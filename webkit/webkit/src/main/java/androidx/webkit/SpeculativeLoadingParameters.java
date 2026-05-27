@@ -19,6 +19,7 @@ package androidx.webkit;
 import android.webkit.WebSettings;
 
 import androidx.annotation.RequiresFeature;
+import androidx.annotation.RestrictTo;
 
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
@@ -46,6 +47,26 @@ public final class SpeculativeLoadingParameters {
         mExpectedNoVarySearchHeader = noVarySearchHeader;
         mIsJavaScriptEnabled = isJavaScriptEnabled;
         mVariationsId = variationsId;
+    }
+
+    @RestrictTo(RestrictTo.Scope.LIBRARY)
+    public SpeculativeLoadingParameters(@NonNull PrefetchParameters prefetchParameters) {
+        this(
+                prefetchParameters.getAdditionalHeaders(),
+                prefetchParameters.getExpectedNoVarySearchData(),
+                prefetchParameters.isJavaScriptEnabled(),
+                prefetchParameters.getVariationsId()
+        );
+    }
+
+    @RestrictTo(RestrictTo.Scope.LIBRARY)
+    public SpeculativeLoadingParameters(@NonNull PrerenderParameters prerenderParameters) {
+        this(
+                prerenderParameters.getAdditionalHeaders(),
+                prerenderParameters.getExpectedNoVarySearchData(),
+                false,
+                prerenderParameters.getVariationsId()
+        );
     }
 
     /**
@@ -84,19 +105,16 @@ public final class SpeculativeLoadingParameters {
 
     /**
      * A builder class to use to construct the {@link SpeculativeLoadingParameters}.
+     * @deprecated Use {@link PrerenderParameters} or {@link PrefetchParameters} instead.
      */
+    @Deprecated
     public static final class Builder {
-        private final @NonNull Map<String, String> mAdditionalHeaders;
+        private final @NonNull Map<String, String> mAdditionalHeaders = new HashMap<>();
         private @Nullable NoVarySearchHeader mExpectedNoVarySearchHeader;
         private boolean mIsJavaScriptEnabled;
         private @Nullable Integer mVariationsId;
 
-        public Builder() {
-            mAdditionalHeaders = new HashMap<>();
-            mExpectedNoVarySearchHeader = null;
-            mIsJavaScriptEnabled = false;
-            mVariationsId = null;
-        }
+        public Builder() {}
 
         /**
          * Use to finish building the PrefetchParams

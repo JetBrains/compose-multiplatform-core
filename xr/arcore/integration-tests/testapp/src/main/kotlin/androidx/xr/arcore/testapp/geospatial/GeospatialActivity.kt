@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@file:Suppress("TYPEALIAS_EXPANSION_DEPRECATION")
 
 package androidx.xr.arcore.testapp.geospatial
 
@@ -77,9 +76,11 @@ import androidx.xr.arcore.testapp.helloar.rendering.PlaneRenderer
 import androidx.xr.arcore.testapp.ui.theme.GoogleYellow
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.DeviceTrackingMode
+import androidx.xr.runtime.ExperimentalXrDeviceLifecycleApi
 import androidx.xr.runtime.GeospatialMode
 import androidx.xr.runtime.PlaneTrackingMode
 import androidx.xr.runtime.Session
+import androidx.xr.runtime.XrDevice
 import androidx.xr.runtime.math.GeospatialPose
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
@@ -99,7 +100,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
-@Suppress("DEPRECATION")
 class GeospatialActivity : ComponentActivity() {
 
     private enum class AnchorType {
@@ -124,6 +124,7 @@ class GeospatialActivity : ComponentActivity() {
         private const val SAVED_ANCHORS_KEY = "geospatial_anchors"
     }
 
+    @OptIn(ExperimentalXrDeviceLifecycleApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         sharedPreferences = getPreferences(MODE_PRIVATE)
@@ -138,7 +139,10 @@ class GeospatialActivity : ComponentActivity() {
                 onSessionAvailable = { session ->
                     this.session = session
                     if (session.config.geospatial == GeospatialMode.DISABLED) {
-                        if (session.runtimes.first().isSupported(GeospatialMode.SPATIAL)) {
+                        if (
+                            XrDevice.getCurrentDevice(this)
+                                .isGeospatialModeSupported(GeospatialMode.SPATIAL)
+                        ) {
                             val newConfig = session.config.copy(geospatial = GeospatialMode.SPATIAL)
                             sessionHelper.tryUpdateConfig(newConfig)
                             return@SessionLifecycleHelper

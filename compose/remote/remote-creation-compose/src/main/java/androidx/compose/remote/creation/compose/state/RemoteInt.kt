@@ -145,8 +145,28 @@ internal constructor(
             constantValueOrNull = null,
             cacheKey = RemoteOperationCacheKey.create(OperationKey.ToFloat, this),
         ) { creationState ->
-            floatArrayOf(getFloatIdForCreationState(creationState))
+            val key = cacheKey // Needed because smart cast with cacheKey is impossible.
+            if (key is RemoteOperationCacheKey && key.op == RemoteFloat.OperationKey.ToInt) {
+                // Force conversion from float to int with a no-op expression so that truncation
+                // occurs as expected for a float->int->float round trip. Note calling binaryOp like
+                // this skips the peephole optimizer.
+                val temp =
+                    binaryOp(this, 0, OperationKey.Add, OP_ADD, { a, _ -> a }) { _, _ -> null }
+                floatArrayOf(temp.getFloatIdForCreationState(creationState))
+            } else {
+                floatArrayOf(getFloatIdForCreationState(creationState))
+            }
         }
+    }
+
+    /**
+     * Converts this [RemoteInt] to a [RemoteLong].
+     *
+     * @return A [RemoteLong] representing this integer as a long.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public fun toRemoteLong(): RemoteLong {
+        return RemoteLong.fromLowHigh(this, selectIfLt(this, 0.ri, (-1).ri, 0.ri))
     }
 
     /**
@@ -509,20 +529,20 @@ internal constructor(
          * Creates a [RemoteInt] instance from a [Long] value, which could be a literal or an ID.
          * The `hasConstantValue` is determined by calling [isConstant].
          *
-         * @param v The constant [Long] value.
+         * @param value The constant [Long] value.
          * @return A [RemoteIntExpression] representing the constant integer.
          */
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         @Deprecated("Use createForId")
-        public operator fun invoke(v: Long): RemoteInt {
-            if (isConstant(v)) {
+        public operator fun invoke(value: Long): RemoteInt {
+            if (isConstant(value)) {
                 return RemoteIntExpression(
-                    constantValueOrNull = v.toInt(),
-                    cacheKey = RemoteConstantCacheKey(v),
-                    arrayProvider = { _ -> longArrayOf(v) },
+                    constantValueOrNull = value.toInt(),
+                    cacheKey = RemoteConstantCacheKey(value),
+                    arrayProvider = { _ -> longArrayOf(value) },
                 )
             }
-            return createForId(v)
+            return createForId(value)
         }
 
         /**
@@ -534,7 +554,6 @@ internal constructor(
          * @param domain The domain of the named integer (defaults to [RemoteState.Domain.User]).
          * @return A [RemoteInt] representing the named int.
          */
-        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         @JvmStatic
         public fun createNamedRemoteInt(
             name: String,
@@ -989,7 +1008,7 @@ internal constructor(
          * @param initialValue The initial value for the state.
          * @return A new [MutableRemoteInt] instance.
          */
-        public fun createMutable(initialValue: Int): MutableRemoteInt {
+        public operator fun invoke(initialValue: Int): MutableRemoteInt {
             return MutableRemoteInt(
                 constantValueOrNull = null,
                 cacheKey = RemoteStateInstanceKey(),
@@ -1213,7 +1232,7 @@ internal constructor(
 @Composable
 @RemoteComposable
 public fun rememberMutableRemoteInt(initialValue: Int): MutableRemoteInt {
-    return remember { MutableRemoteInt.createMutable(initialValue) }
+    return remember { MutableRemoteInt(initialValue) }
 }
 
 /**
@@ -1265,16 +1284,16 @@ public fun rememberRemoteIntValue(
 /**
  * A Composable function to remember and provide a [RemoteInt] expression.
  *
- * @param content A lambda that provides the [RemoteInt] expression.
+ * @param value A lambda that provides the [RemoteInt] expression.
  * @return A [RemoteIntExpression] representing the remembered remote integer.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @Composable
 @RemoteComposable
 @Deprecated("Use rememberMutableRemoteInt", ReplaceWith("rememberMutableRemoteInt(value())"))
-public fun rememberRemoteInt(content: () -> RemoteInt): RemoteInt {
+public fun rememberRemoteInt(value: () -> RemoteInt): RemoteInt {
     return remember {
-        val remoteInt = content()
+        val remoteInt = value()
         RemoteIntExpression(
             remoteInt.constantValueOrNull,
             cacheKey = RemoteStateInstanceKey(),

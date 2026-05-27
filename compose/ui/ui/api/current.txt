@@ -1198,29 +1198,22 @@ package androidx.compose.ui.graphics {
     field public static final float DefaultCameraDistance = 8.0f;
   }
 
-  public final class MeshGradientKt {
-    method public static androidx.compose.ui.Modifier meshGradient(androidx.compose.ui.Modifier, @IntRange(from=1L) int rows, @IntRange(from=1L) int columns, optional boolean hasBicubicColor, kotlin.jvm.functions.Function1<? super androidx.compose.ui.graphics.MeshGradientScope,kotlin.Unit> block);
-    method @BytecodeOnly public static androidx.compose.ui.Modifier! meshGradient$default(androidx.compose.ui.Modifier!, int, int, boolean, kotlin.jvm.functions.Function1!, int, Object!);
+  public final class MeshGradientPainter extends androidx.compose.ui.graphics.painter.Painter {
+    ctor @BytecodeOnly @androidx.compose.runtime.annotation.RememberInComposition public MeshGradientPainter(int, int, boolean, kotlin.jvm.functions.Function1!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
+    ctor @androidx.compose.runtime.annotation.RememberInComposition public MeshGradientPainter(@IntRange(from=1L) int rows, @IntRange(from=1L) int columns, optional boolean hasBicubicColor, kotlin.jvm.functions.Function1<? super androidx.compose.ui.graphics.MeshGradientScope,kotlin.Unit> block);
+    method @BytecodeOnly public long getIntrinsicSize-NH-jbRc();
+    method protected void onDraw(androidx.compose.ui.graphics.drawscope.DrawScope);
+    property public androidx.compose.ui.geometry.Size intrinsicSize;
   }
 
-  public interface MeshGradientRenderer {
-    method public void draw(androidx.compose.ui.graphics.drawscope.DrawScope, int rows, int columns, float[] positions, int[] colors, optional float[]? leftBezierOffsets, optional float[]? topBezierOffsets, optional float[]? rightBezierOffsets, optional float[]? bottomBezierOffsets, optional boolean hasBicubicColor);
-    method @BytecodeOnly public static void draw$default(androidx.compose.ui.graphics.MeshGradientRenderer!, androidx.compose.ui.graphics.drawscope.DrawScope!, int, int, float[]!, int[]!, float[]!, float[]!, float[]!, float[]!, boolean, int, Object!);
-  }
-
-  public final class MeshGradientRenderer_androidKt {
-    method public static androidx.compose.ui.graphics.MeshGradientRenderer MeshGradientRenderer();
-  }
-
-  public final class MeshGradientScope {
-    ctor public MeshGradientScope(int rows, int columns);
+  public sealed nonexhaustive interface MeshGradientScope {
     method @InaccessibleFromKotlin public int getColumns();
     method @InaccessibleFromKotlin public int getRows();
     method @KotlinOnly public void setVertex(int row, int column, androidx.compose.ui.geometry.Offset position, androidx.compose.ui.graphics.Color color, optional androidx.compose.ui.geometry.Offset leftControlPoint, optional androidx.compose.ui.geometry.Offset topControlPoint, optional androidx.compose.ui.geometry.Offset rightControlPoint, optional androidx.compose.ui.geometry.Offset bottomControlPoint);
     method @BytecodeOnly public void setVertex-6uS4IUQ(int, int, long, long, long, long, long, long);
     method @BytecodeOnly public static void setVertex-6uS4IUQ$default(androidx.compose.ui.graphics.MeshGradientScope!, int, int, long, long, long, long, long, long, int, Object!);
-    property public int columns;
-    property public int rows;
+    property public abstract int columns;
+    property public abstract int rows;
   }
 
   @androidx.compose.runtime.Immutable @kotlin.jvm.JvmInline public final value class TransformOrigin {
@@ -3181,11 +3174,15 @@ package androidx.compose.ui.layout {
   public interface MeasureResult {
     method @InaccessibleFromKotlin public java.util.Map<androidx.compose.ui.layout.AlignmentLine,java.lang.Integer> getAlignmentLines();
     method @InaccessibleFromKotlin public int getHeight();
+    method @InaccessibleFromKotlin public default kotlin.jvm.functions.Function2<androidx.compose.ui.layout.RulerScope,androidx.compose.ui.layout.Ruler,kotlin.Unit>? getRulerProvider();
     method @InaccessibleFromKotlin public default kotlin.jvm.functions.Function1<androidx.compose.ui.layout.RulerScope,kotlin.Unit>? getRulers();
     method @InaccessibleFromKotlin public int getWidth();
+    method @InaccessibleFromKotlin public default kotlin.jvm.functions.Function1<androidx.compose.ui.layout.Ruler,java.lang.Boolean>? isRulerProvided();
     method public void placeChildren();
     property public abstract java.util.Map<androidx.compose.ui.layout.AlignmentLine,java.lang.Integer> alignmentLines;
     property public abstract int height;
+    property public default kotlin.jvm.functions.Function1<androidx.compose.ui.layout.Ruler,java.lang.Boolean>? isRulerProvided;
+    property public default kotlin.jvm.functions.Function2<androidx.compose.ui.layout.RulerScope,androidx.compose.ui.layout.Ruler,kotlin.Unit>? rulerProvider;
     property public default kotlin.jvm.functions.Function1<androidx.compose.ui.layout.RulerScope,kotlin.Unit>? rulers;
     property public abstract int width;
   }
@@ -3193,8 +3190,10 @@ package androidx.compose.ui.layout {
   @androidx.compose.ui.layout.MeasureScopeMarker @kotlin.jvm.JvmDefaultWithCompatibility public interface MeasureScope extends androidx.compose.ui.layout.IntrinsicMeasureScope {
     method public default androidx.compose.ui.layout.MeasureResult layout(int width, int height, optional java.util.Map<androidx.compose.ui.layout.AlignmentLine,java.lang.Integer> alignmentLines, kotlin.jvm.functions.Function1<? super androidx.compose.ui.layout.Placeable.PlacementScope,kotlin.Unit> placementBlock);
     method public default androidx.compose.ui.layout.MeasureResult layout(int width, int height, optional java.util.Map<androidx.compose.ui.layout.AlignmentLine,java.lang.Integer> alignmentLines, optional kotlin.jvm.functions.Function1<? super androidx.compose.ui.layout.RulerScope,kotlin.Unit>? rulers, kotlin.jvm.functions.Function1<? super androidx.compose.ui.layout.Placeable.PlacementScope,kotlin.Unit> placementBlock);
+    method public default androidx.compose.ui.layout.MeasureResult layout(int width, int height, kotlin.jvm.functions.Function1<? super androidx.compose.ui.layout.Ruler,java.lang.Boolean> isRulerProvided, kotlin.jvm.functions.Function2<? super androidx.compose.ui.layout.RulerScope,? super androidx.compose.ui.layout.Ruler,kotlin.Unit> rulerProvider, optional java.util.Map<androidx.compose.ui.layout.AlignmentLine,java.lang.Integer> alignmentLines, kotlin.jvm.functions.Function1<? super androidx.compose.ui.layout.Placeable.PlacementScope,kotlin.Unit> placementBlock);
     method @BytecodeOnly public static androidx.compose.ui.layout.MeasureResult! layout$default(androidx.compose.ui.layout.MeasureScope!, int, int, java.util.Map!, kotlin.jvm.functions.Function1!, int, Object!);
     method @BytecodeOnly public static androidx.compose.ui.layout.MeasureResult! layout$default(androidx.compose.ui.layout.MeasureScope!, int, int, java.util.Map!, kotlin.jvm.functions.Function1!, kotlin.jvm.functions.Function1!, int, Object!);
+    method @BytecodeOnly public static androidx.compose.ui.layout.MeasureResult! layout$default(androidx.compose.ui.layout.MeasureScope!, int, int, kotlin.jvm.functions.Function1!, kotlin.jvm.functions.Function2!, java.util.Map!, kotlin.jvm.functions.Function1!, int, Object!);
   }
 
   @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @kotlin.DslMarker public @interface MeasureScopeMarker {
@@ -3977,6 +3976,11 @@ package androidx.compose.ui.platform {
     method public static androidx.compose.ui.platform.ClipMetadata toClipMetadata(android.content.ClipDescription);
   }
 
+  public final class AndroidClipboard_androidKt {
+    method @InaccessibleFromKotlin public static android.content.ClipboardManager getNativeClipboardManager(androidx.compose.ui.platform.Clipboard);
+    property public static android.content.ClipboardManager androidx.compose.ui.platform.Clipboard.nativeClipboardManager;
+  }
+
   @SuppressCompatibility public final class AndroidComposeViewAccessibilityDelegateCompat_androidKt {
     method @InaccessibleFromKotlin @Deprecated @SuppressCompatibility @androidx.compose.ui.ExperimentalComposeUiApi public static boolean getDisableContentCapture();
     method @InaccessibleFromKotlin @Deprecated @SuppressCompatibility @androidx.compose.ui.ExperimentalComposeUiApi public static void setDisableContentCapture(boolean);
@@ -4077,9 +4081,9 @@ package androidx.compose.ui.platform {
 
   public interface Clipboard {
     method public suspend Object? getClipEntry(kotlin.coroutines.Continuation<? super androidx.compose.ui.platform.ClipEntry?>);
-    method @InaccessibleFromKotlin public android.content.ClipboardManager getNativeClipboard();
+    method @InaccessibleFromKotlin @Deprecated public default android.content.ClipboardManager getNativeClipboard();
     method public suspend Object? setClipEntry(androidx.compose.ui.platform.ClipEntry? clipEntry, kotlin.coroutines.Continuation<? super kotlin.Unit>);
-    property public abstract android.content.ClipboardManager nativeClipboard;
+    property @Deprecated public default android.content.ClipboardManager nativeClipboard;
   }
 
   @SuppressCompatibility public final class ClipboardExtensions_androidKt {
@@ -4425,7 +4429,7 @@ package androidx.compose.ui.platform {
     property public static androidx.compose.runtime.CompositionContext? android.view.View.compositionContext;
   }
 
-  public typealias NativeClipboard = android.content.ClipboardManager;
+  @Deprecated public typealias NativeClipboard = android.content.ClipboardManager;
 
 }
 

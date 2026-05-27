@@ -21,12 +21,15 @@ import androidx.compose.remote.core.CoreDocument
 import androidx.compose.remote.creation.compose.capture.RemoteCreationDisplayInfo
 import androidx.compose.remote.creation.compose.capture.createCreationDisplayInfo
 import androidx.compose.remote.creation.compose.layout.RemoteComposable
+import androidx.compose.remote.creation.profile.Profile
+import androidx.compose.remote.creation.profile.RcPlatformProfiles
 import androidx.compose.remote.player.compose.RemoteDocumentPlayer
 import androidx.compose.remote.player.core.state.StateUpdater
 import androidx.compose.remote.testing.RemoteBaseContentTestRule
 import androidx.compose.remote.testing.RemoteContentTestRule
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.test.junit4.ComposeContentTestRule
 import org.junit.rules.TestRule
 import org.junit.runner.Description
 import org.junit.runners.model.Statement
@@ -51,14 +54,23 @@ class RemoteInteractionTestRule(private val remoteCreationDisplayInfo: RemoteCre
     override fun apply(base: Statement, description: Description): Statement =
         remoteContentTestRule.apply(base, description)
 
+    /** [ComposeContentTestRule] used by this [TestRule]. */
+    val composeTestRule: ComposeContentTestRule = remoteContentTestRule.composeTestRule
+
     fun setContent(
+        profile: Profile = RcPlatformProfiles.ANDROIDX,
+        creationComposableWrapper: ComposableWrapper = ComposableWrappers.noop,
         onCoreDocumentCreated: ((CoreDocument) -> Unit)? = null,
+        playComposableWrapper: ComposableWrapper = ComposableWrappers.noop,
         composable: @Composable @RemoteComposable () -> Unit,
     ) {
         remoteContentTestRule.setContent(
             remoteCreationDisplayInfo = remoteCreationDisplayInfo,
+            profile = profile,
+            creationComposableWrapper = creationComposableWrapper,
             onCoreDocumentCreated = onCoreDocumentCreated,
             player = player,
+            playComposableWrapper = playComposableWrapper,
             composable = composable,
         )
     }

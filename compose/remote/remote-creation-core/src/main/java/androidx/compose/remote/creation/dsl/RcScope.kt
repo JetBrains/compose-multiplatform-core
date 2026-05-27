@@ -107,6 +107,7 @@ public interface RcScope {
         fontWeight: Float = RcFontWeight.Normal,
         textAlign: RcTextAlign = RcTextAlign.Start,
         overflow: RcTextOverflow = RcTextOverflow.Clip,
+        content: RcScope.() -> Unit = {},
     )
 
     /** Adds a [Text] component using a remote string reference. */
@@ -118,6 +119,7 @@ public interface RcScope {
         fontWeight: Float = RcFontWeight.Normal,
         textAlign: RcTextAlign = RcTextAlign.Start,
         overflow: RcTextOverflow = RcTextOverflow.Clip,
+        content: RcScope.() -> Unit = {},
     )
 
     /** Adds an [Image] component to the document. */
@@ -143,6 +145,15 @@ public interface RcScope {
 
     /** Ends a global section */
     public fun endGlobal()
+
+    /** Start a list of canvas operations */
+    public fun startCanvasOperations()
+
+    /** End a list of canvas operations */
+    public fun endCanvasOperations()
+
+    /** In the context of a draw modifier, draw the component content */
+    public fun drawComponentContent()
 
     /** Registers a text resource and returns its reference. */
     public fun remoteText(text: String): RcText
@@ -299,8 +310,6 @@ public interface RcScope {
 
     public fun arrayAvg(a: RcFloat): RcFloat
 
-    public operator fun RcFloat.get(index: RcFloat): RcFloat
-
     /**
      * Adds a XY path expression and returns its reference.
      *
@@ -347,6 +356,27 @@ public interface RcScope {
      * @param block the function block
      */
     public fun rFun(block: (RcFloat) -> RcFloat): RcFloat
+
+    public fun density(): RcFloat
+
+    public fun fontSize(): RcFloat
+
+    public fun apiLevel(): RcFloat
+
+    /** Returns the window's width as a remote float. */
+    public fun windowWidth(): RcFloat
+
+    /** Returns the window's height as a remote float. */
+    public fun windowHeight(): RcFloat
+
+    /** CONTINUOUS_SEC is seconds from midnight looping every hour 0-3600 */
+    public fun continuousSec(): RcFloat
+
+    /** ID_OFFSET_TO_UTC is the offset from UTC in sec (typically / 3600f) */
+    public fun utcOffset(): RcFloat
+
+    /** Moth of Year quantized to MONTHS 1-12. 1 = January */
+    public fun month(): RcFloat
 
     /** Returns the component's width as a remote float. */
     public fun componentWidth(): RcFloat
@@ -653,13 +683,13 @@ public interface RcScope {
     public fun RcPath.combine(path2: RcPath, op: RcPathCombineOp): RcPath
 
     /** Performs a haptic feedback. */
-    public fun performHaptic(feedbackConstant: Int)
+    public fun performHaptic(haptic: RcHaptic)
 
     /** Tells the system to wake up in a given number of seconds. */
     public fun wakeIn(seconds: Float)
 
     /** Returns the color attribute. */
-    public fun getColorAttribute(baseColor: RcColor, type: Short): RcFloat
+    public fun getColorAttribute(baseColor: RcColor, type: RcColorAttr): RcFloat
 
     /** Returns a substring of the text. */
     public fun RcText.substring(start: RcFloat, len: RcFloat): RcText
@@ -790,7 +820,7 @@ public interface RcScope {
     public fun textLength(text: RcText): RcFloat
 
     /** Creates a time attribute. */
-    public fun timeAttribute(variable: RcInteger, type: Short, vararg args: Int): RcFloat
+    public fun timeAttribute(variable: RcInteger, type: RcTimeAttr, vararg args: Int): RcFloat
 
     /** Pre-concat the current matrix with the specified skew. */
     public fun skew(skewX: Float, skewY: Float)
@@ -803,7 +833,7 @@ public interface RcScope {
 
     /** Adds a conditional block based on the comparison of two values. */
     public fun conditionalOperations(
-        type: Byte,
+        type: RcConditionOp,
         a: RcFloat,
         b: RcFloat,
         content: RcScope.() -> Unit,
@@ -869,10 +899,10 @@ public interface RcScope {
     public fun impulse(duration: RcFloat, start: RcFloat, block: RcImpulseScope.() -> Unit)
 
     /** Conditionally skip a segment */
-    public fun skip(type: Short, value: Int, block: RcScope.() -> Unit)
+    public fun skip(type: RcSkipKind, value: Int, block: RcScope.() -> Unit)
 
     /** Conditionally skip a segment, returning an offset token. */
-    public fun beginSkip(type: Short, value: Int): Int
+    public fun beginSkip(type: RcSkipKind, value: Int): Int
 
     /** Concludes the skipped segment using the offset token. */
     public fun endSkip(offset: Int)
@@ -891,6 +921,21 @@ public interface RcScope {
     public fun RcDynamicPath.close()
 
     public fun RcDynamicPath.reset()
+
+    /** Registers an integer array and returns its reference. */
+    public fun remoteIntArray(array: IntArray): RcFloat
+
+    /** Registers a dynamic float array with the given size and returns its reference. */
+    public fun remoteDynamicFloatArray(size: Float): RcFloat
+
+    /** Registers a float list and returns its reference. */
+    public fun remoteFloatList(values: FloatArray): RcFloat
+
+    /** Registers a float map and returns its reference. */
+    public fun remoteFloatMap(keys: Array<String>, values: FloatArray): RcFloat
+
+    /** Sets a value in the array at the given index. */
+    public fun setArrayValue(array: RcFloat, index: RcFloat, value: RcFloat)
 }
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)

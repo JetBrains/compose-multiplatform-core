@@ -18,7 +18,6 @@ package androidx.xr.runtime
 
 import android.content.Context
 import androidx.annotation.GuardedBy
-import androidx.annotation.RestrictTo
 import androidx.lifecycle.Lifecycle
 import androidx.xr.runtime.XrDevice.Companion.getCurrentDevice
 import androidx.xr.runtime.interfaces.DisplayBlendMode as InternalDisplayBlendMode
@@ -140,8 +139,39 @@ private constructor(
             return device
         }
 
-        /** Returns true if Projected service is available on this device. False otherwise. */
-        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+        /**
+         * Get the current [XrDevice] for the provided [Context] and inject extra OpenXR extensions.
+         * This method must be called before a [Session] or any other [XrDevice] is created in the
+         * current process. This API is only valid if the [XrDevice] is backed by an OpenXR runtime.
+         *
+         * @param context the [Context] associated with the device
+         * @param extensions the list of extra OpenXR extension names to inject
+         * @param coroutineContext the [CoroutineContext] to use for the XrDevice operations
+         * @throws IllegalArgumentException if the provided [Context] is not supported
+         * @throws IllegalStateException if the OpenXR instance has already been created or the
+         *   XrDevice is not backed by an OpenXR instance
+         * @throws UnsupportedOperationException if any of the requested extensions are not
+         *   supported by the device
+         */
+        @JvmStatic
+        @ExperimentalXrDeviceLifecycleApi
+        @UnstableNativeResourceApi
+        @JvmOverloads
+        public fun getCurrentDevice(
+            context: Context,
+            extensions: List<String>,
+            coroutineContext: CoroutineContext = EmptyCoroutineContext,
+        ): XrDevice {
+            XrInstanceManager.addExtraExtensions(context, extensions)
+            return getCurrentDevice(context, coroutineContext)
+        }
+
+        /**
+         * Returns true if the Android XR Projected service is available on this device. This means
+         * the device supports the necessary system features and has the required system service
+         * components for Projected experiences. Returns false otherwise.
+         */
+        @JvmStatic
         public fun isProjectedServiceAvailable(context: Context): Boolean {
             if (!PackageManagerUtils.hasXrProjectedSystemFeature(context)) {
                 return false

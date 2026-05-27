@@ -24,20 +24,12 @@ import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.content.pm.ResolveInfo
 import android.os.IBinder
-import androidx.annotation.VisibleForTesting
 import androidx.xr.arcore.runtime.PerceptionRuntime
 import androidx.xr.arcore.runtime.TrackingState
-import androidx.xr.runtime.AnchorPersistenceMode
 import androidx.xr.runtime.Config
-import androidx.xr.runtime.Config.ConfigMode
-import androidx.xr.runtime.DepthEstimationMode
 import androidx.xr.runtime.DeviceTrackingMode
 import androidx.xr.runtime.DisplayBlendMode
-import androidx.xr.runtime.EyeTrackingMode
-import androidx.xr.runtime.FaceTrackingMode
 import androidx.xr.runtime.GeospatialMode
-import androidx.xr.runtime.HandTrackingMode
-import androidx.xr.runtime.PlaneTrackingMode
 import androidx.xr.runtime.PreviewSpatialApi
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
@@ -114,14 +106,10 @@ internal constructor(
 
     @OptIn(androidx.xr.runtime.PreviewSpatialApi::class)
     override fun configure(config: Config) {
-        if (config.geospatial == GeospatialMode.INERTIAL) {
-            throw UnsupportedOperationException(
-                "Failed to configure session, runtime does not support GeospatialMode.INERTIAL"
-            )
-        }
         if (
             config.deviceTracking == DeviceTrackingMode.DISABLED &&
-                config.geospatial == GeospatialMode.SPATIAL
+                (config.geospatial == GeospatialMode.SPATIAL ||
+                    config.geospatial == GeospatialMode.INERTIAL)
         ) {
             throw UnsupportedOperationException(
                 "Geospatial mode is not supported when device tracking is disabled."
@@ -135,10 +123,6 @@ internal constructor(
             stopServiceInternal()
         }
         perceptionManager.xrResources.config = config
-    }
-
-    override fun isSupported(configMode: ConfigMode): Boolean {
-        return SUPPORTED_CONFIG_MODES.contains(configMode)
     }
 
     override fun getPreferredDisplayBlendMode(): DisplayBlendMode {
@@ -293,7 +277,8 @@ internal constructor(
         // I.E. if no features are needed from the service we don't require it.
         return config.deviceTracking == DeviceTrackingMode.SPATIAL ||
             config.deviceTracking == DeviceTrackingMode.INERTIAL ||
-            config.geospatial == GeospatialMode.SPATIAL
+            config.geospatial == GeospatialMode.SPATIAL ||
+            config.geospatial == GeospatialMode.INERTIAL
     }
 
     @OptIn(PreviewSpatialApi::class)
@@ -304,6 +289,9 @@ internal constructor(
         // TODO: b/455872882 - Currently, Geo is not compatible with 3DoF tracking stack.
         if (config.geospatial == GeospatialMode.SPATIAL) {
             serviceConfig.geospatialMode = ProjectedGeospatialMode.SPATIAL
+            serviceConfig.trackingMode = ProjectedTrackingMode.PROJECTED_TRACKING_6DOF
+        } else if (config.geospatial == GeospatialMode.INERTIAL) {
+            serviceConfig.geospatialMode = ProjectedGeospatialMode.INERTIAL
             serviceConfig.trackingMode = ProjectedTrackingMode.PROJECTED_TRACKING_6DOF
         } else {
             serviceConfig.geospatialMode = ProjectedGeospatialMode.DISABLED
@@ -346,19 +334,5 @@ internal constructor(
     internal companion object {
         internal const val ACTION_PERCEPTION_BIND: String =
             "androidx.xr.projected.ACTION_PERCEPTION_BIND"
-
-        @VisibleForTesting
-        internal val SUPPORTED_CONFIG_MODES: Set<ConfigMode> =
-            setOf(
-                PlaneTrackingMode.DISABLED,
-                HandTrackingMode.DISABLED,
-                DeviceTrackingMode.DISABLED,
-                DepthEstimationMode.DISABLED,
-                AnchorPersistenceMode.DISABLED,
-                FaceTrackingMode.DISABLED,
-                GeospatialMode.DISABLED,
-                GeospatialMode.SPATIAL,
-                EyeTrackingMode.DISABLED,
-            )
     }
 }

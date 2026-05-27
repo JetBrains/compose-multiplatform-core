@@ -126,10 +126,11 @@ public abstract class DragPolicy internal constructor()
  * This class defines properties that control how anchoring behaves, such as whether it's enabled
  * and what types of planes it can anchor to.
  *
- * This functionality requires the
- * [android.permission.SCENE_UNDERSTANDING_COARSE][androidx.xr.runtime.manifest.SCENE_UNDERSTANDING_COARSE]
- * permission. If this permission is not granted, anchoring will be disabled and the element will
- * behave as if this policy was not applied.
+ * This functionality requires [androidx.xr.runtime.Session.configure] to be called with
+ * [androidx.xr.runtime.PlaneTrackingMode.HORIZONTAL_AND_VERTICAL]. This configuration requires that
+ * the `SCENE_UNDERSTANDING_COARSE` Android permission is granted. If not granted, the `anchorable`
+ * functionality will be disabled, and the element will behave as if the anchorable modifier was not
+ * applied.
  *
  * @property isEnabled Whether anchoring is enabled for this object. If `false`, the object will not
  *   be able to anchor to surfaces. Defaults to `true`.
@@ -326,7 +327,8 @@ public class ResizePolicy(
  * @param T The type of the Android View to be created.
  * @param factory A lambda that creates an instance of the Android View [T].
  * @param modifier SubspaceModifiers to apply to the SpatialPanel. The depth field in size-based
- *   modifiers affects this panel's layout size, but will not affect how the panel is rendered.
+ *   modifiers affects this panel's layout size, but will not affect how the panel is rendered. The
+ *   rendered shape will be a flat rectangle.
  * @param update A lambda that allows updating the created Android View [T].
  * @param shape The shape of this Spatial Panel.
  * @param dragPolicy An optional [DragPolicy] that defines the motion behavior of the
@@ -441,8 +443,9 @@ private fun <T : View> AndroidViewPanel(
  * Creates a [SpatialPanel] representing a 2D plane in 3D space in which an application can fill
  * content.
  *
- * @param modifier SubspaceModifiers to apply to the SpatialPanel. Panels are not affected by the
- *   depth field in size-based modifiers.
+ * @param modifier SubspaceModifiers to apply to the SpatialPanel. The depth field in size-based
+ *   modifiers affects this panel's layout size, but will not affect how the panel is rendered. The
+ *   rendered shape will be a flat rectangle.
  * @param shape The shape of this Spatial Panel.
  * @param dragPolicy An optional [DragPolicy] that defines the motion behavior of the
  *   [SpatialPanel]. This can be either a [MovePolicy] for free movement or an [AnchorPolicy] for
@@ -566,7 +569,8 @@ public fun SpatialPanel(
  *
  * @param modifier The [SubspaceModifier] to be applied to this panel, controlling its layout, size,
  *   and position within the parent. The depth field in size-based modifiers affects this panel's
- *   layout size, but will not affect how the panel is rendered.
+ *   layout size, but will not affect how the panel is rendered. The rendered shape will be a flat
+ *   rectangle.
  * @param shape The shape of this Spatial Panel.
  * @param dragPolicy An optional [DragPolicy] that defines the motion behavior of the
  *   [SpatialPanel]. This can be either a [MovePolicy] for free movement or an [AnchorPolicy] for
@@ -701,7 +705,8 @@ internal class MainPanelOwnerQueue(private val queue: ArrayDeque<() -> Unit> = A
  *
  * @param intent The intent of an Activity to launch within this panel.
  * @param modifier SubspaceModifiers to apply to the SpatialPanel. The depth field in size-based
- *   modifiers affects this panel's layout size, but will not affect how the panel is rendered.
+ *   modifiers affects this panel's layout size, but will not affect how the panel is rendered. The
+ *   rendered shape will be a flat rectangle.
  * @param shape The shape of this Spatial Panel.
  * @param dragPolicy An optional [DragPolicy] that defines the motion behavior of the
  *   [SpatialPanel]. This can be either a [MovePolicy] for free movement or an [AnchorPolicy] for

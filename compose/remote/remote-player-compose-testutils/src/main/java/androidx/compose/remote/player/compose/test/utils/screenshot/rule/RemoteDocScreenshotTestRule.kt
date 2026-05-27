@@ -37,7 +37,6 @@ import androidx.test.screenshot.AndroidXScreenshotTestRule
 import androidx.test.screenshot.matchers.BitmapMatcher
 import org.junit.rules.RuleChain
 import org.junit.rules.TestRule
-import org.junit.rules.TestWatcher
 import org.junit.runner.Description
 import org.junit.runners.model.Statement
 
@@ -52,18 +51,12 @@ class RemoteDocScreenshotTestRule(moduleDirectory: String, val matcher: BitmapMa
 
     private val screenshotTestRule = AndroidXScreenshotTestRule(moduleDirectory)
 
-    private val testNameRule =
-        object : TestWatcher() {
-
-            override fun starting(description: Description) {
-                testDescription = description
-            }
-        }
+    private val goldenScreenshotNameTestRule = GoldenScreenshotNameTestRule()
 
     private val delegateChain: RuleChain =
-        RuleChain.outerRule(testNameRule).around(remoteContentTestRule).around(screenshotTestRule)
-
-    private lateinit var testDescription: Description
+        RuleChain.outerRule(goldenScreenshotNameTestRule)
+            .around(remoteContentTestRule)
+            .around(screenshotTestRule)
 
     override fun apply(base: Statement, description: Description): Statement {
         return delegateChain.apply(base, description)
@@ -73,7 +66,7 @@ class RemoteDocScreenshotTestRule(moduleDirectory: String, val matcher: BitmapMa
         coreDocument: CoreDocument,
         context: Context,
         goldenScreenshotName: GoldenScreenshotName? = null,
-        composableWrapper: (@Composable (composable: @Composable () -> Unit) -> Unit)? = null,
+        composableWrapper: ComposableWrapper = ComposableWrappers.noop,
     ) {
         runScreenshotTestInternal(
             coreDocument = coreDocument,
@@ -91,7 +84,7 @@ class RemoteDocScreenshotTestRule(moduleDirectory: String, val matcher: BitmapMa
         coreDocument: CoreDocument,
         size: Size,
         goldenScreenshotName: GoldenScreenshotName? = null,
-        composableWrapper: (@Composable (composable: @Composable () -> Unit) -> Unit)? = null,
+        composableWrapper: ComposableWrapper = ComposableWrappers.noop,
     ) {
         runScreenshotTestInternal(
             coreDocument = coreDocument,
@@ -105,7 +98,7 @@ class RemoteDocScreenshotTestRule(moduleDirectory: String, val matcher: BitmapMa
         coreDocument: CoreDocument,
         size: Size,
         goldenScreenshotName: GoldenScreenshotName,
-        composableWrapper: (@Composable (content: @Composable () -> Unit) -> Unit)?,
+        composableWrapper: ComposableWrapper,
     ) {
         remoteContentTestRule.setContent(
             coreDocument = coreDocument,
@@ -128,15 +121,14 @@ class RemoteDocScreenshotTestRule(moduleDirectory: String, val matcher: BitmapMa
     }
 
     private fun getGoldenScreenshotName(goldenScreenshotName: GoldenScreenshotName?) =
-        goldenScreenshotName ?: GoldenScreenshotName(testDescription)
+        goldenScreenshotName ?: goldenScreenshotNameTestRule.getGoldenScreenshotName()
 
     companion object {
         const val ROOT_TEST_TAG: String = "ROOT_TEST_TAG"
     }
 
-    private class PlayerImpl(
-        private val composableWrapper: (@Composable (composable: @Composable () -> Unit) -> Unit)?
-    ) : RemoteBaseDocContentTestRule.Player {
+    private class PlayerImpl(private val composableWrapper: ComposableWrapper) :
+        RemoteBaseDocContentTestRule.Player {
         @Composable
         override fun Play(coreDocument: CoreDocument, size: Size) {
             Box(
@@ -152,11 +144,7 @@ class RemoteDocScreenshotTestRule(moduleDirectory: String, val matcher: BitmapMa
                         documentHeight = size.height.toInt(),
                     )
                 }
-                if (composableWrapper == null) {
-                    composable()
-                } else {
-                    composableWrapper { composable() }
-                }
+                composableWrapper { composable() }
             }
         }
     }
