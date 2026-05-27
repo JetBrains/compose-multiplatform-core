@@ -32,7 +32,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.awt.ComposeWindow
 import androidx.compose.ui.isLinux
 import androidx.compose.ui.isMacOs
-import androidx.compose.ui.layout.IntrinsicSizeKind
 import androidx.compose.ui.toDpSize
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.DpRect
@@ -617,13 +616,13 @@ class WindowV2StateTest {
     }
 
     @Test
-    fun `set window min intrinsic height`() = runApplicationTest(useDelay = isLinux) {
+    fun `set window preferred height`() = runApplicationTest(useDelay = isLinux) {
         assumeTrue(!isLinux)  // Flaky on our CI
 
         lateinit var window: ComposeWindow
         val state = WindowState(
             initialBoundsProvider = WindowBoundsProvider(
-                sizeProvider = WindowSizeProvider.MinIntrinsicHeight(width = 300.dp)
+                sizeProvider = WindowSizeProvider.PreferredHeight(width = 300.dp)
             )
         )
 
@@ -631,7 +630,7 @@ class WindowV2StateTest {
             Window(
                 onCloseRequest = ::exitApplication,
                 state = state,
-                title = "set window min intrinsic height"
+                title = "set window preferred height"
             ) {
                 window = this.window
 
@@ -650,20 +649,20 @@ class WindowV2StateTest {
     }
 
     @Test
-    fun `set window min intrinsic width`() = runApplicationTest {
+    fun `set window preferred width`() = runApplicationTest {
         assumeTrue(!isLinux)  // Flaky on our CI
 
         lateinit var window: ComposeWindow
         val state = WindowState(
             initialBoundsProvider = WindowBoundsProvider(
-                sizeProvider = WindowSizeProvider.MinIntrinsicWidth(height = 300.dp)
+                sizeProvider = WindowSizeProvider.PreferredWidth(height = 300.dp)
             )
         )
         launchTestApplication {
             Window(
                 onCloseRequest = ::exitApplication,
                 state = state,
-                title = "set window min intrinsic width"
+                title = "set window preferred width"
             ) {
                 window = this.window
 
@@ -1033,80 +1032,50 @@ class WindowV2StateTest {
     }
 
     @Test
-    fun windowMinIntrinsicWidth() = runWindowSizeTest(
-        testName = "windowMinIntrinsicWidth",
-        sizeProvider = WindowSizeProvider.MinIntrinsicWidth(height = 500.dp),
+    fun windowPreferredWidth() = runWindowSizeTest(
+        testName = "windowPreferredWidth",
+        sizeProvider = WindowSizeProvider.PreferredWidth(height = 500.dp),
         content = {
-            BoxWithIntrinsicSize(
-                minWidth = { 400.dp.roundToPx() }
+            BoxWithGivenSize(
+                width = { 400.dp.roundToPx() }
             )
         },
         expectedWindowSizeSansInsets = DpSize(400.dp, 500.dp)
     )
 
     @Test
-    fun windowMaxIntrinsicWidth() = runWindowSizeTest(
-        testName = "windowMaxIntrinsicWidth",
-        sizeProvider = WindowSizeProvider.MaxIntrinsicWidth(height = 500.dp),
+    fun windowPreferredHeight() = runWindowSizeTest(
+        testName = "windowPreferredHeight",
+        sizeProvider = WindowSizeProvider.PreferredHeight(width = 500.dp),
         content = {
-            BoxWithIntrinsicSize(
-                maxWidth = { 400.dp.roundToPx() }
-            )
-        },
-        expectedWindowSizeSansInsets = DpSize(400.dp, 500.dp)
-    )
-
-    @Test
-    fun windowMinIntrinsicHeight() = runWindowSizeTest(
-        testName = "windowMinIntrinsicHeight",
-        sizeProvider = WindowSizeProvider.MinIntrinsicHeight(width = 500.dp),
-        content = {
-            BoxWithIntrinsicSize(
-                minHeight = { 400.dp.roundToPx() }
+            BoxWithGivenSize(
+                height = { 400.dp.roundToPx() }
             )
         },
         expectedWindowSizeSansInsets = DpSize(500.dp, 400.dp)
     )
 
     @Test
-    fun windowMaxIntrinsicHeight() = runWindowSizeTest(
-        testName = "windowMaxIntrinsicHeight",
-        sizeProvider = WindowSizeProvider.MaxIntrinsicHeight(width = 500.dp),
+    fun windowPreferredWidthWithMatchingHeight() = runWindowSizeTest(
+        testName = "windowPreferredWidthWithMatchingHeight",
+        sizeProvider = WindowSizeProvider.PreferredWidthWithMatchingHeight,
         content = {
-            BoxWithIntrinsicSize(
-                maxHeight = { 400.dp.roundToPx() }
-            )
-        },
-        expectedWindowSizeSansInsets = DpSize(500.dp, 400.dp)
-    )
-
-    @Test
-    fun windowMinWidthWithMatchingMinHeight() = runWindowSizeTest(
-        testName = "windowMinWidthWithMatchingMinHeight",
-        sizeProvider = WindowSizeProvider.IntrinsicWidthWithMatchingIntrinsicHeight(
-            intrinsicWidthKind = IntrinsicSizeKind.Min,
-            intrinsicHeightKind = IntrinsicSizeKind.Min,
-        ),
-        content = {
-            BoxWithIntrinsicSize(
-                minWidth = { 400.dp.roundToPx() },
-                minHeight = { it }  // Return width to make it a square
+            BoxWithGivenSize(
+                width = { 400.dp.roundToPx() },
+                height = { it }  // Return width to make it a square
             )
         },
         expectedWindowSizeSansInsets = DpSize(400.dp, 400.dp)
     )
 
     @Test
-    fun windowMaxHeightWithMatchingMaxWidth() = runWindowSizeTest(
-        testName = "windowMaxHeightWithMatchingMaxWidth",
-        sizeProvider = WindowSizeProvider.IntrinsicHeightWithMatchingIntrinsicWidth(
-            intrinsicWidth = IntrinsicSizeKind.Max,
-            intrinsicHeight = IntrinsicSizeKind.Max,
-        ),
+    fun windowPreferredHeightWithMatchingWidth() = runWindowSizeTest(
+        testName = "windowPreferredHeightWithMatchingWidth",
+        sizeProvider = WindowSizeProvider.PreferredHeightWithMatchingWidth,
         content = {
-            BoxWithIntrinsicSize(
-                maxHeight = { 400.dp.roundToPx() },
-                maxWidth = { it }  // Return height to make it a square
+            BoxWithGivenSize(
+                width = { it },  // Return height to make it a square
+                height = { 400.dp.roundToPx() },
             )
         },
         expectedWindowSizeSansInsets = DpSize(400.dp, 400.dp)
@@ -1115,14 +1084,11 @@ class WindowV2StateTest {
     @Test
     fun `requested size is rounded up`() = runWindowSizeTest(
         testName = "requested size is rounded up",
-        sizeProvider = WindowSizeProvider.IntrinsicWidthWithMatchingIntrinsicHeight(
-            intrinsicWidthKind = IntrinsicSizeKind.Min,
-            intrinsicHeightKind = IntrinsicSizeKind.Min,
-        ),
+        sizeProvider = WindowSizeProvider.PreferredWidthWithMatchingHeight,
         content = {
-            BoxWithIntrinsicSize(
-                minWidth = { (density * 100 + 1).toInt() },
-                minHeight = { it }
+            BoxWithGivenSize(
+                width = { (density * 100 + 1).toInt() },
+                height = { it }
             )
         },
         expectedWindowSizeSansInsets = DpSize(101.dp, 101.dp)

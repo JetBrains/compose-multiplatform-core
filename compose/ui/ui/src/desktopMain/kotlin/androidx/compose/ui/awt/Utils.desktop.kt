@@ -19,7 +19,9 @@ package androidx.compose.ui.awt
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.DpRect
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.IntRect
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.size
 import androidx.compose.ui.util.fastRoundToInt
 import java.awt.Component
@@ -59,6 +61,12 @@ internal fun toAwtRectangle(
     val rwidth = rright - rleft
     val rheight = rbottom - rtop
     return Rectangle(rleft, rtop, rwidth, rheight)
+}
+
+internal fun IntSize.toDpSize(density: Density): DpSize {
+    with(density) {
+        return DpSize(width.toDp(), height.toDp())
+    }
 }
 
 internal fun IntRect.toAwtRectangle(density: Density) = toAwtRectangle(

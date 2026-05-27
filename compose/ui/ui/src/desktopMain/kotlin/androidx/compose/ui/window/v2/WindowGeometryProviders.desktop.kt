@@ -18,10 +18,8 @@ package androidx.compose.ui.window.v2
 
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.awt.toDpSize
 import androidx.compose.ui.layout.IntrinsicMeasurable
-import androidx.compose.ui.layout.IntrinsicSizeKind
-import androidx.compose.ui.layout.MeasurableRootContent
-import androidx.compose.ui.layout.intrinsicDimensionSize
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
@@ -145,7 +143,7 @@ class WindowMetrics internal constructor(
 class WindowGeometryProviderScope internal constructor(
     parentWindow: java.awt.Window?,
     private val window: java.awt.Window,
-    private val measurableContentProvider: () -> MeasurableRootContent,
+    private val measureContent: (Constraints) -> IntSize,
 ): Density {
     init {
         require(window.isDisplayable) {
@@ -187,11 +185,10 @@ class WindowGeometryProviderScope internal constructor(
         }
 
     /**
-     * Represents the composable content of the window, which can be queried for its preferred size
-     * properties.
+     * Measures the window content in the given constraints and returns the resulting size.
      */
-    val windowContent: MeasurableRootContent
-        get() = measurableContentProvider()
+    fun measureWindowContent(constraints: Constraints): DpSize =
+        measureContent(constraints).toDpSize(windowDensity)
 
     /**
      * Evaluates the given [WindowSizeProvider] in this scope.
@@ -477,42 +474,38 @@ fun interface WindowSizeProvider {
          *
          * The preferred size is computed by measuring the content with infinite
          * [Constraints], and adding the window's insets to that.
+         *
+         * If the resulting size is larger than the available size of the screen on one dimension,
+         * it will be given the available size on that dimension and the preferred size on the other
+         * dimension.
+         *
+         * If the resulting size is larger than the available size of the screen on both dimensions,
+         * it will be given the available size on both dimensions.
          */
         val Unconstrained = WindowSizeProvider {
-            windowContent.measuringIn(Constraints()) {
-                contentToWindowSize(
-                    DpSize(
-                        width = it.measuredWidth.toDp(),
-                        height = it.measuredHeight.toDp()
-                    )
-                )
+            val availableScreenBounds = windowMetrics.screen.availableBounds
+            val unconstrainedSize = contentToWindowSize(
+                measureWindowContent(Constraints())
+            )
+
+            val widthFits = unconstrainedSize.width <= availableScreenBounds.width
+            val heightFits = unconstrainedSize.height <= availableScreenBounds.height
+
+            return@WindowSizeProvider if (widthFits && heightFits) {
+                unconstrainedSize
+            } else if (!widthFits && !heightFits) {
+                availableScreenBounds.size
+            } else if (!widthFits) {
+                val height = preferredHeight(availableScreenBounds.width)
+                contentToWindowSize(DpSize(availableScreenBounds.width, height))
+            } else {  // !heightFits
+                val width = preferredWidth(availableScreenBounds.height)
+                contentToWindowSize(DpSize(width, availableScreenBounds.height))
             }
         }
 
         /**
-         * Sets one dimension of the window to its intrinsic size at the given [otherDimensionSize]
-         * on the other dimension.
-         */
-        private fun IntrinsicDimension(
-            isWidth: Boolean,
-            intrinsicSizeKind: IntrinsicSizeKind,
-            otherDimensionSize: Dp,
-            otherDimensionName: String,
-        ): WindowSizeProvider {
-            otherDimensionSize.requireReal(otherDimensionName)
-            return WindowSizeProvider {
-                contentToWindowSize(
-                    windowContent.intrinsicDimensionSize(
-                        isWidth = isWidth,
-                        intrinsicSizeKind = intrinsicSizeKind,
-                        otherDimensionSize = otherDimensionSize
-                    )
-                )
-            }
-        }
-
-        /**
-         * Sets the width of the window to its minimum intrinsic width at the given [height].
+         * Sets the width of the window to its preferred width at the given [height].
          *
          * The height of the window is set to [height].
          *
@@ -520,31 +513,16 @@ fun interface WindowSizeProvider {
          *
          * @see [IntrinsicMeasurable.minIntrinsicWidth]
          */
-        fun MinIntrinsicWidth(height: Dp) = IntrinsicDimension(
-            isWidth = true,
-            intrinsicSizeKind = IntrinsicSizeKind.Min,
-            otherDimensionSize = height,
-            otherDimensionName = "height"
-        )
+        fun PreferredWidth(height: Dp): WindowSizeProvider {
+            height.requireReal("height")
+            return WindowSizeProvider {
+                val width = preferredWidth(height)
+                contentToWindowSize(DpSize(width, height))
+            }
+        }
 
         /**
-         * Sets the width of the window to its maximum intrinsic width at the given [height].
-         *
-         * The height of the window is set to [height].
-         *
-         * @param height The height of the window.
-         *
-         * @see [IntrinsicMeasurable.maxIntrinsicWidth]
-         */
-        fun MaxIntrinsicWidth(height: Dp) = IntrinsicDimension(
-            isWidth = true,
-            intrinsicSizeKind = IntrinsicSizeKind.Max,
-            otherDimensionSize = height,
-            otherDimensionName = "height"
-        )
-
-        /**
-         * Sets the height of the window to its minimum intrinsic height at the given [width].
+         * Sets the height of the window to its preferred height at the given [width].
          *
          * The width of the window is set to [width].
          *
@@ -552,104 +530,74 @@ fun interface WindowSizeProvider {
          *
          * @see [IntrinsicMeasurable.minIntrinsicHeight]
          */
-        fun MinIntrinsicHeight(width: Dp) = IntrinsicDimension(
-            isWidth = false,
-            intrinsicSizeKind = IntrinsicSizeKind.Min,
-            otherDimensionSize = width,
-            otherDimensionName = "width"
-        )
-
-        /**
-         * Sets the height of the window to its maximum intrinsic height at the given [width].
-         *
-         * The width of the window is set to [width].
-         *
-         * @param width The width of the window.
-         *
-         * @see [IntrinsicMeasurable.maxIntrinsicHeight]
-         */
-        fun MaxIntrinsicHeight(width: Dp) = IntrinsicDimension(
-            isWidth = false,
-            intrinsicSizeKind = IntrinsicSizeKind.Max,
-            otherDimensionSize = width,
-            otherDimensionName = "width"
-        )
-
-        /**
-         * Sets the primary dimension of the window to its intrinsic size at the size of the screen
-         * on the secondary dimension, and the secondary dimension to its intrinsic size at the size
-         * of the primary dimension.
-         *
-         * For example, in pseudocode:
-         * ```
-         * width = windowContent.intrinsicWidth(availableScreenHeight)
-         * height = windowContent.intrinsicHeight(width)
-         * ```
-         *
-         * This is useful in cases where the window is fixed on one dimension, but the other one is
-         * flexible.
-         *
-         * @param isWidth Whether the primary dimension is width.
-         * @param primaryIntrinsicKind The primary intrinsic size to use.
-         * @param secondaryIntrinsicKind The secondary intrinsic size to use.
-         */
-        private fun IntrinsicDimensionWithMatchingOtherDimension(
-            isWidth: Boolean,
-            primaryIntrinsicKind: IntrinsicSizeKind,
-            secondaryIntrinsicKind: IntrinsicSizeKind,
-        ) = WindowSizeProvider {
-            val availableScreenBounds = windowMetrics.screen.availableBounds
-            val width: Int
-            val height: Int
-            if (isWidth) {
-                width = primaryIntrinsicKind.widthOf(windowContent, availableScreenBounds.height.roundToPx())
-                height = secondaryIntrinsicKind.heightOf(windowContent, width)
-            } else {
-                height = primaryIntrinsicKind.heightOf(windowContent, availableScreenBounds.width.roundToPx())
-                width = secondaryIntrinsicKind.widthOf(windowContent, height)
+        fun PreferredHeight(width: Dp): WindowSizeProvider {
+            width.requireReal("width")
+            return WindowSizeProvider {
+                val height = preferredHeight(width)
+                contentToWindowSize(DpSize(width, height))
             }
-            contentToWindowSize(
-                DpSize(
-                    width = width.toDp(),
-                    height = height.toDp()
-                )
-            )
         }
 
         /**
          * Sets the width of the window to its intrinsic width at the available height of the
          * screen, and the height of the window to its intrinsic height at that width.
          *
-         * This is useful in cases where the window has a fixed width, but the height is flexible.
+         * In pseudocode:
+         * ```
+         * width = preferredWidth(availableScreenHeight)
+         * height = preferredHeight(width)
+         * ```
          *
-         * @param intrinsicWidthKind The kind of intrinsic width to use.
-         * @param intrinsicHeightKind The kind of intrinsic height to use.
+         * This is useful in cases where the window has a fixed width, but the height is flexible.
          */
-        fun IntrinsicWidthWithMatchingIntrinsicHeight(
-            intrinsicWidthKind: IntrinsicSizeKind,
-            intrinsicHeightKind: IntrinsicSizeKind,
-        ): WindowSizeProvider = IntrinsicDimensionWithMatchingOtherDimension(
-            isWidth = true,
-            primaryIntrinsicKind = intrinsicWidthKind,
-            secondaryIntrinsicKind = intrinsicHeightKind,
-        )
+        val PreferredWidthWithMatchingHeight = WindowSizeProvider {
+            val availableScreenBounds = windowMetrics.screen.availableBounds
+            val width = preferredWidth(availableScreenBounds.height)
+            val height = preferredHeight(width)
+            contentToWindowSize(DpSize(width, height))
+        }
 
         /**
          * Sets the height of the window to its intrinsic height at the available width of the
          * screen, and the width of the window to its intrinsic width at that height.
          *
-         * This is useful in cases where the window has a fixed height, but the width is flexible.
+         * In pseudocode:
+         * ```
+         * height = preferredHeight(availableScreenWidth)
+         * width = preferredWidth(height)
+         * ```
          *
-         * @param intrinsicWidth The kind of intrinsic width to use.
-         * @param intrinsicHeight The kind of intrinsic height to use.
+         * This is useful in cases where the window has a fixed height, but the width is flexible.
          */
-        fun IntrinsicHeightWithMatchingIntrinsicWidth(
-            intrinsicHeight: IntrinsicSizeKind,
-            intrinsicWidth: IntrinsicSizeKind,
-        ) = IntrinsicDimensionWithMatchingOtherDimension(
-            isWidth = false,
-            primaryIntrinsicKind = intrinsicHeight,
-            secondaryIntrinsicKind = intrinsicWidth,
-        )
+        val PreferredHeightWithMatchingWidth = WindowSizeProvider {
+            val availableScreenBounds = windowMetrics.screen.availableBounds
+            val height = preferredHeight(availableScreenBounds.width)
+            val width = preferredHeight(height)
+            contentToWindowSize(DpSize(width, height))
+        }
     }
+}
+
+private fun WindowGeometryProviderScope.preferredWidth(height: Dp): Dp {
+    val heightPx = height.roundToPx()
+    return measureWindowContent(
+        Constraints(
+            minWidth = 0,
+            maxWidth = Constraints.Infinity,
+            minHeight = heightPx,
+            maxHeight = heightPx
+        )
+    ).width
+}
+
+private fun WindowGeometryProviderScope.preferredHeight(width: Dp): Dp {
+    val widthPx = width.roundToPx()
+    return measureWindowContent(
+        Constraints(
+            minWidth = widthPx,
+            maxWidth = widthPx,
+            minHeight = 0,
+            maxHeight = Constraints.Infinity
+        )
+    ).height
 }

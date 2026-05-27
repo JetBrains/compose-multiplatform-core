@@ -21,11 +21,11 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.key.KeyEvent
-import androidx.compose.ui.layout.MeasurableRootContent
 import androidx.compose.ui.layout.layoutId
 import androidx.compose.ui.semantics.SemanticsOwner
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.DpSize
+import androidx.compose.ui.unit.ExperimentalUnitApi
+import androidx.compose.ui.unit.awt.UnspecifiedDimension
 import androidx.compose.ui.window.FrameWindowScope
 import androidx.compose.ui.window.UndecoratedWindowResizer
 import androidx.compose.ui.window.WindowExceptionHandler
@@ -33,6 +33,7 @@ import androidx.compose.ui.window.WindowPlacement
 import androidx.savedstate.SavedState
 import java.awt.Component
 import java.awt.ComponentOrientation
+import java.awt.Dimension
 import java.awt.GraphicsConfiguration
 import java.awt.event.MouseListener
 import java.awt.event.MouseMotionListener
@@ -69,7 +70,7 @@ class ComposeWindow @ExperimentalComposeUiApi constructor(
         graphicsConfiguration: GraphicsConfiguration? = null
     ) : this(graphicsConfiguration, SkiaLayerAnalytics.Empty)
 
-    private val composePanel = ComposeWindowPanel(
+    internal val composePanel = ComposeWindowPanel(
         window = this,
         isUndecorated = ::isUndecorated,
         skiaLayerAnalytics = skiaLayerAnalytics,
@@ -198,34 +199,6 @@ class ComposeWindow @ExperimentalComposeUiApi constructor(
         return composePanel.saveState()
     }
 
-    /**
-     * Returns an object through which the composable content of the window can be queried for its
-     * size preferences, such as its intrinsic size.
-     */
-    @ExperimentalComposeUiApi
-    val measurableContent: MeasurableRootContent
-        get() = composePanel.measurableContent
-
-    /**
-     * The function called by [getMinimumSize] to compute the minimum size of the window.
-     *
-     * Note that it's not called if an explicit minimum size has been set via [setMinimumSize].
-     */
-    @ExperimentalComposeUiApi
-    var minimumSizeComputation: ((MeasurableRootContent) -> DpSize)?
-        get() = composePanel.minimumSizeComputation
-        set(value) { composePanel.minimumSizeComputation = value }
-
-    /**
-     * The function called by [getPreferredSize] to compute the preferred size of the window.
-     *
-     * Note that it's not called if an explicit preferred size has been set via [setPreferredSize].
-     */
-    @ExperimentalComposeUiApi
-    var preferredSizeComputation: ((MeasurableRootContent) -> DpSize)?
-        get() = composePanel.preferredSizeComputation
-        set(value) { composePanel.preferredSizeComputation = value }
-
     override fun dispose() {
         super.dispose()
         composePanel.dispose()
@@ -239,6 +212,30 @@ class ComposeWindow @ExperimentalComposeUiApi constructor(
     override fun setResizable(value: Boolean) {
         super.setResizable(value)
         undecoratedWindowResizer.enabled = isUndecorated && isResizable
+    }
+
+    private fun Dimension.actualize(): Dimension {
+        return composePanel.composeContainer.actualizeSize(this, insets) ?: this
+    }
+
+    /**
+     * Sets the preferred size of the window.
+     *
+     * The width and height of [size] can either be a regular, specific, value or
+     * [androidx.compose.ui.unit.awt.UNSPECIFIED_DIMENSION_VALUE], which means the content will
+     * determine the preferred size on the corresponding axis. The content will be measured
+     * unconstrained on that axis, and the resulting size will be used.
+     */
+    @Suppress("RedundantOverride")
+    override fun setPreferredSize(size: Dimension?) {
+        super.setPreferredSize(size)
+    }
+
+    @OptIn(ExperimentalUnitApi::class)
+    @Suppress("RedundantNullableReturnType")  // https://youtrack.jetbrains.com/issue/KT-31094
+    override fun getPreferredSize(): Dimension? {
+        val size = if (isPreferredSizeSet) super.getPreferredSize() else UnspecifiedDimension()
+        return size.actualize()
     }
 
     /**

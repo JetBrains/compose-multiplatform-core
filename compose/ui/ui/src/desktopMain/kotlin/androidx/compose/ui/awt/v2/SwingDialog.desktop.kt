@@ -276,9 +276,9 @@ fun SwingDialog(
 }
 
 private fun ComposeDialog.initializeBounds(state: DialogState) {
-    initializeBounds(state.boundsRequests, state._bounds, owner, ::measurableContent)
+    initializeBounds(state.boundsRequests, state._bounds, owner, composePanel.composeContainer::measureContent)
 }
 
 private fun ComposeDialog.setBoundsFrom(boundsProvider: WindowBoundsProvider) {
-    setBoundsFrom(boundsProvider, owner, ::measurableContent)
+    setBoundsFrom(boundsProvider, owner, composePanel.composeContainer::measureContent)
 }

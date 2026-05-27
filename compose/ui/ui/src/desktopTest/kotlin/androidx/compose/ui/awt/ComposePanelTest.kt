@@ -52,7 +52,6 @@ import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
-import androidx.compose.ui.layout.MeasurableRootContent
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.sendCharTypedEvents
@@ -61,8 +60,9 @@ import androidx.compose.ui.sendMouseEvent
 import androidx.compose.ui.sendMousePress
 import androidx.compose.ui.sendMouseRelease
 import androidx.compose.ui.sendMouseWheelEvent
-import androidx.compose.ui.toDpSize
-import androidx.compose.ui.unit.DpSize
+import androidx.compose.ui.unit.ExperimentalUnitApi
+import androidx.compose.ui.unit.awt.UNSPECIFIED_DIMENSION_VALUE
+import androidx.compose.ui.unit.awt.UnspecifiedDimension
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
 import androidx.compose.ui.util.ThrowUncaughtExceptionRule
@@ -78,6 +78,7 @@ import java.awt.Component
 import java.awt.Container
 import java.awt.Dimension
 import java.awt.GraphicsEnvironment
+import java.awt.LayoutManager
 import java.awt.Window
 import java.awt.event.MouseEvent
 import javax.swing.BoxLayout
@@ -87,7 +88,6 @@ import javax.swing.JScrollPane
 import javax.swing.ScrollPaneConstants
 import junit.framework.TestCase.assertTrue
 import kotlin.math.max
-import kotlin.reflect.KMutableProperty1
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
@@ -745,7 +745,6 @@ class ComposePanelTest {
                 // Scroll a little and check that compose content was scrolled
                 window.sendMouseWheelEvent(wheelRotation = 1.0)
                 awaitIdle()
-                println(composePanel.size)
                 assertThat(scrollState.value).isGreaterThan(0)
                 assertThat(scrollPane.viewport.viewPosition.y).isEqualTo(0)
 
@@ -756,7 +755,6 @@ class ComposePanelTest {
                 window.sendMouseWheelEvent(wheelRotation = 1000.0)
                 awaitIdle()
                 window.sendMouseWheelEvent(wheelRotation = 1000.0)
-                println("New scroll position: ${scrollPane.viewport.viewPosition.y}")
                 assertThat(scrollPane.viewport.viewPosition.y).isGreaterThan(0)
 
                 // Scroll back to the top to reset the state
@@ -972,51 +970,66 @@ class ComposePanelTest {
         }
     }
 
-    private fun testComposePanelSizeComputation(
-        sizeComputation: KMutableProperty1<ComposePanel, ((MeasurableRootContent) -> DpSize)?>,
-        awtSizeFunction: (Component) -> Dimension,
+    @OptIn(ExperimentalUnitApi::class)
+    private fun testSettingComposePanelSizeProperty(
+        setSizeProperty: ComposePanel.(Dimension) -> Unit,
+        getSizeProperty: Component.() -> Dimension?,
+        layoutManager: LayoutManager = LayoutManager(getSizeProperty)
     ) = runApplicationTest {
-        val size = Dimension(300, 300)
-        val composePanel = ComposePanel().apply {
-            setContent {
-                Box(Modifier.fillMaxSize())
+        val intrinsicSize = Dimension(500, 400)
+        val composePanel = ComposePanel().also {
+            it.setContent {
+                Box(Modifier.fillMaxSize().size(intrinsicSize.width.dp, intrinsicSize.height.dp))
             }
-            sizeComputation.set(this, value = { size.toDpSize() })
         }
         val frame = JFrame().apply {
-            contentPane.layout = LayoutManager(awtSizeFunction)
+            contentPane.layout = layoutManager
             contentPane.add(composePanel)
         }
 
         try {
+            val testedSize = Dimension(300, 200)
+            composePanel.setSizeProperty(testedSize)
             frame.pack()
-            assertThat(composePanel.size).isEqualTo(size)
+            assertThat(composePanel.size).isEqualTo(testedSize)
+
+            composePanel.setSizeProperty(Dimension(testedSize.width, UNSPECIFIED_DIMENSION_VALUE))
+            frame.pack()
+            assertThat(composePanel.size).isEqualTo(Dimension(testedSize.width, intrinsicSize.height))
+
+            composePanel.setSizeProperty(Dimension(UNSPECIFIED_DIMENSION_VALUE, testedSize.height))
+            frame.pack()
+            assertThat(composePanel.size).isEqualTo(Dimension(intrinsicSize.width, testedSize.height))
+
+            composePanel.setSizeProperty(UnspecifiedDimension())
+            frame.pack()
+            assertThat(composePanel.size).isEqualTo(Dimension(intrinsicSize.width, intrinsicSize.height))
         } finally {
             frame.dispose()
         }
     }
 
     @Test
-    fun `ComposePanel minSizeComputation`() = testComposePanelSizeComputation(
-        sizeComputation = ComposePanel::minimumSizeComputation,
-        awtSizeFunction = Component::getMinimumSize
+    fun `ComposePanel minSize`() = testSettingComposePanelSizeProperty(
+        setSizeProperty = { minimumSize = it },
+        getSizeProperty = { minimumSize }
     )
 
     @Test
-    fun `ComposePanel prefSizeComputation`() = testComposePanelSizeComputation(
-        sizeComputation = ComposePanel::preferredSizeComputation,
-        awtSizeFunction = Component::getPreferredSize
+    fun `ComposePanel prefSize`() = testSettingComposePanelSizeProperty(
+        setSizeProperty = { preferredSize = it },
+        getSizeProperty = { preferredSize }
     )
 
     @Test
-    fun `ComposePanel maxSizeComputation`() = testComposePanelSizeComputation(
-        sizeComputation = ComposePanel::maximumSizeComputation,
-        awtSizeFunction = Component::getMaximumSize
+    fun `ComposePanel maxSize`() = testSettingComposePanelSizeProperty(
+        setSizeProperty = { maximumSize = it },
+        getSizeProperty = { maximumSize }
     )
 }
 
-private fun LayoutManager(size: (Component) -> Dimension): java.awt.LayoutManager {
-    return object: java.awt.LayoutManager {
+private fun LayoutManager(sizeFunction: Component.() -> Dimension?): LayoutManager {
+    return object: LayoutManager {
         override fun addLayoutComponent(name: String?, comp: Component?) = Unit
         override fun removeLayoutComponent(comp: Component?) = Unit
 
@@ -1024,7 +1037,7 @@ private fun LayoutManager(size: (Component) -> Dimension): java.awt.LayoutManage
             var width = 0
             var height = 0
             for (child in parent.components) {
-                val childSize = size(child)
+                val childSize = sizeFunction(child)!!
                 width = max(width, childSize.width)
                 height = max(height, childSize.height)
             }
@@ -1035,7 +1048,7 @@ private fun LayoutManager(size: (Component) -> Dimension): java.awt.LayoutManage
 
         override fun layoutContainer(parent: Container) {
             for (child in parent.components) {
-                child.size = size(child)
+                child.size = sizeFunction(child)
             }
         }
     }

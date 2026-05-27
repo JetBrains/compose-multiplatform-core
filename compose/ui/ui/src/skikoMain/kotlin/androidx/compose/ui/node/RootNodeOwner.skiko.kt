@@ -62,8 +62,6 @@ import androidx.compose.ui.input.pointer.PointerKeyboardModifiers
 import androidx.compose.ui.input.pointer.PointerType
 import androidx.compose.ui.input.pointer.PositionCalculator
 import androidx.compose.ui.input.rotary.RotaryScrollEvent
-import androidx.compose.ui.layout.MeasurableRootContent
-import androidx.compose.ui.layout.Measured
 import androidx.compose.ui.layout.RootMeasurePolicy
 import androidx.compose.ui.layout.RulerProviderModifierElement
 import androidx.compose.ui.modifier.ModifierLocalManager
@@ -207,46 +205,14 @@ internal class RootNodeOwner(
         }
     }
 
-    val measurableRootContent: MeasurableRootContent = object : MeasurableRootContent {
-        override val density: Density
-            get() = this@RootNodeOwner.density
-
-        override fun minIntrinsicWidth(height: Int): Int {
-            // RootMeasurePolicy has LayoutNode.NoIntrinsicsMeasurePolicy, so we ask the children
-            return owner.root.children.fastMaxOfOrDefault(0) {
-                it.outerCoordinator.minIntrinsicWidth(height)
-            }
+    /**
+     * Measures the Owner's content with given [constraints] and returns the resulting size.
+     */
+    fun measureContentWithConstraints(constraints: Constraints): IntSize {
+        return measuringRootWithConstraints(constraints) {
+            val outerCoordinator = it.outerCoordinator
+            IntSize(outerCoordinator.measuredWidth, outerCoordinator.measuredHeight)
         }
-
-        override fun minIntrinsicHeight(width: Int): Int {
-            // RootMeasurePolicy has LayoutNode.NoIntrinsicsMeasurePolicy, so we ask the children
-            return owner.root.children.fastMaxOfOrDefault(0) {
-                it.outerCoordinator.minIntrinsicHeight(width)
-            }
-        }
-
-        override fun maxIntrinsicWidth(height: Int): Int {
-            // RootMeasurePolicy has LayoutNode.NoIntrinsicsMeasurePolicy, so we ask the children
-            return owner.root.children.fastMaxOfOrDefault(0) {
-                it.outerCoordinator.maxIntrinsicWidth(height)
-            }
-        }
-
-        override fun maxIntrinsicHeight(width: Int): Int {
-            // RootMeasurePolicy has LayoutNode.NoIntrinsicsMeasurePolicy, so we ask the children
-            return owner.root.children.fastMaxOfOrDefault(0) {
-                it.outerCoordinator.maxIntrinsicHeight(width)
-            }
-        }
-
-        override fun <T> measuringIn(constraints: Constraints, block: (Measured) -> T): T {
-            return measuringRootWithConstraints(constraints) {
-                block(it.outerCoordinator)
-            }
-        }
-
-        override val parentData
-            get() = null
     }
 
     /**

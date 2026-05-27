@@ -44,7 +44,6 @@ import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.PointerKeyboardModifiers
 import androidx.compose.ui.input.pointer.PointerType
 import androidx.compose.ui.isClearFocusOnMouseDownEnabled
-import androidx.compose.ui.layout.MeasurableRootContent
 import androidx.compose.ui.navigationevent.BackNavigationEventInput
 import androidx.compose.ui.platform.AwtDragAndDropManager
 import androidx.compose.ui.platform.DefaultInputModeManager
@@ -62,6 +61,7 @@ import androidx.compose.ui.platform.WindowInfo
 import androidx.compose.ui.platform.a11y.ComposeSceneAccessibility
 import androidx.compose.ui.scene.skia.SkiaLayerComponent
 import androidx.compose.ui.semantics.SemanticsOwner
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
@@ -337,7 +337,7 @@ internal class ComposeSceneMediator(
             }
         }
 
-    private val scene by lazy { composeSceneFactory(this) }
+    val scene by lazy { composeSceneFactory(this) }
     val focusManager get() = scene.focusManager
     var compositionLocalContext: CompositionLocalContext?
         get() = scene.compositionLocalContext
@@ -373,8 +373,9 @@ internal class ComposeSceneMediator(
             )
         }
 
-    val measurableSceneContent: MeasurableRootContent
-        get() = scene.measurableContent
+    fun measureContent(constraints: Constraints): IntSize {
+        return scene.measureContent(constraints)
+    }
 
     /**
      * Keyboard modifiers state might be changed when window is not focused, so window doesn't

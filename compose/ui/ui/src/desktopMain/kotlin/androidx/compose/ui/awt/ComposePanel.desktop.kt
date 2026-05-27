@@ -30,13 +30,12 @@ import androidx.compose.ui.awt.RenderSettings.SkiaSurface
 import androidx.compose.ui.awt.RenderSettings.SwingGraphics
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.isClearFocusOnMouseDownEnabled
-import androidx.compose.ui.layout.MeasurableRootContent
 import androidx.compose.ui.node.InternalCoreApi
 import androidx.compose.ui.scene.ComposeContainer
 import androidx.compose.ui.semantics.SemanticsOwner
-import androidx.compose.ui.unit.DpSize
+import androidx.compose.ui.unit.ExperimentalUnitApi
+import androidx.compose.ui.unit.awt.UnspecifiedDimension
 import androidx.compose.ui.window.WindowExceptionHandler
-import androidx.compose.ui.window.roundToDimension
 import androidx.savedstate.SavedState
 import java.awt.Color
 import java.awt.Component
@@ -221,79 +220,65 @@ class ComposePanel @ExperimentalComposeUiApi constructor(
         _composeContainer?.setBounds(0, 0, width, height)
     }
 
-    /**
-     * Returns an object through which the composable content of the panel can be queried for its
-     * size preferences, such as its intrinsic size.
-     *
-     * This can only be called after the [ComposePanel] has been added to the Swing hierarchy.
-     */
-    @ExperimentalComposeUiApi
-    val measurableContent: MeasurableRootContent
-        get() {
-            return requireNotNull(_composeContainer?.measurableContent) {
-                "Cannot retrieve measurableContent before addNotify"
-            }
-        }
-
-    /**
-     * The function called by [getMinimumSize] to compute the minimum size of the panel.
-     *
-     * Note that it's not called if an explicit minimum size has been set via [setMinimumSize].
-     */
-    @ExperimentalComposeUiApi
-    var minimumSizeComputation: ((MeasurableRootContent) -> DpSize)? = null
-
-    /**
-     * The function called by [getPreferredSize] to compute the preferred size of the panel.
-     *
-     * Note that it's not called if an explicit preferred size has been set via [setPreferredSize].
-     */
-    @ExperimentalComposeUiApi
-    var preferredSizeComputation: ((MeasurableRootContent) -> DpSize)? = null
-
-    /**
-     * The function called by [getMaximumSize] to compute the maximum size of the panel.
-     *
-     * Note that it's not called if an explicit maximum size has been set via [setMaximumSize].
-     */
-    @ExperimentalComposeUiApi
-    var maximumSizeComputation: ((MeasurableRootContent) -> DpSize)? = null
-
-    override fun getMinimumSize(): Dimension {
-        val minSizeComputation = this.minimumSizeComputation
-        if (isMinimumSizeSet || (minSizeComputation == null) || (_composeContainer == null)) {
-            return super.getMinimumSize()
-        }
-
-        return minSizeComputation.invoke(measurableContent).roundToDimension()
+    private fun Dimension.actualize(): Dimension {
+        return _composeContainer?.actualizeSize(this, insets) ?: this
     }
 
-    override fun getPreferredSize(): Dimension {
-        val container = _composeContainer
-        if (isPreferredSizeSet || (container == null)) {
-            return super.getPreferredSize()
-        }
-
-        return preferredSizeComputation?.invoke(measurableContent)?.roundToDimension()
-            ?: try {
-                container.preferredSize
-            } catch (e: Exception) {
-                throw IllegalStateException(
-                    "Unable to compute preferred size of Compose content." +
-                        " Consider providing a custom computation via" +
-                        " `preferredSizeComputation`",
-                    e
-                )
-            }
+    /**
+     * Sets the minimum size of the composable content.
+     *
+     * The width and height of [size] can either be a regular, specific, value or
+     * [androidx.compose.ui.unit.awt.UNSPECIFIED_DIMENSION_VALUE], which means the content will
+     * determine the minimum size on the corresponding axis. The content will be measured
+     * unconstrained on that axis, and the resulting size will be used.
+     */
+    override fun setMinimumSize(size: Dimension?) {
+        super.setMinimumSize(size)
     }
 
+    @OptIn(ExperimentalUnitApi::class)
+    @Suppress("RedundantNullableReturnType")  // https://youtrack.jetbrains.com/issue/KT-31094
+    override fun getMinimumSize(): Dimension? {
+        val size = if (isMinimumSizeSet) super.getMinimumSize() else UnspecifiedDimension()
+        return size.actualize()
+    }
+
+    /**
+     * Sets the preferred size of the [ComposePanel].
+     *
+     * The width and height of [size] can either be a regular, specific, value or
+     * [androidx.compose.ui.unit.awt.UNSPECIFIED_DIMENSION_VALUE], which means the content will
+     * determine the preferred size on the corresponding axis. The content will be measured
+     * unconstrained on that axis, and the resulting size will be used.
+     */
+    override fun setPreferredSize(size: Dimension?) {
+        super.setPreferredSize(size)
+    }
+
+    @OptIn(ExperimentalUnitApi::class)
+    @Suppress("RedundantNullableReturnType")  // https://youtrack.jetbrains.com/issue/KT-31094
+    override fun getPreferredSize(): Dimension? {
+        val size = if (isPreferredSizeSet) super.getPreferredSize() else UnspecifiedDimension()
+        return size.actualize()
+    }
+
+    /**
+     * Sets the maximum size of the composable content.
+     *
+     * The width and height of [size] can either be a regular, specific, value or
+     * [androidx.compose.ui.unit.awt.UNSPECIFIED_DIMENSION_VALUE], which means the content will
+     * determine the maximum size on the corresponding axis. The content will be measured
+     * unconstrained on that axis, and the resulting size will be used.
+     */
+    override fun setMaximumSize(size: Dimension?) {
+        super.setMaximumSize(size)
+    }
+
+    @OptIn(ExperimentalUnitApi::class)
+    @Suppress("RedundantNullableReturnType")  // https://youtrack.jetbrains.com/issue/KT-31094
     override fun getMaximumSize(): Dimension? {
-        val maxSizeComputation = this.maximumSizeComputation
-        if (isMaximumSizeSet || (maxSizeComputation == null) || (_composeContainer == null)) {
-            return super.getMaximumSize()
-        }
-
-        return maxSizeComputation.invoke(measurableContent).roundToDimension()
+        val size = if (isMaximumSizeSet) super.getMaximumSize() else UnspecifiedDimension()
+        return size.actualize()
     }
 
     override fun setBackground(bg: Color?) {

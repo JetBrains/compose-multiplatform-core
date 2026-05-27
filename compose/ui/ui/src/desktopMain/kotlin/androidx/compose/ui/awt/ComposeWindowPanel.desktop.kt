@@ -22,14 +22,10 @@ import androidx.compose.ui.ComposeFeatureFlags
 import androidx.compose.ui.LayerType
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.key.KeyEvent
-import androidx.compose.ui.layout.MeasurableRootContent
 import androidx.compose.ui.scene.ComposeContainer
-import androidx.compose.ui.unit.DpSize
-import androidx.compose.ui.window.roundToDimension
 import androidx.savedstate.SavedState
 import java.awt.Component
 import java.awt.Container
-import java.awt.Dimension
 import java.awt.FocusTraversalPolicy
 import java.awt.Window
 import java.awt.event.MouseListener
@@ -74,7 +70,7 @@ internal class ComposeWindowPanel(
         renderSettings = RenderSettings.SkiaSurface(),
         coroutineContext = coroutineContext
     )
-    private val composeContainer
+    val composeContainer
         get() = requireNotNull(_composeContainer) {
             "ComposeContainer is disposed"
         }
@@ -119,42 +115,9 @@ internal class ComposeWindowPanel(
         isFocusCycleRoot = true
     }
 
-    val measurableContent: MeasurableRootContent
-        get() = composeContainer.measurableContent
-
     override fun setBounds(x: Int, y: Int, width: Int, height: Int) {
         super.setBounds(x, y, width, height)
         composeContainer.setBounds(0, 0, width, height)
-    }
-
-    var minimumSizeComputation: ((MeasurableRootContent) -> DpSize)? = null
-    var preferredSizeComputation: ((MeasurableRootContent) -> DpSize)? = null
-
-    override fun getMinimumSize(): Dimension {
-        val minSizeComputation = this.minimumSizeComputation
-        if (isMinimumSizeSet || (minSizeComputation == null)) {
-            return super.getMinimumSize()
-        }
-
-        return minSizeComputation.invoke(measurableContent).roundToDimension()
-    }
-
-    override fun getPreferredSize(): Dimension {
-        if (isPreferredSizeSet) {
-            return super.getPreferredSize()
-        }
-
-        return preferredSizeComputation?.invoke(measurableContent)?.roundToDimension()
-            ?: try {
-                composeContainer.preferredSize
-            } catch (e: Exception) {
-                throw IllegalStateException(
-                    "Unable to compute preferred size of Compose content." +
-                        " Consider providing a custom computation via" +
-                        " `preferredSizeComputation`",
-                    e
-                )
-            }
     }
 
     override fun addNotify() {

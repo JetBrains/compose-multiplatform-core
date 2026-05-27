@@ -42,6 +42,18 @@ internal operator fun Dimension.minus(insets: Insets): Dimension {
         height - (insets.top + insets.bottom)
     )
 }
+internal operator fun Dimension.plus(insets: Insets): Dimension {
+    return Dimension(
+        width + (insets.left + insets.right),
+        height + (insets.top + insets.bottom)
+    )
+}
+
+internal fun Dimension.copy(
+    width: Int = this.width,
+    height: Int = this.height
+): Dimension = Dimension(width, height)
+
 internal fun Point.toDpOffset() = DpOffset(x.dp, y.dp)
 internal fun Rectangle.toDpRect() = DpRect(
     left = x.dp,

@@ -21,6 +21,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.requiredSize
+import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -32,18 +33,19 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.layout.MeasurableRootContent
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.sendMouseEvent
 import androidx.compose.ui.sendMousePress
 import androidx.compose.ui.sendMouseRelease
-import androidx.compose.ui.toDpSize
 import androidx.compose.ui.unit.Constraints
-import androidx.compose.ui.unit.DpSize
+import androidx.compose.ui.unit.ExperimentalUnitApi
+import androidx.compose.ui.unit.awt.UNSPECIFIED_DIMENSION_VALUE
+import androidx.compose.ui.unit.awt.UnspecifiedDimension
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.WindowExceptionHandler
+import androidx.compose.ui.window.copy
 import androidx.compose.ui.window.density
-import androidx.compose.ui.window.minus
+import androidx.compose.ui.window.plus
 import androidx.compose.ui.window.runApplicationTest
 import androidx.savedstate.SavedState
 import com.google.common.truth.Truth.assertThat
@@ -53,7 +55,6 @@ import java.awt.event.MouseEvent.BUTTON1
 import java.awt.event.MouseEvent.MOUSE_ENTERED
 import java.awt.event.MouseEvent.MOUSE_MOVED
 import java.awt.event.WindowEvent
-import kotlin.reflect.KMutableProperty1
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.skiko.ExperimentalSkikoApi
 import org.jetbrains.skiko.GraphicsApi
@@ -323,37 +324,48 @@ class ComposeDialogTest {
         }
     }
 
-    private fun testDialogSizeComputation(
-        sizeComputation: KMutableProperty1<ComposeDialog, ((MeasurableRootContent) -> DpSize)?>,
-        awtSizeFunction: (ComposeDialog) -> Dimension,
+    @OptIn(ExperimentalUnitApi::class)
+    fun testComposeDialogSizeSetting(
+        setSizeFunction: ComposeDialog.(Dimension) -> Unit
     ) = runApplicationTest {
-        val size = Dimension(300, 300)
+        val intrinsicSize = Dimension(500, 400)
         val dialog = ComposeDialog().apply {
             setContent {
-                Box(Modifier.fillMaxSize())
+                Box(Modifier.fillMaxSize().size(intrinsicSize.width.dp, intrinsicSize.height.dp))
             }
-            sizeComputation.set(this, value = { size.toDpSize() })
         }
 
         try {
+            val appliedSize = Dimension(300, 200)
             dialog.pack()
-            assertThat(awtSizeFunction(dialog) - dialog.insets).isEqualTo(size)
+            val windowInsets = dialog.insets
+            val intrinsicWindowSize = intrinsicSize + windowInsets
+
+            dialog.setSizeFunction(appliedSize)
+            awaitIdle()
+            assertThat(dialog.size).isEqualTo(appliedSize)
+
+            dialog.setSizeFunction(appliedSize.copy(height = UNSPECIFIED_DIMENSION_VALUE))
+            awaitIdle()
+            assertThat(dialog.size).isEqualTo(appliedSize.copy(height = intrinsicWindowSize.height))
+
+            dialog.setSizeFunction(appliedSize.copy(width = UNSPECIFIED_DIMENSION_VALUE))
+            awaitIdle()
+            assertThat(dialog.size).isEqualTo(appliedSize.copy(width = intrinsicWindowSize.width))
+
+            dialog.setSizeFunction(UnspecifiedDimension())
+            awaitIdle()
+            assertThat(dialog.size).isEqualTo(intrinsicWindowSize)
         } finally {
             dialog.dispose()
         }
     }
 
     @Test
-    fun `ComposeDialog minSize`() = testDialogSizeComputation(
-        ComposeDialog::minimumSizeComputation,
-        ComposeDialog::getMinimumSize
-    )
-
-    @Test
-    fun `ComposeDialog prefSize`() = testDialogSizeComputation(
-        ComposeDialog::preferredSizeComputation,
-        ComposeDialog::getPreferredSize
-    )
+    fun `ComposeDialog setPreferredSize`() = testComposeDialogSizeSetting {
+        this.preferredSize = it
+        pack()
+    }
 
     private class TestException : Exception()
 }
