@@ -26,13 +26,13 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.xr.glimmer.GlimmerTheme
 import androidx.xr.glimmer.Text
-import androidx.xr.glimmer.list.VerticalList
+import androidx.xr.glimmer.list.GlimmerLazyColumn
 import androidx.xr.glimmer.surface
 
 @Composable
 fun ShapesSample() {
     val shapes = GlimmerTheme.shapes
-    VerticalList {
+    GlimmerLazyColumn {
         item { ShapeItem("small", shape = shapes.small) }
         item { ShapeItem("medium", shape = shapes.medium) }
         item { ShapeItem("large", shape = shapes.large) }

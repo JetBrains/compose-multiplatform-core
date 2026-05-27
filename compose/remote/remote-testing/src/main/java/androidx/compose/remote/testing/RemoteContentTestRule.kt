@@ -30,7 +30,10 @@ import androidx.compose.remote.testing.RemoteBaseContentTestRule.Creation
 import androidx.compose.remote.testing.RemoteBaseContentTestRule.Player
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.test.junit4.ComposeContentTestRule
 import org.junit.rules.TestRule
 import org.junit.runner.Description
@@ -57,10 +60,14 @@ public class RemoteContentTestRule : TestRule {
         writerEvents: WriterEvents = WriterEvents(),
         onCreate: ((CoreDocument) -> Unit)? = null,
         clock: RemoteClock = RemoteClock.SYSTEM,
+        creationComposableWrapper: (@Composable (composable: @Composable () -> Unit) -> Unit) = {
+            it()
+        },
         onCoreDocumentCreated: ((CoreDocument) -> Unit)? = null,
         player: Player = PlayerImpl,
-        // b/500955051: remove this param
-        composableWrapper: (@Composable (composable: @Composable () -> Unit) -> Unit)? = null,
+        playComposableWrapper: (@Composable (composable: @Composable () -> Unit) -> Unit) = {
+            it()
+        },
         composable: @RemoteComposable @Composable () -> Unit,
     ) {
         remoteBaseContentTestRule.setContent(
@@ -71,11 +78,12 @@ public class RemoteContentTestRule : TestRule {
                     writerEvents = writerEvents,
                     onCreate = onCreate,
                     clock = clock,
+                    composableWrapper = creationComposableWrapper,
                 ),
             player = player,
             size = remoteCreationDisplayInfo.size,
             onCoreDocumentCreated = onCoreDocumentCreated,
-            composableWrapper = composableWrapper,
+            composableWrapper = playComposableWrapper,
             composable = composable,
         )
     }
@@ -86,19 +94,30 @@ public class RemoteContentTestRule : TestRule {
         private val writerEvents: WriterEvents,
         private val onCreate: ((CoreDocument) -> Unit)?,
         private val clock: RemoteClock,
+        private val composableWrapper: (@Composable (composable: @Composable () -> Unit) -> Unit),
     ) : Creation {
         @Composable
         override fun rememberRemoteDocument(
             composable: @RemoteComposable @Composable (() -> Unit)
-        ): MutableState<CoreDocument?> =
-            rememberRemoteDocument(
-                creationDisplayInfo = remoteCreationDisplayInfo,
-                profile = profile,
-                writerEvents = writerEvents,
-                onCreate = onCreate,
-                clock = clock,
-                content = composable,
-            )
+        ): MutableState<CoreDocument?> {
+            val coreDocumentState = remember { mutableStateOf<CoreDocument?>(null) }
+            val content: @Composable () -> Unit = {
+                val docState =
+                    rememberRemoteDocument(
+                        creationDisplayInfo = remoteCreationDisplayInfo,
+                        profile = profile,
+                        writerEvents = writerEvents,
+                        onCreate = onCreate,
+                        clock = clock,
+                        content = composable,
+                    )
+                coreDocumentState.value = docState.value
+            }
+
+            composableWrapper(content)
+
+            return coreDocumentState
+        }
     }
 
     private object PlayerImpl : Player {
@@ -112,3 +131,12 @@ public class RemoteContentTestRule : TestRule {
         }
     }
 }
+
+/**
+ * Captures the visual content of the root Compose node as an [ImageBitmap].
+ *
+ * @return The captured hierarchy rendering as an image.
+ */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public fun RemoteContentTestRule.captureRootToImage(): ImageBitmap =
+    remoteBaseContentTestRule.captureRootToImage()

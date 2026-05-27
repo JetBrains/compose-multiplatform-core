@@ -20,7 +20,6 @@ package androidx.compose.ui.platform
 
 import android.annotation.SuppressLint
 import android.content.Context
-import android.content.pm.ActivityInfo
 import android.content.res.Configuration
 import android.graphics.Point
 import android.graphics.Rect
@@ -51,7 +50,9 @@ import android.view.MotionEvent.ACTION_POINTER_DOWN
 import android.view.MotionEvent.ACTION_POINTER_UP
 import android.view.MotionEvent.ACTION_SCROLL
 import android.view.MotionEvent.ACTION_UP
+import android.view.MotionEvent.TOOL_TYPE_ERASER
 import android.view.MotionEvent.TOOL_TYPE_MOUSE
+import android.view.MotionEvent.TOOL_TYPE_STYLUS
 import android.view.ScrollCaptureTarget
 import android.view.View
 import android.view.ViewGroup
@@ -91,8 +92,6 @@ import androidx.compose.ui.R
 import androidx.compose.ui.SessionMutex
 import androidx.compose.ui.autofill.AndroidAutofill
 import androidx.compose.ui.autofill.AndroidAutofillManager
-import androidx.compose.ui.autofill.Autofill
-import androidx.compose.ui.autofill.AutofillManager
 import androidx.compose.ui.autofill.AutofillTree
 import androidx.compose.ui.autofill.PlatformAutofillManagerImpl
 import androidx.compose.ui.autofill.performAutofill
@@ -155,7 +154,6 @@ import androidx.compose.ui.input.pointer.ProcessResult
 import androidx.compose.ui.input.rotary.RotaryInputModifierNode
 import androidx.compose.ui.input.rotary.RotaryScrollEvent
 import androidx.compose.ui.internal.checkPreconditionNotNull
-import androidx.compose.ui.internal.requirePrecondition
 import androidx.compose.ui.layout.InsetsListener
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.Measurable
@@ -221,6 +219,7 @@ import androidx.compose.ui.util.fastRoundToInt
 import androidx.compose.ui.util.trace
 import androidx.compose.ui.viewinterop.AndroidViewHolder
 import androidx.compose.ui.viewinterop.InteropView
+import androidx.core.graphics.withClip
 import androidx.core.os.ConfigurationCompat
 import androidx.core.os.LocaleListCompat
 import androidx.core.view.AccessibilityDelegateCompat
@@ -268,26 +267,17 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
     FocusListener,
     ExecuteDelayed {
 
-    private var _composeViewContext by mutableStateOf(composeViewContext)
-    var composeViewContext: ComposeViewContext
-        get() = _composeViewContext
-        set(value) {
-            requirePrecondition(
-                coroutineContext === value.compositionContext.effectCoroutineContext ||
-                    root.children.isEmpty() // composition has likely been disposed
-            ) {
-                "Changing ComposeViewContext cannot change the coroutine context without disposing of the composition first."
-            }
-            val currentComposeViewContext = Snapshot.withoutReadObservation { _composeViewContext }
-            if (value == currentComposeViewContext) {
+    var composeViewContext: ComposeViewContext = composeViewContext
+        set(newContext) {
+            val current = field
+            if (newContext === current) {
                 return
             }
             if (isAttachedToWindow) {
-                currentComposeViewContext.decrementViewCount()
-                value.incrementViewCount()
+                current.decrementViewCount()
+                newContext.incrementViewCount()
             }
-            _composeViewContext = value
-            coroutineContext = value.compositionContext.effectCoroutineContext
+            field = newContext
         }
 
     /**
@@ -351,6 +341,7 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
 
     override val focusOwner: FocusOwner = FocusOwnerImpl(this, this)
 
+    @RequiresApi(O)
     override fun getImportantForAutofill(): Int {
         return IMPORTANT_FOR_AUTOFILL_YES
     }
@@ -405,7 +396,7 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
         // The view system does not have an API corresponding to Enter/Exit.
         if (focusDirection == Enter || focusDirection == Exit || !hasFocus()) return false
 
-        val androidViewsHandler = _androidViewsHandler ?: return false
+        val androidViewsHandler = androidViewsHandler ?: return false
 
         val direction =
             checkPreconditionNotNull(focusDirection.toAndroidFocusDirection()) {
@@ -572,7 +563,7 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
     override val semanticsOwner: SemanticsOwner =
         SemanticsOwner(root, EmptySemanticsModifier(), layoutNodes)
     private val composeAccessibilityDelegate = AndroidComposeViewAccessibilityDelegateCompat(this)
-    internal var contentCaptureManager =
+    internal val contentCaptureManager =
         AndroidContentCaptureManager(
             view = this,
             onContentCaptureSession = ::getContentCaptureSessionCompat,
@@ -635,9 +626,12 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
         )
     }
 
-    private val _autofill = if (autofillSupported()) AndroidAutofill(this, autofillTree) else null
+    // Used as a CompositionLocal for performing autofill.
+    override val autofill: AndroidAutofill? =
+        if (autofillSupported()) AndroidAutofill(this, autofillTree) else null
 
-    internal val _autofillManager =
+    // Used as a CompositionLocal for performing semantic autofill.
+    override val autofillManager: AndroidAutofillManager? =
         if (autofillSupported()) {
             AndroidAutofillManager(
                 platformAutofillManager = PlatformAutofillManagerImpl(context),
@@ -649,14 +643,6 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
         } else {
             null
         }
-
-    // Used as a CompositionLocal for performing autofill.
-    override val autofill: Autofill?
-        get() = _autofill
-
-    // Used as a CompositionLocal for performing semantic autofill.
-    override val autofillManager: AutofillManager?
-        get() = _autofillManager
 
     private var observationClearRequested = false
 
@@ -696,20 +682,7 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
             return if (SDK_INT >= 30) Api30Impl.isShowingLayoutBounds(this) else field
         }
 
-    private var _androidViewsHandler: AndroidViewsHandler? = null
-    internal val androidViewsHandler: AndroidViewsHandler
-        get() {
-            if (_androidViewsHandler == null) {
-                _androidViewsHandler = AndroidViewsHandler(context)
-                addView(_androidViewsHandler)
-                // Ensure that AndroidViewsHandler is measured and laid out after creation, so that
-                // it can report correct bounds on screen (for semantics, etc).
-                // Normally this is done by addView, but here we disabled it for optimization
-                // purposes.
-                requestLayout()
-            }
-            return _androidViewsHandler!!
-        }
+    var androidViewsHandler: AndroidViewsHandler? = null
 
     private var viewLayersContainer: DrawChildContainer? = null
 
@@ -734,6 +707,7 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
 
     private val tmpPositionArray = intArrayOf(0, 0)
     private val tmpMatrix = Matrix()
+    private val tmpAndroidMatrix = android.graphics.Matrix()
     private val viewToWindowMatrix = Matrix()
     private val windowToViewMatrix = Matrix()
 
@@ -861,11 +835,13 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
 
     override val modifierLocalManager: ModifierLocalManager = ModifierLocalManager(this)
 
+    private var _textToolbar: TextToolbar? = null
     /**
      * Provide textToolbar to the user, for text-related operation. Use the Android version of
      * floating toolbar(post-M) and primary toolbar(pre-M).
      */
-    override val textToolbar: TextToolbar = AndroidTextToolbar(this)
+    override val textToolbar: TextToolbar
+        get() = _textToolbar ?: AndroidTextToolbar(this).also { _textToolbar = it }
 
     /**
      * When the first event for a mouse is ACTION_DOWN, an ACTION_HOVER_ENTER is never sent. This
@@ -996,7 +972,7 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
      *   View to be laid out so that a subsequent requestLayout() call will trigger remeasurement.
      */
     private val layoutChildViewsIfNeeded: () -> Unit = {
-        _androidViewsHandler?.let { viewsHandler ->
+        androidViewsHandler?.let { viewsHandler ->
             for (i in 0 until viewsHandler.childCount) {
                 val child = viewsHandler.getChildAt(i) as? AndroidViewHolder ?: continue
                 if (child.isLayoutRequested) {
@@ -1005,9 +981,6 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
             }
         }
     }
-
-    private val matrixToWindow =
-        if (SDK_INT < Q) CalculateMatrixToWindowApi21(tmpMatrix) else CalculateMatrixToWindowApi29()
 
     /**
      * Keyboard modifiers state might be changed when window is not focused, so window doesn't
@@ -1063,6 +1036,19 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
             frameRateCategoryView = view
             addView(view)
         }
+    }
+
+    private fun ensureAndroidViewsHandler(): AndroidViewsHandler {
+        return androidViewsHandler
+            ?: AndroidViewsHandler(context).also {
+                addView(it)
+                // Ensure that AndroidViewsHandler is measured and laid out after creation, so that
+                // it can report correct bounds on screen (for semantics, etc).
+                // Normally this is done by addView, but here we disabled it for optimization
+                // purposes.
+                requestLayout()
+                androidViewsHandler = it
+            }
     }
 
     /**
@@ -1520,7 +1506,7 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
 
     override fun onPostAttach(node: LayoutNode) {
         if (autofillSupported()) {
-            _autofillManager?.onPostAttach(node)
+            autofillManager?.onPostAttach(node)
         }
     }
 
@@ -1529,13 +1515,13 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
         measureAndLayoutDelegate.onNodeDetached(node)
         requestClearInvalidObservations()
         if (autofillSupported()) {
-            _autofillManager?.onDetach(node)
+            autofillManager?.onDetach(node)
         }
     }
 
     override fun requestAutofill(node: LayoutNode) {
         if (autofillSupported()) {
-            _autofillManager?.requestAutofill(node)
+            autofillManager?.requestAutofill(node)
         }
     }
 
@@ -1548,12 +1534,12 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
             snapshotObserver.clearInvalidObservations()
             observationClearRequested = false
         }
-        val childAndroidViews = _androidViewsHandler
+        val childAndroidViews = androidViewsHandler
         if (childAndroidViews != null) {
             clearChildInvalidObservations(childAndroidViews)
         }
         if (autofillSupported()) {
-            _autofillManager?.onEndApplyChanges()
+            autofillManager?.onEndApplyChanges()
         }
         // Listeners can add more items to the list and we want to ensure that they
         // are executed after being added, so loop until the list is empty
@@ -1679,6 +1665,7 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
      * hierarchy.
      */
     fun addAndroidView(view: AndroidViewHolder, layoutNode: LayoutNode) {
+        val androidViewsHandler = ensureAndroidViewsHandler()
         androidViewsHandler.holderToLayoutNode[view] = layoutNode
         androidViewsHandler.addView(view)
         androidViewsHandler.layoutNodeToHolder[layoutNode] = view
@@ -1761,6 +1748,7 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
      * hierarchy.
      */
     fun removeAndroidView(view: AndroidViewHolder) {
+        val androidViewsHandler = ensureAndroidViewsHandler()
         androidViewsHandler.removeViewInLayout(view)
         androidViewsHandler.layoutNodeToHolder.remove(
             androidViewsHandler.holderToLayoutNode.remove(view)
@@ -1770,7 +1758,7 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
 
     /** Called to ask the owner to draw a child Android [View] to [canvas]. */
     fun drawAndroidView(view: AndroidViewHolder, canvas: android.graphics.Canvas) {
-        androidViewsHandler.drawView(view, canvas)
+        androidViewsHandler?.drawView(view, canvas)
     }
 
     private fun scheduleMeasureAndLayout(nodeToRemeasure: LayoutNode? = null) {
@@ -1940,7 +1928,8 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
             measureAndLayoutDelegate.measureOnly()
             setMeasuredDimension(root.width, root.height)
 
-            if (_androidViewsHandler != null) {
+            val androidViewsHandler = androidViewsHandler
+            if (androidViewsHandler != null) {
                 trace("AndroidOwner:androidViewMeasure") {
                     androidViewsHandler.measure(
                         MeasureSpec.makeMeasureSpec(root.width, MeasureSpec.EXACTLY),
@@ -1980,7 +1969,8 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
             // are currently wrong if you try to get the global(activity) coordinates -
             // View is not yet laid out.
             updatePositionCacheAndDispatch()
-            if (_androidViewsHandler != null) {
+            val androidViewsHandler = androidViewsHandler
+            if (androidViewsHandler != null) {
                 // Even if we laid out during onMeasure, we want to set the bounds of the
                 // AndroidViewsHandler for accessibility and for Views making assumptions based on
                 // the size of their ancestors. Usually the Views in the hierarchy will not
@@ -2039,6 +2029,7 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
 
     override fun onDraw(canvas: android.graphics.Canvas) {}
 
+    @SuppressLint("ObsoleteSdkInt")
     override fun createLayer(
         drawBlock: (canvas: Canvas, parentLayer: GraphicsLayer?) -> Unit,
         invalidateParentLayer: () -> Unit,
@@ -2105,6 +2096,7 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
      * Return [layer] to the layer cache. It can be reused in [createLayer] after this. Returns
      * `true` if it was recycled or `false` if it will be discarded.
      */
+    @SuppressLint("ObsoleteSdkInt")
     internal fun recycle(layer: OwnedLayer): Boolean {
         val cacheValue =
             viewLayersContainer == null ||
@@ -2129,7 +2121,7 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
 
     override fun onLayoutNodeDeactivated(layoutNode: LayoutNode) {
         if (autofillSupported()) {
-            _autofillManager?.onLayoutNodeDeactivated(layoutNode)
+            autofillManager?.onLayoutNodeDeactivated(layoutNode)
         }
     }
 
@@ -2141,7 +2133,7 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
 
     override fun onPostLayoutNodeReused(layoutNode: LayoutNode, oldSemanticsId: Int) {
         if (autofillSupported()) {
-            _autofillManager?.onPostLayoutNodeReused(layoutNode, oldSemanticsId)
+            autofillManager?.onPostLayoutNodeReused(layoutNode, oldSemanticsId)
         }
     }
 
@@ -2186,11 +2178,7 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
                     // We must update the display list of all children using dispatchDraw()
                     // instead of updateDisplayList(). But since we don't want to actually draw
                     // the contents, we will clip out everything from the canvas.
-                    val saveCount = canvas.save()
-                    canvas.clipRect(0f, 0f, 0f, 0f)
-
-                    super.dispatchDraw(canvas)
-                    canvas.restoreToCount(saveCount)
+                    canvas.withClip(0f, 0f, 0f, 0f) { super.dispatchDraw(canvas) }
                 }
 
                 dirtyLayers.clear()
@@ -2269,15 +2257,6 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
         }
     }
 
-    // TODO(mnuzen): combine both event loops into one larger one
-    suspend fun boundsUpdatesContentCaptureEventLoop() {
-        contentCaptureManager.boundsUpdatesEventLoop()
-    }
-
-    suspend fun boundsUpdatesAccessibilityEventLoop() {
-        composeAccessibilityDelegate.boundsUpdatesEventLoop()
-    }
-
     /** Walks the entire LayoutNode sub-hierarchy and marks all nodes as needing measurement. */
     private fun invalidateLayoutNodeMeasurement(node: LayoutNode) {
         measureAndLayoutDelegate.requestRemeasure(node)
@@ -2348,7 +2327,7 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
         viewTreeObserver.addOnTouchModeChangeListener(this)
 
         if (SDK_INT >= S) AndroidComposeViewTranslationCallbackS.setViewTranslationCallback(this)
-        _autofillManager?.let {
+        autofillManager?.let {
             focusOwner.listeners += it
             semanticsOwner.listeners += it
         }
@@ -2406,7 +2385,7 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
         lifecycleRetainedValuesStoreOwnerEntry = null
 
         if (SDK_INT >= S) AndroidComposeViewTranslationCallbackS.clearViewTranslationCallback(this)
-        _autofillManager?.let {
+        autofillManager?.let {
             semanticsOwner.listeners -= it
             focusOwner.listeners -= it
         }
@@ -2424,14 +2403,16 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
         }
     }
 
+    @RequiresApi(O)
     override fun dispatchProvideAutofillStructure(structure: ViewStructure, flags: Int) {
         if (!autofillSupported()) {
-            super.dispatchProvideAutofillStructure(structure, flags)
             return
         }
 
         isDispatchingAutofillStructure = true
         try {
+            // TODO: This will cause a class verification error on devices before O
+
             // Let ViewGroup collect hosted AndroidView children before appending Compose virtual
             // autofill nodes. Otherwise, the framework stops traversal once virtual children exist.
             super.dispatchProvideAutofillStructure(structure, flags)
@@ -2444,14 +2425,14 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
 
     @RequiresApi(O)
     private fun populateAutofillVirtualStructure(structure: ViewStructure) {
-        _autofillManager?.populateViewStructure(structure)
-        _autofill?.populateViewStructure(structure)
+        autofillManager?.populateViewStructure(structure)
+        autofill?.populateViewStructure(structure)
     }
 
     override fun autofill(values: SparseArray<AutofillValue>) {
         if (autofillSupported()) {
-            _autofillManager?.performAutofill(values)
-            _autofill?.performAutofill(values)
+            autofillManager?.performAutofill(values)
+            autofill?.performAutofill(values)
         }
     }
 
@@ -2849,7 +2830,7 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
         val pointerProperties = Array(pointerCount) { MotionEvent.PointerProperties() }
         val pointerCoords = Array(pointerCount) { MotionEvent.PointerCoords() }
         for (i in 0 until pointerCount) {
-            val sourceIndex = i + if (upIndex < 0 || i < upIndex) 0 else 1
+            val sourceIndex = i + if (upIndex !in 0..i) 0 else 1
             motionEvent.getPointerProperties(sourceIndex, pointerProperties[i])
             val coords = pointerCoords[i]
             motionEvent.getPointerCoords(sourceIndex, coords)
@@ -2967,8 +2948,26 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
     }
 
     private fun recalculateWindowViewTransforms() {
-        matrixToWindow.calculateMatrixToWindow(this, viewToWindowMatrix)
+        calculateMatrixToWindow(viewToWindowMatrix)
         viewToWindowMatrix.invertTo(windowToViewMatrix)
+    }
+
+    private fun calculateMatrixToWindow(matrix: Matrix) {
+        if (SDK_INT >= Q) {
+            CalculateMatrixToWindowApi29.calculateMatrixToWindow(
+                this,
+                matrix,
+                tmpAndroidMatrix,
+                tmpPositionArray,
+            )
+        } else {
+            CalculateMatrixToWindowApi21.calculateMatrixToWindow(
+                this,
+                matrix,
+                tmpMatrix,
+                tmpPositionArray,
+            )
+        }
     }
 
     override fun onCheckIsTextEditor(): Boolean {
@@ -3143,33 +3142,6 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
             event.rawY != lastEvent.rawY
     }
 
-    private fun findViewByAccessibilityIdRootedAtCurrentView(
-        accessibilityId: Int,
-        currentView: View,
-    ): View? {
-        if (SDK_INT < Q) {
-            val getAccessibilityViewIdMethod =
-                Class.forName("android.view.View").getDeclaredMethod("getAccessibilityViewId")
-            getAccessibilityViewIdMethod.isAccessible = true
-            if (getAccessibilityViewIdMethod.invoke(currentView) == accessibilityId) {
-                return currentView
-            }
-            if (currentView is ViewGroup) {
-                for (i in 0 until currentView.childCount) {
-                    val foundView =
-                        findViewByAccessibilityIdRootedAtCurrentView(
-                            accessibilityId,
-                            currentView.getChildAt(i),
-                        )
-                    if (foundView != null) {
-                        return foundView
-                    }
-                }
-            }
-        }
-        return null
-    }
-
     @RequiresApi(N)
     override fun onResolvePointerIcon(
         event: MotionEvent,
@@ -3179,8 +3151,7 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
         if (
             !event.isFromSource(InputDevice.SOURCE_MOUSE) &&
                 event.isFromSource(InputDevice.SOURCE_STYLUS) &&
-                (toolType == MotionEvent.TOOL_TYPE_STYLUS ||
-                    toolType == MotionEvent.TOOL_TYPE_ERASER)
+                (toolType == TOOL_TYPE_STYLUS || toolType == TOOL_TYPE_ERASER)
         ) {
             val icon = pointerIconService.getStylusHoverIcon()
             if (icon != null) {
@@ -3190,6 +3161,7 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
                 )
             }
         }
+        // TODO: This will cause a class verification error on M and earlier
         return super.onResolvePointerIcon(event, pointerIndex)
     }
 
@@ -3231,27 +3203,8 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
      * AccessibilityNodeIdManager and findViewByAccessibilityIdTraversal is only used by autofill.
      */
     @Suppress("BanHideTag")
-    fun findViewByAccessibilityIdTraversal(accessibilityId: Int): View? {
-        try {
-            // AccessibilityInteractionController#findViewByAccessibilityId doesn't call this
-            // method in Android Q and later. Ideally, we should only define this method in
-            // Android P and earlier, but since we don't have a way to do so, we can simply
-            // invoke the hidden parent method after Android P. If in new android, the hidden method
-            // ViewGroup#findViewByAccessibilityIdTraversal signature is changed or removed, we can
-            // simply return null here because there will be no call to this method.
-            return if (SDK_INT >= Q) {
-                val findViewByAccessibilityIdTraversalMethod =
-                    Class.forName("android.view.View")
-                        .getDeclaredMethod("findViewByAccessibilityIdTraversal", Int::class.java)
-                findViewByAccessibilityIdTraversalMethod.isAccessible = true
-                findViewByAccessibilityIdTraversalMethod.invoke(this, accessibilityId) as? View
-            } else {
-                findViewByAccessibilityIdRootedAtCurrentView(accessibilityId, this)
-            }
-        } catch (_: NoSuchMethodException) {
-            return null
-        }
-    }
+    fun findViewByAccessibilityIdTraversal(accessibilityId: Int): View? =
+        findViewByAccessibilityIdTraversal(accessibilityId, this)
 
     override val isLifecycleInResumedState: Boolean
         get() = composeViewContext.lifecycleOwner.lifecycle.currentState == Lifecycle.State.RESUMED
@@ -3372,7 +3325,73 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
         private val composeViews = mutableObjectListOf<AndroidComposeView>()
         private var systemPropertiesChangedRunnable: Runnable? = null
         private var dispatchOnScrollChangedMethod: Method? = null
+        private var getAccessibilityViewIdMethod: Method? = null
+        private var findViewByAccessibilityIdTraversalMethod: Method? = null
 
+        @SuppressLint("PrivateApi")
+        private fun findViewByAccessibilityIdRootedAtCurrentView(
+            accessibilityId: Int,
+            currentView: View,
+        ): View? {
+            if (SDK_INT < Q) {
+                val getAccessibilityViewIdMethod =
+                    getAccessibilityViewIdMethod
+                        ?: Class.forName("android.view.View")
+                            .getDeclaredMethod("getAccessibilityViewId")
+                            .also {
+                                getAccessibilityViewIdMethod = it
+                                it.isAccessible = true
+                            }
+                if (getAccessibilityViewIdMethod.invoke(currentView) == accessibilityId) {
+                    return currentView
+                }
+                if (currentView is ViewGroup) {
+                    for (i in 0 until currentView.childCount) {
+                        val foundView =
+                            findViewByAccessibilityIdRootedAtCurrentView(
+                                accessibilityId,
+                                currentView.getChildAt(i),
+                            )
+                        if (foundView != null) {
+                            return foundView
+                        }
+                    }
+                }
+            }
+            return null
+        }
+
+        @SuppressLint("PrivateApi")
+        @Suppress("BanHideTag")
+        fun findViewByAccessibilityIdTraversal(accessibilityId: Int, view: View): View? {
+            try {
+                // AccessibilityInteractionController#findViewByAccessibilityId doesn't call this
+                // method in Android Q and later. Ideally, we should only define this method in
+                // Android P and earlier, but since we don't have a way to do so, we can simply
+                // invoke the hidden parent method after Android P. If in new android, the hidden
+                // method
+                // ViewGroup#findViewByAccessibilityIdTraversal signature is changed or removed, we
+                // can
+                // simply return null here because there will be no call to this method.
+                return if (SDK_INT >= Q) {
+                    val findViewByAccessibilityIdTraversalMethod =
+                        findViewByAccessibilityIdTraversalMethod
+                            ?: Class.forName("android.view.View")
+                                .getDeclaredMethod(
+                                    "findViewByAccessibilityIdTraversal",
+                                    Int::class.java,
+                                )
+                    findViewByAccessibilityIdTraversalMethod.isAccessible = true
+                    findViewByAccessibilityIdTraversalMethod.invoke(this, accessibilityId) as? View
+                } else {
+                    findViewByAccessibilityIdRootedAtCurrentView(accessibilityId, view)
+                }
+            } catch (_: NoSuchMethodException) {
+                return null
+            }
+        }
+
+        @SuppressLint("PrivateApi")
         @Suppress("BanUncheckedReflection")
         private fun getIsShowingLayoutBounds(): Boolean =
             try {
@@ -3392,6 +3411,7 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
                 false
             }
 
+        @SuppressLint("PrivateApi")
         @Suppress("BanUncheckedReflection")
         private fun addNotificationForSysPropsChange(composeView: AndroidComposeView) {
             if (SDK_INT > 28) {
@@ -3444,7 +3464,10 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
         }
 
         // Back compat implementation
-        @SuppressLint("BanUncheckedReflection") // suppress for now, the API is available in MIN_SDK
+        @SuppressLint(
+            "BanUncheckedReflection",
+            "PrivateApi",
+        ) // suppress for now, the API is available in MIN_SDK
         fun dispatchOnScrollChanged(viewTreeObserver: ViewTreeObserver) {
             try {
                 if (dispatchOnScrollChangedMethod == null) {
@@ -3672,9 +3695,9 @@ private object AndroidComposeViewVerificationHelperMethodsO {
     }
 }
 
+@SuppressLint("ObsoleteSdkInt")
 @RequiresApi(M)
 private object AndroidComposeViewAssistHelperMethodsO {
-    @RequiresApi(M)
     @DoNotInline
     fun setClassName(structure: ViewStructure, view: View) {
         structure.setClassName(view.accessibilityClassName.toString())
@@ -3781,13 +3804,6 @@ private fun dot(m1: Matrix, row: Int, m2: Matrix, column: Int): Float {
         m1[row, 3] * m2[3, column]
 }
 
-private interface CalculateMatrixToWindow {
-    /**
-     * Calculates the matrix from [view] to screen coordinates and returns the value in [matrix].
-     */
-    fun calculateMatrixToWindow(view: View, matrix: Matrix)
-}
-
 @RequiresApi(35)
 private object AndroidComposeViewSensitiveContent35 {
     @DoNotInline
@@ -3802,12 +3818,14 @@ private object AndroidComposeViewSensitiveContent35 {
 }
 
 @RequiresApi(Q)
-private class CalculateMatrixToWindowApi29 : CalculateMatrixToWindow {
-    private val tmpMatrix = android.graphics.Matrix()
-    private val tmpPosition = IntArray(2)
-
+private object CalculateMatrixToWindowApi29 {
     @DoNotInline
-    override fun calculateMatrixToWindow(view: View, matrix: Matrix) {
+    fun calculateMatrixToWindow(
+        view: View,
+        matrix: Matrix,
+        tmpMatrix: android.graphics.Matrix,
+        tmpPosition: IntArray,
+    ) {
         tmpMatrix.reset()
         view.transformMatrixToGlobal(tmpMatrix)
         var parent = view.parent
@@ -3825,31 +3843,38 @@ private class CalculateMatrixToWindowApi29 : CalculateMatrixToWindow {
     }
 }
 
-private class CalculateMatrixToWindowApi21(private val tmpMatrix: Matrix) :
-    CalculateMatrixToWindow {
-    private val tmpLocation = IntArray(2)
-
-    override fun calculateMatrixToWindow(view: View, matrix: Matrix) {
+private object CalculateMatrixToWindowApi21 {
+    fun calculateMatrixToWindow(
+        view: View,
+        matrix: Matrix,
+        tmpMatrix: Matrix,
+        tmpPosition: IntArray,
+    ) {
         matrix.reset()
-        transformMatrixToWindow(view, matrix)
+        transformMatrixToWindow(view, matrix, tmpMatrix, tmpPosition)
     }
 
-    private fun transformMatrixToWindow(view: View, matrix: Matrix) {
+    private fun transformMatrixToWindow(
+        view: View,
+        matrix: Matrix,
+        tmpMatrix: Matrix,
+        tmpLocation: IntArray,
+    ) {
         val parentView = view.parent
         if (parentView is View) {
-            transformMatrixToWindow(parentView, matrix)
-            matrix.preTranslate(-view.scrollX.toFloat(), -view.scrollY.toFloat())
-            matrix.preTranslate(view.left.toFloat(), view.top.toFloat())
+            transformMatrixToWindow(parentView, matrix, tmpMatrix, tmpLocation)
+            matrix.preTranslate(-view.scrollX.toFloat(), -view.scrollY.toFloat(), tmpMatrix)
+            matrix.preTranslate(view.left.toFloat(), view.top.toFloat(), tmpMatrix)
         } else {
             val pos = tmpLocation
             view.getLocationInWindow(pos)
-            matrix.preTranslate(-view.scrollX.toFloat(), -view.scrollY.toFloat())
-            matrix.preTranslate(pos[0].toFloat(), pos[1].toFloat())
+            matrix.preTranslate(-view.scrollX.toFloat(), -view.scrollY.toFloat(), tmpMatrix)
+            matrix.preTranslate(pos[0].toFloat(), pos[1].toFloat(), tmpMatrix)
         }
 
         val viewMatrix = view.matrix
         if (!viewMatrix.isIdentity) {
-            matrix.preConcat(viewMatrix)
+            matrix.preConcat(viewMatrix, tmpMatrix)
         }
     }
 
@@ -3857,14 +3882,9 @@ private class CalculateMatrixToWindowApi21(private val tmpMatrix: Matrix) :
      * Like [android.graphics.Matrix.preConcat], for a Compose [Matrix] that accepts an [other]
      * [android.graphics.Matrix].
      */
-    private fun Matrix.preConcat(other: android.graphics.Matrix) {
+    private fun Matrix.preConcat(other: android.graphics.Matrix, tmpMatrix: Matrix) {
         tmpMatrix.setFrom(other)
         preTransform(tmpMatrix)
-    }
-
-    /** Like [android.graphics.Matrix.preTranslate], for a Compose [Matrix] */
-    private fun Matrix.preTranslate(x: Float, y: Float) {
-        preTranslate(x, y, tmpMatrix)
     }
 }
 
@@ -3909,20 +3929,6 @@ private fun View.getContentCaptureSessionCompat(): ContentCaptureSessionWrapper?
         ViewCompatShims.IMPORTANT_FOR_CONTENT_CAPTURE_YES,
     )
     return ViewCompatShims.getContentCaptureSession(this)
-}
-
-private class BringIntoViewOnScreenResponderNode(var view: ViewGroup) :
-    Modifier.Node(), BringIntoViewModifierNode {
-    override suspend fun bringIntoView(
-        childCoordinates: LayoutCoordinates,
-        boundsProvider: () -> androidx.compose.ui.geometry.Rect?,
-    ) {
-        val childOffset = childCoordinates.positionInRoot()
-        val rootRect = boundsProvider()?.translate(childOffset)
-        if (rootRect != null) {
-            view.requestRectangleOnScreen(rootRect.toAndroidRect(), false)
-        }
-    }
 }
 
 /** Split out to avoid class verification errors. This class will only be loaded when SDK >= 30. */
@@ -4010,13 +4016,13 @@ internal class IndirectPointerNavigationGestureDetector(
     ): Boolean {
         val motionEvent = indirectPointerEvent.nativeEvent
         when (motionEvent.action) {
-            MotionEvent.ACTION_DOWN -> {
+            ACTION_DOWN -> {
                 // Reset state at the start of a new gesture stream.
                 primaryDirectionalMotionAxis = indirectPointerEvent.primaryDirectionalMotionAxis
                 ignoreCurrentGestureStream = false
             }
-            MotionEvent.ACTION_MOVE,
-            MotionEvent.ACTION_UP -> {
+            ACTION_MOVE,
+            ACTION_UP -> {
                 // If another component consumes a move or up event, we should ignore the
                 // rest of the gesture to prevent conflicting actions on the final fling.
                 if (isConsumed) {
@@ -4032,46 +4038,3 @@ internal class IndirectPointerNavigationGestureDetector(
         ignoreCurrentGestureStream = true
     }
 }
-
-/**
- * A combined mask of all known configuration changes that do not affect the window metrics.
- *
- * For optimization purposes, any new configuration changes that don't result in the window metrics
- * changes should be added to this list.
- *
- * Order is copied from `ActivityInfo.Config` with the config change types that can affect the
- * window metrics excluded
- */
-private const val maskForNonWindowMetricsChanges =
-    ActivityInfo.CONFIG_MCC or
-        ActivityInfo.CONFIG_MNC or
-        ActivityInfo.CONFIG_LOCALE or
-        ActivityInfo.CONFIG_TOUCHSCREEN or
-        ActivityInfo.CONFIG_KEYBOARD or
-        ActivityInfo.CONFIG_KEYBOARD_HIDDEN or
-        ActivityInfo.CONFIG_NAVIGATION or
-        ActivityInfo.CONFIG_UI_MODE or
-        ActivityInfo.CONFIG_LAYOUT_DIRECTION or
-        ActivityInfo.CONFIG_COLOR_MODE or
-        ActivityInfo.CONFIG_FONT_SCALE or
-        ActivityInfo.CONFIG_GRAMMATICAL_GENDER or
-        ActivityInfo.CONFIG_FONT_WEIGHT_ADJUSTMENT or
-        ActivityInfo.CONFIG_ASSETS_PATHS
-
-/**
- * Diffs this [Configuration] with the [other] to determine if there were any configuration changes
- * that could result in the window metrics being changed.
- *
- * We also can't just look at [Configuration.screenWidthDp] and [Configuration.screenHeightDp]:
- * Those are represented by integer coordinates, which means that there is necessary rounding.
- * Therefore, small window size changes that are 1 dp or less, may not change the rounded value of
- * [Configuration.screenWidthDp] and [Configuration.screenHeightDp], but this does indeed cause a
- * configuration change that is captured by a change in the non-public window configuration.
- *
- * Because the window configuration is not-public, and to guard against future configuration changes
- * that may change the window metrics, the implementation for this is inverted: We assume that the
- * window metrics may have changed if there were any changes in the configuration other than those
- * defined by [maskForNonWindowMetricsChanges], which we know will not.
- */
-private fun Configuration.diffForWindowMetricsChanged(other: Configuration): Boolean =
-    (diff(other) and maskForNonWindowMetricsChanges.inv()) != 0

@@ -153,6 +153,7 @@ package androidx.compose.foundation {
     property public boolean isAnchoredDraggableTargetValueCalculationFixEnabled;
     property public boolean isBasicTextFieldHeightInLinesOptimizationEnabled;
     property public boolean isBasicTextFieldMinSizeOptimizationEnabled;
+    property public boolean isBasicTextFieldSizeOptimizationEnabled;
     property public boolean isCacheWindowForPagerEnabled;
     property public boolean isClearNestedScrollCoroutineScopeFixEnabled;
     property public boolean isConcurrentTextFieldSelectionFixEnabled;
@@ -161,12 +162,14 @@ package androidx.compose.foundation {
     property public boolean isNewContextMenuEnabled;
     property public boolean isPausableCompositionInPrefetchEnabled;
     property public boolean isReverseLayoutNestedScrollConnectionInPagerFixEnabled;
+    property public boolean isSelectionAutoScrollEnabled;
     property public boolean isSkipItemPlacementAnimationFixEnabled;
     property public boolean isSmartSelectionEnabled;
     field public static final androidx.compose.foundation.ComposeFoundationFlags INSTANCE;
     field public static boolean isAnchoredDraggableTargetValueCalculationFixEnabled;
     field public static boolean isBasicTextFieldHeightInLinesOptimizationEnabled;
     field public static boolean isBasicTextFieldMinSizeOptimizationEnabled;
+    field public static boolean isBasicTextFieldSizeOptimizationEnabled;
     field public static boolean isCacheWindowForPagerEnabled;
     field public static boolean isClearNestedScrollCoroutineScopeFixEnabled;
     field public static boolean isConcurrentTextFieldSelectionFixEnabled;
@@ -175,6 +178,7 @@ package androidx.compose.foundation {
     field public static boolean isNewContextMenuEnabled;
     field public static boolean isPausableCompositionInPrefetchEnabled;
     field public static boolean isReverseLayoutNestedScrollConnectionInPagerFixEnabled;
+    field public static boolean isSelectionAutoScrollEnabled;
     field public static boolean isSkipItemPlacementAnimationFixEnabled;
     field public static boolean isSmartSelectionEnabled;
   }
@@ -1747,6 +1751,7 @@ package androidx.compose.foundation.lazy.staggeredgrid {
     method @InaccessibleFromKotlin public int getBeforeContentPadding();
     method @InaccessibleFromKotlin public int getMainAxisItemSpacing();
     method @InaccessibleFromKotlin public androidx.compose.foundation.gestures.Orientation getOrientation();
+    method @InaccessibleFromKotlin public boolean getReverseLayout();
     method @InaccessibleFromKotlin public int getTotalItemsCount();
     method @InaccessibleFromKotlin public int getViewportEndOffset();
     method @BytecodeOnly public long getViewportSize-YbymL2g();
@@ -1756,6 +1761,7 @@ package androidx.compose.foundation.lazy.staggeredgrid {
     property public abstract int beforeContentPadding;
     property public abstract int mainAxisItemSpacing;
     property public abstract androidx.compose.foundation.gestures.Orientation orientation;
+    property public abstract boolean reverseLayout;
     property public abstract int totalItemsCount;
     property public abstract int viewportEndOffset;
     property public abstract androidx.compose.ui.unit.IntSize viewportSize;

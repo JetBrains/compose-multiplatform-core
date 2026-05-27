@@ -16,12 +16,15 @@
 
 package androidx.compose.ui.platform
 
+import android.accessibilityservice.AccessibilityServiceInfo
+import android.accessibilityservice.AccessibilityServiceInfo.FEEDBACK_ALL_MASK
 import android.content.ComponentCallbacks2
 import android.content.pm.ActivityInfo
 import android.content.res.Configuration
 import android.util.Log
 import android.view.View
 import android.view.ViewTreeObserver
+import android.view.accessibility.AccessibilityManager
 import androidx.annotation.VisibleForTesting
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionContext
@@ -78,52 +81,44 @@ import androidx.savedstate.findViewTreeSavedStateRegistryOwner
  */
 class ComposeViewContext
 private constructor(
-    composeViewContext: ComposeViewContext?,
+    private val composeViewContext: ComposeViewContext?,
     internal val view: View,
-    internal val compositionContext: CompositionContext,
-    internal val lifecycleOwner: LifecycleOwner,
-    internal val savedStateRegistryOwner: SavedStateRegistryOwner,
-    internal val viewModelStoreOwner: ViewModelStoreOwner?,
-    matchesContext: Boolean = composeViewContext?.view?.context == view.context,
+    compositionContext: CompositionContext?,
+    lifecycleOwner: LifecycleOwner?,
+    savedStateRegistryOwner: SavedStateRegistryOwner?,
+    viewModelStoreOwner: ViewModelStoreOwner?,
+    private val matchesContext: Boolean = composeViewContext?.view?.context == view.context,
 ) {
     /**
      * Constructs a [ComposeViewContext] to be used with [AbstractComposeView.createComposition] to
      * compose content while the [AbstractComposeView] isn't attached.
      *
      * @param view A [View] attached to the same hierarchy as the [ComposeView]s constructed with
-     *   this [ComposeViewContext]. This [View] must be attached before calling this constructor and
-     *   should be attached as long as [ComposeViewContext] is expected to be around is expected to
-     *   be around.
+     *   this [ComposeViewContext]. This [View] must be attached before a [ComposeView] using the
+     *   [ComposeViewContext] has called [ComposeView.setContent]. [view] must remain attached as
+     *   long as the [ComposeViewContext] is expected to be active.
      * @param compositionContext The [CompositionContext] used by [ComposeView]s constructed with
-     *   this [ComposeViewContext]. The default value is obtained from
+     *   this [ComposeViewContext]. If `null`, the default value is used, obtained from
      *   [View.findViewTreeCompositionContext], or, if not found from the window
      *   [androidx.compose.runtime.Recomposer].
      * @param lifecycleOwner Used to govern the lifecycle-important aspects of [ComposeView]s
-     *   constructed with this [ComposeViewContext]. The default value is obtained from
-     *   [View.findViewTreeLifecycleOwner]. If not found, [IllegalStateException] will be thrown.
+     *   constructed with this [ComposeViewContext]. If `null`, the default value is obtained from
+     *   [View.findViewTreeLifecycleOwner]. If not found, [IllegalStateException] will be thrown
+     *   during composition.
      * @param savedStateRegistryOwner The [SavedStateRegistryOwner] used by [ComposeView]s
-     *   constructed with this [ComposeViewContext]. The default value is obtained from
+     *   constructed with this [ComposeViewContext]. If `null`, the default value is obtained from
      *   [View.findViewTreeSavedStateRegistryOwner]. If not found, an [IllegalStateException] will
-     *   be thrown.
+     *   be thrown during composition.
      * @param viewModelStoreOwner [ViewModelStoreOwner] to be used by [ComposeView]s to create
-     *   [RetainedValuesStore]s. The default value is obtained from
+     *   [RetainedValuesStore]s. If `null`, the default value is obtained from
      *   [View.findViewTreeViewModelStoreOwner].
      */
     constructor(
         view: View,
-        compositionContext: CompositionContext =
-            view.findViewTreeCompositionContext() ?: view.windowRecomposer,
-        lifecycleOwner: LifecycleOwner =
-            view.findViewTreeLifecycleOwner()
-                ?: throw IllegalStateException(
-                    "Composed into a View which doesn't propagate ViewTreeLifecycleOwner!"
-                ),
-        savedStateRegistryOwner: SavedStateRegistryOwner =
-            view.findViewTreeSavedStateRegistryOwner()
-                ?: throw IllegalStateException(
-                    "Composed into a View which doesn't propagate ViewTreeSavedStateRegistryOwner!"
-                ),
-        viewModelStoreOwner: ViewModelStoreOwner? = view.findViewTreeViewModelStoreOwner(),
+        compositionContext: CompositionContext? = null,
+        lifecycleOwner: LifecycleOwner? = null,
+        savedStateRegistryOwner: SavedStateRegistryOwner? = null,
+        viewModelStoreOwner: ViewModelStoreOwner? = null,
     ) : this(
         view.findViewTreeComposeViewContext(),
         view,
@@ -132,6 +127,41 @@ private constructor(
         savedStateRegistryOwner,
         viewModelStoreOwner,
     )
+
+    /**
+     * The first time the values are needed, [compositionContext], [lifecycleOwner],
+     * [savedStateRegistryOwner], and [viewModelStoreOwner] will be resolved based on the [view], if
+     * the values were not provided by the constructor. [view] must be attached when values are
+     * resolved or an exception will be thrown.
+     */
+    private var areValuesResolved = false
+    private var _compositionContext: CompositionContext? = compositionContext
+    internal val compositionContext: CompositionContext
+        get() {
+            resolveValuesIfNeeded()
+            return _compositionContext!!
+        }
+
+    private var _lifecycleOwner: LifecycleOwner? = lifecycleOwner
+    internal val lifecycleOwner: LifecycleOwner
+        get() {
+            resolveValuesIfNeeded()
+            return _lifecycleOwner!!
+        }
+
+    private var _savedStateRegistryOwner: SavedStateRegistryOwner? = savedStateRegistryOwner
+    internal val savedStateRegistryOwner: SavedStateRegistryOwner
+        get() {
+            resolveValuesIfNeeded()
+            return _savedStateRegistryOwner!!
+        }
+
+    private var _viewModelStoreOwner: ViewModelStoreOwner? = viewModelStoreOwner
+    internal val viewModelStoreOwner: ViewModelStoreOwner?
+        get() {
+            resolveValuesIfNeeded()
+            return _viewModelStoreOwner
+        }
 
     /** [ImageVectorCache] provided by [LocalImageVectorCache] */
     internal val imageVectorCache: ImageVectorCache =
@@ -171,6 +201,41 @@ private constructor(
         } else {
             AndroidAccessibilityManager(view.context)
         }
+
+    private var _isAccessibilityEnabled: Boolean = false
+    internal val isAccessibilityEnabled: Boolean
+        get() =
+            if (matchesContext) {
+                composeViewContext!!.isAccessibilityEnabled
+            } else {
+                // b/504834104 saw accessibility being called when the state wasn't enabled. This
+                // indicates that the onAccessibilityChanged() was not received before the
+                // AccessibilityManager's state changed, so we must double-check here
+                _isAccessibilityEnabled && accessibilityManager.accessibilityManager.isEnabled
+            }
+
+    private var _isTouchExplorationEnabled: Boolean = false
+
+    internal val isTouchExplorationEnabled: Boolean
+        get() =
+            if (matchesContext) {
+                composeViewContext!!.isTouchExplorationEnabled
+            } else {
+                _isTouchExplorationEnabled
+            }
+
+    private var _enabledServices: List<AccessibilityServiceInfo>? = null
+
+    internal val enabledServices: List<AccessibilityServiceInfo>
+        get() =
+            if (matchesContext) {
+                composeViewContext!!.enabledServices
+            } else {
+                _enabledServices
+                    ?: accessibilityManager.accessibilityManager
+                        .getEnabledAccessibilityServiceList(FEEDBACK_ALL_MASK)
+                        .also { _enabledServices = it }
+            }
 
     /** [UriHandler] provided by [LocalUriHandler] */
     internal val uriHandler: AndroidUriHandler =
@@ -274,7 +339,11 @@ private constructor(
      * changes, and [view] attach state changes.
      */
     private val callback =
-        object : ComponentCallbacks2, ViewTreeObserver.OnWindowFocusChangeListener {
+        object :
+            ComponentCallbacks2,
+            ViewTreeObserver.OnWindowFocusChangeListener,
+            AccessibilityManager.AccessibilityStateChangeListener,
+            AccessibilityManager.TouchExplorationStateChangeListener {
             override fun onConfigurationChanged(configuration: Configuration) {
                 this@ComposeViewContext.onConfigurationChanged(configuration)
             }
@@ -292,6 +361,15 @@ private constructor(
 
             override fun onWindowFocusChanged(hasFocus: Boolean) {
                 windowInfo.isWindowFocused = hasFocus
+            }
+
+            override fun onAccessibilityStateChanged(enabled: Boolean) {
+                _isAccessibilityEnabled = enabled
+                if (enabled) resetEnabledAccessibilityServiceList()
+            }
+
+            override fun onTouchExplorationStateChanged(enabled: Boolean) {
+                if (enabled && isAccessibilityEnabled) resetEnabledAccessibilityServiceList()
             }
         }
 
@@ -334,6 +412,16 @@ private constructor(
         windowInfo.setOnInitializeContainerSize(calculateWindowSizeLambda)
         windowInfo.updateContainerSizeIfObserved(calculateWindowSizeLambda)
         view.viewTreeObserver.addOnWindowFocusChangeListener(callback)
+        if (!matchesContext) {
+            val am = accessibilityManager.accessibilityManager
+            _isAccessibilityEnabled = am.isEnabled
+            _isTouchExplorationEnabled = _isAccessibilityEnabled && am.isTouchExplorationEnabled
+            if (_isAccessibilityEnabled) {
+                resetEnabledAccessibilityServiceList()
+            }
+            am.addAccessibilityStateChangeListener(callback)
+            am.addTouchExplorationStateChangeListener(callback)
+        }
     }
 
     /** Stop observing configuration changes and window changes. */
@@ -341,6 +429,11 @@ private constructor(
         view.context.unregisterComponentCallbacks(callback)
         windowInfo.setOnInitializeContainerSize(null)
         view.viewTreeObserver.removeOnWindowFocusChangeListener(callback)
+        if (!matchesContext) {
+            val am = accessibilityManager.accessibilityManager
+            am.removeAccessibilityStateChangeListener(callback)
+            am.removeTouchExplorationStateChangeListener(callback)
+        }
     }
 
     /**
@@ -367,22 +460,31 @@ private constructor(
      * Construct a [ComposeViewContext] sharing parts with another [ComposeViewContext].
      *
      * @param view A [View] attached to the same hierarchy as the [ComposeView]s constructed with
-     *   this [ComposeViewContext]. This [View] must be attached before calling this constructor.
+     *   this [ComposeViewContext]. This [View] must be attached before a [ComposeView] using the
+     *   [ComposeViewContext] has called [ComposeView.setContent]. [view] must remain attached as
+     *   long as the [ComposeViewContext] is expected to be active.
      * @param compositionContext The [CompositionContext] used by [ComposeView]s constructed with
-     *   this [ComposeViewContext].
+     *   this [ComposeViewContext]. If `null`, the default value is used, obtained from
+     *   [View.findViewTreeCompositionContext], or, if not found from the window
+     *   [androidx.compose.runtime.Recomposer].
      * @param lifecycleOwner Used to govern the lifecycle-important aspects of [ComposeView]s
-     *   constructed with this [ComposeViewContext].
+     *   constructed with this [ComposeViewContext]. If `null`, the default value is obtained from
+     *   [View.findViewTreeLifecycleOwner]. If not found, [IllegalStateException] will be thrown
+     *   during composition.
      * @param savedStateRegistryOwner The [SavedStateRegistryOwner] used by [ComposeView]s
-     *   constructed with this [ComposeViewContext].
+     *   constructed with this [ComposeViewContext]. If `null`, the default value is obtained from
+     *   [View.findViewTreeSavedStateRegistryOwner]. If not found, an [IllegalStateException] will
+     *   be thrown during composition.
      * @param viewModelStoreOwner [ViewModelStoreOwner] to be used by [ComposeView]s to create
-     *   [RetainedValuesStore]s.
+     *   [RetainedValuesStore]s. If `null`, the default value is obtained from
+     *   [View.findViewTreeViewModelStoreOwner].
      */
     fun copy(
         view: View = this.view,
-        compositionContext: CompositionContext = this.compositionContext,
-        lifecycleOwner: LifecycleOwner = this.lifecycleOwner,
-        savedStateRegistryOwner: SavedStateRegistryOwner = this.savedStateRegistryOwner,
-        viewModelStoreOwner: ViewModelStoreOwner? = this.viewModelStoreOwner,
+        compositionContext: CompositionContext? = this._compositionContext,
+        lifecycleOwner: LifecycleOwner? = this._lifecycleOwner,
+        savedStateRegistryOwner: SavedStateRegistryOwner? = this._savedStateRegistryOwner,
+        viewModelStoreOwner: ViewModelStoreOwner? = this._viewModelStoreOwner,
     ): ComposeViewContext =
         ComposeViewContext(
             this,
@@ -392,6 +494,36 @@ private constructor(
             savedStateRegistryOwner,
             viewModelStoreOwner,
         )
+
+    private fun resolveValuesIfNeeded() {
+        if (!areValuesResolved) {
+            areValuesResolved = true
+            if (_compositionContext == null) {
+                _compositionContext = view.findViewTreeCompositionContext() ?: view.windowRecomposer
+            }
+            if (_lifecycleOwner == null) {
+                _lifecycleOwner =
+                    view.findViewTreeLifecycleOwner()
+                        ?: throw IllegalStateException(
+                            "Composed into a View which doesn't propagate ViewTreeLifecycleOwner!"
+                        )
+            }
+            if (_savedStateRegistryOwner == null) {
+                _savedStateRegistryOwner =
+                    view.findViewTreeSavedStateRegistryOwner()
+                        ?: throw IllegalStateException(
+                            "Composed into a View which doesn't propagate ViewTreeSavedStateRegistryOwner!"
+                        )
+            }
+            if (_viewModelStoreOwner == null) {
+                _viewModelStoreOwner = view.findViewTreeViewModelStoreOwner()
+            }
+        }
+    }
+
+    private fun resetEnabledAccessibilityServiceList() {
+        _enabledServices = null
+    }
 
     /** Provide common CompositionLocals. */
     @OptIn(ExperimentalComposeUiApi::class, ExperimentalMediaQueryApi::class)

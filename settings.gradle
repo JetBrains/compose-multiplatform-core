@@ -30,8 +30,8 @@ buildscript {
     dependencies {
         // upgrade protobuf to be compatible with AGP
         classpath("com.google.protobuf:protobuf-java:3.25.5")
-        classpath("com.gradle:develocity-gradle-plugin:4.3")
-        classpath("com.gradle:common-custom-user-data-gradle-plugin:2.4.0")
+        classpath("com.gradle:develocity-gradle-plugin:4.4.1")
+        classpath("com.gradle:common-custom-user-data-gradle-plugin:2.6.0")
         classpath("androidx.build.gradle.gcpbuildcache:gcpbuildcache:1.0.0")
         classpath("com.google.cloud:google-cloud-secretmanager:2.67.0")
         def agpOverride = System.getenv("GRADLE_PLUGIN_VERSION")
@@ -403,7 +403,8 @@ def includeProject(String name, filePath, List<BuildType> filter = []) {
 //
 /////////////////////////////
 
-includeProject(":a2ui:a2ui", [BuildType.COMPOSE])
+includeProject(":a2ui:a2ui-core", [BuildType.COMPOSE])
+includeProject(":a2ui:integration-tests:testapp", [BuildType.COMPOSE])
 includeProject(":a2ui:a2ui-compose", [BuildType.COMPOSE])
 includeProject(":activity:activity", [BuildType.MAIN, BuildType.FLAN, BuildType.COMPOSE])
 includeProject(":activity:activity-compose", [BuildType.COMPOSE])
@@ -1212,6 +1213,7 @@ includeProject(":webgpu:webgpu", [BuildType.MAIN])
 includeProject(":webkit:integration-tests:instrumentation", [BuildType.MAIN])
 includeProject(":webkit:integration-tests:common", [BuildType.MAIN])
 includeProject(":webkit:integration-tests:testapp", [BuildType.MAIN])
+includeProject(":webkit:integration-tests:orchestratortests", [BuildType.MAIN])
 includeProject(":webkit:chips-enabled-integration-tests:instrumentation", [BuildType.MAIN])
 includeProject(":webkit:webkit", [BuildType.MAIN])
 includeProject(":window:window", [BuildType.MAIN, BuildType.COMPOSE, BuildType.FLAN, BuildType.WINDOW])

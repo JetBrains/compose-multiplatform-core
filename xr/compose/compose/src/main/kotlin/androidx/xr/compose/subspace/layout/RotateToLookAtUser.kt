@@ -32,8 +32,9 @@ import androidx.xr.runtime.Session
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
-import androidx.xr.scenecore.Space
+import androidx.xr.scenecore.Entity
 import androidx.xr.scenecore.scene
+import kotlin.math.atan2
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
@@ -95,7 +96,7 @@ internal class RotateToLookAtUserNode(var upDirection: Vector3) :
     private var headPoseJob: Job? = null
     private var currentHeadPose: Pose = Pose()
 
-    private inline val density: Density
+    private inline val localDensity: Density
         get() = currentValueOf(LocalDensity)
 
     @Suppress("RestrictedApiAndroidX")
@@ -126,25 +127,25 @@ internal class RotateToLookAtUserNode(var upDirection: Vector3) :
         val placeable: SubspacePlaceable = measurable.measure(constraints = constraints)
 
         return layout(width = placeable.width, height = placeable.height, depth = placeable.depth) {
-            // Get the pose of the root node in the ActivitySpace.
-            // Transform from Root space to Activity space (dst_From_src notation).
-            val activitySpaceFromRoot: Pose =
-                currentValueOf(LocalSubspaceRootNode)?.getPose(relativeTo = Space.ACTIVITY)
-                    ?: Pose.Identity
-
             // Get the pose of the node in the Compose root space.
             // Transform from Node space to root space.
             val rootFromNodePixels: Pose = coordinates?.poseInRoot ?: Pose.Identity
 
             // Convert the node's pose in Compose root from pixels to meters.
             val rootFromNodeMeters: Pose =
-                rootFromNodePixels.convertPixelsToMeters(
-                    density = this@RotateToLookAtUserNode.density
-                )
+                rootFromNodePixels.convertPixelsToMeters(density = localDensity)
+
+            // Fetch the root node directly from composition locals.
+            val rootNode: Entity? = currentValueOf(LocalSubspaceRootNode)
 
             // Chain (compose) the transforms: Node -> Root -> Activity.
+            // Using transformPoseTo() which automatically handle the positioning, rotation, AND
+            // accumulated scale
             val activitySpaceFromNode: Pose =
-                activitySpaceFromRoot.compose(other = rootFromNodeMeters)
+                rootNode?.transformPoseTo(
+                    pose = rootFromNodeMeters,
+                    destination = session.scene.activitySpace,
+                ) ?: rootFromNodeMeters
 
             // Extract Payloads in Activity Space.
             val nodeActivitySpaceTranslation: Vector3 = activitySpaceFromNode.translation
@@ -157,7 +158,10 @@ internal class RotateToLookAtUserNode(var upDirection: Vector3) :
             // Calculate Target Rotation:
             // This is the absolute rotation the node needs in ActivitySpace.
             val activitySpaceFromTargetNodeRotation: Quaternion =
-                Quaternion.fromLookTowards(forward = nodeToHeadDirection, up = upDirection)
+                calculateTargetNodeRotation(
+                    nodeToHeadDirection = nodeToHeadDirection,
+                    upDirection = upDirection,
+                )
 
             // Calculate Local Delta Rotation:
             // We know: activitySpaceFromTargetNodeRotation = activitySpaceFromNode.rotation *
@@ -171,6 +175,53 @@ internal class RotateToLookAtUserNode(var upDirection: Vector3) :
             // Place the measured content using the new local rotation offset.
             placeable.place(pose = Pose(translation = Vector3.Zero, rotation = localRotationOffset))
         }
+    }
+
+    private fun calculateTargetNodeRotation(
+        nodeToHeadDirection: Vector3,
+        upDirection: Vector3,
+    ): Quaternion {
+        val isIntersectingOrigin = nodeToHeadDirection.lengthSquared < MIN_LENGTH_SQUARED
+        if (isIntersectingOrigin) {
+            return Quaternion.Identity
+        }
+
+        val normalizedForwardDirection: Vector3 = nodeToHeadDirection.toNormalized()
+        val stableUp: Vector3 =
+            calculateGravityAlignedUp(forwardDirection = normalizedForwardDirection)
+
+        // Determine the rotation to achieve forward facing direction in activity space
+        var activitySpaceFromTargetNodeRotation: Quaternion =
+            Quaternion.fromLookTowards(forward = normalizedForwardDirection, up = stableUp)
+
+        activitySpaceFromTargetNodeRotation *= calculateLocalRollRotation(upDirection)
+
+        return activitySpaceFromTargetNodeRotation
+    }
+
+    private fun calculateGravityAlignedUp(forwardDirection: Vector3): Vector3 {
+        // Determine the up vector orthogonal to the target vector in the plane determined by
+        // the target vector and the gravity vector
+        val gravityVectorInActivitySpace: Vector3 = Vector3.Down
+        val rightVectorInNodeSpace: Vector3 =
+            forwardDirection.cross(other = gravityVectorInActivitySpace)
+        val isParallelToGravity = rightVectorInNodeSpace.lengthSquared < MIN_LENGTH_SQUARED
+
+        return if (isParallelToGravity) {
+            // Fallback to a stable fixed vector if user is directly above/below
+            Vector3.Forward
+        } else {
+            Vector3.Up
+        }
+    }
+
+    private fun calculateLocalRollRotation(upDirection: Vector3): Quaternion {
+        // Determine the additional roll rotation required to orient the up vector of the
+        // plane/model so that it coincides with the upDirection supplied (w/ respect to the
+        // intermediate rotated space)
+        val angle: Float = atan2(y = upDirection.x, x = upDirection.y) * RADIANS_TO_DEGREES
+
+        return Quaternion.fromAxisAngle(axis = Vector3.Forward, degrees = angle)
     }
 
     private fun manageHeadPoseJob() {
@@ -191,5 +242,10 @@ internal class RotateToLookAtUserNode(var upDirection: Vector3) :
     override fun onDetach() {
         super.onDetach()
         headPoseJob?.cancel()
+    }
+
+    private companion object {
+        private const val MIN_LENGTH_SQUARED = 1e-6f
+        private const val RADIANS_TO_DEGREES = 180.0f / Math.PI.toFloat()
     }
 }

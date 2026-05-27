@@ -28,7 +28,7 @@ class GoldenScreenshotName(
             description.className.substringAfterLast('.') +
                 "_" +
                 description.methodName +
-                (suffix ?: "")
+                if (suffix == null) "" else "_$suffix"
         return testIdentifier.replace("[\\[$]".toRegex(), "_").replace("]", "")
     }
 }

@@ -23,8 +23,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.ComposeContentTestRule
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onRoot
 import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.rules.TestRule
 import org.junit.runner.Description
@@ -51,23 +54,18 @@ public class RemoteBaseContentTestRule : TestRule {
         player: Player,
         size: Size,
         onCoreDocumentCreated: ((CoreDocument) -> Unit)? = null,
-        // b/500955051: remove this param
-        composableWrapper: (@Composable (composable: @Composable () -> Unit) -> Unit)? = null,
+        composableWrapper: (@Composable (composable: @Composable () -> Unit) -> Unit) = { it() },
         composable: @RemoteComposable @Composable () -> Unit,
     ) {
         composeTestRule.setContent {
-            val composable: @Composable () -> Unit = {
-                val coreDocument: CoreDocument? by
-                    creation.rememberRemoteDocument(composable = composable)
+            val coreDocument: CoreDocument? by
+                creation.rememberRemoteDocument(composable = composable)
+            coreDocument?.let {
+                onCoreDocumentCreated?.invoke(it)
 
-                coreDocument?.let {
-                    onCoreDocumentCreated?.invoke(it)
+                val composable: @Composable () -> Unit = {
                     player.Play(coreDocument = it, size = size)
                 }
-            }
-            if (composableWrapper == null) {
-                composable()
-            } else {
                 composableWrapper { composable() }
             }
         }
@@ -84,3 +82,12 @@ public class RemoteBaseContentTestRule : TestRule {
         @Composable public fun Play(coreDocument: CoreDocument, size: Size)
     }
 }
+
+/**
+ * Captures the visual content of the root Compose node as an [ImageBitmap].
+ *
+ * @return The captured hierarchy rendering as an image.
+ */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public fun RemoteBaseContentTestRule.captureRootToImage(): ImageBitmap =
+    this.composeTestRule.onRoot().captureToImage()
