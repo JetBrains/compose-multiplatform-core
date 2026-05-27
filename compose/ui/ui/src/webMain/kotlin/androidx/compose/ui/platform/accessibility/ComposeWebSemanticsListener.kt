@@ -23,7 +23,6 @@ import kotlinx.coroutines.CoroutineScope
 import org.w3c.dom.HTMLElement
 
 internal class ComposeWebSemanticsListener(
-    val coroutineScope: CoroutineScope,
     val webSemanticsRoot: HTMLElement,
 ) : PlatformContext.SemanticsOwnerListener {
 
