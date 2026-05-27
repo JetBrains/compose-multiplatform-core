@@ -16,7 +16,6 @@
 
 package androidx.compose.remote.creation.compose.modifier
 
-import androidx.annotation.RestrictTo
 import androidx.compose.remote.creation.compose.state.RemoteFloat
 
 /**
@@ -25,8 +24,8 @@ import androidx.compose.remote.creation.compose.state.RemoteFloat
  * direction
  *
  * @param degrees Degrees to rotate the content.
+ * @sample androidx.compose.remote.creation.compose.samples.RotateSample
  * @see graphicsLayer
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public fun RemoteModifier.rotate(degrees: RemoteFloat): RemoteModifier =
     graphicsLayer(rotationZ = degrees)

@@ -79,6 +79,8 @@ internal val LocalSubspaceRootNode: ProvidableCompositionLocal<Entity?> =
 
 private object SubspaceConstants {
     const val FOLLOWING_SUBSPACE_ROOT_CONTAINER_NAME = "FollowingSubspaceRootContainer"
+    const val PLANAR_EMBEDDED_SUBSPACE_ROOT_CONTAINER_NAME = "PlanarEmbeddedSubspaceRootContainer"
+    const val PLANAR_EMBEDDED_SUBSPACE_ROOT_NAME = "PlanarEmbeddedSubspaceRoot"
 }
 
 /**
@@ -170,7 +172,13 @@ private fun Subspace(
     val context = LocalContext.current
     val session = checkNotNull(LocalSession.current) { "session must be initialized" }
     val compositionContext = rememberCompositionContext()
-    val subspaceRoot = remember { Entity.create(session, "SubspaceRoot") }
+    val subspaceRoot = remember {
+        Entity.create(
+            session = session,
+            name = "SubspaceRoot",
+            parent = session.scene.activitySpace,
+        )
+    }
     val scene by remember {
         if (SceneManager.getSceneCount(context) == 0) {
             session.scene.mainPanelEntity.setEnabled(false)
@@ -234,6 +242,7 @@ private fun Subspace(
  *   phones and tablets).
  *
  * @sample androidx.xr.compose.samples.PlanarEmbeddedSubspaceSample
+ * @param modifier The [SubspaceModifier] to be applied to the content of this Subspace.
  * @param content The `@SubspaceComposable` 3D content to render within this subspace.
  * @see Subspace For creating a top-level, application-anchored spatial scene.
  */
@@ -241,7 +250,8 @@ private fun Subspace(
 @UiComposable
 @Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/481422057
 public fun PlanarEmbeddedSubspace(
-    content: @Composable @SubspaceComposable SpatialBoxScope.() -> Unit
+    modifier: SubspaceModifier = SubspaceModifier,
+    content: @Composable @SubspaceComposable SpatialBoxScope.() -> Unit,
 ) {
     // If not in XR, do nothing
     if (!LocalSpatialConfiguration.current.hasXrSpatialFeature) return
@@ -255,32 +265,44 @@ public fun PlanarEmbeddedSubspace(
     // The subspace root node will be owned and manipulated by the containing composition, we need a
     // container that we can manipulate at the Subspace level in order to position the entire
     // subspace properly.
-    val subspaceRootContainer by remember {
+    val planarEmbeddedSubspaceRootContainer by remember {
         disposableValueOf(
-            CoreGroupEntity(Entity.create(session, "SubspaceRootContainer")).apply {
-                enabled = false
-                parent = coreEntity
-            }
+            CoreGroupEntity(
+                    Entity.create(
+                        session = session,
+                        name = SubspaceConstants.PLANAR_EMBEDDED_SUBSPACE_ROOT_CONTAINER_NAME,
+                        parent = session.scene.activitySpace,
+                    )
+                )
+                .apply {
+                    enabled = false
+                    parent = coreEntity
+                }
         ) {
             it.dispose()
         }
     }
     val scene by remember {
-        val subspaceRoot =
-            CoreGroupEntity(Entity.create(session, "SubspaceRoot")).apply {
-                parent = subspaceRootContainer
-            }
+        val planarEmbeddedSubspaceRoot =
+            CoreGroupEntity(
+                    Entity.create(
+                        session = session,
+                        name = SubspaceConstants.PLANAR_EMBEDDED_SUBSPACE_ROOT_CONTAINER_NAME,
+                        parent = session.scene.activitySpace,
+                    )
+                )
+                .apply { parent = planarEmbeddedSubspaceRootContainer }
         disposableValueOf(
             SpatialComposeScene(
                 lifecycleOwner = lifecycleOwner,
                 context = context,
                 jxrSession = session,
                 parentCompositionContext = compositionContext,
-                rootEntity = subspaceRoot,
+                rootEntity = planarEmbeddedSubspaceRoot,
             )
         ) {
             it.dispose()
-            subspaceRoot.dispose()
+            planarEmbeddedSubspaceRoot.dispose()
         }
     }
     var subspaceContentPixelSize by remember { mutableStateOf(IntSize.Zero) }
@@ -302,7 +324,9 @@ public fun PlanarEmbeddedSubspace(
     ) { measurables, constraints ->
         // We set the scene content here so the 3D content has access to the 2D constraints.
         scene.setContent {
-            SubspaceLayout(content = { SpatialBox(content = content) }) { subspaceMeasurables, _ ->
+            SubspaceLayout(content = { SpatialBox(modifier = modifier, content = content) }) {
+                subspaceMeasurables,
+                _ ->
                 val volumeConstraints = view.findVolumeConstraints()
                 val placeables =
                     subspaceMeasurables.map {
@@ -346,8 +370,8 @@ public fun PlanarEmbeddedSubspace(
                 val contentOffset = coordinates?.positionInRoot() ?: return@layout
                 val nextPose =
                     calculatePose(contentOffset, parentSize, measuredPlaceholderSize, density)
-                subspaceRootContainer.poseInMeters = nextPose
-                subspaceRootContainer.enabled = true
+                planarEmbeddedSubspaceRootContainer.poseInMeters = nextPose
+                planarEmbeddedSubspaceRootContainer.enabled = true
             }
         }
     }
@@ -466,7 +490,11 @@ public fun FollowingSubspace(
     }
 
     val subspaceRootNode = remember {
-        Entity.create(session, SubspaceConstants.FOLLOWING_SUBSPACE_ROOT_CONTAINER_NAME)
+        Entity.create(
+            session = session,
+            name = SubspaceConstants.FOLLOWING_SUBSPACE_ROOT_CONTAINER_NAME,
+            parent = session.scene.activitySpace,
+        )
     }
 
     // Implicitly subscribes this Composable to scale changes.

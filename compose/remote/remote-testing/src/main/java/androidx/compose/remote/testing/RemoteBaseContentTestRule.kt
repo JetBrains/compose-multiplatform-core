@@ -34,8 +34,8 @@ import org.junit.runners.model.Statement
  * A [TestRule] that allows you to set a Remote Compose content without the necessity to provide a
  * host for the content. The host, such as an Activity, will be created by the test rule.
  *
- * The [CoreDocument] player implementation should be provided, given the flexibility for developers
- * to choose their own implementation.
+ * The [CoreDocument] player implementation should be provided, giving the flexibility for
+ * developers to choose their own implementation.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class RemoteBaseContentTestRule : TestRule {

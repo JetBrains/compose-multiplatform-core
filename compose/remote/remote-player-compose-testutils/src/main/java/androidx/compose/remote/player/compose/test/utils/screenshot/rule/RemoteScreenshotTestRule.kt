@@ -150,21 +150,6 @@ class RemoteScreenshotTestRule(
     private fun getGoldenScreenshotName(goldenScreenshotName: GoldenScreenshotName?) =
         goldenScreenshotName ?: GoldenScreenshotName(testDescription)
 
-    /** Name for the screenshot golden file. */
-    class GoldenScreenshotName(
-        private val description: Description,
-        private val suffix: String? = null,
-    ) {
-        fun getName(): String {
-            val testIdentifier =
-                description.className.substringAfterLast('.') +
-                    "_" +
-                    description.methodName +
-                    (suffix ?: "")
-            return testIdentifier.replace("[\\[$]".toRegex(), "_").replace("]", "")
-        }
-    }
-
     companion object {
         const val ROOT_TEST_TAG: String = "ROOT_TEST_TAG"
     }

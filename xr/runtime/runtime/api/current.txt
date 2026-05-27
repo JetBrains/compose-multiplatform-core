@@ -2,6 +2,8 @@
 package androidx.xr.runtime {
 
   public final class AnchorPersistenceMode extends androidx.xr.runtime.Config.ConfigMode {
+    method @InaccessibleFromKotlin public int getMode();
+    property public int mode;
     field public static final androidx.xr.runtime.AnchorPersistenceMode.Companion Companion;
     field public static final androidx.xr.runtime.AnchorPersistenceMode DISABLED;
     field public static final androidx.xr.runtime.AnchorPersistenceMode LOCAL;
@@ -122,6 +124,8 @@ package androidx.xr.runtime {
   }
 
   public final class DepthEstimationMode extends androidx.xr.runtime.Config.ConfigMode {
+    method @InaccessibleFromKotlin public int getMode();
+    property public int mode;
     field public static final androidx.xr.runtime.DepthEstimationMode.Companion Companion;
     field public static final androidx.xr.runtime.DepthEstimationMode DISABLED;
     field public static final androidx.xr.runtime.DepthEstimationMode RAW_ONLY;
@@ -137,6 +141,8 @@ package androidx.xr.runtime {
   }
 
   public final class DeviceTrackingMode extends androidx.xr.runtime.Config.ConfigMode {
+    method @InaccessibleFromKotlin public int getMode();
+    property public int mode;
     field public static final androidx.xr.runtime.DeviceTrackingMode.Companion Companion;
     field public static final androidx.xr.runtime.DeviceTrackingMode DISABLED;
     field @Deprecated public static final androidx.xr.runtime.DeviceTrackingMode LAST_KNOWN;
@@ -191,6 +197,8 @@ package androidx.xr.runtime {
   }
 
   public final class FaceTrackingMode extends androidx.xr.runtime.Config.ConfigMode {
+    method @InaccessibleFromKotlin public int getMode();
+    property public int mode;
     field public static final androidx.xr.runtime.FaceTrackingMode BLEND_SHAPES;
     field public static final androidx.xr.runtime.FaceTrackingMode.Companion Companion;
     field public static final androidx.xr.runtime.FaceTrackingMode DISABLED;
@@ -220,6 +228,8 @@ package androidx.xr.runtime {
   }
 
   public final class GeospatialMode extends androidx.xr.runtime.Config.ConfigMode {
+    method @InaccessibleFromKotlin public int getMode();
+    property public int mode;
     field public static final androidx.xr.runtime.GeospatialMode.Companion Companion;
     field public static final androidx.xr.runtime.GeospatialMode DISABLED;
     field public static final androidx.xr.runtime.GeospatialMode INERTIAL;
@@ -235,6 +245,8 @@ package androidx.xr.runtime {
   }
 
   public final class HandTrackingMode extends androidx.xr.runtime.Config.ConfigMode {
+    method @InaccessibleFromKotlin public int getMode();
+    property public int mode;
     field public static final androidx.xr.runtime.HandTrackingMode BOTH;
     field public static final androidx.xr.runtime.HandTrackingMode.Companion Companion;
     field public static final androidx.xr.runtime.HandTrackingMode DISABLED;
@@ -263,6 +275,8 @@ package androidx.xr.runtime {
   }
 
   public final class PlaneTrackingMode extends androidx.xr.runtime.Config.ConfigMode {
+    method @InaccessibleFromKotlin public int getMode();
+    property public int mode;
     field public static final androidx.xr.runtime.PlaneTrackingMode.Companion Companion;
     field public static final androidx.xr.runtime.PlaneTrackingMode DISABLED;
     field public static final androidx.xr.runtime.PlaneTrackingMode HORIZONTAL_AND_VERTICAL;
@@ -414,21 +428,6 @@ package androidx.xr.runtime {
     field public static final int SPATIAL_API_V2 = 2; // 0x2
     field public static final int SPATIAL_API_V3 = 3; // 0x3
     field public static final int UNKNOWN = 0; // 0x0
-  }
-
-  public final class TrackingState {
-    field public static final androidx.xr.runtime.TrackingState.Companion Companion;
-    field public static final androidx.xr.runtime.TrackingState PAUSED;
-    field public static final androidx.xr.runtime.TrackingState STOPPED;
-    field public static final androidx.xr.runtime.TrackingState TRACKING;
-    field public static final androidx.xr.runtime.TrackingState TRACKING_DEGRADED;
-  }
-
-  public static final class TrackingState.Companion {
-    property public androidx.xr.runtime.TrackingState PAUSED;
-    property public androidx.xr.runtime.TrackingState STOPPED;
-    property public androidx.xr.runtime.TrackingState TRACKING;
-    property public androidx.xr.runtime.TrackingState TRACKING_DEGRADED;
   }
 
   @SuppressCompatibility @kotlin.RequiresOptIn(message="Access to native pointers is discouraged and the data returned by this API may change in the future.") @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) public @interface UnstableNativeResourceApi {

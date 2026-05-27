@@ -16,14 +16,13 @@
 
 package androidx.compose.remote.creation.compose.modifier
 
-import androidx.annotation.RestrictTo
 import androidx.compose.remote.creation.compose.state.RemoteFloat
 
 /**
  * Draw content with modified alpha that may be less than 1.
  *
+ * @sample androidx.compose.remote.creation.compose.samples.AlphaSample
  * @param alpha the fraction of children's alpha value and must be between `0` and `1`, inclusive.
  * @see graphicsLayer
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public fun RemoteModifier.alpha(alpha: RemoteFloat): RemoteModifier = graphicsLayer(alpha = alpha)
