@@ -173,6 +173,7 @@ internal class DefaultWindowState(private val viewportContainer: Element) : Comp
     override fun sizeFlow() = channel.receiveAsFlow()
 }
 
+@VisibleForTesting
 // This value is for internal usage, for example, to call ComposeWindow.dispose() in the tests
 internal val LocalComposeWindow: ProvidableCompositionLocal<ComposeWindow?> = staticCompositionLocalOf {
     error("ComposeWindow is not available in this composition")
