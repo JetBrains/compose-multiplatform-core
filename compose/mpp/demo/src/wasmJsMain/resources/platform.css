@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package androidx.navigationevent.compose
 
-import androidx.compose.runtime.Composable
 
-@Composable internal actual fun isInspectionMode(): Boolean = false
+h1::before {
+    content: "compose multiplatform wasm demo";
+    display: block;
+}

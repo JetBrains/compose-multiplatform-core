@@ -20,16 +20,19 @@
 
 package androidx.compose.ui.platform.a11y
 
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.material.Button
 import androidx.compose.material.Text
 import androidx.compose.material.TextField
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.OnCanvasTests
 import androidx.compose.ui.currentTimeMillis
+import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.testTag
 import kotlin.test.Ignore
 import kotlin.test.Test
@@ -59,11 +62,11 @@ import org.w3c.dom.get
  *   That's why it's better to use an Int state in such tests, so the change in HTML will be noticed 100%.
  * - Note: running the k/js tests in FF takes 15% longer than in Chrome. K/Wasm is fast in both cases.
  */
-@Ignore // TODO: https://youtrack.jetbrains.com/issue/CMP-10001/Fix-CfWA11YTest.a11yButtonClick-is-too-flaky
 class CfWA11YTest : OnCanvasTests {
 
     @Test
     fun a11yButtonClick() = runApplicationTest {
+        assertEquals(0, getContainer().childElementCount, "No content expected before a composition")
         var clickCounter = 0
 
         createComposeWindow {
@@ -94,6 +97,7 @@ class CfWA11YTest : OnCanvasTests {
 
     @Test
     fun changesAreApplied() = runApplicationTest {
+        assertEquals(0, getContainer().childElementCount, "No content expected before a composition")
         var clickCounter1 = 0
         var clickCounter2 = 0
 
@@ -155,6 +159,7 @@ class CfWA11YTest : OnCanvasTests {
 
     @Test
     fun orderOfElements() = runApplicationTest {
+        assertEquals(0, getContainer().childElementCount, "No content expected before a composition")
         var show1 by mutableStateOf(true)
         var show2 by mutableStateOf(false)
         var show3 by mutableStateOf(false)
@@ -223,6 +228,7 @@ class CfWA11YTest : OnCanvasTests {
 
     @Test
     fun changesMustBeBatched() = runApplicationTest {
+        assertEquals(0, getContainer().childElementCount, "No content expected before a composition")
         var value by mutableStateOf(0)
 
         var recompositions = 0
@@ -270,6 +276,7 @@ class CfWA11YTest : OnCanvasTests {
 
     @Test
     fun changesMustBeAppliedDespiteConstantDebounceAfter1Second() = runApplicationTest {
+        assertEquals(0, getContainer().childElementCount, "No content expected before a composition")
         var value by mutableStateOf(0)
 
         createComposeWindow {
@@ -325,6 +332,7 @@ class CfWA11YTest : OnCanvasTests {
 
     @Test
     fun noChangesFor1SecondTheDebounceShouldWork() = runApplicationTest {
+        assertEquals(0, getContainer().childElementCount, "No content expected before a composition")
         var show by mutableStateOf(true)
 
         var recompositions = 0
@@ -361,6 +369,7 @@ class CfWA11YTest : OnCanvasTests {
 
     @Test
     fun clickListenerMustBeUpdated() = runApplicationTest {
+        assertEquals(0, getContainer().childElementCount, "No content expected before a composition")
         var clickCounter1 = 0
         var clickCounter2 = 0
 
@@ -409,6 +418,7 @@ class CfWA11YTest : OnCanvasTests {
 
     @Test
     fun noA11YRootAndElementsWithDisabledA11Y() = runApplicationTest {
+        assertEquals(0, getContainer().childElementCount, "No content expected before a composition")
         createComposeWindow(
             configure = { isA11YEnabled = false }
         ) {
@@ -432,6 +442,7 @@ class CfWA11YTest : OnCanvasTests {
 
     @Test
     fun modifierTestTagIsSetToId() = runApplicationTest {
+        assertEquals(0, getContainer().childElementCount, "No content expected before a composition")
         var showButton by mutableStateOf(true)
         var clickCounter = 0
 
@@ -463,6 +474,7 @@ class CfWA11YTest : OnCanvasTests {
 
     @Test
     fun textFieldHasTextBoxRole() = runApplicationTest {
+        assertEquals(0, getContainer().childElementCount, "No content expected before a composition")
         var text by mutableStateOf("Hello, World!")
 
         createComposeWindow {
@@ -480,5 +492,73 @@ class CfWA11YTest : OnCanvasTests {
 
         assertEquals("textbox", textField.getAttribute("role"))
         assertEquals("Hello, World!", textField.innerText)
+    }
+
+    @Test // A reproducer for https://youtrack.jetbrains.com/issue/CMP-10226
+    fun nodeReappearsAfterSemanticsModifierToggle() = runApplicationTest {
+        // A LayoutNode that gains/loses a semantic modifier alternates between
+        // being a semantic node (in the a11y tree with its own semanticsId)
+        // and being "transparent" (fillOneLayerOfSemanticsWrappers recurses
+        // through it). The same semanticsId reappears when the modifier is re-added.
+        var addSemantics by mutableStateOf(true)
+
+        createComposeWindow {
+            Column(
+                modifier = if (addSemantics) Modifier.testTag("myColumn") else Modifier
+            ) {
+                Text("ChildText")
+            }
+        }
+
+        awaitA11YChanges()
+        val a11yContainer = getA11YContainer()!!
+        assertTrue(a11yContainer.innerHTML.contains("ChildText"))
+        assertNotNull(getShadowRoot().getElementById("myColumn"))
+
+        // Remove semantic modifier: Column becomes transparent in the semantic tree
+        addSemantics = false
+        awaitA11YChanges()
+        assertNull(getShadowRoot().getElementById("myColumn"))
+
+        // Re-add semantic modifier: same LayoutNode, same semanticsId reappears.
+        // Without proper cleanup of tracking maps, this would crash with "Node $id not found".
+        addSemantics = true
+        awaitA11YChanges()
+        assertNotNull(getShadowRoot().getElementById("myColumn"))
+        assertTrue(a11yContainer.innerHTML.contains("ChildText"))
+    }
+
+    @Test // Reproduces the user-reported scenario from CMP-10226
+    fun spacerReappearsAfterGraphicsLayerClipToggle() = runApplicationTest {
+        // graphicsLayer sets Shape semantics ONLY when clip=true
+        // When the clip modifier is conditionally applied, the Spacer's only semantic property
+        // (Shape) appears and disappears, causing the Spacer to enter/leave the semantic tree
+        // while keeping the same LayoutNode and semanticsId.
+        var enableClip by mutableStateOf(true)
+
+        createComposeWindow {
+            // Conditionally add/remove the entire graphicsLayer modifier so
+            // the modifier chain rebuild triggers semantics invalidation.
+            Spacer(
+                modifier = if (enableClip)
+                    Modifier.graphicsLayer(clip = true, shape = RectangleShape)
+                else Modifier
+            )
+            Text("Sibling")
+        }
+
+        awaitA11YChanges()
+        val a11yContainer = getA11YContainer()!!
+        assertTrue(a11yContainer.innerHTML.contains("Sibling"))
+
+        // Remove clip modifier: Spacer loses Shape semantic → leaves the semantic tree
+        enableClip = false
+        awaitA11YChanges()
+
+        // Re-add clip modifier: same LayoutNode, same semanticsId reappears with Shape semantic.
+        // Without proper cleanup of tracking maps, this would crash with "Node $id not found".
+        enableClip = true
+        awaitA11YChanges()
+        assertTrue(a11yContainer.innerHTML.contains("Sibling"))
     }
 }

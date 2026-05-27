@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,42 +14,19 @@
  * limitations under the License.
  */
 
+package androidx.navigationevent
 
-html, body {
-    width: 100%;
-    height: 100%;
-    margin: 0;
-    padding: 0;
-    overflow: hidden;
-}
+/**
+ * A listener that provides a final fallback action for unhandled `forwardCompleted` callbacks.
+ *
+ * This is typically used to provide a default system behavior when no other part of the application
+ * consumes the forward navigation event.
+ */
+public fun interface OnForwardCompletedFallback {
 
-h1 {
-    padding: 0 16px;
-    font-size: 2em;
-}
-
-
-body {
-    display: flex;
-    flex-direction: column;
-}
-
-#composeApplication {
-    flex: 1;
-}
-
-body:has(textarea) {
-    background-color: aliceblue;
-}
-
-body:has(textarea:focus) {
-    background-color: #eaffe3;
-}
-
-body:has(input) {
-    background-color: aliceblue;
-}
-
-body:has(input:focus) {
-    background-color: #eaffe3;
+    /**
+     * Called when a `forwardCompleted` callback is dispatched but not handled by any
+     * [NavigationEventHandler].
+     */
+    public fun onForwardCompletedFallback()
 }

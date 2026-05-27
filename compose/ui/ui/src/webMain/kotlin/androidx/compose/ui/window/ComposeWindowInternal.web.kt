@@ -24,6 +24,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.InternalComposeApi
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.ProvidableCompositionLocal
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.LocalSystemTheme
 import androidx.compose.ui.draganddrop.WebDragAndDropManager
 import androidx.compose.ui.events.EventTargetListener
@@ -31,7 +33,6 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.asComposeCanvas
 import androidx.compose.ui.input.InputMode
-import androidx.compose.ui.input.InputModeManager
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.key.KeyEventType
@@ -53,9 +54,6 @@ import androidx.compose.ui.internal.checkPrecondition
 import androidx.compose.ui.internal.focusExt
 import androidx.compose.ui.navigationevent.BackNavigationEventInput
 import androidx.compose.ui.platform.DefaultArchitectureComponentsOwner
-import androidx.compose.ui.platform.DefaultHapticFeedback
-import androidx.compose.ui.platform.DefaultInputModeManager
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.PlatformDragAndDropManager
 import androidx.compose.ui.platform.PlatformTextInputMethodRequest
@@ -67,6 +65,7 @@ import androidx.compose.ui.platform.WebTextToolbar
 import androidx.compose.ui.platform.WebWakeLockManager
 import androidx.compose.ui.platform.WindowInfoImpl
 import androidx.compose.ui.platform.accessibility.ComposeWebSemanticsListener
+import androidx.compose.ui.platform.installFallbackFontDownloader
 import androidx.compose.ui.scene.CanvasLayersComposeScene
 import androidx.compose.ui.scene.ComposeSceneDragAndDropNode
 import androidx.compose.ui.scene.ComposeScenePointer
@@ -88,11 +87,6 @@ import androidx.compose.ui.viewinterop.TrackInteropPlacementContainer
 import androidx.compose.ui.viewinterop.WebInteropContainer
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.enableSavedStateHandles
-import kotlin.js.ExperimentalWasmJsInterop
-import kotlin.js.JsArray
-import kotlin.js.js
-import kotlin.js.toInt
-import kotlin.js.toList
 import kotlin.math.absoluteValue
 import kotlinx.browser.document
 import kotlinx.browser.window
@@ -181,6 +175,12 @@ internal class DefaultWindowState(private val viewportContainer: Element) : Comp
     override fun sizeFlow() = channel.receiveAsFlow()
 }
 
+@VisibleForTesting
+// This value is for internal usage, for example, to call ComposeWindow.dispose() in the tests
+internal val LocalComposeWindow: ProvidableCompositionLocal<ComposeWindow?> = staticCompositionLocalOf {
+    error("ComposeWindow is not available in this composition")
+}
+
 @OptIn(InternalComposeApi::class)
 internal class ComposeWindow(
     private val canvas: HTMLCanvasElement,
@@ -208,8 +208,6 @@ internal class ComposeWindow(
     @VisibleForTesting
     internal val archComponentsOwner = DefaultArchitectureComponentsOwner()
 
-    private val hapticFeedback = WebHapticFeedback.webHapticFeedbackOrDefault()
-
     private val navigationEventInput = BackNavigationEventInput()
 
     private val canvasEvents = EventTargetListener(canvas)
@@ -225,7 +223,6 @@ internal class ComposeWindow(
         object : PlatformContext by PlatformContext.Empty() {
             override val windowInfo get() = _windowInfo
             override val architectureComponentsOwner get() = archComponentsOwner
-            override val inputModeManager: InputModeManager = DefaultInputModeManager()
 
             override val dragAndDropManager: PlatformDragAndDropManager = object :
                 WebDragAndDropManager(rootNode, canvasEvents, state.globalEvents, density) {
@@ -252,12 +249,17 @@ internal class ComposeWindow(
                 return super.convertWindowToLocalPosition(positionInWindow)
             }
 
-            override val textToolbar: TextToolbar = WebTextToolbar()
+            override val textToolbar: TextToolbar by lazy(LazyThreadSafetyMode.NONE) {
+                WebTextToolbar()
+            }
+
+            override val hapticFeedback by lazy(LazyThreadSafetyMode.NONE) {
+                WebHapticFeedback.webHapticFeedbackOrDefault()
+            }
 
             override val semanticsOwnerListener: PlatformContext.SemanticsOwnerListener? =
                 if (configuration.isA11YEnabled) {
                     ComposeWebSemanticsListener(
-                        coroutineScope = MainScope(),
                         webSemanticsRoot = a11yContainerElement?.apply {
                             setAttribute("aria-label", "")
                             setAttribute("role", "presentation")
@@ -271,25 +273,27 @@ internal class ComposeWindow(
                     null
                 }
 
-            override val textInputService: WebTextInputService = object : WebTextInputService() {
+            override val textInputService: WebTextInputService by lazy(LazyThreadSafetyMode.NONE) {
+                object : WebTextInputService() {
 
-                override val currentTouchOffset: Offset?
-                    get() = activeTouchOffset
+                    override val currentTouchOffset: Offset?
+                        get() = activeTouchOffset
 
-                override val backingDomInputContainer: HTMLElement
-                    get() = layerRoot
+                    override val backingDomInputContainer: HTMLElement
+                        get() = layerRoot
 
-                override fun getNewGeometryForBackingInput(rect: Rect): DpRect {
-                    val dpRect = rect.toDpRect(density)
-                    val left = dpRect.left.value
-                    val top = dpRect.top.value
+                    override fun getNewGeometryForBackingInput(rect: Rect): DpRect {
+                        val dpRect = rect.toDpRect(density)
+                        val left = dpRect.left.value
+                        val top = dpRect.top.value
 
-                    return DpRect(DpOffset(left.dp, top.dp), dpRect.size)
-                }
+                        return DpRect(DpOffset(left.dp, top.dp), dpRect.size)
+                    }
 
-                override fun processKeyboardEvent(keyEvent: KeyEvent): Boolean {
-                    //this@ComposeWindow.processKeyboardEvent(keyboardEvent)
-                    return scene.sendKeyEvent(keyEvent)
+                    override fun processKeyboardEvent(keyEvent: KeyEvent): Boolean {
+                        //this@ComposeWindow.processKeyboardEvent(keyboardEvent)
+                        return scene.sendKeyEvent(keyEvent)
+                    }
                 }
             }
 
@@ -470,10 +474,11 @@ internal class ComposeWindow(
         scene.setContent {
             CompositionLocalProvider(
                 LocalSystemTheme provides systemThemeObserver.currentSystemTheme.value,
-                LocalHapticFeedback provides hapticFeedback,
                 LocalInteropContainer provides interopContainer,
                 LocalActiveClipEventsTarget provides clipEventsTargetProvider,
+                LocalComposeWindow provides this,
                 content = {
+                    installFallbackFontDownloader()
                     interopContainer.TrackInteropPlacementContainer {
                         content()
                     }
@@ -483,6 +488,18 @@ internal class ComposeWindow(
                             // Convert to proper type: IntSize was exposed to public API with meaning of DPs.
                             val boxSize = DpSize(size.width.dp, size.height.dp)
                             this@ComposeWindow.resize(boxSize)
+                        }
+                    }
+
+                    val webSemanticsListener = platformContext.semanticsOwnerListener as? ComposeWebSemanticsListener
+                    if (webSemanticsListener != null) {
+                        LaunchedEffect(Unit) {
+                            coroutineScope {
+                                // The initial composition would create a lot of noisy invalidations,
+                                // so it makes sense to start the listener here - after the initial composition.
+                                // The composition's coroutine scope ties the listener's lifetime to the composition.
+                                webSemanticsListener.start(this)
+                            }
                         }
                     }
                 }
@@ -500,13 +517,10 @@ internal class ComposeWindow(
     private fun resize(boxSize: DpSize) {
         val sizeInPx = boxSize.toSize(density).toIntSize()
 
+        // we need to scale canvas both via CSS styling and HTML attributes
+        // https://www.khronos.org/webgl/wiki/HandlingHighDPI
         canvas.width = sizeInPx.width
         canvas.height = sizeInPx.height
-
-        // Scale canvas to allow high DPI rendering as suggested in
-        // https://www.khronos.org/webgl/wiki/HandlingHighDPI.
-        canvas.style.width = "${boxSize.width.value}px"
-        canvas.style.height = "${boxSize.height.value}px"
 
         _windowInfo.containerSize = sizeInPx
         _windowInfo.containerDpSize = boxSize

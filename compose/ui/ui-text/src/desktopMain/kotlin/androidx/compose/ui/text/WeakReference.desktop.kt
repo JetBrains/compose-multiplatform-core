@@ -14,11 +14,10 @@
  * limitations under the License.
  */
 
-package androidx.navigationevent.compose
+package androidx.compose.ui.text
 
-import androidx.compose.runtime.HostDefaultKey
-import androidx.navigationevent.NavigationEventDispatcherOwner
-
-public actual val NavigationEventDispatcherOwnerHostDefaultKey:
-    HostDefaultKey<NavigationEventDispatcherOwner?> =
-    object : HostDefaultKey<NavigationEventDispatcherOwner?> {}
+internal actual class WeakReference<T : Any> actual constructor(reference: T) {
+    private val javaReference = java.lang.ref.WeakReference(reference)
+    actual fun get(): T? = javaReference.get()
+    actual fun clear() { javaReference.clear() }
+}

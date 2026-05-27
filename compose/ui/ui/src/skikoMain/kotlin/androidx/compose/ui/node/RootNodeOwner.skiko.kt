@@ -70,7 +70,6 @@ import androidx.compose.ui.layout.RootMeasurePolicy
 import androidx.compose.ui.layout.RulerProviderModifierElement
 import androidx.compose.ui.modifier.ModifierLocalManager
 import androidx.compose.ui.platform.DefaultAccessibilityManager
-import androidx.compose.ui.platform.DefaultHapticFeedback
 import androidx.compose.ui.platform.DelegatingSoftwareKeyboardController
 import androidx.compose.ui.platform.GraphicsLayerOwnerLayer
 import androidx.compose.ui.platform.LegacyRenderNodeLayer
@@ -164,7 +163,9 @@ internal class RootNodeOwner(
             owner.root.layoutDirection = value
         }
 
-    private val rootForTest = PlatformRootForTestImpl()
+    private val rootForTest by lazy(LazyThreadSafetyMode.NONE) {
+        PlatformRootForTestImpl()
+    }
     private val ownedLayerManager = OwnedLayerManagerImpl()
     private val pointerInputEventProcessor = PointerInputEventProcessor(owner.root)
     private val measureAndLayoutDelegate = MeasureAndLayoutDelegate(owner.root)
@@ -471,7 +472,7 @@ internal class RootNodeOwner(
         override val sharedDrawScope = LayoutNodeDrawScope()
         override val layoutNodes: MutableIntObjectMap<LayoutNode> = mutableIntObjectMapOf()
         override val rootForTest get() = this@RootNodeOwner.rootForTest
-        override val hapticFeedBack = DefaultHapticFeedback()
+        override val hapticFeedBack get() = platformContext.hapticFeedback
         override val inputModeManager get() = platformContext.inputModeManager
         override val clipboardManager = createPlatformClipboardManager()
         override val clipboard = createPlatformClipboard()
@@ -486,10 +487,12 @@ internal class RootNodeOwner(
         // TODO https://youtrack.jetbrains.com/issue/CMP-1572
         override val autofillManager: AutofillManager? get() = null
         override val density get() = this@RootNodeOwner.density
-        override val textInputService =
+        override val textInputService by lazy(LazyThreadSafetyMode.NONE) {
             TextInputService(platformContext.textInputService)
-        override val softwareKeyboardController =
+        }
+        override val softwareKeyboardController by lazy(LazyThreadSafetyMode.NONE) {
             DelegatingSoftwareKeyboardController(textInputService)
+        }
 
         private val textInputSessionMutex = SessionMutex<TextInputSession>()
         private inner class TextInputSession(
@@ -531,7 +534,11 @@ internal class RootNodeOwner(
         }
 
         override val dragAndDropManager = this@RootNodeOwner.dragAndDropOwner
-        override val pointerIconService = PointerIconServiceImpl()
+
+        override val pointerIconService by lazy(LazyThreadSafetyMode.NONE) {
+            PointerIconServiceImpl()
+        }
+
         override val semanticsOwner = SemanticsOwner(root, rootSemanticsNode, layoutNodes)
         override val windowInfo get() = platformContext.windowInfo
         override val retainedValuesStore: RetainedValuesStore get() = ForgetfulRetainedValuesStore
