@@ -18,7 +18,6 @@ package androidx.compose.ui.scene
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalContext
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.mutableStateSetOf
 import androidx.compose.ui.ComposeFeatureFlags
 import androidx.compose.ui.ComposeUiFlags
@@ -46,7 +45,6 @@ import androidx.compose.ui.input.pointer.PointerKeyboardModifiers
 import androidx.compose.ui.input.pointer.PointerType
 import androidx.compose.ui.isClearFocusOnMouseDownEnabled
 import androidx.compose.ui.layout.MeasurableRootContent
-import androidx.compose.ui.layout.OverlayLayout
 import androidx.compose.ui.navigationevent.BackNavigationEventInput
 import androidx.compose.ui.platform.AwtDragAndDropManager
 import androidx.compose.ui.platform.DefaultInputModeManager
@@ -71,10 +69,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toOffset
 import androidx.compose.ui.util.fastCoerceAtLeast
 import androidx.compose.ui.util.fastRoundToInt
-import androidx.compose.ui.viewinterop.LocalInteropContainer
 import androidx.compose.ui.viewinterop.RootTrackInteropPlacementModifierElement
 import androidx.compose.ui.viewinterop.SwingInteropContainer
 import androidx.compose.ui.viewinterop.TrackInteropPlacementModifierNode
+import androidx.compose.ui.viewinterop.provideSwingInteropContainer
 import androidx.compose.ui.window.WindowExceptionHandler
 import androidx.compose.ui.window.density
 import androidx.compose.ui.window.sizeInPx
@@ -670,14 +668,11 @@ internal class ComposeSceneMediator(
         runOnceComponentAttached {
             catchExceptions {
                 scene.setContent {
-                    CompositionLocalProvider(
-                        LocalInteropContainer providesComputed { interopContainer },
-                    ) {
-                        OverlayLayout(
-                            modifier = rootInteropModifier,
-                            content = content
-                        )
-                    }
+                    provideSwingInteropContainer(
+                        rootInteropPlacementModifier = rootInteropModifier,
+                        interopContainerProvider = { interopContainer },
+                        content = content,
+                    )
                 }
             }
         }

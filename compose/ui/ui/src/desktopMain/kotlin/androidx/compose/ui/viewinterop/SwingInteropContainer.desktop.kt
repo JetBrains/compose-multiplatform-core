@@ -16,7 +16,11 @@
 
 package androidx.compose.ui.viewinterop
 
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalAccessorScope
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.snapshots.SnapshotStateObserver
+import androidx.compose.ui.layout.OverlayLayout
 import androidx.compose.ui.scene.ComposeSceneMediator
 import androidx.compose.ui.util.fastForEach
 import java.awt.Component
@@ -264,4 +268,21 @@ internal class SwingInteropContainer(
     fun getClipRectForComponent(component: Component): ClipRectangle =
         requireNotNull(interopComponents[component]) as ClipRectangle
 
+}
+
+@Suppress("NOTHING_TO_INLINE")
+@Composable
+internal inline fun provideSwingInteropContainer(
+    rootInteropPlacementModifier: TrackInteropPlacementModifierNode,
+    noinline interopContainerProvider :  CompositionLocalAccessorScope.() -> InteropContainer,
+    noinline content: @Composable () -> Unit
+) {
+    CompositionLocalProvider(
+        LocalInteropContainer providesComputed interopContainerProvider,
+    ) {
+        OverlayLayout(
+            modifier = rootInteropPlacementModifier,
+            content = content
+        )
+    }
 }
