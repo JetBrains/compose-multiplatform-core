@@ -17,6 +17,6 @@
 
 
 h1::before {
-    position: absolute;
     content: "compose multiplatform wasm demo";
+    display: block;
 }
