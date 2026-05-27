@@ -556,6 +556,15 @@ internal class RootNodeOwner(
         override val viewConfiguration get() = platformContext.viewConfiguration
         override val measureIteration: Long get() = measureAndLayoutDelegate.measureIteration
 
+        override val outOfFrameExecutor: OutOfFrameExecutor? =
+            platformContext.scheduleOutOfFrameTask?.let { schedule ->
+                object : OutOfFrameExecutor {
+                    override fun schedule(block: () -> Unit) {
+                        schedule(block)
+                    }
+                }
+            }
+
         override fun requestAutofill(node: LayoutNode) {
             // TODO: 1.8.0-beta01 Adopt requestAutofill API
             //  https://youtrack.jetbrains.com/issue/CMP-7485

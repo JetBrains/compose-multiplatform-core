@@ -192,6 +192,12 @@ interface PlatformContext {
     val isClearFocusOnMouseDownEnabled: Boolean
         get() = ComposeUiFlags.isClearFocusOnMouseDownEnabled
 
+    /**
+     * Schedules a task to run after the current frame work, but before the next frame starts.
+     */
+    val scheduleOutOfFrameTask: ((block: () -> Unit) -> Unit)?
+        get() = null
+
     interface RootForTestListener {
         fun onRootForTestCreated(root: PlatformRootForTest)
         fun onRootForTestDisposed(root: PlatformRootForTest)

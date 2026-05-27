@@ -33,7 +33,6 @@ import androidx.compose.ui.graphics.Canvas
 import androidx.compose.ui.hapticfeedback.CupertinoHapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedback
 import androidx.compose.ui.input.InputMode
-import androidx.compose.ui.input.InputModeManager
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.key.KeyEventType
@@ -750,6 +749,9 @@ internal class ComposeSceneMediator(
         override fun voteFrameRate(frameRate: Float, frameRateCategory: Float) {
             redrawer.voteFrameRate(frameRate, frameRateCategory)
         }
+
+        override val scheduleOutOfFrameTask
+            get() = if (isActive) redrawer.outOfFrameExecutor::schedule else null
 
         override suspend fun startInputMethod(request: PlatformTextInputMethodRequest): Nothing {
             this@ComposeSceneMediator.textInputService.startInputMethod(request)
