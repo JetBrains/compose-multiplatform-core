@@ -239,13 +239,17 @@ class ComposePanel @ExperimentalComposeUiApi constructor(
         // to keep the lambda describing composable content and set the content only when
         // everything is ready to avoid accidental crashes and memory leaks on all supported OS
         // types.
-        val wrappedContent: @Composable () -> Unit = {
+        val wrappedContent = wrapContent(content)
+        _composeContent = wrappedContent
+        _composeContainer?.setContent(wrappedContent)
+    }
+
+    private fun wrapContent(content: @Composable () -> Unit): @Composable () -> Unit {
+        return {
             CompositionLocalProvider(LocalAwtWindow provides windowParent) {
                 content()
             }
         }
-        _composeContent = wrappedContent
-        _composeContainer?.setContent(wrappedContent)
     }
 
     /**
