@@ -197,7 +197,7 @@ internal class ComposeSceneMediator(
     composeSceneFactory: (
         invalidate: () -> Unit,
         platformContext: PlatformContext,
-        coroutineContext: CoroutineContext,
+        frameRecomposer: FrameRecomposer,
     ) -> ComposeScene,
 ) {
     private var onPreviewKeyEvent: (KeyEvent) -> Boolean = { false }
@@ -227,7 +227,7 @@ internal class ComposeSceneMediator(
         composeSceneFactory(
             redrawer::setNeedsRedraw,
             PlatformContextImpl(),
-            frameRecomposer.compositionContext.effectCoroutineContext,
+            frameRecomposer,
         )
     }
 

@@ -188,10 +188,10 @@ class ImageComposeScene @ExperimentalComposeUiApi constructor(
     }
 
     private val scene = CanvasLayersComposeScene(
+        frameRecomposer = frameRecomposer,
         density = density,
         layoutDirection = layoutDirection,
         size = imageSize,
-        coroutineContext = frameRecomposer.compositionContext.effectCoroutineContext,
         platformContext = _platformContext
     ).also {
         it.setContent(content = content)

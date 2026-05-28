@@ -30,14 +30,13 @@ import androidx.compose.ui.layout.MeasurableRootContent
 import androidx.compose.ui.node.InternalCoreApi
 import androidx.compose.ui.node.LayoutNode
 import androidx.compose.ui.node.RootNodeOwner
+import androidx.compose.ui.platform.FrameRecomposer
 import androidx.compose.ui.platform.setContent
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.viewinterop.InteropView
-import kotlin.coroutines.CoroutineContext
-import kotlinx.coroutines.Dispatchers
 
 /**
  * Constructs a single-layer [ComposeScene] using the specified parameters. It utilizes
@@ -46,12 +45,13 @@ import kotlinx.coroutines.Dispatchers
  * After [ComposeScene] will no longer needed, you should call [ComposeScene.close] method, so
  * all resources and subscriptions will be properly closed. Otherwise, there can be a memory leak.
  *
+ * @param frameRecomposer The host-owned recomposer and frame clock that drives this scene. The
+ * scene launches its content effects on [FrameRecomposer.compositionContext]'s effect context, so
+ * effects and animations are performed by the host's [FrameRecomposer.performFrame].
  * @param density Initial density of the content which will be used to convert [Dp] units.
  * @param layoutDirection Initial layout direction of the content.
  * @param size The size of the [ComposeScene]. Default value is `null`, which means the size will be
  * determined by the content.
- * @param coroutineContext Context which will be used to launch effects ([LaunchedEffect],
- * [rememberCoroutineScope]) and run recompositions.
  * @param composeSceneContext The context to share resources between multiple scenes and provide
  * a way for platform interaction.
  * @param invalidateLayout The function to be called when the content requires another
@@ -63,33 +63,33 @@ import kotlinx.coroutines.Dispatchers
  */
 @InternalComposeUiApi
 fun PlatformLayersComposeScene(
+    frameRecomposer: FrameRecomposer,
     density: Density = Density(1f),
     layoutDirection: LayoutDirection = LayoutDirection.Ltr,
     size: IntSize? = null,
-    // TODO: Remove `Dispatchers.Unconfined` as a default
-    coroutineContext: CoroutineContext = Dispatchers.Unconfined,
     composeSceneContext: ComposeSceneContext = ComposeSceneContext.Empty(),
     invalidateLayout: () -> Unit = {},
     invalidateDraw: () -> Unit = {},
 ): ComposeScene = PlatformLayersComposeSceneImpl(
+    frameRecomposer = frameRecomposer,
     density = density,
     layoutDirection = layoutDirection,
     size = size,
-    coroutineContext = coroutineContext,
     composeSceneContext = composeSceneContext,
     invalidateLayout = invalidateLayout,
     invalidateDraw = invalidateDraw,
 )
 
 private class PlatformLayersComposeSceneImpl(
+    frameRecomposer: FrameRecomposer,
     density: Density,
     layoutDirection: LayoutDirection,
     size: IntSize?,
-    coroutineContext: CoroutineContext,
     override val composeSceneContext: ComposeSceneContext,
     invalidateLayout: () -> Unit,
     invalidateDraw: () -> Unit,
 ) : BaseComposeScene(
+    frameRecomposer = frameRecomposer,
     invalidateLayout = invalidateLayout,
     invalidateDraw = invalidateDraw,
 ) {
@@ -97,7 +97,7 @@ private class PlatformLayersComposeSceneImpl(
         RootNodeOwner(
             density = density,
             layoutDirection = layoutDirection,
-            coroutineContext = coroutineContext,
+            coroutineContext = frameRecomposer.compositionContext.effectCoroutineContext,
             size = size,
             platformContext = composeSceneContext.platformContext,
             snapshotInvalidationTracker = snapshotInvalidationTracker,

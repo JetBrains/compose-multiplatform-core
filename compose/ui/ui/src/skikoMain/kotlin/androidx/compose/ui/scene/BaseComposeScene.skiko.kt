@@ -40,7 +40,6 @@ import androidx.compose.ui.platform.FrameRecomposer
 import androidx.compose.ui.platform.GlobalSnapshotManager
 import androidx.compose.ui.platform.ProvidePlatformCompositionLocals
 import androidx.compose.ui.platform.compositionContext
-import androidx.compose.ui.platform.findFrameRecomposerInNearestAncestor
 import androidx.compose.ui.platform.findCompositionContextInNearestAncestor
 import androidx.compose.ui.util.trace
 import kotlin.concurrent.Volatile
@@ -54,6 +53,7 @@ import kotlin.concurrent.Volatile
  */
 @OptIn(InternalComposeUiApi::class)
 internal abstract class BaseComposeScene(
+    private val frameRecomposer: FrameRecomposer,
     private val invalidateLayout: () -> Unit,
     private val invalidateDraw: () -> Unit,
 ) : ComposeScene {
@@ -162,7 +162,7 @@ internal abstract class BaseComposeScene(
              * changed parameters can be applied in a separate turn and trigger double
              * recomposition when new content is installed.
              */
-            resolveFrameRecomposer().performScheduledRecomposerTasks()
+            frameRecomposer.performScheduledRecomposerTasks()
             composition?.dispose()
             composition = createComposition {
                 ProvidePlatformCompositionLocals(
@@ -173,7 +173,7 @@ internal abstract class BaseComposeScene(
                     content = content
                 )
             }
-            resolveFrameRecomposer().performScheduledRecomposerTasks()
+            frameRecomposer.performScheduledRecomposerTasks()
         }
 
     override fun measureAndLayout() {
@@ -187,7 +187,7 @@ internal abstract class BaseComposeScene(
 
             // Schedule synthetic events to be sent after measure/layout completes.
             if (inputHandler.needUpdatePointerPosition) {
-                resolveFrameRecomposer().dispatch {
+                frameRecomposer.dispatch {
                     inputHandler.updatePointerPosition()
                 }
             }
@@ -235,7 +235,7 @@ internal abstract class BaseComposeScene(
             scaleGestureFactor = scaleGestureFactor,
             panGestureOffset = panGestureOffset,
         ).also {
-            resolveFrameRecomposer().performScheduledEffects()
+            frameRecomposer.performScheduledEffects()
         }
     }
 
@@ -266,7 +266,7 @@ internal abstract class BaseComposeScene(
             scaleGestureFactor = scaleGestureFactor,
             panGestureOffset = panGestureOffset,
         ).also {
-            resolveFrameRecomposer().performScheduledEffects()
+            frameRecomposer.performScheduledEffects()
         }
     }
 
@@ -277,7 +277,7 @@ internal abstract class BaseComposeScene(
     override fun sendKeyEvent(keyEvent: KeyEvent): Boolean =
         postponeInvalidation("BaseComposeScene:sendKeyEvent") {
             inputHandler.onKeyEvent(keyEvent).also {
-                resolveFrameRecomposer().performScheduledEffects()
+                frameRecomposer.performScheduledEffects()
             }
         }
 
@@ -292,7 +292,7 @@ internal abstract class BaseComposeScene(
             uptimeMillis = timeMillis
         )
         processRotaryScrollEvent(event).also {
-            resolveFrameRecomposer().performScheduledEffects()
+            frameRecomposer.performScheduledEffects()
         }
     }
 
@@ -301,16 +301,7 @@ internal abstract class BaseComposeScene(
         parentCompositionContext ?: with(composeSceneContext.platformContext.valueStorage) {
             compositionContext
                 ?: findCompositionContextInNearestAncestor()
-                ?: findFrameRecomposerInNearestAncestor()?.compositionContext
-                ?: error("Parent CompositionContext is not found")
-        }
-
-
-    private var frameRecomposer: FrameRecomposer? = null
-    private fun resolveFrameRecomposer(): FrameRecomposer =
-        frameRecomposer ?: with(composeSceneContext.platformContext.valueStorage) {
-            findFrameRecomposerInNearestAncestor()
-                ?: error("FrameRecomposer is not found")
+                ?: frameRecomposer.compositionContext
         }
 
     protected fun runMeasureAndLayout() {

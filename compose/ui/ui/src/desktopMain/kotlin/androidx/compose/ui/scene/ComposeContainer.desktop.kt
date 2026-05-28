@@ -386,9 +386,9 @@ internal class ComposeContainer(
         return when (layerType) {
             LayerType.OnSameCanvas ->
                 CanvasLayersComposeScene(
+                    frameRecomposer = mediator.frameRecomposer,
                     density = density,
                     layoutDirection = layoutDirection,
-                    coroutineContext = mediator.effectCoroutineContext,
                     platformContext = mediator.platformContext,
                     // TODO: Split these into native layout vs repaint invalidation on desktop.
                     // `invalidateLayout` should participate in AWT/Swing layout, while
@@ -397,9 +397,9 @@ internal class ComposeContainer(
                     invalidateDraw = mediator::onComposeInvalidation,
                 )
             else -> PlatformLayersComposeScene(
+                frameRecomposer = mediator.frameRecomposer,
                 density = density,
                 layoutDirection = layoutDirection,
-                coroutineContext = mediator.effectCoroutineContext,
                 composeSceneContext = createComposeSceneContext(
                     platformContext = mediator.platformContext
                 ),

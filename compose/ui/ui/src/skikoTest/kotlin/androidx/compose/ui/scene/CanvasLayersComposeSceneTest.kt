@@ -94,8 +94,8 @@ private fun createCanvasLayersScene(
 ): Pair<ComposeScene, AutoCloseable> {
     val frameRecomposer = FrameRecomposer(coroutineContext)
     val scene = CanvasLayersComposeScene(
+        frameRecomposer = frameRecomposer,
         size = size,
-        coroutineContext = frameRecomposer.compositionContext.effectCoroutineContext,
         platformContext = PlatformContext.Empty(frameRecomposer),
         invalidateLayout = invalidateLayout,
         invalidateDraw = invalidateDraw,

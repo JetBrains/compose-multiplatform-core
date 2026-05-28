@@ -86,7 +86,7 @@ class OnClickTest {
     fun simpleClickWithoutMove() = runTest {
         val frameRecomposer = FrameRecomposer(coroutineContext)
         val scene = CanvasLayersComposeScene(
-            coroutineContext = frameRecomposer.compositionContext.effectCoroutineContext,
+            frameRecomposer = frameRecomposer,
             platformContext = PlatformContext.Empty(frameRecomposer),
         )
         try {

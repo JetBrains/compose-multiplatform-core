@@ -26,6 +26,7 @@ import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.pointer.PointerButton
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.navigationevent.UIKitNavigationEventInput
+import androidx.compose.ui.platform.FrameRecomposer
 import androidx.compose.ui.platform.PlatformArchitectureComponentsOwner
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.uikit.ComposeContainerConfiguration
@@ -117,12 +118,12 @@ internal class UIKitComposeSceneLayer(
     private fun createComposeScene(
         invalidate: () -> Unit,
         platformContext: PlatformContext,
-        coroutineContext: CoroutineContext
+        frameRecomposer: FrameRecomposer
     ): ComposeScene =
         PlatformLayersComposeScene(
+            frameRecomposer = frameRecomposer,
             density = mediator.screenDensity,
             layoutDirection = initialLayoutDirection,
-            coroutineContext = coroutineContext,
             composeSceneContext = createComposeSceneContext(platformContext),
             // TODO: Split these into UIKit layout vs display invalidation instead of using the
             // same invalidation callback for both phases.

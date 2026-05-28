@@ -156,5 +156,4 @@ class FrameRecomposer(
 fun FrameRecomposer.asPlatformValueStorage(): PlatformValueStorage =
     PlatformValueStorage.MapValueStorage().also {
         it.compositionContext = compositionContext
-        it.frameRecomposer = this
     }

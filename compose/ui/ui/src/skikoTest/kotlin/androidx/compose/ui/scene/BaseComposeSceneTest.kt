@@ -164,8 +164,8 @@ private fun createPlatformLayersScene(
 ): Pair<ComposeScene, AutoCloseable> {
     val frameRecomposer = FrameRecomposer(coroutineContext)
     val scene = PlatformLayersComposeScene(
+        frameRecomposer = frameRecomposer,
         size = size,
-        coroutineContext = frameRecomposer.compositionContext.effectCoroutineContext,
         composeSceneContext = object : ComposeSceneContext {
             override val platformContext: PlatformContext = PlatformContext.Empty(frameRecomposer)
         },
@@ -186,8 +186,8 @@ private fun createCanvasLayersScene(
 ): Pair<ComposeScene, AutoCloseable> {
     val frameRecomposer = FrameRecomposer(coroutineContext)
     val scene = CanvasLayersComposeScene(
+        frameRecomposer = frameRecomposer,
         size = size,
-        coroutineContext = frameRecomposer.compositionContext.effectCoroutineContext,
         platformContext = PlatformContext.Empty(frameRecomposer),
         invalidateLayout = invalidateLayout,
         invalidateDraw = invalidateDraw,

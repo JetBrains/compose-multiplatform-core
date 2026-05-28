@@ -26,6 +26,7 @@ import androidx.compose.ui.SystemTheme
 import androidx.compose.ui.graphics.asComposeCanvas
 import androidx.compose.ui.navigationevent.UIKitNavigationEventInput
 import androidx.compose.ui.platform.DefaultArchitectureComponentsOwner
+import androidx.compose.ui.platform.FrameRecomposer
 import androidx.compose.ui.platform.MotionDurationScaleImpl
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.PlatformWindowContext
@@ -229,8 +230,8 @@ internal class ComposeContainer(
             architectureComponentsOwner = architectureComponentsOwner,
             coroutineContext = sceneCoroutineContext,
             redrawer = metalView.redrawer,
-            composeSceneFactory = { invalidate, context, coroutineContext ->
-                createComposeScene(invalidate, context, holder, coroutineContext)
+            composeSceneFactory = { invalidate, context, frameRecomposer ->
+                createComposeScene(invalidate, context, holder, frameRecomposer)
             },
             navigationEventInput = navigationEventInput,
             interfaceOrientationState = interfaceOrientationState,
@@ -330,11 +331,11 @@ internal class ComposeContainer(
         invalidate: () -> Unit,
         platformContext: PlatformContext,
         layersHolder: ComposeLayersHolder,
-        coroutineContext: CoroutineContext
+        frameRecomposer: FrameRecomposer
     ): ComposeScene = PlatformLayersComposeScene(
+        frameRecomposer = frameRecomposer,
         density = view.density,
         layoutDirection = layoutDirection,
-        coroutineContext = coroutineContext,
         composeSceneContext = createComposeSceneContext(
             platformContext = platformContext,
             layersHolder = layersHolder

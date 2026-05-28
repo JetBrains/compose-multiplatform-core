@@ -158,8 +158,7 @@ internal class ComposeSceneMediator(
 
     // TODO: It must be shared between Compose instances.
     //  It's supposed to be stored in platform's root via [PlatformValueStorage].
-    private val frameRecomposer = FrameRecomposer(coroutineContext, ::onComposeInvalidation)
-    val effectCoroutineContext: CoroutineContext by frameRecomposer.compositionContext::effectCoroutineContext
+    val frameRecomposer = FrameRecomposer(coroutineContext, ::onComposeInvalidation)
 
     private val _platformContext = DesktopPlatformContext()
     val platformContext: PlatformContext get() = _platformContext

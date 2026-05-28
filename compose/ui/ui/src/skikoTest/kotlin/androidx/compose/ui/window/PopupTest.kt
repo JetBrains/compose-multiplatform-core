@@ -813,12 +813,12 @@ class PopupTest {
             error("ComposeScene did not become idle")
         }
         scene = CanvasLayersComposeScene(
+            frameRecomposer = frameRecomposer,
             platformContext = object :
                 PlatformContext by PlatformContext.Empty(frameRecomposer) {}.also {
                 val windowInfo = it.windowInfo as WindowInfoImpl
                 windowInfo.containerSize = IntSize(50, 50)
             },
-            coroutineContext = frameRecomposer.compositionContext.effectCoroutineContext,
             invalidateLayout = { needsLayout = true },
             invalidateDraw = { needsDraw = true },
         )

@@ -339,7 +339,7 @@ internal class ComposeWindow(
     }
 
     private val scene = CanvasLayersComposeScene(
-        coroutineContext = frameRecomposer.compositionContext.effectCoroutineContext,
+        frameRecomposer = frameRecomposer,
         platformContext = platformContext,
         density = density,
         // TODO: Split layout invalidation from draw invalidation once the web host has distinct

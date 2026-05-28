@@ -113,7 +113,7 @@ private class ComposeWindow(
         }
     private val skiaLayer = SkiaLayer()
     private val scene = CanvasLayersComposeScene(
-        coroutineContext = frameRecomposer.compositionContext.effectCoroutineContext,
+        frameRecomposer = frameRecomposer,
         platformContext = platformContext,
         // TODO: Route these to distinct AppKit invalidation paths: layout work should use
         // native layout scheduling, while draw work should only mark display dirty.

@@ -374,7 +374,7 @@ private fun createPlatformLayersScene(
             )
     }
     val scene = PlatformLayersComposeScene(
-        coroutineContext = frameRecomposer.compositionContext.effectCoroutineContext,
+        frameRecomposer = frameRecomposer,
         composeSceneContext = object : ComposeSceneContext {
             override val platformContext get() = scenePlatformContext
         },

@@ -73,7 +73,7 @@ internal class RenderingTestScope(
     val surface: Surface = Surface.makeRasterN32Premul(width, height)
     private val canvas = surface.canvas.asComposeCanvas()
     val scene = CanvasLayersComposeScene(
-        coroutineContext = frameRecomposer.compositionContext.effectCoroutineContext,
+        frameRecomposer = frameRecomposer,
         platformContext = PlatformContext.Empty(frameRecomposer),
         invalidateLayout = ::requestFrame,
         invalidateDraw = ::requestFrame,

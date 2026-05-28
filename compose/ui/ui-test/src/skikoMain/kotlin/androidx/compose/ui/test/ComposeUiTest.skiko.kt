@@ -326,9 +326,9 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
     private fun createScene() {
         frameRecomposer = FrameRecomposer(recomposerCoroutineScope.coroutineContext)
         scene = CanvasLayersComposeScene(
+            frameRecomposer = frameRecomposer,
             density = density,
             size = size,
-            coroutineContext = frameRecomposer.compositionContext.effectCoroutineContext,
             platformContext = TestContext(),
             invalidateLayout = { },
             invalidateDraw = { },
