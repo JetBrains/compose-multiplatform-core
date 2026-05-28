@@ -310,7 +310,7 @@ internal class ComposeContainer(
                     layersViewController = layersHolder.getLayersViewController(),
                     initialLayoutDirection = layoutDirection,
                     configuration = configuration,
-                    onAccessibilityChanged = ::onFocusConditionsChanged,
+                    onFocusConditionsChanged = ::onFocusConditionsChanged,
                     focusedViewsList = if (focusable) focusedViewsList.childFocusedViewsList() else null,
                     consumePointerInputOutside = consumePointerInputOutside,
                     parentCoroutineContext = compositionContext.effectCoroutineContext,
