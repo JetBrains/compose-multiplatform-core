@@ -29,6 +29,7 @@ import androidx.compose.ui.unit.offset
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastMap
 import androidx.compose.ui.util.fastMaxBy
+import androidx.compose.ui.util.fastMaxOfOrDefault
 import kotlin.math.min
 
 internal fun RootMeasurePolicy(
@@ -40,11 +41,11 @@ internal fun RootMeasurePolicy(
         constraints, platformInsets, usePlatformDefaultWidth
     )
     val placeables = measurables.fastMap { it.measure(platformConstraints) }
-    layout(constraints.maxWidth, constraints.maxHeight) {
-        val contentSize = IntSize(
-            width = placeables.fastMaxBy { it.width }?.width ?: constraints.minWidth,
-            height = placeables.fastMaxBy { it.height }?.height ?: constraints.minHeight
-        )
+    val contentWidth = placeables.fastMaxOfOrDefault(constraints.minWidth) { it.measuredWidth }
+    val contentHeight = placeables.fastMaxOfOrDefault(constraints.minHeight) { it.measuredHeight }
+
+    layout(contentWidth, contentHeight) {
+        val contentSize = IntSize(contentWidth, contentHeight)
         val position = calculatePosition(contentSize)
         placeables.fastForEach {
             it.place(position.x, position.y)

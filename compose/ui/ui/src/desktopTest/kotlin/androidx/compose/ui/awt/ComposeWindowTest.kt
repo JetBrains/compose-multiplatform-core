@@ -43,6 +43,7 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.awt.UNSPECIFIED_DIMENSION_VALUE
 import androidx.compose.ui.unit.awt.UnspecifiedDimension
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.WindowExceptionHandler
 import androidx.compose.ui.window.copy
 import androidx.compose.ui.window.density
@@ -56,6 +57,7 @@ import java.awt.event.MouseEvent.BUTTON1
 import java.awt.event.MouseEvent.MOUSE_ENTERED
 import java.awt.event.MouseEvent.MOUSE_MOVED
 import java.awt.event.WindowEvent
+import javax.swing.JFrame
 import kotlin.math.roundToInt
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.skiko.ExperimentalSkikoApi
@@ -382,6 +384,26 @@ class ComposeWindowTest {
     fun `ComposeWindow setPreferredSize`() = testComposeWindowSizeSetting {
         this.preferredSize = it
         pack()
+    }
+
+    @Test
+    fun `ComposeWindow with popup prefSize`() = runApplicationTest {
+        val window = ComposeWindow().apply {
+            setContent {
+                Box(Modifier.size(100.dp))
+                Popup {
+                    Box(Modifier.size(500.dp))
+                }
+            }
+        }
+
+        try {
+            window.pack()
+            val size = window.size
+            assertThat(size).isEqualTo(Dimension(500, 500) + window.insets)
+        } finally {
+            window.dispose()
+        }
     }
 
     private class TestException : Exception()

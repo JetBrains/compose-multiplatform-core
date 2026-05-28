@@ -42,6 +42,7 @@ import androidx.compose.ui.unit.ExperimentalUnitApi
 import androidx.compose.ui.unit.awt.UNSPECIFIED_DIMENSION_VALUE
 import androidx.compose.ui.unit.awt.UnspecifiedDimension
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.WindowExceptionHandler
 import androidx.compose.ui.window.copy
 import androidx.compose.ui.window.density
@@ -365,6 +366,26 @@ class ComposeDialogTest {
     fun `ComposeDialog setPreferredSize`() = testComposeDialogSizeSetting {
         this.preferredSize = it
         pack()
+    }
+
+    @Test
+    fun `ComposeDialog with popup prefSize`() = runApplicationTest {
+        val dialog = ComposeDialog().apply {
+            setContent {
+                Box(Modifier.size(100.dp))
+                Popup {
+                    Box(Modifier.size(500.dp))
+                }
+            }
+        }
+
+        try {
+            dialog.pack()
+            val size = dialog.size
+            assertThat(size).isEqualTo(Dimension(500, 500) + dialog.insets)
+        } finally {
+            dialog.dispose()
+        }
     }
 
     private class TestException : Exception()

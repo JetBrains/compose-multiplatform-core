@@ -69,6 +69,7 @@ import androidx.compose.ui.util.ThrowUncaughtExceptionRule
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import androidx.compose.ui.window.density
+import androidx.compose.ui.window.plus
 import androidx.compose.ui.window.runApplicationTest
 import androidx.compose.ui.window.waitForFocusGain
 import androidx.savedstate.SavedState
@@ -1026,6 +1027,29 @@ class ComposePanelTest {
         setSizeProperty = { maximumSize = it },
         getSizeProperty = { maximumSize }
     )
+
+    @Test
+    fun `ComposePanel with popup prefSize`() = runApplicationTest {
+        val composePanel = ComposePanel().also {
+            it.setContent {
+                Box(Modifier.size(100.dp))
+                Popup {
+                    Box(Modifier.size(500.dp))
+                }
+            }
+        }
+        val frame = JFrame().apply {
+            contentPane.add(composePanel)
+        }
+
+        try {
+            frame.pack()
+            val size = frame.size
+            assertThat(size).isEqualTo(Dimension(500, 500) + frame.insets)
+        } finally {
+            frame.dispose()
+        }
+    }
 }
 
 private fun LayoutManager(sizeFunction: Component.() -> Dimension?): LayoutManager {

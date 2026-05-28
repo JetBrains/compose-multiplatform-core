@@ -56,6 +56,7 @@ import androidx.compose.ui.util.fastLastOrNull
 import androidx.compose.ui.viewinterop.InteropView
 import androidx.compose.ui.window.getDialogScrimBlendMode
 import kotlin.coroutines.CoroutineContext
+import kotlin.math.max
 import kotlinx.coroutines.Dispatchers
 
 /**
@@ -200,7 +201,17 @@ private class CanvasLayersComposeSceneImpl(
     }
 
     override fun measureContent(constraints: Constraints): IntSize {
-        return mainOwner.measureContentWithConstraints(constraints)
+        val mainSize = mainOwner.measureContentWithConstraints(constraints)
+        if (layers.isEmpty()) return mainSize
+
+        var width = mainSize.width
+        var height = mainSize.height
+        layers.fastForEach { layer ->
+            val layerSize = layer.owner.measureContentWithConstraints(constraints)
+            width = max(width, layerSize.width)
+            height = max(height, layerSize.height)
+        }
+        return IntSize(width, height)
     }
 
     override fun invalidatePositionInWindow() {
