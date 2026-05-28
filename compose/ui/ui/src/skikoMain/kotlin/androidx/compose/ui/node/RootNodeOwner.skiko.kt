@@ -168,7 +168,6 @@ internal class RootNodeOwner(
     private val pointerInputEventProcessor = PointerInputEventProcessor(owner.root)
     private val measureAndLayoutDelegate = MeasureAndLayoutDelegate(owner.root)
 
-    private val onPointerUpdateCallback = inputHandler::onPointerUpdate
     private var isDisposed = false
 
     private var positionInWindow: Offset? = null
@@ -421,6 +420,8 @@ internal class RootNodeOwner(
         layoutDirection: LayoutDirection,
         override val coroutineContext: CoroutineContext,
     ) : Owner {
+
+        private val onPointerUpdateCallback = inputHandler::onPointerUpdate
         private val platformFocusOwner = object : PlatformFocusOwner {
             override fun requestOwnerFocus(
                 focusDirection: FocusDirection?,
