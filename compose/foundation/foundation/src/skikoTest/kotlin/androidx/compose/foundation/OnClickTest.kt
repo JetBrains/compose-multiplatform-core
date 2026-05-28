@@ -30,7 +30,6 @@ import androidx.compose.ui.input.pointer.PointerKeyboardModifiers
 import androidx.compose.ui.input.pointer.PointerType
 import androidx.compose.ui.input.pointer.isAltPressed
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.FrameRecomposer
 import androidx.compose.ui.platform.LocalViewConfiguration
 import androidx.compose.ui.platform.ViewConfiguration
@@ -87,7 +86,6 @@ class OnClickTest {
         val frameRecomposer = FrameRecomposer(coroutineContext)
         val scene = CanvasLayersComposeScene(
             frameRecomposer = frameRecomposer,
-            platformContext = PlatformContext.Empty(frameRecomposer),
         )
         try {
             scene.size = IntSize(100, 100)

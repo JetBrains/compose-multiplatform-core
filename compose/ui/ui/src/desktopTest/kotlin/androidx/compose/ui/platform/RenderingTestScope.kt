@@ -74,7 +74,6 @@ internal class RenderingTestScope(
     private val canvas = surface.canvas.asComposeCanvas()
     val scene = CanvasLayersComposeScene(
         frameRecomposer = frameRecomposer,
-        platformContext = PlatformContext.Empty(frameRecomposer),
         invalidateLayout = ::requestFrame,
         invalidateDraw = ::requestFrame,
     ).apply {

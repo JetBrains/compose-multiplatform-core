@@ -62,7 +62,7 @@ import androidx.compose.ui.platform.PlatformWindowContext
 import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.platform.WindowInfo
 import androidx.compose.ui.platform.a11y.ComposeSceneAccessibility
-import androidx.compose.ui.platform.asPlatformValueStorage
+import androidx.compose.ui.platform.compositionContext
 import androidx.compose.ui.scene.skia.SkiaLayerComponent
 import androidx.compose.ui.semantics.SemanticsOwner
 import androidx.compose.ui.unit.Density
@@ -74,9 +74,9 @@ import androidx.compose.ui.util.fastCoerceAtLeast
 import androidx.compose.ui.util.fastRoundToInt
 import androidx.compose.ui.viewinterop.SwingInteropContainer
 import androidx.compose.ui.window.WindowExceptionHandler
-import androidx.compose.ui.window.toDpOffset
 import androidx.compose.ui.window.density
 import androidx.compose.ui.window.sizeInPx
+import androidx.compose.ui.window.toDpOffset
 import java.awt.Component
 import java.awt.Cursor
 import java.awt.Dimension
@@ -713,8 +713,13 @@ internal class ComposeSceneMediator(
     override fun onRender(canvas: Canvas, width: Int, height: Int, nanoTime: Long) = catchExceptions {
         interopContainer.postponingExecutingScheduledUpdates {
             canvas.withSceneOffset {
+                // TODO: Call once per frame (across all instances) before platform views layout phase
                 frameRecomposer.performFrame(nanoTime)
+
+                // TODO: Call during platform views layout phase. Should be triggered by platform view invalidation
+                //  (which is triggered by frameRecomposer in case of cases OR regular platform invalidation)
                 scene.measureAndLayout()
+
                 scene.draw(asComposeCanvas())
             }
         }
@@ -810,7 +815,9 @@ internal class ComposeSceneMediator(
         // host component, and make parent lookup traverse the Swing containment hierarchy.
         override val valueStorage: PlatformValueStorage =
             PlatformValueStorage.MapValueStorage(
-                parent = frameRecomposer.asPlatformValueStorage()
+                parent = PlatformValueStorage.MapValueStorage().also {
+                    it.compositionContext = frameRecomposer.compositionContext
+                }
             )
 
         override val windowInfo: WindowInfo get() = windowContext.windowInfo

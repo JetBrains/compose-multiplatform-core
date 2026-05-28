@@ -35,11 +35,11 @@ import kotlinx.coroutines.withContext
  * Owns a recomposer and frame clock shared by one or more scenes hosted by the same platform
  * container.
  *
- * This is the Skiko equivalent of the Android host-side recomposer/frame-clock machinery: Android
- * drives global snapshot notifications through `GlobalSnapshotManager`, drains dispatcher work on
- * the UI thread, then lets the recomposer resume frame-clock awaiters and apply changes. Skiko
- * platforms do not have a shared Android-style View/Choreographer integration point, so the host
- * calls [performFrame] explicitly before driving scene measure/layout and draw.
+ * This is an equivalent of the Android host-side recomposer/frame-clock machinery: Android drives
+ * global snapshot notifications through `GlobalSnapshotManager`, drains dispatcher work on
+ * the UI thread, then lets the recomposer resume frame-clock awaiters and apply changes.
+ * Non-Android platforms do not have a shared Android-style View/Choreographer integration point,
+ * so the host calls [performFrame] explicitly before driving scene measure/layout and draw.
  */
 @InternalComposeUiApi
 class FrameRecomposer(
@@ -148,12 +148,3 @@ class FrameRecomposer(
             effectDispatcher.flush()
         }
 }
-
-/**
- * Creates synthetic platform value storage backed by this host.
- */
-@InternalComposeUiApi
-fun FrameRecomposer.asPlatformValueStorage(): PlatformValueStorage =
-    PlatformValueStorage.MapValueStorage().also {
-        it.compositionContext = compositionContext
-    }

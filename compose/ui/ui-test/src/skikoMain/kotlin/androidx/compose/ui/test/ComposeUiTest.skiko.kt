@@ -37,6 +37,8 @@ import androidx.compose.ui.platform.PlatformWindowInsets
 import androidx.compose.ui.platform.WindowInfo
 import androidx.compose.ui.scene.CanvasLayersComposeScene
 import androidx.compose.ui.platform.FrameRecomposer
+import androidx.compose.ui.platform.PlatformValueStorage
+import androidx.compose.ui.platform.compositionContext
 import androidx.compose.ui.scene.ComposeScene
 import androidx.compose.ui.scene.hasInvalidations
 import androidx.compose.ui.semantics.SemanticsNode
@@ -565,7 +567,13 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
         }
     }
 
-    private inner class TestContext : PlatformContext by PlatformContext.Empty(frameRecomposer) {
+    private inner class TestContext : PlatformContext by PlatformContext.Empty() {
+        override val valueStorage: PlatformValueStorage =
+            PlatformValueStorage.MapValueStorage(
+                parent = PlatformValueStorage.MapValueStorage().also {
+                    it.compositionContext = frameRecomposer.compositionContext
+                }
+            )
         override val windowInfo: WindowInfo = TestWindowInfo()
         override val architectureComponentsOwner get() = this@SkikoComposeUiTest.architectureComponentsOwner
         override val rootForTestListener: PlatformContext.RootForTestListener

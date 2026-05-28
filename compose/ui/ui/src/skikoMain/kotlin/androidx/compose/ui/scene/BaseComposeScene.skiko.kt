@@ -302,7 +302,7 @@ internal abstract class BaseComposeScene(
             compositionContext
                 ?: findCompositionContextInNearestAncestor()
                 ?: frameRecomposer.compositionContext
-        }
+        }.also { parentCompositionContext = it }
 
     protected fun runMeasureAndLayout() {
         snapshotInvalidationTracker.onMeasureAndLayout()

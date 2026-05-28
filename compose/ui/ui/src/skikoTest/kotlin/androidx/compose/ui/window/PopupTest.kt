@@ -814,8 +814,7 @@ class PopupTest {
         }
         scene = CanvasLayersComposeScene(
             frameRecomposer = frameRecomposer,
-            platformContext = object :
-                PlatformContext by PlatformContext.Empty(frameRecomposer) {}.also {
+            platformContext = PlatformContext.Empty().also {
                 val windowInfo = it.windowInfo as WindowInfoImpl
                 windowInfo.containerSize = IntSize(50, 50)
             },

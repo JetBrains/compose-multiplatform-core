@@ -91,7 +91,6 @@ class GraphicLayerBugDesktopTest {
             val frameRecomposer = FrameRecomposer(coroutineContext)
             val scene = CanvasLayersComposeScene(
                 frameRecomposer = frameRecomposer,
-                platformContext = object : PlatformContext by PlatformContext.Empty(frameRecomposer) {},
             )
             try {
                 body(scene, frameRecomposer)

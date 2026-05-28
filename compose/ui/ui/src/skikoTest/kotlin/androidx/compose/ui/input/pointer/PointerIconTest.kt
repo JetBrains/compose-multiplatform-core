@@ -30,14 +30,12 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.asComposeCanvas
 import androidx.compose.ui.isEqualTo
+import androidx.compose.ui.platform.FrameRecomposer
 import androidx.compose.ui.platform.LocalPointerIconService
 import androidx.compose.ui.platform.PlatformContext
-import androidx.compose.ui.platform.FrameRecomposer
 import androidx.compose.ui.scene.ComposeScene
 import androidx.compose.ui.scene.ComposeSceneContext
-import androidx.compose.ui.platform.PlatformValueStorage
 import androidx.compose.ui.scene.PlatformLayersComposeScene
-import androidx.compose.ui.platform.asPlatformValueStorage
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.runSkikoComposeUiTest
 import androidx.compose.ui.unit.IntSize
@@ -367,16 +365,10 @@ private fun createPlatformLayersScene(
     invalidate: () -> Unit = {},
 ): Pair<ComposeScene, FrameRecomposer> {
     val frameRecomposer = FrameRecomposer(coroutineContext, invalidate)
-    val scenePlatformContext = object : PlatformContext by platformContext {
-        override val valueStorage: PlatformValueStorage =
-            PlatformValueStorage.MapValueStorage(
-                parent = frameRecomposer.asPlatformValueStorage()
-            )
-    }
     val scene = PlatformLayersComposeScene(
         frameRecomposer = frameRecomposer,
         composeSceneContext = object : ComposeSceneContext {
-            override val platformContext get() = scenePlatformContext
+            override val platformContext get() = platformContext
         },
         invalidateLayout = invalidate,
         invalidateDraw = invalidate,

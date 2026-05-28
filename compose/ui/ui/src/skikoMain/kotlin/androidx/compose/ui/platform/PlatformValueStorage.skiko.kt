@@ -74,7 +74,8 @@ interface PlatformValueStorage {
             }
         }
 
-        override fun <T : Any> findInNearestAncestor(key: Key<T>): T? = parent?.get(key)
+        override fun <T : Any> findInNearestAncestor(key: Key<T>): T? =
+            parent?.get(key) ?: parent?.findInNearestAncestor(key)
     }
 }
 

@@ -67,6 +67,8 @@ import androidx.compose.ui.platform.accessibility.ComposeWebSemanticsListener
 import androidx.compose.ui.platform.installFallbackFontDownloader
 import androidx.compose.ui.scene.CanvasLayersComposeScene
 import androidx.compose.ui.platform.FrameRecomposer
+import androidx.compose.ui.platform.PlatformValueStorage
+import androidx.compose.ui.platform.compositionContext
 import androidx.compose.ui.scene.ComposeSceneDragAndDropNode
 import androidx.compose.ui.scene.ComposeScenePointer
 import androidx.compose.ui.scene.PointerEventResult
@@ -224,7 +226,14 @@ internal class ComposeWindow(
     private val frameRecomposer = FrameRecomposer(Dispatchers.Main, invalidate = { skiaLayer.needRender() })
 
     private val platformContext: PlatformContext =
-        object : PlatformContext by PlatformContext.Empty(frameRecomposer) {
+        object : PlatformContext by PlatformContext.Empty() {
+            // TODO: Back this with associated objects on the hosting platform views
+            override val valueStorage: PlatformValueStorage =
+                PlatformValueStorage.MapValueStorage(
+                    parent = PlatformValueStorage.MapValueStorage().also {
+                        it.compositionContext = frameRecomposer.compositionContext
+                    }
+                )
             override val windowInfo get() = _windowInfo
             override val architectureComponentsOwner get() = archComponentsOwner
 

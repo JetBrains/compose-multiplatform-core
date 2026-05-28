@@ -36,6 +36,8 @@ import androidx.compose.ui.platform.WindowInfo
 import androidx.compose.ui.platform.WindowInfoImpl
 import androidx.compose.ui.scene.CanvasLayersComposeScene
 import androidx.compose.ui.platform.FrameRecomposer
+import androidx.compose.ui.platform.PlatformValueStorage
+import androidx.compose.ui.platform.compositionContext
 import androidx.compose.ui.scene.ComposeScene
 import androidx.compose.ui.scene.ComposeScenePointer
 import androidx.compose.ui.scene.hasInvalidations
@@ -163,8 +165,15 @@ class ImageComposeScene @ExperimentalComposeUiApi constructor(
 
     private val frameRecomposer = FrameRecomposer(coroutineContext)
 
-    private val _platformContext = object : PlatformContext by PlatformContext.Empty(frameRecomposer),
+    private val _platformContext = object : PlatformContext by PlatformContext.Empty(),
         PlatformContext.SemanticsOwnerListener {
+
+        override val valueStorage: PlatformValueStorage =
+            PlatformValueStorage.MapValueStorage(
+                parent = PlatformValueStorage.MapValueStorage().also {
+                    it.compositionContext = frameRecomposer.compositionContext
+                }
+            )
 
         val semanticsOwners = mutableStateSetOf<SemanticsOwner>()
 

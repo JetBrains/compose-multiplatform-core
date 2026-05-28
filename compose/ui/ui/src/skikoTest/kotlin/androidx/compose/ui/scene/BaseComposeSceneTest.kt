@@ -28,7 +28,6 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.node.DelegatingNode
 import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.node.PointerInputModifierNode
-import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.FrameRecomposer
 import androidx.compose.ui.unit.IntSize
 import kotlin.coroutines.CoroutineContext
@@ -166,9 +165,6 @@ private fun createPlatformLayersScene(
     val scene = PlatformLayersComposeScene(
         frameRecomposer = frameRecomposer,
         size = size,
-        composeSceneContext = object : ComposeSceneContext {
-            override val platformContext: PlatformContext = PlatformContext.Empty(frameRecomposer)
-        },
         invalidateLayout = invalidateLayout,
         invalidateDraw = invalidateDraw,
     )
@@ -188,7 +184,6 @@ private fun createCanvasLayersScene(
     val scene = CanvasLayersComposeScene(
         frameRecomposer = frameRecomposer,
         size = size,
-        platformContext = PlatformContext.Empty(frameRecomposer),
         invalidateLayout = invalidateLayout,
         invalidateDraw = invalidateDraw,
     )
