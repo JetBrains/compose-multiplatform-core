@@ -22,7 +22,6 @@ import androidx.compose.ui.scene.ComposeSceneMediator
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextEditorState
 import androidx.compose.ui.text.substring
-import androidx.compose.ui.util.fastCoerceAtMost
 import java.awt.Rectangle
 import java.awt.event.InputMethodEvent
 import java.awt.event.KeyEvent
@@ -220,8 +219,8 @@ private class InputMethodSession(
         // comp is null and beginIndex > endIndex.
         // TODO Check is this an expected behavior?
         val range = TextRange(
-            start = beginIndex.fastCoerceAtMost(state.length),
-            end = endIndex.fastCoerceAtMost(state.length)
+            start = beginIndex.coerceAtMost(state.length),
+            end = endIndex.coerceAtMost(state.length)
         )
         if (comp == null) {
             val res = state.substring(range)
@@ -229,8 +228,8 @@ private class InputMethodSession(
         }
         val committed = state.substring(
             TextRange(
-                min(range.min, comp.min).fastCoerceAtMost(state.length),
-                max(range.max, comp.max).fastCoerceAtMost(state.length)
+                min(range.min, comp.min).coerceAtMost(state.length),
+                max(range.max, comp.max).coerceAtMost(state.length)
             )
         )
         return AttributedString(committed).iterator

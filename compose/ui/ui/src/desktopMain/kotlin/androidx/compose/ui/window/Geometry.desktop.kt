@@ -22,11 +22,11 @@ import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.isSpecified
-import androidx.compose.ui.util.fastRoundToInt
 import java.awt.Dimension
 import java.awt.Insets
 import java.awt.Point
 import java.awt.Rectangle
+import kotlin.math.roundToInt
 
 internal val Dimension.bottomRight get() = Point(width, height)
 internal operator fun Point.plus(other: Point) = Point(x + other.x, y + other.y)
@@ -45,8 +45,8 @@ internal fun Rectangle.toDpRect() = DpRect(
 )
 
 internal fun DpSize.roundToDimension() = Dimension(
-    width.value.fastRoundToInt(),
-    height.value.fastRoundToInt()
+    width.value.roundToInt(),
+    height.value.roundToInt()
 )
 internal fun DpSize.roundToDimensionOrNull() =
     if (isSpecified) roundToDimension() else null
