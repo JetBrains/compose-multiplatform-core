@@ -194,11 +194,7 @@ internal class SyntheticEventSender(
         pointersSourceEvent: PointerInputEvent
     ): PointerEventResult {
         val previousEvent = previousEvent ?: return UnconsumedEventResult
-        val idToPosition = buildLongLongMap(pointersSourceEvent.pointers.size) {
-            pointersSourceEvent.pointers.fastForEach { ptr ->
-                put(ptr.id.value, ptr.position.packedValue)
-            }
-        }
+        val idToPosition = pointersSourceEvent.pointers.mapPointersToPosition()
         return sendInternal(
             previousEvent.copySynthetic(
                 type = PointerEventType.Move,
@@ -368,16 +364,15 @@ internal class SyntheticEventSender(
             eventType == PointerEventType.Exit
 
     private fun PointerInputEvent.isSamePosition(previousEvent: PointerInputEvent?): Boolean {
-        val previousIdToPosition: LongLongMap? = previousEvent?.pointers?.let { ptrs ->
-            buildLongLongMap(ptrs.size) {
-                ptrs.fastForEach { ptr ->
-                    put(ptr.id.value, ptr.position.packedValue)
-                }
-            }
-        }
-        return pointers.fastAll {
-            if (previousIdToPosition == null) return@fastAll true
+        val previousPointers = previousEvent?.pointers ?: return true
 
+        if (pointers.size == 1 && previousPointers.size == 1) {
+            val current = pointers[0]
+            val previous = previousPointers[0]
+            return current.id != previous.id || current.position.packedValue == previous.position.packedValue
+        }
+        val previousIdToPosition: LongLongMap = previousEvent.pointers.mapPointersToPosition()
+        return pointers.fastAll {
             val previousPosition = previousIdToPosition.getOrDefault(it.id.value, Long.MIN_VALUE)
             previousPosition == Long.MIN_VALUE || it.position.packedValue == previousPosition
         }
@@ -416,6 +411,13 @@ internal class SyntheticEventSender(
         panGestureOffset = Offset.Zero,
         originalEventPosition = position,
     )
+    private fun List<PointerInputEventData>.mapPointersToPosition(): LongLongMap = buildLongLongMap(
+        size
+    ) {
+        this@mapPointersToPosition.fastForEach { ptr ->
+            put(ptr.id.value, ptr.position.packedValue)
+        }
+    }
 }
 
 private val UnconsumedEventResult = PointerEventResult(anyMovementConsumed = false)
