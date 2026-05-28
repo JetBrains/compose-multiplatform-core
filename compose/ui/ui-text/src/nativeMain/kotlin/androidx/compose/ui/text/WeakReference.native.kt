@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 The Android Open Source Project
+ * Copyright 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,19 +14,13 @@
  * limitations under the License.
  */
 
-package androidx.compose.mpp.demo.bug
+package androidx.compose.ui.text
 
-import androidx.compose.mpp.demo.Screen
+import kotlin.experimental.ExperimentalNativeApi
 
-val BugReproducers = Screen.Selection(
-    "Bug Reproducers",
-    NoRecompositionInLazyGrid,
-    RoundedCornerCrashOnJS,
-    CodeViewerReproducer,
-    IOSSelectionContainerCrash,
-    IOSDynamicKeyboardType,
-    NoPressInteractionInOutlinedTextField,
-    WebBaselineAlways0,
-    ResizePopupCrashOnJS,
-    ResizeInLazyList,
-)
+@OptIn(ExperimentalNativeApi::class)
+internal actual class WeakReference<T : Any> actual constructor(reference: T) {
+    private val kotlinNativeReference = kotlin.native.ref.WeakReference(reference)
+    actual fun get(): T? = kotlinNativeReference.get()
+    actual fun clear() { kotlinNativeReference.clear() }
+}

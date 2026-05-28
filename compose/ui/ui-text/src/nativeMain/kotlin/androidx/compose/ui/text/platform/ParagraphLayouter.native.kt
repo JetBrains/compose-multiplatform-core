@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 The Android Open Source Project
+ * Copyright 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,19 +14,10 @@
  * limitations under the License.
  */
 
-package androidx.compose.mpp.demo.bug
+package androidx.compose.ui.text.platform
 
-import androidx.compose.mpp.demo.Screen
+import androidx.compose.runtime.InternalComposeApi
+import androidx.compose.ui.text.UnresolvedSymbolsRegistry
 
-val BugReproducers = Screen.Selection(
-    "Bug Reproducers",
-    NoRecompositionInLazyGrid,
-    RoundedCornerCrashOnJS,
-    CodeViewerReproducer,
-    IOSSelectionContainerCrash,
-    IOSDynamicKeyboardType,
-    NoPressInteractionInOutlinedTextField,
-    WebBaselineAlways0,
-    ResizePopupCrashOnJS,
-    ResizeInLazyList,
-)
+@OptIn(InternalComposeApi::class)
+internal actual fun getUnresolvedSymbolsRegistry(): UnresolvedSymbolsRegistry? = null

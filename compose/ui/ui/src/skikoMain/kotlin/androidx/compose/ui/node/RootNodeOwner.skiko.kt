@@ -542,7 +542,7 @@ internal class RootNodeOwner(
         override val semanticsOwner = SemanticsOwner(root, rootSemanticsNode, layoutNodes)
         override val windowInfo get() = platformContext.windowInfo
         override val retainedValuesStore: RetainedValuesStore get() = ForgetfulRetainedValuesStore
-        override val rectManager = RectManager()
+        override val rectManager = RectManager(layoutNodes)
 
         @Suppress("OVERRIDE_DEPRECATION", "DEPRECATION")
         override val fontLoader = androidx.compose.ui.text.platform.FontLoader()
@@ -578,7 +578,6 @@ internal class RootNodeOwner(
             measureAndLayoutDelegate.onNodeDetached(node)
             snapshotObserver.clear(node)
             needClearObservations = true
-            rectManager.remove(node)
         }
 
         override fun measureAndLayout(sendPointerUpdate: Boolean) {
@@ -678,7 +677,6 @@ internal class RootNodeOwner(
         }
 
         override fun onLayoutNodeDeactivated(layoutNode: LayoutNode) {
-            rectManager.remove(layoutNode)
         }
 
         override fun onPreLayoutNodeReused(layoutNode: LayoutNode, oldSemanticsId: Int) {
