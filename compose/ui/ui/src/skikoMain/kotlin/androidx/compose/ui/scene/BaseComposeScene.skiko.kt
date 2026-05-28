@@ -57,18 +57,16 @@ internal abstract class BaseComposeScene(
     coroutineContext: CoroutineContext,
     private val invalidate: () -> Unit,
 ) : ComposeScene {
-    private val updateInvalidationsCallback = ::updateInvalidations
-    protected val doMeasureAndLayoutCallback = ::doMeasureAndLayout
-    protected val snapshotInvalidationTracker = SnapshotInvalidationTracker(updateInvalidationsCallback)
+    protected val snapshotInvalidationTracker = SnapshotInvalidationTracker(::updateInvalidations)
     protected val inputHandler: ComposeSceneInputHandler =
         ComposeSceneInputHandler(
-            prepareForPointerInputEvent = doMeasureAndLayoutCallback,
+            prepareForPointerInputEvent = ::doMeasureAndLayout,
             processPointerInputEvent = ::onPointerInputEvent,
             cancelPointerInput = ::processCancelPointerInput,
             processKeyEvent = ::processKeyEvent,
         )
 
-    private val frameClock = BroadcastFrameClock(onNewAwaiters = updateInvalidationsCallback)
+    private val frameClock = BroadcastFrameClock(onNewAwaiters = ::updateInvalidations)
     private val recomposer: ComposeSceneRecomposer =
         ComposeSceneRecomposer(coroutineContext, frameClock)
     private var composition: Composition? = null
