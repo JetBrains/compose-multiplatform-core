@@ -167,7 +167,6 @@ internal class RootNodeOwner(
     private val ownedLayerManager = OwnedLayerManagerImpl()
     private val pointerInputEventProcessor = PointerInputEventProcessor(owner.root)
     private val measureAndLayoutDelegate = MeasureAndLayoutDelegate(owner.root)
-
     private var isDisposed = false
 
     private var positionInWindow: Offset? = null
