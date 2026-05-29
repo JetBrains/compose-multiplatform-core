@@ -488,7 +488,7 @@ internal class UIKitInstrumentedTest(
     /**
      * Simulates a long press gesture for a given AccessibilityTestNode.
      */
-    fun AccessibilityTestNode.longPress(duration: Duration = 1.0.seconds) {
+    fun AccessibilityTestNode.longPress(duration: Duration = 2.0.seconds) {
         val frame = frame ?: error("Internal error. Frame is missing.")
         val touch = touchDown(frame.center())
         touch.hold()
@@ -736,7 +736,7 @@ internal fun UIKitInstrumentedTest.waitForContextMenu() {
         "UICalloutBar"
     }
     waitForIdle()
-    waitUntil {
+    waitUntil("Waiting for context menu to appear") {
         firstNodeOrNull { node ->
             node.element?.let { it::class.simpleName } == menuClassName
         } != null
