@@ -18,6 +18,7 @@ package androidx.compose.ui.test
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.snapshots.Snapshot
+import androidx.compose.ui.platform.AccessibilityNotification
 import androidx.compose.ui.platform.InfiniteAnimationPolicy
 import androidx.compose.ui.scene.ComposeHostingView
 import androidx.compose.ui.scene.ComposeHostingViewController
@@ -252,6 +253,9 @@ internal class UIKitInstrumentedTest(
             )
         }
     }
+    val accessibilityNotifications = mutableListOf<AccessibilityNotification>()
+    val lastAccessibilityNotification: AccessibilityNotification?
+        get() = accessibilityNotifications.lastOrNull()
     private var hostingViewController: ComposeHostingViewController? = null
     private var hostingView: ComposeHostingView? = null
 
@@ -274,6 +278,10 @@ internal class UIKitInstrumentedTest(
         interfaceOrientation: UIInterfaceOrientation = UIInterfaceOrientationPortrait,
         content: @Composable () -> Unit
     ) {
+        accessibilityNotifications.clear()
+        AccessibilityNotification.onNotificationPostedForTests = {
+            accessibilityNotifications.add(it)
+        }
         val innerConfigure: ComposeContainerConfiguration.() -> Unit = {
             enforceStrictPlistSanityCheck = false
             configure()
@@ -311,6 +319,7 @@ internal class UIKitInstrumentedTest(
         viewController.view.endEditing(force = true)
         waitForIdle()
 
+        AccessibilityNotification.onNotificationPostedForTests = null
         appDelegate.cleanUp()
     }
 

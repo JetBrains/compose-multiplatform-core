@@ -298,7 +298,7 @@ internal class ComposeSceneMediator(
         onKeyboardPresses = ::onKeyboardPresses,
         ignoreTouchChanges = navigationEventInput::isBackGestureActive,
         onRemoveSubview = {
-            coroutineScope.launch {
+            CoroutineScope(coroutineContext).launch {
                 finishUnattachedKeysPresses()
             }
         }
@@ -796,7 +796,7 @@ internal class ComposeSceneMediator(
     }
 
     private fun onKeyboardEvent(keyEvent: KeyEvent): Boolean {
-        val result = textInputService.onPreviewKeyEvent(keyEvent) // TODO: fix redundant call
+        val result = textInputService.onPreviewKeyEvent(keyEvent)
             || onPreviewKeyEvent(keyEvent)
             || scene.sendKeyEvent(keyEvent)
             || onKeyEvent(keyEvent)
