@@ -83,7 +83,7 @@ inline fun Column(
     modifier: Modifier = Modifier,
     verticalArrangement: Arrangement.Vertical = Arrangement.Top,
     horizontalAlignment: Alignment.Horizontal = Alignment.Start,
-    propagateMinWidth: Boolean = true,
+    propagateMinWidth: Boolean = false,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val measurePolicy =
