@@ -366,7 +366,7 @@ internal class SyntheticEventSender(
             val previous = previousPointers[0]
             return current.id != previous.id || current.position == previous.position
         }
-        val previousIdToPosition: LongLongMap = previousEvent.pointers.mapPointersToPosition()
+        val previousIdToPosition = previousEvent.pointers.mapPointersToPosition()
         return pointers.fastAll {
             val previousPosition = previousIdToPosition.getOrDefault(it.id.value, UnspecifiedOffsetValue)
             previousPosition == UnspecifiedOffsetValue || it.position.packedValue == previousPosition
@@ -406,11 +406,13 @@ internal class SyntheticEventSender(
         panGestureOffset = Offset.Zero,
         originalEventPosition = position,
     )
+}
 
-    private fun PointerToPositionMap.getPositionOrDefault(key: PointerId, default: Offset): Offset =
-        Offset(getOrDefault(key.value, default.packedValue))
+private fun PointerToPositionMap.getPositionOrDefault(key: PointerId, default: Offset): Offset =
+    Offset(getOrDefault(key.value, default.packedValue))
 
-    private fun List<PointerInputEventData>.mapPointersToPosition(): PointerToPositionMap = buildLongLongMap(
+private fun List<PointerInputEventData>.mapPointersToPosition(): PointerToPositionMap =
+    buildLongLongMap(
         size
     ) {
         this@mapPointersToPosition.fastForEach { ptr ->
@@ -418,10 +420,8 @@ internal class SyntheticEventSender(
         }
     }
 
-    private val UnspecifiedOffsetValue = Offset.Unspecified.packedValue
-}
+private val UnspecifiedOffsetValue = Offset.Unspecified.packedValue
 
-//Todo: Move inside SyntheticEventSender once local typealiases are supported
 private typealias PointerToPositionMap = LongLongMap
 
 private val UnconsumedEventResult = PointerEventResult(anyMovementConsumed = false)
