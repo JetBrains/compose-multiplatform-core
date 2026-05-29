@@ -28,6 +28,7 @@ import androidx.compose.ui.test.utils.beginModifierKeyPress
 import androidx.compose.ui.test.utils.beginPress
 import androidx.compose.ui.test.utils.center
 import androidx.compose.ui.test.utils.getTouchesEvent
+import androidx.compose.ui.test.utils.hold
 import androidx.compose.ui.test.utils.mouseDown
 import androidx.compose.ui.test.utils.moveToLocationOnWindow
 import androidx.compose.ui.test.utils.release
@@ -482,6 +483,17 @@ internal class UIKitInstrumentedTest(
     fun AccessibilityTestNode.tap() {
         val frame = frame ?: error("Internal error. Frame is missing.")
         return tap(frame.center())
+    }
+
+    /**
+     * Simulates a long press gesture for a given AccessibilityTestNode.
+     */
+    fun AccessibilityTestNode.longPress(duration: Duration = 1.0.seconds) {
+        val frame = frame ?: error("Internal error. Frame is missing.")
+        val touch = touchDown(frame.center())
+        touch.hold()
+        Companion.delay(duration.inWholeMilliseconds)
+        touch.up()
     }
 
     /**

@@ -47,8 +47,8 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.UIKitInstrumentedTest
 import androidx.compose.ui.test.assertVisibleInContainer
 import androidx.compose.ui.test.findNodeWithLabel
+import androidx.compose.ui.test.findNodeWithLabelOrNull
 import androidx.compose.ui.test.findNodeWithTag
-import androidx.compose.ui.test.firstNodeOrNull
 import androidx.compose.ui.test.runUIKitInstrumentedTest
 import androidx.compose.ui.test.utils.hold
 import androidx.compose.ui.test.utils.up
@@ -175,6 +175,79 @@ class TextFieldEditMenuTest {
         waitUntil("Text field should be fully selected") {
             textFieldState.isFullySelected()
         }
+    }
+
+    @Test
+    fun testBasicTextFieldLongPressShowsContextMenu() = runUIKitInstrumentedTest {
+        UIPasteboard.generalPasteboard().string = "Paste text"
+        val focusRequester = FocusRequester()
+        val textFieldValue = mutableStateOf(TextFieldValue("Hello-LongLongLongLongLongLong-text"))
+        setContent {
+            Column(modifier = Modifier.safeDrawingPadding()) {
+                BasicTextField(
+                    value = textFieldValue.value,
+                    onValueChange = { textFieldValue.value = it },
+                    modifier = Modifier
+                        .testTag("TextField")
+                        .focusRequester(focusRequester)
+                )
+            }
+            LaunchedEffect(Unit) {
+                focusRequester.requestFocus()
+            }
+        }
+
+        // A long press positions the cursor and, on release, reveals the context menu.
+        findNodeWithTag("TextField").longPress()
+        waitForContextMenu()
+        findNodeWithLabel("Paste").assertVisibleInContainer()
+
+        // A short tap elsewhere dismisses the context menu.
+        findNodeWithTag("TextField").tap()
+        waitUntil("Context menu should be hidden") {
+            findNodeWithLabelOrNull("Paste") == null
+        }
+
+        // A tap again brings the context menu back.
+        findNodeWithTag("TextField").tap()
+        waitForContextMenu()
+        findNodeWithLabel("Paste").assertVisibleInContainer()
+    }
+
+    @Test
+    fun testBasicTextField2LongPressShowsContextMenu() = runUIKitInstrumentedTest {
+        UIPasteboard.generalPasteboard().string = "Paste text"
+        val focusRequester = FocusRequester()
+        val textFieldState = TextFieldState("Hello-LongLongLongLongLongLong-text")
+        setContent {
+            Column(modifier = Modifier.safeDrawingPadding()) {
+                BasicTextField(
+                    state = textFieldState,
+                    modifier = Modifier
+                        .testTag("TextField")
+                        .focusRequester(focusRequester)
+                )
+            }
+            LaunchedEffect(Unit) {
+                focusRequester.requestFocus()
+            }
+        }
+
+        // A long press positions the cursor and, on release, reveals the context menu.
+        findNodeWithTag("TextField").longPress()
+        waitForContextMenu()
+        findNodeWithLabel("Paste").assertVisibleInContainer()
+
+        // A short tap elsewhere dismisses the context menu.
+        findNodeWithTag("TextField").tap()
+        waitUntil("Context menu should be hidden") {
+            findNodeWithLabelOrNull("Paste") == null
+        }
+
+        // A long press again brings the context menu back.
+        findNodeWithTag("TextField").tap()
+        waitForContextMenu()
+        findNodeWithLabel("Paste").assertVisibleInContainer()
     }
 
     @Test
