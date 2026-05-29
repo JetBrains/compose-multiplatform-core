@@ -130,6 +130,7 @@ private class CupertinoSelectionGesturesModifierNode(
         var dragTotalDistance = Offset.Zero
         var dragBeginOffset = Offset.Zero
         var isSingleLongPressWithMagnifier = false
+        var selectionAtLongPressStart = TextRange.Zero
 
         override fun onStart(startPoint: Offset, selectionAdjustment: SelectionAdjustment) {
             isSingleLongPressWithMagnifier = selectionAdjustment == SelectionAdjustment.None
@@ -156,6 +157,7 @@ private class CupertinoSelectionGesturesModifierNode(
                 dragBeginOffset = startPoint
             }
             dragTotalDistance = Offset.Zero
+            selectionAtLongPressStart = manager.value.selection
         }
 
         override fun onDrag(delta: Offset) {
@@ -184,10 +186,11 @@ private class CupertinoSelectionGesturesModifierNode(
             manager.draggingHandle = null
             manager.currentDragPosition = null
 
-            if (isSingleLongPressWithMagnifier) {
+            val selectionChanged = manager.value.selection != selectionAtLongPressStart
+            if (isSingleLongPressWithMagnifier && !selectionChanged) {
                 manager.enterSelectionMode()
-                isSingleLongPressWithMagnifier = false
             }
+            isSingleLongPressWithMagnifier = false
         }
 
         override fun onCancel() {

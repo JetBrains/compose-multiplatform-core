@@ -50,9 +50,12 @@ import androidx.compose.ui.test.findNodeWithLabel
 import androidx.compose.ui.test.findNodeWithLabelOrNull
 import androidx.compose.ui.test.findNodeWithTag
 import androidx.compose.ui.test.runUIKitInstrumentedTest
+import androidx.compose.ui.test.utils.findFirstDescendant
 import androidx.compose.ui.test.utils.hold
+import androidx.compose.ui.test.utils.isLoupeView
 import androidx.compose.ui.test.utils.up
 import androidx.compose.ui.test.waitForContextMenu
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import kotlin.test.Test
@@ -181,7 +184,7 @@ class TextFieldEditMenuTest {
     fun testBasicTextFieldLongPressShowsContextMenu() = runUIKitInstrumentedTest {
         UIPasteboard.generalPasteboard().string = "Paste text"
         val focusRequester = FocusRequester()
-        val textFieldValue = mutableStateOf(TextFieldValue("Hello-LongLongLongLongLongLong-text"))
+        val textFieldValue = mutableStateOf(TextFieldValue("Text", TextRange(4,4)))
         setContent {
             Column(modifier = Modifier.safeDrawingPadding()) {
                 BasicTextField(
@@ -198,7 +201,8 @@ class TextFieldEditMenuTest {
         }
 
         // A long press positions the cursor and, on release, reveals the context menu.
-        findNodeWithTag("TextField").longPress()
+        longPressAndAwaitContextMenu("TextField")
+
         waitForContextMenu()
         findNodeWithLabel("Paste").assertVisibleInContainer()
 
@@ -209,8 +213,7 @@ class TextFieldEditMenuTest {
         }
 
         // A tap again brings the context menu back.
-        findNodeWithTag("TextField").tap()
-        waitForContextMenu()
+        longPressAndAwaitContextMenu("TextField")
         findNodeWithLabel("Paste").assertVisibleInContainer()
     }
 
@@ -218,7 +221,7 @@ class TextFieldEditMenuTest {
     fun testBasicTextField2LongPressShowsContextMenu() = runUIKitInstrumentedTest {
         UIPasteboard.generalPasteboard().string = "Paste text"
         val focusRequester = FocusRequester()
-        val textFieldState = TextFieldState("Hello-LongLongLongLongLongLong-text")
+        val textFieldState = TextFieldState("Text", TextRange(4,4))
         setContent {
             Column(modifier = Modifier.safeDrawingPadding()) {
                 BasicTextField(
@@ -234,8 +237,7 @@ class TextFieldEditMenuTest {
         }
 
         // A long press positions the cursor and, on release, reveals the context menu.
-        findNodeWithTag("TextField").longPress()
-        waitForContextMenu()
+        longPressAndAwaitContextMenu("TextField")
         findNodeWithLabel("Paste").assertVisibleInContainer()
 
         // A short tap elsewhere dismisses the context menu.
@@ -245,8 +247,7 @@ class TextFieldEditMenuTest {
         }
 
         // A long press again brings the context menu back.
-        findNodeWithTag("TextField").tap()
-        waitForContextMenu()
+        longPressAndAwaitContextMenu("TextField")
         findNodeWithLabel("Paste").assertVisibleInContainer()
     }
 
@@ -508,6 +509,15 @@ class TextFieldEditMenuTest {
         findNodeWithTag(textFieldTag).tap()
         delay(500)
         findNodeWithTag(textFieldTag).doubleTap()
+        waitForContextMenu()
+    }
+
+    private fun UIKitInstrumentedTest.longPressAndAwaitContextMenu(textFieldTag: String) {
+        val touch = findNodeWithTag(textFieldTag).touchDown()
+        waitUntil {
+            findFirstDescendant { it.isLoupeView } != null
+        }
+        touch.up()
         waitForContextMenu()
     }
 

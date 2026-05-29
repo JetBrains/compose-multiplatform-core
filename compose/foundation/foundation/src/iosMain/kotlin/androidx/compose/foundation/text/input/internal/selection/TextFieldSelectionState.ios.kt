@@ -275,8 +275,10 @@ private class UIKitTextFieldTextDragObserver(
 ) : TextDragObserver {
     private var dragBeginPosition: Offset = Offset.Unspecified
     private var dragTotalDistance: Offset = Offset.Zero
+    private var isSingleLongPress = false
+    private var selectionAtLongPressStart: TextRange = TextRange.Zero
 
-    private fun onDragStop() {
+    private fun onDragStop(showContextMenu: Boolean) {
         // Only execute clear-up if drag was actually ongoing.
         if (dragBeginPosition.isSpecified) {
             textFieldSelectionState.clearHandleDragging()
@@ -284,16 +286,23 @@ private class UIKitTextFieldTextDragObserver(
             dragTotalDistance = Offset.Zero
             textFieldSelectionState.directDragGestureInitiator = InputType.None
             textFieldSelectionState.clearHandleDragging()
+
+            val selectionChanged =
+                textFieldSelectionState.textFieldState.visualText.selection != selectionAtLongPressStart
+            if (showContextMenu && isSingleLongPress && !selectionChanged) {
+                textFieldSelectionState.updateTextToolbarState(Cursor)
+            }
         }
+        isSingleLongPress = false
     }
 
     override fun onDown(point: Offset) = Unit
 
     override fun onUp() = Unit
 
-    override fun onStop() = onDragStop()
+    override fun onStop() = onDragStop(showContextMenu = true)
 
-    override fun onCancel() = onDragStop()
+    override fun onCancel() = onDragStop(showContextMenu = false)
 
     override fun onStart(startPoint: Offset, selectionAdjustment: SelectionAdjustment) {
         if (!textFieldSelectionState.enabled) return
@@ -304,9 +313,12 @@ private class UIKitTextFieldTextDragObserver(
         dragTotalDistance = Offset.Zero
 
         if (selectionAdjustment != SelectionAdjustment.None) {
+            isSingleLongPress = false
             textFieldSelectionState.doRepeatingTapSelection(startPoint, selectionAdjustment)
         } else {
+            isSingleLongPress = true
             textFieldSelectionState.moveCaretByLongPress(startPoint)
+            selectionAtLongPressStart = textFieldSelectionState.textFieldState.visualText.selection
         }
     }
 
