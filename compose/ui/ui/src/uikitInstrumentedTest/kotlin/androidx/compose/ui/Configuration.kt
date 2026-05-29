@@ -16,9 +16,6 @@
 
 package androidx.compose.ui
 
-import androidx.compose.ui.interaction.KeyboardEventsTest
-import androidx.compose.ui.interaction.TextFieldHotkeyTest
-//import androidx.compose.ui.interaction.TextFieldHotkeyTest
 import androidx.compose.xctest.setupXCTestSuite
 import kotlinx.cinterop.ExperimentalForeignApi
 import platform.XCTest.XCTestSuite
@@ -26,8 +23,6 @@ import platform.XCTest.XCTestSuite
 @Suppress("unused")
 @OptIn(ExperimentalForeignApi::class)
 fun testSuite(): XCTestSuite = setupXCTestSuite(
-//    TextFieldHotkeyTest::class,
-//    KeyboardEventsTest::simulateInterruptedKeyPressEvent
     // Run all test cases from the tests
     // BasicInteractionTest::class,
     // LayersAccessibilityTest::class,
