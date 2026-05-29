@@ -200,12 +200,7 @@ internal class SyntheticEventSender(
                 type = PointerEventType.Move,
                 copyPointer = {
                     it.copySynthetic(
-                        position = Offset(
-                            idToPosition.getOrDefault(
-                                it.id.value,
-                                it.position.packedValue
-                            )
-                        )
+                        position = idToPosition.getPositionOrDefault(it.id, it.position)
                     )
                 },
             )
@@ -369,12 +364,12 @@ internal class SyntheticEventSender(
         if (pointers.size == 1 && previousPointers.size == 1) {
             val current = pointers[0]
             val previous = previousPointers[0]
-            return current.id != previous.id || current.position.packedValue == previous.position.packedValue
+            return current.id != previous.id || current.position == previous.position
         }
         val previousIdToPosition: LongLongMap = previousEvent.pointers.mapPointersToPosition()
         return pointers.fastAll {
-            val previousPosition = previousIdToPosition.getOrDefault(it.id.value, Long.MIN_VALUE)
-            previousPosition == Long.MIN_VALUE || it.position.packedValue == previousPosition
+            val previousPosition = previousIdToPosition.getOrDefault(it.id.value, UnspecifiedPackedFloats)
+            previousPosition == UnspecifiedPackedFloats || it.position.packedValue == previousPosition
         }
     }
 
@@ -411,7 +406,11 @@ internal class SyntheticEventSender(
         panGestureOffset = Offset.Zero,
         originalEventPosition = position,
     )
-    private fun List<PointerInputEventData>.mapPointersToPosition(): LongLongMap = buildLongLongMap(
+
+    private fun PointerToPositionMap.getPositionOrDefault(key: PointerId, default: Offset): Offset =
+        Offset(getOrDefault(key.value, default.packedValue))
+
+    private fun List<PointerInputEventData>.mapPointersToPosition(): PointerToPositionMap = buildLongLongMap(
         size
     ) {
         this@mapPointersToPosition.fastForEach { ptr ->
@@ -420,4 +419,12 @@ internal class SyntheticEventSender(
     }
 }
 
+//Todo: Move inside SyntheticEventSender once local typealiases are supported
+private typealias PointerToPositionMap = LongLongMap
+
 private val UnconsumedEventResult = PointerEventResult(anyMovementConsumed = false)
+
+/**
+ * Same as Offset/Size.Unspecified.packedValue, but avoids a getstatic
+ */
+private const val UnspecifiedPackedFloats = 0x7fc00000_7fc00000L // NaN_NaN
