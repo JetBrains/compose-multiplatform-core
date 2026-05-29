@@ -17,6 +17,7 @@
 package androidx.navigation3.scene
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Immutable
 import androidx.navigation3.runtime.NavEntry
 
 /**
@@ -34,7 +35,11 @@ import androidx.navigation3.runtime.NavEntry
  * [androidx.navigation3.runtime.NavEntry]. In this situation, the content for a
  * [androidx.navigation3.runtime.NavEntry] will only be rendered in the most recent target [Scene]
  * that it is displayed in, as determined by [entries].
+ *
+ * **Important** Implementations of this interface should either be data classes, or implement
+ * equals and hashcode to ensure that the same [Scene] is used when appropriate.
  */
+@Immutable
 public interface Scene<T : Any> {
     /**
      * The key identifying the [Scene]. This key will be combined with the class of the [Scene] to

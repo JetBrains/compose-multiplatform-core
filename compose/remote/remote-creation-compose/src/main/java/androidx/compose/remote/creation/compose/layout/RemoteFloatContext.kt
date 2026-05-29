@@ -19,52 +19,51 @@ package androidx.compose.remote.creation.compose.layout
 
 import androidx.annotation.RestrictTo
 import androidx.compose.remote.core.operations.utilities.AnimatedFloatExpression
-import androidx.compose.remote.creation.compose.capture.RemoteComposeCreationState
+import androidx.compose.remote.creation.compose.state.RemoteComponentCacheKey
 import androidx.compose.remote.creation.compose.state.RemoteFloat
 import androidx.compose.remote.creation.compose.state.RemoteFloatExpression
-import androidx.compose.remote.creation.compose.state.remoteFloat
+import androidx.compose.remote.creation.compose.state.RemoteStateScope
 
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public class RemoteFloatContext(public val state: RemoteComposeCreationState) {
+public class RemoteFloatContext internal constructor(internal val state: RemoteStateScope) {
     public fun componentWidth(): RemoteFloat {
         val doc = state.document
         val value = doc.addComponentWidthValue()
-        return RemoteFloatExpression(null, { _ -> floatArrayOf(value) })
+        return RemoteFloatExpression(
+            constantValueOrNull = null,
+            cacheKey = RemoteComponentCacheKey(doc.buffer.lastComponentId, "width"),
+            arrayProvider = { _ -> floatArrayOf(value) },
+        )
     }
 
     public fun componentHeight(): RemoteFloat {
         val doc = state.document
         val value = doc.addComponentHeightValue()
-        return RemoteFloatExpression(null, { _ -> floatArrayOf(value) })
+        return RemoteFloatExpression(
+            constantValueOrNull = null,
+            cacheKey = RemoteComponentCacheKey(doc.buffer.lastComponentId, "height"),
+            arrayProvider = { _ -> floatArrayOf(value) },
+        )
     }
 
     public fun componentCenterX(): RemoteFloat {
         val doc = state.document
         val componentWidthValue = doc.addComponentWidthValue()
         val value = doc.floatExpression(componentWidthValue, 2f, AnimatedFloatExpression.DIV)
-        return RemoteFloatExpression(null, { _ -> floatArrayOf(value) })
+        return RemoteFloatExpression(
+            constantValueOrNull = null,
+            cacheKey = RemoteComponentCacheKey(doc.buffer.lastComponentId, "centerX"),
+            arrayProvider = { _ -> floatArrayOf(value) },
+        )
     }
 
     public fun componentCenterY(): RemoteFloat {
         val doc = state.document
         val componentHeightValue = doc.addComponentHeightValue()
         val value = doc.floatExpression(componentHeightValue, 2f, AnimatedFloatExpression.DIV)
-        return RemoteFloatExpression(null, { _ -> floatArrayOf(value) })
+        return RemoteFloatExpression(
+            constantValueOrNull = null,
+            cacheKey = RemoteComponentCacheKey(doc.buffer.lastComponentId, "centerY"),
+            arrayProvider = { _ -> floatArrayOf(value) },
+        )
     }
-}
-
-public fun remoteComponentWidth(state: RemoteComposeCreationState): RemoteFloat {
-    return remoteFloat(state) { componentWidth() }
-}
-
-public fun remoteComponentHeight(state: RemoteComposeCreationState): RemoteFloat {
-    return remoteFloat(state) { componentHeight() }
-}
-
-public fun remoteComponentCenterX(state: RemoteComposeCreationState): RemoteFloat {
-    return remoteFloat(state) { componentCenterX() }
-}
-
-public fun remoteComponentCenterY(state: RemoteComposeCreationState): RemoteFloat {
-    return remoteFloat(state) { componentCenterY() }
 }

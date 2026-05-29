@@ -21,13 +21,14 @@ import android.hardware.camera2.CaptureResult
 import android.hardware.camera2.TotalCaptureResult
 import android.os.Build
 import androidx.camera.camera2.impl.CAMERAX_TAG_BUNDLE
+import androidx.camera.camera2.impl.Camera2Logger
 import androidx.camera.camera2.pipe.CameraPipe
 import androidx.camera.camera2.pipe.FrameInfo
 import androidx.camera.camera2.pipe.FrameMetadata
 import androidx.camera.camera2.pipe.FrameNumber
 import androidx.camera.camera2.pipe.RequestMetadata
 import androidx.camera.camera2.pipe.UnsafeWrapper
-import androidx.camera.camera2.pipe.core.Log
+import androidx.camera.common.unwrapAs
 import androidx.camera.core.impl.CameraCaptureMetaData.AeMode
 import androidx.camera.core.impl.CameraCaptureMetaData.AeState
 import androidx.camera.core.impl.CameraCaptureMetaData.AfMode
@@ -38,8 +39,8 @@ import androidx.camera.core.impl.CameraCaptureMetaData.FlashState
 import androidx.camera.core.impl.CameraCaptureResult
 import androidx.camera.core.impl.TagBundle
 import androidx.camera.core.impl.utils.ExifData
+import java.lang.Class
 import java.nio.BufferUnderflowException
-import kotlin.reflect.KClass
 
 public class PartialCaptureResultAdapter(
     private val requestMetadata: RequestMetadata,
@@ -72,9 +73,9 @@ public class PartialCaptureResultAdapter(
     }
 
     override fun getCaptureResult(): CaptureResult =
-        checkNotNull(unwrapAs(CaptureResult::class)) { "Failed to unwrap $this as CaptureResult" }
+        checkNotNull(unwrapAs<CaptureResult>()) { "Failed to unwrap $this as CaptureResult" }
 
-    override fun <T : Any> unwrapAs(type: KClass<T>): T? = result.unwrapAs(type)
+    override fun <T : Any> unwrapAs(type: Class<T>): T? = result.unwrapAs(type)
 }
 
 /** Adapts the [CameraCaptureResult] interface to [CameraPipe]. */
@@ -109,14 +110,14 @@ public class CaptureResultAdapter(
     }
 
     override fun getCaptureResult(): CaptureResult =
-        checkNotNull(unwrapAs(TotalCaptureResult::class)) {
+        checkNotNull(unwrapAs<TotalCaptureResult>()) {
             "Failed to unwrap $this as TotalCaptureResult"
         }
 
     @Suppress("UNCHECKED_CAST")
-    override fun <T : Any> unwrapAs(type: KClass<T>): T? {
+    override fun <T : Any> unwrapAs(type: Class<T>): T? {
         return when (type) {
-            FrameInfo::class -> result as T
+            FrameInfo::class.java -> result as T
             else -> result.unwrapAs(type)
         }
     }
@@ -132,7 +133,7 @@ private fun FrameMetadata.getAfMode(): AfMode =
         CaptureResult.CONTROL_AF_MODE_CONTINUOUS_VIDEO -> AfMode.ON_CONTINUOUS_AUTO
         null -> AfMode.UNKNOWN
         else -> {
-            Log.debug { "Unknown AF mode ($mode) for $frameNumber!" }
+            Camera2Logger.debug { "Unknown AF mode ($mode) for $frameNumber!" }
             AfMode.UNKNOWN
         }
     }
@@ -148,7 +149,7 @@ private fun FrameMetadata.getAfState(): AfState =
         CaptureResult.CONTROL_AF_STATE_PASSIVE_UNFOCUSED -> AfState.PASSIVE_NOT_FOCUSED
         null -> AfState.UNKNOWN
         else -> {
-            Log.debug { "Unknown AF state ($state) for $frameNumber!" }
+            Camera2Logger.debug { "Unknown AF state ($state) for $frameNumber!" }
             AfState.UNKNOWN
         }
     }
@@ -162,7 +163,7 @@ private fun FrameMetadata.getAeMode(): AeMode =
         CaptureResult.CONTROL_AE_MODE_ON_AUTO_FLASH_REDEYE -> AeMode.ON_AUTO_FLASH_REDEYE
         null -> AeMode.UNKNOWN
         else -> {
-            Log.debug { "Unknown AE mode ($mode) for $frameNumber!" }
+            Camera2Logger.debug { "Unknown AE mode ($mode) for $frameNumber!" }
             AeMode.UNKNOWN
         }
     }
@@ -177,7 +178,7 @@ private fun FrameMetadata.getAeState(): AeState =
         CaptureResult.CONTROL_AE_STATE_LOCKED -> AeState.LOCKED
         null -> AeState.UNKNOWN
         else -> {
-            Log.debug { "Unknown AE state ($state) for $frameNumber!" }
+            Camera2Logger.debug { "Unknown AE state ($state) for $frameNumber!" }
             AeState.UNKNOWN
         }
     }
@@ -195,7 +196,7 @@ private fun FrameMetadata.getAwbMode(): AwbMode =
         CaptureResult.CONTROL_AWB_MODE_SHADE -> AwbMode.SHADE
         null -> AwbMode.UNKNOWN
         else -> {
-            Log.debug { "Unknown AWB mode ($mode) for $frameNumber!" }
+            Camera2Logger.debug { "Unknown AWB mode ($mode) for $frameNumber!" }
             AwbMode.UNKNOWN
         }
     }
@@ -208,7 +209,7 @@ private fun FrameMetadata.getAwbState(): AwbState =
         CaptureResult.CONTROL_AWB_STATE_LOCKED -> AwbState.LOCKED
         null -> AwbState.UNKNOWN
         else -> {
-            Log.debug { "Unknown AWB state ($state) for $frameNumber!" }
+            Camera2Logger.debug { "Unknown AWB state ($state) for $frameNumber!" }
             AwbState.UNKNOWN
         }
     }
@@ -222,7 +223,7 @@ private fun FrameMetadata.getFlashState(): FlashState =
         CaptureResult.FLASH_STATE_PARTIAL -> FlashState.FIRED
         null -> FlashState.UNKNOWN
         else -> {
-            Log.debug { "Unknown flash state ($state) for $frameNumber!" }
+            Camera2Logger.debug { "Unknown flash state ($state) for $frameNumber!" }
             FlashState.UNKNOWN
         }
     }
@@ -240,7 +241,7 @@ private fun FrameMetadata.populateExifData(exifData: ExifData.Builder) {
         // throws BufferUnderflowException. The value will be overridden in post-processing
         // anyway, so it's safe to ignore. Please reference: b/240998057
         // TODO: b/316233308 - Handle the exception inside in CameraPipe.
-        Log.warn { "Failed to get JPEG orientation." }
+        Camera2Logger.warn { "Failed to get JPEG orientation." }
     }
 
     // Set exposure time

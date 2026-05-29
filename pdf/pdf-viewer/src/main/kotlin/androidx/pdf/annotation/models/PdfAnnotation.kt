@@ -29,24 +29,42 @@ import androidx.annotation.RestrictTo
  * @param pageNum The page number (0-indexed) where this annotation is located.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY)
-public abstract class PdfAnnotation(public open val pageNum: Int) : Parcelable, PdfEdit() {
+public abstract class PdfAnnotation(public open val pageNum: Int) : Parcelable {
 
     /** Default implementation for [Parcelable.describeContents], returning 0. */
     override fun describeContents(): Int = 0
 
     /** Flattens this object in to a Parcel. */
     override fun writeToParcel(dest: Parcel, flags: Int) {
-        // Write the type of the annotation first so that it can be identified
-        // when unparceling.
         when (this) {
             is StampAnnotation -> {
                 dest.writeInt(STAMP_ANNOTATION_TYPE)
                 writeStampAnnotationToParcel(dest, flags)
             }
+            is HighlightAnnotation -> {
+                dest.writeInt(HIGHLIGHT_ANNOTATION_TYPE)
+                writeHighlightAnnotationToParcel(dest, flags)
+            }
             else -> {
                 dest.writeInt(UNKNOWN_TYPE)
             }
         }
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+
+        if (javaClass != other?.javaClass) return false
+
+        other as PdfAnnotation
+
+        if (pageNum != other.pageNum) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        return pageNum
     }
 
     public companion object {
@@ -56,6 +74,9 @@ public abstract class PdfAnnotation(public open val pageNum: Int) : Parcelable, 
         /** Stamp annotation type representing [StampAnnotation] */
         internal const val STAMP_ANNOTATION_TYPE: Int = 1
 
+        /** Highlight annotation type representing [HighlightAnnotation] */
+        internal const val HIGHLIGHT_ANNOTATION_TYPE: Int = 2
+
         /** Parcelable creator for [PdfAnnotation]. */
         @JvmField
         public val CREATOR: Parcelable.Creator<PdfAnnotation> =
@@ -64,6 +85,8 @@ public abstract class PdfAnnotation(public open val pageNum: Int) : Parcelable, 
                     val type = parcel.readInt()
                     return when (type) {
                         STAMP_ANNOTATION_TYPE -> StampAnnotation.CREATOR.createFromParcel(parcel)
+                        HIGHLIGHT_ANNOTATION_TYPE ->
+                            HighlightAnnotation.CREATOR.createFromParcel(parcel)
                         else -> null
                     }
                 }

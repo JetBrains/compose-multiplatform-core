@@ -67,6 +67,7 @@
     <string name="page_broken" msgid="2968770793669433462">"PDF sənədi üçün səhifədə xəta var"</string>
     <string name="needs_more_data" msgid="3520133467908240802">"PDF sənədini emal etmək üçün kifayət qədər data yoxdur"</string>
     <string name="error_cannot_open_pdf" msgid="2361919778558145071">"PDF faylını açmaq olmur"</string>
+    <string name="error_cannot_open_password_protected_pdf" msgid="3400883576932438749">"Parolla qorunan PDF-lər dəstəklənmir."</string>
     <string name="cannot_edit_pdf" msgid="7677598370087228978">"Bu PDF-i redaktə etmək olmur"</string>
     <string name="clipboard_label" msgid="8943155331324944981">"Kontent PDF-dən kopiyalanıb"</string>
     <string name="fast_scroller_thumb" msgid="6712048991132846541">"Sürüşdürmə paneli"</string>
@@ -81,6 +82,7 @@
     <string name="form_click_toggle_instruction" msgid="7171111300244445911">"Kliklədikdə dəyər dəyişiləcək."</string>
     <string name="form_click_opens_choices_menu_instruction" msgid="5648228168212004143">"Kliklədikdə seçim menyusu açılacaq."</string>
     <string name="form_click_enters_text_edit_mode_instruction" msgid="2305283577544618880">"Kliklədikdə mətn redaktə rejiminə keçəcək."</string>
+    <string name="combobox_custom_option" msgid="8730230629127076731">"Fərdi"</string>
     <string name="form_unknown" msgid="6371515914365431330">"Naməlum"</string>
     <string name="form_widget_type_push_button" msgid="3595388398616291441">"Düyməyə basın"</string>
     <string name="form_widget_type_checkbox" msgid="5165655383070460151">"Qeyd xanası"</string>
@@ -89,5 +91,4 @@
     <string name="form_widget_type_list_box" msgid="8052623180309553495">"Siyahı qutusu"</string>
     <string name="form_widget_type_text_field" msgid="581285155951215607">"Mətn sahəsi"</string>
     <string name="form_widget_type_signature" msgid="3811511096215331673">"İmza"</string>
-    <string name="form_filling_tooltip" msgid="1715428076993648563">"Forma doldurma rejiminə daxil olmaq üçün sahəyə toxunun"</string>
 </resources>

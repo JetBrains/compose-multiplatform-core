@@ -16,10 +16,9 @@
 
 package androidx.compose.ui.node
 
-import androidx.annotation.RestrictTo
 import androidx.collection.IntObjectMap
 import androidx.compose.runtime.Applier
-import androidx.compose.runtime.retain.RetainScope
+import androidx.compose.runtime.retain.RetainedValuesStore
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.autofill.AutofillManager
 import androidx.compose.ui.draganddrop.DragAndDropManager
@@ -37,7 +36,6 @@ import androidx.compose.ui.layout.PlacementScope
 import androidx.compose.ui.modifier.ModifierLocalManager
 import androidx.compose.ui.platform.AccessibilityManager
 import androidx.compose.ui.platform.Clipboard
-import androidx.compose.ui.platform.PlatformTextInputModifierNode
 import androidx.compose.ui.platform.PlatformTextInputSessionScope
 import androidx.compose.ui.platform.SoftwareKeyboardController
 import androidx.compose.ui.platform.TextToolbar
@@ -47,12 +45,12 @@ import androidx.compose.ui.semantics.SemanticsOwner
 import androidx.compose.ui.spatial.RectManager
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.intl.LocaleList
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.viewinterop.InteropView
 import kotlin.coroutines.CoroutineContext
-import kotlinx.coroutines.Job
 
 /**
  * Owner implements the connection to the underlying view system. On Android, this connects to
@@ -145,12 +143,18 @@ internal interface Owner : PositionCalculator {
     val windowInfo: WindowInfo
 
     /**
-     * Sets the [RetainScope] for the composition. On Android, this is a lifecycle-aware RetainScope
-     * that persists values across configuration changes and activity recreations.
-     * [androidx.compose.runtime.ForgetfulRetainScope] is a reasonable default for platforms without
-     * window-level retain scenarios.
+     * Sets the [RetainedValuesStore] for the composition. On Android, this is a lifecycle-aware
+     * RetainedValuesStore that persists values across configuration changes and activity
+     * recreations. [androidx.compose.runtime.retain.ForgetfulRetainedValuesStore] is a reasonable
+     * default for platforms without window-level retain scenarios.
+     *
+     * This store is managed outside of the composition and does not receive the default calls to
+     * [RetainedValuesStore.onContentEnteredComposition] and
+     * [RetainedValuesStore.onContentExitComposition] because it is installed directly through
+     * [androidx.compose.runtime.retain.LocalRetainedValuesStore]. The Owner is responsible for
+     * tracking the content presence w.r.t. this store.
      */
-    val retainScope: RetainScope
+    val retainedValuesStore: RetainedValuesStore
 
     /** Provides a queryable and observable index of nodes' bounding rectangles */
     val rectManager: RectManager
@@ -166,9 +170,10 @@ internal interface Owner : PositionCalculator {
 
     val layoutDirection: LayoutDirection
 
+    val localeList: LocaleList
+
     /** `true` when layout should draw debug bounds. */
     var showLayoutBounds: Boolean
-        @RestrictTo(RestrictTo.Scope.LIBRARY) @InternalCoreApi set
 
     /**
      * Called by [LayoutNode] to request the Owner a new measurement+layout. [forceRequest] defines
@@ -342,11 +347,12 @@ internal interface Owner : PositionCalculator {
 
     /**
      * Starts a new text input session and suspends until it's closed. For more information see
-     * [PlatformTextInputModifierNode.establishTextInputSession].
+     * [androidx.compose.ui.platform.establishTextInputSession].
      *
      * Implementations must ensure that new requests cancel any active request. They must also
      * ensure that the previous request is finished running all cancellation tasks before starting
-     * the new session, to ensure that no session code overlaps (e.g. using [Job.cancelAndJoin]).
+     * the new session, to ensure that no session code overlaps (e.g. using
+     * [kotlinx.coroutines.cancelAndJoin]).
      */
     suspend fun textInputSession(
         session: suspend PlatformTextInputSessionScope.() -> Nothing
@@ -382,9 +388,15 @@ internal interface Owner : PositionCalculator {
     /**
      * Dispatches a callback when something in this hierarchy scrolls.
      *
-     * @param offset Delta scrolled.
+     * @param delta Delta scrolled.
      */
     fun dispatchOnScrollChanged(delta: Offset) {}
+
+    /**
+     * Invalidates the layer that the root elements are drawn in. This does not invalidate any child
+     * layers.
+     */
+    fun invalidateRootLayer() {}
 
     companion object {
         /**

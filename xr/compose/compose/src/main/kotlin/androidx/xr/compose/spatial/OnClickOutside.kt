@@ -74,7 +74,7 @@ private class OutsideClickNodeElement(var enabled: Boolean, var onClickOutside: 
     }
 }
 
-private class OutsideClickNode(var enabled: Boolean, var onClickOutside: () -> Unit) :
+internal class OutsideClickNode(var enabled: Boolean, var onClickOutside: () -> Unit) :
     Modifier.Node(),
     PointerInputModifierNode,
     CompositionLocalConsumerModifierNode,
@@ -102,7 +102,8 @@ private class OutsideClickNode(var enabled: Boolean, var onClickOutside: () -> U
         }
     }
 
-    private fun onGlobalInput() {
+    internal fun onGlobalInput() {
+        if (!isAttached) return
         if (enabled && (job == null || job?.isCompleted == true)) {
             job =
                 coroutineScope.launch {
@@ -118,6 +119,7 @@ private class OutsideClickNode(var enabled: Boolean, var onClickOutside: () -> U
         pass: PointerEventPass,
         bounds: IntSize,
     ) {
+        if (!isAttached) return
         job?.cancel()
         // Prevent onClickOutside from being called for a short time.
         job = coroutineScope.launch { delay(CLICK_OUTSIDE_DEBOUNCE_MILLISECONDS) }
@@ -160,6 +162,10 @@ private class InputCaptureView private constructor(context: Context) : View(cont
                 updateLayoutParams<WindowManager.LayoutParams> {
                     // Get the Window token from the parent view
                     token = value.applicationWindowToken
+                    // This view should have zero size as its only purpose is to capture global
+                    // touch events.
+                    width = 0
+                    height = 0
                 }
                 if (isAttachedToWindow) {
                     windowManager.updateViewLayout(this, layoutParams)

@@ -15,25 +15,23 @@
  */
 
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
 
 import androidx.build.AndroidXConfig
 import androidx.build.SoftwareType
+import com.android.build.api.variant.HasAndroidTest
 
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("org.jetbrains.kotlin.android")
 }
 
 dependencies {
     api(libs.jspecify)
-    api(libs.kotlinStdlib)
     api(project(":xr:runtime:runtime"))
     api(project(":xr:scenecore:scenecore-runtime"))
 
@@ -41,8 +39,8 @@ dependencies {
 
     implementation("androidx.annotation:annotation:1.8.1")
     implementation("androidx.concurrent:concurrent-futures:1.0.0")
+    implementation("androidx.media3:media3-exoplayer:1.10.0")
     implementation(libs.androidx.core)
-    implementation libs.testRules
 
     testImplementation(libs.junit)
     testImplementation(libs.testRules)
@@ -50,9 +48,11 @@ dependencies {
     testImplementation(libs.mockitoCore)
     testImplementation(libs.mockitoKotlin4)
     testImplementation(libs.testExtJunit)
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
     testImplementation("org.robolectric:robolectric")
     testImplementation(project(":xr:runtime:runtime-testing"))
     testImplementation(project(":xr:scenecore:scenecore-testing"))
+    testImplementation("androidx.lifecycle:lifecycle-runtime-testing:2.3.1")
 
     androidTestImplementation(libs.junit)
     androidTestImplementation(libs.testExtJunit)
@@ -65,23 +65,27 @@ dependencies {
     androidTestImplementation(project(":xr:scenecore:scenecore-testing"))
 
     // For com.android.xr.extensions.
-    compileOnly(files(new File(AndroidXConfig.getPrebuiltsRoot(project), "androidx/xr/extensions/com.android.extensions.xr.jar")))
+    compileOnly(libs.androidExtensionsXr)
     testImplementation(files(new File(AndroidXConfig.getPrebuiltsRoot(project), "androidx/xr/extensions/com.android.extensions.xr.host.test.jar")))
-    testImplementation(files(new File(AndroidXConfig.getPrebuiltsRoot(project), "androidx/xr/extensions/com.android.extensions.xr.jar")))
+    testImplementation(libs.androidExtensionsXr)
+
 }
 
 android {
-    compileSdk = 35
     defaultConfig {
-        consumerProguardFiles "proguard-rules.pro"
-        minSdk = 24
-    }
-    sourceSets {
-        androidTest {
-            jniLibs.srcDirs += new File(AndroidXConfig.getPrebuiltsRoot(project), "androidx/xr/native/androidTest")
-        }
+        minSdk { version = release(24) }
+        compileSdk { version = release(36) }
     }
     namespace = "androidx.xr.scenecore.spatial.core"
+}
+
+androidComponents {
+    def nativeTestPath = new File(AndroidXConfig.getPrebuiltsRoot(project), "androidx/xr/native/scenecore-spatial/androidTest")
+            .absolutePath
+
+    onVariants(selector().all()) { variant ->
+        (variant as HasAndroidTest).androidTest.sources.jniLibs.addStaticSourceDirectory(nativeTestPath)
+    }
 }
 
 androidx {

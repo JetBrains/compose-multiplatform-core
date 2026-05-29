@@ -20,6 +20,7 @@ enum class TestAgpVersion(val versionString: String?) {
     TEST_AGP_VERSION_8_2_1("8.2.1"),
     TEST_AGP_VERSION_8_3_1("8.3.1"),
     TEST_AGP_VERSION_8_4_2("8.4.2"),
+    TEST_AGP_VERSION_8_5_2("8.5.2"),
     TEST_AGP_VERSION_CURRENT(null);
 
     fun isAtLeast(version: TestAgpVersion) = this in TestAgpVersion.atLeast(version)
@@ -30,12 +31,14 @@ enum class TestAgpVersion(val versionString: String?) {
 
     companion object {
         fun fromVersionString(versionString: String?) =
-            TestAgpVersion.values().first { it.versionString == versionString }
+            TestAgpVersion.entries.first { it.versionString == versionString }
 
-        fun all() = values()
+        fun all() = TestAgpVersion.entries.toTypedArray()
 
-        fun atLeast(version: TestAgpVersion) = values().filter { it.ordinal >= version.ordinal }
+        fun atLeast(version: TestAgpVersion) =
+            TestAgpVersion.entries.filter { it.ordinal >= version.ordinal }
 
-        fun atMost(version: TestAgpVersion) = values().filter { it.ordinal <= version.ordinal }
+        fun atMost(version: TestAgpVersion) =
+            TestAgpVersion.entries.filter { it.ordinal <= version.ordinal }
     }
 }

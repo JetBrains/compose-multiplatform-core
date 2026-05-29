@@ -38,12 +38,13 @@ import androidx.xr.scenecore.GltfModel
 import androidx.xr.scenecore.GltfModelEntity
 import androidx.xr.scenecore.MovableComponent
 import androidx.xr.scenecore.PanelEntity
+import androidx.xr.scenecore.Space
 import androidx.xr.scenecore.SpatialPointerComponent
 import androidx.xr.scenecore.SpatialPointerIcon
 import androidx.xr.scenecore.scene
 import androidx.xr.scenecore.testapp.R
 import androidx.xr.scenecore.testapp.common.SpatialMode
-import androidx.xr.scenecore.testapp.common.createSession
+import androidx.xr.scenecore.testapp.common.managers.SessionManager
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.switchmaterial.SwitchMaterial
 import java.nio.file.Path
@@ -78,8 +79,22 @@ class VisibilityActivity : AppCompatActivity() {
         }
 
         // Create rendering session
-        session = createSession(this)
+        session = SessionManager(this).createSession()
         if (session == null) this.finish()
+        session
+            ?.scene
+            ?.mainPanelEntity
+            ?.addComponent(MovableComponent.createSystemMovable(session!!))
+        // Disable default scale overrides on key entity from Spatial Mode events
+        session?.scene?.setSpaceChangedListener { event ->
+            session?.scene?.keyEntity?.setPose(event.recommendedPose, Space.ACTIVITY)
+        }
+        session!!.scene.activitySpace.addBoundsChangedListener { dimensions ->
+            spatialMode =
+                if (dimensions.width == Float.POSITIVE_INFINITY) SpatialMode.FSM
+                else SpatialMode.HSM
+        }
+        session?.scene?.keyEntity = session?.scene?.mainPanelEntity
 
         // Toolbar action
         findViewById<Toolbar>(R.id.visibility_top_app_bar).also {
@@ -189,11 +204,12 @@ class VisibilityActivity : AppCompatActivity() {
     private fun toggleMode() {
         when (spatialMode) {
             SpatialMode.FSM -> {
-                session!!.scene.requestHomeSpaceMode()
+                session!!.scene.requestHomeSpace()
                 spatialMode = SpatialMode.HSM
             }
+
             SpatialMode.HSM -> {
-                session!!.scene.requestFullSpaceMode()
+                session!!.scene.requestFullSpace()
                 spatialMode = SpatialMode.FSM
             }
         }
@@ -203,8 +219,8 @@ class VisibilityActivity : AppCompatActivity() {
         parentPanelEntity =
             createPanel(
                 "Parent Panel",
-                session!!.scene.activitySpace,
-                Pose(Vector3(-0.5f, -0.65f, 0f)),
+                session!!.scene.mainPanelEntity,
+                Pose(Vector3(-0.5f, -0.65f, 0.1f)),
             )
         childPanelEntity1 =
             createPanel("Child Panel 1", parentPanelEntity, Pose(Vector3(0.5f, 0f, 0f)))
@@ -224,8 +240,14 @@ class VisibilityActivity : AppCompatActivity() {
             supportActionBar?.setDisplayHomeAsUpEnabled(false)
         }
         val panelEntity =
-            PanelEntity.create(session!!, panelContentView, IntSize2d(640, 480), panelName, pose)
-        panelEntity.parent = parent
+            PanelEntity.create(
+                session!!,
+                panelContentView,
+                IntSize2d(640, 480),
+                panelName,
+                pose,
+                parent = parent,
+            )
 
         val movableComponent = MovableComponent.createSystemMovable(session!!)
         panelEntity.addComponent(movableComponent)
@@ -237,22 +259,40 @@ class VisibilityActivity : AppCompatActivity() {
 
     private fun createGltfEntities() {
         parentGltfEntity =
-            GltfModelEntity.create(session!!, model, Pose(Vector3(0.7f, 0f, 0f))).also {
-                it.setScale(0.5f)
-                it.parent = session!!.scene.activitySpace
-            }
+            GltfModelEntity.create(
+                    session!!,
+                    model,
+                    Pose(Vector3(2f, 0f, 0f)),
+                    parent = session!!.scene.activitySpace,
+                )
+                .also {
+                    it.setScale(0.5f)
+                    it.parent = session!!.scene.activitySpace
+                }
 
         childGltfEntity1 =
-            GltfModelEntity.create(session!!, model, Pose(Vector3(0.7f, -0.3f, 0f))).also {
-                it.setScale(0.5f)
-                it.parent = parentGltfEntity
-            }
+            GltfModelEntity.create(
+                    session!!,
+                    model,
+                    Pose(Vector3(0.7f, -0.3f, 0f)),
+                    parent = session!!.scene.activitySpace,
+                )
+                .also {
+                    it.setScale(0.5f)
+                    it.parent = parentGltfEntity
+                }
 
         childGltfEntity2 =
-            GltfModelEntity.create(session!!, model, Pose(Vector3(0.7f, -0.6f, 0f))).also {
-                it.setScale(0.5f)
-                it.parent = childGltfEntity1
-            }
+            GltfModelEntity.create(
+                    session!!,
+                    model,
+                    Pose(Vector3(0.7f, -0.6f, 0f)),
+                    parent = session!!.scene.activitySpace,
+                )
+                .also {
+                    it.setScale(0.5f)
+                    it.parent = childGltfEntity1
+                }
     }
 
     private fun getSizeInLocalSpace(panel: PanelEntity): FloatSize2d {

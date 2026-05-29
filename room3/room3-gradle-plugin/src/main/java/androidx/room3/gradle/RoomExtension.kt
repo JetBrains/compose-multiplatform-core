@@ -269,9 +269,6 @@ open class RoomExtension @Inject constructor(private val project: Project) {
         addSchemaConfiguration(key, path)
     }
 
-    /** Causes Room annotation processor to generate Kotlin code instead of Java. */
-    var generateKotlin: Boolean? = null
-
     private fun addSchemaConfiguration(matchName: MatchName, directory: Provider<Directory>) {
         val config =
             SchemaConfiguration(

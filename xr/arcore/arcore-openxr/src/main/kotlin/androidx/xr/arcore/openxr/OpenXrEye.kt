@@ -16,33 +16,45 @@
 
 package androidx.xr.arcore.openxr
 
-import androidx.annotation.RestrictTo
 import androidx.xr.arcore.runtime.Eye as Eye
-import androidx.xr.arcore.runtime.EyeStatus
+import androidx.xr.arcore.runtime.TrackingState
 import androidx.xr.runtime.math.Pose
 
-/** Wraps the OpenXR eye tracking data with the [Eye] interface. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public class OpenXrEye() : Eye {
-    override var coarseStatus: EyeStatus? = null
+/**
+ * Wraps OpenXR eye tracking data with the [Eye] interface.
+ *
+ * @property isOpen whether the eye is open
+ * @property pose the [Pose] of the eye
+ * @property trackingState the [TrackingState] of the eye
+ */
+internal class OpenXrEye() : Eye {
+    override var isOpen: Boolean = false
         private set
 
-    override var coarsePose: Pose? = null
+    override var pose: Pose = Pose()
         private set
 
-    override var fineStatus: EyeStatus? = null
+    override var trackingState: TrackingState = TrackingState.PAUSED
         private set
 
-    override var finePose: Pose? = null
-        private set
-
-    internal fun updateCoarse(data: EyeData) {
-        coarseStatus = data.state
-        coarsePose = data.pose
-    }
-
-    internal fun updateFine(data: EyeData) {
-        fineStatus = data.state
-        finePose = data.pose
+    internal fun update(data: EyeData) {
+        when (data.state) {
+            EyeStatus.GAZING -> {
+                isOpen = true
+                trackingState = TrackingState.TRACKING
+                pose = data.pose
+            }
+            EyeStatus.SHUT -> {
+                isOpen = false
+                trackingState = TrackingState.TRACKING
+                pose = data.pose
+            }
+            EyeStatus.INVALID -> {
+                isOpen = false
+                trackingState = TrackingState.PAUSED
+                pose = Pose()
+            }
+        }
+        pose = data.pose
     }
 }

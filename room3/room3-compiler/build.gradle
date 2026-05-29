@@ -15,10 +15,9 @@
  */
 
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
 
@@ -57,7 +56,6 @@ dependencies {
     implementation(project(":room3:room3-external-antlr"))
     implementation(project(":room3:room3-migration"))
     implementation(project(":room3:room3-compiler-processing"))
-    implementation(libs.kotlinStdlib)
     implementation(libs.autoCommon)
     implementation(libs.autoValueAnnotations)
     implementation(libs.javapoet)
@@ -74,7 +72,6 @@ dependencies {
         exclude group: "org.glassfish"
     }
     implementation(libs.sqliteJdbc)
-    implementation(libs.apacheCommonsCodec)
     implementation(libs.intellijAnnotations)
     testImplementation(libs.truth)
     testImplementation(project(":kruth:kruth"))
@@ -90,6 +87,12 @@ dependencies {
     testImplementation(libs.antlr4)
     testImplementation(SdkHelperKt.getSdkDependency(project))
     testImplementationAarAsJar(project(":room3:room3-runtime"))
+    testImplementationAarAsJar(project(":room3:room3-rxjava3"))
+    testImplementationAarAsJar(project(":room3:room3-livedata"))
+    testImplementationAarAsJar(project(":room3:room3-guava"))
+    testImplementationAarAsJar(project(":room3:room3-paging"))
+    testImplementationAarAsJar(project(":room3:room3-paging-guava"))
+    testImplementationAarAsJar(project(":room3:room3-paging-rxjava3"))
     testImplementationAarAsJar(project(":sqlite:sqlite"))
     testImplementation(project(":internal-testutils-common"))
 }
@@ -217,13 +220,13 @@ afterEvaluate {
 // make sure we validate published artifacts on the build server.
 BuildOnServerKt.addToBuildOnServer(project, checkArtifactContentsTask)
 
-tasks.withType(KotlinCompile).configureEach {
-    kotlinOptions {
-        freeCompilerArgs += [
+tasks.withType(KotlinCompile).configureEach { task ->
+    task.compilerOptions {
+        it.freeCompilerArgs.addAll(
                 "-opt-in=kotlin.contracts.ExperimentalContracts",
                 "-opt-in=androidx.room3.compiler.processing.ExperimentalProcessingApi",
                 "-opt-in=com.squareup.kotlinpoet.javapoet.KotlinPoetJavaPoetPreview"
-        ]
+        )
     }
 }
 
@@ -241,5 +244,5 @@ androidx {
     type = SoftwareType.ANNOTATION_PROCESSOR
     inceptionYear = "2017"
     description = "Android Room annotation processor"
-    kotlinTarget = KotlinTarget.KOTLIN_2_2
+    kotlinTarget = KotlinTarget.KOTLIN_2_3
 }

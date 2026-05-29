@@ -126,7 +126,6 @@ public final class UserAgentMetadata {
     private boolean mWow64 = false;
     private final @FormFactors List<String> mFormFactors;
 
-    @RestrictTo(RestrictTo.Scope.LIBRARY)
     private UserAgentMetadata(@NonNull List<BrandVersion> brandVersionList,
             @Nullable String fullVersion, @Nullable String platform,
             @Nullable String platformVersion, @Nullable String architecture,
@@ -254,11 +253,17 @@ public final class UserAgentMetadata {
      * {@link #FORM_FACTOR_EINK}, {@link #FORM_FACTOR_WATCH}. See the
      * <a href="https://wicg.github.io/ua-client-hints/#sec-ch-ua-form-factors">spec</a>
      * for more details.
+     *
      * <p>
-     * @see Builder#setFormFactors
+     * This method should only be called if
+     * {@link WebViewFeature#isFeatureSupported(String)} returns {@code true} for
+     * {@link WebViewFeature#USER_AGENT_METADATA_FORM_FACTORS}.
      *
      * @return A list of strings to indicate the form factors of the user-agent.
-     *
+     * @throws UnsupportedOperationException if the
+     *                                       {@link WebViewFeature#USER_AGENT_METADATA_FORM_FACTORS}
+     *                                       feature is not supported.
+     * @see Builder#setFormFactors
      */
     @RequiresFeature(name = WebViewFeature.USER_AGENT_METADATA_FORM_FACTORS,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
@@ -303,7 +308,6 @@ public final class UserAgentMetadata {
         private final String mMajorVersion;
         private final String mFullVersion;
 
-        @RestrictTo(RestrictTo.Scope.LIBRARY)
         private BrandVersion(@NonNull String brand, @NonNull String majorVersion,
                 @NonNull String fullVersion) {
             mBrand = brand;
@@ -673,10 +677,17 @@ public final class UserAgentMetadata {
          * <a href="https://wicg.github.io/ua-client-hints/#sec-ch-ua-form-factors">spec</a>
          * for more details.
          *
+         * <p>
+         * This method should only be called if
+         * {@link WebViewFeature#isFeatureSupported(String)} returns {@code true} for
+         * {@link WebViewFeature#USER_AGENT_METADATA_FORM_FACTORS}.
+         *
          * @param formFactors The form factors is used to generate user-agent client hint
          *                    {@code sec-ch-ua-form-factors}.
          * @throws IllegalArgumentException if the list contains an invalid form factor string.
-         *
+         * @throws UnsupportedOperationException if the
+         *                                   {@link WebViewFeature#USER_AGENT_METADATA_FORM_FACTORS}
+         *                                       feature is not supported.
          */
         @RequiresFeature(name = WebViewFeature.USER_AGENT_METADATA_FORM_FACTORS,
                 enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")

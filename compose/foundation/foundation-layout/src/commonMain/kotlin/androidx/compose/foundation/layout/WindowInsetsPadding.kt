@@ -119,6 +119,10 @@ fun Modifier.consumeWindowInsets(paddingValues: PaddingValues): Modifier =
  * Calls [block] with the [WindowInsets] that have been consumed, either by [consumeWindowInsets] or
  * one of the padding Modifiers, such as [imePadding].
  *
+ * [block] can be called before or during measurement and layout. It should not be used to trigger
+ * changes to composition because composition will only be applied on the following frame, leading
+ * to the UI lagging WindowInsets by a frame.
+ *
  * @sample androidx.compose.foundation.layout.samples.withConsumedInsetsSample
  */
 @Stable
@@ -384,6 +388,9 @@ private class InsetsPaddingModifierElement(
     }
 }
 
+internal const val InsetsConsumingModifierNodeKey =
+    "androidx.compose.foundation.layout.ConsumedInsetsProvider"
+
 /** Base class for WindowInsets modifiers. */
 internal abstract class InsetsConsumingModifierNode : Modifier.Node(), TraversableNode {
 
@@ -392,7 +399,7 @@ internal abstract class InsetsConsumingModifierNode : Modifier.Node(), Traversab
         private set
 
     override val traverseKey: Any
-        get() = "androidx.compose.foundation.layout.ConsumedInsetsProvider"
+        get() = InsetsConsumingModifierNodeKey
 
     /**
      * The [WindowInsets] consumed by this modifier, including any [WindowInsets] consumed by
@@ -582,6 +589,7 @@ private class ConsumedInsetsModifierNode(private var block: (WindowInsets) -> Un
     fun update(block: (WindowInsets) -> Unit) {
         if (block !== this.block) {
             this.block = block
+            insetsInvalidated()
         }
     }
 }

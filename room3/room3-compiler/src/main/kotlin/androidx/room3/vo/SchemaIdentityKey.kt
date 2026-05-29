@@ -16,8 +16,8 @@
 
 package androidx.room3.vo
 
+import androidx.room3.util.md5Hex
 import java.util.Locale
-import org.apache.commons.codec.digest.DigestUtils
 
 interface HasSchemaIdentity {
     fun getIdKey(): String
@@ -43,7 +43,7 @@ class SchemaIdentityKey {
         identities.map { it.getIdKey() }.sortedWith(ENGLISH_SORT).forEach { append(it) }
     }
 
-    fun hash() = DigestUtils.md5Hex(sb.toString())
+    fun hash() = sb.toString().md5Hex()
 
     fun append(identity: String) {
         sb.append(identity).append(SEPARATOR)

@@ -18,7 +18,6 @@ package androidx.room3.integration.kotlintestapp.test
 
 import androidx.kruth.assertThat
 import androidx.kruth.assertThrows
-import androidx.room3.ExperimentalRoomApi
 import androidx.room3.Room
 import androidx.room3.integration.kotlintestapp.TestDatabase
 import androidx.room3.integration.kotlintestapp.dao.BooksDao
@@ -69,13 +68,12 @@ class InvalidationTrackerFlowTest(private val useDriver: UseDriver) {
                     ApplicationProvider.getApplicationContext(),
                     TestDatabase::class.java,
                 )
-                .apply {
-                    if (useDriver == UseDriver.ANDROID) {
-                        setDriver(AndroidSQLiteDriver())
-                    } else if (useDriver == UseDriver.BUNDLED) {
-                        setDriver(BundledSQLiteDriver())
+                .setDriver(
+                    when (useDriver) {
+                        UseDriver.ANDROID -> AndroidSQLiteDriver()
+                        UseDriver.BUNDLED -> BundledSQLiteDriver()
                     }
-                }
+                )
                 .setQueryCoroutineContext(testCoroutineScope.coroutineContext)
                 .build()
         booksDao = database.booksDao()
@@ -126,7 +124,6 @@ class InvalidationTrackerFlowTest(private val useDriver: UseDriver) {
     }
 
     @Test
-    @OptIn(ExperimentalRoomApi::class)
     fun emitOnceForMultipleTablesInTransaction(): Unit = runTest {
         val resultChannel = Channel<Set<String>>(capacity = 10)
         val job =
@@ -178,7 +175,6 @@ class InvalidationTrackerFlowTest(private val useDriver: UseDriver) {
     }
 
     @Test
-    @OptIn(ExperimentalRoomApi::class)
     fun collectInTransaction(): Unit = runTest {
         database.withWriteTransaction {
             val result = database.invalidationTracker.createFlow("author").first()
@@ -253,7 +249,6 @@ class InvalidationTrackerFlowTest(private val useDriver: UseDriver) {
     }
 
     @Test
-    @OptIn(ExperimentalRoomApi::class)
     fun mapTransactionQuery() = runTest {
         booksDao.addAuthors(TestUtil.AUTHOR_1)
         booksDao.addPublishers(TestUtil.PUBLISHER)
@@ -276,7 +271,6 @@ class InvalidationTrackerFlowTest(private val useDriver: UseDriver) {
     }
 
     @Test
-    @OptIn(ExperimentalRoomApi::class)
     fun transactionUpdateAndTransactionQuery() = runTest {
         booksDao.addPublishers(TestUtil.PUBLISHER)
         booksDao.addBooks(TestUtil.BOOK_1)

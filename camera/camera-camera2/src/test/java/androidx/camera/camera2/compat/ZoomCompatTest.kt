@@ -28,11 +28,12 @@ import androidx.camera.camera2.pipe.CameraExtensionMetadata
 import androidx.camera.camera2.pipe.CameraId
 import androidx.camera.camera2.pipe.CameraMetadata
 import androidx.camera.camera2.pipe.Metadata
+import androidx.camera.camera2.pipe.testing.FakeCameraMetadata
 import androidx.camera.camera2.testing.FakeCameraProperties
 import androidx.camera.camera2.testing.FakeUseCaseCameraRequestControl
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
-import kotlin.reflect.KClass
+import java.lang.Class
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
@@ -40,6 +41,7 @@ import org.robolectric.annotation.internal.DoNotInstrument
 
 @RunWith(RobolectricCameraPipeTestRunner::class)
 @DoNotInstrument
+@Config(sdk = [Config.ALL_SDKS])
 class ZoomCompatTest {
     @Test
     @Config(minSdk = 30)
@@ -58,7 +60,12 @@ class ZoomCompatTest {
     @Config(maxSdk = 29)
     fun reset_CropRegionZoomCompat_removeParameters() {
         val fakeRequestControl = FakeUseCaseCameraRequestControl()
-        val zoomCompat = CropRegionZoomCompat(FakeCameraProperties())
+        val fakeCameraMetadata =
+            FakeCameraMetadata(
+                characteristics =
+                    mapOf(CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE to Rect(0, 0, 10, 10))
+            )
+        val zoomCompat = CropRegionZoomCompat(FakeCameraProperties(fakeCameraMetadata))
         zoomCompat.resetAsync(fakeRequestControl)
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
@@ -178,7 +185,7 @@ class ZoomCompatTest {
                 TODO("Not yet implemented")
             }
 
-            override fun <T : Any> unwrapAs(type: KClass<T>): T? {
+            override fun <T : Any> unwrapAs(type: Class<T>): T? {
                 TODO("Not yet implemented")
             }
         }

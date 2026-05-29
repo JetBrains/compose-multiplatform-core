@@ -24,7 +24,7 @@ import android.util.Range
 import android.util.Size
 import androidx.camera.camera2.compat.workaround.OutputSizesCorrector
 import androidx.camera.camera2.config.CameraScope
-import androidx.camera.camera2.pipe.core.Log.warn
+import androidx.camera.camera2.impl.Camera2Logger
 import androidx.camera.core.Logger
 import javax.inject.Inject
 
@@ -42,16 +42,12 @@ constructor(map: StreamConfigurationMap?, private val outputSizesCorrector: Outp
     private val cachedFormatOutputSizes = mutableMapOf<Int, Array<Size>>()
     private val cachedFormatHighResolutionOutputSizes = mutableMapOf<Int, Array<Size>?>()
     private val cachedClassOutputSizes = mutableMapOf<Class<*>, Array<Size>>()
-    private var impl: StreamConfigurationMapCompatImpl
-
-    init {
-        impl =
-            if (Build.VERSION.SDK_INT >= 23) {
-                StreamConfigurationMapCompatApi23Impl(map)
-            } else {
-                StreamConfigurationMapCompatBaseImpl(map)
-            }
-    }
+    private var impl: StreamConfigurationMapCompatImpl =
+        if (Build.VERSION.SDK_INT >= 34) {
+            StreamConfigurationMapCompatApi34Impl(map)
+        } else {
+            StreamConfigurationMapCompatBaseImpl(map)
+        }
 
     /**
      * Get the image format output formats in this stream configuration.
@@ -195,7 +191,9 @@ constructor(map: StreamConfigurationMap?, private val outputSizesCorrector: Outp
         try {
             return impl.getOutputMinFrameDuration(format, size)
         } catch (e: RuntimeException) {
-            warn(e) { "Unable to get min frame duration for format = $format and size = $size" }
+            Camera2Logger.warn(e) {
+                "Unable to get min frame duration for format = $format and size = $size"
+            }
         }
         return 0
     }

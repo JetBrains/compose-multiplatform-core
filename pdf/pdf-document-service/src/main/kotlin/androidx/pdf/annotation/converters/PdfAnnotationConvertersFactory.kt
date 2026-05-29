@@ -16,11 +16,13 @@
 
 package androidx.pdf.annotation.converters
 
+import android.graphics.pdf.component.HighlightAnnotation as AospHighlightAnnotation
 import android.graphics.pdf.component.PdfAnnotation as AospPdfAnnotation
 import android.graphics.pdf.component.StampAnnotation as AospStampAnnotation
 import android.os.Build
 import androidx.annotation.RequiresExtension
 import androidx.pdf.Converter
+import androidx.pdf.annotation.models.HighlightAnnotation
 import androidx.pdf.annotation.models.PdfAnnotation
 import androidx.pdf.annotation.models.StampAnnotation
 
@@ -37,6 +39,9 @@ internal object PdfAnnotationConvertersFactory {
     // AOSP to jetpack converters
     private val aospStampAnnotationConverter = AospStampAnnotationConverter()
 
+    private val aospHighlightAnnotationConverter = AospHighlightAnnotationConverter()
+    private val highlightAnnotationConverter = HighlightAnnotationConverter()
+
     /**
      * Creates and returns a [Converter] for the given [PdfAnnotation].
      *
@@ -51,6 +56,7 @@ internal object PdfAnnotationConvertersFactory {
         val value =
             when (annot) {
                 is StampAnnotation -> stampAnnotationConverter
+                is HighlightAnnotation -> highlightAnnotationConverter
                 else ->
                     throw UnsupportedOperationException(
                         "PdfAnnotation :: ${annot.javaClass.simpleName} is not supported!"
@@ -73,6 +79,9 @@ internal object PdfAnnotationConvertersFactory {
         val value =
             when (annot) {
                 is AospStampAnnotation -> aospStampAnnotationConverter
+                is AospHighlightAnnotation -> {
+                    aospHighlightAnnotationConverter
+                }
                 else ->
                     throw UnsupportedOperationException(
                         "PdfAnnotation :: ${annot.javaClass.simpleName} is not supported!"

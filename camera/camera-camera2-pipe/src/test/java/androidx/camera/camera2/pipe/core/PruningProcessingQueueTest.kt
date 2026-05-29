@@ -18,6 +18,7 @@ package androidx.camera.camera2.pipe.core
 
 import androidx.camera.camera2.pipe.core.PruningProcessingQueue.Companion.processIn
 import com.google.common.truth.Truth.assertThat
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -32,9 +33,11 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
+import org.robolectric.annotation.Config
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(JUnit4::class)
+@Config(sdk = [Config.ALL_SDKS])
 class PruningProcessingQueueTest {
     private val testScope = TestScope()
     private val processingScope =
@@ -240,23 +243,25 @@ class PruningProcessingQueueTest {
                         onUnprocessedElements = unprocessElementHandler,
                     ) {
                         processingCalls.add(it)
-                        delay(100)
+                        delay(100.milliseconds)
                     }
                     .processIn(processingScope)
 
             processingQueue.emitChecked(1)
             processingQueue.emitChecked(2)
             processingQueue.emitChecked(3)
-            advanceTimeBy(50) // Triggers initial processing call
+            advanceTimeBy(50.milliseconds) // Triggers initial processing call
             assertThat(processingCalls).containsExactly(1)
 
             processingQueue.emitChecked(4)
             processingQueue.emitChecked(5)
-            advanceTimeBy(25) // Still processing 1, but elements are still aggregated and pruned.
+            advanceTimeBy(
+                25.milliseconds
+            ) // Still processing 1, but elements are still aggregated and pruned.
             assertThat(processingCalls).containsExactly(1)
 
             processingQueue.emitChecked(6)
-            advanceTimeBy(50) // Processed 1, and processing 2.
+            advanceTimeBy(50.milliseconds) // Processed 1, and processing 2.
             assertThat(processingCalls).containsExactly(1, 2)
 
             processingQueue.emitChecked(7)
@@ -283,7 +288,7 @@ class PruningProcessingQueueTest {
                         onUnprocessedElements = unprocessElementHandler,
                     ) {
                         processingCalls.add(it)
-                        delay(100)
+                        delay(100.milliseconds)
                         throw RuntimeException("Test")
                     }
                     .processIn(processingScope)
@@ -291,7 +296,7 @@ class PruningProcessingQueueTest {
             processingQueue.emitChecked(1)
             processingQueue.emitChecked(2)
             processingQueue.emitChecked(3)
-            advanceTimeBy(50) // Triggers initial processing call, but not exception
+            advanceTimeBy(50.milliseconds) // Triggers initial processing call, but not exception
 
             processingQueue.emitChecked(4)
             processingQueue.emitChecked(5)

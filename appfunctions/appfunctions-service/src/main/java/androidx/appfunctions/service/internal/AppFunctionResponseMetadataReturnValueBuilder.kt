@@ -16,14 +16,15 @@
 
 package androidx.appfunctions.service.internal
 
-import android.app.PendingIntent
 import android.os.Build
+import android.os.Parcelable
 import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.appfunctions.AppFunctionAppUnknownException
 import androidx.appfunctions.AppFunctionData
 import androidx.appfunctions.ExecuteAppFunctionResponse
 import androidx.appfunctions.internal.Constants.APP_FUNCTIONS_TAG
+import androidx.appfunctions.metadata.AppFunctionAllOfTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionArrayTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionBooleanTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionBytesTypeMetadata
@@ -34,7 +35,7 @@ import androidx.appfunctions.metadata.AppFunctionFloatTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionIntTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionLongTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionObjectTypeMetadata
-import androidx.appfunctions.metadata.AppFunctionPendingIntentTypeMetadata
+import androidx.appfunctions.metadata.AppFunctionParcelableTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionReferenceTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionResponseMetadata
 import androidx.appfunctions.metadata.AppFunctionStringTypeMetadata
@@ -116,15 +117,23 @@ private fun AppFunctionDataTypeMetadata.unsafeBuildReturnValue(
         is AppFunctionBytesTypeMetadata -> {
             throw IllegalStateException("Type of a single byte is not supported")
         }
-        is AppFunctionPendingIntentTypeMetadata -> {
+        is AppFunctionParcelableTypeMetadata -> {
             builder
-                .setPendingIntent(
+                .setParcelable(
                     ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE,
-                    result as PendingIntent,
+                    result as Parcelable,
                 )
                 .build()
         }
         is AppFunctionObjectTypeMetadata -> {
+            builder
+                .setAppFunctionData(
+                    ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE,
+                    AppFunctionData.serialize(result, checkNotNull(this.qualifiedName)),
+                )
+                .build()
+        }
+        is AppFunctionAllOfTypeMetadata -> {
             builder
                 .setAppFunctionData(
                     ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE,
@@ -212,16 +221,27 @@ private fun AppFunctionArrayTypeMetadata.unsafeBuildReturnValue(
                 )
                 .build()
         }
-        is AppFunctionPendingIntentTypeMetadata -> {
+        is AppFunctionParcelableTypeMetadata -> {
             @Suppress("UNCHECKED_CAST")
             builder
-                .setPendingIntentList(
+                .setParcelableList(
                     ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE,
-                    result as List<PendingIntent>,
+                    result as List<Parcelable>,
                 )
                 .build()
         }
         is AppFunctionObjectTypeMetadata -> {
+            @Suppress("UNCHECKED_CAST")
+            builder
+                .setAppFunctionDataList(
+                    ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE,
+                    (result as List<Any>).map {
+                        AppFunctionData.serialize(it, checkNotNull(castItemType.qualifiedName))
+                    },
+                )
+                .build()
+        }
+        is AppFunctionAllOfTypeMetadata -> {
             @Suppress("UNCHECKED_CAST")
             builder
                 .setAppFunctionDataList(

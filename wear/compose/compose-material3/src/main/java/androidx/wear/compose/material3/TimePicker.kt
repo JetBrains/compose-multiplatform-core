@@ -96,21 +96,37 @@ import java.util.Locale
  *
  * This component is designed to take most/all of the screen and utilizes large fonts.
  *
+ * For custom backgrounds like gradients or images wrap the TimePicker in a MaterialTheme with the
+ * colorScheme background set to [Color.Unspecified].
+ *
  * Example of a [TimePicker]:
  *
  * @sample androidx.wear.compose.material3.samples.TimePickerSample
+ *
+ * ![TimePickerSample Composite
+ * Image](https://developer.android.com/wear/images/design/WearComposeM3_TimePickerSample_CompositeImage.png)
  *
  * Example of a [TimePicker] with seconds:
  *
  * @sample androidx.wear.compose.material3.samples.TimePickerWithSecondsSample
  *
+ * ![TimePickerWithSecondsSample Composite
+ * Image](https://developer.android.com/wear/images/design/WearComposeM3_TimePickerWithSecondsSample_CompositeImage.png)
+ *
  * Example of a 12 hour clock [TimePicker]:
  *
  * @sample androidx.wear.compose.material3.samples.TimePickerWith12HourClockSample
  *
+ * ![TimePickerWith12HourClockSample Composite
+ * Image](https://developer.android.com/wear/images/design/WearComposeM3_TimePickerWith12HourClockSample_CompositeImage.png)
+ *
  * Example of a [TimePicker] with just minutes and seconds:
  *
  * @sample androidx.wear.compose.material3.samples.TimePickerWithMinutesAndSecondsSample
+ *
+ * ![TimePickerWithMinutesAndSecondsSample Composite
+ * Image](https://developer.android.com/wear/images/design/WearComposeM3_TimePickerWithMinutesAndSecondsSample_CompositeImage.png)
+ *
  * @param initialTime The initial time to be displayed in the TimePicker.
  * @param onTimePicked The callback that is called when the user confirms the time selection. It
  *   provides the selected time as [LocalTime]. Note that any time components not displayed in the
@@ -631,6 +647,9 @@ public class TimePickerColors(
     }
 }
 
+private val TimePickerType.isTwoColumnPicker
+    get() = this == TimePickerType.HoursMinutes24H || this == TimePickerType.MinutesSeconds
+
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 private fun ColumnScope.TimePickerContent(
@@ -936,7 +955,7 @@ private fun rememberPickerLayoutConfig(
             .value
 
     val optionTextStyle =
-        if (isLargeScreen || timePickerType == TimePickerType.HoursMinutes24H) {
+        if (isLargeScreen) {
                 TimePickerTokens.ContentLargeTypography
             } else {
                 TimePickerTokens.ContentTypography
@@ -964,7 +983,7 @@ private fun rememberPickerLayoutConfig(
         LocalTypography.current,
     ) {
         val (minimumOptionHeight, maximumOptionHeight) =
-            if (isLargeScreen || timePickerType == TimePickerType.HoursMinutes24H) {
+            if (isLargeScreen) {
                 46.dp to 58.dp
             } else {
                 36.dp to 48.dp
@@ -973,8 +992,8 @@ private fun rememberPickerLayoutConfig(
         val optionSpacing = if (isLargeScreen) 6.dp else 4.dp
         val separatorPadding =
             when {
-                timePickerType == TimePickerType.HoursMinutes24H && isLargeScreen -> 12.dp
-                timePickerType == TimePickerType.HoursMinutes24H && !isLargeScreen -> 8.dp
+                timePickerType.isTwoColumnPicker && isLargeScreen -> 12.dp
+                timePickerType.isTwoColumnPicker && !isLargeScreen -> 8.dp
                 timePickerType == TimePickerType.HoursMinutesAmPm12H && isLargeScreen -> 0.dp
                 isLargeScreen -> 6.dp
                 else -> 2.dp
@@ -1330,7 +1349,11 @@ internal fun groupTimeParts(parts: List<TimePatternPart>): List<TimeLayoutElemen
  * [TimePatternPart]s. It also inserts a space literal between any two consecutive components that
  * don't have a literal separator.
  */
-internal fun parsePattern(pattern: String): List<TimePatternPart> {
+internal fun parsePattern(originalPattern: String): List<TimePatternPart> {
+    // Sanitize the pattern by removing all quoted literals.
+    // This handles edge cases like fr-CA ("HH 'h' mm") by turning them into "HHmm",
+    // preventing the 'h' from being parsed as an Hour component.
+    val pattern: String = originalPattern.replace(Regex("\\s*'.*?'\\s*"), "")
     val parts = mutableListOf<TimePatternPart>()
     val separatorText = StringBuilder()
     pattern.forEach { char ->
@@ -1349,7 +1372,15 @@ internal fun parsePattern(pattern: String): List<TimePatternPart> {
         if (component != null) {
             // Found a component, first flush any pending literal
             if (separatorText.isNotEmpty()) {
-                parts.add(TimePatternPart.SeparatorPart(separatorText.toString()))
+                // Sanitize long, unquoted literals.
+                // If the separator is longer than 1 char, replace it with a blank string.
+                // This allows the heuristic below to ensure a simple space for a clean UI.
+                // Otherwise, keep simple separators like ":" or ".".
+                val sanitizedSeparator =
+                    if (separatorText.length > 1) " " else separatorText.toString()
+                if (parts.isNotEmpty()) {
+                    parts.add(TimePatternPart.SeparatorPart(sanitizedSeparator))
+                }
                 separatorText.clear()
             }
             // Add the component, avoiding duplicates
@@ -1365,11 +1396,10 @@ internal fun parsePattern(pattern: String): List<TimePatternPart> {
             separatorText.append(char)
         }
     }
-    // Flush any remaining literal at the end
-    if (separatorText.isNotEmpty()) {
-        parts.add(TimePatternPart.SeparatorPart(separatorText.toString()))
-    }
-    return parts
+    // Trim trailing separators.
+    // This handles cases where a literal was at the start or end of the original pattern,
+    // ensuring our UI only displays separators *between* components.
+    return parts.dropLastWhile { it is TimePatternPart.SeparatorPart }
 }
 
 private const val FallbackAmText = "AM"

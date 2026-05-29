@@ -20,6 +20,7 @@ import android.graphics.SurfaceTexture
 import android.os.Build
 import android.util.Size
 import android.view.Surface
+import androidx.camera.camera2.pipe.CameraController
 import androidx.camera.camera2.pipe.CameraController.ControllerState
 import androidx.camera.camera2.pipe.CameraError
 import androidx.camera.camera2.pipe.CameraGraph
@@ -30,35 +31,40 @@ import androidx.camera.camera2.pipe.CameraStream
 import androidx.camera.camera2.pipe.CameraSurfaceManager
 import androidx.camera.camera2.pipe.StreamFormat
 import androidx.camera.camera2.pipe.StreamId
+import androidx.camera.camera2.pipe.StrictMode
 import androidx.camera.camera2.pipe.SurfaceTracker
 import androidx.camera.camera2.pipe.core.TimeSource
 import androidx.camera.camera2.pipe.core.TimestampNs
 import androidx.camera.camera2.pipe.graph.GraphListener
+import androidx.camera.camera2.pipe.graph.StreamGraphImpl
 import androidx.camera.camera2.pipe.internal.CameraStatusMonitor
 import androidx.camera.camera2.pipe.testing.FakeCamera2DeviceManager
 import androidx.camera.camera2.pipe.testing.FakeCamera2MetadataProvider
 import androidx.camera.camera2.pipe.testing.FakeCameraMetadata
 import androidx.camera.camera2.pipe.testing.FakeCameraStatusMonitor
+import androidx.camera.camera2.pipe.testing.FakeImageReaders
+import androidx.camera.camera2.pipe.testing.FakeImageSources
+import androidx.camera.camera2.pipe.testing.FakeSurfaces
 import androidx.camera.camera2.pipe.testing.FakeThreads
 import androidx.camera.camera2.pipe.testing.RobolectricCameraPipeTestRunner
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertFalse
-import kotlin.test.assertTrue
+import com.google.common.truth.Truth.assertThat
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestCoroutineScheduler
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import org.junit.After
+import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
+import org.robolectric.annotation.Config
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricCameraPipeTestRunner::class)
+@Config(sdk = [Config.ALL_SDKS])
 class Camera2CameraControllerTest {
     private val cameraId = CameraId.fromCamera2Id("0")
     private val testScheduler = TestCoroutineScheduler()
@@ -68,7 +74,15 @@ class Camera2CameraControllerTest {
     private val streamConfig1 =
         CameraStream.Config.create(size = Size(1280, 720), format = StreamFormat.YUV_420_888)
     private val streamId1 = StreamId(1)
-    private val fakeGraphConfig = CameraGraph.Config(cameraId, listOf(streamConfig1))
+    private val fakeGraphConfig =
+        CameraGraph.Config(
+            cameraId,
+            listOf(streamConfig1),
+            // Closing the capture session requires setting up and faking the session configuration
+            // pipeline end-to-end, which is largely out-of-scope for this test. For now, set it to
+            // false for the default behavior.
+            flags = CameraGraph.Flags(closeCaptureSessionOnDisconnect = false),
+        )
     private val fakeGraphListener: GraphListener = mock()
     private val fakeSurfaceTracker: SurfaceTracker = mock()
 
@@ -83,38 +97,59 @@ class Camera2CameraControllerTest {
     private val fakeCamera2Quirks =
         Camera2Quirks(
             FakeCamera2MetadataProvider(mapOf(cameraId to fakeCameraMetadata)),
-            cameraPipeFlags = CameraPipe.Flags(),
+            StrictMode(false),
         )
+    private val fakeCamera2SystemState =
+        Camera2SystemState(CameraPipe.CameraInteropConfig(), fakeThreads)
     private val fakeTimeSource: TimeSource = mock()
     private val fakeGraphId = CameraGraphId.nextId()
     private val fakeShutdownListener: Camera2CameraController.ShutdownListener = mock()
+    private val fakeConcurrentSessionSequencers = ConcurrentSessionSequencers()
 
     private val fakeSurfaceTexture = SurfaceTexture(0).apply { setDefaultBufferSize(1280, 720) }
     private val fakeSurface = Surface(fakeSurfaceTexture)
 
+    private val fakeSurfaces = FakeSurfaces()
+    private val fakeImageReaders = FakeImageReaders(fakeSurfaces)
+
     private fun createCamera2CameraController(): Camera2CameraController {
-        return Camera2CameraController(
-            testBackgroundScope,
-            fakeThreads,
-            fakeGraphConfig,
-            fakeGraphListener,
-            fakeSurfaceTracker,
-            fakeCameraStatusMonitor,
-            fakeCaptureSessionFactory,
-            fakeCaptureSequenceProcessorFactory,
-            fakeCamera2DeviceManager,
-            fakeCameraSurfaceManager,
-            fakeCamera2Quirks,
-            fakeTimeSource,
-            fakeGraphId,
-            fakeShutdownListener,
-        )
+        lateinit var cameraController: CameraController
+        val streamGraph =
+            StreamGraphImpl(
+                fakeCameraMetadata,
+                fakeGraphConfig,
+                FakeImageSources(fakeImageReaders),
+                { cameraController },
+            )
+        cameraController =
+            Camera2CameraController(
+                cameraGraphId = fakeGraphId,
+                graphConfig = fakeGraphConfig,
+                scope = testBackgroundScope,
+                threads = fakeThreads,
+                strictMode = StrictMode(true),
+                timeSource = fakeTimeSource,
+                camera2Quirks = fakeCamera2Quirks,
+                camera2DeviceManager = fakeCamera2DeviceManager,
+                camera2SystemState = fakeCamera2SystemState,
+                cameraStatusMonitor = fakeCameraStatusMonitor,
+                concurrentSessionSequencers = fakeConcurrentSessionSequencers,
+                streamGraph = streamGraph,
+                cameraSurfaceManager = fakeCameraSurfaceManager,
+                surfaceTracker = fakeSurfaceTracker,
+                captureSessionFactory = fakeCaptureSessionFactory,
+                captureSequenceProcessorFactory = fakeCaptureSequenceProcessorFactory,
+                graphListener = fakeGraphListener,
+                shutdownListener = fakeShutdownListener,
+            )
+        return cameraController
     }
 
     @After
     fun tearDown() {
         fakeSurface.release()
         fakeSurfaceTexture.release()
+        fakeSurfaces.close()
     }
 
     @Test
@@ -123,47 +158,51 @@ class Camera2CameraControllerTest {
             val cameraAvailable = CameraStatusMonitor.CameraStatus.CameraAvailable(cameraId)
             val cameraUnavailable = CameraStatusMonitor.CameraStatus.CameraUnavailable(cameraId)
 
-            assertTrue(
-                Camera2CameraController.shouldRestart(
-                    ControllerState.DISCONNECTED,
-                    CameraError.ERROR_CAMERA_IN_USE,
-                    cameraAvailable,
-                    null,
-                    TimestampNs(0L),
+            assertThat(
+                    Camera2CameraController.shouldRestart(
+                        ControllerState.DISCONNECTED,
+                        CameraError.ERROR_CAMERA_IN_USE,
+                        cameraAvailable,
+                        null,
+                        TimestampNs(0L),
+                    )
                 )
-            )
+                .isTrue()
 
-            assertTrue(
-                Camera2CameraController.shouldRestart(
-                    ControllerState.ERROR,
-                    CameraError.ERROR_CAMERA_DEVICE,
-                    cameraAvailable,
-                    null,
-                    TimestampNs(0L),
+            assertThat(
+                    Camera2CameraController.shouldRestart(
+                        ControllerState.ERROR,
+                        CameraError.ERROR_CAMERA_DEVICE,
+                        cameraAvailable,
+                        null,
+                        TimestampNs(0L),
+                    )
                 )
-            )
+                .isTrue()
 
             // Do not restart if we had a graph configuration error, which is unrecoverable.
-            assertFalse(
-                Camera2CameraController.shouldRestart(
-                    ControllerState.ERROR,
-                    CameraError.ERROR_GRAPH_CONFIG,
-                    cameraAvailable,
-                    null,
-                    TimestampNs(0L),
+            assertThat(
+                    Camera2CameraController.shouldRestart(
+                        ControllerState.ERROR,
+                        CameraError.ERROR_GRAPH_CONFIG,
+                        cameraAvailable,
+                        null,
+                        TimestampNs(0L),
+                    )
                 )
-            )
+                .isFalse()
 
             // Do not restart if the camera is unavailable.
-            assertFalse(
-                Camera2CameraController.shouldRestart(
-                    ControllerState.ERROR,
-                    CameraError.ERROR_CAMERA_DEVICE,
-                    cameraUnavailable,
-                    null,
-                    TimestampNs(0L),
+            assertThat(
+                    Camera2CameraController.shouldRestart(
+                        ControllerState.ERROR,
+                        CameraError.ERROR_CAMERA_DEVICE,
+                        cameraUnavailable,
+                        null,
+                        TimestampNs(0L),
+                    )
                 )
-            )
+                .isFalse()
         }
 
     @Test
@@ -172,50 +211,54 @@ class Camera2CameraControllerTest {
             val cameraAvailable = CameraStatusMonitor.CameraStatus.CameraAvailable(cameraId)
             val cameraUnavailable = CameraStatusMonitor.CameraStatus.CameraUnavailable(cameraId)
 
-            assertTrue(
-                Camera2CameraController.shouldRestart(
-                    ControllerState.DISCONNECTED,
-                    CameraError.ERROR_CAMERA_LIMIT_EXCEEDED,
-                    cameraAvailable,
-                    lastCameraPrioritiesChangedTs = TimestampNs(100L),
-                    currentTs = TimestampNs(200L),
+            assertThat(
+                    Camera2CameraController.shouldRestart(
+                        ControllerState.DISCONNECTED,
+                        CameraError.ERROR_CAMERA_LIMIT_EXCEEDED,
+                        cameraAvailable,
+                        lastCameraPrioritiesChangedTs = TimestampNs(100L),
+                        currentTs = TimestampNs(200L),
+                    )
                 )
-            )
+                .isTrue()
 
             // We should restart regardless of whether the camera is available.
-            assertTrue(
-                Camera2CameraController.shouldRestart(
-                    ControllerState.DISCONNECTED,
-                    CameraError.ERROR_CAMERA_LIMIT_EXCEEDED,
-                    cameraUnavailable,
-                    lastCameraPrioritiesChangedTs = TimestampNs(100L),
-                    currentTs = TimestampNs(200L),
+            assertThat(
+                    Camera2CameraController.shouldRestart(
+                        ControllerState.DISCONNECTED,
+                        CameraError.ERROR_CAMERA_LIMIT_EXCEEDED,
+                        cameraUnavailable,
+                        lastCameraPrioritiesChangedTs = TimestampNs(100L),
+                        currentTs = TimestampNs(200L),
+                    )
                 )
-            )
+                .isTrue()
 
             // Do not restart if the last priorities changed signal isn't recent.
             if (Build.VERSION.SDK_INT !in (Build.VERSION_CODES.Q..Build.VERSION_CODES.S_V2)) {
-                assertFalse(
-                    Camera2CameraController.shouldRestart(
-                        ControllerState.DISCONNECTED,
-                        CameraError.ERROR_CAMERA_DISCONNECTED,
-                        cameraUnavailable,
-                        lastCameraPrioritiesChangedTs = TimestampNs(100L),
-                        currentTs = TimestampNs(500_000_000L), // 500ms
+                assertThat(
+                        Camera2CameraController.shouldRestart(
+                            ControllerState.DISCONNECTED,
+                            CameraError.ERROR_CAMERA_DISCONNECTED,
+                            cameraUnavailable,
+                            lastCameraPrioritiesChangedTs = TimestampNs(100L),
+                            currentTs = TimestampNs(500_000_000L), // 500ms
+                        )
                     )
-                )
+                    .isFalse()
             }
 
             // Do not restart if we had a camera error and the camera is unavailable.
-            assertFalse(
-                Camera2CameraController.shouldRestart(
-                    ControllerState.ERROR,
-                    CameraError.ERROR_CAMERA_DISABLED,
-                    cameraUnavailable,
-                    lastCameraPrioritiesChangedTs = TimestampNs(100L),
-                    currentTs = TimestampNs(200L),
+            assertThat(
+                    Camera2CameraController.shouldRestart(
+                        ControllerState.ERROR,
+                        CameraError.ERROR_CAMERA_DISABLED,
+                        cameraUnavailable,
+                        lastCameraPrioritiesChangedTs = TimestampNs(100L),
+                        currentTs = TimestampNs(200L),
+                    )
                 )
-            )
+                .isFalse()
         }
 
     @Test
@@ -224,57 +267,62 @@ class Camera2CameraControllerTest {
             val cameraAvailable = CameraStatusMonitor.CameraStatus.CameraAvailable(cameraId)
             val cameraUnavailable = CameraStatusMonitor.CameraStatus.CameraUnavailable(cameraId)
 
-            assertTrue(
-                Camera2CameraController.shouldRestart(
-                    ControllerState.DISCONNECTED,
-                    CameraError.ERROR_CAMERA_DISCONNECTED,
-                    cameraAvailable,
-                    null,
-                    TimestampNs(0L),
-                )
-            )
-
-            if (Build.VERSION.SDK_INT !in (Build.VERSION_CODES.Q..Build.VERSION_CODES.S_V2)) {
-                assertFalse(
+            assertThat(
                     Camera2CameraController.shouldRestart(
                         ControllerState.DISCONNECTED,
                         CameraError.ERROR_CAMERA_DISCONNECTED,
-                        cameraUnavailable,
+                        cameraAvailable,
                         null,
                         TimestampNs(0L),
                     )
                 )
+                .isTrue()
+
+            if (Build.VERSION.SDK_INT !in (Build.VERSION_CODES.Q..Build.VERSION_CODES.S_V2)) {
+                assertThat(
+                        Camera2CameraController.shouldRestart(
+                            ControllerState.DISCONNECTED,
+                            CameraError.ERROR_CAMERA_DISCONNECTED,
+                            cameraUnavailable,
+                            null,
+                            TimestampNs(0L),
+                        )
+                    )
+                    .isFalse()
             }
 
-            assertTrue(
-                Camera2CameraController.shouldRestart(
-                    ControllerState.DISCONNECTED,
-                    CameraError.ERROR_CAMERA_LIMIT_EXCEEDED,
-                    cameraUnavailable,
-                    lastCameraPrioritiesChangedTs = TimestampNs(100L),
-                    currentTs = TimestampNs(200L),
+            assertThat(
+                    Camera2CameraController.shouldRestart(
+                        ControllerState.DISCONNECTED,
+                        CameraError.ERROR_CAMERA_LIMIT_EXCEEDED,
+                        cameraUnavailable,
+                        lastCameraPrioritiesChangedTs = TimestampNs(100L),
+                        currentTs = TimestampNs(200L),
+                    )
                 )
-            )
+                .isTrue()
 
-            assertTrue(
-                Camera2CameraController.shouldRestart(
-                    ControllerState.ERROR,
-                    CameraError.ERROR_CAMERA_OPENER,
-                    cameraAvailable,
-                    null,
-                    TimestampNs(0L),
+            assertThat(
+                    Camera2CameraController.shouldRestart(
+                        ControllerState.ERROR,
+                        CameraError.ERROR_CAMERA_OPENER,
+                        cameraAvailable,
+                        null,
+                        TimestampNs(0L),
+                    )
                 )
-            )
+                .isTrue()
 
-            assertFalse(
-                Camera2CameraController.shouldRestart(
-                    ControllerState.ERROR,
-                    CameraError.ERROR_GRAPH_CONFIG,
-                    cameraAvailable,
-                    null,
-                    TimestampNs(0L),
+            assertThat(
+                    Camera2CameraController.shouldRestart(
+                        ControllerState.ERROR,
+                        CameraError.ERROR_GRAPH_CONFIG,
+                        cameraAvailable,
+                        null,
+                        TimestampNs(0L),
+                    )
                 )
-            )
+                .isFalse()
         }
 
     @Test
@@ -283,25 +331,27 @@ class Camera2CameraControllerTest {
             val cameraUnavailable = CameraStatusMonitor.CameraStatus.CameraUnavailable(cameraId)
 
             if (Build.VERSION.SDK_INT in (Build.VERSION_CODES.Q..Build.VERSION_CODES.S_V2)) {
-                assertTrue(
-                    Camera2CameraController.shouldRestart(
-                        ControllerState.DISCONNECTED,
-                        CameraError.ERROR_CAMERA_IN_USE,
-                        cameraUnavailable,
-                        null,
-                        TimestampNs(0L),
+                assertThat(
+                        Camera2CameraController.shouldRestart(
+                            ControllerState.DISCONNECTED,
+                            CameraError.ERROR_CAMERA_IN_USE,
+                            cameraUnavailable,
+                            null,
+                            TimestampNs(0L),
+                        )
                     )
-                )
+                    .isTrue()
             } else {
-                assertFalse(
-                    Camera2CameraController.shouldRestart(
-                        ControllerState.DISCONNECTED,
-                        CameraError.ERROR_CAMERA_IN_USE,
-                        cameraUnavailable,
-                        null,
-                        TimestampNs(0L),
+                assertThat(
+                        Camera2CameraController.shouldRestart(
+                            ControllerState.DISCONNECTED,
+                            CameraError.ERROR_CAMERA_IN_USE,
+                            cameraUnavailable,
+                            null,
+                            TimestampNs(0L),
+                        )
                     )
-                )
+                    .isFalse()
             }
         }
 
@@ -335,15 +385,15 @@ class Camera2CameraControllerTest {
 
             cameraController.close()
             testScheduler.advanceUntilIdle()
-            assertEquals(cameraController.controllerState, ControllerState.CLOSED)
+            assertThat(cameraController.controllerState).isEqualTo(ControllerState.CLOSED)
 
             fakeCamera2DeviceManager.simulateCameraError(cameraId, CameraError.ERROR_CAMERA_DEVICE)
             testScheduler.advanceUntilIdle()
-            assertEquals(cameraController.controllerState, ControllerState.CLOSED)
+            assertThat(cameraController.controllerState).isEqualTo(ControllerState.CLOSED)
 
             fakeCamera2DeviceManager.simulateCameraError(cameraId, CameraError.ERROR_CAMERA_IN_USE)
             testScheduler.advanceUntilIdle()
-            assertEquals(cameraController.controllerState, ControllerState.CLOSED)
+            assertThat(cameraController.controllerState).isEqualTo(ControllerState.CLOSED)
         }
 
     @Test
@@ -359,7 +409,7 @@ class Camera2CameraControllerTest {
             fakeCamera2DeviceManager.simulateCameraError(cameraId, CameraError.ERROR_CAMERA_DEVICE)
             testScheduler.advanceUntilIdle()
 
-            assertEquals(cameraController.controllerState, ControllerState.ERROR)
+            assertThat(cameraController.controllerState).isEqualTo(ControllerState.ERROR)
 
             cameraController.close()
         }
@@ -380,9 +430,9 @@ class Camera2CameraControllerTest {
             if (Build.VERSION.SDK_INT in (Build.VERSION_CODES.Q..Build.VERSION_CODES.S_V2)) {
                 // Between Android Q and S_V2, we have a quirk that institutes an immediate restart,
                 // since we're unable to get reliable onCameraAccessPrioritiesChanged signals.
-                assertEquals(cameraController.controllerState, ControllerState.STARTED)
+                assertThat(cameraController.controllerState).isEqualTo(ControllerState.STARTED)
             } else {
-                assertEquals(cameraController.controllerState, ControllerState.DISCONNECTED)
+                assertThat(cameraController.controllerState).isEqualTo(ControllerState.DISCONNECTED)
             }
 
             cameraController.close()
@@ -403,7 +453,7 @@ class Camera2CameraControllerTest {
 
             fakeCameraStatusMonitor.simulateCameraAvailable()
             testScheduler.advanceUntilIdle()
-            assertEquals(cameraController.controllerState, ControllerState.STARTED)
+            assertThat(cameraController.controllerState).isEqualTo(ControllerState.STARTED)
             verify(fakeCaptureSessionFactory, times(1)).create(any(), any(), any())
 
             cameraController.close()
@@ -424,7 +474,7 @@ class Camera2CameraControllerTest {
 
             fakeCameraStatusMonitor.simulateCameraAvailable()
             testScheduler.advanceUntilIdle()
-            assertEquals(cameraController.controllerState, ControllerState.STARTED)
+            assertThat(cameraController.controllerState).isEqualTo(ControllerState.STARTED)
             verify(fakeCaptureSessionFactory, times(1)).create(any(), any(), any())
 
             cameraController.close()
@@ -445,7 +495,7 @@ class Camera2CameraControllerTest {
 
             fakeCameraStatusMonitor.simulateCameraAvailable()
             testScheduler.advanceUntilIdle()
-            assertEquals(cameraController.controllerState, ControllerState.ERROR)
+            assertThat(cameraController.controllerState).isEqualTo(ControllerState.ERROR)
 
             cameraController.close()
         }
@@ -465,7 +515,7 @@ class Camera2CameraControllerTest {
 
             fakeCameraStatusMonitor.simulateCameraPrioritiesChanged()
             testScheduler.advanceUntilIdle()
-            assertEquals(cameraController.controllerState, ControllerState.ERROR)
+            assertThat(cameraController.controllerState).isEqualTo(ControllerState.ERROR)
 
             cameraController.close()
         }
@@ -486,8 +536,44 @@ class Camera2CameraControllerTest {
             fakeCameraStatusMonitor.simulateCameraPrioritiesChanged()
             fakeCameraStatusMonitor.simulateCameraAvailable()
             testScheduler.advanceUntilIdle()
-            assertEquals(cameraController.controllerState, ControllerState.STARTED)
+            assertThat(cameraController.controllerState).isEqualTo(ControllerState.STARTED)
             verify(fakeCaptureSessionFactory, times(1)).create(any(), any(), any())
+
+            cameraController.close()
+        }
+
+    @Test
+    fun testControllerStopThenCloseDoesNotCrash() =
+        testScope.runTest(20.seconds) {
+            val cameraController = createCamera2CameraController()
+            cameraController.updateSurfaceMap(mapOf(streamId1 to fakeSurface))
+            cameraController.start()
+            fakeCamera2DeviceManager.simulateCameraOpen(cameraId)
+            testScheduler.advanceUntilIdle()
+
+            cameraController.stop()
+            testScheduler.advanceUntilIdle()
+
+            cameraController.close()
+            testScheduler.advanceUntilIdle()
+
+            assertThat(cameraController.controllerState).isEqualTo(ControllerState.CLOSED)
+        }
+
+    @Test
+    fun testControllerMultipleStopsDoNotCrash() =
+        testScope.runTest(20.seconds) {
+            val cameraController = createCamera2CameraController()
+            cameraController.updateSurfaceMap(mapOf(streamId1 to fakeSurface))
+            cameraController.start()
+            fakeCamera2DeviceManager.simulateCameraOpen(cameraId)
+            testScheduler.advanceUntilIdle()
+
+            cameraController.stop()
+            testScheduler.advanceUntilIdle()
+
+            cameraController.stop()
+            testScheduler.advanceUntilIdle()
 
             cameraController.close()
         }

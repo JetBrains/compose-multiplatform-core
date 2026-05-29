@@ -15,10 +15,9 @@
  */
 
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
 import androidx.build.SoftwareType
@@ -26,16 +25,46 @@ import androidx.build.SoftwareType
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("org.jetbrains.kotlin.android")
+    id("com.squareup.wire")
+    id("androidx.stableaidl")
 }
 
 dependencies {
-    api(libs.kotlinStdlib)
-    // Add dependencies here
+    api("androidx.annotation:annotation:1.9.1")
+    api(libs.kotlinCoroutinesAndroid)
+
+    implementation(libs.jspecify)
+    implementation(libs.guavaAndroid) // upgrading to newer version of guava due to CVE-2023-2976
+    implementation(libs.kotlinCoroutinesGuava)
+    testImplementation(libs.junit)
+    testImplementation(libs.mockitoKotlin4)
+    testImplementation(libs.testExtJunit)
+    testImplementation(libs.testRunner)
+    testImplementation(libs.truth)
+    testImplementation(libs.kotlinCoroutinesTest)
+}
+
+wire {
+    kotlin {}
+
+    sourcePath {
+        srcDir 'src/main/proto'
+    }
 }
 
 android {
     namespace = "androidx.glance.wear.core"
+    defaultConfig {
+        minSdk { version = release(28) }
+    }
+    buildFeatures {
+        aidl = true
+    }
+    buildTypes.all {
+        stableAidl {
+            version = 1
+        }
+    }
 }
 
 androidx {
@@ -43,4 +72,5 @@ androidx {
     type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2025"
     description = "Core functionality for Glance Wear."
+    enableRobolectric()
 }

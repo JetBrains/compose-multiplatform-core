@@ -55,6 +55,7 @@ internal actual suspend fun PlatformTextInputSession.platformSpecificTextInputSe
     updateSelectionState: (() -> Unit)?,
     stylusHandwritingTrigger: MutableSharedFlow<Unit>?,
     viewConfiguration: ViewConfiguration?,
+    updateTouchMode: (Boolean) -> Unit,
 ): Nothing {
     platformSpecificTextInputSession(
         state = state,
@@ -66,6 +67,7 @@ internal actual suspend fun PlatformTextInputSession.platformSpecificTextInputSe
         composeImm = ComposeInputMethodManager(view),
         stylusHandwritingTrigger = stylusHandwritingTrigger,
         viewConfiguration = viewConfiguration,
+        updateTouchMode = updateTouchMode,
     )
 }
 
@@ -80,6 +82,7 @@ internal suspend fun PlatformTextInputSession.platformSpecificTextInputSession(
     composeImm: ComposeInputMethodManager,
     stylusHandwritingTrigger: MutableSharedFlow<Unit>?,
     viewConfiguration: ViewConfiguration?,
+    updateTouchMode: (Boolean) -> Unit,
 ): Nothing {
     coroutineScope {
         launch(start = CoroutineStart.UNDISPATCHED) {
@@ -130,6 +133,9 @@ internal suspend fun PlatformTextInputSession.platformSpecificTextInputSession(
                     override val text: TextFieldCharSequence
                         get() = state.visualText
 
+                    override val transformedLength: Int
+                        get() = imeEditCommandScope.transformedLength
+
                     override fun sendKeyEvent(keyEvent: KeyEvent) {
                         composeImm.sendKeyEvent(keyEvent)
                     }
@@ -174,6 +180,10 @@ internal suspend fun PlatformTextInputSession.platformSpecificTextInputSession(
                         }
                         return false
                     }
+
+                    override fun updateTouchMode(isInTouchMode: Boolean) {
+                        updateTouchMode.invoke(isInTouchMode)
+                    }
                 }
 
             outAttrs.update(
@@ -196,7 +206,7 @@ internal suspend fun PlatformTextInputSession.platformSpecificTextInputSession(
  */
 private val ALL_MIME_TYPES = arrayOf("*/*", "image/*", "video/*")
 
-private fun logDebug(tag: String = TIA_TAG, content: () -> String) {
+private inline fun logDebug(tag: String = TIA_TAG, content: () -> String) {
     if (TIA_DEBUG) {
         Log.d(tag, content())
     }

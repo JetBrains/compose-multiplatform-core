@@ -40,8 +40,8 @@ class CompilationTestHelper(
     private val testFileSrcDir: File,
     /** The root directory containing the source golden files. */
     private val goldenFileSrcDir: File,
-    /** A list of proxy source files to be compiled with the test sources. */
-    private val proxySourceFileNames: List<String>,
+    /** A list of stub source files to be compiled with the test sources. */
+    private val stubSourceFileNames: List<String>,
     /** A list of [com.google.devtools.ksp.processing.SymbolProcessorProvider] under test. */
     private val symbolProcessorProviders: List<SymbolProcessorProvider>,
 ) {
@@ -58,7 +58,7 @@ class CompilationTestHelper(
         check(goldenFileSrcDir.isDirectory) { "[$goldenFileSrcDir] is not a directory." }
     }
 
-    private val outputDir: Path by lazy {
+    val outputDir: Path by lazy {
         requireNotNull(System.getProperty("test_output_dir")) {
                 "test_output_dir not set for diff test."
             }
@@ -78,11 +78,11 @@ class CompilationTestHelper(
                     sourceFile.readText(),
                 )
             } +
-                proxySourceFileNames.map { proxySourceFileName ->
-                    val proxySourceFile = getTestSourceFile(proxySourceFileName)
+                stubSourceFileNames.map { stubSourceFileName ->
+                    val stubSourceFile = getTestSourceFile(stubSourceFileName)
                     Source.Companion.kotlin(
-                        ensureKotlinFileNameFormat(proxySourceFile.name),
-                        proxySourceFile.readText(),
+                        ensureKotlinFileNameFormat(stubSourceFile.name),
+                        stubSourceFile.readText(),
                     )
                 }
 
@@ -95,6 +95,7 @@ class CompilationTestHelper(
                     sources = sources,
                     symbolProcessorProviders = symbolProcessorProviders,
                     processorOptions = processorOptions,
+                    kotlincArguments = listOf("-jvm-target", "11"),
                 ),
             )
 
@@ -105,7 +106,7 @@ class CompilationTestHelper(
      * Asserts that the compilation succeeds and contains a generated file (either source or
      * resource) with the given name, whose content matches the golden file.
      */
-    private fun assertSuccessWithGeneratedContent(
+    fun assertSuccessWithGeneratedContent(
         report: CompilationReport,
         expectGeneratedFileName: String,
         goldenFileName: String,

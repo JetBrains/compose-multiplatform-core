@@ -20,21 +20,7 @@
 package androidx.room3.util
 
 import androidx.annotation.RestrictTo
-import kotlin.jvm.JvmField
 import kotlin.jvm.JvmName
-
-@Suppress("unused")
-@JvmField
-@Deprecated("No longer used by generated code")
-public val EMPTY_STRING_ARRAY: Array<String?> = arrayOfNulls<String>(0)
-
-/**
- * Returns a new StringBuilder to be used while producing SQL queries.
- *
- * @return A new or recycled StringBuilder
- */
-@Deprecated("No longer used by generated code")
-public fun newStringBuilder(): StringBuilder = StringBuilder()
 
 /**
  * Adds bind variable placeholders (?) to the given string. Each placeholder is separated by a
@@ -48,6 +34,38 @@ public fun appendPlaceholders(builder: StringBuilder, count: Int) {
         builder.append("?")
         if (i < count - 1) {
             builder.append(",")
+        }
+    }
+}
+
+/**
+ * Adds row value placeholders (e.g., (?, ?)) to the given string. Each tuplet is separated by a
+ * comma.
+ *
+ * @param builder The StringBuilder for the query
+ * @param count Number of tuplets
+ * @param columnsSize Size of each tuplet
+ */
+public fun appendRowValuePlaceholders(builder: StringBuilder, count: Int, columnsSize: Int) {
+    if (count <= 0) return
+    val placeholder =
+        when (columnsSize) {
+            2 -> "(?, ?)"
+            3 -> "(?, ?, ?)"
+            else -> {
+                val sb = StringBuilder("(")
+                for (i in 0 until columnsSize) {
+                    if (i > 0) sb.append(", ")
+                    sb.append("?")
+                }
+                sb.append(")")
+                sb.toString()
+            }
+        }
+    for (i in 0 until count) {
+        builder.append(placeholder)
+        if (i < count - 1) {
+            builder.append(", ")
         }
     }
 }

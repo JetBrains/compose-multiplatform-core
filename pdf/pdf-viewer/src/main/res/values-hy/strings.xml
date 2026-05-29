@@ -51,8 +51,8 @@
     <string name="desc_page_range" msgid="5286496438609641577">"էջ <xliff:g id="FIRST">%1$d</xliff:g>–<xliff:g id="LAST">%2$d</xliff:g>՝ <xliff:g id="TOTAL">%3$d</xliff:g>-ից"</string>
     <string name="desc_image_alt_text" msgid="7700601988820586333">"Պատկեր՝ <xliff:g id="ALT_TEXT">%1$s</xliff:g>"</string>
     <string name="hint_find" msgid="5385388836603550565">"Գտեք ֆայլում"</string>
-    <string name="previous_button_description" msgid="1169511027880317546">"Նախորդը"</string>
-    <string name="next_button_description" msgid="4702699322249103693">"Հաջորդը"</string>
+    <string name="previous_button_description" msgid="1169511027880317546">"Նախորդ"</string>
+    <string name="next_button_description" msgid="4702699322249103693">"Հաջորդ"</string>
     <string name="close_button_description" msgid="7379823906921067675">"Փակել"</string>
     <string name="message_match_status" msgid="6288242289981639727">"<xliff:g id="POSITION">%1$d</xliff:g>/<xliff:g id="TOTAL">%2$d</xliff:g>"</string>
     <string name="match_status_description" msgid="4996847358326345288">"<xliff:g id="POSITION">%1$d</xliff:g>՝ <xliff:g id="TOTAL">%2$d</xliff:g>-ից"</string>
@@ -67,6 +67,7 @@
     <string name="page_broken" msgid="2968770793669433462">"PDF փաստաթղթի էջը վնասված է"</string>
     <string name="needs_more_data" msgid="3520133467908240802">"Ոչ բավարար տվյալներ PDF փաստաթղթի մշակման համար"</string>
     <string name="error_cannot_open_pdf" msgid="2361919778558145071">"Չհաջողվեց բացել PDF ֆայլը"</string>
+    <string name="error_cannot_open_password_protected_pdf" msgid="3400883576932438749">"Գաղտնաբառով պաշտպանված PDF ֆայլերը չեն աջակցվում։"</string>
     <string name="cannot_edit_pdf" msgid="7677598370087228978">"Այս PDF ֆայլը հնարավոր չէ խմբագրել"</string>
     <string name="clipboard_label" msgid="8943155331324944981">"PDF ֆայլից պատճենված բովանդակություն"</string>
     <string name="fast_scroller_thumb" msgid="6712048991132846541">"Ոլորագոտի"</string>
@@ -81,6 +82,7 @@
     <string name="form_click_toggle_instruction" msgid="7171111300244445911">"Սեղմեք փոխարկելու համար։"</string>
     <string name="form_click_opens_choices_menu_instruction" msgid="5648228168212004143">"Սեղմեք՝ ընտրության ընտրացանկը բացելու համար։"</string>
     <string name="form_click_enters_text_edit_mode_instruction" msgid="2305283577544618880">"Սեղմեք՝ տեքստի խմբագրման ռեժիմին անցնելու համար։"</string>
+    <string name="combobox_custom_option" msgid="8730230629127076731">"Այլ"</string>
     <string name="form_unknown" msgid="6371515914365431330">"Անհայտ"</string>
     <string name="form_widget_type_push_button" msgid="3595388398616291441">"Կոճակ"</string>
     <string name="form_widget_type_checkbox" msgid="5165655383070460151">"Նշավանդակ"</string>
@@ -89,5 +91,4 @@
     <string name="form_widget_type_list_box" msgid="8052623180309553495">"Ցուցակ"</string>
     <string name="form_widget_type_text_field" msgid="581285155951215607">"Տեքստային դաշտ"</string>
     <string name="form_widget_type_signature" msgid="3811511096215331673">"Ստորագրություն"</string>
-    <string name="form_filling_tooltip" msgid="1715428076993648563">"Հպեք դաշտին՝ ձևի լրացման ռեժիմը միացնելու համար"</string>
 </resources>

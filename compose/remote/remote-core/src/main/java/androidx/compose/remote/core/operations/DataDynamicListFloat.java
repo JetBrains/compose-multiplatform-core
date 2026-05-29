@@ -15,13 +15,11 @@
  */
 package androidx.compose.remote.core.operations;
 
-import static androidx.compose.remote.core.documentation.DocumentedOperation.FLOAT_ARRAY;
-import static androidx.compose.remote.core.documentation.DocumentedOperation.INT;
-
 import androidx.annotation.RestrictTo;
 import androidx.compose.remote.core.Operation;
 import androidx.compose.remote.core.Operations;
 import androidx.compose.remote.core.RemoteContext;
+import androidx.compose.remote.core.VariableProvider;
 import androidx.compose.remote.core.VariableSupport;
 import androidx.compose.remote.core.WireBuffer;
 import androidx.compose.remote.core.documentation.DocumentationBuilder;
@@ -38,14 +36,24 @@ import java.util.List;
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class DataDynamicListFloat extends Operation
-        implements VariableSupport, ArrayAccess, Serializable {
+        implements VariableSupport, VariableProvider, ArrayAccess, Serializable {
     private static final int OP_CODE = Operations.DYNAMIC_FLOAT_LIST;
     private static final String CLASS_NAME = "DataDynamicListFloat";
-    public final int mId;
+    public int mId;
     private final float mArrayLength;
     private float mArrayLengthOut;
     private float @NonNull [] mValues;
     private static final int MAX_FLOAT_ARRAY = 2000;
+
+    @Override
+    public int getId() {
+        return mId;
+    }
+
+    @Override
+    public void setId(int id) {
+        mId = id;
+    }
 
     public DataDynamicListFloat(int id, float nbValues) {
         mId = id;
@@ -58,8 +66,10 @@ public class DataDynamicListFloat extends Operation
 
     @Override
     public void updateVariables(@NonNull RemoteContext context) {
-        mArrayLengthOut = Float.isNaN(mArrayLength)
-                ? context.getFloat(Utils.idFromNan(mArrayLength)) : mArrayLength;
+        mArrayLengthOut =
+                Float.isNaN(mArrayLength)
+                        ? context.getFloat(Utils.idFromNan(mArrayLength))
+                        : mArrayLength;
         if ((int) mArrayLengthOut != mValues.length) {
             mValues = new float[(int) mArrayLengthOut];
             Arrays.fill(mValues, 0f);
@@ -88,8 +98,8 @@ public class DataDynamicListFloat extends Operation
     /**
      * Write this operation to the buffer
      *
-     * @param buffer   the buffer to apply the operation to
-     * @param id       the id of the array
+     * @param buffer the buffer to apply the operation to
+     * @param id the id of the array
      * @param nbValues the number of values of the array
      */
     public static void apply(@NonNull WireBuffer buffer, int id, float nbValues) {
@@ -101,12 +111,12 @@ public class DataDynamicListFloat extends Operation
     /**
      * Read this operation and add it to the list of operations
      *
-     * @param buffer     the buffer to read
+     * @param buffer the buffer to read
      * @param operations the list of operations that will be added to
      */
     public static void read(@NonNull WireBuffer buffer, @NonNull List<Operation> operations) {
-        int id = buffer.readInt();
-        float len = buffer.readFloat();
+        int id = buffer.declareId();
+        float len = buffer.readNanId();
         if (len > MAX_FLOAT_ARRAY) {
             throw new RuntimeException(len + " map entries more than max = " + MAX_FLOAT_ARRAY);
         }
@@ -121,10 +131,10 @@ public class DataDynamicListFloat extends Operation
      */
     public static void documentation(@NonNull DocumentationBuilder doc) {
         doc.operation("Data Operations", OP_CODE, CLASS_NAME)
-                .description("a list of Floats")
-                .field(DocumentedOperation.INT, "id", "id the array (2xxxxx)")
-                .field(INT, "length", "number of floats")
-                .field(FLOAT_ARRAY, "values", "length", "array of floats");
+                .addedVersion(7)
+                .description("A dynamic list of floats")
+                .field(DocumentedOperation.INT, "id", "The ID of the list")
+                .field(DocumentedOperation.FLOAT, "length", "The length of the list");
     }
 
     @NonNull
@@ -153,10 +163,7 @@ public class DataDynamicListFloat extends Operation
         return mValues.length;
     }
 
-    /**
-     * Update the values
-     * @param values
-     */
+    /** Update the values */
     public void updateValues(float @NonNull [] values) {
         mValues = Arrays.copyOf(values, values.length);
     }
@@ -167,9 +174,7 @@ public class DataDynamicListFloat extends Operation
         serializer.addType(CLASS_NAME).add("id", mId).add("values", Arrays.toString(mValues));
     }
 
-    /**
-     * Update the DataListFloat with values from a new one
-     */
+    /** Update the DataListFloat with values from a new one */
     public void update(@NonNull DataDynamicListFloat lc) {
         mValues = lc.mValues;
     }

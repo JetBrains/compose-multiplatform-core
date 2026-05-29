@@ -845,11 +845,6 @@ object ExposedDropdownMenuDefaults {
         PaddingValues(horizontal = ExposedDropdownMenuItemHorizontalPadding, vertical = 0.dp)
 
     @Deprecated("Maintained for binary compatibility", level = DeprecationLevel.HIDDEN)
-    @ExperimentalMaterial3Api
-    @Composable
-    fun TrailingIcon(expanded: Boolean) = TrailingIcon(expanded, Modifier)
-
-    @Deprecated("Maintained for binary compatibility", level = DeprecationLevel.HIDDEN)
     @Composable
     fun textFieldColors(
         focusedTextColor: Color = FilledAutocompleteTokens.FieldFocusInputTextColor.value,
@@ -1450,7 +1445,13 @@ private fun Modifier.expandable(
                 // Since we make the popup menu not focusable for PrimaryEditable to not interrupt
                 // typing, we need to make sure the menu becomes focusable when the user try to
                 // reach the menu via keyboard navigation.
-                if (it.key == Key.Tab || it.key == Key.DirectionDown || it.key == Key.DirectionUp) {
+                if (
+                    it.key == Key.Tab ||
+                        it.key == Key.DirectionDown ||
+                        it.key == Key.NumPadDirectionDown ||
+                        it.key == Key.DirectionUp ||
+                        it.key == Key.NumPadDirectionUp
+                ) {
                     alwaysFocusable.value = true
                     return@onPreviewKeyEvent true
                 }

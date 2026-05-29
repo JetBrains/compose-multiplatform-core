@@ -25,8 +25,7 @@ mkdir -p "$DIST_DIR"
 if [ "$CHANGE_INFO" != "" ]; then
   cp "$CHANGE_INFO" "$ORIGINAL_DIST_DIR/"
   if [ "$MANIFEST" == "" ] && [ -f "$ORIGINAL_DIST_DIR/manifest_${BUILD_NUMBER}.xml" ]; then
-    cp "$ORIGINAL_DIST_DIR/manifest_${BUILD_NUMBER}.xml" "$OUT_DIR/manifest.xml"
-    export MANIFEST="$OUT_DIR/manifest.xml"
+    export MANIFEST="$ORIGINAL_DIST_DIR/manifest_${BUILD_NUMBER}.xml"
   fi
 fi
 
@@ -105,8 +104,12 @@ listJavaProcesses
 busytown/impl/monitor.sh 3600 busytown/impl/showJavaStacks.sh &
 
 # run the build
-if run ./gradlew --ci "$@"; then
-  echo build passed
+if run ./gradlew --ci -Pandroidx.allowLockfileMismatch=false "$@"; then
+  echo "build passed"
+  if [[ "$IS_POSTSUBMIT" == "true" && "$ENABLE_PRESUBMIT_COMPATIBLE_CC_STORE" == "true" ]]; then
+    echo "Caching configuration for reuse in presubmit."
+    run IS_POSTSUBMIT=false ./gradlew --ci -Pandroidx.allowLockfileMismatch=false "$@" --dry-run
+  fi
 else
   if [ "$DIAGNOSE" == "true" ]; then
     # see if diagnose-build-failure.sh can identify the root cauase
@@ -125,7 +128,9 @@ else
 fi
 
 # check that no unexpected modifications were made to the source repository, such as new cache directories
-DIST_DIR=$DIST_DIR $SCRIPT_DIR/verify_no_caches_in_source_repo.sh $BUILD_START_MARKER
+if ! DIST_DIR=$DIST_DIR $SCRIPT_DIR/verify_no_caches_in_source_repo.sh $BUILD_START_MARKER; then
+  BUILD_STATUS=2 # verify_no_caches failure
+fi
 
 # copy problem report to DIST_DIR so we can see them
 PROBLEM_REPORTS_EXPORTED=$DIST_DIR/problem-reports

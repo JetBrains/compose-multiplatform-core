@@ -30,13 +30,13 @@ import androidx.xr.runtime.math.Pose
  * The intended usage is for a [RenderingRuntime] to cast its [SceneRuntime] instance to
  * `RenderingEntityFactory` to access these factory methods.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public interface RenderingEntityFactory {
     /**
      * A factory function to create a SceneCore GltfEntity. The parent may be the activity space or
      * GltfEntity in the scene.
      */
-    public fun createGltfEntity(feature: GltfFeature, pose: Pose, parentEntity: Entity): GltfEntity
+    public fun createGltfEntity(feature: GltfFeature, pose: Pose, parentEntity: Entity?): GltfEntity
 
     /**
      * Factory method for SurfaceEntity.
@@ -49,9 +49,16 @@ public interface RenderingEntityFactory {
     public fun createSurfaceEntity(
         feature: SurfaceFeature,
         pose: Pose,
-        parentEntity: Entity,
+        parentEntity: Entity?,
     ): SurfaceEntity
 
-    /** A factory function to create a SubspaceNodeEntity. */
-    public fun createSubspaceNodeEntity(feature: SubspaceNodeFeature): SubspaceNodeEntity
+    /**
+     * Factory method for MeshEntity.
+     *
+     * @param feature The rendering implementation of MeshEntity.
+     * @param pose Pose of this entity relative to its parent, default value is Identity.
+     * @param parentEntity The parent entity of this entity.
+     * @return A [MeshEntity] which is a child of the parent entity.
+     */
+    public fun createMeshEntity(feature: MeshFeature, pose: Pose, parentEntity: Entity?): MeshEntity
 }

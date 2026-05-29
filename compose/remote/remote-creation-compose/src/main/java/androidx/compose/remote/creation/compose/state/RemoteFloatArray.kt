@@ -23,20 +23,32 @@ import androidx.compose.remote.core.operations.utilities.AnimatedFloatExpression
 import androidx.compose.remote.creation.compose.capture.RemoteComposeCreationState
 import androidx.compose.ui.util.fastMap
 
-/**
- * Represents an array of floats.
- *
- * @property input The collection of floats to store in the document
- */
+/** Represents an array of floats. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public class RemoteFloatArray(public override val constantValue: List<RemoteFloat>?) :
-    RemoteState<List<RemoteFloat>> {
+public class RemoteFloatArray
+internal constructor(
+    public override val constantValueOrNull: List<RemoteFloat>?,
+    internal override val cacheKey: RemoteStateCacheKey,
+) : BaseRemoteState<List<RemoteFloat>>(cacheKey) {
 
-    override val value: List<RemoteFloat>
-        get() = constantValue!!
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public constructor(
+        constantValueOrNull: List<RemoteFloat>?
+    ) : this(
+        constantValueOrNull,
+        constantValueOrNull?.let { values ->
+            RemoteOperationCacheKey.create(OperationKey.Create, *values.toTypedArray())
+        } ?: RemoteStateInstanceKey(),
+    )
+
+    internal enum class OperationKey {
+        Create,
+        Get,
+    }
 
     override fun writeToDocument(creationState: RemoteComposeCreationState): Int {
-        val asFloat = constantValue!!.fastMap { it.toFloat() }.toFloatArray()
+        val asFloat =
+            with(creationState) { constantValueOrNull!!.fastMap { it.floatId }.toFloatArray() }
         return Utils.idFromNan(creationState.document.addFloatArray(asFloat))
     }
 
@@ -45,10 +57,13 @@ public class RemoteFloatArray(public override val constantValue: List<RemoteFloa
      * dereference operation on a remote float array.
      */
     public operator fun get(v: RemoteFloat): RemoteFloat {
-        v.constantValue?.let {
-            return constantValue!![it.toInt()]
+        v.constantValueOrNull?.let {
+            return constantValueOrNull!![it.toInt()]
         }
-        return RemoteFloatExpression(constantValue = null) { creationState ->
+        return RemoteFloatExpression(
+            constantValueOrNull = null,
+            cacheKey = RemoteOperationCacheKey.create(OperationKey.Get, this, v),
+        ) { creationState ->
             floatArrayOf(
                 *arrayForCreationState(creationState),
                 *v.arrayForCreationState(creationState),
@@ -61,17 +76,20 @@ public class RemoteFloatArray(public override val constantValue: List<RemoteFloa
      * Array access operator for [RemoteFloatArray] with an [Int] index. Performs a dereference
      * operation on a remote float array.
      */
-    public operator fun get(v: Int): RemoteFloat = constantValue!![v]
+    public operator fun get(v: Int): RemoteFloat = constantValueOrNull!![v]
 
     /**
      * Array access operator for [RemoteFloatArray] with a [RemoteInt] index. Performs a dereference
      * operation on a remote float array.
      */
     public operator fun get(v: RemoteInt): RemoteFloat {
-        v.constantValue?.let {
-            return constantValue!![it]
+        v.constantValueOrNull?.let {
+            return constantValueOrNull!![it]
         }
-        return RemoteFloatExpression(constantValue = null) { creationState ->
+        return RemoteFloatExpression(
+            constantValueOrNull = null,
+            cacheKey = RemoteOperationCacheKey.create(OperationKey.Get, this, v),
+        ) { creationState ->
             floatArrayOf(
                 *arrayForCreationState(creationState),
                 v.getFloatIdForCreationState(creationState),
@@ -81,12 +99,8 @@ public class RemoteFloatArray(public override val constantValue: List<RemoteFloa
     }
 
     private fun arrayForCreationState(creationState: RemoteComposeCreationState): FloatArray {
-        val cachedArray = creationState.floatArrayCache.get(this)
-        if (cachedArray != null) {
-            return cachedArray
+        return creationState.getOrPutFloatArray(cacheKey) {
+            floatArrayOf(getFloatIdForCreationState(creationState))
         }
-        val array = floatArrayOf(getFloatIdForCreationState(creationState))
-        creationState.floatArrayCache.put(this, array)
-        return array
     }
 }

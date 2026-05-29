@@ -27,6 +27,7 @@ import androidx.room3.Room
 import androidx.room3.RoomDatabase
 import androidx.room3.TypeConverter
 import androidx.room3.TypeConverters
+import androidx.sqlite.driver.AndroidSQLiteDriver
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
@@ -203,6 +204,7 @@ class UuidColumnTypeAdapterTest {
     private fun runTest(kClass: KClass<out ConverterDb>, block: (ByteDao, StringDao) -> Unit) {
         val db =
             Room.inMemoryDatabaseBuilder(ApplicationProvider.getApplicationContext(), kClass.java)
+                .setDriver(AndroidSQLiteDriver())
                 .build()
 
         try {

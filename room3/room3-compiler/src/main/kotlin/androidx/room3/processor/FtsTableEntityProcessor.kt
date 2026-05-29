@@ -18,10 +18,12 @@ package androidx.room3.processor
 
 import androidx.room3.Fts3
 import androidx.room3.Fts4
+import androidx.room3.Fts5
+import androidx.room3.FtsOptions.Detail
 import androidx.room3.FtsOptions.MatchInfo
 import androidx.room3.FtsOptions.Order
 import androidx.room3.FtsOptions.TOKENIZER_SIMPLE
-import androidx.room3.compiler.codegen.asClassName
+import androidx.room3.FtsOptions.TOKENIZER_UNICODE61
 import androidx.room3.compiler.processing.XAnnotation
 import androidx.room3.compiler.processing.XType
 import androidx.room3.compiler.processing.XTypeElement
@@ -76,6 +78,9 @@ internal constructor(
                         notIndexedColumns = emptyList(),
                         prefixSizes = emptyList(),
                         preferredOrder = Order.ASC,
+                        contentRowId = null,
+                        columnSize = null,
+                        detail = null,
                     ),
             )
         }
@@ -88,6 +93,12 @@ internal constructor(
         val tableName: String
         if (entityAnnotation != null) {
             tableName = extractTableName(element, entityAnnotation)
+            val withoutRowId = entityAnnotation["withoutRowId"]?.asBoolean() ?: false
+            context.checker.check(
+                !withoutRowId,
+                element,
+                ProcessorErrors.FTS_ENTITY_CANNOT_USE_WITHOUT_ROWID,
+            )
             context.checker.check(
                 extractIndices(entityAnnotation, tableName).isEmpty(),
                 element,
@@ -102,7 +113,7 @@ internal constructor(
             tableName = element.name
         }
 
-        val pojo =
+        val dataClass =
             DataClassProcessor.createFor(
                     context = context,
                     element = element,
@@ -112,31 +123,38 @@ internal constructor(
                 )
                 .process()
 
-        context.checker.check(pojo.relations.isEmpty(), element, ProcessorErrors.RELATION_IN_ENTITY)
+        context.checker.check(
+            dataClass.relations.isEmpty(),
+            element,
+            ProcessorErrors.RELATION_IN_ENTITY,
+        )
 
         val (ftsVersion, ftsOptions) =
             if (element.hasAnnotation(androidx.room3.Fts3::class)) {
                 FtsVersion.FTS3 to getFts3Options(element.requireAnnotation(Fts3::class))
-            } else {
+            } else if (element.hasAnnotation(androidx.room3.Fts4::class)) {
                 FtsVersion.FTS4 to getFts4Options(element.requireAnnotation(Fts4::class))
+            } else {
+                FtsVersion.FTS5 to getFts5Options(element.requireAnnotation(Fts5::class))
             }
 
         val shadowTableName =
             if (ftsOptions.contentEntity != null) {
                 // In 'external content' mode the FTS table content is in another table.
-                // See: https://www.sqlite.org/fts3.html#_external_content_fts4_tables_
+                // See: https://www.sqlite.org/fts3.html#_external_content_fts4_tables_ and
+                // https://www.sqlite.org/fts5.html#external_content_tables
                 ftsOptions.contentEntity.tableName
             } else {
                 // The %_content table contains the unadulterated data inserted by the user into the
-                // FTS
-                // virtual table. See: https://www.sqlite.org/fts3.html#shadow_tables
+                // FTS virtual table. See: https://www.sqlite.org/fts3.html#shadow_tables and
+                // https://www.sqlite.org/fts5.html#fts5_data_structures
                 "${tableName}_content"
             }
 
-        val primaryKey = findAndValidatePrimaryKey(entityAnnotation, pojo.properties)
-        findAndValidateLanguageId(pojo.properties, ftsOptions.languageIdColumnName)
+        val primaryKey = findAndValidatePrimaryKey(entityAnnotation, dataClass.properties)
+        findAndValidateLanguageId(dataClass.properties, ftsOptions.languageIdColumnName)
 
-        val missingNotIndexed = ftsOptions.notIndexedColumns - pojo.columnNames
+        val missingNotIndexed = ftsOptions.notIndexedColumns - dataClass.columnNames.toSet()
         context.checker.check(
             missingNotIndexed.isEmpty(),
             element,
@@ -153,11 +171,11 @@ internal constructor(
             FtsEntity(
                 element = element,
                 tableName = tableName,
-                type = pojo.type,
-                properties = pojo.properties,
-                embeddedProperties = pojo.embeddedProperties,
+                type = dataClass.type,
+                properties = dataClass.properties,
+                embeddedProperties = dataClass.embeddedProperties,
                 primaryKey = primaryKey,
-                constructor = pojo.constructor,
+                constructor = dataClass.constructor,
                 ftsVersion = ftsVersion,
                 ftsOptions = ftsOptions,
                 shadowTableName = shadowTableName,
@@ -178,6 +196,9 @@ internal constructor(
             notIndexedColumns = emptyList(),
             prefixSizes = emptyList(),
             preferredOrder = Order.ASC,
+            contentRowId = null,
+            columnSize = null,
+            detail = null,
         )
 
     private fun getFts4Options(annotation: XAnnotation): FtsOptions {
@@ -194,6 +215,26 @@ internal constructor(
             prefixSizes = annotation["prefix"]?.asIntList() ?: emptyList(),
             preferredOrder =
                 annotation["order"]?.asEnum()?.let { Order.valueOf(it.name) } ?: Order.ASC,
+            contentRowId = null,
+            columnSize = null,
+            detail = null,
+        )
+    }
+
+    private fun getFts5Options(annotation: XAnnotation): FtsOptions {
+        val contentEntity: Entity? = getContentEntity(annotation["contentEntity"]?.asType())
+        return FtsOptions(
+            tokenizer = annotation["tokenizer"]?.asString() ?: TOKENIZER_UNICODE61,
+            tokenizerArgs = annotation["tokenizerArgs"]?.asStringList() ?: emptyList(),
+            contentEntity = contentEntity,
+            languageIdColumnName = "",
+            matchInfo = MatchInfo.FTS4,
+            notIndexedColumns = annotation["notIndexed"]?.asStringList() ?: emptyList(),
+            prefixSizes = annotation["prefix"]?.asIntList() ?: emptyList(),
+            preferredOrder = Order.ASC,
+            contentRowId = annotation["contentRowId"]?.asString() ?: "",
+            columnSize = annotation["hasColumnSize"]?.asBoolean() ?: true,
+            detail = annotation["detail"]?.asEnum()?.let { Detail.valueOf(it.name) } ?: Detail.FULL,
         )
     }
 
@@ -295,6 +336,11 @@ internal constructor(
     private fun validateExternalContentEntity(ftsEntity: FtsEntity) {
         val contentEntity = ftsEntity.ftsOptions.contentEntity
         if (contentEntity == null) {
+            context.checker.check(
+                predicate = ftsEntity.ftsOptions.contentRowId.isNullOrEmpty(),
+                element = element,
+                errorMsg = ProcessorErrors.FTS_CONTENT_ROW_ID_WITHOUT_EXTERNAL_CONTENT_ENTITY,
+            )
             return
         }
 
@@ -315,6 +361,19 @@ internal constructor(
                     ),
                 )
             }
+
+        if (!ftsEntity.ftsOptions.contentRowId.isNullOrEmpty()) {
+            context.checker.check(
+                predicate = contentEntity.columnNames.contains(ftsEntity.ftsOptions.contentRowId),
+                element = element,
+                errorMsg =
+                    ProcessorErrors.missingContentRowIdProperty(
+                        element.qualifiedName,
+                        ftsEntity.ftsOptions.contentRowId,
+                        contentEntity.element.qualifiedName,
+                    ),
+            )
+        }
     }
 
     private fun findAndValidateLanguageId(

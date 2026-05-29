@@ -18,11 +18,10 @@
 plugins {
     id("AndroidXPlugin")
     id("com.android.application")
-    id("org.jetbrains.kotlin.android")
 }
 
 android {
-    compileSdk = 35
+    compileSdk { version = release(36) }
     defaultConfig {
         applicationId = "androidx.camera.integration.viewfinder"
     }

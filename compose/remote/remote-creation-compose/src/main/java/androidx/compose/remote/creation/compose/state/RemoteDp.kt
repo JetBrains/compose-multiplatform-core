@@ -13,38 +13,182 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@file:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 
 package androidx.compose.remote.creation.compose.state
 
 import androidx.annotation.RestrictTo
-import androidx.compose.remote.creation.compose.capture.LocalRemoteComposeCreationState
+import androidx.compose.remote.creation.compose.capture.RemoteComposeCreationState
+import androidx.compose.remote.creation.compose.capture.RemoteDensity
 import androidx.compose.remote.creation.compose.layout.RemoteComposable
-import androidx.compose.remote.creation.compose.layout.RemoteFloatContext
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.Stable
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.isSpecified
 
 /**
  * Represents a Density-independent pixel (Dp) value.
  *
- * @property value The [RemoteFloat] that holds the actual Dp value.
+ * `RemoteDp` represents a Dp value that can be a constant, a named variable, or a dynamic
+ * expression.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public class RemoteDp(public var value: RemoteFloat)
+@Stable
+public class RemoteDp
+internal constructor(
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public val value: RemoteFloat
+) : BaseRemoteState<Dp>(RemoteStateInstanceKey()) {
+    internal override val cacheKey: RemoteStateCacheKey
+        get() = toPx().cacheKey
+
+    internal enum class OperationKey {
+        ToPx,
+        ToDp,
+    }
+
+    override val constantValueOrNull: Dp?
+        get() = value.constantValueOrNull?.dp
+
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    override fun writeToDocument(creationState: RemoteComposeCreationState): Int {
+        return toPx().writeToDocument(creationState)
+    }
+
+    /**
+     * Function to convert this [RemoteDp] to a density-independent pixel value. It multiplies the
+     * current float value by the screen\'s density.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public fun toPx(density: RemoteDensity): RemoteFloat {
+        return density.density * value
+    }
+
+    /** Converts a RemoteDp to a RemoteFloat Px using the [RemoteDensity]. */
+    public fun toPx(): RemoteFloat {
+        return RemoteFloatExpression(
+            constantValueOrNull = null,
+            cacheKey = RemoteOperationCacheKey.create(OperationKey.ToPx, value),
+        ) { creationState ->
+            val density = creationState.remoteDensity
+            (value * density.density).arrayForCreationState(creationState)
+        }
+    }
+
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    override fun getFloatIdForCreationState(creationState: RemoteComposeCreationState): Float {
+        return toPx().getFloatIdForCreationState(creationState)
+    }
+
+    public companion object {
+        /**
+         * Creates a [RemoteDp] from a literal [Dp] value.
+         *
+         * @param value The [Dp] value.
+         * @return A [RemoteDp] representing the constant Dp.
+         */
+        public operator fun invoke(value: Dp): RemoteDp = value.asRdp()
+
+        /**
+         * Creates a [RemoteDp] referencing a remote ID.
+         *
+         * @param id The remote ID (stored as a [RemoteFloat]).
+         * @return A [RemoteDp] referencing the ID.
+         */
+        internal fun createForId(id: RemoteFloat): RemoteDp = RemoteDp(id)
+
+        /**
+         * Creates a named [RemoteDp] with an initial value.
+         *
+         * Named remote Dps can be set via AndroidRemoteContext.setNamedFloat.
+         *
+         * @param name A unique name to identify this state within its [domain].
+         * @param defaultValue The initial [Dp] value for the named remote Dp.
+         * @param domain The domain for the named state. Defaults to [RemoteState.Domain.User].
+         * @return A [RemoteDp] representing the named Dp.
+         */
+        @JvmStatic
+        public fun createNamedRemoteDp(
+            name: String,
+            defaultValue: Dp,
+            domain: RemoteState.Domain = RemoteState.Domain.User,
+        ): RemoteDp {
+            return RemoteDp(
+                RemoteFloat.createNamedRemoteFloat(
+                    name = name,
+                    defaultValue = defaultValue.value,
+                    domain = domain,
+                )
+            )
+        }
+    }
+}
+
+/** Extension property to convert an [Int] to a [RemoteDp]. */
+public val Int.rdp: RemoteDp
+    get() {
+        return RemoteDp(this.rf)
+    }
+
+/** Extension property to convert a [Float] to a [RemoteDp]. */
+public val Float.rdp: RemoteDp
+    get() {
+        return RemoteDp(this.rf)
+    }
+
+/** Extension property to convert a [Dp] to a [RemoteDp]. */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public fun Dp.asRdp(): RemoteDp {
+    check(isSpecified) { "Dp conversion not possible for unspecified Dp" }
+    return RemoteDp(this.value.rf)
+}
+
+/** Converts this [RemoteFloat] to a [RemoteDp] directly (1:1) */
+public fun RemoteFloat.asRemoteDp(): RemoteDp {
+    return RemoteDp(this)
+}
+
+/** Converts this [RemoteFloat] representing pixels to a [RemoteDp] by dividing by density. */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public fun RemoteFloat.toRemoteDp(): RemoteDp {
+    // TODO: Optimize for constant values when value and density are constants
+    return RemoteDp(
+        RemoteFloatExpression(
+            constantValueOrNull = null,
+            cacheKey = RemoteOperationCacheKey.create(RemoteDp.OperationKey.ToDp, this),
+        ) { creationState ->
+            val density = creationState.remoteDensity
+            (this / density.density).arrayForCreationState(creationState)
+        }
+    )
+}
 
 /**
- * A Composable function to remember and provide a [RemoteDp] value.
+ * Remembers a named remote Dp expression.
  *
- * @param content A lambda that takes a [RemoteFloatContext] (providing access to the remote
- *   creation state for float-related operations) and returns a [Dp] value.
- * @return A [RemoteDp] instance that will be remembered across recompositions.
+ * @param name The unique name for this remote Dp.
+ * @param domain The domain of the named Dp (defaults to [RemoteState.Domain.User]).
+ * @param value A lambda that provides the [RemoteDp] expression.
+ * @return A [RemoteDp] representing the named remote Dp expression.
  */
 @Composable
 @RemoteComposable
-public fun rememberRemoteDpValue(content: RemoteFloatContext.() -> Dp): RemoteDp {
-    val state = LocalRemoteComposeCreationState.current
-    val context = RemoteFloatContext(state)
-    val valueId = state.document.addFloatConstant(content(context).value)
-    val value = RemoteFloat(valueId)
-    return remember { value.asRemoteDp() }
+public fun rememberNamedRemoteDp(
+    name: String,
+    domain: RemoteState.Domain = RemoteState.Domain.User,
+    value: () -> RemoteDp,
+): RemoteDp {
+    return rememberNamedState(name, domain) {
+        val remoteDp = value()
+        RemoteDp(
+            RemoteFloatExpression(
+                constantValueOrNull = null,
+                cacheKey = RemoteNamedCacheKey(domain, name),
+            ) { creationState ->
+                val px = remoteDp.toPx()
+                val initialValueId = px.getFloatIdForCreationState(creationState)
+                val floatId =
+                    creationState.document.addNamedFloat(domain.prefixed(name), initialValueId)
+                floatArrayOf(floatId)
+            }
+        )
+    }
 }

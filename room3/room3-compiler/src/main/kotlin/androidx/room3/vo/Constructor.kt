@@ -16,9 +16,7 @@
 
 package androidx.room3.vo
 
-import androidx.room3.compiler.codegen.CodeLanguage
 import androidx.room3.compiler.codegen.XCodeBlock
-import androidx.room3.compiler.codegen.XCodeBlock.Builder.Companion.applyTo
 import androidx.room3.compiler.processing.XExecutableElement
 import androidx.room3.compiler.processing.isConstructor
 import androidx.room3.compiler.processing.isMethod
@@ -50,22 +48,13 @@ data class Constructor(val element: XExecutableElement, val params: List<Param>)
                 )
             }
             element.isMethod() -> {
-                builder.applyTo { language ->
-                    // TODO when we generate Kotlin code, we need to handle not having enclosing
-                    //  elements.
-                    val methodName =
-                        when (language) {
-                            CodeLanguage.JAVA -> element.jvmName
-                            CodeLanguage.KOTLIN -> element.name
-                        }
-                    addStatement(
-                        "%L = %T.%L(%L)",
-                        outVar,
-                        element.enclosingElement.asClassName(),
-                        methodName,
-                        args,
-                    )
-                }
+                builder.addStatement(
+                    "%L = %T.%L(%L)",
+                    outVar,
+                    element.enclosingElement.asClassName(),
+                    element.name,
+                    args,
+                )
             }
             else -> throw IllegalStateException("Invalid constructor kind ${element.kindName()}")
         }

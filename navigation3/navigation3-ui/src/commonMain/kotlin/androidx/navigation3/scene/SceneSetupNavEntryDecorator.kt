@@ -27,9 +27,10 @@ import androidx.navigation3.runtime.NavEntryDecorator
 
 /** Returns a [SceneSetupNavEntryDecorator] that is remembered across recompositions. */
 @Composable
-internal fun <T : Any> rememberSceneSetupNavEntryDecorator(): NavEntryDecorator<T> = remember {
-    SceneSetupNavEntryDecorator()
-}
+internal fun <T : Any> rememberSceneSetupNavEntryDecorator(): SceneSetupNavEntryDecorator<T> =
+    remember {
+        SceneSetupNavEntryDecorator()
+    }
 
 /**
  * A [NavEntryDecorator] that wraps each entry in a [movableContentOf] to allow nav displays to
@@ -37,8 +38,9 @@ internal fun <T : Any> rememberSceneSetupNavEntryDecorator(): NavEntryDecorator<
  * the same entry content is not composed multiple times in different places of the hierarchy by
  * different scenes.
  *
- * This should likely be the first [NavEntryDecorator] to ensure that other [NavEntryDecorator]
- * calls that are stateful are moved properly inside the [movableContentOf].
+ * This should likely be the first [NavEntryDecorator] (with the exception of the
+ * [SharedEntryInSceneNavEntryDecorator]) to ensure that other [NavEntryDecorator] calls that are
+ * stateful are moved properly inside the [movableContentOf].
  */
 internal class SceneSetupNavEntryDecorator<T : Any>(
     val movableContentMap: MutableMap<Any, @Composable (@Composable () -> Unit) -> Unit> =
@@ -52,9 +54,9 @@ internal class SceneSetupNavEntryDecorator<T : Any>(
             // entry.Content and all nested content wrappers. If this is the case here, then it
             // means
             // that this entry is being rendered by a different scene somewhere else.
-            val entriesToRender = LocalEntriesToRenderInCurrentScene.current
+            val entriesToExclude = LocalEntriesToExcludeFromCurrentScene.current
             // If no LocalEntriesToRenderInCurrentScene is provided, assume all entries are allowed
-            if (entriesToRender == null || entriesToRender.contains(contentKey)) {
+            if (!entriesToExclude.contains(contentKey)) {
                 key(contentKey) {
                     // In case the key is removed from the backstack while this is still
                     // being rendered, we remember the movableContent directly to allow
@@ -82,12 +84,13 @@ internal class SceneSetupNavEntryDecorator<T : Any>(
     )
 
 /**
- * The entry keys to render in the current [Scene], in the sense of the target of the animation for
- * an [androidx.compose.animation.AnimatedContent] that is transitioning between different scenes.
+ * The entry keys that should be skipped when rendering in the current [Scene] to allow users of
+ * composable methods like [androidx.compose.animation.AnimatedContent] to only show the entry in a
+ * single scene even while it is transitioning between different scenes.
  *
  * If this isn't provided, then all entries in the scene are allowed to be rendered.
  */
-internal val LocalEntriesToRenderInCurrentScene: ProvidableCompositionLocal<Set<Any>?> =
+internal val LocalEntriesToExcludeFromCurrentScene: ProvidableCompositionLocal<Set<Any>> =
     compositionLocalOf {
-        null
+        HashSet()
     }

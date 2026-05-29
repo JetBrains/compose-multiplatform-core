@@ -16,17 +16,13 @@
 
 package androidx.room3.solver.prepared.result
 
-import androidx.room3.compiler.codegen.CodeLanguage
-import androidx.room3.compiler.codegen.XCodeBlock.Builder.Companion.applyTo
 import androidx.room3.compiler.codegen.XMemberName.Companion.packageMember
-import androidx.room3.compiler.codegen.XPropertySpec
 import androidx.room3.compiler.processing.XType
 import androidx.room3.compiler.processing.isInt
 import androidx.room3.compiler.processing.isKotlinUnit
 import androidx.room3.compiler.processing.isLong
 import androidx.room3.compiler.processing.isVoid
 import androidx.room3.compiler.processing.isVoidObject
-import androidx.room3.ext.KotlinTypeNames
 import androidx.room3.ext.RoomTypeNames
 import androidx.room3.parser.QueryType
 import androidx.room3.solver.CodeGenScope
@@ -59,72 +55,12 @@ class PreparedQueryResultAdapter(private val returnType: XType, private val quer
         }
     }
 
-    fun executeAndReturn(
-        stmtQueryVal: String,
-        preparedStmtProperty: XPropertySpec?,
-        dbProperty: XPropertySpec,
-        scope: CodeGenScope,
-    ) {
-        scope.builder.apply {
-            val stmtMethod =
-                if (queryType == QueryType.INSERT) {
-                    "executeInsert"
-                } else {
-                    "executeUpdateDelete"
-                }
-            if (preparedStmtProperty != null) {
-                beginControlFlow("try")
-            }
-            addStatement("%N.beginTransaction()", dbProperty)
-            beginControlFlow("try").apply {
-                if (returnType.isVoid() || returnType.isVoidObject() || returnType.isKotlinUnit()) {
-                    addStatement("%L.%L()", stmtQueryVal, stmtMethod)
-                    addStatement("%N.setTransactionSuccessful()", dbProperty)
-                    if (returnType.isVoidObject()) {
-                        addStatement("return null")
-                    } else if (returnType.isKotlinUnit()) {
-                        applyTo(CodeLanguage.JAVA) {
-                            addStatement("return %T.INSTANCE", KotlinTypeNames.UNIT)
-                        }
-                    }
-                } else {
-                    val resultVar = scope.getTmpVar("_result")
-                    addLocalVal(
-                        resultVar,
-                        returnType.asTypeName(),
-                        "%L.%L()",
-                        stmtQueryVal,
-                        stmtMethod,
-                    )
-                    addStatement("%N.setTransactionSuccessful()", dbProperty)
-                    addStatement("return %L", resultVar)
-                }
-            }
-            nextControlFlow("finally").apply { addStatement("%N.endTransaction()", dbProperty) }
-            endControlFlow()
-            if (preparedStmtProperty != null) {
-                nextControlFlow("finally")
-                addStatement("%N.release(%L)", preparedStmtProperty, stmtQueryVal)
-                endControlFlow()
-            }
-        }
-    }
-
     fun executeAndReturn(connectionVar: String, statementVar: String, scope: CodeGenScope) {
-        scope.builder.applyTo { language ->
+        scope.builder.apply {
             addStatement("%L.step()", statementVar)
-            val returnPrefix =
-                when (language) {
-                    CodeLanguage.JAVA -> "return "
-                    CodeLanguage.KOTLIN -> ""
-                }
             if (returnType.isVoid() || returnType.isVoidObject() || returnType.isKotlinUnit()) {
                 if (returnType.isVoidObject()) {
-                    addStatement("${returnPrefix}null")
-                } else if (returnType.isVoid() && language == CodeLanguage.JAVA) {
-                    addStatement("return null")
-                } else if (returnType.isKotlinUnit() && language == CodeLanguage.JAVA) {
-                    addStatement("return %T.INSTANCE", KotlinTypeNames.UNIT)
+                    addStatement("null")
                 }
             } else {
                 val returnFunctionName =
@@ -135,7 +71,7 @@ class PreparedQueryResultAdapter(private val returnType: XType, private val quer
                         else -> error("No return function name for query type $queryType")
                     }
                 addStatement(
-                    "$returnPrefix%M(%L)",
+                    "%M(%L)",
                     RoomTypeNames.CONNECTION_UTIL.packageMember(returnFunctionName),
                     connectionVar,
                 )

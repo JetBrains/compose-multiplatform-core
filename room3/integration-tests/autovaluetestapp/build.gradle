@@ -14,9 +14,14 @@
  * limitations under the License.
  */
 
+import androidx.build.KotlinTarget
+import com.android.build.api.variant.HasAndroidTest
+import com.android.build.api.variant.HasAndroidTestBuilder
+
 plugins {
     id("AndroidXPlugin")
     id("com.android.application")
+    id("com.google.devtools.ksp")
 }
 
 dependencies {
@@ -25,9 +30,7 @@ dependencies {
     implementation(project(":room3:room3-runtime"))
     implementation("androidx.arch.core:core-runtime:2.2.0")
 
-    androidTestAnnotationProcessor(project(":room3:room3-compiler"))
-    androidTestAnnotationProcessor(libs.autoValue)
-    androidTestAnnotationProcessor(libs.autoValueParcel)
+    ksp(project(":room3:room3-compiler"))
 
     androidTestImplementation(project(":room3:room3-testing"))
     androidTestImplementation("androidx.arch.core:core-testing:2.2.0")
@@ -46,8 +49,18 @@ android {
     namespace = "androidx.room3.integration.autovaluetestapp"
 }
 
+androidComponents {
+    onVariants(selector().withBuildType("debug")) { variant ->
+        (variant as HasAndroidTest).androidTest.sources.java.addStaticSourceDirectory("src/kaptGenerated/java")
+    }
+}
+
 // Enable parameter names to support Room incremental when its a project() dep.
 // See b/198431380
 tasks.withType(JavaCompile) {
     options.compilerArgs << "-parameters"
+}
+
+androidx {
+    kotlinTarget = KotlinTarget.KOTLIN_2_2
 }

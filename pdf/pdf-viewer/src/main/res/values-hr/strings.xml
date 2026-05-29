@@ -61,12 +61,13 @@
     <string name="action_search" msgid="1044074359976464346">"Pretraži datoteku"</string>
     <string name="scrollbar_description" msgid="5720892205323882483">"Klizač"</string>
     <string name="password_not_entered" msgid="8875370870743585303">"Unesite zaporku za otključavanje"</string>
-    <string name="retry_button_text" msgid="3443862378337999137">"Pokušaj ponovo"</string>
+    <string name="retry_button_text" msgid="3443862378337999137">"Pokušaj ponovno"</string>
     <string name="pdf_error" msgid="3287950599604474450">"Obrada PDF dokumenta nije uspjela!"</string>
     <string name="file_error" msgid="4003885928556884091">"Otvaranje datoteke nije uspjelo. Možda postoji problem s dopuštenjem?"</string>
     <string name="page_broken" msgid="2968770793669433462">"Stranica je raščlanjena za PDF dokument"</string>
     <string name="needs_more_data" msgid="3520133467908240802">"Nema dovoljno podataka za obradu PDF dokumenta"</string>
     <string name="error_cannot_open_pdf" msgid="2361919778558145071">"PDF datoteka ne može se otvoriti"</string>
+    <string name="error_cannot_open_password_protected_pdf" msgid="3400883576932438749">"PDF-ovi zaštićeni zaporkom nisu podržani."</string>
     <string name="cannot_edit_pdf" msgid="7677598370087228978">"Ovaj se PDF ne može uređivati"</string>
     <string name="clipboard_label" msgid="8943155331324944981">"Sadržaj kopiran iz PDF-a"</string>
     <string name="fast_scroller_thumb" msgid="6712048991132846541">"Klizač"</string>
@@ -81,6 +82,7 @@
     <string name="form_click_toggle_instruction" msgid="7171111300244445911">"Kliknite da biste promijenili vrijednost."</string>
     <string name="form_click_opens_choices_menu_instruction" msgid="5648228168212004143">"Kliknite da biste otvorili izbornik za odabir."</string>
     <string name="form_click_enters_text_edit_mode_instruction" msgid="2305283577544618880">"Kliknite da biste prešli u način uređivanja teksta."</string>
+    <string name="combobox_custom_option" msgid="8730230629127076731">"Prilagođeno"</string>
     <string name="form_unknown" msgid="6371515914365431330">"Nepoznato"</string>
     <string name="form_widget_type_push_button" msgid="3595388398616291441">"Gumb"</string>
     <string name="form_widget_type_checkbox" msgid="5165655383070460151">"Potvrdni okvir"</string>
@@ -89,5 +91,4 @@
     <string name="form_widget_type_list_box" msgid="8052623180309553495">"Okvir s popisom"</string>
     <string name="form_widget_type_text_field" msgid="581285155951215607">"Tekstno polje"</string>
     <string name="form_widget_type_signature" msgid="3811511096215331673">"Potpis"</string>
-    <string name="form_filling_tooltip" msgid="1715428076993648563">"Dodirnite polje da biste pokrenuli način za ispunjavanje obrasca"</string>
 </resources>

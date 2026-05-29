@@ -23,7 +23,6 @@ import androidx.annotation.RestrictTo
 import androidx.xr.runtime.Session
 import androidx.xr.scenecore.runtime.GltfModelResource as RtGltfModel
 import androidx.xr.scenecore.runtime.RenderingRuntime
-import com.google.common.util.concurrent.ListenableFuture
 import java.nio.file.Path
 
 /**
@@ -37,13 +36,31 @@ import java.nio.file.Path
 //                   - an interface for selecting the
 //                     playback animation from the integer index.
 //                   - an interface which returns a list of available animation names
+// TODO: b/461909954 - Add AutoCloseable interface when it is approved.
+public class GltfModel
+internal constructor(
+    internal val renderingRuntime: RenderingRuntime?,
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public val model: RtGltfModel,
+) : AutoCloseable {
 
-public class GltfModel internal constructor(internal val model: RtGltfModel) {
+    /**
+     * Closes the given [GltfModel].
+     *
+     * The [GltfModel] can be explicitly closed at any time or garbage collected. When either
+     * happens, its resources are freed. If close() is not explicitly invoked by the client, the
+     * [GltfModel] will be automatically closed when the [GltfModel] is garbage collected.
+     *
+     * @throws IllegalStateException if the resource has already been closed.
+     */
+    @MainThread
+    override public fun close() {
+        renderingRuntime?.destroyGltfModel(model)
+    }
 
     public companion object {
 
         private suspend fun create(renderingRuntime: RenderingRuntime, name: String): GltfModel {
-            return createModel(renderingRuntime.loadGltfByAssetName(name))
+            return createModel(renderingRuntime, renderingRuntime.loadGltfByAssetName(name))
         }
 
         private suspend fun create(
@@ -51,7 +68,10 @@ public class GltfModel internal constructor(internal val model: RtGltfModel) {
             assetData: ByteArray,
             assetKey: String,
         ): GltfModel {
-            return createModel(renderingRuntime.loadGltfByByteArray(assetData, assetKey))
+            return createModel(
+                renderingRuntime,
+                renderingRuntime.loadGltfByByteArray(assetData, assetKey),
+            )
         }
 
         /**
@@ -64,7 +84,7 @@ public class GltfModel internal constructor(internal val model: RtGltfModel) {
          * @param path The Path of the binary glTF (.glb) model to be loaded, relative to the
          *   application's `assets/` folder.
          * @return a [GltfModel] upon completion.
-         * @throws IllegalArgumentException if [path.isAbsolute] is true, as this method requires a
+         * @throws IllegalArgumentException if [Path.isAbsolute] is true, as this method requires a
          *   relative path.
          */
         @MainThread
@@ -104,7 +124,7 @@ public class GltfModel internal constructor(internal val model: RtGltfModel) {
          */
         @MainThread
         @JvmStatic
-        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // Hasn't passed API review
         public suspend fun create(
             session: Session,
             assetData: ByteArray,
@@ -113,10 +133,11 @@ public class GltfModel internal constructor(internal val model: RtGltfModel) {
             return GltfModel.create(session.renderingRuntime, assetData, assetKey)
         }
 
-        private suspend fun createModel(
-            gltfResourceFuture: ListenableFuture<RtGltfModel>
+        private fun createModel(
+            renderingRuntime: RenderingRuntime,
+            rengltfResource: RtGltfModel,
         ): GltfModel {
-            return GltfModel(gltfResourceFuture.awaitSuspending())
+            return GltfModel(renderingRuntime, rengltfResource)
         }
     }
 

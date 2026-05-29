@@ -36,10 +36,10 @@ import androidx.xr.scenecore.MovableComponent
 import androidx.xr.scenecore.PanelEntity
 import androidx.xr.scenecore.ResizableComponent
 import androidx.xr.scenecore.ResizeEvent
-import androidx.xr.scenecore.SpatialCapabilities
+import androidx.xr.scenecore.SpatialCapability
 import androidx.xr.scenecore.scene
 import androidx.xr.scenecore.testapp.R
-import androidx.xr.scenecore.testapp.common.createSession
+import androidx.xr.scenecore.testapp.common.managers.SessionManager
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import java.util.function.Consumer
 
@@ -58,8 +58,9 @@ class ActivityPanelActivity : AppCompatActivity() {
             insets
         }
 
-        session = createSession(this)
+        session = SessionManager(this).createSession()
         if (session == null) this.finish()
+        session?.scene?.keyEntity = null
 
         // Set toolbar
         findViewById<Toolbar>(R.id.top_app_bar_activity_panel).also {
@@ -76,22 +77,22 @@ class ActivityPanelActivity : AppCompatActivity() {
 
         // Create activity panel entity
         activityPanelEntity =
-            ActivityPanelEntity.create(session!!, IntSize2d(640, 480), ACTIVITY_NAME)
+            ActivityPanelEntity.create(
+                session!!,
+                IntSize2d(640, 480),
+                ACTIVITY_NAME,
+                parent = session!!.scene.activitySpace,
+            )
 
         // Set button listener
         val button: Button = findViewById(R.id.spawn_activity_panel_button)
         button.setOnClickListener {
             // Check spatial capabilities of the session
-            if (
-                session!!
-                    .scene
-                    .spatialCapabilities
-                    .hasCapability(SpatialCapabilities.SPATIAL_CAPABILITY_EMBED_ACTIVITY)
-            ) {
+            if (session!!.scene.spatialCapabilities.contains(SpatialCapability.EMBED_ACTIVITY)) {
 
                 if (!secondaryPanelLaunched) {
                     // Set the pose for the activity panel
-                    activityPanelEntity.setPose(Pose(Vector3(0f, 0.6f, 0f)))
+                    activityPanelEntity.setPose(Pose(Vector3(0f, 0.6f, .05f)))
                     // Create intent to launch a new activity in the panel
                     val intent = Intent(this, ActivityPanel::class.java)
                     intent.putExtra("NAV_ICON", false)
@@ -109,6 +110,7 @@ class ActivityPanelActivity : AppCompatActivity() {
                     val resizeableComponent =
                         ResizableComponent.create(session!!, resizeEventListener = resizeListener)
                     activityPanelEntity.addComponent(resizeableComponent)
+                    activityPanelEntity.parent = session!!.scene.mainPanelEntity
 
                     secondaryPanelLaunched = true
                 }

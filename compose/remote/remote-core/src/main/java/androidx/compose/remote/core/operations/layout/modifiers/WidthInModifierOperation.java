@@ -51,8 +51,8 @@ public class WidthInModifierOperation extends DimensionInModifierOperation {
      * @param operations the list of operations that will be added to
      */
     public static void read(@NonNull WireBuffer buffer, @NonNull List<Operation> operations) {
-        float v1 = buffer.readFloat();
-        float v2 = buffer.readFloat();
+        float v1 = buffer.readNanId();
+        float v2 = buffer.readNanId();
         operations.add(new WidthInModifierOperation(v1, v2));
     }
 
@@ -81,7 +81,7 @@ public class WidthInModifierOperation extends DimensionInModifierOperation {
      * @param doc to append the description to.
      */
     public static void documentation(@NonNull DocumentationBuilder doc) {
-        doc.operation("Layout Operations", OP_CODE, "WidthInModifierOperation")
+        doc.operation("Modifier Operations", OP_CODE, CLASS_NAME)
                 .description("Add additional constraints to the width")
                 .field(DocumentedOperation.FLOAT, "min", "The minimum width, -1 if not applied")
                 .field(DocumentedOperation.FLOAT, "max", "The maximum width, -1 if not applied");
@@ -98,6 +98,12 @@ public class WidthInModifierOperation extends DimensionInModifierOperation {
         buffer.start(OP_CODE);
         buffer.writeFloat(x1);
         buffer.writeFloat(y1);
+    }
+
+    @Override
+    @NonNull
+    public String deepToString(@NonNull String indent) {
+        return indent + "WidthInModifierOperation " + getMin() + " " + getMax();
     }
 
     @Override

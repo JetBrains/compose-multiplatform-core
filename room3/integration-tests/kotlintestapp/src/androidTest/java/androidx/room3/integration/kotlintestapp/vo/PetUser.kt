@@ -20,85 +20,57 @@ import androidx.room3.Entity
 import androidx.room3.PrimaryKey
 import androidx.room3.TypeConverters
 import androidx.room3.integration.kotlintestapp.TestDatabase
-import java.lang.Float.floatToIntBits
 import java.util.Date
 
 @Entity
 @TypeConverters(TestDatabase.Converters::class)
 class PetUser {
-    @PrimaryKey var mId = 0
-    var mName: String? = null
-    var mLastName: String? = null
-    var mAge = 0
-    var mAdmin = false
-    var mWeight = 0f
-    var mBirthday: Date? = null
+    @PrimaryKey var id = 0
+    var name: String? = null
+    var lastName: String? = null
+    var age = 0
+    var admin = false
+    var weight = 0f
+    var birthday: Date? = null
 
-    @ColumnInfo(name = "custommm", collate = ColumnInfo.NOCASE) var mCustomField: String? = null
+    @ColumnInfo(name = "custommm", collate = ColumnInfo.NOCASE) var customField: String? = null
 
     // bit flags
-    lateinit var mWorkDays: Set<Day>
+    lateinit var workDays: Set<Day>
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
-        if (other == null || javaClass != other.javaClass) return false
-        val user = other as PetUser
-        if (mId != user.mId) return false
-        if (mAge != user.mAge) return false
-        if (mAdmin != user.mAdmin) return false
-        if (user.mWeight.compareTo(mWeight) != 0) return false
-        if (if (mName != null) mName != user.mName else user.mName != null) return false
-        if (if (mLastName != null) mLastName != user.mLastName else user.mLastName != null) {
-            return false
-        }
-        if (if (mBirthday != null) mBirthday != user.mBirthday else user.mBirthday != null) {
-            return false
-        }
-        if (
-            if (mCustomField != null) mCustomField != user.mCustomField
-            else user.mCustomField != null
-        ) {
-            return false
-        }
-        return mWorkDays == user.mWorkDays
+        if (javaClass != other?.javaClass) return false
+
+        other as PetUser
+
+        if (id != other.id) return false
+        if (age != other.age) return false
+        if (admin != other.admin) return false
+        if (weight != other.weight) return false
+        if (name != other.name) return false
+        if (lastName != other.lastName) return false
+        if (birthday != other.birthday) return false
+        if (customField != other.customField) return false
+        if (workDays != other.workDays) return false
+
+        return true
     }
 
     override fun hashCode(): Int {
-        var result = mId
-        result = 31 * result + if (mName != null) mName.hashCode() else 0
-        result = 31 * result + if (mLastName != null) mLastName.hashCode() else 0
-        result = 31 * result + mAge
-        result = 31 * result + if (mAdmin) 1 else 0
-        result = 31 * result + if (mWeight != +0.0f) floatToIntBits(mWeight) else 0
-        result = 31 * result + if (mBirthday != null) mBirthday.hashCode() else 0
-        result = 31 * result + if (mCustomField != null) mCustomField.hashCode() else 0
-        result = 31 * result + mWorkDays.hashCode()
+        var result = id
+        result = 31 * result + age
+        result = 31 * result + admin.hashCode()
+        result = 31 * result + weight.hashCode()
+        result = 31 * result + (name?.hashCode() ?: 0)
+        result = 31 * result + (lastName?.hashCode() ?: 0)
+        result = 31 * result + (birthday?.hashCode() ?: 0)
+        result = 31 * result + (customField?.hashCode() ?: 0)
+        result = 31 * result + workDays.hashCode()
         return result
     }
 
     override fun toString(): String {
-        return ("User{" +
-            "mId=" +
-            mId +
-            ", mName='" +
-            mName +
-            '\'' +
-            ", mLastName='" +
-            mLastName +
-            '\'' +
-            ", mAge=" +
-            mAge +
-            ", mAdmin=" +
-            mAdmin +
-            ", mWeight=" +
-            mWeight +
-            ", mBirthday=" +
-            mBirthday +
-            ", mCustomField='" +
-            mCustomField +
-            '\'' +
-            ", mWorkDays=" +
-            mWorkDays +
-            '}')
+        return "PetUser(id=$id, name=$name, lastName=$lastName, age=$age, admin=$admin, weight=$weight, birthday=$birthday, customField=$customField, workDays=$workDays)"
     }
 }

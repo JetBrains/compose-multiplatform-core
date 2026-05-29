@@ -19,6 +19,10 @@ package androidx.navigationevent
 import androidx.annotation.IntDef
 import androidx.annotation.MainThread
 import androidx.annotation.RestrictTo
+import androidx.collection.MutableOrderedScatterSet
+import androidx.collection.OrderedScatterSet
+import androidx.collection.emptyOrderedScatterSet
+import androidx.collection.mutableOrderedScatterSetOf
 import androidx.navigationevent.NavigationEventDispatcher.Companion.PRIORITY_DEFAULT
 import androidx.navigationevent.NavigationEventDispatcher.Companion.PRIORITY_OVERLAY
 import androidx.navigationevent.NavigationEventTransitionState.Direction
@@ -54,10 +58,14 @@ public class NavigationEventDispatcher
  *   root of its own event handling hierarchy.
  * @param onBackCompletedFallback An optional lambda to be invoked if a back event completes and no
  *   registered [NavigationEventHandler] handles it. This provides a default "back" action.
+ * @param onForwardCompletedFallback An optional lambda to be invoked if a forward event completes
+ *   and no registered [NavigationEventHandler] handles it. This provides a default "forward"
+ *   action.
  */
 private constructor(
     private var parent: NavigationEventDispatcher?,
     private val onBackCompletedFallback: OnBackCompletedFallback?,
+    private val onForwardCompletedFallback: OnForwardCompletedFallback?,
 ) {
 
     /**
@@ -69,7 +77,8 @@ private constructor(
      * If a navigation event completes without being handled by any registered
      * [NavigationEventHandler], nothing further will happen.
      */
-    public constructor() : this(parent = null, onBackCompletedFallback = null)
+    public constructor() :
+        this(parent = null, onBackCompletedFallback = null, onForwardCompletedFallback = null)
 
     /**
      * Creates a **root** `NavigationEventDispatcher` with a fallback action.
@@ -83,7 +92,35 @@ private constructor(
      */
     public constructor(
         onBackCompletedFallback: OnBackCompletedFallback
-    ) : this(parent = null, onBackCompletedFallback = onBackCompletedFallback)
+    ) : this(
+        parent = null,
+        onBackCompletedFallback = onBackCompletedFallback,
+        onForwardCompletedFallback = null,
+    )
+
+    /**
+     * Creates a **root** `NavigationEventDispatcher` with a back and forward fallback action.
+     *
+     * Establishes the top-level dispatcher for a new navigation hierarchy, typically within an
+     * `Activity` or a top-level composable. It creates its own internal [NavigationEventProcessor].
+     *
+     * @param onBackCompletedFallback A lambda to be invoked if a back navigation event
+     *   **completes** and no registered [NavigationEventHandler] handles it. This provides a
+     *   default "back" action for the entire hierarchy. **It will not be invoked if the event is
+     *   cancelled.**
+     * @param onForwardCompletedFallback A lambda to be invoked if a forward navigation event
+     *   **completes** and no registered [NavigationEventHandler] handles it. This provides a
+     *   default "forward" action for the entire hierarchy. **It will not be invoked if the event is
+     *   cancelled.**
+     */
+    public constructor(
+        onBackCompletedFallback: OnBackCompletedFallback,
+        onForwardCompletedFallback: OnForwardCompletedFallback,
+    ) : this(
+        parent = null,
+        onBackCompletedFallback = onBackCompletedFallback,
+        onForwardCompletedFallback = onForwardCompletedFallback,
+    )
 
     /**
      * Creates a **child** `NavigationEventDispatcher` linked to a parent.
@@ -97,7 +134,7 @@ private constructor(
      */
     public constructor(
         parent: NavigationEventDispatcher
-    ) : this(parent = parent, onBackCompletedFallback = null)
+    ) : this(parent = parent, onBackCompletedFallback = null, onForwardCompletedFallback = null)
 
     /**
      * Returns `true` if this dispatcher is in a terminal state and can no longer be used.
@@ -166,7 +203,7 @@ private constructor(
      *
      * **This is primarily for cleanup when this dispatcher is no longer needed.**
      */
-    internal val childDispatchers = mutableSetOf<NavigationEventDispatcher>()
+    internal val childDispatchers = mutableOrderedScatterSetOf<NavigationEventDispatcher>()
 
     /**
      * A set of [NavigationEventHandler] instances directly registered with *this specific*
@@ -178,7 +215,7 @@ private constructor(
      *
      * **This is primarily for cleanup when this dispatcher is no longer needed.**
      */
-    private val handlers = mutableSetOf<NavigationEventHandler<*>>()
+    private val handlers = mutableOrderedScatterSetOf<NavigationEventHandler<*>>()
 
     /**
      * A set of [NavigationEventInput] instances that are directly managed by this dispatcher.
@@ -188,7 +225,7 @@ private constructor(
      *
      * **This is primarily for cleanup when this dispatcher is no longer needed.**
      */
-    private val inputs = mutableSetOf<NavigationEventInput>()
+    private val inputs = mutableOrderedScatterSetOf<NavigationEventInput>()
 
     /**
      * The globally observable, read-only state of the physical navigation gesture.
@@ -380,7 +417,12 @@ private constructor(
         checkInvariants()
 
         if (!isEnabled) return
-        sharedProcessor.dispatchOnCompleted(input, direction, onBackCompletedFallback)
+        sharedProcessor.dispatchOnCompleted(
+            input,
+            direction,
+            onBackCompletedFallback,
+            onForwardCompletedFallback,
+        )
     }
 
     /** @see [NavigationEventProcessor.dispatchOnCancelled] */
@@ -430,18 +472,20 @@ private constructor(
 
             // Add 'currentDispatcher's children to the queue before processing 'currentDispatcher's
             // own cleanup. This ensures a complete traversal of the sub-hierarchy.
-            dispatchersToDispose += currentDispatcher.childDispatchers
+            currentDispatcher.childDispatchers.forEach { dispatcher ->
+                dispatchersToDispose += dispatcher
+            }
 
             // Notify all registered inputs that this dispatcher is being disposed.
             // This gives them a chance to clean up their own state, severing the lifecycle link
             // and preventing them from interacting with a disposed object.
-            for (input in currentDispatcher.inputs) {
+            currentDispatcher.inputs.toOrderedScatterSet().forEach { input ->
                 sharedProcessor.removeInput(input)
             }
             currentDispatcher.inputs.clear()
 
             // Remove handlers directly owned by the currentDispatcher from the shared processor.
-            for (handler in currentDispatcher.handlers) {
+            currentDispatcher.handlers.toOrderedScatterSet().forEach { handler ->
                 // Always use the public API for removal. This ensures the component's internal
                 // state is handled correctly and prevents unexpected behavior.
                 handler.remove()
@@ -498,5 +542,13 @@ private constructor(
          * components have been given a chance to handle them.
          */
         public const val PRIORITY_DEFAULT: Int = 1
+    }
+}
+
+private fun <T> OrderedScatterSet<T>.toOrderedScatterSet(): OrderedScatterSet<T> {
+    return if (isEmpty()) {
+        emptyOrderedScatterSet()
+    } else {
+        MutableOrderedScatterSet<T>(size).also { it.addAll(this) }
     }
 }

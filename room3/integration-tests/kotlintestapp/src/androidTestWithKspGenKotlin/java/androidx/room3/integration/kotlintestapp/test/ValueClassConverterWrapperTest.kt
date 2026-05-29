@@ -32,6 +32,7 @@ import androidx.room3.androidx.room3.integration.kotlintestapp.vo.Experiment
 import androidx.room3.androidx.room3.integration.kotlintestapp.vo.Schrodinger
 import androidx.room3.androidx.room3.integration.kotlintestapp.vo.SchrodingerConverter
 import androidx.room3.integration.kotlintestapp.vo.DateConverter
+import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
@@ -209,7 +210,8 @@ class ValueClassConverterWrapperTest {
     fun initDb() {
         val context = ApplicationProvider.getApplicationContext<Context>()
         db =
-            Room.inMemoryDatabaseBuilder(context, ValueClassConverterWrapperDatabase::class.java)
+            Room.inMemoryDatabaseBuilder<ValueClassConverterWrapperDatabase>(context)
+                .setDriver(BundledSQLiteDriver())
                 .build()
     }
 

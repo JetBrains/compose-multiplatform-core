@@ -129,7 +129,7 @@ class CurvedLayout : ComponentActivity() {
 
             SpatialCurvedRow(
                 modifier = SubspaceModifier.width(2000.dp).height(600.dp),
-                alignment = SpatialAlignment.BottomCenter,
+                verticalAlignment = SpatialAlignment.Bottom,
                 curveRadius = curveRadius,
                 horizontalArrangement = SpatialArrangement.SpaceEvenly,
             ) {
@@ -162,6 +162,7 @@ class CurvedLayout : ComponentActivity() {
         SpatialPanel(modifier = modifier) { PanelContent(false, title = "Side Panel", text) }
     }
 
+    @Suppress("DEPRECATION")
     @Composable
     private fun PanelContent(backButton: Boolean = false, title: String, vararg text: String) {
         var addHighlight by remember { mutableStateOf(false) }

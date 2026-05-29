@@ -40,6 +40,15 @@ public class PdfContentLayout(context: Context, attrs: AttributeSet? = null) :
     public val pdfView: PdfView
         get() = _pdfView
 
+    /**
+     * Controls whether annotation interaction is currently enabled.
+     *
+     * When set to `true`, [PdfContentLayout] is allowed to intercept touch events and route it to
+     * required child. When `false`, touch interception is disable and touch events are passed to
+     * the child views(e.g. [PdfView] for scrolling/zooming).
+     */
+    public var isAnnotationInteractionEnabled: Boolean = false
+
     init {
         LayoutInflater.from(context).inflate(R.layout.pdf_content_layout, this, true)
         _pdfView = findViewById(R.id.pdfView)
@@ -47,11 +56,16 @@ public class PdfContentLayout(context: Context, attrs: AttributeSet? = null) :
 
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
-        _pdfView.enableDefaultFastScrollerRendering = true
+        _pdfView.enableDefaultFastScrollerRendering = false
     }
 
     override fun dispatchDraw(canvas: Canvas) {
         super.dispatchDraw(canvas)
+        if (PdfFeatureFlags.isMultiTouchScrollEnabled && _pdfView.isAccessibilityEnabled) {
+            _pdfView.fastScrollVisibility = PdfView.FastScrollVisibility.ALWAYS_SHOW
+        } else {
+            _pdfView.fastScrollVisibility = PdfView.FastScrollVisibility.AUTO_HIDE
+        }
         _pdfView.drawFastScroller(canvas)
     }
 
@@ -64,11 +78,12 @@ public class PdfContentLayout(context: Context, attrs: AttributeSet? = null) :
         if (ev == null) {
             return super.onInterceptTouchEvent(ev)
         }
-        return PdfFeatureFlags.isMultiTouchScrollEnabled
+        // Intercept touch events only if annotation interaction is enabled
+        return isAnnotationInteractionEnabled
     }
 
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
-        pdfView.enableDefaultFastScrollerRendering = false
+        pdfView.enableDefaultFastScrollerRendering = true
     }
 }

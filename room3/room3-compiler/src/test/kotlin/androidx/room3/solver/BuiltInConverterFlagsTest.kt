@@ -23,8 +23,7 @@ import androidx.room3.Database
 import androidx.room3.DatabaseProcessingStep
 import androidx.room3.compiler.processing.util.Source
 import androidx.room3.compiler.processing.util.XTestInvocation
-import androidx.room3.compiler.processing.util.runProcessorTest
-import androidx.room3.processor.Context
+import androidx.room3.compiler.processing.util.runKspTest
 import androidx.room3.processor.ProcessorErrors.CANNOT_FIND_COLUMN_TYPE_ADAPTER
 import androidx.room3.processor.ProcessorErrors.CANNOT_FIND_STMT_READER
 import org.junit.Test
@@ -138,10 +137,7 @@ class BuiltInConverterFlagsTest {
                 daoAnnotation = daoAnnotation,
                 dbAnnotation = dbAnnotation,
             )
-        runProcessorTest(
-            sources = listOf(source),
-            options = mapOf(Context.BooleanProcessorOptions.GENERATE_KOTLIN.argName to "false"),
-        ) { invocation ->
+        runKspTest(sources = listOf(source)) { invocation ->
             val subject = invocation.processingEnv.requireTypeElement("MyDatabase")
             DatabaseProcessingStep()
                 .process(
@@ -150,8 +146,8 @@ class BuiltInConverterFlagsTest {
                     false,
                 )
             invocation.assertCompilationResult {
-                generatedSourceFileWithPath("MyDatabase_Impl.java")
-                generatedSourceFileWithPath("MyDao_Impl.java")
+                generatedSourceFileWithPath("MyDatabase_Impl.kt")
+                generatedSourceFileWithPath("MyDao_Impl.kt")
             }
             assertion.invoke(invocation)
         }

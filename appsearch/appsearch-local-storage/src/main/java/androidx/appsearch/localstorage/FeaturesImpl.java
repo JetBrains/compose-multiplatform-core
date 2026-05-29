@@ -60,6 +60,10 @@ public class FeaturesImpl implements Features {
                 // fall through
             case Features.SCHEMA_EMBEDDING_QUANTIZATION:
                 // fall through
+            case Features.SCHEMA_EMBEDDING_APPROXIMATE_NEAREST_NEIGHBOR:
+                // fall through
+            case Features.SCHEMA_EMBEDDING_PRE_QUANTIZED_DATA:
+                // fall through
             case Features.SEARCH_SPEC_GROUPING_TYPE_PER_SCHEMA:
                 // fall through
             case Features.SEARCH_RESULT_MATCH_INFO_SUBMATCH:
@@ -92,7 +96,7 @@ public class FeaturesImpl implements Features {
                 // fall through
             case Features.SEARCH_SPEC_ADD_INFORMATIONAL_RANKING_EXPRESSIONS:
                 // fall through
-            case Features.BLOB_STORAGE:
+            case Features.SCHEMA_BLOB_HANDLE:
                 // fall through
             case Features.SEARCH_SPEC_ADD_FILTER_DOCUMENT_IDS:
                 // fall through
@@ -105,15 +109,20 @@ public class FeaturesImpl implements Features {
             case Features.SEARCH_SPEC_RANKING_FUNCTION_FILTER_BY_RANGE:
                 // fall through
             case Features.SEARCH_EMBEDDING_MATCH_INFO:
+                // fall through
+            case Features.SCHEMA_JOINABLE_REPEATED_PROPERTIES:
+                // fall through
+            case Features.SET_SCHEMA_REQUEST_SET_WIPEOUT_ACCOUNT:
                 return true;
+            case Features.SCHEMA_STRING_PROPERTY_CONFIG_DELETE_PROPAGATION_TYPE_PROPAGATE_FROM:
+                // TODO(b/384947619): Enable this once the feature is rolled out to Nextfood in
+                //   platform.
+                return false;
             case Features.INDEXER_MOBILE_APPLICATIONS:
                 // The Apps Indexer is only available on platform storage and some versions of
                 // GMSCore AppSearch. It can't be ran by local storage because local storage
                 // does not have a service component or any background jobs. It would also
                 // duplicate documents already indexed and available in PlatformStorage.
-                return false;
-            case Features.SCHEMA_STRING_PROPERTY_CONFIG_DELETE_PROPAGATION_TYPE_PROPAGATE_FROM:
-                // TODO(b/384947619): enable this feature once it is ready.
                 return false;
             case Features.ISOLATED_STORAGE:
                 // Isolated storage is only supported for platform storage.

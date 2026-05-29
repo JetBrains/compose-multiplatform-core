@@ -23,14 +23,14 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.core.app.ActivityCompat
 import androidx.xr.runtime.Config
-import androidx.xr.runtime.Config.HeadTrackingMode
+import androidx.xr.runtime.DeviceTrackingMode
 import androidx.xr.runtime.Session
 import androidx.xr.scenecore.MovableComponent
 import androidx.xr.scenecore.scene
 import androidx.xr.scenecore.testapp.R
-import androidx.xr.scenecore.testapp.common.createSession
 import androidx.xr.scenecore.testapp.common.managers.GltfManager
 import androidx.xr.scenecore.testapp.common.managers.PanelEntityManager
+import androidx.xr.scenecore.testapp.common.managers.SessionManager
 import androidx.xr.scenecore.testapp.common.managers.SpatialEnvironmentManager
 import androidx.xr.scenecore.testapp.common.managers.SurfaceEntityManager
 import com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -47,9 +47,10 @@ class MemoryLeakActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_memory_leak)
 
-        session = createSession(this)
+        session = SessionManager(this).createSession()
         if (session == null) this.finish()
-        session!!.configure(Config(headTracking = HeadTrackingMode.LAST_KNOWN))
+        session!!.configure(Config.Builder().setDeviceTracking(DeviceTrackingMode.SPATIAL).build())
+        session?.scene?.keyEntity = session?.scene?.mainPanelEntity
 
         val weakActivity = WeakReference(this@MemoryLeakActivity)
         // toolbar
@@ -72,7 +73,6 @@ class MemoryLeakActivity : AppCompatActivity() {
         Log.w("MemoryLeakActivity", "onDestroy called")
         mGltfManager.ClearListeners()
         mSurfaceEntityManager.ClearListeners()
-        session!!.scene.clearSpatialVisibilityChangedListener()
         findViewById<FloatingActionButton>(R.id.bottomCenterFab).setOnClickListener(null)
         findViewById<Toolbar>(R.id.top_app_bar).setNavigationOnClickListener(null)
     }
@@ -80,12 +80,12 @@ class MemoryLeakActivity : AppCompatActivity() {
     private fun setupMainPanel() {
         // Request FSM
         findViewById<Button>(R.id.button_request_fsm).also {
-            it.setOnClickListener { session!!.scene.requestFullSpaceMode() }
+            it.setOnClickListener { session!!.scene.requestFullSpace() }
         }
 
         // Request HSM
         findViewById<Button>(R.id.button_request_hsm).also {
-            it.setOnClickListener { session!!.scene.requestHomeSpaceMode() }
+            it.setOnClickListener { session!!.scene.requestHomeSpace() }
         }
 
         // Make the main panel movable.

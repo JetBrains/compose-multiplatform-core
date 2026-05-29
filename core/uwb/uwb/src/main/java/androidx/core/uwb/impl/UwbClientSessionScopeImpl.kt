@@ -26,7 +26,7 @@ import androidx.core.uwb.RangingResult.RangingResultInitialized
 import androidx.core.uwb.RangingResult.RangingResultPosition
 import androidx.core.uwb.UwbAddress
 import androidx.core.uwb.UwbClientSessionScope
-import androidx.core.uwb.helper.handleApiException
+import androidx.core.uwb.helper.getFailureReasonFromApiException
 import com.google.android.gms.common.api.ApiException
 import com.google.android.gms.nearby.uwb.RangingPosition
 import com.google.android.gms.nearby.uwb.RangingSessionCallback
@@ -191,7 +191,12 @@ internal open class UwbClientSessionScopeImpl(
             uwbClient.startRanging(parametersBuilder.build(), callback).await()
             sessionStarted = true
         } catch (e: ApiException) {
-            handleApiException(e)
+            trySend(
+                RangingResultFailure(
+                    androidx.core.uwb.UwbDevice(localAddress),
+                    getFailureReasonFromApiException(e),
+                )
+            )
         }
 
         awaitClose {
@@ -200,7 +205,12 @@ internal open class UwbClientSessionScopeImpl(
                     uwbClient.stopRanging(callback).await()
                     sessionStarted = false
                 } catch (e: ApiException) {
-                    handleApiException(e)
+                    trySend(
+                        RangingResultFailure(
+                            androidx.core.uwb.UwbDevice(localAddress),
+                            getFailureReasonFromApiException(e),
+                        )
+                    )
                 }
             }
         }

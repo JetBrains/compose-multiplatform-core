@@ -27,7 +27,7 @@ import androidx.room3.ext.SupportDbTypeNames
 import androidx.room3.ext.isEntityElement
 import androidx.room3.parser.SqlParser
 import androidx.room3.processor.ProcessorErrors.RAW_QUERY_STRING_PARAMETER_REMOVED
-import androidx.room3.vo.MapInfo
+import androidx.room3.solver.query.result.InstantQueryResultBinder
 import androidx.room3.vo.RawQueryFunction
 
 class RawQueryFunctionProcessor(
@@ -61,35 +61,18 @@ class RawQueryFunctionProcessor(
             ProcessorErrors.suspendReturnsDeferredType(returnType.rawType.typeName.toString()),
         )
 
-        if (!isSuspendFunction && !returnsDeferredType && !context.isAndroidOnlyTarget()) {
+        val observedTableNames = processObservedTables()
+        val query = SqlParser.rawQueryForTables(observedTableNames)
+        // build the query but don't calculate result info since we just guessed it.
+        val resultBinder = delegate.findResultBinder(returnType, query)
+        if (resultBinder is InstantQueryResultBinder && !context.isAndroidOnlyTarget()) {
             // A blocking function that does not return a deferred return type is not allowed if the
             // target platforms include non-Android targets.
             context.logger.e(
                 executableElement,
                 ProcessorErrors.INVALID_BLOCKING_DAO_FUNCTION_NON_ANDROID,
             )
-            // TODO(b/332781418): Early return to avoid generating redundant code.
         }
-
-        val observedTableNames = processObservedTables()
-        val query = SqlParser.rawQueryForTables(observedTableNames)
-        // build the query but don't calculate result info since we just guessed it.
-        val resultBinder =
-            delegate.findResultBinder(returnType, query) {
-                @Suppress("DEPRECATION") // Due to MapInfo
-                val annotation =
-                    delegate.executableElement.getAnnotation(androidx.room3.MapInfo::class)
-                if (annotation != null) {
-                    val keyColumn = annotation["keyColumn"]?.asString() ?: ""
-                    val valueColumn = annotation["valueColumn"]?.asString() ?: ""
-                    context.checker.check(
-                        keyColumn.isNotEmpty() || valueColumn.isNotEmpty(),
-                        executableElement,
-                        ProcessorErrors.MAP_INFO_MUST_HAVE_AT_LEAST_ONE_COLUMN_PROVIDED,
-                    )
-                    putData(MapInfo::class, MapInfo(keyColumn, valueColumn))
-                }
-            }
 
         val runtimeQueryParam = findRuntimeQueryParameter(delegate.extractParams())
         val inTransaction = executableElement.hasAnnotation(Transaction::class)
@@ -127,7 +110,7 @@ class RawQueryFunctionProcessor(
                     val entity = EntityProcessor(context = context, element = it).process()
                     arrayListOf(entity.tableName)
                 } else {
-                    val pojo =
+                    val dataClass =
                         DataClassProcessor.createFor(
                                 context = context,
                                 element = it,
@@ -135,7 +118,7 @@ class RawQueryFunctionProcessor(
                                 parent = null,
                             )
                             .process()
-                    val tableNames = pojo.accessedTableNames()
+                    val tableNames = dataClass.accessedTableNames()
                     // if it is empty, report error as it does not make sense
                     if (tableNames.isEmpty()) {
                         context.logger.e(

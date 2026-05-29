@@ -26,6 +26,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
+@org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.TARGET_SDK])
 class PdfFormFillingStateTest {
     private val NUM_PAGES = 10
 
@@ -41,41 +42,48 @@ class PdfFormFillingStateTest {
         mPdfFormFillingState.addPageFormWidgetInfos(
             0,
             listOf(
-                FormWidgetInfo(
-                    widgetType = FormWidgetInfo.WIDGET_TYPE_RADIOBUTTON,
+                FormWidgetInfo.createRadioButton(
                     widgetIndex = 0,
                     widgetRect = Rect(50, 500, 100, 600),
                     textValue = "false",
                     accessibilityLabel = "Radio",
+                    isReadOnly = false,
                 ),
-                FormWidgetInfo(
-                    widgetType = FormWidgetInfo.WIDGET_TYPE_RADIOBUTTON,
+                FormWidgetInfo.createRadioButton(
                     widgetIndex = 1,
                     widgetRect = Rect(50, 500, 100, 600),
                     textValue = "false",
                     accessibilityLabel = "Radio",
+                    isReadOnly = false,
                 ),
             ),
         )
         mPdfFormFillingState.addPageFormWidgetInfos(
             1,
             listOf(
-                FormWidgetInfo(
-                    widgetType = FormWidgetInfo.WIDGET_TYPE_TEXTFIELD,
+                FormWidgetInfo.createTextField(
                     widgetIndex = 0,
                     widgetRect = Rect(50, 500, 100, 600),
                     textValue = "false",
                     accessibilityLabel = "Radio",
+                    isReadOnly = false,
+                    isEditableText = true,
+                    isMultiLineText = false,
+                    maxLength = 10,
+                    fontSize = 10f,
                 ),
-                FormWidgetInfo(
-                    widgetType = FormWidgetInfo.WIDGET_TYPE_CHECKBOX,
+                FormWidgetInfo.createCheckbox(
                     widgetIndex = 1,
                     widgetRect = Rect(50, 500, 100, 600),
                     textValue = "false",
                     accessibilityLabel = "Radio",
+                    isReadOnly = false,
                 ),
             ),
         )
+
+        mPdfFormFillingState.addHintText(pageNum = 0, widgetIndex = 0, text = "Name")
+        mPdfFormFillingState.addHintText(pageNum = 1, widgetIndex = 0, text = "Email")
 
         val parcel = Parcel.obtain()
         mPdfFormFillingState.writeToParcel(parcel, 0)
@@ -89,5 +97,29 @@ class PdfFormFillingStateTest {
             assertThat(newPdfFormFillingState.getPageFormWidgetInfos(i))
                 .isEqualTo(mPdfFormFillingState.getPageFormWidgetInfos(i))
         }
+        assertThat(newPdfFormFillingState.getHintText(0, 0)).isEqualTo("Name")
+        assertThat(newPdfFormFillingState.getHintText(1, 0)).isEqualTo("Email")
+        assertThat(newPdfFormFillingState.getHintText(2, 0)).isNull()
+    }
+
+    @Test
+    fun test_addAndGetHintText() {
+        val pageNum = 0
+        val widgetIndex = 5
+        val hintText = "First Name"
+
+        mPdfFormFillingState.addHintText(pageNum, widgetIndex, hintText)
+
+        assertThat(mPdfFormFillingState.getHintText(pageNum, widgetIndex)).isEqualTo(hintText)
+    }
+
+    @Test
+    fun test_hasHintsForPage() {
+        assertThat(mPdfFormFillingState.hasHintsForPage(0)).isFalse()
+
+        mPdfFormFillingState.addHintText(0, 0, "Hint")
+
+        assertThat(mPdfFormFillingState.hasHintsForPage(0)).isTrue()
+        assertThat(mPdfFormFillingState.hasHintsForPage(1)).isFalse()
     }
 }

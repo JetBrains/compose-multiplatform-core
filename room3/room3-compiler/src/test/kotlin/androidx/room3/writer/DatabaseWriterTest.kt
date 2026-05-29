@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,161 +13,82 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package androidx.room3.writer
 
-import COMMON
-import androidx.room3.RoomKspProcessor
 import androidx.room3.RoomProcessor
-import androidx.room3.compiler.processing.util.CompilationResultSubject
 import androidx.room3.compiler.processing.util.Source
-import androidx.room3.compiler.processing.util.compileFiles
-import androidx.room3.compiler.processing.util.runProcessorTest
-import androidx.room3.processor.Context
-import androidx.testutils.generateAllEnumerations
-import loadTestSource
+import androidx.room3.compiler.processing.util.runKspProcessorTest
 import org.junit.Test
-import org.junit.experimental.runners.Enclosed
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 
-@RunWith(Enclosed::class)
-class DatabaseWriterTest {
-
-    class SmallDB {
-
-        @Test
-        fun testCompileAndVerifySources() {
-            singleDb(
-                loadTestSource(
-                    fileName = "databasewriter/input/ComplexDatabase.java",
-                    qName = "foo.bar.ComplexDatabase",
-                ),
-                loadTestSource(
-                    fileName = "daoWriter/input/ComplexDao.java",
-                    qName = "foo.bar.ComplexDao",
-                ),
-            ) {
-                it.generatedSource(
-                    loadTestSource(
-                        fileName = "databasewriter/output/ComplexDatabase.java",
-                        qName = "foo.bar.ComplexDatabase_Impl",
-                    )
-                )
-            }
-        }
-    }
-
-    @RunWith(Parameterized::class)
-    class BigDB(val config: Pair<Int, Int>) {
-
-        @Test
-        fun testCompile() {
-            val (maxStatementCount, valuesPerEntity) = config
-            val entitySources = mutableListOf<Pair<String, Source>>()
-            var entityCount = 1
-            var statementCount = 0
-            while (statementCount < maxStatementCount) {
-                val entityValues =
-                    StringBuilder().apply {
-                        for (i in 1..valuesPerEntity) {
-                            append(
-                                """
-                    private String value$i;
-                    public String getValue$i() { return this.value$i; }
-                    public void setValue$i(String value) { this.value$i = value; }
-
-                    """
-                            )
+/**
+ * Test to validate onValidateSchema is split in various functions to avoid code too big. See
+ * b/111166670 and b/493708172
+ */
+@RunWith(Parameterized::class)
+class ValidationWriterTest(val entitiesCount: Int, val columnsPerEntity: Int) {
+    @Test
+    fun bigDatabase() {
+        check(entitiesCount > 0)
+        check(columnsPerEntity > 0)
+        val entitySources =
+            List(entitiesCount) { entityId ->
+                val entityProperties =
+                    List(columnsPerEntity) { propertyId ->
+                            if (propertyId == 0) {
+                                "@PrimaryKey val pk: Long"
+                            } else {
+                                "val prop$propertyId: String"
+                            }
                         }
-                    }
-                val entitySource =
-                    Source.java(
-                        qName = "foo.bar.Entity$entityCount",
-                        code =
-                            """
-                    package foo.bar;
-
-                    import androidx.room3.*;
-
-                    @Entity
-                    public class Entity$entityCount {
-
-                        @PrimaryKey
-                        private long id;
-
-                        public long getId() { return this.id; }
-                        public void setId(long id) { this.id = id; }
-
-                        $entityValues
-                    }
-                    """,
-                    )
-                entitySources.add("Entity$entityCount" to entitySource)
-                statementCount += valuesPerEntity
-                entityCount++
-            }
-            val entityClasses = entitySources.joinToString { "${it.first}.class" }
-            val dbSource =
-                Source.java(
-                    qName = "foo.bar.TestDatabase",
-                    code =
-                        """
-                    package foo.bar;
-
-                    import androidx.room3.*;
-
-                    @Database(entities = {$entityClasses}, version = 1)
-                    public abstract class TestDatabase extends RoomDatabase {}
-                    """,
+                        .joinToString()
+                Source.kotlin(
+                    "Entity$entityId.kt",
+                    """
+                package foo.bar
+                import androidx.room3.*
+                @Entity
+                data class Entity$entityId($entityProperties)
+                """
+                        .trimIndent(),
                 )
-            singleDb(*(listOf(dbSource) + entitySources.map { it.second }).toTypedArray()) {
-                // no assertion, if compilation succeeded, it is good
             }
-        }
-
-        companion object {
-            @Parameterized.Parameters(name = "(maxStatementCount, valuesPerEntity)={0}")
-            @JvmStatic
-            fun getParams(): List<Pair<Int, Int>> =
-                generateAllEnumerations(listOf(500, 1000, 3000), listOf(50, 100, 200)).map {
-                    it[0] as Int to it[1] as Int
-                }
+        val entityClasses = List(entitiesCount) { "Entity$it::class" }.joinToString()
+        val dbSource =
+            Source.kotlin(
+                filePath = "TestDatabase.kt",
+                code =
+                    """
+                package foo.bar
+                import androidx.room3.*
+                @Database(entities = [$entityClasses], version = 1, exportSchema = false)
+                abstract class TestDatabase : RoomDatabase()
+                """,
+            )
+        runKspProcessorTest(
+            sources = entitySources + dbSource,
+            symbolProcessorProviders = listOf(RoomProcessor.Provider()),
+        ) {
+            it.hasErrorCount(0)
+            it.hasWarningCount(0)
         }
     }
-}
 
-private fun singleDb(
-    vararg inputs: Source,
-    onCompilationResult: (CompilationResultSubject) -> Unit,
-) {
-    val sources =
-        listOf(
-            COMMON.USER,
-            COMMON.USER_SUMMARY,
-            COMMON.PARENT,
-            COMMON.CHILD1,
-            COMMON.CHILD2,
-            COMMON.INFO,
-        ) + inputs
-    val libs =
-        compileFiles(
-            listOf(
-                COMMON.LIVE_DATA,
-                COMMON.COMPUTABLE_LIVE_DATA,
-                COMMON.GUAVA_ROOM,
-                COMMON.LISTENABLE_FUTURE,
-                COMMON.PAGING_SOURCE,
-                COMMON.LIMIT_OFFSET_PAGING_SOURCE,
+    companion object {
+        @JvmStatic
+        @Parameterized.Parameters(name = "entitiesCount={0}, columnsPerEntity={1}")
+        fun getParams(): Array<Array<Int>> =
+            arrayOf(
+                arrayOf(10, 10),
+                arrayOf(10, 30),
+                arrayOf(10, 50),
+                arrayOf(30, 10),
+                arrayOf(30, 30),
+                arrayOf(30, 50),
+                arrayOf(100, 10),
+                arrayOf(100, 30),
+                arrayOf(100, 50),
             )
-        )
-    runProcessorTest(
-        sources = sources,
-        classpath = libs,
-        options = mapOf(Context.BooleanProcessorOptions.GENERATE_KOTLIN.argName to "false"),
-        kotlincArguments = listOf("-jvm-target=11"),
-        javacProcessors = listOf(RoomProcessor()),
-        symbolProcessorProviders = listOf(RoomKspProcessor.Provider()),
-        onCompilationResult = onCompilationResult,
-    )
+    }
 }

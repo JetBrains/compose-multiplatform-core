@@ -26,6 +26,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(RobolectricCameraPipeTestRunner::class)
+@org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.TARGET_SDK])
 class FakeCameraStreamConfigurationMapTest {
     private val streamConfigurationMap =
         FakeCameraStreamConfigurationMap(

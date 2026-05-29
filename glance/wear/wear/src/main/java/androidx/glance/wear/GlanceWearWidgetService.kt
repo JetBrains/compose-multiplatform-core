@@ -16,16 +16,21 @@
 
 package androidx.glance.wear
 
+import android.annotation.SuppressLint
 import android.content.ComponentName
 import android.content.Intent
 import android.os.IBinder
-import androidx.annotation.RestrictTo
+import androidx.compose.remote.creation.compose.RemoteComposeCreationComposeFlags
+import androidx.glance.wear.core.RendererVersion
+import androidx.glance.wear.core.WearWidgetProviderInfo
 import androidx.glance.wear.parcel.IWearWidgetProvider
 import androidx.glance.wear.parcel.LegacyTileProviderImpl
 import androidx.glance.wear.parcel.WearWidgetProviderImpl
 import androidx.glance.wear.parcel.legacy.TileProvider
+import androidx.glance.wear.util.isRobolectricBuild
 import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
 
 /**
  * Service used for communication between the Host and a Widget Provider.
@@ -37,7 +42,21 @@ import androidx.lifecycle.lifecycleScope
  * }
  * ```
  */
-public abstract class GlanceWearWidgetService() : LifecycleService() {
+public abstract class GlanceWearWidgetService : LifecycleService() {
+
+    @SuppressLint("RestrictedApiAndroidX")
+    @OptIn(androidx.compose.remote.creation.compose.ExperimentalRemoteCreationComposeApi::class)
+    override fun onCreate() {
+        super.onCreate()
+        // We need this flag to be false (meaning empty axis won't be send and default normal weight
+        // would be used, for the 1.6 renderer and the player that has a bug in it.
+        RemoteComposeCreationComposeFlags.allowSendingEmptyFontAxis =
+            RendererVersion.fromPlHostPackage(this) > RendererVersion(1, 6, 0)
+        // TODO: b/483999057 - Add CallSuper annotation to lifecycle methods.
+        if (!isRobolectricBuild()) {
+            updateServiceMapping()
+        }
+    }
 
     /** Instance of [GlanceWearWidget] associated with this provider. */
     public abstract val widget: GlanceWearWidget
@@ -60,25 +79,31 @@ public abstract class GlanceWearWidgetService() : LifecycleService() {
         return when (intent.action) {
             ACTION_BIND_WIDGET_PROVIDER -> provider
             ACTION_BIND_TILE_PROVIDER ->
-                if (intent.extras?.getBoolean(EXTRA_KEY_WEAR_WIDGET_PROVIDER_SUPPORTED) == true) {
-                    // TODO: b/444391060 - Add an SDK check also to allow R8 optimization.
+                if (
+                    intent.identifier?.equals(
+                        WearWidgetProviderInfo.WEAR_WIDGET_PROVIDER_SUPPORTED_IDENTIFIER
+                    ) == true
+                ) {
                     provider
                 } else {
                     legacyProvider
                 }
+
             else -> null
+        }
+    }
+
+    private fun updateServiceMapping() {
+        lifecycleScope.launch {
+            GlanceWearWidgetManager(this@GlanceWearWidgetService)
+                .updateServiceMapping(this@GlanceWearWidgetService, widget)
         }
     }
 
     public companion object {
         /** Intent action for binding to a Widget Service. */
         public const val ACTION_BIND_WIDGET_PROVIDER: String =
-            "androidx.glance.wear.action.BIND_WIDGET_PROVIDER"
-
-        /** Extra boolean in the intent to signal support for [IWearWidgetProvider] interface. */
-        @RestrictTo(RestrictTo.Scope.LIBRARY)
-        public const val EXTRA_KEY_WEAR_WIDGET_PROVIDER_SUPPORTED: String =
-            "androidx.glance.wear.extra.WEAR_WIDGET_PROVIDER_SUPPORTED"
+            WearWidgetProviderInfo.ACTION_BIND_WIDGET_PROVIDER
 
         internal const val ACTION_BIND_TILE_PROVIDER: String =
             "androidx.wear.tiles.action.BIND_TILE_PROVIDER"

@@ -20,13 +20,13 @@ import android.content.ClipboardManager
 import android.graphics.Point
 import android.graphics.PointF
 import android.graphics.RectF
+import android.os.Build
 import android.view.InputDevice
 import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.ViewGroup
 import androidx.pdf.PdfPoint
 import androidx.pdf.content.PdfPageTextContent
-import androidx.pdf.featureflag.PdfFeatureFlags
 import androidx.pdf.selection.model.TextSelection
 import androidx.pdf.util.ZoomUtils
 import androidx.test.core.app.ActivityScenario
@@ -40,6 +40,7 @@ import androidx.test.filters.LargeTest
 import com.google.common.truth.Truth.assertThat
 import kotlin.math.roundToInt
 import org.junit.After
+import org.junit.Assume.assumeFalse
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -72,13 +73,11 @@ class PdfViewExternalInputTest {
                 )
             }
         }
-        PdfFeatureFlags.isExternalHardwareInteractionEnabled = true
     }
 
     @After
     fun tearDown() {
         PdfViewTestActivity.onCreateCallback = {}
-        PdfFeatureFlags.isExternalHardwareInteractionEnabled = false
     }
 
     @Test
@@ -200,7 +199,7 @@ class PdfViewExternalInputTest {
                 .check { view, _ ->
                     val pdfView = view as PdfView
                     val pageRect =
-                        pdfView.pageMetadataLoader?.getPageLocation(
+                        pdfView.pageLayoutManager?.getPageLocation(
                             0,
                             pdfView.getVisibleAreaInContentCoords(),
                         )
@@ -252,7 +251,7 @@ class PdfViewExternalInputTest {
                 .check { view, _ ->
                     val pdfView = view as PdfView
                     val pageRect =
-                        pdfView.pageMetadataLoader?.getPageLocation(
+                        pdfView.pageLayoutManager?.getPageLocation(
                             1,
                             pdfView.getVisibleAreaInContentCoords(),
                         )
@@ -349,7 +348,7 @@ class PdfViewExternalInputTest {
                 .check { view, _ ->
                     val pdfView = view as PdfView
                     val pageRect =
-                        pdfView.pageMetadataLoader?.getPageLocation(
+                        pdfView.pageLayoutManager?.getPageLocation(
                             1,
                             pdfView.getVisibleAreaInContentCoords(),
                         )
@@ -566,7 +565,7 @@ class PdfViewExternalInputTest {
                     val pdfView = view as PdfView
                     pdfView.post { pdfView.requestFocus() }
 
-                    defaultZoom = pdfView.getDefaultZoom()
+                    defaultZoom = pdfView.getFitToWidthZoom()
 
                     pdfView.zoom = pdfView.maxZoom
                 }
@@ -599,7 +598,7 @@ class PdfViewExternalInputTest {
                     val pdfView = view as PdfView
                     pdfView.post { pdfView.requestFocus() }
 
-                    defaultZoom = pdfView.getDefaultZoom()
+                    defaultZoom = pdfView.getFitToWidthZoom()
 
                     pdfView.zoom = pdfView.minZoom
                 }
@@ -632,7 +631,7 @@ class PdfViewExternalInputTest {
                     val pdfView = view as PdfView
                     pdfView.post { pdfView.requestFocus() }
 
-                    defaultZoom = pdfView.getDefaultZoom()
+                    defaultZoom = pdfView.getFitToWidthZoom()
 
                     pdfView.zoom = pdfView.maxZoom
                 }
@@ -665,7 +664,7 @@ class PdfViewExternalInputTest {
                     val pdfView = view as PdfView
                     pdfView.post { pdfView.requestFocus() }
 
-                    defaultZoom = pdfView.getDefaultZoom()
+                    defaultZoom = pdfView.getFitToWidthZoom()
 
                     pdfView.zoom = pdfView.minZoom
                 }
@@ -870,6 +869,7 @@ class PdfViewExternalInputTest {
 
     @Test
     fun testCtrlC_copiesSelectionToClipboardAndClearsSelection() {
+
         val expectedSelectedText = FAKE_PAGE_TEXT[0]
 
         with(ActivityScenario.launch(PdfViewTestActivity::class.java)) {
@@ -997,6 +997,10 @@ class PdfViewExternalInputTest {
 
     @Test
     fun mouseDrag_selectsContentInReverse_differentPages() {
+        assumeFalse(
+            "Test fails on cuttlefish b/465537830",
+            Build.MODEL.contains("Cuttlefish", ignoreCase = true),
+        )
         var start: PointF? = null
         var end: PointF? = null
 

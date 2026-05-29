@@ -30,7 +30,6 @@ import java.time.ZoneOffset
 import kotlin.reflect.typeOf
 import kotlin.test.assertFailsWith
 import org.junit.Assume.assumeTrue
-import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -147,14 +146,13 @@ class ActivityIntensityRecordTest {
         assertThat(baseRecord.hashCode()).isNotEqualTo(otherMetadata.hashCode())
     }
 
-    @Ignore // b/442020059
     @Test
     fun constructor_invalidTimes_throws() {
         assertFailsWith<IllegalArgumentException> {
             ActivityIntensityRecord(
                 startTime = Instant.ofEpochMilli(1234L),
                 startZoneOffset = null,
-                endTime = Instant.ofEpochMilli(1234L),
+                endTime = Instant.ofEpochMilli(1233L),
                 endZoneOffset = null,
                 metadata = Metadata.manualEntry(),
                 activityIntensityType =

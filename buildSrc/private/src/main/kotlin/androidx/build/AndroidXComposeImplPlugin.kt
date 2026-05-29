@@ -36,6 +36,7 @@ import org.jetbrains.kotlin.gradle.plugin.SubpluginOption
 import org.jetbrains.kotlin.gradle.tasks.AbstractKotlinCompile
 import org.jetbrains.kotlin.gradle.tasks.AbstractKotlinNativeCompile
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask
+import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
 
 /** Plugin to apply common configuration for Compose projects. */
 class AndroidXComposeImplPlugin : Plugin<Project> {
@@ -63,7 +64,8 @@ class AndroidXComposeImplPlugin : Plugin<Project> {
 
     companion object {
         private fun Project.configureAndroidCommonOptions(lint: Lint) {
-            val isPublished = androidXExtension.shouldPublish()
+            val isPublished = androidXExtension.shouldPublish.get()
+            val type = androidXExtension.type.get()
 
             lint.apply {
                 // These lint checks are normally a warning (or lower), but we ignore (in
@@ -95,55 +97,6 @@ class AndroidXComposeImplPlugin : Plugin<Project> {
                     disable.add("ListIterator")
                 }
 
-                // Paths for which we want to disable ComposeTestRuleDispatcher
-                val ignoreComposeTestRuleDispatcherFilter =
-                    listOf(
-                        "activity:activity-compose",
-                        "camera:camera-compose",
-                        "camera:integration-tests",
-                        "camera:viewfinder:viewfinder-compose",
-                        "compose:remote",
-                        "compose:runtime",
-                        "compose:ui:ui",
-                        "compose:ui:ui-benchmark",
-                        "compose:ui:ui-inspection",
-                        "compose:ui:ui-test",
-                        "compose:ui:ui-test-junit4",
-                        "compose:ui:ui-tooling",
-                        "constraintlayout:constraintlayout-compose",
-                        "core:core-backported-fixes",
-                        "fragment:fragment-compose",
-                        "hilt:hilt-lifecycle-viewmodel-compose",
-                        "hilt:hilt-navigation-compose",
-                        "lifecycle:lifecycle-runtime-compose",
-                        "lifecycle:lifecycle-viewmodel-compose",
-                        "lifecycle:lifecycle-viewmodel-navigation3",
-                        "navigation:navigation-compose",
-                        "navigation:navigation-fragment-compose",
-                        "navigation3:navigation3-ui",
-                        "navigation3:navigation3-runtime",
-                        "navigationevent:navigationevent-compose",
-                        "paging:paging-compose",
-                        "pdf:pdf-compose",
-                        "photopicker:photopicker-compose",
-                        "privacysandbox:ui:ui-client-compose",
-                        "tv:tv-material",
-                        "wear:compose:compose-foundation",
-                        "wear:compose:compose-material",
-                        "wear:compose:compose-material-core",
-                        "wear:compose:compose-material3",
-                        "wear:compose:compose-navigation",
-                        "wear:compose:integration-tests",
-                        "xr:compose",
-                        "xr:glimmer",
-                        "xr:projected:projected",
-                    )
-
-                // Disable ComposeTestRuleDispatcher if not in a matching path
-                if (ignoreComposeTestRuleDispatcherFilter.any { path.contains(it) }) {
-                    disable.add("ComposeTestRuleDispatcher")
-                }
-
                 // b/333784604 Disable ConfigurationScreenWidthHeight for wear libraries, it
                 // does not apply to wear
                 if (path.startsWith(":wear:")) {
@@ -151,21 +104,26 @@ class AndroidXComposeImplPlugin : Plugin<Project> {
                 }
 
                 // These checks are not required for samples projects.
-                if (androidXExtension.type == SoftwareType.SAMPLES) {
+                if (type == SoftwareType.SAMPLES) {
                     disable.add("ListIterator")
                     disable.add("PrimitiveInCollection")
                 }
 
-                // Disable lambda creation in subcompose check in projects where we're less
-                // concerned about performance.
                 if (
-                    androidXExtension.type == SoftwareType.TEST_APPLICATION ||
-                        androidXExtension.type == SoftwareType.PUBLISHED_KOTLIN_ONLY_TEST_LIBRARY ||
-                        androidXExtension.type == SoftwareType.PUBLISHED_TEST_LIBRARY ||
-                        androidXExtension.type == SoftwareType.SAMPLES ||
-                        androidXExtension.type == SoftwareType.UNSET
+                    type in
+                        setOf(
+                            SoftwareType.TEST_APPLICATION,
+                            SoftwareType.PUBLISHED_KOTLIN_ONLY_TEST_LIBRARY,
+                            SoftwareType.PUBLISHED_TEST_LIBRARY,
+                            SoftwareType.SAMPLES,
+                            SoftwareType.UNSET,
+                        )
                 ) {
+                    // Disable lambda creation in subcompose check in projects where we're less
+                    // concerned about performance.
                     disable.add("ComposableLambdaInMeasurePolicy")
+                    // Disable lint rule for feature flag development outside shipped libraries
+                    disable.add("FeatureFlagSetup")
                 }
             }
 
@@ -241,7 +199,13 @@ private fun configureComposeCompilerPlugin(project: Project) {
         project.tasks.withType(KotlinCompilationTask::class.java).configureEach { compile ->
             compile.applyPlugin(kotlinPlugin)
 
-            compile.addPluginOption(ComposeCompileOptions.SourceOption, "true")
+            val isAndroidOrJvm = compile is KotlinJvmCompile
+
+            compile.addPluginOption(ComposeCompileOptions.SourceOption, isAndroidOrJvm.toString())
+            compile.addPluginOption(
+                ComposeCompileOptions.TraceMarkersOption,
+                isAndroidOrJvm.toString(),
+            )
         }
     }
 }
@@ -249,7 +213,8 @@ private fun configureComposeCompilerPlugin(project: Project) {
 private fun KotlinCompilationTask<*>.applyPlugin(plugins: FileCollection) =
     when (this) {
         is AbstractKotlinCompile<*> -> pluginClasspath.from(plugins)
-        is AbstractKotlinNativeCompile<*, *> -> compilerPluginClasspath = plugins
+        is AbstractKotlinNativeCompile<*, *> ->
+            compilerPluginClasspath = compilerPluginClasspath?.plus(plugins) ?: plugins
         else -> throw IllegalStateException("Unsupported Kotlin compilation task type")
     }
 
@@ -279,6 +244,7 @@ private const val ComposePluginId = "androidx.compose.compiler.plugins.kotlin"
 
 private enum class ComposeCompileOptions(val pluginId: String, val key: String) {
     SourceOption(ComposePluginId, "sourceInformation"),
+    TraceMarkersOption(ComposePluginId, "traceMarkersEnabled"),
     StrongSkipping(ComposePluginId, "strongSkipping"),
     NonSkippingGroupOptimization(ComposePluginId, "nonSkippingGroupOptimization"),
     FeatureFlagOption(ComposePluginId, "featureFlag"),

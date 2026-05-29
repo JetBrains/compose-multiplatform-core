@@ -17,7 +17,6 @@
 package androidx.wear.compose.material3.demos
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -58,10 +57,12 @@ import androidx.wear.compose.material3.Text
 import androidx.wear.compose.material3.TimeText
 import androidx.wear.compose.material3.VerticalPagerScaffold
 import androidx.wear.compose.material3.samples.HorizontalPagerScaffoldSample
+import androidx.wear.compose.material3.samples.HorizontalPagerScaffoldWithLowSensitivitySample
 import androidx.wear.compose.material3.samples.ScaffoldSample
 import androidx.wear.compose.material3.samples.ScaffoldWithSLCEdgeButtonSample
 import androidx.wear.compose.material3.samples.ScaffoldWithTLCEdgeButtonSample
 import androidx.wear.compose.material3.samples.VerticalPagerScaffoldSample
+import androidx.wear.compose.material3.samples.VerticalPagerScaffoldWithLowSensitivitySample
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -84,6 +85,12 @@ val ScaffoldDemos =
         },
         ComposableDemo("Complex Horizontal Pager") { ComplexHorizontalPager() },
         ComposableDemo("Nested Pagers") { NestedPagers() },
+        ComposableDemo("Horizontal Pager (PagerSensitivity.Low)") {
+            HorizontalPagerScaffoldWithLowSensitivitySample(it.navigateBack)
+        },
+        ComposableDemo("Vertical Pager (PagerSensitivity.Low)") {
+            VerticalPagerScaffoldWithLowSensitivitySample()
+        },
     )
 
 @Composable
@@ -210,7 +217,8 @@ fun ScaffoldLoadingSLCEdgeButtonSample() {
 fun ComplexHorizontalPager() {
     AppScaffold {
         val pageCount = 3
-        val pagerState = PagerState(currentPage = 0, currentPageOffsetFraction = 0f) { pageCount }
+        val pagerState =
+            rememberPagerState(initialPage = 0, initialPageOffsetFraction = 0f) { pageCount }
 
         HorizontalPagerScaffold(
             pagerState = pagerState,
@@ -245,7 +253,7 @@ fun ComplexHorizontalPager() {
 fun NestedPagers() {
     val pageCount = 3
     val horizontalPagerState =
-        PagerState(currentPage = 0, currentPageOffsetFraction = 0f) { pageCount }
+        rememberPagerState(initialPage = 0, initialPageOffsetFraction = 0f) { pageCount }
     val verticalPagerStates = remember {
         Array(pageCount) { PagerState(currentPage = 0, currentPageOffsetFraction = 0f) { 5 } }
     }
@@ -253,9 +261,26 @@ fun NestedPagers() {
     HorizontalPagerScaffold(pagerState = horizontalPagerState, modifier = Modifier.fillMaxSize()) {
         HorizontalPager(state = horizontalPagerState) { pageIndex ->
             VerticalPagerScaffold(pagerState = verticalPagerStates[pageIndex]) {
-                VerticalPager(state = verticalPagerStates[pageIndex]) { innerPage ->
-                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text("Page #$pageIndex-$innerPage")
+                VerticalPager(
+                    state = verticalPagerStates[pageIndex],
+                    flingBehavior =
+                        PagerScaffoldDefaults.snapWithSpringFlingBehavior(
+                            state = verticalPagerStates[pageIndex]
+                        ),
+                ) { innerPage ->
+                    AnimatedPage(
+                        pageIndex = innerPage,
+                        pagerState = verticalPagerStates[pageIndex],
+                    ) {
+                        Column(
+                            modifier = Modifier.fillMaxSize(),
+                            verticalArrangement = Arrangement.Center,
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                        ) {
+                            Text("Page #$pageIndex-$innerPage")
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Button(onClick = {}) { Text("Button #$pageIndex-$innerPage") }
+                        }
                     }
                 }
             }

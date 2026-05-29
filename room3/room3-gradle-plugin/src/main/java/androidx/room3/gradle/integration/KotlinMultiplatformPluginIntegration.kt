@@ -19,12 +19,9 @@ package androidx.room3.gradle.integration
 import androidx.room3.gradle.RoomArgumentProvider
 import androidx.room3.gradle.RoomExtension
 import androidx.room3.gradle.RoomExtension.SchemaConfiguration
-import androidx.room3.gradle.toOptions
 import androidx.room3.gradle.util.check
-import androidx.room3.gradle.util.kspOneTaskClass
 import androidx.room3.gradle.util.kspTwoTaskClass
 import com.google.devtools.ksp.gradle.KspAATask
-import com.google.devtools.ksp.gradle.KspTask
 import kotlin.reflect.KClass
 import org.gradle.api.Project
 import org.gradle.api.Task
@@ -95,11 +92,7 @@ internal class KotlinMultiplatformPluginIntegration(private val common: CommonIn
                 }
 
                 apTask.finalizedBy(config.copyTask)
-                common.createArgumentProvider(
-                    schemaConfiguration = config,
-                    roomOptions = roomExtension.toOptions(),
-                    task = apTask,
-                )
+                common.createArgumentProvider(schemaConfiguration = config, task = apTask)
             }
             configureKspTasks(project, kotlinCompilationTaskNames, argProviderFactory)
         }
@@ -148,9 +141,6 @@ internal class KotlinMultiplatformPluginIntegration(private val common: CommonIn
                         task.block(argProvider)
                     }
                 }
-            }
-            if (kspOneTaskClass != null) {
-                configureEach(KspTask::class) { commandLineArgumentProviders.add(it) }
             }
             if (kspTwoTaskClass != null) {
                 configureEach(KspAATask::class) { commandLineArgumentProviders.add(it) }

@@ -121,7 +121,7 @@ class AndroidXPlaygroundRootImplPlugin : Plugin<Project> {
     }
 
     private fun RepositoryHandler.addPlaygroundRepositories() {
-        repos.all.forEach { playgroundRepository ->
+        fun RepositoryHandler.add(playgroundRepository: PlaygroundRepository) {
             maven { repository ->
                 repository.url = URI(playgroundRepository.url)
                 repository.metadataSources {
@@ -139,6 +139,7 @@ class AndroidXPlaygroundRootImplPlugin : Plugin<Project> {
                 }
             }
         }
+        repos.priority.forEach { add(it) }
         google { repository ->
             repository.content {
                 it.includeGroupByRegex("androidx.*")
@@ -148,6 +149,7 @@ class AndroidXPlaygroundRootImplPlugin : Plugin<Project> {
         }
         mavenCentral()
         gradlePluginPortal()
+        repos.fallback.forEach { add(it) }
     }
 
     private class PlaygroundRepositories(props: PlaygroundProperties) {
@@ -156,6 +158,11 @@ class AndroidXPlaygroundRootImplPlugin : Plugin<Project> {
                 "https://androidx.dev/snapshots/builds/${props.snapshotBuildId}/artifacts" +
                     "/repository",
                 includeGroupRegex = """androidx\..*""",
+            )
+        val mavenSnapshots =
+            PlaygroundRepository(
+                "https://central.sonatype.com/repository/maven-snapshots/",
+                includeGroupRegex = """com\.google\.devtools.*""",
             )
         val metalava =
             PlaygroundRepository(
@@ -178,13 +185,15 @@ class AndroidXPlaygroundRootImplPlugin : Plugin<Project> {
                 "https://packages.jetbrains.team/maven/p/kt/dev/",
                 includeGroupRegex = """org\.jetbrains\.kotlin.*""",
             )
-        val all = listOf(snapshots, metalava, dokka, prebuilts, kotlinDev)
+        val priority = listOf(metalava, dokka)
+        val fallback = listOf(snapshots, mavenSnapshots, prebuilts, kotlinDev)
     }
 
     private data class PlaygroundRepository(
         val url: String,
         val includeGroupRegex: String,
         val includeModuleRegex: String? = null,
+        val includeVersionRegex: String? = null,
     )
 
     private data class PlaygroundProperties(

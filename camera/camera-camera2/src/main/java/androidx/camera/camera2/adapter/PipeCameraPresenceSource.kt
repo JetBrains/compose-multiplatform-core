@@ -23,6 +23,7 @@ import androidx.camera.camera2.pipe.CameraId
 import androidx.camera.core.CameraIdentifier
 import androidx.camera.core.impl.AbstractCameraPresenceSource
 import androidx.concurrent.futures.CallbackToFutureAdapter
+import androidx.concurrent.futures.await
 import com.google.common.util.concurrent.ListenableFuture
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlinx.coroutines.CoroutineScope
@@ -56,12 +57,15 @@ public class PipeCameraPresenceSource(
         }
         Log.i(TAG, "Starting to collect camera ID flow.")
         flowCollectionJob?.cancel()
+
+        var isFirstEmission = true
+
         flowCollectionJob =
             idFlow
                 .map { pipeCameraIdList ->
                     pipeCameraIdList.mapNotNull { pipeId ->
                         try {
-                            CameraIdentifier.create(pipeId.value)
+                            CameraIdentifier.Factory.create(pipeId.value)
                         } catch (ex: Exception) {
                             Log.w(
                                 TAG,
@@ -75,7 +79,13 @@ public class PipeCameraPresenceSource(
                 .onEach { identifiers ->
                     Log.d(TAG, "Flow emitted new camera set: ${identifiers.joinToString()}")
                     if (isMonitoring.get()) {
-                        updateData(identifiers)
+                        if (isFirstEmission) {
+                            Log.i(TAG, "Handling first camera set, triggering fresh query.")
+                            fetchData().await()
+                            isFirstEmission = false
+                        } else {
+                            updateData(identifiers)
+                        }
                     } else {
                         Log.d(TAG, "Ignoring camera update because monitoring is stopped.")
                     }
@@ -110,7 +120,7 @@ public class PipeCameraPresenceSource(
                     val newIdentifiers =
                         systemCameraIds.mapNotNull {
                             try {
-                                CameraIdentifier.create(it)
+                                CameraIdentifier.Factory.create(it)
                             } catch (e: IllegalArgumentException) {
                                 Log.w(
                                     TAG,

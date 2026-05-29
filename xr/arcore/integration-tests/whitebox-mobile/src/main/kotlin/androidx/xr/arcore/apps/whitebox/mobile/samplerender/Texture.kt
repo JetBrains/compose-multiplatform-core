@@ -184,7 +184,7 @@ class Texture(
     override fun close() {
         if (_textureId[0] != 0) {
             GLES30.glDeleteTextures(1, _textureId, 0)
-            maybeLogGLError(Log.WARN, "Texture", "Failed to free texture", "glDeleteTextures")
+            maybeLogGLError(Log.WARN, "Failed to free texture", "glDeleteTextures")
             _textureId[0] = 0
         }
     }

@@ -16,7 +16,6 @@
 
 package androidx.appfunctions
 
-import android.app.PendingIntent
 import android.app.appsearch.GenericDocument
 import android.net.Uri
 import android.os.Build
@@ -30,10 +29,12 @@ import androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP
 import androidx.annotation.WorkerThread
 import androidx.appfunctions.internal.AppFunctionSerializableFactory
 import androidx.appfunctions.internal.Constants.APP_FUNCTIONS_TAG
+import androidx.appfunctions.metadata.AppFunctionAllOfTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionComponentsMetadata
 import androidx.appfunctions.metadata.AppFunctionObjectTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionParameterMetadata
 import androidx.appfunctions.metadata.AppFunctionResponseMetadata
+import com.google.errorprone.annotations.CanIgnoreReturnValue
 import java.time.LocalDateTime
 
 /**
@@ -459,7 +460,7 @@ internal constructor(
                 null
             } else {
                 AppFunctionData(
-                    spec?.getPropertyObjectSpec(key),
+                    spec?.getPropertyObjectSpec(key, array[0].schemaType),
                     array[0],
                     extras.getBundle(extrasKey(key)) ?: Bundle.EMPTY,
                 )
@@ -471,42 +472,6 @@ internal constructor(
             targetValue = dataValue,
         )
         return dataValue
-    }
-
-    /**
-     * Retrieves a [PendingIntent] value associated with the specified [key].
-     *
-     * @param key The key to retrieve the value for.
-     * @return The value associated with the [key], or null if the associated value is not found.
-     * @throws IllegalArgumentException if the [key] is not allowed or the value type is incorrect
-     *   according to the metadata specification.
-     */
-    public fun getPendingIntent(key: String): PendingIntent? {
-        return getPendingIntentOrNull(key)
-    }
-
-    /**
-     * Retrieves a [PendingIntent] value associated with the specified [key], or returns null if the
-     * associated value is not found.
-     *
-     * This method is used internally by the [AppFunctionSerializableFactory] to retrieve the
-     * underlying PendingIntent value.
-     *
-     * @param key The key to retrieve the value for.
-     * @return The value associated with the [key], or null if the associated value is not found.
-     * @throws IllegalArgumentException if the [key] is not allowed or the value type is incorrect
-     *   according to the metadata specification.
-     */
-    @RestrictTo(LIBRARY_GROUP)
-    public fun getPendingIntentOrNull(key: String): PendingIntent? {
-        val pendingIntentValue = extras.getParcelable(extrasKey(key), PendingIntent::class.java)
-        spec?.validateReadRequest(
-            key,
-            PendingIntent::class.java,
-            isCollection = false,
-            targetValue = pendingIntentValue,
-        )
-        return pendingIntentValue
     }
 
     /**
@@ -570,7 +535,7 @@ internal constructor(
     @RestrictTo(LIBRARY_GROUP)
     public fun <T : Parcelable> getParcelableOrNull(key: String, clazz: Class<T>): T? {
         val parcelable = extras.getParcelable(extrasKey(key), clazz)
-        // TODO: b/447530985 - Implement spec validation
+        spec?.validateReadRequest(key, clazz, isCollection = false, targetValue = parcelable)
         return parcelable
     }
 
@@ -706,6 +671,13 @@ internal constructor(
      *   according to the metadata specification.
      */
     public fun getByteArray(key: String): ByteArray? {
+        return getByteArrayOrNull(key)
+    }
+
+    // Equivalent to getByteArray. Provided for generated AppFunctionSerializableFactory to use
+    // without changing the access getter name based on type.
+    @RestrictTo(LIBRARY_GROUP)
+    public fun getByteArrayOrNull(key: String): ByteArray? {
         val byteArrayValue = unsafeGetProperty(key, Array<ByteArray>::class.java)
         val finalByteArrayValue =
             if (byteArrayValue == null || byteArrayValue.isEmpty()) {
@@ -753,12 +725,11 @@ internal constructor(
      */
     @Suppress("NullableCollection")
     public fun getAppFunctionDataList(key: String): List<AppFunctionData>? {
-        val propertySpec = spec?.getPropertyObjectSpec(key)
         val dataArrayValue =
             unsafeGetProperty(key, Array<GenericDocument>::class.java)?.mapIndexed { index, element
                 ->
                 AppFunctionData(
-                    propertySpec,
+                    spec?.getPropertyObjectSpec(key, element.schemaType),
                     element,
                     extras.getBundle(extrasKey(key, index)) ?: Bundle.EMPTY,
                 )
@@ -770,27 +741,6 @@ internal constructor(
             targetValue = dataArrayValue,
         )
         return dataArrayValue
-    }
-
-    /**
-     * Retrieves a [List] of [PendingIntent] value associated with the specified [key].
-     *
-     * @param key The key to retrieve the value for.
-     * @return The value associated with the [key]. Or null if the associated value is not found.
-     * @throws IllegalArgumentException if the [key] is not allowed or the value type is incorrect
-     *   according to the metadata specification.
-     */
-    @Suppress("NullableCollection")
-    public fun getPendingIntentList(key: String): List<PendingIntent>? {
-        val pendingIntentListValue =
-            extras.getParcelableArrayList(extrasKey(key), PendingIntent::class.java)
-        spec?.validateReadRequest(
-            key,
-            PendingIntent::class.java,
-            isCollection = true,
-            targetValue = pendingIntentListValue,
-        )
-        return pendingIntentListValue
     }
 
     /**
@@ -809,7 +759,7 @@ internal constructor(
     public fun <T : Parcelable> getParcelableList(key: String, clazz: Class<T>): List<T>? {
         extras.classLoader = clazz.classLoader
         val parcelableList = extras.getParcelableArrayList(extrasKey(key), clazz)
-        // TODO: b/447530985 - Implement spec validation
+        spec?.validateReadRequest(key, clazz, isCollection = true, targetValue = parcelableList)
         if (parcelableList?.all { clazz.isInstance(it) } != true) {
             // For some reason Bundle.getParcelableArrayList doesn't return null even when type is
             // wrong.
@@ -1054,9 +1004,8 @@ internal constructor(
         /**
          * Constructs a [Builder] to create input data for an AppFunction execution call.
          *
-         * This constructor is used when you need to write data that will be passed as input when
-         * executing an AppFunction. The [parameterMetadataList] defines the expected input
-         * parameters for that function.
+         * The caller can use this to construct the [AppFunctionData] for
+         * [ExecuteAppFunctionRequest.functionParameters].
          *
          * @param parameterMetadataList List of [AppFunctionParameterMetadata] defining the input
          *   parameters.
@@ -1072,10 +1021,8 @@ internal constructor(
         /**
          * Constructs a [Builder] to create [AppFunctionData] representing an object.
          *
-         * This constructor is used when you need to create [AppFunctionData] that represents an
-         * object used as either function parameters or return values, as defined by an
-         * [AppFunctionObjectTypeMetadata]. This metadata specifies the properties and their types
-         * for the object.
+         * The caller can use this to construct the [AppFunctionData] that conforms with the
+         * provided [objectTypeMetadata].
          *
          * @param objectTypeMetadata [AppFunctionObjectTypeMetadata] defining the object structure.
          * @param componentMetadata [AppFunctionComponentsMetadata] that has the shared data types.
@@ -1088,11 +1035,31 @@ internal constructor(
         ) : this(AppFunctionDataSpec.create(objectTypeMetadata, componentMetadata))
 
         /**
+         * Constructs a [Builder] to create [AppFunctionData] representing an all-of object.
+         *
+         * The caller can use this to construct the [AppFunctionData] that conforms with the
+         * provided [allOfTypeMetadata].
+         *
+         * @param allOfTypeMetadata [AppFunctionAllOfTypeMetadata] defining the object structure.
+         * @param componentMetadata [AppFunctionComponentsMetadata] that has the shared data types.
+         * @see [AppFunctionAllOfTypeMetadata]
+         * @see [AppFunctionComponentsMetadata]
+         */
+        public constructor(
+            allOfTypeMetadata: AppFunctionAllOfTypeMetadata,
+            componentMetadata: AppFunctionComponentsMetadata,
+        ) : this(
+            AppFunctionDataSpec.create(
+                allOfTypeMetadata.getPseudoObjectTypeMetadata(componentMetadata),
+                componentMetadata,
+            )
+        )
+
+        /**
          * Constructs a [Builder] to create [AppFunctionData] representing a response.
          *
-         * This constructor is used when you need to create [AppFunctionData] that represents a
-         * response, as defined by an [AppFunctionResponseMetadata]. This metadata specifies the
-         * properties and their types for the response.
+         * The caller can use this to construct the [AppFunctionData] for
+         * [ExecuteAppFunctionResponse.Success.returnValue].
          *
          * @param responseMetadata [AppFunctionResponseMetadata] defining the response structure.
          * @param componentMetadata [AppFunctionComponentsMetadata] that has the shared data types.
@@ -1136,6 +1103,7 @@ internal constructor(
          * @throws IllegalArgumentException if the [key] is not allowed or the [value] does not
          *   match the metadata specification associated with the [key].
          */
+        @CanIgnoreReturnValue
         public fun setBoolean(key: String, value: Boolean): Builder {
             spec?.validateWriteRequest(
                 key,
@@ -1155,6 +1123,7 @@ internal constructor(
          * @throws IllegalArgumentException if the [key] is not allowed or the [value] does not
          *   match the metadata specification associated with the [key].
          */
+        @CanIgnoreReturnValue
         public fun setFloat(key: String, value: Float): Builder {
             spec?.validateWriteRequest(
                 key,
@@ -1174,6 +1143,7 @@ internal constructor(
          * @throws IllegalArgumentException if the [key] is not allowed or the [value] does not
          *   match the metadata specification associated with the [key].
          */
+        @CanIgnoreReturnValue
         public fun setDouble(key: String, value: Double): Builder {
             spec?.validateWriteRequest(
                 key,
@@ -1193,6 +1163,7 @@ internal constructor(
          * @throws IllegalArgumentException if the [key] is not allowed or the [value] does not
          *   match the metadata specification associated with the [key].
          */
+        @CanIgnoreReturnValue
         public fun setInt(key: String, value: Int): Builder {
             spec?.validateWriteRequest(
                 key,
@@ -1212,6 +1183,7 @@ internal constructor(
          * @throws IllegalArgumentException if the [key] is not allowed or the [value] does not
          *   match the metadata specification associated with the [key].
          */
+        @CanIgnoreReturnValue
         public fun setLong(key: String, value: Long): Builder {
             spec?.validateWriteRequest(
                 key,
@@ -1231,6 +1203,7 @@ internal constructor(
          * @throws IllegalArgumentException if the [key] is not allowed or the [value] does not
          *   match the metadata specification associated with the [key].
          */
+        @CanIgnoreReturnValue
         public fun setString(key: String, value: String): Builder {
             spec?.validateWriteRequest(
                 key,
@@ -1253,6 +1226,7 @@ internal constructor(
          * @throws IllegalArgumentException if the [key] is not allowed or the [value] does not
          *   match the metadata specification associated with the [key].
          */
+        @CanIgnoreReturnValue
         public fun setAppFunctionData(key: String, value: AppFunctionData): Builder {
             spec?.validateWriteRequest(
                 key,
@@ -1260,31 +1234,12 @@ internal constructor(
                 isCollection = false,
                 targetValue = value,
             )
-            spec?.getPropertyObjectSpec(key)?.validateDataSpecMatches(value)
+            spec?.getPropertyObjectSpec(key, value.qualifiedName)?.validateDataSpecMatches(value)
 
             genericDocumentBuilder.setPropertyDocument(key, value.genericDocument)
             if (!value.extras.isEmpty()) {
                 extrasBuilder.putBundle(extrasKey(key), value.extras)
             }
-            return this
-        }
-
-        /**
-         * Sets a [PendingIntent] value for the given [key].
-         *
-         * @param key The key to set the [AppFunctionData] value for.
-         * @param value The [AppFunctionData] value to set.
-         * @throws IllegalArgumentException if the [key] is not allowed or the [value] does not
-         *   match the metadata specification associated with the [key].
-         */
-        public fun setPendingIntent(key: String, value: PendingIntent): Builder {
-            spec?.validateWriteRequest(
-                key,
-                PendingIntent::class.java,
-                isCollection = false,
-                targetValue = value,
-            )
-            extrasBuilder.putParcelable(extrasKey(key), value)
             return this
         }
 
@@ -1299,8 +1254,14 @@ internal constructor(
          * @param key The key to set the value for.
          * @param value The [Parcelable] value of type [T] to set.
          */
+        @CanIgnoreReturnValue
         public fun <T : Parcelable> setParcelable(key: String, value: T): Builder {
-            // TODO: b/447530985 - Implement spec validation
+            spec?.validateWriteRequest(
+                key,
+                value.javaClass,
+                isCollection = false,
+                targetValue = value,
+            )
             extrasBuilder.putParcelable(extrasKey(key), value)
             return this
         }
@@ -1313,6 +1274,7 @@ internal constructor(
          * @throws IllegalArgumentException if the [key] is not allowed or the [value] does not
          *   match the metadata specification associated with the [key].
          */
+        @CanIgnoreReturnValue
         public fun setBooleanArray(key: String, value: BooleanArray): Builder {
             spec?.validateWriteRequest(
                 key,
@@ -1332,6 +1294,7 @@ internal constructor(
          * @throws IllegalArgumentException if the [key] is not allowed or the [value] does not
          *   match the metadata specification associated with the [key].
          */
+        @CanIgnoreReturnValue
         public fun setFloatArray(key: String, value: FloatArray): Builder {
             spec?.validateWriteRequest(
                 key,
@@ -1354,6 +1317,7 @@ internal constructor(
          * @throws IllegalArgumentException if the [key] is not allowed or the [value] does not
          *   match the metadata specification associated with the [key].
          */
+        @CanIgnoreReturnValue
         public fun setDoubleArray(key: String, value: DoubleArray): Builder {
             spec?.validateWriteRequest(
                 key,
@@ -1373,6 +1337,7 @@ internal constructor(
          * @throws IllegalArgumentException if the [key] is not allowed or the [value] does not
          *   match the metadata specification associated with the [key].
          */
+        @CanIgnoreReturnValue
         public fun setIntArray(key: String, value: IntArray): Builder {
             spec?.validateWriteRequest(
                 key,
@@ -1395,6 +1360,7 @@ internal constructor(
          * @throws IllegalArgumentException if the [key] is not allowed or the [value] does not
          *   match the metadata specification associated with the [key].
          */
+        @CanIgnoreReturnValue
         public fun setLongArray(key: String, value: LongArray): Builder {
             spec?.validateWriteRequest(
                 key,
@@ -1414,6 +1380,7 @@ internal constructor(
          * @throws IllegalArgumentException if the [key] is not allowed or the [value] does not
          *   match the metadata specification associated with the [key].
          */
+        @CanIgnoreReturnValue
         public fun setByteArray(key: String, value: ByteArray): Builder {
             spec?.validateWriteRequest(
                 key,
@@ -1433,6 +1400,7 @@ internal constructor(
          * @throws IllegalArgumentException if the [key] is not allowed or the [value] does not
          *   match the metadata specification associated with the [key].
          */
+        @CanIgnoreReturnValue
         public fun setStringList(key: String, value: List<String>): Builder {
             spec?.validateWriteRequest(
                 key,
@@ -1453,6 +1421,7 @@ internal constructor(
          * @throws IllegalArgumentException if the [key] is not allowed or the [value] does not
          *   match the metadata specification associated with the [key].
          */
+        @CanIgnoreReturnValue
         public fun setAppFunctionDataList(key: String, value: List<AppFunctionData>): Builder {
             spec?.validateWriteRequest(
                 key,
@@ -1465,30 +1434,13 @@ internal constructor(
                 *value.map { it.genericDocument }.toTypedArray(),
             )
             value.forEachIndexed { index, element ->
-                spec?.getPropertyObjectSpec(key)?.validateDataSpecMatches(element)
+                spec
+                    ?.getPropertyObjectSpec(key, element.qualifiedName)
+                    ?.validateDataSpecMatches(element)
                 if (!element.extras.isEmpty()) {
                     extrasBuilder.putBundle(extrasKey(key, index), element.extras)
                 }
             }
-            return this
-        }
-
-        /**
-         * Sets a [List] of [PendingIntent] value for the given [key].
-         *
-         * @param key The key to set the [List] of [AppFunctionData] value for.
-         * @param value The [List] of [AppFunctionData] value to set.
-         * @throws IllegalArgumentException if the [key] is not allowed or the [value] does not
-         *   match the metadata specification associated with the [key].
-         */
-        public fun setPendingIntentList(key: String, value: List<PendingIntent>): Builder {
-            spec?.validateWriteRequest(
-                key,
-                PendingIntent::class.java,
-                isCollection = true,
-                targetValue = value,
-            )
-            extrasBuilder.putParcelableArrayList(extrasKey(key), ArrayList<PendingIntent>(value))
             return this
         }
 
@@ -1503,8 +1455,33 @@ internal constructor(
          * @param key The key to set the list for.
          * @param value The [List] of [Parcelable] values of type [T] to set.
          */
-        public fun <T : Parcelable> setParcelableList(key: String, value: List<T>): Builder {
-            // TODO: b/447530985 - Implement spec validation
+        @CanIgnoreReturnValue
+        public inline fun <reified T : Parcelable> setParcelableList(
+            key: String,
+            value: List<T>,
+        ): Builder {
+            return setParcelableList(key, value, T::class.java)
+        }
+
+        /**
+         * Sets a [List] of [Parcelable] values of type [T] for the given [key].
+         *
+         * For `Parcelable` types not defined by the Android platform (e.g., custom classes shared
+         * between agents and apps), forward and backward compatibility is **not guaranteed** by
+         * this framework. The sender and receiver of the `Parcelable` are responsible for managing
+         * any compatibility and versioning concerns.
+         *
+         * @param key The key to set the list for.
+         * @param value The [List] of [Parcelable] values of type [T] to set.
+         * @param clazz The [Class] of the [Parcelable] list to set, of type [T].
+         */
+        @CanIgnoreReturnValue
+        public fun <T : Parcelable> setParcelableList(
+            key: String,
+            value: List<T>,
+            clazz: Class<T>,
+        ): Builder {
+            spec?.validateWriteRequest(key, clazz, isCollection = true, targetValue = value)
             extrasBuilder.putParcelableArrayList(extrasKey(key), ArrayList(value))
             return this
         }

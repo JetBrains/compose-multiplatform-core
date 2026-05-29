@@ -20,9 +20,13 @@ import android.app.ActivityOptions
 import android.companion.virtual.VirtualDeviceManager
 import android.content.Context
 import android.hardware.display.DisplayManager
+import android.hardware.display.DisplayManager.EVENT_TYPE_DISPLAY_ADDED
+import android.hardware.display.DisplayManager.EVENT_TYPE_DISPLAY_CHANGED
+import android.hardware.display.DisplayManager.EVENT_TYPE_DISPLAY_REMOVED
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.annotation.VisibleForTesting
+import androidx.xr.projected.experimental.ExperimentalProjectedApi
 import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.asExecutor
@@ -44,6 +48,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
  * depending on which activity was most recently in the foreground. Prefer using the Activity
  * context to minimize the risk of running into this problem.
  */
+@ExperimentalProjectedApi
 public object ProjectedContext {
 
     private const val TAG = "ProjectedContext"
@@ -143,41 +148,93 @@ public object ProjectedContext {
      *   CoroutineDispatcher.
      */
     @JvmStatic
-    @RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
+    @RequiresApi(Build.VERSION_CODES.BAKLAVA)
     public fun isProjectedDeviceConnected(
         context: Context,
         coroutineContext: CoroutineContext,
     ): Flow<Boolean> =
         callbackFlow {
+                @OptIn(ExperimentalStdlibApi::class)
                 val coroutineDispatcher =
                     coroutineContext[CoroutineDispatcher]
                         ?: throw IllegalArgumentException(
                             "CoroutineContext must contain a CoroutineDispatcher."
                         )
-                val listener =
+
+                fun checkAndSend() {
+                    trySend(isProjectedDisplayAvailable(context))
+                }
+
+                val virtualDeviceListener =
                     object : VirtualDeviceManager.VirtualDeviceListener {
                         override fun onVirtualDeviceCreated(deviceId: Int) {
-                            trySend(getProjectedDeviceId(context) != null)
+                            checkAndSend()
                         }
 
                         override fun onVirtualDeviceClosed(deviceId: Int) {
-                            val projectedDeviceId = getProjectedDeviceId(context)
-                            if (projectedDeviceId == null || projectedDeviceId == deviceId) {
-                                trySend(false)
-                            }
+                            checkAndSend()
                         }
                     }
-                trySend(getProjectedDeviceId(context) != null)
+
+                val displayListener =
+                    object : DisplayManager.DisplayListener {
+                        override fun onDisplayAdded(displayId: Int) {
+                            checkAndSend()
+                        }
+
+                        override fun onDisplayChanged(displayId: Int) {
+                            checkAndSend()
+                        }
+
+                        override fun onDisplayRemoved(displayId: Int) {
+                            checkAndSend()
+                        }
+                    }
+
+                checkAndSend()
+
                 val virtualDeviceManager =
                     context.getSystemService(VirtualDeviceManager::class.java)
                 virtualDeviceManager.registerVirtualDeviceListener(
                     coroutineDispatcher.asExecutor(),
-                    listener,
+                    virtualDeviceListener,
                 )
 
-                awaitClose { virtualDeviceManager.unregisterVirtualDeviceListener(listener) }
+                val displayManager = context.getSystemService(DisplayManager::class.java)
+                val eventFilter =
+                    EVENT_TYPE_DISPLAY_ADDED or
+                        EVENT_TYPE_DISPLAY_CHANGED or
+                        EVENT_TYPE_DISPLAY_REMOVED
+                displayManager.registerDisplayListener(
+                    coroutineDispatcher.asExecutor(),
+                    eventFilter,
+                    displayListener,
+                )
+
+                awaitClose {
+                    virtualDeviceManager.unregisterVirtualDeviceListener(virtualDeviceListener)
+                    displayManager.unregisterDisplayListener(displayListener)
+                }
             }
             .distinctUntilChanged()
+
+    @RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
+    private fun isProjectedDisplayAvailable(context: Context): Boolean {
+        val projectedDeviceContext =
+            try {
+                createProjectedDeviceContext(context)
+            } catch (e: IllegalStateException) {
+                return false
+            }
+        val projectedDisplayIds = getProjectedDisplayIds(projectedDeviceContext)
+        if (projectedDisplayIds.isEmpty()) {
+            return false
+        }
+        val displayManager = context.getSystemService(DisplayManager::class.java)
+        return displayManager.displays.any {
+            it.name == PROJECTED_DISPLAY_NAME && projectedDisplayIds.contains(it.displayId)
+        }
+    }
 
     @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     private fun getProjectedDeviceId(context: Context) =

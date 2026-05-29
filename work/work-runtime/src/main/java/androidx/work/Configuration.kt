@@ -15,6 +15,7 @@
  */
 package androidx.work
 
+import android.annotation.SuppressLint
 import android.os.Build
 import android.util.Log
 import androidx.annotation.IntRange
@@ -46,7 +47,6 @@ import kotlinx.coroutines.asExecutor
  *
  * To set a custom Configuration for WorkManager, see [WorkManager.initialize].
  */
-@OptIn(ExperimentalConfigurationApi::class)
 public class Configuration internal constructor(builder: Builder) {
     /** The [Executor] used by [WorkManager] to execute [Worker]s. */
     public val executor: Executor
@@ -164,11 +164,51 @@ public class Configuration internal constructor(builder: Builder) {
         return isMarkingJobsAsImportantWhileForeground
     }
 
+    @property:ExperimentalEventsApi private val executionEventListener: ExecutionEventListener?
+
+    /** The [ExecutionEventListener] that listens to work execution events for all workers. */
+    @ExperimentalEventsApi
+    public fun getExecutionEventListener(): ExecutionEventListener? {
+        return executionEventListener
+    }
+
+    @property:ExperimentalEventsApi private val scheduleEventListener: ScheduleEventListener?
+
+    /** The [ScheduleEventListener] that listens to work execution events for all workers. */
+    @ExperimentalEventsApi
+    public fun getScheduleEventListener(): ScheduleEventListener? {
+        return scheduleEventListener
+    }
+
     /**
      * @return The [Tracer] instance that can be used by [WorkManager] to record trace spans when
      *   executing [WorkRequest]s.
      */
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public val tracer: Tracer
+
+    private val enableRepresentativeJobs: Boolean
+
+    private val enableGreedyScheduler: Boolean
+
+    /**
+     * Specifies whether WorkManager will prioritize unique constraints when scheduling with
+     * JobScheduler. This is intended to reduce the risk of starvation when many jobs with similar
+     * constraints are scheduled.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public fun isRepresentativeJobsEnabled(): Boolean {
+        return enableRepresentativeJobs
+    }
+
+    /**
+     * Specifies whether the in-process opportunistic greedy scheduler is enabled
+     *
+     * This is enabled by default and should only be disabled for experimental purposes.
+     */
+    @ExperimentalConfigurationApi
+    public fun isGreedySchedulerEnabled(): Boolean {
+        return enableGreedyScheduler
+    }
 
     init {
         val builderWorkerDispatcher = builder.workerContext
@@ -214,7 +254,11 @@ public class Configuration internal constructor(builder: Builder) {
         remoteSessionTimeoutMillis = builder.remoteSessionTimeoutMillis
         contentUriTriggerWorkersLimit = builder.contentUriTriggerWorkersLimit
         isMarkingJobsAsImportantWhileForeground = builder.markJobsAsImportantWhileForeground
+        executionEventListener = builder.executionEventListener
+        scheduleEventListener = builder.scheduleEventListener
         tracer = builder.tracer ?: createDefaultTracer()
+        enableRepresentativeJobs = builder.enableRepresentativeJobs
+        enableGreedyScheduler = builder.enableGreedyScheduler
     }
 
     /** A Builder for [Configuration]s. */
@@ -238,7 +282,11 @@ public class Configuration internal constructor(builder: Builder) {
         internal var maxSchedulerLimit: Int = MIN_SCHEDULER_LIMIT
         internal var contentUriTriggerWorkersLimit: Int = DEFAULT_CONTENT_URI_TRIGGERS_WORKERS_LIMIT
         internal var markJobsAsImportantWhileForeground: Boolean = true
+        internal var executionEventListener: ExecutionEventListener? = null
+        internal var scheduleEventListener: ScheduleEventListener? = null
         internal var tracer: Tracer? = null
+        internal var enableRepresentativeJobs: Boolean = false
+        internal var enableGreedyScheduler: Boolean = true
 
         /** Creates a new [Configuration.Builder]. */
         public constructor()
@@ -272,7 +320,11 @@ public class Configuration internal constructor(builder: Builder) {
             contentUriTriggerWorkersLimit = configuration.contentUriTriggerWorkersLimit
             markJobsAsImportantWhileForeground =
                 configuration.isMarkingJobsAsImportantWhileForeground
+            executionEventListener = configuration.executionEventListener
+            scheduleEventListener = configuration.scheduleEventListener
             tracer = configuration.tracer
+            enableRepresentativeJobs = configuration.isRepresentativeJobsEnabled()
+            enableGreedyScheduler = configuration.isGreedySchedulerEnabled()
         }
 
         /**
@@ -572,6 +624,38 @@ public class Configuration internal constructor(builder: Builder) {
         }
 
         /**
+         * Set a [ExecutionEventListener] to run whenever work execution events occur for any
+         * worker.
+         *
+         * These callbacks will be invoked on a thread bound to [Configuration.taskExecutor].
+         *
+         * @param listener [ExecutionEventListener] to set
+         * @return This [Builder] instance
+         */
+        @SuppressLint("ExecutorRegistration") // Developer can configure taskExecutor directly
+        @ExperimentalEventsApi
+        public fun setExecutionEventListener(listener: ExecutionEventListener): Builder {
+            this.executionEventListener = listener
+            return this
+        }
+
+        /**
+         * Set a [ScheduleEventListener] to run whenever work scheduling events occur for any
+         * worker.
+         *
+         * These callbacks will be invoked on a thread bound to [Configuration.taskExecutor].
+         *
+         * @param listener [ScheduleEventListener] to set
+         * @return This [Builder] instance
+         */
+        @SuppressLint("ExecutorRegistration") // Developer can configure taskExecutor directly
+        @ExperimentalEventsApi
+        public fun setScheduleEventListener(listener: ScheduleEventListener): Builder {
+            this.scheduleEventListener = listener
+            return this
+        }
+
+        /**
          * Specifies the [Tracer] that can be used by [WorkManager] to record trace spans.
          *
          * @param tracer The [Tracer] instance to be used.
@@ -580,6 +664,34 @@ public class Configuration internal constructor(builder: Builder) {
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         public fun setTracer(tracer: Tracer): Builder {
             this.tracer = tracer
+            return this
+        }
+
+        /**
+         * Specifies whether WorkManager will prioritize unique constraints when scheduling with
+         * JobScheduler. This is intended to reduce the risk of starvation when many jobs with
+         * similar constraints are scheduled.
+         *
+         * @param enabled whether to enable representative jobs
+         * @return This [Builder] instance
+         */
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+        public fun setRepresentativeJobsEnabled(enabled: Boolean): Builder {
+            this.enableRepresentativeJobs = enabled
+            return this
+        }
+
+        /**
+         * Specifies whether the in-process opportunistic greedy scheduler should be enabled.
+         *
+         * This is enabled by default and should only be disabled for experimental purposes.
+         *
+         * @param enabled whether to enable the greedy scheduler
+         * @return This [Builder] instance
+         */
+        @ExperimentalConfigurationApi
+        public fun setGreedySchedulerEnabled(enabled: Boolean): Builder {
+            this.enableGreedyScheduler = enabled
             return this
         }
 
@@ -598,7 +710,9 @@ public class Configuration internal constructor(builder: Builder) {
      * initialization of WorkManager. To do this:
      * - Disable `androidx.work.WorkManagerInitializer` in your manifest
      * - Implement the [Configuration.Provider] interface on your [android.app.Application] class
-     * - Use [WorkManager.getInstance] when accessing WorkManager (NOT [WorkManager.getInstance])
+     * - Use [`WorkManager.getInstance(Context)`](https://developer.android.com/reference/androidx/work/WorkManager#getInstance(android.content.Context))
+     *   when accessing WorkManager (NOT
+     *   [`WorkManager.getInstance`](https://developer.android.com/reference/androidx/work/WorkManager#getInstance()))
      *
      * Note that on-demand initialization may delay some useful features of WorkManager such as
      * automatic rescheduling of work following a crash and recovery from the application being

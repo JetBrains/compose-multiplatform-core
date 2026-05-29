@@ -40,6 +40,8 @@ import androidx.room3.SkipQueryVerification
 import androidx.room3.Transaction
 import androidx.room3.Update
 import androidx.room3.Upsert
+import androidx.room3.integration.multiplatformtestapp.library.LibraryDao
+import androidx.room3.integration.multiplatformtestapp.library.LibraryEntity
 import kotlinx.coroutines.flow.Flow
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -84,19 +86,13 @@ data class SampleEntity2Byte(@PrimaryKey val pk2: ByteArray) {
 }
 
 @Entity
-data class SampleEntity2(
-    @PrimaryKey val pk2: Long,
-    @ColumnInfo(defaultValue = "0") val data2: Long,
-)
+data class SampleEntity2(@PrimaryKey val pk2: Long, @ColumnInfo(defaultValue = "0") val data2: Long)
 
 @Entity(
     foreignKeys =
         [ForeignKey(entity = SampleEntity2::class, parentColumns = ["pk2"], childColumns = ["pk3"])]
 )
-data class SampleEntity3(
-    @PrimaryKey val pk3: Long,
-    @ColumnInfo(defaultValue = "0") val data3: Long,
-)
+data class SampleEntity3(@PrimaryKey val pk3: Long, @ColumnInfo(defaultValue = "0") val data3: Long)
 
 @Entity
 data class SampleEntityCopy(
@@ -245,29 +241,29 @@ interface SampleDao {
 
     data class Sample1And2(
         @Embedded val sample1: SampleEntity,
-        @Relation(parentColumn = "pk", entityColumn = "pk2") val sample2: SampleEntity2,
+        @Relation(parentColumns = ["pk"], entityColumns = ["pk2"]) val sample2: SampleEntity2,
     )
 
     data class Sample1And2Byte(
         @Embedded val sample1: SampleEntity1Byte,
-        @Relation(parentColumn = "pk", entityColumn = "pk2") val sample2: SampleEntity2Byte,
+        @Relation(parentColumns = ["pk"], entityColumns = ["pk2"]) val sample2: SampleEntity2Byte,
     )
 
     data class Sample1AndMany(
         @Embedded val sample1: SampleEntity,
-        @Relation(parentColumn = "pk", entityColumn = "pk2") val sample2s: List<SampleEntity2>,
+        @Relation(parentColumns = ["pk"], entityColumns = ["pk2"]) val sample2s: List<SampleEntity2>,
     )
 
     data class SampleManyAndMany(
         @Embedded val sample1: StringSampleEntity1,
         @Relation(
-            parentColumn = "stringPk1",
-            entityColumn = "stringPk2",
+            parentColumns = ["stringPk1"],
+            entityColumns = ["stringPk2"],
             associateBy =
                 Junction(
                     value = Sample1Sample2XRef::class,
-                    parentColumn = "sample1Key",
-                    entityColumn = "sample2Key",
+                    parentColumns = ["sample1Key"],
+                    entityColumns = ["sample2Key"],
                 ),
         )
         val sample2s: List<StringSampleEntity2>,
@@ -288,6 +284,7 @@ interface SampleDao {
             StringSampleEntity1::class,
             StringSampleEntity2::class,
             Sample1Sample2XRef::class,
+            LibraryEntity::class,
         ],
     version = 1,
     exportSchema = false,
@@ -295,6 +292,8 @@ interface SampleDao {
 @ConstructedBy(SampleDatabaseConstructor::class)
 abstract class SampleDatabase : RoomDatabase() {
     abstract fun dao(): SampleDao
+
+    abstract fun libraryDao(): LibraryDao
 }
 
 expect object SampleDatabaseConstructor : RoomDatabaseConstructor<SampleDatabase>

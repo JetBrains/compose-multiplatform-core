@@ -19,11 +19,13 @@ package androidx.room3.integration.kotlintestapp.dao
 import androidx.lifecycle.LiveData
 import androidx.room3.ColumnInfo
 import androidx.room3.Dao
+import androidx.room3.DaoReturnTypeConverters
 import androidx.room3.Delete
 import androidx.room3.Insert
 import androidx.room3.Query
 import androidx.room3.RawQuery
 import androidx.room3.Relation
+import androidx.room3.RoomRawQuery
 import androidx.room3.RoomWarnings
 import androidx.room3.Transaction
 import androidx.room3.TypeConverters
@@ -35,27 +37,35 @@ import androidx.room3.integration.kotlintestapp.vo.Book
 import androidx.room3.integration.kotlintestapp.vo.BookAuthor
 import androidx.room3.integration.kotlintestapp.vo.BookWithJavaEntity
 import androidx.room3.integration.kotlintestapp.vo.BookWithPublisher
+import androidx.room3.integration.kotlintestapp.vo.CustomDaoReturnType
+import androidx.room3.integration.kotlintestapp.vo.CustomDaoReturnTypeConverter
 import androidx.room3.integration.kotlintestapp.vo.DateConverter
+import androidx.room3.integration.kotlintestapp.vo.Either
+import androidx.room3.integration.kotlintestapp.vo.EitherDaoReturnTypeConverter
 import androidx.room3.integration.kotlintestapp.vo.Lang
 import androidx.room3.integration.kotlintestapp.vo.MiniBook
 import androidx.room3.integration.kotlintestapp.vo.Publisher
 import androidx.room3.integration.kotlintestapp.vo.PublisherWithBookSales
 import androidx.room3.integration.kotlintestapp.vo.PublisherWithBooks
-import androidx.sqlite.db.SupportSQLiteQuery
+import androidx.room3.integration.kotlintestapp.vo.ResultDaoReturnTypeConverter
 import com.google.common.base.Optional
 import com.google.common.collect.ImmutableList
 import com.google.common.collect.ImmutableListMultimap
 import com.google.common.util.concurrent.ListenableFuture
-import io.reactivex.Completable
-import io.reactivex.Flowable
-import io.reactivex.Maybe
-import io.reactivex.Observable
-import io.reactivex.Single
+import io.reactivex.rxjava3.core.Completable
+import io.reactivex.rxjava3.core.Flowable
+import io.reactivex.rxjava3.core.Maybe
+import io.reactivex.rxjava3.core.Observable
+import io.reactivex.rxjava3.core.Single
 import java.util.Date
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.runBlocking
 
 @Dao
+@DaoReturnTypeConverters(
+    CustomDaoReturnTypeConverter::class,
+    ResultDaoReturnTypeConverter::class,
+    EitherDaoReturnTypeConverter::class,
+)
 @TypeConverters(DateConverter::class, AnswerConverter::class)
 interface BooksDao {
 
@@ -204,7 +214,7 @@ interface BooksDao {
     @Query("SELECT * FROM book WHERE salesCnt > :count")
     suspend fun getBooksWithMinSalesCountSuspend(count: Int): List<Book>
 
-    @RawQuery suspend fun getBookWithRawQuerySuspend(query: SupportSQLiteQuery): Book
+    @RawQuery suspend fun getBookWithRawQuerySuspend(query: RoomRawQuery): Book
 
     @Insert suspend fun insertBookSuspend(book: Book)
 
@@ -238,7 +248,7 @@ interface BooksDao {
     fun getBooksMultiLineQueryWithComment(bookIds: List<String>): List<Book>
 
     @Query("SELECT * FROM book WHERE bookId = :bookId")
-    fun getBookLiveData(bookId: String): LiveData<Book>
+    fun getBookLiveData(bookId: String): LiveData<Book?>
 
     @Query("SELECT * FROM book WHERE bookId = :bookId")
     fun getBookFlowable(bookId: String): Flowable<Book>
@@ -396,6 +406,9 @@ interface BooksDao {
 
     @Query("SELECT * FROM book") fun getBooksFlow(): Flow<List<Book>>
 
+    @Query("SELECT * FROM book")
+    suspend fun getBooksCustomDaoReturnType(): CustomDaoReturnType<List<Book>>
+
     @Transaction @Query("SELECT * FROM book") fun getBooksFlowInTransaction(): Flow<List<Book>>
 
     @Query("SELECT * FROM book WHERE bookId = :id") fun getOneBooksFlow(id: String): Flow<Book?>
@@ -418,12 +431,6 @@ interface BooksDao {
     suspend fun concreteVoidSuspendFunction() {}
 
     suspend fun concreteSuspendFunctionWithParams(num: Int, text: String) = "$num - $text"
-
-    @Transaction
-    fun functionWithSuspendFunctionalParam(
-        input: Book,
-        action: suspend (input: Book) -> Book,
-    ): Book = runBlocking { action(input) }
 
     @Transaction
     suspend fun suspendFunctionWithSuspendFunctionalParam(
@@ -496,7 +503,7 @@ interface BooksDao {
     data class PublisherRelation(
         val publisherId: String,
         @ColumnInfo(defaultValue = "0") val name: String,
-        @Relation(parentColumn = "publisherId", entityColumn = "publisherId")
+        @Relation(parentColumns = ["publisherId"], entityColumns = ["publisherId"])
         val relationEntity: Publisher,
     )
 
@@ -513,4 +520,23 @@ interface BooksDao {
     @Query("SELECT * FROM Author") fun getAuthorsFlow(): Flow<List<Author>>
 
     @Query("SELECT * FROM Publisher") fun getPublishersFlow(): Flow<List<Publisher>>
+
+    @Query("SELECT * FROM Publisher WHERE publisherId = :id")
+    suspend fun getPublisherResult(id: String): Result<Publisher>
+
+    @Insert suspend fun insertPublisherResult(p: Publisher): Result<Long>
+
+    @Query("SELECT * FROM Publisher WHERE publisherId = :id")
+    suspend fun getPublisherEither(id: String): Either<Throwable, Publisher>
+
+    @Insert suspend fun insertPublisherEither(p: Publisher): Either<Throwable, Long>
+
+    @Query("SELECT title, salesCnt FROM Book ORDER BY salesCnt DESC LIMIT 1")
+    fun getBookWithMostSales(): Pair<String, Int>
+
+    @Query("SELECT title, salesCnt FROM Book ORDER BY salesCnt DESC")
+    fun getTopSoldBooks(): List<Pair<String, Int>>
+
+    @Query("SELECT name, publisherId, 'static' FROM Publisher LIMIT 1")
+    fun getPublisherNameAndIdAndStatic(): Triple<String, String, String>
 }

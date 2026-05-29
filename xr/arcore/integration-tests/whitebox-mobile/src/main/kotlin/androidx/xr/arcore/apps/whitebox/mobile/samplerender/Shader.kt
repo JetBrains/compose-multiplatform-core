@@ -100,7 +100,6 @@ public class Shader(
                 val infoLog: String = GLES30.glGetProgramInfoLog(programId)
                 maybeLogGLError(
                     Log.WARN,
-                    TAG,
                     "Failed to retrieve shader program info log",
                     "glGetProgramInfoLog",
                 )
@@ -113,11 +112,11 @@ public class Shader(
             // Shader objects can be flagged for deletion immediately after program creation.
             if (vertexShaderId != 0) {
                 GLES30.glDeleteShader(vertexShaderId)
-                maybeLogGLError(Log.WARN, TAG, "Failed to free vertex shader", "glDeleteShader")
+                maybeLogGLError(Log.WARN, "Failed to free vertex shader", "glDeleteShader")
             }
             if (fragmentShaderId != 0) {
                 GLES30.glDeleteShader(fragmentShaderId)
-                maybeLogGLError(Log.WARN, TAG, "Failed to free fragment shader", "glDeleteShader")
+                maybeLogGLError(Log.WARN, "Failed to free fragment shader", "glDeleteShader")
             }
         }
     }
@@ -439,7 +438,7 @@ public class Shader(
             obsoleteEntries.forEach { obsoleteEntry -> uniforms.remove(obsoleteEntry) }
         } finally {
             GLES30.glActiveTexture(GLES30.GL_TEXTURE0)
-            maybeLogGLError(Log.WARN, TAG, "Failed to set active texture", "glActiveTexture")
+            maybeLogGLError(Log.WARN, "Failed to set active texture", "glActiveTexture")
         }
     }
 
@@ -609,12 +608,11 @@ public class Shader(
                 val infoLog: String = GLES30.glGetShaderInfoLog(shaderId)
                 maybeLogGLError(
                     Log.WARN,
-                    TAG,
                     "Failed to retrieve shader info log",
                     "glGetShaderInfoLog",
                 )
                 GLES30.glDeleteShader(shaderId)
-                maybeLogGLError(Log.WARN, TAG, "Failed to free shader", "glDeleteShader")
+                maybeLogGLError(Log.WARN, "Failed to free shader", "glDeleteShader")
                 throw GLException(0, "Shader compilation failed: " + infoLog)
             }
 

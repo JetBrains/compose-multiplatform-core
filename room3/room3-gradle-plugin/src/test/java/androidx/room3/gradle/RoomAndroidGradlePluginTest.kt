@@ -37,7 +37,7 @@ class RoomAndroidGradlePluginTest {
 
     private fun setup(
         projectName: String,
-        backend: ProcessingBackend = ProcessingBackend.JAVAC,
+        backend: ProcessingBackend = ProcessingBackend.KSP,
         projectRoot: File = projectSetup.rootDir,
         schemaDslLines: List<String> = listOf("schemaDirectory(\"\$projectDir/schemas\")"),
     ) {
@@ -60,20 +60,20 @@ class RoomAndroidGradlePluginTest {
             when (backend) {
                 ProcessingBackend.JAVAC ->
                     """
-                |    id('kotlin-android')
-                """
+                    |    id('kotlin-android')
+                    """
                         .trimMargin()
                 ProcessingBackend.KAPT ->
                     """
-                |    id('kotlin-android')
-                |    id('kotlin-kapt')
-                """
+                    |    id('kotlin-android')
+                    |    id('kotlin-kapt')
+                    """
                         .trimMargin()
                 ProcessingBackend.KSP ->
                     """
-                |    id('kotlin-android')
-                |    id('com.google.devtools.ksp')
-                """
+                    |    id('kotlin-android')
+                    |    id('com.google.devtools.ksp')
+                    """
                         .trimMargin()
             }
 
@@ -93,14 +93,14 @@ class RoomAndroidGradlePluginTest {
         val kotlinJvmTargetBlock =
             if (backend.isForKotlin) {
                 """
-            tasks.withType(
-                org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-            ).configureEach {
-                kotlinOptions {
-                    jvmTarget = "1.8"
+                tasks.withType(
+                    org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+                ).configureEach {
+                    kotlinOptions {
+                        jvmTarget = "11"
+                    }
                 }
-            }
-            """
+                """
                     .trimIndent()
             } else {
                 ""
@@ -129,8 +129,8 @@ class RoomAndroidGradlePluginTest {
             |android {
             |    namespace "room.testapp"
             |    compileOptions {
-            |      sourceCompatibility = JavaVersion.VERSION_1_8
-            |      targetCompatibility = JavaVersion.VERSION_1_8
+            |      sourceCompatibility = JavaVersion.VERSION_11
+            |      targetCompatibility = JavaVersion.VERSION_11
             |    }
             |}
             |
@@ -138,7 +138,6 @@ class RoomAndroidGradlePluginTest {
             |
             |room3 {
             |${schemaDslLines.joinToString(separator = "\n")}
-            |    generateKotlin = false
             |}
             |
             """
@@ -147,12 +146,12 @@ class RoomAndroidGradlePluginTest {
     }
 
     @Test
-    fun testWorkflow(@TestParameter backend: ProcessingBackend) {
+    fun testWorkflow(@TestParameter("KSP") backend: ProcessingBackend) {
         setup("simple-project", backend = backend)
 
         // First clean build, all tasks need to run
-        runGradleTasks(CLEAN_TASK, COMPILE_TASK).let { result ->
-            result.assertTaskOutcome(COMPILE_TASK, TaskOutcome.SUCCESS)
+        runGradleTasks(CLEAN_TASK, JAVAC_COMPILE_TASK).let { result ->
+            result.assertTaskOutcome(JAVAC_COMPILE_TASK, TaskOutcome.SUCCESS)
             result.assertTaskOutcome(COPY_TASK, TaskOutcome.SUCCESS)
         }
 
@@ -165,14 +164,14 @@ class RoomAndroidGradlePluginTest {
 
         // Incremental build, compile task re-runs because schema 1 is used as input, but no copy
         // is done since schema has not changed.
-        runGradleTasks(COMPILE_TASK).let { result ->
-            result.assertTaskOutcome(COMPILE_TASK, TaskOutcome.SUCCESS)
+        runGradleTasks(JAVAC_COMPILE_TASK).let { result ->
+            result.assertTaskOutcome(JAVAC_COMPILE_TASK, TaskOutcome.SUCCESS)
             result.assertTaskOutcome(COPY_TASK, TaskOutcome.NO_SOURCE)
         }
 
         // Incremental build, everything is up to date.
-        runGradleTasks(COMPILE_TASK).let { result ->
-            result.assertTaskOutcome(COMPILE_TASK, TaskOutcome.UP_TO_DATE)
+        runGradleTasks(JAVAC_COMPILE_TASK).let { result ->
+            result.assertTaskOutcome(JAVAC_COMPILE_TASK, TaskOutcome.UP_TO_DATE)
             result.assertTaskOutcome(COPY_TASK, TaskOutcome.NO_SOURCE)
         }
 
@@ -184,8 +183,8 @@ class RoomAndroidGradlePluginTest {
         )
 
         // Incremental build, new schema for version 1 is generated and copied.
-        runGradleTasks(COMPILE_TASK).let { result ->
-            result.assertTaskOutcome(COMPILE_TASK, TaskOutcome.SUCCESS)
+        runGradleTasks(JAVAC_COMPILE_TASK).let { result ->
+            result.assertTaskOutcome(JAVAC_COMPILE_TASK, TaskOutcome.SUCCESS)
             result.assertTaskOutcome(COPY_TASK, TaskOutcome.SUCCESS)
         }
 
@@ -198,14 +197,14 @@ class RoomAndroidGradlePluginTest {
 
         // Incremental build, compile task re-runs because schema 1 is used as input (it changed),
         // but no copy is done since schema has not changed.
-        runGradleTasks(COMPILE_TASK).let { result ->
-            result.assertTaskOutcome(COMPILE_TASK, TaskOutcome.SUCCESS)
+        runGradleTasks(JAVAC_COMPILE_TASK).let { result ->
+            result.assertTaskOutcome(JAVAC_COMPILE_TASK, TaskOutcome.SUCCESS)
             result.assertTaskOutcome(COPY_TASK, TaskOutcome.NO_SOURCE)
         }
 
         // Incremental build, everything is up to date.
-        runGradleTasks(COMPILE_TASK).let { result ->
-            result.assertTaskOutcome(COMPILE_TASK, TaskOutcome.UP_TO_DATE)
+        runGradleTasks(JAVAC_COMPILE_TASK).let { result ->
+            result.assertTaskOutcome(JAVAC_COMPILE_TASK, TaskOutcome.UP_TO_DATE)
             result.assertTaskOutcome(COPY_TASK, TaskOutcome.NO_SOURCE)
         }
 
@@ -214,23 +213,23 @@ class RoomAndroidGradlePluginTest {
             .resolve("src/main/java/room/testapp/NewUtil.java")
             .writeText(
                 """
-            package room.testapp;
-            public class NewUtil {
-            }
-            """
+                package room.testapp;
+                public class NewUtil {
+                }
+                """
                     .trimIndent()
             )
 
         // Incremental build, compile task re-runs because of new source, but no schema is copied
         // since Room processor didn't even run.
-        runGradleTasks(COMPILE_TASK).let { result ->
-            result.assertTaskOutcome(COMPILE_TASK, TaskOutcome.SUCCESS)
+        runGradleTasks(JAVAC_COMPILE_TASK).let { result ->
+            result.assertTaskOutcome(JAVAC_COMPILE_TASK, TaskOutcome.SUCCESS)
             result.assertTaskOutcome(COPY_TASK, TaskOutcome.NO_SOURCE)
         }
 
         // Incremental build, everything is up to date.
-        runGradleTasks(COMPILE_TASK).let { result ->
-            result.assertTaskOutcome(COMPILE_TASK, TaskOutcome.UP_TO_DATE)
+        runGradleTasks(JAVAC_COMPILE_TASK).let { result ->
+            result.assertTaskOutcome(JAVAC_COMPILE_TASK, TaskOutcome.UP_TO_DATE)
             result.assertTaskOutcome(COPY_TASK, TaskOutcome.NO_SOURCE)
         }
 
@@ -243,8 +242,8 @@ class RoomAndroidGradlePluginTest {
         )
 
         // Incremental build, due to the version change a new schema file is generated.
-        runGradleTasks(COMPILE_TASK).let { result ->
-            result.assertTaskOutcome(COMPILE_TASK, TaskOutcome.SUCCESS)
+        runGradleTasks(JAVAC_COMPILE_TASK).let { result ->
+            result.assertTaskOutcome(KOTLINC_COMPILE_TASK, TaskOutcome.SUCCESS)
             result.assertTaskOutcome(COPY_TASK, TaskOutcome.SUCCESS)
         }
 
@@ -261,7 +260,7 @@ class RoomAndroidGradlePluginTest {
     }
 
     @Test
-    fun testFlavoredProject(@TestParameter backend: ProcessingBackend) {
+    fun testFlavoredProject(@TestParameter("KSP") backend: ProcessingBackend) {
         setup(
             projectName = "flavored-project",
             backend = backend,
@@ -275,18 +274,18 @@ class RoomAndroidGradlePluginTest {
         File(projectSetup.rootDir, "build.gradle")
             .appendText(
                 """
-            android {
-                flavorDimensions "mode"
-                productFlavors {
-                    flavorOne {
-                        dimension "mode"
-                    }
-                    flavorTwo {
-                        dimension "mode"
+                android {
+                    flavorDimensions "mode"
+                    productFlavors {
+                        flavorOne {
+                            dimension "mode"
+                        }
+                        flavorTwo {
+                            dimension "mode"
+                        }
                     }
                 }
-            }
-            """
+                """
                     .trimIndent()
             )
 
@@ -327,18 +326,18 @@ class RoomAndroidGradlePluginTest {
         File(projectSetup.rootDir, "build.gradle")
             .appendText(
                 """
-            android {
-                flavorDimensions "mode"
-                productFlavors {
-                    flavorOne {
-                        dimension "mode"
-                    }
-                    flavorTwo {
-                        dimension "mode"
+                android {
+                    flavorDimensions "mode"
+                    productFlavors {
+                        flavorOne {
+                            dimension "mode"
+                        }
+                        flavorTwo {
+                            dimension "mode"
+                        }
                     }
                 }
-            }
-            """
+                """
                     .trimIndent()
             )
 
@@ -365,7 +364,7 @@ class RoomAndroidGradlePluginTest {
     }
 
     @Test
-    fun testMoreBuildTypesProject(@TestParameter backend: ProcessingBackend) {
+    fun testMoreBuildTypesProject(@TestParameter("KSP") backend: ProcessingBackend) {
         setup(
             projectName = "simple-project",
             backend = backend,
@@ -379,15 +378,15 @@ class RoomAndroidGradlePluginTest {
         File(projectSetup.rootDir, "build.gradle")
             .appendText(
                 """
-            android {
-                buildTypes {
-                    staging {
-                        initWith debug
-                        applicationIdSuffix ".debugStaging"
+                android {
+                    buildTypes {
+                        staging {
+                            initWith debug
+                            applicationIdSuffix ".debugStaging"
+                        }
                     }
                 }
-            }
-            """
+                """
                     .trimIndent()
             )
 
@@ -404,7 +403,7 @@ class RoomAndroidGradlePluginTest {
     fun testMissingConfigProject() {
         setup(projectName = "simple-project", schemaDslLines = listOf())
 
-        runGradleTasks(CLEAN_TASK, COMPILE_TASK, expectFailure = true).let { result ->
+        runGradleTasks(CLEAN_TASK, JAVAC_COMPILE_TASK, expectFailure = true).let { result ->
             assertThat(result.output)
                 .contains(
                     "The Room Gradle plugin was applied but no schema location was specified."
@@ -432,7 +431,7 @@ class RoomAndroidGradlePluginTest {
     fun testEmptyStringConfigProject() {
         setup(projectName = "simple-project", schemaDslLines = listOf("schemaDirectory(\"\")"))
 
-        runGradleTasks(CLEAN_TASK, COMPILE_TASK, expectFailure = true).let { result ->
+        runGradleTasks(CLEAN_TASK, JAVAC_COMPILE_TASK, expectFailure = true).let { result ->
             assertThat(result.output)
                 .contains(
                     "Failed to query the value of task ':copyRoomSchemas' property 'schemaDirectory'."
@@ -452,18 +451,18 @@ class RoomAndroidGradlePluginTest {
         File(projectSetup.rootDir, "build.gradle")
             .appendText(
                 """
-            android {
-                flavorDimensions "mode"
-                productFlavors {
-                    flavorOne {
-                        dimension "mode"
-                    }
-                    flavorTwo {
-                        dimension "mode"
+                android {
+                    flavorDimensions "mode"
+                    productFlavors {
+                        flavorOne {
+                            dimension "mode"
+                        }
+                        flavorTwo {
+                            dimension "mode"
+                        }
                     }
                 }
-            }
-            """
+                """
                     .trimIndent()
             )
 
@@ -482,7 +481,7 @@ class RoomAndroidGradlePluginTest {
     }
 
     @Test
-    fun testCopyInconsistencyFlavoredProject(@TestParameter backend: ProcessingBackend) {
+    fun testCopyInconsistencyFlavoredProject(@TestParameter("KSP") backend: ProcessingBackend) {
         setup(
             projectName = "flavored-project",
             backend = backend,
@@ -492,18 +491,18 @@ class RoomAndroidGradlePluginTest {
         File(projectSetup.rootDir, "build.gradle")
             .appendText(
                 """
-            android {
-                flavorDimensions "mode"
-                productFlavors {
-                    flavorOne {
-                        dimension "mode"
-                    }
-                    flavorTwo {
-                        dimension "mode"
+                android {
+                    flavorDimensions "mode"
+                    productFlavors {
+                        flavorOne {
+                            dimension "mode"
+                        }
+                        flavorTwo {
+                            dimension "mode"
+                        }
                     }
                 }
-            }
-            """
+                """
                     .trimIndent()
             )
 
@@ -534,7 +533,8 @@ class RoomAndroidGradlePluginTest {
 
     companion object {
         private const val CLEAN_TASK = ":clean"
-        private const val COMPILE_TASK = ":compileDebugJavaWithJavac"
+        private const val JAVAC_COMPILE_TASK = ":compileDebugJavaWithJavac"
+        private const val KOTLINC_COMPILE_TASK = ":compileDebugKotlin"
         private const val COPY_TASK = ":copyRoomSchemas"
     }
 }

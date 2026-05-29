@@ -103,6 +103,7 @@ class SpatialElevation : ComponentActivity() {
         setContent { IntegrationTestsAppTheme { SpatialElevationApp() } }
     }
 
+    @Suppress("DEPRECATION")
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     private fun SpatialElevationApp() {
@@ -219,13 +220,9 @@ class SpatialElevation : ComponentActivity() {
                     ) {
                         Box(modifier = Modifier.align(Alignment.Center)) {
                             if (LocalSpatialCapabilities.current.isSpatialUiEnabled) {
-                                CUJButton("Enter Home Space Mode") {
-                                    session.scene.requestHomeSpaceMode()
-                                }
+                                CUJButton("Enter Home Space") { session.scene.requestHomeSpace() }
                             } else {
-                                CUJButton("Enter Full Space Mode") {
-                                    session.scene.requestFullSpaceMode()
-                                }
+                                CUJButton("Enter Full Space") { session.scene.requestFullSpace() }
                             }
                         }
                         Box(modifier = Modifier.align(Alignment.CenterEnd).padding(end = 20.dp)) {

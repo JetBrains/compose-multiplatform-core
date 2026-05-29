@@ -28,8 +28,10 @@ import android.os.Build
 import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.annotation.RestrictTo
+import androidx.benchmark.DeviceInfo.ART_MAINLINE_MIN_VERSION_VERIFY_CLEARS_RUNTIME_IMAGE
 import androidx.test.platform.app.InstrumentationRegistry
 import java.io.File
+import org.jetbrains.annotations.VisibleForTesting
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 object DeviceInfo {
@@ -189,11 +191,11 @@ object DeviceInfo {
                     summary = "Running on Eng Build",
                     message =
                         """
-                    Benchmark is running on device flashed with a '-eng' build. Eng builds
-                    of the platform drastically reduce performance to enable testing
-                    changes quickly. For this reason they should not be used for
-                    benchmarking. Use a '-user' or '-userdebug' system image.
-                """
+                        Benchmark is running on device flashed with a '-eng' build. Eng builds
+                        of the platform drastically reduce performance to enable testing
+                        changes quickly. For this reason they should not be used for
+                        benchmarking. Use a '-user' or '-userdebug' system image.
+                        """
                             .trimIndent(),
                 ),
                 conditionalError(
@@ -202,11 +204,11 @@ object DeviceInfo {
                     summary = "Running on Emulator",
                     message =
                         """
-                    Benchmark is running on an emulator, which is not representative of
-                    real user devices. Use a physical device to benchmark. Emulator
-                    benchmark improvements might not carry over to a real user's
-                    experience (or even regress real device performance).
-                """
+                        Benchmark is running on an emulator, which is not representative of
+                        real user devices. Use a physical device to benchmark. Emulator
+                        benchmark improvements might not carry over to a real user's
+                        experience (or even regress real device performance).
+                        """
                             .trimIndent(),
                 ),
                 conditionalError(
@@ -261,7 +263,7 @@ object DeviceInfo {
      *
      * See b/368404173
      *
-     * @see androidx.benchmark.macro.MacrobenchmarkScope.KillFlushMode.ClearArtRuntimeImage
+     * @see androidx.benchmark.macro.MacrobenchmarkScope.KillMode.clearArtRuntimeImage
      * @see ART_MAINLINE_MIN_VERSION_VERIFY_CLEARS_RUNTIME_IMAGE
      */
     private const val ART_MAINLINE_MIN_VERSION_RUNTIME_IMAGE = 340800000L
@@ -345,4 +347,27 @@ object DeviceInfo {
 
     val supportsCpuEventCounters =
         Build.VERSION.SDK_INT < CpuEventCounter.MIN_API_ROOT_REQUIRED || isRooted
+
+    @get:VisibleForTesting
+    @set:VisibleForTesting
+    var canShellAccessAppFilesOverride: Boolean? = null
+
+    val canShellAccessAppFiles: Boolean
+        get() = canShellAccessAppFilesOverride ?: canShellAccessAppFilesImpl
+
+    private val canShellAccessAppFilesImpl: Boolean by lazy {
+        val testFile = File(Outputs.dirUsableByAppAndShell, "shell_access_test.txt")
+        try {
+            testFile.writeText("test")
+            val output = Shell.executeScriptCaptureStdoutStderr("rm -f ${testFile.absolutePath}")
+            !output.stderr.contains("Permission denied", ignoreCase = true) &&
+                !output.stderr.contains("Operation not permitted", ignoreCase = true)
+        } catch (e: Exception) {
+            true // If it fails for any other reason, assume true to not proactively fail
+        } finally {
+            if (testFile.exists()) {
+                testFile.delete()
+            }
+        }
+    }
 }

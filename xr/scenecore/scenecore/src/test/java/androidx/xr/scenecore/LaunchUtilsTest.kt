@@ -18,62 +18,52 @@ package androidx.xr.scenecore
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
-import androidx.xr.arcore.testing.FakePerceptionRuntimeFactory
 import androidx.xr.runtime.Session
-import androidx.xr.scenecore.runtime.ActivitySpace as RtActivitySpace
+import androidx.xr.runtime.SessionCreateSuccess
 import androidx.xr.scenecore.runtime.SceneRuntime
+import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mockito.kotlin.any
-import org.mockito.kotlin.mock
-import org.mockito.kotlin.verify
-import org.mockito.kotlin.whenever
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
+@org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.TARGET_SDK])
 class LaunchUtilsTest {
-    private val fakeRuntimeFactory = FakePerceptionRuntimeFactory()
     private val activityController = Robolectric.buildActivity(ComponentActivity::class.java)
     private val activity: ComponentActivity = activityController.create().start().get()
-    private val mockSceneRuntime = mock<SceneRuntime>()
+    private lateinit var sceneRuntime: SceneRuntime
     private lateinit var session: Session
 
     @Before
     fun setUp() {
-        // A minimal setup is needed to create a Session instance.
-        // The session needs access to the mockSceneRuntime.
-        val mockActivitySpace = mock<RtActivitySpace>()
-        whenever(mockSceneRuntime.activitySpace).thenReturn(mockActivitySpace)
-        whenever(mockSceneRuntime.mainPanelEntity).thenReturn(mock())
-        whenever(mockSceneRuntime.spatialEnvironment).thenReturn(mock())
-        whenever(mockSceneRuntime.perceptionSpaceActivityPose).thenReturn(mock())
-        session =
-            Session(
-                activity,
-                runtimes = listOf(fakeRuntimeFactory.createRuntime(activity), mockSceneRuntime),
-            )
+        val testDispatcher = StandardTestDispatcher()
+        val result = Session.create(context = activity, coroutineContext = testDispatcher)
+
+        assertThat(result).isInstanceOf(SessionCreateSuccess::class.java)
+
+        session = (result as SessionCreateSuccess).session
+        sceneRuntime = session.sceneRuntime
     }
 
     @Test
-    fun configureBundleForFullSpaceMode_Launch_callsThrough() {
+    fun configureBundleForFullSpaceLaunch_callsThrough() {
         // Test that Session calls into the runtime.
         val bundle = Bundle().apply { putString("testkey", "testval") }
-        whenever(mockSceneRuntime.setFullSpaceMode(any())).thenReturn(bundle)
-        @Suppress("UNUSED_VARIABLE")
-        val unused = createBundleForFullSpaceModeLaunch(session, bundle)
-        verify(mockSceneRuntime).setFullSpaceMode(bundle)
+        @Suppress("UNUSED_VARIABLE") val result = createBundleForFullSpaceLaunch(session, bundle)
+
+        assertThat(result).isEqualTo(bundle)
     }
 
     @Test
-    fun configureBundleForFullSpaceModeLaunchWithEnvironmentInherited_callsThrough() {
+    fun configureBundleForFullSpaceLaunchWithEnvironmentInherited_callsThrough() {
         // Test that Session calls into the runtime.
         val bundle = Bundle().apply { putString("testkey", "testval") }
-        whenever(mockSceneRuntime.setFullSpaceModeWithEnvironmentInherited(any()))
-            .thenReturn(bundle)
         @Suppress("UNUSED_VARIABLE")
-        val unused = createBundleForFullSpaceModeLaunchWithEnvironmentInherited(session, bundle)
-        verify(mockSceneRuntime).setFullSpaceModeWithEnvironmentInherited(bundle)
+        val result = createBundleForFullSpaceLaunchWithEnvironmentInherited(session, bundle)
+
+        assertThat(result).isEqualTo(bundle)
     }
 }

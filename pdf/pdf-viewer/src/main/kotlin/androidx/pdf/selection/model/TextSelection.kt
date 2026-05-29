@@ -32,9 +32,6 @@ import androidx.pdf.view.writeToParcel
 public class TextSelection(public val text: CharSequence, override val bounds: List<PdfRect>) :
     Selection {
 
-    /** Returns [text] as a [String] */
-    public fun textAsString(): String = text.toString()
-
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other == null || other !is TextSelection) return false

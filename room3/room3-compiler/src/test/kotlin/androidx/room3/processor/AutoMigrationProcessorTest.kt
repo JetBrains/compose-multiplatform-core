@@ -17,7 +17,7 @@
 package androidx.room3.processor
 
 import androidx.room3.compiler.processing.util.Source
-import androidx.room3.compiler.processing.util.runProcessorTest
+import androidx.room3.compiler.processing.util.runKspTest
 import androidx.room3.migration.bundle.DatabaseBundle
 import androidx.room3.migration.bundle.EntityBundle
 import androidx.room3.migration.bundle.FieldBundle
@@ -35,16 +35,16 @@ class AutoMigrationProcessorTest {
             Source.java(
                 "foo.bar.MyAutoMigration",
                 """
-            package foo.bar;
-            import androidx.room3.migration.AutoMigrationSpec;
-            public class MyAutoMigration {
-                public MyAutoMigration (int x) {}
-            }
-            """
+                package foo.bar;
+                import androidx.room3.migration.AutoMigrationSpec;
+                public class MyAutoMigration {
+                    public MyAutoMigration (int x) {}
+                }
+                """
                     .trimIndent(),
             )
 
-        runProcessorTest(listOf(source)) { invocation ->
+        runKspTest(listOf(source)) { invocation ->
             AutoMigrationProcessor(
                     context = invocation.context,
                     spec = invocation.processingEnv.requireType("foo.bar.MyAutoMigration"),
@@ -64,14 +64,14 @@ class AutoMigrationProcessorTest {
             Source.java(
                 "foo.bar.MyAutoMigration",
                 """
-            package foo.bar;
-            import androidx.room3.migration.AutoMigrationSpec;
-            public interface MyAutoMigration extends AutoMigrationSpec {}
-            """
+                package foo.bar;
+                import androidx.room3.migration.AutoMigrationSpec;
+                public interface MyAutoMigration extends AutoMigrationSpec {}
+                """
                     .trimIndent(),
             )
 
-        runProcessorTest(listOf(source)) { invocation ->
+        runKspTest(listOf(source)) { invocation ->
             AutoMigrationProcessor(
                     context = invocation.context,
                     spec = invocation.processingEnv.requireType("foo.bar.MyAutoMigration"),
@@ -91,16 +91,16 @@ class AutoMigrationProcessorTest {
             Source.java(
                 "foo.bar.MyAutoMigrationDb",
                 """
-            package foo.bar;
-            import androidx.room3.migration.AutoMigrationSpec;
-            public class MyAutoMigrationDb {
-                class MyAutoMigration implements AutoMigrationSpec {}
-            }
-            """
+                package foo.bar;
+                import androidx.room3.migration.AutoMigrationSpec;
+                public class MyAutoMigrationDb {
+                    class MyAutoMigration implements AutoMigrationSpec {}
+                }
+                """
                     .trimIndent(),
             )
 
-        runProcessorTest(listOf(source)) { invocation ->
+        runKspTest(listOf(source)) { invocation ->
             AutoMigrationProcessor(
                     context = invocation.context,
                     spec =
@@ -123,16 +123,16 @@ class AutoMigrationProcessorTest {
             Source.java(
                 "foo.bar.MyAutoMigration",
                 """
-            package foo.bar;
-            import androidx.room3.migration.AutoMigrationSpec;
-            import androidx.room3.AutoMigration;
-            import androidx.sqlite.db.SupportSQLiteDatabase;
-            public class MyAutoMigration {}
-            """
+                package foo.bar;
+                import androidx.room3.migration.AutoMigrationSpec;
+                import androidx.room3.AutoMigration;
+                import androidx.sqlite.db.SupportSQLiteDatabase;
+                public class MyAutoMigration {}
+                """
                     .trimIndent(),
             )
 
-        runProcessorTest(listOf(source)) { invocation ->
+        runKspTest(listOf(source)) { invocation ->
             AutoMigrationProcessor(
                     context = invocation.context,
                     spec = invocation.processingEnv.requireType("foo.bar.MyAutoMigration"),

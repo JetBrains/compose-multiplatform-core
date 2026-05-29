@@ -16,6 +16,7 @@
 
 package androidx.xr.compose.spatial
 
+import android.view.View
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.geometry.Offset
@@ -25,8 +26,10 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.xr.compose.unit.Meter
+import androidx.xr.compose.unit.Meter.Companion.meters
 import androidx.xr.compose.unit.toMeter
 import androidx.xr.runtime.math.Pose
+import androidx.xr.runtime.math.Vector3
 
 /** Calculate a [Pose] in 3D space based on the relative offset within the 2D space of a Panel. */
 @Composable
@@ -70,6 +73,24 @@ internal fun calculatePose(
     return Pose(translation = positionInMeters.toVector3())
 }
 
+/** A 3D vector where each coordinate is [Meter]s. */
+internal data class MeterPosition(
+    val x: Meter = 0.meters,
+    val y: Meter = 0.meters,
+    val z: Meter = 0.meters,
+) {
+    /**
+     * Adds this [MeterPosition] to the [other] one.
+     *
+     * @param other the other [MeterPosition] to add.
+     * @return a new [MeterPosition] representing the sum of the two positions.
+     */
+    operator fun plus(other: MeterPosition) =
+        MeterPosition(x = x + other.x, y = y + other.y, z = z + other.z)
+
+    fun toVector3() = Vector3(x = x.toM(), y = y.toM(), z = z.toM())
+}
+
 /**
  * Converts a 2D pixel offset to a 3D meter-based position, correctly anchoring the content.
  *
@@ -100,6 +121,9 @@ private fun Offset.toMeterPosition(
         y = Meter.fromPixel(-centerYInPixels, density),
     )
 }
+
+internal val View.size
+    get() = IntSize(width, height)
 
 /**
  * Translates a 2D coordinate from a top-left anchor system to a center-based anchor system.

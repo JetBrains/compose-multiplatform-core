@@ -50,11 +50,13 @@ import org.mockito.kotlin.never
 import org.mockito.kotlin.reset
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 import org.robolectric.util.ReflectionHelpers
 
 @RunWith(RobolectricCameraPipeTestRunner::class)
 @DoNotInstrument
+@Config(sdk = [Config.ALL_SDKS])
 class CameraCoordinatorAdapterTest {
     private val cameraMetadata0 =
         FakeCameraMetadata(
@@ -158,13 +160,23 @@ class CameraCoordinatorAdapterTest {
     }
 
     @Test
-    fun setAndGetActiveConcurrentCameraInfos() {
+    fun addPendingCameraInfoAnd_thenSetActiveConcurrentCameraInfos() {
         whenever(mockCameraInternalAdapter0.getDeferredCameraGraphConfig())
             .thenReturn(mockCameraGraphConfig0)
         whenever(mockCameraInternalAdapter1.getDeferredCameraGraphConfig())
             .thenReturn(mockCameraGraphConfig1)
         whenever(mockCameraInternalAdapter2.getDeferredCameraGraphConfig())
             .thenReturn(mockCameraGraphConfig2)
+
+        cameraCoordinatorAdapter.cameraOperatingMode = CAMERA_OPERATING_MODE_CONCURRENT
+
+        cameraCoordinatorAdapter.addPendingCameraInfo(
+            FakeCameraInfoAdapterCreator.createCameraInfoAdapter(cameraId = CameraId("0"))
+        )
+
+        cameraCoordinatorAdapter.addPendingCameraInfo(
+            FakeCameraInfoAdapterCreator.createCameraInfoAdapter(cameraId = CameraId("1"))
+        )
 
         cameraCoordinatorAdapter.activeConcurrentCameraInfos =
             mutableListOf(
@@ -181,6 +193,68 @@ class CameraCoordinatorAdapterTest {
         assertThat(cameraInfo1.cameraId).isEqualTo("1")
         verify(mockCameraInternalAdapter0).resumeDeferredCameraGraphCreation(any())
         verify(mockCameraInternalAdapter1).resumeDeferredCameraGraphCreation(any())
+    }
+
+    @Test
+    fun setActiveConcurrentCameraInfos_thenAddPendingCameraInfoAnd() {
+        whenever(mockCameraInternalAdapter0.getDeferredCameraGraphConfig())
+            .thenReturn(mockCameraGraphConfig0)
+        whenever(mockCameraInternalAdapter1.getDeferredCameraGraphConfig())
+            .thenReturn(mockCameraGraphConfig1)
+        whenever(mockCameraInternalAdapter2.getDeferredCameraGraphConfig())
+            .thenReturn(mockCameraGraphConfig2)
+
+        cameraCoordinatorAdapter.cameraOperatingMode = CAMERA_OPERATING_MODE_CONCURRENT
+
+        cameraCoordinatorAdapter.activeConcurrentCameraInfos =
+            mutableListOf(
+                FakeCameraInfoAdapterCreator.createCameraInfoAdapter(cameraId = CameraId("0")),
+                FakeCameraInfoAdapterCreator.createCameraInfoAdapter(cameraId = CameraId("1")),
+            )
+
+        cameraCoordinatorAdapter.addPendingCameraInfo(
+            FakeCameraInfoAdapterCreator.createCameraInfoAdapter(cameraId = CameraId("0"))
+        )
+
+        cameraCoordinatorAdapter.addPendingCameraInfo(
+            FakeCameraInfoAdapterCreator.createCameraInfoAdapter(cameraId = CameraId("1"))
+        )
+
+        verify(mockCameraInternalAdapter0).resumeDeferredCameraGraphCreation(any())
+        verify(mockCameraInternalAdapter1).resumeDeferredCameraGraphCreation(any())
+    }
+
+    @Test
+    fun setActiveConcurrentCameraInfos_thenRemoveAndAddPendingCameraInfoAnd() {
+        whenever(mockCameraInternalAdapter0.getDeferredCameraGraphConfig())
+            .thenReturn(mockCameraGraphConfig0)
+        whenever(mockCameraInternalAdapter1.getDeferredCameraGraphConfig())
+            .thenReturn(mockCameraGraphConfig1)
+        whenever(mockCameraInternalAdapter2.getDeferredCameraGraphConfig())
+            .thenReturn(mockCameraGraphConfig2)
+
+        cameraCoordinatorAdapter.cameraOperatingMode = CAMERA_OPERATING_MODE_CONCURRENT
+
+        cameraCoordinatorAdapter.activeConcurrentCameraInfos =
+            mutableListOf(
+                FakeCameraInfoAdapterCreator.createCameraInfoAdapter(cameraId = CameraId("0")),
+                FakeCameraInfoAdapterCreator.createCameraInfoAdapter(cameraId = CameraId("1")),
+            )
+
+        cameraCoordinatorAdapter.addPendingCameraInfo(
+            FakeCameraInfoAdapterCreator.createCameraInfoAdapter(cameraId = CameraId("0"))
+        )
+
+        cameraCoordinatorAdapter.removePendingCameraInfo(
+            FakeCameraInfoAdapterCreator.createCameraInfoAdapter(cameraId = CameraId("0"))
+        )
+
+        cameraCoordinatorAdapter.addPendingCameraInfo(
+            FakeCameraInfoAdapterCreator.createCameraInfoAdapter(cameraId = CameraId("1"))
+        )
+
+        verify(mockCameraInternalAdapter0, never()).resumeDeferredCameraGraphCreation(any())
+        verify(mockCameraInternalAdapter1, never()).resumeDeferredCameraGraphCreation(any())
     }
 
     @Test
@@ -311,6 +385,8 @@ class CameraCoordinatorAdapterTest {
                 ): Set<Set<CameraId>> {
                     throw RuntimeException("Test failure from CameraDevices")
                 }
+
+                override fun awaitConcurrentCameraIds() = awaitConcurrentCameraIds(null)
             }
         val coordinatorWithFailingDeps = CameraCoordinatorAdapter(cameraPipe, failingCameraDevices)
 

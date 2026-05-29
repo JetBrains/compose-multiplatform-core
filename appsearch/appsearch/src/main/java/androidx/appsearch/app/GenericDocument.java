@@ -66,7 +66,8 @@ import java.util.Set;
  * @see AppSearchSession#getByDocumentIdAsync
  * @see AppSearchSession#search
  */
-// TODO(b/384721898): Switch to JSpecify annotations
+// TODO(b/384721898): Switching to JSpecify annotations changes APIs once synced to platform.
+//  Do not switch unless you've checked that no APIs are affected.
 @SuppressWarnings("JSpecifyNullness")
 public class GenericDocument {
     private static final String TAG = "AppSearchGenericDocumen";
@@ -791,7 +792,6 @@ public class GenericDocument {
      * @return The first {@code EmbeddingVector[]} associated with the given path or
      * {@code null} if there is no such value or the value is of a different type.
      */
-    @FlaggedApi(Flags.FLAG_ENABLE_SCHEMA_EMBEDDING_PROPERTY_CONFIG)
     public @Nullable EmbeddingVector getPropertyEmbedding(@NonNull String path) {
         Preconditions.checkNotNull(path);
         EmbeddingVector[] propertyArray = getPropertyEmbeddingArray(path);
@@ -814,8 +814,6 @@ public class GenericDocument {
      * @return The first {@link AppSearchBlobHandle} associated with the given path or
      * {@code null} if there is no such value or the value is of a different type.
      */
-    @FlaggedApi(Flags.FLAG_ENABLE_BLOB_STORE)
-    @ExperimentalAppSearchApi
     public @Nullable AppSearchBlobHandle getPropertyBlobHandle(@NonNull String path) {
         Preconditions.checkNotNull(path);
         AppSearchBlobHandle[] propertyArray = getPropertyBlobHandleArray(path);
@@ -996,7 +994,6 @@ public class GenericDocument {
      * {@code null} if no value is set or the value is of a different type.
      */
     @SuppressLint({"ArrayReturn", "NullableCollection"})
-    @FlaggedApi(Flags.FLAG_ENABLE_SCHEMA_EMBEDDING_PROPERTY_CONFIG)
     public @Nullable EmbeddingVector[] getPropertyEmbeddingArray(@NonNull String path) {
         Preconditions.checkNotNull(path);
         Object value = getProperty(path);
@@ -1020,8 +1017,6 @@ public class GenericDocument {
      * {@code null} if no value is set or the value is of a different type.
      */
     @SuppressLint({"ArrayReturn", "NullableCollection"})
-    @ExperimentalAppSearchApi
-    @FlaggedApi(Flags.FLAG_ENABLE_BLOB_STORE)
     public @Nullable AppSearchBlobHandle[] getPropertyBlobHandleArray(@NonNull String path) {
         Preconditions.checkNotNull(path);
         Object value = getProperty(path);
@@ -1644,7 +1639,6 @@ public class GenericDocument {
          * @throws IllegalArgumentException if the name is empty or {@code null}.
          */
         @CanIgnoreReturnValue
-        @FlaggedApi(Flags.FLAG_ENABLE_SCHEMA_EMBEDDING_PROPERTY_CONFIG)
         @RequiresFeature(
                 enforcement = "androidx.appsearch.app.Features#isFeatureSupported",
                 name = Features.SCHEMA_EMBEDDING_PROPERTY_CONFIG)
@@ -1681,11 +1675,9 @@ public class GenericDocument {
          * @throws IllegalArgumentException if the name is empty or {@code null}.
          */
         @CanIgnoreReturnValue
-        @FlaggedApi(Flags.FLAG_ENABLE_BLOB_STORE)
-        @ExperimentalAppSearchApi
         @RequiresFeature(
                 enforcement = "androidx.appsearch.app.Features#isFeatureSupported",
-                name = Features.BLOB_STORAGE)
+                name = Features.SCHEMA_BLOB_HANDLE)
         public @NonNull BuilderType setPropertyBlobHandle(@NonNull String name,
                 @NonNull AppSearchBlobHandle... values) {
             Preconditions.checkNotNull(name);

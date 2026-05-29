@@ -14,4 +14,4 @@
 # limitations under the License.
 #
 
-androidx.room3.RoomKspProcessor$Provider
+androidx.room3.RoomProcessor$Provider

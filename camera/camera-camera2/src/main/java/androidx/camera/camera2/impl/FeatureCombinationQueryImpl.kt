@@ -20,11 +20,11 @@ import androidx.annotation.RequiresApi
 import androidx.camera.camera2.adapter.ZslControlNoOpImpl
 import androidx.camera.camera2.compat.quirk.CameraQuirks
 import androidx.camera.camera2.compat.workaround.TemplateParamsQuirkOverride
+import androidx.camera.camera2.config.CameraConfig
 import androidx.camera.camera2.pipe.CameraGraph
 import androidx.camera.camera2.pipe.CameraMetadata
 import androidx.camera.camera2.pipe.CameraPipe
 import androidx.camera.camera2.pipe.ConfigQueryResult
-import androidx.camera.camera2.pipe.core.Log.debug
 import androidx.camera.core.featuregroup.impl.FeatureCombinationQuery
 import androidx.camera.core.impl.SessionConfig
 import kotlinx.coroutines.runBlocking
@@ -37,34 +37,38 @@ internal class FeatureCombinationQueryImpl(
     private val cameraQuirks: CameraQuirks,
 ) : FeatureCombinationQuery {
     override fun isSupported(sessionConfig: SessionConfig): Boolean {
-        val config =
-            UseCaseManager.createCameraGraphConfig(
-                cameraId = cameraMetadata.camera,
-                cameraMetadata = cameraMetadata,
+        val configProvider =
+            CameraGraphConfigProvider(
+                callbackMap = CameraCallbackMap(),
+                requestListener = ComboRequestListener(),
+                cameraConfig = CameraConfig(cameraMetadata.camera),
                 cameraQuirks = cameraQuirks,
+                zslControl = ZslControlNoOpImpl(), // TODO: b/400835309 - Handle ZSL properly
+                templateParamsOverride = TemplateParamsQuirkOverride(cameraQuirks.quirks),
+                cameraMetadata = cameraMetadata,
+            )
+
+        val graphConfigBundle =
+            configProvider.create(
                 operatingMode = CameraGraph.OperatingMode.NORMAL,
                 sessionConfig = sessionConfig,
                 setOutputType = true,
-                templateParamsOverride = TemplateParamsQuirkOverride(cameraQuirks.quirks),
-                zslControl = ZslControlNoOpImpl(), // TODO: b/400835309 - Handle ZSL properly,
-                callbackMap = CameraCallbackMap(),
-                requestListener = ComboRequestListener(),
-                streamConfigMap = mutableMapOf(),
             )
 
         return runBlocking {
-            cameraPipe.isConfigSupported(config).apply {
-                debug {
+            cameraPipe.isConfigSupported(graphConfigBundle.graphConfig).apply {
+                Camera2Logger.debug {
                     val streamsLog =
-                        config.streams.map { cameraStream ->
+                        graphConfigBundle.graphConfig.streams.map { cameraStream ->
                             cameraStream.outputs.map {
                                 "size=${it.size}, format=${it.format}," +
                                     " dynamicRangeProfile${it.dynamicRangeProfile}"
                             }
                         }
 
-                    "FeatureCombinationQueryImpl#isSupported: result = $this for sessionParameters =" +
-                        " ${config.sessionParameters} and streams = $streamsLog"
+                    "FeatureCombinationQueryImpl#isSupported: result = $this for " +
+                        "sessionParameters = ${graphConfigBundle.graphConfig.sessionParameters} " +
+                        "and streams = $streamsLog"
                 }
             } == ConfigQueryResult.SUPPORTED
         }

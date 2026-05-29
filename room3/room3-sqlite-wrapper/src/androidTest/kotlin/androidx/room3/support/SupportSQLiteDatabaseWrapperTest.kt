@@ -63,7 +63,6 @@ class SupportSQLiteDatabaseWrapperTest(private val driver: Driver) {
     enum class Driver {
         BUNDLED,
         ANDROID,
-        NONE,
     }
 
     private val context = InstrumentationRegistry.getInstrumentation().context
@@ -78,13 +77,12 @@ class SupportSQLiteDatabaseWrapperTest(private val driver: Driver) {
         database =
             Room.databaseBuilder(context, TestDatabase::class.java, "test.db")
                 .setQueryCoroutineContext(Dispatchers.IO)
-                .apply {
+                .setDriver(
                     when (driver) {
                         Driver.BUNDLED -> BundledSQLiteDriver()
                         Driver.ANDROID -> AndroidSQLiteDriver()
-                        Driver.NONE -> null
-                    }?.let { setDriver(it) }
-                }
+                    }
+                )
                 .build()
         wrapper = database.getSupportWrapper()
     }
@@ -158,7 +156,7 @@ class SupportSQLiteDatabaseWrapperTest(private val driver: Driver) {
                     blobCol,
                     nullCol
                 ) VALUES (?, ?, ?, ?, ?)
-            """
+                """
                     .trimIndent()
             )
             .use {
@@ -688,6 +686,34 @@ class SupportSQLiteDatabaseWrapperTest(private val driver: Driver) {
     @Test
     fun databaseIntegrityOk() {
         assertThat(wrapper.isDatabaseIntegrityOk).isTrue()
+    }
+
+    /** Test that transactions are isolated based on the calling thread that started them. */
+    @Test
+    fun threadTransactionIsolation() {
+        val t1 = thread {
+            wrapper.beginTransactionNonExclusive()
+            wrapper.insert(
+                table = "TestEntity",
+                conflictAlgorithm = SQLiteDatabase.CONFLICT_NONE,
+                values = ContentValues().apply { put("id", 1) },
+            )
+            wrapper.setTransactionSuccessful()
+            wrapper.endTransaction() // commit
+        }
+        val t2 = thread {
+            wrapper.beginTransactionNonExclusive()
+            wrapper.insert(
+                table = "TestEntity",
+                conflictAlgorithm = SQLiteDatabase.CONFLICT_NONE,
+                values = ContentValues().apply { put("id", 2) },
+            )
+            wrapper.endTransaction() // rollback
+        }
+        t1.join()
+        t2.join()
+
+        assertThat(database.dao().getEntities()).containsExactly(TestEntity(1))
     }
 
     /** Test that a read transaction is not blocked by a write transaction. */

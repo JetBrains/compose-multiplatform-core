@@ -21,27 +21,24 @@ import android.graphics.Color
 import androidx.compose.remote.core.CoreDocument
 import androidx.compose.remote.core.RemoteContext
 import androidx.compose.remote.creation.compose.capture.RemoteComposeCreationState
-import androidx.compose.remote.creation.platform.AndroidxPlatformServices
+import androidx.compose.remote.creation.platform.AndroidxRcPlatformServices
 import androidx.compose.remote.player.core.platform.AndroidRemoteContext
 import androidx.compose.ui.geometry.Size
 import com.google.common.truth.Truth.assertThat
-import kotlin.and
-import kotlin.collections.get
-import kotlin.or
-import kotlin.xor
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
+@Config(sdk = [Config.TARGET_SDK])
 class RemoteBooleanTest {
     val context =
         AndroidRemoteContext().apply {
             useCanvas(Canvas(Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888)))
         }
 
-    val creationState =
-        RemoteComposeCreationState(AndroidxPlatformServices(), density = 1f, Size(1f, 1f))
+    val creationState = RemoteComposeCreationState(AndroidxRcPlatformServices(), Size(1f, 1f))
 
     @Test
     fun stringSelect_true() {
@@ -662,9 +659,81 @@ class RemoteBooleanTest {
         assertThat((RemoteInt(10) gt RemoteInt(5)).constantValue).isTrue()
 
         assertThat(
-                (RemoteFloat(100f) gt RemoteFloat(RemoteContext.FLOAT_CONTINUOUS_SEC)).constantValue
+                (RemoteFloat(100f) gt RemoteFloat(RemoteContext.FLOAT_CONTINUOUS_SEC))
+                    .constantValueOrNull
             )
             .isNull()
+    }
+
+    @Test
+    fun select_complexExpression() {
+        // Create a complex float expression
+        var complexFloat = RemoteFloat(0f)
+        for (i in 1..50) {
+            complexFloat += RemoteFloat(i.toFloat())
+        }
+
+        val bool = RemoteBoolean.createNamedRemoteBoolean("testBool", true)
+        // usage of select with complex expression
+        val result = bool.select(complexFloat, RemoteFloat(0f))
+
+        // Assertions similar to longExpression_usesReferences
+        val finalArray = result.arrayProvider(creationState)
+        assertThat(finalArray.size < 20).isTrue()
+
+        val resultId = result.getIdForCreationState(creationState)
+        makeAndPaintCoreDocument()
+        val expected = (50 * 51) / 2f
+        assertThat(context.getFloat(resultId)).isEqualTo(expected)
+    }
+
+    @Test
+    fun cacheKeys() {
+        val constant = RemoteBoolean(true)
+        // implemented as RemoteInt
+        assertThat(constant.cacheKey).isEqualTo(RemoteConstantCacheKey(1))
+
+        val named = RemoteBoolean.createNamedRemoteBoolean("test", false)
+        val op = constant and named
+        assertThat(op.cacheKey)
+            .isEqualTo(
+                RemoteOperationCacheKey.create(
+                    RemoteInt.OperationKey.And,
+                    constant.intValue,
+                    named.intValue,
+                )
+            )
+    }
+
+    @Test
+    fun computeRequiredCodePointSet_true() {
+        val bool = RemoteBoolean(true)
+        val str = bool.select(RemoteString("A"), RemoteString("B"))
+
+        assertThat(str.computeRequiredCodePointSet(creationState)).containsExactly("A")
+    }
+
+    @Test
+    fun computeRequiredCodePointSet_false() {
+        val bool = RemoteBoolean(false)
+        val str = bool.select(RemoteString("A"), RemoteString("B"))
+
+        assertThat(str.computeRequiredCodePointSet(creationState)).containsExactly("B")
+    }
+
+    @Test
+    fun computeRequiredCodePointSet_dynamic() {
+        val bool = RemoteBoolean.createNamedRemoteBoolean("test", true)
+        val str = bool.select(RemoteString("A"), RemoteString("B"))
+
+        assertThat(str.computeRequiredCodePointSet(creationState)).containsExactly("A", "B")
+    }
+
+    @Test
+    fun mutableRemoteBoolean_smokeTest() {
+        val mutableBool = MutableRemoteBoolean(true)
+        val resultId = mutableBool.getIdForCreationState(creationState)
+        assertThat(resultId).isGreaterThan(0)
     }
 
     private fun makeAndPaintCoreDocument() =

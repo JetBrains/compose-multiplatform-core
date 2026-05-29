@@ -30,7 +30,6 @@ import androidx.room3.compiler.codegen.asClassName
 import androidx.room3.compiler.codegen.asMutableClassName
 import androidx.room3.compiler.codegen.buildCodeBlock
 import androidx.room3.compiler.codegen.compat.XConverters.applyToJavaPoet
-import androidx.room3.ext.RoomGuavaTypeNames.GUAVA_ROOM
 import androidx.room3.solver.CodeGenScope
 import com.squareup.kotlinpoet.javapoet.JTypeName
 import java.util.concurrent.Callable
@@ -56,16 +55,11 @@ object SQLiteDriverTypeNames {
 object RoomTypeNames {
     val STRING_UTIL = XClassName.get("$ROOM_PACKAGE.util", "StringUtil")
     val ROOM_DB = XClassName.get(ROOM_PACKAGE, "RoomDatabase")
-    val ROOM_DB_KT = XClassName.get(ROOM_PACKAGE, "RoomDatabaseKt")
     val ROOM_DB_CALLBACK = XClassName.get(ROOM_PACKAGE, "RoomDatabase", "Callback")
     val ROOM_DB_CONFIG = XClassName.get(ROOM_PACKAGE, "DatabaseConfiguration")
     val INSERT_ADAPTER = XClassName.get(ROOM_PACKAGE, "EntityInsertAdapter")
     val UPSERT_ADAPTER = XClassName.get(ROOM_PACKAGE, "EntityUpsertAdapter")
     val DELETE_OR_UPDATE_ADAPTER = XClassName.get(ROOM_PACKAGE, "EntityDeleteOrUpdateAdapter")
-    val INSERT_ADAPTER_COMPAT = XClassName.get(ROOM_PACKAGE, "EntityInsertionAdapter")
-    val UPSERT_ADAPTER_COMPAT = XClassName.get(ROOM_PACKAGE, "EntityUpsertionAdapter")
-    val DELETE_OR_UPDATE_ADAPTER_COMPAT =
-        XClassName.get(ROOM_PACKAGE, "EntityDeletionOrUpdateAdapter")
     val SHARED_SQLITE_STMT = XClassName.get(ROOM_PACKAGE, "SharedSQLiteStatement")
     val INVALIDATION_TRACKER = XClassName.get(ROOM_PACKAGE, "InvalidationTracker")
     val ROOM_SQL_QUERY = XClassName.get(ROOM_PACKAGE, "RoomSQLiteQuery")
@@ -91,6 +85,7 @@ object RoomTypeNames {
     val RAW_QUERY = XClassName.get(ROOM_PACKAGE, "RoomRawQuery")
     val ROOM_DB_CONSTRUCTOR = XClassName.get(ROOM_PACKAGE, "RoomDatabaseConstructor")
     val BYTE_ARRAY_WRAPPER = XClassName.get("$ROOM_PACKAGE.util", "ByteArrayWrapper")
+    val ANDROID_MARKER = XClassName.get("$ROOM_PACKAGE.util", "AndroidMarker")
 }
 
 object RoomAnnotationTypeNames {
@@ -104,25 +99,13 @@ object RoomAnnotationTypeNames {
 }
 
 object PagingTypeNames {
-    val DATA_SOURCE = XClassName.get(PAGING_PACKAGE, "DataSource")
     val POSITIONAL_DATA_SOURCE = XClassName.get(PAGING_PACKAGE, "PositionalDataSource")
-    val DATA_SOURCE_FACTORY = XClassName.get(PAGING_PACKAGE, "DataSource", "Factory")
     val PAGING_SOURCE = XClassName.get(PAGING_PACKAGE, "PagingSource")
-    val LISTENABLE_FUTURE_PAGING_SOURCE =
-        XClassName.get(PAGING_PACKAGE, "ListenableFuturePagingSource")
-    val RX2_PAGING_SOURCE = XClassName.get("$PAGING_PACKAGE.rxjava2", "RxPagingSource")
-    val RX3_PAGING_SOURCE = XClassName.get("$PAGING_PACKAGE.rxjava3", "RxPagingSource")
 }
 
 object LifecyclesTypeNames {
     val LIVE_DATA = XClassName.get(LIFECYCLE_PACKAGE, "LiveData")
     val COMPUTABLE_LIVE_DATA = XClassName.get(LIFECYCLE_PACKAGE, "ComputableLiveData")
-}
-
-object AndroidTypeNames {
-    val CURSOR = XClassName.get("android.database", "Cursor")
-    val BUILD = XClassName.get("android.os", "Build")
-    val CANCELLATION_SIGNAL = XClassName.get("android.os", "CancellationSignal")
 }
 
 object CollectionTypeNames {
@@ -132,7 +115,7 @@ object CollectionTypeNames {
 }
 
 object KotlinCollectionMemberNames {
-    val ARRAY_OF_NULLS = XClassName.get("kotlin", "LibraryKt").packageMember("arrayOfNulls")
+    val LIST_OF = KotlinTypeNames.COLLECTIONS_KT.packageMember("listOf")
     val MUTABLE_LIST_OF = KotlinTypeNames.COLLECTIONS_KT.packageMember("mutableListOf")
     val MUTABLE_SET_OF = KotlinTypeNames.SETS_KT.packageMember("mutableSetOf")
     val MUTABLE_MAP_OF = KotlinTypeNames.MAPS_KT.packageMember("mutableMapOf")
@@ -145,21 +128,15 @@ object KotlinPreconditionsMemberNames {
 object CommonTypeNames {
     val VOID = Void::class.asClassName()
     val COLLECTION = Collection::class.asClassName()
-    val COLLECTIONS = XClassName.get("java.util", "Collections")
-    val ARRAYS = XClassName.get("java.util", "Arrays")
     val LIST = List::class.asClassName()
     val MUTABLE_LIST = List::class.asMutableClassName()
-    val ARRAY_LIST = XClassName.get("java.util", "ArrayList")
     val MAP = Map::class.asClassName()
     val MUTABLE_MAP = Map::class.asMutableClassName()
-    val HASH_MAP = XClassName.get("java.util", "HashMap")
     val QUEUE = XClassName.get("java.util", "Queue")
     val LINKED_HASH_MAP = LinkedHashMap::class.asClassName()
     val SET = Set::class.asClassName()
     val MUTABLE_SET = Set::class.asMutableClassName()
-    val HASH_SET = XClassName.get("java.util", "HashSet")
     val STRING = String::class.asClassName()
-    val STRING_BUILDER = XClassName.get("java.lang", "StringBuilder")
     val OPTIONAL = XClassName.get("java.util", "Optional")
     val UUID = XClassName.get("java.util", "UUID")
     val BYTE_BUFFER = XClassName.get("java.nio", "ByteBuffer")
@@ -170,8 +147,6 @@ object CommonTypeNames {
 }
 
 object ExceptionTypeNames {
-    val JAVA_ILLEGAL_STATE_EXCEPTION = XClassName.get("java.lang", "IllegalStateException")
-    val JAVA_ILLEGAL_ARG_EXCEPTION = XClassName.get("java.lang", "IllegalArgumentException")
     val KOTLIN_ILLEGAL_STATE_EXCEPTION = XClassName.get("kotlin", "IllegalStateException")
     val KOTLIN_ILLEGAL_ARG_EXCEPTION = XClassName.get("kotlin", "IllegalArgumentException")
 }
@@ -197,14 +172,6 @@ object GuavaUtilConcurrentTypeNames {
     val LISTENABLE_FUTURE = XClassName.get("com.google.common.util.concurrent", "ListenableFuture")
 }
 
-object RxJava2TypeNames {
-    val FLOWABLE = XClassName.get("io.reactivex", "Flowable")
-    val OBSERVABLE = XClassName.get("io.reactivex", "Observable")
-    val MAYBE = XClassName.get("io.reactivex", "Maybe")
-    val SINGLE = XClassName.get("io.reactivex", "Single")
-    val COMPLETABLE = XClassName.get("io.reactivex", "Completable")
-}
-
 object RxJava3TypeNames {
     val FLOWABLE = XClassName.get("io.reactivex.rxjava3.core", "Flowable")
     val OBSERVABLE = XClassName.get("io.reactivex.rxjava3.core", "Observable")
@@ -215,73 +182,6 @@ object RxJava3TypeNames {
 
 object ReactiveStreamsTypeNames {
     val PUBLISHER = XClassName.get("org.reactivestreams", "Publisher")
-}
-
-object RoomGuavaTypeNames {
-    val GUAVA_ROOM = XClassName.get("$ROOM_PACKAGE.guava", "GuavaRoom")
-    val GUAVA_ROOM_MARKER = XClassName.get("$ROOM_PACKAGE.guava", "GuavaRoomArtifactMarker")
-}
-
-object RoomGuavaMemberNames {
-    val GUAVA_ROOM_CREATE_LISTENABLE_FUTURE = GUAVA_ROOM.packageMember("createListenableFuture")
-}
-
-object RoomRxJava2TypeNames {
-    val RX2_ROOM = XClassName.get(ROOM_PACKAGE, "RxRoom")
-    val RX2_EMPTY_RESULT_SET_EXCEPTION = XClassName.get(ROOM_PACKAGE, "EmptyResultSetException")
-}
-
-object RoomRxJava2MemberNames {
-    val RX_ROOM_CREATE_FLOWABLE =
-        RoomRxJava2TypeNames.RX2_ROOM.companionMember("createFlowable", isJvmStatic = true)
-    val RX_ROOM_CREATE_OBSERVABLE =
-        RoomRxJava2TypeNames.RX2_ROOM.companionMember("createObservable", isJvmStatic = true)
-    val RX_ROOM_CREATE_SINGLE =
-        RoomRxJava2TypeNames.RX2_ROOM.companionMember("createSingle", isJvmStatic = true)
-    val RX_ROOM_CREATE_MAYBE =
-        RoomRxJava2TypeNames.RX2_ROOM.companionMember("createMaybe", isJvmStatic = true)
-    val RX_ROOM_CREATE_COMPLETABLE =
-        RoomRxJava2TypeNames.RX2_ROOM.companionMember("createCompletable", isJvmStatic = true)
-}
-
-object RoomRxJava3TypeNames {
-    val RX3_ROOM = XClassName.get("$ROOM_PACKAGE.rxjava3", "RxRoom")
-    val RX3_ROOM_MARKER = XClassName.get("$ROOM_PACKAGE.rxjava3", "Rx3RoomArtifactMarker")
-    val RX3_EMPTY_RESULT_SET_EXCEPTION =
-        XClassName.get("$ROOM_PACKAGE.rxjava3", "EmptyResultSetException")
-}
-
-object RoomRxJava3MemberNames {
-    val RX_ROOM_CREATE_FLOWABLE = RoomRxJava3TypeNames.RX3_ROOM.packageMember("createFlowable")
-    val RX_ROOM_CREATE_OBSERVABLE = RoomRxJava3TypeNames.RX3_ROOM.packageMember("createObservable")
-    val RX_ROOM_CREATE_SINGLE = RoomRxJava3TypeNames.RX3_ROOM.packageMember("createSingle")
-    val RX_ROOM_CREATE_MAYBE = RoomRxJava3TypeNames.RX3_ROOM.packageMember("createMaybe")
-    val RX_ROOM_CREATE_COMPLETABLE =
-        RoomRxJava3TypeNames.RX3_ROOM.packageMember("createCompletable")
-}
-
-object RoomPagingTypeNames {
-    val LIMIT_OFFSET_PAGING_SOURCE =
-        XClassName.get("$ROOM_PACKAGE.paging", "LimitOffsetPagingSource")
-}
-
-object RoomPagingGuavaTypeNames {
-    val LIMIT_OFFSET_LISTENABLE_FUTURE_PAGING_SOURCE =
-        XClassName.get("$ROOM_PACKAGE.paging.guava", "LimitOffsetListenableFuturePagingSource")
-}
-
-object RoomPagingRx2TypeNames {
-    val LIMIT_OFFSET_RX_PAGING_SOURCE =
-        XClassName.get("$ROOM_PACKAGE.paging.rxjava2", "LimitOffsetRxPagingSource")
-}
-
-object RoomPagingRx3TypeNames {
-    val LIMIT_OFFSET_RX_PAGING_SOURCE =
-        XClassName.get("$ROOM_PACKAGE.paging.rxjava3", "LimitOffsetRxPagingSource")
-}
-
-object RoomCoroutinesTypeNames {
-    val COROUTINES_ROOM = XClassName.get(ROOM_PACKAGE, "CoroutinesRoom")
 }
 
 object KotlinTypeNames {
@@ -298,25 +198,39 @@ object KotlinTypeNames {
     val MAPS_KT = XClassName.get("kotlin.collections", "MapsKt")
     val STRING_BUILDER = XClassName.get("kotlin.text", "StringBuilder")
     val LINKED_HASH_MAP = XClassName.get("kotlin.collections", "LinkedHashMap")
+    val NO_ARG_SUSPEND_LAMBDA = XClassName.get("kotlin.coroutines", "SuspendFunction0")
+    val NO_ARG_LAMBDA = XClassName.get("kotlin", "Function0")
+    val SINGLE_ARG_SUSPEND_LAMBDA = XClassName.get("kotlin.coroutines", "SuspendFunction1")
+    val SINGLE_ARG_LAMBDA = XClassName.get("kotlin", "Function1")
+    val U_BYTE = XClassName.get("kotlin", "UByte")
+    val U_SHORT = XClassName.get("kotlin", "UShort")
+    val U_INT = XClassName.get("kotlin", "UInt")
+    val U_LONG = XClassName.get("kotlin", "ULong")
+    val PAIR = XClassName.get("kotlin", "Pair")
+    val TRIPLE = XClassName.get("kotlin", "Triple")
+}
+
+object KotlinUnsignedMemberNames {
+    val TO_BYTE = KotlinTypeNames.U_BYTE.packageMember("toUByte")
+    val TO_SHORT = KotlinTypeNames.U_SHORT.packageMember("toUShort")
+    val TO_INT = KotlinTypeNames.U_INT.packageMember("toUInt")
+    val TO_LONG = KotlinTypeNames.U_LONG.packageMember("toULong")
 }
 
 object RoomMemberNames {
-    val DB_UTIL_QUERY = RoomTypeNames.DB_UTIL.packageMember("query")
     val DB_UTIL_FOREIGN_KEY_CHECK = RoomTypeNames.DB_UTIL.packageMember("foreignKeyCheck")
     val DB_UTIL_DROP_FTS_SYNC_TRIGGERS = RoomTypeNames.DB_UTIL.packageMember("dropFtsSyncTriggers")
     val DB_UTIL_PERFORM_SUSPENDING = RoomTypeNames.DB_UTIL.packageMember("performSuspending")
     val DB_UTIL_PERFORM_BLOCKING = RoomTypeNames.DB_UTIL.packageMember("performBlocking")
-    val DB_UTIL_SUPPORT_DB_TO_CONNECTION = RoomTypeNames.DB_UTIL.packageMember("toSQLiteConnection")
     val DB_UTIL_PERFORM_IN_TRANSACTION_SUSPENDING =
         RoomTypeNames.DB_UTIL.packageMember("performInTransactionSuspending")
-    val CURSOR_UTIL_GET_COLUMN_INDEX = RoomTypeNames.CURSOR_UTIL.packageMember("getColumnIndex")
-    val CURSOR_UTIL_GET_COLUMN_INDEX_OR_THROW =
-        RoomTypeNames.CURSOR_UTIL.packageMember("getColumnIndexOrThrow")
-    val CURSOR_UTIL_WRAP_MAPPED_COLUMNS =
-        RoomTypeNames.CURSOR_UTIL.packageMember("wrapMappedColumns")
+    val DB_UTIL_PERFORM_IN_TRANSACTION_BLOCKING =
+        RoomTypeNames.DB_UTIL.packageMember("performInTransactionBlocking")
+    val DB_UTIL_PERFORM_CLEAR = RoomTypeNames.DB_UTIL.packageMember("performClear")
+    val STATEMENT_UTIL_WRAP_MAPPED_COLUMNS =
+        RoomTypeNames.STATEMENT_UTIL.packageMember("wrapMappedColumns")
     val ROOM_SQL_QUERY_ACQUIRE =
         RoomTypeNames.ROOM_SQL_QUERY.companionMember("acquire", isJvmStatic = true)
-    val ROOM_DATABASE_WITH_TRANSACTION = RoomTypeNames.ROOM_DB_KT.packageMember("withTransaction")
     val TABLE_INFO_READ = RoomTypeNames.TABLE_INFO.companionMember("read", isJvmStatic = true)
     val FTS_TABLE_INFO_READ =
         RoomTypeNames.FTS_TABLE_INFO.companionMember("read", isJvmStatic = true)
@@ -327,15 +241,18 @@ object SQLiteDriverMemberNames {
     val CONNECTION_EXEC_SQL = SQLiteDriverTypeNames.SQLITE.packageMember("execSQL")
 }
 
+val SUPPORTED_VALUES_TYPES =
+    listOf(
+        KotlinTypeNames.U_BYTE,
+        KotlinTypeNames.U_SHORT,
+        KotlinTypeNames.U_INT,
+        KotlinTypeNames.U_LONG,
+    )
+
 val DEFERRED_TYPES =
     listOf(
         LifecyclesTypeNames.LIVE_DATA,
         LifecyclesTypeNames.COMPUTABLE_LIVE_DATA,
-        RxJava2TypeNames.FLOWABLE,
-        RxJava2TypeNames.OBSERVABLE,
-        RxJava2TypeNames.MAYBE,
-        RxJava2TypeNames.SINGLE,
-        RxJava2TypeNames.COMPLETABLE,
         RxJava3TypeNames.FLOWABLE,
         RxJava3TypeNames.OBSERVABLE,
         RxJava3TypeNames.MAYBE,
@@ -378,6 +295,25 @@ fun CallableTypeSpecBuilder(parameterTypeName: XTypeName, callBody: XFunSpec.Bui
         )
     }
 
+fun Function0TypeSpec(returnTypeName: XTypeName, callBody: XFunSpec.Builder.() -> Unit) =
+    XTypeSpec.anonymousClassBuilder("")
+        .apply {
+            superclass(Function0::class.asClassName().parametrizedBy(returnTypeName))
+            addFunction(
+                XFunSpec.builder(
+                        name = "invoke",
+                        visibility = VisibilityModifier.PUBLIC,
+                        isOverride = true,
+                    )
+                    .apply {
+                        returns(returnTypeName)
+                        callBody()
+                    }
+                    .build()
+            )
+        }
+        .build()
+
 fun Function1TypeSpec(
     parameterTypeName: XTypeName,
     parameterName: String,
@@ -412,12 +348,18 @@ fun Function1TypeSpec(
 fun InvokeWithLambdaParameter(
     scope: CodeGenScope,
     functionName: XMemberName,
+    functionTypeArg: XTypeName? = null,
     argFormat: List<String>,
     args: List<Any>,
     continuationParamName: String? = null,
     lambdaSpec: LambdaSpec,
 ): XCodeBlock {
-    val functionCall = XCodeBlock.of("%M", functionName)
+    val functionCall =
+        if (functionTypeArg != null) {
+            XCodeBlock.of("%M<%T>", functionName, functionTypeArg)
+        } else {
+            XCodeBlock.of("%M", functionName)
+        }
     return InvokeWithLambdaParameter(
         scope,
         functionCall,
@@ -470,7 +412,7 @@ fun InvokeWithLambdaParameter(
                     "%L($argsFormatString, (%L) -> {\n",
                     functionCall,
                     *args.toTypedArray(),
-                    lambdaSpec.parameterName,
+                    lambdaSpec.parameterName ?: "",
                 )
                 indent()
                 val bodyScope = scope.fork()
@@ -494,18 +436,35 @@ fun InvokeWithLambdaParameter(
                         .joinToString(separator = ", ")
                 val adjustedArgs = buildList {
                     addAll(args)
-                    add(
-                        Function1TypeSpec(
-                            parameterTypeName = lambdaSpec.parameterTypeName,
-                            parameterName = lambdaSpec.parameterName,
-                            returnTypeName = lambdaSpec.returnTypeName,
-                            callBody = {
-                                val bodyScope = scope.fork()
-                                with(lambdaSpec) { bodyScope.builder.body(bodyScope) }
-                                addCode(bodyScope.generate())
-                            },
-                        )
-                    )
+                    val functionTypeSpec =
+                        if (
+                            lambdaSpec.parameterTypeName == null || lambdaSpec.parameterName == null
+                        ) {
+                            check(
+                                lambdaSpec.parameterTypeName == null &&
+                                    lambdaSpec.parameterName == null
+                            )
+                            Function0TypeSpec(
+                                returnTypeName = lambdaSpec.returnTypeName,
+                                callBody = {
+                                    val bodyScope = scope.fork()
+                                    with(lambdaSpec) { bodyScope.builder.body(bodyScope) }
+                                    addCode(bodyScope.generate())
+                                },
+                            )
+                        } else {
+                            Function1TypeSpec(
+                                parameterTypeName = lambdaSpec.parameterTypeName,
+                                parameterName = lambdaSpec.parameterName,
+                                returnTypeName = lambdaSpec.returnTypeName,
+                                callBody = {
+                                    val bodyScope = scope.fork()
+                                    with(lambdaSpec) { bodyScope.builder.body(bodyScope) }
+                                    addCode(bodyScope.generate())
+                                },
+                            )
+                        }
+                    add(functionTypeSpec)
                     if (continuationParamName != null) {
                         add(continuationParamName)
                     }
@@ -515,7 +474,10 @@ fun InvokeWithLambdaParameter(
         }
         CodeLanguage.KOTLIN -> {
             val argsFormatString = argFormat.joinToString(separator = ", ")
-            if (lambdaSpec.parameterTypeName.rawTypeName != KotlinTypeNames.CONTINUATION) {
+            if (lambdaSpec.parameterTypeName == null || lambdaSpec.parameterName == null) {
+                check(lambdaSpec.parameterTypeName == null && lambdaSpec.parameterName == null)
+                add("%L($argsFormatString) {\n", functionCall, *args.toTypedArray())
+            } else if (lambdaSpec.parameterTypeName.rawTypeName != KotlinTypeNames.CONTINUATION) {
                 add(
                     "%L($argsFormatString) { %L ->\n",
                     functionCall,
@@ -535,10 +497,14 @@ fun InvokeWithLambdaParameter(
     }
 }
 
-/** Describes the lambda to be generated with [InvokeWithLambdaParameter]. */
+/**
+ * Describes the lambda to be generated with [InvokeWithLambdaParameter].
+ *
+ * If the lambda has no parameters, then both [parameterTypeName] and [parameterName] can be null.
+ */
 abstract class LambdaSpec(
-    val parameterTypeName: XTypeName,
-    val parameterName: String,
+    val parameterTypeName: XTypeName?,
+    val parameterName: String?,
     val returnTypeName: XTypeName,
     val javaLambdaSyntaxAvailable: Boolean,
 ) {
@@ -676,6 +642,17 @@ fun DoubleArrayLiteral(
             }
             .build(),
     )
+}
+
+fun ListOfString(vararg values: String) = buildCodeBlock { language ->
+    val space =
+        when (language) {
+            CodeLanguage.JAVA -> "%W"
+            CodeLanguage.KOTLIN -> " "
+        }
+
+    val placeholders = Array(values.size) { "%S" }.joinToString(separator = ",$space")
+    add("%M($placeholders)", KotlinCollectionMemberNames.LIST_OF, *values)
 }
 
 private fun getArrayOfFunction(type: XTypeName) =

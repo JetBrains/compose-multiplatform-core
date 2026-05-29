@@ -17,7 +17,7 @@
 package androidx.room3.integration.kotlintestapp.test
 
 import androidx.kruth.assertThrows
-import androidx.sqlite.db.SimpleSQLiteQuery
+import androidx.room3.RoomRawQuery
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
 import kotlinx.coroutines.test.runTest
@@ -26,7 +26,7 @@ import org.junit.runner.RunWith
 
 @SmallTest
 @RunWith(AndroidJUnit4::class)
-class RawQueryTest : TestDatabaseTest() {
+class RawQueryTest : TestDatabaseTest(UseDriver.ANDROID) {
 
     @Test
     fun rawQueryMissingColumn() = runTest {
@@ -34,7 +34,7 @@ class RawQueryTest : TestDatabaseTest() {
         booksDao.addBooks(TestUtil.BOOK_1)
 
         assertThrows<IllegalStateException> {
-                booksDao.getBookWithRawQuerySuspend(SimpleSQLiteQuery("SELECT bookId FROM book"))
+                booksDao.getBookWithRawQuerySuspend(RoomRawQuery("SELECT bookId FROM book"))
             }
             .hasMessageThat()
             .isEqualTo("Missing column 'title' for a NON-NULL value, column not found in result.")

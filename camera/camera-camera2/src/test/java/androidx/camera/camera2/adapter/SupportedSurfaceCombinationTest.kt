@@ -113,6 +113,7 @@ import androidx.camera.core.impl.UseCaseConfig
 import androidx.camera.core.impl.UseCaseConfigFactory
 import androidx.camera.core.impl.UseCaseConfigFactory.CaptureType
 import androidx.camera.core.impl.stabilization.StabilizationMode
+import androidx.camera.core.impl.stabilization.VideoStabilization
 import androidx.camera.core.impl.utils.CompareSizesByArea
 import androidx.camera.core.internal.StreamSpecsCalculator
 import androidx.camera.core.internal.utils.SizeUtil.RESOLUTION_1080P
@@ -165,6 +166,7 @@ import org.robolectric.util.ReflectionHelpers
 @Suppress("DEPRECATION")
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
+@Config(sdk = [Config.ALL_SDKS])
 class SupportedSurfaceCombinationTest {
     private val streamUseCaseOption: androidx.camera.core.impl.Config.Option<Long> =
         androidx.camera.core.impl.Config.Option.create(
@@ -1867,7 +1869,7 @@ class SupportedSurfaceCombinationTest {
         supportedHighSpeedSizeAndFpsMap: Map<Size, List<Range<Int>>>? = null,
         dynamicRangeProfiles: DynamicRangeProfiles? = null,
         default10BitProfile: Long? = null,
-        isPreviewStabilizationOn: Boolean = false,
+        videoStabilization: VideoStabilization = VideoStabilization.UNSPECIFIED,
         hasVideoCapture: Boolean = false,
         findMaxSupportedFrameRate: Boolean = false,
         expectedSessionType: Int = SESSION_TYPE_REGULAR,
@@ -1876,6 +1878,7 @@ class SupportedSurfaceCombinationTest {
         featureCombinationQuery: FeatureCombinationQuery = NO_OP_FEATURE_COMBINATION_QUERY,
         deviceFPSRanges: Array<Range<Int>> = defaultFpsRanges,
         expectedStreamUseCaseMap: Map<UseCase, StreamUseCase?>? = null,
+        sessionConfigQueryVersion: Int = Build.VERSION_CODES.VANILLA_ICE_CREAM,
     ): SurfaceStreamSpecQueryResult {
         setupCamera(
             hardwareLevel = hardwareLevel,
@@ -1886,6 +1889,7 @@ class SupportedSurfaceCombinationTest {
             supportedHighSpeedSizeAndFpsMap = supportedHighSpeedSizeAndFpsMap,
             maxFpsBySizeMap = maxFpsBySizeMap,
             deviceFPSRanges = deviceFPSRanges,
+            sessionConfigQueryVersion = sessionConfigQueryVersion,
         )
         val supportedSurfaceCombination =
             SupportedSurfaceCombination(
@@ -1905,7 +1909,7 @@ class SupportedSurfaceCombinationTest {
                 cameraMode,
                 attachedSurfaceInfoList,
                 useCaseConfigToOutputSizesMap,
-                isPreviewStabilizationOn,
+                videoStabilization,
                 hasVideoCapture,
                 isFeatureComboInvocation,
                 findMaxSupportedFrameRate,
@@ -4429,7 +4433,7 @@ class SupportedSurfaceCombinationTest {
                 },
             )
         val surfaceConfigList =
-            GuaranteedConfigurationsUtil.QUERYABLE_FCQ_COMBINATIONS.first().surfaceConfigList
+            GuaranteedConfigurationsUtil.QUERYABLE_VIC_FCQ_COMBINATIONS.first().surfaceConfigList
 
         // Act: Check for a FCQ SurfaceConfig combination
         supportedSurfaceCombination.checkSupported(
@@ -4454,7 +4458,7 @@ class SupportedSurfaceCombinationTest {
                 fakeFeatureCombinationQuery.apply { isSupported = false },
             )
         val surfaceConfigList =
-            GuaranteedConfigurationsUtil.QUERYABLE_FCQ_COMBINATIONS.first().surfaceConfigList
+            GuaranteedConfigurationsUtil.QUERYABLE_VIC_FCQ_COMBINATIONS.first().surfaceConfigList
 
         // Act & assert
         assertThat(
@@ -4469,6 +4473,7 @@ class SupportedSurfaceCombinationTest {
             .isFalse()
     }
 
+    @Config(minSdk = 35) // TODO: b/406372518 - Remove when supporting FCQ GMS queries
     @Test
     fun checkSupported_featureComboQueryReportsSupported_fcqSurfaceCombinationSupported() {
         // Arrange: Setup resources with a FeatureCombinationQuery impl. that always returns true
@@ -4481,7 +4486,7 @@ class SupportedSurfaceCombinationTest {
                 fakeFeatureCombinationQuery.apply { isSupported = true },
             )
         val surfaceConfigList =
-            GuaranteedConfigurationsUtil.QUERYABLE_FCQ_COMBINATIONS.first().surfaceConfigList
+            GuaranteedConfigurationsUtil.QUERYABLE_VIC_FCQ_COMBINATIONS.first().surfaceConfigList
 
         // Act & assert
         assertThat(
@@ -4536,55 +4541,291 @@ class SupportedSurfaceCombinationTest {
     }
 
     @Test
-    fun getSuggestedStreamSpecs_allFeaturesSupported_fcqInvokedWithCorrectParameters() {
-        // Arrange: Preview + ImageCapture use cases with all FCQ features - HLG10, 60 FPS, Preview
-        // Stabilization, and Ultra HDR
-        val previewUseCase =
-            createUseCase(
-                CaptureType.PREVIEW,
-                dynamicRange =
-                    if (Build.VERSION.SDK_INT >= 33) {
-                        HLG_10_BIT
-                    } else {
-                        DynamicRange.UNSPECIFIED
-                    },
-                targetFrameRate = Range(60, 60),
+    fun checkSupported_returnsFalseForVicFcqStreamCombo_whenSessionConfigQueryVersionIsUdc() {
+        // Arrange: Setup resources with a FeatureCombinationQuery impl. always returning true
+        setupCamera(sessionConfigQueryVersion = Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+        val supportedSurfaceCombination =
+            SupportedSurfaceCombination(
+                context,
+                fakeCameraMetadata,
+                mockEncoderProfilesAdapter,
+                fakeFeatureCombinationQuery.apply { isSupported = true },
             )
+        val surfaceConfigList =
+            GuaranteedConfigurationsUtil.QUERYABLE_VIC_FCQ_COMBINATIONS.first().surfaceConfigList
+
+        // Act & assert
+        assertThat(
+                supportedSurfaceCombination.checkSupported(
+                    createFeatureSettings(requiresFeatureComboQuery = true),
+                    surfaceConfigList,
+                    surfaceConfigList.associateWith { DynamicRange.UNSPECIFIED },
+                    surfaceConfigList.toUseCaseConfigs(),
+                    (0 until surfaceConfigList.size).toList(),
+                )
+            )
+            .isFalse()
+    }
+
+    @Test
+    fun checkSupported_returnsFalseForBaklavaFcqStreamCombo_whenSessionConfigQueryVersionIsVic() {
+        // Arrange: Setup resources with a FeatureCombinationQuery impl. always returning true
+        setupCamera(sessionConfigQueryVersion = Build.VERSION_CODES.VANILLA_ICE_CREAM)
+        val supportedSurfaceCombination =
+            SupportedSurfaceCombination(
+                context,
+                fakeCameraMetadata,
+                mockEncoderProfilesAdapter,
+                fakeFeatureCombinationQuery.apply { isSupported = true },
+            )
+        val surfaceConfigList =
+            GuaranteedConfigurationsUtil.QUERYABLE_BAKLAVA_FCQ_COMBINATIONS.first()
+                .surfaceConfigList
+
+        // Act & assert: Baklava configs should not be supported
+        assertThat(
+                supportedSurfaceCombination.checkSupported(
+                    createFeatureSettings(requiresFeatureComboQuery = true),
+                    surfaceConfigList,
+                    surfaceConfigList.associateWith { DynamicRange.UNSPECIFIED },
+                    surfaceConfigList.toUseCaseConfigs(),
+                    (0 until surfaceConfigList.size).toList(),
+                )
+            )
+            .isFalse()
+    }
+
+    @Config(minSdk = 35) // TODO: b/406372518 - Remove when supporting FCQ GMS queries
+    @Test
+    fun checkSupported_returnsTrueForBaklavaFcqStreamCombo_whenQueryVersionIsBaklava() {
+        // Arrange: Setup resources with a FeatureCombinationQuery impl. always returning true
+        setupCamera(sessionConfigQueryVersion = Build.VERSION_CODES.BAKLAVA)
+        val supportedSurfaceCombination =
+            SupportedSurfaceCombination(
+                context,
+                fakeCameraMetadata,
+                mockEncoderProfilesAdapter,
+                fakeFeatureCombinationQuery.apply { isSupported = true },
+            )
+        val surfaceConfigList =
+            GuaranteedConfigurationsUtil.QUERYABLE_BAKLAVA_FCQ_COMBINATIONS.first()
+                .surfaceConfigList
+
+        // Act & assert
+        assertThat(
+                supportedSurfaceCombination.checkSupported(
+                    createFeatureSettings(requiresFeatureComboQuery = true),
+                    surfaceConfigList,
+                    surfaceConfigList.associateWith { DynamicRange.UNSPECIFIED },
+                    surfaceConfigList.toUseCaseConfigs(),
+                    (0 until surfaceConfigList.size).toList(),
+                )
+            )
+            .isTrue()
+    }
+
+    @Test
+    fun checkSupported_returnsFalseForBaklavaFcqStreamCombo_whenPreviewStabilizationIsOn() {
+        // Arrange: Setup resources with a FeatureCombinationQuery impl. always returning true
+        setupCamera(sessionConfigQueryVersion = Build.VERSION_CODES.BAKLAVA)
+        val supportedSurfaceCombination =
+            SupportedSurfaceCombination(
+                context,
+                fakeCameraMetadata,
+                mockEncoderProfilesAdapter,
+                fakeFeatureCombinationQuery.apply { isSupported = true },
+            )
+        val surfaceConfigList =
+            GuaranteedConfigurationsUtil.QUERYABLE_BAKLAVA_FCQ_COMBINATIONS.first()
+                .surfaceConfigList
+
+        // Act & assert
+        assertThat(
+                supportedSurfaceCombination.checkSupported(
+                    createFeatureSettings(
+                        requiresFeatureComboQuery = true,
+                        videoStabilization = VideoStabilization.PREVIEW,
+                    ),
+                    surfaceConfigList,
+                    surfaceConfigList.associateWith { DynamicRange.UNSPECIFIED },
+                    surfaceConfigList.toUseCaseConfigs(),
+                    (0 until surfaceConfigList.size).toList(),
+                )
+            )
+            .isFalse()
+    }
+
+    @Config(minSdk = 35) // TODO: b/406372518 - Remove when supporting FCQ GMS queries
+    @Test
+    fun getSuggestedStreamSpecs_fcqInvokedWithCorrectParameters_forPreviewStabilization() {
+        val previewUseCase = createUseCase(CaptureType.PREVIEW)
+        val imageCaptureUseCase = createUseCase(CaptureType.IMAGE_CAPTURE)
+
+        verifySuggestedStreamSpecsFcqParameters(
+            useCases = listOf(previewUseCase, imageCaptureUseCase),
+            videoStabilization = VideoStabilization.PREVIEW,
+        ) { sessionConfig ->
+            assertThat(sessionConfig.repeatingCaptureConfig.previewStabilizationMode)
+                .isEqualTo(StabilizationMode.ON)
+        }
+    }
+
+    @Config(minSdk = 35) // TODO: b/406372518 - Remove when supporting FCQ GMS queries
+    @Test
+    fun getSuggestedStreamSpecs_fcqInvokedWithCorrectParameters_forVideoStabilization() {
+        val previewUseCase = createUseCase(CaptureType.PREVIEW)
+        val videoCaptureUseCase = createUseCase(CaptureType.VIDEO_CAPTURE)
+
+        verifySuggestedStreamSpecsFcqParameters(
+            useCases = listOf(previewUseCase, videoCaptureUseCase),
+            videoStabilization = VideoStabilization.ON,
+            sessionConfigQueryVersion = Build.VERSION_CODES.BAKLAVA,
+        ) { sessionConfig ->
+            assertThat(sessionConfig.repeatingCaptureConfig.videoStabilizationMode)
+                .isEqualTo(StabilizationMode.ON)
+        }
+    }
+
+    @Config(minSdk = 35) // TODO: b/406372518 - Remove when supporting FCQ GMS queries
+    @Test
+    fun getSuggestedStreamSpecs_fcqInvokedWithCorrectParameters_forUltraHdr() {
+        val previewUseCase = createUseCase(CaptureType.PREVIEW)
         val imageCaptureUseCase = createUseCase(CaptureType.IMAGE_CAPTURE, imageFormat = JPEG_R)
 
-        val useCasesOutputSizesMap =
-            mapOf(
-                previewUseCase to listOf(RESOLUTION_1080P),
-                imageCaptureUseCase to listOf(RESOLUTION_1440P_16_9),
-            )
-        val useCaseExpectedResultMap =
-            mapOf(previewUseCase to RESOLUTION_1080P, imageCaptureUseCase to RESOLUTION_1440P_16_9)
+        verifySuggestedStreamSpecsFcqParameters(
+            useCases = listOf(previewUseCase, imageCaptureUseCase),
+            imageCaptureFormat = JPEG_R,
+        )
+    }
 
-        // Act & assert that all features are supported
-        getSuggestedSpecsAndVerify(
-            useCaseExpectedResultMap,
-            useCasesOutputSizesMap = useCasesOutputSizesMap,
-            dynamicRangeProfiles = if (Build.VERSION.SDK_INT >= 33) HLG10_CONSTRAINED else null,
+    @Config(minSdk = 35) // TODO: b/406372518 - Remove when supporting FCQ GMS queries
+    @Test
+    fun getSuggestedStreamSpecs_fcqInvokedWithCorrectParameters_forHlg10() {
+        val previewUseCase = createUseCase(CaptureType.PREVIEW, dynamicRange = HLG_10_BIT)
+        val imageCaptureUseCase = createUseCase(CaptureType.IMAGE_CAPTURE)
+
+        verifySuggestedStreamSpecsFcqParameters(
+            useCases = listOf(previewUseCase, imageCaptureUseCase),
+            dynamicRangeProfiles = HLG10_CONSTRAINED,
             capabilities = intArrayOf(REQUEST_AVAILABLE_CAPABILITIES_DYNAMIC_RANGE_TEN_BIT),
-            isPreviewStabilizationOn = Build.VERSION.SDK_INT >= 33,
-            isFeatureComboInvocation = true,
-            featureCombinationQuery = fakeFeatureCombinationQuery.apply { isSupported = true },
+        )
+    }
+
+    @Config(minSdk = 35) // TODO: b/406372518 - Remove when supporting FCQ GMS queries
+    @Test
+    fun getSuggestedStreamSpecs_fcqInvokedWithCorrectParameters_for60Fps() {
+        val previewUseCase = createUseCase(CaptureType.PREVIEW, targetFrameRate = Range(60, 60))
+        val imageCaptureUseCase = createUseCase(CaptureType.IMAGE_CAPTURE)
+
+        verifySuggestedStreamSpecsFcqParameters(
+            useCases = listOf(previewUseCase, imageCaptureUseCase),
             maxFpsBySizeMap =
                 mapOf(RESOLUTION_1080P to 60, RESOLUTION_1440P_16_9 to 60, RESOLUTION_UHD to 60),
+        ) { sessionConfig ->
+            assertThat(sessionConfig.expectedFrameRateRange).isEqualTo(Range(60, 60))
+        }
+    }
+
+    /**
+     * Helper function to run a Feature Combination Query (FCQ) test scenario and verify the
+     * parameters passed to the [FeatureCombinationQuery] implementation.
+     *
+     * This function sets up the necessary environment for an FCQ test, including creating default
+     * output sizes for the provided use cases, invoking the
+     * [SupportedSurfaceCombination.getSuggestedStreamSpecifications] method, and then asserting
+     * that the [FeatureCombinationQuery] received the expected [SessionConfig] parameters.
+     *
+     * Specifically, it verifies the surface parameters (format, size, container class, and dynamic
+     * range) of each output configuration. Additional custom assertions can be performed via the
+     * [additionalVerification] lambda.
+     *
+     * @param useCases The list of [UseCase] objects to be used in the test.
+     * @param videoStabilization The video stabilization mode.
+     * @param dynamicRangeProfiles The [DynamicRangeProfiles] to be used for camera setup.
+     * @param capabilities The camera capabilities to be used for camera setup.
+     * @param maxFpsBySizeMap A map of [Size] to max FPS for camera setup.
+     * @param sessionConfigQueryVersion The session configuration query version for camera setup.
+     * @param imageCaptureFormat The expected image format for [ImageCapture] use cases.
+     * @param additionalVerification An optional lambda function to perform additional assertions on
+     *   the [SessionConfig] passed to the [FeatureCombinationQuery].
+     */
+    private fun verifySuggestedStreamSpecsFcqParameters(
+        useCases: List<UseCase>,
+        videoStabilization: VideoStabilization = VideoStabilization.UNSPECIFIED,
+        dynamicRangeProfiles: DynamicRangeProfiles? = null,
+        capabilities: IntArray? = null,
+        maxFpsBySizeMap: Map<Size, Int> = emptyMap(),
+        sessionConfigQueryVersion: Int = Build.VERSION_CODES.VANILLA_ICE_CREAM,
+        imageCaptureFormat: Int = JPEG,
+        additionalVerification: (SessionConfig) -> Unit = {},
+    ) {
+        val useCaseToSizesMap = mutableMapOf<UseCase, List<Size>>()
+        val useCaseToExpectedSizeMap = mutableMapOf<UseCase, Size>()
+
+        useCases.forEach {
+            val defaultSize =
+                when (it.currentConfig.captureType) {
+                    CaptureType.PREVIEW -> RESOLUTION_1080P
+                    CaptureType.IMAGE_CAPTURE -> RESOLUTION_1440P_16_9
+                    CaptureType.VIDEO_CAPTURE -> RESOLUTION_1080P
+                    else -> throw IllegalArgumentException("Unsupported CaptureType")
+                }
+            useCaseToSizesMap[it] = listOf(defaultSize)
+            useCaseToExpectedSizeMap[it] = defaultSize
+        }
+
+        // Act
+        getSuggestedSpecsAndVerify(
+            useCaseToExpectedSizeMap,
+            useCasesOutputSizesMap = useCaseToSizesMap,
+            videoStabilization = videoStabilization,
+            isFeatureComboInvocation = true,
+            featureCombinationQuery = fakeFeatureCombinationQuery.apply { isSupported = true },
+            dynamicRangeProfiles = dynamicRangeProfiles,
+            capabilities = capabilities,
+            maxFpsBySizeMap = maxFpsBySizeMap,
+            sessionConfigQueryVersion = sessionConfigQueryVersion,
         )
 
-        // Assert: Correct params were passed every time FeatureCombinationQuery API was invoked
-
-        // Same dynamic range should be resolved to all use cases, HLG_10 is not supported before
-        // API 33
-        val expectedDynamicRange = if (Build.VERSION.SDK_INT >= 33) HLG_10_BIT else SDR
-
-        val expectedPreviewStabilization =
-            if (Build.VERSION.SDK_INT >= 33) StabilizationMode.ON else StabilizationMode.UNSPECIFIED
-
+        // Assert that correct params were passed to FeatureCombinationQuery
         fakeFeatureCombinationQuery.queriedConfigs.forEach { sessionConfig ->
-            // Verify surface parameters of each output config, each config dynamic range should be
-            // resolved to the same HLG10
+            val expectedOutputConfigs =
+                useCases.map {
+                    val dynamicRange =
+                        if (
+                            Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                                dynamicRangeProfiles == HLG10_CONSTRAINED
+                        ) {
+                            HLG_10_BIT
+                        } else {
+                            SDR
+                        }
+
+                    when (it.currentConfig.captureType) {
+                        CaptureType.PREVIEW ->
+                            listOf(
+                                PRIVATE,
+                                RESOLUTION_1080P,
+                                UseCaseType.PREVIEW.surfaceClass,
+                                dynamicRange,
+                            )
+                        CaptureType.IMAGE_CAPTURE ->
+                            listOf(
+                                imageCaptureFormat,
+                                RESOLUTION_1440P_16_9,
+                                UseCaseType.IMAGE_CAPTURE.surfaceClass,
+                                dynamicRange,
+                            )
+                        CaptureType.VIDEO_CAPTURE ->
+                            listOf(
+                                PRIVATE,
+                                RESOLUTION_1080P,
+                                UseCaseType.VIDEO_CAPTURE.surfaceClass,
+                                dynamicRange,
+                            )
+                        else -> throw IllegalArgumentException("Unsupported CaptureType")
+                    }
+                }
             assertThat(
                     sessionConfig.outputConfigs.map {
                         listOf(
@@ -4595,27 +4836,8 @@ class SupportedSurfaceCombinationTest {
                         )
                     }
                 )
-                .containsExactly(
-                    listOf( // Preview
-                        PRIVATE,
-                        RESOLUTION_1080P,
-                        UseCaseType.PREVIEW.surfaceClass,
-                        expectedDynamicRange,
-                    ),
-                    listOf( // ImageCapture
-                        JPEG_R, // Verify Ultra HDR
-                        RESOLUTION_1440P_16_9,
-                        UseCaseType.IMAGE_CAPTURE.surfaceClass,
-                        expectedDynamicRange,
-                    ),
-                )
-
-            // Verify 60 FPS
-            assertThat(sessionConfig.expectedFrameRateRange).isEqualTo(Range(60, 60))
-
-            // Verify Preview Stabilization
-            assertThat(sessionConfig.repeatingCaptureConfig.previewStabilizationMode)
-                .isEqualTo(expectedPreviewStabilization)
+                .containsExactlyElementsIn(expectedOutputConfigs)
+            additionalVerification(sessionConfig)
         }
     }
 
@@ -4682,6 +4904,68 @@ class SupportedSurfaceCombinationTest {
         )
     }
 
+    @Test
+    fun checkSupported_returnsFalseForVicFcqStreamCombo_whenVideoStabilizationIsOn() {
+        // Arrange: Setup resources with a FeatureCombinationQuery impl. always returning true
+        setupCamera(sessionConfigQueryVersion = Build.VERSION_CODES.VANILLA_ICE_CREAM)
+        val supportedSurfaceCombination =
+            SupportedSurfaceCombination(
+                context,
+                fakeCameraMetadata,
+                mockEncoderProfilesAdapter,
+                fakeFeatureCombinationQuery.apply { isSupported = true },
+            )
+        val surfaceConfigList =
+            GuaranteedConfigurationsUtil.QUERYABLE_VIC_FCQ_COMBINATIONS.first().surfaceConfigList
+
+        // Act & assert
+        assertThat(
+                supportedSurfaceCombination.checkSupported(
+                    createFeatureSettings(
+                        requiresFeatureComboQuery = true,
+                        videoStabilization = VideoStabilization.ON,
+                    ),
+                    surfaceConfigList,
+                    surfaceConfigList.associateWith { DynamicRange.UNSPECIFIED },
+                    surfaceConfigList.toUseCaseConfigs(),
+                    (0 until surfaceConfigList.size).toList(),
+                )
+            )
+            .isFalse()
+    }
+
+    @Config(minSdk = 35) // TODO: b/406372518 - Remove when supporting FCQ GMS queries
+    @Test
+    fun checkSupported_returnsTrueForBaklavaFcqStreamCombo_whenVideoStabilizationIsOn() {
+        // Arrange: Setup resources with a FeatureCombinationQuery impl. always returning true
+        setupCamera(sessionConfigQueryVersion = Build.VERSION_CODES.BAKLAVA)
+        val supportedSurfaceCombination =
+            SupportedSurfaceCombination(
+                context,
+                fakeCameraMetadata,
+                mockEncoderProfilesAdapter,
+                fakeFeatureCombinationQuery.apply { isSupported = true },
+            )
+        val surfaceConfigList =
+            GuaranteedConfigurationsUtil.QUERYABLE_BAKLAVA_FCQ_COMBINATIONS.first()
+                .surfaceConfigList
+
+        // Act & assert
+        assertThat(
+                supportedSurfaceCombination.checkSupported(
+                    createFeatureSettings(
+                        requiresFeatureComboQuery = true,
+                        videoStabilization = VideoStabilization.ON,
+                    ),
+                    surfaceConfigList,
+                    surfaceConfigList.associateWith { DynamicRange.UNSPECIFIED },
+                    surfaceConfigList.toUseCaseConfigs(),
+                    (0 until surfaceConfigList.size).toList(),
+                )
+            )
+            .isTrue()
+    }
+
     private fun createSupportedSurfaceCombinationWithSetup(
         hardwareLevel: Int = CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LEGACY
     ): SupportedSurfaceCombination {
@@ -4699,6 +4983,7 @@ class SupportedSurfaceCombinationTest {
         requiresFeatureComboQuery: Boolean = false,
         targetFpsRange: Range<Int> = FRAME_RATE_RANGE_UNSPECIFIED,
         isStrictFpsRequired: Boolean = false,
+        videoStabilization: VideoStabilization = VideoStabilization.UNSPECIFIED,
     ) =
         SupportedSurfaceCombination.FeatureSettings(
             CameraMode.DEFAULT,
@@ -4707,6 +4992,7 @@ class SupportedSurfaceCombinationTest {
             requiresFeatureComboQuery = requiresFeatureComboQuery,
             targetFpsRange = targetFpsRange,
             isStrictFpsRequired = isStrictFpsRequired,
+            videoStabilization = videoStabilization,
         )
 
     private fun setupCamera(
@@ -4725,6 +5011,8 @@ class SupportedSurfaceCombinationTest {
         cameraId: CameraId = CameraId.fromCamera1Id(0),
         maxFpsBySizeMap: Map<Size, Int> = emptyMap(),
         deviceFPSRanges: Array<Range<Int>> = defaultFpsRanges,
+        // VIC used as default as it's the first version supporting FCQ combinations
+        sessionConfigQueryVersion: Int = Build.VERSION_CODES.VANILLA_ICE_CREAM,
     ) {
         cameraFactory = FakeCameraFactory()
         val characteristics = ShadowCameraCharacteristics.newCameraCharacteristics()
@@ -4818,6 +5106,11 @@ class SupportedSurfaceCombinationTest {
                 )
             }
         characteristicsMap[CameraCharacteristics.CONTROL_AVAILABLE_VIDEO_STABILIZATION_MODES] = vs
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+            characteristicsMap[CameraCharacteristics.INFO_SESSION_CONFIGURATION_QUERY_VERSION] =
+                sessionConfigQueryVersion
+        }
 
         // set up FakeCafakeCameraMetadatameraMetadata
         fakeCameraMetadata =
@@ -4973,7 +5266,11 @@ class SupportedSurfaceCombinationTest {
         cameraFactory!!.cameraManager = mockCameraAppComponent
         val cameraXConfig =
             CameraXConfig.Builder.fromConfig(Camera2Config.defaultConfig())
-                .setDeviceSurfaceManagerProvider { context: Context?, _: Any?, _: Set<String?>? ->
+                .setDeviceSurfaceManagerProvider {
+                    context: Context?,
+                    _: Any?,
+                    _: Set<String?>?,
+                    _: String? ->
                     CameraSurfaceAdapter(context!!, mockCameraAppComponent, setOf(cameraId))
                 }
                 .setCameraFactoryProvider {

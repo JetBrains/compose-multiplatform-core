@@ -20,8 +20,8 @@ import android.hardware.camera2.CameraDevice
 import android.hardware.camera2.CaptureRequest
 import androidx.annotation.OptIn
 import androidx.camera.camera2.compat.workaround.TemplateParamsOverride
+import androidx.camera.camera2.config.UseCaseCameraContext
 import androidx.camera.camera2.config.UseCaseCameraScope
-import androidx.camera.camera2.config.UseCaseGraphConfig
 import androidx.camera.camera2.impl.CAMERAX_TAG_BUNDLE
 import androidx.camera.camera2.impl.Camera2ImplConfig
 import androidx.camera.camera2.impl.CameraCallbackMap
@@ -37,6 +37,7 @@ import androidx.camera.camera2.pipe.RequestFailure
 import androidx.camera.camera2.pipe.RequestMetadata
 import androidx.camera.camera2.pipe.RequestTemplate
 import androidx.camera.camera2.pipe.media.AndroidImage
+import androidx.camera.common.unwrapAs
 import androidx.camera.core.ExperimentalGetImage
 import androidx.camera.core.ImageProxy
 import androidx.camera.core.impl.CameraCaptureResults
@@ -54,7 +55,7 @@ public class CaptureConfigAdapter
 @Inject
 constructor(
     cameraProperties: CameraProperties,
-    private val useCaseGraphConfig: UseCaseGraphConfig,
+    private val useCaseCameraContext: UseCaseCameraContext,
     private val zslControl: ZslControl,
     private val threads: UseCaseThreads,
     private val templateParamsOverride: TemplateParamsOverride,
@@ -65,7 +66,7 @@ constructor(
      * Maps [CaptureConfig] to [Request].
      *
      * @throws IllegalStateException When CaptureConfig does not have any surface or a CaptureConfig
-     *   surface is not recognized in [UseCaseGraphConfig.surfaceToStreamMap]
+     *   surface is not recognized in [UseCaseCameraContext.surfaceToStreamMap]
      */
     @OptIn(ExperimentalGetImage::class)
     public fun mapToRequest(
@@ -81,7 +82,7 @@ constructor(
 
         val streamIdList =
             surfaces.map {
-                checkNotNull(useCaseGraphConfig.surfaceToStreamMap[it]) {
+                checkNotNull(useCaseCameraContext.surfaceToStreamMap[it]) {
                     "Attempted to issue a capture with an unrecognized surface: $it"
                 }
             }
@@ -131,7 +132,7 @@ constructor(
                         "Unexpected capture result type: ${cameraCaptureResult.javaClass}"
                     }
                     val imageWrapper = AndroidImage(checkNotNull(imageProxy.image))
-                    val frameInfo = checkNotNull(cameraCaptureResult.unwrapAs(FrameInfo::class))
+                    val frameInfo = checkNotNull(cameraCaptureResult.unwrapAs<FrameInfo>())
                     inputRequest = InputRequest(imageWrapper, frameInfo)
 
                     // It's essential to call ImageProxy#close().

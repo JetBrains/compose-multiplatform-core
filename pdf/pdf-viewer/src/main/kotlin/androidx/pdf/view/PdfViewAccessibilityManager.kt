@@ -35,6 +35,7 @@ import androidx.pdf.util.ExternalLinks
 import androidx.pdf.util.FormWidgetContentDescriptionFactory
 import androidx.pdf.util.buildPageIndicatorLabel
 import androidx.pdf.view.fastscroll.FastScroller
+import androidx.pdf.view.layout.PageLayoutManager
 import kotlin.math.roundToInt
 
 /**
@@ -45,7 +46,7 @@ import kotlin.math.roundToInt
  */
 internal class PdfViewAccessibilityManager(
     private val pdfView: PdfView,
-    private val pageMetadataLoader: PageMetadataLoader,
+    private val pageLayoutManager: PageLayoutManager,
     private val pageManager: PageManager,
     private val formWidgetInteractionHandler: FormWidgetInteractionHandler,
     private val getFastScroller: () -> FastScroller?,
@@ -63,7 +64,7 @@ internal class PdfViewAccessibilityManager(
     private val fastScrollPageIndicatorBackgroundDrawableId = FAST_SCROLLER_OFFSET + 2
 
     public override fun getVirtualViewAt(x: Float, y: Float): Int {
-        val visiblePages = pageMetadataLoader.visiblePages
+        val visiblePages = pageLayoutManager.visiblePages
 
         if (
             pdfView.lastFastScrollerVisibility &&
@@ -77,7 +78,7 @@ internal class PdfViewAccessibilityManager(
                 getFastScroller()
                     ?.isPointOnIndicator(
                         pdfView.context,
-                        pageMetadataLoader.fullyVisiblePages,
+                        pageLayoutManager.fullyVisiblePages,
                         x,
                         y,
                         totalPages,
@@ -125,14 +126,14 @@ internal class PdfViewAccessibilityManager(
 
         // Check if the coordinates fall within the visible page bounds
         return (visiblePages.lower..visiblePages.upper).firstOrNull { page ->
-            pageMetadataLoader
+            pageLayoutManager
                 .getPageLocation(page, pdfView.getVisibleAreaInContentCoords())
                 .contains(contentX, contentY)
         } ?: HOST_ID
     }
 
     public override fun getVisibleVirtualViews(virtualViewIds: MutableList<Int>) {
-        val visiblePages = pageMetadataLoader.visiblePages
+        val visiblePages = pageLayoutManager.visiblePages
         loadPageLinks()
         loadFormWidgetInfos()
 
@@ -197,7 +198,7 @@ internal class PdfViewAccessibilityManager(
         val currentLabel =
             buildPageIndicatorLabel(
                 pdfView.context,
-                pageMetadataLoader.fullyVisiblePages,
+                pageLayoutManager.fullyVisiblePages,
                 totalPages,
                 R.string.desc_page_single,
                 R.string.desc_page_single,
@@ -218,19 +219,20 @@ internal class PdfViewAccessibilityManager(
     private fun isFastScrollerStateValid(): Boolean =
         pdfView.lastFastScrollerVisibility && pdfView.positionIsStable
 
-    override fun onPerformActionForVirtualView(
+    public override fun onPerformActionForVirtualView(
         virtualViewId: Int,
         action: Int,
         arguments: Bundle?,
     ): Boolean {
         if (action != AccessibilityNodeInfo.ACTION_CLICK) return false
+        pdfView.commitFormFillingEditText()
 
         formWidgetInfos[virtualViewId]?.let { pair ->
             val pageNum = pair.first
             val formWidgetIndex = pair.second
             pageManager.pages[pageNum].formWidgetIndexToInfoMap?.get(formWidgetIndex)?.let {
                 formWidgetInfo ->
-                if (formWidgetInfo.readOnly) return true
+                if (formWidgetInfo.isReadOnly) return true
 
                 val pdfTouchPoint =
                     PdfPoint(
@@ -244,6 +246,28 @@ internal class PdfViewAccessibilityManager(
                 return true
             }
         }
+
+        // Handle GoTo Links
+        gotoLinks[virtualViewId]?.let { linkWrapper ->
+            val destination =
+                PdfPoint(
+                    pageNum = linkWrapper.content.destination.pageNumber,
+                    pagePoint =
+                        PointF(
+                            linkWrapper.content.destination.xCoordinate,
+                            linkWrapper.content.destination.yCoordinate,
+                        ),
+                )
+            pdfView.scrollToPosition(destination)
+            return true
+        }
+
+        // Handle URL Links
+        urlLinks[virtualViewId]?.let { linkWrapper ->
+            pdfView.openExternalLink(linkWrapper.content.uri)
+            return true
+        }
+
         // This view does not handle any actions.
         return false
     }
@@ -251,15 +275,14 @@ internal class PdfViewAccessibilityManager(
     private fun populateNodeForPage(virtualViewId: Int, node: AccessibilityNodeInfoCompat) {
         val pageText = pageManager.pages[virtualViewId]?.pageText
         val pageBounds =
-            pageMetadataLoader.getPageLocation(
+            pageLayoutManager.getPageLocation(
                 virtualViewId,
                 pdfView.getVisibleAreaInContentCoords(),
             )
 
         node.apply {
             contentDescription =
-                pageText?.let { getContentDescriptionForPage(pdfView.context, virtualViewId, it) }
-                    ?: getDefaultDesc(pdfView.context, virtualViewId)
+                getContentDescriptionForPage(pdfView.context, virtualViewId, pageText)
 
             setBoundsInScreenFromBoundsInParent(
                 node,
@@ -321,7 +344,7 @@ internal class PdfViewAccessibilityManager(
                 setBoundsInScreenFromBoundsInParent(node, bounds)
                 isFocusable = true
             }
-            if (!formWidgetInfo.readOnly) {
+            if (!formWidgetInfo.isReadOnly) {
                 node.addAction(AccessibilityNodeInfoCompat.ACTION_CLICK)
             }
         }
@@ -336,7 +359,7 @@ internal class PdfViewAccessibilityManager(
      */
     fun getPageAdjustedBounds(pageNumber: Int, bounds: RectF): RectF {
         val pageBounds =
-            pageMetadataLoader.getPageLocation(pageNumber, pdfView.getVisibleAreaInContentCoords())
+            pageLayoutManager.getPageLocation(pageNumber, pdfView.getVisibleAreaInContentCoords())
         return RectF(
             bounds.left + pageBounds.left,
             bounds.top + pageBounds.top,
@@ -369,7 +392,7 @@ internal class PdfViewAccessibilityManager(
      * them in the corresponding maps.
      */
     fun loadPageLinks() {
-        val visiblePages = pageMetadataLoader.visiblePages
+        val visiblePages = pageLayoutManager.visiblePages
 
         // Clear existing links and fetch new ones for the visible pages
         gotoLinks.clear()
@@ -405,7 +428,7 @@ internal class PdfViewAccessibilityManager(
     fun loadFormWidgetInfos() {
         formWidgetInfos.clear()
         var currentAvailableVirtualViewId = FORM_WIDGET_VIRTUAL_VIEW_ID_OFFSET
-        val visiblePages = pageMetadataLoader.visiblePages
+        val visiblePages = pageLayoutManager.visiblePages
         (visiblePages.lower..visiblePages.upper).forEach { pageIndex ->
             pageManager.pages[pageIndex]?.formWidgetInfos?.let { formWidgetInfos ->
                 formWidgetInfos.forEach { formWidgetInfo ->

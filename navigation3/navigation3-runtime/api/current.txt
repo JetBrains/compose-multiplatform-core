@@ -2,28 +2,50 @@
 package androidx.navigation3.runtime {
 
   public final class DecoratedNavEntriesKt {
-    method @BytecodeOnly @androidx.compose.runtime.Composable public static <T> java.util.List<androidx.navigation3.runtime.NavEntry<T!>!> rememberDecoratedNavEntries(java.util.List<? extends androidx.navigation3.runtime.NavEntry<T!>!>, java.util.List<androidx.navigation3.runtime.NavEntryDecorator<T!>!>?, androidx.compose.runtime.Composer?, int, int);
-    method @BytecodeOnly @androidx.compose.runtime.Composable public static <T> java.util.List<androidx.navigation3.runtime.NavEntry<T!>!> rememberDecoratedNavEntries(java.util.List<? extends T!>, java.util.List<androidx.navigation3.runtime.NavEntryDecorator<T!>!>?, kotlin.jvm.functions.Function1<? super T!,? extends androidx.navigation3.runtime.NavEntry<T!>!>, androidx.compose.runtime.Composer?, int, int);
+    method @BytecodeOnly @androidx.compose.runtime.Composable public static <T> java.util.List<androidx.navigation3.runtime.NavEntry<T>!> rememberDecoratedNavEntries(java.util.List<? extends T>, java.util.List<androidx.navigation3.runtime.NavEntryDecorator<T>!>?, kotlin.jvm.functions.Function1<? super T,androidx.navigation3.runtime.NavEntry<T>!>, androidx.compose.runtime.Composer?, int, int);
     method @KotlinOnly @androidx.compose.runtime.Composable public static <T> java.util.List<androidx.navigation3.runtime.NavEntry<T>> rememberDecoratedNavEntries(java.util.List<androidx.navigation3.runtime.NavEntry<T>> entries, optional java.util.List<androidx.navigation3.runtime.NavEntryDecorator<T>> entryDecorators);
+    method @BytecodeOnly @androidx.compose.runtime.Composable public static <T> java.util.List<androidx.navigation3.runtime.NavEntry<T>!> rememberDecoratedNavEntries(java.util.List<androidx.navigation3.runtime.NavEntry<T>!>, java.util.List<androidx.navigation3.runtime.NavEntryDecorator<T>!>?, androidx.compose.runtime.Composer?, int, int);
     method @KotlinOnly @androidx.compose.runtime.Composable public static <T> java.util.List<androidx.navigation3.runtime.NavEntry<T>> rememberDecoratedNavEntries(java.util.List<T> backStack, optional java.util.List<androidx.navigation3.runtime.NavEntryDecorator<T>> entryDecorators, kotlin.jvm.functions.Function1<T,androidx.navigation3.runtime.NavEntry<T>> entryProvider);
   }
 
-  @kotlin.DslMarker public @interface EntryDsl {
+  @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @kotlin.DslMarker public @interface EntryDsl {
   }
 
   public final class EntryProviderKt {
-    method public static inline <T> kotlin.jvm.functions.Function1<T,androidx.navigation3.runtime.NavEntry<T>> entryProvider(optional kotlin.jvm.functions.Function1<? super T,? extends androidx.navigation3.runtime.NavEntry<T>> fallback, kotlin.jvm.functions.Function1<? super androidx.navigation3.runtime.EntryProviderScope<T>,kotlin.Unit> builder);
+    method public static inline <T> kotlin.jvm.functions.Function1<T,androidx.navigation3.runtime.NavEntry<T>> entryProvider(optional kotlin.jvm.functions.Function1<? super T,androidx.navigation3.runtime.NavEntry<T>> fallback, kotlin.jvm.functions.Function1<? super androidx.navigation3.runtime.EntryProviderScope<T>,kotlin.Unit> builder);
+    method @BytecodeOnly public static kotlin.jvm.functions.Function1! entryProvider$default(kotlin.jvm.functions.Function1!, kotlin.jvm.functions.Function1!, int, Object!);
   }
 
   @androidx.navigation3.runtime.EntryDsl public final class EntryProviderScope<T> {
-    ctor public EntryProviderScope(kotlin.jvm.functions.Function1<? super T,? extends androidx.navigation3.runtime.NavEntry<T>> fallback);
+    ctor public EntryProviderScope(kotlin.jvm.functions.Function1<? super T,androidx.navigation3.runtime.NavEntry<T>> fallback);
     method public <K extends T> void addEntryProvider(K key, optional Object contentKey, optional java.util.Map<java.lang.String,?> metadata, kotlin.jvm.functions.Function1<? super K,kotlin.Unit> content);
-    method @BytecodeOnly public <K extends T> void addEntryProvider(K, Object, java.util.Map<java.lang.String!,? extends java.lang.Object!>, kotlin.jvm.functions.Function3<? super K!,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>);
+    method @BytecodeOnly public <K extends T> void addEntryProvider(K, Object, java.util.Map<java.lang.String!,? extends java.lang.Object!>, kotlin.jvm.functions.Function3<? super K,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>);
+    method public <K extends T> void addEntryProvider(K key, optional Object contentKey, kotlin.jvm.functions.Function1<? super K,? extends java.util.Map<java.lang.String,?>> metadata, kotlin.jvm.functions.Function1<? super K,kotlin.Unit> content);
+    method @BytecodeOnly public <K extends T> void addEntryProvider(K, Object, kotlin.jvm.functions.Function1<? super K,? extends java.util.Map<java.lang.String!,? extends java.lang.Object!>!>, kotlin.jvm.functions.Function3<? super K,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>);
     method public <K extends T> void addEntryProvider(kotlin.reflect.KClass<? extends K> clazz, optional kotlin.jvm.functions.Function1<K,?> clazzContentKey, optional java.util.Map<java.lang.String,?> metadata, kotlin.jvm.functions.Function1<? super K,kotlin.Unit> content);
-    method @BytecodeOnly public <K extends T> void addEntryProvider(kotlin.reflect.KClass<? extends K!>, kotlin.jvm.functions.Function1<K!,? extends java.lang.Object!>, java.util.Map<java.lang.String!,? extends java.lang.Object!>, kotlin.jvm.functions.Function3<? super K!,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>);
+    method @BytecodeOnly public <K extends T> void addEntryProvider(kotlin.reflect.KClass<? extends K>, kotlin.jvm.functions.Function1<K,? extends java.lang.Object!>, java.util.Map<java.lang.String!,? extends java.lang.Object!>, kotlin.jvm.functions.Function3<? super K,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>);
+    method public <K extends T> void addEntryProvider(kotlin.reflect.KClass<? extends K> clazz, optional kotlin.jvm.functions.Function1<K,?> clazzContentKey, kotlin.jvm.functions.Function1<? super K,? extends java.util.Map<java.lang.String,?>> metadata, kotlin.jvm.functions.Function1<? super K,kotlin.Unit> content);
+    method @BytecodeOnly public <K extends T> void addEntryProvider(kotlin.reflect.KClass<? extends K>, kotlin.jvm.functions.Function1<K,? extends java.lang.Object!>, kotlin.jvm.functions.Function1<? super K,? extends java.util.Map<java.lang.String!,? extends java.lang.Object!>!>, kotlin.jvm.functions.Function3<? super K,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>);
+    method @BytecodeOnly public static void addEntryProvider$default(androidx.navigation3.runtime.EntryProviderScope!, Object!, Object!, java.util.Map!, kotlin.jvm.functions.Function3!, int, Object!);
+    method @BytecodeOnly public static void addEntryProvider$default(androidx.navigation3.runtime.EntryProviderScope!, Object!, Object!, kotlin.jvm.functions.Function1!, kotlin.jvm.functions.Function3!, int, Object!);
+    method @BytecodeOnly public static void addEntryProvider$default(androidx.navigation3.runtime.EntryProviderScope!, kotlin.reflect.KClass!, kotlin.jvm.functions.Function1!, java.util.Map!, kotlin.jvm.functions.Function3!, int, Object!);
+    method @BytecodeOnly public static void addEntryProvider$default(androidx.navigation3.runtime.EntryProviderScope!, kotlin.reflect.KClass!, kotlin.jvm.functions.Function1!, kotlin.jvm.functions.Function1!, kotlin.jvm.functions.Function3!, int, Object!);
     method public <K extends T> void entry(androidx.navigation3.runtime.EntryProviderScope<T>, K key, optional Object contentKey, optional java.util.Map<java.lang.String,?> metadata, kotlin.jvm.functions.Function1<? super K,kotlin.Unit> content);
-    method @BytecodeOnly public <K extends T> void entry(androidx.navigation3.runtime.EntryProviderScope<T!>, K, Object, java.util.Map<java.lang.String!,? extends java.lang.Object!>, kotlin.jvm.functions.Function3<? super K!,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>);
+    method @BytecodeOnly public <K extends T> void entry(androidx.navigation3.runtime.EntryProviderScope<T>, K, Object, java.util.Map<java.lang.String!,? extends java.lang.Object!>, kotlin.jvm.functions.Function3<? super K,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>);
+    method public <K extends T> void entry(androidx.navigation3.runtime.EntryProviderScope<T>, K key, optional Object contentKey, kotlin.jvm.functions.Function1<? super K,? extends java.util.Map<java.lang.String,?>> metadata, kotlin.jvm.functions.Function1<? super K,kotlin.Unit> content);
+    method @BytecodeOnly public <K extends T> void entry(androidx.navigation3.runtime.EntryProviderScope<T>, K, Object, kotlin.jvm.functions.Function1<? super K,? extends java.util.Map<java.lang.String!,? extends java.lang.Object!>!>, kotlin.jvm.functions.Function3<? super K,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>);
     method @KotlinOnly public inline <reified K extends T> void entry(optional kotlin.jvm.functions.Function1<K,java.lang.Object> clazzContentKey, optional java.util.Map<java.lang.String,java.lang.Object> metadata, kotlin.jvm.functions.Function1<K,kotlin.Unit> content);
+    method @KotlinOnly public inline <reified K extends T> void entry(optional kotlin.jvm.functions.Function1<K,java.lang.Object> clazzContentKey, kotlin.jvm.functions.Function1<K,java.util.Map<java.lang.String,java.lang.Object>> metadata, kotlin.jvm.functions.Function1<K,kotlin.Unit> content);
+    method @BytecodeOnly public static void entry$default(androidx.navigation3.runtime.EntryProviderScope!, androidx.navigation3.runtime.EntryProviderScope!, Object!, Object!, java.util.Map!, kotlin.jvm.functions.Function3!, int, Object!);
+    method @BytecodeOnly public static void entry$default(androidx.navigation3.runtime.EntryProviderScope!, androidx.navigation3.runtime.EntryProviderScope!, Object!, Object!, kotlin.jvm.functions.Function1!, kotlin.jvm.functions.Function3!, int, Object!);
+  }
+
+  @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @kotlin.DslMarker public @interface MetadataDsl {
+  }
+
+  @androidx.navigation3.runtime.MetadataDsl public final class MetadataScope {
+    ctor public MetadataScope();
+    method public <K extends androidx.navigation3.runtime.NavMetadataKey<T>, T> void put(K key, T value);
   }
 
   @kotlinx.serialization.Serializable(with=NavBackStackSerializer::class) public final class NavBackStack<T extends androidx.navigation3.runtime.NavKey> implements kotlin.jvm.internal.markers.KMutableList java.util.List<T> java.util.RandomAccess androidx.compose.runtime.snapshots.StateObject {
@@ -39,7 +61,7 @@ package androidx.navigation3.runtime {
     method public operator boolean contains(T element);
     method public boolean containsAll(java.util.Collection<T> elements);
     method public operator T get(int index);
-    method @BytecodeOnly public androidx.compose.runtime.snapshots.StateRecord getFirstStateRecord();
+    method public androidx.compose.runtime.snapshots.StateRecord getFirstStateRecord();
     method @BytecodeOnly public int getSize();
     method @BytecodeOnly public int indexOf(Object!);
     method public int indexOf(T element);
@@ -50,7 +72,7 @@ package androidx.navigation3.runtime {
     method public java.util.ListIterator<T> listIterator();
     method public java.util.ListIterator<T> listIterator(int index);
     method public void prependStateRecord(androidx.compose.runtime.snapshots.StateRecord value);
-    method @BytecodeOnly public T! remove(int);
+    method @BytecodeOnly public T remove(int);
     method @BytecodeOnly public boolean remove(Object!);
     method public boolean remove(T element);
     method public boolean removeAll(java.util.Collection<T> elements);
@@ -60,34 +82,41 @@ package androidx.navigation3.runtime {
     method @BytecodeOnly public int size();
     method public java.util.List<T> subList(int fromIndex, int toIndex);
     method @BytecodeOnly public Object![]! toArray();
-    method @BytecodeOnly public <T> T![]! toArray(T![]!);
+    method @BytecodeOnly public <T> T[]! toArray(T[]!);
     property public androidx.compose.runtime.snapshots.StateRecord firstStateRecord;
     property public int size;
   }
 
-  public class NavEntry<T> {
+  @androidx.compose.runtime.Immutable public final class NavEntry<T> {
+    ctor public NavEntry(androidx.navigation3.runtime.NavEntry<T> navEntry, kotlin.jvm.functions.Function1<? super T,kotlin.Unit> content);
+    ctor @BytecodeOnly public NavEntry(androidx.navigation3.runtime.NavEntry<T>, kotlin.jvm.functions.Function3<? super T,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>);
+    ctor @BytecodeOnly public NavEntry(Object!, Object!, java.util.Map!, kotlin.jvm.functions.Function3!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
     ctor public NavEntry(T key, optional Object contentKey, optional java.util.Map<java.lang.String,?> metadata, kotlin.jvm.functions.Function1<? super T,kotlin.Unit> content);
-    ctor @BytecodeOnly public NavEntry(T, Object, java.util.Map<java.lang.String!,? extends java.lang.Object!>, kotlin.jvm.functions.Function3<? super T!,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>);
+    ctor @BytecodeOnly public NavEntry(T, Object, java.util.Map<java.lang.String!,? extends java.lang.Object!>, kotlin.jvm.functions.Function3<? super T,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>);
     method @KotlinOnly @androidx.compose.runtime.Composable public void Content();
     method @BytecodeOnly @androidx.compose.runtime.Composable public void Content(androidx.compose.runtime.Composer?, int);
-    method @InaccessibleFromKotlin public final Object getContentKey();
+    method @InaccessibleFromKotlin public Object getContentKey();
     method @InaccessibleFromKotlin public java.util.Map<java.lang.String,java.lang.Object> getMetadata();
-    property public final Object contentKey;
+    property public Object contentKey;
     property public java.util.Map<java.lang.String,java.lang.Object> metadata;
   }
 
-  public class NavEntryDecorator<T> {
+  @androidx.compose.runtime.Immutable public class NavEntryDecorator<T> {
+    ctor @BytecodeOnly public NavEntryDecorator(kotlin.jvm.functions.Function1!, kotlin.jvm.functions.Function3!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
     ctor public NavEntryDecorator(optional kotlin.jvm.functions.Function1<java.lang.Object,kotlin.Unit> onPop, kotlin.jvm.functions.Function1<? super androidx.navigation3.runtime.NavEntry<T>,kotlin.Unit> decorate);
-    ctor @BytecodeOnly public NavEntryDecorator(kotlin.jvm.functions.Function1<java.lang.Object!,kotlin.Unit!>, kotlin.jvm.functions.Function3<? super androidx.navigation3.runtime.NavEntry<T!>!,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>);
-  }
-
-  public class NavEntryWrapper<T> extends androidx.navigation3.runtime.NavEntry<T> {
-    ctor public NavEntryWrapper(androidx.navigation3.runtime.NavEntry<T> navEntry);
-    method @InaccessibleFromKotlin public final androidx.navigation3.runtime.NavEntry<T> getNavEntry();
-    property public final androidx.navigation3.runtime.NavEntry<T> navEntry;
+    ctor @BytecodeOnly public NavEntryDecorator(kotlin.jvm.functions.Function1<java.lang.Object!,kotlin.Unit!>, kotlin.jvm.functions.Function3<? super androidx.navigation3.runtime.NavEntry<T>!,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>);
   }
 
   public interface NavKey {
+  }
+
+  public interface NavMetadataKey<T> {
+  }
+
+  public final class NavMetadataKt {
+    method public static operator <T> boolean contains(java.util.Map<java.lang.String,?>, androidx.navigation3.runtime.NavMetadataKey<T> key);
+    method public static operator <T> T? get(java.util.Map<java.lang.String,?>, androidx.navigation3.runtime.NavMetadataKey<T> key);
+    method public static inline java.util.Map<java.lang.String,java.lang.Object> metadata(kotlin.jvm.functions.Function1<? super androidx.navigation3.runtime.MetadataScope,kotlin.Unit> builder);
   }
 
   public final class RememberNavBackStackKt {
@@ -102,8 +131,131 @@ package androidx.navigation3.runtime {
   }
 
   public final class SaveableStateHolderNavEntryDecoratorKt {
-    method @KotlinOnly @androidx.compose.runtime.Composable public static <T> androidx.navigation3.runtime.NavEntryDecorator<T> rememberSaveableStateHolderNavEntryDecorator(optional androidx.compose.runtime.saveable.SaveableStateHolder saveableStateHolder);
-    method @BytecodeOnly @androidx.compose.runtime.Composable public static <T> androidx.navigation3.runtime.NavEntryDecorator<T!> rememberSaveableStateHolderNavEntryDecorator(androidx.compose.runtime.saveable.SaveableStateHolder?, androidx.compose.runtime.Composer?, int, int);
+    method @KotlinOnly @androidx.compose.runtime.Composable public static <T> androidx.navigation3.runtime.SaveableStateHolderNavEntryDecorator<T> rememberSaveableStateHolderNavEntryDecorator(optional androidx.compose.runtime.saveable.SaveableStateHolder saveableStateHolder);
+    method @BytecodeOnly @androidx.compose.runtime.Composable public static <T> androidx.navigation3.runtime.SaveableStateHolderNavEntryDecorator<T> rememberSaveableStateHolderNavEntryDecorator(androidx.compose.runtime.saveable.SaveableStateHolder?, androidx.compose.runtime.Composer?, int, int);
+  }
+
+}
+
+package androidx.navigation3.runtime.deeplink {
+
+  public abstract class DeepLinkMatcher<T> {
+    ctor public DeepLinkMatcher();
+    ctor @BytecodeOnly public DeepLinkMatcher(java.util.List!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
+    ctor public DeepLinkMatcher(optional java.util.List<? extends androidx.navigation3.runtime.deeplink.DeepLinkMatcher.Filter<? extends java.lang.Object?>> filters);
+    method public final androidx.navigation3.runtime.deeplink.DeepLinkMatcher.MatchResult<T>? match(androidx.navigation3.runtime.deeplink.DeepLinkRequest request);
+    method protected abstract androidx.navigation3.runtime.deeplink.DeepLinkMatcher.MatchResult<T>? matchRequest(androidx.navigation3.runtime.deeplink.DeepLinkRequest request);
+  }
+
+  public abstract static class DeepLinkMatcher.Filter<K> {
+    ctor public DeepLinkMatcher.Filter(K filter);
+    method public abstract boolean filterRequest(androidx.navigation3.runtime.deeplink.DeepLinkRequest request);
+  }
+
+  public static class DeepLinkMatcher.MatchResult<T> implements java.lang.Comparable<androidx.navigation3.runtime.deeplink.DeepLinkMatcher.MatchResult<T>> {
+    ctor public DeepLinkMatcher.MatchResult(T key);
+    method public int compareTo(androidx.navigation3.runtime.deeplink.DeepLinkMatcher.MatchResult<T> other);
+    method @InaccessibleFromKotlin public final T getKey();
+    property public final T key;
+  }
+
+  public final class DeepLinkRequest {
+    method public static androidx.navigation3.runtime.deeplink.DeepLinkRequest fromAction(String action, optional android.net.Uri? uri, optional String? mimeType);
+    method public static androidx.navigation3.runtime.deeplink.DeepLinkRequest fromMimeType(String mimeType, optional android.net.Uri? uri, optional String? action);
+    method public static androidx.navigation3.runtime.deeplink.DeepLinkRequest fromUri(android.net.Uri uri, optional String? mimeType, optional String? action);
+    method public static androidx.navigation3.runtime.deeplink.DeepLinkRequest fromUriString(String uri, optional String? mimeType, optional String? action);
+    method @InaccessibleFromKotlin public String? getAction();
+    method @InaccessibleFromKotlin public String? getMimeType();
+    method @InaccessibleFromKotlin public android.net.Uri? getUri();
+    property public String? action;
+    property public String? mimeType;
+    property public android.net.Uri? uri;
+    field public static final androidx.navigation3.runtime.deeplink.DeepLinkRequest.Companion Companion;
+  }
+
+  public static final class DeepLinkRequest.Companion {
+    method public androidx.navigation3.runtime.deeplink.DeepLinkRequest fromAction(String action, optional android.net.Uri? uri, optional String? mimeType);
+    method @BytecodeOnly public static androidx.navigation3.runtime.deeplink.DeepLinkRequest! fromAction$default(androidx.navigation3.runtime.deeplink.DeepLinkRequest.Companion!, String!, android.net.Uri!, String!, int, Object!);
+    method public androidx.navigation3.runtime.deeplink.DeepLinkRequest fromMimeType(String mimeType, optional android.net.Uri? uri, optional String? action);
+    method @BytecodeOnly public static androidx.navigation3.runtime.deeplink.DeepLinkRequest! fromMimeType$default(androidx.navigation3.runtime.deeplink.DeepLinkRequest.Companion!, String!, android.net.Uri!, String!, int, Object!);
+    method public androidx.navigation3.runtime.deeplink.DeepLinkRequest fromUri(android.net.Uri uri, optional String? mimeType, optional String? action);
+    method @BytecodeOnly public static androidx.navigation3.runtime.deeplink.DeepLinkRequest! fromUri$default(androidx.navigation3.runtime.deeplink.DeepLinkRequest.Companion!, android.net.Uri!, String!, String!, int, Object!);
+    method public androidx.navigation3.runtime.deeplink.DeepLinkRequest fromUriString(String uri, optional String? mimeType, optional String? action);
+    method @BytecodeOnly public static androidx.navigation3.runtime.deeplink.DeepLinkRequest! fromUriString$default(androidx.navigation3.runtime.deeplink.DeepLinkRequest.Companion!, String!, String!, String!, int, Object!);
+  }
+
+  public final class DeepLinkRequest_androidKt {
+    method public static androidx.navigation3.runtime.deeplink.DeepLinkRequest fromIntent(androidx.navigation3.runtime.deeplink.DeepLinkRequest.Companion, android.content.Intent intent);
+  }
+
+  public final class DeepLinkUriKt {
+    method public static android.net.Uri DeepLinkUri(String uriString);
+  }
+
+  public final class StaticKeyDeepLinkMatcher<T> extends androidx.navigation3.runtime.deeplink.DeepLinkMatcher<T> {
+    ctor public StaticKeyDeepLinkMatcher(T key, java.util.List<? extends androidx.navigation3.runtime.deeplink.DeepLinkMatcher.Filter<java.lang.Object>> filters);
+    method @InaccessibleFromKotlin public T getKey();
+    method protected androidx.navigation3.runtime.deeplink.DeepLinkMatcher.MatchResult<T> matchRequest(androidx.navigation3.runtime.deeplink.DeepLinkRequest request);
+    property public T key;
+  }
+
+  public class UriDeepLinkMatcher<T> extends androidx.navigation3.runtime.deeplink.DeepLinkMatcher<T> {
+    ctor @BytecodeOnly public UriDeepLinkMatcher(android.net.Uri!, kotlinx.serialization.KSerializer!, java.util.List!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
+    ctor public UriDeepLinkMatcher(android.net.Uri uriPattern, kotlinx.serialization.KSerializer<T> serializer, optional java.util.List<? extends androidx.navigation3.runtime.deeplink.DeepLinkMatcher.Filter<java.lang.Object>> filters);
+    method protected androidx.navigation3.runtime.deeplink.UriMatchResult<T>? matchArguments(optional java.util.Map<java.lang.String,? extends java.util.List<java.lang.String>> pathArgs, optional java.util.Map<java.lang.String,? extends java.util.List<java.lang.String>> queryArgs, optional java.util.Map<java.lang.String,? extends java.util.List<java.lang.String>> fragmentArgs);
+    method @BytecodeOnly public static androidx.navigation3.runtime.deeplink.UriMatchResult! matchArguments$default(androidx.navigation3.runtime.deeplink.UriDeepLinkMatcher!, java.util.Map!, java.util.Map!, java.util.Map!, int, Object!);
+    method protected androidx.navigation3.runtime.deeplink.UriMatchResult<T>? matchRequest(androidx.navigation3.runtime.deeplink.DeepLinkRequest request);
+    method protected androidx.navigation3.runtime.deeplink.UriMatchResult<T>? matchUri(android.net.Uri uri);
+  }
+
+  public class UriMatchResult<T> extends androidx.navigation3.runtime.deeplink.DeepLinkMatcher.MatchResult<T> {
+    ctor public UriMatchResult(T key, java.util.Map<java.lang.String,? extends java.util.List<java.lang.String>> arguments);
+    method @InaccessibleFromKotlin public final java.util.Map<java.lang.String,java.util.List<java.lang.String>> getArguments();
+    method @InaccessibleFromKotlin protected final boolean isExactPath();
+    method @InaccessibleFromKotlin protected final void setExactPath(boolean);
+    property public final java.util.Map<java.lang.String,java.util.List<java.lang.String>> arguments;
+    property protected final boolean isExactPath;
+  }
+
+  public typealias DeepLinkUri = android.net.Uri;
+
+}
+
+package androidx.navigation3.runtime.result {
+
+  public final class LocalResultEventBus {
+    method @BytecodeOnly @androidx.compose.runtime.Composable public androidx.navigation3.runtime.result.ResultEventBus getCurrent(androidx.compose.runtime.Composer?, int);
+    method public infix androidx.compose.runtime.ProvidedValue<androidx.navigation3.runtime.result.ResultEventBus?> provides(androidx.navigation3.runtime.result.ResultEventBus eventBus);
+    property @androidx.compose.runtime.Composable public androidx.navigation3.runtime.result.ResultEventBus current;
+    field public static final androidx.navigation3.runtime.result.LocalResultEventBus INSTANCE;
+  }
+
+  public final class ResultEffectKt {
+    method @KotlinOnly @androidx.compose.runtime.Composable public static inline <reified T> void ResultEffect(optional androidx.navigation3.runtime.result.ResultEventBus resultEventBus, kotlin.jvm.functions.Function2<T,kotlin.coroutines.Continuation<? super kotlin.Unit>,?> onResult);
+    method @BytecodeOnly @androidx.compose.runtime.Composable public static <T> void ResultEffect(String, androidx.navigation3.runtime.result.ResultEventBus?, kotlin.jvm.functions.Function2<? super T,? super kotlin.coroutines.Continuation<? super kotlin.Unit!>!,? extends java.lang.Object!>, androidx.compose.runtime.Composer?, int, int);
+    method @KotlinOnly @androidx.compose.runtime.Composable public static <T> void ResultEffect(String resultKey, optional androidx.navigation3.runtime.result.ResultEventBus resultEventBus, kotlin.jvm.functions.Function2<T,kotlin.coroutines.Continuation<? super kotlin.Unit>,?> onResult);
+  }
+
+  public final class ResultEventBus {
+    ctor public ResultEventBus();
+    method @KotlinOnly @androidx.compose.runtime.Composable public <T> androidx.compose.runtime.State<T> conflateAsState(String resultKey, T defaultValue);
+    method @BytecodeOnly @androidx.compose.runtime.Composable public <T> androidx.compose.runtime.State<T> conflateAsState(String, T, androidx.compose.runtime.Composer?, int);
+    method @KotlinOnly @androidx.compose.runtime.Composable public inline <reified T> androidx.compose.runtime.State<T> conflateAsState(T defaultValue);
+    method @KotlinOnly public inline <reified T> void removeResult();
+    method public void removeResult(String resultKey);
+    method public <T> void sendResult(String resultKey, T result);
+    method @KotlinOnly public inline <reified T> void sendResult(T result);
+  }
+
+  public final class ResultEventBusNavEntryDecorator<T> extends androidx.navigation3.runtime.NavEntryDecorator<T> {
+    ctor public ResultEventBusNavEntryDecorator();
+    ctor public ResultEventBusNavEntryDecorator(optional androidx.navigation3.runtime.result.ResultEventBus bus);
+    ctor @BytecodeOnly public ResultEventBusNavEntryDecorator(androidx.navigation3.runtime.result.ResultEventBus!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
+  }
+
+  public final class ResultEventBusNavEntryDecoratorKt {
+    method @KotlinOnly @androidx.compose.runtime.Composable public static <T> androidx.navigation3.runtime.result.ResultEventBusNavEntryDecorator<T> rememberResultEventBusNavEntryDecorator();
+    method @BytecodeOnly @androidx.compose.runtime.Composable public static <T> androidx.navigation3.runtime.result.ResultEventBusNavEntryDecorator<T> rememberResultEventBusNavEntryDecorator(androidx.compose.runtime.Composer?, int);
   }
 
 }

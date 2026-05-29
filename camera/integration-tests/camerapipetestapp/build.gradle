@@ -18,20 +18,18 @@
 plugins {
     id("AndroidXPlugin")
     id("com.android.application")
-    id("org.jetbrains.kotlin.android")
 }
 
 android {
-    compileSdk = 35
+    compileSdk { version = release(36) }
     defaultConfig {
         applicationId = "androidx.camera.integration.camera2.pipe"
     }
     buildTypes {
         release {
-            minifyEnabled = true
-            shrinkResources = true
-            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"),
-                    "proguard-rules.pro")
+            optimization {
+                enable = true
+            }
         }
     }
     namespace = "androidx.camera.integration.camera2.pipe"
@@ -39,7 +37,6 @@ android {
 
 dependencies {
     // Internal library
-    implementation(libs.kotlinStdlib)
 
     // Android Support Library
     implementation("androidx.appcompat:appcompat:1.1.0")

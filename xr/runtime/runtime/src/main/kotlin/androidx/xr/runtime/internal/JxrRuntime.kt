@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Android Open Source Project
+ * Copyright 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package androidx.xr.runtime.internal
 
 import androidx.annotation.RestrictTo
 import androidx.xr.runtime.Config
-import androidx.xr.runtime.Config.ConfigMode
 import kotlin.time.ComparableTimeMark
 
 /**
@@ -28,6 +27,9 @@ import kotlin.time.ComparableTimeMark
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 @Suppress("NotCloseable")
 public interface JxrRuntime {
+    /** The configuration of the runtime. */
+    public val config: Config
+
     /**
      * Executes the [JxrRuntime] initialization logic. It is necessary to call [resume] after
      * calling this method to start the runtime's execution logic.
@@ -51,19 +53,6 @@ public interface JxrRuntime {
     public fun configure(config: Config) {}
 
     /**
-     * Checks whether the provided mode is supported by this runtime for the current device.
-     *
-     * @param configMode the [ConfigMode] mode to check.
-     * @return true if supported, false if not.
-     */
-    @SuppressWarnings("UnavailableSymbol")
-    public fun isSupported(
-        @SuppressWarnings("HiddenTypeParameter") configMode: ConfigMode
-    ): Boolean {
-        return false
-    }
-
-    /**
      * Updates the state of the system. The call is blocking and will return once the underlying
      * implementation has been updated or a platform-specific timeout has been reached. This method
      * can only be called when the runtime is resumed.
@@ -80,4 +69,8 @@ public interface JxrRuntime {
      * after calling [destroy]. The runtime must not be resumed when this method is called.
      */
     public fun destroy() {}
+
+    /** Gets the pointer to the underlying native session if applicable. */
+    public val sessionPointer: Long?
+        get() = null
 }

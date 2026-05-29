@@ -17,23 +17,21 @@
 package androidx.xr.runtime
 
 import android.Manifest
+import android.graphics.Bitmap
 import android.os.Looper
 import androidx.activity.ComponentActivity
+import androidx.kruth.assertThrows
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LifecycleRegistry
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.xr.arcore.testing.FakeLifecycleManager
-import androidx.xr.arcore.testing.FakePerceptionRuntime
-import androidx.xr.arcore.testing.FakePerceptionRuntimeFactory
-import androidx.xr.arcore.testing.FakeStateExtender
 import androidx.xr.runtime.internal.ApkCheckAvailabilityErrorException
 import androidx.xr.runtime.internal.ApkCheckAvailabilityInProgressException
 import androidx.xr.runtime.internal.ApkNotInstalledException
+import androidx.xr.runtime.internal.JxrRuntime
 import androidx.xr.runtime.internal.UnsupportedDeviceException
-import androidx.xr.scenecore.testing.FakeRenderingRuntime
-import androidx.xr.scenecore.testing.FakeSceneRuntime
 import com.google.common.truth.Truth.assertThat
+import kotlin.coroutines.ContinuationInterceptor
 import kotlin.test.assertFailsWith
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.milliseconds
@@ -53,7 +51,6 @@ import org.robolectric.Robolectric
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.android.controller.ActivityController
 
-// TODO(b/440615454) - Use local Fakes instead of FakeSceneRuntime/FakePerceptionRuntime.
 @RunWith(AndroidJUnit4::class)
 class SessionTest {
     private lateinit var underTest: Session
@@ -68,11 +65,11 @@ class SessionTest {
         activity = activityController.get()
 
         val shadowApplication = shadowOf(activity.application)
-        FakeLifecycleManager.TestPermissions.forEach { permission ->
+        StubPerceptionRuntime.TestPermissions.forEach { permission ->
             shadowApplication.grantPermissions(permission)
         }
 
-        FakePerceptionRuntimeFactory.hasCreatePermission = true
+        StubPerceptionRuntimeFactory.hasCreatePermission = true
     }
 
     @After
@@ -86,10 +83,13 @@ class SessionTest {
     fun create_returnsSuccessResultWithNonNullSession() {
         activityController.create()
 
-        val result = Session.create(activity)
+        val result = Session.create(context = activity)
 
         assertThat(result).isInstanceOf(SessionCreateSuccess::class.java)
-        assertThat((result as SessionCreateSuccess).session).isNotNull()
+
+        val session = (result as SessionCreateSuccess).session
+        assertThat(session).isNotNull()
+        assertThat(session.lifecycleOwner).isEqualTo(activity)
     }
 
     @Test
@@ -98,8 +98,8 @@ class SessionTest {
 
         underTest = createSession()
 
-        val lifecycleManager = getLifecycleManager()
-        assertThat(lifecycleManager.state).isEqualTo(FakeLifecycleManager.State.INITIALIZED)
+        val stubRuntime = getStubRuntime()
+        assertThat(stubRuntime.state).isEqualTo(StubPerceptionRuntime.State.INITIALIZED)
     }
 
     @Test
@@ -108,38 +108,82 @@ class SessionTest {
 
         underTest = createSession()
 
-        val stateExtender = underTest.stateExtenders.last() as FakeStateExtender
+        val stateExtender = underTest.stateExtenders.last() as StubStateExtender
         assertThat(stateExtender.isInitialized).isTrue()
     }
 
     @Test
-    fun create_initializesRuntime() {
+    fun create_initializesSessionConnector() {
         activityController.create()
 
         underTest = createSession()
 
-        assertThat(getSceneRuntime()).isNotNull()
-        assertThat(getRenderingRuntime().state.name).isEqualTo("CREATED")
+        val sessionConnector = getStubSessionConnector()
+        assertThat(sessionConnector.isInitialized).isTrue()
+        assertThat(sessionConnector.initializedRuntimes).isEqualTo(underTest.runtimes)
+    }
+
+    @Test
+    fun create_withApplicationContext_returnsSuccessResultWithNonNullSession() {
+        activityController.create()
+
+        val context = activity.applicationContext
+        val result =
+            Session.create(
+                context = context,
+                coroutineContext = testDispatcher,
+                lifecycleOwner = activity,
+            )
+
+        assertThat(result).isInstanceOf(SessionCreateSuccess::class.java)
+        assertThat((result as SessionCreateSuccess).session).isNotNull()
+    }
+
+    @Test
+    fun create_withActivityAndLifecycleOwner_usesProvidedLifecycleOwner() {
+        activityController.create()
+        val customLifecycleOwner =
+            object : LifecycleOwner {
+                override val lifecycle = LifecycleRegistry(this)
+            }
+
+        val result = Session.create(context = activity, lifecycleOwner = customLifecycleOwner)
+
+        val session = (result as SessionCreateSuccess).session
+        assertThat(session.lifecycleOwner).isEqualTo(customLifecycleOwner)
+    }
+
+    @Test
+    fun create_withActivityAndCoroutineContext_returnsSuccessResultWithNonNullSession() {
+        activityController.create()
+
+        val result = Session.create(context = activity, coroutineContext = testDispatcher)
+
+        assertThat(result).isInstanceOf(SessionCreateSuccess::class.java)
+        val session = (result as SessionCreateSuccess).session
+        assertThat(session).isNotNull()
+        assertThat(session.coroutineScope.coroutineContext[ContinuationInterceptor])
+            .isEqualTo(testDispatcher)
     }
 
     @Test
     fun create_permissionNotGranted_throwsSecurityException() {
         val shadowApplication = shadowOf(activity.application)
         shadowApplication.denyPermissions(Manifest.permission.CAMERA)
-        FakePerceptionRuntimeFactory.hasCreatePermission = false
+        StubPerceptionRuntimeFactory.hasCreatePermission = false
 
         activityController.create()
 
-        assertFailsWith<SecurityException> { Session.create(activity) }
+        assertFailsWith<SecurityException> { Session.create(context = activity) }
     }
 
     @Test
     fun create_arcoreNotInstalledException_returnsApkRequiredResult() {
-        FakePerceptionRuntimeFactory.lifecycleCreateException =
+        StubPerceptionRuntimeFactory.lifecycleCreateException =
             ApkNotInstalledException(ARCORE_PACKAGE_NAME)
         activityController.create()
 
-        val result = Session.create(activity)
+        val result = Session.create(context = activity)
 
         assertThat(result).isInstanceOf(SessionCreateApkRequired::class.java)
         assertThat((result as SessionCreateApkRequired).requiredApk).isEqualTo(ARCORE_PACKAGE_NAME)
@@ -147,21 +191,21 @@ class SessionTest {
 
     @Test
     fun create_arcoreUnsupportedDeviceException_returnsUnsupportedDeviceResult() {
-        FakePerceptionRuntimeFactory.lifecycleCreateException = UnsupportedDeviceException()
+        StubPerceptionRuntimeFactory.lifecycleCreateException = UnsupportedDeviceException()
         activityController.create()
 
-        val result = Session.create(activity)
+        val result = Session.create(context = activity)
 
         assertThat(result).isInstanceOf(SessionCreateUnsupportedDevice::class.java)
     }
 
     @Test
     fun create_arcoreCheckAvailabilityInProgressException_returnsApkRequiredResult() {
-        FakePerceptionRuntimeFactory.lifecycleCreateException =
+        StubPerceptionRuntimeFactory.lifecycleCreateException =
             ApkCheckAvailabilityInProgressException(ARCORE_PACKAGE_NAME)
         activityController.create()
 
-        val result = Session.create(activity)
+        val result = Session.create(context = activity)
 
         assertThat(result).isInstanceOf(SessionCreateApkRequired::class.java)
         assertThat((result as SessionCreateApkRequired).requiredApk).isEqualTo(ARCORE_PACKAGE_NAME)
@@ -169,11 +213,11 @@ class SessionTest {
 
     @Test
     fun create_arcoreCheckAvailabilityErrorException_returnsApkRequiredResult() {
-        FakePerceptionRuntimeFactory.lifecycleCreateException =
+        StubPerceptionRuntimeFactory.lifecycleCreateException =
             ApkCheckAvailabilityErrorException(ARCORE_PACKAGE_NAME)
         activityController.create()
 
-        val result = Session.create(activity)
+        val result = Session.create(context = activity)
 
         assertThat(result).isInstanceOf(SessionCreateApkRequired::class.java)
         assertThat((result as SessionCreateApkRequired).requiredApk).isEqualTo(ARCORE_PACKAGE_NAME)
@@ -183,10 +227,19 @@ class SessionTest {
     fun create_onDestroyedActivity_throwsIllegalStateException() {
         activityController.create().destroy()
 
-        val exception = assertFailsWith<IllegalStateException> { Session.create(activity) }
+        val exception =
+            assertFailsWith<IllegalStateException> { Session.create(context = activity) }
         assertThat(exception)
             .hasMessageThat()
-            .isEqualTo("Cannot create a new session on a destroyed activity.")
+            .isEqualTo("Cannot create a new session on a destroyed lifecycleOwner.")
+    }
+
+    @Test
+    fun create_runtimesStartWithDefaultConfig() {
+        activityController.create().start()
+        underTest = createSession()
+
+        underTest.runtimes.forEach { assertThat(it.config).isEqualTo(Session.DEFAULT_CONFIG) }
     }
 
     @Test
@@ -195,78 +248,156 @@ class SessionTest {
         underTest = createSession()
         activityController.destroy()
 
-        assertFailsWith<IllegalStateException> { underTest.configure(Config()) }
+        assertFailsWith<IllegalStateException> { underTest.configure(Config.Builder().build()) }
     }
 
     @Test
     fun configure_returnsSuccessAndChangesConfig() {
         activityController.create().start().resume()
         underTest = createSession()
-        val lifecycleManager = getLifecycleManager()
-        check(
-            lifecycleManager.config ==
-                Config(
-                    planeTracking = Config.PlaneTrackingMode.HORIZONTAL_AND_VERTICAL,
-                    augmentedObjectCategories = AugmentedObjectCategory.all(),
-                    handTracking = Config.HandTrackingMode.BOTH,
-                    deviceTracking = Config.DeviceTrackingMode.LAST_KNOWN,
-                    depthEstimation = Config.DepthEstimationMode.SMOOTH_AND_RAW,
-                    anchorPersistence = Config.AnchorPersistenceMode.LOCAL,
-                )
-        )
+
         val newConfig =
-            Config(
-                planeTracking = Config.PlaneTrackingMode.DISABLED,
-                augmentedObjectCategories = listOf<AugmentedObjectCategory>(),
-                handTracking = Config.HandTrackingMode.DISABLED,
-                deviceTracking = Config.DeviceTrackingMode.DISABLED,
-                depthEstimation = Config.DepthEstimationMode.DISABLED,
-                anchorPersistence = Config.AnchorPersistenceMode.DISABLED,
-            )
+            Config.Builder()
+                .setPlaneTracking(PlaneTrackingMode.HORIZONTAL_AND_VERTICAL)
+                .setAugmentedObjectCategories(setOf(AugmentedObjectCategory.MOUSE))
+                .setHandTracking(HandTrackingMode.BOTH)
+                .setDeviceTracking(DeviceTrackingMode.SPATIAL)
+                .setDepthEstimation(DepthEstimationMode.SMOOTH_AND_RAW)
+                .setAnchorPersistence(AnchorPersistenceMode.LOCAL)
+                .setQrCodeTracking(QrCodeTrackingMode.DYNAMIC)
+                .build()
 
         val result = underTest.configure(newConfig)
 
         assertThat(result).isInstanceOf(SessionConfigureSuccess::class.java)
-        assertThat(lifecycleManager.config).isEqualTo(newConfig)
+        assertThat(underTest.config).isEqualTo(newConfig)
     }
 
     @Test
     fun configure_permissionNotGranted_throwsSecurityException() {
         activityController.create().start().resume()
         underTest = createSession()
-        val lifecycleManager = getLifecycleManager()
+        val stubRuntime = getStubRuntime()
 
-        val currentConfig = lifecycleManager.config
-        check(currentConfig.depthEstimation == Config.DepthEstimationMode.SMOOTH_AND_RAW)
-        lifecycleManager.hasMissingPermission = true
+        val currentConfig = underTest.config
+        stubRuntime.hasMissingPermission = true
 
         assertFailsWith<SecurityException> {
             underTest.configure(
-                underTest.config.copy(
-                    depthEstimation = Config.DepthEstimationMode.DISABLED,
-                    faceTracking = Config.FaceTrackingMode.DISABLED,
-                )
+                Config.Builder(currentConfig)
+                    .setDepthEstimation(DepthEstimationMode.SMOOTH_AND_RAW)
+                    .setFaceTracking(FaceTrackingMode.MESHES)
+                    .build()
             )
         }
-        assertThat(lifecycleManager.config).isEqualTo(currentConfig)
+        assertThat(underTest.config).isEqualTo(currentConfig)
     }
 
     @Test
     fun configure_unsupportedMode_throwsUnsupportedOperationException() {
         activityController.create().start().resume()
         underTest = createSession()
-        val lifecycleManager = getLifecycleManager()
+
+        val stubRuntime = getStubRuntime()
 
         val currentConfig = underTest.config
-        lifecycleManager.shouldSupportPlaneTracking = false
+        stubRuntime.shouldSupportPlaneTracking = false
 
         assertFailsWith<UnsupportedOperationException> {
             underTest.configure(
-                currentConfig.copy(planeTracking = Config.PlaneTrackingMode.HORIZONTAL_AND_VERTICAL)
+                Config.Builder(currentConfig)
+                    .setPlaneTracking(PlaneTrackingMode.HORIZONTAL_AND_VERTICAL)
+                    .build()
             )
         }
         assertThat(underTest.config).isEqualTo(currentConfig)
-        lifecycleManager.shouldSupportPlaneTracking = true
+    }
+
+    @Test
+    fun configure_unsupportedImageMode_returnsConfigurationNotSupportedResult() {
+        activityController.create().start().resume()
+        underTest = createSession()
+        val stubRuntime = getStubRuntime()
+
+        val currentConfig = underTest.config
+        stubRuntime.shouldSupportImageTracking = false
+
+        assertFailsWith<UnsupportedOperationException> {
+            underTest.configure(
+                Config.Builder(currentConfig)
+                    .setAugmentedImageDatabase(
+                        AugmentedImageDatabase().apply {
+                            addAugmentedImageDatabaseEntry(
+                                mode = AugmentedImageDatabaseEntryMode.DYNAMIC,
+                                bitmap = Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888),
+                            )
+                        }
+                    )
+                    .build()
+            )
+        }
+        assertThat(underTest.config).isEqualTo(currentConfig)
+    }
+
+    @Test
+    fun configure_unsupportedQrCodeMode_returnsConfigurationNotSupportedResult() {
+        activityController.create().start().resume()
+        underTest = createSession()
+        val stubRuntime = getStubRuntime()
+
+        val currentConfig = underTest.config
+        stubRuntime.shouldSupportQrCodeTracking = false
+
+        assertFailsWith<UnsupportedOperationException> {
+            underTest.configure(
+                Config.Builder().setQrCodeTracking(QrCodeTrackingMode.DYNAMIC).build()
+            )
+        }
+        assertThat(underTest.config).isEqualTo(currentConfig)
+    }
+
+    @Test
+    fun configure_runtimeConfigureFailure_rollsBackConfiguration() {
+        val runtime1 =
+            object : JxrRuntime {
+                override var config = Session.DEFAULT_CONFIG
+
+                override fun configure(config: Config) {
+                    this.config = config
+                }
+            }
+        val runtime2 =
+            object : JxrRuntime {
+                override var config = Session.DEFAULT_CONFIG
+
+                override fun configure(config: Config) {
+                    if (config.planeTracking == PlaneTrackingMode.HORIZONTAL_AND_VERTICAL) {
+                        throw RuntimeException()
+                    }
+                }
+            }
+        val underTest =
+            Session(
+                activity,
+                runtimes = listOf(runtime1, runtime2),
+                coroutineScope = kotlinx.coroutines.test.TestScope(testDispatcher),
+                lifecycleOwner = activity,
+            )
+        activity.lifecycle.addObserver(underTest.lifecycleObserver)
+        activityController.create().start().resume()
+
+        val initialConfig = Config.Builder().setPlaneTracking(PlaneTrackingMode.DISABLED).build()
+        underTest.configure(initialConfig)
+
+        assertThrows<RuntimeException> {
+            underTest.configure(
+                Config.Builder(underTest.config)
+                    .setPlaneTracking(PlaneTrackingMode.HORIZONTAL_AND_VERTICAL)
+                    .build()
+            )
+        }
+        assertThat(runtime1.config).isEqualTo(initialConfig)
+        assertThat(runtime2.config).isEqualTo(initialConfig)
     }
 
     @Test
@@ -276,20 +407,9 @@ class SessionTest {
 
         activityController.resume()
 
-        val lifecycleManager = getLifecycleManager()
+        val stubRuntime = getStubRuntime()
 
-        assertThat(lifecycleManager.state).isEqualTo(FakeLifecycleManager.State.RESUMED)
-    }
-
-    @Test
-    fun resume_returnsSuccessAndSetsPlatformAdapterToResumed() {
-        activityController.create().start()
-        underTest = createSession()
-
-        activityController.resume()
-
-        assertThat(getRenderingRuntime().state)
-            .isEqualTo(FakeRenderingRuntime.State.STARTED) // Corresponds to resumed
+        assertThat(stubRuntime.state).isEqualTo(StubPerceptionRuntime.State.RESUMED)
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -298,9 +418,9 @@ class SessionTest {
         runTest(testDispatcher) {
             activityController.create().start()
             underTest = createSession(coroutineDispatcher = testDispatcher)
-            val lifecycleManager = getLifecycleManager()
+            val stubRuntime = getStubRuntime()
 
-            val timeSource = lifecycleManager.timeSource
+            val timeSource = stubRuntime.timeSource
             val expectedDuration = 100.milliseconds
             val initialTimeMark = underTest.state.value.timeMark
 
@@ -315,7 +435,7 @@ class SessionTest {
             advanceUntilIdle()
             timeSource += expectedDuration
 
-            lifecycleManager.allowOneMoreCallToUpdate()
+            stubRuntime.allowOneMoreCallToUpdate()
             activityController.resume()
             shadowOf(Looper.getMainLooper()).idle()
             advanceUntilIdle()
@@ -335,7 +455,7 @@ class SessionTest {
             activityController.resume() // Triggers update
             advanceUntilIdle()
 
-            val stateExtender = underTest.stateExtenders.last() as FakeStateExtender
+            val stateExtender = underTest.stateExtenders.last() as StubStateExtender
             assertThat(stateExtender.extended).isNotEmpty()
         }
 
@@ -346,19 +466,8 @@ class SessionTest {
 
         activityController.pause()
 
-        val lifecycleManager = getLifecycleManager()
-        assertThat(lifecycleManager.state).isEqualTo(FakeLifecycleManager.State.PAUSED)
-    }
-
-    @Test
-    fun pause_setsRuntimeToPaused() {
-        activityController.create().start().resume()
-        underTest = createSession()
-
-        activityController.pause()
-
-        val renderingRuntime = getRenderingRuntime()
-        assertThat(renderingRuntime.state).isEqualTo(FakeRenderingRuntime.State.PAUSED)
+        val stubRuntime = getStubRuntime()
+        assertThat(stubRuntime.state).isEqualTo(StubPerceptionRuntime.State.PAUSED)
     }
 
     @Test
@@ -368,8 +477,8 @@ class SessionTest {
 
         activityController.destroy() // Triggers session destroy
 
-        val lifecycleManager = getLifecycleManager()
-        assertThat(lifecycleManager.state).isEqualTo(FakeLifecycleManager.State.DESTROYED)
+        val stubRuntime = getStubRuntime()
+        assertThat(stubRuntime.state).isEqualTo(StubPerceptionRuntime.State.DESTROYED)
     }
 
     @Test
@@ -379,19 +488,8 @@ class SessionTest {
 
         activityController.destroy()
 
-        val lifecycleManager = getLifecycleManager()
-        assertThat(lifecycleManager.state).isEqualTo(FakeLifecycleManager.State.DESTROYED)
-    }
-
-    @Test
-    fun destroy_setsRuntimeToDestroyed() {
-        activityController.create().start().resume()
-        underTest = createSession()
-
-        activityController.destroy()
-
-        val renderingRuntime = getRenderingRuntime()
-        assertThat(renderingRuntime.state).isEqualTo(FakeRenderingRuntime.State.DESTROYED)
+        val stubRuntime = getStubRuntime()
+        assertThat(stubRuntime.state).isEqualTo(StubPerceptionRuntime.State.DESTROYED)
     }
 
     fun destroy_withMultiple_doesNotSetFinalActivity() {
@@ -400,17 +498,19 @@ class SessionTest {
 
         val underTest = createSession()
         val secondSession =
-            (Session.create(secondActivity!!, testDispatcher) as SessionCreateSuccess).session
+            (Session.create(context = secondActivity!!, coroutineContext = testDispatcher)
+                    as SessionCreateSuccess)
+                .session
         activityController.create().start().resume()
         activityController2.create().start().resume()
 
         // Destroy the session while the other session is still active.
         activityController.destroy()
 
-        val lifecycleManager = getLifecycleManager()
-        // This should not be stopped because there is still an active activity but it will update
+        val stubRuntime = getStubRuntime()
+        // This should not be stopped because there is still an active activity, but it will update
         // to PAUSED.
-        assertThat(lifecycleManager.state).isEqualTo(FakeLifecycleManager.State.PAUSED)
+        assertThat(stubRuntime.state).isEqualTo(StubPerceptionRuntime.State.PAUSED)
 
         // Destroy the second session to clean up the static activity map.
         activityController2.destroy()
@@ -422,7 +522,9 @@ class SessionTest {
         val secondActivity = activityController2.get()
         underTest = createSession()
         val secondSession =
-            (Session.create(secondActivity!!, testDispatcher) as SessionCreateSuccess).session
+            (Session.create(context = secondActivity!!, coroutineContext = testDispatcher)
+                    as SessionCreateSuccess)
+                .session
         activityController2.create().start().resume()
         activityController2.destroy()
         activityController.create().start().resume()
@@ -430,8 +532,8 @@ class SessionTest {
         // Destroy the session after the other session was destroyed.
         activityController.destroy()
 
-        val lifecycleManager = getLifecycleManager()
-        assertThat(lifecycleManager.state).isEqualTo(FakeLifecycleManager.State.DESTROYED)
+        val stubRuntime = getStubRuntime()
+        assertThat(stubRuntime.state).isEqualTo(StubPerceptionRuntime.State.DESTROYED)
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -456,30 +558,110 @@ class SessionTest {
                 override val lifecycle: Lifecycle
                     get() = LifecycleRegistry(this)
             }
-        underTest = (Session.create(activity, lifecycleOwner) as SessionCreateSuccess).session
+        underTest =
+            (Session.create(context = activity, lifecycleOwner = lifecycleOwner)
+                    as SessionCreateSuccess)
+                .session
 
         activityController.destroy()
 
-        val lifecycleManager = getLifecycleManager()
-        assertThat(lifecycleManager.state).isEqualTo(FakeLifecycleManager.State.DESTROYED)
+        val stubRuntime = getStubRuntime()
+        assertThat(stubRuntime.state).isEqualTo(StubPerceptionRuntime.State.DESTROYED)
+    }
+
+    @Test
+    fun destroy_closesSessionConnector() {
+        activityController.create()
+        underTest = createSession()
+        val sessionConnector = getStubSessionConnector()
+
+        activityController.destroy()
+
+        assertThat(sessionConnector.isClosed).isTrue()
+    }
+
+    @Test
+    fun destroy_closesSessionExtender() {
+        activityController.create()
+        underTest = createSession()
+        val stateExtender = getStubStateExtender()
+
+        activityController.destroy()
+
+        assertThat(stateExtender.isClosed).isTrue()
+    }
+
+    @Test
+    fun destroy_callsCleanupsInReverseOrder() {
+        val callOrder = mutableListOf<String>()
+        val runtime1 =
+            object : JxrRuntime {
+                override val config = Session.DEFAULT_CONFIG
+
+                override fun destroy() {
+                    callOrder.add("runtime1")
+                }
+            }
+        val runtime2 =
+            object : JxrRuntime {
+                override val config = Session.DEFAULT_CONFIG
+
+                override fun destroy() {
+                    callOrder.add("runtime2")
+                }
+            }
+        val connector1 =
+            object : SessionConnector {
+                override fun initialize(runtimes: List<JxrRuntime>) {}
+
+                override fun close() {
+                    callOrder.add("connector1")
+                }
+            }
+        val extender1 =
+            object : StateExtender {
+                override fun initialize(runtimes: List<JxrRuntime>) {}
+
+                override suspend fun extend(coreState: CoreState) {}
+
+                override fun close() {
+                    callOrder.add("extender1")
+                }
+            }
+        val session =
+            Session(
+                activity,
+                listOf(extender1),
+                listOf(connector1),
+                listOf(runtime1, runtime2),
+                kotlinx.coroutines.test.TestScope(testDispatcher),
+                activity,
+            )
+        activity.lifecycle.addObserver(session.lifecycleObserver)
+
+        activityController.create().start().resume().pause().stop().destroy()
+
+        assertThat(callOrder)
+            .containsExactly("connector1", "extender1", "runtime2", "runtime1")
+            .inOrder()
     }
 
     private fun createSession(coroutineDispatcher: CoroutineDispatcher = testDispatcher): Session {
-        val result = Session.create(activity, coroutineDispatcher)
+        val result = Session.create(context = activity, coroutineContext = coroutineDispatcher)
         assertThat(result).isInstanceOf(SessionCreateSuccess::class.java)
         return (result as SessionCreateSuccess).session
     }
 
-    private fun getLifecycleManager(): FakeLifecycleManager {
-        return underTest.runtimes.filterIsInstance<FakePerceptionRuntime>().first().lifecycleManager
+    private fun getStubRuntime(): StubPerceptionRuntime {
+        return underTest.runtimes.filterIsInstance<StubPerceptionRuntime>().first()
     }
 
-    private fun getSceneRuntime(): FakeSceneRuntime {
-        return underTest.runtimes.filterIsInstance<FakeSceneRuntime>().first()
+    private fun getStubSessionConnector(): StubSessionConnector {
+        return underTest.sessionConnectors.filterIsInstance<StubSessionConnector>().first()
     }
 
-    private fun getRenderingRuntime(): FakeRenderingRuntime {
-        return underTest.runtimes.filterIsInstance<FakeRenderingRuntime>().first()
+    private fun getStubStateExtender(): StubStateExtender {
+        return underTest.stateExtenders.filterIsInstance<StubStateExtender>().first()
     }
 
     private companion object {

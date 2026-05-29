@@ -16,26 +16,54 @@
 
 package androidx.xr.arcore.openxr
 
-import androidx.annotation.RestrictTo
 import androidx.xr.arcore.runtime.Face
-import androidx.xr.runtime.TrackingState
+import androidx.xr.arcore.runtime.Mesh
+import androidx.xr.arcore.runtime.TrackingState
+import androidx.xr.runtime.math.Pose
 
-/** Wraps the native XrFaceStateANDROID with the [androidx.xr.arcore.runtime.Face] interface. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public class OpenXrFace : Updatable, Face {
-    public override var trackingState: TrackingState = TrackingState.PAUSED
+/**
+ * Wraps a native
+ * [XrFaceStateANDROID](https://registry.khronos.org/OpenXR/specs/1.1/man/html/XrFaceStateANDROID.html)
+ * with the [Face] interface.
+ *
+ * @property trackingState the [TrackingState] of the face
+ * @property blendShapeValues the blend shape values of the face
+ * @property confidenceValues the confidence values of the face tracker at different regions
+ * @property centerPose the [Pose] at the geometric center of the face
+ * @property mesh the [Mesh] data
+ * @property noseTipPose the [Pose] located at the tip of the nose
+ * @property foreheadLeftPose the [Pose] located at the left side of the detected face's forehead
+ * @property foreheadRightPose the [Pose] located at the right side of the detected face's forehead
+ * @property isValid a flag indicating if the face is valid
+ */
+internal class OpenXrFace : Updatable, Face {
+
+    override var trackingState: TrackingState = TrackingState.PAUSED
         private set
 
-    public override var blendShapeValues: FloatArray = FloatArray(XR_FACE_PARAMETER_COUNT_ANDROID)
+    override var blendShapeValues: FloatArray = FloatArray(XR_FACE_PARAMETER_COUNT_ANDROID)
         private set
 
-    public override var confidenceValues: FloatArray =
-        FloatArray(XR_FACE_REGION_CONFIDENCE_COUNT_ANDROID)
+    override var confidenceValues: FloatArray = FloatArray(XR_FACE_REGION_CONFIDENCE_COUNT_ANDROID)
         private set
 
-    public override var isValid: Boolean = false
+    override val centerPose: Pose? = null
 
-    /** Updatable */
+    override val mesh: Mesh? = null
+
+    override val noseTipPose: Pose? = null
+
+    override val foreheadLeftPose: Pose? = null
+
+    override val foreheadRightPose: Pose? = null
+
+    override var isValid: Boolean = false
+
+    /**
+     * Updates the entity retrieving its state at [xrTime].
+     *
+     * @param xrTime the number of nanoseconds since the start of the OpenXR epoch
+     */
     override fun update(xrTime: Long) {
         val faceState = nativeGetFaceState(xrTime)
         if (faceState == null) {
@@ -52,12 +80,12 @@ public class OpenXrFace : Updatable, Face {
         }
     }
 
-    /** Native method */
     private external fun nativeGetFaceState(timestampNs: Long): FaceState?
 
-    /** Holds OpenXR constants for reference */
     internal companion object {
+        /** OpenXR constant for reference */
         internal const val XR_FACE_PARAMETER_COUNT_ANDROID: Int = 68
+        /** OpenXR constant for reference */
         internal const val XR_FACE_REGION_CONFIDENCE_COUNT_ANDROID: Int = 3
     }
 }

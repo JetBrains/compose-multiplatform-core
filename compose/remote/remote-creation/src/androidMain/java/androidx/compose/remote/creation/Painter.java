@@ -24,6 +24,7 @@ import android.os.Build;
 
 import androidx.annotation.RestrictTo;
 import androidx.compose.remote.core.operations.paint.PaintBundle;
+import androidx.compose.remote.core.operations.paint.PaintPathEffects;
 
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
@@ -214,7 +215,7 @@ public class Painter {
             float endY,
             int @NonNull [] colors,
             int mask,
-            float @NonNull [] positions,
+            float @Nullable [] positions,
             Shader.@NonNull TileMode tile) {
         mPaint.setLinearGradient(
                 colors, mask, positions, startX, startY, endX, endY, tile.ordinal());
@@ -356,10 +357,24 @@ public class Painter {
      *
      * @param fontType 0 = default 1 = sans serif 2 = serif 3 = monospace
      * @param weight The desired weight to be drawn.
-     * @param italic {@code true} if italic style is desired to be drawn. Otherwise, {@code false}
+     * @param italic {@code true} if italic style is desired to be drawn.
      */
     public @NonNull Painter setTypeface(int fontType, int weight, boolean italic) {
         mPaint.setTextStyle(fontType, weight, italic);
+        return this;
+    }
+
+    /**
+     * sets a fallback typeface (0,1,2,3) object that best matches the specified existing typeface
+     * and the specified weight and italic style if your custom font fails it should call this.
+     *
+     * @param fontType 0 = default 1 = sans serif 2 = serif 3 = monospace
+     * @param weight The desired weight to be drawn.
+     * @param italic {@code true} if italic style is desired to be drawn. Otherwise, {@code false}
+     * @return
+     */
+    public @NonNull Painter setFallbackTypeFace(int fontType, int weight, boolean italic) {
+        mPaint.setFallbackTypeFace(fontType, weight, italic);
         return this;
     }
 
@@ -608,6 +623,18 @@ public class Painter {
     public @NonNull Painter setTextureShader(
             int texture, short tileModeX, short tileModeY, short filterMode, short maxAnisotropy) {
         mPaint.setTextureShader(texture, tileModeX, tileModeY, filterMode, maxAnisotropy);
+        return this;
+    }
+
+    /**
+     * Set the path effect
+     *
+     * @param pathEffectData path effect data
+     * @return the painter object
+     * @see PaintPathEffects
+     */
+    public @NonNull Painter setPathEffect(float @Nullable [] pathEffectData) {
+        mPaint.setPathEffect(pathEffectData);
         return this;
     }
 }

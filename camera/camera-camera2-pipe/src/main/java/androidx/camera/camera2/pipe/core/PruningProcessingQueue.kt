@@ -136,7 +136,7 @@ internal class PruningProcessingQueue<T>(
                     processDeferred?.onAwait { processDeferred = null }
                 }
             } catch (cancellationException: CancellationException) {
-                Log.debug(cancellationException) { "PruningProcessingQueue: Scope cancelled" }
+                Log.debug { "PruningProcessingQueue: Scope cancelled" }
                 break
             } catch (throwable: Throwable) {
                 Log.error(throwable) { "Encountered exception during processing" }
@@ -146,7 +146,7 @@ internal class PruningProcessingQueue<T>(
 
             if (queue.isEmpty() || processDeferred != null) continue
 
-            val elementToProcess = queue.first()
+            val elementToProcess = queue.removeFirst()
             val deferred = async {
                 Log.debug { "PruningProcessingQueue: Processing $elementToProcess" }
                 process(elementToProcess)
@@ -156,7 +156,6 @@ internal class PruningProcessingQueue<T>(
                 Log.info { "Unable to process $elementToProcess due to Job cancellation" }
                 break
             }
-            queue.removeFirst()
             processDeferred = deferred
         }
 

@@ -23,11 +23,10 @@ import androidx.compose.remote.core.operations.TextAttribute
 import androidx.compose.remote.creation.Painter
 import androidx.compose.remote.creation.RemoteComposeWriter
 import androidx.compose.remote.creation.RemoteComposeWriterAndroid
-import androidx.compose.remote.creation.compose.capture.LocalRemoteComposeCreationState
 import androidx.compose.remote.creation.compose.state.RemoteFloat
+import androidx.compose.remote.creation.compose.state.RemoteFloatExpression
+import androidx.compose.remote.creation.compose.state.RemoteStateInstanceKey
 import androidx.compose.remote.creation.compose.state.RemoteString
-import androidx.compose.remote.creation.compose.state.rememberRemoteFloat
-import androidx.compose.remote.creation.compose.state.rf
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
@@ -46,57 +45,67 @@ private val RemoteComposeWriter.painter: Painter
     }
 
 @Composable
+@Suppress("UnrememberedMutableState")
 public fun measureTextWidth(
     text: RemoteString,
     style: TextStyle = LocalTextStyle.current,
     fontSize: TextUnit = TextUnit.Unspecified,
 ): RemoteFloat {
     val textSize = with(LocalDensity.current) { fontSize.takeOrElse { style.fontSize }.toPx() }
-    val creationState = LocalRemoteComposeCreationState.current
-    val doc = creationState.document
-    doc.painter
-        .setTextSize(textSize)
-        .setTypeface(
-            0,
-            (style.fontWeight ?: FontWeight.Normal).weight,
-            style.fontStyle == FontStyle.Italic,
-        )
-        .commit() // For text width measuring
 
-    return rememberRemoteFloat {
-        doc.textAttribute(text.getIdForCreationState(creationState), TextAttribute.MEASURE_WIDTH).rf
+    return RemoteFloatExpression(
+        constantValueOrNull = null,
+        // May depend on composition locals so avoid caching
+        cacheKey = RemoteStateInstanceKey(),
+    ) { creationState ->
+        val doc = creationState.document
+        doc.painter
+            .setTextSize(textSize)
+            .setTypeface(
+                0,
+                (style.fontWeight ?: FontWeight.Normal).weight,
+                style.fontStyle == FontStyle.Italic,
+            )
+            .commit() // For text width measuring
+
+        floatArrayOf(
+            doc.textAttribute(
+                text.getIdForCreationState(creationState),
+                TextAttribute.MEASURE_WIDTH,
+            )
+        )
     }
 }
 
 @Composable
+@Suppress("UnrememberedMutableState")
 public fun measureTextHeight(
     text: RemoteString,
     style: TextStyle = LocalTextStyle.current,
     fontSize: TextUnit = TextUnit.Unspecified,
 ): RemoteFloat {
     val textSize = with(LocalDensity.current) { fontSize.takeOrElse { style.fontSize }.toPx() }
-    val creationState = LocalRemoteComposeCreationState.current
-    val doc = creationState.document
-    doc.painter
-        .setTextSize(textSize)
-        .setTypeface(
-            0,
-            (style.fontWeight ?: FontWeight.Normal).weight,
-            style.fontStyle == FontStyle.Italic,
+
+    return RemoteFloatExpression(
+        constantValueOrNull = null,
+        // May depend on composition locals so avoid caching
+        cacheKey = RemoteStateInstanceKey(),
+    ) { creationState ->
+        val doc = creationState.document
+        doc.painter
+            .setTextSize(textSize)
+            .setTypeface(
+                0,
+                (style.fontWeight ?: FontWeight.Normal).weight,
+                style.fontStyle == FontStyle.Italic,
+            )
+            .commit() // For text width measuring
+
+        floatArrayOf(
+            doc.textAttribute(
+                text.getIdForCreationState(creationState),
+                TextAttribute.MEASURE_HEIGHT,
+            )
         )
-        .commit() // For text width measuring
-
-    return rememberRemoteFloat {
-        doc.textAttribute(text.getIdForCreationState(creationState), TextAttribute.MEASURE_HEIGHT)
-            .rf
-    }
-}
-
-@Composable
-public fun measureTextLength(text: RemoteString): RemoteFloat {
-    val creationState = LocalRemoteComposeCreationState.current
-    val doc = creationState.document
-    return rememberRemoteFloat {
-        doc.textAttribute(text.getIdForCreationState(creationState), TextAttribute.TEXT_LENGTH).rf
     }
 }

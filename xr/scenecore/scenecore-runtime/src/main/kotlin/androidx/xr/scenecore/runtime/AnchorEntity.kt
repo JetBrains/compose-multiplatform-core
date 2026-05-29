@@ -18,26 +18,28 @@ package androidx.xr.scenecore.runtime
 
 import androidx.annotation.IntDef
 import androidx.annotation.RestrictTo
+import androidx.xr.arcore.Anchor
 
 /** Interface for Anchor entity. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public interface AnchorEntity : SystemSpaceEntity {
     /** The current state of the anchor. */
     public val state: @State Int
 
-    /** Returns the native pointer of the anchor. */
-    // TODO(b/373711152) : Remove this property once the Jetpack XR Runtime API migration is done.
-    public val nativePointer: Long
-
-    /** Registers a listener to be called when the state of the anchor changes. */
+    /**
+     * Registers a listener to be called when the state of the anchor changes. Set to null to
+     * unregister a current listener.
+     */
     @Suppress("ExecutorRegistration")
-    public fun setOnStateChangedListener(onStateChangedListener: OnStateChangedListener)
+    public fun setOnStateChangedListener(onStateChangedListener: OnStateChangedListener?)
+
+    /** Sets the runtime anchor for this AnchorEntity. */
+    public fun setAnchor(anchor: Anchor): Boolean
 
     /** Specifies the current tracking state of the Anchor. */
     @IntDef(State.UNANCHORED, State.ANCHORED, State.TIMED_OUT, State.ERROR)
     @Target(AnnotationTarget.TYPE)
     @Retention(AnnotationRetention.SOURCE)
-    @Suppress("PublicTypedef")
     public annotation class State {
         public companion object {
             /**

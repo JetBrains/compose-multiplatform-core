@@ -24,8 +24,8 @@ import androidx.annotation.RestrictTo
  *
  * @param capabilities the set of capabilities enabled for the platform.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public class SpatialCapabilities(public val capabilities: Int) {
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public class SpatialCapabilities(@property:SpatialCapability public val capabilities: Int) {
 
     /** Spatial Capabilities for SceneCore Platform. */
     @RestrictTo(RestrictTo.Scope.LIBRARY)
@@ -42,7 +42,7 @@ public class SpatialCapabilities(public val capabilities: Int) {
                 SPATIAL_CAPABILITY_EMBED_ACTIVITY,
             ],
     )
-    internal annotation class SpatialCapability
+    public annotation class SpatialCapability
 
     public fun hasCapability(@SpatialCapability capability: Int): Boolean =
         (capabilities and capability) == capability

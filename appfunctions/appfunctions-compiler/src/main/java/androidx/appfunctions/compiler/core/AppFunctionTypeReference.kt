@@ -25,7 +25,10 @@ import androidx.appfunctions.compiler.core.AppFunctionTypeReference.AppFunctionS
 import androidx.appfunctions.compiler.core.AppFunctionTypeReference.AppFunctionSupportedTypeCategory.SERIALIZABLE_PROXY_LIST
 import androidx.appfunctions.compiler.core.AppFunctionTypeReference.AppFunctionSupportedTypeCategory.SERIALIZABLE_PROXY_SINGULAR
 import androidx.appfunctions.compiler.core.AppFunctionTypeReference.AppFunctionSupportedTypeCategory.SERIALIZABLE_SINGULAR
+import androidx.appfunctions.compiler.core.IntrospectionHelper.PARCELABLE_CLASS_NAME
 import androidx.appfunctions.compiler.core.metadata.AppFunctionDataTypeMetadata
+import com.google.devtools.ksp.getAllSuperTypes
+import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSTypeReference
 import com.squareup.kotlinpoet.BOOLEAN
 import com.squareup.kotlinpoet.BOOLEAN_ARRAY
@@ -41,7 +44,9 @@ import com.squareup.kotlinpoet.LONG
 import com.squareup.kotlinpoet.LONG_ARRAY
 import com.squareup.kotlinpoet.TypeName
 import java.time.Instant
+import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.LocalTime
 import java.time.ZoneId
 
 /** Represents a type that is supported by AppFunction and AppFunctionSerializable. */
@@ -68,6 +73,10 @@ class AppFunctionTypeReference(val selfTypeReference: KSTypeReference) {
                 SERIALIZABLE_INTERFACE_SINGULAR
             isAppFunctionSerializableInterfaceListType(selfTypeReference) ->
                 SERIALIZABLE_INTERFACE_LIST
+            isParcelableType(selfTypeReference) ->
+                AppFunctionSupportedTypeCategory.PARCELABLE_SINGULAR
+            isParcelableListType(selfTypeReference) ->
+                AppFunctionSupportedTypeCategory.PARCELABLE_LIST
             else ->
                 throw ProcessingException(
                     "Unsupported type reference ${selfTypeReference.ensureQualifiedTypeName().asString()}",
@@ -89,7 +98,7 @@ class AppFunctionTypeReference(val selfTypeReference: KSTypeReference) {
      * @return the type reference of the list element if the type reference is a list.
      * @throws IllegalArgumentException if used for a non-list type.
      */
-    val itemTypeReference: KSTypeReference by lazy { ->
+    val itemTypeReference: KSTypeReference by lazy {
         require(selfTypeReference.isOfType(LIST)) { "Type reference is not a list" }
         selfTypeReference.resolveListParameterizedType()
     }
@@ -152,6 +161,8 @@ class AppFunctionTypeReference(val selfTypeReference: KSTypeReference) {
         SERIALIZABLE_PROXY_LIST,
         SERIALIZABLE_INTERFACE_SINGULAR,
         SERIALIZABLE_INTERFACE_LIST,
+        PARCELABLE_SINGULAR,
+        PARCELABLE_LIST,
     }
 
     companion object {
@@ -192,7 +203,9 @@ class AppFunctionTypeReference(val selfTypeReference: KSTypeReference) {
                 isSupportedPrimitiveListType(typeReferenceArgument) ||
                 isAppFunctionSerializableType(typeReferenceArgument) ||
                 isAppFunctionSerializableListType(typeReferenceArgument) ||
-                isAppFunctionSerializableProxyListType(typeReferenceArgument)
+                isAppFunctionSerializableProxyListType(typeReferenceArgument) ||
+                isParcelableType(typeReferenceArgument) ||
+                isParcelableListType(typeReferenceArgument)
         }
 
         /**
@@ -220,7 +233,6 @@ class AppFunctionTypeReference(val selfTypeReference: KSTypeReference) {
                     AppFunctionDataTypeMetadata.TYPE_BOOLEAN
                 ByteArray::class.ensureQualifiedName() -> AppFunctionDataTypeMetadata.TYPE_BYTES
 
-                ANDROID_PENDING_INTENT -> AppFunctionDataTypeMetadata.TYPE_PENDING_INTENT
                 else ->
                     throw ProcessingException(
                         "Unsupported type reference " + this.ensureQualifiedTypeName().asString(),
@@ -230,7 +242,7 @@ class AppFunctionTypeReference(val selfTypeReference: KSTypeReference) {
         }
 
         private fun isSupportedPrimitiveListType(typeReferenceArgument: KSTypeReference) =
-            typeReferenceArgument.isOfType(LIST) &&
+            typeReferenceArgument.isListType() &&
                 typeReferenceArgument
                     .resolveListParameterizedType()
                     .asStringWithoutNullQualifier() in SUPPORTED_PRIMITIVE_TYPES_IN_LIST
@@ -238,7 +250,7 @@ class AppFunctionTypeReference(val selfTypeReference: KSTypeReference) {
         private fun isAppFunctionSerializableListType(
             typeReferenceArgument: KSTypeReference
         ): Boolean {
-            return typeReferenceArgument.isOfType(LIST) &&
+            return typeReferenceArgument.isListType() &&
                 isAppFunctionSerializableType(typeReferenceArgument.resolveListParameterizedType())
         }
 
@@ -254,7 +266,7 @@ class AppFunctionTypeReference(val selfTypeReference: KSTypeReference) {
         private fun isAppFunctionSerializableProxyListType(
             typeReferenceArgument: KSTypeReference
         ): Boolean {
-            return typeReferenceArgument.isOfType(LIST) &&
+            return typeReferenceArgument.isListType() &&
                 isAppFunctionSerializableProxyType(
                     typeReferenceArgument.resolveListParameterizedType()
                 )
@@ -289,11 +301,35 @@ class AppFunctionTypeReference(val selfTypeReference: KSTypeReference) {
         private fun isAppFunctionSerializableInterfaceListType(
             typeReferenceArgument: KSTypeReference
         ): Boolean {
-            return typeReferenceArgument.isOfType(LIST) &&
+            return typeReferenceArgument.isListType() &&
                 isAppFunctionSerializableInterfaceType(
                     typeReferenceArgument.resolveListParameterizedType()
                 )
         }
+
+        private fun isParcelableType(typeReference: KSTypeReference): Boolean {
+            val type = typeReference.resolve()
+
+            val classDeclaration = type.declaration as? KSClassDeclaration ?: return false
+
+            if (classDeclaration.qualifiedName?.asString() == PARCELABLE_CLASS_NAME.canonicalName) {
+                throw ProcessingException(
+                    "Use an implementation of Parcelable, base Parcelable type is not allowed as a type in AppFunctions",
+                    classDeclaration,
+                )
+            }
+
+            return classDeclaration.getAllSuperTypes().any { superType ->
+                superType.declaration.qualifiedName?.asString() ==
+                    PARCELABLE_CLASS_NAME.canonicalName
+            }
+        }
+
+        private fun isParcelableListType(typeReference: KSTypeReference): Boolean =
+            typeReference.isListType() &&
+                isParcelableType(typeReference.resolveListParameterizedType())
+
+        private fun KSTypeReference.isListType(): Boolean = this.isOfType(LIST)
 
         private fun TypeName.ignoreNullable(): TypeName {
             return copy(nullable = false)
@@ -303,7 +339,6 @@ class AppFunctionTypeReference(val selfTypeReference: KSTypeReference) {
             toTypeName().ignoreNullable().toString()
 
         // Android Only primitives
-        private const val ANDROID_PENDING_INTENT = "android.app.PendingIntent"
         private const val ANDROID_URI = "android.net.Uri"
 
         private val SUPPORTED_ARRAY_PRIMITIVE_TYPES =
@@ -313,7 +348,6 @@ class AppFunctionTypeReference(val selfTypeReference: KSTypeReference) {
                 FloatArray::class.ensureQualifiedName(),
                 DoubleArray::class.ensureQualifiedName(),
                 BooleanArray::class.ensureQualifiedName(),
-                ByteArray::class.ensureQualifiedName(),
             )
 
         private val SUPPORTED_SINGLE_PRIMITIVE_TYPES =
@@ -325,7 +359,9 @@ class AppFunctionTypeReference(val selfTypeReference: KSTypeReference) {
                 Boolean::class.ensureQualifiedName(),
                 String::class.ensureQualifiedName(),
                 Unit::class.ensureQualifiedName(),
-                ANDROID_PENDING_INTENT,
+                // AppFunction considers ByteArray as singular primitive type as Byte is not
+                // supported.
+                ByteArray::class.ensureQualifiedName(),
             )
 
         private val SUPPORTED_SINGLE_SERIALIZABLE_PROXY_TYPES =
@@ -334,6 +370,8 @@ class AppFunctionTypeReference(val selfTypeReference: KSTypeReference) {
                 ANDROID_URI,
                 ZoneId::class.ensureQualifiedName(),
                 Instant::class.ensureQualifiedName(),
+                LocalDate::class.ensureQualifiedName(),
+                LocalTime::class.ensureQualifiedName(),
             )
 
         private val SUPPORTED_PRIMITIVE_TYPES_IN_LIST = setOf(String::class.ensureQualifiedName())

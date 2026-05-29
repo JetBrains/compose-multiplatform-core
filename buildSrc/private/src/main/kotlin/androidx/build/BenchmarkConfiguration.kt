@@ -26,7 +26,7 @@ import org.gradle.api.Project
  * See [androidx.build.testConfiguration.INST_ARG_BLOCKLIST], which can be used to suppress some of
  * these args in CI.
  */
-internal fun HasDeviceTests.enableMicrobenchmarkInternalDefaults(project: Project) {
+internal fun HasDeviceTests.enableBenchmarkInternalDefaults(project: Project) {
     if (project.hasBenchmarkPlugin()) {
         deviceTests.forEach { (_, deviceTest) ->
             // Enables CPU perf event counters both locally, and in CI
@@ -62,6 +62,22 @@ internal fun HasDeviceTests.enableMicrobenchmarkInternalDefaults(project: Projec
             // NOTE, this *must* be suppressed in CI!!
             deviceTest.instrumentationRunnerArguments.put(
                 "androidx.benchmark.profiling.skipWhenDurationRisksAnr",
+                "false",
+            )
+
+            // Temporarily disable this check while we are trialing fixed performance mode for
+            // benchmark runners (b/468041607). Fixed performance does not lock the clocks.
+            deviceTest.instrumentationRunnerArguments.put(
+                "androidx.benchmark.requireLockedClocks",
+                "false",
+            )
+        }
+    } else if (project.isMacrobenchmark()) {
+        deviceTests.forEach { (_, deviceTest) ->
+            // Temporarily disable this check while we are trialing fixed performance mode for
+            // benchmark runners (b/468041607). Fixed performance does not lock the clocks.
+            deviceTest.instrumentationRunnerArguments.put(
+                "androidx.benchmark.requireLockedClocks",
                 "false",
             )
         }

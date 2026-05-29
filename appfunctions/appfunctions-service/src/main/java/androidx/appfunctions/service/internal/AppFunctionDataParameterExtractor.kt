@@ -16,8 +16,8 @@
 
 package androidx.appfunctions.service.internal
 
-import android.app.PendingIntent
 import android.os.Build
+import android.os.Parcelable
 import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.appfunctions.AppFunctionData
@@ -32,7 +32,7 @@ import androidx.appfunctions.metadata.AppFunctionIntTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionLongTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionObjectTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionParameterMetadata
-import androidx.appfunctions.metadata.AppFunctionPendingIntentTypeMetadata
+import androidx.appfunctions.metadata.AppFunctionParcelableTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionReferenceTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionStringTypeMetadata
 
@@ -90,13 +90,18 @@ internal fun AppFunctionData.unsafeGetParameterValue(
                     }
                 }
                 is AppFunctionBytesTypeMetadata -> {
-                    throw IllegalStateException("Type of a single byte is not supported")
+                    if (!isRequired && !isNullable) {
+                        getByteArray(key) ?: byteArrayOf()
+                    } else {
+                        getByteArray(key)
+                    }
                 }
                 is AppFunctionStringTypeMetadata -> {
                     getString(key)
                 }
-                is AppFunctionPendingIntentTypeMetadata -> {
-                    getPendingIntent(key)
+                is AppFunctionParcelableTypeMetadata -> {
+                    val parcelableClass = getParcelableClass(castDataType.qualifiedName)
+                    getParcelable(key, parcelableClass)
                 }
                 is AppFunctionObjectTypeMetadata -> {
                     getAppFunctionData(key)?.deserialize(checkNotNull(castDataType.qualifiedName))
@@ -115,11 +120,11 @@ internal fun AppFunctionData.unsafeGetParameterValue(
                 }
                 else ->
                     throw IllegalStateException(
-                        "Unknown DataTypeMetadata: ${castDataType::class.java}"
+                        "Unknown DataTypeMetadata: ${castDataType.javaClass}"
                     )
             }
         if (value == null) {
-            require(!parameterMetadata.isRequired) {
+            require(!parameterMetadata.isRequired || parameterMetadata.dataType.isNullable) {
                 Log.d(APP_FUNCTIONS_TAG, "Parameter ${parameterMetadata.name} is required")
                 "Parameter ${parameterMetadata.name} is required"
             }
@@ -181,11 +186,7 @@ private fun AppFunctionData.getArrayTypeParameterValue(
             }
         }
         is AppFunctionBytesTypeMetadata -> {
-            if (!isRequired && !isNullable) {
-                getByteArray(key) ?: byteArrayOf()
-            } else {
-                getByteArray(key)
-            }
+            throw IllegalStateException("List<ByteArray> is not supported")
         }
         is AppFunctionStringTypeMetadata -> {
             if (!isRequired && !isNullable) {
@@ -194,11 +195,12 @@ private fun AppFunctionData.getArrayTypeParameterValue(
                 getStringList(key)
             }
         }
-        is AppFunctionPendingIntentTypeMetadata -> {
+        is AppFunctionParcelableTypeMetadata -> {
+            val parcelableClass = getParcelableClass(itemType.qualifiedName)
             if (!isRequired && !isNullable) {
-                getPendingIntentList(key) ?: emptyList<PendingIntent>()
+                getParcelableList(key, parcelableClass) ?: emptyList()
             } else {
-                getPendingIntentList(key)
+                getParcelableList(key, parcelableClass)
             }
         }
         is AppFunctionObjectTypeMetadata -> {
@@ -223,7 +225,23 @@ private fun AppFunctionData.getArrayTypeParameterValue(
                 }
             }
         }
-        else ->
-            throw IllegalStateException("Unknown item DataTypeMetadata: ${itemType::class.java}")
+        else -> throw IllegalStateException("Unknown item DataTypeMetadata: ${itemType.javaClass}")
     }
+}
+
+private fun getParcelableClass(className: String): Class<Parcelable> {
+    val rawClass =
+        try {
+            Class.forName(className)
+        } catch (e: ClassNotFoundException) {
+            throw IllegalStateException("Class '$className' could not be found.", e)
+        }
+
+    if (!Parcelable::class.java.isAssignableFrom(rawClass)) {
+        throw IllegalStateException("Class '$className' is not a Parcelable.")
+    }
+
+    @Suppress("UNCHECKED_CAST") val parcelableClass = rawClass as Class<Parcelable>
+
+    return parcelableClass
 }

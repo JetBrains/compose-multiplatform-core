@@ -89,12 +89,24 @@ public class FastScroller(
         viewHeight: Int,
         visiblePages: Range<Int>,
         estimatedFullHeight: Float,
+        paddingRect: Rect,
     ) {
+        val effectiveViewHeight = viewHeight - paddingRect.top - paddingRect.bottom
+        if (
+            !scrollCalculator.canFastScroll(
+                effectiveViewHeight,
+                fastScrollDrawer.thumbHeightPx,
+                estimatedFullHeight,
+            )
+        ) {
+            return
+        }
+
         if (scrollY != lastScrollY) {
             fastScrollY =
                 scrollCalculator.computeThumbPosition(
                     scrollY = scrollY,
-                    viewHeight = viewHeight,
+                    viewHeight = effectiveViewHeight,
                     thumbHeightPx = fastScrollDrawer.thumbHeightPx,
                     estimatedFullHeight = estimatedFullHeight,
                 )
@@ -120,17 +132,31 @@ public class FastScroller(
         scrollY: Float,
         viewHeight: Int,
         estimatedFullHeight: Float,
+        paddingRect: Rect,
     ): Int {
+        val effectiveViewHeight = viewHeight - paddingRect.top - paddingRect.bottom
+        val effectiveScrollY = scrollY - paddingRect.top
+
+        if (
+            !scrollCalculator.canFastScroll(
+                effectiveViewHeight,
+                fastScrollDrawer.thumbHeightPx,
+                estimatedFullHeight,
+            )
+        ) {
+            return 0
+        }
+
         fastScrollY =
             scrollCalculator.constrainScrollPosition(
-                scrollY,
-                viewHeight,
+                effectiveScrollY,
+                effectiveViewHeight,
                 fastScrollDrawer.thumbHeightPx,
             )
 
         return scrollCalculator.computeViewScroll(
             fastScrollY = fastScrollY,
-            viewHeight = viewHeight,
+            viewHeight = effectiveViewHeight,
             thumbHeightPx = fastScrollDrawer.thumbHeightPx,
             estimatedFullHeight = estimatedFullHeight,
         )

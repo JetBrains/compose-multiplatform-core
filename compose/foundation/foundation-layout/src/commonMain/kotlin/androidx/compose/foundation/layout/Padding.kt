@@ -16,6 +16,7 @@
 
 package androidx.compose.foundation.layout
 
+import androidx.compose.foundation.layout.PaddingValues.Absolute
 import androidx.compose.foundation.layout.internal.requirePrecondition
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
@@ -194,16 +195,6 @@ interface PaddingValues {
     /** The padding to be applied along the bottom edge inside a box. */
     fun calculateBottomPadding(): Dp
 
-    /** Returns a new [PaddingValues] with the sum of this and [other] */
-    @Stable operator fun plus(other: PaddingValues): PaddingValues = AddedPaddingValues(this, other)
-
-    /**
-     * Returns a new [PaddingValues] with the difference of this and [other], coercing negative
-     * values to `0.dp`.
-     */
-    @Stable
-    operator fun minus(other: PaddingValues): PaddingValues = SubtractedPaddingValues(this, other)
-
     /** Describes an absolute (RTL unaware) padding to be applied along the edges inside a box. */
     @Immutable
     class Absolute(
@@ -253,6 +244,48 @@ interface PaddingValues {
         @Stable @get:Stable val Zero: PaddingValues = Absolute()
     }
 }
+
+/** Adds two [PaddingValues] together. */
+@Stable
+operator fun PaddingValues.plus(other: PaddingValues): PaddingValues =
+    object : PaddingValues {
+        override fun calculateLeftPadding(layoutDirection: LayoutDirection): Dp =
+            this@plus.calculateLeftPadding(layoutDirection) +
+                other.calculateLeftPadding(layoutDirection)
+
+        override fun calculateTopPadding(): Dp =
+            this@plus.calculateTopPadding() + other.calculateTopPadding()
+
+        override fun calculateRightPadding(layoutDirection: LayoutDirection): Dp =
+            this@plus.calculateRightPadding(layoutDirection) +
+                other.calculateRightPadding(layoutDirection)
+
+        override fun calculateBottomPadding(): Dp =
+            this@plus.calculateBottomPadding() + other.calculateBottomPadding()
+    }
+
+/** Subtracts a [PaddingValues] from another one and ensures that the result is non-negative. */
+@Stable
+operator fun PaddingValues.minus(other: PaddingValues): PaddingValues =
+    object : PaddingValues {
+        override fun calculateLeftPadding(layoutDirection: LayoutDirection): Dp =
+            (this@minus.calculateLeftPadding(layoutDirection) -
+                    other.calculateLeftPadding(layoutDirection))
+                .coerceAtLeast(0.dp)
+
+        override fun calculateTopPadding(): Dp =
+            (this@minus.calculateTopPadding() - other.calculateTopPadding()).coerceAtLeast(0.dp)
+
+        override fun calculateRightPadding(layoutDirection: LayoutDirection): Dp =
+            (this@minus.calculateRightPadding(layoutDirection) -
+                    other.calculateRightPadding(layoutDirection))
+                .coerceAtLeast(0.dp)
+
+        override fun calculateBottomPadding(): Dp =
+            (this@minus.calculateBottomPadding() - other.calculateBottomPadding()).coerceAtLeast(
+                0.dp
+            )
+    }
 
 /**
  * The padding to be applied along the start edge inside a box: along the left edge if the layout
@@ -340,79 +373,6 @@ internal class PaddingValuesImpl(
         ((start.hashCode() * 31 + top.hashCode()) * 31 + end.hashCode()) * 31 + bottom.hashCode()
 
     override fun toString() = "PaddingValues(start=$start, top=$top, end=$end, bottom=$bottom)"
-}
-
-/**
- * A [PaddingValues] that is the sum of [first] and [second] as returned after [PaddingValues.plus].
- */
-@Immutable
-private class AddedPaddingValues(val first: PaddingValues, val second: PaddingValues) :
-    PaddingValues {
-    override fun calculateLeftPadding(layoutDirection: LayoutDirection): Dp {
-        return first.calculateLeftPadding(layoutDirection) +
-            second.calculateLeftPadding(layoutDirection)
-    }
-
-    override fun calculateTopPadding(): Dp {
-        return first.calculateTopPadding() + second.calculateTopPadding()
-    }
-
-    override fun calculateRightPadding(layoutDirection: LayoutDirection): Dp {
-        return first.calculateRightPadding(layoutDirection) +
-            second.calculateRightPadding(layoutDirection)
-    }
-
-    override fun calculateBottomPadding(): Dp {
-        return first.calculateBottomPadding() + second.calculateBottomPadding()
-    }
-
-    override fun equals(other: Any?): Boolean {
-        if (other !is AddedPaddingValues) return false
-        return first == other.first && second == other.second
-    }
-
-    override fun hashCode() = first.hashCode() * 31 + second.hashCode()
-
-    override fun toString() = "($first + $second)"
-}
-
-/**
- * A [PaddingValues] that is the difference of [first] and [second] as returned after
- * [PaddingValues.minus]. Paddings will be coerced to 0 if the result is negative.
- */
-@Immutable
-private class SubtractedPaddingValues(val first: PaddingValues, val second: PaddingValues) :
-    PaddingValues {
-    override fun calculateLeftPadding(layoutDirection: LayoutDirection): Dp {
-        return (first.calculateLeftPadding(layoutDirection) -
-                second.calculateLeftPadding(layoutDirection))
-            .coerceAtLeast(0.dp)
-    }
-
-    override fun calculateTopPadding(): Dp {
-        return (first.calculateTopPadding() - second.calculateTopPadding()).coerceAtLeast(0.dp)
-    }
-
-    override fun calculateRightPadding(layoutDirection: LayoutDirection): Dp {
-        return (first.calculateRightPadding(layoutDirection) -
-                second.calculateRightPadding(layoutDirection))
-            .coerceAtLeast(0.dp)
-    }
-
-    override fun calculateBottomPadding(): Dp {
-        return (first.calculateBottomPadding() - second.calculateBottomPadding()).coerceAtLeast(
-            0.dp
-        )
-    }
-
-    override fun equals(other: Any?): Boolean {
-        if (other !is SubtractedPaddingValues) return false
-        return first == other.first && second == other.second
-    }
-
-    override fun hashCode() = first.hashCode() * 31 + second.hashCode()
-
-    override fun toString() = "($first - $second)"
 }
 
 private class PaddingElement(

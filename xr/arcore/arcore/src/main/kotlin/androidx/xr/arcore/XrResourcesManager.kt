@@ -18,16 +18,18 @@ package androidx.xr.arcore
 
 import android.annotation.SuppressLint
 import androidx.xr.arcore.runtime.ArDevice as RuntimeArDevice
+import androidx.xr.arcore.runtime.AugmentedImage as RuntimeImage
 import androidx.xr.arcore.runtime.AugmentedObject as RuntimeObject
-import androidx.xr.arcore.runtime.DepthMap as RuntimeDepthMap
-import androidx.xr.arcore.runtime.Earth as RuntimeEarth
+import androidx.xr.arcore.runtime.Depth as RuntimeDepth
 import androidx.xr.arcore.runtime.Eye as RuntimeEye
 import androidx.xr.arcore.runtime.Face as RuntimeFace
+import androidx.xr.arcore.runtime.Geospatial as RuntimeGeospatial
 import androidx.xr.arcore.runtime.Hand as RuntimeHand
+import androidx.xr.arcore.runtime.PerceptionRuntime
 import androidx.xr.arcore.runtime.Plane as RuntimePlane
+import androidx.xr.arcore.runtime.QrCode as RuntimeQrCode
 import androidx.xr.arcore.runtime.RenderViewpoint as RuntimeRenderViewpoint
 import androidx.xr.arcore.runtime.Trackable as RuntimeTrackable
-import androidx.xr.runtime.internal.LifecycleManager
 import java.util.Queue
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.CopyOnWriteArrayList
@@ -35,7 +37,7 @@ import java.util.concurrent.CopyOnWriteArrayList
 /** Manages all XR resources that are used by the ARCore for XR API. */
 internal class XrResourcesManager {
 
-    internal lateinit var lifecycleManager: LifecycleManager
+    internal lateinit var perceptionRuntime: PerceptionRuntime
 
     /** List of [Updatable]s that are updated every frame. */
     private val _updatables = CopyOnWriteArrayList<Updatable>()
@@ -79,25 +81,25 @@ internal class XrResourcesManager {
 
     /** The data of the user's face */
     private var _userFace: RuntimeFace? = null
-    val userFace: Face? by lazy { _userFace?.let { Face(it) } }
+    val userFace: Face? by lazy { _userFace?.let { Face(it, this) } }
 
     /** Geospatial data */
-    private var _earth: Earth? = null
-    val earth: Earth
-        get() = checkNotNull(_earth)
+    internal var _geospatial: Geospatial? = null
+    val geospatial: Geospatial
+        get() = checkNotNull(_geospatial)
 
     /** The depth map data */
-    var leftDepthMap: DepthMap? = null
+    var leftDepth: Depth? = null
         private set
 
-    var rightDepthMap: DepthMap? = null
+    var rightDepth: Depth? = null
         private set
 
-    var monoDepthMap: DepthMap? = null
+    var monoDepth: Depth? = null
         private set
 
-    internal fun initiateEarth(runtimeEarth: RuntimeEarth) {
-        _earth = Earth(runtimeEarth, this)
+    internal fun initiateGeospatial(runtimeGeospatial: RuntimeGeospatial) {
+        _geospatial = Geospatial(runtimeGeospatial, this)
     }
 
     internal fun initiateEyes(leftRuntimeEye: RuntimeEye?, rightRuntimeEye: RuntimeEye?) {
@@ -128,14 +130,14 @@ internal class XrResourcesManager {
         }
     }
 
-    internal fun initiateDepthMaps(
-        runtimeLeftDepthMap: RuntimeDepthMap?,
-        runtimeRightDepthMap: RuntimeDepthMap?,
-        runtimeMonoDepthMap: RuntimeDepthMap?,
+    internal fun initiateDepths(
+        runtimeLeftDepth: RuntimeDepth?,
+        runtimeRightDepth: RuntimeDepth?,
+        runtimeMonoDepth: RuntimeDepth?,
     ) {
-        runtimeLeftDepthMap?.let { leftDepthMap = DepthMap(it) }
-        runtimeRightDepthMap?.let { rightDepthMap = DepthMap(it) }
-        runtimeMonoDepthMap?.let { monoDepthMap = DepthMap(it) }
+        runtimeLeftDepth?.let { leftDepth = Depth(it) }
+        runtimeRightDepth?.let { rightDepth = Depth(it) }
+        runtimeMonoDepth?.let { monoDepth = Depth(it) }
     }
 
     internal fun initiateFace(userFace: RuntimeFace?) {
@@ -163,11 +165,10 @@ internal class XrResourcesManager {
             updatable.update()
         }
 
-        // Earth should always be initialized if a runtime is present. This check should only fail
-        // in
-        // unit tests.
-        if (_earth != null) {
-            earth.update()
+        // Geospatial should always be initialized if a runtime is present. This check should only
+        // fail in unit tests.
+        if (_geospatial != null) {
+            geospatial.update()
         }
     }
 
@@ -201,6 +202,11 @@ internal class XrResourcesManager {
             when (runtimeTrackable) {
                 is RuntimePlane -> Plane(runtimeTrackable, this)
                 is RuntimeObject -> AugmentedObject(runtimeTrackable, this)
+                is RuntimeImage -> AugmentedImage(runtimeTrackable)
+                is RuntimeQrCode -> QrCode(runtimeTrackable)
+                is RuntimeFace -> Face(runtimeTrackable, this)
+                is RuntimeEye -> Eye(runtimeTrackable)
+                is RuntimeHand -> Hand(runtimeTrackable)
                 else ->
                     throw IllegalArgumentException(
                         "Unsupported trackable type: ${runtimeTrackable.javaClass}"

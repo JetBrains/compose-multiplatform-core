@@ -15,31 +15,42 @@
  */
 package androidx.compose.remote.player.view;
 
+import static com.google.common.truth.Truth.assertThat;
+
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 
-import androidx.compose.remote.core.Platform;
+import androidx.compose.remote.core.Limits;
+import androidx.compose.remote.core.RcPlatformServices;
 import androidx.compose.remote.core.RemoteComposeBuffer;
 import androidx.compose.remote.core.RemoteContext;
 import androidx.compose.remote.core.operations.BitmapData;
 import androidx.compose.remote.core.operations.Theme;
 import androidx.compose.remote.creation.RemoteComposeContext;
 import androidx.compose.remote.creation.RemoteComposeContextAndroid;
-import androidx.compose.remote.creation.platform.AndroidxPlatformServices;
-import androidx.compose.remote.player.core.RemoteComposeDocument;
+import androidx.compose.remote.creation.platform.AndroidxRcPlatformServices;
+import androidx.compose.remote.player.core.RemoteDocument;
+import androidx.compose.remote.player.core.platform.AndroidRemoteContext;
+import androidx.compose.remote.player.core.platform.BitmapLoader;
 import androidx.compose.remote.player.view.platform.RemoteComposeView;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.SdkSuppress;
 import androidx.test.platform.app.InstrumentationRegistry;
 
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
@@ -49,10 +60,27 @@ import java.util.Random;
 @RunWith(AndroidJUnit4.class)
 public class ImageErrorTest {
 
-    private final Platform mPlatform = new AndroidxPlatformServices();
+    private final RcPlatformServices mPlatform = new AndroidxRcPlatformServices();
+
+    private boolean mOriginalEnableImageUrls;
+    private boolean mOriginalEnableImageFiles;
+
+    @Before
+    public void setUp() {
+        mOriginalEnableImageUrls = Limits.ENABLE_IMAGE_URLS;
+        mOriginalEnableImageFiles = Limits.ENABLE_IMAGE_FILES;
+        Limits.ENABLE_IMAGE_URLS = true;
+        Limits.ENABLE_IMAGE_FILES = true;
+    }
+
+    @After
+    public void tearDown() {
+        Limits.ENABLE_IMAGE_URLS = mOriginalEnableImageUrls;
+        Limits.ENABLE_IMAGE_FILES = mOriginalEnableImageFiles;
+    }
 
     // ########################### TEST UTILS ######################################
-    private RemoteComposeDocument createDocument(
+    private RemoteDocument createDocument(
             RemoteContext context, Bitmap lightImage, Bitmap darkImage) {
         byte[] buffer = create(lightImage, darkImage);
         System.out.println("size of doc " + buffer.length / 1024 + "KB");
@@ -87,15 +115,14 @@ public class ImageErrorTest {
         return Arrays.copyOf(buffer, bufferSize);
     }
 
-    private RemoteComposeDocument createDocument(
-            byte[] buffer, int bufferSize, RemoteContext context) {
-        RemoteComposeDocument recreatedDocument =
-                new RemoteComposeDocument(new ByteArrayInputStream(buffer, 0, bufferSize));
+    private RemoteDocument createDocument(byte[] buffer, int bufferSize, RemoteContext context) {
+        RemoteDocument recreatedDocument =
+                new RemoteDocument(new ByteArrayInputStream(buffer, 0, bufferSize));
         recreatedDocument.initializeContext(context);
         return recreatedDocument;
     }
 
-    ByteBuffer docGetBuffer(RemoteComposeDocument doc) {
+    ByteBuffer docGetBuffer(RemoteDocument doc) {
         RemoteComposeBuffer buff = doc.getDocument().getBuffer();
         int size = buff.getBuffer().getSize();
         ByteBuffer b = ByteBuffer.allocate(size);
@@ -113,7 +140,7 @@ public class ImageErrorTest {
         Bitmap lightImage = TestUtils.createImage(tw, th, false);
         Bitmap darkImage = TestUtils.createImage(tw, th, true);
         DebugPlayerContext debugContext = new DebugPlayerContext();
-        RemoteComposeDocument doc = createDocument(debugContext, lightImage, darkImage);
+        RemoteDocument doc = createDocument(debugContext, lightImage, darkImage);
         doc.paint(debugContext, Theme.UNSPECIFIED);
 
         String result = TestUtils.removeTime(debugContext.getTestResults());
@@ -151,6 +178,193 @@ public class ImageErrorTest {
         assertEquals("write doc <$result>", expectedResult, result);
     }
 
+    @Test
+    public void testInlineLargeArgb8888PngFailsSafely() {
+        int tw = 600;
+        int th = 600;
+
+        int declaredWidth = 10;
+        int declaredHeight = 10;
+        int attackWidth = 2000;
+        int attackHeight = 2000;
+
+        Bitmap bigImage = Bitmap.createBitmap(attackWidth, attackHeight, Bitmap.Config.ARGB_8888);
+        java.io.ByteArrayOutputStream bos = new java.io.ByteArrayOutputStream();
+        bigImage.compress(Bitmap.CompressFormat.PNG, 100, bos);
+        byte[] bigPngBytes = bos.toByteArray();
+        bigImage.recycle();
+
+        RemoteComposeBuffer buffer = new RemoteComposeBuffer();
+        buffer.header(tw, th, 1.0f, 0L);
+        buffer.storeBitmap(1, declaredWidth, declaredHeight, bigPngBytes);
+        buffer.addDrawBitmap(1, 0f, 0f, 100f, 100f, 0);
+
+        int size = buffer.getBuffer().getSize();
+        byte[] b = Arrays.copyOf(buffer.getBuffer().getBuffer(), size);
+        InputStream is = new ByteArrayInputStream(b);
+        RemoteDocument rdoc = new RemoteDocument(is);
+        android.content.Context appContext =
+                InstrumentationRegistry.getInstrumentation().getTargetContext();
+
+        AndroidRemoteContext context = new AndroidRemoteContext();
+        context.useCanvas(new Canvas());
+
+        RuntimeException e =
+                assertThrows(
+                        RuntimeException.class,
+                        () -> {
+                            rdoc.paint(context, Theme.UNSPECIFIED);
+                        });
+        assertThat(e).hasMessageThat().contains("dimensions don't match");
+    }
+
+    @Test
+    public void testInlineAlpha8LargePngFailsSafely() {
+        int tw = 600;
+        int th = 600;
+
+        int declaredWidth = 10;
+        int declaredHeight = 10;
+        int attackWidth = 2000;
+        int attackHeight = 2000;
+
+        // Create the image as ARGB_8888 so it successfully compresses to PNG.
+        // It will be decoded as ALPHA_8 because we store it with storeBitmapA8.
+        Bitmap bigImage = Bitmap.createBitmap(attackWidth, attackHeight, Bitmap.Config.ARGB_8888);
+        java.io.ByteArrayOutputStream bos = new java.io.ByteArrayOutputStream();
+        assertTrue(
+                "failed to compress to PNG",
+                bigImage.compress(Bitmap.CompressFormat.PNG, 100, bos));
+        byte[] bigPngBytes = bos.toByteArray();
+        bigImage.recycle();
+
+        RemoteComposeBuffer buffer = new RemoteComposeBuffer();
+        buffer.header(tw, th, 1.0f, 0L);
+        // Store as Alpha 8 explicitly
+        buffer.storeBitmapA8(1, declaredWidth, declaredHeight, bigPngBytes);
+        buffer.addDrawBitmap(1, 0f, 0f, 100f, 100f, 0);
+
+        int size = buffer.getBuffer().getSize();
+        byte[] b = Arrays.copyOf(buffer.getBuffer().getBuffer(), size);
+        InputStream is = new ByteArrayInputStream(b);
+        RemoteDocument rdoc = new RemoteDocument(is);
+        android.content.Context appContext =
+                InstrumentationRegistry.getInstrumentation().getTargetContext();
+
+        AndroidRemoteContext context = new AndroidRemoteContext();
+        context.useCanvas(new Canvas());
+
+        RuntimeException e =
+                assertThrows(
+                        RuntimeException.class,
+                        () -> {
+                            rdoc.paint(context, Theme.UNSPECIFIED);
+                        });
+        assertThat(e).hasMessageThat().contains("dimensions don't match");
+    }
+
+    @Test
+    public void testUrlLargePngFailsSafely() {
+        int tw = 600;
+        int th = 600;
+
+        int declaredWidth = 10;
+        int declaredHeight = 10;
+        int attackWidth = 2000;
+        int attackHeight = 2000;
+
+        String url = "content://large_png";
+
+        // Create a large image that is actually 2000x2000
+        Bitmap bigImage = Bitmap.createBitmap(attackWidth, attackHeight, Bitmap.Config.ARGB_8888);
+        java.io.ByteArrayOutputStream bos = new java.io.ByteArrayOutputStream();
+        bigImage.compress(Bitmap.CompressFormat.PNG, 100, bos);
+        byte[] bigPngBytes = bos.toByteArray();
+        bigImage.recycle();
+
+        BitmapLoader largeImageLoader = u -> new ByteArrayInputStream(bigPngBytes);
+
+        RemoteComposeBuffer buffer = new RemoteComposeBuffer();
+        buffer.header(tw, th, 1.0f, 0L);
+        buffer.storeBitmapUrl(1, url, declaredWidth, declaredHeight);
+        buffer.addDrawBitmap(1, 0f, 0f, 100f, 100f, 0);
+
+        int size = buffer.getBuffer().getSize();
+        byte[] b = Arrays.copyOf(buffer.getBuffer().getBuffer(), size);
+        InputStream is = new ByteArrayInputStream(b);
+        RemoteDocument rdoc = new RemoteDocument(is);
+
+        android.content.Context appContext =
+                InstrumentationRegistry.getInstrumentation().getTargetContext();
+
+        AndroidRemoteContext context = new AndroidRemoteContext();
+        context.useCanvas(new Canvas());
+        context.setBitmapLoader(largeImageLoader);
+
+        RuntimeException e =
+                assertThrows(
+                        RuntimeException.class,
+                        () -> {
+                            rdoc.paint(context, Theme.UNSPECIFIED);
+                        });
+        assertThat(e).hasMessageThat().contains("dimensions don't match");
+    }
+
+    @Test
+    public void testFileLargePngFailsSafely() throws IOException {
+        int tw = 600;
+        int th = 600;
+
+        int declaredWidth = 10;
+        int declaredHeight = 10;
+        int attackWidth = 2000;
+        int attackHeight = 2000;
+
+        android.content.Context appContext =
+                InstrumentationRegistry.getInstrumentation().getTargetContext();
+
+        // Create a large image that is actually 2000x2000
+        Bitmap bigImage = Bitmap.createBitmap(attackWidth, attackHeight, Bitmap.Config.ARGB_8888);
+        File tempFile = File.createTempFile("large_png", ".png", appContext.getCacheDir());
+        try (FileOutputStream fos = new FileOutputStream(tempFile)) {
+            bigImage.compress(Bitmap.CompressFormat.PNG, 100, fos);
+        }
+        bigImage.recycle();
+
+        RemoteComposeBuffer buffer = new RemoteComposeBuffer();
+        buffer.header(tw, th, 1.0f, 0L);
+        byte[] pathBytes =
+                tempFile.getAbsolutePath().getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        BitmapData.apply(
+                buffer.getBuffer(),
+                1,
+                BitmapData.TYPE_PNG,
+                (short) declaredWidth,
+                BitmapData.ENCODING_FILE,
+                (short) declaredHeight,
+                pathBytes);
+        buffer.addDrawBitmap(1, 0f, 0f, 100f, 100f, 0);
+        int size = buffer.getBuffer().getSize();
+        byte[] b = Arrays.copyOf(buffer.getBuffer().getBuffer(), size);
+        InputStream is = new ByteArrayInputStream(b);
+        RemoteDocument rdoc = new RemoteDocument(is);
+
+        AndroidRemoteContext context = new AndroidRemoteContext();
+        context.useCanvas(new Canvas());
+
+        try {
+            RuntimeException e =
+                    assertThrows(
+                            RuntimeException.class,
+                            () -> {
+                                rdoc.paint(context, Theme.UNSPECIFIED);
+                            });
+            assertThat(e).hasMessageThat().contains("dimensions don't match");
+        } finally {
+            tempFile.delete();
+        }
+    }
+
     ByteBuffer createDoc(int tw, int th) {
         Bitmap lightImage = TestUtils.createImage(tw, th, false);
         Bitmap darkImage = TestUtils.createImage(tw, th, true);
@@ -159,7 +373,7 @@ public class ImageErrorTest {
 
     ByteBuffer createDoc(Bitmap lightImage, Bitmap darkImage) {
         DebugPlayerContext debugContext = new DebugPlayerContext();
-        RemoteComposeDocument doc = createDocument(debugContext, lightImage, darkImage);
+        RemoteDocument doc = createDocument(debugContext, lightImage, darkImage);
         doc.paint(debugContext, Theme.UNSPECIFIED);
         ByteBuffer b = docGetBuffer(doc);
         return b;
@@ -174,7 +388,7 @@ public class ImageErrorTest {
 
         byte[] b = create(lightImage, darkImage);
         InputStream is = new ByteArrayInputStream(b);
-        RemoteComposeDocument rdoc = new RemoteComposeDocument(is);
+        RemoteDocument rdoc = new RemoteDocument(is);
         android.content.Context appContext =
                 InstrumentationRegistry.getInstrumentation().getTargetContext();
 
@@ -217,7 +431,7 @@ public class ImageErrorTest {
             }
             InputStream is = new ByteArrayInputStream(b);
             try {
-                RemoteComposeDocument rdoc = new RemoteComposeDocument(is);
+                RemoteDocument rdoc = new RemoteDocument(is);
             } catch (Exception ex) {
                 System.out.println(" caught " + seed + " " + ex.toString());
                 continue;
@@ -230,12 +444,12 @@ public class ImageErrorTest {
     @Test
     public void testImageTooLargeCreating1() {
         int tw = 400;
-        int th = BitmapData.MAX_IMAGE_DIMENSION + 1;
+        int th = Limits.MAX_IMAGE_DIMENSION + 1;
         Bitmap lightImage = TestUtils.createImage(tw, th, false);
         Bitmap darkImage = TestUtils.createImage(tw, th, true);
         DebugPlayerContext debugContext = new DebugPlayerContext();
 
-        RemoteComposeDocument doc = null;
+        RemoteDocument doc = null;
         try {
             doc = createDocument(debugContext, lightImage, darkImage);
         } catch (Exception e) {
@@ -247,13 +461,13 @@ public class ImageErrorTest {
 
     @Test
     public void testImageTooLargeCreating2() {
-        int tw = BitmapData.MAX_IMAGE_DIMENSION + 1;
+        int tw = Limits.MAX_IMAGE_DIMENSION + 1;
         int th = 60;
         Bitmap lightImage = TestUtils.createImage(tw, th, false);
         Bitmap darkImage = TestUtils.createImage(tw, th, true);
         DebugPlayerContext debugContext = new DebugPlayerContext();
 
-        RemoteComposeDocument doc = null;
+        RemoteDocument doc = null;
         try {
             doc = createDocument(debugContext, lightImage, darkImage);
         } catch (Exception e) {
@@ -266,12 +480,12 @@ public class ImageErrorTest {
     @Test
     public void testNonSquareImageThroughPlayer() {
         int tw = 400;
-        int th = BitmapData.MAX_IMAGE_DIMENSION + 1;
+        int th = Limits.MAX_IMAGE_DIMENSION + 1;
         Bitmap lightImage = TestUtils.createImage(tw, th, false);
         Bitmap darkImage = TestUtils.createImage(tw, th, true);
         DebugPlayerContext debugContext = new DebugPlayerContext();
 
-        RemoteComposeDocument doc = null;
+        RemoteDocument doc = null;
         try {
             doc = createDocument(debugContext, lightImage, darkImage);
         } catch (Exception e) {

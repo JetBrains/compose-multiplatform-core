@@ -76,7 +76,6 @@ internal class KspExecutableParameterElement(
         val resolvedType = parameter.type.resolve()
         val type =
             env.wrap(
-                    originalAnnotations = parameter.type.annotations,
                     ksType =
                         parameter.typeAsMemberOf(
                             functionDeclaration = enclosingElement.declaration,

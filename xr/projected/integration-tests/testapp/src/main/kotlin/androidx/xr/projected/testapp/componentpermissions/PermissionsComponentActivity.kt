@@ -20,6 +20,7 @@ import android.Manifest
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
+import androidx.xr.projected.experimental.ExperimentalProjectedApi
 import androidx.xr.projected.permissions.ProjectedPermissionsRequestParams
 import androidx.xr.projected.permissions.ProjectedPermissionsResultContract
 
@@ -30,6 +31,7 @@ import androidx.xr.projected.permissions.ProjectedPermissionsResultContract
  * The same pattern can be used in [androidx.appcompat.app.AppCompatActivity] (which extends
  * ComponentActivity) and [androidx.fragment.app.Fragment].
  */
+@OptIn(ExperimentalProjectedApi::class)
 class PermissionsComponentActivity : ComponentActivity() {
     private val requestPermissionLauncher =
         registerForActivityResult(ProjectedPermissionsResultContract()) { results ->
@@ -48,7 +50,11 @@ class PermissionsComponentActivity : ComponentActivity() {
         requestPermissionLauncher.launch(
             listOf(
                 ProjectedPermissionsRequestParams(
-                    listOf(Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.CAMERA),
+                    listOf(
+                        Manifest.permission.ACCESS_COARSE_LOCATION,
+                        Manifest.permission.CAMERA,
+                        Manifest.permission.RECORD_AUDIO,
+                    ),
                     "Some good rationale.",
                 )
             )

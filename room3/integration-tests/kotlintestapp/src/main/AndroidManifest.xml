@@ -14,4 +14,12 @@
   ~ limitations under the License.
   -->
 
-<manifest xmlns:android="http://schemas.android.com/apk/res/android" />
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application>
+        <service
+            android:name="androidx.room3.integration.kotlintestapp.RemoteDatabaseService"
+            android:label="Multi-Process SampleDatabase"
+            android:exported="false"
+            android:process="androidx.room3.integration.kotlintestapp.service" />
+    </application>
+</manifest>

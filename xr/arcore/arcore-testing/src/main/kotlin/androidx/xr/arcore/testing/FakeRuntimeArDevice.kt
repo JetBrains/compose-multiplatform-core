@@ -18,11 +18,38 @@ package androidx.xr.arcore.testing
 
 import androidx.annotation.RestrictTo
 import androidx.xr.arcore.runtime.ArDevice as RuntimeArDevice
+import androidx.xr.arcore.runtime.TrackingState
 import androidx.xr.runtime.math.Pose
 
-// TODO: b/326481788 - Add more functionality to FakeRuntimeArDevice
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public class FakeRuntimeArDevice(override var devicePose: Pose = Pose()) : RuntimeArDevice {
+// TODO b/500091606 Remove when no longer used in G3
+/**
+ * Fake implementation of [ArDevice][RuntimeArDevice] for testing purposes. This should not be used
+ * to unit test `ArDevice` APIs. Instead, use an [ArCoreTestRule]. Example:
+ * ```
+ * @Rule @JvmField val arCoreTestRule = ArCoreTestRule()
+ *
+ * @Test
+ * fun pose_tracksTranslation() = runTest(testDispatcher) {
+ *     val expectedPose = Pose(Vector3(1f, 2f, 3f), Quaternion(4f, 5f, 6f, 7f))
+ *     arCoreTestRule.device.pose = expectedPose
+ *     advanceUntilIdle()
+ *     val underTest = ArDevice.getInstance(session)
+ *     assertThat(underTest.state.value.devicePose.translation)
+ *         .isEqualTo(expectedPose.translation)
+ * }
+ * ```
+ *
+ * @deprecated This will be removed in a future release. In order to test androidx.xr.arcore APIs,
+ *   use an [ArCoreTestRule] in your tests.
+ */
+@RestrictTo(RestrictTo.Scope.LIBRARY)
+@Deprecated(
+    "arcore-testing fakes have been moved internal and should no longer be used by unit tests."
+)
+public class FakeRuntimeArDevice(
+    override var devicePose: Pose = Pose(),
+    override var trackingState: TrackingState = TrackingState.STOPPED,
+) : RuntimeArDevice {
 
     public companion object {}
 }

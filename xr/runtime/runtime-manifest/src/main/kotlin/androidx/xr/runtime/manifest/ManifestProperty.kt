@@ -181,3 +181,45 @@ public val XR_BOUNDARY_TYPE_NO_RECOMMENDATION: String = "XR_BOUNDARY_TYPE_NO_REC
 @JvmField
 public val PROPERTY_XR_USES_CUSTOM_FULL_SPACE_MANAGED_ANIMATION: String =
     "android.window.PROPERTY_XR_USES_CUSTOM_FULL_SPACE_MANAGED_ANIMATION"
+
+/**
+ * Intent category to inform the system that the activity should be displayed in the launcher of a
+ * projected XR device.
+ *
+ * **Syntax:**
+ *
+ * ```
+ * <application>
+ * <activity>
+ *   <intent-filter>
+ *     <action android:name="android.intent.action.MAIN" />
+ *     <category android:name="android.intent.category.XR_PROJECTED_LAUNCHER" />
+ *   </intent-filter>
+ * </activity>
+ * </application>
+ * ```
+ *
+ * Constant Value: "android.intent.category.XR_PROJECTED_LAUNCHER"
+ */
+@JvmField
+public val CATEGORY_XR_PROJECTED_LAUNCHER: String = "android.intent.category.XR_PROJECTED_LAUNCHER"
+
+/**
+ * Activity level
+ * [ActivityInfo.requiredDisplayCategory][android.content.pm.ActivityInfo.requiredDisplayCategory]
+ * to inform the system that the activity should be displayed on a projected display, rather than on
+ * the device display.
+ *
+ * **Syntax:**
+ *
+ * ```
+ * <application>
+ * <activity
+ *   android:requiredDisplayCategory="android.hardware.display.category.XR_PROJECTED" />
+ * </application>
+ * ```
+ *
+ * Constant Value: "android.hardware.display.category.XR_PROJECTED"
+ */
+@JvmField
+public val DISPLAY_CATEGORY_XR_PROJECTED: String = "android.hardware.display.category.XR_PROJECTED"

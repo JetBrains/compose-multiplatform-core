@@ -78,10 +78,18 @@ internal interface GraphProcessor {
     fun trigger(parameters: Map<*, Any?>): Boolean
 
     /** Update [androidx.camera.camera2.pipe.Parameters] changes to current repeating request. */
-    fun updateGraphParameters(parameters: Map<*, Any?>)
+    fun updateGraphParameters(
+        parameters: Map<*, Any?>,
+        listeners: List<Request.Listener> = emptyList(),
+    )
 
     /** Update [androidx.camera.camera2.pipe.Parameters] changes to current repeating request. */
     fun update3AParameters(parameters: Map<*, Any?>)
+
+    /**
+     * Update [androidx.camera.camera2.pipe.RequestListeners] changes to current repeating request.
+     */
+    fun updateRequestListeners(listeners: List<Request.Listener>)
 
     /**
      * Indicates that internal state may have changed, and that the repeating request may need to be
@@ -146,7 +154,7 @@ constructor(
                 cameraGraphId = cameraGraphId,
                 defaultParameters = defaultParameters,
                 requiredParameters = requiredParameters,
-                graphListeners = graphListeners + listOfNotNull(captureLimiter),
+                requiredListeners = graphListeners + listOfNotNull(captureLimiter),
                 listeners = listOfNotNull(graphListener3A, captureLimiter),
                 shutdownScope = threads.cameraPipeScope,
                 dispatcher = threads.lightweightDispatcher,
@@ -241,12 +249,19 @@ constructor(
      */
     override fun trigger(parameters: Map<*, Any?>): Boolean = graphLoop.trigger(parameters)
 
-    override fun updateGraphParameters(parameters: Map<*, Any?>) {
-        graphLoop.graphParameters = parameters
+    override fun updateGraphParameters(
+        parameters: Map<*, Any?>,
+        listeners: List<Request.Listener>,
+    ) {
+        graphLoop.graphParameters = GraphParameters(parameters, listeners)
     }
 
     override fun update3AParameters(parameters: Map<*, Any?>) {
         graphLoop.graph3AParameters = parameters
+    }
+
+    override fun updateRequestListeners(listeners: List<Request.Listener>) {
+        graphLoop.requestListeners = listeners
     }
 
     override fun invalidate() {

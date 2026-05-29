@@ -94,7 +94,7 @@ class LayoutCoordinatesBenchmark {
     @Test
     fun grandParentMoves_gettingPositionInRoot_onLayoutRectChanged() {
         benchmarkRule.toggleStateBenchmark(
-            MovingGrandParentTestCase(Modifier.onLayoutRectChanged { it.positionInRoot })
+            MovingGrandParentTestCase(Modifier.onLayoutRectChanged(0, 0) { it.positionInRoot })
         )
     }
 
@@ -116,6 +116,18 @@ class LayoutCoordinatesBenchmark {
     @Test
     fun grandParentMoves_noCoordinatesUsage() {
         benchmarkRule.toggleStateBenchmark(MovingGrandParentTestCase(Modifier))
+    }
+
+    @Test
+    fun positionInRoot() {
+        benchmarkRule.runBenchmarkFor({ LayoutCoordinatesTestCase(false) }) {
+            benchmarkRule.runOnUiThread { doFramesUntilNoChangesPending() }
+
+            benchmarkRule.measureRepeatedOnUiThread {
+                val testCase = getTestCase()
+                testCase.coordinates1.positionInRoot()
+            }
+        }
     }
 
     private class LayoutCoordinatesTestCase(val useLayer: Boolean) : ComposeTestCase {

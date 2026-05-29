@@ -17,13 +17,13 @@
 package androidx.xr.scenecore.runtime
 
 import androidx.annotation.RestrictTo
-import androidx.xr.runtime.SubspaceNodeHolder
 import androidx.xr.runtime.internal.JxrRuntime
+import androidx.xr.runtime.math.BoundingBox
 import androidx.xr.runtime.math.Matrix3
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.runtime.math.Vector4
-import com.google.common.util.concurrent.ListenableFuture
+import java.nio.ByteBuffer
 
 /**
  * RenderingRuntime encapsulates all the platform-specific rendering-related operations. Its
@@ -36,70 +36,74 @@ import com.google.common.util.concurrent.ListenableFuture
  *
  * This API is not intended to be used by applications.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public interface RenderingRuntime : JxrRuntime {
     /**
-     * Loads glTF Asset for the given asset name from the assets folder. The future returned by this
-     * method will fire listeners on the UI thread if Runnable::run is supplied.
+     * Loads glTF Asset for the given asset name from the assets folder. The Coroutine returned by
+     * this method will fire listeners on the UI thread if Runnable::run is supplied.
      *
      * @param assetName The name of the asset to load from the assets folder.
-     * @return A future that resolves to the glTF model when it is loaded. The future will be null
-     *   if the asset was not found.
+     * @return A glTF model. Will be null if the asset was not found.
      */
-    @Suppress("AsyncSuffixFuture")
-    public fun loadGltfByAssetName(assetName: String): ListenableFuture<GltfModelResource>
+    public suspend fun loadGltfByAssetName(assetName: String): GltfModelResource
 
     /**
-     * Loads glTF Asset from a provided byte array. The future returned by this method will fire
+     * Loads glTF Asset from a provided byte array. The Coroutine returned by this method will fire
      * listeners on the UI thread if Runnable::run is supplied.
      *
      * @param assetData A gltfAsset in the form of a byte array.
      * @param assetKey The name of the asset to load from the cache.
-     * @return A future that resolves to the glTF model when it is loaded. The future will be null
-     *   if the asset was not found.
+     * @return A glTF model when it is loaded. Will be null if the asset was not found.
      */
-    @Suppress("AsyncSuffixFuture")
     // TODO(b/397746548): Add InputStream support for loading glTFs.
     // Suppressed to allow CompletableFuture.
-    public fun loadGltfByByteArray(
+    public suspend fun loadGltfByByteArray(
         assetData: ByteArray,
         assetKey: String,
-    ): ListenableFuture<GltfModelResource>
+    ): GltfModelResource
+
+    /**
+     * Destroys the given glTF model resource.
+     *
+     * @param gltfModel The glTF model resource to destroy.
+     */
+    public fun destroyGltfModel(gltfModel: GltfModelResource)
 
     /**
      * Loads an ExrImage for the given asset name from the assets folder.
      *
      * @param assetName The name of the asset to load from the assets folder.
-     * @return A future that resolves to the ExrImage when it is loaded. The future will be null if
-     *   the asset was not found.
+     * @return An ExrImage. Will be null if the asset was not found.
      */
-    @SuppressWarnings("AsyncSuffixFuture")
-    public fun loadExrImageByAssetName(assetName: String): ListenableFuture<ExrImageResource>
+    public suspend fun loadExrImageByAssetName(assetName: String): ExrImageResource
 
     /**
      * Loads an ExrImage from a provided byte array.
      *
      * @param assetData An ExrImage in the form of a byte array.
      * @param assetKey The name of the asset to load from the cache.
-     * @return A future that resolves to the ExrImage when it is loaded. The future will be null if
-     *   the asset was not found.
+     * @return An ExrImage. Will be null if the asset was not found.
      */
-    @Suppress("AsyncSuffixFuture")
-    // Suppressed to allow CompletableFuture.
-    public fun loadExrImageByByteArray(
+    public suspend fun loadExrImageByByteArray(
         assetData: ByteArray,
         assetKey: String,
-    ): ListenableFuture<ExrImageResource>
+    ): ExrImageResource
 
     /**
-     * Loads a texture resource for the given asset name or URL. The future returned by this method
-     * will fire listeners on the UI thread if Runnable::run is supplied.
+     * Destroys the given EXR image resource.
+     *
+     * @param exrImage The EXR image resource to destroy.
+     */
+    public fun destroyExrImage(exrImage: ExrImageResource)
+
+    /**
+     * Loads a texture resource for the given asset name or URL. The Coroutine returned by this
+     * method will fire listeners on the UI thread if Runnable::run is supplied.
      *
      * @param assetName The name of the texture file to load or the URL of the remote texture.
-     * @return A future that resolves to the texture when it is loaded.
+     * @return A texture.
      */
-    @Suppress("AsyncSuffixFuture")
-    public fun loadTexture(assetName: String): ListenableFuture<TextureResource>
+    public suspend fun loadTexture(assetName: String): TextureResource
 
     /** Borrows the reflection texture from the currently set environment IBL. */
     public fun borrowReflectionTexture(): TextureResource?
@@ -121,15 +125,14 @@ public interface RenderingRuntime : JxrRuntime {
     public fun getReflectionTextureFromIbl(iblToken: ExrImageResource): TextureResource?
 
     /**
-     * Creates a water material by querying it from the system's built-in materials. The future
+     * Creates a water material by querying it from the system's built-in materials. The Coroutine
      * returned by this method will fire listeners on the UI thread if Runnable::run is supplied.
      *
      * @param isAlphaMapVersion True if the water material should be the alpha map version.
-     * @return A ListenableFuture containing a WaterMaterial backed by an imp::WaterMaterial. The
-     *   WaterMaterial can be destroyed by passing it to destroyNativeObject.
+     * @return A WaterMaterial backed by an imp::WaterMaterial. The WaterMaterial can be destroyed
+     *   by passing it to destroyNativeObject.
      */
-    @Suppress("AsyncSuffixFuture")
-    public fun createWaterMaterial(isAlphaMapVersion: Boolean): ListenableFuture<MaterialResource>
+    public suspend fun createWaterMaterial(isAlphaMapVersion: Boolean): MaterialResource
 
     /**
      * Destroys the given water material resource.
@@ -222,12 +225,10 @@ public interface RenderingRuntime : JxrRuntime {
 
     /**
      * Creates a Khronos PBR material by querying it from the system's built-in materials. The
-     * future returned by this method will fire listeners on the UI thread if Runnable::run is
+     * Coroutine returned by this method will fire listeners on the UI thread if Runnable::run is
      * supplied.
      */
-    public fun createKhronosPbrMaterial(
-        spec: KhronosPbrMaterialSpec
-    ): ListenableFuture<MaterialResource>
+    public suspend fun createKhronosPbrMaterial(spec: KhronosPbrMaterialSpec): MaterialResource
 
     /**
      * Destroys the given Khronos PBR material resource.
@@ -598,13 +599,15 @@ public interface RenderingRuntime : JxrRuntime {
     public fun createGltfEntity(
         pose: Pose,
         loadedGltf: GltfModelResource,
-        parentEntity: Entity,
+        parentEntity: Entity?,
     ): GltfEntity
 
     /**
      * Factory method for SurfaceEntity.
      *
      * @param stereoMode Stereo mode for the surface.
+     * @param mediaBlendingMode The [SurfaceEntity.MediaBlendingMode] which describes the media
+     *   blending mode of the surface.
      * @param pose Pose of this entity relative to its parent, default value is Identity.
      * @param shape The [SurfaceEntity.Shape] which describes the 3D geometry of the entity.
      * @param surfaceProtection The [SurfaceEntity.SurfaceProtection] which describes whether DRM is
@@ -616,22 +619,111 @@ public interface RenderingRuntime : JxrRuntime {
      */
     public fun createSurfaceEntity(
         stereoMode: Int,
+        @SurfaceEntity.MediaBlendingMode mediaBlendingMode: Int,
         pose: Pose,
         shape: SurfaceEntity.Shape,
         @SurfaceEntity.SurfaceProtection surfaceProtection: Int,
         superSampling: Int,
-        parentEntity: Entity,
+        parentEntity: Entity?,
     ): SurfaceEntity
 
     /**
-     * A factory function to create a SubspaceNodeEntity.
+     * Creates a MeshBuffer resource.
      *
-     * @param subspaceNodeHolder Hold the SubspaceNode to create the SubspaceNodeEntity from.
-     * @param size The (width, depth, height) of the [SubspaceNodeEntity].
+     * @param attributeIds The attribute IDs for each vertex attribute.
+     * @param attributeTypes The attribute types for each vertex attribute.
+     * @param bufferIndices The buffer indices for each vertex attribute.
+     * @param byteOffsets The byte offsets for each vertex attribute.
+     * @param byteStrides The byte strides for each buffer.
+     * @param maxVertices The maximum number of vertices.
+     * @param maxIndices The maximum number of indices.
+     * @param vertexData The vertex data arrays.
+     * @param vertexDataSizes The sizes of the vertex data arrays.
+     * @param indexData The index data.
+     * @param indexDataSize The size of the index data.
+     * @return A MeshBuffer resource.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-    public fun createSubspaceNodeEntity(
-        subspaceNodeHolder: SubspaceNodeHolder<*>,
-        size: Dimensions,
-    ): SubspaceNodeEntity
+    public fun createMeshBuffer(
+        attributeIds: IntArray,
+        attributeTypes: IntArray,
+        bufferIndices: ByteArray,
+        byteOffsets: IntArray,
+        byteStrides: IntArray,
+        maxVertices: Int,
+        maxIndices: Int,
+        vertexData: Array<ByteBuffer>?,
+        vertexDataOffsets: IntArray?,
+        vertexDataSizes: IntArray?,
+        indexData: ByteBuffer?,
+        indexDataOffset: Int,
+        indexDataSize: Int,
+    ): MeshBufferResource
+
+    /**
+     * Destroys the given MeshBuffer resource.
+     *
+     * @param meshBuffer The MeshBuffer resource to destroy.
+     */
+    public fun destroyMeshBuffer(meshBuffer: MeshBufferResource)
+
+    /**
+     * Creates a CustomMesh resource.
+     *
+     * @param meshBuffer The MeshBuffer resource.
+     * @param subsetOffsets The subset offsets.
+     * @param subsetCounts The subset counts.
+     * @param subsetTopologies The subset topologies.
+     * @param centerX The x coordinate of the center of the bounding box.
+     * @param centerY The y coordinate of the center of the bounding box.
+     * @param centerZ The z coordinate of the center of the bounding box.
+     * @param halfExtentX The half extent of the bounding box along the x axis.
+     * @param halfExtentY The half extent of the bounding box along the y axis.
+     * @param halfExtentZ The half extent of the bounding box along the z axis.
+     * @return A CustomMesh resource.
+     */
+    public fun createCustomMesh(
+        meshBuffer: MeshBufferResource,
+        subsetOffsets: IntArray,
+        subsetCounts: IntArray,
+        subsetTopologies: IntArray,
+        centerX: Float,
+        centerY: Float,
+        centerZ: Float,
+        halfExtentX: Float,
+        halfExtentY: Float,
+        halfExtentZ: Float,
+    ): CustomMeshResource
+
+    /**
+     * Gets the bounding box of the given CustomMesh resource.
+     *
+     * @param customMesh The CustomMesh resource.
+     * @return The BoundingBox of the CustomMesh.
+     */
+    public fun getCustomMeshBoundingBox(customMesh: CustomMeshResource): BoundingBox
+
+    /**
+     * Destroys the given CustomMesh resource.
+     *
+     * @param customMesh The CustomMesh resource to destroy.
+     */
+    public fun destroyCustomMesh(customMesh: CustomMeshResource)
+
+    /**
+     * Creates a MeshEntity.
+     *
+     * @param customMesh The CustomMesh resource.
+     * @param materials The list of materials.
+     * @param boneCount The number of bones.
+     * @param pose The initial pose.
+     * @param parent The parent entity.
+     * @return A MeshEntity.
+     */
+    public fun createMeshEntity(
+        customMesh: CustomMeshResource,
+        materials: List<MaterialResource>,
+        boneCount: Int,
+        pose: Pose,
+        parent: Entity?,
+    ): MeshEntity
 }

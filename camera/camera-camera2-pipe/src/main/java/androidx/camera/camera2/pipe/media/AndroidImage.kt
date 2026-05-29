@@ -16,10 +16,15 @@
 
 package androidx.camera.camera2.pipe.media
 
+import android.graphics.Rect
+import android.hardware.HardwareBuffer
 import android.media.Image
+import android.os.Build
 import androidx.camera.camera2.pipe.StreamFormat
+import androidx.camera.camera2.pipe.compat.Api28Compat
+import androidx.camera.camera2.pipe.compat.Api33Compat
+import java.lang.Class
 import java.nio.ByteBuffer
-import kotlin.reflect.KClass
 
 /**
  * An [ImageWrapper] backed by an [Image].
@@ -39,9 +44,9 @@ public class AndroidImage(private val image: Image) : ImageWrapper {
         override val buffer: ByteBuffer = imagePlane.buffer
 
         @Suppress("UNCHECKED_CAST")
-        override fun <T : Any> unwrapAs(type: KClass<T>): T? =
+        override fun <T : Any> unwrapAs(type: Class<T>): T? =
             when (type) {
-                Image.Plane::class -> imagePlane as T
+                Image.Plane::class.java -> imagePlane as T
                 else -> null
             }
     }
@@ -58,21 +63,50 @@ public class AndroidImage(private val image: Image) : ImageWrapper {
     override val width: Int = image.width
     override val height: Int = image.height
     override val timestamp: Long = image.timestamp
+    override var cropRect: Rect
+        get() = image.cropRect
+        set(newRectValue: Rect) {
+            image.cropRect = newRectValue
+        }
+
+    override val hardwareBuffer: HardwareBuffer?
+        get() =
+            if (Build.VERSION.SDK_INT > Build.VERSION_CODES.O_MR1) {
+                Api28Compat.getHardwareBuffer(image)
+            } else {
+                null
+            }
+
+    override var dataSpace: Int?
+        get() =
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
+                Api33Compat.getDataSpace(image)
+            else null
+        set(value) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                Api33Compat.setDataSpace(image, checkNotNull(value))
+            }
+        }
 
     @Suppress("UNCHECKED_CAST")
-    override fun <T : Any> unwrapAs(type: KClass<T>): T? =
-        when (type) {
-            Image::class -> image as T
-            else -> null
+    override fun <T : Any> unwrapAs(type: Class<T>): T? =
+        if (type == Image::class.java) {
+            image as T
+        } else {
+            if (Build.VERSION.SDK_INT > Build.VERSION_CODES.O_MR1) {
+                Api28Compat.unwrapAsHardwareBuffer<T>(image, type)
+            } else {
+                null
+            }
         }
 
     override val planes: List<ImagePlane>
         get() = readPlanes()
 
     override fun toString(): String {
-        // Image will be written as "Image-YUV_444_888w640h480-1234567890" with format, width,
+        // Image will be written as "Image-YUV_444_888w640h480-t1234567890" with format, width,
         // height, and timestamp
-        return "Image-${StreamFormat(format).name}-w${width}h$height-$timestamp"
+        return "Image-${StreamFormat(format).name}-w${width}h$height-t$timestamp"
     }
 
     override fun close() {

@@ -20,7 +20,6 @@ import androidx.room3.DatabaseProcessingStep
 import androidx.room3.compiler.processing.util.Source
 import androidx.room3.compiler.processing.util.XTestInvocation
 import androidx.room3.compiler.processing.util.runKspTest
-import androidx.room3.processor.Context
 import loadTestSource
 import org.junit.Rule
 import org.junit.Test
@@ -63,10 +62,10 @@ class DatabaseObjectConstructorWriterKotlinCodeGenTest {
             Source.kotlin(
                 "MyDatabaseCtor.kt",
                 """
-            import androidx.room3.*
+                import androidx.room3.*
 
-            expect object MyDatabaseCtor : RoomDatabaseConstructor<MyDatabase>
-            """
+                expect object MyDatabaseCtor : RoomDatabaseConstructor<MyDatabase>
+                """
                     .trimIndent(),
             )
         runTest(
@@ -81,10 +80,10 @@ class DatabaseObjectConstructorWriterKotlinCodeGenTest {
             Source.kotlin(
                 "MyDatabaseCtor.kt",
                 """
-            import androidx.room3.*
+                import androidx.room3.*
 
-            internal expect object MyDatabaseCtor : RoomDatabaseConstructor<MyDatabase>
-            """
+                internal expect object MyDatabaseCtor : RoomDatabaseConstructor<MyDatabase>
+                """
                     .trimIndent(),
             )
         runTest(
@@ -99,12 +98,12 @@ class DatabaseObjectConstructorWriterKotlinCodeGenTest {
             Source.kotlin(
                 "MyDatabaseCtor.kt",
                 """
-            import androidx.room3.*
+                import androidx.room3.*
 
-            expect object MyDatabaseCtor : RoomDatabaseConstructor<MyDatabase> {
-                override fun initialize(): MyDatabase
-            }
-            """
+                expect object MyDatabaseCtor : RoomDatabaseConstructor<MyDatabase> {
+                    override fun initialize(): MyDatabase
+                }
+                """
                     .trimIndent(),
             )
         runTest(
@@ -122,10 +121,7 @@ class DatabaseObjectConstructorWriterKotlinCodeGenTest {
         expectedFilePath: String,
         handler: (XTestInvocation) -> Unit = {},
     ) {
-        runKspTest(
-            sources = sources,
-            options = mapOf(Context.BooleanProcessorOptions.GENERATE_KOTLIN.argName to "true"),
-        ) {
+        runKspTest(sources = sources) {
             val databaseFqn = "androidx.room3.Database"
             DatabaseProcessingStep()
                 .process(

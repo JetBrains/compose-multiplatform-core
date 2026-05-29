@@ -17,6 +17,7 @@
 package androidx.appfunctions.compiler.processors
 
 import androidx.appfunctions.compiler.AppFunctionCompiler
+import androidx.appfunctions.compiler.core.AnnotatedAppFunction
 import androidx.appfunctions.compiler.core.AnnotatedAppFunctions
 import androidx.appfunctions.compiler.core.AppFunctionComponentRegistryGenerator
 import androidx.appfunctions.compiler.core.AppFunctionComponentRegistryGenerator.AppFunctionComponent
@@ -141,7 +142,14 @@ class AppFunctionInvokerProcessor(private val codeGenerator: CodeGenerator) : Sy
 
         val invokerClassName = getAppFunctionInvokerClassName(originalClassName)
         val invokerClassBuilder = TypeSpec.classBuilder(invokerClassName)
-        invokerClassBuilder.addSuperinterface(AppFunctionInvokerClass.CLASS_NAME)
+        // TODO(b/463909015): Remove the condition logic once service module is removed
+        val invokerSuperInterface =
+            if (appFunctionClass.hasBaseAnnotation) {
+                AppFunctionInvokerClass.CLASS_NAME_BASE
+            } else {
+                AppFunctionInvokerClass.CLASS_NAME
+            }
+        invokerClassBuilder.addSuperinterface(invokerSuperInterface)
         invokerClassBuilder.addAnnotation(AppFunctionCompiler.GENERATED_ANNOTATION)
         invokerClassBuilder.addProperty(buildSupportedFunctionIdsProperty(appFunctionClass))
         invokerClassBuilder.addFunction(buildUnsafeInvokeFunction(appFunctionClass))
@@ -169,8 +177,8 @@ class AppFunctionInvokerProcessor(private val codeGenerator: CodeGenerator) : Sy
         annotatedAppFunctions: AnnotatedAppFunctions
     ): PropertySpec {
         val functionIds =
-            annotatedAppFunctions.appFunctionDeclarations.map { function ->
-                annotatedAppFunctions.getAppFunctionIdentifier(function)
+            annotatedAppFunctions.appFunctions.map { appFunction ->
+                appFunction.getAppFunctionIdentifier(annotatedAppFunctions.classDeclaration)
             }
         return PropertySpec.builder(
                 AppFunctionInvokerClass.SUPPORTED_FUNCTION_IDS_PROPERTY_NAME,
@@ -225,7 +233,7 @@ class AppFunctionInvokerProcessor(private val codeGenerator: CodeGenerator) : Sy
                 buildCodeBlock {
                     addStatement("val result: Any? = when (${functionIdentifierSpec.name}) {")
                     indent()
-                    for (appFunction in annotatedAppFunctions.appFunctionDeclarations) {
+                    for (appFunction in annotatedAppFunctions.appFunctions) {
                         appendInvocationBranchStatement(
                             annotatedAppFunctions,
                             appFunction,
@@ -265,26 +273,41 @@ class AppFunctionInvokerProcessor(private val codeGenerator: CodeGenerator) : Sy
      */
     private fun CodeBlock.Builder.appendInvocationBranchStatement(
         annotatedAppFunctions: AnnotatedAppFunctions,
-        appFunction: KSFunctionDeclaration,
+        appFunction: AnnotatedAppFunction,
         contextSpec: ParameterSpec,
         functionParametersSpec: ParameterSpec,
     ) {
+        val isDeprecated = appFunction.isDeprecated
         val functionParameterStatement =
-            appFunction.getAppFunctionParametersStatement(contextSpec, functionParametersSpec)
+            appFunction.appFunctionDeclaration.getAppFunctionParametersStatement(
+                contextSpec,
+                functionParametersSpec,
+            )
+        // TODO(b/463909015): Remove the condition logic once service module is removed
+        val factoryClassName =
+            if (annotatedAppFunctions.hasBaseAnnotation) {
+                ConfigurableAppFunctionFactoryClass.CLASS_NAME_BASE
+            } else {
+                ConfigurableAppFunctionFactoryClass.CLASS_NAME
+            }
         val formatStringMap =
             mapOf<String, Any>(
-                "function_id" to annotatedAppFunctions.getAppFunctionIdentifier(appFunction),
-                "factory_class" to ConfigurableAppFunctionFactoryClass.CLASS_NAME,
+                "function_id" to
+                    appFunction.getAppFunctionIdentifier(annotatedAppFunctions.classDeclaration),
+                "factory_class" to factoryClassName,
                 "enclosing_class" to annotatedAppFunctions.getEnclosingClassName(),
                 "context_param" to contextSpec.name,
                 "context_property" to AppFunctionContextClass.CONTEXT_PROPERTY_NAME,
                 "create_method" to
                     ConfigurableAppFunctionFactoryClass.CreateEnclosingClassMethod.METHOD_NAME,
-                "function_name" to appFunction.simpleName.asString(),
+                "function_name" to appFunction.appFunctionDeclaration.simpleName.asString(),
                 "parameters" to functionParameterStatement,
             )
         addNamed("\"%function_id:L\" -> {\n", formatStringMap)
         indent()
+        if (isDeprecated) {
+            add("@Suppress(\"DEPRECATION\")\n")
+        }
         addNamed("%factory_class:T<%enclosing_class:T>(\n", formatStringMap)
         indent()
         addNamed("%context_param:L.%context_property:L\n", formatStringMap)

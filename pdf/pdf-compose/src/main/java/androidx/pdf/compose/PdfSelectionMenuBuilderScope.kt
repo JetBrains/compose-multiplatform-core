@@ -40,7 +40,7 @@ public class PdfSelectionMenuBuilderScope internal constructor() {
     public fun item(
         key: Any,
         label: String,
-        contentDescription: String,
+        contentDescription: String?,
         onClick: SelectionMenuSession.() -> Unit,
     ) {
         _menuItems.add(SelectionMenuComponent(key, label, contentDescription, onClick))

@@ -28,7 +28,6 @@ import androidx.appsearch.app.EmbeddingVector;
 import androidx.appsearch.app.ExperimentalAppSearchApi;
 import androidx.appsearch.app.Features;
 import androidx.appsearch.app.GenericDocument;
-import androidx.appsearch.platformstorage.util.AppSearchVersionUtil;
 import androidx.core.util.Preconditions;
 
 import org.jspecify.annotations.NonNull;
@@ -97,7 +96,7 @@ public final class GenericDocumentToPlatformConverter {
                 }
                 platformBuilder.setPropertyDocument(propertyName, platformSubDocuments);
             } else if (property instanceof EmbeddingVector[]) {
-                if (!AppSearchVersionUtil.isAtLeastB()) {
+                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.BAKLAVA) {
                     throw new UnsupportedOperationException(
                             Features.SCHEMA_EMBEDDING_PROPERTY_CONFIG
                                     + " is not available on this AppSearch implementation.");
@@ -106,9 +105,14 @@ public final class GenericDocumentToPlatformConverter {
                 ApiHelperForB.setPlatformPropertyEmbedding(platformBuilder, propertyName,
                         embeddingVectors);
             } else if (property instanceof AppSearchBlobHandle[]) {
-                // TODO(b/273591938): Remove this once blob APIs are available.
-                throw new UnsupportedOperationException(Features.BLOB_STORAGE
-                        + " is not available on this AppSearch implementation.");
+                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.BAKLAVA) {
+                    throw new UnsupportedOperationException(Features.SCHEMA_BLOB_HANDLE
+                            + " is not available on this AppSearch implementation.");
+                }
+
+                AppSearchBlobHandle[] blobHandles = (AppSearchBlobHandle[]) property;
+                ApiHelperForB.setPlatformPropertyBlobHandle(platformBuilder, propertyName,
+                        blobHandles);
             } else {
                 throw new IllegalStateException(
                         String.format("Property \"%s\" has unsupported value type %s", propertyName,
@@ -164,12 +168,18 @@ public final class GenericDocumentToPlatformConverter {
                     jetpackSubDocuments[j] = toJetpackGenericDocument(documentValues[j]);
                 }
                 jetpackBuilder.setPropertyDocument(propertyName, jetpackSubDocuments);
-            } else if (AppSearchVersionUtil.isAtLeastB()
+            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA
                     && property instanceof android.app.appsearch.EmbeddingVector[]) {
                 android.app.appsearch.EmbeddingVector[] embeddingVectors =
                         (android.app.appsearch.EmbeddingVector[]) property;
                 ApiHelperForB.setJetpackPropertyEmbedding(jetpackBuilder, propertyName,
                         embeddingVectors);
+            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA
+                    && property instanceof android.app.appsearch.AppSearchBlobHandle[]) {
+                android.app.appsearch.AppSearchBlobHandle[] blobHandles =
+                        (android.app.appsearch.AppSearchBlobHandle[]) property;
+                ApiHelperForB.setJetpackPropertyBlobHandles(jetpackBuilder, propertyName,
+                        blobHandles);
             } else {
                 throw new IllegalStateException(
                         String.format("Property \"%s\" has unsupported value type %s", propertyName,
@@ -188,6 +198,7 @@ public final class GenericDocumentToPlatformConverter {
 
         @SuppressLint("NewApi") // EmbeddingVector is incorrectly flagged as needing 34-ext16
         @DoNotInline
+        @OptIn(markerClass = ExperimentalAppSearchApi.class)
         static void setPlatformPropertyEmbedding(
                 android.app.appsearch.GenericDocument.@NonNull Builder<
                         android.app.appsearch.GenericDocument.Builder<?>> platformBuilder,
@@ -196,11 +207,33 @@ public final class GenericDocumentToPlatformConverter {
             android.app.appsearch.EmbeddingVector[] platformEmbeddingVectors =
                     new android.app.appsearch.EmbeddingVector[jetpackEmbeddingVectors.length];
             for (int i = 0; i < jetpackEmbeddingVectors.length; i++) {
+                // TODO(b/390450012): Update this once pre-quantized embedding vectors are
+                //  supported.
+                if (jetpackEmbeddingVectors[i].getQuantizedData() != null) {
+                    throw new UnsupportedOperationException(
+                            Features.SCHEMA_EMBEDDING_PRE_QUANTIZED_DATA
+                            + " is not available on this AppSearch implementation.");
+                }
                 platformEmbeddingVectors[i] = new android.app.appsearch.EmbeddingVector(
                         jetpackEmbeddingVectors[i].getValues(),
                         jetpackEmbeddingVectors[i].getModelSignature());
             }
             platformBuilder.setPropertyEmbedding(propertyName, platformEmbeddingVectors);
+        }
+
+        @DoNotInline
+        static void setPlatformPropertyBlobHandle(
+                android.app.appsearch.GenericDocument.@NonNull Builder<
+                        android.app.appsearch.GenericDocument.Builder<?>> platformBuilder,
+                @NonNull String propertyName,
+                AppSearchBlobHandle @NonNull [] jetpackBlobHandles) {
+            android.app.appsearch.AppSearchBlobHandle[] platformBlobHandles =
+                    new android.app.appsearch.AppSearchBlobHandle[jetpackBlobHandles.length];
+            for (int i = 0; i < jetpackBlobHandles.length; i++) {
+                platformBlobHandles[i] = AppSearchBlobHandleToPlatformConverter
+                        .toPlatformBlobHandle(jetpackBlobHandles[i]);
+            }
+            platformBuilder.setPropertyBlobHandle(propertyName, platformBlobHandles);
         }
 
         @SuppressLint("NewApi") // getValues() is incorrectly flagged as needing 34-ext16
@@ -217,6 +250,20 @@ public final class GenericDocumentToPlatformConverter {
                         platformEmbeddingVectors[i].getModelSignature());
             }
             jetpackBuilder.setPropertyEmbedding(propertyName, jetpackEmbeddingVectors);
+        }
+
+        @DoNotInline
+        static void setJetpackPropertyBlobHandles(
+                GenericDocument.@NonNull Builder<GenericDocument.Builder<?>> jetpackBuilder,
+                @NonNull String propertyName,
+                android.app.appsearch.AppSearchBlobHandle @NonNull [] platformBlobHandles) {
+            AppSearchBlobHandle[] jetpackBlobHandles =
+                    new AppSearchBlobHandle[platformBlobHandles.length];
+            for (int i = 0; i < platformBlobHandles.length; i++) {
+                jetpackBlobHandles[i] = AppSearchBlobHandleToPlatformConverter
+                        .toJetpackBlobHandle(platformBlobHandles[i]);
+            }
+            jetpackBuilder.setPropertyBlobHandle(propertyName, jetpackBlobHandles);
         }
     }
 }

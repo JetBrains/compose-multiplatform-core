@@ -16,13 +16,15 @@
 
 package androidx.camera.camera2.impl
 
+import androidx.camera.camera2.adapter.CameraStateAdapter
 import androidx.camera.camera2.adapter.CaptureConfigAdapter
+import androidx.camera.camera2.adapter.GraphStateToCameraStateAdapter
 import androidx.camera.camera2.adapter.RobolectricCameraPipeTestRunner
 import androidx.camera.camera2.adapter.ZslControlNoOpImpl
 import androidx.camera.camera2.compat.workaround.NoOpTemplateParamsOverride
 import androidx.camera.camera2.compat.workaround.NotUseFlashModeTorchFor3aUpdate
 import androidx.camera.camera2.compat.workaround.NotUseTorchAsFlash
-import androidx.camera.camera2.config.UseCaseGraphConfig
+import androidx.camera.camera2.config.UseCaseCameraContext
 import androidx.camera.camera2.pipe.FrameNumber
 import androidx.camera.camera2.pipe.StreamId
 import androidx.camera.camera2.pipe.testing.FakeFrameInfo
@@ -59,11 +61,13 @@ import org.junit.Assume.assumeTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricCameraPipeTestRunner::class)
 @DoNotInstrument
+@Config(sdk = [Config.ALL_SDKS])
 class StillCaptureRequestControlTest {
     private val testScope = TestScope()
     private val testDispatcher = StandardTestDispatcher(testScope.testScheduler)
@@ -73,17 +77,19 @@ class StillCaptureRequestControlTest {
     }
     private val fakeCameraProperties = FakeCameraProperties()
     private val fakeSurface = FakeSurface()
+    private val cameraStateAdapter = CameraStateAdapter()
 
     private lateinit var fakeCameraGraphSession: FakeCameraGraphSession
     private lateinit var fakeCameraGraph: FakeCameraGraph
-    private lateinit var fakeUseCaseGraphConfig: UseCaseGraphConfig
+    private lateinit var fakeUseCaseCameraContext: UseCaseCameraContext
 
     private lateinit var fakeConfigAdapter: CaptureConfigAdapter
     private lateinit var fakeUseCaseCameraState: UseCaseCameraState
 
     private val fakeState3AControl: State3AControl =
         FakeState3AControlCreator.createState3AControl(
-            requestControl = FakeUseCaseCameraRequestControl()
+            requestControl = FakeUseCaseCameraRequestControl(),
+            threads = fakeUseCaseThreads,
         )
 
     private lateinit var useCaseCameraRequestControl: UseCaseCameraRequestControl
@@ -429,14 +435,17 @@ class StillCaptureRequestControlTest {
     private fun initUseCaseCameraScopeObjects(isSurfaceSetupSuccessful: Deferred<Boolean>) {
         fakeCameraGraphSession = FakeCameraGraphSession()
         fakeCameraGraph = FakeCameraGraph(fakeCameraGraphSession = fakeCameraGraphSession)
-        fakeUseCaseGraphConfig =
-            UseCaseGraphConfig(
-                graph = fakeCameraGraph,
-                surfaceToStreamMap = mapOf(fakeSurface to StreamId(0)),
+        fakeUseCaseCameraContext =
+            UseCaseCameraContext(
+                cameraGraphProvider = { fakeCameraGraph },
+                cameraStateAdapter = cameraStateAdapter,
+                graphStateToCameraStateAdapter = GraphStateToCameraStateAdapter(cameraStateAdapter),
+                streamConfigMapProvider = { emptyMap() },
+                defaultSurfaceToStreamMap = mapOf(fakeSurface to StreamId(0)),
             )
         fakeConfigAdapter =
             CaptureConfigAdapter(
-                useCaseGraphConfig = fakeUseCaseGraphConfig,
+                useCaseCameraContext = fakeUseCaseCameraContext,
                 cameraProperties = fakeCameraProperties,
                 zslControl = ZslControlNoOpImpl(),
                 threads = fakeUseCaseThreads,
@@ -444,8 +453,7 @@ class StillCaptureRequestControlTest {
             )
         fakeUseCaseCameraState =
             UseCaseCameraState(
-                useCaseGraphConfig = fakeUseCaseGraphConfig,
-                threads = fakeUseCaseThreads,
+                useCaseCameraContext = fakeUseCaseCameraContext,
                 templateParamsOverride = NoOpTemplateParamsOverride,
             )
         val torchControl =
@@ -457,15 +465,15 @@ class StillCaptureRequestControlTest {
             )
         useCaseCameraRequestControl =
             UseCaseCameraRequestControlImpl(
-                capturePipeline =
+                capturePipelineProvider = {
                     CapturePipelineImpl(
                         configAdapter = fakeConfigAdapter,
                         cameraProperties = fakeCameraProperties,
                         requestListener = ComboRequestListener(),
                         threads = fakeUseCaseThreads,
                         torchControl = torchControl,
-                        useCaseGraphConfig = fakeUseCaseGraphConfig,
-                        useCaseCameraState = fakeUseCaseCameraState,
+                        useCaseCameraContext = fakeUseCaseCameraContext,
+                        useCaseCameraStateProvider = { fakeUseCaseCameraState },
                         useTorchAsFlash = NotUseTorchAsFlash,
                         flashControl =
                             FlashControl(
@@ -476,10 +484,11 @@ class StillCaptureRequestControlTest {
                                 useFlashModeTorchFor3aUpdate = NotUseFlashModeTorchFor3aUpdate,
                             ),
                         videoUsageControl = VideoUsageControl(),
-                    ),
-                state = fakeUseCaseCameraState,
-                useCaseGraphConfig = fakeUseCaseGraphConfig,
-                useCaseSurfaceManager = useCaseSurfaceManager,
+                    )
+                },
+                useCaseCameraStateProvider = { fakeUseCaseCameraState },
+                useCaseCameraContext = fakeUseCaseCameraContext,
+                useCaseSurfaceManagerProvider = { useCaseSurfaceManager },
                 threads = fakeUseCaseThreads,
             )
     }

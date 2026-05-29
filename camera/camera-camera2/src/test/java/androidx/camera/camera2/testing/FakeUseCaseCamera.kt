@@ -19,26 +19,34 @@ package androidx.camera.camera2.testing
 import android.hardware.camera2.CaptureRequest
 import android.hardware.camera2.params.MeteringRectangle
 import androidx.camera.camera2.adapter.CameraStateAdapter
+import androidx.camera.camera2.adapter.GraphStateToCameraStateAdapter
 import androidx.camera.camera2.adapter.SessionConfigAdapter
+import androidx.camera.camera2.adapter.ZslControlNoOpImpl
+import androidx.camera.camera2.compat.StreamConfigurationMapCompat
+import androidx.camera.camera2.compat.quirk.CameraQuirks
+import androidx.camera.camera2.compat.workaround.OutputSizesCorrector
+import androidx.camera.camera2.compat.workaround.TemplateParamsQuirkOverride
+import androidx.camera.camera2.config.CameraConfig
 import androidx.camera.camera2.config.UseCaseCameraComponent
 import androidx.camera.camera2.config.UseCaseCameraConfig
-import androidx.camera.camera2.config.UseCaseGraphConfig
+import androidx.camera.camera2.config.UseCaseCameraContext
+import androidx.camera.camera2.impl.CameraCallbackMap
+import androidx.camera.camera2.impl.CameraGraphConfigProvider
+import androidx.camera.camera2.impl.ComboRequestListener
 import androidx.camera.camera2.impl.UseCaseCamera
 import androidx.camera.camera2.impl.UseCaseCameraRequestControl
+import androidx.camera.camera2.impl.toMap
 import androidx.camera.camera2.pipe.AeMode
 import androidx.camera.camera2.pipe.CameraGraph
-import androidx.camera.camera2.pipe.CameraStream
+import androidx.camera.camera2.pipe.FrameMetadata
 import androidx.camera.camera2.pipe.Lock3ABehavior
-import androidx.camera.camera2.pipe.Request
-import androidx.camera.camera2.pipe.RequestTemplate
 import androidx.camera.camera2.pipe.Result3A
-import androidx.camera.camera2.pipe.StreamId
+import androidx.camera.camera2.pipe.testing.FakeCameraMetadata
 import androidx.camera.core.ImageCapture
+import androidx.camera.core.UseCase
 import androidx.camera.core.imagecapture.CameraCapturePipeline
 import androidx.camera.core.impl.CaptureConfig
 import androidx.camera.core.impl.Config
-import androidx.camera.core.impl.DeferrableSurface
-import androidx.camera.core.impl.SessionConfig
 import androidx.camera.testing.impl.FakeCameraCapturePipeline
 import java.util.concurrent.TimeUnit.MILLISECONDS
 import java.util.concurrent.TimeUnit.NANOSECONDS
@@ -49,15 +57,45 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
+import org.robolectric.shadows.StreamConfigurationMapBuilder
 
 class FakeUseCaseCameraComponentBuilder : UseCaseCameraComponent.Builder {
     var buildInvocationCount = 0
     private var sessionConfigAdapter = SessionConfigAdapter(emptyList())
     private var cameraGraph = FakeCameraGraph()
-    private var streamConfigMap = mutableMapOf<CameraStream.Config, DeferrableSurface>()
+    private val cameraStateAdapter = CameraStateAdapter()
+    private val cameraMetadata = FakeCameraMetadata()
+    private val cameraQuirks =
+        CameraQuirks(
+            cameraMetadata,
+            StreamConfigurationMapCompat(
+                StreamConfigurationMapBuilder.newBuilder().build(),
+                OutputSizesCorrector(
+                    cameraMetadata,
+                    StreamConfigurationMapBuilder.newBuilder().build(),
+                ),
+            ),
+        )
+    val configProvider =
+        CameraGraphConfigProvider(
+            callbackMap = CameraCallbackMap(),
+            requestListener = ComboRequestListener(),
+            cameraConfig = CameraConfig(cameraMetadata.camera),
+            cameraQuirks = cameraQuirks,
+            zslControl = ZslControlNoOpImpl(),
+            templateParamsOverride = TemplateParamsQuirkOverride(cameraQuirks.quirks),
+            cameraMetadata = cameraMetadata,
+        )
 
     private var config: UseCaseCameraConfig =
-        UseCaseCameraConfig(emptyList(), sessionConfigAdapter, cameraGraph, streamConfigMap)
+        UseCaseCameraConfig.create(
+            cameraGraphConfigProvider = configProvider,
+            cameraGraphFactory = { _ -> cameraGraph },
+            cameraStateAdapter = cameraStateAdapter,
+            sessionConfigAdapter = sessionConfigAdapter,
+            extensionMode = null,
+            sessionProcessor = null,
+        )
 
     override fun config(config: UseCaseCameraConfig): UseCaseCameraComponent.Builder {
         this.config = config
@@ -74,14 +112,22 @@ class FakeUseCaseCameraComponent() : UseCaseCameraComponent {
     private val fakeUseCaseCamera = FakeUseCaseCamera()
     private val cameraGraph = FakeCameraGraph()
     private val cameraStateAdapter = CameraStateAdapter()
+    private val useCaseCameraContext =
+        UseCaseCameraContext(
+            cameraGraphProvider = { cameraGraph },
+            cameraStateAdapter = cameraStateAdapter,
+            graphStateToCameraStateAdapter = GraphStateToCameraStateAdapter(cameraStateAdapter),
+            streamConfigMapProvider = { emptyMap() },
+            defaultSurfaceToStreamMap = emptyMap(),
+        )
 
     override fun getUseCaseCamera(): UseCaseCamera {
         return fakeUseCaseCamera
     }
 
-    override fun getUseCaseGraphConfig(): UseCaseGraphConfig {
+    override fun getUseCaseCameraContext(): UseCaseCameraContext {
         // TODO: Implement this properly once we need to use it with SessionProcessor enabled.
-        return UseCaseGraphConfig(cameraGraph, emptyMap())
+        return useCaseCameraContext
     }
 }
 
@@ -96,13 +142,23 @@ open class FakeUseCaseCameraRequestControl(
     var setConfigCalls = mutableListOf<RequestParameters>()
     var setConfigResult = CompletableDeferred(Unit)
     var setTorchResult = CompletableDeferred(Result3A(status = Result3A.Status.OK))
+    var setTorchCalls = mutableListOf<Boolean>()
 
     // TODO - Implement thread-safety in the functions annotated with @AnyThread in
     //  UseCaseCameraRequestControl
 
     override fun setParametersAsync(
-        type: UseCaseCameraRequestControl.Type,
         values: Map<CaptureRequest.Key<*>, Any>,
+        type: UseCaseCameraRequestControl.Type,
+        optionPriority: Config.OptionPriority,
+    ): Deferred<Unit> {
+        addParameterCalls.add(values)
+        return addParameterResult
+    }
+
+    override fun submitParameters(
+        values: Map<CaptureRequest.Key<*>, Any>,
+        type: UseCaseCameraRequestControl.Type,
         optionPriority: Config.OptionPriority,
     ): Deferred<Unit> {
         addParameterCalls.add(values)
@@ -110,31 +166,42 @@ open class FakeUseCaseCameraRequestControl(
     }
 
     override fun removeParametersAsync(
-        type: UseCaseCameraRequestControl.Type,
         keys: List<CaptureRequest.Key<*>>,
+        type: UseCaseCameraRequestControl.Type,
     ): Deferred<Unit> {
         removeParameterCalls.addAll(keys)
         return removeParameterResult
     }
 
-    override fun setConfigAsync(
-        type: UseCaseCameraRequestControl.Type,
-        config: Config?,
-        tags: Map<String, Any>,
-        streams: Set<StreamId>?,
-        template: RequestTemplate?,
-        listeners: Set<Request.Listener>,
-        sessionConfig: SessionConfig?,
+    override fun updateRepeatingRequestAsync(
+        isPrimary: Boolean,
+        runningUseCases: Collection<UseCase>,
     ): Deferred<Unit> {
-        setConfigCalls.add(RequestParameters(type, config, tags))
+        val sessionConfig = SessionConfigAdapter(runningUseCases).getValidSessionConfigOrNull()
+        setConfigCalls.add(
+            RequestParameters(
+                UseCaseCameraRequestControl.Type.SESSION_CONFIG,
+                sessionConfig?.implementationOptions,
+                sessionConfig?.repeatingCaptureConfig?.tagBundle?.toMap() ?: emptyMap(),
+            )
+        )
+        return CompletableDeferred(Unit)
+    }
+
+    override fun updateCamera2ConfigAsync(config: Config, tags: Map<String, Any>): Deferred<Unit> {
+        setConfigCalls.add(
+            RequestParameters(UseCaseCameraRequestControl.Type.CAMERA2_CAMERA_CONTROL, config, tags)
+        )
         return CompletableDeferred(Unit)
     }
 
     override fun setTorchOnAsync(): Deferred<Result3A> {
+        setTorchCalls.add(true)
         return setTorchResult
     }
 
     override fun setTorchOffAsync(aeMode: AeMode): Deferred<Result3A> {
+        setTorchCalls.add(false)
         return setTorchResult
     }
 
@@ -158,6 +225,7 @@ open class FakeUseCaseCameraRequestControl(
         awbLockBehavior: Lock3ABehavior?,
         afTriggerStartAeMode: AeMode?,
         timeLimitNs: Long,
+        convergedCondition: ((FrameMetadata) -> Boolean)?,
     ): Deferred<Result3A> {
         this.aeRegions = aeRegions
         this.afRegions = afRegions
@@ -254,6 +322,13 @@ class FakeUseCaseCamera(
         flashMode: Int,
         flashType: Int,
     ): CameraCapturePipeline = FakeCameraCapturePipeline()
+
+    override fun updateRepeatingRequestAsync(
+        isPrimary: Boolean,
+        runningUseCases: Collection<UseCase>,
+    ): Job {
+        return CompletableDeferred(Unit)
+    }
 
     override fun close(): Job {
         return CompletableDeferred(Unit)

@@ -18,11 +18,12 @@ package androidx.compose.remote.creation.compose.state
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import androidx.compose.remote.core.CoreDocument
-import androidx.compose.remote.core.Operations
+import androidx.compose.remote.core.RcProfiles.PROFILE_ANDROIDX
 import androidx.compose.remote.creation.compose.capture.RemoteComposeCreationState
-import androidx.compose.remote.creation.platform.AndroidxPlatformServices
+import androidx.compose.remote.creation.platform.AndroidxRcPlatformServices
 import androidx.compose.remote.player.core.platform.AndroidRemoteContext
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.asImageBitmap
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -32,6 +33,7 @@ private fun bitmap(width: Int, height: Int) =
     Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
 
 @RunWith(RobolectricTestRunner::class)
+@org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.TARGET_SDK])
 class RemoteBitmapFontTest {
     val context =
         AndroidRemoteContext().apply {
@@ -40,26 +42,25 @@ class RemoteBitmapFontTest {
 
     val creationState =
         RemoteComposeCreationState(
-            AndroidxPlatformServices(),
-            density = 1f,
+            AndroidxRcPlatformServices(),
             Size(1f, 1f),
             CoreDocument.DOCUMENT_API_LEVEL,
-            Operations.PROFILE_ANDROIDX,
+            PROFILE_ANDROIDX,
         )
 
     val bitmapFont =
         RemoteBitmapFont(
             listOf(
-                RemoteBitmapFont.Glyph("a", bitmap(10, 20), 1, 2, 3, 4),
-                RemoteBitmapFont.Glyph("b", bitmap(20, 20), 10, 20, 30, 40),
-                RemoteBitmapFont.Glyph("c", bitmap(30, 20), 2, 4, 6, 8),
+                RemoteBitmapFont.Glyph("a", bitmap(10, 20).asImageBitmap(), 1, 2, 3, 4),
+                RemoteBitmapFont.Glyph("b", bitmap(20, 20).asImageBitmap(), 10, 20, 30, 40),
+                RemoteBitmapFont.Glyph("c", bitmap(30, 20).asImageBitmap(), 2, 4, 6, 8),
                 RemoteBitmapFont.Glyph(" ", null, 20, 0, 0, 0),
             )
         )
 
     @Test
     fun measureWidth() {
-        val result = bitmapFont.measureWidth(RemoteString("ab c"))
+        val result = bitmapFont.measureWidth(RemoteString("ab c"), RemoteFloat(0f))
         val resultId = result.getIdForCreationState(creationState)
         makeAndPaintCoreDocument()
 
@@ -69,6 +70,36 @@ class RemoteBitmapFontTest {
         //  : 20 = 20
         // c: 2 + 30 + 6 = 38
         assertThat(context.getInteger(resultId)).isEqualTo(14 + 60 + 20 + 38)
+    }
+
+    @Test
+    fun measureWidthPositiveGlyphSpacing() {
+        val result = bitmapFont.measureWidth(RemoteString("abc"), RemoteFloat(5f))
+        val resultId = result.getIdForCreationState(creationState)
+        makeAndPaintCoreDocument()
+
+        // Width is the sum of:
+        // a: 1 + 10 + 3 = 14
+        //    5
+        // b: 10 + 20 + 30 = 60
+        //    5
+        // c: 2 + 30 + 6 = 38
+        assertThat(context.getInteger(resultId)).isEqualTo(14 + 5 + 60 + 5 + 38)
+    }
+
+    @Test
+    fun measureWidthNegativeGlyphSpacing() {
+        val result = bitmapFont.measureWidth(RemoteString("abc"), RemoteFloat(-5f))
+        val resultId = result.getIdForCreationState(creationState)
+        makeAndPaintCoreDocument()
+
+        // Width is the sum of:
+        // a: 1 + 10 + 3 = 14
+        //    -5
+        // b: 10 + 20 + 30 = 60
+        //    -5
+        // c: 2 + 30 + 6 = 38
+        assertThat(context.getInteger(resultId)).isEqualTo(14 - 5 + 60 - 5 + 38)
     }
 
     @Test
@@ -83,6 +114,79 @@ class RemoteBitmapFontTest {
         //  : 0
         // c: 4 + 20 + 8 = 32
         assertThat(context.getInteger(resultId)).isEqualTo(80)
+    }
+
+    @Test
+    fun measureWithKerning() {
+        val kerningFont =
+            RemoteBitmapFont(
+                listOf(
+                    RemoteBitmapFont.Glyph("a", bitmap(10, 20).asImageBitmap(), 1, 0, 1, 0),
+                    RemoteBitmapFont.Glyph("b", bitmap(10, 20).asImageBitmap(), 1, 0, 1, 0),
+                ),
+                mapOf("ab" to (-2).toShort()),
+            )
+        val result = kerningFont.measureWidth(RemoteString("ab"), RemoteFloat(0f))
+        val resultId = result.getIdForCreationState(creationState)
+        makeAndPaintCoreDocument()
+
+        // a: 1 + 10 + 1 = 12
+        // kerning: -2
+        // b: 1 + 10 + 1 = 12
+        // Total: 12 - 2 + 12 = 22
+        assertThat(context.getInteger(resultId)).isEqualTo(22)
+    }
+
+    @Test
+    fun measureEmptyString() {
+        val result = bitmapFont.measureWidth(RemoteString(""), RemoteFloat(0f))
+        val resultId = result.getIdForCreationState(creationState)
+        makeAndPaintCoreDocument()
+
+        assertThat(context.getInteger(resultId)).isEqualTo(0)
+    }
+
+    @Test
+    fun measureUnmatchedGlyphs() {
+        val result = bitmapFont.measureWidth(RemoteString("z"), RemoteFloat(0f))
+        val resultId = result.getIdForCreationState(creationState)
+        makeAndPaintCoreDocument()
+
+        // "z" is not in the font, so it's ignored.
+        assertThat(context.getInteger(resultId)).isEqualTo(0)
+    }
+
+    @Test
+    fun measureNonConstantWidth() {
+        // We use a RemoteString that doesn't have a constant value.
+        val nonConstantString = RemoteString.createNamedRemoteString("testWidth", "abc")
+
+        val result = bitmapFont.measureWidth(nonConstantString, RemoteFloat(0f))
+        val resultId = result.getIdForCreationState(creationState)
+        makeAndPaintCoreDocument()
+
+        // "abc" width: 14 + 60 + 38 = 112
+        assertThat(context.getInteger(resultId)).isEqualTo(112)
+    }
+
+    @Test
+    fun measureGreedyMatching() {
+        val greedyFont =
+            RemoteBitmapFont(
+                listOf(
+                    RemoteBitmapFont.Glyph("a", bitmap(10, 20).asImageBitmap(), 0, 0, 0, 0),
+                    RemoteBitmapFont.Glyph("ab", bitmap(20, 20).asImageBitmap(), 0, 0, 0, 0),
+                    RemoteBitmapFont.Glyph("abc", bitmap(30, 20).asImageBitmap(), 0, 0, 0, 0),
+                )
+            )
+
+        val result = greedyFont.measureWidth(RemoteString("abc"), RemoteFloat(0f))
+        val resultId = result.getIdForCreationState(creationState)
+        makeAndPaintCoreDocument()
+
+        // If it's truly greedy, it should match "abc" (width 30)
+        // even if "a" comes first in the list.
+        assertThat(context.getInteger(resultId)).isEqualTo(30)
     }
 
     private fun makeAndPaintCoreDocument() =

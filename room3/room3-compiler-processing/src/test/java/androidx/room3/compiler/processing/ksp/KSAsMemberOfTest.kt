@@ -37,16 +37,16 @@ class KSAsMemberOfTest {
             Source.kotlin(
                 "Foo.kt",
                 """
-            open class BaseClass<T, R>(val genericProp : T) {
-                val normalInt:Int = 3
-                val listOfGeneric : List<T> = TODO()
-                val mapOfStringToGeneric2 : Map<String, R> = TODO()
-                val pairOfGenerics : Pair<T, R> = TODO()
-            }
-            class SubClass(x : Int) : BaseClass<Int, List<String>>(x) {
-                val subClassProp : String = "abc"
-            }
-            """
+                open class BaseClass<T, R>(val genericProp : T) {
+                    val normalInt:Int = 3
+                    val listOfGeneric : List<T> = TODO()
+                    val mapOfStringToGeneric2 : Map<String, R> = TODO()
+                    val pairOfGenerics : Pair<T, R> = TODO()
+                }
+                class SubClass(x : Int) : BaseClass<Int, List<String>>(x) {
+                    val subClassProp : String = "abc"
+                }
+                """
                     .trimIndent(),
             )
 
@@ -101,15 +101,15 @@ class KSAsMemberOfTest {
             Source.kotlin(
                 "Foo.kt",
                 """
-            open class MyInterface<T> {
-                val inheritedProp: T = TODO()
-                var nullableProp: T? = TODO()
-                val inheritedGenericProp: List<T> = TODO()
-                val nullableGenericProp: List<T?> = TODO()
-            }
-            abstract class NonNullSubject : MyInterface<String>()
-            abstract class NullableSubject: MyInterface<String?>()
-            """
+                open class MyInterface<T> {
+                    val inheritedProp: T = TODO()
+                    var nullableProp: T? = TODO()
+                    val inheritedGenericProp: List<T> = TODO()
+                    val nullableGenericProp: List<T?> = TODO()
+                }
+                abstract class NonNullSubject : MyInterface<String>()
+                abstract class NullableSubject: MyInterface<String?>()
+                """
                     .trimIndent(),
             )
         runKspTest(sources = listOf(src)) { invocation ->
@@ -131,21 +131,25 @@ class KSAsMemberOfTest {
             val inheritedGenericProp = myInterface.getField("inheritedGenericProp")
             inheritedGenericProp.asMemberOf(nonNullSubject).let {
                 assertThat(it.nullability).isEqualTo(XNullability.NONNULL)
-                assertThat(it.typeArguments.first().nullability).isEqualTo(XNullability.NONNULL)
+                assertThat(it.typeArguments.first().type.nullability)
+                    .isEqualTo(XNullability.NONNULL)
             }
             inheritedGenericProp.asMemberOf(nullableSubject).let {
                 assertThat(it.nullability).isEqualTo(XNullability.NONNULL)
-                assertThat(it.typeArguments.first().nullability).isEqualTo(XNullability.NULLABLE)
+                assertThat(it.typeArguments.first().type.nullability)
+                    .isEqualTo(XNullability.NULLABLE)
             }
 
             val nullableGenericProp = myInterface.getField("nullableGenericProp")
             nullableGenericProp.asMemberOf(nonNullSubject).let {
                 assertThat(it.nullability).isEqualTo(XNullability.NONNULL)
-                assertThat(it.typeArguments.first().nullability).isEqualTo(XNullability.NULLABLE)
+                assertThat(it.typeArguments.first().type.nullability)
+                    .isEqualTo(XNullability.NULLABLE)
             }
             nullableGenericProp.asMemberOf(nullableSubject).let {
                 assertThat(it.nullability).isEqualTo(XNullability.NONNULL)
-                assertThat(it.typeArguments.first().nullability).isEqualTo(XNullability.NULLABLE)
+                assertThat(it.typeArguments.first().type.nullability)
+                    .isEqualTo(XNullability.NULLABLE)
             }
         }
     }
@@ -156,26 +160,26 @@ class KSAsMemberOfTest {
             Source.kotlin(
                 "KotlinClass.kt",
                 """
-            class KotlinClass {
-                companion object {
-                    @JvmStatic
-                    var staticProp: String = ""
-                    @JvmStatic
-                    fun staticFun(x:Int) {}
+                class KotlinClass {
+                    companion object {
+                        @JvmStatic
+                        var staticProp: String = ""
+                        @JvmStatic
+                        fun staticFun(x:Int) {}
+                    }
                 }
-            }
-            """
+                """
                     .trimIndent(),
             )
         val javaSrc =
             Source.java(
                 "JavaClass",
                 """
-            class JavaClass {
-                void staticFun(int x) {}
-                static String staticProp;
-            }
-            """
+                class JavaClass {
+                    void staticFun(int x) {}
+                    static String staticProp;
+                }
+                """
                     .trimIndent(),
             )
         runKspTest(sources = listOf(kotlinSrc, javaSrc)) { invocation ->

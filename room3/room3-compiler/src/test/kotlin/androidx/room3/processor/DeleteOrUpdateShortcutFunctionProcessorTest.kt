@@ -28,13 +28,12 @@ import androidx.room3.compiler.processing.XType
 import androidx.room3.compiler.processing.XTypeElement
 import androidx.room3.compiler.processing.util.Source
 import androidx.room3.compiler.processing.util.XTestInvocation
-import androidx.room3.compiler.processing.util.runProcessorTest
+import androidx.room3.compiler.processing.util.runKspTest
 import androidx.room3.ext.CommonTypeNames
 import androidx.room3.ext.GuavaUtilConcurrentTypeNames
 import androidx.room3.ext.KotlinTypeNames
 import androidx.room3.ext.LifecyclesTypeNames
 import androidx.room3.ext.ReactiveStreamsTypeNames
-import androidx.room3.ext.RxJava2TypeNames
 import androidx.room3.ext.RxJava3TypeNames
 import androidx.room3.testing.context
 import androidx.room3.vo.DeleteOrUpdateShortcutFunction
@@ -51,7 +50,10 @@ abstract class DeleteOrUpdateShortcutFunctionProcessorTest<out T : DeleteOrUpdat
                 package foo.bar;
                 import androidx.room3.*;
                 import java.util.*;
+                import androidx.room3.guava.GuavaDaoReturnTypeConverter;
+                import androidx.room3.rxjava3.RxDaoReturnTypeConverters;
                 @Dao
+                @DaoReturnTypeConverters({GuavaDaoReturnTypeConverter.class, RxDaoReturnTypeConverters.class})
                 abstract class MyClass {
                 """
         const val DAO_PREFIX_KT =
@@ -65,8 +67,11 @@ abstract class DeleteOrUpdateShortcutFunctionProcessorTest<out T : DeleteOrUpdat
                 import com.google.common.util.concurrent.*
                 import org.reactivestreams.*
                 import kotlinx.coroutines.flow.*
+                import androidx.room3.guava.GuavaDaoReturnTypeConverter
+                import androidx.room3.rxjava3.RxDaoReturnTypeConverters
             
                 @Dao
+                @DaoReturnTypeConverters(GuavaDaoReturnTypeConverter::class, RxDaoReturnTypeConverters::class)
                 abstract class MyClass {
                 """
 
@@ -104,7 +109,8 @@ abstract class DeleteOrUpdateShortcutFunctionProcessorTest<out T : DeleteOrUpdat
             assertThat(shortcut.parameters.size).isEqualTo(1)
             val param = shortcut.parameters.first()
             assertThat(param.type.asTypeName()).isEqualTo(USER_TYPE_NAME.copy(nullable = true))
-            assertThat(param.pojoType?.asTypeName()).isEqualTo(USER_TYPE_NAME.copy(nullable = true))
+            assertThat(param.dataClassType?.asTypeName())
+                .isEqualTo(USER_TYPE_NAME.copy(nullable = true))
             assertThat(shortcut.entities.size).isEqualTo(1)
             assertThat(shortcut.entities["user"]?.isPartialEntity).isEqualTo(false)
             assertThat(shortcut.entities["user"]?.dataClass?.typeName).isEqualTo(USER_TYPE_NAME)
@@ -120,7 +126,7 @@ abstract class DeleteOrUpdateShortcutFunctionProcessorTest<out T : DeleteOrUpdat
                 """
         ) { _, invocation ->
             invocation.assertCompilationResult {
-                hasErrorContaining(ProcessorErrors.nullableParamInShortcutFunction("foo.bar.User"))
+                hasErrorContaining(ProcessorErrors.nullableParamInShortcutFunction("foo.bar.User?"))
             }
         }
     }
@@ -155,7 +161,7 @@ abstract class DeleteOrUpdateShortcutFunctionProcessorTest<out T : DeleteOrUpdat
             assertThat(shortcut.parameters.size).isEqualTo(2)
             shortcut.parameters.forEach {
                 assertThat(it.type.asTypeName()).isEqualTo(USER_TYPE_NAME.copy(nullable = true))
-                assertThat(it.pojoType?.asTypeName())
+                assertThat(it.dataClassType?.asTypeName())
                     .isEqualTo(USER_TYPE_NAME.copy(nullable = true))
             }
             assertThat(shortcut.entities.size).isEqualTo(2)
@@ -176,7 +182,7 @@ abstract class DeleteOrUpdateShortcutFunctionProcessorTest<out T : DeleteOrUpdat
                 """
         ) { _, invocation ->
             invocation.assertCompilationResult {
-                hasErrorContaining(ProcessorErrors.nullableParamInShortcutFunction("foo.bar.User"))
+                hasErrorContaining(ProcessorErrors.nullableParamInShortcutFunction("foo.bar.User?"))
                 hasErrorCount(2)
             }
         }
@@ -187,9 +193,6 @@ abstract class DeleteOrUpdateShortcutFunctionProcessorTest<out T : DeleteOrUpdat
         listOf(
                 "int",
                 "Integer",
-                "${RxJava2TypeNames.SINGLE.canonicalName}<Integer>",
-                "${RxJava2TypeNames.MAYBE.canonicalName}<Integer>",
-                RxJava2TypeNames.COMPLETABLE.canonicalName,
                 "${RxJava3TypeNames.SINGLE.canonicalName}<Integer>",
                 "${RxJava3TypeNames.MAYBE.canonicalName}<Integer>",
                 RxJava3TypeNames.COMPLETABLE.canonicalName,
@@ -213,7 +216,7 @@ abstract class DeleteOrUpdateShortcutFunctionProcessorTest<out T : DeleteOrUpdat
                                 .copy(nullable = true)
                         )
 
-                    assertThat(param.pojoType?.asTypeName())
+                    assertThat(param.dataClassType?.asTypeName())
                         .isEqualTo(USER_TYPE_NAME.copy(nullable = true))
                     assertThat(shortcut.entities.size).isEqualTo(1)
                     assertThat(shortcut.entities["users"]?.dataClass?.typeName)
@@ -233,7 +236,7 @@ abstract class DeleteOrUpdateShortcutFunctionProcessorTest<out T : DeleteOrUpdat
             invocation.assertCompilationResult {
                 hasErrorContaining(
                     ProcessorErrors.nullableParamInShortcutFunction(
-                        "java.util.List<? extends foo.bar.User>"
+                        "kotlin.collections.List<foo.bar.User?>"
                     )
                 )
             }
@@ -280,7 +283,7 @@ abstract class DeleteOrUpdateShortcutFunctionProcessorTest<out T : DeleteOrUpdat
         ) { _, invocation ->
             invocation.assertCompilationResult {
                 hasErrorContaining(
-                    ProcessorErrors.nullableParamInShortcutFunction("foo.bar.User[]")
+                    ProcessorErrors.nullableParamInShortcutFunction("kotlin.Array<foo.bar.User?>")
                 )
             }
         }
@@ -321,7 +324,7 @@ abstract class DeleteOrUpdateShortcutFunctionProcessorTest<out T : DeleteOrUpdat
             invocation.assertCompilationResult {
                 hasErrorContaining(
                     ProcessorErrors.nullableParamInShortcutFunction(
-                        "java.util.Set<? extends foo.bar.User>"
+                        "kotlin.collections.Set<foo.bar.User?>"
                     )
                 )
             }
@@ -390,7 +393,7 @@ abstract class DeleteOrUpdateShortcutFunctionProcessorTest<out T : DeleteOrUpdat
             invocation.assertCompilationResult {
                 hasErrorContaining(
                     ProcessorErrors.nullableParamInShortcutFunction(
-                        "foo.bar.MyClass.MyList<java.lang.String, foo.bar.User>"
+                        "foo.bar.MyClass.MyList<kotlin.String?, foo.bar.User?>"
                     )
                 )
             }
@@ -403,9 +406,6 @@ abstract class DeleteOrUpdateShortcutFunctionProcessorTest<out T : DeleteOrUpdat
                 "void",
                 "int",
                 "Integer",
-                "${RxJava2TypeNames.SINGLE.canonicalName}<Integer>",
-                "${RxJava2TypeNames.MAYBE.canonicalName}<Integer>",
-                RxJava2TypeNames.COMPLETABLE.canonicalName,
                 "${RxJava3TypeNames.SINGLE.canonicalName}<Integer>",
                 "${RxJava3TypeNames.MAYBE.canonicalName}<Integer>",
                 RxJava3TypeNames.COMPLETABLE.canonicalName,
@@ -445,8 +445,8 @@ abstract class DeleteOrUpdateShortcutFunctionProcessorTest<out T : DeleteOrUpdat
                 """
         ) { _, invocation ->
             invocation.assertCompilationResult {
-                hasErrorContaining(ProcessorErrors.nullableParamInShortcutFunction("foo.bar.User"))
-                hasErrorContaining(ProcessorErrors.nullableParamInShortcutFunction("foo.bar.Book"))
+                hasErrorContaining(ProcessorErrors.nullableParamInShortcutFunction("foo.bar.User?"))
+                hasErrorContaining(ProcessorErrors.nullableParamInShortcutFunction("foo.bar.Book?"))
                 hasErrorCount(2)
             }
         }
@@ -458,12 +458,6 @@ abstract class DeleteOrUpdateShortcutFunctionProcessorTest<out T : DeleteOrUpdat
                 "long",
                 "String",
                 "User",
-                "${RxJava2TypeNames.SINGLE.canonicalName}<Int>",
-                "${RxJava2TypeNames.MAYBE.canonicalName}<Int>",
-                "${RxJava2TypeNames.SINGLE.canonicalName}<String>",
-                "${RxJava2TypeNames.MAYBE.canonicalName}<String>",
-                "${RxJava2TypeNames.SINGLE.canonicalName}<User>",
-                "${RxJava2TypeNames.MAYBE.canonicalName}<User>",
                 "${GuavaUtilConcurrentTypeNames.LISTENABLE_FUTURE.canonicalName}<Int>",
                 "${GuavaUtilConcurrentTypeNames.LISTENABLE_FUTURE.canonicalName}<String>",
                 "${GuavaUtilConcurrentTypeNames.LISTENABLE_FUTURE.canonicalName}<User>",
@@ -485,11 +479,6 @@ abstract class DeleteOrUpdateShortcutFunctionProcessorTest<out T : DeleteOrUpdat
     @Test
     fun suspendReturnsDeferredType() {
         listOf(
-                "${RxJava2TypeNames.FLOWABLE.canonicalName}<Int>",
-                "${RxJava2TypeNames.OBSERVABLE.canonicalName}<Int>",
-                "${RxJava2TypeNames.MAYBE.canonicalName}<Int>",
-                "${RxJava2TypeNames.SINGLE.canonicalName}<Int>",
-                "${RxJava2TypeNames.COMPLETABLE.canonicalName}",
                 "${RxJava3TypeNames.FLOWABLE.canonicalName}<Int>",
                 "${RxJava3TypeNames.OBSERVABLE.canonicalName}<Int>",
                 "${RxJava3TypeNames.MAYBE.canonicalName}<Int>",
@@ -542,7 +531,7 @@ abstract class DeleteOrUpdateShortcutFunctionProcessorTest<out T : DeleteOrUpdat
             assertThat(shortcut.parameters.size).isEqualTo(1)
             val param = shortcut.parameters.first()
             assertThat(param.type.asTypeName()).isEqualTo(USERNAME_TYPE_NAME.copy(nullable = true))
-            assertThat(param.pojoType?.asTypeName())
+            assertThat(param.dataClassType?.asTypeName())
                 .isEqualTo(USERNAME_TYPE_NAME.copy(nullable = true))
             assertThat(shortcut.entities.size).isEqualTo(1)
             assertThat(shortcut.entities["username"]?.isPartialEntity).isEqualTo(true)
@@ -671,7 +660,7 @@ abstract class DeleteOrUpdateShortcutFunctionProcessorTest<out T : DeleteOrUpdat
 
             public class UserPets {
                 int uid;
-                @Relation(parentColumn = "uid", entityColumn = "ownerId")
+                @Relation(parentColumns = {"uid"}, entityColumns = {"ownerId"})
                 List<Pet> pets;
             }
             """,
@@ -713,7 +702,9 @@ abstract class DeleteOrUpdateShortcutFunctionProcessorTest<out T : DeleteOrUpdat
                 """
         ) { _, invocation ->
             invocation.assertCompilationResult {
-                hasErrorContaining(ProcessorErrors.shortcutFunctionArgumentMustBeAClass("long"))
+                hasErrorContaining(
+                    ProcessorErrors.shortcutFunctionArgumentMustBeAClass("kotlin.Long")
+                )
             }
         }
     }
@@ -724,9 +715,9 @@ abstract class DeleteOrUpdateShortcutFunctionProcessorTest<out T : DeleteOrUpdat
             Source.java(
                 "foo.bar.EmptyClass",
                 """
-            package foo.bar;
-            public class EmptyClass {}
-            """
+                package foo.bar;
+                public class EmptyClass {}
+                """
                     .trimIndent(),
             )
 
@@ -775,19 +766,19 @@ abstract class DeleteOrUpdateShortcutFunctionProcessorTest<out T : DeleteOrUpdat
                 COMMON.USER,
                 COMMON.BOOK,
                 COMMON.NOT_AN_ENTITY,
-                COMMON.RX2_COMPLETABLE,
-                COMMON.RX2_MAYBE,
-                COMMON.RX2_SINGLE,
                 COMMON.RX3_COMPLETABLE,
                 COMMON.RX3_MAYBE,
                 COMMON.RX3_SINGLE,
+                COMMON.RX3_FLOWABLE,
+                COMMON.RX3_OBSERVABLE,
                 COMMON.LISTENABLE_FUTURE,
+                COMMON.LIVE_DATA,
+                COMMON.COMPUTABLE_LIVE_DATA,
+                COMMON.PUBLISHER,
+                COMMON.FLOW,
                 COMMON.GUAVA_ROOM,
             )
-        runProcessorTest(
-            sources = commonSources + additionalSources + inputSource,
-            options = mapOf(Context.BooleanProcessorOptions.GENERATE_KOTLIN.argName to "false"),
-        ) { invocation ->
+        runKspTest(sources = commonSources + additionalSources + inputSource) { invocation ->
             val (owner, methods) =
                 invocation.roundEnv
                     .getElementsAnnotatedWith(Dao::class.qualifiedName!!)
@@ -801,7 +792,7 @@ abstract class DeleteOrUpdateShortcutFunctionProcessorTest<out T : DeleteOrUpdat
                     .first { it.second.isNotEmpty() }
             val processed =
                 process(
-                    baseContext = invocation.context,
+                    baseContext = invocation.context.fork(owner),
                     containing = owner.type,
                     executableElement = methods.first(),
                 )
@@ -822,11 +813,6 @@ abstract class DeleteOrUpdateShortcutFunctionProcessorTest<out T : DeleteOrUpdat
                 COMMON.USER,
                 COMMON.BOOK,
                 COMMON.NOT_AN_ENTITY,
-                COMMON.RX2_COMPLETABLE,
-                COMMON.RX2_MAYBE,
-                COMMON.RX2_SINGLE,
-                COMMON.RX2_FLOWABLE,
-                COMMON.RX2_OBSERVABLE,
                 COMMON.RX3_COMPLETABLE,
                 COMMON.RX3_MAYBE,
                 COMMON.RX3_SINGLE,
@@ -840,10 +826,7 @@ abstract class DeleteOrUpdateShortcutFunctionProcessorTest<out T : DeleteOrUpdat
                 COMMON.GUAVA_ROOM,
             )
 
-        runProcessorTest(
-            sources = commonSources + additionalSources + inputSource,
-            options = mapOf(Context.BooleanProcessorOptions.GENERATE_KOTLIN.argName to "false"),
-        ) { invocation ->
+        runKspTest(sources = commonSources + additionalSources + inputSource) { invocation ->
             val (owner, functions) =
                 invocation.roundEnv
                     .getElementsAnnotatedWith(Dao::class.qualifiedName!!)
@@ -858,7 +841,7 @@ abstract class DeleteOrUpdateShortcutFunctionProcessorTest<out T : DeleteOrUpdat
 
             val processed =
                 process(
-                    baseContext = invocation.context,
+                    baseContext = invocation.context.fork(owner),
                     containing = owner.type,
                     executableElement = functions.first(),
                 )

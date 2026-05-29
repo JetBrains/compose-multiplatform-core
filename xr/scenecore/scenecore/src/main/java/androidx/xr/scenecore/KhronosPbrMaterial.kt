@@ -42,7 +42,7 @@ import androidx.xr.scenecore.runtime.RenderingRuntime
 public class KhronosPbrMaterial
 internal constructor(
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) override val material: RtMaterial,
-    @AlphaModeValues internal val alphaMode: Int,
+    internal val alphaMode: AlphaMode,
     internal val session: Session,
 ) : Material {
 
@@ -57,10 +57,12 @@ internal constructor(
     }
 
     /**
-     * Sets the material's base color using a texture.
+     * Sets the material's base color texture (often called albedo).
      *
-     * By default this is a white texture, where all pixels are [1, 1, 1, 1]. In other words, if
-     * this is left as default, the base color will always be the base color factor.
+     * This texture defines the main color of the surface. It is typically used to apply visual
+     * patterns like wood grain or fabric weaves. By default this is a white texture, where all
+     * pixels are [1, 1, 1, 1]. In other words, if this is left as default, the base color will
+     * always be the base color factor.
      *
      * @param texture The [Texture] to be used as the base color texture, in sRGB color space.
      * @param sampler The [TextureSampler] to be used when sampling the base color texture.
@@ -137,7 +139,10 @@ internal constructor(
     /**
      * Sets the normal map texture for surface detail.
      *
-     * By default the texture is unset, in which case no normal mapping is done.
+     * A normal map is a texture that simulates fine surface details, such as bumps, grooves, or
+     * scratches, by modifying the way light reflects off the surface. This creates the illusion of
+     * depth and complexity. By default the texture is unset, in which case no normal mapping is
+     * done.
      *
      * @param texture The [Texture] to be used as the normal map, in tangent space and linear color.
      * @param scale A scalar multiplier controlling the strength of the normal map. Default is 1.0.
@@ -404,7 +409,7 @@ internal constructor(
     /**
      * Sets the alpha cutoff threshold.
      *
-     * This value is only used when the material's [alphaMode] is [AlphaMode.ALPHA_MODE_MASK].
+     * This value is only used when the material's [alphaMode] is [AlphaMode.MASK].
      *
      * @param alphaCutoff The alpha cutoff. Fragments with alpha below this value are discarded.
      *   Default is 0.5. Valid values are between 0.0 and 1.0, inclusive.
@@ -412,7 +417,7 @@ internal constructor(
      */
     @MainThread
     public fun setAlphaCutoff(@FloatRange(from = 0.0, to = 1.0) alphaCutoff: Float) {
-        check(alphaMode == AlphaMode.ALPHA_MODE_MASK) {
+        check(alphaMode == AlphaMode.MASK) {
             "Alpha cutoff can only be set when the material's alpha mode is set to ALPHA_MODE_MASK."
         }
         session.renderingRuntime.setAlphaCutoffOnKhronosPbrMaterial(material, alphaCutoff)
@@ -421,13 +426,11 @@ internal constructor(
     public companion object {
         internal suspend fun createAsync(
             renderingRuntime: RenderingRuntime,
-            @AlphaModeValues alphaMode: Int,
+            alphaMode: AlphaMode,
             session: Session,
         ): KhronosPbrMaterial {
             val material =
-                renderingRuntime
-                    .createKhronosPbrMaterial(alphaMode.toRtKhronosPbrMaterialSpec())
-                    .awaitSuspending()
+                renderingRuntime.createKhronosPbrMaterial(alphaMode.toRtKhronosPbrMaterialSpec())
             return KhronosPbrMaterial(material, alphaMode, session)
         }
 
@@ -440,10 +443,7 @@ internal constructor(
          */
         @MainThread
         @JvmStatic
-        public suspend fun create(
-            session: Session,
-            @AlphaModeValues alphaMode: Int,
-        ): KhronosPbrMaterial {
+        public suspend fun create(session: Session, alphaMode: AlphaMode): KhronosPbrMaterial {
             return createAsync(session.renderingRuntime, alphaMode, session)
         }
     }

@@ -19,12 +19,14 @@
 package androidx.compose.ui.platform
 
 import androidx.annotation.RestrictTo
+import androidx.annotation.VisibleForTesting
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocal
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.ProvidableCompositionLocal
 import androidx.compose.runtime.compositionLocalOf
-import androidx.compose.runtime.retain.LocalRetainScope
+import androidx.compose.runtime.compositionLocalWithComputedDefaultOf
+import androidx.compose.runtime.retain.LocalRetainedValuesStore
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.autofill.Autofill
@@ -42,6 +44,8 @@ import androidx.compose.ui.node.Owner
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.TextInputService
+import androidx.compose.ui.text.intl.Locale
+import androidx.compose.ui.text.intl.LocaleList
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.lifecycle.LifecycleOwner
@@ -148,6 +152,22 @@ val LocalInputModeManager =
 val LocalLayoutDirection =
     staticCompositionLocalOf<LayoutDirection> { noLocalProvidedFor("LocalLayoutDirection") }
 
+/** The providable CompositionLocal to provide the locale list. This list can never be empty. */
+@get:VisibleForTesting
+@get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+val LocalProvidableLocaleList: ProvidableCompositionLocal<LocaleList> = staticCompositionLocalOf {
+    noLocalProvidedFor("LocalProvidableLocaleList")
+}
+
+/** The CompositionLocal to provide the locale list. This list will never be empty. */
+val LocalLocaleList: CompositionLocal<LocaleList>
+    get() = LocalProvidableLocaleList
+
+/** The CompositionLocal to provide the locale. */
+val LocalLocale: CompositionLocal<Locale> = compositionLocalWithComputedDefaultOf {
+    LocalLocaleList.currentValue.first()
+}
+
 /** The CompositionLocal to provide communication with platform text input service. */
 @Deprecated("Use PlatformTextInputModifierNode instead.")
 val LocalTextInputService = staticCompositionLocalOf<TextInputService?> { null }
@@ -175,6 +195,24 @@ val LocalViewConfiguration =
  * The CompositionLocal that provides information about the window that hosts the current [Owner].
  */
 val LocalWindowInfo = staticCompositionLocalOf<WindowInfo> { noLocalProvidedFor("LocalWindowInfo") }
+
+/**
+ * The CompositionLocal to provide platform sound effects.
+ *
+ * This is used to trigger sounds on user interaction, like clicks. To enable, disable, or customize
+ * sound interaction scopes, utilize `SoundEffectOnInteraction`.
+ *
+ * @sample androidx.compose.ui.samples.InteractionSoundSamples
+ * @see SoundEffect
+ */
+val LocalSoundEffect =
+    staticCompositionLocalOf<SoundEffect> {
+        object : SoundEffect {
+            override fun playClickSound() {
+                // This platform does not support sound, so sound effects are a no-op
+            }
+        }
+    }
 
 /** The CompositionLocal containing the current [LifecycleOwner]. */
 @Deprecated(
@@ -227,17 +265,18 @@ internal fun ProvideCommonCompositionLocals(
             @Suppress("DEPRECATION") owner.fontLoader,
         LocalFontFamilyResolver providesDefault owner.fontFamilyResolver,
         LocalHapticFeedback provides owner.hapticFeedBack,
-        LocalInputModeManager provides owner.inputModeManager,
+        LocalInputModeManager providesComputed { owner.inputModeManager },
         LocalLayoutDirection provides owner.layoutDirection,
-        LocalRetainScope provides owner.retainScope,
-        LocalTextInputService provides owner.textInputService,
-        LocalSoftwareKeyboardController provides owner.softwareKeyboardController,
-        LocalTextToolbar provides owner.textToolbar,
+        LocalTextInputService providesComputed { owner.textInputService },
+        LocalSoftwareKeyboardController providesComputed { owner.softwareKeyboardController },
+        LocalTextToolbar providesComputed { owner.textToolbar },
         LocalUriHandler provides uriHandler,
         LocalViewConfiguration provides owner.viewConfiguration,
         LocalWindowInfo provides owner.windowInfo,
-        LocalPointerIconService provides owner.pointerIconService,
+        LocalPointerIconService providesComputed { owner.pointerIconService },
         LocalGraphicsContext provides owner.graphicsContext,
+        LocalRetainedValuesStore provides owner.retainedValuesStore,
+        LocalProvidableLocaleList provides owner.localeList,
         content = content,
     )
 }

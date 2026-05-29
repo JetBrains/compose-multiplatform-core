@@ -15,12 +15,18 @@
  */
 package androidx.compose.remote.core.operations.layout.managers;
 
+import static androidx.compose.remote.core.documentation.DocumentedOperation.FLOAT;
+import static androidx.compose.remote.core.documentation.DocumentedOperation.INT;
+
 import androidx.annotation.RestrictTo;
+import androidx.compose.remote.core.CoreDocument;
 import androidx.compose.remote.core.Operation;
 import androidx.compose.remote.core.Operations;
 import androidx.compose.remote.core.PaintContext;
 import androidx.compose.remote.core.RemoteContext;
 import androidx.compose.remote.core.WireBuffer;
+import androidx.compose.remote.core.documentation.DocumentationBuilder;
+import androidx.compose.remote.core.operations.Header;
 import androidx.compose.remote.core.operations.layout.Component;
 import androidx.compose.remote.core.operations.layout.LayoutComponent;
 import androidx.compose.remote.core.operations.layout.measure.ComponentMeasure;
@@ -77,6 +83,22 @@ public class CollapsibleRowLayout extends RowLayout {
                 spacedBy);
     }
 
+    /**
+     * Populate the documentation with a description of this operation
+     *
+     * @param doc to append the description to.
+     */
+    public static void documentation(@NonNull DocumentationBuilder doc) {
+        doc.operation("Layout Managers", id(), "CollapsibleRow")
+                .additionalDocumentation("collapsible_row")
+                .description("A row layout that can hide children if space is insufficient")
+                .field(INT, "componentId", "Unique ID for this component")
+                .field(INT, "animationId", "ID for animation purposes")
+                .field(INT, "horizontalPositioning", "Horizontal positioning value")
+                .field(INT, "verticalPositioning", "Vertical positioning value")
+                .field(FLOAT, "spacedBy", "Horizontal spacing between components");
+    }
+
     @NonNull
     @Override
     protected String getSerializedName() {
@@ -124,8 +146,8 @@ public class CollapsibleRowLayout extends RowLayout {
      * @param operations the list of operations that will be added to
      */
     public static void read(@NonNull WireBuffer buffer, @NonNull List<Operation> operations) {
-        int componentId = buffer.readInt();
-        int animationId = buffer.readInt();
+        int componentId = buffer.declareId();
+        int animationId = buffer.declareId();
         int horizontalPositioning = buffer.readInt();
         int verticalPositioning = buffer.readInt();
         float spacedBy = buffer.readFloat();
@@ -141,18 +163,38 @@ public class CollapsibleRowLayout extends RowLayout {
 
     @Override
     public float minIntrinsicHeight(@NonNull RemoteContext context) {
-        float height = computeModifierDefinedHeight(context);
+        float height = computeModifierDefinedHeight(context, true);
         if (!mChildrenComponents.isEmpty()) {
-            height += mChildrenComponents.get(0).minIntrinsicHeight(context);
+            Component c;
+            if (context.useFeature(Header.FEATURE_PRIORITY_FIX)) {
+                c =
+                        CollapsiblePriority.findLastStanding(
+                                mChildrenComponents, CollapsiblePriority.HORIZONTAL);
+            } else {
+                c = mChildrenComponents.get(0);
+            }
+            if (c != null) {
+                height += c.minIntrinsicHeight(context);
+            }
         }
         return height;
     }
 
     @Override
     public float minIntrinsicWidth(@NonNull RemoteContext context) {
-        float width = computeModifierDefinedWidth(context);
+        float width = computeModifierDefinedWidth(context, true);
         if (!mChildrenComponents.isEmpty()) {
-            width += mChildrenComponents.get(0).minIntrinsicWidth(context);
+            Component c;
+            if (context.useFeature(Header.FEATURE_PRIORITY_FIX)) {
+                c =
+                        CollapsiblePriority.findLastStanding(
+                                mChildrenComponents, CollapsiblePriority.HORIZONTAL);
+            } else {
+                c = mChildrenComponents.get(0);
+            }
+            if (c != null) {
+                width += c.minIntrinsicWidth(context);
+            }
         }
         return width;
     }
@@ -165,7 +207,9 @@ public class CollapsibleRowLayout extends RowLayout {
     @Override
     public void computeWrapSize(
             @NonNull PaintContext context,
+            float minWidth,
             float maxWidth,
+            float minHeight,
             float maxHeight,
             boolean horizontalWrap,
             boolean verticalWrap,
@@ -234,7 +278,11 @@ public class CollapsibleRowLayout extends RowLayout {
             }
         }
         if (!mChildrenComponents.isEmpty() && size != null) {
-            size.setWidth(size.getWidth() + (mSpacedBy * (visibleChildren - 1)));
+            float spacedBy = mSpacedBy;
+            if (context.getDensityBehavior() == CoreDocument.DENSITY_BEHAVIOR_DP) {
+                spacedBy *= context.getDensity();
+            }
+            size.setWidth(size.getWidth() + (spacedBy * (visibleChildren - 1)));
         }
 
         float childrenWidth = 0f;

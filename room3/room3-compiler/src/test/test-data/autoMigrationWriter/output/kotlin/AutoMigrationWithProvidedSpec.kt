@@ -8,7 +8,7 @@ import javax.`annotation`.processing.Generated
 import kotlin.Suppress
 
 @Generated(value = ["androidx.room3.RoomProcessor"])
-@Suppress(names = ["UNCHECKED_CAST", "DEPRECATION", "REDUNDANT_PROJECTION", "REMOVAL"])
+@Suppress(names = ["UNCHECKED_CAST", "DEPRECATION", "REDUNDANT_PROJECTION", "REMOVAL", "MemberExtensionConflict"])
 internal class MyDatabase_AutoMigration_1_2_Impl : Migration {
     private val callback: AutoMigrationSpec
 
@@ -16,7 +16,7 @@ internal class MyDatabase_AutoMigration_1_2_Impl : Migration {
         this.callback = callback
     }
 
-    public override fun migrate(connection: SQLiteConnection) {
+    public override suspend fun migrate(connection: SQLiteConnection) {
         connection.execSQL("ALTER TABLE `Song` ADD COLUMN `artistId` INTEGER DEFAULT NULL")
         callback.onPostMigrate(connection)
     }

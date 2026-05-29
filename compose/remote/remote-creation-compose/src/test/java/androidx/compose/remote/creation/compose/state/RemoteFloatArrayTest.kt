@@ -20,25 +20,24 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import androidx.compose.remote.core.CoreDocument
 import androidx.compose.remote.creation.compose.capture.RemoteComposeCreationState
-import androidx.compose.remote.creation.platform.AndroidxPlatformServices
+import androidx.compose.remote.creation.platform.AndroidxRcPlatformServices
 import androidx.compose.remote.player.core.platform.AndroidRemoteContext
 import androidx.compose.ui.geometry.Size
 import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
-import kotlin.text.get
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 
-@SdkSuppress(minSdkVersion = 26)
+@SdkSuppress(minSdkVersion = 29)
 @RunWith(RobolectricTestRunner::class)
+@org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.TARGET_SDK])
 class RemoteFloatArrayTest {
     val context =
         AndroidRemoteContext().apply {
             useCanvas(Canvas(Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888)))
         }
-    val creationState =
-        RemoteComposeCreationState(AndroidxPlatformServices(), density = 1f, Size(1f, 1f))
+    val creationState = RemoteComposeCreationState(AndroidxRcPlatformServices(), Size(1f, 1f))
 
     @Test
     fun arrayDeref_fetchesValueFromArray() {
@@ -54,8 +53,7 @@ class RemoteFloatArrayTest {
 
     @Test
     fun arrayDeref_fetchesVariableFromArray() {
-        val remoteFloatArray =
-            RemoteFloatArray(listOf(1.rf, RemoteFloat(2.rf.internalAsFloat()), 3.rf))
+        val remoteFloatArray = RemoteFloatArray(listOf(1.rf, RemoteFloat(2f), 3.rf))
 
         val result = remoteFloatArray[1.rf]
         val resultId = result.getIdForCreationState(creationState)
@@ -68,7 +66,7 @@ class RemoteFloatArrayTest {
     @Test
     fun arrayDeref_variableIndexFetchesFromArray() {
         val remoteFloatArray = RemoteFloatArray(listOf(1.rf, 2.rf, 3.rf, 4.rf))
-        val index = RemoteFloat(1.rf.internalAsFloat())
+        val index = RemoteFloat(1f)
 
         val result = remoteFloatArray[index]
         val resultId = result.getIdForCreationState(creationState)

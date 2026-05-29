@@ -283,7 +283,7 @@ public final class FakeCameraFactory implements CameraFactory, CameraFactory.Int
         Set<String> availableIds = getAvailableCameraIds();
         List<CameraIdentifier> identifiers = new ArrayList<>();
         for (String id : availableIds) {
-            identifiers.add(CameraIdentifier.create(id));
+            identifiers.add(CameraIdentifier.Factory.create(id));
         }
 
         // This check is needed because setCameraPresenceSource can overwrite our observable.

@@ -18,13 +18,9 @@
 package androidx.compose.remote.creation.compose.modifier
 
 import androidx.annotation.RestrictTo
-import androidx.compose.foundation.MarqueeAnimationMode
 import androidx.compose.foundation.MarqueeSpacing
-import androidx.compose.foundation.basicMarquee
+import androidx.compose.remote.creation.compose.state.RemoteStateScope
 import androidx.compose.remote.creation.modifiers.RecordingModifier
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 
 /**
  * A modifier that animates the text content to scroll across the screen like a marquee.
@@ -52,9 +48,10 @@ public class MarqueeModifier(
     public val initialDelayMillis: Float,
     public val spacing: Float,
     public val velocity: Float,
-) : RemoteLayoutModifier {
+) : RemoteModifier.Element {
 
-    override fun toRemoteComposeElement(): RecordingModifier.Element {
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    override fun RemoteStateScope.toRecordingModifierElement(): RecordingModifier.Element {
         return androidx.compose.remote.creation.modifiers.MarqueeModifier(
             iterations,
             animationMode,
@@ -64,20 +61,9 @@ public class MarqueeModifier(
             velocity,
         )
     }
-
-    @Composable
-    override fun Modifier.toComposeUi(): Modifier {
-        return basicMarquee(
-            iterations,
-            animationMode = MarqueeAnimationMode.Immediately,
-            repeatDelayMillis = repeatDelayMillis.toInt(),
-            initialDelayMillis.toInt(),
-            spacing = MarqueeSpacing(spacing.dp),
-            velocity = velocity.dp,
-        )
-    }
 }
 
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public fun RemoteModifier.basicMarquee(
     iterations: Int = Int.MAX_VALUE,
     animationMode: Int = 0,

@@ -138,7 +138,7 @@ public class SportsEvent extends Event {
     private @SportsEventResult long mResult;
 
     @OptIn(markerClass = ExperimentalAppSearchApi.class)
-    protected SportsEvent(
+    SportsEvent(
         @NonNull String namespace, @NonNull String id, int documentScore,
         long creationTimestampMillis, long documentTtlMillis,
         @Nullable String name, @Nullable List<String> alternateNames,
@@ -151,7 +151,7 @@ public class SportsEvent extends Event {
         @NonNull String sport,
         @Nullable Organization organizer,
         @SportsEventStatus long sportsEventStatus,
-        @NonNull String sportsEventStatusLabel,
+        @Nullable String sportsEventStatusLabel,
         @Nullable String gameTemporalState,
         @Nullable String notableDetail,
         @NonNull SportsTeam homeTeam,
@@ -213,7 +213,7 @@ public class SportsEvent extends Event {
      * Which is a localized string representation of the
      * {@link SportsEventStatus}.
      */
-    public @NonNull String getSportsEventStatusLabel() {
+    public @Nullable String getSportsEventStatusLabel() {
         return mSportsEventStatusLabel;
     }
 

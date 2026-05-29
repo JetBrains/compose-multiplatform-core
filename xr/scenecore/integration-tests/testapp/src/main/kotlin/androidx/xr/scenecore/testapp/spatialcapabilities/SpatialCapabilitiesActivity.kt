@@ -35,6 +35,7 @@ import androidx.xr.scenecore.testapp.common.EventType
 import androidx.xr.scenecore.testapp.common.SpatialEventLog
 import androidx.xr.scenecore.testapp.common.SpatialMode
 import androidx.xr.scenecore.testapp.common.currentTimestamp
+import androidx.xr.scenecore.testapp.common.format
 import androidx.xr.scenecore.testapp.common.logCapabilities
 import androidx.xr.scenecore.testapp.ui.EventLogRecyclerViewAdapter
 import com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -42,7 +43,7 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton
 @SuppressLint("SetTextI18n", "RestrictedApi")
 class SpatialCapabilitiesActivity : AppCompatActivity() {
     private val renderingSession: Session by lazy {
-        (Session.create(this) as SessionCreateSuccess).session
+        (Session.create(context = this) as SessionCreateSuccess).session
     }
     private var spatialMode = SpatialMode.FSM
     private var spatialEventLogList = mutableListOf<SpatialEventLog>()
@@ -60,6 +61,8 @@ class SpatialCapabilitiesActivity : AppCompatActivity() {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
+
+        renderingSession.scene.keyEntity = renderingSession.scene.mainPanelEntity
 
         // toolbar
         findViewById<Toolbar>(R.id.top_app_bar_activity_panel).also {
@@ -109,12 +112,14 @@ class SpatialCapabilitiesActivity : AppCompatActivity() {
             )
         }
 
-        renderingSession.scene.activitySpace.addOnBoundsChangedListener { bounds ->
+        renderingSession.scene.activitySpace.addBoundsChangedListener { bounds ->
             addNewSpatialLogEvent(
                 SpatialEventLog(
                     currentTimestamp(),
                     EventType.BOUNDS_CHANGED.text,
-                    "w=${bounds.width}, h=${bounds.height}, d=${bounds.depth}",
+                    "w=${bounds.width.format(2)}, " +
+                        "h=${bounds.height.format(2)}, " +
+                        "d=${bounds.depth.format(2)}",
                 )
             )
         }
@@ -137,15 +142,16 @@ class SpatialCapabilitiesActivity : AppCompatActivity() {
     private fun toggleMode(session: Session): String {
         when (spatialMode) {
             SpatialMode.FSM -> {
-                session.scene.requestHomeSpaceMode()
+                session.scene.requestHomeSpace()
                 spatialMode = SpatialMode.HSM
                 addNewSpatialLogEvent(
                     SpatialEventLog(currentTimestamp(), EventType.MODE_CHANGED_TO_HSM.text, "")
                 )
                 return getString(R.string.switch_to_fsm_button_text)
             }
+
             SpatialMode.HSM -> {
-                session.scene.requestFullSpaceMode()
+                session.scene.requestFullSpace()
                 spatialMode = SpatialMode.FSM
                 addNewSpatialLogEvent(
                     SpatialEventLog(currentTimestamp(), EventType.MODE_CHANGED_TO_FSM.text, "")

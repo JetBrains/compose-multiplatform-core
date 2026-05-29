@@ -27,7 +27,9 @@ import androidx.room3.concurrent.withLock
 import androidx.room3.util.getCoroutineContext
 import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.SQLiteException
-import androidx.sqlite.execSQL
+import androidx.sqlite.async.executeSQL
+import androidx.sqlite.async.prepare
+import androidx.sqlite.async.step
 import kotlin.concurrent.Volatile
 import kotlin.jvm.JvmOverloads
 import kotlin.jvm.JvmSuppressWildcards
@@ -59,7 +61,7 @@ constructor(
     /**
      * Internal function to initialize tracker for a given connection. Invoked by generated code.
      */
-    internal fun internalInit(connection: SQLiteConnection)
+    internal suspend fun internalInit(connection: SQLiteConnection)
 
     /**
      * Creates a [Flow] that tracks modifications in the database and emits sets of the tables that
@@ -135,14 +137,14 @@ constructor(
  * * An in-memory table is created with two columns, 'table_id' and 'invalidated' to known which
  *   table has been modified.
  * * [ObservedTableStates] keeps the 'observed' state of each table helping the tracker know which
- *   tables should be watched (via an installed TRIGGER) based on the number of observers
- *   interested.
+ *   tables should be watched (via an installed TRIGGER) based on the number of actively collecting
+ *   Flows returned from [createFlow].
  * * Before a write transaction, Room will sync triggers by invoking [InvalidationTracker.sync].
  * * If in the write transaction a table was modified, the installed trigger will flip the table's
  *   invalidated column in the in-memory table to ON.
  * * After a write transaction, Room will check the invalidated rows by invoking
- *   [InvalidationTracker.refreshAsync], notifying observers if necessary via the provided
- *   [onInvalidatedTablesIds] callback.
+ *   [InvalidationTracker.refreshAsync], emitting notifications by updating the
+ *   [ObservedTableVersions] if necessary that then propagate to the invalidation Flows.
  */
 internal class TriggerBasedInvalidationTracker(
     private val database: RoomDatabase,
@@ -154,9 +156,6 @@ internal class TriggerBasedInvalidationTracker(
     tableNames: Array<out String>,
     // True if a TEMP / in-memory table should be using for tracking
     private val useTempTable: Boolean,
-    // Callback function for when a set of tables are invalidated, the 'id' of a table is its
-    // index in the given `tableNames`
-    private val onInvalidatedTablesIds: (Set<Int>) -> Unit,
 ) {
     /** Table name (lowercase) to index (id) in [tablesNames], used as a quick lookup map. */
     private val tableIdLookup: Map<String, Int>
@@ -204,20 +203,20 @@ internal class TriggerBasedInvalidationTracker(
      * Configure a connection. All connections open by Room should be configured by the tracker even
      * though the one we really care about is the single write connection.
      */
-    fun configureConnection(connection: SQLiteConnection) {
+    suspend fun configureConnection(connection: SQLiteConnection) {
         val isReadConnection =
             connection.prepare("PRAGMA query_only").use {
                 it.step()
                 it.getBoolean(0)
             }
         if (!isReadConnection) {
-            connection.execSQL("PRAGMA temp_store = MEMORY")
-            connection.execSQL("PRAGMA recursive_triggers = 1")
-            connection.execSQL(DROP_TRACKING_TABLE_SQL)
+            connection.executeSQL("PRAGMA temp_store = MEMORY")
+            connection.executeSQL("PRAGMA recursive_triggers = 1")
+            connection.executeSQL(DROP_TRACKING_TABLE_SQL)
             if (useTempTable) {
-                connection.execSQL(CREATE_TRACKING_TABLE_SQL)
+                connection.executeSQL(CREATE_TRACKING_TABLE_SQL)
             } else {
-                connection.execSQL(CREATE_TRACKING_TABLE_SQL.replace("TEMP", ""))
+                connection.executeSQL(CREATE_TRACKING_TABLE_SQL.replace("TEMP", ""))
             }
             // When a connection is configured the temporary triggers need to be synced since it is
             // possible that a new write connection is being configured because a previous one
@@ -230,10 +229,11 @@ internal class TriggerBasedInvalidationTracker(
         resolvedTableNames: Array<String>,
         tableIds: IntArray,
         emitInitialState: Boolean,
+        canSync: Boolean = true,
     ): Flow<Set<String>> {
         return flow {
             val shouldSync = observedTableStates.onObserverAdded(tableIds)
-            if (shouldSync) {
+            if (canSync && shouldSync) {
                 // Syncing triggers is a database operation, we use the database context just for
                 // the sync while adhering to flow context preservation.
                 withContext(database.getCoroutineContext(inTransaction = false)) { syncTriggers() }
@@ -293,13 +293,6 @@ internal class TriggerBasedInvalidationTracker(
             .toTypedArray()
     }
 
-    /** Notifies that an observer was added and return true if the state of some table changed. */
-    internal fun onObserverAdded(tableIds: IntArray) = observedTableStates.onObserverAdded(tableIds)
-
-    /** Notifies that an observer was removed and return true if the state of some table changed. */
-    internal fun onObserverRemoved(tableIds: IntArray) =
-        observedTableStates.onObserverRemoved(tableIds)
-
     /** Synchronizes database triggers with observed tables. */
     internal suspend fun syncTriggers() =
         database.closeBarrier.ifNotClosed {
@@ -325,12 +318,12 @@ internal class TriggerBasedInvalidationTracker(
         }
 
     private suspend fun startTrackingTable(connection: PooledConnection, tableId: Int) {
-        connection.execSQL("INSERT OR IGNORE INTO $UPDATE_TABLE_NAME VALUES($tableId, 0)")
+        connection.executeSQL("INSERT OR IGNORE INTO $UPDATE_TABLE_NAME VALUES($tableId, 0)")
         val tableName = tablesNames[tableId]
         for (trigger in TRIGGERS) {
             val tempKeyword = if (useTempTable) "TEMP" else ""
             val triggerName = getTriggerName(tableName, trigger)
-            connection.execSQL(
+            connection.executeSQL(
                 "CREATE $tempKeyword TRIGGER IF NOT EXISTS `$triggerName` " +
                     "AFTER $trigger ON `$tableName` BEGIN " +
                     "UPDATE $UPDATE_TABLE_NAME SET $INVALIDATED_COLUMN_NAME = 1 " +
@@ -344,7 +337,7 @@ internal class TriggerBasedInvalidationTracker(
         val tableName = tablesNames[tableId]
         for (trigger in TRIGGERS) {
             val triggerName = getTriggerName(tableName, trigger)
-            connection.execSQL("DROP TRIGGER IF EXISTS `$triggerName`")
+            connection.executeSQL("DROP TRIGGER IF EXISTS `$triggerName`")
         }
     }
 
@@ -432,7 +425,6 @@ internal class TriggerBasedInvalidationTracker(
                 }
             if (invalidatedTableIds.isNotEmpty()) {
                 observedTableVersions.increment(invalidatedTableIds)
-                onInvalidatedTablesIds.invoke(invalidatedTableIds)
             }
             return invalidatedTableIds
         }
@@ -450,7 +442,7 @@ internal class TriggerBasedInvalidationTracker(
                 }
             }
         if (invalidatedTableIds.isNotEmpty()) {
-            connection.execSQL(RESET_UPDATED_TABLES_SQL)
+            connection.executeSQL(RESET_UPDATED_TABLES_SQL)
         }
         return invalidatedTableIds
     }

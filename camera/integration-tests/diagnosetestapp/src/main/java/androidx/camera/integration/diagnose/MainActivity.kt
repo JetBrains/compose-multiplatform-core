@@ -102,6 +102,7 @@ class MainActivity : AppCompatActivity() {
             Executors.newSingleThreadExecutor() { runnable ->
                 val thread = Executors.defaultThreadFactory().newThread(runnable)
                 thread.name = "CalibrationThread"
+                @Suppress("deprecation")
                 calibrationThreadId = thread.id
                 return@newSingleThreadExecutor thread
             }
@@ -366,6 +367,7 @@ class MainActivity : AppCompatActivity() {
         }
 
     private fun checkCalibrationThread() {
+        @Suppress("deprecation")
         Preconditions.checkState(
             calibrationThreadId == Thread.currentThread().id,
             "Not working on Calibration Thread",

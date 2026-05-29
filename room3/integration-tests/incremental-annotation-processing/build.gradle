@@ -15,10 +15,9 @@
  */
 
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
 import androidx.build.SdkResourceGenerator
@@ -26,18 +25,38 @@ import androidx.build.SdkResourceGenerator
 plugins {
     id("AndroidXPlugin")
     id("kotlin")
+    id("java-gradle-plugin")
+}
+
+configurations {
+    // Config for plugin classpath to be used during tests
+    testPlugin {
+        canBeConsumed = false
+        canBeResolved = true
+    }
 }
 
 dependencies {
-    implementation(libs.kotlinStdlib)
 
     testImplementation(project(":internal-testutils-gradle-plugin"))
     testImplementation(libs.junit)
     testImplementation(libs.truth)
     testImplementation(gradleTestKit())
+
+    testPlugin("com.android.tools.build:gradle:8.10.0")
+    testPlugin("com.android.tools.build:aapt2:8.10.0-12782657")
+    testPlugin("com.android.tools.build:aapt2:8.10.0-12782657:linux")
+    testPlugin("com.android.tools.build:aapt2:8.10.0-12782657:osx")
+    testPlugin(libs.kotlinGradlePlugin)
+    testPlugin(libs.kspGradlePlugin)
 }
 
-SdkResourceGenerator.generateForHostTest(project)
+// Configure the generating task of plugin-under-test-metadata.properties to
+// include additional dependencies for the injected plugin classpath that
+// are not present in the main runtime dependencies.
+tasks.withType(PluginUnderTestMetadata.class).named("pluginUnderTestMetadata").configure {
+    it.pluginClasspath.from(configurations.testPlugin)
+}
 
 tasks.withType(Test).configureEach { test ->
     test.dependsOn(
@@ -52,4 +71,13 @@ tasks.withType(Test).configureEach { test ->
             ":sqlite:sqlite:publish",
             ":sqlite:sqlite-framework:publish",
     )
+}
+
+gradlePlugin {
+    plugins {
+        room {
+            id = "androidx.room3.empty"
+            implementationClass = "androidx.room3.gradle.EmptyGradlePlugin"
+        }
+    }
 }

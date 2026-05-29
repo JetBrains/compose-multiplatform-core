@@ -20,7 +20,7 @@ import androidx.room3.compiler.codegen.XClassName
 import androidx.room3.compiler.processing.util.Source
 import androidx.room3.compiler.processing.util.XTestInvocation
 import androidx.room3.compiler.processing.util.compileFiles
-import androidx.room3.compiler.processing.util.runProcessorTest
+import androidx.room3.compiler.processing.util.runKspTest
 import androidx.room3.processor.DataClassProcessor
 import androidx.room3.processor.ProcessorErrors
 import androidx.room3.processor.PropertyProcessor
@@ -113,7 +113,7 @@ class AutoValueDataClassProcessorDelegateTest {
                 javacArguments = listOf("-parameters"),
             )
         // https://github.com/google/ksp/issues/2033
-        runProcessorTest(sources = emptyList(), classpath = libraryClasspath) {
+        runKspTest(sources = emptyList(), classpath = libraryClasspath) {
             invocation: XTestInvocation ->
             DataClassProcessor.createFor(
                     context = invocation.context,
@@ -281,7 +281,7 @@ class AutoValueDataClassProcessorDelegateTest {
         val autoValueDataClassSource =
             Source.java(AUTOVALUE_MY_DATA_CLASS.canonicalName, autoValueDataClassCode)
         val all: List<Source> = sources.toList() + dataClassSource + autoValueDataClassSource
-        runProcessorTest(sources = all, classpath = classpathFiles) { invocation ->
+        runKspTest(sources = all, classpath = classpathFiles) { invocation ->
             handler.invoke(
                 DataClassProcessor.createFor(
                         context = invocation.context,

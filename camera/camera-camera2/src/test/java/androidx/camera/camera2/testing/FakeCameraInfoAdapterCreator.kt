@@ -37,11 +37,12 @@ import androidx.camera.camera2.impl.ComboRequestListener
 import androidx.camera.camera2.impl.EvCompControl
 import androidx.camera.camera2.impl.FocusMeteringControl
 import androidx.camera.camera2.impl.LowLightBoostControl
+import androidx.camera.camera2.impl.NightModeIndicatorMonitor
 import androidx.camera.camera2.impl.State3AControl
 import androidx.camera.camera2.impl.TorchControl
 import androidx.camera.camera2.impl.UseCaseThreads
 import androidx.camera.camera2.impl.ZoomControl
-import androidx.camera.camera2.internal.CameraFovInfo
+import androidx.camera.camera2.internal.IntrinsicZoomCalculatorImpl
 import androidx.camera.camera2.pipe.CameraBackendId
 import androidx.camera.camera2.pipe.CameraDevices
 import androidx.camera.camera2.pipe.CameraId
@@ -136,7 +137,7 @@ object FakeCameraInfoAdapterCreator {
             createCameraQuirks(cameraProperties.metadata, fakeStreamConfigurationMap)
         val fakeEncoderProfilesProvider = FakeEncoderProfilesProvider.Builder().build()
         val state3AControl =
-            State3AControl(cameraProperties, NoOpAutoFlashAEModeDisabler).apply {
+            State3AControl(cameraProperties, NoOpAutoFlashAEModeDisabler, useCaseThreads).apply {
                 requestControl = fakeRequestControl
             }
         return CameraInfoAdapter(
@@ -154,6 +155,7 @@ object FakeCameraInfoAdapterCreator {
                     ComboRequestListener(),
                 ),
             ),
+            NightModeIndicatorMonitor(cameraProperties.metadata, ComboRequestListener()),
             CameraCallbackMap(),
             FocusMeteringControl(
                     cameraProperties,
@@ -168,7 +170,7 @@ object FakeCameraInfoAdapterCreator {
             fakeCameraQuirks,
             fakeEncoderProfilesProvider,
             fakeStreamConfigurationMap,
-            CameraFovInfo(cameraDevices, cameraProperties),
+            IntrinsicZoomCalculatorImpl(cameraDevices),
             NO_OP_STREAM_SPECS_CALCULATOR,
         )
     }

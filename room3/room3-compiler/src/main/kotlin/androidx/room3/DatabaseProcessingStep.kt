@@ -24,7 +24,6 @@ import androidx.room3.compiler.processing.XProcessingStep
 import androidx.room3.compiler.processing.XTypeElement
 import androidx.room3.log.RLog
 import androidx.room3.processor.Context
-import androidx.room3.processor.Context.BooleanProcessorOptions.GENERATE_KOTLIN
 import androidx.room3.processor.DatabaseProcessor
 import androidx.room3.processor.ProcessorErrors
 import androidx.room3.vo.DaoFunction
@@ -201,8 +200,6 @@ class DatabaseProcessingStep : XProcessingStep {
 
     companion object {
         internal fun getEnvConfig(options: Map<String, String>) =
-            XProcessingEnvConfig.DEFAULT.copy(
-                excludeMethodsWithInvalidJvmSourceNames = !GENERATE_KOTLIN.getValue(options)
-            )
+            XProcessingEnvConfig.DEFAULT.copy(excludeMethodsWithInvalidJvmSourceNames = false)
     }
 }

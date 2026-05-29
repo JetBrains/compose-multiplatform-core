@@ -79,5 +79,3 @@ RemovedFromKotlin: androidx.navigation.fragment.FragmentNavigator.Destination#ge
     Source breaking change: method androidx.navigation.fragment.FragmentNavigator.Destination.getClassName() can no longer be resolved from Kotlin source
 RemovedFromKotlin: androidx.navigation.fragment.FragmentNavigator.Extras#getSharedElements():
     Source breaking change: method androidx.navigation.fragment.FragmentNavigator.Extras.getSharedElements() can no longer be resolved from Kotlin source
-RemovedFromKotlin: androidx.navigation.fragment.NavHostFragment#getNavController():
-    Source breaking change: method androidx.navigation.fragment.NavHostFragment.getNavController() can no longer be resolved from Kotlin source

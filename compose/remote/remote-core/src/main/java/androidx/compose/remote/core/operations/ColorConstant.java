@@ -21,6 +21,7 @@ import androidx.annotation.RestrictTo;
 import androidx.compose.remote.core.Operation;
 import androidx.compose.remote.core.Operations;
 import androidx.compose.remote.core.RemoteContext;
+import androidx.compose.remote.core.VariableProvider;
 import androidx.compose.remote.core.WireBuffer;
 import androidx.compose.remote.core.documentation.DocumentationBuilder;
 import androidx.compose.remote.core.documentation.DocumentedOperation;
@@ -33,7 +34,8 @@ import java.util.List;
 
 /** Operation that defines a simple Color based on ID Mainly for colors in theming. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public class ColorConstant extends Operation implements Serializable {
+public class ColorConstant extends Operation
+        implements Serializable, ComponentData, VariableProvider {
     private static final int OP_CODE = Operations.COLOR_CONSTANT;
     private static final String CLASS_NAME = "ColorConstant";
 
@@ -43,8 +45,18 @@ public class ColorConstant extends Operation implements Serializable {
     /** the color value (AARRGGBB) */
     public int mColor;
 
+    @Override
+    public int getId() {
+        return mColorId;
+    }
+
+    @Override
+    public void setId(int id) {
+        mColorId = id;
+    }
+
     /**
-     * Creat a color constant
+     * Create a color constant
      *
      * @param colorId id of color
      * @param color AARRGGBB value
@@ -104,9 +116,9 @@ public class ColorConstant extends Operation implements Serializable {
      * @param operations the list of operations that will be added to
      */
     public static void read(@NonNull WireBuffer buffer, @NonNull List<Operation> operations) {
-        int colorId = buffer.readInt();
+        int id = buffer.declareId();
         int color = buffer.readInt();
-        operations.add(new ColorConstant(colorId, color));
+        operations.add(new ColorConstant(id, color));
     }
 
     /**
@@ -115,10 +127,10 @@ public class ColorConstant extends Operation implements Serializable {
      * @param doc to append the description to.
      */
     public static void documentation(@NonNull DocumentationBuilder doc) {
-        doc.operation("Expressions Operations", OP_CODE, CLASS_NAME)
-                .description("Define a Color")
-                .field(DocumentedOperation.INT, "id", "Id of the color")
-                .field(INT, "color", "32 bit ARGB color");
+        doc.operation("Paint & Styles Operations", OP_CODE, CLASS_NAME)
+                .description("Define a static color and associate it with an ID")
+                .field(DocumentedOperation.INT, "colorId", "The ID of the color")
+                .field(INT, "color", "32-bit ARGB color value");
     }
 
     @Override

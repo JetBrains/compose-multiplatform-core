@@ -16,27 +16,22 @@
 
 package androidx.compose.ui.inspection.validators
 
-import android.util.Log
-import androidx.compose.ui.inspection.LOG_TAG
 import androidx.compose.ui.inspection.util.toMap
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
 import layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.GetRecompositionStateReadResponse
 import layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.Parameter.Type
-import layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.RecompositionStateRead
-import layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.RecompositionStateReadEvent
+import layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.StackTraceLine
 import layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.StateRead
-
-// Add a fudge value for line comparisons to avoid frequent test failures from
-// changed code.
-// For failures with this validator: disable the test and assign a bug to jlauridsen@
-private const val LINE_FUDGE_VALUE = 50
+import layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.StateReadGroup
 
 // A pattern for matching a line from a stacktrace.
 // Can be used to extract className, methodName, fileName and line number.
 // example: "at androidx.compose.runtime.CompositionImpl.recordReadOf(Composition.kt:1015)"
 private val stackTraceLinePattern =
     Regex("\\s*at ([\\w$.<>]+)\\.([\\w$-<>]+)\\(([ $.\\w<>]*):(-?\\d+)\\)")
+
+private val composers = listOf("GapComposer", "LinkComposer", "ComposerImpl")
 
 /** Validate a DSL for a [GetRecompositionStateReadResponse]. */
 internal fun validate(
@@ -45,25 +40,15 @@ internal fun validate(
     block: MultiRecompositionStateReadValidator.() -> Unit = {},
 ) {
     assertThat(reads.anchorHash).isEqualTo(anchorHash)
-    validate(reads.stringsList.toMap(), listOf(reads.read), block)
-}
-
-/** Validate a DSL for a [RecompositionStateReadEvent]. */
-internal fun validate(
-    event: RecompositionStateReadEvent,
-    anchorHash: Int,
-    block: MultiRecompositionStateReadValidator.() -> Unit = {},
-) {
-    assertThat(event.anchorHash).isEqualTo(anchorHash)
-    validate(event.stringsList.toMap(), event.readList, block)
+    validate(reads.stringsList.toMap(), reads.readList, block)
 }
 
 private fun validate(
     strings: Map<Int, String>,
-    reads: List<RecompositionStateRead>,
+    reads: List<StateReadGroup>,
     block: MultiRecompositionStateReadValidator.() -> Unit = {},
 ) {
-    val map = reads.associate { it.recompositionNumber to it.readList }
+    val map = reads.associateBy { it.recompositionNumber }
     try {
         val validator = MultiRecompositionStateReadValidator(strings, map)
         validator.block()
@@ -80,10 +65,10 @@ private fun validate(
     }
 }
 
-/** Validator of a DSL for [GetRecompositionStateReadResponse] and [RecompositionStateReadEvent]. */
+/** Validator of a DSL for [GetRecompositionStateReadResponse]. */
 internal class MultiRecompositionStateReadValidator(
     private val strings: Map<Int, String>,
-    private val reads: Map<Int, List<StateRead>>,
+    private val reads: Map<Int, StateReadGroup>,
 ) {
     private val recompositionsChecked = mutableSetOf<Int>()
 
@@ -100,8 +85,8 @@ internal class MultiRecompositionStateReadValidator(
             .that(recompositionsChecked)
             .doesNotContain(recomposition)
         recompositionsChecked.add(recomposition)
-        val read = reads[recomposition] ?: emptyList()
-        val validator = RecompositionStateReadValidator(strings, read)
+        val group = reads[recomposition] ?: StateReadGroup.getDefaultInstance()
+        val validator = RecompositionStateReadValidator(strings, group)
         validator.block()
         validator.end()
     }
@@ -123,23 +108,40 @@ internal class MultiRecompositionStateReadValidator(
         val spaces = "    ".repeat(indent)
         for (recomposition in recompositions) {
             output.appendLine("${spaces}recomposition($recomposition) {")
-            val read = reads[recomposition] ?: emptyList()
-            val validator = RecompositionStateReadValidator(strings, read)
+            val group = reads[recomposition] ?: StateReadGroup.getDefaultInstance()
+            val validator = RecompositionStateReadValidator(strings, group)
             validator.dump(output, indent + 1)
             output.appendLine("${spaces}}")
         }
     }
 }
 
-/**
- * Validator of a DSL of state reads from either a [GetRecompositionStateReadResponse] or a
- * [RecompositionStateReadEvent].
- */
+/** Validator of a DSL of state reads from a [GetRecompositionStateReadResponse]. */
 internal class RecompositionStateReadValidator(
     private val strings: Map<Int, String>,
-    private val reads: List<StateRead>,
+    private val group: StateReadGroup,
 ) {
+    private val reads = group.readList
     private var readIndex = 0
+    private var parameterIndex = 0
+
+    fun parameterChange(
+        name: String,
+        type: Type,
+        value: Any,
+        block: ParameterListValidator.() -> Unit = {},
+    ) {
+        if (group.parameterChangesList.isEmpty()) {
+            error("No changed parameters detected")
+        } else if (parameterIndex >= group.parameterChangesList.size) {
+            error(
+                "There are only ${group.parameterChangesList.size} changed parameters for this recomposition"
+            )
+        }
+        val change = group.parameterChangesList[parameterIndex++]
+        val validator = ParameterListValidator(strings, listOf(change))
+        validator.parameter(name, type, value, block)
+    }
 
     /** Specifies an expected state read with a [block] for the expected value and state trace. */
     fun read(block: StateReadValidator.() -> Unit = {}) {
@@ -159,11 +161,18 @@ internal class RecompositionStateReadValidator(
         assertWithMessage("Only $readIndex out of ${reads.size} state reads are accounted for")
             .that(readIndex)
             .isEqualTo(reads.size)
+        assertWithMessage(
+                "Only $parameterIndex out of ${group.parameterChangesList.size} parameter changes are accounted for"
+            )
+            .that(parameterIndex)
+            .isEqualTo(group.parameterChangesList.size)
     }
 
     /** Formats the actual data (to be used in error messages). */
     fun dump(output: StringBuilder, indent: Int) {
         val spaces = "    ".repeat(indent)
+        val validator = ParameterListValidator(strings, group.parameterChangesList)
+        validator.dump(output, indent, "parameterChange", showName = true)
         for (read in reads) {
             output.appendLine("${spaces}read {")
             val validator = StateReadValidator(strings, read)
@@ -173,10 +182,7 @@ internal class RecompositionStateReadValidator(
     }
 }
 
-/**
- * Validator of a DSL of a single state read from either a [GetRecompositionStateReadResponse] or a
- * [RecompositionStateReadEvent].
- */
+/** Validator of a DSL of state reads from a [GetRecompositionStateReadResponse]. */
 internal class StateReadValidator(
     private val strings: Map<Int, String>,
     private val read: StateRead,
@@ -188,6 +194,13 @@ internal class StateReadValidator(
     fun value(type: Type, value: Any, block: ParameterListValidator.() -> Unit = {}) {
         val validator = ParameterListValidator(strings, listOf(read.value))
         validator.parameter("value", type, value, block)
+    }
+
+    /** Specifies the possible values a state variable may have. */
+    fun valueOptions(block: ValueOptionValidator.() -> Unit = {}) {
+        val validator = ValueOptionValidator(strings, read)
+        validator.block()
+        validator.end()
     }
 
     /**
@@ -209,48 +222,134 @@ internal class StateReadValidator(
      * Specifies the expected stack trace for when the state read was observed in the
      * RecompositionHandler.
      */
+    @DoNotChangeMayRequireChangesInAndroidStudio
     fun trace(trace: String) {
         var traceIndex = 0
+        var skipUntilFound = false
         val lines = trace.lines()
-        lines.forEachIndexed { index, line ->
+        lines.forEach { line ->
             // Warning: without failing the test:
             when (line.trim()) {
-                "" -> return@forEachIndexed
-                "..." -> return
+                "" -> return@forEach
+                "..." -> {
+                    skipUntilFound = true
+                    return@forEach
+                }
             }
             val match =
                 stackTraceLinePattern.matchEntire(line) ?: error("Could not parse: \"$line\"")
             if (traceIndex >= stackTraces.size) {
-                error("Only ${stackTraces.size} stack traces found at this level")
+                error("Only ${stackTraces.size} stack traces found at this level, not found: $line")
             }
-            val expectedClass = match.groupValues[1]
-            val expectedMethod = match.groupValues[2]
-            val expectedFile = match.groupValues[3]
-            val expectedLine = match.groupValues[4].toInt()
-            val actual = stackTraces[traceIndex++]
-            assertIsMatch(line, strings[actual.declaringClass], expectedClass)
-            assertIsMatch(line, strings[actual.methodName], expectedMethod)
-            assertIsMatch(line, strings[actual.fileName], expectedFile)
-            assertThat(actual.lineNumber)
-                .isIn(expectedLine - LINE_FUDGE_VALUE..expectedLine + LINE_FUDGE_VALUE)
-            if (actual.lineNumber != expectedLine) {
-                // Warning: without failing the test:
-                Log.w(LOG_TAG, Exception("Expected: $expectedLine was: ${actual.lineNumber}"))
+            var actual = stackTraces[traceIndex++]
+            if (!skipUntilFound) {
+                assertIsMatch(line, actual, match)
+            } else {
+                while (!isMatch(actual, match)) {
+                    if (traceIndex >= stackTraces.size) {
+                        error("Line not found: $line")
+                    }
+                    actual = stackTraces[traceIndex++]
+                }
+                skipUntilFound = false
             }
         }
-        if (traceIndex < stackTraces.size) {
+        if (!skipUntilFound && traceIndex < stackTraces.size) {
             error("Only $traceIndex stack trace lines of ${stackTraces.size} are accounted for.")
         }
         checkInvalidated()
     }
 
+    @DoNotChangeMayRequireChangesInAndroidStudio
+    fun folding(unfolded: String) {
+        val unfoldedLineIndexes = fold(strings, stackTraces)
+        val unfoldedLines = unfoldedLineIndexes.map { stackTraces[it] }
+        val expectedLines = unfolded.trimIndent().lines()
+        if (unfoldedLines.size != expectedLines.size) {
+            assertThat(convertToLines(strings, unfoldedLines)).isEqualTo(expectedLines)
+        }
+        for (index in expectedLines.indices) {
+            val line = expectedLines[index]
+            val match =
+                stackTraceLinePattern.matchEntire(line) ?: error("Could not parse: \"$line\"")
+            assertIsMatch(line, unfoldedLines[index], match)
+        }
+    }
+
+    private fun isMatch(actual: StackTraceLine, match: MatchResult): Boolean {
+        val expectedClass = match.groupValues[1]
+        val expectedMethod = match.groupValues[2]
+        val expectedFile = match.groupValues[3]
+        return isMatch(strings[actual.declaringClass], expectedClass) &&
+            isMatch(strings[actual.methodName], expectedMethod) &&
+            isMatch(strings[actual.fileName], expectedFile)
+    }
+
+    private fun isMatch(actual: String?, expected: String): Boolean {
+        if (expected.endsWith("<any>")) {
+            return actual!!.startsWith(expected.dropLast(5))
+        } else {
+            return actual == expected
+        }
+    }
+
+    private fun assertIsMatch(line: String, actual: StackTraceLine, match: MatchResult) {
+        val expectedClass = match.groupValues[1]
+        val expectedMethod = match.groupValues[2]
+        val expectedFile = match.groupValues[3]
+        assertIsMatch(line, strings[actual.declaringClass], expectedClass)
+        assertIsMatch(line, strings[actual.methodName], expectedMethod)
+        assertIsMatch(line, strings[actual.fileName], expectedFile)
+    }
+
     private fun assertIsMatch(line: String, actual: String?, expected: String) {
         val message = "Found in line: $line"
-        if (expected.endsWith("<any>")) {
-            val prefix = expected.substring(0, expected.length - 5)
-            assertWithMessage(message).that(actual).startsWith(prefix)
-        } else {
-            assertWithMessage(message).that(actual).isEqualTo(expected)
+        when {
+            expected.endsWith("<any>") -> {
+                val prefix = expected.substring(0, expected.length - 5)
+                assertWithMessage(message).that(actual).startsWith(prefix)
+            }
+            expected.contains("<composer>") -> {
+                val composer = composers.find { expected.replace("<composer>", it) == actual }
+                if (composer == null) {
+                    assertWithMessage(message).that(actual).isEqualTo(expected)
+                }
+            }
+            else -> assertWithMessage(message).that(actual).isEqualTo(expected)
+        }
+    }
+
+    /** Validate a parameter value that may be one of several possibilities */
+    internal class ValueOptionValidator(
+        private val strings: Map<Int, String>,
+        private val read: StateRead,
+    ) {
+        private var type: Type = Type.UNSPECIFIED
+        private val possibilities = mutableMapOf<Any, ParameterListValidator.() -> Unit>()
+
+        fun value(type: Type, value: Any, block: ParameterListValidator.() -> Unit = {}) {
+            if (this.type != Type.UNSPECIFIED) {
+                assertThat(type).isEqualTo(this.type)
+            }
+            this.type = type
+            possibilities[value] = block
+        }
+
+        fun end() {
+            assertThat(possibilities.size).isGreaterThan(0)
+            possibilities.forEach { (value, block) ->
+                try {
+                    val validator = ParameterListValidator(strings, listOf(read.value))
+                    validator.parameter("value", type, value, block)
+                    return
+                } catch (_: Throwable) {
+                    // Ignore and try the next possibility...
+                }
+            }
+            // No matches found. Give the error from the first possibility:
+            val (value, block) = possibilities.entries.first()
+            val validator = ParameterListValidator(strings, listOf(read.value))
+            validator.parameter("value", type, value, block)
         }
     }
 

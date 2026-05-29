@@ -85,8 +85,8 @@ import kotlin.math.floor
  * @param autoSize Enable auto sizing for this text composable. Finds the biggest font size that
  *   fits in the available space and lays the text out with this size. This performs multiple layout
  *   passes and can be slower than using a fixed font size. This takes precedence over sizes defined
- *   through [style]. See [TextAutoSize] and
- *   [androidx.compose.foundation.samples.TextAutoSizeBasicTextSample].
+ *   through [style]. See [TextAutoSize] and the sample code.
+ * @sample androidx.compose.foundation.samples.TextAutoSizeBasicTextSample
  */
 @Composable
 fun BasicText(
@@ -111,7 +111,11 @@ fun BasicText(
                     selectionRegistrar.nextSelectableId()
                 }
             remember(selectableId, selectionRegistrar, backgroundSelectionColor) {
-                SelectionController(selectableId, selectionRegistrar, backgroundSelectionColor)
+                SelectionController(
+                    selectableId = selectableId,
+                    selectionRegistrar = selectionRegistrar,
+                    backgroundSelectionColor = backgroundSelectionColor,
+                )
             }
         } else {
             null
@@ -119,7 +123,12 @@ fun BasicText(
 
     val fontFamilyResolver = LocalFontFamilyResolver.current
 
-    BackgroundTextMeasurement(text = text, style = style, fontFamilyResolver = fontFamilyResolver)
+    BackgroundTextMeasurement(
+        text = text,
+        style = style,
+        fontFamilyResolver = fontFamilyResolver,
+        softWrap = softWrap,
+    )
 
     val finalModifier =
         if (selectionController != null || onTextLayout != null || autoSize != null) {
@@ -182,8 +191,8 @@ fun BasicText(
  * @param autoSize Enable auto sizing for this text composable. Finds the biggest font size that
  *   fits in the available space and lays the text out with this size. This performs multiple layout
  *   passes and can be slower than using a fixed font size. This takes precedence over sizes defined
- *   through [style]. See [TextAutoSize] and
- *   [androidx.compose.foundation.samples.TextAutoSizeBasicTextSample].
+ *   through [style]. See [TextAutoSize] and the sample code.
+ * @sample androidx.compose.foundation.samples.TextAutoSizeBasicTextSample
  */
 @Composable
 fun BasicText(
@@ -209,7 +218,11 @@ fun BasicText(
                     selectionRegistrar.nextSelectableId()
                 }
             remember(selectableId, selectionRegistrar, backgroundSelectionColor) {
-                SelectionController(selectableId, selectionRegistrar, backgroundSelectionColor)
+                SelectionController(
+                    selectableId = selectableId,
+                    selectionRegistrar = selectionRegistrar,
+                    backgroundSelectionColor = backgroundSelectionColor,
+                )
             }
         } else {
             null
@@ -225,6 +238,7 @@ fun BasicText(
             style = style,
             fontFamilyResolver = fontFamilyResolver,
             placeholders = null,
+            softWrap = softWrap,
         )
 
         // this is the same as text: String, use all the early exits
@@ -681,6 +695,7 @@ private fun LayoutWithLinksAndInlineContent(
         style = style,
         fontFamilyResolver = fontFamilyResolver,
         placeholders = placeholders,
+        softWrap = softWrap,
     )
 
     Layout(
@@ -732,6 +747,7 @@ internal expect fun BackgroundTextMeasurement(
     text: String,
     style: TextStyle,
     fontFamilyResolver: FontFamily.Resolver,
+    softWrap: Boolean,
 )
 
 /**
@@ -745,4 +761,5 @@ internal expect fun BackgroundTextMeasurement(
     style: TextStyle,
     fontFamilyResolver: FontFamily.Resolver,
     placeholders: List<AnnotatedString.Range<Placeholder>>?,
+    softWrap: Boolean,
 )

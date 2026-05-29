@@ -21,7 +21,6 @@ package androidx.xr.scenecore
 import android.app.Activity
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
-import androidx.xr.arcore.runtime.PerceptionRuntime
 import androidx.xr.runtime.Session
 import androidx.xr.scenecore.runtime.RenderingRuntime
 import androidx.xr.scenecore.runtime.SceneRuntime
@@ -53,18 +52,13 @@ private val Activity.lifecycle: Lifecycle
  * @see Scene
  */
 public val Session.scene: Scene
-    get() = checkAndGetScene(this)
-
-/** Gets the [Scene] associated with the given [Session], using a cache. */
-private fun checkAndGetScene(session: Session): Scene {
-    check(session.activity.lifecycle.currentState != Lifecycle.State.DESTROYED) {
-        "Session has been destroyed."
-    }
-    return sceneCache.getOrPut(session) {
-        // This lambda is executed only once per session instance.
-        session.sessionConnectors.filterIsInstance<Scene>().single()
-    }
-}
+    get() =
+        // TODO: b/450009236 - This will return the scene even if the Session's Activity has been
+        //  destroyed, which we may want to change in the future.
+        sceneCache.getOrPut(this) {
+            // This lambda is executed only once per session instance.
+            this.sessionConnectors.filterIsInstance<Scene>().single()
+        }
 
 internal fun removeSceneFromCache(scene: Scene) {
     synchronized(sceneCache) {
@@ -81,10 +75,15 @@ internal fun removeSceneFromCache(scene: Scene) {
 }
 
 internal val Session.sceneRuntime: SceneRuntime
-    get() = runtimes.filterIsInstance<SceneRuntime>().single()
+    get() =
+        runtimes.filterIsInstance<SceneRuntime>().firstOrNull()
+            ?: throw IllegalStateException(
+                "No scene runtime found. Did you create the Session with a non-Activity context?"
+            )
 
 internal val Session.renderingRuntime: RenderingRuntime
-    get() = runtimes.filterIsInstance<RenderingRuntime>().single()
-
-internal val Session.perceptionRuntime: PerceptionRuntime
-    get() = runtimes.filterIsInstance<PerceptionRuntime>().single()
+    get() =
+        runtimes.filterIsInstance<RenderingRuntime>().firstOrNull()
+            ?: throw IllegalStateException(
+                "No rendering runtime found. Did you create the Session with a non-Activity context?"
+            )

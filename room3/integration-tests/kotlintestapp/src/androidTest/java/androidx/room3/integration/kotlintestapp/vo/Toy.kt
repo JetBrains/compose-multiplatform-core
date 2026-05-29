@@ -22,31 +22,15 @@ import androidx.room3.PrimaryKey
 
 /** The toys of a pet. */
 @Entity(
-    indices = [Index(value = ["mName"], unique = true), Index(value = ["mPetId"])],
+    indices = [Index(value = ["name"], unique = true), Index(value = ["petId"])],
     foreignKeys =
         [
             ForeignKey(
                 entity = Pet::class,
-                parentColumns = ["mPetId"],
-                childColumns = ["mPetId"],
+                parentColumns = ["petId"],
+                childColumns = ["petId"],
                 deferred = true,
             )
         ],
 )
-data class Toy(@PrimaryKey(autoGenerate = true) val mId: Int, var mName: String?, var mPetId: Int) {
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (other == null || javaClass != other.javaClass) return false
-        val toy = other as Toy
-        if (mId != toy.mId) return false
-        if (mPetId != toy.mPetId) return false
-        return if (mName != null) mName == toy.mName else toy.mName == null
-    }
-
-    override fun hashCode(): Int {
-        var result = mId
-        result = 31 * result + if (mName != null) mName.hashCode() else 0
-        result = 31 * result + mPetId
-        return result
-    }
-}
+data class Toy(@PrimaryKey(autoGenerate = true) val id: Int, var name: String?, var petId: Int)
