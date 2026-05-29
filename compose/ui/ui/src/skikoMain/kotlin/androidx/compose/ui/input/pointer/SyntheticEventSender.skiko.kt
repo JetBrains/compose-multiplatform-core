@@ -368,8 +368,8 @@ internal class SyntheticEventSender(
         }
         val previousIdToPosition: LongLongMap = previousEvent.pointers.mapPointersToPosition()
         return pointers.fastAll {
-            val previousPosition = previousIdToPosition.getOrDefault(it.id.value, UnspecifiedPackedFloats)
-            previousPosition == UnspecifiedPackedFloats || it.position.packedValue == previousPosition
+            val previousPosition = previousIdToPosition.getOrDefault(it.id.value, UnspecifiedOffsetValue)
+            previousPosition == UnspecifiedOffsetValue || it.position.packedValue == previousPosition
         }
     }
 
@@ -417,14 +417,11 @@ internal class SyntheticEventSender(
             put(ptr.id.value, ptr.position.packedValue)
         }
     }
+
+    private val UnspecifiedOffsetValue = Offset.Unspecified.packedValue
 }
 
 //Todo: Move inside SyntheticEventSender once local typealiases are supported
 private typealias PointerToPositionMap = LongLongMap
 
 private val UnconsumedEventResult = PointerEventResult(anyMovementConsumed = false)
-
-/**
- * Same as Offset/Size.Unspecified.packedValue, but avoids a getstatic
- */
-private const val UnspecifiedPackedFloats = 0x7fc00000_7fc00000L // NaN_NaN
