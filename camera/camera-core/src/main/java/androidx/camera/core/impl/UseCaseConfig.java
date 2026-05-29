@@ -136,6 +136,12 @@ public interface UseCaseConfig<T extends UseCase> extends TargetConfig<T>, Image
     Option<Integer> OPTION_VIDEO_STABILIZATION_MODE =
             Option.create("camerax.core.useCase.videoStabilizationMode", int.class);
 
+    /**
+     * Option: camerax.core.useCase.isVideoQualitySelectorDefault
+     */
+    Option<Boolean> OPTION_IS_VIDEO_QUALITY_SELECTOR_DEFAULT = Option.create(
+            "camerax.core.useCase.isVideoQualitySelectorDefault", Boolean.class);
+
     Option<TakePictureManager.Provider> OPTION_TAKE_PICTURE_MANAGER_PROVIDER =
             Option.create("camerax.core.useCase.takePictureManagerProvider",
                     TakePictureManager.Provider.class);

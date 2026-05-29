@@ -151,7 +151,14 @@ internal class CurvedTextChild(
         Box(Modifier.semantics { with(mergedSemantics) { applySemantics() } })
     }
 
-    override fun CurvedMeasureScope.initializeMeasure(measurables: Iterator<Measurable>) {
+    override fun CurvedMeasureScope.initializeMeasure(
+        measurables: Iterator<Measurable>
+    ): (Placeable.PlacementScope).() -> Unit {
+        if (isLookingAhead) {
+            // TODO(b/486792667): Investigate properly supporting Lookahead animations.
+            val lookaheadPlaceable = measurables.next().measure(Constraints())
+            return { lookaheadPlaceable.place(0, 0) }
+        }
         delegate.updateIfNeeded(
             text,
             clockwise,
@@ -196,6 +203,10 @@ internal class CurvedTextChild(
                         maxHeight = height,
                     )
                 )
+        return {
+            // clockwise doesn't matter, we have no content in placeable.
+            place(placeable, layoutInfo!!, parentSweepRadians, clockwise = false)
+        }
     }
 
     override fun doEstimateThickness(maxRadius: Float): Float = delegate.textHeight
@@ -240,10 +251,6 @@ internal class CurvedTextChild(
             )
         }
     }
-
-    override fun (Placeable.PlacementScope).placeIfNeeded() =
-        // clockwise doesn't matter, we have no content in placeable.
-        place(placeable, layoutInfo!!, parentSweepRadians, clockwise = false)
 }
 
 /** Used to cache computations and objects with expensive construction (Android's Paint & Path) */
@@ -277,6 +284,7 @@ internal class CurvedTextDelegate {
     private var prevWarping = CurvedTextStyle.WarpOffset.None
     private var warpRadiusOffset = 0f
 
+    @OptIn(ExperimentalWearFoundationApi::class)
     fun updateIfNeeded(
         text: String,
         clockwise: Boolean,
@@ -288,16 +296,30 @@ internal class CurvedTextDelegate {
     ) {
         var needsUpdate = false
 
-        if (Build.VERSION.SDK_INT >= 29) {
-            // Defaults to not warping.
-            val actualWarping = warpOffset.takeOrElse { CurvedTextStyle.WarpOffset.None }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            val actualWarping =
+                if (WearComposeFoundationFlags.isWarpingCurvedTextEnabled) {
+                    warpOffset.takeOrElse { CurvedTextStyle.WarpOffset.HalfOpticalHeight }
+                } else CurvedTextStyle.WarpOffset.None
+
             if (actualWarping != prevWarping) {
                 prevWarping = actualWarping
                 // Note that the Rendered may be stateful (computing things in the `preRender` to
                 // (re)use during `render`), so we need our own instance.
                 textRender =
-                    if (actualWarping != CurvedTextStyle.WarpOffset.None) WarpedCurvedTextRenderer()
-                    else AndroidCurvedTextRenderer()
+                    // b/484319336: androidx.graphics.path native library does not work in a
+                    // Robolectric test environment, so defaulting to warped text before API 34
+                    // would break developer tests.
+                    // From API 34 onwards, PathIterator is available in the Android Framework,
+                    // so we can then default to half optical height warping.
+                    if (
+                        actualWarping != CurvedTextStyle.WarpOffset.None &&
+                            Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE
+                    ) {
+                        WarpedCurvedTextRenderer()
+                    } else {
+                        AndroidCurvedTextRenderer()
+                    }
 
                 needsUpdate = true
                 warpRadiusOffset =

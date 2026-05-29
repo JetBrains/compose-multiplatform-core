@@ -19,6 +19,6 @@ import androidx.room3.Embedded
 import androidx.room3.Relation
 
 class PetAndOwner(
-    @field:Embedded val mPet: Pet,
-    @field:Relation(parentColumn = "mUserId", entityColumn = "mId") val mUser: PetUser,
+    @field:Embedded val pet: Pet,
+    @field:Relation(parentColumns = ["userId"], entityColumns = ["id"]) val user: PetUser,
 )

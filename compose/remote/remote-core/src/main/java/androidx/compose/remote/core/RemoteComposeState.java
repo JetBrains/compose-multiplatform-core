@@ -29,7 +29,6 @@ import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 
 /**
@@ -39,13 +38,10 @@ import java.util.HashMap;
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class RemoteComposeState implements CollectionsAccess {
     public static final int START_ID = 42;
-    //    private static final int MAX_FLOATS = 500;
-    private static int sMaxColors = 200;
 
     /** Offset added to bitmap to cache bitmap textures */
     public static final int BITMAP_TEXTURE_ID_OFFSET = 2000;
 
-    private static final int MAX_DATA = 1000;
     private final IntMap<Object> mIntDataMap = new IntMap<>();
     private final IntMap<Boolean> mIntWrittenMap = new IntMap<>();
     private final HashMap<Object, Integer> mDataIntMap = new HashMap<>();
@@ -60,14 +56,15 @@ public class RemoteComposeState implements CollectionsAccess {
     private final IntMap<float[]> mPathData = new IntMap<>();
     private final IntIntMap mPathWinding = new IntIntMap();
 
-    private boolean[] mColorOverride = new boolean[sMaxColors];
+    private final IntIntMap mColorOverride = new IntIntMap();
     @NonNull private final IntMap<ArrayAccess> mCollectionMap = new IntMap<>();
 
-    private final boolean[] mDataOverride = new boolean[MAX_DATA];
-    private final boolean[] mIntegerOverride = new boolean[MAX_DATA];
-    private final boolean[] mFloatOverride = new boolean[MAX_DATA];
+    private final boolean[] mDataOverride = new boolean[Limits.MAX_STATE_DATA];
+    private final boolean[] mIntegerOverride = new boolean[Limits.MAX_STATE_DATA];
+    private final boolean[] mFloatOverride = new boolean[Limits.MAX_STATE_DATA];
 
     private int mNextId = START_ID;
+    private int mNextLocalId = 0x4000;
     private final int @NonNull [] mIdMaps =
             new int[] {START_ID, NanMap.START_VAR, NanMap.START_ARRAY};
     @Nullable private RemoteContext mRemoteContext = null;
@@ -165,10 +162,10 @@ public class RemoteComposeState implements CollectionsAccess {
     }
 
     /**
-     * The path data the Array of floats that is asoicated with the path It also removes the current
-     * path object.
+     * The path data the Array of floats that is associated with the path It also removes the
+     * current path object.
      *
-     * @param id the integer asociated with the data and path
+     * @param id the integer associated with the data and path
      * @param data the array of floats that represents the path
      */
     public void putPathData(int id, float @NonNull [] data) {
@@ -188,6 +185,7 @@ public class RemoteComposeState implements CollectionsAccess {
 
     /**
      * Get the winding associated with the path id
+     *
      * @param id the id of the path
      * @return the winding
      */
@@ -197,6 +195,7 @@ public class RemoteComposeState implements CollectionsAccess {
 
     /**
      * Set the winding associated with the path id
+     *
      * @param id the id of the path
      * @param winding the winding
      */
@@ -345,7 +344,7 @@ public class RemoteComposeState implements CollectionsAccess {
      * @param color color (as an int)
      */
     public void updateColor(int id, int color) {
-        if (id < sMaxColors && mColorOverride[id]) {
+        if (mColorOverride.contains(id)) {
             return;
         }
         mColorMap.put(id, color);
@@ -369,18 +368,14 @@ public class RemoteComposeState implements CollectionsAccess {
      * @param color color (as an int)
      */
     public void overrideColor(int id, int color) {
-        if (id >= sMaxColors) {
-            sMaxColors *= 2;
-            mColorOverride = Arrays.copyOf(mColorOverride, sMaxColors);
-        }
-        mColorOverride[id] = true;
+        mColorOverride.put(id, 1);
         mColorMap.put(id, color);
         updateListeners(id);
     }
 
     /** Clear the color Overrides */
     public void clearColorOverride() {
-        Arrays.fill(mColorOverride, false);
+        mColorOverride.clear();
     }
 
     /**
@@ -458,6 +453,15 @@ public class RemoteComposeState implements CollectionsAccess {
     }
 
     /**
+     * Get the next available macro-local id
+     *
+     * @return next available local id
+     */
+    public int createNextLocalId() {
+        return mNextLocalId++;
+    }
+
+    /**
      * Set the next id
      *
      * @param id set the id to increment off of
@@ -475,8 +479,10 @@ public class RemoteComposeState implements CollectionsAccess {
             v = new ArrayList<VariableSupport>();
             mVarListeners.put(id, v);
         }
-        v.add(variableSupport);
-        mAllVarListeners.add(variableSupport);
+        if (!v.contains(variableSupport)) {
+            v.add(variableSupport);
+            mAllVarListeners.add(variableSupport);
+        }
     }
 
     /**
@@ -535,7 +541,9 @@ public class RemoteComposeState implements CollectionsAccess {
             int sub = (int) (currentTime % 60000);
             return Math.min(repaintMs, 2 + 1000 * 60 - sub);
         }
-
+        if (!Float.isNaN(mRepaintSeconds)) {
+            return (int) (mRepaintSeconds * 1000);
+        }
         return -1;
     }
 
@@ -682,10 +690,10 @@ public class RemoteComposeState implements CollectionsAccess {
 
     /**
      * Mark the variable with id to be dirty
+     *
      * @param id
      */
     public void markVariableDirty(int id) {
         updateListeners(id);
     }
-
 }

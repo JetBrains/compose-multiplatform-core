@@ -26,22 +26,29 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SdkSuppress
 import androidx.xr.projected.ProjectedContext.PROJECTED_DEVICE_NAME
+import androidx.xr.projected.experimental.ExperimentalProjectedApi
+import androidx.xr.projected.testing.ProjectedTestRule
 import com.google.common.truth.Truth.assertThat
-import java.util.concurrent.Executor
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertThrows
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
+import org.robolectric.shadow.api.Shadow
 import org.robolectric.shadows.ShadowDisplayManager
+import org.robolectric.shadows.ShadowVirtualDeviceManager
 import org.robolectric.util.ReflectionHelpers
 import org.robolectric.util.ReflectionHelpers.ClassParameter
 
-@Config(sdk = [Build.VERSION_CODES.VANILLA_ICE_CREAM])
+@Config(sdk = [Build.VERSION_CODES.BAKLAVA])
 @RunWith(AndroidJUnit4::class)
 @SdkSuppress(minSdkVersion = Build.VERSION_CODES.VANILLA_ICE_CREAM)
+@OptIn(ExperimentalProjectedApi::class)
 class ProjectedContextTest {
+
+    @get:Rule() val projectedTestRule = ProjectedTestRule()
 
     val context: ContextWrapper = ApplicationProvider.getApplicationContext()
     val virtualDeviceManager =
@@ -52,13 +59,13 @@ class ProjectedContextTest {
 
     @Test
     fun createProjectedDeviceContext_hasVirtualDevice_returnsContext() {
-        createVirtualDevice()
-
         assertThat(ProjectedContext.createProjectedDeviceContext(context)).isNotNull()
     }
 
     @Test
     fun createProjectedDeviceContext_noVirtualDevice_throwsIllegalStateException() {
+        projectedTestRule.isDeviceConnected = false
+
         assertThrows(IllegalStateException::class.java) {
             assertThat(ProjectedContext.createProjectedDeviceContext(context)).isNull()
         }
@@ -72,16 +79,12 @@ class ProjectedContextTest {
 
     @Test
     fun getProjectedDeviceName_projectedDeviceContext_returnsName() {
-        createVirtualDevice()
-
         assertThat(ProjectedContext.getProjectedDeviceName(projectedDeviceContext))
             .isEqualTo(PROJECTED_DEVICE_NAME)
     }
 
     @Test
     fun getProjectedDeviceName_anotherContext_throwsIllegalArgumentException() {
-        createVirtualDevice()
-
         assertThrows(IllegalArgumentException::class.java) {
             ProjectedContext.getProjectedDeviceName(context)
         }
@@ -89,22 +92,16 @@ class ProjectedContextTest {
 
     @Test
     fun isProjectedDeviceContext_returnsTrue() {
-        createVirtualDevice()
-
         assertThat(ProjectedContext.isProjectedDeviceContext(projectedDeviceContext)).isTrue()
     }
 
     @Test
     fun isProjectedDeviceContext_returnsFalse() {
-        createVirtualDevice()
-
         assertThat(ProjectedContext.isProjectedDeviceContext(context)).isFalse()
     }
 
     @Test
     fun createProjectedActivityOptions_projectedDisplayAvailable_projectedDeviceContext_returnsActivityOptionsWithLaunchDisplayId() {
-        createVirtualDevice()
-
         val activityOptions =
             ProjectedContext.createProjectedActivityOptions(projectedDeviceContext)
 
@@ -113,8 +110,6 @@ class ProjectedContextTest {
 
     @Test
     fun createProjectedActivityOptions_projectedDisplayAvailable_anotherContext_returnsActivityOptionsWithLaunchDisplayId() {
-        createVirtualDevice()
-
         val activityOptions = ProjectedContext.createProjectedActivityOptions(context)
 
         assertThat(activityOptions.launchDisplayId).isEqualTo(1)
@@ -122,6 +117,10 @@ class ProjectedContextTest {
 
     @Test
     fun createProjectedActivityOptions_projectedDisplayUnavailable_throwsIllegalStateException() {
+        ShadowDisplayManager.removeDisplay(
+            virtualDeviceManager.virtualDevices.first().displayIds[0]
+        )
+
         assertThrows(IllegalStateException::class.java) {
             ProjectedContext.createProjectedActivityOptions(context)
         }
@@ -129,7 +128,9 @@ class ProjectedContextTest {
 
     @Test
     fun createProjectedActivityOptions_projectedDisplayDoesNotBelongToProjectedDevice_throwsIllegalStateException() {
-        createVirtualDevice(shouldCreateVirtualDisplay = false)
+        ShadowDisplayManager.removeDisplay(
+            virtualDeviceManager.virtualDevices.first().displayIds[0]
+        )
 
         // Create a display with the Projected display name that belongs to another device.
         ShadowDisplayManager.addDisplay("", ProjectedContext.PROJECTED_DISPLAY_NAME)
@@ -139,21 +140,47 @@ class ProjectedContextTest {
         }
     }
 
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.BAKLAVA)
     @Test
     fun isProjectedDeviceConnected_projectedDeviceCreated_isTrue() = runBlocking {
-        createVirtualDevice()
-
         assertThat(ProjectedContext.isProjectedDeviceConnected(context, coroutineContext).first())
             .isTrue()
     }
 
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.BAKLAVA)
+    @Test
+    fun isProjectedDeviceConnected_displayAddedLater_isTrue() = runBlocking {
+        val virtualDevice = createVirtualDevice()
+        val flow = ProjectedContext.isProjectedDeviceConnected(context, coroutineContext)
+        createVirtualDisplayForDevice(virtualDevice)
+
+        assertThat(flow.first()).isTrue()
+    }
+
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.BAKLAVA)
+    @Test
+    fun isProjectedDeviceConnected_displayRemoved_isFalse() = runBlocking {
+        val flow = ProjectedContext.isProjectedDeviceConnected(context, coroutineContext)
+        assertThat(flow.first()).isTrue()
+
+        ShadowDisplayManager.removeDisplay(
+            virtualDeviceManager.virtualDevices.first().displayIds[0]
+        )
+
+        assertThat(flow.first()).isFalse()
+    }
+
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.BAKLAVA)
     @Test
     fun isProjectedDeviceConnected_projectedDeviceNotCreated_isFalse() = runBlocking {
+        projectedTestRule.isDeviceConnected = false
+
         assertThat(ProjectedContext.isProjectedDeviceConnected(context, coroutineContext).first())
             .isFalse()
     }
 
-    private fun createVirtualDevice(shouldCreateVirtualDisplay: Boolean = true) {
+    // TODO: b/476403759 - Replace reflection with the shadow APIs when they are available.
+    private fun createVirtualDevice(): Any? {
         val virtualDeviceParamsBuilderClass =
             Class.forName("android.companion.virtual.VirtualDeviceParams\$Builder")
         val virtualDeviceParamsClass =
@@ -176,23 +203,25 @@ class ProjectedContextTest {
                 ClassParameter(virtualDeviceParamsClass, virtualDeviceParamsBuilder),
             )
 
-        val virtualDisplayConfig =
-            VirtualDisplayConfig.Builder(ProjectedContext.PROJECTED_DISPLAY_NAME, 10, 10, 10)
-                .build()
-
-        if (shouldCreateVirtualDisplay) {
-            ReflectionHelpers.callInstanceMethod<Any?>(
-                virtualDevice,
-                "createVirtualDisplay",
-                ClassParameter(VirtualDisplayConfig::class.java, virtualDisplayConfig),
-                ClassParameter(Executor::class.java, null),
-                ClassParameter(VirtualDisplay.Callback::class.java, null),
-            )
-        }
+        return virtualDevice
     }
 
     class LocalContextWrapper(context: Context, private val deviceId: Int) :
         ContextWrapper(context) {
         override fun getDeviceId() = deviceId
     }
+
+    private fun createVirtualDisplayForDevice(virtualDevice: Any?): VirtualDisplay =
+        Shadow.extract<ShadowVirtualDeviceManager.ShadowVirtualDevice>(virtualDevice)
+            .createVirtualDisplay(
+                VirtualDisplayConfig.Builder(
+                        ProjectedContext.PROJECTED_DISPLAY_NAME,
+                        /* width = */ 10,
+                        /* height = */ 10,
+                        /* densityDpi = */ 10,
+                    )
+                    .build(),
+                /* executor= */ null,
+                /* callback= */ null,
+            )
 }

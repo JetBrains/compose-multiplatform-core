@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("DEPRECATION")
+
 package androidx.xr.scenecore.testing
 
 import android.app.Activity
@@ -21,25 +23,18 @@ import android.os.Build
 import android.os.Bundle
 import android.view.View
 import androidx.test.filters.SdkSuppress
-import androidx.xr.arcore.testing.FakeRuntimeAnchor
-import androidx.xr.arcore.testing.FakeRuntimePlane
-import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.math.Pose
-import androidx.xr.scenecore.runtime.AnchorPlacement
-import androidx.xr.scenecore.runtime.CameraViewActivityPose
+import androidx.xr.scenecore.runtime.AnchorEntity
 import androidx.xr.scenecore.runtime.Dimensions
 import androidx.xr.scenecore.runtime.InputEvent
 import androidx.xr.scenecore.runtime.InputEventListener
 import androidx.xr.scenecore.runtime.PixelDimensions
 import androidx.xr.scenecore.runtime.PlaneSemantic
 import androidx.xr.scenecore.runtime.PlaneType
-import androidx.xr.scenecore.runtime.PointerCaptureComponent.PointerCaptureState
 import androidx.xr.scenecore.runtime.PointerCaptureComponent.StateListener
 import androidx.xr.scenecore.runtime.SpatialCapabilities
 import androidx.xr.scenecore.runtime.SpatialVisibility
 import com.google.common.truth.Truth.assertThat
-import java.time.Duration
-import java.util.UUID
 import java.util.concurrent.Executor
 import java.util.function.Consumer
 import org.junit.Before
@@ -49,6 +44,7 @@ import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
+@org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.TARGET_SDK])
 class FakeSceneRuntimeTest {
     private lateinit var fakeSceneRuntime: FakeSceneRuntime
 
@@ -60,30 +56,6 @@ class FakeSceneRuntimeTest {
     @Test
     fun getState_whenCreated_returnsCreatedState() {
         assertThat(fakeSceneRuntime.state).isEqualTo(FakeSceneRuntime.State.CREATED)
-    }
-
-    @Test
-    fun getCameraViewActivityPose_returnsCameraViewActivityPoseWithCorrectType() {
-        val cameraViewActivityPose =
-            fakeSceneRuntime.getCameraViewActivityPose(
-                CameraViewActivityPose.CameraType.CAMERA_TYPE_UNKNOWN
-            )
-        val cameraViewActivityPoseL =
-            fakeSceneRuntime.getCameraViewActivityPose(
-                CameraViewActivityPose.CameraType.CAMERA_TYPE_LEFT_EYE
-            )
-        val cameraViewActivityPoseR =
-            fakeSceneRuntime.getCameraViewActivityPose(
-                CameraViewActivityPose.CameraType.CAMERA_TYPE_RIGHT_EYE
-            )
-
-        assertThat(cameraViewActivityPose).isNull()
-        assertThat(cameraViewActivityPoseL).isNotNull()
-        assertThat((cameraViewActivityPoseL as FakeCameraViewActivityPose).cameraType)
-            .isEqualTo(CameraViewActivityPose.CameraType.CAMERA_TYPE_LEFT_EYE)
-        assertThat(cameraViewActivityPoseR).isNotNull()
-        assertThat((cameraViewActivityPoseR as FakeCameraViewActivityPose).cameraType)
-            .isEqualTo(CameraViewActivityPose.CameraType.CAMERA_TYPE_RIGHT_EYE)
     }
 
     @Test
@@ -144,12 +116,18 @@ class FakeSceneRuntimeTest {
     }
 
     @Test
-    fun requestFullSpaceMode_requested() {
-        check(!fakeSceneRuntime.requestedFullSpaceMode)
+    fun requestHomeSpaceMode_requestFullSpaceMode_spatialCapabilitiesIsUpdated() {
+        assertThat(fakeSceneRuntime.spatialCapabilities.capabilities)
+            .isEqualTo(FakeSceneRuntime.ALL_SPATIAL_CAPABILITIES)
+
+        fakeSceneRuntime.requestHomeSpaceMode()
+
+        assertThat(fakeSceneRuntime.spatialCapabilities.capabilities).isEqualTo(0)
 
         fakeSceneRuntime.requestFullSpaceMode()
 
-        assertThat(fakeSceneRuntime.requestedFullSpaceMode).isTrue()
+        assertThat(fakeSceneRuntime.spatialCapabilities.capabilities)
+            .isEqualTo(FakeSceneRuntime.ALL_SPATIAL_CAPABILITIES)
     }
 
     @Test
@@ -165,8 +143,11 @@ class FakeSceneRuntimeTest {
 
         assertThat(panelEntity).isInstanceOf(FakePanelEntity::class.java)
         assertThat(panelEntity.getPose()).isEqualTo(pose)
-        assertThat(panelEntity.size).isEqualTo(dimensions)
+        assertThat(panelEntity.size.width).isWithin(0.001f).of(dimensions.width)
+        assertThat(panelEntity.size.height).isWithin(0.001f).of(dimensions.height)
+        assertThat(panelEntity.size.depth).isWithin(0.001f).of(dimensions.depth)
         assertThat(panelEntity.parent).isEqualTo(parent)
+        assertThat((panelEntity as FakeEntity).name).isEqualTo(name)
     }
 
     @Test
@@ -184,6 +165,7 @@ class FakeSceneRuntimeTest {
         assertThat(panelEntity.getPose()).isEqualTo(pose)
         assertThat(panelEntity.sizeInPixels).isEqualTo(pixelDimensions)
         assertThat(panelEntity.parent).isEqualTo(parent)
+        assertThat((panelEntity as FakeEntity).name).isEqualTo(name)
     }
 
     @Test
@@ -206,49 +188,41 @@ class FakeSceneRuntimeTest {
         assertThat(activityPanelEntity.getPose()).isEqualTo(pose)
         assertThat(activityPanelEntity.sizeInPixels).isEqualTo(windowBoundsPx)
         assertThat(activityPanelEntity.parent).isEqualTo(parent)
+        assertThat((activityPanelEntity as FakeEntity).name).isEqualTo(name)
     }
 
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
-    fun createAnchorEntity_withPlaneAttributes_returnsInitialValue() {
-        val bounds = Dimensions(2f, 1f, 0f)
-        val planeType = PlaneType.HORIZONTAL
-        val planeSemantic = PlaneSemantic.FLOOR
-        val searchTimeout = Duration.ofMillis(100)
-        val anchorEntity =
-            fakeSceneRuntime.createAnchorEntity(bounds, planeType, planeSemantic, searchTimeout)
+    fun createAnchorEntity_returnsInitialValue() {
+        val anchorEntity = fakeSceneRuntime.createAnchorEntity()
 
         assertThat(anchorEntity).isInstanceOf(FakeAnchorEntity::class.java)
-        assertThat(anchorEntity.anchorCreationData.bounds).isEqualTo(bounds)
-        assertThat(anchorEntity.anchorCreationData.planeType).isEqualTo(planeType)
-        assertThat(anchorEntity.anchorCreationData.planeSemantic).isEqualTo(planeSemantic)
-        assertThat(anchorEntity.anchorCreationData.searchTimeout).isEqualTo(searchTimeout)
-    }
-
-    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
-    @Test
-    fun createAnchorEntity_withAnAnchor_returnsInitialValue() {
-        val anchor =
-            FakeRuntimeAnchor(
-                Pose.Identity,
-                FakeRuntimePlane(trackingState = TrackingState.STOPPED),
-            )
-        val anchorEntity = fakeSceneRuntime.createAnchorEntity(anchor)
-
-        assertThat(anchorEntity).isInstanceOf(FakeAnchorEntity::class.java)
-        assertThat(anchorEntity.anchor).isEqualTo(anchor)
+        assertThat(anchorEntity.state).isEqualTo(AnchorEntity.State.UNANCHORED)
     }
 
     @Test
-    fun createGroupEntity_returnsInitialValue() {
+    fun createEntity_returnsInitialValue() {
         val pose = Pose.Identity
         val name = "test_entity"
         val parent = FakeEntity()
-        val groupEntity = fakeSceneRuntime.createGroupEntity(pose, name, parent)
+        val entity = fakeSceneRuntime.createEntity(pose, name, parent)
 
-        assertThat(groupEntity).isInstanceOf(FakeEntity::class.java)
-        assertThat(groupEntity.getPose()).isEqualTo(pose)
-        assertThat(groupEntity.parent).isEqualTo(parent)
+        assertThat(entity).isInstanceOf(FakeEntity::class.java)
+        assertThat(entity.getPose()).isEqualTo(pose)
+        assertThat(entity.parent).isEqualTo(parent)
+        assertThat((entity as FakeEntity).name).isEqualTo(name)
+    }
+
+    @Test
+    fun createEntity_withNoName_returnsEmptyName() {
+        val pose = Pose.Identity
+        val parent = FakeEntity()
+        val entity = fakeSceneRuntime.createEntity(pose, null, parent)
+
+        assertThat(entity).isInstanceOf(FakeEntity::class.java)
+        assertThat(entity.getPose()).isEqualTo(pose)
+        assertThat(entity.parent).isEqualTo(parent)
+        assertThat((entity as FakeEntity).name).isEmpty()
     }
 
     @Test
@@ -263,23 +237,16 @@ class FakeSceneRuntimeTest {
 
     @Test
     fun createMovableComponent_returnsInitialValue() {
-        val anchorPlacement: Set<@JvmSuppressWildcards AnchorPlacement> =
-            setOf(
-                fakeSceneRuntime.createAnchorPlacementForPlanes(
-                    setOf(PlaneType.HORIZONTAL),
-                    setOf(PlaneSemantic.TABLE, PlaneSemantic.FLOOR),
-                )
+        val movableComponent =
+            fakeSceneRuntime.createMovableComponent(
+                systemMovable = false,
+                scaleInZ = false,
+                userAnchorable = false,
             )
-
-        assertThat(
-                fakeSceneRuntime.createMovableComponent(
-                    systemMovable = false,
-                    scaleInZ = false,
-                    anchorPlacement = anchorPlacement,
-                    shouldDisposeParentAnchor = false,
-                )
-            )
-            .isInstanceOf(FakeMovableComponent::class.java)
+        assertThat(movableComponent).isInstanceOf(FakeMovableComponent::class.java)
+        assertThat(movableComponent.systemMovable).isFalse()
+        assertThat(movableComponent.scaleInZ).isFalse()
+        assertThat(movableComponent.userAnchorable).isFalse()
     }
 
     @Test
@@ -309,10 +276,7 @@ class FakeSceneRuntimeTest {
     @Test
     fun createPointerCaptureComponent_returnsInitialValue() {
         val executor = Executor { command -> command.run() }
-        val stateListener: StateListener =
-            object : StateListener {
-                override fun onStateChanged(@PointerCaptureState newState: Int) {}
-            }
+        val stateListener = StateListener {}
         val inputListener = TestInputEventListener()
         val pointerCaptureComponent =
             fakeSceneRuntime.createPointerCaptureComponent(executor, stateListener, inputListener)
@@ -326,19 +290,6 @@ class FakeSceneRuntimeTest {
     fun createSpatialPointerComponent_returnsInitialValue() {
         assertThat(fakeSceneRuntime.createSpatialPointerComponent())
             .isInstanceOf(FakeSpatialPointerComponent::class.java)
-    }
-
-    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
-    @Test
-    fun createPersistedAnchorEntity_returnsInitialValue() {
-        val uuid = UUID(0L, 0L)
-        val searchTimeout = Duration.ofMillis(100)
-        val persistedAnchorEntity =
-            fakeSceneRuntime.createPersistedAnchorEntity(uuid, searchTimeout)
-
-        assertThat(persistedAnchorEntity).isInstanceOf(FakeAnchorEntity::class.java)
-        assertThat(persistedAnchorEntity.anchorCreationData.uuid).isEqualTo(uuid)
-        assertThat(persistedAnchorEntity.anchorCreationData.searchTimeout).isEqualTo(searchTimeout)
     }
 
     @Test
@@ -368,7 +319,67 @@ class FakeSceneRuntimeTest {
         assertThat(fakeSceneRuntime.lastSetPreferredAspectRatioRatio).isEqualTo(preferredRatio)
     }
 
+    @Test
+    fun onBoundaryConsentChanged_listenersAreCalledAndInternalStateUpdates() {
+        var listenerCalledWith: Boolean? = null
+        val listener = Consumer<Boolean> { granted -> listenerCalledWith = granted }
+        val executor = Executor { command -> command.run() }
+
+        assertThat(fakeSceneRuntime.isBoundaryConsentGranted).isFalse()
+
+        fakeSceneRuntime.addOnBoundaryConsentChangedListener(executor, listener)
+
+        assertThat(listenerCalledWith).isNull()
+
+        // Change to true
+        fakeSceneRuntime.onBoundaryConsentChanged(true)
+
+        assertThat(fakeSceneRuntime.isBoundaryConsentGranted).isTrue()
+        assertThat(listenerCalledWith).isTrue()
+
+        // Change to false
+        listenerCalledWith = null
+        fakeSceneRuntime.onBoundaryConsentChanged(false)
+
+        assertThat(fakeSceneRuntime.isBoundaryConsentGranted).isFalse()
+        assertThat(listenerCalledWith).isFalse()
+    }
+
+    @Test
+    fun addOnBoundaryConsentChangedListener_addsListenerAndExecutorToMap() {
+        val listener = Consumer<Boolean> {}
+        val executor = Executor { command -> command.run() }
+
+        assertThat(fakeSceneRuntime.boundaryConsentChangedMap).isEmpty()
+
+        fakeSceneRuntime.addOnBoundaryConsentChangedListener(executor, listener)
+
+        assertThat(fakeSceneRuntime.boundaryConsentChangedMap).hasSize(1)
+        assertThat(fakeSceneRuntime.boundaryConsentChangedMap).containsEntry(listener, executor)
+    }
+
+    @Test
+    fun removeOnBoundaryConsentChangedListener_removesListenerFromMap() {
+        val listener = Consumer<Boolean> {}
+        val executor = Executor { command -> command.run() }
+
+        fakeSceneRuntime.addOnBoundaryConsentChangedListener(executor, listener)
+
+        assertThat(fakeSceneRuntime.boundaryConsentChangedMap).isNotEmpty() //
+
+        fakeSceneRuntime.removeOnBoundaryConsentChangedListener(listener)
+
+        assertThat(fakeSceneRuntime.boundaryConsentChangedMap).isEmpty()
+    }
+
     private class TestInputEventListener : InputEventListener {
         override fun onInputEvent(event: InputEvent) {}
+    }
+
+    @Test
+    fun defaultPixelsPerMeter_getDefaultValue() {
+        val ppm = fakeSceneRuntime.virtualPixelDensity
+
+        assertThat(ppm).isGreaterThan(0f)
     }
 }

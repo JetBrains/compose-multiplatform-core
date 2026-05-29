@@ -31,7 +31,6 @@ import androidx.room3.ext.GuavaUtilConcurrentTypeNames
 import androidx.room3.ext.KotlinTypeNames
 import androidx.room3.ext.LifecyclesTypeNames
 import androidx.room3.ext.ReactiveStreamsTypeNames
-import androidx.room3.ext.RxJava2TypeNames
 import androidx.room3.ext.RxJava3TypeNames
 import androidx.room3.processor.DatabaseViewProcessor
 import androidx.room3.processor.TableEntityProcessor
@@ -71,11 +70,6 @@ object COMMON {
         loadJavaCode("common/input/NotAnEntity.java", "foo.bar.NotAnEntity")
     }
 
-    val PARENT by lazy { loadJavaCode("common/input/Parent.java", "foo.bar.Parent") }
-    val CHILD1 by lazy { loadJavaCode("common/input/Child1.java", "foo.bar.Child1") }
-    val CHILD2 by lazy { loadJavaCode("common/input/Child2.java", "foo.bar.Child2") }
-    val INFO by lazy { loadJavaCode("common/input/Info.java", "foo.bar.Info") }
-
     val NOT_AN_ENTITY_TYPE_NAME by lazy { XClassName.get("foo.bar", "NotAnEntity") }
 
     val MULTI_PKEY_ENTITY by lazy {
@@ -87,6 +81,7 @@ object COMMON {
     val LIVE_DATA by lazy {
         loadJavaCode("common/input/LiveData.java", LifecyclesTypeNames.LIVE_DATA.canonicalName)
     }
+    val FLOW_LIVE_DATA by lazy { loadKotlinCode("common/input/FlowLiveData.kt") }
     val COMPUTABLE_LIVE_DATA by lazy {
         loadJavaCode(
             "common/input/ComputableLiveData.java",
@@ -99,29 +94,6 @@ object COMMON {
             ReactiveStreamsTypeNames.PUBLISHER.canonicalName,
         )
     }
-    val RX2_FLOWABLE by lazy {
-        loadJavaCode("common/input/rxjava2/Flowable.java", RxJava2TypeNames.FLOWABLE.canonicalName)
-    }
-    val RX2_OBSERVABLE by lazy {
-        loadJavaCode(
-            "common/input/rxjava2/Observable.java",
-            RxJava2TypeNames.OBSERVABLE.canonicalName,
-        )
-    }
-    val RX2_SINGLE by lazy {
-        loadJavaCode("common/input/rxjava2/Single.java", RxJava2TypeNames.SINGLE.canonicalName)
-    }
-    val RX2_MAYBE by lazy {
-        loadJavaCode("common/input/rxjava2/Maybe.java", RxJava2TypeNames.MAYBE.canonicalName)
-    }
-    val RX2_COMPLETABLE by lazy {
-        loadJavaCode(
-            "common/input/rxjava2/Completable.java",
-            RxJava2TypeNames.COMPLETABLE.canonicalName,
-        )
-    }
-
-    val RX2_ROOM by lazy { loadKotlinCode("common/input/Rx2Room.kt") }
 
     val RX3_FLOWABLE by lazy {
         loadJavaCode("common/input/rxjava3/Flowable.java", RxJava3TypeNames.FLOWABLE.canonicalName)
@@ -167,6 +139,8 @@ object COMMON {
 
     val GUAVA_ROOM by lazy { loadKotlinCode("common/input/GuavaRoom.kt") }
 
+    val EITHER by lazy { loadKotlinCode("common/input/Either.kt") }
+
     val LISTENABLE_FUTURE_PAGING_SOURCE by lazy {
         loadKotlinCode("common/input/ListenableFuturePagingSource.kt")
     }
@@ -175,24 +149,11 @@ object COMMON {
         loadKotlinCode("common/input/LimitOffsetListenableFuturePagingSource.kt")
     }
 
-    val RX2_PAGING_SOURCE by lazy { loadKotlinCode("common/input/Rx2PagingSource.kt") }
-
-    val RX2_EMPTY_RESULT_SET_EXCEPTION by lazy {
-        loadJavaCode(
-            "common/input/rxjava2/EmptyResultSetException.java",
-            "androidx.room3.EmptyResultSetException",
-        )
-    }
-
     val RX3_EMPTY_RESULT_SET_EXCEPTION by lazy {
         loadJavaCode(
             "common/input/rxjava3/EmptyResultSetException.java",
             "androidx.room3.rxjava3.EmptyResultSetException",
         )
-    }
-
-    val LIMIT_OFFSET_RX2_PAGING_SOURCE by lazy {
-        loadKotlinCode("common/input/LimitOffsetRx2PagingSource.kt")
     }
 
     val RX3_PAGING_SOURCE by lazy { loadKotlinCode("common/input/Rx3PagingSource.kt") }
@@ -214,8 +175,6 @@ object COMMON {
 
     val RECEIVE_CHANNEL by lazy { loadKotlinCode("common/input/coroutines/ReceiveChannel.kt") }
 
-    val ROOM_DATABASE_KTX by lazy { loadKotlinCode("common/input/RoomDatabaseExt.kt") }
-
     val LONG_SPARSE_ARRAY by lazy {
         loadJavaCode(
             "common/input/collection/LongSparseArray.java",
@@ -233,7 +192,7 @@ object COMMON {
 
 fun testCodeGenScope(): CodeGenScope {
     return CodeGenScope(
-        object : TypeWriter(WriterContext(CodeLanguage.JAVA, setOf(Platform.JVM), true)) {
+        object : TypeWriter(WriterContext(CodeLanguage.KOTLIN, setOf(Platform.JVM), true, 500)) {
             override val packageName = "test"
 
             override fun createTypeSpecBuilder(): XTypeSpec.Builder {

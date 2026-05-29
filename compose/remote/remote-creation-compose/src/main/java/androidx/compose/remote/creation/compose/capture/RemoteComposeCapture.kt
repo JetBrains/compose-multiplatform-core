@@ -17,319 +17,98 @@
 
 package androidx.compose.remote.creation.compose.capture
 
-import android.content.Context
-import android.content.res.Resources
-import android.hardware.display.DisplayManager
-import android.view.SurfaceView
-import android.view.View
-import android.widget.FrameLayout
 import androidx.annotation.RestrictTo
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.remote.core.CoreDocument
+import androidx.compose.remote.core.RemoteClock
 import androidx.compose.remote.core.RemoteComposeBuffer
-import androidx.compose.remote.creation.RemoteComposeWriter
-import androidx.compose.remote.creation.compose.layout.RemoteComposable
-import androidx.compose.remote.creation.compose.state.FallbackCreationState
-import androidx.compose.remote.creation.profile.PlatformProfile
 import androidx.compose.remote.creation.profile.Profile
+import androidx.compose.remote.creation.profile.RcPlatformProfiles
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.unit.DpSize
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.platform.LocalWindowInfo
+import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.toSize
+import androidx.tracing.trace
 import java.io.ByteArrayInputStream
 
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public data class HostDisplayInfo(
-    val width: Int = Resources.getSystem().displayMetrics.widthPixels,
-    val height: Int = Resources.getSystem().displayMetrics.heightPixels,
-    val density: Int = Resources.getSystem().displayMetrics.densityDpi,
-) {
-    val size: Size
-        get() = Size(width.toFloat(), height.toFloat())
-}
-
 @Composable
 public fun rememberRemoteDocument(
-    size: Size = displaySize(),
+    creationDisplayInfo: RemoteCreationDisplayInfo = createCreationDisplayInfo(),
+    profile: Profile = RcPlatformProfiles.ANDROIDX,
+    writerEvents: WriterEvents = WriterEvents(),
     onCreate: ((CoreDocument) -> Unit)? = null,
+    clock: RemoteClock = RemoteClock.SYSTEM,
     content: @Composable () -> Unit,
 ): MutableState<CoreDocument?> {
-    return rememberRemoteDocument(size, onCreate, CoreDocument.DOCUMENT_API_LEVEL, 0, content)
-}
-
-@Composable
-public fun rememberRemoteDocument(
-    size: Size = displaySize(),
-    onCreate: ((CoreDocument) -> Unit)? = null,
-    apiLevel: Int,
-    profiles: Int,
-    content: @Composable () -> Unit,
-): MutableState<CoreDocument?> {
+    val layoutDirection = LocalLayoutDirection.current
     val doc: MutableState<CoreDocument?> = remember { mutableStateOf(null) }
-    val densityDpi = LocalConfiguration.current.densityDpi
-    val hostDisplayInfo = HostDisplayInfo(size.width.toInt(), size.height.toInt(), densityDpi)
-    val done = remember { mutableStateOf(false) }
-    RemoteComposeCapture(
-        LocalContext.current,
-        hostDisplayInfo,
-        true,
-        { view, writer ->
-            if (!done.value) {
-                val buffer = writer.buffer()
-                val bufferSize = writer.bufferSize()
-                val inputStream = ByteArrayInputStream(buffer, 0, bufferSize)
-                val document = CoreDocument()
-                val rcBuffer = RemoteComposeBuffer.fromInputStream(inputStream)
-                document.initFromBuffer(rcBuffer)
-                doc.value = document
-                done.value = true
-                if (onCreate != null) {
-                    onCreate(document)
+    val context = LocalContext.current
+    LaunchedEffect(Unit) {
+        val document =
+            captureSingleRemoteDocument(
+                creationDisplayInfo = createCreationDisplayInfo(context),
+                layoutDirection = layoutDirection,
+                context = context,
+                content = content,
+                profile = profile,
+                clock = clock,
+            )
+        val coreDocument =
+            CoreDocument(clock).apply {
+                trace("CreateRemoteDocument:parsing") {
+                    initFromBuffer(
+                        RemoteComposeBuffer.fromInputStream(ByteArrayInputStream(document.bytes))
+                    )
                 }
             }
-            done.value
-        },
-        @Composable {},
-        apiLevel,
-        profiles,
-        @Composable { content() },
-    )
+        if (onCreate != null) {
+            onCreate(coreDocument)
+        }
+        doc.value = coreDocument
+    }
     return doc
 }
 
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @Composable
-public fun rememberAsyncRemoteDocument(
-    size: Size = displaySize(),
-    content: @Composable (MutableState<Boolean>) -> Unit,
+public fun rememberRemoteDocument(
+    size: Size,
+    onCreate: ((CoreDocument) -> Unit)? = null,
+    content: @Composable () -> Unit,
 ): MutableState<CoreDocument?> {
-    return rememberAsyncRemoteDocument(size, CoreDocument.DOCUMENT_API_LEVEL, 0, content)
-}
-
-@Composable
-public fun rememberAsyncRemoteDocument(
-    size: Size = displaySize(),
-    apiLevel: Int,
-    profiles: Int,
-    content: @Composable (MutableState<Boolean>) -> Unit,
-): MutableState<CoreDocument?> {
-    val doc: MutableState<CoreDocument?> = remember { mutableStateOf(null) }
-    val densityDpi = LocalConfiguration.current.densityDpi
-    val hostDisplayInfo =
-        HostDisplayInfo(
-            width = size.width.toInt(),
-            height = size.height.toInt(),
-            density = densityDpi,
-        )
-    val done = remember { mutableStateOf(false) }
-    val readyToCapture = remember { mutableStateOf(false) }
-    RemoteComposeCapture(
-        LocalContext.current,
-        hostDisplayInfo,
-        false,
-        { view, writer ->
-            if (readyToCapture.value && !done.value) {
-                val buffer = writer.buffer()
-                val bufferSize = writer.bufferSize()
-                val inputStream = ByteArrayInputStream(buffer, 0, bufferSize)
-                val document = CoreDocument()
-                val rcBuffer = RemoteComposeBuffer.fromInputStream(inputStream)
-                document.initFromBuffer(rcBuffer)
-                doc.value = document
-                done.value = true
-            }
-            done.value
-        },
-        @Composable {},
-        apiLevel,
-        profiles,
-        @Composable { content(readyToCapture) },
+    return rememberRemoteDocument(
+        creationDisplayInfo =
+            RemoteCreationDisplayInfo(
+                size.width.toInt(),
+                size.height.toInt(),
+                LocalConfiguration.current.densityDpi,
+                LocalConfiguration.current.fontScale,
+            ),
+        onCreate = onCreate,
+        content = content,
     )
-    return doc
 }
 
 @Composable
 public fun displaySize(): Size {
-    return with(LocalDensity.current) {
-        DpSize(
-                LocalConfiguration.current.screenWidthDp.dp,
-                LocalConfiguration.current.screenHeightDp.dp,
-            )
-            .toSize()
-    }
+    // Note: Usage of LocalConfiguration.current.screenWidthDp was replaced due to
+    // `ConfigurationScreenWidthHeight` lint rule
+    // TODO: Consider to remove this function at all
+    return LocalWindowInfo.current.containerSize.toSize()
 }
 
-/**
- * Encapsulate the overall capture process of running a composable function in a virtual display.
- * The remoteComposeExecution() function will run inside a CaptureComposeView, capturing its output
- * via a RecordingCanvas
- */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public class RemoteComposeCapture(
-    context: Context,
-    hostDisplayInfo: HostDisplayInfo,
-    public val immediateCapture: Boolean = true,
-    public val onPaint: (View, RemoteComposeWriter) -> Boolean,
-    public val onCaptureReady: @Composable () -> Unit,
-    public val apiLevel: Int,
-    public val profiles: Int,
-    public val content: @Composable () -> Unit,
-    public val remoteComposeExecution:
-        @Composable
-        (CaptureComposeView, @Composable () -> Unit) -> Unit =
-        { captureComposeView, contentWrapper ->
-            RemoteComposeExecution(
-                captureComposeView,
-                hostDisplayInfo.size,
-                apiLevel,
-                profiles,
-                contentWrapper,
-            )
-        },
-) {
-    public constructor(
-        context: Context,
-        hostDisplayInfo: HostDisplayInfo,
-        immediateCapture: Boolean = true,
-        onPaint: (View, RemoteComposeWriter) -> Boolean,
-        onCaptureReady: @Composable () -> Unit,
-        profile: Profile,
-        content: @Composable () -> Unit,
-    ) : this(
-        context,
-        hostDisplayInfo,
-        immediateCapture,
-        onPaint,
-        onCaptureReady,
-        profile.apiLevel,
-        profile.operationsProfiles,
-        content,
-        remoteComposeExecution =
-            @Composable { captureComposeView, contentWrapper ->
-                RemoteComposeExecution(
-                    captureComposeView,
-                    hostDisplayInfo.size,
-                    profile,
-                    contentWrapper,
-                )
-            },
-    )
-
-    public fun newSize(width: Int, height: Int) {
-        resizableLayout.layoutParams = FrameLayout.LayoutParams(width, height)
-    }
-
-    private var resizableLayout: ResizableLayout
-
-    init {
-        val displayManager = context.getSystemService(Context.DISPLAY_SERVICE) as DisplayManager
-        val virtualDisplay =
-            displayManager.createVirtualDisplay(
-                "Projection",
-                hostDisplayInfo.width,
-                hostDisplayInfo.height,
-                hostDisplayInfo.density,
-                SurfaceView(context).holder.surface,
-                0,
-            )
-
-        val presentation = SecondaryDisplay(context, virtualDisplay.display)
-        val captureComposeView =
-            CaptureComposeView(presentation.context, immediateCapture, onPaint, onCaptureReady)
-        captureComposeView.apply {
-            setContent { remoteComposeExecution(captureComposeView) { content.invoke() } }
-        }
-        presentation.show()
-        resizableLayout = presentation.resizeLayout
-        resizableLayout.use(captureComposeView)
-    }
-}
-
-@Composable
-public fun RemoteComposeExecution(
-    captureComposeView: CaptureComposeView,
-    size: Size,
-    apiLevel: Int,
-    profiles: Int,
-    content: @Composable () -> Unit,
-) {
-    val density = LocalDensity.current
-    val platform = LocalPlatform.current
-
-    val remoteComposeCreationState = remember {
-        RemoteComposeCreationState(platform, density.density, size, apiLevel, profiles)
-    }
-    CompositionLocalProvider(LocalRemoteComposeCreationState provides remoteComposeCreationState) {
-        FallbackCreationState.state = remoteComposeCreationState
-        captureComposeView.setRemoteComposeState(remoteComposeCreationState)
-        content.invoke()
-    }
-}
-
-@Composable
-public fun RemoteComposeExecution(
-    captureComposeView: CaptureComposeView,
-    size: Size,
-    profile: Profile,
-    content: @Composable () -> Unit,
-) {
-    val density = LocalDensity.current
-
-    val remoteComposeCreationState = remember {
-        RemoteComposeCreationState(density.density, size, profile)
-    }
-    CompositionLocalProvider(LocalRemoteComposeCreationState provides remoteComposeCreationState) {
-        FallbackCreationState.state = remoteComposeCreationState
-        captureComposeView.setRemoteComposeState(remoteComposeCreationState)
-        content.invoke()
-    }
-}
-
-/**
- * Record a RemoteComposeDocument from a composable function without creating a SecondaryDisplay.
- */
-@Composable
-public fun RememberRemoteDocumentInline(
-    profile: Profile = PlatformProfile.ANDROIDX,
-    onDocument: (CoreDocument) -> Unit,
-    content: @RemoteComposable @Composable () -> Unit,
-) {
-    val generated = remember { mutableStateOf(false) }
-    if (!generated.value) {
-        AndroidView(
-            modifier = Modifier.fillMaxSize(),
-            factory = { context ->
-                val hostDisplayInfo = HostDisplayInfo()
-
-                CaptureComposeView(
-                        context = context,
-                        immediateCapture = true,
-                        onPaint = { view, writer ->
-                            val buffer = writer.buffer()
-                            val bufferSize = writer.bufferSize()
-                            val inputStream = ByteArrayInputStream(buffer, 0, bufferSize)
-                            val coreDocument = CoreDocument()
-                            val rcBuffer = RemoteComposeBuffer.fromInputStream(inputStream)
-                            coreDocument.initFromBuffer(rcBuffer)
-                            onDocument(coreDocument)
-                            true
-                        },
-                        onCaptureReady = {},
-                    )
-                    .apply {
-                        setContent {
-                            RemoteComposeExecution(this, hostDisplayInfo.size, profile, content)
-                        }
-                    }
-            },
-        )
+/** Convert an Android layout direction to a compose [layout direction][LayoutDirection]. */
+internal fun toLayoutDirection(androidLayoutDirection: Int): LayoutDirection {
+    return when (androidLayoutDirection) {
+        android.util.LayoutDirection.LTR -> LayoutDirection.Ltr
+        android.util.LayoutDirection.RTL -> LayoutDirection.Rtl
+        else -> throw IllegalArgumentException("Unknown layout direction: $androidLayoutDirection")
     }
 }

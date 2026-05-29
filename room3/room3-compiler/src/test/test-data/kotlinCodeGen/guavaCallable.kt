@@ -2,10 +2,11 @@ import androidx.room3.EntityDeleteOrUpdateAdapter
 import androidx.room3.EntityInsertAdapter
 import androidx.room3.EntityUpsertAdapter
 import androidx.room3.RoomDatabase
-import androidx.room3.guava.createListenableFuture
+import androidx.room3.guava.GuavaDaoReturnTypeConverter
 import androidx.room3.util.appendPlaceholders
 import androidx.room3.util.getColumnIndexOrThrow
 import androidx.room3.util.getLastInsertedRowId
+import androidx.room3.util.performSuspending
 import androidx.sqlite.SQLiteStatement
 import com.google.common.util.concurrent.ListenableFuture
 import java.lang.Void
@@ -19,13 +20,16 @@ import kotlin.reflect.KClass
 import kotlin.text.StringBuilder
 
 @Generated(value = ["androidx.room3.RoomProcessor"])
-@Suppress(names = ["UNCHECKED_CAST", "DEPRECATION", "REDUNDANT_PROJECTION", "REMOVAL"])
+@Suppress(names = ["UNCHECKED_CAST", "DEPRECATION", "REDUNDANT_PROJECTION", "REMOVAL", "MemberExtensionConflict"])
 internal class MyDao_Impl(
   __db: RoomDatabase,
 ) : MyDao {
   private val __db: RoomDatabase
 
   private val __insertAdapterOfMyEntity: EntityInsertAdapter<MyEntity>
+
+  private val __guavaDaoReturnTypeConverter: GuavaDaoReturnTypeConverter =
+      GuavaDaoReturnTypeConverter()
 
   private val __deleteAdapterOfMyEntity: EntityDeleteOrUpdateAdapter<MyEntity>
 
@@ -76,26 +80,34 @@ internal class MyDao_Impl(
     })
   }
 
-  public override fun insertListenableFuture(vararg entities: MyEntity): ListenableFuture<List<Long>> = createListenableFuture(__db, false, true) { _connection ->
-    val _result: List<Long> = __insertAdapterOfMyEntity.insertAndReturnIdsList(_connection, entities)
-    _result
+  public override fun insertListenableFuture(vararg entities: MyEntity): ListenableFuture<List<Long>> = __guavaDaoReturnTypeConverter.convertAsync(__db, true) {
+    performSuspending<List<Long>>(__db, false, true) { _connection ->
+      val _result: List<Long> = __insertAdapterOfMyEntity.insertAndReturnIdsList(_connection, entities)
+      _result
+    }
   }
 
-  public override fun deleteListenableFuture(entity: MyEntity): ListenableFuture<Int> = createListenableFuture(__db, false, true) { _connection ->
-    var _result: Int = 0
-    _result += __deleteAdapterOfMyEntity.handle(_connection, entity)
-    _result
+  public override fun deleteListenableFuture(entity: MyEntity): ListenableFuture<Int> = __guavaDaoReturnTypeConverter.convertAsync(__db, true) {
+    performSuspending<Int>(__db, false, true) { _connection ->
+      var _result: Int = 0
+      _result += __deleteAdapterOfMyEntity.handleAndReturnChanges(_connection, entity)
+      _result
+    }
   }
 
-  public override fun updateListenableFuture(entity: MyEntity): ListenableFuture<Int> = createListenableFuture(__db, false, true) { _connection ->
-    var _result: Int = 0
-    _result += __updateAdapterOfMyEntity.handle(_connection, entity)
-    _result
+  public override fun updateListenableFuture(entity: MyEntity): ListenableFuture<Int> = __guavaDaoReturnTypeConverter.convertAsync(__db, true) {
+    performSuspending<Int>(__db, false, true) { _connection ->
+      var _result: Int = 0
+      _result += __updateAdapterOfMyEntity.handleAndReturnChanges(_connection, entity)
+      _result
+    }
   }
 
-  public override fun upsertListenableFuture(vararg entities: MyEntity): ListenableFuture<List<Long>> = createListenableFuture(__db, false, true) { _connection ->
-    val _result: List<Long> = __upsertAdapterOfMyEntity.upsertAndReturnIdsList(_connection, entities)
-    _result
+  public override fun upsertListenableFuture(vararg entities: MyEntity): ListenableFuture<List<Long>> = __guavaDaoReturnTypeConverter.convertAsync(__db, true) {
+    performSuspending<List<Long>>(__db, false, true) { _connection ->
+      val _result: List<Long> = __upsertAdapterOfMyEntity.upsertAndReturnIdsList(_connection, entities)
+      _result
+    }
   }
 
   public override fun getListenableFuture(vararg arg: String?): ListenableFuture<MyEntity> {
@@ -105,33 +117,35 @@ internal class MyDao_Impl(
     appendPlaceholders(_stringBuilder, _inputSize)
     _stringBuilder.append(")")
     val _sql: String = _stringBuilder.toString()
-    return createListenableFuture(__db, true, false) { _connection ->
-      val _stmt: SQLiteStatement = _connection.prepare(_sql)
-      try {
-        var _argIndex: Int = 1
-        for (_item: String? in arg) {
-          if (_item == null) {
-            _stmt.bindNull(_argIndex)
-          } else {
-            _stmt.bindText(_argIndex, _item)
+    return __guavaDaoReturnTypeConverter.convertAsync(__db, false) {
+      performSuspending<MyEntity>(__db, true, false) { _connection ->
+        val _stmt: SQLiteStatement = _connection.prepare(_sql)
+        try {
+          var _argIndex: Int = 1
+          for (_item: String? in arg) {
+            if (_item == null) {
+              _stmt.bindNull(_argIndex)
+            } else {
+              _stmt.bindText(_argIndex, _item)
+            }
+            _argIndex++
           }
-          _argIndex++
+          val _columnIndexOfPk: Int = getColumnIndexOrThrow(_stmt, "pk")
+          val _columnIndexOfOther: Int = getColumnIndexOrThrow(_stmt, "other")
+          val _result: MyEntity
+          if (_stmt.step()) {
+            val _tmpPk: Int
+            _tmpPk = _stmt.getLong(_columnIndexOfPk).toInt()
+            val _tmpOther: String
+            _tmpOther = _stmt.getText(_columnIndexOfOther)
+            _result = MyEntity(_tmpPk,_tmpOther)
+          } else {
+            error("The query result was empty, but expected a single row to return a NON-NULL object of type 'MyEntity'.")
+          }
+          _result
+        } finally {
+          _stmt.close()
         }
-        val _columnIndexOfPk: Int = getColumnIndexOrThrow(_stmt, "pk")
-        val _columnIndexOfOther: Int = getColumnIndexOrThrow(_stmt, "other")
-        val _result: MyEntity
-        if (_stmt.step()) {
-          val _tmpPk: Int
-          _tmpPk = _stmt.getLong(_columnIndexOfPk).toInt()
-          val _tmpOther: String
-          _tmpOther = _stmt.getText(_columnIndexOfOther)
-          _result = MyEntity(_tmpPk,_tmpOther)
-        } else {
-          error("The query result was empty, but expected a single row to return a NON-NULL object of type 'MyEntity'.")
-        }
-        _result
-      } finally {
-        _stmt.close()
       }
     }
   }
@@ -143,67 +157,73 @@ internal class MyDao_Impl(
     appendPlaceholders(_stringBuilder, _inputSize)
     _stringBuilder.append(")")
     val _sql: String = _stringBuilder.toString()
-    return createListenableFuture(__db, true, false) { _connection ->
-      val _stmt: SQLiteStatement = _connection.prepare(_sql)
-      try {
-        var _argIndex: Int = 1
-        for (_item: String? in arg) {
-          if (_item == null) {
-            _stmt.bindNull(_argIndex)
-          } else {
-            _stmt.bindText(_argIndex, _item)
+    return __guavaDaoReturnTypeConverter.convertAsync(__db, false) {
+      performSuspending<MyEntity?>(__db, true, false) { _connection ->
+        val _stmt: SQLiteStatement = _connection.prepare(_sql)
+        try {
+          var _argIndex: Int = 1
+          for (_item: String? in arg) {
+            if (_item == null) {
+              _stmt.bindNull(_argIndex)
+            } else {
+              _stmt.bindText(_argIndex, _item)
+            }
+            _argIndex++
           }
-          _argIndex++
+          val _columnIndexOfPk: Int = getColumnIndexOrThrow(_stmt, "pk")
+          val _columnIndexOfOther: Int = getColumnIndexOrThrow(_stmt, "other")
+          val _result: MyEntity?
+          if (_stmt.step()) {
+            val _tmpPk: Int
+            _tmpPk = _stmt.getLong(_columnIndexOfPk).toInt()
+            val _tmpOther: String
+            _tmpOther = _stmt.getText(_columnIndexOfOther)
+            _result = MyEntity(_tmpPk,_tmpOther)
+          } else {
+            _result = null
+          }
+          _result
+        } finally {
+          _stmt.close()
         }
-        val _columnIndexOfPk: Int = getColumnIndexOrThrow(_stmt, "pk")
-        val _columnIndexOfOther: Int = getColumnIndexOrThrow(_stmt, "other")
-        val _result: MyEntity?
-        if (_stmt.step()) {
-          val _tmpPk: Int
-          _tmpPk = _stmt.getLong(_columnIndexOfPk).toInt()
-          val _tmpOther: String
-          _tmpOther = _stmt.getText(_columnIndexOfOther)
-          _result = MyEntity(_tmpPk,_tmpOther)
-        } else {
-          _result = null
-        }
-        _result
-      } finally {
-        _stmt.close()
       }
     }
   }
 
   public override fun insertListenableFuture(id: String, name: String): ListenableFuture<Long> {
     val _sql: String = "INSERT INTO MyEntity (pk, other) VALUES (?, ?)"
-    return createListenableFuture(__db, false, true) { _connection ->
-      val _stmt: SQLiteStatement = _connection.prepare(_sql)
-      try {
-        var _argIndex: Int = 1
-        _stmt.bindText(_argIndex, id)
-        _argIndex = 2
-        _stmt.bindText(_argIndex, name)
-        _stmt.step()
-        getLastInsertedRowId(_connection)
-      } finally {
-        _stmt.close()
+    return __guavaDaoReturnTypeConverter.convertAsync(__db, true) {
+      performSuspending<Long>(__db, false, true) { _connection ->
+        val _stmt: SQLiteStatement = _connection.prepare(_sql)
+        try {
+          var _argIndex: Int = 1
+          _stmt.bindText(_argIndex, id)
+          _argIndex = 2
+          _stmt.bindText(_argIndex, name)
+          _stmt.step()
+          getLastInsertedRowId(_connection)
+        } finally {
+          _stmt.close()
+        }
       }
     }
   }
 
   public override fun updateListenableFuture(id: String, name: String): ListenableFuture<Void?> {
     val _sql: String = "UPDATE MyEntity SET other = ? WHERE pk = ?"
-    return createListenableFuture(__db, false, true) { _connection ->
-      val _stmt: SQLiteStatement = _connection.prepare(_sql)
-      try {
-        var _argIndex: Int = 1
-        _stmt.bindText(_argIndex, name)
-        _argIndex = 2
-        _stmt.bindText(_argIndex, id)
-        _stmt.step()
-        null
-      } finally {
-        _stmt.close()
+    return __guavaDaoReturnTypeConverter.convertAsync(__db, true) {
+      performSuspending<Void?>(__db, false, true) { _connection ->
+        val _stmt: SQLiteStatement = _connection.prepare(_sql)
+        try {
+          var _argIndex: Int = 1
+          _stmt.bindText(_argIndex, name)
+          _argIndex = 2
+          _stmt.bindText(_argIndex, id)
+          _stmt.step()
+          null
+        } finally {
+          _stmt.close()
+        }
       }
     }
   }

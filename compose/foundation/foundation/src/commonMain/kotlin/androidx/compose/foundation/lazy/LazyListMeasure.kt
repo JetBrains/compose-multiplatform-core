@@ -16,6 +16,8 @@
 
 package androidx.compose.foundation.lazy
 
+import androidx.collection.IntList
+import androidx.compose.foundation.ComposeFoundationFlags.isSkipItemPlacementAnimationFixEnabled
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.internal.checkPrecondition
@@ -37,7 +39,6 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.constrainHeight
 import androidx.compose.ui.unit.constrainWidth
 import androidx.compose.ui.util.fastForEach
-import androidx.compose.ui.util.fastForEachReversed
 import androidx.compose.ui.util.fastRoundToInt
 import kotlin.math.abs
 import kotlin.math.sign
@@ -66,13 +67,14 @@ internal fun measureLazyList(
     density: Density,
     itemAnimator: LazyLayoutItemAnimator<LazyListMeasuredItem>,
     beyondBoundsItemCount: Int,
-    pinnedItems: List<Int>,
+    pinnedItems: IntList,
     hasLookaheadOccurred: Boolean,
     isLookingAhead: Boolean,
     coroutineScope: CoroutineScope,
     placementScopeInvalidator: ObservableScopeInvalidator,
     graphicsContext: GraphicsContext,
     stickyItemsPlacement: StickyItemsPlacement?,
+    shouldRunItemAnimation: Boolean,
     layout: (Int, Int, Placeable.PlacementScope.() -> Unit) -> MeasureResult,
 ): LazyListMeasureResult {
     requirePrecondition(beforeContentPadding >= 0) { "invalid beforeContentPadding" }
@@ -98,6 +100,7 @@ internal fun measureLazyList(
             coroutineScope = coroutineScope,
             graphicsContext = graphicsContext,
         )
+
         if (!isLookingAhead) {
             val disappearingItemsSize = itemAnimator.minSizeToFitDisappearingItems
             if (disappearingItemsSize != IntSize.Zero) {
@@ -359,22 +362,24 @@ internal fun measureLazyList(
                 density = density,
             )
 
-        itemAnimator.onMeasured(
-            consumedScroll = consumedScroll.toInt(),
-            layoutWidth = layoutWidth,
-            layoutHeight = layoutHeight,
-            positionedItems = positionedItems,
-            keyIndexMap = measuredItemProvider.keyIndexMap,
-            itemProvider = measuredItemProvider,
-            isVertical = isVertical,
-            laneCount = 1,
-            isLookingAhead = isLookingAhead,
-            hasLookaheadOccurred = hasLookaheadOccurred,
-            coroutineScope = coroutineScope,
-            layoutMinOffset = currentFirstItemScrollOffset,
-            layoutMaxOffset = currentMainAxisOffset,
-            graphicsContext = graphicsContext,
-        )
+        if (!isSkipItemPlacementAnimationFixEnabled || shouldRunItemAnimation) {
+            itemAnimator.onMeasured(
+                consumedScroll = consumedScroll.toInt(),
+                layoutWidth = layoutWidth,
+                layoutHeight = layoutHeight,
+                positionedItems = positionedItems,
+                keyIndexMap = measuredItemProvider.keyIndexMap,
+                itemProvider = measuredItemProvider,
+                isVertical = isVertical,
+                laneCount = 1,
+                isLookingAhead = isLookingAhead,
+                hasLookaheadOccurred = hasLookaheadOccurred,
+                coroutineScope = coroutineScope,
+                layoutMinOffset = currentFirstItemScrollOffset,
+                layoutMaxOffset = currentMainAxisOffset,
+                graphicsContext = graphicsContext,
+            )
+        }
 
         if (!isLookingAhead) {
             val disappearingItemsSize = itemAnimator.minSizeToFitDisappearingItems
@@ -402,6 +407,7 @@ internal fun measureLazyList(
                 afterContentPadding,
                 layoutWidth,
                 layoutHeight,
+                isVertical,
             ) {
                 measuredItemProvider.getAndMeasure(it)
             }
@@ -463,7 +469,7 @@ private fun createItemsAfterList(
     measuredItemProvider: LazyListMeasuredItemProvider,
     itemsCount: Int,
     beyondBoundsItemCount: Int,
-    pinnedItems: List<Int>,
+    pinnedItems: IntList,
 ): List<LazyListMeasuredItem> {
     var list: MutableList<LazyListMeasuredItem>? = null
 
@@ -482,7 +488,7 @@ private fun createItemsAfterList(
             end = it.last().index
         }
     }
-    pinnedItems.fastForEach { index ->
+    pinnedItems.forEach { index ->
         if (index > end) {
             if (list == null) list = mutableListOf()
             list?.add(measuredItemProvider.getAndMeasure(index))
@@ -496,7 +502,7 @@ private fun createItemsBeforeList(
     currentFirstItemIndex: Int,
     measuredItemProvider: LazyListMeasuredItemProvider,
     beyondBoundsItemCount: Int,
-    pinnedItems: List<Int>,
+    pinnedItems: IntList,
 ): List<LazyListMeasuredItem> {
     var list: MutableList<LazyListMeasuredItem>? = null
 
@@ -509,7 +515,7 @@ private fun createItemsBeforeList(
         list.add(measuredItemProvider.getAndMeasure(i))
     }
 
-    pinnedItems.fastForEachReversed { index ->
+    pinnedItems.forEachReversed { index ->
         if (index < start) {
             if (list == null) list = mutableListOf()
             list?.add(measuredItemProvider.getAndMeasure(index))

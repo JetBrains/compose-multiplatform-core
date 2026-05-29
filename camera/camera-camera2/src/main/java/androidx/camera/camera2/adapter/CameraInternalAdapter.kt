@@ -18,11 +18,11 @@ package androidx.camera.camera2.adapter
 
 import androidx.camera.camera2.config.CameraConfig
 import androidx.camera.camera2.config.CameraScope
+import androidx.camera.camera2.impl.Camera2Logger
 import androidx.camera.camera2.impl.UseCaseManager
 import androidx.camera.camera2.impl.UseCaseThreads
 import androidx.camera.camera2.pipe.CameraGraph
 import androidx.camera.camera2.pipe.CameraPipe
-import androidx.camera.camera2.pipe.core.Log.debug
 import androidx.camera.core.UseCase
 import androidx.camera.core.impl.CameraConfigs
 import androidx.camera.core.impl.CameraControlInternal
@@ -58,7 +58,7 @@ constructor(
     private val isRemoved = atomic(false)
 
     init {
-        debug { "Created $this for $cameraId" }
+        Camera2Logger.debug { "Created $this for $cameraId" }
         // TODO: Consider preloading the list of camera ids and metadata.
     }
 
@@ -75,11 +75,11 @@ constructor(
 
     // Load / unload methods
     override fun open() {
-        debug { "$this#open" }
+        Camera2Logger.debug { "$this#open" }
     }
 
     override fun close() {
-        debug { "$this#close" }
+        Camera2Logger.debug { "$this#close" }
     }
 
     override fun setPrimary(isPrimary: Boolean) {
@@ -150,7 +150,7 @@ constructor(
      * CameraGraph.
      */
     override fun onRemoved() {
-        debug { "$this received removed signal. Cleaning up." }
+        Camera2Logger.debug { "$this received removed signal. Cleaning up." }
         if (isRemoved.compareAndSet(expect = false, update = true)) {
             threads.scope.launch {
                 // 1. Immediately update the public state via the state adapter.

@@ -29,6 +29,7 @@ import androidx.compose.runtime.mock.revalidate
 import androidx.compose.runtime.mock.validate
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -887,6 +888,104 @@ class CompositionLocalTests {
         advance()
         assertTrue(valueSeen)
     }
+
+    @Test
+    fun hostDefault_resolvesValueFromProvider() = compositionTest {
+        val key = TestHostDefaultKey<String>()
+        val local = compositionLocalWithHostDefaultOf(key)
+        val provider = TestHostDefaultProvider(mapOf(key to "HostValue"))
+
+        compose {
+            CompositionLocalProvider(LocalHostDefaultProvider provides provider) {
+                assertEquals("HostValue", local.current)
+            }
+        }
+    }
+
+    @Test
+    fun hostDefault_explicitValueOverridesHost() = compositionTest {
+        val key = TestHostDefaultKey<String>()
+        val local = compositionLocalWithHostDefaultOf(key)
+        val provider = TestHostDefaultProvider(mapOf(key to "HostValue"))
+
+        compose {
+            CompositionLocalProvider(LocalHostDefaultProvider provides provider) {
+                CompositionLocalProvider(local provides "Explicit") {
+                    assertEquals("Explicit", local.current)
+                }
+            }
+        }
+    }
+
+    @Test
+    fun hostDefault_returnsNullForMissingNullableKey() = compositionTest {
+        // Key expects a nullable String
+        val key = TestHostDefaultKey<String?>()
+        val local = compositionLocalWithHostDefaultOf(key)
+        // Provider is empty
+        val provider = TestHostDefaultProvider(emptyMap())
+
+        compose {
+            CompositionLocalProvider(LocalHostDefaultProvider provides provider) {
+                assertEquals(null, local.current)
+            }
+        }
+    }
+
+    @Test
+    fun hostDefault_throwsForMissingNonNullableKey() = compositionTest {
+        // We use String (reference type) because Kotlin/Native's LLVM backend may 'segfault' when
+        // attempting to unbox a null 'Any' into a primitive (like Int). Using a reference type
+        // ensures we get a catchable runtime exception instead of a process crash.
+        val key = TestHostDefaultKey<String>()
+        val local = compositionLocalWithHostDefaultOf(key)
+        val provider = TestHostDefaultProvider(emptyMap())
+
+        val exception =
+            assertFailsWith<Throwable> {
+                compose {
+                    CompositionLocalProvider(LocalHostDefaultProvider provides provider) {
+                        // We force access with !! because some platforms (e.g., JS) are more
+                        // "relaxed" about nullability at runtime. The assertion ensures the
+                        // failure happens here rather than leaking into later code.
+                        @Suppress("UnusedVariable", "unused", "UNNECESSARY_NOT_NULL_ASSERTION")
+                        val unused: String = local.current!!
+                    }
+                }
+            }
+
+        // Different Kotlin backends report "null-to-non-null" failures differently.
+        // JVM usually throws NPE on unboxing; Native/JS may throw ClassCastException.
+        assertTrue(
+            exception is NullPointerException || exception is ClassCastException,
+            "Expected NPE or CCE due to missing provider, but got: ${exception::class.simpleName}",
+        )
+    }
+
+    @Test
+    fun hostDefault_dynamicUpdatesFromProvider() = compositionTest {
+        val key = TestHostDefaultKey<String>()
+        val local = compositionLocalWithHostDefaultOf(key)
+
+        // We use mutable state to swap providers to simulate the host environment changing
+        var useProviderA by mutableStateOf(true)
+
+        val providerA = TestHostDefaultProvider(mapOf(key to "ValueA"))
+        val providerB = TestHostDefaultProvider(mapOf(key to "ValueB"))
+
+        compose {
+            val currentProvider = if (useProviderA) providerA else providerB
+            CompositionLocalProvider(LocalHostDefaultProvider provides currentProvider) {
+                Text(local.current)
+            }
+        }
+
+        validate { Text("ValueA") }
+
+        useProviderA = false
+        expectChanges()
+        validate { Text("ValueB") }
+    }
 }
 
 val LocalCache = staticCompositionLocalOf { "Unset" }
@@ -918,3 +1017,13 @@ fun MockViewValidator.CacheInvalidate(state: State<Int>) {
 data class SomeData(val value: String = "default")
 
 @Stable class StableRef<T>(var value: T)
+
+private class TestHostDefaultKey<T> : HostDefaultKey<T>
+
+private class TestHostDefaultProvider(val values: Map<HostDefaultKey<*>, Any?>) :
+    HostDefaultProvider {
+    override fun <T> getHostDefault(key: HostDefaultKey<T>): T {
+        @Suppress("UNCHECKED_CAST")
+        return values[key] as T
+    }
+}

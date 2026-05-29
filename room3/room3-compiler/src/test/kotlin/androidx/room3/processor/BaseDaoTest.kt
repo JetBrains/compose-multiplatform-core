@@ -4,7 +4,7 @@ import COMMON
 import androidx.room3.compiler.codegen.CodeLanguage
 import androidx.room3.compiler.processing.XProcessingEnv
 import androidx.room3.compiler.processing.util.Source
-import androidx.room3.compiler.processing.util.runProcessorTest
+import androidx.room3.compiler.processing.util.runKspTest
 import androidx.room3.testing.context
 import androidx.room3.vo.Dao
 import androidx.room3.writer.DaoWriter
@@ -168,48 +168,48 @@ class BaseDaoTest {
             Source.kotlin(
                 "Foo.kt",
                 """
-            import androidx.room3.*
+                import androidx.room3.*
 
-            interface Parent<T> {
-                @Delete
-                fun delete(t: T)
-            }
+                interface Parent<T> {
+                    @Delete
+                    fun delete(t: T)
+                }
 
-            interface Child1<T> : Parent<T> {
-                @Insert
-                fun insert(t: T)
-            }
+                interface Child1<T> : Parent<T> {
+                    @Insert
+                    fun insert(t: T)
+                }
 
-            interface Child2<T> : Parent<T> {
-                @Update
-                fun update(t: T)
-            }
+                interface Child2<T> : Parent<T> {
+                    @Update
+                    fun update(t: T)
+                }
 
-            @Entity
-            data class Data(
-                @PrimaryKey(autoGenerate = false)
-                val id: Long,
-                val data: String
-            )
+                @Entity
+                data class Data(
+                    @PrimaryKey(autoGenerate = false)
+                    val id: Long,
+                    val data: String
+                )
 
-            @Dao
-            abstract class Dao1 : Child1<Data>, Child2<Data>, Parent<Data>
+                @Dao
+                abstract class Dao1 : Child1<Data>, Child2<Data>, Parent<Data>
 
-            @Dao
-            abstract class Dao2 : Child1<Data>, Parent<Data>
+                @Dao
+                abstract class Dao2 : Child1<Data>, Parent<Data>
 
-            @Dao
-            abstract class Dao3 : Child1<Data>, Parent<Data> {
-                @Delete
-                abstract override fun delete(t: Data)
-            }
+                @Dao
+                abstract class Dao3 : Child1<Data>, Parent<Data> {
+                    @Delete
+                    abstract override fun delete(t: Data)
+                }
 
-            abstract class MyDb : RoomDatabase() {
-            }
-            """
+                abstract class MyDb : RoomDatabase() {
+                }
+                """
                     .trimIndent(),
             )
-        runProcessorTest(sources = listOf(source)) { invocation ->
+        runKspTest(sources = listOf(source)) { invocation ->
             val dbElm = invocation.context.processingEnv.requireTypeElement("MyDb")
             val dbType = dbElm.type
             // if we could create valid code, it is good, no need for assertions.
@@ -221,9 +221,10 @@ class BaseDaoTest {
                         dbElement = dbElm,
                         writerContext =
                             TypeWriter.WriterContext(
-                                codeLanguage = CodeLanguage.JAVA,
-                                javaLambdaSyntaxAvailable = false,
+                                codeLanguage = CodeLanguage.KOTLIN,
                                 targetPlatforms = setOf(XProcessingEnv.Platform.JVM),
+                                javaLambdaSyntaxAvailable = false,
+                                validateChunkSize = 300,
                             ),
                     )
                     .write(invocation.processingEnv)
@@ -269,8 +270,7 @@ class BaseDaoTest {
             """,
             )
         // https://github.com/google/ksp/issues/2051
-        runProcessorTest(sources = listOf(baseClass, extension, COMMON.USER, fakeDb)) { invocation
-            ->
+        runKspTest(sources = listOf(baseClass, extension, COMMON.USER, fakeDb)) { invocation ->
             val daoElm = invocation.processingEnv.requireTypeElement("foo.bar.MyDao")
             val dbElm = invocation.context.processingEnv.requireTypeElement("foo.bar.MyDb")
             val dbType = dbElm.type
@@ -281,9 +281,10 @@ class BaseDaoTest {
                     dbElement = dbElm,
                     writerContext =
                         TypeWriter.WriterContext(
-                            codeLanguage = CodeLanguage.JAVA,
-                            javaLambdaSyntaxAvailable = false,
+                            codeLanguage = CodeLanguage.KOTLIN,
                             targetPlatforms = setOf(XProcessingEnv.Platform.JVM),
+                            javaLambdaSyntaxAvailable = false,
+                            validateChunkSize = 300,
                         ),
                 )
                 .write(invocation.processingEnv)

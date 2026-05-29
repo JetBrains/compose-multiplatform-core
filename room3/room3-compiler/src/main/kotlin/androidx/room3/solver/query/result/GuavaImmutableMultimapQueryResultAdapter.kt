@@ -92,7 +92,8 @@ class GuavaImmutableMultimapQueryResultAdapter(
                 addLocalVariable(name = tmpKeyVarName, typeName = keyTypeArg.asTypeName())
                 keyRowAdapter.convert(tmpKeyVarName, stmtVarName, scope)
 
-                // Iterate over all matched fields to check if all are null. If so, we continue in
+                // Iterate over all matched fields to check if all are null. If so, we continue
+                // in
                 // the while loop to the next iteration.
                 check(valueRowAdapter is QueryMappedRowAdapter)
                 val valueIndexVars =

@@ -57,18 +57,32 @@ internal data class SinglePaneScene<T : Any>(
  * list.
  */
 public class SinglePaneSceneStrategy<T : Any> : SceneStrategy<T> {
-    @Composable
-    override fun calculateScene(entries: List<NavEntry<T>>, onBack: () -> Unit): Scene<T> =
-        SinglePaneScene(
+
+    override fun SceneStrategyScope<T>.calculateScene(entries: List<NavEntry<T>>): Scene<T> {
+        return SinglePaneScene(
             key = entries.last().contentKey,
             entry = entries.last(),
             previousEntries = entries.dropLast(1),
         )
+    }
 }
 
-@Composable
-internal fun <T : Any> SceneStrategy<T>.calculateSceneWithSinglePaneFallback(
+internal fun <T : Any> calculateSceneWithSinglePaneFallback(
+    sceneStrategies: List<SceneStrategy<T>>,
+    scope: SceneStrategyScope<T>,
     entries: List<NavEntry<T>>,
-    onBack: () -> Unit,
-): Scene<T> =
-    calculateScene(entries, onBack) ?: SinglePaneSceneStrategy<T>().calculateScene(entries, onBack)
+): Scene<T> {
+    var scene: Scene<T>? = null
+    for (index in sceneStrategies.indices) {
+        scene = with(sceneStrategies[index]) { scope.calculateScene(entries) }
+        if (scene != null) break
+    }
+    return scene ?: with(SinglePaneSceneStrategy<T>()) { scope.calculateScene(entries) }
+}
+
+internal fun <T : Any> SceneDecoratorStrategy<T>.decorateScene(
+    scope: SceneDecoratorStrategyScope<T>,
+    scene: Scene<T>,
+): Scene<T> {
+    return scope.decorateScene(scene)
+}

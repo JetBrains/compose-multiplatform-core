@@ -66,9 +66,12 @@ class ProtoParcelableTest {
         assertThat(foo1.hashCode()).isNotEqualTo(foo2.hashCode())
     }
 
+    @Suppress("DEPRECATION") // usage of bundleOf
     @Test
     fun extrasEqualsAndHashCode() {
+        @Suppress("DEPRECATION") // b/446711972
         val bundle1 = bundleOf("foo1" to 111)
+        @Suppress("DEPRECATION") // b/446711972
         val bundle2 = bundleOf("foo1" to 111, "bar2" to "Baz")
         val reqBytes = TileUpdateRequest(tile_id = 222).encode()
 
@@ -82,14 +85,18 @@ class ProtoParcelableTest {
         assertThat(foo1.hashCode()).isNotEqualTo(bar.hashCode())
     }
 
+    @Suppress("DEPRECATION") // usage of bundleOf
     @Test
     fun extrasEqualsAndHashCode_withDifferentKeyOrder() {
         val key1 = "key1"
         val key2 = "key2"
         val val1 = 123
         val val2 = "value2"
+        @Suppress("DEPRECATION") // b/446711972
         val bundleA1 = bundleOf(key1 to val1, key2 to val2)
+        @Suppress("DEPRECATION") // b/446711972
         val bundleA2 = bundleOf(key2 to val2, key1 to val1)
+        @Suppress("DEPRECATION") // b/446711972
         val bundleB = bundleOf("another_key" to "another_value")
         val reqBytes = TileUpdateRequest(tile_id = 222).encode()
 
@@ -115,9 +122,11 @@ class ProtoParcelableTest {
         assertThat(Wrapper.CREATOR.createFromParcel(parcel)).isEqualTo(wrapper)
     }
 
+    @Suppress("DEPRECATION") // usage of bundleOf
     @Test
     fun toParcelAndBackV2() {
         val req = TileUpdateRequest(tile_id = 222)
+        @Suppress("DEPRECATION") // b/446711972
         val extras = bundleOf("foo1" to 111, "bar2" to "Baz")
         val wrapper = WrapperV2(req.encode(), extras, WrapperV2.VERSION)
 

@@ -16,14 +16,14 @@
 
 package androidx.appfunctions.service
 
-import android.app.appfunctions.AppFunctionService
 import androidx.annotation.RequiresApi
 import androidx.annotation.RestrictTo
 import androidx.appfunctions.AppFunctionAppUnknownException
-import androidx.appfunctions.AppFunctionCompatService
 import androidx.appfunctions.AppFunctionException
+import androidx.appfunctions.AppFunctionService
 import androidx.appfunctions.ExecuteAppFunctionRequest
 import androidx.appfunctions.ExecuteAppFunctionResponse
+import androidx.appfunctions.internal.AppFunctionInventory
 import androidx.appfunctions.internal.Dependencies
 import androidx.appfunctions.internal.Dispatchers
 import androidx.appfunctions.service.internal.ServiceDependencies
@@ -31,7 +31,7 @@ import androidx.appfunctions.service.internal.ServiceDependencies
 /** The implementation of [AppFunctionService] from the platform. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @RequiresApi(36)
-public class PlatformAppFunctionService : AppFunctionCompatService() {
+public class PlatformAppFunctionService : AppFunctionService() {
 
     private lateinit var delegate: AppFunctionServiceDelegate
 
@@ -57,4 +57,8 @@ public class PlatformAppFunctionService : AppFunctionCompatService() {
         } catch (e: Exception) {
             ExecuteAppFunctionResponse.Error(AppFunctionAppUnknownException(e.message))
         }
+
+    override fun resolveInventory(): AppFunctionInventory? {
+        return Dependencies.aggregatedAppFunctionInventory
+    }
 }

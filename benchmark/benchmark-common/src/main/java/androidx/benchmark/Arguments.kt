@@ -60,6 +60,13 @@ object Arguments {
     private val _startupInsightsHelpUrlBase: String?
     @VisibleForTesting var startupInsightsHelpUrlBaseOverride: String? = null
 
+    /**
+     * Whether to require clocks to be locked. Important: This is *disabled* by default as it was
+     * introduced in later versions of benchmark, and running with unlocked clocks is a legitimate
+     * use case for Macrobenchmarks.
+     */
+    val requireLockedClocks: Boolean
+
     val enabledRules: Set<RuleType>
 
     enum class RuleType {
@@ -344,6 +351,8 @@ object Arguments {
         requireAot = arguments.getBenchmarkArgument("requireAot")?.toBoolean() ?: false
         requireJitDisabledIfRooted =
             arguments.getBenchmarkArgument("requireJitDisabledIfRooted")?.toBoolean() ?: false
+        requireLockedClocks =
+            arguments.getBenchmarkArgument("requireLockedClocks")?.toBoolean() ?: false
 
         throwOnMainThreadMeasureRepeated =
             arguments.getBenchmarkArgument("throwOnMainThreadMeasureRepeated")?.toBoolean() ?: false
@@ -357,12 +366,12 @@ object Arguments {
         if (arguments.getString("orchestratorService") != null) {
             InstrumentationResults.scheduleIdeWarningOnNextReport(
                 """
-                    AndroidX Benchmark does not support running with the AndroidX Test Orchestrator.
+                AndroidX Benchmark does not support running with the AndroidX Test Orchestrator.
 
-                    AndroidX benchmarks (micro and macro) produce one JSON file per test module,
-                    which together with Test Orchestrator restarting the process frequently causes
-                    benchmark output JSON files to be repeatedly overwritten during the test.
-                    """
+                AndroidX benchmarks (micro and macro) produce one JSON file per test module,
+                which together with Test Orchestrator restarting the process frequently causes
+                benchmark output JSON files to be repeatedly overwritten during the test.
+                """
                     .trimIndent()
             )
         }
@@ -392,11 +401,11 @@ object Arguments {
         targetPackageName
             ?: throw IllegalArgumentException(
                 """
-        Can't retrieve the target package name from instrumentation arguments.
-        This feature requires the baseline profile gradle plugin with minimum version 1.3.0-alpha01
-        and the Android Gradle Plugin minimum version 8.3.0-alpha10.
-        Please ensure your project has the correct versions in order to use this feature.
-    """
+                Can't retrieve the target package name from instrumentation arguments.
+                This feature requires the baseline profile gradle plugin with minimum version 1.3.0-alpha01
+                and the Android Gradle Plugin minimum version 8.3.0-alpha10.
+                Please ensure your project has the correct versions in order to use this feature.
+                """
                     .trimIndent()
             )
 }

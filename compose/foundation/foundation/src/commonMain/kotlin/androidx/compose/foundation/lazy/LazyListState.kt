@@ -273,6 +273,8 @@ constructor(
     internal val density: Density
         get() = layoutInfoState.value.density
 
+    internal var skipItemPlacementAnimation: Boolean = false
+
     /**
      * The ScrollableController instance. We keep it as we need to call stopAnimation on it once we
      * reached the end of the list.
@@ -358,7 +360,14 @@ constructor(
     private val _scrollIndicatorState =
         object : ScrollIndicatorState {
             override val scrollOffset: Int
-                get() = calculateScrollOffset()
+                get() =
+                    if (layoutInfo.reverseLayout) {
+                        layoutInfo.calculateContentSize() -
+                            layoutInfo.singleAxisViewportSize -
+                            calculateScrollOffset()
+                    } else {
+                        calculateScrollOffset()
+                    }
 
             override val contentSize: Int
                 get() = layoutInfo.calculateContentSize()
@@ -458,7 +467,9 @@ constructor(
         scrollPriority: MutatePriority,
         block: suspend ScrollScope.() -> Unit,
     ) {
-        awaitLayoutModifier.waitForFirstLayout()
+        if (layoutInfoState.value === EmptyLazyListMeasureResult) {
+            awaitLayoutModifier.waitForFirstLayout()
+        }
         scrollableState.scroll(scrollPriority, block)
     }
 
@@ -576,9 +587,14 @@ constructor(
      *   scroll the item further upward (taking it partly offscreen).
      */
     suspend fun animateScrollToItem(@AndroidXIntRange(from = 0) index: Int, scrollOffset: Int = 0) {
-        scroll {
-            LazyLayoutScrollScope(this@LazyListState, this)
-                .animateScrollToItem(index, scrollOffset, NumberOfItemsToTeleport, density)
+        try {
+            skipItemPlacementAnimation = true
+            scroll {
+                LazyLayoutScrollScope(this@LazyListState, this)
+                    .animateScrollToItem(index, scrollOffset, NumberOfItemsToTeleport, density)
+            }
+        } finally {
+            skipItemPlacementAnimation = false
         }
     }
 

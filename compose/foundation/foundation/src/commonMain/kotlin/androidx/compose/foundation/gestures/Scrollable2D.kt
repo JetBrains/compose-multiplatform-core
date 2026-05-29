@@ -19,6 +19,7 @@ package androidx.compose.foundation.gestures
 import androidx.compose.animation.core.VectorConverter
 import androidx.compose.animation.core.animate
 import androidx.compose.animation.splineBasedDecay
+import androidx.compose.foundation.ComposeFoundationFlags.isClearNestedScrollCoroutineScopeFixEnabled
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.MutatePriority
 import androidx.compose.foundation.OverscrollEffect
@@ -139,6 +140,7 @@ private class Scrollable2DElement(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 internal class Scrollable2DNode(
     state: Scrollable2DState,
     private var overscrollEffect: OverscrollEffect?,
@@ -150,15 +152,13 @@ internal class Scrollable2DNode(
         canDrag = CanDragCalculation,
         enabled = enabled,
         interactionSource = interactionSource,
-        orientationLock = null,
+        orientation = null,
     ),
     SemanticsModifierNode {
 
     override val shouldAutoInvalidate: Boolean = false
 
     private val nestedScrollDispatcher = NestedScrollDispatcher()
-
-    private val scrollableContainerNode = delegate(ScrollableContainerNode(enabled))
 
     // Place holder fling behavior, we'll initialize it when the density is available.
     private val defaultFlingBehavior = DefaultFlingBehavior(splineBasedDecay(UnityDensity))
@@ -196,6 +196,7 @@ internal class Scrollable2DNode(
     override fun onDragStarted(startedPosition: Offset) {}
 
     override fun onDragStopped(event: DragEvent.DragStopped) {
+        if (isClearNestedScrollCoroutineScopeFixEnabled && !isAttached) return
         nestedScrollDispatcher.coroutineScope.launch {
             scrollingLogic.onScrollStopped(event.velocity)
         }
@@ -215,7 +216,6 @@ internal class Scrollable2DNode(
         var shouldInvalidateSemantics = false
         if (this.enabled != enabled) { // enabled changed
             nestedScrollConnection.enabled = enabled
-            scrollableContainerNode.update(enabled)
             shouldInvalidateSemantics = true
         }
         // a new fling behavior was set, change the resolved one.

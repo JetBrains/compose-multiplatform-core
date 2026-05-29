@@ -23,6 +23,7 @@ import static androidx.compose.remote.core.documentation.DocumentedOperation.LON
 
 import androidx.annotation.RestrictTo;
 import androidx.compose.remote.core.CoreDocument;
+import androidx.compose.remote.core.Limits;
 import androidx.compose.remote.core.Operation;
 import androidx.compose.remote.core.Operations;
 import androidx.compose.remote.core.RemoteComposeOperation;
@@ -50,7 +51,6 @@ public class Header extends Operation implements RemoteComposeOperation {
     private static final int OP_CODE = Operations.HEADER;
     private static final String CLASS_NAME = "Header";
     private static final int MAGIC_NUMBER = 0x048C0000; // to uniquely identify the protocol
-    private static final int MAX_TABLE_SIZE = 1000;
 
     int mMajorVersion;
     int mMinorVersion;
@@ -59,7 +59,7 @@ public class Header extends Operation implements RemoteComposeOperation {
     int mWidth = 256;
     int mHeight = 256;
 
-    float mDensity = 3;
+    float mDensity = 1;
     long mCapabilities = 0;
     int mProfiles = 0;
     private @Nullable IntMap<Object> mProperties;
@@ -104,6 +104,52 @@ public class Header extends Operation implements RemoteComposeOperation {
     /** profiles */
     public static final short DOC_PROFILES = 14;
 
+    /** direct measure in paint, instead of wrap behavior */
+    public static final short FEATURE_PAINT_MEASURE = 15;
+
+    /** Direct player to be verbose levels= 0=off,1,2,3 */
+    public static final short DEBUG = 16;
+
+    /** Specify measure implementation version */
+    public static final short FEATURE_MEASURE_VERSION = 17;
+
+    /** Specify touch implementation version */
+    public static final short FEATURE_TOUCH_VERSION = 18;
+
+    /** Test capture at time in ms since epoch */
+    public static final short TEST_TIME = 19;
+
+    /** Test capture after this seconds float time in seconds */
+    public static final short TEST_AFTER = 20;
+
+    /** Simulate color theme "color.system_accent1_100 = 2324323, system.textColor = 32323" */
+    public static final short TEST_COLOR_THEME = 21;
+
+    /** Support for actions like "DOWN(time,x,y), MOVE(duration,x,y), UP(x,y)" */
+    public static final short TEST_ACTIONS = 22;
+
+    /** Fix priority logic in collapsible layouts */
+    public static final short FEATURE_PRIORITY_FIX = 23;
+
+    /** Support for origin-aware resizing animations */
+    public static final short FEATURE_LT_RESIZE = 24;
+
+    /** Enable listener pattern for arrays in TextLookup */
+    public static final short FEATURE_ARRAY_LISTENERS = 25;
+
+    /**
+     * Modify click behavior The default is support for single click, double-click and long press,
+     * setting FEATURE_CLICK_VERSION to 1 will only support single click.
+     */
+    public static final short FEATURE_CLICK_VERSION = 26;
+
+    /**
+     * Density behavior for the document. 0: Current behavior (mixed) 1: Values are interpreted as
+     * pixels, no density applied by default 2: Values are interpreted as dp, density applied by
+     * default
+     */
+    public static final short DOC_DENSITY_BEHAVIOR = 27;
+
     /** The object is an integer */
     private static final short DATA_TYPE_INT = 0;
 
@@ -125,7 +171,16 @@ public class Header extends Operation implements RemoteComposeOperation {
         DOC_SOURCE,
         DOC_DATA_UPDATE,
         HOST_EXCEPTION_HANDLER,
-        DOC_PROFILES
+        DOC_PROFILES,
+        FEATURE_PAINT_MEASURE,
+        DEBUG,
+        FEATURE_MEASURE_VERSION,
+        FEATURE_TOUCH_VERSION,
+        FEATURE_PRIORITY_FIX,
+        FEATURE_LT_RESIZE,
+        FEATURE_ARRAY_LISTENERS,
+        FEATURE_CLICK_VERSION,
+        DOC_DENSITY_BEHAVIOR,
     };
     private static final String[] KEY_NAMES = {
         "DOC_WIDTH",
@@ -136,7 +191,16 @@ public class Header extends Operation implements RemoteComposeOperation {
         "DOC_SOURCE",
         "DOC_DATA_UPDATE",
         "HOST_EXCEPTION_HANDLER",
-        "DOC_PROFILES"
+        "DOC_PROFILES",
+        "PAINT_MEASURE",
+        "DEBUG",
+        "MEASURE_VERSION",
+        "TOUCH_VERSION",
+        "PRIORITY_FIX",
+        "LT_RESIZE",
+        "ARRAY_LISTENERS",
+        "CLICK_VERSION",
+        "DENSITY_BEHAVIOR"
     };
 
     /**
@@ -186,7 +250,7 @@ public class Header extends Operation implements RemoteComposeOperation {
             this.mProperties = properties;
             this.mWidth = getInt(DOC_WIDTH, 256);
             this.mHeight = getInt(DOC_HEIGHT, 256);
-            this.mDensity = getFloat(DOC_DENSITY_AT_GENERATION, 0);
+            this.mDensity = getFloat(DOC_DENSITY_AT_GENERATION, 1);
             this.mProfiles = getInt(DOC_PROFILES, 0);
         }
     }
@@ -195,7 +259,12 @@ public class Header extends Operation implements RemoteComposeOperation {
         return mProfiles;
     }
 
-    private int getInt(int key, int defaultValue) {
+    public float getDensity() {
+        return mDensity;
+    }
+
+    /** Check for a property on the header */
+    public int getInt(int key, int defaultValue) {
         if (mProperties == null) {
             return defaultValue;
         }
@@ -314,15 +383,7 @@ public class Header extends Operation implements RemoteComposeOperation {
         return OP_CODE;
     }
 
-    /**
-     * Apply the header to the wire buffer
-     *
-     * @param buffer
-     * @param width
-     * @param height
-     * @param density
-     * @param capabilities
-     */
+    /** Apply the header to the wire buffer */
     public static void apply(
             @NonNull WireBuffer buffer, int width, int height, float density, long capabilities) {
         buffer.start(OP_CODE);
@@ -335,21 +396,14 @@ public class Header extends Operation implements RemoteComposeOperation {
         buffer.writeLong(capabilities);
     }
 
-    /**
-     * Apply the header to the wire buffer
-     *
-     * @param buffer
-     * @param apiLevel
-     * @param type
-     * @param value
-     */
+    /** Apply the header to the wire buffer */
     public static void apply(
             @NonNull WireBuffer buffer,
             int apiLevel,
             short @NonNull [] type,
             Object @NonNull [] value) {
         buffer.start(OP_CODE);
-        if (apiLevel == CoreDocument.DOCUMENT_API_LEVEL) {
+        if (apiLevel >= 7) {
             buffer.writeInt(MAJOR_VERSION | MAGIC_NUMBER); // major version number of the protocol
             buffer.writeInt(MINOR_VERSION); // minor version number of the protocol
             buffer.writeInt(PATCH_VERSION); // patch version number of the protocol
@@ -473,25 +527,30 @@ public class Header extends Operation implements RemoteComposeOperation {
     }
 
     /**
-     * Read the Header api level
+     * Peeks and returns the Header api level
      *
-     * @param buffer
      * @return api level, -1 if not found
      */
-    public static int readApiLevel(@NonNull WireBuffer buffer) {
-        int index = buffer.getIndex();
+    public static int peekApiLevel(@NonNull WireBuffer buffer) {
+        if (buffer.getIndex() != 0) {
+            throw new IllegalStateException(
+                    "Invalid buffer reading position; can't read the header");
+        }
         int headerOpId = buffer.readByte();
         if (headerOpId != Operations.HEADER) {
             return -1;
         }
         int majorVersion = buffer.readInt();
         int minorVersion = buffer.readInt();
-        buffer.setIndex(index);
+        buffer.setIndex(0);
         if (majorVersion >= 0x10000) {
             if ((majorVersion & 0xFFFF0000) != MAGIC_NUMBER) {
                 return -1;
             }
             majorVersion &= 0xFFFF;
+        }
+        if (majorVersion == 1 && minorVersion == 2) {
+            return 8;
         }
         if (majorVersion == 1 && minorVersion == 1) {
             return 7;
@@ -539,7 +598,7 @@ public class Header extends Operation implements RemoteComposeOperation {
         } else {
             majorVersion &= 0xFFFF;
             int length = buffer.readInt();
-            if (length > MAX_TABLE_SIZE) {
+            if (length > Limits.MAX_TABLE_SIZE) {
                 throw new RuntimeException("Invalid table size " + length);
             }
             short[] types = new short[length];
@@ -560,55 +619,46 @@ public class Header extends Operation implements RemoteComposeOperation {
      * @throws IOException if there is an error reading the header
      */
     public static @NonNull Header readDirect(@NonNull WireBuffer buffer) throws IOException {
-        int index = buffer.getIndex();
-        try {
-
-            int type = buffer.readByte();
-
-            if (type != OP_CODE) {
-                throw new IOException("Invalid header " + type + " != " + OP_CODE);
-            }
-            int majorVersion = buffer.readInt();
-            int minorVersion = buffer.readInt();
-            int patchVersion = buffer.readInt();
-
-            if (majorVersion < 0x10000) {
-                int width = buffer.readInt();
-                int height = buffer.readInt();
-                // float density = is.read();
-                float density = 1f;
-                long capabilities = buffer.readLong();
-                return new Header(
-                        majorVersion,
-                        minorVersion,
-                        patchVersion,
-                        width,
-                        height,
-                        density,
-                        capabilities);
-            }
-
-            if ((majorVersion & 0xFFFF0000) != MAGIC_NUMBER) {
-                throw new IOException(
-                        "Invalid header MAGIC_NUMBER "
-                                + (majorVersion & 0xFFFF0000)
-                                + " != "
-                                + MAGIC_NUMBER);
-            }
-            majorVersion &= 0xFFFF;
-            int len = buffer.readInt();
-            short[] types = new short[len];
-            Object[] values = new Object[len];
-            readMap(buffer, types, values);
-            IntMap<Object> map = new IntMap<>();
-            for (int i = 0; i < len; i++) {
-                map.put(types[i], values[i]);
-            }
-            return new Header(majorVersion, minorVersion, patchVersion, map);
-
-        } finally {
-            buffer.setIndex(index);
+        if (buffer.getIndex() != 0) {
+            throw new IllegalStateException(
+                    "Invalid buffer reading position; can't read the header.");
         }
+        int type = buffer.readByte();
+
+        if (type != OP_CODE) {
+            throw new IOException("Invalid header " + type + " != " + OP_CODE);
+        }
+        int majorVersion = buffer.readInt();
+        int minorVersion = buffer.readInt();
+        int patchVersion = buffer.readInt();
+
+        if (majorVersion < 0x10000) {
+            int width = buffer.readInt();
+            int height = buffer.readInt();
+            // float density = is.read();
+            float density = 1f;
+            long capabilities = buffer.readLong();
+            return new Header(
+                    majorVersion, minorVersion, patchVersion, width, height, density, capabilities);
+        }
+
+        if ((majorVersion & 0xFFFF0000) != MAGIC_NUMBER) {
+            throw new IOException(
+                    "Invalid header MAGIC_NUMBER "
+                            + (majorVersion & 0xFFFF0000)
+                            + " != "
+                            + MAGIC_NUMBER);
+        }
+        majorVersion &= 0xFFFF;
+        int len = buffer.readInt();
+        short[] types = new short[len];
+        Object[] values = new Object[len];
+        readMap(buffer, types, values);
+        IntMap<Object> map = new IntMap<>();
+        for (int i = 0; i < len; i++) {
+            map.put(types[i], values[i]);
+        }
+        return new Header(majorVersion, minorVersion, patchVersion, map);
     }
 
     /**
@@ -684,24 +734,19 @@ public class Header extends Operation implements RemoteComposeOperation {
      * @param doc to append the description to.
      */
     public static void documentation(@NonNull DocumentationBuilder doc) {
-        doc.operation("Protocol Operations", OP_CODE, CLASS_NAME)
+        doc.operation("Document Protocol Operations", OP_CODE, CLASS_NAME)
                 .description(
                         "Document metadata, containing the version,"
                                 + " original size & density, capabilities mask")
-                .field(INT, "MAJOR_VERSION", "Major version")
-                .field(INT, "MINOR_VERSION", "Minor version")
-                .field(INT, "PATCH_VERSION", "Patch version")
-                .field(INT, "WIDTH", "Major version")
-                .field(INT, "HEIGHT", "Major version")
-                // .field(FLOAT, "DENSITY", "Major version")
-                .field(LONG, "CAPABILITIES", "Major version");
+                .field(INT, "majorVersion", "Major version")
+                .field(INT, "minorVersion", "Minor version")
+                .field(INT, "patchVersion", "Patch version")
+                .field(INT, "width", "Document width in pixels")
+                .field(INT, "height", "Document height in pixels")
+                .field(LONG, "capabilities", "Capabilities mask");
     }
 
-    /**
-     * Set the version on a document
-     *
-     * @param document
-     */
+    /** Set the version on a document */
     public void setVersion(@NonNull CoreDocument document) {
         document.setHostExceptionID(getInt(HOST_EXCEPTION_HANDLER, 0));
         document.setUpdateDoc(getInt(DOC_DATA_UPDATE, 0) != 0);

@@ -44,6 +44,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.xr.projected.R
+import androidx.xr.projected.experimental.ExperimentalProjectedApi
 
 /**
  * An Activity to display rationale and request permissions on the host display. See
@@ -51,6 +52,7 @@ import androidx.xr.projected.R
  */
 @Suppress("ForbiddenSuperClass")
 @RestrictTo(RestrictTo.Scope.LIBRARY)
+@OptIn(ExperimentalProjectedApi::class)
 public class RequestPermissionsOnHostActivity : AppCompatActivity() {
 
     private data class PermissionRequest(
@@ -318,11 +320,11 @@ public class RequestPermissionsOnHostActivity : AppCompatActivity() {
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 Button(onClick = onContinueClick, modifier = Modifier.weight(1f)) {
-                    Text(text = stringResource(R.string.continue_button))
+                    Text(text = stringResource(R.string.projected_continue_button))
                 }
 
                 Button(onClick = onCancelClick, modifier = Modifier.weight(1f)) {
-                    Text(text = stringResource(R.string.cancel_button))
+                    Text(text = stringResource(R.string.projected_cancel_button))
                 }
             }
 

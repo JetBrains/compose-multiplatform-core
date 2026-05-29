@@ -75,6 +75,9 @@ object SemanticsProperties {
     /** @see SemanticsPropertyReceiver.heading */
     val Heading = AccessibilityKey<Unit>("Heading")
 
+    /** @see SemanticsPropertyReceiver.textEntryKey */
+    val TextEntryKey = AccessibilityKey<Unit>("TextEntryKey")
+
     /** @see SemanticsPropertyReceiver.disabled */
     val Disabled = AccessibilityKey<Unit>("Disabled")
 
@@ -93,7 +96,7 @@ object SemanticsProperties {
     /** @see SemanticsPropertyReceiver.isTraversalGroup */
     val IsTraversalGroup = SemanticsPropertyKey<Boolean>("IsTraversalGroup")
 
-    /** @see SemanticsPropertyReceiver.IsSensitiveData */
+    /** @see isSensitiveData */
     val IsSensitiveData = SemanticsPropertyKey<Boolean>("IsSensitiveData")
 
     /** @see SemanticsPropertyReceiver.invisibleToUser */
@@ -243,6 +246,9 @@ object SemanticsProperties {
     /** @see SemanticsPropertyReceiver.textSelectionRange */
     val TextSelectionRange = AccessibilityKey<TextRange>("TextSelectionRange")
 
+    /** @see SemanticsPropertyReceiver.textCompositionRange */
+    val TextCompositionRange = AccessibilityKey<TextRange?>("TextCompositionRange")
+
     /** @see SemanticsPropertyReceiver.onImeAction */
     val ImeAction = AccessibilityKey<ImeAction>("ImeAction")
 
@@ -251,6 +257,10 @@ object SemanticsProperties {
 
     /** @see SemanticsPropertyReceiver.toggleableState */
     val ToggleableState = AccessibilityKey<ToggleableState>("ToggleableState")
+
+    /** @see SemanticsPropertyReceiver.inputTextSuggestionState */
+    val InputTextSuggestionState =
+        AccessibilityKey<InputTextSuggestionState>("InputTextSuggestionState")
 
     /** @see SemanticsPropertyReceiver.password */
     val Password = AccessibilityKey<Unit>("Password")
@@ -378,7 +388,11 @@ object SemanticsActions {
     val RequestFocus = ActionPropertyKey<() -> Boolean>("RequestFocus")
 
     /** @see SemanticsPropertyReceiver.customActions */
-    val CustomActions = AccessibilityKey<List<CustomAccessibilityAction>>("CustomActions")
+    val CustomActions =
+        AccessibilityKey<List<CustomAccessibilityAction>>(
+            name = "CustomActions",
+            mergePolicy = { parentValue, childValue -> parentValue.orEmpty() + childValue },
+        )
 
     /** @see SemanticsPropertyReceiver.pageUp */
     val PageUp = ActionPropertyKey<() -> Boolean>("PageUp")
@@ -633,7 +647,28 @@ class ProgressBarRangeInfo(
  * @param rowCount the number of rows in the collection, or -1 if unknown
  * @param columnCount the number of columns in the collection, or -1 if unknown
  */
-class CollectionInfo(val rowCount: Int, val columnCount: Int)
+class CollectionInfo(val rowCount: Int, val columnCount: Int) {
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is CollectionInfo) return false
+
+        if (rowCount != other.rowCount) return false
+        if (columnCount != other.columnCount) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = rowCount.hashCode()
+        result = 31 * result + columnCount.hashCode()
+        return result
+    }
+
+    override fun toString(): String {
+        return "CollectionInfo(rowCount=$rowCount, columnCount=$columnCount)"
+    }
+}
 
 /**
  * Information about the item of a collection.
@@ -671,6 +706,61 @@ class ScrollAxisRange(
     override fun toString(): String =
         "ScrollAxisRange(value=${value()}, maxValue=${maxValue()}, " +
             "reverseScrolling=$reverseScrolling)"
+}
+
+/**
+ * The state of an input text when suggestions are shown. This property specifies the different
+ * available states the input text can be in when there are text suggestions available, typically
+ * shown as a dialog window and when a user inputs a transliteration language specifically Chinese,
+ * Japanese, Korean, and Vietnamese.
+ *
+ * This is supported only in SDK >= 37.
+ *
+ * @param isCommittedByInputMethodEditor whether the current text was committed by an input method
+ *   editor done by the user, will stay false if the committed text was done programmatically, e.g.
+ *   via Accessibility service.
+ * @param isTransliterationSuggestionSelected whether a replacement text suggestion is selected to
+ *   replace the transliterated text. If true, the text is from a transliteration language and is
+ *   currently displaying one or multiple text suggestion replacements and that one of the
+ *   suggestions is selected to replace the transliterated text. This does not indicate whether the
+ *   text replacement suggestion has been committed. Will stay false for non-transliteration
+ *   languages or if no suggestion is currently selected. If this were to be set to true for a
+ *   non-transliteration language, it may affect accessibility services from announcing events
+ *   correctly.
+ */
+class InputTextSuggestionState(
+    val isCommittedByInputMethodEditor: Boolean = false,
+    val isTransliterationSuggestionSelected: Boolean = false,
+) {
+    override fun toString(): String =
+        "InputTextSuggestionState(isCommittedByInputMethodEditor=$isCommittedByInputMethodEditor," +
+            " suggestionSelected=$isTransliterationSuggestionSelected)"
+
+    override fun hashCode(): Int {
+        var result = isCommittedByInputMethodEditor.hashCode()
+        result = 31 * result + isTransliterationSuggestionSelected.hashCode()
+        return result
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is InputTextSuggestionState) return false
+
+        if (isCommittedByInputMethodEditor != other.isCommittedByInputMethodEditor) return false
+        if (isTransliterationSuggestionSelected != other.isTransliterationSuggestionSelected)
+            return false
+
+        return true
+    }
+
+    @Suppress("unused")
+    @Deprecated(
+        message = "Use the new constructor that accepts the [isSuggestionSelected] parameter",
+        level = DeprecationLevel.HIDDEN,
+    )
+    constructor(
+        isCommittedByInputMethodEditor: Boolean = false
+    ) : this(isCommittedByInputMethodEditor, false)
 }
 
 /**
@@ -852,6 +942,22 @@ var SemanticsPropertyReceiver.progressBarRangeInfo by SemanticsProperties.Progre
  */
 fun SemanticsPropertyReceiver.heading() {
     this[SemanticsProperties.Heading] = Unit
+}
+
+/**
+ * The node is marked as a text entry key for accessibility. This is used to indicate that this
+ * composable acts as a key within a text entry interface, such as a custom on-screen keyboard.
+ * Accessibility services can use this information to provide a better experience for users
+ * interacting with custom text input methods.
+ *
+ * See
+ * [AccessibilityNodeInfo.setTextEntryKey](https://developer.android.com/reference/android/view/accessibility/AccessibilityNodeInfo#setTextEntryKey(boolean))
+ * for more details.
+ *
+ * @see SemanticsProperties.TextEntryKey
+ */
+fun SemanticsPropertyReceiver.textEntryKey() {
+    this[SemanticsProperties.TextEntryKey] = Unit
 }
 
 /**
@@ -1110,6 +1216,9 @@ var SemanticsPropertyReceiver.editableText by SemanticsProperties.EditableText
 /** Text selection range for the text field. */
 var SemanticsPropertyReceiver.textSelectionRange by SemanticsProperties.TextSelectionRange
 
+/** Text composition range for the text field. */
+var SemanticsPropertyReceiver.textCompositionRange by SemanticsProperties.TextCompositionRange
+
 /**
  * Contains the IME action provided by the node.
  *
@@ -1151,6 +1260,18 @@ var SemanticsPropertyReceiver.collectionItemInfo by SemanticsProperties.Collecti
  * The presence of this property indicates that the element is toggleable.
  */
 var SemanticsPropertyReceiver.toggleableState by SemanticsProperties.ToggleableState
+
+/**
+ * This semantics provides the state of a text that has active suggestions. Text with suggestions
+ * are typically associated with typing transliteration languages such as Chinese, Japanese, Korean
+ * where multiple text replacement suggestions appear.
+ *
+ * It is used by accessibility services to determine what speech feedback should be announced as the
+ * user is typing a transliteration text. For example, whether to announce that a replacement text
+ * is selected.
+ */
+var SemanticsPropertyReceiver.inputTextSuggestionState by
+    SemanticsProperties.InputTextSuggestionState
 
 /** Whether this semantics node is editable, e.g. an editable text field. */
 var SemanticsPropertyReceiver.isEditable by SemanticsProperties.IsEditable

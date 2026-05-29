@@ -24,17 +24,18 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.core.app.ActivityCompat
 import androidx.xr.runtime.Config
-import androidx.xr.runtime.Config.HeadTrackingMode
+import androidx.xr.runtime.DeviceTrackingMode
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.scenecore.MovableComponent
+import androidx.xr.scenecore.Space
 import androidx.xr.scenecore.SpatialVisibility
 import androidx.xr.scenecore.scene
 import androidx.xr.scenecore.testapp.R
 import androidx.xr.scenecore.testapp.common.DebugTextLinearView
-import androidx.xr.scenecore.testapp.common.createSession
 import androidx.xr.scenecore.testapp.common.managers.GltfManager
 import androidx.xr.scenecore.testapp.common.managers.PanelEntityManager
+import androidx.xr.scenecore.testapp.common.managers.SessionManager
 import androidx.xr.scenecore.testapp.common.managers.SpatialEnvironmentManager
 import androidx.xr.scenecore.testapp.common.managers.SurfaceEntityManager
 import com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -44,6 +45,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 class FieldOfViewVisibilityActivity : AppCompatActivity() {
     private val TAG = "FieldOfViewVisibility"
     private var session: Session? = null
+
+    private var inFsm: Boolean = true
     private lateinit var mGltfManager: GltfManager
     private lateinit var mSurfaceEntityManager: SurfaceEntityManager
     private lateinit var mSpatialEnvironmentManager: SpatialEnvironmentManager
@@ -51,9 +54,8 @@ class FieldOfViewVisibilityActivity : AppCompatActivity() {
     private lateinit var mPanelEntityManager: PanelEntityManager
     private lateinit var mPerceivedResolutionManager: PerceivedResolutionManager
     private lateinit var mHeadLockedPanelView: DebugTextLinearView
-    private val _mSpatialVisibilityFlow =
-        MutableStateFlow(SpatialVisibility.SPATIAL_VISIBILITY_UNKNOWN)
-    var mSpatialVisibility: Int
+    private val _mSpatialVisibilityFlow = MutableStateFlow(SpatialVisibility.UNKNOWN)
+    var mSpatialVisibility: SpatialVisibility
         get() = _mSpatialVisibilityFlow.value
         set(value) {
             _mSpatialVisibilityFlow.value = value
@@ -75,9 +77,19 @@ class FieldOfViewVisibilityActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_field_of_view_visibility)
 
-        session = createSession(this)
+        session = SessionManager(this).createSession()
         if (session == null) this.finish()
-        session!!.configure(Config(headTracking = HeadTrackingMode.LAST_KNOWN))
+        session!!.configure(Config.Builder().setDeviceTracking(DeviceTrackingMode.SPATIAL).build())
+        // Disable default scale overrides on key entity from Spatial Mode events
+        session?.scene?.setSpaceChangedListener { event ->
+            session?.scene?.keyEntity?.setPose(event.recommendedPose, Space.ACTIVITY)
+        }
+        session?.scene?.keyEntity = session?.scene?.mainPanelEntity
+
+        session!!.scene.activitySpace.addBoundsChangedListener { dimensions ->
+            inFsm = dimensions.width == Float.POSITIVE_INFINITY
+            updateTextViews()
+        }
 
         // toolbar
         findViewById<Toolbar>(R.id.top_app_bar).also {
@@ -95,28 +107,19 @@ class FieldOfViewVisibilityActivity : AppCompatActivity() {
         setupMainPanel()
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        session!!.scene.clearSpatialVisibilityChangedListener()
-        session!!
-            .scene
-            .mainPanelEntity
-            .removePerceivedResolutionChangedListener(mPerceivedResolutionListener)
-    }
-
     private fun createHeadLockedPanel() {
         mHeadLockedPanelView = DebugTextLinearView(context = this)
         mHeadLockedPanelView.setName("Spatial Visibility")
         mHeadLockedPanelView.setLine("State", "UNKNOWN")
         this.mHeadLockedUIManager = HeadLockedUIManager(session!!, this, mHeadLockedPanelView)
 
-        session!!.scene.setSpatialVisibilityChangedListener { visibility: Int ->
+        session!!.scene.addSpatialVisibilityChangedListener { visibility: SpatialVisibility ->
             mSpatialVisibility = visibility
             Log.i(
                 TAG,
-                "Spatial visibility changed listener called ${visibility.toSpatialVisibilityString()}",
+                "Spatial visibility changed listener called ${spatialVisibilityToString(visibility)}",
             )
-            mHeadLockedPanelView.setLine("State", visibility.toSpatialVisibilityString())
+            mHeadLockedPanelView.setLine("State", spatialVisibilityToString(visibility))
             updateTextViews()
         }
         session!!
@@ -127,11 +130,15 @@ class FieldOfViewVisibilityActivity : AppCompatActivity() {
 
     private fun updateTextViews() {
         findViewById<TextView>(R.id.fov_textview1).also {
-            it.text = "SpatialVisibility: ${mSpatialVisibility.toSpatialVisibilityString()}"
+            it.text = "SpatialVisibility: ${spatialVisibilityToString(mSpatialVisibility)}"
         }
 
         findViewById<TextView>(R.id.fov_textview2).also {
-            it.text = "Perceived Resolution (HSM): $mPerceivedResolution"
+            if (inFsm) {
+                it.text = "Perceived Resolution (HSM): Not available in Full-Space Mode."
+            } else {
+                it.text = "Perceived Resolution (HSM): $mPerceivedResolution"
+            }
         }
 
         findViewById<TextView>(R.id.fov_textview3).also {
@@ -140,7 +147,7 @@ class FieldOfViewVisibilityActivity : AppCompatActivity() {
                     "adb root\n" +
                     "adb shell setprop persist.spaceflinger.fov.visualize_bounds 1\n" +
                     "adb shell setprop persist.ix.sysui.editor_enabled 1\n" +
-                    "adb reboot"
+                    "adb shell stop && adb shell start"
         }
     }
 
@@ -149,12 +156,12 @@ class FieldOfViewVisibilityActivity : AppCompatActivity() {
 
         // Request FSM
         findViewById<Button>(R.id.button_request_fsm).also {
-            it.setOnClickListener { session!!.scene.requestFullSpaceMode() }
+            it.setOnClickListener { session!!.scene.requestFullSpace() }
         }
 
         // Request HSM
         findViewById<Button>(R.id.button_request_hsm).also {
-            it.setOnClickListener { session!!.scene.requestHomeSpaceMode() }
+            it.setOnClickListener { session!!.scene.requestHomeSpace() }
         }
 
         // Make the main panel movable.
@@ -170,17 +177,13 @@ class FieldOfViewVisibilityActivity : AppCompatActivity() {
             PerceivedResolutionManager(session!!, this, mSurfaceEntityManager, mPanelEntityManager)
     }
 
-    fun Int.toSpatialVisibilityString(): String {
-        val visibilityString =
-            when (this) {
-                SpatialVisibility.SPATIAL_VISIBILITY_UNKNOWN -> "UNKNOWN"
-                SpatialVisibility.SPATIAL_VISIBILITY_OUTSIDE_FIELD_OF_VIEW ->
-                    "OUTSIDE_FIELD_OF_VIEW"
-                SpatialVisibility.SPATIAL_VISIBILITY_PARTIALLY_WITHIN_FIELD_OF_VIEW ->
-                    "PARTIALLY_WITHIN_FIELD_OF_VIEW"
-                SpatialVisibility.SPATIAL_VISIBILITY_WITHIN_FIELD_OF_VIEW -> "WITHIN_FIELD_OF_VIEW"
-                else -> "UNKNOWN"
-            }
-        return "SpatialVisibility($visibilityString)"
+    fun spatialVisibilityToString(visibility: SpatialVisibility): String {
+        return when (visibility) {
+            SpatialVisibility.UNKNOWN -> "UNKNOWN"
+            SpatialVisibility.OUTSIDE_FIELD_OF_VIEW -> "OUTSIDE_FIELD_OF_VIEW"
+            SpatialVisibility.PARTIALLY_WITHIN_FIELD_OF_VIEW -> "PARTIALLY_WITHIN_FIELD_OF_VIEW"
+            SpatialVisibility.WITHIN_FIELD_OF_VIEW -> "WITHIN_FIELD_OF_VIEW"
+            else -> visibility.toString()
+        }
     }
 }

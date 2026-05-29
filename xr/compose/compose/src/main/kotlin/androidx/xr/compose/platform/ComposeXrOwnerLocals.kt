@@ -17,7 +17,6 @@
 package androidx.xr.compose.platform
 
 import android.app.Activity
-import android.view.View
 import androidx.annotation.VisibleForTesting
 import androidx.compose.runtime.CompositionLocal
 import androidx.compose.runtime.compositionLocalWithComputedDefaultOf
@@ -29,7 +28,6 @@ import androidx.xr.compose.subspace.layout.CoreMainPanelEntity
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.SessionCreateSuccess
 import androidx.xr.scenecore.Entity
-import androidx.xr.scenecore.GroupEntity
 import androidx.xr.scenecore.scene
 
 /**
@@ -38,29 +36,8 @@ import androidx.xr.scenecore.scene
  */
 internal val LocalComposeXrOwners: CompositionLocal<ComposeXrOwnerLocals?> =
     compositionLocalWithComputedDefaultOf {
-        val activity = LocalContext.currentValue.getActivity()
-        if (activity != null && LocalIsXrEnabled.currentValue) {
-            activity.window.decorView.getOrCreateXrOwnerLocals(
-                activity = activity,
-                sessionFactory = LocalSessionFactory.currentValue,
-            )
-        } else {
-            null
-        }
+        LocalContext.currentValue.getActivity()?.getOrCreateXrOwnerLocals()
     }
-
-@VisibleForTesting
-internal val LocalIsXrEnabled = compositionLocalWithComputedDefaultOf {
-    SpatialConfiguration.hasXrSpatialFeature(LocalContext.currentValue.requireActivity())
-}
-
-@VisibleForTesting
-internal val LocalSessionFactory = compositionLocalWithComputedDefaultOf {
-    {
-        (Session.create(LocalContext.currentValue.requireActivity()) as? SessionCreateSuccess)
-            ?.session
-    }
-}
 
 /**
  * A storage container for singletons tied to the current [Activity].
@@ -100,47 +77,105 @@ internal class ComposeXrOwnerLocals(
     }
 }
 
-@VisibleForTesting
-internal fun View.getOrCreateXrOwnerLocals(
-    activity: Activity,
-    sessionFactory: () -> Session?,
-): ComposeXrOwnerLocals? = getXrOwnerLocals() ?: createXrOwnerLocals(activity, sessionFactory)
+private object ComposeXrOwnerLocalsConstants {
+    const val SUBSPACE_ROOT_CONTAINER_NAME = "SubspaceRootContainer"
+}
 
 @VisibleForTesting
-internal fun View.getXrOwnerLocals(): ComposeXrOwnerLocals? =
-    getTag(R.id.compose_xr_owner_locals) as? ComposeXrOwnerLocals
+internal fun Activity.getOrCreateXrOwnerLocals(): ComposeXrOwnerLocals? =
+    getXrOwnerLocals() ?: createXrOwnerLocals()
 
-private fun View.createXrOwnerLocals(
-    activity: Activity,
-    sessionFactory: () -> Session?,
-): ComposeXrOwnerLocals? {
-    val session = sessionFactory() ?: return null
+private fun Activity.getXrOwnerLocals(): ComposeXrOwnerLocals? =
+    contentView.getTag(R.id.compose_xr_owner_locals) as? ComposeXrOwnerLocals
+
+private fun Activity.createXrOwnerLocals(): ComposeXrOwnerLocals? {
+    // Don't try to create a session for non-XR configurations.
+    if (!SpatialConfiguration.hasXrSpatialFeature(this)) return null
+
+    val session = getOrCreateSession() ?: return null
 
     // When the owning lifecycle is destroyed, clear the cached  `ComposeXrOwnerLocals` from the
-    // View's tag. This is critical to prevent crashes from using a stale `Session` after Activity
-    // recreation, as `Session` lifecycle is currently tied to the lifecycle of an activity so that
-    // it forces a fresh `Session` instance to be created on next access.
-    if (activity is LifecycleOwner) {
-        activity.lifecycle.addObserver(
+    // View's tag.
+    if (this is LifecycleOwner) {
+        lifecycle.addObserver(
             object : DefaultLifecycleObserver {
                 override fun onDestroy(owner: LifecycleOwner) {
-                    setTag(R.id.compose_xr_owner_locals, null)
+                    session.scene.clearSpaceChangedListener()
+                    contentView.setTag(R.id.compose_xr_owner_locals, null)
                     owner.lifecycle.removeObserver(this)
                 }
             }
         )
     }
 
+    val subspaceRootNode =
+        Entity.create(
+            session = session,
+            name = ComposeXrOwnerLocalsConstants.SUBSPACE_ROOT_CONTAINER_NAME,
+            parent = session.scene.activitySpace,
+        )
+
+    // If the main panel is implicitly hosted (not explicitly placed in a Subspace via
+    // SpatialMainPanel), we parent it to the SubspaceRootNode so it still receives
+    // recommended pose and scale updates from the system.
+    contentView.post {
+        if (session.scene.mainPanelEntity.parent == null) {
+            session.scene.mainPanelEntity.parent = subspaceRootNode
+        }
+    }
+
     return ComposeXrOwnerLocals(
             session = session,
-            spatialConfiguration = SessionSpatialConfiguration(session),
+            spatialConfiguration =
+                SessionSpatialConfiguration(session = session, subspaceRootNode = subspaceRootNode),
             spatialCapabilities = SessionSpatialCapabilities(session),
             coreMainPanelEntity = CoreMainPanelEntity(session),
-            subspaceRootNode =
-                GroupEntity.create(session, "SubspaceRootContainer").apply {
-                    session.scene.keyEntity = this
-                },
+            subspaceRootNode = subspaceRootNode,
             dialogManager = DefaultDialogManager(),
         )
-        .also { setTag(R.id.compose_xr_owner_locals, it) }
+        .also { locals -> contentView.setTag(R.id.compose_xr_owner_locals, locals) }
+}
+
+internal fun Activity.getOrCreateSession(): Session? {
+    return getSession() ?: createSession()
+}
+
+private fun Activity.getSession(): Session? {
+    return contentView.getTag(R.id.compose_xr_session) as? Session
+}
+
+private fun Activity.createSession(): Session? {
+    return try {
+        val session = getSessionFactory(this).invoke() ?: return null
+        contentView.setTag(R.id.compose_xr_session, session)
+
+        // When the owning lifecycle is destroyed, clear the cached `Session` from the View's tag.
+        // This is critical to prevent crashes from using a stale `Session` after Activity
+        // recreation as `Session` lifecycle is currently tied to the lifecycle of an activity so
+        // that it forces a fresh `Session` instance to be created on next access.
+        if (this is LifecycleOwner) {
+            lifecycle.addObserver(
+                object : DefaultLifecycleObserver {
+                    override fun onDestroy(owner: LifecycleOwner) {
+                        contentView.setTag(R.id.compose_xr_session, null)
+                        owner.lifecycle.removeObserver(this)
+                    }
+                }
+            )
+        }
+
+        session
+    } catch (_: Throwable) {
+        // If we fail to create the session then there is nothing that we can do and the app should
+        // fall back to non-XR behavior.
+        null
+    }
+}
+
+private fun Activity.getSessionFactory(activity: Activity): () -> Session? {
+    @Suppress("UNCHECKED_CAST")
+    return contentView.getTag(R.id.compose_xr_session_factory) as? () -> Session?
+        ?: {
+            (Session.create(context = activity) as? SessionCreateSuccess)?.session
+        }
 }

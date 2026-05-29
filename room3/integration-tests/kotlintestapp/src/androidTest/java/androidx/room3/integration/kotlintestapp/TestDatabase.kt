@@ -16,19 +16,26 @@
 
 package androidx.room3.integration.kotlintestapp
 
+import androidx.room3.DaoReturnTypeConverters
 import androidx.room3.Database
 import androidx.room3.RoomDatabase
 import androidx.room3.TypeConverter
 import androidx.room3.TypeConverters
+import androidx.room3.guava.GuavaDaoReturnTypeConverter
 import androidx.room3.integration.kotlintestapp.dao.AbstractDao
 import androidx.room3.integration.kotlintestapp.dao.BooksDao
 import androidx.room3.integration.kotlintestapp.dao.CounterDao
 import androidx.room3.integration.kotlintestapp.dao.DependencyDao
 import androidx.room3.integration.kotlintestapp.dao.DerivedDao
+import androidx.room3.integration.kotlintestapp.dao.FunnyNamedDao
 import androidx.room3.integration.kotlintestapp.dao.MusicDao
+import androidx.room3.integration.kotlintestapp.dao.PetCoupleDao
 import androidx.room3.integration.kotlintestapp.dao.PetDao
+import androidx.room3.integration.kotlintestapp.dao.SchoolDao
 import androidx.room3.integration.kotlintestapp.dao.ToyDao
+import androidx.room3.integration.kotlintestapp.dao.UserPetDao
 import androidx.room3.integration.kotlintestapp.dao.UsersDao
+import androidx.room3.integration.kotlintestapp.dao.WithClauseDao
 import androidx.room3.integration.kotlintestapp.vo.Album
 import androidx.room3.integration.kotlintestapp.vo.Artist
 import androidx.room3.integration.kotlintestapp.vo.Author
@@ -37,18 +44,26 @@ import androidx.room3.integration.kotlintestapp.vo.BookAuthor
 import androidx.room3.integration.kotlintestapp.vo.Counter
 import androidx.room3.integration.kotlintestapp.vo.DataClassFromDependency
 import androidx.room3.integration.kotlintestapp.vo.EntityWithJavaPojoList
+import androidx.room3.integration.kotlintestapp.vo.FunnyNamedEntity
 import androidx.room3.integration.kotlintestapp.vo.Image
 import androidx.room3.integration.kotlintestapp.vo.JavaEntity
 import androidx.room3.integration.kotlintestapp.vo.NoArgClass
 import androidx.room3.integration.kotlintestapp.vo.Pet
+import androidx.room3.integration.kotlintestapp.vo.PetCouple
 import androidx.room3.integration.kotlintestapp.vo.PetUser
 import androidx.room3.integration.kotlintestapp.vo.PetWithUser
 import androidx.room3.integration.kotlintestapp.vo.Playlist
 import androidx.room3.integration.kotlintestapp.vo.PlaylistSongXRef
 import androidx.room3.integration.kotlintestapp.vo.Publisher
+import androidx.room3.integration.kotlintestapp.vo.School
 import androidx.room3.integration.kotlintestapp.vo.Song
 import androidx.room3.integration.kotlintestapp.vo.Toy
 import androidx.room3.integration.kotlintestapp.vo.User
+import androidx.room3.livedata.LiveDataDaoReturnTypeConverter
+import androidx.room3.paging.PagingSourceDaoReturnTypeConverter
+import androidx.room3.paging.guava.ListenableFuturePagingSourceDaoReturnTypeConverter
+import androidx.room3.paging.rxjava3.RxPagingSourceDaoReturnTypeConverter
+import androidx.room3.rxjava3.RxDaoReturnTypeConverters
 import java.nio.ByteBuffer
 import java.util.Date
 import java.util.UUID
@@ -75,10 +90,21 @@ import java.util.UUID
             Artist::class,
             Album::class,
             Image::class,
+            School::class,
+            PetCouple::class,
+            FunnyNamedEntity::class,
         ],
     views = [PetWithUser::class],
     version = 1,
     exportSchema = false,
+)
+@DaoReturnTypeConverters(
+    LiveDataDaoReturnTypeConverter::class,
+    RxDaoReturnTypeConverters::class,
+    GuavaDaoReturnTypeConverter::class,
+    PagingSourceDaoReturnTypeConverter::class,
+    ListenableFuturePagingSourceDaoReturnTypeConverter::class,
+    RxPagingSourceDaoReturnTypeConverter::class,
 )
 @TypeConverters(TestDatabase.Converters::class)
 abstract class TestDatabase : RoomDatabase() {
@@ -100,6 +126,16 @@ abstract class TestDatabase : RoomDatabase() {
     abstract fun petDao(): PetDao
 
     abstract fun musicDao(): MusicDao
+
+    abstract fun userPetDao(): UserPetDao
+
+    abstract fun schoolDao(): SchoolDao
+
+    abstract fun petCoupleDao(): PetCoupleDao
+
+    abstract fun funnyNamedDao(): FunnyNamedDao
+
+    abstract fun withClauseDao(): WithClauseDao
 
     class Converters {
         @TypeConverter

@@ -52,21 +52,22 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.xr.compose.platform.LocalSession
+import androidx.xr.compose.spatial.PlanarEmbeddedSubspace
 import androidx.xr.compose.spatial.Subspace
-import androidx.xr.compose.subspace.ExperimentalSubspaceVolumeApi
-import androidx.xr.compose.subspace.MovePolicy
+import androidx.xr.compose.subspace.SceneCoreEntity
 import androidx.xr.compose.subspace.SpatialPanel
-import androidx.xr.compose.subspace.Volume
+import androidx.xr.compose.subspace.draw.scale
 import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.compose.subspace.layout.height
 import androidx.xr.compose.subspace.layout.offset
-import androidx.xr.compose.subspace.layout.scale
-import androidx.xr.compose.subspace.layout.testTag
+import androidx.xr.compose.subspace.layout.transformingMovable
 import androidx.xr.compose.subspace.layout.width
+import androidx.xr.compose.subspace.semantics.testTag
 import androidx.xr.compose.testapp.ui.components.CommonTestScaffold
 import androidx.xr.compose.unit.Meter.Companion.meters
 import androidx.xr.scenecore.GltfModel
 import androidx.xr.scenecore.GltfModelEntity
+import androidx.xr.scenecore.scene
 import java.nio.file.Paths
 
 class PanelVolume : ComponentActivity() {
@@ -80,10 +81,7 @@ class PanelVolume : ComponentActivity() {
         val panelSize = SubspaceModifier.width(550.dp).height(300.dp)
         var checked by remember { mutableStateOf(false) }
 
-        SpatialPanel(
-            modifier = panelSize.offset((-500).dp, 0.dp, 0.dp),
-            dragPolicy = MovePolicy(),
-        ) {
+        SpatialPanel(modifier = panelSize.offset((-500).dp, 0.dp, 0.dp).transformingMovable()) {
             CommonTestScaffold(
                 title = "Panel Volume Test case",
                 showBottomBar = true,
@@ -126,7 +124,6 @@ class PanelVolume : ComponentActivity() {
         }
     }
 
-    @OptIn(ExperimentalSubspaceVolumeApi::class)
     @Composable
     private fun SpatialContent() {
         val session =
@@ -134,7 +131,12 @@ class PanelVolume : ComponentActivity() {
                 "LocalSession.current was null. Session must be available."
             }
         var arrows by remember { mutableStateOf<GltfModel?>(null) }
-        val gltfEntity = arrows?.let { remember { GltfModelEntity.create(session, it) } }
+        val gltfEntity =
+            arrows?.let {
+                remember {
+                    GltfModelEntity.create(session, it, parent = session.scene.activitySpace)
+                }
+            }
 
         LaunchedEffect(Unit) {
             arrows = GltfModel.create(session, Paths.get("models", "xyzArrows.glb"))
@@ -153,8 +155,8 @@ class PanelVolume : ComponentActivity() {
                 SubspaceModifier.width(200.dp)
                     .height(200.dp)
                     .offset(y = panelYOffset)
-                    .testTag("RootPanel"),
-            dragPolicy = MovePolicy(),
+                    .testTag("RootPanel")
+                    .transformingMovable()
         ) {
             Box(
                 modifier = Modifier.background(Color.LightGray).fillMaxSize(),
@@ -163,14 +165,13 @@ class PanelVolume : ComponentActivity() {
                 Row {
                     Text(text = "Panel", textAlign = TextAlign.Center, fontSize = 20.sp)
                     if (gltfEntity != null) {
-                        Subspace {
-                            Volume(
+                        PlanarEmbeddedSubspace {
+                            SceneCoreEntity(
+                                factory = { gltfEntity },
                                 modifier =
                                     SubspaceModifier.scale(.3f)
-                                        .offset(x = 1.meters.toDp(), z = -0.5.meters.toDp())
-                            ) {
-                                gltfEntity.parent = it
-                            }
+                                        .offset(x = 1.meters.toDp(), z = -0.5.meters.toDp()),
+                            )
                         }
                     }
                 }

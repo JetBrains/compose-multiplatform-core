@@ -37,6 +37,7 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextForegroundStyle
 import androidx.compose.ui.text.style.TextGeometricTransform
 import androidx.compose.ui.text.style.lerp
+import androidx.compose.ui.text.style.takeOrElse
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.isSpecified
 import androidx.compose.ui.unit.isUnspecified
@@ -763,11 +764,33 @@ fun lerp(start: SpanStyle, stop: SpanStyle, fraction: Float): SpanStyle {
         localeList = lerpDiscrete(start.localeList, stop.localeList, fraction),
         background = lerp(start.background, stop.background, fraction),
         textDecoration = lerpDiscrete(start.textDecoration, stop.textDecoration, fraction),
-        shadow = lerp(start.shadow ?: Shadow(), stop.shadow ?: Shadow(), fraction),
+        shadow = nullSafeLerp(start.shadow, stop.shadow, fraction),
         platformStyle = lerpPlatformStyle(start.platformStyle, stop.platformStyle, fraction),
         drawStyle = lerpDiscrete(start.drawStyle, stop.drawStyle, fraction),
     )
 }
+
+/**
+ * Linearly interpolates between two [Shadow]s.
+ *
+ * If one of the shadows is null, it is treated as a transparent shadow. If both are null, null is
+ * returned.
+ */
+internal fun nullSafeLerp(lhs: Shadow?, rhs: Shadow?, fraction: Float): Shadow? {
+    if (lhs == null && rhs == null) {
+        return null
+    }
+    if (lhs == null) {
+        return lerp(rhs!!.dropAlpha(), rhs, fraction)
+    }
+    if (rhs == null) {
+        return lerp(lhs, lhs.dropAlpha(), fraction)
+    }
+    return lerp(lhs, rhs, fraction)
+}
+
+/** Returns a copy of this [Shadow] with its alpha component set to 0f. */
+private fun Shadow.dropAlpha(): Shadow = copy(color = color.copy(alpha = 0f))
 
 private fun lerpPlatformStyle(
     start: PlatformSpanStyle?,

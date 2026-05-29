@@ -20,17 +20,14 @@ import androidx.room3.gradle.RoomArgumentProvider
 import androidx.room3.gradle.RoomExtension
 import androidx.room3.gradle.RoomExtension.SchemaConfiguration
 import androidx.room3.gradle.RoomSimpleCopyTask
-import androidx.room3.gradle.toOptions
 import androidx.room3.gradle.util.capitalize
 import androidx.room3.gradle.util.check
-import androidx.room3.gradle.util.kspOneTaskClass
 import androidx.room3.gradle.util.kspTwoTaskClass
 import com.android.build.api.AndroidPluginVersion
 import com.android.build.api.variant.AndroidComponentsExtension
 import com.android.build.api.variant.ComponentIdentity
 import com.android.build.api.variant.HasUnitTest
 import com.google.devtools.ksp.gradle.KspAATask
-import com.google.devtools.ksp.gradle.KspTask
 import kotlin.reflect.KClass
 import org.gradle.api.Project
 import org.gradle.api.Task
@@ -57,9 +54,9 @@ internal class AndroidPluginIntegration(private val common: CommonIntegration) {
         project.check(componentsExtension != null, isFatal = true) {
             "Could not find the Android Gradle Plugin (AGP) extension."
         }
-        project.check(componentsExtension.pluginVersion >= AndroidPluginVersion(8, 4)) {
+        project.check(componentsExtension.pluginVersion >= AndroidPluginVersion(8, 10)) {
             "The Room Gradle plugin is only compatible with Android Gradle plugin (AGP) " +
-                "version 8.4.0 or higher (found ${componentsExtension.pluginVersion})."
+                "version 8.10.0 or higher (found ${componentsExtension.pluginVersion})."
         }
         componentsExtension.onVariants { variant ->
             configureAndroidVariant(project, roomExtension, variant)
@@ -74,7 +71,7 @@ internal class AndroidPluginIntegration(private val common: CommonIntegration) {
         project.afterEvaluate {
             project.check(roomExtension.schemaConfigurations.isNotEmpty(), isFatal = true) {
                 "The Room Gradle plugin was applied but no schema location was specified. " +
-                    "Use the `room { schemaDirectory(...) }` DSL to specify one."
+                    "Use the `room3 { schemaDirectory(...) }` DSL to specify one."
             }
         }
     }
@@ -98,11 +95,7 @@ internal class AndroidPluginIntegration(private val common: CommonIntegration) {
             }
 
             apTask.finalizedBy(config.copyTask)
-            common.createArgumentProvider(
-                schemaConfiguration = config,
-                roomOptions = roomExtension.toOptions(),
-                task = apTask,
-            )
+            common.createArgumentProvider(schemaConfiguration = config, task = apTask)
         }
         configureJavaTasks(project, androidVariantTaskNames, argProviderFactory)
         configureKaptTasks(project, androidVariantTaskNames, argProviderFactory)
@@ -227,9 +220,6 @@ internal class AndroidPluginIntegration(private val common: CommonIntegration) {
                         task.block(argProvider)
                     }
                 }
-            }
-            if (kspOneTaskClass != null) {
-                configureEach(KspTask::class) { commandLineArgumentProviders.add(it) }
             }
             if (kspTwoTaskClass != null) {
                 configureEach(KspAATask::class) { commandLineArgumentProviders.add(it) }

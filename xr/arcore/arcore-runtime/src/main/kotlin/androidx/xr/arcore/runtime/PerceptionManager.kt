@@ -17,86 +17,110 @@
 package androidx.xr.arcore.runtime
 
 import androidx.annotation.RestrictTo
-import androidx.xr.runtime.VpsAvailabilityResult
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Ray
 import java.util.UUID
 
 /**
  * Describes the perception functionality that is required from a [PerceptionRuntime]
- * implementation. It is expected that these functions are only valid while the [PerceptionRuntime]
- * is in a resumed state.
+ * implementation.
+ *
+ * It is expected that these functions are only valid while the [PerceptionRuntime] is in a resumed
+ * state.
+ *
+ * @property trackables the [Collection] of all known [Trackables][Trackable]
+ * @property leftEye the left [Eye], or null if not available
+ * @property rightEye the right [Eye], or null if not available
+ * @property leftHand the left [Hand], or null if not available
+ * @property rightHand the right [Hand], or null if not available
+ * @property arDevice the [ArDevice] instance
+ * @property leftRenderViewpoint the left [RenderViewpoint], or null if not available
+ * @property rightRenderViewpoint the right [RenderViewpoint], or null if not available
+ * @property monoRenderViewpoint the mono [RenderViewpoint], or null if not available
+ * @property geospatial the [Geospatial] instance
+ * @property leftDepth the left [Depth], or null if not available
+ * @property rightDepth the right [Depth], or null if not available
+ * @property monoDepth the mono [Depth], or null if not available
+ * @property userFace the user's [Face], or null if not available
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public interface PerceptionManager {
-    /** Defines a tracked location in the physical world. */
+    /**
+     * Defines a tracked location in the physical world.
+     *
+     * @param pose the [Pose] of the anchor
+     * @return the created [Anchor]
+     */
     public fun createAnchor(pose: Pose): Anchor
 
-    /** Performs a ray cast in the direction of the given [ray] in the latest camera view. */
+    /**
+     * Performs a ray cast in the direction of the given [ray] in the latest camera view.
+     *
+     * @param ray the [Ray] to cast
+     * @return a list of [HitResult] objects
+     */
     public fun hitTest(ray: Ray): List<HitResult>
 
-    /** Retrieves all the [UUID] instances from [Anchor] objects that have been persisted. */
+    /**
+     * Retrieves all the [UUID] instances from [Anchor] objects that have been persisted.
+     *
+     * @return a list of [UUID]s
+     */
     public fun getPersistedAnchorUuids(): List<UUID>
 
-    /** Loads an [Anchor] from local storage. */
+    /**
+     * Loads an [Anchor] from local storage.
+     *
+     * @param uuid the [UUID] of the anchor to load
+     * @return the loaded [Anchor]
+     */
     public fun loadAnchor(uuid: UUID): Anchor
 
-    /** Loads an [Anchor] from a native pointer. */
-    // TODO(b/373711152) : Remove this method once the Jetpack XR Runtime API migration is done.
-    public fun loadAnchorFromNativePointer(nativePointer: Long): Anchor
-
-    /** Deletes a persisted [Anchor] from local storage. */
+    /**
+     * Deletes a persisted [Anchor] from local storage.
+     *
+     * @param uuid the [UUID] of the anchor to unpersist
+     */
     public fun unpersistAnchor(uuid: UUID)
 
-    /** Checks the VPS availability at the given location. */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-    public suspend fun checkVpsAvailability(
-        latitude: Double,
-        longitude: Double,
-    ): VpsAvailabilityResult
+    /**
+     * Sets the display rotation on supported devices.
+     *
+     * @param rotation the angle in degrees to rotate the display from its default orientation, with
+     *   positive values representing clockwise rotations
+     * @param width the new display width after rotation
+     * @param height the new display width after rotation
+     * @throws UnsupportedOperationException if the current runtime does not support display
+     *   rotation
+     */
+    public fun setDisplayRotation(rotation: Int, width: Int, height: Int): Unit =
+        throw UnsupportedOperationException()
 
-    /** Returns the list of all known trackables. */
+    /**
+     * Returns the maximum number of images that can be added to an
+     * [androidx.xr.runtime.AugmentedImageDatabase]
+     */
+    public val imageDatabaseMaxLoadedImageCount: Int
+
+    /** Returns if the device support physical size estimation. Used for image tracking. */
+    public val isPhysicalSizeEstimationSupported: Boolean
+
+    /** Returns if the device supports QR code size estimation. Used for QR code tracking. */
+    public val isQrCodeSizeEstimationSupported: Boolean
+
     public val trackables: Collection<Trackable>
-
-    /** Eye tracking information for the left [Eye]. Only available on supported platforms. */
     public val leftEye: Eye?
-
-    /** Eye tracking information for the right [Eye]. Only available on supported platforms. */
     public val rightEye: Eye?
-
-    /** Hand tracking information for the left [Hand]. Only available on supported platforms. */
     public val leftHand: Hand?
-
-    /** Hand tracking information for the right [Hand]. Only available on supported platforms. */
     public val rightHand: Hand?
-
-    /** AR device tracking information. */
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public val arDevice: ArDevice
-
-    /** Left View Camera information. */
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+    public val arDevice: ArDevice
     public val leftRenderViewpoint: RenderViewpoint?
-
-    /** Right View Camera information. */
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     public val rightRenderViewpoint: RenderViewpoint?
-
-    /** Mono View Camera information. */
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     public val monoRenderViewpoint: RenderViewpoint?
-
-    /** [Earth] tracking information. */
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public val earth: Earth
-
-    /** Left [DepthMap]'s current frame information */
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public val leftDepthMap: DepthMap?
-
-    /** Right [DepthMap]'s current frame information */
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public val rightDepthMap: DepthMap?
-
-    /** Mono [DepthMap]'s current frame information */
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public val monoDepthMap: DepthMap?
-
-    /** Face tracking information for the face. Only available on supported platforms. */
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public val userFace: Face?
+    public val geospatial: Geospatial
+    public val leftDepth: Depth?
+    public val rightDepth: Depth?
+    public val monoDepth: Depth?
+    public val userFace: Face?
+    public val conversationSceneSignal: ConversationState?
 }

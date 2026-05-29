@@ -32,76 +32,57 @@ androidXMultiplatform {
     androidLibrary {
         namespace = "androidx.room3.paging"
     }
+    js()
     jvm()
     mac()
     linux()
     ios()
-    // TODO(b/432783733): Add TV and Watch once paging-common 3.4 is released
-    // tvos()
-    // watchos()
+    tvos()
+    watchos()
+    wasmJs()
 
     defaultPlatform(PlatformIdentifier.ANDROID)
 
     sourceSets {
-        commonMain {
-            dependencies {
-                api(libs.kotlinStdlib)
-                api("androidx.paging:paging-common:3.3.2")
-                api(project(":room3:room3-runtime"))
-            }
+        commonMain.dependencies {
+            api("androidx.paging:paging-common:3.4.2")
+            api(project(":room3:room3-runtime"))
+            implementation(project(":sqlite:sqlite-async"))
         }
 
-        commonTest {
-            dependencies {
-                implementation(libs.kotlinCoroutinesTest)
-                implementation(project(":kruth:kruth"))
-            }
+        commonTest.dependencies {
+            implementation(libs.kotlinCoroutinesTest)
+            implementation(project(":kruth:kruth"))
         }
 
-        androidMain {
-            dependsOn(commonMain)
-        }
+        create("jvmNativeWebMain").dependsOn(commonMain)
 
-        jvmNativeMain {
-            dependsOn(commonMain)
-        }
-
-        jvmMain {
-            dependsOn(jvmNativeMain)
-        }
+        jvmMain.dependsOn(jvmNativeWebMain)
 
         nativeMain {
-            dependsOn(jvmNativeMain)
+            dependsOn(jvmNativeWebMain)
             dependencies {
                 implementation(libs.atomicFu)
             }
         }
 
-        androidInstrumentedTest {
-            dependsOn(commonTest)
-            dependencies {
-                implementation(libs.junit)
-                implementation(project(":internal-testutils-common"))
-                implementation(libs.kotlinTestJunit)
-                implementation(libs.testExtJunit)
-                implementation(libs.testCore)
-                implementation(libs.testRunner)
-                implementation("androidx.arch.core:core-testing:2.2.0")
-                implementation("androidx.paging:paging-testing:3.3.2")
-            }
-        }
-        targets.configureEach { target ->
-            if (target.platformType == KotlinPlatformType.native) {
-                target.compilations["main"].defaultSourceSet {
-                    dependsOn(nativeMain)
-                }
-            }
+        webMain.dependsOn(jvmNativeWebMain)
+
+        androidDeviceTest.dependencies {
+            implementation(libs.junit)
+            implementation(project(":internal-testutils-common"))
+            implementation(libs.kotlinTestJunit)
+            implementation(libs.testExtJunit)
+            implementation(libs.testCore)
+            implementation(libs.testRunner)
+            implementation("androidx.arch.core:core-testing:2.2.0")
+            implementation("androidx.paging:paging-testing:3.4.2")
         }
     }
 }
 
 dependencies {
-    add("kspAndroidInstrumentedTest", project(":room3:room3-compiler"))
+    add("kspAndroidDeviceTest", project(":room3:room3-compiler"))
 }
 
 androidx {
@@ -109,17 +90,4 @@ androidx {
     type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2021"
     description = "Room Paging integration"
-    kotlinTarget = KotlinTarget.KOTLIN_2_1
-}
-
-// TODO(https://github.com/google/ksp/issues/2250) Remove when KSP migrates to the new variants API
-// Without this, dependency introduced between lintAnalyzeAndroidInstrumentedTest and kspAndroidInstrumentedTest
-tasks.withType(AndroidLintAnalysisTask).configureEach {
-    mustRunAfter(tasks.withType(KspAATask))
-}
-
-// TODO(https://github.com/google/ksp/issues/2250) Remove when KSP migrates to the new variants API
-// Without this, dependency introduced between lintAnalyzeAndroidInstrumentedTest and kspAndroidInstrumentedTest
-tasks.withType(LintModelWriterTask).configureEach {
-    mustRunAfter(tasks.withType(KspAATask))
 }

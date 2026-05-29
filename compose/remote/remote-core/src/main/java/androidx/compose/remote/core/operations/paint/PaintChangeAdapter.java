@@ -30,6 +30,9 @@ public class PaintChangeAdapter implements PaintChanges {
     public void setTypeFace(int fontType, int weight, boolean italic) {}
 
     @Override
+    public void setFallbackTypeFace(int fontType, int weight, boolean italic) {}
+
+    @Override
     public void setShaderMatrix(float matrixId) {}
 
     @Override
@@ -41,6 +44,9 @@ public class PaintChangeAdapter implements PaintChanges {
     @Override
     public void setTextureShader(
             int bitmapId, short tileX, short tileY, short filterMode, short maxAnisotropy) {}
+
+    @Override
+    public void setPathEffect(float @Nullable [] pathEffect) {}
 
     @Override
     public void setStrokeWidth(float width) {}

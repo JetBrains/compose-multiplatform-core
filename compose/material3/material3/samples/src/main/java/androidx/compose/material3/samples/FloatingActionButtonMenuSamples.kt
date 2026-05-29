@@ -34,14 +34,18 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Contacts
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Snooze
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FloatingActionButtonMenu
 import androidx.compose.material3.FloatingActionButtonMenuItem
 import androidx.compose.material3.Icon
+import androidx.compose.material3.PlainTooltip
 import androidx.compose.material3.Text
 import androidx.compose.material3.ToggleFloatingActionButton
 import androidx.compose.material3.ToggleFloatingActionButtonDefaults.animateIcon
+import androidx.compose.material3.TooltipAnchorPosition
+import androidx.compose.material3.TooltipBox
+import androidx.compose.material3.TooltipDefaults
 import androidx.compose.material3.animateFloatingActionButton
+import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -61,23 +65,29 @@ import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.semantics.CustomAccessibilityAction
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.isTraversalGroup
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.paneTitle
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.semantics.traversalIndex
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Preview
 @Sampled
 @Composable
 fun FloatingActionButtonMenuSample() {
     val listState = rememberLazyListState()
-    val fabVisible by remember { derivedStateOf { listState.firstVisibleItemIndex == 0 } }
-    val focusRequester = FocusRequester()
+    val fabVisible by remember {
+        derivedStateOf {
+            listState.firstVisibleItemIndex == 0 || listState.canScrollForward == false
+        }
+    }
+    val focusRequester = remember { FocusRequester() }
 
     Box {
         LazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
@@ -109,31 +119,59 @@ fun FloatingActionButtonMenuSample() {
             modifier = Modifier.align(Alignment.BottomEnd),
             expanded = fabMenuExpanded,
             button = {
-                ToggleFloatingActionButton(
-                    modifier =
-                        Modifier.semantics {
-                                traversalIndex = -1f
-                                stateDescription = if (fabMenuExpanded) "Expanded" else "Collapsed"
-                                contentDescription = "Toggle menu"
+                // A FAB should have a tooltip associated with it.
+                TooltipBox(
+                    positionProvider =
+                        TooltipDefaults.rememberTooltipPositionProvider(
+                            if (fabMenuExpanded) {
+                                TooltipAnchorPosition.Start
+                            } else {
+                                TooltipAnchorPosition.Above
                             }
-                            .animateFloatingActionButton(
-                                visible = fabVisible || fabMenuExpanded,
-                                alignment = Alignment.BottomEnd,
-                            )
-                            .focusRequester(focusRequester),
-                    checked = fabMenuExpanded,
-                    onCheckedChange = { fabMenuExpanded = !fabMenuExpanded },
-                ) {
-                    val imageVector by remember {
-                        derivedStateOf {
-                            if (checkedProgress > 0.5f) Icons.Filled.Close else Icons.Filled.Add
+                        ),
+                    tooltip = {
+                        PlainTooltip(
+                            modifier =
+                                Modifier.semantics {
+                                    // TODO(b/496338253): Remove this modifier once bug where
+                                    //  tooltip text is not announced by a11y screen readers is
+                                    //  resolved.
+                                    liveRegion = LiveRegionMode.Assertive
+                                    paneTitle = "Toggle menu"
+                                }
+                        ) {
+                            Text("Toggle menu")
                         }
+                    },
+                    state = rememberTooltipState(),
+                ) {
+                    ToggleFloatingActionButton(
+                        modifier =
+                            Modifier.semantics {
+                                    traversalIndex = -1f
+                                    stateDescription =
+                                        if (fabMenuExpanded) "Expanded" else "Collapsed"
+                                    contentDescription = "Toggle menu"
+                                }
+                                .animateFloatingActionButton(
+                                    visible = fabVisible || fabMenuExpanded,
+                                    alignment = Alignment.BottomEnd,
+                                )
+                                .focusRequester(focusRequester),
+                        checked = fabMenuExpanded,
+                        onCheckedChange = { fabMenuExpanded = !fabMenuExpanded },
+                    ) {
+                        val imageVector by remember {
+                            derivedStateOf {
+                                if (checkedProgress > 0.5f) Icons.Filled.Close else Icons.Filled.Add
+                            }
+                        }
+                        Icon(
+                            painter = rememberVectorPainter(imageVector),
+                            contentDescription = null,
+                            modifier = Modifier.animateIcon({ checkedProgress }),
+                        )
                     }
-                    Icon(
-                        painter = rememberVectorPainter(imageVector),
-                        contentDescription = null,
-                        modifier = Modifier.animateIcon({ checkedProgress }),
-                    )
                 }
             },
         ) {
@@ -166,6 +204,7 @@ fun FloatingActionButtonMenuSample() {
                                         if (
                                             it.type == KeyEventType.KeyDown &&
                                                 (it.key == Key.DirectionUp ||
+                                                    it.key == Key.NumPadDirectionUp ||
                                                     (it.isShiftPressed && it.key == Key.Tab))
                                         ) {
                                             focusRequester.requestFocus()

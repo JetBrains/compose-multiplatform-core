@@ -17,6 +17,7 @@
 package androidx.appfunctions.metadata
 
 import android.annotation.SuppressLint
+import android.app.PendingIntent
 import androidx.annotation.IntDef
 import androidx.appsearch.annotation.Document
 import java.util.Objects
@@ -34,7 +35,8 @@ import java.util.Objects
     AppFunctionDataTypeMetadata.TYPE_ARRAY,
     AppFunctionDataTypeMetadata.TYPE_REFERENCE,
     AppFunctionDataTypeMetadata.TYPE_ALL_OF,
-    AppFunctionDataTypeMetadata.TYPE_PENDING_INTENT,
+    AppFunctionDataTypeMetadata.TYPE_ONE_OF,
+    AppFunctionDataTypeMetadata.TYPE_PARCELABLE,
 )
 @Retention(AnnotationRetention.SOURCE)
 internal annotation class AppFunctionDataType
@@ -50,6 +52,50 @@ internal constructor(
     /** Converts this [AppFunctionDataTypeMetadata] to an [AppFunctionDataTypeMetadataDocument]. */
     internal abstract fun toAppFunctionDataTypeMetadataDocument():
         AppFunctionDataTypeMetadataDocument
+
+    /**
+     * Checks if this metadata is semantically equivalent to [other].
+     *
+     * @throws IllegalArgumentException If they are not matching.
+     */
+    internal fun requireSemanticallyEquivalentTo(
+        other: AppFunctionDataTypeMetadata,
+        thisComponent: AppFunctionComponentsMetadata,
+        otherComponent: AppFunctionComponentsMetadata,
+        visitingPairs: MutableSet<Pair<String, String>> = mutableSetOf(),
+    ) {
+        require(this.isNullable == other.isNullable) {
+            "Nullable mismatch. Expected: ${this.isNullable}, actual: ${other.isNullable}"
+        }
+        internalRequireSemanticallyEquivalentTo(other, thisComponent, otherComponent, visitingPairs)
+    }
+
+    internal abstract fun internalRequireSemanticallyEquivalentTo(
+        other: AppFunctionDataTypeMetadata,
+        thisComponent: AppFunctionComponentsMetadata,
+        otherComponent: AppFunctionComponentsMetadata,
+        visitingPairs: MutableSet<Pair<String, String>> = mutableSetOf(),
+    )
+
+    internal fun tryResolveDataType(
+        dataType: AppFunctionDataTypeMetadata,
+        component: AppFunctionComponentsMetadata,
+    ): AppFunctionDataTypeMetadata {
+        return if (dataType is AppFunctionReferenceTypeMetadata) {
+            val resolvedType =
+                component.dataTypes[dataType.referenceDataType]
+                    ?: throw IllegalArgumentException(
+                        "Unable to resolve ${dataType.referenceDataType}"
+                    )
+            if (resolvedType is AppFunctionReferenceTypeMetadata) {
+                tryResolveDataType(resolvedType, component)
+            } else {
+                resolvedType
+            }
+        } else {
+            dataType
+        }
+    }
 
     public companion object {
         /** Void type. */
@@ -83,8 +129,14 @@ internal constructor(
          * All of type. The schema of the all of type is defined in a [AppFunctionAllOfTypeMetadata]
          */
         internal const val TYPE_ALL_OF: Int = 12
-        /** Pending Intent type. */
-        internal const val TYPE_PENDING_INTENT: Int = 13
+
+        /** Parcelable type. */
+        internal const val TYPE_PARCELABLE: Int = 13
+
+        /**
+         * One of type. The schema of the one of type is defined in a [AppFunctionOneOfTypeMetadata]
+         */
+        internal const val TYPE_ONE_OF: Int = 14
     }
 
     override fun equals(other: Any?): Boolean {
@@ -137,6 +189,28 @@ constructor(
             ")"
     }
 
+    override fun internalRequireSemanticallyEquivalentTo(
+        other: AppFunctionDataTypeMetadata,
+        thisComponent: AppFunctionComponentsMetadata,
+        otherComponent: AppFunctionComponentsMetadata,
+        visitingPairs: MutableSet<Pair<String, String>>,
+    ) {
+        val otherResolved = tryResolveDataType(other, otherComponent)
+        require(otherResolved is AppFunctionArrayTypeMetadata) {
+            "Expect ${AppFunctionArrayTypeMetadata::class.java} but found ${otherResolved.javaClass}"
+        }
+        try {
+            this.itemType.requireSemanticallyEquivalentTo(
+                otherResolved.itemType,
+                thisComponent,
+                otherComponent,
+                visitingPairs,
+            )
+        } catch (e: IllegalArgumentException) {
+            throw IllegalArgumentException("Type mismatch in Array items: ${e.message}", e)
+        }
+    }
+
     /** Converts this [AppFunctionArrayTypeMetadata] to an [AppFunctionDataTypeMetadataDocument]. */
     override fun toAppFunctionDataTypeMetadataDocument(): AppFunctionDataTypeMetadataDocument {
         return AppFunctionDataTypeMetadataDocument(
@@ -165,6 +239,8 @@ constructor(
  *
  * For example, consider the following objects:
  * ```
+ * package com.example.myapp
+ *
  * open class Address (
  *     open val street: String,
  *     open val city: String,
@@ -187,7 +263,7 @@ constructor(
  *
  * ```
  * val personWithAddressType = AppFunctionAllOfTypeMetadata(
- *     qualifiedName = "androidx.appfunctions.metadata.PersonWithAddress",
+ *     qualifiedName = "com.example.myapp.PersonWithAddress",
  *     matchAll = listOf(
  *         AppFunctionObjectTypeMetadata(
  *             properties = mapOf(
@@ -197,7 +273,7 @@ constructor(
  *                 "zipCode" to AppFunctionStringTypeMetadata(...),
  *             ),
  *             required = listOf("street", "city", "state", "zipCode"),
- *             qualifiedName = "androidx.appfunctions.metadata.Address",
+ *             qualifiedName = "com.example.myapp.Address",
  *             isNullable = false,
  *         ),
  *         AppFunctionObjectTypeMetadata(
@@ -206,7 +282,7 @@ constructor(
  *                 "age" to AppFunctionIntTypeMetadata(...),
  *             ),
  *             required = listOf("name", "age"),
- *             qualifiedName = "androidx.appfunctions.metadata.PersonWithAddress",
+ *             qualifiedName = "com.example.myapp.PersonWithAddress",
  *             isNullable = false,
  *         ),
  *     ),
@@ -301,10 +377,33 @@ constructor(
         return AppFunctionObjectTypeMetadata(
             properties = allProperties,
             required = allRequired.toList(),
-            qualifiedName = null,
+            qualifiedName = qualifiedName,
             isNullable = false,
             description = "",
         )
+    }
+
+    override fun internalRequireSemanticallyEquivalentTo(
+        other: AppFunctionDataTypeMetadata,
+        thisComponent: AppFunctionComponentsMetadata,
+        otherComponent: AppFunctionComponentsMetadata,
+        visitingPairs: MutableSet<Pair<String, String>>,
+    ) {
+        val otherResolved = tryResolveDataType(other, otherComponent)
+        require(otherResolved is AppFunctionAllOfTypeMetadata) {
+            "Expect ${AppFunctionAllOfTypeMetadata::class.java} but found ${otherResolved.javaClass}"
+        }
+        try {
+            this.getPseudoObjectTypeMetadata(thisComponent)
+                .requireSemanticallyEquivalentTo(
+                    otherResolved.getPseudoObjectTypeMetadata(otherComponent),
+                    thisComponent,
+                    otherComponent,
+                    visitingPairs,
+                )
+        } catch (e: IllegalArgumentException) {
+            throw IllegalArgumentException("Type mismatch in AllOf properties: ${e.message}", e)
+        }
     }
 
     public companion object {
@@ -319,6 +418,180 @@ constructor(
          * * An [AppFunctionReferenceTypeMetadata] to an outer object metadata.
          */
         internal const val TYPE: Int = TYPE_ALL_OF
+    }
+}
+
+/**
+ * Defines the schema for a data type that can be one of several possible types, representing a form
+ * of polymorphism or a sealed hierarchy.
+ *
+ * An object of this type must match exactly one of the schemas defined in the [matchOneOf] list.
+ * This is useful for modeling sealed classes or interfaces where an object can be one of a limited
+ * set of subtypes. This implies a hierarchical relationship between the parent type (represented by
+ * this `OneOfTypeMetadata`) and its possible concrete implementations in [matchOneOf].
+ *
+ * For example, consider the following sealed interface and its implementations:
+ * ```
+ * package com.example.myapp
+ *
+ * sealed interface Animal {
+ *     val name: String
+ * }
+ *
+ * data class Dog(
+ *     override val name: String,
+ *     val breed: String,
+ * ) : Animal
+ *
+ * data class Cat(
+ *     override val name: String,
+ *     val livesLeft: Int,
+ * ) : Animal
+ *
+ * ```
+ *
+ * The following [AppFunctionOneOfTypeMetadata] can be used to define a data type that matches any
+ * object implementing the `Animal` interface (i.e., either a `Dog` or a `Cat`).
+ *
+ * ```
+ * val animalType = AppFunctionOneOfTypeMetadata(
+ *     qualifiedName = "com.example.myapp.Animal",
+ *     matchOneOf = listOf(
+ *         AppFunctionObjectTypeMetadata(
+ *             qualifiedName = "com.example.myapp.Dog",
+ *             properties = mapOf(
+ *                 "name" to AppFunctionStringTypeMetadata(...),
+ *                 "breed" to AppFunctionStringTypeMetadata(...),
+ *             ),
+ *             required = listOf("name", "breed"),
+ *             isNullable = false,
+ *         ),
+ *         AppFunctionObjectTypeMetadata(
+ *             qualifiedName = "com.example.myapp.Cat",
+ *             properties = mapOf(
+ *                 "name" to AppFunctionStringTypeMetadata(...),
+ *                 "livesLeft" to AppFunctionIntTypeMetadata(...),
+ *             ),
+ *             required = listOf("name", "livesLeft"),
+ *             isNullable = false,
+ *         ),
+ *     ),
+ *     isNullable = false,
+ * )
+ * ```
+ *
+ * This data type can be used to define the schema of an input or output type.
+ */
+public class AppFunctionOneOfTypeMetadata
+@JvmOverloads
+constructor(
+    /** The list of possible data types that an object can match. */
+    public val matchOneOf: List<AppFunctionDataTypeMetadata>,
+    /**
+     * The parent object's qualified name if available. For example, "com.example.myapp.Animal".
+     *
+     * Use this value to set [androidx.appfunctions.AppFunctionData.qualifiedName] when trying to
+     * build the parameters for [androidx.appfunctions.ExecuteAppFunctionRequest].
+     */
+    public val qualifiedName: String,
+    /** Whether this data type is nullable. */
+    isNullable: Boolean,
+    /** A description of the data type and its intended use. */
+    description: String = "",
+) : AppFunctionDataTypeMetadata(isNullable = isNullable, description = description) {
+    override fun toAppFunctionDataTypeMetadataDocument() =
+        AppFunctionDataTypeMetadataDocument(
+            type = TYPE,
+            oneOf = matchOneOf.map { it.toAppFunctionDataTypeMetadataDocument() },
+            isNullable = isNullable,
+            objectQualifiedName = qualifiedName,
+            description = description.ifEmpty { null },
+        )
+
+    override fun equals(other: Any?): Boolean {
+        if (!super.equals(other)) return false
+        if (other !is AppFunctionOneOfTypeMetadata) return false
+        if (qualifiedName != other.qualifiedName) return false
+        return matchOneOf == other.matchOneOf
+    }
+
+    override fun hashCode(): Int {
+        var result = super.hashCode()
+        result = 31 * result + matchOneOf.hashCode()
+        result = 31 * result + qualifiedName.hashCode()
+        return result
+    }
+
+    override fun toString(): String {
+        return "AppFunctionOneOfTypeMetadata(matchOneOf=$matchOneOf, isNullable=$isNullable, description=$description)"
+    }
+
+    internal fun getObjectMetadataForOneOfType(qualifiedName: String): AppFunctionDataTypeMetadata {
+        return matchOneOf.singleOrNull {
+            when (it) {
+                is AppFunctionObjectTypeMetadata -> it.qualifiedName == qualifiedName
+                is AppFunctionReferenceTypeMetadata -> it.referenceDataType == qualifiedName
+                is AppFunctionAllOfTypeMetadata -> it.qualifiedName == qualifiedName
+                else -> throw IllegalArgumentException("Unexpected data type $it for one of type")
+            }
+        } ?: throw IllegalArgumentException("$qualifiedName does not match any of the oneOf types")
+    }
+
+    override fun internalRequireSemanticallyEquivalentTo(
+        other: AppFunctionDataTypeMetadata,
+        thisComponent: AppFunctionComponentsMetadata,
+        otherComponent: AppFunctionComponentsMetadata,
+        visitingPairs: MutableSet<Pair<String, String>>,
+    ) {
+        val otherResolved = tryResolveDataType(other, otherComponent)
+        require(otherResolved is AppFunctionOneOfTypeMetadata) {
+            "Expect ${AppFunctionOneOfTypeMetadata::class.java} but found ${otherResolved.javaClass}"
+        }
+        require(this.matchOneOf.size == otherResolved.matchOneOf.size) {
+            "OneOf options size mismatch. Expected size: ${this.matchOneOf.size}, actual size: ${otherResolved.matchOneOf.size}"
+        }
+        for (t1 in this.matchOneOf) {
+            val matchesAny =
+                otherResolved.matchOneOf.any { t2 ->
+                    try {
+                        t1.requireSemanticallyEquivalentTo(
+                            t2,
+                            thisComponent,
+                            otherComponent,
+                            visitingPairs,
+                        )
+                        true
+                    } catch (_: IllegalArgumentException) {
+                        false
+                    }
+                }
+            require(matchesAny) {
+                "OneOf match mismatch. Cannot find equivalent type for $t1 in OneOf"
+            }
+        }
+        for (t2 in otherResolved.matchOneOf) {
+            val matchesAny =
+                this.matchOneOf.any { t1 ->
+                    try {
+                        t1.requireSemanticallyEquivalentTo(
+                            t2,
+                            thisComponent,
+                            otherComponent,
+                            visitingPairs,
+                        )
+                        true
+                    } catch (_: IllegalArgumentException) {
+                        false
+                    }
+                }
+            require(matchesAny) {
+                "OneOf match mismatch. Cannot find equivalent type for $t2 in expected OneOf"
+            }
+        }
+    }
+
+    public companion object {
+        internal const val TYPE: Int = TYPE_ONE_OF
     }
 }
 
@@ -394,6 +667,46 @@ constructor(
         )
     }
 
+    override fun internalRequireSemanticallyEquivalentTo(
+        other: AppFunctionDataTypeMetadata,
+        thisComponent: AppFunctionComponentsMetadata,
+        otherComponent: AppFunctionComponentsMetadata,
+        visitingPairs: MutableSet<Pair<String, String>>,
+    ) {
+        val otherResolved = tryResolveDataType(other, otherComponent)
+        require(otherResolved is AppFunctionObjectTypeMetadata) {
+            "Expect ${AppFunctionObjectTypeMetadata::class.java} but found ${otherResolved.javaClass}"
+        }
+        val thisKeys = this.properties.keys
+        val otherKeys = otherResolved.properties.keys
+        require(thisKeys == otherKeys) {
+            "Property keys mismatch in Object type. Expected keys: $thisKeys, actual keys: $otherKeys"
+        }
+        val thisRequiredSet = this.required.toSet()
+        val otherRequiredSet = otherResolved.required.toSet()
+        require(thisRequiredSet == otherRequiredSet) {
+            "Required properties mismatch in Object type. Expected: $thisRequiredSet, actual: $otherRequiredSet"
+        }
+
+        for ((key, value) in this.properties) {
+            val otherValue = otherResolved.properties[key]
+            requireNotNull(otherValue) { "Missing property \"$key\" in actual Object type" }
+            try {
+                value.requireSemanticallyEquivalentTo(
+                    otherValue,
+                    thisComponent,
+                    otherComponent,
+                    visitingPairs,
+                )
+            } catch (e: IllegalArgumentException) {
+                throw IllegalArgumentException(
+                    "Type mismatch in Object property \"$key\": ${e.message}",
+                    e,
+                )
+            }
+        }
+    }
+
     public companion object {
         /**
          * Object type. The schema of the object is defined in a [AppFunctionObjectTypeMetadata].
@@ -441,6 +754,30 @@ constructor(
             dataTypeReference = referenceDataType,
             isNullable = isNullable,
             description = description.ifEmpty { null },
+        )
+    }
+
+    override fun internalRequireSemanticallyEquivalentTo(
+        other: AppFunctionDataTypeMetadata,
+        thisComponent: AppFunctionComponentsMetadata,
+        otherComponent: AppFunctionComponentsMetadata,
+        visitingPairs: MutableSet<Pair<String, String>>,
+    ) {
+        if (other is AppFunctionReferenceTypeMetadata) {
+            val pair = this.referenceDataType to other.referenceDataType
+            if (visitingPairs.contains(pair)) {
+                return
+            }
+            visitingPairs.add(pair)
+        }
+
+        val thisResolved = tryResolveDataType(this, thisComponent)
+        val otherResolved = tryResolveDataType(other, otherComponent)
+        thisResolved.requireSemanticallyEquivalentTo(
+            otherResolved,
+            thisComponent,
+            otherComponent,
+            visitingPairs,
         )
     }
 
@@ -495,6 +832,23 @@ constructor(
         )
     }
 
+    override fun internalRequireSemanticallyEquivalentTo(
+        other: AppFunctionDataTypeMetadata,
+        thisComponent: AppFunctionComponentsMetadata,
+        otherComponent: AppFunctionComponentsMetadata,
+        visitingPairs: MutableSet<Pair<String, String>>,
+    ) {
+        val otherResolved = tryResolveDataType(other, otherComponent)
+        require(otherResolved is AppFunctionIntTypeMetadata) {
+            "Expect ${AppFunctionIntTypeMetadata::class.java} but found ${otherResolved.javaClass}"
+        }
+        require(this.enumValues == otherResolved.enumValues) {
+            "Enum values mismatch for Int type. " +
+                "Expected: ${this.enumValues}, " +
+                "actual: ${otherResolved.enumValues}"
+        }
+    }
+
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is AppFunctionIntTypeMetadata) return false
@@ -544,6 +898,18 @@ constructor(
     override fun toString(): String {
         return "AppFunctionLongTypeMetadata(isNullable=$isNullable, description=$description)"
     }
+
+    override fun internalRequireSemanticallyEquivalentTo(
+        other: AppFunctionDataTypeMetadata,
+        thisComponent: AppFunctionComponentsMetadata,
+        otherComponent: AppFunctionComponentsMetadata,
+        visitingPairs: MutableSet<Pair<String, String>>,
+    ) {
+        val otherResolved = tryResolveDataType(other, otherComponent)
+        require(otherResolved is AppFunctionLongTypeMetadata) {
+            "Expect ${AppFunctionLongTypeMetadata::class.java} but found ${otherResolved.javaClass}"
+        }
+    }
 }
 
 /**
@@ -581,6 +947,18 @@ constructor(
 
     override fun toString(): String {
         return "AppFunctionFloatTypeMetadata(isNullable=$isNullable, description=$description)"
+    }
+
+    override fun internalRequireSemanticallyEquivalentTo(
+        other: AppFunctionDataTypeMetadata,
+        thisComponent: AppFunctionComponentsMetadata,
+        otherComponent: AppFunctionComponentsMetadata,
+        visitingPairs: MutableSet<Pair<String, String>>,
+    ) {
+        val otherResolved = tryResolveDataType(other, otherComponent)
+        require(otherResolved is AppFunctionFloatTypeMetadata) {
+            "Expect ${AppFunctionFloatTypeMetadata::class.java} but found ${otherResolved.javaClass}"
+        }
     }
 }
 
@@ -622,6 +1000,18 @@ constructor(
     override fun toString(): String {
         return "AppFunctionUnitTypeMetadata(isNullable=$isNullable, description=$description)"
     }
+
+    override fun internalRequireSemanticallyEquivalentTo(
+        other: AppFunctionDataTypeMetadata,
+        thisComponent: AppFunctionComponentsMetadata,
+        otherComponent: AppFunctionComponentsMetadata,
+        visitingPairs: MutableSet<Pair<String, String>>,
+    ) {
+        val otherResolved = tryResolveDataType(other, otherComponent)
+        require(otherResolved is AppFunctionUnitTypeMetadata) {
+            "Expect ${AppFunctionUnitTypeMetadata::class.java} but found ${otherResolved.javaClass}"
+        }
+    }
 }
 
 /**
@@ -662,6 +1052,18 @@ constructor(
     override fun toString(): String {
         return "AppFunctionBooleanTypeMetadata(isNullable=$isNullable, description=$description)"
     }
+
+    override fun internalRequireSemanticallyEquivalentTo(
+        other: AppFunctionDataTypeMetadata,
+        thisComponent: AppFunctionComponentsMetadata,
+        otherComponent: AppFunctionComponentsMetadata,
+        visitingPairs: MutableSet<Pair<String, String>>,
+    ) {
+        val otherResolved = tryResolveDataType(other, otherComponent)
+        require(otherResolved is AppFunctionBooleanTypeMetadata) {
+            "Expect ${AppFunctionBooleanTypeMetadata::class.java} but found ${otherResolved.javaClass}"
+        }
+    }
 }
 
 /**
@@ -699,6 +1101,18 @@ constructor(
 
     override fun toString(): String {
         return "AppFunctionBytesTypeMetadata(isNullable=$isNullable, description=$description)"
+    }
+
+    override fun internalRequireSemanticallyEquivalentTo(
+        other: AppFunctionDataTypeMetadata,
+        thisComponent: AppFunctionComponentsMetadata,
+        otherComponent: AppFunctionComponentsMetadata,
+        visitingPairs: MutableSet<Pair<String, String>>,
+    ) {
+        val otherResolved = tryResolveDataType(other, otherComponent)
+        require(otherResolved is AppFunctionBytesTypeMetadata) {
+            "Expect ${AppFunctionBytesTypeMetadata::class.java} but found ${otherResolved.javaClass}"
+        }
     }
 }
 
@@ -739,6 +1153,18 @@ constructor(
 
     override fun toString(): String {
         return "AppFunctionDoubleTypeMetadata(isNullable=$isNullable, description=$description)"
+    }
+
+    override fun internalRequireSemanticallyEquivalentTo(
+        other: AppFunctionDataTypeMetadata,
+        thisComponent: AppFunctionComponentsMetadata,
+        otherComponent: AppFunctionComponentsMetadata,
+        visitingPairs: MutableSet<Pair<String, String>>,
+    ) {
+        val otherResolved = tryResolveDataType(other, otherComponent)
+        require(otherResolved is AppFunctionDoubleTypeMetadata) {
+            "Expect ${AppFunctionDoubleTypeMetadata::class.java} but found ${otherResolved.javaClass}"
+        }
     }
 }
 
@@ -800,46 +1226,81 @@ constructor(
     override fun toString(): String {
         return "AppFunctionStringTypeMetadata(isNullable=$isNullable, description=$description)"
     }
+
+    override fun internalRequireSemanticallyEquivalentTo(
+        other: AppFunctionDataTypeMetadata,
+        thisComponent: AppFunctionComponentsMetadata,
+        otherComponent: AppFunctionComponentsMetadata,
+        visitingPairs: MutableSet<Pair<String, String>>,
+    ) {
+        val otherResolved = tryResolveDataType(other, otherComponent)
+        require(otherResolved is AppFunctionStringTypeMetadata) {
+            "Expect ${AppFunctionStringTypeMetadata::class.java} but found ${otherResolved.javaClass}"
+        }
+        require(this.enumValues == otherResolved.enumValues) {
+            "Enum values mismatch for String type. " +
+                "Expected: ${this.enumValues}, " +
+                "actual: ${otherResolved.enumValues}"
+        }
+    }
 }
 
 /**
- * Defines the schema of a PendingIntent data type.
+ * Defines the schema of a Parcelable data type.
  *
- * Corresponds to [android.app.PendingIntent].
+ * Corresponds to [android.os.Parcelable].
  */
-public class AppFunctionPendingIntentTypeMetadata
+public class AppFunctionParcelableTypeMetadata
 @JvmOverloads
 constructor(
+    /** The qualified name of the [android.os.Parcelable] represented by this metadata. */
+    public val qualifiedName: String,
     /** Whether the data type is nullable. */
     isNullable: Boolean,
     /** A description of the data type and its intended use. */
     description: String = "",
 ) : AppFunctionDataTypeMetadata(isNullable = isNullable, description = description) {
-
-    /**
-     * Converts this [AppFunctionPendingIntentTypeMetadata] to an
-     * [AppFunctionDataTypeMetadataDocument].
-     */
-    override fun toAppFunctionDataTypeMetadataDocument(): AppFunctionDataTypeMetadataDocument {
-        return AppFunctionDataTypeMetadataDocument(
-            type = TYPE_PENDING_INTENT,
+    override fun toAppFunctionDataTypeMetadataDocument() =
+        AppFunctionDataTypeMetadataDocument(
+            type = TYPE_PARCELABLE,
             isNullable = isNullable,
             description = description.ifEmpty { null },
+            objectQualifiedName = qualifiedName,
         )
-    }
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
-        if (other !is AppFunctionPendingIntentTypeMetadata) return false
-        return super.equals(other)
+        if (other !is AppFunctionParcelableTypeMetadata) return false
+        if (!super.equals(other)) return false
+
+        return qualifiedName == other.qualifiedName
     }
 
     override fun hashCode(): Int {
-        return super.hashCode()
+        var result = super.hashCode()
+        result = 31 * result + qualifiedName.hashCode()
+        return result
     }
 
     override fun toString(): String {
-        return "AppFunctionPendingIntentTypeMetadata(isNullable=$isNullable, description=$description)"
+        return "AppFunctionParcelableTypeMetadata(qualifiedName=$qualifiedName, isNullable=$isNullable, description=$description)"
+    }
+
+    override fun internalRequireSemanticallyEquivalentTo(
+        other: AppFunctionDataTypeMetadata,
+        thisComponent: AppFunctionComponentsMetadata,
+        otherComponent: AppFunctionComponentsMetadata,
+        visitingPairs: MutableSet<Pair<String, String>>,
+    ) {
+        val otherResolved = tryResolveDataType(other, otherComponent)
+        require(otherResolved is AppFunctionParcelableTypeMetadata) {
+            "Expect ${AppFunctionParcelableTypeMetadata::class.java} but found ${otherResolved.javaClass}"
+        }
+        require(this.qualifiedName == otherResolved.qualifiedName) {
+            "Parcelable qualified name mismatch. " +
+                "Expected: ${this.qualifiedName}, " +
+                "actual: ${otherResolved.qualifiedName}"
+        }
     }
 }
 
@@ -881,6 +1342,12 @@ internal data class AppFunctionDataTypeMetadataDocument(
      * properties.
      */
     @Document.DocumentProperty val allOf: List<AppFunctionDataTypeMetadataDocument> = emptyList(),
+
+    /**
+     * If the [type] is [AppFunctionDataTypeMetadata.TYPE_ONE_OF], this specifies the types
+     * supported by this one of.
+     */
+    @Document.DocumentProperty val oneOf: List<AppFunctionDataTypeMetadataDocument> = emptyList(),
 
     /**
      * If the [type] is [AppFunctionDataTypeMetadata.TYPE_OBJECT], this specified the object's
@@ -949,6 +1416,13 @@ internal data class AppFunctionDataTypeMetadataDocument(
                     isNullable = isNullable,
                     description = description ?: "",
                 )
+            AppFunctionDataTypeMetadata.TYPE_ONE_OF ->
+                AppFunctionOneOfTypeMetadata(
+                    matchOneOf = oneOf.map { it.toAppFunctionDataTypeMetadata() },
+                    qualifiedName = checkNotNull(objectQualifiedName),
+                    isNullable = isNullable,
+                    description = description ?: "",
+                )
             AppFunctionDataTypeMetadata.TYPE_INT ->
                 AppFunctionIntTypeMetadata(
                     isNullable = isNullable,
@@ -991,8 +1465,14 @@ internal data class AppFunctionDataTypeMetadataDocument(
                     description = description ?: "",
                     enumValues = enumValues.toSet().ifEmpty { null },
                 )
-            AppFunctionDataTypeMetadata.TYPE_PENDING_INTENT ->
-                AppFunctionPendingIntentTypeMetadata(
+            AppFunctionDataTypeMetadata.TYPE_PARCELABLE ->
+                AppFunctionParcelableTypeMetadata(
+                    // In library versions alpha01 through alpha07, PendingIntent was represented
+                    // by AppFunctionPendingIntentTypeMetadata. To maintain runtime backward
+                    // compatibility, we use the same type constant for all parcelables and
+                    // default to "android.app.PendingIntent" if the indexed AppFunctionMetadata
+                    // does not contain a qualified name.
+                    qualifiedName = objectQualifiedName ?: PendingIntent::class.java.name,
                     isNullable = isNullable,
                     description = description ?: "",
                 )

@@ -13,40 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@file:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 
 package androidx.compose.remote.creation.compose.modifier
 
 import androidx.annotation.RestrictTo
-import androidx.compose.foundation.layout.offset
 import androidx.compose.remote.creation.compose.state.RemoteDp
 import androidx.compose.remote.creation.compose.state.RemoteFloat
+import androidx.compose.remote.creation.compose.state.RemoteStateScope
 import androidx.compose.remote.creation.modifiers.RecordingModifier
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.unit.Dp
 
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public class OffsetModifier(public val x: RemoteFloat, public val y: RemoteFloat) :
-    RemoteLayoutModifier {
+internal class OffsetModifier(public val x: RemoteFloat, public val y: RemoteFloat) :
+    RemoteModifier.Element {
 
-    override fun toRemoteComposeElement(): RecordingModifier.Element {
-        return androidx.compose.remote.creation.modifiers.OffsetModifier(
-            x.internalAsFloat(),
-            y.internalAsFloat(),
-        )
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    override fun RemoteStateScope.toRecordingModifierElement(): RecordingModifier.Element {
+        return androidx.compose.remote.creation.modifiers.OffsetModifier(x.floatId, y.floatId)
     }
-
-    @Composable
-    override fun Modifier.toComposeUi(): Modifier {
-        return with(LocalDensity.current) { offset(x.toFloat().toDp(), y.toFloat().toDp()) }
-    }
-}
-
-@Composable
-public fun RemoteModifier.offset(x: Dp, y: Dp): RemoteModifier {
-    return offset(RemoteFloat(x.value).asRemoteDp(), RemoteFloat(y.value).asRemoteDp())
 }
 
 public fun RemoteModifier.offset(x: RemoteDp, y: RemoteDp): RemoteModifier =

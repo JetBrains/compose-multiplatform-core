@@ -35,6 +35,7 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.takeOrElse
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.max
+import androidx.wear.compose.foundation.lazy.TransformingLazyColumn
 import androidx.wear.compose.material3.tokens.FilledIconButtonTokens
 import androidx.wear.compose.material3.tokens.FilledTonalIconButtonTokens
 import androidx.wear.compose.material3.tokens.IconButtonTokens
@@ -62,6 +63,9 @@ import androidx.wear.compose.material3.tokens.ShapeTokens
  * Example of an [IconButton]:
  *
  * @sample androidx.wear.compose.material3.samples.IconButtonSample
+ *
+ * ![IconButtonSample Composite
+ * Image](https://developer.android.com/wear/images/design/WearComposeM3_IconButtonSample_CompositeImage.png)
  *
  * Example of an [IconButton] with onLongClick:
  *
@@ -144,6 +148,10 @@ public fun IconButton(
  * Example of [FilledIconButton]:
  *
  * @sample androidx.wear.compose.material3.samples.FilledIconButtonSample
+ *
+ * ![FilledIconButtonSample Composite
+ * Image](https://developer.android.com/wear/images/design/WearComposeM3_FilledIconButtonSample_CompositeImage.png)
+ *
  * @param onClick Will be called when the user clicks the button.
  * @param modifier Modifier to be applied to the button.
  * @param onLongClick Called when this button is long clicked (long-pressed). When this callback is
@@ -214,6 +222,10 @@ public fun FilledIconButton(
  * Example of [FilledTonalIconButton]:
  *
  * @sample androidx.wear.compose.material3.samples.FilledTonalIconButtonSample
+ *
+ * ![FilledTonalIconButtonSample Composite
+ * Image](https://developer.android.com/wear/images/design/WearComposeM3_FilledTonalIconButtonSample_CompositeImage.png)
+ *
  * @param onClick Will be called when the user clicks the button.
  * @param modifier Modifier to be applied to the button.
  * @param onLongClick Called when this button is long clicked (long-pressed). When this callback is
@@ -287,6 +299,10 @@ public fun FilledTonalIconButton(
  * Example of [OutlinedIconButton]:
  *
  * @sample androidx.wear.compose.material3.samples.OutlinedIconButtonSample
+ *
+ * ![OutlinedIconButtonSample Composite
+ * Image](https://developer.android.com/wear/images/design/WearComposeM3_OutlinedIconButtonSample_CompositeImage.png)
+ *
  * @param onClick Will be called when the user clicks the button.
  * @param modifier Modifier to be applied to the button.
  * @param onLongClick Called when this button is long clicked (long-pressed). When this callback is
@@ -384,6 +400,18 @@ public object IconButtonDefaults {
     /** Recommended pressed [Shape] for [IconButton]. */
     public val pressedShape: CornerBasedShape
         @Composable get() = MaterialTheme.shapes.small
+
+    /**
+     * The minimum vertical content padding for the list when an [IconButton] is placed at the top
+     * or bottom edge. Recommended for use with
+     * [androidx.wear.compose.foundation.lazy.TransformingLazyColumnItemScope]'s
+     * [androidx.wear.compose.foundation.lazy.TransformingLazyColumnItemScope.minimumVerticalContentPadding],
+     * which allows items to choose a preferred content padding for the list.
+     * [TransformingLazyColumn] takes its contentPadding as the maximum of the preferred content
+     * padding values and its own contentPadding parameter.
+     */
+    public val minimumVerticalListContentPadding: Dp
+        @Composable get() = screenHeightFraction(SMALL_VERTICAL_CONTENT_PADDING_FRACTION)
 
     /** Recommended alpha to apply to an IconButton with Image content with disabled */
     public val DisabledImageOpacity: Float = DisabledContentAlpha
@@ -496,6 +524,9 @@ public object IconButtonDefaults {
      * Example of creating a [FilledIconButton] with [filledVariantIconButtonColors]:
      *
      * @sample androidx.wear.compose.material3.samples.FilledVariantIconButtonSample
+     *
+     * ![FilledVariantIconButtonSample Composite
+     * Image](https://developer.android.com/wear/images/design/WearComposeM3_FilledVariantIconButtonSample_CompositeImage.png)
      */
     @Composable
     public fun filledVariantIconButtonColors(): IconButtonColors =
@@ -510,6 +541,10 @@ public object IconButtonDefaults {
      * Example of creating a [FilledIconButton] with [filledVariantIconButtonColors]:
      *
      * @sample androidx.wear.compose.material3.samples.FilledVariantIconButtonSample
+     *
+     * ![FilledVariantIconButtonSample Composite
+     * Image](https://developer.android.com/wear/images/design/WearComposeM3_FilledVariantIconButtonSample_CompositeImage.png)
+     *
      * @param containerColor The background color of this icon button when enabled.
      * @param contentColor The color of this icon when enabled.
      * @param disabledContainerColor The background color of this icon button when not enabled.

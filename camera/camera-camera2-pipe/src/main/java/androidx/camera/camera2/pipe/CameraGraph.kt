@@ -38,6 +38,7 @@ import androidx.camera.camera2.pipe.compat.Camera2Quirks
 import androidx.camera.camera2.pipe.core.Log
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 
 /** A [CameraGraph] represents the combined configuration and state of a camera. */
@@ -94,7 +95,7 @@ public interface CameraGraph : CameraGraphBase<Session>, CameraControls3A {
         val sessionColorSpace: CameraColorSpace? = null,
         // TODO: Internal error handling. May be better at the CameraPipe level.
     ) {
-        internal var sharedCameraIds: List<CameraId> = emptyList()
+        internal var concurrentCameraGraphs: ConcurrentCameraGraphs? = null
 
         init {
             check(cameraBackendId == null || customCameraBackend == null) {
@@ -103,9 +104,7 @@ public interface CameraGraph : CameraGraphBase<Session>, CameraControls3A {
         }
     }
 
-    public class ConcurrentConfig(graphConfigs: List<Config>) {
-        public val graphConfigs: List<Config>
-
+    public class ConcurrentConfig(public val graphConfigs: List<Config>) {
         init {
             check(graphConfigs.size >= 2) {
                 "Cannot create ConcurrentGraphConfig without 2 or more CameraGraph.Config(s)"
@@ -119,13 +118,6 @@ public interface CameraGraph : CameraGraphBase<Session>, CameraControls3A {
             check(distinctCameraIds.size == graphConfigs.size) {
                 "Each CameraGraph.Config must have a distinct camera id!"
             }
-
-            this.graphConfigs =
-                graphConfigs.map { config ->
-                    config.apply {
-                        sharedCameraIds = distinctCameraIds.filter { it != config.camera }
-                    }
-                }
         }
     }
 
@@ -246,7 +238,8 @@ public interface CameraGraph : CameraGraphBase<Session>, CameraControls3A {
          * - Device(s): Depends on the situation and the use case.
          * - API levels: All
          */
-        val closeCaptureSessionOnDisconnect: Boolean = false,
+        val closeCaptureSessionOnDisconnect: Boolean =
+            Camera2Quirks.shouldCloseCaptureSessionOnDisconnect(),
 
         /**
          * Flag to close the camera device when the CameraGraph is closed. This is needed on devices
@@ -361,9 +354,19 @@ public interface CameraGraph : CameraGraphBase<Session>, CameraControls3A {
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public interface Session : CameraControls3A, AutoCloseable {
         /**
+         * The currently configured repeating request. If there's no active repeating request, the
+         * method would return null.
+         *
+         * Setting this value to null will attempt to call stopRepeating on the Camera.
+         */
+        public var repeatingRequest: Request?
+
+        /**
          * Causes the CameraGraph to start or update the current repeating request with the provided
          * [Request] object. The [Request] object may be cached, and may be used for other
-         * interactions with the camera (such as updating 3A, or issuing 3A triggers).
+         * interactions with the camera (such as updating 3A, or issuing 3A triggers). Note that
+         * parameter values set in the request here would override the ones in [Parameters] but
+         * would be overwritten by the ones in [Config.requiredParameters].
          */
         public fun startRepeating(request: Request)
 
@@ -588,6 +591,11 @@ public interface CameraGraphBase<TSession : Session> : AutoCloseable {
      */
     public val parameters: Parameters
 
+    /*
+     * This enables setting listeners directly. The listeners would receive callbacks similar to ones added in a [Request]. For detailed usage see [Listeners].
+     */
+    public val listeners: RequestListeners
+
     /** The [StreamGraph] for this camera graph instance. */
     public val streams: StreamGraph
 
@@ -596,6 +604,12 @@ public interface CameraGraphBase<TSession : Session> : AutoCloseable {
      * including when a camera graph is stopped, starting or started.
      */
     public val graphState: StateFlow<GraphState>
+
+    /** Conflated flow of the most recent [FrameNumber]s emitted by this CameraGraph. */
+    public val latestFrameNumber: Flow<FrameNumber>
+
+    /** Conflated flow of the most recent [FrameInfo] instances emitted by this CameraGraph. */
+    public val latestFrameInfo: Flow<FrameInfo>
 
     /**
      * This is a hint an app can give to a camera graph to indicate whether the camera is being used

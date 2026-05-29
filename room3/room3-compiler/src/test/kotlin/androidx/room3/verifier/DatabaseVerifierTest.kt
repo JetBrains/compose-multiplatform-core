@@ -403,7 +403,6 @@ class DatabaseVerifierTest(private val useLocalizedCollation: Boolean) {
             version = -1,
             exportSchema = false,
             enableForeignKeys = false,
-            overrideClearAllTables = true,
             constructorObject = null,
         )
     }

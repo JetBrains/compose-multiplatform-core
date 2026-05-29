@@ -16,7 +16,6 @@
 
 package androidx.room3.solver.transaction.binder
 
-import androidx.room3.compiler.codegen.CodeLanguage
 import androidx.room3.compiler.codegen.XClassName
 import androidx.room3.compiler.codegen.XCodeBlock
 import androidx.room3.compiler.codegen.XPropertySpec
@@ -64,22 +63,12 @@ class CoroutineTransactionFunctionBinder(
                         override fun XCodeBlock.Builder.body(scope: CodeGenScope) {
                             val adapterScope = scope.fork()
                             adapter.createDelegateToSuperCode(
-                                parameterNames =
-                                    when (scope.language) {
-                                        CodeLanguage.JAVA ->
-                                            parameterNames + innerContinuationParamName
-                                        CodeLanguage.KOTLIN -> parameterNames
-                                    },
+                                parameterNames = parameterNames,
                                 daoName = daoName,
                                 daoImplName = daoImplName,
                                 scope = adapterScope,
                             )
-                            val returnPrefix =
-                                when (scope.language) {
-                                    CodeLanguage.JAVA -> "return "
-                                    CodeLanguage.KOTLIN -> ""
-                                }
-                            addStatement("$returnPrefix%L", adapterScope.generate())
+                            addStatement("%L", adapterScope.generate())
                         }
                     },
             )

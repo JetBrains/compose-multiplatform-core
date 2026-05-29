@@ -163,39 +163,33 @@ public final class CustomTabsIntent {
     @RestrictTo(RestrictTo.Scope.LIBRARY)
     @IntDef({OPEN_IN_BROWSER_STATE_DEFAULT, OPEN_IN_BROWSER_STATE_ON, OPEN_IN_BROWSER_STATE_OFF})
     @Retention(RetentionPolicy.SOURCE)
-    @ExperimentalOpenInBrowser
     public @interface OpenInBrowserState {
     }
 
     /**
      * Applies the default Open in Browser button state in the toolbar depending on the browser.
      */
-    @ExperimentalOpenInBrowser
     public static final int OPEN_IN_BROWSER_STATE_DEFAULT = 0;
 
     /**
      * Shows the Open in Browser button in the toolbar.
      */
-    @ExperimentalOpenInBrowser
     public static final int OPEN_IN_BROWSER_STATE_ON = 1;
 
     /**
      * Explicitly does not show the Open in Browser button in the toolbar.
      */
-    @ExperimentalOpenInBrowser
     public static final int OPEN_IN_BROWSER_STATE_OFF = 2;
 
     /**
      * Maximum value for the OPEN_IN_BROWSER_STATE_* configuration options. For validation purposes
      * only.
      */
-    @ExperimentalOpenInBrowser
     private static final int OPEN_IN_BROWSER_STATE_MAX = 2;
 
     /**
      * Extra to set the state for the Open in Browser button in the toolbar.
      */
-    @ExperimentalOpenInBrowser
     public static final String EXTRA_OPEN_IN_BROWSER_STATE =
             "androidx.browser.customtabs.extra.OPEN_IN_BROWSER_STATE";
 
@@ -766,6 +760,14 @@ public final class CustomTabsIntent {
     @ExperimentalCustomContentAction
     public static final String EXTRA_CONTEXT_IMAGE_URL =
             "androidx.browser.customtabs.extra.CONTEXT_IMAGE_URL";
+
+    /**
+     * Extra added to the custom content action {@link PendingIntent} by the browser.
+     * This extra may contain the title of the current web page.
+     */
+    @ExperimentalCustomContentAction
+    public static final String EXTRA_CONTEXT_PAGE_TITLE =
+            "androidx.browser.customtabs.extra.CONTEXT_PAGE_TITLE";
 
     /**
      * Extra added to the custom content action {@link PendingIntent} by the browser.
@@ -1525,7 +1527,6 @@ public final class CustomTabsIntent {
          * @see CustomTabsIntent#OPEN_IN_BROWSER_STATE_OFF
          * @throws IllegalArgumentException when an invalid option is provided.
          */
-        @ExperimentalOpenInBrowser
         public @NonNull Builder setOpenInBrowserButtonState(
                 @OpenInBrowserState int openInBrowserState) {
             if (openInBrowserState < 0 || openInBrowserState > OPEN_IN_BROWSER_STATE_MAX) {
@@ -1690,7 +1691,8 @@ public final class CustomTabsIntent {
          * Custom Tab as its data, {@link CustomTabsIntent#EXTRA_TRIGGERED_CUSTOM_CONTENT_ACTION_ID}
          * with the ID of this action, {@link CustomTabsIntent#EXTRA_CLICKED_CONTENT_TARGET_TYPE}
          * with the type of content interacted with, and potentially other contextual extras
-         * (e.g., {@link CustomTabsIntent#EXTRA_CONTEXT_IMAGE_URL}).
+         * (e.g., {@link CustomTabsIntent#EXTRA_CONTEXT_IMAGE_URL},
+         * {@link CustomTabsIntent#EXTRA_CONTEXT_PAGE_TITLE}).
          *
          * @param action The {@link CustomContentAction} to add. Must not be null.
          * @return This Builder.
@@ -2025,7 +2027,6 @@ public final class CustomTabsIntent {
      * @see CustomTabsIntent#OPEN_IN_BROWSER_STATE_ON
      * @see CustomTabsIntent#OPEN_IN_BROWSER_STATE_OFF
      */
-    @ExperimentalOpenInBrowser
     @OpenInBrowserState
     public static int getOpenInBrowserButtonState(@NonNull Intent intent) {
         return intent.getIntExtra(EXTRA_OPEN_IN_BROWSER_STATE, OPEN_IN_BROWSER_STATE_DEFAULT);
@@ -2143,9 +2144,11 @@ public final class CustomTabsIntent {
         }
         List<CustomContentAction> actions = new ArrayList<>(bundles.size());
         for (Bundle bundle : bundles) {
-            CustomContentAction action = CustomContentAction.fromBundle(bundle);
-            if (action != null) {
+            try {
+                CustomContentAction action = CustomContentAction.fromBundle(bundle);
                 actions.add(action);
+            } catch (IllegalArgumentException e) {
+                // Ignoring malformed bundles on purpose.
             }
         }
         return Collections.unmodifiableList(actions);

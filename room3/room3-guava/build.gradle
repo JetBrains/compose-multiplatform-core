@@ -15,10 +15,9 @@
  */
 
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
 
@@ -28,21 +27,17 @@ import androidx.build.SoftwareType
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("org.jetbrains.kotlin.android")
 }
 
 dependencies {
     api(libs.jspecify)
     api(project(":room3:room3-common"))
-    api(project(":room3:room3-runtime")) {
-        exclude group: "com.google.guava", module: "listenablefuture"
-    }
+    api(project(":room3:room3-runtime"))
     implementation("androidx.arch.core:core-runtime:2.2.0")
     api("androidx.annotation:annotation:1.8.1")
     implementation("androidx.concurrent:concurrent-futures:1.0.0")
-    implementation(libs.kotlinCoroutinesGuava) {
-        exclude group: "com.google.guava", module: "guava"
-    }
+    implementation(libs.guavaAndroid) // upgrading to newer version of guava due to CVE-2023-2976
+    implementation(libs.kotlinCoroutinesGuava)
     androidTestImplementation(libs.testRunner)
     androidTestImplementation(libs.truth)
 }
@@ -52,7 +47,6 @@ androidx {
     type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2018"
     description = "Android Room Guava"
-    kotlinTarget = KotlinTarget.KOTLIN_2_1
 }
 
 android {

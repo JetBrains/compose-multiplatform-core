@@ -42,20 +42,23 @@ package androidx.compose.runtime.retain
 public interface RetainObserver {
     /**
      * Called when this object is successfully [retain]ed. This occurs when the result of a [retain]
-     * call is successfully created and installed in a [RetainScope] and has the same timing as
-     * [onRemembered][androidx.compose.runtime.RememberObserver.onRemembered] for the initial
+     * call is successfully created and installed in a [RetainedValuesStore] and has the same timing
+     * as [onRemembered][androidx.compose.runtime.RememberObserver.onRemembered] for the initial
      * retention of a value.
      *
      * When the composition is successful, this call will be immediately followed by a call to
      * [onEnteredComposition].
      *
-     * If the composition is abandoned and the associated [RetainScope] is currently keeping exited
-     * values, the value will be retained and may be used in a future (successful) composition. This
-     * is the only scenario in which it is possible for a RetainObserver to experience a lifecycle
-     * of Retained -> Retired without receiving any calls to [onEnteredComposition].
+     * If the composition is abandoned and the associated [RetainedValuesStore] is currently
+     * retaining exited values, the value will be retained and may be used in a future (successful)
+     * composition. This is the only scenario in which it is possible for a RetainObserver to
+     * experience a lifecycle of Retained -> Retired without receiving any calls to
+     * [onEnteredComposition].
      *
-     * If the composition is unsuccessful and the associated [RetainScope] is not keeping exited
-     * values, this callback will be skipped and [onUnused] will be called instead.
+     * If the composition is unsuccessful and the associated [RetainedValuesStore] is not retaining
+     * exited values, this callback will be skipped and [onUnused] will be called instead.
+     *
+     * This callback is always invoked on the applier thread.
      */
     public fun onRetained()
 
@@ -69,6 +72,10 @@ public interface RetainObserver {
      * relative both to other RetainObservers and other
      * [RememberObserver][androidx.compose.runtime.RememberObserver] instances. This function can be
      * called multiple times and will be invoked only after [onRetained] or [onExitedComposition].
+     *
+     * This callback is always invoked on the _current_ applier thread. If the retained value has
+     * moved to a different composition, this may be a different thread than the one it was
+     * [onRetained] on.
      */
     public fun onEnteredComposition()
 
@@ -83,6 +90,9 @@ public interface RetainObserver {
      * [RememberObserver.onForgotten][androidx.compose.runtime.RememberObserver.onForgotten],
      * relative both to other RetainObservers and other
      * [RememberObserver][androidx.compose.runtime.RememberObserver] instances.
+     *
+     * This callback is always invoked on the current applier thread. It will match the last thread
+     * used by [onEnteredComposition].
      */
     public fun onExitedComposition()
 
@@ -96,8 +106,9 @@ public interface RetainObserver {
      * [androidx.compose.runtime.RememberObserver.onAbandoned]), or after [onExitedComposition].
      * When called after [onExitedComposition], this indicates that this value was previously used
      * in composition, but the content retaining this value has been removed and will not be
-     * returned to (either because the relevant [RetainScope] was not retaining at the time of
-     * removal, or the removed content was not restored after all retained objects were restored).
+     * returned to (either because the relevant [RetainedValuesStore] was not retaining at the time
+     * of removal, or the removed content was not restored after all retained objects were
+     * restored).
      *
      * Implementations of this method can be used to release resources held by the instance.
      *
@@ -106,6 +117,14 @@ public interface RetainObserver {
      * an arbitrary delay between [onExitedComposition] and when this method is called — anywhere
      * between immediately after exiting the composition, a single frame later, or indefinitely
      * later.
+     *
+     * This callback may execute on any thread. By default in Compose UI, this callback always
+     * executes on the main thread. If a value is retired because it left composition and its scope
+     * is not retaining exited values, the callback will execute on the current applier thread. If a
+     * value is retired because the retaining [RetainedValuesStore] was disposed while orphaned from
+     * a composition (and therefore with no designated applier thread), this callback will execute
+     * on the thread that triggered the disposal. This may be a different applier thread or the main
+     * thread.
      */
     public fun onRetired()
 
@@ -116,6 +135,8 @@ public interface RetainObserver {
      *
      * This method is only called when this value is returned by [retain] and will not receive a
      * call to [onRetained].
+     *
+     * This callback is always invoked on the applier thread.
      */
     public fun onUnused()
 }

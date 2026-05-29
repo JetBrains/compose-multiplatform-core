@@ -16,11 +16,12 @@
 
 package androidx.xr.arcore.openxr
 
-import androidx.annotation.RestrictTo
 import androidx.xr.arcore.runtime.Anchor
 import androidx.xr.arcore.runtime.AnchorInvalidUuidException
 import androidx.xr.arcore.runtime.AnchorResourcesExhaustedException
-import androidx.xr.arcore.runtime.DepthMap
+import androidx.xr.arcore.runtime.AnchorRuntimeFailureException
+import androidx.xr.arcore.runtime.ConversationState
+import androidx.xr.arcore.runtime.Depth
 import androidx.xr.arcore.runtime.Eye
 import androidx.xr.arcore.runtime.Face
 import androidx.xr.arcore.runtime.Hand
@@ -29,8 +30,8 @@ import androidx.xr.arcore.runtime.PerceptionManager
 import androidx.xr.arcore.runtime.Plane
 import androidx.xr.arcore.runtime.RenderViewpoint
 import androidx.xr.arcore.runtime.Trackable
-import androidx.xr.runtime.Config
-import androidx.xr.runtime.VpsAvailabilityResult
+import androidx.xr.runtime.DepthEstimationMode
+import androidx.xr.runtime.EyeTrackingMode
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Ray
 import androidx.xr.runtime.math.Vector3
@@ -38,10 +39,27 @@ import java.nio.ByteBuffer
 import java.util.Arrays
 import java.util.UUID
 
-/** Implementation of the perception capabilities of a runtime using OpenXR. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public class OpenXrPerceptionManager
-internal constructor(private val timeSource: OpenXrTimeSource) : PerceptionManager {
+/**
+ * Implementation of the perception capabilities of a runtime using OpenXR.
+ *
+ * @property xrResources the [XrResources] for this manager
+ * @property trackables the collection of [Trackable] objects
+ * @property leftEye the left [Eye], or null if not available
+ * @property rightEye the right [Eye], or null if not available
+ * @property leftHand the left [Hand], or null if not available
+ * @property rightHand the right [Hand], or null if not available
+ * @property arDevice the [OpenXrDevice] instance
+ * @property leftRenderViewpoint the left [RenderViewpoint], or null if not available
+ * @property rightRenderViewpoint the right [RenderViewpoint], or null if not available
+ * @property monoRenderViewpoint the mono [RenderViewpoint], or null if not available
+ * @property userFace the user's [Face], or null if not available
+ * @property geospatial the [OpenXrGeospatial] instance
+ * @property leftDepth the left [Depth], or null if not available
+ * @property rightDepth the right [Depth], or null if not available
+ * @property monoDepth the mono [Depth], or null if not available
+ */
+internal class OpenXrPerceptionManager(private val timeSource: OpenXrTimeSource) :
+    PerceptionManager {
 
     override fun createAnchor(pose: Pose): Anchor {
         val nativeAnchor = nativeCreateAnchor(pose, lastUpdateXrTime)
@@ -89,18 +107,11 @@ internal constructor(private val timeSource: OpenXrTimeSource) : PerceptionManag
         return anchor
     }
 
-    override fun loadAnchorFromNativePointer(nativePointer: Long): Anchor {
-        val anchor = OpenXrAnchor(nativePointer, xrResources)
-        anchor.update(lastUpdateXrTime)
-        xrResources.addUpdatable(anchor as Updatable)
-        return anchor
-    }
-
     override fun unpersistAnchor(uuid: UUID) {
         check(nativeUnpersistAnchor(uuid)) { "Failed to unpersist anchor." }
     }
 
-    internal val xrResources = XrResources()
+    internal val xrResources = XrResources(timeSource)
     override val trackables: Collection<Trackable> = xrResources.trackablesMap.values
 
     override val leftEye: Eye
@@ -130,29 +141,32 @@ internal constructor(private val timeSource: OpenXrTimeSource) : PerceptionManag
     override val userFace: Face?
         get() = xrResources.userFace
 
-    override val earth: OpenXrEarth = xrResources.earth
+    override val geospatial: OpenXrGeospatial = xrResources.geospatial
 
-    override val leftDepthMap: DepthMap?
-        get() = xrResources.leftDepthMap
+    override val leftDepth: Depth?
+        get() = xrResources.leftDepth
 
-    override val rightDepthMap: DepthMap?
-        get() = xrResources.rightDepthMap
+    override val rightDepth: Depth?
+        get() = xrResources.rightDepth
 
     // Mono depth map is not supported in OpenXR.
-    override val monoDepthMap: DepthMap? = null
+    override val monoDepth: Depth? = null
 
-    internal var depthEstimationMode = Config.DepthEstimationMode.DISABLED
+    // Conversation scene signal is not supported in OpenXR.
+    override val conversationSceneSignal: ConversationState? = null
 
-    internal var eyeTrackingMode = Config.EyeTrackingMode.DISABLED
+    internal var depthEstimationMode = DepthEstimationMode.DISABLED
+
+    internal var eyeTrackingMode = EyeTrackingMode.DISABLED
 
     private var lastUpdateXrTime: Long = 0L
 
     /**
      * Updates the perception manager.
      *
-     * @param xrTime the number of nanoseconds since the start of the OpenXR epoch.
+     * @param xrTime the number of nanoseconds since the start of the OpenXR epoch
      */
-    public fun update(xrTime: Long) {
+    internal fun update(xrTime: Long) {
         for (updatable in xrResources.updatables) {
             updatable.update(xrTime)
         }
@@ -161,30 +175,27 @@ internal constructor(private val timeSource: OpenXrTimeSource) : PerceptionManag
         // TODO(b/421191332): Add the View Camera config and apply it for poseInUnboundedSpace.
         updateRenderViewpoints(xrTime, false)
 
-        if (depthEstimationMode != Config.DepthEstimationMode.DISABLED) {
+        if (depthEstimationMode != DepthEstimationMode.DISABLED) {
             val depthMapBuffers = nativeGetDepthImagesDataBuffers(xrTime)
-            xrResources.leftDepthMap.update(depthMapBuffers)
-            xrResources.rightDepthMap.update(depthMapBuffers)
+            xrResources.leftDepth.update(depthMapBuffers)
+            xrResources.rightDepth.update(depthMapBuffers)
         }
 
-        if (eyeTrackingMode != Config.EyeTrackingMode.DISABLED) {
-            if (eyeTrackingMode.isCoarseTrackingEnabled) {
-                updateEyesCoarseTracking(xrTime)
-            }
-            if (eyeTrackingMode.isFineTrackingEnabled) {
-                updateEyesFineTracking(xrTime)
-            }
+        if (eyeTrackingMode != EyeTrackingMode.DISABLED) {
+            updateEyes(xrTime)
         }
 
         lastUpdateXrTime = xrTime
     }
 
-    override suspend fun checkVpsAvailability(
-        latitude: Double,
-        longitude: Double,
-    ): VpsAvailabilityResult {
-        throw NotImplementedError("Not implemented on OpenXR runtime.")
-    }
+    override val imageDatabaseMaxLoadedImageCount: Int
+        get() = nativeGetImageDatabaseMaxLoadedImageCount()
+
+    override val isPhysicalSizeEstimationSupported: Boolean
+        get() = nativeIsPhysicalSizeEstimationSupported()
+
+    override val isQrCodeSizeEstimationSupported: Boolean
+        get() = nativeIsQrCodeSizeEstimationSupported()
 
     internal fun updateAugmentedObjects(xrTime: Long) {
         val objects = nativeGetAugmentedObjects(xrTime)
@@ -198,23 +209,13 @@ internal constructor(private val timeSource: OpenXrTimeSource) : PerceptionManag
         }
     }
 
-    internal fun updateEyesCoarseTracking(xrTime: Long) {
-        val eyesInfo = nativeGetCoarseEyesInfo(xrTime)
+    internal fun updateEyes(xrTime: Long) {
+        val eyesInfo = nativeGetEyesInfo(xrTime)
         if (eyesInfo.trackingState.hasLeft) {
-            xrResources.leftEye.updateCoarse(eyesInfo.eyes[0])
+            xrResources.leftEye.update(eyesInfo.eyes[0])
         }
         if (eyesInfo.trackingState.hasRight) {
-            xrResources.rightEye.updateCoarse(eyesInfo.eyes[1])
-        }
-    }
-
-    internal fun updateEyesFineTracking(xrTime: Long) {
-        val eyesInfo = nativeGetFineEyesInfo(xrTime)
-        if (eyesInfo.trackingState.hasLeft) {
-            xrResources.leftEye.updateFine(eyesInfo.eyes[0])
-        }
-        if (eyesInfo.trackingState.hasRight) {
-            xrResources.rightEye.updateFine(eyesInfo.eyes[1])
+            xrResources.rightEye.update(eyesInfo.eyes[1])
         }
     }
 
@@ -225,12 +226,56 @@ internal constructor(private val timeSource: OpenXrTimeSource) : PerceptionManag
             if (xrResources.trackablesMap.containsKey(plane)) continue
 
             val planeTypeInt = nativeGetPlaneType(plane, xrTime)
-            check(planeTypeInt >= 0) { "Failed to get plane type." }
+            // TODO(b/508726641) - Restore to a check that planeTypeInt is non-negative once
+            // xrGetTrackablePlaneANDROID issue is resolved.
+            if (planeTypeInt < 0) {
+                continue
+            }
 
             val trackable =
                 OpenXrPlane(plane, Plane.Type.fromOpenXrType(planeTypeInt), timeSource, xrResources)
             xrResources.addTrackable(plane, trackable)
             xrResources.addUpdatable(trackable as Updatable)
+        }
+    }
+
+    internal fun updateAugmentedImages(xrTime: Long) {
+        val augmentedImages = nativeGetAugmentedImages()
+        // Add new images to the list of trackables.
+        for (augmentedImage in augmentedImages) {
+            if (xrResources.trackablesMap.containsKey(augmentedImage)) continue
+
+            val trackable = OpenXrAugmentedImage(augmentedImage)
+            xrResources.addTrackable(augmentedImage, trackable)
+            xrResources.addUpdatable(trackable as Updatable)
+        }
+
+        // Remove images that are no longer tracked.
+        for ((key, value) in xrResources.trackablesMap.toMap()) {
+            if (value is OpenXrAugmentedImage && !augmentedImages.contains(key)) {
+                xrResources.removeUpdatable(value as Updatable)
+                xrResources.removeTrackable(key)
+            }
+        }
+    }
+
+    internal fun updateQrCode(xrTime: Long) {
+        val qrCodes = nativeGetQrCodes()
+        // Add new QR codes to the list of trackables.
+        for (qrCode in qrCodes) {
+            if (xrResources.trackablesMap.containsKey(qrCode)) continue
+
+            val trackable = OpenXrQrCode(qrCode)
+            xrResources.addTrackable(qrCode, trackable)
+            xrResources.addUpdatable(trackable as Updatable)
+        }
+
+        // Remove QR codes that are no longer tracked.
+        for ((key, value) in xrResources.trackablesMap.toMap()) {
+            if (value is OpenXrQrCode && !qrCodes.contains(key)) {
+                xrResources.removeUpdatable(value as Updatable)
+                xrResources.removeTrackable(key)
+            }
         }
     }
 
@@ -261,7 +306,7 @@ internal constructor(private val timeSource: OpenXrTimeSource) : PerceptionManag
 
     private fun checkNativeAnchorIsValid(nativeAnchor: Long) {
         when (nativeAnchor) {
-            -2L -> throw IllegalStateException("Failed to create anchor.") // kErrorRuntimeFailure
+            -2L -> throw AnchorRuntimeFailureException() // kErrorRuntimeFailure
             -10L -> throw AnchorResourcesExhaustedException() // kErrorLimitReached
         }
     }
@@ -270,9 +315,7 @@ internal constructor(private val timeSource: OpenXrTimeSource) : PerceptionManag
 
     private external fun nativeGetAugmentedObjects(timestampNs: Long): LongArray
 
-    private external fun nativeGetCoarseEyesInfo(xrTime: Long): EyesInfo
-
-    private external fun nativeGetFineEyesInfo(xrTime: Long): EyesInfo
+    private external fun nativeGetEyesInfo(xrTime: Long): EyesInfo
 
     private external fun nativeGetPlanes(): LongArray
 
@@ -301,4 +344,14 @@ internal constructor(private val timeSource: OpenXrTimeSource) : PerceptionManag
     ): Array<ViewCameraState>?
 
     private external fun nativeGetDepthImagesDataBuffers(timestampNs: Long): Array<ByteBuffer>
+
+    private external fun nativeGetAugmentedImages(): LongArray
+
+    private external fun nativeGetImageDatabaseMaxLoadedImageCount(): Int
+
+    private external fun nativeIsPhysicalSizeEstimationSupported(): Boolean
+
+    private external fun nativeGetQrCodes(): LongArray
+
+    private external fun nativeIsQrCodeSizeEstimationSupported(): Boolean
 }

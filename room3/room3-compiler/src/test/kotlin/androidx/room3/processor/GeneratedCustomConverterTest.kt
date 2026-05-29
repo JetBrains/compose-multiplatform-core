@@ -16,7 +16,6 @@
 
 package androidx.room3.processor
 
-import androidx.room3.RoomKspProcessor
 import androidx.room3.RoomProcessor
 import androidx.room3.compiler.processing.XElement
 import androidx.room3.compiler.processing.XFiler
@@ -26,7 +25,7 @@ import androidx.room3.compiler.processing.addOriginatingElement
 import androidx.room3.compiler.processing.javac.JavacBasicAnnotationProcessor
 import androidx.room3.compiler.processing.ksp.KspBasicAnnotationProcessor
 import androidx.room3.compiler.processing.util.Source
-import androidx.room3.compiler.processing.util.runProcessorTest
+import androidx.room3.compiler.processing.util.runKspProcessorTest
 import com.google.devtools.ksp.processing.SymbolProcessorEnvironment
 import com.google.devtools.ksp.processing.SymbolProcessorProvider
 import com.squareup.javapoet.ClassName
@@ -48,38 +47,37 @@ class GeneratedCustomConverterTest {
             Source.kotlin(
                 "Sources.kt",
                 """
-            import androidx.room3.*
+                import androidx.room3.*
 
-            @Database(entities = [MyEntity::class], version = 1, exportSchema = false)
-            @TypeConverters(Generated_CustomConverters::class)
-            abstract class MyDatabase : RoomDatabase() {
-              abstract fun getMyDao(): MyDao
-            }
+                @Database(entities = [MyEntity::class], version = 1, exportSchema = false)
+                @TypeConverters(Generated_CustomConverters::class)
+                abstract class MyDatabase : RoomDatabase() {
+                  abstract fun getMyDao(): MyDao
+                }
 
-            @Dao
-            interface MyDao {
-              @Query("SELECT * FROM MyEntity")
-              fun getMyEntity(): MyEntity
-            }
+                @Dao
+                interface MyDao {
+                  @Query("SELECT * FROM MyEntity")
+                  fun getMyEntity(): MyEntity
+                }
 
-            @Entity
-            @GenConverter
-            data class MyEntity(
-              @PrimaryKey val id: Long,
-              val data: Foo
-            )
+                @Entity
+                @GenConverter
+                data class MyEntity(
+                  @PrimaryKey val id: Long,
+                  val data: Foo
+                )
 
-            class Foo
+                class Foo
 
-            annotation class GenConverter
-            """
+                annotation class GenConverter
+                """
                     .trimIndent(),
             )
-        runProcessorTest(
+        runKspProcessorTest(
             sources = listOf(src),
-            javacProcessors = listOf(RoomProcessor(), JavacCustomConverter()),
             symbolProcessorProviders =
-                listOf(RoomKspProcessor.Provider(), KspCustomConverter.Provider()),
+                listOf(RoomProcessor.Provider(), KspCustomConverter.Provider()),
         ) {
             it.hasNoWarnings()
         }

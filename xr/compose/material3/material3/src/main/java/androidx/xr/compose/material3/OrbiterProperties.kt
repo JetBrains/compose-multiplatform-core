@@ -170,6 +170,7 @@ internal fun VerticalOrbiter(
     properties: VerticalOrbiterProperties,
     content: @Composable () -> Unit,
 ) {
+    @Suppress("DEPRECATION")
     Orbiter(
         position = properties.position,
         offset = properties.offset,
@@ -186,6 +187,7 @@ internal fun HorizontalOrbiter(
     properties: HorizontalOrbiterProperties,
     content: @Composable () -> Unit,
 ) {
+    @Suppress("DEPRECATION")
     Orbiter(
         position = properties.position,
         offset = properties.offset,

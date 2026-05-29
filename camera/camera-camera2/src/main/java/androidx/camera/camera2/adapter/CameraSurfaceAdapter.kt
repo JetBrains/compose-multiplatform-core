@@ -24,14 +24,15 @@ import androidx.annotation.GuardedBy
 import androidx.annotation.VisibleForTesting
 import androidx.camera.camera2.compat.StreamConfigurationMapCompat
 import androidx.camera.camera2.compat.quirk.CameraQuirks
+import androidx.camera.camera2.compat.workaround.ExtraSupportedSurfaceCombinationsContainer
 import androidx.camera.camera2.compat.workaround.OutputSizesCorrector
 import androidx.camera.camera2.config.CameraAppComponent
 import androidx.camera.camera2.config.CameraModule
+import androidx.camera.camera2.impl.Camera2Logger
 import androidx.camera.camera2.impl.FeatureCombinationQueryImpl
 import androidx.camera.camera2.pipe.CameraId
 import androidx.camera.camera2.pipe.CameraPipe
 import androidx.camera.camera2.pipe.DoNotDisturbException
-import androidx.camera.camera2.pipe.core.Log.debug
 import androidx.camera.core.InitializationException
 import androidx.camera.core.featuregroup.impl.FeatureCombinationQuery
 import androidx.camera.core.impl.AttachedSurfaceInfo
@@ -41,6 +42,7 @@ import androidx.camera.core.impl.StreamUseCase
 import androidx.camera.core.impl.SurfaceConfig
 import androidx.camera.core.impl.SurfaceStreamSpecQueryResult
 import androidx.camera.core.impl.UseCaseConfig
+import androidx.camera.core.impl.stabilization.VideoStabilization
 import androidx.core.util.Preconditions
 
 /**
@@ -53,9 +55,13 @@ public class CameraSurfaceAdapter(
     private val context: Context,
     cameraComponent: Any?,
     availableCameraIds: Set<String>,
+    private val extraSupportedSurfaceCombinations: String? = null,
 ) : CameraDeviceSurfaceManager {
     private val component = cameraComponent as CameraAppComponent
     private val lock = Any()
+
+    private val extraSupportedSurfaceCombinationsContainer =
+        ExtraSupportedSurfaceCombinationsContainer(extraSupportedSurfaceCombinations)
 
     @GuardedBy("lock")
     private var supportedSurfaceCombinationMap = mapOf<String, SupportedSurfaceCombination>()
@@ -84,7 +90,7 @@ public class CameraSurfaceAdapter(
         }
 
         if (combinationsToCreate.isNotEmpty()) {
-            debug { "Creating new surface combinations for: $combinationsToCreate" }
+            Camera2Logger.debug { "Creating new surface combinations for: $combinationsToCreate" }
         }
 
         // This heavy work can throw CameraUpdateException, which is the signal to the coordinator.
@@ -106,7 +112,7 @@ public class CameraSurfaceAdapter(
 
             // 3. Atomically replace the map.
             supportedSurfaceCombinationMap = finalCombinations
-            debug {
+            Camera2Logger.debug {
                 "Committed new surface combination map. Total cameras: ${finalCombinations.size}"
             }
         }
@@ -156,6 +162,7 @@ public class CameraSurfaceAdapter(
                         } else {
                             FeatureCombinationQuery.NO_OP_FEATURE_COMBINATION_QUERY
                         },
+                        extraSupportedSurfaceCombinationsContainer,
                     )
             }
         } catch (e: DoNotDisturbException) {
@@ -219,7 +226,7 @@ public class CameraSurfaceAdapter(
      *   resolutions for these surface can not change.
      * @param newUseCaseConfigsSupportedSizeMap map of configurations of the use cases to the
      *   supported sizes list that will be given a suggested stream specification
-     * @param isPreviewStabilizationOn whether the preview stabilization is enabled.
+     * @param videoStabilization the video stabilization mode.
      * @param hasVideoCapture whether the use cases has video capture.
      * @return map of suggested stream specifications for given use cases
      * @throws IllegalArgumentException if {@code newUseCaseConfigs} is an empty list, if there
@@ -231,7 +238,7 @@ public class CameraSurfaceAdapter(
         cameraId: String,
         existingSurfaces: List<AttachedSurfaceInfo>,
         newUseCaseConfigsSupportedSizeMap: Map<UseCaseConfig<*>, List<Size>>,
-        isPreviewStabilizationOn: Boolean,
+        videoStabilization: VideoStabilization,
         hasVideoCapture: Boolean,
         isFeatureComboInvocation: Boolean,
         findMaxSupportedFrameRate: Boolean,
@@ -252,7 +259,7 @@ public class CameraSurfaceAdapter(
             cameraMode,
             existingSurfaces,
             newUseCaseConfigsSupportedSizeMap,
-            isPreviewStabilizationOn,
+            videoStabilization,
             hasVideoCapture,
             isFeatureComboInvocation,
             findMaxSupportedFrameRate,

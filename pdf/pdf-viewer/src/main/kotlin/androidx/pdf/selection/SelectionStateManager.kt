@@ -19,29 +19,43 @@ package androidx.pdf.selection
 import android.graphics.Point
 import android.graphics.PointF
 import android.graphics.RectF
-import android.os.DeadObjectException
+import android.os.RemoteException
 import android.util.SparseArray
 import android.view.HapticFeedbackConstants
 import android.view.MotionEvent
 import androidx.annotation.IntDef
 import androidx.annotation.VisibleForTesting
-import androidx.core.util.forEach
+import androidx.pdf.Dimension
 import androidx.pdf.PdfDocument
+import androidx.pdf.PdfFeature
 import androidx.pdf.PdfPoint
+import androidx.pdf.annotation.models.ImagePdfObject
+import androidx.pdf.annotation.models.bitmapSize
+import androidx.pdf.annotation.models.toImageSelection
+import androidx.pdf.centerPoint
 import androidx.pdf.content.PageSelection
 import androidx.pdf.content.PdfPageContent
 import androidx.pdf.content.PdfPageGotoLinkContent
 import androidx.pdf.content.PdfPageLinkContent
+import androidx.pdf.content.SelectionBoundary
 import androidx.pdf.content.toViewSelection
 import androidx.pdf.exceptions.RequestFailedException
 import androidx.pdf.exceptions.RequestMetadata
+import androidx.pdf.leftBottom
+import androidx.pdf.ocr.OcrProvider
+import androidx.pdf.ocr.OcrResult
+import androidx.pdf.ocr.OcrText
+import androidx.pdf.rightBottom
 import androidx.pdf.selection.model.GoToLinkSelection
 import androidx.pdf.selection.model.HyperLinkSelection
+import androidx.pdf.selection.model.ImageSelection
 import androidx.pdf.selection.model.TextSelection
+import androidx.pdf.toImagePoint
+import androidx.pdf.toPdfRect
 import androidx.pdf.util.CONTENT_SELECTION_REQUEST_NAME
+import androidx.pdf.util.ExceptionUtils.isHandledRemoteException
 import androidx.pdf.view.PageManager
-import androidx.pdf.view.PageMetadataLoader
-import kotlin.collections.firstOrNull
+import androidx.pdf.view.layout.PageLayoutManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancelAndJoin
@@ -52,28 +66,66 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-/** Owns and updates all mutable state related to content selection in [PdfView] */
+/**
+ * Owns and updates all mutable state related to content selection in [androidx.pdf.view.PdfView]
+ */
 internal class SelectionStateManager(
     private val pdfDocument: PdfDocument,
     private val backgroundScope: CoroutineScope,
     private val handleTouchTargetSizePx: Int,
     private val errorFlow: MutableSharedFlow<Throwable>,
-    private val pageMetadataLoader: PageMetadataLoader?,
+    private val pageLayoutManager: PageLayoutManager?,
     private val pageManager: PageManager?,
+    internal var isImageSelectionEnabled: Boolean = false,
+    internal var ocrProvider: OcrProvider? = null,
     initialSelection: SelectionModel? = null,
 ) {
     /** The current [Selection] */
-    @VisibleForTesting val _selectionModel = MutableStateFlow<SelectionModel?>(initialSelection)
+    @VisibleForTesting
+    val _selectionModel = MutableStateFlow(processInitialSelection(initialSelection))
 
     val selectionModel: StateFlow<SelectionModel?>
         get() = _selectionModel
 
-    /** Replay at few values in case of an UI signal issued while [PdfView] is not collecting */
+    /**
+     * Processes the initial selection.
+     *
+     * Placeholder [ImageSelection]s are filtered out and returned as null to initiate an
+     * asynchronous re-fetch of the actual bitmap data. All other selection types are returned
+     * as-is.
+     *
+     * @param initialSelection The selection to process.
+     * @return The sanitized [SelectionModel], or null if it requires a re-fetch.
+     */
+    private fun processInitialSelection(initialSelection: SelectionModel?): SelectionModel? {
+        if (initialSelection == null) return null
+
+        val selection = initialSelection.documentSelection.selection
+        if (selection is ImageSelection && selection.isPlaceholder) {
+            // This is a placeholder from a restored state.
+            // We need to re-fetch the image content asynchronously.
+            val bounds = selection.bounds.first()
+            backgroundScope.launch {
+                selectImageOrImageTextAtPoint(bounds.pageNum, bounds.centerPoint)
+            }
+
+            // Return null for the initial state, as the real selection will be set later.
+            return null
+        }
+
+        // For all other selection types, accept the initial value.
+        return initialSelection
+    }
+
+    /**
+     * Replay at few values in case of an UI signal issued while [androidx.pdf.view.PdfView] is not
+     * collecting
+     */
     private val _selectionUiSignalBus = MutableSharedFlow<SelectionUiSignal>(replay = 3)
 
     /**
-     * This [SharedFlow] serves as an event bus of sorts to signal our host [PdfView] to update its
-     * UI in a decoupled way
+     * This [SharedFlow] serves as an event bus of sorts to signal our host
+     * [androidx.pdf.view.PdfView] to update its UI in a decoupled way
      */
     val selectionUiSignalBus: SharedFlow<SelectionUiSignal>
         get() = _selectionUiSignalBus
@@ -81,6 +133,14 @@ internal class SelectionStateManager(
     private var setSelectionJob: Job? = null
 
     private var draggingState: DraggingState? = null
+
+    /** Context for the current OCR selection, if any */
+    private var ocrContext: OcrContext? = null
+
+    /**
+     * Cache for full-page selection bounds results for selection handle drag session and select all
+     */
+    private val fullPageSelectionCache = SparseArray<PageSelection?>()
 
     /**
      * Potentially updates the location of a drag handle given the [action] and [location] of a
@@ -96,6 +156,7 @@ internal class SelectionStateManager(
         currentZoom: Float,
         isSourceMouse: Boolean,
     ): Boolean {
+        if (!pdfDocument.isFeatureSupported(PdfFeature.TEXT_SELECTION)) return false
         return when (action) {
             MotionEvent.ACTION_DOWN -> {
                 location ?: return false // We can't handle an ACTION_DOWN without a location
@@ -114,16 +175,131 @@ internal class SelectionStateManager(
     /** Asynchronously attempts to select the nearest block of content to [pdfPoint] */
     fun maybeSelectContentAtPoint(pdfPoint: PdfPoint) {
         _selectionUiSignalBus.tryEmit(SelectionUiSignal.ToggleActionMode(show = false))
+        if (!pdfDocument.isFeatureSupported(PdfFeature.TEXT_SELECTION)) return
+
         _selectionUiSignalBus.tryEmit(
             SelectionUiSignal.PlayHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
         )
-        // Check for a link at this point.
-        pageManager?.getPageLinks(pdfPoint.pageNum)?.let { links ->
-            if (selectGoToLinkAtPoint(links.gotoLinks, pdfPoint)) return
-            if (selectExternalLinkAtPoint(links.externalLinks, pdfPoint)) return
+
+        val prevJob = setSelectionJob
+        setSelectionJob =
+            backgroundScope.launch {
+                prevJob?.cancelAndJoin()
+
+                // Check for an image at this point.
+                ocrContext = null
+                if (selectImageOrImageTextAtPoint(pdfPoint.pageNum, pdfPoint)) {
+                    return@launch
+                }
+
+                // Check for a link at this point.
+                pageManager?.getPageLinks(pdfPoint.pageNum)?.let { links ->
+                    if (selectGoToLinkAtPoint(links.gotoLinks, pdfPoint)) return@launch
+                    if (selectExternalLinkAtPoint(links.externalLinks, pdfPoint)) return@launch
+                }
+
+                // Check for a text at this point.
+                updateTextSelection(pdfPoint, pdfPoint)
+            }
+    }
+
+    suspend fun selectImageOrImageTextAtPoint(pageNum: Int, point: PdfPoint): Boolean {
+        // Short-circuit if neither feature is enabled
+        if (!isImageSelectionEnabled && ocrProvider == null) return false
+        try {
+            val imageObject =
+                pdfDocument.getTopPageObjectAtPosition(pageNum, PointF(point.x, point.y))
+                    as? ImagePdfObject ?: return false
+
+            // OCR Selection: Prioritize selecting granular text within the image if an OCR
+            // provider is available. This allows users to interact with specific words as they
+            // would with regular PDF text.
+            if (ocrProvider != null && selectWordInImage(pageNum, point, imageObject)) {
+                return true
+            }
+
+            // Full Image Selection fallback: If OCR is unavailable or no word was found at the
+            // touch point, fallback to selecting the entire image object if image selection is
+            // enabled.
+            if (isImageSelectionEnabled) {
+                val imageSelection = imageObject.toImageSelection(pageNum)
+                updateImageSelection(pageNum = pageNum, imageSelection = imageSelection)
+                return true
+            }
+        } catch (e: RemoteException) {
+            if (!e.isHandledRemoteException) throw e
+
+            val exception =
+                RequestFailedException(
+                    requestMetadata =
+                        RequestMetadata(
+                            requestName = CONTENT_SELECTION_REQUEST_NAME,
+                            pageRange = pageNum..pageNum,
+                        ),
+                    throwable = e,
+                    // Non-critical failure, user can retry the operation.
+                    showError = false,
+                )
+            errorFlow.emit(exception)
         }
-        // Check for a text at this point.
-        updateRangeSelectionAsync(pdfPoint, pdfPoint)
+
+        return false
+    }
+
+    private suspend fun selectWordInImage(
+        pageNum: Int,
+        point: PdfPoint,
+        imageObject: ImagePdfObject,
+    ): Boolean {
+        val ocrResult = ocrProvider?.recognizeText(imageObject.bitmap)
+        if (ocrResult != null) {
+            // Check for a word in image at this point.
+            val imagePoint = point.toImagePoint(imageObject.bounds, imageObject.bitmapSize)
+            val word = ocrResult.getWordAt(imagePoint)
+
+            if (word != null) {
+                // set ocrContext for drag requests.
+                ocrContext =
+                    OcrContext(
+                        ocrResult = ocrResult,
+                        pageNum = pageNum,
+                        imageRect = imageObject.bounds,
+                        bitmapSize = imageObject.bitmapSize,
+                    )
+
+                updateOcrSelection(word)
+                return true
+            }
+        }
+        return false
+    }
+
+    /**
+     * Updates the selection state with the provided [ocrText] within the current OCR context.
+     *
+     * @param ocrText The recognized text and its visual bounds to select.
+     */
+    private fun updateOcrSelection(ocrText: OcrText) {
+        val context = ocrContext ?: return
+
+        // Create Text Selection.
+        val pdfBounds =
+            ocrText.bounds.map {
+                it.toPdfRect(context.pageNum, context.imageRect, context.bitmapSize)
+            }
+        val textSelection = TextSelection(ocrText.text, pdfBounds)
+        val selectedContents =
+            SparseArray<List<Selection>>(1).apply { put(context.pageNum, listOf(textSelection)) }
+
+        // Update Selection Model and signal redraw.
+        _selectionModel.update {
+            SelectionModel(
+                DocumentSelection(selectedContents),
+                UiSelectionBoundary(pdfBounds.first().leftBottom, context.ocrResult.isRtl),
+                UiSelectionBoundary(pdfBounds.last().rightBottom, context.ocrResult.isRtl),
+            )
+        }
+        _selectionUiSignalBus.tryEmit(SelectionUiSignal.Invalidate)
     }
 
     /**
@@ -215,8 +391,10 @@ internal class SelectionStateManager(
     }
 
     /** Synchronously resets all state of this manager */
-    fun clearSelection() {
+    fun clearCurrentSelection() {
         draggingState = null
+        ocrContext = null
+        fullPageSelectionCache.clear()
         setSelectionJob?.cancel()
         setSelectionJob = null
         _selectionUiSignalBus.tryEmit(SelectionUiSignal.ToggleActionMode(show = false))
@@ -235,13 +413,28 @@ internal class SelectionStateManager(
         _selectionUiSignalBus.tryEmit(SelectionUiSignal.ToggleActionMode(show = false))
     }
 
-    /** Updates the selection to include all text on the 0-indexed [pageNum]. */
+    /** Updates the current selection to include all text on all currently selected pages. */
     // TODO(b/386398335) Update this to accept a range of pages for select all, once we support
     // multi-page selections
     // TODO(b/386417152) Update this to use index-based selection once that's supported by
     // PdfDocument
-    fun selectAllTextOnPageAsync(pageNum: Int) {
-        updateAllSelectionAsync(pageNum)
+    fun selectAllText() {
+        val currentSelection = selectionModel.value ?: return
+
+        // If OCR selection is active, select all text within the image
+        ocrContext?.let { context ->
+            updateOcrSelection(context.ocrResult.allText)
+            return
+        }
+
+        val startPage = currentSelection.startBoundary.location.pageNum
+        val endPage = currentSelection.endBoundary.location.pageNum
+
+        updateSelectionAsync(startPage..endPage) {
+            val newPageSelection = getFullPageSelectionForRange(startPage, endPage)
+
+            SelectionModel.create(newPageSelection)
+        }
     }
 
     /**
@@ -305,7 +498,7 @@ internal class SelectionStateManager(
             return maybeHandleActionDown(location, currentZoom)
         }
         // A new drag starts, clear previous selection and hide action mode.
-        clearSelection()
+        clearCurrentSelection()
         val boundary = UiSelectionBoundary(location, isRtl = false)
         draggingState =
             DraggingState(
@@ -355,14 +548,32 @@ internal class SelectionStateManager(
                 prevDraggingState.dragging.location.translateBy(dx, dy)
             else PdfPoint(location.pageNum, PointF(location.x, location.y))
 
-        updateRangeSelectionAsync(
-            fixedPoint = prevDraggingState.fixed.location,
-            draggedPoint = newEndPoint,
-        )
+        updateSelectionRange(prevDraggingState.fixed.location, newEndPoint)
 
         // Hide the action mode while the user is actively dragging the handles
         _selectionUiSignalBus.tryEmit(SelectionUiSignal.ToggleActionMode(show = false))
         return true
+    }
+
+    private fun updateSelectionRange(fixedPoint: PdfPoint, draggedPoint: PdfPoint) {
+        if (ocrContext != null) {
+            handleOcrDrag(fixedPoint, draggedPoint)
+        } else {
+            updateTextSelection(fixedPoint, draggedPoint)
+        }
+    }
+
+    /** Handles selection dragging for images using cached OCR results. */
+    private fun handleOcrDrag(fixedPoint: PdfPoint, draggedPoint: PdfPoint) {
+        val context = ocrContext ?: return
+        if (draggedPoint.pageNum != context.pageNum) return
+        if (!context.imageRect.contains(draggedPoint.x, draggedPoint.y)) return
+
+        val currentImagePoint = draggedPoint.toImagePoint(context.imageRect, context.bitmapSize)
+        val fixedImagePoint = fixedPoint.toImagePoint(context.imageRect, context.bitmapSize)
+
+        val selectedText = context.ocrResult.getText(fixedImagePoint, currentImagePoint)
+        updateOcrSelection(selectedText)
     }
 
     private fun maybeHandleGestureEnd(): Boolean {
@@ -383,19 +594,24 @@ internal class SelectionStateManager(
         return PdfPoint(this.pageNum, PointF(this.x + dx, this.y + dy))
     }
 
-    private fun updateAllSelectionAsync(pageNum: Int) {
-        updateSelectionAsync(pageNum..pageNum) {
-            val newPageSelection =
-                pdfDocument.getSelectAllSelectionBounds(pageNum) ?: return@updateSelectionAsync null
+    private fun updateImageSelection(pageNum: Int, imageSelection: ImageSelection) {
 
-            SelectionModel.getCombinedSelectionModel(
-                selectionModel.value?.documentSelection ?: DocumentSelection(SparseArray()),
-                listOf(newPageSelection),
+        val selectedContents =
+            SparseArray<List<Selection>>().apply { put(pageNum, listOf(imageSelection)) }
+        val documentSelection = DocumentSelection(selectedContents = selectedContents)
+
+        val bounds = imageSelection.bounds.first()
+        _selectionModel.update {
+            SelectionModel(
+                documentSelection,
+                UiSelectionBoundary(PdfPoint(pageNum, bounds.left, bounds.top), isRtl = false),
+                UiSelectionBoundary(PdfPoint(pageNum, bounds.right, bounds.bottom), isRtl = false),
             )
         }
+        _selectionUiSignalBus.tryEmit(SelectionUiSignal.Invalidate)
     }
 
-    private fun updateRangeSelectionAsync(fixedPoint: PdfPoint, draggedPoint: PdfPoint) {
+    private fun updateTextSelection(fixedPoint: PdfPoint, draggedPoint: PdfPoint) {
         val oldSelectionModel = selectionModel.value
         if (oldSelectionModel == null || fixedPoint.pageNum == draggedPoint.pageNum) {
             return updateSinglePageSelection(fixedPoint, draggedPoint)
@@ -404,119 +620,74 @@ internal class SelectionStateManager(
     }
 
     private fun updateMultiplePageSelection(fixedPoint: PdfPoint, draggedPoint: PdfPoint) {
-        val prevSelectionModel = selectionModel.value ?: return
-        val prevStart = prevSelectionModel.startBoundary.location
-        val prevEnd = prevSelectionModel.endBoundary.location
-        val pageRange =
-            if (draggedPoint.pageNum < fixedPoint.pageNum) draggedPoint.pageNum..fixedPoint.pageNum
-            else fixedPoint.pageNum..draggedPoint.pageNum
-        updateSelectionAsync(pageRange) {
+        val (startPoint, endPoint) =
+            if (draggedPoint.pageNum < fixedPoint.pageNum) draggedPoint to fixedPoint
+            else fixedPoint to draggedPoint
+
+        updateSelectionAsync(startPoint.pageNum..endPoint.pageNum) {
             val newPageSelections =
-                if (draggedPoint.pageNum < fixedPoint.pageNum) {
-                        // Extending selection in the upwards direction
-                        getBoundsExtendingUpwards(draggedPoint, prevStart, prevEnd)
-                    } else {
-                        // Extending selection in the downwards direction
-                        getBoundsExtendingDownwards(draggedPoint, prevStart, prevEnd)
-                    }
-                    .takeIf { it.isNotEmpty() } ?: return@updateSelectionAsync null
+                getMultiPageSelectionBounds(startPoint, endPoint).takeIf { it.isNotEmpty() }
+                    ?: return@updateSelectionAsync null
 
-            SelectionModel.getCombinedSelectionModel(
-                getOldSelectionBetweenPageRange(prevSelectionModel, pageRange),
-                newPageSelections,
-            )
+            SelectionModel.create(newPageSelections)
         }
     }
 
-    private suspend fun getBoundsExtendingUpwards(
-        draggedPoint: PdfPoint,
-        prevStart: PdfPoint,
-        prevEnd: PdfPoint,
+    /**
+     * Asynchronously retrieves the selection bounds for a multipage selection.
+     *
+     * @param startPoint The starting point of the selection in PDF coordinates.
+     * @param endPoint The ending point of the selection in PDF coordinates.
+     * @return A list of [PageSelection] objects, one for each page in the selection range.
+     */
+    private suspend fun getMultiPageSelectionBounds(
+        startPoint: PdfPoint,
+        endPoint: PdfPoint,
     ): List<PageSelection?> {
-
-        val newPageSize = pageMetadataLoader?.getPageSize(draggedPoint.pageNum) ?: Point(0, 0)
-        // Find selection bounds for all the skipped pages
-        val intermediateSelection =
-            getPageSelectionsForRange(draggedPoint.pageNum + 1, prevStart.pageNum - 1)
-        return mutableListOf(
-            // Find selection bounds of the page where dragged handles starts
+        // Start page: from startPoint to end of page
+        val startPageSelection =
             pdfDocument.getSelectionBounds(
-                draggedPoint.pageNum,
-                PointF(draggedPoint.x, draggedPoint.y),
-                PointF(newPageSize.x.toFloat(), newPageSize.y.toFloat()),
-            ),
-
-            // Find selection bounds of the page where dragged handle stops
-            getBoundsForFirstSelectedPage(prevStart, prevEnd, draggedPoint),
-        ) + intermediateSelection
-    }
-
-    private suspend fun getBoundsExtendingDownwards(
-        draggedPoint: PdfPoint,
-        prevStart: PdfPoint,
-        prevEnd: PdfPoint,
-    ): List<PageSelection?> {
+                startPoint.pageNum,
+                SelectionBoundary(point = Point(startPoint.x.toInt(), startPoint.y.toInt())),
+                SelectionBoundary(index = Int.MAX_VALUE),
+            )
 
         // Find selection bounds for all the skipped pages
         val intermediateSelection =
-            getPageSelectionsForRange(prevEnd.pageNum + 1, draggedPoint.pageNum - 1)
-        return mutableListOf(
-            // Find selection bounds of the page where dragged handles stops
-            pdfDocument.getSelectionBounds(
-                draggedPoint.pageNum,
-                PointF(0f, 0f),
-                PointF(draggedPoint.x, draggedPoint.y),
-            ),
+            getFullPageSelectionForRange(startPoint.pageNum + 1, endPoint.pageNum - 1)
 
-            // Find selection bounds of the page where dragged handle starts
-            getBoundsForLastSelectedPage(prevStart, prevEnd, draggedPoint),
-        ) + intermediateSelection
-    }
-
-    private suspend fun getBoundsForFirstSelectedPage(
-        prevStart: PdfPoint,
-        prevEnd: PdfPoint,
-        draggedPoint: PdfPoint,
-    ): PageSelection? {
-        return if (prevStart.pageNum == prevEnd.pageNum) {
+        // End page: from start of page to endPoint
+        val endPageSelection =
             pdfDocument.getSelectionBounds(
-                prevEnd.pageNum,
-                PointF(0f, 0f),
-                PointF(prevEnd.x, prevEnd.y),
+                endPoint.pageNum,
+                SelectionBoundary(index = 0),
+                SelectionBoundary(point = Point(endPoint.x.toInt(), endPoint.y.toInt())),
             )
-        } else if (prevStart.pageNum > draggedPoint.pageNum) {
-            pdfDocument.getSelectAllSelectionBounds(prevStart.pageNum)
-        } else {
-            null
-        }
+
+        return listOf(startPageSelection) + intermediateSelection + listOf(endPageSelection)
     }
 
-    private suspend fun getBoundsForLastSelectedPage(
-        prevStart: PdfPoint,
-        prevEnd: PdfPoint,
-        draggedPoint: PdfPoint,
-    ): PageSelection? {
-        return if (prevStart.pageNum == prevEnd.pageNum) {
-            val prevPageSize = pageMetadataLoader?.getPageSize(prevEnd.pageNum) ?: Point(0, 0)
-            pdfDocument.getSelectionBounds(
-                prevEnd.pageNum,
-                PointF(prevStart.x, prevStart.y),
-                PointF(prevPageSize.x.toFloat(), prevPageSize.y.toFloat()),
-            )
-        } else if (prevEnd.pageNum < draggedPoint.pageNum) {
-            pdfDocument.getSelectAllSelectionBounds(prevEnd.pageNum)
-        } else {
-            null
-        }
-    }
-
-    private suspend fun getPageSelectionsForRange(
+    /**
+     * Asynchronously retrieves the full-page selection bounds for a range of pages.
+     *
+     * @param startPage The starting page of the range (inclusive).
+     * @param endPage The ending page of the range (inclusive).
+     * @return A list of [PageSelection] objects representing full-page selections for each page.
+     */
+    private suspend fun getFullPageSelectionForRange(
         startPage: Int,
         endPage: Int,
     ): List<PageSelection?> {
         val selections = mutableListOf<PageSelection?>()
         for (currentPage in startPage..endPage) {
-            selections.add(pdfDocument.getSelectAllSelectionBounds(currentPage))
+            val cachedSelection = fullPageSelectionCache[currentPage]
+            if (cachedSelection != null) {
+                selections.add(cachedSelection)
+            } else {
+                val selection = pdfDocument.getSelectAllSelectionBounds(currentPage)
+                fullPageSelectionCache.put(currentPage, selection)
+                selections.add(selection)
+            }
         }
         return selections
     }
@@ -530,27 +701,8 @@ internal class SelectionStateManager(
                     PointF(endPoint.x, endPoint.y),
                 ) ?: return@updateSelectionAsync null
 
-            SelectionModel.getCombinedSelectionModel(
-                DocumentSelection(SparseArray()),
-                listOf(newPageSelection),
-            )
+            SelectionModel.create(listOf(newPageSelection))
         }
-    }
-
-    private fun getOldSelectionBetweenPageRange(
-        oldSelectionModel: SelectionModel?,
-        pageRange: IntRange,
-    ): DocumentSelection {
-
-        val selectedContents =
-            oldSelectionModel?.documentSelection?.selectedContents ?: SparseArray()
-        val keysToRemove = mutableListOf<Int>()
-        selectedContents.forEach { pageNum, _ ->
-            if (pageNum !in pageRange) keysToRemove.add(pageNum)
-        }
-        keysToRemove.forEach { selectedContents.remove(it) }
-
-        return DocumentSelection(selectedContents)
     }
 
     private fun updateSelectionAsync(
@@ -573,7 +725,9 @@ internal class SelectionStateManager(
                                 SelectionUiSignal.ToggleActionMode(show = true)
                             )
                         }
-                    } catch (e: DeadObjectException) {
+                    } catch (e: RemoteException) {
+                        if (!e.isHandledRemoteException) throw e
+
                         val exception =
                             RequestFailedException(
                                 requestMetadata =
@@ -633,6 +787,14 @@ private data class DraggingState(
     val fixed: UiSelectionBoundary,
     val dragging: UiSelectionBoundary,
     val downPoint: PointF,
+)
+
+/** Holds OCR results and the spatial data needed to map touches back to pixels. */
+private data class OcrContext(
+    val ocrResult: OcrResult,
+    val pageNum: Int,
+    val imageRect: RectF,
+    val bitmapSize: Dimension,
 )
 
 /** Defines integer constants to represent relative position of selection handles */

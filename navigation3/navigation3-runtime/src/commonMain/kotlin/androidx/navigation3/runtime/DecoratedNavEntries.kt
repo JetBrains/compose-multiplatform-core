@@ -19,6 +19,7 @@ package androidx.navigation3.runtime
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import kotlin.jvm.JvmSuppressWildcards
@@ -172,8 +173,7 @@ public fun <T : Any> rememberDecoratedNavEntries(
         }
 
     PrepareBackStack(decoratedEntries, entryDecorators, keysInBackstack, keysInComposition)
-    @Suppress("ListIterator")
-    return remember(entries.toList(), entryDecorators.toList()) { decoratedEntries }
+    return decoratedEntries
 }
 
 /**
@@ -192,44 +192,43 @@ private fun <T : Any> decorateEntry(
     keysInComposition: MutableSet<Any>,
 ): NavEntry<T> {
     val latestDecorators by rememberUpdatedState(decorators)
-    val initial =
-        object : NavEntryWrapper<T>(entry) {
-            @Composable
-            override fun Content() {
-                val keysInComposition = keysInComposition
-                // track if entry is in backstack and/or still in composition
-                DisposableEffect(key1 = contentKey) {
-                    keysInComposition.add(contentKey)
-                    onDispose {
-                        val notInComposition = keysInComposition.remove(contentKey)
-                        val popped = !keysInBackstack.contains(contentKey)
-                        if (popped && notInComposition) {
-                            // we reverse the scopes before popping to imitate the order
-                            // of onDispose calls if each scope/decorator had their own
-                            // onDispose
-                            // calls for clean up
-                            // convert to mutableList first for backwards compat.
-                            latestDecorators.fastForEachReversedOrForEachReversed {
-                                it.onPop(contentKey)
-                            }
+    val contentKey = entry.contentKey
+
+    // decorateEntry gets called in a loop by rememberDecoratedNavEntries for each entry in the
+    // backstack.
+    // Since looped content all share the same position in compose tree, we need to key the NavEntry
+    // instance
+    // to help compose differentiate between NavEntries if backStacks were swapped.
+    key(contentKey) {
+        return NavEntry(navEntry = entry) {
+            val keysInComposition = keysInComposition
+            // track if entry is in backstack and/or still in composition
+            DisposableEffect(key1 = contentKey) {
+                keysInComposition.add(contentKey)
+                onDispose {
+                    val notInComposition = keysInComposition.remove(contentKey)
+                    val popped = !keysInBackstack.contains(contentKey)
+                    if (popped && notInComposition) {
+                        // we reverse the scopes before popping to imitate the order
+                        // of onDispose calls if each scope/decorator had their own
+                        // onDispose
+                        // calls for clean up
+                        // convert to mutableList first for backwards compat.
+                        latestDecorators.fastForEachReversedOrForEachReversed {
+                            it.onPop(contentKey)
                         }
                     }
                 }
-                // wrap entry with decorators then invoke Content
-                decorators
-                    .fastDistinctOrDistinct()
-                    .foldRight(initial = entry) { decorator, wrappedEntry ->
-                        object : NavEntryWrapper<T>(wrappedEntry) {
-                            @Composable
-                            override fun Content() {
-                                decorator.decorate(wrappedEntry)
-                            }
-                        }
-                    }
-                    .Content()
             }
+            // wrap entry with decorators then invoke Content
+            decorators
+                .fastDistinctOrDistinct()
+                .foldRight(initial = entry) { decorator, wrappedEntry ->
+                    NavEntry<T>(wrappedEntry) { decorator.decorate(wrappedEntry) }
+                }
+                .Content()
         }
-    return initial
+    }
 }
 
 /**

@@ -19,13 +19,15 @@ package androidx.appfunctions.core
 import android.content.Context
 import android.os.Build
 import androidx.annotation.RequiresApi
-import androidx.appfunctions.internal.readAll
+import androidx.appfunctions.internal.consumeAll
 import androidx.appfunctions.metadata.AppFunctionAllOfTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionAppMetadata
 import androidx.appfunctions.metadata.AppFunctionComponentsMetadata
 import androidx.appfunctions.metadata.AppFunctionIntTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionMetadata
+import androidx.appfunctions.metadata.AppFunctionName
 import androidx.appfunctions.metadata.AppFunctionObjectTypeMetadata
+import androidx.appfunctions.metadata.AppFunctionPackageMetadata
 import androidx.appfunctions.metadata.AppFunctionParameterMetadata
 import androidx.appfunctions.metadata.AppFunctionReferenceTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionResponseMetadata
@@ -110,7 +112,7 @@ internal class AppFunctionMetadataTestHelper(private val context: Context) {
                             .setNumericSearchEnabled(true)
                             .build(),
                     )
-                    .readAll { it.genericDocument }
+                    .consumeAll { it.genericDocument }
                     .filterNotNull()
                     .first()
 
@@ -188,25 +190,33 @@ internal class AppFunctionMetadataTestHelper(private val context: Context) {
             )
         val NO_SCHEMA_EXECUTION_SUCCEED =
             AppFunctionMetadata(
-                id = FunctionIds.NO_SCHEMA_EXECUTION_SUCCEED,
-                packageName = "androidx.appfunctions.service.test",
-                isEnabled = true,
-                description = "Test function without schema, successful execution expected.",
+                name =
+                    AppFunctionName(
+                        packageName = "androidx.appfunctions.service.test",
+                        functionIdentifier = FunctionIds.NO_SCHEMA_EXECUTION_SUCCEED,
+                    ),
                 schema = null,
-                parameters = emptyList(),
+                parameters = emptyList<AppFunctionParameterMetadata>(),
                 response =
                     AppFunctionResponseMetadata(
                         valueType = AppFunctionStringTypeMetadata(isNullable = false)
                     ),
-                components = sharedComponents,
+                packageMetadata =
+                    AppFunctionPackageMetadata(
+                        packageName = "androidx.appfunctions.service.test",
+                        components = sharedComponents,
+                    ),
+                isEnabled = true,
+                description = "Test function without schema, successful execution expected.",
             )
 
         val NO_SCHEMA_ENABLED_BY_DEFAULT =
             AppFunctionMetadata(
-                id = FunctionIds.NO_SCHEMA_ENABLED_BY_DEFAULT,
-                packageName = "androidx.appfunctions.service.test",
-                isEnabled = true,
-                description = "Test function without schema, enabled by default.",
+                name =
+                    AppFunctionName(
+                        packageName = "androidx.appfunctions.service.test",
+                        functionIdentifier = FunctionIds.NO_SCHEMA_ENABLED_BY_DEFAULT,
+                    ),
                 schema = null,
                 parameters =
                     listOf(
@@ -222,97 +232,142 @@ internal class AppFunctionMetadataTestHelper(private val context: Context) {
                         valueType = AppFunctionUnitTypeMetadata(isNullable = false),
                         description = "The function's response",
                     ),
-                components = sharedComponents,
+                packageMetadata =
+                    AppFunctionPackageMetadata(
+                        packageName = "androidx.appfunctions.service.test",
+                        components = sharedComponents,
+                    ),
+                isEnabled = true,
+                description = "Test function without schema, enabled by default.",
             )
 
         val NO_SCHEMA_DISABLED_BY_DEFAULT =
             AppFunctionMetadata(
-                id = FunctionIds.NO_SCHEMA_DISABLED_BY_DEFAULT,
-                packageName = "androidx.appfunctions.service.test",
-                isEnabled = false,
-                description = "Test function without schema, disabled by default.",
+                name =
+                    AppFunctionName(
+                        packageName = "androidx.appfunctions.service.test",
+                        functionIdentifier = FunctionIds.NO_SCHEMA_DISABLED_BY_DEFAULT,
+                    ),
                 schema = null,
-                parameters = emptyList(),
+                parameters = emptyList<AppFunctionParameterMetadata>(),
                 response =
                     AppFunctionResponseMetadata(
                         valueType = AppFunctionUnitTypeMetadata(isNullable = false)
                     ),
-                components = sharedComponents,
+                packageMetadata =
+                    AppFunctionPackageMetadata(
+                        packageName = "androidx.appfunctions.service.test",
+                        components = sharedComponents,
+                    ),
+                isEnabled = false,
+                description = "Test function without schema, disabled by default.",
             )
 
         val MEDIA_SCHEMA2_PRINT =
             AppFunctionMetadata(
-                id = FunctionIds.MEDIA_SCHEMA2_PRINT,
-                packageName = "androidx.appfunctions.service.test",
-                isEnabled = false,
+                name =
+                    AppFunctionName(
+                        packageName = "androidx.appfunctions.service.test",
+                        functionIdentifier = FunctionIds.MEDIA_SCHEMA2_PRINT,
+                    ),
                 schema = AppFunctionSchemaMetadata(category = "media", name = "print", version = 2),
-                parameters = emptyList(),
+                parameters = emptyList<AppFunctionParameterMetadata>(),
                 response =
                     AppFunctionResponseMetadata(
                         valueType = AppFunctionUnitTypeMetadata(isNullable = false)
                     ),
-                components = sharedComponents,
+                packageMetadata =
+                    AppFunctionPackageMetadata(
+                        packageName = "androidx.appfunctions.service.test",
+                        components = sharedComponents,
+                    ),
+                isEnabled = false,
             )
 
         val MEDIA_SCHEMA_PRINT =
             AppFunctionMetadata(
-                id = FunctionIds.MEDIA_SCHEMA_PRINT,
-                packageName = "androidx.appfunctions.service.test",
-                isEnabled = true,
+                name =
+                    AppFunctionName(
+                        packageName = "androidx.appfunctions.service.test",
+                        functionIdentifier = FunctionIds.MEDIA_SCHEMA_PRINT,
+                    ),
                 schema = AppFunctionSchemaMetadata(category = "media", name = "print", version = 1),
-                parameters = emptyList(),
+                parameters = emptyList<AppFunctionParameterMetadata>(),
                 response =
                     AppFunctionResponseMetadata(
                         valueType = AppFunctionUnitTypeMetadata(isNullable = false)
                     ),
-                components = sharedComponents,
+                packageMetadata =
+                    AppFunctionPackageMetadata(
+                        packageName = "androidx.appfunctions.service.test",
+                        components = sharedComponents,
+                    ),
+                isEnabled = true,
             )
 
         val NOTES_SCHEMA_PRINT =
             AppFunctionMetadata(
-                id = FunctionIds.NOTES_SCHEMA_PRINT,
-                packageName = "androidx.appfunctions.service.test",
-                isEnabled = true,
+                name =
+                    AppFunctionName(
+                        packageName = "androidx.appfunctions.service.test",
+                        functionIdentifier = FunctionIds.NOTES_SCHEMA_PRINT,
+                    ),
                 schema = AppFunctionSchemaMetadata(category = "notes", name = "print", version = 1),
-                parameters = emptyList(),
+                parameters = emptyList<AppFunctionParameterMetadata>(),
                 response =
                     AppFunctionResponseMetadata(
                         valueType = AppFunctionUnitTypeMetadata(isNullable = false)
                     ),
-                components = sharedComponents,
+                packageMetadata =
+                    AppFunctionPackageMetadata(
+                        packageName = "androidx.appfunctions.service.test",
+                        components = sharedComponents,
+                    ),
+                isEnabled = true,
             )
 
         val NO_SCHEMA_EXECUTION_FAIL =
             AppFunctionMetadata(
-                id = FunctionIds.NO_SCHEMA_EXECUTION_FAIL,
-                packageName = "androidx.appfunctions.service.test",
-                isEnabled = true,
-                description = "Test function without schema, failed execution expected.",
+                name =
+                    AppFunctionName(
+                        packageName = "androidx.appfunctions.service.test",
+                        functionIdentifier = FunctionIds.NO_SCHEMA_EXECUTION_FAIL,
+                    ),
                 schema = null,
-                parameters = emptyList(),
+                parameters = emptyList<AppFunctionParameterMetadata>(),
                 response =
                     AppFunctionResponseMetadata(
                         valueType = AppFunctionUnitTypeMetadata(isNullable = false)
                     ),
-                components = sharedComponents,
+                packageMetadata =
+                    AppFunctionPackageMetadata(
+                        packageName = "androidx.appfunctions.service.test",
+                        components = sharedComponents,
+                    ),
+                isEnabled = true,
+                description = "Test function without schema, failed execution expected.",
             )
 
         val ADDITIONAL_LEGACY_CREATE_NOTE =
             AppFunctionMetadata(
-                id = FunctionIds.ADDITIONAL_LEGACY_CREATE_NOTE,
-                packageName = "com.google.android.app.notes",
-                isEnabled = true,
+                name =
+                    AppFunctionName(
+                        packageName = "com.google.android.app.notes",
+                        functionIdentifier = FunctionIds.ADDITIONAL_LEGACY_CREATE_NOTE,
+                    ),
                 schema =
                     AppFunctionSchemaMetadata(category = "notes", name = "createNote", version = 1),
-                parameters = emptyList(),
+                parameters = emptyList<AppFunctionParameterMetadata>(),
                 response =
                     AppFunctionResponseMetadata(
                         AppFunctionReferenceTypeMetadata("test", isNullable = false)
                     ),
-                // TODO: b/444163595 - Remove once components are added to package metadata.
-                // Components are now aggregated hence they are appearing for this as well from
-                // Schema Inventory.
-                components = sharedComponents,
+                packageMetadata =
+                    AppFunctionPackageMetadata(
+                        packageName = "com.google.android.app.notes",
+                        components = sharedComponents,
+                    ),
+                isEnabled = true,
             )
     }
 
@@ -328,13 +383,13 @@ internal class AppFunctionMetadataTestHelper(private val context: Context) {
                         "* Use noSchema_executionFail for testing execution failure. " +
                         "* Use notesSchema_print and mediaSchema_print for schema-based enabled functions. " +
                         "* Use mediaSchema2_print for testing a schema function disabled by default.",
-                displayDescription = "Test AppFunctionManagerCompat API(s)",
+                displayDescription = "Test AppFunctionManager API(s)",
             )
 
         val TEST_APP_METADATA_IN_FRENCH =
             AppFunctionAppMetadata(
                 description = TEST_APP_METADATA.description,
-                displayDescription = "Tester l'API AppFunctionManagerCompat",
+                displayDescription = "Tester l'API AppFunctionManager",
             )
     }
 }

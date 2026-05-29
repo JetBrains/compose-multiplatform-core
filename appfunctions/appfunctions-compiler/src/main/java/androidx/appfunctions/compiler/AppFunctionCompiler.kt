@@ -23,6 +23,7 @@ import androidx.appfunctions.compiler.core.SymbolNotReadyException
 import androidx.appfunctions.compiler.core.logException
 import androidx.appfunctions.compiler.processors.AppFunctionAggregateProcessor
 import androidx.appfunctions.compiler.processors.AppFunctionComponentRegistryProcessor
+import androidx.appfunctions.compiler.processors.AppFunctionEntryPointProcessor
 import androidx.appfunctions.compiler.processors.AppFunctionIdProcessor
 import androidx.appfunctions.compiler.processors.AppFunctionInventoryProcessor
 import androidx.appfunctions.compiler.processors.AppFunctionInvokerProcessor
@@ -71,7 +72,8 @@ class AppFunctionCompiler(
      */
     private fun shouldDeferAllProcessing(resolver: Resolver): List<KSAnnotated> {
         val appFunctionSymbolResolver = AppFunctionSymbolResolver(resolver)
-        val annotatedAppFunctions = appFunctionSymbolResolver.resolveAnnotatedAppFunctions()
+        val annotatedAppFunctions =
+            appFunctionSymbolResolver.resolveUnvalidatedAnnotatedAppFunctions()
         for (annotatedAppFunction in annotatedAppFunctions) {
             try {
                 annotatedAppFunction.validate()
@@ -96,9 +98,15 @@ class AppFunctionCompiler(
             val entityProcessor =
                 AppFunctionSerializableProcessor(environment.codeGenerator, environment.logger)
             val aggregateProcessor =
-                AppFunctionAggregateProcessor(options, environment.codeGenerator)
+                AppFunctionAggregateProcessor(
+                    options,
+                    environment.codeGenerator,
+                    environment.logger,
+                )
             val schemaInventoryProcessor =
                 AppFunctionSchemaInventoryProcessor(environment.codeGenerator, options)
+            val entryPointProcessor =
+                AppFunctionEntryPointProcessor(environment.codeGenerator, environment.logger)
             return AppFunctionCompiler(
                 listOf(
                     functionRegistryProcessor,
@@ -108,6 +116,7 @@ class AppFunctionCompiler(
                     entityProcessor,
                     aggregateProcessor,
                     schemaInventoryProcessor,
+                    entryPointProcessor,
                 ),
                 environment.logger,
             )

@@ -15,10 +15,9 @@
  */
 
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
 
@@ -28,12 +27,10 @@ import androidx.build.SoftwareType
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("org.jetbrains.kotlin.android")
     id("AndroidXComposePlugin")
 }
 
 dependencies {
-    api(libs.kotlinStdlib)
     api(project(":xr:compose:compose"))
     api(project(":xr:runtime:runtime"))
     api(project(":xr:runtime:runtime-testing"))
@@ -41,25 +38,26 @@ dependencies {
     api(project(":xr:scenecore:scenecore-testing"))
 
     implementation(project(":xr:scenecore:scenecore-spatial-core"))
-    implementation(libs.mockitoKotlin)
-    implementation(libs.robolectric)
-    implementation(libs.testExtTruth)
     implementation("androidx.annotation:annotation:1.8.1")
     implementation("androidx.compose.runtime:runtime:1.7.5")
     implementation("androidx.compose.ui:ui:1.7.5")
     implementation("androidx.compose.ui:ui-unit:1.7.5")
     implementation("androidx.compose.ui:ui-util:1.7.5")
     implementation("androidx.compose.ui:ui-test-junit4:1.7.5")
-    implementation("com.google.ar:impress:0.0.7")
+    implementation("com.google.ar:impress:1.0.0-beta01")
 
-    compileOnly(files(new File(AndroidXConfig.getPrebuiltsRoot(project), "androidx/xr/extensions/com.android.extensions.xr.jar")))
+    // Forcing this upgrade due to CVE-2026-0636. For more information, see b/505221306
+    implementation("org.bouncycastle:bcprov-jdk18on:1.84")
+
+    compileOnly("com.google.errorprone:error_prone_annotations:2.30.0")
+    compileOnly(libs.androidExtensionsXr)
     compileOnly(files(new File(AndroidXConfig.getPrebuiltsRoot(project), "androidx/xr/extensions/com.android.extensions.xr.host.test.jar")))
 }
 
 android {
-    compileSdk = 35
     defaultConfig {
-        minSdk = 24
+        minSdk { version = release(24) }
+        compileSdk { version = release(36) }
     }
     namespace = "androidx.xr.compose.testing"
 }
@@ -69,4 +67,5 @@ androidx {
     type = SoftwareType.PUBLISHED_KOTLIN_ONLY_TEST_LIBRARY
     inceptionYear = "2024"
     description = "Libraries to aid in unit testing Compose for XR clients."
+    samples(project(":xr:compose:compose-testing:compose-testing-samples"))
 }

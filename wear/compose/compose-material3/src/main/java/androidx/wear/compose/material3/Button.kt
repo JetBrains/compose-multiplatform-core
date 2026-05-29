@@ -56,6 +56,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.wear.compose.foundation.lazy.TransformingLazyColumn
 import androidx.wear.compose.material3.tokens.ChildButtonTokens
 import androidx.wear.compose.material3.tokens.CompactButtonTokens
 import androidx.wear.compose.material3.tokens.FilledButtonTokens
@@ -89,6 +90,10 @@ import androidx.wear.compose.material3.tokens.ShapeTokens
  * Example of a [Button]:
  *
  * @sample androidx.wear.compose.material3.samples.SimpleButtonSample
+ *
+ * ![SimpleButtonSample Composite
+ * Image](https://developer.android.com/wear/images/design/WearComposeM3_SimpleButtonSample_CompositeImage.png)
+ *
  * @param onClick Will be called when the user clicks the button
  * @param modifier Modifier to be applied to the button
  * @param onLongClick Called when this button is long clicked (long-pressed). When this callback is
@@ -169,6 +174,10 @@ public fun Button(
  * Example of a [Button] with an image background:
  *
  * @sample androidx.wear.compose.material3.samples.ButtonWithImageSample
+ *
+ * ![ButtonWithImageSample Composite
+ * Image](https://developer.android.com/wear/images/design/WearComposeM3_ButtonWithImageSample_CompositeImage.png)
+ *
  * @param onClick Will be called when the user clicks the button
  * @param containerPainter The [Painter] to use to draw the container image of the [Button], such as
  *   returned by [ButtonDefaults.containerPainter].
@@ -262,6 +271,10 @@ public fun Button(
  * Example of a [FilledTonalButton]:
  *
  * @sample androidx.wear.compose.material3.samples.SimpleFilledTonalButtonSample
+ *
+ *   ![SimpleFilledTonalButtonSample Composite
+ *   Image](https://developer.android.com/wear/images/design/WearComposeM3_SimpleFilledTonalButtonSample_CompositeImage.png)
+ *
  * @param onClick Will be called when the user clicks the button
  * @param modifier Modifier to be applied to the button
  * @param onLongClick Called when this button is long clicked (long-pressed). When this callback is
@@ -345,6 +358,10 @@ public fun FilledTonalButton(
  * Example of an [OutlinedButton]:
  *
  * @sample androidx.wear.compose.material3.samples.SimpleOutlinedButtonSample
+ *
+ *   ![SimpleOutlinedButtonSample Composite
+ *   Image](https://developer.android.com/wear/images/design/WearComposeM3_SimpleOutlinedButtonSample_CompositeImage.png)
+ *
  * @param onClick Will be called when the user clicks the button
  * @param modifier Modifier to be applied to the button
  * @param onLongClick Called when this button is long clicked (long-pressed). When this callback is
@@ -428,6 +445,10 @@ public fun OutlinedButton(
  * Example of a [ChildButton]:
  *
  * @sample androidx.wear.compose.material3.samples.SimpleChildButtonSample
+ *
+ * ![SimpleChildButtonSample Composite
+ * Image](https://developer.android.com/wear/images/design/WearComposeM3_SimpleChildButtonSample_CompositeImage.png)
+ *
  * @param onClick Will be called when the user clicks the button
  * @param modifier Modifier to be applied to the button
  * @param onLongClick Called when this button is long clicked (long-pressed). When this callback is
@@ -514,13 +535,23 @@ public fun ChildButton(
  *
  * @sample androidx.wear.compose.material3.samples.ButtonSample
  *
+ * ![ButtonSample Composite
+ * Image](https://developer.android.com/wear/images/design/WearComposeM3_ButtonSample_CompositeImage.png)
+ *
  * Example of a [Button] with a large icon and adjusted content padding:
  *
  * @sample androidx.wear.compose.material3.samples.ButtonLargeIconSample
  *
+ * ![ButtonLargeIconSample Composite
+ * Image](https://developer.android.com/wear/images/design/WearComposeM3_ButtonLargeIconSample_CompositeImage.png)
+ *
  * Example of a [Button] with an extra large icon and adjusted content padding:
  *
  * @sample androidx.wear.compose.material3.samples.ButtonExtraLargeIconSample
+ *
+ *   ![ButtonExtraLargeIconSample Composite
+ *   Image](https://developer.android.com/wear/images/design/WearComposeM3_ButtonExtraLargeIconSample_CompositeImage.png)
+ *
  * @param onClick Will be called when the user clicks the button
  * @param modifier Modifier to be applied to the button
  * @param onLongClick Called when this button is long clicked (long-pressed). When this callback is
@@ -640,6 +671,10 @@ public fun Button(
  * Example of a [Button] with an image background, an icon and a secondary label:
  *
  * @sample androidx.wear.compose.material3.samples.ButtonWithImageSample
+ *
+ * ![ButtonWithImageSample Composite
+ * Image](https://developer.android.com/wear/images/design/WearComposeM3_ButtonWithImageSample_CompositeImage.png)
+ *
  * @param onClick Will be called when the user clicks the button
  * @param containerPainter The [Painter] to use to draw the container image of the [Button], such as
  *   returned by [ButtonDefaults.containerPainter].
@@ -774,6 +809,10 @@ public fun Button(
  * Example of a [FilledTonalButton] with an icon and secondary label:
  *
  * @sample androidx.wear.compose.material3.samples.FilledTonalButtonSample
+ *
+ * ![FilledTonalButtonSample Composite
+ * Image](https://developer.android.com/wear/images/design/WearComposeM3_FilledTonalButtonSample_CompositeImage.png)
+ *
  * @param onClick Will be called when the user clicks the button
  * @param modifier Modifier to be applied to the button
  * @param onLongClick Called when this button is long clicked (long-pressed). When this callback is
@@ -895,6 +934,10 @@ public fun FilledTonalButton(
  * Example of an [OutlinedButton] with an icon and secondary label:
  *
  * @sample androidx.wear.compose.material3.samples.OutlinedButtonSample
+ *
+ * ![OutlinedButtonSample Composite
+ * Image](https://developer.android.com/wear/images/design/WearComposeM3_OutlinedButtonSample_CompositeImage.png)
+ *
  * @param onClick Will be called when the user clicks the button
  * @param modifier Modifier to be applied to the button
  * @param onLongClick Called when this button is long clicked (long-pressed). When this callback is
@@ -1016,6 +1059,10 @@ public fun OutlinedButton(
  * Example of a [ChildButton] with an icon and secondary label:
  *
  * @sample androidx.wear.compose.material3.samples.ChildButtonSample
+ *
+ * ![ChildButtonSample Composite
+ * Image](https://developer.android.com/wear/images/design/WearComposeM3_ChildButtonSample_CompositeImage.png)
+ *
  * @param onClick Will be called when the user clicks the button
  * @param modifier Modifier to be applied to the button
  * @param onLongClick Called when this button is long clicked (long-pressed). When this callback is
@@ -1114,23 +1161,22 @@ public fun ChildButton(
  * provided.
  *
  * The [CompactButton] is Stadium shaped and has a max height designed to take no more than one line
- * of text and/or one icon. The default max height is [ButtonDefaults.CompactButtonHeight]. This
- * includes a visible button height of 32.dp and 8.dp of padding above and below the button in order
- * to meet accessibility guidelines that request a minimum of 48.dp height and width of tappable
- * area.
+ * of text and/or one icon. The default max height is [CompactButtonDefaults.Height]. This includes
+ * a visible button height of 32.dp and 8.dp of padding above and below the button in order to meet
+ * accessibility guidelines that request a minimum of 48.dp height and width of tappable area.
  *
  * If an icon is provided then the labels should be "start" aligned, e.g. left aligned in
  * left-to-right mode so that the text starts next to the icon.
  *
  * The items are laid out as follows.
  * 1. If a label is provided then the button will be laid out with the optional icon at the start of
- *    a row followed by the label with a default max height of [ButtonDefaults.CompactButtonHeight].
+ *    a row followed by the label with a default max height of [CompactButtonDefaults.Height].
  * 2. If only an icon is provided it will be laid out vertically and horizontally centered with a
- *    default height of [ButtonDefaults.CompactButtonHeight] and the default width of
- *    [ButtonDefaults.IconOnlyCompactButtonWidth]
+ *    default height of [CompactButtonDefaults.Height] and the default width of
+ *    [CompactButtonDefaults.IconOnlyWidth]
  *
- * If neither icon nor label is provided then the button will displayed like an icon only button but
- * with no contents or background color.
+ * If neither icon nor label is provided then the button will be displayed like an icon only button
+ * but with no contents or background color.
  *
  * [CompactButton] takes the [ButtonDefaults.buttonColors] color scheme by default, with colored
  * background, contrasting content color and no border. This is a high-emphasis button for the
@@ -1147,16 +1193,25 @@ public fun ChildButton(
  *
  * @sample androidx.wear.compose.material3.samples.CompactButtonSample
  *
+ * ![CompactButtonSample Composite
+ * Image](https://developer.android.com/wear/images/design/WearComposeM3_CompactButtonSample_CompositeImage.png)
+ *
  * Example of a [CompactButton] with an icon and label and with
  * [ButtonDefaults.filledTonalButtonColors]
  *
  * @sample androidx.wear.compose.material3.samples.FilledTonalCompactButtonSample
+ *
+ *   ![FilledTonalCompactButtonSample Composite
+ *   Image](https://developer.android.com/wear/images/design/WearComposeM3_FilledTonalCompactButtonSample_CompositeImage.png)
  *
  * Example of a [CompactButton] with an icon and label and with
  * [ButtonDefaults.outlinedButtonBorder] and [ButtonDefaults.outlinedButtonColors]. The example
  * includes a [Text] that expands and collapses when the [CompactButton] is clicked.
  *
  * @sample androidx.wear.compose.material3.samples.OutlinedCompactButtonSample
+ *
+ *   ![OutlinedCompactButtonSample Composite
+ *   Image](https://developer.android.com/wear/images/design/WearComposeM3_OutlinedCompactButtonSample_CompositeImage.png)
  *
  * Example of a [CompactButton] with onLongClick:
  *
@@ -1167,8 +1222,9 @@ public fun ChildButton(
  *   set, [onLongClickLabel] should be set as well.
  * @param onLongClickLabel Semantic / accessibility label for the [onLongClick] action.
  * @param icon A slot for providing the button's icon. The contents are expected to be a
- *   horizontally and vertically aligned icon of size [ButtonDefaults.ExtraSmallIconSize] when used
- *   with a label or [ButtonDefaults.SmallIconSize] when used as the only content in the button.
+ *   horizontally and vertically aligned icon of size [CompactButtonDefaults.ExtraSmallIconSize]
+ *   when used with a label or [CompactButtonDefaults.SmallIconSize] when used as the only content
+ *   in the button.
  * @param enabled Controls the enabled state of the button. When `false`, this button will not be
  *   clickable.
  * @param shape Defines the button's shape. It is strongly recommended to use the default as this
@@ -1198,10 +1254,10 @@ public fun CompactButton(
     onLongClickLabel: String? = null,
     icon: (@Composable BoxScope.() -> Unit)? = null,
     enabled: Boolean = true,
-    shape: Shape = ButtonDefaults.compactButtonShape,
+    shape: Shape = CompactButtonDefaults.shape,
     colors: ButtonColors = ButtonDefaults.buttonColors(),
     border: BorderStroke? = null,
-    contentPadding: PaddingValues = ButtonDefaults.CompactButtonContentPadding,
+    contentPadding: PaddingValues = CompactButtonDefaults.ContentPadding,
     interactionSource: MutableInteractionSource? = null,
     transformation: SurfaceTransformation? = null,
     label: (@Composable RowScope.() -> Unit)? = null,
@@ -1210,9 +1266,7 @@ public fun CompactButton(
         ButtonImpl(
             onClick = onClick,
             modifier =
-                modifier
-                    .compactButtonModifier()
-                    .padding(ButtonDefaults.CompactButtonTapTargetPadding),
+                modifier.compactButtonModifier().padding(CompactButtonDefaults.TapTargetPadding),
             onLongClick = onLongClick,
             onLongClickLabel = onLongClickLabel,
             secondaryLabelContent = null,
@@ -1248,8 +1302,8 @@ public fun CompactButton(
             modifier =
                 modifier
                     .compactButtonModifier()
-                    .width(ButtonDefaults.IconOnlyCompactButtonWidth)
-                    .padding(ButtonDefaults.CompactButtonTapTargetPadding),
+                    .width(CompactButtonDefaults.IconOnlyWidth)
+                    .padding(CompactButtonDefaults.TapTargetPadding),
             onLongClick = onLongClick,
             onLongClickLabel = onLongClickLabel,
             enabled = enabled,
@@ -1281,6 +1335,10 @@ public object ButtonDefaults {
         @Composable get() = ShapeTokens.CornerLarge
 
     /** Recommended [RoundedCornerShape] for [CompactButton]. */
+    @Deprecated(
+        "Use CompactButtonDefaults.shape instead",
+        replaceWith = ReplaceWith("CompactButtonDefaults.shape"),
+    )
     public val compactButtonShape: RoundedCornerShape
         @Composable get() = ShapeTokens.CornerMedium
 
@@ -1351,6 +1409,9 @@ public object ButtonDefaults {
      * Example of a [Button] with [filledVariantButtonColors]:
      *
      * @sample androidx.wear.compose.material3.samples.SimpleFilledVariantButtonSample
+     *
+     *   ![SimpleFilledVariantButtonSample Composite
+     *   Image](https://developer.android.com/wear/images/design/WearComposeM3_SimpleFilledVariantButtonSample_CompositeImage.png)
      */
     @Composable
     public fun filledVariantButtonColors(): ButtonColors =
@@ -1368,6 +1429,10 @@ public object ButtonDefaults {
      * Example of a [Button] with [filledVariantButtonColors]:
      *
      * @sample androidx.wear.compose.material3.samples.FilledVariantButtonSample
+     *
+     *   ![FilledVariantButtonSample Composite
+     *   Image](https://developer.android.com/wear/images/design/WearComposeM3_FilledVariantButtonSample_CompositeImage.png)
+     *
      * @param containerColor The background color of this [Button] when enabled
      * @param contentColor The content color of this [Button] when enabled
      * @param secondaryContentColor The secondary content color of this [Button] when enabled, used
@@ -1510,6 +1575,10 @@ public object ButtonDefaults {
      * Example of a Button with an image background:
      *
      * @sample androidx.wear.compose.material3.samples.ButtonWithImageSample
+     *
+     * ![ButtonWithImageSample Composite
+     * Image](https://developer.android.com/wear/images/design/WearComposeM3_ButtonWithImageSample_CompositeImage.png)
+     *
      * @param contentColor The content color of this [Button] when enabled
      * @param secondaryContentColor The secondary content color of this [Button] when enabled, used
      *   for secondaryLabel content
@@ -1547,6 +1616,10 @@ public object ButtonDefaults {
      * Example of a Button with an image background:
      *
      * @sample androidx.wear.compose.material3.samples.ButtonWithImageSample
+     *
+     * ![ButtonWithImageSample Composite
+     * Image](https://developer.android.com/wear/images/design/WearComposeM3_ButtonWithImageSample_CompositeImage.png)
+     *
      * @param image The [Painter] to use to draw the container background of the [Button].
      * @param scrim The [Brush] to use to paint a scrim over the container image to ensure that any
      *   text drawn over the image is legible.
@@ -1667,7 +1740,7 @@ public object ButtonDefaults {
             disabledIconColor = disabledIconColor,
         )
 
-    /** The recommended horizontal padding used by [Button] by default */
+    /** The recommended horizontal content padding used by [Button] by default */
     public val ButtonHorizontalPadding: Dp = 14.dp
 
     /** The recommended start padding to be used with [Button] with a large icon */
@@ -1676,7 +1749,7 @@ public object ButtonDefaults {
     /** The recommended start padding to be used with [Button] with an extra large icon */
     public val ButtonExtraLargeIconStartPadding: Dp = 8.dp
 
-    /** The recommended vertical padding used by [Button] by default */
+    /** The recommended vertical content padding used by [Button] by default */
     public val ButtonVerticalPadding: Dp = 6.dp
 
     /** The default content padding used by [Button] */
@@ -1701,10 +1774,32 @@ public object ButtonDefaults {
             bottom = ButtonVerticalPadding,
         )
 
+    /**
+     * The minimum vertical content padding for the list when a [Button] is placed at the top or
+     * bottom edge. Recommended for use with
+     * [androidx.wear.compose.foundation.lazy.TransformingLazyColumnItemScope]'s
+     * [androidx.wear.compose.foundation.lazy.TransformingLazyColumnItemScope.minimumVerticalContentPadding],
+     * which allows items to choose a preferred content padding for the list.
+     * [TransformingLazyColumn] takes its contentPadding as the maximum of the preferred content
+     * padding values and its own contentPadding parameter.
+     *
+     * @sample androidx.wear.compose.material3.samples.TransformingLazyColumnButtonsSample
+     */
+    public val minimumVerticalListContentPadding: Dp
+        @Composable get() = screenHeightFraction(LARGE_VERTICAL_CONTENT_PADDING_FRACTION)
+
     /** The recommended icon size when used in [CompactButton]s containing both icon and text. */
+    @Deprecated(
+        "Use CompactButtonDefaults.ExtraSmallIconSize instead",
+        replaceWith = ReplaceWith("CompactButtonDefaults.ExtraSmallIconSize"),
+    )
     public val ExtraSmallIconSize: Dp = CompactButtonTokens.IconSize
 
     /** The recommended icon size when used in [CompactButton]s containing icon-only content. */
+    @Deprecated(
+        "Use CompactButtonDefaults.SmallIconSize instead",
+        replaceWith = ReplaceWith("CompactButtonDefaults.SmallIconSize"),
+    )
     public val SmallIconSize: Dp = CompactButtonTokens.IconOnlyIconSize
 
     /** The recommended default size for icons when used inside a [Button]. */
@@ -1722,16 +1817,29 @@ public object ButtonDefaults {
      */
     public val Height: Dp = FilledButtonTokens.ContainerHeight
 
+    @Deprecated(
+        "Use CompactButtonDefaults.HorizontalPadding instead",
+        replaceWith = ReplaceWith("CompactButtonDefaults.HorizontalPadding"),
+    )
     public val CompactButtonHorizontalPadding: Dp = 12.dp
+
+    @Deprecated(
+        "Use CompactButtonDefaults.VerticalPadding instead",
+        replaceWith = ReplaceWith("CompactButtonDefaults.VerticalPadding"),
+    )
     public val CompactButtonVerticalPadding: Dp = 0.dp
 
     /** The default content padding used by [CompactButton] */
+    @Deprecated(
+        "Use CompactButtonDefaults.ContentPadding instead",
+        replaceWith = ReplaceWith("CompactButtonDefaults.ContentPadding"),
+    )
     public val CompactButtonContentPadding: PaddingValues =
         PaddingValues(
-            start = CompactButtonHorizontalPadding,
-            top = CompactButtonVerticalPadding,
-            end = CompactButtonHorizontalPadding,
-            bottom = CompactButtonVerticalPadding,
+            start = CompactButtonDefaults.HorizontalPadding,
+            top = CompactButtonDefaults.VerticalPadding,
+            end = CompactButtonDefaults.HorizontalPadding,
+            bottom = CompactButtonDefaults.VerticalPadding,
         )
 
     /**
@@ -1742,12 +1850,20 @@ public object ButtonDefaults {
      * Note that you can override it by adjusting Modifier.height and Modifier.padding directly on
      * [CompactButton].
      */
+    @Deprecated(
+        "Use CompactButtonDefaults.Height instead",
+        replaceWith = ReplaceWith("CompactButtonDefaults.Height"),
+    )
     public val CompactButtonHeight: Dp = CompactButtonTokens.ContainerHeight
 
     /**
      * The default padding to be provided around a [CompactButton] in order to ensure that its
      * tappable area meets minimum UX guidance.
      */
+    @Deprecated(
+        "Use CompactButtonDefaults.TapTargetPadding instead",
+        replaceWith = ReplaceWith("CompactButtonDefaults.TapTargetPadding"),
+    )
     public val CompactButtonTapTargetPadding: PaddingValues =
         PaddingValues(top = 8.dp, bottom = 8.dp)
 
@@ -1968,12 +2084,73 @@ public object ButtonDefaults {
                     )
                     .also { defaultButtonWithContainerPainterColorsCached = it }
         }
+}
+
+/** Contains the default values used by [CompactButton] */
+public object CompactButtonDefaults {
+    /** Recommended [RoundedCornerShape] for [CompactButton]. */
+    public val shape: RoundedCornerShape
+        @Composable get() = ShapeTokens.CornerMedium
+
+    /** Recommended horizontal content padding for [CompactButton] */
+    public val HorizontalPadding: Dp = 12.dp
+
+    /** Recommended vertical content padding for [CompactButton] */
+    public val VerticalPadding: Dp = 0.dp
+
+    /** The default content padding used by [CompactButton] */
+    public val ContentPadding: PaddingValues =
+        PaddingValues(
+            start = HorizontalPadding,
+            top = VerticalPadding,
+            end = HorizontalPadding,
+            bottom = VerticalPadding,
+        )
+
+    /**
+     * The minimum vertical content padding for the list when a [CompactButton] is placed at the top
+     * or bottom edge. Recommended for use with
+     * [androidx.wear.compose.foundation.lazy.TransformingLazyColumnItemScope]'s
+     * [androidx.wear.compose.foundation.lazy.TransformingLazyColumnItemScope.minimumVerticalContentPadding],
+     * which allows items to choose a preferred content padding for the list.
+     * [TransformingLazyColumn] takes its contentPadding as the maximum of the preferred content
+     * padding values and its own contentPadding parameter.
+     *
+     * @sample androidx.wear.compose.material3.samples.TransformingLazyColumnMinimumVerticalContentPaddingSample
+     *
+     *   ![TransformingLazyColumnMinimumVerticalContentPaddingSample Composite
+     *   Image](https://developer.android.com/wear/images/design/WearComposeM3_TransformingLazyColumnMinimumVerticalContentPaddingSample_CompositeImage.png)
+     */
+    public val minimumVerticalListContentPadding: Dp
+        @Composable get() = screenHeightFraction(SMALL_VERTICAL_CONTENT_PADDING_FRACTION)
+
+    /**
+     * The height applied for the [CompactButton]. This includes a visible button height of 32.dp
+     * and 8.dp of padding above and below the button in order to meet accessibility guidelines that
+     * request a minimum of 48.dp height and width of tappable area.
+     *
+     * Note that you can override it by adjusting Modifier.height and Modifier.padding directly on
+     * [CompactButton].
+     */
+    public val Height: Dp = CompactButtonTokens.ContainerHeight
+
+    /**
+     * The default padding to be provided around a [CompactButton] in order to ensure that its
+     * tappable area meets minimum UX guidance.
+     */
+    public val TapTargetPadding: PaddingValues = PaddingValues(top = 8.dp, bottom = 8.dp)
 
     /**
      * The default width applied for the [CompactButton] when it has no label provided. Note that
      * you can override it by applying Modifier.width directly on [CompactButton].
      */
-    internal val IconOnlyCompactButtonWidth = CompactButtonTokens.IconOnlyWidth
+    internal val IconOnlyWidth = CompactButtonTokens.IconOnlyWidth
+
+    /** The recommended icon size when used in [CompactButton]s containing both icon and text. */
+    public val ExtraSmallIconSize: Dp = CompactButtonTokens.IconSize
+
+    /** The recommended icon size when used in [CompactButton]s containing icon-only content. */
+    public val SmallIconSize: Dp = CompactButtonTokens.IconOnlyIconSize
 }
 
 /**
@@ -2108,8 +2285,7 @@ private fun Modifier.buttonSizeModifier(): Modifier =
     this.defaultMinSize(minHeight = ButtonDefaults.Height)
 
 @Composable
-private fun Modifier.compactButtonModifier(): Modifier =
-    this.height(ButtonDefaults.CompactButtonHeight)
+private fun Modifier.compactButtonModifier(): Modifier = this.height(CompactButtonDefaults.Height)
 
 /**
  * Button with label. This allows to use the token values for individual buttons instead of relying

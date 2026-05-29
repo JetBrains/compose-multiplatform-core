@@ -52,7 +52,7 @@ public class SportsTeam extends SportsOrganization {
     private @Nullable String mFormattedRecord;
 
     @OptIn(markerClass = ExperimentalAppSearchApi.class)
-    protected SportsTeam(
+    SportsTeam(
         @NonNull String namespace, @NonNull String id, int documentScore,
         long creationTimestampMillis, long documentTtlMillis,
         @Nullable String name, @Nullable List<String> alternateNames,

@@ -22,8 +22,10 @@ import android.os.Looper.getMainLooper
 import android.view.Surface
 import androidx.camera.camera2.pipe.CameraError
 import androidx.camera.camera2.pipe.CameraId
+import androidx.camera.camera2.pipe.CameraInterop
 import androidx.camera.camera2.pipe.CameraPipe
 import androidx.camera.camera2.pipe.RequestTemplate
+import androidx.camera.camera2.pipe.StrictMode
 import androidx.camera.camera2.pipe.core.SystemTimeSource
 import androidx.camera.camera2.pipe.core.TimeSource
 import androidx.camera.camera2.pipe.core.Timestamps
@@ -37,8 +39,10 @@ import androidx.camera.camera2.pipe.testing.FakeCameraMetadata
 import androidx.camera.camera2.pipe.testing.FakeThreads
 import androidx.camera.camera2.pipe.testing.RobolectricCameraPipeTestRunner
 import androidx.camera.camera2.pipe.testing.RobolectricCameras
+import androidx.camera.common.unwrapAs
 import com.google.common.truth.Truth.assertThat
 import java.util.concurrent.TimeUnit
+import kotlin.time.Duration
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.asFlow
@@ -57,8 +61,10 @@ import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.robolectric.Shadows.shadowOf
+import org.robolectric.annotation.Config
 
 @RunWith(RobolectricCameraPipeTestRunner::class)
+@Config(sdk = [Config.ALL_SDKS])
 @OptIn(ExperimentalCoroutinesApi::class)
 internal class VirtualCameraStateTest {
     private val mainLooper = shadowOf(getMainLooper())
@@ -90,10 +96,10 @@ internal class VirtualCameraStateTest {
         assertThat(closedState.cameraErrorCode).isNull()
         assertThat(closedState.cameraException).isNull()
         assertThat(closedState.cameraRetryCount).isNull()
-        assertThat(closedState.cameraRetryDurationNs).isNull()
-        assertThat(closedState.cameraOpenDurationNs).isNull()
-        assertThat(closedState.cameraActiveDurationNs).isNull()
-        assertThat(closedState.cameraClosingDurationNs).isNull()
+        assertThat(closedState.cameraRetryDuration).isNull()
+        assertThat(closedState.cameraOpenDuration).isNull()
+        assertThat(closedState.cameraActiveDuration).isNull()
+        assertThat(closedState.cameraClosingDuration).isNull()
     }
 
     @Test
@@ -282,6 +288,7 @@ internal class VirtualCameraStateTest {
 }
 
 @RunWith(RobolectricCameraPipeTestRunner::class)
+@Config(sdk = [Config.ALL_SDKS])
 @OptIn(ExperimentalCoroutinesApi::class)
 internal class AndroidCameraDeviceTest {
     private val mainLooper = shadowOf(getMainLooper())
@@ -293,7 +300,7 @@ internal class AndroidCameraDeviceTest {
     private val fakeCamera2Quirks =
         Camera2Quirks(
             FakeCamera2MetadataProvider(mapOf(cameraId to fakeCameraMetadata)),
-            CameraPipe.Flags(),
+            StrictMode(false),
         )
     private val now = Timestamps.now(timeSource)
     private val cameraErrorListener =
@@ -311,6 +318,12 @@ internal class AndroidCameraDeviceTest {
             }
         }
     private val audioRestrictionController = FakeAudioRestrictionController()
+    private val systemCallbacks: CameraInterop.CameraSystemCallbacks = mock()
+    val camera2SystemState =
+        Camera2SystemState(
+            CameraPipe.CameraInteropConfig(cameraSystemCallbacks = systemCallbacks),
+            FakeThreads.fromTestScope(TestScope()),
+        )
 
     @After
     fun teardown() {
@@ -319,6 +332,7 @@ internal class AndroidCameraDeviceTest {
 
     @Test
     fun cameraOpensAndGeneratesStats() {
+        camera2SystemState.onCameraOpening(testCamera.cameraId)
         mainLooper.idleFor(200, TimeUnit.MILLISECONDS)
         val listener =
             AndroidCameraState(
@@ -330,6 +344,7 @@ internal class AndroidCameraDeviceTest {
                 cameraErrorListener,
                 cameraDeviceCloser,
                 fakeCamera2Quirks,
+                camera2SystemState,
                 FakeThreads.fromTestScope(TestScope()),
                 audioRestrictionController,
             )
@@ -341,9 +356,7 @@ internal class AndroidCameraDeviceTest {
         listener.onOpened(testCamera.cameraDevice)
 
         assertThat(listener.state.value).isInstanceOf(CameraStateOpen::class.java)
-        assertThat(
-                (listener.state.value as CameraStateOpen).cameraDevice.unwrapAs(CameraDevice::class)
-            )
+        assertThat((listener.state.value as CameraStateOpen).cameraDevice.unwrapAs<CameraDevice>())
             .isSameInstanceAs(testCamera.cameraDevice)
 
         mainLooper.idleFor(1000, TimeUnit.MILLISECONDS)
@@ -357,17 +370,20 @@ internal class AndroidCameraDeviceTest {
         assertThat(closedState.cameraClosedReason).isEqualTo(ClosedReason.CAMERA2_CLOSED)
         assertThat(closedState.cameraRetryCount).isEqualTo(0)
         assertThat(closedState.cameraException).isNull()
-        assertThat(closedState.cameraRetryDurationNs?.value).isAtLeast(1)
-        assertThat(closedState.cameraOpenDurationNs?.value).isAtLeast(1)
-        assertThat(closedState.cameraActiveDurationNs?.value).isAtLeast(1)
+        assertThat(closedState.cameraRetryDuration).isGreaterThan(Duration.ZERO)
+        assertThat(closedState.cameraOpenDuration).isGreaterThan(Duration.ZERO)
+        assertThat(closedState.cameraActiveDuration).isGreaterThan(Duration.ZERO)
 
         // Closing duration measures how long "close()" takes to invoke on the camera device.
         // However, shimming the clocks is difficult.
-        assertThat(closedState.cameraClosingDurationNs).isNotNull()
+        assertThat(closedState.cameraClosingDuration).isNotNull()
+        verify(systemCallbacks, times(1)).onCameraSystemStarting()
+        verify(systemCallbacks, times(1)).onCameraSystemStopped()
     }
 
     @Test
     fun multipleCloseEventsReportFirstEvent() {
+        camera2SystemState.onCameraOpening(testCamera.cameraId)
         val listener =
             AndroidCameraState(
                 testCamera.cameraId,
@@ -378,6 +394,7 @@ internal class AndroidCameraDeviceTest {
                 cameraErrorListener,
                 cameraDeviceCloser,
                 fakeCamera2Quirks,
+                camera2SystemState,
                 FakeThreads.fromTestScope(TestScope()),
                 audioRestrictionController,
             )
@@ -394,6 +411,7 @@ internal class AndroidCameraDeviceTest {
 
     @Test
     fun closingStateReportsAppClose() {
+        camera2SystemState.onCameraOpening(testCamera.cameraId)
         val listener =
             AndroidCameraState(
                 testCamera.cameraId,
@@ -404,6 +422,7 @@ internal class AndroidCameraDeviceTest {
                 cameraErrorListener,
                 cameraDeviceCloser,
                 fakeCamera2Quirks,
+                camera2SystemState,
                 FakeThreads.fromTestScope(TestScope()),
                 audioRestrictionController,
             )
@@ -417,6 +436,7 @@ internal class AndroidCameraDeviceTest {
 
     @Test
     fun closingWithExceptionIsReported() {
+        camera2SystemState.onCameraOpening(testCamera.cameraId)
         val listener =
             AndroidCameraState(
                 testCamera.cameraId,
@@ -427,6 +447,7 @@ internal class AndroidCameraDeviceTest {
                 cameraErrorListener,
                 cameraDeviceCloser,
                 fakeCamera2Quirks,
+                camera2SystemState,
                 FakeThreads.fromTestScope(TestScope()),
                 audioRestrictionController,
             )
@@ -440,6 +461,7 @@ internal class AndroidCameraDeviceTest {
 
     @Test
     fun errorCodesAreReported() {
+        camera2SystemState.onCameraOpening(testCamera.cameraId)
         val listener =
             AndroidCameraState(
                 testCamera.cameraId,
@@ -450,6 +472,7 @@ internal class AndroidCameraDeviceTest {
                 cameraErrorListener,
                 cameraDeviceCloser,
                 fakeCamera2Quirks,
+                camera2SystemState,
                 FakeThreads.fromTestScope(TestScope()),
                 audioRestrictionController,
             )
@@ -465,6 +488,7 @@ internal class AndroidCameraDeviceTest {
 
     @Test
     fun errorCodesAreReportedToGraphListener() {
+        camera2SystemState.onCameraOpening(testCamera.cameraId)
         val listener =
             AndroidCameraState(
                 testCamera.cameraId,
@@ -475,6 +499,7 @@ internal class AndroidCameraDeviceTest {
                 cameraErrorListener,
                 cameraDeviceCloser,
                 fakeCamera2Quirks,
+                camera2SystemState,
                 FakeThreads.fromTestScope(TestScope()),
                 audioRestrictionController,
             )
@@ -488,6 +513,7 @@ internal class AndroidCameraDeviceTest {
 
     @Test
     fun errorCodesAreReportedToGraphListenerWhenCameraIsNotOpened() {
+        camera2SystemState.onCameraOpening(testCamera.cameraId)
         // Unless this is a camera open exception, all errors should be reported even if camera is
         // not opened. The main reason is CameraAccessException.CAMERA_ERROR, where under which, we
         // only know the nature of the error true onError(), and we should and would report that.
@@ -501,6 +527,7 @@ internal class AndroidCameraDeviceTest {
                 cameraErrorListener,
                 cameraDeviceCloser,
                 fakeCamera2Quirks,
+                camera2SystemState,
                 FakeThreads.fromTestScope(TestScope()),
                 audioRestrictionController,
             )
@@ -513,6 +540,7 @@ internal class AndroidCameraDeviceTest {
 
     @Test
     fun onClosedDoesNotCloseTheCameraAgain() {
+        camera2SystemState.onCameraOpening(testCamera.cameraId)
         val listener =
             AndroidCameraState(
                 testCamera.cameraId,
@@ -523,6 +551,7 @@ internal class AndroidCameraDeviceTest {
                 cameraErrorListener,
                 cameraDeviceCloser,
                 fakeCamera2Quirks,
+                camera2SystemState,
                 FakeThreads.fromTestScope(TestScope()),
                 audioRestrictionController,
             )

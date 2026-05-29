@@ -23,13 +23,13 @@ import android.view.Surface
 import androidx.camera.camera2.pipe.CameraError
 import androidx.camera.camera2.pipe.CameraGraphId
 import androidx.camera.camera2.pipe.CameraId
-import androidx.camera.camera2.pipe.CameraPipe
 import androidx.camera.camera2.pipe.GraphState
 import androidx.camera.camera2.pipe.GraphState.GraphStateError
 import androidx.camera.camera2.pipe.GraphState.GraphStateStopped
 import androidx.camera.camera2.pipe.GraphStateListener
 import androidx.camera.camera2.pipe.Request
 import androidx.camera.camera2.pipe.StreamId
+import androidx.camera.camera2.pipe.StrictMode
 import androidx.camera.camera2.pipe.compat.Camera2Quirks
 import androidx.camera.camera2.pipe.testing.FakeCamera2MetadataProvider
 import androidx.camera.camera2.pipe.testing.FakeCameraMetadata
@@ -46,6 +46,7 @@ import androidx.camera.camera2.pipe.testing.FakeThreads
 import androidx.camera.camera2.pipe.testing.RobolectricCameraPipeTestRunner
 import androidx.testutils.assertThrows
 import com.google.common.truth.Truth.assertThat
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
@@ -56,9 +57,11 @@ import kotlinx.coroutines.withTimeoutOrNull
 import org.junit.After
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.annotation.Config
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricCameraPipeTestRunner::class)
+@Config(sdk = [Config.ALL_SDKS])
 internal class GraphProcessorTest {
     private val testScope = TestScope()
     private val fakeThreads = FakeThreads.fromTestScope(testScope)
@@ -93,7 +96,7 @@ internal class GraphProcessorTest {
                     FakeCamera2MetadataProvider(
                         mapOf(CameraId("0") to FakeCameraMetadata(cameraId = CameraId("0")))
                     ),
-                cameraPipeFlags = CameraPipe.Flags(),
+                strictMode = StrictMode(false),
             ),
         )
 
@@ -355,7 +358,7 @@ internal class GraphProcessorTest {
             graphProcessor.submit(request2)
 
             val abortEvent1 =
-                withTimeoutOrNull(timeMillis = 50L) { requestListener1.onAbortedFlow.firstOrNull() }
+                withTimeoutOrNull(50.milliseconds) { requestListener1.onAbortedFlow.firstOrNull() }
             val abortEvent2 = requestListener2.onAbortedFlow.first()
             assertThat(abortEvent1).isNull()
             assertThat(abortEvent2.request).isSameInstanceAs(request2)

@@ -76,6 +76,10 @@ package androidx.compose.ui.tooling.preview {
     property public static String TABLET;
     property public static String TV_1080p;
     property public static String TV_720p;
+    property @Deprecated public static String WEAR_OS_LARGE_ROUND;
+    property @Deprecated public static String WEAR_OS_RECT;
+    property @Deprecated public static String WEAR_OS_SMALL_ROUND;
+    property @Deprecated public static String WEAR_OS_SQUARE;
     field public static final String AUTOMOTIVE_1024p = "id:automotive_1024p_landscape";
     field public static final String DEFAULT = "";
     field public static final String DESKTOP = "spec:width=1920dp,height=1080dp,dpi=160";
@@ -187,6 +191,17 @@ package androidx.compose.ui.tooling.preview {
   }
 
   @androidx.compose.ui.tooling.preview.Preview(name="Phone", device=androidx.compose.ui.tooling.preview.Devices.PHONE, showSystemUi=true) @androidx.compose.ui.tooling.preview.Preview(name="Phone - Landscape", device="spec:width=411dp,height=891dp,orientation=landscape,dpi=420", showSystemUi=true) @androidx.compose.ui.tooling.preview.Preview(name="Unfolded Foldable", device=androidx.compose.ui.tooling.preview.Devices.FOLDABLE, showSystemUi=true) @androidx.compose.ui.tooling.preview.Preview(name="Tablet", device="spec:width=1280dp,height=800dp,dpi=240,orientation=portrait", showSystemUi=true) @androidx.compose.ui.tooling.preview.Preview(name="Tablet - Landscape", device=androidx.compose.ui.tooling.preview.Devices.TABLET, showSystemUi=true) @androidx.compose.ui.tooling.preview.Preview(name="Desktop", device=androidx.compose.ui.tooling.preview.Devices.DESKTOP, showSystemUi=true) @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) @kotlin.annotation.Target(allowedTargets={kotlin.annotation.AnnotationTarget.ANNOTATION_CLASS, kotlin.annotation.AnnotationTarget.FUNCTION}) public @interface PreviewScreenSizes {
+  }
+
+  @kotlin.annotation.MustBeDocumented @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) @kotlin.annotation.Target(allowedTargets={kotlin.annotation.AnnotationTarget.ANNOTATION_CLASS, kotlin.annotation.AnnotationTarget.FUNCTION}) public @interface PreviewWrapper {
+    ctor @KotlinOnly public PreviewWrapper(kotlin.reflect.KClass<? extends androidx.compose.ui.tooling.preview.PreviewWrapperProvider> wrapper);
+    method @InaccessibleFromKotlin public abstract Class<? extends androidx.compose.ui.tooling.preview.PreviewWrapperProvider> wrapper();
+    property public abstract kotlin.reflect.KClass<? extends androidx.compose.ui.tooling.preview.PreviewWrapperProvider> wrapper;
+  }
+
+  public interface PreviewWrapperProvider {
+    method @KotlinOnly @androidx.compose.runtime.Composable public void Wrap(kotlin.jvm.functions.Function0<kotlin.Unit> content);
+    method @BytecodeOnly @androidx.compose.runtime.Composable public void Wrap(kotlin.jvm.functions.Function2<? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>, androidx.compose.runtime.Composer?, int);
   }
 
   public final class Wallpapers {

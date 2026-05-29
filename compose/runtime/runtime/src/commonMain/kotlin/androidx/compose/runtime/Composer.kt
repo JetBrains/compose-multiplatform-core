@@ -19,57 +19,23 @@
 
 package androidx.compose.runtime
 
-import androidx.collection.ObjectList
-import androidx.collection.ScatterMap
-import androidx.collection.emptyScatterMap
-import androidx.collection.mutableScatterMapOf
-import androidx.compose.runtime.collection.fastFilter
-import androidx.compose.runtime.collection.sortedBy
+import androidx.compose.runtime.Composer.Companion.Empty
+import androidx.compose.runtime.collection.ScopeMap
+import androidx.compose.runtime.composer.RememberManager
+import androidx.compose.runtime.composer.gapbuffer.SlotReader
+import androidx.compose.runtime.composer.gapbuffer.SlotTable
+import androidx.compose.runtime.composer.gapbuffer.SlotWriter
+import androidx.compose.runtime.composer.gapbuffer.asGapAnchor
+import androidx.compose.runtime.tooling.ComposeStackTrace
+import androidx.compose.runtime.tooling.ComposeStackTraceFrame
 import androidx.compose.runtime.tooling.ComposeStackTraceMode
 import androidx.compose.runtime.tooling.CompositionData
-import androidx.compose.runtime.tooling.CompositionGroup
-import androidx.compose.runtime.tooling.CompositionInstance
-import androidx.compose.runtime.tooling.SourceInformation
-import androidx.compose.runtime.tooling.findSubcompositionContextGroup
+import androidx.compose.runtime.tooling.CompositionErrorContextImpl
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.contract
 import kotlin.coroutines.CoroutineContext
 import kotlin.jvm.JvmInline
 import kotlin.jvm.JvmName
-
-/**
- * An interface used during [ControlledComposition.applyChanges] and [Composition.dispose] to track
- * when [RememberObserver] instances and leave the composition an also allows recording [SideEffect]
- * calls.
- */
-internal interface RememberManager {
-    /** The [RememberObserver] is being remembered by a slot in the slot table. */
-    fun remembering(instance: RememberObserverHolder)
-
-    /** The [RememberObserver] is being forgotten by a slot in the slot table. */
-    fun forgetting(instance: RememberObserverHolder)
-
-    /**
-     * The [effect] should be called when changes are being applied but after the remember/forget
-     * notifications are sent.
-     */
-    fun sideEffect(effect: () -> Unit)
-
-    /** The [ComposeNodeLifecycleCallback] is being deactivated. */
-    fun deactivating(instance: ComposeNodeLifecycleCallback)
-
-    /** The [ComposeNodeLifecycleCallback] is being released. */
-    fun releasing(instance: ComposeNodeLifecycleCallback)
-
-    /** The restart scope is pausing */
-    fun rememberPausingScope(scope: RecomposeScopeImpl)
-
-    /** The restart scope is resuming */
-    fun startResumingScope(scope: RecomposeScopeImpl)
-
-    /** The restart scope is finished resuming */
-    fun endResumingScope(scope: RecomposeScopeImpl)
-}
 
 /**
  * Internal compose compiler plugin API that is used to update the function the composer will call
@@ -178,115 +144,6 @@ internal constructor(
         get() = (explicitNull || value != null) && !isDynamic
 
     internal fun ifNotAlreadyProvided() = this.also { canOverride = false }
-}
-
-/**
- * This class is used internally by [movableContentOf]. Please see [movableContentOf] which has
- * documentation and example for how to use movable content. This class cannot be used directly.
- *
- * A Compose compiler plugin API. DO NOT call directly.
- *
- * An instance used to track the identity of the movable content. Using a holder object allows
- * creating unique movable content instances from the same instance of a lambda. This avoids using
- * the identity of a lambda instance as it can be merged into a singleton or merged by later
- * rewritings and using its identity might lead to unpredictable results that might change from the
- * debug and release builds.
- *
- * @see movableContentOf
- */
-@InternalComposeApi
-public class MovableContent<P>(public val content: @Composable (parameter: P) -> Unit) {
-    internal var used: Boolean = false
-}
-
-/**
- * A Compose compiler plugin API. DO NOT call directly.
- *
- * A reference to the movable content state prior to changes being applied.
- */
-@InternalComposeApi
-public class MovableContentStateReference
-internal constructor(
-    internal val content: MovableContent<Any?>,
-    internal val parameter: Any?,
-    internal val composition: ControlledComposition,
-    internal val slotTable: SlotTable,
-    internal val anchor: Anchor,
-    internal var invalidations: List<Pair<RecomposeScopeImpl, Any?>>,
-    internal val locals: PersistentCompositionLocalMap,
-    internal val nestedReferences: List<MovableContentStateReference>?,
-) {
-    /** Transfer any invalidations that may have accumulated since this reference was created. */
-    internal fun transferPendingInvalidations() {
-        if (anchor.valid) {
-            invalidations =
-                invalidations + (composition as CompositionImpl).extractInvalidationsOf(anchor)
-        }
-    }
-}
-
-/**
- * A Compose compiler plugin API. DO NOT call directly.
- *
- * A reference to the state of a [MovableContent] after changes have being applied. This is the
- * state that was removed from the `from` composition during [ControlledComposition.applyChanges]
- * and before it is inserted during [ControlledComposition.insertMovableContent].
- */
-@InternalComposeApi
-public class MovableContentState internal constructor(internal val slotTable: SlotTable) {
-
-    /** Extract one or more states for movable content that is nested in the [slotTable]. */
-    internal fun extractNestedStates(
-        applier: Applier<*>,
-        references: ObjectList<MovableContentStateReference>,
-    ): ScatterMap<MovableContentStateReference, MovableContentState> {
-        // We can only remove states that are contained in this states slot table so the references
-        // with anchors not owned by the slotTable should be removed. We also should traverse the
-        // slot table in order to avoid thrashing the gap buffer so the references are sorted.
-        val referencesToExtract =
-            references
-                .fastFilter { slotTable.ownsAnchor(it.anchor) }
-                .sortedBy { slotTable.anchorIndex(it.anchor) }
-        if (referencesToExtract.isEmpty()) return emptyScatterMap()
-        val result = mutableScatterMapOf<MovableContentStateReference, MovableContentState>()
-        slotTable.write { writer ->
-            fun closeToGroupContaining(group: Int) {
-                while (writer.parent >= 0 && writer.currentGroupEnd <= group) {
-                    writer.skipToGroupEnd()
-                    writer.endGroup()
-                }
-            }
-            fun openParent(parent: Int) {
-                closeToGroupContaining(parent)
-                while (writer.currentGroup != parent && !writer.isGroupEnd) {
-                    if (parent < writer.nextGroup) {
-                        writer.startGroup()
-                    } else {
-                        writer.skipGroup()
-                    }
-                }
-                runtimeCheck(writer.currentGroup == parent) { "Unexpected slot table structure" }
-                writer.startGroup()
-            }
-            referencesToExtract.forEach { reference ->
-                val newGroup = writer.anchorIndex(reference.anchor)
-                val newParent = writer.parent(newGroup)
-                closeToGroupContaining(newParent)
-                openParent(newParent)
-                writer.advanceBy(newGroup - writer.currentGroup)
-                val content =
-                    extractMovableContentAtCurrent(
-                        composition = reference.composition,
-                        reference = reference,
-                        slots = writer,
-                        applier = applier,
-                    )
-                result[reference] = content
-            }
-            closeToGroupContaining(Int.MAX_VALUE)
-        }
-        return result
-    }
 }
 
 private val SlotWriter.nextGroup
@@ -1023,10 +880,12 @@ public sealed interface Composer {
     public fun collectParameterInformation()
 
     /**
-     * Schedules an [action] to be invoked when the recomposer finishes the next execution of a
-     * frame. If a frame is currently in-progress, [action] will be invoked when the current frame
-     * finishes. If a frame isn't currently in-progress, a new frame will be scheduled (if one
-     * hasn't been already) and [action] will execute at the completion of the next frame.
+     * Schedules an [action] to be invoked when the recomposer finishes the next composition of a
+     * frame (including the completion of subcompositions). If a frame is currently in-progress,
+     * [action] will be invoked when the current frame fully finishes composing. If a frame isn't
+     * currently in-progress, a new frame will be scheduled (if one hasn't been already) and
+     * [action] will execute at the completion of the next frame's composition. If a new frame is
+     * scheduled and there is no other work to execute, [action] will still execute.
      *
      * [action] will always execute on the applier thread.
      *
@@ -1119,6 +978,60 @@ public sealed interface Composer {
                 if (enabled) ComposeStackTraceMode.SourceInformation else ComposeStackTraceMode.None
         }
     }
+}
+
+internal abstract class InternalComposer : Composer {
+    internal abstract val areChildrenComposing: Boolean
+    internal abstract val isComposing: Boolean
+    internal abstract val hasPendingChanges: Boolean
+    internal abstract val currentRecomposeScope: RecomposeScopeImpl?
+    internal abstract val errorContext: CompositionErrorContextImpl?
+    internal abstract val deferredChanges: Changes?
+    internal abstract val sourceMarkersEnabled: Boolean
+
+    internal abstract fun startReuseFromRoot()
+
+    internal abstract fun endReuseFromRoot()
+
+    internal abstract fun changesApplied()
+
+    internal abstract fun forceRecomposeScopes(): Boolean
+
+    internal abstract fun dispose()
+
+    internal abstract fun deactivate()
+
+    internal abstract fun verifyConsistent()
+
+    internal abstract fun stacksSize(): Int
+
+    internal abstract fun stackTraceForValue(value: Any?): ComposeStackTrace
+
+    internal abstract fun parentStackTrace(): List<ComposeStackTraceFrame>
+
+    internal abstract fun prepareCompose(block: () -> Unit)
+
+    internal abstract fun composeContent(
+        invalidationsRequested: ScopeMap<RecomposeScopeImpl, Any>,
+        content: @Composable () -> Unit,
+        shouldPause: ShouldPauseCallback?,
+    )
+
+    internal abstract fun recompose(
+        invalidationsRequested: ScopeMap<RecomposeScopeImpl, Any>,
+        shouldPause: ShouldPauseCallback?,
+    ): Boolean
+
+    internal abstract fun tryImminentInvalidation(
+        scope: RecomposeScopeImpl,
+        instance: Any?,
+    ): Boolean
+
+    internal abstract fun updateComposerInvalidations(
+        invalidationsRequested: ScopeMap<RecomposeScopeImpl, Any>
+    )
+
+    @TestOnly internal abstract fun parentKey(): Int
 }
 
 /**
@@ -1421,7 +1334,7 @@ internal inline fun <R> SlotWriter.withAfterAnchorInfo(anchor: Anchor?, cb: (Int
     var priority = -1
     var endRelativeAfter = -1
     if (anchor != null && anchor.valid) {
-        priority = anchorIndex(anchor)
+        priority = anchorIndex(anchor.asGapAnchor())
         endRelativeAfter = slotsSize - slotsEndAllIndex(priority)
     }
     cb(priority, endRelativeAfter)
@@ -1432,14 +1345,15 @@ internal val SlotWriter.isAfterFirstChild
 internal val SlotReader.isAfterFirstChild
     get() = currentGroup > parent + 1
 
-/*
- * Remember observer which is not removed during reuse/deactivate of the group.
- * It is used to preserve composition locals between group deactivation.
+/**
+ * Remember observer which is not removed during reuse/deactivate of the group. It is used to
+ * preserve composition locals between group deactivation.
  */
-internal class ReusableRememberObserverHolder(wrapped: RememberObserver, afterGroupIndex: Int) :
-    RememberObserverHolder(wrapped, afterGroupIndex)
+internal interface ReusableRememberObserverHolder : RememberObserverHolder
 
-internal open class RememberObserverHolder(var wrapped: RememberObserver, var afterGroupIndex: Int)
+internal interface RememberObserverHolder {
+    var wrapped: RememberObserver
+}
 
 // An arbitrary key value that marks the default parameter group
 internal const val defaultsKey = -127
@@ -1581,6 +1495,17 @@ internal fun extractMovableContentAtCurrent(
         }
     }
 
+    // Transfer invalidations before moving the scopes, since we could have accumulated more after
+    // creating the state.
+    val anchor = reference.anchor
+    if (anchor.valid) {
+        val extracted =
+            (composition as CompositionImpl).extractInvalidationsOfGroup {
+                slots.inGroup(anchor.asGapAnchor(), it.asGapAnchor())
+            }
+        reference.invalidations += extracted
+    }
+
     // Write a table that as if it was written by a calling invokeMovableContentLambda because this
     // might be removed from the composition before the new composition can be composed to receive
     // it. When the new composition receives the state it must recompose over the state by calling
@@ -1595,7 +1520,7 @@ internal fun extractMovableContentAtCurrent(
             writer.update(reference.parameter)
 
             // Move the content into current location
-            val anchors = slots.moveTo(reference.anchor, 1, writer)
+            val anchors = slots.moveTo(reference.anchor.asGapAnchor(), 1, writer)
 
             // skip the group that was just inserted.
             writer.skipGroup()
@@ -1655,47 +1580,4 @@ internal fun extractMovableContentAtCurrent(
         }
     }
     return state
-}
-
-internal class CompositionDataImpl(val composition: Composition) :
-    CompositionData, CompositionInstance {
-    private val slotTable
-        get() = (composition as CompositionImpl).slotTable
-
-    override val compositionGroups: Iterable<CompositionGroup>
-        get() = slotTable.compositionGroups
-
-    override val isEmpty: Boolean
-        get() = slotTable.isEmpty
-
-    override fun find(identityToFind: Any): CompositionGroup? = slotTable.find(identityToFind)
-
-    override fun hashCode(): Int = composition.hashCode() * 31
-
-    override fun equals(other: Any?): Boolean =
-        other is CompositionDataImpl && composition == other.composition
-
-    override val parent: CompositionInstance?
-        get() = composition.parent?.let { CompositionDataImpl(it) }
-
-    override val data: CompositionData
-        get() = this
-
-    override fun findContextGroup(): CompositionGroup? {
-        val parentSlotTable = composition.parent?.slotTable ?: return null
-        val context = composition.context ?: return null
-
-        return parentSlotTable.findSubcompositionContextGroup(context)?.let {
-            parentSlotTable.compositionGroupOf(it)
-        }
-    }
-
-    private val Composition.slotTable
-        get() = (this as? CompositionImpl)?.slotTable
-
-    private val Composition.context
-        get() = (this as? CompositionImpl)?.parent
-
-    private val Composition.parent
-        get() = context?.composition
 }

@@ -22,8 +22,8 @@ import androidx.xr.runtime.math.Vector3
 import java.util.concurrent.Executor
 
 /** Interface for an XR Runtime Entity. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public interface Entity : ActivityPose {
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public interface Entity : ScenePose {
 
     /** Sets the provided Entities to be children of the Entity. */
     public val children: List<Entity>
@@ -46,7 +46,7 @@ public interface Entity : ActivityPose {
      *
      * @param hidden The new local hidden state of this Entity.
      */
-    public fun setHidden(hidden: Boolean): Unit
+    public fun setHidden(hidden: Boolean)
 
     /**
      * Add given Entity as child. The child Entity's pose will be relative to the pose of its parent
@@ -110,19 +110,12 @@ public interface Entity : ActivityPose {
     public fun getAlpha(): Float = getAlpha(Space.PARENT)
 
     /**
-     * Sets the alpha transparency for the given Entity, relative to the given space.
-     *
-     * @param alpha Alpha transparency level for the Entity.
-     * @param relativeTo The space in which to set the alpha.
-     */
-    public fun setAlpha(alpha: Float, @SpaceValue relativeTo: Int)
-
-    /**
-     * Sets the alpha transparency for the given Entity.
+     * Sets the alpha transparency for the given Entity, relative to the parent space. Values are in
+     * the range [0, 1] with 0 being fully transparent and 1 being fully opaque.
      *
      * @param alpha Alpha transparency level for the Entity.
      */
-    public fun setAlpha(alpha: Float): Unit = setAlpha(alpha, Space.PARENT)
+    public fun setAlpha(alpha: Float): Unit
 
     /** Sets the provided Entities to be children of the Entity. */
     public fun addChildren(children: List<Entity>): Unit
@@ -146,7 +139,7 @@ public interface Entity : ActivityPose {
      * @param listener The input event listener to add.
      */
     @Suppress("ExecutorRegistration")
-    public fun addInputEventListener(executor: Executor, listener: InputEventListener)
+    public fun addInputEventListener(executor: Executor? = null, listener: InputEventListener)
 
     /** Removes the given listener from the set of active input listeners. */
     public fun removeInputEventListener(listener: InputEventListener)

@@ -1,41 +1,46 @@
-diff --git a/benchmark/benchmark-darwin-gradle-plugin/src/main/kotlin/androidx/benchmark/darwin/gradle/DarwinBenchmarkPlugin.kt b/benchmark/benchmark-darwin-gradle-plugin/src/main/kotlin/androidx/benchmark/darwin/gradle/DarwinBenchmarkPlugin.kt
-index b9855a3ede2..0204c30c80b 100644
---- a/benchmark/benchmark-darwin-gradle-plugin/src/main/kotlin/androidx/benchmark/darwin/gradle/DarwinBenchmarkPlugin.kt
-+++ b/benchmark/benchmark-darwin-gradle-plugin/src/main/kotlin/androidx/benchmark/darwin/gradle/DarwinBenchmarkPlugin.kt
-@@ -32,6 +32,7 @@ import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
-  * results in `json`.
-  */
- class DarwinBenchmarkPlugin : Plugin<Project> {
-+    @Suppress("UPPER_BOUND_VIOLATED_BASED_ON_JAVA_ANNOTATIONS")
-     override fun apply(project: Project) {
-         val extension =
-             project.extensions.create("darwinBenchmark", DarwinBenchmarkPluginExtension::class.java)
-diff --git a/buildSrc/private/src/main/kotlin/androidx/build/binarycompatibilityvalidator/BinaryCompatibilityValidation.kt b/buildSrc/private/src/main/kotlin/androidx/build/binarycompatibilityvalidator/BinaryCompatibilityValidation.kt
-index bba13155856..00b9b157031 100644
---- a/buildSrc/private/src/main/kotlin/androidx/build/binarycompatibilityvalidator/BinaryCompatibilityValidation.kt
-+++ b/buildSrc/private/src/main/kotlin/androidx/build/binarycompatibilityvalidator/BinaryCompatibilityValidation.kt
-@@ -319,9 +319,7 @@ class BinaryCompatibilityValidation(
+diff --git a/buildSrc/public/src/main/kotlin/androidx/build/AndroidXConfiguration.kt b/buildSrc/public/src/main/kotlin/androidx/build/AndroidXConfiguration.kt
+index 6fece502bef..f1c96195b0b 100644
+--- a/buildSrc/public/src/main/kotlin/androidx/build/AndroidXConfiguration.kt
++++ b/buildSrc/public/src/main/kotlin/androidx/build/AndroidXConfiguration.kt
+@@ -38,11 +38,11 @@ interface AndroidXConfiguration {
+ }
  
-             val target = currentTarget.toKlibTarget()
+ enum class KotlinTarget(val apiVersion: KotlinVersion, val catalogVersion: String) {
+-    KOTLIN_2_1(KotlinVersion.KOTLIN_2_1, "kotlin21"),
+     KOTLIN_2_2(KotlinVersion.KOTLIN_2_2, "kotlin22"),
+     KOTLIN_2_3(KotlinVersion.KOTLIN_2_3, "kotlin23"),
+-    DEFAULT(KOTLIN_2_1),
+-    LATEST(KOTLIN_2_3);
++    KOTLIN_2_4(KotlinVersion.KOTLIN_2_3, "kotlin24"),
++    DEFAULT(KOTLIN_2_2),
++    LATEST(KOTLIN_2_4);
  
--            val isEnabled =
--                currentTarget is KotlinNativeTarget &&
--                    HostManager().isEnabled(currentTarget.konanTarget)
-+            val isEnabled = HostManager().isEnabled(currentTarget.konanTarget)
-             if (isEnabled) {
-                 val buildTargetAbi =
-                     configureKlibCompilation(
+     constructor(
+         kotlinTarget: KotlinTarget
 diff --git a/buildSrc/shared.gradle b/buildSrc/shared.gradle
-index b27c1ab28af..add98e68e37 100644
+index e516bf8575b..bd3400df80f 100644
 --- a/buildSrc/shared.gradle
 +++ b/buildSrc/shared.gradle
-@@ -48,7 +48,7 @@ tasks.withType(KotlinCompile).configureEach { task ->
-         if (task.path == ":imports:binary-compatibility-validator:compileKotlin") {
-             friendPaths.from(configurations.friends.incoming.artifactView {}.files)
-         }
--        languageVersion.set(KotlinVersion.KOTLIN_2_0)
--        apiVersion.set(KotlinVersion.KOTLIN_2_0)
-+        languageVersion.set(KotlinVersion.KOTLIN_2_1)
-+        apiVersion.set(KotlinVersion.KOTLIN_2_1)
+@@ -44,7 +44,7 @@ tasks.withType(KotlinCompile).configureEach { task ->
+                 "-Xskip-metadata-version-check",
+                 "-Xjdk-release=17",
+         )
+-        languageVersion.set(KotlinVersion.KOTLIN_2_1)
+-        apiVersion.set(KotlinVersion.KOTLIN_2_1)
++        languageVersion.set(KotlinVersion.KOTLIN_2_2)
++        apiVersion.set(KotlinVersion.KOTLIN_2_2)
      }
  }
+diff --git a/room3/room3-gradle-plugin/src/test/java/androidx/room3/gradle/RoomKmpGradlePluginTest.kt b/room3/room3-gradle-plugin/src/test/java/androidx/room3/gradle/RoomKmpGradlePluginTest.kt
+index c02d9d12b62..e862d3e3b43 100644
+--- a/room3/room3-gradle-plugin/src/test/java/androidx/room3/gradle/RoomKmpGradlePluginTest.kt
++++ b/room3/room3-gradle-plugin/src/test/java/androidx/room3/gradle/RoomKmpGradlePluginTest.kt
+@@ -72,7 +72,7 @@ class RoomKmpGradlePluginTest {
+             |  }
+             |
+             |  compilerOptions {
+-            |    languageVersion = org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_2_1
++            |    languageVersion = org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_2_2
+             |  }
+             |}
+             |

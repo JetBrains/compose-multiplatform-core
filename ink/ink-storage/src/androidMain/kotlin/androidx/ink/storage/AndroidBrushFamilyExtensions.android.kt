@@ -20,16 +20,18 @@ package androidx.ink.storage
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import androidx.annotation.RestrictTo
 import androidx.ink.brush.BrushFamily
-import androidx.ink.brush.ExperimentalInkCustomBrushApi
+import androidx.ink.brush.BrushPaint
 import androidx.ink.brush.TextureBitmapStore
+import androidx.ink.brush.Version
 import java.io.ByteArrayOutputStream
+import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
 import java.util.zip.GZIPOutputStream
 
 /** A callback to use with [decode] to manage texture image assets. */
-@ExperimentalInkCustomBrushApi
 public fun interface BrushFamilyDecodeCallback {
     /**
      * Called for each texture used by a BrushFamily when that BrushFamily is decoded. In the
@@ -49,7 +51,9 @@ public fun interface BrushFamilyDecodeCallback {
 
 /**
  * Write a gzip-compressed `ink.proto.BrushFamily` binary proto message representing the
- * [BrushFamily] to the given [OutputStream].
+ * [BrushFamily] to the given [OutputStream]. If `hasFallbacks` is true, then the stored, proto
+ * message including fallbacks for this [BrushFamily] will be used instead of recomputing the proto
+ * from the [BrushFamily] object.
  *
  * @param output The [OutputStream] to write the gzip-compressed encoded bytes to.
  * @param textureBitmapStore The [TextureBitmapStore] to use to encode the texture images within the
@@ -58,31 +62,48 @@ public fun interface BrushFamilyDecodeCallback {
  *   that always returns `null`.
  * @receiver The [BrushFamily] object to encode.
  */
-@ExperimentalInkCustomBrushApi
 public fun BrushFamily.encode(output: OutputStream, textureBitmapStore: TextureBitmapStore) {
-    val textureIdToNativeBitmaps: MutableMap<String, ByteArray> = mutableMapOf()
-
-    for (coat in coats) {
-        for (paint in coat.paintPreferences) {
-            for (layer in paint.textureLayers) {
-                if (textureIdToNativeBitmaps.containsKey(layer.clientTextureId)) continue
-
-                val bitmap = textureBitmapStore[layer.clientTextureId] ?: continue
-
-                val pngBytes =
-                    ByteArrayOutputStream().use { outputStream ->
-                        // Encode bitmap as PNG bytes. PNG is lossless, so the quality value is
-                        // ignored.
-                        bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
-                        outputStream.toByteArray()
-                    }
-                textureIdToNativeBitmaps[layer.clientTextureId] = pngBytes
-            }
-        }
-    }
+    val textureIdToNativeBitmaps = mutableMapOf<String, ByteArray>()
+    collectTextureBitmaps(textureBitmapStore, textureIdToNativeBitmaps)
     GZIPOutputStream(output).use {
         it.write(
             BrushSerializationNative.serializeBrushFamily(nativePointer, textureIdToNativeBitmaps)
+        )
+    }
+}
+
+/**
+ * Write a gzip-compressed `ink.proto.BrushFamily` binary proto message representing the [List] of
+ * [BrushFamily]s to the given [OutputStream].
+ *
+ * All [BrushFamily] objects in this [List] are encoded into a single BrushFamily proto object. At
+ * the top-level is the lowest-version compatible [BrushFamily], making the proto backwards
+ * compatible with older versions of Ink which have no concept of nested brush families. Creates new
+ * fallbacks from the [BrushFamily] objects passed in, overriding any existing fallbacks on any
+ * individual [BrushFamily].
+ *
+ * @param output The [OutputStream] to write the gzip-compressed encoded bytes to.
+ * @param textureBitmapStore The [TextureBitmapStore] to use to encode the texture images within the
+ *   encoded [BrushFamily]s. If this is not desired behavior, e.g. if the application has a static
+ *   set of texture images that it includes as resources, then this can be a [TextureBitmapStore]
+ *   that always returns `null`.
+ * @receiver The [List] of [BrushFamily] objects to encode.
+ */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // FutureJetpackApi
+public fun List<BrushFamily>.encodeMultiple(
+    output: OutputStream,
+    textureBitmapStore: TextureBitmapStore,
+) {
+    val textureIdToNativeBitmaps = mutableMapOf<String, ByteArray>()
+    for (family in this) {
+        family.collectTextureBitmaps(textureBitmapStore, textureIdToNativeBitmaps)
+    }
+    GZIPOutputStream(output).use {
+        it.write(
+            BrushSerializationNative.serializeMultipleBrushFamilies(
+                LongArray(this.size) { index -> this[index].nativePointer },
+                textureIdToNativeBitmaps,
+            )
         )
     }
 }
@@ -97,34 +118,80 @@ public fun BrushFamily.encode(output: OutputStream, textureBitmapStore: TextureB
  * @param getClientTextureId A callback to store the decoded texture image, if one were encoded
  *   inside the serialized [BrushFamily], into a [TextureBitmapStore]. This is called synchronously
  *   as part of this function call on the same thread.
+ * @param maxVersion The maximum [Version] to be supported by the deserializer. Proto objects with a
+ *   `min_version` of greater than maxVersion will be rejected.
  * @return The [BrushFamily] parsed from the [InputStream].
  * @throws [java.io.IOException] if gzip-format bytes cannot be read from [input].
  * @throws [IllegalArgumentException] [input] does not provide a valid `ink.proto.BrushFamily` proto
  *   message, or the corresponding [BrushFamily] is invalid.
  */
 @SuppressWarnings("ExecutorRegistration")
-@ExperimentalInkCustomBrushApi
+public fun BrushFamily.Companion.decode(
+    input: InputStream,
+    maxVersion: Version,
+    getClientTextureId: BrushFamilyDecodeCallback,
+): BrushFamily =
+    BrushFamily.wrapNative {
+        val decompressed = DecompressedBytes(input)
+        BrushSerializationNative.newBrushFamilyFromProto(
+                brushFamilyDirectByteBuffer = null,
+                brushFamilyByteArray = decompressed.bytes,
+                offset = 0,
+                length = decompressed.size,
+                callback = getClientTextureId.toNativeCallback(),
+                maxVersion = maxVersion.value,
+            )
+            .also { check(it != 0L) { "Should have thrown exception if decoding failed." } }
+    }
+
+/**
+ * Read a serialized [BrushFamily] from the given [InputStream] and parse it into a [List] of
+ * [BrushFamily]s, throwing an exception if parsing or validation was not successful. Java callers
+ * should use [AndroidBrushFamilySerialization.decodeMultiple] instead.
+ *
+ * @param input [InputStream] providing gzip-compressed `ink.proto.BrushFamily` binary proto
+ *   messages, the same as written to [OutputStream] by [encodeMultiple].
+ * @param getClientTextureId A callback to store the decoded texture image, if one were encoded
+ *   inside the serialized [BrushFamily]s, into a [TextureBitmapStore]. This is called synchronously
+ *   as part of this function call on the same thread.
+ * @param maxVersion The maximum [Version] supported by the deserializer. If any of the serialized
+ *   [BrushFamily]s have a `min_version` of greater than maxVersion, deserialization will fail.
+ * @return The [List] of [BrushFamily]s parsed from the [InputStream].
+ * @throws [java.io.IOException] if gzip-format bytes cannot be read from [input].
+ * @throws [IllegalArgumentException] [input] does not provide a valid `ink.proto.BrushFamily` proto
+ *   message, or any of the corresponding [BrushFamily]s are invalid.
+ */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // FutureJetpackApi
+@SuppressWarnings("ExecutorRegistration")
+public fun BrushFamily.Companion.decodeMultiple(
+    input: InputStream,
+    maxVersion: Version,
+    getClientTextureId: BrushFamilyDecodeCallback,
+): List<BrushFamily> {
+    val decompressed = DecompressedBytes(input)
+    return MultipleBrushFamilies.decode(
+        brushFamilyDirectByteBuffer = null,
+        brushFamilyByteArray = decompressed.bytes,
+        length = decompressed.size,
+        callback = getClientTextureId.toNativeCallback(),
+        maxVersion = maxVersion.value,
+    )
+}
+
+/** See [decodeMultiple] above. This overload uses [Version.MAX_SUPPORTED]. */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // FutureJetpackApi
+@SuppressWarnings("ExecutorRegistration")
+public fun BrushFamily.Companion.decodeMultiple(
+    input: InputStream,
+    getClientTextureId: BrushFamilyDecodeCallback,
+): List<BrushFamily> = decodeMultiple(input, Version.MAX_SUPPORTED, getClientTextureId)
+
+/** See [decode] above. This overload uses [Version.MAX_SUPPORTED]. */
+@SuppressWarnings("ExecutorRegistration")
 public fun BrushFamily.Companion.decode(
     input: InputStream,
     getClientTextureId: BrushFamilyDecodeCallback,
-): BrushFamily {
-    val decompressed = DecompressedBytes(input)
-    val convertPngBytesToAndroidBitmapAndCallAndroidCallback: (String, ByteArray?) -> String =
-        { textureId: String, pngBytes: ByteArray? ->
-            val bitmap: Bitmap? = pngBytes?.let { BitmapFactory.decodeByteArray(it, 0, it.size) }
-            getClientTextureId.onDecodeTexture(textureId, bitmap)
-        }
-    val nativePointer =
-        BrushSerializationNative.newBrushFamilyFromProto(
-            brushFamilyDirectByteBuffer = null,
-            brushFamilyByteArray = decompressed.bytes,
-            offset = 0,
-            length = decompressed.size,
-            callback = convertPngBytesToAndroidBitmapAndCallAndroidCallback,
-        )
-    check(nativePointer != 0L) { "Should have thrown exception if decoding failed." }
-    return BrushFamily.wrapNative(nativePointer)
-}
+): BrushFamily = decode(input, Version.MAX_SUPPORTED, getClientTextureId)
 
 // Using an explicit singleton object instead of @file:JvmName to put the static interface intended
 // for use from Java in a class because otherwise there are multiple top-level functions with the
@@ -132,11 +199,12 @@ public fun BrushFamily.Companion.decode(
 // overload arbitrarily, which leads to potentially very confusing behavior (e.g. decode might work
 // by coincidence at one point and then suddenly stop working when more overloads are added).
 
-@ExperimentalInkCustomBrushApi
 public object AndroidBrushFamilySerialization {
     /**
      * Write a gzip-compressed `ink.proto.BrushFamily` binary proto message representing the
-     * [BrushFamily] to the given [OutputStream].
+     * [BrushFamily] to the given [OutputStream]. If `hasFallbacks` is true, then the stored, proto
+     * message including fallbacks for this [BrushFamily] will be used instead of recomputing the
+     * proto from the [BrushFamily] object.
      *
      * @param brushFamily The [BrushFamily] object to encode.
      * @param output The [OutputStream] to write the gzip-compressed encoded bytes to.
@@ -146,6 +214,7 @@ public object AndroidBrushFamilySerialization {
      *   [TextureBitmapStore] that always returns `null`.
      */
     @JvmStatic
+    @Throws(IOException::class)
     public fun encode(
         brushFamily: BrushFamily,
         output: OutputStream,
@@ -164,6 +233,8 @@ public object AndroidBrushFamilySerialization {
      *
      * @param input [InputStream] providing gzip-compressed `ink.proto.BrushFamily` binary proto
      *   messages, the same as written to [OutputStream] by [encode].
+     * @param maxVersion The maximum [Version] supported by the deserializer. If the serialized
+     *   [BrushFamily] has a `min_version` of greater than maxVersion, deserialization will fail.
      * @param getClientTextureId A callback to store the decoded texture image, if one were encoded
      *   inside the serialized [BrushFamily], into a [TextureBitmapStore]. This is called
      *   synchronously as part of this function call on the same thread.
@@ -174,8 +245,124 @@ public object AndroidBrushFamilySerialization {
      */
     @SuppressWarnings("ExecutorRegistration")
     @JvmStatic
+    @Throws(IOException::class)
+    public fun decode(
+        input: InputStream,
+        maxVersion: Version,
+        getClientTextureId: BrushFamilyDecodeCallback,
+    ): BrushFamily = BrushFamily.decode(input, maxVersion, getClientTextureId)
+
+    /** See [decode] above. This overload uses [Version.MAX_SUPPORTED]. */
+    @SuppressWarnings("ExecutorRegistration")
+    @JvmStatic
+    @Throws(IOException::class)
     public fun decode(
         input: InputStream,
         getClientTextureId: BrushFamilyDecodeCallback,
-    ): BrushFamily = BrushFamily.decode(input, getClientTextureId)
+    ): BrushFamily = decode(input, Version.MAX_SUPPORTED, getClientTextureId)
+
+    /**
+     * Write a gzip-compressed `ink.proto.BrushFamily` binary proto message representing the [List]
+     * of [BrushFamily]s to the given [OutputStream].
+     *
+     * All [BrushFamily] objects in this [List] are encoded into a single BrushFamily proto object.
+     * At the top-level is the lowest-version compatible [BrushFamily], making the proto backwards
+     * compatible with older versions of Ink which have no concept of nested brush families. Creates
+     * new fallbacks from the [BrushFamily] objects passed in, overriding any existing fallbacks on
+     * any individual [BrushFamily].
+     *
+     * @param brushFamilies The [List] of [BrushFamily] objects to encode.
+     * @param output The [OutputStream] to write the gzip-compressed encoded bytes to.
+     * @param textureBitmapStore The [TextureBitmapStore] to use to encode the texture images within
+     *   the encoded [BrushFamily]s. If this is not desired behavior, e.g. if the application has a
+     *   static set of texture images that it includes as resources, then this can be a
+     *   [TextureBitmapStore] that always returns `null`.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // FutureJetpackApi
+    @JvmStatic
+    @Throws(IOException::class)
+    public fun encodeMultiple(
+        brushFamilies: List<BrushFamily>,
+        output: OutputStream,
+        textureBitmapStore: TextureBitmapStore,
+    ) {
+        brushFamilies.encodeMultiple(output, textureBitmapStore)
+    }
+
+    /**
+     * Read a serialized [List] of [BrushFamily]s from the given [InputStream] and parse it into a
+     * [List] of [BrushFamily]s, throwing an exception if parsing or validation was not successful.
+     * Kotlin callers should use [BrushFamily.Companion.decodeMultiple] instead.
+     *
+     * [getClientTextureId] is called synchronously as part of this function call, on the same
+     * thread.
+     *
+     * @param input [InputStream] providing gzip-compressed `ink.proto.BrushFamily` binary proto
+     *   messages, the same as written to [OutputStream] by [encodeMultiple].
+     * @param maxVersion The maximum [Version] supported by the deserializer. If any of the
+     *   serialized [BrushFamily]s have a `min_version` of greater than maxVersion, deserialization
+     *   will fail.
+     * @param getClientTextureId A callback to store the decoded texture image, if one were encoded
+     *   inside the serialized [BrushFamily]s, into a [TextureBitmapStore]. This is called
+     *   synchronously as part of this function call on the same thread.
+     * @return The [List] of [BrushFamily]s parsed from the [InputStream].
+     * @throws [java.io.IOException] if gzip-format bytes cannot be read from [input].
+     * @throws [IllegalArgumentException] [input] does not provide a valid `ink.proto.BrushFamily`
+     *   proto message, or any of the corresponding [BrushFamily]s are invalid.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // FutureJetpackApi
+    @SuppressWarnings("ExecutorRegistration")
+    @JvmStatic
+    @Throws(IOException::class)
+    public fun decodeMultiple(
+        input: InputStream,
+        maxVersion: Version,
+        getClientTextureId: BrushFamilyDecodeCallback,
+    ): List<BrushFamily> = BrushFamily.decodeMultiple(input, maxVersion, getClientTextureId)
+
+    /** See [decodeMultiple] above. This overload uses [Version.MAX_SUPPORTED]. */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // FutureJetpackApi
+    @SuppressWarnings("ExecutorRegistration")
+    @JvmStatic
+    public fun decodeMultiple(
+        input: InputStream,
+        getClientTextureId: BrushFamilyDecodeCallback,
+    ): List<BrushFamily> = decodeMultiple(input, Version.MAX_SUPPORTED, getClientTextureId)
 }
+
+private fun BrushFamily.collectTextureBitmaps(
+    textureBitmapStore: TextureBitmapStore,
+    textureIdToNativeBitmaps: MutableMap<String, ByteArray>,
+) {
+    for (coat in coats) {
+        for (paint in coat.paintPreferences) {
+            for (layer in paint.textureLayers) {
+                val clientTextureId =
+                    when (layer) {
+                        is BrushPaint.StampingTexture -> layer.clientTextureId
+                        is BrushPaint.TilingTexture -> layer.clientTextureId
+                        else -> ""
+                    }
+                if (clientTextureId.isEmpty()) continue
+                if (textureIdToNativeBitmaps.containsKey(clientTextureId)) continue
+
+                val bitmap = textureBitmapStore[clientTextureId] ?: continue
+
+                val pngBytes =
+                    ByteArrayOutputStream().use { outputStream ->
+                        // Encode bitmap as PNG bytes. PNG is lossless, so the quality value is
+                        // ignored.
+                        bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
+                        outputStream.toByteArray()
+                    }
+                textureIdToNativeBitmaps[clientTextureId] = pngBytes
+            }
+        }
+    }
+}
+
+private fun BrushFamilyDecodeCallback.toNativeCallback(): (String, ByteArray?) -> String =
+    { textureId: String, pngBytes: ByteArray? ->
+        val bitmap: Bitmap? = pngBytes?.let { BitmapFactory.decodeByteArray(it, 0, it.size) }
+        onDecodeTexture(textureId, bitmap)
+    }

@@ -20,15 +20,23 @@ import androidx.arch.core.executor.ArchTaskExecutor
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.Observer
+import androidx.room3.integration.kotlintestapp.vo.Address
 import androidx.room3.integration.kotlintestapp.vo.Author
 import androidx.room3.integration.kotlintestapp.vo.Book
 import androidx.room3.integration.kotlintestapp.vo.BookAuthor
+import androidx.room3.integration.kotlintestapp.vo.Coordinates
+import androidx.room3.integration.kotlintestapp.vo.Email
+import androidx.room3.integration.kotlintestapp.vo.Fts4Mail
+import androidx.room3.integration.kotlintestapp.vo.Fts5Mail
 import androidx.room3.integration.kotlintestapp.vo.Lang
 import androidx.room3.integration.kotlintestapp.vo.Pet
 import androidx.room3.integration.kotlintestapp.vo.Publisher
+import androidx.room3.integration.kotlintestapp.vo.School
+import androidx.room3.integration.kotlintestapp.vo.User
 import java.util.Date
 import java.util.UUID
 import java.util.concurrent.FutureTask
+import kotlin.random.Random
 
 class TestUtil {
 
@@ -60,10 +68,58 @@ class TestUtil {
 
         fun createPet(id: Int): Pet {
             return Pet(
-                mPetId = id,
-                mUserId = id,
-                mName = UUID.randomUUID().toString(),
-                mAdoptionDate = Date(),
+                petId = id,
+                userId = id,
+                name = UUID.randomUUID().toString(),
+                adoptionDate = Date(),
+            )
+        }
+
+        fun createUser(id: Int): User {
+            return User(
+                uId = id,
+                email = Email(id = "e$id", address = "e$id@test.com"),
+                secondaryEmail = null,
+            )
+        }
+
+        fun createSchool(id: Int, managerId: Int): School {
+            return School(
+                id = id,
+                name = UUID.randomUUID().toString(),
+                address = createAddress(),
+                manager = createUser(managerId),
+            )
+        }
+
+        private fun createAddress(): Address {
+            return Address(
+                street = UUID.randomUUID().toString(),
+                state = UUID.randomUUID().toString().substring(0, 2),
+                postCode = Random.Default.nextInt(from = 0, until = 99999),
+                coordinates = createCoordinates(),
+            )
+        }
+
+        private fun createCoordinates(): Coordinates {
+            return Coordinates(Random.Default.nextDouble(), Random.Default.nextDouble())
+        }
+
+        fun createFts4Mail(id: Long, subject: String, body: String): Fts4Mail {
+            return Fts4Mail(
+                rowId = id,
+                subject = subject,
+                body = body,
+                datetime = System.currentTimeMillis(),
+            )
+        }
+
+        fun createFts5Mail(id: Long, subject: String, body: String): Fts5Mail {
+            return Fts5Mail(
+                rowId = id,
+                subject = subject,
+                body = body,
+                datetime = System.currentTimeMillis(),
             )
         }
     }

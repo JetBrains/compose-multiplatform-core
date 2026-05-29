@@ -20,20 +20,20 @@ import androidx.room3.compiler.codegen.XTypeName
 import androidx.room3.compiler.processing.XEquality
 import androidx.room3.compiler.processing.XNullability
 import androidx.room3.compiler.processing.XType
+import androidx.room3.compiler.processing.XTypeArgument
 import androidx.room3.compiler.processing.isArray
 import androidx.room3.compiler.processing.tryBox
 import androidx.room3.compiler.processing.tryUnbox
 import com.google.devtools.ksp.KspExperimental
-import com.google.devtools.ksp.symbol.KSAnnotation
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSType
+import com.google.devtools.ksp.symbol.KSTypeAlias
 import com.google.devtools.ksp.symbol.KSTypeArgument
 import com.google.devtools.ksp.symbol.KSTypeParameter
 import com.google.devtools.ksp.symbol.KSTypeReference
 import com.google.devtools.ksp.symbol.Nullability
 import com.google.devtools.ksp.symbol.Variance
 import com.squareup.javapoet.TypeName
-import com.squareup.javapoet.WildcardTypeName
 import com.squareup.kotlinpoet.javapoet.JTypeName
 import com.squareup.kotlinpoet.javapoet.KTypeName
 import kotlin.reflect.KClass
@@ -48,14 +48,19 @@ import kotlin.reflect.KClass
  */
 internal abstract class KspType(
     env: KspProcessingEnv,
-    val ksType: KSType,
-    // This is needed as a workaround until https://github.com/google/ksp/issues/1376 is fixed.
-    val originalKSAnnotations: Sequence<KSAnnotation>,
+    /** The original KSType (can be a type alias). */
+    private val originalKSType: KSType,
     /** Type resolver to convert KSType into its JVM representation. */
     val scope: KSTypeVarianceResolverScope?,
-    /** The `typealias` that was resolved to get the [ksType], or null if none exists. */
-    val typeAlias: KSType?,
 ) : KspAnnotated(env), XType, XEquality {
+    val ksType by lazy {
+        if (originalKSType.declaration is KSTypeAlias) {
+            originalKSType.replaceTypeAliases(env.resolver)
+        } else {
+            originalKSType
+        }
+    }
+
     override val rawType by lazy { KspRawType(this) }
 
     final override val typeName: TypeName by lazy { xTypeName.java }
@@ -67,32 +72,14 @@ internal abstract class KspType(
      * [XTypeName] represents those differences as [JTypeName] and [KTypeName], respectively.
      */
     private val xTypeName: XTypeName by lazy {
-        val jvmWildcardType =
-            env.resolveWildcards(typeAlias ?: ksType, scope).let {
-                if (ksType == it) {
-                    if (ksType.arguments != it.arguments) {
-                        // Replacing the type arguments to retain the variances resolved in
-                        // `resolveWildcards`. See https://github.com/google/ksp/issues/1778.
-                        copy(
-                            env = env,
-                            ksType = ksType.replace(it.arguments),
-                            originalKSAnnotations = originalKSAnnotations,
-                            scope = scope,
-                            typeAlias = typeAlias,
-                        )
-                    } else {
-                        this
-                    }
-                } else {
-                    env.wrap(ksType = it, allowPrimitives = this is KspPrimitiveType)
-                }
-            }
-        XTypeName(jvmWildcardType.resolveJTypeName(), resolveKTypeName(), nullability)
+        XTypeName(resolveJTypeName(), resolveKTypeName(), nullability)
     }
 
-    protected abstract fun resolveJTypeName(): JTypeName
+    internal val jvmKsType by lazy { env.resolveWildcards(originalKSType, scope) }
 
-    protected abstract fun resolveKTypeName(): KTypeName
+    protected open fun resolveJTypeName() = jvmKsType.asJTypeName(env.resolver)
+
+    protected open fun resolveKTypeName() = ksType.asKTypeName(env.resolver)
 
     override val nullability by lazy {
         when (ksType.nullability) {
@@ -207,7 +194,7 @@ internal abstract class KspType(
     }
 
     @OptIn(KspExperimental::class)
-    override val typeArguments: List<XType> by lazy {
+    override val typeArguments: List<XTypeArgument> by lazy {
         if (env.resolver.isJavaRawType(ksType)) {
             emptyList()
         } else {
@@ -221,14 +208,7 @@ internal abstract class KspType(
     }
 
     override fun isError(): Boolean {
-        // Avoid returning true if this type represents a java wildcard type, e.g. "? extends Foo"
-        // since in that case the wildcard type is not the error type itself. Instead, the error
-        // type should be on the XType#extendsBound() type, "Foo", instead.
-        return ksType.isError && !isJavaWildcardType()
-    }
-
-    private fun isJavaWildcardType(): Boolean {
-        return asTypeName().java is WildcardTypeName
+        return ksType.isError
     }
 
     override fun defaultValue(): String {
@@ -251,7 +231,7 @@ internal abstract class KspType(
         }
     }
 
-    override val ksAnnotations = originalKSAnnotations
+    override val ksAnnotations = ksType.annotations
 
     override fun isNone(): Boolean {
         // even void is converted to Unit so we don't have none type in KSP
@@ -279,12 +259,6 @@ internal abstract class KspType(
         return ksType == other.ksType
     }
 
-    override fun extendsBound(): XType? {
-        // when we detect that there should be an extends bounds, KspProcessingEnv creates
-        // [KspTypeArgumentType].
-        return null
-    }
-
     override val equalityItems: Array<out Any?> by lazy { arrayOf(ksType) }
 
     override fun equals(other: Any?): Boolean {
@@ -304,26 +278,13 @@ internal abstract class KspType(
     abstract fun copy(
         env: KspProcessingEnv,
         ksType: KSType,
-        originalKSAnnotations: Sequence<KSAnnotation>,
         scope: KSTypeVarianceResolverScope?,
-        typeAlias: KSType?,
     ): KspType
 
-    fun copyWithScope(scope: KSTypeVarianceResolverScope) =
-        copy(env, ksType, originalKSAnnotations, scope, typeAlias)
-
-    fun copyWithTypeAlias(typeAlias: KSType) =
-        copy(env, ksType, originalKSAnnotations, scope, typeAlias)
+    fun copyWithScope(scope: KSTypeVarianceResolverScope) = copy(env, originalKSType, scope)
 
     private fun copyWithNullability(nullability: XNullability): KspType =
-        boxed()
-            .copy(
-                env = env,
-                ksType = ksType.withNullability(nullability),
-                originalKSAnnotations = originalKSAnnotations,
-                scope = scope,
-                typeAlias = typeAlias,
-            )
+        boxed().copy(env = env, ksType = originalKSType.withNullability(nullability), scope = scope)
 
     final override fun makeNullable(): KspType {
         if (nullability == XNullability.NULLABLE) {

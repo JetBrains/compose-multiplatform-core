@@ -33,6 +33,7 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.takeOrElse
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.Dp
+import androidx.wear.compose.foundation.lazy.TransformingLazyColumn
 import androidx.wear.compose.material3.tokens.FilledTextButtonTokens
 import androidx.wear.compose.material3.tokens.FilledTonalTextButtonTokens
 import androidx.wear.compose.material3.tokens.OutlinedTextButtonTokens
@@ -62,9 +63,15 @@ import androidx.wear.compose.material3.tokens.TextButtonTokens
  *
  * @sample androidx.wear.compose.material3.samples.TextButtonSample
  *
+ * ![TextButtonSample Composite
+ * Image](https://developer.android.com/wear/images/design/WearComposeM3_TextButtonSample_CompositeImage.png)
+ *
  * Example of a large, filled tonal [TextButton]:
  *
  * @sample androidx.wear.compose.material3.samples.LargeFilledTonalTextButtonSample
+ *
+ *   ![LargeFilledTonalTextButtonSample Composite
+ *   Image](https://developer.android.com/wear/images/design/WearComposeM3_LargeFilledTonalTextButtonSample_CompositeImage.png)
  *
  * Example of [TextButton] with onLongClick:
  *
@@ -146,6 +153,18 @@ public object TextButtonDefaults {
     public val pressedShape: CornerBasedShape
         @Composable get() = MaterialTheme.shapes.small
 
+    /**
+     * The minimum vertical content padding for the list when a [TextButton] is placed at the top or
+     * bottom edge. Recommended for use with
+     * [androidx.wear.compose.foundation.lazy.TransformingLazyColumnItemScope]'s
+     * [androidx.wear.compose.foundation.lazy.TransformingLazyColumnItemScope.minimumVerticalContentPadding],
+     * which allows items to choose a preferred content padding for the list.
+     * [TransformingLazyColumn] takes its contentPadding as the maximum of the preferred content
+     * padding values and its own contentPadding parameter.
+     */
+    public val minimumVerticalListContentPadding: Dp
+        @Composable get() = screenHeightFraction(SMALL_VERTICAL_CONTENT_PADDING_FRACTION)
+
     /** Returns the default [TextButtonShapes] for a static [TextButton]. */
     @Composable public fun shapes(): TextButtonShapes = MaterialTheme.shapes.defaultTextButtonShapes
 
@@ -208,6 +227,10 @@ public object TextButtonDefaults {
      * Example of [TextButton] with [filledTextButtonColors]:
      *
      * @sample androidx.wear.compose.material3.samples.FilledTextButtonSample
+     *
+     *   ![FilledTextButtonSample Composite
+     *   Image](https://developer.android.com/wear/images/design/WearComposeM3_FilledTextButtonSample_CompositeImage.png)
+     *
      * @param containerColor The background color of this text button when enabled
      * @param contentColor The content color of this text button when enabled
      * @param disabledContainerColor the background color of this text button when not enabled
@@ -236,6 +259,9 @@ public object TextButtonDefaults {
      * Example of creating a [TextButton] with [filledVariantTextButtonColors]:
      *
      * @sample androidx.wear.compose.material3.samples.FilledVariantTextButtonSample
+     *
+     *   ![FilledVariantTextButtonSample Composite
+     *   Image](https://developer.android.com/wear/images/design/WearComposeM3_FilledVariantTextButtonSample_CompositeImage.png)
      */
     @Composable
     public fun filledVariantTextButtonColors(): TextButtonColors =
@@ -250,6 +276,10 @@ public object TextButtonDefaults {
      * Example of creating a [TextButton] with [filledVariantTextButtonColors]:
      *
      * @sample androidx.wear.compose.material3.samples.FilledVariantTextButtonSample
+     *
+     *   ![FilledVariantTextButtonSample Composite
+     *   Image](https://developer.android.com/wear/images/design/WearComposeM3_FilledVariantTextButtonSample_CompositeImage.png)
+     *
      * @param containerColor The background color of this text button when enabled
      * @param contentColor The content color of this text button when enabled
      * @param disabledContainerColor the background color of this text button when not enabled
@@ -286,6 +316,10 @@ public object TextButtonDefaults {
      * Example of [TextButton] with [filledTonalTextButtonColors]:
      *
      * @sample androidx.wear.compose.material3.samples.FilledTonalTextButtonSample
+     *
+     *   ![FilledTonalTextButtonSample Composite
+     *   Image](https://developer.android.com/wear/images/design/WearComposeM3_FilledTonalTextButtonSample_CompositeImage.png)
+     *
      * @param containerColor The background color of this text button when enabled
      * @param contentColor The content color of this text button when enabled
      * @param disabledContainerColor the background color of this text button when not enabled
@@ -323,6 +357,10 @@ public object TextButtonDefaults {
      * [ButtonDefaults.outlinedButtonBorder]:
      *
      * @sample androidx.wear.compose.material3.samples.OutlinedTextButtonSample
+     *
+     *   ![OutlinedTextButtonSample Composite
+     *   Image](https://developer.android.com/wear/images/design/WearComposeM3_OutlinedTextButtonSample_CompositeImage.png)
+     *
      * @param contentColor The content color of this text button when enabled
      * @param disabledContentColor The content color of this text button when not enabled
      */

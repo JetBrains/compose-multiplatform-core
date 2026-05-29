@@ -16,6 +16,7 @@
 
 package androidx.appfunctions.compiler.core
 
+import com.squareup.kotlinpoet.AnnotationSpec
 import com.squareup.kotlinpoet.ClassName
 
 /** Helper class to introspect AppFunction symbols. */
@@ -30,10 +31,22 @@ object IntrospectionHelper {
     private const val APP_FUNCTIONS_METADATA_PACKAGE_NAME = "androidx.appfunctions.metadata"
 
     // Annotation classes
+    object DeprecatedAnnotation {
+        val CLASS_NAME = ClassName("kotlin", "Deprecated")
+        const val PROPERTY_MESSAGE = "message"
+    }
+
     object AppFunctionAnnotation {
         val CLASS_NAME = ClassName(APP_FUNCTIONS_SERVICE_PACKAGE_NAME, "AppFunction")
+        val CLASS_NAME_BASE = ClassName(APP_FUNCTIONS_PACKAGE_NAME, "AppFunction")
         const val PROPERTY_IS_ENABLED = "isEnabled"
-        const val PROPERTY_IS_DESCRIBED_BY_KDOC = "isDescribedByKdoc"
+        const val PROPERTY_IS_DESCRIBED_BY_KDOC = "isDescribedByKDoc"
+    }
+
+    object AppFunctionEntryPointAnnotation {
+        val CLASS_NAME = ClassName(APP_FUNCTIONS_PACKAGE_NAME, "AppFunctionEntryPoint")
+        const val PROPERTY_SERVICE_NAME = "serviceName"
+        const val PROPERTY_APP_FUNCTION_XML_FILE_NAME = "appFunctionXmlFileName"
     }
 
     object AppFunctionSchemaDefinitionAnnotation {
@@ -43,9 +56,15 @@ object IntrospectionHelper {
         const val PROPERTY_VERSION = "version"
     }
 
+    object AppFunctionOneOfTypeAnnotation {
+        val CLASS_NAME = ClassName(APP_FUNCTIONS_PACKAGE_NAME, "AppFunctionOneOfType")
+        const val PROPERTY_IS_DESCRIBED_BY_KDOC = "isDescribedByKdoc"
+        const val PROPERTY_MATCH_ONE_OF = "matchOneOf"
+    }
+
     object AppFunctionSerializableAnnotation {
         val CLASS_NAME = ClassName(APP_FUNCTIONS_PACKAGE_NAME, "AppFunctionSerializable")
-        const val PROPERTY_IS_DESCRIBED_BY_KDOC = "isDescribedByKdoc"
+        const val PROPERTY_IS_DESCRIBED_BY_KDOC = "isDescribedByKDoc"
     }
 
     object AppFunctionSerializableInterfaceAnnotation {
@@ -97,12 +116,19 @@ object IntrospectionHelper {
         ClassName(APP_FUNCTIONS_METADATA_PACKAGE_NAME, "CompileTimeAppFunctionMetadata")
     val APP_FUNCTION_FUNCTION_NOT_FOUND_EXCEPTION_CLASS =
         ClassName(APP_FUNCTIONS_PACKAGE_NAME, "AppFunctionFunctionNotFoundException")
+    val APP_FUNCTION_CANCELLED_EXCEPTION_CLASS =
+        ClassName(APP_FUNCTIONS_PACKAGE_NAME, "AppFunctionCancelledException")
+    val APP_FUNCTION_APP_UNKNOWN_EXCEPTION_CLASS =
+        ClassName(APP_FUNCTIONS_PACKAGE_NAME, "AppFunctionAppUnknownException")
+    val APP_FUNCTION_EXCEPTION_CLASS = ClassName(APP_FUNCTIONS_PACKAGE_NAME, "AppFunctionException")
     val APP_FUNCTION_SCHEMA_METADATA_CLASS =
         ClassName(APP_FUNCTIONS_METADATA_PACKAGE_NAME, "AppFunctionSchemaMetadata")
     val APP_FUNCTION_PARAMETER_METADATA_CLASS =
         ClassName(APP_FUNCTIONS_METADATA_PACKAGE_NAME, "AppFunctionParameterMetadata")
     val APP_FUNCTION_DATA_TYPE_METADATA =
         ClassName(APP_FUNCTIONS_METADATA_PACKAGE_NAME, "AppFunctionDataTypeMetadata")
+    val APP_FUNCTION_DEPRECATION_METADATA_CLASS =
+        ClassName(APP_FUNCTIONS_METADATA_PACKAGE_NAME, "AppFunctionDeprecationMetadata")
 
     // Primitive Types
     val APP_FUNCTION_UNIT_TYPE_METADATA_CLASS =
@@ -132,14 +158,24 @@ object IntrospectionHelper {
         ClassName(APP_FUNCTIONS_METADATA_PACKAGE_NAME, "AppFunctionReferenceTypeMetadata")
     val APP_FUNCTION_ALL_OF_TYPE_METADATA_CLASS =
         ClassName(APP_FUNCTIONS_METADATA_PACKAGE_NAME, "AppFunctionAllOfTypeMetadata")
+    val APP_FUNCTION_ONE_OF_TYPE_METADATA_CLASS =
+        ClassName(APP_FUNCTIONS_METADATA_PACKAGE_NAME, "AppFunctionOneOfTypeMetadata")
+    val APP_FUNCTION_PARCELABLE_TYPE_METADATA_CLASS =
+        ClassName(APP_FUNCTIONS_METADATA_PACKAGE_NAME, "AppFunctionParcelableTypeMetadata")
     val APP_FUNCTION_COMPONENTS_METADATA_CLASS =
         ClassName(APP_FUNCTIONS_METADATA_PACKAGE_NAME, "AppFunctionComponentsMetadata")
     val APP_FUNCTION_RESPONSE_METADATA_CLASS =
         ClassName(APP_FUNCTIONS_METADATA_PACKAGE_NAME, "AppFunctionResponseMetadata")
 
+    val DEPENDENCIES_CLASS = ClassName(APP_FUNCTIONS_INTERNAL_PACKAGE_NAME, "Dependencies")
+    val CANCELLATION_EXCEPTION_CLASS = ClassName("kotlinx.coroutines", "CancellationException")
+    val EXCEPTION_CLASS = ClassName("kotlin", "Exception")
+
     object ConfigurableAppFunctionFactoryClass {
         val CLASS_NAME =
             ClassName(APP_FUNCTIONS_SERVICE_INTERNAL_PACKAGE_NAME, "ConfigurableAppFunctionFactory")
+        val CLASS_NAME_BASE =
+            ClassName(APP_FUNCTIONS_INTERNAL_PACKAGE_NAME, "ConfigurableAppFunctionFactory")
 
         object CreateEnclosingClassMethod {
             const val METHOD_NAME = "createEnclosingClass"
@@ -151,9 +187,48 @@ object IntrospectionHelper {
         const val CONTEXT_PROPERTY_NAME = "context"
     }
 
+    object AppFunctionInventoryProviderInterface {
+        object ResolveInventoryMethod {
+            const val METHOD_NAME = "resolveInventory"
+        }
+    }
+
+    object AppFunctionServiceClass {
+        val CLASS_NAME = ClassName(APP_FUNCTIONS_PACKAGE_NAME, "AppFunctionService")
+
+        object ExecuteFunctionMethod {
+            const val METHOD_NAME = "executeFunction"
+            const val REQUEST_PARAM_NAME = "request"
+        }
+    }
+
+    object AppFunctionExecutionDispatcherClass {
+        val CLASS_NAME =
+            ClassName(APP_FUNCTIONS_INTERNAL_PACKAGE_NAME, "AppFunctionExecutionDispatcher")
+
+        object ExecuteAppFunctionMethod {
+            const val METHOD_NAME = "executeAppFunction"
+        }
+    }
+
+    object ExecuteAppFunctionRequestClass {
+        val CLASS_NAME = ClassName(APP_FUNCTIONS_PACKAGE_NAME, "ExecuteAppFunctionRequest")
+    }
+
+    object ExecuteAppFunctionResponseClass {
+        val CLASS_NAME = ClassName(APP_FUNCTIONS_PACKAGE_NAME, "ExecuteAppFunctionResponse")
+        val SUCCESS_CLASS_NAME = CLASS_NAME.nestedClass("Success")
+    }
+
+    object ServiceInternalHelper {
+        const val UNSAFE_GET_PARAMETER_VALUE_METHOD = "unsafeGetParameterValue"
+        const val UNSAFE_BUILD_RETURN_VALUE_METHOD = "unsafeBuildReturnValue"
+    }
+
     object AppFunctionInvokerClass {
         val CLASS_NAME =
             ClassName(APP_FUNCTIONS_SERVICE_INTERNAL_PACKAGE_NAME, "AppFunctionInvoker")
+        val CLASS_NAME_BASE = ClassName(APP_FUNCTIONS_INTERNAL_PACKAGE_NAME, "AppFunctionInvoker")
         const val SUPPORTED_FUNCTION_IDS_PROPERTY_NAME = "supportedFunctionIds"
 
         object UnsafeInvokeMethod {
@@ -238,6 +313,10 @@ object IntrospectionHelper {
         }
     }
 
+    object AppFunctionInventoryInterface {
+        val CLASS_NAME = ClassName(APP_FUNCTIONS_INTERNAL_PACKAGE_NAME, "AppFunctionInventory")
+    }
+
     object AggregatedAppFunctionInventoryClass {
         val CLASS_NAME =
             ClassName(APP_FUNCTIONS_INTERNAL_PACKAGE_NAME, "AggregatedAppFunctionInventory")
@@ -248,6 +327,8 @@ object IntrospectionHelper {
     object AggregatedAppFunctionInvokerClass {
         val CLASS_NAME =
             ClassName(APP_FUNCTIONS_SERVICE_INTERNAL_PACKAGE_NAME, "AggregatedAppFunctionInvoker")
+        val CLASS_NAME_BASE =
+            ClassName(APP_FUNCTIONS_INTERNAL_PACKAGE_NAME, "AggregatedAppFunctionInvoker")
 
         const val PROPERTY_INVOKERS_NAME = "invokers"
     }
@@ -255,8 +336,18 @@ object IntrospectionHelper {
     object AppFunctionDataClass {
         val CLASS_NAME = ClassName(APP_FUNCTIONS_PACKAGE_NAME, "AppFunctionData")
 
+        val APP_FUNCTION_DATA_QUALIFIED_NAME_PROPERTY = "qualifiedName"
+
         object BuilderClass {
             val CLASS_NAME = ClassName(APP_FUNCTIONS_PACKAGE_NAME, "AppFunctionData", "Builder")
         }
     }
+
+    /** [AnnotationSpec] for @RequiresApi(33) */
+    val RESTRICT_API_TO_33_ANNOTATION =
+        AnnotationSpec.builder(ClassName("androidx.annotation", "RequiresApi"))
+            .addMember("%L", 33)
+            .build()
+
+    val PARCELABLE_CLASS_NAME = ClassName("android.os", "Parcelable")
 }

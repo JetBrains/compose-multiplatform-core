@@ -34,38 +34,31 @@ package androidx.camera.camera2.impl
 
 import android.hardware.camera2.CameraCharacteristics.CONTROL_AE_STATE_FLASH_REQUIRED
 import android.hardware.camera2.CameraDevice
-import android.hardware.camera2.CaptureRequest
 import android.hardware.camera2.CaptureResult
-import android.view.Surface
 import androidx.annotation.VisibleForTesting
 import androidx.camera.camera2.adapter.CaptureConfigAdapter
-import androidx.camera.camera2.adapter.CaptureResultAdapter
+import androidx.camera.camera2.adapter.FrameMetadataConverter.toCameraCaptureResult
 import androidx.camera.camera2.adapter.future
 import androidx.camera.camera2.compat.workaround.UseTorchAsFlash
 import androidx.camera.camera2.compat.workaround.isFlashAvailable
 import androidx.camera.camera2.compat.workaround.shouldStopRepeatingBeforeCapture
+import androidx.camera.camera2.config.UseCaseCameraContext
 import androidx.camera.camera2.config.UseCaseCameraScope
-import androidx.camera.camera2.config.UseCaseGraphConfig
+import androidx.camera.camera2.impl.Camera2Logger.debug
 import androidx.camera.camera2.impl.CapturePipelineImpl.PipelineTask.MAIN_CAPTURE
 import androidx.camera.camera2.impl.CapturePipelineImpl.PipelineTask.POST_CAPTURE
 import androidx.camera.camera2.impl.CapturePipelineImpl.PipelineTask.PRE_CAPTURE
 import androidx.camera.camera2.impl.TorchControl.TorchMode
 import androidx.camera.camera2.pipe.CameraGraph
-import androidx.camera.camera2.pipe.CameraId
 import androidx.camera.camera2.pipe.FrameInfo
 import androidx.camera.camera2.pipe.FrameMetadata
 import androidx.camera.camera2.pipe.FrameNumber
 import androidx.camera.camera2.pipe.Lock3ABehavior
-import androidx.camera.camera2.pipe.Metadata
 import androidx.camera.camera2.pipe.Request
 import androidx.camera.camera2.pipe.RequestFailure
 import androidx.camera.camera2.pipe.RequestMetadata
-import androidx.camera.camera2.pipe.RequestNumber
 import androidx.camera.camera2.pipe.RequestTemplate
 import androidx.camera.camera2.pipe.Result3A
-import androidx.camera.camera2.pipe.StreamId
-import androidx.camera.camera2.pipe.core.Log.debug
-import androidx.camera.camera2.pipe.core.Log.info
 import androidx.camera.core.ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY
 import androidx.camera.core.ImageCapture.CaptureMode
 import androidx.camera.core.ImageCapture.ERROR_CAMERA_CLOSED
@@ -80,14 +73,13 @@ import androidx.camera.core.ImageCapture.FlashType
 import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.TorchState
 import androidx.camera.core.imagecapture.CameraCapturePipeline
-import androidx.camera.core.impl.CameraCaptureResult
 import androidx.camera.core.impl.CaptureConfig
 import androidx.camera.core.impl.Config
 import androidx.camera.core.impl.ConvergenceUtils
 import com.google.common.util.concurrent.ListenableFuture
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
-import kotlin.reflect.KClass
+import javax.inject.Provider
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Deferred
@@ -134,16 +126,9 @@ constructor(
     private val requestListener: ComboRequestListener,
     private val useTorchAsFlash: UseTorchAsFlash,
     cameraProperties: CameraProperties,
-    private val useCaseCameraState: UseCaseCameraState,
-    useCaseGraphConfig: UseCaseGraphConfig,
+    private val useCaseCameraStateProvider: Provider<UseCaseCameraState>,
+    private val useCaseCameraContext: UseCaseCameraContext,
 ) : CapturePipeline {
-    private val graph = useCaseGraphConfig.graph
-
-    // If there is no flash unit, skip the flash related task instead of failing the pipeline.
-    private val hasFlashUnit = cameraProperties.isFlashAvailable()
-
-    override var template: Int = CameraDevice.TEMPLATE_PREVIEW
-
     private enum class PipelineTask {
         PRE_CAPTURE,
         MAIN_CAPTURE,
@@ -155,6 +140,36 @@ constructor(
         val requestTemplate: RequestTemplate,
         val sessionConfigOptions: Config,
     )
+
+    // If there is no flash unit, skip the flash related task instead of failing the pipeline.
+    private val hasFlashUnit by lazy { cameraProperties.isFlashAvailable() }
+
+    private val useCaseCameraState by lazy { useCaseCameraStateProvider.get() }
+
+    override var template: Int = CameraDevice.TEMPLATE_PREVIEW
+
+    /**
+     * A [FrameMetadata] that pipeline tasks can use to determine various info, e.g. whether the
+     * flash is required.
+     */
+    private var frameMetadata: FrameMetadata? = null
+
+    /**
+     * Returns a [FrameMetadata] that pipeline tasks can use to determine various info, e.g. whether
+     * the flash is required.
+     *
+     * If [frameMetadata] is not already cached, this function will wait for a new [FrameInfo] from
+     * the camera and cache its [FrameMetadata] for the duration of a whole capture. The cache is
+     * invalidated at the start of each new capture.
+     */
+    private suspend fun getFrameMetadata(): FrameMetadata? {
+        if (frameMetadata == null) {
+            debug { "getFrameMetadata: waiting for result" }
+            frameMetadata = waitForResult(CHECK_FLASH_REQUIRED_TIMEOUT_IN_NS)?.metadata
+        }
+        debug { "getFrameMetadata: frameMetadata = $frameMetadata" }
+        return frameMetadata
+    }
 
     /**
      * Invokes various capture pipelines (e.g. pre-capture or main capture or post-capture).
@@ -177,6 +192,13 @@ constructor(
             "CapturePipeline#invokeCaptureTasks: tasks = $pipelineTasks" +
                 ", captureMode = $captureMode, flashMode = $flashMode, flashType = $flashType"
         }
+
+        // frameMetadata is cleared for each new capture pipeline invocation. It is assumed that
+        // different captures are not intertwined. Usually, camera-core ImageCapture ensures that
+        // captures are queued, so we can assume individual captures are processed one-by-one
+        // through this class. If this changes in future, we should ensure each different capture
+        // has its own pipeline properties, specially the frameMetadata.
+        frameMetadata = null
 
         if (pipelineTasks.contains(MAIN_CAPTURE)) {
             checkNotNull(mainCaptureParams) { "Must not be null for PipelineType.MAIN_CAPTURE" }
@@ -260,10 +282,15 @@ constructor(
     ): List<Deferred<Void?>> {
         debug { "CapturePipeline#List<PipelineTask>.invoke: tasks = $this" }
         if (contains(PRE_CAPTURE)) {
+            debug { "CapturePipeline#List<PipelineTask>.invoke: starting PRE_CAPTURE" }
             preCapture()
+            debug { "CapturePipeline#List<PipelineTask>.invoke: PRE_CAPTURE completed" }
         }
         return if (contains(MAIN_CAPTURE)) {
-                submitRequestInternal(checkNotNull(mainCaptureParams))
+                debug { "CapturePipeline#List<PipelineTask>.invoke: starting MAIN_CAPTURE" }
+                submitRequestInternal(checkNotNull(mainCaptureParams)).also {
+                    debug { "CapturePipeline#List<PipelineTask>.invoke: MAIN_CAPTURE completed" }
+                }
             } else {
                 listOf(CompletableDeferred(value = null))
             }
@@ -271,12 +298,13 @@ constructor(
                 if (contains(POST_CAPTURE)) {
                     threads.sequentialScope.launch {
                         debug {
-                            "CapturePipeline#List<PipelineTask>.invoke: Waiting for capture signal"
+                            "CapturePipeline#List<PipelineTask>.invoke:" +
+                                " Waiting for POST_CAPTURE signal"
                         }
                         captureSignal.joinAll()
                         debug {
                             "CapturePipeline#List<PipelineTask>.invoke:" +
-                                " Waiting for capture signal done"
+                                " Waiting for POST_CAPTURE signal done"
                         }
                         postCapture()
                     }
@@ -297,9 +325,9 @@ constructor(
                 captureMode,
                 CHECK_3A_WITH_FLASH_TIMEOUT_IN_NS,
                 pipelineTasks,
-                // TODO: b/339846763 - Disable AE precap only for the quirks where AE precapture
-                //  is problematic, instead of all TorchAsFlash quirks.
-                !useTorchAsFlash.shouldUseTorchAsFlash() && !videoUsageControl.isInVideoUsage(),
+                // TODO: b/339846763 - Further refine AE precap disabling for specific
+                //  legacy quirks, instead of disabling for all older UseTorchAsFlash quirks.
+                !useTorchAsFlash.shouldDisableAePrecapture() && !videoUsageControl.isInVideoUsage(),
             )
         } else {
             defaultNoFlashCapture(mainCaptureParams, captureMode, pipelineTasks)
@@ -376,7 +404,7 @@ constructor(
                 if (triggerAePreCapture) {
                     debug { "CapturePipeline#torchApplyCapture: Locking 3A for capture" }
                     val result3A =
-                        graph.acquireSession().use {
+                        useCaseCameraContext.useGraphSession {
                             it.lock3AForCapture(
                                     timeLimitNs = timeLimitNs,
                                     triggerAf = captureMode == CAPTURE_MODE_MAXIMIZE_QUALITY,
@@ -423,7 +451,7 @@ constructor(
                 if (triggerAePreCapture) {
                     debug { "CapturePipeline#torchApplyCapture: Unlocking 3A for capture" }
                     @Suppress("DeferredResultUnused")
-                    graph.acquireSession().use {
+                    useCaseCameraContext.useGraphSession {
                         it.unlock3APostCapture(
                             cancelAf = captureMode == CAPTURE_MODE_MAXIMIZE_QUALITY
                         )
@@ -453,7 +481,7 @@ constructor(
                 debug {
                     "CapturePipeline#aePreCaptureApplyCapture: Acquiring session for locking 3A"
                 }
-                graph.acquireSession().use {
+                useCaseCameraContext.useGraphSession {
                     debug { "CapturePipeline#aePreCaptureApplyCapture: Locking 3A for capture" }
                     it.lock3AForCapture(
                             timeLimitNs = timeLimitNs,
@@ -470,7 +498,7 @@ constructor(
                 debug {
                     "CapturePipeline#aePreCaptureApplyCapture: Acquiring session for unlocking 3A"
                 }
-                graph.acquireSession().use {
+                useCaseCameraContext.useGraphSession {
                     debug { "CapturePipeline#aePreCaptureApplyCapture: Unlocking 3A" }
                     @Suppress("DeferredResultUnused")
                     it.unlock3APostCapture(cancelAf = captureMode == CAPTURE_MODE_MAXIMIZE_QUALITY)
@@ -507,7 +535,7 @@ constructor(
     public suspend fun invokeScreenFlashPreCaptureTasks(@CaptureMode captureMode: Int) {
         flashControl.startScreenFlashCaptureTasks()
 
-        graph.acquireSession().use { session ->
+        useCaseCameraContext.useGraphSession { session ->
             // Trigger AE precapture & wait for 3A converge
             debug { "screenFlashPreCapture: Locking 3A for capture" }
             val result3A =
@@ -528,7 +556,7 @@ constructor(
 
         // Unlock 3A
         debug { "screenFlashPostCapture: Acquiring session for unlocking 3A" }
-        graph.acquireSession().use { session ->
+        useCaseCameraContext.useGraphSession { session ->
             debug { "screenFlashPostCapture: Unlocking 3A" }
             @Suppress("DeferredResultUnused")
             session.unlock3APostCapture(cancelAf = captureMode == CAPTURE_MODE_MAXIMIZE_QUALITY)
@@ -544,9 +572,8 @@ constructor(
      * condition is used (i.e. [ConvergenceUtils.is3AConverged]).
      */
     private suspend fun lockAf(convergedTimeLimitNs: Long, isTorchAsFlash: Boolean): Result3A =
-        graph
-            .acquireSession()
-            .use {
+        useCaseCameraContext
+            .useGraphSession {
                 it.lock3A(
                     aeLockBehavior = null,
                     afLockBehavior = Lock3ABehavior.AFTER_CURRENT_SCAN,
@@ -564,52 +591,11 @@ constructor(
         ConvergenceUtils.is3AConverged(frameMetadata.toCameraCaptureResult(), isTorchAsFlash)
     }
 
-    private fun FrameMetadata.toCameraCaptureResult(): CameraCaptureResult {
-        val frameInfo =
-            object : FrameInfo {
-                private val frameMetadata = this@toCameraCaptureResult
-                override val metadata: FrameMetadata = frameMetadata
-
-                override fun get(camera: CameraId): FrameMetadata? = frameMetadata
-
-                override val camera: CameraId = frameMetadata.camera
-                override val frameNumber: FrameNumber = frameMetadata.frameNumber
-                override val requestMetadata: RequestMetadata = emptyRequestMetadata
-
-                @Suppress("UNCHECKED_CAST")
-                override fun <T : Any> unwrapAs(type: KClass<T>): T? = null
-            }
-
-        return CaptureResultAdapter(
-            emptyRequestMetadata,
-            /** RequestMetadata not to be used here */
-            frameNumber,
-            frameInfo,
-        )
-    }
-
-    private val emptyRequestMetadata =
-        object : RequestMetadata {
-            override fun <T> get(key: CaptureRequest.Key<T>): T? = null
-
-            override fun <T> getOrDefault(key: CaptureRequest.Key<T>, default: T): T = default
-
-            override val template: RequestTemplate = RequestTemplate(0)
-            override val streams: Map<StreamId, Surface> = mapOf()
-            override val repeating: Boolean = true
-            override val request: Request = Request(listOf())
-            override val requestNumber: RequestNumber = RequestNumber(0)
-
-            override fun <T> get(key: Metadata.Key<T>): T? = null
-
-            override fun <T> getOrDefault(key: Metadata.Key<T>, default: T): T = default
-
-            override fun <T : Any> unwrapAs(type: KClass<T>): T? = null
-        }
-
     /** Unlocks any active AF lock by triggering an AF cancel. */
     private suspend fun unlockAf(timeLimitNs: Long): Result3A =
-        graph.acquireSession().use { it.unlock3A(af = true, timeLimitNs = timeLimitNs) }.await()
+        useCaseCameraContext
+            .useGraphSession { it.unlock3A(af = true, timeLimitNs = timeLimitNs) }
+            .await()
 
     private fun submitRequestInternal(params: MainCaptureParams): List<Deferred<Void?>> {
         debug {
@@ -617,11 +603,12 @@ constructor(
         }
         val deferredList = mutableListOf<CompletableDeferred<Void?>>()
         val requests =
-            params.configs.mapNotNull {
-                val completeSignal = CompletableDeferred<Void?>().also { deferredList.add(it) }
+            params.configs.mapNotNull { captureConfig ->
+                val completeSignal = CompletableDeferred<Void?>()
+                deferredList.add(completeSignal)
                 try {
                     configAdapter.mapToRequest(
-                        it,
+                        captureConfig,
                         params.requestTemplate,
                         params.sessionConfigOptions,
                         listOf(
@@ -662,7 +649,7 @@ constructor(
                         ),
                     )
                 } catch (e: IllegalStateException) {
-                    info(e) {
+                    Camera2Logger.info(e) {
                         "CapturePipeline#submitRequestInternal: configAdapter.mapToRequest failed!"
                     }
                     completeSignal.completeExceptionally(
@@ -682,16 +669,25 @@ constructor(
             return deferredList
         }
 
-        threads.sequentialScope.launch {
+        threads.confineLaunch {
             debug {
                 "CapturePipeline#submitRequestInternal: Acquiring session for submitting requests"
             }
             // graph.acquireSession may fail if camera has entered closing stage
-            var cameraGraphSession: CameraGraph.Session? = null
+            var requiresStopRepeating = false
+
             try {
-                cameraGraphSession = graph.acquireSession()
+                useCaseCameraContext.useGraphSession { session ->
+                    requiresStopRepeating = requests.shouldStopRepeatingBeforeCapture()
+                    if (requiresStopRepeating) {
+                        session.stopRepeating()
+                    }
+
+                    debug { "CapturePipeline#submitRequestInternal: Submitting $requests" }
+                    session.submit(requests)
+                }
             } catch (_: CancellationException) {
-                info {
+                Camera2Logger.info {
                     "CapturePipeline#submitRequestInternal: " +
                         "CameraGraph.Session could not be acquired, requests may need re-submission"
                 }
@@ -706,21 +702,12 @@ constructor(
                         )
                     )
                 }
+                return@confineLaunch
             }
 
-            cameraGraphSession?.use {
-                val requiresStopRepeating = requests.shouldStopRepeatingBeforeCapture()
-                if (requiresStopRepeating) {
-                    it.stopRepeating()
-                }
-
-                debug { "CapturePipeline#submitRequestInternal: Submitting $requests" }
-                it.submit(requests)
-
-                if (requiresStopRepeating) {
-                    deferredList.joinAll()
-                    useCaseCameraState.tryStartRepeating()
-                }
+            if (requiresStopRepeating) {
+                deferredList.joinAll()
+                useCaseCameraState.tryStartRepeating()
             }
         }
 
@@ -731,9 +718,8 @@ constructor(
         when (flashMode) {
             FLASH_MODE_ON -> true
             FLASH_MODE_AUTO -> {
-                waitForResult(CHECK_FLASH_REQUIRED_TIMEOUT_IN_NS)
-                    ?.metadata
-                    ?.get(CaptureResult.CONTROL_AE_STATE) == CONTROL_AE_STATE_FLASH_REQUIRED
+                getFrameMetadata()?.get(CaptureResult.CONTROL_AE_STATE) ==
+                    CONTROL_AE_STATE_FLASH_REQUIRED
             }
             FLASH_MODE_OFF -> false
             FLASH_MODE_SCREEN -> false
@@ -765,10 +751,10 @@ constructor(
             }
     }
 
-    private fun isTorchAsFlash(@FlashType flashType: Int): Boolean {
+    private suspend fun isTorchAsFlash(@FlashType flashType: Int): Boolean {
         return template == CameraDevice.TEMPLATE_RECORD ||
             flashType == FLASH_TYPE_USE_TORCH_AS_FLASH ||
-            useTorchAsFlash.shouldUseTorchAsFlash()
+            useTorchAsFlash.shouldUseTorchAsFlash({ getFrameMetadata() })
     }
 }
 

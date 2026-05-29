@@ -105,9 +105,9 @@ public class DataMapLookup extends Operation {
      * @param operations the created command is added to the list
      */
     public static void read(@NonNull WireBuffer buffer, @NonNull List<Operation> operations) {
-        int id = buffer.readInt();
-        int mapId = buffer.readInt();
-        int stringId = buffer.readInt();
+        int id = buffer.readId();
+        int mapId = buffer.readId();
+        int stringId = buffer.readId();
         operations.add(new DataMapLookup(id, mapId, stringId));
     }
 
@@ -117,11 +117,11 @@ public class DataMapLookup extends Operation {
      * @param doc to append the description to.
      */
     public static void documentation(@NonNull DocumentationBuilder doc) {
-        doc.operation("Expressions Operations", OP_CODE, CLASS_NAME)
+        doc.operation("Data Operations", OP_CODE, CLASS_NAME)
                 .description("Look up a value in a data map")
-                .field(INT, "id", "id of float")
-                .field(INT, "dataMapId", "32-bit float value")
-                .field(INT, "stringId", "32-bit float value");
+                .field(INT, "id", "The ID of the output value")
+                .field(INT, "dataMapId", "The ID of the data map")
+                .field(INT, "stringId", "The ID of the string to look up");
     }
 
     @Override

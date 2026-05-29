@@ -29,10 +29,6 @@ import androidx.annotation.IntDef
 import androidx.collection.LongSparseArray
 import androidx.compose.ui.util.fastForEach
 
-internal actual typealias NativePointerButtons = Int
-
-internal actual typealias NativePointerKeyboardModifiers = Int
-
 /**
  * Restricts Ints to `MotionEvent`'s classification types. See the
  * [Android documentation on MotionEvent.getClassification()]
@@ -76,7 +72,7 @@ internal actual constructor(
      *     * The [PointerEvent] was fabricated within Compose (i.e., not directly from a system
      *       input event).
      *     * The [PointerEvent] has already been dispatched within the Compose input system. (See
-     *       [androidx.compose.ui.samples.PointerEventMotionEventSample] for details).
+     *       the sample code for details).
      *
      * @sample androidx.compose.ui.samples.PointerEventMotionEventSample
      */
@@ -108,13 +104,62 @@ internal actual constructor(
     private fun calculatePointerEventType(): PointerEventType {
         val motionEvent = motionEvent
         if (motionEvent != null) {
+            /**
+             * Special case: for a two finger swipe from a trackpad, we interpret the motion event
+             * as a scroll event type, rather than the fake finger press + move + release
+             */
+            val isTwoFingerSwipe =
+                Build.VERSION.SDK_INT >= 29 &&
+                    motionEvent.classification == CLASSIFICATION_TWO_FINGER_SWIPE
+            val isPinch =
+                Build.VERSION.SDK_INT >= 29 && motionEvent.classification == CLASSIFICATION_PINCH
             return when (motionEvent.actionMasked) {
-                MotionEvent.ACTION_DOWN,
-                MotionEvent.ACTION_POINTER_DOWN -> PointerEventType.Press
-                MotionEvent.ACTION_UP,
-                MotionEvent.ACTION_POINTER_UP -> PointerEventType.Release
+                MotionEvent.ACTION_DOWN -> {
+                    if (isTwoFingerSwipe) {
+                        PointerEventType.PanStart
+                    } else if (isPinch) {
+                        PointerEventType.ScaleStart
+                    } else {
+                        PointerEventType.Press
+                    }
+                }
+                MotionEvent.ACTION_POINTER_DOWN -> {
+                    if (isTwoFingerSwipe) {
+                        PointerEventType.PanStart
+                    } else if (isPinch) {
+                        PointerEventType.ScaleChange
+                    } else {
+                        PointerEventType.Press
+                    }
+                }
+                MotionEvent.ACTION_UP -> {
+                    if (isTwoFingerSwipe) {
+                        PointerEventType.PanEnd
+                    } else if (isPinch) {
+                        PointerEventType.ScaleEnd
+                    } else {
+                        PointerEventType.Release
+                    }
+                }
+                MotionEvent.ACTION_POINTER_UP -> {
+                    if (isTwoFingerSwipe) {
+                        PointerEventType.PanEnd
+                    } else if (isPinch) {
+                        PointerEventType.ScaleChange
+                    } else {
+                        PointerEventType.Release
+                    }
+                }
                 MotionEvent.ACTION_HOVER_MOVE,
-                MotionEvent.ACTION_MOVE -> PointerEventType.Move
+                MotionEvent.ACTION_MOVE -> {
+                    if (isTwoFingerSwipe) {
+                        PointerEventType.PanMove
+                    } else if (isPinch) {
+                        PointerEventType.ScaleChange
+                    } else {
+                        PointerEventType.Move
+                    }
+                }
                 MotionEvent.ACTION_HOVER_ENTER -> PointerEventType.Enter
                 MotionEvent.ACTION_HOVER_EXIT -> PointerEventType.Exit
                 ACTION_SCROLL -> PointerEventType.Scroll
@@ -134,6 +179,7 @@ internal actual constructor(
     }
 
     // only because PointerEvent was a data class
+    @Suppress("KmpModifierMismatch") // commonStubsMain is operator
     fun component1(): List<PointerInputChange> = changes
 
     // only because PointerEvent was a data class
@@ -148,14 +194,17 @@ internal actual constructor(
                     changesArray.put(change.id.value, change)
                     pointerEventData +=
                         PointerInputEventData(
-                            change.id,
-                            change.uptimeMillis,
-                            change.position,
-                            change.position,
-                            change.pressed,
-                            change.pressure,
-                            change.type,
-                            this.internalPointerEvent?.activeHoverEvent(change.id) == true,
+                            id = change.id,
+                            uptime = change.uptimeMillis,
+                            positionOnScreen = change.position,
+                            position = change.position,
+                            down = change.pressed,
+                            pressure = change.pressure,
+                            type = change.type,
+                            activeHover =
+                                this.internalPointerEvent?.activeHoverEvent(change.id) == true,
+                            scaleGestureFactor = change.scaleFactor,
+                            panGestureOffset = change.panOffset,
                         )
                 }
 
@@ -166,8 +215,6 @@ internal actual constructor(
             }
         }
 }
-
-internal actual fun EmptyPointerKeyboardModifiers() = PointerKeyboardModifiers(0)
 
 actual val PointerButtons.isPrimaryPressed: Boolean
     get() = packedValue and (MotionEvent.BUTTON_PRIMARY or MotionEvent.BUTTON_STYLUS_PRIMARY) != 0

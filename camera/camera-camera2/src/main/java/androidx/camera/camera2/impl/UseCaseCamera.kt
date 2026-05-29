@@ -16,30 +16,31 @@
 
 package androidx.camera.camera2.impl
 
-import android.hardware.camera2.CameraDevice
+import android.hardware.camera2.CaptureRequest
+import android.os.Build
+import android.util.Pair
 import androidx.camera.camera2.adapter.SessionConfigAdapter
+import androidx.camera.camera2.config.UseCaseCameraContext
 import androidx.camera.camera2.config.UseCaseCameraScope
-import androidx.camera.camera2.config.UseCaseGraphConfig
 import androidx.camera.camera2.pipe.CameraGraph
-import androidx.camera.camera2.pipe.core.Log
-import androidx.camera.camera2.pipe.core.Log.debug
+import androidx.camera.camera2.pipe.StreamId
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.UseCase
 import androidx.camera.core.imagecapture.CameraCapturePipeline
 import androidx.camera.core.impl.Config
+import androidx.camera.core.impl.SessionProcessor
 import dagger.Binds
 import dagger.Module
 import java.util.concurrent.CancellationException
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
+import javax.inject.Provider
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.launch
 
 internal val useCaseCameraIds = atomic(0)
 internal val defaultOptionPriority = Config.OptionPriority.OPTIONAL
-internal const val defaultTemplate = CameraDevice.TEMPLATE_PREVIEW
 
 @JvmDefaultWithCompatibility
 public interface UseCaseCamera {
@@ -56,6 +57,11 @@ public interface UseCaseCamera {
 
     public fun setActiveResumeMode(enabled: Boolean) {}
 
+    public fun updateRepeatingRequestAsync(
+        isPrimary: Boolean,
+        runningUseCases: Collection<UseCase>,
+    ): Job
+
     // Lifecycle
     public fun close(): Job
 }
@@ -67,50 +73,117 @@ public interface UseCaseCamera {
 public class UseCaseCameraImpl
 @Inject
 constructor(
-    private val useCaseGraphConfig: UseCaseGraphConfig,
-    private val useCases: java.util.ArrayList<UseCase>,
-    private val useCaseSurfaceManager: UseCaseSurfaceManager,
+    private val useCaseCameraContext: UseCaseCameraContext,
     private val threads: UseCaseThreads,
-    private val sessionConfigAdapter: SessionConfigAdapter,
+    private val sessionProcessor: SessionProcessor?,
     override val requestControl: UseCaseCameraRequestControl,
-    private val capturePipeline: CapturePipeline,
+    private val useCaseSurfaceManagerProvider: Provider<UseCaseSurfaceManager>,
+    private val sessionConfigAdapterProvider: Provider<SessionConfigAdapter>,
+    private val capturePipelineProvider: Provider<CapturePipeline>,
 ) : UseCaseCamera {
     private val debugId = useCaseCameraIds.incrementAndGet()
     private val closed = atomic(false)
 
     init {
-        debug { "Configured $this for $useCases" }
+        Camera2Logger.debug { "Configured $this" }
     }
 
-    override fun start(): Unit =
-        with(useCaseGraphConfig) {
-            // Start the CameraGraph first before setting up Surfaces. Surfaces can be closed, and
-            // we will close the CameraGraph when that happens, and we cannot start a closed
-            // CameraGraph.
+    private val useCaseSurfaceManager by lazy { useCaseSurfaceManagerProvider.get() }
+    private val sessionConfigAdapter by lazy { sessionConfigAdapterProvider.get() }
+    private val capturePipeline by lazy { capturePipelineProvider.get() }
+
+    override fun start() {
+        threads.confineLaunch {
+            if (closed.value) {
+                Camera2Logger.debug {
+                    "UseCaseCamera is closed before starting the CameraGraph, skipping setup."
+                }
+                return@confineLaunch
+            }
+            val graph = useCaseCameraContext.graph
+
+            // Configure state listeners now that graph is ready
+            useCaseCameraContext.configureCameraStateListener()
+
+            // Start the CameraGraph first before setting up Surfaces.
             graph.start()
 
-            debug { "Setting up Surfaces with UseCaseSurfaceManager" }
+            val surfaces = useCaseCameraContext.surfaceToStreamMap
+
+            // Calculate stream ID for session processor
+            val stillCaptureStreamId = findStillCaptureStreamId()
+
+            Camera2Logger.debug { "Setting up Surfaces with UseCaseSurfaceManager" }
             if (sessionConfigAdapter.isSessionConfigValid()) {
                 useCaseSurfaceManager
-                    .setupAsync(graph, sessionConfigAdapter, surfaceToStreamMap)
+                    .setupAsync(graph, sessionConfigAdapter, surfaces)
                     .invokeOnCompletion { throwable ->
-                        // Only show logs for error cases, ignore CancellationException since the
-                        // task could be cancelled by UseCaseSurfaceManager#stopAsync().
+                        // Only show logs for error cases, ignore CancellationException since
+                        // the task could be cancelled by UseCaseSurfaceManager#stopAsync().
                         if (throwable != null && throwable !is CancellationException) {
-                            Log.error(throwable) { "Surface setup error!" }
+                            Camera2Logger.error(throwable) { "Surface setup error!" }
                         }
                     }
             } else {
-                Log.error { "Unable to create capture session due to conflicting configurations" }
+                Camera2Logger.error {
+                    "Unable to create capture session due to conflicting configurations"
+                }
             }
+
+            // Update Session Processor
+            setCaptureSessionRequestProcessor(stillCaptureStreamId, graph)
         }
+    }
+
+    private fun findStillCaptureStreamId(): StreamId? {
+        val sessionConfig = sessionConfigAdapter.getValidSessionConfigOrNull() ?: return null
+        val repeatingSurfaces = sessionConfig.repeatingCaptureConfig.surfaces
+
+        // Find the first surface that is not part of the repeating set
+        val stillCaptureSurface =
+            sessionConfig.surfaces.firstOrNull { it !in repeatingSurfaces } ?: return null
+
+        // Convert the surface back to a StreamId
+        return useCaseCameraContext
+            .getStreamIdsFromSurfaces(listOf(stillCaptureSurface))
+            .firstOrNull()
+    }
+
+    private fun setCaptureSessionRequestProcessor(
+        stillCaptureStreamId: StreamId?,
+        cameraGraph: CameraGraph,
+    ) {
+        sessionProcessor?.setCaptureSessionRequestProcessor(
+            object : SessionProcessor.CaptureSessionRequestProcessor {
+                override fun getRealtimeStillCaptureLatency(): Pair<Long, Long>? {
+                    if (stillCaptureStreamId == null) return null
+                    val outputLatency =
+                        cameraGraph.streams.getOutputLatency(stillCaptureStreamId) ?: return null
+                    val captureLatencyMs =
+                        TimeUnit.NANOSECONDS.toMillis(outputLatency.estimatedCaptureLatencyNs)
+                    val processingLatencyMs =
+                        TimeUnit.NANOSECONDS.toMillis(outputLatency.estimatedProcessingLatencyNs)
+                    return Pair.create(captureLatencyMs, processingLatencyMs)
+                }
+
+                override fun setExtensionStrength(strength: Int) {
+                    if (Build.VERSION.SDK_INT >= 34) {
+                        requestControl.setParametersAsync(
+                            values = mutableMapOf(CaptureRequest.EXTENSION_STRENGTH to strength)
+                        )
+                    }
+                }
+            }
+        )
+    }
 
     override fun close(): Job {
         return if (closed.compareAndSet(expect = false, update = true)) {
-            threads.scope.launch(start = CoroutineStart.UNDISPATCHED) {
-                debug { "Closing $this" }
-                requestControl.close()
-                useCaseGraphConfig.graph.close()
+            requestControl.close()
+            threads.confineLaunch {
+                Camera2Logger.debug { "Closing $this" }
+                sessionProcessor?.setCaptureSessionRequestProcessor(null)
+                useCaseCameraContext.closeGraph()
                 useCaseSurfaceManager.stopAsync().await()
             }
         } else {
@@ -119,7 +192,22 @@ constructor(
     }
 
     override fun setActiveResumeMode(enabled: Boolean) {
-        useCaseGraphConfig.graph.isForeground = enabled
+        threads.confineLaunch {
+            if (closed.value) {
+                Camera2Logger.debug {
+                    "UseCaseCamera is closed before setActiveResumeMode, skipping setup."
+                }
+                return@confineLaunch
+            }
+            useCaseCameraContext.graph.isForeground = enabled
+        }
+    }
+
+    override fun updateRepeatingRequestAsync(
+        isPrimary: Boolean,
+        runningUseCases: Collection<UseCase>,
+    ): Job {
+        return requestControl.updateRepeatingRequestAsync(isPrimary, runningUseCases)
     }
 
     override fun toString(): String = "UseCaseCamera-$debugId"

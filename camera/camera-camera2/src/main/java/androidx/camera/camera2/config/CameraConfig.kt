@@ -16,6 +16,7 @@
 
 package androidx.camera.camera2.config
 
+import android.content.Context
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.params.StreamConfigurationMap
 import androidx.annotation.Nullable
@@ -25,6 +26,7 @@ import androidx.camera.camera2.adapter.CameraControlAdapter
 import androidx.camera.camera2.adapter.CameraInfoAdapter
 import androidx.camera.camera2.adapter.CameraInternalAdapter
 import androidx.camera.camera2.adapter.EncoderProfilesProviderAdapter
+import androidx.camera.camera2.adapter.SupportedSurfaceCombination
 import androidx.camera.camera2.adapter.ZslControl
 import androidx.camera.camera2.adapter.ZslControlImpl
 import androidx.camera.camera2.compat.Camera2CameraControlCompat
@@ -32,6 +34,8 @@ import androidx.camera.camera2.compat.CameraCompatModule
 import androidx.camera.camera2.compat.EvCompCompat
 import androidx.camera.camera2.compat.ZoomCompat
 import androidx.camera.camera2.compat.quirk.CameraQuirks
+import androidx.camera.camera2.compat.workaround.ExtraSupportedSurfaceCombinationsContainer
+import androidx.camera.camera2.impl.Camera2Logger
 import androidx.camera.camera2.impl.CameraPipeCameraProperties
 import androidx.camera.camera2.impl.CameraProperties
 import androidx.camera.camera2.impl.ComboRequestListener
@@ -39,19 +43,21 @@ import androidx.camera.camera2.impl.EvCompControl
 import androidx.camera.camera2.impl.FlashControl
 import androidx.camera.camera2.impl.FocusMeteringControl
 import androidx.camera.camera2.impl.LowLightBoostControl
+import androidx.camera.camera2.impl.NightModeIndicatorMonitor
 import androidx.camera.camera2.impl.State3AControl
 import androidx.camera.camera2.impl.StillCaptureRequestControl
 import androidx.camera.camera2.impl.TorchControl
 import androidx.camera.camera2.impl.UseCaseThreads
 import androidx.camera.camera2.impl.VideoUsageControl
 import androidx.camera.camera2.impl.ZoomControl
+import androidx.camera.camera2.internal.IntrinsicZoomCalculator
 import androidx.camera.camera2.interop.Camera2CameraControl
 import androidx.camera.camera2.interop.ExperimentalCamera2Interop
 import androidx.camera.camera2.pipe.CameraId
 import androidx.camera.camera2.pipe.CameraMetadata
 import androidx.camera.camera2.pipe.CameraPipe
 import androidx.camera.camera2.pipe.DoNotDisturbException
-import androidx.camera.camera2.pipe.core.Log
+import androidx.camera.core.featuregroup.impl.FeatureCombinationQuery
 import androidx.camera.core.impl.CameraControlInternal
 import androidx.camera.core.impl.CameraInfoInternal
 import androidx.camera.core.impl.CameraInternal
@@ -83,10 +89,12 @@ import kotlinx.coroutines.asCoroutineDispatcher
             EvCompControl.Bindings::class,
             FlashControl.Bindings::class,
             FocusMeteringControl.Bindings::class,
+            IntrinsicZoomCalculator.Bindings::class,
             State3AControl.Bindings::class,
             StillCaptureRequestControl.Bindings::class,
             TorchControl.Bindings::class,
             LowLightBoostControl.Bindings::class,
+            NightModeIndicatorMonitor.Bindings::class,
             VideoUsageControl.Bindings::class,
             ZoomCompat.Bindings::class,
             ZoomControl.Bindings::class,
@@ -133,8 +141,10 @@ public abstract class CameraModule {
         ): CameraMetadata? {
             try {
                 return cameraPipe.cameras().awaitCameraMetadata(config.cameraId)
-            } catch (exception: DoNotDisturbException) {
-                Log.error { "Failed to inject camera metadata: Do Not Disturb mode is on." }
+            } catch (_: DoNotDisturbException) {
+                Camera2Logger.error {
+                    "Failed to inject camera metadata: Do Not Disturb mode is on."
+                }
             }
             return null
         }
@@ -172,6 +182,23 @@ public abstract class CameraModule {
             cameraQuirks: CameraQuirks,
         ): EncoderProfilesProvider {
             return EncoderProfilesProviderAdapter(cameraIdString, cameraQuirks.quirks)
+        }
+
+        @CameraScope
+        @Provides
+        public fun provideSupportedSurfaceCombination(
+            context: Context,
+            cameraProperties: CameraProperties,
+            encoderProfilesProvider: EncoderProfilesProvider,
+            extraSupportedSurfaceCombinationsContainer: ExtraSupportedSurfaceCombinationsContainer,
+        ): SupportedSurfaceCombination {
+            return SupportedSurfaceCombination(
+                context,
+                cameraProperties.metadata,
+                encoderProfilesProvider,
+                FeatureCombinationQuery.NO_OP_FEATURE_COMBINATION_QUERY,
+                extraSupportedSurfaceCombinationsContainer,
+            )
         }
     }
 

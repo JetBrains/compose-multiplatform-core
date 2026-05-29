@@ -21,6 +21,7 @@ import androidx.camera.camera2.adapter.CaptureConfigAdapter.Companion.getStillCa
 import androidx.camera.camera2.compat.quirk.DeviceQuirks
 import androidx.camera.camera2.compat.quirk.TorchIsClosedAfterImageCapturingQuirk
 import androidx.camera.camera2.config.UseCaseCameraScope
+import androidx.camera.camera2.impl.Camera2Logger
 import androidx.camera.camera2.impl.CameraProperties
 import androidx.camera.camera2.impl.CapturePipeline
 import androidx.camera.camera2.impl.CapturePipelineImpl
@@ -29,13 +30,13 @@ import androidx.camera.camera2.impl.TorchControl.TorchMode
 import androidx.camera.camera2.impl.UseCaseThreads
 import androidx.camera.camera2.pipe.CameraMetadata.Companion.isHardwareLevelLegacy
 import androidx.camera.camera2.pipe.RequestTemplate
-import androidx.camera.camera2.pipe.core.Log
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.TorchState
 import androidx.camera.core.imagecapture.CameraCapturePipeline
 import androidx.camera.core.impl.CaptureConfig
 import androidx.camera.core.impl.Config
 import javax.inject.Inject
+import javax.inject.Provider
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
@@ -52,11 +53,12 @@ public class CapturePipelineTorchCorrection
 @Inject
 constructor(
     cameraProperties: CameraProperties,
-    private val capturePipelineImpl: CapturePipelineImpl,
+    private val capturePipelineImplProvider: Provider<CapturePipelineImpl>,
     private val threads: UseCaseThreads,
     private val torchControl: TorchControl,
 ) : CapturePipeline {
-    private val isLegacyDevice = cameraProperties.metadata.isHardwareLevelLegacy
+    private val isLegacyDevice by lazy { cameraProperties.metadata.isHardwareLevelLegacy }
+    private val capturePipelineImpl by lazy { capturePipelineImplProvider.get() }
 
     override suspend fun submitStillCaptures(
         configs: List<CaptureConfig>,
@@ -82,10 +84,10 @@ constructor(
         if (needCorrectTorchState) {
             threads.sequentialScope.launch {
                 deferredResults.joinAll()
-                Log.debug { "Re-enable Torch to correct the Torch state" }
+                Camera2Logger.debug { "Re-enable Torch to correct the Torch state" }
                 torchControl.setTorchAsync(TorchMode.OFF).join()
                 torchControl.setTorchAsync(TorchMode.USED_AS_FLASH).join()
-                Log.debug { "Re-enable Torch to correct the Torch state, done" }
+                Camera2Logger.debug { "Re-enable Torch to correct the Torch state, done" }
             }
         }
 

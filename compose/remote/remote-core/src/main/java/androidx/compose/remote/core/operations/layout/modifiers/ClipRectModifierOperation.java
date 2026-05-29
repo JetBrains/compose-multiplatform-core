@@ -60,6 +60,12 @@ public class ClipRectModifierOperation extends DecoratorModifierOperation {
     }
 
     @Override
+    @NonNull
+    public String deepToString(@NonNull String indent) {
+        return indent + "ClipRectModifierOperation(" + mWidth + ", " + mHeight + ")";
+    }
+
+    @Override
     public void write(@NonNull WireBuffer buffer) {
         apply(buffer);
     }
@@ -108,8 +114,9 @@ public class ClipRectModifierOperation extends DecoratorModifierOperation {
      * @param doc to append the description to.
      */
     public static void documentation(@NonNull DocumentationBuilder doc) {
-        doc.operation("Canvas Operations", OP_CODE, CLASS_NAME)
-                .description("Draw the specified round-rect");
+        doc.operation("Modifier Operations", OP_CODE, CLASS_NAME)
+                .additionalDocumentation("modifier_clip_rect")
+                .description("Clip the component's content to its rectangular bounds");
     }
 
     @Override

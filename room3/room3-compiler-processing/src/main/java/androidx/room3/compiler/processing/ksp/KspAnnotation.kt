@@ -62,7 +62,9 @@ internal class KspAnnotation(val env: KspProcessingEnv, val ksAnnotation: KSAnno
         // KSAnnotation.arguments / KSAnnotation.defaultArguments isn't guaranteed to have the same
         // ordering as declared in the annotation declaration, so we order it manually using a map
         // from name to index (see https://github.com/google/ksp/issues/2616).
-        return values.map { env.wrapAnnotationValue(it) }.sortedBy { indexByName[it.name] }
+        return values
+            .map { env.wrapAnnotationValue(annotation = ksAnnotation, value = it) }
+            .sortedBy { indexByName[it.name] }
     }
 
     // A map of annotation value name to index.

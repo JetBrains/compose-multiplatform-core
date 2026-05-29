@@ -21,8 +21,6 @@ RemovedFromBytecode: androidx.navigation.NavDeepLinkDslBuilderKt#navDeepLink(Str
     Binary breaking change: method androidx.navigation.NavDeepLinkDslBuilderKt.navDeepLink(String,java.util.Map<kotlin.reflect.KType,androidx.navigation.NavType<?>>,kotlin.jvm.functions.Function1<androidx.navigation.NavDeepLinkDslBuilder,kotlin.Unit>) has been removed from bytecode
 RemovedFromBytecode: androidx.navigation.NavDestination.Companion#hasRoute(androidx.navigation.NavDestination):
     Binary breaking change: method androidx.navigation.NavDestination.Companion.hasRoute(androidx.navigation.NavDestination) has been removed from bytecode
-RemovedFromBytecode: androidx.navigation.NavDestinationBuilder#deepLink(String):
-    Binary breaking change: method androidx.navigation.NavDestinationBuilder.deepLink(String) has been removed from bytecode
 RemovedFromBytecode: androidx.navigation.NavDestinationBuilder#deepLink(String, kotlin.jvm.functions.Function1<? super androidx.navigation.NavDeepLinkDslBuilder,kotlin.Unit>):
     Binary breaking change: method androidx.navigation.NavDestinationBuilder.deepLink(String,kotlin.jvm.functions.Function1<androidx.navigation.NavDeepLinkDslBuilder,kotlin.Unit>) has been removed from bytecode
 RemovedFromBytecode: androidx.navigation.NavGraph#findNode():
@@ -53,8 +51,6 @@ RemovedFromJava: androidx.navigation.NavDeepLinkDslBuilderKt#navDeepLink(String,
     Source breaking change: method androidx.navigation.NavDeepLinkDslBuilderKt.navDeepLink(String,java.util.Map<kotlin.reflect.KType,androidx.navigation.NavType<?>>,kotlin.jvm.functions.Function1<androidx.navigation.NavDeepLinkDslBuilder,kotlin.Unit>) can no longer be resolved from Java source
 RemovedFromJava: androidx.navigation.NavDestination.Companion#hasRoute(androidx.navigation.NavDestination):
     Source breaking change: method androidx.navigation.NavDestination.Companion.hasRoute(androidx.navigation.NavDestination) can no longer be resolved from Java source
-RemovedFromJava: androidx.navigation.NavDestinationBuilder#deepLink(String):
-    Source breaking change: method androidx.navigation.NavDestinationBuilder.deepLink(String) can no longer be resolved from Java source
 RemovedFromJava: androidx.navigation.NavDestinationBuilder#deepLink(String, kotlin.jvm.functions.Function1<? super androidx.navigation.NavDeepLinkDslBuilder,kotlin.Unit>):
     Source breaking change: method androidx.navigation.NavDestinationBuilder.deepLink(String,kotlin.jvm.functions.Function1<androidx.navigation.NavDeepLinkDslBuilder,kotlin.Unit>) can no longer be resolved from Java source
 RemovedFromJava: androidx.navigation.NavGraph#findNode():
@@ -147,20 +143,12 @@ RemovedFromKotlin: androidx.navigation.NavArgumentBuilder#setType(androidx.navig
     Source breaking change: method androidx.navigation.NavArgumentBuilder.setType(androidx.navigation.NavType<?>) can no longer be resolved from Kotlin source
 RemovedFromKotlin: androidx.navigation.NavBackStackEntry#getArguments():
     Source breaking change: method androidx.navigation.NavBackStackEntry.getArguments() can no longer be resolved from Kotlin source
-RemovedFromKotlin: androidx.navigation.NavBackStackEntry#getDefaultViewModelProviderFactory():
-    Source breaking change: method androidx.navigation.NavBackStackEntry.getDefaultViewModelProviderFactory() can no longer be resolved from Kotlin source
 RemovedFromKotlin: androidx.navigation.NavBackStackEntry#getDestination():
     Source breaking change: method androidx.navigation.NavBackStackEntry.getDestination() can no longer be resolved from Kotlin source
 RemovedFromKotlin: androidx.navigation.NavBackStackEntry#getId():
     Source breaking change: method androidx.navigation.NavBackStackEntry.getId() can no longer be resolved from Kotlin source
-RemovedFromKotlin: androidx.navigation.NavBackStackEntry#getLifecycle():
-    Source breaking change: method androidx.navigation.NavBackStackEntry.getLifecycle() can no longer be resolved from Kotlin source
 RemovedFromKotlin: androidx.navigation.NavBackStackEntry#getSavedStateHandle():
     Source breaking change: method androidx.navigation.NavBackStackEntry.getSavedStateHandle() can no longer be resolved from Kotlin source
-RemovedFromKotlin: androidx.navigation.NavBackStackEntry#getSavedStateRegistry():
-    Source breaking change: method androidx.navigation.NavBackStackEntry.getSavedStateRegistry() can no longer be resolved from Kotlin source
-RemovedFromKotlin: androidx.navigation.NavBackStackEntry#getViewModelStore():
-    Source breaking change: method androidx.navigation.NavBackStackEntry.getViewModelStore() can no longer be resolved from Kotlin source
 RemovedFromKotlin: androidx.navigation.NavDeepLink#getAction():
     Source breaking change: method androidx.navigation.NavDeepLink.getAction() can no longer be resolved from Kotlin source
 RemovedFromKotlin: androidx.navigation.NavDeepLink#getMimeType():

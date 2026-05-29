@@ -15,10 +15,9 @@
  */
 
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
 
@@ -27,16 +26,16 @@ import androidx.build.SoftwareType
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("org.jetbrains.kotlin.android")
 }
 
 dependencies {
-    api(libs.kotlinStdlib)
     api(libs.kotlinCoroutinesCore)
     api(project(":xr:runtime:runtime-manifest"))
+    api(project(":xr:runtime:runtime-interfaces"))
     api("androidx.annotation:annotation:1.8.1")
     api("androidx.lifecycle:lifecycle-common:2.8.7")
 
+    implementation(project(":xr:runtime:runtime-openxr"))
     implementation("androidx.core:core:1.1.0")
     implementation("androidx.lifecycle:lifecycle-runtime:2.8.7")
 
@@ -46,17 +45,19 @@ dependencies {
     testImplementation(libs.testRunner)
     testImplementation(libs.truth)
     testImplementation(project(":kruth:kruth"))
-    testImplementation(project(":xr:scenecore:scenecore-testing"))
     testImplementation(project(":xr:runtime:runtime-testing"))
     testImplementation("androidx.appcompat:appcompat:1.2.0")
     testImplementation(libs.testRules)
 }
 
 android {
-    compileSdk = 35
     namespace = "androidx.xr.runtime"
+    buildFeatures {
+        resValues = true
+    }
     defaultConfig {
-        consumerProguardFiles 'proguard-rules.pro'
+        def xrProjectedMinApiVersion = libs.versions.xrProjectedMinApiVersion.get()
+        resValue "string", "xr_projected_min_api_version", xrProjectedMinApiVersion
     }
 }
 

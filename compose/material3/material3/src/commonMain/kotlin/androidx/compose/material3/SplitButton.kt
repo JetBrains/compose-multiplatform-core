@@ -70,8 +70,8 @@ import androidx.compose.ui.util.fastMaxOfOrNull
 import androidx.compose.ui.util.fastSumBy
 
 /**
- * A [SplitButtonLayout] let user define a button group consisting of 2 buttons. The leading button
- * performs a primary action, and the trailing button performs a secondary action that is
+ * A [SplitButtonLayout] lets users define a button group consisting of 2 buttons. The leading
+ * button performs a primary action, and the trailing button performs a secondary action that is
  * contextually related to the primary action.
  *
  * @sample androidx.compose.material3.samples.FilledSplitButtonSample
@@ -104,18 +104,17 @@ import androidx.compose.ui.util.fastSumBy
  * such as when the button requires visual separation from patterned container.
  *
  * Use [SplitButtonDefaults.OutlinedLeadingButton] and [SplitButtonDefaults.OutlinedTrailingButton]
- * to construct a `outlined SplitButton`. Outlined split buttons are medium-emphasis buttons. They
+ * to construct an `outlined SplitButton`. Outlined split buttons are medium-emphasis buttons. They
  * contain actions that are important, but are not the primary action in an app. Outlined buttons
  * pair well with `filled SplitButton`s to indicate an alternative, secondary action.
  *
  * @param leadingButton the leading button. You can specify your own composable or construct a
  *   [SplitButtonDefaults.LeadingButton]
- * @param trailingButton the trailing button.You can specify your own composable or construct a
+ * @param trailingButton the trailing button. You can specify your own composable or construct a
  *   [SplitButtonDefaults.TrailingButton]
  * @param modifier the [Modifier] to be applied to this split button.
  * @param spacing The spacing between the [leadingButton] and [trailingButton]
  */
-@ExperimentalMaterial3ExpressiveApi
 @Composable
 fun SplitButtonLayout(
     leadingButton: @Composable () -> Unit,
@@ -125,7 +124,7 @@ fun SplitButtonLayout(
 ) {
     Layout(
         {
-            // Override min component size enforcement to avoid create extra padding internally
+            // Override min component size enforcement to avoid creating extra padding internally
             // Enforce it on the parent instead
             CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides 0.dp) {
                 Box(
@@ -183,7 +182,6 @@ fun SplitButtonLayout(
 }
 
 /** Contains default values used by [SplitButtonLayout] and its style variants. */
-@ExperimentalMaterial3ExpressiveApi
 object SplitButtonDefaults {
     /** Default icon size for the leading button */
     val LeadingIconSize = ButtonSmallTokens.IconSize
@@ -269,7 +267,6 @@ object SplitButtonDefaults {
         )
 
     /** Default content padding of the extra small leading button */
-    @ExperimentalMaterial3ExpressiveApi
     val ExtraSmallLeadingButtonContentPadding =
         PaddingValues(
             start = SplitButtonXSmallTokens.LeadingButtonLeadingSpace,
@@ -277,7 +274,6 @@ object SplitButtonDefaults {
         )
 
     /** Default content padding of the small leading button */
-    @ExperimentalMaterial3ExpressiveApi
     val SmallLeadingButtonContentPadding =
         PaddingValues(
             start = SplitButtonSmallTokens.LeadingButtonLeadingSpace,
@@ -285,7 +281,6 @@ object SplitButtonDefaults {
         )
 
     /** Default content padding of the medium leading button */
-    @ExperimentalMaterial3ExpressiveApi
     val MediumLeadingButtonContentPadding =
         PaddingValues(
             start = SplitButtonMediumTokens.LeadingButtonLeadingSpace,
@@ -293,7 +288,6 @@ object SplitButtonDefaults {
         )
 
     /** Default content padding of the large leading button */
-    @ExperimentalMaterial3ExpressiveApi
     val LargeLeadingButtonContentPadding =
         PaddingValues(
             start = SplitButtonLargeTokens.LeadingButtonLeadingSpace,
@@ -301,7 +295,6 @@ object SplitButtonDefaults {
         )
 
     /** Default content padding of the extra large leading button */
-    @ExperimentalMaterial3ExpressiveApi
     val ExtraLargeLeadingButtonContentPadding =
         PaddingValues(
             start = SplitButtonXLargeTokens.LeadingButtonLeadingSpace,
@@ -309,7 +302,6 @@ object SplitButtonDefaults {
         )
 
     /** Default content padding of the extra small trailing button */
-    @ExperimentalMaterial3ExpressiveApi
     val ExtraSmallTrailingButtonContentPadding =
         PaddingValues(
             start = SplitButtonXSmallTokens.TrailingButtonLeadingSpace,
@@ -317,7 +309,6 @@ object SplitButtonDefaults {
         )
 
     /** Default content padding of the small trailing button */
-    @ExperimentalMaterial3ExpressiveApi
     val SmallTrailingButtonContentPadding =
         PaddingValues(
             start = SplitButtonSmallTokens.TrailingButtonLeadingSpace,
@@ -325,7 +316,6 @@ object SplitButtonDefaults {
         )
 
     /** Default content padding of the medium trailing button */
-    @ExperimentalMaterial3ExpressiveApi
     val MediumTrailingButtonContentPadding =
         PaddingValues(
             start = SplitButtonMediumTokens.TrailingButtonLeadingSpace,
@@ -333,7 +323,6 @@ object SplitButtonDefaults {
         )
 
     /** Default content padding of the large trailing button */
-    @ExperimentalMaterial3ExpressiveApi
     val LargeTrailingButtonContentPadding =
         PaddingValues(
             start = SplitButtonLargeTokens.TrailingButtonLeadingSpace,
@@ -341,7 +330,6 @@ object SplitButtonDefaults {
         )
 
     /** Default content padding of the extra large trailing button */
-    @ExperimentalMaterial3ExpressiveApi
     val ExtraLargeTrailingButtonContentPadding =
         PaddingValues(
             start = SplitButtonXLargeTokens.TrailingButtonLeadingSpace,
@@ -353,13 +341,13 @@ object SplitButtonDefaults {
      */
     val ExtraSmallTrailingButtonIconSize = SplitButtonXSmallTokens.TrailingIconSize
 
-    /** The default size of the icon used inside of an small trailing button of a split button. */
+    /** The default size of the icon used inside of a small trailing button of a split button. */
     val SmallTrailingButtonIconSize = SplitButtonSmallTokens.TrailingIconSize
 
-    /** The default size of the icon used inside of an medium trailing button of a split button. */
+    /** The default size of the icon used inside of a medium trailing button of a split button. */
     val MediumTrailingButtonIconSize = SplitButtonMediumTokens.TrailingIconSize
 
-    /** The default size of the icon used inside of an large trailing button of a split button. */
+    /** The default size of the icon used inside of a large trailing button of a split button. */
     val LargeTrailingButtonIconSize = SplitButtonLargeTokens.TrailingIconSize
 
     /**
@@ -391,19 +379,15 @@ object SplitButtonDefaults {
     val SmallContainerHeight = SplitButtonSmallTokens.ContainerHeight
 
     /** The default height for an extra small button container. */
-    @ExperimentalMaterial3ExpressiveApi
     val ExtraSmallContainerHeight = SplitButtonXSmallTokens.ContainerHeight
 
     /** The default height for a medium button container. */
-    @ExperimentalMaterial3ExpressiveApi
     val MediumContainerHeight = SplitButtonMediumTokens.ContainerHeight
 
     /** The default height for a large button container. */
-    @ExperimentalMaterial3ExpressiveApi
     val LargeContainerHeight = SplitButtonLargeTokens.ContainerHeight
 
     /** The default height for an extra large button container. */
-    @ExperimentalMaterial3ExpressiveApi
     val ExtraLargeContainerHeight = SplitButtonXLargeTokens.ContainerHeight
 
     /** Default minimum width of the [TrailingButton]. */
@@ -495,7 +479,6 @@ object SplitButtonDefaults {
      * @param buttonHeight The height of the button
      */
     @Composable
-    @ExperimentalMaterial3ExpressiveApi
     fun leadingButtonShapesFor(buttonHeight: Dp): SplitButtonShapes {
         val xSmallHeight = ButtonDefaults.ExtraSmallContainerHeight
         val smallHeight = ButtonDefaults.MinHeight
@@ -537,7 +520,6 @@ object SplitButtonDefaults {
      * @param buttonHeight The height of the button
      */
     @Composable
-    @ExperimentalMaterial3ExpressiveApi
     fun trailingButtonShapesFor(buttonHeight: Dp): SplitButtonShapes {
         val xSmallHeight = ButtonDefaults.ExtraSmallContainerHeight
         val smallHeight = ButtonDefaults.MinHeight
@@ -658,8 +640,7 @@ object SplitButtonDefaults {
      * @param elevation [ButtonElevation] used to resolve the elevation for this button in different
      *   states. This controls the size of the shadow below the button. See
      *   [ButtonElevation.shadowElevation].
-     * @param border the border to draw around the container of this button contentPadding the
-     *   spacing values to apply internally between the container and the content
+     * @param border the border to draw around the container of this button
      * @param contentPadding the spacing values to apply internally between the container and the
      *   content
      * @param interactionSource an optional hoisted [MutableInteractionSource] for observing and
@@ -668,7 +649,6 @@ object SplitButtonDefaults {
      *   will still happen internally.
      * @param content the content for the button.
      */
-    @ExperimentalMaterial3ExpressiveApi
     @Composable
     fun LeadingButton(
         onClick: () -> Unit,
@@ -740,8 +720,7 @@ object SplitButtonDefaults {
      * @param elevation [ButtonElevation] used to resolve the elevation for this button in different
      *   states. This controls the size of the shadow below the button. See
      *   [ButtonElevation.shadowElevation].
-     * @param border the border to draw around the container of this button contentPadding the
-     *   spacing values to apply internally between the container and the content
+     * @param border the border to draw around the container of this button
      * @param contentPadding the spacing values to apply internally between the container and the
      *   content
      * @param interactionSource an optional hoisted [MutableInteractionSource] for observing and
@@ -751,7 +730,6 @@ object SplitButtonDefaults {
      * @param content the content to be placed in the button
      */
     @Composable
-    @ExperimentalMaterial3ExpressiveApi
     fun TrailingButton(
         onClick: () -> Unit,
         modifier: Modifier = Modifier,
@@ -853,8 +831,7 @@ object SplitButtonDefaults {
      * @param elevation [ButtonElevation] used to resolve the elevation for this button in different
      *   states. This controls the size of the shadow below the button. See
      *   [ButtonElevation.shadowElevation].
-     * @param border the border to draw around the container of this button contentPadding the
-     *   spacing values to apply internally between the container and the content
+     * @param border the border to draw around the container of this button
      * @param contentPadding the spacing values to apply internally between the container and the
      *   content
      * @param interactionSource an optional hoisted [MutableInteractionSource] for observing and
@@ -864,7 +841,6 @@ object SplitButtonDefaults {
      * @param content the content to be placed in the button
      */
     @Composable
-    @ExperimentalMaterial3ExpressiveApi
     fun TrailingButton(
         checked: Boolean,
         onCheckedChange: (Boolean) -> Unit,
@@ -976,8 +952,7 @@ object SplitButtonDefaults {
      * @param elevation [ButtonElevation] used to resolve the elevation for this button in different
      *   states. This controls the size of the shadow below the button. See
      *   [ButtonElevation.shadowElevation].
-     * @param border the border to draw around the container of this button contentPadding the
-     *   spacing values to apply internally between the container and the content
+     * @param border the border to draw around the container of this button
      * @param contentPadding the spacing values to apply internally between the container and the
      *   content
      * @param interactionSource an optional hoisted [MutableInteractionSource] for observing and
@@ -986,7 +961,6 @@ object SplitButtonDefaults {
      *   will still happen internally.
      * @param content the content for the button.
      */
-    @ExperimentalMaterial3ExpressiveApi
     @Composable
     fun TonalLeadingButton(
         onClick: () -> Unit,
@@ -1038,8 +1012,7 @@ object SplitButtonDefaults {
      * @param elevation [ButtonElevation] used to resolve the elevation for this button in different
      *   states. This controls the size of the shadow below the button. See
      *   [ButtonElevation.shadowElevation].
-     * @param border the border to draw around the container of this button contentPadding the
-     *   spacing values to apply internally between the container and the content
+     * @param border the border to draw around the container of this button
      * @param contentPadding the spacing values to apply internally between the container and the
      *   content
      * @param interactionSource an optional hoisted [MutableInteractionSource] for observing and
@@ -1048,7 +1021,6 @@ object SplitButtonDefaults {
      *   will still happen internally.
      * @param content the content to be placed in the button
      */
-    @ExperimentalMaterial3ExpressiveApi
     @Composable
     fun TonalTrailingButton(
         checked: Boolean,
@@ -1079,9 +1051,9 @@ object SplitButtonDefaults {
     }
 
     /**
-     * Create a elevated `leading` button that has the same visual as a [ElevatedButton]. To create
-     * a `filled`, `outlined`, or `elevated` version, the default value of [Button] params can be
-     * passed in. For example, [ElevatedButton].
+     * Create an elevated `leading button` that has the same visual as an [ElevatedButton]. To
+     * create a `filled`, `outlined`, or `elevated` version, the default value of [Button] params
+     * can be passed in. For example, [ElevatedButton].
      *
      * The default text style for internal [Text] components will be set to [Typography.labelLarge].
      *
@@ -1097,8 +1069,7 @@ object SplitButtonDefaults {
      * @param elevation [ButtonElevation] used to resolve the elevation for this button in different
      *   states. This controls the size of the shadow below the button. See
      *   [ButtonElevation.shadowElevation].
-     * @param border the border to draw around the container of this button contentPadding the
-     *   spacing values to apply internally between the container and the content
+     * @param border the border to draw around the container of this button
      * @param contentPadding the spacing values to apply internally between the container and the
      *   content
      * @param interactionSource an optional hoisted [MutableInteractionSource] for observing and
@@ -1107,7 +1078,6 @@ object SplitButtonDefaults {
      *   will still happen internally.
      * @param content the content for the button.
      */
-    @ExperimentalMaterial3ExpressiveApi
     @Composable
     fun OutlinedLeadingButton(
         onClick: () -> Unit,
@@ -1136,7 +1106,7 @@ object SplitButtonDefaults {
     }
 
     /**
-     * Creates a outlined `trailing` button that has the same visual as a [OutlinedButton]. When
+     * Creates an outlined `trailing button` that has the same visual as an [OutlinedButton]. When
      * [checked] is updated from `false` to `true`, the buttons corners will morph to `full` by
      * default. Pressed shape and checked shape can be customized via [shapes] param.
      *
@@ -1159,8 +1129,7 @@ object SplitButtonDefaults {
      * @param elevation [ButtonElevation] used to resolve the elevation for this button in different
      *   states. This controls the size of the shadow below the button. See
      *   [ButtonElevation.shadowElevation].
-     * @param border the border to draw around the container of this button contentPadding the
-     *   spacing values to apply internally between the container and the content
+     * @param border the border to draw around the container of this button
      * @param contentPadding the spacing values to apply internally between the container and the
      *   content
      * @param interactionSource an optional hoisted [MutableInteractionSource] for observing and
@@ -1169,7 +1138,6 @@ object SplitButtonDefaults {
      *   will still happen internally.
      * @param content the content to be placed in the button
      */
-    @ExperimentalMaterial3ExpressiveApi
     @Composable
     fun OutlinedTrailingButton(
         checked: Boolean,
@@ -1200,9 +1168,9 @@ object SplitButtonDefaults {
     }
 
     /**
-     * Create a elevated `leading` button that has the same visual as a [ElevatedButton]. To create
-     * a `filled`, `outlined`, or `elevated` version, the default value of [Button] params can be
-     * passed in. For example, [ElevatedButton].
+     * Create an elevated `leading button` that has the same visual as an [ElevatedButton]. To
+     * create a `filled`, `outlined`, or `elevated` version, the default value of [Button] params
+     * can be passed in. For example, [ElevatedButton].
      *
      * The default text style for internal [Text] components will be set to [Typography.labelLarge].
      *
@@ -1218,8 +1186,7 @@ object SplitButtonDefaults {
      * @param elevation [ButtonElevation] used to resolve the elevation for this button in different
      *   states. This controls the size of the shadow below the button. See
      *   [ButtonElevation.shadowElevation].
-     * @param border the border to draw around the container of this button contentPadding the
-     *   spacing values to apply internally between the container and the content
+     * @param border the border to draw around the container of this button
      * @param contentPadding the spacing values to apply internally between the container and the
      *   content
      * @param interactionSource an optional hoisted [MutableInteractionSource] for observing and
@@ -1228,7 +1195,6 @@ object SplitButtonDefaults {
      *   will still happen internally.
      * @param content the content for the button.
      */
-    @ExperimentalMaterial3ExpressiveApi
     @Composable
     fun ElevatedLeadingButton(
         onClick: () -> Unit,
@@ -1257,7 +1223,7 @@ object SplitButtonDefaults {
     }
 
     /**
-     * Creates a elevated `trailing` button that has the same visual as a [ElevatedButton]. When
+     * Creates an elevated `trailing button` that has the same visual as an [ElevatedButton]. When
      * [checked] is updated from `false` to `true`, the buttons corners will morph to `full` by
      * default. Pressed shape and checked shape can be customized via [shapes] param.
      *
@@ -1280,8 +1246,7 @@ object SplitButtonDefaults {
      * @param elevation [ButtonElevation] used to resolve the elevation for this button in different
      *   states. This controls the size of the shadow below the button. See
      *   [ButtonElevation.shadowElevation].
-     * @param border the border to draw around the container of this button contentPadding the
-     *   spacing values to apply internally between the container and the content
+     * @param border the border to draw around the container of this button
      * @param contentPadding the spacing values to apply internally between the container and the
      *   content
      * @param interactionSource an optional hoisted [MutableInteractionSource] for observing and
@@ -1290,7 +1255,6 @@ object SplitButtonDefaults {
      *   will still happen internally.
      * @param content the content to be placed in the button
      */
-    @ExperimentalMaterial3ExpressiveApi
     @Composable
     fun ElevatedTrailingButton(
         checked: Boolean,
@@ -1321,7 +1285,6 @@ object SplitButtonDefaults {
     }
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun shapeByInteraction(
     shapes: SplitButtonShapes,
@@ -1338,6 +1301,8 @@ private fun shapeByInteraction(
 
     if (shapes.hasRoundedCornerShapes) {
         return rememberAnimatedShape(shape as RoundedCornerShape, animationSpec)
+    } else if (shapes.hasCornerBasedShapes) {
+        return rememberAnimatedShape(shape as CornerBasedShape, animationSpec)
     }
     return shape
 }
@@ -1350,7 +1315,6 @@ private fun shapeByInteraction(
  * @property pressedShape is the pressed shape.
  * @property checkedShape is the checked shape.
  */
-@ExperimentalMaterial3ExpressiveApi
 class SplitButtonShapes(val shape: Shape, val pressedShape: Shape?, val checkedShape: Shape?) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -1376,13 +1340,20 @@ class SplitButtonShapes(val shape: Shape, val pressedShape: Shape?, val checkedS
     }
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 private val SplitButtonShapes.hasRoundedCornerShapes: Boolean
     get() {
         // Ignore null shapes and only check default shape for RoundedCorner
         if (pressedShape != null && pressedShape !is RoundedCornerShape) return false
         if (checkedShape != null && checkedShape !is RoundedCornerShape) return false
         return shape is RoundedCornerShape
+    }
+
+private val SplitButtonShapes.hasCornerBasedShapes: Boolean
+    get() {
+        // Ignore null shapes and only check default shape for RoundedCorner
+        if (pressedShape != null && pressedShape !is CornerBasedShape) return false
+        if (checkedShape != null && checkedShape !is CornerBasedShape) return false
+        return shape is CornerBasedShape
     }
 
 private const val LeadingButtonLayoutId = "LeadingButton"

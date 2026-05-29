@@ -19,7 +19,7 @@ package androidx.room3.writer
 import androidx.room3.compiler.processing.XTypeElement
 import androidx.room3.compiler.processing.util.Source
 import androidx.room3.compiler.processing.util.XTestInvocation
-import androidx.room3.compiler.processing.util.runProcessorTest
+import androidx.room3.compiler.processing.util.runKspTest
 import androidx.room3.processor.DatabaseProcessor
 import androidx.room3.testing.context
 import androidx.room3.vo.Database
@@ -51,11 +51,11 @@ class OpenDelegateWriterTest {
     fun createSimpleEntity() {
         singleEntity(
             """
-                @PrimaryKey
-                @NonNull
-                String uuid;
-                String name;
-                int age;
+            @PrimaryKey
+            @NonNull
+            String uuid;
+            String name;
+            int age;
             """
                 .trimIndent()
         ) { database, _ ->
@@ -75,11 +75,11 @@ class OpenDelegateWriterTest {
     fun multiplePrimaryKeys() {
         singleEntity(
             """
-                @NonNull
-                String uuid;
-                @NonNull
-                String name;
-                int age;
+            @NonNull
+            String uuid;
+            @NonNull
+            String name;
+            int age;
             """
                 .trimIndent(),
             attributes = mapOf("primaryKeys" to "{\"uuid\", \"name\"}"),
@@ -219,7 +219,7 @@ class OpenDelegateWriterTest {
             }
             """,
             )
-        runProcessorTest(sources = sources + databaseCode) { invocation ->
+        runKspTest(sources = sources + databaseCode) { invocation ->
             val db =
                 invocation.roundEnv
                     .getElementsAnnotatedWith(androidx.room3.Database::class.qualifiedName!!)

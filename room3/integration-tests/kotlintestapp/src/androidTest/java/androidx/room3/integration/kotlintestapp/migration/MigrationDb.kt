@@ -17,6 +17,7 @@
 package androidx.room3.integration.kotlintestapp.migration
 
 import androidx.room3.AutoMigration
+import androidx.room3.ColumnInfo
 import androidx.room3.Dao
 import androidx.room3.Database
 import androidx.room3.Entity
@@ -32,7 +33,13 @@ import androidx.sqlite.SQLiteConnection
 
 @Database(
     version = MigrationDb.LATEST_VERSION,
-    entities = [MigrationDb.Entity1::class, MigrationDb.Entity2::class, MigrationDb.Entity4::class],
+    entities =
+        [
+            MigrationDb.Entity1::class,
+            MigrationDb.Entity2::class,
+            MigrationDb.Entity4::class,
+            MigrationDb.Entity5::class,
+        ],
     autoMigrations = [AutoMigration(7, 8)],
 )
 abstract class MigrationDb : RoomDatabase() {
@@ -84,6 +91,17 @@ abstract class MigrationDb : RoomDatabase() {
         }
     }
 
+    @Entity // added in v8
+    data class Entity5(
+        @PrimaryKey var id: Int = 0,
+        @ColumnInfo(defaultValue = "'Unknown") var addedInV9: String? = null,
+        @ColumnInfo(defaultValue = "(0)") var addedInV10: Int,
+    ) {
+        companion object {
+            const val TABLE_NAME = "Entity5"
+        }
+    }
+
     @Dao
     internal interface MigrationDao {
         @Query("SELECT * from Entity1 ORDER BY id ASC") fun loadAllEntity1s(): List<Entity1>
@@ -124,6 +142,6 @@ abstract class MigrationDb : RoomDatabase() {
     }
 
     companion object {
-        const val LATEST_VERSION = 8
+        const val LATEST_VERSION = 10
     }
 }

@@ -76,7 +76,7 @@ package androidx.privacysandbox.ads.adservices.adselection {
     method @SuppressCompatibility @androidx.privacysandbox.ads.adservices.common.ExperimentalFeatures.Ext10OptIn public boolean hasOutcome();
     property public long adSelectionId;
     property public android.net.Uri renderUri;
-    field public static final androidx.privacysandbox.ads.adservices.adselection.AdSelectionOutcome.Companion Companion;
+    field @SuppressCompatibility @androidx.privacysandbox.ads.adservices.common.ExperimentalFeatures.Ext10OptIn public static final androidx.privacysandbox.ads.adservices.adselection.AdSelectionOutcome.Companion Companion;
     field @SuppressCompatibility @androidx.privacysandbox.ads.adservices.common.ExperimentalFeatures.Ext10OptIn public static final androidx.privacysandbox.ads.adservices.adselection.AdSelectionOutcome NO_OUTCOME;
   }
 
@@ -87,6 +87,7 @@ package androidx.privacysandbox.ads.adservices.adselection {
   @SuppressCompatibility @androidx.privacysandbox.ads.adservices.common.ExperimentalFeatures.Ext10OptIn public final class GetAdSelectionDataOutcome {
     ctor public GetAdSelectionDataOutcome(long adSelectionId);
     ctor public GetAdSelectionDataOutcome(long adSelectionId, optional byte[]? adSelectionData);
+    ctor @BytecodeOnly public GetAdSelectionDataOutcome(long, byte[]!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
     method @InaccessibleFromKotlin public byte[]? getAdSelectionData();
     method @InaccessibleFromKotlin public long getAdSelectionId();
     property public byte[]? adSelectionData;
@@ -97,6 +98,7 @@ package androidx.privacysandbox.ads.adservices.adselection {
     ctor public GetAdSelectionDataRequest(androidx.privacysandbox.ads.adservices.common.AdTechIdentifier seller);
     ctor public GetAdSelectionDataRequest(androidx.privacysandbox.ads.adservices.common.AdTechIdentifier seller, optional android.net.Uri? coordinatorOriginUri);
     ctor public GetAdSelectionDataRequest(androidx.privacysandbox.ads.adservices.common.AdTechIdentifier seller, optional android.net.Uri? coordinatorOriginUri, optional androidx.privacysandbox.ads.adservices.adselection.SellerConfiguration? sellerConfiguration);
+    ctor @BytecodeOnly public GetAdSelectionDataRequest(androidx.privacysandbox.ads.adservices.common.AdTechIdentifier!, android.net.Uri!, androidx.privacysandbox.ads.adservices.adselection.SellerConfiguration!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
     method @SuppressCompatibility @androidx.privacysandbox.ads.adservices.common.ExperimentalFeatures.Ext12OptIn public android.net.Uri? getCoordinatorOriginUri();
     method @InaccessibleFromKotlin public androidx.privacysandbox.ads.adservices.common.AdTechIdentifier getSeller();
     method @SuppressCompatibility @androidx.privacysandbox.ads.adservices.common.ExperimentalFeatures.Ext12OptIn public androidx.privacysandbox.ads.adservices.adselection.SellerConfiguration? getSellerConfiguration();
@@ -115,6 +117,7 @@ package androidx.privacysandbox.ads.adservices.adselection {
     ctor public PersistAdSelectionResultRequest(long adSelectionId);
     ctor public PersistAdSelectionResultRequest(long adSelectionId, optional androidx.privacysandbox.ads.adservices.common.AdTechIdentifier? seller);
     ctor public PersistAdSelectionResultRequest(long adSelectionId, optional androidx.privacysandbox.ads.adservices.common.AdTechIdentifier? seller, optional byte[]? adSelectionResult);
+    ctor @BytecodeOnly public PersistAdSelectionResultRequest(long, androidx.privacysandbox.ads.adservices.common.AdTechIdentifier!, byte[]!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
     method @InaccessibleFromKotlin public long getAdSelectionId();
     method @InaccessibleFromKotlin public byte[]? getAdSelectionResult();
     method @InaccessibleFromKotlin public androidx.privacysandbox.ads.adservices.common.AdTechIdentifier? getSeller();
@@ -126,6 +129,7 @@ package androidx.privacysandbox.ads.adservices.adselection {
   @SuppressCompatibility @androidx.privacysandbox.ads.adservices.common.ExperimentalFeatures.Ext8OptIn public final class ReportEventRequest {
     ctor public ReportEventRequest(long adSelectionId, String eventKey, String eventData, int reportingDestinations);
     ctor public ReportEventRequest(long adSelectionId, String eventKey, String eventData, int reportingDestinations, optional android.view.InputEvent? inputEvent);
+    ctor @BytecodeOnly public ReportEventRequest(long, String!, String!, int, android.view.InputEvent!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
     method @InaccessibleFromKotlin public long getAdSelectionId();
     method @InaccessibleFromKotlin public String getEventData();
     method @InaccessibleFromKotlin public String getEventKey();
@@ -140,7 +144,7 @@ package androidx.privacysandbox.ads.adservices.adselection {
     field public static final int FLAG_REPORTING_DESTINATION_SELLER = 1; // 0x1
   }
 
-  public static final class ReportEventRequest.Companion {
+  @SuppressCompatibility @androidx.privacysandbox.ads.adservices.common.ExperimentalFeatures.Ext8OptIn public static final class ReportEventRequest.Companion {
     property public static int FLAG_REPORTING_DESTINATION_BUYER;
     property public static int FLAG_REPORTING_DESTINATION_SELLER;
   }
@@ -208,6 +212,8 @@ package androidx.privacysandbox.ads.adservices.common {
 
   public final class AdData {
     ctor public AdData(android.net.Uri renderUri, String metadata);
+    ctor @BytecodeOnly @SuppressCompatibility @androidx.privacysandbox.ads.adservices.common.ExperimentalFeatures.Ext8OptIn public AdData(android.net.Uri!, String!, java.util.Set!, androidx.privacysandbox.ads.adservices.common.AdFilters!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
+    ctor @BytecodeOnly @SuppressCompatibility @androidx.privacysandbox.ads.adservices.common.ExperimentalFeatures.Ext10OptIn public AdData(android.net.Uri!, String!, java.util.Set!, androidx.privacysandbox.ads.adservices.common.AdFilters!, String!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
     ctor @SuppressCompatibility @androidx.privacysandbox.ads.adservices.common.ExperimentalFeatures.Ext8OptIn public AdData(android.net.Uri renderUri, String metadata, optional java.util.Set<java.lang.Integer> adCounterKeys, optional androidx.privacysandbox.ads.adservices.common.AdFilters? adFilters);
     ctor @SuppressCompatibility @androidx.privacysandbox.ads.adservices.common.ExperimentalFeatures.Ext10OptIn public AdData(android.net.Uri renderUri, String metadata, optional java.util.Set<java.lang.Integer> adCounterKeys, optional androidx.privacysandbox.ads.adservices.common.AdFilters? adFilters, optional String? adRenderId);
     method @InaccessibleFromKotlin public java.util.Set<java.lang.Integer> getAdCounterKeys();
@@ -248,32 +254,33 @@ package androidx.privacysandbox.ads.adservices.common {
     property public android.net.Uri renderUri;
   }
 
-  public sealed interface ExperimentalFeatures {
+  public sealed exhaustive interface ExperimentalFeatures {
   }
 
-  @SuppressCompatibility @kotlin.RequiresOptIn(message="The Ext10 API is experimental.", level=kotlin.RequiresOptIn.Level.WARNING) public static @interface ExperimentalFeatures.Ext10OptIn {
+  @SuppressCompatibility @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @kotlin.RequiresOptIn(message="The Ext10 API is experimental.", level=kotlin.RequiresOptIn.Level.WARNING) public static @interface ExperimentalFeatures.Ext10OptIn {
   }
 
-  @SuppressCompatibility @kotlin.RequiresOptIn(message="The Ext11 API is experimental.", level=kotlin.RequiresOptIn.Level.WARNING) public static @interface ExperimentalFeatures.Ext11OptIn {
+  @SuppressCompatibility @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @kotlin.RequiresOptIn(message="The Ext11 API is experimental.", level=kotlin.RequiresOptIn.Level.WARNING) public static @interface ExperimentalFeatures.Ext11OptIn {
   }
 
-  @SuppressCompatibility @kotlin.RequiresOptIn(message="The Ext12 API is experimental.", level=kotlin.RequiresOptIn.Level.WARNING) public static @interface ExperimentalFeatures.Ext12OptIn {
+  @SuppressCompatibility @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @kotlin.RequiresOptIn(message="The Ext12 API is experimental.", level=kotlin.RequiresOptIn.Level.WARNING) public static @interface ExperimentalFeatures.Ext12OptIn {
   }
 
-  @SuppressCompatibility @kotlin.RequiresOptIn(message="The Ext14 API is experimental.", level=kotlin.RequiresOptIn.Level.WARNING) public static @interface ExperimentalFeatures.Ext14OptIn {
+  @SuppressCompatibility @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @kotlin.RequiresOptIn(message="The Ext14 API is experimental.", level=kotlin.RequiresOptIn.Level.WARNING) public static @interface ExperimentalFeatures.Ext14OptIn {
   }
 
-  @SuppressCompatibility @kotlin.RequiresOptIn(message="The Ext16 API is experimental.", level=kotlin.RequiresOptIn.Level.WARNING) public static @interface ExperimentalFeatures.Ext16OptIn {
+  @SuppressCompatibility @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @kotlin.RequiresOptIn(message="The Ext16 API is experimental.", level=kotlin.RequiresOptIn.Level.WARNING) public static @interface ExperimentalFeatures.Ext16OptIn {
   }
 
-  @SuppressCompatibility @kotlin.RequiresOptIn(message="The Ext8 API is experimental.", level=kotlin.RequiresOptIn.Level.WARNING) public static @interface ExperimentalFeatures.Ext8OptIn {
+  @SuppressCompatibility @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @kotlin.RequiresOptIn(message="The Ext8 API is experimental.", level=kotlin.RequiresOptIn.Level.WARNING) public static @interface ExperimentalFeatures.Ext8OptIn {
   }
 
-  @SuppressCompatibility @kotlin.RequiresOptIn(message="This API is experimental.", level=kotlin.RequiresOptIn.Level.WARNING) public static @interface ExperimentalFeatures.RegisterSourceOptIn {
+  @SuppressCompatibility @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @kotlin.RequiresOptIn(message="This API is experimental.", level=kotlin.RequiresOptIn.Level.WARNING) public static @interface ExperimentalFeatures.RegisterSourceOptIn {
   }
 
   @SuppressCompatibility @androidx.privacysandbox.ads.adservices.common.ExperimentalFeatures.Ext8OptIn public final class FrequencyCapFilters {
     ctor public FrequencyCapFilters();
+    ctor @BytecodeOnly public FrequencyCapFilters(java.util.List!, java.util.List!, java.util.List!, java.util.List!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
     ctor public FrequencyCapFilters(optional java.util.List<androidx.privacysandbox.ads.adservices.common.KeyedFrequencyCap> keyedFrequencyCapsForWinEvents);
     ctor public FrequencyCapFilters(optional java.util.List<androidx.privacysandbox.ads.adservices.common.KeyedFrequencyCap> keyedFrequencyCapsForWinEvents, optional java.util.List<androidx.privacysandbox.ads.adservices.common.KeyedFrequencyCap> keyedFrequencyCapsForImpressionEvents);
     ctor public FrequencyCapFilters(optional java.util.List<androidx.privacysandbox.ads.adservices.common.KeyedFrequencyCap> keyedFrequencyCapsForWinEvents, optional java.util.List<androidx.privacysandbox.ads.adservices.common.KeyedFrequencyCap> keyedFrequencyCapsForImpressionEvents, optional java.util.List<androidx.privacysandbox.ads.adservices.common.KeyedFrequencyCap> keyedFrequencyCapsForViewEvents);
@@ -293,7 +300,7 @@ package androidx.privacysandbox.ads.adservices.common {
     field public static final androidx.privacysandbox.ads.adservices.common.FrequencyCapFilters.Companion Companion;
   }
 
-  public static final class FrequencyCapFilters.Companion {
+  @SuppressCompatibility @androidx.privacysandbox.ads.adservices.common.ExperimentalFeatures.Ext8OptIn public static final class FrequencyCapFilters.Companion {
     property public static int AD_EVENT_TYPE_CLICK;
     property public static int AD_EVENT_TYPE_IMPRESSION;
     property public static int AD_EVENT_TYPE_VIEW;
@@ -315,8 +322,11 @@ package androidx.privacysandbox.ads.adservices.common {
 package androidx.privacysandbox.ads.adservices.customaudience {
 
   public final class CustomAudience {
+    ctor @BytecodeOnly @SuppressCompatibility @androidx.privacysandbox.ads.adservices.common.ExperimentalFeatures.Ext14OptIn public CustomAudience(androidx.privacysandbox.ads.adservices.common.AdTechIdentifier!, String!, android.net.Uri!, android.net.Uri!, java.util.List!, java.time.Instant!, java.time.Instant!, androidx.privacysandbox.ads.adservices.common.AdSelectionSignals!, androidx.privacysandbox.ads.adservices.customaudience.TrustedBiddingData!, int, double, int, kotlin.jvm.internal.DefaultConstructorMarker!);
+    ctor @BytecodeOnly @SuppressCompatibility @androidx.privacysandbox.ads.adservices.common.ExperimentalFeatures.Ext16OptIn public CustomAudience(androidx.privacysandbox.ads.adservices.common.AdTechIdentifier!, String!, android.net.Uri!, android.net.Uri!, java.util.List!, java.time.Instant!, java.time.Instant!, androidx.privacysandbox.ads.adservices.common.AdSelectionSignals!, androidx.privacysandbox.ads.adservices.customaudience.TrustedBiddingData!, int, double, java.util.List!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
+    ctor @BytecodeOnly public CustomAudience(androidx.privacysandbox.ads.adservices.common.AdTechIdentifier!, String!, android.net.Uri!, android.net.Uri!, java.util.List!, java.time.Instant!, java.time.Instant!, androidx.privacysandbox.ads.adservices.common.AdSelectionSignals!, androidx.privacysandbox.ads.adservices.customaudience.TrustedBiddingData!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
     ctor public CustomAudience(androidx.privacysandbox.ads.adservices.common.AdTechIdentifier buyer, String name, android.net.Uri dailyUpdateUri, android.net.Uri biddingLogicUri, java.util.List<androidx.privacysandbox.ads.adservices.common.AdData> ads, optional java.time.Instant? activationTime, optional java.time.Instant? expirationTime, optional androidx.privacysandbox.ads.adservices.common.AdSelectionSignals? userBiddingSignals, optional androidx.privacysandbox.ads.adservices.customaudience.TrustedBiddingData? trustedBiddingSignals);
-    ctor @SuppressCompatibility @androidx.privacysandbox.ads.adservices.common.ExperimentalFeatures.Ext14OptIn public CustomAudience(androidx.privacysandbox.ads.adservices.common.AdTechIdentifier buyer, String name, android.net.Uri dailyUpdateUri, android.net.Uri biddingLogicUri, java.util.List<androidx.privacysandbox.ads.adservices.common.AdData> ads, optional java.time.Instant? activationTime, optional java.time.Instant? expirationTime, optional androidx.privacysandbox.ads.adservices.common.AdSelectionSignals? userBiddingSignals, optional androidx.privacysandbox.ads.adservices.customaudience.TrustedBiddingData? trustedBiddingSignals, optional @SuppressCompatibility int auctionServerRequestFlags, optional double priority);
+    ctor @SuppressCompatibility @androidx.privacysandbox.ads.adservices.common.ExperimentalFeatures.Ext14OptIn public CustomAudience(androidx.privacysandbox.ads.adservices.common.AdTechIdentifier buyer, String name, android.net.Uri dailyUpdateUri, android.net.Uri biddingLogicUri, java.util.List<androidx.privacysandbox.ads.adservices.common.AdData> ads, optional java.time.Instant? activationTime, optional java.time.Instant? expirationTime, optional androidx.privacysandbox.ads.adservices.common.AdSelectionSignals? userBiddingSignals, optional androidx.privacysandbox.ads.adservices.customaudience.TrustedBiddingData? trustedBiddingSignals, optional int auctionServerRequestFlags, optional double priority);
     ctor @SuppressCompatibility @androidx.privacysandbox.ads.adservices.common.ExperimentalFeatures.Ext16OptIn public CustomAudience(androidx.privacysandbox.ads.adservices.common.AdTechIdentifier buyer, String name, android.net.Uri dailyUpdateUri, android.net.Uri biddingLogicUri, java.util.List<androidx.privacysandbox.ads.adservices.common.AdData> ads, optional java.time.Instant? activationTime, optional java.time.Instant? expirationTime, optional androidx.privacysandbox.ads.adservices.common.AdSelectionSignals? userBiddingSignals, optional androidx.privacysandbox.ads.adservices.customaudience.TrustedBiddingData? trustedBiddingSignals, optional int auctionServerRequestFlags, optional double priority, optional java.util.List<androidx.privacysandbox.ads.adservices.common.ComponentAdData> componentAds);
     method @InaccessibleFromKotlin public java.time.Instant? getActivationTime();
     method @InaccessibleFromKotlin public java.util.List<androidx.privacysandbox.ads.adservices.common.AdData> getAds();
@@ -339,7 +349,7 @@ package androidx.privacysandbox.ads.adservices.customaudience {
     property public String name;
     property public androidx.privacysandbox.ads.adservices.customaudience.TrustedBiddingData? trustedBiddingSignals;
     property public androidx.privacysandbox.ads.adservices.common.AdSelectionSignals? userBiddingSignals;
-    field public static final androidx.privacysandbox.ads.adservices.customaudience.CustomAudience.Companion Companion;
+    field @SuppressCompatibility @androidx.privacysandbox.ads.adservices.common.ExperimentalFeatures.Ext14OptIn public static final androidx.privacysandbox.ads.adservices.customaudience.CustomAudience.Companion Companion;
     field @SuppressCompatibility @androidx.privacysandbox.ads.adservices.common.ExperimentalFeatures.Ext14OptIn public static final int FLAG_AUCTION_SERVER_REQUEST_DEFAULT = 0; // 0x0
     field @SuppressCompatibility @androidx.privacysandbox.ads.adservices.common.ExperimentalFeatures.Ext14OptIn public static final int FLAG_AUCTION_SERVER_REQUEST_OMIT_ADS = 1; // 0x1
     field @SuppressCompatibility @androidx.privacysandbox.ads.adservices.common.ExperimentalFeatures.Ext14OptIn public static final double PRIORITY_DEFAULT = 0.0;
@@ -350,7 +360,7 @@ package androidx.privacysandbox.ads.adservices.customaudience {
     method public androidx.privacysandbox.ads.adservices.customaudience.CustomAudience build();
     method public androidx.privacysandbox.ads.adservices.customaudience.CustomAudience.Builder setActivationTime(java.time.Instant activationTime);
     method public androidx.privacysandbox.ads.adservices.customaudience.CustomAudience.Builder setAds(java.util.List<androidx.privacysandbox.ads.adservices.common.AdData> ads);
-    method @SuppressCompatibility @androidx.privacysandbox.ads.adservices.common.ExperimentalFeatures.Ext14OptIn public androidx.privacysandbox.ads.adservices.customaudience.CustomAudience.Builder setAuctionServerRequestFlags(@SuppressCompatibility int auctionServerRequestFlag);
+    method @SuppressCompatibility @androidx.privacysandbox.ads.adservices.common.ExperimentalFeatures.Ext14OptIn public androidx.privacysandbox.ads.adservices.customaudience.CustomAudience.Builder setAuctionServerRequestFlags(int auctionServerRequestFlag);
     method public androidx.privacysandbox.ads.adservices.customaudience.CustomAudience.Builder setBiddingLogicUri(android.net.Uri biddingLogicUri);
     method public androidx.privacysandbox.ads.adservices.customaudience.CustomAudience.Builder setBuyer(androidx.privacysandbox.ads.adservices.common.AdTechIdentifier buyer);
     method @SuppressCompatibility @androidx.privacysandbox.ads.adservices.common.ExperimentalFeatures.Ext16OptIn public androidx.privacysandbox.ads.adservices.customaudience.CustomAudience.Builder setComponentAds(java.util.List<androidx.privacysandbox.ads.adservices.common.ComponentAdData> componentAds);
@@ -387,6 +397,7 @@ package androidx.privacysandbox.ads.adservices.customaudience {
     ctor public FetchAndJoinCustomAudienceRequest(android.net.Uri fetchUri, optional String? name, optional java.time.Instant? activationTime);
     ctor public FetchAndJoinCustomAudienceRequest(android.net.Uri fetchUri, optional String? name, optional java.time.Instant? activationTime, optional java.time.Instant? expirationTime);
     ctor public FetchAndJoinCustomAudienceRequest(android.net.Uri fetchUri, optional String? name, optional java.time.Instant? activationTime, optional java.time.Instant? expirationTime, optional androidx.privacysandbox.ads.adservices.common.AdSelectionSignals? userBiddingSignals);
+    ctor @BytecodeOnly public FetchAndJoinCustomAudienceRequest(android.net.Uri!, String!, java.time.Instant!, java.time.Instant!, androidx.privacysandbox.ads.adservices.common.AdSelectionSignals!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
     method @InaccessibleFromKotlin public java.time.Instant? getActivationTime();
     method @InaccessibleFromKotlin public java.time.Instant? getExpirationTime();
     method @InaccessibleFromKotlin public android.net.Uri getFetchUri();
@@ -418,6 +429,7 @@ package androidx.privacysandbox.ads.adservices.customaudience {
     ctor public PartialCustomAudience(String name, optional java.time.Instant? activationTime);
     ctor public PartialCustomAudience(String name, optional java.time.Instant? activationTime, optional java.time.Instant? expirationTime);
     ctor public PartialCustomAudience(String name, optional java.time.Instant? activationTime, optional java.time.Instant? expirationTime, optional androidx.privacysandbox.ads.adservices.common.AdSelectionSignals? userBiddingSignals);
+    ctor @BytecodeOnly public PartialCustomAudience(String!, java.time.Instant!, java.time.Instant!, androidx.privacysandbox.ads.adservices.common.AdSelectionSignals!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
     method @InaccessibleFromKotlin public java.time.Instant? getActivationTime();
     method @InaccessibleFromKotlin public java.time.Instant? getExpirationTime();
     method @InaccessibleFromKotlin public String getName();
@@ -429,6 +441,7 @@ package androidx.privacysandbox.ads.adservices.customaudience {
   }
 
   @SuppressCompatibility @androidx.privacysandbox.ads.adservices.common.ExperimentalFeatures.Ext14OptIn public final class ScheduleCustomAudienceUpdateRequest {
+    ctor @BytecodeOnly public ScheduleCustomAudienceUpdateRequest(android.net.Uri!, java.time.Duration!, java.util.List!, boolean, int, kotlin.jvm.internal.DefaultConstructorMarker!);
     ctor public ScheduleCustomAudienceUpdateRequest(android.net.Uri updateUri, java.time.Duration minDelay, java.util.List<androidx.privacysandbox.ads.adservices.customaudience.PartialCustomAudience> partialCustomAudienceList);
     ctor public ScheduleCustomAudienceUpdateRequest(android.net.Uri updateUri, java.time.Duration minDelay, java.util.List<androidx.privacysandbox.ads.adservices.customaudience.PartialCustomAudience> partialCustomAudienceList, optional boolean shouldReplacePendingUpdates);
     method @InaccessibleFromKotlin public java.time.Duration getMinDelay();
@@ -454,6 +467,7 @@ package androidx.privacysandbox.ads.adservices.customaudience {
 package androidx.privacysandbox.ads.adservices.measurement {
 
   @RequiresApi(android.os.Build.VERSION_CODES.O) public final class DeletionRequest {
+    ctor @BytecodeOnly public DeletionRequest(int, int, java.time.Instant!, java.time.Instant!, java.util.List!, java.util.List!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
     ctor public DeletionRequest(int deletionMode, int matchBehavior, optional java.time.Instant start, optional java.time.Instant end, optional java.util.List<? extends android.net.Uri> domainUris, optional java.util.List<? extends android.net.Uri> originUris);
     method @InaccessibleFromKotlin public int getDeletionMode();
     method @InaccessibleFromKotlin public java.util.List<android.net.Uri> getDomainUris();
@@ -512,6 +526,7 @@ package androidx.privacysandbox.ads.adservices.measurement {
   }
 
   @SuppressCompatibility @androidx.privacysandbox.ads.adservices.common.ExperimentalFeatures.RegisterSourceOptIn public final class SourceRegistrationRequest {
+    ctor @BytecodeOnly public SourceRegistrationRequest(java.util.List!, android.view.InputEvent!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
     ctor public SourceRegistrationRequest(java.util.List<? extends android.net.Uri> registrationUris, optional android.view.InputEvent? inputEvent);
     method @InaccessibleFromKotlin public android.view.InputEvent? getInputEvent();
     method @InaccessibleFromKotlin public java.util.List<android.net.Uri> getRegistrationUris();
@@ -519,7 +534,7 @@ package androidx.privacysandbox.ads.adservices.measurement {
     property public java.util.List<android.net.Uri> registrationUris;
   }
 
-  public static final class SourceRegistrationRequest.Builder {
+  @SuppressCompatibility @androidx.privacysandbox.ads.adservices.common.ExperimentalFeatures.RegisterSourceOptIn public static final class SourceRegistrationRequest.Builder {
     ctor public SourceRegistrationRequest.Builder(java.util.List<? extends android.net.Uri> registrationUris);
     method public androidx.privacysandbox.ads.adservices.measurement.SourceRegistrationRequest build();
     method public androidx.privacysandbox.ads.adservices.measurement.SourceRegistrationRequest.Builder setInputEvent(android.view.InputEvent inputEvent);
@@ -534,6 +549,7 @@ package androidx.privacysandbox.ads.adservices.measurement {
   }
 
   public final class WebSourceRegistrationRequest {
+    ctor @BytecodeOnly public WebSourceRegistrationRequest(java.util.List!, android.net.Uri!, android.view.InputEvent!, android.net.Uri!, android.net.Uri!, android.net.Uri!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
     ctor public WebSourceRegistrationRequest(java.util.List<androidx.privacysandbox.ads.adservices.measurement.WebSourceParams> webSourceParams, android.net.Uri topOriginUri, optional android.view.InputEvent? inputEvent, optional android.net.Uri? appDestination, optional android.net.Uri? webDestination, optional android.net.Uri? verifiedDestination);
     method @InaccessibleFromKotlin public android.net.Uri? getAppDestination();
     method @InaccessibleFromKotlin public android.view.InputEvent? getInputEvent();
@@ -611,6 +627,7 @@ package androidx.privacysandbox.ads.adservices.topics {
   public final class GetTopicsRequest {
     ctor public GetTopicsRequest();
     ctor public GetTopicsRequest(optional String adsSdkName, optional boolean shouldRecordObservation);
+    ctor @BytecodeOnly public GetTopicsRequest(String!, boolean, int, kotlin.jvm.internal.DefaultConstructorMarker!);
     method @InaccessibleFromKotlin public String getAdsSdkName();
     method @InaccessibleFromKotlin public boolean shouldRecordObservation();
     property public String adsSdkName;

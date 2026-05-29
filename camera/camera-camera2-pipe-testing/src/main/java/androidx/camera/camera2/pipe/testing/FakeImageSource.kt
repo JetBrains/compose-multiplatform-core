@@ -16,6 +16,7 @@
 
 package androidx.camera.camera2.pipe.testing
 
+import android.hardware.HardwareBuffer
 import android.util.Size
 import androidx.camera.camera2.pipe.OutputId
 import androidx.camera.camera2.pipe.StreamFormat
@@ -41,8 +42,19 @@ private constructor(
     public val images: List<FakeImage>
         get() = fakeImageReader.images
 
-    public fun simulateImage(timestamp: Long, outputId: OutputId? = null): FakeImage {
-        return fakeImageReader.simulateImage(timestamp, outputId)
+    public val isFlushed: Boolean
+        get() = fakeImageReader.isFlushed
+
+    public fun simulateImage(
+        timestamp: Long,
+        outputId: OutputId? = null,
+        hardwareBuffer: HardwareBuffer? = null,
+    ): FakeImage {
+        return fakeImageReader.simulateImage(timestamp, outputId, hardwareBuffer = hardwareBuffer)
+    }
+
+    public fun simulateExpectedOutputs(timestamp: Long, outputIds: Set<OutputId>) {
+        fakeImageReader.simulateExpectedOutputs(timestamp, outputIds)
     }
 
     override fun close() {
@@ -53,6 +65,14 @@ private constructor(
 
     override fun toString(): String = "FakeImageSource-$debugId"
 
+    override fun flush() {
+        fakeImageReader.flush()
+    }
+
+    override fun discardFreeBuffers() {
+        fakeImageReader.discardFreeBuffers()
+    }
+
     public companion object {
         private val debugIds = atomic(0)
 
@@ -61,9 +81,19 @@ private constructor(
             streamId: StreamId,
             outputs: Map<OutputId, Size>,
             capacity: Int,
+            usageFlags: Long?,
             fakeImageReaders: FakeImageReaders,
         ): FakeImageSource {
-            val fakeImageReader = fakeImageReaders.create(streamFormat, streamId, outputs, capacity)
+            // ImageReaderImageSource maintains a margin to avoid acquiring too many images. We need
+            // to bump up the capacity to keep effective capacity same.
+            val fakeImageReader =
+                fakeImageReaders.create(
+                    streamFormat,
+                    streamId,
+                    outputs,
+                    capacity + ImageReaderImageSource.IMAGE_SOURCE_CAPACITY_MARGIN,
+                    usageFlags,
+                )
 
             val imageReaderImageSource = ImageReaderImageSource.create(fakeImageReader)
             return FakeImageSource(fakeImageReader, imageReaderImageSource)

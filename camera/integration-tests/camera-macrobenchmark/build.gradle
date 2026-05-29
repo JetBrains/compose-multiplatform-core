@@ -17,11 +17,10 @@
 plugins {
     id("AndroidXPlugin")
     id("com.android.test")
-    id("org.jetbrains.kotlin.android")
 }
 
 android {
-    compileSdk = 35
+    compileSdk { version = release(36) }
     namespace = "androidx.camera.integration.macrobenchmark"
     targetProjectPath = ":camera:integration-tests:camera-macrobenchmark-target"
     experimentalProperties["android.experimental.self-instrumenting"] = true
@@ -38,7 +37,6 @@ dependencies {
     implementation(project(":internal-testutils-benchmark-macro"))
 
     implementation(project(":camera:camera-camera2"))
-    implementation(project(":camera:camera-camera2-pipe-integration"))
     implementation(project(":camera:camera-testing"))
 
     implementation(libs.testRules)

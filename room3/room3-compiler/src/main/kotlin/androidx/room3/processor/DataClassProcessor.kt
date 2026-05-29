@@ -19,7 +19,6 @@ package androidx.room3.processor
 import androidx.room3.ColumnInfo
 import androidx.room3.Embedded
 import androidx.room3.Ignore
-import androidx.room3.Junction
 import androidx.room3.PrimaryKey
 import androidx.room3.Relation
 import androidx.room3.compiler.processing.XExecutableElement
@@ -32,7 +31,6 @@ import androidx.room3.ext.isCollection
 import androidx.room3.ext.isNotVoid
 import androidx.room3.processor.ProcessorErrors.CANNOT_FIND_GETTER_FOR_PROPERTY
 import androidx.room3.processor.ProcessorErrors.CANNOT_FIND_SETTER_FOR_PROPERTY
-import androidx.room3.processor.ProcessorErrors.DATA_CLASS_PROPERTY_HAS_DUPLICATE_COLUMN_NAME
 import androidx.room3.processor.autovalue.AutoValueDataClassProcessorDelegate
 import androidx.room3.processor.cache.Cache
 import androidx.room3.vo.CallType
@@ -186,7 +184,7 @@ private constructor(
             propertyBindingErrors[property]?.let { context.logger.e(property.element, it) }
         }
         val unfilteredEmbeddedProperties =
-            allProperties[Embedded::class]?.mapNotNull { processEmbeddedField(declaredType, it) }
+            allProperties[Embedded::class]?.mapNotNull { processEmbeddedProperty(declaredType, it) }
                 ?: emptyList()
         val embeddedProperties =
             unfilteredEmbeddedProperties.filterNot {
@@ -194,7 +192,7 @@ private constructor(
             }
 
         val subProperties = embeddedProperties.flatMap { it.dataClass.properties }
-        val propertys = myProperties + subProperties
+        val properties = myProperties + subProperties
 
         val unfilteredCombinedProperties =
             unfilteredMyProperties + unfilteredEmbeddedProperties.map { it.property }
@@ -210,13 +208,13 @@ private constructor(
 
         val myRelationsList =
             allProperties[Relation::class]?.mapNotNull {
-                processRelationField(propertys, declaredType, it)
+                processRelationProperty(properties, declaredType, it)
             } ?: emptyList()
 
         val subRelations = embeddedProperties.flatMap { it.dataClass.relations }
         val relations = myRelationsList + subRelations
 
-        propertys
+        properties
             .groupBy { it.columnName }
             .filter { it.value.size > 1 }
             .forEach {
@@ -227,15 +225,11 @@ private constructor(
                         it.value.map(Property::getPath),
                     ),
                 )
-                it.value.forEach {
-                    context.logger.e(it.element, DATA_CLASS_PROPERTY_HAS_DUPLICATE_COLUMN_NAME)
-                }
             }
 
         val methods =
             element
                 .getAllNonPrivateInstanceMethods()
-                .asSequence()
                 .filter { !it.isAbstract() && !it.hasAnnotation(Ignore::class) }
                 .map {
                     DataClassFunctionProcessor(
@@ -282,7 +276,7 @@ private constructor(
         return delegate.createDataClass(
             element,
             declaredType,
-            propertys,
+            properties,
             embeddedProperties,
             relations,
             constructor,
@@ -321,9 +315,9 @@ private constructor(
                                     }
                                 }
 
-                            val exactFieldMatch = propertyMap[paramName]
-                            if (matches(exactFieldMatch)) {
-                                return@param Constructor.Param.PropertyParam(exactFieldMatch!!)
+                            val exactPropertyMatch = propertyMap[paramName]
+                            if (matches(exactPropertyMatch)) {
+                                return@param Constructor.Param.PropertyParam(exactPropertyMatch!!)
                             }
                             val exactEmbeddedMatch = embeddedMap[paramName]
                             if (matches(exactEmbeddedMatch?.property)) {
@@ -396,10 +390,9 @@ private constructor(
                 return null
             }
             goodConstructors.size > 1 -> {
-                // if the class is a Kotlin data class (not a POJO) then pick its primary
-                // constructor. This is better than picking the no-arg constructor and forcing
-                // users to define propertys as
-                // vars.
+                // if the class is a Kotlin data class (not a data object / POJO) then pick its
+                // primary constructor. This is better than picking the no-arg constructor and
+                // forcing users to define properties as vars.
                 val primaryConstructor =
                     element.findPrimaryConstructor()?.let { primary ->
                         goodConstructors.firstOrNull { candidate -> candidate.element == primary }
@@ -408,8 +401,7 @@ private constructor(
                     return primaryConstructor
                 }
                 // if there is a no-arg constructor, pick it. Even though it is weird, easily
-                // happens
-                // with kotlin data classes.
+                // happens with data objects.
                 val noArg = goodConstructors.firstOrNull { it.params.isEmpty() }
                 if (noArg != null) {
                     context.logger.w(
@@ -428,7 +420,7 @@ private constructor(
         }
     }
 
-    private fun processEmbeddedField(
+    private fun processEmbeddedProperty(
         declaredType: XType,
         variableElement: XFieldElement,
     ): EmbeddedProperty? {
@@ -475,26 +467,38 @@ private constructor(
         return subParent
     }
 
-    private fun processRelationField(
+    private fun processRelationProperty(
         myProperties: List<Property>,
         container: XType,
         relationElement: XFieldElement,
     ): androidx.room3.vo.Relation? {
         val annotation = relationElement.requireAnnotation(Relation::class)
 
-        val parentColumnName = annotation.getAsString("parentColumn")
-        val parentField = myProperties.firstOrNull { it.columnName == parentColumnName }
-        if (parentField == null) {
+        val parentColumnNames = annotation["parentColumns"]?.asStringList() ?: emptyList()
+        if (parentColumnNames.isEmpty()) {
             context.logger.e(
                 relationElement,
-                ProcessorErrors.relationCannotFindParentEntityProperty(
+                ProcessorErrors.RELATION_PARENT_COLUMNS_CANNOT_BE_EMPTY,
+            )
+            return null
+        }
+        val parentColumnNameToProperty =
+            parentColumnNames.associateWith { columnName ->
+                myProperties.firstOrNull { it.columnName == columnName }
+            }
+        val missingParentColumnNames = parentColumnNameToProperty.filterValues { it == null }.keys
+        if (missingParentColumnNames.isNotEmpty()) {
+            context.logger.e(
+                relationElement,
+                ProcessorErrors.relationCannotFindParentEntityProperties(
                     entityName = element.qualifiedName,
-                    columnName = parentColumnName,
+                    columnNames = missingParentColumnNames.toList(),
                     availableColumns = myProperties.map { it.columnName },
                 ),
             )
             return null
         }
+        val parentProperties = parentColumnNameToProperty.values.requireNoNulls().toList()
         // parse it as an entity.
         val asMember = relationElement.asMemberOf(container)
         val asType =
@@ -538,20 +542,32 @@ private constructor(
 
         val entity = EntityOrViewProcessor(context, entityElement, referenceStack).process()
 
-        // now find the property in the entity.
-        val entityColumnName = annotation.getAsString("entityColumn")
-        val entityField = entity.findPropertyByColumnName(entityColumnName)
-        if (entityField == null) {
+        // now find the properties in the entity.
+        val entityColumnNames = annotation["entityColumns"]?.asStringList() ?: emptyList()
+        if (entityColumnNames.isEmpty()) {
             context.logger.e(
                 relationElement,
-                ProcessorErrors.relationCannotFindEntityProperty(
+                ProcessorErrors.RELATION_ENTITY_COLUMNS_CANNOT_BE_EMPTY,
+            )
+            return null
+        }
+        val entityColumnNameToProperty =
+            entityColumnNames.associateWith { columnName ->
+                entity.findPropertyByColumnName(columnName)
+            }
+        val missingEntityColumnNames = entityColumnNameToProperty.filterValues { it == null }.keys
+        if (missingEntityColumnNames.isNotEmpty()) {
+            context.logger.e(
+                relationElement,
+                ProcessorErrors.relationCannotFindEntityProperties(
                     entityName = entity.typeName.toString(context.codeLanguage),
-                    columnName = entityColumnName,
+                    columnNames = missingEntityColumnNames.toList(),
                     availableColumns = entity.columnNames,
                 ),
             )
             return null
         }
+        val entityProperties = entityColumnNameToProperty.values.requireNoNulls().toList()
 
         // do we have a join entity?
         val junctionAnnotation = annotation["associateBy"]?.asAnnotation()
@@ -571,15 +587,7 @@ private constructor(
                 val entityOrView =
                     EntityOrViewProcessor(context, junctionElement, referenceStack).process()
 
-                fun findAndValidateJunctionColumn(
-                    columnName: String,
-                    onMissingField: () -> Unit,
-                ): Property? {
-                    val property = entityOrView.findPropertyByColumnName(columnName)
-                    if (property == null) {
-                        onMissingField()
-                        return null
-                    }
+                fun checkJunctionColumnIndex(property: Property) {
                     if (entityOrView is Entity) {
                         // warn about not having indices in the junction columns, only considering
                         // 1st column in composite primary key and indices, since order matters.
@@ -593,72 +601,90 @@ private constructor(
                                 ProcessorErrors.junctionColumnWithoutIndex(
                                     entityName =
                                         entityOrView.typeName.toString(context.codeLanguage),
-                                    columnName = columnName,
+                                    columnName = property.columnName,
                                 ),
                             )
                         }
                     }
-                    return property
                 }
 
-                val junctionParentColumnName = junctionAnnotation["parentColumn"]?.asString() ?: ""
-                val junctionParentColumn =
-                    if (junctionParentColumnName.isNotEmpty()) {
-                        junctionParentColumnName
-                    } else {
-                        parentField.columnName
-                    }
-                val junctionParentField =
-                    findAndValidateJunctionColumn(
-                        columnName = junctionParentColumn,
-                        onMissingField = {
-                            context.logger.e(
-                                junctionElement,
-                                ProcessorErrors.relationCannotFindJunctionParentProperty(
-                                    entityName =
-                                        entityOrView.typeName.toString(context.codeLanguage),
-                                    columnName = junctionParentColumn,
-                                    availableColumns = entityOrView.columnNames,
-                                ),
-                            )
-                        },
+                val junctionParentColumnNames =
+                    junctionAnnotation["parentColumns"]?.asStringList() ?: emptyList()
+                val junctionParentColumns =
+                    junctionParentColumnNames.ifEmpty { parentProperties.map { it.columnName } }
+                if (junctionParentColumns.size != parentProperties.size) {
+                    context.logger.e(
+                        junctionElement,
+                        ProcessorErrors.JUNCTION_PARENT_COLUMNS_SIZE_MISMATCH,
                     )
-
-                val junctionEntityColumnName = junctionAnnotation["entityColumn"]?.asString() ?: ""
-                val junctionEntityColumn =
-                    if (junctionEntityColumnName.isNotEmpty()) {
-                        junctionEntityColumnName
-                    } else {
-                        entityField.columnName
-                    }
-                val junctionEntityField =
-                    findAndValidateJunctionColumn(
-                        columnName = junctionEntityColumn,
-                        onMissingField = {
-                            context.logger.e(
-                                junctionElement,
-                                ProcessorErrors.relationCannotFindJunctionEntityProperty(
-                                    entityName =
-                                        entityOrView.typeName.toString(context.codeLanguage),
-                                    columnName = junctionEntityColumn,
-                                    availableColumns = entityOrView.columnNames,
-                                ),
-                            )
-                        },
-                    )
-
-                if (junctionParentField == null || junctionEntityField == null) {
                     return null
                 }
+                val junctionParentColumnNameToProperty =
+                    junctionParentColumns.associateWith { columnName ->
+                        entityOrView.findPropertyByColumnName(columnName)
+                    }
+                val missingJunctionParentColumnNames =
+                    junctionParentColumnNameToProperty.filterValues { it == null }.keys
+                if (missingJunctionParentColumnNames.isNotEmpty()) {
+                    context.logger.e(
+                        junctionElement,
+                        ProcessorErrors.relationCannotFindJunctionParentProperties(
+                            entityName = entityOrView.typeName.toString(context.codeLanguage),
+                            columnNames = missingJunctionParentColumnNames.toList(),
+                            availableColumns = entityOrView.columnNames,
+                        ),
+                    )
+                    return null
+                }
+                val junctionParentProperties =
+                    junctionParentColumnNameToProperty.values.requireNoNulls().toList()
+                junctionParentProperties.forEach { checkJunctionColumnIndex(it) }
+
+                val junctionEntityColumnNames =
+                    junctionAnnotation["entityColumns"]?.asStringList() ?: emptyList()
+                val junctionEntityColumns =
+                    junctionEntityColumnNames.ifEmpty { entityProperties.map { it.columnName } }
+                if (junctionEntityColumns.size != entityProperties.size) {
+                    context.logger.e(
+                        junctionElement,
+                        ProcessorErrors.JUNCTION_ENTITY_COLUMNS_SIZE_MISMATCH,
+                    )
+                    return null
+                }
+                val junctionEntityColumnNameToProperty =
+                    junctionEntityColumns.associateWith { columnName ->
+                        entityOrView.findPropertyByColumnName(columnName)
+                    }
+                val missingJunctionEntityColumnNames =
+                    junctionEntityColumnNameToProperty.filterValues { it == null }.keys
+                if (missingJunctionEntityColumnNames.isNotEmpty()) {
+                    context.logger.e(
+                        junctionElement,
+                        ProcessorErrors.relationCannotFindJunctionEntityProperties(
+                            entityName = entityOrView.typeName.toString(context.codeLanguage),
+                            columnNames = missingJunctionEntityColumnNames.toList(),
+                            availableColumns = entityOrView.columnNames,
+                        ),
+                    )
+                    return null
+                }
+                val junctionEntityProperties =
+                    junctionEntityColumnNameToProperty.values.requireNoNulls().toList()
+                junctionEntityProperties.forEach { checkJunctionColumnIndex(it) }
 
                 androidx.room3.vo.Junction(
                     entity = entityOrView,
-                    parentProperty = junctionParentField,
-                    entityProperty = junctionEntityField,
+                    parentProperties = junctionParentProperties,
+                    entityProperties = junctionEntityProperties,
                 )
             } else {
                 null
             }
+
+        if (junction == null && entityColumnNames.size != parentColumnNames.size) {
+            context.logger.e(relationElement, ProcessorErrors.RELATION_COLUMNS_SIZE_MISMATCH)
+            return null
+        }
 
         val property =
             Property(
@@ -673,7 +699,13 @@ private constructor(
         val projection =
             if (projectionNames.isEmpty()) {
                 // we need to infer the projection from inputs.
-                createRelationshipProjection(inferEntity, asType, entity, entityField, typeElement)
+                createRelationshipProjection(
+                    inferEntity,
+                    asType,
+                    entity,
+                    entityProperties,
+                    typeElement,
+                )
             } else {
                 // make sure projection makes sense
                 validateRelationshipProjection(projectionNames, entity, relationElement)
@@ -684,8 +716,8 @@ private constructor(
             entity = entity,
             dataClassType = asType,
             property = property,
-            parentProperty = parentField,
-            entityProperty = entityField,
+            parentProperties = parentProperties,
+            entityProperties = entityProperties,
             junction = junction,
             projection = projection,
         )
@@ -696,7 +728,7 @@ private constructor(
         entity: EntityOrView,
         relationElement: XVariableElement,
     ) {
-        val missingColumns = projectionInput.toList() - entity.columnNames
+        val missingColumns = projectionInput.toList() - entity.columnNames.toSet()
         if (missingColumns.isNotEmpty()) {
             context.logger.e(
                 relationElement,
@@ -712,16 +744,17 @@ private constructor(
     /**
      * Create the projection column list based on the relationship args.
      *
-     * if entity property in the annotation is not specified, it is the method return type if it is
-     * specified in the annotation: still check the method return type, if the same, use it if not,
-     * check to see if we can find a column Adapter, if so use the childField last resort, try to
-     * parse it as a data class to infer it.
+     * if entity property in the annotation is not specified, it is the return type of the annotated
+     * element, if it is specified in the annotation: still check the element return type, if the
+     * same use it, if not then check to see if we can find a column Adapter, if there is one and
+     * there is a single child property use it, as last resort try to parse it as a data class to
+     * infer it.
      */
     private fun createRelationshipProjection(
         inferEntity: Boolean,
         typeArg: XType,
         entity: EntityOrView,
-        entityField: Property,
+        entityProperties: List<Property>,
         typeArgElement: XTypeElement,
     ): List<String> {
         return if (inferEntity || typeArg.asTypeName() == entity.typeName) {
@@ -729,8 +762,17 @@ private constructor(
         } else {
             val columnAdapter = context.typeAdapterStore.findStatementValueReader(typeArg, null)
             if (columnAdapter != null) {
-                // nice, there is a column adapter for this, assume single column response
-                listOf(entityField.name)
+                // there is a column adapter for this, assume single column response and if there
+                // is one child column, use it, otherwise we ask for projection.
+                if (entityProperties.size == 1) {
+                    listOf(entityProperties.single().name)
+                } else {
+                    context.logger.e(
+                        typeArgElement,
+                        ProcessorErrors.RELATION_CANNOT_INFER_PROJECTION_FOR_COMPOSITE_RELATION,
+                    )
+                    emptyList()
+                }
             } else {
                 // last resort, it needs to be a data class
                 val dataClass =
@@ -774,10 +816,10 @@ private constructor(
     }
 
     private fun assignGetters(
-        propertys: List<Property>,
+        properties: List<Property>,
         getterCandidates: List<DataClassFunction>,
     ) {
-        propertys.forEach { property -> assignGetter(property, getterCandidates) }
+        properties.forEach { property -> assignGetter(property, getterCandidates) }
     }
 
     private fun assignGetter(property: Property, getterCandidates: List<DataClassFunction>) {
@@ -846,11 +888,11 @@ private constructor(
     }
 
     private fun assignSetters(
-        propertys: List<Property>,
+        properties: List<Property>,
         setterCandidates: List<DataClassFunction>,
         constructor: Constructor?,
     ) {
-        propertys.forEach { property -> assignSetter(property, setterCandidates, constructor) }
+        properties.forEach { property -> assignSetter(property, setterCandidates, constructor) }
     }
 
     private fun assignSetter(

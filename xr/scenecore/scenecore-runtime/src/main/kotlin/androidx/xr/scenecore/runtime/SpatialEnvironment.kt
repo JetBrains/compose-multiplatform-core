@@ -28,7 +28,7 @@ import java.util.function.Consumer
  * visibility by enabling or disabling passthrough. The skybox and geometry will be remembered
  * across passthrough mode changes.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public interface SpatialEnvironment {
     /**
      * Gets the current passthrough opacity value between 0 and 1 where 0.0f means no passthrough,
@@ -131,25 +131,19 @@ public interface SpatialEnvironment {
      * A class that represents the user's preferred spatial environment.
      *
      * @param geometry the preferred geometry for the environment based on a pre-loaded glTF model.
-     *   If null, there will be no geometry.
+     *   If null, there will be no geometry if no other geometry entity is passed.
      * @param skybox the preferred skybox for the environment based on a pre-loaded EXR Image. If
      *   null, it will be all black.
-     * @param geometryMaterial the material to override a given mesh in the geometry. If null, the
-     *   material will not override any mesh.
-     * @param geometryNodeName the name of the node that contains the mesh to override with the
-     *   material. If null, the material will not override any mesh.
-     * @param geometryAnimationName the name of the animation to play on the geometry. If null, the
-     *   geometry will not play any animation. Note that the animation will be played in loop.
+     * @param geometryEntity the preferred geometry Entity for the environment. If null, there will
+     *   be no geometry if no other geometry resource is passed.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public class SpatialEnvironmentPreference
     @JvmOverloads
     constructor(
         public val skybox: ExrImageResource?,
         public val geometry: GltfModelResource?,
-        public val geometryMaterial: MaterialResource? = null,
-        public val geometryNodeName: String? = null,
-        public val geometryAnimationName: String? = null,
+        public val geometryEntity: GltfEntity? = null,
     ) {
         override fun equals(other: Any?): Boolean {
             if (this === other) return true
@@ -157,17 +151,15 @@ public interface SpatialEnvironment {
 
             return skybox == other.skybox &&
                 geometry == other.geometry &&
-                geometryMaterial == other.geometryMaterial &&
-                geometryNodeName == other.geometryNodeName &&
-                geometryAnimationName == other.geometryAnimationName
+                geometryEntity == other.geometryEntity
         }
 
         override fun hashCode(): Int {
-            return Objects.hash(skybox, geometry)
+            return Objects.hash(skybox, geometry, geometryEntity)
         }
     }
 
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public companion object {
         /**
          * Passed into [preferredPassthroughOpacity] to clear the application's passthrough opacity

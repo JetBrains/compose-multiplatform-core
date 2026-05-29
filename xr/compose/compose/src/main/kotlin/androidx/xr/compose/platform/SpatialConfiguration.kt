@@ -20,6 +20,7 @@ import android.content.Context
 import androidx.compose.runtime.ProvidableCompositionLocal
 import androidx.compose.runtime.compositionLocalWithComputedDefaultOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
@@ -28,6 +29,9 @@ import androidx.xr.compose.unit.DpVolumeSize
 import androidx.xr.compose.unit.toDpVolumeSize
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.manifest.FEATURE_XR_API_SPATIAL
+import androidx.xr.runtime.math.Pose
+import androidx.xr.scenecore.Entity
+import androidx.xr.scenecore.Space
 import androidx.xr.scenecore.scene
 
 /**
@@ -46,7 +50,7 @@ public val LocalSpatialConfiguration: ProvidableCompositionLocal<SpatialConfigur
 /**
  * Provides information and functionality related to the spatial configuration of the application.
  */
-public interface SpatialConfiguration {
+public sealed interface SpatialConfiguration {
     /**
      * A volume whose width, height, and depth represent the space available to the application.
      *
@@ -61,7 +65,6 @@ public interface SpatialConfiguration {
      * This is a state-based value that will trigger recomposition.
      */
     public val bounds: DpVolumeSize
-        get() = DpVolumeSize.Zero
 
     /**
      * XR Spatial APIs are supported for this system. This is equivalent to
@@ -71,7 +74,6 @@ public interface SpatialConfiguration {
     @Suppress("INAPPLICABLE_JVM_NAME")
     @get:JvmName("hasXrSpatialFeature")
     public val hasXrSpatialFeature: Boolean
-        get() = false
 
     /**
      * Request that the system places the application into home space mode. This will execute
@@ -83,11 +85,7 @@ public interface SpatialConfiguration {
      *
      * See [modes in XR](https://developer.android.com/design/ui/xr/guides/foundations#modes).
      */
-    public fun requestHomeSpaceMode() {
-        throw UnsupportedOperationException(
-            "Cannot request mode changes when not in an Android XR environment."
-        )
-    }
+    @Deprecated("Use Activity.requestHomeSpace.") public fun requestHomeSpaceMode()
 
     /**
      * Request that the system places the application into full space mode. This will execute
@@ -100,17 +98,15 @@ public interface SpatialConfiguration {
      *
      * See [modes in XR](https://developer.android.com/design/ui/xr/guides/foundations#modes).
      */
-    public fun requestFullSpaceMode() {
-        throw UnsupportedOperationException(
-            "Cannot request mode changes when not in an Android XR environment."
-        )
-    }
+    @Deprecated("Use Activity.requestFullSpace.") public fun requestFullSpaceMode()
 
     public companion object {
         /**
          * XR Spatial APIs are supported for this system. This is equivalent to
          * PackageManager.hasSystemFeature(FEATURE_XR_API_SPATIAL). When this feature is available,
          * it is safe to assume we are in an XR environment.
+         *
+         * @param context The application or activity context used to check for the system feature.
          */
         public fun hasXrSpatialFeature(context: Context): Boolean {
             return context.packageManager.hasSystemFeature(FEATURE_XR_API_SPATIAL)
@@ -123,6 +119,20 @@ private class ContextOnlySpatialConfiguration(private val context: Context) : Sp
     override val hasXrSpatialFeature: Boolean
         get() = SpatialConfiguration.hasXrSpatialFeature(context)
 
+    @Deprecated("Use Activity.requestHomeSpace.")
+    override fun requestHomeSpaceMode() {
+        throw UnsupportedOperationException(
+            "Cannot request mode changes when not in an Android XR environment."
+        )
+    }
+
+    @Deprecated("Use Activity.requestFullSpace.")
+    override fun requestFullSpaceMode() {
+        throw UnsupportedOperationException(
+            "Cannot request mode changes when not in an Android XR environment."
+        )
+    }
+
     override val bounds: DpVolumeSize
         get() =
             DpVolumeSize(
@@ -133,22 +143,77 @@ private class ContextOnlySpatialConfiguration(private val context: Context) : Sp
 }
 
 /** A [SpatialConfiguration] that is attached to the current [Session]. */
-internal class SessionSpatialConfiguration(private val session: Session) : SpatialConfiguration {
+internal class SessionSpatialConfiguration(
+    private val session: Session,
+    private val subspaceRootNode: Entity,
+) : SpatialConfiguration {
     private var boundsState by
         mutableStateOf(session.scene.activitySpace.bounds).apply {
-            session.scene.activitySpace.addOnBoundsChangedListener { value = it }
+            session.scene.activitySpace.addBoundsChangedListener { value = it }
         }
+
+    private val recommendedPoseState =
+        mutableStateOf(
+            try {
+                session.scene.keyEntity?.getPose(relativeTo = Space.ACTIVITY) ?: Pose.Identity
+            } catch (_: RuntimeException) {
+                Pose.Identity
+            }
+        )
+
+    private val recommendedScaleState =
+        mutableFloatStateOf(
+            try {
+                session.scene.keyEntity?.getScale(relativeTo = Space.ACTIVITY) ?: 1f
+            } catch (_: RuntimeException) {
+                1f
+            }
+        )
+
+    init {
+        session.scene.setSpaceChangedListener { event ->
+            recommendedPoseState.value = event.recommendedPose
+            recommendedScaleState.floatValue = event.recommendedScale
+            subspaceRootNode.setPose(pose = recommendedPoseState.value, relativeTo = Space.ACTIVITY)
+            subspaceRootNode.setScale(
+                scale = recommendedScaleState.floatValue,
+                relativeTo = Space.ACTIVITY,
+            )
+        }
+    }
 
     override val hasXrSpatialFeature: Boolean = true
 
     override val bounds: DpVolumeSize
         get() = boundsState.toDpVolumeSize()
 
+    /**
+     * The recommended pose for the application, provided by the system.
+     *
+     * This value may change when the system adjusts, such as during a Spatial Mode transition
+     * between Home Space Mode and Full Space Mode or recentering or launching a new activity.
+     * Reading this property inside a Composable will trigger recomposition when the pose changes.
+     */
+    internal val recommendedPose: Pose
+        get() = recommendedPoseState.value
+
+    /**
+     * The recommended scale for the application, provided by the system.
+     *
+     * This value may change when the system adjusts, such as during a Spatial Mode transition
+     * between Home Space Mode and Full Space Mode or recentering or launching a new activity.
+     * Reading this property inside a Composable will trigger recomposition when the scale changes.
+     */
+    internal val recommendedScale: Float
+        get() = recommendedScaleState.floatValue
+
+    @Deprecated("Use Activity.requestHomeSpace.")
     override fun requestHomeSpaceMode() {
-        session.scene.requestHomeSpaceMode()
+        session.scene.requestHomeSpace()
     }
 
+    @Deprecated("Use Activity.requestFullSpace.")
     override fun requestFullSpaceMode() {
-        session.scene.requestFullSpaceMode()
+        session.scene.requestFullSpace()
     }
 }

@@ -22,6 +22,7 @@ import androidx.camera.core.CameraSelector
 import androidx.camera.core.CameraSelector.LENS_FACING_BACK
 import androidx.camera.core.CameraSelector.LENS_FACING_FRONT
 import androidx.camera.core.CameraXConfig
+import androidx.camera.core.CompositionSettings
 import androidx.camera.core.ConcurrentCamera.SingleCameraConfig
 import androidx.camera.core.Preview
 import androidx.camera.core.UseCaseGroup
@@ -47,10 +48,12 @@ import org.junit.After
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
+@Config(sdk = [Config.ALL_SDKS])
 class ConcurrentCameraTest {
     private val context = ApplicationProvider.getApplicationContext() as Context
     private lateinit var provider: ProcessCameraProvider
@@ -320,6 +323,126 @@ class ConcurrentCameraTest {
         }
     }
 
+    @Test
+    fun setCompositionSettings_updatesSettings(): Unit = runBlocking {
+        ProcessCameraProvider.configureInstance(createConcurrentCameraAppConfig())
+
+        provider = ProcessCameraProvider.getInstance(context).await()
+        val useCase0 = Preview.Builder().build()
+        val useCase1 =
+            FakeUseCase(
+                FakeUseCaseConfig.Builder(CaptureType.VIDEO_CAPTURE).useCaseConfig,
+                CaptureType.VIDEO_CAPTURE,
+            )
+
+        val singleCameraConfig0 =
+            SingleCameraConfig(
+                CameraSelector.DEFAULT_BACK_CAMERA,
+                UseCaseGroup.Builder().addUseCase(useCase0).addUseCase(useCase1).build(),
+                lifecycleOwner0,
+            )
+        val singleCameraConfig1 =
+            SingleCameraConfig(
+                CameraSelector.DEFAULT_FRONT_CAMERA,
+                UseCaseGroup.Builder().addUseCase(useCase0).addUseCase(useCase1).build(),
+                lifecycleOwner1,
+            )
+
+        if (context.packageManager.hasSystemFeature(FEATURE_CAMERA_CONCURRENT)) {
+            val concurrentCamera =
+                provider.bindToLifecycle(listOf(singleCameraConfig0, singleCameraConfig1))
+
+            val primarySettings =
+                CompositionSettings.Builder()
+                    .setAlpha(0.5f)
+                    .setOffset(0.1f, 0.1f)
+                    .setScale(0.5f, 0.5f)
+                    .build()
+            val secondarySettings =
+                CompositionSettings.Builder()
+                    .setAlpha(0.8f)
+                    .setOffset(-0.1f, -0.1f)
+                    .setScale(0.3f, 0.3f)
+                    .build()
+
+            concurrentCamera.setCompositionSettings(listOf(primarySettings, secondarySettings))
+
+            val camera = concurrentCamera.cameras[0]
+            val adapter = (camera as LifecycleCamera).cameraUseCaseAdapter
+            assertThat(adapter.compositionSettings[0].alpha).isEqualTo(0.5f)
+            assertThat(adapter.compositionSettings[1].alpha).isEqualTo(0.8f)
+        }
+    }
+
+    @Test
+    fun setCompositionSettings_throwsIfSizeNotTwo(): Unit = runBlocking {
+        ProcessCameraProvider.configureInstance(createConcurrentCameraAppConfig())
+
+        provider = ProcessCameraProvider.getInstance(context).await()
+        val useCase0 = Preview.Builder().build()
+        val useCase1 =
+            FakeUseCase(
+                FakeUseCaseConfig.Builder(CaptureType.VIDEO_CAPTURE).useCaseConfig,
+                CaptureType.VIDEO_CAPTURE,
+            )
+
+        val singleCameraConfig0 =
+            SingleCameraConfig(
+                CameraSelector.DEFAULT_BACK_CAMERA,
+                UseCaseGroup.Builder().addUseCase(useCase0).addUseCase(useCase1).build(),
+                lifecycleOwner0,
+            )
+        val singleCameraConfig1 =
+            SingleCameraConfig(
+                CameraSelector.DEFAULT_FRONT_CAMERA,
+                UseCaseGroup.Builder().addUseCase(useCase0).addUseCase(useCase1).build(),
+                lifecycleOwner1,
+            )
+
+        if (context.packageManager.hasSystemFeature(FEATURE_CAMERA_CONCURRENT)) {
+            val concurrentCamera =
+                provider.bindToLifecycle(listOf(singleCameraConfig0, singleCameraConfig1))
+
+            assertThrows<IllegalArgumentException> {
+                concurrentCamera.setCompositionSettings(listOf(CompositionSettings.DEFAULT))
+            }
+        }
+    }
+
+    @Test
+    fun setCompositionSettings_throwsIfNotInCompositionMode(): Unit = runBlocking {
+        ProcessCameraProvider.configureInstance(createConcurrentCameraAppConfig())
+
+        provider = ProcessCameraProvider.getInstance(context).await()
+        val useCase0 = Preview.Builder().build()
+        val useCase1 = Preview.Builder().build()
+
+        val singleCameraConfig0 =
+            SingleCameraConfig(
+                CameraSelector.DEFAULT_BACK_CAMERA,
+                UseCaseGroup.Builder().addUseCase(useCase0).build(),
+                lifecycleOwner0,
+            )
+        val singleCameraConfig1 =
+            SingleCameraConfig(
+                CameraSelector.DEFAULT_FRONT_CAMERA,
+                UseCaseGroup.Builder().addUseCase(useCase1).build(),
+                lifecycleOwner1,
+            )
+
+        if (context.packageManager.hasSystemFeature(FEATURE_CAMERA_CONCURRENT)) {
+            val concurrentCamera =
+                provider.bindToLifecycle(listOf(singleCameraConfig0, singleCameraConfig1))
+
+            // Non-composition mode because different use cases
+            assertThrows<IllegalStateException> {
+                concurrentCamera.setCompositionSettings(
+                    listOf(CompositionSettings.DEFAULT, CompositionSettings.DEFAULT)
+                )
+            }
+        }
+    }
+
     private fun createConcurrentCameraAppConfig(): CameraXConfig {
         val combination0 =
             mapOf(
@@ -352,8 +475,8 @@ class ConcurrentCameraTest {
         val appConfigBuilder =
             CameraXConfig.Builder()
                 .setCameraFactoryProvider(cameraFactoryProvider)
-                .setDeviceSurfaceManagerProvider { _, _, _ -> FakeCameraDeviceSurfaceManager() }
-                .setUseCaseConfigFactoryProvider { FakeUseCaseConfigFactory() }
+                .setDeviceSurfaceManagerProvider { _, _, _, _ -> FakeCameraDeviceSurfaceManager() }
+                .setUseCaseConfigFactoryProvider { _, _ -> FakeUseCaseConfigFactory() }
 
         return appConfigBuilder.build()
     }

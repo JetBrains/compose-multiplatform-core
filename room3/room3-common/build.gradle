@@ -15,10 +15,9 @@
  */
 
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
 
@@ -45,45 +44,18 @@ androidXMultiplatform {
     defaultPlatform(PlatformIdentifier.JVM)
 
     sourceSets {
-        commonMain {
-            dependencies {
-                api(libs.kotlinStdlib)
-                api("androidx.annotation:annotation:1.9.1")
-            }
+        commonMain.dependencies {
+            api("androidx.annotation:annotation:1.9.1")
         }
 
-        commonTest {
-            dependencies {
-                implementation(project(":kruth:kruth"))
-                implementation(libs.kotlinTest)
-            }
+        commonTest.dependencies {
+            implementation(project(":kruth:kruth"))
+            implementation(libs.kotlinTest)
         }
 
-        jvmMain {
-            dependsOn(commonMain)
-        }
-
-        jvmTest {
-            dependsOn(commonTest)
-            dependencies {
-                implementation(libs.guava)
-                implementation(libs.kotlinTestJunit)
-            }
-        }
-
-        nativeMain {
-            dependsOn(commonMain)
-        }
-
-        nativeTest {
-            dependsOn(commonTest)
-        }
-
-        targets.configureEach { target ->
-            if (target.platformType == KotlinPlatformType.native) {
-                target.compilations["main"].defaultSourceSet.dependsOn(nativeMain)
-                target.compilations["test"].defaultSourceSet.dependsOn(nativeTest)
-            }
+        jvmTest.dependencies {
+            implementation(libs.guava)
+            implementation(libs.kotlinTestJunit)
         }
     }
 }
@@ -93,5 +65,4 @@ androidx {
     type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2017"
     description = "Android Room-Common"
-    kotlinTarget = KotlinTarget.KOTLIN_2_1
 }

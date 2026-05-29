@@ -16,314 +16,80 @@
 
 package androidx.xr.compose.testing
 
-import android.app.Activity
-import android.content.pm.PackageManager
-import android.os.Build
-import androidx.annotation.RestrictTo
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.junit4.AndroidComposeTestRule
-import androidx.lifecycle.DefaultLifecycleObserver
-import androidx.lifecycle.LifecycleOwner
-import androidx.xr.arcore.testing.FakePerceptionRuntimeFactory
-import androidx.xr.compose.platform.LocalSession
-import androidx.xr.compose.platform.LocalSpatialCapabilities
-import androidx.xr.compose.platform.LocalSpatialConfiguration
-import androidx.xr.compose.platform.SceneManager
-import androidx.xr.compose.platform.SpatialCapabilities
-import androidx.xr.compose.platform.SpatialConfiguration
-import androidx.xr.compose.unit.DpVolumeSize
-import androidx.xr.compose.unit.Meter
-import androidx.xr.runtime.Session
-import androidx.xr.runtime.math.FloatSize3d
-import androidx.xr.scenecore.SpatialCapabilities.Companion.SPATIAL_CAPABILITY_3D_CONTENT
-import androidx.xr.scenecore.SpatialCapabilities.Companion.SPATIAL_CAPABILITY_APP_ENVIRONMENT
-import androidx.xr.scenecore.SpatialCapabilities.Companion.SPATIAL_CAPABILITY_PASSTHROUGH_CONTROL
-import androidx.xr.scenecore.SpatialCapabilities.Companion.SPATIAL_CAPABILITY_SPATIAL_AUDIO
-import androidx.xr.scenecore.SpatialCapabilities.Companion.SPATIAL_CAPABILITY_UI
-import androidx.xr.scenecore.impl.extensions.XrExtensionsProvider
-import androidx.xr.scenecore.runtime.SceneRuntime
-import androidx.xr.scenecore.scene
-import androidx.xr.scenecore.testing.FakeRenderingRuntime
-import androidx.xr.scenecore.testing.FakeSceneRuntimeFactory
-import androidx.xr.scenecore.testing.FakeScheduledExecutorService
-import com.android.extensions.xr.ShadowConfig
-import java.lang.reflect.Method
-import java.util.concurrent.ScheduledExecutorService
-
-private object SubspaceAndroidComposeTestRuleConstants {
-    const val DEFAULT_DP_PER_METER = 1151.856f
-
-    const val USE_REAL_RUNTIME = "androidx.xr.compose.testing.USE_REAL_RUNTIME"
-}
 
 /**
- * Analog to [AndroidComposeTestRule.setContent] for testing content in XR. This creates the minimum
- * environment necessary for testing content in XR.
+ * Finds a semantics node in the Subspace hierarchy that matches the given condition.
  *
- * If an XR [Session] is not already created and assigned using [AndroidComposeTestRule.session],
- * then a test XR [Session] will be created.
+ * This function only locates nodes within the Subspace hierarchy and does not include nodes from
+ * standard 2D compose contexts. For example, it targets `SpatialPanel`, `SpatialRow`, or
+ * `SpatialColumn` nodes but not standard `Row`, `Column`, or `Text` nodes. For locating 2D nodes,
+ * use `AndroidComposeTestRule.onNode`.
  *
- * @param content The content to render to the test [Activity].
+ * Any subsequent operation on the returned interaction expects exactly one element to be found
+ * (unless `SubspaceSemanticsNodeInteraction.assertDoesNotExist` is used) and throws an
+ * `AssertionError` if zero or multiple elements are found.
+ *
+ * @sample androidx.xr.compose.testing.samples.subspacePanelRenderedAndInteractive
+ * @sample androidx.xr.compose.testing.samples.subspaceNodeMatcherProperties
+ * @param matcher the `SubspaceSemanticsMatcher` used to identify the matching semantics node.
+ * @return the `SubspaceSemanticsNodeInteraction` for the matched node.
+ * @see AndroidComposeTestRule.onAllSubspaceNodes
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public fun AndroidComposeTestRule<*, *>.setContentWithCompatibilityForXr(
-    content: @Composable () -> Unit
-) {
-    SceneManager.start()
-    ShadowConfig.extract(XrExtensionsProvider.getXrExtensions()!!.config!!)
-        .setDefaultDpPerMeter(SubspaceAndroidComposeTestRuleConstants.DEFAULT_DP_PER_METER)
-
-    if (session == null) {
-        session = createTestSession(activity)
-    }
-
-    activity.lifecycle.addObserver(
-        object : DefaultLifecycleObserver {
-            override fun onDestroy(owner: LifecycleOwner) {
-                SceneManager.stop()
-                activity.session = null
-                owner.lifecycle.removeObserver(this)
-                super.onDestroy(owner)
-            }
-        }
-    )
-
-    setContent {
-        CompositionLocalProvider(
-            LocalSession provides session!!,
-            LocalSpatialConfiguration provides TestSessionSpatialConfiguration(session!!),
-            LocalSpatialCapabilities provides TestSessionSpatialCapabilities(session!!),
-            content = content,
-        )
-    }
-}
-
-/**
- * The XR [Session] for the current [androidx.compose.ui.test.junit4.AndroidComposeTestRule].
- *
- * This will be null until the value is set or [setContentWithCompatibilityForXr] is called, after
- * which the value will be non-null and return the current [Session]. Setting this value after
- * calling [setContentWithCompatibilityForXr] will not change the Session that is used for that
- * content block. Setting the value to null will indicate that the default test Session should be
- * used.
- */
-public var AndroidComposeTestRule<*, *>.session: Session?
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) get() = activity.session
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-    set(value) {
-        activity.session = value
-    }
-
-private var Activity.session: Session?
-    get() = window.decorView.getTag(R.id.xr_session) as? Session
-    set(value) {
-        window.decorView.setTag(R.id.xr_session, value)
-    }
-
-/**
- * Finds a semantics node (in the Subspace hierarchy) that matches the given condition.
- *
- * This only locates nodes in the Subspace hierarchy and will not include nodes from 2D compose
- * contexts. For example, it will return SpatialPanel, SpatialRow, or SpatialColumn nodes, but it
- * will not return Row, Column, or Text nodes. For 2D nodes, use [AndroidComposeTestRule.onNode].
- *
- * Any subsequent operation on its result will expect exactly one element found (unless
- * [SubspaceSemanticsNodeInteraction.assertDoesNotExist] is used) and will throw an [AssertionError]
- * if none or more than one element is found.
- *
- * For usage patterns and semantics concepts see [SubspaceSemanticsNodeInteraction]
- *
- * @param matcher Matcher used for filtering
- * @see onAllSubspaceNodes to work with multiple elements
- */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun AndroidComposeTestRule<*, *>.onSubspaceNode(
     matcher: SubspaceSemanticsMatcher
 ): SubspaceSemanticsNodeInteraction =
     SubspaceSemanticsNodeInteraction(SubspaceTestContext(this), matcher)
 
 /**
- * Finds all semantics nodes (in the Subspace hierarchy) that match the given condition.
+ * Finds all semantics nodes in the Subspace hierarchy that match the given condition.
  *
- * This only locates nodes in the Subspace hierarchy and will not include nodes from 2D compose
- * contexts. For example, it will return SpatialPanel, SpatialRow, or SpatialColumn nodes, but it
- * will not return Row, Column, or Text nodes. For 2D nodes, use [AndroidComposeTestRule.onNode].
+ * This function only locates nodes within the Subspace hierarchy and does not include nodes from
+ * standard 2D compose contexts. For locating 2D nodes, use `AndroidComposeTestRule.onAllNodes`. If
+ * you are dealing with elements guaranteed to occur exactly once, prefer using `onSubspaceNode` to
+ * enforce uniqueness constraints and improve clarity.
  *
- * If you are working with elements that are not supposed to occur multiple times use
- * [onSubspaceNode] instead.
- *
- * For usage patterns and semantics concepts see [SubspaceSemanticsNodeInteraction]
- *
- * @param matcher Matcher used for filtering.
- * @see onSubspaceNode
+ * @sample androidx.xr.compose.testing.samples.subspacePanelRenderedAndInteractive
+ * @sample androidx.xr.compose.testing.samples.subspaceNodeMatcherProperties
+ * @param matcher the `SubspaceSemanticsMatcher` used to filter the semantics nodes.
+ * @return the `SubspaceSemanticsNodeInteractionCollection` containing all matching nodes.
+ * @see AndroidComposeTestRule.onSubspaceNode
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun AndroidComposeTestRule<*, *>.onAllSubspaceNodes(
     matcher: SubspaceSemanticsMatcher
 ): SubspaceSemanticsNodeInteractionCollection =
     SubspaceSemanticsNodeInteractionCollection(SubspaceTestContext(this), matcher)
 
 /**
- * Finds a semantics node (in the Subspace hierarchy) identified by the given tag.
+ * Finds a semantics node in the Subspace hierarchy identified by the provided test tag.
  *
- * This only locates nodes in the Subspace hierarchy and will not include nodes from 2D compose
- * contexts. For example, it will return SpatialPanel, SpatialRow, or SpatialColumn nodes, but it
- * will not return Row, Column, or Text nodes. For 2D nodes, use [AndroidComposeTestRule.onNode].
+ * This convenience function specifically searches for nodes within the Subspace hierarchy and does
+ * not locate standard 2D compose elements. The search evaluates for an exact string match on the
+ * test tag.
  *
- * For usage patterns and semantics concepts see [SubspaceSemanticsNodeInteraction]
- *
- * @param testTag The tag to search for. Looks for an exact match only.
- * @see onSubspaceNode for more information.
+ * @sample androidx.xr.compose.testing.samples.subspacePanelRenderedAndInteractive
+ * @sample androidx.xr.compose.testing.samples.subspaceNodeMatcherProperties
+ * @param testTag the specific tag string to search for within the hierarchy.
+ * @return the `SubspaceSemanticsNodeInteraction` for the matched node.
+ * @see AndroidComposeTestRule.onSubspaceNode
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun AndroidComposeTestRule<*, *>.onSubspaceNodeWithTag(
     testTag: String
 ): SubspaceSemanticsNodeInteraction = onSubspaceNode(hasTestTag(testTag))
 
 /**
- * Finds all semantics nodes (in the Subspace hierarchy) identified by the given tag.
+ * Finds all semantics nodes in the Subspace hierarchy identified by the provided test tag.
  *
- * This only locates nodes in the Subspace hierarchy and will not include nodes from 2D compose
- * contexts. For example, it will return SpatialPanel, SpatialRow, or SpatialColumn nodes, but it
- * will not return Row, Column, or Text nodes. For 2D nodes, use [AndroidComposeTestRule.onNode].
+ * This convenience function specifically searches for nodes within the Subspace hierarchy and does
+ * not locate standard 2D compose elements. The search evaluates for an exact string match on the
+ * test tag.
  *
- * For usage patterns and semantics concepts see [SubspaceSemanticsNodeInteraction]
- *
- * @param testTag The tag to search for. Looks for an exact matches only.
- * @see onSubspaceNode for more information.
+ * @sample androidx.xr.compose.testing.samples.subspacePanelRenderedAndInteractive
+ * @sample androidx.xr.compose.testing.samples.subspaceNodeMatcherProperties
+ * @param testTag the specific tag string to search for within the hierarchy.
+ * @return the `SubspaceSemanticsNodeInteractionCollection` containing all matching nodes.
+ * @see AndroidComposeTestRule.onAllSubspaceNodes
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun AndroidComposeTestRule<*, *>.onAllSubspaceNodesWithTag(
     testTag: String
 ): SubspaceSemanticsNodeInteractionCollection = onAllSubspaceNodes(hasTestTag(testTag))
-
-/**
- * Create a [Session] for testing.
- *
- * @param activity The [Activity] to use for the [Session].
- */
-private fun createTestSession(activity: Activity): Session =
-    createTestRuntime(activity).let { sceneRuntime ->
-        Session(
-            activity,
-            runtimes =
-                listOf(
-                    FakePerceptionRuntimeFactory().createRuntime(activity).apply {
-                        lifecycleManager.create()
-                    },
-                    sceneRuntime,
-                    FakeRenderingRuntime(sceneRuntime),
-                ),
-        )
-    }
-
-/**
- * Create a fake [androidx.xr.scenecore.runtime.SceneRuntime] for testing.
- *
- * A convenience method that creates a fake SpatialSceneRuntime for testing.
- *
- * @param activity The [Activity] to use for the [androidx.xr.scenecore.runtime.SceneRuntime].
- */
-private fun createTestRuntime(activity: Activity): SceneRuntime {
-    if (shouldUseRealRuntime(activity)) {
-        // Check version to pass lint rule, "BanUncheckedReflection".
-        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.N) {
-            try {
-                // TODO (b/442359966): Use FakeSceneRuntime instead.
-                val spatialSceneRuntimeClass =
-                    Class.forName("androidx.xr.scenecore.spatial.core.SpatialSceneRuntime")
-
-                val createMethod: Method? =
-                    spatialSceneRuntimeClass.getDeclaredMethod(
-                        "create",
-                        Activity::class.java,
-                        ScheduledExecutorService::class.java,
-                    )
-                createMethod!!.isAccessible = true
-                return createMethod.invoke(null, activity, FakeScheduledExecutorService())
-                    as SceneRuntime
-            } catch (e: Exception) {
-                throw e
-            }
-        } else {
-            throw IllegalStateException(
-                "This method is not available on this SDK version" + Build.VERSION.SDK_INT
-            )
-        }
-    } else {
-        return FakeSceneRuntimeFactory().create(activity)
-    }
-}
-
-/**
- * Check the AndroidManifest for a <meta-data> indicating that the real SceneRuntimeImpl should be
- * used instead of the FakeSceneRuntime. By default, we will use the fake adapter.
- */
-private fun shouldUseRealRuntime(activity: Activity) =
-    activity.packageManager
-        .getActivityInfo(activity.componentName, PackageManager.GET_META_DATA)
-        .metaData
-        ?.run {
-            containsKey(SubspaceAndroidComposeTestRuleConstants.USE_REAL_RUNTIME) &&
-                getBoolean(SubspaceAndroidComposeTestRuleConstants.USE_REAL_RUNTIME)
-        }
-        ?: activity.packageManager
-            .getApplicationInfo(activity.packageName, PackageManager.GET_META_DATA)
-            .metaData
-            ?.run {
-                containsKey(SubspaceAndroidComposeTestRuleConstants.USE_REAL_RUNTIME) &&
-                    getBoolean(SubspaceAndroidComposeTestRuleConstants.USE_REAL_RUNTIME)
-            }
-        ?: false
-
-private class TestSessionSpatialCapabilities(session: Session) : SpatialCapabilities {
-    private var capabilities by
-        mutableStateOf(session.scene.spatialCapabilities).apply {
-            session.scene.addSpatialCapabilitiesChangedListener { value = it }
-        }
-
-    override val isSpatialUiEnabled: Boolean
-        get() = capabilities.hasCapability(SPATIAL_CAPABILITY_UI)
-
-    override val isContent3dEnabled: Boolean
-        get() = capabilities.hasCapability(SPATIAL_CAPABILITY_3D_CONTENT)
-
-    override val isAppEnvironmentEnabled: Boolean
-        get() = capabilities.hasCapability(SPATIAL_CAPABILITY_APP_ENVIRONMENT)
-
-    override val isPassthroughControlEnabled: Boolean
-        get() = capabilities.hasCapability(SPATIAL_CAPABILITY_PASSTHROUGH_CONTROL)
-
-    override val isSpatialAudioEnabled: Boolean
-        get() = capabilities.hasCapability(SPATIAL_CAPABILITY_SPATIAL_AUDIO)
-}
-
-/** A [SpatialConfiguration] that is attached to the current [Session]. */
-private class TestSessionSpatialConfiguration(private val session: Session) : SpatialConfiguration {
-    override val hasXrSpatialFeature: Boolean = true
-
-    override val bounds: DpVolumeSize by
-        mutableStateOf(session.scene.activitySpace.bounds.toDpVolumeSize()).apply {
-            session.scene.activitySpace.addOnBoundsChangedListener { value = it.toDpVolumeSize() }
-        }
-
-    override fun requestHomeSpaceMode() {
-        session.scene.requestHomeSpaceMode()
-    }
-
-    override fun requestFullSpaceMode() {
-        session.scene.requestFullSpaceMode()
-    }
-}
-
-/**
- * Creates a [DpVolumeSize] from a [FloatSize3d] object in meters.
- *
- * @return a [DpVolumeSize] object representing the same volume size in Dp.
- */
-private fun FloatSize3d.toDpVolumeSize(): DpVolumeSize =
-    DpVolumeSize(Meter(width).toDp(), Meter(height).toDp(), Meter(depth).toDp())

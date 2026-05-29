@@ -17,9 +17,8 @@
 package androidx.pdf.annotation
 
 import android.graphics.RectF
-import androidx.pdf.annotation.models.EditId
 import androidx.pdf.annotation.models.PathPdfObject
-import androidx.pdf.annotation.models.PdfAnnotationData
+import androidx.pdf.annotation.models.PathPdfObject.PathInput
 import androidx.pdf.annotation.models.StampAnnotation
 import java.util.UUID
 import kotlin.Float.Companion.MAX_VALUE
@@ -29,11 +28,11 @@ import kotlin.math.max
 import kotlin.math.min
 import kotlin.random.Random
 
-fun createPdfAnnotationDataList(
+fun createKeyedPdfAnnotationList(
     numAnnots: Int,
     pathLength: Int,
     invalidRatio: Float = 0f,
-): List<PdfAnnotationData> {
+): List<KeyedPdfAnnotation> {
     require(invalidRatio >= 0 && invalidRatio <= 1) { "Ratio should be between 0 and 1" }
 
     val invalidCount = (numAnnots * invalidRatio).toInt()
@@ -41,15 +40,16 @@ fun createPdfAnnotationDataList(
         val isInvalid = index < invalidCount
         val pageNum = if (isInvalid) -1 else 0
 
-        createPdfAnnotationData(pageNum, pathLength)
+        createDummyKeyedPdfAnnotation(pageNum, pathLength)
     }
 }
 
-fun createPdfAnnotationData(pageNum: Int, pathLength: Int): PdfAnnotationData =
-    PdfAnnotationData(
-        editId = EditId(pageNum, value = UUID.randomUUID().toString()),
-        annotation = createStampAnnotationWithPath(pageNum, pathLength),
-    )
+fun createDummyKeyedPdfAnnotation(pageNum: Int, pathLength: Int): KeyedPdfAnnotation {
+    val annotation = createStampAnnotationWithPath(pageNum, pathLength)
+    val key =
+        AnnotationHandleIdGenerator.composeAnnotationId(pageNum, id = UUID.randomUUID().toString())
+    return KeyedPdfAnnotation(key, annotation)
+}
 
 fun createStampAnnotationWithPath(pageNum: Int, pathSize: Int): StampAnnotation {
     val randomPathInputs = createPathPdfObjectList(pathSize)
@@ -67,15 +67,17 @@ fun createPathPdfObjectList(size: Int): List<PathPdfObject> {
 fun randomizePathPdfObject(pathLength: Int): PathPdfObject =
     PathPdfObject(brushColor = 0, brushWidth = 0f, inputs = randomizePathInputs(pathLength))
 
-fun randomizePathInputs(pathLength: Int): List<PathPdfObject.PathInput> =
-    IntArray(pathLength).map {
-        PathPdfObject.PathInput(
+fun randomizePathInputs(pathLength: Int): List<PathInput> =
+    IntArray(pathLength).mapIndexed { index, _ ->
+        val command = if (index == 0) PathInput.MOVE_TO else PathInput.LINE_TO
+        PathInput(
             x = abs(Random.nextInt(100, 1000).toFloat()),
             y = abs(Random.nextInt(100, 1000).toFloat()),
+            command = command,
         )
     }
 
-fun List<PathPdfObject.PathInput>.computeBounds(): RectF {
+fun List<PathInput>.computeBounds(): RectF {
     val left = this.fold(MAX_VALUE) { acc, input -> min(acc, input.x) }
     val top = this.fold(MAX_VALUE) { acc, input -> min(acc, input.y) }
     val right = this.fold(MIN_VALUE) { acc, input -> max(acc, input.x) }

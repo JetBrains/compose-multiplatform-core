@@ -31,16 +31,35 @@ import kotlinx.coroutines.test.TestResult
  * environment. Use the methods on [ComposeUiTest] in the test to find Compose content and make
  * assertions on it. If you need access to platform specific elements (such as the Activity on
  * Android), use one of the platform specific variants of this method, e.g.
- * [runAndroidComposeUiTest] on Android.
+ * `runAndroidComposeUiTest` on Android.
  *
  * Implementations of this method will launch a Compose host (such as an Activity on Android) for
  * you. If your test needs to launch its own host, use a platform specific variant that doesn't
- * launch anything for you (if available), e.g. [runEmptyComposeUiTest] on Android. Always make sure
+ * launch anything for you (if available), e.g. `runEmptyComposeUiTest` on Android. Always make sure
  * that the Compose content is set during execution of the [test lambda][block] so the test
  * framework is aware of the content. Whether you need to launch the host from within the test
  * lambda as well depends on the platform.
  *
+ * This function follows the semantics of [kotlinx.coroutines.test.runTest]. On JVM and Native it
+ * behaves similarly to `runBlocking`. On web targets it returns a [TestResult] backed by a
+ * `Promise`.
+ *
+ * For multiplatform tests, make the test return [TestResult] and immediately return the result of
+ * [runComposeUiTest]. Keep assertions inside the [block], and do not execute code after this call.
+ *
+ * Example:
+ * ```kotlin
+ * @Test
+ * fun myTest(): TestResult = runComposeUiTest {
+ *     setContent { /* content under test */ }
+ * }
+ * ```
+ *
  * Keeping a reference to the [ComposeUiTest] outside of this function is an error.
+ *
+ * See also:
+ * * [kotlinx.coroutines.test.runTest](https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-test/kotlinx.coroutines.test/run-test.html)
+ * * [TestResult](https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-test/kotlinx.coroutines.test/-test-result/)
  *
  * @sample androidx.compose.ui.test.samples.RunComposeUiTestSample
  * @param effectContext The [CoroutineContext] used to run the composition. The context for
@@ -54,6 +73,14 @@ import kotlinx.coroutines.test.TestResult
  *   platform specific timeout exception will be thrown.
  * @param block The test function.
  */
+@Deprecated(
+    message =
+        "Use `androidx.compose.ui.test.v2.runComposeUiTest` instead. The v2 APIs align with " +
+            "standard coroutine behavior by queuing tasks rather than executing them " +
+            "immediately. Tests relying on immediate execution may require explicit " +
+            "synchronization. Please refer to the migration guide for more details.",
+    level = DeprecationLevel.WARNING,
+)
 @ExperimentalTestApi
 expect fun runComposeUiTest(
     effectContext: CoroutineContext = EmptyCoroutineContext,
@@ -86,12 +113,8 @@ expect fun runComposeUiTest(
  * An instance of [ComposeUiTest] can be obtained through [runComposeUiTest] or any of its platform
  * specific variants, the argument to which will have it as the receiver scope.
  */
-// Use an `expect sealed interface` with an actual copy for each platform to allow implementations
-// per platform. Each platform is considered a separate compilation unit, which means that when
-// just using `sealed interface` in commonMain, it would not be allowed to implement the interface
-// in platform specific code.
 @ExperimentalTestApi
-expect sealed interface ComposeUiTest : SemanticsNodeInteractionsProvider {
+interface ComposeUiTest : SemanticsNodeInteractionsProvider {
     /**
      * Current device screen's density. Note that it is technically possible for a Compose hierarchy
      * to define a different density for a certain subtree. Try to use
@@ -119,6 +142,32 @@ expect sealed interface ComposeUiTest : SemanticsNodeInteractionsProvider {
      * This method blocks until the action is complete.
      */
     fun <T> runOnIdle(action: () -> T): T
+
+    /**
+     * Executes the given [block] with implicit synchronization suppressed. [block] should contain
+     * read-only assertions, and any actions that mutate state should be performed outside of this
+     * block.
+     *
+     * To ensure stability of the UI tree while running assertions in this block, make sure to call
+     * this on the UI thread, such as with [runOnUiThread]. If you run this block off the UI thread,
+     * state might change in the background and be reflected in the UI while the block is executing.
+     * This exposes your test to race conditions, flakiness, and may cause you to read stale or
+     * inconsistent state.
+     *
+     * Standard node queries (like `onNodeWithTag` or `fetchSemanticsNode`) normally trigger a
+     * `waitForIdle()` under the hood. In animation tests that manually step through frames in a
+     * loop, these implicit waits impose a severe performance penalty.
+     *
+     * This API acts as a performance optimization for motion tests that assert UI state across
+     * multiple frames. It is primarily designed for use when mainClock.autoAdvance is set to false
+     * and the UI is known to be in a stable state at the specific frame being tested (for example,
+     * by calling waitForIdle() before this block).
+     *
+     * @sample androidx.compose.ui.test.samples.runWithoutImplicitWaitSample
+     * @see runOnUiThread
+     * @see hasPendingWork
+     */
+    fun <T> runWithoutImplicitWait(block: () -> T): T
 
     /**
      * Waits for the UI to become idle. Quiescence is reached when there are no more pending changes
@@ -190,6 +239,24 @@ expect sealed interface ComposeUiTest : SemanticsNodeInteractionsProvider {
      *   doesn't have access to a host to set content in.
      */
     fun setContent(composable: @Composable () -> Unit)
+
+    /**
+     * Returns whether the Compose UI has any pending work.
+     *
+     * This performs a passive check of the [mainClock], snapshot state, and recomposer to determine
+     * if there is any pending work. Unlike [waitForIdle], calling this method does not advance the
+     * clock or drain the main message queue.
+     *
+     * This is particularly useful when `autoAdvance` is disabled, allowing you to inspect the state
+     * of the UI while an animation or other work is still active. If `autoAdvance` is `true`, the
+     * testing framework continuously processes pending work. In that scenario, calling this method
+     * acts as a momentary snapshot and will generally return `false`. It may briefly return `true`
+     * if work is queued but the framework hasn't auto-advanced yet, making the result fleeting and
+     * unreliable for driving test logic.
+     *
+     * @sample androidx.compose.ui.test.samples.hasPendingWorkSample
+     */
+    fun hasPendingWork(): Boolean
 }
 
 /**
@@ -265,6 +332,57 @@ fun ComposeUiTest.waitUntilExactlyOneExists(
 @ExperimentalTestApi
 fun ComposeUiTest.waitUntilDoesNotExist(matcher: SemanticsMatcher, timeoutMillis: Long = 1_000L) =
     waitUntilNodeCount(matcher, 0, timeoutMillis)
+
+/**
+ * Capability query to determine if the current [ComposeUiTest] implementation supports registering
+ * an [IdlingResource].
+ *
+ * While [IdlingResource] is supported on Android and Desktop, currently it is not available on all
+ * targets (such as Web).
+ *
+ * @return true if the implementation supports [IdlingResource] registration, false otherwise.
+ * @see IdlingResourceOwner
+ */
+@ExperimentalTestApi
+fun ComposeUiTest.isIdlingResourceSupported(): Boolean {
+    return this is IdlingResourceOwner
+}
+
+/**
+ * Attempts to register an [IdlingResource] in this test.
+ *
+ * This implementation checks [isIdlingResourceSupported] before attempting to register the
+ * resource.
+ *
+ * @return true if the idling resource was successfully registered, or false if the implementation
+ *   does not support idling resources.
+ */
+@ExperimentalTestApi
+fun ComposeUiTest.registerIdlingResource(idlingResource: IdlingResource): Boolean {
+    if (!isIdlingResourceSupported()) {
+        return false
+    }
+    (this as IdlingResourceOwner).registerIdlingResource(idlingResource)
+    return true
+}
+
+/**
+ * Attempts to unregister an [IdlingResource] in this test.
+ *
+ * This implementation checks [isIdlingResourceSupported] before attempting to unregister the
+ * resource.
+ *
+ * @return true if the idling resource was successfully unregistered, or false if the implementation
+ *   does not support idling resources.
+ */
+@ExperimentalTestApi
+fun ComposeUiTest.unregisterIdlingResource(idlingResource: IdlingResource): Boolean {
+    if (!isIdlingResourceSupported()) {
+        return false
+    }
+    (this as IdlingResourceOwner).unregisterIdlingResource(idlingResource)
+    return true
+}
 
 internal const val NanoSecondsPerMilliSecond = 1_000_000L
 

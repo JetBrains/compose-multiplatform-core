@@ -40,8 +40,9 @@ public interface Material : AutoCloseable {
      * Closes the given [Material].
      *
      * The [Material] can be explicitly closed at anytime or garbage collected. In both cases, its
-     * resources are freed and an exception will be thrown if the [Material] is used after being
-     * closed.
+     * resources are freed.
+     *
+     * @throws IllegalStateException if the material has already been closed.
      */
     @MainThread override public fun close()
 }
@@ -61,7 +62,7 @@ public interface Material : AutoCloseable {
 public class KhronosUnlitMaterial
 internal constructor(
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) override val material: RtMaterial,
-    @AlphaModeValues internal val alphaMode: Int,
+    internal val alphaMode: AlphaMode,
     internal val session: Session,
 ) : Material {
 
@@ -110,7 +111,7 @@ internal constructor(
     /**
      * Sets the alpha cutoff threshold.
      *
-     * This value is only used when the material's [alphaMode] is [AlphaMode.ALPHA_MODE_MASK].
+     * This value is only used when the material's [alphaMode] is [AlphaMode.MASK].
      *
      * @param alphaCutoff The alpha cutoff. Fragments with alpha below this value are discarded.
      *   Default is 0.5. Valid values are between 0.0 and 1.0, inclusive.
@@ -118,7 +119,7 @@ internal constructor(
      */
     @MainThread
     public fun setAlphaCutoff(@FloatRange(from = 0.0, to = 1.0) alphaCutoff: Float) {
-        check(alphaMode == AlphaMode.ALPHA_MODE_MASK) {
+        check(alphaMode == AlphaMode.MASK) {
             "Alpha cutoff can only be set when the material's alpha mode is set to ALPHA_MODE_MASK."
         }
         session.renderingRuntime.setAlphaCutoffOnKhronosPbrMaterial(material, alphaCutoff)
@@ -127,13 +128,11 @@ internal constructor(
     public companion object {
         internal suspend fun createAsync(
             renderingRuntime: RenderingRuntime,
-            @AlphaModeValues alphaMode: Int,
+            alphaMode: AlphaMode,
             session: Session,
         ): KhronosUnlitMaterial {
             val material =
-                renderingRuntime
-                    .createKhronosPbrMaterial(alphaMode.toRtKhronosUnlitMaterialSpec())
-                    .awaitSuspending()
+                renderingRuntime.createKhronosPbrMaterial(alphaMode.toRtKhronosUnlitMaterialSpec())
             return KhronosUnlitMaterial(material, alphaMode, session)
         }
 
@@ -146,10 +145,7 @@ internal constructor(
          */
         @MainThread
         @JvmStatic
-        public suspend fun create(
-            session: Session,
-            @AlphaModeValues alphaMode: Int,
-        ): KhronosUnlitMaterial {
+        public suspend fun create(session: Session, alphaMode: AlphaMode): KhronosUnlitMaterial {
             return KhronosUnlitMaterial.createAsync(session.renderingRuntime, alphaMode, session)
         }
     }

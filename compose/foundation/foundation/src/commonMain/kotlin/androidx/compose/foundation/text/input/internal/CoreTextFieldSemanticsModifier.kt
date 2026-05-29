@@ -18,8 +18,8 @@ package androidx.compose.foundation.text.input.internal
 
 import androidx.compose.foundation.text.LegacyTextFieldState
 import androidx.compose.foundation.text.TextFieldDelegate
+import androidx.compose.foundation.text.requestFocusAndShowKeyboardIfNeeded
 import androidx.compose.foundation.text.selection.TextFieldSelectionManager
-import androidx.compose.foundation.text.tapToFocus
 import androidx.compose.ui.autofill.ContentDataType
 import androidx.compose.ui.autofill.ContentType
 import androidx.compose.ui.autofill.FillableData
@@ -262,7 +262,7 @@ internal class CoreTextFieldSemanticsModifierNode(
         onClick {
             // according to the documentation, we still need to provide proper semantics actions
             // even if the state is 'disabled'
-            tapToFocus(state, focusRequester, !readOnly)
+            requestFocusAndShowKeyboardIfNeeded(state, focusRequester, !readOnly)
             true
         }
         onLongClick {

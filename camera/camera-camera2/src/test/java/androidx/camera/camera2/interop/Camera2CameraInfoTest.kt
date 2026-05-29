@@ -40,9 +40,11 @@ import com.google.common.truth.Truth
 import java.util.concurrent.Executor
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.annotation.Config
 
 @RunWith(RobolectricCameraPipeTestRunner::class)
 @OptIn(ExperimentalCamera2Interop::class)
+@Config(sdk = [Config.ALL_SDKS])
 class Camera2CameraInfoTest {
 
     @Test

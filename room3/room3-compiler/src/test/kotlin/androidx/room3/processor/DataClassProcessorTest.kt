@@ -23,17 +23,16 @@ import androidx.room3.compiler.codegen.XClassName
 import androidx.room3.compiler.processing.XFieldElement
 import androidx.room3.compiler.processing.util.Source
 import androidx.room3.compiler.processing.util.XTestInvocation
-import androidx.room3.compiler.processing.util.runProcessorTest
+import androidx.room3.compiler.processing.util.runKspTest
 import androidx.room3.ext.CommonTypeNames
 import androidx.room3.parser.SQLTypeAffinity
 import androidx.room3.processor.ProcessorErrors.CANNOT_FIND_GETTER_FOR_PROPERTY
-import androidx.room3.processor.ProcessorErrors.DATA_CLASS_PROPERTY_HAS_DUPLICATE_COLUMN_NAME
 import androidx.room3.processor.ProcessorErrors.MISSING_DATA_CLASS_CONSTRUCTOR
 import androidx.room3.processor.ProcessorErrors.junctionColumnWithoutIndex
-import androidx.room3.processor.ProcessorErrors.relationCannotFindEntityProperty
-import androidx.room3.processor.ProcessorErrors.relationCannotFindJunctionEntityProperty
-import androidx.room3.processor.ProcessorErrors.relationCannotFindJunctionParentProperty
-import androidx.room3.processor.ProcessorErrors.relationCannotFindParentEntityProperty
+import androidx.room3.processor.ProcessorErrors.relationCannotFindEntityProperties
+import androidx.room3.processor.ProcessorErrors.relationCannotFindJunctionEntityProperties
+import androidx.room3.processor.ProcessorErrors.relationCannotFindJunctionParentProperties
+import androidx.room3.processor.ProcessorErrors.relationCannotFindParentEntityProperties
 import androidx.room3.testing.context
 import androidx.room3.vo.CallType
 import androidx.room3.vo.Constructor
@@ -85,7 +84,7 @@ class DataClassProcessorTest {
                 public void setBaseProperty(String baseProperty){ }
             }
         """
-        runProcessorTest(
+        runKspTest(
             sources =
                 listOf(
                     Source.java(
@@ -178,14 +177,14 @@ class DataClassProcessorTest {
         singleRun(
             """
                 int id;
-                @Relation(parentColumn = "id", entityColumn = "uid")
+                @Relation(parentColumns = {"id"}, entityColumns = {"uid"})
                 public transient List<User> user;
                 """,
             COMMON.USER,
         ) { dataClass, invocation ->
             assertThat(dataClass.relations.size, `is`(1))
-            assertThat(dataClass.relations.first().entityProperty.name, `is`("uid"))
-            assertThat(dataClass.relations.first().parentProperty.name, `is`("id"))
+            assertThat(dataClass.relations.first().entityProperties.first().name, `is`("uid"))
+            assertThat(dataClass.relations.first().parentProperties.first().name, `is`("id"))
             invocation.assertCompilationResult { hasNoWarnings() }
         }
     }
@@ -347,8 +346,7 @@ class DataClassProcessorTest {
                 hasErrorContaining(
                     ProcessorErrors.dataClassDuplicatePropertyNames("id", listOf("id", "another"))
                 )
-                hasErrorContaining(DATA_CLASS_PROPERTY_HAS_DUPLICATE_COLUMN_NAME)
-                hasErrorCount(3)
+                hasErrorCount(1)
             }
         }
     }
@@ -370,8 +368,7 @@ class DataClassProcessorTest {
                 hasErrorContaining(
                     ProcessorErrors.dataClassDuplicatePropertyNames("id", listOf("id", "foo > x"))
                 )
-                hasErrorContaining(DATA_CLASS_PROPERTY_HAS_DUPLICATE_COLUMN_NAME)
-                hasErrorCount(3)
+                hasErrorCount(1)
             }
         }
     }
@@ -400,7 +397,7 @@ class DataClassProcessorTest {
         singleRun(
             """
                 int id;
-                @Relation(parentColumn = "id", entityColumn = "uid")
+                @Relation(parentColumns = {"id"}, entityColumns = {"uid"})
                 public List<UserSummary> user;
                 """,
             COMMON.USER_SUMMARY,
@@ -413,7 +410,7 @@ class DataClassProcessorTest {
         singleRun(
             """
                 int id;
-                @Relation(parentColumn = "id", entityColumn = "uid")
+                @Relation(parentColumns = {"id"}, entityColumns = {"uid"})
                 public User user;
                 """,
             COMMON.USER,
@@ -427,7 +424,7 @@ class DataClassProcessorTest {
             """
                 int id;
                 @ColumnInfo
-                @Relation(parentColumn = "id", entityColumn = "uid")
+                @Relation(parentColumns = {"id"}, entityColumns = {"uid"})
                 public List<User> user;
                 """,
             COMMON.USER,
@@ -445,7 +442,7 @@ class DataClassProcessorTest {
         singleRun(
             """
                 int id;
-                @Relation(parentColumn = "id", entityColumn = "uid")
+                @Relation(parentColumns = {"id"}, entityColumns = {"uid"})
                 public List<NotAnEntity> user;
                 """,
             COMMON.NOT_AN_ENTITY,
@@ -461,7 +458,7 @@ class DataClassProcessorTest {
         singleRun(
             """
                 int id;
-                @Relation(parentColumn = "id", entityColumn = "uid")
+                @Relation(parentColumns = {"id"}, entityColumns = {"uid"})
                 public long user;
                 """
         ) { _, invocation ->
@@ -476,16 +473,16 @@ class DataClassProcessorTest {
         singleRun(
             """
                 int id;
-                @Relation(parentColumn = "idk", entityColumn = "uid")
+                @Relation(parentColumns = {"idk"}, entityColumns = {"uid"})
                 public List<User> user;
                 """,
             COMMON.USER,
         ) { _, invocation ->
             invocation.assertCompilationResult {
                 hasErrorContaining(
-                    relationCannotFindParentEntityProperty(
+                    relationCannotFindParentEntityProperties(
                         "foo.bar.MyDataClass",
-                        "idk",
+                        listOf("idk"),
                         listOf("id"),
                     )
                 )
@@ -498,16 +495,16 @@ class DataClassProcessorTest {
         singleRun(
             """
                 int id;
-                @Relation(parentColumn = "id", entityColumn = "idk")
+                @Relation(parentColumns = {"id"}, entityColumns = {"idk"})
                 public List<User> user;
                 """,
             COMMON.USER,
         ) { _, invocation ->
             invocation.assertCompilationResult {
                 hasErrorContaining(
-                    relationCannotFindEntityProperty(
+                    relationCannotFindEntityProperties(
                         "foo.bar.User",
-                        "idk",
+                        listOf("idk"),
                         listOf("uid", "name", "lastName", "age"),
                     )
                 )
@@ -520,7 +517,7 @@ class DataClassProcessorTest {
         singleRun(
             """
                 int id;
-                @Relation(parentColumn = "id", entityColumn = "uid")
+                @Relation(parentColumns = {"id"}, entityColumns = {"uid"})
                 public List<User> user;
                 """
         ) { _, invocation ->
@@ -549,12 +546,12 @@ class DataClassProcessorTest {
                 }
                 @Embedded
                 Nested nested;
-                @Relation(parentColumn = "foo", entityColumn = "uid")
+                @Relation(parentColumns = {"foo"}, entityColumns = {"uid"})
                 public List<User> user;
                 """,
             COMMON.USER,
         ) { dataClass, _ ->
-            assertThat(dataClass.relations.first().parentProperty.columnName, `is`("foo"))
+            assertThat(dataClass.relations.first().parentProperties.first().columnName, `is`("foo"))
         }
     }
 
@@ -565,16 +562,16 @@ class DataClassProcessorTest {
                 static class UserWithNested {
                     @Embedded
                     public User user;
-                    @Relation(parentColumn = "uid", entityColumn = "uid")
+                    @Relation(parentColumns = {"uid"}, entityColumns = {"uid"})
                     public List<User> selfs;
                 }
                 int id;
-                @Relation(parentColumn = "id", entityColumn = "uid", entity = User.class)
+                @Relation(parentColumns = {"id"}, entityColumns = {"uid"}, entity = User.class)
                 public List<UserWithNested> user;
                 """,
             COMMON.USER,
         ) { dataClass, invocation ->
-            assertThat(dataClass.relations.first().parentProperty.name, `is`("id"))
+            assertThat(dataClass.relations.first().parentProperties.first().name, `is`("id"))
             invocation.assertCompilationResult { hasNoWarnings() }
         }
     }
@@ -584,7 +581,7 @@ class DataClassProcessorTest {
         singleRun(
             """
                 String id;
-                @Relation(parentColumn = "id", entityColumn = "uid")
+                @Relation(parentColumns = {"id"}, entityColumns = {"uid"})
                 public List<User> user;
                 """,
             COMMON.USER,
@@ -592,8 +589,8 @@ class DataClassProcessorTest {
             // trigger assignment evaluation
             RelationCollector.createCollectors(invocation.context, dataClass.relations)
             assertThat(dataClass.relations.size, `is`(1))
-            assertThat(dataClass.relations.first().entityProperty.name, `is`("uid"))
-            assertThat(dataClass.relations.first().parentProperty.name, `is`("id"))
+            assertThat(dataClass.relations.first().entityProperties.first().name, `is`("uid"))
+            assertThat(dataClass.relations.first().parentProperties.first().name, `is`("id"))
             invocation.assertCompilationResult {
                 hasWarningContaining(
                     ProcessorErrors.relationAffinityMismatch(
@@ -612,14 +609,14 @@ class DataClassProcessorTest {
         singleRun(
             """
                 int id;
-                @Relation(parentColumn = "id", entityColumn = "uid")
+                @Relation(parentColumns = {"id"}, entityColumns = {"uid"})
                 public List<User> user;
                 """,
             COMMON.USER,
         ) { dataClass, invocation ->
             assertThat(dataClass.relations.size, `is`(1))
-            assertThat(dataClass.relations.first().entityProperty.name, `is`("uid"))
-            assertThat(dataClass.relations.first().parentProperty.name, `is`("id"))
+            assertThat(dataClass.relations.first().entityProperties.first().name, `is`("uid"))
+            assertThat(dataClass.relations.first().parentProperties.first().name, `is`("id"))
             invocation.assertCompilationResult { hasNoWarnings() }
         }
     }
@@ -629,7 +626,7 @@ class DataClassProcessorTest {
         singleRun(
             """
                 int id;
-                @Relation(parentColumn = "id", entityColumn = "uid", projection={"i_dont_exist"})
+                @Relation(parentColumns = {"id"}, entityColumns = {"uid"}, projection={"i_dont_exist"})
                 public List<User> user;
                 """,
             COMMON.USER,
@@ -651,7 +648,7 @@ class DataClassProcessorTest {
         singleRun(
             """
                 int id;
-                @Relation(parentColumn = "id", entityColumn = "uid")
+                @Relation(parentColumns = {"id"}, entityColumns = {"uid"})
                 private List<User> user;
                 public void setUser(List<User> user){ this.user = user;}
                 public User getUser(){return null;}
@@ -669,7 +666,7 @@ class DataClassProcessorTest {
         singleRun(
             """
                 int id;
-                @Relation(parentColumn = "id", entityColumn = "uid",  projection={"uid"},
+                @Relation(parentColumns = {"id"}, entityColumns = {"uid"},  projection={"uid"},
                         entity = User.class)
                 public List<Integer> userIds;
                 """,
@@ -687,7 +684,7 @@ class DataClassProcessorTest {
         singleRun(
             """
                 int id;
-                @Relation(parentColumn = "id", entityColumn = "uid",  projection={"name"},
+                @Relation(parentColumns = {"id"}, entityColumns = {"uid"},  projection={"name"},
                         entity = User.class)
                 public List<String> userNames;
                 """,
@@ -705,14 +702,14 @@ class DataClassProcessorTest {
         singleRun(
             """
                 int id;
-                @Relation(parentColumn = "id", entityColumn = "uid")
+                @Relation(parentColumns = {"id"}, entityColumns = {"uid"})
                 public List<? extends User> user;
                 """,
             COMMON.USER,
         ) { dataClass, invocation ->
             assertThat(dataClass.relations.size, `is`(1))
-            assertThat(dataClass.relations.first().entityProperty.name, `is`("uid"))
-            assertThat(dataClass.relations.first().parentProperty.name, `is`("id"))
+            assertThat(dataClass.relations.first().entityProperties.first().name, `is`("uid"))
+            assertThat(dataClass.relations.first().parentProperties.first().name, `is`("id"))
             invocation.assertCompilationResult { hasNoWarnings() }
         }
     }
@@ -753,10 +750,10 @@ class DataClassProcessorTest {
             """
                 int id;
                 @Relation(
-                    parentColumn = "id", entityColumn = "uid",
+                    parentColumns = {"id"}, entityColumns = {"uid"},
                     associateBy = @Junction(
                         value = UserFriendsXRef.class,
-                        parentColumn = "uid", entityColumn = "friendId")
+                        parentColumns = {"uid"}, entityColumns = {"friendId"})
                 )
                 public List<User> user;
                 """,
@@ -766,11 +763,11 @@ class DataClassProcessorTest {
             assertThat(dataClass.relations.size, `is`(1))
             assertThat(dataClass.relations.first().junction, notNullValue())
             assertThat(
-                dataClass.relations.first().junction!!.parentProperty.columnName,
+                dataClass.relations.first().junction!!.parentProperties.first().columnName,
                 `is`("uid"),
             )
             assertThat(
-                dataClass.relations.first().junction!!.entityProperty.columnName,
+                dataClass.relations.first().junction!!.entityProperties.first().columnName,
                 `is`("friendId"),
             )
             invocation.assertCompilationResult { hasNoWarnings() }
@@ -798,10 +795,10 @@ class DataClassProcessorTest {
             """
                 int id;
                 @Relation(
-                    parentColumn = "id", entityColumn = "uid",
+                    parentColumns = {"id"}, entityColumns = {"uid"},
                     associateBy = @Junction(
                         value = UserFriendsXRefView.class,
-                        parentColumn = "uid", entityColumn = "friendId")
+                        parentColumns = {"uid"}, entityColumns = {"friendId"})
                 )
                 public List<User> user;
                 """,
@@ -848,7 +845,7 @@ class DataClassProcessorTest {
             """
                 int friendId;
                 @Relation(
-                    parentColumn = "friendId", entityColumn = "uid",
+                    parentColumns = {"friendId"}, entityColumns = {"uid"},
                     associateBy = @Junction(UserFriendsXRef.class))
                 public List<User> user;
                 """,
@@ -880,7 +877,7 @@ class DataClassProcessorTest {
             """
                 int id;
                 @Relation(
-                    parentColumn = "id", entityColumn = "uid",
+                    parentColumns = {"id"}, entityColumns = {"uid"},
                     associateBy = @Junction(UserFriendsXRef.class)
                 )
                 public List<User> user;
@@ -890,9 +887,9 @@ class DataClassProcessorTest {
         ) { _, invocation ->
             invocation.assertCompilationResult {
                 hasErrorContaining(
-                    relationCannotFindJunctionParentProperty(
+                    relationCannotFindJunctionParentProperties(
                         "foo.bar.UserFriendsXRef",
-                        "id",
+                        listOf("id"),
                         listOf("friendFrom", "uid"),
                     )
                 )
@@ -921,7 +918,7 @@ class DataClassProcessorTest {
             """
                 int friendA;
                 @Relation(
-                    parentColumn = "friendA", entityColumn = "uid",
+                    parentColumns = {"friendA"}, entityColumns = {"uid"},
                     associateBy = @Junction(UserFriendsXRef.class)
                 )
                 public List<User> user;
@@ -931,9 +928,9 @@ class DataClassProcessorTest {
         ) { _, invocation ->
             invocation.assertCompilationResult {
                 hasErrorContaining(
-                    relationCannotFindJunctionEntityProperty(
+                    relationCannotFindJunctionEntityProperties(
                         "foo.bar.UserFriendsXRef",
-                        "uid",
+                        listOf("uid"),
                         listOf("friendA", "friendB"),
                     )
                 )
@@ -962,10 +959,10 @@ class DataClassProcessorTest {
             """
                 int friendA;
                 @Relation(
-                    parentColumn = "friendA", entityColumn = "uid",
+                    parentColumns = {"friendA"}, entityColumns = {"uid"},
                     associateBy = @Junction(
                         value = UserFriendsXRef.class,
-                        parentColumn = "bad_col")
+                        parentColumns = {"bad_col"})
                 )
                 public List<User> user;
                 """,
@@ -974,9 +971,9 @@ class DataClassProcessorTest {
         ) { _, invocation ->
             invocation.assertCompilationResult {
                 hasErrorContaining(
-                    relationCannotFindJunctionParentProperty(
+                    relationCannotFindJunctionParentProperties(
                         "foo.bar.UserFriendsXRef",
-                        "bad_col",
+                        listOf("bad_col"),
                         listOf("friendA", "friendB"),
                     )
                 )
@@ -1005,10 +1002,10 @@ class DataClassProcessorTest {
             """
                 int friendA;
                 @Relation(
-                    parentColumn = "friendA", entityColumn = "uid",
+                    parentColumns = {"friendA"}, entityColumns = {"uid"},
                     associateBy = @Junction(
                         value = UserFriendsXRef.class,
-                        entityColumn = "bad_col")
+                        entityColumns = {"bad_col"})
                 )
                 public List<User> user;
                 """,
@@ -1017,9 +1014,9 @@ class DataClassProcessorTest {
         ) { _, invocation ->
             invocation.assertCompilationResult {
                 hasErrorContaining(
-                    relationCannotFindJunctionEntityProperty(
+                    relationCannotFindJunctionEntityProperties(
                         "foo.bar.UserFriendsXRef",
-                        "bad_col",
+                        listOf("bad_col"),
                         listOf("friendA", "friendB"),
                     )
                 )
@@ -1048,7 +1045,7 @@ class DataClassProcessorTest {
             """
                 int friendId;
                 @Relation(
-                    parentColumn = "friendId", entityColumn = "uid",
+                    parentColumns = {"friendId"}, entityColumns = {"uid"},
                     associateBy = @Junction(UserFriendsXRef.class))
                 public List<User> user;
                 """,
@@ -1073,7 +1070,7 @@ class DataClassProcessorTest {
             $FOOTER
             """,
             )
-        runProcessorTest(sources = listOf(dataClass)) { invocation ->
+        runKspTest(sources = listOf(dataClass)) { invocation ->
             val element = invocation.processingEnv.requireTypeElement(MY_DATA_CLASS)
             val dataClass1 =
                 DataClassProcessor.createFor(
@@ -1411,8 +1408,8 @@ class DataClassProcessorTest {
     fun constructor_relationParameter() {
         singleRun(
             """
-            @Relation(entity = foo.bar.User.class, parentColumn = "uid", entityColumn="uid",
-            projection = "name")
+            @Relation(entity = foo.bar.User.class, parentColumns = {"uid"}, entityColumns = {"uid"},
+            projection = {"name"})
             public List<String> items;
             public String uid;
             public MyDataClass(String uid, List<String> items) {
@@ -1447,7 +1444,7 @@ class DataClassProcessorTest {
             """
                 long id;
                 long parentId;
-                @Relation(parentColumn = "id", entityColumn = "parentId")
+                @Relation(parentColumns = {"id"}, entityColumns = {"parentId"})
                 Set<MyDataClass> children;
                 """
         ) { _, invocation ->
@@ -1471,7 +1468,7 @@ class DataClassProcessorTest {
                 static class A {
                     long id;
                     long parentId;
-                    @Relation(entity = A.class, parentColumn = "id", entityColumn = "parentId")
+                    @Relation(entity = A.class, parentColumns = {"id"}, entityColumns = {"parentId"})
                     Set<AWithB> children;
                 }
 
@@ -1503,7 +1500,7 @@ class DataClassProcessorTest {
             """
                 int dataClassId;
 
-                @Relation(parentColumn = "dataClassId", entityColumn = "entityId")
+                @Relation(parentColumns = {"dataClassId"}, entityColumns = {"entityId"})
                 List<MyEntity> myEntity;
 
                 @Entity
@@ -1581,7 +1578,7 @@ class DataClassProcessorTest {
                 static class A {
                     long id;
                     long parentId;
-                    @Relation(parentColumn = "id", entityColumn = "parentId")
+                    @Relation(parentColumns = {"id"}, entityColumns = {"parentId"})
                     Set<AWithB> children;
                 }
 
@@ -1733,7 +1730,7 @@ class DataClassProcessorTest {
                 "foo.bar.TestData.WithJvmOverloads",
             )
             .forEach {
-                runProcessorTest(sources = listOf(TEST_DATA)) { invocation ->
+                runKspTest(sources = listOf(TEST_DATA)) { invocation ->
                     DataClassProcessor.createFor(
                             context = invocation.context,
                             element = invocation.processingEnv.requireTypeElement(it),
@@ -1748,7 +1745,7 @@ class DataClassProcessorTest {
 
     @Test
     fun dataClass_withJvmOverloads_primaryConstructor() {
-        runProcessorTest(sources = listOf(TEST_DATA)) { invocation ->
+        runKspTest(sources = listOf(TEST_DATA)) { invocation ->
             DataClassProcessor.createFor(
                     context = invocation.context,
                     element =
@@ -1778,7 +1775,7 @@ class DataClassProcessorTest {
             }
             """,
             )
-        runProcessorTest(sources = listOf(source)) { invocation ->
+        runKspTest(sources = listOf(source)) { invocation ->
             val dataClass =
                 DataClassProcessor.createFor(
                         context = invocation.context,
@@ -1794,7 +1791,7 @@ class DataClassProcessorTest {
 
     @Test
     fun ignoredColumns_noConstructor() {
-        runProcessorTest(
+        runKspTest(
             listOf(
                 Source.java(
                     MY_DATA_CLASS.canonicalName,
@@ -1833,7 +1830,7 @@ class DataClassProcessorTest {
 
     @Test
     fun ignoredColumns_noSetterGetter() {
-        runProcessorTest(
+        runKspTest(
             listOf(
                 Source.java(
                     MY_DATA_CLASS.canonicalName,
@@ -1870,7 +1867,7 @@ class DataClassProcessorTest {
 
     @Test
     fun ignoredColumns_columnInfo() {
-        runProcessorTest(
+        runKspTest(
             listOf(
                 Source.java(
                     MY_DATA_CLASS.canonicalName,
@@ -1902,7 +1899,7 @@ class DataClassProcessorTest {
 
     @Test
     fun ignoredColumns_missing() {
-        runProcessorTest(
+        runKspTest(
             listOf(
                 Source.java(
                     MY_DATA_CLASS.canonicalName,
@@ -1936,7 +1933,7 @@ class DataClassProcessorTest {
 
     @Test
     fun noSetter_scopeBindStmt() {
-        runProcessorTest(
+        runKspTest(
             listOf(
                 Source.java(
                     MY_DATA_CLASS.canonicalName,
@@ -1965,7 +1962,7 @@ class DataClassProcessorTest {
 
     @Test
     fun noSetter_scopeTwoWay() {
-        runProcessorTest(
+        runKspTest(
             listOf(
                 Source.java(
                     MY_DATA_CLASS.canonicalName,
@@ -1997,7 +1994,7 @@ class DataClassProcessorTest {
 
     @Test
     fun noSetter_scopeReadFromCursor() {
-        runProcessorTest(
+        runKspTest(
             listOf(
                 Source.java(
                     MY_DATA_CLASS.canonicalName,
@@ -2029,7 +2026,7 @@ class DataClassProcessorTest {
 
     @Test
     fun noGetter_scopeBindStmt() {
-        runProcessorTest(
+        runKspTest(
             listOf(
                 Source.java(
                     MY_DATA_CLASS.canonicalName,
@@ -2061,7 +2058,7 @@ class DataClassProcessorTest {
 
     @Test
     fun noGetter_scopeTwoWay() {
-        runProcessorTest(
+        runKspTest(
             listOf(
                 Source.java(
                     MY_DATA_CLASS.canonicalName,
@@ -2093,7 +2090,7 @@ class DataClassProcessorTest {
 
     @Test
     fun noGetter_scopeReadCursor() {
-        runProcessorTest(
+        runKspTest(
             listOf(
                 Source.java(
                     MY_DATA_CLASS.canonicalName,
@@ -2122,7 +2119,7 @@ class DataClassProcessorTest {
 
     @Test
     fun setterStartsWithIs() {
-        runProcessorTest(
+        runKspTest(
             listOf(
                 Source.kotlin(
                     "Book.kt",
@@ -2151,7 +2148,7 @@ class DataClassProcessorTest {
                 .isEqualTo(
                     PropertyGetter(
                         propertyName = "isbn",
-                        jvmName = if (invocation.isKsp2) "isbn" else "getIsbn",
+                        jvmName = "getIsbn",
                         type = stringType,
                         callType = CallType.SYNTHETIC_FUNCTION,
                     )
@@ -2170,7 +2167,7 @@ class DataClassProcessorTest {
                 .isEqualTo(
                     PropertyGetter(
                         propertyName = "isbn2",
-                        jvmName = if (invocation.isKsp2) "isbn2" else "getIsbn2",
+                        jvmName = "getIsbn2",
                         type = stringType.makeNullable(),
                         callType = CallType.SYNTHETIC_FUNCTION,
                     )
@@ -2179,7 +2176,7 @@ class DataClassProcessorTest {
                 .isEqualTo(
                     PropertySetter(
                         propertyName = "isbn2",
-                        jvmName = if (invocation.isKsp2) "setbn2" else "setIsbn2",
+                        jvmName = "setIsbn2",
                         type = stringType.makeNullable(),
                         callType = CallType.SYNTHETIC_FUNCTION,
                     )
@@ -2190,7 +2187,7 @@ class DataClassProcessorTest {
     @Test
     fun embedded_nullability() {
         listOf("foo.bar.TestData.SomeEmbeddedVals").forEach {
-            runProcessorTest(sources = listOf(TEST_DATA)) { invocation ->
+            runKspTest(sources = listOf(TEST_DATA)) { invocation ->
                 val result =
                     DataClassProcessor.createFor(
                             context = invocation.context,
@@ -2238,7 +2235,7 @@ class DataClassProcessorTest {
     ) {
         val dataClassSource = Source.java(MY_DATA_CLASS.canonicalName, code)
         val all = sources.toList() + dataClassSource
-        runProcessorTest(sources = all, classpath = classpath) { invocation ->
+        runKspTest(sources = all, classpath = classpath) { invocation ->
             handler.invoke(
                 DataClassProcessor.createFor(
                         context = invocation.context,
@@ -2249,6 +2246,197 @@ class DataClassProcessorTest {
                     .process(),
                 invocation,
             )
+        }
+    }
+
+    @Test
+    fun relation_composite() {
+        val userSource =
+            Source.java(
+                "foo.bar.User",
+                """
+            package foo.bar;
+            import androidx.room3.*;
+            @Entity(primaryKeys = {"id1", "id2"})
+            public class User {
+                public int id1;
+                public int id2;
+                public String name;
+            }
+            """,
+            )
+        singleRun(
+            """
+                int key1;
+                int key2;
+                @Relation(parentColumns = {"key1", "key2"}, entityColumns = {"id1", "id2"})
+                public List<User> users;
+                """,
+            userSource,
+        ) { dataClass, invocation ->
+            assertThat(dataClass.relations.size, `is`(1))
+            val rel = dataClass.relations.first()
+            assertThat(rel.parentProperties.map { it.columnName }, `is`(listOf("key1", "key2")))
+            assertThat(rel.entityProperties.map { it.columnName }, `is`(listOf("id1", "id2")))
+            invocation.assertCompilationResult { hasNoWarnings() }
+        }
+    }
+
+    @Test
+    fun relation_parentColumns_empty() {
+        singleRun(
+            """
+                int key1;
+                @Relation(parentColumns = {}, entityColumns = {"uid"})
+                public List<User> users;
+                """,
+            COMMON.USER,
+        ) { _, invocation ->
+            invocation.assertCompilationResult {
+                hasErrorContaining(ProcessorErrors.RELATION_PARENT_COLUMNS_CANNOT_BE_EMPTY)
+            }
+        }
+    }
+
+    @Test
+    fun relation_entityColumns_empty() {
+        singleRun(
+            """
+                int key1;
+                @Relation(parentColumns = {"key1"}, entityColumns = {})
+                public List<User> users;
+                """,
+            COMMON.USER,
+        ) { _, invocation ->
+            invocation.assertCompilationResult {
+                hasErrorContaining(ProcessorErrors.RELATION_ENTITY_COLUMNS_CANNOT_BE_EMPTY)
+            }
+        }
+    }
+
+    @Test
+    fun relation_columns_size_mismatch() {
+        singleRun(
+            """
+                int key1;
+                int key2;
+                @Relation(parentColumns = {"key1", "key2"}, entityColumns = {"uid"})
+                public List<User> users;
+                """,
+            COMMON.USER,
+        ) { _, invocation ->
+            invocation.assertCompilationResult {
+                hasErrorContaining(ProcessorErrors.RELATION_COLUMNS_SIZE_MISMATCH)
+            }
+        }
+    }
+
+    @Test
+    fun relation_junction_parentColumns_size_mismatch() {
+        val junctionEntity =
+            Source.java(
+                "foo.bar.UserFriendsXRef",
+                """
+            package foo.bar;
+            import androidx.room3.*;
+            @Entity(primaryKeys = {"uid","friendId"})
+            public class UserFriendsXRef {
+                public int uid;
+                public int friendId;
+            }
+            """,
+            )
+        singleRun(
+            """
+                int key1;
+                int key2;
+                @Relation(
+                    parentColumns = {"key1", "key2"}, entityColumns = {"uid", "name"},
+                    associateBy = @Junction(
+                        value = UserFriendsXRef.class,
+                        parentColumns = {"uid"}, entityColumns = {"friendId"})
+                )
+                public List<User> users;
+                """,
+            COMMON.USER,
+            junctionEntity,
+        ) { _, invocation ->
+            invocation.assertCompilationResult {
+                hasErrorContaining(ProcessorErrors.JUNCTION_PARENT_COLUMNS_SIZE_MISMATCH)
+            }
+        }
+    }
+
+    @Test
+    fun relation_junction_entityColumns_size_mismatch() {
+        val junctionEntity =
+            Source.java(
+                "foo.bar.UserFriendsXRef",
+                """
+            package foo.bar;
+            import androidx.room3.*;
+            @Entity(primaryKeys = {"uid","friendId"})
+            public class UserFriendsXRef {
+                public int uid;
+                public int friendId;
+            }
+            """,
+            )
+        singleRun(
+            """
+                int key1;
+                int key2;
+                @Relation(
+                    parentColumns = {"key1", "key2"}, entityColumns = {"uid", "name"},
+                    associateBy = @Junction(
+                        value = UserFriendsXRef.class,
+                        parentColumns = {"uid", "friendId"}, entityColumns = {"friendId"})
+                )
+                public List<User> users;
+                """,
+            COMMON.USER,
+            junctionEntity,
+        ) { _, invocation ->
+            invocation.assertCompilationResult {
+                hasErrorContaining(ProcessorErrors.JUNCTION_ENTITY_COLUMNS_SIZE_MISMATCH)
+            }
+        }
+    }
+
+    @Test
+    fun relation_cannot_infer_projection_composite() {
+        val userSource =
+            Source.java(
+                "foo.bar.User",
+                """
+            package foo.bar;
+            import androidx.room3.*;
+            @Entity(primaryKeys = {"id1", "id2"})
+            public class User {
+                public int id1;
+                public int id2;
+                public String name;
+            }
+            """,
+            )
+        singleRun(
+            """
+                int key1;
+                int key2;
+                @Relation(
+                    entity = User.class,
+                    parentColumns = {"key1", "key2"},
+                    entityColumns = {"id1", "id2"}
+                )
+                public List<String> userNames; // Returning single value without projection
+                """,
+            userSource,
+        ) { _, invocation ->
+            invocation.assertCompilationResult {
+                hasErrorContaining(
+                    ProcessorErrors.RELATION_CANNOT_INFER_PROJECTION_FOR_COMPOSITE_RELATION
+                )
+            }
         }
     }
 

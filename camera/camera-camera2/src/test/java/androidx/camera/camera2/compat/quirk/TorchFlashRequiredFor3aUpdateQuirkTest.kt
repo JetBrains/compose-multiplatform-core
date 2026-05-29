@@ -26,6 +26,7 @@ import com.google.common.truth.Truth
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.ParameterizedRobolectricTestRunner
+import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 import org.robolectric.shadow.api.Shadow
 import org.robolectric.shadows.ShadowBuild
@@ -34,28 +35,28 @@ import org.robolectric.shadows.StreamConfigurationMapBuilder
 
 @RunWith(ParameterizedRobolectricTestRunner::class)
 @DoNotInstrument
-class TorchFlashRequiredFor3aUpdateQuirkTest(
+@Config(sdk = [Config.ALL_SDKS])
+class TorchFlashRequiredFor3AUpdateQuirkTest(
     private val model: String,
     private val lensFacing: Int,
     private val externalFlashAeModeSupported: Boolean,
     private val enabled: Boolean,
 ) {
     companion object {
-        @Suppress("TYPE_INTERSECTION_AS_REIFIED_WARNING")
         @JvmStatic
         @ParameterizedRobolectricTestRunner.Parameters(
             name = "Model: {0}, lens facing: {1}, external ae mode: {2}, enabled: {3}"
         )
         fun data() =
             listOf(
-                arrayOf("Pixel 3a", CameraCharacteristics.LENS_FACING_FRONT, false, false),
-                arrayOf("Pixel 4", CameraCharacteristics.LENS_FACING_FRONT, true, false),
-                arrayOf("Pixel 6", CameraCharacteristics.LENS_FACING_FRONT, false, false),
-                arrayOf("Pixel 6A", CameraCharacteristics.LENS_FACING_BACK, false, false),
-                arrayOf("Pixel 6A", CameraCharacteristics.LENS_FACING_FRONT, false, true),
-                arrayOf("Pixel 7 pro", CameraCharacteristics.LENS_FACING_FRONT, false, true),
-                arrayOf("Pixel 8", CameraCharacteristics.LENS_FACING_FRONT, false, true),
-                arrayOf("SM-A320FL", CameraCharacteristics.LENS_FACING_FRONT, false, false),
+                arrayOf<Any>("Pixel 3a", CameraCharacteristics.LENS_FACING_FRONT, false, false),
+                arrayOf<Any>("Pixel 4", CameraCharacteristics.LENS_FACING_FRONT, true, false),
+                arrayOf<Any>("Pixel 6", CameraCharacteristics.LENS_FACING_FRONT, false, false),
+                arrayOf<Any>("Pixel 6A", CameraCharacteristics.LENS_FACING_BACK, false, false),
+                arrayOf<Any>("Pixel 6A", CameraCharacteristics.LENS_FACING_FRONT, false, true),
+                arrayOf<Any>("Pixel 7 pro", CameraCharacteristics.LENS_FACING_FRONT, false, true),
+                arrayOf<Any>("Pixel 8", CameraCharacteristics.LENS_FACING_FRONT, false, true),
+                arrayOf<Any>("SM-A320FL", CameraCharacteristics.LENS_FACING_FRONT, false, false),
             )
     }
 

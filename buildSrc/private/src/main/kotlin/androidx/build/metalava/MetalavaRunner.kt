@@ -18,7 +18,7 @@ package androidx.build.metalava
 
 import androidx.build.Version
 import androidx.build.checkapi.ApiLocation
-import androidx.build.getLibraryByName
+import androidx.build.getLibraryClasspath
 import androidx.build.logging.TERMINAL_RED
 import androidx.build.logging.TERMINAL_RESET
 import java.io.ByteArrayOutputStream
@@ -27,7 +27,6 @@ import javax.inject.Inject
 import org.gradle.api.Project
 import org.gradle.api.file.FileCollection
 import org.gradle.api.provider.ListProperty
-import org.gradle.api.provider.Property
 import org.gradle.api.provider.SetProperty
 import org.gradle.process.ExecOperations
 import org.gradle.workers.WorkAction
@@ -40,7 +39,6 @@ import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 fun runMetalavaWithArgs(
     metalavaClasspath: FileCollection,
     args: List<String>,
-    k2UastEnabled: Boolean,
     kotlinSourceLevel: KotlinVersion,
     workerExecutor: WorkerExecutor,
 ) {
@@ -77,6 +75,8 @@ fun runMetalavaWithArgs(
                 "androidx.annotation.ReplaceWith",
                 "--exclude-annotation",
                 "androidx.compose.runtime.ComposableInferredTarget",
+                "--exclude-annotation",
+                "androidx.compose.runtime.ComposableTarget",
                 // internal annotation, includes debug information and values are not constant
                 "--exclude-annotation",
                 "androidx.compose.runtime.internal.FunctionKeyMeta",
@@ -89,14 +89,12 @@ fun runMetalavaWithArgs(
     workQueue.submit(MetalavaWorkAction::class.java) { parameters ->
         parameters.args.set(allArgs)
         parameters.metalavaClasspath.set(metalavaClasspath.files)
-        parameters.k2UastEnabled.set(k2UastEnabled)
     }
 }
 
 interface MetalavaParams : WorkParameters {
     val args: ListProperty<String>
     val metalavaClasspath: SetProperty<File>
-    val k2UastEnabled: Property<Boolean>
 }
 
 abstract class MetalavaWorkAction @Inject constructor(private val execOperations: ExecOperations) :
@@ -104,12 +102,6 @@ abstract class MetalavaWorkAction @Inject constructor(private val execOperations
     override fun execute() {
         val outputStream = ByteArrayOutputStream()
         var successful = false
-        val k2UastArg =
-            listOfNotNull(
-                // Enable Android Lint infrastructure used by Metalava to use K2 UAST
-                // (also historically known as FIR) when running Metalava for this module.
-                "--Xuse-k2-uast".takeIf { parameters.k2UastEnabled.get() }
-            )
         try {
             execOperations.javaexec {
                 // Intellij core reflects into java.util.ResourceBundle
@@ -117,9 +109,9 @@ abstract class MetalavaWorkAction @Inject constructor(private val execOperations
                 it.systemProperty("java.awt.headless", "true")
                 it.classpath(parameters.metalavaClasspath.get())
                 it.mainClass.set("com.android.tools.metalava.Driver")
-                it.args = parameters.args.get() + k2UastArg
-                it.setStandardOutput(outputStream)
-                it.setErrorOutput(outputStream)
+                it.args = parameters.args.get()
+                it.standardOutput = outputStream
+                it.errorOutput = outputStream
             }
             successful = true
         } finally {
@@ -130,11 +122,7 @@ abstract class MetalavaWorkAction @Inject constructor(private val execOperations
     }
 }
 
-fun Project.getMetalavaClasspath(): FileCollection {
-    val configuration =
-        configurations.detachedConfiguration(dependencies.create(getLibraryByName("metalava")))
-    return project.files(configuration)
-}
+fun Project.getMetalavaClasspath(): FileCollection = getLibraryClasspath("metalava")
 
 fun getApiLintArgs(targetsJavaConsumers: Boolean): List<String> {
     val args =
@@ -203,7 +191,14 @@ fun getApiLintArgs(targetsJavaConsumers: Boolean): List<String> {
         args.add(acronym)
     }
     val javaOnlyIssues =
-        listOf("MissingJvmstatic", "ArrayReturn", "ValueClassDefinition", "FacadeClassJvmName")
+        listOf(
+            "MissingJvmstatic",
+            "ArrayReturn",
+            "ValueClassDefinition",
+            "FacadeClassJvmName",
+            "ValueClassUsageFromConstructor",
+            "ValueClassUsageWithoutJvmName",
+        )
     val javaOnlyErrorLevel =
         if (targetsJavaConsumers) {
             "--error"
@@ -225,7 +220,7 @@ internal fun getGenerateApiLevelsArgs(
     return buildList {
         add("--generate-api-version-history")
         add(outputLocation.absolutePath)
-        add("--current-version")
+        add("--api-version-for-sources")
         add(currentVersion.toString())
         if (apiFiles.isNotEmpty()) {
             add("--api-version-signature-files")
@@ -265,19 +260,27 @@ internal fun generateApi(
     apiLintMode: ApiLintMode,
     includeRestrictToLibraryGroupApis: Boolean,
     apiLevelsArgs: List<String>,
-    k2UastEnabled: Boolean,
     kotlinSourceLevel: KotlinVersion,
     workerExecutor: WorkerExecutor,
     pathToManifest: String? = null,
+    multiplatform: Boolean,
+    hasJvmOrAndroidTarget: Boolean,
 ) {
     val generateApiConfigs: MutableList<Pair<GenerateApiMode, ApiLintMode>> =
         mutableListOf(GenerateApiMode.PublicApi to apiLintMode)
 
+    // Generate `RestrictTo` APIs as a separate API surface. This does not make sense to do for
+    // projects without a jvm/android target, because the purpose of tracking `RestrictTo` is for
+    // maintaining binary compatibility, but metalava can only enforce binary compatibility for jvm
+    // based projects.
     @Suppress("LiftReturnOrAssignment")
-    if (includeRestrictToLibraryGroupApis) {
-        generateApiConfigs += GenerateApiMode.AllRestrictedApis to ApiLintMode.Skip
-    } else {
-        generateApiConfigs += GenerateApiMode.RestrictToLibraryGroupPrefixApis to ApiLintMode.Skip
+    if (hasJvmOrAndroidTarget) {
+        if (includeRestrictToLibraryGroupApis) {
+            generateApiConfigs += GenerateApiMode.AllRestrictedApis to ApiLintMode.Skip
+        } else {
+            generateApiConfigs +=
+                GenerateApiMode.RestrictToLibraryGroupPrefixApis to ApiLintMode.Skip
+        }
     }
 
     generateApiConfigs.forEach { (generateApiMode, apiLintMode) ->
@@ -290,10 +293,11 @@ internal fun generateApi(
             generateApiMode,
             apiLintMode,
             apiLevelsArgs,
-            k2UastEnabled,
             kotlinSourceLevel,
             workerExecutor,
             pathToManifest,
+            multiplatform,
+            hasJvmOrAndroidTarget,
         )
     }
 }
@@ -311,10 +315,11 @@ private fun generateApi(
     generateApiMode: GenerateApiMode,
     apiLintMode: ApiLintMode,
     apiLevelsArgs: List<String>,
-    k2UastEnabled: Boolean,
     kotlinSourceLevel: KotlinVersion,
     workerExecutor: WorkerExecutor,
     pathToManifest: String? = null,
+    multiplatform: Boolean,
+    hasJvmOrAndroidTarget: Boolean,
 ) {
     val args =
         getGenerateApiArgs(
@@ -326,8 +331,10 @@ private fun generateApi(
             apiLintMode,
             apiLevelsArgs,
             pathToManifest,
+            multiplatform,
+            hasJvmOrAndroidTarget,
         )
-    runMetalavaWithArgs(metalavaClasspath, args, k2UastEnabled, kotlinSourceLevel, workerExecutor)
+    runMetalavaWithArgs(metalavaClasspath, args, kotlinSourceLevel, workerExecutor)
 }
 
 /**
@@ -343,36 +350,65 @@ fun getGenerateApiArgs(
     apiLintMode: ApiLintMode,
     apiLevelsArgs: List<String>,
     pathToManifest: String? = null,
+    multiplatform: Boolean,
+    hasJvmOrAndroidTarget: Boolean,
 ): List<String> {
-    // generate public API txt
-    val args =
-        mutableListOf(
-            "--source-path",
-            sourcePaths.filter { it.exists() }.joinToString(File.pathSeparator),
-            "--project",
-            projectXml.path,
-        )
+    val args = mutableListOf("--project", projectXml.path, "--format=4.0", "--warnings-as-errors")
 
-    // Include the jar file to generate bytecode-only APIs if this project has any Kotlin source.
-    if (compiledSources != null && sourcePaths.any { containsKotlinFiles(it) }) {
-        args += listOf("--compiled-sources", compiledSources.absolutePath)
-    }
+    // Generate public API txt if there is a jvm/android target. If there isn't, the `generateApi`
+    // task will just run API lint without creating a signature file.
+    if (hasJvmOrAndroidTarget) {
+        args +=
+            listOf(
+                "--source-path",
+                sourcePaths.filter { it.exists() }.joinToString(File.pathSeparator),
+            )
 
-    args += listOf("--format=v4", "--warnings-as-errors")
+        // Include the jar file to generate bytecode-only APIs if this project has any Kotlin
+        // source.
+        if (compiledSources != null && sourcePaths.any { containsKotlinFiles(it) }) {
+            args += listOf("--compiled-sources", compiledSources.absolutePath)
+        }
 
-    pathToManifest?.let { args += listOf("--manifest", pathToManifest) }
+        pathToManifest?.let { args += listOf("--manifest", pathToManifest) }
 
-    if (outputLocation != null) {
-        when (generateApiMode) {
-            is GenerateApiMode.PublicApi -> {
-                args += listOf("--api", outputLocation.publicApiFile.toString())
-                // Generate API levels just for the public API
-                args += apiLevelsArgs
+        if (outputLocation != null) {
+            when (generateApiMode) {
+                is GenerateApiMode.PublicApi -> {
+                    args +=
+                        listOf(
+                            "--trace-file",
+                            ApiLocation.toTraceFilePath(outputLocation.publicApiFile),
+                        )
+                    args += listOf("--api", outputLocation.publicApiFile.toString())
+                    // Generate API levels just for the public API
+                    args += apiLevelsArgs
+                }
+
+                is GenerateApiMode.AllRestrictedApis,
+                GenerateApiMode.RestrictToLibraryGroupPrefixApis -> {
+                    args +=
+                        listOf(
+                            "--trace-file",
+                            ApiLocation.toTraceFilePath(outputLocation.restrictedApiFile),
+                        )
+                    args += listOf("--api", outputLocation.restrictedApiFile.toString())
+                }
             }
-            is GenerateApiMode.AllRestrictedApis,
-            GenerateApiMode.RestrictToLibraryGroupPrefixApis -> {
-                args += listOf("--api", outputLocation.restrictedApiFile.toString())
-            }
+        }
+    } else {
+        // If there is no jvm/android target, generate multiplatform API files instead.
+        if (outputLocation != null) {
+            args +=
+                listOf(
+                    "--trace-file",
+                    ApiLocation.toTraceFilePath(outputLocation.multiplatformApiDirectory),
+                )
+            args +=
+                listOf(
+                    "--multiplatform-api-directory",
+                    outputLocation.multiplatformApiDirectory.toString(),
+                )
         }
     }
 
@@ -380,6 +416,11 @@ fun getGenerateApiArgs(
         is GenerateApiMode.PublicApi -> {
             args += listOf("--hide-annotation", "androidx.annotation.RestrictTo")
             args += listOf("--show-unannotated")
+
+            // Run multiplatform lint for the public API invocation of metalava.
+            if (multiplatform) {
+                args += "--multiplatform-enabled"
+            }
         }
         is GenerateApiMode.AllRestrictedApis,
         GenerateApiMode.RestrictToLibraryGroupPrefixApis -> {

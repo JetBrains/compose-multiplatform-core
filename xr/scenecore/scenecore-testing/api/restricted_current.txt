@@ -1,842 +1,281 @@
 // Signature format: 4.0
 package androidx.xr.scenecore.testing {
 
-  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class FakeActivityPanelEntity extends androidx.xr.scenecore.testing.FakePanelEntity implements androidx.xr.scenecore.runtime.ActivityPanelEntity {
-    ctor public FakeActivityPanelEntity();
-    method @InaccessibleFromKotlin public android.os.Bundle? getLaunchBundle();
-    method @InaccessibleFromKotlin public android.content.Intent getLaunchIntent();
-    method @InaccessibleFromKotlin public android.app.Activity getMovedActivity();
-    method public void launchActivity(android.content.Intent intent, android.os.Bundle? bundle);
-    method public void moveActivity(android.app.Activity activity);
-    property public android.os.Bundle? launchBundle;
-    property public android.content.Intent launchIntent;
-    property public android.app.Activity movedActivity;
+  public final class ActivityPanelEntityTester {
+    method @InaccessibleFromKotlin public android.content.Intent? getStartActivityIntent();
+    method @InaccessibleFromKotlin public android.app.Activity? getTransferredActivity();
+    property public android.content.Intent? startActivityIntent;
+    property public android.app.Activity? transferredActivity;
   }
 
-  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public class FakeActivityPose implements androidx.xr.scenecore.runtime.ActivityPose {
-    ctor public FakeActivityPose();
-    method @InaccessibleFromKotlin public androidx.xr.runtime.math.Pose getActivitySpacePose();
-    method @InaccessibleFromKotlin public androidx.xr.runtime.math.Vector3 getActivitySpaceScale();
-    method @InaccessibleFromKotlin public final androidx.xr.scenecore.runtime.HitTestResult getHitTestResult();
-    method @InaccessibleFromKotlin public androidx.xr.runtime.math.Vector3 getWorldSpaceScale();
-    method public com.google.common.util.concurrent.ListenableFuture<androidx.xr.scenecore.runtime.HitTestResult> hitTest(androidx.xr.runtime.math.Vector3 origin, androidx.xr.runtime.math.Vector3 direction, @androidx.xr.scenecore.runtime.ActivityPose.HitTestFilterValue int hitTestFilter);
-    method @InaccessibleFromKotlin public final void setHitTestResult(androidx.xr.scenecore.runtime.HitTestResult);
-    method public androidx.xr.runtime.math.Pose transformPoseTo(androidx.xr.runtime.math.Pose pose, androidx.xr.scenecore.runtime.ActivityPose destination);
-    property public androidx.xr.runtime.math.Pose activitySpacePose;
-    property public androidx.xr.runtime.math.Vector3 activitySpaceScale;
-    property public final androidx.xr.scenecore.runtime.HitTestResult hitTestResult;
-    property public androidx.xr.runtime.math.Vector3 worldSpaceScale;
-  }
-
-  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class FakeActivitySpace extends androidx.xr.scenecore.testing.FakeSystemSpaceEntity implements androidx.xr.scenecore.runtime.ActivitySpace {
-    ctor public FakeActivitySpace();
-    method public void addOnBoundsChangedListener(androidx.xr.scenecore.runtime.ActivitySpace.OnBoundsChangedListener listener);
-    method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.HitTestResult getActivitySpaceHitTestResult();
-    method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.Dimensions getBounds();
-    method @InaccessibleFromKotlin public java.util.Set<androidx.xr.scenecore.runtime.ActivitySpace.OnBoundsChangedListener> getOnBoundsChangedListeners();
+  public final class ActivitySpaceTester {
+    method @InaccessibleFromKotlin public androidx.xr.scenecore.HitTestResult? getHitTestResult();
     method @InaccessibleFromKotlin public androidx.xr.runtime.math.BoundingBox getRecommendedContentBoxInFullSpace();
-    method public com.google.common.util.concurrent.ListenableFuture<androidx.xr.scenecore.runtime.HitTestResult> hitTestRelativeToActivityPose(androidx.xr.runtime.math.Vector3 origin, androidx.xr.runtime.math.Vector3 direction, @androidx.xr.scenecore.runtime.ActivityPose.HitTestFilterValue int hitTestFilter, androidx.xr.scenecore.runtime.ActivityPose activityPose);
-    method public void onBoundsChanged(androidx.xr.scenecore.runtime.Dimensions bounds);
-    method public void removeOnBoundsChangedListener(androidx.xr.scenecore.runtime.ActivitySpace.OnBoundsChangedListener listener);
-    method @InaccessibleFromKotlin public void setActivitySpaceHitTestResult(androidx.xr.scenecore.runtime.HitTestResult);
-    property public androidx.xr.scenecore.runtime.HitTestResult activitySpaceHitTestResult;
-    property public androidx.xr.scenecore.runtime.Dimensions bounds;
-    property public java.util.Set<androidx.xr.scenecore.runtime.ActivitySpace.OnBoundsChangedListener> onBoundsChangedListeners;
+    method @InaccessibleFromKotlin public void setHitTestResult(androidx.xr.scenecore.HitTestResult?);
+    method @InaccessibleFromKotlin public void setRecommendedContentBoxInFullSpace(androidx.xr.runtime.math.BoundingBox);
+    method public void triggerOnBoundsChanged(androidx.xr.runtime.math.FloatSize3d bounds);
+    method public void triggerOnOriginChanged();
+    property public androidx.xr.scenecore.HitTestResult? hitTestResult;
     property public androidx.xr.runtime.math.BoundingBox recommendedContentBoxInFullSpace;
   }
 
-  @RequiresApi(android.os.Build.VERSION_CODES.O) @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class FakeAnchorEntity extends androidx.xr.scenecore.testing.FakeSystemSpaceEntity implements androidx.xr.scenecore.runtime.AnchorEntity {
-    ctor public FakeAnchorEntity();
-    ctor public FakeAnchorEntity(optional androidx.xr.scenecore.testing.FakeAnchorEntity.AnchorCreationData anchorCreationData, optional androidx.xr.arcore.runtime.Anchor anchor);
-    method @InaccessibleFromKotlin public long getNativePointer();
-    method @InaccessibleFromKotlin public int getState();
-    method public void onStateChanged(int newState);
-    method public void setOnStateChangedListener(androidx.xr.scenecore.runtime.AnchorEntity.OnStateChangedListener onStateChangedListener);
-    property public long nativePointer;
-    property public int state;
+  public final class AnchorEntityTester {
+    method @InaccessibleFromKotlin public androidx.xr.scenecore.AnchorEntity.State? getState();
+    method @InaccessibleFromKotlin public void setState(androidx.xr.scenecore.AnchorEntity.State?);
+    method public void triggerOnOriginChanged();
+    property public androidx.xr.scenecore.AnchorEntity.State? state;
   }
 
-  @RequiresApi(android.os.Build.VERSION_CODES.O) public static final class FakeAnchorEntity.AnchorCreationData {
-    ctor public FakeAnchorEntity.AnchorCreationData();
-    ctor public FakeAnchorEntity.AnchorCreationData(optional androidx.xr.scenecore.runtime.Dimensions bounds, optional androidx.xr.scenecore.runtime.PlaneType planeType, optional androidx.xr.scenecore.runtime.PlaneSemantic planeSemantic, optional java.time.Duration searchTimeout, optional java.util.UUID uuid);
-    method public androidx.xr.scenecore.runtime.Dimensions component1();
-    method public androidx.xr.scenecore.runtime.PlaneType component2();
-    method public androidx.xr.scenecore.runtime.PlaneSemantic component3();
-    method public java.time.Duration component4();
-    method public java.util.UUID component5();
-    method public androidx.xr.scenecore.testing.FakeAnchorEntity.AnchorCreationData copy(optional androidx.xr.scenecore.runtime.Dimensions bounds, optional androidx.xr.scenecore.runtime.PlaneType planeType, optional androidx.xr.scenecore.runtime.PlaneSemantic planeSemantic, optional java.time.Duration searchTimeout, optional java.util.UUID uuid);
-    method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.Dimensions getBounds();
-    method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.PlaneSemantic getPlaneSemantic();
-    method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.PlaneType getPlaneType();
-    method @InaccessibleFromKotlin public java.time.Duration getSearchTimeout();
-    method @InaccessibleFromKotlin public java.util.UUID getUuid();
-    property public androidx.xr.scenecore.runtime.Dimensions bounds;
-    property public androidx.xr.scenecore.runtime.PlaneSemantic planeSemantic;
-    property public androidx.xr.scenecore.runtime.PlaneType planeType;
-    property public java.time.Duration searchTimeout;
-    property public java.util.UUID uuid;
+  public final class BoundsComponentTester {
+    method public void triggerOnBoundsUpdate(androidx.xr.runtime.math.BoundingBox boundingBox);
   }
 
-  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class FakeAnchorPlacement implements androidx.xr.scenecore.runtime.AnchorPlacement {
+  public final class GltfModelEntityTester {
+    method public void addAnimation(androidx.xr.scenecore.testing.TestGltfAnimation animation);
+    method public void addNode(androidx.xr.scenecore.testing.TestGltfModelNode node);
+    method @InaccessibleFromKotlin public androidx.xr.runtime.math.BoundingBox getGltfModelBoundingBox();
+    method @InaccessibleFromKotlin public void setGltfModelBoundingBox(androidx.xr.runtime.math.BoundingBox);
+    property public androidx.xr.runtime.math.BoundingBox gltfModelBoundingBox;
   }
 
-  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class FakeAudioTrackExtensionsWrapper implements androidx.xr.scenecore.runtime.AudioTrackExtensionsWrapper {
-    ctor public FakeAudioTrackExtensionsWrapper();
-    method public androidx.xr.scenecore.runtime.PointSourceParams? getPointSourceParams(android.media.AudioTrack track);
-    method public androidx.xr.scenecore.runtime.SoundFieldAttributes? getSoundFieldAttributes(android.media.AudioTrack track);
-    method @InaccessibleFromKotlin public java.util.Map<android.media.AudioTrack,androidx.xr.scenecore.runtime.SoundFieldAttributes?> getSoundFieldAttributesMap();
-    method @androidx.xr.scenecore.runtime.SpatializerConstants.SourceType public int getSpatialSourceType(android.media.AudioTrack track);
-    method @InaccessibleFromKotlin public java.util.Map<android.media.AudioTrack,java.lang.Integer> getSpatialSourceTypeMap();
-    method public void setPointSourceParams(android.media.AudioTrack track, androidx.xr.scenecore.runtime.PointSourceParams params);
-    method public android.media.AudioTrack.Builder setPointSourceParams(android.media.AudioTrack.Builder builder, androidx.xr.scenecore.runtime.PointSourceParams params);
-    method public android.media.AudioTrack.Builder setSoundFieldAttributes(android.media.AudioTrack.Builder builder, androidx.xr.scenecore.runtime.SoundFieldAttributes attributes);
-    method @InaccessibleFromKotlin public void setSoundFieldAttributesMap(java.util.Map<android.media.AudioTrack,androidx.xr.scenecore.runtime.SoundFieldAttributes?>);
-    method @InaccessibleFromKotlin public void setSpatialSourceTypeMap(java.util.Map<android.media.AudioTrack,java.lang.Integer>);
-    property public java.util.Map<android.media.AudioTrack,androidx.xr.scenecore.runtime.SoundFieldAttributes?> soundFieldAttributesMap;
-    property public java.util.Map<android.media.AudioTrack,java.lang.Integer> spatialSourceTypeMap;
+  public final class GltfModelTester {
+    method @InaccessibleFromKotlin public byte[] getAssetData();
+    method @InaccessibleFromKotlin public String getAssetKey();
+    method @InaccessibleFromKotlin public String getAssetPath();
+    property public byte[] assetData;
+    property public String assetKey;
+    property public String assetPath;
   }
 
-  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public class FakeBaseRenderingFeature implements androidx.xr.scenecore.runtime.RenderingFeature {
-    ctor public FakeBaseRenderingFeature(androidx.xr.runtime.NodeHolder<? extends java.lang.Object?> _nodeHolder);
-    method public void dispose();
-    method public androidx.xr.runtime.NodeHolder<? extends java.lang.Object?> getNodeHolder();
+  public final class ImageBasedLightingAssetTester {
+    method @InaccessibleFromKotlin public byte[] getAssetData();
+    method @InaccessibleFromKotlin public String getAssetKey();
+    method @InaccessibleFromKotlin public String getAssetPath();
+    property public byte[] assetData;
+    property public String assetKey;
+    property public String assetPath;
   }
 
-  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public class FakeCameraViewActivityPose extends androidx.xr.scenecore.testing.FakeActivityPose implements androidx.xr.scenecore.runtime.CameraViewActivityPose {
-    ctor public FakeCameraViewActivityPose();
-    ctor public FakeCameraViewActivityPose(optional @androidx.xr.scenecore.runtime.CameraViewActivityPose.CameraType int cameraType);
-    method @InaccessibleFromKotlin public int getCameraType();
-    method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.PixelDimensions getDisplayResolutionInPixels();
-    method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.CameraViewActivityPose.Fov getFov();
-    method @InaccessibleFromKotlin public void setDisplayResolutionInPixels(androidx.xr.scenecore.runtime.PixelDimensions);
-    method @InaccessibleFromKotlin public void setFov(androidx.xr.scenecore.runtime.CameraViewActivityPose.Fov);
-    property public int cameraType;
-    property public androidx.xr.scenecore.runtime.PixelDimensions displayResolutionInPixels;
-    property public androidx.xr.scenecore.runtime.CameraViewActivityPose.Fov fov;
+  public final class InteractableComponentTester {
+    method public void triggerOnInputEvent(androidx.xr.scenecore.InputEvent inputEvent);
   }
 
-  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public class FakeComponent implements androidx.xr.scenecore.runtime.Component {
-    ctor public FakeComponent();
-    method @InaccessibleFromKotlin public final boolean getCanBeAttached();
-    method public boolean onAttach(androidx.xr.scenecore.runtime.Entity entity);
-    method public void onDetach(androidx.xr.scenecore.runtime.Entity entity);
-    method @InaccessibleFromKotlin public final void setCanBeAttached(boolean);
-    property public final boolean canBeAttached;
+  public final class MainPanelEntityTester extends androidx.xr.scenecore.testing.PanelEntityTester {
+    method public void triggerOnPerceivedResolutionChanged(androidx.xr.runtime.math.IntSize2d dimensions);
   }
 
-  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public class FakeEntity extends androidx.xr.scenecore.testing.FakeActivityPose implements androidx.xr.scenecore.runtime.Entity {
-    ctor public FakeEntity();
-    method public void addChild(androidx.xr.scenecore.runtime.Entity child);
-    method public void addChildren(java.util.List<? extends androidx.xr.scenecore.runtime.Entity> children);
-    method public boolean addComponent(androidx.xr.scenecore.runtime.Component component);
-    method public void addInputEventListener(java.util.concurrent.Executor executor, androidx.xr.scenecore.runtime.InputEventListener listener);
-    method public void dispose();
-    method public float getAlpha(@androidx.xr.scenecore.runtime.SpaceValue int relativeTo);
-    method @InaccessibleFromKotlin public java.util.List<androidx.xr.scenecore.runtime.Entity> getChildren();
-    method public java.util.List<androidx.xr.scenecore.runtime.Component> getComponents();
-    method public <T extends androidx.xr.scenecore.runtime.Component> java.util.List<T> getComponentsOfType(Class<? extends T> type);
-    method @InaccessibleFromKotlin public CharSequence getContentDescription();
-    method @InaccessibleFromKotlin public final java.util.Map<androidx.xr.scenecore.runtime.InputEventListener,java.util.concurrent.Executor> getInputEventListenerMap();
-    method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.Entity? getParent();
-    method public androidx.xr.runtime.math.Pose getPose(@androidx.xr.scenecore.runtime.SpaceValue int relativeTo);
-    method public androidx.xr.runtime.math.Vector3 getScale(@androidx.xr.scenecore.runtime.SpaceValue int relativeTo);
-    method public boolean isHidden(boolean includeParents);
-    method public void removeAllComponents();
-    method public void removeComponent(androidx.xr.scenecore.runtime.Component component);
-    method public void removeInputEventListener(androidx.xr.scenecore.runtime.InputEventListener listener);
-    method public void setAlpha(float alpha, @androidx.xr.scenecore.runtime.SpaceValue int relativeTo);
-    method @InaccessibleFromKotlin public void setContentDescription(CharSequence);
-    method public void setHidden(boolean hidden);
-    method @InaccessibleFromKotlin public void setParent(androidx.xr.scenecore.runtime.Entity?);
-    method public void setPose(androidx.xr.runtime.math.Pose pose, @androidx.xr.scenecore.runtime.SpaceValue int relativeTo);
-    method public void setScale(androidx.xr.runtime.math.Vector3 scale, @androidx.xr.scenecore.runtime.SpaceValue int relativeTo);
-    property public java.util.List<androidx.xr.scenecore.runtime.Entity> children;
-    property public CharSequence contentDescription;
-    property public final java.util.Map<androidx.xr.scenecore.runtime.InputEventListener,java.util.concurrent.Executor> inputEventListenerMap;
-    property public androidx.xr.scenecore.runtime.Entity? parent;
+  public final class MeshEntityTester {
+    method @InaccessibleFromKotlin public java.util.List<androidx.xr.runtime.math.Matrix4> getBoneTransforms();
+    property public java.util.List<androidx.xr.runtime.math.Matrix4> boneTransforms;
   }
 
-  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public class FakeGltfEntity extends androidx.xr.scenecore.testing.FakeEntity implements androidx.xr.scenecore.runtime.GltfEntity {
-    ctor public FakeGltfEntity();
-    ctor public FakeGltfEntity(optional androidx.xr.scenecore.runtime.GltfFeature? feature, optional java.util.concurrent.Executor? executor);
-    method public void clearMaterialOverride(String nodeName, int primitiveIndex);
-    method @InaccessibleFromKotlin public int getAnimationState();
-    method @InaccessibleFromKotlin public final String? getCurrentAnimationName();
-    method @InaccessibleFromKotlin public final androidx.xr.scenecore.testing.FakeGltfEntity.Node getNode();
-    method @InaccessibleFromKotlin public final java.util.List<java.lang.String> getSupportedAnimationNames();
-    method @InaccessibleFromKotlin public final boolean isLooping();
-    method @InaccessibleFromKotlin public final void setLooping(boolean);
-    method public void setMaterialOverride(androidx.xr.scenecore.runtime.MaterialResource material, String nodeName, int primitiveIndex);
-    method @InaccessibleFromKotlin public final void setSupportedAnimationNames(java.util.List<java.lang.String>);
-    method public void startAnimation(boolean loop, String? animationName);
-    method public void stopAnimation();
-    property @androidx.xr.scenecore.runtime.GltfEntity.AnimationStateValue public int animationState;
-    property public final String? currentAnimationName;
-    property public final boolean isLooping;
-    property public final androidx.xr.scenecore.testing.FakeGltfEntity.Node node;
-    property public final java.util.List<java.lang.String> supportedAnimationNames;
+  public final class MovableComponentTester {
+    method @InaccessibleFromKotlin public boolean isAnchorable();
+    method @InaccessibleFromKotlin public boolean isScaleInZ();
+    method @InaccessibleFromKotlin public boolean isSystemMovable();
+    method public void triggerOnMoveEnd(androidx.xr.runtime.math.Ray finalInputRay, androidx.xr.runtime.math.Pose finalPose, androidx.xr.runtime.math.Vector3 finalScale);
+    method public void triggerOnMoveEnd(androidx.xr.runtime.math.Ray finalInputRay, androidx.xr.runtime.math.Pose finalPose, androidx.xr.runtime.math.Vector3 finalScale, optional androidx.xr.scenecore.Entity? updatedParent);
+    method @BytecodeOnly public static void triggerOnMoveEnd$default(androidx.xr.scenecore.testing.MovableComponentTester!, androidx.xr.runtime.math.Ray!, androidx.xr.runtime.math.Pose!, androidx.xr.runtime.math.Vector3!, androidx.xr.scenecore.Entity!, int, Object!);
+    method public void triggerOnMoveStart(androidx.xr.runtime.math.Ray initialInputRay, androidx.xr.runtime.math.Pose initialPose, androidx.xr.runtime.math.Vector3 initialScale, androidx.xr.scenecore.Entity initialParent);
+    method public void triggerOnMoveUpdate(androidx.xr.runtime.math.Ray currentInputRay, androidx.xr.runtime.math.Pose currentPose, androidx.xr.runtime.math.Vector3 currentScale);
+    property public boolean isAnchorable;
+    property public boolean isScaleInZ;
+    property public boolean isSystemMovable;
   }
 
-  public static final class FakeGltfEntity.Node {
-    ctor public FakeGltfEntity.Node();
-    method @InaccessibleFromKotlin public androidx.xr.scenecore.testing.FakeResource[] getMaterialArray();
-    method @InaccessibleFromKotlin public String getNodeName();
-    property public androidx.xr.scenecore.testing.FakeResource[] materialArray;
-    property public String nodeName;
+  public class PanelEntityTester {
+    method @InaccessibleFromKotlin public final androidx.xr.scenecore.PerceivedResolutionResult getPerceivedResolutionResult();
+    method @InaccessibleFromKotlin public final void setPerceivedResolutionResult(androidx.xr.scenecore.PerceivedResolutionResult);
+    property public final androidx.xr.scenecore.PerceivedResolutionResult perceivedResolutionResult;
   }
 
-  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class FakeGltfFeature extends androidx.xr.scenecore.testing.FakeBaseRenderingFeature implements androidx.xr.scenecore.runtime.GltfFeature {
-    ctor public FakeGltfFeature(androidx.xr.runtime.NodeHolder<? extends java.lang.Object?> nodeHolder);
-    method public void clearMaterialOverride(String nodeName, int primitiveIndex);
-    method @InaccessibleFromKotlin public int getAnimationState();
-    method public void setColliderEnabled(boolean enableCollider);
-    method public void setMaterialOverride(androidx.xr.scenecore.runtime.MaterialResource material, String nodeName, int primitiveIndex);
-    method public void startAnimation(boolean loop, String? animationName, java.util.concurrent.Executor executor);
-    method public void stopAnimation();
-    property public int animationState;
-    field public static final androidx.xr.scenecore.testing.FakeGltfFeature.Companion Companion;
+  public final class PerceptionSpaceTester {
+    method @InaccessibleFromKotlin public androidx.xr.scenecore.HitTestResult? getHitTestResult();
+    method @InaccessibleFromKotlin public void setHitTestResult(androidx.xr.scenecore.HitTestResult?);
+    property public androidx.xr.scenecore.HitTestResult? hitTestResult;
   }
 
-  public static final class FakeGltfFeature.Companion {
-    method public androidx.xr.scenecore.runtime.GltfFeature createWithMockFeature(androidx.xr.scenecore.runtime.GltfFeature feature, androidx.xr.runtime.NodeHolder<? extends java.lang.Object?> nodeHolder);
+  public final class PointerCaptureComponentTester {
+    method public void triggerOnInputEvent(androidx.xr.scenecore.InputEvent event);
+    method public void triggerOnStateChanged(androidx.xr.scenecore.PointerCaptureComponent.PointerCaptureState newState);
   }
 
-  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class FakeHeadActivityPose extends androidx.xr.scenecore.testing.FakeActivityPose implements androidx.xr.scenecore.runtime.HeadActivityPose {
-    ctor public FakeHeadActivityPose();
+  public final class PositionalAudioComponentTester {
+    method @InaccessibleFromKotlin public androidx.media3.exoplayer.audio.AudioOutputProvider getAudioOutputProvider();
+    method @InaccessibleFromKotlin public androidx.xr.scenecore.PointSourceParams getPointSourceParams();
+    method @InaccessibleFromKotlin public void setAudioOutputProvider(androidx.media3.exoplayer.audio.AudioOutputProvider);
+    property public androidx.media3.exoplayer.audio.AudioOutputProvider audioOutputProvider;
+    property public androidx.xr.scenecore.PointSourceParams pointSourceParams;
   }
 
-  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class FakeInteractableComponent extends androidx.xr.scenecore.testing.FakeComponent implements androidx.xr.scenecore.runtime.InteractableComponent {
-    ctor public FakeInteractableComponent();
+  public final class ResizableComponentTester {
+    method public void triggerOnResizeEvent(androidx.xr.scenecore.ResizeEvent resizeEvent);
   }
 
-  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class FakeMediaPlayerExtensionsWrapper implements androidx.xr.scenecore.runtime.MediaPlayerExtensionsWrapper {
-    ctor public FakeMediaPlayerExtensionsWrapper();
-    method @InaccessibleFromKotlin public java.util.Map<android.media.MediaPlayer,androidx.xr.scenecore.runtime.PointSourceParams> getPointSourceParams();
-    method @InaccessibleFromKotlin public java.util.Map<android.media.MediaPlayer,androidx.xr.scenecore.runtime.SoundFieldAttributes> getSoundFieldAttributes();
-    method public void setPointSourceParams(android.media.MediaPlayer mediaPlayer, androidx.xr.scenecore.runtime.PointSourceParams params);
-    method public void setSoundFieldAttributes(android.media.MediaPlayer mediaPlayer, androidx.xr.scenecore.runtime.SoundFieldAttributes attributes);
-    property public java.util.Map<android.media.MediaPlayer,androidx.xr.scenecore.runtime.PointSourceParams> pointSourceParams;
-    property public java.util.Map<android.media.MediaPlayer,androidx.xr.scenecore.runtime.SoundFieldAttributes> soundFieldAttributes;
+  public final class SceneCoreTestRule extends org.junit.rules.ExternalResource {
+    ctor public SceneCoreTestRule();
+    method public androidx.xr.scenecore.testing.SpatialMediaPlayerTester createTester(android.media.MediaPlayer mediaPlayer);
+    method @KotlinOnly public inline <reified T> T createTester(androidx.xr.scenecore.Component component);
+    method @KotlinOnly public inline <reified T> T createTester(androidx.xr.scenecore.Entity entity);
+    method public androidx.xr.scenecore.testing.GltfModelTester createTester(androidx.xr.scenecore.GltfModel gltfModel);
+    method public androidx.xr.scenecore.testing.ImageBasedLightingAssetTester createTester(androidx.xr.scenecore.ImageBasedLightingAsset asset);
+    method public androidx.xr.scenecore.testing.SoundEffectPoolTester createTester(androidx.xr.scenecore.SoundEffectPool soundEffectPool);
+    method public androidx.xr.scenecore.testing.TextureTester createTester(androidx.xr.scenecore.Texture texture);
+    method @InaccessibleFromKotlin public androidx.xr.scenecore.testing.ActivitySpaceTester getActivitySpaceTester();
+    method @InaccessibleFromKotlin public androidx.xr.scenecore.testing.MainPanelEntityTester getMainPanelEntityTester();
+    method @InaccessibleFromKotlin public androidx.xr.scenecore.testing.PerceptionSpaceTester getPerceptionSpaceTester();
+    method @InaccessibleFromKotlin public androidx.xr.scenecore.testing.SceneTester getSceneTester();
+    method @InaccessibleFromKotlin public androidx.xr.scenecore.testing.SpatialAudioTrackBuilderTester getSpatialAudioTrackBuilderTester();
+    method @InaccessibleFromKotlin public androidx.xr.scenecore.testing.SpatialAudioTrackTester getSpatialAudioTrackTester();
+    method @InaccessibleFromKotlin public androidx.xr.scenecore.testing.SpatialEnvironmentTester getSpatialEnvironmentTester();
+    method @InaccessibleFromKotlin public androidx.xr.scenecore.testing.SpatialSoundPoolTester getSpatialSoundPoolTester();
+    method @InaccessibleFromKotlin public androidx.xr.scenecore.testing.SpatialWindowTester getSpatialWindowTester();
+    method @kotlin.PublishedApi internal Object? resolveTesterInternal(androidx.xr.scenecore.Component component);
+    method @kotlin.PublishedApi internal Object? resolveTesterInternal(androidx.xr.scenecore.Entity entity);
+    property public androidx.xr.scenecore.testing.ActivitySpaceTester activitySpaceTester;
+    property public androidx.xr.scenecore.testing.MainPanelEntityTester mainPanelEntityTester;
+    property public androidx.xr.scenecore.testing.PerceptionSpaceTester perceptionSpaceTester;
+    property public androidx.xr.scenecore.testing.SceneTester sceneTester;
+    property public androidx.xr.scenecore.testing.SpatialAudioTrackBuilderTester spatialAudioTrackBuilderTester;
+    property public androidx.xr.scenecore.testing.SpatialAudioTrackTester spatialAudioTrackTester;
+    property public androidx.xr.scenecore.testing.SpatialEnvironmentTester spatialEnvironmentTester;
+    property public androidx.xr.scenecore.testing.SpatialSoundPoolTester spatialSoundPoolTester;
+    property public androidx.xr.scenecore.testing.SpatialWindowTester spatialWindowTester;
   }
 
-  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class FakeMovableComponent extends androidx.xr.scenecore.testing.FakeComponent implements androidx.xr.scenecore.runtime.MovableComponent {
-    ctor public FakeMovableComponent();
-    method public void addMoveEventListener(java.util.concurrent.Executor executor, androidx.xr.scenecore.runtime.MoveEventListener moveEventListener);
-    method @InaccessibleFromKotlin public java.util.Map<androidx.xr.scenecore.runtime.MoveEventListener,java.util.concurrent.Executor> getMoveEventListenersMap();
-    method @InaccessibleFromKotlin public int getScaleWithDistanceMode();
-    method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.Dimensions getSize();
-    method public void removeMoveEventListener(androidx.xr.scenecore.runtime.MoveEventListener moveEventListener);
-    method @InaccessibleFromKotlin public void setScaleWithDistanceMode(int);
-    method @InaccessibleFromKotlin public void setSize(androidx.xr.scenecore.runtime.Dimensions);
-    property public java.util.Map<androidx.xr.scenecore.runtime.MoveEventListener,java.util.concurrent.Executor> moveEventListenersMap;
-    property public int scaleWithDistanceMode;
-    property public androidx.xr.scenecore.runtime.Dimensions size;
+  public final class SceneTester {
+    method @InaccessibleFromKotlin public androidx.xr.scenecore.PanelClippingConfig getPanelClippingConfig();
+    method @InaccessibleFromKotlin public java.util.Set<androidx.xr.scenecore.SpatialCapability> getSpatialCapabilities();
+    method @InaccessibleFromKotlin public void setSpatialCapabilities(java.util.Set<androidx.xr.scenecore.SpatialCapability>);
+    method public void triggerSpaceChanged(androidx.xr.scenecore.SpaceChangeEvent spaceChangeEvent);
+    method public void triggerSpatialVisibilityChanged(androidx.xr.scenecore.SpatialVisibility spatialVisibility);
+    property public androidx.xr.scenecore.PanelClippingConfig panelClippingConfig;
+    property public java.util.Set<androidx.xr.scenecore.SpatialCapability> spatialCapabilities;
   }
 
-  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public interface FakeNode {
+  public final class SoundEffectPoolComponentTester {
+    method @InaccessibleFromKotlin public androidx.xr.scenecore.Stream? getLastPausedStream();
+    method @InaccessibleFromKotlin public androidx.xr.scenecore.PointSourceParams? getLastPlayedPointSourceParams();
+    method @InaccessibleFromKotlin public androidx.xr.scenecore.Stream? getLastPlayedStream();
+    method @InaccessibleFromKotlin public androidx.xr.scenecore.Stream? getLastResumedStream();
+    method @InaccessibleFromKotlin public androidx.xr.scenecore.Stream? getLastStoppedStream();
+    method @IntRange(from=0L) public int getPriority(androidx.xr.scenecore.Stream stream);
+    method public androidx.xr.scenecore.SoundEffect getSoundEffect(androidx.xr.scenecore.Stream stream);
+    method @FloatRange(from=0.0, to=1.0) public float getVolume(androidx.xr.scenecore.Stream stream);
+    method public boolean isLooping(androidx.xr.scenecore.Stream stream);
+    property public androidx.xr.scenecore.Stream? lastPausedStream;
+    property public androidx.xr.scenecore.PointSourceParams? lastPlayedPointSourceParams;
+    property public androidx.xr.scenecore.Stream? lastPlayedStream;
+    property public androidx.xr.scenecore.Stream? lastResumedStream;
+    property public androidx.xr.scenecore.Stream? lastStoppedStream;
   }
 
-  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public class FakePanelEntity extends androidx.xr.scenecore.testing.FakeEntity implements androidx.xr.scenecore.runtime.PanelEntity {
-    ctor public FakePanelEntity();
-    method @InaccessibleFromKotlin public float getCornerRadius();
-    method public androidx.xr.scenecore.runtime.PerceivedResolutionResult getPerceivedResolution();
-    method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.Dimensions getSize();
-    method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.PixelDimensions getSizeInPixels();
-    method @InaccessibleFromKotlin public void setCornerRadius(float);
-    method public final void setPerceivedResolution(androidx.xr.scenecore.runtime.PerceivedResolutionResult perceivedResolution);
-    method @InaccessibleFromKotlin public void setSize(androidx.xr.scenecore.runtime.Dimensions);
-    method @InaccessibleFromKotlin public void setSizeInPixels(androidx.xr.scenecore.runtime.PixelDimensions);
-    property public float cornerRadius;
-    property public androidx.xr.scenecore.runtime.Dimensions size;
-    property public androidx.xr.scenecore.runtime.PixelDimensions sizeInPixels;
+  public final class SoundEffectPoolTester {
+    method public boolean isAssetLoaded(android.content.res.AssetFileDescriptor assetFileDescriptor);
+    method public boolean isResourceLoaded(int resourceId);
+    method public void triggerLoadCompleteListener(androidx.xr.scenecore.SoundEffect soundEffect, boolean success);
   }
 
-  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class FakePerceptionSpaceActivityPose extends androidx.xr.scenecore.testing.FakeActivityPose implements androidx.xr.scenecore.runtime.PerceptionSpaceActivityPose {
-    ctor public FakePerceptionSpaceActivityPose();
+  public final class SpatialAudioTrackBuilderTester {
+    method public androidx.xr.scenecore.PointSourceParams? getPointSourceParams(android.media.AudioTrack.Builder builder);
+    method public androidx.xr.scenecore.SoundFieldAttributes? getSoundFieldAttributes(android.media.AudioTrack.Builder builder);
+    method public boolean isCurrentPointSource(android.media.AudioTrack.Builder builder, androidx.xr.scenecore.Entity entity);
   }
 
-  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class FakePointerCaptureComponent extends androidx.xr.scenecore.testing.FakeComponent implements androidx.xr.scenecore.runtime.PointerCaptureComponent {
-    ctor public FakePointerCaptureComponent();
-    ctor public FakePointerCaptureComponent(optional java.util.concurrent.Executor? executor, optional androidx.xr.scenecore.runtime.PointerCaptureComponent.StateListener? stateListener);
+  public final class SpatialAudioTrackTester {
+    method public boolean isCurrentPointSource(android.media.AudioTrack track, androidx.xr.scenecore.Entity entity);
+    method public void setSoundFieldAttributes(android.media.AudioTrack track, androidx.xr.scenecore.SoundFieldAttributes soundFieldAttributes);
+    method public void setSpatialSourceType(android.media.AudioTrack track, androidx.xr.scenecore.SpatializerConstants.SourceType sourceType);
   }
 
-  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class FakeRenderingRuntime implements androidx.xr.scenecore.runtime.RenderingRuntime {
-    ctor public FakeRenderingRuntime(androidx.xr.scenecore.runtime.SceneRuntime sceneRuntime, optional androidx.xr.scenecore.runtime.RenderingEntityFactory entityFactory);
-    method public androidx.xr.scenecore.runtime.TextureResource? borrowReflectionTexture();
-    method public androidx.xr.scenecore.runtime.GltfEntity createGltfEntity(androidx.xr.runtime.math.Pose pose, androidx.xr.scenecore.runtime.GltfModelResource loadedGltf, androidx.xr.scenecore.runtime.Entity parentEntity);
-    method public com.google.common.util.concurrent.ListenableFuture<androidx.xr.scenecore.runtime.MaterialResource> createKhronosPbrMaterial(androidx.xr.scenecore.runtime.KhronosPbrMaterialSpec spec);
-    method public androidx.xr.scenecore.runtime.SubspaceNodeEntity createSubspaceNodeEntity(androidx.xr.runtime.SubspaceNodeHolder<? extends java.lang.Object?> subspaceNodeHolder, androidx.xr.scenecore.runtime.Dimensions size);
-    method public androidx.xr.runtime.SubspaceNodeHolder<? extends java.lang.Object?> createSubspaceNodeHolder();
-    method public androidx.xr.scenecore.runtime.SurfaceEntity createSurfaceEntity(int stereoMode, androidx.xr.runtime.math.Pose pose, androidx.xr.scenecore.runtime.SurfaceEntity.Shape shape, int surfaceProtection, int superSampling, androidx.xr.scenecore.runtime.Entity parentEntity);
-    method public com.google.common.util.concurrent.ListenableFuture<androidx.xr.scenecore.runtime.MaterialResource> createWaterMaterial(boolean isAlphaMapVersion);
-    method public void destroyKhronosPbrMaterial(androidx.xr.scenecore.runtime.MaterialResource material);
-    method public void destroyTexture(androidx.xr.scenecore.runtime.TextureResource texture);
-    method public void destroyWaterMaterial(androidx.xr.scenecore.runtime.MaterialResource material);
-    method @InaccessibleFromKotlin public java.util.List<androidx.xr.scenecore.testing.FakeRenderingRuntime.FakeKhronosPbrMaterial> getCreatedKhronosPbrMaterials();
-    method @InaccessibleFromKotlin public java.util.List<androidx.xr.scenecore.testing.FakeRenderingRuntime.FakeWaterMaterial> getCreatedWaterMaterials();
-    method public androidx.xr.scenecore.runtime.TextureResource? getReflectionTextureFromIbl(androidx.xr.scenecore.runtime.ExrImageResource iblToken);
-    method @InaccessibleFromKotlin public Enum<androidx.xr.scenecore.testing.FakeRenderingRuntime.State> getState();
-    method public com.google.common.util.concurrent.ListenableFuture<androidx.xr.scenecore.runtime.ExrImageResource> loadExrImageByAssetName(String assetName);
-    method public com.google.common.util.concurrent.ListenableFuture<androidx.xr.scenecore.runtime.ExrImageResource> loadExrImageByByteArray(byte[] assetData, String assetKey);
-    method public com.google.common.util.concurrent.ListenableFuture<androidx.xr.scenecore.runtime.GltfModelResource> loadGltfByAssetName(String assetName);
-    method public com.google.common.util.concurrent.ListenableFuture<androidx.xr.scenecore.runtime.GltfModelResource> loadGltfByByteArray(byte[] assetData, String assetKey);
-    method public com.google.common.util.concurrent.ListenableFuture<androidx.xr.scenecore.runtime.TextureResource> loadTexture(String assetName);
-    method public void setAlphaCutoffOnKhronosPbrMaterial(androidx.xr.scenecore.runtime.MaterialResource material, float alphaCutoff);
-    method public void setAlphaMapOnWaterMaterial(androidx.xr.scenecore.runtime.MaterialResource material, androidx.xr.scenecore.runtime.TextureResource alphaMap, androidx.xr.scenecore.runtime.TextureSampler sampler);
-    method public void setAlphaStepMultiplierOnWaterMaterial(androidx.xr.scenecore.runtime.MaterialResource material, float alphaStepMultiplier);
-    method public void setAmbientOcclusionFactorOnKhronosPbrMaterial(androidx.xr.scenecore.runtime.MaterialResource material, float factor);
-    method public void setAmbientOcclusionTextureOnKhronosPbrMaterial(androidx.xr.scenecore.runtime.MaterialResource material, androidx.xr.scenecore.runtime.TextureResource ambientOcclusion, androidx.xr.scenecore.runtime.TextureSampler sampler);
-    method public void setAmbientOcclusionUvTransformOnKhronosPbrMaterial(androidx.xr.scenecore.runtime.MaterialResource material, androidx.xr.runtime.math.Matrix3 uvTransform);
-    method public void setBaseColorFactorsOnKhronosPbrMaterial(androidx.xr.scenecore.runtime.MaterialResource material, androidx.xr.runtime.math.Vector4 factors);
-    method public void setBaseColorTextureOnKhronosPbrMaterial(androidx.xr.scenecore.runtime.MaterialResource material, androidx.xr.scenecore.runtime.TextureResource baseColor, androidx.xr.scenecore.runtime.TextureSampler sampler);
-    method public void setBaseColorUvTransformOnKhronosPbrMaterial(androidx.xr.scenecore.runtime.MaterialResource material, androidx.xr.runtime.math.Matrix3 uvTransform);
-    method public void setClearcoatFactorsOnKhronosPbrMaterial(androidx.xr.scenecore.runtime.MaterialResource material, float intensity, float roughness, float normal);
-    method public void setClearcoatNormalTextureOnKhronosPbrMaterial(androidx.xr.scenecore.runtime.MaterialResource material, androidx.xr.scenecore.runtime.TextureResource clearcoatNormal, androidx.xr.scenecore.runtime.TextureSampler sampler);
-    method public void setClearcoatRoughnessTextureOnKhronosPbrMaterial(androidx.xr.scenecore.runtime.MaterialResource material, androidx.xr.scenecore.runtime.TextureResource clearcoatRoughness, androidx.xr.scenecore.runtime.TextureSampler sampler);
-    method public void setClearcoatTextureOnKhronosPbrMaterial(androidx.xr.scenecore.runtime.MaterialResource material, androidx.xr.scenecore.runtime.TextureResource clearcoat, androidx.xr.scenecore.runtime.TextureSampler sampler);
-    method public void setEmissiveFactorsOnKhronosPbrMaterial(androidx.xr.scenecore.runtime.MaterialResource material, androidx.xr.runtime.math.Vector3 factors);
-    method public void setEmissiveTextureOnKhronosPbrMaterial(androidx.xr.scenecore.runtime.MaterialResource material, androidx.xr.scenecore.runtime.TextureResource emissive, androidx.xr.scenecore.runtime.TextureSampler sampler);
-    method public void setEmissiveUvTransformOnKhronosPbrMaterial(androidx.xr.scenecore.runtime.MaterialResource material, androidx.xr.runtime.math.Matrix3 uvTransform);
-    method public void setIndexOfRefractionOnKhronosPbrMaterial(androidx.xr.scenecore.runtime.MaterialResource material, float indexOfRefraction);
-    method public void setMetallicFactorOnKhronosPbrMaterial(androidx.xr.scenecore.runtime.MaterialResource material, float factor);
-    method public void setMetallicRoughnessTextureOnKhronosPbrMaterial(androidx.xr.scenecore.runtime.MaterialResource material, androidx.xr.scenecore.runtime.TextureResource metallicRoughness, androidx.xr.scenecore.runtime.TextureSampler sampler);
-    method public void setMetallicRoughnessUvTransformOnKhronosPbrMaterial(androidx.xr.scenecore.runtime.MaterialResource material, androidx.xr.runtime.math.Matrix3 uvTransform);
-    method public void setNormalBoundaryOnWaterMaterial(androidx.xr.scenecore.runtime.MaterialResource material, float normalBoundary);
-    method public void setNormalFactorOnKhronosPbrMaterial(androidx.xr.scenecore.runtime.MaterialResource material, float factor);
-    method public void setNormalMapOnWaterMaterial(androidx.xr.scenecore.runtime.MaterialResource material, androidx.xr.scenecore.runtime.TextureResource normalMap, androidx.xr.scenecore.runtime.TextureSampler sampler);
-    method public void setNormalSpeedOnWaterMaterial(androidx.xr.scenecore.runtime.MaterialResource material, float normalSpeed);
-    method public void setNormalTextureOnKhronosPbrMaterial(androidx.xr.scenecore.runtime.MaterialResource material, androidx.xr.scenecore.runtime.TextureResource normal, androidx.xr.scenecore.runtime.TextureSampler sampler);
-    method public void setNormalTilingOnWaterMaterial(androidx.xr.scenecore.runtime.MaterialResource material, float normalTiling);
-    method public void setNormalUvTransformOnKhronosPbrMaterial(androidx.xr.scenecore.runtime.MaterialResource material, androidx.xr.runtime.math.Matrix3 uvTransform);
-    method public void setNormalZOnWaterMaterial(androidx.xr.scenecore.runtime.MaterialResource material, float normalZ);
-    method public void setReflectionMapOnWaterMaterial(androidx.xr.scenecore.runtime.MaterialResource material, androidx.xr.scenecore.runtime.TextureResource reflectionMap, androidx.xr.scenecore.runtime.TextureSampler sampler);
-    method public void setRoughnessFactorOnKhronosPbrMaterial(androidx.xr.scenecore.runtime.MaterialResource material, float factor);
-    method public void setSheenColorFactorsOnKhronosPbrMaterial(androidx.xr.scenecore.runtime.MaterialResource material, androidx.xr.runtime.math.Vector3 factors);
-    method public void setSheenColorTextureOnKhronosPbrMaterial(androidx.xr.scenecore.runtime.MaterialResource material, androidx.xr.scenecore.runtime.TextureResource sheenColor, androidx.xr.scenecore.runtime.TextureSampler sampler);
-    method public void setSheenRoughnessFactorOnKhronosPbrMaterial(androidx.xr.scenecore.runtime.MaterialResource material, float factor);
-    method public void setSheenRoughnessTextureOnKhronosPbrMaterial(androidx.xr.scenecore.runtime.MaterialResource material, androidx.xr.scenecore.runtime.TextureResource sheenRoughness, androidx.xr.scenecore.runtime.TextureSampler sampler);
-    method public void setTransmissionFactorOnKhronosPbrMaterial(androidx.xr.scenecore.runtime.MaterialResource material, float factor);
-    method public void setTransmissionTextureOnKhronosPbrMaterial(androidx.xr.scenecore.runtime.MaterialResource material, androidx.xr.scenecore.runtime.TextureResource transmission, androidx.xr.scenecore.runtime.TextureSampler sampler);
-    method public void setTransmissionUvTransformOnKhronosPbrMaterial(androidx.xr.scenecore.runtime.MaterialResource material, androidx.xr.runtime.math.Matrix3 uvTransform);
-    property public java.util.List<androidx.xr.scenecore.testing.FakeRenderingRuntime.FakeKhronosPbrMaterial> createdKhronosPbrMaterials;
-    property public java.util.List<androidx.xr.scenecore.testing.FakeRenderingRuntime.FakeWaterMaterial> createdWaterMaterials;
-    property public Enum<androidx.xr.scenecore.testing.FakeRenderingRuntime.State> state;
+  public final class SpatialEnvironmentTester {
+    method public void triggerPassthroughOpacityChanged(@FloatRange(from=0.0, to=1.0) float opacity);
+    method public void triggerSpatialEnvironmentChanged(boolean active);
   }
 
-  public static final class FakeRenderingRuntime.FakeKhronosPbrMaterial implements androidx.xr.scenecore.runtime.MaterialResource {
-    ctor public FakeRenderingRuntime.FakeKhronosPbrMaterial(androidx.xr.scenecore.runtime.KhronosPbrMaterialSpec spec);
-    method @InaccessibleFromKotlin public Float? getAlphaCutoff();
-    method @InaccessibleFromKotlin public Float? getAmbientOcclusionFactor();
-    method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.TextureResource? getAmbientOcclusionTexture();
-    method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.TextureSampler? getAmbientOcclusionTextureSampler();
-    method @InaccessibleFromKotlin public androidx.xr.runtime.math.Matrix3? getAmbientOcclusionUvTransform();
-    method @InaccessibleFromKotlin public androidx.xr.runtime.math.Vector4? getBaseColorFactors();
-    method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.TextureResource? getBaseColorTexture();
-    method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.TextureSampler? getBaseColorTextureSampler();
-    method @InaccessibleFromKotlin public androidx.xr.runtime.math.Matrix3? getBaseColorUvTransform();
-    method @InaccessibleFromKotlin public Float? getClearcoatIntensity();
-    method @InaccessibleFromKotlin public Float? getClearcoatNormalFactor();
-    method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.TextureResource? getClearcoatNormalTexture();
-    method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.TextureSampler? getClearcoatNormalTextureSampler();
-    method @InaccessibleFromKotlin public Float? getClearcoatRoughness();
-    method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.TextureResource? getClearcoatRoughnessTexture();
-    method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.TextureSampler? getClearcoatRoughnessTextureSampler();
-    method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.TextureResource? getClearcoatTexture();
-    method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.TextureSampler? getClearcoatTextureSampler();
-    method @InaccessibleFromKotlin public androidx.xr.runtime.math.Vector3? getEmissiveFactors();
-    method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.TextureResource? getEmissiveTexture();
-    method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.TextureSampler? getEmissiveTextureSampler();
-    method @InaccessibleFromKotlin public androidx.xr.runtime.math.Matrix3? getEmissiveUvTransform();
-    method @InaccessibleFromKotlin public Float? getIndexOfRefraction();
-    method @InaccessibleFromKotlin public Float? getMetallicFactor();
-    method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.TextureResource? getMetallicRoughnessTexture();
-    method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.TextureSampler? getMetallicRoughnessTextureSampler();
-    method @InaccessibleFromKotlin public androidx.xr.runtime.math.Matrix3? getMetallicRoughnessUvTransform();
-    method @InaccessibleFromKotlin public Float? getNormalFactor();
-    method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.TextureResource? getNormalTexture();
-    method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.TextureSampler? getNormalTextureSampler();
-    method @InaccessibleFromKotlin public androidx.xr.runtime.math.Matrix3? getNormalUvTransform();
-    method @InaccessibleFromKotlin public Float? getRoughnessFactor();
-    method @InaccessibleFromKotlin public androidx.xr.runtime.math.Vector3? getSheenColorFactors();
-    method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.TextureResource? getSheenColorTexture();
-    method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.TextureSampler? getSheenColorTextureSampler();
-    method @InaccessibleFromKotlin public Float? getSheenRoughnessFactor();
-    method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.TextureResource? getSheenRoughnessTexture();
-    method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.TextureSampler? getSheenRoughnessTextureSampler();
-    method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.KhronosPbrMaterialSpec getSpec();
-    method @InaccessibleFromKotlin public Float? getTransmissionFactor();
-    method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.TextureResource? getTransmissionTexture();
-    method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.TextureSampler? getTransmissionTextureSampler();
-    method @InaccessibleFromKotlin public androidx.xr.runtime.math.Matrix3? getTransmissionUvTransform();
-    method @InaccessibleFromKotlin public void setAlphaCutoff(Float?);
-    method @InaccessibleFromKotlin public void setAmbientOcclusionFactor(Float?);
-    method @InaccessibleFromKotlin public void setAmbientOcclusionTexture(androidx.xr.scenecore.runtime.TextureResource?);
-    method @InaccessibleFromKotlin public void setAmbientOcclusionTextureSampler(androidx.xr.scenecore.runtime.TextureSampler?);
-    method @InaccessibleFromKotlin public void setAmbientOcclusionUvTransform(androidx.xr.runtime.math.Matrix3?);
-    method @InaccessibleFromKotlin public void setBaseColorFactors(androidx.xr.runtime.math.Vector4?);
-    method @InaccessibleFromKotlin public void setBaseColorTexture(androidx.xr.scenecore.runtime.TextureResource?);
-    method @InaccessibleFromKotlin public void setBaseColorTextureSampler(androidx.xr.scenecore.runtime.TextureSampler?);
-    method @InaccessibleFromKotlin public void setBaseColorUvTransform(androidx.xr.runtime.math.Matrix3?);
-    method @InaccessibleFromKotlin public void setClearcoatIntensity(Float?);
-    method @InaccessibleFromKotlin public void setClearcoatNormalFactor(Float?);
-    method @InaccessibleFromKotlin public void setClearcoatNormalTexture(androidx.xr.scenecore.runtime.TextureResource?);
-    method @InaccessibleFromKotlin public void setClearcoatNormalTextureSampler(androidx.xr.scenecore.runtime.TextureSampler?);
-    method @InaccessibleFromKotlin public void setClearcoatRoughness(Float?);
-    method @InaccessibleFromKotlin public void setClearcoatRoughnessTexture(androidx.xr.scenecore.runtime.TextureResource?);
-    method @InaccessibleFromKotlin public void setClearcoatRoughnessTextureSampler(androidx.xr.scenecore.runtime.TextureSampler?);
-    method @InaccessibleFromKotlin public void setClearcoatTexture(androidx.xr.scenecore.runtime.TextureResource?);
-    method @InaccessibleFromKotlin public void setClearcoatTextureSampler(androidx.xr.scenecore.runtime.TextureSampler?);
-    method @InaccessibleFromKotlin public void setEmissiveFactors(androidx.xr.runtime.math.Vector3?);
-    method @InaccessibleFromKotlin public void setEmissiveTexture(androidx.xr.scenecore.runtime.TextureResource?);
-    method @InaccessibleFromKotlin public void setEmissiveTextureSampler(androidx.xr.scenecore.runtime.TextureSampler?);
-    method @InaccessibleFromKotlin public void setEmissiveUvTransform(androidx.xr.runtime.math.Matrix3?);
-    method @InaccessibleFromKotlin public void setIndexOfRefraction(Float?);
-    method @InaccessibleFromKotlin public void setMetallicFactor(Float?);
-    method @InaccessibleFromKotlin public void setMetallicRoughnessTexture(androidx.xr.scenecore.runtime.TextureResource?);
-    method @InaccessibleFromKotlin public void setMetallicRoughnessTextureSampler(androidx.xr.scenecore.runtime.TextureSampler?);
-    method @InaccessibleFromKotlin public void setMetallicRoughnessUvTransform(androidx.xr.runtime.math.Matrix3?);
-    method @InaccessibleFromKotlin public void setNormalFactor(Float?);
-    method @InaccessibleFromKotlin public void setNormalTexture(androidx.xr.scenecore.runtime.TextureResource?);
-    method @InaccessibleFromKotlin public void setNormalTextureSampler(androidx.xr.scenecore.runtime.TextureSampler?);
-    method @InaccessibleFromKotlin public void setNormalUvTransform(androidx.xr.runtime.math.Matrix3?);
-    method @InaccessibleFromKotlin public void setRoughnessFactor(Float?);
-    method @InaccessibleFromKotlin public void setSheenColorFactors(androidx.xr.runtime.math.Vector3?);
-    method @InaccessibleFromKotlin public void setSheenColorTexture(androidx.xr.scenecore.runtime.TextureResource?);
-    method @InaccessibleFromKotlin public void setSheenColorTextureSampler(androidx.xr.scenecore.runtime.TextureSampler?);
-    method @InaccessibleFromKotlin public void setSheenRoughnessFactor(Float?);
-    method @InaccessibleFromKotlin public void setSheenRoughnessTexture(androidx.xr.scenecore.runtime.TextureResource?);
-    method @InaccessibleFromKotlin public void setSheenRoughnessTextureSampler(androidx.xr.scenecore.runtime.TextureSampler?);
-    method @InaccessibleFromKotlin public void setTransmissionFactor(Float?);
-    method @InaccessibleFromKotlin public void setTransmissionTexture(androidx.xr.scenecore.runtime.TextureResource?);
-    method @InaccessibleFromKotlin public void setTransmissionTextureSampler(androidx.xr.scenecore.runtime.TextureSampler?);
-    method @InaccessibleFromKotlin public void setTransmissionUvTransform(androidx.xr.runtime.math.Matrix3?);
-    property public Float? alphaCutoff;
-    property public Float? ambientOcclusionFactor;
-    property public androidx.xr.scenecore.runtime.TextureResource? ambientOcclusionTexture;
-    property public androidx.xr.scenecore.runtime.TextureSampler? ambientOcclusionTextureSampler;
-    property public androidx.xr.runtime.math.Matrix3? ambientOcclusionUvTransform;
-    property public androidx.xr.runtime.math.Vector4? baseColorFactors;
-    property public androidx.xr.scenecore.runtime.TextureResource? baseColorTexture;
-    property public androidx.xr.scenecore.runtime.TextureSampler? baseColorTextureSampler;
-    property public androidx.xr.runtime.math.Matrix3? baseColorUvTransform;
-    property public Float? clearcoatIntensity;
-    property public Float? clearcoatNormalFactor;
-    property public androidx.xr.scenecore.runtime.TextureResource? clearcoatNormalTexture;
-    property public androidx.xr.scenecore.runtime.TextureSampler? clearcoatNormalTextureSampler;
-    property public Float? clearcoatRoughness;
-    property public androidx.xr.scenecore.runtime.TextureResource? clearcoatRoughnessTexture;
-    property public androidx.xr.scenecore.runtime.TextureSampler? clearcoatRoughnessTextureSampler;
-    property public androidx.xr.scenecore.runtime.TextureResource? clearcoatTexture;
-    property public androidx.xr.scenecore.runtime.TextureSampler? clearcoatTextureSampler;
-    property public androidx.xr.runtime.math.Vector3? emissiveFactors;
-    property public androidx.xr.scenecore.runtime.TextureResource? emissiveTexture;
-    property public androidx.xr.scenecore.runtime.TextureSampler? emissiveTextureSampler;
-    property public androidx.xr.runtime.math.Matrix3? emissiveUvTransform;
-    property public Float? indexOfRefraction;
-    property public Float? metallicFactor;
-    property public androidx.xr.scenecore.runtime.TextureResource? metallicRoughnessTexture;
-    property public androidx.xr.scenecore.runtime.TextureSampler? metallicRoughnessTextureSampler;
-    property public androidx.xr.runtime.math.Matrix3? metallicRoughnessUvTransform;
-    property public Float? normalFactor;
-    property public androidx.xr.scenecore.runtime.TextureResource? normalTexture;
-    property public androidx.xr.scenecore.runtime.TextureSampler? normalTextureSampler;
-    property public androidx.xr.runtime.math.Matrix3? normalUvTransform;
-    property public Float? roughnessFactor;
-    property public androidx.xr.runtime.math.Vector3? sheenColorFactors;
-    property public androidx.xr.scenecore.runtime.TextureResource? sheenColorTexture;
-    property public androidx.xr.scenecore.runtime.TextureSampler? sheenColorTextureSampler;
-    property public Float? sheenRoughnessFactor;
-    property public androidx.xr.scenecore.runtime.TextureResource? sheenRoughnessTexture;
-    property public androidx.xr.scenecore.runtime.TextureSampler? sheenRoughnessTextureSampler;
-    property public androidx.xr.scenecore.runtime.KhronosPbrMaterialSpec spec;
-    property public Float? transmissionFactor;
-    property public androidx.xr.scenecore.runtime.TextureResource? transmissionTexture;
-    property public androidx.xr.scenecore.runtime.TextureSampler? transmissionTextureSampler;
-    property public androidx.xr.runtime.math.Matrix3? transmissionUvTransform;
+  public final class SpatialMediaPlayerTester {
+    method @InaccessibleFromKotlin public androidx.xr.scenecore.PointSourceParams? getPointSourceParams();
+    method @InaccessibleFromKotlin public androidx.xr.scenecore.SoundFieldAttributes? getSoundFieldAttributes();
+    method public boolean isCurrentPointSource(androidx.xr.scenecore.Entity entity);
+    property public androidx.xr.scenecore.PointSourceParams? pointSourceParams;
+    property public androidx.xr.scenecore.SoundFieldAttributes? soundFieldAttributes;
   }
 
-  public static final class FakeRenderingRuntime.FakeWaterMaterial implements androidx.xr.scenecore.runtime.MaterialResource {
-    ctor public FakeRenderingRuntime.FakeWaterMaterial(boolean isAlphaMapVersion);
-    method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.TextureResource? getAlphaMap();
-    method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.TextureSampler? getAlphaMapSampler();
-    method @InaccessibleFromKotlin public float getAlphaStepMultiplier();
-    method @InaccessibleFromKotlin public float getNormalBoundary();
-    method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.TextureResource? getNormalMap();
-    method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.TextureSampler? getNormalMapSampler();
-    method @InaccessibleFromKotlin public float getNormalSpeed();
-    method @InaccessibleFromKotlin public float getNormalTiling();
-    method @InaccessibleFromKotlin public float getNormalZ();
-    method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.TextureResource? getReflectionMap();
-    method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.TextureSampler? getReflectionMapSampler();
-    method @InaccessibleFromKotlin public boolean isAlphaMapVersion();
-    method @InaccessibleFromKotlin public void setAlphaMap(androidx.xr.scenecore.runtime.TextureResource?);
-    method @InaccessibleFromKotlin public void setAlphaMapSampler(androidx.xr.scenecore.runtime.TextureSampler?);
-    method @InaccessibleFromKotlin public void setAlphaStepMultiplier(float);
-    method @InaccessibleFromKotlin public void setNormalBoundary(float);
-    method @InaccessibleFromKotlin public void setNormalMap(androidx.xr.scenecore.runtime.TextureResource?);
-    method @InaccessibleFromKotlin public void setNormalMapSampler(androidx.xr.scenecore.runtime.TextureSampler?);
-    method @InaccessibleFromKotlin public void setNormalSpeed(float);
-    method @InaccessibleFromKotlin public void setNormalTiling(float);
-    method @InaccessibleFromKotlin public void setNormalZ(float);
-    method @InaccessibleFromKotlin public void setReflectionMap(androidx.xr.scenecore.runtime.TextureResource?);
-    method @InaccessibleFromKotlin public void setReflectionMapSampler(androidx.xr.scenecore.runtime.TextureSampler?);
-    property public androidx.xr.scenecore.runtime.TextureResource? alphaMap;
-    property public androidx.xr.scenecore.runtime.TextureSampler? alphaMapSampler;
-    property public float alphaStepMultiplier;
-    property public boolean isAlphaMapVersion;
-    property public float normalBoundary;
-    property public androidx.xr.scenecore.runtime.TextureResource? normalMap;
-    property public androidx.xr.scenecore.runtime.TextureSampler? normalMapSampler;
-    property public float normalSpeed;
-    property public float normalTiling;
-    property public float normalZ;
-    property public androidx.xr.scenecore.runtime.TextureResource? reflectionMap;
-    property public androidx.xr.scenecore.runtime.TextureSampler? reflectionMapSampler;
+  public final class SpatialSoundPoolTester {
+    method @InaccessibleFromKotlin public int getPlayAsPointSourceResult();
+    method @InaccessibleFromKotlin public int getPlayAsSoundFieldResult();
+    method @InaccessibleFromKotlin public androidx.xr.scenecore.SpatializerConstants.SourceType getSpatialSourceType();
+    method @InaccessibleFromKotlin public void setPlayAsPointSourceResult(int);
+    method @InaccessibleFromKotlin public void setPlayAsSoundFieldResult(int);
+    method @InaccessibleFromKotlin public void setSpatialSourceType(androidx.xr.scenecore.SpatializerConstants.SourceType);
+    property public int playAsPointSourceResult;
+    property public int playAsSoundFieldResult;
+    property public androidx.xr.scenecore.SpatializerConstants.SourceType spatialSourceType;
   }
 
-  public enum FakeRenderingRuntime.State {
-    enum_constant public static final androidx.xr.scenecore.testing.FakeRenderingRuntime.State CREATED;
-    enum_constant public static final androidx.xr.scenecore.testing.FakeRenderingRuntime.State DESTROYED;
-    enum_constant public static final androidx.xr.scenecore.testing.FakeRenderingRuntime.State PAUSED;
-    enum_constant public static final androidx.xr.scenecore.testing.FakeRenderingRuntime.State STARTED;
+  public final class SpatialWindowTester {
+    method @InaccessibleFromKotlin public float getPreferredAspectRatio();
+    property public float preferredAspectRatio;
   }
 
-  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class FakeRenderingRuntimeFactory implements androidx.xr.runtime.internal.RenderingRuntimeFactory {
-    ctor public FakeRenderingRuntimeFactory();
-    method public androidx.xr.scenecore.runtime.RenderingRuntime create(java.util.List<? extends androidx.xr.runtime.internal.JxrRuntime> runtimes, android.app.Activity activity);
-    method @InaccessibleFromKotlin public java.util.Set<androidx.xr.runtime.internal.Feature> getRequirements();
-    property public java.util.Set<androidx.xr.runtime.internal.Feature> requirements;
-  }
-
-  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class FakeResizableComponent extends androidx.xr.scenecore.testing.FakeComponent implements androidx.xr.scenecore.runtime.ResizableComponent {
-    ctor public FakeResizableComponent();
-    ctor public FakeResizableComponent(optional androidx.xr.scenecore.runtime.Dimensions size, optional androidx.xr.scenecore.runtime.Dimensions minimumSize, optional androidx.xr.scenecore.runtime.Dimensions maximumSize, optional boolean isFixedAspectRatioEnabled, optional boolean autoHideContent, optional boolean autoUpdateSize, optional boolean forceShowResizeOverlay);
-    method public void addResizeEventListener(java.util.concurrent.Executor executor, androidx.xr.scenecore.runtime.ResizeEventListener resizeEventListener);
-    method @InaccessibleFromKotlin public boolean getAutoHideContent();
-    method @InaccessibleFromKotlin public boolean getAutoUpdateSize();
-    method @InaccessibleFromKotlin public boolean getForceShowResizeOverlay();
-    method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.Dimensions getMaximumSize();
-    method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.Dimensions getMinimumSize();
-    method @InaccessibleFromKotlin public java.util.Map<androidx.xr.scenecore.runtime.ResizeEventListener,java.util.concurrent.Executor> getResizeEventListenersMap();
-    method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.Dimensions getSize();
-    method @InaccessibleFromKotlin public boolean isFixedAspectRatioEnabled();
-    method public void removeResizeEventListener(androidx.xr.scenecore.runtime.ResizeEventListener resizeEventListener);
-    method @InaccessibleFromKotlin public void setAutoHideContent(boolean);
-    method @InaccessibleFromKotlin public void setAutoUpdateSize(boolean);
-    method @InaccessibleFromKotlin public void setFixedAspectRatioEnabled(boolean);
-    method @InaccessibleFromKotlin public void setForceShowResizeOverlay(boolean);
-    method @InaccessibleFromKotlin public void setMaximumSize(androidx.xr.scenecore.runtime.Dimensions);
-    method @InaccessibleFromKotlin public void setMinimumSize(androidx.xr.scenecore.runtime.Dimensions);
-    method @InaccessibleFromKotlin public void setSize(androidx.xr.scenecore.runtime.Dimensions);
-    property public boolean autoHideContent;
-    property public boolean autoUpdateSize;
-    property public boolean forceShowResizeOverlay;
-    property public boolean isFixedAspectRatioEnabled;
-    property public androidx.xr.scenecore.runtime.Dimensions maximumSize;
-    property public androidx.xr.scenecore.runtime.Dimensions minimumSize;
-    property public java.util.Map<androidx.xr.scenecore.runtime.ResizeEventListener,java.util.concurrent.Executor> resizeEventListenersMap;
-    property public androidx.xr.scenecore.runtime.Dimensions size;
-  }
-
-  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class FakeResource implements androidx.xr.scenecore.runtime.ExrImageResource androidx.xr.scenecore.runtime.GltfModelResource androidx.xr.scenecore.runtime.MaterialResource androidx.xr.scenecore.runtime.Resource androidx.xr.scenecore.runtime.TextureResource {
-    ctor public FakeResource();
-    ctor public FakeResource(optional long token);
-    method public androidx.xr.scenecore.testing.FakeResource copy(optional long token);
-  }
-
-  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class FakeSceneRuntime implements androidx.xr.scenecore.runtime.RenderingEntityFactory androidx.xr.scenecore.runtime.SceneRuntime {
-    ctor public FakeSceneRuntime();
-    ctor public FakeSceneRuntime(optional java.util.concurrent.Executor? executor);
-    method public void addPerceivedResolutionChangedListener(java.util.concurrent.Executor callbackExecutor, java.util.function.Consumer<androidx.xr.scenecore.runtime.PixelDimensions> listener);
-    method public void addSpatialCapabilitiesChangedListener(java.util.concurrent.Executor callbackExecutor, java.util.function.Consumer<androidx.xr.scenecore.runtime.SpatialCapabilities> listener);
-    method public void clearSpatialVisibilityChangedListener();
-    method public androidx.xr.scenecore.runtime.ActivityPanelEntity createActivityPanelEntity(androidx.xr.runtime.math.Pose pose, androidx.xr.scenecore.runtime.PixelDimensions windowBoundsPx, String name, android.app.Activity hostActivity, androidx.xr.scenecore.runtime.Entity parent);
-    method @RequiresApi(android.os.Build.VERSION_CODES.O) public androidx.xr.scenecore.testing.FakeAnchorEntity createAnchorEntity(androidx.xr.arcore.runtime.Anchor anchor);
-    method @RequiresApi(android.os.Build.VERSION_CODES.O) public androidx.xr.scenecore.testing.FakeAnchorEntity createAnchorEntity(androidx.xr.scenecore.runtime.Dimensions bounds, androidx.xr.scenecore.runtime.PlaneType planeType, androidx.xr.scenecore.runtime.PlaneSemantic planeSemantic, java.time.Duration searchTimeout);
-    method public androidx.xr.scenecore.testing.FakeAnchorPlacement createAnchorPlacementForPlanes(java.util.Set<androidx.xr.scenecore.runtime.PlaneType> planeTypeFilter, java.util.Set<androidx.xr.scenecore.runtime.PlaneSemantic> planeSemanticFilter);
-    method public androidx.xr.scenecore.runtime.GltfEntity createGltfEntity(androidx.xr.scenecore.runtime.GltfFeature feature, androidx.xr.runtime.math.Pose pose, androidx.xr.scenecore.runtime.Entity parentEntity);
-    method public androidx.xr.scenecore.runtime.Entity createGroupEntity(androidx.xr.runtime.math.Pose pose, String name, androidx.xr.scenecore.runtime.Entity parent);
-    method public androidx.xr.scenecore.runtime.InteractableComponent createInteractableComponent(java.util.concurrent.Executor executor, androidx.xr.scenecore.runtime.InputEventListener listener);
-    method public androidx.xr.scenecore.runtime.LoggingEntity createLoggingEntity(androidx.xr.runtime.math.Pose pose);
-    method public androidx.xr.scenecore.testing.FakeMovableComponent createMovableComponent(boolean systemMovable, boolean scaleInZ, java.util.Set<androidx.xr.scenecore.runtime.AnchorPlacement> anchorPlacement, boolean shouldDisposeParentAnchor);
-    method public androidx.xr.scenecore.runtime.PanelEntity createPanelEntity(android.content.Context context, androidx.xr.runtime.math.Pose pose, android.view.View view, androidx.xr.scenecore.runtime.Dimensions dimensions, String name, androidx.xr.scenecore.runtime.Entity parent);
-    method public androidx.xr.scenecore.runtime.PanelEntity createPanelEntity(android.content.Context context, androidx.xr.runtime.math.Pose pose, android.view.View view, androidx.xr.scenecore.runtime.PixelDimensions pixelDimensions, String name, androidx.xr.scenecore.runtime.Entity parent);
-    method @RequiresApi(android.os.Build.VERSION_CODES.O) public androidx.xr.scenecore.testing.FakeAnchorEntity createPersistedAnchorEntity(java.util.UUID uuid, java.time.Duration searchTimeout);
-    method public androidx.xr.scenecore.testing.FakePointerCaptureComponent createPointerCaptureComponent(java.util.concurrent.Executor executor, androidx.xr.scenecore.runtime.PointerCaptureComponent.StateListener stateListener, androidx.xr.scenecore.runtime.InputEventListener inputListener);
-    method public androidx.xr.scenecore.testing.FakeResizableComponent createResizableComponent(androidx.xr.scenecore.runtime.Dimensions minimumSize, androidx.xr.scenecore.runtime.Dimensions maximumSize);
-    method public androidx.xr.scenecore.runtime.SpatialPointerComponent createSpatialPointerComponent();
-    method public androidx.xr.scenecore.runtime.SubspaceNodeEntity createSubspaceNodeEntity(androidx.xr.scenecore.runtime.SubspaceNodeFeature feature);
-    method public androidx.xr.scenecore.runtime.SurfaceEntity createSurfaceEntity(androidx.xr.scenecore.runtime.SurfaceFeature feature, androidx.xr.runtime.math.Pose pose, androidx.xr.scenecore.runtime.Entity parentEntity);
-    method public void enablePanelDepthTest(boolean enabled);
-    method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.ActivitySpace getActivitySpace();
-    method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.AudioTrackExtensionsWrapper getAudioTrackExtensionsWrapper();
-    method public androidx.xr.scenecore.runtime.CameraViewActivityPose? getCameraViewActivityPose(@androidx.xr.scenecore.runtime.CameraViewActivityPose.CameraType int cameraType);
-    method @InaccessibleFromKotlin public java.util.concurrent.Executor? getExecutor();
-    method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.HeadActivityPose? getHeadActivityPose();
-    method @InaccessibleFromKotlin public android.app.Activity? getLastSetPreferredAspectRatioActivity();
-    method @InaccessibleFromKotlin public float getLastSetPreferredAspectRatioRatio();
-    method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.PanelEntity getMainPanelEntity();
-    method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.MediaPlayerExtensionsWrapper getMediaPlayerExtensionsWrapper();
-    method @InaccessibleFromKotlin public java.util.Map<java.util.concurrent.Executor,java.util.function.Consumer<androidx.xr.scenecore.runtime.PixelDimensions>> getPerceivedResolutionChangedMap();
-    method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.PerceptionSpaceActivityPose getPerceptionSpaceActivityPose();
-    method @InaccessibleFromKotlin public boolean getRequestedFullSpaceMode();
-    method @InaccessibleFromKotlin public boolean getRequestedHomeSpaceMode();
-    method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.SoundPoolExtensionsWrapper getSoundPoolExtensionsWrapper();
-    method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.SpatialCapabilities getSpatialCapabilities();
-    method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.SpatialEnvironment getSpatialEnvironment();
-    method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.SpatialModeChangeListener? getSpatialModeChangeListener();
-    method @InaccessibleFromKotlin public java.util.Map<java.util.concurrent.Executor,java.util.function.Consumer<androidx.xr.scenecore.runtime.SpatialVisibility>> getSpatialVisibilityChangedMap();
-    method @InaccessibleFromKotlin public Enum<androidx.xr.scenecore.testing.FakeSceneRuntime.State> getState();
-    method public void removePerceivedResolutionChangedListener(java.util.function.Consumer<androidx.xr.scenecore.runtime.PixelDimensions> listener);
-    method public void removeSpatialCapabilitiesChangedListener(java.util.function.Consumer<androidx.xr.scenecore.runtime.SpatialCapabilities> listener);
-    method public void requestFullSpaceMode();
-    method public void requestHomeSpaceMode();
-    method public android.os.Bundle setFullSpaceMode(android.os.Bundle bundle);
-    method public android.os.Bundle setFullSpaceModeWithEnvironmentInherited(android.os.Bundle bundle);
-    method @InaccessibleFromKotlin public void setLastSetPreferredAspectRatioActivity(android.app.Activity?);
-    method @InaccessibleFromKotlin public void setLastSetPreferredAspectRatioRatio(float);
-    method public void setPreferredAspectRatio(android.app.Activity activity, float preferredRatio);
-    method @InaccessibleFromKotlin public void setRequestedFullSpaceMode(boolean);
-    method @InaccessibleFromKotlin public void setRequestedHomeSpaceMode(boolean);
-    method @InaccessibleFromKotlin public void setSpatialModeChangeListener(androidx.xr.scenecore.runtime.SpatialModeChangeListener?);
-    method public void setSpatialVisibilityChangedListener(java.util.concurrent.Executor callbackExecutor, java.util.function.Consumer<androidx.xr.scenecore.runtime.SpatialVisibility> listener);
-    property public androidx.xr.scenecore.runtime.ActivitySpace activitySpace;
-    property public androidx.xr.scenecore.runtime.AudioTrackExtensionsWrapper audioTrackExtensionsWrapper;
-    property public java.util.concurrent.Executor? executor;
-    property public androidx.xr.scenecore.runtime.HeadActivityPose? headActivityPose;
-    property public android.app.Activity? lastSetPreferredAspectRatioActivity;
-    property public float lastSetPreferredAspectRatioRatio;
-    property public androidx.xr.scenecore.runtime.PanelEntity mainPanelEntity;
-    property public androidx.xr.scenecore.runtime.MediaPlayerExtensionsWrapper mediaPlayerExtensionsWrapper;
-    property public java.util.Map<java.util.concurrent.Executor,java.util.function.Consumer<androidx.xr.scenecore.runtime.PixelDimensions>> perceivedResolutionChangedMap;
-    property public androidx.xr.scenecore.runtime.PerceptionSpaceActivityPose perceptionSpaceActivityPose;
-    property public boolean requestedFullSpaceMode;
-    property public boolean requestedHomeSpaceMode;
-    property public androidx.xr.scenecore.runtime.SoundPoolExtensionsWrapper soundPoolExtensionsWrapper;
-    property public androidx.xr.scenecore.runtime.SpatialCapabilities spatialCapabilities;
-    property public androidx.xr.scenecore.runtime.SpatialEnvironment spatialEnvironment;
-    property public androidx.xr.scenecore.runtime.SpatialModeChangeListener? spatialModeChangeListener;
-    property public java.util.Map<java.util.concurrent.Executor,java.util.function.Consumer<androidx.xr.scenecore.runtime.SpatialVisibility>> spatialVisibilityChangedMap;
-    property public Enum<androidx.xr.scenecore.testing.FakeSceneRuntime.State> state;
-  }
-
-  public enum FakeSceneRuntime.State {
-    enum_constant public static final androidx.xr.scenecore.testing.FakeSceneRuntime.State CREATED;
-    enum_constant public static final androidx.xr.scenecore.testing.FakeSceneRuntime.State DESTROYED;
-    enum_constant public static final androidx.xr.scenecore.testing.FakeSceneRuntime.State PAUSED;
-    enum_constant public static final androidx.xr.scenecore.testing.FakeSceneRuntime.State STARTED;
-  }
-
-  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class FakeSceneRuntimeFactory implements androidx.xr.runtime.internal.SceneRuntimeFactory {
-    ctor public FakeSceneRuntimeFactory();
-    method public androidx.xr.scenecore.runtime.SceneRuntime create(android.app.Activity activity);
-    method @InaccessibleFromKotlin public java.util.Set<androidx.xr.runtime.internal.Feature> getRequirements();
-    property public java.util.Set<androidx.xr.runtime.internal.Feature> requirements;
-  }
-
-  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public class FakeScheduledExecutorService extends java.util.concurrent.AbstractExecutorService implements java.lang.AutoCloseable java.util.concurrent.ScheduledExecutorService {
-    ctor public FakeScheduledExecutorService();
-    method public boolean awaitTermination(long, java.util.concurrent.TimeUnit?);
-    method public void close();
-    method public void execute(Runnable?);
-    method public boolean hasNext();
-    method @com.google.errorprone.annotations.CheckReturnValue public boolean isEmpty();
-    method public boolean isShutdown();
-    method public boolean isTerminated();
-    method public void runAll();
-    method public void runNext();
-    method public java.util.concurrent.ScheduledFuture<? extends java.lang.Object!> schedule(Runnable?, long, java.util.concurrent.TimeUnit?);
-    method public <V> java.util.concurrent.ScheduledFuture<V!> schedule(java.util.concurrent.Callable<V!>?, long, java.util.concurrent.TimeUnit?);
-    method public java.util.concurrent.ScheduledFuture<? extends java.lang.Object!> scheduleAtFixedRate(Runnable?, long, long, java.util.concurrent.TimeUnit?);
-    method public java.util.concurrent.ScheduledFuture<? extends java.lang.Object!> scheduleWithFixedDelay(Runnable?, long, long, java.util.concurrent.TimeUnit?);
-    method public void shutdown();
-    method public java.util.List<java.lang.Runnable!> shutdownNow();
-    method public void simulateSleepExecutingAllTasks(java.time.Duration);
-    method public boolean simulateSleepExecutingAtMostOneTask();
-    method public boolean simulateSleepExecutingAtMostOneTask(java.time.Duration);
-  }
-
-  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class FakeSoundPoolExtensionsWrapper implements androidx.xr.scenecore.runtime.SoundPoolExtensionsWrapper {
-    ctor public FakeSoundPoolExtensionsWrapper();
-    method @InaccessibleFromKotlin public int getSourceType();
-    method @androidx.xr.scenecore.runtime.SpatializerConstants.SourceType public int getSpatialSourceType(android.media.SoundPool soundPool, int streamId);
-    method public int play(android.media.SoundPool soundPool, int soundId, androidx.xr.scenecore.runtime.PointSourceParams params, float volume, int priority, int loop, float rate);
-    method public int play(android.media.SoundPool soundPool, int soundId, androidx.xr.scenecore.runtime.SoundFieldAttributes attributes, float volume, int priority, int loop, float rate);
-    method public void setPlayAsPointSourceResult(int result);
-    method public void setPlayAsSoundFieldResult(int result);
-    method @InaccessibleFromKotlin public void setSourceType(int);
-    property @androidx.xr.scenecore.runtime.SpatializerConstants.SourceType public int sourceType;
-  }
-
-  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class FakeSpatialEnvironment implements androidx.xr.scenecore.runtime.SpatialEnvironment androidx.xr.scenecore.runtime.SpatialEnvironmentExt {
-    ctor public FakeSpatialEnvironment();
-    method public void addOnPassthroughOpacityChangedListener(java.util.concurrent.Executor executor, java.util.function.Consumer<java.lang.Float> listener);
-    method public void addOnSpatialEnvironmentChangedListener(java.util.concurrent.Executor executor, java.util.function.Consumer<java.lang.Boolean> listener);
-    method @InaccessibleFromKotlin public float getCurrentPassthroughOpacity();
-    method @InaccessibleFromKotlin public java.util.Map<java.util.concurrent.Executor,java.util.function.Consumer<java.lang.Float>> getPassthroughOpacityChangedListenerMap();
-    method @InaccessibleFromKotlin public float getPreferredPassthroughOpacity();
-    method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.SpatialEnvironment.SpatialEnvironmentPreference? getPreferredSpatialEnvironment();
-    method @InaccessibleFromKotlin public java.util.Map<java.util.concurrent.Executor,java.util.function.Consumer<java.lang.Boolean>> getSpatialEnvironmentChangedListenerMap();
-    method @InaccessibleFromKotlin public boolean isPreferredSpatialEnvironmentActive();
-    method public void onRenderingFeatureReady(androidx.xr.scenecore.runtime.SpatialEnvironmentFeature feature);
-    method public void removeOnPassthroughOpacityChangedListener(java.util.function.Consumer<java.lang.Float> listener);
-    method public void removeOnSpatialEnvironmentChangedListener(java.util.function.Consumer<java.lang.Boolean> listener);
-    method @InaccessibleFromKotlin public void setPreferredPassthroughOpacity(float);
-    method @InaccessibleFromKotlin public void setPreferredSpatialEnvironment(androidx.xr.scenecore.runtime.SpatialEnvironment.SpatialEnvironmentPreference?);
-    property public float currentPassthroughOpacity;
-    property public boolean isPreferredSpatialEnvironmentActive;
-    property public java.util.Map<java.util.concurrent.Executor,java.util.function.Consumer<java.lang.Float>> passthroughOpacityChangedListenerMap;
-    property public float preferredPassthroughOpacity;
-    property public androidx.xr.scenecore.runtime.SpatialEnvironment.SpatialEnvironmentPreference? preferredSpatialEnvironment;
-    property public java.util.Map<java.util.concurrent.Executor,java.util.function.Consumer<java.lang.Boolean>> spatialEnvironmentChangedListenerMap;
-  }
-
-  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class FakeSpatialEnvironmentFeature extends androidx.xr.scenecore.testing.FakeBaseRenderingFeature implements androidx.xr.scenecore.runtime.SpatialEnvironmentFeature {
-    ctor public FakeSpatialEnvironmentFeature();
-    method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.SpatialEnvironment.SpatialEnvironmentPreference? getPreferredSpatialEnvironment();
-    method @InaccessibleFromKotlin public void setPreferredSpatialEnvironment(androidx.xr.scenecore.runtime.SpatialEnvironment.SpatialEnvironmentPreference?);
-    property public androidx.xr.scenecore.runtime.SpatialEnvironment.SpatialEnvironmentPreference? preferredSpatialEnvironment;
-  }
-
-  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class FakeSpatialModeChangeListener implements androidx.xr.scenecore.runtime.SpatialModeChangeListener {
-    ctor public FakeSpatialModeChangeListener();
-    method @InaccessibleFromKotlin public androidx.xr.runtime.math.Pose? getLastRecommendedPose();
-    method @InaccessibleFromKotlin public androidx.xr.runtime.math.Vector3? getLastRecommendedScale();
-    method @InaccessibleFromKotlin public int getUpdateCount();
-    method public void onSpatialModeChanged(androidx.xr.runtime.math.Pose recommendedPose, androidx.xr.runtime.math.Vector3 recommendedScale);
-    method public void reset();
-    method @InaccessibleFromKotlin public void setLastRecommendedPose(androidx.xr.runtime.math.Pose?);
-    method @InaccessibleFromKotlin public void setLastRecommendedScale(androidx.xr.runtime.math.Vector3?);
-    method @InaccessibleFromKotlin public void setUpdateCount(int);
-    property public androidx.xr.runtime.math.Pose? lastRecommendedPose;
-    property public androidx.xr.runtime.math.Vector3? lastRecommendedScale;
-    property public int updateCount;
-  }
-
-  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class FakeSpatialPointerComponent extends androidx.xr.scenecore.testing.FakeComponent implements androidx.xr.scenecore.runtime.SpatialPointerComponent {
-    ctor public FakeSpatialPointerComponent();
-    method @androidx.xr.scenecore.runtime.SpatialPointerIconType public int getSpatialPointerIcon();
-    method public void setSpatialPointerIcon(@androidx.xr.scenecore.runtime.SpatialPointerIconType int iconType);
-  }
-
-  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public interface FakeSubspaceNode {
-    method @InaccessibleFromKotlin public androidx.xr.runtime.NodeHolder<? extends java.lang.Object?> getNodeHolder();
-    property public abstract androidx.xr.runtime.NodeHolder<? extends java.lang.Object?> nodeHolder;
-  }
-
-  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class FakeSubspaceNodeEntity extends androidx.xr.scenecore.testing.FakeEntity implements androidx.xr.scenecore.runtime.SubspaceNodeEntity {
-    ctor public FakeSubspaceNodeEntity();
-    ctor public FakeSubspaceNodeEntity(optional androidx.xr.scenecore.runtime.SubspaceNodeFeature? mockSubspaceNodeFeature, optional androidx.xr.scenecore.runtime.Dimensions size);
-    method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.Dimensions getSize();
-    method @InaccessibleFromKotlin public void setSize(androidx.xr.scenecore.runtime.Dimensions);
-    property public androidx.xr.scenecore.runtime.Dimensions size;
-  }
-
-  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class FakeSubspaceNodeFeature extends androidx.xr.scenecore.testing.FakeBaseRenderingFeature implements androidx.xr.scenecore.runtime.SubspaceNodeFeature {
-    ctor public FakeSubspaceNodeFeature(androidx.xr.runtime.NodeHolder<? extends java.lang.Object?> _nodeHolder, optional androidx.xr.scenecore.runtime.Dimensions initSize);
-    method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.Dimensions getSize();
-    method public void setAlpha(float alpha);
-    method public void setHidden(boolean hidden);
-    method public void setPose(androidx.xr.runtime.math.Pose pose);
-    method public void setScale(androidx.xr.runtime.math.Vector3 scaleActivity);
-    method @InaccessibleFromKotlin public void setSize(androidx.xr.scenecore.runtime.Dimensions);
-    property public androidx.xr.scenecore.runtime.Dimensions size;
-    field public static final androidx.xr.scenecore.testing.FakeSubspaceNodeFeature.Companion Companion;
-  }
-
-  public static final class FakeSubspaceNodeFeature.Companion {
-    method public androidx.xr.scenecore.runtime.SubspaceNodeFeature createWithMockFeature(androidx.xr.scenecore.runtime.SubspaceNodeFeature mockFeature, androidx.xr.runtime.NodeHolder<? extends java.lang.Object?> nodeHolder, androidx.xr.scenecore.runtime.Dimensions size);
-  }
-
-  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class FakeSurfaceEntity extends androidx.xr.scenecore.testing.FakeEntity implements androidx.xr.scenecore.runtime.SurfaceEntity {
-    ctor public FakeSurfaceEntity();
-    ctor public FakeSurfaceEntity(optional androidx.xr.scenecore.runtime.SurfaceFeature? feature);
-    method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.TextureResource? getAuxiliaryAlphaMask();
-    method @InaccessibleFromKotlin public int getColorRange();
-    method @InaccessibleFromKotlin public int getColorSpace();
-    method @InaccessibleFromKotlin public int getColorTransfer();
-    method @InaccessibleFromKotlin public boolean getContentColorMetadataSet();
-    method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.Dimensions getDimensions();
-    method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.SurfaceEntity.EdgeFeather getEdgeFeather();
-    method @InaccessibleFromKotlin public boolean getMContentColorMetadataSet();
-    method @InaccessibleFromKotlin public int getMaxContentLightLevel();
-    method public androidx.xr.scenecore.runtime.PerceivedResolutionResult getPerceivedResolution();
-    method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.PerceivedResolutionResult getPerceivedResolutionResult();
-    method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.TextureResource? getPrimaryAlphaMask();
-    method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.SurfaceEntity.Shape getShape();
-    method @InaccessibleFromKotlin public int getStereoMode();
+  public final class SurfaceEntityTester {
+    method @InaccessibleFromKotlin public androidx.xr.scenecore.PerceivedResolutionResult getPerceivedResolutionResult();
     method @InaccessibleFromKotlin public android.view.Surface getSurface();
-    method public void resetContentColorMetadata();
-    method public void setAuxiliaryAlphaMaskTexture(androidx.xr.scenecore.runtime.TextureResource? alphaMask);
-    method public void setContentColorMetadata(int colorSpace, int colorTransfer, int colorRange, int maxContentLightLevel);
-    method @InaccessibleFromKotlin public void setEdgeFeather(androidx.xr.scenecore.runtime.SurfaceEntity.EdgeFeather);
-    method @InaccessibleFromKotlin public void setMContentColorMetadataSet(boolean);
-    method @InaccessibleFromKotlin public void setPerceivedResolutionResult(androidx.xr.scenecore.runtime.PerceivedResolutionResult);
-    method public void setPrimaryAlphaMaskTexture(androidx.xr.scenecore.runtime.TextureResource? alphaMask);
-    method @InaccessibleFromKotlin public void setShape(androidx.xr.scenecore.runtime.SurfaceEntity.Shape);
-    method @InaccessibleFromKotlin public void setStereoMode(int);
-    method public void setSurface(android.view.Surface surface);
-    property public androidx.xr.scenecore.runtime.TextureResource? auxiliaryAlphaMask;
-    property public int colorRange;
-    property public int colorSpace;
-    property public int colorTransfer;
-    property public boolean contentColorMetadataSet;
-    property public androidx.xr.scenecore.runtime.Dimensions dimensions;
-    property public androidx.xr.scenecore.runtime.SurfaceEntity.EdgeFeather edgeFeather;
-    property public boolean mContentColorMetadataSet;
-    property public int maxContentLightLevel;
-    property public androidx.xr.scenecore.runtime.PerceivedResolutionResult perceivedResolutionResult;
-    property public androidx.xr.scenecore.runtime.TextureResource? primaryAlphaMask;
-    property public androidx.xr.scenecore.runtime.SurfaceEntity.Shape shape;
-    property public int stereoMode;
+    method @InaccessibleFromKotlin public void setPerceivedResolutionResult(androidx.xr.scenecore.PerceivedResolutionResult);
+    method @InaccessibleFromKotlin public void setSurface(android.view.Surface);
+    property public androidx.xr.scenecore.PerceivedResolutionResult perceivedResolutionResult;
     property public android.view.Surface surface;
   }
 
-  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class FakeSurfaceFeature extends androidx.xr.scenecore.testing.FakeBaseRenderingFeature implements androidx.xr.scenecore.runtime.SurfaceFeature {
-    ctor public FakeSurfaceFeature(androidx.xr.runtime.NodeHolder<? extends java.lang.Object?> nodeHolder);
-    method public boolean getColliderEnabled();
-    method @InaccessibleFromKotlin public int getColorRange();
-    method @InaccessibleFromKotlin public int getColorSpace();
-    method @InaccessibleFromKotlin public int getColorTransfer();
-    method @InaccessibleFromKotlin public boolean getContentColorMetadataSet();
-    method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.Dimensions getDimensions();
-    method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.SurfaceEntity.EdgeFeather getEdgeFeather();
-    method @InaccessibleFromKotlin public int getMaxContentLightLevel();
-    method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.TextureResource? getPrimaryAlphaMask();
-    method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.SurfaceEntity.Shape getShape();
-    method @InaccessibleFromKotlin public int getStereoMode();
-    method @InaccessibleFromKotlin public android.view.Surface getSurface();
-    method public void resetContentColorMetadata();
-    method public void setAuxiliaryAlphaMaskTexture(androidx.xr.scenecore.runtime.TextureResource? alphaMask);
-    method public void setColliderEnabled(boolean enableCollider);
-    method public void setContentColorMetadata(int colorSpace, int colorTransfer, int colorRange, int maxCLL);
-    method @InaccessibleFromKotlin public void setEdgeFeather(androidx.xr.scenecore.runtime.SurfaceEntity.EdgeFeather);
-    method public void setPrimaryAlphaMaskTexture(androidx.xr.scenecore.runtime.TextureResource? alphaMask);
-    method @InaccessibleFromKotlin public void setShape(androidx.xr.scenecore.runtime.SurfaceEntity.Shape);
-    method @InaccessibleFromKotlin public void setStereoMode(int);
-    method public void setSurface(android.view.Surface surface);
-    property public int colorRange;
-    property public int colorSpace;
-    property public int colorTransfer;
-    property public boolean contentColorMetadataSet;
-    property public androidx.xr.scenecore.runtime.Dimensions dimensions;
-    property public androidx.xr.scenecore.runtime.SurfaceEntity.EdgeFeather edgeFeather;
-    property public int maxContentLightLevel;
-    property public androidx.xr.scenecore.runtime.TextureResource? primaryAlphaMask;
-    property public androidx.xr.scenecore.runtime.SurfaceEntity.Shape shape;
-    property public int stereoMode;
-    property public android.view.Surface surface;
-    field public static final androidx.xr.scenecore.testing.FakeSurfaceFeature.Companion Companion;
+  public final class TestGltfAnimation {
+    method @InaccessibleFromKotlin public float getAnimationDuration();
+    method @InaccessibleFromKotlin public int getAnimationIndex();
+    method @InaccessibleFromKotlin public String? getAnimationName();
+    method @InaccessibleFromKotlin public float getSeekStartTime();
+    method @InaccessibleFromKotlin public float getSpeed();
+    method @InaccessibleFromKotlin public boolean shouldLoop();
+    property public float animationDuration;
+    property public int animationIndex;
+    property public String? animationName;
+    property public float seekStartTime;
+    property public boolean shouldLoop;
+    property public float speed;
   }
 
-  public static final class FakeSurfaceFeature.Companion {
-    method public androidx.xr.scenecore.runtime.SurfaceFeature createWithMockFeature(androidx.xr.scenecore.runtime.SurfaceFeature feature, androidx.xr.runtime.NodeHolder<? extends java.lang.Object?> nodeHolder);
+  public static final class TestGltfAnimation.Builder {
+    ctor public TestGltfAnimation.Builder();
+    method public androidx.xr.scenecore.testing.TestGltfAnimation build();
+    method public androidx.xr.scenecore.testing.TestGltfAnimation.Builder setAnimationDuration(float animationDuration);
+    method public androidx.xr.scenecore.testing.TestGltfAnimation.Builder setAnimationIndex(int animationIndex);
+    method public androidx.xr.scenecore.testing.TestGltfAnimation.Builder setAnimationName(String? animationName);
   }
 
-  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public class FakeSystemSpaceEntity extends androidx.xr.scenecore.testing.FakeEntity implements androidx.xr.scenecore.runtime.SystemSpaceEntity {
-    ctor public FakeSystemSpaceEntity();
-    method public final void onSpaceUpdated();
-    method public void setOnSpaceUpdatedListener(Runnable? listener, java.util.concurrent.Executor? executor);
+  public final class TestGltfModelNode {
+    method @InaccessibleFromKotlin public androidx.xr.runtime.math.Pose getLocalPose();
+    method @InaccessibleFromKotlin public androidx.xr.runtime.math.Vector3 getLocalScale();
+    method @InaccessibleFromKotlin public androidx.xr.runtime.math.Pose getModelPose();
+    method @InaccessibleFromKotlin public androidx.xr.runtime.math.Vector3 getModelScale();
+    method @InaccessibleFromKotlin public String? getName();
+    property public androidx.xr.runtime.math.Pose localPose;
+    property public androidx.xr.runtime.math.Vector3 localScale;
+    property public androidx.xr.runtime.math.Pose modelPose;
+    property public androidx.xr.runtime.math.Vector3 modelScale;
+    property public String? name;
+  }
+
+  public static final class TestGltfModelNode.Builder {
+    ctor public TestGltfModelNode.Builder();
+    method public androidx.xr.scenecore.testing.TestGltfModelNode build();
+    method public androidx.xr.scenecore.testing.TestGltfModelNode.Builder setLocalPose(androidx.xr.runtime.math.Pose localPose);
+    method public androidx.xr.scenecore.testing.TestGltfModelNode.Builder setLocalScale(androidx.xr.runtime.math.Vector3 localScale);
+    method public androidx.xr.scenecore.testing.TestGltfModelNode.Builder setModelPose(androidx.xr.runtime.math.Pose modelPose);
+    method public androidx.xr.scenecore.testing.TestGltfModelNode.Builder setModelScale(androidx.xr.runtime.math.Vector3 modelScale);
+    method public androidx.xr.scenecore.testing.TestGltfModelNode.Builder setName(String? name);
+  }
+
+  public final class TextureTester {
+    method @InaccessibleFromKotlin @RequiresApi(android.os.Build.VERSION_CODES.O) public java.nio.file.Path getPath();
+    property @RequiresApi(android.os.Build.VERSION_CODES.O) public java.nio.file.Path path;
   }
 
 }

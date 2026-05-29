@@ -27,7 +27,7 @@ import androidx.compose.ui.inspection.inspector.NodeParameterReference
 import androidx.compose.ui.inspection.inspector.ParameterKind
 import androidx.compose.ui.inspection.inspector.ParameterType
 import androidx.compose.ui.inspection.inspector.systemPackages
-import androidx.compose.ui.inspection.recompositions.ObservedStateReads
+import androidx.compose.ui.inspection.recompositions.ObservedReadResult
 import androidx.compose.ui.inspection.recompositions.StateReadRecord
 import layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.Bounds
 import layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.ComposableNode
@@ -36,10 +36,10 @@ import layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.LambdaV
 import layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.Parameter
 import layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.ParameterReference
 import layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.Quad
-import layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.RecompositionStateRead
 import layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.Rect
 import layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.StackTraceLine
 import layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.StateRead
+import layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.StateReadGroup
 
 internal fun InspectorNode.toComposableNode(context: ConversionContext): ComposableNode {
     return toNodeBuilder(context).build()
@@ -184,26 +184,26 @@ private fun Parameter.Builder.setValue(stringTable: StringTable, value: Any?) {
     when (type) {
         Parameter.Type.ITERABLE,
         Parameter.Type.STRING -> {
-            int32Value = stringTable.put(value as String)
+            int32Value = stringTable.put(value as? String ?: "")
         }
         Parameter.Type.BOOLEAN -> {
-            int32Value = if (value as Boolean) 1 else 0
+            int32Value = if (value as? Boolean == true) 1 else 0
         }
         Parameter.Type.DOUBLE -> {
-            doubleValue = value as Double
+            doubleValue = value as? Double ?: 0.0
         }
         Parameter.Type.FLOAT,
         Parameter.Type.DIMENSION_DP,
         Parameter.Type.DIMENSION_SP,
         Parameter.Type.DIMENSION_EM -> {
-            floatValue = value as Float
+            floatValue = value as? Float ?: 0.0f
         }
         Parameter.Type.INT32,
         Parameter.Type.COLOR -> {
-            int32Value = value as Int
+            int32Value = value as? Int ?: 0
         }
         Parameter.Type.INT64 -> {
-            int64Value = value as Long
+            int64Value = value as? Long ?: 0
         }
         Parameter.Type.RESOURCE -> setResourceType(value, stringTable)
         Parameter.Type.LAMBDA -> setFunctionType(value, stringTable)
@@ -295,7 +295,7 @@ private fun StateReadRecord.convert(
     stringTable: StringTable,
     layoutInspectorTree: LayoutInspectorTree,
 ): StateRead {
-    val value = layoutInspectorTree.convertStateValue(this.value)
+    val value = layoutInspectorTree.convertStateValue("value", this.value)
     val elements = this.trace.stackTrace
     val builder = StateRead.newBuilder()
     builder.value = value?.convert(stringTable) ?: Parameter.getDefaultInstance()
@@ -318,13 +318,17 @@ private fun StateReadRecord.convert(
     return builder.build()
 }
 
-fun ObservedStateReads.convert(
-    recomposition: Int,
+internal fun ObservedReadResult.convert(
     stringTable: StringTable,
     layoutInspectorTree: LayoutInspectorTree,
-): RecompositionStateRead {
-    val builder = RecompositionStateRead.newBuilder()
+): StateReadGroup {
+    val builder = StateReadGroup.newBuilder()
     builder.recompositionNumber = recomposition
+    val parameters =
+        parameterChanges.mapNotNull {
+            layoutInspectorTree.convertStateValue(it.name, it.value)?.convert(stringTable)
+        }
+    builder.addAllParameterChanges(parameters)
 
     // Collapse state reads that are identical:
     val convertedReads = mutableSetOf<StateRead>()

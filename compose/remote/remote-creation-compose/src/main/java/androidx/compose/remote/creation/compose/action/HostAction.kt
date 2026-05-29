@@ -13,26 +13,57 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@file:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 
 package androidx.compose.remote.creation.compose.action
 
 import androidx.annotation.RestrictTo
 import androidx.compose.remote.core.operations.layout.modifiers.HostNamedActionOperation
-import androidx.compose.remote.creation.actions.HostAction
-import androidx.compose.remote.creation.compose.state.FallbackCreationState
-import androidx.compose.remote.creation.compose.state.MutableRemoteInt
-import androidx.compose.remote.creation.compose.state.MutableRemoteString
+import androidx.compose.remote.creation.actions.Action as CreationAction
+import androidx.compose.remote.creation.actions.HostAction as CreationHostAction
 import androidx.compose.remote.creation.compose.state.RemoteFloat
-import androidx.compose.runtime.Composable
+import androidx.compose.remote.creation.compose.state.RemoteInt
+import androidx.compose.remote.creation.compose.state.RemoteState
+import androidx.compose.remote.creation.compose.state.RemoteStateScope
+import androidx.compose.remote.creation.compose.state.RemoteString
+
+/**
+ * Creates an [Action] that triggers a named action on the host.
+ *
+ * @param name The name of the action.
+ */
+public fun hostAction(name: RemoteString): Action = HostAction(name, HostAction.Type.NONE)
+
+/**
+ * Creates an [Action] that triggers a named action on the host with a float value.
+ *
+ * @param name The name of the action.
+ * @param value The float value to pass with the action.
+ */
+public fun hostAction(name: RemoteString, value: RemoteFloat): Action = HostAction(name, value)
+
+/**
+ * Creates an [Action] that triggers a named action on the host with an int value.
+ *
+ * @param name The name of the action.
+ * @param value The int value to pass with the action.
+ */
+public fun hostAction(name: RemoteString, value: RemoteInt): Action = HostAction(name, value)
+
+/**
+ * Creates an [Action] that triggers a named action on the host with a string value.
+ *
+ * @param name The name of the action.
+ * @param value The string value to pass with the action.
+ */
+public fun hostAction(name: RemoteString, value: RemoteString): Action = HostAction(name, value)
 
 /** Run the named host action when invoked. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public class HostAction(
-    public val name: String,
+internal class HostAction(
+    public val name: RemoteString,
     public val type: Type = Type.INT,
-    public var id: Int = -1,
-) : Action {
+    public val id: Int = 0,
+    public val value: RemoteState<*>? = null,
+) : RemoteAction() {
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public enum class Type(public val value: Int) {
@@ -44,25 +75,29 @@ public class HostAction(
     }
 
     // TODO: Add a RemoteFloatArray type and use it here!
-    public constructor(
-        name: String,
-        value: RemoteFloat,
-        type: Type = Type.FLOAT,
-    ) : this(name, type, value.getIdForCreationState(FallbackCreationState.state))
+    public constructor(name: RemoteString, value: RemoteFloat) : this(name, Type.FLOAT, 0, value)
+
+    public constructor(name: RemoteString, value: RemoteInt) : this(name, Type.INT, 0, value)
+
+    public constructor(name: RemoteString, value: RemoteString) : this(name, Type.STRING, 0, value)
 
     public constructor(
-        name: String,
-        value: MutableRemoteInt,
-    ) : this(name, Type.INT, value.getIdForCreationState(FallbackCreationState.state))
+        id: Int,
+        name: RemoteString,
+        value: RemoteString,
+    ) : this(name, Type.STRING, id, value)
 
-    public constructor(
-        name: String,
-        value: MutableRemoteString,
-    ) : this(name, Type.STRING, value.getIdForCreationState(FallbackCreationState.state))
-
-    override fun toRemoteAction(): androidx.compose.remote.creation.actions.Action {
-        return HostAction(name, type.ordinal, id)
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    override fun RemoteStateScope.toRemoteAction(): CreationAction {
+        val valueId = value?.id ?: -1
+        val constantValue = name.constantValueOrNull
+        if (id != 0) {
+            return CreationHostAction(id, valueId)
+        }
+        return if (constantValue != null) {
+            CreationHostAction(constantValue, type.ordinal, valueId)
+        } else {
+            CreationHostAction(name.id, valueId)
+        }
     }
-
-    @Composable override fun toComposeUiAction(): () -> Unit = {}
 }

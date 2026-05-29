@@ -20,8 +20,8 @@ import androidx.room3.DatabaseProcessingStep
 import androidx.room3.compiler.processing.util.Source
 import androidx.room3.compiler.processing.util.XTestInvocation
 import androidx.room3.compiler.processing.util.runKspTest
-import androidx.room3.processor.Context
 import loadTestSource
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TestName
@@ -37,25 +37,25 @@ class DatabaseKotlinCodeGenTest {
             Source.kotlin(
                 "MyDatabase.kt",
                 """
-            import androidx.room3.*
+                import androidx.room3.*
 
-            @Database(entities = [MyEntity::class], version = 1, exportSchema = false)
-            abstract class MyDatabase : RoomDatabase() {
-              abstract fun getDao(): MyDao
-            }
+                @Database(entities = [MyEntity::class], version = 1, exportSchema = false)
+                abstract class MyDatabase : RoomDatabase() {
+                  abstract fun getDao(): MyDao
+                }
 
-            @Dao
-            interface MyDao {
-              @Query("SELECT * FROM MyEntity")
-              fun getEntity(): MyEntity
-            }
+                @Dao
+                interface MyDao {
+                  @Query("SELECT * FROM MyEntity")
+                  fun getEntity(): MyEntity
+                }
 
-            @Entity
-            data class MyEntity(
-                @PrimaryKey
-                var pk: Int
-            )
-            """
+                @Entity
+                data class MyEntity(
+                    @PrimaryKey
+                    var pk: Int
+                )
+                """
                     .trimIndent(),
             )
         runTest(sources = listOf(src), expectedFilePath = getTestGoldenPath(testName.methodName))
@@ -67,60 +67,60 @@ class DatabaseKotlinCodeGenTest {
             Source.kotlin(
                 "MyDatabase.kt",
                 """
-            import androidx.room3.*
+                import androidx.room3.*
 
-            @Database(
-                entities = [
-                    MyParentEntity::class,
-                    MyEntity::class,
-                    MyFtsEntity::class,
-                ],
-                views = [ MyView::class ],
-                version = 1,
-                exportSchema = false
-            )
-            abstract class MyDatabase : RoomDatabase() {
-              abstract fun getDao(): MyDao
-            }
+                @Database(
+                    entities = [
+                        MyParentEntity::class,
+                        MyEntity::class,
+                        MyFtsEntity::class,
+                    ],
+                    views = [ MyView::class ],
+                    version = 1,
+                    exportSchema = false
+                )
+                abstract class MyDatabase : RoomDatabase() {
+                  abstract fun getDao(): MyDao
+                }
 
-            @Dao
-            interface MyDao {
-              @Query("SELECT * FROM MyEntity")
-              fun getEntity(): MyEntity
-            }
+                @Dao
+                interface MyDao {
+                  @Query("SELECT * FROM MyEntity")
+                  fun getEntity(): MyEntity
+                }
 
-            @Entity
-            data class MyParentEntity(@PrimaryKey val parentKey: Long)
+                @Entity
+                data class MyParentEntity(@PrimaryKey val parentKey: Long)
 
-            @Entity(
-                foreignKeys = [
-                    ForeignKey(
-                        entity = MyParentEntity::class,
-                        parentColumns = ["parentKey"],
-                        childColumns = ["indexedCol"],
-                        onDelete = ForeignKey.CASCADE
-                    )
-                ],
-                indices = [Index("indexedCol")]
-            )
-            data class MyEntity(
-                @PrimaryKey
-                val pk: Int,
-                val indexedCol: String
-            )
+                @Entity(
+                    foreignKeys = [
+                        ForeignKey(
+                            entity = MyParentEntity::class,
+                            parentColumns = ["parentKey"],
+                            childColumns = ["indexedCol"],
+                            onDelete = ForeignKey.CASCADE
+                        )
+                    ],
+                    indices = [Index("indexedCol")]
+                )
+                data class MyEntity(
+                    @PrimaryKey
+                    val pk: Int,
+                    val indexedCol: String
+                )
 
-            @Fts4
-            @Entity
-            data class MyFtsEntity(
-                @PrimaryKey
-                @ColumnInfo(name = "rowid")
-                val pk: Int,
-                val text: String
-            )
+                @Fts4
+                @Entity
+                data class MyFtsEntity(
+                    @PrimaryKey
+                    @ColumnInfo(name = "rowid")
+                    val pk: Int,
+                    val text: String
+                )
 
-            @DatabaseView("SELECT text FROM MyFtsEntity")
-            data class MyView(val text: String)
-            """
+                @DatabaseView("SELECT text FROM MyFtsEntity")
+                data class MyView(val text: String)
+                """
                     .trimIndent(),
             )
         runTest(sources = listOf(src), expectedFilePath = getTestGoldenPath(testName.methodName))
@@ -132,26 +132,26 @@ class DatabaseKotlinCodeGenTest {
             Source.kotlin(
                 "MyDatabase.kt",
                 """
-            import androidx.room3.*
+                import androidx.room3.*
 
-            @Database(entities = [MyEntity::class], version = 1, exportSchema = false)
-            internal abstract class MyDatabase : RoomDatabase() {
-              internal abstract fun getDao(): MyDao
-            }
+                @Database(entities = [MyEntity::class], version = 1, exportSchema = false)
+                internal abstract class MyDatabase : RoomDatabase() {
+                  internal abstract fun getDao(): MyDao
+                }
 
-            @Dao
-            internal abstract class MyDao {
-              @Query("SELECT * FROM MyEntity")
-              internal abstract fun getEntity(): MyEntity
-            }
+                @Dao
+                internal abstract class MyDao {
+                  @Query("SELECT * FROM MyEntity")
+                  internal abstract fun getEntity(): MyEntity
+                }
 
-            @Entity
-            @ConsistentCopyVisibility
-            internal data class MyEntity internal constructor(
-                @PrimaryKey
-                var pk: Int
-            )
-            """
+                @Entity
+                @ConsistentCopyVisibility
+                internal data class MyEntity internal constructor(
+                    @PrimaryKey
+                    var pk: Int
+                )
+                """
                     .trimIndent(),
             )
         runTest(sources = listOf(src), expectedFilePath = getTestGoldenPath(testName.methodName))
@@ -163,42 +163,42 @@ class DatabaseKotlinCodeGenTest {
             Source.java(
                 "MyDatabase",
                 """
-            import androidx.room3.*;
+                import androidx.room3.*;
 
-            @Database(entities = { MyEntity.class }, version = 1, exportSchema = false)
-            public abstract class MyDatabase extends RoomDatabase {
-              abstract MyDao getDao();
-            }
-            """
+                @Database(entities = { MyEntity.class }, version = 1, exportSchema = false)
+                public abstract class MyDatabase extends RoomDatabase {
+                  abstract MyDao getDao();
+                }
+                """
                     .trimIndent(),
             )
         val daoSrc =
             Source.java(
                 "MyDao",
                 """
-            import androidx.annotation.NonNull;
-            import androidx.room3.*;
+                import androidx.annotation.NonNull;
+                import androidx.room3.*;
 
-            @Dao
-            public interface MyDao {
-              @Query("SELECT * FROM MyEntity")
-              @NonNull MyEntity getEntity();
-            }
-            """
+                @Dao
+                public interface MyDao {
+                  @Query("SELECT * FROM MyEntity")
+                  @NonNull MyEntity getEntity();
+                }
+                """
                     .trimIndent(),
             )
         val entitySrc =
             Source.java(
                 "MyEntity",
                 """
-            import androidx.room3.*;
+                import androidx.room3.*;
 
-            @Entity
-            public class MyEntity {
-                @PrimaryKey
-                public int pk;
-            }
-            """
+                @Entity
+                public class MyEntity {
+                    @PrimaryKey
+                    public int pk;
+                }
+                """
                     .trimIndent(),
             )
         runTest(
@@ -207,48 +207,50 @@ class DatabaseKotlinCodeGenTest {
         )
     }
 
+    // disabled after KGP 2.2.20 update due to https://youtrack.jetbrains.com/issue/KTLC-271
+    @Ignore
     @Test
     fun database_packagePrivateVisibility_java() {
         val dbSrc =
             Source.java(
                 "MyDatabase",
                 """
-            import androidx.room3.*;
+                import androidx.room3.*;
 
-            @Database(entities = { MyEntity.class }, version = 1, exportSchema = false)
-            abstract class MyDatabase extends RoomDatabase {
-              abstract MyDao getDao();
-            }
-            """
+                @Database(entities = { MyEntity.class }, version = 1, exportSchema = false)
+                abstract class MyDatabase extends RoomDatabase {
+                  abstract MyDao getDao();
+                }
+                """
                     .trimIndent(),
             )
         val daoSrc =
             Source.java(
                 "MyDao",
                 """
-            import androidx.annotation.NonNull;
-            import androidx.room3.*;
+                import androidx.annotation.NonNull;
+                import androidx.room3.*;
 
-            @Dao
-            interface MyDao {
-              @Query("SELECT * FROM MyEntity")
-              @NonNull MyEntity getEntity();
-            }
-            """
+                @Dao
+                interface MyDao {
+                  @Query("SELECT * FROM MyEntity")
+                  @NonNull MyEntity getEntity();
+                }
+                """
                     .trimIndent(),
             )
         val entitySrc =
             Source.java(
                 "MyEntity",
                 """
-            import androidx.room3.*;
+                import androidx.room3.*;
 
-            @Entity
-            class MyEntity {
-                @PrimaryKey
-                public int pk;
-            }
-            """
+                @Entity
+                class MyEntity {
+                    @PrimaryKey
+                    public int pk;
+                }
+                """
                     .trimIndent(),
             )
         runTest(
@@ -263,25 +265,25 @@ class DatabaseKotlinCodeGenTest {
             Source.kotlin(
                 "MyDatabase.kt",
                 """
-            import androidx.room3.*
+                import androidx.room3.*
 
-            @Database(entities = [MyEntity::class], version = 1, exportSchema = false)
-            abstract class MyDatabase : RoomDatabase() {
-              abstract val dao: MyDao
-            }
+                @Database(entities = [MyEntity::class], version = 1, exportSchema = false)
+                abstract class MyDatabase : RoomDatabase() {
+                  abstract val dao: MyDao
+                }
 
-            @Dao
-            abstract class MyDao {
-              @Query("SELECT * FROM MyEntity")
-              abstract fun getEntity(): MyEntity
-            }
+                @Dao
+                abstract class MyDao {
+                  @Query("SELECT * FROM MyEntity")
+                  abstract fun getEntity(): MyEntity
+                }
 
-            @Entity
-            data class MyEntity(
-                @PrimaryKey
-                val pk: Int
-            )
-            """
+                @Entity
+                data class MyEntity(
+                    @PrimaryKey
+                    val pk: Int
+                )
+                """
                     .trimIndent(),
             )
         runTest(sources = listOf(src), expectedFilePath = getTestGoldenPath(testName.methodName))
@@ -296,11 +298,7 @@ class DatabaseKotlinCodeGenTest {
         expectedFilePath: String,
         handler: (XTestInvocation) -> Unit = {},
     ) {
-        runKspTest(
-            sources = sources,
-            options = mapOf(Context.BooleanProcessorOptions.GENERATE_KOTLIN.argName to "true"),
-            kotlincArguments = listOf("-jvm-target=11"),
-        ) {
+        runKspTest(sources = sources, kotlincArguments = listOf("-jvm-target=11")) {
             val databaseFqn = "androidx.room3.Database"
             DatabaseProcessingStep()
                 .process(

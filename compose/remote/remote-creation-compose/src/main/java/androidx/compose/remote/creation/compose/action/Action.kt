@@ -13,21 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@file:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 
 package androidx.compose.remote.creation.compose.action
 
 import androidx.annotation.RestrictTo
-import androidx.compose.remote.creation.actions.Action
-import androidx.compose.runtime.Composable
+import androidx.compose.remote.creation.actions.Action as CreationAction
+import androidx.compose.remote.creation.compose.state.RemoteStateScope
 
-/**
- * A RemoteCompose frontend model of Actions that can be converted to either RemoteCompose
- * operations or a ComposeUI lambda.
- */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+/** A RemoteCompose frontend model of Actions that can be converted to RemoteCompose operations. */
 public interface Action {
-    public fun toRemoteAction(): Action
+    public companion object {
+        /** A placeholder empty action. */
+        @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public val Empty: Action = combinedAction()
+    }
+}
 
-    public @Composable fun toComposeUiAction(): () -> Unit
+internal abstract class RemoteAction : Action {
+    abstract fun RemoteStateScope.toRemoteAction(): CreationAction
 }

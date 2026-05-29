@@ -16,15 +16,10 @@
 
 package androidx.compose.ui.platform
 
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
-import androidx.compose.ui.input.pointer.EmptyPointerKeyboardModifiers
 import androidx.compose.ui.input.pointer.PointerKeyboardModifiers
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.IntSize
@@ -64,15 +59,6 @@ interface WindowInfo {
         get() = DpSize.Unspecified
 }
 
-@Composable
-internal fun WindowFocusObserver(onWindowFocusChanged: (isWindowFocused: Boolean) -> Unit) {
-    val windowInfo = LocalWindowInfo.current
-    val callback = rememberUpdatedState(onWindowFocusChanged)
-    LaunchedEffect(windowInfo) {
-        snapshotFlow { windowInfo.isWindowFocused }.collect { callback.value(it) }
-    }
-}
-
 internal class WindowInfoImpl : WindowInfo {
     private val _containerSize = mutableStateOf(IntSize.Zero)
 
@@ -101,6 +87,6 @@ internal class WindowInfoImpl : WindowInfo {
     companion object {
         // One instance across all windows makes sense, since the state of KeyboardModifiers is
         // common for all windows.
-        internal val GlobalKeyboardModifiers = mutableStateOf(EmptyPointerKeyboardModifiers())
+        internal val GlobalKeyboardModifiers = mutableStateOf(PointerKeyboardModifiers())
     }
 }

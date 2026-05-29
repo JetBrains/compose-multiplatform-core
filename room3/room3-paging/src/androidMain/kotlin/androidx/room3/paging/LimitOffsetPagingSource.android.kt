@@ -16,17 +16,12 @@
 
 package androidx.room3.paging
 
-import android.database.Cursor
 import androidx.annotation.RestrictTo
 import androidx.paging.PagingSource
 import androidx.paging.PagingState
 import androidx.room3.RoomDatabase
 import androidx.room3.RoomRawQuery
-import androidx.room3.RoomSQLiteQuery
-import androidx.room3.paging.CommonLimitOffsetImpl.Companion.BUG_LINK
 import androidx.room3.paging.util.getClippedRefreshKey
-import androidx.room3.util.performSuspending
-import androidx.sqlite.db.SupportSQLiteQuery
 
 /**
  * An implementation of [PagingSource] to perform a LIMIT OFFSET query
@@ -42,21 +37,6 @@ actual constructor(
     public actual val db: RoomDatabase,
     vararg tables: String,
 ) : PagingSource<Int, Value>() {
-    public constructor(
-        sourceQuery: RoomSQLiteQuery,
-        db: RoomDatabase,
-        vararg tables: String,
-    ) : this(sourceQuery = sourceQuery.toRoomRawQuery(), db = db, tables = tables)
-
-    public constructor(
-        supportSQLiteQuery: SupportSQLiteQuery,
-        db: RoomDatabase,
-        vararg tables: String,
-    ) : this(
-        sourceQuery = RoomSQLiteQuery.copyFrom(supportSQLiteQuery).toRoomRawQuery(),
-        db = db,
-        tables = tables,
-    )
 
     private val implementation = CommonLimitOffsetImpl(tables, this, ::convertRows)
 
@@ -72,22 +52,8 @@ actual constructor(
     actual override fun getRefreshKey(state: PagingState<Int, Value>): Int? =
         state.getClippedRefreshKey()
 
-    protected open fun convertRows(cursor: Cursor): List<Value> {
-        throw NotImplementedError(
-            "Unexpected call to a function with no implementation that Room is suppose to " +
-                "generate. Please file a bug at: $BUG_LINK."
-        )
-    }
-
-    protected actual open suspend fun convertRows(
+    protected actual abstract suspend fun convertRows(
         limitOffsetQuery: RoomRawQuery,
         itemCount: Int,
-    ): List<Value> {
-        return performSuspending(db, isReadOnly = true, inTransaction = false) { connection ->
-            connection.prepare(limitOffsetQuery.sql).use { statement ->
-                limitOffsetQuery.getBindingFunction().invoke(statement)
-                convertRows(SQLiteStatementCursor(statement, itemCount))
-            }
-        }
-    }
+    ): List<Value>
 }

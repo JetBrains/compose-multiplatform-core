@@ -13,31 +13,123 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@file:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 
 package androidx.compose.remote.creation.compose.state
 
 import androidx.annotation.RestrictTo
-import androidx.compose.remote.core.Platform
-import androidx.compose.remote.core.operations.Utils
 import androidx.compose.remote.creation.compose.capture.RemoteComposeCreationState
-import androidx.compose.remote.player.core.state.RemoteDomains
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableLongState
-import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.Stable
 import androidx.compose.runtime.remember
 
 /**
  * Abstract base class for all remote long representations. This class extends [RemoteState<Long>].
- *
- * @property hasConstantValue A boolean indicating whether this [RemoteLong] will always evaluate to
- *   the same [value]. This is a conservative check; some expressions that are effectively constant
- *   might still return `false` due to the cost of tracking their dependencies.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public abstract class RemoteLong : RemoteState<Long> {
+@Stable
+public open class RemoteLong
+internal constructor(
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public val low: RemoteInt,
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public val high: RemoteInt,
+    cacheKey: RemoteStateCacheKey = RemoteOperationCacheKey.create(RemoteLongOp.Emulated, low, high),
+) : BaseRemoteState<Long>(cacheKey) {
 
-    public abstract val id: Int
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    @get:Suppress("AutoBoxing")
+    public override val constantValueOrNull: Long?
+        get() {
+            val l = low.constantValueOrNull ?: return null
+            val h = high.constantValueOrNull ?: return null
+            return (h.toLong() shl 32) or (l.toLong() and 0xFFFFFFFFL)
+        }
+
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public override fun writeToDocument(creationState: RemoteComposeCreationState): Int {
+        throw UnsupportedOperationException("RemoteLong cannot be directly written to document yet")
+    }
+
+    /** Returns a new [RemoteLong] that evaluates to this [RemoteLong] plus [v]. */
+    public operator fun plus(v: RemoteLong): RemoteLong {
+        // Emulates 64-bit addition using 32-bit integer arithmetic (Multiple-precision arithmetic).
+        //
+        // The algorithm computes the lower 32-bit sum and manually detects carry-out by checking if
+        // the unsigned sum is less than either unsigned operand. Since `RemoteInt` handles signed
+        // values, it flips the sign bit using `xor Int.MIN_VALUE` to perform unsigned comparisons.
+        // See: https://www.nayuki.io/page/unsigned-int-considered-harmful-for-java (Unsigned
+        // comparison)
+        val lowAdd = this.low + v.low
+        val minVal = Int.MIN_VALUE.ri
+        val carry = selectIfLt(lowAdd xor minVal, this.low xor minVal, 1.ri, 0.ri)
+        val highAdd = this.high + v.high + carry
+        val key = RemoteOperationCacheKey.create(RemoteLongOp.Add, this@RemoteLong, v)
+        return object : RemoteLong(lowAdd, highAdd, key) {}
+    }
+
+    /** Returns a new [RemoteLong] that evaluates to this [RemoteLong] minus [v]. */
+    public operator fun minus(v: RemoteLong): RemoteLong {
+        // Emulates 64-bit subtraction using 32-bit integer arithmetic (Multiple-precision
+        // arithmetic).
+        //
+        // The algorithm computes the lower 32-bit difference and manually detects borrow-out by
+        // checking if the first unsigned operand is less than the second unsigned operand. Similar
+        // to
+        // addition, unsigned comparison is achieved by flipping the sign bit using `xor
+        // Int.MIN_VALUE`.
+        // See: https://www.nayuki.io/page/unsigned-int-considered-harmful-for-java (Unsigned
+        // comparison)
+        val lowSub = this.low - v.low
+        val minVal = Int.MIN_VALUE.ri
+        val borrow = selectIfLt(this.low xor minVal, v.low xor minVal, 1.ri, 0.ri)
+        val highSub = this.high - v.high - borrow
+        val key = RemoteOperationCacheKey.create(RemoteLongOp.Sub, this@RemoteLong, v)
+        return object : RemoteLong(lowSub, highSub, key) {}
+    }
+
+    /** Returns a new [RemoteLong] that evaluates to this [RemoteLong] times [v]. */
+    public operator fun times(v: RemoteLong): RemoteLong {
+        // Emulates 64-bit multiplication using 32-bit integer arithmetic.
+        //
+        // To prevent 32-bit signed overflow during intermediate calculations, the 32-bit `low`
+        // words are further split into 16-bit halves. It performs four 16x16-bit multiplications
+        // and combines the partial products with appropriate shifts. This is an implementation of
+        // standard long multiplication algorithms in software, commonly used when hardware
+        // only supports 32-bit registers.
+        // See: https://en.wikipedia.org/wiki/Multiplication_algorithm#Long_multiplication
+        val mask = 0xFFFF.ri
+        val a0 = this.low and mask
+        val a1 = (this.low shr 16.ri) and mask
+        val b0 = v.low and mask
+        val b1 = (v.low shr 16.ri) and mask
+
+        val m00 = a0 * b0
+        val m00Carry = (m00 shr 16.ri) and mask
+
+        val mid1 = (a1 * b0) + m00Carry
+        val mid1Lo = mid1 and mask
+        val mid1Hi = (mid1 shr 16.ri) and mask
+
+        val mid2 = a0 * b1
+        val mid2Lo = mid2 and mask
+        val mid2Hi = (mid2 shr 16.ri) and mask
+
+        val midLoSum = mid1Lo + mid2Lo
+        val midLoSumCarry = (midLoSum shr 16.ri) and mask
+
+        val highCross = mid1Hi + mid2Hi + midLoSumCarry
+        val m11 = a1 * b1
+        val upper32 = m11 + highCross
+
+        val finalLow = this.low * v.low
+        val finalHigh = (this.high * v.low) + (this.low * v.high) + upper32
+
+        val key = RemoteOperationCacheKey.create(RemoteLongOp.Mul, this@RemoteLong, v)
+        return object : RemoteLong(finalLow, finalHigh, key) {}
+    }
+
+    /**
+     * Returns a [RemoteInt] that evaluates to the truncating conversion of the lower 32 bits of the
+     * [RemoteLong].
+     */
+    public fun toRemoteInt(): RemoteInt = low
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public companion object {
@@ -45,13 +137,36 @@ public abstract class RemoteLong : RemoteState<Long> {
          * Creates a [RemoteLong] instance from a constant [Long] value. This value will be added as
          * a constant to the remote document.
          *
-         * @param v The constant [Long] value.
+         * @param value The constant [Long] value.
          * @return A [MutableRemoteLong] representing the constant value.
          */
-        public operator fun invoke(v: Long): RemoteLong {
-            return MutableRemoteLong(mutableLongStateOf(v), v) { creationState ->
-                creationState.document.addLong(v)
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+        public operator fun invoke(value: Long): RemoteLong {
+            return MutableRemoteLong(value, cacheKey = RemoteConstantCacheKey(value)) {
+                creationState ->
+                creationState.document.addLong(value)
             }
+        }
+
+        /**
+         * Creates a [RemoteLong] referencing a remote ID.
+         *
+         * @param id The remote ID.
+         * @return A [RemoteLong] referencing the ID.
+         */
+        internal fun createForId(id: Int): RemoteLong = MutableRemoteLong(id)
+
+        /**
+         * Creates a [RemoteLong] from low and high [RemoteInt]s.
+         *
+         * @param low The lower 32 bits.
+         * @param high The upper 32 bits.
+         * @return A [RemoteLong] representing the combination of low and high.
+         */
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+        @JvmStatic
+        public fun fromLowHigh(low: RemoteInt, high: RemoteInt): RemoteLong {
+            return RemoteLong(low, high)
         }
 
         /**
@@ -59,104 +174,126 @@ public abstract class RemoteLong : RemoteState<Long> {
          * AndroidRemoteContext.setNamedLong.
          *
          * @param name The unique name for this remote long.
-         * @param initialValue The initial [Long] value for the named remote long.
+         * @param defaultValue The initial [Long] value for the named remote long.
+         * @param domain The domain of the named long (defaults to [RemoteState.Domain.User]).
          * @return A [RemoteLong] representing the named long.
          */
         @JvmStatic
-        public fun createNamedRemoteLong(name: String, initialValue: Long): RemoteLong {
-            return MutableRemoteLong(mutableLongStateOf(initialValue), constantValue = null) {
-                creationState ->
-                creationState.document.addNamedLong(name, initialValue)
+        public fun createNamedRemoteLong(
+            name: String,
+            defaultValue: Long,
+            domain: RemoteState.Domain = RemoteState.Domain.User,
+        ): RemoteLong {
+            return MutableRemoteLong(
+                constantValueOrNull = null,
+                cacheKey = RemoteNamedCacheKey(domain, name),
+            ) { creationState ->
+                creationState.document.addNamedLong(domain.prefixed(name), defaultValue)
             }
         }
     }
 }
 
 /**
- * A mutable implementation of [RemoteLong] that holds its value in a [MutableLongState].
+ * A mutable implementation of [RemoteLong].
  *
- * @property content The underlying [MutableLongState] that stores the actual long value.
- * @property hasConstantValue A boolean indicating whether this [MutableRemoteLong] is expected to
- *   remain constant. For mutable states, this is typically `false`.
- * @property idProvider A lambda that provides the unique ID for this mutable long within the
- *   [RemoteComposeCreationState]. This ID is used to identify the long in the remote document.
+ * @param constantValueOrNull A nullable value if this [MutableRemoteLong] is constant.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public class MutableRemoteLong(
-    private val content: MutableLongState,
-    public override val constantValue: Long?,
+public class MutableRemoteLong
+internal constructor(
+    @get:Suppress("AutoBoxing") public override val constantValueOrNull: Long?,
+    cacheKey: RemoteStateCacheKey,
+    low: RemoteInt =
+        constantValueOrNull?.let { RemoteInt(it.toInt()) }
+            ?: RemoteIntExpression(null, RemoteStateInstanceKey()) {
+                throw UnsupportedOperationException("Cannot extract low from dynamic RemoteLong")
+            },
+    high: RemoteInt =
+        constantValueOrNull?.let { RemoteInt((it shr 32).toInt()) }
+            ?: RemoteIntExpression(null, RemoteStateInstanceKey()) {
+                throw UnsupportedOperationException("Cannot extract high from dynamic RemoteLong")
+            },
     private val idProvider: (creationState: RemoteComposeCreationState) -> Int,
-) : RemoteLong(), MutableRemoteState<Long> {
+) : RemoteLong(low, high, cacheKey), MutableRemoteState<Long> {
 
     /**
      * Constructor for [MutableRemoteLong] that allows specifying an optional initial ID. If no ID
      * is provided, a new float variable ID is reserved.
      *
-     * @param content The [MutableLongState] to hold the value.
      * @param id An optional explicit ID for this mutable long. If `null`, a new ID is reserved.
      */
-    public constructor(
-        content: MutableLongState,
-        id: Int? = null,
-    ) : this(
-        content,
-        constantValue = null,
-        { creationState -> id ?: Utils.idFromNan(creationState.document.reserveFloatVariable()) },
-    )
+    internal constructor(
+        id: Int
+    ) : this(constantValueOrNull = null, cacheKey = RemoteStateIdKey(id), idProvider = { id })
 
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public override fun writeToDocument(creationState: RemoteComposeCreationState): Int =
         idProvider(creationState)
 
-    @Deprecated("Use getIdForCreationState directly")
-    public override val id: Int
-        get() {
-            FallbackCreationState.state.platform.log(
-                Platform.LogCategory.TODO,
-                "Use RemoteLong.getIdForCreationState directly",
-            )
-            return getIdForCreationState(FallbackCreationState.state)
-        }
-
-    public override var value: Long
-        get() {
-            return content.longValue
-        }
-        set(newValue) {
-            content.longValue = newValue
-        }
-
-    public override operator fun component1(): Long = value
-
-    public override operator fun component2(): (Long) -> Unit = { newValue ->
-        content.longValue = newValue
+    public override fun toString(): String {
+        return "MutableRemoteLong@${this.hashCode()} =" + constantValueOrNull
     }
 
-    public override fun toString(): String {
-        return "MutableRemoteLong@${this.hashCode()} =" + content.longValue
+    public companion object {
+        /**
+         * Creates a new mutable state (allocates an ID).
+         *
+         * @param initialValue The initial value for the state.
+         * @return A new [MutableRemoteLong] instance.
+         */
+        public operator fun invoke(initialValue: Long): MutableRemoteLong {
+            return MutableRemoteLong(
+                constantValueOrNull = null,
+                cacheKey = RemoteStateInstanceKey(),
+            ) { creationState ->
+                creationState.document.addLong(initialValue)
+            }
+        }
+
+        /**
+         * Maps an existing mutable ID to a state instance.
+         *
+         * @param id The existing mutable ID.
+         * @return A [MutableRemoteLong] instance mapping to the ID.
+         */
+        internal fun createMutableForId(id: Int): MutableRemoteLong = MutableRemoteLong(id)
     }
 }
 
 /**
- * A Composable function to remember and provide a mutable remote long value.
+ * Factory composable for mutable remote long state.
  *
- * @param name The unique name for this remote long, used for identification in the remote document.
- * @param domain The domain of the remote long (defaults to [RemoteDomains.USER]). This helps
- *   organize named values.
- * @param value A lambda that provides the initial [Long] value for this remote long.
+ * @param initialValue The initial [Long] value.
  * @return A [MutableRemoteLong] instance that will be remembered across recompositions.
  */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @Composable
-public fun rememberRemoteLongValue(
+public fun rememberMutableRemoteLong(initialValue: Long): MutableRemoteLong {
+    return remember { MutableRemoteLong(initialValue) }
+}
+
+/**
+ * Remembers a named remote long expression.
+ *
+ * @param name The unique name for this remote long.
+ * @param domain The domain of the named long (defaults to [RemoteState.Domain.User]).
+ * @param defaultValue The initial long value.
+ * @return A [RemoteLong] representing the named remote long expression.
+ */
+@Composable
+public fun rememberNamedRemoteLong(
     name: String,
-    domain: RemoteDomains = RemoteDomains.USER,
-    value: () -> Long,
-): MutableRemoteLong {
-    return remember(name) {
-        val initial = value()
-        MutableRemoteLong(mutableLongStateOf(initial), constantValue = null) { creationState ->
-            val id = creationState.document.addNamedLong(name, initial)
-            creationState.document.setStringName(id.toInt(), "$domain:$name")
-            id
-        }
+    defaultValue: Long,
+    domain: RemoteState.Domain = RemoteState.Domain.User,
+): RemoteLong {
+    return rememberNamedState(name, domain) {
+        RemoteLong.createNamedRemoteLong(name, defaultValue, domain)
     }
+}
+
+internal enum class RemoteLongOp {
+    Emulated,
+    Add,
+    Sub,
+    Mul,
 }

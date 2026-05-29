@@ -22,8 +22,8 @@ import androidx.room3.compiler.codegen.XClassName
 import androidx.room3.compiler.codegen.XTypeName
 import androidx.room3.compiler.codegen.XTypeName.Companion.ANY_OBJECT
 import androidx.room3.compiler.processing.compat.XConverters.toKS
-import androidx.room3.compiler.processing.javac.JavacType
-import androidx.room3.compiler.processing.ksp.KspTypeArgumentType
+import androidx.room3.compiler.processing.javac.JavacTypeArgument
+import androidx.room3.compiler.processing.ksp.KspTypeArgument
 import androidx.room3.compiler.processing.util.Source
 import androidx.room3.compiler.processing.util.XTestInvocation
 import androidx.room3.compiler.processing.util.asJClassName
@@ -73,16 +73,16 @@ class XTypeTest {
             Source.java(
                 "foo.bar.Parent",
                 """
-            package foo.bar;
-            import java.io.InputStream;
-            import java.util.Set;
-            import java.util.List;
-            class Parent<InputStreamType extends InputStream> {
-                public void wildcardParam(Set<?> param1) {}
-                public void rawParamType(Set param1) {}
-                public void rawParamTypeArgument(List<Set> param1) {}
-            }
-            """
+                package foo.bar;
+                import java.io.InputStream;
+                import java.util.Set;
+                import java.util.List;
+                class Parent<InputStreamType extends InputStream> {
+                    public void wildcardParam(Set<?> param1) {}
+                    public void rawParamType(Set param1) {}
+                    public void rawParamTypeArgument(List<Set> param1) {}
+                }
+                """
                     .trimIndent(),
             )
         runProcessorTest(sources = listOf(parent)) {
@@ -136,7 +136,7 @@ class XTypeTest {
 
             type.typeElement!!.getMethodByJvmName("wildcardParam").let { method ->
                 val wildcardParam = method.parameters.first()
-                val extendsBoundOrSelf = wildcardParam.type.extendsBoundOrSelf()
+                val extendsBoundOrSelf = wildcardParam.type
                 assertThat(wildcardParam.type.asTypeName().java)
                     .isEqualTo(
                         JParameterizedTypeName.get(
@@ -207,24 +207,24 @@ class XTypeTest {
             Source.kotlin(
                 "Parent.kt",
                 """
-            package foo.bar
-            interface TUpper
-            class FooOut<out T: TUpper>
-            class FooIn<in T>
-            class Foo<T: TUpper>
-            class Test {
-                fun f(): Foo<*> = TODO()
-                fun fIn(): FooIn<*> = TODO()
-                fun fOut(): FooOut<*> = TODO()
-            }
-            """
+                package foo.bar
+                interface TUpper
+                class FooOut<out T: TUpper>
+                class FooIn<in T>
+                class Foo<T: TUpper>
+                class Test {
+                    fun f(): Foo<*> = TODO()
+                    fun fIn(): FooIn<*> = TODO()
+                    fun fOut(): FooOut<*> = TODO()
+                }
+                """
                     .trimIndent(),
             )
         fun checkKsp(invocation: XTestInvocation) {
             invocation.processingEnv.requireTypeElement("foo.bar.Test").let { cls ->
                 cls.getMethodByJvmName("f").returnType.let { returnType ->
-                    returnType.typeArguments.single().let { typeArgType ->
-                        (typeArgType as KspTypeArgumentType).typeArg.let { ksTypeArg ->
+                    returnType.typeArguments.single().let { typeArg ->
+                        (typeArg as KspTypeArgument).ksTypeArgument.let { ksTypeArg ->
                             assertThat(ksTypeArg.variance).isEqualTo(Variance.STAR)
                             // The type is resolved to the upper bound in KSP1 but is null in KSP2.
                             if (invocation.kspProcessingEnv.isKsp2) {
@@ -235,14 +235,14 @@ class XTypeTest {
                             }
                         }
 
-                        assertThat(typeArgType.asTypeName().java).isEqualTo(UNKNOWN)
-                        assertThat(typeArgType.asTypeName().kotlin).isEqualTo(STAR)
+                        assertThat(typeArg.asTypeName().java).isEqualTo(UNKNOWN)
+                        assertThat(typeArg.asTypeName().kotlin).isEqualTo(STAR)
                     }
                 }
 
                 cls.getMethodByJvmName("fOut").returnType.let { returnType ->
-                    returnType.typeArguments.single().let { typeArgType ->
-                        (typeArgType as KspTypeArgumentType).typeArg.let { ksTypeArg ->
+                    returnType.typeArguments.single().let { typeArg ->
+                        (typeArg as KspTypeArgument).ksTypeArgument.let { ksTypeArg ->
                             // The variance doesn't get replaced to OUT/COVARIANT.
                             assertThat(ksTypeArg.variance).isEqualTo(Variance.STAR)
                             if (invocation.kspProcessingEnv.isKsp2) {
@@ -252,14 +252,14 @@ class XTypeTest {
                                     .isEqualTo("TUpper")
                             }
                         }
-                        assertThat(typeArgType.asTypeName().java).isEqualTo(UNKNOWN)
-                        assertThat(typeArgType.asTypeName().kotlin).isEqualTo(STAR)
+                        assertThat(typeArg.asTypeName().java).isEqualTo(UNKNOWN)
+                        assertThat(typeArg.asTypeName().kotlin).isEqualTo(STAR)
                     }
                 }
 
                 cls.getMethodByJvmName("fIn").returnType.let { returnType ->
-                    returnType.typeArguments.single().let { typeArgType ->
-                        (typeArgType as KspTypeArgumentType).typeArg.let { ksTypeArg ->
+                    returnType.typeArguments.single().let { typeArg ->
+                        (typeArg as KspTypeArgument).ksTypeArgument.let { ksTypeArg ->
                             // The variance doesn't get replaced to IN/CONTRAVARIANT.
                             assertThat(ksTypeArg.variance).isEqualTo(Variance.STAR)
                             if (invocation.kspProcessingEnv.isKsp2) {
@@ -269,8 +269,8 @@ class XTypeTest {
                                 assertThat(ksTypeArg.type!!.resolve().toString()).isEqualTo("Any?")
                             }
                         }
-                        assertThat(typeArgType.asTypeName().java).isEqualTo(UNKNOWN)
-                        assertThat(typeArgType.asTypeName().kotlin).isEqualTo(STAR)
+                        assertThat(typeArg.asTypeName().java).isEqualTo(UNKNOWN)
+                        assertThat(typeArg.asTypeName().kotlin).isEqualTo(STAR)
                     }
                 }
             }
@@ -281,7 +281,7 @@ class XTypeTest {
                     cls.getMethodByJvmName(methodName)
                         .returnType
                         .typeArguments
-                        .map { it as JavacType }
+                        .map { it as JavacTypeArgument }
                         .single()
                         .let {
                             assertThat(it.toString()).isEqualTo("?")
@@ -307,28 +307,28 @@ class XTypeTest {
             Source.java(
                 "foo.bar.Parent",
                 """
-            package foo.bar;
-            import java.io.InputStream;
-            import java.util.Set;
-            import java.util.List;
+                package foo.bar;
+                import java.io.InputStream;
+                import java.util.Set;
+                import java.util.List;
 
-            interface TUpper {}
-            class Foo<T extends TUpper> {}
-            class Test {
-                Foo<?> f() {
-                    throw new RuntimeException();
+                interface TUpper {}
+                class Foo<T extends TUpper> {}
+                class Test {
+                    Foo<?> f() {
+                        throw new RuntimeException();
+                    }
                 }
-            }
-            """
+                """
                     .trimIndent(),
             )
         fun handler(invocation: XTestInvocation) {
             invocation.processingEnv.requireTypeElement("foo.bar.Test").let { cls ->
                 cls.getMethodByJvmName("f").returnType.let { returnType ->
-                    returnType.typeArguments.single().let { typeArgType ->
+                    returnType.typeArguments.single().let { typeArg ->
                         if (invocation.isKsp) {
                             val kspVersion = invocation.processingEnv.toKS().kspVersion
-                            (typeArgType as KspTypeArgumentType).typeArg.type.let { typeRef ->
+                            (typeArg as KspTypeArgument).ksTypeArgument.type.let { typeRef ->
                                 if (kspVersion >= KotlinVersion(2, 0)) {
                                     assertThat(typeRef).isNull()
                                 } else {
@@ -336,11 +336,11 @@ class XTypeTest {
                                         .isEqualTo("(TUpper..TUpper?)")
                                 }
                             }
-                            assertThat(typeArgType.asTypeName().java).isEqualTo(UNKNOWN)
-                            assertThat(typeArgType.asTypeName().kotlin).isEqualTo(STAR)
+                            assertThat(typeArg.asTypeName().java).isEqualTo(UNKNOWN)
+                            assertThat(typeArg.asTypeName().kotlin).isEqualTo(STAR)
                         } else {
-                            assertThat(typeArgType.toString()).isEqualTo("?")
-                            assertThat(typeArgType.asTypeName().java).isEqualTo(UNKNOWN)
+                            assertThat(typeArg.toString()).isEqualTo("?")
+                            assertThat(typeArg.asTypeName().java).isEqualTo(UNKNOWN)
                         }
                     }
                 }
@@ -363,7 +363,7 @@ class XTypeTest {
                         throw new RuntimeException("Stub");
                     }
                 }
-            """
+                """
                     .trimIndent(),
             )
         val kotlinSource =
@@ -421,7 +421,7 @@ class XTypeTest {
                         throw new RuntimeException("Stub");
                     }
                 }
-            """
+                """
                     .trimIndent(),
             )
         val kotlinSource =
@@ -479,7 +479,7 @@ class XTypeTest {
                         throw new RuntimeException("Stub");
                     }
                 }
-            """
+                """
                     .trimIndent(),
             )
         val kotlinSource =
@@ -770,14 +770,14 @@ class XTypeTest {
                 element.getField("badField").let { field ->
                     assertThat(field.type.isError()).isFalse()
                     assertThat(field.type.asTypeName()).isEqualTo(listOfErrorTypeName)
-                    assertThat(field.type.typeArguments.single().isError()).isTrue()
+                    assertThat(field.type.typeArguments.single().type.isError()).isTrue()
                     assertThat(field.type.typeArguments.single().asTypeName())
                         .isEqualTo(errorTypeName)
                 }
                 element.getDeclaredMethodByJvmName("badMethod").let { method ->
                     assertThat(method.returnType.isError()).isFalse()
                     assertThat(method.returnType.asTypeName()).isEqualTo(listOfErrorTypeName)
-                    assertThat(method.returnType.typeArguments.single().isError()).isTrue()
+                    assertThat(method.returnType.typeArguments.single().type.isError()).isTrue()
                     assertThat(method.returnType.typeArguments.single().asTypeName())
                         .isEqualTo(errorTypeName)
                 }
@@ -846,14 +846,14 @@ class XTypeTest {
                 element.getField("badField").let { field ->
                     assertThat(field.type.isError()).isFalse()
                     assertThat(field.type.asTypeName()).isEqualTo(listOfErrorTypeName)
-                    assertThat(field.type.typeArguments.single().isError()).isTrue()
+                    assertThat(field.type.typeArguments.single().type.isError()).isTrue()
                     assertThat(field.type.typeArguments.single().asTypeName())
                         .isEqualTo(errorTypeName)
                 }
                 element.getDeclaredMethodByJvmName("badMethod").let { method ->
                     assertThat(method.returnType.isError()).isFalse()
                     assertThat(method.returnType.asTypeName()).isEqualTo(listOfErrorTypeName)
-                    assertThat(method.returnType.typeArguments.single().isError()).isTrue()
+                    assertThat(method.returnType.typeArguments.single().type.isError()).isTrue()
                     assertThat(method.returnType.typeArguments.single().asTypeName())
                         .isEqualTo(errorTypeName)
                 }
@@ -870,11 +870,11 @@ class XTypeTest {
             Source.java(
                 "foo.bar.Baz",
                 """
-            package foo.bar;
-            interface Baz {
-                void method(String... inputs);
-            }
-            """
+                package foo.bar;
+                interface Baz {
+                    void method(String... inputs);
+                }
+                """
                     .trimIndent(),
             )
         runProcessorTest(sources = listOf(subject)) {
@@ -893,22 +893,22 @@ class XTypeTest {
             Source.java(
                 "JavaClass",
                 """
-            class JavaClass {
-                int intField;
-                Integer integerField;
-            }
-            """
+                class JavaClass {
+                    int intField;
+                    Integer integerField;
+                }
+                """
                     .trimIndent(),
             )
         val kotlinSrc =
             Source.kotlin(
                 "Foo.kt",
                 """
-            class KotlinClass {
-                val intProp: Int = 0
-                val integerProp : Int? = null
-            }
-            """
+                class KotlinClass {
+                    val intProp: Int = 0
+                    val integerProp : Int? = null
+                }
+                """
                     .trimIndent(),
             )
         runProcessorTest(sources = listOf(javaSrc, kotlinSrc)) { invocation ->
@@ -1003,7 +1003,7 @@ class XTypeTest {
                 package foo.bar;
                 public class Baz extends IDontExist {
                 }
-            """
+                """
                     .trimIndent(),
             )
         runProcessorTest(sources = listOf(missingSuperClassType)) {
@@ -1020,7 +1020,7 @@ class XTypeTest {
                 package foo.bar;
                 public class Baz implements IDontExist {
                 }
-            """
+                """
                     .trimIndent(),
             )
         runProcessorTest(sources = listOf(missingSuperInterfaceType)) {
@@ -1044,13 +1044,13 @@ class XTypeTest {
                 "Subject.kt",
                 """
                 package test
-    
+
                 interface SubjectInterface : MissingType
                 class SubjectClassOne : MissingType
                 class SubjectClassTwo : MissingType()
                 class SubjectClassThree : ValidSuperClass(), MissingType
                 class SubjectClassFour : ValidSuperInterface, MissingType
-    
+
                 abstract class ValidSuperClass
                 interface ValidSuperInterface
                 """
@@ -1307,34 +1307,143 @@ class XTypeTest {
     }
 
     @Test
+    fun isStar() {
+        val javaSource =
+            Source.java(
+                "test.Usage",
+                """
+                package test;
+                class Usage {
+                  Foo<?> fooStar = null;
+                  Foo<Bar> fooBar = null;
+                  Foo<? extends Object> fooExtendsObject = null;
+                  Foo<? extends Bar> fooExtendsBar = null;
+                  Foo<? super Bar> fooSuperBar = null;
+                }
+                interface Foo<T> {}
+                interface Bar {}
+                """
+                    .trimIndent(),
+            )
+        val kotlinSource =
+            Source.kotlin(
+                "test.Usage.kt",
+                """
+                package test
+                class Usage {
+                    val fooStar: Foo<*> = TODO()
+                    val fooBar: Foo<Bar> = TODO()
+                    val fooExtendsObject: Foo<out Any?> = TODO()
+                    val fooExtendsBar: Foo<out Bar> = TODO()
+                    val fooSuperBar: Foo<in Bar> = TODO()
+
+                    // For kotlin-specific tests
+                    val fooInBar: FooIn<Bar> = TODO()
+                    val fooOutBar: FooOut<Bar> = TODO()
+                    val fooOutJvmWildcardBar: Foo<@JvmWildcard Bar> = TODO()
+                    val jvmSuppressWildcardsFooStar: @JvmSuppressWildcards Foo<*> = TODO()
+                }
+                interface Foo<T>
+                interface FooIn<in T>
+                interface FooOut<out T>
+                interface Bar
+                """
+                    .trimIndent(),
+            )
+        fun runTests(source: Source) {
+            runProcessorTest(sources = listOf(source)) { invocation ->
+                val usage = invocation.processingEnv.requireTypeElement("test.Usage")
+
+                usage.getDeclaredField("fooStar").type.let { type ->
+                    type.typeArguments.single().let { typeArg ->
+                        assertThat(typeArg.isStar()).isTrue()
+                        assertThat(typeArg.extendsBound()).isNull()
+                    }
+                }
+                usage.getDeclaredField("fooBar").type.let { type ->
+                    type.typeArguments.single().let { typeArg ->
+                        assertThat(typeArg.isStar()).isFalse()
+                        assertThat(typeArg.extendsBound()).isNull()
+                    }
+                }
+                usage.getDeclaredField("fooExtendsObject").type.let { type ->
+                    type.typeArguments.single().let { typeArg ->
+                        assertThat(typeArg.isStar()).isFalse()
+                        assertThat(typeArg.extendsBound()).isNotNull()
+                    }
+                }
+                usage.getDeclaredField("fooExtendsBar").type.let { type ->
+                    type.typeArguments.single().let { typeArg ->
+                        assertThat(typeArg.isStar()).isFalse()
+                        assertThat(typeArg.extendsBound()).isNotNull()
+                    }
+                }
+                usage.getDeclaredField("fooSuperBar").type.let { type ->
+                    type.typeArguments.single().let { typeArg ->
+                        assertThat(typeArg.isStar()).isFalse()
+                        assertThat(typeArg.extendsBound()).isNotNull()
+                    }
+                }
+
+                // Additional tests that only apply to Kotlin sources
+                if (source is Source.KotlinSource) {
+                    usage.getDeclaredField("fooInBar").type.let { type ->
+                        type.typeArguments.single().let { typeArg ->
+                            assertThat(typeArg.isStar()).isFalse()
+                            assertThat(typeArg.extendsBound()).isNull()
+                        }
+                    }
+                    usage.getDeclaredField("fooOutBar").type.let { type ->
+                        type.typeArguments.single().let { typeArg ->
+                            assertThat(typeArg.isStar()).isFalse()
+                            assertThat(typeArg.extendsBound()).isNull()
+                        }
+                    }
+                    usage.getDeclaredField("fooOutJvmWildcardBar").type.let { type ->
+                        type.typeArguments.single().let { typeArg ->
+                            assertThat(typeArg.isStar()).isFalse()
+                            assertThat(typeArg.extendsBound()).isNull()
+                        }
+                    }
+                    usage.getDeclaredField("jvmSuppressWildcardsFooStar").type.let { type ->
+                        type.typeArguments.single().let { typeArg ->
+                            assertThat(typeArg.isStar()).isTrue()
+                            assertThat(typeArg.extendsBound()).isNull()
+                        }
+                    }
+                }
+            }
+        }
+        runTests(javaSource)
+        runTests(kotlinSource)
+    }
+
+    @Test
     fun isKotlinUnit() {
         val kotlinSubject =
             Source.kotlin(
                 "Subject.kt",
                 """
-            class KotlinSubject {
-                suspend fun unitSuspend() {}
-            }
-            """
+                class KotlinSubject {
+                    suspend fun unitSuspend() {}
+                }
+                """
                     .trimIndent(),
             )
         runProcessorTest(sources = listOf(kotlinSubject)) { invocation ->
             invocation.processingEnv.requireTypeElement("KotlinSubject").let {
                 val continuationParam = it.getMethodByJvmName("unitSuspend").parameters.last()
-                val typeArg =
-                    continuationParam.type.typeArguments.first().let {
-                        // KAPT will include the bounds directly whereas in KSP, we use bounds only
-                        // when resolving the jvm wildcard type.
-                        if (invocation.isKsp) {
-                            it
-                        } else {
-                            checkNotNull(it.extendsBound()) {
-                                "In KAPT, continuation should've had an extends bound"
-                            }
-                        }
-                    }
-                assertThat(typeArg.isKotlinUnit()).isTrue()
-                assertThat(typeArg.extendsBound()).isNull()
+                val typeArg = continuationParam.type.typeArguments.first()
+                // KAPT will include the bounds directly whereas in KSP, we use bounds
+                // only when resolving the jvm wildcard type.
+                if (invocation.isKsp) {
+                    // In KSP, continuation should've had no bounds
+                    assertThat(typeArg.extendsBound()).isNull()
+                } else {
+                    // In KAPT, continuation should've had an extends bound
+                    assertThat(typeArg.extendsBound()).isNotNull()
+                }
+                assertThat(typeArg.type.isKotlinUnit()).isTrue()
             }
         }
     }
@@ -1345,22 +1454,22 @@ class XTypeTest {
             Source.java(
                 "JavaInterface",
                 """
-            import java.lang.Void;
-            interface JavaInterface {
-                Void getVoid();
-                Void anotherVoid();
-            }
-            """
+                import java.lang.Void;
+                interface JavaInterface {
+                    Void getVoid();
+                    Void anotherVoid();
+                }
+                """
                     .trimIndent(),
             )
         val kotlinSubject =
             Source.kotlin(
                 "Subject.kt",
                 """
-            abstract class KotlinSubject: JavaInterface {
-                fun voidMethod() {}
-            }
-            """
+                abstract class KotlinSubject: JavaInterface {
+                    fun voidMethod() {}
+                }
+                """
                     .trimIndent(),
             )
         runProcessorTest(sources = listOf(javaBase, kotlinSubject)) { invocation ->
@@ -1391,10 +1500,10 @@ class XTypeTest {
             Source.kotlin(
                 "Foo.kt",
                 """
-            class SelfReferencing<T : SelfReferencing<T>> {
-                fun method(sr: SelfReferencing<*>) { TODO() }
-            }
-            """
+                class SelfReferencing<T : SelfReferencing<T>> {
+                    fun method(sr: SelfReferencing<*>) { TODO() }
+                }
+                """
                     .trimIndent(),
             )
         runProcessorTest(sources = listOf(src)) { invocation ->
@@ -1419,18 +1528,18 @@ class XTypeTest {
             assertThat(parameter.type.asTypeName().java.dumpToString(5))
                 .isEqualTo(
                     """
-                SelfReferencing<?>
-                | ?
-                """
+                    SelfReferencing<?>
+                    | ?
+                    """
                         .trimIndent()
                 )
             if (invocation.isKsp) {
                 assertThat(parameter.type.asTypeName().kotlin.dumpToString(5))
                     .isEqualTo(
                         """
-                    SelfReferencing<*>
-                    | *
-                    """
+                        SelfReferencing<*>
+                        | *
+                        """
                             .trimIndent()
                     )
             }
@@ -1443,10 +1552,10 @@ class XTypeTest {
             Source.java(
                 "SelfReferencing",
                 """
-            class SelfReferencing<T extends SelfReferencing<T>> {
-                static void method(SelfReferencing sr) {}
-            }
-            """
+                class SelfReferencing<T extends SelfReferencing<T>> {
+                    static void method(SelfReferencing sr) {}
+                }
+                """
                     .trimIndent(),
             )
         runProcessorTest(sources = listOf(src)) { invocation ->
@@ -1467,13 +1576,13 @@ class XTypeTest {
             if (invocation.isKsp) {
                 val expectedTypeStringDumpKotlin =
                     """
-                SelfReferencing<T>
-                | T
-                | > SelfReferencing<T?>?
-                | > | T?
-                | > | > SelfReferencing<T?>?
-                | > | > | T?
-                """
+                    SelfReferencing<T>
+                    | T
+                    | > SelfReferencing<T?>?
+                    | > | T?
+                    | > | > SelfReferencing<T?>?
+                    | > | > | T?
+                    """
                         .trimIndent()
                 assertThat(typeElement.type.asTypeName().kotlin.dumpToString(5))
                     .isEqualTo(expectedTypeStringDumpKotlin)
@@ -1493,13 +1602,13 @@ class XTypeTest {
             Source.kotlin(
                 "Foo.kt",
                 """
-            open class Node<TX : Node<TX, RX>, RX : Node<RX, TX>> {
-                fun allStar(node : Node<*, *>) { TODO() }
-                fun secondStar(node : Node<TX, *>) { TODO() }
-                fun firstStar(node : Node<*, RX>) { TODO() }
-                fun noStar(node : Node<TX, RX>) { TODO() }
-            }
-            """
+                open class Node<TX : Node<TX, RX>, RX : Node<RX, TX>> {
+                    fun allStar(node : Node<*, *>) { TODO() }
+                    fun secondStar(node : Node<TX, *>) { TODO() }
+                    fun firstStar(node : Node<*, RX>) { TODO() }
+                    fun noStar(node : Node<TX, RX>) { TODO() }
+                }
+                """
                     .trimIndent(),
             )
         runProcessorTest(sources = listOf(src)) { invocation ->
@@ -1557,7 +1666,7 @@ class XTypeTest {
                         | > | > Node<TX, RX>
                         | > | > | TX
                         | > | > | RX
-                    """
+                        """
                             .trimIndent(),
                     "secondStar" to
                         """
@@ -1573,7 +1682,7 @@ class XTypeTest {
                         | > | > | RX
                         | > | > | TX
                         | ?
-                    """
+                        """
                             .trimIndent(),
                     "noStar" to
                         """
@@ -1598,7 +1707,7 @@ class XTypeTest {
                         | > | > Node<TX, RX>
                         | > | > | TX
                         | > | > | RX
-                    """
+                        """
                             .trimIndent(),
                 )
             nodeElm
@@ -1626,8 +1735,8 @@ class XTypeTest {
             Source.kotlin(
                 "SelfReferencing.kt",
                 """
-            class SelfReferencing<TX : SelfReferencing<TX, RX>, RX : List<TX>>
-            """
+                class SelfReferencing<TX : SelfReferencing<TX, RX>, RX : List<TX>>
+                """
                     .trimIndent(),
             )
         runProcessorTest(sources = listOf(src)) { invocation ->
@@ -1645,43 +1754,43 @@ class XTypeTest {
                 assertThat(typeDump)
                     .isEqualTo(
                         """
-                    SelfReferencing<TX, RX>
-                    | TX
-                    | > SelfReferencing<TX, RX>
-                    | > | TX
-                    | > | > SelfReferencing<TX, RX>
-                    | > | > | TX
-                    | > | > | RX
-                    | > | RX
-                    | > | > java.util.List<TX>
-                    | > | > | TX
-                    | RX
-                    | > java.util.List<TX>
-                    | > | TX
-                    | > | > SelfReferencing<TX, RX>
-                    | > | > | TX
-                    | > | > | RX
-                    """
+                        SelfReferencing<TX, RX>
+                        | TX
+                        | > SelfReferencing<TX, RX>
+                        | > | TX
+                        | > | > SelfReferencing<TX, RX>
+                        | > | > | TX
+                        | > | > | RX
+                        | > | RX
+                        | > | > java.util.List<TX>
+                        | > | > | TX
+                        | RX
+                        | > java.util.List<TX>
+                        | > | TX
+                        | > | > SelfReferencing<TX, RX>
+                        | > | > | TX
+                        | > | > | RX
+                        """
                             .trimIndent()
                     )
             } else {
                 assertThat(typeDump)
                     .isEqualTo(
                         """
-                    SelfReferencing<TX, RX>
-                    | TX
-                    | > SelfReferencing<TX, RX>
-                    | > | TX
-                    | > | > SelfReferencing<TX, RX>
-                    | > | > | TX
-                    | > | > | RX
-                    | > | RX
-                    | > | > java.util.List<? extends TX>
-                    | > | > | ? extends TX
-                    | RX
-                    | > java.util.List<? extends TX>
-                    | > | ? extends TX
-                    """
+                        SelfReferencing<TX, RX>
+                        | TX
+                        | > SelfReferencing<TX, RX>
+                        | > | TX
+                        | > | > SelfReferencing<TX, RX>
+                        | > | > | TX
+                        | > | > | RX
+                        | > | RX
+                        | > | > java.util.List<? extends TX>
+                        | > | > | ? extends TX
+                        | RX
+                        | > java.util.List<? extends TX>
+                        | > | ? extends TX
+                        """
                             .trimIndent()
                     )
             }
@@ -1694,9 +1803,9 @@ class XTypeTest {
             Source.kotlin(
                 "SelfReferencing.kt",
                 """
-            class Generic<T>
-            class SelfReferencing<TX : SelfReferencing<TX, RX>, RX : Generic<TX>>
-            """
+                class Generic<T>
+                class SelfReferencing<TX : SelfReferencing<TX, RX>, RX : Generic<TX>>
+                """
                     .trimIndent(),
             )
         runProcessorTest(sources = listOf(src)) { invocation ->
@@ -1735,13 +1844,13 @@ class XTypeTest {
             Source.kotlin(
                 "StyleBuilder.kt",
                 """
-            class StyleApplier<X, Y>
-            class StyleBuilder<out B : StyleBuilder<B, A>, out A : StyleApplier<*, *>>
-            class KotlinSubject {
-                fun subject_1(builder: StyleBuilder<*, *>)  {
+                class StyleApplier<X, Y>
+                class StyleBuilder<out B : StyleBuilder<B, A>, out A : StyleApplier<*, *>>
+                class KotlinSubject {
+                    fun subject_1(builder: StyleBuilder<*, *>)  {
+                    }
                 }
-            }
-            """
+                """
                     .trimIndent(),
             )
         val javaSource =
@@ -1754,7 +1863,7 @@ class XTypeTest {
                     static void subject_2(StyleBuilder builder)  {
                     }
                 }
-            """
+                """
                     .trimIndent(),
             )
         runProcessorTest(sources = listOf(src, javaSource)) { invocation ->
@@ -1763,10 +1872,10 @@ class XTypeTest {
             assertThat(styleApplier.typeName.dumpToString(5))
                 .isEqualTo(
                     """
-                StyleApplier<X, Y>
-                | X
-                | Y
-                """
+                    StyleApplier<X, Y>
+                    | X
+                    | Y
+                    """
                         .trimIndent()
                 )
             // we don't match what kapt generates here so this test is kept here to acknowledge the
@@ -1823,19 +1932,19 @@ class XTypeTest {
             assertThat(javaTypeName)
                 .isEqualTo(
                     """
-                StyleBuilder<?, ?>
-                | ?
-                | ?
-                """
+                    StyleBuilder<?, ?>
+                    | ?
+                    | ?
+                    """
                         .trimIndent()
                 )
             assertThat(kotlinTypeName)
                 .isEqualTo(
                     """
-                StyleBuilder<?, ?>
-                | ?
-                | ?
-                """
+                    StyleBuilder<?, ?>
+                    | ?
+                    | ?
+                    """
                         .trimIndent()
                 )
         }
@@ -1848,10 +1957,10 @@ class XTypeTest {
             Source.kotlin(
                 "lib.kt",
                 """
-            class MyClass<R> {
-                fun setLists(starList: List<*>, rList: List<R>) {}
-            }
-            """
+                class MyClass<R> {
+                    fun setLists(starList: List<*>, rList: List<R>) {}
+                }
+                """
                     .trimIndent(),
             )
         runProcessorTest(listOf(libSource)) { invocation ->
@@ -1878,12 +1987,12 @@ class XTypeTest {
             Source.kotlin(
                 "foo.kt",
                 """
-            package foo.bar;
-            class Baz : MyInterface, AbstractClass<String>() {
-            }
-            abstract class AbstractClass<T> {}
-            interface MyInterface {}
-            """
+                package foo.bar;
+                class Baz : MyInterface, AbstractClass<String>() {
+                }
+                abstract class AbstractClass<T> {}
+                interface MyInterface {}
+                """
                     .trimIndent(),
             )
         runProcessorTest(listOf(libSource)) { invocation ->
@@ -1926,13 +2035,13 @@ class XTypeTest {
                 Source.java(
                     "foo.bar.Foo",
                     """
-            package foo.bar;
-            class Foo {
-              Bar bar;
-              Bar[] barArray;
-            }
-            class Bar {}
-            """
+                    package foo.bar;
+                    class Foo {
+                      Bar bar;
+                      Bar[] barArray;
+                    }
+                    class Bar {}
+                    """
                         .trimIndent(),
                 )
             )
@@ -1945,13 +2054,13 @@ class XTypeTest {
                 Source.kotlin(
                     "foo.bar.Foo.kt",
                     """
-            package foo.bar;
-            class Foo {
-              val bar: Bar = TODO()
-              val barArray: Array<Bar> = TODO()
-            }
-            class Bar
-            """
+                    package foo.bar;
+                    class Foo {
+                      val bar: Bar = TODO()
+                      val barArray: Array<Bar> = TODO()
+                    }
+                    class Bar
+                    """
                         .trimIndent(),
                 )
             )
@@ -1977,11 +2086,11 @@ class XTypeTest {
                 Source.java(
                     "foo.bar.Foo",
                     """
-            package foo.bar;
-            class Foo {
-              int i;
-            }
-            """
+                    package foo.bar;
+                    class Foo {
+                      int i;
+                    }
+                    """
                         .trimIndent(),
                 )
             )
@@ -1994,11 +2103,11 @@ class XTypeTest {
                 Source.kotlin(
                     "foo.bar.Foo.kt",
                     """
-            package foo.bar
-            class Foo {
-              val i: Int = TODO()
-            }
-            """
+                    package foo.bar
+                    class Foo {
+                      val i: Int = TODO()
+                    }
+                    """
                         .trimIndent(),
                 )
             )
@@ -2036,13 +2145,13 @@ class XTypeTest {
             assertThat(superTypeHierarchy(fooElement.type))
                 .isEqualTo(
                     """
-                > test.Foo<V1, V2>
-                  > java.lang.Object
-                  > test.Bar<test.Baz<V1, java.lang.Number>, V2>
-                    > java.lang.Object
-                    > test.Baz<test.Baz<V1, java.lang.Number>, V2>
+                    > test.Foo<V1, V2>
                       > java.lang.Object
-                """
+                      > test.Bar<test.Baz<V1, java.lang.Number>, V2>
+                        > java.lang.Object
+                        > test.Baz<test.Baz<V1, java.lang.Number>, V2>
+                          > java.lang.Object
+                    """
                         .trimIndent()
                 )
 
@@ -2050,15 +2159,15 @@ class XTypeTest {
             assertThat(superTypeHierarchy(usageElement.type))
                 .isEqualTo(
                     """
-                > test.Usage
-                  > java.lang.Object
-                  > test.Foo<java.lang.Long, java.lang.Integer>
-                    > java.lang.Object
-                    > test.Bar<test.Baz<java.lang.Long, java.lang.Number>, java.lang.Integer>
+                    > test.Usage
                       > java.lang.Object
-                      > test.Baz<test.Baz<java.lang.Long, java.lang.Number>, java.lang.Integer>
+                      > test.Foo<java.lang.Long, java.lang.Integer>
                         > java.lang.Object
-                """
+                        > test.Bar<test.Baz<java.lang.Long, java.lang.Number>, java.lang.Integer>
+                          > java.lang.Object
+                          > test.Baz<test.Baz<java.lang.Long, java.lang.Number>, java.lang.Integer>
+                            > java.lang.Object
+                    """
                         .trimIndent()
                 )
 
@@ -2067,13 +2176,13 @@ class XTypeTest {
             assertThat(superTypeHierarchy(methodFoo.returnType))
                 .isEqualTo(
                     """
-                > test.Foo<java.lang.String, java.lang.Integer>
-                  > java.lang.Object
-                  > test.Bar<test.Baz<java.lang.String, java.lang.Number>, java.lang.Integer>
-                    > java.lang.Object
-                    > test.Baz<test.Baz<java.lang.String, java.lang.Number>, java.lang.Integer>
+                    > test.Foo<java.lang.String, java.lang.Integer>
                       > java.lang.Object
-                """
+                      > test.Bar<test.Baz<java.lang.String, java.lang.Number>, java.lang.Integer>
+                        > java.lang.Object
+                        > test.Baz<test.Baz<java.lang.String, java.lang.Number>, java.lang.Integer>
+                          > java.lang.Object
+                    """
                         .trimIndent()
                 )
 
@@ -2081,13 +2190,13 @@ class XTypeTest {
             assertThat(superTypeHierarchy(methodFoo.parameters[0].type))
                 .isEqualTo(
                     """
-                > test.Foo<java.lang.Double, java.lang.Integer>
-                  > java.lang.Object
-                  > test.Bar<test.Baz<java.lang.Double, java.lang.Number>, java.lang.Integer>
-                    > java.lang.Object
-                    > test.Baz<test.Baz<java.lang.Double, java.lang.Number>, java.lang.Integer>
+                    > test.Foo<java.lang.Double, java.lang.Integer>
                       > java.lang.Object
-                """
+                      > test.Bar<test.Baz<java.lang.Double, java.lang.Number>, java.lang.Integer>
+                        > java.lang.Object
+                        > test.Baz<test.Baz<java.lang.Double, java.lang.Number>, java.lang.Integer>
+                          > java.lang.Object
+                    """
                         .trimIndent()
                 )
         }
@@ -2097,17 +2206,17 @@ class XTypeTest {
                 Source.java(
                     "test.Usage",
                     """
-            package test;
-            interface Usage extends Foo<Long, Integer> {
-                Foo<String, Integer> foo(Foo<Double, Integer> param);
-            }
-            interface Foo<V1, V2 extends Integer> extends Bar<Baz<V1, Number>, V2> {}
-            interface Bar<U1, U2 extends Integer> extends Baz<U1, U2> {}
-            interface Baz<T1, T2 extends Number> {
-                T1 method1();
-                T2 method2();
-            }
-            """
+                    package test;
+                    interface Usage extends Foo<Long, Integer> {
+                        Foo<String, Integer> foo(Foo<Double, Integer> param);
+                    }
+                    interface Foo<V1, V2 extends Integer> extends Bar<Baz<V1, Number>, V2> {}
+                    interface Bar<U1, U2 extends Integer> extends Baz<U1, U2> {}
+                    interface Baz<T1, T2 extends Number> {
+                        T1 method1();
+                        T2 method2();
+                    }
+                    """
                         .trimIndent(),
                 )
             )
@@ -2120,17 +2229,17 @@ class XTypeTest {
                 Source.kotlin(
                     "test.Usage.kt",
                     """
-            package test
-            interface Usage : Foo<Long, Integer> {
-                fun foo(param: Foo<Double, Integer>): Foo<String, Integer>
-            }
-            interface Foo<V1, V2: Integer> : Bar<Baz<V1, Number>, V2> {}
-            interface Bar<U1, U2: Integer> : Baz<U1, U2> {}
-            interface Baz<T1, T2: Number> {
-                fun method1(): T1
-                fun method2(): T2
-            }
-            """
+                    package test
+                    interface Usage : Foo<Long, Integer> {
+                        fun foo(param: Foo<Double, Integer>): Foo<String, Integer>
+                    }
+                    interface Foo<V1, V2: Integer> : Bar<Baz<V1, Number>, V2> {}
+                    interface Bar<U1, U2: Integer> : Baz<U1, U2> {}
+                    interface Baz<T1, T2: Number> {
+                        fun method1(): T1
+                        fun method2(): T2
+                    }
+                    """
                         .trimIndent(),
                 )
             )
@@ -2160,8 +2269,8 @@ class XTypeTest {
                 assertThat(fooType.isError()).isFalse()
 
                 val typeArgument = fooType.typeArguments.single()
-                assertThat(typeArgument.typeName).isEqualTo(missingTypeName)
-                assertThat(typeArgument.isError()).isTrue()
+                assertThat(typeArgument.type.typeName).isEqualTo(missingTypeName)
+                assertThat(typeArgument.type.isError()).isTrue()
 
                 return emptySet()
             }
@@ -2174,12 +2283,12 @@ class XTypeTest {
                     Source.java(
                         "test.Foo",
                         """
-                package test;
-                @Inspect
-                class Bar extends Foo<MissingType> {}
-                class Foo<T> {}
-                @interface Inspect {}
-                """
+                        package test;
+                        @Inspect
+                        class Bar extends Foo<MissingType> {}
+                        class Foo<T> {}
+                        @interface Inspect {}
+                        """
                             .trimIndent(),
                     )
                 )
@@ -2209,10 +2318,10 @@ class XTypeTest {
                     Source.kotlin(
                         "test.Foo.kt",
                         """
-            package test
-            class Bar : Foo<MissingType>()
-            open class Foo<T>
-            """
+                        package test
+                        class Bar : Foo<MissingType>()
+                        open class Foo<T>
+                        """
                             .trimIndent(),
                     )
                 ),
@@ -2247,8 +2356,8 @@ class XTypeTest {
                 assertThat(fooType.isError()).isFalse()
 
                 val wildcardType = fooType.typeArguments.single()
-                assertThat(wildcardType.typeName).isEqualTo(wildcardTypeName)
-                assertThat(wildcardType.isError()).isFalse()
+                assertThat(wildcardType.asTypeName().java).isEqualTo(wildcardTypeName)
+                assertThat(wildcardType.type.isError()).isTrue()
 
                 assertThat(wildcardType.extendsBound()).isNotNull()
                 val errorType = wildcardType.extendsBound()!!
@@ -2265,13 +2374,13 @@ class XTypeTest {
                     Source.java(
                         "test.Foo",
                         """
-                package test;
-                @Inspect
-                class Foo<T> {
-                  Foo<? extends MissingType> foo;
-                }
-                @interface Inspect {}
-                """
+                        package test;
+                        @Inspect
+                        class Foo<T> {
+                          Foo<? extends MissingType> foo;
+                        }
+                        @interface Inspect {}
+                        """
                             .trimIndent(),
                     )
                 ),
@@ -2288,11 +2397,11 @@ class XTypeTest {
                     Source.kotlin(
                         "test.Foo.kt",
                         """
-            package test
-            class Foo<T> {
-              val foo: Foo<out MissingType> = TODO()
-            }
-            """
+                        package test
+                        class Foo<T> {
+                          val foo: Foo<out MissingType> = TODO()
+                        }
+                        """
                             .trimIndent(),
                     )
                 ),
@@ -2361,16 +2470,16 @@ class XTypeTest {
                 Source.java(
                     "test.Foo",
                     """
-            package test;
-            class Usage {
-              Foo<?> fooUnbounded;
-              Foo<Bar> fooBar;
-              Foo<? extends Bar> fooExtendsBar;
-              Foo<? super Bar> fooSuperBar;
-            }
-            interface Foo<T> {}
-            interface Bar {}
-            """
+                    package test;
+                    class Usage {
+                      Foo<?> fooUnbounded;
+                      Foo<Bar> fooBar;
+                      Foo<? extends Bar> fooExtendsBar;
+                      Foo<? super Bar> fooSuperBar;
+                    }
+                    interface Foo<T> {}
+                    interface Bar {}
+                    """
                         .trimIndent(),
                 )
             )
@@ -2383,16 +2492,16 @@ class XTypeTest {
                 Source.kotlin(
                     "Usage.kt",
                     """
-            package test
-            class Usage {
-              val fooUnbounded: Foo<*> = TODO()
-              val fooBar: Foo<Bar> = TODO()
-              val fooExtendsBar: Foo<out Bar> = TODO()
-              val fooSuperBar: Foo<in Bar> = TODO()
-            }
-            interface Foo<T>
-            interface Bar
-            """
+                    package test
+                    class Usage {
+                      val fooUnbounded: Foo<*> = TODO()
+                      val fooBar: Foo<Bar> = TODO()
+                      val fooExtendsBar: Foo<out Bar> = TODO()
+                      val fooSuperBar: Foo<in Bar> = TODO()
+                    }
+                    interface Foo<T>
+                    interface Bar
+                    """
                         .trimIndent(),
                 )
             )
@@ -2407,40 +2516,40 @@ class XTypeTest {
             Source.java(
                 "test.JavaFoo",
                 """
-            package test;
-            class JavaFoo<T> {
-                T field;
-                T method(T param) {
-                    return null;
+                package test;
+                class JavaFoo<T> {
+                    T field;
+                    T method(T param) {
+                        return null;
+                    }
                 }
-            }
-            """
+                """
                     .trimIndent(),
             )
         val javaImplSubject =
             Source.java(
                 "test.JavaFooImpl",
                 """
-            package test;
-            class JavaFooImpl extends JavaFoo<String> {
-            }
-            """
+                package test;
+                class JavaFooImpl extends JavaFoo<String> {
+                }
+                """
                     .trimIndent(),
             )
         val kotlinSubject =
             Source.kotlin(
                 "Foo.kt",
                 """
-            package test
-            open class KotlinFoo<T> {
-                val field: T = TODO();
-                fun method(param: T): T {
-                    TODO()
+                package test
+                open class KotlinFoo<T> {
+                    val field: T = TODO();
+                    fun method(param: T): T {
+                        TODO()
+                    }
                 }
-            }
 
-            class KotlinFooImpl : KotlinFoo<String>()
-            """
+                class KotlinFooImpl : KotlinFoo<String>()
+                """
                     .trimIndent(),
             )
         runProcessorTest(sources = listOf(javaSubject, javaImplSubject, kotlinSubject)) { invocation
@@ -2471,20 +2580,16 @@ class XTypeTest {
             Source.kotlin(
                 "Foo.kt",
                 """
-            class Foo<E> {
-                fun justOneGeneric(): E = TODO()
-                fun listOfGeneric(): List<E> = TODO()
-            }
-            """
+                class Foo<E> {
+                    fun justOneGeneric(): E = TODO()
+                    fun listOfGeneric(): List<E> = TODO()
+                }
+                """
                     .trimIndent(),
             )
         runProcessorTest(sources = listOf(src)) {
             val fooTypeElement = it.processingEnv.requireTypeElement("Foo")
-            fooTypeElement.getMethodByJvmName("justOneGeneric").returnType.let { type ->
-                assertThat(type.extendsBound()).isNull()
-            }
             fooTypeElement.getMethodByJvmName("listOfGeneric").returnType.let { type ->
-                assertThat(type.extendsBound()).isNull()
                 type.typeArguments.forEach { typeArg ->
                     assertThat(typeArg.extendsBound()).isNull()
                 }
@@ -2498,13 +2603,13 @@ class XTypeTest {
             Source.kotlin(
                 "Foo.kt",
                 """
-            package test
+                package test
 
-            class Foo {
-              fun bar(missing: MissingType) = TODO()
-              fun barQualified(missing: bar.MissingType) = TODO()
-            }
-            """
+                class Foo {
+                  fun bar(missing: MissingType) = TODO()
+                  fun barQualified(missing: bar.MissingType) = TODO()
+                }
+                """
                     .trimIndent(),
             )
         runProcessorTest(
@@ -2529,18 +2634,18 @@ class XTypeTest {
             Source.java(
                 "test.Subject",
                 """
-            package test;
-            import java.util.Set;
-            @SuppressWarnings("rawtypes")
-            class Subject {
-                Foo foo;
-                Foo<Foo> fooFoo;
-                Foo<Foo<Foo>> fooFooFoo;
-                Bar<Foo, Foo> barFooFoo;
-            }
-            class Foo<T> {}
-            class Bar<T1, T2> {}
-            """
+                package test;
+                import java.util.Set;
+                @SuppressWarnings("rawtypes")
+                class Subject {
+                    Foo foo;
+                    Foo<Foo> fooFoo;
+                    Foo<Foo<Foo>> fooFooFoo;
+                    Bar<Foo, Foo> barFooFoo;
+                }
+                class Foo<T> {}
+                class Bar<T1, T2> {}
+                """
                     .trimIndent(),
             )
         runProcessorTest(sources = listOf(src)) { invocation ->
@@ -2620,18 +2725,18 @@ class XTypeTest {
             // Test manually unwrapping a type with a raw type argument:
             subject.getDeclaredField("fooFoo").type.let { fooFoo ->
                 assertHasTypeName(
-                    type = fooFoo.typeArguments.single(),
+                    type = fooFoo.typeArguments.single().type,
                     expectedTypeName = fooTypeName.copy(nullable = true),
                 )
             }
             subject.getDeclaredField("barFooFoo").type.let { barFooFoo ->
                 assertThat(barFooFoo.typeArguments).hasSize(2)
                 assertHasTypeName(
-                    type = barFooFoo.typeArguments[0],
+                    type = barFooFoo.typeArguments[0].type,
                     expectedTypeName = fooTypeName.copy(nullable = true),
                 )
                 assertHasTypeName(
-                    type = barFooFoo.typeArguments[1],
+                    type = barFooFoo.typeArguments[1].type,
                     expectedTypeName = fooTypeName.copy(nullable = true),
                 )
             }
@@ -2644,20 +2749,20 @@ class XTypeTest {
             Source.kotlin(
                 "KotlinClass.kt",
                 """
-            package foo.bar
-            interface KotlinInterface
-            open class KotlinBase
-            @Target(AnnotationTarget.TYPE)
-            annotation class KotlinAnnotation {
+                package foo.bar
+                interface KotlinInterface
+                open class KotlinBase
                 @Target(AnnotationTarget.TYPE)
-                annotation class KotlinNestedAnnotation
-            }
-            class KotlinClass : @KotlinAnnotation.KotlinNestedAnnotation KotlinBase(),
-                    @KotlinAnnotation KotlinInterface {
-                inner class KotlinInner : @KotlinAnnotation KotlinInterface
-                class KotlinNested : @KotlinAnnotation KotlinInterface
-            }
-            """
+                annotation class KotlinAnnotation {
+                    @Target(AnnotationTarget.TYPE)
+                    annotation class KotlinNestedAnnotation
+                }
+                class KotlinClass : @KotlinAnnotation.KotlinNestedAnnotation KotlinBase(),
+                        @KotlinAnnotation KotlinInterface {
+                    inner class KotlinInner : @KotlinAnnotation KotlinInterface
+                    class KotlinNested : @KotlinAnnotation KotlinInterface
+                }
+                """
                     .trimIndent(),
             )
         // KSP can't read nested annotations in Java sources if the filename does not match
@@ -2666,27 +2771,27 @@ class XTypeTest {
             Source.java(
                 "foo.bar.JavaAnnotation",
                 """
-            package foo.bar;
-            import java.lang.annotation.ElementType;
-            import java.lang.annotation.Target;
-            @Target(ElementType.TYPE_USE)
-            @interface JavaAnnotation {
+                package foo.bar;
+                import java.lang.annotation.ElementType;
+                import java.lang.annotation.Target;
                 @Target(ElementType.TYPE_USE)
-                @interface JavaNestedAnnotation {}
-            }
-            """
+                @interface JavaAnnotation {
+                    @Target(ElementType.TYPE_USE)
+                    @interface JavaNestedAnnotation {}
+                }
+                """
                     .trimIndent(),
             )
         val javaSrc =
             Source.java(
                 "foo.bar.JavaClass",
                 """
-            package foo.bar;
-            interface JavaInterface {}
-            class JavaBase {}
-            class JavaClass extends @JavaAnnotation.JavaNestedAnnotation JavaBase
-                implements @JavaAnnotation JavaInterface {}
-            """
+                package foo.bar;
+                interface JavaInterface {}
+                class JavaBase {}
+                class JavaClass extends @JavaAnnotation.JavaNestedAnnotation JavaBase
+                    implements @JavaAnnotation JavaInterface {}
+                """
                     .trimIndent(),
             )
         fun checkKotlin(invocation: XTestInvocation) {
@@ -2794,13 +2899,13 @@ class XTypeTest {
             Source.kotlin(
                 "test.Foo.kt",
                 """
-            package test
-            class Usage {
-                val foo: Foo<*> = TODO()
-                val fooExtendsFoo: Foo<out Foo<*>> = TODO()
-            }
-            abstract class Foo<T: Foo<T>>
-            """
+                package test
+                class Usage {
+                    val foo: Foo<*> = TODO()
+                    val fooExtendsFoo: Foo<out Foo<*>> = TODO()
+                }
+                abstract class Foo<T: Foo<T>>
+                """
                     .trimIndent(),
             )
         )
@@ -2812,27 +2917,27 @@ class XTypeTest {
             Source.java(
                 "test.BaseInterface",
                 """
-            package test;
-            public interface BaseInterface<T> {}
-            """
+                package test;
+                public interface BaseInterface<T> {}
+                """
                     .trimIndent(),
             )
         val selfReferenceClass =
             Source.java(
                 "test.SelfRef",
                 """
-            package test;
-            public abstract class SelfRef<T extends SelfRef<T>> { }
-            """
+                package test;
+                public abstract class SelfRef<T extends SelfRef<T>> { }
+                """
                     .trimIndent(),
             )
         val source =
             Source.java(
                 "test.Subject",
                 """
-            package test;
-            public final class Subject implements BaseInterface<SelfRef<?>> { }
-            """
+                package test;
+                public final class Subject implements BaseInterface<SelfRef<?>> { }
+                """
                     .trimIndent(),
             )
         runProcessorTest(sources = listOf(baseInterface, selfReferenceClass, source)) {
@@ -2861,12 +2966,12 @@ class XTypeTest {
             Source.kotlin(
                 "KotlinClass.kt",
                 """
-            @JvmInline value class PackageName(val value: String)
-            class KotlinClass {
-                fun getPackageNames(): Set<PackageName> = emptySet()
-                fun setPackageNames(pkgNames: Set<PackageName>) { }
-            }
-            """
+                @JvmInline value class PackageName(val value: String)
+                class KotlinClass {
+                    fun getPackageNames(): Set<PackageName> = emptySet()
+                    fun setPackageNames(pkgNames: Set<PackageName>) { }
+                }
+                """
                     .trimIndent(),
             )
         runProcessorTest(
@@ -2887,13 +2992,13 @@ class XTypeTest {
 
             kotlinElm.getMethodByJvmName("getPackageNames").apply {
                 assertThat(returnType.typeName.toString()).isEqualTo("java.util.Set<PackageName>")
-                assertThat(returnType.typeArguments.single().typeName.toString())
+                assertThat(returnType.typeArguments.single().asTypeName().java.toString())
                     .isEqualTo("PackageName")
             }
             kotlinElm.getMethodByJvmName("setPackageNames").apply {
                 val paramType = parameters.single().type
                 assertThat(paramType.typeName.toString()).isEqualTo("java.util.Set<PackageName>")
-                assertThat(paramType.typeArguments.single().typeName.toString())
+                assertThat(paramType.typeArguments.single().asTypeName().java.toString())
                     .isEqualTo("PackageName")
             }
         }
@@ -2905,49 +3010,49 @@ class XTypeTest {
             Source.kotlin(
                 "KotlinClass.kt",
                 """
-            @JvmInline value class MyInlineClass(val value: Int)
-            @JvmInline value class MyGenericInlineClass<T: Number>(val value: T)
-            class KotlinClass {
-                // @JvmName disables name mangling for functions that use inline classes directly
-                // and make them visible to Java:
-                // https://kotlinlang.org/docs/inline-classes.html#calling-from-java-code
-                @JvmName("kotlinValueClassDirectUsage")
-                fun kotlinValueClassDirectUsage(): UInt = TODO()
-                fun kotlinValueClassIndirectUsage(): List<UInt> = TODO()
-                fun kotlinNonValueClassDirectUsage(): String = TODO()
-                fun kotlinNonValueClassIndirectUsage(): List<String> = TODO()
-                @JvmName("kotlinGenericValueClassDirectUsage")
-                fun kotlinGenericValueClassDirectUsage(): Result<Int> = TODO()
-                fun kotlinGenericValueClassIndirectUsage(): List<Result<Int>> = TODO()
-                @JvmName("nonKotlinValueClassDirectUsage")
-                fun nonKotlinValueClassDirectUsage(): MyInlineClass = TODO()
-                fun nonKotlinValueClassIndirectUsage(): List<MyInlineClass> = TODO()
-                @JvmName("nonKotlinGenericValueClassDirectUsage")
-                fun nonKotlinGenericValueClassDirectUsage(): MyGenericInlineClass<Int> = TODO()
-                fun nonKotlinGenericValueClassIndirectUsage(): List<MyGenericInlineClass<Int>> = TODO()
-            }
-            """
+                @JvmInline value class MyInlineClass(val value: Int)
+                @JvmInline value class MyGenericInlineClass<T: Number>(val value: T)
+                class KotlinClass {
+                    // @JvmName disables name mangling for functions that use inline classes directly
+                    // and make them visible to Java:
+                    // https://kotlinlang.org/docs/inline-classes.html#calling-from-java-code
+                    @JvmName("kotlinValueClassDirectUsage")
+                    fun kotlinValueClassDirectUsage(): UInt = TODO()
+                    fun kotlinValueClassIndirectUsage(): List<UInt> = TODO()
+                    fun kotlinNonValueClassDirectUsage(): String = TODO()
+                    fun kotlinNonValueClassIndirectUsage(): List<String> = TODO()
+                    @JvmName("kotlinGenericValueClassDirectUsage")
+                    fun kotlinGenericValueClassDirectUsage(): Result<Int> = TODO()
+                    fun kotlinGenericValueClassIndirectUsage(): List<Result<Int>> = TODO()
+                    @JvmName("nonKotlinValueClassDirectUsage")
+                    fun nonKotlinValueClassDirectUsage(): MyInlineClass = TODO()
+                    fun nonKotlinValueClassIndirectUsage(): List<MyInlineClass> = TODO()
+                    @JvmName("nonKotlinGenericValueClassDirectUsage")
+                    fun nonKotlinGenericValueClassDirectUsage(): MyGenericInlineClass<Int> = TODO()
+                    fun nonKotlinGenericValueClassIndirectUsage(): List<MyGenericInlineClass<Int>> = TODO()
+                }
+                """
                     .trimIndent(),
             )
         val javaSrc =
             Source.java(
                 "JavaClass",
                 """
-            import java.util.List;
-            import kotlin.Result;
-            import kotlin.UInt;
-            interface JavaClass {
-                UInt inlineClassDirectUsage();
-                List<UInt> inlineClassIndirectUsage();
-                Result<Integer> genericInlineClassDirectUsage();
-                List<Result<Integer>> genericInlineClassIndirectUsage();
+                import java.util.List;
+                import kotlin.Result;
+                import kotlin.UInt;
+                interface JavaClass {
+                    UInt inlineClassDirectUsage();
+                    List<UInt> inlineClassIndirectUsage();
+                    Result<Integer> genericInlineClassDirectUsage();
+                    List<Result<Integer>> genericInlineClassIndirectUsage();
 
-                MyInlineClass customInlineClassDirectUsage();
-                List<MyInlineClass> customInlineClassIndirectUsage();
-                MyGenericInlineClass<Integer> customGenericInlineClassDirectUsage();
-                List<MyGenericInlineClass<Integer>> customGenericInlineClassIndirectUsage();
-            }
-            """
+                    MyInlineClass customInlineClassDirectUsage();
+                    List<MyInlineClass> customInlineClassIndirectUsage();
+                    MyGenericInlineClass<Integer> customGenericInlineClassDirectUsage();
+                    List<MyGenericInlineClass<Integer>> customGenericInlineClassIndirectUsage();
+                }
+                """
                     .trimIndent(),
             )
         runProcessorTest(
@@ -3089,29 +3194,29 @@ class XTypeTest {
             Source.kotlin(
                 "KotlinOuter.kt",
                 """
-            class KotlinOuter<T> {
-                inner class Inner<P> {
-                    inner class InnerAgain<Q>
+                class KotlinOuter<T> {
+                    inner class Inner<P> {
+                        inner class InnerAgain<Q>
+                    }
+                    inner class InnerWithoutArgs
                 }
-                inner class InnerWithoutArgs
-            }
-            class KotlinOuterWithoutArgs {
-                inner class Inner<P> {
-                    inner class InnerAgain<Q>
+                class KotlinOuterWithoutArgs {
+                    inner class Inner<P> {
+                        inner class InnerAgain<Q>
+                    }
+                    inner class InnerWithoutArgs
                 }
-                inner class InnerWithoutArgs
-            }
-            class KotlinClient {
-                fun outer(): KotlinOuter<String> = TODO()
-                fun inner(): KotlinOuter<String>.Inner<Number> = TODO()
-                fun innerAgain(): KotlinOuter<String>.Inner<Number>.InnerAgain<Boolean> = TODO()
-                fun innerWithoutArgs(): KotlinOuter<String>.InnerWithoutArgs = TODO()
-                fun outerWithoutArgs(): KotlinOuterWithoutArgs = TODO()
-                fun innerInOuterWithoutArgs(): KotlinOuterWithoutArgs.Inner<String> = TODO()
-                fun innerAgainInOuterWithoutArgs(): KotlinOuterWithoutArgs.Inner<String>.InnerAgain<Number> = TODO()
-                fun innerWithoutArgsInOuterWithoutArgs(): KotlinOuterWithoutArgs.InnerWithoutArgs = TODO()
-            }
-            """
+                class KotlinClient {
+                    fun outer(): KotlinOuter<String> = TODO()
+                    fun inner(): KotlinOuter<String>.Inner<Number> = TODO()
+                    fun innerAgain(): KotlinOuter<String>.Inner<Number>.InnerAgain<Boolean> = TODO()
+                    fun innerWithoutArgs(): KotlinOuter<String>.InnerWithoutArgs = TODO()
+                    fun outerWithoutArgs(): KotlinOuterWithoutArgs = TODO()
+                    fun innerInOuterWithoutArgs(): KotlinOuterWithoutArgs.Inner<String> = TODO()
+                    fun innerAgainInOuterWithoutArgs(): KotlinOuterWithoutArgs.Inner<String>.InnerAgain<Number> = TODO()
+                    fun innerWithoutArgsInOuterWithoutArgs(): KotlinOuterWithoutArgs.InnerWithoutArgs = TODO()
+                }
+                """
                     .trimIndent(),
             )
         val javaSrc =

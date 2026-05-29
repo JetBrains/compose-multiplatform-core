@@ -20,8 +20,6 @@ import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.animation.core.FiniteAnimationSpec
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.updateTransition
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.Interaction
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -42,21 +40,25 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.selection.toggleable
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.State
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.drawWithCache
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.painter.ColorPainter
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.takeOrElse
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -64,17 +66,19 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.lerp
+import androidx.wear.compose.material3.internal.Strings
+import androidx.wear.compose.material3.internal.getString
 import androidx.wear.compose.material3.tokens.ShapeTokens
 import androidx.wear.compose.material3.tokens.SplitSwitchButtonTokens
 import androidx.wear.compose.material3.tokens.SwitchButtonTokens
 import androidx.wear.compose.materialcore.SelectionStage
 import androidx.wear.compose.materialcore.animateSelectionColor
-import androidx.wear.compose.materialcore.animateTick
 import androidx.wear.compose.materialcore.isLayoutDirectionRtl
 
 /**
@@ -90,6 +94,9 @@ import androidx.wear.compose.materialcore.isLayoutDirectionRtl
  * Example of a SwitchButton:
  *
  * @sample androidx.wear.compose.material3.samples.SwitchButtonSample
+ *
+ * ![SwitchButtonSample Composite
+ * Image](https://developer.android.com/wear/images/design/WearComposeM3_SwitchButtonSample_CompositeImage.png)
  *
  * [SwitchButton] can be enabled or disabled. A disabled button will not respond to click events.
  *
@@ -136,6 +143,12 @@ public fun SwitchButton(
     label: @Composable RowScope.() -> Unit,
 ) {
     val hapticFeedback = LocalHapticFeedback.current
+    val currentStateDescription =
+        if (checked) {
+            getString(Strings.OnStateDescription)
+        } else {
+            getString(Strings.OffStateDescription)
+        }
 
     androidx.wear.compose.materialcore.ToggleButton(
         checked = checked,
@@ -176,7 +189,10 @@ public fun SwitchButton(
             )
         },
         selectionControl = null,
-        modifier = modifier.defaultMinSize(minHeight = MIN_HEIGHT).height(IntrinsicSize.Min),
+        modifier =
+            modifier.defaultMinSize(minHeight = MIN_HEIGHT).height(IntrinsicSize.Min).semantics {
+                stateDescription = currentStateDescription
+            },
         icon =
             provideNullableScopeContent(
                 contentColor = colors.iconColor(enabled = enabled, checked),
@@ -195,14 +211,22 @@ public fun SwitchButton(
                 content = secondaryLabel,
             ),
         background = { isEnabled, isChecked ->
-            val backgroundColor =
-                colors.containerColor(enabled = isEnabled, checked = isChecked).value
+            val backgroundColorState =
+                colors.containerColor(enabled = isEnabled, checked = isChecked)
 
-            Modifier.surface(
-                transformation = transformation,
-                shape = shape,
-                painter = ColorPainter(backgroundColor),
-            )
+            val colorPainter =
+                remember(backgroundColorState) {
+                    object : Painter() {
+                        override val intrinsicSize: Size
+                            get() = Size.Unspecified
+
+                        override fun DrawScope.onDraw() {
+                            drawRect(color = backgroundColorState.value)
+                        }
+                    }
+                }
+
+            Modifier.surface(transformation = transformation, shape = shape, painter = colorPainter)
         },
         enabled = enabled,
         interactionSource = interactionSource,
@@ -234,6 +258,9 @@ public fun SwitchButton(
  * Example of a SplitSwitchButton:
  *
  * @sample androidx.wear.compose.material3.samples.SplitSwitchButtonSample
+ *
+ * ![SplitSwitchButtonSample Composite
+ * Image](https://developer.android.com/wear/images/design/WearComposeM3_SplitSwitchButtonSample_CompositeImage.png)
  *
  * For a SplitSwitchButton the background of the tappable background area behind the switch will
  * have a visual effect applied to provide a "divider" between the two tappable areas.
@@ -293,8 +320,13 @@ public fun SplitSwitchButton(
     secondaryLabel: @Composable (RowScope.() -> Unit)? = null,
     label: @Composable RowScope.() -> Unit,
 ) {
-    val containerColor = colors.containerColor(enabled, checked).value
-
+    val containerColorState = colors.containerColor(enabled, checked)
+    val currentStateDescription =
+        if (checked) {
+            getString(Strings.OnStateDescription)
+        } else {
+            getString(Strings.OffStateDescription)
+        }
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier =
@@ -321,7 +353,7 @@ public fun SplitSwitchButton(
                     .semantics { role = Role.Button }
                     .fillMaxHeight()
                     .clip(SPLIT_SECTIONS_SHAPE)
-                    .background(containerColor)
+                    .drawBehind { drawRect(containerColorState.value) }
                     .padding(contentPadding)
                     .weight(1.0f),
             verticalAlignment = Alignment.CenterVertically,
@@ -358,8 +390,7 @@ public fun SplitSwitchButton(
 
         Spacer(modifier = Modifier.size(2.dp))
 
-        val splitBackground = if (enabled) containerColor else Color.Black
-        val splitBackgroundOverlay = colors.splitContainerColor(enabled, checked).value
+        val splitBackgroundOverlayState = colors.splitContainerColor(enabled, checked)
         val hapticFeedback = LocalHapticFeedback.current
         Box(
             contentAlignment = Alignment.Center,
@@ -379,16 +410,15 @@ public fun SplitSwitchButton(
                     )
                     .fillMaxHeight()
                     .clip(SPLIT_SECTIONS_SHAPE)
-                    .background(splitBackground)
-                    .drawWithCache {
-                        onDrawWithContent {
-                            drawRect(color = splitBackgroundOverlay)
-                            drawContent()
-                        }
+                    .drawBehind {
+                        val color = if (enabled) containerColorState.value else Color.Black
+                        drawRect(color)
+                        drawRect(splitBackgroundOverlayState.value)
                     }
                     .defaultMinSize(minWidth = SPLIT_MIN_WIDTH)
                     .wrapContentHeight(align = Alignment.CenterVertically)
-                    .padding(contentPadding),
+                    .padding(contentPadding)
+                    .semantics { stateDescription = currentStateDescription },
         ) {
             Switch(
                 checked = checked,
@@ -1849,36 +1879,65 @@ private fun Switch(
                 SelectionStage.Checked -> 1f
             }
         }
-    val actualThumbColor = thumbColor(enabled, checked).value
-    val actualThumbIconColor = thumbIconColor(enabled, checked).value
-    val actualTrackColor = trackColor(enabled, checked).value
-    val actualTrackBorderColor = trackBorderColor(enabled, checked).value
+    val actualThumbColor = thumbColor(enabled, checked)
+    val actualThumbIconColor = thumbIconColor(enabled, checked)
+    val actualTrackColor = trackColor(enabled, checked)
+    val actualTrackBorderColor = trackBorderColor(enabled, checked)
     Box(
         modifier =
             modifier
                 .semantics { this.role = Role.Switch }
                 .height(SWITCH_INNER_HEIGHT)
                 .width(SWITCH_WIDTH)
-                .border(
-                    width = SWITCH_TRACK_WIDTH,
-                    shape = CircleShape,
-                    color =
-                        if (actualTrackColor == actualTrackBorderColor) {
-                            Color.Transparent
-                        } else {
-                            actualTrackBorderColor
-                        },
-                )
-                .background(color = actualTrackColor, shape = CircleShape)
-                .drawBehind {
-                    drawThumbAndTick(
-                        enabled,
-                        checked,
-                        actualThumbColor,
-                        thumbProgress.value,
-                        actualThumbIconColor,
-                        isRtl,
-                    )
+                .drawWithCache {
+                    val tickPath = createFullTickPath() // Avoid recreating the Path on every frame
+
+                    onDrawBehind { // This block is run on every invalidation of the draw phase
+                        val currentThumbColor = actualThumbColor.value
+                        val currentThumbIconColor = actualThumbIconColor.value
+                        val currentTrackColor = actualTrackColor.value
+                        val currentTrackBorderColor = actualTrackBorderColor.value
+
+                        // Draw track background
+                        drawRoundRect(
+                            color = currentTrackColor,
+                            size = size,
+                            cornerRadius = CornerRadius(size.height / 2),
+                        )
+
+                        // Draw track border
+                        val borderColor =
+                            if (currentTrackColor == currentTrackBorderColor) {
+                                Color.Transparent
+                            } else {
+                                currentTrackBorderColor
+                            }
+
+                        val strokeWidthPx = SWITCH_TRACK_WIDTH.toPx()
+                        // Inset the drawing area for the border by half the stroke width to
+                        // replicate
+                        // Modifier.border's inset behavior.
+                        val inset = strokeWidthPx / 2
+                        drawRoundRect(
+                            color = borderColor,
+                            topLeft = Offset(inset, inset),
+                            size = Size(size.width - strokeWidthPx, size.height - strokeWidthPx),
+                            cornerRadius = CornerRadius((size.height - strokeWidthPx) / 2f),
+                            style =
+                                androidx.compose.ui.graphics.drawscope.Stroke(width = strokeWidthPx),
+                        )
+
+                        // Draw thumb and tick on top
+                        drawThumbAndTick(
+                            enabled,
+                            checked,
+                            currentThumbColor,
+                            thumbProgress.value,
+                            currentThumbIconColor,
+                            isRtl,
+                            tickPath,
+                        )
+                    }
                 }
                 .wrapContentSize(Alignment.CenterEnd)
     )
@@ -1891,6 +1950,7 @@ private fun DrawScope.drawThumbAndTick(
     progress: Float,
     thumbIconColor: Color,
     isRtl: Boolean,
+    tickPath: Path,
 ) {
 
     val thumbPaddingUnchecked = SWITCH_INNER_HEIGHT / 2 - THUMB_RADIUS_UNCHECKED
@@ -1926,25 +1986,21 @@ private fun DrawScope.drawThumbAndTick(
         center = Offset(thumbProgressPx, center.y),
     )
 
-    val ltrAdditionalOffset = 5.dp.toPx()
-    val rtlAdditionalOffset = 6.dp.toPx()
+    // Center of the tick's design, in pixels.
+    val tickDesignCenterX = 12.dp.toPx()
+    val tickDesignCenterY = 12.dp.toPx()
 
-    val totalDist = switchTrackLengthPx - 2 * switchThumbRadiusPx - ltrAdditionalOffset
-
-    // Offset value to be added if RTL mode is enabled.
-    // We need to move the tick to the checked position in ltr mode when unchecked.
-    val rtlOffset = switchTrackLengthPx - 2 * THUMB_RADIUS_CHECKED.toPx() - rtlAdditionalOffset
-
-    val distMoved = if (isRtl) rtlOffset - progress * totalDist else progress * totalDist
-
-    // Draw tick icon
-    animateTick(
-        enabled = enabled,
-        checked = checked,
-        tickColor = thumbIconColor,
-        tickProgress = progress,
-        startXOffset = distMoved.toDp(),
-    )
+    // Translate the canvas so the tick's design center (12.dp, 12.dp)
+    // aligns with the thumb's current center (thumbProgressPx, center.y).
+    translate(left = thumbProgressPx - tickDesignCenterX, top = center.y - tickDesignCenterY) {
+        // Call the new scaling tick function from AnimateTick.kt
+        drawScalingTick(
+            tickPath = tickPath,
+            tickColor = thumbIconColor,
+            scaleProgress = progress,
+            enabled = enabled,
+        )
+    }
 }
 
 @Composable

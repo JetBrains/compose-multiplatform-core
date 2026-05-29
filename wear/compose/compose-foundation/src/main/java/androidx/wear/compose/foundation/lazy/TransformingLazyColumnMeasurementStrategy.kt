@@ -118,6 +118,8 @@ internal fun emptyMeasureResult(
         afterContentPadding = afterContentPadding,
         itemSpacing = 0,
         childConstraints = Constraints(),
+        reverseLayout = false,
+        consumedScroll = 0f,
         measureResult = layout(containerConstraints.maxWidth, containerConstraints.maxHeight) {},
     )
 

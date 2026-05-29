@@ -56,6 +56,7 @@ import androidx.compose.ui.layout.MeasureResult
 import androidx.compose.ui.layout.Remeasurement
 import androidx.compose.ui.layout.RemeasurementModifier
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.util.fastFirstOrNull
 import androidx.compose.ui.util.fastForEach
 import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.math.abs
@@ -394,7 +395,14 @@ constructor(
     private val _scrollIndicatorState =
         object : ScrollIndicatorState {
             override val scrollOffset: Int
-                get() = calculateScrollOffset()
+                get() =
+                    if (layoutInfo.reverseLayout) {
+                        layoutInfo.calculateContentSize() -
+                            layoutInfo.singleAxisViewportSize -
+                            calculateScrollOffset()
+                    } else {
+                        calculateScrollOffset()
+                    }
 
             override val contentSize: Int
                 get() = layoutInfo.calculateContentSize()
@@ -405,7 +413,28 @@ constructor(
 
     private fun calculateScrollOffset(): Int {
         val info = layoutInfo
-        return (info.visibleLinesAverageMainAxisSize() * info.firstVisibleItemLineIndex) +
+        val visibleItems = info.visibleItemsInfo
+        val orientation = info.orientation
+
+        // Find the first visible item that corresponds to the state's logical scroll position
+        val firstVisibleItem = visibleItems.fastFirstOrNull { it.index == firstVisibleItemIndex }
+        val firstVisibleItemLineIndex = firstVisibleItem?.lineIndex(orientation) ?: -1
+
+        val lineForOffset =
+            if (firstVisibleItemLineIndex != -1) {
+                // The first visible item is a standard grid item.
+                firstVisibleItemLineIndex
+            } else {
+                // Fallback for sticky headers, where the line is an UnknownRow/UnknownColumn (-1
+                // index)
+                val firstValidItem =
+                    visibleItems.fastFirstOrNull { it.lineIndex(orientation) != -1 }
+                val firstValidLineIndex = firstValidItem?.lineIndex(orientation) ?: 0
+
+                maxOf(0, firstValidLineIndex - 1)
+            }
+
+        return (info.visibleLinesAverageMainAxisSize() * lineForOffset) +
             firstVisibleItemScrollOffset
     }
 
@@ -492,7 +521,9 @@ constructor(
         scrollPriority: MutatePriority,
         block: suspend ScrollScope.() -> Unit,
     ) {
-        awaitLayoutModifier.waitForFirstLayout()
+        if (layoutInfoState.value === EmptyLazyGridLayoutInfo) {
+            awaitLayoutModifier.waitForFirstLayout()
+        }
         scrollableState.scroll(scrollPriority, block)
     }
 
@@ -627,6 +658,20 @@ constructor(
         if (!isLookingAhead && hasLookaheadOccurred) {
             // If there was already a lookahead pass, record this result as Approach result
             approachLayoutInfo = result
+            Snapshot.withoutReadObservation {
+                // Check whether backscroll animation (from _lazyLayoutScrollDeltaBetweenPasses) is
+                // necessary. This animation handles cases where lookahead and approach passes
+                // have different maximum scroll bounds due to measurement differences (e.g.,
+                // when scrolling past the last item). If both passes already have the same
+                // scroll position, the animation is unnecessary and can be stopped.
+                if (
+                    _lazyLayoutScrollDeltaBetweenPasses.isActive &&
+                        result.firstVisibleLineScrollOffset == scrollPosition.scrollOffset &&
+                        result.firstVisibleLine?.items?.firstOrNull()?.index == scrollPosition.index
+                ) {
+                    _lazyLayoutScrollDeltaBetweenPasses.stop()
+                }
+            }
         } else {
             if (isLookingAhead) {
                 hasLookaheadOccurred = true

@@ -25,6 +25,7 @@ import androidx.compose.remote.core.RemoteContext;
 import androidx.compose.remote.core.VariableSupport;
 import androidx.compose.remote.core.WireBuffer;
 import androidx.compose.remote.core.documentation.DocumentationBuilder;
+import androidx.compose.remote.core.operations.utilities.ArrayAccess;
 import androidx.compose.remote.core.serialize.MapSerializer;
 import androidx.compose.remote.core.serialize.Serializable;
 
@@ -38,14 +39,13 @@ import java.util.List;
  * the decimal point
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public class TextLookup extends Operation implements VariableSupport, Serializable {
+public class TextLookup extends Operation implements VariableSupport, Serializable, ComponentData {
     private static final int OP_CODE = Operations.TEXT_LOOKUP;
     private static final String CLASS_NAME = "TextFromFloat";
     public int mTextId;
     public int mDataSetId;
     public float mOutIndex, mIndex;
-
-    public static final int MAX_STRING_SIZE = 4000;
+    private boolean mRegisteredForArray = false;
 
     public TextLookup(int textId, int dataSetId, float index) {
         this.mTextId = textId;
@@ -80,6 +80,20 @@ public class TextLookup extends Operation implements VariableSupport, Serializab
     public void registerListening(@NonNull RemoteContext context) {
         if (Float.isNaN(mIndex)) {
             context.listensTo(Utils.idFromNan(mIndex), this);
+        }
+        if (context.useFeature(Header.FEATURE_ARRAY_LISTENERS)) {
+            registerForArray(context);
+        }
+    }
+
+    private void registerForArray(@NonNull RemoteContext context) {
+        ArrayAccess array = context.getCollectionsAccess().getArray(mDataSetId);
+        if (array != null) {
+            for (int i = 0; i < array.getLength(); i++) {
+                int next = array.getId(i);
+                context.listensTo(next, this);
+            }
+            mRegisteredForArray = true;
         }
     }
 
@@ -124,10 +138,10 @@ public class TextLookup extends Operation implements VariableSupport, Serializab
      * @param operations the list of operations that will be added to
      */
     public static void read(@NonNull WireBuffer buffer, @NonNull List<Operation> operations) {
-        int textId = buffer.readInt();
-        int dataSetId = buffer.readInt();
-        float index = buffer.readFloat();
-        operations.add(new TextLookup(textId, dataSetId, index));
+        int id = buffer.declareId();
+        int listId = buffer.readId();
+        float index = buffer.readNanId();
+        operations.add(new TextLookup(id, listId, index));
     }
 
     /**
@@ -136,15 +150,19 @@ public class TextLookup extends Operation implements VariableSupport, Serializab
      * @param doc to append the description to.
      */
     public static void documentation(@NonNull DocumentationBuilder doc) {
-        doc.operation("Expressions Operations", OP_CODE, CLASS_NAME)
-                .description("Look an array and turn into a text object")
-                .field(INT, "textId", "id of the text generated")
-                .field(FLOAT, "dataSet", "float pointer to the array/list to turn int a string")
-                .field(FLOAT, "index", "index of element to return");
+        doc.operation("Text Operations", OP_CODE, CLASS_NAME)
+                .description("Look up a string from a collection via index")
+                .field(INT, "textId", "The ID of the resulting text")
+                .field(INT, "dataSetId", "The ID of the string collection")
+                .field(FLOAT, "index", "The index of the string to retrieve");
     }
 
     @Override
     public void apply(@NonNull RemoteContext context) {
+        if (!mRegisteredForArray && context.useFeature(Header.FEATURE_ARRAY_LISTENERS)) {
+            registerForArray(context);
+        }
+
         int id = context.getCollectionsAccess().getId(mDataSetId, (int) mOutIndex);
         context.loadText(mTextId, context.getText(id));
     }

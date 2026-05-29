@@ -30,6 +30,8 @@ import androidx.compose.material3.TimePickerDialog
 import androidx.compose.material3.TimePickerDialogDefaults
 import androidx.compose.material3.TimePickerDialogDefaults.MinHeightForTimePicker
 import androidx.compose.material3.TimePickerDisplayMode
+import androidx.compose.material3.isHourInputValid
+import androidx.compose.material3.isInputValid
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -71,7 +73,9 @@ fun TimePickerSample() {
             onDismissRequest = { showTimePicker = false },
             confirmButton = {
                 TextButton(
+                    enabled = state.isInputValid,
                     onClick = {
+                        state.isHourInputValid
                         val cal = Calendar.getInstance()
                         cal.set(Calendar.HOUR_OF_DAY, state.hour)
                         cal.set(Calendar.MINUTE, state.minute)
@@ -80,7 +84,7 @@ fun TimePickerSample() {
                             snackState.showSnackbar("Entered time: ${formatter.format(cal.time)}")
                         }
                         showTimePicker = false
-                    }
+                    },
                 ) {
                     Text("Ok")
                 }
@@ -117,6 +121,7 @@ fun TimeInputSample() {
             onDismissRequest = { showTimePicker = false },
             confirmButton = {
                 TextButton(
+                    enabled = state.isInputValid,
                     onClick = {
                         val cal = Calendar.getInstance()
                         cal.set(Calendar.HOUR_OF_DAY, state.hour)
@@ -126,7 +131,7 @@ fun TimeInputSample() {
                             snackState.showSnackbar("Entered time: ${formatter.format(cal.time)}")
                         }
                         showTimePicker = false
-                    }
+                    },
                 ) {
                     Text("Ok")
                 }
@@ -165,6 +170,7 @@ fun TimePickerSwitchableSample() {
             onDismissRequest = { showTimePicker = false },
             confirmButton = {
                 TextButton(
+                    enabled = state.isInputValid,
                     onClick = {
                         val cal = Calendar.getInstance()
                         cal.set(Calendar.HOUR_OF_DAY, state.hour)
@@ -174,7 +180,7 @@ fun TimePickerSwitchableSample() {
                             snackState.showSnackbar("Entered time: ${formatter.format(cal.time)}")
                         }
                         showTimePicker = false
-                    }
+                    },
                 ) {
                     Text("Ok")
                 }

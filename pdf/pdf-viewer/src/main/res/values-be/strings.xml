@@ -67,6 +67,7 @@
     <string name="page_broken" msgid="2968770793669433462">"Старонка дакумента PDF пашкоджана"</string>
     <string name="needs_more_data" msgid="3520133467908240802">"Не хапае даных для апрацоўкі дакумента PDF"</string>
     <string name="error_cannot_open_pdf" msgid="2361919778558145071">"Не ўдаецца адкрыць файл PDF"</string>
+    <string name="error_cannot_open_password_protected_pdf" msgid="3400883576932438749">"Файлы PDF, абароненыя паролем, не падтрымліваюцца."</string>
     <string name="cannot_edit_pdf" msgid="7677598370087228978">"Гэты файл PDF немагчыма змяніць"</string>
     <string name="clipboard_label" msgid="8943155331324944981">"Змесціва скапіравана з PDF"</string>
     <string name="fast_scroller_thumb" msgid="6712048991132846541">"Паласа прагорткі"</string>
@@ -81,6 +82,7 @@
     <string name="form_click_toggle_instruction" msgid="7171111300244445911">"Націсніце, каб пераключыць значэнне."</string>
     <string name="form_click_opens_choices_menu_instruction" msgid="5648228168212004143">"Націсніце, каб адкрыць меню выбару."</string>
     <string name="form_click_enters_text_edit_mode_instruction" msgid="2305283577544618880">"Націсніце, каб перайсці ў рэжым рэдагавання тэксту."</string>
+    <string name="combobox_custom_option" msgid="8730230629127076731">"Свой"</string>
     <string name="form_unknown" msgid="6371515914365431330">"Невядома"</string>
     <string name="form_widget_type_push_button" msgid="3595388398616291441">"Націскная кнопка"</string>
     <string name="form_widget_type_checkbox" msgid="5165655383070460151">"Поле для птушкі"</string>
@@ -89,5 +91,4 @@
     <string name="form_widget_type_list_box" msgid="8052623180309553495">"Спіс"</string>
     <string name="form_widget_type_text_field" msgid="581285155951215607">"Тэкставае поле"</string>
     <string name="form_widget_type_signature" msgid="3811511096215331673">"Подпіс"</string>
-    <string name="form_filling_tooltip" msgid="1715428076993648563">"Націсніце на поле, каб увайсці ў рэжым запаўнення формы"</string>
 </resources>

@@ -53,6 +53,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.wear.compose.foundation.lazy.TransformingLazyColumn
 import androidx.wear.compose.material3.tokens.CardTokens
 import androidx.wear.compose.material3.tokens.ImageCardTokens
 import androidx.wear.compose.material3.tokens.OutlinedCardTokens
@@ -71,6 +72,9 @@ import androidx.wear.compose.materialcore.Text
  * Example of a [Card] with onClick:
  *
  * @sample androidx.wear.compose.material3.samples.CardSample
+ *
+ * ![CardSample Composite
+ * Image](https://developer.android.com/wear/images/design/WearComposeM3_CardSample_CompositeImage.png)
  *
  * Example of [Card] with onLongClick:
  *
@@ -164,6 +168,10 @@ public fun Card(
  * Example of a [Card] with an image background:
  *
  * @sample androidx.wear.compose.material3.samples.ImageCardSample
+ *
+ * ![ImageCardSample Composite
+ * Image](https://developer.android.com/wear/images/design/WearComposeM3_ImageCardSample_CompositeImage.png)
+ *
  * @param onClick Will be called when the user clicks the card
  * @param containerPainter The [Painter] to use to draw the container image of the [Card], such as
  *   returned by [CardDefaults.containerPainter].
@@ -254,17 +262,29 @@ public fun Card(
  *
  * @sample androidx.wear.compose.material3.samples.AppCardSample
  *
+ * ![AppCardSample Composite
+ * Image](https://developer.android.com/wear/images/design/WearComposeM3_AppCardSample_CompositeImage.png)
+ *
  * Example of an [AppCard] with icon:
  *
  * @sample androidx.wear.compose.material3.samples.AppCardWithIconSample
+ *
+ * ![AppCardWithIconSample Composite
+ * Image](https://developer.android.com/wear/images/design/WearComposeM3_AppCardWithIconSample_CompositeImage.png)
  *
  * Example of an [AppCard] with image [content]:
  *
  * @sample androidx.wear.compose.material3.samples.AppCardWithImageSample
  *
+ * ![AppCardWithImageSample Composite
+ * Image](https://developer.android.com/wear/images/design/WearComposeM3_AppCardWithImageSample_CompositeImage.png)
+ *
  * Example of an outlined [AppCard]:
  *
  * @sample androidx.wear.compose.material3.samples.OutlinedAppCardSample
+ *
+ * ![OutlinedAppCardSample Composite
+ * Image](https://developer.android.com/wear/images/design/WearComposeM3_OutlinedAppCardSample_CompositeImage.png)
  *
  * For more information, see the
  * [Cards](https://developer.android.com/training/wearables/components/cards) guide.
@@ -356,17 +376,29 @@ public fun AppCard(
  *
  * @sample androidx.wear.compose.material3.samples.TitleCardSample
  *
+ * ![TitleCardSample Composite
+ * Image](https://developer.android.com/wear/images/design/WearComposeM3_TitleCardSample_CompositeImage.png)
+ *
  * Example of a [TitleCard] with [time], [title] and [subtitle]:
  *
  * @sample androidx.wear.compose.material3.samples.TitleCardWithSubtitleAndTimeSample
+ *
+ * ![TitleCardWithSubtitleAndTimeSample Composite
+ * Image](https://developer.android.com/wear/images/design/WearComposeM3_TitleCardWithSubtitleAndTimeSample_CompositeImage.png)
  *
  * Example of a [TitleCard] with images [content]:
  *
  * @sample androidx.wear.compose.material3.samples.TitleCardWithMultipleImagesSample
  *
+ * ![TitleCardWithMultipleImagesSample Composite
+ * Image](https://developer.android.com/wear/images/design/WearComposeM3_TitleCardWithMultipleImagesSample_CompositeImage.png)
+ *
  * Example of an outlined [TitleCard]:
  *
  * @sample androidx.wear.compose.material3.samples.OutlinedTitleCardSample
+ *
+ * ![OutlinedTitleCardSample Composite
+ * Image](https://developer.android.com/wear/images/design/WearComposeM3_OutlinedTitleCardSample_CompositeImage.png)
  *
  * For more information, see the
  * [Cards](https://developer.android.com/training/wearables/components/cards) guide.
@@ -465,6 +497,9 @@ public fun TitleCard(
  *
  * @sample androidx.wear.compose.material3.samples.TitleCardWithImageWithTimeAndTitleSample
  *
+ * ![TitleCardWithImageWithTimeAndTitleSample Composite
+ * Image](https://developer.android.com/wear/images/design/WearComposeM3_TitleCardWithImageWithTimeAndTitleSample_CompositeImage.png)
+ *
  * For more information, see the
  * [Cards](https://developer.android.com/training/wearables/components/cards) guide.
  *
@@ -554,6 +589,9 @@ public fun TitleCard(
  * Example of an [OutlinedCard]:
  *
  * @sample androidx.wear.compose.material3.samples.OutlinedCardSample
+ *
+ * ![OutlinedCardSample Composite
+ * Image](https://developer.android.com/wear/images/design/WearComposeM3_OutlinedCardSample_CompositeImage.png)
  *
  * For more information, see the
  * [Cards](https://developer.android.com/training/wearables/components/cards) Wear OS Material
@@ -808,6 +846,20 @@ public object CardDefaults {
             end = CardHorizontalPadding,
             bottom = CardVerticalPadding,
         )
+
+    /**
+     * The minimum vertical content padding for the list when a [Card] is placed at the top or
+     * bottom edge. Recommended for use with
+     * [androidx.wear.compose.foundation.lazy.TransformingLazyColumnItemScope]'s
+     * [androidx.wear.compose.foundation.lazy.TransformingLazyColumnItemScope.minimumVerticalContentPadding],
+     * which allows items to choose a preferred content padding for the list.
+     * [TransformingLazyColumn] takes its contentPadding as the maximum of the preferred content
+     * padding values and its own contentPadding parameter.
+     *
+     * @sample androidx.wear.compose.material3.samples.TransformingLazyColumnMinimumVerticalContentPaddingSample
+     */
+    public val minimumVerticalListContentPadding: Dp
+        @Composable get() = screenHeightFraction(LARGE_VERTICAL_CONTENT_PADDING_FRACTION)
 
     /** Additional bottom padding added for TitleCard with an image background */
     public val ImageBottomPadding: Dp = 12.dp

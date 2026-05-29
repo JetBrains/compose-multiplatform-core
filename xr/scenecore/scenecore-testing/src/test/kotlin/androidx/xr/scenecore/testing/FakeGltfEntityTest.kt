@@ -14,11 +14,13 @@
  * limitations under the License.
  */
 
+@file:Suppress("DEPRECATION")
+
 package androidx.xr.scenecore.testing
 
-import androidx.xr.scenecore.runtime.GltfEntity
+import androidx.xr.runtime.math.FloatSize3d
+import androidx.xr.runtime.math.Vector3
 import com.google.common.truth.Truth.assertThat
-import kotlinx.coroutines.runBlocking
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -36,79 +38,25 @@ class FakeGltfEntityTest {
 
     @Test
     fun getInitialState_returnsDefaultValues() {
-        check(underTest.animationState == GltfEntity.AnimationState.STOPPED)
-        check(!underTest.isLooping)
-        check(underTest.currentAnimationName == null)
+        check(underTest.gltfModelBoundingBox.center == Vector3(0.5f, 0.5f, 0.5f))
+        check(underTest.gltfModelBoundingBox.halfExtents == FloatSize3d(0.5f, 0.5f, 0.5f))
     }
 
     @Test
-    fun startAnimationWithSupportedAnimation_setsAnimationStateToPlaying() = runBlocking {
-        check(underTest.supportedAnimationNames.contains("animation_name"))
-
-        underTest.startAnimation(false, "test_animation")
-
-        // startAnimation doesn't work on an unsupported animation name.
-        assertThat(underTest.isLooping).isFalse()
-        assertThat(underTest.animationState).isEqualTo(GltfEntity.AnimationState.STOPPED)
-        assertThat(underTest.currentAnimationName).isNull()
-
-        underTest.startAnimation(loop = true, animationName = "animation_name")
-
-        assertThat(underTest.isLooping).isTrue()
-        assertThat(underTest.animationState).isEqualTo(GltfEntity.AnimationState.PLAYING)
-        assertThat(underTest.currentAnimationName).isEqualTo("animation_name")
-
-        underTest.supportedAnimationNames.add("test_animation")
-        underTest.startAnimation(false, "test_animation")
-
-        // startAnimation doesn't work when the animationState is PLAYING.
-        assertThat(underTest.isLooping).isTrue()
-        assertThat(underTest.animationState).isEqualTo(GltfEntity.AnimationState.PLAYING)
-        assertThat(underTest.currentAnimationName).isEqualTo("animation_name")
-
-        underTest.stopAnimation()
-
-        // stopAnimation resets all states.
-        assertThat(underTest.isLooping).isFalse()
-        assertThat(underTest.animationState).isEqualTo(GltfEntity.AnimationState.STOPPED)
-        assertThat(underTest.currentAnimationName).isNull()
-
-        underTest.startAnimation(false, "test_animation")
-
-        // Verifies that startAnimation works on the added supported animation name.
-        assertThat(underTest.isLooping).isFalse()
-        assertThat(underTest.animationState).isEqualTo(GltfEntity.AnimationState.PLAYING)
-        assertThat(underTest.currentAnimationName).isEqualTo("test_animation")
+    fun getAnimations_returnsEmptyList() {
+        assertThat(underTest.animations).isEmpty()
     }
 
     @Test
-    fun setMaterialOverride_setMaterialCorrectly() {
-        val material = FakeResource(123)
-        val nodeName = "glTF node"
-        val primitiveIndex = 0
+    fun addAnimation_addsAnimationToList() {
+        val animation = FakeGltfAnimationFeature()
+        underTest.addAnimation(animation)
 
-        check(underTest.node.materialArray[primitiveIndex] == FakeResource(1))
-
-        underTest.setMaterialOverride(material, nodeName, primitiveIndex)
-
-        assertThat(underTest.node.materialArray[primitiveIndex]).isEqualTo(material)
+        assertThat(underTest.animations).containsExactly(animation)
     }
 
     @Test
-    fun clearMaterialOverride_setAndClearOverrideMaterial_getMaterialAfterClearCorrectly() {
-        val material = FakeResource(123)
-        val nodeName = "glTF node"
-        val primitiveIndex = 0
-
-        check(underTest.node.materialArray[primitiveIndex] == FakeResource(1))
-
-        underTest.setMaterialOverride(material, nodeName, primitiveIndex)
-
-        assertThat(underTest.node.materialArray[primitiveIndex]).isEqualTo(material)
-
-        underTest.clearMaterialOverride(nodeName, primitiveIndex)
-
-        assertThat(underTest.node.materialArray[primitiveIndex])
-            .isEqualTo(FakeResource(primitiveIndex.toLong()))
+    fun getNodes_returnsEmptyListByDefault() {
+        assertThat(underTest.nodes).isEmpty()
     }
 }

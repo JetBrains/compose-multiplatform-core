@@ -40,12 +40,10 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.currentStateAsState
 import androidx.lifecycle.lifecycleScope
 import androidx.xr.arcore.Anchor
-import androidx.xr.arcore.AnchorCreateNotAuthorized
 import androidx.xr.arcore.AnchorCreateResourcesExhausted
-import androidx.xr.arcore.AnchorCreateResult
 import androidx.xr.arcore.AnchorCreateSuccess
 import androidx.xr.arcore.AnchorCreateTrackingUnavailable
-import androidx.xr.arcore.AnchorLoadInvalidUuid
+import androidx.xr.arcore.AnchorResult
 import androidx.xr.compose.testapp.R
 import androidx.xr.compose.testapp.common.composables.BasicLayout
 import androidx.xr.compose.testapp.common.composables.TestResult
@@ -62,8 +60,10 @@ import androidx.xr.scenecore.GltfModel
 import androidx.xr.scenecore.GltfModelEntity
 import java.nio.file.Paths
 import kotlin.random.Random
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /*
  * Testing if the session lifecycle fires with the activity lifecycle by creating
@@ -77,24 +77,33 @@ class RuntimeSessionActivity : BaseLifecycleTestActivity() {
     private var latestCreatedAnchor: Anchor? by mutableStateOf(null)
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        Log.i("corycook", "preCreate peekDecorView: " + window.peekDecorView())
+
         super.onCreate(savedInstanceState)
 
-        val result: SessionCreateResult = Session.Companion.create(this)
-        currentSession =
-            if (result is SessionCreateSuccess) {
-                result.session
-            } else {
-                Log.e(
-                    TAG,
-                    "[$activityName] Failed to create Session: ${result.javaClass.simpleName}",
-                )
-                null
-            }
+        Log.i("corycook", "onCreate peekDecorView: " + window.peekDecorView())
 
-        // Load 3D models once the session is created
-        currentSession?.let { session -> lifecycleScope.launch { load3DModels(session) } }
+        lifecycleScope.launch {
+            val result: SessionCreateResult =
+                withContext(Dispatchers.IO) {
+                    Session.create(context = this@RuntimeSessionActivity)
+                }
+            currentSession =
+                if (result is SessionCreateSuccess) {
+                    result.session
+                } else {
+                    Log.e(
+                        TAG,
+                        "[$activityName] Failed to create Session: ${result.javaClass.simpleName}",
+                    )
+                    null
+                }
 
-        setContent { RuntimeSessionContent() }
+            // Load 3D models once the session is created
+            currentSession?.let { session -> launch { load3DModels(session) } }
+
+            setContent { RuntimeSessionContent() }
+        }
     }
 
     override fun onDestroy() {
@@ -169,7 +178,7 @@ class RuntimeSessionActivity : BaseLifecycleTestActivity() {
     }
 
     private fun createAnchor(session: Session, pose: Pose, model: GltfModel): Anchor? {
-        val result: AnchorCreateResult = Anchor.create(session, pose)
+        val result: AnchorResult = Anchor.create(session, pose)
         when (result) {
             is AnchorCreateSuccess -> {
                 Log.i(TAG, "[$activityName] [PASS] ANCHOR_SPAWN: success: ${result.anchor}")
@@ -185,13 +194,6 @@ class RuntimeSessionActivity : BaseLifecycleTestActivity() {
                 Log.e(TAG, "[$activityName] ANCHOR_SPAWN: failed: AnchorCreateResourcesExhausted")
                 Toast.makeText(this, "ARCore resources exhausted!", Toast.LENGTH_SHORT).show()
             }
-            is AnchorLoadInvalidUuid -> {
-                Log.e(
-                    TAG,
-                    "[$activityName] ANCHOR_SPAWN: failed: AnchorLoadInvalidUuid (should not happen for new creation)",
-                )
-                Toast.makeText(this, "Invalid Anchor UUID!", Toast.LENGTH_SHORT).show()
-            }
             is AnchorCreateTrackingUnavailable -> {
                 Log.e(
                     TAG,
@@ -199,17 +201,10 @@ class RuntimeSessionActivity : BaseLifecycleTestActivity() {
                 )
                 Toast.makeText(this, "ARCore tracking unavailable!", Toast.LENGTH_SHORT).show()
             }
-            is AnchorCreateNotAuthorized -> {
-                Log.e(
-                    TAG,
-                    "[$activityName] ANCHOR_SPAWN: failed: AnchorCreateNotAuthorized (app not authorized)",
-                )
-                Toast.makeText(this, "App not authorized for ARCore!", Toast.LENGTH_SHORT).show()
-            }
             else -> {
                 Log.e(
                     TAG,
-                    "[$activityName] ANCHOR_SPAWN: failed: Unexpected AnchorCreateResult: ${result.javaClass.simpleName}",
+                    "[$activityName] ANCHOR_SPAWN: failed: Unexpected AnchorResult: ${result.javaClass.simpleName}",
                 )
                 Toast.makeText(this, "Failed to create anchor: Unknown error!", Toast.LENGTH_SHORT)
                     .show()

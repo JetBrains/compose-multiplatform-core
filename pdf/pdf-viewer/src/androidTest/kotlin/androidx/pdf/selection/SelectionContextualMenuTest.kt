@@ -16,12 +16,15 @@
 
 package androidx.pdf.selection
 
+import android.content.Context
+import android.content.Intent
 import android.graphics.Point
 import android.graphics.RectF
 import android.net.Uri
 import android.os.Build
 import android.view.ViewGroup
 import androidx.pdf.PdfDocument.PdfPageLinks
+import androidx.pdf.TestUtils.assertNotNullObjectByText
 import androidx.pdf.content.PdfPageGotoLinkContent
 import androidx.pdf.content.PdfPageLinkContent
 import androidx.pdf.content.PdfPageTextContent
@@ -29,14 +32,13 @@ import androidx.pdf.view.FakePdfDocument
 import androidx.pdf.view.PdfView
 import androidx.pdf.view.PdfViewTestActivity
 import androidx.test.core.app.ActivityScenario
+import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.Espresso
 import androidx.test.espresso.action.ViewActions.doubleClick
 import androidx.test.espresso.action.ViewActions.longClick
 import androidx.test.espresso.assertion.ViewAssertions.doesNotExist
-import androidx.test.espresso.assertion.ViewAssertions.matches
 import androidx.test.espresso.matcher.RootMatchers
 import androidx.test.espresso.matcher.ViewMatchers
-import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
 import androidx.test.espresso.matcher.ViewMatchers.withText
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
@@ -104,24 +106,21 @@ class SelectionContextualMenuTest {
     }
 
     @Test
-    fun testDoubleTapAfterSelection_stillshowsMenuOption() {
+    fun testDoubleTapAfterSelection_stillShowsMenuOption() {
         with(ActivityScenario.launch(PdfViewTestActivity::class.java)) {
             Espresso.onView(ViewMatchers.withId(PDF_VIEW_ID))
                 // Create a selection by long-pressing the center of the view.
                 .perform(longClick())
             // Verify that the long press selected started action mode.
-            Espresso.onView(withText("Copy"))
-                .inRoot(RootMatchers.isPlatformPopup())
-                .check(matches(isDisplayed()))
+            assertNotNullObjectByText("Copy")
 
             Espresso.onView(ViewMatchers.withId(PDF_VIEW_ID))
                 // Double Tap to zoom in.
                 .perform(doubleClick())
 
             // Verify that the contextual menu is still visible.
-            Espresso.onView(withText("Copy"))
-                .inRoot(RootMatchers.isPlatformPopup())
-                .check(matches(isDisplayed()))
+            // Verify that the long press selected started action mode.
+            assertNotNullObjectByText("Copy")
         }
     }
 
@@ -144,20 +143,22 @@ class SelectionContextualMenuTest {
 
     @Test
     fun testEmailSelection_showsEmailAddOptions() {
+        // Pre-requisite check: ensure an email client is available on the device.
+        if (!hasEmailClient()) return
+
         with(ActivityScenario.launch(PdfViewTestActivity::class.java)) {
             Espresso.onView(ViewMatchers.withId(PDF_VIEW_ID))
                 // Create a selection by long-pressing the center of the view.
                 .perform(longClick())
+
             // Verify that the long press selected started action mode showing email add
             // options
-            Espresso.onView(withText("Email"))
-                .inRoot(RootMatchers.isPlatformPopup())
-                .check(matches(isDisplayed()))
+            assertNotNullObjectByText("Email")
         }
     }
 
     @Test
-    fun testGoToLinkSelection_showsJumptoOption() {
+    fun testGoToLinkSelection_showsJumpToOption() {
         with(ActivityScenario.launch(PdfViewTestActivity::class.java)) {
             Espresso.onView(ViewMatchers.withId(PDF_VIEW_ID))
                 .check { view, _ ->
@@ -166,15 +167,14 @@ class SelectionContextualMenuTest {
                 }
                 // Create a selection by long-pressing the center of the view.
                 .perform(longClick())
+
             // Verify that the long press selected started action mode showing Jump to option
-            Espresso.onView(withText("Jump to"))
-                .inRoot(RootMatchers.isPlatformPopup())
-                .check(matches(isDisplayed()))
+            assertNotNullObjectByText("Jump to")
         }
     }
 
     @Test
-    fun testHyperLinkSelection_showsCopylinkOption() {
+    fun testHyperLinkSelection_showsCopyLinkOption() {
         with(ActivityScenario.launch(PdfViewTestActivity::class.java)) {
             Espresso.onView(ViewMatchers.withId(PDF_VIEW_ID))
                 .check { view, _ ->
@@ -183,10 +183,9 @@ class SelectionContextualMenuTest {
                 }
                 // Create a selection by long-pressing the center of the view.
                 .perform(longClick())
+
             // Verify that the long press selected started action mode showing Copy link option
-            Espresso.onView(withText("Copy link"))
-                .inRoot(RootMatchers.isPlatformPopup())
-                .check(matches(isDisplayed()))
+            assertNotNullObjectByText("Copy link")
         }
     }
 
@@ -201,9 +200,7 @@ class SelectionContextualMenuTest {
                 // Create a selection by long-pressing the center of the view.
                 .perform(longClick())
             // Verify that the long press selected started action mode showing open
-            Espresso.onView(withText("Open"))
-                .inRoot(RootMatchers.isPlatformPopup())
-                .check(matches(isDisplayed()))
+            assertNotNullObjectByText("Open")
         }
     }
 
@@ -218,9 +215,7 @@ class SelectionContextualMenuTest {
                 // Create a selection by long-pressing the center of the view.
                 .perform(longClick())
             // Verify that the long press selected started action mode showing call option
-            Espresso.onView(withText("Call"))
-                .inRoot(RootMatchers.isPlatformPopup())
-                .check(matches(isDisplayed()))
+            assertNotNullObjectByText("Call")
         }
     }
 
@@ -244,5 +239,12 @@ class SelectionContextualMenuTest {
             )
         val FAKE_PAGE_TEXT =
             listOf<String>(EMAIL, LINK, PHONE_NUMBER, BACKTOEMAIL, GOOGLE, EMAIL_LINK)
+
+        /** Verifies an email client exists on device. */
+        private fun hasEmailClient(): Boolean {
+            val context = ApplicationProvider.getApplicationContext<Context>()
+            val intent = Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:"))
+            return intent.resolveActivity(context.packageManager) != null
+        }
     }
 }

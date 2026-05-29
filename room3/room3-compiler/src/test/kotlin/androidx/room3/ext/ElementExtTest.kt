@@ -25,7 +25,6 @@ import androidx.room3.compiler.processing.util.Source
 import androidx.room3.compiler.processing.util.XTestInvocation
 import androidx.room3.compiler.processing.util.compileFiles
 import androidx.room3.compiler.processing.util.runKspTest
-import androidx.room3.compiler.processing.util.runProcessorTest
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
@@ -38,34 +37,34 @@ class ElementExtTest(private val preCompile: Boolean) {
             Source.java(
                 "foo.bar.Parent",
                 """
-            package foo.bar;
+                package foo.bar;
 
-            public class Parent {
-                public Parent() {}
-                private void parentPrivate() {}
-                public void parentPublic() {}
-                public void overridden() {}
-                private static void parentStaticPrivate() {}
-                public static void parentStaticPublic() {}
-            }
-            """
+                public class Parent {
+                    public Parent() {}
+                    private void parentPrivate() {}
+                    public void parentPublic() {}
+                    public void overridden() {}
+                    private static void parentStaticPrivate() {}
+                    public static void parentStaticPublic() {}
+                }
+                """
                     .trimIndent(),
             )
         val childCode =
             Source.java(
                 "foo.bar.Child",
                 """
-            package foo.bar;
+                package foo.bar;
 
-            public class Child extends Parent {
-                public Child() {}
-                private void childPrivate() {}
-                public void childPublic() {}
-                public void overridden() {}
-                private static void childStaticPrivate() {}
-                public static void childStaticPublic() {}
-            }
-            """
+                public class Child extends Parent {
+                    public Child() {}
+                    private void childPrivate() {}
+                    public void childPublic() {}
+                    public void overridden() {}
+                    private static void childStaticPrivate() {}
+                    public static void childStaticPublic() {}
+                }
+                """
                     .trimIndent(),
             )
 
@@ -130,30 +129,30 @@ class ElementExtTest(private val preCompile: Boolean) {
             Source.java(
                 "foo.bar.Parent",
                 """
-            package foo.bar;
+                package foo.bar;
 
-            public interface Parent {
-                public void parentPublic();
-                public void overridden();
-                private static void parentStaticPrivate() {}
-                public static void parentStaticPublic() {}
-            }
-            """
+                public interface Parent {
+                    public void parentPublic();
+                    public void overridden();
+                    private static void parentStaticPrivate() {}
+                    public static void parentStaticPublic() {}
+                }
+                """
                     .trimIndent(),
             )
         val childCode =
             Source.java(
                 "foo.bar.Child",
                 """
-            package foo.bar;
+                package foo.bar;
 
-            public interface Child extends Parent {
-                public void childPublic();
-                public void overridden();
-                private static void childStaticPrivate() {}
-                public static void childStaticPublic() {}
-            }
-            """
+                public interface Child extends Parent {
+                    public void childPublic();
+                    public void overridden();
+                    private static void childStaticPrivate() {}
+                    public static void childStaticPublic() {}
+                }
+                """
                     .trimIndent(),
             )
 
@@ -195,15 +194,15 @@ class ElementExtTest(private val preCompile: Boolean) {
             Source.java(
                 "foo.bar.Baz",
                 """
-            package foo.bar;
+                package foo.bar;
 
-            public class Baz {
-                public int field;
-                public int method() {
-                    return 3;
+                public class Baz {
+                    public int field;
+                    public int method() {
+                        return 3;
+                    }
                 }
-            }
-            """
+                """
                     .trimIndent(),
             )
 
@@ -223,12 +222,12 @@ class ElementExtTest(private val preCompile: Boolean) {
             Source.kotlin(
                 "Subject.kt",
                 """
-            package foo
-            class Subject {
-              fun uLongFunction(): ULong = TODO()
-              fun durationFunction(): kotlin.time.Duration = TODO()
-            }
-            """
+                package foo
+                class Subject {
+                  fun uLongFunction(): ULong = TODO()
+                  fun durationFunction(): kotlin.time.Duration = TODO()
+                }
+                """
                     .trimIndent(),
             )
         runKspTest(
@@ -247,7 +246,7 @@ class ElementExtTest(private val preCompile: Boolean) {
                     assertThat(info.getter!!.propertyName).isEqualTo("data")
                     assertThat(info.parameter.type)
                         .isEqualTo(invocation.processingEnv.requireType(XTypeName.PRIMITIVE_LONG))
-                    assertThat(info.getter!!.returnType)
+                    assertThat(info.getter.returnType)
                         .isEqualTo(invocation.processingEnv.requireType(XTypeName.PRIMITIVE_LONG))
                 }
             subject
@@ -272,7 +271,7 @@ class ElementExtTest(private val preCompile: Boolean) {
             } else {
                 sources to emptyList()
             }
-        runProcessorTest(sources = sources, classpath = classpath, handler = handler)
+        runKspTest(sources = sources, classpath = classpath, handler = handler)
     }
 
     private fun XTestInvocation.objectMethodNames(): List<String> {

@@ -16,6 +16,7 @@
 package androidx.compose.remote.core.operations;
 
 import static androidx.compose.remote.core.documentation.DocumentedOperation.INT;
+import static androidx.compose.remote.core.documentation.DocumentedOperation.REPEATED_INT;
 import static androidx.compose.remote.core.documentation.DocumentedOperation.SHORT;
 
 import androidx.annotation.RestrictTo;
@@ -121,13 +122,13 @@ public class ImageAttribute extends PaintOperation {
      * @param operations the list of operations that will be added to
      */
     public static void read(@NonNull WireBuffer buffer, @NonNull List<Operation> operations) {
-        int id = buffer.readInt();
-        int imageId = buffer.readInt();
+        int id = buffer.readId();
+        int imageId = buffer.readId();
         short type = (short) buffer.readShort();
         short len = (short) buffer.readShort();
         int[] args = new int[len];
         for (int i = 0; i < args.length; i++) {
-            args[i] = buffer.readInt();
+            args[i] = buffer.readId();
         }
         operations.add(new ImageAttribute(id, imageId, type, args));
     }
@@ -138,13 +139,13 @@ public class ImageAttribute extends PaintOperation {
      * @param doc to append the description to.
      */
     public static void documentation(@NonNull DocumentationBuilder doc) {
-        doc.operation("Image Attributes", OP_CODE, CLASS_NAME)
-                .description("Measure text")
-                .field(INT, "id", "id of float result of the measure")
-                .field(INT, "ImageId", "id of the image")
-                .field(SHORT, "type", "type: measure 0=width,1=height")
-                .field(SHORT, "len", "number of additional arguments (currently 0)")
-                .field(INT, "a", "len", "number of arguments");
+        doc.operation("Logic & Expressions Operations", OP_CODE, CLASS_NAME)
+                .description("Extract image-related properties (width, height)")
+                .field(INT, "id", "The ID of the float variable to store the result")
+                .field(INT, "imageId", "The ID of the image variable to extract from")
+                .field(SHORT, "type", "The type of property to extract (0=WIDTH, 1=HEIGHT)")
+                .field(SHORT, "argsLength", "The number of additional arguments")
+                .field(REPEATED_INT, "args", "The additional arguments");
     }
 
     @NonNull

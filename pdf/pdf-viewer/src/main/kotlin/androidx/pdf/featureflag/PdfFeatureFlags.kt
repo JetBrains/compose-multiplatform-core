@@ -32,9 +32,6 @@ public object PdfFeatureFlags {
     // Toggle handling of custom link.
     public var isCustomLinkHandlingEnabled: Boolean = false
 
-    // Toggles handling of external hardware events like keyboard and mouse shortcuts.
-    public var isExternalHardwareInteractionEnabled: Boolean = false
-
     // Toggles multi touch scroll functionality for the PDF viewer.
     public var isMultiTouchScrollEnabled: Boolean = false
 
@@ -42,4 +39,7 @@ public object PdfFeatureFlags {
     public var isThumbnailPreviewEnabled: Boolean = false
 
     public var isFormFillingEnabled: Boolean = false
+
+    // Toggles autofill functionality for PDF forms.
+    public var isAutofillEnabled: Boolean = false
 }

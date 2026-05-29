@@ -17,7 +17,6 @@
 package androidx.room3.processor
 
 import androidx.kruth.assertThat
-import androidx.room3.RoomKspProcessor
 import androidx.room3.RoomProcessor
 import androidx.room3.compiler.codegen.CodeLanguage
 import androidx.room3.compiler.codegen.VisibilityModifier
@@ -33,11 +32,11 @@ import androidx.room3.compiler.processing.XFiler
 import androidx.room3.compiler.processing.XProcessingEnv
 import androidx.room3.compiler.processing.XProcessingEnvConfig
 import androidx.room3.compiler.processing.XProcessingStep
-import androidx.room3.compiler.processing.javac.JavacBasicAnnotationProcessor
 import androidx.room3.compiler.processing.ksp.KspBasicAnnotationProcessor
 import androidx.room3.compiler.processing.util.Source
 import androidx.room3.compiler.processing.util.XTestInvocation
-import androidx.room3.compiler.processing.util.runProcessorTest
+import androidx.room3.compiler.processing.util.runKspProcessorTest
+import androidx.room3.compiler.processing.util.runKspTest
 import androidx.room3.ext.CommonTypeNames
 import androidx.room3.ext.CommonTypeNames.MUTABLE_LIST
 import androidx.room3.ext.CommonTypeNames.STRING
@@ -266,7 +265,7 @@ class CustomConverterProcessorTest {
                         .build()
                         .toString(CodeLanguage.JAVA),
             )
-        runProcessorTest(sources = listOf(baseConverter, extendingClass)) { invocation ->
+        runKspTest(sources = listOf(baseConverter, extendingClass)) { invocation ->
             val element =
                 invocation.processingEnv.requireTypeElement(extendingClassName.canonicalName)
             val converter =
@@ -296,7 +295,7 @@ class CustomConverterProcessorTest {
                 .isEqualTo(XTypeName.BOXED_SHORT.copy(nullable = true))
             assertThat(converter?.toTypeName).isEqualTo(XTypeName.BOXED_CHAR.copy(nullable = true))
             invocation.assertCompilationResult {
-                hasErrorContaining("Multiple functions define the same conversion")
+                hasErrorContaining("Multiple @TypeConverter functions define the same conversion.")
             }
         }
     }
@@ -349,7 +348,7 @@ class CustomConverterProcessorTest {
                 public class Container {}
                 """,
             )
-        runProcessorTest(listOf(source)) { invocation ->
+        runKspTest(listOf(source)) { invocation ->
             val result =
                 CustomConverterProcessor.findConverters(
                     invocation.context,
@@ -405,20 +404,20 @@ class CustomConverterProcessorTest {
                     .use { output ->
                         output.write(
                             """
-                        import androidx.room3.TypeConverter;
-                        
-                        public class GeneratedTypeConverter {
-                            @TypeConverter
-                            public TestId toId(long id) {
-                                return new TestId();
+                            import androidx.room3.TypeConverter;
+
+                            public class GeneratedTypeConverter {
+                                @TypeConverter
+                                public TestId toId(long id) {
+                                    return new TestId();
+                                }
+                                
+                                @TypeConverter
+                                public long fromId(TestId id) {
+                                    return 1;
+                                }
                             }
-                            
-                            @TypeConverter
-                            public long fromId(TestId id) {
-                                return 1;
-                            }
-                        }
-                        """
+                            """
                                 .trimIndent()
                         )
                     }
@@ -436,31 +435,22 @@ class CustomConverterProcessorTest {
                     .use { output ->
                         output.write(
                             """
-                        import androidx.room3.TypeConverter
-                        
-                        class GeneratedTypeConverter {
-                            @TypeConverter
-                            fun toId(id: Long): TestId = TestId()
-                            
-                            @TypeConverter
-                            fun fromId(id: TestId): Long = 1L
-                        }
-                        """
+                            import androidx.room3.TypeConverter
+
+                            class GeneratedTypeConverter {
+                                @TypeConverter
+                                fun toId(id: Long): TestId = TestId()
+                                
+                                @TypeConverter
+                                fun fromId(id: TestId): Long = 1L
+                            }
+                            """
                                 .trimIndent()
                         )
                     }
             }
         }
 
-        val typeConverterProcessor =
-            object :
-                JavacBasicAnnotationProcessor(
-                    config =
-                        XProcessingEnvConfig.DEFAULT.copy(disableAnnotatedElementValidation = true)
-                ) {
-                override fun processingSteps() =
-                    listOf(GenerateTypeConverterStep(CodeLanguage.JAVA))
-            }
         val typeConverterKspProvider = SymbolProcessorProvider {
             object :
                 KspBasicAnnotationProcessor(
@@ -477,33 +467,32 @@ class CustomConverterProcessorTest {
             Source.kotlin(
                 "MyDatabase.kt",
                 """
-            import androidx.room3.*
+                import androidx.room3.*
 
-            class TestId
+                class TestId
 
-            @Entity
-            data class TestEntity(@PrimaryKey val id: TestId)
+                @Entity
+                data class TestEntity(@PrimaryKey val id: TestId)
 
-            @Dao
-            interface MyDao {
-                @Query("SELECT * FROM TestEntity")
-                fun getAll(): List<TestEntity>
-            }
+                @Dao
+                interface MyDao {
+                    @Query("SELECT * FROM TestEntity")
+                    fun getAll(): List<TestEntity>
+                }
 
-            @Database(entities = [TestEntity::class], version = 1, exportSchema = false)
-            @TypeConverters(GeneratedTypeConverter::class)
-            abstract class MyDatabase : RoomDatabase() {
-                abstract fun getDao(): MyDao
-            }
-            """
+                @Database(entities = [TestEntity::class], version = 1, exportSchema = false)
+                @TypeConverters(GeneratedTypeConverter::class)
+                abstract class MyDatabase : RoomDatabase() {
+                    abstract fun getDao(): MyDao
+                }
+                """
                     .trimIndent(),
             )
-        runProcessorTest(
+        runKspProcessorTest(
             sources = listOf(databaseSrc),
             kotlincArguments =
                 listOf("-P", "plugin:org.jetbrains.kotlin.kapt3:correctErrorTypes=true"),
-            javacProcessors = listOf(RoomProcessor(), typeConverterProcessor),
-            symbolProcessorProviders = listOf(RoomKspProcessor.Provider(), typeConverterKspProvider),
+            symbolProcessorProviders = listOf(RoomProcessor.Provider(), typeConverterKspProvider),
         ) {
             it.hasErrorCount(0)
         }
@@ -550,7 +539,7 @@ class CustomConverterProcessorTest {
         vararg sources: Source,
         handler: (CustomTypeConverter?, XTestInvocation) -> Unit,
     ) {
-        runProcessorTest(sources = sources.toList() + CONTAINER) { invocation ->
+        runKspTest(sources = sources.toList() + CONTAINER) { invocation ->
             val processed =
                 CustomConverterProcessor.findConverters(
                     invocation.context,

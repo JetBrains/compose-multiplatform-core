@@ -16,10 +16,12 @@
 
 package androidx.biometric.internal.viewmodel
 
+import androidx.biometric.AuthenticationRequest
 import androidx.biometric.BiometricPrompt
 import androidx.biometric.internal.data.FakeAuthenticationStateRepository
 import androidx.biometric.internal.data.FakePromptConfigRepository
 import androidx.biometric.utils.BiometricErrorData
+import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
@@ -28,9 +30,8 @@ import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.robolectric.RobolectricTestRunner
 
-@RunWith(RobolectricTestRunner::class)
+@RunWith(AndroidJUnit4::class)
 @OptIn(ExperimentalCoroutinesApi::class)
 class AuthenticationViewModelTest {
     private val promptRepository = FakePromptConfigRepository()
@@ -114,6 +115,22 @@ class AuthenticationViewModelTest {
         }
 
     @Test
+    fun testFallbackOptionPressPending() =
+        runTest(UnconfinedTestDispatcher()) {
+            var actualFallback: AuthenticationRequest.Biometric.Fallback.CustomOption? = null
+            val job = launch {
+                viewModel.isFallbackOptionPressPending.collect { actualFallback = it }
+            }
+
+            val expectedFallback = AuthenticationRequest.Biometric.Fallback.CustomOption("test")
+            authRepository.setFallbackOptionPressPending(expectedFallback)
+            runCurrent()
+
+            assertThat(actualFallback).isEqualTo(expectedFallback)
+            job.cancel()
+        }
+
+    @Test
     fun testMoreOptionsButtonPressPending() =
         runTest(UnconfinedTestDispatcher()) {
             var moreOptionsPressPending = false
@@ -127,4 +144,28 @@ class AuthenticationViewModelTest {
             assertThat(moreOptionsPressPending).isTrue()
             job.cancel()
         }
+
+    @Test
+    fun testGenerateNextHandlerKey() {
+        assertThat(viewModel.generateNextHandlerKey()).isEqualTo(1)
+        assertThat(viewModel.generateNextHandlerKey()).isEqualTo(2)
+    }
+
+    @Test
+    fun testResetHandlerKey() {
+        viewModel.generateNextHandlerKey()
+        viewModel.generateNextHandlerKey()
+
+        viewModel.resetHandlerKey()
+
+        assertThat(viewModel.generateNextHandlerKey()).isEqualTo(1)
+    }
+
+    @Test
+    fun testCurrentAuthenticationKey() {
+        assertThat(viewModel.currentAuthenticationKey).isEqualTo(0)
+
+        viewModel.currentAuthenticationKey = 1
+        assertThat(viewModel.currentAuthenticationKey).isEqualTo(1)
+    }
 }

@@ -16,17 +16,8 @@
 
 package androidx.xr.compose.subspace.layout
 
-import androidx.compose.material3.Button
 import androidx.compose.material3.Text
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
-import androidx.compose.ui.test.onNodeWithTag
-import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -35,9 +26,9 @@ import androidx.xr.compose.subspace.SpatialColumn
 import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.SpatialRow
 import androidx.xr.compose.subspace.node.SubspaceSemanticsInfo
+import androidx.xr.compose.subspace.semantics.testTag
 import androidx.xr.compose.testing.SubspaceTestingActivity
 import androidx.xr.compose.testing.onSubspaceNodeWithTag
-import androidx.xr.compose.testing.setContentWithCompatibilityForXr
 import androidx.xr.compose.unit.DpVolumeSize
 import androidx.xr.compose.unit.Meter.Companion.meters
 import androidx.xr.scenecore.ResizableComponent
@@ -45,7 +36,6 @@ import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -53,13 +43,17 @@ import org.junit.runner.RunWith
 /** Tests for [SubspaceModifier.resizable] modifier. */
 @RunWith(AndroidJUnit4::class)
 class ResizableModifierTest {
+
+    // Migrate to `androidx.compose.ui.test.junit4.v2.createAndroidComposeRule`,
+    // available starting with v1.11.0.
+    // See API docs for details.
+    @Suppress("DEPRECATION")
     @get:Rule
-    val composeTestRule =
-        createAndroidComposeRule<SubspaceTestingActivity>(StandardTestDispatcher())
+    val composeTestRule = createAndroidComposeRule<SubspaceTestingActivity>()
 
     @Test
     fun resizable_noComponentByDefault() {
-        composeTestRule.setContentWithCompatibilityForXr {
+        composeTestRule.setContent {
             Subspace { SpatialPanel(SubspaceModifier.testTag("panel")) { Text(text = "Panel") } }
         }
 
@@ -73,444 +67,84 @@ class ResizableModifierTest {
     }
 
     @Test
-    @Suppress("DEPRECATION")
     fun resizable_componentIsNotNullAndOnlyContainsSingleResizable() {
-        composeTestRule.setContentWithCompatibilityForXr {
+        composeTestRule.setContent {
             Subspace {
-                SpatialPanel(SubspaceModifier.testTag("panel").resizable()) { Text(text = "Panel") }
-            }
-        }
-
-        assertSingleResizableComponentExists()
-    }
-
-    @Test
-    @Suppress("DEPRECATION")
-    fun resizable_modifierIsDisabledAndComponentDoesNotExist() {
-        composeTestRule.setContentWithCompatibilityForXr {
-            Subspace {
-                SpatialPanel(SubspaceModifier.testTag("panel").resizable(enabled = false)) {
+                SpatialPanel(SubspaceModifier.testTag("panel").resizable(onResize = {})) {
                     Text(text = "Panel")
                 }
             }
         }
 
-        assertResizableComponentDoesNotExist()
+        assertSingleResizableComponentExists()
     }
 
     @Test
-    @Suppress("DEPRECATION")
-    fun resizable_modifierDoesNotChangeAndComponentDoesNotUpdate() {
-        composeTestRule.setContentWithCompatibilityForXr {
+    fun resizable_columnEntity_oneComponentWhenResizableIsEnabled() {
+        composeTestRule.setContent {
             Subspace {
-                var panelWidth by remember { mutableStateOf(50.dp) }
-                SpatialPanel(
-                    SubspaceModifier.testTag("panel").width(panelWidth).resizable(enabled = true)
-                ) {
-                    Button(
-                        modifier = Modifier.testTag("button"),
-                        onClick = { panelWidth += 50.dp },
-                    ) {
-                        Text(text = "Click to change width")
-                    }
+                SpatialColumn(SubspaceModifier.testTag("column").resizable(onResize = {})) {
+                    SpatialPanel { Text(text = "Column") }
                 }
             }
         }
-
-        assertSingleResizableComponentExists()
-
-        composeTestRule.onNodeWithTag("button").performClick()
-
-        // After recompose we should continue to have the same component.
-        assertSingleResizableComponentExists()
+        assertResizableComponentDoesExist("column")
     }
 
     @Test
-    @Suppress("DEPRECATION")
-    fun resizable_modifierEnabledToDisabledAndComponentUpdates() {
-        composeTestRule.setContentWithCompatibilityForXr {
+    fun resizable_rowEntity_oneComponentWhenResizableIsEnabled() {
+        composeTestRule.setContent {
             Subspace {
-                var resizableEnabled by remember { mutableStateOf(true) }
-                SpatialPanel(
-                    SubspaceModifier.testTag("panel").resizable(enabled = resizableEnabled)
-                ) {
-                    Button(
-                        modifier = Modifier.testTag("button"),
-                        onClick = { resizableEnabled = !resizableEnabled },
-                    ) {
-                        Text(text = "Click to change resizable")
-                    }
+                SpatialRow(SubspaceModifier.testTag("row").resizable(onResize = {})) {
+                    SpatialPanel { Text(text = "Row") }
                 }
             }
         }
-
-        assertSingleResizableComponentExists()
-
-        composeTestRule.onNodeWithTag("button").performClick()
-
-        // After recompose no Components should exist.
-        assertResizableComponentDoesNotExist()
+        assertResizableComponentDoesExist("row")
     }
 
     @Test
-    @Suppress("DEPRECATION")
-    fun resizable_modifierOnSizeChangeUpdateAndComponentUpdates() {
-        composeTestRule.setContentWithCompatibilityForXr {
-            Subspace {
-                var onSizeReturnValue by remember { mutableStateOf(true) }
-                SpatialPanel(
-                    SubspaceModifier.testTag("panel")
-                        .resizable(enabled = true, onSizeChange = { onSizeReturnValue })
-                ) {
-                    Button(
-                        modifier = Modifier.testTag("button"),
-                        onClick = { onSizeReturnValue = !onSizeReturnValue },
-                    ) {
-                        Text(text = "Click to change onSizeChange")
-                    }
-                }
-            }
-        }
-
-        assertSingleResizableComponentExists()
-
-        composeTestRule.onNodeWithTag("button").performClick()
-
-        // After recompose we should still have one Component.
-        assertSingleResizableComponentExists()
-    }
-
-    @Test
-    @Suppress("DEPRECATION")
-    fun resizable_modifierDisableWithOnSizeChangeUpdateAndComponentRemoved() {
-        composeTestRule.setContentWithCompatibilityForXr {
-            Subspace {
-                var resizableEnabled by remember { mutableStateOf(true) }
-                var onSizeReturnValue by remember { mutableStateOf(true) }
-                SpatialPanel(
-                    SubspaceModifier.testTag("panel")
-                        .resizable(enabled = resizableEnabled, onSizeChange = { onSizeReturnValue })
-                ) {
-                    Button(
-                        modifier = Modifier.testTag("button"),
-                        onClick = {
-                            resizableEnabled = !resizableEnabled
-                            onSizeReturnValue = !onSizeReturnValue
-                        },
-                    ) {
-                        Text(text = "Click to change resizable and onSizeChange")
-                    }
-                }
-            }
-        }
-
-        assertSingleResizableComponentExists()
-
-        composeTestRule.onNodeWithTag("button").performClick()
-
-        // After recompose Component should be removed.
-        assertResizableComponentDoesNotExist()
-    }
-
-    @Test
-    @Suppress("DEPRECATION")
-    fun resizable_modifierEnabledWithOnSizeChangeUpdateAndComponentUpdates() {
-        composeTestRule.setContentWithCompatibilityForXr {
-            Subspace {
-                var resizableEnabled by remember { mutableStateOf(false) }
-                var onSizeReturnValue by remember { mutableStateOf(true) }
-                SpatialPanel(
-                    SubspaceModifier.testTag("panel")
-                        .resizable(enabled = resizableEnabled, onSizeChange = { onSizeReturnValue })
-                ) {
-                    Button(
-                        modifier = Modifier.testTag("button"),
-                        onClick = {
-                            resizableEnabled = !resizableEnabled
-                            onSizeReturnValue = !onSizeReturnValue
-                        },
-                    ) {
-                        Text(text = "Click to change resizable and onSizeChange")
-                    }
-                }
-            }
-        }
-
-        assertResizableComponentDoesNotExist()
-
-        composeTestRule.onNodeWithTag("button").performClick()
-
-        // After recompose Component should exist and be attached.
-        assertSingleResizableComponentExists()
-    }
-
-    @Test
-    @Suppress("DEPRECATION")
-    fun resizable_modifierDisabledThenEnabledAndComponentUpdates() {
-        composeTestRule.setContentWithCompatibilityForXr {
-            Subspace {
-                var resizableEnabled by remember { mutableStateOf(true) }
-                SpatialPanel(
-                    SubspaceModifier.testTag("panel").resizable(enabled = resizableEnabled)
-                ) {
-                    Button(
-                        modifier = Modifier.testTag("button"),
-                        onClick = { resizableEnabled = !resizableEnabled },
-                    ) {
-                        Text(text = "Click to change resizable")
-                    }
-                }
-            }
-        }
-
-        assertSingleResizableComponentExists()
-
-        composeTestRule.onNodeWithTag("button").performClick()
-
-        // After disabled, recompose Component should not exist.
-        assertResizableComponentDoesNotExist()
-
-        composeTestRule.onNodeWithTag("button").performClick()
-
-        // After enabled, recompose Component should be attached.
-        assertSingleResizableComponentExists()
-    }
-
-    @Test
-    @Suppress("DEPRECATION")
-    fun resizable_modifierOnSizeChangeTwiceUpdateAndComponentUpdates() {
-        composeTestRule.setContentWithCompatibilityForXr {
-            Subspace {
-                var onSizeReturnValue by remember { mutableStateOf(true) }
-                SpatialPanel(
-                    SubspaceModifier.testTag("panel")
-                        .resizable(enabled = true, onSizeChange = { onSizeReturnValue })
-                ) {
-                    Button(
-                        modifier = Modifier.testTag("button"),
-                        onClick = { onSizeReturnValue = !onSizeReturnValue },
-                    ) {
-                        Text(text = "Click to change onSizeChange")
-                    }
-                }
-            }
-        }
-
-        assertSingleResizableComponentExists()
-
-        composeTestRule.onNodeWithTag("button").performClick()
-
-        // After recompose should only have one Component.
-        assertSingleResizableComponentExists()
-
-        composeTestRule.onNodeWithTag("button").performClick()
-
-        // After recompose should only have one Component.
-        assertSingleResizableComponentExists()
-    }
-
-    @Test
-    @Suppress("DEPRECATION")
-    fun resizable_modifierDisabledThenEnabledWithOnSizeChangeUpdateAndComponentUpdates() {
-        composeTestRule.setContentWithCompatibilityForXr {
-            Subspace {
-                var resizableEnabled by remember { mutableStateOf(true) }
-                var onSizeReturnValue by remember { mutableStateOf(true) }
-                SpatialPanel(
-                    SubspaceModifier.testTag("panel")
-                        .resizable(enabled = resizableEnabled, onSizeChange = { onSizeReturnValue })
-                ) {
-                    Button(
-                        modifier = Modifier.testTag("button"),
-                        onClick = {
-                            resizableEnabled = !resizableEnabled
-                            onSizeReturnValue = !onSizeReturnValue
-                        },
-                    ) {
-                        Text(text = "Click to change resizable and onSizeChange")
-                    }
-                }
-            }
-        }
-
-        assertSingleResizableComponentExists()
-
-        composeTestRule.onNodeWithTag("button").performClick()
-
-        // After disabled, recompose removes Component.
-        assertResizableComponentDoesNotExist()
-
-        composeTestRule.onNodeWithTag("button").performClick()
-
-        // After enabled, recompose removes Component.
-        assertSingleResizableComponentExists()
-    }
-
-    @Test
-    @Suppress("DEPRECATION")
-    fun resizable_modifierEnabledThenDisabledWithOnSizeChangeUpdateAndComponentUpdates() {
-        composeTestRule.setContentWithCompatibilityForXr {
-            Subspace {
-                var resizableEnabled by remember { mutableStateOf(false) }
-                var onSizeReturnValue by remember { mutableStateOf(true) }
-                SpatialPanel(
-                    SubspaceModifier.testTag("panel")
-                        .resizable(enabled = resizableEnabled, onSizeChange = { onSizeReturnValue })
-                ) {
-                    Button(
-                        modifier = Modifier.testTag("button"),
-                        onClick = {
-                            resizableEnabled = !resizableEnabled
-                            onSizeReturnValue = !onSizeReturnValue
-                        },
-                    ) {
-                        Text(text = "Click to change resizable and onSizeChange")
-                    }
-                }
-            }
-        }
-
-        assertResizableComponentDoesNotExist()
-
-        composeTestRule.onNodeWithTag("button").performClick()
-
-        // After enabled, recompose removes Component.
-        assertSingleResizableComponentExists()
-
-        composeTestRule.onNodeWithTag("button").performClick()
-
-        // After disabled, recompose removes Component.
-        assertResizableComponentDoesNotExist()
-    }
-
-    @Test
-    @Suppress("DEPRECATION")
     fun resizable_modifierMaxSizeIsSet() {
         val maxSize = DpVolumeSize(500.dp, 500.dp, 500.dp)
-        composeTestRule.setContentWithCompatibilityForXr {
+        composeTestRule.setContent {
             Subspace {
-                SpatialPanel(SubspaceModifier.testTag("panel").resizable(maximumSize = maxSize)) {}
+                SpatialPanel(
+                    SubspaceModifier.testTag("panel")
+                        .resizable(maximumSize = maxSize, onResize = {})
+                ) {}
             }
         }
         assertResizableComponentMaxSizeIsSet(size = maxSize)
     }
 
     @Test
-    @Suppress("DEPRECATION")
     fun resizable_modifierMaxSizeIsNotSet() {
-        composeTestRule.setContentWithCompatibilityForXr {
-            Subspace { SpatialPanel(SubspaceModifier.testTag("panel").resizable()) {} }
+        composeTestRule.setContent {
+            Subspace { SpatialPanel(SubspaceModifier.testTag("panel").resizable(onResize = {})) {} }
         }
         assertResizableComponentMaxSizeIsNotSet()
     }
 
     @Test
-    @Suppress("DEPRECATION")
     fun resizable_modifierMinSizeIsSet() {
         val minSize = DpVolumeSize(100.dp, 100.dp, 100.dp)
-        composeTestRule.setContentWithCompatibilityForXr {
+        composeTestRule.setContent {
             Subspace {
-                SpatialPanel(SubspaceModifier.testTag("panel").resizable(minimumSize = minSize)) {}
+                SpatialPanel(
+                    SubspaceModifier.testTag("panel")
+                        .resizable(minimumSize = minSize, onResize = {})
+                ) {}
             }
         }
         assertResizableComponentMinSizeIsSet(size = minSize)
     }
 
     @Test
-    @Suppress("DEPRECATION")
     fun resizable_modifierMinSizeIsNotSet() {
-        composeTestRule.setContentWithCompatibilityForXr {
-            Subspace { SpatialPanel(SubspaceModifier.testTag("panel").resizable()) {} }
+        composeTestRule.setContent {
+            Subspace { SpatialPanel(SubspaceModifier.testTag("panel").resizable(onResize = {})) {} }
         }
         assertResizableComponentMinSizeIsNotSet()
-    }
-
-    @Test
-    @Suppress("DEPRECATION")
-    fun resizable_columnEntity_noComponentByDefault() {
-        composeTestRule.setContentWithCompatibilityForXr {
-            Subspace {
-                SpatialColumn(SubspaceModifier.testTag("column")) {
-                    SpatialPanel { Text(text = "Column") }
-                }
-            }
-        }
-        assertTrue(
-            composeTestRule
-                .onSubspaceNodeWithTag("column")
-                .fetchSemanticsNode()
-                .components
-                .isNullOrEmpty()
-        )
-    }
-
-    @Test
-    @Suppress("DEPRECATION")
-    fun resizable_columnEntity_noComponentWhenResizableIsEnabled() {
-        composeTestRule.setContentWithCompatibilityForXr {
-            Subspace {
-                SpatialColumn(SubspaceModifier.testTag("column").resizable()) {
-                    SpatialPanel { Text(text = "Column") }
-                }
-            }
-        }
-        assertResizableComponentDoesNotExist("column")
-    }
-
-    @Test
-    @Suppress("DEPRECATION")
-    fun resizable_columnEntity_noComponentWhenResizableIsDisabled() {
-        composeTestRule.setContentWithCompatibilityForXr {
-            Subspace {
-                SpatialColumn(SubspaceModifier.testTag("column").resizable(false)) {
-                    SpatialPanel { Text(text = "Column") }
-                }
-            }
-        }
-        assertResizableComponentDoesNotExist("column")
-    }
-
-    @Test
-    @Suppress("DEPRECATION")
-    fun resizable_rowEntity_noComponentByDefault() {
-        composeTestRule.setContentWithCompatibilityForXr {
-            Subspace {
-                SpatialRow(SubspaceModifier.testTag("row")) { SpatialPanel { Text(text = "Row") } }
-            }
-        }
-        assertTrue(
-            composeTestRule
-                .onSubspaceNodeWithTag("row")
-                .fetchSemanticsNode()
-                .components
-                .isNullOrEmpty()
-        )
-    }
-
-    @Test
-    @Suppress("DEPRECATION")
-    fun resizable_rowEntity_noComponentWhenResizableIsEnabled() {
-        composeTestRule.setContentWithCompatibilityForXr {
-            Subspace {
-                SpatialRow(SubspaceModifier.testTag("row").resizable()) {
-                    SpatialPanel { Text(text = "Row") }
-                }
-            }
-        }
-        assertResizableComponentDoesNotExist("row")
-    }
-
-    @Test
-    @Suppress("DEPRECATION")
-    fun resizable_rowEntity_noComponentWhenResizableIsDisabled() {
-        composeTestRule.setContentWithCompatibilityForXr {
-            Subspace {
-                SpatialRow(SubspaceModifier.testTag("row").resizable(false)) {
-                    SpatialPanel { Text(text = "Row") }
-                }
-            }
-        }
-        assertResizableComponentDoesNotExist("row")
     }
 
     private fun assertSingleResizableComponentExists(testTag: String = "panel") {
@@ -526,6 +160,13 @@ class ResizableModifierTest {
             composeTestRule.onSubspaceNodeWithTag(testTag).fetchSemanticsNode().components
         assertNotNull(components)
         assertEquals(0, components.size)
+    }
+
+    private fun assertResizableComponentDoesExist(testTag: String = "panel") {
+        val components =
+            composeTestRule.onSubspaceNodeWithTag(testTag).fetchSemanticsNode().components
+        assertNotNull(components)
+        assertEquals(1, components.size)
     }
 
     private fun assertResizableComponentMaxSizeIsSet(

@@ -215,6 +215,32 @@ public fun <K, V> mutableScatterMapOf(): MutableScatterMap<K, V> = MutableScatte
 public fun <K, V> mutableScatterMapOf(vararg pairs: Pair<K, V>): MutableScatterMap<K, V> =
     MutableScatterMap<K, V>(pairs.size).apply { putAll(pairs) }
 
+/** Returns a new read-only [ScatterMap] with the specified mappings. */
+public fun <K, V> Map<K, V>.toScatterMap(): ScatterMap<K, V> =
+    if (isEmpty()) emptyScatterMap() else toMutableScatterMap()
+
+/**
+ * Returns a new [MutableScatterMap] with the specified mappings.
+ *
+ * The [MutableScatterMap] is created with an initial capacity sufficient to hold the mappings in
+ * the specified [Map].
+ */
+public fun <K, V> Map<K, V>.toMutableScatterMap(): MutableScatterMap<K, V> =
+    MutableScatterMap<K, V>(size).also { it.putAll(this) }
+
+/** Returns a new read-only [ScatterMap] with the specified mappings. */
+public fun <K, V> ScatterMap<K, V>.toScatterMap(): ScatterMap<K, V> =
+    if (isEmpty()) emptyScatterMap() else toMutableScatterMap()
+
+/**
+ * Returns a new [MutableScatterMap] with the specified mappings.
+ *
+ * The [MutableScatterMap] is created with an initial capacity sufficient to hold the mappings in
+ * the specified [ScatterMap].
+ */
+public fun <K, V> ScatterMap<K, V>.toMutableScatterMap(): MutableScatterMap<K, V> =
+    MutableScatterMap<K, V>(size).also { it.putAll(this) }
+
 /**
  * [ScatterMap] is a container with a [Map]-like interface based on a flat hash table implementation
  * (the key/value mappings are not stored by nodes but directly into arrays). The underlying

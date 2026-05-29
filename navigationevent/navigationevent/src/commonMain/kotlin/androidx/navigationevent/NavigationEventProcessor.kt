@@ -16,6 +16,7 @@
 
 package androidx.navigationevent
 
+import androidx.collection.mutableOrderedScatterSetOf
 import androidx.navigationevent.NavigationEventDispatcher.Companion.PRIORITY_DEFAULT
 import androidx.navigationevent.NavigationEventDispatcher.Companion.PRIORITY_OVERLAY
 import androidx.navigationevent.NavigationEventDispatcher.Priority
@@ -132,7 +133,7 @@ internal class NavigationEventProcessor {
      * These are typically treated as the lowest priority level, processed only after
      * [defaultInputs] and [overlayInputs].
      */
-    private val unspecifiedInputs = mutableSetOf<NavigationEventInput>()
+    private val unspecifiedInputs = mutableOrderedScatterSetOf<NavigationEventInput>()
 
     /**
      * Holds inputs registered with the [PRIORITY_DEFAULT] priority.
@@ -140,7 +141,7 @@ internal class NavigationEventProcessor {
      * This level is for primary UI content and is processed before [unspecifiedInputs] but after
      * [overlayInputs].
      */
-    private val defaultInputs = mutableSetOf<NavigationEventInput>()
+    private val defaultInputs = mutableOrderedScatterSetOf<NavigationEventInput>()
 
     /**
      * Holds inputs registered with the [PRIORITY_OVERLAY] priority.
@@ -148,7 +149,7 @@ internal class NavigationEventProcessor {
      * This is the highest priority level, intended for UI elements like dialogs or bottom sheets
      * that appear on top of other content.
      */
-    private val overlayInputs = mutableSetOf<NavigationEventInput>()
+    private val overlayInputs = mutableOrderedScatterSetOf<NavigationEventInput>()
 
     /** Whether at least one handler with [PRIORITY_DEFAULT] is enabled. */
     private var hasEnabledDefaultHandlers = false
@@ -180,19 +181,19 @@ internal class NavigationEventProcessor {
 
         // 2) Notify only when a priority’s state actually changed.
         if (overlayEnabledChanged) {
-            for (input in overlayInputs) {
+            overlayInputs.forEach { input ->
                 input.doOnHasEnabledHandlersChanged(hasEnabledHandlers = newOverlayEnabled)
             }
         }
 
         if (defaultEnabledChanged) {
-            for (input in defaultInputs) {
+            defaultInputs.forEach { input ->
                 input.doOnHasEnabledHandlersChanged(hasEnabledHandlers = newDefaultEnabled)
             }
         }
 
         if (anyEnabledChanged) {
-            for (input in unspecifiedInputs) {
+            unspecifiedInputs.forEach { input ->
                 input.doOnHasEnabledHandlersChanged(hasEnabledHandlers = newAnyEnabled)
             }
         }
@@ -250,15 +251,9 @@ internal class NavigationEventProcessor {
         // Notify inputs directly for immediate, synchronous updates. This avoids
         // delays from the coroutine dispatcher, ensuring that consumers can react
         // to the state change within the same frame.
-        for (input in overlayInputs) {
-            input.doOnHistoryChanged(newHistory)
-        }
-        for (input in defaultInputs) {
-            input.doOnHistoryChanged(newHistory)
-        }
-        for (input in unspecifiedInputs) {
-            input.doOnHistoryChanged(newHistory)
-        }
+        overlayInputs.forEach { input -> input.doOnHistoryChanged(newHistory) }
+        defaultInputs.forEach { input -> input.doOnHistoryChanged(newHistory) }
+        unspecifiedInputs.forEach { input -> input.doOnHistoryChanged(newHistory) }
     }
 
     /** [NavigationEventDispatcher.addHandler] */
@@ -319,10 +314,6 @@ internal class NavigationEventProcessor {
         input: NavigationEventInput,
         priority: Int,
     ) {
-        require(input.dispatcher == null) {
-            "Input '$input' is already added to dispatcher ${input.dispatcher}."
-        }
-
         val inputs =
             when (priority) {
                 PRIORITY_OVERLAY -> overlayInputs
@@ -331,7 +322,6 @@ internal class NavigationEventProcessor {
             }
         inputs += input
 
-        input.dispatcher = dispatcher
         input.doOnAdded(dispatcher)
 
         // Input must get 'history' immediately to avoid missing initial state.
@@ -354,7 +344,6 @@ internal class NavigationEventProcessor {
         overlayInputs.remove(input)
         defaultInputs.remove(input)
         unspecifiedInputs.remove(input)
-        input.dispatcher = null
         input.doOnRemoved()
     }
 
@@ -454,16 +443,18 @@ internal class NavigationEventProcessor {
      *
      * Fallbacks:
      * - For [TRANSITIONING_BACK], invoke [onBackCompletedFallback] if no handler is resolved.
-     * - For [TRANSITIONING_FORWARD], no fallback is invoked.
+     * - For [TRANSITIONING_FORWARD], invoke [onForwardCompletedFallback] if no handler is resolved.
      *
      * @param input The [NavigationEventInput] that sourced this event.
      * @param direction The direction of the navigation event.
      * @param onBackCompletedFallback Action to invoke if no back handler completes the event.
+     * @param onForwardCompletedFallback Action to invoke if no forward handler completes the event.
      */
     fun dispatchOnCompleted(
         input: NavigationEventInput,
         @Direction direction: Int,
         onBackCompletedFallback: OnBackCompletedFallback?,
+        onForwardCompletedFallback: OnForwardCompletedFallback?,
     ) {
         if (input != inProgressInput || direction != inProgressDirection) {
             return
@@ -481,13 +472,18 @@ internal class NavigationEventProcessor {
         when (direction) {
             TRANSITIONING_BACK -> {
                 if (handler == null) {
-                    // No handler: only back events have a fallback to invoke.
                     onBackCompletedFallback?.onBackCompletedFallback()
                 } else {
                     handler.doOnBackCompleted()
                 }
             }
-            TRANSITIONING_FORWARD -> handler?.doOnForwardCompleted()
+            TRANSITIONING_FORWARD -> {
+                if (handler == null) {
+                    onForwardCompletedFallback?.onForwardCompletedFallback()
+                } else {
+                    handler.doOnForwardCompleted()
+                }
+            }
             TRANSITIONING_UNKNOWN -> {}
         }
 

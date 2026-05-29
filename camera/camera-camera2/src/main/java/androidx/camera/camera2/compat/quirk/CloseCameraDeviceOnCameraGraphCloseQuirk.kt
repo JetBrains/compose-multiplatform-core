@@ -19,6 +19,7 @@ package androidx.camera.camera2.compat.quirk
 import android.annotation.SuppressLint
 import android.os.Build
 import androidx.camera.camera2.compat.quirk.Device.isSamsungDevice
+import androidx.camera.camera2.compat.quirk.Device.isSonyDevice
 import androidx.camera.camera2.compat.quirk.Device.isXiaomiDevice
 import androidx.camera.core.impl.Quirk
 
@@ -80,6 +81,8 @@ public class CloseCameraDeviceOnCameraGraphCloseQuirk : Quirk {
                 // When Extensions is enabled, there might be some timing issue to cause the
                 // BindUnbindUseCasesStressTest to run fail easily. Applying this quirk will fix it.
                 return true
+            } else if (isSonyProblematicDevice) {
+                return true
             }
             return false
         }
@@ -90,6 +93,15 @@ public class CloseCameraDeviceOnCameraGraphCloseQuirk : Quirk {
         // Xiaomi 14 Ultra and Xiaomi 14 to apply the quirk when Extensions is enabled.
         private val isXiaomiProblematicDevice: Boolean =
             isXiaomiDevice() && arrayOf("aurora", "houji").contains(Build.DEVICE.lowercase())
+
+        private val isSonyProblematicDevice: Boolean =
+            isSonyDevice() &&
+                listOf(
+                        "XQ-DQ", // Sony Xperia 1 V (XQ-DQ72, XQ-DQ54 etc.), ref: b/445897456
+                        "SO", // Sony Xperia 1 V (SO-51D, SOG10), ref: b/445897456
+                        "A301SO", // Sony Xperia 1 V, ref: b/445897456
+                    )
+                    .any { Build.DEVICE.startsWith(it, ignoreCase = true) }
 
         // Samsung API 31 ~ 34 devices to apply the quirk when Extensions is enabled.
         private val isSamsungProblematicDevice: Boolean =

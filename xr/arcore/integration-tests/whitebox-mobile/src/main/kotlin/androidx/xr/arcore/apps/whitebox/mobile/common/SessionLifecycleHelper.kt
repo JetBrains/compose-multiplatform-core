@@ -25,12 +25,16 @@ import androidx.activity.ComponentActivity
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.xr.runtime.Config
+import androidx.xr.runtime.GeospatialMode
+import androidx.xr.runtime.PlaneTrackingMode
 import androidx.xr.runtime.Session
-import androidx.xr.runtime.SessionConfigureGooglePlayServicesLocationLibraryNotLinked
+import androidx.xr.runtime.SessionConfigureLibraryNotLinked
 import androidx.xr.runtime.SessionConfigureSuccess
 import androidx.xr.runtime.SessionCreateApkRequired
 import androidx.xr.runtime.SessionCreateResult
 import androidx.xr.runtime.SessionCreateSuccess
+import androidx.xr.runtime.SessionCreateTimedOut
+import androidx.xr.runtime.SessionCreateUnknownError
 import androidx.xr.runtime.SessionCreateUnsupportedDevice
 
 /**
@@ -39,7 +43,7 @@ import androidx.xr.runtime.SessionCreateUnsupportedDevice
  */
 class SessionLifecycleHelper(
     val activity: ComponentActivity,
-    val config: Config = Config(),
+    val config: Config = Config.Builder().build(),
     val onSessionAvailable: (Session) -> Unit = {},
     val onSessionCreateActionRequired: (SessionCreateResult) -> Unit = {},
 ) {
@@ -74,10 +78,10 @@ class SessionLifecycleHelper(
 
     private fun getRequiredPermissions(config: Config): List<String> {
         val permissions = mutableListOf(CAMERA)
-        if (config.planeTracking != Config.PlaneTrackingMode.DISABLED) {
+        if (config.planeTracking != PlaneTrackingMode.DISABLED) {
             permissions.add(ACCESS_COARSE_LOCATION)
         }
-        if (config.geospatial != Config.GeospatialMode.DISABLED) {
+        if (config.geospatial != GeospatialMode.DISABLED) {
             permissions.add(ACCESS_FINE_LOCATION)
         }
         return permissions
@@ -85,15 +89,15 @@ class SessionLifecycleHelper(
 
     internal fun tryCreateSession() {
         try {
-            when (val result = Session.create(activity)) {
+            when (val result = Session.create(context = activity)) {
                 is SessionCreateSuccess -> {
                     session = result.session
                     try {
                         when (val configResult = session.configure(config)) {
-                            is SessionConfigureGooglePlayServicesLocationLibraryNotLinked -> {
+                            is SessionConfigureLibraryNotLinked -> {
                                 Log.e(
-                                    TAG,
-                                    "Google Play Services Location Library is not linked, this should not happen.",
+                                    "JetpackXR",
+                                    "Library \"${configResult.libraryName}\" not linked.",
                                 )
                             }
 
@@ -122,6 +126,18 @@ class SessionLifecycleHelper(
                     showErrorMessage("Session could not be created, device is Unsupported.")
                     activity.finish()
                 }
+                is SessionCreateTimedOut -> {
+                    showErrorMessage("Time out")
+                    activity.finish()
+                }
+                is SessionCreateUnknownError -> {
+                    showErrorMessage(result.errorMessage)
+                    activity.finish()
+                }
+                else -> {
+                    showErrorMessage("Unexpected ${result::class.simpleName}")
+                    activity.finish()
+                }
             }
         } catch (e: SecurityException) {
             requestPermissionLauncher.launch(getRequiredPermissions(config).toTypedArray())
@@ -133,7 +149,7 @@ class SessionLifecycleHelper(
     }
 
     private fun <F> showErrorMessage(error: F) {
-        Log.e(TAG, error.toString())
+        Log.e("JetpackXR", error.toString())
         Toast.makeText(activity, error.toString(), Toast.LENGTH_LONG).show()
     }
 }

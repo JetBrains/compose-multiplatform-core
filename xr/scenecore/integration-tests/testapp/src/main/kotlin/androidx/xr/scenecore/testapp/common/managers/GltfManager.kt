@@ -24,9 +24,9 @@ import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.GltfModel
 import androidx.xr.scenecore.GltfModelEntity
+import androidx.xr.scenecore.scene
 import androidx.xr.scenecore.testapp.R
 import java.nio.file.Paths
-import kotlin.text.clear
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 
@@ -105,6 +105,7 @@ class GltfManager(
                         mGltfModel!!,
                         // Offset each new entity
                         Pose(Vector3.Forward * 3f + Vector3.Right * entityNumber.toFloat() * 1.5f),
+                        parent = session.scene.activitySpace,
                     )
                 for (callback in onEntityChangedCallbacks) callback(newEntity)
                 gltfModelEntities.add(newEntity)
@@ -116,7 +117,8 @@ class GltfManager(
         for (i in 1..entitiesPerClick) {
             if (gltfModelEntities.isNotEmpty()) {
                 val lastEntity = gltfModelEntities.removeAt(gltfModelEntities.lastIndex)
-                lastEntity.dispose()
+                lastEntity.removeAllComponents()
+                lastEntity.parent = null
             }
         }
     }
@@ -133,11 +135,21 @@ class GltfManager(
             createGltfEntityButton.text =
                 if (currentCount == maxEntities) "Create Gltf Entity"
                 else
-                    "Create Gltf Entity #${currentCount + 1}-#${minOf(currentCount + entitiesPerClick, maxEntities)}"
+                    "Create Gltf Entity #${currentCount + 1}-#${
+                        minOf(
+                            currentCount + entitiesPerClick,
+                            maxEntities,
+                        )
+                    }"
             destroyGltfEntityButton.text =
                 if (currentCount == 0) "Destroy Gltf Entity"
                 else
-                    "Destroy Gltf Entity #${currentCount}-#${maxOf(currentCount - entitiesPerClick, 1)}"
+                    "Destroy Gltf Entity #${currentCount}-#${
+                        maxOf(
+                            currentCount - entitiesPerClick,
+                            1,
+                        )
+                    }"
         }
     }
 

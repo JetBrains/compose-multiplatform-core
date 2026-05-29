@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<issues format="6" by="lint 8.13.0-alpha01" type="baseline" client="gradle" dependencies="false" name="AGP (8.13.0-alpha01)" variant="all" version="8.13.0-alpha01">
+<issues format="6" by="lint 9.2.0-alpha07" type="baseline" client="gradle" dependencies="false" name="AGP (9.2.0-alpha07)" variant="all" version="9.2.0-alpha07">
 
     <issue
         id="ComposableNaming"
@@ -7,7 +7,7 @@
         errorLine1="    private fun withLifecycleOwner("
         errorLine2="                ~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/androidInstrumentedTest/kotlin/androidx/lifecycle/compose/CollectAsStateWithLifecycleTests.kt"/>
+            file="src/androidDeviceTest/kotlin/androidx/lifecycle/compose/CollectAsStateWithLifecycleTests.kt"/>
     </issue>
 
 </issues>

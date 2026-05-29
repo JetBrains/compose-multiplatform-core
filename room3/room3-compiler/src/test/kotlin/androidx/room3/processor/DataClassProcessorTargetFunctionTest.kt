@@ -19,7 +19,7 @@ package androidx.room3.processor
 import androidx.room3.compiler.codegen.XClassName
 import androidx.room3.compiler.processing.util.Source
 import androidx.room3.compiler.processing.util.XTestInvocation
-import androidx.room3.compiler.processing.util.runProcessorTest
+import androidx.room3.compiler.processing.util.runKspTest
 import androidx.room3.testing.context
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -436,7 +436,7 @@ class DataClassProcessorTargetFunctionTest {
                 @PrimaryKey
                 abstract long getId();
                 @AutoValue.CopyAnnotations
-                @Relation(parentColumn = "id", entityColumn = "parentId")
+                @Relation(parentColumns = {"id"}, entityColumns = {"parentId"})
                 abstract List<RelationDataClass> getRelations();
                 static MyDataClass create(long id, List<RelationDataClass> relations) {
                     return new AutoValue_MyDataClass(id, relations);
@@ -445,7 +445,7 @@ class DataClassProcessorTargetFunctionTest {
             """
                 @PrimaryKey
                 private final long id;
-                @Relation(parentColumn = "id", entityColumn = "parentId")
+                @Relation(parentColumns = {"id"}, entityColumns = {"parentId"})
                 private final List<RelationDataClass> relations;
                 AutoValue_MyDataClass(long id, List<RelationDataClass> relations) {
                     this.id = id;
@@ -453,7 +453,7 @@ class DataClassProcessorTargetFunctionTest {
                 }
                 @PrimaryKey
                 long getId() { return this.id; }
-                @Relation(parentColumn = "id", entityColumn = "parentId")
+                @Relation(parentColumns = {"id"}, entityColumns = {"parentId"})
                 List<RelationDataClass> getRelations() { return this.relations; }
                 """,
             Source.java("foo.bar.RelationDataClass", embeddedDataClass),
@@ -461,7 +461,7 @@ class DataClassProcessorTargetFunctionTest {
     }
 
     private fun singleRun(vararg sources: Source, handler: ((XTestInvocation) -> Unit)? = null) {
-        runProcessorTest(sources = sources.toList()) { invocation ->
+        runKspTest(sources = sources.toList()) { invocation ->
             DataClassProcessor.createFor(
                     context = invocation.context,
                     element = invocation.processingEnv.requireTypeElement(MY_DATA_CLASS),
@@ -507,7 +507,7 @@ class DataClassProcessorTargetFunctionTest {
         val autoValueDataClassSource =
             Source.java(AUTOVALUE_MY_DATA_CLASS.canonicalName, autoValueDataClassCode)
         val all = sources.toList() + dataClassSource + autoValueDataClassSource
-        return runProcessorTest(sources = all) { invocation ->
+        return runKspTest(sources = all) { invocation ->
             DataClassProcessor.createFor(
                     context = invocation.context,
                     element = invocation.processingEnv.requireTypeElement(MY_DATA_CLASS),

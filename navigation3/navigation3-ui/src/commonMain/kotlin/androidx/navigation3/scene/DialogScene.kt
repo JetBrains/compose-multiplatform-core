@@ -17,9 +17,15 @@
 package androidx.navigation3.scene
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.rememberLifecycleOwner
 import androidx.navigation3.runtime.NavEntry
+import androidx.navigation3.runtime.NavMetadataKey
+import androidx.navigation3.runtime.get
+import androidx.navigation3.runtime.metadata
 
 /** An [OverlayScene] that renders an [entry] within a [Dialog]. */
 internal class DialogScene<T : Any>(
@@ -34,7 +40,12 @@ internal class DialogScene<T : Any>(
     override val entries: List<NavEntry<T>> = listOf(entry)
 
     override val content: @Composable (() -> Unit) = {
-        Dialog(onDismissRequest = onBack, properties = dialogProperties) { entry.Content() }
+        val lifecycleOwner = rememberLifecycleOwner()
+        Dialog(onDismissRequest = onBack, properties = dialogProperties) {
+            CompositionLocalProvider(LocalLifecycleOwner provides lifecycleOwner) {
+                entry.Content()
+            }
+        }
     }
 
     override fun equals(other: Any?): Boolean {
@@ -70,10 +81,12 @@ internal class DialogScene<T : Any>(
  * This strategy should always be added before any non-overlay scene strategies.
  */
 public class DialogSceneStrategy<T : Any>() : SceneStrategy<T> {
-    @Composable
-    public override fun calculateScene(entries: List<NavEntry<T>>, onBack: () -> Unit): Scene<T>? {
+
+    public override fun SceneStrategyScope<T>.calculateScene(
+        entries: List<NavEntry<T>>
+    ): Scene<T>? {
         val lastEntry = entries.lastOrNull()
-        val dialogProperties = lastEntry?.metadata?.get(DIALOG_KEY) as? DialogProperties
+        val dialogProperties = lastEntry?.metadata?.get(DialogKey)
         return dialogProperties?.let { properties ->
             DialogScene(
                 key = lastEntry.contentKey,
@@ -88,6 +101,14 @@ public class DialogSceneStrategy<T : Any>() : SceneStrategy<T> {
 
     public companion object {
         /**
+         * The key for [NavEntry.metadata] or [Scene.metadata] to indicate that an entry should be
+         * displayed within a [Dialog].
+         *
+         * @sample androidx.navigation3.ui.samples.DialogSample
+         */
+        public object DialogKey : NavMetadataKey<DialogProperties>
+
+        /**
          * Function to be called on the [NavEntry.metadata] to mark this entry as something that
          * should be displayed within a [Dialog].
          *
@@ -95,8 +116,6 @@ public class DialogSceneStrategy<T : Any>() : SceneStrategy<T> {
          */
         public fun dialog(
             dialogProperties: DialogProperties = DialogProperties()
-        ): Map<String, Any> = mapOf(DIALOG_KEY to dialogProperties)
-
-        internal const val DIALOG_KEY = "dialog"
+        ): Map<String, Any> = metadata { put(DialogKey, dialogProperties) }
     }
 }

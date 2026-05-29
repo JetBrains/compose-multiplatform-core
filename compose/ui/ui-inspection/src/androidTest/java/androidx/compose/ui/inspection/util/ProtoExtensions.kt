@@ -171,6 +171,7 @@ internal fun GetComposablesCommand(
     skipSystemComposables: Boolean = true,
     generation: Int = 1,
     extractAllParameters: Boolean = false,
+    allowEmptyIfUnchanged: Boolean = false,
 ): Command =
     Command.newBuilder()
         .apply {
@@ -181,6 +182,7 @@ internal fun GetComposablesCommand(
                         this.skipSystemComposables = skipSystemComposables
                         this.generation = generation
                         this.extractAllParameters = extractAllParameters
+                        this.allowEmptyIfUnchanged = allowEmptyIfUnchanged
                     }
                     .setRootViewId(rootViewId)
                     .setSkipSystemComposables(skipSystemComposables)
@@ -248,7 +250,8 @@ internal fun GetUpdateSettingsCommand(
     reduceChildNesting: Boolean = false,
     stateReadKind: StateReadSettings.Kind = StateReadSettings.Kind.NONE,
     composableToObserve: List<Int> = emptyList(),
-    maxRecompositions: Int = 0,
+    includeParameterChanges: Boolean = false,
+    maxStateReads: Int = 0,
 ): Command =
     Command.newBuilder()
         .apply {
@@ -267,7 +270,9 @@ internal fun GetUpdateSettingsCommand(
                                             all =
                                                 StateReadSettings.All.newBuilder()
                                                     .apply {
-                                                        this.maxRecompositions = maxRecompositions
+                                                        this.maxStateReads = maxStateReads
+                                                        this.includeParameterChanges =
+                                                            includeParameterChanges
                                                     }
                                                     .build()
                                         StateReadSettings.Kind.BY_ID ->
@@ -277,7 +282,9 @@ internal fun GetUpdateSettingsCommand(
                                                         addAllComposableToObserve(
                                                             composableToObserve
                                                         )
-                                                        this.maxRecompositions = maxRecompositions
+                                                        this.maxStateReads = maxStateReads
+                                                        this.includeParameterChanges =
+                                                            includeParameterChanges
                                                     }
                                                     .build()
                                         else -> none = StateReadSettings.None.getDefaultInstance()
@@ -289,14 +296,21 @@ internal fun GetUpdateSettingsCommand(
         }
         .build()
 
-internal fun GetRecompositionStateReadCommand(anchorHash: Int, recomposition: Int = 0): Command =
+internal fun GetRecompositionStateReadCommand(
+    anchorHash: Int,
+    recompositionNumberStart: Int,
+    recompositionNumberEnd: Int,
+    includeExtra: Boolean,
+): Command =
     Command.newBuilder()
         .apply {
             getRecompositionStateReadCommand =
                 GetRecompositionStateReadCommand.newBuilder()
                     .apply {
                         this.anchorHash = anchorHash
-                        this.recompositionNumber = recomposition
+                        this.recompositionNumberStart = recompositionNumberStart
+                        this.recompositionNumberEnd = recompositionNumberEnd
+                        this.includeExtra = includeExtra
                     }
                     .build()
         }

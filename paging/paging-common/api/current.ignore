@@ -47,8 +47,6 @@ RemovedFromKotlin: androidx.paging.ItemSnapshotList#getPlaceholdersAfter():
     Source breaking change: method androidx.paging.ItemSnapshotList.getPlaceholdersAfter() can no longer be resolved from Kotlin source
 RemovedFromKotlin: androidx.paging.ItemSnapshotList#getPlaceholdersBefore():
     Source breaking change: method androidx.paging.ItemSnapshotList.getPlaceholdersBefore() can no longer be resolved from Kotlin source
-RemovedFromKotlin: androidx.paging.ItemSnapshotList#getSize():
-    Source breaking change: method androidx.paging.ItemSnapshotList.getSize() can no longer be resolved from Kotlin source
 RemovedFromKotlin: androidx.paging.LoadState#getEndOfPaginationReached():
     Source breaking change: method androidx.paging.LoadState.getEndOfPaginationReached() can no longer be resolved from Kotlin source
 RemovedFromKotlin: androidx.paging.LoadState.Error#getError():
@@ -79,10 +77,6 @@ RemovedFromKotlin: androidx.paging.PagedList#isDetached():
     Source breaking change: method androidx.paging.PagedList.isDetached() can no longer be resolved from Kotlin source
 RemovedFromKotlin: androidx.paging.PagedList#isImmutable():
     Source breaking change: method androidx.paging.PagedList.isImmutable() can no longer be resolved from Kotlin source
-RemovedFromKotlin: androidx.paging.PagedList#remove(int):
-    Source breaking change: method androidx.paging.PagedList.remove(int) can no longer be resolved from Kotlin source
-RemovedFromKotlin: androidx.paging.PagedList#size():
-    Source breaking change: method androidx.paging.PagedList.size() can no longer be resolved from Kotlin source
 RemovedFromKotlin: androidx.paging.Pager#getFlow():
     Source breaking change: method androidx.paging.Pager.getFlow() can no longer be resolved from Kotlin source
 RemovedFromKotlin: androidx.paging.PagingDataEvent.Append#getInserted():

@@ -14,17 +14,31 @@
  * limitations under the License.
  */
 
+@file:Suppress("DEPRECATION")
+
 package androidx.xr.scenecore.testing
 
 import androidx.annotation.RestrictTo
+import androidx.xr.scenecore.runtime.InputEvent
+import androidx.xr.scenecore.runtime.InputEventListener
 import androidx.xr.scenecore.runtime.PointerCaptureComponent
 import androidx.xr.scenecore.runtime.PointerCaptureComponent.PointerCaptureState
 import androidx.xr.scenecore.runtime.PointerCaptureComponent.StateListener
+import androidx.xr.scenecore.testing.internal.FakePointerCaptureComponent as InternalFakePointerCaptureComponent
 import java.util.concurrent.Executor
 
 /** Test-only implementation of [FakePointerCaptureComponent] */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public class FakePointerCaptureComponent(
+@Deprecated("Use SceneCoreTestRule instead.")
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public class FakePointerCaptureComponent
+internal constructor(internal val fakeInternal: InternalFakePointerCaptureComponent) :
+    FakeComponent(), PointerCaptureComponent {
+
+    public constructor(
+        executor: Executor? = null,
+        stateListener: StateListener? = null,
+    ) : this(InternalFakePointerCaptureComponent(executor, stateListener))
+
     /**
      * The executor on which to invoke the
      * [androidx.xr.scenecore.runtime.PointerCaptureComponent.StateListener] callbacks.
@@ -33,7 +47,9 @@ public class FakePointerCaptureComponent(
      * callbacks will be invoked synchronously on the thread that calls [onStateChanged]. This can
      * be set in tests to simulate different threading behaviors.
      */
-    internal val executor: Executor? = null,
+    internal val executor: Executor?
+        get() = fakeInternal.executor
+
     /**
      * The [androidx.xr.scenecore.runtime.PointerCaptureComponent.StateListener] that receives
      * callbacks upon a simulated pointer capture state change.
@@ -42,8 +58,19 @@ public class FakePointerCaptureComponent(
      * [onStateChanged] function, are dispatched correctly. If this is null, calls to
      * [onStateChanged] will be ignored.
      */
-    internal val stateListener: StateListener? = null,
-) : FakeComponent(), PointerCaptureComponent {
+    internal val stateListener: StateListener?
+        get() = fakeInternal.stateListener
+
+    /**
+     * This property reflects the `inputListener` parameter that was passed to the runtime's factory
+     * method [FakeSceneRuntime.createPointerCaptureComponent]. Tests can inspect this value to
+     * verify that the component was created with the correct configuration.
+     */
+    public var inputListener: InputEventListener?
+        get() = fakeInternal.inputListener
+        internal set(value) {
+            fakeInternal.inputListener = value
+        }
 
     /**
      * Simulates a pointer capture state change event, invoking the registered [stateListener].
@@ -56,11 +83,20 @@ public class FakePointerCaptureComponent(
      *   [androidx.xr.scenecore.runtime.PointerCaptureComponent.PointerCaptureState] to propagate to
      *   the listener.
      */
-    internal fun onStateChanged(@PointerCaptureState newState: Int) {
-        if (stateListener != null) {
-            executor?.let { currentExecutor ->
-                currentExecutor.execute { stateListener.onStateChanged(newState) }
-            } ?: run { stateListener!!.onStateChanged(newState) }
-        }
+    public fun onStateChanged(@PointerCaptureState newState: Int) {
+        fakeInternal.onStateChanged(newState)
+    }
+
+    /**
+     * Simulates an input event from the runtime, invoking the registered [inputListener]
+     *
+     * This function is intended for testing purposes to allow manual triggering of the update
+     * mechanism. It respects the provided [executor], dispatching the callback to it if non-null,
+     * or invoking it synchronously otherwise.
+     *
+     * @param event The new [InputEvent] to be sent in the simulated event.
+     */
+    public fun onInputEvent(event: InputEvent) {
+        fakeInternal.onInputEvent(event)
     }
 }

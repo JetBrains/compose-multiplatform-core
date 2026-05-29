@@ -13,36 +13,52 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@file:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 
 package androidx.compose.remote.creation.compose.action
 
 import android.app.PendingIntent
+import android.content.Context
 import androidx.annotation.RestrictTo
 import androidx.compose.remote.core.operations.Utils
-import androidx.compose.remote.creation.compose.capture.LocalRemoteComposeCreationState
-import androidx.compose.remote.creation.compose.capture.PendingIntentAwareWriter
-import androidx.compose.remote.creation.compose.capture.RemoteComposeCreationState
+import androidx.compose.remote.creation.actions.Action as CreationAction
+import androidx.compose.remote.creation.actions.HostAction as CreationHostAction
+import androidx.compose.remote.creation.compose.capture.WriterEvents
+import androidx.compose.remote.creation.compose.state.RemoteStateScope
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalInspectionMode
 
-/** Create a [PendingIntentAction] to send the [PendingIntent] when invoked. */
+/**
+ * Creates an [Action] that triggers a [PendingIntent].
+ *
+ * @param pendingIntent A lambda that returns the [PendingIntent] to trigger. The [Context] is
+ *   provided to the lambda to ensure it's available during serialization.
+ */
 @Composable
-public fun pendingIntentAction(pendingIntent: PendingIntent): PendingIntentAction =
-    PendingIntentAction(LocalRemoteComposeCreationState.current, pendingIntent)
+public fun pendingIntentAction(pendingIntent: (Context) -> PendingIntent): Action {
+    if (LocalInspectionMode.current) {
+        // Use the dedicated empty action for IDE previews as a safe no-op.
+        return Action.Empty
+    }
+
+    // Using a lambda defers PendingIntent access until serialization, preventing potential
+    // crashes in environments like IDE previews where PendingIntent might not be available.
+    val context = LocalContext.current
+    return remember(context, pendingIntent) { PendingIntentAction { pendingIntent(context) } }
+}
 
 /** Send the [PendingIntent] when invoked. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public class PendingIntentAction(
-    public val remoteComposeCreationState: RemoteComposeCreationState,
-    public val pendingIntent: PendingIntent,
-) : Action {
+internal class PendingIntentAction(public val pendingIntent: () -> PendingIntent) : RemoteAction() {
 
-    override fun toRemoteAction(): androidx.compose.remote.creation.actions.Action {
-        val writer = remoteComposeCreationState.document
-        if (writer is PendingIntentAwareWriter) {
-            val index = writer.storePendingIntent(pendingIntent)
-            val valueId = remoteComposeCreationState.document.addInteger(index)
-            return androidx.compose.remote.creation.actions.HostAction(
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    override fun RemoteStateScope.toRemoteAction(): CreationAction {
+        val writerCallback = document.writerCallback
+        if (writerCallback is WriterEvents) {
+            val index = writerCallback.storePendingIntent(pendingIntent())
+            val valueId = document.addInteger(index)
+            return CreationHostAction(
                 ACTION_NAME,
                 HostAction.Type.INT.ordinal,
                 Utils.idFromLong(valueId).toInt(),
@@ -50,12 +66,10 @@ public class PendingIntentAction(
         } else {
             error(
                 "Could not store the pendingIntent, " +
-                    "a PendingIntentAwareWriter is required for writing a PendingIntentAction."
+                    "a WriterEvents is required for writing a PendingIntentAction."
             )
         }
     }
-
-    @Composable override fun toComposeUiAction(): () -> Unit = {}
 
     public companion object {
         public const val ACTION_NAME: String = "SendPendingIntent"

@@ -38,12 +38,17 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.xr.projected.ProjectedContext
-import androidx.xr.projected.testapp.audiomanager.AudioManagerActivity
+import androidx.xr.projected.experimental.ExperimentalProjectedApi
+import androidx.xr.projected.testapp.audio.AudioActivity
+import androidx.xr.projected.testapp.camera.CameraActivity
 import androidx.xr.projected.testapp.componentpermissions.PermissionsComponentActivity
+import androidx.xr.projected.testapp.controller.DisplayControllerActivity
+import androidx.xr.projected.testapp.input.ProjectedInputActivity
 import androidx.xr.projected.testapp.permissions.PermissionsActivity
 import androidx.xr.projected.testapp.projectedcontext.ProjectedContextActivity
 
 /** The MainActivity is used to launch the various projected test activities. */
+@OptIn(ExperimentalProjectedApi::class)
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -63,17 +68,12 @@ class MainActivity : ComponentActivity() {
                     activity.key,
                     activity.value,
                     context,
-                    /* launchProjected= */ false,
+                    launchProjected = false,
                 )
             }
             // Add all activities that are launched on a projected device.
             for (activity in PROJECTED_ACTIVITY_MAP) {
-                CreateTestActivityRow(
-                    activity.key,
-                    activity.value,
-                    context,
-                    /* launchProjected= */ true,
-                )
+                CreateTestActivityRow(activity.key, activity.value, context, launchProjected = true)
             }
         }
     }
@@ -130,7 +130,9 @@ class MainActivity : ComponentActivity() {
         val ACTIVITY_MAP: Map<String, Class<*>> =
             mapOf(
                 "Projected Context" to ProjectedContextActivity::class.java,
-                "Audio Manager" to AudioManagerActivity::class.java,
+                "Audio" to AudioActivity::class.java,
+                "Display Controller" to DisplayControllerActivity::class.java,
+                "Camera" to CameraActivity::class.java,
             )
 
         // A list of projected activities that are launchable from the main activity.
@@ -138,6 +140,7 @@ class MainActivity : ComponentActivity() {
             mapOf(
                 "Permission" to PermissionsActivity::class.java,
                 "Component Permission" to PermissionsComponentActivity::class.java,
+                "Input" to ProjectedInputActivity::class.java,
             )
     }
 }

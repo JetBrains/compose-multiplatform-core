@@ -4,6 +4,7 @@ set -e
 echo "Starting $0 at $(date)"
 source "$(dirname "$0")/setup_build_env_vars.sh"
 source "$(dirname "$0")/record_build_metrics.sh"
+source "$(dirname "$0")/impl/delete_old_out.sh"
 
 cd "$(dirname $0)"
 
@@ -15,71 +16,19 @@ export OUT_DIR="$OUT_DIR/incremental"
 mkdir -p "$OUT_DIR"
 
 if [ "$MANIFEST" == "" -a "$CHANGE_INFO" != "" ]; then
-  cp "$DIST_DIR/manifest_${BUILD_NUMBER}.xml" "$OUT_DIR/manifest.xml"
-  export MANIFEST="$OUT_DIR/manifest.xml"
+  export MANIFEST="$DIST_DIR/manifest_${BUILD_NUMBER}.xml"
 fi
 
-# Given a file containing a date as text, echos which week number it is
-# Examples: input "2024-01-01" should give output "0", input "2024-01-07" should give output "1", input "2024-01-14" should give output "2"
-function getWeekNumber() {
-  text="$1"
-  dayOfYearWithPrecedingZeros="$(date --date="$text" +"%j")"
-  dayOfYear="$(echo $dayOfYearWithPrecedingZeros | sed 's/^0*//')"
-  if [ "$dayOfYear" == "" ]; then
-    # There is an error that we will catch later
-    echo
-  else
-    echo "$(($dayOfYear / 7))"
-  fi
-}
-
-function deleteOldOutDir() {
-  # file telling when the out dir was created
-  createdAtFile=$OUT_DIR/created_at.txt
-  # file telling when the out dir was last updated
-  updatedAtFile=$OUT_DIR/updated_at.txt
-  now="$(date)"
-
-  # if this directory was created a long time ago, delete it
-  if [ -e "$createdAtFile" ]; then
-    createdAt="$(cat "$createdAtFile")"
-    # out dir knows when it was created
-    createdWeekNumber="$(getWeekNumber "$createdAt" || true)"
-    if [ "$createdWeekNumber" == "" ]; then
-      echo "Failed to parse $createdAtFile with text $createdAt" >&2
-      rm -f "$createdAtFile"
-      exit 1
-    fi
-    updatedWeekNumber="$(getWeekNumber "$now")"
-
-    if [ "$createdWeekNumber" != "$updatedWeekNumber" ]; then
-      echo "Deleting $OUT_DIR because it was created at $createdAt week $createdWeekNumber whereas now is $now week $updatedWeekNumber"
-      rm -rf "$OUT_DIR"
-    fi
-  fi
-  mkdir -p "$OUT_DIR"
-
-  # record that this directory was updated
-  echo "$now" > "$updatedAtFile"
-
-  # if we haven't recorded when this directory was created, do that too
-  if [ ! -e "$createdAtFile" ]; then
-    cp "$updatedAtFile" "$createdAtFile"
-  fi
-}
 deleteOldOutDir
 
-# b/430983364: Remove cache to avoid privacySandbox flakiness
-function deletePrivacySandbox() {
-    rm -rf "$OUT_DIR/androidx/privacysandbox/databridge/integration-tests/testsdk"
-    rm -rf "$OUT_DIR/androidx/privacysandbox/tools/integration-tests/testsdk"
-    rm -rf "$OUT_DIR/androidx/privacysandbox/ui/integration-tests/testsdkprovider"
-    rm -rf "$OUT_DIR/androidx/privacysandbox/ui/integration-tests/mediateesdkprovider"
-    rm -rf "$OUT_DIR/androidx/privacysandbox/ui/macrobenchmark/testapp/mediateesdkprovider"
-    rm -rf "$OUT_DIR/androidx/privacysandbox/ui/macrobenchmark/testapp/testsdkprovider"
+function deleteStaleCache() {
+   rm -rf "$OUT_DIR/androidx/appfunctions/"
+   # Remove when we upgrade Wire
+   rm -rf "$OUT_DIR/androidx/glance/wear/wear/"
+   rm -rf "$OUT_DIR/androidx/glance/wear/wear-core/"
 }
 
-deletePrivacySandbox
+deleteStaleCache
 
 export DIST_DIR="$DIST_DIR/incremental"
 mkdir -p "$DIST_DIR"
@@ -94,6 +43,7 @@ else
 fi
 
 export USE_ANDROIDX_REMOTE_BUILD_CACHE=gcp
+export ENABLE_PRESUBMIT_COMPATIBLE_CC_STORE=true
 
 # If we encounter a failure in postsubmit, we try a few things to determine if the failure is
 # reproducible
@@ -114,6 +64,8 @@ EXIT_VALUE=0
 if ! impl/check_translations.sh; then
   echo check_translations failed
   EXIT_VALUE=1
+elif ! impl/verify-gradle-signature.sh; then
+  EXIT_VALUE=1
 else
     # Run Gradle
     if impl/build.sh $DIAGNOSE_ARG buildOnServer createAllArchives checkExternalLicenses listTaskOutputs exportSboms generateJavaKzip generateKotlinKzip \
@@ -124,9 +76,6 @@ else
     echo build failed
     EXIT_VALUE=1
     fi
-
-    # Parse performance profile reports (generated with the --profile option) and re-export the metrics in an easily machine-readable format for tracking
-    impl/parse_profile_data.sh
 fi
 
 record_build_metrics "$start_time"

@@ -16,6 +16,8 @@
 
 package androidx.room3.integration.kotlintestapp.test
 
+import android.content.Context
+import androidx.arch.core.executor.ArchTaskExecutor
 import androidx.arch.core.executor.testing.CountingTaskExecutorRule
 import androidx.room3.Room
 import androidx.room3.integration.kotlintestapp.TestDatabase
@@ -25,31 +27,44 @@ import androidx.room3.integration.kotlintestapp.testutil.TestObserver
 import androidx.sqlite.driver.AndroidSQLiteDriver
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import androidx.test.core.app.ApplicationProvider
+import androidx.test.platform.app.InstrumentationRegistry
 import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.asCoroutineDispatcher
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 
-abstract class TestDatabaseTest(protected val useDriver: UseDriver = UseDriver.NONE) {
+abstract class TestDatabaseTest(
+    protected val useDriver: UseDriver = UseDriver.ANDROID,
+    protected val useInMemoryDatabase: Boolean = true,
+) {
     @get:Rule val countingTaskExecutorRule = CountingTaskExecutorRule()
     protected lateinit var database: TestDatabase
     protected lateinit var booksDao: BooksDao
     protected lateinit var usersDao: UsersDao
 
+    private val context = ApplicationProvider.getApplicationContext<Context>()
+
     @Before
     fun setUp() {
+        if (!useInMemoryDatabase) {
+            context.deleteDatabase("test.db")
+        }
         database =
-            Room.inMemoryDatabaseBuilder(
-                    ApplicationProvider.getApplicationContext(),
-                    TestDatabase::class.java,
-                )
-                .apply {
-                    if (useDriver == UseDriver.ANDROID) {
-                        setDriver(AndroidSQLiteDriver())
-                    } else if (useDriver == UseDriver.BUNDLED) {
-                        setDriver(BundledSQLiteDriver())
-                    }
+            if (useInMemoryDatabase) {
+                    Room.inMemoryDatabaseBuilder<TestDatabase>(context)
+                } else {
+                    Room.databaseBuilder(context, "test.db")
                 }
+                .setDriver(
+                    when (useDriver) {
+                        UseDriver.ANDROID -> AndroidSQLiteDriver()
+                        UseDriver.BUNDLED -> BundledSQLiteDriver()
+                    }
+                )
+                .setQueryCoroutineContext(
+                    ArchTaskExecutor.getIOThreadExecutor().asCoroutineDispatcher()
+                )
                 .build()
 
         booksDao = database.booksDao()
@@ -67,13 +82,16 @@ abstract class TestDatabaseTest(protected val useDriver: UseDriver = UseDriver.N
 
     inner class LiveDataTestObserver<T> : TestObserver<T>() {
         override fun drain() {
+            // Drain the background threads for things like invalidation
             countingTaskExecutorRule.drainTasks(1, TimeUnit.MINUTES)
+            // Queue up and wait for a no-op main thread function to 'flush' the main thread,
+            // important because LiveData things happen in the main thread.
+            InstrumentationRegistry.getInstrumentation().runOnMainSync {}
         }
     }
 
     enum class UseDriver {
         ANDROID,
         BUNDLED,
-        NONE,
     }
 }

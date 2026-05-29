@@ -23,11 +23,13 @@ import android.util.Log;
 import androidx.annotation.DoNotInline;
 import androidx.annotation.OptIn;
 import androidx.annotation.RequiresApi;
+import androidx.annotation.RequiresExtension;
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.app.ExperimentalAppSearchApi;
 import androidx.appsearch.app.GenericDocument;
 import androidx.appsearch.app.SearchResult;
 import androidx.appsearch.platformstorage.util.AppSearchVersionUtil;
+import androidx.core.os.BuildCompat;
 import androidx.core.util.Preconditions;
 
 import org.jspecify.annotations.NonNull;
@@ -63,19 +65,21 @@ public class SearchResultToPlatformConverter {
             SearchResult.MatchInfo jetpackMatchInfo = toJetpackMatchInfo(platformMatches.get(i));
             builder.addMatchInfo(jetpackMatchInfo);
         }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+        if (BuildCompat.T_EXTENSION_INT >= AppSearchVersionUtil.TExtensionVersions.U_BASE) {
             for (android.app.appsearch.SearchResult joinedResult :
-                    ApiHelperForU.getJoinedResults(platformResult)) {
+                    ApiHelperForSdkExtensionUBase.getJoinedResults(platformResult)) {
                 builder.addJoinedResult(toJetpackSearchResult(joinedResult));
             }
         }
-        if (AppSearchVersionUtil.isAtLeastB()) {
+        if (BuildCompat.T_EXTENSION_INT >= AppSearchVersionUtil.TExtensionVersions.B_BASE) {
             List<Double> informationalRankingSignals =
-                    ApiHelperForB.getInformationalRankingSignals(platformResult);
+                    ApiHelperForSdkExtensionBBase.getInformationalRankingSignals(platformResult);
             for (int i = 0; i < informationalRankingSignals.size(); i++) {
                 builder.addInformationalRankingSignal(informationalRankingSignals.get(i));
             }
+        }
 
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) {
             try {
                 // TODO(b/371610934): Ensure the parent type map is set for older devices receiving
                 //  mainline updates. AppSearch will relocate parent type information from
@@ -136,9 +140,10 @@ public class SearchResultToPlatformConverter {
         }
     }
 
-    @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
-    private static class ApiHelperForU {
-        private ApiHelperForU() {
+    @RequiresExtension(extension = Build.VERSION_CODES.TIRAMISU,
+            version = AppSearchVersionUtil.TExtensionVersions.U_BASE)
+    private static class ApiHelperForSdkExtensionUBase {
+        private ApiHelperForSdkExtensionUBase() {
             // This class is not instantiable.
         }
 
@@ -149,16 +154,23 @@ public class SearchResultToPlatformConverter {
         }
     }
 
-    @RequiresApi(36)
-    private static class ApiHelperForB {
-        private ApiHelperForB() {
+    @RequiresExtension(extension = Build.VERSION_CODES.TIRAMISU,
+            version = AppSearchVersionUtil.TExtensionVersions.B_BASE)
+    private static class ApiHelperForSdkExtensionBBase {
+        private ApiHelperForSdkExtensionBBase() {
+            // This class is not instantiable.
         }
 
         @DoNotInline
-        @SuppressLint("NewApi") // getInformationalRankingSignals() incorrectly flagged as 34-ext16
         static List<Double> getInformationalRankingSignals(
                 android.app.appsearch.@NonNull SearchResult result) {
             return result.getInformationalRankingSignals();
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.BAKLAVA)
+    private static class ApiHelperForB {
+        private ApiHelperForB() {
         }
 
         @DoNotInline

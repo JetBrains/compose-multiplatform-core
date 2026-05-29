@@ -20,7 +20,6 @@ import android.util.Range
 import androidx.annotation.RestrictTo
 import androidx.camera.core.CameraEffect
 import androidx.camera.core.CameraInfo
-import androidx.camera.core.ExperimentalSessionConfig
 import androidx.camera.core.MirrorMode.MIRROR_MODE_OFF
 import androidx.camera.core.Preview
 import androidx.camera.core.SessionConfig
@@ -87,12 +86,11 @@ import androidx.camera.core.impl.StreamSpec.FRAME_RATE_RANGE_UNSPECIFIED
  *   with a specific [HighSpeedVideoSessionConfig], or an [IllegalArgumentException] will be thrown
  *   when binding to lifecycle.
  * @property isSlowMotionEnabled Whether to apply slow-motion effects to the recorded video.
- * @throws IllegalArgumentException if any of the constraints are violated.
+ * @property isAutoRotationEnabled Whether to use auto rotation. When enabled, CameraX will monitor
+ *   the device motion sensor and set the target rotation for [videoCapture].
  * @See androidx.camera.lifecycle.ProcessCameraProvider.bindToLifecycle
  * @See Recorder.getHighSpeedVideoCapabilities
  */
-@ExperimentalHighSpeedVideo
-@OptIn(ExperimentalSessionConfig::class)
 public class HighSpeedVideoSessionConfig
 @JvmOverloads
 constructor(
@@ -100,8 +98,13 @@ constructor(
     public val preview: Preview? = null,
     frameRateRange: Range<Int> = FRAME_RATE_RANGE_UNSPECIFIED,
     public val isSlowMotionEnabled: Boolean = false,
-) : SessionConfig(listOfNotNull(videoCapture, preview), frameRateRange = frameRateRange) {
-
+    isAutoRotationEnabled: Boolean = false,
+) :
+    SessionConfig(
+        listOfNotNull(videoCapture, preview),
+        frameRateRange = frameRateRange,
+        isAutoRotationEnabled = isAutoRotationEnabled,
+    ) {
     @get:RestrictTo(RestrictTo.Scope.LIBRARY)
     public override val sessionType: Int = SESSION_TYPE_HIGH_SPEED
 
@@ -114,6 +117,7 @@ constructor(
         private var preview: Preview? = null
         private var frameRateRange: Range<Int> = FRAME_RATE_RANGE_UNSPECIFIED
         private var isSlowMotionEnabled: Boolean = false
+        private var isAutoRotationEnabled: Boolean = false
 
         /** Sets the [Preview] use case for displaying a preview during recording. */
         public fun setPreview(preview: Preview?): Builder {
@@ -137,6 +141,17 @@ constructor(
             return this
         }
 
+        /**
+         * Sets whether to use auto rotation.
+         *
+         * When enabled, CameraX will monitor the device motion sensor and set the target rotation
+         * for VideoCapture.
+         */
+        public fun setAutoRotationEnabled(autoRotationEnabled: Boolean): Builder {
+            this.isAutoRotationEnabled = autoRotationEnabled
+            return this
+        }
+
         /** Builds a [HighSpeedVideoSessionConfig] from the current configuration. */
         public fun build(): HighSpeedVideoSessionConfig {
             return HighSpeedVideoSessionConfig(
@@ -144,6 +159,7 @@ constructor(
                 preview = preview,
                 frameRateRange = frameRateRange,
                 isSlowMotionEnabled = isSlowMotionEnabled,
+                isAutoRotationEnabled = isAutoRotationEnabled,
             )
         }
     }
@@ -154,6 +170,17 @@ constructor(
         if (isSlowMotionEnabled) {
             (videoCapture.output as Recorder).videoEncodingFrameRate = SLOW_MOTION_ENCODE_FRAME_RATE
         }
+    }
+
+    override fun toString(): String {
+        return "HighSpeedVideoSessionConfig@" +
+            "${Integer.toHexString(System.identityHashCode(this))} {" +
+            "videoCapture=$videoCapture, " +
+            "preview=$preview, " +
+            "frameRateRange=$frameRateRange, " +
+            "isSlowMotionEnabled=$isSlowMotionEnabled, " +
+            "isAutoRotationEnabled=$isAutoRotationEnabled" +
+            "}"
     }
 
     private fun validateSettingsOrThrow(videoCapture: VideoCapture<*>, preview: Preview?) {

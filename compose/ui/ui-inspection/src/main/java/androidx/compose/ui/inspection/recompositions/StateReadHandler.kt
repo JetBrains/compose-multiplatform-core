@@ -17,57 +17,65 @@
 package androidx.compose.ui.inspection.recompositions
 
 import androidx.annotation.GuardedBy
-import androidx.collection.IntObjectMap
-import androidx.collection.emptyIntObjectMap
+import androidx.compose.runtime.Composer
+import androidx.compose.runtime.CompositionTracer
 import androidx.compose.runtime.ExperimentalComposeRuntimeApi
+import androidx.compose.runtime.InternalComposeTracingApi
 import androidx.compose.runtime.RecomposeScope
 import androidx.compose.runtime.Recomposer
 import androidx.compose.runtime.RecomposerInfo
 import androidx.compose.runtime.tooling.ComposeToolingApi
+import androidx.compose.runtime.tooling.CompositionData
+import androidx.compose.runtime.tooling.CompositionGroup
 import androidx.compose.runtime.tooling.CompositionObserver
 import androidx.compose.runtime.tooling.CompositionObserverHandle
 import androidx.compose.runtime.tooling.CompositionRegistrationObserver
 import androidx.compose.runtime.tooling.IdentifiableRecomposeScope
 import androidx.compose.runtime.tooling.ObservableComposition
+import androidx.compose.ui.inspection.RootsDetector
+import androidx.compose.ui.inspection.inspector.InlineClassConverter
+import androidx.compose.ui.inspection.inspector.RawParameter
 import androidx.compose.ui.inspection.util.AnchorMap
+import androidx.compose.ui.tooling.data.UiToolingDataApi
+import androidx.compose.ui.tooling.data.findParameters
 import androidx.inspection.ArtTooling
-import kotlin.time.Duration.Companion.milliseconds
+import java.util.IdentityHashMap
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.StateReadSettings
 import layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.StateReadSettings.MethodCase
 
-/** The default number of recompositions with state reads per composable */
-private const val DEFAULT_MAX_RECOMPOSITIONS_WITH_STATE_READS = 20
+private const val NUMBER_OF_CHANGE_MASKS_PER_DIRTY_VARIABLE = 10
+private const val CHANGED_BIT_MASK = 0b011
+private const val BITS_IN_CHANGE_MASK = 3
 
-/** The time to wait for all state reads for a composable that was recomposed for the 1st time */
-val DELAY_FOR_STATE_READS = 100.milliseconds
-
-/** Sender for state read events from ComposeLayoutInspector */
-fun interface StateReadEventSender {
-    fun sendEvent(anchorHash: Int, stateReadsPerRecomposition: IntObjectMap<ObservedStateReads>)
-}
-
-/** The result for a [StateReadHandler.getReads] call. */
+/**
+ * The elements of the result for a [StateReadHandler.getReadsAndRemove] call.
+ *
+ * @param recomposition the recomposition number
+ * @param reads the state reads for this recomposition
+ * @param parameterChanges the parameters that changed
+ */
 class ObservedReadResult(
-    val firstObservedRecomposition: Int,
     val recomposition: Int,
-    val reads: ObservedStateReads,
-) {
-    companion object {
-        val EMPTY_RESULT = ObservedReadResult(0, 0, ObservedStateReads())
-    }
-}
+    val reads: List<StateReadRecord>,
+    val parameterChanges: List<RawParameter>,
+)
 
 /** An extension of [RecompositionHandler] that keeps track of state reads. */
-class StateReadHandler(
+@OptIn(
+    ExperimentalComposeRuntimeApi::class,
+    ComposeToolingApi::class,
+    InternalComposeTracingApi::class,
+)
+internal class StateReadHandler(
     artTooling: ArtTooling,
     anchorMap: AnchorMap,
-    private val readEventSender: StateReadEventSender,
+    private val inlineClassConverter: InlineClassConverter,
+    private val rootsDetector: RootsDetector,
 ) :
     RecompositionHandler<RecompositionDataWithStateReads>(
         artTooling,
@@ -82,31 +90,30 @@ class StateReadHandler(
     // The anchors of all the composable where state reads are being collected for.
     @GuardedBy("lock") private val anchorsObserved = mutableSetOf<Any>()
 
-    // The first state read was sent as an event for these anchors.
-    @GuardedBy("lock") private val firstStateReadSendForAnchor = mutableSetOf<Any>()
+    @GuardedBy("lock") private val cache = StateReadCache(counts)
 
-    // The max number of recompositions with state reads kept per composable.
-    @GuardedBy("lock") private var maxRecompositions = DEFAULT_MAX_RECOMPOSITIONS_WITH_STATE_READS
-
-    // If true, send state read events for first recomposition with state reads,
-    // and whenever state reads are discarded because of maxRecompositions.
-    @GuardedBy("lock") private var sendDiscardedEvent = false
+    // The root [CompositionData] by [ObservableComposition] lazily detected.
+    @GuardedBy("lock")
+    private val rootByObservableComposition =
+        IdentityHashMap<ObservableComposition, CompositionData>()
 
     // The recomposers being observed (for state reads)
-    @OptIn(ExperimentalComposeRuntimeApi::class)
     @GuardedBy("lock")
-    private val recomposers = mutableMapOf<RecomposerInfo, CompositionObserverHandle>()
+    private val recomposers = hashMapOf<RecomposerInfo, CompositionObserverHandle>()
 
     // The compositions being observed (for state reads)
-    @OptIn(ExperimentalComposeRuntimeApi::class)
     @GuardedBy("lock")
-    private val compositions = mutableMapOf<ObservableComposition, CompositionObserverHandle>()
+    private val compositions = hashMapOf<ObservableComposition, CompositionObserverHandle>()
+
+    // The recompositions registered for the current composition
+    @GuardedBy("lock") private val recompositions = LinkedHashMap<Any, ObservedStateReads>()
+
+    // Use the CompositionTracer to keep track of parameter changes.
+    @GuardedBy("lock") private var trackingParameterChanges = false
 
     // An observer to keep track of compositions
-    @OptIn(ExperimentalComposeRuntimeApi::class, ComposeToolingApi::class)
     private val observer =
-        object : CompositionRegistrationObserver, CompositionObserver {
-
+        object : CompositionRegistrationObserver, CompositionObserver, CompositionTracer {
             override fun onCompositionRegistered(composition: ObservableComposition) {
                 synchronized(lock) { compositions[composition] = composition.setObserver(this) }
             }
@@ -127,30 +134,42 @@ class StateReadHandler(
                     if (anchorsObserved.isNotEmpty() && !anchorsObserved.contains(anchor)) {
                         return
                     }
-                    counts
-                        .getOrPut(anchor) { RecompositionDataWithStateReads() }
-                        .addStateRead(value, Exception())
+                    cache.addStateRead(anchor, value, Exception())
                 }
             }
 
             override fun onScopeExit(scope: RecomposeScope) {}
 
-            override fun onEndComposition(composition: ObservableComposition) {}
+            override fun onEndComposition(composition: ObservableComposition) {
+                // The recomposition is done.
+                // We can now read the parameter values for all the registered parameter changes.
+                synchronized(lock) {
+                    registerChangedParameterValues(composition)
+                    recompositions.clear()
+                }
+            }
 
             override fun onScopeInvalidated(scope: RecomposeScope, value: Any?) {
                 synchronized(lock) {
                     val anchor = (scope as? IdentifiableRecomposeScope)?.identity ?: return
                     // Again: filter by the composable.
-                    if (anchorsObserved.isNotEmpty() && !anchorsObserved.contains(anchor)) {
+                    if (!isObserving(anchor)) {
                         return
                     }
-                    counts
-                        .getOrPut(anchor) { RecompositionDataWithStateReads() }
-                        .addInvalidation(value)
+                    cache.addInvalidation(anchor, value)
                 }
             }
 
             override fun onScopeDisposed(scope: RecomposeScope) {}
+
+            override fun traceEventStart(key: Int, dirty1: Int, dirty2: Int, info: String) {
+                // Detect parameter changes, but do not read the parameter values yet.
+                registerParameterChanges(key, dirty1, dirty2)
+            }
+
+            override fun traceEventEnd() {}
+
+            override fun isTraceInProgress(): Boolean = true
         }
 
     // Apply the [StateReadSettings] and recomposition settings received from Studio.
@@ -168,41 +187,47 @@ class StateReadHandler(
                         MethodCase.ALL -> true
                         else -> false
                     }
+            val includeParameterChanges =
+                observingStateReads &&
+                    when (settings.methodCase) {
+                        MethodCase.BY_ID -> settings.byId.includeParameterChanges
+                        MethodCase.ALL -> settings.all.includeParameterChanges
+                        else -> false
+                    }
             if (observingStateReads != (observerJob != null)) {
                 if (observingStateReads) {
-                    startObservingStateReads()
+                    startObservingStateReads(includeParameterChanges)
                 } else {
                     stopObservingStateReads()
                 }
             }
-            if (!keepRecomposeCounts) {
-                firstStateReadSendForAnchor.clear()
-            }
-            if (!observingStateReads) {
+            if (!observingStateReads || settings.methodCase == MethodCase.ALL) {
                 anchorsObserved.clear()
-                firstStateReadSendForAnchor.clear()
-            } else if (
-                settings.methodCase == MethodCase.BY_ID &&
-                    settings.byId.composableToObserveList != anchorsObserved
-            ) {
-                val stopObserving = mutableSetOf<Any>()
-                stopObserving.addAll(anchorsObserved)
-                anchorsObserved.clear()
-                anchorsObserved.addAll(
+            } else {
+                val anchorsToObserve =
                     settings.byId.composableToObserveList.mapNotNull { anchorMap[it] }
-                )
-                stopObserving.removeAll(anchorsObserved)
-                stopObserving.forEach { counts[it]?.clearStateReads() }
-                firstStateReadSendForAnchor.removeAll(stopObserving)
+                if (anchorsToObserve != anchorsObserved) {
+                    anchorsObserved.clear()
+                    anchorsObserved.addAll(anchorsToObserve)
+                    cache.removeAllExcept(anchorsObserved)
+                }
             }
-            this.sendDiscardedEvent =
-                settings.methodCase == MethodCase.BY_ID && anchorsObserved.isNotEmpty()
-            this.maxRecompositions =
+            cache.maxStateReads =
                 when (settings.methodCase) {
-                    MethodCase.ALL -> settings.all.maxRecompositions
-                    MethodCase.BY_ID -> settings.byId.maxRecompositions
+                    MethodCase.ALL -> settings.all.maxStateReads
+                    MethodCase.BY_ID -> settings.byId.maxStateReads
                     else -> 0
-                }.takeIf { it != 0 } ?: DEFAULT_MAX_RECOMPOSITIONS_WITH_STATE_READS
+                }.takeIf { it != 0 } ?: DEFAULT_MAX_STATE_READS
+        }
+    }
+
+    override fun incrementRecompositionCount(anchor: Any): RecompositionDataWithStateReads? {
+        synchronized(lock) {
+            val data = super.incrementRecompositionCount(anchor) ?: return null
+            if (isObserving(anchor)) {
+                recompositions[anchor] = data.expectStateReads()
+            }
+            return data
         }
     }
 
@@ -211,92 +236,128 @@ class StateReadHandler(
         scope.cancel()
     }
 
-    // Return the stats reads for a recomposition of a composable or the first recomposition
-    // with state reads for this composable. If no state reads exist return EMPTY_RESULT.
-    fun getReads(anchorHash: Int, recomposition: Int): ObservedReadResult {
+    /**
+     * Return the stats reads for a range of recompositions for a composable. There may be holes in
+     * the data i.e. recompositions with no state reads.
+     *
+     * @param anchorHash the anchorHash of the composable
+     * @param recompositionNumberStart the lower recomposition to look for
+     * @param recompositionNumberEnd the upper recomposition to look for
+     * @param includeExtra include extra state reads after recompositionNumberEnd if state reads are
+     *   missing from the requested range
+     */
+    fun getReadsAndRemove(
+        anchorHash: Int,
+        recompositionNumberStart: Int,
+        recompositionNumberEnd: Int,
+        includeExtra: Boolean,
+    ): List<ObservedReadResult> {
         synchronized(lock) {
-            val anchor = anchorMap[anchorHash] ?: return ObservedReadResult.EMPTY_RESULT
-            val data = counts[anchor] ?: return ObservedReadResult.EMPTY_RESULT
-            val actualRecomposition = maxOf(data.firstObserved, recomposition)
-            val observedStateReads =
-                data.getReads(actualRecomposition, sendDiscardedEvent)
-                    ?: return ObservedReadResult.EMPTY_RESULT
-            val reads =
-                when {
-                    // If this the most recent recomposition, there may still be state reads
-                    // being recorded, make a copy:
-                    actualRecomposition == data.count -> observedStateReads.copy()
-                    // Otherwise it is safe to return the ObservedStateReads
-                    else -> observedStateReads
-                }
-            return ObservedReadResult(data.firstObserved, actualRecomposition, reads)
+            val anchor = anchorMap[anchorHash] ?: return emptyList()
+            return cache.getReadsAndRemove(
+                anchor,
+                recompositionNumberStart,
+                recompositionNumberEnd,
+                includeExtra,
+            )
         }
     }
 
-    override fun incrementRecompositionCount(anchor: Any): RecompositionDataWithStateReads? {
-        val data: RecompositionDataWithStateReads
-        synchronized(lock) {
-            data = super.incrementRecompositionCount(anchor) ?: return null
-            if (observerJob != null) {
-                val newRecomposition = data.count
-                if (!sendDiscardedEvent) {
-                    // Quietly discard the state reads for older recompositions:
-                    data.discardExcessStateReads(maxRecompositions)
-                } else if (data.recompositionsWithObservations > maxRecompositions) {
-                    sendStateReads(anchor, data.count - 1)
-                } else if (
-                    !firstStateReadSendForAnchor.contains(anchor) &&
-                        anchorsObserved.contains(anchor)
-                ) {
-                    sendStateReads(
-                        anchor,
-                        newRecomposition,
-                        doWaitForStateReadsOfFirstRecomposition = true,
-                    )
-                }
-            }
-        }
-        return data
-    }
+    /** Return the number of state reads purged from the state read cache. */
+    fun getPurgedStateReadCount(): Long = cache.purgedStateReads
 
     /**
-     * Send state reads up to [lastRecomposition] of the specified anchor and discard those state
-     * reads. Delay the send slightly if [doWaitForStateReadsOfFirstRecomposition] is true.
+     * Register the parameters that have changed.
+     *
+     * At this point the parameter value has not been updated in the SlotTree. Instead, we will
+     * compute a compact parameter change mask and store it in the recomposition data.
      */
-    private fun sendStateReads(
-        anchor: Any,
-        lastRecomposition: Int,
-        doWaitForStateReadsOfFirstRecomposition: Boolean = false,
-    ) {
-        scope.launch {
-            if (doWaitForStateReadsOfFirstRecomposition) {
-                // Delay a little to receive any upcoming state reads for the current recomposition
-                delay(DELAY_FOR_STATE_READS)
-            }
-            var reads = emptyIntObjectMap<ObservedStateReads>()
-            synchronized(lock) {
-                if (
-                    doWaitForStateReadsOfFirstRecomposition &&
-                        firstStateReadSendForAnchor.contains(anchor)
-                ) {
-                    // We already sent the first event
-                    return@launch
-                }
-                val data = counts[anchor] ?: return@launch
-                reads = data.getAndRemoveReads(lastRecomposition)
-                if (reads.isNotEmpty()) {
-                    firstStateReadSendForAnchor.add(anchor)
-                }
-            }
-            if (reads.isNotEmpty()) {
-                readEventSender.sendEvent(anchorMap[anchor], reads)
+    private fun registerParameterChanges(key: Int, dirty1: Int, dirty2: Int) {
+        synchronized(lock) {
+            val changes = findChanges(dirty1, dirty2)
+            if (changes == 0 || recompositions.isEmpty()) return
+            val (anchor, data) = recompositions.entries.last()
+            if (anchorMap.getKey(anchor) == key) {
+                data.parameterChangeMask = changes
             }
         }
     }
 
-    @OptIn(ExperimentalComposeRuntimeApi::class)
-    private fun startObservingStateReads() {
+    @OptIn(UiToolingDataApi::class)
+    private fun registerChangedParameterValues(composition: ObservableComposition) {
         synchronized(lock) {
+            for (entry in recompositions) {
+                val changes = entry.value.parameterChangeMask
+                if (changes == 0) {
+                    continue
+                }
+                val parameters = findGroup(composition, entry.key)?.findParameters()
+                if (parameters.isNullOrEmpty()) {
+                    continue
+                }
+                val parameterChanges = mutableListOf<RawParameter>()
+                var bitMask = 1
+                parameters.forEach { parameter ->
+                    if (changes and bitMask != 0) {
+                        parameterChanges.add(inlineClassConverter.toRawParameter(parameter))
+                    }
+                    bitMask = bitMask shl 1
+                }
+                entry.value.registerParameterChanges(parameterChanges)
+            }
+        }
+    }
+
+    private fun findGroup(composition: ObservableComposition, anchor: Any): CompositionGroup? {
+        val root = rootByObservableComposition[composition]
+        if (root != null) return root.find(anchor)
+        rootsDetector.getAllCompositionRoots().forEach { foundRoot ->
+            val group = foundRoot.find(anchor)
+            if (group != null) {
+                rootByObservableComposition[composition] = foundRoot
+                return group
+            }
+        }
+        return null
+    }
+
+    private fun findChanges(dirty1: Int, dirty2: Int): Int {
+        return convertDirtyBits(dirty1) or
+            (convertDirtyBits(dirty2) shl NUMBER_OF_CHANGE_MASKS_PER_DIRTY_VARIABLE)
+    }
+
+    private fun convertDirtyBits(dirty: Int): Int {
+        var changeBit = 1
+        var changes = 0
+        var bits = dirty shr 1
+        var index = 0
+        while (index < NUMBER_OF_CHANGE_MASKS_PER_DIRTY_VARIABLE && bits != 0) {
+            // Each parameter uses 3 (BITS_IN_CHANGE_MASK) bits.
+            // Status is in the lower 2 bits of the 3-bit slot, starting at bit 1.
+            // A value of 2 means the value changed.
+            val status = bits and CHANGED_BIT_MASK
+            if (status == 2) {
+                changes = changes or changeBit
+            }
+            bits = bits shr BITS_IN_CHANGE_MASK
+            changeBit = changeBit shl 1
+            index++
+        }
+        return changes
+    }
+
+    private fun isObserving(anchor: Any): Boolean =
+        observerJob != null && (anchorsObserved.isEmpty() || anchorsObserved.contains(anchor))
+
+    private fun startObservingStateReads(includeParameterChanges: Boolean) {
+        synchronized(lock) {
+            if (includeParameterChanges) {
+                Composer.setTracer(observer)
+            } else if (trackingParameterChanges) {
+                Composer.setTracer(null)
+            }
+            trackingParameterChanges = includeParameterChanges
+
             if (observerJob != null) {
                 // We are already observing state reads
                 return
@@ -324,9 +385,12 @@ class StateReadHandler(
             }
     }
 
-    @OptIn(ExperimentalComposeRuntimeApi::class)
     private fun stopObservingStateReads() {
         synchronized(lock) {
+            if (trackingParameterChanges) {
+                Composer.setTracer(null)
+                trackingParameterChanges = false
+            }
             // Just return if we are not currently observing state reads
             val job = observerJob ?: return
             job.cancel()
@@ -335,9 +399,7 @@ class StateReadHandler(
             compositions.clear()
             recomposers.values.forEach { it.dispose() }
             recomposers.clear()
-            for (data in counts.values) {
-                data.clearStateReads()
-            }
+            cache.clear()
         }
     }
 }

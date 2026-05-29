@@ -18,8 +18,8 @@ package androidx.camera.camera2.compat.quirk
 
 import androidx.camera.camera2.compat.StreamConfigurationMapCompat
 import androidx.camera.camera2.config.CameraScope
+import androidx.camera.camera2.impl.Camera2Logger
 import androidx.camera.camera2.pipe.CameraMetadata
-import androidx.camera.camera2.pipe.core.Log
 import androidx.camera.core.Logger
 import androidx.camera.core.impl.Quirk
 import androidx.camera.core.impl.QuirkSettingsHolder
@@ -42,7 +42,7 @@ constructor(
         val quirkSettings = QuirkSettingsHolder.instance().get()
         val quirks: MutableList<Quirk> = mutableListOf()
         if (cameraMetadata == null) {
-            Log.error { "Failed to enable quirks: camera metadata injection failed" }
+            Camera2Logger.error { "Failed to enable quirks: camera metadata injection failed" }
             return@lazy Quirks(quirks)
         }
 
@@ -264,20 +264,19 @@ constructor(
         ) {
             quirks.add(AbnormalStreamWhenImageAnalysisBindWithTemplateRecordQuirk())
         }
+        if (
+            quirkSettings.shouldEnableQuirk(
+                UltraWideFlashCaptureUnderexposureQuirk::class.java,
+                UltraWideFlashCaptureUnderexposureQuirk.isEnabled(cameraMetadata),
+            )
+        ) {
+            quirks.add(UltraWideFlashCaptureUnderexposureQuirk())
+        }
 
         Quirks(quirks).also { Logger.d(TAG, "camera2 CameraQuirks = " + Quirks.toString(it)) }
     }
 
     public companion object {
         private const val TAG = "CameraQuirks"
-
-        public fun isImmediateSurfaceReleaseAllowed(): Boolean {
-            // TODO(b/285956022): Releasing a Surface too early turns out to cause memory leaks
-            //  where an Image may not be eventually closed. When the issue is resolved on an
-            //  architectural level, uncomment the following, allowing compliant devices to recycle
-            //  Surfaces and shutdown sooner.
-            //  Build.BRAND == "google" && Build.VERSION.SDK_INT > Build.VERSION_CODES.O_MR1
-            return false
-        }
     }
 }

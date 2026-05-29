@@ -40,10 +40,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.xr.compose.platform.LocalSpatialCapabilities
 import androidx.xr.compose.spatial.ContentEdge
-import androidx.xr.compose.spatial.GravityAlignedSubspace
 import androidx.xr.compose.spatial.Orbiter
 import androidx.xr.compose.spatial.SpatialElevation
 import androidx.xr.compose.spatial.SpatialElevationLevel
+import androidx.xr.compose.spatial.Subspace
 import androidx.xr.compose.subspace.SpatialRow
 import androidx.xr.compose.testapp.R
 import androidx.xr.compose.testapp.ui.components.CommonTestPanel
@@ -65,11 +65,7 @@ class ModeChange : ComponentActivity() {
 
         setContent {
             val renderingSession = remember {
-                (Session.create(
-                        activity = this@ModeChange,
-                        unscaledGravityAlignedActivitySpace = true,
-                    ) as SessionCreateSuccess)
-                    .session
+                (Session.create(context = this@ModeChange) as SessionCreateSuccess).session
             }
             IntegrationTestsAppTheme {
                 if (LocalSpatialCapabilities.current.isSpatialUiEnabled) {
@@ -83,8 +79,7 @@ class ModeChange : ComponentActivity() {
 
     @Composable
     private fun FullSpaceMainPanel(renderingSession: Session) {
-
-        GravityAlignedSubspace {
+        Subspace {
             SpatialRow {
                 CommonTestPanel(
                     size = DpVolumeSize(320.dp, 240.dp, 0.dp),
@@ -102,7 +97,7 @@ class ModeChange : ComponentActivity() {
                     onClickRecreate = { this@ModeChange.recreate() },
                 ) { padding ->
                     PanelContent(padding, "FullSpace Mode", "Transition to HomeSpace Mode") {
-                        renderingSession.scene.requestHomeSpaceMode()
+                        renderingSession.scene.requestHomeSpace()
                     }
                 }
 
@@ -127,7 +122,7 @@ class ModeChange : ComponentActivity() {
             onClickRecreate = { this@ModeChange.recreate() },
         ) { padding ->
             PanelContent(padding, "HomeSpace Mode", "Transition to FullSpace Mode") {
-                renderingSession!!.scene.requestFullSpaceMode()
+                renderingSession!!.scene.requestFullSpace()
             }
         }
     }
@@ -144,6 +139,7 @@ class ModeChange : ComponentActivity() {
             contentAlignment = Alignment.Center,
         ) {
             Column {
+                @Suppress("DEPRECATION")
                 Orbiter(position = ContentEdge.Top, offset = 5.dp) {
                     Text(
                         text = orbiterText,

@@ -20,7 +20,6 @@ import androidx.annotation.GuardedBy
 import androidx.camera.camera2.adapter.asListenableFuture
 import androidx.camera.camera2.adapter.propagateCompletion
 import androidx.camera.camera2.config.CameraScope
-import androidx.camera.camera2.pipe.core.Log.debug
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.impl.CaptureConfig
@@ -103,7 +102,7 @@ constructor(private val flashControl: FlashControl, private val threads: UseCase
             } else {
                 // UseCaseCamera may become null by the time the coroutine is started
                 mutex.withLock { pendingRequests.add(request) }
-                debug {
+                Camera2Logger.debug {
                     "StillCaptureRequestControl: useCaseCamera is null, $request" +
                         " will be retried with a future UseCaseCamera"
                 }
@@ -138,12 +137,12 @@ constructor(private val flashControl: FlashControl, private val threads: UseCase
         request: CaptureRequest,
         requestControl: UseCaseCameraRequestControl,
     ): Deferred<List<Void?>> {
-        debug { "StillCaptureRequestControl: submitting $request at $requestControl" }
+        Camera2Logger.debug { "StillCaptureRequestControl: submitting $request at $requestControl" }
         // Prior to submitStillCaptures, wait until the pending flash mode session change is
         // completed. On some devices, AE preCapture triggered in submitStillCaptures may not
         // work properly if the repeating request to change the flash mode is not completed.
         val flashMode = flashControl.awaitFlashModeUpdate()
-        debug { "StillCaptureRequestControl: Issuing single capture" }
+        Camera2Logger.debug { "StillCaptureRequestControl: Issuing single capture" }
         val deferredList =
             requestControl.issueSingleCaptureAsync(
                 request.captureConfigs,
@@ -155,9 +154,13 @@ constructor(private val flashControl: FlashControl, private val threads: UseCase
         return threads.sequentialScope.async {
             // requestControl.issueSingleCaptureAsync shouldn't be invoked from here directly,
             // because sequentialScope.async is may not be executed immediately
-            debug { "StillCaptureRequestControl: Waiting for deferred list from $request" }
+            Camera2Logger.debug {
+                "StillCaptureRequestControl: Waiting for deferred list from $request"
+            }
             deferredList.awaitAll().also {
-                debug { "StillCaptureRequestControl: Waiting for deferred list from $request done" }
+                Camera2Logger.debug {
+                    "StillCaptureRequestControl: Waiting for deferred list from $request done"
+                }
             }
         }
     }
@@ -189,7 +192,7 @@ constructor(private val flashControl: FlashControl, private val threads: UseCase
                     // no new camera to retry at, adding to pending list for trying later
                     if (isPending) {
                         mutex.withLock { pendingRequests.add(submittedRequest) }
-                        debug {
+                        Camera2Logger.debug {
                             "StillCaptureRequestControl: failed to submit $submittedRequest" +
                                 ", will be retried with a future UseCaseCamera"
                         }

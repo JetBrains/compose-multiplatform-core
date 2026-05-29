@@ -31,6 +31,7 @@ import androidx.camera.camera2.pipe.testing.FakeGraphProcessor
 import androidx.camera.camera2.pipe.testing.FakeRequestMetadata
 import androidx.camera.camera2.pipe.testing.RobolectricCameraPipeTestRunner
 import com.google.common.truth.Truth.assertThat
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
@@ -39,8 +40,10 @@ import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.annotation.Config
 
 @RunWith(RobolectricCameraPipeTestRunner::class)
+@Config(sdk = [Config.ALL_SDKS])
 class Controller3AForCaptureTest {
     private val graphTestContext = GraphTestContext()
     private val graphState3A = GraphState3A()
@@ -422,7 +425,7 @@ class Controller3AForCaptureTest {
                             ),
                     ),
                 )
-                delay(FRAME_RATE_MS)
+                delay(FRAME_RATE)
             }
         }
         repeatingJob.await()
@@ -553,7 +556,7 @@ class Controller3AForCaptureTest {
 
     companion object {
         // The time duration in milliseconds between two frame results.
-        private const val FRAME_RATE_MS = 33L
+        private val FRAME_RATE = 33.milliseconds
     }
 }
 

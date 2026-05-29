@@ -27,19 +27,22 @@ import kotlin.math.min
 import kotlin.math.roundToInt
 
 /**
- * Used to specify the arrangement of the layout's children in layouts like [SpatialRow] or
- * [SpatialColumn] in the main axis direction (horizontal and vertical, respectively).
+ * Used to specify the arrangement of the layout's children in layouts like
+ * [androidx.xr.compose.subspace.SpatialRow] or [androidx.xr.compose.subspace.SpatialColumn] in the
+ * main axis direction (horizontal and vertical, respectively).
  *
- * [SpatialRow] supports horizontal arrangements similar to [Row]: ![Row
+ * [androidx.xr.compose.subspace.SpatialRow] supports horizontal arrangements similar to
+ * [androidx.compose.foundation.layout.Row]: ![Row
  * arrangements](https://developer.android.com/images/reference/androidx/compose/foundation/layout/row_arrangement_visualization.gif)
  *
- * [SpatialColumn] supports horizontal arrangements similar to [Column]: ![Column
+ * [androidx.xr.compose.subspace.SpatialColumn] supports horizontal arrangements similar to
+ * [androidx.compose.foundation.layout.Column]: ![Column
  * arrangements](https://developer.android.com/images/reference/androidx/compose/foundation/layout/column_arrangement_visualization.gif)
  */
 public object SpatialArrangement {
     /**
      * Used to specify the horizontal arrangement of the layout's children in layouts like
-     * [SpatialRow].
+     * [androidx.xr.compose.subspace.SpatialRow].
      */
     @Stable
     @JvmDefaultWithCompatibility
@@ -69,7 +72,7 @@ public object SpatialArrangement {
 
     /**
      * Used to specify the vertical arrangement of the layout's children in layouts like
-     * [SpatialColumn].
+     * [androidx.xr.compose.subspace.SpatialColumn].
      */
     @Stable
     @JvmDefaultWithCompatibility
@@ -92,8 +95,8 @@ public object SpatialArrangement {
 
     /**
      * Used to specify the horizontal arrangement of the layout's children in horizontal layouts
-     * like [SpatialRow], or the vertical arrangement of the layout's children in vertical layouts
-     * like [SpatialColumn].
+     * like [androidx.xr.compose.subspace.SpatialRow], or the vertical arrangement of the layout's
+     * children in vertical layouts like [androidx.xr.compose.subspace.SpatialColumn].
      */
     @Stable
     @JvmDefaultWithCompatibility
@@ -365,6 +368,8 @@ public object SpatialArrangement {
 
     /**
      * Children are placed next to each other with fixed [space] between them along the main axis.
+     *
+     * @param space fixed space [Dp] to place between adjacent children.
      */
     public fun spacedBy(space: Dp): AxisIndependent =
         SpacedAligned(space = space, rtlMirror = true, axisMultiplier = 0) {
@@ -381,6 +386,9 @@ public object SpatialArrangement {
     /**
      * Children are placed next to each other with fixed [space] between them horizontally and
      * aligned them according to the [spatialAlignment] given.
+     *
+     * @param space fixed space [Dp] to place between adjacent children.
+     * @param spatialAlignment [SpatialAlignment.Horizontal] to align the children with.
      */
     public fun spacedBy(space: Dp, spatialAlignment: SpatialAlignment.Horizontal): Horizontal =
         SpacedAligned(space = space, rtlMirror = true, axisMultiplier = 1) {
@@ -397,6 +405,9 @@ public object SpatialArrangement {
     /**
      * Children are placed next to each other with fixed [space] between them vertically and align
      * them according to the [spatialAlignment] given.
+     *
+     * @param space fixed space [Dp] to place between adjacent children.
+     * @param spatialAlignment [SpatialAlignment.Vertical] to align the children with.
      */
     public fun spacedBy(space: Dp, spatialAlignment: SpatialAlignment.Vertical): Vertical =
         SpacedAligned(space = space, rtlMirror = false, axisMultiplier = -1) {
@@ -409,6 +420,8 @@ public object SpatialArrangement {
     /**
      * Children placed next to each other horizontally and align them according to the
      * [spatialAlignment] given.
+     *
+     * @param spatialAlignment [SpatialAlignment.Horizontal] to align the children with.
      */
     public fun aligned(spatialAlignment: SpatialAlignment.Horizontal): Horizontal =
         SpacedAligned(space = 0.dp, rtlMirror = true, axisMultiplier = 1) {
@@ -425,6 +438,8 @@ public object SpatialArrangement {
     /**
      * Children placed next to each other vertically and align them according to the
      * [spatialAlignment].
+     *
+     * @param spatialAlignment [SpatialAlignment.Vertical] to align the children with.
      */
     public fun aligned(spatialAlignment: SpatialAlignment.Vertical): Vertical =
         SpacedAligned(space = 0.dp, rtlMirror = false, axisMultiplier = -1) { occupied, totalSize, _
@@ -436,9 +451,9 @@ public object SpatialArrangement {
     @Immutable
     public object Absolute {
         /**
-         * All children should be arranged at the left of the [SpatialRow]. Unlike
-         * [SpatialArrangement.Start], when layout direction is RTL, children will not be mirrored.
-         * Visually: 123####
+         * All children should be arranged at the left of the
+         * [androidx.xr.compose.subspace.SpatialRow]. Unlike [SpatialArrangement.Start], when layout
+         * direction is RTL, children will not be mirrored. Visually: 123####
          */
         public val Left: Horizontal =
             object : Horizontal {
@@ -455,9 +470,9 @@ public object SpatialArrangement {
             }
 
         /**
-         * All children should be arranged at the center of the [SpatialRow]. Unlike
-         * [SpatialArrangement.Center], when layout direction is RTL, children will not be mirrored.
-         * Visually: ##123##
+         * All children should be arranged at the center of the
+         * [androidx.xr.compose.subspace.SpatialRow]. Unlike [SpatialArrangement.Center], when
+         * layout direction is RTL, children will not be mirrored. Visually: ##123##
          */
         public val Center: Horizontal =
             object : Horizontal {
@@ -479,9 +494,9 @@ public object SpatialArrangement {
             }
 
         /**
-         * All children should be arranged at the right of the [SpatialRow]. Unlike
-         * [SpatialArrangement.End], when layout direction is RTL, children will not be mirrored.
-         * Visually: ####123
+         * All children should be arranged at the right of the
+         * [androidx.xr.compose.subspace.SpatialRow]. Unlike [SpatialArrangement.End], when layout
+         * direction is RTL, children will not be mirrored. Visually: ####123
          */
         public val Right: Horizontal =
             object : Horizontal {
@@ -578,6 +593,9 @@ public object SpatialArrangement {
          * align them according to the [spatialAlignment] given. Unlike
          * [SpatialArrangement.spacedBy], when layout direction is RTL, children will not be
          * mirrored.
+         *
+         * @param space fixed space [Dp] to place between adjacent children.
+         * @param spatialAlignment [SpatialAlignment.Horizontal] to align the children with.
          */
         public fun spacedBy(space: Dp, spatialAlignment: SpatialAlignment.Horizontal): Horizontal {
             return SpacedAligned(space = space, rtlMirror = false, axisMultiplier = 1) {
@@ -596,6 +614,8 @@ public object SpatialArrangement {
          * Children placed next to each other horizontally and align them according to the
          * [spatialAlignment] given. Unlike [SpatialArrangement.spacedBy], when layout direction is
          * RTL, children will not be mirrored.
+         *
+         * @param spatialAlignment [SpatialAlignment.Horizontal] to align the children with.
          */
         public fun aligned(spatialAlignment: SpatialAlignment.Horizontal): Horizontal {
             return SpacedAligned(space = 0.dp, rtlMirror = false, axisMultiplier = 1) {

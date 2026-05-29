@@ -16,6 +16,7 @@ package androidx.ink.geometry {
     method public final androidx.ink.geometry.MutableAffineTransform computeInverse(androidx.ink.geometry.MutableAffineTransform outAffineTransform);
     method @Size(min=6L) public final float[] getValues();
     method @Size(min=6L) public final float[] getValues(optional @Size(min=6L) float[] outArray);
+    method @BytecodeOnly @Size(min=6) public static float[]! getValues$default(androidx.ink.geometry.AffineTransform!, float[]!, int, Object!);
     method public final boolean isAlmostEqual(androidx.ink.geometry.AffineTransform other, @FloatRange(from=0.0) float tolerance);
     method public static final void multiply(androidx.ink.geometry.AffineTransform lhs, androidx.ink.geometry.AffineTransform rhs, androidx.ink.geometry.MutableAffineTransform output);
     field public static final androidx.ink.geometry.AffineTransform.Companion Companion;
@@ -51,7 +52,7 @@ package androidx.ink.geometry {
   public final class Angle {
     method @androidx.ink.geometry.AngleRadiansFloat public static float degreesToRadians(@androidx.ink.geometry.AngleDegreesFloat float degrees);
     method @FloatRange(from=-180.0, to=180.0, fromInclusive=false) @androidx.ink.geometry.AngleDegreesFloat public static float normalizedAboutZeroDegrees(@androidx.ink.geometry.AngleDegreesFloat float degrees);
-    method @FloatRange(from=-3.141592653589793, to=java.lang.Math.PI, fromInclusive=false) @androidx.ink.geometry.AngleRadiansFloat public static float normalizedAboutZeroRadians(@androidx.ink.geometry.AngleRadiansFloat float radians);
+    method @FloatRange(from=-3.141592653589793, to=PI, fromInclusive=false) @androidx.ink.geometry.AngleRadiansFloat public static float normalizedAboutZeroRadians(@androidx.ink.geometry.AngleRadiansFloat float radians);
     method @FloatRange(from=0.0, to=360.0, toInclusive=false) @androidx.ink.geometry.AngleDegreesFloat public static float normalizedDegrees(@androidx.ink.geometry.AngleDegreesFloat float degrees);
     method @FloatRange(from=0.0, to=6.283185307179586, toInclusive=false) @androidx.ink.geometry.AngleRadiansFloat public static float normalizedRadians(@androidx.ink.geometry.AngleRadiansFloat float radians);
     method @androidx.ink.geometry.AngleDegreesFloat public static float radiansToDegrees(@androidx.ink.geometry.AngleRadiansFloat float radians);
@@ -123,6 +124,7 @@ package androidx.ink.geometry {
   public final class ImmutableAffineTransform extends androidx.ink.geometry.AffineTransform {
     ctor public ImmutableAffineTransform(float m00, float m10, float m20, float m01, float m11, float m21);
     ctor public ImmutableAffineTransform(@Size(min=6L) float[] values);
+    method public operator boolean equals(Object? other);
     method public static androidx.ink.geometry.ImmutableAffineTransform rotateDegrees(@androidx.ink.geometry.AngleDegreesFloat float degrees);
     method public static androidx.ink.geometry.ImmutableAffineTransform scale(float scaleFactor);
     method public static androidx.ink.geometry.ImmutableAffineTransform scale(float xScaleFactor, float yScaleFactor);
@@ -268,6 +270,7 @@ package androidx.ink.geometry {
 
   public final class MutableAffineTransform extends androidx.ink.geometry.AffineTransform {
     ctor public MutableAffineTransform();
+    method public operator boolean equals(Object? other);
     method public androidx.ink.geometry.MutableAffineTransform populateFrom(androidx.ink.geometry.AffineTransform input);
     method public androidx.ink.geometry.MutableAffineTransform populateFromIdentity();
     method public androidx.ink.geometry.MutableAffineTransform populateFromRotationDegrees(@androidx.ink.geometry.AngleDegreesFloat float degrees);
@@ -407,6 +410,10 @@ package androidx.ink.geometry {
     method @FloatRange(from=0.0, to=1.0) public float computeCoverage(androidx.ink.geometry.PartitionedMesh other, optional androidx.ink.geometry.AffineTransform otherShapeToThis);
     method @FloatRange(from=0.0, to=1.0) public float computeCoverage(androidx.ink.geometry.Triangle triangle);
     method @FloatRange(from=0.0, to=1.0) public float computeCoverage(androidx.ink.geometry.Triangle triangle, optional androidx.ink.geometry.AffineTransform triangleToThis);
+    method @BytecodeOnly @FloatRange(from=0.0, to=1.0) public static float computeCoverage$default(androidx.ink.geometry.PartitionedMesh!, androidx.ink.geometry.Box!, androidx.ink.geometry.AffineTransform!, int, Object!);
+    method @BytecodeOnly @FloatRange(from=0.0, to=1.0) public static float computeCoverage$default(androidx.ink.geometry.PartitionedMesh!, androidx.ink.geometry.Parallelogram!, androidx.ink.geometry.AffineTransform!, int, Object!);
+    method @BytecodeOnly @FloatRange(from=0.0, to=1.0) public static float computeCoverage$default(androidx.ink.geometry.PartitionedMesh!, androidx.ink.geometry.PartitionedMesh!, androidx.ink.geometry.AffineTransform!, int, Object!);
+    method @BytecodeOnly @FloatRange(from=0.0, to=1.0) public static float computeCoverage$default(androidx.ink.geometry.PartitionedMesh!, androidx.ink.geometry.Triangle!, androidx.ink.geometry.AffineTransform!, int, Object!);
     method public boolean computeCoverageIsGreaterThan(androidx.ink.geometry.Box box, float coverageThreshold);
     method public boolean computeCoverageIsGreaterThan(androidx.ink.geometry.Box box, float coverageThreshold, optional androidx.ink.geometry.AffineTransform boxToThis);
     method public boolean computeCoverageIsGreaterThan(androidx.ink.geometry.Parallelogram parallelogram, float coverageThreshold);
@@ -415,7 +422,10 @@ package androidx.ink.geometry {
     method public boolean computeCoverageIsGreaterThan(androidx.ink.geometry.PartitionedMesh other, float coverageThreshold, optional androidx.ink.geometry.AffineTransform otherShapeToThis);
     method public boolean computeCoverageIsGreaterThan(androidx.ink.geometry.Triangle triangle, float coverageThreshold);
     method public boolean computeCoverageIsGreaterThan(androidx.ink.geometry.Triangle triangle, float coverageThreshold, optional androidx.ink.geometry.AffineTransform triangleToThis);
-    method protected void finalize();
+    method @BytecodeOnly public static boolean computeCoverageIsGreaterThan$default(androidx.ink.geometry.PartitionedMesh!, androidx.ink.geometry.Box!, float, androidx.ink.geometry.AffineTransform!, int, Object!);
+    method @BytecodeOnly public static boolean computeCoverageIsGreaterThan$default(androidx.ink.geometry.PartitionedMesh!, androidx.ink.geometry.Parallelogram!, float, androidx.ink.geometry.AffineTransform!, int, Object!);
+    method @BytecodeOnly public static boolean computeCoverageIsGreaterThan$default(androidx.ink.geometry.PartitionedMesh!, androidx.ink.geometry.PartitionedMesh!, float, androidx.ink.geometry.AffineTransform!, int, Object!);
+    method @BytecodeOnly public static boolean computeCoverageIsGreaterThan$default(androidx.ink.geometry.PartitionedMesh!, androidx.ink.geometry.Triangle!, float, androidx.ink.geometry.AffineTransform!, int, Object!);
     method @IntRange(from=0L) public int getOutlineCount(@IntRange(from=0L) int groupIndex);
     method @IntRange(from=0L) public int getOutlineVertexCount(@IntRange(from=0L) int groupIndex, @IntRange(from=0L) int outlineIndex);
     method @IntRange(from=0L) public int getRenderGroupCount();
@@ -488,6 +498,7 @@ package androidx.ink.geometry {
     method @InaccessibleFromKotlin public abstract float getY();
     method public final boolean isAlmostEqual(androidx.ink.geometry.Vec other);
     method public final boolean isAlmostEqual(androidx.ink.geometry.Vec other, optional @FloatRange(from=0.0) float tolerance);
+    method @BytecodeOnly public static boolean isAlmostEqual$default(androidx.ink.geometry.Vec!, androidx.ink.geometry.Vec!, float, int, Object!);
     method public final boolean isParallelTo(androidx.ink.geometry.Vec other, @FloatRange(from=0.0) @androidx.ink.geometry.AngleDegreesFloat float toleranceDegrees);
     method public final boolean isPerpendicularTo(androidx.ink.geometry.Vec other, @FloatRange(from=0.0) @androidx.ink.geometry.AngleDegreesFloat float toleranceDegrees);
     method public static final void multiply(androidx.ink.geometry.Vec lhs, float rhs, androidx.ink.geometry.MutableVec output);

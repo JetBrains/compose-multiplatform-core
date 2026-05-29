@@ -19,9 +19,10 @@ package androidx.glance.wear.parcel
 import android.content.ComponentName
 import android.content.Context
 import android.util.Log
-import androidx.glance.wear.ActiveWearWidgetHandle
-import androidx.glance.wear.ContainerType
 import androidx.glance.wear.GlanceWearWidget
+import androidx.glance.wear.core.ActiveWearWidgetHandle
+import androidx.glance.wear.core.ContainerInfo.Companion.CONTAINER_TYPE_TILE_COMPAT
+import androidx.glance.wear.core.WidgetInstanceId
 import androidx.glance.wear.parcel.legacy.TileAddEventData
 import androidx.glance.wear.parcel.legacy.TileProvider
 import androidx.glance.wear.parcel.legacy.TileRemoveEventData
@@ -47,8 +48,15 @@ internal class LegacyTileProviderImpl(
             try {
                 val addEvent = TileAddEvent.ADAPTER.decode(eventData.contents)
                 val widgetId =
-                    ActiveWearWidgetHandle(providerName, addEvent.tile_id, ContainerType.Fullscreen)
-                widget.onActivated(context, widgetId)
+                    ActiveWearWidgetHandle(
+                        providerName,
+                        WidgetInstanceId(
+                            namespace = WidgetInstanceId.WIDGET_CAROUSEL_NAMESPACE,
+                            id = addEvent.tile_id,
+                        ),
+                        CONTAINER_TYPE_TILE_COMPAT,
+                    )
+                widget.onAdded(context, widgetId)
             } catch (ex: IOException) {
                 Log.e(TAG, "Error deserializing TileAddEvent payload.", ex)
             }
@@ -65,10 +73,13 @@ internal class LegacyTileProviderImpl(
                 val widgetId =
                     ActiveWearWidgetHandle(
                         providerName,
-                        removeEvent.tile_id,
-                        ContainerType.Fullscreen,
+                        WidgetInstanceId(
+                            namespace = WidgetInstanceId.WIDGET_CAROUSEL_NAMESPACE,
+                            id = removeEvent.tile_id,
+                        ),
+                        CONTAINER_TYPE_TILE_COMPAT,
                     )
-                widget.onDeactivated(context, widgetId)
+                widget.onRemoved(context, widgetId)
             } catch (ex: IOException) {
                 Log.e(TAG, "Error deserializing TileRemoveEvent payload.", ex)
             }

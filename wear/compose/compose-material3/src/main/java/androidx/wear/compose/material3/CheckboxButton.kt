@@ -18,6 +18,8 @@ package androidx.wear.compose.material3
 
 import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.animation.core.FiniteAnimationSpec
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.updateTransition
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.Interaction
@@ -44,12 +46,14 @@ import androidx.compose.runtime.State
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -62,13 +66,18 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.wear.compose.material3.internal.Strings
+import androidx.wear.compose.material3.internal.getString
 import androidx.wear.compose.material3.tokens.CheckboxButtonTokens
 import androidx.wear.compose.material3.tokens.ShapeTokens
 import androidx.wear.compose.material3.tokens.SplitCheckboxButtonTokens
+import androidx.wear.compose.materialcore.SelectionStage
 import androidx.wear.compose.materialcore.animateSelectionColor
+import androidx.wear.compose.materialcore.isLayoutDirectionRtl
 
 /**
  * The Wear Material [CheckboxButton] offers three slots and a specific layout for an icon, a label,
@@ -83,6 +92,9 @@ import androidx.wear.compose.materialcore.animateSelectionColor
  * Samples: Example of a CheckboxButton:
  *
  * @sample androidx.wear.compose.material3.samples.CheckboxButtonSample
+ *
+ * ![CheckboxButtonSample Composite
+ * Image](https://developer.android.com/wear/images/design/WearComposeM3_CheckboxButtonSample_CompositeImage.png)
  *
  * [CheckboxButton] can be enabled or disabled. A disabled button will not respond to click events.
  *
@@ -129,6 +141,12 @@ public fun CheckboxButton(
     label: @Composable RowScope.() -> Unit,
 ) {
     val hapticFeedback = LocalHapticFeedback.current
+    val currentStateDescription =
+        if (checked) {
+            getString(Strings.CheckedStateDescription)
+        } else {
+            getString(Strings.NotCheckedStateDescription)
+        }
 
     androidx.wear.compose.materialcore.ToggleButton(
         checked = checked,
@@ -163,7 +181,10 @@ public fun CheckboxButton(
             )
         },
         selectionControl = null,
-        modifier = modifier.defaultMinSize(minHeight = MIN_HEIGHT),
+        modifier =
+            modifier.defaultMinSize(minHeight = MIN_HEIGHT).semantics {
+                stateDescription = currentStateDescription
+            },
         icon =
             provideNullableScopeContent(
                 contentColor = colors.iconColor(enabled = enabled, checked),
@@ -221,6 +242,9 @@ public fun CheckboxButton(
  * Samples: Example of a SplitCheckboxButton:
  *
  * @sample androidx.wear.compose.material3.samples.SplitCheckboxButtonSample
+ *
+ * ![SplitCheckboxButtonSample Composite
+ * Image](https://developer.android.com/wear/images/design/WearComposeM3_SplitCheckboxButtonSample_CompositeImage.png)
  *
  * For a SplitCheckboxButton the background of the tappable background area behind the toggle
  * control will have a visual effect applied to provide a "divider" between the two tappable areas.
@@ -280,7 +304,13 @@ public fun SplitCheckboxButton(
     secondaryLabel: @Composable (RowScope.() -> Unit)? = null,
     label: @Composable RowScope.() -> Unit,
 ) {
-    val containerColor = colors.containerColor(enabled, checked).value
+    val containerColorState = colors.containerColor(enabled, checked)
+    val currentStateDescription =
+        if (checked) {
+            getString(Strings.CheckedStateDescription)
+        } else {
+            getString(Strings.NotCheckedStateDescription)
+        }
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier =
@@ -308,7 +338,7 @@ public fun SplitCheckboxButton(
                     .semantics { role = Role.Button }
                     .fillMaxHeight()
                     .clip(SPLIT_SECTIONS_SHAPE)
-                    .background(containerColor)
+                    .drawBehind { drawRect(containerColorState.value) }
                     .padding(contentPadding)
                     .weight(1.0f),
             verticalAlignment = Alignment.CenterVertically,
@@ -344,8 +374,7 @@ public fun SplitCheckboxButton(
 
         Spacer(modifier = Modifier.size(2.dp))
 
-        val splitBackground = if (enabled) containerColor else Color.Black
-        val splitBackgroundOverlay = colors.splitContainerColor(enabled, checked).value
+        val splitBackgroundOverlayState = colors.splitContainerColor(enabled, checked)
         val hapticFeedback = LocalHapticFeedback.current
         Box(
             contentAlignment = Alignment.Center,
@@ -365,16 +394,17 @@ public fun SplitCheckboxButton(
                     )
                     .fillMaxHeight()
                     .clip(SPLIT_SECTIONS_SHAPE)
-                    .background(splitBackground)
-                    .drawWithCache {
-                        onDrawWithContent {
-                            drawRect(color = splitBackgroundOverlay)
-                            drawContent()
-                        }
+                    .drawBehind {
+                        drawRect(
+                            splitBackgroundOverlayState.value.compositeOver(
+                                if (enabled) containerColorState.value else Color.Black
+                            )
+                        )
                     }
                     .defaultMinSize(minWidth = SPLIT_MIN_WIDTH)
                     .wrapContentHeight(align = Alignment.CenterVertically)
-                    .padding(contentPadding),
+                    .padding(contentPadding)
+                    .semantics { stateDescription = currentStateDescription },
         ) {
             Checkbox(
                 checked = checked,
@@ -1480,23 +1510,47 @@ private fun Checkbox(
     boxColor: @Composable (enabled: Boolean, selected: Boolean) -> State<Color>,
     checkmarkColor: @Composable (enabled: Boolean, selected: Boolean) -> State<Color>,
     modifier: Modifier = Modifier,
-) =
-    androidx.wear.compose.materialcore.Checkbox(
-        checked = checked,
-        modifier = modifier,
-        boxColor = boxColor,
-        checkmarkColor = checkmarkColor,
-        enabled = enabled,
-        onCheckedChange = null,
-        interactionSource = null,
-        drawBox = { drawScope, color, progress, isRtl ->
-            drawScope.drawBox(color = color, progress = progress, isRtl = isRtl)
-        },
-        progressAnimationSpec = PROGRESS_ANIMATION_SPEC,
-        width = CHECKBOX_WIDTH,
-        height = CHECKBOX_HEIGHT,
-        ripple = ripple(),
+) {
+    val targetState = if (checked) SelectionStage.Checked else SelectionStage.Unchecked
+    val transition = updateTransition(targetState, label = "checkboxTransition")
+    val progress =
+        transition.animateFloat(
+            transitionSpec = { PROGRESS_ANIMATION_SPEC },
+            label = "checkboxTransition",
+        ) {
+            when (it) {
+                SelectionStage.Unchecked -> 0f
+                SelectionStage.Checked -> 1f
+            }
+        }
+    val isRtl = isLayoutDirectionRtl()
+    val startXOffset = if (isRtl) 0.dp else CHECKBOX_WIDTH - CHECKBOX_HEIGHT
+
+    // For Checkbox, the color and alpha animations have the same duration and easing,
+    // so we don't need to explicitly animate alpha.
+    val boxColorState = boxColor(enabled, checked)
+    val checkmarkColorState = checkmarkColor(enabled, checked)
+
+    Box(
+        modifier =
+            modifier
+                .semantics { this.role = Role.Checkbox }
+                .height(CHECKBOX_HEIGHT)
+                .width(CHECKBOX_WIDTH)
+                .drawWithCache {
+                    onDrawWithContent {
+                        drawBox(boxColorState.value, progress.value, isRtl)
+                        animateTick(
+                            enabled = enabled,
+                            checked = checked,
+                            checkmarkColorState.value,
+                            progress.value,
+                            startXOffset = startXOffset,
+                        )
+                    }
+                }
     )
+}
 
 private fun DrawScope.drawBox(color: Color, progress: Float, isRtl: Boolean) {
     // Centering vertically.

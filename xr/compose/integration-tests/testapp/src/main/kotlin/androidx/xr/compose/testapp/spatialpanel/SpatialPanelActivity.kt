@@ -41,14 +41,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.xr.compose.platform.LocalSession
 import androidx.xr.compose.spatial.Subspace
-import androidx.xr.compose.subspace.MovePolicy
-import androidx.xr.compose.subspace.ResizePolicy
 import androidx.xr.compose.subspace.SpatialColumn
 import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.compose.subspace.layout.height
 import androidx.xr.compose.subspace.layout.offset
 import androidx.xr.compose.subspace.layout.onGloballyPositioned
+import androidx.xr.compose.subspace.layout.transformingMovable
+import androidx.xr.compose.subspace.layout.transformingResizable
 import androidx.xr.compose.subspace.layout.width
 import androidx.xr.compose.testapp.R
 import androidx.xr.compose.testapp.common.composables.BasicLayout
@@ -56,12 +56,12 @@ import androidx.xr.compose.testapp.common.composables.FixedSizeFullSpaceLayout
 import androidx.xr.compose.testapp.common.composables.TestResult
 import androidx.xr.compose.testapp.common.composables.TestResultsDisplay
 import androidx.xr.compose.testapp.common.composables.addTestResult
-import androidx.xr.scenecore.SpatialCapabilities
+import androidx.xr.scenecore.SpatialCapability
 import androidx.xr.scenecore.scene
 import kotlinx.coroutines.delay
 
 /*
- * This test checks how an activity in Full Space Mode reacts to a reconfiguration event.
+ * This test checks how an activity in Full Space reacts to a reconfiguration event.
  * This can be caused by a settings change, app resize or other factors.
  * In particular we want to test whether items lose their position in a recreation event
  * - Move panel and verify the delta in its X coordinate.
@@ -117,14 +117,12 @@ class SpatialPanelActivity : ComponentActivity() {
             } else {
                 // A recreation event has occurred if we're in this code block.
                 delay(1000)
-                // TODO: b/430264066 requestFullSpaceMode() is failing after activity.recreate()
+                // TODO: b/430264066 requestFullSpace() is failing after activity.recreate()
                 try {
-                    session.scene.requestFullSpaceMode()
+                    session.scene.requestFullSpace()
                     delay(1000)
                     testResult =
-                        session.scene.spatialCapabilities.hasCapability(
-                            SpatialCapabilities.SPATIAL_CAPABILITY_UI
-                        )
+                        session.scene.spatialCapabilities.contains(SpatialCapability.SPATIAL_UI)
                     addTestResult(
                         testResults,
                         tag,
@@ -165,12 +163,12 @@ class SpatialPanelActivity : ComponentActivity() {
                     TestResultsDisplay(testResults)
                 }
                 SpatialPanel(
-                    dragPolicy = MovePolicy(),
-                    resizePolicy = ResizePolicy(),
                     modifier =
                         SubspaceModifier.width(1200.dp)
                             .height(200.dp)
                             .offset(panelOffset.x.dp, panelOffset.y.dp)
+                            .transformingMovable()
+                            .transformingResizable()
                             .onGloballyPositioned {
                                 val newX = it?.poseInRoot?.translation?.x
                                 val newY = it?.poseInRoot?.translation?.y
@@ -190,7 +188,7 @@ class SpatialPanelActivity : ComponentActivity() {
                                     x3 = newX
                                     y3 = newY
                                 }
-                            },
+                            }
                 ) {
                     Box(
                         modifier =

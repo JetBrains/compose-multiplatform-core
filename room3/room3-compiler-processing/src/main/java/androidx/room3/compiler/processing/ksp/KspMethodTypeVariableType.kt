@@ -21,6 +21,7 @@ import androidx.room3.compiler.processing.XEquality
 import androidx.room3.compiler.processing.XNullability
 import androidx.room3.compiler.processing.XRawType
 import androidx.room3.compiler.processing.XType
+import androidx.room3.compiler.processing.XTypeArgument
 import androidx.room3.compiler.processing.XTypeElement
 import androidx.room3.compiler.processing.XTypeVariableType
 import com.google.devtools.ksp.symbol.KSTypeParameter
@@ -50,7 +51,7 @@ internal class KspMethodTypeVariableType(
         )
     }
 
-    override val upperBounds: List<XType> = ksTypeVariable.bounds.map(env::wrap).toList()
+    override val upperBounds: List<XType> by lazy { ksTypeVariable.bounds.map(env::wrap).toList() }
 
     override val ksAnnotations by lazy { ksTypeVariable.annotations }
 
@@ -83,7 +84,7 @@ internal class KspMethodTypeVariableType(
     override val typeElement: XTypeElement?
         get() = null
 
-    override val typeArguments: List<XType>
+    override val typeArguments: List<XTypeArgument>
         get() = emptyList()
 
     override fun isAssignableFrom(other: XType): Boolean {
@@ -96,25 +97,15 @@ internal class KspMethodTypeVariableType(
         return ksTypeVariable == typeVar
     }
 
-    override fun isError(): Boolean {
-        return false
-    }
+    override fun isError() = false
 
-    override fun defaultValue(): String {
-        return "null"
-    }
+    override fun defaultValue() = "null"
 
-    override fun boxed(): KspMethodTypeVariableType {
-        return this
-    }
+    override fun boxed(): XType = this
 
-    override fun isNone(): Boolean {
-        return false
-    }
+    override fun isNone() = false
 
-    override fun isTypeOf(other: KClass<*>): Boolean {
-        return false
-    }
+    override fun isTypeOf(other: KClass<*>) = false
 
     override fun isSameType(other: XType): Boolean {
         val typeVar =
@@ -126,29 +117,15 @@ internal class KspMethodTypeVariableType(
         return ksTypeVariable == typeVar
     }
 
-    override fun extendsBound(): XType? {
-        return null
-    }
+    override fun makeNullable(): XType = this
 
-    override fun makeNullable(): XType {
-        return this
-    }
-
-    override fun makeNonNullable(): XType {
-        return this
-    }
+    override fun makeNonNullable(): XType = this
 
     override val equalityItems: Array<out Any?> by lazy { arrayOf(ksTypeVariable) }
 
-    override fun equals(other: Any?): Boolean {
-        return XEquality.equals(this, other)
-    }
+    override fun equals(other: Any?): Boolean = XEquality.equals(this, other)
 
-    override fun hashCode(): Int {
-        return XEquality.hashCode(equalityItems)
-    }
+    override fun hashCode(): Int = XEquality.hashCode(equalityItems)
 
-    override fun toString(): String {
-        return ksTypeVariable.toString()
-    }
+    override fun toString(): String = ksTypeVariable.toString()
 }

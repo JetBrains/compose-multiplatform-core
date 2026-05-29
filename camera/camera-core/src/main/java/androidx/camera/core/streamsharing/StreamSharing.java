@@ -94,9 +94,9 @@ public class StreamSharing extends UseCase {
 
     private final @NonNull VirtualCameraAdapter mVirtualCameraAdapter;
     // The composition settings of primary camera in dual camera case.
-    private final @NonNull CompositionSettings mCompositionSettings;
+    private @NonNull CompositionSettings mCompositionSettings;
     // The composition settings of secondary camera in dual camera case.
-    private final @NonNull CompositionSettings mSecondaryCompositionSettings;
+    private @NonNull CompositionSettings mSecondaryCompositionSettings;
     // Node that applies effect to the input.
     private @Nullable SurfaceProcessorNode mEffectNode;
     // Node that shares a single stream to multiple UseCases.
@@ -186,6 +186,20 @@ public class StreamSharing extends UseCase {
     public void updateFeatureGroup(@NonNull Set<UseCase> children) {
         // All use cases should have same feature group, so using only the first child
         setFeatureGroup(children.iterator().next().getFeatureGroup());
+    }
+
+    /**
+     * Updates the composition settings.
+     */
+    public void updateCompositionSettings(
+            @NonNull CompositionSettings primaryCompositionSettings,
+            @NonNull CompositionSettings secondaryCompositionSettings) {
+        mCompositionSettings = primaryCompositionSettings;
+        mSecondaryCompositionSettings = secondaryCompositionSettings;
+        if (mDualSharingNode != null) {
+            mDualSharingNode.updateCompositionSettings(
+                    primaryCompositionSettings, secondaryCompositionSettings);
+        }
     }
 
     @Override
@@ -569,7 +583,7 @@ public class StreamSharing extends UseCase {
             @NonNull CameraInternal camera) {
         // Transform the camera edge to get the input edge.
         mEffectNode = new SurfaceProcessorNode(camera,
-                getEffect().createSurfaceProcessorInternal());
+                getEffect().createSurfaceProcessorInternal(), TAG);
         int rotationAppliedByEffect = getRotationAppliedByEffect();
         Rect cropRectAppliedByEffect = getCropRectAppliedByEffect(inputEdge);
         OutConfig outConfig = OutConfig.of(
@@ -593,12 +607,13 @@ public class StreamSharing extends UseCase {
                 == CameraEffect.OUTPUT_OPTION_ONE_FOR_EACH_TARGET) {
             // The effect wants to handle the sharing itself. Use the effect's node for sharing.
             mEffectNode = new SurfaceProcessorNode(camera,
-                    getEffect().createSurfaceProcessorInternal());
+                    getEffect().createSurfaceProcessorInternal(), TAG);
             return mEffectNode;
         } else {
             // Create an internal node for copying.
             return new SurfaceProcessorNode(camera,
-                    DefaultSurfaceProcessor.Factory.newInstance(streamSpec.getDynamicRange()));
+                    DefaultSurfaceProcessor.Factory.newInstance(streamSpec.getDynamicRange()),
+                    TAG);
         }
     }
 
@@ -613,7 +628,7 @@ public class StreamSharing extends UseCase {
                 DualSurfaceProcessor.Factory.newInstance(
                         streamSpec.getDynamicRange(),
                         primaryCompositionSettings,
-                        secondaryCompositionSettings));
+                        secondaryCompositionSettings), TAG);
     }
 
     private int getRotationAppliedByEffect() {

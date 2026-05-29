@@ -1,5 +1,5 @@
 import androidx.room3.RoomDatabase
-import androidx.room3.util.performBlocking
+import androidx.room3.util.performInTransactionBlocking
 import androidx.room3.util.performInTransactionSuspending
 import javax.`annotation`.processing.Generated
 import kotlin.Long
@@ -9,7 +9,7 @@ import kotlin.collections.List
 import kotlin.reflect.KClass
 
 @Generated(value = ["androidx.room3.RoomProcessor"])
-@Suppress(names = ["UNCHECKED_CAST", "DEPRECATION", "REDUNDANT_PROJECTION", "REMOVAL"])
+@Suppress(names = ["UNCHECKED_CAST", "DEPRECATION", "REDUNDANT_PROJECTION", "REMOVAL", "MemberExtensionConflict"])
 internal class MyDao_Impl(
   __db: RoomDatabase,
 ) : MyDao() {
@@ -18,7 +18,7 @@ internal class MyDao_Impl(
     this.__db = __db
   }
 
-  public override fun baseConcrete(): Unit = performBlocking(__db, false, true) { _ ->
+  public override fun baseConcrete(): Unit = performInTransactionBlocking(__db) {
     super@MyDao_Impl.baseConcrete()
   }
 
@@ -26,11 +26,11 @@ internal class MyDao_Impl(
     super@MyDao_Impl.baseSuspendConcrete()
   }
 
-  public override fun concrete(): Unit = performBlocking(__db, false, true) { _ ->
+  public override fun concrete(): Unit = performInTransactionBlocking(__db) {
     super@MyDao_Impl.concrete()
   }
 
-  internal override fun concreteInternal(): Unit = performBlocking(__db, false, true) { _ ->
+  internal override fun concreteInternal(): Unit = performInTransactionBlocking(__db) {
     super@MyDao_Impl.concreteInternal()
   }
 
@@ -38,12 +38,28 @@ internal class MyDao_Impl(
     super@MyDao_Impl.suspendConcrete()
   }
 
-  public override fun concreteWithVararg(vararg arr: Long): Unit = performBlocking(__db, false, true) { _ ->
+  internal override fun concreteInternalWithReturn(): Long = performInTransactionBlocking(__db) {
+    super@MyDao_Impl.concreteInternalWithReturn()
+  }
+
+  public override suspend fun suspendConcreteWithReturn(): Long = performInTransactionSuspending(__db) {
+    super@MyDao_Impl.suspendConcreteWithReturn()
+  }
+
+  public override fun concreteWithVararg(vararg arr: Long): Unit = performInTransactionBlocking(__db) {
     super@MyDao_Impl.concreteWithVararg(*arr)
   }
 
   public override suspend fun suspendConcreteWithVararg(vararg arr: Long): Unit = performInTransactionSuspending(__db) {
     super@MyDao_Impl.suspendConcreteWithVararg(*arr)
+  }
+
+  public override fun <R> concreteWithTypeParam(): Unit = performInTransactionBlocking(__db) {
+    super@MyDao_Impl.concreteWithTypeParam<R>()
+  }
+
+  public override suspend fun <R> suspendConcreteWithTypeParam(): Unit = performInTransactionSuspending(__db) {
+    super@MyDao_Impl.suspendConcreteWithTypeParam<R>()
   }
 
   public companion object {
