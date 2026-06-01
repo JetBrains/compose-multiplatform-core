@@ -144,7 +144,7 @@ class WindowGeometryProviderScope internal constructor(
     parentWindow: java.awt.Window?,
     private val window: java.awt.Window,
     private val measureContent: (Constraints) -> IntSize,
-): Density {
+) {
     init {
         require(window.isDisplayable) {
             "Window must be displayable before it can be used in WindowGeometryProviderScope"
@@ -156,12 +156,6 @@ class WindowGeometryProviderScope internal constructor(
      */
     private val windowDensity: Density
         get() = window.density
-
-    override val density: Float
-        get() = windowDensity.density
-
-    override val fontScale: Float
-        get() = windowDensity.fontScale
 
     /**
      * The metrics of the parent window, if any.
@@ -186,9 +180,32 @@ class WindowGeometryProviderScope internal constructor(
 
     /**
      * Measures the window content in the given constraints and returns the resulting size.
+     *
+     * Each [Dp] value can be [Dp.Unspecified] to indicate no (or infinite) constraint.
      */
-    fun measureWindowContent(constraints: Constraints): DpSize =
-        measureContent(constraints).toDpSize(windowDensity)
+    fun measureWindowContent(
+        minWidth: Dp = 0.dp,
+        maxWidth: Dp = Dp.Unspecified,
+        minHeight: Dp = 0.dp,
+        maxHeight: Dp = Dp.Unspecified,
+    ): DpSize {
+        fun Dp.toPxOrInfinity() =
+            if (this@toPxOrInfinity == Dp.Unspecified) {
+                Constraints.Infinity
+            } else {
+                with(windowDensity) {
+                    roundToPx()
+                }
+            }
+
+        val constraints = Constraints(
+            minWidth = minWidth.toPxOrInfinity(),
+            maxWidth = maxWidth.toPxOrInfinity(),
+            minHeight = minHeight.toPxOrInfinity(),
+            maxHeight = maxHeight.toPxOrInfinity(),
+        )
+        return measureContent(constraints).toDpSize(windowDensity)
+    }
 
     /**
      * Evaluates the given [WindowSizeProvider] in this scope.
@@ -484,9 +501,7 @@ fun interface WindowSizeProvider {
          */
         val Unconstrained = WindowSizeProvider {
             val availableScreenBounds = windowMetrics.screen.availableBounds
-            val unconstrainedSize = contentToWindowSize(
-                measureWindowContent(Constraints())
-            )
+            val unconstrainedSize = contentToWindowSize(measureWindowContent())
 
             val widthFits = unconstrainedSize.width <= availableScreenBounds.width
             val heightFits = unconstrainedSize.height <= availableScreenBounds.height
@@ -537,67 +552,19 @@ fun interface WindowSizeProvider {
                 contentToWindowSize(DpSize(width, height))
             }
         }
-
-        /**
-         * Sets the width of the window to its intrinsic width at the available height of the
-         * screen, and the height of the window to its intrinsic height at that width.
-         *
-         * In pseudocode:
-         * ```
-         * width = preferredWidth(availableScreenHeight)
-         * height = preferredHeight(width)
-         * ```
-         *
-         * This is useful in cases where the window has a fixed width, but the height is flexible.
-         */
-        val PreferredWidthWithMatchingHeight = WindowSizeProvider {
-            val availableScreenBounds = windowMetrics.screen.availableBounds
-            val width = preferredWidth(availableScreenBounds.height)
-            val height = preferredHeight(width)
-            contentToWindowSize(DpSize(width, height))
-        }
-
-        /**
-         * Sets the height of the window to its intrinsic height at the available width of the
-         * screen, and the width of the window to its intrinsic width at that height.
-         *
-         * In pseudocode:
-         * ```
-         * height = preferredHeight(availableScreenWidth)
-         * width = preferredWidth(height)
-         * ```
-         *
-         * This is useful in cases where the window has a fixed height, but the width is flexible.
-         */
-        val PreferredHeightWithMatchingWidth = WindowSizeProvider {
-            val availableScreenBounds = windowMetrics.screen.availableBounds
-            val height = preferredHeight(availableScreenBounds.width)
-            val width = preferredHeight(height)
-            contentToWindowSize(DpSize(width, height))
-        }
     }
 }
 
 private fun WindowGeometryProviderScope.preferredWidth(height: Dp): Dp {
-    val heightPx = height.roundToPx()
     return measureWindowContent(
-        Constraints(
-            minWidth = 0,
-            maxWidth = Constraints.Infinity,
-            minHeight = heightPx,
-            maxHeight = heightPx
-        )
+        minHeight = height,
+        maxHeight = height
     ).width
 }
 
 private fun WindowGeometryProviderScope.preferredHeight(width: Dp): Dp {
-    val widthPx = width.roundToPx()
     return measureWindowContent(
-        Constraints(
-            minWidth = widthPx,
-            maxWidth = widthPx,
-            minHeight = 0,
-            maxHeight = Constraints.Infinity
-        )
+        minWidth = width,
+        maxWidth = width,
     ).height
 }

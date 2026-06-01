@@ -33,6 +33,7 @@ import androidx.compose.ui.awt.ComposeDialog
 import androidx.compose.ui.awt.ComposeWindow
 import androidx.compose.ui.isLinux
 import androidx.compose.ui.isMacOs
+import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.toDpSize
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.DpRect
@@ -818,40 +819,14 @@ class DialogWindowV2StateTest {
     )
 
     @Test
-    fun dialogPreferredWidthWithMatchingHeight() = runDialogSizeTest(
-        testName = "dialogPreferredWidthWithMatchingHeight",
-        sizeProvider = WindowSizeProvider.PreferredWidthWithMatchingHeight,
+    fun `preferred size is rounded up`() = runDialogSizeTest(
+        testName = "preferred size is rounded up",
+        sizeProvider = WindowSizeProvider.Unconstrained,
         content = {
-            BoxWithGivenSize(
-                width = { 400.dp.roundToPx() },
-                height = { it }  // Return width to make it a square
-            )
-        },
-        expectedWindowSizeSansInsets = DpSize(400.dp, 400.dp)
-    )
-
-    @Test
-    fun dialogPreferredHeightWithMatchingWidth() = runDialogSizeTest(
-        testName = "dialogPreferredHeightWithMatchingWidth",
-        sizeProvider = WindowSizeProvider.PreferredHeightWithMatchingWidth,
-        content = {
-            BoxWithGivenSize(
-                width = { it },  // Return height to make it a square
-                height = { 400.dp.roundToPx() }
-            )
-        },
-        expectedWindowSizeSansInsets = DpSize(400.dp, 400.dp)
-    )
-
-    @Test
-    fun `requested size is rounded up`() = runDialogSizeTest(
-        testName = "requested size is rounded up",
-        sizeProvider = WindowSizeProvider.PreferredWidthWithMatchingHeight,
-        content = {
-            BoxWithGivenSize(
-                width = { (density * 100 + 1).toInt() },
-                height = { it }
-            )
+            Layout { _, _ ->
+                val size = (density * 100 + 1).toInt()
+                layout(size, size) { }
+            }
         },
         expectedWindowSizeSansInsets = DpSize(101.dp, 101.dp)
     )

@@ -23,10 +23,14 @@ import androidx.compose.ui.LayerType
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.scene.ComposeContainer
+import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.IntSize
 import androidx.savedstate.SavedState
 import java.awt.Component
 import java.awt.Container
+import java.awt.Dimension
 import java.awt.FocusTraversalPolicy
+import java.awt.Insets
 import java.awt.Window
 import java.awt.event.MouseListener
 import java.awt.event.MouseMotionListener
@@ -70,7 +74,7 @@ internal class ComposeWindowPanel(
         renderSettings = RenderSettings.SkiaSurface(),
         coroutineContext = coroutineContext
     )
-    val composeContainer
+    private val composeContainer
         get() = requireNotNull(_composeContainer) {
             "ComposeContainer is disposed"
         }
@@ -200,4 +204,12 @@ internal class ComposeWindowPanel(
         set(value) {
             _composeContainer?.showLayoutBounds = value
         }
+
+    fun measureContent(constraints: Constraints): IntSize {
+        return composeContainer.measureContent(constraints)
+    }
+
+    fun actualizeSize(size: Dimension, insets: Insets): Dimension {
+        return composeContainer.actualizeSize(size, insets)
+    }
 }

@@ -23,8 +23,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.layout.layoutId
 import androidx.compose.ui.semantics.SemanticsOwner
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.ExperimentalUnitApi
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.awt.UnspecifiedDimension
 import androidx.compose.ui.window.FrameWindowScope
 import androidx.compose.ui.window.UndecoratedWindowResizer
@@ -70,7 +72,7 @@ class ComposeWindow @ExperimentalComposeUiApi constructor(
         graphicsConfiguration: GraphicsConfiguration? = null
     ) : this(graphicsConfiguration, SkiaLayerAnalytics.Empty)
 
-    internal val composePanel = ComposeWindowPanel(
+    private val composePanel = ComposeWindowPanel(
         window = this,
         isUndecorated = ::isUndecorated,
         skiaLayerAnalytics = skiaLayerAnalytics,
@@ -215,7 +217,7 @@ class ComposeWindow @ExperimentalComposeUiApi constructor(
     }
 
     private fun Dimension.actualize(): Dimension {
-        return composePanel.composeContainer.actualizeSize(this, insets) ?: this
+        return composePanel.actualizeSize(this, insets)
     }
 
     /**
@@ -369,4 +371,8 @@ class ComposeWindow @ExperimentalComposeUiApi constructor(
         set(value) {
             composePanel.showLayoutBounds = value
         }
+
+    internal fun measureContent(constraints: Constraints): IntSize {
+        return composePanel.measureContent(constraints)
+    }
 }

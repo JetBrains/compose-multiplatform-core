@@ -24,8 +24,10 @@ import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.layout.layoutId
 import androidx.compose.ui.semantics.dialog
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.ExperimentalUnitApi
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.awt.UnspecifiedDimension
 import androidx.compose.ui.window.DialogWindowScope
 import androidx.compose.ui.window.UndecoratedWindowResizer
@@ -51,7 +53,7 @@ import org.jetbrains.skiko.SkiaLayerAnalytics
  * System dialog for displaying Compose UI, inheriting [javax.swing.JDialog].
  */
 class ComposeDialog : JDialog {
-    internal val composePanel: ComposeWindowPanel
+    private val composePanel: ComposeWindowPanel
 
     private fun createComposePanel(
         skiaLayerAnalytics: SkiaLayerAnalytics,
@@ -332,7 +334,7 @@ class ComposeDialog : JDialog {
     }
 
     private fun Dimension.actualize(): Dimension {
-        return composePanel.composeContainer.actualizeSize(this, insets) ?: this
+        return composePanel.actualizeSize(this, insets)
     }
 
     /**
@@ -434,4 +436,8 @@ class ComposeDialog : JDialog {
         set(value) {
             composePanel.showLayoutBounds = value
         }
+
+    internal fun measureContent(constraints: Constraints): IntSize {
+        return composePanel.measureContent(constraints)
+    }
 }

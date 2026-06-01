@@ -16,7 +16,6 @@
 
 package androidx.compose.ui.window.v2
 
-import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.layout.IntrinsicMeasurable
 import androidx.compose.ui.layout.IntrinsicMeasureScope
@@ -26,7 +25,6 @@ import androidx.compose.ui.layout.MeasurePolicy
 import androidx.compose.ui.layout.MeasureResult
 import androidx.compose.ui.layout.MeasureScope
 import androidx.compose.ui.unit.Constraints
-import androidx.compose.ui.unit.Dp
 import java.awt.Dimension
 import java.awt.Window
 

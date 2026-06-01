@@ -354,11 +354,11 @@ internal fun Window.setBoundsFrom(
 }
 
 private fun ComposeWindow.initializeBounds(state: WindowState) {
-    initializeBounds(state.boundsRequests, state._bounds, null, composePanel.composeContainer::measureContent)
+    initializeBounds(state.boundsRequests, state._bounds, null, ::measureContent)
 }
 
 private fun ComposeWindow.setBoundsFrom(boundsProvider: WindowBoundsProvider) {
-    setBoundsFrom(boundsProvider, null, composePanel.composeContainer::measureContent)
+    setBoundsFrom(boundsProvider, null, ::measureContent)
 }
 
 internal fun Window.setScreenFrom(screenProvider: WindowScreenProvider) {

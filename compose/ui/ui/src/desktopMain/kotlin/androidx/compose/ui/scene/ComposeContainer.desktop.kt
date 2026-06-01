@@ -252,7 +252,7 @@ internal class ComposeContainer(
                 return if (this == UNSPECIFIED_DIMENSION_VALUE) {
                     valueIfUnspecified
                 } else {
-                    ((this - inset) * density).fastRoundToInt()
+                    ((this - inset).coerceAtLeast(0) * density).fastRoundToInt()
                 }
             }
 
