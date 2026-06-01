@@ -47,6 +47,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.UIKitInstrumentedTest
 import androidx.compose.ui.test.assertVisibleInContainer
 import androidx.compose.ui.test.findNodeWithLabel
+import androidx.compose.ui.test.findNodeWithLabelOrNull
 import androidx.compose.ui.test.findNodeWithTag
 import androidx.compose.ui.test.firstNodeOrNull
 import androidx.compose.ui.test.runUIKitInstrumentedTest
@@ -59,6 +60,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import kotlin.test.fail
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.cinterop.ExperimentalForeignApi
 import org.jetbrains.skiko.OS
@@ -469,7 +471,11 @@ class TextFieldEditMenuTest {
             assertTrue(it.isAccessibilityElement ?: false)
         }
 
-        findNodeWithLabel("Select All").let {
+        // On small screens it might be not enough space to fit both menus.
+        val selectionNode =
+            findNodeWithLabelOrNull("Select All") ?: findNodeWithLabelOrNull("Select")
+            ?: fail("Cannot find node with Select All or Select label")
+        selectionNode.let {
             it.assertVisibleInContainer()
             assertTrue(it.isAccessibilityElement ?: false)
         }
