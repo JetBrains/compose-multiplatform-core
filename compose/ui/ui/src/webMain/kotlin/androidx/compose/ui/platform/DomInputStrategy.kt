@@ -136,7 +136,7 @@ internal class DomInputStrategy(
         document.addEventListener("selectionchange", selectionChangeListener)
         // In Firefox and Safari we listen to the selection change on the input element.
         // Chrome is expected to dispatch this event too (https://chromium-review.googlesource.com/c/chromium/src/+/5598393),
-        // but it doesn't: https://partnerissuetracker.corp.google.com/issues/518751607
+        // but it doesn't: https://issuetracker.google.com/issues/518751607
         htmlInput.addEventListener("selectionchange", selectionChangeListener)
     }
 
