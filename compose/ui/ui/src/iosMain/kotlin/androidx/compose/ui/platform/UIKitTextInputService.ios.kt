@@ -148,12 +148,21 @@ internal class UIKitTextInputService(
                     // Note: start() is intentionally not called here — it establishes a text editing
                     // session (requiring a PlatformTextInputMethodRequest) which is not applicable for
                     // SelectionContainer.
-                    currentInputConnection = SelectionContainerConnection(
-                        view, coroutineScope, viewConfiguration, focusManager
+                    val connection = SelectionContainerConnection(
+                        view = view,
+                        coroutineScope = coroutineScope,
+                        viewConfiguration = viewConfiguration,
+                        focusManager = focusManager
                     )
+                    currentInputConnection = connection
+                    connection.attachInputToView()
                 }
                 (currentInputConnection as? TextToolbar)?.showMenu(
-                    rect, onCopyRequested, onPasteRequested, onCutRequested, onSelectAllRequested
+                    rect = rect,
+                    onCopyRequested = onCopyRequested,
+                    onPasteRequested = onPasteRequested,
+                    onCutRequested = onCutRequested,
+                    onSelectAllRequested = onSelectAllRequested
                 )
             }
 

@@ -39,4 +39,8 @@ internal class SelectionContainerConnection(
         textInputView.resignFirstResponder()
         super.stop()
     }
+
+    public override fun attachInputToView() {
+        super.attachInputToView()
+    }
 }

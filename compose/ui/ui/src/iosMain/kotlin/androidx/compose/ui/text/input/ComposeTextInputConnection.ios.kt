@@ -136,6 +136,7 @@ internal open class ComposeTextInputConnection(
                     copy = onCopyRequested,
                     cut = onCutRequested,
                     paste = onPasteRequested,
+                    select = null,
                     selectAll = onSelectAllRequested,
                     customActions = emptyList<CMPEditMenuCustomAction>()
                 )

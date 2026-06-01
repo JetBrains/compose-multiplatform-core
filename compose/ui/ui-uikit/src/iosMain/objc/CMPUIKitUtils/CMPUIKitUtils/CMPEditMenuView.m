@@ -66,6 +66,7 @@
 @property (copy, nonatomic, nullable) void (^copyBlock)(void);
 @property (copy, nonatomic, nullable) void (^cutBlock)(void);
 @property (copy, nonatomic, nullable) void (^pasteBlock)(void);
+@property (copy, nonatomic, nullable) void (^selectBlock)(void);
 @property (copy, nonatomic, nullable) void (^selectAllBlock)(void);
 @property (copy, nonatomic, nullable) NSArray<CMPEditMenuCustomAction *> *customActions;
 
@@ -87,24 +88,13 @@ id _editInteraction;
                       copy:(void (^)(void))copyBlock
                        cut:(void (^)(void))cutBlock
                      paste:(void (^)(void))pasteBlock
-                 selectAll:(void (^)(void))selectAllBlock {
-    [self showEditMenuAtRect:targetRect
-                        copy:copyBlock
-                         cut:cutBlock
-                       paste:pasteBlock
-                   selectAll:selectAllBlock
-               customActions:@[]];
-}
-
-- (void)showEditMenuAtRect:(CGRect)targetRect
-                      copy:(void (^)(void))copyBlock
-                       cut:(void (^)(void))cutBlock
-                     paste:(void (^)(void))pasteBlock
+                    select:(void (^)(void))selectBlock
                  selectAll:(void (^)(void))selectAllBlock
              customActions:(NSArray<CMPEditMenuCustomAction *> *)customActions {
     BOOL contextMenuItemsChanged = [self contextMenuItemsChangedCopy:copyBlock
                                                                  cut:cutBlock
                                                                paste:pasteBlock
+                                                              select:selectBlock
                                                            selectAll:selectAllBlock
                                                        customActions:customActions];
     BOOL positionChanged = !CGRectEqualToRect(self.targetRect, targetRect);
@@ -119,6 +109,7 @@ id _editInteraction;
     self.copyBlock = copyBlock;
     self.cutBlock = cutBlock;
     self.pasteBlock = pasteBlock;
+    self.selectBlock = selectBlock;
     self.selectAllBlock = selectAllBlock;
     self.customActions = customActions;
 
@@ -291,11 +282,13 @@ id _editInteraction;
 - (BOOL)contextMenuItemsChangedCopy:(void (^)(void))copyBlock
                                 cut:(void (^)(void))cutBlock
                               paste:(void (^)(void))pasteBlock
+                             select:(void (^)(void))selectBlock
                           selectAll:(void (^)(void))selectAllBlock
                       customActions:(NSArray<CMPEditMenuCustomAction *> *)customActions {
     return ((self.copyBlock == nil) != (copyBlock == nil) ||
             (self.cutBlock == nil) != (cutBlock == nil) ||
             (self.pasteBlock == nil) != (pasteBlock == nil) ||
+            (self.selectBlock == nil) != (selectBlock == nil) ||
             (self.selectAllBlock == nil) != (selectAllBlock == nil) ||
             (![self.customActions isEqualToArray:customActions]));
 }
@@ -309,6 +302,9 @@ id _editInteraction;
     }
     if (@selector(cut:) == action) {
         return self.cutBlock != nil;
+    }
+    if (@selector(select:) == action) {
+        return self.selectBlock != nil;
     }
     if (@selector(selectAll:) == action) {
         return self.selectAllBlock != nil;
@@ -343,6 +339,12 @@ id _editInteraction;
 - (void)cut:(id)sender {
     if (self.cutBlock != nil) {
         self.cutBlock();
+    }
+}
+
+- (void)select:(id)sender {
+    if (self.selectBlock != nil) {
+        self.selectBlock();
     }
 }
 
