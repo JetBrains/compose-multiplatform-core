@@ -18,8 +18,7 @@ package androidx.compose.ui.scene
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Composition
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.CompositionContext
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Canvas
@@ -164,13 +163,14 @@ private class PlatformLayersComposeSceneImpl(
         mainOwner.invalidatePositionOnScreen()
     }
 
-    override fun createComposition(content: @Composable () -> Unit): Composition {
-        return mainOwner.setContent(
-            parent = resolveParentCompositionContext(),
-            getCompositionLocalContext = { compositionLocalContext },
-            content = content,
-        )
-    }
+    override fun createComposition(
+        parentCompositionContext: CompositionContext,
+        content: @Composable () -> Unit,
+    ): Composition = mainOwner.setContent(
+        parent = parentCompositionContext,
+        getCompositionLocalContext = { compositionLocalContext },
+        content = content,
+    )
 
     override fun hitTestInteropView(position: Offset): InteropView? {
         return mainOwner.hitTestInteropView(position)

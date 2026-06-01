@@ -57,11 +57,6 @@ import kotlinx.coroutines.awaitCancellation
 @InternalComposeUiApi
 interface PlatformContext {
     /**
-     * Platform-scoped values exposed by the current host container.
-     */
-    val valueStorage: PlatformValueStorage
-
-    /**
      * The value that will be provided to [LocalWindowInfo] by default.
      */
     val windowInfo: WindowInfo
@@ -237,9 +232,6 @@ interface PlatformContext {
 
     @InternalComposeUiApi
     open class Empty : PlatformContext {
-        override val valueStorage: PlatformValueStorage =
-            PlatformValueStorage.MapValueStorage()
-
         override val windowInfo: WindowInfo = WindowInfoImpl().apply {
             // true is a better default if the platform doesn't provide WindowInfo.
             // otherwise UI will always be rendered in unfocused mode

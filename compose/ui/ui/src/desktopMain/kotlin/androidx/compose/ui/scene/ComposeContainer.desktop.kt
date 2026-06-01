@@ -17,7 +17,6 @@
 package androidx.compose.ui.scene
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionContext
 import androidx.compose.ui.ComposeFeatureFlags
 import androidx.compose.ui.LayerType
 import androidx.compose.ui.awt.AwtEventFilter
@@ -58,6 +57,7 @@ import kotlin.coroutines.AbstractCoroutineContextElement
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
 import kotlinx.coroutines.CoroutineExceptionHandler
+import kotlinx.coroutines.Job
 import org.jetbrains.annotations.VisibleForTesting
 import org.jetbrains.skia.Canvas
 import org.jetbrains.skiko.MainUIDispatcher
@@ -363,7 +363,7 @@ internal class ComposeContainer(
     }
 
     fun setContent(content: @Composable () -> Unit) {
-        mediator.setContent(content)
+        mediator.setContent(content = content)
     }
 
     private fun createSkiaLayerComponent(mediator: ComposeSceneMediator): SkiaLayerComponent {
@@ -411,7 +411,6 @@ internal class ComposeContainer(
     }
 
     private fun createPlatformLayer(
-        compositionContext: CompositionContext,
         density: Density,
         layoutDirection: LayoutDirection,
         focusable: Boolean,
@@ -423,7 +422,7 @@ internal class ComposeContainer(
                 skiaLayerAnalytics = skiaLayerAnalytics,
                 renderSettings = renderSettings,
                 transparent = true, // TODO: Consider allowing opaque window layers
-                compositionContext = compositionContext,
+                compositionContext = mediator.frameRecomposer.compositionContext,
                 density = density,
                 layoutDirection = layoutDirection,
                 focusable = focusable,
@@ -431,7 +430,7 @@ internal class ComposeContainer(
             LayerType.OnComponent -> SwingComposeSceneLayer(
                 composeContainer = this,
                 skiaLayerAnalytics = skiaLayerAnalytics,
-                compositionContext = compositionContext,
+                compositionContext = mediator.frameRecomposer.compositionContext,
                 density = density,
                 layoutDirection = layoutDirection,
                 focusable = focusable,
@@ -510,13 +509,11 @@ internal class ComposeContainer(
         override val platformContext: PlatformContext,
     ) : ComposeSceneContext {
         override fun createLayer(
-            compositionContext: CompositionContext,
             density: Density,
             layoutDirection: LayoutDirection,
             focusable: Boolean,
             consumePointerInputOutside: Boolean,
         ): ComposeSceneLayer = createPlatformLayer(
-            compositionContext = compositionContext,
             density = density,
             layoutDirection = layoutDirection,
             focusable = focusable,

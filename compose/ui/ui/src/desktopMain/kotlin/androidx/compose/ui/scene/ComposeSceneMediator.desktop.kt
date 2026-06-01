@@ -17,6 +17,7 @@
 package androidx.compose.ui.scene
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionContext
 import androidx.compose.runtime.CompositionLocalContext
 import androidx.compose.runtime.mutableStateSetOf
 import androidx.compose.ui.ComposeFeatureFlags
@@ -57,12 +58,10 @@ import androidx.compose.ui.platform.PlatformComponent
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.PlatformDragAndDropManager
 import androidx.compose.ui.platform.PlatformTextInputMethodRequest
-import androidx.compose.ui.platform.PlatformValueStorage
 import androidx.compose.ui.platform.PlatformWindowContext
 import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.platform.WindowInfo
 import androidx.compose.ui.platform.a11y.ComposeSceneAccessibility
-import androidx.compose.ui.platform.compositionContext
 import androidx.compose.ui.scene.skia.SkiaLayerComponent
 import androidx.compose.ui.semantics.SemanticsOwner
 import androidx.compose.ui.unit.Density
@@ -157,7 +156,7 @@ internal class ComposeSceneMediator(
     }
 
     // TODO: It must be shared between Compose instances.
-    //  It's supposed to be stored in platform's root via [PlatformValueStorage].
+    //  It's supposed to be stored in platform's root view or window.
     val frameRecomposer = FrameRecomposer(coroutineContext, ::onComposeInvalidation)
 
     private val _platformContext = DesktopPlatformContext()
@@ -811,15 +810,6 @@ internal class ComposeSceneMediator(
     }
 
     private inner class DesktopPlatformContext : PlatformContext {
-        // TODO: Back this with Swing's `getClientProperty` / `putClientProperty` on the current
-        // host component, and make parent lookup traverse the Swing containment hierarchy.
-        override val valueStorage: PlatformValueStorage =
-            PlatformValueStorage.MapValueStorage(
-                parent = PlatformValueStorage.MapValueStorage().also {
-                    it.compositionContext = frameRecomposer.compositionContext
-                }
-            )
-
         override val windowInfo: WindowInfo get() = windowContext.windowInfo
         override val architectureComponentsOwner get() = this@ComposeSceneMediator.architectureComponentsOwner
         override val isWindowTransparent: Boolean get() = windowContext.isWindowTransparent

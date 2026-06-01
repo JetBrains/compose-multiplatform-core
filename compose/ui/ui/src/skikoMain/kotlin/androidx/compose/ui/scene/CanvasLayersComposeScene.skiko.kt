@@ -20,10 +20,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Composition
 import androidx.compose.runtime.CompositionContext
 import androidx.compose.runtime.CompositionLocalContext
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.Modifier
@@ -56,6 +54,7 @@ import androidx.compose.ui.util.fastForEachReversed
 import androidx.compose.ui.util.fastLastOrNull
 import androidx.compose.ui.viewinterop.InteropView
 import androidx.compose.ui.window.getDialogScrimBlendMode
+import kotlin.coroutines.CoroutineContext
 
 /**
  * Constructs a multi-layer [ComposeScene] using the specified parameters. Unlike
@@ -218,13 +217,14 @@ private class CanvasLayersComposeSceneImpl(
         mainOwner.invalidatePositionOnScreen()
     }
 
-    override fun createComposition(content: @Composable () -> Unit): Composition {
-        return mainOwner.setContent(
-            parent = resolveParentCompositionContext(),
-            getCompositionLocalContext = { compositionLocalContext },
-            content = content,
-        )
-    }
+    override fun createComposition(
+        parentCompositionContext: CompositionContext,
+        content: @Composable () -> Unit,
+    ): Composition = mainOwner.setContent(
+        parent = parentCompositionContext,
+        getCompositionLocalContext = { compositionLocalContext },
+        content = content,
+    )
 
     override fun hitTestInteropView(position: Offset): InteropView? {
         forEachLayerReversed { layer ->
@@ -465,13 +465,12 @@ private class CanvasLayersComposeSceneImpl(
     }
 
     override fun createLayer(
-        compositionContext: CompositionContext,
         density: Density,
         layoutDirection: LayoutDirection,
         focusable: Boolean,
         consumePointerInputOutside: Boolean,
     ): ComposeSceneLayer = AttachedComposeSceneLayer(
-        compositionContext = compositionContext,
+        coroutineContext = frameRecomposer.compositionContext.effectCoroutineContext,
         density = density,
         layoutDirection = layoutDirection,
         focusable = focusable,
@@ -533,7 +532,7 @@ private class CanvasLayersComposeSceneImpl(
     }
 
     private inner class AttachedComposeSceneLayer(
-        private val compositionContext: CompositionContext,
+        coroutineContext: CoroutineContext,
         density: Density,
         layoutDirection: LayoutDirection,
         focusable: Boolean,
@@ -542,7 +541,7 @@ private class CanvasLayersComposeSceneImpl(
         val owner = RootNodeOwner(
             density = density,
             layoutDirection = layoutDirection,
-            coroutineContext = compositionContext.effectCoroutineContext,
+            coroutineContext = coroutineContext,
             size = this@CanvasLayersComposeSceneImpl.size,
             platformContext = object : PlatformContext by composeSceneContext.platformContext {
 
@@ -648,11 +647,11 @@ private class CanvasLayersComposeSceneImpl(
             outsidePointerCallback = onOutsidePointerEvent
         }
 
-        override fun setContent(content: @Composable () -> Unit) {
+        override fun setContent(parentCompositionContext: CompositionContext, content: @Composable () -> Unit) {
             check(!isClosed) { "AttachedComposeSceneLayer is closed" }
             composition?.dispose()
             composition = owner.setContent(
-                parent = this@AttachedComposeSceneLayer.compositionContext,
+                parent = parentCompositionContext,
                 {
                     /*
                      * Do not use `compositionLocalContext` here - composition locals already

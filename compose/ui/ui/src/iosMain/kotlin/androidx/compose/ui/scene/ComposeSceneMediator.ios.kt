@@ -17,6 +17,7 @@
 package androidx.compose.ui.scene
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionContext
 import androidx.compose.runtime.CompositionLocalContext
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.State
@@ -54,14 +55,12 @@ import androidx.compose.ui.platform.PlatformArchitectureComponentsOwner
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.PlatformScreenReader
 import androidx.compose.ui.platform.PlatformTextInputMethodRequest
-import androidx.compose.ui.platform.PlatformValueStorage
 import androidx.compose.ui.platform.PlatformWindowContext
 import androidx.compose.ui.platform.UIKitIdleTimerManager
 import androidx.compose.ui.platform.UIKitTextInputService
 import androidx.compose.ui.platform.UIKitWindowInsetsManager
 import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.platform.WindowInfo
-import androidx.compose.ui.platform.compositionContext
 import androidx.compose.ui.semantics.SemanticsOwner
 import androidx.compose.ui.uikit.InterfaceOrientation
 import androidx.compose.ui.uikit.LocalNativeTextInputContext
@@ -219,8 +218,8 @@ internal class ComposeSceneMediator(
         }
 
     // TODO: It must be shared between Compose instances.
-    //  It's supposed to be stored in platform's root via [PlatformValueStorage].
-    private val frameRecomposer = FrameRecomposer(coroutineContext, redrawer::setNeedsRedraw)
+    //  It's supposed to be stored in platform's root view or window.
+    val frameRecomposer = FrameRecomposer(coroutineContext, redrawer::setNeedsRedraw)
 
     private val scene: ComposeScene by lazy {
         composeSceneFactory(
@@ -728,16 +727,6 @@ internal class ComposeSceneMediator(
             || navigationEventInput.onKeyEvent(keyEvent)
 
     private inner class PlatformContextImpl : PlatformContext {
-        // TODO: Back this with ObjC associated objects on the hosting UIKit view
-        // (`objc_getAssociatedObject` / `objc_setAssociatedObject`) and walk the superview chain
-        // for ancestor lookup instead of relying on the synthetic map-backed storage.
-        override val valueStorage: PlatformValueStorage =
-            PlatformValueStorage.MapValueStorage(
-                parent = PlatformValueStorage.MapValueStorage().also {
-                    it.compositionContext = frameRecomposer.compositionContext
-                }
-            )
-
         override val windowInfo: WindowInfo get() = windowContext.windowInfo
         override val architectureComponentsOwner get() = this@ComposeSceneMediator.architectureComponentsOwner
         override val screenReader: PlatformScreenReader get() = platformScreenReader

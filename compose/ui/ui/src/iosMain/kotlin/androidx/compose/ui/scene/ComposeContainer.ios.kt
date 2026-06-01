@@ -17,7 +17,6 @@
 package androidx.compose.ui.scene
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionContext
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
@@ -289,13 +288,13 @@ internal class ComposeContainer(
 
     private fun createComposeSceneContext(
         platformContext: PlatformContext,
-        layersHolder: ComposeLayersHolder
+        layersHolder: ComposeLayersHolder,
+        frameRecomposer: FrameRecomposer,
     ): ComposeSceneContext {
         return object : ComposeSceneContext {
             override val platformContext: PlatformContext = platformContext
 
             override fun createLayer(
-                compositionContext: CompositionContext,
                 density: Density,
                 layoutDirection: LayoutDirection,
                 focusable: Boolean,
@@ -306,7 +305,9 @@ internal class ComposeContainer(
                         layersHolder.getLayersViewController().detach(it)
                         onAccessibilityChanged()
                     },
-                    createComposeSceneContext = { createComposeSceneContext(it, layersHolder) },
+                    createComposeSceneContext = {
+                        createComposeSceneContext(it, layersHolder, frameRecomposer)
+                    },
                     hostCompositionLocals = { ProvideContainerCompositionLocals(it) },
                     layersViewController = layersHolder.getLayersViewController(),
                     initialLayoutDirection = layoutDirection,
@@ -314,7 +315,7 @@ internal class ComposeContainer(
                     onAccessibilityChanged = ::onAccessibilityChanged,
                     focusedViewsList = if (focusable) focusedViewsList.childFocusedViewsList() else null,
                     consumePointerInputOutside = consumePointerInputOutside,
-                    parentCoroutineContext = compositionContext.effectCoroutineContext,
+                    parentCoroutineContext = frameRecomposer.compositionContext.effectCoroutineContext,
                     ownerProvider = architectureComponentsOwner,
                     interfaceOrientationState = interfaceOrientationState,
                 )
@@ -331,14 +332,15 @@ internal class ComposeContainer(
         invalidate: () -> Unit,
         platformContext: PlatformContext,
         layersHolder: ComposeLayersHolder,
-        frameRecomposer: FrameRecomposer
+        frameRecomposer: FrameRecomposer,
     ): ComposeScene = PlatformLayersComposeScene(
         frameRecomposer = frameRecomposer,
         density = view.density,
         layoutDirection = layoutDirection,
         composeSceneContext = createComposeSceneContext(
             platformContext = platformContext,
-            layersHolder = layersHolder
+            layersHolder = layersHolder,
+            frameRecomposer = frameRecomposer,
         ),
         // TODO: Split these into UIKit layout vs display invalidation. `invalidateLayout`
         // should call into layout scheduling, while `invalidateDraw` should schedule display.

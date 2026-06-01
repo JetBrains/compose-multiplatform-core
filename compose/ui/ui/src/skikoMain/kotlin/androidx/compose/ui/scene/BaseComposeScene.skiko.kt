@@ -39,8 +39,6 @@ import androidx.compose.ui.node.SnapshotInvalidationTracker
 import androidx.compose.ui.platform.FrameRecomposer
 import androidx.compose.ui.platform.GlobalSnapshotManager
 import androidx.compose.ui.platform.ProvidePlatformCompositionLocals
-import androidx.compose.ui.platform.compositionContext
-import androidx.compose.ui.platform.findCompositionContextInNearestAncestor
 import androidx.compose.ui.util.trace
 import kotlin.concurrent.Volatile
 
@@ -53,7 +51,7 @@ import kotlin.concurrent.Volatile
  */
 @OptIn(InternalComposeUiApi::class)
 internal abstract class BaseComposeScene(
-    private val frameRecomposer: FrameRecomposer,
+    protected val frameRecomposer: FrameRecomposer,
     private val invalidateLayout: () -> Unit,
     private val invalidateDraw: () -> Unit,
 ) : ComposeScene {
@@ -151,8 +149,10 @@ internal abstract class BaseComposeScene(
     override val hasPendingSnapshotCommands: Boolean
         get() = snapshotInvalidationTracker.hasPendingSnapshotCommands
 
-    override fun setContent(content: @Composable () -> Unit) =
-        postponeInvalidation("BaseComposeScene:setContent") {
+    override fun setContent(
+        parentCompositionContext: CompositionContext?,
+        content: @Composable () -> Unit,
+    ) = postponeInvalidation("BaseComposeScene:setContent") {
             check(!isClosed) { "setContent called after ComposeScene is closed" }
             inputHandler.onChangeContent()
 
@@ -164,7 +164,9 @@ internal abstract class BaseComposeScene(
              */
             frameRecomposer.performScheduledRecomposerTasks()
             composition?.dispose()
-            composition = createComposition {
+            composition = createComposition(
+                parentCompositionContext = parentCompositionContext ?: frameRecomposer.compositionContext,
+            ) {
                 ProvidePlatformCompositionLocals(
                     @Suppress("DEPRECATION")
                     LocalComposeScene provides this,
@@ -296,20 +298,15 @@ internal abstract class BaseComposeScene(
         }
     }
 
-    private var parentCompositionContext: CompositionContext? = null
-    protected fun resolveParentCompositionContext(): CompositionContext =
-        parentCompositionContext ?: with(composeSceneContext.platformContext.valueStorage) {
-            compositionContext
-                ?: findCompositionContextInNearestAncestor()
-                ?: frameRecomposer.compositionContext
-        }.also { parentCompositionContext = it }
-
     protected fun runMeasureAndLayout() {
         snapshotInvalidationTracker.onMeasureAndLayout()
         doMeasureAndLayout()
     }
 
-    protected abstract fun createComposition(content: @Composable () -> Unit): Composition
+    protected abstract fun createComposition(
+        parentCompositionContext: CompositionContext,
+        content: @Composable () -> Unit
+    ): Composition
 
     private fun onPointerInputEvent(event: PointerInputEvent) = processPointerInputEvent(event)
         .also {

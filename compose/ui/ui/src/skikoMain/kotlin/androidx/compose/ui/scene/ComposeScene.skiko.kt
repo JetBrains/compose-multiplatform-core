@@ -17,6 +17,7 @@
 package androidx.compose.ui.scene
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionContext
 import androidx.compose.runtime.CompositionLocal
 import androidx.compose.runtime.CompositionLocalContext
 import androidx.compose.runtime.LaunchedEffect
@@ -185,9 +186,14 @@ sealed interface ComposeScene : AutoCloseable {
      *
      * Will throw an [IllegalStateException] if the composition has been disposed.
      *
+     * @param parentCompositionContext The parent [CompositionContext] of the content's composition.
+     * When `null`, root [androidx.compose.runtime.Recomposer] is used.
      * @param content Content of the [ComposeScene]
      */
-    fun setContent(content: @Composable () -> Unit)
+    fun setContent(
+        parentCompositionContext: CompositionContext? = null,
+        content: @Composable () -> Unit,
+    )
 
     /**
      * Runs layout for the current scene content.
