@@ -37,15 +37,20 @@ internal fun RootMeasurePolicy(
     usePlatformDefaultWidth: Boolean,
     calculatePosition: MeasureScope.(contentSize: IntSize) -> IntOffset,
 ) = MeasurePolicy { measurables, constraints ->
-    val platformConstraints = applyPlatformConstrains(
+    val platformConstraints = applyPlatformConstraints(
         constraints, platformInsets, usePlatformDefaultWidth
     )
     val placeables = measurables.fastMap { it.measure(platformConstraints) }
-    val contentWidth = placeables.fastMaxOfOrDefault(constraints.minWidth) { it.measuredWidth }
-    val contentHeight = placeables.fastMaxOfOrDefault(constraints.minHeight) { it.measuredHeight }
+    val contentSize = IntSize(
+        width = placeables.fastMaxOfOrDefault(constraints.minWidth) { it.width },
+        height = placeables.fastMaxOfOrDefault(constraints.minHeight) { it.height }
+    )
 
-    layout(contentWidth, contentHeight) {
-        val contentSize = IntSize(contentWidth, contentHeight)
+    // When unconstrained, use content size as layout dimensions to allow the content's
+    // preferred size to be measured
+    val width = if (constraints.hasBoundedWidth) constraints.maxWidth else contentSize.width
+    val height = if (constraints.hasBoundedHeight) constraints.maxHeight else contentSize.height
+    layout(width, height) {
         val position = calculatePosition(contentSize)
         placeables.fastForEach {
             it.place(position.x, position.y)
@@ -53,7 +58,7 @@ internal fun RootMeasurePolicy(
     }
 }
 
-private fun Density.applyPlatformConstrains(
+private fun Density.applyPlatformConstraints(
     constraints: Constraints,
     platformInsets: PlatformInsets,
     usePlatformDefaultWidth: Boolean
