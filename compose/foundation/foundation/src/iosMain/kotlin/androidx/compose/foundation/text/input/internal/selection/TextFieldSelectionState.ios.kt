@@ -275,8 +275,7 @@ private class UIKitTextFieldTextDragObserver(
 ) : TextDragObserver {
     private var dragBeginPosition: Offset = Offset.Unspecified
     private var dragTotalDistance: Offset = Offset.Zero
-    private var isSingleLongPress = false
-    private var selectionAtLongPressStart: TextRange = TextRange.Zero
+    private var selectionAtLongPressStart: TextRange? = null
 
     private fun onDragStop(showContextMenu: Boolean) {
         // Only execute clear-up if drag was actually ongoing.
@@ -287,13 +286,13 @@ private class UIKitTextFieldTextDragObserver(
             textFieldSelectionState.directDragGestureInitiator = InputType.None
             textFieldSelectionState.clearHandleDragging()
 
-            val selectionChanged =
-                textFieldSelectionState.textFieldState.visualText.selection != selectionAtLongPressStart
-            if (showContextMenu && isSingleLongPress && !selectionChanged) {
+            val isSelectionUnchanged =
+                textFieldSelectionState.textFieldState.visualText.selection == selectionAtLongPressStart
+            if (showContextMenu && isSelectionUnchanged) {
                 textFieldSelectionState.updateTextToolbarState(Cursor)
             }
         }
-        isSingleLongPress = false
+        selectionAtLongPressStart = null
     }
 
     override fun onDown(point: Offset) = Unit
@@ -313,10 +312,9 @@ private class UIKitTextFieldTextDragObserver(
         dragTotalDistance = Offset.Zero
 
         if (selectionAdjustment != SelectionAdjustment.None) {
-            isSingleLongPress = false
             textFieldSelectionState.doRepeatingTapSelection(startPoint, selectionAdjustment)
+            selectionAtLongPressStart = null
         } else {
-            isSingleLongPress = true
             textFieldSelectionState.moveCaretByLongPress(startPoint)
             selectionAtLongPressStart = textFieldSelectionState.textFieldState.visualText.selection
         }
