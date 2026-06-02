@@ -50,6 +50,7 @@ import androidx.compose.ui.test.findNodeWithLabel
 import androidx.compose.ui.test.findNodeWithLabelOrNull
 import androidx.compose.ui.test.findNodeWithTag
 import androidx.compose.ui.test.firstNodeOrNull
+import androidx.compose.ui.test.isVisibleInContainer
 import androidx.compose.ui.test.runUIKitInstrumentedTest
 import androidx.compose.ui.test.utils.hold
 import androidx.compose.ui.test.utils.up
@@ -59,6 +60,7 @@ import androidx.compose.ui.unit.dp
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import kotlin.test.fail
 import kotlin.time.Duration.Companion.seconds
@@ -473,12 +475,15 @@ class TextFieldEditMenuTest {
 
         // On small screens it might be not enough space to fit both menus.
         val selectionNode =
-            findNodeWithLabelOrNull("Select All") ?: findNodeWithLabelOrNull("Select")
-            ?: fail("Cannot find node with Select All or Select label")
-        selectionNode.let {
-            it.assertVisibleInContainer()
-            assertTrue(it.isAccessibilityElement ?: false)
-        }
+            findNodeWithLabelOrNull("Select All")?.takeIf { it.isVisibleInContainer }
+                ?: findNodeWithLabelOrNull("Select")?.takeIf { it.isVisibleInContainer }
+                ?: fail("Cannot find node with Select All or Select label")
+
+        assertNotNull(
+            selectionNode,
+            "Either Select or Select All context menu button must be visible"
+        )
+        assertTrue(selectionNode.isAccessibilityElement ?: false)
     }
 
     private fun UIKitInstrumentedTest.tapContextMenuButton(label: String) {
