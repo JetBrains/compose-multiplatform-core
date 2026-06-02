@@ -188,7 +188,7 @@ internal class UIKitTextInputService(
             customActions: List<UIKitNativeTextInputContextMenuCustomAction>?
         ) {
             fun update() {
-                currentInputConnection?.updateNativeTextInputEditMenuState(
+                currentInputConnection?.setAvailableEditMenuActions(
                     copy = copy,
                     paste = paste,
                     cut = cut,

@@ -365,7 +365,7 @@ internal class NativeTextInputConnection(
         textInputView.setTintColor(selectionTintColor?.toUIColor())
     }
 
-    override fun updateNativeTextInputEditMenuState(
+    override fun setAvailableEditMenuActions(
         copy: (() -> Unit)?,
         paste: (() -> Unit)?,
         cut: (() -> Unit)?,

@@ -135,7 +135,7 @@ internal abstract class TextInputConnection(
         }
     }
 
-    abstract fun updateNativeTextInputEditMenuState(
+    abstract fun setAvailableEditMenuActions(
         copy: (() -> Unit)?,
         paste: (() -> Unit)?,
         cut: (() -> Unit)?,

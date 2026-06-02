@@ -113,7 +113,7 @@ internal open class ComposeTextInputConnection(
         showMenuOrUpdatePosition()
     }
 
-    override fun updateNativeTextInputEditMenuState(
+    override fun setAvailableEditMenuActions(
         copy: (() -> Unit)?,
         paste: (() -> Unit)?,
         cut: (() -> Unit)?,
