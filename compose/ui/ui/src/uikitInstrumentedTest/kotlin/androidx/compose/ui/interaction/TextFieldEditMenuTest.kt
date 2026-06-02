@@ -75,13 +75,16 @@ class TextFieldEditMenuTest {
     @Test
     fun testBasicTextFieldToolbar() = runContextMenuTest(false) {
         UIPasteboard.generalPasteboard().string = "Paste text"
+        val textValue = mutableStateOf(TextFieldValue("Hello-LongLongLongLongLongLong-text"))
         setContent {
             Column(modifier = Modifier.safeDrawingPadding()) {
-                BasicTextField("Hello-LongLongLongLongLongLong-text", {}, modifier = Modifier.testTag("TextField"))
+                BasicTextField(textValue.value, { textValue.value = it }, modifier = Modifier.testTag("TextField"))
             }
         }
 
         openToolbar(textFieldTag = "TextField")
+
+        println(">>> SELECTION: ${textValue.value.selection}")
 
         verifyFullToolbarPresent()
     }
