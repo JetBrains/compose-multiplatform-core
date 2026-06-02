@@ -1,7 +1,7 @@
 ---
 name: ios-instrumented-tests
 description: This skill should be used when the user asks about "running iOS tests", "iOS instrumented tests", "how to run ios tests", "launch specific ios test", "add new ios instrumented test" and these tests are located in the "compose/ui/ui/src/uikitInstrumentedTest" directory.
-version: 1.0.0
+version: 1.0.1
 ---
 
 iOS Instrumented tests are designed to run XCTests written on Kotlin using the iOS Simulator as an environment.
