@@ -137,7 +137,7 @@ internal class ComposeContainer(
     @VisibleForTesting
     val architectureComponentsOwner = DefaultArchitectureComponentsOwner(savedState)
 
-    val mediator = ComposeSceneMediator(
+    private val mediator = ComposeSceneMediator(
         container = container,
         isWindowLevel = isWindowLevel,
         windowContext = windowContext,
