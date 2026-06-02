@@ -51,6 +51,7 @@ import androidx.compose.ui.platform.CUPERTINO_TOUCH_SLOP
 import androidx.compose.ui.platform.DefaultInputModeManager
 import androidx.compose.ui.platform.PlatformArchitectureComponentsOwner
 import androidx.compose.ui.platform.PlatformContext
+import androidx.compose.ui.platform.PlatformOutOfFrameExecutor
 import androidx.compose.ui.platform.PlatformScreenReader
 import androidx.compose.ui.platform.PlatformTextInputMethodRequest
 import androidx.compose.ui.platform.PlatformWindowContext
@@ -750,8 +751,8 @@ internal class ComposeSceneMediator(
             redrawer.voteFrameRate(frameRate, frameRateCategory)
         }
 
-        override val scheduleOutOfFrameTask
-            get() = if (isActive) redrawer.outOfFrameExecutor::schedule else null
+        override val outOfFrameExecutor: PlatformOutOfFrameExecutor?
+            get() = if (isActive) redrawer.outOfFrameExecutor else null
 
         override suspend fun startInputMethod(request: PlatformTextInputMethodRequest): Nothing {
             this@ComposeSceneMediator.textInputService.startInputMethod(request)

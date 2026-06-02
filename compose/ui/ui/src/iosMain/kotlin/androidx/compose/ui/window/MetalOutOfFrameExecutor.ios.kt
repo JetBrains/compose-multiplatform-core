@@ -16,22 +16,23 @@
 
 package androidx.compose.ui.window
 
+import androidx.compose.ui.platform.PlatformOutOfFrameExecutor
 import androidx.compose.ui.util.trace
-import kotlin.time.Clock
-import kotlin.time.ExperimentalTime
 import platform.Foundation.NSThread
 import platform.darwin.dispatch_async
 import platform.darwin.dispatch_get_main_queue
 
-internal class MetalOutOfFrameExecutor {
+internal class MetalOutOfFrameExecutor: PlatformOutOfFrameExecutor {
     private val queue = ArrayDeque<() -> Unit>()
     private var isFrameInProgress = false
     private var isDrainScheduled = false
     private var isDraining = false
     private var isDisposed = false
 
-    @OptIn(ExperimentalTime::class)
-    fun schedule(block: () -> Unit) {
+    override val hasWorkScheduled: Boolean
+        get() = queue.isNotEmpty()
+
+    override fun schedule(block: () -> Unit) {
         check(NSThread.isMainThread) {
             "MetalOutOfFrameExecutor.schedule() must be called on main thread"
         }
@@ -42,6 +43,11 @@ internal class MetalOutOfFrameExecutor {
         queue.addLast(block)
 
         if (!isFrameInProgress && !isDraining && !isDrainScheduled) {
+            // When work is scheduled during frame recording, onFrameEnd() drains it before the next
+            // frame starts. Outside of a frame there is no such drain point, but running the block
+            // inline would make scheduling synchronous and could mutate composition state from the
+            // current rendering/layout stack. Post one main-queue drain to defer the work while
+            // keeping it on the main thread.
             isDrainScheduled = true
             dispatch_async(dispatch_get_main_queue()) {
                 drain()
@@ -82,7 +88,7 @@ internal class MetalOutOfFrameExecutor {
         queue.clear()
     }
 
-    private fun drain() {
+    override fun drain() {
         check(NSThread.isMainThread) {
             "MetalOutOfFrameExecutor.drain() must be called on main thread"
         }

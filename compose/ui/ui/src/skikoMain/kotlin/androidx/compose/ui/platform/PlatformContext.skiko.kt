@@ -32,6 +32,7 @@ import androidx.compose.ui.input.InputModeManager
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.isClearFocusOnMouseDownEnabled
 import androidx.compose.ui.node.LayoutNode
+import androidx.compose.ui.node.OutOfFrameExecutor
 import androidx.compose.ui.node.OwnedLayer
 import androidx.compose.ui.node.Owner
 import androidx.compose.ui.node.RootForTest
@@ -193,10 +194,13 @@ interface PlatformContext {
         get() = ComposeUiFlags.isClearFocusOnMouseDownEnabled
 
     /**
-     * Schedules a task to run after the current frame work, but before the next frame starts.
+     * Schedules work that should be deferred out of the current
+     * composition/layout/rendering stack.
+     *
+     * @see PlatformOutOfFrameExecutor
+     * @see OutOfFrameExecutor
      */
-    val scheduleOutOfFrameTask: ((block: () -> Unit) -> Unit)?
-        get() = null
+    val outOfFrameExecutor: PlatformOutOfFrameExecutor? get() = null
 
     interface RootForTestListener {
         fun onRootForTestCreated(root: PlatformRootForTest)

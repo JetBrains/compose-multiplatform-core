@@ -557,10 +557,10 @@ internal class RootNodeOwner(
         override val measureIteration: Long get() = measureAndLayoutDelegate.measureIteration
 
         override val outOfFrameExecutor: OutOfFrameExecutor? =
-            platformContext.scheduleOutOfFrameTask?.let { schedule ->
+            platformContext.outOfFrameExecutor?.let {
                 object : OutOfFrameExecutor {
                     override fun schedule(block: () -> Unit) {
-                        schedule(block)
+                        it.schedule(block)
                     }
                 }
             }
@@ -799,10 +799,11 @@ internal class RootNodeOwner(
             }
 
         override val hasPendingMeasureOrLayout: Boolean
-            get() = measureAndLayoutDelegate.hasPendingMeasureOrLayout
+            get() = measureAndLayoutDelegate.hasPendingMeasureOrLayout || platformContext.outOfFrameExecutor?.hasWorkScheduled ?: false
 
         override fun measureAndLayoutForTest() {
             owner.measureAndLayout(sendPointerUpdate = true)
+            platformContext.outOfFrameExecutor?.drain()
         }
 
         /**

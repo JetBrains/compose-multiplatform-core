@@ -17,6 +17,7 @@
 package androidx.compose.ui.window
 
 import androidx.compose.ui.FrameRateCategory
+import androidx.compose.ui.platform.PlatformOutOfFrameExecutor
 import androidx.compose.ui.uikit.utils.CMPMetalDrawablesHandler
 import androidx.compose.ui.util.trace
 import androidx.compose.ui.viewinterop.UIKitInteropAction
@@ -38,7 +39,7 @@ internal sealed interface MetalRedrawer {
     var isActive: Boolean
     fun draw(waitUntilCompletion: Boolean)
     fun setNeedsRedraw()
-    val outOfFrameExecutor: MetalOutOfFrameExecutor
+    val outOfFrameExecutor: PlatformOutOfFrameExecutor
     var ongoingInteractionEventsCount: Int
     var preferredFramesPerSecond: NSInteger
     var isForcedToPresentWithTransactionEveryFrame: Boolean
