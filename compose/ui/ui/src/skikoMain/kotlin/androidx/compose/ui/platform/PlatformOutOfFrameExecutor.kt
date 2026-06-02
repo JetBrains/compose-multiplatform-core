@@ -17,10 +17,13 @@
 package androidx.compose.ui.platform
 
 import androidx.compose.ui.InternalComposeUiApi
+import androidx.compose.ui.node.OutOfFrameExecutor
 
 /**
  * Platform-specific scheduler for work that should be deferred out of the current
  * composition/layout/rendering stack.
+ *
+ * @see OutOfFrameExecutor
  */
 @InternalComposeUiApi
 interface PlatformOutOfFrameExecutor {
