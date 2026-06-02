@@ -34,7 +34,6 @@ import androidx.compose.ui.node.InternalCoreApi
 import androidx.compose.ui.scene.ComposeContainer
 import androidx.compose.ui.semantics.SemanticsOwner
 import androidx.compose.ui.unit.ExperimentalUnitApi
-import androidx.compose.ui.unit.awt.UnspecifiedDimension
 import androidx.compose.ui.window.WindowExceptionHandler
 import androidx.savedstate.SavedState
 import java.awt.Color
@@ -228,7 +227,7 @@ class ComposePanel @ExperimentalComposeUiApi constructor(
      * Sets the minimum size of the composable content.
      *
      * The width and height of [size] can either be a regular, specific, value or
-     * [androidx.compose.ui.unit.awt.UNSPECIFIED_DIMENSION_VALUE], which means the content will
+     * [UNSPECIFIED_DIMENSION_VALUE], which means the content will
      * determine the minimum size on the corresponding axis. The content will be measured
      * unconstrained on that axis, and the resulting size will be used.
      */
@@ -247,7 +246,7 @@ class ComposePanel @ExperimentalComposeUiApi constructor(
      * Sets the preferred size of the [ComposePanel].
      *
      * The width and height of [size] can either be a regular, specific, value or
-     * [androidx.compose.ui.unit.awt.UNSPECIFIED_DIMENSION_VALUE], which means the content will
+     * [UNSPECIFIED_DIMENSION_VALUE], which means the content will
      * determine the preferred size on the corresponding axis. The content will be measured
      * unconstrained on that axis, and the resulting size will be used.
      */
@@ -266,7 +265,7 @@ class ComposePanel @ExperimentalComposeUiApi constructor(
      * Sets the maximum size of the composable content.
      *
      * The width and height of [size] can either be a regular, specific, value or
-     * [androidx.compose.ui.unit.awt.UNSPECIFIED_DIMENSION_VALUE], which means the content will
+     * [UNSPECIFIED_DIMENSION_VALUE], which means the content will
      * determine the maximum size on the corresponding axis. The content will be measured
      * unconstrained on that axis, and the resulting size will be used.
      */

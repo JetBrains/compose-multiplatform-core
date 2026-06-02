@@ -181,22 +181,25 @@ class WindowGeometryProviderScope internal constructor(
     /**
      * Measures the window content in the given constraints and returns the resulting size.
      *
-     * Each [Dp] value can be [Dp.Unspecified] to indicate no (or infinite) constraint.
+     * [maxWidth] and [maxHeight] can be [Dp.Infinity] to indicate no (or infinite) constraint.
      */
     fun measureWindowContent(
         minWidth: Dp = 0.dp,
-        maxWidth: Dp = Dp.Unspecified,
+        maxWidth: Dp = Dp.Infinity,
         minHeight: Dp = 0.dp,
-        maxHeight: Dp = Dp.Unspecified,
+        maxHeight: Dp = Dp.Infinity,
     ): DpSize {
         fun Dp.toPxOrInfinity() =
-            if (this@toPxOrInfinity == Dp.Unspecified) {
-                Constraints.Infinity
-            } else {
+            if (this.isFinite && this.isSpecified) {
                 with(windowDensity) {
                     roundToPx()
                 }
+            } else {
+                Constraints.Infinity
             }
+
+        minWidth.requireReal("minWidth")
+        minHeight.requireReal("minHeight")
 
         val constraints = Constraints(
             minWidth = minWidth.toPxOrInfinity(),

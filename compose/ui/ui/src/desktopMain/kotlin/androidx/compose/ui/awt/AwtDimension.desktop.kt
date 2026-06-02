@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package androidx.compose.ui.unit.awt
+package androidx.compose.ui.awt
 
 import androidx.compose.ui.unit.ExperimentalUnitApi
 import java.awt.Dimension

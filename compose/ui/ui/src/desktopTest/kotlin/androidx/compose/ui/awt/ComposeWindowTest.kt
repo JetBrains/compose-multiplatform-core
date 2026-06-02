@@ -40,8 +40,6 @@ import androidx.compose.ui.sendMouseRelease
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.ExperimentalUnitApi
 import androidx.compose.ui.unit.IntSize
-import androidx.compose.ui.unit.awt.UNSPECIFIED_DIMENSION_VALUE
-import androidx.compose.ui.unit.awt.UnspecifiedDimension
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.WindowExceptionHandler
@@ -57,7 +55,6 @@ import java.awt.event.MouseEvent.BUTTON1
 import java.awt.event.MouseEvent.MOUSE_ENTERED
 import java.awt.event.MouseEvent.MOUSE_MOVED
 import java.awt.event.WindowEvent
-import javax.swing.JFrame
 import kotlin.math.roundToInt
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.skiko.ExperimentalSkikoApi

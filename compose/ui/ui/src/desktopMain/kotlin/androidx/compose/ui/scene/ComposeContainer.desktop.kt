@@ -36,7 +36,7 @@ import androidx.compose.ui.unit.ExperimentalUnitApi
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.util.fastAll
-import androidx.compose.ui.unit.awt.UNSPECIFIED_DIMENSION_VALUE
+import androidx.compose.ui.awt.UNSPECIFIED_DIMENSION_VALUE
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastForEachReversed
 import androidx.compose.ui.util.fastRoundToInt

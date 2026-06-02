@@ -61,8 +61,6 @@ import androidx.compose.ui.sendMousePress
 import androidx.compose.ui.sendMouseRelease
 import androidx.compose.ui.sendMouseWheelEvent
 import androidx.compose.ui.unit.ExperimentalUnitApi
-import androidx.compose.ui.unit.awt.UNSPECIFIED_DIMENSION_VALUE
-import androidx.compose.ui.unit.awt.UnspecifiedDimension
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
 import androidx.compose.ui.util.ThrowUncaughtExceptionRule

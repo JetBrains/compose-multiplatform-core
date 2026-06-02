@@ -27,7 +27,6 @@ import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.ExperimentalUnitApi
 import androidx.compose.ui.unit.IntSize
-import androidx.compose.ui.unit.awt.UnspecifiedDimension
 import androidx.compose.ui.window.FrameWindowScope
 import androidx.compose.ui.window.UndecoratedWindowResizer
 import androidx.compose.ui.window.WindowExceptionHandler
@@ -224,7 +223,7 @@ class ComposeWindow @ExperimentalComposeUiApi constructor(
      * Sets the preferred size of the window.
      *
      * The width and height of [size] can either be a regular, specific, value or
-     * [androidx.compose.ui.unit.awt.UNSPECIFIED_DIMENSION_VALUE], which means the content will
+     * [UNSPECIFIED_DIMENSION_VALUE], which means the content will
      * determine the preferred size on the corresponding axis. The content will be measured
      * unconstrained on that axis, and the resulting size will be used.
      */
