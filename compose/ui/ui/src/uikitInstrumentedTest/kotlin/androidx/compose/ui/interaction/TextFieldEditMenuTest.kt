@@ -50,6 +50,7 @@ import androidx.compose.ui.test.findNodeWithLabel
 import androidx.compose.ui.test.findNodeWithLabelOrNull
 import androidx.compose.ui.test.findNodeWithTag
 import androidx.compose.ui.test.firstNodeOrNull
+import androidx.compose.ui.test.getAccessibilityTree
 import androidx.compose.ui.test.isVisibleInContainer
 import androidx.compose.ui.test.runUIKitInstrumentedTest
 import androidx.compose.ui.test.utils.hold
@@ -477,12 +478,20 @@ class TextFieldEditMenuTest {
         val selectionNode =
             findNodeWithLabelOrNull("Select All")?.takeIf { it.isVisibleInContainer }
                 ?: findNodeWithLabelOrNull("Select")?.takeIf { it.isVisibleInContainer }
-                ?: fail("Cannot find node with Select All or Select label")
 
-        assertNotNull(
-            selectionNode,
-            "Either Select or Select All context menu button must be visible"
-        )
+        if (selectionNode == null) {
+            println(">---------------------------------------------------------<")
+            println(">---------------------------------------------------------<")
+
+            println(getAccessibilityTree().printTree())
+
+            println(">---------------------------------------------------------<")
+            println(">---------------------------------------------------------<")
+        }
+
+        selectionNode ?: fail("Cannot find node with Select All or Select label")
+
+
         assertTrue(selectionNode.isAccessibilityElement ?: false)
     }
 
