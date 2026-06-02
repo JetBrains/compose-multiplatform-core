@@ -84,8 +84,6 @@ class TextFieldEditMenuTest {
 
         openToolbar(textFieldTag = "TextField")
 
-        println(">>> SELECTION: ${textValue.value.selection}")
-
         verifyFullToolbarPresent()
     }
 
@@ -477,25 +475,10 @@ class TextFieldEditMenuTest {
             assertTrue(it.isAccessibilityElement ?: false)
         }
 
-        // On small screens it might be not enough space to fit both menus.
-        val selectionNode =
-            findNodeWithLabelOrNull("Select All")?.takeIf { it.isVisibleInContainer }
-                ?: findNodeWithLabelOrNull("Select")?.takeIf { it.isVisibleInContainer }
-
-        if (selectionNode == null) {
-            println(">---------------------------------------------------------<")
-            println(">---------------------------------------------------------<")
-
-            println(getAccessibilityTree().printTree())
-
-            println(">---------------------------------------------------------<")
-            println(">---------------------------------------------------------<")
+        findNodeWithLabel("Select All").let {
+            it.assertVisibleInContainer()
+            assertTrue(it.isAccessibilityElement ?: false)
         }
-
-        selectionNode ?: fail("Cannot find node with Select All or Select label")
-
-
-        assertTrue(selectionNode.isAccessibilityElement ?: false)
     }
 
     private fun UIKitInstrumentedTest.tapContextMenuButton(label: String) {
