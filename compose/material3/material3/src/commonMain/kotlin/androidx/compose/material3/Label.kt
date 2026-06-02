@@ -31,13 +31,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.onGloballyPositioned
-import kotlinx.coroutines.flow.collectLatest
 
 /**
  * Label component that will append a [label] to [content]. The positioning logic uses
@@ -108,20 +108,33 @@ private fun HandleInteractions(
     interactionSource: MutableInteractionSource,
 ) {
     if (enabled) {
+        // Track all active interactions so that HoverInteraction.Exit during a drag does not
+        // prematurely dismiss the label. With collectLatest the previous show() coroutine was
+        // cancelled on every new interaction; if HoverInteraction.Exit arrived while a
+        // DragInteraction.Start was still active the label disappeared until drag ended.
+        val activeInteractions = remember { mutableStateListOf<Interaction>() }
+        val hasActiveInteractions = activeInteractions.isNotEmpty()
+
         LaunchedEffect(interactionSource) {
-            interactionSource.interactions.collectLatest { interaction ->
+            interactionSource.interactions.collect { interaction ->
                 when (interaction) {
-                    is PressInteraction.Press,
-                    is DragInteraction.Start,
-                    is HoverInteraction.Enter -> {
-                        state.show(MutatePriority.UserInput)
-                    }
-                    is PressInteraction.Release,
-                    is DragInteraction.Stop,
-                    is HoverInteraction.Exit -> {
-                        state.dismiss()
-                    }
+                    is PressInteraction.Press -> activeInteractions.add(interaction)
+                    is PressInteraction.Release -> activeInteractions.remove(interaction.press)
+                    is PressInteraction.Cancel -> activeInteractions.remove(interaction.press)
+                    is DragInteraction.Start -> activeInteractions.add(interaction)
+                    is DragInteraction.Stop -> activeInteractions.remove(interaction.start)
+                    is DragInteraction.Cancel -> activeInteractions.remove(interaction.start)
+                    is HoverInteraction.Enter -> activeInteractions.add(interaction)
+                    is HoverInteraction.Exit -> activeInteractions.remove(interaction.enter)
                 }
+            }
+        }
+
+        LaunchedEffect(hasActiveInteractions) {
+            if (hasActiveInteractions) {
+                state.show(MutatePriority.UserInput)
+            } else {
+                state.dismiss()
             }
         }
     }
