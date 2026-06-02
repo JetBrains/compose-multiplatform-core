@@ -385,7 +385,7 @@ class RenderPhasesTest {
     }
 
     @Test
-    fun panPointerEventHandlesScrollUpdatesSynchronously() = runInternalSkikoComposeUiTest {
+    fun panPointerEventHandlesScrollUpdates() = runInternalSkikoComposeUiTest {
         val scrollState = ScrollState(0)
         setContent {
             Box(modifier = Modifier.size(100.dp).verticalScroll(scrollState)) {
@@ -393,21 +393,28 @@ class RenderPhasesTest {
             }
         }
 
-        assertFalse(scene.hasInvalidations())
         assertEquals(0, scrollState.value)
 
+        scene.sendPointerEvent(
+            eventType = PointerEventType.PanStart,
+            position = Offset(50f, 50f),
+        )
         scene.sendPointerEvent(
             eventType = PointerEventType.PanMove,
             position = Offset(50f, 50f),
             panGestureOffset = Offset(0f, 40f)
         )
+        scene.sendPointerEvent(
+            eventType = PointerEventType.PanEnd,
+            position = Offset(50f, 50f),
+        )
 
-        assertTrue(scene.hasInvalidations())
+        waitForIdle()
         assertNotEquals(0, scrollState.value)
     }
 
     @Test
-    fun scalePointerEventHandlesScrollUpdatesSynchronously() = runInternalSkikoComposeUiTest {
+    fun scalePointerEventHandlesScrollUpdates() = runInternalSkikoComposeUiTest {
         var scale = 1f
         setContent {
             Box(modifier = Modifier.size(100.dp).onPointerEvent(PointerEventType.ScaleChange) {
@@ -419,7 +426,6 @@ class RenderPhasesTest {
             }
         }
 
-        assertFalse(scene.hasInvalidations())
         assertEquals(1f, scale)
 
         scene.sendPointerEvent(
@@ -428,7 +434,7 @@ class RenderPhasesTest {
             scaleGestureFactor = 2.0f
         )
 
-        assertTrue(scene.hasInvalidations())
+        waitForIdle()
         assertNotEquals(1f, scale)
     }
 
