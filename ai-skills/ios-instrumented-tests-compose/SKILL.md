@@ -1,6 +1,6 @@
 ---
 name: ios-instrumented-tests
-/skidescription: This skill should be used when the user asks about "running iOS tests", "iOS instrumented tests", "how to run ios tests", "launch specific ios test", "add new ios instrumented test" and these tests are located in the "compose/ui/ui/src/uikitInstrumentedTest" directory.
+description: This skill should be used when the user asks about "running iOS tests", "iOS instrumented tests", "how to run ios tests", "launch specific ios test", "add new ios instrumented test" and these tests are located in the "compose/ui/ui/src/uikitInstrumentedTest" directory.
 version: 1.0.0
 ---
 
