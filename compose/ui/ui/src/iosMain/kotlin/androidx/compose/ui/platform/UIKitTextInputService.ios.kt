@@ -54,6 +54,8 @@ internal class UIKitTextInputService(
 
     private var currentInputConnection: TextInputConnection? by mutableStateOf(null)
 
+    private var updateEditMenuState = {}
+
     val hasInvalidations: Boolean
         get() = currentInputConnection?.hasInvalidations ?: false
 
@@ -108,7 +110,7 @@ internal class UIKitTextInputService(
             )
         }
         currentInputConnection?.start(request)
-
+        updateEditMenuState()
         onInputStarted()
     }
 
@@ -131,7 +133,7 @@ internal class UIKitTextInputService(
     val textToolbar: TextToolbar by lazy(LazyThreadSafetyMode.NONE) {
         object : TextToolbar {
             override val status: TextToolbarStatus
-                get() = (currentInputConnection as? TextToolbar)?.status ?: TextToolbarStatus.Hidden
+                get() = (currentInputConnection as? ComposeTextInputConnection)?.toolbarStatus ?: TextToolbarStatus.Hidden
 
             override fun showMenu(
                 rect: Rect,
@@ -157,7 +159,7 @@ internal class UIKitTextInputService(
                     currentInputConnection = connection
                     connection.attachInputToView()
                 }
-                (currentInputConnection as? TextToolbar)?.showMenu(
+                (currentInputConnection as? ComposeTextInputConnection)?.showToolbarMenu(
                     rect = rect,
                     onCopyRequested = onCopyRequested,
                     onPasteRequested = onPasteRequested,
@@ -167,7 +169,7 @@ internal class UIKitTextInputService(
             }
 
             override fun hide() {
-                (currentInputConnection as? TextToolbar)?.hide()
+                (currentInputConnection as? ComposeTextInputConnection)?.hideToolbar()
 
                 if (currentInputConnection is SelectionContainerConnection) {
                     // stop() removes the view from the hierarchy and resigns first responder,
@@ -190,9 +192,24 @@ internal class UIKitTextInputService(
             selectAll: (() -> Unit)?,
             customActions: List<UIKitNativeTextInputContextMenuCustomAction>?
         ) {
-            (currentInputConnection as? NativeTextInputConnection)?.updateNativeTextInputEditMenuState(
-                copy, paste, cut, selectAll, customActions
-            )
+            fun update() {
+                currentInputConnection?.setAvailableEditMenuActions(
+                    copy = copy,
+                    paste = paste,
+                    cut = cut,
+                    selectAll = selectAll,
+                    customActions = customActions
+                )
+                updateEditMenuState = {}
+            }
+
+            if (currentInputConnection == null) {
+                // Fixes race conditions when the `updateNativeTextInputEditMenuState` called before
+                // the input session start.
+                updateEditMenuState = ::update
+            } else {
+                update()
+            }
         }
 
         override fun updateNativeTextInputTintColor(color: Color?) {
