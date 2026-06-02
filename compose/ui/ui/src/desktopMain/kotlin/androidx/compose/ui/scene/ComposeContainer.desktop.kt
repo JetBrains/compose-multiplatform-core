@@ -616,11 +616,10 @@ internal class ComposeContainer(
 /**
  * Returns whether the given value is not [UNSPECIFIED_DIMENSION_VALUE].
  */
-@ExperimentalUnitApi
+@OptIn(ExperimentalUnitApi::class)
 private val Int.isDimensionSpecified: Boolean
     get() = this != UNSPECIFIED_DIMENSION_VALUE
 
 
-@ExperimentalUnitApi
 private inline fun Int.takeOrElse(block: () -> Int): Int =
     if (isDimensionSpecified) this else block()
