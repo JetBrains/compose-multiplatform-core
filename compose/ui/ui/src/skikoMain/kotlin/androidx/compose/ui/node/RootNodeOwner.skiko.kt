@@ -99,7 +99,6 @@ import androidx.compose.ui.unit.round
 import androidx.compose.ui.unit.toRect
 import androidx.compose.ui.useLegacyRenderNodeLayers
 import androidx.compose.ui.util.fastAll
-import androidx.compose.ui.util.fastMaxOfOrDefault
 import androidx.compose.ui.util.trace
 import androidx.compose.ui.viewinterop.InteropPointerInputModifier
 import androidx.compose.ui.viewinterop.InteropView
@@ -229,7 +228,7 @@ internal class RootNodeOwner(
             measureAndLayoutDelegate.measureOnly()
             block(owner.root)
         } finally {
-            measureAndLayoutDelegate.updateRootConstraints(size.toConstraints())
+            measureAndLayoutDelegate.updateRootConstraints(size.toMaxConstraints())
         }
     }
 
@@ -300,7 +299,7 @@ internal class RootNodeOwner(
     }
 
     private fun onRootSizeChanged(size: IntSize?) {
-        measureAndLayoutDelegate.updateRootConstraints(size.toConstraints())
+        measureAndLayoutDelegate.updateRootConstraints(size.toMaxConstraints())
         if (measureAndLayoutDelegate.hasPendingMeasureOrLayout) {
             snapshotInvalidationTracker.requestMeasureAndLayout()
         }
@@ -982,27 +981,8 @@ internal class RootNodeOwner(
     }
 }
 
-// TODO a proper way is to provide API in Constraints to get this value
-/**
- * Equals [Constraints.MinNonFocusMask]
- */
-private const val ConstraintsMinNonFocusMask = 0x7FFF // 32767
-
-/**
- * The max value that can be passed as Constraints(0, LargeDimension, 0, LargeDimension)
- *
- * Greater values cause "Can't represent a width of".
- * See [Constraints.createConstraints] and [Constraints.bitsNeedForSize]:
- *  - it fails if `widthBits + heightBits > 31`
- *  - widthBits/heightBits are greater than 15 if we pass size >= [Constraints.MinNonFocusMask]
- */
-internal const val LargeDimension = ConstraintsMinNonFocusMask - 1
-
-private fun IntSize?.toConstraints() =
-    if (this == null)
-        Constraints()
-    else
-        Constraints(maxWidth = width, maxHeight = height)
+private fun IntSize?.toMaxConstraints() =
+    if (this == null) Constraints() else Constraints(maxWidth = width, maxHeight = height)
 
 private object IdentityPositionCalculator: PositionCalculator {
     override fun screenToLocal(positionOnScreen: Offset): Offset = positionOnScreen
