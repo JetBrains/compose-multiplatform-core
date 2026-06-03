@@ -69,6 +69,10 @@ androidXMultiplatform {
             implementation(project(":compose:ui:ui-backhandler"))
         }
 
+        desktopMain {
+            dependsOn(nonAndroidMain)
+        }
+
         desktopTest {
             dependsOn(nonAndroidTest)
         }

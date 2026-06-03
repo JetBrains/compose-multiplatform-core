@@ -24,6 +24,7 @@
 import androidx.build.SoftwareType
 import androidx.build.PlatformIdentifier
 import androidx.build.ProjectLayoutType
+import org.jetbrains.androidx.build.GenerateNotoFontFallbackDataTask
 import org.jetbrains.androidx.build.UpdateTranslationsTask
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 import org.jetbrains.kotlin.gradle.targets.jvm.tasks.KotlinJvmTest
@@ -100,7 +101,6 @@ androidXMultiplatform {
         }
 
         jvmAndAndroidMain.dependencies {
-            api(libs.jspecify)
         }
 
         androidMain.dependencies {
@@ -110,6 +110,7 @@ androidXMultiplatform {
             compileOnly(project(":compose:ui:ui-android-stubs"))
             implementation("androidx.autofill:autofill:1.0.0")
             implementation(libs.kotlinCoroutinesAndroid)
+            api(libs.jspecify)
 
             implementation("androidx.activity:activity-ktx:1.7.0")
             implementation("androidx.core:core:1.16.0")
@@ -476,4 +477,13 @@ tasks.desktopTest {
         excludeCategories("androidx.compose.ui.HeadlessTest")
     }
     jvmArgs("--add-opens=java.desktop/javax.swing=ALL-UNNAMED")
+}
+
+// Regenerates NotoFontFallbackData.web.kt from the latest Google Fonts data.
+tasks.register("generateNotoFontFallbackData", GenerateNotoFontFallbackDataTask.class) {
+    group = "generation"
+    description = "Generates NotoFontFallbackData.web.kt from Google Fonts metadata."
+    outputFile = project.file(
+        "src/webMain/kotlin/androidx/compose/ui/platform/NotoFontFallbackData.web.kt"
+    )
 }

@@ -418,6 +418,8 @@ internal class RootNodeOwner(
         layoutDirection: LayoutDirection,
         override val coroutineContext: CoroutineContext,
     ) : Owner {
+
+        private val onPointerUpdateCallback = inputHandler::onPointerUpdate
         private val platformFocusOwner = object : PlatformFocusOwner {
             override fun requestOwnerFocus(
                 focusDirection: FocusDirection?,
@@ -539,7 +541,7 @@ internal class RootNodeOwner(
         override val semanticsOwner = SemanticsOwner(root, rootSemanticsNode, layoutNodes)
         override val windowInfo get() = platformContext.windowInfo
         override val retainedValuesStore: RetainedValuesStore get() = ForgetfulRetainedValuesStore
-        override val rectManager = RectManager()
+        override val rectManager = RectManager(layoutNodes)
 
         @Suppress("OVERRIDE_DEPRECATION", "DEPRECATION")
         override val fontLoader = androidx.compose.ui.text.platform.FontLoader()
@@ -574,7 +576,6 @@ internal class RootNodeOwner(
             measureAndLayoutDelegate.onNodeDetached(node)
             snapshotObserver.clear(node)
             needClearObservations = true
-            rectManager.remove(node)
         }
 
         override fun measureAndLayout(sendPointerUpdate: Boolean) {
@@ -583,7 +584,7 @@ internal class RootNodeOwner(
                 measureAndLayoutDelegate.hasPendingOnPositionedCallbacks
             ) {
                 trace("RootNodeOwner:measureAndLayout") {
-                    val resend = if (sendPointerUpdate) inputHandler::onPointerUpdate else null
+                    val resend = if (sendPointerUpdate) onPointerUpdateCallback else null
                     val rootNodeResized = measureAndLayoutDelegate.measureAndLayout(resend)
                     if (rootNodeResized) {
                         snapshotInvalidationTracker.requestDraw()
@@ -674,7 +675,6 @@ internal class RootNodeOwner(
         }
 
         override fun onLayoutNodeDeactivated(layoutNode: LayoutNode) {
-            rectManager.remove(layoutNode)
         }
 
         override fun onPreLayoutNodeReused(layoutNode: LayoutNode, oldSemanticsId: Int) {

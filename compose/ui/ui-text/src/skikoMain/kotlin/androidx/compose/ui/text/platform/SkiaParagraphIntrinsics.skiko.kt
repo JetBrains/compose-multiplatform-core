@@ -15,6 +15,9 @@
  */
 package androidx.compose.ui.text.platform
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.text.*
 import androidx.compose.ui.text.AnnotatedString.Range
 import androidx.compose.ui.text.font.FontFamily
@@ -36,6 +39,10 @@ internal class SkiaParagraphIntrinsics(
 ) : ParagraphIntrinsics {
     val textDirection = resolveTextDirection(text, style.textDirection, style.localeList)
 
+    //we need to track it reactively to invalidate the UI
+    override var hasStaleResolvedFonts: Boolean by mutableStateOf(false)
+        private set
+
     private var layouter: ParagraphLayouter? = newLayouter()
 
     fun layouter(): ParagraphLayouter {
@@ -51,7 +58,8 @@ internal class SkiaParagraphIntrinsics(
         annotations = annotations,
         placeholders = placeholders,
         density = density,
-        fontFamilyResolver = fontFamilyResolver
+        fontFamilyResolver = fontFamilyResolver,
+        onFontStale = { hasStaleResolvedFonts = true }
     )
 
     override var minIntrinsicWidth = 0f
