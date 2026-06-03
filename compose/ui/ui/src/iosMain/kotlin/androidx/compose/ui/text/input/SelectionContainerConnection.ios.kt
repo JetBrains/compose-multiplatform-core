@@ -35,12 +35,11 @@ internal class SelectionContainerConnection(
     null,
     focusManager
 ) {
-    override fun stop() {
-        textInputView.resignFirstResponder()
-        super.stop()
+    override fun showKeyboard() {
+        // Does nothing. Keyboard is not needed for the selection container
     }
 
-    public override fun attachInputToView() {
-        super.attachInputToView()
+    override fun dismissKeyboard() {
+        // Does nothing. Keyboard is not needed for the selection container
     }
 }

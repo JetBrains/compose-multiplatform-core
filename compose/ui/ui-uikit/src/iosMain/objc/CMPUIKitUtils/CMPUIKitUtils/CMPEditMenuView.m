@@ -75,6 +75,7 @@
 @property (copy, nonatomic, nullable) void (^systemCopyBlock)(void);
 @property (copy, nonatomic, nullable) void (^systemCutBlock)(void);
 @property (copy, nonatomic, nullable) void (^systemPasteBlock)(void);
+@property (copy, nonatomic, nullable) void (^systemSelectBlock)(void);
 @property (copy, nonatomic, nullable) void (^systemSelectAllBlock)(void);
 
 @property (strong, nonatomic, nullable) dispatch_block_t showContextMenuBlock;
@@ -142,10 +143,12 @@ id _editInteraction;
 - (void)updateAvailableSystemActions:(void (^)(void))copyBlock
                                  cut:(void (^)(void))cutBlock
                                paste:(void (^)(void))pasteBlock
+                              select:(void (^)(void))selectBlock
                            selectAll:(void (^)(void))selectAllBlock {
     self.systemCopyBlock = copyBlock;
     self.systemCutBlock = cutBlock;
     self.systemPasteBlock = pasteBlock;
+    self.systemSelectBlock = selectBlock;
     self.systemSelectAllBlock = selectAllBlock;
 }
 
@@ -374,6 +377,8 @@ id _editInteraction;
 - (void)select:(id)sender {
     if (self.selectBlock != nil) {
         self.selectBlock();
+    } else if (self.systemSelectBlock != nil) {
+        self.systemSelectBlock();
     }
 }
 

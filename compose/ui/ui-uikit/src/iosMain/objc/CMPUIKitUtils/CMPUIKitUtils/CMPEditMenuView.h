@@ -32,6 +32,7 @@
 - (void)updateAvailableSystemActions:(void (^)(void))copyBlock
                                  cut:(void (^)(void))cutBlock
                                paste:(void (^)(void))pasteBlock
+                              select:(void (^)(void))selectBlock
                            selectAll:(void (^)(void))selectAllBlock;
 
 - (void)hideEditMenu;

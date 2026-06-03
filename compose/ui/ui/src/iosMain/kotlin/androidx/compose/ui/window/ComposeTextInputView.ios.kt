@@ -126,6 +126,8 @@ internal class ComposeTextInputView(
             this.select()
         }.takeIf { selectAll != null && showSelectMenu }
 
+        println(">>> Show edit menu 1 copy: $copy cut: $cut paste: $paste select: $patchedSelect selectAll: $selectAll customActions: $customActions")
+
         super.showEditMenuAtRect(
             targetRect = targetRect,
             copy = copy,
