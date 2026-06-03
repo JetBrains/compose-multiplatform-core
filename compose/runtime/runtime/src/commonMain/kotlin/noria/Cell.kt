@@ -26,8 +26,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.Snapshot
+import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
+import noria.impl.EffectCoroutineContextCompositionLocal
 import noria.impl.NoriaState
 
 fun interface Cell<out T> {
@@ -118,23 +120,24 @@ inline fun <T> state(
 
 @Composable
 inline fun <T> state(vararg inputs: Any?, crossinline init: () -> T): StateCell<T> {
-    val composer = currentComposer
+    val effectCoroutineContext = EffectCoroutineContextCompositionLocal.current
     return remember(*inputs) {
-        stateCellNoRemember(composer, init)
+        stateCellNoRemember(effectCoroutineContext, init)
     }
 }
 
 @OptIn(InternalComposeApi::class)
-inline fun <T> stateCellNoRemember(composer: Composer?, init: () -> T): StateCell<T> {
+inline fun <T> stateCellNoRemember(
+    effectCoroutineContext: CoroutineContext,
+    init: () -> T,
+): StateCell<T> {
     var backingState by mutableStateOf(init())
     return object : StateCell<T> {
         override fun read(): T = backingState
 
         override fun update(f: (T) -> T) {
-            composer?.applyCoroutineContext?.let {
-                GlobalScope.launch(it) {
-                    backingState = f(backingState)
-                }
+                GlobalScope.launch(effectCoroutineContext) {
+                        backingState = f(backingState)
             }
         }
     }
