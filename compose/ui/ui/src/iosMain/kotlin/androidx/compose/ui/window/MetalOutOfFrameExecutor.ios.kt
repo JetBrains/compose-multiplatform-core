@@ -88,7 +88,9 @@ internal class MetalOutOfFrameExecutor: PlatformOutOfFrameExecutor {
         queue.clear()
     }
 
-    override fun drain() {
+    override fun drainScheduledWorkForTest() = drain()
+
+    private fun drain() {
         check(NSThread.isMainThread) {
             "MetalOutOfFrameExecutor.drain() must be called on main thread"
         }

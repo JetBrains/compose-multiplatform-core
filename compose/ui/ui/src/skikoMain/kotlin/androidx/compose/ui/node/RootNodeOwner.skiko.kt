@@ -803,7 +803,7 @@ internal class RootNodeOwner(
 
         override fun measureAndLayoutForTest() {
             owner.measureAndLayout(sendPointerUpdate = true)
-            platformContext.outOfFrameExecutor?.drain()
+            platformContext.outOfFrameExecutor?.drainScheduledWorkForTest()
         }
 
         /**

@@ -39,7 +39,7 @@ interface PlatformOutOfFrameExecutor {
     fun schedule(block: () -> Unit)
 
     /**
-     * Runs all pending work scheduled by [schedule].
+     * Runs pending work scheduled by [schedule] immediately for tests.
      */
-    fun drain()
+    fun drainScheduledWorkForTest()
 }
