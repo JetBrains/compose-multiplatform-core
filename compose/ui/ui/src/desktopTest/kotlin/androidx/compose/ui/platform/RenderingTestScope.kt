@@ -19,9 +19,10 @@ package androidx.compose.ui.platform
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asComposeCanvas
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.skiaCanvas
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.scene.CanvasLayersComposeScene
+import androidx.compose.ui.scene.SingleComposeSceneRenderingScope
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntSize
 import kotlin.coroutines.CoroutineContext
@@ -53,29 +54,18 @@ internal class RenderingTestScope(
 ) {
     var currentTimeMillis = 0L
 
-    private var isRendering = false
-    private var needsFrameAfterRender = false
-
-    private fun requestFrame() {
-        if (isRendering) {
-            needsFrameAfterRender = true
-        } else {
-            frameDispatcher.scheduleFrame()
-        }
-    }
-
     private val frameDispatcher = FrameDispatcher(coroutineContext) {
         onRender(currentTimeMillis * 1_000_000)
     }
-
-    private val frameRecomposer = FrameRecomposer(coroutineContext, ::requestFrame)
+    private val frameRecomposer = FrameRecomposer(coroutineContext, frameDispatcher::scheduleFrame)
+    private val sceneRenderingScope = SingleComposeSceneRenderingScope(frameDispatcher::scheduleFrame)
 
     val surface: Surface = Surface.makeRasterN32Premul(width, height)
     private val canvas = surface.canvas.asComposeCanvas()
     val scene = CanvasLayersComposeScene(
         frameRecomposer = frameRecomposer,
-        invalidateLayout = ::requestFrame,
-        invalidateDraw = ::requestFrame,
+        invalidateLayout = sceneRenderingScope::onSceneInvalidation,
+        invalidateDraw = sceneRenderingScope::onSceneInvalidation,
     ).apply {
         size = IntSize(width = width, height = height)
     }
@@ -95,21 +85,13 @@ internal class RenderingTestScope(
     private var onRender = CompletableDeferred<Unit>()
 
     fun setContent(content: @Composable () -> Unit) {
-        scene.setContent {
-            content()
-        }
+        scene.setContent(content = content)
     }
 
     private fun onRender(timeNanos: Long) {
-        isRendering = true
-        needsFrameAfterRender = false
         canvas.skiaCanvas.clear(Color.Transparent.toArgb())
-        frameRecomposer.performFrame(timeNanos)
-        scene.measureAndLayout()
-        scene.draw(canvas)
-        isRendering = false
-        if (needsFrameAfterRender && (scene.hasPendingMeasureOrLayout || scene.hasPendingDraw)) {
-            frameDispatcher.scheduleFrame()
+        with(sceneRenderingScope) {
+            scene.render(frameRecomposer, canvas, timeNanos)
         }
         onRender.complete(Unit)
     }

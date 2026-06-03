@@ -48,7 +48,7 @@ class FrameRecomposer(
 ) : AutoCloseable {
     private val job = Job()
     private val coroutineScope = CoroutineScope(coroutineContext + job)
-    private val frameClock = BroadcastFrameClock(onNewAwaiters = invalidate)
+    private val frameClock = BroadcastFrameClock(::onNewAwaiters)
     private val effectDispatcher = FlushCoroutineDispatcher(coroutineScope)
     private val recomposeDispatcher = FlushCoroutineDispatcher(coroutineScope)
     private val recomposer = Recomposer(coroutineContext + job + effectDispatcher)
@@ -67,6 +67,24 @@ class FrameRecomposer(
      */
     val compositionContext: CompositionContext
         get() = recomposer
+
+    private var isInFrame = false
+
+    private fun onNewAwaiters() {
+        if (isInFrame) return
+        invalidate()
+    }
+
+    private inline fun <T> postponeFrameInvalidation(crossinline block: () -> T): T =
+        trace("FrameRecomposer:performFrame") {
+            check(!isInFrame)
+            isInFrame = true
+            try {
+                block()
+            } finally {
+                isInFrame = false
+            }
+        }
 
     /**
      * Performs one host frame. Platforms should call this once from their native frame callback
@@ -91,14 +109,16 @@ class FrameRecomposer(
      * Advances only the host recomposer and frame clock by one frame at [frameTimeNanos].
      */
     private fun recomposeFrame(frameTimeNanos: Long) {
-        // Flush composition effects (e.g. LaunchedEffect, coroutines launched in
-        // rememberCoroutineScope()) queued by the previous turn must run before
-        // recomposition tasks and frame-clock awaiters.
-        performScheduledEffects()
-        performScheduledRecomposerTasks()
+        postponeFrameInvalidation {
+            // Flush composition effects (e.g. LaunchedEffect, coroutines launched in
+            // rememberCoroutineScope()) queued by the previous turn must run before
+            // recomposition tasks and frame-clock awaiters.
+            performScheduledEffects()
+            performScheduledRecomposerTasks()
 
-        frameClock.sendFrame(frameTimeNanos)
-        if (hasPendingWork()) {
+            frameClock.sendFrame(frameTimeNanos)
+        }
+        if (frameClock.hasAwaiters) {
             invalidate()
         }
     }

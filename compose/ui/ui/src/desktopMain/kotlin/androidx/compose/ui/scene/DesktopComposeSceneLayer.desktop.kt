@@ -120,6 +120,7 @@ internal abstract class DesktopComposeSceneLayer(
         parentCompositionContext: CompositionContext,
         content: @Composable () -> Unit,
     ) {
+        // TODO: pass [parentCompositionContext] once a shared [Recomposer] exists.
         mediator?.setContent(content)
     }
 

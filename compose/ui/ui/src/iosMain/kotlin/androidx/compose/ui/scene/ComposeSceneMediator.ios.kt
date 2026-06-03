@@ -17,7 +17,6 @@
 package androidx.compose.ui.scene
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionContext
 import androidx.compose.runtime.CompositionLocalContext
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.State
@@ -221,9 +220,17 @@ internal class ComposeSceneMediator(
     //  It's supposed to be stored in platform's root view or window.
     val frameRecomposer = FrameRecomposer(coroutineContext, redrawer::setNeedsRedraw)
 
+    // TODO: It cannot be used in case of shared [FrameRecomposer], replace this helper with calling
+    //  - [frameRecomposer.performFrame] once per frame (across all instances) before platform views layout phase
+    //  - [scene.measureAndLayout] during platform views layout phase. Note that it should be triggered
+    //    by platform view invalidation (which is triggered by [scene.invalidateLayout] OR by regular platform invalidation)
+    //  - [scene.draw] during drawing phase of platform views (which is triggered by [scene.invalidateDraw]).
+    //    Note that in case of custom GPU surface/V-Sync handling, it needs to be handled differently.
+    private val sceneRenderingScope = SingleComposeSceneRenderingScope(redrawer::setNeedsRedraw)
+
     private val scene: ComposeScene by lazy {
         composeSceneFactory(
-            redrawer::setNeedsRedraw,
+            sceneRenderingScope::onSceneInvalidation,
             PlatformContextImpl(),
             frameRecomposer,
         )
@@ -608,15 +615,9 @@ internal class ComposeSceneMediator(
     private var lastRenderTime = CACurrentMediaTime().toNanoSeconds()
     fun render(canvas: Canvas, nanoTime: Long) {
         lastRenderTime = nanoTime
-
-        // TODO: Call once per frame (across all instances) before platform views layout phase
-        frameRecomposer.performFrame(nanoTime)
-
-        // TODO: Call during platform views layout phase. Should be triggered by platform view invalidation
-        //  (which is triggered by frameRecomposer in case of cases OR regular platform invalidation)
-        scene.measureAndLayout()
-
-        scene.draw(canvas)
+        with(sceneRenderingScope) {
+            scene.render(frameRecomposer, canvas, nanoTime)
+        }
     }
 
     fun retrieveInteropTransaction(): UIKitInteropTransaction =

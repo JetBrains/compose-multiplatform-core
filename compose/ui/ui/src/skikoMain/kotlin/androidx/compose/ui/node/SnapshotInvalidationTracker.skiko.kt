@@ -40,9 +40,6 @@ internal class SnapshotInvalidationTracker(
      */
     private var renderingThreadId: Long? by atomic(null)
 
-    val hasInvalidations: Boolean
-        get() = hasPendingMeasureOrLayout || hasPendingDraw || hasPendingSnapshotCommands
-
     val hasPendingSnapshotCommands: Boolean
         get() = snapshotChanges.hasCommands
 

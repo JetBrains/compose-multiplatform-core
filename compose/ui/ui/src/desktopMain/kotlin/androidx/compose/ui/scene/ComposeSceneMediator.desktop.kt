@@ -17,7 +17,6 @@
 package androidx.compose.ui.scene
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionContext
 import androidx.compose.runtime.CompositionLocalContext
 import androidx.compose.runtime.mutableStateSetOf
 import androidx.compose.ui.ComposeFeatureFlags
@@ -100,7 +99,7 @@ import java.awt.im.InputMethodRequests
 import javax.swing.JComponent
 import javax.swing.SwingUtilities
 import kotlin.coroutines.CoroutineContext
-import org.jetbrains.skia.Canvas
+import org.jetbrains.skia.Canvas as SkCanvas
 import org.jetbrains.skiko.ClipRectangle
 import org.jetbrains.skiko.ExperimentalSkikoApi
 import org.jetbrains.skiko.GraphicsApi
@@ -157,7 +156,15 @@ internal class ComposeSceneMediator(
 
     // TODO: It must be shared between Compose instances.
     //  It's supposed to be stored in platform's root view or window.
-    val frameRecomposer = FrameRecomposer(coroutineContext, ::onComposeInvalidation)
+    val frameRecomposer = FrameRecomposer(coroutineContext, ::needRender)
+
+    // TODO: It cannot be used in case of shared [FrameRecomposer], replace this helper with calling
+    //  - [frameRecomposer.performFrame] once per frame (across all instances) before platform views layout phase
+    //  - [scene.measureAndLayout] during platform views layout phase. Note that it should be triggered
+    //    by platform view invalidation (which is triggered by [scene.invalidateLayout] OR by regular platform invalidation)
+    //  - [scene.draw] during drawing phase of platform views (which is triggered by [scene.invalidateDraw]).
+    //    Note that in case of custom GPU surface/V-Sync handling, it needs to be handled differently.
+    private val sceneRenderingScope = SingleComposeSceneRenderingScope(::needRender)
 
     private val _platformContext = DesktopPlatformContext()
     val platformContext: PlatformContext get() = _platformContext
@@ -666,11 +673,15 @@ internal class ComposeSceneMediator(
         }
     }
 
-    fun onComposeInvalidation() = composeInvalidationExecutor.runOrScheduleDebounced {
+    private fun needRender(): Unit = composeInvalidationExecutor.runOrScheduleDebounced {
         catchExceptions {
             if (isDisposed) return@catchExceptions
-            skiaLayerComponent.onComposeInvalidation()
+            skiaLayerComponent.needRender()
         }
+    }
+
+    fun onComposeInvalidation() {
+        sceneRenderingScope.onSceneInvalidation()
     }
 
     fun onComponentPositionChanged() = catchExceptions {
@@ -709,22 +720,17 @@ internal class ComposeSceneMediator(
         scene.layoutDirection = layoutDirection
     }
 
-    override fun onRender(canvas: Canvas, width: Int, height: Int, nanoTime: Long) = catchExceptions {
+    override fun onRender(canvas: SkCanvas, width: Int, height: Int, nanoTime: Long) = catchExceptions {
         interopContainer.postponingExecutingScheduledUpdates {
             canvas.withSceneOffset {
-                // TODO: Call once per frame (across all instances) before platform views layout phase
-                frameRecomposer.performFrame(nanoTime)
-
-                // TODO: Call during platform views layout phase. Should be triggered by platform view invalidation
-                //  (which is triggered by frameRecomposer in case of cases OR regular platform invalidation)
-                scene.measureAndLayout()
-
-                scene.draw(asComposeCanvas())
+                with(sceneRenderingScope) {
+                    scene.render(frameRecomposer, asComposeCanvas(), nanoTime)
+                }
             }
         }
     }
 
-    private inline fun Canvas.withSceneOffset(block: Canvas.() -> Unit) {
+    private inline fun SkCanvas.withSceneOffset(crossinline block: SkCanvas.() -> Unit) {
         // Offset of scene relative to [container]
         val sceneBoundsOffset = sceneBoundsInPx?.topLeft ?: Offset.Zero
         // Offset of canvas relative to [container]

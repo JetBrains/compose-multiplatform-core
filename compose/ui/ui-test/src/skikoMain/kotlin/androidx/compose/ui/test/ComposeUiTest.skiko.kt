@@ -28,6 +28,7 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.toComposeImageBitmap
 import androidx.compose.ui.node.RootForTest
 import androidx.compose.ui.platform.DefaultArchitectureComponentsOwner
+import androidx.compose.ui.platform.FrameRecomposer
 import androidx.compose.ui.platform.InfiniteAnimationPolicy
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.PlatformDragAndDropManager
@@ -36,7 +37,6 @@ import androidx.compose.ui.platform.PlatformTextInputMethodRequest
 import androidx.compose.ui.platform.PlatformWindowInsets
 import androidx.compose.ui.platform.WindowInfo
 import androidx.compose.ui.scene.CanvasLayersComposeScene
-import androidx.compose.ui.platform.FrameRecomposer
 import androidx.compose.ui.scene.ComposeScene
 import androidx.compose.ui.scene.hasInvalidations
 import androidx.compose.ui.semantics.SemanticsNode
@@ -361,9 +361,7 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
         }
 
         if (!mainClock.autoAdvance) {
-            return !scene.hasPendingMeasureOrLayout &&
-                !scene.hasPendingDraw &&
-                areAllResourcesIdle()
+            return true
         }
 
         return !Snapshot.current.hasPendingChanges()

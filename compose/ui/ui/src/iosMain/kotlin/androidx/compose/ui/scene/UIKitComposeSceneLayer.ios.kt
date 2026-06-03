@@ -127,7 +127,7 @@ internal class UIKitComposeSceneLayer(
             layoutDirection = initialLayoutDirection,
             composeSceneContext = createComposeSceneContext(platformContext),
             // TODO: Split these into UIKit layout vs display invalidation instead of using the
-            // same invalidation callback for both phases.
+            //  same invalidation callback for both phases.
             invalidateLayout = invalidate,
             invalidateDraw = invalidate,
         )
@@ -212,6 +212,7 @@ internal class UIKitComposeSceneLayer(
         parentCompositionContext: CompositionContext,
         content: @Composable () -> Unit,
     ) {
+        // TODO: pass [parentCompositionContext] once a shared [Recomposer] exists.
         mediator.setContent {
             hostCompositionLocals {
                 ProvideComposeSceneLayerCompositionLocals(content)
