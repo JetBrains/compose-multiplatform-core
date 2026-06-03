@@ -35,6 +35,7 @@ import androidx.compose.material.TextField
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -77,8 +78,16 @@ class TextFieldEditMenuTest {
         UIPasteboard.generalPasteboard().string = "Paste text"
         val textValue = mutableStateOf(TextFieldValue("Hello-LongLongLongLongLongLong-text"))
         setContent {
+            val focusRequester = remember { FocusRequester() }
             Column(modifier = Modifier.safeDrawingPadding()) {
-                BasicTextField(textValue.value, { textValue.value = it }, modifier = Modifier.testTag("TextField"))
+                BasicTextField(
+                    textValue.value,
+                    { textValue.value = it },
+                    modifier = Modifier.testTag("TextField").focusRequester(focusRequester)
+                )
+            }
+            LaunchedEffect(focusRequester) {
+                focusRequester.requestFocus()
             }
         }
 
@@ -92,8 +101,15 @@ class TextFieldEditMenuTest {
         UIPasteboard.generalPasteboard().string = "Paste text"
         val textFieldState = TextFieldState("Hello-LongLongLongLongLongLong-text")
         setContent {
+            val focusRequester = remember { FocusRequester() }
             Column(modifier = Modifier.safeDrawingPadding()) {
-                BasicTextField(textFieldState, modifier = Modifier.testTag("TextField"))
+                BasicTextField(
+                    textFieldState,
+                    modifier = Modifier.testTag("TextField").focusRequester(focusRequester)
+                )
+            }
+            LaunchedEffect(focusRequester) {
+                focusRequester.requestFocus()
             }
         }
 
@@ -106,8 +122,12 @@ class TextFieldEditMenuTest {
     fun testBasicTextFieldToolbarNewContextMenu() = runContextMenuTest(true) {
         UIPasteboard.generalPasteboard().string = "Paste text"
         setContent {
+            val focusRequester = remember { FocusRequester() }
             Column(modifier = Modifier.safeDrawingPadding()) {
-                TextField("Hello-LongLongLongLongLong-text", {}, modifier = Modifier.testTag("TextField"))
+                TextField("Hello-LongLongLongLongLong-text", {}, modifier = Modifier.testTag("TextField").focusRequester(focusRequester))
+            }
+            LaunchedEffect(focusRequester) {
+                focusRequester.requestFocus()
             }
         }
 
@@ -121,8 +141,12 @@ class TextFieldEditMenuTest {
         UIPasteboard.generalPasteboard().string = "Paste text"
         val textFieldState = TextFieldState("Hello-LongLongLongLongLongLong-text")
         setContent {
+            val focusRequester = remember { FocusRequester() }
             Column(modifier = Modifier.safeDrawingPadding()) {
-                BasicTextField(textFieldState, modifier = Modifier.testTag("TextField"))
+                BasicTextField(textFieldState, modifier = Modifier.testTag("TextField").focusRequester(focusRequester))
+            }
+            LaunchedEffect(focusRequester) {
+                focusRequester.requestFocus()
             }
         }
 
@@ -135,12 +159,16 @@ class TextFieldEditMenuTest {
     fun testBasicTextFieldToolbarInteraction() = runUIKitInstrumentedTest {
         val textFieldValue = mutableStateOf(TextFieldValue("Hello-LongLongLongLongLongLong-text"))
         setContent {
+            val focusRequester = remember { FocusRequester() }
             Column(modifier = Modifier.safeDrawingPadding()) {
                 BasicTextField(
                     value = textFieldValue.value,
                     onValueChange = { textFieldValue.value = it },
-                    modifier = Modifier.testTag("TextField")
+                    modifier = Modifier.testTag("TextField").focusRequester(focusRequester)
                 )
+            }
+            LaunchedEffect(focusRequester) {
+                focusRequester.requestFocus()
             }
         }
 
@@ -163,8 +191,12 @@ class TextFieldEditMenuTest {
     fun testBasicTextField2ToolbarInteraction() = runUIKitInstrumentedTest {
         val textFieldState = TextFieldState("Hello-LongLongLongLongLongLong-text")
         setContent {
+            val focusRequester = remember { FocusRequester() }
             Column(modifier = Modifier.safeDrawingPadding()) {
-                BasicTextField(textFieldState, modifier = Modifier.testTag("TextField"))
+                BasicTextField(textFieldState, modifier = Modifier.testTag("TextField").focusRequester(focusRequester))
+            }
+            LaunchedEffect(focusRequester) {
+                focusRequester.requestFocus()
             }
         }
 
@@ -186,9 +218,9 @@ class TextFieldEditMenuTest {
     @Test
     fun testBasicTextFieldLongPressShowsContextMenu() = runUIKitInstrumentedTest {
         UIPasteboard.generalPasteboard().string = "Paste text"
-        val focusRequester = FocusRequester()
         val textFieldValue = mutableStateOf(TextFieldValue("Text", TextRange(4,4)))
         setContent {
+            val focusRequester = remember { FocusRequester() }
             Column(modifier = Modifier.safeDrawingPadding()) {
                 BasicTextField(
                     value = textFieldValue.value,
@@ -198,7 +230,7 @@ class TextFieldEditMenuTest {
                         .focusRequester(focusRequester)
                 )
             }
-            LaunchedEffect(Unit) {
+            LaunchedEffect(focusRequester) {
                 focusRequester.requestFocus()
             }
         }
@@ -223,9 +255,9 @@ class TextFieldEditMenuTest {
     @Test
     fun testBasicTextField2LongPressShowsContextMenu() = runUIKitInstrumentedTest {
         UIPasteboard.generalPasteboard().string = "Paste text"
-        val focusRequester = FocusRequester()
         val textFieldState = TextFieldState("Text", TextRange(4,4))
         setContent {
+            val focusRequester = remember { FocusRequester() }
             Column(modifier = Modifier.safeDrawingPadding()) {
                 BasicTextField(
                     state = textFieldState,
@@ -234,7 +266,7 @@ class TextFieldEditMenuTest {
                         .focusRequester(focusRequester)
                 )
             }
-            LaunchedEffect(Unit) {
+            LaunchedEffect(focusRequester) {
                 focusRequester.requestFocus()
             }
         }
@@ -396,12 +428,14 @@ class TextFieldEditMenuTest {
         var customItemClicked = false
         val textFieldValue = mutableStateOf(TextFieldValue("Hello-LongLongLongLongLongLong-text"))
         setContent {
+            val focusRequester = remember { FocusRequester() }
             Column(modifier = Modifier.safeDrawingPadding()) {
                 BasicTextField(
                     value = textFieldValue.value,
                     onValueChange = { textFieldValue.value = it },
                     modifier = Modifier
                         .testTag("TextField")
+                        .focusRequester(focusRequester)
                         .appendTextContextMenuComponents {
                             item(key = "CustomKey", label = "Custom Action") {
                                 customItemClicked = true
@@ -413,6 +447,9 @@ class TextFieldEditMenuTest {
                             component.key == "CustomKey"
                         }
                 )
+            }
+            LaunchedEffect(focusRequester) {
+                focusRequester.requestFocus()
             }
         }
 
@@ -436,11 +473,13 @@ class TextFieldEditMenuTest {
         var customItemClicked = false
         val textFieldState = TextFieldState("Hello-LongLongLongLongLongLong-text")
         setContent {
+            val focusRequester = remember { FocusRequester() }
             Column(modifier = Modifier.safeDrawingPadding()) {
                 BasicTextField(
                     state = textFieldState,
                     modifier = Modifier
                         .testTag("TextField")
+                        .focusRequester(focusRequester)
                         .appendTextContextMenuComponents {
                             item(key = "CustomKey", label = "Custom Action") {
                                 customItemClicked = true
@@ -452,6 +491,9 @@ class TextFieldEditMenuTest {
                             component.key == "CustomKey"
                         }
                 )
+            }
+            LaunchedEffect(focusRequester) {
+                focusRequester.requestFocus()
             }
         }
 
