@@ -25,7 +25,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.OnCanvasTests
 import androidx.compose.ui.keepScreenOn
-import kotlin.js.JsAny
 import kotlin.js.Promise
 import kotlin.js.js
 import kotlin.js.unsafeCast
@@ -33,8 +32,10 @@ import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import kotlinx.browser.document
 import kotlinx.browser.window
-import kotlinx.coroutines.suspendCancellableCoroutine
+import org.w3c.dom.pointerevents.PointerEvent
+import org.w3c.dom.pointerevents.PointerEventInit
 
 class WebWakeLockManagerTests : OnCanvasTests {
 
@@ -73,6 +74,52 @@ class WebWakeLockManagerTests : OnCanvasTests {
         )
         assertFalse(manager.requestingLock, "Should not be requesting lock after release")
         manager.reset()
+    }
+
+    @Test
+    fun testWakeLockRequestRetriedOnUserActivationAfterInitialFailure() = runApplicationTest {
+        val manager = WebWakeLockManager
+        manager.reset()
+
+        var allowRequest = false
+        val sentinel = fakeWakeLockSentinel()
+        manager.requestWakeLock = {
+            if (allowRequest) {
+                resolvedWakeLockPromise(sentinel)
+            } else {
+                rejectedWakeLockPromise()
+            }
+        }
+
+        try {
+            createComposeWindow {
+                Box(Modifier.keepScreenOn())
+            }
+
+            awaitIdle()
+
+            assertFalse(
+                manager.isWakeLockActive(),
+                "Wake lock should not be active after the initial request fails"
+            )
+            assertFalse(manager.requestingLock, "Failed request should clear requesting state")
+
+            allowRequest = true
+            document.dispatchEvent(
+                PointerEvent(
+                    "pointerdown",
+                    PointerEventInit(button = 0, buttons = 1, pointerType = "mouse")
+                )
+            )
+            awaitIdle()
+
+            assertTrue(
+                manager.isWakeLockActive(),
+                "Wake lock should be retried on a user activation event"
+            )
+        } finally {
+            manager.reset()
+        }
     }
 
     @Test
@@ -265,3 +312,30 @@ class WebWakeLockManagerTests : OnCanvasTests {
         manager.reset()
     }
 }
+
+private fun fakeWakeLockSentinel(): WakeLockSentinel = js(
+    """({
+        released: false,
+        type: "screen",
+        release: function() {
+            this.released = true;
+            if (this.releaseListener) {
+                this.releaseListener();
+            }
+            return Promise.resolve(null);
+        },
+        addEventListener: function(type, listener) {
+            if (type === "release") {
+                this.releaseListener = listener;
+            }
+        }
+    })"""
+).unsafeCast<WakeLockSentinel>()
+
+private fun resolvedWakeLockPromise(sentinel: WakeLockSentinel): Promise<WakeLockSentinel> = js(
+    "Promise.resolve(sentinel)"
+)
+
+private fun rejectedWakeLockPromise(): Promise<WakeLockSentinel> = js(
+    "Promise.reject(new Error('Transient activation is required'))"
+)
