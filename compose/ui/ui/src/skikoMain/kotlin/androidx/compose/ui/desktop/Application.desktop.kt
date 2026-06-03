@@ -76,8 +76,8 @@ suspend fun <T> launchScene(
             prepareMainThread = prepareMainThread,
             restoreMainThread = restoreMainThread,
         )
-        val globalSnapshotRegistration =
-            scene.withPreparedMainThread { GlobalSnapshotManager.register(ComposeUIDispatcher) }
+        GlobalSnapshotManager.setCallbackInterceptor(scene::withPreparedMainThread)
+        val globalSnapshotRegistration = GlobalSnapshotManager.register(ComposeUIDispatcher)
 
         val recomposer = Recomposer(coroutineContext)
 
