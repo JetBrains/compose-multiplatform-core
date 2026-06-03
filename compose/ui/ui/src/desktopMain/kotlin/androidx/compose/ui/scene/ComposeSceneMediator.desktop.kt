@@ -337,7 +337,7 @@ internal class ComposeSceneMediator(
             }
         }
 
-    val scene by lazy { composeSceneFactory(this) }
+    private val scene by lazy { composeSceneFactory(this) }
     val focusManager get() = scene.focusManager
     var compositionLocalContext: CompositionLocalContext?
         get() = scene.compositionLocalContext

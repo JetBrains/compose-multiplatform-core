@@ -18,7 +18,6 @@ package androidx.compose.ui.window.v2
 
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
-import androidx.compose.ui.awt.toDpSize
 import androidx.compose.ui.layout.IntrinsicMeasurable
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
@@ -41,6 +40,7 @@ import androidx.compose.ui.unit.plus
 import androidx.compose.ui.unit.requireReal
 import androidx.compose.ui.unit.roundToIntSize
 import androidx.compose.ui.unit.size
+import androidx.compose.ui.unit.toDpSize
 import androidx.compose.ui.unit.topLeft
 import androidx.compose.ui.unit.width
 import androidx.compose.ui.window.WindowLocationTracker
