@@ -22,7 +22,16 @@ import platform.Foundation.NSThread
 import platform.darwin.dispatch_async
 import platform.darwin.dispatch_get_main_queue
 
-internal class MetalOutOfFrameExecutor: PlatformOutOfFrameExecutor {
+/**
+ * Drains out-of-frame work around Metal frame production.
+ *
+ * Work scheduled during a frame is drained in [onFrameEnd], after that frame has been recorded and
+ * before the next frame starts. Work scheduled between frames is already out of the current frame,
+ * so it should run before the next frame starts instead of waiting for that next frame to finish.
+ * The async main-queue drain is a best-effort way to run such work early, while [onFrameStart]
+ * provides the ordering guarantee if the display-link callback wins the race.
+ */
+internal class MetalOutOfFrameExecutor : PlatformOutOfFrameExecutor {
     private val queue = ArrayDeque<() -> Unit>()
     private var isFrameInProgress = false
     private var isDrainScheduled = false
