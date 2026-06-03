@@ -45,6 +45,7 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontSynthesis
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.font.SkiaFontLoader
+import androidx.compose.ui.text.internal.checkPrecondition
 import androidx.compose.ui.text.intl.LocaleList
 import androidx.compose.ui.text.style.BaselineShift
 import androidx.compose.ui.text.style.LineHeightStyle
@@ -593,7 +594,7 @@ internal class ParagraphBuilder(
     }
 
     private fun mergeStyles(activeStyles: List<SpanStyle>): ComputedStyle.Mutable {
-        check(activeStyles.isNotEmpty()) { "There should be at least one active style" }
+        checkPrecondition(activeStyles.isNotEmpty()) { "There should be at least one active style" }
         val style = ComputedStyle(
             density = density,
             spanStyle = activeStyles[0],

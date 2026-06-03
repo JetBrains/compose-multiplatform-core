@@ -29,6 +29,7 @@ import androidx.compose.ui.LayerType
 import androidx.compose.ui.awt.RenderSettings.SkiaSurface
 import androidx.compose.ui.awt.RenderSettings.SwingGraphics
 import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.internal.checkPrecondition
 import androidx.compose.ui.isClearFocusOnMouseDownEnabled
 import androidx.compose.ui.node.InternalCoreApi
 import androidx.compose.ui.scene.ComposeContainer
@@ -95,7 +96,7 @@ class ComposePanel @ExperimentalComposeUiApi constructor(
     }
 
     init {
-        check(isEventDispatchThread()) {
+        checkPrecondition(isEventDispatchThread()) {
             "ComposePanel should be created inside AWT Event Dispatch Thread" +
                 " (use SwingUtilities.invokeLater).\n" +
                 "Creating from another thread isn't supported."

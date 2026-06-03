@@ -62,6 +62,8 @@ import androidx.compose.ui.input.pointer.PointerKeyboardModifiers
 import androidx.compose.ui.input.pointer.PointerType
 import androidx.compose.ui.input.pointer.PositionCalculator
 import androidx.compose.ui.input.rotary.RotaryScrollEvent
+import androidx.compose.ui.internal.checkPrecondition
+import androidx.compose.ui.internal.checkPreconditionNotNull
 import androidx.compose.ui.layout.MeasurableRootContent
 import androidx.compose.ui.layout.Measured
 import androidx.compose.ui.layout.RootMeasurePolicy
@@ -189,7 +191,7 @@ internal class RootNodeOwner(
     }
 
     fun dispose() {
-        check(!isDisposed) { "RootNodeOwner is already disposed" }
+        checkPrecondition(!isDisposed) { "RootNodeOwner is already disposed" }
         coroutineScope.cancel()
         platformContext.rootForTestListener?.onRootForTestDisposed(rootForTest)
         snapshotObserver.stopObserving()
@@ -682,10 +684,10 @@ internal class RootNodeOwner(
         override fun onPreLayoutNodeReused(layoutNode: LayoutNode, oldSemanticsId: Int) {
             // Keep the mapping up to date when the semanticsId changes
             val existing = layoutNodes.remove(oldSemanticsId)
-            checkNotNull(existing) {
+            checkPreconditionNotNull(existing) {
                 "Invalid usage of Owner.onPreLayoutNodeReused: layoutNode is not found"
             }
-            check(existing == layoutNode) {
+            checkPrecondition(existing == layoutNode) {
                 "Invalid usage of Owner.onPreLayoutNodeReused: previous semanticsId refers another layoutNode"
             }
             layoutNodes[layoutNode.semanticsId] = layoutNode

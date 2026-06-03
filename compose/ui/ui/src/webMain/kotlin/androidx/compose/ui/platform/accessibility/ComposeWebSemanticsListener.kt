@@ -19,6 +19,7 @@ package androidx.compose.ui.platform.accessibility
 import androidx.collection.MutableScatterMap
 import androidx.compose.ui.currentTimeMillis
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.internal.checkPreconditionNotNull
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsActions
@@ -180,8 +181,8 @@ internal class ComposeWebSemanticsListener(
 
             val htmlNode = if (nodes[currentId] != null) {
                 nodes[currentId] = node
-                val htmlNode = webNodes[currentId] ?: error("Node $currentId not found")
-
+                val htmlNode = webNodes[currentId]
+                checkPreconditionNotNull(htmlNode) { "Node $currentId not found" }
                 if (children.isNotEmpty()) {
                     // To ensure the correct order of nested nodes, we remove all of them.
                     // I assume it's more efficient to remove and re-add them than to insert the nodes at specific positions.

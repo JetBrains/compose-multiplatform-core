@@ -16,6 +16,7 @@
 
 package androidx.compose.ui.platform.a11y
 
+import androidx.compose.ui.internal.checkPrecondition
 import androidx.compose.ui.platform.PlatformComponent
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.scene.ComposeScene
@@ -91,7 +92,7 @@ internal class ComposeSceneAccessibility(
     }
 
     override fun onSemanticsOwnerAppended(semanticsOwner: SemanticsOwner) {
-        check(semanticsOwner !in ownerAccessibilityByOwner)
+        checkPrecondition(semanticsOwner !in ownerAccessibilityByOwner)
         val ownerAccessibility = SemanticsOwnerAccessibility(
             owner = semanticsOwner,
             desktopComponent = platformComponent,

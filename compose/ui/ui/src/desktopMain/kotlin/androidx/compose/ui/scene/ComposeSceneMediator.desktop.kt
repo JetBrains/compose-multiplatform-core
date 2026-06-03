@@ -43,6 +43,7 @@ import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.PointerKeyboardModifiers
 import androidx.compose.ui.input.pointer.PointerType
+import androidx.compose.ui.internal.checkPrecondition
 import androidx.compose.ui.isClearFocusOnMouseDownEnabled
 import androidx.compose.ui.layout.MeasurableRootContent
 import androidx.compose.ui.navigationevent.BackNavigationEventInput
@@ -586,7 +587,7 @@ internal class ComposeSceneMediator(
     }
 
     fun dispose() {
-        check(!isDisposed) { "ComposeSceneMediator is already disposed" }
+        checkPrecondition(!isDisposed) { "ComposeSceneMediator is already disposed" }
         isDisposed = true
 
         unsubscribeFromInputEvents()

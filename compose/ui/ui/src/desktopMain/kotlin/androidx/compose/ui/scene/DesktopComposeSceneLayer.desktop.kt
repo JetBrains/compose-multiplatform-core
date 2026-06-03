@@ -25,6 +25,7 @@ import androidx.compose.ui.awt.AwtEventListeners
 import androidx.compose.ui.awt.toAwtRectangle
 import androidx.compose.ui.input.pointer.PointerButton
 import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.internal.checkPrecondition
 import androidx.compose.ui.skiko.RecordDrawRectRenderDecorator
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntOffset
@@ -139,10 +140,10 @@ internal abstract class DesktopComposeSceneLayer(
         positionInWindow // [ComposeScene] is equal to [windowContainer] for the layer.
 
     protected fun recordDrawBounds(renderDelegate: SkikoRenderDelegate): RecordDrawRectRenderDecorator {
-        check(!isClosed) {
+        checkPrecondition(!isClosed) {
             "recordDrawBounds called after layer is closed"
         }
-        check(drawBoundsRecorder == null) {
+        checkPrecondition(drawBoundsRecorder == null) {
             "recordDrawBounds cannot be called multiple times."
         }
         return RecordDrawRectRenderDecorator(renderDelegate) { canvasBoundsInPx ->

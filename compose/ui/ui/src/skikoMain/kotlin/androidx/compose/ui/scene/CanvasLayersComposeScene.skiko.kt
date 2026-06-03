@@ -38,6 +38,7 @@ import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.PointerInputEvent
 import androidx.compose.ui.input.pointer.PointerType
 import androidx.compose.ui.input.rotary.RotaryScrollEvent
+import androidx.compose.ui.internal.checkPrecondition
 import androidx.compose.ui.layout.MeasurableRootContent
 import androidx.compose.ui.node.InternalCoreApi
 import androidx.compose.ui.node.RootNodeOwner
@@ -125,22 +126,22 @@ private class CanvasLayersComposeSceneImpl(
 
     override var density: Density = density
         set(value) {
-            check(!isClosed) { "density set after ComposeScene is closed" }
+            checkPrecondition(!isClosed) { "density set after ComposeScene is closed" }
             field = value
             mainOwner.density = value
         }
 
     override var layoutDirection: LayoutDirection = layoutDirection
         set(value) {
-            check(!isClosed) { "layoutDirection set after ComposeScene is closed" }
+            checkPrecondition(!isClosed) { "layoutDirection set after ComposeScene is closed" }
             field = value
             mainOwner.layoutDirection = value
         }
 
     override var size: IntSize? = size
         set(value) {
-            check(!isClosed) { "size set after ComposeScene is closed" }
-            check(value == null || (value.width >= 0f && value.height >= 0)) {
+            checkPrecondition(!isClosed) { "size set after ComposeScene is closed" }
+            checkPrecondition(value == null || (value.width >= 0f && value.height >= 0)) {
                 "Size of ComposeScene cannot be negative"
             }
             field = value
@@ -192,7 +193,7 @@ private class CanvasLayersComposeSceneImpl(
     }
 
     override fun close() {
-        check(!isClosed) { "ComposeScene is already closed" }
+        checkPrecondition(!isClosed) { "ComposeScene is already closed" }
         onOwnerRemoved(mainOwner)
         mainOwner.dispose()
         forEachLayer { it.close() }
@@ -201,17 +202,17 @@ private class CanvasLayersComposeSceneImpl(
 
     override val measurableContent: MeasurableRootContent
         get() {
-            check(!isClosed) { "measurableContent requested after ComposeScene is closed" }
+            checkPrecondition(!isClosed) { "measurableContent requested after ComposeScene is closed" }
             return mainOwner.measurableRootContent
         }
 
     override fun invalidatePositionInWindow() {
-        check(!isClosed) { "invalidatePositionInWindow called after ComposeScene is closed" }
+        checkPrecondition(!isClosed) { "invalidatePositionInWindow called after ComposeScene is closed" }
         mainOwner.invalidatePositionInWindow()
     }
 
     override fun invalidatePositionOnScreen() {
-        check(!isClosed) { "invalidatePositionOnScreen called after ComposeScene is closed" }
+        checkPrecondition(!isClosed) { "invalidatePositionOnScreen called after ComposeScene is closed" }
         mainOwner.invalidatePositionOnScreen()
     }
 
@@ -490,7 +491,7 @@ private class CanvasLayersComposeSceneImpl(
     }
 
     private fun attachLayer(layer: AttachedComposeSceneLayer) {
-        check(!isClosed) { "attachLayer called after ComposeScene is closed" }
+        checkPrecondition(!isClosed) { "attachLayer called after ComposeScene is closed" }
         layers.add(layer)
 
         if (layer.focusable) {
@@ -503,7 +504,7 @@ private class CanvasLayersComposeSceneImpl(
     }
 
     private fun detachLayer(layer: AttachedComposeSceneLayer) {
-        check(!isClosed) { "detachLayer called after ComposeScene is closed" }
+        checkPrecondition(!isClosed) { "detachLayer called after ComposeScene is closed" }
         layers.remove(layer)
 
         releaseFocus(layer)
@@ -646,7 +647,7 @@ private class CanvasLayersComposeSceneImpl(
         }
 
         override fun setContent(content: @Composable () -> Unit) {
-            check(!isClosed) { "AttachedComposeSceneLayer is closed" }
+            checkPrecondition(!isClosed) { "AttachedComposeSceneLayer is closed" }
             composition?.dispose()
             composition = owner.setContent(
                 parent = this@AttachedComposeSceneLayer.compositionContext,

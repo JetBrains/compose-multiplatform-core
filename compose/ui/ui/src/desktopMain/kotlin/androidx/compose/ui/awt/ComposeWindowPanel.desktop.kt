@@ -22,6 +22,7 @@ import androidx.compose.ui.ComposeFeatureFlags
 import androidx.compose.ui.LayerType
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.key.KeyEvent
+import androidx.compose.ui.internal.checkPrecondition
 import androidx.compose.ui.layout.MeasurableRootContent
 import androidx.compose.ui.scene.ComposeContainer
 import androidx.savedstate.SavedState
@@ -92,8 +93,8 @@ internal class ComposeWindowPanel(
     var isWindowTransparent: Boolean = false
         set(value) {
             if (field != value) {
-                check(isUndecorated()) { "Transparent window should be undecorated!" }
-                check(!window.isDisplayable) {
+                checkPrecondition(isUndecorated()) { "Transparent window should be undecorated!" }
+                checkPrecondition(!window.isDisplayable) {
                     "Cannot change transparency if window is already displayable."
                 }
                 field = value

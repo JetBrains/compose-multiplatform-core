@@ -32,6 +32,7 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.toAwtImage
 import androidx.compose.ui.input.key.KeyShortcut
 import androidx.compose.ui.input.key.toSwingKeyStroke
+import androidx.compose.ui.internal.checkPrecondition
 import androidx.compose.ui.node.Ref
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -702,12 +703,12 @@ internal class MenuItemApplier(private val root: Menu) : Applier<MenuItem> {
     override var current: MenuItem = root
 
     override fun up() {
-        check(current != root)
+        checkPrecondition(current != root)
         current = current.parent as MenuItem
     }
 
     override fun down(node: MenuItem) {
-        check(current == node.parent)
+        checkPrecondition(current == node.parent)
         current = node
     }
 

@@ -43,7 +43,7 @@ actual typealias NativeCanvas = SkCanvas
 
 internal actual fun ActualCanvas(image: ImageBitmap): Canvas {
     val skiaBitmap = image.asSkiaBitmap()
-    require(!skiaBitmap.isImmutable) {
+    requirePrecondition(!skiaBitmap.isImmutable) {
         "Cannot draw on immutable ImageBitmap"
     }
     return SkiaBackedCanvas(SkCanvas(skiaBitmap))
@@ -92,7 +92,9 @@ internal class SkiaBackedCanvas(
     internal var alphaMultiplier: Float = 1.0f
 
     private fun Paint.asSkiaPaintWithAppliedAlphaMultiplier(): SkPaint {
-        require(this is SkiaBackedPaint)
+        requirePrecondition(this is SkiaBackedPaint){
+            "Cannot get alphaMultiplier in ${this::class} implementation"
+        }
         this.alphaMultiplier = this@SkiaBackedCanvas.alphaMultiplier
         return internalSkiaPaint
     }

@@ -18,6 +18,7 @@ package androidx.compose.ui.window
 
 import androidx.collection.IntIntPair
 import androidx.compose.ui.FrameRateCategory
+import androidx.compose.ui.internal.checkPrecondition
 import androidx.compose.ui.uikit.utils.CMPMetalDrawablesHandler
 import androidx.compose.ui.util.trace
 import androidx.compose.ui.viewinterop.UIKitInteropAction
@@ -186,7 +187,7 @@ internal class LegacyMetalRedrawer(
         }
 
     override fun dispose() {
-        check(caDisplayLink != null) { "MetalRedrawer.dispose() was called more than once" }
+        checkPrecondition(caDisplayLink != null) { "MetalRedrawer.dispose() was called more than once" }
 
         retrieveInteropTransaction = {
             object : UIKitInteropTransaction {
@@ -255,8 +256,8 @@ internal class LegacyMetalRedrawer(
      */
     @OptIn(BetaInteropApi::class)
     private fun draw(waitUntilCompletion: Boolean, targetTimestamp: NSTimeInterval) = trace("MetalRedrawer:draw") {
-        check(NSThread.isMainThread)
-        check(!isDrawRecursiveCall) {
+        checkPrecondition(NSThread.isMainThread)
+        checkPrecondition(!isDrawRecursiveCall) {
             "Attempt to call MetalRedrawer.draw() recursively which may lead to the PictureRecorder corruption."
         }
         isDrawRecursiveCall = true

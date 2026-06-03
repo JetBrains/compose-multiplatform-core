@@ -16,6 +16,9 @@
 
 package androidx.compose.ui.node
 
+import androidx.collection.mutableObjectListOf
+import kotlin.collections.forEachIndexed
+
 
 /**
  * Implements [SortedSet] via a min-heap (implemented via an array) and a hash-map mapping the
@@ -38,27 +41,27 @@ internal actual class SortedSet<E> actual constructor(
     /**
      * The heap array.
      */
-    private val itemTree = arrayListOf<E>()
+    private val itemTree = mutableObjectListOf<E>()
 
     /**
      * Returns whether the index is the root of the tree.
      */
-    private val Int.isRootIndex get() = this == 0
+    private inline val Int.isRootIndex get() = this == 0
 
     /**
      * Returns the index of the parent node.
      */
-    private val Int.parentIndex get() = (this - 1) shr 1
+    private inline val Int.parentIndex get() = (this - 1) shr 1
 
     /**
      * Returns the index of the left child node.
      */
-    private val Int.leftChildIndex get() = (this shl 1) + 1
+    private inline val Int.leftChildIndex get() = (this shl 1) + 1
 
     /**
      * Returns the index of the right child node.
      */
-    private val Int.rightChildIndex get() = (this shl 1) + 2
+    private inline val Int.rightChildIndex get() = (this shl 1) + 2
 
     /**
      * Maps each element to its index in [itemTree].
@@ -78,10 +81,9 @@ internal actual class SortedSet<E> actual constructor(
         // Insert the item at the rightmost leaf
         val index = itemTree.size
         itemTree.add(element)
-        indexByElement[element] = index  // This is the initial index; heapifyUp will update it
 
         // Fix the heap
-        heapifyUp(index)
+        heapifyUp(index, element)
 
         return true
     }
@@ -96,19 +98,16 @@ internal actual class SortedSet<E> actual constructor(
         val index = indexByElement.remove(element) ?: return false
 
         // Remove the rightmost leaf (to move it in place of the remove element)
-        val rightMostLeafElement = itemTree.removeLast()
+        val rightMostLeafElement = itemTree.removeAt(itemTree.lastIndex)
 
         // If the removed element is the rightmost leaf, then there's no need to move it, or to fix
         // the heap. This also takes care of the case when the set is empty after removal.
         if (index < itemTree.size) {
-            itemTree[index] = rightMostLeafElement
-            indexByElement[rightMostLeafElement] = index
-
             // Restore min-heap invariant
-            if (!index.isRootIndex && (itemTree[index.parentIndex] >= itemTree[index])) {
-                heapifyUp(index)
+            if (!index.isRootIndex && (itemTree[index.parentIndex] >= rightMostLeafElement)) {
+                heapifyUp(index, rightMostLeafElement)
             } else {
-                heapifyDown(index)
+                heapifyDown(index, rightMostLeafElement)
             }
 
             // FIXME: https://youtrack.jetbrains.com/issue/KT-82783
@@ -124,7 +123,7 @@ internal actual class SortedSet<E> actual constructor(
     /**
      * Returns the smallest item in the set, according to [comparator].
      */
-    actual fun first() = itemTree[0]
+    actual fun first() = itemTree.first()
 
     /**
      * Returns whether the set is empty.
@@ -139,31 +138,34 @@ internal actual class SortedSet<E> actual constructor(
     /**
      * Bubbles up the element at the given index until the min-heap invariant is restored.
      */
-    private fun heapifyUp(index: Int) {
-        val element = itemTree[index]  // The element being bubbled up
+    private fun heapifyUp(index: Int, element: E) {
         var currentIndex = index  // The index we're currently comparing to its parent
 
         while (!currentIndex.isRootIndex) {
             val parentIndex = currentIndex.parentIndex
+            val parentElement = itemTree[parentIndex]
 
             // If the order is correct, stop
-            if (itemTree[parentIndex] <= element) {
+            if (parentElement <= element) {
                 break
             }
 
-            // Swap
-            swap(currentIndex, parentIndex)
+            // Move parent down
+            itemTree[currentIndex] = parentElement
+            indexByElement[parentElement] = currentIndex
 
             // Continue with parent
             currentIndex = parentIndex
         }
+
+        itemTree[currentIndex] = element
+        indexByElement[element] = currentIndex
     }
 
     /**
      * Sinks down the element at the given index until the min-heap invariant is restored.
      */
-    private fun heapifyDown(index: Int) {
-        val element = itemTree[index]  // The element being sunk down
+    private fun heapifyDown(index: Int, element: E) {
         var currentIndex = index  // The index we're currently comparing to its children
 
         while (true) {
@@ -196,26 +198,12 @@ internal actual class SortedSet<E> actual constructor(
                 break
             }
 
-            swap(currentIndex, indexOfSmallerElement)
+            itemTree[currentIndex] = smallerElement
+            indexByElement[smallerElement] = currentIndex
             currentIndex = indexOfSmallerElement
         }
-    }
 
-    /**
-     * Swaps the elements at the given indices in [itemTree], and updates the indices in
-     * [indexByElement].
-     */
-    private fun swap(index1: Int, index2: Int) {
-        // Get the items
-        val item1 = itemTree[index1]
-        val item2 = itemTree[index2]
-
-        // Swap the items
-        itemTree[index1] = item2
-        itemTree[index2] = item1
-
-        // Update the indices
-        indexByElement[item1] = index2
-        indexByElement[item2] = index1
+        itemTree[currentIndex] = element
+        indexByElement[element] = currentIndex
     }
 }

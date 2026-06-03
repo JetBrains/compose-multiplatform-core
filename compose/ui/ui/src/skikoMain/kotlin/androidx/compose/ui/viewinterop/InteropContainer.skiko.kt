@@ -20,6 +20,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.snapshots.SnapshotStateObserver
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.internal.checkPrecondition
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.OverlayLayout
 import androidx.compose.ui.node.GlobalPositionAwareModifierNode
@@ -126,7 +127,7 @@ internal fun InteropContainer.interopComponentsSortedByDrawOrder(
         }
         true
     }
-    check(remainingHolders.isEmpty()) { "Some interop view holders not found in interop container" }
+    checkPrecondition(remainingHolders.isEmpty()) { "Some interop view holders not found in interop container" }
     return result
 }
 

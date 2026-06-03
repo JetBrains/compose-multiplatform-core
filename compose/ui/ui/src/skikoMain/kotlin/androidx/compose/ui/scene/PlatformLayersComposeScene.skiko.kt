@@ -26,6 +26,7 @@ import androidx.compose.ui.graphics.Canvas
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.pointer.PointerInputEvent
 import androidx.compose.ui.input.rotary.RotaryScrollEvent
+import androidx.compose.ui.internal.checkPrecondition
 import androidx.compose.ui.layout.MeasurableRootContent
 import androidx.compose.ui.node.InternalCoreApi
 import androidx.compose.ui.node.LayoutNode
@@ -104,22 +105,22 @@ private class PlatformLayersComposeSceneImpl(
 
     override var density: Density = density
         set(value) {
-            check(!isClosed) { "density set after ComposeScene is closed" }
+            checkPrecondition(!isClosed) { "density set after ComposeScene is closed" }
             field = value
             mainOwner.density = value
         }
 
     override var layoutDirection: LayoutDirection = layoutDirection
         set(value) {
-            check(!isClosed) { "layoutDirection set after ComposeScene is closed" }
+            checkPrecondition(!isClosed) { "layoutDirection set after ComposeScene is closed" }
             field = value
             mainOwner.layoutDirection = value
         }
 
     override var size: IntSize? = size
         set(value) {
-            check(!isClosed) { "size set after ComposeScene is closed" }
-            check(value == null || (value.width >= 0f && value.height >= 0)) {
+            checkPrecondition(!isClosed) { "size set after ComposeScene is closed" }
+            checkPrecondition(value == null || (value.width >= 0f && value.height >= 0)) {
                 "Size of ComposeScene cannot be negative"
             }
             field = value
@@ -139,7 +140,7 @@ private class PlatformLayersComposeSceneImpl(
     }
 
     override fun close() {
-        check(!isClosed) { "close called after ComposeScene is already closed" }
+        checkPrecondition(!isClosed) { "close called after ComposeScene is already closed" }
         onOwnerRemoved(mainOwner)
         mainOwner.dispose()
         super.close()
@@ -147,17 +148,17 @@ private class PlatformLayersComposeSceneImpl(
 
     override val measurableContent: MeasurableRootContent
         get() {
-            check(!isClosed) { "measurableContent requested after ComposeScene is closed" }
+            checkPrecondition(!isClosed) { "measurableContent requested after ComposeScene is closed" }
             return mainOwner.measurableRootContent
         }
 
     override fun invalidatePositionInWindow() {
-        check(!isClosed) { "invalidatePositionInWindow called after ComposeScene is closed" }
+        checkPrecondition(!isClosed) { "invalidatePositionInWindow called after ComposeScene is closed" }
         mainOwner.invalidatePositionInWindow()
     }
 
     override fun invalidatePositionOnScreen() {
-        check(!isClosed) { "invalidatePositionOnScreen called after ComposeScene is closed" }
+        checkPrecondition(!isClosed) { "invalidatePositionOnScreen called after ComposeScene is closed" }
         mainOwner.invalidatePositionOnScreen()
     }
 

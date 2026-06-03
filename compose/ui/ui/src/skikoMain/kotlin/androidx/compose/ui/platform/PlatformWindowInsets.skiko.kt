@@ -20,6 +20,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.internal.checkPrecondition
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -241,7 +242,7 @@ private value class ValuePlatformInsets(
         }
 
         private fun checkBounds(value: Int, name: String) {
-            check(value in 0..0xFFFF) {
+            checkPrecondition(value in 0..0xFFFF) {
                 "$name should be in 0..0xFFFF range, but was $value"
             }
         }

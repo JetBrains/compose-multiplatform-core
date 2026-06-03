@@ -25,6 +25,10 @@ import androidx.compose.ui.awt.AwtEventListener
 import androidx.compose.ui.awt.AwtEventListeners
 import androidx.compose.ui.awt.RenderSettings
 import androidx.compose.ui.input.key.KeyEvent
+import androidx.compose.ui.internal.checkPrecondition
+import androidx.compose.ui.internal.checkPreconditionNotNull
+import androidx.compose.ui.internal.requirePrecondition
+import androidx.compose.ui.internal.requirePreconditionNotNull
 import androidx.compose.ui.layout.MeasurableRootContent
 import androidx.compose.ui.platform.DefaultArchitectureComponentsOwner
 import androidx.compose.ui.platform.PlatformContext
@@ -108,13 +112,14 @@ internal class ComposeContainer(
 
     private var _windowContainer: JLayeredPane? = null
     var windowContainer: JLayeredPane
-        get() = requireNotNull(_windowContainer)
+        get() = checkPreconditionNotNull(_windowContainer)
         set(value) {
             if (_windowContainer == value) {
                 return
             }
-            if (layerType == LayerType.OnSameCanvas && value != container) {
-                error("Customizing windowContainer cannot be used with LayerType.OnSameCanvas")
+            val isError : Boolean = layerType == LayerType.OnSameCanvas && value != container
+            checkPrecondition(!isError){
+                "Customizing windowContainer cannot be used with LayerType.OnSameCanvas"
             }
 
             _windowContainer?.removeComponentListener(windowContainerComponentListener)
@@ -194,8 +199,9 @@ internal class ComposeContainer(
         setWindow(window)
         this.windowContainer = windowContainer
 
-        if (layerType == LayerType.OnComponent && renderSettings !is RenderSettings.SwingGraphics) {
-            error("LayerType.OnComponent can only be used with rendering via Swing graphics")
+        val isError = layerType == LayerType.OnComponent && renderSettings !is RenderSettings.SwingGraphics
+        checkPrecondition(!isError) {
+            "LayerType.OnComponent can only be used with rendering via Swing graphics"
         }
     }
 

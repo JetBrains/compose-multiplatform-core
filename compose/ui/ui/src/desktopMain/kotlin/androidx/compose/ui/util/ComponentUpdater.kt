@@ -16,6 +16,8 @@
 
 package androidx.compose.ui.util
 
+import androidx.compose.ui.internal.checkPrecondition
+
 /**
  * Stores the previous applied state, and provide an ability to update component if the new state is
  * changed.
@@ -41,7 +43,7 @@ internal class ComponentUpdater {
                     updatedValues[index] = value
                 }
             } else {
-                check(index == updatedValues.size)
+                checkPrecondition(index == updatedValues.size)
                 update(value)
                 updatedValues.add(value)
             }
