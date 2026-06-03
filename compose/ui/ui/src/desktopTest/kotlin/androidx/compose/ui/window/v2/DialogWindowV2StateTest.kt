@@ -258,7 +258,7 @@ class DialogWindowV2StateTest {
         val state = DialogState(
             initialBoundsProvider = WindowBoundsProvider(
                 sizeProvider = WindowSizeProvider.Fixed(200.dp, 200.dp),
-                positionProvider = WindowPositionProvider.AlignedToScreen(Alignment.Center)
+                positionProvider = WindowPositionProvider.CenteredOnScreen
             )
         )
         lateinit var dialog: ComposeDialog
@@ -282,7 +282,7 @@ class DialogWindowV2StateTest {
         val windowState = WindowState(
             initialBoundsProvider = WindowBoundsProvider(
                 sizeProvider = WindowSizeProvider.Fixed(400.dp, 400.dp),
-                positionProvider = WindowPositionProvider.AlignedToScreen(Alignment.Center)
+                positionProvider = WindowPositionProvider.CenteredOnScreen
             )
         )
         lateinit var window: ComposeWindow
@@ -290,7 +290,7 @@ class DialogWindowV2StateTest {
         val dialogState = DialogState(
             initialBoundsProvider = WindowBoundsProvider(
                 sizeProvider = WindowSizeProvider.Fixed(200.dp, 200.dp),
-                positionProvider = WindowPositionProvider.AlignedToParentWindow(Alignment.Center)
+                positionProvider = WindowPositionProvider.CenteredInParentWindow
             )
         )
         lateinit var dialog: ComposeDialog

@@ -337,6 +337,19 @@ fun interface WindowPositionProvider {
         val Current = WindowPositionProvider { windowMetrics.bounds.topLeft }
 
         /**
+         * Centers the window within the screen.
+         */
+        val CenteredOnScreen = AlignedToScreen(alignment = Alignment.Center)
+
+        /**
+         * Centers the window within its parent window.
+         */
+        val CenteredInParentWindow = AlignedToParentWindow(
+            alignment = Alignment.Center,
+            anchor = Alignment.Center
+        )
+
+        /**
          * Positions the window at the given [position].
          *
          * @param position The position of the window.
@@ -395,7 +408,7 @@ fun interface WindowPositionProvider {
          */
         fun AlignedToParentWindow(
             anchor: Alignment,
-            alignment: Alignment = Alignment.Center,
+            alignment: Alignment,
             offset: DpOffset = DpOffset.Zero,
             excludeParentInsets: Boolean = false,
         ): WindowPositionProvider = WindowPositionProvider { size ->
