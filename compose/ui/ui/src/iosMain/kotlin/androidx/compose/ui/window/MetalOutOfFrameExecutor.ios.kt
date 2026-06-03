@@ -63,6 +63,11 @@ internal class MetalOutOfFrameExecutor: PlatformOutOfFrameExecutor {
             return
         }
 
+        // The async main-queue drain is best-effort and can lose the race to a display-link
+        // callback. Drain pending work before starting frame production to preserve the contract
+        // that out-of-frame work runs before the next frame starts.
+        drain()
+
         isFrameInProgress = true
     }
 
@@ -94,6 +99,7 @@ internal class MetalOutOfFrameExecutor: PlatformOutOfFrameExecutor {
         check(NSThread.isMainThread) {
             "MetalOutOfFrameExecutor.drain() must be called on main thread"
         }
+
         if (isDisposed || isDraining) {
             return
         }
