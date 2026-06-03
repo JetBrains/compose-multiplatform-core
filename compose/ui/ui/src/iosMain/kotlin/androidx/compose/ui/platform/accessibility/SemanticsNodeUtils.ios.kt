@@ -290,14 +290,10 @@ private fun LinkAnnotation.getTag(): String? =
     }
 
 internal fun SemanticsNode.canBeAccessibilityElement(): Boolean {
-    return !isHiddenFromAccessibility &&
-        (unmergedConfig.isMergingSemanticsOfDescendants || isUnmergedSpeakingNode)
-}
+    if (isHiddenFromAccessibility || isFake) return false
+    if (unmergedConfig.isActionableNode || unmergedConfig.isMergingSemanticsOfDescendants) return true
 
-internal val SemanticsNode.isUnmergedSpeakingNode: Boolean get() {
-    if (isFake) return false
     if (!unmergedConfig.isSpeakingNode) return false
-    if (unmergedConfig.isActionableNode) return true
 
     val hasReplacedChildren = replacedChildren.isNotEmpty()
 
@@ -311,6 +307,9 @@ internal val SemanticsNode.isUnmergedSpeakingNode: Boolean get() {
         }
         if (currentNode.semanticsConfiguration?.getOrNull(SemanticsProperties.IsTraversalGroup) == true) {
             return true
+        }
+        if (currentNode.semanticsConfiguration?.isActionableNode == true) {
+            return false
         }
         currentNode = currentNode.parent
     }
