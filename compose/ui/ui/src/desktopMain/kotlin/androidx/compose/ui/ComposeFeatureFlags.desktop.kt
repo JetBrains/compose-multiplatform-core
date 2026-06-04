@@ -56,7 +56,8 @@ internal object ComposeFeatureFlags {
      * (such as for [Popup] and [Dialog]) are created within the initial canvas.
      */
     val layerType = FeatureFlag {
-        LayerType.parse(System.getProperty("compose.layers.type"))
+        LayerType.OnComponent
+//        LayerType.parse(System.getProperty("compose.layers.type"))
     }
 
     /**
@@ -73,7 +74,8 @@ internal object ComposeFeatureFlags {
      * @see androidx.compose.ui.awt.RenderSettings.SwingGraphics
      */
     val useSwingGraphicsInComposePanel = FeatureFlag {
-        System.getProperty("compose.swing.render.on.graphics").toBoolean()
+        true
+//        System.getProperty("compose.swing.render.on.graphics").toBoolean()
     }
 
     /**

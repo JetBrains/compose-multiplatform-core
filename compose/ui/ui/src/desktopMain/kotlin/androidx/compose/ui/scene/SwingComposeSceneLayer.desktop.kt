@@ -16,7 +16,6 @@
 
 package androidx.compose.ui.scene
 
-import androidx.compose.runtime.CompositionContext
 import androidx.compose.ui.awt.toAwtRectangle
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
@@ -40,7 +39,6 @@ import org.jetbrains.skiko.SkiaLayerAnalytics
 internal class SwingComposeSceneLayer(
     composeContainer: ComposeContainer,
     private val skiaLayerAnalytics: SkiaLayerAnalytics,
-    compositionContext: CompositionContext,
     density: Density,
     layoutDirection: LayoutDirection,
     focusable: Boolean,
@@ -114,7 +112,7 @@ internal class SwingComposeSceneLayer(
             eventListener = eventListener,
             measureDrawLayerBounds = true,
             architectureComponentsOwner = composeContainer.architectureComponentsOwner,
-            coroutineContext = compositionContext.effectCoroutineContext,
+            coroutineContext = composeContainer.coroutineContext,
             skiaLayerComponentFactory = ::createSkiaLayerComponent,
             composeSceneFactory = ::createComposeScene,
         ).also {
@@ -184,16 +182,14 @@ internal class SwingComposeSceneLayer(
     private fun createComposeScene(mediator: ComposeSceneMediator): ComposeScene {
         val density = container.density
         return PlatformLayersComposeScene(
-            frameRecomposer = mediator.frameRecomposer,
+            frameRecomposer = composeContainer.frameRecomposer,
             density = density,
-            // TODO: Route layout invalidations through Swing layout and draw invalidations
-            // through repaint instead of collapsing both to `onComposeInvalidation`.
-            invalidateLayout = mediator::onComposeInvalidation,
-            invalidateDraw = mediator::onComposeInvalidation,
             layoutDirection = layoutDirection,
             composeSceneContext = composeContainer.createComposeSceneContext(
                 platformContext = mediator.platformContext
             ),
+            invalidateLayout = { mediator.contentComponent.revalidate() },
+            invalidateDraw = { mediator.contentComponent.repaint() },
         )
     }
 }

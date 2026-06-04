@@ -51,7 +51,6 @@ import androidx.compose.ui.platform.DefaultInputModeManager
 import androidx.compose.ui.platform.DelegateRootForTestListener
 import androidx.compose.ui.platform.DesktopTextInputService
 import androidx.compose.ui.platform.DesktopTextInputService2
-import androidx.compose.ui.platform.FrameRecomposer
 import androidx.compose.ui.platform.PlatformArchitectureComponentsOwner
 import androidx.compose.ui.platform.PlatformComponent
 import androidx.compose.ui.platform.PlatformContext
@@ -154,18 +153,6 @@ internal class ComposeSceneMediator(
         DesktopTextInputService2(platformComponent)
     }
 
-    // TODO: It must be shared between Compose instances.
-    //  It's supposed to be stored in platform's root view or window.
-    val frameRecomposer = FrameRecomposer(coroutineContext, ::needRender)
-
-    // TODO: It cannot be used in case of shared [FrameRecomposer], replace this helper with calling
-    //  - [frameRecomposer.performFrame] once per frame (across all instances) before platform views layout phase
-    //  - [scene.measureAndLayout] during platform views layout phase. Note that it should be triggered
-    //    by platform view invalidation (which is triggered by [scene.invalidateLayout] OR by regular platform invalidation)
-    //  - [scene.draw] during drawing phase of platform views (which is triggered by [scene.invalidateDraw]).
-    //    Note that in case of custom GPU surface/V-Sync handling, it needs to be handled differently.
-    private val sceneRenderingScope = SingleComposeSceneRenderingScope(::needRender)
-
     private val _platformContext = DesktopPlatformContext()
     val platformContext: PlatformContext get() = _platformContext
 
@@ -212,7 +199,7 @@ internal class ComposeSceneMediator(
     private val interopContainer = SwingInteropContainer(
         root = container,
         placeInteropAbove = shouldPlaceInteropAbove,
-        requestRedraw = ::onComposeInvalidation
+        requestRedraw = { contentComponent.revalidate() }
     )
 
     private val interopContainerListener = object : ContainerListener {
@@ -610,7 +597,6 @@ internal class ComposeSceneMediator(
         container.dropTarget = null
 
         scene.close()
-        frameRecomposer.close()
         skiaLayerComponent.dispose()
 
         interopContainer.root.removeContainerListener(interopContainerListener)
@@ -673,25 +659,21 @@ internal class ComposeSceneMediator(
         }
     }
 
-    private fun needRender(): Unit = composeInvalidationExecutor.runOrScheduleDebounced {
-        catchExceptions {
-            if (isDisposed) return@catchExceptions
-            skiaLayerComponent.needRender()
-        }
-    }
-
-    fun onComposeInvalidation() {
-        sceneRenderingScope.onSceneInvalidation()
-    }
-
     fun onComponentPositionChanged() = catchExceptions {
         if (!container.isDisplayable) return
 
         offsetInWindow = windowContext.offsetInWindow(container)
     }
 
+    fun doLayout() = catchExceptions {
+        if (!container.isDisplayable || !isComponentAttached) return
+
+        scene.measureAndLayout()
+        onContainerSizeChanged()
+    }
+
     fun onContainerSizeChanged() = catchExceptions {
-        if (!container.isDisplayable) return
+        if (!container.isDisplayable || !isComponentAttached) return
 
         val size = sceneBoundsInPx?.size ?: container.sizeInPx
         scene.size = IntSize(
@@ -723,9 +705,7 @@ internal class ComposeSceneMediator(
     override fun onRender(canvas: SkCanvas, width: Int, height: Int, nanoTime: Long) = catchExceptions {
         interopContainer.postponingExecutingScheduledUpdates {
             canvas.withSceneOffset {
-                with(sceneRenderingScope) {
-                    scene.render(frameRecomposer, asComposeCanvas(), nanoTime)
-                }
+                scene.draw(asComposeCanvas())
             }
         }
     }

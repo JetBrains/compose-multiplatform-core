@@ -26,6 +26,8 @@ import androidx.compose.ui.awt.RenderSettings
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.layout.MeasurableRootContent
 import androidx.compose.ui.platform.DefaultArchitectureComponentsOwner
+import androidx.compose.ui.platform.DesktopFrameRecomposer
+import androidx.compose.ui.platform.FrameRecomposer
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.PlatformWindowContext
 import androidx.compose.ui.scene.skia.SkiaLayerComponent
@@ -127,9 +129,31 @@ internal class ComposeContainer(
             onWindowContainerPositionChanged()
         }
 
+    private var _frameRecomposer: DesktopFrameRecomposer? = null
+    val frameRecomposer: FrameRecomposer
+        get() = resolveFrameRecomposer().frameRecomposer
+
+    private fun resolveFrameRecomposer() : DesktopFrameRecomposer {
+        var frameRecomposer = _frameRecomposer
+        if (frameRecomposer != null) {
+            return frameRecomposer
+        }
+        val root = windowContainer.rootPane
+        frameRecomposer = root.getClientProperty(DesktopFrameRecomposer::class) as? DesktopFrameRecomposer
+        if (frameRecomposer != null) {
+            _frameRecomposer = frameRecomposer
+            return frameRecomposer
+        }
+        frameRecomposer = DesktopFrameRecomposer()
+        root.putClientProperty(DesktopFrameRecomposer::class, frameRecomposer)
+        _frameRecomposer = frameRecomposer
+        return frameRecomposer
+    }
+
     @VisibleForTesting
     val architectureComponentsOwner = DefaultArchitectureComponentsOwner(savedState)
 
+    val coroutineContext = coroutineContext + MainUIDispatcher + DesktopCoroutineExceptionHandler()
     private val mediator = ComposeSceneMediator(
         container = container,
         isWindowLevel = isWindowLevel,
@@ -142,7 +166,7 @@ internal class ComposeContainer(
             BlockingInputLayerEventFilter()
         ),
         architectureComponentsOwner = architectureComponentsOwner,
-        coroutineContext = coroutineContext + MainUIDispatcher + DesktopCoroutineExceptionHandler(),
+        coroutineContext = this.coroutineContext,
         skiaLayerComponentFactory = ::createSkiaLayerComponent,
         composeSceneFactory = ::createComposeScene,
     )
@@ -194,9 +218,9 @@ internal class ComposeContainer(
         setWindow(window)
         this.windowContainer = windowContainer
 
-        if (layerType == LayerType.OnComponent && renderSettings !is RenderSettings.SwingGraphics) {
-            error("LayerType.OnComponent can only be used with rendering via Swing graphics")
-        }
+        // TEMP, ONLY FOR POC
+        check(layerType == LayerType.OnComponent)
+        check(renderSettings is RenderSettings.SwingGraphics)
     }
 
     /**
@@ -385,34 +409,29 @@ internal class ComposeContainer(
     private fun createComposeScene(mediator: ComposeSceneMediator): ComposeScene {
         val density = container.density
         return when (layerType) {
-            LayerType.OnSameCanvas ->
-                CanvasLayersComposeScene(
-                    frameRecomposer = mediator.frameRecomposer,
-                    density = density,
-                    layoutDirection = layoutDirection,
-                    platformContext = mediator.platformContext,
-                    // TODO: Split these into native layout vs repaint invalidation only for the
-                    //  Swing rendering mode (which has no V-Sync): there `invalidateLayout` should
-                    //  participate in AWT/Swing layout while `invalidateDraw` schedules a repaint.
-                    //  The default SkiaLayer pipeline drives V-Sync per-window and
-                    //  needs to be handled differently.
-                    invalidateLayout = mediator::onComposeInvalidation,
-                    invalidateDraw = mediator::onComposeInvalidation,
-                )
+//            LayerType.OnSameCanvas ->
+//                CanvasLayersComposeScene(
+//                    frameRecomposer = mediator.frameRecomposer,
+//                    density = density,
+//                    layoutDirection = layoutDirection,
+//                    platformContext = mediator.platformContext,
+//                    // TODO: Split these into native layout vs repaint invalidation only for the
+//                    //  Swing rendering mode (which has no V-Sync): there `invalidateLayout` should
+//                    //  participate in AWT/Swing layout while `invalidateDraw` schedules a repaint.
+//                    //  The default SkiaLayer pipeline drives V-Sync per-window and
+//                    //  needs to be handled differently.
+//                    invalidateLayout = mediator::onComposeInvalidation,
+//                    invalidateDraw = mediator::onComposeInvalidation,
+//                )
             else -> PlatformLayersComposeScene(
-                frameRecomposer = mediator.frameRecomposer,
+                frameRecomposer = frameRecomposer,
                 density = density,
                 layoutDirection = layoutDirection,
                 composeSceneContext = createComposeSceneContext(
                     platformContext = mediator.platformContext
                 ),
-                // TODO: Split these into native layout vs repaint invalidation only for the
-                //  Swing rendering mode (which has no V-Sync): there `invalidateLayout` should
-                //  participate in AWT/Swing layout while `invalidateDraw` schedules a repaint.
-                //  The default SkiaLayer pipeline drives V-Sync per-window and
-                //  needs to be handled differently.
-                invalidateLayout = mediator::onComposeInvalidation,
-                invalidateDraw = mediator::onComposeInvalidation,
+                invalidateLayout = { mediator.contentComponent.revalidate() },
+                invalidateDraw = { mediator.contentComponent.repaint() },
             )
         }
     }
@@ -424,20 +443,19 @@ internal class ComposeContainer(
         consumePointerInputOutside: Boolean,
     ): ComposeSceneLayer {
         return when (layerType) {
-            LayerType.OnWindow -> WindowComposeSceneLayer(
-                composeContainer = this,
-                skiaLayerAnalytics = skiaLayerAnalytics,
-                renderSettings = renderSettings,
-                transparent = true, // TODO: Consider allowing opaque window layers
-                compositionContext = mediator.frameRecomposer.compositionContext,
-                density = density,
-                layoutDirection = layoutDirection,
-                focusable = focusable,
-            )
+//            LayerType.OnWindow -> WindowComposeSceneLayer(
+//                composeContainer = this,
+//                skiaLayerAnalytics = skiaLayerAnalytics,
+//                renderSettings = renderSettings,
+//                transparent = true, // TODO: Consider allowing opaque window layers
+//                compositionContext = mediator.frameRecomposer.compositionContext,
+//                density = density,
+//                layoutDirection = layoutDirection,
+//                focusable = focusable,
+//            )
             LayerType.OnComponent -> SwingComposeSceneLayer(
                 composeContainer = this,
                 skiaLayerAnalytics = skiaLayerAnalytics,
-                compositionContext = mediator.frameRecomposer.compositionContext,
                 density = density,
                 layoutDirection = layoutDirection,
                 focusable = focusable,

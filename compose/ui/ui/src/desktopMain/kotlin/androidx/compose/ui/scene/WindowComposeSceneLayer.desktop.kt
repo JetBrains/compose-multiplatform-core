@@ -224,19 +224,14 @@ internal class WindowComposeSceneLayer(
         val density = container.density
         val layoutDirection = layoutDirectionFor(container)
         return PlatformLayersComposeScene(
-            frameRecomposer = mediator.frameRecomposer,
+            frameRecomposer = composeContainer.frameRecomposer,
             density = density,
-            // TODO: Split these into native layout vs repaint invalidation only for the
-            //  Swing rendering mode (which has no V-Sync): there `invalidateLayout` should
-            //  participate in AWT/Swing layout while `invalidateDraw` schedules a repaint.
-            //  The default SkiaLayer pipeline drives V-Sync per-window and
-            //  needs to be handled differently.
-            invalidateLayout = mediator::onComposeInvalidation,
-            invalidateDraw = mediator::onComposeInvalidation,
             layoutDirection = layoutDirection,
             composeSceneContext = composeContainer.createComposeSceneContext(
                 platformContext = mediator.platformContext
             ),
+            invalidateLayout = { mediator.contentComponent.revalidate() },
+            invalidateDraw = { mediator.contentComponent.repaint() },
         )
     }
 

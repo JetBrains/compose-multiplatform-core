@@ -61,15 +61,10 @@ internal class ComposeWindowPanel(
         window = window,
         windowContainer = this,
         savedState = savedState,
-        layerType = ComposeFeatureFlags.layerType.value.let {
-            // LayerType.OnComponent may can only be used with rendering via Swing graphics,
-            // but it's always disabled here. Using fallback instead of [check] to support
-            // opening separate windows from [ComposePanel] with such layer type.
-            if (it == LayerType.OnComponent) LayerType.OnSameCanvas else it
-        },
+        layerType = ComposeFeatureFlags.layerType.value,
         // Swing graphics is not supposed to be used here.
         // TODO: Add isVsyncEnabled flag to ComposeWindowPanel constructor
-        renderSettings = RenderSettings.SkiaSurface(),
+        renderSettings = RenderSettings.SwingGraphics(),
         coroutineContext = coroutineContext
     )
     private val composeContainer
