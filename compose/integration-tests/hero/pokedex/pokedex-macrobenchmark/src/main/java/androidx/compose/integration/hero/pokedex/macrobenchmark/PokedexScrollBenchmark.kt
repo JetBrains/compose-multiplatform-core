@@ -31,6 +31,7 @@ import androidx.test.uiautomator.By
 import androidx.test.uiautomator.Direction
 import androidx.test.uiautomator.UiObject2
 import androidx.test.uiautomator.Until
+import androidx.testutils.CpuFrequencyChangeMetric
 import androidx.testutils.createCompilationParams
 import androidx.testutils.defaultComposeScrollingMetrics
 import androidx.tracing.Trace
@@ -92,7 +93,10 @@ class PokedexScrollBenchmark(
     ) =
         benchmarkRule.measureRepeated(
             packageName = POKEDEX_TARGET_PACKAGE_NAME,
-            metrics = defaultComposeScrollingMetrics() + FrameTimingGfxInfoMetric(),
+            metrics =
+                defaultComposeScrollingMetrics() +
+                    FrameTimingGfxInfoMetric() +
+                    CpuFrequencyChangeMetric(),
             compilationMode = compilationMode,
             iterations = HeroMacrobenchmarkDefaults.ITERATIONS,
             setupBlock = {
@@ -121,14 +125,16 @@ class PokedexScrollBenchmark(
         // specifically only want to measure scroll here.
         val upSpeed = (FLING_SPEED_DP_PER_SECOND * targetDisplayDensity).roundToInt()
         val downSpeed = (upSpeed * OPPOSING_DIRECTION_FLING_FACTOR).roundToInt()
-        content.fling(Direction.DOWN, upSpeed)
-        device.waitForIdle()
-        content.fling(Direction.UP, downSpeed)
-        device.waitForIdle()
-        content.fling(Direction.DOWN, upSpeed)
-        device.waitForIdle()
-        content.fling(Direction.UP, downSpeed)
-        device.waitForIdle()
+        fun flingAndWaitForIdle(direction: Direction, speed: Int) {
+            trace("PokedexScrollBenchmark#fling($direction, speed=$speed)") {
+                content.fling(direction, speed)
+                device.waitForIdle()
+            }
+        }
+        flingAndWaitForIdle(Direction.DOWN, upSpeed)
+        flingAndWaitForIdle(Direction.UP, downSpeed)
+        flingAndWaitForIdle(Direction.DOWN, upSpeed)
+        flingAndWaitForIdle(Direction.UP, downSpeed)
     }
 
     /** Density of the instrumentation's target context, in DP. */

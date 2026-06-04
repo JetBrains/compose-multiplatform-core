@@ -80,6 +80,7 @@ import androidx.compose.material3.samples.ElevatedButtonSample
 import androidx.compose.material3.samples.ElevatedButtonWithAnimatedShapeSample
 import androidx.compose.material3.samples.ElevatedCardSample
 import androidx.compose.material3.samples.ElevatedFilterChipSample
+import androidx.compose.material3.samples.ElevatedFilterChipWithCornerMorphingSample
 import androidx.compose.material3.samples.ElevatedSplitButtonSample
 import androidx.compose.material3.samples.ElevatedSuggestionChipSample
 import androidx.compose.material3.samples.ElevatedToggleButtonSample
@@ -114,6 +115,7 @@ import androidx.compose.material3.samples.FilledTonalButtonWithAnimatedShapeSamp
 import androidx.compose.material3.samples.FilledTonalIconButtonSample
 import androidx.compose.material3.samples.FilledTonalIconToggleButtonSample
 import androidx.compose.material3.samples.FilterChipSample
+import androidx.compose.material3.samples.FilterChipWithCornerMorphingSample
 import androidx.compose.material3.samples.FilterChipWithCustomSpacingSample
 import androidx.compose.material3.samples.FilterChipWithLeadingIconSample
 import androidx.compose.material3.samples.FilterChipWithTrailingIconSample
@@ -134,6 +136,7 @@ import androidx.compose.material3.samples.IndeterminateLinearProgressIndicatorSa
 import androidx.compose.material3.samples.IndeterminateLinearWavyProgressIndicatorSample
 import androidx.compose.material3.samples.InputChipSample
 import androidx.compose.material3.samples.InputChipWithAvatarSample
+import androidx.compose.material3.samples.InputChipWithCornerMorphingSample
 import androidx.compose.material3.samples.LargeAnimatedExtendedFloatingActionButtonSample
 import androidx.compose.material3.samples.LargeButtonWithIconSample
 import androidx.compose.material3.samples.LargeExtendedFloatingActionButtonSample
@@ -157,13 +160,14 @@ import androidx.compose.material3.samples.MediumFloatingActionButtonSample
 import androidx.compose.material3.samples.MediumRoundWideIconButtonSample
 import androidx.compose.material3.samples.MediumToggleButtonWithIconSample
 import androidx.compose.material3.samples.MenuSample
+import androidx.compose.material3.samples.MenuWithCascadingMenusSample
 import androidx.compose.material3.samples.MenuWithScrollStateSample
 import androidx.compose.material3.samples.ModalBottomSheetSample
 import androidx.compose.material3.samples.ModalNavigationDrawerSample
 import androidx.compose.material3.samples.ModalWideNavigationRailSample
 import androidx.compose.material3.samples.MultiAspectCarouselLazyRowSample
 import androidx.compose.material3.samples.MultiAutocompleteExposedDropdownMenuSample
-import androidx.compose.material3.samples.MultiSelectConnectedButtonGroupWithFlowLayoutSample
+import androidx.compose.material3.samples.MultiSelectConnectedButtonGroupSample
 import androidx.compose.material3.samples.MultiSelectionListItemSample
 import androidx.compose.material3.samples.MultiSelectionSegmentedListItemSample
 import androidx.compose.material3.samples.NavigationBarItemWithBadge
@@ -176,6 +180,7 @@ import androidx.compose.material3.samples.OutlinedButtonWithAnimatedShapeSample
 import androidx.compose.material3.samples.OutlinedCardSample
 import androidx.compose.material3.samples.OutlinedIconButtonSample
 import androidx.compose.material3.samples.OutlinedIconToggleButtonSample
+import androidx.compose.material3.samples.OutlinedIconToggleButtonWithAnimatedShapeSample
 import androidx.compose.material3.samples.OutlinedSplitButtonSample
 import androidx.compose.material3.samples.OutlinedTextFieldWithInitialValueAndSelection
 import androidx.compose.material3.samples.OutlinedToggleButtonSample
@@ -216,6 +221,7 @@ import androidx.compose.material3.samples.ScaffoldWithCustomSnackbar
 import androidx.compose.material3.samples.ScaffoldWithIndefiniteSnackbar
 import androidx.compose.material3.samples.ScaffoldWithMultilineSnackbar
 import androidx.compose.material3.samples.ScaffoldWithSimpleSnackbar
+import androidx.compose.material3.samples.ScrollFieldSample
 import androidx.compose.material3.samples.ScrollableHorizontalFloatingToolbarSample
 import androidx.compose.material3.samples.ScrollableVerticalFloatingToolbarSample
 import androidx.compose.material3.samples.ScrollingFancyIndicatorContainerTabs
@@ -238,7 +244,7 @@ import androidx.compose.material3.samples.SimpleTextFieldSample
 import androidx.compose.material3.samples.SimpleTopAppBar
 import androidx.compose.material3.samples.SimpleTopAppBarWithAdaptiveActions
 import androidx.compose.material3.samples.SimpleTopAppBarWithSubtitle
-import androidx.compose.material3.samples.SingleSelectConnectedButtonGroupWithFlowLayoutSample
+import androidx.compose.material3.samples.SingleSelectConnectedButtonGroupSample
 import androidx.compose.material3.samples.SingleSelectionListItemSample
 import androidx.compose.material3.samples.SingleSelectionSegmentedListItemSample
 import androidx.compose.material3.samples.SliderSample
@@ -278,6 +284,7 @@ import androidx.compose.material3.samples.ThreeLineListItemWithOverlineAndSuppor
 import androidx.compose.material3.samples.TimeInputSample
 import androidx.compose.material3.samples.TimePickerSample
 import androidx.compose.material3.samples.TimePickerSwitchableSample
+import androidx.compose.material3.samples.TimeScrollFieldSample
 import androidx.compose.material3.samples.TintedIconButtonSample
 import androidx.compose.material3.samples.ToggleButtonSample
 import androidx.compose.material3.samples.ToggleButtonWithIconSample
@@ -286,6 +293,8 @@ import androidx.compose.material3.samples.TonalToggleButtonSample
 import androidx.compose.material3.samples.TriStateCheckboxRoundedStrokesSample
 import androidx.compose.material3.samples.TriStateCheckboxSample
 import androidx.compose.material3.samples.TwoLineListItem
+import androidx.compose.material3.samples.TypographyCustomFontFamilySample
+import androidx.compose.material3.samples.TypographySample
 import androidx.compose.material3.samples.VerticalButtonGroupSample
 import androidx.compose.material3.samples.VerticalCenteredSliderSample
 import androidx.compose.material3.samples.VerticalFloatingToolbarWithFabSample
@@ -572,20 +581,20 @@ val ButtonGroupsExamples =
             ButtonGroupSample()
         },
         Example(
-            name = "SingleSelectConnectedButtonGroupWithFlowLayoutSample",
+            name = "SingleSelectConnectedButtonGroupSample",
             description = ButtonGroupsExampleDescription,
             sourceUrl = ButtonGroupsExampleSourceUrl,
             isExpressive = true,
         ) {
-            SingleSelectConnectedButtonGroupWithFlowLayoutSample()
+            SingleSelectConnectedButtonGroupSample()
         },
         Example(
-            name = "MultiSelectConnectedButtonGroupWithFlowLayoutSample",
+            name = "MultiSelectConnectedButtonGroupSample",
             description = ButtonGroupsExampleDescription,
             sourceUrl = ButtonGroupsExampleSourceUrl,
             isExpressive = true,
         ) {
-            MultiSelectConnectedButtonGroupWithFlowLayoutSample()
+            MultiSelectConnectedButtonGroupSample()
         },
         Example(
             name = "VerticalButtonGroupSample",
@@ -780,12 +789,28 @@ val ChipsExamples =
             FilterChipSample()
         },
         Example(
+            name = "FilterChipWithCornerMorphingSample",
+            description = ChipsExampleDescription,
+            sourceUrl = ChipsExampleSourceUrl,
+            isExpressive = true,
+        ) {
+            FilterChipWithCornerMorphingSample()
+        },
+        Example(
             name = "ElevatedFilterChipSample",
             description = ChipsExampleDescription,
             sourceUrl = ChipsExampleSourceUrl,
             isExpressive = false,
         ) {
             ElevatedFilterChipSample()
+        },
+        Example(
+            name = "ElevatedFilterChipWithCornerMorphingSample",
+            description = ChipsExampleDescription,
+            sourceUrl = ChipsExampleSourceUrl,
+            isExpressive = true,
+        ) {
+            ElevatedFilterChipWithCornerMorphingSample()
         },
         Example(
             name = "FilterChipWithLeadingIconSample",
@@ -826,6 +851,14 @@ val ChipsExamples =
             isExpressive = false,
         ) {
             InputChipWithAvatarSample()
+        },
+        Example(
+            name = "InputChipWithCornerMorphingSample",
+            description = ChipsExampleDescription,
+            sourceUrl = ChipsExampleSourceUrl,
+            isExpressive = true,
+        ) {
+            InputChipWithCornerMorphingSample()
         },
         Example(
             name = "SuggestionChipSample",
@@ -1138,6 +1171,28 @@ val TopAppBarExamples =
             isExpressive = true,
         ) {
             CustomTwoRowsTopAppBar()
+        },
+    )
+
+private const val TypographyExampleDescription = "Typography examples"
+private const val TypographyExampleSourceUrl = "$SampleSourceUrl/TypographySamples.kt"
+val TypographyExamples =
+    listOf(
+        Example(
+            name = "TypographySample",
+            description = TypographyExampleDescription,
+            sourceUrl = TypographyExampleSourceUrl,
+            isExpressive = false,
+        ) {
+            TypographySample()
+        },
+        Example(
+            name = "TypographyCustomFontFamilySample",
+            description = TypographyExampleDescription,
+            sourceUrl = TypographyExampleSourceUrl,
+            isExpressive = false,
+        ) {
+            TypographyCustomFontFamilySample()
         },
     )
 
@@ -1579,6 +1634,14 @@ val IconButtonExamples =
             OutlinedIconToggleButtonSample()
         },
         Example(
+            name = "OutlinedIconToggleButtonWithAnimatedShapeSample",
+            description = IconButtonExampleDescription,
+            sourceUrl = IconButtonExampleSourceUrl,
+            isExpressive = false,
+        ) {
+            OutlinedIconToggleButtonWithAnimatedShapeSample()
+        },
+        Example(
             name = "XSmallNarrowSquareIconButtonsSample",
             description = IconButtonExampleDescription,
             sourceUrl = IconButtonExampleSourceUrl,
@@ -1670,6 +1733,14 @@ val MenusExamples =
             isExpressive = true,
         ) {
             GroupedMenuSample()
+        },
+        Example(
+            name = "MenuWithCascadingMenusSample",
+            description = MenusExampleDescription,
+            sourceUrl = MenusExampleSourceUrl,
+            isExpressive = true,
+        ) {
+            MenuWithCascadingMenusSample()
         },
         Example(
             name = "MenuWithScrollStateSample",
@@ -2140,6 +2211,28 @@ val ToggleButtonsExamples =
             isExpressive = true,
         ) {
             XLargeToggleButtonWithIconSample()
+        },
+    )
+
+private const val ScrollFieldDescription = "Scroll field examples"
+private const val ScrollFieldSourceUrl = "$SampleSourceUrl/ScrollFieldSamples.kt"
+val ScrollFieldExamples =
+    listOf(
+        Example(
+            name = "ScrollFieldSample",
+            description = ScrollFieldDescription,
+            sourceUrl = ScrollFieldSourceUrl,
+            isExpressive = true,
+        ) {
+            ScrollFieldSample()
+        },
+        Example(
+            name = "TimeScrollFieldSample",
+            description = ScrollFieldDescription,
+            sourceUrl = ScrollFieldSourceUrl,
+            isExpressive = true,
+        ) {
+            TimeScrollFieldSample()
         },
     )
 

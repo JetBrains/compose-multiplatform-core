@@ -17,10 +17,10 @@
 package androidx.compose.ui.scene
 
 import androidx.compose.runtime.CompositionContext
-import androidx.compose.ui.awt.toAwtColor
 import androidx.compose.ui.awt.toAwtRectangle
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.awt.toAwtColor
 import androidx.compose.ui.scene.skia.SkiaLayerComponent
 import androidx.compose.ui.scene.skia.SwingSkiaLayerComponent
 import androidx.compose.ui.unit.Density
@@ -40,10 +40,11 @@ import org.jetbrains.skiko.SkiaLayerAnalytics
 internal class SwingComposeSceneLayer(
     composeContainer: ComposeContainer,
     private val skiaLayerAnalytics: SkiaLayerAnalytics,
+    compositionContext: CompositionContext,
     density: Density,
     layoutDirection: LayoutDirection,
     focusable: Boolean,
-    compositionContext: CompositionContext
+    override var consumePointerInputOutside: Boolean = focusable,
 ) : DesktopComposeSceneLayer(composeContainer, density, layoutDirection) {
     private val backgroundMouseListener = object : MouseAdapter() {
         override fun mousePressed(event: MouseEvent) = onMouseEventOutside(event)
@@ -156,7 +157,7 @@ internal class SwingComposeSceneLayer(
             val contentComponent = mediator?.contentComponent ?: return
             val localDrawBounds = drawBounds.toAwtRectangle(density)
 
-            if (focusable) {
+            if (consumePointerInputOutside) {
                 container.setBounds(0, 0, windowContainer.width, windowContainer.height)
                 contentComponent.bounds = localDrawBounds
                 mediator?.sceneBoundsInPx = null
@@ -183,9 +184,12 @@ internal class SwingComposeSceneLayer(
     private fun createComposeScene(mediator: ComposeSceneMediator): ComposeScene {
         val density = container.density
         return PlatformLayersComposeScene(
-            coroutineContext = mediator.coroutineContext,
+            frameRecomposer = mediator.frameRecomposer,
             density = density,
-            invalidate = mediator::onComposeInvalidation,
+            // TODO: Route layout invalidations through Swing layout and draw invalidations
+            // through repaint instead of collapsing both to `onComposeInvalidation`.
+            invalidateLayout = mediator::onComposeInvalidation,
+            invalidateDraw = mediator::onComposeInvalidation,
             layoutDirection = layoutDirection,
             composeSceneContext = composeContainer.createComposeSceneContext(
                 platformContext = mediator.platformContext

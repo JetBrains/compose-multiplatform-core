@@ -125,7 +125,6 @@ import kotlinx.coroutines.launch
  * @param density The [Density] used for this text field.
  * @param enabled If false, all selection behaviors and gestures will be disabled.
  * @param readOnly If true, selection behaviors still work, but the text field cannot be edited.
- * @param isFocused True iff component is focused and the window is focused.
  * @param isPassword True if the text field is for a password.
  * @param toolbarRequester The [ToolbarRequester] used to show and hide text floating toolbar.
  * @param coroutineScope The [coroutineScope] bounds to the composition.
@@ -139,13 +138,15 @@ internal class TextFieldSelectionState(
     private var density: Density,
     enabled: Boolean,
     readOnly: Boolean,
-    var isFocused: Boolean,
     private var isPassword: Boolean,
     private val toolbarRequester: ToolbarRequester,
     private val coroutineScope: CoroutineScope,
     internal val platformSelectionBehaviors: PlatformSelectionBehaviors?,
     private var clipboard: Clipboard,
 ) {
+    // This field is updated from `TextFieldCoreModifier`.
+    var isWindowAndTextFieldFocused: Boolean = false
+
     var enabled: Boolean = enabled
         private set
 
@@ -363,7 +364,7 @@ internal class TextFieldSelectionState(
     fun getFocusRect(): Rect {
         val layoutResult = textLayoutState.layoutResult ?: return Rect.Zero
         // if not focused, use the entire bounding box of the TextField.
-        if (!isFocused) return UnsetFocusRect
+        if (!isWindowAndTextFieldFocused) return UnsetFocusRect
         val value = textFieldState.visualText
 
         val focusRectInTextLayout =
@@ -871,6 +872,18 @@ internal class TextFieldSelectionState(
         }
     }
 
+    /**
+     * Observer for text drag gestures in a text field.
+     *
+     * Note: During a drag gesture, we accept that the user is interacting with whatever they are
+     * seeing on the screen currently. Any changes that are in
+     * [androidx.compose.foundation.text.input.TextFieldState] might not have had a chance to
+     * produce a layout result yet. For instance, it might be possible that the text you read from
+     * [androidx.compose.foundation.text.input.TextFieldState] has a length of 15 because a
+     * character was added, but the last layout result was created for a text with length 14. Thus,
+     * we should use the text from [TextLayoutState.layoutResult]
+     * (`textLayoutState.layoutResult?.layoutInput?.text`).
+     */
     private inner class TextFieldTextDragObserver(private val requestFocus: () -> Unit) :
         TextDragObserver {
         private var dragBeginOffsetInText = -1
@@ -997,11 +1010,21 @@ internal class TextFieldSelectionState(
                     }
             } else {
                 startOffset =
-                    dragBeginOffsetInText.takeIf { it >= 0 }
-                        ?: textLayoutState.getOffsetForPosition(
-                            position = dragBeginPosition,
-                            coerceInVisibleBounds = false,
-                        )
+                    if (ComposeFoundationFlags.isConcurrentTextFieldSelectionFixEnabled) {
+                        val textLength =
+                            textLayoutState.layoutResult?.layoutInput?.text?.length ?: 0
+                        dragBeginOffsetInText.takeIf { it in 0..textLength }
+                            ?: textLayoutState.getOffsetForPosition(
+                                position = dragBeginPosition,
+                                coerceInVisibleBounds = false,
+                            )
+                    } else {
+                        dragBeginOffsetInText.takeIf { it >= 0 }
+                            ?: textLayoutState.getOffsetForPosition(
+                                position = dragBeginPosition,
+                                coerceInVisibleBounds = false,
+                            )
+                    }
                 endOffset =
                     textLayoutState.getOffsetForPosition(
                         position = currentDragPosition,
@@ -1320,9 +1343,11 @@ internal class TextFieldSelectionState(
             textLayoutCoordinates
                 .localToRoot(Offset(0f, layoutResult.getCursorRect(text.selection.end).top))
                 .y
+        val left = min(startOffset.x, endOffset.x)
+        val right = max(startOffset.x, endOffset.x)
         return Rect(
-            left = min(startOffset.x, endOffset.x),
-            right = max(startOffset.x, endOffset.x),
+            left = left,
+            right = if (left == right) right + 1f else right,
             top = min(startTop, endTop),
             bottom = max(startOffset.y, endOffset.y),
         )
@@ -1776,7 +1801,7 @@ internal suspend fun TextFieldSelectionState.defaultDetectTextFieldTapGestures(
             logDebug { "onTapTextField" }
             requestFocus()
 
-            if (enabled && isFocused) {
+            if (enabled && isWindowAndTextFieldFocused) {
                 if (!readOnly) {
                     showKeyboard()
                     if (textFieldState.visualText.isNotEmpty()) {

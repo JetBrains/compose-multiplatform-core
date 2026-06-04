@@ -21,7 +21,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.outlined.Lock
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.FilledIconToggleButton
 import androidx.compose.material3.FilledTonalIconButton
@@ -47,6 +46,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.paneTitle
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
 
 @Preview
@@ -58,7 +61,19 @@ fun IconButtonSample() {
     TooltipBox(
         positionProvider =
             TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Above),
-        tooltip = { PlainTooltip { Text(description) } },
+        tooltip = {
+            PlainTooltip(
+                modifier =
+                    Modifier.semantics {
+                        // TODO(b/496338253): Remove this modifier once bug where tooltip text is
+                        //  not announced by a11y screen readers is resolved.
+                        liveRegion = LiveRegionMode.Assertive
+                        paneTitle = description
+                    }
+            ) {
+                Text(description)
+            }
+        },
         state = rememberTooltipState(),
     ) {
         IconButton(onClick = { /* doSomething() */ }) {
@@ -76,7 +91,19 @@ fun IconButtonWithAnimatedShapeSample() {
     TooltipBox(
         positionProvider =
             TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Above),
-        tooltip = { PlainTooltip { Text(description) } },
+        tooltip = {
+            PlainTooltip(
+                modifier =
+                    Modifier.semantics {
+                        // TODO(b/496338253): Remove this modifier once bug where tooltip text is
+                        //  not announced by a11y screen readers is resolved.
+                        liveRegion = LiveRegionMode.Assertive
+                        paneTitle = description
+                    }
+            ) {
+                Text(description)
+            }
+        },
         state = rememberTooltipState(),
     ) {
         IconButton(onClick = { /* doSomething() */ }, shapes = IconButtonDefaults.shapes()) {
@@ -94,7 +121,19 @@ fun ExtraSmallNarrowSquareIconButtonsSample() {
     TooltipBox(
         positionProvider =
             TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Above),
-        tooltip = { PlainTooltip { Text(description) } },
+        tooltip = {
+            PlainTooltip(
+                modifier =
+                    Modifier.semantics {
+                        // TODO(b/496338253): Remove this modifier once bug where tooltip text is
+                        //  not announced by a11y screen readers is resolved.
+                        liveRegion = LiveRegionMode.Assertive
+                        paneTitle = description
+                    }
+            ) {
+                Text(description)
+            }
+        },
         state = rememberTooltipState(),
     ) {
         // Small narrow round icon button
@@ -127,7 +166,19 @@ fun MediumRoundWideIconButtonSample() {
     TooltipBox(
         positionProvider =
             TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Above),
-        tooltip = { PlainTooltip { Text(description) } },
+        tooltip = {
+            PlainTooltip(
+                modifier =
+                    Modifier.semantics {
+                        // TODO(b/496338253): Remove this modifier once bug where tooltip text is
+                        //  not announced by a11y screen readers is resolved.
+                        liveRegion = LiveRegionMode.Assertive
+                        paneTitle = description
+                    }
+            ) {
+                Text(description)
+            }
+        },
         state = rememberTooltipState(),
     ) {
         IconButton(
@@ -158,7 +209,19 @@ fun LargeRoundUniformOutlinedIconButtonSample() {
     TooltipBox(
         positionProvider =
             TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Above),
-        tooltip = { PlainTooltip { Text(description) } },
+        tooltip = {
+            PlainTooltip(
+                modifier =
+                    Modifier.semantics {
+                        // TODO(b/496338253): Remove this modifier once bug where tooltip text is
+                        //  not announced by a11y screen readers is resolved.
+                        liveRegion = LiveRegionMode.Assertive
+                        paneTitle = description
+                    }
+            ) {
+                Text(description)
+            }
+        },
         state = rememberTooltipState(),
     ) {
         OutlinedIconButton(
@@ -184,7 +247,19 @@ fun TintedIconButtonSample() {
     TooltipBox(
         positionProvider =
             TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Above),
-        tooltip = { PlainTooltip { Text(description) } },
+        tooltip = {
+            PlainTooltip(
+                modifier =
+                    Modifier.semantics {
+                        // TODO(b/496338253): Remove this modifier once bug where tooltip text is
+                        //  not announced by a11y screen readers is resolved.
+                        liveRegion = LiveRegionMode.Assertive
+                        paneTitle = description
+                    }
+            ) {
+                Text(description)
+            }
+        },
         state = rememberTooltipState(),
     ) {
         IconButton(onClick = { /* doSomething() */ }) {
@@ -207,7 +282,19 @@ fun IconToggleButtonSample() {
     TooltipBox(
         positionProvider =
             TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Above),
-        tooltip = { PlainTooltip { Text(description) } },
+        tooltip = {
+            PlainTooltip(
+                modifier =
+                    Modifier.semantics {
+                        // TODO(b/496338253): Remove this modifier once bug where tooltip text is
+                        //  not announced by a11y screen readers is resolved.
+                        liveRegion = LiveRegionMode.Assertive
+                        paneTitle = description
+                    }
+            ) {
+                Text(description)
+            }
+        },
         state = rememberTooltipState(),
     ) {
         IconToggleButton(checked = checked, onCheckedChange = { checked = it }) {
@@ -230,7 +317,19 @@ fun IconToggleButtonWithAnimatedShapeSample() {
     TooltipBox(
         positionProvider =
             TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Above),
-        tooltip = { PlainTooltip { Text(description) } },
+        tooltip = {
+            PlainTooltip(
+                modifier =
+                    Modifier.semantics {
+                        // TODO(b/496338253): Remove this modifier once bug where tooltip text is
+                        //  not announced by a11y screen readers is resolved.
+                        liveRegion = LiveRegionMode.Assertive
+                        paneTitle = description
+                    }
+            ) {
+                Text(description)
+            }
+        },
         state = rememberTooltipState(),
     ) {
         IconToggleButton(
@@ -256,7 +355,19 @@ fun FilledIconButtonSample() {
     TooltipBox(
         positionProvider =
             TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Above),
-        tooltip = { PlainTooltip { Text(description) } },
+        tooltip = {
+            PlainTooltip(
+                modifier =
+                    Modifier.semantics {
+                        // TODO(b/496338253): Remove this modifier once bug where tooltip text is
+                        //  not announced by a11y screen readers is resolved.
+                        liveRegion = LiveRegionMode.Assertive
+                        paneTitle = description
+                    }
+            ) {
+                Text(description)
+            }
+        },
         state = rememberTooltipState(),
     ) {
         FilledIconButton(onClick = { /* doSomething() */ }) {
@@ -274,7 +385,19 @@ fun FilledIconButtonWithAnimatedShapeSample() {
     TooltipBox(
         positionProvider =
             TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Above),
-        tooltip = { PlainTooltip { Text(description) } },
+        tooltip = {
+            PlainTooltip(
+                modifier =
+                    Modifier.semantics {
+                        // TODO(b/496338253): Remove this modifier once bug where tooltip text is
+                        //  not announced by a11y screen readers is resolved.
+                        liveRegion = LiveRegionMode.Assertive
+                        paneTitle = description
+                    }
+            ) {
+                Text(description)
+            }
+        },
         state = rememberTooltipState(),
     ) {
         FilledIconButton(onClick = { /* doSomething() */ }, shapes = IconButtonDefaults.shapes()) {
@@ -293,7 +416,19 @@ fun FilledIconToggleButtonSample() {
     TooltipBox(
         positionProvider =
             TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Above),
-        tooltip = { PlainTooltip { Text(description) } },
+        tooltip = {
+            PlainTooltip(
+                modifier =
+                    Modifier.semantics {
+                        // TODO(b/496338253): Remove this modifier once bug where tooltip text is
+                        //  not announced by a11y screen readers is resolved.
+                        liveRegion = LiveRegionMode.Assertive
+                        paneTitle = description
+                    }
+            ) {
+                Text(description)
+            }
+        },
         state = rememberTooltipState(),
     ) {
         FilledIconToggleButton(checked = checked, onCheckedChange = { checked = it }) {
@@ -316,7 +451,19 @@ fun FilledIconToggleButtonWithAnimatedShapeSample() {
     TooltipBox(
         positionProvider =
             TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Above),
-        tooltip = { PlainTooltip { Text(description) } },
+        tooltip = {
+            PlainTooltip(
+                modifier =
+                    Modifier.semantics {
+                        // TODO(b/496338253): Remove this modifier once bug where tooltip text is
+                        //  not announced by a11y screen readers is resolved.
+                        liveRegion = LiveRegionMode.Assertive
+                        paneTitle = description
+                    }
+            ) {
+                Text(description)
+            }
+        },
         state = rememberTooltipState(),
     ) {
         FilledIconToggleButton(
@@ -342,7 +489,19 @@ fun FilledTonalIconButtonSample() {
     TooltipBox(
         positionProvider =
             TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Above),
-        tooltip = { PlainTooltip { Text(description) } },
+        tooltip = {
+            PlainTooltip(
+                modifier =
+                    Modifier.semantics {
+                        // TODO(b/496338253): Remove this modifier once bug where tooltip text is
+                        //  not announced by a11y screen readers is resolved.
+                        liveRegion = LiveRegionMode.Assertive
+                        paneTitle = description
+                    }
+            ) {
+                Text(description)
+            }
+        },
         state = rememberTooltipState(),
     ) {
         FilledTonalIconButton(onClick = { /* doSomething() */ }) {
@@ -360,7 +519,19 @@ fun FilledTonalIconButtonWithAnimatedShapeSample() {
     TooltipBox(
         positionProvider =
             TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Above),
-        tooltip = { PlainTooltip { Text(description) } },
+        tooltip = {
+            PlainTooltip(
+                modifier =
+                    Modifier.semantics {
+                        // TODO(b/496338253): Remove this modifier once bug where tooltip text is
+                        //  not announced by a11y screen readers is resolved.
+                        liveRegion = LiveRegionMode.Assertive
+                        paneTitle = description
+                    }
+            ) {
+                Text(description)
+            }
+        },
         state = rememberTooltipState(),
     ) {
         FilledTonalIconButton(
@@ -382,7 +553,19 @@ fun FilledTonalIconToggleButtonSample() {
     TooltipBox(
         positionProvider =
             TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Above),
-        tooltip = { PlainTooltip { Text(description) } },
+        tooltip = {
+            PlainTooltip(
+                modifier =
+                    Modifier.semantics {
+                        // TODO(b/496338253): Remove this modifier once bug where tooltip text is
+                        //  not announced by a11y screen readers is resolved.
+                        liveRegion = LiveRegionMode.Assertive
+                        paneTitle = description
+                    }
+            ) {
+                Text(description)
+            }
+        },
         state = rememberTooltipState(),
     ) {
         FilledTonalIconToggleButton(checked = checked, onCheckedChange = { checked = it }) {
@@ -405,7 +588,19 @@ fun FilledTonalIconToggleButtonWithAnimatedShapeSample() {
     TooltipBox(
         positionProvider =
             TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Above),
-        tooltip = { PlainTooltip { Text(description) } },
+        tooltip = {
+            PlainTooltip(
+                modifier =
+                    Modifier.semantics {
+                        // TODO(b/496338253): Remove this modifier once bug where tooltip text is
+                        //  not announced by a11y screen readers is resolved.
+                        liveRegion = LiveRegionMode.Assertive
+                        paneTitle = description
+                    }
+            ) {
+                Text(description)
+            }
+        },
         state = rememberTooltipState(),
     ) {
         FilledTonalIconToggleButton(
@@ -431,7 +626,19 @@ fun OutlinedIconButtonSample() {
     TooltipBox(
         positionProvider =
             TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Above),
-        tooltip = { PlainTooltip { Text(description) } },
+        tooltip = {
+            PlainTooltip(
+                modifier =
+                    Modifier.semantics {
+                        // TODO(b/496338253): Remove this modifier once bug where tooltip text is
+                        //  not announced by a11y screen readers is resolved.
+                        liveRegion = LiveRegionMode.Assertive
+                        paneTitle = description
+                    }
+            ) {
+                Text(description)
+            }
+        },
         state = rememberTooltipState(),
     ) {
         OutlinedIconButton(onClick = { /* doSomething() */ }) {
@@ -449,7 +656,19 @@ fun OutlinedIconButtonWithAnimatedShapeSample() {
     TooltipBox(
         positionProvider =
             TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Above),
-        tooltip = { PlainTooltip { Text(description) } },
+        tooltip = {
+            PlainTooltip(
+                modifier =
+                    Modifier.semantics {
+                        // TODO(b/496338253): Remove this modifier once bug where tooltip text is
+                        //  not announced by a11y screen readers is resolved.
+                        liveRegion = LiveRegionMode.Assertive
+                        paneTitle = description
+                    }
+            ) {
+                Text(description)
+            }
+        },
         state = rememberTooltipState(),
     ) {
         OutlinedIconButton(
@@ -471,7 +690,19 @@ fun OutlinedIconToggleButtonSample() {
     TooltipBox(
         positionProvider =
             TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Above),
-        tooltip = { PlainTooltip { Text(description) } },
+        tooltip = {
+            PlainTooltip(
+                modifier =
+                    Modifier.semantics {
+                        // TODO(b/496338253): Remove this modifier once bug where tooltip text is
+                        //  not announced by a11y screen readers is resolved.
+                        liveRegion = LiveRegionMode.Assertive
+                        paneTitle = description
+                    }
+            ) {
+                Text(description)
+            }
+        },
         state = rememberTooltipState(),
     ) {
         OutlinedIconToggleButton(checked = checked, onCheckedChange = { checked = it }) {
@@ -484,7 +715,6 @@ fun OutlinedIconToggleButtonSample() {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Preview
 @Sampled
 @Composable
@@ -495,7 +725,19 @@ fun OutlinedIconToggleButtonWithAnimatedShapeSample() {
     TooltipBox(
         positionProvider =
             TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Above),
-        tooltip = { PlainTooltip { Text(description) } },
+        tooltip = {
+            PlainTooltip(
+                modifier =
+                    Modifier.semantics {
+                        // TODO(b/496338253): Remove this modifier once bug where tooltip text is
+                        //  not announced by a11y screen readers is resolved.
+                        liveRegion = LiveRegionMode.Assertive
+                        paneTitle = description
+                    }
+            ) {
+                Text(description)
+            }
+        },
         state = rememberTooltipState(),
     ) {
         OutlinedIconToggleButton(

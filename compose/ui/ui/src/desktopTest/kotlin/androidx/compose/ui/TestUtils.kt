@@ -23,6 +23,7 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp

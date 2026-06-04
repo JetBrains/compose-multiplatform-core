@@ -63,18 +63,26 @@
 
 @property (weak, nonatomic, nullable) UIView *rootView;
 
+// Used for context menu
 @property (copy, nonatomic, nullable) void (^copyBlock)(void);
 @property (copy, nonatomic, nullable) void (^cutBlock)(void);
 @property (copy, nonatomic, nullable) void (^pasteBlock)(void);
+@property (copy, nonatomic, nullable) void (^selectBlock)(void);
 @property (copy, nonatomic, nullable) void (^selectAllBlock)(void);
 @property (copy, nonatomic, nullable) NSArray<CMPEditMenuCustomAction *> *customActions;
+
+// Used for hotkeys
+@property (copy, nonatomic, nullable) void (^systemCopyBlock)(void);
+@property (copy, nonatomic, nullable) void (^systemCutBlock)(void);
+@property (copy, nonatomic, nullable) void (^systemPasteBlock)(void);
+@property (copy, nonatomic, nullable) void (^systemSelectBlock)(void);
+@property (copy, nonatomic, nullable) void (^systemSelectAllBlock)(void);
 
 @property (strong, nonatomic, nullable) dispatch_block_t showContextMenuBlock;
 @property (strong, nonatomic, nullable) dispatch_block_t presentInteractionBlock;
 
 @property (assign, nonatomic) CGRect targetRect;
 @property (assign, nonatomic) BOOL isEditMenuShown;
-@property (assign, nonatomic) BOOL shouldUseNonComposeMenuActions;
 
 @property (readwrite) UIEditMenuInteraction* editInteraction API_AVAILABLE(ios(16.0));
 
@@ -88,24 +96,13 @@ id _editInteraction;
                       copy:(void (^)(void))copyBlock
                        cut:(void (^)(void))cutBlock
                      paste:(void (^)(void))pasteBlock
-                 selectAll:(void (^)(void))selectAllBlock {
-    [self showEditMenuAtRect:targetRect
-                        copy:copyBlock
-                         cut:cutBlock
-                       paste:pasteBlock
-                   selectAll:selectAllBlock
-               customActions:@[]];
-}
-
-- (void)showEditMenuAtRect:(CGRect)targetRect
-                      copy:(void (^)(void))copyBlock
-                       cut:(void (^)(void))cutBlock
-                     paste:(void (^)(void))pasteBlock
+                    select:(void (^)(void))selectBlock
                  selectAll:(void (^)(void))selectAllBlock
              customActions:(NSArray<CMPEditMenuCustomAction *> *)customActions {
     BOOL contextMenuItemsChanged = [self contextMenuItemsChangedCopy:copyBlock
                                                                  cut:cutBlock
                                                                paste:pasteBlock
+                                                              select:selectBlock
                                                            selectAll:selectAllBlock
                                                        customActions:customActions];
     BOOL positionChanged = !CGRectEqualToRect(self.targetRect, targetRect);
@@ -120,6 +117,7 @@ id _editInteraction;
     self.copyBlock = copyBlock;
     self.cutBlock = cutBlock;
     self.pasteBlock = pasteBlock;
+    self.selectBlock = selectBlock;
     self.selectAllBlock = selectAllBlock;
     self.customActions = customActions;
 
@@ -142,12 +140,25 @@ id _editInteraction;
     }
 }
 
+- (void)updateAvailableSystemActions:(void (^)(void))copyBlock
+                                 cut:(void (^)(void))cutBlock
+                               paste:(void (^)(void))pasteBlock
+                              select:(void (^)(void))selectBlock
+                           selectAll:(void (^)(void))selectAllBlock {
+    self.systemCopyBlock = copyBlock;
+    self.systemCutBlock = cutBlock;
+    self.systemPasteBlock = pasteBlock;
+    self.systemSelectBlock = selectBlock;
+    self.systemSelectAllBlock = selectAllBlock;
+}
+
 - (void)didMoveToWindow {
     [super didMoveToWindow];
     
     if (self.window != nil) {
         [[CMPEditMenuViewRegister shared] addEditMenu:self];
     } else {
+        [self hideEditMenu];
         [[CMPEditMenuViewRegister shared] removeEditMenu:self];
     }
 }
@@ -286,32 +297,43 @@ id _editInteraction;
         [self cancelShowMenuController];
         [[UIMenuController sharedMenuController] hideMenu];
     }
+
+    self.copyBlock = nil;
+    self.cutBlock = nil;
+    self.pasteBlock = nil;
+    self.selectAllBlock = nil;
+    self.customActions = @[];
 }
 
 - (BOOL)contextMenuItemsChangedCopy:(void (^)(void))copyBlock
                                 cut:(void (^)(void))cutBlock
                               paste:(void (^)(void))pasteBlock
+                             select:(void (^)(void))selectBlock
                           selectAll:(void (^)(void))selectAllBlock
                       customActions:(NSArray<CMPEditMenuCustomAction *> *)customActions {
     return ((self.copyBlock == nil) != (copyBlock == nil) ||
             (self.cutBlock == nil) != (cutBlock == nil) ||
             (self.pasteBlock == nil) != (pasteBlock == nil) ||
+            (self.selectBlock == nil) != (selectBlock == nil) ||
             (self.selectAllBlock == nil) != (selectAllBlock == nil) ||
             (![self.customActions isEqualToArray:customActions]));
 }
 
 - (BOOL)canPerformAction:(SEL)action withSender:(id)sender {
     if (@selector(copy:) == action) {
-        return self.copyBlock != nil;
+        return self.copyBlock != nil || self.systemCopyBlock != nil;
     }
     if (@selector(paste:) == action) {
-        return self.pasteBlock != nil;
+        return self.pasteBlock != nil || self.systemPasteBlock != nil;
     }
     if (@selector(cut:) == action) {
-        return self.cutBlock != nil;
+        return self.cutBlock != nil || self.systemCutBlock != nil;
+    }
+    if (@selector(select:) == action) {
+        return self.selectBlock != nil;
     }
     if (@selector(selectAll:) == action) {
-        return self.selectAllBlock != nil;
+        return self.selectAllBlock != nil || self.systemSelectAllBlock != nil;
     }
 
     if (@selector(customAction0:) == action) return self.customActions.count > 0;
@@ -325,32 +347,46 @@ id _editInteraction;
     if (@selector(customAction8:) == action) return self.customActions.count > 8;
     if (@selector(customAction9:) == action) return self.customActions.count > 9;
 
-    if (self.shouldUseNonComposeMenuActions) {
-        return [super canPerformAction:action withSender:sender];
-    } else { return NO; }
+    return NO;
 }
 
 - (void)copy:(id)sender {
     if (self.copyBlock != nil) {
         self.copyBlock();
+    } else if (self.systemCopyBlock != nil) {
+        self.systemCopyBlock();
     }
 }
 
 - (void)paste:(id)sender {
     if (self.pasteBlock != nil) {
         self.pasteBlock();
+    } else if (self.systemPasteBlock != nil) {
+        self.systemPasteBlock();
     }
 }
 
 - (void)cut:(id)sender {
     if (self.cutBlock != nil) {
         self.cutBlock();
+    } else if (self.systemCutBlock != nil) {
+        self.systemCutBlock();
+    }
+}
+
+- (void)select:(id)sender {
+    if (self.selectBlock != nil) {
+        self.selectBlock();
+    } else if (self.systemSelectBlock != nil) {
+        self.systemSelectBlock();
     }
 }
 
 - (void)selectAll:(id)sender {
     if (self.selectAllBlock != nil) {
         self.selectAllBlock();
+    } else if (self.systemSelectAllBlock != nil) {
+        self.systemSelectAllBlock();
     }
 }
 
@@ -441,24 +477,12 @@ willPresentMenuForConfiguration:(UIEditMenuConfiguration *)configuration
     return [UIMenu menuWithTitle:@"" children:allActions];
 }
 
-- (void)activateTextInputInteractionIfNeeded {
-    if (@available(iOS 17, *)) {
-        for (id<UIInteraction> interaction in self.interactions) {
-            if ([interaction isKindOfClass:[UITextSelectionDisplayInteraction class]]) {
-                [((UITextSelectionDisplayInteraction *)interaction) setActivated:YES];
-            }
-        }
-    }
+- (UIView *)inputView {
+    return nil;
 }
 
-- (void)deactivateTextInputInteractionIfNeeded {
-    if (@available(iOS 17, *)) {
-        for (id<UIInteraction> interaction in self.interactions) {
-            if ([interaction isKindOfClass:[UITextSelectionDisplayInteraction class]]) {
-                [((UITextSelectionDisplayInteraction *)interaction) setActivated:NO];
-            }
-        }
-    }
+- (UIView *)inputAccessoryView {
+    return nil;
 }
 
 @end

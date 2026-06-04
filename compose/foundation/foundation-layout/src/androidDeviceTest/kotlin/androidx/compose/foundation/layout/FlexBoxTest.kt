@@ -984,9 +984,10 @@ class FlexBoxTest {
                         )
                         // Item with shrink=1 (default, will shrink)
                         Box(
-                            Modifier.widthIn(min = 40.dp, max = 60.dp).height(20.dp).onSizeChanged {
-                                widths.add(1, it.width)
-                            }
+                            Modifier.widthIn(min = 20.dp)
+                                .height(20.dp)
+                                .flex { basis(60.dp) }
+                                .onSizeChanged { widths.add(1, it.width) }
                         )
                     }
                 }
@@ -2024,6 +2025,62 @@ class FlexBoxTest {
         assertThrows(IllegalArgumentException::class.java) {
             rule.setContent { FlexBox { Box(nanValueModifier) } }
         }
+    }
+
+    @OptIn(ExperimentalFlexBoxApi::class)
+    @Test
+    fun testFlexBox_wrap_maxIntrinsicWidth_reportsSumOfChildren() {
+        var width = 0
+
+        rule.setContent {
+            CompositionLocalProvider(LocalDensity provides NoOpDensity) {
+                Box(Modifier.width(IntrinsicSize.Max)) {
+                    FlexBox(
+                        modifier = Modifier.onSizeChanged { width = it.width },
+                        config = {
+                            direction(FlexDirection.Row)
+                            wrap(FlexWrap.Wrap)
+                        },
+                    ) {
+                        Box(Modifier.size(20.dp))
+                        Box(Modifier.size(30.dp))
+                        Box(Modifier.size(40.dp))
+                    }
+                }
+            }
+        }
+
+        rule.waitForIdle()
+        // Max intrinsic width should be the sum of all children widths (20 + 30 + 40 = 90)
+        Truth.assertThat(width).isEqualTo(90)
+    }
+
+    @OptIn(ExperimentalFlexBoxApi::class)
+    @Test
+    fun testFlexBox_wrap_minIntrinsicWidth_reportsMaxChildWidth() {
+        var width = 0
+
+        rule.setContent {
+            CompositionLocalProvider(LocalDensity provides NoOpDensity) {
+                Box(Modifier.width(IntrinsicSize.Min)) {
+                    FlexBox(
+                        modifier = Modifier.onSizeChanged { width = it.width },
+                        config = {
+                            direction(FlexDirection.Row)
+                            wrap(FlexWrap.Wrap)
+                        },
+                    ) {
+                        Box(Modifier.size(20.dp))
+                        Box(Modifier.size(30.dp))
+                        Box(Modifier.size(40.dp))
+                    }
+                }
+            }
+        }
+
+        rule.waitForIdle()
+        // Min intrinsic width should be the width of the single widest child (40)
+        Truth.assertThat(width).isEqualTo(40)
     }
 
     companion object {

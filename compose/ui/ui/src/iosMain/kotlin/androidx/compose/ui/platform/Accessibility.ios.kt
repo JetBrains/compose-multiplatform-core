@@ -46,18 +46,18 @@ import androidx.compose.ui.semantics.SemanticsOwner
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getAllUncoveredSemanticsNodesToIntObjectMap
 import androidx.compose.ui.semantics.getOrNull
-import androidx.compose.ui.semantics.isImportantForAccessibility
 import androidx.compose.ui.semantics.sortByGeometryGroupings
 import androidx.compose.ui.uikit.density
 import androidx.compose.ui.uikit.toNanoSeconds
 import androidx.compose.ui.uikit.utils.CMPAccessibilityElement
 import androidx.compose.ui.unit.IntSize
-import androidx.compose.ui.unit.asCGRect
-import androidx.compose.ui.unit.asDpOffset
-import androidx.compose.ui.unit.asDpRect
+import androidx.compose.ui.unit.toCGRect
+import androidx.compose.ui.unit.toDpOffset
 import androidx.compose.ui.unit.toDpRect
 import androidx.compose.ui.unit.toRect
 import androidx.compose.ui.util.fastForEach
+import androidx.compose.ui.util.fastJoinToString
+import androidx.compose.ui.util.fastMap
 import androidx.compose.ui.viewinterop.InteropWrappingView
 import androidx.compose.ui.viewinterop.NativeAccessibilityViewSemanticsKey
 import androidx.compose.ui.window.DisplayLinkListener
@@ -201,10 +201,10 @@ private sealed interface AccessibilityNode {
      * @mediator reference to the containing AccessibilityMediator
      */
     class Semantics(
-        override val semanticsNode: SemanticsNode,
+        semanticsNode: SemanticsNode,
         private val mediator: AccessibilityMediator,
-        private val isBeyondBounds: Boolean
-    ) : AccessibilityNode {
+        private val isBeyondBounds: Boolean,
+    ) : Container(semanticsNode) {
         private val cachedConfig = semanticsNode.config
         private val scrollableParentNodeIds by lazy { semanticsNode.allScrollableParentNodeIds }
 
@@ -217,6 +217,13 @@ private sealed interface AccessibilityNode {
                 false
             }
         }
+
+        override val accessibilityContainerType: UIAccessibilityContainerType
+            get() = when {
+                semanticsNode.canBeAccessibilityElement() -> UIAccessibilityContainerTypeNone
+                semanticsNode.isTraversalGroup -> UIAccessibilityContainerTypeSemanticGroup
+                else -> UIAccessibilityContainerTypeNone
+            }
 
         override val accessibilityInteropView: InteropWrappingView?
             get() = cachedConfig.getOrNull(NativeAccessibilityViewSemanticsKey)?.also {
@@ -358,7 +365,7 @@ private sealed interface AccessibilityNode {
      * with all its children. [Container] is used to indicate element that contains container
      * semantic node with all its children.
      */
-    class Container(
+    open class Container(
         override val semanticsNode: SemanticsNode
     ) : AccessibilityNode {
         override val key: AccessibilityElementKey = semanticsNode.containerKey
@@ -408,7 +415,7 @@ private sealed interface AccessibilityNode {
 
         override suspend fun scrollBy(delta: CValue<CGPoint>) {
             val deltaInPx = with(semanticsNode.layoutNode.density) {
-                delta.asDpOffset().let {
+                delta.toDpOffset().let {
                     Offset(it.x.toPx(), it.y.toPx())
                 }
             }
@@ -486,7 +493,7 @@ private class AccessibilityRoot(
 
         val hitSemanticsEntities = HitTestResult()
         val pointerPosition = with(mediator.view.density) {
-            val point = point.asDpOffset()
+            val point = point.toDpOffset()
             Offset(point.x.toPx(), point.y.toPx())
         }
 
@@ -565,7 +572,7 @@ private class AccessibilityElement(
 
     init {
         setAccessibilityElements(children + nodeSemanticsElements())
-        children.forEach { it.setAccessibilityContainer(this) }
+        children.fastForEach { it.setAccessibilityContainer(this) }
         if (available(OS.Ios to OSVersion(major = 17))) {
             setAutomationElements(children + nodeSemanticsElements())
         }
@@ -591,7 +598,7 @@ private class AccessibilityElement(
         if (available(OS.Ios to OSVersion(major = 17))) {
             setAutomationElements(children + nodeSemanticsElements())
         }
-        children.forEach { it.setAccessibilityContainer(this) }
+        children.fastForEach { it.setAccessibilityContainer(this) }
         this.cachedProperties.clear()
     }
 
@@ -990,8 +997,7 @@ internal class AccessibilityNotification private constructor(
 ) {
     companion object {
         // For testing purposes only
-        var lastPostedNotificationForTests: AccessibilityNotification? = null
-            private set
+        var onNotificationPostedForTests: ((AccessibilityNotification) -> Unit)? = null
 
         private val notificationsWithFocusedElement = setOf(
             UIAccessibilityScreenChangedNotification,
@@ -1007,7 +1013,7 @@ internal class AccessibilityNotification private constructor(
 
     fun postNotification() {
         val focusNotification = notification in notificationsWithFocusedElement
-        lastPostedNotificationForTests = this
+        onNotificationPostedForTests?.invoke(this)
         UIAccessibilityPostNotification(
             notification,
             argument = if (focusNotification) elementToFocus?.value else message
@@ -1135,7 +1141,7 @@ internal class AccessibilityMediator(
             rect = UIEdgeInsetsInsetRect(view.bounds, view.safeAreaInsets),
             toView = null
         )
-        return rectInWindow.asDpRect().toRect(view.density)
+        return rectInWindow.toDpRect().toRect(view.density)
     }
 
     private var displayLinkListener: DisplayLinkListener? = null
@@ -1165,7 +1171,7 @@ internal class AccessibilityMediator(
                     element.node.semanticsNode.unclippedBoundsInWindow
 
                 else ->
-                    element.accessibilityFrame.asDpRect()
+                    element.accessibilityFrame.toDpRect()
                         .toRect(scrollableContainer.node.semanticsNode.layoutNode.density)
             }
             scrollJob = CoroutineScope(coroutineContext + listener.frameClock).launch {
@@ -1324,7 +1330,7 @@ internal class AccessibilityMediator(
         private set
 
     private fun convertToAppWindowCGRect(rect: Rect): CValue<CGRect> {
-        return view.convertRect(rect.toDpRect(view.density).asCGRect(), toView = null)
+        return view.convertRect(rect.toDpRect(view.density).toCGRect(), toView = null)
     }
 
     fun notifyScrollCompleted(
@@ -1447,7 +1453,7 @@ internal class AccessibilityMediator(
 
         resultFrame = resultFrame.translate(dx, dy)
 
-        element.focusFrame = resultFrame.toDpRect(node.semanticsNode.layoutNode.density).asCGRect()
+        element.focusFrame = resultFrame.toDpRect(node.semanticsNode.layoutNode.density).toCGRect()
 
         return element
     }
@@ -1540,18 +1546,19 @@ internal class AccessibilityMediator(
 
             fun makeSemanticsNode(children: List<AccessibilityElement>): AccessibilityElement {
                 val isLiveRegion = node.unmergedConfig.contains(SemanticsProperties.LiveRegion)
-                val (oldLabel, oldValue) = if (isLiveRegion) {
+                var oldLabel: String?  = null
+                var oldValue: String? = null
+                if (isLiveRegion) {
                     val element = accessibilityElementsMap[node.semanticsKey]
-                    element?.accessibilityLabel() to element?.accessibilityValue()
-                } else {
-                    Pair(null, null)
+                    oldLabel = element?.accessibilityLabel()
+                    oldValue = element?.accessibilityValue()
                 }
 
                 val element = createOrUpdateAccessibilityElement(
                     node = AccessibilityNode.Semantics(
                         semanticsNode = node,
                         mediator = this,
-                        isBeyondBounds = isBeyondBounds
+                        isBeyondBounds = isBeyondBounds,
                     ),
                     container = container,
                     children = children,
@@ -1565,7 +1572,7 @@ internal class AccessibilityMediator(
                     if ((newLabel != null || newValue != null) &&
                         (oldLabel != newLabel || oldValue != newValue)
                     ) {
-                        val announcement = listOfNotNull(newLabel, newValue).joinToString(", ")
+                        val announcement = listOfNotNull(newLabel, newValue).fastJoinToString(", ")
                         lastLiveRegionAnnouncement = AccessibilityNotification(
                             UIAccessibilityAnnouncementNotification,
                             message = announcement
@@ -1593,35 +1600,39 @@ internal class AccessibilityMediator(
                 beforeChildren.sortWith(BeyondBoundsComparator(node.isRTL))
                 afterChildren.sortWith(BeyondBoundsComparator(node.isRTL))
 
-                val visibleElements = sortedChildren.map {
+                val visibleElements = sortedChildren.fastMap {
                     traverseChildren(it, isBeyondBounds = isBeyondBounds, flatten = flattenChildren, container = node)
                 }
-                val beforeElements = beforeChildren.map {
+                val beforeElements = beforeChildren.fastMap {
                     traverseChildren(it, isBeyondBounds = true, flatten = flattenChildren, container = node)
                 }
-                val afterElements = afterChildren.map {
+                val afterElements = afterChildren.fastMap {
                     traverseChildren(it, isBeyondBounds = true, flatten = flattenChildren, container = node)
                 }
 
-                val allElements = beforeElements + visibleElements + afterElements
                 if (node.isTraversalGroup || node.id == rootNode.id) {
-                    val hasSemanticsNode = node.isImportantForAccessibility() ||
-                        node.config.contains(SemanticsProperties.TestTag)
-
-                    val containerChildren = if (hasSemanticsNode) {
-                        listOf(makeSemanticsNode(allElements))
+                    if (node.canBeAccessibilityElement()) {
+                        val containerElement = listOf(makeSemanticsNode(emptyList()))
+                        createOrUpdateAccessibilityElement(
+                            node = AccessibilityNode.Container(semanticsNode = node),
+                            container = container,
+                            children = beforeElements + visibleElements + containerElement + afterElements,
+                            frame = frame
+                        )
                     } else {
-                        allElements
+                        createOrUpdateAccessibilityElement(
+                            node = AccessibilityNode.Semantics(
+                                semanticsNode = node,
+                                mediator = this,
+                                isBeyondBounds = isBeyondBounds
+                            ),
+                            container = container,
+                            children = beforeElements + visibleElements + afterElements,
+                            frame = frame
+                        )
                     }
-
-                    createOrUpdateAccessibilityElement(
-                        node = AccessibilityNode.Container(semanticsNode = node),
-                        container = container,
-                        children = containerChildren,
-                        frame = frame
-                    )
                 } else {
-                    makeSemanticsNode(allElements)
+                    makeSemanticsNode(beforeElements + visibleElements + afterElements)
                 }
             } else {
                 makeSemanticsNode(emptyList())
@@ -1817,7 +1828,7 @@ internal class AccessibilityMediator(
             ?.let { findChildAccessibilityElement(it) }
             ?.let { return it }
 
-        semanticsNode.children.forEach { child ->
+        semanticsNode.children.fastForEach { child ->
             findAccessibilityElementInSemanticsHierarchy(semanticsNode = child)?.let { return it }
         }
 

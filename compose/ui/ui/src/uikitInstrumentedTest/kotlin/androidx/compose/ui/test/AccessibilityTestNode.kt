@@ -21,7 +21,7 @@ import androidx.compose.ui.platform.accessibility.CMPAccessibilityTraitTextView
 import androidx.compose.ui.test.utils.DpRectZero
 import androidx.compose.ui.test.utils.intersect
 import androidx.compose.ui.unit.DpRect
-import androidx.compose.ui.unit.asDpRect
+import androidx.compose.ui.unit.toDpRect
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.height
 import androidx.compose.ui.unit.width
@@ -32,6 +32,12 @@ import kotlinx.cinterop.ExperimentalForeignApi
 import org.jetbrains.skiko.OS
 import org.jetbrains.skiko.OSVersion
 import org.jetbrains.skiko.available
+import platform.UIKit.UIAccessibilityContainerType
+import platform.UIKit.UIAccessibilityContainerTypeDataTable
+import platform.UIKit.UIAccessibilityContainerTypeLandmark
+import platform.UIKit.UIAccessibilityContainerTypeList
+import platform.UIKit.UIAccessibilityContainerTypeNone
+import platform.UIKit.UIAccessibilityContainerTypeSemanticGroup
 import platform.UIKit.UIAccessibilityElement
 import platform.UIKit.UIAccessibilityTraitAdjustable
 import platform.UIKit.UIAccessibilityTraitAllowsDirectInteraction
@@ -57,6 +63,7 @@ import platform.UIKit.UIAccessibilityTraits
 import platform.UIKit.UIView
 import platform.UIKit.UIWindow
 import platform.UIKit.UIWindowScene
+import platform.UIKit.accessibilityContainerType
 import platform.UIKit.accessibilityCustomActions
 import platform.UIKit.accessibilityElementAtIndex
 import platform.UIKit.accessibilityElementCount
@@ -141,7 +148,8 @@ internal fun UIKitInstrumentedTest.getAccessibilityTree(): AccessibilityTestNode
             identifier = (element as? UIAccessibilityElement)?.accessibilityIdentifier,
             label = element.accessibilityLabel,
             value = element.accessibilityValue,
-            frame = element.accessibilityFrame.asDpRect(),
+            frame = element.accessibilityFrame.toDpRect(),
+            containerType = element.accessibilityContainerType,
             children = children,
             traits = allAccessibilityTraits.keys.filter {
                 element.accessibilityTraits and it != 0.toULong()
@@ -184,6 +192,14 @@ private val allAccessibilityTraits = mutableMapOf(
     it as Map<UIAccessibilityTraits, String>
 }
 
+private val allContainerTypes = mapOf(
+    UIAccessibilityContainerTypeNone to "UIAccessibilityContainerTypeNone",
+    UIAccessibilityContainerTypeDataTable to "UIAccessibilityContainerTypeDataTable",
+    UIAccessibilityContainerTypeList to "UIAccessibilityContainerTypeList",
+    UIAccessibilityContainerTypeLandmark to "UIAccessibilityContainerTypeLandmark",
+    UIAccessibilityContainerTypeSemanticGroup to "UIAccessibilityContainerTypeSemanticGroup",
+)
+
 /**
  * Represents a node in an accessibility tree, which is used for testing accessibility features
  * within a UI hierarchy. This class captures various accessibility properties of UI components
@@ -195,6 +211,7 @@ internal data class AccessibilityTestNode(
     var label: String? = null,
     var value: String? = null,
     var frame: DpRect? = null,
+    var containerType: UIAccessibilityContainerType? = null,
     var children: List<AccessibilityTestNode>? = null,
     var traits: List<UIAccessibilityTraits>? = null,
     var element: NSObject? = null,
@@ -226,6 +243,9 @@ internal data class AccessibilityTestNode(
         }
         traits?.let {
             assertEquals(it.toSet(), actualNode?.traits?.toSet())
+        }
+        containerType?.let {
+            assertEquals(it, actualNode?.containerType)
         }
         children?.let {
             assertEquals(it.count(), actualNode?.children?.count())
@@ -268,6 +288,10 @@ internal data class AccessibilityTestNode(
                     builder.appendLine("$fieldIndent  - ${allAccessibilityTraits.getValue(it)}")
                 }
             }
+            node.containerType?.takeIf { it != UIAccessibilityContainerTypeNone }?.let {
+                val typeString = allContainerTypes[it] ?: "Unknown: $it"
+                builder.appendLine("$fieldIndent accessibilityContainerType: $typeString")
+            }
             node.value?.let { builder.appendLine("$fieldIndent accessibilityValue: $it") }
             node.element?.accessibilityCustomActions?.takeIf { it.isNotEmpty() }?.let {
                 builder.appendLine("$fieldIndent accessibilityCustomActions: $it")
@@ -305,7 +329,7 @@ internal fun AccessibilityTestNode.normalized(): AccessibilityTestNode? {
     }
 }
 
-internal fun AccessibilityTestNode.assertVisibleInContainer() {
+internal val AccessibilityTestNode.isVisibleInContainer: Boolean get() {
     var frame = this.frame ?: DpRectZero()
     var iterator = parent
     while (iterator != null && iterator.element !is UIWindow) {
@@ -313,8 +337,12 @@ internal fun AccessibilityTestNode.assertVisibleInContainer() {
         iterator = iterator.parent
     }
 
+    return frame.width >= 1.dp && frame.height >= 1.dp
+}
+
+internal fun AccessibilityTestNode.assertVisibleInContainer() {
     assertTrue(
-        frame.width >= 1.dp && frame.height >= 1.dp,
+        isVisibleInContainer,
         "Element with frame ${this.frame} ($frame) is not visible or has very small size"
     )
 }

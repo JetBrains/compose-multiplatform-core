@@ -17,6 +17,7 @@
 package androidx.compose.ui.scene
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionContext
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.State
 import androidx.compose.ui.graphics.Canvas
@@ -26,6 +27,7 @@ import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.pointer.PointerButton
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.navigationevent.UIKitNavigationEventInput
+import androidx.compose.ui.platform.FrameRecomposer
 import androidx.compose.ui.platform.PlatformArchitectureComponentsOwner
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.uikit.ComposeContainerConfiguration
@@ -37,7 +39,7 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.LayoutDirection
-import androidx.compose.ui.unit.asDpRect
+import androidx.compose.ui.unit.toDpRect
 import androidx.compose.ui.unit.toRect
 import androidx.compose.ui.window.FocusedViewsList
 import androidx.navigationevent.NavigationEventDispatcher
@@ -55,9 +57,10 @@ internal class UIKitComposeSceneLayer(
 
     private val layersViewController: ComposeLayersViewController,
     private val initialLayoutDirection: LayoutDirection,
-    private val onAccessibilityChanged: () -> Unit,
+    private val onFocusConditionsChanged: () -> Unit,
     configuration: ComposeContainerConfiguration,
     private var focusedViewsList: FocusedViewsList?,
+    consumePointerInputOutside: Boolean = focusedViewsList != null,
     parentCoroutineContext: CoroutineContext,
     private val ownerProvider: PlatformArchitectureComponentsOwner,
     private val interfaceOrientationState: State<InterfaceOrientation>,
@@ -69,8 +72,16 @@ internal class UIKitComposeSceneLayer(
         set(value) {
             if (field != value) {
                 field = value
+                onFocusConditionsChanged()
+            }
+        }
+
+    override var consumePointerInputOutside: Boolean = consumePointerInputOutside
+        set(value) {
+            if (field != value) {
+                field = value
                 mediator.isInterceptingOutsideEvents = value
-                onAccessibilityChanged()
+                onFocusConditionsChanged()
             }
         }
 
@@ -102,24 +113,28 @@ internal class UIKitComposeSceneLayer(
         interfaceOrientationState = interfaceOrientationState
     ).also {
         interactionView.embedSubview(it.backgroundView)
-        it.isInterceptingOutsideEvents = focusable
+        it.isInterceptingOutsideEvents = consumePointerInputOutside
     }
 
     private fun createComposeScene(
         invalidate: () -> Unit,
-        platformContext: PlatformContext
+        platformContext: PlatformContext,
+        frameRecomposer: FrameRecomposer
     ): ComposeScene =
         PlatformLayersComposeScene(
+            frameRecomposer = frameRecomposer,
             density = mediator.screenDensity,
             layoutDirection = initialLayoutDirection,
-            coroutineContext = layerCoroutineContext,
             composeSceneContext = createComposeSceneContext(platformContext),
-            invalidate = invalidate,
+            // TODO: Split these into UIKit layout vs display invalidation instead of using the
+            //  same invalidation callback for both phases.
+            invalidateLayout = invalidate,
+            invalidateDraw = invalidate,
         )
 
     val hasInvalidations by mediator::hasInvalidations
 
-    var isAccessibilityEnabled by mediator::isAccessibilityEnabled
+    var isFocusEnabled by mediator::isFocusEnabled
 
     override var density: Density
         get() = mediator.composeSceneDensity
@@ -155,7 +170,7 @@ internal class UIKitComposeSceneLayer(
     fun render(canvas: Canvas, nanoTime: Long) {
         if (scrimColor != null) {
             val density = layersViewController.metalView.view.density
-            val rect = layersViewController.metalView.view.bounds.asDpRect().toRect(density)
+            val rect = layersViewController.metalView.view.bounds.toDpRect().toRect(density)
 
             canvas.drawRect(rect, scrimPaint)
         }
@@ -193,7 +208,11 @@ internal class UIKitComposeSceneLayer(
         content = content
     )
 
-    override fun setContent(content: @Composable () -> Unit) {
+    override fun setContent(
+        parentCompositionContext: CompositionContext,
+        content: @Composable () -> Unit,
+    ) {
+        // TODO: pass [parentCompositionContext] once a shared [Recomposer] exists.
         mediator.setContent {
             hostCompositionLocals {
                 ProvideComposeSceneLayerCompositionLocals(content)

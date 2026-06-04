@@ -17,7 +17,6 @@
 package androidx.compose.ui.scene
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionContext
 import androidx.compose.ui.ComposeFeatureFlags
 import androidx.compose.ui.LayerType
 import androidx.compose.ui.awt.AwtEventFilter
@@ -30,11 +29,16 @@ import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.PlatformWindowContext
 import androidx.compose.ui.scene.skia.SkiaLayerComponent
 import androidx.compose.ui.skiko.OverlayRenderDecorator
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.ExperimentalUnitApi
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.util.fastAll
+import androidx.compose.ui.awt.UNSPECIFIED_DIMENSION_VALUE
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastForEachReversed
+import androidx.compose.ui.util.fastRoundToInt
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.WindowExceptionHandler
@@ -44,6 +48,8 @@ import androidx.lifecycle.Lifecycle.State
 import androidx.lifecycle.enableSavedStateHandles
 import androidx.savedstate.SavedState
 import java.awt.Component
+import java.awt.Dimension
+import java.awt.Insets
 import java.awt.Window
 import java.awt.event.ComponentAdapter
 import java.awt.event.ComponentEvent
@@ -57,7 +63,9 @@ import javax.swing.SwingUtilities
 import kotlin.coroutines.AbstractCoroutineContextElement
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
+import kotlin.math.ceil
 import kotlinx.coroutines.CoroutineExceptionHandler
+import kotlinx.coroutines.Job
 import org.jetbrains.annotations.VisibleForTesting
 import org.jetbrains.skia.Canvas
 import org.jetbrains.skiko.MainUIDispatcher
@@ -138,7 +146,7 @@ internal class ComposeContainer(
         },
         eventListener = AwtEventListeners(
             DetectEventOutsideLayer(),
-            FocusableLayerEventFilter()
+            BlockingInputLayerEventFilter()
         ),
         architectureComponentsOwner = architectureComponentsOwner,
         coroutineContext = coroutineContext + MainUIDispatcher + DesktopCoroutineExceptionHandler(),
@@ -215,6 +223,65 @@ internal class ComposeContainer(
         _windowContainer?.removeComponentListener(windowContainerComponentListener)
         mediator.dispose()
         layers.fastForEach(DesktopComposeSceneLayer::close)
+    }
+
+    fun measureContent(constraints: Constraints): IntSize {
+        return mediator.measureContent(constraints)
+    }
+
+    /**
+     * Actualizes the given [size].
+     *
+     * If either width or height (or both) of [size] is [UNSPECIFIED_DIMENSION_VALUE], the Compose
+     * content is measured in constraints that leave the corresponding dimension unconstrained.
+     * The measured size of the corresponding axis is then returned in the resulting [Dimension].
+     *
+     * Width or height that are not [UNSPECIFIED_DIMENSION_VALUE] are returned unchanged.
+     */
+    @OptIn(ExperimentalUnitApi::class)
+    fun actualizeSize(size: Dimension, insets: Insets): Dimension {
+        if ((size.width != UNSPECIFIED_DIMENSION_VALUE) && (size.height != UNSPECIFIED_DIMENSION_VALUE)) {
+            return size
+        }
+
+        val horizontalInset = insets.left + insets.right
+        val verticalInset = insets.top + insets.bottom
+
+        with(container.density) {
+            fun Int.toPixelsOrElse(inset: Int, valueIfUnspecified: Int): Int {
+                return if (this == UNSPECIFIED_DIMENSION_VALUE) {
+                    valueIfUnspecified
+                } else {
+                    ((this - inset).coerceAtLeast(0) * density).fastRoundToInt()
+                }
+            }
+
+            fun Dimension.toComposeConstraints(): Constraints {
+                return with(this) {
+                    Constraints(
+                        minWidth = width.toPixelsOrElse(horizontalInset, 0),
+                        maxWidth = width.toPixelsOrElse(horizontalInset, Constraints.Infinity),
+                        minHeight = height.toPixelsOrElse(verticalInset, 0),
+                        maxHeight = height.toPixelsOrElse(verticalInset, Constraints.Infinity)
+                    )
+                }
+            }
+
+            fun Int.toAwtPixels() = ceil(this / density).toInt()  // Round up
+
+            val measuredSize = try {
+                measureContent(size.toComposeConstraints())
+            } catch (e: Exception) {
+                throw IllegalStateException(
+                    "Unable to actualize size of Compose content. Provide a specific value instead",
+                    e
+                )
+            }
+
+            val width = size.width.takeOrElse { measuredSize.width.toAwtPixels() + horizontalInset }
+            val height = size.height.takeOrElse { measuredSize.height.toAwtPixels() + verticalInset }
+            return Dimension(width, height)
+        }
     }
 
     override fun windowGainedFocus(event: WindowEvent) = onWindowFocusChanged()
@@ -360,7 +427,7 @@ internal class ComposeContainer(
     }
 
     fun setContent(content: @Composable () -> Unit) {
-        mediator.setContent(content)
+        mediator.setContent(content = content)
     }
 
     private fun createSkiaLayerComponent(mediator: ComposeSceneMediator): SkiaLayerComponent {
@@ -383,20 +450,32 @@ internal class ComposeContainer(
         return when (layerType) {
             LayerType.OnSameCanvas ->
                 CanvasLayersComposeScene(
+                    frameRecomposer = mediator.frameRecomposer,
                     density = density,
                     layoutDirection = layoutDirection,
-                    coroutineContext = mediator.coroutineContext,
                     platformContext = mediator.platformContext,
-                    invalidate = mediator::onComposeInvalidation,
+                    // TODO: Split these into native layout vs repaint invalidation only for the
+                    //  Swing rendering mode (which has no V-Sync): there `invalidateLayout` should
+                    //  participate in AWT/Swing layout while `invalidateDraw` schedules a repaint.
+                    //  The default SkiaLayer pipeline drives V-Sync per-window and
+                    //  needs to be handled differently.
+                    invalidateLayout = mediator::onComposeInvalidation,
+                    invalidateDraw = mediator::onComposeInvalidation,
                 )
             else -> PlatformLayersComposeScene(
+                frameRecomposer = mediator.frameRecomposer,
                 density = density,
                 layoutDirection = layoutDirection,
-                coroutineContext = mediator.coroutineContext,
                 composeSceneContext = createComposeSceneContext(
                     platformContext = mediator.platformContext
                 ),
-                invalidate = mediator::onComposeInvalidation,
+                // TODO: Split these into native layout vs repaint invalidation only for the
+                //  Swing rendering mode (which has no V-Sync): there `invalidateLayout` should
+                //  participate in AWT/Swing layout while `invalidateDraw` schedules a repaint.
+                //  The default SkiaLayer pipeline drives V-Sync per-window and
+                //  needs to be handled differently.
+                invalidateLayout = mediator::onComposeInvalidation,
+                invalidateDraw = mediator::onComposeInvalidation,
             )
         }
     }
@@ -405,26 +484,27 @@ internal class ComposeContainer(
         density: Density,
         layoutDirection: LayoutDirection,
         focusable: Boolean,
-        compositionContext: CompositionContext
+        consumePointerInputOutside: Boolean,
     ): ComposeSceneLayer {
         return when (layerType) {
             LayerType.OnWindow -> WindowComposeSceneLayer(
                 composeContainer = this,
                 skiaLayerAnalytics = skiaLayerAnalytics,
+                renderSettings = renderSettings,
                 transparent = true, // TODO: Consider allowing opaque window layers
+                compositionContext = mediator.frameRecomposer.compositionContext,
                 density = density,
                 layoutDirection = layoutDirection,
                 focusable = focusable,
-                compositionContext = compositionContext,
-                renderSettings = renderSettings
             )
             LayerType.OnComponent -> SwingComposeSceneLayer(
                 composeContainer = this,
                 skiaLayerAnalytics = skiaLayerAnalytics,
+                compositionContext = mediator.frameRecomposer.compositionContext,
                 density = density,
                 layoutDirection = layoutDirection,
                 focusable = focusable,
-                compositionContext = compositionContext
+                consumePointerInputOutside = consumePointerInputOutside,
             )
             else -> error("Unexpected LayerType")
         }
@@ -502,12 +582,12 @@ internal class ComposeContainer(
             density: Density,
             layoutDirection: LayoutDirection,
             focusable: Boolean,
-            compositionContext: CompositionContext
+            consumePointerInputOutside: Boolean,
         ): ComposeSceneLayer = createPlatformLayer(
             density = density,
             layoutDirection = layoutDirection,
             focusable = focusable,
-            compositionContext = compositionContext
+            consumePointerInputOutside = consumePointerInputOutside,
         )
     }
 
@@ -520,13 +600,13 @@ internal class ComposeContainer(
 
     /**
      * Detect and trigger [DesktopComposeSceneLayer.onMouseEventOutside] if event happened below
-     * focused layer.
+     * a layer that blocks pointer input outside of its bounds.
      */
     private inner class DetectEventOutsideLayer : AwtEventListener {
         override fun onMouseEvent(event: AwtMouseEvent): Boolean {
             layers.fastForEachReversed {
                 it.onMouseEventOutside(event)
-                if (it.focusable) {
+                if (it.consumePointerInputOutside) {
                     return false
                 }
             }
@@ -534,10 +614,21 @@ internal class ComposeContainer(
         }
     }
 
-    private inner class FocusableLayerEventFilter : AwtEventFilter() {
-        private val noFocusableLayers get() = layers.fastAll { !it.focusable }
+    private inner class BlockingInputLayerEventFilter : AwtEventFilter() {
+        private val noBlockingInputLayers get() = layers.fastAll { !it.consumePointerInputOutside }
 
-        override fun shouldSendMouseEvent(event: AwtMouseEvent): Boolean = noFocusableLayers
-        override fun shouldSendKeyEvent(event: AwtKeyEvent): Boolean = noFocusableLayers
+        override fun shouldSendMouseEvent(event: AwtMouseEvent): Boolean = noBlockingInputLayers
+        override fun shouldSendKeyEvent(event: AwtKeyEvent): Boolean = noBlockingInputLayers
     }
 }
+
+/**
+ * Returns whether the given value is not [UNSPECIFIED_DIMENSION_VALUE].
+ */
+@OptIn(ExperimentalUnitApi::class)
+private val Int.isDimensionSpecified: Boolean
+    get() = this != UNSPECIFIED_DIMENSION_VALUE
+
+
+private inline fun Int.takeOrElse(block: () -> Int): Int =
+    if (isDimensionSpecified) this else block()

@@ -60,19 +60,24 @@ import androidx.compose.ui.sendMouseEvent
 import androidx.compose.ui.sendMousePress
 import androidx.compose.ui.sendMouseRelease
 import androidx.compose.ui.sendMouseWheelEvent
+import androidx.compose.ui.unit.ExperimentalUnitApi
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
 import androidx.compose.ui.util.ThrowUncaughtExceptionRule
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import androidx.compose.ui.window.density
+import androidx.compose.ui.window.plus
 import androidx.compose.ui.window.runApplicationTest
 import androidx.compose.ui.window.waitForFocusGain
 import androidx.savedstate.SavedState
 import com.google.common.truth.Truth.assertThat
 import java.awt.BorderLayout
+import java.awt.Component
+import java.awt.Container
 import java.awt.Dimension
 import java.awt.GraphicsEnvironment
+import java.awt.LayoutManager
 import java.awt.Window
 import java.awt.event.MouseEvent
 import javax.swing.BoxLayout
@@ -81,9 +86,11 @@ import javax.swing.JPanel
 import javax.swing.JScrollPane
 import javax.swing.ScrollPaneConstants
 import junit.framework.TestCase.assertTrue
+import kotlin.math.max
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.skiko.ExperimentalSkikoApi
@@ -94,8 +101,12 @@ import org.jetbrains.skiko.SkiaLayerAnalytics
 import org.junit.Assume.assumeFalse
 import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.Timeout
 
 class ComposePanelTest {
+    @get:Rule
+    val timeout: Timeout = Timeout.seconds(60)
+
     @get:Rule
     val throwUncaughtExceptionRule = ThrowUncaughtExceptionRule()
 
@@ -263,15 +274,15 @@ class ComposePanelTest {
                 frame.pack()
 
                 frame.isVisible = true
-                delay(1000)
+                delay(1.seconds)
                 assertEquals(1, initialStateCounter)
 
                 frame.contentPane.remove(composePanel)
-                delay(1000)
+                delay(1.seconds)
                 assertEquals(1, initialStateCounter)
 
                 frame.contentPane.add(composePanel)
-                delay(1000)
+                delay(1.seconds)
                 assertEquals(1, initialStateCounter)
             } finally {
                 frame.dispose()
@@ -306,15 +317,15 @@ class ComposePanelTest {
                 frame.pack()
 
                 frame.isVisible = true
-                delay(1000)
+                delay(1.seconds)
                 assertEquals(1, initialStateCounter)
 
                 frame.contentPane.remove(composePanel)
-                delay(1000)
+                delay(1.seconds)
                 assertEquals(1, initialStateCounter)
 
                 frame.contentPane.add(composePanel)
-                delay(1000)
+                delay(1.seconds)
                 assertEquals(2, initialStateCounter)
             } finally {
                 frame.dispose()
@@ -343,19 +354,19 @@ class ComposePanelTest {
                 val density = frame.contentPane.density.density
                 frame.contentPane.add(composePanel)
                 frame.isVisible = true
-                delay(1000)
+                delay(1.seconds)
                 assertEquals(Size(100f * density, 100f * density), size)
 
                 frame.contentPane.remove(composePanel)
-                delay(1000)
+                delay(1.seconds)
                 assertEquals(Size(100f * density, 100f * density), size)
 
                 frame.contentPane.add(composePanel)
-                delay(1000)
+                delay(1.seconds)
                 assertEquals(Size(100f * density, 100f * density), size)
 
                 frame.size = Dimension(200, 100)
-                delay(1000)
+                delay(1.seconds)
                 assertEquals(Size(200f * density, 100f * density), size)
             } finally {
                 frame.dispose()
@@ -382,7 +393,7 @@ class ComposePanelTest {
                 frame.pack()
 
                 frame.isVisible = true
-                delay(1000)
+                delay(1.seconds)
                 assertTrue(content.size.height > 2)
                 assertTrue(content.size.width > 2)
             } finally {
@@ -416,7 +427,7 @@ class ComposePanelTest {
                 frame.pack()
 
                 frame.isVisible = true
-                delay(1000)
+                delay(1.seconds)
                 assertTrue(content.size.width > 2)
                 assertEquals(500, content.size.height)
             } finally {
@@ -451,7 +462,7 @@ class ComposePanelTest {
                 frame.pack()
 
                 frame.isVisible = true
-                delay(1000)
+                delay(1.seconds)
                 assertEquals(200, content.size.width)
                 assertEquals(300, content.size.height)
             } finally {
@@ -725,7 +736,7 @@ class ComposePanelTest {
                     JPanel().apply {
                         layout = BoxLayout(this, BoxLayout.Y_AXIS)
                         add(composePanel)
-                        add(javax.swing.Box.createVerticalStrut(1000), BorderLayout.CENTER)
+                        add(javax.swing.Box.createVerticalStrut(1000))
                     }
                 )
                 scrollPane.horizontalScrollBarPolicy = ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER
@@ -747,7 +758,6 @@ class ComposePanelTest {
                 window.sendMouseWheelEvent(wheelRotation = 1000.0)
                 awaitIdle()
                 window.sendMouseWheelEvent(wheelRotation = 1000.0)
-                println("New scroll position: ${scrollPane.viewport.viewPosition.y}")
                 assertThat(scrollPane.viewport.viewPosition.y).isGreaterThan(0)
 
                 // Scroll back to the top to reset the state
@@ -903,7 +913,7 @@ class ComposePanelTest {
     fun `ComposePanel draws background correctly`() = runApplicationTest {
         // Show a canvas and a `ComposePanel` with the same background and compare the two colors.
         // Simply comparing to the set color doesn't work because Robot returns the color after
-        // the OS transforms it to the screen color space (which doesn't seem to be accessible from
+        // the OS transforms it to the screen color space (which doesn't seem accessible from
         // the JVM).
 
         val bgColor = java.awt.Color.RED
@@ -960,6 +970,112 @@ class ComposePanelTest {
             assertNotNull(localWindow)
         } finally {
             frame.dispose()
+        }
+    }
+
+    @OptIn(ExperimentalUnitApi::class)
+    private fun testSettingComposePanelSizeProperty(
+        setSizeProperty: ComposePanel.(Dimension) -> Unit,
+        getSizeProperty: Component.() -> Dimension?,
+        layoutManager: LayoutManager = LayoutManager(getSizeProperty)
+    ) = runApplicationTest {
+        val intrinsicSize = Dimension(500, 400)
+        val composePanel = ComposePanel().also {
+            it.setContent {
+                Box(Modifier.fillMaxSize().size(intrinsicSize.width.dp, intrinsicSize.height.dp))
+            }
+        }
+        val frame = JFrame().apply {
+            contentPane.layout = layoutManager
+            contentPane.add(composePanel)
+        }
+
+        try {
+            val testedSize = Dimension(300, 200)
+            composePanel.setSizeProperty(testedSize)
+            frame.pack()
+            assertThat(composePanel.size).isEqualTo(testedSize)
+
+            composePanel.setSizeProperty(Dimension(testedSize.width, UNSPECIFIED_DIMENSION_VALUE))
+            frame.pack()
+            assertThat(composePanel.size).isEqualTo(Dimension(testedSize.width, intrinsicSize.height))
+
+            composePanel.setSizeProperty(Dimension(UNSPECIFIED_DIMENSION_VALUE, testedSize.height))
+            frame.pack()
+            assertThat(composePanel.size).isEqualTo(Dimension(intrinsicSize.width, testedSize.height))
+
+            composePanel.setSizeProperty(UnspecifiedDimension())
+            frame.pack()
+            assertThat(composePanel.size).isEqualTo(Dimension(intrinsicSize.width, intrinsicSize.height))
+        } finally {
+            frame.dispose()
+        }
+    }
+
+    @Test
+    fun `ComposePanel minSize`() = testSettingComposePanelSizeProperty(
+        setSizeProperty = { minimumSize = it },
+        getSizeProperty = { minimumSize }
+    )
+
+    @Test
+    fun `ComposePanel prefSize`() = testSettingComposePanelSizeProperty(
+        setSizeProperty = { preferredSize = it },
+        getSizeProperty = { preferredSize }
+    )
+
+    @Test
+    fun `ComposePanel maxSize`() = testSettingComposePanelSizeProperty(
+        setSizeProperty = { maximumSize = it },
+        getSizeProperty = { maximumSize }
+    )
+
+    @Test
+    fun `ComposePanel with popup prefSize`() = runApplicationTest {
+        val composePanel = ComposePanel().also {
+            it.setContent {
+                Box(Modifier.size(100.dp))
+                Popup {
+                    Box(Modifier.size(500.dp))
+                }
+            }
+        }
+        val frame = JFrame().apply {
+            contentPane.add(composePanel)
+        }
+
+        try {
+            frame.pack()
+            val size = frame.size
+            assertThat(size).isEqualTo(Dimension(500, 500) + frame.insets)
+        } finally {
+            frame.dispose()
+        }
+    }
+}
+
+private fun LayoutManager(sizeFunction: Component.() -> Dimension?): LayoutManager {
+    return object: LayoutManager {
+        override fun addLayoutComponent(name: String?, comp: Component?) = Unit
+        override fun removeLayoutComponent(comp: Component?) = Unit
+
+        override fun preferredLayoutSize(parent: Container): Dimension {
+            var width = 0
+            var height = 0
+            for (child in parent.components) {
+                val childSize = sizeFunction(child)!!
+                width = max(width, childSize.width)
+                height = max(height, childSize.height)
+            }
+            return Dimension(width, height)
+        }
+
+        override fun minimumLayoutSize(parent: Container) = Dimension(0, 0)
+
+        override fun layoutContainer(parent: Container) {
+            for (child in parent.components) {
+                child.size = sizeFunction(child)
+            }
         }
     }
 }

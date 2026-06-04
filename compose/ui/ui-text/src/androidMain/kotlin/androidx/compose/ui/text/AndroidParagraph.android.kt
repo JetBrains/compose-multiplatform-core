@@ -75,7 +75,6 @@ import androidx.compose.ui.text.android.style.IndentationFixSpan
 import androidx.compose.ui.text.android.style.PlaceholderSpan
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.internal.requirePrecondition
-import androidx.compose.ui.text.platform.AndroidParagraphIntrinsics
 import androidx.compose.ui.text.platform.AndroidTextPaint
 import androidx.compose.ui.text.platform.extensions.setSpan
 import androidx.compose.ui.text.platform.isIncludeFontPaddingEnabled
@@ -126,6 +125,7 @@ internal class AndroidParagraph(
                 placeholders = placeholders,
                 fontFamilyResolver = fontFamilyResolver,
                 density = density,
+                softWrap = true,
             ),
         maxLines = maxLines,
         overflow = overflow,
@@ -373,8 +373,9 @@ internal class AndroidParagraph(
     }
 
     override fun getOffsetForPosition(position: Offset): Int {
-        val line = layout.getLineForVertical(position.y.toInt())
-        return layout.getOffsetForHorizontal(line, position.x)
+        val lineUnbounded = layout.getLineForVerticalUnbounded(position.y.toInt())
+        if (lineUnbounded >= lineCount) return layout.text.length
+        return layout.getOffsetForHorizontal(lineUnbounded, position.x)
     }
 
     override fun getRangeForRect(

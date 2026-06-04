@@ -28,6 +28,7 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.toComposeImageBitmap
 import androidx.compose.ui.node.RootForTest
 import androidx.compose.ui.platform.DefaultArchitectureComponentsOwner
+import androidx.compose.ui.platform.FrameRecomposer
 import androidx.compose.ui.platform.InfiniteAnimationPolicy
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.PlatformDragAndDropManager
@@ -37,6 +38,7 @@ import androidx.compose.ui.platform.PlatformWindowInsets
 import androidx.compose.ui.platform.WindowInfo
 import androidx.compose.ui.scene.CanvasLayersComposeScene
 import androidx.compose.ui.scene.ComposeScene
+import androidx.compose.ui.scene.hasInvalidations
 import androidx.compose.ui.semantics.SemanticsNode
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.DpSize
@@ -233,6 +235,8 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
         @InternalTestApi
         set
 
+    private lateinit var frameRecomposer: FrameRecomposer
+
     private val architectureComponentsOwner =
         DefaultArchitectureComponentsOwner(enforceMainThread = false)
     private val testOwner = SkikoTestOwner()
@@ -270,7 +274,7 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
                         // > Anything that might result in animation may require the MonotonicFrameClock,
                         // > and to get the timing right it should be the clock provided by the Recomposer's effect context
                         // It's covered by SkikoComposeUiTestTest.canDriveAnimationsFromTest.
-                        scene.withMonotonicFrameClock {
+                        frameRecomposer.withMonotonicFrameClock {
                             block()
                         }
                     }
@@ -314,19 +318,20 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
      */
     private fun render(timeMillis: Long) {
         surface.canvas.clear(Color.TRANSPARENT)
-        scene.render(
-            surface.canvas.asComposeCanvas(),
-            timeMillis * NanoSecondsPerMilliSecond
-        )
+        frameRecomposer.performFrame(timeMillis * NanoSecondsPerMilliSecond)
+        scene.measureAndLayout()
+        scene.draw(surface.canvas.asComposeCanvas())
     }
 
     private fun createScene() {
+        frameRecomposer = FrameRecomposer(recomposerCoroutineScope.coroutineContext)
         scene = CanvasLayersComposeScene(
+            frameRecomposer = frameRecomposer,
             density = density,
             size = size,
-            coroutineContext = recomposerCoroutineScope.coroutineContext,
             platformContext = TestContext(),
-            invalidate = { }
+            invalidateLayout = { },
+            invalidateDraw = { },
         )
         architectureComponentsOwner.enableSavedStateHandles()
         architectureComponentsOwner.lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_RESUME)
@@ -335,6 +340,7 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
     private fun closeScene() {
         architectureComponentsOwner.lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_DESTROY)
         scene.close()
+        frameRecomposer.close()
     }
 
     private fun advanceIfNeededAndRenderNextFrame() {
@@ -360,6 +366,7 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
 
         return !Snapshot.current.hasPendingChanges()
             && !Snapshot.isApplyObserverNotificationPending
+            && !frameRecomposer.hasPendingWork()
             && !scene.hasInvalidations()
             && areAllResourcesIdle()
     }
@@ -406,6 +413,11 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
         return runOnUiThread(action)
     }
 
+    override fun <T> runWithoutImplicitWait(block: () -> T): T {
+        // TODO https://youtrack.jetbrains.com/issue/CMP-10244/ui-test.-Implement-runWithoutImplicitWait
+        throw NotImplementedError("runWithoutImplicitWait is not implemented.")
+    }
+
     override fun waitUntil(
         conditionDescription: String?,
         timeoutMillis: Long,
@@ -444,6 +456,10 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
         }
     }
 
+    override fun hasPendingWork(): Boolean {
+        return !isIdle()
+    }
+
     override fun onNode(
         matcher: SemanticsMatcher,
         useUnmergedTree: Boolean
@@ -480,6 +496,8 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
 
     @OptIn(InternalComposeUiApi::class)
     internal inner class SkikoTestOwner : TestOwner {
+        override var isImplicitWaitSuppressed: Boolean = false
+
         override val mainClock
             get() = mainClockImpl
 
@@ -488,7 +506,9 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
         }
 
         override fun getRoots(atLeastOneRootExpected: Boolean): Set<RootForTest> {
-            waitForIdle()
+            if (!isImplicitWaitSuppressed) {
+                waitForIdle()
+            }
             return composeRootRegistry.getComposeRoots()
         }
 
@@ -555,23 +575,6 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
             awaitCancellation()
         }
     }
-}
-
-@ExperimentalTestApi
-actual sealed interface ComposeUiTest : SemanticsNodeInteractionsProvider {
-    actual val density: Density
-    actual val mainClock: MainTestClock
-    actual fun <T> runOnUiThread(action: () -> T): T
-    actual fun <T> runOnIdle(action: () -> T): T
-    actual fun waitForIdle()
-    actual suspend fun awaitIdle()
-    actual fun waitUntil(
-        conditionDescription: String?,
-        timeoutMillis: Long,
-        condition: () -> Boolean
-    )
-
-    actual fun setContent(composable: @Composable () -> Unit)
 }
 
 private const val FRAME_DELAY_MILLIS = 16L

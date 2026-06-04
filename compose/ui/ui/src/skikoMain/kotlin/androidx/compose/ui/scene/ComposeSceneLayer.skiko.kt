@@ -18,6 +18,7 @@ package androidx.compose.ui.scene
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalContext
+import androidx.compose.runtime.CompositionContext
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.currentCompositionLocalContext
 import androidx.compose.runtime.remember
@@ -96,12 +97,19 @@ interface ComposeSceneLayer {
      * for example, the pressing of the back button.
      *
      * This flag also influences the expected behavior of [setOutsidePointerEventListener]:
-     * when [focusable] is true, touch events outside of this layer's bounds are not propagated to
+     * when [focusable] is true, pointer events outside of this layer's bounds are not propagated to
      * the content layered below this one.
      *
      * @see PopupProperties.focusable
      */
     var focusable: Boolean
+
+    /**
+     * Indicates if pointer input events outside of this layer's bounds should be blocked.
+     * When set to true, pointer events outside of this layer's bounds are not propagated to
+     * the content layered below this one.
+     */
+    var consumePointerInputOutside: Boolean
 
     /**
      * Close all resources and subscriptions. It's anticipated that the platform implementation
@@ -118,9 +126,10 @@ interface ComposeSceneLayer {
      *
      * Will throw an [IllegalStateException] if the composition has been disposed.
      *
+     * @param parentCompositionContext The parent [CompositionContext] for the layer's content.
      * @param content Content of the [ComposeScene]
      */
-    fun setContent(content: @Composable () -> Unit)
+    fun setContent(parentCompositionContext: CompositionContext, content: @Composable () -> Unit)
 
     /**
      * Sets the root key event listener.
@@ -174,25 +183,26 @@ interface ComposeSceneLayer {
  */
 @Composable
 internal fun rememberComposeSceneLayer(
-    focusable: Boolean = false
+    focusable: Boolean = false,
+    consumePointerInputOutside: Boolean = focusable,
 ): ComposeSceneLayer {
     val sceneContext = LocalComposeSceneContext.requireCurrent()
     val density = LocalDensity.current
     val layoutDirection = LocalLayoutDirection.current
-    val parentComposition = rememberCompositionContext()
     val compositionLocalContext = currentCompositionLocalContext
     val layer = remember {
         sceneContext.createLayer(
             density = density,
             layoutDirection = layoutDirection,
             focusable = focusable,
-            compositionContext = parentComposition,
+            consumePointerInputOutside = consumePointerInputOutside,
         )
     }
-    layer.focusable = focusable
-    layer.compositionLocalContext = compositionLocalContext
     layer.density = density
     layer.layoutDirection = layoutDirection
+    layer.compositionLocalContext = compositionLocalContext
+    layer.focusable = focusable
+    layer.consumePointerInputOutside = consumePointerInputOutside
 
     return layer
 }
@@ -201,9 +211,12 @@ internal fun rememberComposeSceneLayer(
  * Sets the content of the layer to [content].
  */
 @Composable
-internal fun ComposeSceneLayer.Content(content: @Composable () -> Unit) {
+internal fun ComposeSceneLayer.Content(
+    parentCompositionContext: CompositionContext = rememberCompositionContext(),
+    content: @Composable () -> Unit,
+) {
     DisposableEffect(this, content) {
-        setContent(content)
+        setContent(parentCompositionContext, content)
         onDispose { }
     }
 }

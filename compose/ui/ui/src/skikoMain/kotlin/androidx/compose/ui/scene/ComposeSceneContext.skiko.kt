@@ -17,7 +17,6 @@
 package androidx.compose.ui.scene
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionContext
 import androidx.compose.runtime.CompositionLocal
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.InternalComposeUiApi
@@ -58,7 +57,8 @@ interface ComposeSceneContext {
      * @param density The density of the layer.
      * @param layoutDirection The layout direction of the layer.
      * @param focusable Indicates whether the layer is focusable.
-     * @param compositionContext The composition context for the layer.
+     * @param consumePointerInputOutside Indicates whether the pointer input events outside the
+     *  layer should be blocked.
      * @return The created [ComposeSceneLayer] representing the scene layer.
      *
      * @see ComposeSceneLayer
@@ -67,7 +67,7 @@ interface ComposeSceneContext {
         density: Density,
         layoutDirection: LayoutDirection,
         focusable: Boolean,
-        compositionContext: CompositionContext,
+        consumePointerInputOutside: Boolean = focusable,
     ) : ComposeSceneLayer {
         throw IllegalStateException()
     }

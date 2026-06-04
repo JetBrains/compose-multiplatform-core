@@ -24,8 +24,12 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.LayoutBoundsHolder
 import androidx.compose.ui.layout.layoutBounds
 import androidx.compose.ui.platform.LocalDensity
@@ -38,13 +42,16 @@ import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowState
+import androidx.compose.ui.window.roundToDimension
 import androidx.compose.ui.window.runApplicationTest
 import java.awt.BorderLayout
 import java.awt.Dimension
+import java.awt.Graphics
 import java.awt.Point
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import java.awt.event.MouseWheelEvent
+import javax.swing.JComponent
 import javax.swing.JLabel
 import javax.swing.JPanel
 import javax.swing.SwingUtilities
@@ -189,13 +196,13 @@ class SwingPanelTest {
             ) {
                 Box(Modifier.fillMaxWidth().height(2000.dp)) {
                     SwingPanel(
-                        background = Color.Red,
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(400.dp),
                         factory = {
                             JPanel(BorderLayout()).also {
                                 it.add(JLabel("Swing content"))
+                                it.background = java.awt.Color.RED
                             }
                         },
                     )
@@ -208,5 +215,47 @@ class SwingPanelTest {
         window.sendMouseWheelEvent(x = 200, y = 200, wheelRotation = 50.0)
         awaitIdle()
         assertTrue(scrollState.value > 0, "Compose did not scroll; SwingPanel blocked the event")
+    }
+
+    @Test
+    fun swingPanelRespondsToDensityChange() = runApplicationTest {
+        val swingComponent = object: JComponent() {
+            override fun paint(g: Graphics) {
+                g.color = java.awt.Color.RED
+                g.fillRect(0, 0, width, height)
+            }
+        }
+        val swingElementSize = DpSize(200.dp, 200.dp)
+
+        var densityScale by mutableFloatStateOf(1f)
+        launchTestWindowApplication(
+            state = WindowState(size = DpSize(500.dp, 500.dp))
+        ) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                val density = LocalDensity.current.density
+                CompositionLocalProvider(LocalDensity provides Density(densityScale * density)) {
+                    SwingPanel(
+                        modifier = Modifier.size(swingElementSize),
+                        factory = { swingComponent }
+                    )
+                }
+            }
+        }
+
+        awaitIdle()
+        assertEquals(
+            expected = swingElementSize.roundToDimension(),
+            actual = swingComponent.size
+        )
+
+        densityScale = 2f
+        awaitIdle()
+        assertEquals(
+            expected = (swingElementSize * densityScale).roundToDimension(),
+            actual = swingComponent.size
+        )
     }
 }

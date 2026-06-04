@@ -24,7 +24,7 @@ import androidx.compose.ui.uikit.utils.CMPHoverGestureRecognizer
 import androidx.compose.ui.uikit.utils.CMPPanGestureRecognizer
 import androidx.compose.ui.uikit.utils.CMPScrollView
 import androidx.compose.ui.unit.DpOffset
-import androidx.compose.ui.unit.asDpOffset
+import androidx.compose.ui.unit.toDpOffset
 import androidx.compose.ui.viewinterop.InteropWrappingView
 import androidx.compose.ui.viewinterop.UIKitInteropInteractionMode
 import kotlin.getValue
@@ -56,7 +56,6 @@ import platform.UIKit.UIGestureRecognizerStateChanged
 import platform.UIKit.UIGestureRecognizerStateEnded
 import platform.UIKit.UIGestureRecognizerStateFailed
 import platform.UIKit.UIGestureRecognizerStatePossible
-import platform.UIKit.UIHoverGestureRecognizer
 import platform.UIKit.UIPanGestureRecognizer
 import platform.UIKit.UIPressesEvent
 import platform.UIKit.UIScreenEdgePanGestureRecognizer
@@ -435,7 +434,7 @@ private class ScrollGestureRecognizer(
     @OptIn(BetaInteropApi::class)
     @ObjCAction
     fun onPan(gestureRecognizer: UIPanGestureRecognizer) {
-        val position = gestureRecognizer.locationInView(view).asDpOffset()
+        val position = gestureRecognizer.locationInView(view).toDpOffset()
 
         when (gestureRecognizer.state) {
             UIGestureRecognizerStateBegan -> {
@@ -515,6 +514,7 @@ internal class OverlayInputView(
     private var onHoverEvent: (position: DpOffset, event: UIEvent?, eventKind: TouchesEventKind) -> Unit,
     private var onKeyboardPresses: (Set<*>) -> Unit,
     ignoreTouchChanges: () -> Boolean,
+    private var onRemoveSubview: () -> Unit,
 ) : CMPScrollView(CGRectZero.readValue()) {
     /**
      * Gesture recognizer responsible for processing touches
@@ -577,6 +577,15 @@ internal class OverlayInputView(
         scrollsToTop = false
     }
 
+    override fun willRemoveSubview(subview: UIView) {
+        super.willRemoveSubview(subview)
+
+        // `willRemoveSubview` is called during the deinit operation of UIView.
+        // Employ safe calls to prevent access to `this` reference that has already been invalidated.
+        @Suppress("UNNECESSARY_SAFE_CALL")
+        this?.onRemoveSubview?.invoke()
+    }
+
     override fun canBecomeFirstResponder() = true
 
     override fun canBecomeFocused(): Boolean = false
@@ -589,6 +598,11 @@ internal class OverlayInputView(
     override fun pressesEnded(presses: Set<*>, withEvent: UIPressesEvent?) {
         onKeyboardPresses(presses)
         super.pressesEnded(presses, withEvent)
+    }
+
+    override fun pressesCancelled(presses: Set<*>, withEvent: UIPressesEvent?) {
+        onKeyboardPresses(presses)
+        super.pressesCancelled(presses, withEvent)
     }
 
     private val trackedTouchesOutside: MutableSet<UITouch> = mutableSetOf()
@@ -661,7 +675,7 @@ internal class OverlayInputView(
             return null
         }
         val nativeTextInputViewHitTest = subviews.firstNotNullOfOrNull { it ->
-            (it as? IntermediateTextScrollView)?.let {
+            (it as? NativeTextInputScrollView)?.let {
                 val inputPoint = convertPoint(point, toView = it)
                 it.hitTest(inputPoint, withEvent)
             }
@@ -676,7 +690,7 @@ internal class OverlayInputView(
     @OptIn(BetaInteropApi::class)
     @ObjCAction
     fun onHover(gestureRecognizer: CMPHoverGestureRecognizer) {
-        val position = gestureRecognizer.locationInView(this).asDpOffset()
+        val position = gestureRecognizer.locationInView(this).toDpOffset()
         val lastEvent = hoverGestureRecognizer.lastReceivedEvent
         when (gestureRecognizer.state) {
             UIGestureRecognizerStateBegan ->
@@ -717,6 +731,7 @@ internal class OverlayInputView(
         onOutsidePointerEvent = {}
         onTouchesEvent = { _, _, _ -> PointerEventResult() }
         onCancelAllTouches = {}
+        onRemoveSubview = {}
         trackedTouchesOutside.clear()
     }
 }
@@ -727,6 +742,7 @@ internal class OverlayInputView(
  * All other user input events should be handled by the [OverlayInputView] or with its help.
  */
 internal class BackgroundInputView(
+    private var onMovedToWindow: () -> Unit,
     private var onLayoutSubviews: () -> Unit,
     private var hitTestInteropView: (point: CValue<CGPoint>) -> UIView?,
     private var isPointInsideInteractionBounds: (CValue<CGPoint>) -> Boolean,
@@ -764,6 +780,9 @@ internal class BackgroundInputView(
     override fun didMoveToWindow() {
         super.didMoveToWindow()
 
+        window?.let {
+            onMovedToWindow()
+        }
         setNeedsLayout()
     }
 
@@ -801,6 +820,7 @@ internal class BackgroundInputView(
         removeGestureRecognizer(touchesGestureRecognizer)
         touchesGestureRecognizer.dispose()
 
+        onMovedToWindow = {}
         hitTestInteropView = { null }
         isPointInsideInteractionBounds = { false }
         onLayoutSubviews = {}
@@ -819,7 +839,7 @@ private fun UIView.findAncestorInteractionMode(touch: UITouch): UIKitInteropInte
         if (view is InteropWrappingView) {
             return view.interactionMode
         }
-        if (view is IntermediateTextScrollView) {
+        if (view is NativeTextInputScrollView) {
             return view.interactionModeAt(touch.locationInView(view))
         }
         view = view.superview

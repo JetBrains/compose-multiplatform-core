@@ -16,6 +16,7 @@
 
 package androidx.compose.material3
 
+import androidx.collection.IntList
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.FiniteAnimationSpec
@@ -85,9 +86,11 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastFirst
 import androidx.compose.ui.window.Popup
+import androidx.compose.ui.window.PopupPositionProvider
 import androidx.compose.ui.window.PopupProperties
 import kotlin.math.max
 import kotlin.math.min
@@ -187,6 +190,7 @@ expect fun DropdownMenu(
  * @param properties [PopupProperties] for further customization of this popup's behavior.
  * @param content the content of this dropdown menu.
  */
+@Deprecated("Maintained for binary compatibility.", level = DeprecationLevel.HIDDEN)
 @ExperimentalMaterial3ExpressiveApi
 @Composable
 expect fun DropdownMenuPopup(
@@ -201,6 +205,64 @@ expect fun DropdownMenuPopup(
 /**
  * [Material Design dropdown menu](https://m3.material.io/components/menus/overview)
  *
+ * A [Popup] that provides the foundation for building a custom menu.
+ *
+ * ![Dropdown menu
+ * image](https://developer.android.com/images/reference/androidx/compose/material3/exposed-dropdown-menu-selectable-items.png)
+ *
+ * This composable provides the [Popup] and layout behavior for a menu. This is useful for building
+ * custom menus that require different content arrangements or styling than the default
+ * [DropdownMenu].
+ *
+ * Example usage:
+ *
+ * @sample androidx.compose.material3.samples.GroupedMenuSample
+ *
+ * Example usage of cascading menus:
+ *
+ * @sample androidx.compose.material3.samples.MenuWithCascadingMenusSample
+ * @param expanded whether the menu is expanded or not.
+ * @param onDismissRequest called when the user requests to dismiss the menu, such as by tapping
+ *   outside the menu's bounds.
+ * @param modifier [Modifier] to be applied to the menu's content.
+ * @param popupPositionProvider [DropdownMenuPopupPositionProvider] to be used to position the menu.
+ * @param offset [DpOffset] from the original position of the menu.
+ * @param properties [PopupProperties] for further customization of this popup's behavior.
+ * @param content the content of this dropdown menu.
+ */
+@Composable
+fun DropdownMenuPopup(
+    expanded: Boolean,
+    onDismissRequest: () -> Unit,
+    modifier: Modifier = Modifier,
+    popupPositionProvider: DropdownMenuPopupPositionProvider =
+        MenuDefaults.rememberDropdownMenuPopupPositionProvider(MenuAnchorPosition.Below),
+    offset: DpOffset = DpOffset(0.dp, 0.dp),
+    properties: PopupProperties = DefaultMenuProperties,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    val expandedState = remember { MutableTransitionState(false) }
+    expandedState.targetState = expanded
+    if (expandedState.currentState || expandedState.targetState) {
+        DropdownMenuPopupImpl(
+            onDismissRequest = onDismissRequest,
+            popupPositionProvider = popupPositionProvider,
+            properties = properties,
+            content = {
+                DropdownMenuPopupContent(
+                    modifier = modifier,
+                    expandedState = expandedState,
+                    transformOriginState = popupPositionProvider.transformOriginState,
+                    content = content,
+                )
+            },
+        )
+    }
+}
+
+/**
+ * [Material Design dropdown menu](https://m3.material.io/components/menus/overview)
+ *
  * A composable for creating a visually distinct group within a [DropdownMenuPopup].
  *
  * This component adds additional styling to [content]. It's used to group related menu items.
@@ -211,6 +273,10 @@ expect fun DropdownMenuPopup(
  * Example usage:
  *
  * @sample androidx.compose.material3.samples.GroupedMenuSample
+ *
+ * Example usage of cascading menus:
+ *
+ * @sample androidx.compose.material3.samples.MenuWithCascadingMenusSample
  * @param shapes the [MenuGroupShapes] of the menu group. The shapes provided should be determined
  *   by the number of groups in the menu as well as the group's position in the menu. There is a
  *   convenience function that can be used to easily determine the shape to be used at
@@ -229,7 +295,6 @@ expect fun DropdownMenuPopup(
  *   emitting [Interaction]s for this menu group.
  * @param content the content of this menu group, typically [DropdownMenuItem]s.
  */
-@ExperimentalMaterial3ExpressiveApi
 @Composable
 fun DropdownMenuGroup(
     shapes: MenuGroupShapes,
@@ -316,61 +381,9 @@ expect fun DropdownMenuItem(
  * ![Dropdown menu
  * image](https://developer.android.com/images/reference/androidx/compose/material3/exposed-dropdown-menu-selectable-items.png)
  *
- * @param onClick called when this menu item is clicked
- * @param text text of the menu item.
- * @param shape [Shape] of this menu item. The shapes provided should be determined by the number of
- *   items in the group or menu as well as the item's position in the menu. Please use
- *   [MenuDefaults.leadingItemShape] for the first item in a list, [MenuDefaults.middleItemShape]
- *   for the middle items in a list, and [MenuDefaults.trailingItemShape] for the last item in a
- *   list.
- * @param modifier the [Modifier] to be applied to this menu item.
- * @param leadingIcon optional leading icon to be displayed when the item is unchecked.
- * @param trailingIcon optional trailing icon to be displayed at the end of the item's text.
- * @param enabled controls the enabled state of this menu item. When `false`, this component will
- *   not respond to user input.
- * @param colors [MenuItemColors] that will be used to resolve the colors for this menu item.
- * @param contentPadding the padding applied to the content of this menu item.
- * @param interactionSource an optional hoisted [MutableInteractionSource] for observing and
- *   emitting [Interaction]s for this menu item.
- */
-@Deprecated("Maintained for binary compatibility.", level = DeprecationLevel.HIDDEN)
-@ExperimentalMaterial3ExpressiveApi
-@Composable
-fun DropdownMenuItem(
-    onClick: () -> Unit,
-    text: @Composable () -> Unit,
-    shape: Shape,
-    modifier: Modifier = Modifier,
-    leadingIcon: @Composable (() -> Unit)? = null,
-    trailingIcon: @Composable (() -> Unit)? = null,
-    enabled: Boolean = true,
-    colors: MenuItemColors = MenuDefaults.itemColors(),
-    contentPadding: PaddingValues = MenuDefaults.DropdownMenuItemContentPadding,
-    interactionSource: MutableInteractionSource? = null,
-) =
-    DropdownMenuItem(
-        onClick = onClick,
-        text = text,
-        shape = shape,
-        modifier = modifier,
-        supportingText = null,
-        leadingIcon = leadingIcon,
-        trailingIcon = trailingIcon,
-        enabled = enabled,
-        colors = colors,
-        contentPadding = contentPadding,
-        interactionSource = interactionSource,
-    )
-
-/**
- * [Material Design dropdown menu](https://m3.material.io/components/menus/overview)
+ * Example usage:
  *
- * Menus display a list of choices on a temporary surface. They appear when users interact with a
- * button, action, or other control.
- *
- * ![Dropdown menu
- * image](https://developer.android.com/images/reference/androidx/compose/material3/exposed-dropdown-menu-selectable-items.png)
- *
+ * @sample androidx.compose.material3.samples.GroupedMenuSample
  * @param onClick called when this menu item is clicked
  * @param text text of the menu item.
  * @param shape [Shape] of this menu item. The shapes provided should be determined by the number of
@@ -389,7 +402,7 @@ fun DropdownMenuItem(
  *   emitting [Interaction]s for this menu item.
  * @param supportingText optional supporting text of the menu item.
  */
-@ExperimentalMaterial3ExpressiveApi
+@Deprecated("Maintained for binary compatibility.", level = DeprecationLevel.HIDDEN)
 @Composable
 fun DropdownMenuItem(
     onClick: () -> Unit,
@@ -403,6 +416,64 @@ fun DropdownMenuItem(
     contentPadding: PaddingValues = MenuDefaults.DropdownMenuSelectableItemContentPadding,
     interactionSource: MutableInteractionSource? = null,
     supportingText: @Composable (() -> Unit)? = null,
+) =
+    DropdownMenuItem(
+        onClick = onClick,
+        text = text,
+        shape = shape,
+        modifier = modifier,
+        leadingIcon = leadingIcon,
+        trailingIcon = trailingIcon,
+        supportingText = supportingText,
+        enabled = enabled,
+        colors = colors,
+        contentPadding = contentPadding,
+        interactionSource = interactionSource,
+    )
+
+/**
+ * [Material Design dropdown menu](https://m3.material.io/components/menus/overview)
+ *
+ * Menus display a list of choices on a temporary surface. They appear when users interact with a
+ * button, action, or other control.
+ *
+ * ![Dropdown menu
+ * image](https://developer.android.com/images/reference/androidx/compose/material3/exposed-dropdown-menu-selectable-items.png)
+ *
+ * Example usage:
+ *
+ * @sample androidx.compose.material3.samples.GroupedMenuSample
+ * @param onClick called when this menu item is clicked
+ * @param text text of the menu item.
+ * @param shape [Shape] of this menu item. The shapes provided should be determined by the number of
+ *   items in the group or menu as well as the item's position in the menu. Please use
+ *   [MenuDefaults.leadingItemShape] for the first item in a list, [MenuDefaults.middleItemShape]
+ *   for the middle items in a list, and [MenuDefaults.trailingItemShape] for the last item in a
+ *   list.
+ * @param modifier the [Modifier] to be applied to this menu item.
+ * @param leadingIcon optional leading icon to be displayed when the item is unchecked.
+ * @param trailingIcon optional trailing icon to be displayed at the end of the item's text.
+ * @param supportingText optional supporting text of the menu item.
+ * @param enabled controls the enabled state of this menu item. When `false`, this component will
+ *   not respond to user input.
+ * @param colors [MenuItemColors] that will be used to resolve the colors for this menu item.
+ * @param contentPadding the padding applied to the content of this menu item.
+ * @param interactionSource an optional hoisted [MutableInteractionSource] for observing and
+ *   emitting [Interaction]s for this menu item.
+ */
+@Composable
+fun DropdownMenuItem(
+    onClick: () -> Unit,
+    text: @Composable () -> Unit,
+    shape: Shape,
+    modifier: Modifier = Modifier,
+    leadingIcon: @Composable (() -> Unit)? = null,
+    trailingIcon: @Composable (() -> Unit)? = null,
+    supportingText: @Composable (() -> Unit)? = null,
+    enabled: Boolean = true,
+    colors: MenuItemColors = MenuDefaults.itemColors(),
+    contentPadding: PaddingValues = MenuDefaults.DropdownMenuSelectableItemContentPadding,
+    interactionSource: MutableInteractionSource? = null,
 ) {
     DropdownMenuItemContent(
         text = text,
@@ -525,7 +596,7 @@ fun DropdownMenuItem(
  *   emitting [Interaction]s for this menu item.
  * @param supportingText optional supporting text of the menu item.
  */
-@ExperimentalMaterial3ExpressiveApi
+@Deprecated("Maintained for binary compatibility.", level = DeprecationLevel.HIDDEN)
 @Composable
 fun DropdownMenuItem(
     checked: Boolean,
@@ -541,6 +612,74 @@ fun DropdownMenuItem(
     contentPadding: PaddingValues = MenuDefaults.DropdownMenuSelectableItemContentPadding,
     interactionSource: MutableInteractionSource? = null,
     supportingText: @Composable (() -> Unit)? = null,
+) =
+    DropdownMenuItem(
+        checked = checked,
+        onCheckedChange = onCheckedChange,
+        text = text,
+        shapes = shapes,
+        modifier = modifier,
+        leadingIcon = leadingIcon,
+        checkedLeadingIcon = checkedLeadingIcon,
+        trailingIcon = trailingIcon,
+        enabled = enabled,
+        colors = colors,
+        contentPadding = contentPadding,
+        interactionSource = interactionSource,
+        supportingText = supportingText,
+    )
+
+/**
+ * [Material Design dropdown menu](https://m3.material.io/components/menus/overview)
+ *
+ * A menu item that changes its styling depending on the [checked] state.
+ *
+ * This composable is suitable for menu items that represent an on/off setting, behaving like a
+ * checkbox or switch within the menu.
+ *
+ * ![Dropdown menu
+ * image](https://developer.android.com/images/reference/androidx/compose/material3/exposed-dropdown-menu-selectable-items.png)
+ *
+ * Example usage:
+ *
+ * @sample androidx.compose.material3.samples.GroupedMenuSample
+ * @param checked whether this menu item is currently checked.
+ * @param onCheckedChange called when this menu item is clicked, with the new checked state.
+ * @param text text of the menu item.
+ * @param shapes [MenuItemShapes] that will be used to resolve the shapes for this menu item. The
+ *   shape of this item is determined by the value of [checked]. The shapes provided should be
+ *   determined by the number of items in the group or menu as well as the item's position in the
+ *   menu. There is a convenience function that can be used to easily determine the shape to be used
+ *   at [MenuDefaults.itemShape]
+ * @param modifier the [Modifier] to be applied to this menu item.
+ * @param leadingIcon optional leading icon to be displayed when the item is unchecked.
+ * @param checkedLeadingIcon optional leading icon to be displayed when the item is checked.
+ * @param trailingIcon optional trailing icon to be displayed at the end of the item's text.
+ * @param supportingText optional supporting text of the menu item.
+ * @param enabled controls the enabled state of this menu item. When `false`, this component will
+ *   not respond to user input.
+ * @param colors [MenuItemColors] that will be used to resolve the colors for this menu item. There
+ *   are two predefined [MenuItemColors] at [MenuDefaults.selectableItemColors] and
+ *   [MenuDefaults.selectableItemVibrantColors] which you can use or modify.
+ * @param contentPadding the padding applied to the content of this menu item.
+ * @param interactionSource an optional hoisted [MutableInteractionSource] for observing and
+ *   emitting [Interaction]s for this menu item.
+ */
+@Composable
+fun DropdownMenuItem(
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    text: @Composable () -> Unit,
+    shapes: MenuItemShapes,
+    modifier: Modifier = Modifier,
+    leadingIcon: @Composable (() -> Unit)? = null,
+    checkedLeadingIcon: @Composable (() -> Unit)? = null,
+    trailingIcon: @Composable (() -> Unit)? = null,
+    supportingText: @Composable (() -> Unit)? = null,
+    enabled: Boolean = true,
+    colors: MenuItemColors = MenuDefaults.selectableItemColors(),
+    contentPadding: PaddingValues = MenuDefaults.DropdownMenuSelectableItemContentPadding,
+    interactionSource: MutableInteractionSource? = null,
 ) {
     DropdownMenuItemContent(
         text = text,
@@ -583,7 +722,7 @@ fun DropdownMenuItem(
  *   at [MenuDefaults.itemShape]
  * @param modifier the [Modifier] to be applied to this menu item.
  * @param leadingIcon optional leading icon to be displayed when the item is unchecked.
- * @param checkedLeadingIcon optional leading icon to be displayed when the item is checked.
+ * @param selectedLeadingIcon optional leading icon to be displayed when the item is selected.
  * @param trailingIcon optional trailing icon to be displayed at the end of the item's text.
  * @param enabled controls the enabled state of this menu item. When `false`, this component will
  *   not respond to user input.
@@ -593,9 +732,9 @@ fun DropdownMenuItem(
  * @param contentPadding the padding applied to the content of this menu item.
  * @param interactionSource an optional hoisted [MutableInteractionSource] for observing and
  *   emitting [Interaction]s for this menu item.
+ * @param supportingText optional supporting text of the menu item.
  */
 @Deprecated("Maintained for binary compatibility.", level = DeprecationLevel.HIDDEN)
-@ExperimentalMaterial3ExpressiveApi
 @Composable
 fun DropdownMenuItem(
     selected: Boolean,
@@ -604,12 +743,13 @@ fun DropdownMenuItem(
     shapes: MenuItemShapes,
     modifier: Modifier = Modifier,
     leadingIcon: @Composable (() -> Unit)? = null,
-    checkedLeadingIcon: @Composable (() -> Unit)? = null,
+    selectedLeadingIcon: @Composable (() -> Unit)? = null,
     trailingIcon: @Composable (() -> Unit)? = null,
     enabled: Boolean = true,
     colors: MenuItemColors = MenuDefaults.selectableItemColors(),
     contentPadding: PaddingValues = MenuDefaults.DropdownMenuSelectableItemContentPadding,
     interactionSource: MutableInteractionSource? = null,
+    supportingText: @Composable (() -> Unit)? = null,
 ) =
     DropdownMenuItem(
         selected = selected,
@@ -617,14 +757,14 @@ fun DropdownMenuItem(
         text = text,
         shapes = shapes,
         modifier = modifier,
-        supportingText = null,
         leadingIcon = leadingIcon,
+        selectedLeadingIcon = selectedLeadingIcon,
         trailingIcon = trailingIcon,
-        selectedLeadingIcon = checkedLeadingIcon,
         enabled = enabled,
         colors = colors,
         contentPadding = contentPadding,
         interactionSource = interactionSource,
+        supportingText = supportingText,
     )
 
 /**
@@ -653,6 +793,7 @@ fun DropdownMenuItem(
  * @param leadingIcon optional leading icon to be displayed when the item is unchecked.
  * @param selectedLeadingIcon optional leading icon to be displayed when the item is selected.
  * @param trailingIcon optional trailing icon to be displayed at the end of the item's text.
+ * @param supportingText optional supporting text of the menu item.
  * @param enabled controls the enabled state of this menu item. When `false`, this component will
  *   not respond to user input.
  * @param colors [MenuItemColors] that will be used to resolve the colors for this menu item. There
@@ -661,9 +802,7 @@ fun DropdownMenuItem(
  * @param contentPadding the padding applied to the content of this menu item.
  * @param interactionSource an optional hoisted [MutableInteractionSource] for observing and
  *   emitting [Interaction]s for this menu item.
- * @param supportingText optional supporting text of the menu item.
  */
-@ExperimentalMaterial3ExpressiveApi
 @Composable
 fun DropdownMenuItem(
     selected: Boolean,
@@ -674,11 +813,11 @@ fun DropdownMenuItem(
     leadingIcon: @Composable (() -> Unit)? = null,
     selectedLeadingIcon: @Composable (() -> Unit)? = null,
     trailingIcon: @Composable (() -> Unit)? = null,
+    supportingText: @Composable (() -> Unit)? = null,
     enabled: Boolean = true,
     colors: MenuItemColors = MenuDefaults.selectableItemColors(),
     contentPadding: PaddingValues = MenuDefaults.DropdownMenuSelectableItemContentPadding,
     interactionSource: MutableInteractionSource? = null,
-    supportingText: @Composable (() -> Unit)? = null,
 ) {
     DropdownMenuItemContent(
         text = text,
@@ -724,7 +863,6 @@ internal expect val DefaultMenuProperties: PopupProperties
  */
 @Immutable
 class MenuItemColors
-@ExperimentalMaterial3ExpressiveApi
 constructor(
     val textColor: Color,
     val leadingIconColor: Color,
@@ -741,23 +879,21 @@ constructor(
 ) {
 
     /** The container color of this menu item when enabled and unselected. */
-    @ExperimentalMaterial3ExpressiveApi val containerColor: Color = containerColor
+    val containerColor: Color = containerColor
 
     /** The container color of this menu item when not enabled */
-    @ExperimentalMaterial3ExpressiveApi val disabledContainerColor = disabledContainerColor
+    val disabledContainerColor = disabledContainerColor
 
     /** The container color of this menu item when enabled and selected. */
-    @ExperimentalMaterial3ExpressiveApi val selectedContainerColor: Color = selectedContainerColor
+    val selectedContainerColor: Color = selectedContainerColor
 
     /** The text color of this menu item when enabled and selected. */
-    @ExperimentalMaterial3ExpressiveApi val selectedTextColor: Color = selectedTextColor
+    val selectedTextColor: Color = selectedTextColor
 
     /** The leading icon color of this menu item when enabled and selected. */
-    @ExperimentalMaterial3ExpressiveApi
     val selectedLeadingIconColor: Color = selectedLeadingIconColor
 
     /** The trailing icon color of this menu item when enabled and selected. */
-    @ExperimentalMaterial3ExpressiveApi
     val selectedTrailingIconColor: Color = selectedTrailingIconColor
 
     /**
@@ -772,7 +908,6 @@ constructor(
      * @param disabledLeadingIconColor the leading icon color of this menu item when not enabled
      * @param disabledTrailingIconColor the trailing icon color of this menu item when not enabled
      */
-    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
     constructor(
         textColor: Color,
         leadingIconColor: Color,
@@ -799,7 +934,6 @@ constructor(
      * Returns a copy of this MenuItemColors, optionally overriding some of the values. This uses
      * the Color.Unspecified to mean “use the value from the source”
      */
-    @ExperimentalMaterial3ExpressiveApi
     fun copy(
         textColor: Color = this.textColor,
         containerColor: Color = this.containerColor,
@@ -856,7 +990,6 @@ constructor(
      * @param enabled whether the menu item is enabled
      * @param selected whether the menu item is selected.
      */
-    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
     @Stable
     internal fun textColor(enabled: Boolean, selected: Boolean = false): Color {
         return if (enabled) {
@@ -876,7 +1009,6 @@ constructor(
      * @param enabled whether the menu item is enabled
      * @param selected whether the menu item is selected.
      */
-    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
     @Stable
     internal fun leadingIconColor(enabled: Boolean, selected: Boolean = false): Color {
         return if (enabled) {
@@ -896,7 +1028,6 @@ constructor(
      * @param enabled whether the menu item is enabled
      * @param selected whether the menu item is selected.
      */
-    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
     @Stable
     internal fun trailingIconColor(enabled: Boolean, selected: Boolean = false): Color {
         return if (enabled) {
@@ -917,7 +1048,6 @@ constructor(
      * @param enabled whether the menu item is enabled.
      * @param selected whether the menu item is selected.
      */
-    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
     @Stable
     internal fun containerColor(enabled: Boolean, selected: Boolean = false): Color {
         return if (enabled) {
@@ -931,7 +1061,6 @@ constructor(
         }
     }
 
-    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other == null || other !is MenuItemColors) return false
@@ -952,7 +1081,6 @@ constructor(
         return true
     }
 
-    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
     override fun hashCode(): Int {
         var result = textColor.hashCode()
         result = 31 * result + containerColor.hashCode()
@@ -976,7 +1104,6 @@ constructor(
  * @param shape the [Shape] to use when the item is unselected.
  * @param selectedShape the [Shape] to use when the item is selected.
  */
-@ExperimentalMaterial3ExpressiveApi
 @Immutable
 class MenuItemShapes(val shape: Shape, val selectedShape: Shape) {
     /** Returns a copy of this MenuItemShapes, optionally overriding some of the values. */
@@ -1009,7 +1136,6 @@ class MenuItemShapes(val shape: Shape, val selectedShape: Shape) {
  * @param shape the default [Shape] to use for the group.
  * @param inactiveShape the [Shape] to use when the group has stop being hovered.
  */
-@ExperimentalMaterial3ExpressiveApi
 @Immutable
 class MenuGroupShapes(val shape: Shape, val inactiveShape: Shape) {
     /** Returns a copy of this MenuGroupShapes, optionally overriding some of the values. */
@@ -1035,6 +1161,95 @@ class MenuGroupShapes(val shape: Shape, val inactiveShape: Shape) {
         return result
     }
 }
+
+/**
+ * Interface that determines the position of a menu relative to its anchor.
+ *
+ * This allows selecting between standard positioning strategies (such as [Above], [Below], [Start],
+ * [End], [Left], [Right]) or providing a [Custom] implementation for complex positioning logic.
+ */
+@Stable
+sealed interface MenuAnchorPosition {
+    /** Positions the menu vertically above the anchor. */
+    object Above : MenuAnchorPosition
+
+    /** Positions the menu vertically below the anchor. */
+    object Below : MenuAnchorPosition
+
+    /** Positions the menu to the absolute left of the anchor. */
+    object Left : MenuAnchorPosition
+
+    /** Positions the menu to the absolute right of the anchor. */
+    object Right : MenuAnchorPosition
+
+    /** Positions the menu at the start of the anchor, adhering to the layout direction. */
+    object Start : MenuAnchorPosition
+
+    /** Positions the menu at the end of the anchor, adhering to the layout direction. */
+    object End : MenuAnchorPosition
+
+    /**
+     * A custom positioning strategy
+     *
+     * This allows for dynamic positioning logic that can adapt to the anchor's location on screen,
+     * the available window space, and the size of the menu content.
+     *
+     * Please adjust [xCandidates] and [yCandidates] to the current [LayoutDirection] if needed.
+     *
+     * @property xCandidates A lambda that calculates a list of preferred X (horizontal)
+     *   coordinates. The system will iterate through these candidates to find the best fit within
+     *   the window bounds. The lambda receives: `anchorBounds`: The position and size of the anchor
+     *   element in window coordinates. `windowSize`: The total available size of the window/screen.
+     *   `menuSize`: The measured size of the menu content.
+     * @property yCandidates A lambda that calculates a list of preferred Y (vertical) coordinates.
+     *   The system will iterate through these candidates to find the best fit within the window
+     *   bounds. The lambda receives: `anchorBounds`: The position and size of the anchor element in
+     *   window coordinates. `windowSize`: The total available size of the window/screen.
+     *   `menuSize`: The measured size of the menu content.
+     */
+    @Immutable
+    class Custom(
+        val xCandidates: (anchorBounds: IntRect, windowSize: IntSize, menuSize: IntSize) -> IntList,
+        val yCandidates: (anchorBounds: IntRect, windowSize: IntSize, menuSize: IntSize) -> IntList,
+    ) : MenuAnchorPosition {
+
+        override fun equals(other: Any?): Boolean {
+            if (this === other) return true
+            if (other !is Custom) return false
+
+            if (xCandidates !== other.xCandidates) return false
+            if (yCandidates !== other.yCandidates) return false
+
+            return true
+        }
+
+        override fun hashCode(): Int {
+            var result = xCandidates.hashCode()
+            result = 31 * result + yCandidates.hashCode()
+            return result
+        }
+    }
+}
+
+/**
+ * [PopupPositionProvider] that communicates the [TransformOrigin] to dropdown menu's
+ * implementation.
+ */
+interface DropdownMenuPopupPositionProvider : PopupPositionProvider {
+    val transformOriginState: MutableState<TransformOrigin>
+}
+
+/**
+ * The implementation of the popup. This allows desktop versions to listen to key events and
+ * communicate it to their popup.
+ */
+@Composable
+internal expect fun DropdownMenuPopupImpl(
+    onDismissRequest: () -> Unit,
+    popupPositionProvider: DropdownMenuPopupPositionProvider,
+    properties: PopupProperties,
+    content: @Composable () -> Unit,
+)
 
 @Composable
 internal fun DropdownMenuContent(
@@ -1096,7 +1311,45 @@ internal fun DropdownMenuContent(
     }
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+internal fun DropdownMenuPopupContent(
+    modifier: Modifier,
+    expandedState: MutableTransitionState<Boolean>,
+    transformOriginState: MutableState<TransformOrigin>,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    // Menu open/close animation.
+    @Suppress("DEPRECATION") val transition = updateTransition(expandedState, "DropDownMenu")
+    // TODO Load the motionScheme tokens from the component tokens file
+    val scaleAnimationSpec = MotionSchemeKeyTokens.FastSpatial.value<Float>()
+    val alphaAnimationSpec = MotionSchemeKeyTokens.FastEffects.value<Float>()
+    val scale by
+        transition.animateFloat(transitionSpec = { scaleAnimationSpec }) { expanded ->
+            if (expanded) ExpandedScaleTarget else ClosedScaleTarget
+        }
+    val alpha by
+        transition.animateFloat(transitionSpec = { alphaAnimationSpec }) { expanded ->
+            if (expanded) ExpandedAlphaTarget else ClosedAlphaTarget
+        }
+    val isInspecting = LocalInspectionMode.current
+    Column(
+        modifier =
+            modifier.width(IntrinsicSize.Max).graphicsLayer {
+                scaleX =
+                    if (!isInspecting) scale
+                    else if (expandedState.targetState) ExpandedScaleTarget else ClosedScaleTarget
+                scaleY =
+                    if (!isInspecting) scale
+                    else if (expandedState.targetState) ExpandedScaleTarget else ClosedScaleTarget
+                this.alpha =
+                    if (!isInspecting) alpha
+                    else if (expandedState.targetState) ExpandedAlphaTarget else ClosedAlphaTarget
+                transformOrigin = transformOriginState.value
+            },
+        content = content,
+    )
+}
+
 @Composable
 internal fun DropdownMenuItemContent(
     selected: Boolean,
@@ -1208,7 +1461,7 @@ internal fun DropdownMenuItemContent(
                                 .padding(
                                     end =
                                         if (hasTrailingIcon) {
-                                            DropdownMenuIconTextPadding
+                                            MenuDefaults.dropdownMenuIconTextPadding
                                         } else {
                                             0.dp
                                         }
@@ -1266,19 +1519,15 @@ internal fun DropdownMenuItemContent(
     }
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 internal val MenuItemShapes.hasRoundedCornerShapes: Boolean
     get() = shape is RoundedCornerShape && selectedShape is RoundedCornerShape
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 internal val MenuGroupShapes.hasRoundedCornerShapes: Boolean
     get() = shape is RoundedCornerShape && inactiveShape is RoundedCornerShape
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 internal val MenuItemShapes.hasCornerBasedShapes: Boolean
     get() = shape is CornerBasedShape && selectedShape is CornerBasedShape
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 internal val MenuGroupShapes.hasCornerBasedShapes: Boolean
     get() = shape is CornerBasedShape && inactiveShape is CornerBasedShape
 
@@ -1406,7 +1655,6 @@ private fun LabelWithSupportingText(
     }
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun shapeByInteraction(
     shapes: MenuItemShapes,
@@ -1432,7 +1680,6 @@ private fun shapeByInteraction(
     return shape
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun shapeByInteraction(
     shapes: MenuGroupShapes,
@@ -1464,7 +1711,7 @@ private fun WrappedLeadingIcon(content: @Composable BoxScope.() -> Unit) {
     Box(
         modifier =
             Modifier.defaultMinSize(minWidth = SegmentedMenuTokens.ItemLeadingIconSize)
-                .padding(end = DropdownMenuIconTextPadding),
+                .padding(end = MenuDefaults.dropdownMenuIconTextPadding),
         content = content,
     )
 }
@@ -1697,8 +1944,6 @@ internal val DropdownMenuGroupVerticalPadding = 2.dp
 private val DropdownMenuSelectableItemPadding = PaddingValues(horizontal = 4.dp)
 private val DropdownMenuSelectableItemWithSupportTexPadding =
     PaddingValues(horizontal = 4.dp, vertical = 2.dp)
-private val DropdownMenuIconTextPadding =
-    if (shouldUsePrecisionPointerComponentSizing.value) 12.dp else 8.dp
 internal val DropdownMenuVerticalPadding = 8.dp
 internal val DropdownMenuItemDefaultMinWidth = 112.dp
 internal val DropdownMenuItemDefaultMaxWidth = 280.dp

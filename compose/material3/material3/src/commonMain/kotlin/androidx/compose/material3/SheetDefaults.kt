@@ -16,25 +16,18 @@
 
 package androidx.compose.material3
 
-import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.FiniteAnimationSpec
 import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.AnchoredDraggableDefaults
 import androidx.compose.foundation.gestures.AnchoredDraggableState
-import androidx.compose.foundation.gestures.DraggableAnchors
 import androidx.compose.foundation.gestures.FlingBehavior
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.ScrollScope
-import androidx.compose.foundation.gestures.anchoredDraggable
 import androidx.compose.foundation.gestures.animateTo
 import androidx.compose.foundation.gestures.snapTo
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -42,401 +35,47 @@ import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.SheetValue.Expanded
 import androidx.compose.material3.SheetValue.Hidden
 import androidx.compose.material3.SheetValue.PartiallyExpanded
-import androidx.compose.material3.internal.PredictiveBack
-import androidx.compose.material3.internal.PredictiveBackHandler
 import androidx.compose.material3.internal.Strings
-import androidx.compose.material3.internal.draggableAnchors
 import androidx.compose.material3.internal.getString
 import androidx.compose.material3.tokens.ScrimTokens
 import androidx.compose.material3.tokens.SheetBottomTokens
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.GraphicsLayerScope
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
-import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalViewConfiguration
-import androidx.compose.ui.semantics.collapse
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.dismiss
-import androidx.compose.ui.semantics.expand
-import androidx.compose.ui.semantics.paneTitle
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.semantics.traversalIndex
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.util.lerp
 import kotlin.jvm.JvmName
-import kotlin.math.max
-import kotlin.math.min
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.launch
-
-/**
- * [Material Design bottom sheet](https://m3.material.io/components/bottom-sheets/overview)
- *
- * Modal bottom sheets are used as an alternative to inline menus or simple dialogs on mobile,
- * especially when offering a long list of action items, or when items require longer descriptions
- * and icons.
- *
- * This component provides the visual surface and gesture behavior for a bottom sheet. Crucially, it
- * renders **directly in the composition hierarchy** (the main UI tree), unlike [ModalBottomSheet]
- * which launches a separate [androidx.compose.ui.window.Dialog] window.
- *
- * Because this component exists in the main UI tree:
- * - It is drawn at the Z-index determined by its placement in the layout (e.g. inside a [Box]).
- * - It does not automatically provide a scrim or block interaction with the rest of the screen.
- * - It shares the same lifecycle and input handling as its parent composables.
- *
- * Use this component when building custom sheet experiences where a
- * [androidx.compose.ui.window.Dialog] window is not desired, or when a custom
- * [androidx.compose.ui.window.Dialog] is needed.
- *
- * For a modal bottom sheet that handles the Dialog window, scrim, and focus management
- * automatically, use [ModalBottomSheet].
- *
- * For a persistent bottom sheet that is structurally integrated into a screen layout, use
- * [BottomSheetScaffold].
- *
- * The following sample shows how the component can be used alongside your UI.
- *
- * @sample androidx.compose.material3.samples.ManualModalBottomSheetSample
- * @param modifier The modifier to be applied to the bottom sheet.
- * @param state The state object managing the sheet's value and offsets.
- * @param onDismissRequest Optional callback invoked when the sheet is swiped to [Hidden].
- * @param maxWidth [Dp] that defines what the maximum width the sheet will take. Pass in
- *   [Dp.Unspecified] for a sheet that spans the entire screen width.
- * @param gesturesEnabled Whether gestures are enabled.
- * @param backHandlerEnabled Whether dismissing via back press and predictive back behavior is
- *   enabled
- * @param dragHandle Optional visual marker to indicate the sheet is draggable.
- * @param contentWindowInsets Window insets to be applied to the content.
- * @param shape The shape of the bottom sheet.
- * @param containerColor The background color of the bottom sheet.
- * @param contentColor The preferred content color.
- * @param tonalElevation The tonal elevation of the bottom sheet.
- * @param shadowElevation The shadow elevation of the bottom sheet.
- * @param content The content of the sheet.
- */
-@Composable
-@ExperimentalMaterial3Api
-fun BottomSheet(
-    modifier: Modifier = Modifier,
-    state: SheetState = rememberModalBottomSheetState(),
-    onDismissRequest: () -> Unit = {},
-    maxWidth: Dp = BottomSheetDefaults.SheetMaxWidth,
-    gesturesEnabled: Boolean = true,
-    backHandlerEnabled: Boolean = true,
-    dragHandle: @Composable (() -> Unit)? = { BottomSheetDefaults.DragHandle() },
-    contentWindowInsets: @Composable () -> WindowInsets = {
-        BottomSheetDefaults.standardWindowInsets
-    },
-    shape: Shape = BottomSheetDefaults.ExpandedShape,
-    containerColor: Color = BottomSheetDefaults.ContainerColor,
-    contentColor: Color = contentColorFor(containerColor),
-    tonalElevation: Dp = BottomSheetDefaults.Elevation,
-    shadowElevation: Dp = 0.dp,
-    content: @Composable ColumnScope.() -> Unit,
-) {
-    val showMotion = MaterialTheme.motionScheme.defaultSpatialSpec<Float>()
-    val hideMotion = MaterialTheme.motionScheme.fastEffectsSpec<Float>()
-    val anchoredDraggableMotion = MaterialTheme.motionScheme.defaultSpatialSpec<Float>()
-    SideEffect {
-        state.showMotionSpec = showMotion
-        state.hideMotionSpec = hideMotion
-        state.anchoredDraggableMotionSpec = anchoredDraggableMotion
-    }
-
-    val predictiveBackProgress = remember { Animatable(initialValue = 0f) }
-    val scope = rememberCoroutineScope()
-    val settleToDismiss: () -> Unit = {
-        if (state.currentValue == Expanded && state.hasPartiallyExpandedState) {
-            scope.launch { state.partialExpand() }
-            scope.launch { predictiveBackProgress.animateTo(0f) }
-        } else {
-            scope
-                .launch { state.hide() }
-                .invokeOnCompletion { if (!state.isVisible) onDismissRequest() }
-        }
-    }
-
-    PredictiveBackHandler(enabled = backHandlerEnabled && state.isVisible) { progress ->
-        try {
-            progress.collect { backEvent ->
-                predictiveBackProgress.snapTo(PredictiveBack.transform(backEvent.progress))
-            }
-            settleToDismiss()
-        } catch (e: CancellationException) {
-            predictiveBackProgress.animateTo(0f)
-        }
-    }
-    BottomSheetImpl(
-        predictiveBackProgress = predictiveBackProgress.value,
-        modifier = modifier,
-        state = state,
-        onDismissRequest = onDismissRequest,
-        maxWidth = maxWidth,
-        gesturesEnabled = gesturesEnabled,
-        shape = shape,
-        containerColor = containerColor,
-        contentColor = contentColor,
-        tonalElevation = tonalElevation,
-        shadowElevation = shadowElevation,
-        dragHandle = dragHandle,
-        contentWindowInsets = contentWindowInsets,
-        content = content,
-    )
-}
-
-/** Refactored content implementation to enable predictive back testing. */
-@Composable
-@ExperimentalMaterial3Api
-internal fun BottomSheetImpl(
-    predictiveBackProgress: Float,
-    modifier: Modifier = Modifier,
-    state: SheetState = rememberModalBottomSheetState(),
-    onDismissRequest: () -> Unit = {},
-    maxWidth: Dp = BottomSheetDefaults.SheetMaxWidth,
-    gesturesEnabled: Boolean = true,
-    shape: Shape = BottomSheetDefaults.ExpandedShape,
-    containerColor: Color = BottomSheetDefaults.ContainerColor,
-    contentColor: Color = contentColorFor(containerColor),
-    tonalElevation: Dp = BottomSheetDefaults.Elevation,
-    shadowElevation: Dp = 0.dp,
-    dragHandle: @Composable (() -> Unit)? = { BottomSheetDefaults.DragHandle() },
-    contentWindowInsets: @Composable () -> WindowInsets = {
-        BottomSheetDefaults.standardWindowInsets
-    },
-    content: @Composable ColumnScope.() -> Unit,
-) {
-    val bottomSheetPaneTitle = getString(string = Strings.BottomSheetPaneTitle)
-    val spatialFlingSpec = MaterialTheme.motionScheme.defaultSpatialSpec<Float>()
-    val viewConfiguration = LocalViewConfiguration.current
-    val density = LocalDensity.current
-
-    val anchoredDraggableFlingBehavior =
-        AnchoredDraggableDefaults.flingBehavior(
-            state = state.anchoredDraggableState,
-            positionalThreshold = { _ -> state.positionalThreshold.invoke() },
-            animationSpec = spatialFlingSpec,
-        )
-
-    val modalBottomSheetFlingBehavior =
-        remember(anchoredDraggableFlingBehavior, state, viewConfiguration, density) {
-            object : FlingBehavior {
-                override suspend fun ScrollScope.performFling(initialVelocity: Float): Float {
-                    val maxSystemVelocity = viewConfiguration.maximumFlingVelocity
-                    var safeVelocity =
-                        initialVelocity.coerceIn(-maxSystemVelocity, maxSystemVelocity)
-
-                    if (
-                        safeVelocity > 0f &&
-                            state.anchoredDraggableState.anchors.hasPositionFor(Hidden)
-                    ) {
-                        val hiddenAnchor = state.anchoredDraggableState.anchors.positionOf(Hidden)
-                        val currentOffset = state.requireOffset()
-                        val distanceToFloor = max(0f, hiddenAnchor - currentOffset)
-
-                        val dampeningZone =
-                            with(density) { BottomSheetDefaults.BoundaryDampeningZone.toPx() }
-                        if (distanceToFloor < dampeningZone) {
-                            val factor = distanceToFloor / dampeningZone
-                            safeVelocity *= factor
-
-                            // Ensure previously valid velocities (above velocityThresholdPx) shrink
-                            // at most to velocityThresholdPx to maintain a valid fling.
-                            val velocityThresholdPx =
-                                with(density) { BottomSheetDefaults.VelocityThreshold.toPx() }
-                            if (initialVelocity >= velocityThresholdPx) {
-                                safeVelocity = max(safeVelocity, velocityThresholdPx)
-                            }
-                        }
-                    }
-
-                    var remainingVelocity = 0f
-                    try {
-                        remainingVelocity =
-                            with(anchoredDraggableFlingBehavior) { performFling(safeVelocity) }
-                    } finally {
-                        if (!state.isVisible) onDismissRequest()
-                    }
-                    return remainingVelocity
-                }
-            }
-        }
-
-    val scope = rememberCoroutineScope()
-    val animateToDismiss: () -> Unit = {
-        if (state.confirmValueChange(Hidden)) {
-            scope
-                .launch { state.hide() }
-                .invokeOnCompletion {
-                    if (!state.isVisible) {
-                        onDismissRequest()
-                    }
-                }
-        }
-    }
-
-    Surface(
-        modifier =
-            modifier
-                .widthIn(max = maxWidth)
-                .fillMaxWidth()
-                .then(
-                    if (gesturesEnabled)
-                        Modifier.nestedScroll(
-                            remember(state) {
-                                ConsumeSwipeWithinBottomSheetBoundsNestedScrollConnection(
-                                    sheetState = state,
-                                    orientation = Orientation.Vertical,
-                                    flingBehavior = modalBottomSheetFlingBehavior,
-                                )
-                            }
-                        )
-                    else Modifier
-                )
-                .draggableAnchors(state.anchoredDraggableState, Orientation.Vertical) {
-                    sheetSize,
-                    constraints ->
-                    val fullHeight = constraints.maxHeight.toFloat()
-                    val newAnchors = DraggableAnchors {
-                        Hidden at fullHeight
-                        if (sheetSize.height > (fullHeight / 2) && !state.skipPartiallyExpanded) {
-                            PartiallyExpanded at fullHeight / 2f
-                        }
-                        if (sheetSize.height != 0) {
-                            Expanded at max(0f, fullHeight - sheetSize.height)
-                        }
-                    }
-                    val newTarget =
-                        when (state.targetValue) {
-                            Hidden -> Hidden
-                            PartiallyExpanded -> {
-                                when {
-                                    newAnchors.hasPositionFor(PartiallyExpanded) ->
-                                        PartiallyExpanded
-                                    newAnchors.hasPositionFor(Expanded) -> Expanded
-                                    else -> Hidden
-                                }
-                            }
-
-                            Expanded -> {
-                                if (newAnchors.hasPositionFor(Expanded)) Expanded else Hidden
-                            }
-                        }
-                    return@draggableAnchors newAnchors to newTarget
-                }
-                .anchoredDraggable(
-                    state = state.anchoredDraggableState,
-                    orientation = Orientation.Vertical,
-                    enabled = gesturesEnabled && state.currentValue != Hidden,
-                    flingBehavior = modalBottomSheetFlingBehavior,
-                )
-                .semantics {
-                    paneTitle = bottomSheetPaneTitle
-                    traversalIndex = 0f
-                }
-                .sheetPredictiveBackScaling(state, predictiveBackProgress)
-                // Scale up the Surface vertically in case the sheet's offset overflows below
-                // the min anchor. This is done to avoid showing a gap when the sheet opens and
-                // bounces when it's applied with a bouncy motion. Note that the content inside
-                // the Surface is scaled back down to maintain its aspect ratio (see below).
-                .verticalScaleUp(state),
-        shape = shape,
-        color = containerColor,
-        contentColor = contentColor,
-        tonalElevation = tonalElevation,
-        shadowElevation = shadowElevation,
-    ) {
-        Column(
-            Modifier.fillMaxWidth()
-                .windowInsetsPadding(contentWindowInsets())
-                .contentPredictiveBackScaling(predictiveBackProgress)
-                // Scale the content down in case the sheet offset overflows below the min
-                // anchor. The wrapping Surface is scaled up, so this is done to maintain
-                // the content's aspect ratio.
-                .verticalScaleDown(state)
-        ) {
-            if (dragHandle != null) {
-                val collapseActionLabel = getString(Strings.BottomSheetPartialExpandDescription)
-                val dismissActionLabel = getString(Strings.BottomSheetDismissDescription)
-                val expandActionLabel = getString(Strings.BottomSheetExpandDescription)
-                DragHandleWithTooltip(
-                    modifier =
-                        Modifier.clickable {
-                                when (state.currentValue) {
-                                    Expanded -> animateToDismiss()
-                                    PartiallyExpanded -> scope.launch { state.expand() }
-                                    else -> scope.launch { state.show() }
-                                }
-                            }
-                            .semantics(mergeDescendants = true) {
-                                // Provides semantics to interact with the bottomsheet based on
-                                // its current value.
-                                if (gesturesEnabled) {
-                                    with(state) {
-                                        dismiss(dismissActionLabel) {
-                                            animateToDismiss()
-                                            true
-                                        }
-                                        if (currentValue == PartiallyExpanded) {
-                                            expand(expandActionLabel) {
-                                                if (confirmValueChange(Expanded)) {
-                                                    scope.launch { state.expand() }
-                                                }
-                                                true
-                                            }
-                                        } else if (hasPartiallyExpandedState) {
-                                            collapse(collapseActionLabel) {
-                                                if (confirmValueChange(PartiallyExpanded)) {
-                                                    scope.launch { partialExpand() }
-                                                }
-                                                true
-                                            }
-                                        }
-                                    }
-                                }
-                            },
-                    content = dragHandle,
-                )
-            }
-            content()
-        }
-    }
-}
 
 /**
  * State of a sheet composable, such as [ModalBottomSheet]
  *
  * Contains states relating to its swipe position as well as animations between state values.
  *
- * @param skipPartiallyExpanded Whether the partially expanded state, if the sheet is large enough,
- *   should be skipped. If true, the sheet will always expand to the [Expanded] state and move to
- *   the [Hidden] state if available when hiding the sheet, either programmatically or by user
- *   interaction.
+ * @param enabledValues The set of [SheetValue]s that the bottom sheet can settle in. This is the
+ *   direct source of truth for available states; if a value is included here, the component will
+ *   attempt to create an anchor for it.
  * @param positionalThreshold The positional threshold, in px, to be used when calculating the
  *   target state while a drag is in progress and when settling after the drag ends. This is the
  *   distance from the start of a transition. It will be, depending on the direction of the
@@ -447,32 +86,88 @@ internal fun BottomSheetImpl(
  *   reached.
  * @param initialValue The initial value of the state.
  * @param confirmValueChange Optional callback invoked to confirm or veto a pending state change.
- * @param skipHiddenState Whether the hidden state should be skipped. If true, the sheet will always
- *   expand to the [Expanded] state and move to the [PartiallyExpanded] if available, either
- *   programmatically or by user interaction.
  */
 @Stable
 @ExperimentalMaterial3Api
 class SheetState(
-    internal val skipPartiallyExpanded: Boolean,
+    internal val enabledValues: Set<SheetValue>,
     internal val positionalThreshold: () -> Float,
     internal val velocityThreshold: () -> Float,
     initialValue: SheetValue = Hidden,
     internal val confirmValueChange: (SheetValue) -> Boolean = { true },
-    internal val skipHiddenState: Boolean = false,
 ) {
+    /**
+     * @param skipPartiallyExpanded Whether the partially expanded state, if the sheet is large
+     *   enough, should be skipped. If true, the sheet will always expand to the [Expanded] state
+     *   and move to the [Hidden] state if available when hiding the sheet, either programmatically
+     *   or by user interaction.
+     * @param positionalThreshold The positional threshold, in px, to be used when calculating the
+     *   target state while a drag is in progress and when settling after the drag ends. This is the
+     *   distance from the start of a transition. It will be, depending on the direction of the
+     *   interaction, added or subtracted from/to the origin offset. It should always be a positive
+     *   value.
+     * @param velocityThreshold The velocity threshold (in px per second) that the end velocity has
+     *   to exceed in order to animate to the next state, even if the [positionalThreshold] has not
+     *   been reached.
+     * @param initialValue The initial value of the state.
+     * @param confirmValueChange Optional callback invoked to confirm or veto a pending state
+     *   change.
+     * @param skipHiddenState Whether the hidden state should be skipped. If true, the sheet will
+     *   always expand to the [Expanded] state and move to the [PartiallyExpanded] if available,
+     *   either programmatically or by user interaction.
+     */
+    @Deprecated(
+        message = "Use the primary constructor that takes a set of enabled values.",
+        replaceWith =
+            ReplaceWith(
+                "SheetState(enabledValues = buildSet { " +
+                    "add(SheetValue.Expanded); " +
+                    "if (!skipPartiallyExpanded) add(SheetValue.PartiallyExpanded); " +
+                    "if (!skipHiddenState) add(SheetValue.Hidden) " +
+                    "}, positionalThreshold, velocityThreshold, initialValue, confirmValueChange)",
+                "androidx.compose.material3.SheetValue",
+            ),
+    )
+    constructor(
+        skipPartiallyExpanded: Boolean,
+        positionalThreshold: () -> Float,
+        velocityThreshold: () -> Float,
+        initialValue: SheetValue = Hidden,
+        confirmValueChange: (SheetValue) -> Boolean = { true },
+        skipHiddenState: Boolean = false,
+    ) : this(
+        enabledValues =
+            buildSet {
+                add(Expanded)
+                if (!skipPartiallyExpanded) add(PartiallyExpanded)
+                if (!skipHiddenState) add(Hidden)
+            },
+        positionalThreshold = positionalThreshold,
+        velocityThreshold = velocityThreshold,
+        initialValue = initialValue,
+        confirmValueChange = confirmValueChange,
+    )
+
+    /**
+     * Whether the partially expanded state, if the sheet is large enough, should be skipped. If
+     * true, the sheet will always expand to the [Expanded] state and move to the [Hidden] state if
+     * available when hiding the sheet, either programmatically or by user interaction.
+     */
+    internal val skipPartiallyExpanded: Boolean
+        get() = !enabledValues.contains(PartiallyExpanded)
+
+    /**
+     * Whether the hidden state should be skipped. If true, the sheet will always expand to the
+     * [Expanded] state and move to the [PartiallyExpanded] if available, either programmatically or
+     * by user interaction.
+     */
+    internal val skipHiddenState: Boolean
+        get() = !enabledValues.contains(Hidden)
 
     init {
-        if (skipPartiallyExpanded) {
-            require(initialValue != PartiallyExpanded) {
-                "The initial value must not be set to PartiallyExpanded if skipPartiallyExpanded " +
-                    "is set to true."
-            }
-        }
-        if (skipHiddenState) {
-            require(initialValue != Hidden) {
-                "The initial value must not be set to Hidden if skipHiddenState is set to true."
-            }
+        require(enabledValues.contains(Expanded)) { "Expanded must be one of the enabled values." }
+        require(enabledValues.contains(initialValue)) {
+            "The initial value must be one of the enabled values."
         }
     }
 
@@ -685,30 +380,53 @@ class SheetState(
     companion object {
         /** The default [Saver] implementation for [SheetState]. */
         fun Saver(
+            enabledValues: Set<SheetValue>,
+            positionalThreshold: () -> Float,
+            velocityThreshold: () -> Float,
+            confirmValueChange: (SheetValue) -> Boolean,
+        ) =
+            Saver<SheetState, SheetValue>(
+                save = { it.currentValue },
+                restore = { savedValue ->
+                    SheetState(
+                        enabledValues,
+                        positionalThreshold,
+                        velocityThreshold,
+                        savedValue,
+                        confirmValueChange,
+                    )
+                },
+            )
+
+        @Deprecated(
+            message = "Use the Saver that takes a set of enabled values.",
+            replaceWith =
+                ReplaceWith(
+                    "Saver(enabledValues = buildSet { " +
+                        "add(SheetValue.Expanded); " +
+                        "if (!skipPartiallyExpanded) add(SheetValue.PartiallyExpanded); " +
+                        "if (!skipHiddenState) add(SheetValue.Hidden) " +
+                        "}, positionalThreshold, velocityThreshold, confirmValueChange)",
+                    "androidx.compose.material3.SheetValue",
+                ),
+        )
+        fun Saver(
             skipPartiallyExpanded: Boolean,
             positionalThreshold: () -> Float,
             velocityThreshold: () -> Float,
             confirmValueChange: (SheetValue) -> Boolean,
             skipHiddenState: Boolean,
         ) =
-            Saver<SheetState, SheetValue>(
-                save = { it.currentValue },
-                restore = { savedValue ->
-                    val newValue =
-                        if (skipPartiallyExpanded && savedValue == PartiallyExpanded) {
-                            Expanded
-                        } else {
-                            savedValue
-                        }
-                    SheetState(
-                        skipPartiallyExpanded,
-                        positionalThreshold,
-                        velocityThreshold,
-                        newValue,
-                        confirmValueChange,
-                        skipHiddenState,
-                    )
-                },
+            Saver(
+                enabledValues =
+                    buildSet {
+                        add(Expanded)
+                        if (!skipPartiallyExpanded) add(PartiallyExpanded)
+                        if (!skipHiddenState) add(Hidden)
+                    },
+                positionalThreshold = positionalThreshold,
+                velocityThreshold = velocityThreshold,
+                confirmValueChange = confirmValueChange,
             )
 
         @Deprecated(
@@ -722,9 +440,13 @@ class SheetState(
             skipHiddenState: Boolean,
         ) =
             Saver(
-                skipPartiallyExpanded = skipPartiallyExpanded,
+                enabledValues =
+                    buildSet {
+                        add(Expanded)
+                        if (!skipPartiallyExpanded) add(PartiallyExpanded)
+                        if (!skipHiddenState) add(Hidden)
+                    },
                 confirmValueChange = confirmValueChange,
-                skipHiddenState = skipHiddenState,
                 positionalThreshold = {
                     with(density) { BottomSheetDefaults.PositionalThreshold.toPx() }
                 },
@@ -742,12 +464,16 @@ class SheetState(
         confirmValueChange: (SheetValue) -> Boolean = { true },
         skipHiddenState: Boolean = false,
     ) : this(
-        skipPartiallyExpanded = skipPartiallyExpanded,
+        enabledValues =
+            buildSet {
+                add(Expanded)
+                if (!skipPartiallyExpanded) add(PartiallyExpanded)
+                if (!skipHiddenState) add(Hidden)
+            },
         positionalThreshold = { with(density) { BottomSheetDefaults.PositionalThreshold.toPx() } },
         velocityThreshold = { with(density) { BottomSheetDefaults.VelocityThreshold.toPx() } },
         initialValue = initialValue,
         confirmValueChange = confirmValueChange,
-        skipHiddenState = skipHiddenState,
     )
 }
 
@@ -856,7 +582,9 @@ internal fun DragHandleWithTooltip(modifier: Modifier, content: @Composable (() 
             modifier = modifier,
             positionProvider =
                 TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Above),
-            tooltip = { PlainTooltip { Text(dragHandleDescription) } },
+            tooltip = {
+                PlainTooltipInternal(dragHandleDescription) { Text(dragHandleDescription) }
+            },
             state = rememberTooltipState(),
             content = content,
         )
@@ -923,13 +651,46 @@ internal fun ConsumeSwipeWithinBottomSheetBoundsNestedScrollConnection(
         private fun Offset.toFloat(): Float = if (orientation == Orientation.Horizontal) x else y
     }
 
+/**
+ * Create and [remember] a [SheetState] for [BottomSheet], [ModalBottomSheet], or
+ * [BottomSheetScaffold].
+ *
+ * @param initialValue The initial value of the state.
+ * @param enabledValues The set of [SheetValue]s that the bottom sheet can settle in. This is the
+ *   direct source of truth for available states; if a value is included here, the component will
+ *   attempt to create an anchor for it.
+ * @param confirmValueChange Optional callback invoked to confirm or veto a pending state change.
+ */
+@Composable
+@ExperimentalMaterial3Api
+fun rememberBottomSheetState(
+    initialValue: SheetValue,
+    enabledValues: Set<SheetValue> = setOf(Hidden, PartiallyExpanded, Expanded),
+    confirmValueChange: (SheetValue) -> Boolean = { true },
+): SheetState =
+    rememberSheetState(
+        enabledValues = enabledValues,
+        confirmValueChange = confirmValueChange,
+        initialValue = initialValue,
+    )
+
+/**
+ * Create and [remember] a [SheetState] for a sheet composable.
+ *
+ * @param enabledValues The set of [SheetValue]s that the bottom sheet can settle in.
+ * @param confirmValueChange Optional callback invoked to confirm or veto a pending state change.
+ * @param initialValue The initial value of the state.
+ * @param positionalThreshold The positional threshold, in dp, used to determine whether the sheet
+ *   should settle to the next anchor when being dragged.
+ * @param velocityThreshold The velocity threshold, in dp, used to determine whether the sheet
+ *   should settle to the next anchor when being dragged with velocity.
+ */
 @Composable
 @ExperimentalMaterial3Api
 internal fun rememberSheetState(
-    skipPartiallyExpanded: Boolean = false,
+    enabledValues: Set<SheetValue> = setOf(Hidden, PartiallyExpanded, Expanded),
     confirmValueChange: (SheetValue) -> Boolean = { true },
     initialValue: SheetValue = Hidden,
-    skipHiddenState: Boolean = false,
     positionalThreshold: Dp = BottomSheetDefaults.PositionalThreshold,
     velocityThreshold: Dp = BottomSheetDefaults.VelocityThreshold,
 ): SheetState {
@@ -937,66 +698,24 @@ internal fun rememberSheetState(
     val positionalThresholdToPx = { with(density) { positionalThreshold.toPx() } }
     val velocityThresholdToPx = { with(density) { velocityThreshold.toPx() } }
     return rememberSaveable(
-        skipPartiallyExpanded,
+        enabledValues,
         confirmValueChange,
-        skipHiddenState,
         saver =
             SheetState.Saver(
-                skipPartiallyExpanded = skipPartiallyExpanded,
+                enabledValues = enabledValues,
                 positionalThreshold = positionalThresholdToPx,
                 velocityThreshold = velocityThresholdToPx,
                 confirmValueChange = confirmValueChange,
-                skipHiddenState = skipHiddenState,
             ),
     ) {
         SheetState(
-            skipPartiallyExpanded,
+            enabledValues,
             positionalThresholdToPx,
             velocityThresholdToPx,
             initialValue,
             confirmValueChange,
-            skipHiddenState,
         )
     }
-}
-
-internal fun GraphicsLayerScope.calculateSheetPredictiveBackScaleX(progress: Float): Float {
-    val width = size.width
-    return if (width.isNaN() || width == 0f) {
-        1f
-    } else {
-        1f - lerp(0f, min(PredictiveBackMaxScaleXDistance.toPx(), width), progress) / width
-    }
-}
-
-internal fun GraphicsLayerScope.calculateSheetPredictiveBackScaleY(progress: Float): Float {
-    val height = size.height
-    return if (height.isNaN() || height == 0f) {
-        1f
-    } else {
-        1f - lerp(0f, min(PredictiveBackMaxScaleYDistance.toPx(), height), progress) / height
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-internal fun Modifier.sheetPredictiveBackScaling(
-    sheetState: SheetState,
-    predictiveBackProgress: Float,
-) = graphicsLayer {
-    val sheetOffset = sheetState.anchoredDraggableState.offset
-    val sheetHeight = size.height
-    if (!sheetOffset.isNaN() && !sheetHeight.isNaN() && sheetHeight != 0f) {
-        scaleX = calculateSheetPredictiveBackScaleX(predictiveBackProgress)
-        scaleY = calculateSheetPredictiveBackScaleY(predictiveBackProgress)
-        transformOrigin = TransformOrigin(0.5f, (sheetOffset + sheetHeight) / sheetHeight)
-    }
-}
-
-internal fun Modifier.contentPredictiveBackScaling(predictiveBackProgress: Float) = graphicsLayer {
-    val predictiveBackScaleX = calculateSheetPredictiveBackScaleX(predictiveBackProgress)
-    val predictiveBackScaleY = calculateSheetPredictiveBackScaleY(predictiveBackProgress)
-    scaleY = if (predictiveBackScaleY != 0f) predictiveBackScaleX / predictiveBackScaleY else 1f
-    transformOrigin = PredictiveBackChildTransformOrigin
 }
 
 /**
@@ -1043,6 +762,3 @@ internal val BottomSheetAnimationSpec: AnimationSpec<Float> =
     tween(durationMillis = 300, easing = FastOutSlowInEasing)
 
 private val DragHandleVerticalPadding = 22.dp
-private val PredictiveBackMaxScaleXDistance = 48.dp
-private val PredictiveBackMaxScaleYDistance = 24.dp
-internal val PredictiveBackChildTransformOrigin = TransformOrigin(0.5f, 0f)

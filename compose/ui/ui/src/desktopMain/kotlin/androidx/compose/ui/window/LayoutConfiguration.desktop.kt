@@ -43,7 +43,7 @@ internal val GlobalDensity get() = GraphicsEnvironment.getLocalGraphicsEnvironme
 internal val Component.density: Density get() = graphicsConfiguration.density
 
 internal val Component.sizeInPx: Size
-    get() = size.asDpSize().toSize(density)
+    get() = size.toDpSize().toSize(density)
 
 private val GraphicsConfiguration.density: Density get() = Density(
     defaultTransform.scaleX.toFloat(),
@@ -78,6 +78,6 @@ internal fun layoutDirectionFor(component: Component): LayoutDirection {
         orientation.layoutDirection
     } else {
         // To preserve backwards compatibility we fall back to the locale
-        return component.locale.layoutDirection
+        component.locale.layoutDirection
     }
 }

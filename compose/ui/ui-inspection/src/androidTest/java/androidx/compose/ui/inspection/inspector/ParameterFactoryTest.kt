@@ -714,6 +714,7 @@ class ParameterFactoryTest {
                     parameter("blendMode", ParameterType.String, "SrcOver", index = 17)
                     // Null values aren't added to the list of properties
                     // parameter("colorFilter", ParameterType.String, "null", index = 18)
+                    parameter("outsets", ParameterType.String, "Zero", index = 19)
                 }
             }
         }
@@ -964,6 +965,12 @@ class ParameterFactoryTest {
     fun testVectorAssert() {
         assertThat(lookup(Icons.Filled.Call)).isEqualTo(ParameterType.String to "Filled.Call")
         assertThat(lookup(Icons.Rounded.Add)).isEqualTo(ParameterType.String to "Rounded.Add")
+    }
+
+    @Test
+    fun testPrimitiveConstantNamesAreSkipped() {
+        create("parameter", ParameterFactoryTest())
+        assertThat(lookup(PARAM_INDEX)).isEqualTo(ParameterType.Int32 to 4)
     }
 
     private fun create(

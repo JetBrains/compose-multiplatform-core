@@ -40,10 +40,11 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.toOffset
+import androidx.compose.ui.util.fastAll
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastJoinToString
 import androidx.compose.ui.util.fastRoundToInt
-import androidx.compose.ui.window.asDpOffset
+import androidx.compose.ui.window.toDpOffset
 import java.awt.Color
 import java.awt.Cursor
 import java.awt.Dimension
@@ -232,7 +233,7 @@ internal class ComposeAccessible(
         }
 
         private fun Point.toComposeOffset() =
-            asDpOffset().toOffset(density)
+            toDpOffset().toOffset(density)
 
         private fun Dp.toAwtPx() =
             if (value.isInfinite()) Constraints.Infinity else value.fastRoundToInt()
@@ -975,7 +976,7 @@ private fun SemanticsNode.traversalOrderedChildren(
     // from `unmergedConfig`.
     // `config` is currently very slow (b/184376083) and wrong (b/384549982)?
 
-    val allIndicesAreNull = children.all {
+    val allIndicesAreNull = children.fastAll {
         it.unmergedConfig.getOrNull(SemanticsProperties.TraversalIndex) == null
     }
     if (allIndicesAreNull) return children  // Common case
