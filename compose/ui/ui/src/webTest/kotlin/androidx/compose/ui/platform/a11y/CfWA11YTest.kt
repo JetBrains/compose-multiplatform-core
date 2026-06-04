@@ -307,7 +307,6 @@ class CfWA11YTest : OnCanvasTests {
 
         var debounceCounter = 0
         val startTime = currentTimeMillis()
-        var maxFrameAwaitTime = 0L
 
         while(changesAppliedTime == 0L) {
             if (currentTimeMillis() - startTime > 2000) {
@@ -315,31 +314,20 @@ class CfWA11YTest : OnCanvasTests {
             }
             // Change the state every frame. Such changes must be "debounced", (time delta is less than 100ms)
             value += 1
-            measureTime {
-                awaitAnimationFrame()
-            }.let {
-                maxFrameAwaitTime = maxOf(maxFrameAwaitTime, it.inWholeMilliseconds)
-            }
+            awaitAnimationFrame()
 
             if (changesAppliedTime == 0L) {
                 debounceCounter++
             }
         }
 
-        println("maxFrameAwaitTime: $maxFrameAwaitTime")
-
         // To avoid flakiness, we make just a sanity check. The expected value is ~18
         assertTrue(debounceCounter > 1)
 
-        if (maxFrameAwaitTime < 16 * 5) {
-            // Adding a tolerance of 200ms, just to avoid flakiness
-            assertTrue(
-                changesAppliedTime - startTime in (1000..1200),
-                "Changes must be applied after 1 second, waited for ${changesAppliedTime - startTime} ms"
-            )
-        } else {
-            println("Due to maxFrameAwaitTime=$maxFrameAwaitTime, skipping the assert for (changesAppliedTime - startTime) = ${changesAppliedTime - startTime} to be in 1000..1200 range")
-        }
+        assertTrue(
+            changesAppliedTime - startTime in (1000..1200),
+            "Changes must be applied after 1 second, waited for ${changesAppliedTime - startTime} ms"
+        )
     }
 
     @Test

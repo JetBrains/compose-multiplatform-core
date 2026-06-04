@@ -247,7 +247,7 @@ internal class WebApplicationScope(
                 window.requestAnimationFrame { continuation.resumeWith(Result.success(Unit)) }
             }
         }.also {
-            println("raf took ${it.inWholeMilliseconds}ms")
+            println("raf took ${it.inWholeMilliseconds}ms\n")
         }
     }
 
