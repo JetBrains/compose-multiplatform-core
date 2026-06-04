@@ -399,7 +399,7 @@ private fun rememberDialogMeasurePolicy(
 ): MeasurePolicy {
     val platformInsets = properties.platformInsets
     return remember(layer, properties, containerSize, platformInsets) {
-        RootMeasurePolicy(
+        SceneLayerMeasurePolicy(
             platformInsets = platformInsets,
             usePlatformDefaultWidth = properties.usePlatformDefaultWidth
         ) { contentSize ->

@@ -553,7 +553,7 @@ private fun rememberPopupMeasurePolicy(
     layoutDirection,
     parentBoundsInWindow
 ) {
-    RootMeasurePolicy(
+    SceneLayerMeasurePolicy(
         platformInsets = platformInsets,
         usePlatformDefaultWidth = properties.usePlatformDefaultWidth
     ) { contentSize ->
