@@ -30,7 +30,6 @@ import androidx.compose.ui.awt.RenderSettings.SkiaSurface
 import androidx.compose.ui.awt.RenderSettings.SwingGraphics
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.isClearFocusOnMouseDownEnabled
-import androidx.compose.ui.node.InternalCoreApi
 import androidx.compose.ui.scene.ComposeContainer
 import androidx.compose.ui.semantics.SemanticsOwner
 import androidx.compose.ui.unit.ExperimentalUnitApi
@@ -362,7 +361,6 @@ class ComposePanel @ExperimentalComposeUiApi constructor(
             _composeContainer = it
             windowParent = SwingUtilities.getWindowAncestor(this)
             it.redispatchUnconsumedMouseWheelEvents = redispatchUnconsumedMouseWheelEvents
-            @OptIn(InternalCoreApi::class)
             it.showLayoutBounds = showLayoutBounds
             val composeContent = _composeContent
             if (composeContent != null) {
@@ -519,7 +517,6 @@ class ComposePanel @ExperimentalComposeUiApi constructor(
             // We're assuming we own the scene and thus this value, and nobody
             // else will change it from under us, so we never get out of sync.
             field = value
-            @OptIn(InternalCoreApi::class)
             _composeContainer?.showLayoutBounds = value
         }
 }
