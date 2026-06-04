@@ -286,7 +286,7 @@ internal class KeepScreenOnModifierTest {
     }
 
     @Test
-    fun testWhenModifierIsOnlyInsideDialog() = runUIKitInstrumentedTest {
+    fun testKeepScreenOnInDialog() = runUIKitInstrumentedTest {
         cleanupMemory()
 
         var showDialog by mutableStateOf(false)
