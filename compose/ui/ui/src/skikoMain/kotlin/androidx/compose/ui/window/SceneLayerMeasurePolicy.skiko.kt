@@ -74,7 +74,8 @@ private fun Density.applyPlatformConstraints(
     }
 }
 
-internal fun positionWithInsets(
+@Suppress("UnusedReceiverParameter")
+internal fun MeasureScope.positionWithInsets(
     insets: PlatformInsets,
     size: IntSize,
     calculatePosition: (sizeWithoutInsets: IntSize) -> IntOffset,
