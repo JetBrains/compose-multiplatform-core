@@ -34,14 +34,12 @@ import androidx.compose.ui.currentTimeMillis
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.testTag
-import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
-import kotlin.time.measureTime
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -324,6 +322,7 @@ class CfWA11YTest : OnCanvasTests {
         // To avoid flakiness, we make just a sanity check. The expected value is ~18
         assertTrue(debounceCounter > 1)
 
+        // Adding a tolerance of 200ms, just to avoid flakiness
         assertTrue(
             changesAppliedTime - startTime in (1000..1200),
             "Changes must be applied after 1 second, waited for ${changesAppliedTime - startTime} ms"

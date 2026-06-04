@@ -248,6 +248,7 @@ internal class WebApplicationScope(
             }
         }.also {
             if (it.inWholeMilliseconds > 60) {
+                // Longer raf could cause tests flakiness, so let's print it for diagnostics
                 println("raf took ${it.inWholeMilliseconds}ms\n")
             }
         }
