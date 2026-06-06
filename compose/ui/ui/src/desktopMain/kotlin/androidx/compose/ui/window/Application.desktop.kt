@@ -197,8 +197,7 @@ suspend fun awaitApplication(
     }
     withContext(MainUIDispatcher) {
         withContext(YieldFrameClock) {
-            GlobalSnapshotManager.ensureStarted()
-
+            val globalSnapshotRegistration = GlobalSnapshotManager.ensureStarted(MainUIDispatcher)
             val recomposer = Recomposer(coroutineContext)
             var isOpen by mutableStateOf(true)
 
@@ -230,6 +229,7 @@ suspend fun awaitApplication(
                     }
                     recomposer.close()
                     recomposer.join()
+                    globalSnapshotRegistration?.close()
                 } finally {
                     composition.dispose()
                 }
