@@ -205,6 +205,7 @@ internal class RootNodeOwner(
      * Measures the Owner's content with given [constraints] and returns the resulting size.
      */
     fun measureContentWithConstraints(constraints: Constraints): IntSize {
+        check(!isDisposed) { "RootNodeOwner is already disposed" }
         return measuringRootWithConstraints(constraints) {
             val outerCoordinator = it.outerCoordinator
             IntSize(outerCoordinator.measuredWidth, outerCoordinator.measuredHeight)
@@ -219,6 +220,7 @@ internal class RootNodeOwner(
         constraints: Constraints,
         block: (LayoutNode) -> T
     ): T {
+        check(!isDisposed) { "RootNodeOwner is already disposed" }
         return try {
             // TODO: is it possible to measure without reassigning root constraints?
             measureAndLayoutDelegate.updateRootConstraints(constraints)
@@ -230,6 +232,7 @@ internal class RootNodeOwner(
     }
 
     fun measureAndLayout() {
+        check(!isDisposed) { "RootNodeOwner is already disposed" }
         owner.measureAndLayout(sendPointerUpdate = true)
         updatePositionCacheAndDispatch()
     }
@@ -278,17 +281,22 @@ internal class RootNodeOwner(
     }
 
     fun invalidatePositionInWindow() {
+        check(!isDisposed) { "RootNodeOwner is already disposed" }
         updatePositionCacheAndDispatch()
     }
 
     fun invalidatePositionOnScreen() {
+        check(!isDisposed) { "RootNodeOwner is already disposed" }
         updatePositionCacheAndDispatch()
     }
 
-    fun draw(canvas: Canvas) = trace("RootNodeOwner:draw") {
-        ownedLayerManager.draw(canvas)
-        clearInvalidObservations()
-        owner.rectManager.dispatchCallbacks()
+    fun draw(canvas: Canvas) {
+        check(!isDisposed) { "RootNodeOwner is already disposed" }
+        trace("RootNodeOwner:draw") {
+            ownedLayerManager.draw(canvas)
+            clearInvalidObservations()
+            owner.rectManager.dispatchCallbacks()
+        }
     }
 
     fun setRootModifier(modifier: Modifier) {
