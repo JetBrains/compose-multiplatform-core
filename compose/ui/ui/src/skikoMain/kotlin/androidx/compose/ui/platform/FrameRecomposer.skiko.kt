@@ -40,15 +40,14 @@ import kotlinx.coroutines.withContext
  * (`AndroidComposeView` + the host recomposer + `Choreographer`).
  *
  * Two work queues mirror `AndroidUiDispatcher`'s two queues:
- * - [effectDispatcher] (Android's `toRunTrampolined`): coroutine dispatch, composition effects
+ * - [trampolineDispatcher] (Android's `toRunTrampolined`): coroutine dispatch, composition effects
  *   (`LaunchedEffect`, `rememberCoroutineScope` launches) and the recomposer's effect context;
- * - [recomposeDispatcher] (Android's `toRunOnFrame`), together with [frameClock]: `withFrameNanos`
- *   awaiters and recomposition (the recomposition loop runs on `recomposeDispatcher + frameClock`).
+ * - [frameDispatcher] (Android's `toRunOnFrame`), together with [frameClock]: `withFrameNanos`
+ *   awaiters and recomposition (the recomposition loop runs on `frameDispatcher + frameClock`).
  *
- * Both are [FlushCoroutineDispatcher]s layered over the host's real dispatcher, so on a host with a
- * live native loop they drain automatically (like Android's `Handler.post`); [performFrame] and the
- * scene phases also drain them explicitly via [performScheduledEffects] /
- * [performScheduledRecomposerTasks].
+ * Both are [FlushCoroutineDispatcher]s layered over the host's real dispatcher, so on a host with
+ * a live native loop they drain automatically; [performFrame] and the scene phases also roll them
+ * synchronously via [performTrampolineDispatch] / [performFrameDispatch].
  *
  * Android drives frames through `Choreographer.doFrame`; non-Android platforms have no such hook,
  * so the host calls [performFrame] explicitly before driving scene measure/layout and draw.
@@ -64,11 +63,20 @@ class FrameRecomposer(
     private val job = Job()
     private val coroutineScope = CoroutineScope(coroutineContext + job)
 
-    /** Trampoline queue: coroutine dispatch / composition effects / scheduled apply notifications. */
-    private val effectDispatcher = FlushCoroutineDispatcher(coroutineScope)
+    /**
+     * Trampoline queue (Android's `toRunTrampolined`):
+     *   - Coroutine dispatch
+     *   - Composition effects
+     *   - Scheduled apply notifications
+     * Rolled synchronously by [performTrampolineDispatch].
+     */
+    private val trampolineDispatcher = FlushCoroutineDispatcher(coroutineScope)
 
-    /** Frame queue: `withFrameNanos` awaiters and recomposition tasks. */
-    private val recomposeDispatcher = FlushCoroutineDispatcher(coroutineScope)
+    /**
+     * Frame queue (Android's `toRunOnFrame`): `withFrameNanos` awaiters and recomposition tasks.
+     * Rolled synchronously by [performFrameDispatch].
+     */
+    private val frameDispatcher = FlushCoroutineDispatcher(coroutineScope)
 
     /**
      * The clock that drives the recomposition loop.
@@ -76,7 +84,7 @@ class FrameRecomposer(
      */
     private val frameClock = BroadcastFrameClock(::onNewAwaiters)
 
-    private val recomposer = Recomposer(coroutineContext + job + effectDispatcher)
+    private val recomposer = Recomposer(coroutineContext + job + trampolineDispatcher)
 
     /**
      * Id of the host (compose) thread. Snapshot-observer callbacks run inline when on this thread,
@@ -99,7 +107,7 @@ class FrameRecomposer(
             "FrameRecomposer requires a ContinuationInterceptor in its coroutineContext"
         }
         coroutineScope.launch(
-            recomposeDispatcher + frameClock,
+            frameDispatcher + frameClock,
             start = CoroutineStart.UNDISPATCHED
         ) {
             recomposer.runRecomposeAndApplyChanges()
@@ -135,23 +143,8 @@ class FrameRecomposer(
      * running [androidx.compose.ui.scene.ComposeScene] measure/layout and draw phases.
      */
     fun performFrame(frameTimeNanos: Long) {
-        // It's usually handled by [GlobalSnapshotManager], but currently there are a few places
-        // that require synchronous execution, so this guard is for compatibility.
-        Snapshot.sendApplyNotifications()
-
-        recomposeFrame(frameTimeNanos)
-    }
-
-    /**
-     * Advances only the host recomposer and frame clock by one frame at [frameTimeNanos].
-     */
-    private fun recomposeFrame(frameTimeNanos: Long) {
         postponeFrameInvalidation {
-            // Flush composition effects (e.g. LaunchedEffect, coroutines launched in
-            // rememberCoroutineScope()) queued by the previous turn must run before
-            // recomposition tasks and frame-clock awaiters.
-            performScheduledEffects()
-            performScheduledRecomposerTasks()
+            performFrameDispatch()
 
             frameClock.sendFrame(frameTimeNanos)
         }
@@ -165,8 +158,8 @@ class FrameRecomposer(
      */
     fun hasPendingWork(): Boolean =
         recomposer.hasPendingWork ||
-            effectDispatcher.hasImmediateTasks() ||
-            recomposeDispatcher.hasImmediateTasks() ||
+            trampolineDispatcher.hasImmediateTasks() ||
+            frameDispatcher.hasImmediateTasks() ||
             frameClock.hasAwaiters
 
     /**
@@ -199,30 +192,33 @@ class FrameRecomposer(
 
     /**
      * Enqueues [block] onto the trampoline queue; it runs on the next loop turn or the next
-     * [performScheduledEffects].
+     * [performTrampolineDispatch].
      */
     internal fun dispatch(block: () -> Unit) {
-        effectDispatcher.dispatch(job, Runnable(block))
+        trampolineDispatcher.dispatch(job, Runnable(block))
     }
 
     /**
-     * Runs the frame queue (pending `withFrameNanos`/recompose tasks) and records the compose thread:
-     * this is where the recomposer (`runRecomposeAndApplyChanges`) executes on the host thread, so it
-     * is the single place [composeThreadId] is set. Driven by [performFrame] each frame, and by
-     * `BaseComposeScene.setContent` so the compose thread is established before the first frame.
+     * Synchronously rolls the frame loop: drains the [frameDispatcher] queue (pending
+     * `withFrameNanos` / recompose tasks) after first rolling the trampoline loop via
+     * [performTrampolineDispatch].
      */
-    internal fun performScheduledRecomposerTasks(): Unit =
-        trace("FrameRecomposer:performScheduledRecomposerTasks") {
+    internal fun performFrameDispatch(): Unit =
+        trace("FrameRecomposer:performFrameDispatch") {
             composeThreadId = getCurrentThreadId()
-            recomposeDispatcher.flush()
+            performTrampolineDispatch()
+            frameDispatcher.flush()
         }
 
     /**
-     * Runs the trampoline queue (coroutine dispatch / composition effects / scheduled apply
-     * notifications).
+     * Synchronously rolls the trampoline loop: first flushes pending snapshot apply notifications
+     * (so writes made since the last turn are visible to the queued work), then drains the
+     * [trampolineDispatcher] queue (coroutine dispatch / composition effects).
      */
-    internal fun performScheduledEffects(): Unit =
-        trace("FrameRecomposer:performScheduledEffects") {
-            effectDispatcher.flush()
+    internal fun performTrampolineDispatch(): Unit =
+        trace("FrameRecomposer:performTrampolineDispatch") {
+            Snapshot.sendApplyNotifications()
+
+            trampolineDispatcher.flush()
         }
 }

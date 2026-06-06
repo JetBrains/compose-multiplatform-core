@@ -74,19 +74,8 @@ internal abstract class BaseComposeScene(
             if (isInvalidationDisabled) return block()
             isInvalidationDisabled = true
             return try {
-                // Keep the same scene-boundary snapshot behavior the previous combined render path had
-                // via SnapshotInvalidationTracker.sendAndPerformSnapshotChanges(): first send global
-                // apply notifications, then run only this scene's queued owner-observer callbacks.
-                // This makes snapshot reads that affect layout/draw visible before the phase starts,
-                // but keeps the tracker scene-local;
-                Snapshot.sendApplyNotifications()
-
                 block()
             } finally {
-                // This is the previous wrapper's trailing checkpoint written out explicitly.
-                // It lets state writes produced during the phase enqueue layout/draw invalidations
-                // before the native platform decides whether another layout or draw pass is needed.
-                Snapshot.sendApplyNotifications()
                 isInvalidationDisabled = false
             }.also {
                 invokeInvalidationCallbacks()
@@ -132,7 +121,7 @@ internal abstract class BaseComposeScene(
              * changed parameters can be applied in a separate turn and trigger double
              * recomposition when new content is installed.
              */
-            frameRecomposer.performScheduledRecomposerTasks()
+            frameRecomposer.performFrameDispatch()
             composition?.dispose()
             composition = createComposition(
                 parentCompositionContext = parentCompositionContext ?: frameRecomposer.compositionContext,
@@ -145,7 +134,7 @@ internal abstract class BaseComposeScene(
                     content = content
                 )
             }
-            frameRecomposer.performScheduledRecomposerTasks()
+            frameRecomposer.performFrameDispatch()
         }
 
     override fun measureAndLayout() {
@@ -167,10 +156,23 @@ internal abstract class BaseComposeScene(
         if (isClosed) return
 
         postponeInvalidation("BaseComposeScene:draw") {
+            // FIXME: Remove applying the global snapshot here.
+            //  Android never applies the snapshot *between* the layout and draw phases
+            //  (applies happen once per frame on the main looper, not between phases).
+            //  This between-phase apply is a temporary workaround kept only to preserve current
+            //  behavior for OffsetToFocusedRect (iOS FocusableAboveKeyboard).
+            Snapshot.sendApplyNotifications()
+
             // AndroidComposeView.dispatchDraw() begins with measureAndLayout() so layout changes
             // discovered after the host layout traversal are still settled before drawing. Keep
             // that trailing layout pass here even though measureAndLayout() is also a public phase.
             doMeasureAndLayout()
+
+            // Advance the global snapshot before drawing so writes made since the last pass
+            // including state objects created during a prior draw are recorded as modified and
+            // visible to this draw. Lighter than sendApplyNotifications, matches what Android does.
+            Snapshot.notifyObjectsInitialized()
+
             doDraw(canvas)
         }
     }
@@ -203,7 +205,7 @@ internal abstract class BaseComposeScene(
             scaleGestureFactor = scaleGestureFactor,
             panGestureOffset = panGestureOffset,
         ).also {
-            frameRecomposer.performScheduledEffects()
+            frameRecomposer.performTrampolineDispatch()
         }
     }
 
@@ -234,7 +236,7 @@ internal abstract class BaseComposeScene(
             scaleGestureFactor = scaleGestureFactor,
             panGestureOffset = panGestureOffset,
         ).also {
-            frameRecomposer.performScheduledEffects()
+            frameRecomposer.performTrampolineDispatch()
         }
     }
 
@@ -245,7 +247,7 @@ internal abstract class BaseComposeScene(
     override fun sendKeyEvent(keyEvent: KeyEvent): Boolean =
         postponeInvalidation("BaseComposeScene:sendKeyEvent") {
             inputHandler.onKeyEvent(keyEvent).also {
-                frameRecomposer.performScheduledEffects()
+                frameRecomposer.performTrampolineDispatch()
             }
         }
 
@@ -260,7 +262,7 @@ internal abstract class BaseComposeScene(
             uptimeMillis = timeMillis
         )
         processRotaryScrollEvent(event).also {
-            frameRecomposer.performScheduledEffects()
+            frameRecomposer.performTrampolineDispatch()
         }
     }
 
