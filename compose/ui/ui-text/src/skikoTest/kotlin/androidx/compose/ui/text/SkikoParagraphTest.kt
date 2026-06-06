@@ -385,22 +385,26 @@ class SkikoParagraphTest {
     }
 
     @Test
-    fun getOffsetForPosition_insideComplexCharacter_shouldJumpToEnd() {
+    fun getOffsetForPosition_midpointOfComplexCharacter_snapsToClusterStart() {
         val text = "abc\u0915\u094D abc" // "abcक् abc"
         val paragraph = simpleParagraph(text)
 
-        val complexCharStart = 3 // Index of 'क'
+        val complexCharStart = 3 // Index of 'क'; the cluster "क्" spans indices 3..4
         val complexCharBox = paragraph.getBoundingBox(complexCharStart)
 
-        // Try to position the caret inside the complex character
+        // Click exactly in the middle of the complex character's box.
         val insideOffset =
             Offset(complexCharBox.left + complexCharBox.width / 2, complexCharBox.center.y)
         val position = paragraph.getOffsetForPosition(insideOffset)
 
+        // A midpoint click is a tie between the two valid caret positions (before the
+        // cluster = 3, after it = 5). Matching Android's Layout.getOffsetForHorizontal,
+        // the exact-midpoint tie resolves to the before-char side, i.e. the cluster start.
+        // The caret must never land on the internal code-unit index (4).
         assertEquals(
-            5, // after 'क्'
+            3, // start of "क्" (before-char), Android-compatible midpoint tie-break
             position,
-            message = "The position should be at the end of the complex character, not inside it"
+            message = "A midpoint click on a complex cluster should snap to the cluster start (before-char)"
         )
     }
 
