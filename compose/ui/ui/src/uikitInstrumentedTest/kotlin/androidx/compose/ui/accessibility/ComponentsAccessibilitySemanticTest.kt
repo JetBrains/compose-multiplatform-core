@@ -1358,6 +1358,39 @@ class ComponentsAccessibilitySemanticTest {
     }
 
     @Test
+    fun testSemanticsWithoutMergingInsideFocusableNodes() = runUIKitInstrumentedTest {
+        setContent {
+            Column(
+                modifier = Modifier
+                    .testTag("ContentBox")
+                    .focusable()
+            ) {
+                Box {
+                    Text("Text 1")
+                }
+                Text("Text 2")
+            }
+        }
+
+        assertAccessibilityTree {
+            node {
+                isAccessibilityElement = false
+                identifier = "ContentBox"
+            }
+            node {
+                isAccessibilityElement = true
+                label = "Text 1"
+                traits(UIAccessibilityTraitStaticText)
+            }
+            node {
+                isAccessibilityElement = true
+                label = "Text 2"
+                traits(UIAccessibilityTraitStaticText)
+            }
+        }
+    }
+
+    @Test
     fun testSemanticsMergingWithProgressIndicators() = runUIKitInstrumentedTest {
         setContent {
             Column(modifier = Modifier.semantics(mergeDescendants = true) {}) {
