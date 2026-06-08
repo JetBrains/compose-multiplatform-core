@@ -323,6 +323,10 @@ internal class InputStateTracker(
         }
     }
 
+    fun clearPointerButtons() {
+        pointerButtons = PointerButtons()
+    }
+    
     private fun Density.updatePointerPosition(
         positionInWindow: DpOffset,
         pointerEventType: PointerEventType,
