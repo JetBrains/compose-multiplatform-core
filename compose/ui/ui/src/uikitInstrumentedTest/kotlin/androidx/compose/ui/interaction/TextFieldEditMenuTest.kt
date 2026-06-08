@@ -304,6 +304,22 @@ class TextFieldEditMenuTest {
     }
 
     @Test
+    fun testOldContextMenuEditableCollapsedClipboardEmpty() = runContextMenuTest(false) {
+        verifyEditableCollapsedClipboardEmptyContextMenu(
+            visibleActions = listOf("Select", "Select All"),
+            hiddenActions = listOf("Cut", "Copy", "Paste")
+        )
+    }
+
+    @Test
+    fun testNewContextMenuEditableCollapsedClipboardEmpty() = runContextMenuTest(true) {
+        verifyEditableCollapsedClipboardEmptyContextMenu(
+            visibleActions = listOf("Select All"),
+            hiddenActions = listOf("Cut", "Copy", "Paste", "Select")
+        )
+    }
+
+    @Test
     fun testTapsCountingWithMultiTouch() = runUIKitInstrumentedTest {
         var touchesDown = 0
         var touchesUp = 0
@@ -587,7 +603,30 @@ class TextFieldEditMenuTest {
         visibleActions: List<String>,
         hiddenActions: List<String>,
     ) {
-        UIPasteboard.generalPasteboard().string = "Paste text"
+        verifyEditableCollapsedContextMenu(
+            clipboardText = "Paste text",
+            visibleActions = visibleActions,
+            hiddenActions = hiddenActions
+        )
+    }
+
+    private fun UIKitInstrumentedTest.verifyEditableCollapsedClipboardEmptyContextMenu(
+        visibleActions: List<String>,
+        hiddenActions: List<String>,
+    ) {
+        verifyEditableCollapsedContextMenu(
+            clipboardText = null,
+            visibleActions = visibleActions,
+            hiddenActions = hiddenActions
+        )
+    }
+
+    private fun UIKitInstrumentedTest.verifyEditableCollapsedContextMenu(
+        clipboardText: String?,
+        visibleActions: List<String>,
+        hiddenActions: List<String>,
+    ) {
+        UIPasteboard.generalPasteboard().string = clipboardText
         val textFieldValue = mutableStateOf(TextFieldValue("Text", TextRange(4,4)))
         setContent {
             val focusRequester = remember { FocusRequester() }
