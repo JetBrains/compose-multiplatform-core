@@ -52,7 +52,7 @@ jobs:
         if: always()
 
   compose-ios-tests:
-    runs-on: macos-15-xlarge
+    runs-on: macos-26-xlarge
     name: Compose iOS Tests
     env:
       GRADLE_OPTS: -Xmx12g -Dorg.gradle.daemon=false
@@ -79,7 +79,7 @@ jobs:
         if: always()
 
   compose-ios-utils-tests:
-    runs-on: macos-15-xlarge
+    runs-on: macos-26-xlarge
     name: Compose iOS Utils Tests
     env:
       GRADLE_OPTS: -Xmx12g -Dorg.gradle.daemon=false
@@ -112,7 +112,7 @@ jobs:
           path: compose/ui/ui-uikit/src/iosMain/objc/CMPUIKitUtils/TestResults.xcresult
 
   compose-ios-instrumented-tests:
-    runs-on: macos-15-xlarge
+    runs-on: macos-26-xlarge
     strategy:
       fail-fast: false
       matrix:
@@ -135,9 +135,9 @@ jobs:
         shell: bash
         run: |
           DEVICE_NAME="${{ matrix.device }}"
-          DEVICE_VERSION="26.2"
+          DEVICE_VERSION="26.5"
 
-          DEVICE_DASH="${DEVICE_VERSION//./-}"   # e.g. 26.2 -> 26-2
+          DEVICE_DASH="${DEVICE_VERSION//./-}"   # e.g. 26.5 -> 26-5
           
           echo "Looking for device: '$DEVICE_NAME' ($DEVICE_VERSION)"
 
