@@ -63,6 +63,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.test.fail
 import kotlin.time.Duration.Companion.seconds
@@ -284,6 +285,22 @@ class TextFieldEditMenuTest {
         // A long press again brings the context menu back.
         longPressAndAwaitContextMenu("TextField")
         findNodeWithLabel("Paste").assertVisibleInContainer()
+    }
+
+    @Test
+    fun testOldContextMenuEditableCollapsedClipboardText() = runContextMenuTest(false) {
+        verifyEditableCollapsedClipboardTextContextMenu(
+            visibleActions = listOf("Paste", "Select", "Select All"),
+            hiddenActions = listOf("Cut", "Copy")
+        )
+    }
+
+    @Test
+    fun testNewContextMenuEditableCollapsedClipboardText() = runContextMenuTest(true) {
+        verifyEditableCollapsedClipboardTextContextMenu(
+            visibleActions = listOf("Paste", "Select All"),
+            hiddenActions = listOf("Cut", "Copy", "Select")
+        )
     }
 
     @Test
@@ -566,6 +583,34 @@ class TextFieldEditMenuTest {
         waitForContextMenu()
     }
 
+    private fun UIKitInstrumentedTest.verifyEditableCollapsedClipboardTextContextMenu(
+        visibleActions: List<String>,
+        hiddenActions: List<String>,
+    ) {
+        UIPasteboard.generalPasteboard().string = "Paste text"
+        val textFieldValue = mutableStateOf(TextFieldValue("Text", TextRange(4,4)))
+        setContent {
+            val focusRequester = remember { FocusRequester() }
+            Column(modifier = Modifier.safeDrawingPadding()) {
+                BasicTextField(
+                    value = textFieldValue.value,
+                    onValueChange = { textFieldValue.value = it },
+                    modifier = Modifier
+                        .testTag("TextField")
+                        .focusRequester(focusRequester)
+                )
+            }
+            LaunchedEffect(focusRequester) {
+                focusRequester.requestFocus()
+            }
+        }
+
+        longPressAndAwaitContextMenu("TextField")
+
+        verifyContextMenuItemsVisible(visibleActions)
+        verifyContextMenuItemsHidden(hiddenActions)
+    }
+
     @OptIn(ExperimentalFoundationApi::class)
     private fun runContextMenuTest(
         newContextMenuEnabled: Boolean,
@@ -587,6 +632,15 @@ class TextFieldEditMenuTest {
                 it.assertVisibleInContainer()
                 assertTrue(it.isAccessibilityElement ?: false)
             }
+        }
+    }
+
+    @OptIn(ExperimentalForeignApi::class) private fun UIKitInstrumentedTest.verifyContextMenuItemsHidden(labels: List<String>) {
+        labels.forEach { label ->
+            assertNull(
+                findNodeWithLabelOrNull(label),
+                "Context menu item \"$label\" should be hidden"
+            )
         }
     }
 
