@@ -27,7 +27,7 @@ import kotlin.test.Test
 
 class DeleteWordBackwardTests : TextFieldTestSpec, BasicTextFieldWithValue {
 
-    fun sendPhysicalDeleteWordBackward() {
+    private fun sendPhysicalDeleteWordBackward() {
         sendToHtmlInput(
             keyEvent(
                 key = "Backspace",
@@ -39,7 +39,7 @@ class DeleteWordBackwardTests : TextFieldTestSpec, BasicTextFieldWithValue {
         )
     }
 
-    fun sendVirtualDeleteWordBackward() {
+    private fun sendVirtualDeleteWordBackward() {
         sendToHtmlInput(
             keyEvent(
                 key = "Backspace",
@@ -48,6 +48,18 @@ class DeleteWordBackwardTests : TextFieldTestSpec, BasicTextFieldWithValue {
                 repeat = true,
             ),
             beforeInput("deleteWordBackward", null)
+        )
+    }
+
+    private fun sendVirtualFastDeleteAsContentBackward() {
+        sendToHtmlInput(
+            keyEvent(
+                key = "Backspace",
+                code = "Backspace",
+                type = "keydown",
+                repeat = true,
+            ),
+            beforeInput("deleteContentBackward", null)
         )
     }
 
@@ -189,6 +201,21 @@ class DeleteWordBackwardTests : TextFieldTestSpec, BasicTextFieldWithValue {
 
         sendPhysicalDeleteWordBackward()
         textFieldValue.awaitAndAssertTextEquals("천천히 ")
+    }
+
+    @Test
+    fun deletePrevWordVirtualMiddle_viaDeleteContentBackward_CMP_10086() = runApplicationTest {
+        val textFieldValue = createApplicationWithHolder(
+            "here   we     go again!!!",
+            initialSelection = TextRange(14, 14)
+        )
+        awaitAnimationFrame()
+
+        sendVirtualFastDeleteAsContentBackward()
+        textFieldValue.awaitAndAssertTextEquals(
+            "here  go again!!!",
+            "deleteContentBackward with repeating Backspace should behave as deleteWordBackward (CMP-10086)"
+        )
     }
 
 }
