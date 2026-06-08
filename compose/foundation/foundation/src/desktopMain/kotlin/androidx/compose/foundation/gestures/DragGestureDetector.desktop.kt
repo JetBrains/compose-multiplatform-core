@@ -16,18 +16,9 @@
 
 package androidx.compose.foundation.gestures
 
-import androidx.compose.ui.input.pointer.AwaitPointerEventScope
-import androidx.compose.ui.input.pointer.PointerId
-import androidx.compose.ui.input.pointer.PointerInputChange
+import androidx.compose.ui.desktop.Application
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
-
-internal actual suspend fun AwaitPointerEventScope.awaitDragOrCancellationImpl(
-    pointerId: PointerId
-): PointerInputChange? {
-    return defaultAwaitDragOrCancellationImpl(pointerId)
-}
 
 internal actual fun mouseSlop(): Dp {
-    return 0.125.dp
+    return Application.current.dragThreshold
 }
