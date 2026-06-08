@@ -211,6 +211,15 @@ interface PlatformContext {
     val isClearFocusOnMouseDownEnabled: Boolean
         get() = ComposeUiFlags.isClearFocusOnMouseDownEnabled
 
+    /**
+     * Schedules work that should be deferred out of the current
+     * composition/layout/rendering stack.
+     *
+     * @see PlatformOutOfFrameExecutor
+     * @see OutOfFrameExecutor
+     */
+    val outOfFrameExecutor: PlatformOutOfFrameExecutor? get() = null
+
     interface RootForTestListener {
         fun onRootForTestCreated(root: PlatformRootForTest)
         fun onRootForTestDisposed(root: PlatformRootForTest)
