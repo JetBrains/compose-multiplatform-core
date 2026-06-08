@@ -19,10 +19,9 @@ package androidx.compose.ui.draganddrop
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.desktop.ClipboardEntry
 import androidx.compose.ui.desktop.ClipboardFormat
-import androidx.compose.ui.desktop.MimeTransferClipboardEntry
-import androidx.compose.ui.desktop.linuxMimeTypes
+import androidx.compose.ui.desktop.LinuxDragAndDropClipboardEntry
 import androidx.compose.ui.desktop.macos.MacOsClipboardEntry
-import androidx.compose.ui.desktop.macos.toUniformTypeIdentifier
+import androidx.compose.ui.desktop.macos.MacOsDragAndDropClipboardEntry
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.platform.DesktopPlatform
@@ -30,7 +29,6 @@ import java.awt.datatransfer.Transferable
 import java.awt.dnd.DropTargetDragEvent
 import java.awt.dnd.DropTargetDropEvent
 import org.jetbrains.desktop.macos.DragInfo
-import org.jetbrains.desktop.macos.Pasteboard
 
 /**
  * Encapsulates the information needed to start a drag-and-drop session from Compose on the desktop.
@@ -214,21 +212,34 @@ val DragAndDropEvent.clipboardEntry: ClipboardEntry
         }
     }
 
-fun DragAndDropEvent.containsFormat(format: ClipboardFormat<*>): Boolean {
+
+fun DragAndDropEvent.containsFormat(format: ClipboardFormat<*>, actions: List<DragAndDropTransferAction>): Boolean {
     return when (DesktopPlatform.Current) {
         DesktopPlatform.MacOS -> {
-            val pasteboard = (nativeEvent as DragInfo).pasteboard
-            val target = format.toUniformTypeIdentifier()
-            val itemCount = Pasteboard.itemCount(pasteboard).toInt()
-            (0 until itemCount).any { target in Pasteboard.readItemTypes(it, pasteboard) }
+            (nativeEvent as MacOsDragAndDropClipboardEntry).containsFormat(format, actions)
         }
         DesktopPlatform.Linux -> {
-            val available = (nativeEvent as? MimeTransferClipboardEntry)?.availableMimeTypes().orEmpty()
-            format.linuxMimeTypes().any { it in available }
+//            (nativeEvent as LinuxDragAndDropClipboardEntry).containsFormat(format, actions)
+            throw UnsupportedOperationException("Drag and drop is not supported on Linux")
         }
         DesktopPlatform.Windows -> {
             throw UnsupportedOperationException("Drag and drop is not supported on Windows")
         }
         DesktopPlatform.Unknown -> false
+    }
+}
+
+fun DragAndDropEvent.acceptsFormat(format: ClipboardFormat<*>, actions: List<DragAndDropTransferAction>) {
+    when (DesktopPlatform.Current) {
+        DesktopPlatform.MacOS -> {
+            (nativeEvent as MacOsDragAndDropClipboardEntry).acceptsFormat(format, actions)
+        }
+        DesktopPlatform.Linux -> {
+            (nativeEvent as LinuxDragAndDropClipboardEntry).acceptsFormat(format, actions)
+        }
+        DesktopPlatform.Windows -> {
+            throw UnsupportedOperationException("Drag and drop is not supported on Windows")
+        }
+        DesktopPlatform.Unknown -> {}
     }
 }

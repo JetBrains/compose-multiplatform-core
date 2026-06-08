@@ -19,7 +19,9 @@ package androidx.compose.ui.desktop
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.json.Json
 
-expect fun clipboardEntry(vararg items: ClipboardItem): ClipboardEntry
+fun clipboardEntry(vararg items: ClipboardItem): ClipboardEntry =
+    ClipboardItemsEntry(items.toList())
+
 
 fun clipboardEntry(block: ClipboardEntryBuilderScope.() -> Unit): ClipboardEntry {
     val builder = ClipboardEntryBuilderImpl().apply(block)

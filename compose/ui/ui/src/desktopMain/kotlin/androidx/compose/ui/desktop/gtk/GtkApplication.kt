@@ -15,6 +15,7 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.SystemTheme
 import androidx.compose.ui.draganddrop.DragAndDropTransferAction
 import androidx.compose.ui.desktop.Application
+import androidx.compose.ui.desktop.ClipboardItemsEntry
 import androidx.compose.ui.desktop.DefaultDoubleClickDistance
 import androidx.compose.ui.desktop.DefaultDragThreshold
 import androidx.compose.ui.desktop.LightweightWindowId
@@ -22,6 +23,7 @@ import androidx.compose.ui.desktop.Scene
 import androidx.compose.ui.desktop.Window
 import androidx.compose.ui.desktop.WindowCloseRequestReason
 import androidx.compose.ui.desktop.deactivateApplication
+import androidx.compose.ui.desktop.getDataForLinuxMimeType
 import androidx.compose.ui.desktop.logging.logger
 import androidx.compose.ui.desktop.removeApplication
 import androidx.compose.ui.platform.ClipEntry
@@ -156,7 +158,7 @@ object GtkApplication : Application {
 
     internal data class ActiveDragSource(
         val windowId: LightweightWindowId,
-        val mimeData: Map<String, ByteArray>,
+        val itemsEntry: ClipboardItemsEntry,
         val supportedActions: Set<DragAndDropTransferAction>,
         val onTransferCompleted: (DragAndDropTransferAction?) -> Unit,
         val dragIconPngBytes: ByteArray?,
@@ -278,20 +280,25 @@ object GtkApplication : Application {
                     EventHandlerResult.Stop
                 }
 
-                is Event.DataTransferAvailable -> {
-                    val handledByClipboard = clipboard.onDataTransferAvailable(event)
-                    val handledByWindow = windows.values.any { it.onDataTransferAvailable(event) }
-                    if (handledByClipboard || handledByWindow) {
-                        EventHandlerResult.Stop
-                    } else {
-                        EventHandlerResult.Continue
+                is Event.DataTransferCancelled -> {
+                    when (event.dataSource) {
+                        DataSource.Clipboard -> clipboard.clearClipboardData()
+                        DataSource.PrimarySelection -> clipboard.clearPrimarySelectionData()
+                        DataSource.DragAndDrop -> {
+                            activeDragSource?.onTransferCompleted(null)
+                            activeDragSource = null
+                        }
                     }
+                    EventHandlerResult.Stop
+                }
+
+                is Event.DataTransferAvailable -> {
+                    clipboard.onDataTransferAvailable(event)
+                    EventHandlerResult.Stop
                 }
 
                 is Event.DataTransfer -> {
-                    val handledByClipboard = clipboard.onDataReceived(event)
-                    val handledByWindow = windows.values.any { it.onDataTransfer(event) }
-                    if (handledByClipboard || handledByWindow) {
+                    if (clipboard.onDataReceived(event)) {
                         EventHandlerResult.Stop
                     } else {
                         EventHandlerResult.Continue
@@ -413,10 +420,10 @@ object GtkApplication : Application {
     ): ByteArray? =
         when (dataSource) {
             DataSource.Clipboard -> clipboard.getMimeData(mimeType)
-            DataSource.DragAndDrop -> activeDragSource?.mimeData?.get(mimeType)
+            DataSource.DragAndDrop -> activeDragSource?.itemsEntry?.getDataForLinuxMimeType(mimeType)
             DataSource.PrimarySelection ->
                 if (middleClickPasteEnabled) {
-                    clipboard.getPrimarySelectionMimeData(mimeType)
+                    clipboard.getPrimarySelectionData(mimeType)
                 } else {
                     null
                 }

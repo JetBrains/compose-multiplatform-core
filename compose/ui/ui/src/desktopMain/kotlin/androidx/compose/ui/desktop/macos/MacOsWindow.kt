@@ -486,9 +486,9 @@ class MacOsWindow internal constructor(
             repaintSynchronously()
         }
         macOsDragAndDropManager = MacOsDragAndDropManager(
-            { composeScene.rootDragAndDropNode },
-            { density },
-            object : CallbackInterceptor {
+            rootDragAndDropNode = { composeScene.rootDragAndDropNode },
+            density = { density },
+            callbackInterceptor = object : CallbackInterceptor {
                 override fun <T> execute(f: () -> T): T {
                     return scene.withPreparedMainThread {
                         f()
@@ -818,7 +818,7 @@ class MacOsWindow internal constructor(
                                                 .timeMark
                                                 .elapsedNow()
                                             if (elapsedTime.inWholeMilliseconds > 10) {
-                                                logger.debug("Long frame: ${elapsedTime}")
+//                                                logger.debug("Long frame: ${elapsedTime}")
                                             }
                                         },
                                     )

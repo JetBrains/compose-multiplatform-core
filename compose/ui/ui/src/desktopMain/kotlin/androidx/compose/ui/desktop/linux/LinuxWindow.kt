@@ -20,14 +20,13 @@ import androidx.compose.ui.desktop.InteractiveResizeInitiator
 import androidx.compose.ui.desktop.KdtDragAndDropManager
 import androidx.compose.ui.desktop.KdtDragAndDropTransferable
 import androidx.compose.ui.desktop.LightweightWindowId
-import androidx.compose.ui.desktop.MimeTransferClipboardEntry
 import androidx.compose.ui.desktop.Scene
 import androidx.compose.ui.desktop.Window
 import androidx.compose.ui.desktop.WindowCloseRequestReason
 import androidx.compose.ui.desktop.WindowResizeHandle
 import androidx.compose.ui.desktop.WindowScope
 import androidx.compose.ui.desktop.draganddrop.DragAndDropImage
-import androidx.compose.ui.desktop.encodeClipboardItemsToMimeData
+import androidx.compose.ui.desktop.linuxMimeTypes
 import androidx.compose.ui.draganddrop.DragAndDropTransferAction
 import androidx.compose.ui.draganddrop.DragAndDropTransferData
 import androidx.compose.ui.geometry.Offset
@@ -82,6 +81,7 @@ import kotlin.math.roundToInt
 import kotlinx.coroutines.CancellableContinuation
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.io.files.Path
+import noria.CallbackInterceptor
 import org.jetbrains.desktop.linux.DataSource
 import org.jetbrains.desktop.linux.DesktopTitlebarAction
 import org.jetbrains.desktop.linux.DragAndDropAction
@@ -127,7 +127,7 @@ class LinuxWindow internal constructor(
                 windowId = nativeWindowId,
                 appId = application.identifier,
                 title = "",
-                size = LogicalSize(800U, 600U),
+                size = LogicalSize(800, 600),
                 preferClientSideDecoration = true,
                 renderingMode = RenderingMode.Auto,
             ),
@@ -147,14 +147,7 @@ class LinuxWindow internal constructor(
     private var titleField by mutableStateOf("")
     private var overriddenSystemTheme by mutableStateOf<SystemTheme?>(null)
     private var textInputAvailable by mutableStateOf(false)
-    private var windowCapabilities by mutableStateOf(
-        WindowCapabilities(
-            windowMenu = true,
-            maximize = true,
-            fullscreen = true,
-            minimize = true,
-        ),
-    )
+    private var windowCapabilities by mutableStateOf<WindowCapabilities?>(null)
 
     @Volatile
     private var currentTextInputSession: ComposeTextInputSession? = null
@@ -192,8 +185,8 @@ class LinuxWindow internal constructor(
             onNativeWindowAsync {
                 setMinSize(
                     LogicalSize(
-                        minSize.width.takeOrElse { this@LinuxWindow.minSize.width }.value.roundToInt().toUInt(),
-                        minSize.height.takeOrElse { this@LinuxWindow.minSize.height }.value.roundToInt().toUInt(),
+                        minSize.width.takeOrElse { this@LinuxWindow.minSize.width }.value.roundToInt(),
+                        minSize.height.takeOrElse { this@LinuxWindow.minSize.height }.value.roundToInt(),
                     ),
                 )
             }
@@ -209,8 +202,8 @@ class LinuxWindow internal constructor(
         onNativeWindowAsync {
             setMaxSize(
                 LogicalSize(
-                    maxSize.width.takeOrElse { this@LinuxWindow.maxSize.width }.value.roundToInt().toUInt(),
-                    maxSize.height.takeOrElse { this@LinuxWindow.maxSize.height }.value.roundToInt().toUInt(),
+                    maxSize.width.takeOrElse { this@LinuxWindow.maxSize.width }.value.roundToInt(),
+                    maxSize.height.takeOrElse { this@LinuxWindow.maxSize.height }.value.roundToInt(),
                 ),
             )
         }
@@ -338,10 +331,13 @@ class LinuxWindow internal constructor(
     internal val dragAndDropManager: LinuxDragAndDropManager = LinuxDragAndDropManager(
         rootDragAndDropNode = { composeScene.rootDragAndDropNode },
         density = { density },
-        currentDragClipboardEntry = {
-            MimeTransferClipboardEntry { incomingDragMimeData.toMap() }
-        },
-        currentMimeTypes = { incomingDragMimeTypes },
+        callbackInterceptor = object : CallbackInterceptor {
+            override fun <T> execute(f: () -> T): T {
+                return scene.withPreparedMainThread {
+                    f()
+                }
+            }
+        }
     )
 
     private var layoutDirection: LayoutDirection by mutableStateOf(LayoutDirection.Ltr)
@@ -769,10 +765,10 @@ class LinuxWindow internal constructor(
         decorationSize: Size,
         drawDragDecoration: DrawScope.() -> Unit,
     ) {
-        val clipEntry = (transferData.transferable as? KdtDragAndDropTransferable)
-            ?.clipboardEntry ?: return
+        val clipEntry =
+            (transferData.transferable as? KdtDragAndDropTransferable)?.clipboardEntry ?: return
         val itemsEntry = clipEntry.nativeClipEntry as? ClipboardItemsEntry ?: return
-        val mimeData = encodeClipboardItemsToMimeData(itemsEntry.items)
+        val mimeTypes = itemsEntry.linuxMimeTypes()
         val supportedActions = transferData.supportedActions.toSet()
         val dragImageBytes = DragAndDropImage(
             size = decorationSize,
@@ -783,16 +779,22 @@ class LinuxWindow internal constructor(
 
         application.activeDragSource = LinuxApplication.ActiveDragSource(
             windowId = id,
-            mimeData = mimeData,
+            itemsEntry = itemsEntry,
             supportedActions = supportedActions,
             onTransferCompleted = { action -> transferData.onTransferCompleted?.invoke(action) },
             dragIconPngBytes = dragImageBytes,
         )
         onNativeWindowAsync {
+            // Native DnD takes over the pointer here, so the press that started the
+            // drag will never get a matching release in this window. Clear the
+            // pressed buttons so the follow-up exit event reports `down = false` - otherwise
+            // the original press hit path keeps receiving pointer events
+            inputStateTracker.clearPointerButtons()
+
             startDragAndDrop(
                 StartDragAndDropParams(
-                    mimeTypes = mimeData.keys.toList(),
-                    actions = supportedActions.toLinuxActions(),
+                    mimeTypes = mimeTypes,
+                    actions = supportedActions.mapNotNull(DragAndDropTransferAction::toLinuxAction).toSet(),
                     dragIconParams = DragIconParams(
                         renderingMode = RenderingMode.Software,
                         size = decorationSize.toLogicalSize(density),
@@ -1010,7 +1012,7 @@ private fun WindowResizeHandle.toWindowResizeEdge(): WindowResizeEdge = when (th
 
 @OptIn(ExperimentalComposeUiApi::class)
 private fun Pair<List<WindowDecoration.TitleBarElement>, List<WindowDecoration.TitleBarElement>>.forCapabilities(
-    capabilities: WindowCapabilities,
+    capabilities: WindowCapabilities?,
 ): Pair<List<WindowDecoration.TitleBarElement>, List<WindowDecoration.TitleBarElement>> {
     var layoutLeft = first
     var layoutRight = second
@@ -1049,9 +1051,9 @@ private fun Pair<List<WindowDecoration.TitleBarElement>, List<WindowDecoration.T
 }
 
 @OptIn(ExperimentalComposeUiApi::class)
-private fun WindowDecoration.TitleBarElement.isAvailableIn(capabilities: WindowCapabilities): Boolean =
+private fun WindowDecoration.TitleBarElement.isAvailableIn(capabilities: WindowCapabilities?): Boolean =
     when (this) {
-        WindowDecoration.TitleBarElement.MinimizeButton -> capabilities.minimize
-        WindowDecoration.TitleBarElement.MaximizeButton -> capabilities.maximize
+        WindowDecoration.TitleBarElement.MinimizeButton -> capabilities?.minimize ?: true
+        WindowDecoration.TitleBarElement.MaximizeButton -> capabilities?.maximize ?: true
         else -> true
     }
