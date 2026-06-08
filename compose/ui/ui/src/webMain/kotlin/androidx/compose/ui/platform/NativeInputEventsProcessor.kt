@@ -22,6 +22,7 @@ import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.input.BackspaceCommand
 import androidx.compose.ui.text.input.CommitTextCommand
 import androidx.compose.ui.text.input.DeleteSurroundingTextCommand
+import androidx.compose.ui.text.input.EditCommand
 import androidx.compose.ui.text.input.OffsetMapping
 import androidx.compose.ui.text.input.SetComposingTextCommand
 import androidx.compose.ui.text.input.SetSelectionCommand
@@ -156,6 +157,21 @@ internal abstract class NativeInputEventsProcessor(
         collectedEvents.clear()
     }
 
+    private fun InputEventExt.createDeleteWordCommand(): EditCommand? {
+        val shouldTriggerDelete = when {
+            lastProcessedKeydown?.isBackspace() != true -> false
+            lastProcessedKeydown?.repeat == true -> true
+            else -> false
+        }
+
+        return if (shouldTriggerDelete) {
+            val layoutResult = composeSender.currentTextLayoutResult() ?: return null
+
+            val offset = layoutResult.getPrevWordOffset(textRangeEnd)
+            DeleteSurroundingTextCommand((textRangeEnd - offset).coerceAtLeast(0), 0)
+        } else null
+    }
+
     private fun InputEventExt.process(currentTextFieldValue: TextFieldValue) {
         val editCommands = when (inputType) {
             "deleteContentBackward" -> buildList {
@@ -168,40 +184,28 @@ internal abstract class NativeInputEventsProcessor(
                         // When Compose TextField has text selection, a good UX for deleteContentBackward would be to emulate Backspace.
                         add(BackspaceCommand())
                     }
-                } else { // Empty selection case.
-                    // This happens when an autocorrection is applied on mobile:
-                    // The system first tells us to delete the old text,
-                    // and then it would send the "insertText" event.
-                    if (textRangeSize > 0) {
-                        // deleteContentBackward can happen under very non-trivial circumstances:
-                        // - for instance, when an input suggestion on Android Chrome is accepted,
-                        // the browser then deletes space after the word just to add space again;
-                        // - or when a browser performs Fast Delete;
-                        add(SetSelectionCommand(textRangeStart, textRangeEnd))
+                } else {
+                    // We skip this branch if the lastProcessedKeydown is Backspace, because Compose must have already processed this.
+                    // Otherwise, under specific circumstance previous symbol can be deleted while inputting the new one
+                    // see https://youtrack.jetbrains.com/issue/CMP-8773
+                    if (lastProcessedKeydown?.isBackspace() != true) {
+                        // This happens when an autocorrection is applied on mobile:
+                        // The system first tells us to delete the old text,
+                        // and then it would send the "insertText" event.
+                        if (textRangeSize > 0) {
+                            add(SetSelectionCommand(textRangeStart, textRangeEnd))
+                        }
+
                         add(BackspaceCommand())
-                    } else if (textRangeSize == 0 && lastProcessedKeydown?.isBackspace() != true) {
-                        // We skip this branch if the lastProcessedKeydown is Backspace, because Compose must have already processed this.
-                        // Otherwise, under specific circumstance previous symbol can be deleted while inputting the new one
-                        // see https://youtrack.jetbrains.com/issue/CMP-8773
-                        add(BackspaceCommand())
+                    } else {
+                        createDeleteWordCommand()?.let { add(it) }
                     }
                 }
             }
 
             "deleteWordBackward" -> buildList {
-                if (lastProcessedKeydown?.isBackspace() != true) return@buildList
-
-                // This would mean event was triggered by long press on mobile device (iOS)
-                if (lastProcessedKeydown?.repeat == true) {
-                    val layoutResult = composeSender.currentTextLayoutResult() ?: return@buildList
-
-
-                    val offset = layoutResult.getPrevWordOffset(textRangeEnd)
-                    val deleteCommand = DeleteSurroundingTextCommand((textRangeEnd - offset).coerceAtLeast(0), 0)
-                    add(deleteCommand)
-                }
+                createDeleteWordCommand()?.let { add(it) }
             }
-
 
             "insertReplacementText" -> buildList {
                 if (data == null) return@buildList
