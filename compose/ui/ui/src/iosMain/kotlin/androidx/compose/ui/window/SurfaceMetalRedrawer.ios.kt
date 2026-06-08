@@ -16,6 +16,7 @@
 
 package androidx.compose.ui.window
 
+import androidx.collection.IntIntPair
 import androidx.compose.ui.FrameRateCategory
 import androidx.compose.ui.uikit.utils.CMPMetalLayer
 import androidx.compose.ui.uikit.utils.CMPDrawable
@@ -120,6 +121,7 @@ internal class SurfaceMetalRedrawer(
     private var lastRenderTimestamp: NSTimeInterval = CACurrentMediaTime()
     private val pictureRecorder = PictureRecorder()
     private val transactionQueue = InteropTransactionQueue()
+    override val outOfFrameExecutor = MetalOutOfFrameExecutor()
 
     private val inflightCommandBuffersGroup = dispatch_group_create()
     // A guard flag to have proper assertion when draw() method is called recursively.
@@ -267,6 +269,7 @@ internal class SurfaceMetalRedrawer(
 
     override fun dispose() {
         check(caDisplayLink != null) { "MetalRedrawer.dispose() was called more than once" }
+        outOfFrameExecutor.dispose()
 
         retrieveInteropTransaction = {
             object : UIKitInteropTransaction {
@@ -354,12 +357,13 @@ internal class SurfaceMetalRedrawer(
             }
 
             isDrawRecursiveCall = true
+            outOfFrameExecutor.onFrameStart()
 
             try {
                 lastRenderTimestamp = maxOf(targetTimestamp, lastRenderTimestamp)
 
                 val (width, height) = metalLayer.drawableSize.useContents {
-                    width.roundToInt() to height.roundToInt()
+                    IntIntPair(width.roundToInt(), height.roundToInt())
                 }
 
                 if (width <= 0 || height <= 0) {
@@ -407,6 +411,7 @@ internal class SurfaceMetalRedrawer(
                 }
             } finally {
                 isDrawRecursiveCall = false
+                outOfFrameExecutor.onFrameEnd()
             }
         }
 

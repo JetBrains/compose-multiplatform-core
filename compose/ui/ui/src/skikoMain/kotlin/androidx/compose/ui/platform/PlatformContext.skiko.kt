@@ -26,11 +26,13 @@ import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.hapticfeedback.HapticFeedback
 import androidx.compose.ui.input.InputMode
 import androidx.compose.ui.input.InputModeManager
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.isClearFocusOnMouseDownEnabled
 import androidx.compose.ui.node.LayoutNode
+import androidx.compose.ui.node.OutOfFrameExecutor
 import androidx.compose.ui.node.OwnedLayer
 import androidx.compose.ui.node.Owner
 import androidx.compose.ui.node.RootForTest
@@ -146,6 +148,7 @@ interface PlatformContext {
     }
 
     val textToolbar: TextToolbar get() = EmptyTextToolbar
+    val hapticFeedback: HapticFeedback get() = DefaultHapticFeedback
     fun setPointerIcon(pointerIcon: PointerIcon) = Unit
 
     val parentFocusManager: FocusManager get() = EmptyFocusManager
@@ -189,6 +192,15 @@ interface PlatformContext {
      */
     val isClearFocusOnMouseDownEnabled: Boolean
         get() = ComposeUiFlags.isClearFocusOnMouseDownEnabled
+
+    /**
+     * Schedules work that should be deferred out of the current
+     * composition/layout/rendering stack.
+     *
+     * @see PlatformOutOfFrameExecutor
+     * @see OutOfFrameExecutor
+     */
+    val outOfFrameExecutor: PlatformOutOfFrameExecutor? get() = null
 
     interface RootForTestListener {
         fun onRootForTestCreated(root: PlatformRootForTest)
@@ -237,7 +249,9 @@ interface PlatformContext {
             isWindowFocused = true
         }
 
-        override val inputModeManager: InputModeManager = DefaultInputModeManager()
+        override val inputModeManager: InputModeManager by lazy(LazyThreadSafetyMode.NONE) {
+            DefaultInputModeManager()
+        }
     }
 
     // This object must be immutable because it is used as a delegate in other ViewConfiguration

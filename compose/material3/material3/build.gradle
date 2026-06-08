@@ -32,6 +32,7 @@ plugins {
     id("AndroidXPlugin")
     id("AndroidXComposePlugin")
     id("JetBrainsAndroidXPlugin")
+    alias(libs.plugins.atomicFu)
 }
 
 androidXMultiplatform {
@@ -204,13 +205,6 @@ androidx {
     legacyDisableKotlinStrictApiMode = true
     samples(project(":compose:material3:material3:material3-samples"))
     addGoldenImageAssets()
-}
-
-tasks.withType(KotlinCompile).configureEach {
-    def dirToDelete = new File(project.buildDir, "kotlin/${it.name}/cacheable")
-    it.doFirst {
-        dirToDelete.deleteDir()
-    }
 }
 
 // This task updates the translations of the localizable strings in this module.

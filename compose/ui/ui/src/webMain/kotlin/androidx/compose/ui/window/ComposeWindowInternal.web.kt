@@ -24,6 +24,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.InternalComposeApi
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.ProvidableCompositionLocal
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.LocalSystemTheme
 import androidx.compose.ui.draganddrop.WebDragAndDropManager
 import androidx.compose.ui.events.EventTargetListener
@@ -31,7 +33,6 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.asComposeCanvas
 import androidx.compose.ui.input.InputMode
-import androidx.compose.ui.input.InputModeManager
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.key.KeyEventType
@@ -52,9 +53,6 @@ import androidx.compose.ui.input.pointer.composeButtons
 import androidx.compose.ui.internal.focusExt
 import androidx.compose.ui.navigationevent.BackNavigationEventInput
 import androidx.compose.ui.platform.DefaultArchitectureComponentsOwner
-import androidx.compose.ui.platform.DefaultHapticFeedback
-import androidx.compose.ui.platform.DefaultInputModeManager
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.PlatformDragAndDropManager
 import androidx.compose.ui.platform.PlatformTextInputMethodRequest
@@ -66,10 +64,13 @@ import androidx.compose.ui.platform.WebTextToolbar
 import androidx.compose.ui.platform.WebWakeLockManager
 import androidx.compose.ui.platform.WindowInfoImpl
 import androidx.compose.ui.platform.accessibility.ComposeWebSemanticsListener
+import androidx.compose.ui.platform.installFallbackFontDownloader
 import androidx.compose.ui.scene.CanvasLayersComposeScene
+import androidx.compose.ui.platform.FrameRecomposer
 import androidx.compose.ui.scene.ComposeSceneDragAndDropNode
 import androidx.compose.ui.scene.ComposeScenePointer
 import androidx.compose.ui.scene.PointerEventResult
+import androidx.compose.ui.scene.SingleComposeSceneRenderingScope
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.DpRect
@@ -87,11 +88,6 @@ import androidx.compose.ui.viewinterop.TrackInteropPlacementContainer
 import androidx.compose.ui.viewinterop.WebInteropContainer
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.enableSavedStateHandles
-import kotlin.js.ExperimentalWasmJsInterop
-import kotlin.js.JsArray
-import kotlin.js.js
-import kotlin.js.toInt
-import kotlin.js.toList
 import kotlin.math.absoluteValue
 import kotlinx.browser.document
 import kotlinx.browser.window
@@ -180,6 +176,12 @@ internal class DefaultWindowState(private val viewportContainer: Element) : Comp
     override fun sizeFlow() = channel.receiveAsFlow()
 }
 
+@VisibleForTesting
+// This value is for internal usage, for example, to call ComposeWindow.dispose() in the tests
+internal val LocalComposeWindow: ProvidableCompositionLocal<ComposeWindow?> = staticCompositionLocalOf {
+    error("ComposeWindow is not available in this composition")
+}
+
 @OptIn(InternalComposeApi::class)
 internal class ComposeWindow(
     private val canvas: HTMLCanvasElement,
@@ -207,8 +209,6 @@ internal class ComposeWindow(
     @VisibleForTesting
     internal val archComponentsOwner = DefaultArchitectureComponentsOwner()
 
-    private val hapticFeedback = WebHapticFeedback.webHapticFeedbackOrDefault()
-
     private val navigationEventInput = BackNavigationEventInput()
 
     private val canvasEvents = EventTargetListener(canvas)
@@ -220,11 +220,22 @@ internal class ComposeWindow(
 
     private val clipTarget = clipTargetElement(canvas)
 
+    // TODO: It must be shared between Compose instances.
+    //  It's supposed to be stored in platform's root view or window.
+    private val frameRecomposer = FrameRecomposer(Dispatchers.Main, invalidate = { skiaLayer.needRender() })
+
+    // TODO: It cannot be used in case of shared [FrameRecomposer], replace this helper with calling
+    //  - [frameRecomposer.performFrame] once per frame (across all instances) before platform views layout phase
+    //  - [scene.measureAndLayout] during platform views layout phase. Note that it should be triggered
+    //    by platform view invalidation (which is triggered by [scene.invalidateLayout] OR by regular platform invalidation)
+    //  - [scene.draw] during drawing phase of platform views (which is triggered by [scene.invalidateDraw]).
+    //    Note that in case of custom GPU surface/V-Sync handling, it needs to be handled differently.
+    private val sceneRenderingScope = SingleComposeSceneRenderingScope { skiaLayer.needRender() }
+
     private val platformContext: PlatformContext =
         object : PlatformContext by PlatformContext.Empty() {
             override val windowInfo get() = _windowInfo
             override val architectureComponentsOwner get() = archComponentsOwner
-            override val inputModeManager: InputModeManager = DefaultInputModeManager()
 
             override val dragAndDropManager: PlatformDragAndDropManager = object :
                 WebDragAndDropManager(rootNode, canvasEvents, state.globalEvents, density) {
@@ -251,12 +262,17 @@ internal class ComposeWindow(
                 return super.convertWindowToLocalPosition(positionInWindow)
             }
 
-            override val textToolbar: TextToolbar = WebTextToolbar()
+            override val textToolbar: TextToolbar by lazy(LazyThreadSafetyMode.NONE) {
+                WebTextToolbar()
+            }
+
+            override val hapticFeedback by lazy(LazyThreadSafetyMode.NONE) {
+                WebHapticFeedback.webHapticFeedbackOrDefault()
+            }
 
             override val semanticsOwnerListener: PlatformContext.SemanticsOwnerListener? =
                 if (configuration.isA11YEnabled) {
                     ComposeWebSemanticsListener(
-                        coroutineScope = MainScope(),
                         webSemanticsRoot = a11yContainerElement?.apply {
                             setAttribute("aria-label", "")
                             setAttribute("role", "presentation")
@@ -270,25 +286,27 @@ internal class ComposeWindow(
                     null
                 }
 
-            override val textInputService: WebTextInputService = object : WebTextInputService() {
+            override val textInputService: WebTextInputService by lazy(LazyThreadSafetyMode.NONE) {
+                object : WebTextInputService() {
 
-                override val currentTouchOffset: Offset?
-                    get() = activeTouchOffset
+                    override val currentTouchOffset: Offset?
+                        get() = activeTouchOffset
 
-                override val backingDomInputContainer: HTMLElement
-                    get() = layerRoot
+                    override val backingDomInputContainer: HTMLElement
+                        get() = layerRoot
 
-                override fun getNewGeometryForBackingInput(rect: Rect): DpRect {
-                    val dpRect = rect.toDpRect(density)
-                    val left = dpRect.left.value
-                    val top = dpRect.top.value
+                    override fun getNewGeometryForBackingInput(rect: Rect): DpRect {
+                        val dpRect = rect.toDpRect(density)
+                        val left = dpRect.left.value
+                        val top = dpRect.top.value
 
-                    return DpRect(DpOffset(left.dp, top.dp), dpRect.size)
-                }
+                        return DpRect(DpOffset(left.dp, top.dp), dpRect.size)
+                    }
 
-                override fun processKeyboardEvent(keyEvent: KeyEvent): Boolean {
-                    //this@ComposeWindow.processKeyboardEvent(keyboardEvent)
-                    return scene.sendKeyEvent(keyEvent)
+                    override fun processKeyboardEvent(keyEvent: KeyEvent): Boolean {
+                        //this@ComposeWindow.processKeyboardEvent(keyboardEvent)
+                        return scene.sendKeyEvent(keyEvent)
+                    }
                 }
             }
 
@@ -323,15 +341,20 @@ internal class ComposeWindow(
 
     private val skiaLayer: SkiaLayer = SkiaLayer().apply {
         renderDelegate = SkikoRenderDelegate { canvas, _, _, nanoTime ->
-            scene.render(canvas.asComposeCanvas(), nanoTime)
+            with(sceneRenderingScope) {
+                scene.render(frameRecomposer, canvas.asComposeCanvas(), nanoTime)
+            }
         }
     }
 
     private val scene = CanvasLayersComposeScene(
-        coroutineContext = Dispatchers.Main,
+        frameRecomposer = frameRecomposer,
         platformContext = platformContext,
         density = density,
-        invalidate = skiaLayer::needRender,
+        // TODO: Split layout invalidation from draw invalidation once the web host has distinct
+        //  scheduling paths for relayout vs redraw.
+        invalidateLayout = sceneRenderingScope::onSceneInvalidation,
+        invalidateDraw = sceneRenderingScope::onSceneInvalidation,
     )
 
     private val systemThemeObserver = getSystemThemeObserver()
@@ -469,10 +492,11 @@ internal class ComposeWindow(
         scene.setContent {
             CompositionLocalProvider(
                 LocalSystemTheme provides systemThemeObserver.currentSystemTheme.value,
-                LocalHapticFeedback provides hapticFeedback,
                 LocalInteropContainer provides interopContainer,
                 LocalActiveClipEventsTarget provides clipEventsTargetProvider,
+                LocalComposeWindow provides this,
                 content = {
+                    installFallbackFontDownloader()
                     interopContainer.TrackInteropPlacementContainer {
                         content()
                     }
@@ -482,6 +506,18 @@ internal class ComposeWindow(
                             // Convert to proper type: IntSize was exposed to public API with meaning of DPs.
                             val boxSize = DpSize(size.width.dp, size.height.dp)
                             this@ComposeWindow.resize(boxSize)
+                        }
+                    }
+
+                    val webSemanticsListener = platformContext.semanticsOwnerListener as? ComposeWebSemanticsListener
+                    if (webSemanticsListener != null) {
+                        LaunchedEffect(Unit) {
+                            coroutineScope {
+                                // The initial composition would create a lot of noisy invalidations,
+                                // so it makes sense to start the listener here - after the initial composition.
+                                // The composition's coroutine scope ties the listener's lifetime to the composition.
+                                webSemanticsListener.start(this)
+                            }
                         }
                     }
                 }
@@ -499,13 +535,10 @@ internal class ComposeWindow(
     private fun resize(boxSize: DpSize) {
         val sizeInPx = boxSize.toSize(density).toIntSize()
 
+        // we need to scale canvas both via CSS styling and HTML attributes
+        // https://www.khronos.org/webgl/wiki/HandlingHighDPI
         canvas.width = sizeInPx.width
         canvas.height = sizeInPx.height
-
-        // Scale canvas to allow high DPI rendering as suggested in
-        // https://www.khronos.org/webgl/wiki/HandlingHighDPI.
-        canvas.style.width = "${boxSize.width.value}px"
-        canvas.style.height = "${boxSize.height.value}px"
 
         _windowInfo.containerSize = sizeInPx
         _windowInfo.containerDpSize = boxSize
@@ -525,6 +558,7 @@ internal class ComposeWindow(
             .navigationEventDispatcher.removeInput(navigationEventInput)
 
         scene.close()
+        frameRecomposer.close()
         skiaLayer.detach()
 
         systemThemeObserver.dispose()
@@ -571,16 +605,29 @@ internal class ComposeWindow(
     }
 
     private fun onPointerEvent(event: PointerEvent) {
+        if (event.type == "pointercancel") {
+            if (isTouchEvent(event)) {
+                activeTouchPointers.clear()
+                activeTouchOffset = null
+            } else {
+                actualActivePointerButtons = null
+            }
+
+            event.target?.let { releasePointerCapture(it, event.pointerId) }
+
+            scene.cancelPointerInput()
+            return
+        }
+
         val eventType = event.getPointerEventType()
         var result: PointerEventResult? = null
 
         if (isMouseEvent(event)) {
             keyboardModeState = KeyboardModeState.Hardware
 
-            // validate event before sending it further - see
-            // https://youtrack.jetbrains.com/issue/CMP-8430/Sequence-of-Move-PointerInputEvents-cancel-out-press-PointerInputEvent-under-certain-conditions
-
-            var isValidEvent = true
+            // Track active mouse buttons. Used as a fallback for unreliable
+            // `buttons` in wheel events (see CMP-9900) and to reset state on
+            // `dragend` in Safari (see CMP-10102).
             when (eventType) {
                 PointerEventType.Press -> {
                     actualActivePointerButtons = event.composeButtons
@@ -588,12 +635,7 @@ internal class ComposeWindow(
                 PointerEventType.Release -> {
                     actualActivePointerButtons = null
                 }
-                PointerEventType.Move -> {
-                    isValidEvent = actualActivePointerButtons == null || actualActivePointerButtons == event.composeButtons
-                }
             }
-
-            if (!isValidEvent) return
 
             scene.sendPointerEvent(
                 eventType = eventType,
@@ -767,6 +809,10 @@ internal fun onDomReady(block: () -> Unit) {
     }
 }
 
+private fun releasePointerCapture(target: EventTarget, pointerId: Int) {
+    js("try { target.releasePointerCapture(pointerId) } catch (e) {}")
+}
+
 private fun setPointerCapture(target: EventTarget, pointerId: Int) {
     js("try { target.setPointerCapture(pointerId) } catch (e) {}")
 }
@@ -828,6 +874,10 @@ private fun clipTargetElement(canvas: HTMLCanvasElement): HTMLTextAreaElement {
 
 // strings checks are faster on a JS side
 // language=js
+private fun isTouchEvent(event: PointerEvent): Boolean = js("event.pointerType === 'touch'")
+
+// strings checks are faster on a JS side
+// language=js
 private fun isMouseEvent(event: PointerEvent): Boolean = js("event.pointerType === 'mouse'")
 
 // strings checks are faster on a JS side
@@ -838,7 +888,6 @@ private fun getPointerEventCode(event: PointerEvent): Int = js(
           case 'pointerdown':
             return 1; // PointerEventType.Press
           case 'pointerup':
-          case 'pointercancel':
             return 2; // PointerEventType.Release
           case 'pointermove':
             return 3; // PointerEventType.Move
@@ -878,4 +927,3 @@ private fun Element.isFocused(): Boolean {
 private external interface ShadowRootExt {
     val activeElement: Element?
 }
-

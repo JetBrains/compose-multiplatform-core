@@ -78,7 +78,7 @@ protobuf = "4.28.2"
 paparazzi = "1.0.0"
 paparazziNative = "2022.1.1-canary-f5f9f71"
 shadow = "8.1.1"
-skiko = "0.148.0"
+skiko = "0.148.1"
 spdxGradlePlugin = "0.6.0"
 sqldelight = "1.3.0"
 retrofit = "2.12.0"
@@ -334,7 +334,7 @@ kotlinBenchmark = { id = "org.jetbrains.kotlinx.benchmark", version.ref = "kotli
 kotlinJvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlinMp = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
 kotlinSerialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
-atomicFu = { id = "org.jetbrains.kotlin.plugin.atomicfu", version.ref = "atomicFu" }
+atomicFu = { id = "org.jetbrains.kotlinx.atomicfu", version.ref = "atomicFu" }
 
 [bundles]
 # prevent androidAccessibilityFramework 3.1 which pulls hamcrest 2.2, breaking espresso-core

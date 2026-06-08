@@ -82,7 +82,7 @@ internal class DomInputStrategy(
     private val tabKeyCode = Key.Tab.keyCode.toInt()
 
     private fun initEvents() {
-
+        // Whenever new type of event is processed, don't forget to sync the NativeInputEventsProcessor::runCheckpoint isIME check
         htmlInput.addEventListener("keydown", { evt ->
             nativeInputEventsProcessor.registerEvent(evt as KeyboardEvent)
 
@@ -111,10 +111,6 @@ internal class DomInputStrategy(
             }
         })
 
-        htmlInput.addEventListener("compositionstart", { evt ->
-            nativeInputEventsProcessor.registerEvent(evt as CompositionEvent)
-        })
-
         htmlInput.addEventListener("compositionend", { evt ->
             nativeInputEventsProcessor.registerEvent(evt as CompositionEvent)
         })
@@ -132,11 +128,17 @@ internal class DomInputStrategy(
                 composeSender.sendEditCommand(SetSelectionCommand(normalizedStart, normalizedEnd))
             }
         }
+        // In Chrome, we need to listen to the selection change on the document
         document.addEventListener("selectionchange", selectionChangeListener)
+        // In Firefox and Safari we listen to the selection change on the input element.
+        // Chrome is expected to dispatch this event too (https://chromium-review.googlesource.com/c/chromium/src/+/5598393),
+        // but it doesn't: https://issuetracker.google.com/issues/518751607
+        htmlInput.addEventListener("selectionchange", selectionChangeListener)
     }
 
     fun dispose() {
         document.removeEventListener("selectionchange", selectionChangeListener)
+        htmlInput.removeEventListener("selectionchange", selectionChangeListener)
         selectionChangeListener = null
     }
 
