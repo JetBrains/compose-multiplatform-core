@@ -158,18 +158,12 @@ internal abstract class NativeInputEventsProcessor(
     }
 
     private fun InputEventExt.createDeleteWordCommand(): EditCommand? {
-        val shouldTriggerDelete = when {
-            lastProcessedKeydown?.isBackspace() != true -> false
-            lastProcessedKeydown?.repeat == true -> true
-            else -> false
-        }
+        val keydown = lastProcessedKeydown ?: return null
+        if (!keydown.isBackspace() || !keydown.repeat) return null
+        val layoutResult = composeSender.currentTextLayoutResult() ?: return null
 
-        return if (shouldTriggerDelete) {
-            val layoutResult = composeSender.currentTextLayoutResult() ?: return null
-
-            val offset = layoutResult.getPrevWordOffset(textRangeEnd)
-            DeleteSurroundingTextCommand((textRangeEnd - offset).coerceAtLeast(0), 0)
-        } else null
+        val offset = layoutResult.getPrevWordOffset(textRangeEnd)
+        return DeleteSurroundingTextCommand((textRangeEnd - offset).coerceAtLeast(0), 0)
     }
 
     private fun InputEventExt.process(currentTextFieldValue: TextFieldValue) {
