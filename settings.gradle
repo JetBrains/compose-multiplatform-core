@@ -38,7 +38,7 @@ buildscript {
         if (agpOverride != null) {
             classpath("com.android.settings:com.android.settings.gradle.plugin:$agpOverride")
         } else {
-            classpath("com.android.settings:com.android.settings.gradle.plugin:9.3.0-alpha01")
+            classpath("com.android.settings:com.android.settings.gradle.plugin:9.3.0-alpha05")
         }
         // set guava version to be compatible with Depdendency analysis gradle plugin
         classpath("com.google.guava:guava:33.3.1-jre")
@@ -323,7 +323,7 @@ private Set<BuildType> createRequestedFilter() {
                         "CAMERA  - camera projects\n" +
                         "MAIN    - androidx projects that are not compose\n" +
                         "FLAN    - fragment, lifecycle, activity, and navigation projects\n" +
-                        "MEDIA   - media and mediarouter projects\n" +
+                        "MEDIA   - mediarouter projects\n" +
                         "WEAR    - Wear OS projects\n" +
                         "NATIVE  - native projects\n" +
                         "WINDOW  - window projects\n" +
@@ -659,12 +659,13 @@ includeProject(":compose:remote:remote-player-compose-testutils", [BuildType.MAI
 includeProject(":compose:remote:remote-testing", [BuildType.MAIN])
 includeProject(":compose:remote:remote-lint", [BuildType.MAIN])
 includeProject(":compose:ui:ui-tooling-preview:ui-tooling-preview-samples", "compose/ui/ui-tooling-preview/samples", [BuildType.COMPOSE])
-includeProject(":core:core-locationbutton", [BuildType.MAIN])
-includeProject(":core:core-locationbutton-testing", [BuildType.MAIN])
+includeProject(":core:locationbutton:locationbutton", [BuildType.MAIN])
+includeProject(":core:locationbutton:locationbutton-testing", [BuildType.MAIN])
 includeProject(":core:core-pip", [BuildType.MAIN])
 includeProject(":wear:compose:remote:integration-tests:demos", [BuildType.MAIN])
 includeProject(":wear:compose:remote:remote-material3", [BuildType.MAIN])
 includeProject(":wear:compose:remote:remote-material3-samples", "wear/compose/remote/remote-material3/samples", [BuildType.MAIN])
+includeProject(":wear:compose:remote:remote-lint", [BuildType.MAIN])
 includeProject(":compose:runtime:runtime", [BuildType.COMPOSE, BuildType.KMP])
 includeProject(":compose:runtime:runtime-annotation", [BuildType.COMPOSE, BuildType.KMP])
 includeProject(":compose:runtime:runtime-annotation:runtime-annotation-samples", "compose/runtime/runtime-annotation/samples", [BuildType.COMPOSE])
@@ -902,11 +903,11 @@ includeProject(":hilt:integration-tests:hilt-testapp-viewmodel", "hilt/integrati
 includeProject(":hilt:integration-tests:hilt-testapp-worker", "hilt/integration-tests/workerapp", [BuildType.MAIN])
 includeProject(":ink:ink-authoring", [BuildType.MAIN])
 includeProject(":ink:ink-authoring-compose", [BuildType.MAIN, BuildType.COMPOSE])
-includeProject(":ink:ink-brush", [BuildType.MAIN])
+includeProject(":ink:ink-brush", [BuildType.MAIN, BuildType.KMP])
 includeProject(":ink:ink-brush-compose", [BuildType.MAIN, BuildType.COMPOSE])
-includeProject(":ink:ink-geometry", [BuildType.MAIN])
+includeProject(":ink:ink-geometry", [BuildType.MAIN, BuildType.KMP])
 includeProject(":ink:ink-geometry-compose", [BuildType.MAIN, BuildType.COMPOSE])
-includeProject(":ink:ink-nativeloader", [BuildType.MAIN])
+includeProject(":ink:ink-nativeloader", [BuildType.MAIN, BuildType.KMP])
 includeProject(":ink:ink-storage", [BuildType.MAIN])
 includeProject(":ink:ink-strokes", [BuildType.MAIN])
 includeProject(":ink:ink-rendering", [BuildType.MAIN])
@@ -962,7 +963,6 @@ includeProject(":lint-checks")
 includeProject(":lint-checks:integration-tests")
 includeProject(":loader:loader", [BuildType.MAIN])
 includeProject(":loader:loader-ktx", [BuildType.MAIN])
-includeProject(":media:media", [BuildType.MAIN, BuildType.MEDIA])
 includeProject(":mediarouter:mediarouter", [BuildType.MAIN, BuildType.MEDIA])
 includeProject(":mediarouter:mediarouter-testing", [BuildType.MAIN, BuildType.MEDIA])
 includeProject(":metrics:metrics-performance", [BuildType.MAIN])
@@ -1290,6 +1290,7 @@ includeProject(":xr:scenecore:scenecore-spatial-rendering", [BuildType.XR])
 includeProject(":xr:scenecore:scenecore-testing", [BuildType.XR])
 includeProject(":xr:scenecore:integration-tests:testapp", [BuildType.XR])
 includeProject(":xr:scenecore:integration-tests:videoplayerdrmtest", [BuildType.XR])
+includeProject(":xr:testutils", [BuildType.XR])
 
 /////////////////////////////
 //

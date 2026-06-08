@@ -93,6 +93,9 @@ public class BaseStats {
             INTERNAL_CALL_TYPE_ISOLATED_STORAGE_DATA_MIGRATION_AEGIS_TO_AISEAL,
             INTERNAL_CALL_TYPE_ISOLATED_STORAGE_DATA_MIGRATION_AISEAL_TO_AEGIS,
             INTERNAL_CALL_TYPE_ISOLATED_STORAGE_DATA_MIGRATION_VM_TO_HOST,
+            INTERNAL_CALL_TYPE_MAINTAIN_ANN_INDEX_JOB,
+            CALL_TYPE_INITIALIZE_TRIVIAL,
+            CALL_TYPE_INITIALIZE_PENDING,
     })
     @Retention(RetentionPolicy.SOURCE)
     public @interface CallType {
@@ -160,6 +163,11 @@ public class BaseStats {
     public static final int INTERNAL_CALL_TYPE_ISOLATED_STORAGE_DATA_MIGRATION_AEGIS_TO_AISEAL = 49;
     public static final int INTERNAL_CALL_TYPE_ISOLATED_STORAGE_DATA_MIGRATION_AISEAL_TO_AEGIS = 50;
     public static final int INTERNAL_CALL_TYPE_ISOLATED_STORAGE_DATA_MIGRATION_VM_TO_HOST = 51;
+    public static final int INTERNAL_CALL_TYPE_MAINTAIN_ANN_INDEX_JOB = 52;
+    // Represents INITIALIZE tasks that retrieve an already-completed user instance.
+    public static final int CALL_TYPE_INITIALIZE_TRIVIAL = 53;
+    // Represents INITIALIZE tasks that retrieve a user instance whose creation was on-going.
+    public static final int CALL_TYPE_INITIALIZE_PENDING = 54;
 
     // These strings are for the subset of call types that correspond to an AppSearchManager API
     public static final String CALL_TYPE_STRING_INITIALIZE = "initialize";
@@ -212,6 +220,10 @@ public class BaseStats {
     public static final String INTERNAL_CALL_TYPE_STRING_MANUALLY_SCHEDULE_FLUSH =
             "manuallyScheduleFlush";
     public static final String INTERNAL_CALL_TYPE_STRING_APPS_INDEXER = "appsIndexer";
+    public static final String INTERNAL_CALL_TYPE_STRING_MAINTAIN_ANN_INDEX_JOB =
+            "maintainAnnIndexJob";
+    public static final String CALL_TYPE_STRING_INITIALIZE_TRIVIAL = "initializeTrivial";
+    public static final String CALL_TYPE_STRING_INITIALIZE_PENDING = "initializePending";
 
     // Enabled features bitmask with all features disabled.
     public static final long NO_FEATURES_ENABLED_BITMASK = 0;

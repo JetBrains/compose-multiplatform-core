@@ -26,9 +26,9 @@ import android.view.View
 import androidx.annotation.RequiresApi
 import androidx.annotation.RestrictTo
 import androidx.lifecycle.LifecycleOwner
-import androidx.lifecycle.coroutineScope
 import androidx.lifecycle.lifecycleScope
 import androidx.xr.arcore.Trackable
+import androidx.xr.runtime.Config
 import androidx.xr.runtime.math.Pose
 import androidx.xr.scenecore.runtime.ActivityPanelEntity
 import androidx.xr.scenecore.runtime.AnchorEntity
@@ -37,7 +37,6 @@ import androidx.xr.scenecore.runtime.Dimensions
 import androidx.xr.scenecore.runtime.Entity
 import androidx.xr.scenecore.runtime.GltfFeature
 import androidx.xr.scenecore.runtime.InputEventListener
-import androidx.xr.scenecore.runtime.InteractableComponent
 import androidx.xr.scenecore.runtime.LoggingEntity
 import androidx.xr.scenecore.runtime.MeshEntity
 import androidx.xr.scenecore.runtime.MeshFeature
@@ -66,6 +65,19 @@ import androidx.xr.scenecore.runtime.SubspaceNodeEntity
 import androidx.xr.scenecore.runtime.SurfaceEntity
 import androidx.xr.scenecore.runtime.SurfaceFeature
 import androidx.xr.scenecore.runtime.TrackableComponent
+import androidx.xr.scenecore.testing.internal.FakeActivityPanelEntity as InternalFakeActivityPanelEntity
+import androidx.xr.scenecore.testing.internal.FakeAnchorEntity as InternalFakeAnchorEntity
+import androidx.xr.scenecore.testing.internal.FakeBoundsComponent as InternalFakeBoundsComponent
+import androidx.xr.scenecore.testing.internal.FakeEntity as InternalFakeEntity
+import androidx.xr.scenecore.testing.internal.FakeMeshEntity as InternalFakeMeshEntity
+import androidx.xr.scenecore.testing.internal.FakePanelEntity as InternalFakePanelEntity
+import androidx.xr.scenecore.testing.internal.FakePerceptionSpaceScenePose as InternalFakePerceptionSpaceScenePose
+import androidx.xr.scenecore.testing.internal.FakePositionalAudioComponent as InternalFakePositionalAudioComponent
+import androidx.xr.scenecore.testing.internal.FakeSceneRuntime as InternalFakeSceneRuntime
+import androidx.xr.scenecore.testing.internal.FakeSoundEffectPool as InternalFakeSoundEffectPool
+import androidx.xr.scenecore.testing.internal.FakeSoundEffectPoolComponent as InternalFakeSoundEffectPoolComponent
+import androidx.xr.scenecore.testing.internal.FakeSoundPoolExtensionsWrapper as InternalFakeSoundPoolExtensionsWrapper
+import androidx.xr.scenecore.testing.internal.FakeSurfaceEntity as InternalFakeSurfaceEntity
 import java.util.concurrent.Executor
 import java.util.function.Consumer
 import kotlinx.coroutines.flow.Flow
@@ -81,6 +93,8 @@ import kotlinx.coroutines.flow.mapNotNull
 public class FakeSceneRuntime(public val executor: Executor? = null) :
     SceneRuntime, RenderingEntityFactory {
 
+    internal var internalRuntime: InternalFakeSceneRuntime = InternalFakeSceneRuntime(executor)
+
     /* Tracks the current state of the adapter according to where it is in its lifecycle. */
     public enum class State {
         CREATED,
@@ -92,6 +106,7 @@ public class FakeSceneRuntime(public val executor: Executor? = null) :
     private var _state: Enum<State> = State.CREATED
 
     /** The last [FakeMovableComponent] created or injected via [createMovableComponent]. */
+    // TODO: b/514807603 - Remove this property once xr:compose tests migrate to SceneCoreTestRule.
     public var lastMovableComponent: FakeMovableComponent? = null
         private set
 
@@ -104,43 +119,82 @@ public class FakeSceneRuntime(public val executor: Executor? = null) :
     public val state: Enum<State>
         get() = _state
 
-    override var spatialCapabilities: SpatialCapabilities =
-        SpatialCapabilities(ALL_SPATIAL_CAPABILITIES)
+    override val config: Config
+        get() = internalRuntime.config
+
+    override var spatialCapabilities: SpatialCapabilities
+        get() = internalRuntime.spatialCapabilities
         private set(value) {
-            field = value
-            spatialCapabilitiesChangedMap.forEach { (consumer, executor) ->
-                executor.execute { consumer.accept(value) }
+            internalRuntime.spatialCapabilities = value
+        }
+
+    override val activitySpace: FakeActivitySpace = FakeActivitySpace(internalRuntime.activitySpace)
+
+    override val perceptionSpaceActivityPose: PerceptionSpaceScenePose =
+        FakePerceptionSpaceScenePose(
+            internalRuntime.perceptionSpaceActivityPose as InternalFakePerceptionSpaceScenePose
+        )
+
+    override val soundPoolExtensionsWrapper: SoundPoolExtensionsWrapper =
+        FakeSoundPoolExtensionsWrapper(
+            internalRuntime.soundPoolExtensionsWrapper as InternalFakeSoundPoolExtensionsWrapper
+        )
+
+    override val audioTrackExtensionsWrapper: FakeAudioTrackExtensionsWrapper =
+        FakeAudioTrackExtensionsWrapper(internalRuntime.audioTrackExtensionsWrapper)
+
+    override val mediaPlayerExtensionsWrapper: FakeMediaPlayerExtensionsWrapper =
+        FakeMediaPlayerExtensionsWrapper(internalRuntime.mediaPlayerExtensionsWrapper)
+
+    override val mainPanelEntity: PanelEntity =
+        FakePanelEntity(null, "", internalRuntime.mainPanelEntity as InternalFakePanelEntity)
+
+    private var _keyEntity: Entity? = null
+
+    override var keyEntity: Entity?
+        get() = _keyEntity
+        set(value) {
+            _keyEntity = value
+
+            when (value) {
+                null -> {
+                    internalRuntime.keyEntity = null
+                }
+                is FakeEntity -> {
+                    internalRuntime.keyEntity = value.fakeInternal as InternalFakeEntity
+                }
+
+                else -> {
+                    // When integrated with Compose, the keyEntity might be a Compose-specific
+                    // representation of an Entity. In such cases, this FakeSceneRuntime does
+                    // not need to do anything with it, as the Compose integration handles
+                    // the key entity state separately. Only FakeEntity types, which are
+                    // created by this FakeSceneRuntime, need to be mirrored to the internalRuntime.
+                }
             }
         }
 
-    override val activitySpace: FakeActivitySpace = FakeActivitySpace()
+    override val spatialEnvironment: FakeSpatialEnvironment =
+        FakeSpatialEnvironment(internalRuntime.spatialEnvironment)
 
-    override val perceptionSpaceActivityPose: PerceptionSpaceScenePose =
-        FakePerceptionSpaceScenePose()
-
-    override val soundPoolExtensionsWrapper: SoundPoolExtensionsWrapper =
-        FakeSoundPoolExtensionsWrapper()
-
-    override val audioTrackExtensionsWrapper: FakeAudioTrackExtensionsWrapper =
-        FakeAudioTrackExtensionsWrapper()
-
-    override val mediaPlayerExtensionsWrapper: FakeMediaPlayerExtensionsWrapper =
-        FakeMediaPlayerExtensionsWrapper()
-
-    override val mainPanelEntity: PanelEntity = FakePanelEntity()
-
-    override var keyEntity: Entity? = null
-
-    override val spatialEnvironment: FakeSpatialEnvironment = FakeSpatialEnvironment()
-
-    override var spatialModeChangeListener: SpatialModeChangeListener? =
-        FakeSpatialModeChangeListener()
+    override var spatialModeChangeListener: SpatialModeChangeListener?
+        get() = internalRuntime.spatialModeChangeListener
+        set(value) {
+            internalRuntime.spatialModeChangeListener = value
+        }
 
     override fun getScenePoseFromPerceptionPose(pose: Pose): ScenePose {
-        return FakePerceptionSpaceScenePose()
+        return FakePerceptionSpaceScenePose(
+            internalRuntime.getScenePoseFromPerceptionPose(pose)
+                as InternalFakePerceptionSpaceScenePose
+        )
     }
 
     public var deviceDpPerMeter: Float = DEFAULT_DP_PER_METER
+
+    override fun configure(config: Config) {
+        internalRuntime.configure(config)
+    }
 
     override fun createPanelEntity(
         context: Context,
@@ -149,13 +203,19 @@ public class FakeSceneRuntime(public val executor: Executor? = null) :
         dimensions: Dimensions,
         name: String,
         parent: Entity?,
-    ): PanelEntity =
-        FakePanelEntity(view, name).apply {
-            dpPerMeter = deviceDpPerMeter
-            size = dimensions
+    ): PanelEntity {
+        val fakePanelEntity =
+            FakePanelEntity(
+                view,
+                name,
+                internalRuntime.createPanelEntity(context, pose, view, dimensions, name, parent)
+                    as InternalFakePanelEntity,
+            )
+        return fakePanelEntity.apply {
             this.parent = parent
             setPose(pose)
         }
+    }
 
     override fun createPanelEntity(
         context: Context,
@@ -164,13 +224,27 @@ public class FakeSceneRuntime(public val executor: Executor? = null) :
         pixelDimensions: PixelDimensions,
         name: String,
         parent: Entity?,
-    ): PanelEntity =
-        FakePanelEntity(view, name).apply {
+    ): PanelEntity {
+        val fakePanelEntity =
+            FakePanelEntity(
+                view,
+                name,
+                internalRuntime.createPanelEntity(
+                    context,
+                    pose,
+                    view,
+                    pixelDimensions,
+                    name,
+                    parent,
+                ) as InternalFakePanelEntity,
+            )
+        return fakePanelEntity.apply {
             dpPerMeter = deviceDpPerMeter
             sizeInPixels = pixelDimensions
             this.parent = parent
             setPose(pose)
         }
+    }
 
     override fun createActivityPanelEntity(
         pose: Pose,
@@ -179,16 +253,26 @@ public class FakeSceneRuntime(public val executor: Executor? = null) :
         hostActivity: Activity,
         parent: Entity?,
     ): ActivityPanelEntity =
-        FakeActivityPanelEntity(name).apply {
-            dpPerMeter = deviceDpPerMeter
-            sizeInPixels = windowBoundsPx
-            this.parent = parent
-            setPose(pose)
-        }
+        FakeActivityPanelEntity(
+                name,
+                internalRuntime.createActivityPanelEntity(
+                    pose,
+                    windowBoundsPx,
+                    name,
+                    hostActivity,
+                    parent,
+                ) as InternalFakeActivityPanelEntity,
+            )
+            .apply {
+                dpPerMeter = deviceDpPerMeter
+                sizeInPixels = windowBoundsPx
+                this.parent = parent
+                setPose(pose)
+            }
 
     @RequiresApi(Build.VERSION_CODES.O)
     override fun createAnchorEntity(): AnchorEntity {
-        return FakeAnchorEntity()
+        return FakeAnchorEntity(internalRuntime.createAnchorEntity() as InternalFakeAnchorEntity)
     }
 
     override fun createGltfEntity(
@@ -196,11 +280,19 @@ public class FakeSceneRuntime(public val executor: Executor? = null) :
         pose: Pose,
         parentEntity: Entity?,
     ): FakeGltfEntity {
-        if (executor == null) throw NullPointerException("Set executor before test")
+        val nonNullExecutor = checkNotNull(executor) { "Set executor before test" }
 
-        val gltfEntity = FakeGltfEntity(feature, executor)
+        require(feature is FakeGltfFeature) {
+            "The feature passed to FakeSceneRuntime must be an instance of FakeGltfFeature."
+        }
+
+        val gltfEntity = FakeGltfEntity(feature, nonNullExecutor)
         gltfEntity.setPose(pose)
         gltfEntity.parent = parentEntity
+
+        internalRuntime.createGltfEntity(feature.fakeInternal, pose, parentEntity).let {
+            gltfEntity.fakeInternal = it
+        }
 
         return gltfEntity
     }
@@ -210,7 +302,13 @@ public class FakeSceneRuntime(public val executor: Executor? = null) :
         pose: Pose,
         parentEntity: Entity?,
     ): SurfaceEntity {
-        val surfaceEntity = FakeSurfaceEntity()
+        val fakeFeature = feature as FakeSurfaceFeature
+
+        val internalEntity =
+            internalRuntime.createSurfaceEntity(fakeFeature.fakeInternal, pose, parentEntity)
+                as InternalFakeSurfaceEntity
+
+        val surfaceEntity = FakeSurfaceEntity(fakeFeature, internalEntity)
         surfaceEntity.setPose(pose)
         surfaceEntity.parent = parentEntity
 
@@ -222,15 +320,26 @@ public class FakeSceneRuntime(public val executor: Executor? = null) :
         pose: Pose,
         parentEntity: Entity?,
     ): MeshEntity {
-        val meshEntity = FakeMeshEntity(feature)
+        val meshEntity = FakeMeshEntity(feature as FakeMeshFeature)
         meshEntity.setPose(pose)
         meshEntity.parent = parentEntity
+        meshEntity.fakeInternal =
+            internalRuntime.createMeshEntity(
+                feature.fakeInternal,
+                pose,
+                (parentEntity as? FakeEntity)?.fakeInternal as? InternalFakeEntity,
+            ) as InternalFakeMeshEntity
+
         return meshEntity
     }
 
     override fun createEntity(pose: Pose, name: String?, parent: Entity?): Entity {
         val entityName = name ?: ""
-        val entity = FakeEntity(entityName)
+        val entity =
+            FakeEntity(
+                entityName,
+                internalRuntime.createEntity(pose, name, parent) as InternalFakeEntity,
+            )
         entity.setPose(pose)
         entity.parent = parent
 
@@ -262,21 +371,17 @@ public class FakeSceneRuntime(public val executor: Executor? = null) :
      * correct listeners are registered with their intended executors.
      */
     public val spatialCapabilitiesChangedMap: Map<Consumer<SpatialCapabilities>, Executor>
-        get() = _spatialCapabilitiesChangedMap
-
-    private val _spatialCapabilitiesChangedMap:
-        MutableMap<Consumer<SpatialCapabilities>, Executor> =
-        mutableMapOf()
+        get() = internalRuntime.spatialCapabilitiesChangedMap
 
     override fun addSpatialCapabilitiesChangedListener(
         callbackExecutor: Executor,
         listener: Consumer<SpatialCapabilities>,
     ) {
-        _spatialCapabilitiesChangedMap[listener] = callbackExecutor
+        internalRuntime.addSpatialCapabilitiesChangedListener(callbackExecutor, listener)
     }
 
     override fun removeSpatialCapabilitiesChangedListener(listener: Consumer<SpatialCapabilities>) {
-        _spatialCapabilitiesChangedMap.remove(listener)
+        internalRuntime.removeSpatialCapabilitiesChangedListener(listener)
     }
 
     /**
@@ -291,20 +396,17 @@ public class FakeSceneRuntime(public val executor: Executor? = null) :
      * correct listener is registered or that it has been successfully cleared.
      */
     public val spatialVisibilityChangedMap: Map<Consumer<SpatialVisibility>, Executor>
-        get() = _spatialVisibilityChangedMap
-
-    private val _spatialVisibilityChangedMap: MutableMap<Consumer<SpatialVisibility>, Executor> =
-        mutableMapOf()
+        get() = internalRuntime.spatialVisibilityChangedMap
 
     override fun setSpatialVisibilityChangedListener(
         callbackExecutor: Executor,
         listener: Consumer<SpatialVisibility>,
     ) {
-        _spatialVisibilityChangedMap[listener] = callbackExecutor
+        internalRuntime.setSpatialVisibilityChangedListener(callbackExecutor, listener)
     }
 
     override fun clearSpatialVisibilityChangedListener() {
-        _spatialVisibilityChangedMap.clear()
+        internalRuntime.clearSpatialVisibilityChangedListener()
     }
 
     /**
@@ -319,20 +421,17 @@ public class FakeSceneRuntime(public val executor: Executor? = null) :
      * correct listeners are registered or that they have been successfully removed.
      */
     public val perceivedResolutionChangedMap: Map<Consumer<PixelDimensions>, Executor>
-        get() = _perceivedResolutionChangedMap
-
-    private val _perceivedResolutionChangedMap: MutableMap<Consumer<PixelDimensions>, Executor> =
-        mutableMapOf()
+        get() = internalRuntime.perceivedResolutionChangedMap
 
     override fun addPerceivedResolutionChangedListener(
         callbackExecutor: Executor,
         listener: Consumer<PixelDimensions>,
     ) {
-        _perceivedResolutionChangedMap[listener] = callbackExecutor
+        internalRuntime.addPerceivedResolutionChangedListener(callbackExecutor, listener)
     }
 
     override fun removePerceivedResolutionChangedListener(listener: Consumer<PixelDimensions>) {
-        _perceivedResolutionChangedMap.remove(listener)
+        internalRuntime.removePerceivedResolutionChangedListener(listener)
     }
 
     /**
@@ -341,7 +440,11 @@ public class FakeSceneRuntime(public val executor: Executor? = null) :
      * Stores the [Activity] that was last provided to the [setPreferredAspectRatio] method. Tests
      * can inspect this property to verify the correct activity was used.
      */
-    public var lastSetPreferredAspectRatioActivity: Activity? = null
+    public var lastSetPreferredAspectRatioActivity: Activity?
+        get() = internalRuntime.lastSetPreferredAspectRatioActivity
+        set(value) {
+            internalRuntime.lastSetPreferredAspectRatioActivity = value
+        }
 
     /**
      * For test purposes only.
@@ -349,22 +452,27 @@ public class FakeSceneRuntime(public val executor: Executor? = null) :
      * Stores the ratio that was last provided to the [setPreferredAspectRatio] method. Tests can
      * inspect this property to verify the correct ratio was set.
      */
-    public var lastSetPreferredAspectRatioRatio: Float = -1f
+    public var lastSetPreferredAspectRatioRatio: Float
+        get() = internalRuntime.lastSetPreferredAspectRatio
+        set(value) {
+            internalRuntime.lastSetPreferredAspectRatio = value
+        }
 
     override fun setPreferredAspectRatio(activity: Activity, preferredRatio: Float) {
-        lastSetPreferredAspectRatioActivity = activity
-        lastSetPreferredAspectRatioRatio = preferredRatio
+        internalRuntime.setPreferredAspectRatio(activity, preferredRatio)
     }
 
     override fun requestFullSpaceMode() {
-        spatialCapabilities = SpatialCapabilities(ALL_SPATIAL_CAPABILITIES)
+        internalRuntime.requestFullSpaceMode()
+        // FakeActivitySpace has not bypassed data to internal, use current.
         activitySpace.onBoundsChanged(
             Dimensions(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY)
         )
     }
 
     override fun requestHomeSpaceMode() {
-        spatialCapabilities = SpatialCapabilities(0)
+        internalRuntime.requestHomeSpaceMode()
+        // FakeActivitySpace has not bypassed data to internal, use current.
         activitySpace.onBoundsChanged(Dimensions(1f, 1f, 1f))
     }
 
@@ -373,20 +481,23 @@ public class FakeSceneRuntime(public val executor: Executor? = null) :
     override fun setFullSpaceModeWithEnvironmentInherited(bundle: Bundle): Bundle = bundle
 
     /** This value is used to verify the result of [enablePanelDepthTest] in tests. */
-    public var enabledPanelDepthTest: Boolean = false
-        internal set
+    public var enabledPanelDepthTest: Boolean
+        get() = internalRuntime.enabledPanelDepthTest
+        internal set(value) {
+            internalRuntime.enabledPanelDepthTest = value
+        }
 
     override fun enablePanelDepthTest(enabled: Boolean) {
-        enabledPanelDepthTest = enabled
+        internalRuntime.enablePanelDepthTest(enabled)
     }
 
     override fun createInteractableComponent(
         executor: Executor,
         listener: InputEventListener,
-    ): InteractableComponent {
-        val interactableComponent = FakeInteractableComponent()
-        interactableComponent.inputEventListenersMap[listener] = executor
-        return interactableComponent
+    ): FakeInteractableComponent {
+        return FakeInteractableComponent(
+            internalRuntime.createInteractableComponent(executor, listener)
+        )
     }
 
     override fun createAnchorPlacementForPlanes(
@@ -399,10 +510,10 @@ public class FakeSceneRuntime(public val executor: Executor? = null) :
         scaleInZ: Boolean,
         userAnchorable: Boolean,
     ): FakeMovableComponent {
-        val movableComponent = FakeMovableComponent()
-        movableComponent.systemMovable = systemMovable
-        movableComponent.scaleInZ = scaleInZ
-        movableComponent.userAnchorable = userAnchorable
+        val movableComponent =
+            FakeMovableComponent(
+                internalRuntime.createMovableComponent(systemMovable, scaleInZ, userAnchorable)
+            )
         lastMovableComponent = movableComponent
         return movableComponent
     }
@@ -425,8 +536,9 @@ public class FakeSceneRuntime(public val executor: Executor? = null) :
         maximumSize: Dimensions,
     ): FakeResizableComponent {
         val resizableComponent =
-            FakeResizableComponent(minimumSize = minimumSize, maximumSize = maximumSize)
-
+            FakeResizableComponent(
+                fakeInternal = internalRuntime.createResizableComponent(minimumSize, maximumSize)
+            )
         return resizableComponent
     }
 
@@ -436,15 +548,24 @@ public class FakeSceneRuntime(public val executor: Executor? = null) :
         stateListener: PointerCaptureComponent.StateListener,
         inputListener: InputEventListener,
     ): FakePointerCaptureComponent {
-        val pointerCaptureComponent = FakePointerCaptureComponent(executor, stateListener)
-        pointerCaptureComponent.inputListener = inputListener
-        return pointerCaptureComponent
+        return FakePointerCaptureComponent(
+            fakeInternal =
+                internalRuntime.createPointerCaptureComponent(
+                    executor,
+                    stateListener,
+                    inputListener,
+                )
+        )
     }
 
     override fun createSpatialPointerComponent(): SpatialPointerComponent =
         FakeSpatialPointerComponent()
 
-    override fun createBoundsComponent(): BoundsComponent = FakeBoundsComponent()
+    override fun createBoundsComponent(): BoundsComponent {
+        return FakeBoundsComponent(
+            internalRuntime.createBoundsComponent() as InternalFakeBoundsComponent
+        )
+    }
 
     // Assuming the subspaceNodeHolder contains a valid FakeSubspaceNode and a valid FakeNode.
     public fun createSubspaceNodeEntity(node: FakeNode, size: Dimensions): SubspaceNodeEntity =
@@ -462,9 +583,8 @@ public class FakeSceneRuntime(public val executor: Executor? = null) :
                 SpatialCapabilities.SPATIAL_CAPABILITY_EMBED_ACTIVITY
     }
 
-    private var _isBoundaryConsentGranted = false
     override val isBoundaryConsentGranted: Boolean
-        get() = _isBoundaryConsentGranted
+        get() = internalRuntime.isBoundaryConsentGranted
 
     /**
      * For test purposes only.
@@ -477,26 +597,29 @@ public class FakeSceneRuntime(public val executor: Executor? = null) :
      * correct listeners are registered with their intended executors.
      */
     public val boundaryConsentChangedMap: Map<Consumer<Boolean>, Executor>
-        get() = _boundaryConsentChangedMap
-
-    private val _boundaryConsentChangedMap: MutableMap<Consumer<Boolean>, Executor> = mutableMapOf()
+        get() = internalRuntime.boundaryConsentChangedMap
 
     override fun addOnBoundaryConsentChangedListener(
         callbackExecutor: Executor,
         listener: Consumer<Boolean>,
     ) {
-        _boundaryConsentChangedMap[listener] = callbackExecutor
+        internalRuntime.addOnBoundaryConsentChangedListener(callbackExecutor, listener)
     }
 
     override fun removeOnBoundaryConsentChangedListener(listener: Consumer<Boolean>) {
-        _boundaryConsentChangedMap.remove(listener)
+        internalRuntime.removeOnBoundaryConsentChangedListener(listener)
     }
 
     override fun createPositionalAudioComponent(
         context: Context,
         params: PointSourceParams,
     ): PositionalAudioComponent {
-        return FakePositionalAudioComponent(context, params)
+        return FakePositionalAudioComponent(
+            context,
+            params,
+            internalRuntime.createPositionalAudioComponent(context, params)
+                as InternalFakePositionalAudioComponent,
+        )
     }
 
     override fun createSoundFieldAudioComponent(
@@ -506,14 +629,21 @@ public class FakeSceneRuntime(public val executor: Executor? = null) :
         return FakeSoundFieldAudioComponent(context)
     }
 
-    override fun createSoundEffectPool(maxStreams: Int): SoundEffectPool {
-        return FakeSoundEffectPool()
-    }
+    override fun createSoundEffectPool(maxStreams: Int): SoundEffectPool =
+        FakeSoundEffectPool(
+            internalRuntime.createSoundEffectPool(maxStreams) as InternalFakeSoundEffectPool
+        )
 
     override fun createSoundEffectPoolComponent(
         soundEffectPool: SoundEffectPool
     ): SoundEffectPoolComponent {
-        return FakeSoundEffectPoolComponent()
+        val fakeSoundEffectPoolComponent =
+            FakeSoundEffectPoolComponent(
+                internalRuntime.createSoundEffectPoolComponent(soundEffectPool)
+                    as InternalFakeSoundEffectPoolComponent
+            )
+
+        return fakeSoundEffectPoolComponent
     }
 
     /**
@@ -525,16 +655,12 @@ public class FakeSceneRuntime(public val executor: Executor? = null) :
      * @param boundaryConsent The new value for boundary consent.
      */
     public fun onBoundaryConsentChanged(boundaryConsent: Boolean) {
-        val oldBoundaryConsent = _isBoundaryConsentGranted
-        val newBoundaryConsent = boundaryConsent
-        _isBoundaryConsentGranted = newBoundaryConsent
-
-        if (oldBoundaryConsent != newBoundaryConsent) {
-            _boundaryConsentChangedMap.forEach { (listener, executor) ->
-                executor.execute { listener.accept(newBoundaryConsent) }
-            }
-        }
+        internalRuntime.onBoundaryConsentChanged(boundaryConsent)
     }
 
     override val virtualPixelDensity: Float = 2000f
+
+    override fun destroy() {
+        internalRuntime.destroy()
+    }
 }

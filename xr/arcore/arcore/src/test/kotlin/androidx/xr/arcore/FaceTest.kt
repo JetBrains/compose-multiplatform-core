@@ -56,6 +56,10 @@ import org.robolectric.android.controller.ActivityController
 class FaceTest {
     companion object {
         const val BLEND_SHAPE_COUNT = 68
+        val DISABLED_CONFIG = Config.Builder().setFaceTracking(FaceTrackingMode.DISABLED).build()
+        val MESHES_CONFIG = Config.Builder().setFaceTracking(FaceTrackingMode.MESHES).build()
+        val BLEND_SHAPES_CONFIG =
+            Config.Builder().setFaceTracking(FaceTrackingMode.BLEND_SHAPES).build()
     }
 
     @Rule @JvmField val arCoreTestRule = ArCoreTestRule()
@@ -86,7 +90,7 @@ class FaceTest {
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun getUserFace_returnsFaceWithUpdatedTrackingStateAndBlendShapes() {
-        session.configure(Config(faceTracking = FaceTrackingMode.BLEND_SHAPES))
+        session.configure(BLEND_SHAPES_CONFIG)
         runTest(testDispatcher) {
             val underTest = Face.getUserFace(session)
 
@@ -109,22 +113,22 @@ class FaceTest {
 
     @Test
     fun getUserFace_faceTrackingDisabled_throwsIllegalStateException() {
-        session.configure(Config(faceTracking = FaceTrackingMode.DISABLED))
+        session.configure(DISABLED_CONFIG)
 
         assertFailsWith<IllegalStateException> { Face.getUserFace(session) }
     }
 
     @Test
     fun getUserFace_faceTrackingConfiguredForMeshes_throwsIllegalStateException() {
-        session.configure(Config(faceTracking = FaceTrackingMode.MESHES))
+        session.configure(MESHES_CONFIG)
 
         assertFailsWith<IllegalStateException> { Face.getUserFace(session) }
     }
 
-    @OptIn(ExperimentalCoroutinesApi::class, ExperimentalFaceApi::class)
+    @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun subscribe_collectReturnsFaceMesh() {
-        session.configure(Config(faceTracking = FaceTrackingMode.MESHES))
+        session.configure(MESHES_CONFIG)
         runTest(testDispatcher) {
             val testFace = TestFace()
             arCoreTestRule.addTrackables(testFace)
@@ -139,18 +143,16 @@ class FaceTest {
         }
     }
 
-    @OptIn(ExperimentalFaceApi::class)
     @Test
     fun subscribe_faceTrackingDisabled_throwsIllegalStateException() {
-        session.configure(Config(faceTracking = FaceTrackingMode.DISABLED))
+        session.configure(DISABLED_CONFIG)
 
         assertFailsWith<IllegalStateException> { Face.subscribe(session) }
     }
 
-    @OptIn(ExperimentalFaceApi::class)
     @Test
     fun subscribe_faceTrackingConfiguredForBlendShapes_throwsIllegalStateException() {
-        session.configure(Config(faceTracking = FaceTrackingMode.BLEND_SHAPES))
+        session.configure(BLEND_SHAPES_CONFIG)
 
         assertFailsWith<IllegalStateException> { Face.subscribe(session) }
     }
@@ -158,7 +160,7 @@ class FaceTest {
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun getUserFace_stateMatchesRuntimeFace() {
-        session.configure(Config(faceTracking = FaceTrackingMode.BLEND_SHAPES))
+        session.configure(BLEND_SHAPES_CONFIG)
         runTest(testDispatcher) {
             val underTest = Face.getUserFace(session)
             arCoreTestRule.faceTester.isValid = true
@@ -169,7 +171,7 @@ class FaceTest {
 
             activityController.pause()
             advanceUntilIdle()
-            session.configure(Config(faceTracking = FaceTrackingMode.DISABLED))
+            session.configure(DISABLED_CONFIG)
             advanceUntilIdle()
             activityController.resume()
             advanceUntilIdle()
@@ -182,7 +184,7 @@ class FaceTest {
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun blendShapeArray_invalidValues_doesNotUpdateState() {
-        session.configure(Config(faceTracking = FaceTrackingMode.BLEND_SHAPES))
+        session.configure(BLEND_SHAPES_CONFIG)
         runTest(testDispatcher) {
             val underTest = Face.getUserFace(session)
 
@@ -215,7 +217,7 @@ class FaceTest {
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun confidenceArray_invalidValues_doesNotUpdateState() {
-        session.configure(Config(faceTracking = FaceTrackingMode.BLEND_SHAPES))
+        session.configure(BLEND_SHAPES_CONFIG)
         runTest(testDispatcher) {
             val underTest = Face.getUserFace(session)
 
@@ -242,10 +244,9 @@ class FaceTest {
         }
     }
 
-    @OptIn(ExperimentalFaceApi::class)
     @Test
     fun update_trackingStateMatchesRuntime() {
-        session.configure(Config(faceTracking = FaceTrackingMode.MESHES))
+        session.configure(MESHES_CONFIG)
         runTest(testDispatcher) {
             val testFace = TestFace()
             arCoreTestRule.addTrackables(testFace)
@@ -268,10 +269,9 @@ class FaceTest {
         }
     }
 
-    @OptIn(ExperimentalFaceApi::class)
     @Test
     fun update_centerPoseMatchesRuntime() {
-        session.configure(Config(faceTracking = FaceTrackingMode.MESHES))
+        session.configure(MESHES_CONFIG)
         runTest(testDispatcher) {
             val testFace = TestFace()
             arCoreTestRule.addTrackables(testFace)
@@ -291,10 +291,9 @@ class FaceTest {
         }
     }
 
-    @OptIn(ExperimentalFaceApi::class)
     @Test
     fun update_noseTipPoseMatchesRuntime() {
-        session.configure(Config(faceTracking = FaceTrackingMode.MESHES))
+        session.configure(MESHES_CONFIG)
         runTest(testDispatcher) {
             val testFace = TestFace()
             arCoreTestRule.addTrackables(testFace)
@@ -314,10 +313,9 @@ class FaceTest {
         }
     }
 
-    @OptIn(ExperimentalFaceApi::class)
     @Test
     fun update_foreheadLeftPoseMatchesRuntime() {
-        session.configure(Config(faceTracking = FaceTrackingMode.MESHES))
+        session.configure(MESHES_CONFIG)
         runTest(testDispatcher) {
             val testFace = TestFace()
             arCoreTestRule.addTrackables(testFace)
@@ -337,10 +335,9 @@ class FaceTest {
         }
     }
 
-    @OptIn(ExperimentalFaceApi::class)
     @Test
     fun update_foreheadRightPoseMatchesRuntime() {
-        session.configure(Config(faceTracking = FaceTrackingMode.MESHES))
+        session.configure(MESHES_CONFIG)
         runTest(testDispatcher) {
             val testFace = TestFace()
             arCoreTestRule.addTrackables(testFace)
@@ -360,10 +357,9 @@ class FaceTest {
         }
     }
 
-    @OptIn(ExperimentalFaceApi::class)
     @Test
     fun update_mesh_matchesRuntime() {
-        session.configure(Config(faceTracking = FaceTrackingMode.MESHES))
+        session.configure(MESHES_CONFIG)
         runTest(testDispatcher) {
             val testFace = TestFace()
             arCoreTestRule.addTrackables(testFace)

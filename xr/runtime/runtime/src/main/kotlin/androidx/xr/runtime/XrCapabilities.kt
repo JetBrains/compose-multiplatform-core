@@ -135,10 +135,12 @@ public class DeviceTrackingMode private constructor(public val mode: Int) {
          * - [CAMERA][android.Manifest.permission.CAMERA] (Play Services runtimes only)
          */
         // TODO: remove this once we've migrated all 1P apps.
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         @Deprecated("Use SPATIAL instead.", replaceWith = ReplaceWith("SPATIAL"))
         @JvmField
         public val LAST_KNOWN: DeviceTrackingMode = SPATIAL
 
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         @Deprecated("Use SPATIAL instead.", ReplaceWith("SPATIAL"))
         @JvmField
         public val SPATIAL_LAST_KNOWN: DeviceTrackingMode = SPATIAL
@@ -152,11 +154,12 @@ public class DeviceTrackingMode private constructor(public val mode: Int) {
          * Supported runtimes:
          * - Projected
          */
-        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+        @ExperimentalInertialTrackingApi
         @JvmField
         public val INERTIAL: DeviceTrackingMode = DeviceTrackingMode(2)
 
-        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+        @OptIn(ExperimentalInertialTrackingApi::class)
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         @Deprecated("Use INERTIAL instead.", ReplaceWith("INERTIAL"))
         @JvmField
         public val INERTIAL_LAST_KNOWN: DeviceTrackingMode = INERTIAL
@@ -233,9 +236,6 @@ public class AnchorPersistenceMode private constructor(public val mode: Int) {
  *
  * Setting this feature to [FaceTrackingMode.BLEND_SHAPES] requires that the `FACE_TRACKING` Android
  * permission is granted by the calling application.
- *
- * Setting this feature to [FaceTrackingMode.MESHES] requires the `CAMERA` Android permission to be
- * granted and that [CameraFacingDirection] is set to [CameraFacingDirection.Companion.USER].
  */
 public class FaceTrackingMode private constructor(public val mode: Int) {
     public companion object {
@@ -338,6 +338,7 @@ public class GeospatialMode private constructor(public val mode: Int) {
 
         @Deprecated("Use SPATIAL instead.", ReplaceWith("SPATIAL"))
         @JvmField
+        @RestrictTo(RestrictTo.Scope.LIBRARY)
         public val VPS_AND_GPS: GeospatialMode = SPATIAL
 
         /**
@@ -415,6 +416,39 @@ public class CameraFacingDirection private constructor(public val mode: Int) {
          * - [CAMERA][android.Manifest.permission.CAMERA]
          */
         @JvmField public val USER: CameraFacingDirection = CameraFacingDirection(1)
+    }
+}
+
+/** Feature that allows tracking of and provides information about QR codes. */
+public class QrCodeTrackingMode private constructor(public val mode: Int) {
+    public companion object {
+        /** QR codes will not be tracked. */
+        @JvmField public val DISABLED: QrCodeTrackingMode = QrCodeTrackingMode(0)
+
+        /**
+         * Used for tracking moving QR codes. It has the highest accuracy, the lowest latency and
+         * the highest power consumption.
+         *
+         * Supported runtimes:
+         * - OpenXR
+         *
+         * Required permissions:
+         * - [SCENE_UNDERSTANDING_COARSE][androidx.xr.runtime.manifest.SCENE_UNDERSTANDING_COARSE]
+         */
+        @JvmField public val DYNAMIC: QrCodeTrackingMode = QrCodeTrackingMode(1)
+
+        /**
+         * Used for tracking QR codes that are known to be static or semi-static. It has less power
+         * consumption in comparison to dynamic mode. If a static QR code is moving, it will be
+         * updated with a much higher latency.
+         *
+         * Supported runtimes:
+         * - OpenXR
+         *
+         * Required permissions:
+         * - [SCENE_UNDERSTANDING_COARSE][androidx.xr.runtime.manifest.SCENE_UNDERSTANDING_COARSE]
+         */
+        @JvmField public val STATIC: QrCodeTrackingMode = QrCodeTrackingMode(2)
     }
 }
 

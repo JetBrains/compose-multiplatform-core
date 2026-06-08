@@ -36,7 +36,7 @@ import java.util.concurrent.atomic.AtomicReference
  * relationship with each other and are used to build a spatial scene graph.
  *
  * There are several different Entity types with Entity being the base class. The position of most
- * Entity types can updated within the scene graph by updating their [Pose]. Additionally, the
+ * Entity types can be updated within the scene graph by updating their [Pose]. Additionally, the
  * Entity's scale, and alpha can be updated. Components can be attached to Entities to enable
  * additional behaviors.
  *
@@ -50,7 +50,8 @@ internal constructor(rtEntity: RtEntity, private val entityRegistry: EntityRegis
 
     private var _rtEntity: RtEntity? = null
 
-    internal val rtEntity: RtEntity
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public val rtEntity: RtEntity
         get() {
             checkNotDisposed()
             return _rtEntity!!
@@ -420,8 +421,11 @@ internal constructor(rtEntity: RtEntity, private val entityRegistry: EntityRegis
          * @param session Session to create the Entity in.
          * @param name Name of the entity. This is unset by default.
          * @param pose Initial pose of the entity. The default value is [Pose.Identity].
-         * @param parent Parent entity. If `null`, the entity is created but not attached to the
-         *   scene graph and will not be visible until a parent is set. The default value is `null`.
+         * @param parent Parent entity. Defaults to `null`. If `null`, the entity is created but not
+         *   attached to the scene graph, meaning it will be invisible. If a parent entity (e.g.,
+         *   [ActivitySpace] or any other [Entity] already present in the scene) is assigned later,
+         *   the entity will become visible (provided it is enabled). This allows for [Entity]
+         *   pre-configuration before making it visible.
          */
         @JvmOverloads
         @JvmStatic

@@ -40,7 +40,6 @@ import androidx.xr.projected.permissions.ProjectedPermissionsRequestParams
 import androidx.xr.projected.permissions.ProjectedPermissionsResultContract
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.DeviceTrackingMode
-import androidx.xr.runtime.ExperimentalXrDeviceLifecycleApi
 import androidx.xr.runtime.GeospatialMode
 import androidx.xr.runtime.PreviewSpatialApi
 import androidx.xr.runtime.Session
@@ -49,7 +48,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 @Suppress("DEPRECATION")
-@OptIn(PreviewSpatialApi::class, ExperimentalXrDeviceLifecycleApi::class)
+@OptIn(PreviewSpatialApi::class)
 class ConfigProjectedGeospatialActivity : ComponentActivity() {
 
     private val test1Result = mutableStateOf("Pending...")
@@ -125,17 +124,21 @@ class ConfigProjectedGeospatialActivity : ComponentActivity() {
         lifecycleScope.launch(Dispatchers.IO) {
             try {
                 when (
-                    val result = Session.create(context = this@ConfigProjectedGeospatialActivity)
+                    val result =
+                        Session.create(
+                            context = this@ConfigProjectedGeospatialActivity,
+                            lifecycleOwner = this@ConfigProjectedGeospatialActivity,
+                        )
                 ) {
                     is SessionCreateSuccess -> {
                         val session = result.session
 
                         // TEST 1 (Config Plumbing)
                         val config =
-                            Config(
-                                geospatial = targetMode,
-                                deviceTracking = DeviceTrackingMode.SPATIAL,
-                            )
+                            Config.Builder()
+                                .setGeospatial(targetMode)
+                                .setDeviceTracking(DeviceTrackingMode.SPATIAL)
+                                .build()
                         try {
                             session.configure(config)
                             test1Result.value = "Success"

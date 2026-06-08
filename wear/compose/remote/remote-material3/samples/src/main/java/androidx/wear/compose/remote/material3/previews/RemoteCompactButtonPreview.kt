@@ -18,7 +18,7 @@
 
 package androidx.wear.compose.remote.material3.previews
 
-import androidx.compose.remote.creation.compose.action.HostAction
+import androidx.compose.remote.creation.compose.action.hostAction
 import androidx.compose.remote.creation.compose.layout.RemoteAlignment
 import androidx.compose.remote.creation.compose.layout.RemoteBox
 import androidx.compose.remote.creation.compose.layout.RemoteComposable
@@ -31,7 +31,7 @@ import androidx.compose.remote.creation.compose.state.rdp
 import androidx.compose.remote.creation.compose.state.rf
 import androidx.compose.remote.creation.compose.state.rs
 import androidx.compose.remote.creation.profile.Profile
-import androidx.compose.remote.tooling.preview.RemotePreview
+import androidx.compose.remote.tooling.preview.RemoteContentPreview
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.PreviewParameter
@@ -65,7 +65,7 @@ fun RemoteCompactButtonWithIcon() {
 @Composable
 private fun RemoteCompactButtonWithIconPreview(
     @PreviewParameter(ProfilePreviewParameterProvider::class) profile: Profile
-) = RemotePreview(profile = profile) { Container { RemoteCompactButtonWithIcon() } }
+) = RemoteContentPreview(profile = profile) { Container { RemoteCompactButtonWithIcon() } }
 
 @Composable
 @RemoteComposable
@@ -81,7 +81,7 @@ fun RemoteCompactButtonWithLabel() {
 @Composable
 private fun RemoteCompactButtonWithLabelPreview(
     @PreviewParameter(ProfilePreviewParameterProvider::class) profile: Profile
-) = RemotePreview(profile = profile) { Container { RemoteCompactButtonWithLabel() } }
+) = RemoteContentPreview(profile = profile) { Container { RemoteCompactButtonWithLabel() } }
 
 @Composable
 @RemoteComposable
@@ -105,7 +105,7 @@ fun RemoteCompactButtonWithIconAndLabel() {
 @Composable
 private fun RemoteCompactButtonWithIconAndLabelPreview(
     @PreviewParameter(ProfilePreviewParameterProvider::class) profile: Profile
-) = RemotePreview(profile = profile) { Container { RemoteCompactButtonWithIconAndLabel() } }
+) = RemoteContentPreview(profile = profile) { Container { RemoteCompactButtonWithIconAndLabel() } }
 
 @Composable
 @RemoteComposable
@@ -122,7 +122,7 @@ fun RemoteCompactButtonWithBorder() {
 @Composable
 private fun RemoteCompactButtonWithBorderPreview(
     @PreviewParameter(ProfilePreviewParameterProvider::class) profile: Profile
-) = RemotePreview(profile = profile) { Container { RemoteCompactButtonWithBorder() } }
+) = RemoteContentPreview(profile = profile) { Container { RemoteCompactButtonWithBorder() } }
 
 @Composable
 @RemoteComposable
@@ -138,7 +138,7 @@ fun RemoteCompactButtonWithShape() {
 @Composable
 private fun RemoteCompactButtonWithShapePreview(
     @PreviewParameter(ProfilePreviewParameterProvider::class) profile: Profile
-) = RemotePreview(profile = profile) { Container { RemoteCompactButtonWithShape() } }
+) = RemoteContentPreview(profile = profile) { Container { RemoteCompactButtonWithShape() } }
 
 @Composable
 @RemoteComposable
@@ -149,4 +149,4 @@ private fun Container(
     RemoteBox(modifier, contentAlignment = RemoteAlignment.Center, content = content)
 }
 
-private val testAction = HostAction("testAction".rs, 1.rf)
+private val testAction = hostAction("testAction".rs, 1.rf)

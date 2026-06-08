@@ -19,31 +19,41 @@ package androidx.xr.scenecore
 import android.os.Build
 import androidx.activity.ComponentActivity
 import androidx.annotation.RequiresApi
+import androidx.lifecycle.LifecycleOwner
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.SessionCreateSuccess
 import androidx.xr.runtime.math.Matrix4
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.testing.MemoryUtils
+import androidx.xr.scenecore.testing.MeshEntityTester
+import androidx.xr.scenecore.testing.SceneCoreTestRule
 import com.google.common.truth.Truth.assertThat
 import java.lang.ref.WeakReference
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.StandardTestDispatcher
+import org.junit.After
 import org.junit.Assert.assertThrows
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.android.controller.ActivityController
+import org.robolectric.annotation.Config
 
-@OptIn(ExperimentalCustomMeshApi::class)
 @RunWith(RobolectricTestRunner::class)
-@org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.TARGET_SDK])
+@Config(sdk = [Config.TARGET_SDK])
 class MeshEntityTest {
-    private val activity =
-        Robolectric.buildActivity(ComponentActivity::class.java).create().start().get()
+    @Rule @JvmField val testRule = SceneCoreTestRule()
+
+    private val testDispatcher = StandardTestDispatcher()
+
+    private lateinit var activityController: ActivityController<ComponentActivity>
+    private lateinit var activity: ComponentActivity
     private lateinit var session: Session
     private lateinit var meshBuffer: MeshBuffer
     private lateinit var customMesh: CustomMesh
@@ -52,8 +62,14 @@ class MeshEntityTest {
     @RequiresApi(Build.VERSION_CODES.O)
     @Before
     fun setUp() = runBlocking {
-        val testDispatcher = StandardTestDispatcher()
-        val result = Session.create(context = activity, coroutineContext = testDispatcher)
+        activityController = Robolectric.buildActivity(ComponentActivity::class.java)
+        activity = activityController.create().start().get()
+        val result =
+            Session.create(
+                context = activity,
+                coroutineContext = testDispatcher,
+                lifecycleOwner = activity as LifecycleOwner,
+            )
 
         assertThat(result).isInstanceOf(SessionCreateSuccess::class.java)
 
@@ -79,6 +95,13 @@ class MeshEntityTest {
         material = KhronosPbrMaterial.create(session, AlphaMode.OPAQUE)
     }
 
+    @After
+    fun tearDown() {
+        if (::activityController.isInitialized) {
+            activityController.destroy()
+        }
+    }
+
     @Test
     fun create_withValidArguments_createsMeshEntity() {
         val entity = MeshEntity.create(session, customMesh, listOf(material))
@@ -87,6 +110,7 @@ class MeshEntityTest {
         assertThat(entity.mesh).isEqualTo(customMesh)
         assertThat(entity.materials).containsExactly(material)
         assertThat(entity.getPose()).isEqualTo(Pose.Identity)
+        assertThat(entity.parent).isNull()
     }
 
     @Test
@@ -158,10 +182,12 @@ class MeshEntityTest {
     @Test
     fun setBoneTransforms_withPositiveBoneCount_succeeds() {
         val entity = MeshEntity.create(session, customMesh, listOf(material), boneCount = 1)
+        val tester = testRule.createTester<MeshEntityTester>(entity)
 
         entity.setBoneTransforms(listOf(Matrix4.Identity))
 
-        // Execution succeeded without exception
+        assertThat(tester.boneTransforms).hasSize(1)
+        assertThat(tester.boneTransforms[0]).isEqualTo(Matrix4.Identity)
     }
 
     @Test

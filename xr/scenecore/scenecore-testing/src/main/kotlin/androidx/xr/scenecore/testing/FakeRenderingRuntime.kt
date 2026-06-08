@@ -19,6 +19,7 @@
 package androidx.xr.scenecore.testing
 
 import androidx.annotation.RestrictTo
+import androidx.xr.runtime.Config
 import androidx.xr.runtime.math.BoundingBox
 import androidx.xr.runtime.math.Matrix3
 import androidx.xr.runtime.math.Pose
@@ -41,6 +42,11 @@ import androidx.xr.scenecore.runtime.SpatialEnvironmentExt
 import androidx.xr.scenecore.runtime.SurfaceEntity
 import androidx.xr.scenecore.runtime.TextureResource
 import androidx.xr.scenecore.runtime.TextureSampler
+import androidx.xr.scenecore.testing.internal.FakeExrImageResource as InternalFakeExrImageResource
+import androidx.xr.scenecore.testing.internal.FakeGltfFeature as InternalFakeGltfFeature
+import androidx.xr.scenecore.testing.internal.FakeRenderingRuntime as InternalFakeRenderingRuntime
+import androidx.xr.scenecore.testing.internal.FakeSurfaceFeature as InternalFakeSurfaceFeature
+import androidx.xr.scenecore.testing.internal.FakeTexture as InternalFakeTexture
 import java.nio.ByteBuffer
 
 /**
@@ -56,8 +62,15 @@ public class FakeRenderingRuntime(
     private val sceneRuntime: SceneRuntime,
     private val entityFactory: RenderingEntityFactory = sceneRuntime as RenderingEntityFactory,
 ) : RenderingRuntime {
+
+    override val config: Config
+        get() = internalRuntime.config
+
+    internal var internalRuntime: InternalFakeRenderingRuntime =
+        InternalFakeRenderingRuntime(sceneRuntime)
+
     private var spatialEnvironmentFeature: FakeSpatialEnvironmentFeature =
-        FakeSpatialEnvironmentFeature()
+        FakeSpatialEnvironmentFeature(internalRuntime.spatialEnvironmentFeature)
 
     init {
         (sceneRuntime.spatialEnvironment as SpatialEnvironmentExt).onRenderingFeatureReady(
@@ -65,38 +78,47 @@ public class FakeRenderingRuntime(
         )
     }
 
-    override suspend fun loadGltfByAssetName(assetName: String): GltfModelResource {
-        val gltfModelResource = FakeGltfModelResource(0)
-        gltfModelResource.assetName = assetName
-        return gltfModelResource
+    override fun configure(config: Config) {
+        internalRuntime.configure(config)
+    }
+
+    override suspend fun loadGltfByAssetName(assetName: String): FakeGltfModelResource {
+        return FakeGltfModelResource(0, internalRuntime.loadGltfByAssetName(assetName))
     }
 
     override suspend fun loadGltfByByteArray(
         assetData: ByteArray,
         assetKey: String,
-    ): GltfModelResource {
-        val gltfModelResource = FakeGltfModelResource(0)
-        gltfModelResource.assetData = assetData
-        gltfModelResource.assetKey = assetKey
-        return gltfModelResource
+    ): FakeGltfModelResource {
+        return FakeGltfModelResource(0, internalRuntime.loadGltfByByteArray(assetData, assetKey))
     }
 
     override fun destroyGltfModel(gltfModel: GltfModelResource) {}
 
     override suspend fun loadExrImageByAssetName(assetName: String): ExrImageResource {
-        val exrImageResource = FakeExrImageResource(0)
-        exrImageResource.assetName = assetName
-        return exrImageResource
+        return FakeExrImageResource(
+            0,
+            internalRuntime.loadExrImageByAssetName(assetName) as InternalFakeExrImageResource,
+        )
     }
 
     override suspend fun loadExrImageByByteArray(
         assetData: ByteArray,
         assetKey: String,
-    ): ExrImageResource = FakeExrImageResource(1)
+    ): ExrImageResource {
+        return FakeExrImageResource(
+            1,
+            internalRuntime.loadExrImageByByteArray(assetData, assetKey)
+                as InternalFakeExrImageResource,
+        )
+    }
 
     override fun destroyExrImage(exrImage: ExrImageResource) {}
 
-    override suspend fun loadTexture(assetName: String): TextureResource = FakeResource()
+    override suspend fun loadTexture(assetName: String): TextureResource =
+        FakeTexture(internalRuntime.loadTexture(assetName) as InternalFakeTexture).apply {
+            this.assetName = assetName
+        }
 
     /**
      * For test purposes only.
@@ -104,19 +126,26 @@ public class FakeRenderingRuntime(
      * Controls the `TextureResource` instance returned by [borrowReflectionTexture] and
      * [getReflectionTextureFromIbl].
      *
-     * <p>Tests can set this property to a [FakeResource] instance to simulate the availability of a
+     * <p>Tests can set this property to a [FakeTexture] instance to simulate the availability of a
      * reflection texture. This allows verification that the code under test correctly handles the
-     * borrowed or retrieved texture. Calling [destroyTexture] will reset this property to `null`,
-     * enabling tests to also verify resource cleanup behavior.
+     * borrowed or retrieved texture.
      */
-    internal var reflectionTexture: FakeResource? = null
+    internal var reflectionTexture: FakeTexture?
+        get() =
+            internalRuntime.reflectionTexture?.let {
+                FakeTexture.wrap(it as TextureResource) as FakeTexture
+            }
+        set(value) {
+            internalRuntime.reflectionTexture =
+                value?.let { FakeTexture.unwrap(it as TextureResource) as InternalFakeTexture }
+        }
 
     override fun borrowReflectionTexture(): TextureResource? {
         return reflectionTexture
     }
 
     override fun destroyTexture(texture: TextureResource) {
-        reflectionTexture = null
+        internalRuntime.destroyTexture(FakeTexture.unwrap(texture))
     }
 
     override fun getReflectionTextureFromIbl(iblToken: ExrImageResource): TextureResource? {
@@ -139,6 +168,8 @@ public class FakeRenderingRuntime(
      */
     @Deprecated("Use SceneCoreTestRule instead.")
     public class FakeWaterMaterial(public val isAlphaMapVersion: Boolean) : MaterialResource {
+        internal var fakeInternal =
+            InternalFakeRenderingRuntime.FakeWaterMaterial(isAlphaMapVersion)
         public var reflectionMap: TextureResource? = null
         public var reflectionMapSampler: TextureSampler? = null
         public var normalMap: TextureResource? = null
@@ -179,6 +210,7 @@ public class FakeRenderingRuntime(
     @Deprecated("Use SceneCoreTestRule instead.")
     public class FakeKhronosPbrMaterial(public val spec: KhronosPbrMaterialSpec) :
         MaterialResource {
+        internal var fakeInternal = InternalFakeRenderingRuntime.FakeKhronosPbrMaterial(spec)
         public var baseColorTexture: TextureResource? = null
         public var baseColorTextureSampler: TextureSampler? = null
         public var baseColorUvTransform: Matrix3? = null
@@ -528,7 +560,11 @@ public class FakeRenderingRuntime(
         loadedGltf: GltfModelResource,
         parentEntity: Entity?,
     ): GltfEntity {
-        return entityFactory.createGltfEntity(FakeGltfFeature(createNode()), pose, parentEntity)
+        val nodeHolder = createNode()
+        val fakeInternal =
+            InternalFakeGltfFeature(nodeHolder).apply { this.loadedGltf = loadedGltf }
+        val gltfFeature = FakeGltfFeature(nodeHolder, fakeInternal)
+        return entityFactory.createGltfEntity(gltfFeature, pose, parentEntity)
     }
 
     override fun createSurfaceEntity(
@@ -540,7 +576,9 @@ public class FakeRenderingRuntime(
         superSampling: Int,
         parentEntity: Entity?,
     ): SurfaceEntity {
-        val surfaceFeature = FakeSurfaceFeature(createNode())
+        val nodeHolder = createNode()
+
+        val surfaceFeature = FakeSurfaceFeature(nodeHolder, InternalFakeSurfaceFeature(nodeHolder))
         surfaceFeature.stereoMode = stereoMode
         surfaceFeature.shape = shape
 
@@ -594,7 +632,14 @@ public class FakeRenderingRuntime(
         pose: Pose,
         parent: Entity?,
     ): MeshEntity {
-        return entityFactory.createMeshEntity(FakeMeshFeature(createNode()), pose, parent)
+        val nodeHolder = createNode()
+
+        val meshFeature =
+            FakeMeshFeature(nodeHolder = nodeHolder, initialMaterials = materials).apply {
+                this.boneCount = boneCount
+            }
+
+        return entityFactory.createMeshEntity(meshFeature, pose, parent)
     }
 
     /* Tracks the current state of the adapter according to where it is in its lifecycle. */
@@ -626,5 +671,7 @@ public class FakeRenderingRuntime(
 
     override fun destroy() {
         _state = State.DESTROYED
+
+        internalRuntime.destroy()
     }
 }

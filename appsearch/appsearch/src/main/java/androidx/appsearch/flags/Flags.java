@@ -227,15 +227,8 @@ public final class Flags {
             FLAG_PREFIX + "directly_write_commit_remove_blob_response";
 
     /**
-     * Whether to enable schema-type id optimization for setSchema. When enabled, the type-ids of
-     * existing types will be preserved when possible.
-     */
-    public static final String FLAG_ENABLE_SCHEMA_TYPE_ID_OPTIMIZATION =
-            FLAG_PREFIX + "enable_schema_type_id_optimization";
-
-    /**
-     * Enable deduping schema types' property definitions when storing SchemaTypeConfigs in the
-     * schema store.
+     * Whether to enable deduping schema types' property definitions when storing
+     * SchemaTypeConfigs in the schema store.
      */
     public static final String FLAG_ENABLE_SCHEMA_DEFINITION_DEDUPING =
             FLAG_PREFIX + "enable_schema_definition_deduping";
@@ -296,6 +289,10 @@ public final class Flags {
     /** Enables embedding approximate nearest neighbor. */
     public static final String FLAG_ENABLE_EMBEDDING_APPROXIMATE_NEAREST_NEIGHBOR =
             FLAG_PREFIX + "enable_embedding_approximate_nearest_neighbor";
+
+    /** Enables embedding pre-quantized data. */
+    public static final String FLAG_ENABLE_EMBEDDING_PRE_QUANTIZED_DATA =
+            FLAG_PREFIX + "enable_embedding_pre_quantized_data";
 
     // Whether the features should be enabled.
     //
@@ -551,16 +548,6 @@ public final class Flags {
     }
 
     /**
-     * Whether to enable schema-type id optimization for setSchema. When enabled, the type-ids of
-     * existing types will be preserved when possible, and there will be no schema-type id
-     * reassignment for adding new types.
-     */
-    public static boolean enableSchemaTypeIdOptimization() {
-        // TODO(b/434218554): Enable this once the feature is rolled out to Nextfood in platform.
-        return false;
-    }
-
-    /**
      * Whether to enable deduping schema types' property definitions when storing
      * SchemaTypeConfigs in the schema store.
      */
@@ -645,6 +632,11 @@ public final class Flags {
 
     /** Whether embedding approximate nearest neighbor should be enabled. */
     public static boolean enableEmbeddingApproximateNearestNeighbor() {
+        return true;
+    }
+
+    /** Whether embedding pre-quantized data should be enabled. */
+    public static boolean enableEmbeddingPreQuantizedData() {
         return true;
     }
 }

@@ -30,7 +30,6 @@ import androidx.xr.arcore.ArDevice
 import androidx.xr.arcore.CreateGeospatialPoseFromPoseSuccess
 import androidx.xr.arcore.CreatePoseFromGeospatialPoseSuccess
 import androidx.xr.arcore.Geospatial
-import androidx.xr.arcore.GeospatialState
 import androidx.xr.arcore.TrackingState
 import androidx.xr.arcore.VpsAvailabilityAvailable
 import androidx.xr.arcore.VpsAvailabilityErrorInternal
@@ -44,6 +43,7 @@ import androidx.xr.projected.permissions.ProjectedPermissionsRequestParams
 import androidx.xr.projected.permissions.ProjectedPermissionsResultContract
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.DeviceTrackingMode
+import androidx.xr.runtime.ExperimentalInertialTrackingApi
 import androidx.xr.runtime.GeospatialMode
 import androidx.xr.runtime.PreviewSpatialApi
 import androidx.xr.runtime.Session
@@ -60,7 +60,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /** Test app which tests projected perception API surface. */
-@OptIn(PreviewSpatialApi::class)
+@OptIn(PreviewSpatialApi::class, ExperimentalInertialTrackingApi::class)
 class ProjectedTestAppActivity : ComponentActivity() {
     private lateinit var session: Session
     private lateinit var geospatial: Geospatial
@@ -72,35 +72,35 @@ class ProjectedTestAppActivity : ComponentActivity() {
     private val configs =
         listOf(
             "Geospatial On, 6DoF On" to
-                Config(
-                    geospatial = GeospatialMode.SPATIAL,
-                    deviceTracking = DeviceTrackingMode.SPATIAL,
-                ),
+                Config.Builder()
+                    .setGeospatial(GeospatialMode.SPATIAL)
+                    .setDeviceTracking(DeviceTrackingMode.SPATIAL)
+                    .build(),
             "Geospatial Off, 6DoF On" to
-                Config(
-                    geospatial = GeospatialMode.DISABLED,
-                    deviceTracking = DeviceTrackingMode.SPATIAL,
-                ),
+                Config.Builder()
+                    .setGeospatial(GeospatialMode.DISABLED)
+                    .setDeviceTracking(DeviceTrackingMode.SPATIAL)
+                    .build(),
             "Geospatial Off, 3DoF On" to
-                Config(
-                    geospatial = GeospatialMode.DISABLED,
-                    deviceTracking = DeviceTrackingMode.INERTIAL,
-                ),
+                Config.Builder()
+                    .setGeospatial(GeospatialMode.DISABLED)
+                    .setDeviceTracking(DeviceTrackingMode.INERTIAL)
+                    .build(),
             "Geospatial Off, Device Tracking Off" to
-                Config(
-                    geospatial = GeospatialMode.DISABLED,
-                    deviceTracking = DeviceTrackingMode.DISABLED,
-                ),
+                Config.Builder()
+                    .setGeospatial(GeospatialMode.DISABLED)
+                    .setDeviceTracking(DeviceTrackingMode.DISABLED)
+                    .build(),
             "Geospatial On, Device Tracking Off" to
-                Config(
-                    geospatial = GeospatialMode.SPATIAL,
-                    deviceTracking = DeviceTrackingMode.DISABLED,
-                ),
+                Config.Builder()
+                    .setGeospatial(GeospatialMode.SPATIAL)
+                    .setDeviceTracking(DeviceTrackingMode.DISABLED)
+                    .build(),
             "Geospatial Low Power" to
-                Config(
-                    geospatial = GeospatialMode.INERTIAL,
-                    deviceTracking = DeviceTrackingMode.SPATIAL,
-                ),
+                Config.Builder()
+                    .setGeospatial(GeospatialMode.INERTIAL)
+                    .setDeviceTracking(DeviceTrackingMode.SPATIAL)
+                    .build(),
         )
     private var currentConfigIndex = 0
     private val currentConfig: Config
@@ -248,8 +248,8 @@ class ProjectedTestAppActivity : ComponentActivity() {
     private fun getGeospatialPoseText(): String {
         val devicePose = ArDevice.getInstance(session).state.value.devicePose
         val geospatialState = Geospatial.getInstance(session).state.value
-        if (geospatialState != GeospatialState.RUNNING) {
-            return "\nGeospatial State: ${getGeospatialStateMessage(geospatialState)} (Waiting for Earth...)"
+        if (geospatialState.geospatialTrackingState != Geospatial.GeospatialTrackingState.RUNNING) {
+            return "\nGeospatial State: ${getGeospatialStateMessage(geospatialState.geospatialTrackingState)} (Waiting for Earth...)"
         }
 
         when (val geospatialPoseResult = geospatial.createGeospatialPoseFromPose(devicePose)) {
@@ -274,7 +274,7 @@ class ProjectedTestAppActivity : ComponentActivity() {
                 val comparisonMessage = testGeospatialConversions(geoPose)
 
                 var text =
-                    "\nGeospatial GeospatialState: ${getGeospatialStateMessage(geospatialState)}"
+                    "\nGeospatial GeospatialState: ${getGeospatialStateMessage(geospatialState.geospatialTrackingState)}"
                 text += "\nGeospatialPose: Lat/Lon: ${lat.fmt(6)}, ${lon.fmt(6)}, Alt: ${alt.fmt()}"
                 text += "\nEUS Quat: ${eus.x.fmt()}, ${eus.y.fmt()}, ${eus.z.fmt()}, ${eus.w.fmt()}"
                 text += "\nVPS availability: $vpsStatusMessage"
@@ -310,14 +310,16 @@ class ProjectedTestAppActivity : ComponentActivity() {
         }
     }
 
-    private fun getGeospatialStateMessage(geospatialState: GeospatialState?): String {
-        return when (geospatialState) {
-            GeospatialState.RUNNING -> "Running"
-            GeospatialState.NOT_RUNNING -> "Not Running"
-            GeospatialState.ERROR_INTERNAL -> "Internal Error"
-            GeospatialState.ERROR_NOT_AUTHORIZED -> "Not Authorized"
-            GeospatialState.ERROR_RESOURCE_EXHAUSTED -> "Resource Exhausted"
-            GeospatialState.PAUSED -> "Paused"
+    private fun getGeospatialStateMessage(
+        geospatialTrackingState: Geospatial.GeospatialTrackingState?
+    ): String {
+        return when (geospatialTrackingState) {
+            Geospatial.GeospatialTrackingState.RUNNING -> "Running"
+            Geospatial.GeospatialTrackingState.NOT_RUNNING -> "Not Running"
+            Geospatial.GeospatialTrackingState.ERROR_INTERNAL -> "Internal Error"
+            Geospatial.GeospatialTrackingState.ERROR_NOT_AUTHORIZED -> "Not Authorized"
+            Geospatial.GeospatialTrackingState.ERROR_RESOURCE_EXHAUSTED -> "Resource Exhausted"
+            Geospatial.GeospatialTrackingState.PAUSED -> "Paused"
             else -> "Checking..."
         }
     }
@@ -399,7 +401,7 @@ class ProjectedTestAppActivity : ComponentActivity() {
 
     public fun tryCreateSession() {
         Log.i("JetpackXR", "Session.create(this)")
-        when (val result = Session.create(context = this)) {
+        when (val result = Session.create(context = this, lifecycleOwner = this)) {
             is SessionCreateSuccess -> {
                 session = result.session
                 try {

@@ -82,10 +82,9 @@ internal constructor(
     /**
      * Gets the perceived resolution of this Entity in the provided [RenderViewpoint].
      *
-     * This API is only intended for use in Full Space Mode and will return
-     * [PerceivedResolutionResult.InvalidRenderViewpoint] in Home Space Mode. For applications
-     * requiring perceived resolution in Home Space Mode, see
-     * [MainPanelEntity.getPerceivedResolution].
+     * This API is only intended for use in Full Space and will return
+     * [PerceivedResolutionResult.InvalidRenderViewpoint] in Home Space. For applications requiring
+     * perceived resolution in Home Space, see [MainPanelEntity.getPerceivedResolution].
      *
      * This value represents the dimensions of the Entity on the camera view if its largest surface
      * was facing the camera without changing the distance of the Entity to the camera. This can be
@@ -229,8 +228,11 @@ internal constructor(
          *   in meters.
          * @param name Name of this PanelEntity.
          * @param pose [Pose] of this entity relative to its parent, default value is Identity.
-         * @param parent Parent entity. If `null`, the entity is created but not attached to the
-         *   scene graph and will not be visible until a parent is set. The default value is `null`.
+         * @param parent Parent entity. Defaults to `null`. If `null`, the entity is created but not
+         *   attached to the scene graph, meaning it will be invisible. If a parent entity (e.g.,
+         *   [ActivitySpace] or any other [Entity] already present in the scene) is assigned later,
+         *   the entity will become visible (provided it is enabled). This allows for [Entity]
+         *   pre-configuration before making it visible.
          * @return a PanelEntity instance.
          */
         @JvmOverloads
@@ -264,8 +266,11 @@ internal constructor(
          *   pixels.
          * @param name Name of the panel.
          * @param pose [Pose] of this PanelEntity relative to its parent, default value is Identity.
-         * @param parent Parent entity. If `null`, the entity is created but not attached to the
-         *   scene graph and will not be visible until a parent is set. The default value is `null`.
+         * @param parent Parent entity. Defaults to `null`. If `null`, the entity is created but not
+         *   attached to the scene graph, meaning it will be invisible. If a parent entity (e.g.,
+         *   [ActivitySpace] or any other [Entity] already present in the scene) is assigned later,
+         *   the entity will become visible (provided it is enabled). This allows for [Entity]
+         *   pre-configuration before making it visible.
          * @return a PanelEntity instance.
          */
         @JvmOverloads

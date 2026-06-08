@@ -89,6 +89,23 @@ internal class AndroidParagraphIntrinsics(
     internal val textDirectionHeuristic =
         resolveTextDirectionHeuristics(style.textDirection, style.localeList)
 
+    /**
+     * Whether [text] contains a hard new line. This is evaluated to apply certain optimizations.
+     * Let's compute this only once when needed to avoid unnecessary O(n) call.
+     */
+    private var _textContainsNewLine = -1
+    @OptIn(ExperimentalTextApi::class)
+    internal val textContainsNewLine: Boolean
+        get() {
+            if (
+                AndroidComposeUiTextFlags.isSingleLineLineHeightOptimizationEnabled &&
+                    _textContainsNewLine == -1
+            ) {
+                _textContainsNewLine = if (text.contains('\n')) 1 else 0
+            }
+            return _textContainsNewLine == 1
+        }
+
     init {
         val resolveTypeface: (FontFamily?, FontWeight, FontStyle, FontSynthesis) -> Typeface =
             { fontFamily, fontWeight, fontStyle, fontSynthesis ->
@@ -141,6 +158,8 @@ internal class AndroidParagraphIntrinsics(
                 density = density,
                 resolveTypeface = resolveTypeface,
                 useEmojiCompat = emojiCompatProcessed,
+                softWrap = softWrap,
+                textContainsNewLine = textContainsNewLine,
             )
 
         layoutIntrinsics = LayoutIntrinsics(charSequence, textPaint, textDirectionHeuristic)
@@ -177,8 +196,9 @@ internal fun resolveTextDirectionHeuristics(
 @Deprecated(
     "Font.ResourceLoader is deprecated, instead use FontFamily.Resolver",
     ReplaceWith(
-        "ParagraphIntrinsics(text, style, spanStyles, placeholders, density, " +
-            "fontFamilyResolver)"
+        "ParagraphIntrinsics(text, style, spanStyles, density, " +
+            "createFontFamilyResolver(resourceLoader), placeholders, true)",
+        "androidx.compose.ui.text.font.createFontFamilyResolver",
     ),
 )
 actual fun ParagraphIntrinsics(
@@ -202,7 +222,7 @@ actual fun ParagraphIntrinsics(
 @Deprecated(
     "Use an overload that takes `annotations` instead",
     ReplaceWith(
-        "ParagraphIntrinsics(text, style, spanStyles, density, fontFamilyResolver, placeholders)"
+        "ParagraphIntrinsics(text, style, spanStyles, density, fontFamilyResolver, placeholders, true)"
     ),
 )
 actual fun ParagraphIntrinsics(
@@ -226,7 +246,7 @@ actual fun ParagraphIntrinsics(
 @Deprecated(
     "Use an override with `softWrap`",
     ReplaceWith(
-        "ParagraphIntrinsics(text, style, annotations, density, fontFamilyResolver, true, listOf())"
+        "ParagraphIntrinsics(text, style, annotations, density, fontFamilyResolver, listOf(), true)"
     ),
 )
 actual fun ParagraphIntrinsics(

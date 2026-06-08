@@ -57,7 +57,6 @@ import androidx.xr.arcore.CreateGeospatialPoseFromPoseNotTracking
 import androidx.xr.arcore.CreateGeospatialPoseFromPoseResult
 import androidx.xr.arcore.CreateGeospatialPoseFromPoseSuccess
 import androidx.xr.arcore.Geospatial
-import androidx.xr.arcore.GeospatialState
 import androidx.xr.arcore.GeospatialSurface
 import androidx.xr.arcore.Plane
 import androidx.xr.arcore.PlaneLabel
@@ -76,7 +75,6 @@ import androidx.xr.arcore.testapp.helloar.rendering.PlaneRenderer
 import androidx.xr.arcore.testapp.ui.theme.GoogleYellow
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.DeviceTrackingMode
-import androidx.xr.runtime.ExperimentalXrDeviceLifecycleApi
 import androidx.xr.runtime.GeospatialMode
 import androidx.xr.runtime.PlaneTrackingMode
 import androidx.xr.runtime.Session
@@ -119,23 +117,24 @@ class GeospatialActivity : ComponentActivity() {
     private lateinit var mainPanelEntity: PanelEntity
     private val mainPanelOffset = Pose(Vector3(0f, 0f, -0.7f))
     private var selectedAnchorType = AnchorType.STANDARD
+    private val configBuilder = Config.Builder()
 
     companion object {
         private const val SAVED_ANCHORS_KEY = "geospatial_anchors"
     }
 
-    @OptIn(ExperimentalXrDeviceLifecycleApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         sharedPreferences = getPreferences(MODE_PRIVATE)
 
+        configBuilder
+            .setPlaneTracking(PlaneTrackingMode.HORIZONTAL_AND_VERTICAL)
+            .setDeviceTracking(DeviceTrackingMode.SPATIAL)
+
         sessionHelper =
             SessionLifecycleHelper(
                 this,
-                Config(
-                    deviceTracking = DeviceTrackingMode.SPATIAL,
-                    planeTracking = PlaneTrackingMode.HORIZONTAL_AND_VERTICAL,
-                ),
+                configBuilder.build(),
                 onSessionAvailable = { session ->
                     this.session = session
                     if (session.config.geospatial == GeospatialMode.DISABLED) {
@@ -143,7 +142,8 @@ class GeospatialActivity : ComponentActivity() {
                             XrDevice.getCurrentDevice(this)
                                 .isGeospatialModeSupported(GeospatialMode.SPATIAL)
                         ) {
-                            val newConfig = session.config.copy(geospatial = GeospatialMode.SPATIAL)
+                            val newConfig =
+                                configBuilder.setGeospatial(GeospatialMode.SPATIAL).build()
                             sessionHelper.tryUpdateConfig(newConfig)
                             return@SessionLifecycleHelper
                         } else {
@@ -169,7 +169,9 @@ class GeospatialActivity : ComponentActivity() {
 
                         // Wait for Geospatial to be running before loading anchors.
                         val geospatial = Geospatial.getInstance(session)
-                        geospatial.state.first { it == GeospatialState.RUNNING }
+                        geospatial.state.first {
+                            it.geospatialTrackingState == Geospatial.GeospatialTrackingState.RUNNING
+                        }
                         loadAnchorsFromSharedPreferences()
                     }
 
@@ -223,10 +225,15 @@ class GeospatialActivity : ComponentActivity() {
                 modifier =
                     Modifier.padding(innerPadding).background(color = Color.White).fillMaxSize()
             ) {
-                Text("Geospatial GeospatialState: $geospatialState")
+                Text(
+                    "Geospatial geospatialTrackingState: ${geospatialState.geospatialTrackingState}"
+                )
                 Text("VPS Availability: ${vpsAvailabilityToString(vpsAvailability)}")
                 Text(localizationStatusText)
-                if (geospatialState == GeospatialState.RUNNING) {
+                if (
+                    geospatialState.geospatialTrackingState ==
+                        Geospatial.GeospatialTrackingState.RUNNING
+                ) {
                     Text("Tap on a plane to create an anchor.")
                 }
                 Text("Anchor type:")
@@ -257,7 +264,10 @@ class GeospatialActivity : ComponentActivity() {
         }
 
         LaunchedEffect(geospatialState) {
-            if (geospatialState == GeospatialState.RUNNING) {
+            if (
+                geospatialState.geospatialTrackingState ==
+                    Geospatial.GeospatialTrackingState.RUNNING
+            ) {
                 val poseResult =
                     snapshotFlow { arDeviceState }
                         .map { geospatial.createGeospatialPoseFromPose(it.devicePose) }
@@ -279,7 +289,10 @@ class GeospatialActivity : ComponentActivity() {
 
         LaunchedEffect(geospatialState) {
             while (true) {
-                if (geospatialState == GeospatialState.RUNNING) {
+                if (
+                    geospatialState.geospatialTrackingState ==
+                        Geospatial.GeospatialTrackingState.RUNNING
+                ) {
                     try {
                         val result =
                             geospatial.createGeospatialPoseFromPose(arDeviceState.devicePose)
@@ -345,7 +358,10 @@ class GeospatialActivity : ComponentActivity() {
             return
         }
         val geospatial = Geospatial.getInstance(session)
-        if (geospatial.state.value != GeospatialState.RUNNING) {
+        if (
+            geospatial.state.value.geospatialTrackingState !=
+                Geospatial.GeospatialTrackingState.RUNNING
+        ) {
             logAndShowToast("Geospatial not running, cannot create anchor.")
             return
         }

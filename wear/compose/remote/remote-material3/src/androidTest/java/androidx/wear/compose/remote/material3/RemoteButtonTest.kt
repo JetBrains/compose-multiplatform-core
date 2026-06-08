@@ -19,7 +19,7 @@ package androidx.wear.compose.remote.material3
 import android.annotation.SuppressLint
 import android.content.Context
 import androidx.collection.buildObjectIntMap
-import androidx.compose.remote.creation.compose.action.HostAction
+import androidx.compose.remote.creation.compose.action.hostAction
 import androidx.compose.remote.creation.compose.capture.createCreationDisplayInfo
 import androidx.compose.remote.creation.compose.layout.RemotePaddingValues
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
@@ -34,8 +34,8 @@ import androidx.compose.remote.creation.compose.state.rememberNamedRemoteBitmap
 import androidx.compose.remote.creation.compose.state.rf
 import androidx.compose.remote.creation.compose.state.rs
 import androidx.compose.remote.creation.profile.RcPlatformProfiles
-import androidx.compose.remote.player.compose.test.utils.screenshot.rule.ComposableWrappers
-import androidx.compose.remote.player.compose.test.utils.screenshot.rule.RemoteScreenshotTestRule
+import androidx.compose.remote.player.compose.test.utils.ComposableWrappers
+import androidx.compose.remote.player.compose.test.utils.RemoteScreenshotTestRule
 import androidx.compose.remote.testing.RemoteCaptureTestRule
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
@@ -381,5 +381,5 @@ class RemoteButtonTest {
     // trim leading/trailing spaces from the whole string
     private fun String.normalizeWhiteSpace() = this.replace(Regex("\\s+"), " ").trim()
 
-    private val testAction = HostAction("testAction".rs, 1.rf)
+    private val testAction = hostAction("testAction".rs, 1.rf)
 }

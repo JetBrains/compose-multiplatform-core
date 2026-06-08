@@ -179,8 +179,11 @@ private constructor(rtGltfEntity: RtGltfEntity, entityRegistry: EntityRegistry) 
          * @param session [Session] to create the [GltfModel] in.
          * @param model The [GltfModel] this [Entity] is referencing.
          * @param pose The initial [Pose] of the [Entity]. The default value is [Pose.Identity].
-         * @param parent Parent entity. If `null`, the entity is created but not attached to the
-         *   scene graph and will not be visible until a parent is set. The default value is `null`.
+         * @param parent Parent entity. Defaults to `null`. If `null`, the entity is created but not
+         *   attached to the scene graph, meaning it will be invisible. If a parent entity (e.g.,
+         *   [ActivitySpace] or any other [Entity] already present in the scene) is assigned later,
+         *   the entity will become visible (provided it is enabled). This allows for [Entity]
+         *   pre-configuration before making it visible.
          */
         @MainThread
         @JvmOverloads

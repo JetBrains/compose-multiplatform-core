@@ -136,9 +136,7 @@ object ComposeFoundationFlags {
      * [androidx.compose.foundation.text.BasicTextField] into one.
      */
     // TODO: Remove this flag after 1.12 (b/507967106)
-    @field:Suppress("MutableBareField")
-    @JvmField
-    var isBasicTextFieldSizeOptimizationEnabled = false
+    @field:Suppress("MutableBareField") @JvmField var isBasicTextFieldSizeOptimizationEnabled = true
 
     /**
      * This flag controls the fix where item placement animation in
@@ -190,7 +188,7 @@ object ComposeFoundationFlags {
     // TODO: b/506963276
     @field:Suppress("MutableBareField")
     @JvmField
-    var isClearNestedScrollCoroutineScopeFixEnabled: Boolean = false
+    var isClearNestedScrollCoroutineScopeFixEnabled: Boolean = true
 
     /**
      * This flag controls whether selecting text in

@@ -18,7 +18,6 @@ package androidx.xr.runtime.internal
 
 import androidx.annotation.RestrictTo
 import androidx.xr.runtime.Config
-import androidx.xr.runtime.DisplayBlendMode
 import kotlin.time.ComparableTimeMark
 
 /**
@@ -28,6 +27,9 @@ import kotlin.time.ComparableTimeMark
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 @Suppress("NotCloseable")
 public interface JxrRuntime {
+    /** The configuration of the runtime. */
+    public val config: Config
+
     /**
      * Executes the [JxrRuntime] initialization logic. It is necessary to call [resume] after
      * calling this method to start the runtime's execution logic.
@@ -49,17 +51,6 @@ public interface JxrRuntime {
      * method.
      */
     public fun configure(config: Config) {}
-
-    /**
-     * Gets the preferred [DisplayBlendMode] by the runtime.
-     *
-     * @return the preferred [DisplayBlendMode], or [DisplayBlendMode.NO_DISPLAY] if none are
-     *   supported.
-     */
-    @SuppressWarnings("UnavailableSymbol", "HiddenTypeParameter")
-    public fun getPreferredDisplayBlendMode(): DisplayBlendMode {
-        return DisplayBlendMode.NO_DISPLAY
-    }
 
     /**
      * Updates the state of the system. The call is blocking and will return once the underlying

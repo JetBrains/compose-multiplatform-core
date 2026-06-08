@@ -69,12 +69,12 @@ class EyeTest {
             (Session.create(context = activity, coroutineContext = testDispatcher)
                     as SessionCreateSuccess)
                 .session
-        session.configure(Config(eyeTracking = EyeTrackingMode.FINE_TRACKING))
+        session.configure(Config.Builder().setEyeTracking(EyeTrackingMode.FINE_TRACKING).build())
     }
 
     @Test
     fun left_eyeTrackingDisabled_throwsIllegalStateException() {
-        session.configure(Config(eyeTracking = EyeTrackingMode.DISABLED))
+        session.configure(Config.Builder().setEyeTracking(EyeTrackingMode.DISABLED).build())
 
         assertFailsWith<IllegalStateException> { Eye.left(session) }
     }
@@ -84,6 +84,7 @@ class EyeTest {
     fun left_trackingStateMatchesRuntime() =
         runTest(testDispatcher) {
             val underTest = Eye.left(session)
+            arCoreTestRule.leftEyeTester.isOpen = true
             advanceUntilIdle()
 
             assertThat(underTest.state.value.trackingState).isEqualTo(TrackingState.TRACKING)
@@ -125,7 +126,7 @@ class EyeTest {
 
     @Test
     fun right_eyeTrackingDisabled_throwsIllegalStateException() {
-        session.configure(Config(eyeTracking = EyeTrackingMode.DISABLED))
+        session.configure(Config.Builder().setEyeTracking(EyeTrackingMode.DISABLED).build())
 
         assertFailsWith<IllegalStateException> { Eye.right(session) }
     }
@@ -135,6 +136,7 @@ class EyeTest {
     fun right_trackingStateMatchesRuntime() =
         runTest(testDispatcher) {
             val underTest = Eye.right(session)
+            arCoreTestRule.rightEyeTester.isOpen = true
             advanceUntilIdle()
 
             assertThat(underTest.state.value.trackingState).isEqualTo(TrackingState.TRACKING)

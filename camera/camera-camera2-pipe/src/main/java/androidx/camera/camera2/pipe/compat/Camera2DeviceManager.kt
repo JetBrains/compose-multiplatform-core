@@ -31,6 +31,7 @@ import androidx.camera.camera2.pipe.graph.GraphListener
 import androidx.camera.camera2.pipe.graph.GraphRequestProcessor
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
@@ -121,7 +122,7 @@ internal class ActiveCamera(
     private val wakelock =
         WakeLock(
             scope,
-            timeout = 1000,
+            timeout = 1.seconds,
             callback = { closeCallback(this) },
             // Every ActiveCamera is associated with an opened camera. We should ensure that we
             // issue a RequestClose eventually for every ActiveCamera created.
@@ -144,9 +145,9 @@ internal class ActiveCamera(
     // the ActiveCamera for the duration under which it's processing an open request.
     fun acquire() = wakelock.acquire()
 
-    // TODO: b/389758537, b/390530866 - Make Token non-nullable. If we cannot acquire a token, the
-    //  ActiveCamera has issued a RequestClose for this ActiveCamera already.
-    suspend fun connectTo(virtualCameraState: VirtualCameraState, token: Token?) {
+    // If we cannot acquire a token, the ActiveCamera has issued a RequestClose for this
+    // ActiveCamera already.
+    suspend fun connectTo(virtualCameraState: VirtualCameraState, token: Token) {
         val previous = current
         current = virtualCameraState
 

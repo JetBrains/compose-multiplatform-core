@@ -149,8 +149,9 @@ public typealias SurfaceProtection = SpatialExternalSurfaceProtection
  * USAGE_PROTECTED_CONTENT flag set. These buffers support hardware paths for decoding protected
  * content.
  *
+ * See [MediaDrm](https://developer.android.com/reference/android/media/MediaDrm)
+ *
  * @see [SpatialExternalSurface]
- * @see https://developer.android.com/reference/android/media/MediaDrm
  */
 @JvmInline
 public value class SpatialExternalSurfaceProtection
@@ -219,6 +220,7 @@ private constructor(internal val value: SurfaceEntity.SurfaceProtection) {
  */
 @Composable
 @SubspaceComposable
+@Suppress("DEPRECATION", "ReferencesDeprecated")
 public fun SpatialExternalSurface(
     stereoMode: StereoMode,
     modifier: SubspaceModifier = SubspaceModifier,

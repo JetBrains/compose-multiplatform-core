@@ -72,7 +72,6 @@ import androidx.xr.compose.spatial.Orbiter
 import androidx.xr.compose.spatial.OrbiterOffsetType
 import androidx.xr.compose.spatial.Subspace
 import androidx.xr.compose.subspace.AnchorPolicy
-import androidx.xr.compose.subspace.ResizePolicy
 import androidx.xr.compose.subspace.SceneCoreEntity
 import androidx.xr.compose.subspace.SpatialActivityPanel
 import androidx.xr.compose.subspace.SpatialAndroidViewPanel
@@ -85,6 +84,7 @@ import androidx.xr.compose.subspace.draw.alpha
 import androidx.xr.compose.subspace.layout.PlaneOrientation
 import androidx.xr.compose.subspace.layout.SpatialAlignment
 import androidx.xr.compose.subspace.layout.SpatialArrangement
+import androidx.xr.compose.subspace.layout.SpatialResizeEventType
 import androidx.xr.compose.subspace.layout.SpatialRoundedCornerShape
 import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.compose.subspace.layout.aspectRatio
@@ -96,6 +96,7 @@ import androidx.xr.compose.subspace.layout.offset
 import androidx.xr.compose.subspace.layout.padding
 import androidx.xr.compose.subspace.layout.rotate
 import androidx.xr.compose.subspace.layout.transformingMovable
+import androidx.xr.compose.subspace.layout.transformingResizable
 import androidx.xr.compose.subspace.layout.width
 import androidx.xr.compose.subspace.semantics.testTag
 import androidx.xr.compose.testapp.common.AnotherActivity
@@ -263,7 +264,13 @@ class SpatialCompose : ComponentActivity() {
                     horizontalAlignment = SpatialAlignment.CenterHorizontally,
                     verticalArrangement = SpatialArrangement.Center,
                 ) {
-                    SpatialMainPanel(modifier = SubspaceModifier.fillMaxHeight(0.7f).fillMaxWidth())
+                    SpatialMainPanel(
+                        modifier =
+                            SubspaceModifier.fillMaxHeight(0.7f)
+                                .fillMaxWidth()
+                                .transformingMovable()
+                                .transformingResizable()
+                    )
                     val intent = remember {
                         Intent(this@SpatialCompose, AnotherActivity::class.java)
                     }
@@ -303,13 +310,17 @@ class SpatialCompose : ComponentActivity() {
                 modifier
                     .testTag(text)
                     .alpha(alpha)
-                    .transformingMovable(enabled = !moveResizeLocked),
-            resizePolicy =
-                ResizePolicy(
-                    isEnabled = !moveResizeLocked,
-                    onResizeStart = { alpha = 0f },
-                    onResizeEnd = { alpha = 1f }, // setting the alpha here.. no pop!
-                ),
+                    .transformingMovable(enabled = !moveResizeLocked)
+                    .transformingResizable(
+                        enabled = !moveResizeLocked,
+                        onResize = { event ->
+                            when (event.type) {
+                                SpatialResizeEventType.Start -> alpha = 0f
+                                SpatialResizeEventType.End -> alpha = 1f
+                                else -> {}
+                            }
+                        },
+                    )
         ) {
             PanelContent { Text(text) }
 
@@ -338,7 +349,9 @@ class SpatialCompose : ComponentActivity() {
     fun AnchorPanel(modifier: SubspaceModifier = SubspaceModifier, text: String = "") {
         val session = LocalSession.current ?: return
         // This is required to use the AnchorPolicy.
-        session.configure(Config(planeTracking = PlaneTrackingMode.HORIZONTAL_AND_VERTICAL))
+        session.configure(
+            Config.Builder().setPlaneTracking(PlaneTrackingMode.HORIZONTAL_AND_VERTICAL).build()
+        )
 
         // TODO(b/424834805): It's possible to have multiple movable overloads in place which are
         // not compatible with each other.

@@ -97,8 +97,11 @@ private constructor(
          * @param name Name of the panel.
          * @param pose [Pose] of this entity relative to its parent, the default value is
          *   [Pose.Identity].
-         * @param parent Parent entity. If `null`, the entity is created but not attached to the
-         *   scene graph and will not be visible until a parent is set. The default value is `null`.
+         * @param parent Parent entity. Defaults to `null`. If `null`, the entity is created but not
+         *   attached to the scene graph, meaning it will be invisible. If a parent entity (e.g.,
+         *   [ActivitySpace] or any other [Entity] already present in the scene) is assigned later,
+         *   the entity will become visible (provided it is enabled). This allows for [Entity]
+         *   pre-configuration before making it visible.
          * @return an ActivityPanelEntity instance.
          */
         @JvmOverloads

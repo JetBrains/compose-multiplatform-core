@@ -31,7 +31,6 @@ import androidx.xr.arcore.testing.internal.FakeRuntimeRenderViewpoint
 import androidx.xr.arcore.testing.internal.PendingTrackablesProvider
 import androidx.xr.runtime.AnchorPersistenceMode
 import androidx.xr.runtime.Config
-import androidx.xr.runtime.ExperimentalSceneSignalApi
 import androidx.xr.runtime.PreviewSpatialApi
 import androidx.xr.runtime.math.Pose
 import java.util.UUID
@@ -47,6 +46,7 @@ public class ArCoreTestRule : ExternalResource(), PendingTrackablesProvider {
     private val _planes: MutableList<TestPlane> = mutableListOf()
     private val _objects: MutableList<TestAugmentedObject> = mutableListOf()
     private val _images: MutableList<TestAugmentedImage> = mutableListOf()
+    private val _qrCodes: MutableList<TestQrCode> = mutableListOf()
     private val _faceMeshes: MutableList<TestFace> = mutableListOf()
 
     internal lateinit var runtime: FakePerceptionRuntime
@@ -88,6 +88,14 @@ public class ArCoreTestRule : ExternalResource(), PendingTrackablesProvider {
      */
     public val augmentedImages: List<TestAugmentedImage>
         get() = _images.toList()
+
+    /**
+     * A list of all [TestQrCode] objects in the environment. Tracking must be configured via
+     * [androidx.xr.runtime.Session.configure] in order for an added object to be ingested by the
+     * runtime.
+     */
+    public val qrCodes: List<TestQrCode>
+        get() = _qrCodes.toList()
 
     /**
      * A list of all [TestFace] objects in the environment, excluding the user's. Tracking must be
@@ -203,7 +211,8 @@ public class ArCoreTestRule : ExternalResource(), PendingTrackablesProvider {
     }
 
     /** A test representation of the device's Conversation Scene Signal. */
-    @ExperimentalSceneSignalApi
+    @get:android.annotation.SuppressLint("ExperimentalPropertyAnnotation")
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     @PreviewSpatialApi
     public val conversationSceneSignal: ConversationSceneSignalTester by lazy {
         ConversationSceneSignalTester(
@@ -237,6 +246,9 @@ public class ArCoreTestRule : ExternalResource(), PendingTrackablesProvider {
                 }
                 is TestAugmentedImage -> {
                     _images.add(it)
+                }
+                is TestQrCode -> {
+                    _qrCodes.add(it)
                 }
             }
             pendingTrackables.add(it)

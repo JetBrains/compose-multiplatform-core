@@ -49,7 +49,7 @@ class MemoryLeakActivity : AppCompatActivity() {
 
         session = SessionManager(this).createSession()
         if (session == null) this.finish()
-        session!!.configure(Config(deviceTracking = DeviceTrackingMode.SPATIAL))
+        session!!.configure(Config.Builder().setDeviceTracking(DeviceTrackingMode.SPATIAL).build())
         session?.scene?.keyEntity = session?.scene?.mainPanelEntity
 
         val weakActivity = WeakReference(this@MemoryLeakActivity)
@@ -80,12 +80,12 @@ class MemoryLeakActivity : AppCompatActivity() {
     private fun setupMainPanel() {
         // Request FSM
         findViewById<Button>(R.id.button_request_fsm).also {
-            it.setOnClickListener { session!!.scene.requestFullSpaceMode() }
+            it.setOnClickListener { session!!.scene.requestFullSpace() }
         }
 
         // Request HSM
         findViewById<Button>(R.id.button_request_hsm).also {
-            it.setOnClickListener { session!!.scene.requestHomeSpaceMode() }
+            it.setOnClickListener { session!!.scene.requestHomeSpace() }
         }
 
         // Make the main panel movable.

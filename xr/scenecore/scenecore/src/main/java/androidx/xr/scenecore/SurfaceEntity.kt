@@ -22,7 +22,6 @@ import androidx.annotation.FloatRange
 import androidx.annotation.MainThread
 import androidx.annotation.RestrictTo
 import androidx.xr.arcore.RenderViewpoint
-import androidx.xr.arcore.runtime.PerceptionRuntime
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.math.FieldOfView
 import androidx.xr.runtime.math.FloatSize2d
@@ -64,6 +63,7 @@ private constructor(
 
     /** Represents the shape of the Canvas that backs a SurfaceEntity. */
     public interface Shape {
+
         /**
          * A Quadrilateral-shaped canvas. Width and height are expressed in the X and Y axis in the
          * local spatial coordinate system of the entity. (0,0) is the center of the Quad mesh; the
@@ -71,35 +71,25 @@ private constructor(
          *
          * @property extents The size of the Quad in the local spatial coordinate system of the
          *   entity.
+         * @property cornerRadius The radius of the rounded corners of the Quad in the local spatial
+         *   coordinate system of the entity. The maximum allowed value is half of the smaller
+         *   dimension of [extents]. If set to 0.0f, the corners will be sharp.
          */
-        public class Quad : Shape {
-            public val extents: FloatSize2d
-            @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public val cornerRadius: Float
-
-            /**
-             * A Quadrilateral-shaped canvas.
-             *
-             * @param extents The size of the Quad in the local spatial coordinate system of the
-             *   entity.
-             */
-            public constructor(extents: FloatSize2d) : this(extents, 0.0f)
-
-            /**
-             * A Quadrilateral-shaped canvas with rounded corners.
-             *
-             * @param extents The size of the Quad in the local spatial coordinate system of the
-             *   entity.
-             * @param cornerRadius The radius of the rounded corners of the Quad in the local
-             *   spatial coordinate system of the entity. If set to 0.0f, the corners will be sharp.
-             */
-            @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-            public constructor(extents: FloatSize2d, cornerRadius: Float) {
+        public class Quad
+        @JvmOverloads
+        constructor(
+            public val extents: FloatSize2d,
+            @FloatRange(from = 0.0) public val cornerRadius: Float = 0.0f,
+        ) : Shape {
+            init {
                 require(extents.width >= 0.0f && extents.height >= 0.0f) {
                     "extents must be non-negative"
                 }
                 require(cornerRadius >= 0.0f) { "cornerRadius must be non-negative" }
-                this.extents = extents
-                this.cornerRadius = cornerRadius
+                val maxRadius = minOf(extents.width, extents.height) / 2.0f
+                require(cornerRadius <= maxRadius) {
+                    "cornerRadius ($cornerRadius) must not be greater than half of the smaller dimension (width or height): $maxRadius"
+                }
             }
         }
 
@@ -572,7 +562,6 @@ private constructor(
         /**
          * Factory method for SurfaceEntity.
          *
-         * @param perceptionRuntime An ARCore PerceptionRuntime
          * @param sceneRuntime SceneRuntime to use.
          * @param renderingRuntime RenderingRuntime to use.
          * @param entityRegistry A SceneCore [EntityRegistry]
@@ -592,10 +581,8 @@ private constructor(
          *   [Scene]'s [ActivitySpace].
          * @return a SurfaceEntity instance
          */
-        @Suppress("RestrictedApiAndroidX")
         internal fun create(
             session: Session,
-            perceptionRuntime: PerceptionRuntime,
             renderingRuntime: RenderingRuntime,
             stereoMode: StereoMode = StereoMode.MONO,
             mediaBlendingMode: MediaBlendingMode = MediaBlendingMode.TRANSPARENT,
@@ -653,8 +640,11 @@ private constructor(
          *   surface should support Widevine DRM.
          * @param superSampling The [SuperSampling] which describes whether super sampling is
          *   enabled for the surface.
-         * @param parent Parent entity. If `null`, the entity is created but not attached to the
-         *   scene graph and will not be visible until a parent is set. The default value is `null`.
+         * @param parent Parent entity. Defaults to `null`. If `null`, the entity is created but not
+         *   attached to the scene graph, meaning it will be invisible. If a parent entity (e.g.,
+         *   [ActivitySpace] or any other [Entity] already present in the scene) is assigned later,
+         *   the entity will become visible (provided it is enabled). This allows for [Entity]
+         *   pre-configuration before making it visible.
          * @return a SurfaceEntity instance
          */
         @MainThread
@@ -671,7 +661,6 @@ private constructor(
         ): SurfaceEntity =
             SurfaceEntity.create(
                 session,
-                session.perceptionRuntime,
                 session.renderingRuntime,
                 stereoMode,
                 MediaBlendingMode.TRANSPARENT,
@@ -697,8 +686,11 @@ private constructor(
          *   enabled for the surface. The default value is [SuperSampling.PENTAGON].
          * @param surfaceProtection The [SurfaceProtection] which describes whether the hosted
          *   surface should support Widevine DRM. The default value is [SurfaceProtection.NONE].
-         * @param parent Parent entity. If `null`, the entity is created but not attached to the
-         *   scene graph and will not be visible until a parent is set. The default value is `null`.
+         * @param parent Parent entity. Defaults to `null`. If `null`, the entity is created but not
+         *   attached to the scene graph, meaning it will be invisible. If a parent entity (e.g.,
+         *   [ActivitySpace] or any other [Entity] already present in the scene) is assigned later,
+         *   the entity will become visible (provided it is enabled). This allows for [Entity]
+         *   pre-configuration before making it visible.
          * @return a SurfaceEntity instance
          */
         @MainThread
@@ -716,7 +708,6 @@ private constructor(
         ): SurfaceEntity =
             SurfaceEntity.create(
                 session,
-                session.perceptionRuntime,
                 session.renderingRuntime,
                 stereoMode,
                 mediaBlendingMode,
@@ -953,8 +944,8 @@ private constructor(
     /**
      * Gets the perceived resolution of the entity in the provided [RenderViewpoint].
      *
-     * This API is only intended for use in Full Space Mode and will return
-     * [PerceivedResolutionResult.InvalidRenderViewpoint] in Home Space Mode.
+     * This API is only intended for use in Full Space and will return
+     * [PerceivedResolutionResult.InvalidRenderViewpoint] in Home Space.
      *
      * The entity's own rotation and the camera's viewing direction are disregarded; this value
      * represents the dimensions of the entity on the camera view if its largest surface was facing

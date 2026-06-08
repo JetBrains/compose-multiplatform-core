@@ -239,6 +239,10 @@ package androidx.browser.customtabs {
     method public boolean warmup(long);
   }
 
+  public class CustomTabsFeatures {
+    field public static final String ENGAGEMENT_SIGNALS = "ENGAGEMENT_SIGNALS";
+  }
+
   public final class CustomTabsIntent {
     method public static int getActivityResizeBehavior(android.content.Intent);
     method @Dimension(unit=androidx.annotation.Dimension.DP) public static int getActivitySideSheetBreakpointDp(android.content.Intent);

@@ -22,6 +22,7 @@ import androidx.annotation.RestrictTo
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.math.FloatSize3d
 import androidx.xr.scenecore.runtime.HandlerExecutor
+import androidx.xr.scenecore.runtime.ResizableComponent as RtResizableComponent
 import androidx.xr.scenecore.runtime.ResizeEventListener as RtResizeEventListener
 import androidx.xr.scenecore.runtime.SceneRuntime
 import java.util.concurrent.ConcurrentHashMap
@@ -48,7 +49,8 @@ private constructor(
     initialListener: Consumer<ResizeEvent>,
 ) : Component() {
 
-    private val rtResizableComponent by lazy {
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public val rtResizableComponent: RtResizableComponent by lazy {
         sceneRuntime.createResizableComponent(
             minimumSize.toRtDimensions(),
             maximumSize.toRtDimensions(),
@@ -69,6 +71,7 @@ private constructor(
      * meter. If attached to a [PanelEntity], this is updated to the size of the Entity when
      * attached.
      */
+    // TODO: b/514173126 - Update getter to retrieve value from rtResizableComponent.
     public var affordanceSize: FloatSize3d = kDimensionsOneMeter
         set(value) {
             if (field != value) {
@@ -82,6 +85,7 @@ private constructor(
      * user can resize the bounding box of the [Entity]. The size of the content inside that
      * bounding box is fully controlled by the application.
      */
+    // TODO: b/514173126 - Update getter to retrieve value from rtResizableComponent.
     public var minimumEntitySize: FloatSize3d = minimumSize
         set(value) {
             if (field != value) {
@@ -95,6 +99,7 @@ private constructor(
      * can resize the bounding box of the [Entity]. The size of the content inside that bounding box
      * is fully controlled by the application.
      */
+    // TODO: b/514173126 - Update getter to retrieve value from rtResizableComponent.
     public var maximumEntitySize: FloatSize3d = maximumSize
         set(value) {
             if (field != value) {
@@ -109,6 +114,7 @@ private constructor(
      * If true the affordance will maintain its current aspect ratio being resized and all suggested
      * sizes will maintain the current aspect ratio. This defaults to false.
      */
+    // TODO: b/514173126 - Update getter to retrieve value from rtResizableComponent.
     public var isFixedAspectRatioEnabled: Boolean = false
         set(value) {
             if (field != value) {
@@ -121,6 +127,7 @@ private constructor(
      * Whether the content of the [Entity], and all child Entities, will be automatically hidden
      * while it is being resized.
      */
+    // TODO: b/514173126 - Update getter to retrieve value from rtResizableComponent.
     public var isAutoHideContentWhileResizingEnabled: Boolean = true
         set(value) {
             if (field != value) {
@@ -135,6 +142,7 @@ private constructor(
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     @get:JvmName("shouldAutoUpdateOverlay")
+    // TODO: b/514173126 - Update getter to retrieve value from rtResizableComponent.
     public var shouldAutoUpdateOverlay: Boolean = true
         set(value) {
             if (field != value) {
@@ -148,6 +156,7 @@ private constructor(
      *
      * This is useful for resizing multiple panels at once.
      */
+    // TODO: b/514173126 - Update getter to retrieve value from rtResizableComponent.
     public var isAlwaysShowOverlayEnabled: Boolean = false
         set(value) {
             if (field != value) {

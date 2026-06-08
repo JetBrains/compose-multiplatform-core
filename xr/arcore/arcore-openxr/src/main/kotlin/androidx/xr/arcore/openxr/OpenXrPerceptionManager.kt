@@ -58,8 +58,8 @@ import java.util.UUID
  * @property rightDepth the right [Depth], or null if not available
  * @property monoDepth the mono [Depth], or null if not available
  */
-internal class OpenXrPerceptionManager
-internal constructor(private val timeSource: OpenXrTimeSource) : PerceptionManager {
+internal class OpenXrPerceptionManager(private val timeSource: OpenXrTimeSource) :
+    PerceptionManager {
 
     override fun createAnchor(pose: Pose): Anchor {
         val nativeAnchor = nativeCreateAnchor(pose, lastUpdateXrTime)
@@ -166,7 +166,7 @@ internal constructor(private val timeSource: OpenXrTimeSource) : PerceptionManag
      *
      * @param xrTime the number of nanoseconds since the start of the OpenXR epoch
      */
-    public fun update(xrTime: Long) {
+    internal fun update(xrTime: Long) {
         for (updatable in xrResources.updatables) {
             updatable.update(xrTime)
         }
@@ -193,6 +193,9 @@ internal constructor(private val timeSource: OpenXrTimeSource) : PerceptionManag
 
     override val isPhysicalSizeEstimationSupported: Boolean
         get() = nativeIsPhysicalSizeEstimationSupported()
+
+    override val isQrCodeSizeEstimationSupported: Boolean
+        get() = nativeIsQrCodeSizeEstimationSupported()
 
     internal fun updateAugmentedObjects(xrTime: Long) {
         val objects = nativeGetAugmentedObjects(xrTime)
@@ -250,6 +253,26 @@ internal constructor(private val timeSource: OpenXrTimeSource) : PerceptionManag
         // Remove images that are no longer tracked.
         for ((key, value) in xrResources.trackablesMap.toMap()) {
             if (value is OpenXrAugmentedImage && !augmentedImages.contains(key)) {
+                xrResources.removeUpdatable(value as Updatable)
+                xrResources.removeTrackable(key)
+            }
+        }
+    }
+
+    internal fun updateQrCode(xrTime: Long) {
+        val qrCodes = nativeGetQrCodes()
+        // Add new QR codes to the list of trackables.
+        for (qrCode in qrCodes) {
+            if (xrResources.trackablesMap.containsKey(qrCode)) continue
+
+            val trackable = OpenXrQrCode(qrCode)
+            xrResources.addTrackable(qrCode, trackable)
+            xrResources.addUpdatable(trackable as Updatable)
+        }
+
+        // Remove QR codes that are no longer tracked.
+        for ((key, value) in xrResources.trackablesMap.toMap()) {
+            if (value is OpenXrQrCode && !qrCodes.contains(key)) {
                 xrResources.removeUpdatable(value as Updatable)
                 xrResources.removeTrackable(key)
             }
@@ -327,4 +350,8 @@ internal constructor(private val timeSource: OpenXrTimeSource) : PerceptionManag
     private external fun nativeGetImageDatabaseMaxLoadedImageCount(): Int
 
     private external fun nativeIsPhysicalSizeEstimationSupported(): Boolean
+
+    private external fun nativeGetQrCodes(): LongArray
+
+    private external fun nativeIsQrCodeSizeEstimationSupported(): Boolean
 }

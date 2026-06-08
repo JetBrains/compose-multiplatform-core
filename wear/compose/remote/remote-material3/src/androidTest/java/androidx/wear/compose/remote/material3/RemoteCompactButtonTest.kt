@@ -19,15 +19,15 @@ package androidx.wear.compose.remote.material3
 import android.annotation.SuppressLint
 import android.content.Context
 import androidx.collection.buildObjectIntMap
-import androidx.compose.remote.creation.compose.action.HostAction
+import androidx.compose.remote.creation.compose.action.hostAction
 import androidx.compose.remote.creation.compose.capture.createCreationDisplayInfo
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
 import androidx.compose.remote.creation.compose.state.rb
 import androidx.compose.remote.creation.compose.state.rf
 import androidx.compose.remote.creation.compose.state.rs
 import androidx.compose.remote.creation.profile.RcPlatformProfiles
-import androidx.compose.remote.player.compose.test.utils.screenshot.rule.ComposableWrappers
-import androidx.compose.remote.player.compose.test.utils.screenshot.rule.RemoteScreenshotTestRule
+import androidx.compose.remote.player.compose.test.utils.ComposableWrappers
+import androidx.compose.remote.player.compose.test.utils.RemoteScreenshotTestRule
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
@@ -137,4 +137,4 @@ class RemoteCompactButtonTest {
     }
 }
 
-private val testAction = HostAction("".rs, 1.rf)
+private val testAction = hostAction("".rs, 1.rf)

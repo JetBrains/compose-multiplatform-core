@@ -208,12 +208,6 @@ public class FlagsTest {
     }
 
     @Test
-    public void testFlagValue_enableSchemaTypeIdOptimization() {
-        assertThat(Flags.FLAG_ENABLE_SCHEMA_TYPE_ID_OPTIMIZATION).isEqualTo(
-                "com.android.appsearch.flags.enable_schema_type_id_optimization");
-    }
-
-    @Test
     public void testFlagValue_enableOptimizeImprovements() {
         assertThat(Flags.FLAG_ENABLE_OPTIMIZE_IMPROVEMENTS).isEqualTo(
                 "com.android.appsearch.flags.enable_optimize_improvements");
@@ -262,5 +256,11 @@ public class FlagsTest {
                 .isEqualTo(
                         "com.android.appsearch.flags"
                                 + ".enable_embedding_approximate_nearest_neighbor");
+    }
+
+    @Test
+    public void testFlagValue_enableEmbeddingPreQuantizedData() {
+        assertThat(Flags.FLAG_ENABLE_EMBEDDING_PRE_QUANTIZED_DATA)
+                .isEqualTo("com.android.appsearch.flags.enable_embedding_pre_quantized_data");
     }
 }

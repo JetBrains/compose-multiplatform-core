@@ -30,6 +30,7 @@ import androidx.xr.runtime.DisplayBlendMode
 import androidx.xr.runtime.FaceTrackingMode
 import androidx.xr.runtime.HandTrackingMode
 import androidx.xr.runtime.PlaneTrackingMode
+import androidx.xr.runtime.QrCodeTrackingMode
 import kotlin.time.ComparableTimeMark
 import kotlin.time.TestTimeSource
 import kotlinx.coroutines.sync.Semaphore
@@ -96,16 +97,23 @@ public data class FakePerceptionRuntime(
 
     public var augmentedImageDatabase: AugmentedImageDatabase = AugmentedImageDatabase()
 
+    /** If false, [configure] will throw an Exception if the config enables QrCodeTracking. */
+    @get:JvmName("shouldSupportQrCodeTracking")
+    public var shouldSupportQrCodeTracking: Boolean = true
+
     public override var config: Config =
-        Config(
-            PlaneTrackingMode.HORIZONTAL_AND_VERTICAL,
-            HandTrackingMode.BOTH,
-            DeviceTrackingMode.SPATIAL,
-            DepthEstimationMode.SMOOTH_AND_RAW,
-            AnchorPersistenceMode.LOCAL,
-            augmentedObjectCategories = setOf(AugmentedObjectCategory.MOUSE),
-            augmentedImageDatabase = augmentedImageDatabase,
-        )
+        Config.Builder()
+            .setPlaneTracking(PlaneTrackingMode.HORIZONTAL_AND_VERTICAL)
+            .setHandTracking(HandTrackingMode.BOTH)
+            .setDeviceTracking(DeviceTrackingMode.SPATIAL)
+            .setDepthEstimation(DepthEstimationMode.SMOOTH_AND_RAW)
+            .setAnchorPersistence(AnchorPersistenceMode.LOCAL)
+            .setAugmentedObjectCategories(
+                augmentedObjectCategories = setOf(AugmentedObjectCategory.MOUSE)
+            )
+            .setAugmentedImageDatabase(augmentedImageDatabase = augmentedImageDatabase)
+            .setQrCodeTracking(QrCodeTrackingMode.DYNAMIC)
+            .build()
 
     override fun initialize() {
         check(state == State.NOT_INITIALIZED)
@@ -138,12 +146,12 @@ public data class FakePerceptionRuntime(
             throw UnsupportedOperationException()
         }
 
+        if (!shouldSupportQrCodeTracking && config.qrCodeTracking != QrCodeTrackingMode.DISABLED) {
+            throw UnsupportedOperationException()
+        }
+
         if (hasMissingPermission) throw SecurityException()
         this.config = config
-    }
-
-    override fun getPreferredDisplayBlendMode(): DisplayBlendMode {
-        return xrDevicePreferredDisplayBlendMode
     }
 
     override fun resume() {

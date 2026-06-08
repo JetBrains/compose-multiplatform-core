@@ -60,13 +60,11 @@ import androidx.xr.arcore.CreateGeospatialPoseFromPoseInternalError
 import androidx.xr.arcore.CreateGeospatialPoseFromPoseNotTracking
 import androidx.xr.arcore.CreateGeospatialPoseFromPoseSuccess
 import androidx.xr.arcore.Geospatial
-import androidx.xr.arcore.GeospatialState
 import androidx.xr.arcore.HitResult
 import androidx.xr.arcore.Plane
 import androidx.xr.arcore.apps.whitebox.mobile.common.SessionLifecycleHelper
 import androidx.xr.arcore.apps.whitebox.mobile.samplerender.SampleRender
 import androidx.xr.arcore.hitTest
-import androidx.xr.arcore.playservices.ExperimentalCameraApi
 import androidx.xr.arcore.playservices.UnsupportedArCoreCompatApi
 import androidx.xr.arcore.playservices.cameraState
 import androidx.xr.runtime.Config
@@ -101,11 +99,11 @@ class GeospatialActivity : ComponentActivity(), DefaultLifecycleObserver {
             SessionLifecycleHelper(
                 this,
                 config =
-                    Config(
-                        planeTracking = PlaneTrackingMode.HORIZONTAL_AND_VERTICAL,
-                        deviceTracking = DeviceTrackingMode.SPATIAL,
-                        geospatial = GeospatialMode.SPATIAL,
-                    ),
+                    Config.Builder(session.config)
+                        .setPlaneTracking(PlaneTrackingMode.HORIZONTAL_AND_VERTICAL)
+                        .setDeviceTracking(DeviceTrackingMode.SPATIAL)
+                        .setGeospatial(GeospatialMode.SPATIAL)
+                        .build(),
                 onSessionAvailable = { session ->
                     this.session = session
                     surfaceView = GLSurfaceView(this)
@@ -125,7 +123,8 @@ class GeospatialActivity : ComponentActivity(), DefaultLifecycleObserver {
         surfaceView.onPause()
     }
 
-    @OptIn(UnsupportedArCoreCompatApi::class, ExperimentalCameraApi::class)
+    @OptIn(UnsupportedArCoreCompatApi::class)
+    @SuppressWarnings("RestrictedApiAndroidX")
     private fun getHits() {
         if (lifecycle.currentStateFlow.value == Lifecycle.State.RESUMED) {
             val pose: Pose? = session.state.value.cameraState?.displayOrientedPose
@@ -152,7 +151,10 @@ class GeospatialActivity : ComponentActivity(), DefaultLifecycleObserver {
 
     private fun createAnchorAtPose(pose: Pose) {
         val geospatial = Geospatial.getInstance(session)
-        if (geospatial.state.value != GeospatialState.RUNNING) {
+        if (
+            geospatial.state.value.geospatialTrackingState !=
+                Geospatial.GeospatialTrackingState.RUNNING
+        ) {
             Log.e("JetpackXR", "Failed to create anchor: Geospatial is not running.")
             return
         }
@@ -268,14 +270,16 @@ class GeospatialActivity : ComponentActivity(), DefaultLifecycleObserver {
     }
 
     private fun localizationTextForGeospatial(geospatial: Geospatial): String {
-        return when (geospatial.state.value) {
-            GeospatialState.NOT_RUNNING -> "Enable Config.GeospatialMode to use the Geospatial API"
-            GeospatialState.ERROR_INTERNAL -> "Error: Internal"
-            GeospatialState.PAUSED -> "Paused"
-            GeospatialState.ERROR_NOT_AUTHORIZED ->
+        return when (geospatial.state.value.geospatialTrackingState) {
+            Geospatial.GeospatialTrackingState.NOT_RUNNING ->
+                "Enable Config.GeospatialMode to use the Geospatial API"
+            Geospatial.GeospatialTrackingState.ERROR_INTERNAL -> "Error: Internal"
+            Geospatial.GeospatialTrackingState.PAUSED -> "Paused"
+            Geospatial.GeospatialTrackingState.ERROR_NOT_AUTHORIZED ->
                 "Error: Not authorized. Check your API key or keyless authorization configuration"
-            GeospatialState.ERROR_RESOURCE_EXHAUSTED -> "Error: ARCore API limit reached."
-            GeospatialState.RUNNING ->
+            Geospatial.GeospatialTrackingState.ERROR_RESOURCE_EXHAUSTED ->
+                "Error: ARCore API limit reached."
+            Geospatial.GeospatialTrackingState.RUNNING ->
                 when (
                     val result =
                         geospatial.createGeospatialPoseFromPose(

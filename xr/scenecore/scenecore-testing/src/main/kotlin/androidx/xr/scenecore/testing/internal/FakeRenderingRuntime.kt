@@ -16,6 +16,7 @@
 
 package androidx.xr.scenecore.testing.internal
 
+import androidx.xr.runtime.Config
 import androidx.xr.runtime.math.BoundingBox
 import androidx.xr.runtime.math.Matrix3
 import androidx.xr.runtime.math.Pose
@@ -38,6 +39,7 @@ import androidx.xr.scenecore.runtime.SpatialEnvironmentExt
 import androidx.xr.scenecore.runtime.SurfaceEntity
 import androidx.xr.scenecore.runtime.TextureResource
 import androidx.xr.scenecore.runtime.TextureSampler
+import java.lang.ref.WeakReference
 import java.nio.ByteBuffer
 
 /**
@@ -51,16 +53,32 @@ internal class FakeRenderingRuntime(
     private val sceneRuntime: SceneRuntime,
     private val entityFactory: RenderingEntityFactory = sceneRuntime as RenderingEntityFactory,
 ) : RenderingRuntime {
-    private var spatialEnvironmentFeature: FakeSpatialEnvironmentFeature =
-        FakeSpatialEnvironmentFeature()
+    override var config: Config = Config.Builder().build()
+        private set
+
+    var spatialEnvironmentFeature: FakeSpatialEnvironmentFeature = FakeSpatialEnvironmentFeature()
 
     init {
+        instance = this
         (sceneRuntime.spatialEnvironment as SpatialEnvironmentExt).onRenderingFeatureReady(
             spatialEnvironmentFeature
         )
     }
 
-    override suspend fun loadGltfByAssetName(assetName: String): GltfModelResource {
+    internal companion object {
+        @Volatile private var instanceRef: WeakReference<FakeRenderingRuntime>? = null
+        internal var instance: FakeRenderingRuntime?
+            get() = instanceRef?.get()
+            private set(value) {
+                instanceRef = value?.let { WeakReference(it) }
+            }
+    }
+
+    override fun configure(config: Config) {
+        this.config = config
+    }
+
+    override suspend fun loadGltfByAssetName(assetName: String): FakeGltfModelResource {
         val gltfModelResource = FakeGltfModelResource(0)
         gltfModelResource.assetName = assetName
         return gltfModelResource
@@ -69,7 +87,7 @@ internal class FakeRenderingRuntime(
     override suspend fun loadGltfByByteArray(
         assetData: ByteArray,
         assetKey: String,
-    ): GltfModelResource {
+    ): FakeGltfModelResource {
         val gltfModelResource = FakeGltfModelResource(0)
         gltfModelResource.assetData = assetData
         gltfModelResource.assetKey = assetKey
@@ -79,19 +97,23 @@ internal class FakeRenderingRuntime(
     override fun destroyGltfModel(gltfModel: GltfModelResource) {}
 
     override suspend fun loadExrImageByAssetName(assetName: String): ExrImageResource {
-        val exrImageResource = FakeExrImageResource(0)
-        exrImageResource.assetName = assetName
-        return exrImageResource
+        return FakeExrImageResource().apply { this.assetName = assetName }
     }
 
     override suspend fun loadExrImageByByteArray(
         assetData: ByteArray,
         assetKey: String,
-    ): ExrImageResource = FakeExrImageResource(1)
+    ): ExrImageResource {
+        return FakeExrImageResource().apply {
+            this.assetData = assetData
+            this.assetKey = assetKey
+        }
+    }
 
     override fun destroyExrImage(exrImage: ExrImageResource) {}
 
-    override suspend fun loadTexture(assetName: String): TextureResource = FakeResource()
+    override suspend fun loadTexture(assetName: String): TextureResource =
+        FakeTexture().apply { this.assetName = assetName }
 
     /**
      * For test purposes only.
@@ -99,19 +121,18 @@ internal class FakeRenderingRuntime(
      * Controls the `TextureResource` instance returned by [borrowReflectionTexture] and
      * [getReflectionTextureFromIbl].
      *
-     * <p>Tests can set this property to a [FakeResource] instance to simulate the availability of a
+     * <p>Tests can set this property to a [FakeTexture] instance to simulate the availability of a
      * reflection texture. This allows verification that the code under test correctly handles the
-     * borrowed or retrieved texture. Calling [destroyTexture] will reset this property to `null`,
-     * enabling tests to also verify resource cleanup behavior.
+     * borrowed or retrieved texture.
      */
-    internal var reflectionTexture: FakeResource? = null
+    internal var reflectionTexture: FakeTexture? = null
 
     override fun borrowReflectionTexture(): TextureResource? {
         return reflectionTexture
     }
 
     override fun destroyTexture(texture: TextureResource) {
-        reflectionTexture = null
+        (texture as? FakeTexture)?.isDestroyed = true
     }
 
     override fun getReflectionTextureFromIbl(iblToken: ExrImageResource): TextureResource? {
@@ -519,7 +540,11 @@ internal class FakeRenderingRuntime(
         loadedGltf: GltfModelResource,
         parentEntity: Entity?,
     ): GltfEntity {
-        return entityFactory.createGltfEntity(FakeGltfFeature(createNode()), pose, parentEntity)
+        return entityFactory.createGltfEntity(
+            FakeGltfFeature(createNode()).apply { this.loadedGltf = loadedGltf },
+            pose,
+            parentEntity,
+        )
     }
 
     override fun createSurfaceEntity(
@@ -585,7 +610,14 @@ internal class FakeRenderingRuntime(
         pose: Pose,
         parent: Entity?,
     ): MeshEntity {
-        return entityFactory.createMeshEntity(FakeMeshFeature(createNode()), pose, parent)
+        val nodeHolder = createNode()
+
+        val meshFeature =
+            FakeMeshFeature(nodeHolder = nodeHolder, materials = materials.toMutableList()).apply {
+                this.boneCount = boneCount
+            }
+
+        return entityFactory.createMeshEntity(meshFeature, pose, parent)
     }
 
     /* Tracks the current state of the adapter according to where it is in its lifecycle. */
@@ -617,5 +649,10 @@ internal class FakeRenderingRuntime(
 
     override fun destroy() {
         _state = State.DESTROYED
+        reflectionTexture = null
+        createdWaterMaterials.clear()
+        createdKhronosPbrMaterials.clear()
+
+        instance = null
     }
 }

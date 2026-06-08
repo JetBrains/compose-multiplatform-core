@@ -14,9 +14,11 @@
  * limitations under the License.
  */
 
+@file:Suppress("RestrictedApiAndroidX")
+
 package androidx.wear.compose.remote.material3.previews
 
-import androidx.compose.remote.creation.compose.action.HostAction
+import androidx.compose.remote.creation.compose.action.hostAction
 import androidx.compose.remote.creation.compose.layout.RemoteAlignment
 import androidx.compose.remote.creation.compose.layout.RemoteBox
 import androidx.compose.remote.creation.compose.layout.RemoteComposable
@@ -28,7 +30,7 @@ import androidx.compose.remote.creation.compose.state.rdp
 import androidx.compose.remote.creation.compose.state.rf
 import androidx.compose.remote.creation.compose.state.rs
 import androidx.compose.remote.creation.profile.Profile
-import androidx.compose.remote.tooling.preview.RemotePreview
+import androidx.compose.remote.tooling.preview.RemoteContentPreview
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.PreviewParameter
@@ -49,7 +51,7 @@ fun RemoteTextButtonEnabled() {
 @Composable
 private fun RemoteTextButtonEnabledPreview(
     @PreviewParameter(ProfilePreviewParameterProvider::class) profile: Profile
-) = RemotePreview(profile = profile) { Container { RemoteTextButtonEnabled() } }
+) = RemoteContentPreview(profile = profile) { Container { RemoteTextButtonEnabled() } }
 
 @Composable
 @RemoteComposable
@@ -63,7 +65,7 @@ fun RemoteTextButtonTonal() {
 @Composable
 private fun RemoteTextButtonTonalPreview(
     @PreviewParameter(ProfilePreviewParameterProvider::class) profile: Profile
-) = RemotePreview(profile = profile) { Container { RemoteTextButtonTonal() } }
+) = RemoteContentPreview(profile = profile) { Container { RemoteTextButtonTonal() } }
 
 @Composable
 @RemoteComposable
@@ -83,7 +85,7 @@ fun RemoteTextButtonOutline() {
 @Composable
 private fun RemoteTextButtonOutlinePreview(
     @PreviewParameter(ProfilePreviewParameterProvider::class) profile: Profile
-) = RemotePreview(profile = profile) { Container { RemoteTextButtonOutline() } }
+) = RemoteContentPreview(profile = profile) { Container { RemoteTextButtonOutline() } }
 
 @Composable
 private fun filledTonalColor() =
@@ -114,4 +116,4 @@ private fun Container(
     RemoteBox(modifier, contentAlignment = RemoteAlignment.Center, content = content)
 }
 
-private val testAction = HostAction("testAction".rs, 1.rf)
+private val testAction = hostAction("testAction".rs, 1.rf)

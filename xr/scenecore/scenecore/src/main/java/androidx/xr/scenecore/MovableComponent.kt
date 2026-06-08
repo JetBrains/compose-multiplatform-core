@@ -18,6 +18,7 @@
 
 package androidx.xr.scenecore
 
+import androidx.annotation.RestrictTo
 import androidx.xr.arcore.AnchorCreateSuccess
 import androidx.xr.arcore.AugmentedObject
 import androidx.xr.arcore.Eye
@@ -33,6 +34,7 @@ import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.MovableComponent.Companion.createAnchorable
 import androidx.xr.scenecore.MovableComponent.Companion.createSystemMovable
 import androidx.xr.scenecore.runtime.HandlerExecutor
+import androidx.xr.scenecore.runtime.MovableComponent as RtMovableComponent
 import androidx.xr.scenecore.runtime.MoveEventListener as RtMoveEventListener
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executor
@@ -76,7 +78,8 @@ private constructor(
     private val anchorable = !anchorPlacement.isEmpty()
     private var createdAnchorEntity: AnchorEntity? = null
 
-    internal val rtMovableComponent by lazy {
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public val rtMovableComponent: RtMovableComponent by lazy {
         sceneRuntime.createMovableComponent(systemMovable, scaleInZ, anchorable)
     }
     internal val rtTrackableComponent by lazy {
@@ -89,7 +92,6 @@ private constructor(
 
     private val moveListenersMap = ConcurrentHashMap<EntityMoveListener, Executor>()
 
-    @OptIn(ExperimentalCustomMeshApi::class)
     private val rtMoveEventListener: RtMoveEventListener = RtMoveEventListener { rtMoveEvent ->
         val moveEvent = rtMoveEvent.toMoveEvent(entityRegistry)
         var updatedReformEventInfo: UpdatedReformEventInfo? = null
@@ -133,7 +135,7 @@ private constructor(
                                 moveEvent.currentInputRay,
                                 updatedReformEventInfo?.pose ?: moveEvent.currentPose,
                                 updatedReformEventInfo?.scale ?: moveEvent.currentScale,
-                                updatedReformEventInfo?.parent ?: moveEvent.initialParent,
+                                updatedReformEventInfo?.parent ?: moveEvent.updatedParent,
                             )
                         }
                 }
@@ -230,7 +232,6 @@ private constructor(
 
     private data class UpdatedReformEventInfo(val pose: Pose, val parent: Entity?, val scale: Float)
 
-    @OptIn(ExperimentalCustomMeshApi::class)
     private fun getUpdatedReformEventPoseAndParent(moveEvent: MoveEvent): UpdatedReformEventInfo {
         val initialParent = moveEvent.initialParent
         val initialPose = moveEvent.currentPose

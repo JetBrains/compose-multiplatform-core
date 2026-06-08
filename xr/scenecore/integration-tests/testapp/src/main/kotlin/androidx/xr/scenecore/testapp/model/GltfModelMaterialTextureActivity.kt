@@ -84,7 +84,9 @@ class GltfModelMaterialTextureActivity : AppCompatActivity() {
 
         session = SessionManager(this).createSession()
         if (session == null) this.finish()
-        session!!.configure(Config(PlaneTrackingMode.HORIZONTAL_AND_VERTICAL))
+        session!!.configure(
+            Config.Builder().setPlaneTracking(PlaneTrackingMode.HORIZONTAL_AND_VERTICAL).build()
+        )
         session?.scene?.keyEntity = session?.scene?.mainPanelEntity
 
         findViewById<Toolbar>(R.id.gltf_model_topAppBar).also {
@@ -309,13 +311,13 @@ class GltfModelMaterialTextureActivity : AppCompatActivity() {
     private fun toggleMode(): String {
         when (spatialMode) {
             SpatialMode.FSM -> {
-                session!!.scene.requestHomeSpaceMode()
+                session!!.scene.requestHomeSpace()
                 spatialMode = SpatialMode.HSM
                 return getString(R.string.switch_to_fsm_button_text)
             }
 
             SpatialMode.HSM -> {
-                session!!.scene.requestFullSpaceMode()
+                session!!.scene.requestFullSpace()
                 spatialMode = SpatialMode.FSM
                 return getString(R.string.switch_to_hsm_button_text)
             }

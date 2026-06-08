@@ -2041,7 +2041,7 @@ class TableEntityProcessorTest : BaseEntityParserTest() {
             """
                 @PrimaryKey
                 int id;
-                @Relation(parentColumn = "id", entityColumn = "uid")
+                @Relation(parentColumns = {"id"}, entityColumns = {"uid"})
                 java.util.List<User> users;
                 """,
             sources = listOf(COMMON.USER),
@@ -2513,7 +2513,7 @@ class TableEntityProcessorTest : BaseEntityParserTest() {
 
                 static class A {
                     int entityId;
-                    @Relation(parentColumn = "entityId", entityColumn = "dataClassId")
+                    @Relation(parentColumns = {"entityId"}, entityColumns = {"dataClassId"})
                     List<MyEntity> myEntity;
                 }
                 """
@@ -2622,6 +2622,23 @@ class TableEntityProcessorTest : BaseEntityParserTest() {
         ) { _, invocation ->
             invocation.assertCompilationResult {
                 hasErrorContaining(ProcessorErrors.INVALID_COLUMN_NAME)
+            }
+        }
+    }
+
+    @Test
+    fun withoutRowId_errorAutoIncrement() {
+        val annotation = mapOf("withoutRowId" to "true")
+        singleEntity(
+            """
+                @PrimaryKey(autoGenerate = true)
+                int id;
+                String name;
+                """,
+            attributes = annotation,
+        ) { _, invocation ->
+            invocation.assertCompilationResult {
+                hasErrorContaining(ProcessorErrors.WITHOUT_ROWID_CANNOT_USE_AUTOINCREMENT)
             }
         }
     }

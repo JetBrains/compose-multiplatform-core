@@ -24,6 +24,7 @@ import androidx.xr.arcore.runtime.PerceptionRuntime
 import androidx.xr.runtime.AnchorPersistenceMode
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.DepthEstimationMode
+import androidx.xr.runtime.ExperimentalInertialTrackingApi
 import androidx.xr.runtime.FaceTrackingMode
 import androidx.xr.runtime.GeospatialMode
 import androidx.xr.runtime.HandTrackingMode
@@ -37,7 +38,6 @@ import com.google.ar.core.ArCoreApk
 import com.google.ar.core.ArCoreApk.Availability
 import com.google.ar.core.AugmentedImageDatabase
 import com.google.ar.core.Config as ArConfig
-import com.google.ar.core.Config as ArCoreConfig
 import com.google.ar.core.Config.AugmentedFaceMode
 import com.google.ar.core.Config.DepthMode
 import com.google.ar.core.Config.GeospatialMode as ArGeospatialMode
@@ -60,6 +60,7 @@ import kotlinx.coroutines.delay
  * @property config the current [Config] of the session
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY)
+@OptIn(ExperimentalInertialTrackingApi::class)
 public class ArCoreRuntime
 internal constructor(
     private val context: Context,
@@ -77,8 +78,9 @@ internal constructor(
      */
     @UnsupportedArCoreCompatApi public fun session(): Session = _session
 
-    // TODO(b/392660855): Disable all features by default once this API is fully implemented.
-    public override var config: Config = Config()
+    // TODO(515763631) - The underlying ArCore 1.x Session configuration does not necessarily match
+    // this default configuration before the runtime is configured.
+    public override var config: Config = Config.Builder().build()
         private set
 
     override fun initialize() {
@@ -89,10 +91,12 @@ internal constructor(
     }
 
     override fun resume() {
+        perceptionManager.arDevice.resume()
         _session.resume()
     }
 
     override fun pause() {
+        perceptionManager.arDevice.pause()
         _session.pause()
     }
 
@@ -115,6 +119,8 @@ internal constructor(
     @SuppressWarnings("RestrictedApiAndroidX")
     override fun configure(config: Config) {
         val arConfig = _session.config
+
+        perceptionManager.arDevice.configureTracking(config.deviceTracking, context)
 
         if (config.cameraFacingDirection != this.config.cameraFacingDirection) {
             try {
@@ -250,32 +256,6 @@ internal constructor(
     @RequiresApi(27)
     private fun setTextureUpdateModeToHardwareBuffer(config: ArConfig) {
         config.textureUpdateMode = TextureUpdateMode.EXPOSE_HARDWARE_BUFFER
-    }
-
-    private fun isDepthModeSupportedInArCore1x(depthEstimationMode: DepthEstimationMode): Boolean {
-        val arCoreDepthMode =
-            when (depthEstimationMode) {
-                DepthEstimationMode.SMOOTH_ONLY,
-                DepthEstimationMode.SMOOTH_AND_RAW -> ArCoreConfig.DepthMode.AUTOMATIC
-                DepthEstimationMode.RAW_ONLY -> ArCoreConfig.DepthMode.RAW_DEPTH_ONLY
-                else -> ArCoreConfig.DepthMode.DISABLED
-            }
-        return _session.isDepthModeSupported(arCoreDepthMode)
-    }
-
-    private fun isGeoSpatialModeSupportedInArCore1x(geospatialMode: GeospatialMode): Boolean {
-
-        // TODO: b/510879776 - Remove this code once GeospatialMode.INERTIAL is out in ARCore 1.55
-        if (geospatialMode == GeospatialMode.INERTIAL) {
-            return isPrototypeGeospatialModeSupported(ARCORE_GEOSPATIAL_MODE_INERTIAL)
-        }
-
-        val arCoreGeospatialMode =
-            when (geospatialMode) {
-                GeospatialMode.SPATIAL -> ArCoreConfig.GeospatialMode.ENABLED
-                else -> ArCoreConfig.GeospatialMode.DISABLED
-            }
-        return _session.isGeospatialModeSupported(arCoreGeospatialMode)
     }
 
     // TODO: b/510879776 - Remove this method once GeospatialMode.INERTIAL is out in ARCore 1.55

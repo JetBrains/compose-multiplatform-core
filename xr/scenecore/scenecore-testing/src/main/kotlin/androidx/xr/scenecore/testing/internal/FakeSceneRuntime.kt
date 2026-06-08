@@ -25,6 +25,7 @@ import androidx.annotation.RequiresApi
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import androidx.xr.arcore.Trackable
+import androidx.xr.runtime.Config
 import androidx.xr.runtime.math.Pose
 import androidx.xr.scenecore.runtime.ActivityPanelEntity
 import androidx.xr.scenecore.runtime.AnchorEntity
@@ -33,7 +34,6 @@ import androidx.xr.scenecore.runtime.Dimensions
 import androidx.xr.scenecore.runtime.Entity
 import androidx.xr.scenecore.runtime.GltfFeature
 import androidx.xr.scenecore.runtime.InputEventListener
-import androidx.xr.scenecore.runtime.InteractableComponent
 import androidx.xr.scenecore.runtime.LoggingEntity
 import androidx.xr.scenecore.runtime.MeshEntity
 import androidx.xr.scenecore.runtime.MeshFeature
@@ -62,6 +62,7 @@ import androidx.xr.scenecore.runtime.SubspaceNodeEntity
 import androidx.xr.scenecore.runtime.SurfaceEntity
 import androidx.xr.scenecore.runtime.SurfaceFeature
 import androidx.xr.scenecore.runtime.TrackableComponent
+import java.lang.ref.WeakReference
 import java.util.concurrent.Executor
 import java.util.function.Consumer
 import kotlinx.coroutines.flow.Flow
@@ -74,6 +75,23 @@ import kotlinx.coroutines.flow.mapNotNull
  */
 internal class FakeSceneRuntime(val executor: Executor? = null) :
     SceneRuntime, RenderingEntityFactory {
+
+    init {
+        instance = this
+    }
+
+    override fun destroy() {
+        _state = State.DESTROYED
+        _spatialCapabilitiesChangedMap.clear()
+        _spatialVisibilityChangedMap.clear()
+        _perceivedResolutionChangedMap.clear()
+        _boundaryConsentChangedMap.clear()
+
+        keyEntity = null
+        enabledPanelDepthTest = false
+
+        instance = null
+    }
 
     /* Tracks the current state of the adapter according to where it is in its lifecycle. */
     enum class State {
@@ -98,11 +116,14 @@ internal class FakeSceneRuntime(val executor: Executor? = null) :
     val state: Enum<State>
         get() = _state
 
+    override var config: Config = Config.Builder().build()
+        private set
+
     override var spatialCapabilities: SpatialCapabilities =
         SpatialCapabilities(ALL_SPATIAL_CAPABILITIES)
-        private set(value) {
+        set(value) {
             field = value
-            spatialCapabilitiesChangedMap.forEach { (consumer, executor) ->
+            spatialCapabilitiesChangedMap.toMap().forEach { (consumer, executor) ->
                 executor.execute { consumer.accept(value) }
             }
         }
@@ -130,8 +151,12 @@ internal class FakeSceneRuntime(val executor: Executor? = null) :
     override var spatialModeChangeListener: SpatialModeChangeListener? =
         FakeSpatialModeChangeListener()
 
+    override fun configure(config: Config) {
+        this.config = config
+    }
+
     override fun getScenePoseFromPerceptionPose(pose: Pose): ScenePose {
-        return FakePerceptionSpaceScenePose()
+        return FakePerceptionSpaceScenePose(pose)
     }
 
     var deviceDpPerMeter: Float = DEFAULT_DP_PER_METER
@@ -190,9 +215,13 @@ internal class FakeSceneRuntime(val executor: Executor? = null) :
         pose: Pose,
         parentEntity: Entity?,
     ): FakeGltfEntity {
-        if (executor == null) throw NullPointerException("Set executor before test")
+        val nonNullExecutor = checkNotNull(executor) { "Set executor before test" }
 
-        val gltfEntity = FakeGltfEntity(feature, executor)
+        require(feature is FakeGltfFeature) {
+            "The feature passed to FakeSceneRuntime must be an instance of FakeGltfFeature."
+        }
+
+        val gltfEntity = FakeGltfEntity(feature, nonNullExecutor)
         gltfEntity.setPose(pose)
         gltfEntity.parent = parentEntity
 
@@ -204,7 +233,7 @@ internal class FakeSceneRuntime(val executor: Executor? = null) :
         pose: Pose,
         parentEntity: Entity?,
     ): SurfaceEntity {
-        val surfaceEntity = FakeSurfaceEntity()
+        val surfaceEntity = FakeSurfaceEntity(feature as FakeSurfaceFeature)
         surfaceEntity.setPose(pose)
         surfaceEntity.parent = parentEntity
 
@@ -216,7 +245,7 @@ internal class FakeSceneRuntime(val executor: Executor? = null) :
         pose: Pose,
         parentEntity: Entity?,
     ): MeshEntity {
-        val meshEntity = FakeMeshEntity(feature)
+        val meshEntity = FakeMeshEntity(feature as FakeMeshFeature)
         meshEntity.setPose(pose)
         meshEntity.parent = parentEntity
         return meshEntity
@@ -330,6 +359,17 @@ internal class FakeSceneRuntime(val executor: Executor? = null) :
     }
 
     /**
+     * For test purposes only. Notifies all registered listeners of a perceived resolution change.
+     */
+    // TODO: b/514561866 - Add unit tests for this once testing/FakeSceneRuntime is removed.
+    internal fun onPerceivedResolutionChanged(width: Int, height: Int) {
+        val rtDimensions = PixelDimensions(width, height)
+        _perceivedResolutionChangedMap.toMap().forEach { (consumer, executor) ->
+            executor.execute { consumer.accept(rtDimensions) }
+        }
+    }
+
+    /**
      * For test purposes only.
      *
      * Stores the [Activity] that was last provided to the [setPreferredAspectRatio] method. Tests
@@ -343,11 +383,11 @@ internal class FakeSceneRuntime(val executor: Executor? = null) :
      * Stores the ratio that was last provided to the [setPreferredAspectRatio] method. Tests can
      * inspect this property to verify the correct ratio was set.
      */
-    var lastSetPreferredAspectRatioRatio: Float = -1f
+    var lastSetPreferredAspectRatio: Float = -1f
 
     override fun setPreferredAspectRatio(activity: Activity, preferredRatio: Float) {
         lastSetPreferredAspectRatioActivity = activity
-        lastSetPreferredAspectRatioRatio = preferredRatio
+        lastSetPreferredAspectRatio = preferredRatio
     }
 
     override fun requestFullSpaceMode() {
@@ -377,7 +417,7 @@ internal class FakeSceneRuntime(val executor: Executor? = null) :
     override fun createInteractableComponent(
         executor: Executor,
         listener: InputEventListener,
-    ): InteractableComponent {
+    ): FakeInteractableComponent {
         val interactableComponent = FakeInteractableComponent()
         interactableComponent.inputEventListenersMap[listener] = executor
         return interactableComponent
@@ -420,7 +460,6 @@ internal class FakeSceneRuntime(val executor: Executor? = null) :
     ): FakeResizableComponent {
         val resizableComponent =
             FakeResizableComponent(minimumSize = minimumSize, maximumSize = maximumSize)
-
         return resizableComponent
     }
 
@@ -454,6 +493,13 @@ internal class FakeSceneRuntime(val executor: Executor? = null) :
                 SpatialCapabilities.SPATIAL_CAPABILITY_APP_ENVIRONMENT or
                 SpatialCapabilities.SPATIAL_CAPABILITY_PASSTHROUGH_CONTROL or
                 SpatialCapabilities.SPATIAL_CAPABILITY_EMBED_ACTIVITY
+
+        @Volatile private var instanceRef: WeakReference<FakeSceneRuntime>? = null
+        internal var instance: FakeSceneRuntime?
+            get() = instanceRef?.get()
+            private set(value) {
+                instanceRef = value?.let { WeakReference(it) }
+            }
     }
 
     private var _isBoundaryConsentGranted = false
@@ -523,7 +569,7 @@ internal class FakeSceneRuntime(val executor: Executor? = null) :
         _isBoundaryConsentGranted = boundaryConsent
 
         if (oldBoundaryConsent != boundaryConsent) {
-            _boundaryConsentChangedMap.forEach { (listener, executor) ->
+            _boundaryConsentChangedMap.toMap().forEach { (listener, executor) ->
                 executor.execute { listener.accept(boundaryConsent) }
             }
         }

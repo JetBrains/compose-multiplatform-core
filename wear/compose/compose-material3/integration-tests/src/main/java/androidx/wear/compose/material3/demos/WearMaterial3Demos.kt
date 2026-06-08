@@ -42,7 +42,10 @@ import androidx.wear.compose.material3.samples.NonClickableImageCardSample
 import androidx.wear.compose.material3.samples.NonClickableTitleCardWithImageWithTimeAndTitleSample
 import androidx.wear.compose.material3.samples.OneHandedGestureButtonSample
 import androidx.wear.compose.material3.samples.OneHandedGestureHorizontalPagerSample
+import androidx.wear.compose.material3.samples.OneHandedGestureScalingLazyColumnSample
+import androidx.wear.compose.material3.samples.OneHandedGestureScalingLazyColumnScrollToNextItemSample
 import androidx.wear.compose.material3.samples.OneHandedGestureTransformingLazyColumnSample
+import androidx.wear.compose.material3.samples.OneHandedGestureTransformingLazyColumnScrollToNextItemSample
 import androidx.wear.compose.material3.samples.OneHandedGestureVerticalPagerSample
 import androidx.wear.compose.material3.samples.SimpleSwipeToDismissBox
 import androidx.wear.compose.material3.samples.StatefulSwipeToDismissBox
@@ -242,6 +245,7 @@ val WearMaterial3Demos =
                         ComposableDemo("With edgeSwipeToDismiss") { params ->
                             SwipeToRevealWithEdgeSwipeToDismiss(params.swipeToDismissBoxState)
                         },
+                        ComposableDemo("Custom drag with fling") { SwipeToRevealCustomDragDemo() },
                     ),
                 ),
                 Material3DemoCategory(
@@ -307,8 +311,17 @@ val WearMaterial3Demos =
                     title = "One Handed Gestures",
                     listOf(
                         ComposableDemo("Button") { OneHandedGestureButtonSample() },
-                        ComposableDemo("TransformingLazyColumn with EdgeButton") {
+                        ComposableDemo("TLC scrollDown with EdgeButton") {
                             OneHandedGestureTransformingLazyColumnSample()
+                        },
+                        ComposableDemo("SLC scrollDown with EdgeButton") {
+                            OneHandedGestureScalingLazyColumnSample()
+                        },
+                        ComposableDemo("TLC scrollToNextItem with EdgeButton") {
+                            OneHandedGestureTransformingLazyColumnScrollToNextItemSample()
+                        },
+                        ComposableDemo("SLC scrollToNextItem with EdgeButton") {
+                            OneHandedGestureScalingLazyColumnScrollToNextItemSample()
                         },
                         ComposableDemo("TransformingLazyColumn with Button") {
                             OneHandedGestureTransformingLazyColumnWithButtonDemo()
@@ -319,6 +332,9 @@ val WearMaterial3Demos =
                         ComposableDemo("Vertical Pager") { OneHandedGestureVerticalPagerSample() },
                         ComposableDemo("Two Buttons with the same priority") {
                             OneHandedGestureTwoButtonsSamePriorityDemo()
+                        },
+                        ComposableDemo("Primary/Dismiss Buttons") {
+                            OneHandedGesturePrimaryDismissButtons()
                         },
                         ActivityDemo(
                             "SwipeDismissableNavHost",

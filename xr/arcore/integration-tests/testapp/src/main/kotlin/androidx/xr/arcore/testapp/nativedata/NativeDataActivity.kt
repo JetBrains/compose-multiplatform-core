@@ -53,13 +53,12 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LifecycleRegistry
 import androidx.xr.arcore.testapp.ui.theme.GoogleYellow
 import androidx.xr.compose.spatial.Subspace
-import androidx.xr.compose.subspace.ResizePolicy
 import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.compose.subspace.layout.size
 import androidx.xr.compose.subspace.layout.transformingMovable
+import androidx.xr.compose.subspace.layout.transformingResizable
 import androidx.xr.compose.unit.DpVolumeSize
-import androidx.xr.runtime.ExperimentalXrDeviceLifecycleApi
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.UnstableNativeResourceApi
 import androidx.xr.runtime.XrDevice
@@ -80,7 +79,7 @@ class NativeDataActivity : ComponentActivity() {
     private var getNativeDataResult by mutableStateOf("Not started")
     private var getNativeDataPassed by mutableStateOf(false)
 
-    @OptIn(UnstableNativeResourceApi::class, ExperimentalXrDeviceLifecycleApi::class)
+    @OptIn(UnstableNativeResourceApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -91,8 +90,8 @@ class NativeDataActivity : ComponentActivity() {
                     SpatialPanel(
                         modifier =
                             SubspaceModifier.size(DpVolumeSize(640.dp, 480.dp, 0.dp))
-                                .transformingMovable(),
-                        resizePolicy = ResizePolicy(),
+                                .transformingMovable()
+                                .transformingResizable()
                     ) {
                         TestResultsView()
                     }
@@ -240,7 +239,8 @@ class NativeDataActivity : ComponentActivity() {
         }
     }
 
-    @OptIn(UnstableNativeResourceApi::class, ExperimentalXrDeviceLifecycleApi::class)
+    @OptIn(UnstableNativeResourceApi::class)
+    @Suppress("RestrictedApiAndroidX")
     private fun runTests() {
         // Test 1: Invalid Extensions
         val invalidExtensions = listOf("XR_INVALID_EXTENSION_NAME")

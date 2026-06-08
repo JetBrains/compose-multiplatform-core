@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("RestrictedApiAndroidX")
+
 package androidx.wear.compose.remote.material3.previews
 
 import androidx.compose.remote.creation.compose.layout.RemoteAlignment
@@ -27,7 +29,7 @@ import androidx.compose.remote.creation.compose.state.rc
 import androidx.compose.remote.creation.compose.state.rdp
 import androidx.compose.remote.creation.compose.state.rf
 import androidx.compose.remote.creation.profile.Profile
-import androidx.compose.remote.tooling.preview.RemotePreview
+import androidx.compose.remote.tooling.preview.RemoteContentPreview
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.PreviewParameter
@@ -42,7 +44,7 @@ import androidx.wear.compose.ui.tooling.preview.WearPreviewDevices
 private fun RemoteCircularProgressIndicatorPreview(
     @PreviewParameter(ProfilePreviewParameterProvider::class) profile: Profile
 ) {
-    RemotePreview(profile = profile) { Container { RemoteCircularProgressEnabled() } }
+    RemoteContentPreview(profile = profile) { Container { RemoteCircularProgressEnabled() } }
 }
 
 @Composable
@@ -55,7 +57,9 @@ fun RemoteCircularProgressEnabled() {
 private fun RemoteCircularProgressNoGapCustomAnglePreview(
     @PreviewParameter(ProfilePreviewParameterProvider::class) profile: Profile
 ) {
-    RemotePreview(profile = profile) { Container { RemoteCircularProgressNoGapCustomAngle() } }
+    RemoteContentPreview(profile = profile) {
+        Container { RemoteCircularProgressNoGapCustomAngle() }
+    }
 }
 
 @Composable
@@ -74,7 +78,9 @@ fun RemoteCircularProgressNoGapCustomAngle() {
 private fun RemoteCircularProgressIndicatorCustomColorPreview(
     @PreviewParameter(ProfilePreviewParameterProvider::class) profile: Profile
 ) {
-    RemotePreview(profile = profile) { Container { RemoteCircularProgressIndicatorCustomColor() } }
+    RemoteContentPreview(profile = profile) {
+        Container { RemoteCircularProgressIndicatorCustomColor() }
+    }
 }
 
 @Composable
@@ -95,7 +101,9 @@ fun RemoteCircularProgressIndicatorCustomColor() {
 private fun RemoteCircularProgressIndicatorDisabledPreview(
     @PreviewParameter(ProfilePreviewParameterProvider::class) profile: Profile
 ) {
-    RemotePreview(profile = profile) { Container { RemoteCircularProgressIndicatorDisabled() } }
+    RemoteContentPreview(profile = profile) {
+        Container { RemoteCircularProgressIndicatorDisabled() }
+    }
 }
 
 @Composable
@@ -115,13 +123,13 @@ fun RemoteCircularProgressIndeterminate() {
 @WearPreviewDevices
 @Composable
 public fun RemoteCircularProgressIndeterminatePreview() {
-    RemotePreview { Container { RemoteCircularProgressIndeterminate() } }
+    RemoteContentPreview { Container { RemoteCircularProgressIndeterminate() } }
 }
 
 @WearPreviewDevices
 @Composable
 public fun RemoteCircularProgressIndicatorAnimatedPreview() {
-    RemotePreview { Container { RemoteCircularProgressIndicatorAnimatedSample() } }
+    RemoteContentPreview { Container { RemoteCircularProgressIndicatorAnimatedSample() } }
 }
 
 @Composable
