@@ -198,6 +198,8 @@ internal abstract class NativeInputEventsProcessor(
 
                         add(BackspaceCommand())
                     } else {
+                        // certain keyboard layout trigger deleteContentBackward on fast delete
+                        // https://youtrack.jetbrains.com/issue/CMP-10086
                         createDeleteWordCommand()?.let { add(it) }
                     }
                 }
