@@ -34,8 +34,13 @@ internal actual fun loadTypeface(font: Font): SkTypeface {
     }
     @Suppress("REDUNDANT_ELSE_IN_WHEN")
     return when (font) {
-        is LoadedFont -> FontMgr.default.makeFromData(Data.makeFromBytes(font.getData()))
-            ?: error("loadTypeface makeFromData failed")
+        is LoadedFont -> {
+            when (val fontData = font.getData()) {
+                is ByteArray -> FontMgr.default.makeFromData(Data.makeFromBytes(fontData))
+                is Data -> FontMgr.default.makeFromData(fontData)
+                else -> error("LoadedFont data must be ByteArray or org.jetbrains.skia.Data on WASM, got ${fontData::class}")
+            } ?: error("loadTypeface makeFromData failed")
+        }
         is SystemFont -> FontMgr.default.legacyMakeTypeface(font.identity, font.skFontStyle)
             ?: error("loadTypeface legacyMakeTypeface failed")
         // TODO: compilation fails without `else` see https://youtrack.jetbrains.com/issue/KT-43875
