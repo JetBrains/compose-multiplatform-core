@@ -59,7 +59,7 @@ import org.jetbrains.skiko.currentNanoTime
  */
 fun Font(
     identity: String,
-    getData: () -> ByteArray,
+    getData: () -> Any,
     weight: FontWeight = FontWeight.Normal,
     style: FontStyle = FontStyle.Normal
 ): Font = LoadedFont(identity, getData, weight, style, FontVariation.Settings())
@@ -90,7 +90,7 @@ fun Font(
  */
 fun Font(
     identity: String,
-    getData: () -> ByteArray,
+    getData: () -> Any,
     weight: FontWeight = FontWeight.Normal,
     style: FontStyle = FontStyle.Normal,
     variationSettings: FontVariation.Settings = FontVariation.Settings(weight, style)

@@ -78,7 +78,7 @@ class SystemFont(
  */
 class LoadedFont @InternalComposeUiApi constructor(
     override val identity: String,
-    internal val getData: () -> ByteArray,
+    internal val getData: () -> Any,
     override val weight: FontWeight,
     override val style: FontStyle,
     override val variationSettings: FontVariation.Settings = FontVariation.Settings(weight, style),
@@ -87,7 +87,7 @@ class LoadedFont @InternalComposeUiApi constructor(
     @OptIn(InternalComposeUiApi::class)
     constructor(
         identity: String,
-        getData: () -> ByteArray,
+        getData: () -> Any,
         weight: FontWeight,
         style: FontStyle
     ) : this(identity, getData, weight, style, FontVariation.Settings())
@@ -95,7 +95,7 @@ class LoadedFont @InternalComposeUiApi constructor(
     @ExperimentalTextApi
     override val loadingStrategy: FontLoadingStrategy = FontLoadingStrategy.Blocking
 
-    val data: ByteArray get() = getData()
+    val data: Any get() = getData()
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

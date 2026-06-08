@@ -39,7 +39,11 @@ internal actual fun loadTypeface(font: Font): SkTypeface {
     val typeface = when (font) {
         is ResourceFont -> typefaceResource(font.name)
         is FileFont -> FontMgr.default.makeFromFile(font.file.toString())
-        is LoadedFont -> FontMgr.default.makeFromData(Data.makeFromBytes(font.data))
+        is LoadedFont -> {
+            val fontData = font.data
+            require(fontData is ByteArray) { "LoadedFont data must be ByteArray on Desktop, got ${fontData::class}" }
+            FontMgr.default.makeFromData(Data.makeFromBytes(fontData))
+        }
         is SystemFont -> FontMgr.default.matchFamilyStyle(font.identity, font.skFontStyle)
     } ?: (FontMgr.default.legacyMakeTypeface(font.identity, font.skFontStyle)
         ?: error("loadTypeface legacyMakeTypeface failed"))
