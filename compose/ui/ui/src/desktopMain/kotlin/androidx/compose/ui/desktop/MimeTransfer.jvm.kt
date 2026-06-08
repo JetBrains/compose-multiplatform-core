@@ -16,8 +16,13 @@
 
 package androidx.compose.ui.desktop
 
+import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.desktop.ClipboardItemsEntry
+import androidx.compose.ui.draganddrop.DragAndDropTransferAction
 import java.net.URI
 import java.nio.file.Path
+import kotlin.ByteArray
+import kotlin.String
 
 internal const val Utf8PlainTextMimeType = "text/plain;charset=utf-8"
 internal const val Utf8PlainTextMimeTypeFallback = "text/plain"
@@ -27,95 +32,95 @@ internal const val FileUriListMimeType = "text/uri-list"
 internal const val PngMimeType = "image/png"
 internal const val WindowLocalDragMimeType = "org.jetbrains.fleet.window-local-drag"
 
-internal interface FixedMimeTransferClipboardEntry : ClipboardEntry {
-    val mimeData: Map<String, ByteArray>
-}
-
-internal class FixedMimeTransferItems(
-    override val mimeData: Map<String, ByteArray>,
-) : FixedMimeTransferClipboardEntry {
-    override suspend fun <T : Any> getForFormat(format: ClipboardFormat<T>): List<T> {
-        return getForFormatSync(format)
-    }
-
-    @Suppress("UNCHECKED_CAST")
-    override fun <T : Any> getForFormatSync(format: ClipboardFormat<T>): List<T> {
-        return decodeMimeData(mimeData, format) as List<T>
-    }
-}
-
-internal class MimeTransferClipboardEntry(
-    private val mimeDataProvider: () -> Map<String, ByteArray>,
+@OptIn(ExperimentalComposeUiApi::class)
+internal class LinuxDragAndDropClipboardEntry(
+    private val mimeTypes: List<String>,
+    private val data: ByteArray?,
 ) : ClipboardEntry {
+    private val acceptedMimeTypes = linkedMapOf(
+        WindowLocalDragMimeType to listOf(DragAndDropTransferAction.Move, DragAndDropTransferAction.Copy)
+    )
+
     override suspend fun <T : Any> getForFormat(format: ClipboardFormat<T>): List<T> {
         return getForFormatSync(format)
     }
 
-    @Suppress("UNCHECKED_CAST")
     override fun <T : Any> getForFormatSync(format: ClipboardFormat<T>): List<T> {
-        return decodeMimeData(mimeDataProvider(), format) as List<T>
+        return data?.let { data ->
+            val mimeType = mimeTypes.single()
+            if (format.linuxMimeTypes().contains(mimeType)) {
+                decodeMimeData(data, format)
+            } else {
+                emptyList()
+            }
+        }.orEmpty()
     }
 
-    internal fun availableMimeTypes(): Set<String> = mimeDataProvider().keys
+    internal fun containsFormat(format: ClipboardFormat<*>, actions: List<DragAndDropTransferAction>): Boolean {
+        val formatMimeTypes = format.linuxMimeTypes()
+        return formatMimeTypes.any { it in mimeTypes }
+    }
+
+    internal fun acceptsFormat(format: ClipboardFormat<*>, actions: List<DragAndDropTransferAction>) {
+        val formatMimeTypes = format.linuxMimeTypes()
+        if (formatMimeTypes.any { it in mimeTypes }) {
+            acceptedMimeTypes.putAll(formatMimeTypes.map { it to actions })
+        }
+    }
+
+    internal fun acceptedMimeTypes(): Collection<Pair<String, List<DragAndDropTransferAction>>> = acceptedMimeTypes.map { it.key to it.value }
 }
 
-internal fun mimeTransferClipboardEntry(vararg items: ClipboardItem): FixedMimeTransferItems {
-    return fixedMimeTransferClipboardEntry(*items)
-}
-
-internal fun fixedMimeTransferClipboardEntry(vararg items: ClipboardItem): FixedMimeTransferItems {
-    return FixedMimeTransferItems(encodeClipboardItemsToMimeData(items.asList()))
-}
-
-internal fun encodeClipboardItemsToMimeData(items: Iterable<ClipboardItem>): Map<String, ByteArray> {
-    val mimeData = linkedMapOf<String, ByteArray>()
+internal fun ClipboardItemsEntry.getDataForLinuxMimeType(mimeType: String): ByteArray? {
     val files = mutableListOf<String>()
-
     for (item in items) {
         for (element in item.elements) {
-            @Suppress("UNCHECKED_CAST")
-            when (element.format) {
-                ClipboardFormat.Utf8PlainText ->
-                    mimeData.putIfAbsent(
-                        Utf8PlainTextMimeType,
-                        (element.value as String).toByteArray(Charsets.UTF_8),
-                    )
-                ClipboardFormat.Html ->
-                    mimeData.putIfAbsent(
-                        HtmlMimeType,
-                        (element.value as String).toByteArray(Charsets.UTF_8),
-                    )
-                ClipboardFormat.Png ->
-                    mimeData.putIfAbsent(PngMimeType, element.value as ByteArray)
-                ClipboardFormat.File ->
-                    files += element.value as String
-                ClipboardFormat.WindowLocalDrag ->
-                    mimeData.putIfAbsent(
-                        WindowLocalDragMimeType,
-                        (element.value as LightweightWindowId).value.toString().toByteArray(Charsets.UTF_8),
-                    )
-                is ClipboardFormat.CustomSerializable<*> ->
-                    mimeData.putIfAbsent(
-                        element.format.mimeType,
-                        (element.format as ClipboardFormat.CustomSerializable<Any>)
+            if (element.format.linuxMimeTypes().contains(mimeType)) {
+                when (element.format) {
+                    ClipboardFormat.Utf8PlainText -> {
+                        return (element.value as String).toByteArray(Charsets.UTF_8)
+                    }
+                    ClipboardFormat.Html -> {
+                        return (element.value as String).toByteArray(Charsets.UTF_8)
+                    }
+                    ClipboardFormat.Png -> {
+                        return element.value as ByteArray
+                    }
+                    ClipboardFormat.File -> {
+                        files.add(element.value as String)
+                    }
+                    ClipboardFormat.WindowLocalDrag -> {
+                        return (element.value as LightweightWindowId).value.toString()
+                            .toByteArray(Charsets.UTF_8)
+                    }
+                    is ClipboardFormat.CustomSerializable<*> -> {
+                        @Suppress("UNCHECKED_CAST")
+                        return (element.format as ClipboardFormat.CustomSerializable<Any>)
                             .encode(element.value)
-                            .toByteArray(Charsets.UTF_8),
-                    )
+                            .toByteArray(Charsets.UTF_8)
+                    }
+                }
             }
         }
     }
 
-    if (files.isNotEmpty()) {
-        mimeData[FileUriListMimeType] =
-            files.joinToString(separator = "\r\n", postfix = "\r\n") { Path.of(it).toUri().toString() }
-                .toByteArray(Charsets.UTF_8)
+    return if (files.isEmpty()) {
+        null
+    } else {
+        files.joinToString(separator = "\r\n", postfix = "\r\n") {
+            Path.of(it).toUri().toString()
+        }.toByteArray(Charsets.UTF_8)
     }
-
-    return mimeData
 }
 
-internal fun availableMimeTypesForClipboardItems(items: Iterable<ClipboardItem>): List<String> {
-    return encodeClipboardItemsToMimeData(items).keys.toList()
+internal fun ClipboardItemsEntry.linuxMimeTypes(): List<String> {
+    val mimeTypes = linkedSetOf<String>()
+    for (item in items) {
+        for (element in item.elements) {
+            mimeTypes.addAll(element.format.linuxMimeTypes())
+        }
+    }
+    return mimeTypes.toList()
 }
 
 internal fun ClipboardFormat<*>.linuxMimeTypes(): List<String> = when (this) {
@@ -128,52 +133,23 @@ internal fun ClipboardFormat<*>.linuxMimeTypes(): List<String> = when (this) {
 }
 
 internal fun <T : Any> decodeMimeData(
-    mimeData: Map<String, ByteArray>,
+    data: ByteArray,
     format: ClipboardFormat<T>,
 ): List<T> {
+    val list: List<Any> = when (format) {
+        ClipboardFormat.Utf8PlainText -> listOf(data.decodeToString())
+        ClipboardFormat.Html -> listOf(data.decodeToString())
+        ClipboardFormat.Png -> listOf(data)
+        ClipboardFormat.File -> decodeUriList(data)
+        ClipboardFormat.WindowLocalDrag -> listOfNotNull(data.decodeToString().toLongOrNull()
+            ?.let { LightweightWindowId(it) })
+        is ClipboardFormat.CustomSerializable<*> -> listOf(format.decode(data.decodeToString()))
+    }
     @Suppress("UNCHECKED_CAST")
-    return when (format) {
-        ClipboardFormat.Utf8PlainText -> firstMimeBytes(
-            mimeData,
-            Utf8PlainTextMimeType,
-            Utf8PlainTextMimeTypeFallback,
-        )?.decodeToString()?.let(::listOf).orEmpty()
-        ClipboardFormat.Html -> firstMimeBytes(
-            mimeData,
-            HtmlMimeType,
-            HtmlMimeTypeFallback,
-        )?.decodeToString()?.let(::listOf).orEmpty()
-        ClipboardFormat.Png -> mimeData[PngMimeType]?.let(::listOf).orEmpty()
-        ClipboardFormat.File -> decodeUriList(mimeData[FileUriListMimeType])
-        ClipboardFormat.WindowLocalDrag -> mimeData[WindowLocalDragMimeType]
-            ?.decodeToString()
-            ?.toLongOrNull()
-            ?.let { listOf(LightweightWindowId(it)) }
-            .orEmpty()
-        is ClipboardFormat.CustomSerializable<*> -> mimeData[format.mimeType]
-            ?.decodeToString()
-            ?.let { serialized ->
-                listOf(format.decode(serialized))
-            }
-            .orEmpty()
-    } as List<T>
+    return list as List<T>
 }
 
-private fun firstMimeBytes(
-    mimeData: Map<String, ByteArray>,
-    vararg candidates: String,
-): ByteArray? {
-    for (candidate in candidates) {
-        mimeData[candidate]?.let { return it }
-    }
-    return null
-}
-
-private fun decodeUriList(data: ByteArray?): List<String> {
-    if (data == null) {
-        return emptyList()
-    }
-
+private fun decodeUriList(data: ByteArray): List<String> {
     return data.decodeToString()
         .lineSequence()
         .map(String::trim)

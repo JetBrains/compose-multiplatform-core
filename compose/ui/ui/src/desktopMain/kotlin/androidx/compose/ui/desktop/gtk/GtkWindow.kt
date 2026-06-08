@@ -20,13 +20,12 @@ import androidx.compose.ui.desktop.InteractiveMoveInitiator
 import androidx.compose.ui.desktop.KdtDragAndDropManager
 import androidx.compose.ui.desktop.KdtDragAndDropTransferable
 import androidx.compose.ui.desktop.LightweightWindowId
-import androidx.compose.ui.desktop.MimeTransferClipboardEntry
 import androidx.compose.ui.desktop.Scene
 import androidx.compose.ui.desktop.Window
 import androidx.compose.ui.desktop.WindowCloseRequestReason
 import androidx.compose.ui.desktop.WindowScope
 import androidx.compose.ui.desktop.draganddrop.DragAndDropImage
-import androidx.compose.ui.desktop.encodeClipboardItemsToMimeData
+import androidx.compose.ui.desktop.linuxMimeTypes
 import androidx.compose.ui.draganddrop.DragAndDropTransferAction
 import androidx.compose.ui.draganddrop.DragAndDropTransferData
 import androidx.compose.ui.geometry.Offset
@@ -76,11 +75,13 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.enableSavedStateHandles
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.coroutines.resume
+import kotlin.invoke
 import kotlin.math.roundToInt
 import kotlinx.coroutines.CancellableContinuation
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.io.files.Path
+import noria.CallbackInterceptor
 import org.jetbrains.desktop.gtk.DataSource
 import org.jetbrains.desktop.gtk.DragAndDropAction
 import org.jetbrains.desktop.gtk.DragAndDropQueryData
@@ -288,10 +289,13 @@ class GtkWindow internal constructor(
     internal val dragAndDropManager: GtkDragAndDropManager = GtkDragAndDropManager(
         rootDragAndDropNode = { composeScene.rootDragAndDropNode },
         density = { density },
-        currentDragClipboardEntry = {
-            MimeTransferClipboardEntry { incomingDragMimeData.toMap() }
-        },
-        currentMimeTypes = { incomingDragMimeTypes },
+        callbackInterceptor = object : CallbackInterceptor {
+            override fun <T> execute(f: () -> T): T {
+                return scene.withPreparedMainThread {
+                    f()
+                }
+            }
+        }
     )
 
     private var layoutDirection: LayoutDirection by mutableStateOf(LayoutDirection.Ltr)
@@ -754,7 +758,7 @@ class GtkWindow internal constructor(
         val clipEntry = (transferData.transferable as? KdtDragAndDropTransferable)
             ?.clipboardEntry ?: return
         val itemsEntry = clipEntry.nativeClipEntry as? ClipboardItemsEntry ?: return
-        val mimeData = encodeClipboardItemsToMimeData(itemsEntry.items)
+        val mimeTypes = itemsEntry.linuxMimeTypes()
         val supportedActions = transferData.supportedActions.toSet()
         val dragImageBytes = DragAndDropImage(
             size = decorationSize,
@@ -765,15 +769,22 @@ class GtkWindow internal constructor(
 
         application.activeDragSource = GtkApplication.ActiveDragSource(
             windowId = id,
-            mimeData = mimeData,
+            itemsEntry = itemsEntry,
             supportedActions = supportedActions,
             onTransferCompleted = { action -> transferData.onTransferCompleted?.invoke(action) },
             dragIconPngBytes = dragImageBytes,
         )
+
         onNativeWindowAsync {
+            // Native DnD takes over the pointer here, so the press that started the
+            // drag will never get a matching release in this window. Clear the
+            // pressed buttons so the follow-up exit event reports `down = false` - otherwise
+            // the original press hit path keeps receiving pointer events
+            inputStateTracker.clearPointerButtons()
+
             startDragAndDrop(
                 StartDragAndDropParams(
-                    mimeTypes = mimeData.keys.toList(),
+                    mimeTypes = mimeTypes,
                     actions = supportedActions.toGtkActions(),
                     dragIconParams = DragIconParams(
                         renderingMode = RenderingMode.Auto,

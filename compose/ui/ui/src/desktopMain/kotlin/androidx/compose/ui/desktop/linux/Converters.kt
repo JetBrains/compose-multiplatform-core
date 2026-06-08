@@ -16,6 +16,8 @@
 
 package androidx.compose.ui.desktop.linux
 
+import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.draganddrop.DragAndDropTransferAction
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
@@ -25,18 +27,19 @@ import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import kotlin.math.roundToInt
+import org.jetbrains.desktop.linux.DragAndDropAction
 import org.jetbrains.desktop.linux.LogicalPoint
 import org.jetbrains.desktop.linux.LogicalRect
 import org.jetbrains.desktop.linux.LogicalSize
 
 internal fun LogicalSize.roundToIntSize(density: Density): IntSize {
     return with(density) {
-        IntSize(width.toInt().dp.roundToPx(), height.toInt().dp.roundToPx())
+        IntSize(width.dp.roundToPx(), height.dp.roundToPx())
     }
 }
 
 internal fun LogicalSize.toDpSize(): DpSize {
-    return DpSize(width.toInt().dp, height.toInt().dp)
+    return DpSize(width.dp, height.dp)
 }
 
 internal fun LogicalPoint.toDpOffset(): DpOffset {
@@ -49,13 +52,9 @@ internal fun Offset.toLogicalPoint(density: Density): LogicalPoint {
     }
 }
 
-internal fun DpOffset.toPxOffset(density: Density): Offset = with(density) {
-    Offset(x.toPx(), y.toPx())
-}
-
 internal fun Size.toLogicalSize(density: Density): LogicalSize {
     return with(density) {
-        LogicalSize(width.toDp().value.roundToInt().toUInt(), height.toDp().value.roundToInt().toUInt())
+        LogicalSize(width.toDp().value.roundToInt(), height.toDp().value.roundToInt())
     }
 }
 
@@ -68,10 +67,23 @@ internal operator fun LogicalPoint.minus(other: LogicalPoint): LogicalPoint =
 internal fun Rect.toLogicalRect(density: Density): LogicalRect {
     return with(density) {
         LogicalRect(
-            x = left.toDp().value.roundToInt().toUInt(),
-            y = top.toDp().value.roundToInt().toUInt(),
-            width = width.toDp().value.roundToInt().toUInt(),
-            height = height.toDp().value.roundToInt().toUInt(),
+            x = left.toDp().value.roundToInt(),
+            y = top.toDp().value.roundToInt(),
+            width = width.toDp().value.roundToInt(),
+            height = height.toDp().value.roundToInt(),
         )
+    }
+}
+
+internal fun DpOffset.toPxOffset(density: Density): Offset = with(density) {
+    Offset(x.toPx(), y.toPx())
+}
+
+@OptIn(ExperimentalComposeUiApi::class)
+internal fun DragAndDropTransferAction.toLinuxAction(): DragAndDropAction? {
+    return when (this) {
+        DragAndDropTransferAction.Copy -> DragAndDropAction.Copy
+        DragAndDropTransferAction.Move -> DragAndDropAction.Move
+        else -> null
     }
 }
