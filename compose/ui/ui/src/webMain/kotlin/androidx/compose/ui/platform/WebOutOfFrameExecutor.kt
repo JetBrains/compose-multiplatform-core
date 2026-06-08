@@ -20,26 +20,42 @@ import androidx.compose.ui.node.OutOfFrameExecutor
 import kotlin.js.ExperimentalWasmJsInterop
 import kotlin.js.js
 
-internal object WebOutOfFrameExecutor : OutOfFrameExecutor {
+internal class WebOutOfFrameExecutor : PlatformOutOfFrameExecutor  {
     private val queue = ArrayDeque<() -> Unit>()
-    private val outOfFrameCallback = {
-        while (queue.isNotEmpty()) {
-            queue.removeFirst().invoke()
+    private var isDisposed = false
+    private val drainCallback = {
+        if (!isDisposed) {
+            while (queue.isNotEmpty()) {
+                queue.removeLast().invoke()
+            }
         }
     }
 
-    @OptIn(ExperimentalWasmJsInterop::class)
     override fun schedule(block: () -> Unit) {
+        if (isDisposed) {
+            return
+        }
         val shouldSchedule = queue.isEmpty()
         queue.addLast(block)
 
         if (shouldSchedule) {
-            schedulerPostTask(outOfFrameCallback)
+            schedulerPostTask(drainCallback)
         }
+    }
+
+    override fun drainScheduledWorkForTest() {
+        drainCallback()
+    }
+
+    override val hasWorkScheduled: Boolean
+        get() = queue.isNotEmpty()
+
+    fun dispose() {
+        isDisposed = true
+        queue.clear()
     }
 }
 
-@OptIn(ExperimentalWasmJsInterop::class)
 internal val isPostingTasksSupported: Boolean by lazy {
     isSchedulerApiSupported()
 }

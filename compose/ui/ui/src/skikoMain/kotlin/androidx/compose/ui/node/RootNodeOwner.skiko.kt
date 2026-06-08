@@ -384,14 +384,6 @@ internal class RootNodeOwner(
         override val coroutineContext: CoroutineContext,
     ) : Owner {
 
-
-        override val outOfFrameExecutor: OutOfFrameExecutor? = if (platformContext.isOutOfFrameExecutorSupported) {
-            object : OutOfFrameExecutor {
-                override fun schedule(block: () -> Unit) = platformContext.scheduleOutOfFrameTask(block)
-
-            }
-        } else null
-
         private val onPointerUpdateCallback = inputHandler::onPointerUpdate
         private val platformFocusOwner = object : PlatformFocusOwner {
             override fun requestOwnerFocus(

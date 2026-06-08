@@ -69,6 +69,7 @@ import androidx.compose.ui.platform.isPostingTasksSupported
 import androidx.compose.ui.platform.installFallbackFontDownloader
 import androidx.compose.ui.scene.CanvasLayersComposeScene
 import androidx.compose.ui.platform.FrameRecomposer
+import androidx.compose.ui.platform.PlatformOutOfFrameExecutor
 import androidx.compose.ui.scene.ComposeSceneDragAndDropNode
 import androidx.compose.ui.scene.ComposeScenePointer
 import androidx.compose.ui.scene.PointerEventResult
@@ -213,6 +214,10 @@ internal class ComposeWindow(
 
     private val navigationEventInput = BackNavigationEventInput()
 
+    private val webOutOfFrameExecutor by lazy(LazyThreadSafetyMode.NONE) {
+        if (isPostingTasksSupported) WebOutOfFrameExecutor() else null
+    }
+
     private val canvasEvents = EventTargetListener(canvas)
 
     private var keyboardModeState: KeyboardModeState = KeyboardModeState.Hardware
@@ -236,10 +241,8 @@ internal class ComposeWindow(
 
     private val platformContext: PlatformContext =
         object : PlatformContext by PlatformContext.Empty() {
-            override val isOutOfFrameExecutorSupported: Boolean
-                get() = isPostingTasksSupported
 
-            override fun scheduleOutOfFrameTask(block: () -> Unit) = WebOutOfFrameExecutor.schedule(block)
+            override val outOfFrameExecutor: PlatformOutOfFrameExecutor? get() = webOutOfFrameExecutor
 
             override val windowInfo get() = _windowInfo
             override val architectureComponentsOwner get() = archComponentsOwner
@@ -564,6 +567,7 @@ internal class ComposeWindow(
         archComponentsOwner.navigationEventDispatcherOwner
             .navigationEventDispatcher.removeInput(navigationEventInput)
 
+        webOutOfFrameExecutor?.dispose()
         scene.close()
         frameRecomposer.close()
         skiaLayer.detach()
