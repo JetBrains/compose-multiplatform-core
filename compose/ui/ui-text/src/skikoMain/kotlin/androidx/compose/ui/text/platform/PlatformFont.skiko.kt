@@ -87,7 +87,7 @@ class SystemFont(
  */
 class LoadedFont internal constructor(
     override val identity: String,
-    internal val getData: () -> ByteArray,
+    internal val getData: () -> Any,
     override val weight: FontWeight,
     override val style: FontStyle,
     override val variationSettings: FontVariation.Settings = FontVariation.Settings(weight, style),
@@ -103,7 +103,7 @@ class LoadedFont internal constructor(
     @ExperimentalTextApi
     override val loadingStrategy: FontLoadingStrategy = FontLoadingStrategy.Blocking
 
-    val data: ByteArray get() = getData()
+    val data: Any get() = getData()
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -141,7 +141,7 @@ class LoadedFont internal constructor(
  */
 fun Font(
     identity: String,
-    getData: () -> ByteArray,
+    getData: () -> Any,
     weight: FontWeight = FontWeight.Normal,
     style: FontStyle = FontStyle.Normal
 ): Font = LoadedFont(identity, getData, weight, style, FontVariation.Settings())
@@ -172,7 +172,7 @@ fun Font(
  */
 fun Font(
     identity: String,
-    getData: () -> ByteArray,
+    getData: () -> Any,
     weight: FontWeight = FontWeight.Normal,
     style: FontStyle = FontStyle.Normal,
     variationSettings: FontVariation.Settings = FontVariation.Settings(weight, style)
