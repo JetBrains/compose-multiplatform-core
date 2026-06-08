@@ -102,7 +102,7 @@ jobs:
             -resultBundlePath TestResults.xcresult \
             -scheme CMPUIKitUtilsTests \
             -project CMPUIKitUtils.xcodeproj \
-            -destination 'platform=iOS Simulator,name=iPhone 16'
+            -destination 'platform=iOS Simulator,name=iPhone 17,OS=26.5'
 
       - name: Upload Test Results
         uses: actions/upload-artifact@v4
