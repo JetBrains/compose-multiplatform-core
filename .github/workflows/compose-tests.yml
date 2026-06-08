@@ -135,12 +135,12 @@ jobs:
         shell: bash
         run: |
           DEVICE_NAME="${{ matrix.device }}"
-          DEVICE_VERSION="26.5"
-          
-          DEVICE_DASH="${DEVICE_VERSION//./-}"   # e.g. 26.5 -> 26-5
+          DEVICE_VERSION="26.2"
+
+          DEVICE_DASH="${DEVICE_VERSION//./-}"   # e.g. 26.2 -> 26-2
           
           echo "Looking for device: '$DEVICE_NAME' ($DEVICE_VERSION)"
-          
+
           SIMULATOR_ID=$(xcrun simctl list devices available -j \
           | jq -r --arg device "$DEVICE_NAME" --arg vdot "$DEVICE_VERSION" --arg vdash "$DEVICE_DASH" '
           .devices
