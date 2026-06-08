@@ -740,6 +740,7 @@ internal class ComposeSceneMediator(
         override val semanticsOwnerListener get() = this@ComposeSceneMediator.semanticsOwnerListener
         override val dragAndDropManager get() = this@ComposeSceneMediator.dragAndDropManager
         override val windowInsets get() = this@ComposeSceneMediator.windowInsetsManager.windowInsets
+        override val outOfFrameExecutor get() = this@ComposeSceneMediator.redrawer.outOfFrameExecutor
         override val isClearFocusOnMouseDownEnabled: Boolean
             get() = this@ComposeSceneMediator.isClearFocusOnMouseDownEnabled
 
@@ -750,9 +751,6 @@ internal class ComposeSceneMediator(
         override fun voteFrameRate(frameRate: Float, frameRateCategory: Float) {
             redrawer.voteFrameRate(frameRate, frameRateCategory)
         }
-
-        override val outOfFrameExecutor: PlatformOutOfFrameExecutor?
-            get() = if (isActive) redrawer.outOfFrameExecutor else null
 
         override suspend fun startInputMethod(request: PlatformTextInputMethodRequest): Nothing {
             this@ComposeSceneMediator.textInputService.startInputMethod(request)
