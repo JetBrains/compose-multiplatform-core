@@ -26,6 +26,7 @@ import androidx.compose.ui.input.pointer.PointerInputChange
 import androidx.compose.ui.input.pointer.PointerType
 import androidx.compose.ui.input.pointer.changedToUpIgnoreConsumed
 import androidx.compose.ui.platform.ViewConfiguration
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastFirstOrNull
 import kotlin.math.abs
@@ -123,13 +124,12 @@ private suspend inline fun AwaitPointerEventScope.awaitPointerSlopOrCancellation
 private fun PointerEvent.isPointerUp(pointerId: PointerId): Boolean =
     changes.fastFirstOrNull { it.id == pointerId }?.pressed != true
 
-private val mouseSlop = 0.125.dp
+internal expect fun mouseSlop(): Dp
 private val defaultTouchSlop = 18.dp // The default touch slop on Android devices
-private val mouseToTouchSlopRatio = mouseSlop / defaultTouchSlop
 
 internal fun ViewConfiguration.pointerSlop(pointerType: PointerType): Float {
     return when (pointerType) {
-        PointerType.Mouse -> touchSlop * mouseToTouchSlopRatio
+        PointerType.Mouse -> touchSlop  * (mouseSlop() / defaultTouchSlop)
         else -> touchSlop
     }
 }
