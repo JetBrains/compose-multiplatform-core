@@ -581,26 +581,18 @@ class TextFieldEditMenuTest {
     }
 
     @OptIn(ExperimentalForeignApi::class)
+    private fun UIKitInstrumentedTest.verifyContextMenuItemsVisible(labels: List<String>) {
+        labels.forEach { label ->
+            findNodeWithLabel(label).let {
+                it.assertVisibleInContainer()
+                assertTrue(it.isAccessibilityElement ?: false)
+            }
+        }
+    }
+
+    @OptIn(ExperimentalForeignApi::class)
     private fun UIKitInstrumentedTest.verifyFullToolbarPresent() {
-        findNodeWithLabel("Cut").let {
-            it.assertVisibleInContainer()
-            assertTrue(it.isAccessibilityElement ?: false)
-        }
-
-        findNodeWithLabel("Copy").let {
-            it.assertVisibleInContainer()
-            assertTrue(it.isAccessibilityElement ?: false)
-        }
-
-        findNodeWithLabel("Paste").let {
-            it.assertVisibleInContainer()
-            assertTrue(it.isAccessibilityElement ?: false)
-        }
-
-        findNodeWithLabel("Select All").let {
-            it.assertVisibleInContainer()
-            assertTrue(it.isAccessibilityElement ?: false)
-        }
+        verifyContextMenuItemsVisible(listOf("Cut", "Copy", "Paste", "Select All"))
     }
 
     private fun UIKitInstrumentedTest.tapContextMenuButton(label: String) {
