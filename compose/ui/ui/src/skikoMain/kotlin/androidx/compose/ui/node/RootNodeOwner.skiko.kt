@@ -62,16 +62,11 @@ import androidx.compose.ui.input.pointer.PointerKeyboardModifiers
 import androidx.compose.ui.input.pointer.PointerType
 import androidx.compose.ui.input.pointer.PositionCalculator
 import androidx.compose.ui.input.rotary.RotaryScrollEvent
-import androidx.compose.ui.layout.MeasurableRootContent
-import androidx.compose.ui.layout.Measured
 import androidx.compose.ui.layout.RootMeasurePolicy
 import androidx.compose.ui.layout.RulerProviderModifierElement
 import androidx.compose.ui.modifier.ModifierLocalManager
 import androidx.compose.ui.platform.DefaultAccessibilityManager
 import androidx.compose.ui.platform.DelegatingSoftwareKeyboardController
-import androidx.compose.ui.platform.GraphicsLayerOwnerLayer
-import androidx.compose.ui.platform.LegacyRenderNodeLayer
-import androidx.compose.ui.platform.OwnedLayerManager
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.PlatformRootForTest
 import androidx.compose.ui.platform.PlatformTextInputMethodRequest
@@ -80,7 +75,6 @@ import androidx.compose.ui.platform.PlatformWindowInsets
 import androidx.compose.ui.platform.PlatformWindowInsetsProviderNode
 import androidx.compose.ui.platform.createPlatformClipboard
 import androidx.compose.ui.platform.createPlatformClipboardManager
-import androidx.compose.ui.platform.setLightingInfo
 import androidx.compose.ui.scene.ComposeScene
 import androidx.compose.ui.scene.ComposeSceneInputHandler
 import androidx.compose.ui.scene.ComposeScenePointer
@@ -101,7 +95,6 @@ import androidx.compose.ui.unit.round
 import androidx.compose.ui.unit.toRect
 import androidx.compose.ui.useLegacyRenderNodeLayers
 import androidx.compose.ui.util.fastAll
-import androidx.compose.ui.util.fastMaxOfOrDefault
 import androidx.compose.ui.util.trace
 import androidx.compose.ui.viewinterop.InteropPointerInputModifier
 import androidx.compose.ui.viewinterop.InteropView
@@ -138,7 +131,8 @@ internal class RootNodeOwner(
     private val rootSemanticsNode = EmptySemanticsModifier()
     private val snapshotObserver = snapshotInvalidationTracker.snapshotObserver()
     private val graphicsContext = SkiaGraphicsContext(platformContext.measureDrawLayerBounds)
-    private val coroutineScope = CoroutineScope(coroutineContext + Job(parent = coroutineContext[Job]))
+    private val coroutineScope =
+        CoroutineScope(coroutineContext + Job(parent = coroutineContext[Job]))
 
     private val _owner = OwnerImpl(layoutDirection, coroutineContext)
     val owner: Owner get() = _owner
@@ -148,7 +142,7 @@ internal class RootNodeOwner(
         set(value) {
             if (field != value) {
                 field = value
-                onRootConstrainsChanged(value?.toConstraints())
+                onRootSizeChanged(value)
             }
         }
     var density by mutableStateOf(density)
@@ -180,7 +174,7 @@ internal class RootNodeOwner(
         snapshotObserver.startObserving()
         owner.root.attach(owner)
         platformContext.rootForTestListener?.onRootForTestCreated(rootForTest)
-        onRootConstrainsChanged(size?.toConstraints())
+        onRootSizeChanged(size)
         updatePositionCacheAndDispatch()
         coroutineScope.launch {
             snapshotFlow { platformContext.windowInfo.containerSize }
@@ -207,42 +201,13 @@ internal class RootNodeOwner(
         }
     }
 
-    val measurableRootContent: MeasurableRootContent = object : MeasurableRootContent {
-        override val parentData
-            get() = null
-
-        override fun minIntrinsicWidth(height: Int): Int {
-            // RootMeasurePolicy has LayoutNode.NoIntrinsicsMeasurePolicy, so we ask the children
-            return owner.root.children.fastMaxOfOrDefault(0) {
-                it.outerCoordinator.minIntrinsicWidth(height)
-            }
-        }
-
-        override fun minIntrinsicHeight(width: Int): Int {
-            // RootMeasurePolicy has LayoutNode.NoIntrinsicsMeasurePolicy, so we ask the children
-            return owner.root.children.fastMaxOfOrDefault(0) {
-                it.outerCoordinator.minIntrinsicHeight(width)
-            }
-        }
-
-        override fun maxIntrinsicWidth(height: Int): Int {
-            // RootMeasurePolicy has LayoutNode.NoIntrinsicsMeasurePolicy, so we ask the children
-            return owner.root.children.fastMaxOfOrDefault(0) {
-                it.outerCoordinator.maxIntrinsicWidth(height)
-            }
-        }
-
-        override fun maxIntrinsicHeight(width: Int): Int {
-            // RootMeasurePolicy has LayoutNode.NoIntrinsicsMeasurePolicy, so we ask the children
-            return owner.root.children.fastMaxOfOrDefault(0) {
-                it.outerCoordinator.maxIntrinsicHeight(width)
-            }
-        }
-
-        override fun <T> measuringIn(constraints: Constraints, block: (Measured) -> T): T {
-            return measuringRootWithConstraints(constraints) {
-                block(it.outerCoordinator)
-            }
+    /**
+     * Measures the Owner's content with given [constraints] and returns the resulting size.
+     */
+    fun measureContentWithConstraints(constraints: Constraints): IntSize {
+        return measuringRootWithConstraints(constraints) {
+            val outerCoordinator = it.outerCoordinator
+            IntSize(outerCoordinator.measuredWidth, outerCoordinator.measuredHeight)
         }
     }
 
@@ -256,11 +221,11 @@ internal class RootNodeOwner(
     ): T {
         return try {
             // TODO: is it possible to measure without reassigning root constraints?
-            measureAndLayoutDelegate.updateRootConstraintsWithInfinityCheck(constraints)
+            measureAndLayoutDelegate.updateRootConstraints(constraints)
             measureAndLayoutDelegate.measureOnly()
             block(owner.root)
         } finally {
-            measureAndLayoutDelegate.updateRootConstraintsWithInfinityCheck(size?.toConstraints())
+            measureAndLayoutDelegate.updateRootConstraints(size.toMaxConstraints())
         }
     }
 
@@ -330,8 +295,8 @@ internal class RootNodeOwner(
         owner.root.modifier = _owner.rootModifier then modifier
     }
 
-    private fun onRootConstrainsChanged(constraints: Constraints?) {
-        measureAndLayoutDelegate.updateRootConstraintsWithInfinityCheck(constraints)
+    private fun onRootSizeChanged(size: IntSize?) {
+        measureAndLayoutDelegate.updateRootConstraints(size.toMaxConstraints())
         if (measureAndLayoutDelegate.hasPendingMeasureOrLayout) {
             snapshotInvalidationTracker.requestMeasureAndLayout()
         }
@@ -341,7 +306,6 @@ internal class RootNodeOwner(
         pointerInputEventProcessor.processCancel()
     }
 
-    @OptIn(InternalCoreApi::class)
     fun onPointerInput(event: PointerInputEvent): PointerEventResult {
         if (event.button != null) {
             platformContext.inputModeManager.requestInputMode(InputMode.Touch)
@@ -419,6 +383,8 @@ internal class RootNodeOwner(
         layoutDirection: LayoutDirection,
         override val coroutineContext: CoroutineContext,
     ) : Owner {
+
+        private val onPointerUpdateCallback = inputHandler::onPointerUpdate
         private val platformFocusOwner = object : PlatformFocusOwner {
             override fun requestOwnerFocus(
                 focusDirection: FocusDirection?,
@@ -477,11 +443,14 @@ internal class RootNodeOwner(
         override val accessibilityManager = DefaultAccessibilityManager()
         override val graphicsContext get() = this@RootNodeOwner.graphicsContext
         override val textToolbar get() = platformContext.textToolbar
+
         @Suppress("DEPRECATION")
         override val autofillTree = androidx.compose.ui.autofill.AutofillTree()
+
         @Suppress("DEPRECATION")
         override val autofill: androidx.compose.ui.autofill.Autofill?
             get() = null
+
         // TODO https://youtrack.jetbrains.com/issue/CMP-1572
         override val autofillManager: AutofillManager? get() = null
         override val density get() = this@RootNodeOwner.density
@@ -493,6 +462,7 @@ internal class RootNodeOwner(
         }
 
         private val textInputSessionMutex = SessionMutex<TextInputSession>()
+
         private inner class TextInputSession(
             coroutineScope: CoroutineScope,
         ) : PlatformTextInputSessionScope, CoroutineScope by coroutineScope {
@@ -524,7 +494,7 @@ internal class RootNodeOwner(
 
         override suspend fun textInputSession(
             session: suspend PlatformTextInputSessionScope.() -> Nothing
-        ) : Nothing {
+        ): Nothing {
             textInputSessionMutex.withSessionCancellingPrevious<Nothing>(
                 sessionInitializer = ::TextInputSession,
                 session = session
@@ -540,7 +510,7 @@ internal class RootNodeOwner(
         override val semanticsOwner = SemanticsOwner(root, rootSemanticsNode, layoutNodes)
         override val windowInfo get() = platformContext.windowInfo
         override val retainedValuesStore: RetainedValuesStore get() = ForgetfulRetainedValuesStore
-        override val rectManager = RectManager()
+        override val rectManager = RectManager(layoutNodes)
 
         @Suppress("OVERRIDE_DEPRECATION", "DEPRECATION")
         override val fontLoader = androidx.compose.ui.text.platform.FontLoader()
@@ -548,13 +518,21 @@ internal class RootNodeOwner(
         override val layoutDirection get() = _layoutDirection
         override val localeList get() = platformContext.localeList
         override var showLayoutBounds by mutableStateOf(false)
-            @InternalCoreApi
             set
 
         override val modifierLocalManager = ModifierLocalManager(this)
         override val snapshotObserver get() = this@RootNodeOwner.snapshotObserver
         override val viewConfiguration get() = platformContext.viewConfiguration
         override val measureIteration: Long get() = measureAndLayoutDelegate.measureIteration
+
+        override val outOfFrameExecutor: OutOfFrameExecutor? =
+            platformContext.outOfFrameExecutor?.let {
+                object : OutOfFrameExecutor {
+                    override fun schedule(block: () -> Unit) {
+                        it.schedule(block)
+                    }
+                }
+            }
 
         override fun requestAutofill(node: LayoutNode) {
             // TODO: 1.8.0-beta01 Adopt requestAutofill API
@@ -576,7 +554,6 @@ internal class RootNodeOwner(
             measureAndLayoutDelegate.onNodeDetached(node)
             snapshotObserver.clear(node)
             needClearObservations = true
-            rectManager.remove(node)
         }
 
         override fun measureAndLayout(sendPointerUpdate: Boolean) {
@@ -585,7 +562,7 @@ internal class RootNodeOwner(
                 measureAndLayoutDelegate.hasPendingOnPositionedCallbacks
             ) {
                 trace("RootNodeOwner:measureAndLayout") {
-                    val resend = if (sendPointerUpdate) inputHandler::onPointerUpdate else null
+                    val resend = if (sendPointerUpdate) onPointerUpdateCallback else null
                     val rootNodeResized = measureAndLayoutDelegate.measureAndLayout(resend)
                     if (rootNodeResized) {
                         snapshotInvalidationTracker.requestDraw()
@@ -676,7 +653,6 @@ internal class RootNodeOwner(
         }
 
         override fun onLayoutNodeDeactivated(layoutNode: LayoutNode) {
-            rectManager.remove(layoutNode)
         }
 
         override fun onPreLayoutNodeReused(layoutNode: LayoutNode, oldSemanticsId: Int) {
@@ -719,6 +695,13 @@ internal class RootNodeOwner(
         private val endApplyChangesListeners = mutableVectorOf<(() -> Unit)?>()
 
         override fun onEndApplyChanges() {
+            // Android's OwnerSnapshotObserver runs callbacks immediately when apply changes
+            // happens on the view handler thread. Non-Android queues off-thread owner callbacks in
+            // the scene-local tracker, so drain them here before clearing invalid observations and
+            // invoking end-apply listeners.
+            // This preserves the previous render-time synchronous observer ordering
+            // after recomposition moved to FrameRecomposer.
+            snapshotInvalidationTracker.performSnapshotChanges()
             clearInvalidObservations()
 
             // Listeners can add more items to the list and we want to ensure that they
@@ -779,6 +762,7 @@ internal class RootNodeOwner(
 
     private inner class PlatformRootForTestImpl : PlatformRootForTest {
         override val density get() = this@RootNodeOwner.density
+
         @Suppress("OVERRIDE_DEPRECATION")
         override val textInputService get() = owner.textInputService
         override val semanticsOwner get() = owner.semanticsOwner
@@ -790,10 +774,11 @@ internal class RootNodeOwner(
             }
 
         override val hasPendingMeasureOrLayout: Boolean
-            get() = measureAndLayoutDelegate.hasPendingMeasureOrLayout
+            get() = measureAndLayoutDelegate.hasPendingMeasureOrLayout || platformContext.outOfFrameExecutor?.hasWorkScheduled ?: false
 
         override fun measureAndLayoutForTest() {
             owner.measureAndLayout(sendPointerUpdate = true)
+            platformContext.outOfFrameExecutor?.drainScheduledWorkForTest()
         }
 
         /**
@@ -1001,7 +986,8 @@ internal class RootNodeOwner(
                 postponed.clear()
             }
 
-            val isAnyCurrentFrameRateSet = !currentFrameRate.isNaN() || currentFrameRateCategory != 0f
+            val isAnyCurrentFrameRateSet =
+                !currentFrameRate.isNaN() || currentFrameRateCategory != 0f
             if (isAnyCurrentFrameRateSet) {
                 platformContext.voteFrameRate(currentFrameRate, currentFrameRateCategory)
                 currentFrameRate = Float.NaN
@@ -1013,55 +999,10 @@ internal class RootNodeOwner(
     }
 }
 
-// TODO a proper way is to provide API in Constraints to get this value
-/**
- * Equals [Constraints.MinNonFocusMask]
- */
-private const val ConstraintsMinNonFocusMask = 0x7FFF // 32767
+private fun IntSize?.toMaxConstraints() =
+    if (this == null) Constraints() else Constraints(maxWidth = width, maxHeight = height)
 
-/**
- * The max value that can be passed as Constraints(0, LargeDimension, 0, LargeDimension)
- *
- * Greater values cause "Can't represent a width of".
- * See [Constraints.createConstraints] and [Constraints.bitsNeedForSize]:
- *  - it fails if `widthBits + heightBits > 31`
- *  - widthBits/heightBits are greater than 15 if we pass size >= [Constraints.MinNonFocusMask]
- */
-internal const val LargeDimension = ConstraintsMinNonFocusMask - 1
-
-/**
- * After https://android-review.googlesource.com/c/platform/frameworks/support/+/2901556
- * Compose core doesn't allow measuring in infinity constraints,
- * but RootNodeOwner and ComposeScene allow passing Infinity constraints by contract
- * (Android on the other hand doesn't have public API for that and don't have such an issue).
- *
- * This method adds additional check on Infinity constraints,
- * and pass constraint large enough instead
- */
-private fun MeasureAndLayoutDelegate.updateRootConstraintsWithInfinityCheck(
-    constraints: Constraints?
-) {
-    updateRootConstraints(
-        constraints = Constraints(
-            minWidth = constraints?.minWidth ?: 0,
-            maxWidth = if (constraints != null && constraints.hasBoundedWidth) {
-                constraints.maxWidth
-            } else {
-                LargeDimension
-            },
-            minHeight = constraints?.minHeight ?: 0,
-            maxHeight = if (constraints != null && constraints.hasBoundedHeight) {
-                constraints.maxHeight
-            } else {
-                LargeDimension
-            }
-        )
-    )
-}
-
-private fun IntSize.toConstraints() = Constraints(maxWidth = width, maxHeight = height)
-
-private object IdentityPositionCalculator: PositionCalculator {
+private object IdentityPositionCalculator : PositionCalculator {
     override fun screenToLocal(positionOnScreen: Offset): Offset = positionOnScreen
     override fun localToScreen(localPosition: Offset): Offset = localPosition
 }
@@ -1071,14 +1012,16 @@ private fun Modifier.rulerProvider(windowInsets: PlatformWindowInsets) =
 
 private data class RootWindowInsetsProviderModifierElement(
     val windowInsets: PlatformWindowInsets,
-): ModifierNodeElement<RootPlatformWindowInsetsProviderNode>() {
-    override fun create(): RootPlatformWindowInsetsProviderNode = RootPlatformWindowInsetsProviderNode(windowInsets)
+) : ModifierNodeElement<RootPlatformWindowInsetsProviderNode>() {
+    override fun create(): RootPlatformWindowInsetsProviderNode =
+        RootPlatformWindowInsetsProviderNode(windowInsets)
+
     override fun update(node: RootPlatformWindowInsetsProviderNode) = node.update(windowInsets)
 }
 
 private class RootPlatformWindowInsetsProviderNode(
     private var insets: PlatformWindowInsets,
-): PlatformWindowInsetsProviderNode(insets) {
+) : PlatformWindowInsetsProviderNode(insets) {
     override fun calculatePlatformInsets(ancestorWindowInsets: PlatformWindowInsets): PlatformWindowInsets =
         insets
 
