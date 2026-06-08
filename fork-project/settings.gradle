@@ -427,36 +427,6 @@ includeProject(":savedstate:savedstate", "savedstate/savedstate-compatibility-st
 includeProject(":savedstate:savedstate-compose", "savedstate/savedstate-compose-compatibility-stub")
 includeProject(":window:window-core", "window/window-core-compatibility-stub")
 
-def artifactSubstitutions = [
-        [artifact: "androidx.compose.runtime:runtime", project: ":compose:runtime:runtime"],
-        [artifact: "androidx.lifecycle:lifecycle-common", project: ":lifecycle:lifecycle-common"],
-        [artifact: "androidx.lifecycle:lifecycle-runtime", project: ":lifecycle:lifecycle-runtime"],
-        [artifact: "androidx.lifecycle:lifecycle-runtime-compose", project: ":lifecycle:lifecycle-runtime-compose"],
-        [artifact: "androidx.lifecycle:lifecycle-viewmodel", project: ":lifecycle:lifecycle-viewmodel"],
-        [artifact: "androidx.lifecycle:lifecycle-viewmodel-compose", project: ":lifecycle:lifecycle-viewmodel-compose"],
-        [artifact: "androidx.lifecycle:lifecycle-viewmodel-navigation3", project: ":lifecycle:lifecycle-viewmodel-navigation3"],
-        [artifact: "androidx.lifecycle:lifecycle-viewmodel-savedstate", project: ":lifecycle:lifecycle-viewmodel-savedstate"],
-        [artifact: "androidx.navigation:navigation-common", project: ":navigation:navigation-common"],
-        [artifact: "androidx.navigation:navigation-runtime", project: ":navigation:navigation-runtime"],
-        [artifact: "androidx.navigationevent:navigationevent-compose", project: ":navigationevent:navigationevent-compose"],
-        [artifact: "androidx.savedstate:savedstate", project: ":savedstate:savedstate"],
-        [artifact: "androidx.savedstate:savedstate-compose", project: ":savedstate:savedstate-compose"],
-        [artifact: "androidx.window:window-core", project: ":window:window-core"],
-]
-def substituteAndroidxArtifacts = providers
-        .gradleProperty("jetbrains.androidx.substituteAndroidxArtifacts")
-        .map { it.toBoolean() }
-        .getOrElse(false)
-if (substituteAndroidxArtifacts) {
-    includeBuild("..") {
-        dependencySubstitution {
-            artifactSubstitutions.each { substitution ->
-                substitute(module(substitution.artifact)).using(project(substitution.project))
-            }
-        }
-    }
-}
-
 includeProject(":annotation:annotation-sampled")
 includeProject(":compose:animation")
 includeProject(":compose:animation:animation")
