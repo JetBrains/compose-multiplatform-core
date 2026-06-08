@@ -133,8 +133,6 @@ public constructor(
          * The thread on which this method should be called depends on the features being used:
          * - If you are using SceneCore rendering APIs, this method must be called on the **Main
          *   Thread**.
-         * - If you are using ARCore APIs on a Projected device, this method must be called on a
-         *   **Worker Thread** (e.g., [Dispatchers.IO][kotlinx.coroutines.Dispatchers.IO]).
          * > **Thread Safety Warning:** This method performs significant disk I/O, including loading
          * > native libraries. If StrictMode is enabled, calling this on the **Main Thread** (UI
          * > Thread) will trigger a [android.os.StrictMode] `DiskReadViolation`.
@@ -199,6 +197,8 @@ public constructor(
                 "Cannot create a new session on a destroyed lifecycleOwner."
             }
 
+            val coroutineScope = CoroutineScope(coroutineContext)
+
             if (contextSessionMap.containsKey(context)) {
                 return SessionCreateSuccess(contextSessionMap[context]!!)
             }
@@ -212,8 +212,7 @@ public constructor(
                     loadProviders(PerceptionRuntimeFactory::class.java, RUNTIME_FACTORY_PROVIDERS),
                     features,
                 )
-            val perceptionRuntime =
-                perceptionRuntimeFactory?.createRuntime(context, coroutineContext)
+            val perceptionRuntime = perceptionRuntimeFactory?.createRuntime(context, coroutineScope)
             try {
                 perceptionRuntime?.initialize()
             } catch (e: ApkNotInstalledException) {
@@ -280,7 +279,7 @@ public constructor(
                     stateExtenders,
                     sessionConnectors,
                     runtimes,
-                    CoroutineScope(context = coroutineContext),
+                    coroutineScope,
                     lifecycleOwner,
                 )
 

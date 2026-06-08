@@ -20,9 +20,12 @@ import android.view.View
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.currentCompositeKeyHashCode
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedback
+import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.node.CompositionLocalConsumerModifierNode
+import androidx.compose.ui.node.LayoutAwareModifierNode
 import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.node.ObserverModifierNode
 import androidx.compose.ui.node.currentValueOf
@@ -36,6 +39,9 @@ import kotlin.String
 
 /**
  * Registers a gesture handler.
+ *
+ * Note: Gesture recognition can be explicitly disabled across a component hierarchy by providing
+ * false` to [LocalOneHandedGestureEnabled].
  *
  * **Visibility Management:** This gesture handler is active as long as the Modifier is part of the
  * composition. On its own, it does not track whether the composable is visible or clipped (e.g., in
@@ -102,7 +108,14 @@ public fun Modifier.oneHandedGesture(
     interactionSource: MutableInteractionSource? = null,
     onGesture: suspend () -> Unit,
 ): Modifier {
-    val key = currentCompositeKeyHashCode.toString(MaxSupportedRadix)
+    val hash = currentCompositeKeyHashCode
+
+    val key =
+        remember(hash, action, priority) {
+            hash.toString(MaxSupportedRadix) +
+                action.value.toString().padStart(2, '0') +
+                priority.value.toString().padStart(3, '0')
+        }
     return then(
         Modifier.oneHandedGesture(
             action = action,
@@ -117,6 +130,9 @@ public fun Modifier.oneHandedGesture(
 
 /**
  * Registers a gesture handler.
+ *
+ * Note: Gesture recognition can be explicitly disabled across a component hierarchy by providing
+ * false` to [LocalOneHandedGestureEnabled].
  *
  * **Visibility Management:** This gesture handler is active as long as the Modifier is part of the
  * composition. On its own, it does not track whether the composable is visible or clipped (e.g., in
@@ -231,17 +247,20 @@ private class GestureElement(val config: GestureConfig) : ModifierNodeElement<Ge
 }
 
 private class GestureNode(var config: GestureConfig) :
-    Modifier.Node(), CompositionLocalConsumerModifierNode, ObserverModifierNode {
+    Modifier.Node(),
+    CompositionLocalConsumerModifierNode,
+    ObserverModifierNode,
+    LayoutAwareModifierNode {
 
     private var gestureManager: GestureManager? = null
     private var localScreenIsActive = false
     private var currentView: View? = null
     private var hapticFeedback: HapticFeedback? = null
     private var size: IntSize = IntSize.Zero
+    private var isEnabled = true
 
     override fun onAttach() {
-        updateCompositionLocals(false)
-        registerGesture(gestureManager, currentView!!, hapticFeedback!!, config)
+        updateCompositionLocals(true)
     }
 
     override fun onObservedReadsChanged() = updateCompositionLocals(true)
@@ -254,24 +273,32 @@ private class GestureNode(var config: GestureConfig) :
         hapticFeedback = null
     }
 
+    override fun onPlaced(coordinates: LayoutCoordinates) {
+        size = coordinates.size
+    }
+
     fun updateGesture(newConfig: GestureConfig) {
         val oldConfig = config
         val oldGestureManager = gestureManager
+        val wasEnabled = isEnabled
         /* Update local compositions here to handle node reparenting. onAttach is not sufficient as
          * it may trigger before the node is fully settled in its new composition context. Manually
          * syncing ensures we capture the correct providers after the tree has stabilized. */
         updateCompositionLocals(false)
 
-        if (oldGestureManager == gestureManager) {
-            if (isAttached) {
+        val managerChanged = oldGestureManager != gestureManager
+        if (!isEnabled || managerChanged) {
+            unregisterGesture(oldGestureManager, currentView!!, oldConfig)
+        }
+
+        if (isEnabled && isAttached) {
+            if (managerChanged || !wasEnabled) {
+                registerGesture(gestureManager, currentView!!, hapticFeedback!!, newConfig)
+            } else {
                 gestureManager?.updateGesture(currentView!!, oldConfig, newConfig)
             }
-        } else {
-            unregisterGesture(oldGestureManager, currentView!!, oldConfig)
-            if (isAttached) {
-                registerGesture(gestureManager, currentView!!, hapticFeedback!!, newConfig)
-            }
         }
+
         config = newConfig
     }
 
@@ -279,6 +306,7 @@ private class GestureNode(var config: GestureConfig) :
         localScreenIsActive = currentValueOf(LocalScreenIsActive)
         currentView = currentValueOf(LocalView)
         hapticFeedback = currentValueOf(LocalHapticFeedback)
+        isEnabled = currentValueOf(LocalOneHandedGestureEnabled)
         val newGestureManager = currentValueOf(LocalGestureManager)
         if (reregister) {
             unregisterGesture(gestureManager, currentView!!, config)
@@ -293,13 +321,15 @@ private class GestureNode(var config: GestureConfig) :
         haptic: HapticFeedback,
         gesture: GestureConfig,
     ) {
-        manager?.registerGesture(
-            view = view,
-            haptic = haptic,
-            gesture = gesture,
-            isActive = { localScreenIsActive },
-            size = { size },
-        )
+        if (isEnabled) {
+            manager?.registerGesture(
+                view = view,
+                haptic = haptic,
+                gesture = gesture,
+                isActive = { localScreenIsActive },
+                size = { size },
+            )
+        }
     }
 
     private fun unregisterGesture(manager: GestureManager?, view: View, gesture: GestureConfig) {
