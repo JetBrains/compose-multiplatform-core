@@ -31,7 +31,7 @@ import androidx.compose.ui.util.fastMap
 import androidx.compose.ui.util.fastMaxOfOrDefault
 import kotlin.math.min
 
-internal fun SceneLayerMeasurePolicy(
+internal fun ComposeSceneLayerMeasurePolicy(
     platformInsets: PlatformInsets,
     usePlatformDefaultWidth: Boolean,
     calculatePosition: MeasureScope.(contentSize: IntSize) -> IntOffset,
