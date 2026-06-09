@@ -2,7 +2,7 @@
   <configuration default="false" name="desktop Demo" type="GradleRunConfiguration" factoryName="Gradle" folderName="mpp/demo">
     <ExternalSystemSettings>
       <option name="executionName" />
-      <option name="externalProjectPath" value="$PROJECT_DIR$" />
+      <option name="externalProjectPath" value="D:\Work\androidx-main\frameworks\support\fork-project" />
       <option name="externalSystemIdString" value="GRADLE" />
       <option name="scriptParameters" value="" />
       <option name="taskDescriptions">

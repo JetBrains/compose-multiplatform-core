@@ -26,6 +26,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
+import androidx.compose.runtime.Recomposer
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -42,71 +43,9 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.singleWindowApplication
+import kotlin.coroutines.EmptyCoroutineContext
 
 @OptIn(ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class)
-fun main() = singleWindowApplication(
-    title = "Drag target demo"
-) {
-    MaterialTheme {
-        var isDragging by remember { mutableStateOf(false) }
-        var text by remember { mutableStateOf<String?>(null) }
-        var painter by remember { mutableStateOf<Painter?>(null) }
-
-        val dragAndDropTarget = remember {
-            object: DragAndDropTarget {
-
-                override fun onStarted(event: DragAndDropEvent) {
-                    isDragging = true
-                }
-
-                override fun onEnded(event: DragAndDropEvent) {
-                    isDragging = false
-                }
-
-                override fun onDrop(event: DragAndDropEvent): Boolean {
-                    val dragData = event.dragData()
-                    text = dragData.toString()
-                    if (dragData is DragData.Image) {
-                        painter = dragData.readImage()
-                    }
-                    isDragging = false
-
-                    return true
-                }
-            }
-        }
-
-
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(200.dp)
-                    .background(
-                        when {
-                            isDragging -> Color.Green
-                            text != null -> Color.White
-                            else -> Color.Red
-                        }
-                    )
-                    .dragAndDropTarget(
-                        shouldStartDragAndDrop = { true },
-                        target = dragAndDropTarget
-                    )
-                    .padding(16.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = text ?: "Try to drag some files or image here",
-                    textAlign = TextAlign.Center,
-                )
-                val currentPainter = painter
-                if (currentPainter != null) {
-                    Image(currentPainter, contentDescription = "Pasted Image")
-                }
-            }
-        }
-    }
+fun main() {
+    Recomposer(EmptyCoroutineContext)
 }

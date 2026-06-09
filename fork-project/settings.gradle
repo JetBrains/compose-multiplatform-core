@@ -51,6 +51,13 @@ enableFeaturePreview "STABLE_CONFIGURATION_CACHE"
 
 def supportRootFolder = buildscript.sourceFile.getParentFile().getParentFile()
 skikoSetup.defineSkikoInVersionCatalog(settings)
+def useAOSPProjectSources = providers.gradleProperty("useAOSPProjectSources")
+        .map { it.toBoolean() }
+        .getOrElse(false)
+def aospProjectSourcesRepository = new File(
+        supportRootFolder.parentFile.parentFile,
+        "out/repository"
+)
 
 /* In JetBrains Fork we don't force Android Studio usage.
 // Abort immediately if we're running in Studio, but not a managed instance of Studio.
@@ -74,6 +81,12 @@ apply from: "buildSrc/settingsScripts/out-setup.groovy"
 getGradle().beforeProject { project ->
     // Migrate to dependencyResolutionManagement.repositories when
     // https://github.com/gradle/gradle/issues/17295 is fixed
+    if (useAOSPProjectSources) {
+        project.repositories.maven { repo ->
+            repo.name = "AOSPProjectSources"
+            repo.url = aospProjectSourcesRepository
+        }
+    }
     if (project.path == ":") {
         repos.addMavenRepositories(project.repositories)
         rootProjectRepositories = project.repositories

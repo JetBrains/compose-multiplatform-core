@@ -199,6 +199,11 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
     public var changeCount: Long = 0L
         private set
 
+    init {
+        println("QQQ")
+
+    }
+
     private val broadcastFrameClock = BroadcastFrameClock { onNewFrameAwaiter() }
     private val nextFrameEndCallbackQueue = NextFrameEndCallbackQueue { onNewFrameAwaiter() }
 
