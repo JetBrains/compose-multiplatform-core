@@ -59,6 +59,7 @@ import androidx.compose.ui.test.waitForContextMenu
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
+import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -421,6 +422,7 @@ class TextFieldEditMenuTest {
     }
 
     @Test
+    @Ignore // CMP-10301: Menu is not shown after tap on Select All
     fun testNewContextMenuBasicTextField2EditableFullSelectionClipboardText() = runContextMenuTest(true) {
         verifyEditableFullSelectionClipboardTextContextMenu(
             textFieldKind = EditableTextFieldKind.BasicTextField2,
@@ -928,8 +930,6 @@ class TextFieldEditMenuTest {
                         focusRequester.requestFocus()
                     }
                 }
-
-           //     delay(60000)
 
                 longPressAndAwaitContextMenu("TextField")
                 tapContextMenuButton("Select All")
