@@ -18,6 +18,7 @@
 
 package androidx.compose.foundation.gestures
 
+import androidx.compose.ui.dom.domEventOrNull
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.PointerEvent
 import androidx.compose.ui.node.CompositionLocalConsumerModifierNode
@@ -25,6 +26,7 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastFold
+import org.w3c.dom.events.WheelEvent
 
 internal actual fun CompositionLocalConsumerModifierNode.platformScrollConfig(): ScrollConfig = JsConfig
 
@@ -38,6 +40,9 @@ private object JsConfig : ScrollConfig {
         // However, keep in mind that any modifications would also necessitate adjustments to the corresponding tests.
         return event.totalScrollDelta * -1.dp.toPx()
     }
+
+    override fun isPreciseWheelScroll(event: PointerEvent): Boolean =
+        (event.domEventOrNull as? WheelEvent)?.deltaMode == WheelEvent.DOM_DELTA_PIXEL
 }
 
 private val PointerEvent.totalScrollDelta

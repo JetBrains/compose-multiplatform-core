@@ -62,6 +62,36 @@ class WheelEventTests : OnCanvasTests {
     }
 
     @Test
+    fun pixelModeWheelScrollIsAppliedImmediately() = runTest {
+        val verticalScrollState = ScrollState(initial = 0)
+
+        createComposeWindow {
+            CompositionLocalProvider(LocalDensity provides Density(2f)) {
+                Box(
+                    modifier = Modifier.size(100.dp).verticalScroll(verticalScrollState)
+                ) {
+                    Column(modifier = Modifier.size(400.dp)) { }
+                }
+            }
+        }
+
+        assertEquals(0, verticalScrollState.value)
+
+        getCanvas().dispatchEvent(
+            WheelEvent(
+                "wheel",
+                WheelEventInit(deltaY = 100.0, deltaMode = WheelEvent.DOM_DELTA_PIXEL)
+            )
+        )
+
+        assertEquals(
+            200,
+            verticalScrollState.value,
+            "pixel-mode wheel scroll should apply immediately"
+        )
+    }
+
+    @Test
     fun horizontalScroll() = runTest {
         val horizontalScrollState = ScrollState(initial = 0)
 
