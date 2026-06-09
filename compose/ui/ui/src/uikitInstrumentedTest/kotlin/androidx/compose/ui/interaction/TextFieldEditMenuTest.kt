@@ -287,221 +287,173 @@ class TextFieldEditMenuTest {
     }
 
     @Test
-    fun testOldContextMenuBasicTextFieldEditableCollapsedClipboardText() = runContextMenuTest(false) {
-        verifyEditableCollapsedClipboardTextContextMenu(
+    fun testOldContextMenuBasicTextFieldEditableCollapsedClipboardText() =
+        runEditableCollapsedClipboardTextContextMenuTest(
             textFieldKind = EditableTextFieldKind.BasicTextField,
-            visibleActions = listOf("Paste", "Select", "Select All"),
-            hiddenActions = listOf("Cut", "Copy")
+            newContextMenu = false
         )
-    }
 
     @Test
-    fun testOldContextMenuBasicTextField2EditableCollapsedClipboardText() = runContextMenuTest(false) {
-        verifyEditableCollapsedClipboardTextContextMenu(
+    fun testOldContextMenuBasicTextField2EditableCollapsedClipboardText() =
+        runEditableCollapsedClipboardTextContextMenuTest(
             textFieldKind = EditableTextFieldKind.BasicTextField2,
-            visibleActions = listOf("Paste", "Select", "Select All"),
-            hiddenActions = listOf("Cut", "Copy")
+            newContextMenu = false
         )
-    }
 
     @Test
-    fun testNewContextMenuBasicTextFieldEditableCollapsedClipboardText() = runContextMenuTest(true) {
-        verifyEditableCollapsedClipboardTextContextMenu(
+    fun testNewContextMenuBasicTextFieldEditableCollapsedClipboardText() =
+        runEditableCollapsedClipboardTextContextMenuTest(
             textFieldKind = EditableTextFieldKind.BasicTextField,
-            visibleActions = listOf("Paste", "Select All"),
-            hiddenActions = listOf("Cut", "Copy", "Select")
+            newContextMenu = true
         )
-    }
 
     @Test
-    fun testNewContextMenuBasicTextField2EditableCollapsedClipboardText() = runContextMenuTest(true) {
-        verifyEditableCollapsedClipboardTextContextMenu(
+    fun testNewContextMenuBasicTextField2EditableCollapsedClipboardText() =
+        runEditableCollapsedClipboardTextContextMenuTest(
             textFieldKind = EditableTextFieldKind.BasicTextField2,
-            visibleActions = listOf("Paste", "Select All"),
-            hiddenActions = listOf("Cut", "Copy", "Select")
+            newContextMenu = true
         )
-    }
 
     @Test
-    fun testOldContextMenuBasicTextFieldEditableCollapsedClipboardEmpty() = runContextMenuTest(false) {
-        verifyEditableCollapsedClipboardEmptyContextMenu(
+    fun testOldContextMenuBasicTextFieldEditableCollapsedClipboardEmpty() =
+        runEditableCollapsedClipboardEmptyContextMenuTest(
             textFieldKind = EditableTextFieldKind.BasicTextField,
-            visibleActions = listOf("Select", "Select All"),
-            hiddenActions = listOf("Cut", "Copy", "Paste")
+            newContextMenu = false
         )
-    }
 
     @Test
-    fun testOldContextMenuBasicTextField2EditableCollapsedClipboardEmpty() = runContextMenuTest(false) {
-        verifyEditableCollapsedClipboardEmptyContextMenu(
+    fun testOldContextMenuBasicTextField2EditableCollapsedClipboardEmpty() =
+        runEditableCollapsedClipboardEmptyContextMenuTest(
             textFieldKind = EditableTextFieldKind.BasicTextField2,
-            visibleActions = listOf("Select", "Select All"),
-            hiddenActions = listOf("Cut", "Copy", "Paste")
+            newContextMenu = false
         )
-    }
 
     @Test
-    fun testNewContextMenuBasicTextFieldEditableCollapsedClipboardEmpty() = runContextMenuTest(true) {
-        verifyEditableCollapsedClipboardEmptyContextMenu(
+    fun testNewContextMenuBasicTextFieldEditableCollapsedClipboardEmpty() =
+        runEditableCollapsedClipboardEmptyContextMenuTest(
             textFieldKind = EditableTextFieldKind.BasicTextField,
-            visibleActions = listOf("Select All"),
-            hiddenActions = listOf("Cut", "Copy", "Paste", "Select")
+            newContextMenu = true
         )
-    }
 
     @Test
-    fun testNewContextMenuBasicTextField2EditableCollapsedClipboardEmpty() = runContextMenuTest(true) {
-        verifyEditableCollapsedClipboardEmptyContextMenu(
+    fun testNewContextMenuBasicTextField2EditableCollapsedClipboardEmpty() =
+        runEditableCollapsedClipboardEmptyContextMenuTest(
             textFieldKind = EditableTextFieldKind.BasicTextField2,
-            visibleActions = listOf("Select All"),
-            hiddenActions = listOf("Cut", "Copy", "Paste", "Select")
+            newContextMenu = true
         )
-    }
 
     @Test
-    fun testOldContextMenuBasicTextFieldEditablePartialSelectionClipboardText() = runContextMenuTest(false) {
-        verifyEditablePartialSelectionClipboardTextContextMenu(
+    fun testOldContextMenuBasicTextFieldEditablePartialSelectionClipboardText() =
+        runEditablePartialSelectionClipboardTextContextMenuTest(
             textFieldKind = EditableTextFieldKind.BasicTextField,
-            visibleActions = listOf("Cut", "Copy", "Paste", "Select All"),
-            hiddenActions = listOf("Select")
+            newContextMenu = false
         )
-    }
 
     @Test
-    fun testOldContextMenuBasicTextField2EditablePartialSelectionClipboardText() = runContextMenuTest(false) {
-        verifyEditablePartialSelectionClipboardTextContextMenu(
+    fun testOldContextMenuBasicTextField2EditablePartialSelectionClipboardText() =
+        runEditablePartialSelectionClipboardTextContextMenuTest(
             textFieldKind = EditableTextFieldKind.BasicTextField2,
-            visibleActions = listOf("Cut", "Copy", "Paste", "Select All"),
-            hiddenActions = listOf("Select")
+            newContextMenu = false
         )
-    }
 
     @Test
-    fun testNewContextMenuBasicTextFieldEditablePartialSelectionClipboardText() = runContextMenuTest(true) {
-        verifyEditablePartialSelectionClipboardTextContextMenu(
+    fun testNewContextMenuBasicTextFieldEditablePartialSelectionClipboardText() =
+        runEditablePartialSelectionClipboardTextContextMenuTest(
             textFieldKind = EditableTextFieldKind.BasicTextField,
-            visibleActions = listOf("Cut", "Copy", "Paste", "Select All"),
-            hiddenActions = listOf("Select")
+            newContextMenu = true
         )
-    }
 
     @Test
-    fun testNewContextMenuBasicTextField2EditablePartialSelectionClipboardText() = runContextMenuTest(true) {
-        verifyEditablePartialSelectionClipboardTextContextMenu(
+    fun testNewContextMenuBasicTextField2EditablePartialSelectionClipboardText() =
+        runEditablePartialSelectionClipboardTextContextMenuTest(
             textFieldKind = EditableTextFieldKind.BasicTextField2,
-            visibleActions = listOf("Cut", "Copy", "Paste", "Select All"),
-            hiddenActions = listOf("Select")
+            newContextMenu = true
         )
-    }
 
     @Test
-    fun testOldContextMenuBasicTextFieldEditableFullSelectionClipboardText() = runContextMenuTest(false) {
-        verifyEditableFullSelectionClipboardTextContextMenu(
+    fun testOldContextMenuBasicTextFieldEditableFullSelectionClipboardText() =
+        runEditableFullSelectionClipboardTextContextMenuTest(
             textFieldKind = EditableTextFieldKind.BasicTextField,
-            visibleActions = listOf("Cut", "Copy", "Paste"),
-            hiddenActions = listOf("Select", "Select All")
+            newContextMenu = false
         )
-    }
 
     @Test
-    fun testOldContextMenuBasicTextField2EditableFullSelectionClipboardText() = runContextMenuTest(false) {
-        verifyEditableFullSelectionClipboardTextContextMenu(
+    fun testOldContextMenuBasicTextField2EditableFullSelectionClipboardText() =
+        runEditableFullSelectionClipboardTextContextMenuTest(
             textFieldKind = EditableTextFieldKind.BasicTextField2,
-            visibleActions = listOf("Cut", "Copy", "Paste"),
-            hiddenActions = listOf("Select", "Select All")
+            newContextMenu = false
         )
-    }
 
     @Test
-    fun testNewContextMenuBasicTextFieldEditableFullSelectionClipboardText() = runContextMenuTest(true) {
-        verifyEditableFullSelectionClipboardTextContextMenu(
+    fun testNewContextMenuBasicTextFieldEditableFullSelectionClipboardText() =
+        runEditableFullSelectionClipboardTextContextMenuTest(
             textFieldKind = EditableTextFieldKind.BasicTextField,
-            visibleActions = listOf("Cut", "Copy", "Paste"),
-            hiddenActions = listOf("Select", "Select All")
+            newContextMenu = true
         )
-    }
 
     @Test
     @Ignore // CMP-10301: Menu is not shown after tap on Select All
-    fun testNewContextMenuBasicTextField2EditableFullSelectionClipboardText() = runContextMenuTest(true) {
-        verifyEditableFullSelectionClipboardTextContextMenu(
+    fun testNewContextMenuBasicTextField2EditableFullSelectionClipboardText() =
+        runEditableFullSelectionClipboardTextContextMenuTest(
             textFieldKind = EditableTextFieldKind.BasicTextField2,
-            visibleActions = listOf("Cut", "Copy", "Paste"),
-            hiddenActions = listOf("Select", "Select All")
+            newContextMenu = true
         )
-    }
 
     @Test
-    fun testOldContextMenuBasicTextFieldReadOnlyCollapsedClipboardText() = runContextMenuTest(false) {
-        verifyReadOnlyCollapsedClipboardTextContextMenu(
+    fun testOldContextMenuBasicTextFieldReadOnlyCollapsedClipboardText() =
+        runReadOnlyCollapsedClipboardTextContextMenuTest(
             textFieldKind = EditableTextFieldKind.BasicTextField,
-            visibleActions = listOf("Select All"),
-            hiddenActions = listOf("Cut", "Copy", "Paste", "Select")
+            newContextMenu = false
         )
-    }
 
     @Test
-    fun testOldContextMenuBasicTextField2ReadOnlyCollapsedClipboardText() = runContextMenuTest(false) {
-        verifyReadOnlyCollapsedClipboardTextContextMenu(
+    fun testOldContextMenuBasicTextField2ReadOnlyCollapsedClipboardText() =
+        runReadOnlyCollapsedClipboardTextContextMenuTest(
             textFieldKind = EditableTextFieldKind.BasicTextField2,
-            visibleActions = listOf("Select All"),
-            hiddenActions = listOf("Cut", "Copy", "Paste", "Select")
+            newContextMenu = false
         )
-    }
 
     @Test
-    fun testNewContextMenuBasicTextFieldReadOnlyCollapsedClipboardText() = runContextMenuTest(true) {
-        verifyReadOnlyCollapsedClipboardTextContextMenu(
+    fun testNewContextMenuBasicTextFieldReadOnlyCollapsedClipboardText() =
+        runReadOnlyCollapsedClipboardTextContextMenuTest(
             textFieldKind = EditableTextFieldKind.BasicTextField,
-            visibleActions = listOf("Select All"),
-            hiddenActions = listOf("Cut", "Copy", "Paste", "Select")
+            newContextMenu = true
         )
-    }
 
     @Test
-    fun testNewContextMenuBasicTextField2ReadOnlyCollapsedClipboardText() = runContextMenuTest(true) {
-        verifyReadOnlyCollapsedClipboardTextContextMenu(
+    fun testNewContextMenuBasicTextField2ReadOnlyCollapsedClipboardText() =
+        runReadOnlyCollapsedClipboardTextContextMenuTest(
             textFieldKind = EditableTextFieldKind.BasicTextField2,
-            visibleActions = listOf("Select All"),
-            hiddenActions = listOf("Cut", "Copy", "Paste", "Select")
+            newContextMenu = true
         )
-    }
 
     @Test
-    fun testOldContextMenuBasicTextFieldReadOnlyPartialSelectionClipboardText() = runContextMenuTest(false) {
-        verifyReadOnlyPartialSelectionClipboardTextContextMenu(
+    fun testOldContextMenuBasicTextFieldReadOnlyPartialSelectionClipboardText() =
+        runReadOnlyPartialSelectionClipboardTextContextMenuTest(
             textFieldKind = EditableTextFieldKind.BasicTextField,
-            visibleActions = listOf("Copy", "Select All"),
-            hiddenActions = listOf("Cut", "Paste", "Select")
+            newContextMenu = false
         )
-    }
 
     @Test
-    fun testOldContextMenuBasicTextField2ReadOnlyPartialSelectionClipboardText() = runContextMenuTest(false) {
-        verifyReadOnlyPartialSelectionClipboardTextContextMenu(
+    fun testOldContextMenuBasicTextField2ReadOnlyPartialSelectionClipboardText() =
+        runReadOnlyPartialSelectionClipboardTextContextMenuTest(
             textFieldKind = EditableTextFieldKind.BasicTextField2,
-            visibleActions = listOf("Copy", "Select All"),
-            hiddenActions = listOf("Cut", "Paste", "Select")
+            newContextMenu = false
         )
-    }
 
     @Test
-    fun testNewContextMenuBasicTextFieldReadOnlyPartialSelectionClipboardText() = runContextMenuTest(true) {
-        verifyReadOnlyPartialSelectionClipboardTextContextMenu(
+    fun testNewContextMenuBasicTextFieldReadOnlyPartialSelectionClipboardText() =
+        runReadOnlyPartialSelectionClipboardTextContextMenuTest(
             textFieldKind = EditableTextFieldKind.BasicTextField,
-            visibleActions = listOf("Copy", "Select All"),
-            hiddenActions = listOf("Cut", "Paste", "Select")
+            newContextMenu = true
         )
-    }
 
     @Test
-    fun testNewContextMenuBasicTextField2ReadOnlyPartialSelectionClipboardText() = runContextMenuTest(true) {
-        verifyReadOnlyPartialSelectionClipboardTextContextMenu(
+    fun testNewContextMenuBasicTextField2ReadOnlyPartialSelectionClipboardText() =
+        runReadOnlyPartialSelectionClipboardTextContextMenuTest(
             textFieldKind = EditableTextFieldKind.BasicTextField2,
-            visibleActions = listOf("Copy", "Select All"),
-            hiddenActions = listOf("Cut", "Paste", "Select")
+            newContextMenu = true
         )
-    }
 
     @Test
     fun testTapsCountingWithMultiTouch() = runUIKitInstrumentedTest {
@@ -772,6 +724,98 @@ class TextFieldEditMenuTest {
         delay(500)
         findNodeWithTag(textFieldTag).doubleTap()
         waitForContextMenu()
+    }
+
+    private fun runEditableCollapsedClipboardTextContextMenuTest(
+        textFieldKind: EditableTextFieldKind,
+        newContextMenu: Boolean,
+    ) = runContextMenuTest(newContextMenu) {
+        val visibleActions =
+            if (newContextMenu) {
+                listOf("Paste", "Select All")
+            } else {
+                listOf("Paste", "Select", "Select All")
+            }
+        val hiddenActions =
+            if (newContextMenu) {
+                listOf("Cut", "Copy", "Select")
+            } else {
+                listOf("Cut", "Copy")
+            }
+
+        verifyEditableCollapsedClipboardTextContextMenu(
+            textFieldKind = textFieldKind,
+            visibleActions = visibleActions,
+            hiddenActions = hiddenActions
+        )
+    }
+
+    private fun runEditableCollapsedClipboardEmptyContextMenuTest(
+        textFieldKind: EditableTextFieldKind,
+        newContextMenu: Boolean,
+    ) = runContextMenuTest(newContextMenu) {
+        val visibleActions =
+            if (newContextMenu) {
+                listOf("Select All")
+            } else {
+                listOf("Select", "Select All")
+            }
+        val hiddenActions =
+            if (newContextMenu) {
+                listOf("Cut", "Copy", "Paste", "Select")
+            } else {
+                listOf("Cut", "Copy", "Paste")
+            }
+
+        verifyEditableCollapsedClipboardEmptyContextMenu(
+            textFieldKind = textFieldKind,
+            visibleActions = visibleActions,
+            hiddenActions = hiddenActions
+        )
+    }
+
+    private fun runEditablePartialSelectionClipboardTextContextMenuTest(
+        textFieldKind: EditableTextFieldKind,
+        newContextMenu: Boolean,
+    ) = runContextMenuTest(newContextMenu) {
+        verifyEditablePartialSelectionClipboardTextContextMenu(
+            textFieldKind = textFieldKind,
+            visibleActions = listOf("Cut", "Copy", "Paste", "Select All"),
+            hiddenActions = listOf("Select")
+        )
+    }
+
+    private fun runEditableFullSelectionClipboardTextContextMenuTest(
+        textFieldKind: EditableTextFieldKind,
+        newContextMenu: Boolean,
+    ) = runContextMenuTest(newContextMenu) {
+        verifyEditableFullSelectionClipboardTextContextMenu(
+            textFieldKind = textFieldKind,
+            visibleActions = listOf("Cut", "Copy", "Paste"),
+            hiddenActions = listOf("Select", "Select All")
+        )
+    }
+
+    private fun runReadOnlyCollapsedClipboardTextContextMenuTest(
+        textFieldKind: EditableTextFieldKind,
+        newContextMenu: Boolean,
+    ) = runContextMenuTest(newContextMenu) {
+        verifyReadOnlyCollapsedClipboardTextContextMenu(
+            textFieldKind = textFieldKind,
+            visibleActions = listOf("Select All"),
+            hiddenActions = listOf("Cut", "Copy", "Paste", "Select")
+        )
+    }
+
+    private fun runReadOnlyPartialSelectionClipboardTextContextMenuTest(
+        textFieldKind: EditableTextFieldKind,
+        newContextMenu: Boolean,
+    ) = runContextMenuTest(newContextMenu) {
+        verifyReadOnlyPartialSelectionClipboardTextContextMenu(
+            textFieldKind = textFieldKind,
+            visibleActions = listOf("Copy", "Select All"),
+            hiddenActions = listOf("Cut", "Paste", "Select")
+        )
     }
 
     private fun UIKitInstrumentedTest.longPressAndAwaitContextMenu(textFieldTag: String) {
