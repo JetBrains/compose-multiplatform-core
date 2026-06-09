@@ -179,21 +179,22 @@ internal abstract class NativeInputEventsProcessor(
                         add(BackspaceCommand())
                     }
                 } else {
-                    // We skip this branch if the lastProcessedKeydown is Backspace, because Compose must have already processed this.
-                    // Otherwise, under specific circumstance previous symbol can be deleted while inputting the new one
-                    // see https://youtrack.jetbrains.com/issue/CMP-8773
-                    if (lastProcessedKeydown?.isBackspace() != true) {
-                        // This happens when an autocorrection is applied on mobile:
-                        // The system first tells us to delete the old text,
-                        // and then it would send the "insertText" event.
-                        if (textRangeSize > 0) {
-                            add(SetSelectionCommand(textRangeStart, textRangeEnd))
-                        }
-
+                    // This happens when an autocorrection is applied on mobile:
+                    // The system first tells us to delete the old text,
+                    // and then it would send the "insertText" event.
+                    if (textRangeSize > 0) {
+                        // deleteContentBackward can happen under very non-trivial circumstances:
+                        // - for instance, when an input suggestion on Android Chrome is accepted,
+                        // the browser then deletes space after the word just to add space again;
+                        // - or when a browser performs Fast Delete;
+                        add(SetSelectionCommand(textRangeStart, textRangeEnd))
+                        add(BackspaceCommand())
+                    } else if (textRangeSize == 0 && lastProcessedKeydown?.isBackspace() != true) {
+                        // We skip this branch if the lastProcessedKeydown is Backspace, because Compose must have already processed this.
+                        // Otherwise, under specific circumstance previous symbol can be deleted while inputting the new one
+                        // see https://youtrack.jetbrains.com/issue/CMP-8773
                         add(BackspaceCommand())
                     } else {
-                        // certain keyboard layout trigger deleteContentBackward on fast delete
-                        // https://youtrack.jetbrains.com/issue/CMP-10086
                         createDeleteWordCommand()?.let { add(it) }
                     }
                 }
