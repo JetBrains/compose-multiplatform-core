@@ -360,6 +360,42 @@ class TextFieldEditMenuTest {
     }
 
     @Test
+    fun testOldContextMenuBasicTextFieldEditablePartialSelectionClipboardText() = runContextMenuTest(false) {
+        verifyEditablePartialSelectionClipboardTextContextMenu(
+            textFieldKind = EditableTextFieldKind.BasicTextField,
+            visibleActions = listOf("Cut", "Copy", "Paste", "Select All"),
+            hiddenActions = listOf("Select")
+        )
+    }
+
+    @Test
+    fun testOldContextMenuBasicTextField2EditablePartialSelectionClipboardText() = runContextMenuTest(false) {
+        verifyEditablePartialSelectionClipboardTextContextMenu(
+            textFieldKind = EditableTextFieldKind.BasicTextField2,
+            visibleActions = listOf("Cut", "Copy", "Paste", "Select All"),
+            hiddenActions = listOf("Select")
+        )
+    }
+
+    @Test
+    fun testNewContextMenuBasicTextFieldEditablePartialSelectionClipboardText() = runContextMenuTest(true) {
+        verifyEditablePartialSelectionClipboardTextContextMenu(
+            textFieldKind = EditableTextFieldKind.BasicTextField,
+            visibleActions = listOf("Cut", "Copy", "Paste", "Select All"),
+            hiddenActions = listOf("Select")
+        )
+    }
+
+    @Test
+    fun testNewContextMenuBasicTextField2EditablePartialSelectionClipboardText() = runContextMenuTest(true) {
+        verifyEditablePartialSelectionClipboardTextContextMenu(
+            textFieldKind = EditableTextFieldKind.BasicTextField2,
+            visibleActions = listOf("Cut", "Copy", "Paste", "Select All"),
+            hiddenActions = listOf("Select")
+        )
+    }
+
+    @Test
     fun testTapsCountingWithMultiTouch() = runUIKitInstrumentedTest {
         var touchesDown = 0
         var touchesUp = 0
@@ -672,13 +708,45 @@ class TextFieldEditMenuTest {
         hiddenActions: List<String>,
     ) {
         UIPasteboard.generalPasteboard().string = clipboardText
+        setEditableTextFieldContent(
+            textFieldKind = textFieldKind,
+            initialValue = TextFieldValue("Text", TextRange(4, 4))
+        )
+
+        longPressAndAwaitContextMenu("TextField")
+
+        verifyContextMenuItemsVisible(visibleActions)
+        verifyContextMenuItemsHidden(hiddenActions)
+    }
+
+    private fun UIKitInstrumentedTest.verifyEditablePartialSelectionClipboardTextContextMenu(
+        textFieldKind: EditableTextFieldKind,
+        visibleActions: List<String>,
+        hiddenActions: List<String>,
+    ) {
+        UIPasteboard.generalPasteboard().string = "Paste text"
+        setEditableTextFieldContent(
+            textFieldKind = textFieldKind,
+            initialValue = TextFieldValue(PARTIAL_SELECTION_TEXT)
+        )
+
+        openToolbar("TextField")
+
+        verifyContextMenuItemsVisible(visibleActions)
+        verifyContextMenuItemsHidden(hiddenActions)
+    }
+
+    private fun UIKitInstrumentedTest.setEditableTextFieldContent(
+        textFieldKind: EditableTextFieldKind,
+        initialValue: TextFieldValue,
+    ) {
         setContent {
             val focusRequester = remember { FocusRequester() }
             Column(modifier = Modifier.safeDrawingPadding()) {
                 when (textFieldKind) {
                     EditableTextFieldKind.BasicTextField -> {
                         val textFieldValue = remember {
-                            mutableStateOf(TextFieldValue("Text", TextRange(4, 4)))
+                            mutableStateOf(initialValue)
                         }
                         BasicTextField(
                             value = textFieldValue.value,
@@ -690,7 +758,7 @@ class TextFieldEditMenuTest {
                     }
                     EditableTextFieldKind.BasicTextField2 -> {
                         val textFieldState = remember {
-                            TextFieldState("Text", TextRange(4, 4))
+                            TextFieldState(initialValue.text, initialValue.selection)
                         }
                         BasicTextField(
                             state = textFieldState,
@@ -705,16 +773,15 @@ class TextFieldEditMenuTest {
                 focusRequester.requestFocus()
             }
         }
-
-        longPressAndAwaitContextMenu("TextField")
-
-        verifyContextMenuItemsVisible(visibleActions)
-        verifyContextMenuItemsHidden(hiddenActions)
     }
 
     private enum class EditableTextFieldKind {
         BasicTextField,
         BasicTextField2
+    }
+
+    private companion object {
+        private const val PARTIAL_SELECTION_TEXT = "accomplishment extraordinary magnificent establishment"
     }
 
     @OptIn(ExperimentalFoundationApi::class)
