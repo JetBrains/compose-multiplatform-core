@@ -711,6 +711,23 @@ class DesktopParagraphTest {
         assertThat(measureLines(TextAlign.Justify, TextDirection.Rtl)).isEqualTo(listOf(1830, 1950, 1900, 1980))
     }
 
+    @Test
+    fun centredText_withLetterSpacing_isVisuallyCentred() {
+        val containerWidth = 400f
+        val paragraph = simpleParagraph(
+            text = "Hello",
+            style = TextStyle(
+                textAlign = TextAlign.Center,
+                letterSpacing = 10.sp,
+                fontSize = 20.sp
+            ),
+            width = containerWidth
+        )
+        val bounds = paragraph.getPathForRange(0, "Hello".length).getBounds()
+        val visualCenter = (bounds.left + bounds.right) / 2f
+        assertThat(visualCenter).isWithin(1f).of(containerWidth / 2f)
+    }
+
     private fun simpleParagraph(
         text: String = "",
         style: TextStyle? = null,

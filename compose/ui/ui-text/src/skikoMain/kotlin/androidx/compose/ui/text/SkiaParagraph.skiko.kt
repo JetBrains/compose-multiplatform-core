@@ -39,6 +39,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.isSpecified
 import androidx.compose.ui.unit.isUnspecified
 import kotlin.math.floor
 import org.jetbrains.skia.FontMetrics
@@ -584,6 +585,26 @@ internal class SkiaParagraph(
         return paragraph.getWordBoundary(offset).toTextRange()
     }
 
+    /**
+     * Skia includes trailing letter spacing in LineMetrics.width, causing centred text to appear
+     * shifted left by letterSpacing / 2. This returns the x offset to compensate.
+     * https://youtrack.jetbrains.com/issue/CMP-8469
+     */
+    private fun centreAlignmentPaintOffset(): Float {
+        if (layouter.textStyle.textAlign != TextAlign.Center) return 0f
+        val letterSpacing = layouter.textStyle.letterSpacing
+        if (!letterSpacing.isSpecified || letterSpacing.value == 0f) return 0f
+        val fontSize = layouter.textStyle.fontSize
+        val letterSpacingPx: Float = with(layouter.density) {
+            when {
+                letterSpacing.isSp -> letterSpacing.toPx()
+                letterSpacing.isEm && fontSize.isSpecified -> letterSpacing.value * fontSize.toPx()
+                else -> return 0f
+            }
+        }
+        return letterSpacingPx / 2f
+    }
+
     override fun paint(
         canvas: Canvas,
         color: Color,
@@ -600,7 +621,7 @@ internal class SkiaParagraph(
                 width = width
             )
         }
-        paragraph.paint(canvas.skiaCanvas, 0.0f, 0.0f)
+        paragraph.paint(canvas.skiaCanvas, centreAlignmentPaintOffset(), 0.0f)
     }
 
     @ExperimentalTextApi
@@ -624,7 +645,7 @@ internal class SkiaParagraph(
                 width = width
             )
         }
-        paragraph.paint(canvas.skiaCanvas, 0.0f, 0.0f)
+        paragraph.paint(canvas.skiaCanvas, centreAlignmentPaintOffset(), 0.0f)
     }
 
     @ExperimentalTextApi
@@ -653,7 +674,7 @@ internal class SkiaParagraph(
                 width = width
             )
         }
-        paragraph.paint(canvas.skiaCanvas, 0.0f, 0.0f)
+        paragraph.paint(canvas.skiaCanvas, centreAlignmentPaintOffset(), 0.0f)
     }
 
     /**
