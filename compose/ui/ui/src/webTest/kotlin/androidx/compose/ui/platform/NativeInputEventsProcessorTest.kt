@@ -701,10 +701,15 @@ class NativeInputEventsProcessorTest {
 
         processor.manuallyRunCheckpoint(communicator.currentTextFieldValue())
 
-        // The deleteContentBackward event should be ignored since Backspace key was pressed:
-        // Compose already processed the Backspace via the key event, so no edit commands should be produced.
         assertEquals(1, communicator.keyboardEvents.size)
-        assertEquals(0, communicator.editCommands.size)
+        assertEquals(2, communicator.editCommands.size)
+
+        val selectionCommand = communicator.editCommands[0]
+        assertTrue(selectionCommand is SetSelectionCommand)
+        assertEquals(8, selectionCommand.start)
+        assertEquals(12, selectionCommand.end)
+
+        assertEquals("example ", communicator.currentTextFieldValue().text)
     }
 
     @Test
