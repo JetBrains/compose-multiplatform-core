@@ -35,7 +35,7 @@ class SkiaGraphicsContext(
         private set
 
     fun dispose() {
-        check(!isClosed) { "GraphicsContext is already closed" }
+        require(!isClosed) { "GraphicsContext is already closed" }
         isClosed = true
         renderNodeContext.close()
     }
@@ -48,7 +48,7 @@ class SkiaGraphicsContext(
         ambientShadowAlpha: Float = 0f,
         spotShadowAlpha: Float = 0f
     ) {
-        check(!isClosed) { "GraphicsContext is already closed" }
+        require(!isClosed) { "GraphicsContext is already closed" }
         renderNodeContext.setLightingInfo(
             centerX,
             centerY,
@@ -60,7 +60,7 @@ class SkiaGraphicsContext(
     }
 
     override fun createGraphicsLayer(): GraphicsLayer {
-        check(!isClosed) { "GraphicsContext is already closed" }
+        require(!isClosed) { "GraphicsContext is already closed" }
         activeGraphicsLayersCount++
         return GraphicsLayer(
             renderNode = RenderNode(renderNodeContext)

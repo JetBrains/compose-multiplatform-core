@@ -25,12 +25,10 @@ import androidx.compose.ui.util.fastRoundToInt
 import java.awt.Component
 import java.awt.EventQueue
 import java.awt.Graphics
-import java.awt.Point
 import java.awt.Rectangle
 import java.util.concurrent.atomic.AtomicBoolean
 import javax.swing.JLayeredPane
 import javax.swing.RootPaneContainer
-import javax.swing.SwingUtilities
 import kotlin.math.ceil
 import kotlin.math.floor
 import org.jetbrains.skiko.OS
@@ -45,15 +43,6 @@ internal fun Component.isParentOf(component: Component?): Boolean {
         parent = parent.parent
     }
     return false
-}
-
-internal fun Component.locationOn(component: Component?): Point {
-    if (component == null) return Point(0, 0)
-    return  SwingUtilities.convertPoint(
-        /* source = */ this,
-        /* aPoint = */ Point(0, 0),
-        /* destination = */ component,
-    )
 }
 
 internal fun toAwtRectangle(
