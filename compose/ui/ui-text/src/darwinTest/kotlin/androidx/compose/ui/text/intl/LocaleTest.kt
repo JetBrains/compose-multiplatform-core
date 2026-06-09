@@ -24,7 +24,7 @@ class LocaleTest {
     @Test
     fun platformLocale_sharesTheAttributes() {
         val platformLocale = NSLocale("sr-Latn-SR")
-        val locale = Locale(platformLocale)
+        val locale = platformLocale.toComposeLocale()
 
         assertEquals(platformLocale, locale.platformLocale)
         assertEquals("sr", locale.language)

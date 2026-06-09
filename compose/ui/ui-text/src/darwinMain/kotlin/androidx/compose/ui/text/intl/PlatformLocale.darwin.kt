@@ -32,10 +32,8 @@ internal actual fun createPlatformLocaleDelegate(): PlatformLocaleDelegate =
     }
 
 @Immutable
-actual class Locale private constructor(
+actual class Locale internal constructor(
     internal val platformLocale: NSLocale,
-    // parameter to avoid clash between constructor and extension function
-    @Suppress("UNUSED_PARAMETER") unused: Boolean
 ) {
     // Strip NSLocale-specific keyword suffixes so toLanguageTag stays BCP47-compatible.
     private val languageTag: String =
@@ -66,17 +64,15 @@ actual class Locale private constructor(
     actual companion object {
         actual val current: Locale
             get() = platformLocaleDelegate.current[0]
-
-        internal fun fromPlatformLocale(platformLocale: NSLocale): Locale = Locale(platformLocale, false)
     }
 
-    actual constructor(languageTag: String): this(NSLocale(languageTag), false)
+    actual constructor(languageTag: String): this(NSLocale(languageTag))
 }
 
 /**
- * Create a [Locale] object from [NSLocale].
+ * Creates [Locale] object from platform specific [NSLocale].
  */
-fun Locale(platformLocale: NSLocale): Locale = Locale.fromPlatformLocale(platformLocale)
+fun NSLocale.toComposeLocale(): Locale = Locale(this)
 
 private fun NSLocale.isRtl(): Boolean =
     NSLocale.characterDirectionForLanguage(languageCode) == NSLocaleLanguageDirectionRightToLeft
