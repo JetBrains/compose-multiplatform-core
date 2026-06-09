@@ -288,32 +288,72 @@ class TextFieldEditMenuTest {
     }
 
     @Test
-    fun testOldContextMenuEditableCollapsedClipboardText() = runContextMenuTest(false) {
+    fun testOldContextMenuBasicTextFieldEditableCollapsedClipboardText() = runContextMenuTest(false) {
         verifyEditableCollapsedClipboardTextContextMenu(
+            textFieldKind = EditableTextFieldKind.BasicTextField,
             visibleActions = listOf("Paste", "Select", "Select All"),
             hiddenActions = listOf("Cut", "Copy")
         )
     }
 
     @Test
-    fun testNewContextMenuEditableCollapsedClipboardText() = runContextMenuTest(true) {
+    fun testOldContextMenuBasicTextField2EditableCollapsedClipboardText() = runContextMenuTest(false) {
         verifyEditableCollapsedClipboardTextContextMenu(
+            textFieldKind = EditableTextFieldKind.BasicTextField2,
+            visibleActions = listOf("Paste", "Select", "Select All"),
+            hiddenActions = listOf("Cut", "Copy")
+        )
+    }
+
+    @Test
+    fun testNewContextMenuBasicTextFieldEditableCollapsedClipboardText() = runContextMenuTest(true) {
+        verifyEditableCollapsedClipboardTextContextMenu(
+            textFieldKind = EditableTextFieldKind.BasicTextField,
             visibleActions = listOf("Paste", "Select All"),
             hiddenActions = listOf("Cut", "Copy", "Select")
         )
     }
 
     @Test
-    fun testOldContextMenuEditableCollapsedClipboardEmpty() = runContextMenuTest(false) {
+    fun testNewContextMenuBasicTextField2EditableCollapsedClipboardText() = runContextMenuTest(true) {
+        verifyEditableCollapsedClipboardTextContextMenu(
+            textFieldKind = EditableTextFieldKind.BasicTextField2,
+            visibleActions = listOf("Paste", "Select All"),
+            hiddenActions = listOf("Cut", "Copy", "Select")
+        )
+    }
+
+    @Test
+    fun testOldContextMenuBasicTextFieldEditableCollapsedClipboardEmpty() = runContextMenuTest(false) {
         verifyEditableCollapsedClipboardEmptyContextMenu(
+            textFieldKind = EditableTextFieldKind.BasicTextField,
             visibleActions = listOf("Select", "Select All"),
             hiddenActions = listOf("Cut", "Copy", "Paste")
         )
     }
 
     @Test
-    fun testNewContextMenuEditableCollapsedClipboardEmpty() = runContextMenuTest(true) {
+    fun testOldContextMenuBasicTextField2EditableCollapsedClipboardEmpty() = runContextMenuTest(false) {
         verifyEditableCollapsedClipboardEmptyContextMenu(
+            textFieldKind = EditableTextFieldKind.BasicTextField2,
+            visibleActions = listOf("Select", "Select All"),
+            hiddenActions = listOf("Cut", "Copy", "Paste")
+        )
+    }
+
+    @Test
+    fun testNewContextMenuBasicTextFieldEditableCollapsedClipboardEmpty() = runContextMenuTest(true) {
+        verifyEditableCollapsedClipboardEmptyContextMenu(
+            textFieldKind = EditableTextFieldKind.BasicTextField,
+            visibleActions = listOf("Select All"),
+            hiddenActions = listOf("Cut", "Copy", "Paste", "Select")
+        )
+    }
+
+    @Test
+    fun testNewContextMenuBasicTextField2EditableCollapsedClipboardEmpty() = runContextMenuTest(true) {
+        verifyEditableCollapsedClipboardEmptyContextMenu(
+            textFieldKind = EditableTextFieldKind.BasicTextField2,
             visibleActions = listOf("Select All"),
             hiddenActions = listOf("Cut", "Copy", "Paste", "Select")
         )
@@ -600,10 +640,12 @@ class TextFieldEditMenuTest {
     }
 
     private fun UIKitInstrumentedTest.verifyEditableCollapsedClipboardTextContextMenu(
+        textFieldKind: EditableTextFieldKind,
         visibleActions: List<String>,
         hiddenActions: List<String>,
     ) {
         verifyEditableCollapsedContextMenu(
+            textFieldKind = textFieldKind,
             clipboardText = "Paste text",
             visibleActions = visibleActions,
             hiddenActions = hiddenActions
@@ -611,10 +653,12 @@ class TextFieldEditMenuTest {
     }
 
     private fun UIKitInstrumentedTest.verifyEditableCollapsedClipboardEmptyContextMenu(
+        textFieldKind: EditableTextFieldKind,
         visibleActions: List<String>,
         hiddenActions: List<String>,
     ) {
         verifyEditableCollapsedContextMenu(
+            textFieldKind = textFieldKind,
             clipboardText = null,
             visibleActions = visibleActions,
             hiddenActions = hiddenActions
@@ -622,22 +666,40 @@ class TextFieldEditMenuTest {
     }
 
     private fun UIKitInstrumentedTest.verifyEditableCollapsedContextMenu(
+        textFieldKind: EditableTextFieldKind,
         clipboardText: String?,
         visibleActions: List<String>,
         hiddenActions: List<String>,
     ) {
         UIPasteboard.generalPasteboard().string = clipboardText
-        val textFieldValue = mutableStateOf(TextFieldValue("Text", TextRange(4,4)))
         setContent {
             val focusRequester = remember { FocusRequester() }
             Column(modifier = Modifier.safeDrawingPadding()) {
-                BasicTextField(
-                    value = textFieldValue.value,
-                    onValueChange = { textFieldValue.value = it },
-                    modifier = Modifier
-                        .testTag("TextField")
-                        .focusRequester(focusRequester)
-                )
+                when (textFieldKind) {
+                    EditableTextFieldKind.BasicTextField -> {
+                        val textFieldValue = remember {
+                            mutableStateOf(TextFieldValue("Text", TextRange(4, 4)))
+                        }
+                        BasicTextField(
+                            value = textFieldValue.value,
+                            onValueChange = { textFieldValue.value = it },
+                            modifier = Modifier
+                                .testTag("TextField")
+                                .focusRequester(focusRequester)
+                        )
+                    }
+                    EditableTextFieldKind.BasicTextField2 -> {
+                        val textFieldState = remember {
+                            TextFieldState("Text", TextRange(4, 4))
+                        }
+                        BasicTextField(
+                            state = textFieldState,
+                            modifier = Modifier
+                                .testTag("TextField")
+                                .focusRequester(focusRequester)
+                        )
+                    }
+                }
             }
             LaunchedEffect(focusRequester) {
                 focusRequester.requestFocus()
@@ -648,6 +710,11 @@ class TextFieldEditMenuTest {
 
         verifyContextMenuItemsVisible(visibleActions)
         verifyContextMenuItemsHidden(hiddenActions)
+    }
+
+    private enum class EditableTextFieldKind {
+        BasicTextField,
+        BasicTextField2
     }
 
     @OptIn(ExperimentalFoundationApi::class)
