@@ -83,7 +83,7 @@ class TextFieldEditMenuTest {
                 BasicTextField(
                     textValue.value,
                     { textValue.value = it },
-                    modifier = Modifier.testTag("TextField").focusRequester(focusRequester)
+                    modifier = textFieldModifier(focusRequester)
                 )
             }
             LaunchedEffect(focusRequester) {
@@ -105,7 +105,7 @@ class TextFieldEditMenuTest {
             Column(modifier = Modifier.safeDrawingPadding()) {
                 BasicTextField(
                     textFieldState,
-                    modifier = Modifier.testTag("TextField").focusRequester(focusRequester)
+                    modifier = textFieldModifier(focusRequester)
                 )
             }
             LaunchedEffect(focusRequester) {
@@ -124,7 +124,7 @@ class TextFieldEditMenuTest {
         setContent {
             val focusRequester = remember { FocusRequester() }
             Column(modifier = Modifier.safeDrawingPadding()) {
-                TextField("Hello-LongLongLongLongLong-text", {}, modifier = Modifier.testTag("TextField").focusRequester(focusRequester))
+                TextField("Hello-LongLongLongLongLong-text", {}, modifier = textFieldModifier(focusRequester))
             }
             LaunchedEffect(focusRequester) {
                 focusRequester.requestFocus()
@@ -143,7 +143,7 @@ class TextFieldEditMenuTest {
         setContent {
             val focusRequester = remember { FocusRequester() }
             Column(modifier = Modifier.safeDrawingPadding()) {
-                BasicTextField(textFieldState, modifier = Modifier.testTag("TextField").focusRequester(focusRequester))
+                BasicTextField(textFieldState, modifier = textFieldModifier(focusRequester))
             }
             LaunchedEffect(focusRequester) {
                 focusRequester.requestFocus()
@@ -164,7 +164,7 @@ class TextFieldEditMenuTest {
                 BasicTextField(
                     value = textFieldValue.value,
                     onValueChange = { textFieldValue.value = it },
-                    modifier = Modifier.testTag("TextField").focusRequester(focusRequester)
+                    modifier = textFieldModifier(focusRequester)
                 )
             }
             LaunchedEffect(focusRequester) {
@@ -193,7 +193,7 @@ class TextFieldEditMenuTest {
         setContent {
             val focusRequester = remember { FocusRequester() }
             Column(modifier = Modifier.safeDrawingPadding()) {
-                BasicTextField(textFieldState, modifier = Modifier.testTag("TextField").focusRequester(focusRequester))
+                BasicTextField(textFieldState, modifier = textFieldModifier(focusRequester))
             }
             LaunchedEffect(focusRequester) {
                 focusRequester.requestFocus()
@@ -225,9 +225,7 @@ class TextFieldEditMenuTest {
                 BasicTextField(
                     value = textFieldValue.value,
                     onValueChange = { textFieldValue.value = it },
-                    modifier = Modifier
-                        .testTag("TextField")
-                        .focusRequester(focusRequester)
+                    modifier = textFieldModifier(focusRequester)
                 )
             }
             LaunchedEffect(focusRequester) {
@@ -261,9 +259,7 @@ class TextFieldEditMenuTest {
             Column(modifier = Modifier.safeDrawingPadding()) {
                 BasicTextField(
                     state = textFieldState,
-                    modifier = Modifier
-                        .testTag("TextField")
-                        .focusRequester(focusRequester)
+                    modifier = textFieldModifier(focusRequester)
                 )
             }
             LaunchedEffect(focusRequester) {
@@ -602,9 +598,7 @@ class TextFieldEditMenuTest {
                 BasicTextField(
                     value = textFieldValue.value,
                     onValueChange = { textFieldValue.value = it },
-                    modifier = Modifier
-                        .testTag("TextField")
-                        .focusRequester(focusRequester)
+                    modifier = textFieldModifier(focusRequester)
                         .appendTextContextMenuComponents {
                             item(key = "CustomKey", label = "Custom Action") {
                                 customItemClicked = true
@@ -646,9 +640,7 @@ class TextFieldEditMenuTest {
             Column(modifier = Modifier.safeDrawingPadding()) {
                 BasicTextField(
                     state = textFieldState,
-                    modifier = Modifier
-                        .testTag("TextField")
-                        .focusRequester(focusRequester)
+                    modifier = textFieldModifier(focusRequester)
                         .appendTextContextMenuComponents {
                             item(key = "CustomKey", label = "Custom Action") {
                                 customItemClicked = true
@@ -725,6 +717,11 @@ class TextFieldEditMenuTest {
         findNodeWithTag(textFieldTag).doubleTap()
         waitForContextMenu()
     }
+
+    private fun textFieldModifier(focusRequester: FocusRequester): Modifier =
+        Modifier
+            .testTag("TextField")
+            .focusRequester(focusRequester)
 
     private fun runEditableCollapsedClipboardTextContextMenuTest(
         textFieldKind: EditableTextFieldKind,
@@ -941,9 +938,7 @@ class TextFieldEditMenuTest {
                         BasicTextField(
                             value = textFieldValue.value,
                             onValueChange = { textFieldValue.value = it },
-                            modifier = Modifier
-                                .testTag("TextField")
-                                .focusRequester(focusRequester)
+                            modifier = textFieldModifier(focusRequester)
                         )
                     }
                     LaunchedEffect(focusRequester) {
@@ -965,9 +960,7 @@ class TextFieldEditMenuTest {
                     Column(modifier = Modifier.safeDrawingPadding()) {
                         BasicTextField(
                             state = textFieldState,
-                            modifier = Modifier
-                                .testTag("TextField")
-                                .focusRequester(focusRequester)
+                            modifier = textFieldModifier(focusRequester)
                         )
                     }
                     LaunchedEffect(focusRequester) {
@@ -1009,9 +1002,7 @@ class TextFieldEditMenuTest {
                         BasicTextField(
                             value = textFieldValue.value,
                             onValueChange = { textFieldValue.value = it },
-                            modifier = Modifier
-                                .testTag("TextField")
-                                .focusRequester(focusRequester),
+                            modifier = textFieldModifier(focusRequester),
                             readOnly = readOnly
                         )
                     }
@@ -1021,9 +1012,7 @@ class TextFieldEditMenuTest {
                         }
                         BasicTextField(
                             state = textFieldState,
-                            modifier = Modifier
-                                .testTag("TextField")
-                                .focusRequester(focusRequester),
+                            modifier = textFieldModifier(focusRequester),
                             readOnly = readOnly
                         )
                     }
