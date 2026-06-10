@@ -32,6 +32,7 @@ import androidx.compose.runtime.withFrameMillis
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Matrix
 import androidx.compose.ui.platform.PlatformTextInputMethodRequest
+import androidx.compose.ui.platform.PlatformTextInputSession
 import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextRange
@@ -147,7 +148,9 @@ internal class AndroidLegacyPlatformTextInputServiceAdapter :
                 initializeRequest?.invoke(request)
                 currentRequest = request
                 try {
-                    startInputMethod(request)
+                    @Suppress("UNCHECKED_CAST")
+                    (this@launchTextInputSession as PlatformTextInputSession<PlatformTextInputMethodRequest>)
+                        .startInputMethod(request)
                 } finally {
                     currentRequest = null
                 }

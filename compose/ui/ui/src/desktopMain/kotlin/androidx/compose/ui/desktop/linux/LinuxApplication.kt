@@ -19,9 +19,12 @@ import androidx.compose.ui.desktop.ClipboardItemsEntry
 import androidx.compose.ui.desktop.DefaultDoubleClickDistance
 import androidx.compose.ui.desktop.DefaultDragThreshold
 import androidx.compose.ui.desktop.LightweightWindowId
+import androidx.compose.ui.desktop.LinuxTextInputContext
+import androidx.compose.ui.desktop.LinuxTextInputSurroundingText
 import androidx.compose.ui.desktop.Scene
 import androidx.compose.ui.desktop.Window
 import androidx.compose.ui.desktop.WindowCloseRequestReason
+import androidx.compose.ui.desktop.codepointFromOffset
 import androidx.compose.ui.desktop.deactivateApplication
 import androidx.compose.ui.desktop.getDataForLinuxMimeType
 import androidx.compose.ui.desktop.logging.logger
@@ -35,6 +38,8 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.UriHandler
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.createFontFamilyResolver
+import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.window.WindowDecoration
 import java.nio.file.Files
@@ -56,6 +61,9 @@ import org.jetbrains.desktop.linux.EventHandlerResult
 import org.jetbrains.desktop.linux.KotlinDesktopToolkit
 import org.jetbrains.desktop.linux.LogLevel
 import org.jetbrains.desktop.linux.RequestId
+import org.jetbrains.desktop.linux.TextInputContentHint
+import org.jetbrains.desktop.linux.TextInputContentPurpose
+import org.jetbrains.desktop.linux.TextInputContext
 
 object LinuxApplication : Application {
     internal val logger = logger<LinuxApplication>()
@@ -212,6 +220,11 @@ object LinuxApplication : Application {
     private val pendingActivationRequests = ConcurrentHashMap<RequestId, LightweightWindowId>()
     private val nextWindowId = AtomicLong(1L)
     private var keyboardFocusWindowId: LightweightWindowId? = null
+
+    // Wayland text input is seat-wide: only one window at a time receives IME events, tracked here.
+    // The last context per window is cached so the seat can be re-enabled when focus returns.
+    private var textInputWindowId: LightweightWindowId? = null
+    private val lastTextInputContexts = mutableMapOf<LightweightWindowId, TextInputContext>()
 
     override var screens: Map<Int, LinuxScreen> by mutableStateOf(emptyMap())
         private set
@@ -402,11 +415,15 @@ object LinuxApplication : Application {
                 is Event.KeyDown,
                 is Event.KeyUp,
                 is Event.ModifiersChanged,
-                is Event.TextInput,
                     -> {
                     keyboardFocusWindowId?.let { windowId ->
                         windows[windowId]?.handleEvent(event)
                     } ?: EventHandlerResult.Continue
+                }
+
+                is Event.TextInput -> {
+                    windows[textInputWindowId]?.handleTextInput(event)
+                        ?: EventHandlerResult.Continue
                 }
 
                 is Event.WindowKeyboardEnter -> {
@@ -450,13 +467,47 @@ object LinuxApplication : Application {
                     EventHandlerResult.Stop
                 }
 
+                is Event.TextInputAvailability -> {
+                    val windowId = event.windowId.toLightweightWindowId()
+                    textInputWindowId = if (event.available) windowId else null
+                    if (event.available) {
+                        lastTextInputContexts[windowId]?.let {
+                            nativeApplication.textInputEnable(it.copy(changeCausedByInputMethod = false))
+                        }
+                    } else {
+                        nativeApplication.textInputDisable()
+                        windows[windowId]?.discardActivePreedit()
+                    }
+                    EventHandlerResult.Stop
+                }
+
+                is Event.MouseDown -> {
+                    val windowId = event.windowId.toLightweightWindowId()
+                    val window = windows[windowId]
+                    if (window != null) {
+                        // Some compositors handle this automatically (e.g. Gnome, KDE), but others
+                        // (e.g. Sway) don't, so a mouse-down inside an active preedit must cancel the
+                        // composition and re-arm the input method explicitly.
+                        if (window.hasPreeditString()) {
+                            lastTextInputContexts[windowId]?.let { lastContext ->
+                                nativeApplication.textInputDisable()
+                                window.discardActivePreedit()
+                                nativeApplication.textInputEnable(
+                                    lastContext.copy(changeCausedByInputMethod = false)
+                                )
+                            }
+                        }
+                        window.handleEvent(event)
+                    } else {
+                        EventHandlerResult.Continue
+                    }
+                }
+
                 is Event.WindowCloseRequest,
                 is Event.WindowConfigure,
                 is Event.WindowDraw,
                 is Event.WindowScaleChanged,
                 is Event.WindowScreenChange,
-                is Event.TextInputAvailability,
-                is Event.MouseDown,
                 is Event.MouseUp,
                 is Event.MouseMoved,
                 is Event.MouseEntered,
@@ -493,6 +544,48 @@ object LinuxApplication : Application {
     }
 
     internal fun allocateNativeWindowId(): Long = nextWindowId.getAndIncrement()
+
+    /**
+     * Arms the native (seat-level) input method for [windowId] with the editor-supplied context.
+     * Called from the text input session coroutine, so the native call is posted to the event loop.
+     */
+    internal fun startTextInput(
+        windowId: LightweightWindowId,
+        context: LinuxTextInputContext,
+        surroundingText: LinuxTextInputSurroundingText,
+    ) {
+        onEventLoopAsync {
+            val nativeContext = createTextInputContext(context, surroundingText, changeCausedByInputMethod = false)
+            lastTextInputContexts[windowId] = nativeContext
+            if (textInputWindowId == windowId) {
+                textInputEnable(nativeContext)
+            }
+        }
+    }
+
+    internal fun updateTextInput(
+        windowId: LightweightWindowId,
+        context: LinuxTextInputContext,
+        surroundingText: LinuxTextInputSurroundingText,
+    ) {
+        onEventLoopAsync {
+            val nativeContext = createTextInputContext(context, surroundingText, changeCausedByInputMethod = true)
+            lastTextInputContexts[windowId] = nativeContext
+            if (textInputWindowId == windowId) {
+                textInputUpdate(nativeContext)
+            }
+        }
+    }
+
+    internal fun stopTextInput(windowId: LightweightWindowId) {
+        onEventLoopAsync {
+            lastTextInputContexts.remove(windowId)
+            if (textInputWindowId == windowId) {
+                textInputDisable()
+                windows[windowId]?.discardActivePreedit()
+            }
+        }
+    }
 
     internal fun requestWindowActivation(windowId: LightweightWindowId) {
         val nativeWindow = windows[windowId]?.nativeWindow ?: return
@@ -608,6 +701,8 @@ object LinuxApplication : Application {
         windows.values.toList().forEach { it.dispose() }
         activeDragSource = null
         keyboardFocusWindowId = null
+        textInputWindowId = null
+        lastTextInputContexts.clear()
         pendingActivationRequests.clear()
         quitHandlers.clear()
         // The native Wayland runtime persists across resetForReuse() and window removal is processed
@@ -655,6 +750,58 @@ private fun Event.windowIdOrNull(): LightweightWindowId? =
         is Event.DragAndDropLeave -> windowId.toLightweightWindowId()
         else -> null
     }
+
+private fun createTextInputContext(
+    context: LinuxTextInputContext,
+    surroundingText: LinuxTextInputSurroundingText,
+    changeCausedByInputMethod: Boolean,
+): TextInputContext {
+    val text = surroundingText.text
+    val imeOptions = context.imeOptions
+    val contentPurpose = imeOptions.keyboardType.toTextInputContentPurpose()
+    return TextInputContext(
+        surroundingText = text,
+        cursorCodepointOffset = codepointFromOffset(text, surroundingText.cursorOffset),
+        selectionStartCodepointOffset = codepointFromOffset(text, surroundingText.selectionStartOffset),
+        hints = buildSet {
+            if (!imeOptions.singleLine) add(TextInputContentHint.Multiline)
+            if (imeOptions.autoCorrect) add(TextInputContentHint.Spellcheck)
+            when (imeOptions.capitalization) {
+                KeyboardCapitalization.None -> add(TextInputContentHint.Lowercase)
+                KeyboardCapitalization.Characters -> add(TextInputContentHint.Uppercase)
+                KeyboardCapitalization.Words -> add(TextInputContentHint.Titlecase)
+                KeyboardCapitalization.Sentences -> add(TextInputContentHint.AutoCapitalization)
+                else -> {}
+            }
+            if (contentPurpose == TextInputContentPurpose.Password ||
+                contentPurpose == TextInputContentPurpose.Pin
+            ) {
+                add(TextInputContentHint.HiddenText)
+                add(TextInputContentHint.SensitiveData)
+            }
+        },
+        contentPurpose = contentPurpose,
+        cursorRectangle = context.cursorRectangle.toLogicalRect(),
+        changeCausedByInputMethod = changeCausedByInputMethod,
+    )
+}
+
+private fun KeyboardType.toTextInputContentPurpose(): TextInputContentPurpose {
+    return when (this) {
+        KeyboardType.Unspecified,
+        KeyboardType.Text,
+        KeyboardType.Ascii,
+            -> TextInputContentPurpose.Normal
+        KeyboardType.Uri -> TextInputContentPurpose.Url
+        KeyboardType.Email -> TextInputContentPurpose.Email
+        KeyboardType.Number -> TextInputContentPurpose.Digits
+        KeyboardType.Decimal -> TextInputContentPurpose.Number
+        KeyboardType.Phone -> TextInputContentPurpose.Phone
+        KeyboardType.Password -> TextInputContentPurpose.Password
+        KeyboardType.NumberPassword -> TextInputContentPurpose.Pin
+        else -> TextInputContentPurpose.Normal
+    }
+}
 
 @OptIn(ExperimentalComposeUiApi::class)
 private fun String.toCustomTitleBarLayout():

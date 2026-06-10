@@ -962,7 +962,7 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
         get() = PlacementScope(this)
 
     override suspend fun textInputSession(
-        session: suspend PlatformTextInputSessionScope.() -> Nothing
+        session: suspend PlatformTextInputSessionScope<*>.() -> Nothing
     ): Nothing =
         textInputSessionMutex.withSessionCancellingPrevious(
             sessionInitializer = {
@@ -974,6 +974,12 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
             },
             session = session,
         )
+
+    @OptIn(InternalComposeUiApi::class)
+    override fun isTextInputSessionActive(): Boolean = false
+
+    @OptIn(InternalComposeUiApi::class)
+    override fun handleEventWithInputSession(keyEvent: KeyEvent): Boolean = false
 
     @Deprecated(
         "fontLoader is deprecated, use fontFamilyResolver",
