@@ -4,8 +4,6 @@ runs:
   steps:
     # List of available Xcode versions:
     # https://github.com/actions/runner-images/blob/main/images/macos/macos-26-Readme.md#xcode
-    # Note that explicit download is required due to updated support policy:
-    # https://github.com/actions/runner-images/issues/12758#issuecomment-3206748945
     - name: Setup Xcode version
       shell: bash
       run: |
