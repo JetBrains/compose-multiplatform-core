@@ -22,12 +22,16 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.DpOffset
+import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.height
+import androidx.compose.ui.unit.width
 import kotlin.math.roundToInt
 import org.jetbrains.desktop.gtk.DragAndDropAction
 import org.jetbrains.desktop.gtk.LogicalPoint
+import org.jetbrains.desktop.gtk.LogicalRect
 import org.jetbrains.desktop.gtk.LogicalSize
 
 internal fun LogicalSize.roundToIntSize(density: Density): IntSize {
@@ -59,6 +63,15 @@ internal operator fun LogicalPoint.plus(other: LogicalPoint): LogicalPoint =
 
 internal operator fun LogicalPoint.minus(other: LogicalPoint): LogicalPoint =
     LogicalPoint(x - other.x, y - other.y)
+
+internal fun DpRect.toLogicalRect(): LogicalRect {
+    return LogicalRect(
+        x = left.value.roundToInt(),
+        y = top.value.roundToInt(),
+        width = width.value.roundToInt(),
+        height = height.value.roundToInt(),
+    )
+}
 
 @OptIn(ExperimentalComposeUiApi::class)
 internal fun DragAndDropTransferAction.toGtkAction(): DragAndDropAction? {

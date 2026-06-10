@@ -14,7 +14,7 @@ import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.LocalSystemTheme
 import androidx.compose.ui.SystemTheme
 import androidx.compose.ui.desktop.ClipboardItemsEntry
-import androidx.compose.ui.desktop.ComposeTextInputSession
+import androidx.compose.ui.desktop.LocalTextInputSessionOwner
 import androidx.compose.ui.desktop.DefaultCustomTitleBarHeightForAir
 import androidx.compose.ui.desktop.InteractiveMoveInitiator
 import androidx.compose.ui.desktop.KdtDragAndDropManager
@@ -54,6 +54,8 @@ import androidx.compose.ui.platform.InterceptPlatformTextInput
 import androidx.compose.ui.platform.LocalTextInputContext
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.PlatformDragAndDropManager
+import androidx.compose.ui.platform.PlatformTextInputMethodRequest
+import androidx.compose.ui.platform.PlatformTextInputSession
 import androidx.compose.ui.platform.PlatformTextInputInterceptor
 import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.platform.WindowInfo
@@ -94,8 +96,6 @@ import org.jetbrains.desktop.gtk.LogicalSize
 import org.jetbrains.desktop.gtk.RenderingMode
 import org.jetbrains.desktop.gtk.RequestId
 import org.jetbrains.desktop.gtk.StartDragAndDropParams
-import org.jetbrains.desktop.gtk.TextInputContentPurpose
-import org.jetbrains.desktop.gtk.TextInputContext as GtkTextInputContext
 import org.jetbrains.desktop.gtk.TextInputSurroundingText
 import org.jetbrains.desktop.gtk.WindowDecorationMode
 import org.jetbrains.desktop.gtk.WindowParams
@@ -150,11 +150,6 @@ class GtkWindow internal constructor(
     private var titleField by mutableStateOf("")
     private var overriddenSystemTheme by mutableStateOf<SystemTheme?>(null)
 
-    @Volatile
-    private var currentTextInputSession: ComposeTextInputSession? = null
-
-    @Volatile
-    private var nativeTextInputEnabled = false
     private var incomingDragMimeTypes: List<String> = emptyList()
     private val incomingDragMimeData = linkedMapOf<String, ByteArray>()
 
@@ -332,6 +327,12 @@ class GtkWindow internal constructor(
         setLifecycleState(Lifecycle.State.RESUMED)
     }
 
+    private val gtkTextInputSessionOwner = GtkTextInputSessionOwner(
+        startInputMethod = { context -> onNativeWindowAsync { textInputEnable(context) } },
+        stopInputMethod = { onNativeWindowAsync { textInputDisable() } },
+        onDataChanged = { context -> onNativeWindowAsync { textInputUpdate(context) } },
+    )
+
     private val platformContext: PlatformContext = object : PlatformContext by PlatformContext.Empty() {
         override val windowInfo: WindowInfo
             get() = this@GtkWindow.windowInfo
@@ -343,6 +344,8 @@ class GtkWindow internal constructor(
         override val textToolbar = DefaultTextToolbar()
         override val dragAndDropManager: PlatformDragAndDropManager =
             KdtDragAndDropManager(this@GtkWindow)
+
+        override fun textInputSessionOwner() = gtkTextInputSessionOwner
     }
 
     private val composeScene: ComposeScene = CanvasLayersComposeScene(
@@ -451,18 +454,8 @@ class GtkWindow internal constructor(
         }
     }
 
-    internal fun currentTextInputSurroundingText(): TextInputSurroundingText? {
-        val session = currentTextInputSession ?: return null
-        val value = session.value
-        val cursorOffset = value.selection.start.coerceIn(0, value.text.length)
-        val selectionOffset = value.selection.end.coerceIn(0, value.text.length)
-        return TextInputSurroundingText(
-            surroundingText = value.text,
-            cursorCodepointOffset = value.text.codePointCount(0, cursorOffset).toUShort(),
-            selectionStartCodepointOffset = value.text.codePointCount(0, selectionOffset)
-                .toUShort(),
-        )
-    }
+    internal fun currentTextInputSurroundingText(): TextInputSurroundingText? =
+        gtkTextInputSessionOwner.currentTextInputSurroundingText
 
     internal fun queryDragAndDropTarget(query: DragAndDropQueryData): DragAndDropQueryResponse {
         return dragAndDropManager.onQuery(query)
@@ -529,17 +522,45 @@ class GtkWindow internal constructor(
 
             is Event.WindowKeyboardEnter -> {
                 isFocused = true
-                updateNativeTextInputState()
+                // GTK text input is window-level; re-arm it when keyboard focus returns.
+                if (gtkTextInputSessionOwner.isTextInputSessionActive()) {
+                    gtkTextInputSessionOwner.currentContext?.let { nativeWindow.textInputEnable(it) }
+                }
                 inputStateTracker.updateStateAndSendEvents(event, density)
             }
 
             is Event.WindowKeyboardLeave -> {
                 isFocused = false
-                updateNativeTextInputState()
+                if (gtkTextInputSessionOwner.isTextInputSessionActive() &&
+                    gtkTextInputSessionOwner.hasPreeditString
+                ) {
+                    nativeWindow.textInputDisable()
+                }
                 inputStateTracker.updateStateAndSendEvents(event, density)
             }
 
-            is Event.MouseDown,
+            is Event.MouseDown -> {
+                // A mouse-down inside an active preedit must cancel composition and re-arm the IME.
+                if (gtkTextInputSessionOwner.isTextInputSessionActive() &&
+                    gtkTextInputSessionOwner.hasPreeditString
+                ) {
+                    gtkTextInputSessionOwner.currentContext?.let {
+                        nativeWindow.textInputDisable()
+                        nativeWindow.textInputEnable(it)
+                    }
+                }
+                inputStateTracker.updateStateAndSendEvents(event, density)
+            }
+
+            is Event.TextInput -> {
+                gtkTextInputSessionOwner.handleTextInputEvent(
+                    event.preeditStringData,
+                    event.commitStringData,
+                    event.deleteSurroundingTextData,
+                )
+                EventHandlerResult.Stop
+            }
+
             is Event.MouseUp,
             is Event.MouseMoved,
             is Event.MouseEntered,
@@ -549,11 +570,6 @@ class GtkWindow internal constructor(
             is Event.KeyUp,
             is Event.ModifiersChanged,
                 -> inputStateTracker.updateStateAndSendEvents(event, density)
-
-            is Event.TextInput -> {
-                handleTextInput(event)
-                EventHandlerResult.Stop
-            }
 
             is Event.WindowFrameTick -> {
                 if (isFrameRequested) {
@@ -613,109 +629,6 @@ class GtkWindow internal constructor(
         }
     }
 
-    private val textInputContext: TextInputContext = object : TextInputContext {
-        override fun handleKeyEvent(event: KeyEvent): Boolean {
-            val nativeEvent =
-                (event.nativeKeyEvent as? InternalKeyEvent)?.nativeEvent as? Event.KeyDown
-            val characters = nativeEvent?.characters?.takeIf { it.isNotEmpty() }
-            val session = currentTextInputSession ?: return false
-            return if (
-                event.type == KeyEventType.KeyDown &&
-                characters != null &&
-                !event.isMetaPressed &&
-                (!event.isCtrlPressed && !event.isAltPressed || event.isAltPressed && event.isCtrlPressed)
-            ) {
-                session.commitText(characters)
-                true
-            } else {
-                false
-            }
-        }
-    }
-
-    private fun scheduleNativeTextInputStateUpdate() {
-        if (application.isEventLoopThread()) {
-            updateNativeTextInputState()
-        } else {
-            application.onEventLoopAsync {
-                updateNativeTextInputState()
-            }
-        }
-    }
-
-    private fun updateNativeTextInputState() {
-        val session = currentTextInputSession
-        val shouldEnable = !isDisposed && session != null && isFocused
-        when {
-            shouldEnable && !nativeTextInputEnabled -> {
-                nativeWindow.textInputEnable(session.toNativeContext())
-                nativeTextInputEnabled = true
-            }
-
-            shouldEnable -> {
-                nativeWindow.textInputUpdate(session.toNativeContext())
-            }
-
-            nativeTextInputEnabled -> {
-                nativeWindow.textInputDisable()
-                nativeTextInputEnabled = false
-            }
-        }
-    }
-
-    private fun handleTextInput(event: Event.TextInput) {
-        val session = currentTextInputSession ?: return
-        val preeditStringData = event.preeditStringData
-        val composingText = preeditStringData?.text
-        if (!composingText.isNullOrEmpty()) {
-            val selection = preeditStringData.cursorBytePos
-                .takeIf { it >= 0 }
-                ?.let { TextRange(composingText.offset8to16(it)) }
-            session.setComposingText(composingText, selection)
-        } else {
-            session.finishComposingText()
-        }
-        event.commitStringData?.text
-            ?.takeIf(String::isNotEmpty)
-            ?.let(session::commitText)
-    }
-
-    private fun ComposeTextInputSession.toNativeContext(): GtkTextInputContext {
-        val focusedRect = focusedRectInRoot ?: Rect.Zero
-        val scale = density.density
-        return GtkTextInputContext(
-            hints = emptySet(),
-            contentPurpose = TextInputContentPurpose.Normal,
-            cursorRectangle = LogicalRect(
-                (focusedRect.left / scale).roundToInt(),
-                (focusedRect.top / scale).roundToInt(),
-                (focusedRect.width / scale).roundToInt(),
-                (focusedRect.height / scale).roundToInt(),
-            ),
-        )
-    }
-
-    private val platformTextInputInterceptor = PlatformTextInputInterceptor { request, _ ->
-        val session = ComposeTextInputSession(request, scene)
-        currentTextInputSession = session
-        scheduleNativeTextInputStateUpdate()
-        try {
-            suspendCancellableCoroutine<Nothing> { continuation ->
-                continuation.invokeOnCancellation {
-                    if (currentTextInputSession === session) {
-                        currentTextInputSession = null
-                    }
-                    scheduleNativeTextInputStateUpdate()
-                }
-            }
-        } finally {
-            if (currentTextInputSession === session) {
-                currentTextInputSession = null
-            }
-            scheduleNativeTextInputStateUpdate()
-        }
-    }
-
     @Composable
     override fun Content(onLayout: (LightweightWindowId) -> Unit) {
         // ComposeScene drives its own composition; nothing to host here.
@@ -743,6 +656,9 @@ class GtkWindow internal constructor(
             }
         },
         sendKeyEvent = { keyEvent ->
+            // IME commit is driven by the editor's own bubble key handler
+            // (TextInputSessionOwner.handleEventWithInputSession), so the window must not pre-empt
+            // here: doing so would swallow keys before onPreviewKeyEvent and the focus dispatch.
             onPreviewKeyEvent(keyEvent) ||
                 composeScene.sendKeyEvent(keyEvent) ||
                 onKeyEvent(keyEvent)
@@ -853,11 +769,9 @@ class GtkWindow internal constructor(
         composeScene.setContent {
             CompositionLocalProvider(
                 LocalSystemTheme provides systemTheme,
-                LocalTextInputContext provides textInputContext,
+                LocalTextInputSessionOwner provides gtkTextInputSessionOwner,
             ) {
-                InterceptPlatformTextInput(platformTextInputInterceptor) {
-                    contentState?.invoke(windowScope)
-                }
+                contentState?.invoke(windowScope)
             }
         }
     }
@@ -934,10 +848,3 @@ class GtkWindow internal constructor(
     }
 }
 
-private fun String.offset8to16(offset8: Int): Int {
-    val utf8Bytes = toByteArray(Charsets.UTF_8)
-    return utf8Bytes
-        .copyOfRange(0, offset8.coerceIn(0, utf8Bytes.size))
-        .decodeToString()
-        .length
-}

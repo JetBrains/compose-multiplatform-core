@@ -14,7 +14,7 @@ import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.LocalSystemTheme
 import androidx.compose.ui.SystemTheme
 import androidx.compose.ui.desktop.ClipboardItemsEntry
-import androidx.compose.ui.desktop.ComposeTextInputSession
+import androidx.compose.ui.desktop.LocalTextInputSessionOwner
 import androidx.compose.ui.desktop.InteractiveMoveInitiator
 import androidx.compose.ui.desktop.InteractiveResizeInitiator
 import androidx.compose.ui.desktop.KdtDragAndDropManager
@@ -55,6 +55,8 @@ import androidx.compose.ui.platform.InterceptPlatformTextInput
 import androidx.compose.ui.platform.LocalTextInputContext
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.PlatformDragAndDropManager
+import androidx.compose.ui.platform.PlatformTextInputMethodRequest
+import androidx.compose.ui.platform.PlatformTextInputSession
 import androidx.compose.ui.platform.PlatformTextInputInterceptor
 import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.platform.WindowInfo
@@ -94,9 +96,6 @@ import org.jetbrains.desktop.linux.LogicalSize
 import org.jetbrains.desktop.linux.RenderingMode
 import org.jetbrains.desktop.linux.RequestId
 import org.jetbrains.desktop.linux.StartDragAndDropParams
-import org.jetbrains.desktop.linux.TextInputContentHint
-import org.jetbrains.desktop.linux.TextInputContentPurpose
-import org.jetbrains.desktop.linux.TextInputContext as LinuxTextInputContext
 import org.jetbrains.desktop.linux.WindowCapabilities
 import org.jetbrains.desktop.linux.WindowDecorationMode
 import org.jetbrains.desktop.linux.WindowParams
@@ -146,14 +145,8 @@ class LinuxWindow internal constructor(
 
     private var titleField by mutableStateOf("")
     private var overriddenSystemTheme by mutableStateOf<SystemTheme?>(null)
-    private var textInputAvailable by mutableStateOf(false)
     private var windowCapabilities by mutableStateOf<WindowCapabilities?>(null)
 
-    @Volatile
-    private var currentTextInputSession: ComposeTextInputSession? = null
-
-    @Volatile
-    private var nativeTextInputEnabled = false
     private var incomingDragMimeTypes: List<String> = emptyList()
     private val incomingDragMimeData = linkedMapOf<String, ByteArray>()
 
@@ -374,6 +367,16 @@ class LinuxWindow internal constructor(
         setLifecycleState(Lifecycle.State.RESUMED)
     }
 
+    private val linuxTextInputSessionOwner = LinuxTextInputSessionOwner(
+        startInputMethod = { context, surroundingText ->
+            application.startTextInput(id, context, surroundingText)
+        },
+        stopInputMethod = { application.stopTextInput(id) },
+        onDataChanged = { context, surroundingText ->
+            application.updateTextInput(id, context, surroundingText)
+        },
+    )
+
     private val platformContext: PlatformContext = object : PlatformContext by PlatformContext.Empty() {
         override val windowInfo: WindowInfo
             get() = this@LinuxWindow.windowInfo
@@ -385,6 +388,8 @@ class LinuxWindow internal constructor(
         override val textToolbar = DefaultTextToolbar()
         override val dragAndDropManager: PlatformDragAndDropManager =
             KdtDragAndDropManager(this@LinuxWindow)
+
+        override fun textInputSessionOwner() = linuxTextInputSessionOwner
     }
 
     private val composeScene: ComposeScene = CanvasLayersComposeScene(
@@ -563,17 +568,6 @@ class LinuxWindow internal constructor(
             is Event.ModifiersChanged,
                 -> inputStateTracker.updateStateAndSendEvents(event, density)
 
-            is Event.TextInputAvailability -> {
-                textInputAvailable = event.available
-                updateNativeTextInputState()
-                EventHandlerResult.Stop
-            }
-
-            is Event.TextInput -> {
-                handleTextInput(event)
-                EventHandlerResult.Stop
-            }
-
             is Event.WindowDraw -> {
                 if (isDisposed) {
                     return EventHandlerResult.Continue
@@ -614,116 +608,25 @@ class LinuxWindow internal constructor(
         }
     }
 
-    private val textInputContext: TextInputContext = object : TextInputContext {
-        override fun handleKeyEvent(event: KeyEvent): Boolean {
-            val nativeEvent =
-                (event.nativeKeyEvent as? InternalKeyEvent)?.nativeEvent as? Event.KeyDown
-            val characters = nativeEvent?.characters?.takeIf { it.isNotEmpty() }
-            val session = currentTextInputSession ?: return false
-            return if (
-                event.type == KeyEventType.KeyDown &&
-                characters != null &&
-                !event.isMetaPressed &&
-                (!event.isCtrlPressed && !event.isAltPressed || event.isAltPressed && event.isCtrlPressed)
-            ) {
-                session.commitText(characters)
-                true
-            } else {
-                false
-            }
-        }
-    }
-
-    private fun scheduleNativeTextInputStateUpdate() {
-        if (application.nativeApplication.isEventLoopThread()) {
-            updateNativeTextInputState()
-        } else {
-            application.nativeApplication.runOnEventLoopAsync {
-                updateNativeTextInputState()
-            }
-        }
-    }
-
-    private fun updateNativeTextInputState() {
-        scene.withPreparedMainThread {
-            val session = currentTextInputSession
-            val shouldEnable = !isDisposed && session != null && textInputAvailable
-            when {
-                shouldEnable && !nativeTextInputEnabled -> {
-                    application.nativeApplication.textInputEnable(session.toNativeContext())
-                    nativeTextInputEnabled = true
-                }
-
-                shouldEnable -> {
-                    application.nativeApplication.textInputUpdate(session.toNativeContext())
-                }
-
-                nativeTextInputEnabled -> {
-                    application.nativeApplication.textInputDisable()
-                    nativeTextInputEnabled = false
-                }
-            }
-        }
-    }
-
-    private fun handleTextInput(event: Event.TextInput) {
-        val session = currentTextInputSession ?: return
-        scene.withPreparedMainThread {
-            val preeditStringData = event.preeditStringData
-            val composingText = preeditStringData?.text
-            if (!composingText.isNullOrEmpty()) {
-                val selection = preeditStringData.cursorBeginBytePos
-                    .takeIf { it >= 0 }
-                    ?.let { TextRange(composingText.offset8to16(it)) }
-                session.setComposingText(composingText, selection)
-            } else {
-                session.finishComposingText()
-            }
-            event.commitStringData?.text
-                ?.takeIf(String::isNotEmpty)
-                ?.let(session::commitText)
-        }
-    }
-
-    private fun ComposeTextInputSession.toNativeContext(): LinuxTextInputContext {
-        val value = value
-        val cursorOffset = value.selection.start.coerceIn(0, value.text.length)
-        val selectionOffset = value.selection.end.coerceIn(0, value.text.length)
-        val focusedRect = focusedRectInRoot ?: Rect.Zero
-        return LinuxTextInputContext(
-            surroundingText = value.text,
-            cursorCodepointOffset = value.text.codePointCount(0, cursorOffset).toUShort(),
-            selectionStartCodepointOffset = value.text.codePointCount(0, selectionOffset).toUShort(),
-            hints = buildSet {
-                if (!isSingleLine) {
-                    add(TextInputContentHint.Multiline)
-                }
-            },
-            contentPurpose = keyboardType.toTextInputContentPurpose(),
-            cursorRectangle = focusedRect.toLogicalRect(density),
-            changeCausedByInputMethod = false,
+    internal fun handleTextInput(event: Event.TextInput): EventHandlerResult {
+        linuxTextInputSessionOwner.handleTextInputEvent(
+            event.preeditStringData,
+            event.commitStringData,
+            event.deleteSurroundingTextData,
         )
+        return EventHandlerResult.Stop
     }
 
-    private val platformTextInputInterceptor = PlatformTextInputInterceptor { request, _ ->
-        val session = ComposeTextInputSession(request, scene)
-        currentTextInputSession = session
-        scheduleNativeTextInputStateUpdate()
-        try {
-            suspendCancellableCoroutine<Nothing> { continuation ->
-                continuation.invokeOnCancellation {
-                    if (currentTextInputSession === session) {
-                        currentTextInputSession = null
-                    }
-                    scheduleNativeTextInputStateUpdate()
-                }
-            }
-        } finally {
-            if (currentTextInputSession === session) {
-                currentTextInputSession = null
-            }
-            scheduleNativeTextInputStateUpdate()
-        }
+    internal fun hasPreeditString(): Boolean =
+        linuxTextInputSessionOwner.isTextInputSessionActive() &&
+            linuxTextInputSessionOwner.hasPreeditString
+
+    internal fun discardActivePreedit() {
+        linuxTextInputSessionOwner.handleTextInputEvent(
+            preeditStringData = null,
+            commitStringData = null,
+            deleteSurroundingTextData = null,
+        )
     }
 
     @Composable
@@ -753,6 +656,9 @@ class LinuxWindow internal constructor(
             }
         },
         sendKeyEvent = { keyEvent ->
+            // IME commit is driven by the editor's own bubble key handler
+            // (TextInputSessionOwner.handleEventWithInputSession), so the window must not pre-empt
+            // here: doing so would swallow keys before onPreviewKeyEvent and the focus dispatch.
             onPreviewKeyEvent(keyEvent) ||
                 composeScene.sendKeyEvent(keyEvent) ||
                 onKeyEvent(keyEvent)
@@ -881,11 +787,9 @@ class LinuxWindow internal constructor(
         composeScene.setContent {
             CompositionLocalProvider(
                 LocalSystemTheme provides systemTheme,
-                LocalTextInputContext provides textInputContext,
+                LocalTextInputSessionOwner provides linuxTextInputSessionOwner,
             ) {
-                InterceptPlatformTextInput(platformTextInputInterceptor) {
-                    contentState?.invoke(windowScope)
-                }
+                contentState?.invoke(windowScope)
             }
         }
     }
@@ -973,29 +877,6 @@ class LinuxWindow internal constructor(
                 surface.flushAndSubmit()
             }
         }
-    }
-}
-
-private fun String.offset8to16(offset8: Int): Int {
-    val utf8Bytes = toByteArray(Charsets.UTF_8)
-    return utf8Bytes
-        .copyOfRange(0, offset8.coerceIn(0, utf8Bytes.size))
-        .decodeToString()
-        .length
-}
-
-private fun KeyboardType.toTextInputContentPurpose(): TextInputContentPurpose {
-    return when (this) {
-        KeyboardType.Unspecified -> TextInputContentPurpose.Normal
-        KeyboardType.Text -> TextInputContentPurpose.Normal
-        KeyboardType.Uri -> TextInputContentPurpose.Url
-        KeyboardType.Email -> TextInputContentPurpose.Email
-        KeyboardType.Number -> TextInputContentPurpose.Digits
-        KeyboardType.Decimal -> TextInputContentPurpose.Number
-        KeyboardType.Phone -> TextInputContentPurpose.Phone
-        KeyboardType.Password -> TextInputContentPurpose.Password
-        KeyboardType.NumberPassword -> TextInputContentPurpose.Pin
-        else -> TextInputContentPurpose.Normal
     }
 }
 

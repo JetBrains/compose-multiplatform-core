@@ -23,9 +23,12 @@ import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.DpOffset
+import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.height
+import androidx.compose.ui.unit.width
 import kotlin.math.roundToInt
 import org.jetbrains.desktop.linux.DragAndDropAction
 import org.jetbrains.desktop.linux.LogicalPoint
@@ -73,6 +76,15 @@ internal fun Rect.toLogicalRect(density: Density): LogicalRect {
             height = height.toDp().value.roundToInt(),
         )
     }
+}
+
+internal fun DpRect.toLogicalRect(): LogicalRect {
+    return LogicalRect(
+        x = left.value.roundToInt(),
+        y = top.value.roundToInt(),
+        width = width.value.roundToInt(),
+        height = height.value.roundToInt(),
+    )
 }
 
 internal fun DpOffset.toPxOffset(density: Density): Offset = with(density) {

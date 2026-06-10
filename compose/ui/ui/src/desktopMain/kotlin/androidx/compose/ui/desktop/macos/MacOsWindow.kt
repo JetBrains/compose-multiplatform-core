@@ -32,6 +32,7 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.LocalSystemTheme
 import androidx.compose.ui.SystemTheme
+import androidx.compose.ui.desktop.LocalTextInputSessionOwner
 import androidx.compose.ui.desktop.draganddrop.DragAndDropImage
 import androidx.compose.ui.draganddrop.DragAndDropTransferData
 import androidx.compose.ui.geometry.Offset
@@ -64,7 +65,8 @@ import androidx.compose.ui.platform.LocalTextInputContext
 import androidx.compose.ui.platform.LocalTextToolbar
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.PlatformDragAndDropManager
-import androidx.compose.ui.platform.PlatformTextInputInterceptor
+import androidx.compose.ui.platform.PlatformTextInputMethodRequest
+import androidx.compose.ui.platform.PlatformTextInputSession
 import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.platform.WindowInfo
 import androidx.compose.ui.platform.DefaultArchitectureComponentsOwner
@@ -442,6 +444,9 @@ class MacOsWindow internal constructor(
         setLifecycleState(Lifecycle.State.RESUMED)
     }
 
+    private val macOsTextInputSessionOwner =
+        MacOsTextInputSessionOwner(nativeWindow, scene, density = { density })
+
     private val platformContext: PlatformContext = object : PlatformContext by PlatformContext.Empty() {
         override val windowInfo: WindowInfo
             get() = this@MacOsWindow.windowInfo
@@ -462,6 +467,8 @@ class MacOsWindow internal constructor(
             positionCalculator.localToScreen(calculatePositionInWindow(localPosition))
         override fun convertScreenToLocalPosition(positionOnScreen: Offset): Offset =
             calculateLocalPosition(positionCalculator.screenToLocal(positionOnScreen))
+
+        override fun textInputSessionOwner() = macOsTextInputSessionOwner
     }
 
     private val composeScene: ComposeScene = CanvasLayersComposeScene(
@@ -710,70 +717,6 @@ class MacOsWindow internal constructor(
         return with(d) { Offset(deltaX.toPx(), deltaY.toPx()) }
     }
 
-    private val textInputContext = object : TextInputContext {
-        override fun handleKeyEvent(event: KeyEvent): Boolean {
-            val nativeEvent = (event.nativeKeyEvent as? InternalKeyEvent)?.nativeEvent
-            val isSyntheticKeyEvent = nativeEvent.let {
-                it !is Event.KeyDown && it !is Event.KeyUp ||
-                    // macOS doesn't send native key events for modifier keys, so it must be
-                    // synthetic in this case
-                    event.key.isModifier
-            }
-            logger.debug {
-                "textInputContext.handleKeyEvent: key=${event.key}, type=${event.type}, " +
-                    "isSyntheticKeyEvent=$isSyntheticKeyEvent, " +
-                    "nativeEvent=${nativeEvent?.let { it::class.simpleName }}"
-            }
-            // We don't call through if we know that we're currently handling a synthetic key event.
-            // Otherwise, the underlying KDT code would erroneously send the latest actual
-            // event into the TextInputContext, potentially leading to duplicate insertions or otherwise
-            // unexpected behavior.
-            return if (isSyntheticKeyEvent) {
-                logger.debug { "  -> skipping (synthetic key event), returning false" }
-                false
-            } else {
-                currentTextInputClient?.armSilentConsumptionDetection()
-                val result = nativeWindow.textInputContext.handleCurrentEvent()
-                val consumed = result == EventHandlerResult.Stop
-                currentTextInputClient?.evaluateSilentConsumption(consumed)
-                logger.debug {
-                    "  -> nativeWindow.textInputContext.handleCurrentEvent() returned $result" +
-                        " (silentlyConsumedEvent=${currentTextInputClient?.silentlyConsumedEvent == true})"
-                }
-                consumed
-            }
-        }
-    }
-
-    private var currentTextInputClient: ComposeTextInputClient? = null
-
-    @OptIn(ExperimentalComposeUiApi::class)
-    private val platformTextInputInterceptor =
-        PlatformTextInputInterceptor { request, _ ->
-            logger.debug { "platformTextInputInterceptor: new text input session starting" }
-            logger.debug { "  discarding marked text and invalidating character coordinates" }
-            nativeWindow.textInputContext.discardMarkedText()
-            nativeWindow.textInputContext.invalidateCharacterCoordinates()
-            currentTextInputClient = ComposeTextInputClient(
-                request,
-                scene,
-                { density },
-                {
-                    nativeWindow.contentOrigin + it
-                },
-            ).also {
-                logger.debug { "  setting new ComposeTextInputClient on native window" }
-                nativeWindow.setTextInputClient(it)
-            }
-            suspendCancellableCoroutine { continuation ->
-                continuation.invokeOnCancellation {
-                    logger.debug { "platformTextInputInterceptor: text input session cancelled, clearing client" }
-                    currentTextInputClient = null
-                    nativeWindow.setTextInputClient(TextInputClient.Noop)
-                }
-            }
-        }
-
     @Composable
     @ApiStatus.Internal
     override fun Content(onLayout: (LightweightWindowId) -> Unit) {
@@ -880,77 +823,28 @@ class MacOsWindow internal constructor(
     private val inputStateTracker = InputStateTracker(
         inputModeManager = application.inputModeManager,
         sendPointerEvent = { eventType, position, scrollDelta, timeMillis, type, buttons, modifiers, nativeEvent, button ->
-            // The IME popups respond to the mouse event by committing/discarding composition and
-            // dismissing the popup, which is why we need to give it priority if it's active
-            val imeConsumed = if (
-                currentTextInputClient?.hasMarkedText() == true ||
-                currentTextInputClient?.silentlyConsumedEvent == true
-            ) {
-                logger.debug {
-                    "handleEvent: forwarding pointer event to IME " +
-                        "(hasMarkedText=${currentTextInputClient?.hasMarkedText() == true}, " +
-                        "silentlyConsumedEvent=${currentTextInputClient?.silentlyConsumedEvent == true})"
-                }
-                currentTextInputClient?.armSilentConsumptionDetection()
-                val result = nativeWindow.textInputContext.handleCurrentEvent()
-                currentTextInputClient?.evaluateSilentConsumption(result == EventHandlerResult.Stop)
-                logger.debug {
-                    "  IME result=$result" +
-                        " (silentlyConsumedEvent=${currentTextInputClient?.silentlyConsumedEvent == true})"
-                }
-                result == EventHandlerResult.Stop
-            } else {
-                false
-            }
-
-            if (imeConsumed) {
-                PointerEventResult(
-                    anyMovementConsumed = true,
-                    anyChangeConsumed = true,
-                    dispatchedToAPointerInputModifier = true,
+            scene.withPreparedMainThread {
+                composeScene.sendPointerEvent(
+                    eventType = eventType,
+                    position = position,
+                    scrollDelta = scrollDelta,
+                    timeMillis = timeMillis,
+                    type = type,
+                    buttons = buttons,
+                    keyboardModifiers = modifiers,
+                    nativeEvent = nativeEvent,
+                    button = button,
                 )
-            } else {
-                scene.withPreparedMainThread {
-                    composeScene.sendPointerEvent(
-                        eventType = eventType,
-                        position = position,
-                        scrollDelta = scrollDelta,
-                        timeMillis = timeMillis,
-                        type = type,
-                        buttons = buttons,
-                        keyboardModifiers = modifiers,
-                        nativeEvent = nativeEvent,
-                        button = button,
-                    )
-                }
             }
         },
         sendKeyEvent =
             { keyEvent ->
-                logger.debug {
-                    "sendKeyEvent: key=${keyEvent.key}, type=${keyEvent.type}, " +
-                        "hasMarkedText=${currentTextInputClient?.hasMarkedText() == true}, " +
-                        "silentlyConsumedEvent=${currentTextInputClient?.silentlyConsumedEvent == true}"
-                }
+                // Give the active IME session a chance to consume the event (marked text / IME
+                // navigation keys) before dispatching it to Compose.
+                val textInputConsumed =
+                    macOsTextInputSessionOwner.offerEventBeforeSendingToApplication(keyEvent)
 
-                val textInputContextConsumedEvent =
-                    if (
-                        currentTextInputClient?.hasMarkedText() == true ||
-                        (currentTextInputClient?.silentlyConsumedEvent == true &&
-                            keyEvent.type == KeyEventType.KeyDown)
-                    ) {
-                        val result = textInputContext.handleKeyEvent(keyEvent)
-                        logger.debug {
-                            "  textInputContextConsumedEvent=$result " +
-                                "(hasMarkedText=${currentTextInputClient?.hasMarkedText() == true}, " +
-                                "silentlyConsumedEvent=${currentTextInputClient?.silentlyConsumedEvent == true})"
-                        }
-                        result
-                    } else {
-                        false
-                    }
-
-                val finalResult = textInputContextConsumedEvent || scene.withPreparedMainThread {
+                val finalResult = textInputConsumed || scene.withPreparedMainThread {
                     onPreviewKeyEvent(keyEvent) ||
                         composeScene.sendKeyEvent(keyEvent) ||
                         onKeyEvent(keyEvent)
@@ -1088,12 +982,10 @@ class MacOsWindow internal constructor(
             CompositionLocalProvider(
                 LocalSystemTheme provides systemTheme,
                 LocalTextToolbar provides remember { DefaultTextToolbar() },
-                LocalTextInputContext provides textInputContext,
                 LocalWindow provides this,
+                LocalTextInputSessionOwner provides macOsTextInputSessionOwner,
             ) {
-                InterceptPlatformTextInput(platformTextInputInterceptor) {
-                    contentState.value?.invoke(windowScope)
-                }
+                contentState.value?.invoke(windowScope)
             }
         }
     }

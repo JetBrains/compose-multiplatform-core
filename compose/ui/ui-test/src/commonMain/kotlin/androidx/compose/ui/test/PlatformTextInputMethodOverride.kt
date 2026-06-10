@@ -19,6 +19,7 @@ package androidx.compose.ui.test
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.platform.InterceptPlatformTextInput
+import androidx.compose.ui.platform.PlatformTextInputMethodRequest
 import androidx.compose.ui.platform.PlatformTextInputSession
 
 /**
@@ -36,7 +37,7 @@ import androidx.compose.ui.platform.PlatformTextInputSession
 @ExperimentalTestApi
 @Composable
 fun PlatformTextInputMethodTestOverride(
-    sessionHandler: PlatformTextInputSession,
+    sessionHandler: PlatformTextInputSession<PlatformTextInputMethodRequest>,
     content: @Composable () -> Unit,
 ) {
     InterceptPlatformTextInput(

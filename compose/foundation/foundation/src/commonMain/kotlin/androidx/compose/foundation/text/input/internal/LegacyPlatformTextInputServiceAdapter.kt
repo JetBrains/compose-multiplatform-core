@@ -78,6 +78,6 @@ internal abstract class LegacyPlatformTextInputServiceAdapter : PlatformTextInpu
         val textFieldSelectionManager: TextFieldSelectionManager?
         val viewConfiguration: ViewConfiguration
 
-        fun launchTextInputSession(block: suspend PlatformTextInputSession.() -> Nothing): Job?
+        fun launchTextInputSession(block: suspend PlatformTextInputSession<*>.() -> Nothing): Job?
     }
 }

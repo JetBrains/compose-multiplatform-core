@@ -17,7 +17,9 @@
 package androidx.compose.ui.unit
 
 import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.NoriaOnly
 import androidx.compose.runtime.Stable
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.geometry.isSpecified
@@ -105,5 +107,13 @@ interface Density : FontScaling {
             DpSize(width.toDp(), height.toDp())
         } else {
             DpSize.Unspecified
+        }
+
+    @NoriaOnly
+    fun Offset.toDpOffset(): DpOffset =
+        if (isSpecified) {
+            DpOffset(x.toDp(), y.toDp())
+        } else {
+            DpOffset.Unspecified
         }
 }
