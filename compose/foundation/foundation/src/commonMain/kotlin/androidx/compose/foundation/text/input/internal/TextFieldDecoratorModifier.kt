@@ -77,6 +77,7 @@ import androidx.compose.ui.platform.LocalInputModeManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.LocalViewConfiguration
 import androidx.compose.ui.platform.LocalWindowInfo
+import androidx.compose.ui.platform.PlatformTextInputMethodRequest
 import androidx.compose.ui.platform.PlatformTextInputModifierNode
 import androidx.compose.ui.platform.PlatformTextInputSession
 import androidx.compose.ui.platform.SoftwareKeyboardController
@@ -886,7 +887,7 @@ internal class TextFieldDecoratorModifierNode(
 }
 
 /** Runs platform-specific text input logic. */
-internal expect suspend fun PlatformTextInputSession.platformSpecificTextInputSession(
+internal expect suspend fun PlatformTextInputSession<*>.platformSpecificTextInputSession(
     state: TransformedTextFieldState,
     layoutState: TextLayoutState,
     imeOptions: ImeOptions,

@@ -19,6 +19,7 @@ package androidx.compose.ui.node
 import androidx.annotation.RestrictTo
 import androidx.collection.IntObjectMap
 import androidx.compose.runtime.Applier
+import androidx.compose.runtime.NoriaOnly
 import androidx.compose.runtime.retain.RetainedValuesStore
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.autofill.AutofillManager
@@ -30,6 +31,7 @@ import androidx.compose.ui.graphics.GraphicsContext
 import androidx.compose.ui.graphics.layer.GraphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedback
 import androidx.compose.ui.input.InputModeManager
+import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.pointer.PointerIconService
 import androidx.compose.ui.input.pointer.PositionCalculator
 import androidx.compose.ui.layout.Placeable
@@ -357,8 +359,17 @@ internal interface Owner : PositionCalculator {
      * [kotlinx.coroutines.cancelAndJoin]).
      */
     suspend fun textInputSession(
-        session: suspend PlatformTextInputSessionScope.() -> Nothing
+        session: suspend PlatformTextInputSessionScope<*>.() -> Nothing
     ): Nothing
+
+    /**
+     * Should be used in tests to wait when editor is ready to hande typing
+     */
+    @NoriaOnly
+    fun isTextInputSessionActive(): Boolean
+
+    @NoriaOnly
+    fun handleEventWithInputSession(keyEvent: KeyEvent): Boolean
 
     /**
      * Tracks sensitive content on the screen to protect user privacy. Increment sensitive component

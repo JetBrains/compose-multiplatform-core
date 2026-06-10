@@ -454,7 +454,7 @@ internal class RootNodeOwner(
         private val textInputSessionMutex = SessionMutex<TextInputSession>()
         private inner class TextInputSession(
             coroutineScope: CoroutineScope,
-        ) : PlatformTextInputSessionScope, CoroutineScope by coroutineScope {
+        ) : PlatformTextInputSessionScope<PlatformTextInputMethodRequest>, CoroutineScope by coroutineScope {
             private val innerSessionMutex = SessionMutex<Nothing?>()
 
             @OptIn(InternalTextApi::class)
@@ -481,14 +481,32 @@ internal class RootNodeOwner(
             }
         }
 
+        @OptIn(InternalComposeUiApi::class)
         override suspend fun textInputSession(
-            session: suspend PlatformTextInputSessionScope.() -> Nothing
+            session: suspend PlatformTextInputSessionScope<*>.() -> Nothing
         ) : Nothing {
-            textInputSessionMutex.withSessionCancellingPrevious<Nothing>(
-                sessionInitializer = ::TextInputSession,
-                session = session
-            )
+            // Desktop windows provide a TextInputSessionOwner that creates the platform-typed session
+            // (PlatformTextInputSessionMacOs/Linux/Gtk) the editor's `when (this)` dispatch relies on.
+            // Other platforms (web/uikit) use the generic session that routes through
+            // PlatformContext.startInputMethod.
+            val owner = platformContext.textInputSessionOwner()
+            if (owner != null) {
+                owner.textInputSession(session)
+            } else {
+                textInputSessionMutex.withSessionCancellingPrevious<Nothing>(
+                    sessionInitializer = ::TextInputSession,
+                    session = session
+                )
+            }
         }
+
+        @OptIn(InternalComposeUiApi::class)
+        override fun isTextInputSessionActive(): Boolean =
+            platformContext.isTextInputSessionActive()
+
+        @OptIn(InternalComposeUiApi::class)
+        override fun handleEventWithInputSession(keyEvent: KeyEvent): Boolean =
+            platformContext.handleEventWithInputSession(keyEvent)
 
         override val dragAndDropManager = this@RootNodeOwner.dragAndDropOwner
         override val pointerIconService = PointerIconServiceImpl()

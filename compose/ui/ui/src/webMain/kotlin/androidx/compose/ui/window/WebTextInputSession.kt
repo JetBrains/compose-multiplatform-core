@@ -30,7 +30,7 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 internal class WebTextInputSession(
     coroutineScope: CoroutineScope,
     private val webTextInputService: WebTextInputService
-) : PlatformTextInputSessionScope, CoroutineScope by coroutineScope {
+) : PlatformTextInputSessionScope<PlatformTextInputMethodRequest>, CoroutineScope by coroutineScope {
 
     override suspend fun startInputMethod(
         request: PlatformTextInputMethodRequest

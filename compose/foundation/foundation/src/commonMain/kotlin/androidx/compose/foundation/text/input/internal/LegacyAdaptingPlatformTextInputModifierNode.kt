@@ -130,7 +130,7 @@ internal class LegacyAdaptingPlatformTextInputModifierNode(
     }
 
     override fun launchTextInputSession(
-        block: suspend PlatformTextInputSession.() -> Nothing
+        block: suspend PlatformTextInputSession<*>.() -> Nothing
     ): Job? {
         if (!isAttached) return null
         return coroutineScope.launch(start = CoroutineStart.UNDISPATCHED) {

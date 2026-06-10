@@ -15,6 +15,8 @@
  */
 package androidx.compose.ui.platform
 
+import androidx.compose.runtime.NoriaOnly
+import androidx.compose.ui.desktop.TextInputSessionOwner
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -28,6 +30,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.input.InputMode
 import androidx.compose.ui.input.InputModeManager
+import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.isClearFocusOnMouseDownEnabled
 import androidx.compose.ui.node.LayoutNode
@@ -189,6 +192,25 @@ interface PlatformContext {
      */
     val isClearFocusOnMouseDownEnabled: Boolean
         get() = ComposeUiFlags.isClearFocusOnMouseDownEnabled
+
+    /**
+     * The [TextInputSessionOwner] that owns the platform text input session for this context, or
+     * `null` if this platform routes text input through [startInputMethod] instead. Desktop windows
+     * return their own owner so that all platform IME flows through a single session abstraction.
+     */
+    @NoriaOnly
+    fun textInputSessionOwner(): TextInputSessionOwner? = null
+
+    /**
+     * Should be used in tests to wait when editor is ready to hande typing
+     */
+    @NoriaOnly
+    fun isTextInputSessionActive(): Boolean =
+        textInputSessionOwner()?.isTextInputSessionActive() ?: false
+
+    @NoriaOnly
+    fun handleEventWithInputSession(keyEvent: KeyEvent): Boolean =
+        textInputSessionOwner()?.handleEventWithInputSession(keyEvent) ?: false
 
     interface RootForTestListener {
         fun onRootForTestCreated(root: PlatformRootForTest)

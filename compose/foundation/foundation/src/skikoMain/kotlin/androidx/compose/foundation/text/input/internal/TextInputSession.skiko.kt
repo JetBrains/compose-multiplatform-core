@@ -44,7 +44,7 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
 
 @OptIn(ExperimentalComposeUiApi::class)
-internal actual suspend fun PlatformTextInputSession.platformSpecificTextInputSession(
+internal actual suspend fun PlatformTextInputSession<*>.platformSpecificTextInputSession(
     state: TransformedTextFieldState,
     layoutState: TextLayoutState,
     imeOptions: ImeOptions,
@@ -133,7 +133,10 @@ internal actual suspend fun PlatformTextInputSession.platformSpecificTextInputSe
             return layoutResult.getOffsetForPosition(local)
         }
 
-        startInputMethod(
+        // The session created for this platform may be typed to a platform-specific request
+        // (desktop: PlatformTextInputSessionMacOs/Linux/Gtk) or accept the generic request
+        // (web/uikit). The per-target [startPlatformTextInputMethod] dispatch adapts as needed.
+        startPlatformTextInputMethod(
             SkikoPlatformTextInputMethodRequest(
                 value = { state.untransformedText.toTextFieldValue() },
                 state = state::untransformedText.asTextEditorState(),
@@ -152,6 +155,15 @@ internal actual suspend fun PlatformTextInputSession.platformSpecificTextInputSe
         )
     }
 }
+
+/**
+ * Starts the platform text input method with the generic [request] produced by `BasicTextField`,
+ * adapting it to the active session's expected request type. Desktop adapts to the platform-specific
+ * request ([androidx.compose.ui.desktop] sessions); web/uikit forward the generic request directly.
+ */
+internal expect suspend fun PlatformTextInputSession<*>.startPlatformTextInputMethod(
+    request: PlatformTextInputMethodRequest
+): Nothing
 
 private fun TextFieldCharSequence.toTextFieldValue() =
     TextFieldValue(toString(), selection, composition)

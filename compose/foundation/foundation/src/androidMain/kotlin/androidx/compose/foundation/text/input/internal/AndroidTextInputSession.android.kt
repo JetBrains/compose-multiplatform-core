@@ -33,6 +33,7 @@ import androidx.compose.foundation.text.input.TextFieldCharSequence
 import androidx.compose.foundation.text.input.internal.HandwritingGestureApi34.performHandwritingGesture
 import androidx.compose.foundation.text.input.internal.HandwritingGestureApi34.previewHandwritingGesture
 import androidx.compose.runtime.withFrameMillis
+import androidx.compose.ui.platform.PlatformTextInputMethodRequest
 import androidx.compose.ui.platform.PlatformTextInputSession
 import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.text.input.ImeAction
@@ -46,7 +47,7 @@ import kotlinx.coroutines.launch
 @VisibleForTesting internal const val TIA_DEBUG = false
 private const val TIA_TAG = "AndroidTextInputSession"
 
-internal actual suspend fun PlatformTextInputSession.platformSpecificTextInputSession(
+internal actual suspend fun PlatformTextInputSession<*>.platformSpecificTextInputSession(
     state: TransformedTextFieldState,
     layoutState: TextLayoutState,
     imeOptions: ImeOptions,
@@ -72,7 +73,7 @@ internal actual suspend fun PlatformTextInputSession.platformSpecificTextInputSe
 }
 
 @VisibleForTesting
-internal suspend fun PlatformTextInputSession.platformSpecificTextInputSession(
+internal suspend fun PlatformTextInputSession<*>.platformSpecificTextInputSession(
     state: TransformedTextFieldState,
     layoutState: TextLayoutState,
     imeOptions: ImeOptions,
@@ -124,7 +125,9 @@ internal suspend fun PlatformTextInputSession.platformSpecificTextInputSession(
                 monitorScope = this,
             )
 
-        startInputMethod { outAttrs ->
+        @Suppress("UNCHECKED_CAST")
+        (this@platformSpecificTextInputSession as PlatformTextInputSession<PlatformTextInputMethodRequest>)
+            .startInputMethod { outAttrs ->
             logDebug { "createInputConnection(value=\"${state.visualText}\")" }
 
             val imeEditCommandScope = DefaultImeEditCommandScope(state)

@@ -45,7 +45,7 @@ import kotlinx.coroutines.flow.collectLatest
 interface PlatformTextInputModifierNode : DelegatableNode
 
 /** Receiver type for [establishTextInputSession]. */
-expect interface PlatformTextInputSession {
+expect interface PlatformTextInputSession<in T : PlatformTextInputMethodRequest> {
     /**
      * Starts the text input session and suspends until it is closed.
      *
@@ -58,7 +58,7 @@ expect interface PlatformTextInputSession {
      * @param request The platform-specific [PlatformTextInputMethodRequest] that will be used to
      *   initiate the session.
      */
-    suspend fun startInputMethod(request: PlatformTextInputMethodRequest): Nothing
+    suspend fun startInputMethod(request: T): Nothing
 }
 
 /**
@@ -68,7 +68,7 @@ expect interface PlatformTextInputSession {
  * suspend functions with a [PlatformTextInputSession] receiver. If they need a [CoroutineScope]
  * they should call the [kotlinx.coroutines.coroutineScope] function.
  */
-interface PlatformTextInputSessionScope : PlatformTextInputSession, CoroutineScope
+interface PlatformTextInputSessionScope<in T: PlatformTextInputMethodRequest> : PlatformTextInputSession<T>, CoroutineScope
 
 /** Single-function interface passed to [InterceptPlatformTextInput]. */
 @ExperimentalComposeUiApi
@@ -93,7 +93,7 @@ fun interface PlatformTextInputInterceptor {
      */
     suspend fun interceptStartInputMethod(
         request: PlatformTextInputMethodRequest,
-        nextHandler: PlatformTextInputSession,
+        nextHandler: PlatformTextInputSession<*>,
     ): Nothing
 }
 
@@ -128,7 +128,7 @@ fun interface PlatformTextInputInterceptor {
  *   with the input method.
  */
 suspend fun PlatformTextInputModifierNode.establishTextInputSession(
-    block: suspend PlatformTextInputSessionScope.() -> Nothing
+    block: suspend PlatformTextInputSessionScope<*>.() -> Nothing
 ): Nothing {
     require(node.isAttached) { "establishTextInputSession called from an unattached node" }
     val owner = requireOwner()
@@ -178,7 +178,7 @@ private val LocalChainedPlatformTextInputInterceptor =
 /** Establishes a new text input session, optionally intercepted by [chainedInterceptor]. */
 private suspend fun Owner.interceptedTextInputSession(
     chainedInterceptor: ChainedPlatformTextInputInterceptor?,
-    session: suspend PlatformTextInputSessionScope.() -> Nothing,
+    session: suspend PlatformTextInputSessionScope<*>.() -> Nothing,
 ): Nothing {
     if (chainedInterceptor == null) {
         textInputSession(session)
@@ -214,15 +214,22 @@ private class ChainedPlatformTextInputInterceptor(
     @OptIn(InternalComposeUiApi::class)
     suspend fun textInputSession(
         owner: Owner,
-        session: suspend PlatformTextInputSessionScope.() -> Nothing,
+        session: suspend PlatformTextInputSessionScope<*>.() -> Nothing,
     ): Nothing {
         owner.interceptedTextInputSession(parent) {
             val parentSession = this
+            val parentScope: CoroutineScope = parentSession
+            // The upstream session accepts whatever request its platform produces. The interceptor
+            // chain operates on the generic [PlatformTextInputMethodRequest], so we forward to it
+            // through the contravariant supertype.
+            @Suppress("UNCHECKED_CAST")
             val inputMethodMutex = SessionMutex<Unit>()
 
             // Impl by delegation for platform-specific stuff.
             val scope =
-                object : PlatformTextInputSessionScope by parentSession {
+                object :
+                    PlatformTextInputSessionScope<PlatformTextInputMethodRequest>,
+                    CoroutineScope by parentScope {
                     override suspend fun startInputMethod(
                         request: PlatformTextInputMethodRequest
                     ): Nothing {

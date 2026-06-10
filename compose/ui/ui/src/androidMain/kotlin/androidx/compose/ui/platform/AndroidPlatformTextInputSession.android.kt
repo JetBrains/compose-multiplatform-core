@@ -56,7 +56,7 @@ internal class AndroidPlatformTextInputSession(
     override val view: View,
     private val textInputService: TextInputService,
     private val coroutineScope: CoroutineScope,
-) : PlatformTextInputSessionScope, CoroutineScope by coroutineScope {
+) : PlatformTextInputSessionScope<PlatformTextInputMethodRequest>, CoroutineScope by coroutineScope {
     /** Coordinates between calls to [startInputMethod]. */
     private val methodSessionMutex = SessionMutex<InputMethodSession>()
 

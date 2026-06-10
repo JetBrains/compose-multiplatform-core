@@ -64,7 +64,10 @@ internal actual fun createLegacyPlatformTextInputServiceAdapter():
             val node = textInputModifierNode ?: return
 
             job = node.launchTextInputSession {
-                startInputMethod(
+                // The legacy text field produces the generic request; the per-target dispatch adapts it
+                // to the active session's platform request (desktop sessions are typed). See
+                // [startPlatformTextInputMethod].
+                startPlatformTextInputMethod(
                     makeRequest(
                         imeOptions = imeOptions,
                         onEditCommand = onEditCommand,

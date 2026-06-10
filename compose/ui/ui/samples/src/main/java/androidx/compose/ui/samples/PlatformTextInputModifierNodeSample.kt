@@ -66,7 +66,9 @@ fun platformTextInputModifierNodeSample() {
                             // Call out to a platform-specific expect/actual function to create the
                             // platform-specific request.
                             val request: PlatformTextInputMethodRequest = createInputRequest()
-                            startInputMethod(request)
+                            @Suppress("UNCHECKED_CAST")
+                            (this as PlatformTextInputSession<PlatformTextInputMethodRequest>)
+                                .startInputMethod(request)
                         }
                     }
                 } else {
@@ -75,7 +77,7 @@ fun platformTextInputModifierNodeSample() {
         }
 
         // This would probably be an expect/actual function.
-        private fun PlatformTextInputSession.createInputRequest(): PlatformTextInputMethodRequest {
+        private fun PlatformTextInputSession<*>.createInputRequest(): PlatformTextInputMethodRequest {
             TODO("Create platform-specific request")
         }
     }
