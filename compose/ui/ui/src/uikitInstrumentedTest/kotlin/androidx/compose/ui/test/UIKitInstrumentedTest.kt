@@ -107,6 +107,8 @@ import platform.darwin.NSObject
 import platform.darwin.dispatch_async
 import platform.darwin.dispatch_get_main_queue
 
+internal typealias UIKitInstrumentedTestBlock = UIKitInstrumentedTest.() -> Unit
+
 /**
  * Sets up the test environment for iOS instrumented tests, runs the given [test][testBlock] against
  * UIView- and UIViewController-based Compose Container.
@@ -115,7 +117,12 @@ import platform.darwin.dispatch_get_main_queue
  * assertions on it.
  * @param [testBlock] The test function.
  */
-internal fun runUIKitInstrumentedTest(testBlock: UIKitInstrumentedTest.() -> Unit) {
+internal fun runUIKitInstrumentedTest(testBlock: UIKitInstrumentedTestBlock) {
+    runUIKitInstrumentedTestInHostingView(testBlock)
+    runUIKitInstrumentedTestInHostingViewController(testBlock)
+}
+
+internal fun runUIKitInstrumentedTestInHostingView(testBlock: UIKitInstrumentedTestBlock) {
     println("Debug: Running test with ComposeHostingView")
     with(UIKitInstrumentedTest(useHostingView = true)) {
         try {
@@ -124,7 +131,9 @@ internal fun runUIKitInstrumentedTest(testBlock: UIKitInstrumentedTest.() -> Uni
             tearDown()
         }
     }
+}
 
+internal fun runUIKitInstrumentedTestInHostingViewController(testBlock: UIKitInstrumentedTestBlock) {
     println("Debug: Running test with ComposeHostingViewController")
     with(UIKitInstrumentedTest(useHostingView = false)) {
         try {
@@ -187,7 +196,7 @@ internal fun <T> runUIKitInstrumentedTest(
 internal fun runUIKitInstrumentedTest(
     ignoreIf: Boolean,
     ignoreNotes: String,
-    testBlock: UIKitInstrumentedTest.() -> Unit
+    testBlock: UIKitInstrumentedTestBlock
 ) {
     if (ignoreIf) {
         println("Debug: Ignored test: $ignoreNotes")
@@ -208,7 +217,7 @@ internal fun runUIKitInstrumentedTest(
  */
 @OptIn(ExperimentalForeignApi::class)
 internal class UIKitInstrumentedTest(
-    private val useHostingView: Boolean
+    val useHostingView: Boolean
 ) {
     companion object {
         fun delay(timeoutMillis: Long) {
@@ -283,35 +292,60 @@ internal class UIKitInstrumentedTest(
         AccessibilityNotification.onNotificationPostedForTests = {
             accessibilityNotifications.add(it)
         }
-        val innerConfigure: ComposeContainerConfiguration.() -> Unit = {
-            enforceStrictPlistSanityCheck = false
-            configure()
-        }
 
-        val rootViewController: UIViewController = if (useHostingView) {
-            hostingView = ComposeHostingView(
-                configuration = ComposeUIViewConfiguration().apply(innerConfigure),
-                content = content,
-                coroutineContext = coroutineContext
-            )
-            UIViewController().also {
-                it.view.embedSubview(hostingView!!)
-            }
-        } else {
-            ComposeHostingViewController(
-                configuration = ComposeUIViewControllerConfiguration().apply(innerConfigure),
-                content = content,
-                coroutineContext = coroutineContext
-            ).also {
-                hostingViewController = it
-            }
-        }
+        appDelegate.setUpWindow(
+            createRootViewController(configure, content)
+        )
 
-        appDelegate.setUpWindow(rootViewController)
         waitForIdle()
 
         if (appDelegate.requestInterfaceOrientationChangeIfNeeded(interfaceOrientation)) {
             delay(700)
+        }
+    }
+
+    fun createRootViewController(
+        configure: ComposeContainerConfiguration.() -> Unit = {},
+        content: @Composable () -> Unit
+    ): UIViewController = if (useHostingView) {
+        UIViewController().also {
+            it.view.embedSubview(createHostingView(configure, content))
+        }
+    } else {
+        createHostingViewController(configure, content)
+    }
+
+    fun createHostingView(
+        configure: ComposeUIViewConfiguration.() -> Unit = {},
+        content: @Composable () -> Unit
+    ): ComposeHostingView {
+        val configuration = ComposeUIViewConfiguration()
+            .apply({ enforceStrictPlistSanityCheck = false })
+            .apply(configure)
+
+        return ComposeHostingView(
+            configuration = configuration,
+            content = content,
+            coroutineContext = coroutineContext
+        ).also {
+            hostingView = it
+        }
+    }
+
+    fun createHostingViewController(
+        configure: ComposeUIViewControllerConfiguration.() -> Unit = {},
+        content: @Composable () -> Unit
+    ): ComposeHostingViewController {
+        val configuration = ComposeUIViewControllerConfiguration()
+            .apply({ enforceStrictPlistSanityCheck = false })
+            .apply(configure)
+
+        return ComposeHostingViewController(
+            configuration = configuration,
+            content = content,
+            coroutineContext = coroutineContext
+        ).also {
+            this.hostingViewController = it
         }
     }
 
