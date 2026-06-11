@@ -230,11 +230,11 @@ public final class AppSearchSchema extends AbstractSafeParcelable {
     @Override
     @OptIn(markerClass = ExperimentalAppSearchApi.class)
     public int hashCode() {
-        return ObjectsCompat.hash(
-            getSchemaType(),
-            getProperties(),
-            getParentTypes(),
-            getDescription());
+        int result = mSchemaType.hashCode();
+        result = 31 * result + mPropertyConfigParcels.hashCode();
+        result = 31 * result + mParentTypes.hashCode();
+        result = 31 * result + mDescription.hashCode();
+        return result;
     }
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
@@ -1947,7 +1947,6 @@ public final class AppSearchSchema extends AbstractSafeParcelable {
     @RequiresFeature(
             enforcement = "androidx.appsearch.app.Features#isFeatureSupported",
             name = Features.SCHEMA_EMBEDDING_PROPERTY_CONFIG)
-    @FlaggedApi(Flags.FLAG_ENABLE_SCHEMA_EMBEDDING_PROPERTY_CONFIG)
     public static final class EmbeddingPropertyConfig extends PropertyConfig {
         /**
          * Encapsulates the configurations on how AppSearch should query/index these embedding
@@ -1957,10 +1956,12 @@ public final class AppSearchSchema extends AbstractSafeParcelable {
          */
         @IntDef(value = {
                 INDEXING_TYPE_NONE,
-                INDEXING_TYPE_SIMILARITY
+                INDEXING_TYPE_SIMILARITY,
+                INDEXING_TYPE_APPROXIMATE_NEAREST_NEIGHBOR
         })
         @RestrictTo(RestrictTo.Scope.LIBRARY)
         @Retention(RetentionPolicy.SOURCE)
+        @OptIn(markerClass = ExperimentalAppSearchApi.class)
         public @interface IndexingType {
         }
 
@@ -1974,6 +1975,22 @@ public final class AppSearchSchema extends AbstractSafeParcelable {
          * of embedding vectors within the index.
          */
         public static final int INDEXING_TYPE_SIMILARITY = 1;
+
+        /**
+         * Embedding vectors in this property will be indexed for Approximate Nearest Neighbor
+         * (ANN) search.
+         *
+         * <p>The index maintains clusters of embedding vectors to offer faster search latency
+         * than a full linear scan, but does not guarantee 100% recall. This allows tuning the
+         * trade-off between search latency and recall at search time by configuring the number
+         * of clusters to search via {@link SearchSpec.Builder#setEmbeddingQueryProbeCount(int)}.
+         */
+        @RequiresFeature(
+                enforcement = "androidx.appsearch.app.Features#isFeatureSupported",
+                name = Features.SCHEMA_EMBEDDING_APPROXIMATE_NEAREST_NEIGHBOR)
+        @FlaggedApi(Flags.FLAG_ENABLE_EMBEDDING_APPROXIMATE_NEAREST_NEIGHBOR)
+        @ExperimentalAppSearchApi
+        public static final int INDEXING_TYPE_APPROXIMATE_NEAREST_NEIGHBOR = 2;
 
         /**
          * Indicates whether the vector contents of this property should be quantized.
@@ -2020,7 +2037,6 @@ public final class AppSearchSchema extends AbstractSafeParcelable {
          */
         @EmbeddingPropertyConfig.QuantizationType
         @ExperimentalAppSearchApi
-        @FlaggedApi(Flags.FLAG_ENABLE_SCHEMA_EMBEDDING_QUANTIZATION)
         public int getQuantizationType() {
             PropertyConfigParcel.EmbeddingIndexingConfigParcel indexingConfigParcel =
                     mPropertyConfigParcel.getEmbeddingIndexingConfigParcel();
@@ -2031,7 +2047,6 @@ public final class AppSearchSchema extends AbstractSafeParcelable {
         }
 
         /** Builder for {@link EmbeddingPropertyConfig}. */
-        @FlaggedApi(Flags.FLAG_ENABLE_SCHEMA_EMBEDDING_PROPERTY_CONFIG)
         @OptIn(markerClass = ExperimentalAppSearchApi.class)
         public static final class Builder {
             private final String mPropertyName;
@@ -2094,7 +2109,8 @@ public final class AppSearchSchema extends AbstractSafeParcelable {
             public @NonNull EmbeddingPropertyConfig.Builder setIndexingType(
                     @EmbeddingPropertyConfig.IndexingType int indexingType) {
                 Preconditions.checkArgumentInRange(
-                        indexingType, INDEXING_TYPE_NONE, INDEXING_TYPE_SIMILARITY,
+                        indexingType, INDEXING_TYPE_NONE,
+                        INDEXING_TYPE_APPROXIMATE_NEAREST_NEIGHBOR,
                         "indexingType");
                 mIndexingType = indexingType;
                 return this;
@@ -2115,7 +2131,6 @@ public final class AppSearchSchema extends AbstractSafeParcelable {
             @RequiresFeature(
                     enforcement = "androidx.appsearch.app.Features#isFeatureSupported",
                     name = Features.SCHEMA_EMBEDDING_QUANTIZATION)
-            @FlaggedApi(Flags.FLAG_ENABLE_SCHEMA_EMBEDDING_QUANTIZATION)
             @CanIgnoreReturnValue
             public @NonNull EmbeddingPropertyConfig.Builder setQuantizationType(
                     @EmbeddingPropertyConfig.QuantizationType int quantizationType) {
@@ -2145,14 +2160,12 @@ public final class AppSearchSchema extends AbstractSafeParcelable {
     @RequiresFeature(
             enforcement = "androidx.appsearch.app.Features#isFeatureSupported",
             name = Features.SCHEMA_BLOB_HANDLE)
-    @FlaggedApi(Flags.FLAG_ENABLE_BLOB_STORE)
     public static final class BlobHandlePropertyConfig extends PropertyConfig {
         BlobHandlePropertyConfig(@NonNull PropertyConfigParcel propertyConfigParcel) {
             super(propertyConfigParcel);
         }
 
         /** Builder for {@link BlobHandlePropertyConfig}. */
-        @FlaggedApi(Flags.FLAG_ENABLE_BLOB_STORE)
         public static final class Builder {
             private final String mPropertyName;
             private String mDescription = "";

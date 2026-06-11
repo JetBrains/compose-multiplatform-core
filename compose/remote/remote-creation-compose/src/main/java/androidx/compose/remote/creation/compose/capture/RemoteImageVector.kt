@@ -26,6 +26,7 @@ import androidx.compose.remote.creation.compose.vector.RemotePathNode
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathFillType
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
@@ -160,7 +161,6 @@ internal constructor(
          *
          * @return This ImageVector.Builder instance as a convenience for chaining calls
          */
-        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         internal fun clearGroup(): Builder {
             ensureNotConsumed()
             val popped = nodes.pop()

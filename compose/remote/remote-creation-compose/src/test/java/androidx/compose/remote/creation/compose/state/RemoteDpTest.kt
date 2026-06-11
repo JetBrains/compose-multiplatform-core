@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -117,6 +118,40 @@ class RemoteDpTest {
     }
 
     @Test
+    fun toRemoteDp_hasDifferentFloatValueAsOriginalRemoteFloat() {
+        val pxValue = 20f
+        val density = 2f
+
+        val (resultPxId, resultDpId) =
+            remoteComposeTestRule.initialise {
+                val remoteFloatPx = pxValue.rf
+                val remoteFloatDp = remoteFloatPx.toRemoteDp()
+
+                val resultPxId = remoteFloatPx.getIdForCreationState(it)
+                val resultDpId = remoteFloatDp.value.getIdForCreationState(it)
+                Pair(resultPxId, resultDpId)
+            }
+
+        assertThat(context.getFloat(resultPxId)).isEqualTo(pxValue)
+        assertThat(context.getFloat(resultDpId)).isEqualTo(pxValue / density)
+    }
+
+    @Ignore("Fails because toRemoteDp creates non-constant expression")
+    @Test
+    fun toRemoteDp_resolvesAsConstant_whenValueAndDensityAreConstants() {
+        val pxValue = 20f
+
+        val resultDpId =
+            remoteComposeTestRule.initialise {
+                val remoteFloatPx = pxValue.rf
+                val remoteFloatDp = remoteFloatPx.toRemoteDp()
+                with(it) { remoteFloatDp.floatId }
+            }
+
+        assertThat(resultDpId).isEqualTo(pxValue)
+    }
+
+    @Test
     fun toPx_remoteFloatHasDifferentIdFromOriginal() {
         val floatValue = 10.5f
 
@@ -166,5 +201,24 @@ class RemoteDpTest {
         val dp2 = 10.rdp
         assertThat(dp1.cacheKey).isNotNull()
         assertThat(dp1.cacheKey).isEqualTo(dp2.cacheKey)
+    }
+
+    @Test
+    fun toDebugString_constant() {
+        val dp = 10.5f.rdp
+        assertThat(dp.toDebugString()).isEqualTo("10.5.dp")
+    }
+
+    @Test
+    fun toDebugString_toDp() {
+        val dpExpr = RemoteFloat.createNamedRemoteFloat("pxVal", 0f).toRemoteDp()
+        assertThat(dpExpr.toDebugString()).isEqualTo("user:pxVal.toDp()")
+    }
+
+    @Test
+    fun toDebugString_contextVariable() {
+        val continuousSecFloat = RemoteFloat(RemoteContext.FLOAT_CONTINUOUS_SEC)
+        val dpExpr = continuousSecFloat.toRemoteDp()
+        assertThat(dpExpr.toDebugString()).isEqualTo("context:continuous_sec.toDp()")
     }
 }

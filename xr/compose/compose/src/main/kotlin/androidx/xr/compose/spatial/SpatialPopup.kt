@@ -30,7 +30,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.RememberObserver
 import androidx.compose.runtime.SideEffect
-import androidx.compose.runtime.currentCompositeKeyHash
+import androidx.compose.runtime.currentCompositeKeyHashCode
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.movableContentOf
 import androidx.compose.runtime.mutableStateOf
@@ -72,6 +72,7 @@ import androidx.xr.compose.unit.IntVolumeSize
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.scenecore.PanelEntity
+import androidx.xr.scenecore.scene
 
 /**
  * A composable that creates a panel in 3D space to hoist Popup based composables.
@@ -183,9 +184,7 @@ private fun LayoutSpatialPopup(
     val transition = updateTransition(targetState = elevation, label = "restingLevelTransition")
     val context = LocalContext.current
     val compositionContext = rememberCompositionContext()
-    // TODO(b/474652577): Update from deprecated currentCompositeKey to currentCompositeKeyCode
-    //  once we update JXR Compose to Compile SDK 35
-    @Suppress("DEPRECATION") val localId = currentCompositeKeyHash
+    val localId = currentCompositeKeyHashCode
 
     BackHandler(enabled = properties.dismissOnBackPress) { onDismissRequest?.invoke() }
 
@@ -257,7 +256,7 @@ private val EmptyContent: @Composable () -> Unit = {}
  *   [PopupPositionProvider], anchor bounds, and Z-depth transition.
  */
 private class SpatialPopupRenderer(
-    private val localId: Int,
+    private val localId: Long,
     private val context: Context,
     private val parentView: View,
     private val compositionContext: CompositionContext,
@@ -294,6 +293,7 @@ private class SpatialPopupRenderer(
                         view = view,
                         pixelDimensions = IntSize2d(IntSize.Zero.width, IntSize.Zero.height),
                         name = "ElevatedPanel:${view.id}",
+                        parent = session.scene.activitySpace,
                     )
                 )
                 .apply { view.setTag(R.id.compose_xr_local_view_entity, this) }
@@ -357,6 +357,8 @@ private class SpatialPopupRenderer(
 
     override fun onForgotten() {
         panelEntity?.dispose()
+        panelEntity = null
+        view?.setContent {}
         view?.disposeComposition()
     }
 

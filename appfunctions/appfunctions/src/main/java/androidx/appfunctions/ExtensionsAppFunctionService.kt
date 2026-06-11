@@ -23,13 +23,17 @@ import androidx.annotation.CallSuper
 import androidx.annotation.MainThread
 import androidx.annotation.RequiresApi
 import androidx.annotation.RestrictTo
+import androidx.appfunctions.internal.AppFunctionInventoryProvider
 import androidx.appfunctions.internal.AppFunctionMetadataUtils.getAppFunctionMetadata
 import androidx.appfunctions.internal.Dispatchers
 import com.android.extensions.appfunctions.AppFunctionException as ExtensionAppFunctionException
 import com.android.extensions.appfunctions.AppFunctionService
 import com.android.extensions.appfunctions.ExecuteAppFunctionRequest as ExtensionExecuteAppFunctionRequest
 import com.android.extensions.appfunctions.ExecuteAppFunctionResponse as ExtensionExecuteAppFunctionResponse
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -55,8 +59,10 @@ import kotlinx.coroutines.withContext
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
-public abstract class ExtensionsAppFunctionService : AppFunctionService() {
-    private val workerCoroutineScope = CoroutineScope(Dispatchers.Worker)
+public abstract class ExtensionsAppFunctionService :
+    AppFunctionService(), AppFunctionInventoryProvider {
+    private lateinit var workerExecutor: ExecutorService
+    private lateinit var workerCoroutineScope: CoroutineScope
 
     /**
      * Implements [AppFunctionService.onExecuteFunction] and delegates the execution to
@@ -85,6 +91,7 @@ public abstract class ExtensionsAppFunctionService : AppFunctionService() {
                         val appFunctionMetadata =
                             getAppFunctionMetadata(
                                 this@ExtensionsAppFunctionService,
+                                resolveInventory(),
                                 request.functionIdentifier,
                             )
                                 ?: throw AppFunctionFunctionNotFoundException(
@@ -152,10 +159,27 @@ public abstract class ExtensionsAppFunctionService : AppFunctionService() {
      * reported as [androidx.appfunctions.AppFunctionAppUnknownException].
      *
      * ### Cancellation
+     *
      * The agent app can cancel the execution of an app function at any time. When this happens, the
-     * coroutine executing this `executeFunction` will be cancelled. Implementations should handle
-     * the [kotlinx.coroutines.CancellationException] appropriately, for example, by ceasing any
-     * ongoing work and releasing resources.
+     * coroutine executing this `executeFunction` will be canceled. Therefore, the implementation is
+     * recommended to handle coroutine cancellation gradefully.
+     *
+     * For example:
+     * ```kotlin
+     * override suspend fun executeFunction(
+     *     request: ExecuteAppFunctionRequest
+     * ): ExecuteAppFunctionResponse {
+     *     return withContext(backgroundDispatcher) {
+     *         // Perform CPU-intensive work cooperatively
+     *         val data = request.functionParameters.getStringList("myData") ?: emptyList()
+     *         val results = mutableListOf<String>()
+     *         for (item in data) {
+     *             ensureActive()
+     *             // Process item...
+     *         }
+     *         ExecuteAppFunctionResponse.Success(AppFunctionData.EMPTY)
+     *     }
+     * }
      *
      * @param request The function execution request.
      */
@@ -165,13 +189,25 @@ public abstract class ExtensionsAppFunctionService : AppFunctionService() {
     ): ExecuteAppFunctionResponse
 
     /**
+     * Implementing class can override this method to perform setup but should always call the
+     * superclass implementation.
+     */
+    @CallSuper
+    override fun onCreate() {
+        super.onCreate()
+        workerExecutor = Executors.newSingleThreadExecutor()
+        workerCoroutineScope = CoroutineScope(workerExecutor.asCoroutineDispatcher())
+    }
+
+    /**
      * Implementing class can override this method to perform cleanup but should always call the
      * superclass implementation.
      */
     @CallSuper
     override fun onDestroy() {
-        super.onDestroy()
         workerCoroutineScope.cancel()
+        workerExecutor.shutdown()
+        super.onDestroy()
     }
 
     internal companion object {

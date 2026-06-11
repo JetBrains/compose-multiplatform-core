@@ -64,13 +64,13 @@ import androidx.xr.compose.subspace.layout.sizeIn
 import androidx.xr.compose.subspace.layout.width
 import androidx.xr.compose.subspace.semantics.testTag
 import androidx.xr.compose.testing.SubspaceTestingActivity
+import androidx.xr.compose.testing.XrExtensionsProvider
 import androidx.xr.compose.testing.assertHeightIsEqualTo
 import androidx.xr.compose.testing.assertWidthIsEqualTo
 import androidx.xr.compose.testing.onSubspaceNodeWithTag
 import androidx.xr.compose.testing.session
 import androidx.xr.compose.unit.Meter.Companion.meters
 import androidx.xr.scenecore.PanelEntity
-import androidx.xr.scenecore.runtime.extensions.XrExtensionsProvider
 import androidx.xr.scenecore.scene
 import com.android.extensions.xr.ShadowXrExtensions
 import com.android.extensions.xr.space.ShadowActivityPanel
@@ -488,7 +488,7 @@ class SpatialPanelTest {
         // instead of being launched.
         val launchIntent =
             ShadowActivityPanel.extract(
-                    ShadowXrExtensions.extract(checkNotNull(XrExtensionsProvider.getXrExtensions()))
+                    ShadowXrExtensions.extract(XrExtensionsProvider.getXrExtensions())
                         .getActivityPanelForHost(composeTestRule.activity)
                 )
                 .launchIntent
@@ -513,7 +513,7 @@ class SpatialPanelTest {
                             shape = SpatialRoundedCornerShape(CornerSize(50)),
                         )
                         if (showDialog.value) {
-                            @Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/446706254
+                            @Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/481422057
                             SpatialDialog(onDismissRequest = { showDialog.value = false }) {
                                 Text("Spatial Dialog")
                             }
@@ -556,7 +556,7 @@ class SpatialPanelTest {
                             shape = SpatialRoundedCornerShape(CornerSize(50)),
                         )
                         if (showDialog.value) {
-                            @Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/446706254
+                            @Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/481422057
                             SpatialDialog(onDismissRequest = { showDialog.value = false }) {
                                 Text("Spatial Dialog")
                             }
@@ -580,7 +580,12 @@ class SpatialPanelTest {
         // Verify the set of PanelEntities after the SpatialDialog is dismissed:
         // Activity Panel
         // Main PanelEntity
-        assertThat(session?.scene?.getEntitiesOfType(PanelEntity::class.java)?.size).isEqualTo(2)
+        assertThat(
+                session?.scene?.getEntitiesOfType(PanelEntity::class.java)?.count {
+                    it.parent != null || it == session.scene.mainPanelEntity
+                }
+            )
+            .isEqualTo(2)
     }
 
     @Test

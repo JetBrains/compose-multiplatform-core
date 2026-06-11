@@ -94,9 +94,9 @@ public class StreamSharing extends UseCase {
 
     private final @NonNull VirtualCameraAdapter mVirtualCameraAdapter;
     // The composition settings of primary camera in dual camera case.
-    private final @NonNull CompositionSettings mCompositionSettings;
+    private @NonNull CompositionSettings mCompositionSettings;
     // The composition settings of secondary camera in dual camera case.
-    private final @NonNull CompositionSettings mSecondaryCompositionSettings;
+    private @NonNull CompositionSettings mSecondaryCompositionSettings;
     // Node that applies effect to the input.
     private @Nullable SurfaceProcessorNode mEffectNode;
     // Node that shares a single stream to multiple UseCases.
@@ -186,6 +186,20 @@ public class StreamSharing extends UseCase {
     public void updateFeatureGroup(@NonNull Set<UseCase> children) {
         // All use cases should have same feature group, so using only the first child
         setFeatureGroup(children.iterator().next().getFeatureGroup());
+    }
+
+    /**
+     * Updates the composition settings.
+     */
+    public void updateCompositionSettings(
+            @NonNull CompositionSettings primaryCompositionSettings,
+            @NonNull CompositionSettings secondaryCompositionSettings) {
+        mCompositionSettings = primaryCompositionSettings;
+        mSecondaryCompositionSettings = secondaryCompositionSettings;
+        if (mDualSharingNode != null) {
+            mDualSharingNode.updateCompositionSettings(
+                    primaryCompositionSettings, secondaryCompositionSettings);
+        }
     }
 
     @Override

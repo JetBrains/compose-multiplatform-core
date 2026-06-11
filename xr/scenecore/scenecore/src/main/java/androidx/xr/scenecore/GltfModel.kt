@@ -40,8 +40,8 @@ import java.nio.file.Path
 public class GltfModel
 internal constructor(
     internal val renderingRuntime: RenderingRuntime?,
-    internal val model: RtGltfModel,
-) {
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public val model: RtGltfModel,
+) : AutoCloseable {
 
     /**
      * Closes the given [GltfModel].
@@ -53,8 +53,7 @@ internal constructor(
      * @throws IllegalStateException if the resource has already been closed.
      */
     @MainThread
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public fun close() {
+    override public fun close() {
         renderingRuntime?.destroyGltfModel(model)
     }
 
@@ -125,7 +124,7 @@ internal constructor(
          */
         @MainThread
         @JvmStatic
-        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // Hasn't passed API review
         public suspend fun create(
             session: Session,
             assetData: ByteArray,

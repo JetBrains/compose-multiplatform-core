@@ -376,7 +376,7 @@ fun runEmptyComposeUiTest(block: ComposeUiTest.() -> Unit): TestResult {
  *   activity that was launched and hosts the Compose content
  */
 @ExperimentalTestApi
-sealed interface AndroidComposeUiTest<A : ComponentActivity> : ComposeUiTest {
+sealed interface AndroidComposeUiTest<A : ComponentActivity> : ComposeUiTest, IdlingResourceOwner {
     /**
      * Returns the current activity of type [A] used in this [ComposeUiTest]. If no such activity is
      * available, for example if you've navigated to a different activity and the original host has
@@ -386,6 +386,13 @@ sealed interface AndroidComposeUiTest<A : ComponentActivity> : ComposeUiTest {
      * interact with the Activity.
      */
     val activity: A?
+
+    /**
+     * Sets the [ComposeAccessibilityValidator] to perform the accessibility checks with. Providing
+     * `null` means disabling the accessibility checks
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    fun setComposeAccessibilityValidator(validator: ComposeAccessibilityValidator?)
 }
 
 /**
@@ -814,7 +821,7 @@ internal constructor(
         }
     }
 
-    internal inner class AndroidComposeUiTestImpl : AndroidComposeUiTest<A> {
+    internal inner class AndroidComposeUiTestImpl : AndroidComposeUiTest<A>, TestOwnerProvider {
 
         override val activity: A?
             get() = this@AndroidComposeUiTestEnvironment.activity
@@ -825,6 +832,9 @@ internal constructor(
 
         override val mainClock: MainTestClock
             get() = mainClockImpl
+
+        override val testOwner: TestOwner
+            get() = this@AndroidComposeUiTestEnvironment.testOwner
 
         override fun setComposeAccessibilityValidator(validator: ComposeAccessibilityValidator?) {
             testContext.platform.composeAccessibilityValidator = validator
@@ -839,6 +849,10 @@ internal constructor(
             waitForIdle()
             // Execute the action on ui thread in a blocking way.
             return runOnUiThread(action)
+        }
+
+        override fun <T> runWithoutImplicitWait(block: () -> T): T {
+            return testOwner.withImplicitWaitSuppression(isSuppressed = true, block = block)
         }
 
         override fun waitForIdle() {
@@ -933,6 +947,25 @@ internal constructor(
                 waitForIdle()
             }
         }
+
+        override fun hasPendingWork(): Boolean {
+            return !composeIdlingResource.isIdle
+        }
+    }
+
+    /** Executes the given [block] while temporarily setting the implicit wait suppression state. */
+    private inline fun <T> TestOwner.withImplicitWaitSuppression(
+        isSuppressed: Boolean,
+        block: () -> T,
+    ): T {
+        val previousState = this.isImplicitWaitSuppressed
+        this.isImplicitWaitSuppressed = isSuppressed
+        return try {
+            block()
+        } finally {
+            // Always restore the original synchronization state
+            this.isImplicitWaitSuppressed = previousState
+        }
     }
 
     private fun throwPendingException() {
@@ -943,13 +976,17 @@ internal constructor(
     }
 
     private inner class AndroidTestOwner : TestOwner {
+        override var isImplicitWaitSuppressed: Boolean = false
+
         override val mainClock: MainTestClock
             get() = mainClockImpl
 
         override fun <T> runOnUiThread(action: () -> T): T = testReceiverScope.runOnUiThread(action)
 
         override fun getRoots(atLeastOneRootExpected: Boolean): Set<RootForTest> {
-            waitForIdle(atLeastOneRootExpected)
+            if (!isImplicitWaitSuppressed) {
+                waitForIdle(atLeastOneRootExpected)
+            }
             return composeRootRegistry.getRegisteredComposeRoots()
         }
 
@@ -998,41 +1035,6 @@ internal class BeginningOfCascadingComposeErrors() : RuntimeException(MESSAGE) {
     }
 }
 
-@ExperimentalTestApi
-actual sealed interface ComposeUiTest : SemanticsNodeInteractionsProvider {
-    actual val density: Density
-    actual val mainClock: MainTestClock
-
-    /**
-     * Sets the [ComposeAccessibilityValidator] to perform the accessibility checks with. Providing
-     * `null` means disabling the accessibility checks
-     */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    fun setComposeAccessibilityValidator(validator: ComposeAccessibilityValidator?)
-
-    actual fun <T> runOnUiThread(action: () -> T): T
-
-    actual fun <T> runOnIdle(action: () -> T): T
-
-    actual fun waitForIdle()
-
-    actual suspend fun awaitIdle()
-
-    actual fun waitUntil(
-        conditionDescription: String?,
-        timeoutMillis: Long,
-        condition: () -> Boolean,
-    )
-
-    /** Registers an [IdlingResource] in this test. */
-    fun registerIdlingResource(idlingResource: IdlingResource)
-
-    /** Unregisters an [IdlingResource] from this test. */
-    fun unregisterIdlingResource(idlingResource: IdlingResource)
-
-    actual fun setContent(composable: @Composable () -> Unit)
-}
-
 /**
  * A validator that is used to run accessibility checks before every action through
  * [tryPerformAccessibilityChecks]
@@ -1053,4 +1055,30 @@ private fun CoroutineContext.createDefaultTestDispatcher(
         return StandardTestDispatcher(this[TestCoroutineScheduler])
     }
     return UnconfinedTestDispatcher(this[TestCoroutineScheduler])
+}
+
+/**
+ * Internal interface to expose the TestOwner safely to extension functions within the same
+ * module/library group.
+ */
+internal interface TestOwnerProvider {
+    val testOwner: TestOwner
+}
+
+/**
+ * Internal setter for [ComposeAccessibilityValidator].
+ *
+ * Use [androidx.compose.ui.test.accessibility.enableAccessibilityChecks] or
+ * [androidx.compose.ui.test.accessibility.disableAccessibilityChecks] to manage accessibility
+ * checks in your tests. Passing `null` here disables the checks.
+ */
+@ExperimentalTestApi
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+fun ComposeUiTest.setComposeAccessibilityValidator(validator: ComposeAccessibilityValidator?) {
+    val owner =
+        this as? AndroidComposeUiTest<*>
+            ?: error(
+                "This implementation of ComposeUiTest does not support AccessibilityValidators"
+            )
+    owner.setComposeAccessibilityValidator(validator)
 }

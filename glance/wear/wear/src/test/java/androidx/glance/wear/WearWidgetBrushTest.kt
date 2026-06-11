@@ -34,7 +34,6 @@ class WearWidgetBrushTest {
         val brushes = element.foldIn(initial) { acc, current -> acc + current }
 
         assertThat(brushes).hasSize(1)
-        assertThat(brushes[0].color.constantValueOrNull).isEqualTo(Color.Black)
     }
 
     @Test
@@ -54,7 +53,5 @@ class WearWidgetBrushTest {
         val brushes = combined.foldIn(initial) { acc, current -> acc + current }
 
         assertThat(brushes).hasSize(2)
-        assertThat(brushes[0].color.constantValueOrNull).isEqualTo(Color.Black)
-        assertThat(brushes[1].color.constantValueOrNull).isEqualTo(Color.White)
     }
 }

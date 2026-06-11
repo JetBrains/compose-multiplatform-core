@@ -26,7 +26,6 @@ import androidx.compose.remote.creation.actions.ValueStringChange
 import androidx.compose.remote.creation.compose.state.MutableRemoteFloat
 import androidx.compose.remote.creation.compose.state.MutableRemoteInt
 import androidx.compose.remote.creation.compose.state.MutableRemoteState
-import androidx.compose.remote.creation.compose.state.RemoteDp
 import androidx.compose.remote.creation.compose.state.RemoteFloat
 import androidx.compose.remote.creation.compose.state.RemoteInt
 import androidx.compose.remote.creation.compose.state.RemoteState
@@ -38,27 +37,30 @@ import androidx.compose.remote.creation.compose.state.isLiteral
 internal class ValueChangeAction<T>(
     public val remoteValue: MutableRemoteState<T>,
     public val updatedValue: RemoteState<T>,
-) : Action {
+) : RemoteAction() {
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     override fun RemoteStateScope.toRemoteAction(): CreationAction {
-        return if (remoteValue is MutableRemoteInt) {
-            updatedValue as RemoteInt
-            val array = updatedValue.arrayForCreationState(this)
+        val actualMutable = remoteValue.asEncodedMutable
+        val actualValue = updatedValue.asEncoded
+
+        return if (actualMutable is MutableRemoteInt) {
+            actualValue as RemoteInt
+            val array = actualValue.arrayForCreationState(this)
 
             if (array.isLiteral()) {
-                ValueIntegerChange(remoteValue.id, array[0].toInt())
+                ValueIntegerChange(actualMutable.id, array[0].toInt())
             } else {
                 // TODO validate why these are direct ids as a Long.
-                ValueIntegerExpressionChange(remoteValue.longId, updatedValue.longId)
+                ValueIntegerExpressionChange(actualMutable.longId, actualValue.longId)
             }
-        } else if (remoteValue is MutableRemoteFloat) {
-            updatedValue as RemoteFloat
-            ValueFloatExpressionChange(remoteValue.id, updatedValue.id)
-        } else if (remoteValue is RemoteString) {
-            updatedValue as RemoteString
-            ValueStringChange(remoteValue.id, updatedValue.constantValue)
+        } else if (actualMutable is MutableRemoteFloat) {
+            actualValue as RemoteFloat
+            ValueFloatExpressionChange(actualMutable.id, actualValue.id)
+        } else if (actualMutable is RemoteString) {
+            actualValue as RemoteString
+            ValueStringChange(actualMutable.id, actualValue.constantValue)
         } else {
-            TODO("println unsupported type in ValueChange $remoteValue")
+            TODO("println unsupported type in ValueChange $actualMutable")
         }
     }
 }
@@ -66,33 +68,12 @@ internal class ValueChangeAction<T>(
 internal class ValueFloatChangeAction(
     public val value: MutableRemoteFloat,
     public val updatedValue: Float,
-) : Action {
+) : RemoteAction() {
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     override fun RemoteStateScope.toRemoteAction(): CreationAction {
         val id = value.id
         return ValueFloatChange(id, updatedValue)
     }
-}
-
-internal class ValueFloatDpChangeAction(
-    public val value: RemoteDp,
-    public val updatedValue: Float,
-) : Action {
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    override fun RemoteStateScope.toRemoteAction(): CreationAction {
-        val id = value.value.id
-        return ValueFloatChange(id, updatedValue)
-    }
-}
-
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public fun ValueChange(value: RemoteDp, updatedValue: Float): Action {
-    return ValueFloatDpChangeAction(value, updatedValue)
-}
-
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public fun ValueChange(value: RemoteDp, updatedValue: Int): Action {
-    return ValueFloatDpChangeAction(value, updatedValue.toFloat())
 }
 
 /**
@@ -102,7 +83,7 @@ public fun ValueChange(value: RemoteDp, updatedValue: Int): Action {
  * @param updatedValue The new remote state value to apply.
  * @return An [Action] representing the value change.
  */
-public fun <T> ValueChange(
+public fun <T> valueChange(
     remoteState: MutableRemoteState<T>,
     updatedValue: RemoteState<T>,
 ): Action = ValueChangeAction(remoteState, updatedValue)

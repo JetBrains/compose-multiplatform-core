@@ -27,6 +27,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.SaverScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.ExperimentalComposeUiApi
@@ -342,9 +343,11 @@ class StackStateTest {
     fun saveAndRestoreState_restoresTopItem() {
         val allowingScope = SaverScope { true }
         val original = StackState(initialTopItem = 5)
+        // Cast the Saver to bypass the star projection restriction for testing purposes
+        @Suppress("UNCHECKED_CAST") val saver = StackState.Saver as Saver<StackState, Any>
 
-        val saved = with(StackState.Saver) { allowingScope.save(original) }!!
-        val restored = StackState.Saver.restore(saved)!!
+        val saved = with(saver) { allowingScope.save(original) }!!
+        val restored = saver.restore(saved)!!
 
         assertThat(restored.topItem).isEqualTo(5)
     }

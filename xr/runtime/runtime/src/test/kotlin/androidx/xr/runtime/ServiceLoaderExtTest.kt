@@ -23,9 +23,6 @@ import android.content.pm.PackageInfo
 import android.os.Build
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.xr.arcore.testing.AnotherFakeStateExtender
-import androidx.xr.arcore.testing.FakePerceptionRuntimeFactory
-import androidx.xr.arcore.testing.FakeStateExtender
 import androidx.xr.runtime.interfaces.Feature
 import androidx.xr.runtime.interfaces.Service
 import androidx.xr.runtime.internal.PerceptionRuntimeFactory
@@ -43,41 +40,30 @@ import org.robolectric.shadows.ShadowBuild
 class ServiceLoaderExtTest {
 
     @Test
-    // TODO(b/440615454) - Move this test to arcore-testing.
     fun loadProviders_loadsProviders() {
         assertThat(
                 loadProviders(
                         PerceptionRuntimeFactory::class.java,
-                        listOf(FakePerceptionRuntimeFactory::class.java.name),
+                        listOf(StubPerceptionRuntimeFactory::class.java.name),
                     )
                     .single()
             )
-            .isInstanceOf(FakePerceptionRuntimeFactory::class.java)
+            .isInstanceOf(StubPerceptionRuntimeFactory::class.java)
         assertThat(
-                loadProviders(StateExtender::class.java, listOf(FakeStateExtender::class.java.name))
+                loadProviders(StateExtender::class.java, listOf(StubStateExtender::class.java.name))
                     .iterator()
                     .next()
             )
-            .isInstanceOf(FakeStateExtender::class.java)
+            .isInstanceOf(StubStateExtender::class.java)
     }
 
     @Test
     fun loadProviders_combinesFastAndLoaderProviders() {
         val stateExtenders =
-            loadProviders(
-                StateExtender::class.java,
-                listOf(
-                    FakeStateExtender::class.java.name,
-                    AnotherFakeStateExtender::class.java.name,
-                ),
-            )
+            loadProviders(StateExtender::class.java, listOf(StubStateExtender::class.java.name))
 
-        assertThat(stateExtenders.size).isEqualTo(2)
-
-        // TODO(b/436933956) - temp. dependency on arcore package is pulling in
-        // PerceptionStateExtender
-        assertThat(stateExtenders.any { it is FakeStateExtender || it is AnotherFakeStateExtender })
-            .isTrue()
+        assertThat(stateExtenders.size).isEqualTo(1)
+        assertThat(stateExtenders.any { it is StubStateExtender }).isTrue()
     }
 
     @Test

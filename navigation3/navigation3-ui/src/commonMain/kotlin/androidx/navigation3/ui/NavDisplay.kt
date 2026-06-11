@@ -21,6 +21,7 @@ package androidx.navigation3.ui
 
 import androidx.collection.mutableObjectFloatMapOf
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.ContentTransform
 import androidx.compose.animation.SharedTransitionScope
@@ -35,16 +36,17 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastForEachReversed
+import androidx.compose.ui.util.fastMap
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.rememberLifecycleOwner
+import androidx.navigation3.fastToSet
 import androidx.navigation3.runtime.MetadataScope
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.NavEntryDecorator
@@ -55,6 +57,7 @@ import androidx.navigation3.runtime.rememberDecoratedNavEntries
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.scene.LocalCurrentScene
 import androidx.navigation3.scene.LocalEntriesToExcludeFromCurrentScene
+import androidx.navigation3.scene.NavigationBackHandler
 import androidx.navigation3.scene.OverlayScene
 import androidx.navigation3.scene.Scene
 import androidx.navigation3.scene.SceneDecoratorStrategy
@@ -62,6 +65,7 @@ import androidx.navigation3.scene.SceneInfo
 import androidx.navigation3.scene.SceneState
 import androidx.navigation3.scene.SceneStrategy
 import androidx.navigation3.scene.SinglePaneSceneStrategy
+import androidx.navigation3.scene.rememberNavigationEventState
 import androidx.navigation3.scene.rememberSceneState
 import androidx.navigation3.ui.NavDisplay.popTransitionSpec
 import androidx.navigation3.ui.NavDisplay.predictivePopTransitionSpec
@@ -69,9 +73,7 @@ import androidx.navigation3.ui.NavDisplay.transitionSpec
 import androidx.navigationevent.NavigationEvent
 import androidx.navigationevent.NavigationEventTransitionState.Idle
 import androidx.navigationevent.NavigationEventTransitionState.InProgress
-import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.NavigationEventState
-import androidx.navigationevent.compose.rememberNavigationEventState
 import kotlin.jvm.JvmMultifileClass
 import kotlin.jvm.JvmName
 import kotlin.reflect.KClass
@@ -543,29 +545,14 @@ public fun <T : Any> NavDisplay(
             sharedTransitionScope,
             onBack,
         )
-    val scene = sceneState.currentScene
 
     // Predictive Back Handling
-    val currentInfo = SceneInfo(scene)
-    val previousSceneInfos = sceneState.previousScenes.map { SceneInfo(it) }
-    val gestureState =
-        rememberNavigationEventState(currentInfo = currentInfo, backInfo = previousSceneInfos)
-
-    NavigationBackHandler(
-        state = gestureState,
-        isBackEnabled = scene.previousEntries.isNotEmpty(),
-        onBackCompleted = {
-            // If `enabled` becomes stale (e.g., it was set to false but a gesture was
-            // dispatched in the same frame), this may result in no entries being popped
-            // due to entries.size being smaller than scene.previousEntries.size
-            // but that's preferable to crashing with an IndexOutOfBoundsException
-            repeat(entries.size - scene.previousEntries.size) { onBack() }
-        },
-    )
+    val navigationEventState = rememberNavigationEventState(sceneState)
+    NavigationBackHandler(sceneState, navigationEventState, onBackCompleted = onBack)
 
     NavDisplay(
         sceneState,
-        gestureState,
+        navigationEventState,
         modifier,
         contentAlignment,
         sizeTransform,
@@ -683,10 +670,13 @@ public fun <T : Any> NavDisplay(
     val overlayScenes = sceneState.overlayScenes
     // includes overlay scenes that are already popped off backStack but still animating out
     val currentOverlayScenes = remember { SnapshotStateList<OverlayScene<T>>() }
+
     LaunchedEffect(overlayScenes) {
         // we want a unique set of overlay scenes, but it needs to be ordered to preserve z-order
         overlayScenes.fastForEach {
-            if (!currentOverlayScenes.contains(it)) currentOverlayScenes.add(it)
+            if (!currentOverlayScenes.fastMap { currScene -> currScene.key }.contains(it.key)) {
+                currentOverlayScenes.add(it)
+            }
         }
     }
 
@@ -738,7 +728,7 @@ public fun <T : Any> NavDisplay(
                     if (shouldSwapExcludedScenesFromTarget && transition.targetState != scene) {
                         put(
                             AnimatedSceneKey(scene),
-                            transition.targetState.entries.map { it.contentKey }.toSet(),
+                            transition.targetState.entries.fastMap { it.contentKey }.fastToSet(),
                         )
                     } else {
                         put(AnimatedSceneKey(scene), coveredEntryKeys.toMutableSet())
@@ -832,6 +822,10 @@ public fun <T : Any> NavDisplay(
         }
     }
 
+    // allows OverlayScenes to access animatedContentScope even if it's no-op so that
+    // LocalNavAnimatedContentScope doesn't need to be nullable
+    lateinit var animatedContentScope: AnimatedContentScope
+
     transition.AnimatedContent(
         contentKey = { scene -> AnimatedSceneKey(scene) },
         contentAlignment = contentAlignment,
@@ -856,9 +850,10 @@ public fun <T : Any> NavDisplay(
                     if (isSettled && currentOverlayScenes.isEmpty()) Lifecycle.State.RESUMED
                     else Lifecycle.State.STARTED
             )
+        animatedContentScope = remember { this }
         CompositionLocalProvider(
             LocalLifecycleOwner provides sceneLifecycleOwner,
-            LocalNavAnimatedContentScope provides this,
+            LocalNavAnimatedContentScope provides animatedContentScope,
             LocalCurrentScene provides targetScene,
             LocalEntriesToExcludeFromCurrentScene provides
                 sceneToExcludedEntryMap.getValue(AnimatedSceneKey(targetScene)),
@@ -887,7 +882,6 @@ public fun <T : Any> NavDisplay(
 
     // Show all OverlayScene instances above the AnimatedContent
     currentOverlayScenes.fastForEachReversed { overlayScene ->
-        val scope = rememberCoroutineScope()
         key(overlayScene) {
             val overlaySceneLifecycleOwner =
                 rememberLifecycleOwner(
@@ -901,14 +895,15 @@ public fun <T : Any> NavDisplay(
                 LocalEntriesToExcludeFromCurrentScene provides
                     sceneToExcludedEntryMap.getValue(AnimatedSceneKey(overlayScene)),
                 LocalCurrentScene provides overlayScene,
+                LocalNavAnimatedContentScope provides animatedContentScope,
             ) {
-                overlayScene.content.invoke()
+                overlayScene.content()
             }
         }
         // if the overlay scene is popped, let onRemoved finish before
         // removing from composition to ensure animations can complete
-        if (overlayScene !in overlayScenes) {
-            scope.launch {
+        if (overlayScene.key !in overlayScenes.fastMap { it.key }) {
+            LaunchedEffect(overlayScene.key) {
                 overlayScene.onRemove()
                 currentOverlayScenes.remove(overlayScene)
             }

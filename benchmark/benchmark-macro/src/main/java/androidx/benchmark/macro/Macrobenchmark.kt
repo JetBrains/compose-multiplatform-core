@@ -42,6 +42,7 @@ import androidx.benchmark.json.BenchmarkData
 import androidx.benchmark.macro.MacrobenchmarkScope.KillMode
 import androidx.benchmark.perfetto.PerfettoCapture.PerfettoSdkConfig
 import androidx.benchmark.perfetto.PerfettoCapture.PerfettoSdkConfig.InitialProcessState
+import androidx.benchmark.runServer
 import androidx.benchmark.traceprocessor.TraceProcessor
 import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Assume.assumeFalse
@@ -197,6 +198,19 @@ internal fun checkErrors(packageName: String): ConfigurationError.SuppressionSta
                         id = CpuInfo.Error.ID,
                         summary = CpuInfo.Error.SUMMARY,
                         message = CpuInfo.Error.MESSAGE.trimIndent(),
+                    ),
+                    conditionalError(
+                        hasError = !DeviceInfo.canShellAccessAppFiles,
+                        id = "SHELL-ACCESS-DENIED",
+                        summary = "Shell user cannot access app files",
+                        message =
+                            """
+                            MediaProvider/FUSE is blocking the ADB shell from accessing app data.
+                            This is a known issue on some devices and prevents Jetpack Benchmark from
+                            capturing profiles and traces. The device may simply be incompatible
+                            with Jetpack Benchmark.
+                            """
+                                .trimIndent(),
                     ),
                 )
                 .sortedBy { it.id }

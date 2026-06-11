@@ -18,8 +18,8 @@ package androidx.datastore.preferences.core
 
 import androidx.datastore.core.DataStoreFactory
 import androidx.datastore.core.okio.OkioSerializer
-import androidx.datastore.core.okio.WebStorage
-import androidx.datastore.core.okio.WebStorageType
+import androidx.datastore.core.okio.WebLocalStorage
+import androidx.datastore.core.okio.WebSessionStorage
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -44,11 +44,7 @@ class PreferencesSerializerWebTest {
     @Test
     fun testSessionStorage_writeThenRead() = runTest {
         val storage =
-            WebStorage(
-                name = testSessionStorageName,
-                serializer = preferencesSerializer,
-                storageType = WebStorageType.SESSION,
-            )
+            WebSessionStorage(name = testSessionStorageName, serializer = preferencesSerializer)
         val dataStore = DataStoreFactory.create(storage)
         val floatKey = floatPreferencesKey("float_key")
         val dataToWrite = preferencesOf(floatKey to 120f)
@@ -62,11 +58,7 @@ class PreferencesSerializerWebTest {
     @Test
     fun testLocalStorage_writeThenRead() = runTest {
         val storage =
-            WebStorage(
-                name = testLocalStorageName,
-                serializer = preferencesSerializer,
-                storageType = WebStorageType.LOCAL,
-            )
+            WebLocalStorage(name = testLocalStorageName, serializer = preferencesSerializer)
         val dataStore = DataStoreFactory.create(storage)
         val floatKey = floatPreferencesKey("float_key")
         val dataToWrite = preferencesOf(floatKey to 120f)

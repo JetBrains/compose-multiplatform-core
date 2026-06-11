@@ -37,20 +37,21 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.lifecycleScope
+import androidx.xr.arcore.Plane
 import androidx.xr.arcore.perceptionState
 import androidx.xr.arcore.testapp.common.BackToMainActivityButton
 import androidx.xr.arcore.testapp.common.SessionLifecycleHelper
 import androidx.xr.arcore.testapp.common.TrackablesList
+import androidx.xr.arcore.testapp.common.asString
 import androidx.xr.arcore.testapp.helloar.rendering.AnchorRenderer
 import androidx.xr.arcore.testapp.helloar.rendering.PlaneRenderer
 import androidx.xr.arcore.testapp.ui.theme.GoogleYellow
 import androidx.xr.compose.spatial.Subspace
-import androidx.xr.compose.subspace.ResizePolicy
 import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.layout.SubspaceModifier
-import androidx.xr.compose.subspace.layout.movable
 import androidx.xr.compose.subspace.layout.size
+import androidx.xr.compose.subspace.layout.transformingMovable
+import androidx.xr.compose.subspace.layout.transformingResizable
 import androidx.xr.compose.unit.DpVolumeSize
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.DeviceTrackingMode
@@ -75,15 +76,15 @@ class HelloArPlaneActivity : ComponentActivity() {
         sessionHelper =
             SessionLifecycleHelper(
                 this,
-                Config(
-                    planeTracking = PlaneTrackingMode.HORIZONTAL_AND_VERTICAL,
-                    deviceTracking = DeviceTrackingMode.SPATIAL_LAST_KNOWN,
-                ),
+                Config.Builder()
+                    .setPlaneTracking(PlaneTrackingMode.HORIZONTAL_AND_VERTICAL)
+                    .setDeviceTracking(DeviceTrackingMode.SPATIAL)
+                    .build(),
                 onSessionAvailable = { session ->
                     this.session = session
 
-                    planeRenderer = PlaneRenderer(session, lifecycleScope)
-                    anchorRenderer = AnchorRenderer(this, planeRenderer, session, lifecycleScope)
+                    planeRenderer = PlaneRenderer(session)
+                    anchorRenderer = AnchorRenderer(this, planeRenderer, session)
                     lifecycle.addObserver(planeRenderer)
                     lifecycle.addObserver(anchorRenderer)
 
@@ -92,8 +93,8 @@ class HelloArPlaneActivity : ComponentActivity() {
                             SpatialPanel(
                                 modifier =
                                     SubspaceModifier.size(DpVolumeSize(640.dp, 480.dp, 0.dp))
-                                        .movable(),
-                                resizePolicy = ResizePolicy(),
+                                        .transformingMovable()
+                                        .transformingResizable()
                             ) {
                                 HelloPlanes(session)
                             }
@@ -109,10 +110,13 @@ class HelloArPlaneActivity : ComponentActivity() {
     fun HelloPlanes(session: Session) {
         val state by session.state.collectAsStateWithLifecycle()
         val perceptionState = state.perceptionState
+        val arDevice = androidx.xr.arcore.ArDevice.getInstance(session)
+        val arDeviceState by arDevice.state.collectAsStateWithLifecycle()
         var title = intent.getStringExtra("TITLE")
         if (title == null) title = "Hello AR Plane"
-        val blendMode = XrDevice.getCurrentDevice(session).getPreferredDisplayBlendMode()
-        val isGeospatialSupported = session.runtimes.first().isSupported(GeospatialMode.VPS_AND_GPS)
+        val blendMode = XrDevice.getCurrentDevice(applicationContext).getPreferredDisplayBlendMode()
+        val isGeospatialSupported =
+            XrDevice.getCurrentDevice(this).isGeospatialModeSupported(GeospatialMode.SPATIAL)
         Scaffold(
             modifier = Modifier.fillMaxSize().padding(0.dp),
             topBar = {
@@ -151,6 +155,20 @@ class HelloArPlaneActivity : ComponentActivity() {
                 Row(modifier = Modifier.fillMaxWidth()) {
                     Text(
                         modifier = Modifier.padding(start = 10.dp).weight(1f),
+                        text = "Tracking State:",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    Text(
+                        modifier = Modifier.padding(start = 10.dp).weight(3f),
+                        text = "${arDeviceState.trackingState.asString()}",
+                        fontSize = 20.sp,
+                    )
+                }
+
+                Row(modifier = Modifier.fillMaxWidth()) {
+                    Text(
+                        modifier = Modifier.padding(start = 10.dp).weight(1f),
                         text = "Preferred Blend Mode:",
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold,
@@ -179,14 +197,18 @@ class HelloArPlaneActivity : ComponentActivity() {
                 Row(modifier = Modifier.fillMaxWidth()) {
                     Text(
                         modifier = Modifier.padding(start = 10.dp).weight(1f),
-                        text = "Trackables:",
+                        text = "Planes:",
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold,
                     )
                 }
 
                 if (perceptionState != null) {
-                    TrackablesList(perceptionState.trackables.toList())
+                    TrackablesList(
+                        perceptionState.trackableStates.filterIsInstance<Plane.State>().map {
+                            it.owner
+                        }
+                    )
                 } else {
                     Text(text = "PerceptionState is null.", fontSize = 22.sp)
                 }

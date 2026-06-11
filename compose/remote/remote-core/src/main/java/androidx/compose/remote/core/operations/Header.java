@@ -59,7 +59,7 @@ public class Header extends Operation implements RemoteComposeOperation {
     int mWidth = 256;
     int mHeight = 256;
 
-    float mDensity = 3;
+    float mDensity = 1;
     long mCapabilities = 0;
     int mProfiles = 0;
     private @Nullable IntMap<Object> mProperties;
@@ -134,6 +134,22 @@ public class Header extends Operation implements RemoteComposeOperation {
     /** Support for origin-aware resizing animations */
     public static final short FEATURE_LT_RESIZE = 24;
 
+    /** Enable listener pattern for arrays in TextLookup */
+    public static final short FEATURE_ARRAY_LISTENERS = 25;
+
+    /**
+     * Modify click behavior The default is support for single click, double-click and long press,
+     * setting FEATURE_CLICK_VERSION to 1 will only support single click.
+     */
+    public static final short FEATURE_CLICK_VERSION = 26;
+
+    /**
+     * Density behavior for the document. 0: Current behavior (mixed) 1: Values are interpreted as
+     * pixels, no density applied by default 2: Values are interpreted as dp, density applied by
+     * default
+     */
+    public static final short DOC_DENSITY_BEHAVIOR = 27;
+
     /** The object is an integer */
     private static final short DATA_TYPE_INT = 0;
 
@@ -147,38 +163,44 @@ public class Header extends Operation implements RemoteComposeOperation {
     private static final short DATA_TYPE_STRING = 3;
 
     private static final short[] KEYS = {
-            DOC_WIDTH,
-            DOC_HEIGHT,
-            DOC_DENSITY_AT_GENERATION,
-            DOC_DESIRED_FPS,
-            DOC_CONTENT_DESCRIPTION,
-            DOC_SOURCE,
-            DOC_DATA_UPDATE,
-            HOST_EXCEPTION_HANDLER,
-            DOC_PROFILES,
-            FEATURE_PAINT_MEASURE,
-            DEBUG,
-            FEATURE_MEASURE_VERSION,
-            FEATURE_TOUCH_VERSION,
-            FEATURE_PRIORITY_FIX,
-            FEATURE_LT_RESIZE
+        DOC_WIDTH,
+        DOC_HEIGHT,
+        DOC_DENSITY_AT_GENERATION,
+        DOC_DESIRED_FPS,
+        DOC_CONTENT_DESCRIPTION,
+        DOC_SOURCE,
+        DOC_DATA_UPDATE,
+        HOST_EXCEPTION_HANDLER,
+        DOC_PROFILES,
+        FEATURE_PAINT_MEASURE,
+        DEBUG,
+        FEATURE_MEASURE_VERSION,
+        FEATURE_TOUCH_VERSION,
+        FEATURE_PRIORITY_FIX,
+        FEATURE_LT_RESIZE,
+        FEATURE_ARRAY_LISTENERS,
+        FEATURE_CLICK_VERSION,
+        DOC_DENSITY_BEHAVIOR,
     };
     private static final String[] KEY_NAMES = {
-            "DOC_WIDTH",
-            "DOC_HEIGHT",
-            "DOC_DENSITY_AT_GENERATION",
-            "DOC_DESIRED_FPS",
-            "DOC_CONTENT_DESCRIPTION",
-            "DOC_SOURCE",
-            "DOC_DATA_UPDATE",
-            "HOST_EXCEPTION_HANDLER",
-            "DOC_PROFILES",
-            "PAINT_MEASURE",
-            "DEBUG",
-            "MEASURE_VERSION",
-            "TOUCH_VERSION",
-            "PRIORITY_FIX",
-            "LT_RESIZE"
+        "DOC_WIDTH",
+        "DOC_HEIGHT",
+        "DOC_DENSITY_AT_GENERATION",
+        "DOC_DESIRED_FPS",
+        "DOC_CONTENT_DESCRIPTION",
+        "DOC_SOURCE",
+        "DOC_DATA_UPDATE",
+        "HOST_EXCEPTION_HANDLER",
+        "DOC_PROFILES",
+        "PAINT_MEASURE",
+        "DEBUG",
+        "MEASURE_VERSION",
+        "TOUCH_VERSION",
+        "PRIORITY_FIX",
+        "LT_RESIZE",
+        "ARRAY_LISTENERS",
+        "CLICK_VERSION",
+        "DENSITY_BEHAVIOR"
     };
 
     /**
@@ -188,9 +210,9 @@ public class Header extends Operation implements RemoteComposeOperation {
      * @param majorVersion the major version of the RemoteCompose document API
      * @param minorVersion the minor version of the RemoteCompose document API
      * @param patchVersion the patch version of the RemoteCompose document API
-     * @param width        the width of the RemoteCompose document
-     * @param height       the height of the RemoteCompose document
-     * @param density      the density at which the document was originally created
+     * @param width the width of the RemoteCompose document
+     * @param height the height of the RemoteCompose document
+     * @param density the density at which the document was originally created
      * @param capabilities bitmask field storing needed capabilities (unused for now)
      */
     public Header(
@@ -214,7 +236,7 @@ public class Header extends Operation implements RemoteComposeOperation {
      * @param majorVersion the major version of the RemoteCompose document API
      * @param minorVersion the minor version of the RemoteCompose document API
      * @param patchVersion the patch version of the RemoteCompose document API
-     * @param properties   the properties of the document
+     * @param properties the properties of the document
      */
     public Header(
             int majorVersion,
@@ -228,7 +250,7 @@ public class Header extends Operation implements RemoteComposeOperation {
             this.mProperties = properties;
             this.mWidth = getInt(DOC_WIDTH, 256);
             this.mHeight = getInt(DOC_HEIGHT, 256);
-            this.mDensity = getFloat(DOC_DENSITY_AT_GENERATION, 0);
+            this.mDensity = getFloat(DOC_DENSITY_AT_GENERATION, 1);
             this.mProfiles = getInt(DOC_PROFILES, 0);
         }
     }
@@ -237,9 +259,11 @@ public class Header extends Operation implements RemoteComposeOperation {
         return mProfiles;
     }
 
-    /**
-     * Check for a property on the header
-     */
+    public float getDensity() {
+        return mDensity;
+    }
+
+    /** Check for a property on the header */
     public int getInt(int key, int defaultValue) {
         if (mProperties == null) {
             return defaultValue;
@@ -359,9 +383,7 @@ public class Header extends Operation implements RemoteComposeOperation {
         return OP_CODE;
     }
 
-    /**
-     * Apply the header to the wire buffer
-     */
+    /** Apply the header to the wire buffer */
     public static void apply(
             @NonNull WireBuffer buffer, int width, int height, float density, long capabilities) {
         buffer.start(OP_CODE);
@@ -374,9 +396,7 @@ public class Header extends Operation implements RemoteComposeOperation {
         buffer.writeLong(capabilities);
     }
 
-    /**
-     * Apply the header to the wire buffer
-     */
+    /** Apply the header to the wire buffer */
     public static void apply(
             @NonNull WireBuffer buffer,
             int apiLevel,
@@ -458,6 +478,9 @@ public class Header extends Operation implements RemoteComposeOperation {
             }
             majorVersion &= 0xFFFF;
             int len = stream.readInt();
+            if (len < 0 || len > Limits.MAX_TABLE_SIZE) {
+                throw new IOException("Invalid table size " + len);
+            }
             short[] types = new short[len];
             Object[] values = new Object[len];
             readMap(stream, types, values);
@@ -476,7 +499,7 @@ public class Header extends Operation implements RemoteComposeOperation {
      * Read this operation and add it to the list of operations
      *
      * @param stream the buffer to read
-     * @param types  the list of types that will be populated
+     * @param types the list of types that will be populated
      * @param values the list of values that will be populated
      */
     private static void readMap(DataInputStream stream, short[] types, Object[] values)
@@ -498,6 +521,9 @@ public class Header extends Operation implements RemoteComposeOperation {
                     break;
                 case DATA_TYPE_STRING:
                     int slen = stream.readInt();
+                    if (slen < 0 || slen > Limits.MAX_STRING_SIZE) {
+                        throw new IOException("String length exceeds limit: " + slen);
+                    }
                     byte[] data = new byte[slen];
                     stream.readFully(data);
                     values[i] = new String(data);
@@ -552,7 +578,7 @@ public class Header extends Operation implements RemoteComposeOperation {
     /**
      * Read this operation and add it to the list of operations
      *
-     * @param buffer     the buffer to read
+     * @param buffer the buffer to read
      * @param operations the list of operations that will be added to
      */
     public static void read(@NonNull WireBuffer buffer, @NonNull List<Operation> operations) {
@@ -578,7 +604,7 @@ public class Header extends Operation implements RemoteComposeOperation {
         } else {
             majorVersion &= 0xFFFF;
             int length = buffer.readInt();
-            if (length > Limits.MAX_TABLE_SIZE) {
+            if (length < 0 || length > Limits.MAX_TABLE_SIZE) {
                 throw new RuntimeException("Invalid table size " + length);
             }
             short[] types = new short[length];
@@ -619,13 +645,7 @@ public class Header extends Operation implements RemoteComposeOperation {
             float density = 1f;
             long capabilities = buffer.readLong();
             return new Header(
-                    majorVersion,
-                    minorVersion,
-                    patchVersion,
-                    width,
-                    height,
-                    density,
-                    capabilities);
+                    majorVersion, minorVersion, patchVersion, width, height, density, capabilities);
         }
 
         if ((majorVersion & 0xFFFF0000) != MAGIC_NUMBER) {
@@ -637,6 +657,9 @@ public class Header extends Operation implements RemoteComposeOperation {
         }
         majorVersion &= 0xFFFF;
         int len = buffer.readInt();
+        if (len < 0 || len > Limits.MAX_TABLE_SIZE) {
+            throw new IOException("Invalid table size " + len);
+        }
         short[] types = new short[len];
         Object[] values = new Object[len];
         readMap(buffer, types, values);
@@ -651,7 +674,7 @@ public class Header extends Operation implements RemoteComposeOperation {
      * Read this operation and add it to the list of operations
      *
      * @param buffer the buffer to read
-     * @param types  the list of types that will be populated
+     * @param types the list of types that will be populated
      * @param values the list of values that will be populated
      */
     private static void readMap(@NonNull WireBuffer buffer, short[] types, Object[] values) {
@@ -671,7 +694,7 @@ public class Header extends Operation implements RemoteComposeOperation {
                     values[i] = buffer.readLong();
                     break;
                 case DATA_TYPE_STRING:
-                    values[i] = buffer.readUTF8();
+                    values[i] = buffer.readUTF8(Limits.MAX_STRING_SIZE);
                     break;
             }
         }
@@ -681,7 +704,7 @@ public class Header extends Operation implements RemoteComposeOperation {
      * Write the map of values to the buffer
      *
      * @param buffer the buffer to read
-     * @param types  the list of types that will be written
+     * @param types the list of types that will be written
      * @param values the list of values that will be written
      */
     private static void writeMap(@NonNull WireBuffer buffer, short[] types, Object[] values) {
@@ -732,9 +755,7 @@ public class Header extends Operation implements RemoteComposeOperation {
                 .field(LONG, "capabilities", "Capabilities mask");
     }
 
-    /**
-     * Set the version on a document
-     */
+    /** Set the version on a document */
     public void setVersion(@NonNull CoreDocument document) {
         document.setHostExceptionID(getInt(HOST_EXCEPTION_HANDLER, 0));
         document.setUpdateDoc(getInt(DOC_DATA_UPDATE, 0) != 0);

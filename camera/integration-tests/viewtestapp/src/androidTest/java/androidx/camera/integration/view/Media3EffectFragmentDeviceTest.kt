@@ -20,6 +20,7 @@ import android.annotation.SuppressLint
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.Rect
+import android.os.Bundle
 import androidx.camera.camera2.Camera2Config
 import androidx.camera.core.CameraXConfig
 import androidx.camera.core.ImageCapture.OnImageCapturedCallback
@@ -45,7 +46,6 @@ import androidx.test.rule.GrantPermissionRule
 import com.google.common.truth.Truth.assertThat
 import java.util.concurrent.Semaphore
 import java.util.concurrent.TimeUnit
-import org.junit.After
 import org.junit.Assume.assumeFalse
 import org.junit.Before
 import org.junit.Rule
@@ -92,16 +92,15 @@ class Media3EffectFragmentDeviceTest(
         fragment = fragmentScenario.getFragment()
 
         requireForegroundRule.deferCleanup {
-            if (::cameraProvider.isInitialized) {
-                cameraProvider.shutdownAsync()[10000, TimeUnit.MILLISECONDS]
+            try {
+                if (::fragmentScenario.isInitialized) {
+                    fragmentScenario.moveToState(Lifecycle.State.DESTROYED)
+                }
+            } finally {
+                if (::cameraProvider.isInitialized) {
+                    cameraProvider.shutdownAsync()[10000, TimeUnit.MILLISECONDS]
+                }
             }
-        }
-    }
-
-    @After
-    fun tearDown() {
-        if (::fragmentScenario.isInitialized) {
-            fragmentScenario.moveToState(Lifecycle.State.DESTROYED)
         }
     }
 
@@ -131,10 +130,13 @@ class Media3EffectFragmentDeviceTest(
 
         // Assert: Take a picture and assert the color.
         val bitmap = takePictureAsBitmap()
-
-        assertThat(bitmap).isNotNull()
-        assertThat(getAverageDiff(bitmap!!, Rect(0, 0, bitmap.width, bitmap.height), color))
-            .isEqualTo(0)
+        try {
+            assertThat(bitmap).isNotNull()
+            assertThat(getAverageDiff(bitmap!!, Rect(0, 0, bitmap.width, bitmap.height), color))
+                .isEqualTo(0)
+        } finally {
+            bitmap?.recycle()
+        }
     }
 
     private fun takePictureAsBitmap(): Bitmap? {
@@ -145,10 +147,11 @@ class Media3EffectFragmentDeviceTest(
                 mainThreadExecutor(),
                 object : OnImageCapturedCallback() {
                     override fun onCaptureSuccess(image: ImageProxy) {
-                        bitmap = image.toBitmap()
-                        image.close()
-                        // Unblock the test
-                        imageCallbackSemaphore.release()
+                        image.use { image ->
+                            bitmap = image.toBitmap()
+                            // Unblock the test
+                            imageCallbackSemaphore.release()
+                        }
                     }
 
                     override fun onError(exception: ImageCaptureException) {
@@ -174,9 +177,13 @@ class Media3EffectFragmentDeviceTest(
     }
 
     private fun createFragmentScenario(): FragmentScenario<Media3EffectsFragment> {
+        val fragmentArgs =
+            Bundle().apply {
+                putString(Media3EffectsFragment.ARG_EFFECT, Media3EffectsFragment.EFFECT_BRIGHTNESS)
+            }
         return FragmentScenario.launchInContainer(
             Media3EffectsFragment::class.java,
-            null,
+            fragmentArgs,
             R.style.AppTheme,
             null,
         )
@@ -192,7 +199,7 @@ class Media3EffectFragmentDeviceTest(
         @JvmField val testCameraRule = CameraUtil.PreTestCamera()
 
         const val MAX_PROGRESS = 100
-        const val MIN_PROGRESS = 100
+        const val MIN_PROGRESS = -100
 
         // Timeout for waiting the effect to be effective.
         const val SET_EFFECT_DELAY_MILLIS = 200L

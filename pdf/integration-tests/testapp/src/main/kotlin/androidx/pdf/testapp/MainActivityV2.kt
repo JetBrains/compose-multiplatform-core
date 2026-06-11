@@ -18,7 +18,6 @@ package androidx.pdf.testapp
 
 import android.database.Cursor
 import android.net.Uri
-import android.os.Build
 import android.os.Bundle
 import android.provider.OpenableColumns
 import android.view.View
@@ -26,8 +25,6 @@ import android.widget.ImageButton
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.result.contract.ActivityResultContracts.GetContent
-import androidx.annotation.RequiresExtension
-import androidx.annotation.RestrictTo
 import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.os.BundleCompat
@@ -48,7 +45,6 @@ import com.google.android.material.button.MaterialButton
 // TODO(b/386721657): Remove this activity once the switch to V2 completes
 
 @Suppress("NewApi")
-@RestrictTo(RestrictTo.Scope.LIBRARY)
 internal class MainActivityV2 : AppCompatActivity(), EditablePdfHostFragment.FragmentListener {
 
     private lateinit var pdfViewerFragment: PdfViewerFragment
@@ -66,11 +62,14 @@ internal class MainActivityV2 : AppCompatActivity(), EditablePdfHostFragment.Fra
 
     private lateinit var savePdfButton: MaterialButton
 
-    @RequiresExtension(extension = Build.VERSION_CODES.S, version = 13)
     @VisibleForTesting
     private var filePicker: ActivityResultLauncher<String> =
         registerForActivityResult(GetContent()) { uri: Uri? ->
             uri?.let {
+                if (pdfViewerFragment.documentUri != uri) {
+                    // Reset the thumbnails if a new uri is loaded.
+                    (pdfViewerFragment as? PdfViewerFragmentExtended)?.resetThumbnails()
+                }
                 pdfViewerFragment.documentUri = uri
                 currentFileName = getFileName(it)
             }
@@ -117,7 +116,6 @@ internal class MainActivityV2 : AppCompatActivity(), EditablePdfHostFragment.Fra
         return result ?: SAMPLE_PDF_NAME
     }
 
-    @RequiresExtension(extension = Build.VERSION_CODES.S, version = 13)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -141,7 +139,6 @@ internal class MainActivityV2 : AppCompatActivity(), EditablePdfHostFragment.Fra
         WindowCompat.setDecorFitsSystemWindows(window, false)
     }
 
-    @RequiresExtension(extension = Build.VERSION_CODES.S, version = 13)
     private fun setupViews(pdfViewerFragment: PdfViewerFragment) {
         openPdfButton = findViewById(R.id.launch_button)
         searchButton = findViewById(R.id.search_pdf_button)
@@ -172,7 +169,6 @@ internal class MainActivityV2 : AppCompatActivity(), EditablePdfHostFragment.Fra
         }
     }
 
-    @RequiresExtension(extension = Build.VERSION_CODES.S, version = 13)
     private fun getFragmentForCurrentConfiguration(): PdfViewerFragment {
         val fragmentType = getFragmentTypeFromIntent()
 
@@ -204,9 +200,9 @@ internal class MainActivityV2 : AppCompatActivity(), EditablePdfHostFragment.Fra
 
             // Adjust the padding of the container view to accommodate system windows
             view.setPadding(
-                view.paddingLeft,
+                systemBarsInsets.left,
                 systemBarsInsets.top,
-                view.paddingRight,
+                systemBarsInsets.right,
                 systemBarsInsets.bottom,
             )
 

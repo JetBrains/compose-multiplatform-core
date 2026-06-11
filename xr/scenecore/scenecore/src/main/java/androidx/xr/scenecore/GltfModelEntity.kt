@@ -21,7 +21,6 @@ import androidx.annotation.MainThread
 import androidx.annotation.RequiresApi
 import androidx.annotation.RestrictTo
 import androidx.xr.runtime.Session
-import androidx.xr.runtime.XrLog
 import androidx.xr.runtime.math.BoundingBox
 import androidx.xr.runtime.math.Pose
 import androidx.xr.scenecore.runtime.GltfEntity as RtGltfEntity
@@ -37,12 +36,16 @@ import java.util.concurrent.TimeUnit
  * size of the model.
  */
 public class GltfModelEntity
-private constructor(rtEntity: RtGltfEntity, entityRegistry: EntityRegistry) :
-    BaseEntity<RtGltfEntity>(rtEntity, entityRegistry) {
+private constructor(rtGltfEntity: RtGltfEntity, entityRegistry: EntityRegistry) :
+    Entity(rtGltfEntity, entityRegistry) {
+
+    internal val rtGltfEntity: RtGltfEntity
+        get() = rtEntity as RtGltfEntity
+
     private val _nodes: List<GltfModelNode> by lazy {
         // The unique identifier of a node is their index so we first get the
         // count of the nodes in the model from the native side.
-        val features = rtEntity!!.nodes
+        val features = rtGltfEntity.nodes
         val list = ArrayList<GltfModelNode>(features.size)
 
         for (i in features.indices) {
@@ -73,7 +76,7 @@ private constructor(rtEntity: RtGltfEntity, entityRegistry: EntityRegistry) :
     private val _animations: List<GltfAnimation> by lazy {
         // The unique identifier of an animation is their index so we first get the
         // count of the nodes in the model from the native side.
-        val features = rtEntity.animations
+        val features = rtGltfEntity.animations
         val list = ArrayList<GltfAnimation>(features.size)
 
         for (i in features.indices) {
@@ -82,7 +85,7 @@ private constructor(rtEntity: RtGltfEntity, entityRegistry: EntityRegistry) :
             val feature = features[i]
             list.add(
                 GltfAnimation(
-                    rtGltfEntity = rtEntity,
+                    rtGltfEntity = rtGltfEntity,
                     rtGltfAnimation = feature,
                     index = feature.animationIndex,
                     name = feature.animationName,
@@ -123,13 +126,22 @@ private constructor(rtEntity: RtGltfEntity, entityRegistry: EntityRegistry) :
      *   [BoundingBox.halfExtents] defines the distance from the center to each face. The total size
      *   of the box is twice the half-extent. All values are in meters.
      */
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-    public val gltfModelBoundingBox: BoundingBox
-        @MainThread
-        get() {
-            checkNotDisposed()
-            return rtEntity!!.gltfModelBoundingBox
-        }
+    internal val gltfModelBoundingBox: BoundingBox
+        @MainThread get() = rtGltfEntity.gltfModelBoundingBox
+
+    /**
+     * Retrieves the axis-aligned bounding box (AABB) of an instanced glTF model in meters in the
+     * model's local coordinate space.
+     *
+     * @return A [BoundingBox] object representing the model's bounding box. The
+     *   [BoundingBox.center] defines the geometric center of the box, and the
+     *   [BoundingBox.halfExtents] defines the distance from the center to each face. The total size
+     *   of the box is twice the half-extent. All values are in meters.
+     */
+    // TODO - b/501059605: Make the property public and remove this getter.
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+    @ExperimentalGltfComposeMethod
+    public fun getGltfModelBoundingBox(): BoundingBox = gltfModelBoundingBox
 
     public companion object {
         /**
@@ -143,6 +155,7 @@ private constructor(rtEntity: RtGltfEntity, entityRegistry: EntityRegistry) :
          *   scene graph and will not be visible until a parent is set. The default value is
          *   [Scene]'s [ActivitySpace].
          */
+        @Suppress("RestrictedApiAndroidX")
         internal fun create(
             sceneRuntime: SceneRuntime,
             renderingRuntime: RenderingRuntime,
@@ -152,47 +165,10 @@ private constructor(rtEntity: RtGltfEntity, entityRegistry: EntityRegistry) :
             parent: Entity? = entityRegistry.getEntityForRtEntity(sceneRuntime.activitySpace),
         ): GltfModelEntity =
             GltfModelEntity(
-                renderingRuntime.createGltfEntity(
-                    pose,
-                    model.model,
-                    if (parent != null && parent !is BaseEntity<*>) {
-                        XrLog.warn(
-                            "The provided parent is not a BaseEntity. The GltfModelEntity will " +
-                                "be created without a parent."
-                        )
-                        null
-                    } else {
-                        parent?.rtEntity
-                    },
-                ),
-                entityRegistry,
-            )
-
-        /**
-         * Public factory function for a [GltfModelEntity].
-         *
-         * This method must be called from the main thread.
-         * https://developer.android.com/guide/components/processes-and-threads
-         *
-         * @param session [Session] to create the [GltfModel] in.
-         * @param model The [GltfModel] this [Entity] is referencing.
-         * @param pose The initial [Pose] of the [Entity].
-         */
-        @MainThread
-        @JvmStatic
-        @JvmOverloads
-        public fun create(
-            session: Session,
-            model: GltfModel,
-            pose: Pose = Pose.Identity,
-        ): GltfModelEntity =
-            create(
-                session.sceneRuntime,
-                session.renderingRuntime,
-                session.scene.entityRegistry,
-                model,
-                pose,
-            )
+                    renderingRuntime.createGltfEntity(pose, model.model, parent?.rtEntity),
+                    entityRegistry,
+                )
+                .also { it.parent = parent }
 
         /**
          * Public factory function for a [GltfModelEntity].
@@ -203,20 +179,20 @@ private constructor(rtEntity: RtGltfEntity, entityRegistry: EntityRegistry) :
          * @param session [Session] to create the [GltfModel] in.
          * @param model The [GltfModel] this [Entity] is referencing.
          * @param pose The initial [Pose] of the [Entity]. The default value is [Pose.Identity].
-         * @param parent Parent entity. If `null`, the entity is created but not attached to the
-         *   scene graph and will not be visible until a parent is set. The default value is
-         *   [Scene]'s [ActivitySpace].
+         * @param parent Parent entity. Defaults to `null`. If `null`, the entity is created but not
+         *   attached to the scene graph, meaning it will be invisible. If a parent entity (e.g.,
+         *   [ActivitySpace] or any other [Entity] already present in the scene) is assigned later,
+         *   the entity will become visible (provided it is enabled). This allows for [Entity]
+         *   pre-configuration before making it visible.
          */
         @MainThread
+        @JvmOverloads
         @JvmStatic
-        // TODO: b/462865943 - Replace @RestrictTo with @JvmOverloads and remove the other overload
-        //  once the API proposal is approved.
-        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
         public fun create(
             session: Session,
             model: GltfModel,
             pose: Pose = Pose.Identity,
-            parent: Entity? = session.scene.activitySpace,
+            parent: Entity? = null,
         ): GltfModelEntity =
             create(
                 session.sceneRuntime,
@@ -228,3 +204,12 @@ private constructor(rtEntity: RtGltfEntity, entityRegistry: EntityRegistry) :
             )
     }
 }
+
+// Annotation for Gltf-specific restricted LIBRARY_GROUP_PREFIX APIs that have not been finalized.
+// The annotation itself is also restricted, to match the methods being annotated.
+@RequiresOptIn(
+    "This API is experimental and used exclusively by XR Compose. It is not supported for general use. (b/501059605)"
+)
+@Retention(AnnotationRetention.BINARY)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+public annotation class ExperimentalGltfComposeMethod

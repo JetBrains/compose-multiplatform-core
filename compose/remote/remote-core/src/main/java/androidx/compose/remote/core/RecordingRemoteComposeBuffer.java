@@ -111,6 +111,7 @@ import androidx.compose.remote.core.operations.layout.ImpulseOperation;
 import androidx.compose.remote.core.operations.layout.ImpulseProcess;
 import androidx.compose.remote.core.operations.layout.LayoutComponentContent;
 import androidx.compose.remote.core.operations.layout.LoopOperation;
+import androidx.compose.remote.core.operations.layout.MultiClickModifier;
 import androidx.compose.remote.core.operations.layout.RootLayoutComponent;
 import androidx.compose.remote.core.operations.layout.TouchCancelModifierOperation;
 import androidx.compose.remote.core.operations.layout.TouchDownModifierOperation;
@@ -134,6 +135,7 @@ import androidx.compose.remote.core.operations.layout.modifiers.BorderModifierOp
 import androidx.compose.remote.core.operations.layout.modifiers.ClipRectModifierOperation;
 import androidx.compose.remote.core.operations.layout.modifiers.CollapsiblePriorityModifierOperation;
 import androidx.compose.remote.core.operations.layout.modifiers.ComponentVisibilityOperation;
+import androidx.compose.remote.core.operations.layout.modifiers.DimensionConstraintsModifierOperation;
 import androidx.compose.remote.core.operations.layout.modifiers.DimensionModifierOperation;
 import androidx.compose.remote.core.operations.layout.modifiers.DrawContentOperation;
 import androidx.compose.remote.core.operations.layout.modifiers.GraphicsLayerModifierOperation;
@@ -155,6 +157,11 @@ import androidx.compose.remote.core.operations.layout.modifiers.ValueStringChang
 import androidx.compose.remote.core.operations.layout.modifiers.WidthInModifierOperation;
 import androidx.compose.remote.core.operations.layout.modifiers.WidthModifierOperation;
 import androidx.compose.remote.core.operations.layout.modifiers.ZIndexModifierOperation;
+import androidx.compose.remote.core.operations.loom.PatternArgument;
+import androidx.compose.remote.core.operations.loom.PatternBlock;
+import androidx.compose.remote.core.operations.loom.PatternDefine;
+import androidx.compose.remote.core.operations.loom.PatternForEach;
+import androidx.compose.remote.core.operations.loom.PatternInflation;
 import androidx.compose.remote.core.operations.matrix.MatrixConstant;
 import androidx.compose.remote.core.operations.matrix.MatrixExpression;
 import androidx.compose.remote.core.operations.matrix.MatrixVectorMath;
@@ -317,7 +324,7 @@ public class RecordingRemoteComposeBuffer extends RemoteComposeBuffer {
     }
 
     private interface OperationBlock {
-        void run(WireBuffer buffer, ArrayList<Operation> operations);
+        void run(WireBuffer buffer, List<Operation> operations);
     }
 
     private void addOperation(int id, @NonNull OperationBlock block) {
@@ -422,7 +429,11 @@ public class RecordingRemoteComposeBuffer extends RemoteComposeBuffer {
 
     @Override
     public void addDrawBitmap(
-            int imageId, float left, float top, float right, float bottom,
+            int imageId,
+            float left,
+            float top,
+            float right,
+            float bottom,
             int contentDescriptionId) {
         addOperation(new DrawBitmap(imageId, left, top, right, bottom, contentDescriptionId));
     }
@@ -570,14 +581,24 @@ public class RecordingRemoteComposeBuffer extends RemoteComposeBuffer {
 
     @Override
     public void addDrawBitmapFontTextRun(
-            int textId, int bitmapFontId, int start, int end, float x, float y,
+            int textId,
+            int bitmapFontId,
+            int start,
+            int end,
+            float x,
+            float y,
             float glyphSpacing) {
         addOperation(new DrawBitmapFontText(textId, bitmapFontId, start, end, x, y, glyphSpacing));
     }
 
     @Override
     public void addDrawBitmapFontTextRunOnPath(
-            int textId, int bitmapFontId, int pathId, int start, int end, float yAdj,
+            int textId,
+            int bitmapFontId,
+            int pathId,
+            int start,
+            int end,
+            float yAdj,
             float glyphSpacing) {
         addOperation(
                 new DrawBitmapFontTextOnPath(
@@ -882,6 +903,61 @@ public class RecordingRemoteComposeBuffer extends RemoteComposeBuffer {
     }
 
     @Override
+    public int definePattern(@NonNull String name, int @NonNull [] paramIds) {
+        int id = name.hashCode();
+        addText(id, name);
+        addOperation(new PatternDefine(id, paramIds));
+        return id;
+    }
+
+    @Override
+    public int definePatternParameter(@NonNull String name) {
+        int id = name.hashCode();
+        addText(id, name);
+        return id;
+    }
+
+    @Override
+    public void inflatePattern(int id, int @NonNull [] argIds) {
+        addOperation(new PatternInflation(id, argIds));
+    }
+
+    @Override
+    public void addPatternBlock(int paramIndex) {
+        addOperation(new PatternBlock(paramIndex));
+    }
+
+    @Override
+    public void addPatternArgument(int paramIndex) {
+        addOperation(new PatternArgument(paramIndex));
+    }
+
+    @Override
+    public void addPatternForEach(int collectionId, int localItemId) {
+        addOperation(new PatternForEach(collectionId, localItemId));
+    }
+
+    @Override
+    public void endPatternForEach() {
+        addContainerEnd();
+    }
+
+    @Override
+    public void endPatternDefine() {
+        addContainerEnd();
+    }
+
+    @Override
+    public void endPatternInflation() {
+        addContainerEnd();
+    }
+
+    @Override
+    public void endPatternBlock() {
+        addContainerEnd();
+    }
+
+    @Override
     public void addContainerEnd() {
         addOperation(new ContainerEnd());
     }
@@ -1009,16 +1085,14 @@ public class RecordingRemoteComposeBuffer extends RemoteComposeBuffer {
     @Override
     public void addFitBoxStart(int componentId, int animationId, int horizontal, int vertical) {
         mLastComponentId = getComponentId(componentId);
-        addOperation(
-                new FitBoxLayout(null, mLastComponentId, animationId, horizontal, vertical));
+        addOperation(new FitBoxLayout(null, mLastComponentId, animationId, horizontal, vertical));
     }
 
     @Override
     public void addImage(
             int componentId, int animationId, int bitmapId, int scaleType, float alpha) {
         mLastComponentId = getComponentId(componentId);
-        addOperation(
-                new ImageLayout(null, componentId, animationId, bitmapId, scaleType, alpha));
+        addOperation(new ImageLayout(null, componentId, animationId, bitmapId, scaleType, alpha));
     }
 
     @Override
@@ -1251,11 +1325,7 @@ public class RecordingRemoteComposeBuffer extends RemoteComposeBuffer {
 
     @Override
     public void addTextComponentStart(
-            int componentId,
-            int animationId,
-            int textId,
-            int textStyleId,
-            int flags) {
+            int componentId, int animationId, int textId, int textStyleId, int flags) {
         mLastComponentId = getComponentId(componentId);
         addOperation(
                 new CoreText(
@@ -1409,14 +1479,14 @@ public class RecordingRemoteComposeBuffer extends RemoteComposeBuffer {
     }
 
     @Override
-    public int storeBitmapUrl(int imageId, @NonNull String url) {
+    public int storeBitmapUrl(int imageId, @NonNull String url, int width, int height) {
         addOperation(
                 new BitmapData(
                         imageId,
                         BitmapData.TYPE_PNG,
-                        (short) 1,
+                        (short) width,
                         BitmapData.ENCODING_URL,
-                        (short) 1,
+                        (short) height,
                         url.getBytes(StandardCharsets.UTF_8)));
         return imageId;
     }
@@ -1490,13 +1560,17 @@ public class RecordingRemoteComposeBuffer extends RemoteComposeBuffer {
 
     @Override
     public void setVersion(int documentApiLevel, int profiles) {
-        throw new UnsupportedOperationException("setVersion is not supported");
+        mApiLevel = documentApiLevel;
+        mProfileMask = profiles;
     }
 
     @Override
-    public void setVersion(int documentApiLevel, int operationsProfiles,
+    public void setVersion(
+            int documentApiLevel,
+            int operationsProfiles,
             @NonNull Set<Integer> supportedOperations) {
-        throw new UnsupportedOperationException("setVersion is not supported");
+        mApiLevel = documentApiLevel;
+        mProfileMask = operationsProfiles;
     }
 
     @Override
@@ -1581,6 +1655,11 @@ public class RecordingRemoteComposeBuffer extends RemoteComposeBuffer {
     }
 
     @Override
+    public void addDimensionConstraintsModifierOperation(int type, float min, float max) {
+        addOperation(new DimensionConstraintsModifierOperation(type, min, max));
+    }
+
+    @Override
     public void addDrawContentOperation() {
         addOperation(new DrawContentOperation());
     }
@@ -1613,6 +1692,16 @@ public class RecordingRemoteComposeBuffer extends RemoteComposeBuffer {
                         mode,
                         enabled,
                         clickable));
+    }
+
+    /**
+     * Add a click modifier operation
+     *
+     * @param clickType type of click (0=single, 1=long, 2=double)
+     */
+    @Override
+    public void addClickModifierOperation(int clickType) {
+        addOperation(new MultiClickModifier(clickType));
     }
 
     @Override
@@ -1771,7 +1860,7 @@ public class RecordingRemoteComposeBuffer extends RemoteComposeBuffer {
 
         @Override
         public void addCollection(int id, @NonNull ArrayAccess collection) {
-            throw new UnsupportedOperationException("Not yet implemented");
+            // Ignore, called by RecordingRemoteComposeBuffer.addDynamicFloatArray.
         }
 
         @Override

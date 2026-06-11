@@ -30,6 +30,8 @@
     <string name="label_page_single" msgid="456123685879261101">"<xliff:g id="PAGE">%1$d</xliff:g> / <xliff:g id="TOTAL">%2$d</xliff:g>"</string>
     <string name="desc_page_single" msgid="8459583146661044094">"strana <xliff:g id="PAGE">%1$d</xliff:g> z <xliff:g id="TOTAL">%2$d</xliff:g>"</string>
     <string name="desc_zoom" msgid="7318480946145947242">"lupa na <xliff:g id="FIRST">%1$d</xliff:g> percent"</string>
+    <!-- no translation found for desc_pdf_view (4353979540148077296) -->
+    <skip />
     <string name="desc_goto" msgid="1333698934111921601">"Prejsť na"</string>
     <string name="desc_goto_link" msgid="2461368384824849714">"Prejsť na stránku <xliff:g id="PAGE_NUMBER">%1$d</xliff:g>"</string>
     <string name="desc_copy" msgid="385275789223074637">"Skopíruje vybraný obsah do schránky"</string>
@@ -67,6 +69,7 @@
     <string name="page_broken" msgid="2968770793669433462">"Stránka sa v dokumente vo formáte PDF nedá načítať"</string>
     <string name="needs_more_data" msgid="3520133467908240802">"V dokumente vo formáte PDF nie je dostatok údajov na spracovanie"</string>
     <string name="error_cannot_open_pdf" msgid="2361919778558145071">"Súbor PDF sa nepodarilo otvoriť"</string>
+    <string name="error_cannot_open_password_protected_pdf" msgid="3400883576932438749">"Súbory PDF chránené heslom nie sú podporované."</string>
     <string name="cannot_edit_pdf" msgid="7677598370087228978">"Tento súbor PDF nie je možné upraviť"</string>
     <string name="clipboard_label" msgid="8943155331324944981">"Obsah bol skopírovaný zo súboru PDF"</string>
     <string name="fast_scroller_thumb" msgid="6712048991132846541">"Posúvač"</string>
@@ -90,5 +93,4 @@
     <string name="form_widget_type_list_box" msgid="8052623180309553495">"Zoznamové pole"</string>
     <string name="form_widget_type_text_field" msgid="581285155951215607">"Textové pole"</string>
     <string name="form_widget_type_signature" msgid="3811511096215331673">"Podpis"</string>
-    <string name="form_filling_tooltip" msgid="1715428076993648563">"Klepnutím na pole prejdete do režimu vypĺňania formulára"</string>
 </resources>

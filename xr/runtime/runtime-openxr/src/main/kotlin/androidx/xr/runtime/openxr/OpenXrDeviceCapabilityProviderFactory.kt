@@ -20,24 +20,21 @@ import android.content.Context
 import androidx.xr.runtime.interfaces.Feature
 import androidx.xr.runtime.interfaces.XrDeviceCapabilityProvider
 import androidx.xr.runtime.interfaces.XrDeviceCapabilityProviderFactory
+import androidx.xr.runtime.interfaces.XrNativeInstanceProvider
 import kotlin.coroutines.CoroutineContext
 
 internal class OpenXrDeviceCapabilityProviderFactory() : XrDeviceCapabilityProviderFactory {
-    companion object {
-        private const val LIBRARY_NAME: String = "androidx.xr.runtime.openxr"
-
-        init {
-            // TODO(b/461561664): Add proper logging to this library.
-            System.loadLibrary(LIBRARY_NAME)
-        }
-    }
 
     override val requirements: Set<Feature> = setOf(Feature.FULLSTACK, Feature.OPEN_XR)
 
     override fun create(
         context: Context,
         coroutineContext: CoroutineContext,
+        nativeInstanceProvider: XrNativeInstanceProvider?,
     ): XrDeviceCapabilityProvider {
-        return OpenXrDeviceCapabilityProvider(context)
+        require(nativeInstanceProvider is OpenXrInstanceManager) {
+            "nativeInstanceProvider must be an instance of OpenXrInstanceManager"
+        }
+        return OpenXrDeviceCapabilityProvider(context, nativeInstanceProvider.nativeManager)
     }
 }

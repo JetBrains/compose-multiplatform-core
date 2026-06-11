@@ -54,12 +54,6 @@ androidXMultiplatform {
     androidLibrary {
         withJava()
         namespace = "androidx.room3"
-        optimization {
-            it.consumerKeepRules.publish = true
-            it.consumerKeepRules.files.add(
-                    new File(project.projectDir, "src/androidMain/proguard-rules.pro")
-            )
-        }
         stableAidl {
             version = 1
         }
@@ -88,6 +82,7 @@ androidXMultiplatform {
             dependencies {
                 api(project(":room3:room3-common"))
                 api(project(":sqlite:sqlite"))
+                implementation(project(":sqlite:sqlite-async"))
                 api("androidx.collection:collection:1.5.0")
                 api("androidx.annotation:annotation:1.9.1")
                 api(libs.kotlinCoroutinesCore)
@@ -204,15 +199,6 @@ androidx {
     type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2017"
     description = "Android Room-Runtime"
-    kotlinTarget = KotlinTarget.KOTLIN_2_1
-}
-
-// TODO(b/430983364): Workaround KSP incremental issue
-tasks.withType(KotlinCompile).configureEach {
-    incremental = false
-}
-tasks.withType(KspAATask).configureEach {
-    it.kspConfig.incremental.set(false)
 }
 
 // b/446711395

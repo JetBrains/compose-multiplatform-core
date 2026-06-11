@@ -8,8 +8,6 @@ import androidx.room3.paging.rxjava3.RxPagingSourceDaoReturnTypeConverter
 import androidx.room3.util.getColumnIndexOrThrow
 import androidx.room3.util.performSuspending
 import androidx.sqlite.SQLiteStatement
-import androidx.sqlite.prepare
-import androidx.sqlite.step
 import javax.`annotation`.processing.Generated
 import kotlin.Int
 import kotlin.Long
@@ -41,7 +39,7 @@ internal class MyDao_Impl(
     val _sql: String = "SELECT pk FROM MyEntity"
     val _rawQuery: RoomRawQuery = RoomRawQuery(_sql)
     return __listenableFuturePagingSourceDaoReturnTypeConverter.convert(__db, arrayOf("MyEntity"), _rawQuery) { _converterQuery ->
-      performSuspending(__db, true, false) { _connection ->
+      performSuspending<MutableList<MyEntity>>(__db, true, false) { _connection ->
         val _stmt: SQLiteStatement = _connection.prepare(_converterQuery.sql)
         try {
           _converterQuery.getBindingFunction().invoke(_stmt)
@@ -69,7 +67,7 @@ internal class MyDao_Impl(
       _stmt.bindLong(_argIndex, gt)
     }
     return __listenableFuturePagingSourceDaoReturnTypeConverter.convert(__db, arrayOf("MyEntity"), _rawQuery) { _converterQuery ->
-      performSuspending(__db, true, false) { _connection ->
+      performSuspending<MutableList<MyEntity>>(__db, true, false) { _connection ->
         val _stmt: SQLiteStatement = _connection.prepare(_converterQuery.sql)
         try {
           _converterQuery.getBindingFunction().invoke(_stmt)
@@ -94,7 +92,7 @@ internal class MyDao_Impl(
     val _sql: String = "SELECT pk FROM MyEntity"
     val _rawQuery: RoomRawQuery = RoomRawQuery(_sql)
     return __rxPagingSourceDaoReturnTypeConverter.convert(__db, arrayOf("MyEntity"), _rawQuery) { _converterQuery ->
-      performSuspending(__db, true, false) { _connection ->
+      performSuspending<MutableList<MyEntity>>(__db, true, false) { _connection ->
         val _stmt: SQLiteStatement = _connection.prepare(_converterQuery.sql)
         try {
           _converterQuery.getBindingFunction().invoke(_stmt)
@@ -119,7 +117,7 @@ internal class MyDao_Impl(
     val _sql: String = "SELECT pk FROM MyEntity"
     val _rawQuery: RoomRawQuery = RoomRawQuery(_sql)
     return __listenableFuturePagingSourceDaoReturnTypeConverter.convert(__db, arrayOf("MyEntity"), _rawQuery) { _converterQuery ->
-      performSuspending(__db, true, false) { _connection ->
+      performSuspending<MutableList<MyEntity>>(__db, true, false) { _connection ->
         val _stmt: SQLiteStatement = _connection.prepare(_converterQuery.sql)
         try {
           _converterQuery.getBindingFunction().invoke(_stmt)
@@ -141,6 +139,8 @@ internal class MyDao_Impl(
   }
 
   public companion object {
-    public fun getRequiredConverters(): List<KClass<*>> = emptyList()
+    public fun getRequiredColumnConverters(): List<KClass<*>> = emptyList()
+
+    public fun getRequiredDaoReturnTypeConverters(): List<KClass<*>> = emptyList()
   }
 }

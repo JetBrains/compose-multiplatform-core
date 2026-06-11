@@ -33,6 +33,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.inspection.SPAM_LOG_TAG
 import androidx.compose.ui.inspection.inspector.ParameterType.DimensionDp
 import androidx.compose.ui.inspection.util.copy
+import androidx.compose.ui.inspection.util.isPrimitiveClass
 import androidx.compose.ui.inspection.util.removeLast
 import androidx.compose.ui.platform.InspectableValue
 import androidx.compose.ui.text.AnnotatedString
@@ -259,7 +260,7 @@ internal class ParameterFactory(inlineClassConverter: InlineClassConverter) {
     private fun ignoredValue(value: Any?): Boolean =
         value == null ||
             ignoredClasses.any { ignored -> ignored.isInstance(value) } ||
-            value::class.java.isPrimitive
+            value.javaClass.isPrimitiveClass()
 
     /** Convenience class for building [NodeParameter]s. */
     private inner class ParameterCreator {
@@ -576,7 +577,26 @@ internal class ParameterFactory(inlineClassConverter: InlineClassConverter) {
             val parameter = NodeParameter(name, ParameterType.String, simpleName)
             return when {
                 properties.isEmpty() -> parameter
-                !shouldRecurseDeeper() -> parameter.withChildReference()
+                !shouldRecurseDeeper() -> {
+                    // If we have reached or exceeded the recursion limit, we don't want to
+                    // decompose further in the current call stack. We still check for expandable
+                    // children to provide a reference for potential later expansion by the client.
+                    if (recursions > maxRecursions) {
+                        // This branch is taken if createRecursively was called with a recursion
+                        // depth already exceeding maxRecursions. This should be prevented from
+                        // going deeper to avoid stack overflow.
+                        return parameter
+                    }
+                    // When recursions == maxRecursions, we proceed to check if there are child
+                    // elements. The hasChildValue check below calls createRecursively to determine
+                    // if this node is expandable.
+                    val hasChildValue =
+                        properties.values.any { part ->
+                            createRecursively(part.name, support.valueOf(part, value), value, 0) !=
+                                null
+                        }
+                    if (hasChildValue) parameter.withChildReference() else parameter
+                }
                 else -> {
                     val elements = parameter.elements
                     properties.values.mapIndexedNotNullTo(elements) { index, part ->

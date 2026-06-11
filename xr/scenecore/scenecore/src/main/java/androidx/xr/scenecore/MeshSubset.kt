@@ -13,23 +13,37 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package androidx.xr.scenecore
 
-import androidx.annotation.RestrictTo
+import androidx.annotation.IntRange
 
 /**
- * Enum defining the topology of the mesh subset.
+ * Defines the topology of the indices in a [MeshSubset].
  *
- * This specifies how the indices in the index buffer are interpreted to form geometric primitives.
+ * This specifies how the index buffer maps vertices to geometric primitives.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public enum class MeshSubsetTopology(public val id: Int) {
-    /** Every three indices form a separate triangle. */
-    TRIANGLES(0),
+public class MeshSubsetTopology private constructor(private val value: Int) {
+    public companion object {
+        /** Every three indices form a separate triangle. */
+        @JvmField public val TRIANGLES: MeshSubsetTopology = MeshSubsetTopology(1)
+        /** Every index after the first two forms a triangle with the previous two indices. */
+        @JvmField public val TRIANGLE_STRIP: MeshSubsetTopology = MeshSubsetTopology(2)
+    }
 
-    /** Every index after the first two forms a triangle with the previous two indices. */
-    TRIANGLE_STRIP(1),
+    public override fun toString(): String =
+        when (this) {
+            TRIANGLES -> "TRIANGLES"
+            TRIANGLE_STRIP -> "TRIANGLE_STRIP"
+            else -> value.toString()
+        }
+
+    public override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is MeshSubsetTopology) return false
+        return value == other.value
+    }
+
+    public override fun hashCode(): Int = value.hashCode()
 }
 
 /**
@@ -42,10 +56,35 @@ public enum class MeshSubsetTopology(public val id: Int) {
  * @param indexOffset The offset (in number of indices, not bytes) to the first index in the index
  *   buffer.
  * @param indexCount The number of indices to draw.
+ * @throws IllegalArgumentException if [indexOffset] or [indexCount] is negative.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public data class MeshSubset(
+public class MeshSubset(
     public val topology: MeshSubsetTopology,
-    public val indexOffset: Int,
-    public val indexCount: Int,
-)
+    @IntRange(from = 0) public val indexOffset: Int,
+    @IntRange(from = 0) public val indexCount: Int,
+) {
+    init {
+        require(indexOffset >= 0) { "indexOffset must not be negative." }
+        require(indexCount >= 0) { "indexCount must not be negative." }
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is MeshSubset) return false
+        if (topology != other.topology) return false
+        if (indexOffset != other.indexOffset) return false
+        if (indexCount != other.indexCount) return false
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = topology.hashCode()
+        result = 31 * result + indexOffset
+        result = 31 * result + indexCount
+        return result
+    }
+
+    override fun toString(): String {
+        return "MeshSubset(topology=$topology, indexOffset=$indexOffset, indexCount=$indexCount)"
+    }
+}

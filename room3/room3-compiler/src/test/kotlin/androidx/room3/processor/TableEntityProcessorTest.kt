@@ -1477,6 +1477,46 @@ class TableEntityProcessorTest : BaseEntityParserTest() {
     }
 
     @Test
+    fun primaryKey_algorithm_rowid() {
+        listOf("long", "Long", "Integer", "int").forEach { type ->
+            singleEntity(
+                """
+                @PrimaryKey(autoGenerate = true, algorithm = androidx.room3.PrimaryKey.Algorithm.ROWID)
+                public $type id;
+                """
+            ) { entity, _ ->
+                assertThat(entity.primaryKey.properties.size, `is`(1))
+                assertThat(entity.primaryKey.properties.firstOrNull()?.name, `is`("id"))
+                assertThat(entity.primaryKey.autoGenerateId, `is`(true))
+                assertThat(
+                    entity.primaryKey.algorithm,
+                    `is`(androidx.room3.PrimaryKey.Algorithm.ROWID),
+                )
+            }
+        }
+    }
+
+    @Test
+    fun primaryKey_algorithm_autoincrement() {
+        listOf("long", "Long", "Integer", "int").forEach { type ->
+            singleEntity(
+                """
+                @PrimaryKey(autoGenerate = true, algorithm = androidx.room3.PrimaryKey.Algorithm.AUTOINCREMENT)
+                public $type id;
+                """
+            ) { entity, _ ->
+                assertThat(entity.primaryKey.properties.size, `is`(1))
+                assertThat(entity.primaryKey.properties.firstOrNull()?.name, `is`("id"))
+                assertThat(entity.primaryKey.autoGenerateId, `is`(true))
+                assertThat(
+                    entity.primaryKey.algorithm,
+                    `is`(androidx.room3.PrimaryKey.Algorithm.AUTOINCREMENT),
+                )
+            }
+        }
+    }
+
+    @Test
     fun primaryKey_nonNull_notNeeded() {
         listOf("long", "Long", "Integer", "int").forEach { type ->
             singleEntity(
@@ -2041,7 +2081,7 @@ class TableEntityProcessorTest : BaseEntityParserTest() {
             """
                 @PrimaryKey
                 int id;
-                @Relation(parentColumn = "id", entityColumn = "uid")
+                @Relation(parentColumns = {"id"}, entityColumns = {"uid"})
                 java.util.List<User> users;
                 """,
             sources = listOf(COMMON.USER),
@@ -2513,7 +2553,7 @@ class TableEntityProcessorTest : BaseEntityParserTest() {
 
                 static class A {
                     int entityId;
-                    @Relation(parentColumn = "entityId", entityColumn = "dataClassId")
+                    @Relation(parentColumns = {"entityId"}, entityColumns = {"dataClassId"})
                     List<MyEntity> myEntity;
                 }
                 """
@@ -2622,6 +2662,23 @@ class TableEntityProcessorTest : BaseEntityParserTest() {
         ) { _, invocation ->
             invocation.assertCompilationResult {
                 hasErrorContaining(ProcessorErrors.INVALID_COLUMN_NAME)
+            }
+        }
+    }
+
+    @Test
+    fun withoutRowId_errorAutoIncrement() {
+        val annotation = mapOf("withoutRowId" to "true")
+        singleEntity(
+            """
+                @PrimaryKey(autoGenerate = true)
+                int id;
+                String name;
+                """,
+            attributes = annotation,
+        ) { _, invocation ->
+            invocation.assertCompilationResult {
+                hasErrorContaining(ProcessorErrors.WITHOUT_ROWID_CANNOT_USE_AUTOINCREMENT)
             }
         }
     }

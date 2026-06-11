@@ -16,6 +16,7 @@
 
 package androidx.compose.remote.creation.compose.state
 
+import androidx.compose.remote.core.RemoteContext
 import androidx.compose.remote.core.operations.Utils
 import com.google.common.truth.Truth.assertThat
 import kotlin.test.assertFails
@@ -133,6 +134,129 @@ class RemoteStateCacheKeyTest {
         val floatKey = RemoteOperationCacheKey.create(floatOp, 10f.rf, 5f.rf)
 
         assertThat(intKey).isNotEqualTo(floatKey)
+    }
+
+    @Test
+    fun remoteStateIdKey_Equality() {
+        val key1 = RemoteStateIdKey(10)
+        val key1Dup = RemoteStateIdKey(10)
+        val key2 = RemoteStateIdKey(20)
+
+        assertThat(key1).isEqualTo(key1Dup)
+        assertThat(key1.hashCode()).isEqualTo(key1Dup.hashCode())
+
+        assertThat(key1).isNotEqualTo(key2)
+    }
+
+    @Test
+    fun remoteStateIdKey_toDebugString() {
+        assertThat(RemoteStateIdKey(RemoteContext.ID_CONTINUOUS_SEC).toDebugString())
+            .isEqualTo("context:continuous_sec")
+        assertThat(RemoteStateIdKey(RemoteContext.ID_TIME_IN_SEC).toDebugString())
+            .isEqualTo("context:time_in_sec")
+        assertThat(RemoteStateIdKey(RemoteContext.ID_TIME_IN_MIN).toDebugString())
+            .isEqualTo("context:time_in_min")
+        assertThat(RemoteStateIdKey(RemoteContext.ID_TIME_IN_HR).toDebugString())
+            .isEqualTo("context:time_in_hr")
+        assertThat(RemoteStateIdKey(RemoteContext.ID_WINDOW_WIDTH).toDebugString())
+            .isEqualTo("context:window_width")
+        assertThat(RemoteStateIdKey(RemoteContext.ID_WINDOW_HEIGHT).toDebugString())
+            .isEqualTo("context:window_height")
+        assertThat(RemoteStateIdKey(RemoteContext.ID_COMPONENT_WIDTH).toDebugString())
+            .isEqualTo("context:component_width")
+        assertThat(RemoteStateIdKey(RemoteContext.ID_COMPONENT_HEIGHT).toDebugString())
+            .isEqualTo("context:component_height")
+        assertThat(RemoteStateIdKey(RemoteContext.ID_CALENDAR_MONTH).toDebugString())
+            .isEqualTo("context:calendar_month")
+        assertThat(RemoteStateIdKey(RemoteContext.ID_OFFSET_TO_UTC).toDebugString())
+            .isEqualTo("context:offset_to_utc")
+        assertThat(RemoteStateIdKey(RemoteContext.ID_WEEK_DAY).toDebugString())
+            .isEqualTo("context:week_day")
+        assertThat(RemoteStateIdKey(RemoteContext.ID_DAY_OF_MONTH).toDebugString())
+            .isEqualTo("context:day_of_month")
+        assertThat(RemoteStateIdKey(RemoteContext.ID_DAY_OF_YEAR).toDebugString())
+            .isEqualTo("context:day_of_year")
+        assertThat(RemoteStateIdKey(RemoteContext.ID_YEAR).toDebugString())
+            .isEqualTo("context:year")
+        assertThat(RemoteStateIdKey(RemoteContext.ID_TOUCH_POS_X).toDebugString())
+            .isEqualTo("context:touch_pos_x")
+        assertThat(RemoteStateIdKey(RemoteContext.ID_TOUCH_POS_Y).toDebugString())
+            .isEqualTo("context:touch_pos_y")
+        assertThat(RemoteStateIdKey(RemoteContext.ID_TOUCH_VEL_X).toDebugString())
+            .isEqualTo("context:touch_vel_x")
+        assertThat(RemoteStateIdKey(RemoteContext.ID_TOUCH_VEL_Y).toDebugString())
+            .isEqualTo("context:touch_vel_y")
+        assertThat(RemoteStateIdKey(RemoteContext.ID_ACCELERATION_X).toDebugString())
+            .isEqualTo("context:acceleration_x")
+        assertThat(RemoteStateIdKey(RemoteContext.ID_ACCELERATION_Y).toDebugString())
+            .isEqualTo("context:acceleration_y")
+        assertThat(RemoteStateIdKey(RemoteContext.ID_ACCELERATION_Z).toDebugString())
+            .isEqualTo("context:acceleration_z")
+        assertThat(RemoteStateIdKey(RemoteContext.ID_GYRO_ROT_X).toDebugString())
+            .isEqualTo("context:gyro_rot_x")
+        assertThat(RemoteStateIdKey(RemoteContext.ID_GYRO_ROT_Y).toDebugString())
+            .isEqualTo("context:gyro_rot_y")
+        assertThat(RemoteStateIdKey(RemoteContext.ID_GYRO_ROT_Z).toDebugString())
+            .isEqualTo("context:gyro_rot_z")
+        assertThat(RemoteStateIdKey(RemoteContext.ID_MAGNETIC_X).toDebugString())
+            .isEqualTo("context:magnetic_x")
+        assertThat(RemoteStateIdKey(RemoteContext.ID_MAGNETIC_Y).toDebugString())
+            .isEqualTo("context:magnetic_y")
+        assertThat(RemoteStateIdKey(RemoteContext.ID_MAGNETIC_Z).toDebugString())
+            .isEqualTo("context:magnetic_z")
+        assertThat(RemoteStateIdKey(RemoteContext.ID_LIGHT).toDebugString())
+            .isEqualTo("context:light")
+        assertThat(RemoteStateIdKey(RemoteContext.ID_DENSITY).toDebugString())
+            .isEqualTo("context:density")
+        assertThat(RemoteStateIdKey(RemoteContext.ID_API_LEVEL).toDebugString())
+            .isEqualTo("context:api_level")
+        assertThat(RemoteStateIdKey(RemoteContext.ID_TOUCH_EVENT_TIME).toDebugString())
+            .isEqualTo("context:touch_event_time")
+        assertThat(RemoteStateIdKey(RemoteContext.ID_ANIMATION_TIME).toDebugString())
+            .isEqualTo("context:animation_time")
+        assertThat(RemoteStateIdKey(RemoteContext.ID_ANIMATION_DELTA_TIME).toDebugString())
+            .isEqualTo("context:animation_delta_time")
+        assertThat(RemoteStateIdKey(RemoteContext.ID_EPOCH_SECOND).toDebugString())
+            .isEqualTo("context:epoch_second")
+        assertThat(RemoteStateIdKey(RemoteContext.ID_FONT_SIZE).toDebugString())
+            .isEqualTo("context:font_size")
+        assertThat(RemoteStateIdKey(9999).toDebugString()).isEqualTo("context:#9999")
+    }
+
+    @Test
+    fun floatArrayCacheKey_Equality() {
+        val array1 = floatArrayOf(1f, 2f)
+        val array2 = floatArrayOf(1f, 2f)
+        val array3 = floatArrayOf(1f, 3f)
+
+        val key1 = FloatArrayCacheKey(array1)
+        val key1Dup = FloatArrayCacheKey(array2)
+        val key2 = FloatArrayCacheKey(array3)
+
+        assertThat(key1).isEqualTo(key1Dup)
+        assertThat(key1.hashCode()).isEqualTo(key1Dup.hashCode())
+
+        assertThat(key1).isNotEqualTo(key2)
+    }
+
+    @Test
+    fun hashCode_IsStableAfterMemoization() {
+        val keys =
+            listOf(
+                RemoteConstantCacheKey(10f),
+                RemoteNamedCacheKey(RemoteState.Domain.User, "test"),
+                RemoteStateIdKey(123),
+                RemoteComponentCacheKey(1, "width"),
+                RemoteOperationCacheKey.create(RemoteFloat.OperationKey.Plus, 1f.rf, 2f.rf),
+                FloatArrayCacheKey(floatArrayOf(1f)),
+            )
+
+        for (key in keys) {
+            val hash1 = key.hashCode()
+            val hash2 = key.hashCode()
+            assertThat(hash1).isEqualTo(hash2)
+            assertThat(hash1).isNotEqualTo(0)
+        }
     }
 
     @Test

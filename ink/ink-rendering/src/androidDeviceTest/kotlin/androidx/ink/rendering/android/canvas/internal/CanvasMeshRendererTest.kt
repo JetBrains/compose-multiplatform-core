@@ -25,7 +25,8 @@ import androidx.ink.brush.Brush
 import androidx.ink.brush.BrushCoat
 import androidx.ink.brush.BrushFamily
 import androidx.ink.brush.BrushPaint
-import androidx.ink.brush.ExperimentalInkCustomBrushApi
+import androidx.ink.brush.BrushPaint.StampingTexture
+import androidx.ink.brush.BrushPaint.TilingTexture
 import androidx.ink.brush.InputToolType
 import androidx.ink.brush.SelfOverlap
 import androidx.ink.brush.StockBrushes
@@ -53,7 +54,6 @@ import org.junit.runner.RunWith
  * TODO(b/293163827) Move this to a Robolectric test once a shadow exists for
  *   [android.graphics.MeshSpecification].
  */
-@OptIn(ExperimentalInkCustomBrushApi::class)
 @RunWith(AndroidJUnit4::class)
 @MediumTest
 @SdkSuppress(minSdkVersion = Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
@@ -417,10 +417,8 @@ class CanvasMeshRendererTest {
     fun drawStroke_whenAndroidU_withTextureAnimation_shouldSaveRecentlyDrawnMesh() {
         // Create a stroke with a texture animation.
         val texture =
-            BrushPaint.TextureLayer(
+            StampingTexture(
                 clientTextureId = "test",
-                sizeX = 10f,
-                sizeY = 10f,
                 animationFrames = 8,
                 animationRows = 3,
                 animationColumns = 3,
@@ -497,13 +495,7 @@ class CanvasMeshRendererTest {
     )
     fun drawStroke_whenAndroidU_withoutTextureAnimation_shouldIgnoreTextureProgressForMeshReuse() {
         // Create a stroke without a texture animation.
-        val texture =
-            BrushPaint.TextureLayer(
-                clientTextureId = "test",
-                sizeX = 10f,
-                sizeY = 10f,
-                animationFrames = 1,
-            )
+        val texture = TilingTexture(clientTextureId = "test", sizeX = 10f, sizeY = 10f)
         val family = BrushFamily(paint = BrushPaint(listOf(texture)))
         val brush = Brush(family = family, size = 10f, epsilon = 0.1f)
         val stroke =

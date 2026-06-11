@@ -16,11 +16,9 @@
 
 package androidx.xr.arcore
 
-import androidx.annotation.RestrictTo
 import androidx.xr.arcore.runtime.Eye as RuntimeEye
 import androidx.xr.runtime.EyeTrackingMode
 import androidx.xr.runtime.Session
-import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.math.Pose
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -32,40 +30,51 @@ import kotlinx.coroutines.flow.asStateFlow
  * An [Eye] instance provides the state of the eye (shut or gazing), as well as a [Pose] indicating
  * where the user is currently looking.
  */
+@SuppressWarnings("HiddenSuperclass")
 public class Eye internal constructor(internal val runtimeEye: RuntimeEye) :
-    Trackable<Eye.State>, Updatable {
+    Trackable<Eye.State>, Updatable() {
 
     public companion object {
         /**
-         * Returns the left eye, if available.
+         * Returns the left eye.
          *
          * @param session the [Session] to retrieve the eye from
+         * @throws IllegalStateException if [androidx.xr.runtime.Config.eyeTracking] is set to
+         *   [EyeTrackingMode.DISABLED]
          * @sample androidx.xr.arcore.samples.getLeftEye
          */
         @JvmStatic
-        public fun left(session: Session): Eye? {
+        public fun left(session: Session): Eye {
             val perceptionStateExtender = getPerceptionStateExtender(session)
-            val config = perceptionStateExtender.xrResourcesManager.lifecycleManager.config
+            val config = perceptionStateExtender.xrResourcesManager.perceptionRuntime.config
             check(config.eyeTracking != EyeTrackingMode.DISABLED) {
                 "Config.EyeTrackingMode is set to DISABLED."
             }
-            return perceptionStateExtender.xrResourcesManager.leftEye
+            check(perceptionStateExtender.xrResourcesManager.leftEye != null) {
+                "Left eye is not available."
+            }
+            return perceptionStateExtender.xrResourcesManager.leftEye!!
         }
 
         /**
-         * Returns the right eye, if available.
+         * Returns the right eye.
          *
          * @param session the [Session] to retrieve the eye from
+         * @throws IllegalStateException if [androidx.xr.runtime.Config.eyeTracking] is set to
+         *   [EyeTrackingMode.DISABLED]
          * @sample androidx.xr.arcore.samples.getRightEye
          */
         @JvmStatic
-        public fun right(session: Session): Eye? {
+        public fun right(session: Session): Eye {
             val perceptionStateExtender = getPerceptionStateExtender(session)
-            val config = perceptionStateExtender.xrResourcesManager.lifecycleManager.config
+            val config = perceptionStateExtender.xrResourcesManager.perceptionRuntime.config
             check(config.eyeTracking != EyeTrackingMode.DISABLED) {
                 "Config.EyeTrackingMode is set to DISABLED."
             }
-            return perceptionStateExtender.xrResourcesManager.rightEye
+            check(perceptionStateExtender.xrResourcesManager.rightEye != null) {
+                "Right eye is not available."
+            }
+            return perceptionStateExtender.xrResourcesManager.rightEye!!
         }
 
         private fun getPerceptionStateExtender(session: Session): PerceptionStateExtender {
@@ -84,18 +93,21 @@ public class Eye internal constructor(internal val runtimeEye: RuntimeEye) :
      *
      * @property isOpen a flag indicating whether the eye is open
      * @property pose the [Pose] of the eye
-     * @property trackingState the [TrackingState] of the eye
+     * @property trackingState the [androidx.xr.arcore.TrackingState] of the eye
+     * @property owner self-reference to the object that owns this state.
      */
     public class State
     internal constructor(
         public val isOpen: Boolean,
         public val pose: Pose,
         public override val trackingState: TrackingState,
+        public val owner: Eye,
     ) : Trackable.State {
         override fun hashCode(): Int {
             var result = isOpen.hashCode()
             result = 31 * result + pose.hashCode()
             result = 31 * result + trackingState.hashCode()
+            result = 31 * result + owner.hashCode()
             return result
         }
 
@@ -104,12 +116,20 @@ public class Eye internal constructor(internal val runtimeEye: RuntimeEye) :
             if (other !is State) return false
             return isOpen == other.isOpen &&
                 pose == other.pose &&
-                trackingState == other.trackingState
+                trackingState == other.trackingState &&
+                owner == other.owner
         }
     }
 
     private var _state =
-        MutableStateFlow(State(runtimeEye.isOpen, runtimeEye.pose, runtimeEye.trackingState))
+        MutableStateFlow(
+            State(
+                runtimeEye.isOpen,
+                runtimeEye.pose,
+                runtimeEye.trackingState.toTrackingState(),
+                owner = this,
+            )
+        )
 
     /** A [StateFlow] that contains the latest [State] of an [Eye]. */
     public override val state: StateFlow<State> = _state.asStateFlow()
@@ -118,8 +138,14 @@ public class Eye internal constructor(internal val runtimeEye: RuntimeEye) :
      * This function is used by the runtime to propagate internal state changes. It is not intended
      * to be called directly by a developer.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     override suspend fun update() {
-        _state.emit(State(runtimeEye.isOpen, runtimeEye.pose, runtimeEye.trackingState))
+        _state.emit(
+            State(
+                runtimeEye.isOpen,
+                runtimeEye.pose,
+                runtimeEye.trackingState.toTrackingState(),
+                owner = this,
+            )
+        )
     }
 }

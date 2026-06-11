@@ -28,8 +28,8 @@ plugins {
 }
 
 dependencies {
-    implementation("androidx.core:core:1.18.0-rc01")
-    androidTestImplementation("androidx.activity:activity:1.13.0-rc01")
+    implementation("androidx.core:core:1.18.0")
+    androidTestImplementation("androidx.activity:activity:1.13.0")
     androidTestImplementation(libs.testExtJunit)
     androidTestImplementation(libs.testRunner)
     androidTestImplementation(libs.truth)
@@ -37,7 +37,7 @@ dependencies {
 }
 
 android {
-    compileSdk { version = release(36) }
+    compileSdk { version = release(37) }
     namespace = "androidx.core.pip"
 }
 

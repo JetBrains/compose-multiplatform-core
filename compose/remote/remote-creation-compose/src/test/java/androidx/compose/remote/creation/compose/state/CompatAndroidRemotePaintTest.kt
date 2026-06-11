@@ -126,6 +126,28 @@ class CompatAndroidRemotePaintTest {
     }
 
     @Test
+    fun remoteColorExpressionPreservedInRemotePaintTest() {
+        val paint = CompatAndroidRemotePaint()
+        val namedColor = RemoteColor.createNamedRemoteColor("myColor", Color.Red)
+        paint.remoteColor = namedColor
+
+        val remotePaint = paint.asRemotePaint()
+        assertThat(remotePaint.color).isEqualTo(namedColor)
+    }
+
+    @Test
+    fun remoteColorFilterExpressionPreservedInRemotePaintTest() {
+        val paint = CompatAndroidRemotePaint()
+        val namedColor = RemoteColor.createNamedRemoteColor("myColor", Color.Green)
+        val namedFilter =
+            RemoteBlendModeColorFilter(namedColor, androidx.compose.ui.graphics.BlendMode.SrcIn)
+        paint.remoteColorFilter = namedFilter
+
+        val remotePaint = paint.asRemotePaint()
+        assertThat(remotePaint.colorFilter).isEqualTo(namedFilter)
+    }
+
+    @Test
     fun remoteShaderTest() {
         val paint = CompatAndroidRemotePaint()
         val sweepGradient = RemoteBrush.sweepGradient(listOf(Color.Red.rc, Color.Blue.rc))

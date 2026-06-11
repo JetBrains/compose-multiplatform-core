@@ -17,7 +17,8 @@
 
 package androidx.compose.ui
 
-import androidx.compose.ui.node.findNearestAncestor
+import androidx.compose.ui.ComposeUiFlags.isInitialFocusOnFocusableAvailable
+import androidx.compose.ui.ComposeUiFlags.isViewFocusFixEnabled
 import kotlin.jvm.JvmField
 import kotlin.jvm.JvmName
 
@@ -55,6 +56,7 @@ import kotlin.jvm.JvmName
  */
 @ExperimentalComposeUiApi
 object ComposeUiFlags {
+
     /**
      * This enables fixes for View focus. The changes are large enough to require a flag to allow
      * disabling them.
@@ -84,34 +86,6 @@ object ComposeUiFlags {
     // TODO: b/485962036
     @field:Suppress("MutableBareField") @JvmField var isFocusRestorationEnabled: Boolean = false
 
-    /** Flag for enabling indirect pointer event navigation gestures in Compose. */
-    // TODO: b/455601135
-    @field:Suppress("MutableBareField")
-    @JvmField
-    var isIndirectPointerNavigationGestureDetectorEnabled: Boolean = true
-
-    /** Flag enables optimized focus change dispatching logic. */
-    // TODO: b/455603009
-    @field:Suppress("MutableBareField")
-    @JvmField
-    var isOptimizedFocusEventDispatchEnabled: Boolean = true
-
-    /** This flag enables setting the shape semantics property in the graphicsLayer modifiers. */
-    // TODO: b/455600081
-    @field:Suppress("MutableBareField")
-    @JvmField
-    var isGraphicsLayerShapeSemanticsEnabled: Boolean = true
-
-    /**
-     * Enables a fix where [androidx.compose.ui.node.TraversableNode] traversal method
-     * [findNearestAncestor] will take into consideration any delegates that might also be
-     * traversable.
-     */
-    // TODO: b/485962494
-    @field:Suppress("MutableBareField")
-    @JvmField
-    var isTraversableDelegatesFixEnabled: Boolean = true
-
     /**
      * Enables a change where off-screen children of the partially visible merging nodes (e.g. a
      * Text node of a Button) inside scrollable container are now also reported in the semantics
@@ -123,22 +97,6 @@ object ComposeUiFlags {
     @field:Suppress("MutableBareField")
     @JvmField
     var isAccessibilityShouldIncludeOffscreenChildrenEnabled: Boolean = true
-
-    /**
-     * Enables support of trackpad gesture events.
-     *
-     * If enabled, [androidx.compose.ui.input.pointer.PointerEvent]s can have type of
-     * [androidx.compose.ui.input.pointer.PointerEventType.PanMove] and
-     * [androidx.compose.ui.input.pointer.PointerEventType.ScaleChange], corresponding to
-     * system-recognized gestures on a trackpad.
-     *
-     * These trackpad gestures will also generally be treated as mouse, with the exact behavior
-     * depending on platform specifics.
-     */
-    // TODO: b/475634969 remove the temporary flag
-    @field:Suppress("MutableBareField")
-    @JvmField
-    var isTrackpadGestureHandlingEnabled: Boolean = true
 
     /**
      * Enable the integration of [LocalUiMediaScope] at the root compose view which provides various
@@ -159,4 +117,33 @@ object ComposeUiFlags {
     @field:Suppress("MutableBareField")
     @JvmField
     var isSkipNonImportantSemanticsNodesHitTestEnabled: Boolean = true
+
+    /**
+     * Enables fix where coroutine scope lambda and scope are cleared on node detachment to prevent
+     * reference leaking.
+     */
+    // TODO: b/506963276
+    @field:Suppress("MutableBareField")
+    @JvmField
+    var isClearNestedScrollCoroutineScopeFixEnabled: Boolean = true
+
+    /**
+     * This flag controls whether the fix for velocity tracker usage in Draggable and related
+     * classes is enabled to a) properly track velocity per pointer and b) make sure to also take
+     * the pointer events into account that don't move at the beginning of the gesture in order to
+     * increase the stability of the computed velocity.
+     */
+    // TODO: Remove this flag once it has soaked (b/501080937)
+    @field:Suppress("MutableBareField")
+    @JvmField
+    var isTriggerMoveEventsWhenLocationHasNotChangedEnabled: Boolean = true
+
+    /**
+     * Enables re-interpreting trackpad pinch gestures (CLASSIFICATION_PINCH) as mouse events with
+     * scale factor, rather than passing through fake finger touch events.
+     */
+    // TODO: b/519714278 - Cleanup feature flag
+    @field:Suppress("MutableBareField")
+    @JvmField
+    var isTrackpadPinchReinterpretationEnabled: Boolean = true
 }

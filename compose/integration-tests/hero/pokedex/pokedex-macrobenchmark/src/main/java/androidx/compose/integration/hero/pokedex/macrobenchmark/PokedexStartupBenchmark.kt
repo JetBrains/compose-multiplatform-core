@@ -26,7 +26,9 @@ import androidx.test.filters.LargeTest
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.BySelector
 import androidx.test.uiautomator.Until
+import androidx.testutils.CpuFrequencyChangeMetric
 import androidx.testutils.createStartupCompilationParams
+import androidx.testutils.getStartupMetrics
 import androidx.testutils.measureStartup
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -45,12 +47,14 @@ class PokedexStartupBenchmark(
         action: String,
         contentSelector: BySelector,
         setupIntent: Intent.() -> Unit = {},
-    ) =
+    ) {
+
         benchmarkRule.measureStartup(
             compilationMode = compilation,
             startupMode = startupMode,
             packageName = POKEDEX_TARGET_PACKAGE_NAME,
             iterations = HeroMacrobenchmarkDefaults.ITERATIONS,
+            metrics = getStartupMetrics() + CpuFrequencyChangeMetric(),
             waitForContent = {
                 device.waitForIdle()
                 val searchCondition = Until.hasObject(contentSelector)
@@ -65,6 +69,7 @@ class PokedexStartupBenchmark(
                 setupIntent()
             },
         )
+    }
 
     @Test
     fun startupCompose() =

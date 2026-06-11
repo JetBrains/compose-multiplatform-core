@@ -25,11 +25,11 @@ import androidx.compose.remote.core.VariableSupport
 import androidx.compose.remote.core.operations.layout.managers.BoxLayout
 import androidx.compose.remote.core.semantics.AccessibleComponent
 import androidx.compose.remote.core.semantics.CoreSemantics
-import androidx.compose.remote.creation.CreationDisplayInfo
 import androidx.compose.remote.creation.compose.capture.CapturedDocument
+import androidx.compose.remote.creation.compose.capture.RemoteCreationDisplayInfo
+import androidx.compose.remote.creation.compose.capture.captureSingleRemoteDocument
 import androidx.compose.remote.creation.compose.layout.RemoteBox
 import androidx.compose.remote.creation.compose.state.rs
-import androidx.compose.remote.creation.compose.v2.captureSingleRemoteDocumentV2
 import androidx.compose.remote.player.core.platform.AndroidRemoteContext
 import androidx.compose.ui.semantics.Role
 import androidx.test.core.app.ApplicationProvider
@@ -55,9 +55,9 @@ class SemanticsModifierTest {
 
     @Test
     fun semanticsModifier_recordsCorrectProperties() = runTest {
-        val displayInfo = CreationDisplayInfo(500, 500, 1)
+        val displayInfo = RemoteCreationDisplayInfo(500, 500, 1, 1.0f)
         val captured =
-            captureSingleRemoteDocumentV2(
+            captureSingleRemoteDocument(
                 creationDisplayInfo = displayInfo,
                 context = applicationContext,
             ) {
@@ -76,7 +76,8 @@ class SemanticsModifierTest {
         val coreDoc = makeAndUpdateCoreDocument(captured)
 
         val boxLayout = coreDoc.getComponent(-3) as BoxLayout
-        val semantics = boxLayout.componentModifiers.list.filterIsInstance<CoreSemantics>().first()
+        val semantics =
+            boxLayout.componentModifiers.modifiersList.filterIsInstance<CoreSemantics>().first()
 
         assertThat(semantics).isNotNull()
         assertThat(context.getText(semantics.contentDescriptionId)).isEqualTo("test description")
@@ -89,9 +90,9 @@ class SemanticsModifierTest {
 
     @Test
     fun clearAndSetSemantics_recordsCorrectMode() = runTest {
-        val displayInfo = CreationDisplayInfo(500, 500, 1)
+        val displayInfo = RemoteCreationDisplayInfo(500, 500, 1, 1.0f)
         val captured =
-            captureSingleRemoteDocumentV2(
+            captureSingleRemoteDocument(
                 creationDisplayInfo = displayInfo,
                 context = applicationContext,
             ) {
@@ -101,7 +102,8 @@ class SemanticsModifierTest {
         val coreDoc = makeAndUpdateCoreDocument(captured)
 
         val boxLayout = coreDoc.getComponent(-3) as BoxLayout
-        val semantics = boxLayout.componentModifiers.list.filterIsInstance<CoreSemantics>().first()
+        val semantics =
+            boxLayout.componentModifiers.modifiersList.filterIsInstance<CoreSemantics>().first()
 
         assertThat(semantics).isNotNull()
         assertThat(semantics.mode).isEqualTo(AccessibleComponent.Mode.CLEAR_AND_SET)

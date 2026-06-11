@@ -28,6 +28,8 @@ import android.os.Build
 import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.annotation.RestrictTo
+import androidx.annotation.VisibleForTesting
+import androidx.benchmark.DeviceInfo.ART_MAINLINE_MIN_VERSION_VERIFY_CLEARS_RUNTIME_IMAGE
 import androidx.test.platform.app.InstrumentationRegistry
 import java.io.File
 
@@ -261,7 +263,7 @@ object DeviceInfo {
      *
      * See b/368404173
      *
-     * @see androidx.benchmark.macro.MacrobenchmarkScope.KillFlushMode.ClearArtRuntimeImage
+     * @see androidx.benchmark.macro.MacrobenchmarkScope.KillMode.clearArtRuntimeImage
      * @see ART_MAINLINE_MIN_VERSION_VERIFY_CLEARS_RUNTIME_IMAGE
      */
     private const val ART_MAINLINE_MIN_VERSION_RUNTIME_IMAGE = 340800000L
@@ -345,4 +347,27 @@ object DeviceInfo {
 
     val supportsCpuEventCounters =
         Build.VERSION.SDK_INT < CpuEventCounter.MIN_API_ROOT_REQUIRED || isRooted
+
+    @get:VisibleForTesting
+    @set:VisibleForTesting
+    var canShellAccessAppFilesOverride: Boolean? = null
+
+    val canShellAccessAppFiles: Boolean
+        get() = canShellAccessAppFilesOverride ?: canShellAccessAppFilesImpl
+
+    private val canShellAccessAppFilesImpl: Boolean by lazy {
+        val testFile = File(Outputs.dirUsableByAppAndShell, "shell_access_test.txt")
+        try {
+            testFile.writeText("test")
+            val output = Shell.executeScriptCaptureStdoutStderr("rm -f ${testFile.absolutePath}")
+            !output.stderr.contains("Permission denied", ignoreCase = true) &&
+                !output.stderr.contains("Operation not permitted", ignoreCase = true)
+        } catch (e: Exception) {
+            true // If it fails for any other reason, assume true to not proactively fail
+        } finally {
+            if (testFile.exists()) {
+                testFile.delete()
+            }
+        }
+    }
 }

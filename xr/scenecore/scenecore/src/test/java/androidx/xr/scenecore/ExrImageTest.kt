@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("DEPRECATION")
+
 package androidx.xr.scenecore
 
 import androidx.activity.ComponentActivity
@@ -45,7 +47,7 @@ class ExrImageTest {
         Robolectric.buildActivity(ComponentActivity::class.java).create().start().get()
 
     @Before
-    fun setUp() {
+    fun setUp(): Unit = runBlocking {
         val testDispatcher = StandardTestDispatcher()
         val result = Session.create(activity, testDispatcher)
 

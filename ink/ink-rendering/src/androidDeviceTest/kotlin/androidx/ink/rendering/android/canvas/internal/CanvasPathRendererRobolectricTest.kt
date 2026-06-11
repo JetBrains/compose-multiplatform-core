@@ -21,7 +21,7 @@ import androidx.ink.brush.Brush
 import androidx.ink.brush.BrushCoat
 import androidx.ink.brush.BrushFamily
 import androidx.ink.brush.BrushPaint
-import androidx.ink.brush.ExperimentalInkCustomBrushApi
+import androidx.ink.brush.BrushPaint.StampingTexture
 import androidx.ink.brush.InputToolType
 import androidx.ink.brush.SelfOverlap
 import androidx.ink.strokes.ImmutableStrokeInputBatch
@@ -44,7 +44,6 @@ import org.junit.runner.RunWith
  * Note that in AndroidX, this test runs on the emulator rather than Robolectric, so it doesn't have
  * a speed benefit.
  */
-@OptIn(ExperimentalInkCustomBrushApi::class)
 @RunWith(AndroidJUnit4::class)
 @MediumTest
 class CanvasPathRendererRobolectricTest {
@@ -101,17 +100,7 @@ class CanvasPathRendererRobolectricTest {
     @Test
     fun canDraw_withUnsupportedTextureMapping_returnsFalse() {
         val stampingPaint =
-            BrushPaint(
-                textureLayers =
-                    listOf(
-                        BrushPaint.TextureLayer(
-                            clientTextureId = "foo",
-                            sizeX = 16F,
-                            sizeY = 16F,
-                            mapping = BrushPaint.TextureMapping.STAMPING,
-                        )
-                    )
-            )
+            BrushPaint(textureLayers = listOf(StampingTexture(clientTextureId = "foo")))
         val stampingBrush =
             Brush(
                 family =

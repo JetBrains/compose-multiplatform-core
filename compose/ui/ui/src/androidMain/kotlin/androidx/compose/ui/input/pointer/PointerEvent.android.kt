@@ -31,10 +31,6 @@ import androidx.compose.ui.ComposeUiFlags
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.util.fastForEach
 
-internal actual typealias NativePointerButtons = Int
-
-internal actual typealias NativePointerKeyboardModifiers = Int
-
 /**
  * Restricts Ints to `MotionEvent`'s classification types. See the
  * [Android documentation on MotionEvent.getClassification()]
@@ -112,46 +108,52 @@ internal actual constructor(
         val motionEvent = motionEvent
         if (motionEvent != null) {
             /**
-             * Special case: for a two finger swipe from a trackpad, we interpret the motion event
-             * as a scroll event type, rather than the fake finger press + move + release
+             * Special cases: for classifications, we interpret the motion event differently instead
+             * of the fake finger press + move + release
              */
             val isTwoFingerSwipe =
-                Build.VERSION.SDK_INT >= 29 &&
+                Build.VERSION.SDK_INT >= 34 &&
                     motionEvent.classification == CLASSIFICATION_TWO_FINGER_SWIPE
             val isPinch =
-                Build.VERSION.SDK_INT >= 29 && motionEvent.classification == CLASSIFICATION_PINCH
+                Build.VERSION.SDK_INT >= 34 && motionEvent.classification == CLASSIFICATION_PINCH
+            val isPinchReinterpretation =
+                isPinch && ComposeUiFlags.isTrackpadPinchReinterpretationEnabled
             return when (motionEvent.actionMasked) {
                 MotionEvent.ACTION_DOWN -> {
-                    if (isTwoFingerSwipe && ComposeUiFlags.isTrackpadGestureHandlingEnabled) {
+                    if (isTwoFingerSwipe) {
                         PointerEventType.PanStart
-                    } else if (isPinch && ComposeUiFlags.isTrackpadGestureHandlingEnabled) {
+                    } else if (isPinch && !isPinchReinterpretation) {
                         PointerEventType.ScaleStart
                     } else {
                         PointerEventType.Press
                     }
                 }
                 MotionEvent.ACTION_POINTER_DOWN -> {
-                    if (isTwoFingerSwipe && ComposeUiFlags.isTrackpadGestureHandlingEnabled) {
+                    if (isTwoFingerSwipe) {
                         PointerEventType.PanStart
-                    } else if (isPinch && ComposeUiFlags.isTrackpadGestureHandlingEnabled) {
+                    } else if (isPinchReinterpretation) {
+                        PointerEventType.ScaleStart
+                    } else if (isPinch) {
                         PointerEventType.ScaleChange
                     } else {
                         PointerEventType.Press
                     }
                 }
                 MotionEvent.ACTION_UP -> {
-                    if (isTwoFingerSwipe && ComposeUiFlags.isTrackpadGestureHandlingEnabled) {
+                    if (isTwoFingerSwipe) {
                         PointerEventType.PanEnd
-                    } else if (isPinch && ComposeUiFlags.isTrackpadGestureHandlingEnabled) {
+                    } else if (isPinch && !isPinchReinterpretation) {
                         PointerEventType.ScaleEnd
                     } else {
                         PointerEventType.Release
                     }
                 }
                 MotionEvent.ACTION_POINTER_UP -> {
-                    if (isTwoFingerSwipe && ComposeUiFlags.isTrackpadGestureHandlingEnabled) {
+                    if (isTwoFingerSwipe) {
                         PointerEventType.PanEnd
-                    } else if (isPinch && ComposeUiFlags.isTrackpadGestureHandlingEnabled) {
+                    } else if (isPinchReinterpretation) {
+                        PointerEventType.ScaleEnd
+                    } else if (isPinch) {
                         PointerEventType.ScaleChange
                     } else {
                         PointerEventType.Release
@@ -159,9 +161,9 @@ internal actual constructor(
                 }
                 MotionEvent.ACTION_HOVER_MOVE,
                 MotionEvent.ACTION_MOVE -> {
-                    if (isTwoFingerSwipe && ComposeUiFlags.isTrackpadGestureHandlingEnabled) {
+                    if (isTwoFingerSwipe) {
                         PointerEventType.PanMove
-                    } else if (isPinch && ComposeUiFlags.isTrackpadGestureHandlingEnabled) {
+                    } else if (isPinch) {
                         PointerEventType.ScaleChange
                     } else {
                         PointerEventType.Move
@@ -222,8 +224,6 @@ internal actual constructor(
             }
         }
 }
-
-internal actual fun EmptyPointerKeyboardModifiers() = PointerKeyboardModifiers(0)
 
 actual val PointerButtons.isPrimaryPressed: Boolean
     get() = packedValue and (MotionEvent.BUTTON_PRIMARY or MotionEvent.BUTTON_STYLUS_PRIMARY) != 0

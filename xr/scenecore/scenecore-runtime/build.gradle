@@ -38,11 +38,20 @@ dependencies {
     implementation(libs.androidx.core)
     implementation("androidx.concurrent:concurrent-futures:1.0.0")
     implementation("com.google.errorprone:error_prone_annotations:2.30.0")
-    implementation("androidx.media3:media3-exoplayer:1.9.0-beta01")
+    implementation("androidx.media3:media3-exoplayer:1.10.0")
+
+    testImplementation(libs.junit)
+    testImplementation(libs.kotlinTest)
+    testImplementation(libs.testExtJunit)
+    testImplementation(libs.mockitoCore4)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.truth)
+    testImplementation(libs.mockitoKotlin)
+    testImplementation(libs.testRunner)
+    testImplementation(project(":xr:runtime:runtime-testing"))
+    testImplementation(project(":xr:scenecore:scenecore-testing"))
 
     // For com.android.extensions.xr
-    // TODO(b/447454270): Remove this once extensions are in g3.
-    compileOnly(libs.androidExtensionsXr)
     testImplementation(files(new File(AndroidXConfig.getPrebuiltsRoot(project), "androidx/xr/extensions/com.android.extensions.xr.host.test.jar")))
     testImplementation(libs.androidExtensionsXr)
 }

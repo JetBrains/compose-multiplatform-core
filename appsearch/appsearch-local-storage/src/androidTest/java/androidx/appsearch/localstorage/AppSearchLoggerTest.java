@@ -28,7 +28,6 @@ import androidx.appsearch.app.JoinSpec;
 import androidx.appsearch.app.SearchResultPage;
 import androidx.appsearch.app.SearchSpec;
 import androidx.appsearch.exceptions.AppSearchException;
-import androidx.appsearch.flags.Flags;
 import androidx.appsearch.localstorage.stats.InitializeStats;
 import androidx.appsearch.localstorage.stats.OptimizeStats;
 import androidx.appsearch.localstorage.stats.PutDocumentStats;
@@ -38,13 +37,13 @@ import androidx.appsearch.localstorage.stats.SearchStats;
 import androidx.appsearch.localstorage.stats.SetSchemaStats;
 import androidx.appsearch.testutil.AppSearchTestUtils;
 import androidx.appsearch.testutil.SimpleTestLogger;
-import androidx.appsearch.testutil.flags.RequiresFlagsDisabled;
-import androidx.appsearch.testutil.flags.RequiresFlagsEnabled;
 
 import com.google.android.icing.proto.DeleteStatsProto;
 import com.google.android.icing.proto.DocumentProto;
+import com.google.android.icing.proto.IcingApiCallType;
 import com.google.android.icing.proto.InitializeStatsProto;
 import com.google.android.icing.proto.OptimizeStatsProto;
+import com.google.android.icing.proto.PersistType;
 import com.google.android.icing.proto.PutDocumentStatsProto;
 import com.google.android.icing.proto.PutResultProto;
 import com.google.android.icing.proto.QueryStatsProto;
@@ -127,6 +126,22 @@ public class AppSearchLoggerTest {
                 InitializeStatsProto.RecoveryCause.DEPENDENCIES_CHANGED_VALUE;
         StatusProto.Code initializeIcuDataStatusCode = StatusProto.Code.OK;
         int nativeNumFailedReindexedDocuments = 18;
+        InitializeStatsProto.FailureStage.Code nativeFailureStageCode =
+                InitializeStatsProto.FailureStage.Code.BASE_DIRECTORY_CREATION;
+        StatusProto.Code nativeIcuSegmenterCreationStatusCode = StatusProto.Code.ABORTED;
+        StatusProto.Code nativeIcuNormalizerCreationStatusCode = StatusProto.Code.UNAVAILABLE;
+        PersistType.Code nativeLastPersistType = PersistType.Code.RECOVERY_PROOF;
+        List<IcingApiCallType.Code> nativeAfterLastPersistFullCallTypes =
+                ImmutableList.of(IcingApiCallType.Code.DELETE, IcingApiCallType.Code.PUT);
+        List<IcingApiCallType.Code> nativeAfterLastPersistRecoveryProofCallTypes =
+                ImmutableList.of(IcingApiCallType.Code.BATCH_PUT);
+        List<IcingApiCallType.Code> nativeAfterLastPersistLiteCallTypes =
+                ImmutableList.of(
+                        IcingApiCallType.Code.INITIALIZE,
+                        IcingApiCallType.Code.OPTIMIZE,
+                        IcingApiCallType.Code.REPORT_USAGE);
+        long nativeSchemaProtoByteSize = 19;
+
         InitializeStatsProto.Builder nativeInitBuilder = InitializeStatsProto.newBuilder()
                 .setLatencyMs(nativeLatencyMillis)
                 .setDocumentStoreRecoveryCause(InitializeStatsProto.RecoveryCause.forNumber(
@@ -155,7 +170,18 @@ public class AppSearchLoggerTest {
                                 nativeEmbeddingIndexRestorationCause))
                 .setInitializeIcuDataStatus(StatusProto.newBuilder()
                         .setCode(initializeIcuDataStatusCode))
-                .setNumFailedReindexedDocuments(nativeNumFailedReindexedDocuments);
+                .setNumFailedReindexedDocuments(nativeNumFailedReindexedDocuments)
+                .setFailureStage(nativeFailureStageCode)
+                .setIcuSegmenterCreationStatus(
+                        StatusProto.newBuilder().setCode(nativeIcuSegmenterCreationStatusCode))
+                .setIcuNormalizerCreationStatus(
+                        StatusProto.newBuilder().setCode(nativeIcuNormalizerCreationStatusCode))
+                .setLastPersistToDiskType(nativeLastPersistType)
+                .addAllAfterLastFlushFullCallTypes(nativeAfterLastPersistFullCallTypes)
+                .addAllAfterLastFlushRecoveryProofCallTypes(
+                        nativeAfterLastPersistRecoveryProofCallTypes)
+                .addAllAfterLastFlushLiteCallTypes(nativeAfterLastPersistLiteCallTypes)
+                .setSchemaProtoByteSize(nativeSchemaProtoByteSize);
         InitializeStats.Builder initBuilder = new InitializeStats.Builder();
 
         AppSearchLoggerHelper.copyNativeStats(nativeInitBuilder.build(), initBuilder);
@@ -189,6 +215,19 @@ public class AppSearchLoggerTest {
                 .isEqualTo(initializeIcuDataStatusCode.getNumber());
         assertThat(iStats.getNativeNumFailedReindexedDocuments())
                 .isEqualTo(nativeNumFailedReindexedDocuments);
+        assertThat(iStats.getNativeFailureStageCode()).isEqualTo(nativeFailureStageCode);
+        assertThat(iStats.getNativeIcuSegmenterCreationStatusCode())
+                .isEqualTo(nativeIcuSegmenterCreationStatusCode.getNumber());
+        assertThat(iStats.getNativeIcuNormalizerCreationStatusCode())
+                .isEqualTo(nativeIcuNormalizerCreationStatusCode.getNumber());
+        assertThat(iStats.getNativeLastPersistType()).isEqualTo(nativeLastPersistType);
+        assertThat(iStats.getNativeAfterLastPersistFullCallTypes())
+                .containsExactlyElementsIn(nativeAfterLastPersistFullCallTypes);
+        assertThat(iStats.getNativeAfterLastPersistRecoveryProofCallTypes())
+                .containsExactlyElementsIn(nativeAfterLastPersistRecoveryProofCallTypes);
+        assertThat(iStats.getNativeAfterLastPersistLiteCallTypes())
+                .containsExactlyElementsIn(nativeAfterLastPersistLiteCallTypes);
+        assertThat(iStats.getNativeSchemaProtoByteSize()).isEqualTo(nativeSchemaProtoByteSize);
     }
 
     @Test
@@ -270,6 +309,7 @@ public class AppSearchLoggerTest {
         int numQuantizedEmbeddingsScored = 15;
         int numEmbeddingShardsRead = 16;
         long numEmbeddingBytesRead = 17L;
+        int numAnnEmbeddingsScored = 18;
 
         QueryStatsProto.SearchStats searchStats = QueryStatsProto.SearchStats.newBuilder()
                 .setQueryLength(nativeQueryLength)
@@ -294,6 +334,7 @@ public class AppSearchLoggerTest {
                 .setNumQuantizedEmbeddingsScored(numQuantizedEmbeddingsScored)
                 .setNumEmbeddingShardsRead(numEmbeddingShardsRead)
                 .setNumEmbeddingBytesRead(numEmbeddingBytesRead)
+                .setNumAnnEmbeddingsScored(numAnnEmbeddingsScored)
                 .build();
 
         boolean nativeIsFirstPage = true;
@@ -397,6 +438,8 @@ public class AppSearchLoggerTest {
                 numEmbeddingShardsRead);
         assertThat(parentSearchStats.getNativeNumEmbeddingBytesRead()).isEqualTo(
                 numEmbeddingBytesRead);
+        assertThat(parentSearchStats.getNativeNumAnnEmbeddingsScored()).isEqualTo(
+                numAnnEmbeddingsScored);
 
         SearchStats childSearchStats = sStats.getParentSearchStats();
 
@@ -434,6 +477,8 @@ public class AppSearchLoggerTest {
                 numEmbeddingShardsRead);
         assertThat(childSearchStats.getNativeNumEmbeddingBytesRead()).isEqualTo(
                 numEmbeddingBytesRead);
+        assertThat(childSearchStats.getNativeNumAnnEmbeddingsScored()).isEqualTo(
+                numAnnEmbeddingsScored);
     }
 
     @Test
@@ -548,6 +593,7 @@ public class AppSearchLoggerTest {
         int documentStoreOptimizedUpdateSchemaLatencyMillis = 4;
         int indexRestorationLatencyMillis = 5;
         int scorablePropertyCacheRegenerationLatencyMillis = 6;
+        long schemaProtoByteSize = 7;
 
         SetSchemaResultProto setSchemaResultProto = SetSchemaResultProto.newBuilder()
                 .addAllNewSchemaTypes(newSchemaTypeChangeList)
@@ -571,7 +617,8 @@ public class AppSearchLoggerTest {
                                 documentStoreOptimizedUpdateSchemaLatencyMillis)
                         .setIndexRestorationLatencyMs(indexRestorationLatencyMillis)
                         .setScorablePropertyCacheRegenerationLatencyMs(
-                                scorablePropertyCacheRegenerationLatencyMillis))
+                                scorablePropertyCacheRegenerationLatencyMillis)
+                        .setSchemaProtoByteSize(schemaProtoByteSize))
                 .build();
         SetSchemaStats.Builder sBuilder = new SetSchemaStats.Builder(PACKAGE_NAME, DATABASE);
 
@@ -605,6 +652,7 @@ public class AppSearchLoggerTest {
                 indexRestorationLatencyMillis);
         assertThat(sStats.getNativeScorablePropertyCacheRegenerationLatencyMillis()).isEqualTo(
                 scorablePropertyCacheRegenerationLatencyMillis);
+        assertThat(sStats.getNativeSchemaProtoByteSize()).isEqualTo(schemaProtoByteSize);
     }
 
     //
@@ -650,7 +698,6 @@ public class AppSearchLoggerTest {
     }
 
     @Test
-    @RequiresFlagsDisabled(Flags.FLAG_ENABLE_BLOB_STORE)
     @SuppressWarnings("deprecation") // AppSearchImpl.putDocument
     public void testLoggingStats_initializeWithDocuments_success() throws Exception {
         final String testPackageName = "testPackage";
@@ -733,7 +780,6 @@ public class AppSearchLoggerTest {
     }
 
     @Test
-    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_BLOB_STORE)
     @SuppressWarnings("deprecation") // AppSearchImpl.putDocument
     public void testLoggingStats_enableBlobStore_initializeWithDocuments_success()
             throws Exception {

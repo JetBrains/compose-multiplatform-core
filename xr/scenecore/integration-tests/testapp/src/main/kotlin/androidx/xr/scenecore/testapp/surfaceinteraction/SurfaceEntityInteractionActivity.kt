@@ -32,6 +32,9 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
@@ -41,12 +44,12 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.xr.arcore.ArDevice
 import androidx.xr.arcore.Hand
 import androidx.xr.arcore.HandJointType
+import androidx.xr.arcore.TrackingState
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.DeviceTrackingMode
 import androidx.xr.runtime.HandTrackingMode
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.SessionCreateSuccess
-import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.FloatSize3d
 import androidx.xr.runtime.math.Pose
@@ -61,6 +64,8 @@ import androidx.xr.scenecore.scene
 import androidx.xr.scenecore.testapp.R
 import androidx.xr.scenecore.testapp.common.isMvHevcSupported
 import java.io.File
+import kotlinx.coroutines.android.awaitFrame
+import kotlinx.coroutines.launch
 
 internal const val TAG = "JXR-SurfaceEntityInteractionActivity"
 
@@ -79,9 +84,7 @@ class SurfaceEntityInteractionActivity : AppCompatActivity() {
             return if (videoSelected == null) null else videoAttributesMap[videoSelected!!.ordinal]
         }
 
-    private lateinit var view: View
     private lateinit var session: Session
-
     private lateinit var scene: Scene
     private lateinit var device: ArDevice
 
@@ -109,91 +112,118 @@ class SurfaceEntityInteractionActivity : AppCompatActivity() {
             insets
         }
 
-        session = (Session.create(this) as SessionCreateSuccess).session
-        scene = session.scene
-        scene.spatialEnvironment.preferredPassthroughOpacity = 0.0f
-        session.configure(
-            Config(
-                deviceTracking = DeviceTrackingMode.SPATIAL_LAST_KNOWN,
-                handTracking = HandTrackingMode.BOTH,
-            )
-        )
-        session.scene.keyEntity = session.scene.mainPanelEntity
-        device = ArDevice.getInstance(session)
+        lifecycleScope.launch {
+            val sessionResult = Session.create(context = this@SurfaceEntityInteractionActivity)
+            if (sessionResult is SessionCreateSuccess) {
+                session = sessionResult.session
+                scene = session.scene
+                scene.spatialEnvironment.preferredPassthroughOpacity = 0.0f
+                session.configure(
+                    Config.Builder()
+                        .setDeviceTracking(DeviceTrackingMode.SPATIAL)
+                        .setHandTracking(HandTrackingMode.BOTH)
+                        .build()
+                )
+                session.scene.keyEntity = session.scene.mainPanelEntity
+                device = ArDevice.getInstance(session)
 
-        surfaceParent = Entity.create(session, "SurfaceParent", Pose.Identity)
-        videoInputManager = VideoInputManager()
-        pointerLogManager = PointerLogManager(this, session)
+                surfaceParent =
+                    Entity.create(
+                        session,
+                        name = "SurfaceParent",
+                        pose = Pose.Identity,
+                        parent = session.scene.activitySpace,
+                    )
+                videoInputManager = VideoInputManager()
+                pointerLogManager =
+                    PointerLogManager(this@SurfaceEntityInteractionActivity, session)
 
-        // Set up the MoveableComponent so the user can move the Main Panel out of the way of
-        // video canvases which appear behind it.
-        if (scene.mainPanelEntity.getComponentsOfType(MovableComponent::class.java).isEmpty()) {
-            val comp = MovableComponent.createSystemMovable(session)
-            scene.mainPanelEntity.addComponent(comp)
-            comp.size = scene.mainPanelEntity.size.to3d()
+                // Set up the MoveableComponent so the user can move the Main Panel out of the way
+                // of
+                // video canvases which appear behind it.
+                if (
+                    scene.mainPanelEntity
+                        .getComponentsOfType(MovableComponent::class.java)
+                        .isEmpty()
+                ) {
+                    val comp = MovableComponent.createSystemMovable(session)
+                    scene.mainPanelEntity.addComponent(comp)
+                    comp.size = scene.mainPanelEntity.size.to3d()
+                }
+
+                checkExternalStoragePermission()
+
+                // Setup View Buttons
+                val toolBar = findViewById<Toolbar>(R.id.surface_interaction_topAppBar)
+                setSupportActionBar(toolBar)
+                toolBar.setNavigationOnClickListener { activity.finish() }
+
+                buttonSelectQuad = findViewById(R.id.button_select_quad_video)
+                buttonSelectQuad.setOnClickListener { view ->
+                    onSelectedVideoClicked(VideoEnums.BIG_BUCK_BUNNY_BUTTON)
+                }
+
+                buttonSelectSphere = findViewById(R.id.button_select_360_video)
+                buttonSelectSphere.setOnClickListener { view ->
+                    onSelectedVideoClicked(VideoEnums.GALAXY_360_MVHEVC_BUTTON)
+                }
+
+                buttonSelectHemisphere = findViewById(R.id.button_select_180_video)
+                buttonSelectHemisphere.setOnClickListener { view ->
+                    onSelectedVideoClicked(VideoEnums.NAVER_180_MVHEVC_BUTTON)
+                }
+
+                buttonDeselectVideo = findViewById(R.id.button_deselect_video)
+                buttonDeselectVideo.setOnClickListener {
+                    deselectVideo()
+                    updateButtonsEnabled(videoSelected, attachedInteractable != null)
+                }
+
+                switchInteractableAttached = findViewById(R.id.switch_interactable_attached)
+                switchInteractableAttached.setOnClickListener(
+                    this@SurfaceEntityInteractionActivity::onSwitchInteractableClicked
+                )
+
+                switchSingleClickEnabled = findViewById(R.id.switch_single_click_enabled)
+                switchSingleClickEnabled.setOnClickListener {
+                    videoInputManager.singleClickEnabled = !videoInputManager.singleClickEnabled
+                    switchSingleClickEnabled.isChecked = videoInputManager.singleClickEnabled
+                }
+
+                switchDoubleClickEnabled = findViewById(R.id.switch_double_click_enabled)
+                switchDoubleClickEnabled.setOnClickListener {
+                    videoInputManager.doubleClickEnabled = !videoInputManager.doubleClickEnabled
+                    switchDoubleClickEnabled.isChecked = videoInputManager.doubleClickEnabled
+                }
+
+                switchDragEnabled = findViewById(R.id.switch_drag_enabled)
+                switchDragEnabled.setOnClickListener {
+                    videoInputManager.dragEnabled = !videoInputManager.dragEnabled
+                    switchDragEnabled.isChecked = videoInputManager.dragEnabled
+                }
+
+                textViewPointerLogs = findViewById(R.id.textView_pointer_log)
+                textViewPointerLogs.text = ""
+
+                mvHevcNotSupportedText = findViewById(R.id.mv_hevc_not_supported_text)
+                if (!isMvHevcSupported()) {
+                    mvHevcNotSupportedText.visibility = View.VISIBLE
+                }
+
+                updateButtonsEnabled(null, false)
+
+                lifecycleScope.launch {
+                    repeatOnLifecycle(Lifecycle.State.RESUMED) {
+                        while (true) {
+                            onAnimation()
+                            awaitFrame()
+                        }
+                    }
+                }
+            } else {
+                finish()
+            }
         }
-
-        checkExternalStoragePermission()
-
-        // Setup View Buttons
-        val toolBar = findViewById<Toolbar>(R.id.surface_interaction_topAppBar)
-        setSupportActionBar(toolBar)
-        toolBar.setNavigationOnClickListener { activity.finish() }
-
-        buttonSelectQuad = findViewById(R.id.button_select_quad_video)
-        buttonSelectQuad.setOnClickListener { view ->
-            onSelectedVideoClicked(VideoEnums.BIG_BUCK_BUNNY_BUTTON)
-        }
-
-        buttonSelectSphere = findViewById(R.id.button_select_360_video)
-        buttonSelectSphere.setOnClickListener { view ->
-            onSelectedVideoClicked(VideoEnums.GALAXY_360_MVHEVC_BUTTON)
-        }
-
-        buttonSelectHemisphere = findViewById(R.id.button_select_180_video)
-        buttonSelectHemisphere.setOnClickListener { view ->
-            onSelectedVideoClicked(VideoEnums.NAVER_180_MVHEVC_BUTTON)
-        }
-
-        buttonDeselectVideo = findViewById(R.id.button_deselect_video)
-        buttonDeselectVideo.setOnClickListener {
-            deselectVideo()
-            updateButtonsEnabled(videoSelected, attachedInteractable != null)
-        }
-
-        switchInteractableAttached = findViewById(R.id.switch_interactable_attached)
-        switchInteractableAttached.setOnClickListener(this::onSwitchInteractableClicked)
-
-        switchSingleClickEnabled = findViewById(R.id.switch_single_click_enabled)
-        switchSingleClickEnabled.setOnClickListener {
-            videoInputManager.singleClickEnabled = !videoInputManager.singleClickEnabled
-            switchSingleClickEnabled.isChecked = videoInputManager.singleClickEnabled
-        }
-
-        switchDoubleClickEnabled = findViewById(R.id.switch_double_click_enabled)
-        switchDoubleClickEnabled.setOnClickListener {
-            videoInputManager.doubleClickEnabled = !videoInputManager.doubleClickEnabled
-            switchDoubleClickEnabled.isChecked = videoInputManager.doubleClickEnabled
-        }
-
-        switchDragEnabled = findViewById(R.id.switch_drag_enabled)
-        switchDragEnabled.setOnClickListener {
-            videoInputManager.dragEnabled = !videoInputManager.dragEnabled
-            switchDragEnabled.isChecked = videoInputManager.dragEnabled
-        }
-
-        textViewPointerLogs = findViewById(R.id.textView_pointer_log)
-        textViewPointerLogs.text = ""
-
-        mvHevcNotSupportedText = findViewById(R.id.mv_hevc_not_supported_text)
-        if (!isMvHevcSupported()) {
-            mvHevcNotSupportedText.visibility = View.VISIBLE
-        }
-
-        updateButtonsEnabled(null, false)
-
-        view = window.decorView
-        view.postOnAnimation(this::onAnimation)
     }
 
     private fun onAnimation() {
@@ -251,8 +281,6 @@ class SurfaceEntityInteractionActivity : AppCompatActivity() {
             val newRot = headPose.rotation
             debugPanelRight.setPose(Pose.lerp(oldPose, Pose(newPos, newRot), followingPortion))
         }
-
-        view.postOnAnimation(this::onAnimation)
     }
 
     override fun onDestroy() {
@@ -403,7 +431,9 @@ class SurfaceEntityInteractionActivity : AppCompatActivity() {
         exoPlayer?.stop()
         exoPlayer?.release()
         exoPlayer = null
-        surfaceEntity?.dispose()
+
+        surfaceEntity?.removeAllComponents()
+        surfaceEntity?.parent = null
         surfaceEntity = null
         videoSelected = null
 
@@ -463,6 +493,7 @@ class SurfaceEntityInteractionActivity : AppCompatActivity() {
                     shape = shape,
                     stereoMode = stereoMode,
                     surfaceProtection = surfaceProtection,
+                    parent = session.scene.activitySpace,
                 )
             surfaceEntity.parent = parent
 

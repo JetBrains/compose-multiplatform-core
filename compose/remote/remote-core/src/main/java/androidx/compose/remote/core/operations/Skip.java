@@ -58,7 +58,6 @@ public class Skip extends Operation implements SerializableToString, Serializabl
         mProfile = systemInfo.getProfile();
     }
 
-
     private boolean needsToSkip() {
         switch (mConditionType) {
             case SKIP_IF_API_LESS_THAN:
@@ -109,22 +108,19 @@ public class Skip extends Operation implements SerializableToString, Serializabl
     }
 
     /**
-     * add a skip  operation
+     * add a skip operation
      *
-     * @param buffer        buffer to add to
+     * @param buffer buffer to add to
      * @param conditionType the type of condition
-     * @param value         the value to compare against
+     * @param value the value to compare against
      */
-    public static int apply(@NonNull WireBuffer buffer, short conditionType, int value,
-            int skipLength) {
+    public static int apply(
+            @NonNull WireBuffer buffer, short conditionType, int value, int skipLength) {
         buffer.start(OP_CODE);
         buffer.writeInt(conditionType); // int
-        buffer.writeInt(value);   // int
+        buffer.writeInt(value); // int
         int offset = buffer.getIndex();
         buffer.writeInt(skipLength); // int
-        System.out.println();
-        Utils.logStack(">> offset = " + offset + " pos", 8);
-
         return offset;
     }
 
@@ -141,17 +137,19 @@ public class Skip extends Operation implements SerializableToString, Serializabl
         buffer.overwriteInt(offset, current - offset - 4);
     }
 
-
     /**
      * Read this operation and DOES NOT ADD it to the list of operations
      *
-     * @param buffer     the buffer to read
+     * @param buffer the buffer to read
      * @param operations the list of operations that will be added to
      */
     public static void read(@NonNull WireBuffer buffer, @NonNull List<Operation> operations) {
         short conditionType = (short) buffer.readInt();
         int value = buffer.readInt();
         int skipLength = buffer.readInt();
+        if (skipLength < 0) {
+            throw new RuntimeException("you cannot skp backwards");
+        }
         Skip skip = new Skip(conditionType, value, skipLength, buffer.getSystemInfo());
         if (skip.needsToSkip()) {
             buffer.setIndex(buffer.getIndex() + skip.mSkipLength);
@@ -169,12 +167,10 @@ public class Skip extends Operation implements SerializableToString, Serializabl
                 .field(DocumentedOperation.SHORT, "Condition", "The type of condition")
                 .field(DocumentedOperation.INT, "Value", "The value to compare against")
                 .field(DocumentedOperation.INT, "Length", "the number of bytes to skip");
-
     }
 
     @Override
-    public void apply(@NonNull RemoteContext context) {
-    }
+    public void apply(@NonNull RemoteContext context) {}
 
     @NonNull
     @Override
@@ -184,10 +180,16 @@ public class Skip extends Operation implements SerializableToString, Serializabl
 
     @Override
     public void serializeToString(int indent, @NonNull StringSerializer serializer) {
-        serializer.append(indent,
-                getSerializedName() + ", " + mConditionType + ", " + mValue + ", " + mSkipLength
+        serializer.append(
+                indent,
+                getSerializedName()
+                        + ", "
+                        + mConditionType
+                        + ", "
+                        + mValue
+                        + ", "
+                        + mSkipLength
                         + "\"");
-
     }
 
     @NonNull
@@ -197,9 +199,10 @@ public class Skip extends Operation implements SerializableToString, Serializabl
 
     @Override
     public void serialize(@NonNull MapSerializer serializer) {
-        serializer.addType(CLASS_NAME).add("conditionType", mConditionType).add("value",
-                mValue).add("skipLength", mSkipLength);
-
-
+        serializer
+                .addType(CLASS_NAME)
+                .add("conditionType", mConditionType)
+                .add("value", mValue)
+                .add("skipLength", mSkipLength);
     }
 }

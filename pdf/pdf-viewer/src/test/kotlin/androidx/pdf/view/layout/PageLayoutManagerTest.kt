@@ -19,21 +19,28 @@ package androidx.pdf.view.layout
 import android.graphics.Point
 import android.graphics.Rect
 import android.graphics.RectF
+import android.os.DeadObjectException
+import android.os.RemoteException
 import android.util.Range
 import android.util.SparseArray
 import androidx.core.util.keyIterator
 import androidx.pdf.PdfDocument
 import androidx.pdf.PdfDocument.Companion.PDF_FORM_TYPE_ACRO_FORM
+import androidx.pdf.exceptions.RequestFailedException
 import androidx.pdf.models.FormWidgetInfo
+import androidx.pdf.util.PAGE_INFO_REQUEST_NAME
+import androidx.pdf.util.compatContentEquals
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.Before
@@ -91,7 +98,7 @@ class PageLayoutManagerTest {
     private val testDispatcher = UnconfinedTestDispatcher()
     private val testScope = TestScope(testDispatcher)
     private lateinit var pageLayoutManager: PageLayoutManager
-    private val errorFlow = MutableSharedFlow<Throwable>()
+    private val errorFlow = MutableSharedFlow<Throwable>(replay = 1)
 
     @Before
     fun setup() {
@@ -243,7 +250,7 @@ class PageLayoutManagerTest {
         // changes
         assertThat(visiblePageAreas.size).isEqualTo(3)
         val firstAreas = visiblePageAreas[1]
-        assertThat(firstAreas.contentEquals(visiblePageAreas[2])).isFalse()
+        assertThat(firstAreas.compatContentEquals(visiblePageAreas[2])).isFalse()
         // Before we learn the viewport, we don't know what's visible
         assertThat(visiblePageAreas[0].size()).isEqualTo(0)
         // First viewport should include all of page 0 through part of page 5
@@ -282,7 +289,7 @@ class PageLayoutManagerTest {
         // change
         assertThat(visiblePageAreas.size).isEqualTo(3)
         val firstAreas = visiblePageAreas[1]
-        assertThat(firstAreas.contentEquals(visiblePageAreas[2])).isTrue()
+        assertThat(firstAreas.compatContentEquals(visiblePageAreas[2])).isTrue()
         // Before we learn the viewport, we don't know what's visible
         assertThat(visiblePageAreas[0].size()).isEqualTo(0)
         // First viewport should include all of page 0 through part of page 5
@@ -314,7 +321,7 @@ class PageLayoutManagerTest {
         // changes
         assertThat(pageLocations.size).isEqualTo(3)
         val firstLocations = pageLocations[1]
-        assertThat(firstLocations.contentEquals(pageLocations[2])).isFalse()
+        assertThat(firstLocations.compatContentEquals(pageLocations[2])).isFalse()
         // Before we learn the viewport, we don't know what's visible
         assertThat(pageLocations[0].size()).isEqualTo(0)
         // First viewport should include pages 0-5
@@ -361,7 +368,7 @@ class PageLayoutManagerTest {
         // change
         assertThat(pageLocations.size).isEqualTo(3)
         val firstLocations = pageLocations[1]
-        assertThat(firstLocations.contentEquals(pageLocations[2])).isTrue()
+        assertThat(firstLocations.compatContentEquals(pageLocations[2])).isTrue()
         // Before we learn the viewport, we don't know what's visible
         assertThat(pageLocations[0].size()).isEqualTo(0)
         // First viewport should include pages 0-5
@@ -529,6 +536,60 @@ class PageLayoutManagerTest {
         for (i in 0..20) {
             assertThat(pageMetadata[i].formWidgetInfos).isEmpty()
         }
+    }
+
+    @Test
+    fun loadPageDimensions_onHandledRemoteException_emitsToErrorFlow() = runTest {
+        val remoteException =
+            RemoteException("android.os.RemoteException: Method getPageInfo is unimplemented.")
+        val pdfDocumentError =
+            mock<PdfDocument> {
+                on { pageCount } doReturn 1
+                onBlocking { getPageInfo(any(), any()) } doAnswer { throw remoteException }
+            }
+        val localPageLayoutManager =
+            PageLayoutManager(pdfDocumentError, testScope, errorFlow = errorFlow)
+
+        localPageLayoutManager.increaseReach(0)
+        testScope.testScheduler.runCurrent()
+
+        val error = errorFlow.first() as RequestFailedException
+        assertThat(error.throwable).isEqualTo(remoteException)
+        assertThat(error.requestMetadata.requestName).isEqualTo(PAGE_INFO_REQUEST_NAME)
+    }
+
+    @Test
+    fun loadPageDimensions_onDeadObjectException_emitsToErrorFlow() = runTest {
+        val deadObjectException = DeadObjectException()
+        val pdfDocumentError =
+            mock<PdfDocument> {
+                on { pageCount } doReturn 1
+                onBlocking { getPageInfo(any(), any()) } doAnswer { throw deadObjectException }
+            }
+        val localPageLayoutManager =
+            PageLayoutManager(pdfDocumentError, testScope, errorFlow = errorFlow)
+
+        localPageLayoutManager.increaseReach(0)
+        testScope.testScheduler.runCurrent()
+
+        val error = errorFlow.first() as RequestFailedException
+        assertThat(error.throwable).isEqualTo(deadObjectException)
+    }
+
+    @Test(expected = RemoteException::class)
+    fun loadPageDimensions_onUnhandledRemoteException_throws() = runTest {
+        val remoteException = RemoteException("Unhandled error")
+        val pdfDocumentError =
+            mock<PdfDocument> {
+                on { pageCount } doReturn 1
+                onBlocking { getPageInfo(any(), any()) } doAnswer { throw remoteException }
+            }
+        // backgroundScope must be monitored for exceptions to be rethrown to runTest
+        val localPageLayoutManager =
+            PageLayoutManager(pdfDocumentError, backgroundScope = this, errorFlow = errorFlow)
+
+        localPageLayoutManager.increaseReach(0)
+        runCurrent()
     }
 }
 

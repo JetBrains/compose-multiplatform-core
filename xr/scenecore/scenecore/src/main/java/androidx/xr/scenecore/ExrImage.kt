@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Android Open Source Project
+ * Copyright 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,9 +32,18 @@ import java.nio.file.Path
  */
 // TODO(b/319269278): Make this and GltfModel derive from a common Resource base class which has
 //                    async helpers.
-// TODO(b/461909954): Add AutoCloseable interface when it is approved.
+// TODO(b/502251518): Remove restricted ExrImage once migration to ImageBasedLightingAsset is
+// complete.
+@Deprecated(
+    message = "ExrImage is being replaced by ImageBasedLightingAsset.",
+    replaceWith =
+        ReplaceWith("ImageBasedLightingAsset", "androidx.xr.scenecore.ImageBasedLightingAsset"),
+)
+@Suppress("DEPRECATION")
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class ExrImage
-internal constructor(internal val session: Session?, internal val image: RtExrImage) {
+internal constructor(internal val session: Session?, internal val image: RtExrImage) :
+    AutoCloseable {
 
     /**
      * Closes the given [ExrImage].
@@ -46,8 +55,7 @@ internal constructor(internal val session: Session?, internal val image: RtExrIm
      * @throws IllegalStateException if the resource has already been closed.
      */
     @MainThread
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public fun close() {
+    override public fun close() {
         session?.renderingRuntime?.destroyExrImage(image)
     }
 

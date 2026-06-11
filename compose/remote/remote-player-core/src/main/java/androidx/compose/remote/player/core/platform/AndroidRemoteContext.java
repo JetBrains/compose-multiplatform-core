@@ -17,10 +17,9 @@ package androidx.compose.remote.player.core.platform;
 
 import static androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP;
 
+import android.content.Context;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
-import android.graphics.Paint;
 import android.widget.EdgeEffect;
 
 import androidx.annotation.RestrictTo;
@@ -30,7 +29,6 @@ import androidx.compose.remote.core.ScrollingEdgeEffect;
 import androidx.compose.remote.core.SystemClock;
 import androidx.compose.remote.core.TouchListener;
 import androidx.compose.remote.core.VariableSupport;
-import androidx.compose.remote.core.operations.BitmapData;
 import androidx.compose.remote.core.operations.FloatExpression;
 import androidx.compose.remote.core.operations.ShaderData;
 import androidx.compose.remote.core.operations.utilities.ArrayAccess;
@@ -40,11 +38,9 @@ import androidx.compose.remote.core.types.LongConstant;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
-import java.io.IOException;
 import java.time.Clock;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Objects;
 
 /**
  * An implementation of Context for Android.
@@ -53,7 +49,16 @@ import java.util.Objects;
  */
 @RestrictTo(LIBRARY_GROUP)
 public class AndroidRemoteContext extends RemoteContext {
-    private static final boolean CHECK_DATA_SIZE = true;
+
+    private Context mAndroidContext;
+
+    public void setAndroidContext(@Nullable Context context) {
+        mAndroidContext = context;
+    }
+
+    public @Nullable Context getAndroidContext() {
+        return mAndroidContext;
+    }
 
     public @Nullable EdgeEffectBuilder mEdgeEffectBuilder;
 
@@ -61,6 +66,29 @@ public class AndroidRemoteContext extends RemoteContext {
 
     @NonNull
     private BitmapLoader mBitmapLoader = BitmapLoader.UNSUPPORTED;
+
+    private TypefaceResolver mTypefaceResolver;
+
+    /**
+     * Sets the TypefaceResolver to be used by the PaintContext.
+     *
+     * @param typefaceResolver The TypefaceResolver to be used.
+     */
+    public void setTypefaceResolver(@NonNull TypefaceResolver typefaceResolver) {
+        mTypefaceResolver = typefaceResolver;
+        if (mPaintContext != null) {
+            ((AndroidPaintContext) mPaintContext).setTypefaceResolver(typefaceResolver);
+        }
+    }
+
+    /**
+     * Gets the current TypefaceResolver.
+     *
+     * @return The current TypefaceResolver.
+     */
+    public @Nullable TypefaceResolver getTypefaceResolver() {
+        return mTypefaceResolver;
+    }
 
     /** Default constructor, uses a {@link RemoteClock#SYSTEM} as the clock. */
     public AndroidRemoteContext() {
@@ -89,6 +117,15 @@ public class AndroidRemoteContext extends RemoteContext {
     }
 
     /**
+     * Returns the BitmapLoader used by the RemoteContext.
+     *
+     * @return The BitmapLoader being used.
+     */
+    public @NonNull BitmapLoader getBitmapLoader() {
+        return mBitmapLoader;
+    }
+
+    /**
      * Sets the Canvas to be used by the RemoteContext for drawing operations. Typically received in
      * onDraw. If a PaintContext already exists, it will be reset and updated with the new Canvas.
      * Otherwise, a new AndroidPaintContext will be created. The width and height of the context are
@@ -99,6 +136,9 @@ public class AndroidRemoteContext extends RemoteContext {
     public void useCanvas(@NonNull Canvas canvas) {
         if (mPaintContext == null) {
             mPaintContext = new AndroidPaintContext(this, canvas);
+            if (mTypefaceResolver != null) {
+                ((AndroidPaintContext) mPaintContext).setTypefaceResolver(mTypefaceResolver);
+            }
         } else {
             // need to make sure to update the canvas for the current one
             mPaintContext.reset();
@@ -112,20 +152,20 @@ public class AndroidRemoteContext extends RemoteContext {
     // Edge effect handling
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
-    /**
-     * EdgeEffectBuilder interface
-     */
+    /** EdgeEffectBuilder interface */
     public interface EdgeEffectBuilder {
         /**
          * Create a new EdgeEffect
-         * @return
+         *
+         * @return EdgeEffect
          */
         @NonNull EdgeEffect create();
     }
 
     /**
      * Set a builder for EdgeEffects
-     * @param builder
+     *
+     * @param builder EdgeEffectBuilder
      */
     public void setEdgeEffectBuilder(@NonNull EdgeEffectBuilder builder) {
         mEdgeEffectBuilder = builder;
@@ -141,7 +181,8 @@ public class AndroidRemoteContext extends RemoteContext {
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
     // Data handling
-    ///////////////////////////////////////////////////////////////////////////////////////////////
+
+    /// ////////////////////////////////////////////////////////////////////////////////////////////
 
     @Override
     public void loadPathData(int instanceId, int winding, float @NonNull [] floatPath) {
@@ -166,21 +207,27 @@ public class AndroidRemoteContext extends RemoteContext {
         }
     }
 
-    HashMap<String, VarName> mVarNameHashMap = new HashMap<>();
+    HashMap<String, ArrayList<VarName>> mVarNameHashMap = new HashMap<>();
 
     /**
      * Returns the id of a variable
-     * @param name
-     * @return
+     *
+     * @param name name of variable
+     * @return id of variable
      */
     public int getVariableId(@NonNull String name) {
-        return Objects.requireNonNull(mVarNameHashMap.get(name)).mId;
+        ArrayList<VarName> list = mVarNameHashMap.get(name);
+        if (list == null || list.isEmpty()) {
+            throw new java.util.NoSuchElementException("Variable " + name + " not found");
+        }
+        return list.get(0).mId;
     }
 
     /**
      * Returns the content of a name variable
-     * @param name
-     * @return
+     *
+     * @param name name of variable
+     * @return content of variable
      */
     public @Nullable String getStringVariableName(@NonNull String name) {
         int id = getVariableId(name);
@@ -189,24 +236,38 @@ public class AndroidRemoteContext extends RemoteContext {
 
     @Override
     public void loadVariableName(@NonNull String varName, int varId, int varType) {
-        mVarNameHashMap.put(varName, new VarName(varName, varId, varType));
+        ArrayList<VarName> list = mVarNameHashMap.get(varName);
+        if (list == null) {
+            list = new ArrayList<>();
+            mVarNameHashMap.put(varName, list);
+        }
+        // Avoid duplicates if re-initializing the same document
+        for (int i = 0; i < list.size(); i++) {
+            if (list.get(i).mId == varId) {
+                return;
+            }
+        }
+        list.add(new VarName(varName, varId, varType));
     }
 
     @Override
     public void setNamedStringOverride(@NonNull String stringName, @NonNull String value) {
-        if (mVarNameHashMap.get(stringName) != null) {
-            int id = mVarNameHashMap.get(stringName).mId;
-            overrideText(id, value);
+        ArrayList<VarName> list = mVarNameHashMap.get(stringName);
+        if (list != null) {
+            for (VarName var : list) {
+                overrideText(var.mId, value);
+            }
         }
     }
 
     @Override
     public void clearNamedStringOverride(@NonNull String stringName) {
-        if (mVarNameHashMap.get(stringName) != null) {
-            int id = mVarNameHashMap.get(stringName).mId;
-            clearDataOverride(id);
+        ArrayList<VarName> list = mVarNameHashMap.get(stringName);
+        if (list != null) {
+            for (VarName var : list) {
+                clearDataOverride(var.mId);
+            }
         }
-        mVarNameHashMap.put(stringName, null);
     }
 
     @Override
@@ -221,63 +282,73 @@ public class AndroidRemoteContext extends RemoteContext {
 
     @Override
     public void setNamedIntegerOverride(@NonNull String integerName, int value) {
-        if (mVarNameHashMap.get(integerName) != null) {
-            int id = mVarNameHashMap.get(integerName).mId;
-            overrideInt(id, value);
+        ArrayList<VarName> list = mVarNameHashMap.get(integerName);
+        if (list != null) {
+            for (VarName var : list) {
+                overrideInt(var.mId, value);
+            }
         }
     }
 
     @Override
     public void clearNamedIntegerOverride(@NonNull String integerName) {
-        if (mVarNameHashMap.get(integerName) != null) {
-            int id = mVarNameHashMap.get(integerName).mId;
-            clearIntegerOverride(id);
+        ArrayList<VarName> list = mVarNameHashMap.get(integerName);
+        if (list != null) {
+            for (VarName var : list) {
+                clearIntegerOverride(var.mId);
+            }
         }
-        mVarNameHashMap.put(integerName, null);
     }
 
     @Override
     public void setNamedFloatOverride(@NonNull String floatName, float value) {
-        if (mVarNameHashMap.get(floatName) != null) {
-            int id = mVarNameHashMap.get(floatName).mId;
-            overrideFloat(id, value);
+        ArrayList<VarName> list = mVarNameHashMap.get(floatName);
+        if (list != null) {
+            for (VarName var : list) {
+                overrideFloat(var.mId, value);
+            }
         }
     }
 
     @Override
     public void clearNamedFloatOverride(@NonNull String floatName) {
-        if (mVarNameHashMap.get(floatName) != null) {
-            int id = mVarNameHashMap.get(floatName).mId;
-            clearFloatOverride(id);
+        ArrayList<VarName> list = mVarNameHashMap.get(floatName);
+        if (list != null) {
+            for (VarName var : list) {
+                clearFloatOverride(var.mId);
+            }
         }
-        mVarNameHashMap.put(floatName, null);
     }
 
     @Override
     public void setNamedLong(@NonNull String name, long value) {
-        VarName entry = mVarNameHashMap.get(name);
-        if (entry != null) {
-            int id = entry.mId;
-            LongConstant longConstant = (LongConstant) mRemoteComposeState.getObject(id);
-            longConstant.setValue(value);
+        ArrayList<VarName> list = mVarNameHashMap.get(name);
+        if (list != null) {
+            for (VarName var : list) {
+                LongConstant longConstant = (LongConstant) mRemoteComposeState.getObject(var.mId);
+                longConstant.setValue(value);
+            }
         }
     }
 
     @Override
     public void setNamedDataOverride(@NonNull String dataName, @NonNull Object value) {
-        if (mVarNameHashMap.get(dataName) != null) {
-            int id = mVarNameHashMap.get(dataName).mId;
-            overrideData(id, value);
+        ArrayList<VarName> list = mVarNameHashMap.get(dataName);
+        if (list != null) {
+            for (VarName var : list) {
+                overrideData(var.mId, value);
+            }
         }
     }
 
     @Override
     public void clearNamedDataOverride(@NonNull String dataName) {
-        if (mVarNameHashMap.get(dataName) != null) {
-            int id = mVarNameHashMap.get(dataName).mId;
-            clearDataOverride(id);
+        ArrayList<VarName> list = mVarNameHashMap.get(dataName);
+        if (list != null) {
+            for (VarName var : list) {
+                clearDataOverride(var.mId);
+            }
         }
-        mVarNameHashMap.put(dataName, null);
     }
 
     /**
@@ -287,9 +358,11 @@ public class AndroidRemoteContext extends RemoteContext {
      */
     @Override
     public void setNamedColorOverride(@NonNull String colorName, int color) {
-        if (mVarNameHashMap.get(colorName) != null) {
-            int id = mVarNameHashMap.get(colorName).mId;
-            mRemoteComposeState.overrideColor(id, color);
+        ArrayList<VarName> list = mVarNameHashMap.get(colorName);
+        if (list != null) {
+            for (VarName var : list) {
+                mRemoteComposeState.overrideColor(var.mId, color);
+            }
         }
     }
 
@@ -336,96 +409,13 @@ public class AndroidRemoteContext extends RemoteContext {
     public void loadBitmap(
             int imageId, short encoding, short type, int width, int height, byte @NonNull [] data) {
         if (!mRemoteComposeState.containsId(imageId)) {
-            Bitmap image = null;
-            switch (encoding) {
-                case BitmapData.ENCODING_INLINE:
-                    switch (type) {
-                        case BitmapData.TYPE_PNG_8888:
-                            if (CHECK_DATA_SIZE) {
-                                BitmapFactory.Options opts = new BitmapFactory.Options();
-                                opts.inJustDecodeBounds = true; // <-- do a bounds-only pass
-                                BitmapFactory.decodeByteArray(data, 0, data.length, opts);
-                                if (opts.outWidth > width || opts.outHeight > height) {
-                                    throw new RuntimeException(
-                                            "dimension don't match "
-                                                    + opts.outWidth
-                                                    + "x"
-                                                    + opts.outHeight
-                                                    + " vs "
-                                                    + width
-                                                    + "x"
-                                                    + height);
-                                }
-                            }
-                            image = BitmapFactory.decodeByteArray(data, 0, data.length);
-                            break;
-                        case BitmapData.TYPE_PNG_ALPHA_8:
-                            image = decodePreferringAlpha8(data);
-
-                            // If needed convert to ALPHA_8.
-                            if (!image.getConfig().equals(Bitmap.Config.ALPHA_8)) {
-                                Bitmap alpha8Bitmap =
-                                        Bitmap.createBitmap(
-                                                image.getWidth(),
-                                                image.getHeight(),
-                                                Bitmap.Config.ALPHA_8);
-                                Canvas canvas = new Canvas(alpha8Bitmap);
-                                Paint paint = new Paint();
-                                paint.setXfermode(
-                                        new android.graphics.PorterDuffXfermode(
-                                                android.graphics.PorterDuff.Mode.SRC));
-                                canvas.drawBitmap(image, 0, 0, paint);
-                                image.recycle(); // Release resources
-
-                                image = alpha8Bitmap;
-                            }
-                            break;
-                        case BitmapData.TYPE_RAW8888:
-                            image = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
-                            int[] idata = new int[data.length / 4];
-                            for (int i = 0; i < idata.length; i++) {
-                                int p = i * 4;
-                                idata[i] =
-                                        (data[p] << 24)
-                                                | (data[p + 1] << 16)
-                                                | (data[p + 2] << 8)
-                                                | data[p + 3];
-                            }
-                            image.setPixels(idata, 0, width, 0, 0, width, height);
-                            break;
-                        case BitmapData.TYPE_RAW8:
-                            image = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
-                            int[] bdata = new int[data.length / 4];
-                            for (int i = 0; i < bdata.length; i++) {
-
-                                bdata[i] = 0x1010101 * data[i];
-                            }
-                            image.setPixels(bdata, 0, width, 0, 0, width, height);
-                            break;
-                    }
-                    break;
-                case BitmapData.ENCODING_FILE:
-                    image = BitmapFactory.decodeFile(new String(data));
-                    break;
-                case BitmapData.ENCODING_URL:
-                    try {
-                        image = BitmapFactory.decodeStream(
-                                mBitmapLoader.loadBitmap(new String(data)));
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
-                    break;
-                case BitmapData.ENCODING_EMPTY:
-                    image = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+            Bitmap image =
+                    RemoteBitmapDecoder.decodeBitmap(
+                            imageId, encoding, type, width, height, data, mBitmapLoader);
+            if (image != null) {
+                mRemoteComposeState.cacheData(imageId, image);
             }
-            mRemoteComposeState.cacheData(imageId, image);
         }
-    }
-
-    private Bitmap decodePreferringAlpha8(byte @NonNull [] data) {
-        BitmapFactory.Options options = new BitmapFactory.Options();
-        options.inPreferredConfig = Bitmap.Config.ALPHA_8;
-        return BitmapFactory.decodeByteArray(data, 0, data.length, options);
     }
 
     @Override

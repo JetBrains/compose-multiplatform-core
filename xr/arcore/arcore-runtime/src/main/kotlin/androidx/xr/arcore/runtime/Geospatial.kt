@@ -17,7 +17,6 @@
 package androidx.xr.arcore.runtime
 
 import androidx.annotation.RestrictTo
-import androidx.xr.runtime.VpsAvailabilityResult
 import androidx.xr.runtime.math.GeospatialPose
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
@@ -27,12 +26,12 @@ import androidx.xr.runtime.math.Quaternion
  *
  * @property state the current [State] of Geospatial
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public interface Geospatial {
 
     /**
      * Describes the state of Geospatial. The State must be [RUNNING] to use Geospatial
-     * functionality. If Geospatial has entered an error state other than [ERROR_APP_PREEMPTED],
+     * functionality. If Geospatial has entered an error state other than [ERROR_INTERNAL],
      * Geospatial must be disabled and re-enabled to use Geospatial again.
      */
     public class State private constructor(private val value: Int) {
@@ -104,7 +103,7 @@ public interface Geospatial {
      * @property geospatialPose the [GeospatialPose] that was created
      * @property horizontalAccuracy the estimated horizontal accuracy in meters
      * @property verticalAccuracy the estimated altitude accuracy in meters
-     * @property orientationYawAccuracy the estimated orientation yaw angle accuracy
+     * @property orientationYawAccuracy the estimated orientation yaw angle accuracy in degrees
      */
     public class GeospatialPoseResult(
         public val geospatialPose: GeospatialPose,
@@ -132,6 +131,18 @@ public interface Geospatial {
     }
 
     public val state: State
+
+    /** The current [GeospatialPose] of the device/camera. */
+    public val geospatialPose: GeospatialPose
+
+    /** The estimated horizontal accuracy in meters. */
+    public val horizontalAccuracy: Double
+
+    /** The estimated altitude accuracy in meters. */
+    public val verticalAccuracy: Double
+
+    /** The estimated orientation yaw angle accuracy in degrees. */
+    public val orientationYawAccuracy: Double
 
     /**
      * Converts the input [GeospatialPose] to a [Pose] in the same position.
@@ -189,7 +200,9 @@ public interface Geospatial {
      * Gets the availability of the Visual Positioning System (VPS) at a specified horizontal
      * position.
      *
-     * The availability of VPS in a given location helps to improve the quality of Geospatial
+     * The Visual Positioning System (VPS) provides highly accurate global localization by matching
+     * features from the device's camera against Google's global database of 3D imagery. The
+     * availability of VPS in a given location helps to improve the quality of Geospatial
      * localization and tracking accuracy.
      *
      * @param latitude the latitude to check

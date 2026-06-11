@@ -31,7 +31,7 @@ plugins {
 
 androidXMultiplatform {
     androidLibrary {
-        compileSdk { version = release(35) }
+        compileSdk { version = release(37) }
         namespace = "androidx.compose.ui.test.junit4"
     }
     jvmStubs()
@@ -59,6 +59,7 @@ androidXMultiplatform {
             implementation("androidx.lifecycle:lifecycle-runtime:2.5.1")
             implementation("androidx.test:core:1.5.0")
             implementation("androidx.test:monitor:1.6.1")
+            implementation("androidx.test.espresso:espresso-core:3.5.0")
         }
 
         jvmStubsMain.dependencies {

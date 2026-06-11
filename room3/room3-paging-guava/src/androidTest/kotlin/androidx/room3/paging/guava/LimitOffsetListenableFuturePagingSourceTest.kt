@@ -36,7 +36,6 @@ import androidx.room3.RoomRawQuery
 import androidx.room3.util.getColumnIndexOrThrow
 import androidx.room3.util.performSuspending
 import androidx.sqlite.driver.AndroidSQLiteDriver
-import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
 import androidx.testutils.FilteringCoroutineContext
@@ -585,9 +584,7 @@ class LimitOffsetListenableFuturePagingSourceTest {
 
     private fun setupAndRun(test: suspend (LimitOffsetTestDb) -> Unit) {
         val db =
-            Room.inMemoryDatabaseBuilder<LimitOffsetTestDb>(
-                    ApplicationProvider.getApplicationContext()
-                )
+            Room.inMemoryDatabaseBuilder<LimitOffsetTestDb>()
                 .setDriver(AndroidSQLiteDriver())
                 .setQueryCoroutineContext(
                     ArchTaskExecutor.getIOThreadExecutor().asCoroutineDispatcher()
@@ -620,9 +617,7 @@ class LimitOffsetListenableFuturePagingSourceTest {
         val queryContext = FilteringCoroutineContext(executorService)
         val queryExecutor = queryContext.executor
         val db =
-            Room.inMemoryDatabaseBuilder<LimitOffsetTestDb>(
-                    ApplicationProvider.getApplicationContext()
-                )
+            Room.inMemoryDatabaseBuilder<LimitOffsetTestDb>()
                 .setDriver(AndroidSQLiteDriver())
                 .setQueryCoroutineContext(queryContext)
                 .build()

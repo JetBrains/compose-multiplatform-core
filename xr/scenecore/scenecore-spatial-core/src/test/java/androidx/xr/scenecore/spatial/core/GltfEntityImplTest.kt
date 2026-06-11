@@ -16,15 +16,14 @@
 package androidx.xr.scenecore.spatial.core
 
 import android.app.Activity
-import androidx.xr.runtime.NodeHolder
-import androidx.xr.runtime.math.BoundingBox.Companion.fromMinMax
+import androidx.xr.runtime.math.BoundingBox
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.runtime.GltfFeature
 import androidx.xr.scenecore.runtime.GltfModelNodeFeature
+import androidx.xr.scenecore.runtime.NodeHolder
 import androidx.xr.scenecore.runtime.Space
-import androidx.xr.scenecore.runtime.extensions.XrExtensionsProvider.getXrExtensions
-import androidx.xr.scenecore.testing.FakeGltfFeature.Companion.createWithMockFeature
+import androidx.xr.scenecore.runtime.impl.PerceptionSpaceScenePoseImpl
 import androidx.xr.scenecore.testing.FakeScheduledExecutorService
 import com.android.extensions.xr.ShadowXrExtensions
 import com.android.extensions.xr.node.Node
@@ -43,18 +42,34 @@ import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [Config.TARGET_SDK])
-class GltfEntityImplTest {
-    private val xrExtensions = requireNotNull(getXrExtensions())
-    private val sceneNodeRegistry = SceneNodeRegistry()
-    private val fakeScheduledExecutorService = FakeScheduledExecutorService()
+class GltfEntityImplTest : AndroidXrEntityImplTest() {
+    override val xrExtensions = SpatialCoreXrExtensionsHolderProvider.extensionsLegacy
+    override val sceneNodeRegistry = SceneNodeRegistry()
+    override val fakeExecutor = FakeScheduledExecutorService()
     private val mockGltfFeature: GltfFeature = mock<GltfFeature>()
     private lateinit var activitySpace: ActivitySpaceImpl
     private lateinit var gltfEntityImpl: GltfEntityImpl
 
+    override lateinit var activity: Activity
+
+    override fun createEntity(node: Node): AndroidXrEntity {
+        val nodeHolder = NodeHolder(node, Node::class.java)
+        whenever(mockGltfFeature.getNodeHolder()).thenReturn(nodeHolder)
+
+        return GltfEntityImpl(
+            activity,
+            mockGltfFeature,
+            null,
+            xrExtensions,
+            sceneNodeRegistry,
+            fakeExecutor,
+        )
+    }
+
     @Before
     fun setUp() {
         val activityController = Robolectric.buildActivity(Activity::class.java)
-        val activity = activityController.create().start().get()
+        activity = activityController.create().start().get()
 
         Truth.assertThat(xrExtensions).isNotNull()
 
@@ -69,7 +84,7 @@ class GltfEntityImplTest {
                 xrExtensions,
                 sceneNodeRegistry,
                 { xrExtensions.getSpatialState(activity) },
-                fakeScheduledExecutorService,
+                fakeExecutor,
             )
         sceneNodeRegistry.addSystemSpaceScenePose(PerceptionSpaceScenePoseImpl(activitySpace))
 
@@ -83,21 +98,24 @@ class GltfEntityImplTest {
 
     private fun createGltfEntity(activity: Activity): GltfEntityImpl {
         val nodeHolder = NodeHolder<Node>(xrExtensions.createNode(), Node::class.java)
-        val fakeGltfFeature = createWithMockFeature(mockGltfFeature, nodeHolder)
+        val defaultBoundingBox = BoundingBox.fromMinMax(Vector3.Zero, Vector3.One)
+
+        whenever(mockGltfFeature.getNodeHolder()).thenReturn(nodeHolder)
+        whenever(mockGltfFeature.getGltfModelBoundingBox()).thenReturn(defaultBoundingBox)
 
         return GltfEntityImpl(
             activity,
-            fakeGltfFeature,
+            mockGltfFeature,
             activitySpace,
             xrExtensions,
             sceneNodeRegistry,
-            fakeScheduledExecutorService,
+            fakeExecutor,
         )
     }
 
     @Test
     fun getGltfModelBoundingBox_returnsBoundingBox() {
-        val expectedResult = fromMinMax(Vector3.Zero, Vector3.One)
+        val expectedResult = BoundingBox.fromMinMax(Vector3.Zero, Vector3.One)
         whenever(mockGltfFeature.getGltfModelBoundingBox()).thenReturn(expectedResult)
 
         val boundingBox = gltfEntityImpl.gltfModelBoundingBox

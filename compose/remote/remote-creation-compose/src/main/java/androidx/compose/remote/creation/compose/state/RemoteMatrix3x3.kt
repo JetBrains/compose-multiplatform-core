@@ -27,18 +27,47 @@ import androidx.compose.remote.creation.compose.capture.RemoteComposeCreationSta
 public class RemoteMatrix3x3
 internal constructor(
     private val arrayProvider: (creationState: RemoteComposeCreationState) -> FloatArray,
-    override val cacheKey: RemoteStateCacheKey,
-) : BaseRemoteState<Any>() {
-    internal enum class OperationKey {
-        IDENTITY,
-        ROTATE,
-        TRANSLATE_X,
-        TRANSLATE_Y,
-        TRANSLATE_XY,
-        SCALE_X,
-        SCALE_Y,
-        ROTATION_AROUND,
-        MUL,
+    cacheKey: RemoteStateCacheKey,
+) : BaseRemoteState<Any>(cacheKey) {
+
+    internal enum class OperationKey(override val precedence: Int = 100) : DebuggableOperation {
+        IDENTITY {
+            override fun toDebugString(args: List<RemoteStateCacheKey>) = "identity()"
+        },
+        ROTATE {
+            override fun toDebugString(args: List<RemoteStateCacheKey>) =
+                "rotate(${args[0].toDebugString()})"
+        },
+        TRANSLATE_X {
+            override fun toDebugString(args: List<RemoteStateCacheKey>) =
+                "translateX(${args[0].toDebugString()})"
+        },
+        TRANSLATE_Y {
+            override fun toDebugString(args: List<RemoteStateCacheKey>) =
+                "translateY(${args[0].toDebugString()})"
+        },
+        TRANSLATE_XY {
+            override fun toDebugString(args: List<RemoteStateCacheKey>) =
+                "translate(${args[0].toDebugString()}, ${args[1].toDebugString()})"
+        },
+        SCALE_X {
+            override fun toDebugString(args: List<RemoteStateCacheKey>) =
+                "scaleX(${args[0].toDebugString()})"
+        },
+        SCALE_Y {
+            override fun toDebugString(args: List<RemoteStateCacheKey>) =
+                "scaleY(${args[0].toDebugString()})"
+        },
+        ROTATION_AROUND {
+            override fun toDebugString(args: List<RemoteStateCacheKey>): String {
+                val params = args.joinToDebugString()
+                return "rotateAround($params)"
+            }
+        },
+        MUL(3) {
+            override fun toDebugString(args: List<RemoteStateCacheKey>) =
+                args.formatOp("*", precedence)
+        },
     }
 
     override val constantValueOrNull: Any?

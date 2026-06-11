@@ -32,9 +32,8 @@ import androidx.xr.scenecore.runtime.HitTestResult
 import androidx.xr.scenecore.runtime.ScenePose
 import androidx.xr.scenecore.runtime.SceneRuntime
 import androidx.xr.scenecore.runtime.Space
-import androidx.xr.scenecore.runtime.extensions.XrExtensionsProvider
+import androidx.xr.scenecore.runtime.SpatialModeChangeListener
 import androidx.xr.scenecore.testing.FakeScheduledExecutorService
-import androidx.xr.scenecore.testing.FakeSpatialModeChangeListener
 import com.android.extensions.xr.ShadowXrExtensions
 import com.android.extensions.xr.XrExtensions
 import com.android.extensions.xr.environment.EnvironmentVisibilityState
@@ -42,6 +41,7 @@ import com.android.extensions.xr.environment.PassthroughVisibilityState
 import com.android.extensions.xr.environment.ShadowEnvironmentVisibilityState
 import com.android.extensions.xr.environment.ShadowPassthroughVisibilityState
 import com.android.extensions.xr.node.Box3
+import com.android.extensions.xr.node.Node
 import com.android.extensions.xr.node.NodeRepository
 import com.android.extensions.xr.node.Vec3
 import com.android.extensions.xr.space.Bounds
@@ -76,10 +76,10 @@ class ActivitySpaceImplTest : SystemSpaceEntityImplTest() {
     // TODO(b/329902726): Move this boilerplate for creating a TestSceneRuntime into a test util
     private val activityController: ActivityController<Activity> =
         Robolectric.buildActivity(Activity::class.java)
-    private val activity: Activity = activityController.create().start().get()
-    private val fakeExecutor = FakeScheduledExecutorService()
+    override val activity: Activity = activityController.create().start().get()
+    override val fakeExecutor = FakeScheduledExecutorService()
     private val nodeRepository = NodeRepository.getInstance()
-    private lateinit var xrExtensions: XrExtensions
+    override lateinit var xrExtensions: XrExtensions
     private lateinit var testRuntime: SceneRuntime
     private lateinit var activitySpace: ActivitySpaceImpl
 
@@ -87,9 +87,26 @@ class ActivitySpaceImplTest : SystemSpaceEntityImplTest() {
         return SpatialSceneRuntime.create(activity, fakeExecutor, xrExtensions, SceneNodeRegistry())
     }
 
+    /**
+     * Creates a new [AndroidXrEntity] for testing.
+     *
+     * @param node The [Node] to use for the entity.
+     * @return The created [AndroidXrEntity].
+     */
+    override fun createEntity(node: Node): AndroidXrEntity {
+        return ActivitySpaceImpl(
+            node,
+            activity,
+            xrExtensions,
+            SceneNodeRegistry(),
+            { xrExtensions.getSpatialState(activity) },
+            fakeExecutor,
+        )
+    }
+
     @Before
     fun setUp() {
-        xrExtensions = XrExtensionsProvider.getXrExtensions()!!
+        xrExtensions = SpatialCoreXrExtensionsHolderProvider.extensionsLegacy
 
         testRuntime = createTestSceneRuntime()
 
@@ -187,10 +204,10 @@ class ActivitySpaceImplTest : SystemSpaceEntityImplTest() {
     }
 
     @Test
-    fun getPoseInActivitySpace_returnsIdentity() {
+    fun getActivitySpacePose_returnsIdentity() {
         val activitySpaceImpl = activitySpace
 
-        assertPose(activitySpaceImpl.poseInActivitySpace, Pose())
+        assertPose(activitySpaceImpl.activitySpacePose, Pose())
     }
 
     @Test
@@ -272,9 +289,21 @@ class ActivitySpaceImplTest : SystemSpaceEntityImplTest() {
         }
     }
 
+    private class TestSpatialModeChangeListener : SpatialModeChangeListener {
+        var lastRecommendedPose: Pose? = null
+        var lastRecommendedScale: Vector3? = null
+        var updateCount = 0
+
+        override fun onSpatialModeChanged(recommendedPose: Pose, recommendedScale: Vector3) {
+            lastRecommendedPose = recommendedPose
+            lastRecommendedScale = recommendedScale
+            updateCount++
+        }
+    }
+
     @Test
     fun handleOriginUpdate_unscaledGravityAlignedFalse_handlerCalled() {
-        val handler = FakeSpatialModeChangeListener()
+        val handler = TestSpatialModeChangeListener()
         activitySpace.setSpatialModeChangeListener(handler)
 
         val initialRotation = Quaternion.fromEulerAngles(30f, 0f, 0f)
@@ -290,7 +319,7 @@ class ActivitySpaceImplTest : SystemSpaceEntityImplTest() {
 
     @Test
     fun handleOriginUpdate_unscaledGravityAlignedTrue_scaleAndRotationApplied_handlerCalled() {
-        val handler = FakeSpatialModeChangeListener()
+        val handler = TestSpatialModeChangeListener()
         testRuntime = createTestSceneRuntime()
         activitySpace = testRuntime.activitySpace as ActivitySpaceImpl
         activitySpace.setSpatialModeChangeListener(handler)
@@ -323,7 +352,7 @@ class ActivitySpaceImplTest : SystemSpaceEntityImplTest() {
 
     @Test
     fun handleOriginUpdate_unscaledGravityAlignedTrue_preservesYaw() {
-        val handler = FakeSpatialModeChangeListener()
+        val handler = TestSpatialModeChangeListener()
         testRuntime = createTestSceneRuntime()
         activitySpace = testRuntime.activitySpace as ActivitySpaceImpl
         activitySpace.setSpatialModeChangeListener(handler)
@@ -366,7 +395,7 @@ class ActivitySpaceImplTest : SystemSpaceEntityImplTest() {
 
     @Test
     fun handleOriginUpdate_noHandler_doesNotCallHandler() {
-        val handler = FakeSpatialModeChangeListener()
+        val handler = TestSpatialModeChangeListener()
         testRuntime = createTestSceneRuntime()
         activitySpace = testRuntime.activitySpace as ActivitySpaceImpl
         activitySpace.setSpatialModeChangeListener(null)
@@ -437,7 +466,7 @@ class ActivitySpaceImplTest : SystemSpaceEntityImplTest() {
     fun getPoseRelativeToActivitySpace_returnsIdentity() {
         val activitySpaceImpl = activitySpace
 
-        assertPose(activitySpaceImpl.getPose(Space.ACTIVITY), activitySpaceImpl.poseInActivitySpace)
+        assertPose(activitySpaceImpl.getPose(Space.ACTIVITY), activitySpaceImpl.activitySpacePose)
     }
 
     @Test
@@ -490,7 +519,7 @@ class ActivitySpaceImplTest : SystemSpaceEntityImplTest() {
         activitySpace = testRuntime.activitySpace as ActivitySpaceImpl
         val initialRotation = Quaternion.fromEulerAngles(45f, 0f, 0f)
         val newTransform = Matrix4.fromTrs(Vector3.One, initialRotation, Vector3(2f, 2f, 2f))
-        activitySpace.handleOriginUpdate(newTransform)
+        activitySpace.setOpenXrReferenceSpaceTransform(newTransform)
         val pose = activitySpace.poseInOpenXrReferenceSpace
         assertThat(pose).isNotNull()
         assertPose(pose!!, Pose(Vector3.One, initialRotation))
@@ -520,11 +549,49 @@ class ActivitySpaceImplTest : SystemSpaceEntityImplTest() {
     override fun setPoseInOpenXrReferenceSpace_updatesScale() {
         val systemSpaceEntity = this.systemSpaceEntityImpl
         val matrix = Matrix4.fromScale(3.3f)
-        val scale = Vector3(3.3f, 3.3f, 3.3f)
         systemSpaceEntity.setOpenXrReferenceSpaceTransform(matrix)
         assertVector3(systemSpaceEntity.activitySpaceScale, Vector3.One)
         // ActivitySpace always returns Vector3.One
         assertVector3(systemSpaceEntity.worldSpaceScale, Vector3.One)
         assertVector3(systemSpaceEntity.getScale(Space.ACTIVITY), Vector3.One)
+    }
+
+    @Test
+    fun handleOriginUpdate_sameTransform_doesNotNotifyAgain() {
+        val handler = TestSpatialModeChangeListener()
+        testRuntime = createTestSceneRuntime()
+        activitySpace = testRuntime.activitySpace as ActivitySpaceImpl
+        activitySpace.setSpatialModeChangeListener(handler)
+
+        val newTransform = Matrix4.fromTrs(Vector3.One, Quaternion.Identity, Vector3.One)
+
+        activitySpace.handleOriginUpdate(newTransform)
+        assertThat(handler.updateCount).isEqualTo(1)
+
+        activitySpace.handleOriginUpdate(newTransform)
+        assertThat(handler.updateCount).isEqualTo(1)
+    }
+
+    @Test
+    fun handleOriginUpdate_handlesIndependentlyOfOpenXrReferenceSpaceTransform() {
+        val handler = TestSpatialModeChangeListener()
+        testRuntime = createTestSceneRuntime()
+        activitySpace = testRuntime.activitySpace as ActivitySpaceImpl
+        activitySpace.setSpatialModeChangeListener(handler)
+
+        val newTransform = Matrix4.fromTrs(Vector3.One, Quaternion.Identity, Vector3.One)
+        val anotherTransform =
+            Matrix4.fromTrs(Vector3.One, Quaternion.Identity, Vector3(2f, 2f, 2f))
+
+        activitySpace.handleOriginUpdate(newTransform)
+        assertThat(handler.updateCount).isEqualTo(1)
+
+        // Asynchronously the underlying OpenXR reference space transform might be updated
+        // by the node transform listener. This should NOT affect handleOriginUpdate's debouncing.
+        activitySpace.setOpenXrReferenceSpaceTransform(anotherTransform)
+
+        // Applying the same transform via handleOriginUpdate should be debounced.
+        activitySpace.handleOriginUpdate(newTransform)
+        assertThat(handler.updateCount).isEqualTo(1)
     }
 }

@@ -43,8 +43,6 @@ import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.testutils.assertAgainstGolden
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -232,7 +230,7 @@ class MenuScreenshotTest {
             DropdownMenuContent(
                 modifier = Modifier,
                 expandedState = MutableTransitionState(initialState = true),
-                transformOriginState = remember { mutableStateOf(TransformOrigin.Center) },
+                transformOrigin = { TransformOrigin.Center },
                 scrollState = rememberScrollState(),
                 shape = shape,
                 containerColor = containerColor,
@@ -265,7 +263,6 @@ class MenuScreenshotTest {
         }
     }
 
-    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
     @Composable
     private fun TestSegmentedMenu(
         enabledItems: Boolean = true,
@@ -278,7 +275,7 @@ class MenuScreenshotTest {
             DropdownMenuPopupContent(
                 Modifier,
                 expandedState = MutableTransitionState(initialState = true),
-                transformOriginState = remember { mutableStateOf(TransformOrigin.Center) },
+                transformOrigin = { TransformOrigin.Center },
             ) {
                 DropdownMenuGroup(
                     shapes = MenuDefaults.groupShapes(shape = MenuDefaults.leadingGroupShape)
@@ -330,10 +327,6 @@ class MenuScreenshotTest {
                 DropdownMenuGroup(
                     shapes = MenuDefaults.groupShapes(shape = MenuDefaults.trailingGroupShape)
                 ) {
-                    MenuDefaults.Label { Text("Group Label") }
-                    HorizontalDivider(
-                        modifier = Modifier.padding(MenuDefaults.HorizontalDividerPadding)
-                    )
                     DropdownMenuItem(
                         shapes = MenuDefaults.itemShapes(shape = MenuDefaults.leadingItemShape),
                         text = { Text("Home") },
@@ -396,14 +389,13 @@ class MenuScreenshotTest {
         }
     }
 
-    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
     @Composable
     private fun TestPrecisionPointerSegmentedMenu() {
         Box(Modifier.testTag(testTag).padding(20.dp), contentAlignment = Alignment.Center) {
             DropdownMenuPopupContent(
                 Modifier,
                 expandedState = MutableTransitionState(initialState = true),
-                transformOriginState = remember { mutableStateOf(TransformOrigin.Center) },
+                transformOrigin = { TransformOrigin.Center },
             ) {
                 DropdownMenuGroup(
                     shapes = MenuDefaults.groupShapes(shape = MenuDefaults.leadingGroupShape)

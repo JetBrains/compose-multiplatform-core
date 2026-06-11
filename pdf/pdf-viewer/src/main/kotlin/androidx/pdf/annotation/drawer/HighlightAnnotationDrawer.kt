@@ -21,15 +21,21 @@ import android.graphics.Canvas
 import android.graphics.Matrix
 import android.graphics.Paint
 import android.graphics.RectF
+import android.os.Build
 import androidx.core.graphics.toRect
-import androidx.pdf.annotation.models.HighlightAnnotation
+import androidx.pdf.annotation.content.HighlightAnnotation
 
 internal class HighlightAnnotationDrawer : PdfAnnotationDrawer<HighlightAnnotation> {
 
     @androidx.annotation.VisibleForTesting
     internal val paint: Paint =
         Paint().apply {
-            blendMode = BlendMode.MULTIPLY
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                blendMode = BlendMode.MULTIPLY
+            } else {
+                // Safe to ignore: HighlightAnnotationDrawer is only invoked on
+                // Build.VERSION_CODES.S and above
+            }
             style = Paint.Style.FILL
         }
 

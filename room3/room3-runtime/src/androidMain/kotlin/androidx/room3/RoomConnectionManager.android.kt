@@ -63,12 +63,22 @@ internal actual class RoomConnectionManager : BaseRoomConnectionManager {
                     statementCacheSize = config.preparedStatementCacheSize,
                 )
             } else {
-                newConnectionPool(
-                    connectionFactory = createConnectionFactory(config.sqliteDriver, config.name),
-                    maxNumOfReaders = config.journalMode.getMaxNumberOfReaders(),
-                    maxNumOfWriters = config.journalMode.getMaxNumberOfWriters(),
-                    statementCacheSize = config.preparedStatementCacheSize,
-                )
+                when (val poolConfig = configuration.connectionPoolConfiguration) {
+                    is SingleConnection ->
+                        newSingleConnectionPool(
+                            connectionFactory =
+                                createConnectionFactory(config.sqliteDriver, config.name),
+                            statementCacheSize = config.preparedStatementCacheSize,
+                        )
+                    is MultipleConnection ->
+                        newConnectionPool(
+                            connectionFactory =
+                                createConnectionFactory(config.sqliteDriver, config.name),
+                            maxNumOfReaders = poolConfig.numOfReaders,
+                            maxNumOfWriters = poolConfig.numOfWriters,
+                            statementCacheSize = config.preparedStatementCacheSize,
+                        )
+                }
             }
     }
 
@@ -96,7 +106,7 @@ internal actual class RoomConnectionManager : BaseRoomConnectionManager {
         if (fileName != ":memory:") {
             // Get database path from context, if the database name is not an absolute path, then
             // the app's database directory will be used, otherwise the given path is used.
-            configuration.context.getDatabasePath(fileName).absolutePath
+            configuration.context?.getDatabasePath(fileName)?.absolutePath ?: fileName
         } else {
             fileName
         }

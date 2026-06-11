@@ -23,6 +23,7 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
+import android.os.RemoteException
 import android.telecom.Call
 import android.telecom.Call.Callback
 import android.telecom.InCallService
@@ -66,7 +67,6 @@ import kotlinx.coroutines.withTimeoutOrNull
  * [onExchangeComplete], which is called when capability exchange has completed and the extension
  * should be initialized.
  */
-@OptIn(ExperimentalAppActions::class)
 internal data class CallExtensionCreator(
     val extensionCapability: Capability,
     val onExchangeComplete: suspend (Capability?, CapabilityExchangeListenerRemote?) -> Unit,
@@ -77,7 +77,6 @@ internal data class CallExtensionCreator(
  * Contains the capabilities that the VOIP app supports and the remote binder implementation used to
  * communicate with the remote process.
  */
-@OptIn(ExperimentalAppActions::class)
 internal data class CapabilityExchangeResult(
     val voipCapabilities: Set<Capability>,
     val extensionInitializationBinder: CapabilityExchangeListenerRemote,
@@ -98,7 +97,6 @@ internal data class CapabilityExchangeResult(
  * }
  * ```
  */
-@OptIn(ExperimentalAppActions::class)
 @RequiresApi(Build.VERSION_CODES.O)
 internal class CallExtensionScopeImpl(
     private val applicationContext: Context,
@@ -222,6 +220,7 @@ internal class CallExtensionScopeImpl(
      * @return The configured [CallIconExtensionRemoteImpl] instance, representing the call icon
      *   extension.
      */
+    @ExperimentalAppActions
     override fun addCallIconSupport(
         onCallIconChanged: suspend (Uri) -> Unit
     ): CallIconExtensionRemote {
@@ -430,7 +429,15 @@ internal class CallExtensionScopeImpl(
         } finally {
             Log.i(TAG, "setupExtensionSession: scope closing, calling onRemoveExtensions")
             callScope.cancel()
-            extensions?.extensionInitializationBinder?.onRemoveExtensions()
+            try {
+                extensions?.extensionInitializationBinder?.onRemoveExtensions()
+            } catch (e: RemoteException) {
+                Log.w(
+                    TAG,
+                    "setupExtensionSession: Remote process died, cannot remove extensions",
+                    e,
+                )
+            }
         }
     }
 
@@ -464,9 +471,12 @@ internal class CallExtensionScopeImpl(
         val callback =
             object : Callback() {
                 override fun onConnectionEvent(call: Call?, event: String?, extras: Bundle?) {
-                    if (call == null || event == null) return
+                    if (event == null) return
                     if (event == CallsManager.EVENT_CALL_READY) {
-                        continuation.resume(Unit)
+                        if (continuation.isActive) {
+                            callProxy.unregisterCallback(this)
+                            continuation.resume(Unit)
+                        }
                     }
                 }
             }
@@ -494,7 +504,7 @@ internal class CallExtensionScopeImpl(
             )
             val capability =
                 extensions.voipCapabilities.firstOrNull {
-                    it.featureId == remoteExtensionImpl.extensionCapability.featureId
+                    it?.featureId == remoteExtensionImpl.extensionCapability.featureId
                 }
             if (capability == null) {
                 Log.d(TAG, "initializeExtensions: no VOIP capability, skipping...")
@@ -531,6 +541,7 @@ internal class CallExtensionScopeImpl(
                             "registerWithRemoteService: received remote result," +
                                 " caps=$capabilities, listener is null=${l == null}",
                         )
+                        if (!continuation.isActive) return
                         continuation.resume(
                             l?.let {
                                 CapabilityExchangeResult(
@@ -550,7 +561,6 @@ internal class CallExtensionScopeImpl(
      * @return the negotiated capability by finding the highest version and actions supported by
      *   both the local and remote interfaces.
      */
-    @ExperimentalAppActions
     private fun calculateNegotiatedCapability(
         localCapability: Capability,
         remoteCapability: Capability,
@@ -599,7 +609,9 @@ internal class CallExtensionScopeImpl(
                 ?.linkToDeath(
                     {
                         Log.w(TAG, "waitForDestroy: binderDied called, cleaning up")
-                        continuation.resume(Unit)
+                        if (continuation.isActive) {
+                            continuation.resume(Unit)
+                        }
                     },
                     0, /* flags */
                 )
@@ -611,7 +623,9 @@ internal class CallExtensionScopeImpl(
                 callProxy.registerCallback(callback, Handler(Looper.getMainLooper()))
                 continuation.invokeOnCancellation { callProxy.unregisterCallback(callback) }
             } else {
-                continuation.resume(Unit)
+                if (continuation.isActive) {
+                    continuation.resume(Unit)
+                }
             }
         }
 }

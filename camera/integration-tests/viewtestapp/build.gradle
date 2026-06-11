@@ -23,16 +23,15 @@ plugins {
 }
 
 android {
-    compileSdk { version = release(36) }
+    compileSdk { version = release(37) }
     defaultConfig {
         applicationId = "androidx.camera.integration.view"
     }
     buildTypes {
         release {
-            minifyEnabled = true
-            shrinkResources = true
-            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"),
-                    "proguard-rules.pro")
+            optimization {
+                enable = true
+            }
         }
     }
     namespace = "androidx.camera.integration.view"

@@ -13,20 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+@file:Suppress("DEPRECATION")
+
 package androidx.xr.scenecore.spatial.core
 
 import android.app.Activity
-import androidx.xr.runtime.FieldOfView
-import androidx.xr.runtime.NodeHolder
+import androidx.xr.runtime.math.FieldOfView
 import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
+import androidx.xr.scenecore.runtime.NodeHolder
 import androidx.xr.scenecore.runtime.PerceivedResolutionResult
 import androidx.xr.scenecore.runtime.PixelDimensions
 import androidx.xr.scenecore.runtime.Space
 import androidx.xr.scenecore.runtime.SurfaceEntity
-import androidx.xr.scenecore.runtime.extensions.XrExtensionsProvider.getXrExtensions
+import androidx.xr.scenecore.runtime.impl.PerceptionSpaceScenePoseImpl
 import androidx.xr.scenecore.testing.FakeScenePose
 import androidx.xr.scenecore.testing.FakeScheduledExecutorService
 import androidx.xr.scenecore.testing.FakeSurfaceFeature
@@ -48,15 +51,15 @@ import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [Config.TARGET_SDK])
-class SurfaceEntityImplTest {
+class SurfaceEntityImplTest : AndroidXrEntityImplTest() {
     private val activityController: ActivityController<Activity> =
         Robolectric.buildActivity(Activity::class.java)
-    private val activity: Activity = activityController.create().start().get()
-    private val xrExtensions = requireNotNull(getXrExtensions())
-    private val fakeScheduledExecutorService = FakeScheduledExecutorService()
+    override val activity: Activity = activityController.create().start().get()
+    override val xrExtensions = SpatialCoreXrExtensionsHolderProvider.extensionsLegacy
+    override val fakeExecutor = FakeScheduledExecutorService()
     private val spatialStateProvider = Supplier { ShadowSpatialState.create() }
     private val viewPlaneResolution = PixelDimensions(2000, 1000)
-    private val sceneNodeRegistry = SceneNodeRegistry()
+    override val sceneNodeRegistry = SceneNodeRegistry()
     private val activitySpaceImpl =
         ActivitySpaceImpl(
             xrExtensions.createNode(),
@@ -64,7 +67,7 @@ class SurfaceEntityImplTest {
             xrExtensions,
             sceneNodeRegistry,
             spatialStateProvider,
-            fakeScheduledExecutorService,
+            fakeExecutor,
         )
     private val fakeSurfaceFeature =
         FakeSurfaceFeature(NodeHolder<Node>(xrExtensions.createNode(), Node::class.java))
@@ -76,7 +79,7 @@ class SurfaceEntityImplTest {
             activitySpaceImpl,
             xrExtensions,
             sceneNodeRegistry,
-            fakeScheduledExecutorService,
+            fakeExecutor,
         )
     private val renderViewScenePose = FakeScenePose()
     private val renderViewFov =
@@ -86,6 +89,20 @@ class SurfaceEntityImplTest {
             atan(1.0).toFloat(),
             atan(1.0).toFloat(),
         )
+
+    override fun createEntity(node: Node): AndroidXrEntity {
+        val nodeHolder = NodeHolder<Node>(node, Node::class.java)
+        val fakeSurfaceFeature = FakeSurfaceFeature(nodeHolder)
+
+        return SurfaceEntityImpl(
+            activity,
+            fakeSurfaceFeature,
+            null,
+            xrExtensions,
+            sceneNodeRegistry,
+            fakeExecutor,
+        )
+    }
 
     @Before
     fun setUp() {

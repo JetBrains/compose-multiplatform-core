@@ -58,7 +58,13 @@ internal interface WidgetUpdateClient {
      * Sends a broadcast for updates. This is usually used in development mode.
      *
      * @param context The context for this operation
-     * @param provider The component name of the widget provider service to request an update from
+     * @param provider The optional [ComponentName] of the widget provider service to request an
+     *   update from
+     * @param instanceId The optional ID of the widget instance to update.
      */
-    fun sendUpdateBroadcast(context: Context, provider: ComponentName)
+    fun sendUpdateBroadcast(
+        context: Context,
+        provider: ComponentName? = null,
+        instanceId: WidgetInstanceId? = null,
+    )
 }

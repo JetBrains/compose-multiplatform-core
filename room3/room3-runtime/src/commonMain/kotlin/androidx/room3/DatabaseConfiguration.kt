@@ -16,11 +16,13 @@
 
 package androidx.room3
 
+import androidx.annotation.RestrictTo
 import androidx.room3.migration.AutoMigrationSpec
 import androidx.sqlite.SQLiteDriver
 import kotlin.coroutines.CoroutineContext
 
 /** Configuration class for a [RoomDatabase]. */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public expect class DatabaseConfiguration {
     /* The name of the database file or null if it is an in-memory database. */
     public val name: String?
@@ -35,8 +37,10 @@ public expect class DatabaseConfiguration {
     /* Whether Room will fallback to destructive migrations on downgrades only .*/
     public val allowDestructiveMigrationOnDowngrade: Boolean
     internal val migrationNotRequiredFrom: Set<Int>?
-    /* List of provided type converters. */
-    public val typeConverters: List<Any>
+    /* List of provided column type converters. */
+    public val columnTypeConverters: List<Any>
+    /* List of provided DAO return type converters. */
+    public val daoReturnTypeConverters: List<Any>
     /* List of provided auto migration specs. */
     public val autoMigrationSpecs: List<AutoMigrationSpec>
     /* Whether Room will delete all tables or only known tables during destructive migrations. */
@@ -45,4 +49,6 @@ public expect class DatabaseConfiguration {
     public val sqliteDriver: SQLiteDriver
     /* The Coroutine context for the database. */
     public val queryCoroutineContext: CoroutineContext
+    /* The connection pool configuration. */
+    public val connectionPoolConfiguration: ConnectionPoolConfiguration
 }

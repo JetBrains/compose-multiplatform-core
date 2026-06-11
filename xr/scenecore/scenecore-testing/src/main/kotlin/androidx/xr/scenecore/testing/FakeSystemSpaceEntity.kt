@@ -14,22 +14,33 @@
  * limitations under the License.
  */
 
+@file:Suppress("DEPRECATION")
+
 package androidx.xr.scenecore.testing
 
 import androidx.annotation.RestrictTo
+import androidx.xr.runtime.math.Matrix4
+import androidx.xr.runtime.math.Pose
 import androidx.xr.scenecore.runtime.SystemSpaceEntity
+import androidx.xr.scenecore.testing.internal.FakeSystemSpaceEntity as InternalFakeSystemSpaceEntity
 import java.util.concurrent.Executor
 
 /**
  * A test double for [androidx.xr.scenecore.runtime.SystemSpaceEntity], designed for use in unit or
  * integration tests.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public open class FakeSystemSpaceEntity() : FakeEntity(), SystemSpaceEntity {
-    public var onOriginChangedListener: Runnable? = null
-        private set
+@Deprecated("Use SceneCoreTestRule instead.")
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public open class FakeSystemSpaceEntity
+internal constructor(fakeInternal: InternalFakeSystemSpaceEntity) :
+    FakeEntity(fakeInternal = fakeInternal), SystemSpaceEntity {
 
-    private var onOriginChangedExecutor: Executor? = null
+    public constructor() : this(InternalFakeSystemSpaceEntity())
+
+    private var openXrReferenceSpaceTransform: Matrix4? = null
+
+    public val onOriginChangedListener: Runnable?
+        get() = (fakeInternal as InternalFakeSystemSpaceEntity).onOriginChangedListener
 
     /**
      * Registers a listener to be called when the underlying space's origin has moved or changed.
@@ -40,8 +51,10 @@ public open class FakeSystemSpaceEntity() : FakeEntity(), SystemSpaceEntity {
      */
     @Suppress("ExecutorRegistration")
     override fun setOnOriginChangedListener(listener: Runnable?, executor: Executor?) {
-        onOriginChangedListener = listener
-        onOriginChangedExecutor = executor
+        (fakeInternal as InternalFakeSystemSpaceEntity).setOnOriginChangedListener(
+            listener,
+            executor,
+        )
     }
 
     /**
@@ -52,8 +65,14 @@ public open class FakeSystemSpaceEntity() : FakeEntity(), SystemSpaceEntity {
      * and verify that your code responds correctly to space updates.
      */
     public fun onOriginChanged() {
-        onOriginChangedListener?.let { listener ->
-            onOriginChangedExecutor?.execute(listener) ?: listener.run()
-        }
+        (fakeInternal as InternalFakeSystemSpaceEntity).onOriginChanged()
     }
+
+    public fun setOpenXrReferenceSpaceTransform(fromTrs: Matrix4) {
+        openXrReferenceSpaceTransform = fromTrs
+        setScale(fromTrs.scale)
+    }
+
+    override val poseInOpenXrReferenceSpace: Pose?
+        get() = openXrReferenceSpaceTransform?.toPose()
 }

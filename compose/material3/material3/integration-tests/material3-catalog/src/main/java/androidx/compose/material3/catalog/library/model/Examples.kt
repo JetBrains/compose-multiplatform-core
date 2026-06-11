@@ -41,6 +41,7 @@ import androidx.compose.material3.samples.BottomAppBarWithFAB
 import androidx.compose.material3.samples.BottomAppBarWithOverflow
 import androidx.compose.material3.samples.BottomSheetScaffoldNestedScrollSample
 import androidx.compose.material3.samples.ButtonGroupSample
+import androidx.compose.material3.samples.ButtonGroupWithCustomItemSample
 import androidx.compose.material3.samples.ButtonSample
 import androidx.compose.material3.samples.ButtonWithAnimatedShapeSample
 import androidx.compose.material3.samples.ButtonWithIconSample
@@ -80,6 +81,7 @@ import androidx.compose.material3.samples.ElevatedButtonSample
 import androidx.compose.material3.samples.ElevatedButtonWithAnimatedShapeSample
 import androidx.compose.material3.samples.ElevatedCardSample
 import androidx.compose.material3.samples.ElevatedFilterChipSample
+import androidx.compose.material3.samples.ElevatedFilterChipWithCornerMorphingSample
 import androidx.compose.material3.samples.ElevatedSplitButtonSample
 import androidx.compose.material3.samples.ElevatedSuggestionChipSample
 import androidx.compose.material3.samples.ElevatedToggleButtonSample
@@ -98,6 +100,20 @@ import androidx.compose.material3.samples.ExitUntilCollapsedMediumTopAppBar
 import androidx.compose.material3.samples.ExpandableHorizontalFloatingToolbarSample
 import androidx.compose.material3.samples.ExpandableVerticalFloatingToolbarSample
 import androidx.compose.material3.samples.ExposedDropdownMenuSample
+import androidx.compose.material3.samples.ExpressiveOutlinedPasswordTextField
+import androidx.compose.material3.samples.ExpressiveOutlinedTextFieldSample
+import androidx.compose.material3.samples.ExpressiveOutlinedTextFieldWithErrorState
+import androidx.compose.material3.samples.ExpressiveOutlinedTextFieldWithIcons
+import androidx.compose.material3.samples.ExpressiveOutlinedTextFieldWithPlaceholder
+import androidx.compose.material3.samples.ExpressiveOutlinedTextFieldWithPrefixAndSuffix
+import androidx.compose.material3.samples.ExpressiveOutlinedTextFieldWithSupportingText
+import androidx.compose.material3.samples.ExpressivePasswordTextField
+import androidx.compose.material3.samples.ExpressiveTextFieldSample
+import androidx.compose.material3.samples.ExpressiveTextFieldWithErrorState
+import androidx.compose.material3.samples.ExpressiveTextFieldWithIcons
+import androidx.compose.material3.samples.ExpressiveTextFieldWithPlaceholder
+import androidx.compose.material3.samples.ExpressiveTextFieldWithPrefixAndSuffix
+import androidx.compose.material3.samples.ExpressiveTextFieldWithSupportingText
 import androidx.compose.material3.samples.ExtendedFloatingActionButtonSample
 import androidx.compose.material3.samples.ExtendedFloatingActionButtonTextSample
 import androidx.compose.material3.samples.ExtraLargeFilledSplitButtonSample
@@ -114,6 +130,7 @@ import androidx.compose.material3.samples.FilledTonalButtonWithAnimatedShapeSamp
 import androidx.compose.material3.samples.FilledTonalIconButtonSample
 import androidx.compose.material3.samples.FilledTonalIconToggleButtonSample
 import androidx.compose.material3.samples.FilterChipSample
+import androidx.compose.material3.samples.FilterChipWithCornerMorphingSample
 import androidx.compose.material3.samples.FilterChipWithCustomSpacingSample
 import androidx.compose.material3.samples.FilterChipWithLeadingIconSample
 import androidx.compose.material3.samples.FilterChipWithTrailingIconSample
@@ -134,6 +151,7 @@ import androidx.compose.material3.samples.IndeterminateLinearProgressIndicatorSa
 import androidx.compose.material3.samples.IndeterminateLinearWavyProgressIndicatorSample
 import androidx.compose.material3.samples.InputChipSample
 import androidx.compose.material3.samples.InputChipWithAvatarSample
+import androidx.compose.material3.samples.InputChipWithCornerMorphingSample
 import androidx.compose.material3.samples.LargeAnimatedExtendedFloatingActionButtonSample
 import androidx.compose.material3.samples.LargeButtonWithIconSample
 import androidx.compose.material3.samples.LargeExtendedFloatingActionButtonSample
@@ -157,13 +175,14 @@ import androidx.compose.material3.samples.MediumFloatingActionButtonSample
 import androidx.compose.material3.samples.MediumRoundWideIconButtonSample
 import androidx.compose.material3.samples.MediumToggleButtonWithIconSample
 import androidx.compose.material3.samples.MenuSample
+import androidx.compose.material3.samples.MenuWithCascadingMenusSample
 import androidx.compose.material3.samples.MenuWithScrollStateSample
 import androidx.compose.material3.samples.ModalBottomSheetSample
 import androidx.compose.material3.samples.ModalNavigationDrawerSample
 import androidx.compose.material3.samples.ModalWideNavigationRailSample
 import androidx.compose.material3.samples.MultiAspectCarouselLazyRowSample
 import androidx.compose.material3.samples.MultiAutocompleteExposedDropdownMenuSample
-import androidx.compose.material3.samples.MultiSelectConnectedButtonGroupWithFlowLayoutSample
+import androidx.compose.material3.samples.MultiSelectConnectedButtonGroupSample
 import androidx.compose.material3.samples.MultiSelectionListItemSample
 import androidx.compose.material3.samples.MultiSelectionSegmentedListItemSample
 import androidx.compose.material3.samples.NavigationBarItemWithBadge
@@ -176,6 +195,7 @@ import androidx.compose.material3.samples.OutlinedButtonWithAnimatedShapeSample
 import androidx.compose.material3.samples.OutlinedCardSample
 import androidx.compose.material3.samples.OutlinedIconButtonSample
 import androidx.compose.material3.samples.OutlinedIconToggleButtonSample
+import androidx.compose.material3.samples.OutlinedIconToggleButtonWithAnimatedShapeSample
 import androidx.compose.material3.samples.OutlinedSplitButtonSample
 import androidx.compose.material3.samples.OutlinedTextFieldWithInitialValueAndSelection
 import androidx.compose.material3.samples.OutlinedToggleButtonSample
@@ -216,6 +236,7 @@ import androidx.compose.material3.samples.ScaffoldWithCustomSnackbar
 import androidx.compose.material3.samples.ScaffoldWithIndefiniteSnackbar
 import androidx.compose.material3.samples.ScaffoldWithMultilineSnackbar
 import androidx.compose.material3.samples.ScaffoldWithSimpleSnackbar
+import androidx.compose.material3.samples.ScrollFieldSample
 import androidx.compose.material3.samples.ScrollableHorizontalFloatingToolbarSample
 import androidx.compose.material3.samples.ScrollableVerticalFloatingToolbarSample
 import androidx.compose.material3.samples.ScrollingFancyIndicatorContainerTabs
@@ -238,7 +259,7 @@ import androidx.compose.material3.samples.SimpleTextFieldSample
 import androidx.compose.material3.samples.SimpleTopAppBar
 import androidx.compose.material3.samples.SimpleTopAppBarWithAdaptiveActions
 import androidx.compose.material3.samples.SimpleTopAppBarWithSubtitle
-import androidx.compose.material3.samples.SingleSelectConnectedButtonGroupWithFlowLayoutSample
+import androidx.compose.material3.samples.SingleSelectConnectedButtonGroupSample
 import androidx.compose.material3.samples.SingleSelectionListItemSample
 import androidx.compose.material3.samples.SingleSelectionSegmentedListItemSample
 import androidx.compose.material3.samples.SliderSample
@@ -278,6 +299,7 @@ import androidx.compose.material3.samples.ThreeLineListItemWithOverlineAndSuppor
 import androidx.compose.material3.samples.TimeInputSample
 import androidx.compose.material3.samples.TimePickerSample
 import androidx.compose.material3.samples.TimePickerSwitchableSample
+import androidx.compose.material3.samples.TimeScrollFieldSample
 import androidx.compose.material3.samples.TintedIconButtonSample
 import androidx.compose.material3.samples.ToggleButtonSample
 import androidx.compose.material3.samples.ToggleButtonWithIconSample
@@ -286,6 +308,8 @@ import androidx.compose.material3.samples.TonalToggleButtonSample
 import androidx.compose.material3.samples.TriStateCheckboxRoundedStrokesSample
 import androidx.compose.material3.samples.TriStateCheckboxSample
 import androidx.compose.material3.samples.TwoLineListItem
+import androidx.compose.material3.samples.TypographyCustomFontFamilySample
+import androidx.compose.material3.samples.TypographySample
 import androidx.compose.material3.samples.VerticalButtonGroupSample
 import androidx.compose.material3.samples.VerticalCenteredSliderSample
 import androidx.compose.material3.samples.VerticalFloatingToolbarWithFabSample
@@ -572,20 +596,28 @@ val ButtonGroupsExamples =
             ButtonGroupSample()
         },
         Example(
-            name = "SingleSelectConnectedButtonGroupWithFlowLayoutSample",
+            name = "ButtonGroupWithCustomItemSample",
             description = ButtonGroupsExampleDescription,
             sourceUrl = ButtonGroupsExampleSourceUrl,
             isExpressive = true,
         ) {
-            SingleSelectConnectedButtonGroupWithFlowLayoutSample()
+            ButtonGroupWithCustomItemSample()
         },
         Example(
-            name = "MultiSelectConnectedButtonGroupWithFlowLayoutSample",
+            name = "SingleSelectConnectedButtonGroupSample",
             description = ButtonGroupsExampleDescription,
             sourceUrl = ButtonGroupsExampleSourceUrl,
             isExpressive = true,
         ) {
-            MultiSelectConnectedButtonGroupWithFlowLayoutSample()
+            SingleSelectConnectedButtonGroupSample()
+        },
+        Example(
+            name = "MultiSelectConnectedButtonGroupSample",
+            description = ButtonGroupsExampleDescription,
+            sourceUrl = ButtonGroupsExampleSourceUrl,
+            isExpressive = true,
+        ) {
+            MultiSelectConnectedButtonGroupSample()
         },
         Example(
             name = "VerticalButtonGroupSample",
@@ -780,12 +812,28 @@ val ChipsExamples =
             FilterChipSample()
         },
         Example(
+            name = "FilterChipWithCornerMorphingSample",
+            description = ChipsExampleDescription,
+            sourceUrl = ChipsExampleSourceUrl,
+            isExpressive = true,
+        ) {
+            FilterChipWithCornerMorphingSample()
+        },
+        Example(
             name = "ElevatedFilterChipSample",
             description = ChipsExampleDescription,
             sourceUrl = ChipsExampleSourceUrl,
             isExpressive = false,
         ) {
             ElevatedFilterChipSample()
+        },
+        Example(
+            name = "ElevatedFilterChipWithCornerMorphingSample",
+            description = ChipsExampleDescription,
+            sourceUrl = ChipsExampleSourceUrl,
+            isExpressive = true,
+        ) {
+            ElevatedFilterChipWithCornerMorphingSample()
         },
         Example(
             name = "FilterChipWithLeadingIconSample",
@@ -826,6 +874,14 @@ val ChipsExamples =
             isExpressive = false,
         ) {
             InputChipWithAvatarSample()
+        },
+        Example(
+            name = "InputChipWithCornerMorphingSample",
+            description = ChipsExampleDescription,
+            sourceUrl = ChipsExampleSourceUrl,
+            isExpressive = true,
+        ) {
+            InputChipWithCornerMorphingSample()
         },
         Example(
             name = "SuggestionChipSample",
@@ -1138,6 +1194,28 @@ val TopAppBarExamples =
             isExpressive = true,
         ) {
             CustomTwoRowsTopAppBar()
+        },
+    )
+
+private const val TypographyExampleDescription = "Typography examples"
+private const val TypographyExampleSourceUrl = "$SampleSourceUrl/TypographySamples.kt"
+val TypographyExamples =
+    listOf(
+        Example(
+            name = "TypographySample",
+            description = TypographyExampleDescription,
+            sourceUrl = TypographyExampleSourceUrl,
+            isExpressive = false,
+        ) {
+            TypographySample()
+        },
+        Example(
+            name = "TypographyCustomFontFamilySample",
+            description = TypographyExampleDescription,
+            sourceUrl = TypographyExampleSourceUrl,
+            isExpressive = false,
+        ) {
+            TypographyCustomFontFamilySample()
         },
     )
 
@@ -1579,6 +1657,14 @@ val IconButtonExamples =
             OutlinedIconToggleButtonSample()
         },
         Example(
+            name = "OutlinedIconToggleButtonWithAnimatedShapeSample",
+            description = IconButtonExampleDescription,
+            sourceUrl = IconButtonExampleSourceUrl,
+            isExpressive = false,
+        ) {
+            OutlinedIconToggleButtonWithAnimatedShapeSample()
+        },
+        Example(
             name = "XSmallNarrowSquareIconButtonsSample",
             description = IconButtonExampleDescription,
             sourceUrl = IconButtonExampleSourceUrl,
@@ -1670,6 +1756,14 @@ val MenusExamples =
             isExpressive = true,
         ) {
             GroupedMenuSample()
+        },
+        Example(
+            name = "MenuWithCascadingMenusSample",
+            description = MenusExampleDescription,
+            sourceUrl = MenusExampleSourceUrl,
+            isExpressive = true,
+        ) {
+            MenuWithCascadingMenusSample()
         },
         Example(
             name = "MenuWithScrollStateSample",
@@ -2143,6 +2237,28 @@ val ToggleButtonsExamples =
         },
     )
 
+private const val ScrollFieldDescription = "Scroll field examples"
+private const val ScrollFieldSourceUrl = "$SampleSourceUrl/ScrollFieldSamples.kt"
+val ScrollFieldExamples =
+    listOf(
+        Example(
+            name = "ScrollFieldSample",
+            description = ScrollFieldDescription,
+            sourceUrl = ScrollFieldSourceUrl,
+            isExpressive = true,
+        ) {
+            ScrollFieldSample()
+        },
+        Example(
+            name = "TimeScrollFieldSample",
+            description = ScrollFieldDescription,
+            sourceUrl = ScrollFieldSourceUrl,
+            isExpressive = true,
+        ) {
+            TimeScrollFieldSample()
+        },
+    )
+
 private const val SlidersExampleDescription = "Sliders examples"
 private const val SlidersExampleSourceUrl = "$SampleSourceUrl/SliderSamples.kt"
 val SlidersExamples =
@@ -2543,6 +2659,118 @@ private const val TextFieldsExampleDescription = "Text fields examples"
 private const val TextFieldsExampleSourceUrl = "$SampleSourceUrl/TextFieldSamples.kt"
 val TextFieldsExamples =
     listOf(
+            Example(
+                name = "ExpressiveTextFieldSample",
+                description = TextFieldsExampleDescription,
+                sourceUrl = TextFieldsExampleSourceUrl,
+                isExpressive = true,
+            ) {
+                ExpressiveTextFieldSample()
+            },
+            Example(
+                name = "ExpressiveOutlinedTextFieldSample",
+                description = TextFieldsExampleDescription,
+                sourceUrl = TextFieldsExampleSourceUrl,
+                isExpressive = true,
+            ) {
+                ExpressiveOutlinedTextFieldSample()
+            },
+            Example(
+                name = "ExpressiveTextFieldWithIcons",
+                description = TextFieldsExampleDescription,
+                sourceUrl = TextFieldsExampleSourceUrl,
+                isExpressive = true,
+            ) {
+                ExpressiveTextFieldWithIcons()
+            },
+            Example(
+                name = "ExpressiveOutlinedTextFieldWithIcons",
+                description = TextFieldsExampleDescription,
+                sourceUrl = TextFieldsExampleSourceUrl,
+                isExpressive = true,
+            ) {
+                ExpressiveOutlinedTextFieldWithIcons()
+            },
+            Example(
+                name = "ExpressiveTextFieldWithPlaceholder",
+                description = TextFieldsExampleDescription,
+                sourceUrl = TextFieldsExampleSourceUrl,
+                isExpressive = true,
+            ) {
+                ExpressiveTextFieldWithPlaceholder()
+            },
+            Example(
+                name = "ExpressiveOutlinedTextFieldWithPlaceholder",
+                description = TextFieldsExampleDescription,
+                sourceUrl = TextFieldsExampleSourceUrl,
+                isExpressive = true,
+            ) {
+                ExpressiveOutlinedTextFieldWithPlaceholder()
+            },
+            Example(
+                name = "ExpressiveTextFieldWithPrefixAndSuffix",
+                description = TextFieldsExampleDescription,
+                sourceUrl = TextFieldsExampleSourceUrl,
+                isExpressive = true,
+            ) {
+                ExpressiveTextFieldWithPrefixAndSuffix()
+            },
+            Example(
+                name = "ExpressiveOutlinedTextFieldWithPrefixAndSuffix",
+                description = TextFieldsExampleDescription,
+                sourceUrl = TextFieldsExampleSourceUrl,
+                isExpressive = true,
+            ) {
+                ExpressiveOutlinedTextFieldWithPrefixAndSuffix()
+            },
+            Example(
+                name = "ExpressiveTextFieldWithSupportingText",
+                description = TextFieldsExampleDescription,
+                sourceUrl = TextFieldsExampleSourceUrl,
+                isExpressive = true,
+            ) {
+                ExpressiveTextFieldWithSupportingText()
+            },
+            Example(
+                name = "ExpressiveOutlinedTextFieldWithSupportingText",
+                description = TextFieldsExampleDescription,
+                sourceUrl = TextFieldsExampleSourceUrl,
+                isExpressive = true,
+            ) {
+                ExpressiveOutlinedTextFieldWithSupportingText()
+            },
+            Example(
+                name = "ExpressiveTextFieldWithErrorState",
+                description = TextFieldsExampleDescription,
+                sourceUrl = TextFieldsExampleSourceUrl,
+                isExpressive = true,
+            ) {
+                ExpressiveTextFieldWithErrorState()
+            },
+            Example(
+                name = "ExpressiveOutlinedTextFieldWithErrorState",
+                description = TextFieldsExampleDescription,
+                sourceUrl = TextFieldsExampleSourceUrl,
+                isExpressive = true,
+            ) {
+                ExpressiveOutlinedTextFieldWithErrorState()
+            },
+            Example(
+                name = "ExpressivePasswordTextField",
+                description = TextFieldsExampleDescription,
+                sourceUrl = TextFieldsExampleSourceUrl,
+                isExpressive = true,
+            ) {
+                ExpressivePasswordTextField()
+            },
+            Example(
+                name = "ExpressiveOutlinedPasswordTextField",
+                description = TextFieldsExampleDescription,
+                sourceUrl = TextFieldsExampleSourceUrl,
+                isExpressive = true,
+            ) {
+                ExpressiveOutlinedPasswordTextField()
+            },
             Example(
                 name = "SimpleTextFieldSample",
                 description = TextFieldsExampleDescription,

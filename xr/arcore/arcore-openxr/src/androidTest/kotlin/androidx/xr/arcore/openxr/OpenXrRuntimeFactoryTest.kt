@@ -16,12 +16,6 @@
 
 package androidx.xr.arcore.openxr
 
-// import android.content.Context
-// import androidx.test.core.app.ApplicationProvider
-// import androidx.xr.runtime.FEATURE_XR_API_OPENXR
-// import org.robolectric.Shadows.shadowOf
-// import org.robolectric.shadows.ShadowBuild
-
 import androidx.activity.ComponentActivity
 import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -31,14 +25,14 @@ import androidx.xr.arcore.runtime.PerceptionRuntime
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.SessionCreateSuccess
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.runBlocking
 import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
 // TODO - b/382119583: Remove the @SdkSuppress annotation once "androidx.xr.arcore.openxr.test"
-// supports a
-// lower SDK version.
+// supports a lower SDK version.
 @SdkSuppress(minSdkVersion = 29)
 @LargeTest
 @RunWith(AndroidJUnit4::class)
@@ -62,7 +56,7 @@ class OpenXrRuntimeFactoryTest {
 
         activityRule.scenario.onActivity {
             assertThat(
-                    (Session.create(it) as SessionCreateSuccess)
+                    (runBlocking { Session.create(context = it) } as SessionCreateSuccess)
                         .session
                         .runtimes
                         .filterIsInstance<PerceptionRuntime>()

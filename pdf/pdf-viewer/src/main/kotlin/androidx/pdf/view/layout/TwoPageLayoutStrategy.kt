@@ -20,6 +20,7 @@ import android.graphics.RectF
 import android.os.Parcel
 import android.os.Parcelable
 import android.util.Range
+import androidx.pdf.Dimension
 import kotlin.math.abs
 
 /**
@@ -29,13 +30,11 @@ import kotlin.math.abs
  * @property verticalPageSpacingPx The vertical distance in pixels between page rows.
  * @property horizontalPageSpacingPx The horizontal distance in pixels between the two pages in a
  *   row.
- * @param topPageMarginPx The top margin in pixels applied before the first page row.
  */
 internal class TwoPageLayoutStrategy(
     val pageCount: Int,
     val verticalPageSpacingPx: Float,
     val horizontalPageSpacingPx: Float,
-    topPageMarginPx: Float = 0f,
 ) : LayoutStrategy {
     override val pagesPerRow: Int = 2
     override val maxWidth: Float
@@ -70,7 +69,7 @@ internal class TwoPageLayoutStrategy(
     private var currentPageRowWidth = 0f
 
     init {
-        require(pageCount >= 0) { "Empty PDF!" }
+        require(pageCount > 0) { "Empty PDF!" }
         require(verticalPageSpacingPx >= 0) { "Invalid vertical spacing!" }
         require(horizontalPageSpacingPx >= 0) { "Invalid horizontal spacing!" }
     }
@@ -79,7 +78,7 @@ internal class TwoPageLayoutStrategy(
     private val pageRowBottoms = FloatArray(rowCount) { 0f }
 
     /** The top position (y-coordinate) of each page row. */
-    private val pageRowTops = FloatArray(rowCount) { 0f }.apply { this[0] = topPageMarginPx }
+    private val pageRowTops = FloatArray(rowCount) { 0f }
 
     /** Private constructor used by the Parcelable [CREATOR]. */
     private constructor(
@@ -228,8 +227,7 @@ internal class TwoPageLayoutStrategy(
     private fun computeTotalHeight(): Float {
         return when {
             lastKnownPage < 0 -> 0f
-            lastKnownPage == pageCount - 1 ->
-                pageRowBottoms[lastKnownPageRow] + verticalPageSpacingPx
+            lastKnownPage == pageCount - 1 -> pageRowBottoms[lastKnownPageRow]
             else -> {
                 // Since all the pages are not yet loaded we need to make an estimate for now.
                 val totalKnownHeight = pageRowBottoms[lastKnownPageRow]

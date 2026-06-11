@@ -17,31 +17,31 @@
 package androidx.compose.remote.creation.compose.layout
 
 import androidx.annotation.RestrictTo
+import androidx.compose.remote.creation.compose.capture.RemoteComposeCreationState
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
-import androidx.compose.remote.creation.compose.modifier.toComposeUiLayout
 import androidx.compose.remote.creation.compose.modifier.toRecordingModifier
-import androidx.compose.remote.creation.compose.v2.RemoteBoxV2
-import androidx.compose.remote.creation.compose.v2.RemoteComposeApplierV2
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.currentComposer
-import androidx.compose.ui.draw.DrawModifier
-import androidx.compose.ui.graphics.drawscope.ContentDrawScope
+import androidx.compose.runtime.Stable
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.LayoutDirection
 
-/** Utility modifier to record the layout information */
-internal class RemoteComposeBoxModifier(
-    private val modifier: RemoteModifier,
-    private val contentAlignment: RemoteAlignment = RemoteAlignment.TopStart,
-) : DrawModifier {
-    override fun ContentDrawScope.draw() {
-        drawIntoRemoteCanvas { canvas ->
-            canvas.document.startBox(
-                canvas.toRecordingModifier(modifier),
-                contentAlignment.horizontal.toRemote(this.layoutDirection),
-                contentAlignment.vertical.toRemote(),
-            )
-            this@draw.drawContent()
-            canvas.document.endBox()
-        }
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) @Stable public class RemoteBoxScope
+
+internal class RemoteBoxNode : RemoteComposeNode() {
+    var horizontalAlignment: RemoteAlignment.Horizontal = RemoteAlignment.Start
+    var verticalAlignment: RemoteAlignment.Vertical = RemoteAlignment.Top
+    var layoutDirection: LayoutDirection = LayoutDirection.Ltr
+
+    override fun render(creationState: RemoteComposeCreationState, remoteCanvas: RemoteCanvas) {
+        val recordingModifier = creationState.toRecordingModifier(modifier)
+        creationState.document.startBox(
+            recordingModifier,
+            horizontalAlignment.toRemote(layoutDirection),
+            verticalAlignment.toRemote(),
+        )
+        renderChildren(creationState, remoteCanvas)
+        creationState.document.endBox()
     }
 }
 
@@ -62,21 +62,24 @@ public fun RemoteBox(
     contentAlignment: RemoteAlignment = RemoteAlignment.TopStart,
     content: @Composable () -> Unit,
 ) {
-    if (currentComposer.applier is RemoteComposeApplierV2) {
-        RemoteBoxV2(modifier, contentAlignment) { content() }
-        return
-    }
-    @Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/446706254
-    androidx.compose.foundation.layout.Box(
-        RemoteComposeBoxModifier(modifier, contentAlignment).then(modifier.toComposeUiLayout())
-    ) {
-        content()
-    }
-}
-
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public inline fun <reified T : RemoteModifier.Element> RemoteModifier.find(): T? {
-    return this.foldIn<T?>(null) { result, element -> result ?: element as? T }
+    val scope = remember { RemoteBoxScope() }
+    val layoutDirection = LocalLayoutDirection.current
+    RemoteComposeNode(
+        factory = ::RemoteBoxNode,
+        update = {
+            set(modifier) { nodeModifier -> this.modifier = nodeModifier }
+            set(contentAlignment.horizontal) { nodeHorizontalAlignment ->
+                this.horizontalAlignment = nodeHorizontalAlignment
+            }
+            set(contentAlignment.vertical) { nodeVerticalAlignment ->
+                this.verticalAlignment = nodeVerticalAlignment
+            }
+            set(layoutDirection) { nodeLayoutDirection ->
+                this.layoutDirection = nodeLayoutDirection
+            }
+        },
+        content = content,
+    )
 }
 
 /**
@@ -87,9 +90,8 @@ public inline fun <reified T : RemoteModifier.Element> RemoteModifier.find(): T?
 @RemoteComposable
 @Composable
 public fun RemoteBox(modifier: RemoteModifier = RemoteModifier) {
-    if (currentComposer.applier is RemoteComposeApplierV2) {
-        RemoteBoxV2(modifier)
-        return
-    }
-    RemoteBox(modifier) {}
+    RemoteComposeNode(
+        factory = ::RemoteBoxNode,
+        update = { set(modifier) { nodeModifier -> this.modifier = nodeModifier } },
+    )
 }

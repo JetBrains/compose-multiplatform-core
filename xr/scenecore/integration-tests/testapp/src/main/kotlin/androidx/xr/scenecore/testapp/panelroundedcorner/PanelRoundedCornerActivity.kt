@@ -28,6 +28,7 @@ import android.widget.SeekBar
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.core.app.ActivityCompat
+import androidx.lifecycle.lifecycleScope
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.runtime.math.Pose
@@ -40,6 +41,7 @@ import androidx.xr.scenecore.testapp.R
 import androidx.xr.scenecore.testapp.activitypanel.ActivityPanel
 import androidx.xr.scenecore.testapp.common.managers.SessionManager
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import kotlinx.coroutines.launch
 
 const val TAG = "PanelRoundedCornerActivity"
 
@@ -57,122 +59,143 @@ class PanelRoundedCornerActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
 
         // Create session
-        session = SessionManager(this).createSession()
-        if (session == null) return finish()
-        session!!.scene.addSpatialCapabilitiesChangedListener { capabilities ->
-            tryToCreateActivityPanel(capabilities)
-        }
-        session!!.scene.keyEntity = session!!.scene.mainPanelEntity
-        tryToCreateActivityPanel(session!!.scene.spatialCapabilities)
 
-        @SuppressLint("InflateParams")
-        val panelEntityView = layoutInflater.inflate(R.layout.rounded_corner_panel_entity, null)
+        lifecycleScope.launch {
+            session = SessionManager(this@PanelRoundedCornerActivity).createSession()
+            if (session == null) {
+                finish()
+                return@launch
+            }
+            session!!.scene.addSpatialCapabilitiesChangedListener { capabilities ->
+                tryToCreateActivityPanel(capabilities)
+            }
 
-        if (panelEntityView == null) {
-            Log.e(ACTIVITY_NAME, "Failed to inflate corner_rounded_panel_entity")
-        }
+            session!!.scene.keyEntity = null
+            tryToCreateActivityPanel(session!!.scene.spatialCapabilities)
 
-        panelEntity =
-            PanelEntity.create(
-                session!!,
-                panelEntityView,
-                IntSize2d(640, 600),
-                "panel_entity",
-                Pose(Vector3(0.1f, -0.5f, 0.1f)),
+            @SuppressLint("InflateParams")
+            val panelEntityView = layoutInflater.inflate(R.layout.rounded_corner_panel_entity, null)
+
+            if (panelEntityView == null) {
+                Log.e(ACTIVITY_NAME, "Failed to inflate corner_rounded_panel_entity")
+            }
+
+            panelEntity =
+                PanelEntity.create(
+                    session!!,
+                    panelEntityView,
+                    IntSize2d(640, 600),
+                    "panel_entity",
+                    parent = session!!.scene.activitySpace,
+                )
+            panelEntity?.parent = session!!.scene.mainPanelEntity
+
+            // layout control panel under main panel to avoid overlapping
+            panelEntity!!.setPose(
+                Pose(
+                    Vector3(
+                        0.1f,
+                        -session!!.scene.mainPanelEntity.size.height / 2f -
+                            panelEntity!!.size.height / 2f -
+                            0.05f,
+                        0.1f,
+                    )
+                )
             )
-        panelEntity?.parent = session!!.scene.keyEntity
 
-        val mainPanelSeekBar = panelEntityView.findViewById<SeekBar>(R.id.main_panel_seekbar)
-        mainPanelSeekBar.setOnSeekBarChangeListener(
-            object : SeekBar.OnSeekBarChangeListener {
-                override fun onProgressChanged(
-                    seekBar: SeekBar?,
-                    progress: Int,
-                    fromUser: Boolean,
-                ) {
-                    session!!.scene.mainPanelEntity.cornerRadius =
-                        calculateCornerRadiusInMeters(
-                            session!!.scene.mainPanelEntity,
-                            progress.toFloat(),
-                        )
-                    session!!
-                        .scene
-                        .mainPanelEntity
-                        .setPose(session!!.scene.mainPanelEntity.getPose())
-                }
-
-                override fun onStartTrackingTouch(seekBar: SeekBar?) {}
-
-                override fun onStopTrackingTouch(seekBar: SeekBar?) {}
-            }
-        )
-        val activityPanelSeekBar =
-            panelEntityView.findViewById<SeekBar>(R.id.activity_panel_seekbar)
-        activityPanelSeekBar.setOnSeekBarChangeListener(
-            object : SeekBar.OnSeekBarChangeListener {
-                override fun onProgressChanged(
-                    seekBar: SeekBar?,
-                    progress: Int,
-                    fromUser: Boolean,
-                ) {
-                    if (activityPanelEntity == null) {
-                        return
+            val mainPanelSeekBar = panelEntityView.findViewById<SeekBar>(R.id.main_panel_seekbar)
+            mainPanelSeekBar.setOnSeekBarChangeListener(
+                object : SeekBar.OnSeekBarChangeListener {
+                    override fun onProgressChanged(
+                        seekBar: SeekBar?,
+                        progress: Int,
+                        fromUser: Boolean,
+                    ) {
+                        session!!.scene.mainPanelEntity.cornerRadius =
+                            calculateCornerRadiusInMeters(
+                                session!!.scene.mainPanelEntity,
+                                progress.toFloat(),
+                            )
+                        session!!
+                            .scene
+                            .mainPanelEntity
+                            .setPose(session!!.scene.mainPanelEntity.getPose())
                     }
-                    activityPanelEntity?.cornerRadius =
-                        calculateCornerRadiusInMeters(activityPanelEntity!!, progress.toFloat())
-                    activityPanelEntity?.setPose(activityPanelEntity!!.getPose())
+
+                    override fun onStartTrackingTouch(seekBar: SeekBar?) {}
+
+                    override fun onStopTrackingTouch(seekBar: SeekBar?) {}
                 }
+            )
+            val activityPanelSeekBar =
+                panelEntityView.findViewById<SeekBar>(R.id.activity_panel_seekbar)
+            activityPanelSeekBar.setOnSeekBarChangeListener(
+                object : SeekBar.OnSeekBarChangeListener {
+                    override fun onProgressChanged(
+                        seekBar: SeekBar?,
+                        progress: Int,
+                        fromUser: Boolean,
+                    ) {
+                        if (activityPanelEntity == null) {
+                            return
+                        }
+                        activityPanelEntity?.cornerRadius =
+                            calculateCornerRadiusInMeters(activityPanelEntity!!, progress.toFloat())
+                        activityPanelEntity?.setPose(activityPanelEntity!!.getPose())
+                    }
 
-                override fun onStartTrackingTouch(seekBar: SeekBar?) {}
+                    override fun onStartTrackingTouch(seekBar: SeekBar?) {}
 
-                override fun onStopTrackingTouch(seekBar: SeekBar?) {}
-            }
-        )
-        val panelEntitySeekBar = panelEntityView.findViewById<SeekBar>(R.id.panel_entity_seekbar)
-        panelEntitySeekBar.setOnSeekBarChangeListener(
-            object : SeekBar.OnSeekBarChangeListener {
-                override fun onProgressChanged(
-                    seekBar: SeekBar?,
-                    progress: Int,
-                    fromUser: Boolean,
-                ) {
-                    panelEntity!!.cornerRadius =
-                        calculateCornerRadiusInMeters(panelEntity!!, progress.toFloat())
-                    panelEntity!!.setPose(panelEntity!!.getPose())
+                    override fun onStopTrackingTouch(seekBar: SeekBar?) {}
                 }
+            )
+            val panelEntitySeekBar =
+                panelEntityView.findViewById<SeekBar>(R.id.panel_entity_seekbar)
+            panelEntitySeekBar.setOnSeekBarChangeListener(
+                object : SeekBar.OnSeekBarChangeListener {
+                    override fun onProgressChanged(
+                        seekBar: SeekBar?,
+                        progress: Int,
+                        fromUser: Boolean,
+                    ) {
+                        panelEntity!!.cornerRadius =
+                            calculateCornerRadiusInMeters(panelEntity!!, progress.toFloat())
+                        panelEntity!!.setPose(panelEntity!!.getPose())
+                    }
 
-                override fun onStartTrackingTouch(seekBar: SeekBar?) {}
+                    override fun onStartTrackingTouch(seekBar: SeekBar?) {}
 
-                override fun onStopTrackingTouch(seekBar: SeekBar?) {}
+                    override fun onStopTrackingTouch(seekBar: SeekBar?) {}
+                }
+            )
+
+            mainPanelSeekBar.max = MAX_CORNER_RADIUS
+            mainPanelSeekBar.progress = DEFAULT_CORNER_RADIUS
+
+            activityPanelSeekBar.max = MAX_CORNER_RADIUS
+            activityPanelSeekBar.progress = DEFAULT_CORNER_RADIUS
+
+            panelEntitySeekBar.max = MAX_CORNER_RADIUS
+            panelEntitySeekBar.progress = DEFAULT_CORNER_RADIUS
+
+            // Set main panel dimensions
+            setContentView(R.layout.common_test_panel)
+            session!!.scene.mainPanelEntity.setPose(Pose(Vector3(-0.1f, 0.1f, 0.0f)))
+
+            // Set toolbar
+            val toolbar: Toolbar = findViewById(R.id.top_app_bar_activity_panel)
+            setSupportActionBar(toolbar)
+            toolbar.setTitle(R.string.cuj_panel_rounded_corner)
+            toolbar.setNavigationOnClickListener { this@PanelRoundedCornerActivity.finish() }
+
+            // Hide the center button
+            findViewById<Button>(R.id.spawn_activity_panel_button).visibility = View.GONE
+
+            // Recreate button
+            findViewById<FloatingActionButton>(R.id.bottomCenterFab).also {
+                it.tooltipText = getString(R.string.fab_recreate_activity_tooltip)
+                it.setOnClickListener { ActivityCompat.recreate(this@PanelRoundedCornerActivity) }
             }
-        )
-
-        mainPanelSeekBar.max = MAX_CORNER_RADIUS
-        mainPanelSeekBar.progress = DEFAULT_CORNER_RADIUS
-
-        activityPanelSeekBar.max = MAX_CORNER_RADIUS
-        activityPanelSeekBar.progress = DEFAULT_CORNER_RADIUS
-
-        panelEntitySeekBar.max = MAX_CORNER_RADIUS
-        panelEntitySeekBar.progress = DEFAULT_CORNER_RADIUS
-
-        // Set main panel dimensions
-        setContentView(R.layout.common_test_panel)
-        session!!.scene.mainPanelEntity.setPose(Pose(Vector3(-0.1f, 0.1f, 0.0f)))
-
-        // Set toolbar
-        val toolbar: Toolbar = findViewById(R.id.top_app_bar_activity_panel)
-        setSupportActionBar(toolbar)
-        toolbar.setTitle(R.string.cuj_panel_rounded_corner)
-        toolbar.setNavigationOnClickListener { this.finish() }
-
-        // Hide the center button
-        findViewById<Button>(R.id.spawn_activity_panel_button).visibility = View.GONE
-
-        // Recreate button
-        findViewById<FloatingActionButton>(R.id.bottomCenterFab).also {
-            it.tooltipText = getString(R.string.fab_recreate_activity_tooltip)
-            it.setOnClickListener { ActivityCompat.recreate(this@PanelRoundedCornerActivity) }
         }
     }
 
@@ -188,23 +211,38 @@ class PanelRoundedCornerActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
+        activityPanelEntity = null
+        panelEntity = null
         super.onDestroy()
-        activityPanelEntity?.parent = null
-        activityPanelEntity?.dispose()
-        panelEntity?.parent = null
-        panelEntity?.dispose()
     }
 
     fun tryToCreateActivityPanel(capabilities: Set<SpatialCapability>) {
         if (capabilities.contains(SpatialCapability.EMBED_ACTIVITY) && !activityPanelCreated) {
             activityPanelEntity =
-                ActivityPanelEntity.create(session!!, IntSize2d(640, 480), "activity_panel")
+                ActivityPanelEntity.create(
+                    session!!,
+                    IntSize2d(640, 480),
+                    "activity_panel",
+                    parent = session!!.scene.activitySpace,
+                )
             val intent = Intent(this, ActivityPanel::class.java)
             intent.putExtra("NAV_ICON", false)
             activityPanelEntity!!.startActivity(intent)
-            activityPanelEntity!!.setPose(Pose(Vector3(0.75f, 0.0f, 0.0f)))
             activityPanelCreated = true
-            activityPanelEntity?.parent = session!!.scene.keyEntity
+            activityPanelEntity?.parent = session!!.scene.mainPanelEntity
+
+            // layout activity panel to the right of main panel to avoid overlapping
+            activityPanelEntity!!.setPose(
+                Pose(
+                    Vector3(
+                        session!!.scene.mainPanelEntity.size.width / 2f +
+                            activityPanelEntity!!.size.width / 2f +
+                            0.05f,
+                        0f,
+                        0f,
+                    )
+                )
+            )
         }
     }
 

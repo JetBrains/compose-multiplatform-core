@@ -22,13 +22,13 @@ import androidx.annotation.RestrictTo
 import androidx.annotation.RestrictTo.Scope
 import java.util.concurrent.Executor
 
-@RestrictTo(Scope.LIBRARY_GROUP_PREFIX)
-public class SoundEffect(@get:RestrictTo(Scope.LIBRARY_GROUP_PREFIX) public val id: Int)
+@RestrictTo(Scope.LIBRARY_GROUP)
+public class SoundEffect(@get:RestrictTo(Scope.LIBRARY_GROUP) public val id: Int)
 
-@RestrictTo(Scope.LIBRARY_GROUP_PREFIX)
-public class Stream(@get:RestrictTo(Scope.LIBRARY_GROUP_PREFIX) public val streamId: Int)
+@RestrictTo(Scope.LIBRARY_GROUP)
+public class Stream(@get:RestrictTo(Scope.LIBRARY_GROUP) public val streamId: Int)
 
-@RestrictTo(Scope.LIBRARY_GROUP_PREFIX)
+@RestrictTo(Scope.LIBRARY_GROUP)
 public interface SoundEffectPool {
     /** Callback interface for receiving notification when a sound effect has finished loading. */
     public fun interface LoadCompleteListener {
@@ -46,6 +46,9 @@ public interface SoundEffectPool {
      * the provided [executor].
      */
     public fun setOnLoadCompleteListener(executor: Executor, listener: LoadCompleteListener)
+
+    /** Clears any listener previously set with [setOnLoadCompleteListener]. */
+    public fun clearOnLoadCompleteListener()
 
     /**
      * Loads a sound from an application resource and returns a [SoundEffect] handle.

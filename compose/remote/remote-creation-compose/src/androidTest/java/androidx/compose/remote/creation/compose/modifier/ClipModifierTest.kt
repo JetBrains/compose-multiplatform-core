@@ -22,12 +22,17 @@ import androidx.compose.remote.creation.compose.layout.RemoteComposable
 import androidx.compose.remote.creation.compose.shapes.RemoteCircleShape
 import androidx.compose.remote.creation.compose.shapes.RemoteRectangleShape
 import androidx.compose.remote.creation.compose.shapes.RemoteRoundedCornerShape
+import androidx.compose.remote.creation.compose.state.RemoteColor
+import androidx.compose.remote.creation.compose.state.RemotePaint
 import androidx.compose.remote.creation.compose.state.rdp
+import androidx.compose.remote.creation.compose.state.rememberNamedRemoteColor
 import androidx.compose.remote.creation.compose.test.base.GridScreenshotUI
 import androidx.compose.remote.creation.compose.test.base.GridScreenshotUI.Companion.DefaultContainerSize
-import androidx.compose.remote.player.compose.test.utils.screenshot.rule.RemoteComposeScreenshotTestRule
+import androidx.compose.remote.player.compose.test.utils.ComposableWrappers
+import androidx.compose.remote.player.compose.test.utils.RemoteScreenshotTestRule
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
@@ -40,9 +45,11 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class ClipModifierTest {
     @get:Rule
-    val composeTestRule: RemoteComposeScreenshotTestRule by lazy {
-        RemoteComposeScreenshotTestRule(moduleDirectory = SCREENSHOT_GOLDEN_DIRECTORY)
-    }
+    val composeTestRule =
+        RemoteScreenshotTestRule(
+            moduleDirectory = SCREENSHOT_GOLDEN_DIRECTORY,
+            context = ApplicationProvider.getApplicationContext(),
+        )
 
     private val gridScreenshotUI = GridScreenshotUI()
 
@@ -74,19 +81,75 @@ class ClipModifierTest {
                             yield(
                                 name to
                                     @RemoteComposable @Composable {
-                                        RemoteBox {
-                                            RemoteBox(
-                                                modifier =
-                                                    RemoteModifier.size(DefaultContainerSize)
-                                                        .clipFn()
-                                                        .background(Color.Red)
-                                            )
-                                        }
+                                        RemoteBox(
+                                            modifier =
+                                                RemoteModifier.size(DefaultContainerSize)
+                                                    .clipFn()
+                                                    .background(Color.Red)
+                                        )
                                     }
                             )
                         }
                     }
                     .toList()
+            )
+        }
+
+    @Test
+    fun clipWithRemoteRoundedCornerShape_rtl() =
+        composeTestRule.runScreenshotTest(creationComposableWrapper = ComposableWrappers.rtl) {
+            val shapes =
+                listOf(
+                    "topStart" to RemoteRoundedCornerShape(topStart = 20.rdp),
+                    "topEnd" to RemoteRoundedCornerShape(topEnd = 20.rdp),
+                    "bottomStart" to RemoteRoundedCornerShape(bottomStart = 20.rdp),
+                    "bottomEnd" to RemoteRoundedCornerShape(bottomEnd = 20.rdp),
+                )
+
+            val items = mutableListOf<Pair<String, @RemoteComposable @Composable () -> Unit>>()
+
+            for ((name, shape) in shapes) {
+                items.add(
+                    name to
+                        @RemoteComposable @Composable {
+                            RemoteBox(
+                                modifier =
+                                    RemoteModifier.size(DefaultContainerSize)
+                                        .clip(shape)
+                                        .background(Color.Red)
+                            )
+                        }
+                )
+            }
+
+            gridScreenshotUI.GridContent(items)
+        }
+
+    @Test
+    fun clipWithDrawWithContent() =
+        composeTestRule.runScreenshotTest {
+            RemoteBox(
+                modifier =
+                    RemoteModifier.size(50.rdp)
+                        .clip(RemoteRoundedCornerShape(size = 20.rdp))
+                        .drawWithContent {
+                            val paint = RemotePaint()
+                            paint.color = RemoteColor(Color.Blue)
+                            drawRect(paint = paint)
+                            drawContent()
+                        }
+            )
+        }
+
+    @Test
+    fun clipWithBackground() =
+        composeTestRule.runScreenshotTest {
+            val color = rememberNamedRemoteColor("test", Color.Blue)
+            RemoteBox(
+                modifier =
+                    RemoteModifier.size(50.rdp)
+                        .clip(RemoteRoundedCornerShape(size = 20.rdp))
+                        .background(color)
             )
         }
 }

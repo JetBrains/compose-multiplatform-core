@@ -20,6 +20,7 @@ import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -28,6 +29,7 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -43,6 +45,8 @@ import androidx.xr.compose.subspace.SpatialRow
 import androidx.xr.compose.subspace.SubspaceComposable
 import androidx.xr.compose.subspace.layout.SpatialAlignment
 import androidx.xr.compose.subspace.layout.SpatialArrangement
+import androidx.xr.compose.subspace.layout.SpatialMoveEvent
+import androidx.xr.compose.subspace.layout.SpatialMoveEventType
 import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.compose.subspace.layout.fillMaxHeight
 import androidx.xr.compose.subspace.layout.fillMaxWidth
@@ -50,6 +54,7 @@ import androidx.xr.compose.subspace.layout.movable
 import androidx.xr.compose.subspace.layout.offset
 import androidx.xr.compose.subspace.layout.padding
 import androidx.xr.compose.subspace.layout.rotate
+import androidx.xr.compose.subspace.layout.transformingMovable
 import androidx.xr.compose.subspace.semantics.testTag
 import androidx.xr.compose.testapp.R
 import androidx.xr.compose.testapp.common.AnotherActivity
@@ -98,6 +103,20 @@ class MovableActivity : ComponentActivity() {
         var zValueMovable by remember { mutableStateOf(0.dp) }
         val density = LocalDensity.current
         var rotateValueMovable by remember { mutableStateOf(Quaternion.Identity) }
+        val customMovement: (SpatialMoveEvent) -> Unit = { event ->
+            val deltaX = event.pose.translation.x - event.previousPose.translation.x
+            val deltaY = event.pose.translation.y - event.previousPose.translation.y
+            val deltaZ = event.pose.translation.z - event.previousPose.translation.z
+
+            val deltaRot = event.previousPose.rotation.inverse * event.pose.rotation
+
+            with(density) {
+                xValueMovable += deltaX.toDp()
+                yValueMovable += deltaY.toDp()
+                zValueMovable += deltaZ.toDp()
+            }
+            rotateValueMovable *= deltaRot
+        }
         SpatialColumn(SubspaceModifier.testTag("PanelGridSpatialColumn")) {
             SpatialRow(
                 modifier = SubspaceModifier.fillMaxWidth(),
@@ -121,12 +140,12 @@ class MovableActivity : ComponentActivity() {
                     SpatialPanel(modifier = SubspaceModifier.weight(1f).fillMaxWidth()) {
                         PanelContent("[NOT MOVABLE]")
                     }
-                    SpatialPanel(modifier = SubspaceModifier.weight(1f).fillMaxWidth().movable()) {
-                        PanelContent("[MOVABLE]")
+                    SpatialPanel(
+                        modifier = SubspaceModifier.weight(1f).fillMaxWidth().transformingMovable()
+                    ) {
+                        PanelContent("[SYSTEM MOVABLE]")
                     }
-                    SpatialPanel(modifier = SubspaceModifier.weight(1f).fillMaxWidth().movable()) {
-                        PanelContent("[MOVABLE]")
-                    }
+                    AnimatedMovablePanel(modifier = SubspaceModifier.weight(1f))
                 }
                 SpatialColumn(
                     modifier =
@@ -145,17 +164,7 @@ class MovableActivity : ComponentActivity() {
                                 .offset(xValueMovable, yValueMovable, zValueMovable)
                                 .fillMaxWidth()
                                 .rotate(rotateValueMovable)
-                                .movable { poseChangeEvent ->
-                                    with(density) {
-                                        xValueMovable = poseChangeEvent.pose.translation.x.toDp()
-                                        yValueMovable = poseChangeEvent.pose.translation.y.toDp()
-                                        zValueMovable = poseChangeEvent.pose.translation.z.toDp()
-                                        rotateValueMovable = poseChangeEvent.pose.rotation
-                                        // This true is to indicate that the callback will handle
-                                        // the moving of the panel.
-                                        true
-                                    }
-                                }
+                                .movable(onMove = customMovement)
                     ) {
                         PanelContent("[MOVABLE WITH CUSTOM LISTENER]")
                     }
@@ -188,7 +197,7 @@ class MovableActivity : ComponentActivity() {
                                 .offset(x = 120.dp)
                                 .fillMaxWidth()
                                 .testTag("ActivityPanel")
-                                .movable(),
+                                .transformingMovable(),
                     )
                 }
             }
@@ -199,5 +208,45 @@ class MovableActivity : ComponentActivity() {
     @Composable
     fun PanelContent(vararg text: String) {
         ColumnWithCenterText(PaddingValues(0.dp, 0.dp, 0.dp), text[0])
+    }
+
+    @SubspaceComposable
+    @Composable
+    private fun AnimatedMovablePanel(modifier: SubspaceModifier) {
+        var isDragging by remember { mutableStateOf(false) }
+        val animatedOffsetX = remember { Animatable(0f) }
+
+        LaunchedEffect(isDragging) {
+            if (!isDragging) {
+                while (true) {
+                    animatedOffsetX.animateTo(
+                        targetValue = 150f,
+                        animationSpec = tween(3000, easing = LinearEasing),
+                    )
+                    animatedOffsetX.animateTo(
+                        targetValue = 0f,
+                        animationSpec = tween(3000, easing = LinearEasing),
+                    )
+                }
+            }
+        }
+
+        SpatialPanel(
+            modifier =
+                modifier
+                    .offset(x = animatedOffsetX.value.dp)
+                    .fillMaxWidth()
+                    .transformingMovable(
+                        onMove = { event ->
+                            if (event.type == SpatialMoveEventType.Start) {
+                                isDragging = true
+                            } else if (event.type == SpatialMoveEventType.End) {
+                                isDragging = false
+                            }
+                        }
+                    )
+        ) {
+            PanelContent("[ANIMATED SYSTEM MOVABLE]")
+        }
     }
 }

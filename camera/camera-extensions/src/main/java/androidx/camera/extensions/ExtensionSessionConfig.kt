@@ -14,14 +14,18 @@
  * limitations under the License.
  */
 
+@file:JvmName("ExtensionSessionConfigKt")
+
 package androidx.camera.extensions
 
+import androidx.annotation.NonNull
+import androidx.annotation.Nullable
 import androidx.annotation.RestrictTo
 import androidx.camera.core.CameraEffect
-import androidx.camera.core.CameraFilter
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraProvider
 import androidx.camera.core.ImageAnalysis
+import androidx.camera.core.ImageCapture
 import androidx.camera.core.SessionConfig
 import androidx.camera.core.UseCase
 import androidx.camera.core.ViewPort
@@ -80,7 +84,7 @@ import androidx.camera.core.ViewPort
  *
  * @param mode The extension mode. See [ExtensionMode] for the list of available modes.
  * @param extensionsManager The [ExtensionsManager] instance.
- * @param useCases The list of [UseCase] to be attached to the camera and receive camera data.
+ * @param useCases The [UseCase] instances to be attached to the camera and receive camera data.
  * @param viewPort The [ViewPort] to be applied on the camera session. If not set, the default is no
  *   viewport.
  * @param effects The list of [CameraEffect] to be applied on the camera session. If not set, the
@@ -90,24 +94,49 @@ import androidx.camera.core.ViewPort
  * @see ExtensionsManager.getInstanceAsync
  */
 public class ExtensionSessionConfig
-@JvmOverloads
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 constructor(
     @param:ExtensionMode.Mode @get:ExtensionMode.Mode public val mode: Int,
     public val extensionsManager: ExtensionsManager,
     useCases: List<UseCase> = emptyList(),
     viewPort: ViewPort? = null,
     effects: List<CameraEffect> = emptyList(),
-) : SessionConfig(useCases, viewPort, effects) {
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    override val requireNonEmptyUseCases: Boolean
-        get() = false
-
-    private val _cameraFilter: CameraFilter? =
-        extensionsManager.getExtensionCameraFilterAndInjectCameraConfig(mode)
-
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    override val cameraFilter: CameraFilter?
-        get() = _cameraFilter
+    /**
+     * Whether to use auto rotation. When enabled, CameraX will monitor the device motion sensor and
+     * set the target rotation for [ImageCapture] and [androidx.camera.video.VideoCapture].
+     *
+     * @see ExtensionSessionConfig.Builder.setAutoRotationEnabled
+     */
+    isAutoRotationEnabled: Boolean = false,
+) :
+    SessionConfig(
+        useCases,
+        viewPort,
+        effects,
+        isAutoRotationEnabled = isAutoRotationEnabled,
+        requireNonEmptyUseCases = false,
+        cameraFilter = extensionsManager.getExtensionCameraFilterAndInjectCameraConfig(mode),
+    ) {
+    /**
+     * Creates an [ExtensionSessionConfig] from the given parameters.
+     *
+     * @param mode The extension mode. See [ExtensionMode] for the list of available modes.
+     * @param extensionsManager The [ExtensionsManager] instance.
+     * @param useCases The [UseCase] instances to be attached to the camera and receive camera data.
+     * @param viewPort The [ViewPort] to be applied on the camera session. If not set, the default
+     *   is no viewport.
+     * @param effects The list of [CameraEffect] to be applied on the camera session. If not set,
+     *   the default is no effects.
+     * @throws IllegalArgumentException if the given mode is not a valid extension mode.
+     */
+    @JvmOverloads
+    public constructor(
+        @ExtensionMode.Mode mode: Int,
+        extensionsManager: ExtensionsManager,
+        useCases: List<UseCase> = emptyList(),
+        viewPort: ViewPort? = null,
+        effects: List<CameraEffect> = emptyList(),
+    ) : this(mode, extensionsManager, useCases, viewPort, effects, isAutoRotationEnabled = false)
 
     /**
      * Creates an [ExtensionSessionConfig] with a variable number of [UseCase] instances.
@@ -135,8 +164,38 @@ constructor(
         private val extensionsManager: ExtensionsManager,
     ) {
         private val useCases: MutableList<UseCase> = mutableListOf()
-        private var viewPort: ViewPort? = null
-        private var effects: MutableList<CameraEffect> = mutableListOf()
+
+        private var _viewPort: ViewPort? = null
+
+        /** The [ViewPort] for the session. */
+        // This property uses `@JvmSynthetic` for both the getter and setter to support idiomatic
+        // Kotlin assignment in the DSL while preventing visibility to Java callers. This satisfies
+        // the AndroidX `GetterOnBuilder` lint rule and avoids polluting the Java Builder API.
+        @get:Nullable
+        @get:JvmSynthetic
+        @set:JvmSynthetic
+        public var viewPort: ViewPort?
+            get() = _viewPort
+            set(@Nullable value) {
+                _viewPort = value
+            }
+
+        private val effects: MutableList<CameraEffect> = mutableListOf()
+
+        private var _isAutoRotationEnabled: Boolean = false
+
+        /** Whether to use auto rotation. */
+        // This property uses `@JvmSynthetic` for both the getter and setter to support idiomatic
+        // Kotlin assignment in the DSL while preventing visibility to Java callers. This satisfies
+        // the AndroidX `GetterOnBuilder` lint rule and avoids polluting the Java Builder API.
+        @get:NonNull
+        @get:JvmSynthetic
+        @set:JvmSynthetic
+        public var isAutoRotationEnabled: Boolean
+            get() = _isAutoRotationEnabled
+            set(@NonNull value) {
+                _isAutoRotationEnabled = value
+            }
 
         /** Adds a [UseCase] to the session. */
         public fun addUseCase(useCase: UseCase): Builder {
@@ -146,13 +205,24 @@ constructor(
 
         /** Sets the [ViewPort] for the session. */
         public fun setViewPort(viewPort: ViewPort): Builder {
-            this.viewPort = viewPort
+            this._viewPort = viewPort
             return this
         }
 
         /** Adds a [CameraEffect] for the session. */
         public fun addEffect(effect: CameraEffect): Builder {
             effects.add(effect)
+            return this
+        }
+
+        /**
+         * Sets whether to use auto rotation.
+         *
+         * When enabled, CameraX will monitor the device motion sensor and set the target rotation
+         * for ImageCapture and VideoCapture.
+         */
+        public fun setAutoRotationEnabled(autoRotationEnabled: Boolean): Builder {
+            this._isAutoRotationEnabled = autoRotationEnabled
             return this
         }
 
@@ -166,9 +236,33 @@ constructor(
                 mode = mode,
                 extensionsManager = extensionsManager,
                 useCases = useCases.toList(),
-                viewPort = viewPort,
+                viewPort = _viewPort,
                 effects = effects.toList(),
+                isAutoRotationEnabled = _isAutoRotationEnabled,
             )
         }
     }
 }
+
+/**
+ * Creates an [ExtensionSessionConfig] using a Kotlin DSL.
+ *
+ * Example usage:
+ * ```
+ * val extensionSessionConfig = extensionSessionConfig(mode, extensionsManager) {
+ *     isAutoRotationEnabled = true
+ *     viewPort = viewPort
+ * }
+ * ```
+ *
+ * @param mode The extension mode. See [ExtensionMode] for the list of available modes.
+ * @param extensionsManager The [ExtensionsManager] instance.
+ * @param block A lambda to configure the [ExtensionSessionConfig.Builder].
+ */
+@JvmSynthetic
+public inline fun extensionSessionConfig(
+    @ExtensionMode.Mode mode: Int,
+    extensionsManager: ExtensionsManager,
+    crossinline block: ExtensionSessionConfig.Builder.() -> Unit,
+): ExtensionSessionConfig =
+    ExtensionSessionConfig.Builder(mode, extensionsManager).apply(block).build()

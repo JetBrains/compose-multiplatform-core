@@ -14,22 +14,29 @@
  * limitations under the License.
  */
 
+@file:Suppress("DEPRECATION")
+
 package androidx.xr.scenecore.testing
 
 import androidx.annotation.RestrictTo
-import androidx.xr.runtime.NodeHolder
+import androidx.xr.scenecore.runtime.NodeHolder
 import androidx.xr.scenecore.runtime.SpatialEnvironment.SpatialEnvironmentPreference
 import androidx.xr.scenecore.runtime.SpatialEnvironmentFeature
+import androidx.xr.scenecore.testing.internal.FakeSpatialEnvironmentFeature as InternalFakeSpatialEnvironmentFeature
 
 /** Test-only implementation of [androidx.xr.scenecore.runtime.SpatialEnvironmentFeature]. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public class FakeSpatialEnvironmentFeature :
+@Deprecated("Use SceneCoreTestRule instead.")
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public class FakeSpatialEnvironmentFeature
+internal constructor(internal var fakeInternal: InternalFakeSpatialEnvironmentFeature) :
     FakeBaseRenderingFeature(NodeHolder<FakeNode>(object : FakeNode {}, FakeNode::class.java)),
     SpatialEnvironmentFeature {
-    private var _preferredSpatialEnvironment: SpatialEnvironmentPreference? = null
+
+    public constructor() : this(InternalFakeSpatialEnvironmentFeature())
+
     override var preferredSpatialEnvironment: SpatialEnvironmentPreference?
-        get() = _preferredSpatialEnvironment
+        get() = fakeInternal.preferredSpatialEnvironment
         set(value) {
-            _preferredSpatialEnvironment = value
+            fakeInternal.preferredSpatialEnvironment = value
         }
 }

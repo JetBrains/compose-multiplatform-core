@@ -93,7 +93,7 @@ public abstract class WebMessagePortCompat {
      * <p>
      * This method should only be called if
      * {@link WebViewFeature#isFeatureSupported(String)}
-     * returns true for {@link WebViewFeature#WEB_MESSAGE_PORT_POST_MESSAGE}.
+     * returns {@code true} for {@link WebViewFeature#WEB_MESSAGE_PORT_POST_MESSAGE}.
      *
      * <p>
      * When posting a {@link WebMessageCompat} with type {@link WebMessageCompat#TYPE_ARRAY_BUFFER},
@@ -111,6 +111,9 @@ public abstract class WebMessagePortCompat {
      * @param message  the message from Java to JS.
      *
      * @throws IllegalStateException If message port is already transferred or closed.
+     * @throws UnsupportedOperationException if the
+     *                                       {@link WebViewFeature#WEB_MESSAGE_PORT_POST_MESSAGE}
+     *                                       feature is not supported.
      */
     @RequiresFeature(name = WebViewFeature.WEB_MESSAGE_PORT_POST_MESSAGE,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
@@ -122,7 +125,11 @@ public abstract class WebMessagePortCompat {
      * <p>
      * This method should only be called if
      * {@link WebViewFeature#isFeatureSupported(String)}
-     * returns true for {@link WebViewFeature#WEB_MESSAGE_PORT_CLOSE}.
+     * returns {@code true} for {@link WebViewFeature#WEB_MESSAGE_PORT_CLOSE}.
+     *
+     * @throws UnsupportedOperationException if the
+     *                                       {@link WebViewFeature#WEB_MESSAGE_PORT_CLOSE}
+     *                                       feature is not supported.
      */
     @RequiresFeature(name = WebViewFeature.WEB_MESSAGE_PORT_CLOSE,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
@@ -134,9 +141,12 @@ public abstract class WebMessagePortCompat {
      * <p>
      * This method should only be called if
      * {@link WebViewFeature#isFeatureSupported(String)}
-     * returns true for {@link WebViewFeature#WEB_MESSAGE_PORT_SET_MESSAGE_CALLBACK}.
+     * returns {@code true} for {@link WebViewFeature#WEB_MESSAGE_PORT_SET_MESSAGE_CALLBACK}.
      *
      * @param callback  the message callback.
+     * @throws UnsupportedOperationException if the
+     *                                  {@link WebViewFeature#WEB_MESSAGE_PORT_SET_MESSAGE_CALLBACK}
+     *                                       feature is not supported.
      */
     @RequiresFeature(name = WebViewFeature.WEB_MESSAGE_PORT_SET_MESSAGE_CALLBACK,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
@@ -150,10 +160,13 @@ public abstract class WebMessagePortCompat {
      * <p>
      * This method should only be called if
      * {@link WebViewFeature#isFeatureSupported(String)}
-     * returns true for {@link WebViewFeature#WEB_MESSAGE_PORT_SET_MESSAGE_CALLBACK}.
+     * returns {@code true} for {@link WebViewFeature#WEB_MESSAGE_PORT_SET_MESSAGE_CALLBACK}.
      *
      * @param handler   the handler to receive the message events.
      * @param callback  the message callback.
+     * @throws UnsupportedOperationException if the
+     *                                  {@link WebViewFeature#WEB_MESSAGE_PORT_SET_MESSAGE_CALLBACK}
+     *                                       feature is not supported.
      */
     @RequiresFeature(name = WebViewFeature.WEB_MESSAGE_PORT_SET_MESSAGE_CALLBACK,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")

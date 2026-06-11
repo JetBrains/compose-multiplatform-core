@@ -28,6 +28,7 @@ import androidx.camera.camera2.interop.getCamera2CaptureRequestConfigurator
 import androidx.camera.camera2.pipe.AeMode
 import androidx.camera.camera2.pipe.CameraGraph
 import androidx.camera.camera2.pipe.CameraGraph.Constants3A.METERING_REGIONS_DEFAULT
+import androidx.camera.camera2.pipe.FrameMetadata
 import androidx.camera.camera2.pipe.Lock3ABehavior
 import androidx.camera.camera2.pipe.Request
 import androidx.camera.camera2.pipe.RequestTemplate
@@ -206,6 +207,12 @@ public interface UseCaseCameraRequestControl {
      * @param afTriggerStartAeMode The AE mode to use when triggering AF.
      * @param timeLimitNs The time limit for the 3A operation in nanoseconds. Defaults to
      *   [CameraGraph.Constants3A.DEFAULT_TIME_LIMIT_NS].
+     * @param convergedCondition A custom condition for 3A convergence, null by default. Note that,
+     *   in CameraPipe, this refers to an additional 3A convergence used for AE/AWB locking which
+     *   happens before the actual AF trigger. This is separate from the `lockedCondition` parameter
+     *   in [CameraGraph.Session.lock3A] which is used for the 3A convergence condition after the
+     *   actual AF triggering. See [androidx.camera.camera2.pipe.graph.Controller3A.lock3A] code
+     *   flow for details.
      * @return A [Deferred] representing the asynchronous operation and its result ([Result3A]).
      */
     @AnyThread
@@ -218,6 +225,7 @@ public interface UseCaseCameraRequestControl {
         awbLockBehavior: Lock3ABehavior? = null,
         afTriggerStartAeMode: AeMode? = null,
         timeLimitNs: Long = CameraGraph.Constants3A.DEFAULT_TIME_LIMIT_NS,
+        convergedCondition: ((FrameMetadata) -> Boolean)? = null,
     ): Deferred<Result3A>
 
     /**
@@ -467,6 +475,7 @@ constructor(
         awbLockBehavior: Lock3ABehavior?,
         afTriggerStartAeMode: AeMode?,
         timeLimitNs: Long,
+        convergedCondition: ((FrameMetadata) -> Boolean)?,
     ): Deferred<Result3A> =
         runIfNotClosed {
             runOnSequential {
@@ -482,6 +491,7 @@ constructor(
                         afTriggerStartAeMode = afTriggerStartAeMode,
                         convergedTimeLimitNs = timeLimitNs,
                         lockedTimeLimitNs = timeLimitNs,
+                        convergedCondition = convergedCondition,
                     )
                 }
             }

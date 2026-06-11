@@ -15,3 +15,5 @@ RemovedFromKotlin: androidx.core.os.ProfilingRequest#getProfilingType():
     Source breaking change: method androidx.core.os.ProfilingRequest.getProfilingType() can no longer be resolved from Kotlin source
 RemovedFromKotlin: androidx.core.os.ProfilingRequest#getTag():
     Source breaking change: method androidx.core.os.ProfilingRequest.getTag() can no longer be resolved from Kotlin source
+ChangedValue: androidx.core.view.accessibility.AccessibilityNodeInfoCompat#ACTION_ARGUMENT_SELECTION_PARCELABLE:
+    Binary breaking change: Field androidx.core.view.accessibility.AccessibilityNodeInfoCompat.ACTION_ARGUMENT_SELECTION_PARCELABLE has changed value from "androidx.core.view.accessibility.action.ARGUMENT_SELECTION_PARCELABLE" to "android.view.accessibility.action.ARGUMENT_SELECTION_PARCELABLE"

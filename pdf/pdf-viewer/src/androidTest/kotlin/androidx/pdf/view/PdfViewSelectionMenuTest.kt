@@ -19,6 +19,7 @@ package androidx.pdf.view
 import android.R as androidR
 import android.graphics.Point
 import android.graphics.RectF
+import android.os.Build
 import android.view.InputDevice
 import android.view.MotionEvent
 import android.view.ViewGroup
@@ -73,7 +74,7 @@ class PdfViewSelectionMenuTest {
                 pdfView =
                     PdfView(activity).apply {
                         pdfDocument = fakePdfDocument
-                        id = R.id.pdf_view
+                        id = R.id.pdfView
                     }
                 container.addView(
                     pdfView,
@@ -96,7 +97,7 @@ class PdfViewSelectionMenuTest {
         val selectionMenuItemPreparer = SelectionMenuItemPreparer()
 
         with(ActivityScenario.launch(PdfViewTestActivity::class.java)) {
-            Espresso.onView(withId(R.id.pdf_view)).check { view, noViewFoundException ->
+            Espresso.onView(withId(R.id.pdfView)).check { view, noViewFoundException ->
                 view ?: throw noViewFoundException
                 val localPdfView = view as PdfView
                 localPdfView.addSelectionMenuItemPreparer(selectionMenuItemPreparer)
@@ -106,11 +107,25 @@ class PdfViewSelectionMenuTest {
         longClickAtCenter()
 
         assert(selectionMenuItemPreparer.components.size == 2)
-        assertNotNullObjectByText(pdfView.context.resources.getString(androidR.string.copy))
-        assertNotNullObjectByText(pdfView.context.resources.getString(androidR.string.selectAll))
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            assertNotNullObjectByText(pdfView.context.resources.getString(androidR.string.copy))
+            assertNotNullObjectByText(
+                pdfView.context.resources.getString(androidR.string.selectAll)
+            )
+        } else {
+            onView(withText(androidR.string.copy))
+                .inRoot(RootMatchers.isPlatformPopup())
+                .check(matches(isDisplayed()))
+
+            onView(withText(androidR.string.selectAll))
+                .inRoot(RootMatchers.isPlatformPopup())
+                .check(matches(isDisplayed()))
+        }
     }
 
-    @SdkSuppress(maxSdkVersion = 35)
+    // On SDK < 25: Extra menu options collapses into an overflow menu.
+    // For SDK 25+: Full menu options are displayed by default.
+    @SdkSuppress(minSdkVersion = 25, maxSdkVersion = 35)
     @Test
     fun testContextMenu_afterAddingAddCommentItem() {
         var addCommentClickCounter = 0
@@ -126,7 +141,7 @@ class PdfViewSelectionMenuTest {
         }
 
         with(ActivityScenario.launch(PdfViewTestActivity::class.java)) {
-            Espresso.onView(withId(R.id.pdf_view)).check { view, noViewFoundException ->
+            Espresso.onView(withId(R.id.pdfView)).check { view, noViewFoundException ->
                 view ?: throw noViewFoundException
                 val localPdfView = view as PdfView
                 localPdfView.addSelectionMenuItemPreparer(selectionMenuItemPreparer)
@@ -158,7 +173,7 @@ class PdfViewSelectionMenuTest {
         }
 
         with(ActivityScenario.launch(PdfViewTestActivity::class.java)) {
-            Espresso.onView(withId(R.id.pdf_view)).check { view, noViewFoundException ->
+            Espresso.onView(withId(R.id.pdfView)).check { view, noViewFoundException ->
                 view ?: throw noViewFoundException
                 val localPdfView = view as PdfView
                 localPdfView.addSelectionMenuItemPreparer(selectionMenuItemPreparer)
@@ -168,11 +183,17 @@ class PdfViewSelectionMenuTest {
         longClickAtCenter()
 
         assert(selectionMenuItemPreparer.components.size == 1)
-        assertNotNullObjectByText(pdfView.context.resources.getString(androidR.string.copy))
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            assertNotNullObjectByText(pdfView.context.resources.getString(androidR.string.copy))
+        } else {
+            onView(withText(androidR.string.copy))
+                .inRoot(RootMatchers.isPlatformPopup())
+                .check(matches(isDisplayed()))
+        }
     }
 
     private fun longClickAtCenter() {
-        onView(withId(R.id.pdf_view))
+        onView(withId(R.id.pdfView))
             .perform(
                 GeneralClickAction(
                     Tap.LONG,

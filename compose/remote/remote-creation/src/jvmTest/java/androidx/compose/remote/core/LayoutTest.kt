@@ -39,8 +39,7 @@ import androidx.compose.remote.creation.modifiers.RecordingModifier
 import org.junit.Ignore
 import org.junit.Test
 
-open class LayoutTest : BaseLayoutTest() {
-
+class LayoutTest : BaseLayoutTest() {
     init {
         GENERATE_GOLD_FILES = false
     }
@@ -386,6 +385,22 @@ open class LayoutTest : BaseLayoutTest() {
             ops,
             TestClock(1234),
         )
+    }
+
+    @Test
+    fun testOffset() {
+        val ops =
+            arrayListOf<TestOperation>(
+                TestLayout {
+                    box(Modifier.fillMaxSize()) {
+                        box(Modifier.size(300, 200).background(Color.RED))
+                        box(Modifier.offset(100f, 100f).size(300, 200).background(Color.RED))
+                        box(Modifier.offset(250f, 350f).size(300, 200).background(Color.RED))
+                    }
+                },
+                CaptureComponentTree(),
+            )
+        checkLayout(1000, 1000, 8, RcProfiles.PROFILE_ANDROIDX, "Layout", ops, TestClock(1234))
     }
 
     @Test

@@ -17,20 +17,22 @@
 package androidx.wear.compose.remote.material3
 
 import android.content.Context
-import androidx.compose.remote.creation.CreationDisplayInfo
-import androidx.compose.remote.creation.compose.layout.RemoteAlignment
-import androidx.compose.remote.creation.compose.layout.RemoteBox
-import androidx.compose.remote.creation.compose.layout.RemoteComposable
-import androidx.compose.remote.creation.compose.modifier.RemoteModifier
-import androidx.compose.remote.creation.compose.modifier.fillMaxSize
-import androidx.compose.remote.player.compose.test.utils.screenshot.rule.RemoteComposeScreenshotTestRule
-import androidx.compose.runtime.Composable
+import androidx.collection.buildObjectIntMap
+import androidx.compose.remote.creation.compose.capture.createCreationDisplayInfo
+import androidx.compose.remote.creation.profile.RcPlatformProfiles
+import androidx.compose.remote.player.compose.test.utils.ComposableWrappers
+import androidx.compose.remote.player.compose.test.utils.RemoteScreenshotTestRule
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import androidx.wear.compose.remote.material3.previews.RemoteCardDefault
 import androidx.wear.compose.remote.material3.previews.RemoteCardOutline
+import androidx.wear.compose.remote.material3.util.ComponentContainer
+import androidx.wear.compose.remote.material3.util.SCREENSHOT_GOLDEN_DIRECTORY
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -41,35 +43,63 @@ import org.junit.runner.RunWith
 class RemoteCardTest {
     @get:Rule
     val remoteComposeTestRule =
-        RemoteComposeScreenshotTestRule(moduleDirectory = SCREENSHOT_GOLDEN_DIRECTORY)
-
-    private val creationDisplayInfo =
-        CreationDisplayInfo(
-            500,
-            500,
-            ApplicationProvider.getApplicationContext<Context>().resources.displayMetrics.densityDpi,
+        RemoteScreenshotTestRule(
+            moduleDirectory = SCREENSHOT_GOLDEN_DIRECTORY,
+            context = ApplicationProvider.getApplicationContext(),
         )
+    private val context: Context = ApplicationProvider.getApplicationContext()
+
+    private val creationDisplayInfo = createCreationDisplayInfo(context, Size(500f, 500f))
 
     @Test
     fun card_default() {
-        remoteComposeTestRule.runScreenshotTest(creationDisplayInfo = creationDisplayInfo) {
-            Container(RemoteModifier.fillMaxSize()) { RemoteCardDefault() }
+        remoteComposeTestRule.runScreenshotTest(
+            profile = RcPlatformProfiles.WEAR_WIDGETS,
+            remoteCreationDisplayInfo = creationDisplayInfo,
+        ) {
+            ComponentContainer { RemoteCardDefault() }
+        }
+    }
+
+    @Test
+    fun card_default_rtl() {
+        remoteComposeTestRule.runScreenshotTest(
+            profile = RcPlatformProfiles.WEAR_WIDGETS,
+            remoteCreationDisplayInfo = creationDisplayInfo,
+            creationComposableWrapper = ComposableWrappers.rtl,
+        ) {
+            ComponentContainer { RemoteCardDefault() }
         }
     }
 
     @Test
     fun card_outline() {
-        remoteComposeTestRule.runScreenshotTest(creationDisplayInfo = creationDisplayInfo) {
-            Container(RemoteModifier.fillMaxSize()) { RemoteCardOutline() }
+        remoteComposeTestRule.runScreenshotTest(
+            profile = RcPlatformProfiles.WEAR_WIDGETS,
+            remoteCreationDisplayInfo = creationDisplayInfo,
+        ) {
+            ComponentContainer { RemoteCardOutline() }
         }
     }
 
-    @Composable
-    @RemoteComposable
-    private fun Container(
-        modifier: RemoteModifier = RemoteModifier.fillMaxSize(),
-        content: @Composable @RemoteComposable () -> Unit,
-    ) {
-        RemoteBox(modifier, contentAlignment = RemoteAlignment.Center, content = content)
+    @Test
+    fun card_dynamic_color() {
+        val colorOverrides = buildObjectIntMap {
+            put("WearM3.primary", Color(0xFFB8D0A0).toArgb())
+            put("WearM3.onPrimary", Color(0xFF24361A).toArgb())
+            put("WearM3.surfaceContainer", Color(0xFF1C1D1A).toArgb())
+            put("WearM3.onSurface", Color(0xFFE2E3DC).toArgb())
+        }
+        remoteComposeTestRule.runScreenshotTest(
+            profile = RcPlatformProfiles.WEAR_WIDGETS,
+            remoteCreationDisplayInfo = creationDisplayInfo,
+            update = { player ->
+                colorOverrides.forEach { name, colorInt ->
+                    player.setUserLocalColor(name, colorInt)
+                }
+            },
+        ) {
+            ComponentContainer { RemoteCardDefault() }
+        }
     }
 }

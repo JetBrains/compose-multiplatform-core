@@ -22,9 +22,9 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
 import androidx.xr.arcore.runtime.HandJointType
+import androidx.xr.arcore.runtime.TrackingState
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.HandTrackingMode
-import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
 import com.google.common.truth.Truth.assertThat
@@ -49,7 +49,7 @@ class OpenXrHandTest {
 
     @get:Rule val activityRule = ActivityScenarioRule(ComponentActivity::class.java)
 
-    private lateinit var openXrManager: OpenXrManager
+    private lateinit var openXrRuntime: OpenXrRuntime
     private lateinit var underTest: OpenXrHand
 
     @Before
@@ -61,7 +61,7 @@ class OpenXrHandTest {
         "b/425697141 - Requires HEAD_TRACKING permission which is not available on Android test runners."
     )
     @Test
-    fun update_updatesActiveStatus() = initOpenXrManagerAndRunTest {
+    fun update_updatesActiveStatus() = initOpenXrRuntimeAndRunTest {
         val xrTime = 50L * 1_000_000 // 50 milliseconds in nanoseconds.
         check(underTest.trackingState != TrackingState.TRACKING)
 
@@ -76,7 +76,7 @@ class OpenXrHandTest {
         "b/425697141 - Requires HEAD_TRACKING permission which is not available on Android test runners."
     )
     @Test
-    fun update_updateHandJoints() = initOpenXrManagerAndRunTest {
+    fun update_updateHandJoints() = initOpenXrRuntimeAndRunTest {
         val xrTime = 50L * 1_000_000 // 50 milliseconds in nanoseconds.
         check(underTest.handJoints.isEmpty())
 
@@ -104,21 +104,21 @@ class OpenXrHandTest {
         }
     }
 
-    private fun initOpenXrManagerAndRunTest(testBody: () -> Unit) {
+    private fun initOpenXrRuntimeAndRunTest(testBody: () -> Unit) {
         activityRule.scenario.onActivity {
             val timeSource = OpenXrTimeSource()
             val perceptionManager = OpenXrPerceptionManager(timeSource)
-            openXrManager = OpenXrManager(it, perceptionManager, timeSource)
-            openXrManager.create()
-            openXrManager.resume()
-            openXrManager.configure(Config(handTracking = HandTrackingMode.BOTH))
+            openXrRuntime = OpenXrRuntime(it, perceptionManager, timeSource)
+            openXrRuntime.initialize()
+            openXrRuntime.resume()
+            openXrRuntime.configure(Config(handTracking = HandTrackingMode.BOTH))
 
             testBody()
 
-            // Pause and stop the OpenXR manager here in lieu of an @After method to ensure that the
-            // calls to the OpenXR manager are coming from the same thread.
-            openXrManager.pause()
-            openXrManager.stop()
+            // Pause and stop the OpenXR runtime here in lieu of an @After method to ensure that the
+            // calls to the OpenXR runtime are coming from the same thread.
+            openXrRuntime.pause()
+            openXrRuntime.destroy()
         }
     }
 }

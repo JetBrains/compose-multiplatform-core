@@ -20,21 +20,20 @@ import androidx.annotation.RestrictTo
 import androidx.xr.arcore.runtime.PerceptionRuntime
 import androidx.xr.runtime.interfaces.Feature
 import androidx.xr.runtime.internal.PerceptionRuntimeFactory
-import kotlin.coroutines.CoroutineContext
+import kotlinx.coroutines.CoroutineScope
 
 /** Factory for creating instances of [ArCoreRuntime]. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+@RestrictTo(RestrictTo.Scope.LIBRARY)
 public class ArCoreRuntimeFactory() : PerceptionRuntimeFactory {
     override val requirements: Set<Feature> = setOf(Feature.FULLSTACK)
 
     override fun createRuntime(
         context: Context,
-        coroutineContext: CoroutineContext,
+        coroutineScope: CoroutineScope,
     ): PerceptionRuntime {
         // b/396235304 -- Provide a way to configure the session.
         val timeSource = ArCoreTimeSource()
         val perceptionManager = ArCorePerceptionManager(timeSource)
-        val manager = ArCoreManager(context, perceptionManager, timeSource)
-        return ArCoreRuntime(manager, perceptionManager)
+        return ArCoreRuntime(context, perceptionManager, timeSource)
     }
 }

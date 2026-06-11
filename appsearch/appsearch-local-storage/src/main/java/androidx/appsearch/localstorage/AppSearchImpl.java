@@ -120,6 +120,8 @@ import com.google.android.icing.proto.IcingSearchEngineOptions;
 import com.google.android.icing.proto.InitializeResultProto;
 import com.google.android.icing.proto.InitializeStatsProto;
 import com.google.android.icing.proto.LogSeverity;
+import com.google.android.icing.proto.MaintainAnnIndexOptions;
+import com.google.android.icing.proto.MaintainAnnIndexResultProto;
 import com.google.android.icing.proto.NamespaceBlobStorageInfoProto;
 import com.google.android.icing.proto.NamespaceStorageInfoProto;
 import com.google.android.icing.proto.OptimizeResultProto;
@@ -230,9 +232,7 @@ public final class AppSearchImpl implements Closeable {
 
     private boolean mResetVisibilityStore;
 
-    @NonNull private final LaunchVMFeatures mLaunchVMFeatures;
-
-    private boolean mIsIcingSchemaDatabaseEnabled;
+    @NonNull private final LaunchVmFeatures mLaunchVmFeatures;
 
     @GuardedBy("mReadWriteLock")
     private final SchemaCache mSchemaCacheLocked = new SchemaCache();
@@ -400,7 +400,8 @@ public final class AppSearchImpl implements Closeable {
         long javaLockAcquisitionEndTimeMillis = 0;
         mReadWriteLock.writeLock().lock();
         try {
-            mLaunchVMFeatures = appSearchUserPlugins.getLaunchVMFeatures();
+            mLaunchVmFeatures = appSearchUserPlugins.getLaunchVmFeatures() == null
+                    ? new LaunchVmFeatures() : appSearchUserPlugins.getLaunchVmFeatures();
             javaLockAcquisitionEndTimeMillis = SystemClock.elapsedRealtime();
             // We synchronize here because we don't want to call IcingSearchEngine.initialize() more
             // than once. It's unnecessary and can be a costly operation.
@@ -409,21 +410,19 @@ public final class AppSearchImpl implements Closeable {
                     maxInitRetries = 2;
                 }
                 IcingSearchEngineOptions options = mConfig.toIcingSearchEngineOptions(
-                        icingDir.getAbsolutePath(), mLaunchVMFeatures.isVMEnabled1());
+                        icingDir.getAbsolutePath(), mLaunchVmFeatures.isVmEnabled());
                 LogUtil.piiTrace(TAG, "Constructing IcingSearchEngine, request", options);
                 mIcingSearchEngineLocked = new IcingSearchEngine(options);
-                mIsIcingSchemaDatabaseEnabled = options.getEnableSchemaDatabase();
                 LogUtil.piiTrace(
                         TAG,
                         "Constructing IcingSearchEngine, response",
                         ObjectsCompat.hashCode(mIcingSearchEngineLocked));
             } else {
                 mIcingSearchEngineLocked = appSearchUserPlugins.getIcingSearchEngine();
-                mIsIcingSchemaDatabaseEnabled = true;
                 maxInitRetries = 2;
             }
             mResetVisibilityStore =
-                    Flags.enableResetVisibilityStore() || mLaunchVMFeatures.isVMEnabled1();
+                    Flags.enableResetVisibilityStore() || mLaunchVmFeatures.isVmEnabled();
 
             // The core initialization procedure. If any part of this fails, we bail into
             // resetLocked(), deleting all data (but hopefully allowing AppSearchImpl to come up).
@@ -461,21 +460,11 @@ public final class AppSearchImpl implements Closeable {
                                     statusProtoToResultCode(initializeResultProto.getStatus()))
                             // TODO(b/173532925) how to get DeSyncs value
                             .setHasDeSync(false)
-                            .setLaunchVMEnabled(mLaunchVMFeatures.isVMEnabled1())
-                            .setLaunchVM2Enabled(mLaunchVMFeatures.isVMEnabled2())
+                            .setLaunchVmEnabled(mLaunchVmFeatures.isVmEnabled())
+                            .setLaunchAiSealEnabled(mLaunchVmFeatures.isAiSealEnabled())
                             .addGetVmLatencyMillis(initializeResultProto.getGetVmLatencyMs());
                     AppSearchLoggerHelper.copyNativeStats(
                             initializeResultProto.getInitializeStats(), initStatsBuilder);
-                    if (isVMEnabled()) {
-                        // TODO(b/415387509): Add an actual atom field to capture this value.
-                        // Hack to propagate the failure cause early
-                        // Store value in IcuDataStatus because that field doesn't matter in
-                        // platform. Add 100 to separate from the range of possible values that
-                        // would otherwise be set in this field.
-                        initStatsBuilder.setNativeInitializeIcuDataStatusCode(
-                                100 + initializeResultProto.getInitializeStats()
-                                        .getFailureStage().getNumber());
-                    }
                 }
                 checkSuccess(initializeResultProto.getStatus());
                 if (hasDatabaseStateChangedAfterInit(initializeResultProto)) {
@@ -721,17 +710,19 @@ public final class AppSearchImpl implements Closeable {
     }
 
     /** Returns whether pVM is enabled in this AppSearchImpl instance. */
-    public boolean isVMEnabled() {
-        return mLaunchVMFeatures.isVMEnabled1();
+    public boolean isVmEnabled() {
+        return mLaunchVmFeatures.isVmEnabled();
     }
 
-    /** Returns whether this AppSearchImpl instance should use database-scoped set and get schema */
-    public boolean useDatabaseScopedSchemaOperations() {
-        return mIsIcingSchemaDatabaseEnabled;
+    /** Returns whether Ai Seal is enabled in this AppSearchImpl instance. */
+    public boolean isAiSealEnabled() {
+        return mLaunchVmFeatures.isAiSealEnabled();
     }
 
     public boolean enableEarlySetSchemaExit() {
-        return Flags.enableEarlySetSchemaExit() || isVMEnabled();
+        // isAiSealEnabled will only be true if isVmEnabled is true, only verify isVmEnabled should
+        // be sufficient.
+        return Flags.enableEarlySetSchemaExit() || isVmEnabled();
     }
 
     /** Atomic method to set a new icing search engine and return the previous engine. */
@@ -743,9 +734,7 @@ public final class AppSearchImpl implements Closeable {
         try {
             IcingSearchEngineInterface previousIcingSearchEngine = mIcingSearchEngineLocked;
             mIcingSearchEngineLocked = icingSearchEngineLocked;
-            mLaunchVMFeatures.setVMEnabled1(isVm1Enabled);
-            mIsIcingSchemaDatabaseEnabled =
-                    Flags.enableDatabaseScopedSchemaOperations() || isVm1Enabled;
+            mLaunchVmFeatures.setVmEnabled(isVm1Enabled);
             mResetVisibilityStore = Flags.enableResetVisibilityStore() || isVm1Enabled;
             return previousIcingSearchEngine;
         } finally {
@@ -856,33 +845,20 @@ public final class AppSearchImpl implements Closeable {
                         .setLastBlockingOperation(mLastReadOrWriteOperationLocked)
                         .setLastBlockingOperationLatencyMillis(
                                 mLastReadOrWriteOperationLatencyMillisLocked)
-                        .setLaunchVMEnabled(mLaunchVMFeatures.isVMEnabled1())
-                        .setLaunchVM2Enabled(mLaunchVMFeatures.isVMEnabled2());
+                        .setLaunchVmEnabled(mLaunchVmFeatures.isVmEnabled())
+                        .setLaunchAiSealEnabled(mLaunchVmFeatures.isAiSealEnabled());
             }
             if (mObserverManager.isPackageObserved(packageName)) {
-                if (useDatabaseScopedSchemaOperations()) {
-                    return doSetSchemaWithChangeNotificationNoGetSchemaLocked(
-                            packageName,
-                            databaseName,
-                            schemas,
-                            visibilityConfigs,
-                            accountPropertyPaths,
-                            forceOverride,
-                            version,
-                            setSchemaStatsBuilder,
-                            callStatsBuilder);
-                } else {
-                    return doSetSchemaWithChangeNotificationLocked(
-                            packageName,
-                            databaseName,
-                            schemas,
-                            visibilityConfigs,
-                            accountPropertyPaths,
-                            forceOverride,
-                            version,
-                            setSchemaStatsBuilder,
-                            callStatsBuilder);
-                }
+                return doSetSchemaWithChangeNotificationNoGetSchemaLocked(
+                        packageName,
+                        databaseName,
+                        schemas,
+                        visibilityConfigs,
+                        accountPropertyPaths,
+                        forceOverride,
+                        version,
+                        setSchemaStatsBuilder,
+                        callStatsBuilder);
             } else {
                 return doSetSchemaNoChangeNotificationLocked(
                         packageName,
@@ -905,186 +881,6 @@ public final class AppSearchImpl implements Closeable {
         }
     }
 
-    /**
-     * Updates the AppSearch schema for this app, dispatching change notifications. This method
-     * calls the getSchema API in the process.
-     *
-     * @see #setSchema
-     * @see #doSetSchemaNoChangeNotificationLocked
-     */
-    @GuardedBy("mReadWriteLock")
-    private @NonNull InternalSetSchemaResponse doSetSchemaWithChangeNotificationLocked(
-            @NonNull String packageName,
-            @NonNull String databaseName,
-            @NonNull List<AppSearchSchema> schemas,
-            @NonNull List<InternalVisibilityConfig> visibilityConfigs,
-            @NonNull Map<String, Set<String>> accountPropertyPaths,
-            boolean forceOverride,
-            int version,
-            SetSchemaStats.@Nullable Builder setSchemaStatsBuilder,
-            CallStats.@Nullable Builder callStatsBuilder) throws AppSearchException {
-        // First, capture the old state of the system. This includes the old schema as well as
-        // whether each registered observer can access each type. Once VisibilityStore is updated
-        // by the setSchema call, the information of which observers could see which types will be
-        // lost.
-        long getOldSchemaStartTimeMillis = SystemClock.elapsedRealtime();
-        GetSchemaResponse oldSchema = getSchema(
-                packageName,
-                databaseName,
-                // A CallerAccess object for internal use that has local access to this database.
-                new CallerAccess(/*callingPackageName=*/packageName),
-                callStatsBuilder);
-        long getOldSchemaEndTimeMillis = SystemClock.elapsedRealtime();
-        if (setSchemaStatsBuilder != null) {
-            setSchemaStatsBuilder.setIsPackageObserved(true)
-                    .setGetOldSchemaLatencyMillis(
-                            (int) (getOldSchemaEndTimeMillis - getOldSchemaStartTimeMillis));
-        }
-
-        long getOldSchemaObserverStartTimeMillis = SystemClock.elapsedRealtime();
-        // Cache some lookup tables to help us work with the old schema
-        Set<AppSearchSchema> oldSchemaTypes = oldSchema.getSchemas();
-        Map<String, AppSearchSchema> oldSchemaNameToType = new ArrayMap<>(oldSchemaTypes.size());
-        // Maps unprefixed schema name to the set of listening packages that had visibility into
-        // that type under the old schema.
-        Map<String, Set<String>> oldSchemaNameToVisibleListeningPackage =
-                new ArrayMap<>(oldSchemaTypes.size());
-        for (AppSearchSchema oldSchemaType : oldSchemaTypes) {
-            String oldSchemaName = oldSchemaType.getSchemaType();
-            oldSchemaNameToType.put(oldSchemaName, oldSchemaType);
-            oldSchemaNameToVisibleListeningPackage.put(
-                    oldSchemaName,
-                    mObserverManager.getObserversForSchemaType(
-                            packageName,
-                            databaseName,
-                            oldSchemaName,
-                            mDocumentVisibilityStoreLocked,
-                            mVisibilityCheckerLocked));
-        }
-        int getOldSchemaObserverLatencyMillis =
-                (int) (SystemClock.elapsedRealtime() - getOldSchemaObserverStartTimeMillis);
-
-        // Apply the new schema
-        InternalSetSchemaResponse internalSetSchemaResponse = doSetSchemaNoChangeNotificationLocked(
-                packageName,
-                databaseName,
-                schemas,
-                visibilityConfigs,
-                accountPropertyPaths,
-                forceOverride,
-                version,
-                setSchemaStatsBuilder,
-                callStatsBuilder).first;
-
-        // This check is needed wherever setSchema is called to detect soft errors which do not
-        // throw an exception but also prevent the schema from actually being applied.
-        if (!internalSetSchemaResponse.isSuccess()) {
-            return internalSetSchemaResponse;
-        }
-
-        long getNewSchemaObserverStartTimeMillis = SystemClock.elapsedRealtime();
-        // Cache some lookup tables to help us work with the new schema
-        Map<String, AppSearchSchema> newSchemaNameToType = new ArrayMap<>(schemas.size());
-        // Maps unprefixed schema name to the set of listening packages that have visibility into
-        // that type under the new schema.
-        Map<String, Set<String>> newSchemaNameToVisibleListeningPackage =
-                new ArrayMap<>(schemas.size());
-        for (AppSearchSchema newSchemaType : schemas) {
-            String newSchemaName = newSchemaType.getSchemaType();
-            newSchemaNameToType.put(newSchemaName, newSchemaType);
-            newSchemaNameToVisibleListeningPackage.put(
-                    newSchemaName,
-                    mObserverManager.getObserversForSchemaType(
-                            packageName,
-                            databaseName,
-                            newSchemaName,
-                            mDocumentVisibilityStoreLocked,
-                            mVisibilityCheckerLocked));
-        }
-        long getNewSchemaObserverEndTimeMillis = SystemClock.elapsedRealtime();
-        if (setSchemaStatsBuilder != null) {
-            setSchemaStatsBuilder.setGetObserverLatencyMillis(getOldSchemaObserverLatencyMillis
-                    + (int) (getNewSchemaObserverEndTimeMillis
-                    - getNewSchemaObserverStartTimeMillis));
-        }
-
-        long preparingChangeNotificationStartTimeMillis = SystemClock.elapsedRealtime();
-        // Create a unified set of all schema names mentioned in either the old or new schema.
-        Set<String> allSchemaNames = new ArraySet<>(oldSchemaNameToType.keySet());
-        allSchemaNames.addAll(newSchemaNameToType.keySet());
-
-        // Perform the diff between the old and new schema.
-        for (String schemaName : allSchemaNames) {
-            final AppSearchSchema contentBefore = oldSchemaNameToType.get(schemaName);
-            final AppSearchSchema contentAfter = newSchemaNameToType.get(schemaName);
-
-            final boolean existBefore = (contentBefore != null);
-            final boolean existAfter = (contentAfter != null);
-
-            // This should never happen
-            if (!existBefore && !existAfter) {
-                continue;
-            }
-
-            boolean contentsChanged = true;
-            if (contentBefore != null
-                    && contentBefore.equals(contentAfter)) {
-                contentsChanged = false;
-            }
-
-            Set<String> oldVisibleListeners =
-                    oldSchemaNameToVisibleListeningPackage.get(schemaName);
-            Set<String> newVisibleListeners =
-                    newSchemaNameToVisibleListeningPackage.get(schemaName);
-            Set<String> allListeningPackages = new ArraySet<>(oldVisibleListeners);
-            if (newVisibleListeners != null) {
-                allListeningPackages.addAll(newVisibleListeners);
-            }
-
-            // Now that we've computed the relationship between the old and new schema, we go
-            // observer by observer and consider the observer's own personal view of the schema.
-            for (String listeningPackageName : allListeningPackages) {
-                // Figure out the visibility
-                final boolean visibleBefore = (
-                        existBefore
-                                && oldVisibleListeners != null
-                                && oldVisibleListeners.contains(listeningPackageName));
-                final boolean visibleAfter = (
-                        existAfter
-                                && newVisibleListeners != null
-                                && newVisibleListeners.contains(listeningPackageName));
-
-                // Now go through the truth table of all the relevant flags.
-                // visibleBefore and visibleAfter take into account existBefore and existAfter, so
-                // we can stop worrying about existBefore and existAfter.
-                boolean sendNotification = false;
-                if (visibleBefore && visibleAfter && contentsChanged) {
-                    sendNotification = true;  // Type configuration was modified
-                } else if (!visibleBefore && visibleAfter) {
-                    sendNotification = true;  // Newly granted visibility or type was created
-                } else if (visibleBefore && !visibleAfter) {
-                    sendNotification = true;  // Revoked visibility or type was deleted
-                } else {
-                    // No visibility before and no visibility after. Nothing to dispatch.
-                }
-
-                if (sendNotification) {
-                    mObserverManager.onSchemaChange(
-                            /*listeningPackageName=*/listeningPackageName,
-                            /*targetPackageName=*/packageName,
-                            /*databaseName=*/databaseName,
-                            /*schemaName=*/schemaName);
-                }
-            }
-        }
-        if (setSchemaStatsBuilder != null) {
-            setSchemaStatsBuilder.setPreparingChangeNotificationLatencyMillis(
-                    (int) (SystemClock.elapsedRealtime()
-                            - preparingChangeNotificationStartTimeMillis));
-        }
-
-        return internalSetSchemaResponse;
-    }
 
     /**
      * Updates the AppSearch schema for this app and dispatches change notifications, without
@@ -1312,7 +1108,6 @@ public final class AppSearchImpl implements Closeable {
      * <p>This method can be used only when no one is observing {@code packageName}.
      *
      * @see #setSchema
-     * @see #doSetSchemaWithChangeNotificationLocked
      */
     @GuardedBy("mReadWriteLock")
     @OptIn(markerClass = ExperimentalAppSearchApi.class)
@@ -1352,56 +1147,38 @@ public final class AppSearchImpl implements Closeable {
         long nativeLatencyStartTimeMillis = SystemClock.elapsedRealtime();
         boolean containsSchemaChange = true;  // Presumed true, by default.
         // Rewrite and apply schema
-        if (useDatabaseScopedSchemaOperations()) {
-            rewrittenPrefixedTypes = getRewrittenPrefixedTypes(prefix,
-                    newSchemaBuilder.build(), /*populateDatabase=*/true);
-            rewriteSchemaEndTimeMillis = SystemClock.elapsedRealtime();
+        rewrittenPrefixedTypes = getRewrittenPrefixedTypes(prefix,
+                newSchemaBuilder.build());
+        rewriteSchemaEndTimeMillis = SystemClock.elapsedRealtime();
 
-            if (enableEarlySetSchemaExit()) {
-                containsSchemaChange =
-                        doesSchemaContainChangeLocked(prefix, rewrittenPrefixedTypes);
-            }
-            if (containsSchemaChange) {
-                SchemaProto finalSchema =
-                        SchemaProto.newBuilder().addAllTypes(
-                                rewrittenPrefixedTypes.values()).build();
-                SetSchemaRequestProto setSchemaRequestProto =
-                        SetSchemaRequestProto.newBuilder()
-                                .setSchema(finalSchema)
-                                .setDatabase(prefix)
-                                .setIgnoreErrorsAndDeleteDocuments(forceOverride)
-                                .build();
-                LogUtil.piiTrace(
-                        TAG, "setSchema, request", finalSchema.getTypesCount(),
-                        setSchemaRequestProto);
-                setSchemaResultProto =
-                        mIcingSearchEngineLocked.setSchemaWithRequestProto(setSchemaRequestProto);
-                deletedPrefixedTypes =
-                        new ArraySet<>(setSchemaResultProto.getDeletedSchemaTypesList());
-            } else {
-                // Schema was a no-op. Skip interaction with Icing.
-                setSchemaResultProto =
-                        SetSchemaResultProto.newBuilder()
-                                .setStatus(StatusProto.newBuilder().setCode(StatusProto.Code.OK))
-                                .build();
-                deletedPrefixedTypes = Collections.emptySet();
-            }
+        if (enableEarlySetSchemaExit()) {
+            containsSchemaChange =
+                    doesSchemaContainChangeLocked(prefix, rewrittenPrefixedTypes);
+        }
+        if (containsSchemaChange) {
+            SchemaProto finalSchema =
+                    SchemaProto.newBuilder().addAllTypes(
+                            rewrittenPrefixedTypes.values()).build();
+            SetSchemaRequestProto setSchemaRequestProto =
+                    SetSchemaRequestProto.newBuilder()
+                            .setSchema(finalSchema)
+                            .setDatabase(prefix)
+                            .setIgnoreErrorsAndDeleteDocuments(forceOverride)
+                            .build();
+            LogUtil.piiTrace(
+                    TAG, "setSchema, request", finalSchema.getTypesCount(),
+                    setSchemaRequestProto);
+            setSchemaResultProto =
+                    mIcingSearchEngineLocked.setSchemaWithRequestProto(setSchemaRequestProto);
+            deletedPrefixedTypes =
+                    new ArraySet<>(setSchemaResultProto.getDeletedSchemaTypesList());
         } else {
-            SchemaProto.Builder existingSchemaBuilder =
-                    getSchemaProtoLocked(callStatsBuilder).toBuilder();
-            // Combine the existing schema (which may have types from other prefixes) with this
-            // prefix's new schema. Modifies the existingSchemaBuilder.
-            RewrittenSchemaResults rewrittenSchemaResults = rewriteSchema(prefix,
-                    existingSchemaBuilder, newSchemaBuilder.build(),
-                    /*populateDatabase=*/false);
-            rewriteSchemaEndTimeMillis = SystemClock.elapsedRealtime();
-
-            deletedPrefixedTypes = rewrittenSchemaResults.mDeletedPrefixedTypes;
-            rewrittenPrefixedTypes = rewrittenSchemaResults.mRewrittenPrefixedTypes;
-
-            SchemaProto finalSchema = existingSchemaBuilder.build();
-            LogUtil.piiTrace(TAG, "setSchema, request", finalSchema.getTypesCount(), finalSchema);
-            setSchemaResultProto = mIcingSearchEngineLocked.setSchema(finalSchema, forceOverride);
+            // Schema was a no-op. Skip interaction with Icing.
+            setSchemaResultProto =
+                    SetSchemaResultProto.newBuilder()
+                            .setStatus(StatusProto.newBuilder().setCode(StatusProto.Code.OK))
+                            .build();
+            deletedPrefixedTypes = Collections.emptySet();
         }
         LogUtil.piiTrace(
                 TAG, "setSchema, response", setSchemaResultProto.getStatus(), setSchemaResultProto);
@@ -1565,18 +1342,11 @@ public final class AppSearchImpl implements Closeable {
             }
             throwIfClosedLocked();
 
-            // Get the schema from IcingLib.
-            // If database-scoped schema operations is enabled, the schema that is retrieved would
-            // only contain schema types corresponding to the package-database prefix. Otherwise,
-            // the full schema containing all types (across all packages and databases) will be
-            // retrieved.
+            // Get the schema from IcingLib. The schema that is retrieved would only contain
+            // schema types corresponding to the package-database prefix.
             SchemaProto icingSchema;
             String prefix = createPrefix(packageName, databaseName);
-            if (useDatabaseScopedSchemaOperations()) {
-                icingSchema = getSchemaProtoForPrefixLocked(prefix);
-            } else {
-                icingSchema = getSchemaProtoLocked(callStatsBuilder);
-            }
+            icingSchema = getSchemaProtoForPrefixLocked(prefix);
             GetSchemaResponse.Builder responseBuilder = new GetSchemaResponse.Builder();
             for (int i = 0; i < icingSchema.getTypesCount(); i++) {
                 // Check that this type belongs to the requested app and that the caller has
@@ -1946,8 +1716,8 @@ public final class AppSearchImpl implements Closeable {
                 String docId = finalDocument.getUri();
                 PutDocumentStats.Builder pStatsBuilder =
                         statsBuilders.get(i)
-                                .setLaunchVMEnabled(mLaunchVMFeatures.isVMEnabled1())
-                                .setLaunchVM2Enabled(mLaunchVMFeatures.isVMEnabled2())
+                                .setLaunchVmEnabled(mLaunchVmFeatures.isVmEnabled())
+                                .setLaunchAiSealEnabled(mLaunchVmFeatures.isAiSealEnabled())
                                 .setJavaLockAcquisitionLatencyMillis(
                                         (int)
                                                 (javaLockAcquisitionEndTimeMillis
@@ -2124,8 +1894,8 @@ public final class AppSearchImpl implements Closeable {
         PutDocumentStats.Builder pStatsBuilder = null;
         if (logger != null) {
             pStatsBuilder = new PutDocumentStats.Builder(packageName, databaseName)
-                    .setLaunchVMEnabled(mLaunchVMFeatures.isVMEnabled1())
-                    .setLaunchVM2Enabled(mLaunchVMFeatures.isVMEnabled2());
+                    .setLaunchVmEnabled(mLaunchVmFeatures.isVmEnabled())
+                    .setLaunchAiSealEnabled(mLaunchVmFeatures.isAiSealEnabled());
         }
         long totalLatencyStartMillis = SystemClock.elapsedRealtime();
         long javaLockAcquisitionEndTimeMillis = 0;
@@ -3160,8 +2930,8 @@ public final class AppSearchImpl implements Closeable {
                         new QueryStats.Builder(QueryStats.VISIBILITY_SCOPE_LOCAL, packageName)
                                 .setDatabase(databaseName)
                                 .setSearchSourceLogTag(searchSpec.getSearchSourceLogTag())
-                                .setLaunchVMEnabled(mLaunchVMFeatures.isVMEnabled1())
-                                .setLaunchVM2Enabled(mLaunchVMFeatures.isVMEnabled2())
+                                .setLaunchVmEnabled(mLaunchVmFeatures.isVmEnabled())
+                                .setLaunchAiSealEnabled(mLaunchVmFeatures.isAiSealEnabled())
                                 .setLastBlockingOperation(mLastWriteOperationLocked)
                                 .setLastBlockingOperationLatencyMillis(
                                         mLastWriteOperationLatencyMillisLocked)
@@ -3252,8 +3022,8 @@ public final class AppSearchImpl implements Closeable {
                                 QueryStats.VISIBILITY_SCOPE_GLOBAL,
                                 callerAccess.getCallingPackageName())
                                 .setSearchSourceLogTag(searchSpec.getSearchSourceLogTag())
-                                .setLaunchVMEnabled(mLaunchVMFeatures.isVMEnabled1())
-                                .setLaunchVM2Enabled(mLaunchVMFeatures.isVMEnabled2())
+                                .setLaunchVmEnabled(mLaunchVmFeatures.isVmEnabled())
+                                .setLaunchAiSealEnabled(mLaunchVmFeatures.isAiSealEnabled())
                                 .setLastBlockingOperation(mLastWriteOperationLocked)
                                 .setLastBlockingOperationLatencyMillis(
                                         mLastWriteOperationLatencyMillisLocked)
@@ -3353,9 +3123,9 @@ public final class AppSearchImpl implements Closeable {
         // All processes are counted in rewriteSearchSpecLatencyMillis
         long rewriteSearchSpecLatencyStartMillis = SystemClock.elapsedRealtime();
         SearchSpecProto finalSearchSpec = searchSpecToProtoConverter.toSearchSpecProto(
-                mLaunchVMFeatures.isVMEnabled1());
+                mLaunchVmFeatures.isVmEnabled());
         ResultSpecProto finalResultSpec = searchSpecToProtoConverter.toResultSpecProto(
-                mNamespaceCacheLocked, mSchemaCacheLocked, mLaunchVMFeatures.isVMEnabled1());
+                mNamespaceCacheLocked, mSchemaCacheLocked, mLaunchVmFeatures.isVmEnabled());
         ScoringSpecProto scoringSpec = searchSpecToProtoConverter.toScoringSpecProto();
         if (sStatsBuilder != null) {
             sStatsBuilder.setRewriteSearchSpecLatencyMillis((int)
@@ -3368,13 +3138,15 @@ public final class AppSearchImpl implements Closeable {
 
         long rewriteSearchResultLatencyStartMillis = SystemClock.elapsedRealtime();
         // Rewrite search result before we return.
+        Set<String> resultSchemas = new ArraySet<>();
         SearchResultPage searchResultPage = SearchResultToProtoConverter
-                .toSearchResultPage(searchResultProto, mSchemaCacheLocked, mConfig);
+                .toSearchResultPage(searchResultProto, mSchemaCacheLocked, mConfig, resultSchemas);
         if (sStatsBuilder != null) {
             sStatsBuilder.setRewriteSearchResultLatencyMillis(
                     (int) (SystemClock.elapsedRealtime()
                             - rewriteSearchResultLatencyStartMillis))
-                    .addGetVmLatencyMillis(searchResultProto.getGetVmLatencyMs());
+                    .addGetVmLatencyMillis(searchResultProto.getGetVmLatencyMs())
+                    .setResultSchemas(resultSchemas);
         }
         return searchResultPage;
     }
@@ -3408,19 +3180,25 @@ public final class AppSearchImpl implements Closeable {
                     searchResultProto.getQueryStats().getLatencyMs());
         }
 
-        long nextPageToken = searchResultProto.getNextPageToken();
-        if (nextPageToken != SearchResultPage.EMPTY_PAGE_TOKEN
-                && searchResultProto.getResultsCount() > 0
-                && searchResultProto.getResultsCount() < resultSpec.getNumPerPage()) {
-            // Did not get a full page of results in the initial search. Do getNextPage until we
-            // get a full result page or we run out of results.
-            SearchResultProto.Builder finalSearchResultProtoBuilder = SearchResultProto.newBuilder(
-                    searchResultProto);
-            retrieveMoreResultsLocked(nextPageToken, /*remainingResultCount=*/
-                    resultSpec.getNumPerPage() - searchResultProto.getResultsCount(),
-                    finalSearchResultProtoBuilder, queryStatsBuilder,
-                    callStatsBuilder);
-            searchResultProto = finalSearchResultProtoBuilder.build();
+
+        if (!Flags.enableClientSidePagination()) {
+            long nextPageToken = searchResultProto.getNextPageToken();
+            if (nextPageToken != SearchResultPage.EMPTY_PAGE_TOKEN
+                    && searchResultProto.getResultsCount() > 0
+                    && searchResultProto.getResultsCount() < resultSpec.getNumPerPage()) {
+                // Did not get a full page of results in the initial search. Do getNextPage until we
+                // get a full result page or we run out of results.
+                SearchResultProto.Builder finalSearchResultProtoBuilder =
+                        SearchResultProto.newBuilder(searchResultProto);
+                retrieveMoreResultsLocked(
+                        nextPageToken,
+                        /* remainingResultCount= */ resultSpec.getNumPerPage()
+                                - searchResultProto.getResultsCount(),
+                        finalSearchResultProtoBuilder,
+                        queryStatsBuilder,
+                        callStatsBuilder);
+                searchResultProto = finalSearchResultProtoBuilder.build();
+            }
         }
         if (queryStatsBuilder != null) {
             queryStatsBuilder.setStatusCode(statusProtoToResultCode(searchResultProto.getStatus()));
@@ -3655,7 +3433,10 @@ public final class AppSearchImpl implements Closeable {
      * @throws AppSearchException on IcingSearchEngine error or if can't advance on nextPageToken.
      */
     @OptIn(markerClass = ExperimentalAppSearchApi.class)
-    public @NonNull SearchResultPage getNextPage(@NonNull String packageName, long nextPageToken,
+    public @NonNull SearchResultPage getNextPage(
+            @NonNull String packageName,
+            long nextPageToken,
+            int maxResults,
             QueryStats.@Nullable Builder queryStatsBuilder,
             CallStats.@Nullable Builder callStatsBuilder)
             throws AppSearchException {
@@ -3675,8 +3456,8 @@ public final class AppSearchImpl implements Closeable {
                 queryStatsBuilder.setJavaLockAcquisitionLatencyMillis(
                                 (int) (javaLockAcquisitionEndTimeMillis
                                         - totalLatencyStartMillis))
-                        .setLaunchVMEnabled(mLaunchVMFeatures.isVMEnabled1())
-                        .setLaunchVM2Enabled(mLaunchVMFeatures.isVMEnabled2())
+                        .setLaunchVmEnabled(mLaunchVmFeatures.isVmEnabled())
+                        .setLaunchAiSealEnabled(mLaunchVmFeatures.isAiSealEnabled())
                         .setLastBlockingOperation(mLastWriteOperationLocked)
                         .setLastBlockingOperationLatencyMillis(
                                 mLastWriteOperationLatencyMillisLocked);
@@ -3686,7 +3467,16 @@ public final class AppSearchImpl implements Closeable {
             checkNextPageToken(packageName, nextPageToken);
             SearchResultProto searchResultProto;
             if (nextPageToken != SearchResultPage.EMPTY_PAGE_TOKEN) {
-                searchResultProto = mIcingSearchEngineLocked.getNextPage(nextPageToken);
+                if (Flags.enableClientSidePagination()) {
+                    searchResultProto =
+                            mIcingSearchEngineLocked.getNextPage(
+                                    GetNextPageRequestProto.newBuilder()
+                                            .setNextPageToken(nextPageToken)
+                                            .setMaxResultsToRetrieveFromPage(maxResults)
+                                            .build());
+                } else {
+                    searchResultProto = mIcingSearchEngineLocked.getNextPage(nextPageToken);
+                }
             } else {
                 // If it is an empty page token, then avoid sending it to Icing to save a JNI call.
                 searchResultProto = SearchResultProto.newBuilder()
@@ -3704,19 +3494,21 @@ public final class AppSearchImpl implements Closeable {
                     searchResultProto);
             checkSuccess(searchResultProto.getStatus());
 
-            int remainingResultCount = searchResultProto.getQueryStats().getRequestedPageSize()
-                    - searchResultProto.getResultsCount();
-            if (nextPageToken != SearchResultPage.EMPTY_PAGE_TOKEN
-                    && searchResultProto.getResultsCount() > 0
-                    && remainingResultCount > 0) {
-                SearchResultProto.Builder finalSearchResultsBuilder = SearchResultProto.newBuilder(
-                        searchResultProto);
-                // Did not get a full page of results during the initial getNextPage. Do more
-                // getNextPage calls until we get a full result page or we run out of results.
-                retrieveMoreResultsLocked(searchResultProto.getNextPageToken(),
-                        remainingResultCount, finalSearchResultsBuilder, queryStatsBuilder,
-                        callStatsBuilder);
-                searchResultProto = finalSearchResultsBuilder.build();
+            if (!Flags.enableClientSidePagination()) {
+                int remainingResultCount = searchResultProto.getQueryStats().getRequestedPageSize()
+                        - searchResultProto.getResultsCount();
+                if (nextPageToken != SearchResultPage.EMPTY_PAGE_TOKEN
+                        && searchResultProto.getResultsCount() > 0
+                        && remainingResultCount > 0) {
+                    SearchResultProto.Builder finalSearchResultsBuilder =
+                            SearchResultProto.newBuilder(searchResultProto);
+                    // Did not get a full page of results during the initial getNextPage. Do more
+                    // getNextPage calls until we get a full result page or we run out of results.
+                    retrieveMoreResultsLocked(searchResultProto.getNextPageToken(),
+                            remainingResultCount, finalSearchResultsBuilder, queryStatsBuilder,
+                            callStatsBuilder);
+                    searchResultProto = finalSearchResultsBuilder.build();
+                }
             }
             if (queryStatsBuilder != null) {
                 queryStatsBuilder.setStatusCode(statusProtoToResultCode(
@@ -3754,13 +3546,16 @@ public final class AppSearchImpl implements Closeable {
 
             long rewriteSearchResultLatencyStartMillis = SystemClock.elapsedRealtime();
             // Rewrite search result before we return.
+            Set<String> resultSchemas = new ArraySet<>();
             SearchResultPage searchResultPage = SearchResultToProtoConverter
-                    .toSearchResultPage(searchResultProto, mSchemaCacheLocked, mConfig);
+                    .toSearchResultPage(searchResultProto, mSchemaCacheLocked, mConfig,
+                            resultSchemas);
             if (queryStatsBuilder != null) {
                 queryStatsBuilder.setRewriteSearchResultLatencyMillis(
                         (int) (SystemClock.elapsedRealtime()
                                 - rewriteSearchResultLatencyStartMillis))
-                        .addGetVmLatencyMillis(searchResultProto.getGetVmLatencyMs());
+                        .addGetVmLatencyMillis(searchResultProto.getGetVmLatencyMs())
+                        .setResultSchemas(resultSchemas);
             }
             return searchResultPage;
         } finally {
@@ -3853,6 +3648,36 @@ public final class AppSearchImpl implements Closeable {
             // PersistToDisk is needed if any document was purged.
             if (resultProto.getNumExpiredDocuments() > 0
                     || resultProto.getNumPropagatedDeletedDocuments() > 0) {
+                mNeedsPersistToDisk.set(true);
+            }
+
+            return resultProto;
+        } finally {
+            mReadWriteLock.writeLock().unlock();
+        }
+    }
+
+    /**
+     * Triggers the maintenance process for all IVF based embedding search indexes.
+     *
+     * @param options options for maintaining ANN index.
+     * @return a {@link MaintainAnnIndexResultProto} object with success code.
+     * @throws AppSearchException if Icing failed to maintain ANN index.
+     */
+    public @NonNull MaintainAnnIndexResultProto maintainAnnIndex(
+            @NonNull MaintainAnnIndexOptions options)
+            throws AppSearchException {
+        mReadWriteLock.writeLock().lock();
+        try {
+            throwIfClosedLocked();
+
+            MaintainAnnIndexResultProto resultProto =
+                    mIcingSearchEngineLocked.maintainAnnIndex(options);
+            checkSuccess(resultProto.getStatus());
+
+            // PersistToDisk is needed if any iterations were performed, meaning the index
+            // was modified.
+            if (resultProto.getActualIterations() > 0) {
                 mNeedsPersistToDisk.set(true);
             }
 
@@ -3979,8 +3804,8 @@ public final class AppSearchImpl implements Closeable {
             if (removeStatsBuilder != null) {
                 removeStatsBuilder.setStatusCode(statusProtoToResultCode(
                                 deleteResultProto.getStatus()))
-                        .setLaunchVMEnabled(mLaunchVMFeatures.isVMEnabled1())
-                        .setLaunchVM2Enabled(mLaunchVMFeatures.isVMEnabled2())
+                        .setLaunchVmEnabled(mLaunchVmFeatures.isVmEnabled())
+                        .setLaunchAiSealEnabled(mLaunchVmFeatures.isAiSealEnabled())
                         .setJavaLockAcquisitionLatencyMillis(
                                 (int) (javaLockAcquisitionEndTimeMillis - totalLatencyStartMillis))
                         .setLastBlockingOperation(mLastReadOrWriteOperationLocked)
@@ -4093,7 +3918,7 @@ public final class AppSearchImpl implements Closeable {
             }
 
             SearchSpecProto finalSearchSpec = searchSpecToProtoConverter.toSearchSpecProto(
-                    mLaunchVMFeatures.isVMEnabled1());
+                    mLaunchVmFeatures.isVmEnabled());
 
             Set<String> prefixedObservedSchemas = null;
             if (mObserverManager.isPackageObserved(packageName)) {
@@ -4122,8 +3947,8 @@ public final class AppSearchImpl implements Closeable {
             if (removeStatsBuilder != null) {
                 removeStatsBuilder.setTotalLatencyMillis(
                                 (int) (SystemClock.elapsedRealtime() - totalLatencyStartMillis))
-                        .setLaunchVMEnabled(mLaunchVMFeatures.isVMEnabled1())
-                        .setLaunchVM2Enabled(mLaunchVMFeatures.isVMEnabled2());
+                        .setLaunchVmEnabled(mLaunchVmFeatures.isVmEnabled())
+                        .setLaunchAiSealEnabled(mLaunchVmFeatures.isAiSealEnabled());
             }
 
         }
@@ -4259,7 +4084,7 @@ public final class AppSearchImpl implements Closeable {
             }
             StorageInfoProto storageInfoProto = getRawStorageInfoProto(callStatsBuilder);
 
-            if (Flags.enableBlobStore() && !wantedPrefixedBlobNamespaces.isEmpty()) {
+            if (!wantedPrefixedBlobNamespaces.isEmpty()) {
                 getBlobStorageInfoForNamespaces(
                         storageInfoProto, wantedPrefixedBlobNamespaces, storageInfoBuilder);
             }
@@ -4298,40 +4123,19 @@ public final class AppSearchImpl implements Closeable {
 
             StorageInfo.Builder storageInfoBuilder = new StorageInfo.Builder();
             String prefix = createPrefix(packageName, databaseName);
-            if (Flags.enableBlobStore()) {
-                // read blob storage info and set to storageInfoBuilder
-                StorageInfoProto storageInfoProto = getRawStorageInfoProto(callStatsBuilder);
-                getBlobStorageInfoForPrefix(storageInfoProto, prefix, storageInfoBuilder);
-                // read document storage info and set to storageInfoBuilder
-                Set<String> wantedPrefixedDocumentNamespaces =
-                        mNamespaceCacheLocked.getPrefixedDocumentNamespaces(prefix);
-                if (wantedPrefixedDocumentNamespaces == null
-                        || wantedPrefixedDocumentNamespaces.isEmpty()) {
-                    return storageInfoBuilder.build();
-                }
-                getDocumentStorageInfoForNamespaces(storageInfoProto,
-                        wantedPrefixedDocumentNamespaces, storageInfoBuilder);
-            } else {
-                Map<String, Set<String>> packageToDatabases = getPackageToDatabases();
-                Set<String> databases = packageToDatabases.get(packageName);
-                if (databases == null) {
-                    // Package doesn't exist, no storage info to report
-                    return storageInfoBuilder.build();
-                }
-                if (!databases.contains(databaseName)) {
-                    // Database doesn't exist, no storage info to report
-                    return storageInfoBuilder.build();
-                }
-
-                Set<String> wantedPrefixedDocumentNamespaces =
-                        mNamespaceCacheLocked.getPrefixedDocumentNamespaces(prefix);
-                if (wantedPrefixedDocumentNamespaces == null
-                        || wantedPrefixedDocumentNamespaces.isEmpty()) {
-                    return storageInfoBuilder.build();
-                }
-                getDocumentStorageInfoForNamespaces(getRawStorageInfoProto(callStatsBuilder),
-                        wantedPrefixedDocumentNamespaces, storageInfoBuilder);
+            // read blob storage info and set to storageInfoBuilder
+            StorageInfoProto storageInfoProto = getRawStorageInfoProto(callStatsBuilder);
+            getBlobStorageInfoForPrefix(storageInfoProto, prefix, storageInfoBuilder);
+            // read document storage info and set to storageInfoBuilder
+            Set<String> wantedPrefixedDocumentNamespaces =
+                    mNamespaceCacheLocked.getPrefixedDocumentNamespaces(prefix);
+            if (wantedPrefixedDocumentNamespaces == null
+                    || wantedPrefixedDocumentNamespaces.isEmpty()) {
+                return storageInfoBuilder.build();
             }
+            getDocumentStorageInfoForNamespaces(storageInfoProto,
+                    wantedPrefixedDocumentNamespaces, storageInfoBuilder);
+
             return storageInfoBuilder.build();
         } finally {
             logReadOperationLatencyLocked(totalLatencyStartMillis,
@@ -4596,8 +4400,8 @@ public final class AppSearchImpl implements Closeable {
                         .setLastBlockingOperation(mLastReadOrWriteOperationLocked)
                         .setLastBlockingOperationLatencyMillis(
                                 mLastReadOrWriteOperationLatencyMillisLocked)
-                        .setLaunchVMEnabled(mLaunchVMFeatures.isVMEnabled1())
-                        .setLaunchVM2Enabled(mLaunchVMFeatures.isVMEnabled2());
+                        .setLaunchVmEnabled(mLaunchVmFeatures.isVmEnabled())
+                        .setLaunchAiSealEnabled(mLaunchVmFeatures.isAiSealEnabled());
             }
 
             LogUtil.piiTrace(TAG, "persistToDisk, request", persistType);
@@ -4701,48 +4505,46 @@ public final class AppSearchImpl implements Closeable {
 
             // Prune schema proto and delete documents
             boolean successfullyDeletedData = false;
-            if (useDatabaseScopedSchemaOperations()) {
-                Set<String> databasesToDelete = new ArraySet<>();
-                Set<String> allSchemaPrefixes = mSchemaCacheLocked.getAllPrefixes();
-                for (String prefix : allSchemaPrefixes) {
-                    String packageName = getPackageName(prefix);
-                    if (!installedPackages.contains(packageName)) {
-                        databasesToDelete.add(prefix);
-                    }
+            Set<String> databasesToDelete = new ArraySet<>();
+            Set<String> allSchemaPrefixes = mSchemaCacheLocked.getAllPrefixes();
+            for (String prefix : allSchemaPrefixes) {
+                String packageName = getPackageName(prefix);
+                if (!installedPackages.contains(packageName)) {
+                    databasesToDelete.add(prefix);
                 }
+            }
 
-                if (databasesToDelete.size()
-                        < PRUNE_PACKAGE_USING_FULL_SET_SCHEMA_THRESHOLD) {
-                    // Use database-scoped set schema request to prune the schemas and documents
-                    // a single database at a time.
-                    for (String database : databasesToDelete) {
-                        // Apply an empty schema and set force override to true to remove all
-                        // schemas and documents that don't belong to any of the installed packages.
-                        SetSchemaRequestProto emptySetSchemaRequestProto =
-                                SetSchemaRequestProto.newBuilder()
-                                        .setSchema(SchemaProto.newBuilder().build())
-                                        .setDatabase(database)
-                                        .setIgnoreErrorsAndDeleteDocuments(true)
-                                        .build();
-                        LogUtil.piiTrace(
-                                TAG,
-                                "clearPackageData.setSchema for database, request",
-                                emptySetSchemaRequestProto);
-                        SetSchemaResultProto setSchemaResultProto =
-                                mIcingSearchEngineLocked.setSchemaWithRequestProto(
-                                        emptySetSchemaRequestProto);
-                        LogUtil.piiTrace(
-                                TAG,
-                                "clearPackageData.setSchema, response",
-                                setSchemaResultProto.getStatus(),
-                                setSchemaResultProto);
+            if (databasesToDelete.size()
+                    < PRUNE_PACKAGE_USING_FULL_SET_SCHEMA_THRESHOLD) {
+                // Use database-scoped set schema request to prune the schemas and documents
+                // a single database at a time.
+                for (String database : databasesToDelete) {
+                    // Apply an empty schema and set force override to true to remove all
+                    // schemas and documents that don't belong to any of the installed packages.
+                    SetSchemaRequestProto emptySetSchemaRequestProto =
+                            SetSchemaRequestProto.newBuilder()
+                                    .setSchema(SchemaProto.newBuilder().build())
+                                    .setDatabase(database)
+                                    .setIgnoreErrorsAndDeleteDocuments(true)
+                                    .build();
+                    LogUtil.piiTrace(
+                            TAG,
+                            "clearPackageData.setSchema for database, request",
+                            emptySetSchemaRequestProto);
+                    SetSchemaResultProto setSchemaResultProto =
+                            mIcingSearchEngineLocked.setSchemaWithRequestProto(
+                                    emptySetSchemaRequestProto);
+                    LogUtil.piiTrace(
+                            TAG,
+                            "clearPackageData.setSchema, response",
+                            setSchemaResultProto.getStatus(),
+                            setSchemaResultProto);
 
-                        // Determine whether it succeeded.
-                        checkSuccess(setSchemaResultProto.getStatus());
-                        mNeedsPersistToDisk.set(true);
-                    }
-                    successfullyDeletedData = true;
+                    // Determine whether it succeeded.
+                    checkSuccess(setSchemaResultProto.getStatus());
+                    mNeedsPersistToDisk.set(true);
                 }
+                successfullyDeletedData = true;
             }
 
             if (!successfullyDeletedData) {
@@ -4919,56 +4721,6 @@ public final class AppSearchImpl implements Closeable {
     }
 
     /**
-     * Rewrites all types mentioned in the given {@code newSchema}.
-     *
-     * <p> Rewritten types will be added to the {@code existingSchema}.
-     *
-     * @param prefix            The full prefix to prepend to the schema.
-     * @param existingSchema    A schema that may contain existing types from across all prefixes
-     *                          (only if database-scoped schema operations is disabled).
-     *                          Will be mutated to contain the properly rewritten schema
-     *                          types from {@code newSchema}.
-     * @param newSchema         Schema with types to add to the {@code existingSchema}.
-     * @param populateDatabase  Whether to populate the database field in the rewritten schema.
-     * @return a RewrittenSchemaResults that contains all prefixed schema type names in the given
-     * prefix as well as a set of schema types that were deleted.
-     */
-    @VisibleForTesting
-    static RewrittenSchemaResults rewriteSchema(@NonNull String prefix,
-            SchemaProto.@NonNull Builder existingSchema,
-            @NonNull SchemaProto newSchema, boolean populateDatabase) throws AppSearchException {
-        Map<String, SchemaTypeConfigProto> newTypesToProto = getRewrittenPrefixedTypes(prefix,
-                newSchema, populateDatabase);
-
-        // newTypesToProto is modified below, so we need a copy first
-        RewrittenSchemaResults rewrittenSchemaResults = new RewrittenSchemaResults();
-        rewrittenSchemaResults.mRewrittenPrefixedTypes.putAll(newTypesToProto);
-
-        // Combine the existing schema (which may have types from other prefixes if
-        // database-scoped schema operations is disabled) with this prefix's new schema. Modifies
-        // the existingSchemaBuilder.
-        // Check if we need to replace any old schema types with the new ones.
-        for (int i = 0; i < existingSchema.getTypesCount(); i++) {
-            String schemaType = existingSchema.getTypes(i).getSchemaType();
-            SchemaTypeConfigProto newProto = newTypesToProto.remove(schemaType);
-            if (newProto != null) {
-                // Replacement
-                existingSchema.setTypes(i, newProto);
-            } else if (prefix.equals(getPrefix(schemaType))) {
-                // All types existing before but not in newSchema should be removed.
-                existingSchema.removeTypes(i);
-                --i;
-                rewrittenSchemaResults.mDeletedPrefixedTypes.add(schemaType);
-            }
-        }
-        // We've been removing existing types from newTypesToProto, so everything that remains is
-        // new.
-        existingSchema.addAllTypes(newTypesToProto.values());
-
-        return rewrittenSchemaResults;
-    }
-
-    /**
      * Rewrites all types in the given {@code schema}. The rewrite prepends {@code prefix} to the
      * schema types, and also populates the schema's database field accordingly.
      *
@@ -4979,7 +4731,7 @@ public final class AppSearchImpl implements Closeable {
      * protos.
      */
     static Map<String, SchemaTypeConfigProto> getRewrittenPrefixedTypes(@NonNull String prefix,
-            @NonNull SchemaProto newSchema, boolean populateDatabase) {
+            @NonNull SchemaProto newSchema) {
         Map<String, SchemaTypeConfigProto> newTypesToProto = new ArrayMap<>();
         // Rewrite the schema type to include the typePrefix.
         for (int typeIdx = 0; typeIdx < newSchema.getTypesCount(); typeIdx++) {
@@ -4989,9 +4741,7 @@ public final class AppSearchImpl implements Closeable {
             // Rewrite SchemaProto.types.schema_type and populate SchemaProto.types.database
             String newSchemaType = prefix + typeConfigBuilder.getSchemaType();
             typeConfigBuilder.setSchemaType(newSchemaType);
-            if (populateDatabase) {
-                typeConfigBuilder.setDatabase(prefix);
-            }
+            typeConfigBuilder.setDatabase(prefix);
 
             // Rewrite SchemaProto.types.properties.schema_type
             for (int propertyIdx = 0;
@@ -5080,9 +4830,8 @@ public final class AppSearchImpl implements Closeable {
      * Retrieves the SchemaProto from IcingLib for the specified prefix. The returned SchemaProto
      * will only contain types for the matching the schema database prefix.
      *
-     * <p> Requires {@link #useDatabaseScopedSchemaOperations()} to be true.
-     * {@link #getSchemaProtoLocked()} should be used instead when
-     * {@link #useDatabaseScopedSchemaOperations()} is false or when the entire schema is needed.
+     * <p> {@link #getSchemaProtoLocked(CallStats.Builder)} should be used instead when the
+     * entire schema is needed.
      *
      * @param prefix  The full prefix for which to retrieve the schema.
      */
@@ -5358,8 +5107,8 @@ public final class AppSearchImpl implements Closeable {
                         .setLastBlockingOperation(mLastReadOrWriteOperationLocked)
                         .setLastBlockingOperationLatencyMillis(
                                 mLastReadOrWriteOperationLatencyMillisLocked)
-                        .setLaunchVMEnabled(mLaunchVMFeatures.isVMEnabled1())
-                        .setLaunchVM2Enabled(mLaunchVMFeatures.isVMEnabled2())
+                        .setLaunchVmEnabled(mLaunchVmFeatures.isVmEnabled())
+                        .setLaunchAiSealEnabled(mLaunchVmFeatures.isAiSealEnabled())
                         .addGetVmLatencyMillis(optimizeResultProto.getGetVmLatencyMs());
                 AppSearchLoggerHelper.copyNativeStats(optimizeResultProto.getOptimizeStats(),
                         optimizeStatsBuilder);

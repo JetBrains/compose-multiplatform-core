@@ -57,7 +57,7 @@ class MediaPlayerActivity : ComponentActivity() {
                     onClickBackArrow = { this@MediaPlayerActivity.finish() },
                     onClickRecreate = { this@MediaPlayerActivity.recreate() },
                 ) { padding ->
-                    @Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/446706254
+                    @Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/481422057
                     Column(modifier = Modifier.padding(padding)) { VideoPlayerXR() }
                 }
             }

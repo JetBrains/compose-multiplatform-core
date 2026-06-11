@@ -3,8 +3,6 @@ import androidx.room3.RoomDatabase
 import androidx.room3.util.getColumnIndexOrThrow
 import androidx.room3.util.performBlocking
 import androidx.sqlite.SQLiteStatement
-import androidx.sqlite.prepare
-import androidx.sqlite.step
 import javax.`annotation`.processing.Generated
 import kotlin.Int
 import kotlin.Lazy
@@ -24,7 +22,7 @@ internal class MyDao_Impl(
   private val __insertAdapterOfMyEntity: EntityInsertAdapter<MyEntity>
 
   private val __fooConverter: Lazy<FooConverter> = lazy {
-    checkNotNull(__db.getTypeConverter(FooConverter::class))
+    checkNotNull(__db.getColumnTypeConverter(FooConverter::class))
   }
   init {
     this.__db = __db
@@ -72,6 +70,8 @@ internal class MyDao_Impl(
   private fun __fooConverter(): FooConverter = __fooConverter.value
 
   public companion object {
-    public fun getRequiredConverters(): List<KClass<*>> = listOf(FooConverter::class)
+    public fun getRequiredColumnConverters(): List<KClass<*>> = listOf(FooConverter::class)
+
+    public fun getRequiredDaoReturnTypeConverters(): List<KClass<*>> = emptyList()
   }
 }

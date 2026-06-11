@@ -68,7 +68,7 @@ fun callSessionCreate(activity: ComponentActivity, userRequestedInstall: Boolean
     activity.lifecycleScope.launch {
         try {
             // Switch to the IO Dispatcher for the heavy creation call
-            val result = withContext(Dispatchers.IO) { Session.create(activity) }
+            val result = withContext(Dispatchers.IO) { Session.create(context = activity) }
 
             // Handle the result back on the initial Thread
             when (result) {
@@ -156,6 +156,10 @@ fun callSessionCreate(activity: ComponentActivity, userRequestedInstall: Boolean
                 is SessionCreateUnknownError -> {
                     Toast.makeText(activity, result.errorMessage, Toast.LENGTH_LONG)
                 }
+
+                else -> {
+                    Toast.makeText(activity, "Session creation failed.", Toast.LENGTH_LONG)
+                }
             }
         } catch (e: SecurityException) {
             // Session creation failed due to missing permission. Try asking the user for those
@@ -166,7 +170,7 @@ fun callSessionCreate(activity: ComponentActivity, userRequestedInstall: Boolean
     }
 }
 
-private fun generateConfig(): Config = Config()
+private fun generateConfig(): Config = Config.Builder().build()
 
 private fun handleConfiguredSession(session: Session) {}
 

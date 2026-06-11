@@ -28,9 +28,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -45,6 +47,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.lifecycleScope
 import androidx.xr.arcore.Anchor
 import androidx.xr.arcore.AnchorCreateResourcesExhausted
 import androidx.xr.arcore.AnchorCreateSuccess
@@ -68,8 +71,9 @@ import androidx.xr.runtime.Session
 import androidx.xr.runtime.SessionCreateSuccess
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
-import androidx.xr.scenecore.AnchorEntity
+import androidx.xr.scenecore.AnchorSpace
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 /** Represents the different states of the AnchorFollowingSubspaceActivity. */
 sealed interface AppState {
@@ -94,6 +98,7 @@ class AnchorFollowingSubspaceActivity : ComponentActivity() {
     lateinit var session: Session
     var planePoses by mutableStateOf(mutableListOf<Pose>())
     private var appState by mutableStateOf<AppState>(AppState.Initial)
+    private var showErrorDialog by mutableStateOf(false)
 
     companion object {
         private const val TAG = "FollowingSubspaceApp"
@@ -103,25 +108,56 @@ class AnchorFollowingSubspaceActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        setContent {
-            session =
-                remember(this) { (Session.create(activity = this) as SessionCreateSuccess).session }
-            LaunchedEffect(session) {
-                session.configure(Config(planeTracking = PlaneTrackingMode.HORIZONTAL_AND_VERTICAL))
+        lifecycleScope.launch {
+            val sessionResult = Session.create(context = this@AnchorFollowingSubspaceActivity)
+            if (sessionResult is SessionCreateSuccess) {
+                session = sessionResult.session
+                session.configure(
+                    Config.Builder()
+                        .setPlaneTracking(PlaneTrackingMode.HORIZONTAL_AND_VERTICAL)
+                        .build()
+                )
+                setContent { MainApp() }
+            } else {
+                finish()
             }
+        }
+    }
 
-            when (val currentState = appState) {
-                is AppState.Initial -> {
-                    MainPanelContent(currentState) { appState = AppState.Scanning }
-                }
-                is AppState.Scanning -> {
-                    PlaneScanner { pose -> appState = AppState.PoseSelected(pose) }
-                }
-                is AppState.PoseSelected -> {
-                    MainPanelContent(currentState) {}
-                    FollowingSubspaceContent(session, currentState.pose)
-                }
+    @Composable
+    fun MainApp() {
+        when (val currentState = appState) {
+            is AppState.Initial -> {
+                MainPanelContent(currentState) { appState = AppState.Scanning }
             }
+            is AppState.Scanning -> {
+                PlaneScanner { pose -> appState = AppState.PoseSelected(pose) }
+            }
+            is AppState.PoseSelected -> {
+                MainPanelContent(currentState) {}
+                FollowingSubspaceContent(session, currentState.pose)
+            }
+        }
+
+        if (showErrorDialog) {
+            AlertDialog(
+                onDismissRequest = {
+                    showErrorDialog = false
+                    appState = AppState.Initial
+                },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            showErrorDialog = false
+                            appState = AppState.Initial
+                        }
+                    ) {
+                        Text("OK")
+                    }
+                },
+                title = { Text("Anchor Creation Failed") },
+                text = { Text("Failed to create anchor. Returning to main menu.") },
+            )
         }
     }
 
@@ -156,23 +192,13 @@ class AnchorFollowingSubspaceActivity : ComponentActivity() {
 
     @Composable
     fun SingleAnchorButtonWithPoseListener(text: String, position: Pose, onClick: () -> Unit) {
-        var rootAnchor by remember { mutableStateOf<AnchorEntity?>(null) }
-        LaunchedEffect(Unit) {
-            val anchorResult = Anchor.create(session, position)
+        var rootAnchor by remember { mutableStateOf<AnchorSpace?>(null) }
+        DisposableEffect(Unit) {
+            val anchorSpace = createAnchorSpace(session, position)
+            val anchor = anchorSpace?.anchor
+            rootAnchor = anchorSpace
 
-            when (anchorResult) {
-                is AnchorCreateSuccess -> {
-                    rootAnchor = AnchorEntity.create(session, anchor = anchorResult.anchor)
-                }
-
-                is AnchorCreateResourcesExhausted -> {
-                    Log.e(TAG, "Failed to create anchor: anchor resources exhausted.")
-                }
-
-                else -> {
-                    Log.e(TAG, "Failed to create anchor: ${anchorResult::class.simpleName}")
-                }
-            }
+            onDispose { anchor?.detach() }
         }
 
         val currentAnchor = rootAnchor
@@ -213,23 +239,26 @@ class AnchorFollowingSubspaceActivity : ComponentActivity() {
 
     @OptIn(ExperimentalFollowingSubspaceApi::class)
     @Composable
-    @Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/446706254
+    @Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/481422057
     private fun FollowingSubspaceContent(session: Session, anchorPose: Pose) {
-        var rootAnchor by remember { mutableStateOf<AnchorEntity?>(null) }
-        var alternateAnchor by remember { mutableStateOf<AnchorEntity?>(null) }
+        var rootAnchor by remember { mutableStateOf<AnchorSpace?>(null) }
+        var alternateAnchor by remember { mutableStateOf<AnchorSpace?>(null) }
         var showAlternate by remember { mutableStateOf(false) }
         var isAnimating by remember { mutableStateOf(false) }
 
         DisposableEffect(anchorPose) {
-            val localRoot = createAnchorEntity(session, anchorPose)
+            val localRoot = createAnchorSpace(session, anchorPose)
             val alternatePose = Pose(anchorPose.translation + ANIMATION_DELTA, anchorPose.rotation)
-            val localAlternative = createAnchorEntity(session, alternatePose)
+            val localAlternative = createAnchorSpace(session, alternatePose)
             rootAnchor = localRoot
             alternateAnchor = localAlternative
 
+            val rootAnchorObj = localRoot?.anchor
+            val alternativeAnchorObj = localAlternative?.anchor
+
             onDispose {
-                localRoot?.getAnchor()?.detach()
-                localAlternative?.getAnchor()?.detach()
+                rootAnchorObj?.detach()
+                alternativeAnchorObj?.detach()
             }
         }
 
@@ -264,17 +293,19 @@ class AnchorFollowingSubspaceActivity : ComponentActivity() {
         }
     }
 
-    private fun createAnchorEntity(session: Session, anchorPose: Pose): AnchorEntity? {
+    private fun createAnchorSpace(session: Session, anchorPose: Pose): AnchorSpace? {
         when (val anchorResult = Anchor.create(session, anchorPose)) {
             is AnchorCreateSuccess -> {
-                return AnchorEntity.create(session, anchor = anchorResult.anchor)
+                return AnchorSpace.create(session, anchor = anchorResult.anchor)
             }
             is AnchorCreateResourcesExhausted -> {
                 Log.e(TAG, "Failed to create anchor: anchor resources exhausted.")
+                showErrorDialog = true
                 return null
             }
             else -> {
                 Log.e(TAG, "Failed to create anchor: ${anchorResult::class.simpleName}")
+                showErrorDialog = true
                 return null
             }
         }
@@ -286,7 +317,7 @@ class AnchorFollowingSubspaceActivity : ComponentActivity() {
         modifier: SubspaceModifier = SubspaceModifier.Companion,
         content: @Composable () -> Unit,
     ) {
-        @Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/446706254
+        @Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/481422057
         (SpatialPanel(modifier.width(300.dp).height(200.dp)) {
             Box(
                 modifier = Modifier.background(Color.LightGray).fillMaxSize(),

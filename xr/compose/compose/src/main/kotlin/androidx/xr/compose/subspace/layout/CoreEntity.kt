@@ -41,6 +41,7 @@ import androidx.xr.runtime.math.Pose
 import androidx.xr.scenecore.ActivityPanelEntity
 import androidx.xr.scenecore.Component
 import androidx.xr.scenecore.Entity
+import androidx.xr.scenecore.ExperimentalGltfComposeMethod
 import androidx.xr.scenecore.GltfAnimation
 import androidx.xr.scenecore.GltfModelEntity
 import androidx.xr.scenecore.GltfModelNode
@@ -170,14 +171,30 @@ internal sealed class CoreEntity(initialEntity: Entity? = null) : OpaqueEntity {
             entityActionQueue.executeWhenAvailable { it.parent = value?.entity ?: originalParent }
         }
 
+    open var contentDescription: String?
+        get() = entity?.contentDescription.toString().takeIf { it.isNotEmpty() }
+        set(value) {
+            if (contentDescription == value) return
+
+            entityActionQueue.executeWhenAvailable { it.contentDescription = value ?: "" }
+        }
+
     fun updatePoseFromLayout() {
+        // Skip updating the pose from layout coordinate changes if a system-initiated movement/drag
+        // (e.g. via transformingMovable) is actively ongoing to prevent Compose from fighting or
+        // overriding the native drag orientation/position.
+        if (layout?.isSystemMoveOngoing == true) {
+            return
+        }
+
         // Compose XR uses pixels, SceneCore uses meters.
         poseInMeters = layoutPoseInPixels.convertPixelsToMeters(density ?: return)
     }
 
     open fun dispose() {
         entityActionQueue.clear()
-        entityActionQueue.value?.dispose()
+        entityActionQueue.value?.let { it.parent = null }
+        entityActionQueue.value = null
     }
 
     /**
@@ -204,7 +221,7 @@ internal sealed class CoreEntity(initialEntity: Entity? = null) : OpaqueEntity {
     }
 
     fun attachEntity(entity: Entity) {
-        entityActionQueue.value?.dispose()
+        entityActionQueue.value?.parent = null
         entityActionQueue.value = entity
     }
 
@@ -235,7 +252,7 @@ internal class CoreGroupEntity(entity: Entity) : CoreEntity(entity)
  * from SceneCore.
  */
 internal sealed class CoreBasePanelEntity(private val panelEntity: PanelEntity) :
-    CoreEntity(panelEntity), MovableCoreEntity, ResizableCoreEntity, InteractableCoreEntity {
+    CoreEntity(panelEntity), InteractableCoreEntity {
     // Density set from setShape.
     private var shapeDensity: Density? = null
 
@@ -333,7 +350,7 @@ internal class CoreMainPanelEntity(session: Session) :
 internal class CoreSurfaceEntity(
     internal val surfaceEntity: SurfaceEntity,
     private val localDensity: Density,
-) : CoreEntity(surfaceEntity), ResizableCoreEntity, MovableCoreEntity, InteractableCoreEntity {
+) : CoreEntity(surfaceEntity), InteractableCoreEntity {
     private var pendingOnSurfaceDestroyed: ((Surface) -> Unit)? = null
 
     internal var stereoMode: SurfaceEntity.StereoMode
@@ -401,9 +418,9 @@ internal class AdaptableCoreEntity<T : Entity>(
     var sceneCoreEntitySizeAdapter: SceneCoreEntitySizeAdapter<T>? = null,
 ) : CoreEntity(coreEntity) {
     override var size: IntVolumeSize
-        get() = sceneCoreEntitySizeAdapter?.intrinsicSize?.invoke(coreEntity) ?: super.size
+        get() = sceneCoreEntitySizeAdapter?.currentSize(coreEntity) ?: super.size
         set(value) {
-            sceneCoreEntitySizeAdapter?.onLayoutSizeChanged?.let { coreEntity.it(value) }
+            sceneCoreEntitySizeAdapter?.onLayoutSizeChanged(coreEntity, value)
             super.size = value
         }
 }
@@ -535,21 +552,21 @@ internal class CoreModelEntity() : CoreEntity() {
         set(value) {
             onEntity {
                 if (super.size != value) {
-                    val heightScale =
-                        value.height / (intrinsicSize.height.toFloat().coerceAtLeast(1f))
-                    val widthScale = value.width / (intrinsicSize.width.toFloat().coerceAtLeast(1f))
-                    val depthScale = value.depth / (intrinsicSize.depth.toFloat().coerceAtLeast(1f))
+                    val heightScale = value.height / (modelSize.height.toFloat().coerceAtLeast(1f))
+                    val widthScale = value.width / (modelSize.width.toFloat().coerceAtLeast(1f))
+                    val depthScale = value.depth / (modelSize.depth.toFloat().coerceAtLeast(1f))
                     scale = minOf(heightScale, widthScale, depthScale)
                 }
                 super.size = value
             }
         }
 
-    val intrinsicSize: IntVolumeSize
+    val modelSize: IntVolumeSize
         get() =
+            @OptIn(ExperimentalGltfComposeMethod::class)
             density?.let { density ->
                 (entity as? GltfModelEntity)
-                    ?.gltfModelBoundingBox
+                    ?.getGltfModelBoundingBox()
                     ?.halfExtents
                     ?.times(2)
                     ?.toIntVolumeSize(density)
@@ -562,12 +579,6 @@ internal class CoreModelEntity() : CoreEntity() {
         onEntityAttached { entity -> (entity as GltfModelEntity).action() }
     }
 }
-
-/** [CoreEntity] types that implement this interface may have the ResizableComponent attached. */
-internal interface ResizableCoreEntity
-
-/** [CoreEntity] types that implement this interface may have the MovableComponent attached. */
-internal interface MovableCoreEntity
 
 /** [CoreEntity] types that implement this interface may have the InteractableComponent attached. */
 internal interface InteractableCoreEntity

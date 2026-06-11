@@ -15,6 +15,7 @@
  */
 package androidx.compose.remote.player.view
 
+import android.graphics.Bitmap
 import android.graphics.Color
 import android.view.Gravity
 import android.view.ViewGroup.LayoutParams
@@ -23,10 +24,12 @@ import androidx.activity.ComponentActivity
 import androidx.compose.remote.core.RcProfiles
 import androidx.compose.remote.core.operations.layout.managers.BoxLayout
 import androidx.compose.remote.core.operations.layout.managers.CoreText
+import androidx.compose.remote.core.operations.utilities.ImageScaling
 import androidx.compose.remote.creation.modifiers.RecordingModifier
 import androidx.compose.remote.player.core.RemoteDocument
 import androidx.compose.remote.player.core.platform.AndroidRemoteContext
 import androidx.compose.remote.player.view.TestUtils.createDocument
+import androidx.compose.remote.testing.LimitsRule
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.action.ViewActions.captureToBitmap
 import androidx.test.espresso.matcher.ViewMatchers
@@ -36,7 +39,10 @@ import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.screenshot.AndroidXScreenshotTestRule
 import androidx.test.screenshot.assertAgainstGolden
+import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
 import org.hamcrest.Matchers
+import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -53,7 +59,20 @@ class PlayerScreenshotTest {
 
     @get:Rule val screenshotRule = AndroidXScreenshotTestRule(SCREENSHOT_GOLDEN_DIRECTORY)
 
+    @get:Rule val limitsRule = LimitsRule().enableImageUrls(true).enableImageFiles(true)
+
     private lateinit var playerView: RemoteComposePlayer
+
+    private val contentUriBitmapLoader =
+        androidx.compose.remote.player.core.platform.BitmapLoader { requestedUrl ->
+            val uri = android.net.Uri.parse(requestedUrl)
+            if (android.content.ContentResolver.SCHEME_CONTENT == uri.scheme) {
+                playerView.context.contentResolver.openInputStream(uri)
+                    ?: throw java.io.IOException("ContentResolver returned null")
+            } else {
+                java.net.URI.create(requestedUrl).toURL().openStream()
+            }
+        }
 
     @Before
     fun setUp() {
@@ -72,6 +91,11 @@ class PlayerScreenshotTest {
             frameLayout.addView(playerView)
             it.setContentView(frameLayout)
         }
+    }
+
+    @After
+    fun tearDown() {
+        RemoteComposeTestContentProvider.bitmapBytes = null
     }
 
     @Test
@@ -97,6 +121,117 @@ class PlayerScreenshotTest {
         activityScenarioRule.scenario.onActivity { playerView.setDocument(remoteComposeDocument) }
 
         assertScreenshot("circle")
+    }
+
+    @Test
+    fun showUrlBitmapWithCorrectSize() {
+        val androidContext = AndroidRemoteContext()
+        val bitmapWidth = 100
+        val bitmapHeight = 50
+        val bitmap = TestUtils.createImage(bitmapWidth, bitmapHeight, false)
+        val url = "https://example.com/test.png"
+
+        activityScenarioRule.scenario.onActivity {
+            playerView.setBitmapLoader { requestedUrl ->
+                if (requestedUrl == url) {
+                    val os = ByteArrayOutputStream()
+                    bitmap.compress(Bitmap.CompressFormat.PNG, 100, os)
+                    ByteArrayInputStream(os.toByteArray())
+                } else {
+                    throw java.io.IOException("Unknown URL: $requestedUrl")
+                }
+            }
+        }
+
+        val remoteComposeDocument: RemoteDocument =
+            createDocument(androidContext) { rcDoc ->
+                rcDoc.root {
+                    val imageId = rcDoc.writer.addBitmapUrl(url, bitmapWidth, bitmapHeight)
+                    rcDoc.image(
+                        RecordingModifier().fillMaxSize(),
+                        imageId,
+                        ImageScaling.SCALE_FIT,
+                        1f,
+                    )
+                }
+            }
+
+        activityScenarioRule.scenario.onActivity { playerView.setDocument(remoteComposeDocument) }
+
+        assertScreenshot("url_bitmap_correct_size")
+    }
+
+    @Test
+    fun showContentUriBitmap() {
+        val androidContext = AndroidRemoteContext()
+        val bitmapWidth = 100
+        val bitmapHeight = 100
+        val bitmap = TestUtils.createImage(bitmapWidth, bitmapHeight, false)
+        val authority = "androidx.compose.remote.player.view.test.provider"
+        val contentUri = "content://$authority/test.png"
+
+        val os = ByteArrayOutputStream()
+        bitmap.compress(Bitmap.CompressFormat.PNG, 100, os)
+        RemoteComposeTestContentProvider.bitmapBytes = os.toByteArray()
+
+        activityScenarioRule.scenario.onActivity {
+            playerView.setBitmapLoader(contentUriBitmapLoader)
+        }
+
+        val remoteComposeDocument: RemoteDocument =
+            createDocument(androidContext) { rcDoc ->
+                rcDoc.root {
+                    val imageId = rcDoc.writer.addBitmapUrl(contentUri, bitmapWidth, bitmapHeight)
+                    rcDoc.image(
+                        RecordingModifier().fillMaxSize(),
+                        imageId,
+                        ImageScaling.SCALE_FIT,
+                        1f,
+                    )
+                }
+            }
+
+        activityScenarioRule.scenario.onActivity {
+            val preparedDoc = playerView.prepareDocument(remoteComposeDocument)!!
+            playerView.setPreparedDocument(preparedDoc)
+        }
+
+        assertScreenshot("content_uri_bitmap")
+    }
+
+    @Test
+    fun showContentUriBitmapSync() {
+        val androidContext = AndroidRemoteContext()
+        val bitmapWidth = 100
+        val bitmapHeight = 100
+        val bitmap = TestUtils.createImage(bitmapWidth, bitmapHeight, false)
+        val authority = "androidx.compose.remote.player.view.test.provider"
+        val contentUri = "content://$authority/test.png"
+
+        val os = ByteArrayOutputStream()
+        bitmap.compress(Bitmap.CompressFormat.PNG, 100, os)
+        RemoteComposeTestContentProvider.bitmapBytes = os.toByteArray()
+
+        activityScenarioRule.scenario.onActivity {
+            playerView.setBitmapLoader(contentUriBitmapLoader)
+        }
+
+        val remoteComposeDocument: RemoteDocument =
+            createDocument(androidContext) { rcDoc ->
+                rcDoc.root {
+                    val imageId = rcDoc.writer.addBitmapUrl(contentUri, bitmapWidth, bitmapHeight)
+                    rcDoc.image(
+                        RecordingModifier().fillMaxSize(),
+                        imageId,
+                        ImageScaling.SCALE_FIT,
+                        1f,
+                    )
+                }
+            }
+
+        activityScenarioRule.scenario.onActivity { playerView.setDocument(remoteComposeDocument) }
+
+        assertScreenshot("content_uri_bitmap_sync")
     }
 
     @Test

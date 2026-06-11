@@ -24,7 +24,8 @@ import android.graphics.ComposeShader
 import android.graphics.Matrix
 import android.graphics.Paint
 import androidx.ink.brush.BrushPaint
-import androidx.ink.brush.ExperimentalInkCustomBrushApi
+import androidx.ink.brush.BrushPaint.TextureLayer
+import androidx.ink.brush.BrushPaint.TilingTexture
 import androidx.ink.brush.TextureBitmapStore
 import androidx.ink.brush.color.Color as ComposeColor
 import androidx.ink.strokes.StrokeInput
@@ -40,7 +41,6 @@ import kotlin.test.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 
-@OptIn(ExperimentalInkCustomBrushApi::class)
 @RunWith(AndroidJUnit4::class)
 @SmallTest
 class BrushPaintCacheTest {
@@ -117,11 +117,11 @@ class BrushPaintCacheTest {
         val brushPaint =
             BrushPaint(
                 listOf(
-                    BrushPaint.TextureLayer(
+                    TilingTexture(
                         fakeTextureId,
                         sizeX = 30F,
                         sizeY = 40F,
-                        origin = BrushPaint.TextureOrigin.FIRST_STROKE_INPUT,
+                        origin = TilingTexture.Origin.FIRST_STROKE_INPUT,
                     )
                 )
             )
@@ -183,11 +183,11 @@ class BrushPaintCacheTest {
         val brushPaint =
             BrushPaint(
                 listOf(
-                    BrushPaint.TextureLayer(
+                    TilingTexture(
                         fakeTextureId,
                         sizeX = 30F,
                         sizeY = 40F,
-                        origin = BrushPaint.TextureOrigin.FIRST_STROKE_INPUT,
+                        origin = TilingTexture.Origin.FIRST_STROKE_INPUT,
                     )
                 )
             )
@@ -254,11 +254,11 @@ class BrushPaintCacheTest {
         val brushPaint =
             BrushPaint(
                 listOf(
-                    BrushPaint.TextureLayer(
+                    TilingTexture(
                         textureId,
                         sizeX = 2f,
                         sizeY = 3f,
-                        sizeUnit = BrushPaint.TextureSizeUnit.BRUSH_SIZE,
+                        sizeUnit = TextureLayer.SizeUnit.BRUSH_SIZE,
                     )
                 )
             )
@@ -317,8 +317,8 @@ class BrushPaintCacheTest {
         val brushPaint =
             BrushPaint(
                 listOf(
-                    BrushPaint.TextureLayer(fakeTextureId1, sizeX = 30F, sizeY = 40F),
-                    BrushPaint.TextureLayer(fakeTextureId2, sizeX = 30F, sizeY = 40F),
+                    TilingTexture(fakeTextureId1, sizeX = 30F, sizeY = 40F),
+                    TilingTexture(fakeTextureId2, sizeX = 30F, sizeY = 40F),
                 )
             )
 
@@ -351,9 +351,9 @@ class BrushPaintCacheTest {
         val brushPaint =
             BrushPaint(
                 listOf(
-                    BrushPaint.TextureLayer(fakeUnmappedTextureId1, sizeX = 30F, sizeY = 40F),
-                    BrushPaint.TextureLayer(fakeWorkingTextureId, sizeX = 30F, sizeY = 40F),
-                    BrushPaint.TextureLayer(fakeUnmappedTextureId2, sizeX = 30F, sizeY = 40F),
+                    TilingTexture(fakeUnmappedTextureId1, sizeX = 30F, sizeY = 40F),
+                    TilingTexture(fakeWorkingTextureId, sizeX = 30F, sizeY = 40F),
+                    TilingTexture(fakeUnmappedTextureId2, sizeX = 30F, sizeY = 40F),
                 )
             )
 
@@ -379,8 +379,7 @@ class BrushPaintCacheTest {
                 }
             )
         val fakeTextureId = "test-texture-one"
-        val brushPaint =
-            BrushPaint(listOf(BrushPaint.TextureLayer(fakeTextureId, sizeX = 30F, sizeY = 40F)))
+        val brushPaint = BrushPaint(listOf(TilingTexture(fakeTextureId, sizeX = 30F, sizeY = 40F)))
         val brushSize = 5f
 
         val paint =
@@ -414,8 +413,8 @@ class BrushPaintCacheTest {
         val brushPaint =
             BrushPaint(
                 listOf(
-                    BrushPaint.TextureLayer(fakeTextureId1, textureLayerWidth, textureLayerHeight),
-                    BrushPaint.TextureLayer(fakeTextureId2, textureLayerWidth, textureLayerHeight),
+                    TilingTexture(fakeTextureId1, textureLayerWidth, textureLayerHeight),
+                    TilingTexture(fakeTextureId2, textureLayerWidth, textureLayerHeight),
                 )
             )
 
@@ -460,7 +459,7 @@ class BrushPaintCacheTest {
         val brushPaint =
             BrushPaint(
                 // Same size as the Bitmap.
-                listOf(BrushPaint.TextureLayer(fakeTextureId, sizeX = 10F, sizeY = 20F))
+                listOf(TilingTexture(fakeTextureId, sizeX = 10F, sizeY = 20F))
             )
 
         val paint =

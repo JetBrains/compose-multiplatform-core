@@ -18,6 +18,7 @@ package androidx.room3.integration.kotlintestapp.dao
 
 import androidx.lifecycle.LiveData
 import androidx.room3.ColumnInfo
+import androidx.room3.ColumnTypeConverters
 import androidx.room3.Dao
 import androidx.room3.DaoReturnTypeConverters
 import androidx.room3.Delete
@@ -28,7 +29,6 @@ import androidx.room3.Relation
 import androidx.room3.RoomRawQuery
 import androidx.room3.RoomWarnings
 import androidx.room3.Transaction
-import androidx.room3.TypeConverters
 import androidx.room3.Update
 import androidx.room3.Upsert
 import androidx.room3.integration.kotlintestapp.vo.AnswerConverter
@@ -48,6 +48,8 @@ import androidx.room3.integration.kotlintestapp.vo.Publisher
 import androidx.room3.integration.kotlintestapp.vo.PublisherWithBookSales
 import androidx.room3.integration.kotlintestapp.vo.PublisherWithBooks
 import androidx.room3.integration.kotlintestapp.vo.ResultDaoReturnTypeConverter
+import androidx.room3.integration.kotlintestapp.vo.TracedQuery
+import androidx.room3.integration.kotlintestapp.vo.TracingDaoReturnTypeConverter
 import com.google.common.base.Optional
 import com.google.common.collect.ImmutableList
 import com.google.common.collect.ImmutableListMultimap
@@ -65,8 +67,9 @@ import kotlinx.coroutines.flow.Flow
     CustomDaoReturnTypeConverter::class,
     ResultDaoReturnTypeConverter::class,
     EitherDaoReturnTypeConverter::class,
+    TracingDaoReturnTypeConverter::class,
 )
-@TypeConverters(DateConverter::class, AnswerConverter::class)
+@ColumnTypeConverters(DateConverter::class, AnswerConverter::class)
 interface BooksDao {
 
     @Insert fun addPublishers(vararg publishers: Publisher): List<Long>
@@ -325,7 +328,7 @@ interface BooksDao {
     fun updateBookTitle(bookId: String, title: String?)
 
     @Query("SELECT * FROM book WHERE languages & :langs != 0 ORDER BY bookId ASC")
-    @TypeConverters(Lang::class)
+    @ColumnTypeConverters(Lang::class)
     fun findByLanguages(langs: Set<Lang>): List<Book>
 
     // see: b/78199923 just a compilation test to ensure we can generate proper code.
@@ -503,7 +506,7 @@ interface BooksDao {
     data class PublisherRelation(
         val publisherId: String,
         @ColumnInfo(defaultValue = "0") val name: String,
-        @Relation(parentColumn = "publisherId", entityColumn = "publisherId")
+        @Relation(parentColumns = ["publisherId"], entityColumns = ["publisherId"])
         val relationEntity: Publisher,
     )
 
@@ -530,4 +533,15 @@ interface BooksDao {
     suspend fun getPublisherEither(id: String): Either<Throwable, Publisher>
 
     @Insert suspend fun insertPublisherEither(p: Publisher): Either<Throwable, Long>
+
+    @Query("SELECT title, salesCnt FROM Book ORDER BY salesCnt DESC LIMIT 1")
+    fun getBookWithMostSales(): Pair<String, Int>
+
+    @Query("SELECT title, salesCnt FROM Book ORDER BY salesCnt DESC")
+    fun getTopSoldBooks(): List<Pair<String, Int>>
+
+    @Query("SELECT name, publisherId, 'static' FROM Publisher LIMIT 1")
+    fun getPublisherNameAndIdAndStatic(): Triple<String, String, String>
+
+    @Query("SELECT * FROM Book") suspend fun getAllBooksTraced(): TracedQuery<List<Book>>
 }
