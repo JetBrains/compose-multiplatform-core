@@ -23,6 +23,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.test.StandardTestDispatcher
 
 class GlobalSnapshotManagerTest {
@@ -89,8 +90,43 @@ class GlobalSnapshotManagerTest {
 
     @Test
     fun nullHandleForInlineContext() {
-        // EmptyCoroutineContext has no ContinuationInterceptor, so isDispatchNeeded() returns
-        // false and ensureStarted returns a no-op handle.
+        // EmptyCoroutineContext has no ContinuationInterceptor, so ensureStarted returns null.
         assertNull(GlobalSnapshotManager.ensureStarted(kotlin.coroutines.EmptyCoroutineContext))
+    }
+
+    @Test
+    fun distinctContextsOnSameDispatcherShareOnePump() {
+        val dispatcher = StandardTestDispatcher()
+        val scheduler = dispatcher.scheduler
+
+        var applyCount = 0
+        val applyObserver = Snapshot.registerApplyObserver { _, _ -> applyCount++ }
+        val state = mutableStateOf(0)
+
+        try {
+            val handle1 = GlobalSnapshotManager.ensureStarted(dispatcher + CoroutineName("a"))
+            val handle2 = GlobalSnapshotManager.ensureStarted(dispatcher + CoroutineName("b"))
+
+            assertNotNull(handle1)
+            assertNotNull(handle2)
+
+            state.value++
+            scheduler.advanceUntilIdle()
+            val countAfterBothOpen = applyCount
+            assertTrue(countAfterBothOpen > 0, "Expected apply notification after first write")
+
+            // Closing one handle keeps the shared pump alive for the other context.
+            handle1.close()
+            state.value++
+            scheduler.advanceUntilIdle()
+            assertTrue(
+                applyCount > countAfterBothOpen,
+                "Expected the shared pump to stay alive after closing one of two handles"
+            )
+
+            handle2.close()
+        } finally {
+            applyObserver.dispose()
+        }
     }
 }
