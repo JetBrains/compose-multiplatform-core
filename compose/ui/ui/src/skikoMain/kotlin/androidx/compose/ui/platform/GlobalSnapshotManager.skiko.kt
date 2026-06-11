@@ -38,13 +38,13 @@ import kotlinx.coroutines.launch
  * contexts at once (e.g. several [FrameRecomposer]s, or an off-UI [ImageComposeScene]). Apply
  * notifications must therefore be delivered on each owner's dispatcher, not on a single global one.
  *
- * [ensureStarted] registers an owner [CoroutineContext]: it observes global writes and, coalesced per
- * batch, sends [Snapshot.sendApplyNotifications] on that context's dispatcher. Registrations are
- * **shared and reference-counted** per [CoroutineDispatcher] - all callers whose context carries the
- * same dispatcher share a single observer and apply pump, and that registration is released only when
- * the **last** returned [AutoCloseable] is closed. Keying on the dispatcher (rather than the whole
- * context) keeps several owners that run on one dispatcher - e.g. several [FrameRecomposer]s on the UI
- * dispatcher - on a single pump instead of each spinning up its own redundant observer.
+ * [ensureStarted] observes global writes and, coalesced per batch, sends
+ * [Snapshot.sendApplyNotifications] on a given [CoroutineDispatcher]. Registrations are **shared and
+ * reference-counted** per dispatcher - all callers passing the same dispatcher share a single observer
+ * and apply pump, and that registration is released only when the **last** returned [AutoCloseable] is
+ * closed. Keying on the dispatcher keeps several owners that run on one dispatcher - e.g. several
+ * [FrameRecomposer]s on the UI dispatcher - on a single pump instead of each spinning up its own
+ * redundant observer.
  */
 internal object GlobalSnapshotManager {
     private val lock = makeSynchronizedObject()
@@ -54,23 +54,47 @@ internal object GlobalSnapshotManager {
 
     /**
      * Ensures global snapshot writes schedule coalesced [Snapshot.sendApplyNotifications] on the
-     * dispatcher carried by [coroutineContext], starting a shared registration on the first call for
-     * that dispatcher. Close the returned [AutoCloseable] when done; the underlying observer/pump is
-     * released only once every caller for this dispatcher has closed its handle.
+     * [CoroutineDispatcher] carried by [coroutineContext], starting a shared registration on the first
+     * call for that dispatcher. Nothing else from the context is used.
      *
-     * @return `null` if [coroutineContext] has no dispatcher, or its dispatcher is *immediate*
-     * (non-dispatching, e.g. `Dispatchers.Main.immediate` or an inline dispatcher). Registering such
-     * contexts can lead to deadlocks, so they get no pump.
+     * @param coroutineContext the host context whose [CoroutineDispatcher] the apply pump runs on.
+     * @return an [AutoCloseable] that releases this caller's share of the registration on close
+     * (the underlying observer/pump is released only once every caller for that dispatcher has
+     * closed its handle), or `null` if [coroutineContext] carries no dispatcher or an *immediate*
+     * (non-dispatching) one - the cases where no pump is started.
      */
     @OptIn(ExperimentalCoroutinesApi::class)
     fun ensureStarted(coroutineContext: CoroutineContext): AutoCloseable? {
-        // Skip registration when there is no dispatcher, or for inline/immediate dispatchers, which
-        // can lead to deadlocks. Note: isDispatchNeeded is a per-resume, thread-dependent property,
-        // so an immediate dispatcher cannot be soundly classified by this one-time registration check.
         val dispatcher = coroutineContext[ContinuationInterceptor] as? CoroutineDispatcher
+        // isDispatchNeeded is a per-resume, thread-dependent property, so an immediate dispatcher
+        // cannot be soundly classified by this one-time registration check.
         if (dispatcher == null || !dispatcher.isDispatchNeeded(coroutineContext)) {
             return null
         }
+        return register(dispatcher)
+    }
+
+    /**
+     * Ensures global snapshot writes schedule coalesced [Snapshot.sendApplyNotifications] on
+     * [dispatcher], starting a shared registration on the first call for that dispatcher.
+     *
+     * @param dispatcher the dispatcher the apply pump runs on.
+     * @return an [AutoCloseable] that releases this caller's share of the registration on close
+     * (the underlying observer/pump is released only once every caller for that dispatcher has
+     * closed its handle), or `null` for an *immediate* (non-dispatching) [dispatcher] - the cases
+     * where no pump is started.
+     */
+    @OptIn(ExperimentalCoroutinesApi::class)
+    fun ensureStarted(dispatcher: CoroutineDispatcher): AutoCloseable? {
+        // isDispatchNeeded is a per-resume, thread-dependent property, so an immediate dispatcher
+        // cannot be soundly classified by this one-time registration check.
+        if (!dispatcher.isDispatchNeeded(dispatcher)) {
+            return null
+        }
+        return register(dispatcher)
+    }
+
+    private fun register(dispatcher: CoroutineDispatcher): AutoCloseable {
         val registration = synchronized(lock) {
             registrations.getOrPut(dispatcher) { Registration(dispatcher) }
                 .also { it.refCount++ }

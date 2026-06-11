@@ -24,6 +24,7 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlinx.coroutines.CoroutineName
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.test.StandardTestDispatcher
 
 class GlobalSnapshotManagerTest {
@@ -89,9 +90,19 @@ class GlobalSnapshotManagerTest {
     }
 
     @Test
-    fun nullHandleForInlineContext() {
-        // EmptyCoroutineContext has no ContinuationInterceptor, so ensureStarted returns null.
+    fun nullHandleForContextWithoutDispatcher() {
+        // EmptyCoroutineContext has no ContinuationInterceptor, so the context overload returns null.
         assertNull(GlobalSnapshotManager.ensureStarted(kotlin.coroutines.EmptyCoroutineContext))
+    }
+
+    @Test
+    fun nullHandleForContextWithImmediateDispatcher() {
+        assertNull(GlobalSnapshotManager.ensureStarted(Dispatchers.Unconfined + CoroutineName("x")))
+    }
+
+    @Test
+    fun nullHandleForImmediateDispatcher() {
+        assertNull(GlobalSnapshotManager.ensureStarted(Dispatchers.Unconfined))
     }
 
     @Test
