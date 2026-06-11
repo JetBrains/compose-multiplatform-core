@@ -33,6 +33,7 @@ import org.jetbrains.skia.Matrix44
 import org.jetbrains.skia.MipmapMode
 import org.jetbrains.skia.Paint as SkPaint
 import org.jetbrains.skia.SamplingMode
+import org.jetbrains.skia.Surface
 import org.jetbrains.skia.impl.use
 
 @Deprecated(
@@ -46,13 +47,15 @@ internal actual fun ActualCanvas(image: ImageBitmap): Canvas {
     require(!skiaBitmap.isImmutable) {
         "Cannot draw on immutable ImageBitmap"
     }
-    return SkiaBackedCanvas(SkCanvas(skiaBitmap))
+    return SkiaBackedCanvas().apply {
+        internalSkiaCanvas = SkCanvas(skiaBitmap)
+    }
 }
 
 /**
  * Convert the [org.jetbrains.skia.Canvas] instance into a Compose-compatible Canvas
  */
-fun SkCanvas.asComposeCanvas(): Canvas = SkiaBackedCanvas(this)
+fun SkCanvas.asComposeCanvas(): Canvas = SkiaBackedCanvas().apply { internalSkiaCanvas = this@asComposeCanvas }
 
 /**
  * Provides access to the underlying [org.jetbrains.skia.Canvas] instance.
@@ -75,6 +78,26 @@ val Canvas.skiaCanvas: SkCanvas
 val Canvas.nativeCanvas: NativeCanvas
     get() = skiaCanvas
 
+
+// Stub canvas instance used to keep the internal canvas parameter non-null during its
+// scoped usage and prevent unnecessary byte code null checks from being generated
+private val EmptyCanvas = Surface.makeNull(1,1).canvas
+
+/**
+ * Holder class that is used to issue scoped calls to a [Canvas] from the framework equivalent
+ * canvas without having to allocate an object on each draw call
+ */
+class CanvasHolder {
+    @PublishedApi internal val skiaBackedCanvas = SkiaBackedCanvas()
+
+    inline fun drawInto(targetCanvas: SkCanvas, block: Canvas.() -> Unit) {
+        val previousCanvas = skiaBackedCanvas.internalSkiaCanvas
+        skiaBackedCanvas.internalSkiaCanvas = targetCanvas
+        skiaBackedCanvas.block()
+        skiaBackedCanvas.internalSkiaCanvas = previousCanvas
+    }
+}
+
 // This was added for internal usage from old render layers (another submodule),
 // but wasn't properly marked as internal. Keep it as deprecated for some time to be safe.
 @InternalComposeApi
@@ -86,9 +109,12 @@ var Canvas.alphaMultiplier: Float
     get() = (this as SkiaBackedCanvas).alphaMultiplier
     set(value) { (this as SkiaBackedCanvas).alphaMultiplier = value }
 
-internal class SkiaBackedCanvas(
-    internal val internalSkiaCanvas: SkCanvas,
-) : Canvas {
+@PublishedApi
+internal class SkiaBackedCanvas : Canvas {
+
+    // Keep the internal canvas as a var prevent having to allocate an AndroidCanvas
+    // instance on each draw call
+    @PublishedApi internal var internalSkiaCanvas: SkCanvas = EmptyCanvas
     internal var alphaMultiplier: Float = 1.0f
 
     private fun Paint.asSkiaPaintWithAppliedAlphaMultiplier(): SkPaint {

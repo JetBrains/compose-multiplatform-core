@@ -22,7 +22,7 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.LocalSystemTheme
 import androidx.compose.ui.SystemTheme
-import androidx.compose.ui.graphics.asComposeCanvas
+import androidx.compose.ui.graphics.CanvasHolder
 import androidx.compose.ui.navigationevent.UIKitNavigationEventInput
 import androidx.compose.ui.platform.DefaultArchitectureComponentsOwner
 import androidx.compose.ui.platform.FrameRecomposer
@@ -120,6 +120,7 @@ internal class ComposeContainer(
     private val systemThemeState: MutableState<SystemTheme> = mutableStateOf(SystemTheme.Unknown)
 
     private val focusedViewsList = FocusedViewsList()
+    private val canvasHolder = CanvasHolder()
 
     init {
         if (configuration.enforceStrictPlistSanityCheck) {
@@ -205,7 +206,9 @@ internal class ComposeContainer(
             },
             useSeparateRenderThreadWhenPossible = configuration.parallelRendering,
             render = { canvas, nanoTime ->
-                mediator?.render(canvas.asComposeCanvas(), nanoTime)
+                canvasHolder.drawInto(canvas) {
+                    mediator?.render(this, nanoTime)
+                }
             }
         )
         metalView.canBeOpaque = configuration.opaque

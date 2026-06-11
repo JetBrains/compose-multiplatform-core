@@ -31,7 +31,7 @@ import androidx.compose.ui.draganddrop.WebDragAndDropManager
 import androidx.compose.ui.events.EventTargetListener
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.graphics.asComposeCanvas
+import androidx.compose.ui.graphics.CanvasHolder
 import androidx.compose.ui.input.InputMode
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEvent
@@ -92,7 +92,6 @@ import kotlin.math.absoluteValue
 import kotlinx.browser.document
 import kotlinx.browser.window
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.Channel.Factory.CONFLATED
 import kotlinx.coroutines.coroutineScope
@@ -206,6 +205,7 @@ internal class ComposeWindow(
         isWindowFocused = true
     }
 
+    private val canvasHolder: CanvasHolder = CanvasHolder()
     @VisibleForTesting
     internal val archComponentsOwner = DefaultArchitectureComponentsOwner()
 
@@ -340,9 +340,11 @@ internal class ComposeWindow(
         }
 
     private val skiaLayer: SkiaLayer = SkiaLayer().apply {
-        renderDelegate = SkikoRenderDelegate { canvas, _, _, nanoTime ->
-            with(sceneRenderingScope) {
-                scene.render(frameRecomposer, canvas.asComposeCanvas(), nanoTime)
+        renderDelegate = SkikoRenderDelegate { skCanvas, _, _, nanoTime ->
+            canvasHolder.drawInto(skCanvas) {
+                with(sceneRenderingScope) {
+                    scene.render(frameRecomposer, this@drawInto, nanoTime)
+                }
             }
         }
     }

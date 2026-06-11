@@ -17,12 +17,11 @@
 package androidx.compose.ui.scene
 
 import androidx.compose.runtime.withFrameNanos
-import androidx.compose.ui.graphics.asComposeCanvas
+import androidx.compose.ui.graphics.CanvasHolder
 import androidx.compose.ui.platform.PlatformWindowContext
 import androidx.compose.ui.uikit.addLayoutConstraintsToMatch
 import androidx.compose.ui.uikit.embedSubview
 import androidx.compose.ui.unit.DpSize
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.dpSize
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.viewinterop.UIKitInteropTransaction
@@ -88,6 +87,7 @@ internal class ComposeLayersViewController(
         )
     }
 
+    private val canvasHolder = CanvasHolder()
     init {
         coroutineContext.job.invokeOnCompletion {
             dispose()
@@ -308,13 +308,13 @@ internal class ComposeLayersViewController(
     }
 
     private fun render(canvas: Canvas, nanoTime: Long) {
-        val composeCanvas = canvas.asComposeCanvas()
-
-        // Some layers may be removed during rendering, because recomposition will happen in the
-        // process, so we need to make a temporary copy of the list
-        layersCache.withCopy { layers ->
-            layers.fastForEach {
-                it.render(composeCanvas, nanoTime)
+        canvasHolder.drawInto(canvas) {
+            // Some layers may be removed during rendering, because recomposition will happen in the
+            // process, so we need to make a temporary copy of the list
+            layersCache.withCopy { layers ->
+                layers.fastForEach {
+                    it.render(this, nanoTime)
+                }
             }
         }
     }

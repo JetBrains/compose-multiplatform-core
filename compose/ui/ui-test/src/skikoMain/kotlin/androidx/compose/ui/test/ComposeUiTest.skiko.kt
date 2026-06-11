@@ -22,8 +22,8 @@ import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.draganddrop.DragAndDropTransferData
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.CanvasHolder
 import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.asComposeCanvas
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.toComposeImageBitmap
 import androidx.compose.ui.node.RootForTest
@@ -228,6 +228,9 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
     )
 
     private val surface = Surface.makeRasterN32Premul(width, height)
+
+    private val canvasHolder : CanvasHolder = CanvasHolder()
+
     private val size = IntSize(width, height)
 
     @InternalComposeUiApi
@@ -320,7 +323,9 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
         surface.canvas.clear(Color.TRANSPARENT)
         frameRecomposer.performFrame(timeMillis * NanoSecondsPerMilliSecond)
         scene.measureAndLayout()
-        scene.draw(surface.canvas.asComposeCanvas())
+        canvasHolder.drawInto(surface.canvas) {
+            scene.draw(this)
+        }
     }
 
     private fun createScene() {

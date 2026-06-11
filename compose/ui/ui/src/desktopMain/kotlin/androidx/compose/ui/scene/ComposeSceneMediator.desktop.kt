@@ -31,7 +31,8 @@ import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.graphics.asComposeCanvas
+import androidx.compose.ui.graphics.Canvas
+import androidx.compose.ui.graphics.CanvasHolder
 import androidx.compose.ui.input.InputModeManager
 import androidx.compose.ui.input.key.KeyEvent as ComposeKeyEvent
 import androidx.compose.ui.input.key.internal
@@ -182,6 +183,8 @@ internal class ComposeSceneMediator(
     val windowHandle by skiaLayerComponent::windowHandle
     val renderApi by skiaLayerComponent::renderApi
     val semanticsOwners: Collection<SemanticsOwner> by semanticsOwnerManager::semanticsOwners
+    
+    private val canvasHolder: CanvasHolder = CanvasHolder()
 
     /**
      * @see ComposeFeatureFlags.useInteropBlending
@@ -725,13 +728,13 @@ internal class ComposeSceneMediator(
         interopContainer.postponingExecutingScheduledUpdates {
             canvas.withSceneOffset {
                 with(sceneRenderingScope) {
-                    scene.render(frameRecomposer, asComposeCanvas(), nanoTime)
+                    scene.render(frameRecomposer, this@withSceneOffset, nanoTime)
                 }
             }
         }
     }
 
-    private inline fun SkCanvas.withSceneOffset(crossinline block: SkCanvas.() -> Unit) {
+    private inline fun SkCanvas.withSceneOffset(crossinline block: Canvas.() -> Unit) {
         // Offset of scene relative to [container]
         val sceneBoundsOffset = sceneBoundsInPx?.topLeft ?: Offset.Zero
         // Offset of canvas relative to [container]
@@ -742,7 +745,7 @@ internal class ComposeSceneMediator(
         val sceneOffset = sceneBoundsOffset - contentOffset
         save()
         translate(sceneOffset.x, sceneOffset.y)
-        block()
+        canvasHolder.drawInto(this, block)
         restore()
     }
 

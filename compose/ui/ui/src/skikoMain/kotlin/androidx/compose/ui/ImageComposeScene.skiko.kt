@@ -24,7 +24,7 @@ import androidx.compose.runtime.mutableStateSetOf
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.asComposeCanvas
+import androidx.compose.ui.graphics.CanvasHolder
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.pointer.PointerButton
 import androidx.compose.ui.input.pointer.PointerButtons
@@ -161,6 +161,7 @@ class ImageComposeScene @ExperimentalComposeUiApi constructor(
         containerDpSize = imageSize.toSize().toDpSize(density)
     }
 
+    private val canvasHolder = CanvasHolder()
     private val frameRecomposer = FrameRecomposer(coroutineContext)
 
     private val _platformContext = object : PlatformContext by PlatformContext.Empty(),
@@ -288,7 +289,9 @@ class ImageComposeScene @ExperimentalComposeUiApi constructor(
         surface.canvas.clear(Color.TRANSPARENT)
         frameRecomposer.performFrame(nanoTime)
         scene.measureAndLayout()
-        scene.draw(surface.canvas.asComposeCanvas())
+        canvasHolder.drawInto(surface.canvas) {
+            scene.draw(this)
+        }
         return surface.makeImageSnapshot()
     }
 
