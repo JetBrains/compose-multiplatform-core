@@ -156,6 +156,8 @@ private fun List<Color>.toColor4fArray(): Array<Color4f> =
         Color4f(color.red, color.green, color.blue, color.alpha)
     }
 
+private fun List<Float>.toFloatArray(): FloatArray = FloatArray(size) { i -> this[i] }
+
 private fun validateColorStops(colors: List<Color>, colorStops: List<Float>?) {
     if (colorStops == null) {
         if (colors.size < 2) {
