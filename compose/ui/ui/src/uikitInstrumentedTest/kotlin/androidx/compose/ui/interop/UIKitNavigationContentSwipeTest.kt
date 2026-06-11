@@ -39,7 +39,6 @@ import androidx.compose.ui.test.findNodeWithTagOrNull
 import androidx.compose.ui.test.runUIKitInstrumentedTestInHostingView
 import androidx.compose.ui.test.runUIKitInstrumentedTestInHostingViewController
 import androidx.compose.ui.test.utils.up
-import androidx.compose.ui.uikit.embedSubview
 import androidx.compose.ui.unit.dp
 import kotlin.test.Test
 import kotlin.test.assertEquals
