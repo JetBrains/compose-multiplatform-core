@@ -20,6 +20,7 @@ import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.RoundRect
+import org.jetbrains.skia.Matrix33
 import org.jetbrains.skia.Path as SkPath
 import org.jetbrains.skia.PathDirection
 import org.jetbrains.skia.PathBuilder
@@ -88,6 +89,9 @@ internal class SkiaBackedPath(
      * Indicates if [internalSkiaPath] is externally observable.
      */
     internal var isSkiaPathObserved = false
+
+
+    private var mMatrix: Matrix33? = null
 
     private inline fun mutatePath(block: PathBuilder.() -> Unit) {
         synchronizeBuilderIfNeeded()
@@ -372,7 +376,9 @@ internal class SkiaBackedPath(
     }
 
     override fun transform(matrix: Matrix) = mutatePath {
-        transform(identityMatrix33().apply { setFrom(matrix) })
+        if (mMatrix == null) mMatrix = identityMatrix33()
+        mMatrix!!.setFrom(matrix)
+        transform(mMatrix!!)
     }
 
     override fun getBounds(): Rect {
