@@ -153,14 +153,7 @@ internal abstract class UIKitNavigationContentSwipeTest(
         content: @Composable () -> Unit = {}
     ) {
         val firstViewController = UIViewController()
-        val secondViewController =
-            if (useHostingView) {
-                UIViewController().also {
-                    it.view.embedSubview(createHostingView(content = content))
-                }
-            } else {
-                createHostingViewController(content = content)
-            }
+        val secondViewController = createRootViewController(content = content)
         val navigationController = UINavigationController()
 
         navigationController.setViewControllers(
