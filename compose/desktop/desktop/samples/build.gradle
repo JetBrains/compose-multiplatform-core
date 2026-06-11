@@ -186,6 +186,36 @@ tasks.register('runVsyncKdt', JavaExec) {
                     compilation.runtimeDependencyFiles
 }
 
+// Selects the kotlin-desktop-toolkit native library variant(s) for the host OS/arch.
+def kdtArch = {
+    def osArch = System.getProperty("os.arch").toLowerCase(Locale.ROOT)
+    (osArch in ["aarch64", "arm64"]) ? "arm64" : "x64"
+}()
+
+def kdtPlatforms = {
+    def osName = System.getProperty("os.name").toLowerCase(Locale.ROOT)
+    if (osName.contains("mac") || osName.contains("darwin")) {
+        ["macos-${kdtArch}"]
+    } else if (osName.contains("win")) {
+        ["windows-${kdtArch}"]
+    } else {
+        // On Linux the Wayland and GTK backends are picked at runtime, so make
+        // the natives for both available.
+        ["linux-${kdtArch}", "gtk-linux-${kdtArch}"]
+    }
+}()
+
+def kdtLibByPlatform = [
+        "macos-arm64"    : libs.kotlinDesktopToolkitMacOsArm64,
+        "macos-x64"      : libs.kotlinDesktopToolkitMacOsX64,
+        "windows-arm64"  : libs.kotlinDesktopToolkitWindowsArm64,
+        "windows-x64"    : libs.kotlinDesktopToolkitWindowsX64,
+        "linux-arm64"    : libs.kotlinDesktopToolkitLinuxArm64,
+        "linux-x64"      : libs.kotlinDesktopToolkitLinuxX64,
+        "gtk-linux-arm64": libs.kotlinDesktopToolkitGtkLinuxArm64,
+        "gtk-linux-x64"  : libs.kotlinDesktopToolkitGtkLinuxX64,
+]
+
 configurations {
     kdtDownload {
         canBeConsumed = false
@@ -194,25 +224,29 @@ configurations {
 }
 
 dependencies {
-    kdtDownload(libs.kotlinDesktopToolkitMacOsArm64)
+    kdtPlatforms.each { platform ->
+        def lib = kdtLibByPlatform[platform]
+        if (lib == null) {
+            throw new GradleException("No kotlin-desktop-toolkit native library available for platform '${platform}'")
+        }
+        kdtDownload(lib)
+    }
 }
 
 tasks.register('downloadAndUnpackKdt', Sync) {
-    description = "Downloads kotlinDesktopToolkitMacOSArm64 jar and unpacks its contents"
+    description = "Downloads the kotlin-desktop-toolkit native library jar(s) for the host OS/arch and unpacks their contents"
     group = "build"
 
-    def kdtFiles = configurations.kdtDownload
-    def jarProvider = kdtFiles.elements.map { elements ->
-        elements.find { it.asFile.name.contains("kotlin-desktop-toolkit-macos-arm64") }
-    }
+    // Multiple jars (e.g. linux + gtk-linux) may share META-INF entries.
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 
+    def kdtFiles = configurations.kdtDownload
     from {
-        def jar = jarProvider.getOrNull()
-        if (jar != null) {
-            zipTree(jar)
-        } else {
-            throw new GradleException("Could not find kotlinDesktopToolkitMacOSArm64 jar file")
+        def jars = kdtFiles.files
+        if (jars.isEmpty()) {
+            throw new GradleException("Could not resolve any kotlin-desktop-toolkit native library jars for platforms ${kdtPlatforms}")
         }
+        jars.collect { zipTree(it) }
     }
     into(layout.buildDirectory.dir("kdt-extracted"))
 }
