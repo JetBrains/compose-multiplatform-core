@@ -38,7 +38,7 @@ import kotlinx.coroutines.launch
  * contexts at once (e.g. several [FrameRecomposer]s, or an off-UI [ImageComposeScene]). Apply
  * notifications must therefore be delivered on each owner's dispatcher, not on a single global one.
  *
- * [ensureStarted] observes global writes and, coalesced per batch, sends
+ * [register] observes global writes and, coalesced per batch, sends
  * [Snapshot.sendApplyNotifications] on a given [CoroutineDispatcher]. Registrations are **shared and
  * reference-counted** per dispatcher - all callers passing the same dispatcher share a single observer
  * and apply pump, and that registration is released only when the **last** returned [AutoCloseable] is
@@ -64,14 +64,14 @@ internal object GlobalSnapshotManager {
      * (non-dispatching) one - the cases where no pump is started.
      */
     @OptIn(ExperimentalCoroutinesApi::class)
-    fun ensureStarted(coroutineContext: CoroutineContext): AutoCloseable? {
+    fun register(coroutineContext: CoroutineContext): AutoCloseable? {
         val dispatcher = coroutineContext[ContinuationInterceptor] as? CoroutineDispatcher
         // isDispatchNeeded is a per-resume, thread-dependent property, so an immediate dispatcher
         // cannot be soundly classified by this one-time registration check.
         if (dispatcher == null || !dispatcher.isDispatchNeeded(coroutineContext)) {
             return null
         }
-        return register(dispatcher)
+        return registerInternal(dispatcher)
     }
 
     /**
@@ -85,19 +85,25 @@ internal object GlobalSnapshotManager {
      * where no pump is started.
      */
     @OptIn(ExperimentalCoroutinesApi::class)
-    fun ensureStarted(dispatcher: CoroutineDispatcher): AutoCloseable? {
+    fun register(dispatcher: CoroutineDispatcher): AutoCloseable? {
         // isDispatchNeeded is a per-resume, thread-dependent property, so an immediate dispatcher
         // cannot be soundly classified by this one-time registration check.
         if (!dispatcher.isDispatchNeeded(dispatcher)) {
             return null
         }
-        return register(dispatcher)
+        return registerInternal(dispatcher)
     }
 
-    private fun register(dispatcher: CoroutineDispatcher): AutoCloseable {
+    private fun registerInternal(dispatcher: CoroutineDispatcher): AutoCloseable {
         val registration = synchronized(lock) {
             registrations.getOrPut(dispatcher) { Registration(dispatcher) }
                 .also { it.refCount++ }
+            }
+        if (registrations.size > 1) {
+            // There are a couple of problems with it e.g. b/418800424
+            println("GlobalSnapshotManager: concurrent registrations of apply dispatchers " +
+                "might lead to races; prefer a single apply dispatcher."
+            )
         }
         return AutoCloseable { release(registration) }
     }

@@ -58,7 +58,7 @@ class FrameRecomposer(
      * schedule apply notifications onto this host. Several [FrameRecomposer]s built on the same
      * host context share one observer and it's released only when the last of them is closed.
      */
-    private val globalSnapshotRegistration = GlobalSnapshotManager.ensureStarted(coroutineContext)
+    private val globalSnapshotRegistration = GlobalSnapshotManager.register(coroutineContext)
 
     init {
         coroutineScope.launch(

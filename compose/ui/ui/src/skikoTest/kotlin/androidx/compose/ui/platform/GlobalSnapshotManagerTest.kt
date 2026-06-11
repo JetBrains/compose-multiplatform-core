@@ -39,8 +39,8 @@ class GlobalSnapshotManagerTest {
         val state = mutableStateOf(0)
 
         try {
-            val handle1 = GlobalSnapshotManager.ensureStarted(dispatcher)
-            val handle2 = GlobalSnapshotManager.ensureStarted(dispatcher)
+            val handle1 = GlobalSnapshotManager.register(dispatcher)
+            val handle2 = GlobalSnapshotManager.register(dispatcher)
 
             assertNotNull(handle1)
             assertNotNull(handle2)
@@ -79,8 +79,8 @@ class GlobalSnapshotManagerTest {
     fun doubleStartAndCloseDoesNotThrow() {
         val dispatcher = StandardTestDispatcher()
 
-        val handle1 = GlobalSnapshotManager.ensureStarted(dispatcher)
-        val handle2 = GlobalSnapshotManager.ensureStarted(dispatcher)
+        val handle1 = GlobalSnapshotManager.register(dispatcher)
+        val handle2 = GlobalSnapshotManager.register(dispatcher)
 
         assertNotNull(handle1)
         assertNotNull(handle2)
@@ -92,17 +92,17 @@ class GlobalSnapshotManagerTest {
     @Test
     fun nullHandleForContextWithoutDispatcher() {
         // EmptyCoroutineContext has no ContinuationInterceptor, so the context overload returns null.
-        assertNull(GlobalSnapshotManager.ensureStarted(kotlin.coroutines.EmptyCoroutineContext))
+        assertNull(GlobalSnapshotManager.register(kotlin.coroutines.EmptyCoroutineContext))
     }
 
     @Test
     fun nullHandleForContextWithImmediateDispatcher() {
-        assertNull(GlobalSnapshotManager.ensureStarted(Dispatchers.Unconfined + CoroutineName("x")))
+        assertNull(GlobalSnapshotManager.register(Dispatchers.Unconfined + CoroutineName("x")))
     }
 
     @Test
     fun nullHandleForImmediateDispatcher() {
-        assertNull(GlobalSnapshotManager.ensureStarted(Dispatchers.Unconfined))
+        assertNull(GlobalSnapshotManager.register(Dispatchers.Unconfined))
     }
 
     @Test
@@ -115,8 +115,8 @@ class GlobalSnapshotManagerTest {
         val state = mutableStateOf(0)
 
         try {
-            val handle1 = GlobalSnapshotManager.ensureStarted(dispatcher + CoroutineName("a"))
-            val handle2 = GlobalSnapshotManager.ensureStarted(dispatcher + CoroutineName("b"))
+            val handle1 = GlobalSnapshotManager.register(dispatcher + CoroutineName("a"))
+            val handle2 = GlobalSnapshotManager.register(dispatcher + CoroutineName("b"))
 
             assertNotNull(handle1)
             assertNotNull(handle2)
