@@ -16,20 +16,32 @@
 
 package androidx.glance.wear
 
+import android.annotation.SuppressLint
+import android.content.ComponentName
 import android.content.Context
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.content.pm.ResolveInfo
 import android.os.Build
 import android.os.OutcomeReceiver
+import android.util.Log
 import androidx.annotation.DoNotInline
 import androidx.annotation.RequiresApi
 import androidx.annotation.VisibleForTesting
+import androidx.glance.wear.cache.WearWidgetCache
 import androidx.glance.wear.core.ActiveWearWidgetHandle
 import androidx.glance.wear.core.ContainerInfo
+import androidx.glance.wear.core.WearWidgetProviderInfo
 import androidx.glance.wear.core.WidgetInstanceId
+import androidx.glance.wear.util.isRobolectricBuild
+import androidx.wear.utils.WearApiVersionHelper
 import com.google.wear.Sdk
 import com.google.wear.services.tiles.TileInstance
+import com.google.wear.services.tiles.TileProvider
 import com.google.wear.services.tiles.TilesManager
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
+import kotlin.reflect.KClass
 import kotlinx.coroutines.CancellableContinuation
 import kotlinx.coroutines.suspendCancellableCoroutine
 
@@ -39,23 +51,33 @@ import kotlinx.coroutines.suspendCancellableCoroutine
  * This is used to query the wear widgets currently active on the system.
  */
 public class GlanceWearWidgetManager {
-
+    private val context: Context
     /** The [TilesManager] used to query for active tiles/widgets on API 34+. */
     private val tilesManager: Lazy<TilesManager>
     /** The [ActiveWidgetStore] used to query for active widgets on API < 34. */
     private val activeWidgetStore: Lazy<ActiveWidgetStore>
+    private val state: State
 
     /**
      * Creates a new [GlanceWearWidgetManager].
      *
+     * @param context The application context.
      * @param tilesManager The [TilesManager] used to query for active tiles/widgets on API 34+.
      * @param activeWidgetStore The [ActiveWidgetStore] used to query for active widgets on API
      *   < 34.
+     * @param widgetCache The [WearWidgetCache] used to store widget information.
      */
     @VisibleForTesting
-    internal constructor(tilesManager: TilesManager, activeWidgetStore: ActiveWidgetStore) {
+    internal constructor(
+        context: Context,
+        tilesManager: TilesManager,
+        activeWidgetStore: ActiveWidgetStore,
+        widgetCache: WearWidgetCache,
+    ) {
+        this.context = context
         this.tilesManager = lazyOf(tilesManager)
         this.activeWidgetStore = lazyOf(activeWidgetStore)
+        this.state = State(context, widgetCache)
     }
 
     /**
@@ -68,31 +90,25 @@ public class GlanceWearWidgetManager {
      * @param context The application context.
      */
     public constructor(context: Context) {
+        this.context = context
         this.tilesManager =
             lazy(LazyThreadSafetyMode.PUBLICATION) {
                 Sdk.getWearManager(context, TilesManager::class.java)
             }
         this.activeWidgetStore = lazy { ActiveWidgetStore(context) }
+        this.state = State(context, WearWidgetCache(context))
     }
 
     /**
-     * Returns all currently active widgets and tiles associated with the calling package.
+     * Returns all currently active widgets instances associated with the calling package.
      *
-     * A widget or a tile instance is active when it was added by the user to a widget or tile
-     * surface.
-     *
-     * This includes:
-     * * **Tiles** provided via `androidx.wear.tiles.TileService`.
-     * * **Widgets** provided via [GlanceWearWidgetService].
-     *
-     * **Note:** A [ContainerInfo.CONTAINER_TYPE_TILE_COMPAT] result represents either a standard
-     * `TileService` or a [GlanceWearWidgetService] running in compatibility mode.
+     * A widget instance is active when it was added by the user to a widget surface.
      *
      * **Legacy Behavior (Pre-API 34):** On SDKs prior to Android 14 (U), this method uses a
      * best-effort approach to approximate platform behavior and may be incomplete. Results may omit
-     * pre-installed tiles or widgets, tiles or widgets not visited within the last 60 days, or all
-     * tiles or widgets if the user has cleared app data. Conversely, tiles or widgets removed via
-     * an app update may incorrectly persist as "active" for up to 60 days post-removal.
+     * pre-installed widgets, widgets not visited within the last 60 days, or all widgets if the
+     * user has cleared app data. Conversely, widgets removed via an app update may incorrectly
+     * persist as "active" for up to 60 days post-removal.
      */
     public suspend fun fetchActiveWidgets(): List<ActiveWearWidgetHandle> =
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
@@ -100,6 +116,43 @@ public class GlanceWearWidgetManager {
         } else {
             activeWidgetStore.value.getActiveWidgets()
         }
+
+    /**
+     * Returns all currently active widgets instances associated with the specified [widget] class.
+     *
+     * A widget instance is active when it was added by the user to a widget surface.
+     *
+     * **Legacy Behavior (Pre-API 34):** On SDKs prior to Android 14 (U), this method uses a
+     * best-effort approach to approximate platform behavior and may be incomplete. Results may omit
+     * pre-installed widgets, widgets not visited within the last 60 days, or all widgets if the
+     * user has cleared app data. Conversely, widgets removed via an app update may incorrectly
+     * persist as "active" for up to 60 days post-removal.
+     */
+    public suspend fun fetchActiveWidgets(
+        widget: KClass<out GlanceWearWidget>
+    ): List<ActiveWearWidgetHandle> {
+        val serviceToWidgetMapping = state.getServiceToWidgetMapping()
+        return fetchActiveWidgets().filter {
+            serviceToWidgetMapping[it.provider] == widget.qualifiedName
+        }
+    }
+
+    internal suspend fun updateServiceMapping(
+        service: GlanceWearWidgetService,
+        widget: GlanceWearWidget,
+    ) {
+        val serviceComponentName = ComponentName(context, service.javaClass)
+        val widgetName = widget.qualifiedName()
+        state.updateServiceMapping(serviceComponentName.className, widgetName)
+    }
+
+    internal suspend fun getProviderForWidget(
+        widgetClass: KClass<out GlanceWearWidget>
+    ): ComponentName? {
+        val serviceToWidgetMapping = state.getServiceToWidgetMapping()
+        val targetName = widgetClass.qualifiedName()
+        return serviceToWidgetMapping.entries.firstOrNull { it.value == targetName }?.key
+    }
 
     @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     private object Api34Impl {
@@ -124,9 +177,7 @@ public class GlanceWearWidgetManager {
                                     WidgetInstanceId.WIDGET_CAROUSEL_NAMESPACE,
                                     instance.id,
                                 ),
-                            // TODO: b/485487815 - Set container type correctly when Wear 7 SDK will
-                            // be available
-                            containerType = ContainerInfo.CONTAINER_TYPE_TILE_COMPAT,
+                            containerType = provider.getContainerTypeCompat(),
                         )
                     }
                 continuation.resume(widgets)
@@ -137,4 +188,128 @@ public class GlanceWearWidgetManager {
             }
         }
     }
+
+    /**
+     * State for this Manager class, holds mappings between [GlanceWearWidgetService] and
+     * [GlanceWearWidget].
+     */
+    private class State(private val context: Context, private val widgetCache: WearWidgetCache) {
+        suspend fun getServiceToWidgetMapping(): Map<ComponentName, String> {
+            val mapping =
+                widgetCache.getServiceToWidgetMapping().takeIf { it.isNotEmpty() }
+                    ?: recoverServiceToWidgetMapping()
+            return mapping.mapKeys { (serviceName, _) -> ComponentName(context, serviceName) }
+        }
+
+        suspend fun updateServiceMapping(serviceName: String, widgetName: String) {
+            widgetCache.update { putServiceToWidgetMapping(serviceName, widgetName) }
+        }
+
+        /**
+         * Rebuilds the mapping between widget services and their associated widget classes by
+         * querying the package manager for all services that handle the
+         * [WearWidgetProviderInfo.ACTION_BIND_WIDGET_PROVIDER] intent.
+         *
+         * This should be used only after App data is cleared, which deletes all cached data.
+         *
+         * The result is also cached with [WearWidgetCache].
+         */
+        @SuppressLint("ListIterator")
+        private suspend fun recoverServiceToWidgetMapping(): Map<String, String> {
+            val serviceToWidgetMapping =
+                context.packageManager
+                    .queryIntentServices(
+                        Intent(WearWidgetProviderInfo.ACTION_BIND_WIDGET_PROVIDER)
+                            .setPackage(context.packageName),
+                        PackageManager.GET_META_DATA,
+                    )
+                    .mapNotNull { resolveInfo ->
+                        resolveInfo.getWidgetClassNameFromService()?.let { widgetName ->
+                            resolveInfo.serviceInfo.name to widgetName
+                        }
+                    }
+                    .toMap()
+
+            widgetCache.update {
+                serviceToWidgetMapping.forEach { (serviceName, widgetName) ->
+                    putServiceToWidgetMapping(serviceName, widgetName)
+                }
+            }
+
+            return serviceToWidgetMapping
+        }
+
+        private fun ResolveInfo.getWidgetClassNameFromService(): String? {
+            val serviceName = serviceInfo.name
+            val serviceClass =
+                runCatching {
+                        Class.forName(
+                            serviceName,
+                            /* initialize = */ false,
+                            // This needs to be our service loader to ensure that we can load
+                            // classes from the calling provider's package and not use Android's
+                            // service ClassLoader.
+                            GlanceWearWidgetService::class.java.classLoader,
+                        )
+                    }
+                    .getOrNull() ?: return null
+            val association = serviceClass.getAnnotation(AssociateWithGlanceWearWidget::class.java)
+            if (association != null) {
+                return association.value.qualifiedName()
+            }
+            return try {
+                maybeGlanceWearWidgetService(serviceClass)?.widget?.qualifiedName()
+            } catch (e: UninitializedPropertyAccessException) {
+                Log.w(TAG, "Widget property not initialized for service $serviceName", e)
+                null
+            } catch (e: Exception) {
+                Log.w(
+                    TAG,
+                    "Failed to find widget class for service $serviceName via fallback reflection",
+                    e,
+                )
+                null
+            }
+        }
+
+        companion object {
+            private const val TAG = "GlanceWearWidgetManager"
+
+            /**
+             * Returns the [GlanceWearWidgetService] instance for this [ResolveInfo], or null if
+             * it's not a valid widget service or cannot be instantiated.
+             */
+            private fun ResolveInfo.maybeGlanceWearWidgetService(
+                serviceClass: Class<*>
+            ): GlanceWearWidgetService? =
+                runCatching {
+                        serviceClass.getDeclaredConstructor().newInstance()
+                            as? GlanceWearWidgetService
+                    }
+                    .getOrNull()
+        }
+    }
+}
+
+private fun GlanceWearWidgetService.serviceName() = this.javaClass.name
+
+private fun KClass<out GlanceWearWidget>.qualifiedName() = this.qualifiedName ?: this.java.name
+
+private fun GlanceWearWidget.qualifiedName() = this::class.qualifiedName()
+
+@ContainerInfo.ContainerType
+private fun TileProvider.getContainerTypeCompat(): Int {
+    if (
+        isRobolectricBuild() ||
+            WearApiVersionHelper.isApiVersionAtLeast(WearApiVersionHelper.WEAR_CINNAMON_BUN_0)
+    ) {
+        return when (containerType) {
+            TilesManager.WIDGET_CONTAINER_TYPE_LARGE -> ContainerInfo.CONTAINER_TYPE_LARGE
+            TilesManager.WIDGET_CONTAINER_TYPE_SMALL -> ContainerInfo.CONTAINER_TYPE_SMALL
+            TilesManager.WIDGET_CONTAINER_TYPE_FULLSCREEN ->
+                ContainerInfo.CONTAINER_TYPE_TILE_COMPAT
+            else -> throw IllegalArgumentException("Unknown containerType $containerType")
+        }
+    }
+    return ContainerInfo.CONTAINER_TYPE_TILE_COMPAT
 }

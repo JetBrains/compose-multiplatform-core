@@ -26,8 +26,10 @@ import androidx.compose.animation.core.FiniteAnimationSpec
 import androidx.compose.animation.core.exponentialDecay
 import androidx.compose.foundation.MutatePriority
 import androidx.compose.foundation.gestures.FlingBehavior
+import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.ScrollScope
 import androidx.compose.foundation.gestures.ScrollableState
+import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
@@ -40,6 +42,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.Stable
+import androidx.compose.runtime.annotation.FrequentlyChangingValue
+import androidx.compose.runtime.annotation.RememberInComposition
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -102,6 +106,9 @@ import kotlinx.coroutines.launch
  * Example of a simple picker to select one of five options:
  *
  * @sample androidx.wear.compose.material3.samples.SimplePicker
+ *
+ * ![SimplePicker Composite
+ * Image](https://developer.android.com/wear/images/design/WearComposeM3_SimplePicker_CompositeImage.png)
  *
  * Example of a sample picker group with an hour and minute picker (24 hour format):
  *
@@ -191,7 +198,21 @@ public fun Picker(
             )
         }
 
-    Box(modifier = modifier.semantics(mergeDescendants = true) {}) {
+    val touchExplorationServicesEnabled by
+        LocalTouchExplorationStateProvider.current.touchExplorationState()
+
+    Box(
+        modifier =
+            modifier
+                .semantics(mergeDescendants = true) {}
+                .then(
+                    if (touchExplorationServicesEnabled) {
+                        Modifier.scrollableForTouchExploration(state)
+                    } else {
+                        Modifier
+                    }
+                )
+    ) {
         ScalingLazyColumn(
             modifier =
                 Modifier.clearAndSetSemantics {
@@ -326,7 +347,9 @@ public fun rememberPickerState(
  * @param shouldRepeatOptions if true (the default), the options will be repeated.
  */
 @Stable
-public class PickerState(
+public class PickerState
+@RememberInComposition
+constructor(
     @IntRange(from = 1) initialNumberOfOptions: Int,
     @IntRange(from = 0) initiallySelectedIndex: Int = 0,
     @get:Suppress("GetterSetterNames") public val shouldRepeatOptions: Boolean = true,
@@ -355,6 +378,7 @@ public class PickerState(
 
     /** Index of the selected option (i.e. at the center). */
     public val selectedOptionIndex: Int
+        @FrequentlyChangingValue
         get() = (scalingLazyListState.centerItemIndex + optionsOffset) % numberOfOptions
 
     /**
@@ -668,5 +692,21 @@ internal fun pickerTextOption(
             )
         }
     }
+
+/**
+ * Returns a Modifier.scrollable() configured to handle scroll events from accessibility services
+ * like TalkBack, ensuring the picker's fling behavior and snapping is engaged.
+ */
+@Composable
+internal fun Modifier.scrollableForTouchExploration(state: PickerState): Modifier {
+    return this.then(
+        Modifier.scrollable(
+            state = state,
+            orientation = Orientation.Vertical,
+            reverseDirection = true,
+            flingBehavior = pickerFlingBehavior(state),
+        )
+    )
+}
 
 private const val LARGE_NUMBER_OF_ITEMS = 100_000_000

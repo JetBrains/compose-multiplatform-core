@@ -11,7 +11,7 @@ plugins {
 
 dependencies {
     api(libs.jspecify)
-    implementation(project(":core:core"))
+    implementation("androidx.core:core:1.17.0")
     implementation(project(":cursoradapter:cursoradapter"))
     implementation("androidx.localbroadcastmanager:localbroadcastmanager:1.0.0")
     implementation(project(":slidingpanelayout:slidingpanelayout"))
@@ -19,7 +19,7 @@ dependencies {
     implementation(project(":fragment:fragment-ktx"))
     implementation(project(":lifecycle:lifecycle-common"))
     implementation(project(":lifecycle:lifecycle-runtime-ktx"))
-    implementation(project(":media:media"))
+    implementation("androidx.media:media:1.7.1")
     implementation(project(":viewpager:viewpager"))
     implementation(libs.kotlinCoroutinesAndroid)
     implementation(project(":coordinatorlayout:coordinatorlayout"))

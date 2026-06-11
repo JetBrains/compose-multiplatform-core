@@ -25,7 +25,6 @@ import androidx.room3.Query
 import androidx.room3.Room.inMemoryDatabaseBuilder
 import androidx.room3.RoomDatabase
 import androidx.sqlite.driver.AndroidSQLiteDriver
-import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
 import org.junit.After
@@ -40,10 +39,7 @@ class DaoNameConflictTest {
 
     @Before
     fun init() {
-        db =
-            inMemoryDatabaseBuilder<ConflictDatabase>(ApplicationProvider.getApplicationContext())
-                .setDriver(AndroidSQLiteDriver())
-                .build()
+        db = inMemoryDatabaseBuilder<ConflictDatabase>().setDriver(AndroidSQLiteDriver()).build()
     }
 
     @After

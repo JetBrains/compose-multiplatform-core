@@ -39,7 +39,6 @@ import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.FocusState
 import androidx.compose.ui.unit.IntSize
-import androidx.xr.glimmer.stack.StackState.Companion.Saver
 
 /**
  * Creates and remembers a [StackState] for a [VerticalStack].
@@ -252,7 +251,7 @@ public class StackState(@IntRange(from = 0) initialTopItem: Int = 0) : Scrollabl
 
     public companion object {
         /** The default [Saver] implementation for [StackState]. */
-        public val Saver: Saver<StackState, Int> =
+        public val Saver: Saver<StackState, *> =
             Saver(save = { it.topItem }, restore = { StackState(it) })
     }
 }

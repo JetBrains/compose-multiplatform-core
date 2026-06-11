@@ -50,56 +50,6 @@ package androidx.compose.ui
  */
 @ExperimentalComposeUiApi
 object AndroidComposeUiFlags {
-    /**
-     * This flag enables ComposeViewContext to be created automatically and used across ComposeViews
-     * within the same hierarchy. With the flag disabled, ComposeViewContext will only be created
-     * when explicitly provided to a ComposeView.
-     */
-    // TODO: b/479834257
-    @field:Suppress("MutableBareField")
-    @JvmField
-    var isSharedComposeViewContextEnabled: Boolean = true
-
-    /** This moves WindowInfo into the shared ComposeViewContext. */
-    // TODO: b/479837249
-    @field:Suppress("MutableBareField") @JvmField var isSharedWindowInfoEnabled: Boolean = true
-
-    /** This moves AccessibilityManager into the shared ComposeViewContext. */
-    @field:Suppress("MutableBareField")
-    @JvmField
-    // TODO: b/479845566
-    var isSharedAccessibilityManagerEnabled: Boolean = true
-
-    /** This moves DrawScope and CanvasHolder into the shared ComposeViewContext. */
-    // TODO: b/479849019
-    @field:Suppress("MutableBareField") @JvmField var isSharedDrawingEnabled: Boolean = true
-
-    /** This moves ViewConfiguration into the shared ComposeViewContext. */
-    @field:Suppress("MutableBareField")
-    @JvmField
-    // TODO: b/479890645
-    var isSharedViewConfigurationEnabled: Boolean = true
-
-    /** This moves Clipboard-related instances into the shared ComposeViewContext. */
-    @field:Suppress("MutableBareField")
-    @JvmField
-    // TODO: b/479895130
-    var isSharedClipboardManagerEnabled: Boolean = true
-
-    /**
-     * This flag enables support for walking up nested scrolling in response to
-     * android.R.id.accessibilityActionShowOnScreen from Accessibility.
-     *
-     * Enabled is correct nested scrolling behavior and it should be enabled in all apps.
-     */
-    // TODO: b/474650559
-    @field:Suppress("MutableBareField")
-    @JvmField
-    var isAccessibilityShowOnScreenNestedScrollingEnabled: Boolean = true
-
-    /** This moves Haptics-related instances into the shared ComposeViewContext. */
-    // TODO: b/479895628
-    @field:Suppress("MutableBareField") @JvmField var isSharedHapticsEnabled: Boolean = true
 
     /**
      * This flag enables using the View's handler for semantics processing instead of the Main
@@ -110,7 +60,47 @@ object AndroidComposeUiFlags {
     // TODO remove me b/486998514
     var isViewBasedSemanticsHandlerEnabled: Boolean = true
 
-    /** This moves Font-related instances into the shared ComposeViewContext. */
-    // TODO remove me b/479898293
-    @field:Suppress("MutableBareField") @JvmField var isSharedFontEnabled: Boolean = true
+    /** This flag enables the Android Framework implementation of VelocityTracker. */
+    // TODO: b/483449576
+    @field:Suppress("MutableBareField")
+    @JvmField
+    var isFrameworkVelocityTrackerEnabled: Boolean = false
+
+    /**
+     * This flag forces scroll capture to center the content being rendered even if it's already
+     * visible.
+     */
+    // TODO: remove and close b/509934021
+    @field:Suppress("MutableBareField")
+    @JvmField
+    var isAlwaysScrollDuringScrollCaptureEnabled: Boolean = true
+
+    /**
+     * If enabled, interactions (like clicks) will automatically trigger interaction sound effects
+     * on Android.
+     */
+    // TODO: Remove this flag once it has soaked (b/495886959)
+    @field:Suppress("MutableBareField")
+    @JvmField
+    var isInteractionSoundEffectsEnabled: Boolean = true
+
+    /** Enables using out of frame scheduler instead of Choreographer for text input events. */
+    // TODO(b/513525072): Cleanup once proven stable.
+    @field:Suppress("MutableBareField")
+    @JvmField
+    var isOutOfFrameSchedulerForTextInputEventsEnabled: Boolean = true
+
+    /**
+     * Return true for AndroidComposeView.dispatchHoverEvent when handleded by explore by touch.
+     *
+     * This fixes behavior where the event would be bubbled to a container view, causing explore by
+     * touch to flicker focus to Compose buttons.
+     *
+     * After this change compose buttons will correctly report they handled the hover event, and
+     * retain accessibility focus.
+     */
+    @field:Suppress("MutableBareField")
+    @JvmField
+    // TODO(b/507533865) cleanup feature flag after 1.12
+    var isExploreByTouchHoverHandled: Boolean = true
 }

@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,10 +18,10 @@ package androidx.xr.scenecore.spatial.rendering
 
 import android.app.Activity
 import androidx.xr.runtime.math.FloatSize2d
-import androidx.xr.scenecore.impl.impress.FakeImpressApiImpl
-import androidx.xr.scenecore.impl.impress.ImpressApi
 import androidx.xr.scenecore.runtime.SurfaceEntity
-import androidx.xr.scenecore.runtime.extensions.XrExtensionsProvider
+import androidx.xr.scenecore.spatial.rendering.impress.FakeImpressApiImpl
+import androidx.xr.scenecore.spatial.rendering.impress.ImpressApi
+import com.android.extensions.xr.XrExtensions
 import com.google.androidxr.splitengine.SplitEngineSubspaceManager
 import com.google.androidxr.splitengine.SubspaceNode
 import com.google.common.truth.Truth.assertThat
@@ -31,12 +31,12 @@ import org.junit.Before
 import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mockito.ArgumentMatchers.anyBoolean
 import org.mockito.ArgumentMatchers.anyInt
 import org.mockito.ArgumentMatchers.anyString
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
-import org.mockito.kotlin.any
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
@@ -50,7 +50,7 @@ class SurfaceFeatureImplTest {
     //       updated.
     private lateinit var impressApi: ImpressApi
     private val fakeImpressApi = FakeImpressApiImpl()
-    private val xrExtensions = XrExtensionsProvider.getXrExtensions()!!
+    private val xrExtensions = XrExtensions()
     private val splitEngineSubspaceManager = mock(SplitEngineSubspaceManager::class.java)
 
     @Before
@@ -60,7 +60,7 @@ class SurfaceFeatureImplTest {
 
         impressApi = mock(ImpressApi::class.java)
         `when`(impressApi.createImpressNode()).thenReturn(fakeImpressApi.createImpressNode())
-        `when`(impressApi.createStereoSurface(any(), any(), any()))
+        `when`(impressApi.createStereoSurface(anyInt(), anyInt(), anyInt(), anyBoolean()))
             .thenReturn(fakeImpressApi.createImpressNode())
 
         Assert.assertNotNull(xrExtensions)

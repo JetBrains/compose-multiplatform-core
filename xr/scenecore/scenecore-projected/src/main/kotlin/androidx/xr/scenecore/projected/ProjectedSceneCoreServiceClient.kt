@@ -25,19 +25,22 @@ import android.content.pm.PackageManager
 import android.content.pm.ResolveInfo
 import android.os.IBinder
 import android.os.Looper
+import androidx.annotation.RestrictTo
 import androidx.annotation.WorkerThread
-import androidx.xr.runtime.XrLog
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlinx.coroutines.suspendCancellableCoroutine
 
-internal open class ProjectedSceneCoreServiceClient {
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public open class ProjectedSceneCoreServiceClient {
     /** The connected service interface, or null if not connected. */
     public var service: IProjectedSceneCoreService? = null
-        private set
+        protected set
 
     private var mActiveConnection: ServiceConnection? = null
     private var mBoundContext: Context? = null
+    private val mServiceIsBound = AtomicBoolean(false)
 
     /**
      * Binds to the Projected SceneCore service and suspends until the connection is established.
@@ -72,7 +75,6 @@ internal open class ProjectedSceneCoreServiceClient {
             val connection =
                 object : ServiceConnection {
                     override fun onServiceConnected(className: ComponentName, binder: IBinder) {
-                        XrLog.info { "Projected SceneCore Service Connected" }
                         val connectedService = IProjectedSceneCoreService.Stub.asInterface(binder)
                         service = connectedService
 
@@ -82,7 +84,6 @@ internal open class ProjectedSceneCoreServiceClient {
                     }
 
                     override fun onServiceDisconnected(className: ComponentName) {
-                        XrLog.info { "Projected SceneCore Service Disconnected" }
                         service = null
                         // We do not unbind here automatically; the system might attempt to
                         // reconnect. However, if the caller relies on a non-null service, they must
@@ -92,7 +93,6 @@ internal open class ProjectedSceneCoreServiceClient {
                     }
 
                     override fun onBindingDied(name: ComponentName?) {
-                        XrLog.warn { "Binding died for $name" }
                         unbindService()
                         if (continuation.isActive) {
                             continuation.resumeWithException(
@@ -102,7 +102,6 @@ internal open class ProjectedSceneCoreServiceClient {
                     }
 
                     override fun onNullBinding(name: ComponentName?) {
-                        XrLog.warn { "Null binding for $name" }
                         unbindService()
                         if (continuation.isActive) {
                             continuation.resumeWithException(
@@ -127,9 +126,9 @@ internal open class ProjectedSceneCoreServiceClient {
                 val didBind =
                     context.bindService(serviceIntent, connection, Context.BIND_AUTO_CREATE)
                 if (didBind) {
-                    XrLog.info { "bindService request accepted, waiting for connection..." }
                     mActiveConnection = connection
                     mBoundContext = context
+                    mServiceIsBound.set(true)
                 } else {
                     continuation.resumeWithException(
                         IllegalStateException("bindService returned false")
@@ -142,16 +141,20 @@ internal open class ProjectedSceneCoreServiceClient {
     }
 
     /** Unbinds from the service and releases resources. */
+    @Suppress("RestrictedApiAndroidX")
     public open fun unbindService() {
         val connection = mActiveConnection
         val context = mBoundContext
 
         if (connection != null && context != null) {
-            try {
-                context.unbindService(connection)
-            } catch (e: IllegalArgumentException) {
-                // Service likely not registered or already unbound
-                XrLog.warn { "Error unbinding service: ${e.message}" }
+            if (mServiceIsBound.compareAndSet(true, false)) {
+                try {
+                    context.unbindService(connection)
+                } catch (_: IllegalStateException) {
+                    // The atomic mServiceIsBound flag should prevent multiple concurrent calls to
+                    // unbindService, however some Android framework issues could still lead here.
+                    // Catching this exception prevents a crash.
+                }
             }
         }
 

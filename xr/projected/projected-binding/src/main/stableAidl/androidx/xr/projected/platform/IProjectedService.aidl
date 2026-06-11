@@ -16,8 +16,11 @@
 
 package androidx.xr.projected.platform;
 
+import androidx.xr.projected.platform.IBatteryStateListener;
 import androidx.xr.projected.platform.IProjectedDeviceStateListener;
 import androidx.xr.projected.platform.IProjectedInputEventListener;
+import androidx.xr.projected.platform.IProjectedPermissionRequestCallback;
+import androidx.xr.projected.platform.ProjectedPermissionRequestData;
 
 @JavaPassthrough(annotation="@androidx.annotation.RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP)")
 interface IProjectedService {
@@ -28,4 +31,9 @@ interface IProjectedService {
   boolean isDisplayCapable();
   void registerProjectedDeviceStateListener(in IProjectedDeviceStateListener listener);
   void unregisterProjectedDeviceStateListener(in IProjectedDeviceStateListener listener);
+  int[] getAudioDeviceIds();
+  void registerBatteryStateListener(in IBatteryStateListener listener);
+  void unregisterBatteryStateListener(in IBatteryStateListener listener);
+  void launchProjectedPermissionRequest(in ProjectedPermissionRequestData data, in IProjectedPermissionRequestCallback callback);
+  void finishProjectedPermissionRequest();
 }

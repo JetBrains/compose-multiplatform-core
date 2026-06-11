@@ -18,14 +18,11 @@ package androidx.room3.integration.multiplatformtestapp.test
 
 import androidx.room3.Room
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
-import androidx.test.platform.app.InstrumentationRegistry
 
 class InvalidationTest : BaseInvalidationTest() {
 
-    private val instrumentation = InstrumentationRegistry.getInstrumentation()
-
     override fun getRoomDatabase(): SampleDatabase {
-        return Room.inMemoryDatabaseBuilder<SampleDatabase>(context = instrumentation.targetContext)
+        return Room.inMemoryDatabaseBuilder<SampleDatabase>()
             .setDriver(BundledSQLiteDriver())
             .build()
     }

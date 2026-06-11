@@ -19,12 +19,10 @@ package androidx.appfunctions.integration.testapp
 import android.app.PendingIntent
 import android.content.Intent
 import android.net.Uri
-import android.util.Log
 import androidx.appfunction.integration.test.sharedschema.AppFunctionNote
 import androidx.appfunction.integration.test.sharedschema.ClassWithOptionalValues
 import androidx.appfunction.integration.test.sharedschema.CreateNoteAppFunction
 import androidx.appfunction.integration.test.sharedschema.CreateNoteParams
-import androidx.appfunction.integration.test.sharedschema.DateTime
 import androidx.appfunction.integration.test.sharedschema.FilesData
 import androidx.appfunction.integration.test.sharedschema.IntEnumSerializable
 import androidx.appfunction.integration.test.sharedschema.Note
@@ -32,15 +30,16 @@ import androidx.appfunction.integration.test.sharedschema.OneOfSealedInterface
 import androidx.appfunction.integration.test.sharedschema.OneOfSealedNestedSerializable
 import androidx.appfunction.integration.test.sharedschema.OpenableNote
 import androidx.appfunction.integration.test.sharedschema.Owner
+import androidx.appfunction.integration.test.sharedschema.ProxyTypesWrapper
 import androidx.appfunction.integration.test.sharedschema.ResourceFunctionResponse
 import androidx.appfunction.integration.test.sharedschema.UpdateNoteParams
+import androidx.appfunctions.AppFunction
 import androidx.appfunctions.AppFunctionContext
 import androidx.appfunctions.AppFunctionIntValueConstraint
 import androidx.appfunctions.AppFunctionInvalidArgumentException
 import androidx.appfunctions.AppFunctionStringValueConstraint
 import androidx.appfunctions.AppFunctionTextResource
 import androidx.appfunctions.AppFunctionUriGrant
-import androidx.appfunctions.service.AppFunction
 import java.time.LocalDateTime
 import kotlinx.coroutines.delay
 
@@ -57,14 +56,10 @@ class TestFunctions {
     fun add(appFunctionContext: AppFunctionContext, num1: Long, num2: Long) = num1 + num2
 
     @AppFunction
-    fun logLocalDateTime(appFunctionContext: AppFunctionContext, dateTime: DateTime) {
-        Log.d("TestFunctions", "LocalDateTime: ${dateTime.localDateTime}")
-    }
-
-    @AppFunction
-    fun getLocalDate(appFunctionContext: AppFunctionContext): DateTime {
-        return DateTime(localDateTime = LocalDateTime.now())
-    }
+    fun echoProxyTypes(
+        appFunctionContext: AppFunctionContext,
+        value: ProxyTypesWrapper,
+    ): ProxyTypesWrapper = value
 
     @AppFunction
     fun doThrow(appFunctionContext: AppFunctionContext) {

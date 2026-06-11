@@ -35,7 +35,7 @@ public object SpatialApiVersionHelper {
     private val PROVIDERS =
         listOf(
             "androidx.xr.scenecore.spatial.core.SpatialCoreApiVersionProvider",
-            "androidx.xr.runtime.testing.FakeSpatialApiVersionProvider",
+            "androidx.xr.runtime.testing.internal.FakeSpatialApiVersionProvider",
         )
 
     /** Lazily loads all available [SpatialApiVersionProvider]s from the [PROVIDERS] list. */
@@ -53,6 +53,7 @@ public object SpatialApiVersionHelper {
      *   found.
      */
     @JvmStatic
+    @SpatialApiVersion
     public val spatialApiVersion: Int
         get() =
             providers.maxOfOrNull { it.spatialApiVersion }
@@ -70,7 +71,7 @@ public object SpatialApiVersionHelper {
      * @throws IllegalStateException if no [SpatialApiVersionProvider] service implementation is
      *   found.
      */
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY)
     @JvmStatic
     public val previewSpatialApiVersion: Int
         get() =

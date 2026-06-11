@@ -93,6 +93,12 @@ internal constructor(
         val tableName: String
         if (entityAnnotation != null) {
             tableName = extractTableName(element, entityAnnotation)
+            val withoutRowId = entityAnnotation["withoutRowId"]?.asBoolean() ?: false
+            context.checker.check(
+                !withoutRowId,
+                element,
+                ProcessorErrors.FTS_ENTITY_CANNOT_USE_WITHOUT_ROWID,
+            )
             context.checker.check(
                 extractIndices(entityAnnotation, tableName).isEmpty(),
                 element,
@@ -279,6 +285,7 @@ internal constructor(
                         declaredIn = pkProperty.element.enclosingElement,
                         properties = Properties(pkProperty),
                         autoGenerateId = true,
+                        algorithm = androidx.room3.PrimaryKey.Algorithm.AUTOINCREMENT,
                     )
                 }
             } ?: emptyList()
@@ -290,6 +297,7 @@ internal constructor(
                         declaredIn = property.element.enclosingElement,
                         properties = Properties(property),
                         autoGenerateId = true,
+                        algorithm = androidx.room3.PrimaryKey.Algorithm.AUTOINCREMENT,
                     )
                 } else {
                     null

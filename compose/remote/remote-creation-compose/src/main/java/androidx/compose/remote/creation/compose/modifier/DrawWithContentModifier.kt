@@ -17,16 +17,9 @@
 package androidx.compose.remote.creation.compose.modifier
 
 import androidx.annotation.RestrictTo
-import androidx.compose.remote.creation.compose.capture.LocalRemoteComposeCreationState
-import androidx.compose.remote.creation.compose.capture.RecordingCanvas
-import androidx.compose.remote.creation.compose.layout.RemoteCanvas
 import androidx.compose.remote.creation.compose.layout.RemoteContentDrawScope
 import androidx.compose.remote.creation.compose.state.RemoteStateScope
 import androidx.compose.remote.creation.modifiers.RecordingModifier
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.graphics.nativeCanvas
 
 /**
  * Creates a [RemoteModifier] that allows drawing with the component's content.
@@ -42,23 +35,5 @@ internal class DrawWithContentModifier(val onDraw: RemoteContentDrawScope.() -> 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     override fun RemoteStateScope.toRecordingModifierElement(): RecordingModifier.Element {
         return androidx.compose.remote.creation.modifiers.DrawWithContentModifier()
-    }
-
-    @Composable
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    override fun Modifier.toComposeUi(): Modifier {
-        val captureMode = LocalRemoteComposeCreationState.current
-        return this.drawBehind {
-            val drawScope =
-                RemoteContentDrawScope(
-                    remoteCanvas =
-                        RemoteCanvas(
-                            internalCanvas = drawContext.canvas.nativeCanvas as RecordingCanvas
-                        )
-                )
-            captureMode.document.startCanvasOperations()
-            drawScope.onDraw()
-            captureMode.document.endCanvasOperations()
-        }
     }
 }

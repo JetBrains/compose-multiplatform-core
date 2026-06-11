@@ -16,18 +16,58 @@
 
 package androidx.compose.remote.integration.view.demos;
 
+import static androidx.compose.remote.integration.view.demos.ExperimentRecyclerActivity.get;
 import static androidx.compose.remote.integration.view.demos.ExperimentRecyclerActivity.getp;
 import static androidx.compose.remote.integration.view.demos.ExperimentRecyclerActivity.getpc;
 import static androidx.compose.remote.integration.view.demos.examples.RcTickerKt.RcTicker;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.graphics.Bitmap;
 
+import androidx.compose.remote.integration.view.demos.dsl.DslCollapsiblePriorityDemoKt;
+import androidx.compose.remote.integration.view.demos.dsl.DslCustomComponentDemoKt;
+import androidx.compose.remote.integration.view.demos.dsl.DslDataVizActivityRingsKt;
+import androidx.compose.remote.integration.view.demos.dsl.DslDataVizBatteryRadialGaugeKt;
+import androidx.compose.remote.integration.view.demos.dsl.DslDataVizCalendarHeatmapKt;
+import androidx.compose.remote.integration.view.demos.dsl.DslDataVizHeartRateKt;
+import androidx.compose.remote.integration.view.demos.dsl.DslDataVizHydrationWaveKt;
+import androidx.compose.remote.integration.view.demos.dsl.DslDataVizMoonPhaseDialKt;
+import androidx.compose.remote.integration.view.demos.dsl.DslDataVizSleepQualityRingsKt;
+import androidx.compose.remote.integration.view.demos.dsl.DslDataVizStepProgressArcKt;
+import androidx.compose.remote.integration.view.demos.dsl.DslDataVizStockSparklineKt;
+import androidx.compose.remote.integration.view.demos.dsl.DslDataVizWeatherForecastKt;
+import androidx.compose.remote.integration.view.demos.dsl.DslDemoAnchorTextKt;
+import androidx.compose.remote.integration.view.demos.dsl.DslDemoAttributedStringKt;
+import androidx.compose.remote.integration.view.demos.dsl.DslDrawWithContentDemoKt;
+import androidx.compose.remote.integration.view.demos.dsl.DslExampleTimerKt;
+import androidx.compose.remote.integration.view.demos.dsl.DslFontAxisDemoKt;
+import androidx.compose.remote.integration.view.demos.dsl.DslHostileActorKt;
+import androidx.compose.remote.integration.view.demos.dsl.DslLayoutComputeDemoKt;
+import androidx.compose.remote.integration.view.demos.dsl.DslPieChartKt;
+import androidx.compose.remote.integration.view.demos.dsl.DslPlotDemosKt;
+import androidx.compose.remote.integration.view.demos.dsl.DslPressureGaugeKt;
+import androidx.compose.remote.integration.view.demos.dsl.DslRcSimpleSwitchKt;
+import androidx.compose.remote.integration.view.demos.dsl.DslServerSideKt;
+import androidx.compose.remote.integration.view.demos.dsl.DslSmallAnimatedKt;
+import androidx.compose.remote.integration.view.demos.dsl.DslSpreadSheetKt;
+import androidx.compose.remote.integration.view.demos.dsl.DslStopwatchKt;
+import androidx.compose.remote.integration.view.demos.dsl.DslSysVarKt;
+import androidx.compose.remote.integration.view.demos.dsl.DslTextDemoKt;
+import androidx.compose.remote.integration.view.demos.dsl.DslTouchDemoKt;
+import androidx.compose.remote.integration.view.demos.dsl.RcDslClockKt;
+import androidx.compose.remote.integration.view.demos.dsl.RcDslCountdownKt;
+import androidx.compose.remote.integration.view.demos.dsl.RcDslDemoKt;
+import androidx.compose.remote.integration.view.demos.dsl.RcDslEnumsDemoKt;
+import androidx.compose.remote.integration.view.demos.dsl.RcDslTickerKt;
 import androidx.compose.remote.integration.view.demos.examples.BadExamples.DemoMemorySkipKt;
 import androidx.compose.remote.integration.view.demos.examples.BadExamples.MemoryKt;
 import androidx.compose.remote.integration.view.demos.examples.ColorCheckKt;
 import androidx.compose.remote.integration.view.demos.examples.ColorThemeCheckKt;
 import androidx.compose.remote.integration.view.demos.examples.CountdownKt;
 import androidx.compose.remote.integration.view.demos.examples.Cube3DKt;
+import androidx.compose.remote.integration.view.demos.examples.CubeSphereTransitionShader2Kt;
+import androidx.compose.remote.integration.view.demos.examples.CubeSphereTransitionShaderKt;
 import androidx.compose.remote.integration.view.demos.examples.DataVizDemosKt;
 import androidx.compose.remote.integration.view.demos.examples.DemoAnchorText;
 import androidx.compose.remote.integration.view.demos.examples.DemoAttributedString;
@@ -39,7 +79,9 @@ import androidx.compose.remote.integration.view.demos.examples.DemoMetalClockKt;
 import androidx.compose.remote.integration.view.demos.examples.DemoParticlesKt;
 import androidx.compose.remote.integration.view.demos.examples.DemoPaths;
 import androidx.compose.remote.integration.view.demos.examples.DemoTextTransformKt;
+import androidx.compose.remote.integration.view.demos.examples.DemoThemeKt;
 import androidx.compose.remote.integration.view.demos.examples.DemoTouchKt;
+import androidx.compose.remote.integration.view.demos.examples.DemotSystemVarKt;
 import androidx.compose.remote.integration.view.demos.examples.ExampleNumbersKt;
 import androidx.compose.remote.integration.view.demos.examples.ExampleTimerKt;
 import androidx.compose.remote.integration.view.demos.examples.FontCheckKt;
@@ -47,13 +89,19 @@ import androidx.compose.remote.integration.view.demos.examples.HostileActor;
 import androidx.compose.remote.integration.view.demos.examples.LinearRegressionKt;
 import androidx.compose.remote.integration.view.demos.examples.MClockKt;
 import androidx.compose.remote.integration.view.demos.examples.MoonPhasesKt;
+import androidx.compose.remote.integration.view.demos.examples.ParticleDotsKt;
+import androidx.compose.remote.integration.view.demos.examples.ParticleSphereKt;
+import androidx.compose.remote.integration.view.demos.examples.Particles3Kt;
 import androidx.compose.remote.integration.view.demos.examples.PieChartKt;
 import androidx.compose.remote.integration.view.demos.examples.PlotWaveKt;
 import androidx.compose.remote.integration.view.demos.examples.PressureGaugeKt;
 import androidx.compose.remote.integration.view.demos.examples.RCPlayerInfoKt;
 import androidx.compose.remote.integration.view.demos.examples.ServerSideKt;
 import androidx.compose.remote.integration.view.demos.examples.ShaderCalendarKt;
+import androidx.compose.remote.integration.view.demos.examples.SimpleShader2Kt;
+import androidx.compose.remote.integration.view.demos.examples.SimpleShaderKt;
 import androidx.compose.remote.integration.view.demos.examples.SmallAnimated;
+import androidx.compose.remote.integration.view.demos.examples.SphereTimeShaderKt;
 import androidx.compose.remote.integration.view.demos.examples.TextKt;
 import androidx.compose.remote.integration.view.demos.examples.components.DemoBoxKt;
 import androidx.compose.remote.integration.view.demos.examples.components.DemoCollapsibleColumnKt;
@@ -138,29 +186,184 @@ public abstract class DemosCreation {
      * @return a list of RCDoc
      */
     public static @NonNull ArrayList<RCDoc> getDemos(@NonNull Activity activity) {
+        Bitmap bitmap = simpleBitmap(100);
+        boolean dsl = true;
+        if (dsl) {
+            return new ArrayList<>(Arrays.asList(
+                    get("0/000/dslStopwatch", DslStopwatchKt::dslStopwatchDemo),
+
+                    getpc("0/002/CubeSphereTransitionShader",
+                            CubeSphereTransitionShader2Kt::createCubeSphereTransitionShader2),
+                    getpc("0/003/CubeSphereTransitionShader",
+                            CubeSphereTransitionShaderKt::createCubeSphereTransitionShader),
+                    get("0/001/DslCustomComponentDemo",
+                            DslCustomComponentDemoKt::dslCustomComponentDemo),
+                    get("0/004/DslDrawWithContentDemo",
+                            DslDrawWithContentDemoKt::dslDrawWithContentDemo),
+                    get("0/005/DslCollapsiblePriorityDemo",
+                            DslCollapsiblePriorityDemoKt::dslCollapsiblePriorityDemo),
+                    get("0/006/DslLayoutComputeDemo", DslLayoutComputeDemoKt::dslLayoutComputeDemo),
+                    get("0/007/DslFontAxisDemo", DslFontAxisDemoKt::dslFontAxisDemo),
+                    getpc("0/008/SphereTimeShader", SphereTimeShaderKt::sphereTimeShader),
+                    get("0/009/Ticker", RcDslTickerKt::dslTicker),
+                    get("0/010/DslTouchDemo", DslTouchDemoKt::dslTouchDemo),
+                    getpc("0/011/particleSphere", ParticleSphereKt::particleSphere),
+
+                    get("0/02/DataVizActivityRings",
+                            DslDataVizActivityRingsKt::dslDemoActivityRings),
+                    get("0/03/DataVizBatteryRadialGauge",
+                            DslDataVizBatteryRadialGaugeKt::dslDemoBatteryRadialGauge),
+                    getp("0/03/DataVizBatteryRadialGauge_og",
+                            DataVizDemosKt::demoBatteryRadialGauge),
+
+                    get("0/04/DataVizCalendarHeatmap",
+                            DslDataVizCalendarHeatmapKt::dslDemoCalendarHeatmap),
+                    getp("0/04/DataVizCalendarHeatmap_og", DataVizDemosKt::demoCalendarHeatmapGrid),
+
+                    get("0/05/DataVizHeartRate", DslDataVizHeartRateKt::dslDemoHeartRateTimeline),
+                    get("0/06/DataVizHydrationWave",
+                            DslDataVizHydrationWaveKt::dslDemoHydrationWave),
+                    get("0/07/DataVizMoonPhaseDial",
+                            DslDataVizMoonPhaseDialKt::dslDemoMoonPhaseDial),
+                    get("0/08/DataVizSleepQualityRings",
+                            DslDataVizSleepQualityRingsKt::dslDemoSleepQualityRings),
+                    get("0/09/DataVizStepProgressArc",
+                            DslDataVizStepProgressArcKt::dslDemoStepProgressArc),
+                    get("0/10/DataVizStockSparkline",
+                            DslDataVizStockSparklineKt::dslDemoStockSparkline),
+                    get("0/11/DataVizWeatherForecast",
+                            DslDataVizWeatherForecastKt::dslDemoWeatherForecast),
+                    get("0/12/DemoAnchorText", DslDemoAnchorTextKt::demoAnchorText),
+                    get("0/13/DemoAttributedString",
+                            DslDemoAttributedStringKt::demoAttributedString),
+                    getp("0/15/DemoGraphs_og", DemoGraphsKt::demoGraphs),
+                    getp("0/16/DemoGraphs2_og", DemoGraphsKt::demoGraphs2),
+//                    get("0/17/SimpleJavaAnim", DslDemoTouchKt::dslSimpleJavaAnim),
+                    getp("0/17/simpleJavaAnim_og", DemoTouchKt::simpleJavaAnim),
+//
+//                    get("0/18/DemoTouch1", DslDemoTouchKt::dslDemoTouch1),
+//                    get("0/19/DemoTouch2", DslDemoTouchKt::dslDemoTouch2),
+//                    get("0/20/TouchStopGently", DslDemoTouchKt::dslTouchStopGently),
+//                    get("0/21/TouchStopEnds", DslDemoTouchKt::dslTouchStopEnds),
+//                    get("0/22/TouchStopInstantly", DslDemoTouchKt::dslTouchStopInstantly),
+//                    get("0/23/TouchStopNotchesEven", DslDemoTouchKt::dslTouchStopNotchesEven),
+//                    get("0/24/TouchStopNotchesPercents",
+//                    DslDemoTouchKt::dslTouchStopNotchesPercents),
+//                    get("0/25/TouchStopNotchesAbsolute",
+//                    DslDemoTouchKt::dslTouchStopNotchesAbsolute),
+//                    get("0/26/TouchStopAbsolutePos", DslDemoTouchKt::dslTouchStopAbsolutePos),
+                    get("0/27/BasicTimer", DslExampleTimerKt::dslBasicTimer),
+                    getpc("0/28/LinearRegression3", LinearRegressionKt::demoLinearRegression),
+
+                    get("0/29/PieChart", DslPieChartKt::dslPieChart),
+                    getpc("0/29/PieChart_og", PieChartKt::demoPieChart),
+
+                    get("0/30/Plot3", DslPlotDemosKt::dslPlot3),
+                    get("0/31/Plot4", DslPlotDemosKt::dslPlot4),
+                    get("0/32/PressureGauge", DslPressureGaugeKt::dslDemoPressureGauge),
+
+//                    get("0/0/RcScrollview", DslRcScrollviewKt::dslRcScrollview),
+                    get("0/37/RcSimpleSwitch", DslRcSimpleSwitchKt::dslRcSimpleSwitchDemo),
+                    get("0/38/ServerClock", DslServerSideKt::dslServerClock),
+//                    getpc("0/0/SimpleShader2", () -> DslSimpleShader2Kt.dslSimpleShader2(bitmap)),
+//                    get("0/0/SlantedButton", DslSlantedButtonKt::dslSlantedButtonDemo),
+                    get("0/40/SmallAnimated", DslSmallAnimatedKt::smallAnimated),
+                    get("0/41/SpreadSheet", DslSpreadSheetKt::dslSpreadSheet),
+                    getp("0/41/SpreadSheet_og", ExampleNumbersKt::spreadSheet),
+
+                    get("0/42/SysVar", DslSysVarKt::dslSysVar),
+                    getp("0/42/SysVar_og", DemotSystemVarKt::sysVar),
+
+                    get("0/43/RcTextDemo", DslTextDemoKt::dslRcTextDemo),
+                    getpc("0/43/RcTextDemo_og", TextKt::RcTextDemo),
+
+                    get("0/44/Clock", RcDslClockKt::dslClock),
+                    get("0/45/Countdown", RcDslCountdownKt::dslCountdown),
+                    get("0/46/Demo", RcDslDemoKt::dslDemo),
+                    get("0/47/Theme1", RcDslDemoKt::dslTheme1),
+                    get("0/48/Theme2", RcDslDemoKt::dslTheme2),
+                    get("0/49/SimpleDemo", RcDslDemoKt::dslSimpleDemo),
+                    get("0/50/SimpleClock", RcDslDemoKt::dslSimpleClock),
+                    get("0/51/EnumsDemo", RcDslEnumsDemoKt::enumsDemo),
+                    get("0/53/Ticker", RcDslTickerKt::dslTicker),
+                    get("0/54/DslTouchDemo", DslTouchDemoKt::dslTouchDemo),
+                    get("0/55/DslFontAxisDemo", DslFontAxisDemoKt::dslFontAxisDemo)
+            ));
+        }
 
         return new ArrayList<>(Arrays.asList(
-                getp("0/0/skip", DemoMemorySkipKt::skip1),
+                get("0/00/dslAttributeString", DslDemoAttributedStringKt::demoAttributedString),
+                getp("0/01/AttributeString", DemoAttributedString::demo),
+                get("0/02/demoAnchorText", DslDemoAnchorTextKt::demoAnchorText),
+                get("0/03/demoImageColor", DslHostileActorKt::demoImageColor),
+                get("0/04/demoImage", DslHostileActorKt::demoImage),
+                get("0/05/smallAnimated", DslSmallAnimatedKt::smallAnimated),
+
+                get("0/08/00dslCountdown1", RcDslCountdownKt::dslCountdown),
+                getpc("0/09/00dslCountdown2", CountdownKt::countDown),
+                get("0/10/00dslTheme1", RcDslDemoKt::dslTheme1),
+                get("0/11/00dslTheme2", RcDslDemoKt::dslTheme2),
+                get("0/12/dslSimpleClock", RcDslDemoKt::dslSimpleClock),
+                get("0/13/dslSimpleDemo", RcDslDemoKt::dslSimpleDemo),
+
+                //get("0/0/00dslCalenda", RcDslCalendarDemoKt::dslCalendarDayAgenda),
+                //get("0/0/00dslDemoGraphs2", DslDemoGraphsKt::dslDemoGraphs2),
+                // get("0/0/00dslDemoGraphs", DslDemoGraphsKt::dslDemoGraphs),
+                // get("0/0/00dslLinearRegression", DslLinearRegressionKt::dslLinearRegression),
+                get("1/1/00enumsDemo", RcDslEnumsDemoKt::enumsDemo),
+                get("1/1/01dslClock", RcDslClockKt::dslClock),
+                get("1/1/02dslDemo", RcDslDemoKt::dslDemo),
+                get("1/1/03dslTickerPreview", RcDslTickerKt::dslTicker),
+
+                get("1/1/dslTheme1", RcDslDemoKt::dslTheme1),
+                get("1/1/dslTheme2", RcDslDemoKt::dslTheme2),
+                getp("1/1/04DemotSystemVarKt", DemotSystemVarKt::sysVar),
+                getp("1/1/skip", DemoMemorySkipKt::skip1),
+                getp("8/1/DemoTheme", DemoThemeKt::theme1),
+                getpc("1/1/0Shade1", SimpleShaderKt::createShaderDoc1),
+                getpc("1/1/0Shade2", () -> SimpleShaderKt.createShaderDoc2(bitmap)),
+                getpc("1/1/0Shade3", () -> SimpleShader2Kt.createShaderDoc3(bitmap)),
+                getpc("1/1/0Shade4", () -> SimpleShader2Kt.createShaderDoc4(bitmap)),
+                getp("1/1/colorCheck1", ColorCheckKt::colorCheck1),
+                getp("1/1/colorCheck2", ColorCheckKt::colorCheck2),
+                getp("1/1/colorCheck3", ColorCheckKt::colorCheck3),
+                getp("1/1/colorCheck4", ColorCheckKt::colorCheck4),
+                getp("1/1/colorTable", ColorCheckKt::colorTable),
+//                getp("0/0/FooDemo", FooDemoKt::FooDemo),
+//                getp("8/0/DemoPaging1", DemoPagingKt::paging1),
+                getp("8/particles/ball", DemoParticlesKt::ball),
+                getp("8/particles/confettiDemo", ImpulseDemo::confettiDemo),
+                getp("8/particles/heartsDemo", ImpulseDemo::heartsDemo),
+                getp("8/particles/maze", DemoParticlesKt::maze),
+                getp("8/particles/maze", DemoParticlesKt::pmaze),
+                getp("8/particles/maze1", DemoParticlesKt::pmaze1),
+                getpc("8/particles/ParticleDots", ParticleDotsKt::particleDots),
+                getpc("8/particles/ParticleDots2", ParticleDotsKt::particleDots2),
+                getpc("8/particles/fireworks", Particles3Kt::fireworks),
+                getpc("8/particles/fireworks2", Particles3Kt::fireworks2),
+                getpc("8/particles/particleSphere", ParticleSphereKt::particleSphere),
+                getpc("8/particles/rain1", Particles3Kt::rain1),
+                getpc("8/particles/warp", Particles3Kt::warp),
+                getp("8/particles/maze2", DemoParticlesKt::pmaze2),
+
                 getp("0/4/BitmapFontWatch", () -> BitmapFontWatch.watch1(activity)),
                 getp("0/4/Procedure__Version", BasicProceduralDemos::version),
-                getp("0/4/Procedure__centerText1", BasicProceduralDemos::centerText1),
-                getp("0/4/Procedure__gradient1", BasicProceduralDemos::gradient1),
-                getp("0/4/Procedure__gradient2", BasicProceduralDemos::gradient2),
-                getp("0/4/Procedure__gradient3", BasicProceduralDemos::gradient3),
-                getp("0/4/Procedure__gradient4", BasicProceduralDemos::gradient4),
-                getp("0/4/Procedure__lookUp1", BasicProceduralDemos::lookUp1),
-                getp("0/4/Procedure__simple1", BasicProceduralDemos::simple1),
-                getp("0/4/Procedure__simple2", BasicProceduralDemos::simple2),
-                getp("0/4/Procedure__simple3", BasicProceduralDemos::simple3),
-                getp("0/4/Procedure__simple4", BasicProceduralDemos::simple4),
-                getp("0/4/Procedure__simple5", BasicProceduralDemos::simple5),
-                getp("0/4/Procedure__simple6", BasicProceduralDemos::simple6),
-                getp("0/4/Procedure__simpleClockFast", BasicProceduralDemos::simpleClockFast),
-                getp("0/4/Procedure__simpleClockSlow", BasicProceduralDemos::simpleClockSlow),
-                getp("0/4/Procedure__textPathEffects", BasicProceduralDemos::textPathEffects),
-                getp("0/4/ClockDemo1_clock1", ClockDemo1::clock1),
-                getp("0/4/ClockDemo2_jancyClock2", ClockDemo2::fancyClock2),
-                getp("0/4/ClockDemo2_jclock2", ClockDemo2::clock2),
+                getp("0/4/Procedure_centerText1", BasicProceduralDemos::centerText1),
+                getp("0/4/Procedure_gradient1", BasicProceduralDemos::gradient1),
+                getp("0/4/Procedure_gradient2", BasicProceduralDemos::gradient2),
+                getp("0/4/Procedure_gradient3", BasicProceduralDemos::gradient3),
+                getp("0/4/Procedure_gradient4", BasicProceduralDemos::gradient4),
+                getp("0/4/Procedure_lookUp1", BasicProceduralDemos::lookUp1),
+                getp("0/4/Procedure_simple1", BasicProceduralDemos::simple1),
+                getp("0/4/Procedure_simple2", BasicProceduralDemos::simple2),
+                getp("0/4/Procedure_simple3", BasicProceduralDemos::simple3),
+                getp("0/4/Procedure_simple4", BasicProceduralDemos::simple4),
+                getp("0/4/Procedure_simple5", BasicProceduralDemos::simple5),
+                getp("0/4/Procedure_simple6", BasicProceduralDemos::simple6),
+                getp("0/4/Procedure_simpleClockFast", BasicProceduralDemos::simpleClockFast),
+                getp("0/4/Procedure_simpleClockSlow", BasicProceduralDemos::simpleClockSlow),
+                getp("0/4/Procedure_textPathEffects", BasicProceduralDemos::textPathEffects),
+
                 getp("0/4/DemoBitmapDrawing_bitDraw1", DemoBitmapDrawing::bitDraw1),
                 getp("0/4/DemoBitmapDrawing_bitDraw2", DemoBitmapDrawing::bitDraw2),
                 getp("0/4/DemoFlick_flickTest", DemoFlick::flickTest),
@@ -168,20 +371,13 @@ public abstract class DemosCreation {
                 getp("0/4/DemoPathExpression_pathTest2", DemoPathExpression::pathTest2),
                 getp("0/4/DemoPathExpression_pathTest3", DemoPathExpression::pathTest3),
                 getp("0/4/DemoWindingRule_pathWinding", DemoWindingRule::pathWinding),
-                getp("0/4/FancyClocks_fancyClock1", FancyClocks::fancyClock1),
-                getp("0/4/FancyClocks_fancyClock2", FancyClocks::fancyClock2),
-                getp("0/4/FancyClocks_fancyClock3", FancyClocks::fancyClock3),
-                getp("0/4/FlowControlChecks_flowControlChecks1",
-                        FlowControlChecks::flowControlChecks1),
-                getp("0/4/FlowControlChecks_flowControlChecks2",
-                        FlowControlChecks::flowControlChecks2),
-                getp("0/4/FlowControlChecks_testConditional",
-                        FlowControlChecks::testConditional),
+
+                getp("0/4/flowControlChecks1", FlowControlChecks::flowControlChecks1),
+                getp("0/4/flowControlChecks2", FlowControlChecks::flowControlChecks2),
+                getp("0/4/testConditional", FlowControlChecks::testConditional),
                 getp("0/4/Graph_graph1", Graph::graph1),
                 getp("0/4/Graph_graph2", Graph::graph2),
                 getp("0/4/HapticDemo_demoHaptic1", HapticDemo::demoHaptic1),
-                getp("0/4/ImpulseDemo_confettiDemo", ImpulseDemo::confettiDemo),
-                getp("0/4/ImpulseDemo_heartsDemo", ImpulseDemo::heartsDemo),
                 getp("0/4/IndexingDemo_pathIndex", IndexingDemo::pathIndex),
                 getp("0/4/PathDemo_path2", PathDemo::path2),
                 getp("0/4/PathDemo_pathTweenDemo", PathDemo::pathTweenDemo),
@@ -210,22 +406,22 @@ public abstract class DemosCreation {
                 getpc("0/A/LinearRegression", LinearRegressionKt::demoLinearRegression),
                 getpc("0/A/MoonPhases", MoonPhasesKt::demoMoonPhases),
                 getp("0/v/badMemory", MemoryKt::fillMemory),
-                getp("DataViz/ActivityRings", DataVizDemosKt::demoActivityRings),
-                getp("DataViz/HeartRateTimeline", DataVizDemosKt::demoHeartRateTimeline),
-                getp("DataViz/StepProgressArc", DataVizDemosKt::demoStepProgressArc),
-                getp("DataViz/WeatherForecastBars", DataVizDemosKt::demoWeatherForecastBars),
-                getp("DataViz/SleepQualityRings", DataVizDemosKt::demoSleepQualityRings),
-                getp("DataViz/BatteryRadialGauge", DataVizDemosKt::demoBatteryRadialGauge),
-                getp("DataViz/CalendarHeatmapGrid", DataVizDemosKt::demoCalendarHeatmapGrid),
-                getp("DataViz/StockSparkline", DataVizDemosKt::demoStockSparkline),
-                getp("DataViz/MoonPhaseDial", DataVizDemosKt::demoMoonPhaseDial),
-                getp("DataViz/HydrationWave", DataVizDemosKt::demoHydrationWave),
+                getp("3/DataViz/ActivityRings", DataVizDemosKt::demoActivityRings),
+                getp("3/DataViz/HeartRateTimeline", DataVizDemosKt::demoHeartRateTimeline),
+                getp("3/DataViz/StepProgressArc", DataVizDemosKt::demoStepProgressArc),
+                getp("3/DataViz/WeatherForecastBars", DataVizDemosKt::demoWeatherForecastBars),
+                getp("3/DataViz/SleepQualityRings", DataVizDemosKt::demoSleepQualityRings),
+                getp("3/DataViz/BatteryRadialGauge", DataVizDemosKt::demoBatteryRadialGauge),
+                getp("3/DataViz/CalendarHeatmapGrid", DataVizDemosKt::demoCalendarHeatmapGrid),
+                getp("3/DataViz/StockSparkline", DataVizDemosKt::demoStockSparkline),
+                getp("3/DataViz/MoonPhaseDial", DataVizDemosKt::demoMoonPhaseDial),
+                getp("3/DataViz/HydrationWave", DataVizDemosKt::demoHydrationWave),
 
                 getp("5/Server/serverClock", ServerSideKt::serverClock),
                 getp("2/Example/spreadSheet", ExampleNumbersKt::spreadSheet),
                 getp("1/Example/color", DemoColorKt::colorButtons),
+//                getp("1/Example/FooDemo", FooDemoKt::FooDemo),
                 getp("0/Color/colorTable", ColorCheckKt::colorTable),
-                getp("0/alt/clock", MClockKt::MClock),
                 getp("0/Alt/ColorTheme", ColorThemeCheckKt::themeList),
                 getpc("0/alt/stock", () -> {
                     return RcTicker(activity.getApplicationContext());
@@ -236,17 +432,12 @@ public abstract class DemosCreation {
                 getp("1/font/colorList", ColorCheckKt::colorList),
 
                 getp("1/Example/spreadSheet", ExampleNumbersKt::spreadSheet),
-                getp("1/Example/demoUseOfGlobal",
-                        DemoGlobalKt::demoUseOfGlobal),
-                getp("1/Example/demoTextTransform",
-                        DemoTextTransformKt::demoTextTransform),
-                getp("1/Example/HostileActor1",
-                        HostileActor::demoImage),
-                getp("1/Example/HostileActor1",
-                        HostileActor::demoImageColor),
+                getp("1/Example/demoUseOfGlobal", DemoGlobalKt::demoUseOfGlobal),
+                getp("1/Example/demoTextTransform", DemoTextTransformKt::demoTextTransform),
+                getp("1/Example/HostileActor1", HostileActor::demoImage),
+                getp("1/Example/HostileActor1", HostileActor::demoImageColor),
 
-                getp("1/ThemedPlot1", DemoKt::plot1),
-                getp("1/plot2", DemoKt::plot2),
+                getp("1/ThemedPlot1", DemoKt::plot1), getp("1/plot2", DemoKt::plot2),
                 getp("1/plot3", DemoKt::plot3),
                 getp("1/plot4", DemoKt::plot4),
                 getp("2/touch/00Touch1", DemoTouchKt::demoTouch1),
@@ -268,132 +459,154 @@ public abstract class DemosCreation {
 
                 getp("5/Server/serverClock", ServerSideKt::serverClock),
 
-                getp("Procedural/plotWave", PlotWaveKt::basicPlot),
-                getp("Procedural/plotWave", PlotWaveKt::plotWave),
-                getpc("Procedural/CountDown", CountdownKt::countDown),
-                getpc("Procedural/Cube3D", Cube3DKt::cube3d),
-                getpc("Procedural/ShaderCalendar", ShaderCalendarKt::ShaderCalendar),
-                getp("Procedural/countdown", ExampleTimerKt::basicTimer),
-                getpc("Procedural/TextBaseline", TextKt::RcTextDemo),
+                getp("6/Procedural/plotWave", PlotWaveKt::basicPlot),
+                getp("6/Procedural/plotWave", PlotWaveKt::plotWave),
+                getpc("6/Procedural/CountDown", CountdownKt::countDown),
+                getpc("6/Procedural/Cube3D", Cube3DKt::cube3d),
+                getpc("6/Procedural/ShaderCalendar", ShaderCalendarKt::ShaderCalendar),
+                getp("6/Procedural/countdown", ExampleTimerKt::basicTimer),
+                getpc("6/Procedural/TextBaseline", TextKt::RcTextDemo),
 
-                getp("Java/AttributeString", DemoAttributedString::demo),
-                getp("Java/anchoredText", DemoAnchorText::anchoredText),
-                getp("1/Java/pathsDemos", DemoPaths::pathTest),
+                getp("7/Java/AttributeString", DemoAttributedString::demo),
+                getp("7/Java/anchoredText", DemoAnchorText::anchoredText),
+                getp("7/Java/pathsDemos", DemoPaths::pathTest),
 
-                getp("fancyClock2", DemoMetalClockKt::fancyClock2),
-                getp("Server/maze", DemoParticlesKt::pmaze),
-                getp("Server/maze1", DemoParticlesKt::pmaze1),
-                getp("Server/maze2", DemoParticlesKt::pmaze2),
 
+                getp("0/clock/fancyClock1", FancyClocks::fancyClock1),
+                getp("0/clock/fancyClock2", FancyClocks::fancyClock2),
+                getp("0/clock/fancyClock3", FancyClocks::fancyClock3),
+                getp("8/clock/clock1", ClockDemo1::clock1),
+                getp("8/clock/clock2", ClockDemo2::clock2),
+                getp("8/clock/fancyClock2", ClockDemo2::fancyClock2),
+                getp("8/clock/fancyClock2", DemoMetalClockKt::fancyClock2),
+                getp("8/clock/mclock", MClockKt::MClock),
                 // Group 1: Foundation & Sizing
-                getp("Components/Box",
-                        DemoBoxKt::DemoBox),
-                getp("Components/Row",
-                        DemoRowKt::DemoRow),
-                getp("Components/Column",
-                        DemoColumnKt::DemoColumn),
-                getp("Components/Modifier/Width",
-                        DemoModifierWidthKt::DemoModifierWidth),
-                getp("Components/Modifier/Height",
-                        DemoModifierHeightKt::DemoModifierHeight),
-                getp("Components/Modifier/Size",
-                        DemoModifierSizeKt::DemoModifierSize),
-                getp("Components/Modifier/FillMaxWidth",
+                getp("9/Comp/C_Box", DemoBoxKt::DemoBox),
+                getp("9/Comp/C_Row", DemoRowKt::DemoRow),
+                getp("9/Comp/C_Column", DemoColumnKt::DemoColumn),
+                getp("9/Comp/C_ModifierWidth", DemoModifierWidthKt::DemoModifierWidth),
+                getp("9/Comp/C_ModifierHeight", DemoModifierHeightKt::DemoModifierHeight),
+                getp("9/Comp/C_ModifierSize", DemoModifierSizeKt::DemoModifierSize),
+                getp("9/Comp/C_ModifierFillMaxWidth",
                         DemoModifierFillMaxWidthKt::DemoModifierFillMaxWidth),
-                getp("Components/Modifier/FillMaxHeight",
+                getp("9/Comp/C_ModifierFillMaxHeight",
                         DemoModifierFillMaxHeightKt::DemoModifierFillMaxHeight),
-                getp("Components/Modifier/FillMaxSize",
+                getp("9/Comp/C_ModifierFillMaxSize",
                         DemoModifierFillMaxSizeKt::DemoModifierFillMaxSize),
-                getp("Components/Modifier/WidthIn",
-                        DemoModifierWidthInKt::DemoModifierWidthIn),
-                getp("Components/Modifier/HeightIn",
-                        DemoModifierHeightInKt::DemoModifierHeightIn),
-                getp("Components/Modifier/WrapContentWidth",
+                getp("9/Comp/CM_odifierWidthIn", DemoModifierWidthInKt::DemoModifierWidthIn),
+                getp("9/Comp/C_ModifierHeightIn", DemoModifierHeightInKt::DemoModifierHeightIn),
+                getp("9/Comp/C_ModifierWrapContentWidth",
                         DemoModifierWrapContentWidthKt::DemoModifierWrapContentWidth),
-                getp("Components/Modifier/WrapContentHeight",
+                getp("9/Comp/C_ModifierWrapContentHeight",
                         DemoModifierWrapContentHeightKt::DemoModifierWrapContentHeight),
-                getp("Components/Modifier/WrapContentSize",
+                getp("9/Comp/C_ModifierWrapContentSize",
                         DemoModifierWrapContentSizeKt::DemoModifierWrapContentSize),
-
                 // Group 2: Parent-Relative & Layout Logic
-                getp("Components/Modifier/FillParentMaxWidth",
+                getp("9/Comp/C_ModifierFillParentMaxWidth",
                         DemoModifierFillParentMaxWidthKt::DemoModifierFillParentMaxWidth),
-                getp("Components/Modifier/FillParentMaxHeight",
+                getp("9/Comp/C_ModifierFillParentMaxHeight",
                         DemoModifierFillParentMaxHeightKt::DemoModifierFillParentMaxHeight),
-                getp("Components/Modifier/FillParentMaxSize",
+                getp("9/Comp/C_ModifierFillParentMaxSize",
                         DemoModifierFillParentMaxSizeKt::DemoModifierFillParentMaxSize),
-                getp("Components/Modifier/HorizontalWeight",
+                getp("9/Comp/C_ModifierHorizontalWeight",
                         DemoModifierHorizontalWeightKt::DemoModifierHorizontalWeight),
-                getp("Components/Modifier/VerticalWeight",
+                getp("9/Comp/C_ModifierVerticalWeight",
                         DemoModifierVerticalWeightKt::DemoModifierVerticalWeight),
-                getp("Components/Modifier/SpacedBy",
+                getp("9/Comp/C_ModifierSpacedBy",
                         DemoModifierSpacedByKt::DemoModifierSpacedBy),
-                getp("Components/Modifier/AlignByBaseline",
+                getp("9/Comp/C_ModifierAlignByBaseline",
                         DemoModifierAlignByBaselineKt::DemoModifierAlignByBaseline),
-                getp("Components/Modifier/Padding",
+                getp("9/Comp/C_ModifierPadding",
                         DemoModifierPaddingKt::DemoModifierPadding),
-                getp("Components/Modifier/ZIndex",
+                getp("9/Comp/C_ModifierZIndex",
                         DemoModifierZIndexKt::DemoModifierZIndex),
-                getp("Components/Modifier/ComponentId",
+                getp("9/Comp/C_ModifierComponentId",
                         DemoModifierComponentIdKt::DemoModifierComponentId),
 
                 // Group 3: Visual & Clipping
-                getp("Components/Modifier/Background",
+                getp("9/Comp/C_ModifierBackground",
                         DemoModifierBackgroundKt::DemoModifierBackground),
-                getp("Components/Modifier/BackgroundId",
+                getp("9/Comp/C_ModifierBackgroundId",
                         DemoModifierBackgroundIdKt::DemoModifierBackgroundId),
-                getp("Components/Modifier/Border",
+                getp("9/Comp/C_ModifierBorder",
                         DemoModifierBorderKt::DemoModifierBorder),
-                getp("Components/Modifier/DynamicBorder",
+                getp("9/Comp/C_ModifierDynamicBorder",
                         DemoModifierDynamicBorderKt::DemoModifierDynamicBorder),
-                getp("Components/Modifier/ClipRect",
+                getp("9/Comp/C_ModifierClipRect",
                         DemoModifierClipRectKt::DemoModifierClipRect),
-                getp("Components/Modifier/ClipRoundedRect",
+                getp("9/Comp/C_ModifierClipRoundedRect",
                         DemoModifierClipRoundedRectKt::DemoModifierClipRoundedRect),
-                getp("Components/Modifier/ClipCircle",
+                getp("9/Comp/C_ModifierClipCircle",
                         DemoModifierClipCircleKt::DemoModifierClipCircle),
-                getp("Components/Modifier/Visibility",
+                getp("9/Comp/C_ModifierVisibility",
                         DemoModifierVisibilityKt::DemoModifierVisibility),
-                getp("Components/Modifier/ComputeMeasure",
+                getp("9/Comp/C_ModifierComputeMeasure",
                         DemoModifierComputeMeasureKt::DemoModifierComputeMeasure),
-                getp("Components/Modifier/ComputePosition",
+                getp("9/Comp/C_ModifierComputePosition",
                         DemoModifierComputePositionKt::DemoModifierComputePosition),
 
                 // Group 4: Specialized Layouts & Content
-                getp("Components/Flow",
+                getp("9/Comp/C_Flow",
                         DemoFlowKt::DemoFlow),
-                getp("Components/FitBox",
+                getp("9/Comp/C_FitBox",
                         DemoFitBoxKt::DemoFitBox),
-                getp("Components/CollapsibleColumn",
+                getp("9/Comp/C_CollapsibleColumn",
                         DemoCollapsibleColumnKt::DemoCollapsibleColumn),
-                getp("Components/CollapsibleRow",
+                getp("9/Comp/C_CollapsibleRow",
                         DemoCollapsibleRowKt::DemoCollapsibleRow),
-                getp("Components/Modifier/CollapsiblePriority",
+                getp("9/Comp/C_ModifierCollapsiblePriority",
                         DemoModifierCollapsiblePriorityKt::DemoModifierCollapsiblePriority),
-                getp("Components/StateLayout",
+                getp("9/Comp/C_StateLayout",
                         DemoStateLayoutKt::DemoStateLayout),
-                getp("Components/Text",
+                getp("9/Comp/C_Text",
                         DemoTextKt::DemoText),
-                getp("Components/TextAutoSize",
+                getp("9/Comp/C_TextAutoSize",
                         DemoTextAutoSizeKt::DemoTextAutoSize),
-                getp("Components/Image",
+                getp("9/Comp/C_Image",
                         DemoImageKt::DemoImage),
 
                 // Group 5: Interactive & Scrolling
-                getp("Components/Modifier/VerticalScroll",
+                getp("9/Comp/C_ModifierVerticalScroll",
                         DemoModifierVerticalScrollKt::DemoModifierVerticalScroll),
-                getp("Components/Modifier/HorizontalScroll",
+                getp("9/Comp/C_ModifierHorizontalScroll",
                         DemoModifierHorizontalScrollKt::DemoModifierHorizontalScroll),
-                getp("Components/Modifier/OnClick",
+                getp("9/Comp/C_ModifierOnClick",
                         DemoModifierOnClickKt::DemoModifierOnClick),
-                getp("Components/Modifier/OnTouchDown",
+                getp("9/Comp/C_ModifierOnTouchDown",
                         DemoModifierOnTouchDownKt::DemoModifierOnTouchDown),
-                getp("Components/Modifier/OnTouchUp",
+                getp("9/Comp/C_ModifierOnTouchUp",
                         DemoModifierOnTouchUpKt::DemoModifierOnTouchUp),
-                getp("Components/Modifier/OnTouchCancel",
+                getp("9/Comp/C_ModifierOnTouchCancel",
                         DemoModifierOnTouchCancelKt::DemoModifierOnTouchCancel)
 
         ));
     }
 
+    @SuppressLint("RestrictedApiAndroidX")
+    static @NonNull Bitmap simpleBitmap(int size) {
+        int color = 0xFF7722;
+        Bitmap ball = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888);
+        int w = ball.getWidth();
+        int h = ball.getHeight();
+        float cx = w / 2;
+        float cy = h / 2;
+        float radius = cx * 0.9f;
+        float radius2 = radius * radius;
+        int[] data = new int[w * h];
+        for (int i = 0; i < data.length; i++) {
+            int x = i % w;
+            int y = i / w;
+            float dx = x - cx;
+            float dy = y - cy;
+            float dist2 = dx * dx + dy * dy;
+            if (dist2 > radius2) {
+                continue;
+            }
+            float norm2 = radius * radius - dist2;
+            int bright = (int) (norm2 * 255 / radius2);
+            data[i] = 0x33000000 + color * bright;
+        }
+        ball.setPixels(data, 0, w, 0, 0, w, h);
+        return ball;
+    }
 }

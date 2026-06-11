@@ -58,6 +58,20 @@ public interface ImageSource : UnsafeWrapper, AutoCloseable {
     public var imageListener: ImageListener?
 
     public var expectedOutputsListener: ExpectedOutputsListener?
+
+    /**
+     * Aggressively free up memory held by the underlying image reader.
+     *
+     * This involves acquiring pending images and closing them and then explicitly freeing any
+     * cached buffers if supported.
+     */
+    public fun flush()
+
+    /**
+     * Release free cached buffers from the underlying [ImageReader] or
+     * [MultiResolutionImageReader].
+     */
+    public fun discardFreeBuffers()
 }
 
 /** Listener for handling [ImageWrapper]s as they are produced. */

@@ -31,15 +31,18 @@ import android.hardware.camera2.params.SessionConfiguration.SESSION_HIGH_SPEED
 import android.util.Range
 import android.util.Size
 import androidx.camera.camera2.adapter.CameraCoordinatorAdapter
+import androidx.camera.camera2.adapter.CameraSessionLifecycleAdapter
 import androidx.camera.camera2.adapter.CameraStateAdapter
 import androidx.camera.camera2.adapter.CameraUseCaseAdapter
 import androidx.camera.camera2.adapter.RobolectricCameraPipeTestRunner
 import androidx.camera.camera2.adapter.SessionConfigAdapter
+import androidx.camera.camera2.adapter.SupportedSurfaceCombination
 import androidx.camera.camera2.adapter.TestDeferrableSurface
 import androidx.camera.camera2.adapter.ZslControlNoOpImpl
 import androidx.camera.camera2.compat.StreamConfigurationMapCompat
 import androidx.camera.camera2.compat.quirk.CameraQuirks
 import androidx.camera.camera2.compat.quirk.CaptureIntentPreviewQuirk
+import androidx.camera.camera2.compat.workaround.ExtraSupportedSurfaceCombinationsContainer
 import androidx.camera.camera2.compat.workaround.NoOpAutoFlashAEModeDisabler
 import androidx.camera.camera2.compat.workaround.NoOpTemplateParamsOverride
 import androidx.camera.camera2.compat.workaround.OutputSizesCorrector
@@ -55,6 +58,7 @@ import androidx.camera.camera2.pipe.CameraPipe
 import androidx.camera.camera2.pipe.OutputStream.DynamicRangeProfile
 import androidx.camera.camera2.pipe.RequestTemplate
 import androidx.camera.camera2.pipe.testing.FakeCameraMetadata
+import androidx.camera.camera2.pipe.testing.HighEndDeviceTemplate
 import androidx.camera.camera2.testing.FakeCamera2CameraControlCompat
 import androidx.camera.camera2.testing.FakeUseCaseCameraComponentBuilder
 import androidx.camera.core.CameraXConfig
@@ -63,6 +67,7 @@ import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.Preview
 import androidx.camera.core.UseCase
+import androidx.camera.core.featuregroup.impl.FeatureCombinationQuery
 import androidx.camera.core.impl.Quirks
 import androidx.camera.core.impl.SessionConfig
 import androidx.camera.core.impl.StreamSpec
@@ -710,7 +715,11 @@ class UseCaseManagerTest {
             .addCamera("0", characteristics)
 
         val fakeCameraMetadata =
-            FakeCameraMetadata(cameraId = cameraId, characteristics = characteristicsMap)
+            FakeCameraMetadata.fromTemplate(
+                template = HighEndDeviceTemplate,
+                cameraId = cameraId,
+                characteristicsOverrides = characteristicsMap,
+            )
         val fakeCamera = FakeCamera()
         val cameraPipe = CameraPipe(CameraPipe.Config(ApplicationProvider.getApplicationContext()))
         val cameraProperties =
@@ -751,7 +760,7 @@ class UseCaseManagerTest {
                         checkNotNull(useCaseThreads),
                         ComboRequestListener(),
                     ),
-                cameraStateAdapter = CameraStateAdapter(),
+                cameraStateAdapter = CameraStateAdapter(CameraSessionLifecycleAdapter()),
                 cameraInternal = { fakeCamera },
                 useCaseThreads = { useCaseThreads },
                 cameraInfoInternal = { fakeCamera.cameraInfoInternal },
@@ -762,6 +771,14 @@ class UseCaseManagerTest {
                     DisplayInfoManager.getInstance(ApplicationProvider.getApplicationContext()),
                 cameraXConfig = cameraXConfig ?: CameraXConfig.Builder().build(),
                 cameraGraphConfigProvider = configProvider,
+                supportedSurfaceCombination =
+                    SupportedSurfaceCombination(
+                        ApplicationProvider.getApplicationContext(),
+                        cameraProperties.metadata,
+                        FakeEncoderProfilesProvider.Builder().build(),
+                        FeatureCombinationQuery.NO_OP_FEATURE_COMBINATION_QUERY,
+                        ExtraSupportedSurfaceCombinationsContainer(),
+                    ),
             )
             .also { useCaseManagerList.add(it) }
     }

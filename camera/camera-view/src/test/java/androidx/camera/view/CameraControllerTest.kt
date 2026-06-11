@@ -65,6 +65,8 @@ import androidx.camera.video.QualitySelector
 import androidx.camera.video.Recorder
 import androidx.camera.video.VideoCapture
 import androidx.camera.video.VideoOutput
+import androidx.camera.video.internal.muxer.MediaMuxerImpl
+import androidx.camera.video.internal.muxer.MuxerFactory
 import androidx.camera.view.CameraController.TAP_TO_FOCUS_FOCUSED
 import androidx.camera.view.CameraController.TAP_TO_FOCUS_NOT_FOCUSED
 import androidx.camera.view.CameraController.TAP_TO_FOCUS_NOT_STARTED
@@ -534,35 +536,61 @@ class CameraControllerTest {
 
     @UiThreadTest
     @Test
-    fun sensorRotationChanges_useCaseTargetRotationUpdated() {
-        // Act.
-        controller.mDeviceRotationListener.onRotationChanged(Surface.ROTATION_180)
+    fun setVideoCaptureMuxerFactory_setToRecorder() {
+        val muxerFactory = MuxerFactory { MediaMuxerImpl() }
 
-        // Assert.
-        assertThat(controller.mImageAnalysis.targetRotation).isEqualTo(Surface.ROTATION_180)
-        assertThat(controller.mImageCapture.targetRotation).isEqualTo(Surface.ROTATION_180)
-        val videoConfig = controller.mVideoCapture.currentConfig as ImageOutputConfig
-        assertThat(videoConfig.targetRotation).isEqualTo(Surface.ROTATION_180)
+        controller.setVideoCaptureMuxerFactory(muxerFactory)
+
+        val recorder = controller.mVideoCapture.output
+        assertThat(recorder.muxerFactory).isSameInstanceAs(muxerFactory)
     }
 
+    @UiThreadTest
     @Test
-    fun useCaseIsRecreated_rotationIsRetained() {
-        // Act: Manually trigger the rotation listener to set the internal state.
-        controller.mDeviceRotationListener.onRotationChanged(Surface.ROTATION_90)
+    fun getBoundSessionConfig_autoRotationEnabledIsTrue() {
+        // Arrange.
+        completeCameraInitialization()
 
-        // Assert: The existing ImageCapture instance has the correct rotation.
-        assertThat(controller.mImageCapture.targetRotation).isEqualTo(Surface.ROTATION_90)
+        // Act.
+        val sessionConfig = controller.getBoundSessionConfig()
 
-        // --- Test with ROTATION_270 ---
+        // Assert.
+        assertThat(sessionConfig?.isAutoRotationEnabled).isTrue()
+    }
 
-        // Act: Manually trigger the listener with a different rotation.
-        controller.mDeviceRotationListener.onRotationChanged(Surface.ROTATION_270)
+    @UiThreadTest
+    @Test
+    fun setAutoRotationEnabledToFalse_getBoundSessionConfig_autoRotationEnabledIsFalse() {
+        // Arrange.
+        completeCameraInitialization()
 
-        // Act: Recreate the ImageCapture use case by setting a different capture mode.
-        controller.imageCaptureMode = ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY
+        // Act.
+        controller.isAutoRotationEnabled = false
+        val sessionConfig = controller.getBoundSessionConfig()
 
-        // Assert: The new ImageCapture instance has the updated rotation.
-        assertThat(controller.mImageCapture.targetRotation).isEqualTo(Surface.ROTATION_270)
+        // Assert.
+        assertThat(controller.isAutoRotationEnabled).isFalse()
+        assertThat(sessionConfig?.isAutoRotationEnabled).isFalse()
+    }
+
+    @UiThreadTest
+    @Test
+    fun setAutoRotationEnabled_dynamicallyUpdatesBoundSessionConfig() {
+        // Arrange.
+        completeCameraInitialization()
+        assertThat(controller.getBoundSessionConfig()?.isAutoRotationEnabled).isTrue()
+
+        // Act: Disable auto-rotation.
+        controller.isAutoRotationEnabled = false
+
+        // Assert: Bound SessionConfig is updated.
+        assertThat(controller.getBoundSessionConfig()?.isAutoRotationEnabled).isFalse()
+
+        // Act: Re-enable auto-rotation.
+        controller.isAutoRotationEnabled = true
+
+        // Assert: Bound SessionConfig is updated again.
+        assertThat(controller.getBoundSessionConfig()?.isAutoRotationEnabled).isTrue()
     }
 
     @UiThreadTest
@@ -1358,6 +1386,13 @@ class CameraControllerTest {
     fun throwException_whenSessionConfigExists_setVideoCaptureTargetFrameRate() {
         functionCallCausesException_whenSessionConfigExists {
             controller.videoCaptureTargetFrameRate = Range.create(30, 30)
+        }
+    }
+
+    @Test
+    fun throwException_whenSessionConfigExists_setVideoCaptureMuxerFactory() {
+        functionCallCausesException_whenSessionConfigExists {
+            controller.setVideoCaptureMuxerFactory { MediaMuxerImpl() }
         }
     }
 

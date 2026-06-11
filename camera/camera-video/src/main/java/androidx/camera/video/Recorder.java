@@ -65,6 +65,7 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.location.Location;
 import android.media.CamcorderProfile;
+import android.media.MediaFormat;
 import android.media.MediaScannerConnection;
 import android.net.Uri;
 import android.os.Build;
@@ -78,6 +79,7 @@ import android.view.Surface;
 import androidx.annotation.GuardedBy;
 import androidx.annotation.IntDef;
 import androidx.annotation.IntRange;
+import androidx.annotation.OptIn;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RequiresPermission;
 import androidx.annotation.RestrictTo;
@@ -349,7 +351,12 @@ public final class Recorder implements VideoOutput {
     // Refer to https://developer.android.com/reference/androidx/media3/muxer/Mp4Muxer + VP8
     // Note: All MIME types in this list must be lowercase to ensure case-sensitive lookups in
     // getSupportedVideoFormats()/getSupportedAudioFormats() function correctly.
-    private static final List<String> SUPPORTED_VIDEO_MIME_TYPES = Arrays.asList(
+    //
+    // IMPORTANT: When adding or removing MIME types here, please also update the Javadoc for
+    // setVideoMimeType() and setAudioMimeType() to keep the public documentation in sync with
+    // the internal allowlist.
+    @VisibleForTesting
+    static final List<String> SUPPORTED_VIDEO_MIME_TYPES = Arrays.asList(
             MIMETYPE_VIDEO_AV1,
             MIMETYPE_VIDEO_MPEG4,
             MIMETYPE_VIDEO_H263,
@@ -360,7 +367,8 @@ public final class Recorder implements VideoOutput {
             MIMETYPE_VIDEO_APV,
             MIMETYPE_VIDEO_DOLBY_VISION
     );
-    private static final List<String> SUPPORTED_AUDIO_MIME_TYPES = Arrays.asList(
+    @VisibleForTesting
+    static final List<String> SUPPORTED_AUDIO_MIME_TYPES = Arrays.asList(
             MIMETYPE_AUDIO_AAC,
             MIMETYPE_AUDIO_AMR_NB,
             MIMETYPE_AUDIO_AMR_WB,
@@ -624,6 +632,7 @@ public final class Recorder implements VideoOutput {
         checkMimeTypeSupportOrThrow(mediaSpec);
     }
 
+    @OptIn(markerClass = ExperimentalMimeTypeApi.class)
     private void checkMimeTypeSupportOrThrow(@NonNull MediaSpec mediaSpec)
             throws IllegalArgumentException {
         // Validate Video MIME Type
@@ -803,14 +812,22 @@ public final class Recorder implements VideoOutput {
         return getObservableData(mMediaSpec).getOutputFormat();
     }
 
-    /** Gets the video mime type. */
-    @RestrictTo(RestrictTo.Scope.LIBRARY)
+    /**
+     * Gets the video MIME type of this Recorder.
+     *
+     * @return the video MIME type provided to {@link Builder#setVideoMimeType(String)}.
+     * @see Builder#setVideoMimeType(String)
+     */
     public @NonNull String getVideoMimeType() {
         return getObservableData(mMediaSpec).getVideoSpec().getMimeType();
     }
 
-    /** Gets the audio mime type. */
-    @RestrictTo(RestrictTo.Scope.LIBRARY)
+    /**
+     * Gets the audio MIME type of this Recorder.
+     *
+     * @return the audio MIME type provided to {@link Builder#setAudioMimeType(String)}.
+     * @see Builder#setAudioMimeType(String)
+     */
     public @NonNull String getAudioMimeType() {
         return getObservableData(mMediaSpec).getAudioSpec().getMimeType();
     }
@@ -825,6 +842,14 @@ public final class Recorder implements VideoOutput {
      */
     public @NonNull QualitySelector getQualitySelector() {
         return getObservableData(mMediaSpec).getVideoSpec().getQualitySelector();
+    }
+
+    /**
+     * Gets the muxer factory of this Recorder.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public @NonNull MuxerFactory getMuxerFactory() {
+        return mMuxerFactory;
     }
 
     @Override
@@ -875,8 +900,34 @@ public final class Recorder implements VideoOutput {
      * builder used to create this recorder. Returns 0, if
      * {@link Builder#setTargetVideoEncodingBitRate(int)} is not called.
      */
+    @IntRange(from = 0)
     public int getTargetVideoEncodingBitRate() {
         return getObservableData(mMediaSpec).getVideoSpec().getBitrate();
+    }
+
+    /**
+     * Gets the target audio encoding bitrate of this Recorder.
+     *
+     * @return the value provided to {@link Builder#setTargetAudioEncodingBitRate(int)} on the
+     * builder used to create this recorder. Returns 0, if
+     * {@link Builder#setTargetAudioEncodingBitRate(int)} is not called.
+     */
+    @IntRange(from = 0)
+    public int getTargetAudioEncodingBitRate() {
+        return getObservableData(mMediaSpec).getAudioSpec().getBitrate();
+    }
+
+    /**
+     * Returns the target audio channel count of this Recorder.
+     *
+     * @return the value provided to {@link Builder#setTargetAudioChannelCount(int)} on the
+     * builder used to create this recorder. Returns 0 if
+     * {@link Builder#setTargetAudioChannelCount(int)} is not called.
+     */
+    @IntRange(from = 0)
+    public int getTargetAudioChannelCount() {
+        int channelCount = getObservableData(mMediaSpec).getAudioSpec().getChannelCount();
+        return channelCount == AudioSpec.CHANNEL_COUNT_UNSPECIFIED ? 0 : channelCount;
     }
 
     /** Gets an {@link Observable} of the video encoder's supported bitrate range. */
@@ -1671,9 +1722,8 @@ public final class Recorder implements VideoOutput {
         }
 
         // Select and create the audio source
-        AudioSettings audioSettings =
-                resolveAudioSettings(audioMimeInfo, mediaSpec.getAudioSpec(),
-                expectedSampleRateRatio);
+        AudioSettings audioSettings = resolveAudioSettings(mediaSpec.getAudioSpec(),
+                audioMimeInfo.getCompatibleAudioProfile(), expectedSampleRateRatio);
         if (mAudioSource != null) {
             releaseCurrentAudioSource();
         }
@@ -2491,7 +2541,9 @@ public final class Recorder implements VideoOutput {
             // the encoder when the source has actually stopped in the FutureCallback.
             // If the recording is explicitly stopped by the user, pass the stop timestamp to the
             // encoder so that the encoding can be stop as close as to the actual stop time.
-            mVideoEncoder.stop(explicitlyStopTime);
+            if (mVideoEncoder != null) {
+                mVideoEncoder.stop(explicitlyStopTime);
+            }
         }
     }
 
@@ -3170,8 +3222,24 @@ public final class Recorder implements VideoOutput {
                 timeUnit);
     }
 
-    /** Returns the video MIME types supported by the device that are compatible with Recorder. */
-    @RestrictTo(RestrictTo.Scope.LIBRARY)
+    /**
+     * Returns the video MIME types supported by the device that are compatible with Recorder.
+     *
+     * <p>The returned list contains only those MIME types that are supported by the device's
+     * encoders and are compatible with Recorder. This list is a subset of the formats accepted
+     * by {@link Builder#setVideoMimeType(String)}.
+     *
+     * <p>This method should be used to discover available formats at runtime. Once a MIME type is
+     * selected from this list, it can be passed to {@link Builder#setVideoMimeType(String)} to
+     * configure the recorder. To query specific camera-dependent capabilities for a chosen MIME
+     * type, such as supported qualities or dynamic ranges, use
+     * {@link #getVideoCapabilities(CameraInfo, String)}.
+     *
+     * @return A list of strings representing the supported video MIME types.
+     * @see Builder#setVideoMimeType(String)
+     * @see #getVideoCapabilities(CameraInfo, String)
+     */
+    @ExperimentalMimeTypeApi
     public static @NonNull List<String> getSupportedVideoMimeTypes() {
         List<String> encoderMimes = CodecUtil.getVideoEncoderMimeTypes();
         List<String> filteredMimes = new ArrayList<>(encoderMimes);
@@ -3179,8 +3247,21 @@ public final class Recorder implements VideoOutput {
         return filteredMimes;
     }
 
-    /** Returns the audio MIME types supported by the device that are compatible with Recorder. */
-    @RestrictTo(RestrictTo.Scope.LIBRARY)
+    /**
+     * Returns the audio MIME types supported by the device that are compatible with Recorder.
+     *
+     * <p>The returned list contains only those MIME types that are supported by the device's
+     * encoders and are compatible with Recorder. This list is a subset of the formats accepted
+     * by {@link Builder#setAudioMimeType(String)}.
+     *
+     * <p>This method should be used to discover available formats at runtime. Once a MIME type is
+     * selected from this list, it can be passed to {@link Builder#setAudioMimeType(String)} to
+     * configure the recorder.
+     *
+     * @return A list of strings representing the supported audio MIME types.
+     * @see Builder#setAudioMimeType(String)
+     */
+    @ExperimentalMimeTypeApi
     public static @NonNull List<String> getSupportedAudioMimeTypes() {
         List<String> encoderMimes = CodecUtil.getAudioEncoderMimeTypes();
         List<String> filteredMimes = new ArrayList<>(encoderMimes);
@@ -3209,9 +3290,25 @@ public final class Recorder implements VideoOutput {
 
     /**
      * Returns the {@link VideoCapabilities} of Recorder with respect to input camera information
-     * and video mime type.
+     * and video MIME type.
+     *
+     * <p>{@link VideoCapabilities} provides methods to query supported dynamic ranges and
+     * qualities. This information can be used for things like checking if HDR is supported for
+     * configuring VideoCapture to record HDR video.
+     *
+     * <p>This method provides an aggregated view of the combined capabilities of the
+     * selected camera and the device's video encoder for the specified format. It allows
+     * discovery of supported qualities, dynamic ranges, and other constraints associated
+     * with a specific encoding format without the need to manually cross-reference
+     * camera and encoder capabilities.
+     *
+     * @param cameraInfo info about the camera.
+     * @param mimeType the video MIME type to query capabilities for (e.g., "video/hevc").
+     * @return VideoCapabilities with respect to the input camera info and video MIME type, or
+     * {@code null} if no capabilities are found for the given MIME type.
+     * @see #getSupportedVideoMimeTypes()
+     * @see Builder#setVideoMimeType(String)
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY)
     public static @Nullable VideoCapabilities getVideoCapabilities(@NonNull CameraInfo cameraInfo,
             @NonNull String mimeType) {
         VideoCapabilities videoCapabilities = getVideoCapabilitiesInternal(
@@ -3290,11 +3387,11 @@ public final class Recorder implements VideoOutput {
         return videoCapabilities.getSupportedDynamicRanges().isEmpty() ? null : videoCapabilities;
     }
 
+    @OptIn(markerClass = ExperimentalMimeTypeApi.class)
     private static @NonNull VideoCapabilities getVideoCapabilitiesInternal(
-            @VideoRecordingType int videoRecordingType,
-            @NonNull CameraInfo cameraInfo,
-            @VideoCapabilitiesSource int videoCapabilitiesSource,
-            @NonNull String mimeType) {
+            @VideoRecordingType int videoRecordingType, @NonNull CameraInfo cameraInfo,
+            @VideoCapabilitiesSource int videoCapabilitiesSource, @NonNull String mimeType) {
+
         CameraInfoInternal cameraInfoInternal = (CameraInfoInternal) cameraInfo;
         if (MIME_TYPE_UNSPECIFIED.equals(mimeType)) {
             EncoderProfilesResolver profilesResolver = getEncoderProfilesResolverInternal(
@@ -3803,16 +3900,87 @@ public final class Recorder implements VideoOutput {
             return this;
         }
 
-        /** Sets the video mime type. */
-        @RestrictTo(RestrictTo.Scope.LIBRARY)
+        /**
+         * Sets the desired video MIME type for the recording.
+         *
+         * <p>If not set, CameraX automatically chooses an appropriate video codec based on
+         * device capabilities. Only call this method if a specific override is required.
+         *
+         * <p>The supported formats will depend on the device capability and can be queried by
+         * {@link Recorder#getSupportedVideoMimeTypes()} at runtime. The Recorder is designed to
+         * support the following MIME types:
+         * <ul>
+         * <li>AV1 ({@link MediaFormat#MIMETYPE_VIDEO_AV1})</li>
+         * <li>MPEG-4 ({@link MediaFormat#MIMETYPE_VIDEO_MPEG4})</li>
+         * <li>H.263 ({@link MediaFormat#MIMETYPE_VIDEO_H263})</li>
+         * <li>H.264 ({@link MediaFormat#MIMETYPE_VIDEO_AVC})</li>
+         * <li>H.265 ({@link MediaFormat#MIMETYPE_VIDEO_HEVC})</li>
+         * <li>VP8 ({@link MediaFormat#MIMETYPE_VIDEO_VP8})</li>
+         * <li>VP9 ({@link MediaFormat#MIMETYPE_VIDEO_VP9})</li>
+         * <li>APV ({@link MediaFormat#MIMETYPE_VIDEO_APV})</li>
+         * <li>Dolby Vision ({@link MediaFormat#MIMETYPE_VIDEO_DOLBY_VISION})</li>
+         * </ul>
+         *
+         * If a MIME type supported by Recorder is provided, but that MIME type is not supported
+         * by the device, an {@link IllegalArgumentException} will be thrown when binding the
+         * {@link VideoCapture} use case that uses this recorder.
+         *
+         * <p>If a custom video MIME type is set but an audio MIME type is left as unspecified,
+         * CameraX will automatically select a compatible audio codec and container format based
+         * on the chosen video format.
+         *
+         * <p>MIME type specific capabilities for a given camera, such as supported qualities and
+         * dynamic ranges, can be queried using
+         * {@link Recorder#getVideoCapabilities(CameraInfo, String)}.
+         *
+         * @param mimeType The desired video MIME type.
+         * @return This {@link Builder} instance.
+         * @throws IllegalArgumentException if {@code mimeType} is not a video format supported
+         * by the Recorder (listed above).
+         * @see Recorder#getSupportedVideoMimeTypes()
+         * @see Recorder#getVideoCapabilities(CameraInfo, String)
+         */
         public @NonNull Builder setVideoMimeType(@NonNull String mimeType) {
+            checkArgument(SUPPORTED_VIDEO_MIME_TYPES.contains(mimeType),
+                    "Unsupported video MIME type: " + mimeType);
             mMediaSpecBuilder.configureVideo(builder -> builder.setMimeType(mimeType));
             return this;
         }
 
-        /** Sets the audio mime type. */
-        @RestrictTo(RestrictTo.Scope.LIBRARY)
+        /**
+         * Sets the desired audio MIME type for the recording.
+         *
+         * <p>If not set, CameraX automatically chooses an appropriate audio codec based on
+         * device capabilities. Only call this method if a specific override is required.
+         *
+         * <p>The supported formats will depend on the device capability and can be queried by
+         * {@link Recorder#getSupportedAudioMimeTypes()} at runtime. The Recorder is designed to
+         * support the following MIME types:
+         * <ul>
+         * <li>AAC ({@link MediaFormat#MIMETYPE_AUDIO_AAC})</li>
+         * <li>AMR-NB ({@link MediaFormat#MIMETYPE_AUDIO_AMR_NB})</li>
+         * <li>AMR-WB ({@link MediaFormat#MIMETYPE_AUDIO_AMR_WB})</li>
+         * <li>Opus ({@link MediaFormat#MIMETYPE_AUDIO_OPUS})</li>
+         * <li>Vorbis ({@link MediaFormat#MIMETYPE_AUDIO_VORBIS})</li>
+         * </ul>
+         *
+         * If a MIME type supported by Recorder is provided, but that MIME type is not supported
+         * by the device, an {@link IllegalArgumentException} will be thrown when binding the
+         * {@link VideoCapture} use case that uses this recorder.
+         *
+         * <p>If a custom audio MIME type is set but a video MIME type is left as unspecified,
+         * CameraX will automatically select a compatible video codec and container format based
+         * on the chosen audio format.
+         *
+         * @param mimeType The desired audio MIME type.
+         * @return This {@link Builder} instance.
+         * @throws IllegalArgumentException if {@code mimeType} is not an audio format supported
+         * by the Recorder (listed above).
+         * @see Recorder#getSupportedAudioMimeTypes()
+         */
         public @NonNull Builder setAudioMimeType(@NonNull String mimeType) {
+            checkArgument(SUPPORTED_AUDIO_MIME_TYPES.contains(mimeType),
+                    "Unsupported audio MIME type: " + mimeType);
             mMediaSpecBuilder.configureAudio(builder -> builder.setMimeType(mimeType));
             return this;
         }
@@ -3860,7 +4028,7 @@ public final class Recorder implements VideoOutput {
         }
 
         /** Sets the {@link MuxerFactory} of this Recorder. */
-        @RestrictTo(RestrictTo.Scope.LIBRARY)
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         public @NonNull Builder setMuxerFactory(@NonNull MuxerFactory muxerFactory) {
             mMuxerFactory = muxerFactory;
             return this;
@@ -3919,6 +4087,54 @@ public final class Recorder implements VideoOutput {
             }
 
             mMediaSpecBuilder.configureVideo(builder -> builder.setBitrate(bitrate));
+            return this;
+        }
+
+        /**
+         * Sets the target audio encoding bitrate of this Recorder.
+         *
+         * <p>Additional checks will be performed on the requested {@code bitrate} to make sure the
+         * specified bitrate is applicable, and sometimes the passed bitrate will be changed
+         * internally to ensure the audio recording can proceed smoothly based on the
+         * capabilities of the platform.
+         *
+         * <p>This API only affects the audio stream and should not be considered the
+         * target for the entire recording. The video stream's bitrate is not affected by this API.
+         *
+         * <p>If this method isn't called, an appropriate bitrate for normal audio
+         * recording is selected by default. Only call this method if a custom bitrate is desired.
+         *
+         * @param bitrate the target audio encoding bitrate in bits per second.
+         * @throws IllegalArgumentException if bitrate is 0 or less.
+         */
+        public @NonNull Builder setTargetAudioEncodingBitRate(@IntRange(from = 1) int bitrate) {
+            if (bitrate <= 0) {
+                throw new IllegalArgumentException("The requested target bitrate " + bitrate
+                        + " is not supported. Target bitrate must be greater than 0.");
+            }
+
+            mMediaSpecBuilder.configureAudio(builder -> builder.setBitrate(bitrate));
+            return this;
+        }
+
+        /**
+         * Sets the intended audio channel count for recording.
+         *
+         * <p>Common values are 1 for mono and 2 for stereo. If the requested channel count is
+         * not supported by the device, CameraX will fall back to a supported channel count. If
+         * this method is not called, an appropriate default channel count will be selected.
+         *
+         * @param channelCount the target audio channel count.
+         * @return the builder instance.
+         * @throws IllegalArgumentException if {@code channelCount} is less than 1.
+         */
+        public @NonNull Builder setTargetAudioChannelCount(@IntRange(from = 1) int channelCount) {
+            if (channelCount < 1) {
+                throw new IllegalArgumentException("Target channel count must be greater than 0, "
+                        + "but was " + channelCount);
+            }
+
+            mMediaSpecBuilder.configureAudio(builder -> builder.setChannelCount(channelCount));
             return this;
         }
 

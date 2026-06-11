@@ -35,15 +35,17 @@ import androidx.camera.camera2.pipe.compat.Api28Compat
 import androidx.camera.camera2.pipe.compat.Api29Compat
 import androidx.camera.camera2.pipe.compat.Api33Compat
 import androidx.camera.camera2.pipe.core.Log
+import java.lang.Class
+import java.util.concurrent.CopyOnWriteArraySet
 import java.util.concurrent.Executor
-import kotlin.reflect.KClass
 import kotlinx.atomicfu.atomic
 
 /** Implements an [ImageReaderWrapper] using an [ImageReader]. */
 public class AndroidImageReader
-private constructor(
+internal constructor(
     private val imageReader: ImageReader,
     override val capacity: Int,
+    override val usageFlags: Long?,
     private val streamId: StreamId,
     private val outputId: OutputId,
 ) : ImageReaderWrapper, ImageReader.OnImageAvailableListener {
@@ -79,18 +81,33 @@ private constructor(
         // discardFreeBuffers to ensure we release as much memory as possible.
         imageReader.acquireLatestImage()?.close()
 
+        discardFreeBuffers()
+    }
+
+    override fun discardFreeBuffers() {
         // ImageReaders are pools of shared memory that is not actively released until the
         // ImageReader is closed. This method call actively frees these unused buffers from the
         // internal buffer pool.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            Api28Compat.discardFreeBuffers(imageReader)
+            try {
+                Api28Compat.discardFreeBuffers(imageReader)
+            } catch (_: IllegalStateException) {
+                // When ImageSource is closed, the underlying ImageReader is not immediately closed,
+                // because there may be outstanding images. At that point,  whenever an image is
+                // closed, the wrapped image calls discardFreeBuffers under the hood to immediately
+                // deallocate memory. Hence, it's reasonable for discardFreeBuffes or flush to
+                // still be callable even after close.
+                Log.debug {
+                    "Failed to discardFreeBuffers on $this. Expected if invoked after close()."
+                }
+            }
         }
     }
 
     @Suppress("UNCHECKED_CAST")
-    override fun <T : Any> unwrapAs(type: KClass<T>): T? =
+    override fun <T : Any> unwrapAs(type: Class<T>): T? =
         when (type) {
-            ImageReader::class -> imageReader as T?
+            ImageReader::class.java -> imageReader as T?
             else -> null
         }
 
@@ -101,18 +118,6 @@ private constructor(
     }
 
     public companion object {
-        // See: b/172464059
-        //
-        // The ImageReader has an internal limit of 64 images by design, but depending on the device
-        // specific camera HAL (Which can be different per device) there is an additional number of
-        // images that are reserved by the Camera HAL which reduces this number. If, for example,
-        // the HAL reserves 8 images, you have a maximum of 56 (64 - 8).
-        //
-        // One of the worst cases observed is the HAL reserving 10 images, which gives a maximum
-        // capacity of 54 (64 - 10). For safety and compatibility reasons, set the maximum capacity
-        // to be 54, which leaves headroom for an app configured limit of 50.
-        internal const val IMAGEREADER_MAX_CAPACITY = 54
-
         /**
          * Create and configure a new ImageReader instance as an [ImageReaderWrapper].
          *
@@ -133,11 +138,6 @@ private constructor(
             require(width > 0) { "Width ($width) must be > 0" }
             require(height > 0) { "Height ($height) must be > 0" }
             require(capacity > 0) { "Capacity ($capacity) must be > 0" }
-            require(capacity <= IMAGEREADER_MAX_CAPACITY) {
-                "Capacity for creating new ImageSources is restricted to " +
-                    "$IMAGEREADER_MAX_CAPACITY. Android has undocumented internal limits that " +
-                    "are different depending on which device the ImageReader is created on."
-            }
 
             // Warnings for unsupported features:
             if (usageFlags != null && Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
@@ -197,7 +197,8 @@ private constructor(
                 }
 
             // Create the ImageSource and wire it up the onImageAvailableListener
-            val androidImageReader = AndroidImageReader(imageReader, capacity, streamId, outputId)
+            val androidImageReader =
+                AndroidImageReader(imageReader, capacity, usageFlags, streamId, outputId)
             imageReader.setOnImageAvailableListener(androidImageReader, handler)
             return androidImageReader
         }
@@ -210,6 +211,7 @@ public class AndroidMultiResolutionImageReader(
     private val multiResolutionImageReader: MultiResolutionImageReader,
     private val streamFormat: StreamFormat,
     override val capacity: Int,
+    override val usageFlags: Long?,
     private val streamId: StreamId,
     internal val outputConfigurations: List<OutputConfiguration>,
     private val streamInfoToOutputIdMap: Map<MultiResolutionStreamInfo, OutputId>,
@@ -217,6 +219,7 @@ public class AndroidMultiResolutionImageReader(
     private val concurrentOutputsEnabled: Boolean,
 ) : ImageReaderWrapper, ImageReader.OnImageAvailableListener, CameraOnActiveOutputSurfacesListener {
     private val singleOutputIdSets = surfaceToOutputIdMap.mapValues { setOf(it.value) }
+    private val imageReaderSet = CopyOnWriteArraySet<ImageReader>()
 
     override val surface: Surface
         get() = multiResolutionImageReader.surface
@@ -227,6 +230,7 @@ public class AndroidMultiResolutionImageReader(
         atomic(null)
 
     override fun onImageAvailable(reader: ImageReader?) {
+        if (reader != null) imageReaderSet.add(reader)
         val image = reader?.acquireNextImage()
         if (image != null) {
             val imageListener = onImageListener
@@ -290,14 +294,32 @@ public class AndroidMultiResolutionImageReader(
         // ImageReaders are pools of shared memory that is not actively released until the
         // ImageReader is closed. This method call actively frees these unused buffers from the
         // internal buffer pool(s).
-        multiResolutionImageReader.flush()
+        try {
+            multiResolutionImageReader.flush()
+        } catch (_: IllegalStateException) {
+            // See [AndroidImageReaders.discardFreeBuffers].
+            Log.debug { "Failed to flush $this. Expected if invoked after close()." }
+        }
+    }
+
+    override fun discardFreeBuffers() {
+        for (imageReader in imageReaderSet) {
+            try {
+                imageReader.discardFreeBuffers()
+            } catch (_: IllegalStateException) {
+                // See [AndroidImageReaders.discardFreeBuffers].
+                Log.debug {
+                    "Failed to discardFreeBuffers on $this. Expected if invoked after close()."
+                }
+            }
+        }
     }
 
     @Suppress("UNCHECKED_CAST")
-    override fun <T : Any> unwrapAs(type: KClass<T>): T? =
+    override fun <T : Any> unwrapAs(type: Class<T>): T? =
         when (type) {
-            AndroidMultiResolutionImageReader::class -> this as T?
-            MultiResolutionImageReader::class -> multiResolutionImageReader as T?
+            AndroidMultiResolutionImageReader::class.java -> this as T?
+            MultiResolutionImageReader::class.java -> multiResolutionImageReader as T?
             else -> null
         }
 
@@ -324,12 +346,6 @@ public class AndroidMultiResolutionImageReader(
             plaformApiCompat: PlatformApiCompat?,
         ): ImageReaderWrapper {
             require(capacity > 0) { "Capacity ($capacity) must be > 0" }
-            require(capacity <= AndroidImageReader.IMAGEREADER_MAX_CAPACITY) {
-                "Capacity for creating new ImageSources is restricted to " +
-                    "${AndroidImageReader.IMAGEREADER_MAX_CAPACITY}. Android has undocumented " +
-                    "internal limits that are different depending on which device the " +
-                    "MultiResolutionImageReader is created on."
-            }
             if (enableConcurrentOutputs) {
                 require(plaformApiCompat?.isMultiResolutionConcurrentReadersEnabled() == true) {
                     "Concurrent MultiResolutionImageReaders are not supported on this device"
@@ -385,6 +401,7 @@ public class AndroidMultiResolutionImageReader(
                     multiResolutionImageReader,
                     StreamFormat(outputFormat),
                     capacity,
+                    usageFlags,
                     streamId,
                     outputConfigurations,
                     streamInfoToOutputIdMap,

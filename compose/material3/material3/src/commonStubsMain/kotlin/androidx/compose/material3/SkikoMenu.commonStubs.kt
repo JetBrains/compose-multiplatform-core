@@ -45,6 +45,7 @@ actual fun DropdownMenu(
     content: @Composable ColumnScope.() -> Unit,
 ): Unit = implementedInJetBrainsFork()
 
+@Deprecated("Maintained for binary compatibility.", level = DeprecationLevel.HIDDEN)
 @ExperimentalMaterial3ExpressiveApi
 @Composable
 actual fun DropdownMenuPopup(
@@ -67,6 +68,14 @@ actual fun DropdownMenuItem(
     colors: MenuItemColors,
     contentPadding: PaddingValues,
     interactionSource: MutableInteractionSource?,
+): Unit = implementedInJetBrainsFork()
+
+@Composable
+internal actual fun DropdownMenuPopupImpl(
+    onDismissRequest: () -> Unit,
+    popupPositionProvider: DropdownMenuPopupPositionProvider,
+    properties: PopupProperties,
+    content: @Composable () -> Unit,
 ): Unit = implementedInJetBrainsFork()
 
 internal actual val DefaultMenuProperties: PopupProperties = implementedInJetBrainsFork()

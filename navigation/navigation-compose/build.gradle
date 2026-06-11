@@ -26,7 +26,7 @@ plugins {
 
 androidXMultiplatform {
     androidLibrary {
-        compileSdk { version = release(35) }
+        compileSdk { version = release(37) }
         namespace = "androidx.navigation.compose"
         androidResources.enable = true
     }
@@ -40,12 +40,12 @@ androidXMultiplatform {
             api(project(":navigation:navigation-runtime"))
             api(project(":navigation:navigation-common"))
             implementation("androidx.annotation:annotation:1.8.0")
-            api("androidx.compose.runtime:runtime:1.7.2")
-            api("androidx.compose.ui:ui:1.7.2")
-            api("androidx.compose.animation:animation:1.7.2")
-            api("androidx.compose.runtime:runtime-saveable:1.7.2")
-            implementation("androidx.compose.animation:animation-core:1.7.2")
-            implementation("androidx.compose.foundation:foundation-layout:1.7.2")
+            api("androidx.compose.runtime:runtime:1.10.5")
+            api("androidx.compose.ui:ui:1.10.5")
+            api("androidx.compose.animation:animation:1.10.5")
+            api("androidx.compose.runtime:runtime-saveable:1.10.5")
+            implementation("androidx.compose.animation:animation-core:1.10.5")
+            implementation("androidx.compose.foundation:foundation-layout:1.10.5")
             implementation("androidx.collection:collection:1.4.5")
             implementation("androidx.lifecycle:lifecycle-common:2.9.1")
             implementation("androidx.lifecycle:lifecycle-runtime-compose:2.9.1")
@@ -54,20 +54,16 @@ androidXMultiplatform {
             implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.9.1")
             implementation("androidx.savedstate:savedstate:1.3.0")
             implementation("androidx.savedstate:savedstate-compose:1.3.0")
+            implementation("androidx.navigationevent:navigationevent-compose:1.1.1")
             implementation(libs.kotlinCoroutinesCore)
             implementation(libs.kotlinSerializationCore)
         }
         commonTest.dependencies {
             implementation(libs.kotlinTest)
         }
-        create("nonAndroidMain").dependsOn(commonMain)
-        create("nonAndroidTest").dependsOn(commonTest)
-
-        jvmStubsMain.dependsOn(nonAndroidMain)
-        jvmStubsTest.dependsOn(nonAndroidTest)
 
         androidMain.dependencies {
-            api("androidx.activity:activity-compose:1.8.0")
+            api("androidx.activity:activity-compose:1.9.0")
             api("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.2")
             implementation("androidx.activity:activity:1.8.0")
         }
@@ -105,8 +101,6 @@ androidXMultiplatform {
             implementation(project(":compose:ui:ui-tooling"))
             implementation(project(":internal-testutils-navigation"))
         }
-        nonJvmMain.dependsOn(nonAndroidMain)
-        nonJvmTest.dependsOn(nonAndroidTest)
     }
 }
 

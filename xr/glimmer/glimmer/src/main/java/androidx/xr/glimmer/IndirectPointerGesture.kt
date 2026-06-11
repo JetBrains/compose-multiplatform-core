@@ -37,21 +37,22 @@ import kotlin.math.abs
  * [IndirectPointerEvent] source. The component (or one of its descendants) using this modifier
  * **must be focused** to intercept events.
  *
- * This modifier allows optionality for gesture callbacks. If a specific gesture callback is `null`,
- * the corresponding events will not be consumed by this modifier. For example, if [onClick] is
- * `null` but swipe callbacks are provided, corresponding [IndirectPointerEvent]s for click can
- * still be handled by a parent `clickable` modifier, while swipe gestures are consumed by this
- * modifier.
+ * This modifier allows optionality for swipe gesture callbacks. If a specific swipe gesture
+ * callback is `null`, the corresponding swipe events will not be consumed by this modifier. For
+ * example:
+ * - When nesting `onIndirectPointerGesture` modifiers, if the inner modifier provides an
+ *   [onSwipeBackward] callback but leaves [onSwipeForward] as `null`, the outer modifier can still
+ *   detect and handle the forward swipe, and vice versa.
+ *
+ * Note that the initial `down` event is always consumed by this modifier (if not already consumed)
+ * as long as at least one callback ([onClick], [onSwipeForward], or [onSwipeBackward]) is provided.
  *
  * @sample androidx.xr.glimmer.samples.OnIndirectPointerGestureSample
  * @param enabled Controls whether gesture detection is active. When `false`, this modifier has no
  *   effect and no callbacks will be invoked.
- * @param onSwipeForward Invoked when a successful forward swipe is detected. If `null`, the
- *   corresponding [IndirectPointerEvent]s will not be consumed.
- * @param onSwipeBackward Invoked when a successful backward swipe is detected. If `null`, the
- *   corresponding [IndirectPointerEvent]s will not be consumed.
- * @param onClick Invoked when a successful click is detected. If `null`, the corresponding
- *   [IndirectPointerEvent]s will not be consumed.
+ * @param onSwipeForward Invoked when a successful forward swipe is detected.
+ * @param onSwipeBackward Invoked when a successful backward swipe is detected.
+ * @param onClick Invoked when a successful click is detected.
  */
 public fun Modifier.onIndirectPointerGesture(
     enabled: Boolean = true,
@@ -184,9 +185,11 @@ private class IndirectPointerGestureNode(
 
             isTrackedPointerInEvent = true
 
-            if (velocityTracker == null) velocityTracker = VelocityTracker()
-
-            requireVelocityTracker().addPosition(change.uptimeMillis, change.position)
+            if (
+                (onSwipeForward != null || onSwipeBackward != null) && !ignoreSwipeForGestureStream
+            ) {
+                getVelocityTracker().addPosition(change.uptimeMillis, change.position)
+            }
             handleInputChange(change)
         }
 
@@ -209,14 +212,13 @@ private class IndirectPointerGestureNode(
     }
 
     private fun handleDownIgnoreConsumed(inputChange: IndirectPointerInputChange) {
-        if (inputChange.isConsumed) {
-            // If the down event was consumed, suppress the `onClick` callback.
-            // However, we still track for swipe gestures, similar to how draggable continues to
-            // track movement even if the initial `down` event is consumed.
-            ignoreClickForGestureStream = true
-        } else {
-            ignoreClickForGestureStream = false
+        if (!inputChange.isConsumed) {
             inputChange.consume()
+        } else {
+            // If the down event is consumed by a child, we don't want to trigger a click.
+            // However, we continue tracking the pointer's movement to determine if it resolves
+            // into a swipe for the current onIndirectPointerGesture.
+            ignoreClickForGestureStream = true
         }
         initialPosition = inputChange.position
         previousValidPositionX = inputChange.position.x
@@ -229,15 +231,37 @@ private class IndirectPointerGestureNode(
         }
 
         totalHorizontalDistanceTraveled += abs(inputChange.position.x - previousValidPositionX)
+
         val displacementFromInitial = inputChange.position - initialPosition
 
         val touchSlop = currentValueOf(LocalViewConfiguration).touchSlop
         val touchSlopSquared = touchSlop * touchSlop
 
+        if (
+            !ignoreSwipeForGestureStream &&
+                isSwipeBacktracking(
+                    touchSlop,
+                    totalDistanceTraveled = totalHorizontalDistanceTraveled,
+                    displacement = displacementFromInitial.x,
+                )
+        ) {
+            // The pointer has backtracked beyond the touch slop threshold. Stop tracking swipe for
+            // the remainder of this gesture.
+            ignoreSwipeForGestureStream = true
+        }
+
         if (displacementFromInitial.getDistanceSquared() > touchSlopSquared) {
             // We've moved outside the click region.
             ignoreClickForGestureStream = true
-            if (!inputChange.isConsumed) inputChange.consume()
+
+            if (!ignoreSwipeForGestureStream) {
+                // Pointer has moved enough to be a swipe, and the swipe is still valid.
+                if (onSwipeBackward != null && displacementFromInitial.x < 0) {
+                    inputChange.consume()
+                } else if (onSwipeForward != null && displacementFromInitial.x > 0) {
+                    inputChange.consume()
+                }
+            }
         }
 
         previousValidPositionX = inputChange.position.x
@@ -256,17 +280,8 @@ private class IndirectPointerGestureNode(
 
             if (abs(finalHorizontalDisplacement) > swipeDistanceThresholdPx) {
                 // We've moved enough to be considered a swipe but not a click.
-                val horizontalVelocity = requireVelocityTracker().calculateVelocity().x
-                totalHorizontalDistanceTraveled +=
-                    abs(inputChange.position.x - previousValidPositionX)
-                if (
-                    abs(horizontalVelocity) >= SwipeVelocityThresholdPxPerSec &&
-                        !isSwipeBacktracking(
-                            touchSlop,
-                            totalDistanceTraveled = totalHorizontalDistanceTraveled,
-                            displacement = finalHorizontalDisplacement,
-                        )
-                ) {
+                val horizontalVelocity = getVelocityTracker().calculateVelocity().x
+                if (abs(horizontalVelocity) >= SwipeVelocityThresholdPxPerSec) {
                     // It's a valid swipe (no backtrack) and it's fast enough.
                     val swipeCallback =
                         if (finalHorizontalDisplacement < 0) onSwipeBackward else onSwipeForward
@@ -299,8 +314,9 @@ private class IndirectPointerGestureNode(
         return abs(totalDistanceTraveled - abs(displacement)) > backtrackingThreshold
     }
 
-    private fun requireVelocityTracker(): VelocityTracker =
-        requireNotNull(velocityTracker) { "Velocity Tracker not initialized." }
+    private fun getVelocityTracker(): VelocityTracker {
+        return velocityTracker ?: VelocityTracker().also { velocityTracker = it }
+    }
 
     private fun IndirectPointerInputChange.changedToDownIgnoreConsumed() =
         !previousPressed && pressed

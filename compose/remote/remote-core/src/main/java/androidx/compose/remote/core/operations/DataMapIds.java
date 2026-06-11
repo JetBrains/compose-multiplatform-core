@@ -23,6 +23,7 @@ import androidx.compose.remote.core.Limits;
 import androidx.compose.remote.core.Operation;
 import androidx.compose.remote.core.Operations;
 import androidx.compose.remote.core.RemoteContext;
+import androidx.compose.remote.core.VariableProvider;
 import androidx.compose.remote.core.WireBuffer;
 import androidx.compose.remote.core.documentation.DocumentationBuilder;
 import androidx.compose.remote.core.operations.utilities.DataMap;
@@ -34,7 +35,7 @@ import java.util.List;
 
 /** This is a map of strings to type & Id */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public class DataMapIds extends Operation {
+public class DataMapIds extends Operation implements VariableProvider {
     private static final int OP_CODE = Operations.ID_MAP;
     private static final String CLASS_NAME = "DataMapIds";
     int mId;
@@ -61,6 +62,16 @@ public class DataMapIds extends Operation {
                 return "Boolean";
         }
         return "?";
+    }
+
+    @Override
+    public int getId() {
+        return mId;
+    }
+
+    @Override
+    public void setId(int id) {
+        mId = id;
     }
 
     public DataMapIds(
@@ -95,10 +106,10 @@ public class DataMapIds extends Operation {
      * Write this operation to the buffer
      *
      * @param buffer the buffer to apply the operation to
-     * @param id     the id
-     * @param names  the names of the variables
-     * @param type   the types of the variables
-     * @param ids    the ids of the variables
+     * @param id the id
+     * @param names the names of the variables
+     * @param type the types of the variables
+     * @param ids the ids of the variables
      */
     public static void apply(
             @NonNull WireBuffer buffer,
@@ -119,15 +130,15 @@ public class DataMapIds extends Operation {
     /**
      * Read this operation and add it to the list of operations
      *
-     * @param buffer     the buffer to read
+     * @param buffer the buffer to read
      * @param operations the list of operations that will be added to
      */
     public static void read(@NonNull WireBuffer buffer, @NonNull List<Operation> operations) {
-        int id = buffer.readInt();
+        int id = buffer.declareId();
         int len = buffer.readInt();
         if (len > Limits.MAX_DATA_MAP_SIZE) {
-            throw new RuntimeException(len + " map entries more than max = "
-                    + Limits.MAX_DATA_MAP_SIZE);
+            throw new RuntimeException(
+                    len + " map entries more than max = " + Limits.MAX_DATA_MAP_SIZE);
         }
         String[] names = new String[len];
         int[] ids = new int[len];
@@ -135,7 +146,7 @@ public class DataMapIds extends Operation {
         for (int i = 0; i < names.length; i++) {
             names[i] = buffer.readUTF8();
             types[i] = (byte) buffer.readByte();
-            ids[i] = buffer.readInt();
+            ids[i] = buffer.readId();
         }
         DataMapIds data = new DataMapIds(id, names, types, ids);
         operations.add(data);
@@ -155,8 +166,7 @@ public class DataMapIds extends Operation {
                 .field(UTF8, "name", "The name of the entry")
                 .field(INT, "type", "The type of the entry")
                 .field(INT, "id", "The ID of the variable")
-                .endSubsection()
-        ;
+                .endSubsection();
     }
 
     @NonNull

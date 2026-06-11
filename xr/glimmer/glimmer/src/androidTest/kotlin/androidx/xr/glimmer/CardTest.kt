@@ -163,7 +163,7 @@ class CardTest {
         lateinit var expectedContentTextStyle: TextStyle
         rule.setGlimmerThemeContent {
             expectedTitleTextStyle = GlimmerTheme.typography.bodyMedium
-            expectedSubtitleTextStyle = GlimmerTheme.typography.bodySmall
+            expectedSubtitleTextStyle = GlimmerTheme.typography.caption
             expectedContentTextStyle = GlimmerTheme.typography.bodySmall
             Card(
                 title = { actualTitleTextStyle = LocalTextStyle.current },
@@ -182,14 +182,12 @@ class CardTest {
 
     @Test
     fun setsContentColor() {
-        var primary = Color.Unspecified
         var titleContentColor = Color.Unspecified
         var subtitleContentColor = Color.Unspecified
         var leadingIconContentColor = Color.Unspecified
         var trailingIconContentColor = Color.Unspecified
         var contentContentColor = Color.Unspecified
         rule.setGlimmerThemeContent {
-            primary = GlimmerTheme.colors.primary
             Card(
                 title = {
                     Box(
@@ -232,8 +230,8 @@ class CardTest {
         rule.runOnIdle {
             assertThat(titleContentColor).isEqualTo(Color.White)
             assertThat(subtitleContentColor).isEqualTo(Color.White)
-            assertThat(leadingIconContentColor).isEqualTo(primary)
-            assertThat(trailingIconContentColor).isEqualTo(primary)
+            assertThat(leadingIconContentColor).isEqualTo(Color.White)
+            assertThat(trailingIconContentColor).isEqualTo(Color.White)
             assertThat(contentContentColor).isEqualTo(Color.White)
         }
     }

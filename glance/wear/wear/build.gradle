@@ -48,6 +48,7 @@ dependencies {
     implementation("androidx.core:core-ktx:1.17.0")
     implementation("androidx.datastore:datastore-android:$datastoreVersion")
     implementation("androidx.datastore:datastore-core:$datastoreVersion")
+    implementation("androidx.wear:wear-core:1.1.0")
 
     compileOnly files("../../../wear/wear_sdk/wear-sdk.jar")
 
@@ -78,7 +79,7 @@ wire {
 
 android {
     namespace = "androidx.glance.wear"
-    compileSdk { version = release(36) }
+    compileSdk { version = release(37) }
     defaultConfig {
         minSdk { version = release(29) }
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"

@@ -132,7 +132,7 @@ class RemoteBooleanTest {
     fun intEqual_true() {
         val v1 = RemoteInt(10)
         val v2 = RemoteInt(10)
-        val bool = v1 eq v2
+        val bool = v1.isEqualTo(v2)
         val str = bool.select(RemoteString("true"), RemoteString("false"))
         val strId = str.getIdForCreationState(creationState)
         makeAndPaintCoreDocument()
@@ -145,8 +145,8 @@ class RemoteBooleanTest {
         val v1 = RemoteInt(10)
         val v2 = RemoteInt(9)
         val v3 = RemoteInt(11)
-        val bool1 = v1 eq v2
-        val bool2 = v3 eq v2
+        val bool1 = v1.isEqualTo(v2)
+        val bool2 = v3.isEqualTo(v2)
         val str1 = bool1.select(RemoteString("true"), RemoteString("false"))
         val str2 = bool2.select(RemoteString("true"), RemoteString("false"))
         val str1Id = str1.getIdForCreationState(creationState)
@@ -161,7 +161,7 @@ class RemoteBooleanTest {
     fun intNotEqual_true() {
         val v1 = RemoteInt(10)
         val v2 = RemoteInt(10)
-        val bool = v1 ne v2
+        val bool = v1.isNotEqualTo(v2)
         val str = bool.select(RemoteString("true"), RemoteString("false"))
         val strId = str.getIdForCreationState(creationState)
         makeAndPaintCoreDocument()
@@ -174,8 +174,8 @@ class RemoteBooleanTest {
         val v1 = RemoteInt(10)
         val v2 = RemoteInt(9)
         val v3 = RemoteInt(11)
-        val bool1 = v1 ne v2
-        val bool2 = v3 ne v2
+        val bool1 = v1.isNotEqualTo(v2)
+        val bool2 = v3.isNotEqualTo(v2)
         val str1 = bool1.select(RemoteString("true"), RemoteString("false"))
         val str2 = bool2.select(RemoteString("true"), RemoteString("false"))
         val str1Id = str1.getIdForCreationState(creationState)
@@ -190,7 +190,7 @@ class RemoteBooleanTest {
     fun intLessThanSelect_true() {
         val v1 = RemoteInt(10)
         val v2 = RemoteInt(20)
-        val bool = v1 lt v2
+        val bool = v1.isLessThan(v2)
         val str = bool.select(RemoteString("true"), RemoteString("false"))
         val strId = str.getIdForCreationState(creationState)
         makeAndPaintCoreDocument()
@@ -202,8 +202,8 @@ class RemoteBooleanTest {
     fun intLessThanSelect_false() {
         val v1 = RemoteInt(10)
         val v2 = RemoteInt(20)
-        val bool1 = v2 lt v1
-        val bool2 = v2 lt v2
+        val bool1 = v2.isLessThan(v1)
+        val bool2 = v2.isLessThan(v2)
         val str1 = bool1.select(RemoteString("true"), RemoteString("false"))
         val str2 = bool2.select(RemoteString("true"), RemoteString("false"))
         val str1Id = str1.getIdForCreationState(creationState)
@@ -218,8 +218,8 @@ class RemoteBooleanTest {
     fun intLessThanOrEqualSelect_true() {
         val v1 = RemoteInt(10)
         val v2 = RemoteInt(20)
-        val bool1 = v1 le v2
-        val bool2 = v2 le v2
+        val bool1 = v1.isLessThanOrEqual(v2)
+        val bool2 = v2.isLessThanOrEqual(v2)
         val str1 = bool1.select(RemoteString("true"), RemoteString("false"))
         val str2 = bool2.select(RemoteString("true"), RemoteString("false"))
         val str1Id = str1.getIdForCreationState(creationState)
@@ -234,7 +234,7 @@ class RemoteBooleanTest {
     fun intLessThanOrEqualSelect_false() {
         val v1 = RemoteInt(10)
         val v2 = RemoteInt(20)
-        val bool = v2 le v1
+        val bool = v2.isLessThanOrEqual(v1)
         val str = bool.select(RemoteString("true"), RemoteString("false"))
         val strId = str.getIdForCreationState(creationState)
         makeAndPaintCoreDocument()
@@ -246,7 +246,7 @@ class RemoteBooleanTest {
     fun intGreaterThanSelect_true() {
         val v1 = RemoteInt(20)
         val v2 = RemoteInt(10)
-        val bool = v1 gt v2
+        val bool = v1.isGreaterThan(v2)
         val str = bool.select(RemoteString("true"), RemoteString("false"))
         val strId = str.getIdForCreationState(creationState)
         makeAndPaintCoreDocument()
@@ -258,8 +258,8 @@ class RemoteBooleanTest {
     fun intGreaterThanSelect_false() {
         val v1 = RemoteInt(20)
         val v2 = RemoteInt(10)
-        val bool1 = v2 gt v1
-        val bool2 = v2 gt v2
+        val bool1 = v2.isGreaterThan(v1)
+        val bool2 = v2.isGreaterThan(v2)
         val str1 = bool1.select(RemoteString("true"), RemoteString("false"))
         val str2 = bool2.select(RemoteString("true"), RemoteString("false"))
         val str1Id = str1.getIdForCreationState(creationState)
@@ -274,8 +274,8 @@ class RemoteBooleanTest {
     fun intGreaterThanOrEqualSelect_true() {
         val v1 = RemoteInt(20)
         val v2 = RemoteInt(10)
-        val bool1 = v1 ge v2
-        val bool2 = v2 ge v2
+        val bool1 = v1.isGreaterThanOrEqual(v2)
+        val bool2 = v2.isGreaterThanOrEqual(v2)
         val str1 = bool1.select(RemoteString("true"), RemoteString("false"))
         val str2 = bool2.select(RemoteString("true"), RemoteString("false"))
         val str1Id = str1.getIdForCreationState(creationState)
@@ -290,7 +290,7 @@ class RemoteBooleanTest {
     fun intGreaterThanOrEqualSelect_false() {
         val v1 = RemoteInt(20)
         val v2 = RemoteInt(10)
-        val bool = v2 ge v1
+        val bool = v2.isGreaterThanOrEqual(v1)
         val str = bool.select(RemoteString("true"), RemoteString("false"))
         val strId = str.getIdForCreationState(creationState)
         makeAndPaintCoreDocument()
@@ -302,7 +302,7 @@ class RemoteBooleanTest {
     fun floatEqual_true() {
         val v1 = RemoteFloat(10f)
         val v2 = RemoteFloat(10f)
-        val bool = v1 eq v2
+        val bool = v1.isEqualTo(v2)
         val str = bool.select(RemoteString("true"), RemoteString("false"))
         val strId = str.getIdForCreationState(creationState)
         makeAndPaintCoreDocument()
@@ -315,8 +315,8 @@ class RemoteBooleanTest {
         val v1 = RemoteFloat(10f)
         val v2 = RemoteFloat(9f)
         val v3 = RemoteFloat(11f)
-        val bool1 = v1 eq v2
-        val bool2 = v3 eq v2
+        val bool1 = v1.isEqualTo(v2)
+        val bool2 = v3.isEqualTo(v2)
         val str1 = bool1.select(RemoteString("true"), RemoteString("false"))
         val str2 = bool2.select(RemoteString("true"), RemoteString("false"))
         val str1Id = str1.getIdForCreationState(creationState)
@@ -331,7 +331,7 @@ class RemoteBooleanTest {
     fun floatNotEqual_true() {
         val v1 = RemoteFloat(10f)
         val v2 = RemoteFloat(10f)
-        val bool = v1 ne v2
+        val bool = v1.isNotEqualTo(v2)
         val str = bool.select(RemoteString("true"), RemoteString("false"))
         val strId = str.getIdForCreationState(creationState)
         makeAndPaintCoreDocument()
@@ -344,8 +344,8 @@ class RemoteBooleanTest {
         val v1 = RemoteFloat(10f)
         val v2 = RemoteFloat(9f)
         val v3 = RemoteFloat(11f)
-        val bool1 = v1 ne v2
-        val bool2 = v3 ne v2
+        val bool1 = v1.isNotEqualTo(v2)
+        val bool2 = v3.isNotEqualTo(v2)
         val str1 = bool1.select(RemoteString("true"), RemoteString("false"))
         val str2 = bool2.select(RemoteString("true"), RemoteString("false"))
         val str1Id = str1.getIdForCreationState(creationState)
@@ -360,7 +360,7 @@ class RemoteBooleanTest {
     fun floatLessThanSelect_true() {
         val v1 = RemoteFloat(10f)
         val v2 = RemoteFloat(20f)
-        val bool = v1 lt v2
+        val bool = v1.isLessThan(v2)
         val str = bool.select(RemoteString("true"), RemoteString("false"))
         val strId = str.getIdForCreationState(creationState)
         makeAndPaintCoreDocument()
@@ -372,8 +372,8 @@ class RemoteBooleanTest {
     fun floatLessThanSelect_false() {
         val v1 = RemoteFloat(10f)
         val v2 = RemoteFloat(20f)
-        val bool1 = v2 lt v1
-        val bool2 = v2 lt v2
+        val bool1 = v2.isLessThan(v1)
+        val bool2 = v2.isLessThan(v2)
         val str1 = bool1.select(RemoteString("true"), RemoteString("false"))
         val str2 = bool2.select(RemoteString("true"), RemoteString("false"))
         val str1Id = str1.getIdForCreationState(creationState)
@@ -388,8 +388,8 @@ class RemoteBooleanTest {
     fun floatLessThanOrEqualSelect_true() {
         val v1 = RemoteFloat(10f)
         val v2 = RemoteFloat(20f)
-        val bool1 = v1 le v2
-        val bool2 = v2 le v2
+        val bool1 = v1.isLessThanOrEqual(v2)
+        val bool2 = v2.isLessThanOrEqual(v2)
         val str1 = bool1.select(RemoteString("true"), RemoteString("false"))
         val str2 = bool2.select(RemoteString("true"), RemoteString("false"))
         val str1Id = str1.getIdForCreationState(creationState)
@@ -404,7 +404,7 @@ class RemoteBooleanTest {
     fun floatLessThanOrEqualSelect_false() {
         val v1 = RemoteFloat(10f)
         val v2 = RemoteFloat(20f)
-        val bool = v2 le v1
+        val bool = v2.isLessThanOrEqual(v1)
         val str = bool.select(RemoteString("true"), RemoteString("false"))
         val strId = str.getIdForCreationState(creationState)
         makeAndPaintCoreDocument()
@@ -416,7 +416,7 @@ class RemoteBooleanTest {
     fun floatGreaterThanSelect_true() {
         val v1 = RemoteFloat(20f)
         val v2 = RemoteFloat(10f)
-        val bool = v1 gt v2
+        val bool = v1.isGreaterThan(v2)
         val str = bool.select(RemoteString("true"), RemoteString("false"))
         val strId = str.getIdForCreationState(creationState)
         makeAndPaintCoreDocument()
@@ -428,8 +428,8 @@ class RemoteBooleanTest {
     fun floatGreaterThanSelect_false() {
         val v1 = RemoteFloat(20f)
         val v2 = RemoteFloat(10f)
-        val bool1 = v2 gt v1
-        val bool2 = v2 gt v2
+        val bool1 = v2.isGreaterThan(v1)
+        val bool2 = v2.isGreaterThan(v2)
         val str1 = bool1.select(RemoteString("true"), RemoteString("false"))
         val str2 = bool2.select(RemoteString("true"), RemoteString("false"))
         val str1Id = str1.getIdForCreationState(creationState)
@@ -444,8 +444,8 @@ class RemoteBooleanTest {
     fun floatGreaterThanOrEqualSelect_true() {
         val v1 = RemoteFloat(20f)
         val v2 = RemoteFloat(10f)
-        val bool1 = v1 ge v2
-        val bool2 = v2 ge v2
+        val bool1 = v1.isGreaterThanOrEqual(v2)
+        val bool2 = v2.isGreaterThanOrEqual(v2)
         val str1 = bool1.select(RemoteString("true"), RemoteString("false"))
         val str2 = bool2.select(RemoteString("true"), RemoteString("false"))
         val str1Id = str1.getIdForCreationState(creationState)
@@ -460,7 +460,7 @@ class RemoteBooleanTest {
     fun floatGreaterThanOrEqualSelect_false() {
         val v1 = RemoteFloat(20f)
         val v2 = RemoteFloat(10f)
-        val bool = v2 ge v1
+        val bool = v2.isGreaterThanOrEqual(v1)
         val str = bool.select(RemoteString("true"), RemoteString("false"))
         val strId = str.getIdForCreationState(creationState)
         makeAndPaintCoreDocument()
@@ -472,7 +472,7 @@ class RemoteBooleanTest {
     fun colorIntSelect_true() {
         val v1 = RemoteFloat(20f)
         val v2 = RemoteFloat(10f)
-        val bool = v1 ge v2
+        val bool = v1.isGreaterThanOrEqual(v2)
         val color = bool.select(Color.RED, Color.GREEN)
         val colorId = color.getIdForCreationState(creationState)
         makeAndPaintCoreDocument()
@@ -484,7 +484,7 @@ class RemoteBooleanTest {
     fun colorIntSelect_false() {
         val v1 = RemoteFloat(10f)
         val v2 = RemoteFloat(20f)
-        val bool = v1 ge v2
+        val bool = v1.isGreaterThanOrEqual(v2)
         val color = bool.select(Color.RED, Color.GREEN)
         val colorId = color.getIdForCreationState(creationState)
         makeAndPaintCoreDocument()
@@ -496,7 +496,7 @@ class RemoteBooleanTest {
     fun colorSelect_true() {
         val v1 = RemoteFloat(20f)
         val v2 = RemoteFloat(10f)
-        val bool = v1 ge v2
+        val bool = v1.isGreaterThanOrEqual(v2)
         val color = bool.select(RemoteColor(Color.RED), RemoteColor(Color.GREEN))
         val colorId = color.getIdForCreationState(creationState)
         makeAndPaintCoreDocument()
@@ -508,7 +508,7 @@ class RemoteBooleanTest {
     fun colorSelect_false() {
         val v1 = RemoteFloat(10f)
         val v2 = RemoteFloat(20f)
-        val bool = v1 ge v2
+        val bool = v1.isGreaterThanOrEqual(v2)
         val color = bool.select(RemoteColor(Color.RED), RemoteColor(Color.GREEN))
         val colorId = color.getIdForCreationState(creationState)
         makeAndPaintCoreDocument()
@@ -584,10 +584,10 @@ class RemoteBooleanTest {
 
     @Test
     fun eq() {
-        val b00 = RemoteBoolean(false) eq RemoteBoolean(false)
-        val b01 = RemoteBoolean(false) eq RemoteBoolean(true)
-        val b10 = RemoteBoolean(true) eq RemoteBoolean(false)
-        val b11 = RemoteBoolean(true) eq RemoteBoolean(true)
+        val b00 = RemoteBoolean(false).isEqualTo(RemoteBoolean(false))
+        val b01 = RemoteBoolean(false).isEqualTo(RemoteBoolean(true))
+        val b10 = RemoteBoolean(true).isEqualTo(RemoteBoolean(false))
+        val b11 = RemoteBoolean(true).isEqualTo(RemoteBoolean(true))
         val result00 = b00.select(RemoteString("true"), RemoteString("false"))
         val result01 = b01.select(RemoteString("true"), RemoteString("false"))
         val result10 = b10.select(RemoteString("true"), RemoteString("false"))
@@ -606,10 +606,10 @@ class RemoteBooleanTest {
 
     @Test
     fun ne() {
-        val b00 = RemoteBoolean(false) ne RemoteBoolean(false)
-        val b01 = RemoteBoolean(false) ne RemoteBoolean(true)
-        val b10 = RemoteBoolean(true) ne RemoteBoolean(false)
-        val b11 = RemoteBoolean(true) ne RemoteBoolean(true)
+        val b00 = RemoteBoolean(false).isNotEqualTo(RemoteBoolean(false))
+        val b01 = RemoteBoolean(false).isNotEqualTo(RemoteBoolean(true))
+        val b10 = RemoteBoolean(true).isNotEqualTo(RemoteBoolean(false))
+        val b11 = RemoteBoolean(true).isNotEqualTo(RemoteBoolean(true))
         val result00 = b00.select(RemoteString("true"), RemoteString("false"))
         val result01 = b01.select(RemoteString("true"), RemoteString("false"))
         val result10 = b10.select(RemoteString("true"), RemoteString("false"))
@@ -656,10 +656,10 @@ class RemoteBooleanTest {
 
     @Test
     fun constantValue() {
-        assertThat((RemoteInt(10) gt RemoteInt(5)).constantValue).isTrue()
+        assertThat((RemoteInt(10).isGreaterThan(RemoteInt(5))).constantValue).isTrue()
 
         assertThat(
-                (RemoteFloat(100f) gt RemoteFloat(RemoteContext.FLOAT_CONTINUOUS_SEC))
+                (RemoteFloat(100f).isGreaterThan(RemoteFloat(RemoteContext.FLOAT_CONTINUOUS_SEC)))
                     .constantValueOrNull
             )
             .isNull()
@@ -703,6 +703,90 @@ class RemoteBooleanTest {
                     named.intValue,
                 )
             )
+    }
+
+    @Test
+    fun computeRequiredCodePointSet_true() {
+        val bool = RemoteBoolean(true)
+        val str = bool.select(RemoteString("A"), RemoteString("B"))
+
+        assertThat(str.computeRequiredCodePointSet(creationState)).containsExactly("A")
+    }
+
+    @Test
+    fun computeRequiredCodePointSet_false() {
+        val bool = RemoteBoolean(false)
+        val str = bool.select(RemoteString("A"), RemoteString("B"))
+
+        assertThat(str.computeRequiredCodePointSet(creationState)).containsExactly("B")
+    }
+
+    @Test
+    fun computeRequiredCodePointSet_dynamic() {
+        val bool = RemoteBoolean.createNamedRemoteBoolean("test", true)
+        val str = bool.select(RemoteString("A"), RemoteString("B"))
+
+        assertThat(str.computeRequiredCodePointSet(creationState)).containsExactly("A", "B")
+    }
+
+    @Test
+    fun mutableRemoteBoolean_smokeTest() {
+        val mutableBool = MutableRemoteBoolean(true)
+        val resultId = mutableBool.getIdForCreationState(creationState)
+        assertThat(resultId).isGreaterThan(0)
+    }
+
+    @Test
+    fun toDebugString_logicalAnd() {
+        val b = RemoteBoolean.createNamedRemoteBoolean("b", true)
+        val expr = b and RemoteBoolean(false)
+        assertThat(expr.toDebugString()).isEqualTo("user:b and 0")
+    }
+
+    @Test
+    fun toDebugString_logicalOr() {
+        val b = RemoteBoolean.createNamedRemoteBoolean("b", true)
+        val expr = b or RemoteBoolean(false)
+        assertThat(expr.toDebugString()).isEqualTo("user:b or 0")
+    }
+
+    @Test
+    fun toDebugString_logicalXor() {
+        val b = RemoteBoolean.createNamedRemoteBoolean("b", true)
+        val expr = b xor RemoteBoolean(false)
+        assertThat(expr.toDebugString()).isEqualTo("user:b xor 0")
+    }
+
+    @Test
+    fun toDebugString_select() {
+        val b = RemoteBoolean.createNamedRemoteBoolean("b", true)
+        val selectStr = b.select(RemoteString("yes"), RemoteString("no"))
+        assertThat(selectStr.toDebugString()).isEqualTo("""user:b ? "yes" : "no"""")
+
+        val selectInt = b.select(RemoteInt(10), RemoteInt(20))
+        assertThat(selectInt.toDebugString()).isEqualTo("user:b ? 10 : 20")
+    }
+
+    @Test
+    fun toDebugString_not() {
+        val b = RemoteBoolean.createNamedRemoteBoolean("b", true)
+        // Note not() is implemented as xor 1.
+        assertThat((!b).toDebugString()).isEqualTo("user:b xor 1")
+    }
+
+    @Test
+    fun toDebugString_contextVariable() {
+        val continuousSecFloat = RemoteFloat(RemoteContext.FLOAT_CONTINUOUS_SEC)
+        val boolExpr = continuousSecFloat.toRemoteInt().isGreaterThan(0.ri)
+        assertThat(boolExpr.toDebugString()).isEqualTo("context:continuous_sec.toRemoteInt() > 0")
+    }
+
+    @Test
+    fun toDebugString_constant() {
+        val bTrue = RemoteBoolean(true)
+        val bFalse = RemoteBoolean(false)
+        assertThat(bTrue.toDebugString()).isEqualTo("true")
+        assertThat(bFalse.toDebugString()).isEqualTo("false")
     }
 
     private fun makeAndPaintCoreDocument() =

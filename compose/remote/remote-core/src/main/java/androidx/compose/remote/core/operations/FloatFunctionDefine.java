@@ -45,13 +45,13 @@ public class FloatFunctionDefine extends Operation implements VariableSupport, C
     private static final String CLASS_NAME = "FunctionDefine";
     private final int mId;
     private final int @NonNull [] mFloatVarId;
-    @NonNull
-    private ArrayList<Operation> mList = new ArrayList<>();
+    private boolean mCurrentlyExecuting  = false;
+    @NonNull private ArrayList<Operation> mList = new ArrayList<>();
 
     @NonNull AnimatedFloatExpression mExp = new AnimatedFloatExpression();
 
     /**
-     * @param id         The id of the function
+     * @param id The id of the function
      * @param floatVarId the ids of the variables
      */
     public FloatFunctionDefine(int id, int @NonNull [] floatVarId) {
@@ -66,8 +66,7 @@ public class FloatFunctionDefine extends Operation implements VariableSupport, C
     }
 
     @Override
-    public void updateVariables(@NonNull RemoteContext context) {
-    }
+    public void updateVariables(@NonNull RemoteContext context) {}
 
     @Override
     public void registerListening(@NonNull RemoteContext context) {
@@ -97,8 +96,8 @@ public class FloatFunctionDefine extends Operation implements VariableSupport, C
      * Write the operation on the buffer
      *
      * @param buffer the buffer to write to
-     * @param id     the id of the function
-     * @param varId  the ids of the variables
+     * @param id the id of the function
+     * @param varId the ids of the variables
      */
     public static void apply(@NonNull WireBuffer buffer, int id, int @NonNull [] varId) {
         buffer.start(OP_CODE);
@@ -112,18 +111,18 @@ public class FloatFunctionDefine extends Operation implements VariableSupport, C
     /**
      * Read this operation and add it to the list of operations
      *
-     * @param buffer     the buffer to read
+     * @param buffer the buffer to read
      * @param operations the list of operations that will be added to
      */
     public static void read(@NonNull WireBuffer buffer, @NonNull List<Operation> operations) {
-        int id = buffer.readInt();
+        int id = buffer.readId();
         int varLen = buffer.readInt();
         if (varLen > Limits.MAX_FUNCTION_ARGUMENTS) {
             throw new IllegalArgumentException("Too many arguments");
         }
         int[] varId = new int[varLen];
         for (int i = 0; i < varId.length; i++) {
-            varId[i] = buffer.readInt();
+            varId[i] = buffer.readId();
         }
         FloatFunctionDefine data = new FloatFunctionDefine(id, varId);
         operations.add(data);
@@ -156,8 +155,7 @@ public class FloatFunctionDefine extends Operation implements VariableSupport, C
     }
 
     @Override
-    public void apply(@NonNull RemoteContext context) {
-    }
+    public void apply(@NonNull RemoteContext context) {}
 
     /**
      * Execute the function by applying the list of operations
@@ -165,6 +163,10 @@ public class FloatFunctionDefine extends Operation implements VariableSupport, C
      * @param context the current RemoteContext
      */
     public void execute(@NonNull RemoteContext context) {
+        if (mCurrentlyExecuting) {
+            throw new RuntimeException("Recursion not allowed");
+        }
+        mCurrentlyExecuting = true;
         for (Operation op : mList) {
             if (op instanceof VariableSupport) {
                 ((VariableSupport) op).updateVariables(context);
@@ -172,6 +174,7 @@ public class FloatFunctionDefine extends Operation implements VariableSupport, C
 
             context.incrementOpCount();
             op.apply(context);
+            mCurrentlyExecuting = false;
         }
     }
 }

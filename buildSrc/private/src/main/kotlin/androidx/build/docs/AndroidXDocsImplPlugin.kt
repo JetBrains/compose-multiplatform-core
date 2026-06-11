@@ -582,10 +582,10 @@ abstract class AndroidXDocsImplPlugin : Plugin<Project> {
             }
 
             return if (isJvm) {
-                // Dackka can't handle the aar dependencies, so this gets the jar from any aars (it
-                // is important that this does not use the transformed android-classes jar, because
-                // that jar does not contain kotlin module metadata) and the resource jar.
-                getArtifacts("jar") + getArtifacts("r-class-jar")
+                // Dackka can't handle the aar dependencies, so this gets two jars from any aars:
+                // the regular jar contains kotlin module metadata and the android-classes jar
+                // contains resources.
+                getArtifacts("jar") + getArtifacts("android-classes")
             } else {
                 getArtifacts()
             }
@@ -636,6 +636,9 @@ abstract class AndroidXDocsImplPlugin : Plugin<Project> {
                 task.argsJsonFile.set(
                     project.getDistributionDirectory().file("dackkaArgs-${project.name}.json")
                 )
+                task.traceFile.set(
+                    project.getDistributionDirectory().file("dackka-${project.name}.trace")
+                )
                 task.apply {
                     // Remove once there is property version of Copy#destinationDir
                     // Use samplesDir.set(unzipSamplesTask.flatMap { it.destinationDirectory })
@@ -661,8 +664,9 @@ abstract class AndroidXDocsImplPlugin : Plugin<Project> {
                     )
                     androidJars.setFrom(
                         project.getAndroidJar(
-                            project.defaultAndroidConfig.latestStableCompileSdk,
-                            project.defaultAndroidConfig.latestCompileSdkExtension,
+                            sdkNum = project.defaultAndroidConfig.latestStableCompileSdk,
+                            extNum = project.defaultAndroidConfig.latestCompileSdkExtension,
+                            minorNum = project.defaultAndroidConfig.latestStableMinorApiLevel,
                         )
                     )
                     nonKmpDependenciesClasspath.from(nonKmpDependencyClasspath)
@@ -871,7 +875,14 @@ private val hiddenPackages =
 
 // Set of packages to exclude from Java refdoc generation
 private val hiddenPackagesJava =
-    setOf("androidx.*compose.*", "androidx.*glance.*", "androidx\\.tv\\..*")
+    setOf(
+        "androidx.*compose.*",
+        "androidx.*glance.*",
+        "androidx\\.tv\\..*",
+        "androidx\\.xr\\.glimmer.*",
+        "androidx\\..*navigation3.*",
+        "androidx\\.appstate\\.transform.*",
+    )
 
 // List of annotations which should not be displayed in the docs
 private val hiddenAnnotations: List<String> =
@@ -931,13 +942,24 @@ private val annotationsToHideApis: List<String> =
 
 /** Data class that matches JSON structure of kotlin source set metadata */
 data class ProjectStructureMetadata(var sourceSets: List<SourceSetMetadata>) {
-    /** Computes the source sets which are dependent on [name] (including [name]. */
-    fun sourceSetsDependentOn(name: String): List<String> {
-        return sourceSets
-            .filter { otherSourceSet ->
-                name == otherSourceSet.name || name in otherSourceSet.dependencies
-            }
-            .map { it.name }
+    /**
+     * Mapping from source set name to transitive dependent source sets computed in
+     * [sourceSetsDependentOn], to avoid having to recompute.
+     */
+    private val cachedTransitiveDependentOn: MutableMap<String, Set<String>> = mutableMapOf()
+
+    /** Computes the source sets which are transitively dependent on [name] (including [name]). */
+    fun sourceSetsDependentOn(name: String): Set<String> {
+        // If the dependent source sets have already been found, return that.
+        return cachedTransitiveDependentOn.getOrPut(name) {
+            // Find all source sets which directly depend on this one.
+            val dependentOn =
+                sourceSets
+                    .filter { otherSourceSet -> name in otherSourceSet.dependencies }
+                    .map { it.name }
+            // Find the transitive dependent source sets, and also include [name] in the set.
+            dependentOn.flatMap { sourceSetsDependentOn(it) }.toSet() + name
+        }
     }
 }
 

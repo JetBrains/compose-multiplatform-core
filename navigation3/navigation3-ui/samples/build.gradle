@@ -59,10 +59,9 @@ androidx {
     type = SoftwareType.SAMPLES
     inceptionYear = "2025"
     description = "Contains the sample code for Navigation3 UI"
-    kotlinTarget = KotlinTarget.KOTLIN_2_1
 }
 
 android {
-    compileSdk { version = release(36) }
+    compileSdk { version = release(37) }
     namespace = "androidx.navigation3.ui.samples"
 }

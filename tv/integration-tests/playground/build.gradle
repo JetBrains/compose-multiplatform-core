@@ -45,16 +45,16 @@ dependencies {
 }
 
 android {
-    compileSdk { version = release(35) }
+    compileSdk { version = release(37) }
     defaultConfig {
         minSdk { version = release(28) }
     }
 
     buildTypes {
         release {
-            minifyEnabled = true
-            shrinkResources = true
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt')
+            optimization {
+                enable = true
+            }
         }
     }
     namespace = "androidx.tv.integration.playground"

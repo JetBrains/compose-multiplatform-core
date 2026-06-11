@@ -16,12 +16,14 @@
 
 package androidx.camera.camera2.pipe.testing
 
+import android.graphics.ImageFormat
 import android.graphics.Rect
 import android.hardware.HardwareBuffer
 import android.os.Build
 import androidx.camera.camera2.pipe.media.ImagePlane
 import androidx.camera.camera2.pipe.media.ImageWrapper
-import kotlin.reflect.KClass
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
 import kotlinx.atomicfu.atomic
 
 /** FakeImage that can be used for testing classes that accept [ImageWrapper]. */
@@ -30,23 +32,66 @@ public class FakeImage(
     override val height: Int,
     override val format: Int,
     override val timestamp: Long,
-    override val hardwareBuffer: HardwareBuffer? = null,
+    // TODO: b/516888993 - Remove providedHardwareBuffer once Google3 tests are migrated.
+    private val providedHardwareBuffer: HardwareBuffer? = null,
     override var cropRect: Rect = Rect(0, 0, width, height),
+    hardwareBuffer: HardwareBuffer? = null,
 ) : ImageWrapper {
     private val debugId = debugIds.incrementAndGet()
     private val closed = atomic(false)
     public val isClosed: Boolean
         get() = closed.value
 
+    private val _providedHardwareBuffer = providedHardwareBuffer ?: hardwareBuffer
+    private var _createdHardwareBuffer: HardwareBuffer? = null
+
+    /**
+     * Returns the fake hardware buffer for this [FakeImage].
+     *
+     * Returns the provided hardware buffer if present. If a hardware buffer isn't provided during
+     * construction, a fake hardware buffer is created and returned on API levels >= 34. Otherwise,
+     * null is returned.
+     */
+    override val hardwareBuffer: HardwareBuffer? by lazy {
+        check(!isClosed)
+        _providedHardwareBuffer
+            ?: if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                _createdHardwareBuffer =
+                    HardwareBuffer.create(
+                        width,
+                        height,
+                        format,
+                        1,
+                        HardwareBuffer.USAGE_GPU_SAMPLED_IMAGE,
+                    )
+                _createdHardwareBuffer
+            } else {
+                null
+            }
+    }
     public var numberOfTimesClosed: Int = 0
         private set
 
-    override val planes: List<ImagePlane>
-        get() = throw UnsupportedOperationException("FakeImage does not support planes.")
+    override val planes: List<ImagePlane> by lazy {
+        check(!isClosed)
+        // TODO(b/507590815): Support other formats as needed
+        if (format == ImageFormat.YUV_420_888) {
+            listOf(
+                FakeImagePlane(pixelStride = 1, rowStride = width, planeHeight = height),
+                FakeImagePlane(pixelStride = 2, rowStride = width, planeHeight = height / 2),
+                FakeImagePlane(pixelStride = 2, rowStride = width, planeHeight = height / 2),
+            )
+        } else {
+            listOf()
+        }
+    }
 
     @Suppress("UNCHECKED_CAST")
-    override fun <T : Any> unwrapAs(type: KClass<T>): T? {
-        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.O_MR1 && type == HardwareBuffer::class) {
+    override fun <T : Any> unwrapAs(type: Class<T>): T? {
+        check(!isClosed)
+        if (
+            Build.VERSION.SDK_INT > Build.VERSION_CODES.O_MR1 && type == HardwareBuffer::class.java
+        ) {
             return hardwareBuffer as T?
         }
         return null
@@ -55,7 +100,9 @@ public class FakeImage(
     override fun close() {
         numberOfTimesClosed++
         if (closed.compareAndSet(expect = false, update = true)) {
-            // FakeImage close is a NoOp
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                _createdHardwareBuffer?.close()
+            }
         }
     }
 
@@ -64,4 +111,30 @@ public class FakeImage(
     public companion object {
         private val debugIds = atomic(0)
     }
+}
+
+public class FakeImagePlane : ImagePlane {
+    override val pixelStride: Int
+    override val rowStride: Int
+    override val buffer: ByteBuffer
+
+    public constructor(
+        planeWidth: Int,
+        planeHeight: Int,
+    ) : this(pixelStride = 1, rowStride = planeWidth, planeHeight = planeHeight)
+
+    public constructor(pixelStride: Int, rowStride: Int, planeHeight: Int) {
+        this.pixelStride = pixelStride
+        this.rowStride = rowStride
+        this.buffer =
+            ByteBuffer.allocateDirect(rowStride * planeHeight).order(ByteOrder.nativeOrder())
+    }
+
+    public constructor(buffer: ByteBuffer, pixelStride: Int, rowStride: Int) {
+        this.pixelStride = pixelStride
+        this.rowStride = rowStride
+        this.buffer = buffer
+    }
+
+    override fun <T : Any> unwrapAs(type: Class<T>): T? = null
 }

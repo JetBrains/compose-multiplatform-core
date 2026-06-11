@@ -29,9 +29,7 @@ import android.graphics.SurfaceTexture
 import android.hardware.camera2.CameraCharacteristics
 import android.location.Location
 import android.media.MediaCodec
-import android.media.MediaFormat.MIMETYPE_AUDIO_OPUS
 import android.media.MediaFormat.MIMETYPE_VIDEO_AVC
-import android.media.MediaFormat.MIMETYPE_VIDEO_HEVC
 import android.media.MediaMetadataRetriever
 import android.media.MediaRecorder
 import android.net.Uri
@@ -334,6 +332,34 @@ class RecorderTest(private val implName: String, private val cameraConfig: Camer
     @Test
     fun recordingWithNegativeBitRate() {
         assertThrows(IllegalArgumentException::class.java) { createRecorder(targetBitrate = -5) }
+    }
+
+    @Test
+    fun canSetTargetAudioEncodingBitrate() {
+        val recorder = createRecorder(targetAudioBitrate = 128_000)
+
+        assertThat(recorder.targetAudioEncodingBitRate).isEqualTo(128_000)
+    }
+
+    @Test
+    fun recordingWithNegativeAudioBitRate() {
+        assertThrows(IllegalArgumentException::class.java) {
+            createRecorder(targetAudioBitrate = -5)
+        }
+    }
+
+    @Test
+    fun canSetTargetAudioChannelCount() {
+        val recorder = createRecorder(targetAudioChannelCount = 2)
+
+        assertThat(recorder.targetAudioChannelCount).isEqualTo(2)
+    }
+
+    @Test
+    fun recordingWithNegativeAudioChannelCount() {
+        assertThrows(IllegalArgumentException::class.java) {
+            createRecorder(targetAudioChannelCount = -5)
+        }
     }
 
     @Test
@@ -1005,6 +1031,42 @@ class RecorderTest(private val implName: String, private val cameraConfig: Camer
     }
 
     @Test
+    fun staticSupportedMimeTypesShouldBeLowerCase() {
+        for (mimeType in
+            Recorder.SUPPORTED_VIDEO_MIME_TYPES + Recorder.SUPPORTED_AUDIO_MIME_TYPES) {
+            assertWithMessage("MIME type $mimeType is not lower case")
+                .that(mimeType)
+                .isEqualTo(mimeType.lowercase())
+        }
+    }
+
+    @Test
+    fun getSupportedVideoMimeTypes_shouldBeLowerCase() {
+        // Act.
+        val mimeTypes = Recorder.getSupportedVideoMimeTypes()
+
+        // Assert.
+        for (mimeType in mimeTypes) {
+            assertWithMessage("MIME type $mimeType is not lower case")
+                .that(mimeType)
+                .isEqualTo(mimeType.lowercase())
+        }
+    }
+
+    @Test
+    fun getSupportedAudioMimeTypes_shouldBeLowerCase() {
+        // Act.
+        val mimeTypes = Recorder.getSupportedAudioMimeTypes()
+
+        // Assert.
+        for (mimeType in mimeTypes) {
+            assertWithMessage("MIME type $mimeType is not lower case")
+                .that(mimeType)
+                .isEqualTo(mimeType.lowercase())
+        }
+    }
+
+    @Test
     fun canSetOutputFormat() {
         // Arrange.
         val recorder = createRecorder(outputFormat = OUTPUT_FORMAT_WEBM)
@@ -1015,20 +1077,46 @@ class RecorderTest(private val implName: String, private val cameraConfig: Camer
 
     @Test
     fun canSetVideoMimeType() {
-        // Arrange.
-        val recorder = createRecorder(videoMimeType = MIMETYPE_VIDEO_HEVC)
+        // Arrange: Test all Recorder supported types
+        val mimeTypes = Recorder.SUPPORTED_VIDEO_MIME_TYPES
 
+        mimeTypes.forEach { mimeType ->
+            // Act.
+            val recorder = Recorder.Builder().setVideoMimeType(mimeType).build()
+
+            // Assert.
+            assertThat(recorder.videoMimeType).isEqualTo(mimeType)
+        }
+    }
+
+    @Test
+    fun setUnsupportedVideoMimeType_throwsException() {
         // Assert.
-        assertThat(recorder.videoMimeType).isEqualTo(MIMETYPE_VIDEO_HEVC)
+        assertThrows(IllegalArgumentException::class.java) {
+            Recorder.Builder().setVideoMimeType("unknown")
+        }
     }
 
     @Test
     fun canSetAudioMimeType() {
-        // Arrange.
-        val recorder = createRecorder(audioMimeType = MIMETYPE_AUDIO_OPUS)
+        // Arrange: Test all Recorder supported types
+        val mimeTypes = Recorder.SUPPORTED_AUDIO_MIME_TYPES
 
+        mimeTypes.forEach { mimeType ->
+            // Act.
+            val recorder = Recorder.Builder().setAudioMimeType(mimeType).build()
+
+            // Assert.
+            assertThat(recorder.audioMimeType).isEqualTo(mimeType)
+        }
+    }
+
+    @Test
+    fun setUnsupportedAudioMimeType_throwsException() {
         // Assert.
-        assertThat(recorder.audioMimeType).isEqualTo(MIMETYPE_AUDIO_OPUS)
+        assertThrows(IllegalArgumentException::class.java) {
+            Recorder.Builder().setAudioMimeType("unknown")
+        }
     }
 
     @Test
@@ -1376,6 +1464,8 @@ class RecorderTest(private val implName: String, private val cameraConfig: Camer
         muxerFactory: MuxerFactory? = null,
         outputStorageFactory: OutputStorage.Factory? = null,
         targetBitrate: Int? = null,
+        targetAudioBitrate: Int? = null,
+        targetAudioChannelCount: Int? = null,
         retrySetupVideoMaxCount: Int? = null,
         retrySetupVideoDelayMs: Long? = null,
         audioSource: Int? = null,
@@ -1396,6 +1486,8 @@ class RecorderTest(private val implName: String, private val cameraConfig: Camer
                     muxerFactory?.let { setMuxerFactory(it) }
                     outputStorageFactory?.let { setOutputStorageFactory(it) }
                     targetBitrate?.let { setTargetVideoEncodingBitRate(it) }
+                    targetAudioBitrate?.let { setTargetAudioEncodingBitRate(it) }
+                    targetAudioChannelCount?.let { setTargetAudioChannelCount(it) }
                     audioSource?.let { setAudioSource(it) }
                     requiredFreeStorageBytes?.let { setRequiredFreeStorageBytes(it) }
                 }

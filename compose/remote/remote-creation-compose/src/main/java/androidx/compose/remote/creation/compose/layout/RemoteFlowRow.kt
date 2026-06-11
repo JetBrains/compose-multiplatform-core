@@ -17,30 +17,38 @@
 package androidx.compose.remote.creation.compose.layout
 
 import androidx.annotation.RestrictTo
+import androidx.compose.remote.creation.compose.capture.RemoteComposeCreationState
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
 import androidx.compose.remote.creation.compose.modifier.toRecordingModifier
-import androidx.compose.remote.creation.compose.v2.RemoteComposeApplierV2
-import androidx.compose.remote.creation.compose.v2.RemoteFlowRowV2
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.currentComposer
-import androidx.compose.ui.draw.DrawModifier
-import androidx.compose.ui.graphics.drawscope.ContentDrawScope
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.LayoutDirection
 
-internal class RemoteComposeFlowRowModifier(
-    private val modifier: RemoteModifier,
-    private val horizontalArrangement: RemoteArrangement.Horizontal = RemoteArrangement.Start,
-    private val verticalArrangement: RemoteArrangement.Vertical = RemoteArrangement.Top,
-) : DrawModifier {
-    override fun ContentDrawScope.draw() {
-        drawIntoRemoteCanvas { canvas ->
-            canvas.document.startFlow(
-                canvas.toRecordingModifier(modifier),
-                horizontalArrangement.toRemote(this.layoutDirection),
-                verticalArrangement.toRemote(),
-            )
-            this@draw.drawContent()
-            canvas.document.endFlow()
+internal class RemoteFlowRowNode : RemoteComposeNode() {
+    var horizontalArrangement: RemoteArrangement.Horizontal = RemoteArrangement.Start
+    var verticalArrangement: RemoteArrangement.Vertical = RemoteArrangement.Top
+    var maxItemsInEachRow: Int = Int.MAX_VALUE
+    var maxLines: Int = Int.MAX_VALUE
+    var layoutDirection: LayoutDirection = LayoutDirection.Ltr
+
+    override fun render(creationState: RemoteComposeCreationState, remoteCanvas: RemoteCanvas) {
+        val recordingModifier = creationState.toRecordingModifier(modifier)
+        (horizontalArrangement as? RemoteSpaced)?.let {
+            recordingModifier.spacedBy(it.space.getFloatIdForCreationState(creationState))
         }
+        creationState.document.startFlow(
+            recordingModifier,
+            horizontalArrangement.toRemote(layoutDirection),
+            verticalArrangement.toRemote(),
+            maxItemsInEachRow,
+            maxLines,
+        )
+        renderChildren(
+            creationState,
+            remoteCanvas,
+            reversed = shouldReverse(horizontalArrangement, layoutDirection),
+        )
+        creationState.document.endFlow()
     }
 }
 
@@ -53,6 +61,8 @@ internal class RemoteComposeFlowRowModifier(
  * @param modifier The modifier to be applied to this flow.
  * @param horizontalArrangement The horizontal arrangement of the children.
  * @param verticalArrangement The vertical arrangement of the children.
+ * @param maxItemsInEachRow The maximum number of items in each row.
+ * @param maxLines The maximum number of lines in the flow.
  * @param content The content of the flow.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
@@ -62,10 +72,29 @@ public fun RemoteFlowRow(
     modifier: RemoteModifier = RemoteModifier,
     horizontalArrangement: RemoteArrangement.Horizontal = RemoteArrangement.Start,
     verticalArrangement: RemoteArrangement.Vertical = RemoteArrangement.Top,
+    maxItemsInEachRow: Int = Int.MAX_VALUE,
+    maxLines: Int = Int.MAX_VALUE,
     content: @Composable () -> Unit,
 ) {
-    require(currentComposer.applier is RemoteComposeApplierV2) {
-        "This component is only supported with RemoteComposeApplierV2."
-    }
-    RemoteFlowRowV2(modifier, horizontalArrangement, verticalArrangement, content)
+    val layoutDirection = LocalLayoutDirection.current
+    RemoteComposeNode(
+        factory = ::RemoteFlowRowNode,
+        update = {
+            set(modifier) { nodeModifier -> this.modifier = nodeModifier }
+            set(horizontalArrangement) { nodeHorizontalArrangement ->
+                this.horizontalArrangement = nodeHorizontalArrangement
+            }
+            set(verticalArrangement) { nodeVerticalArrangement ->
+                this.verticalArrangement = nodeVerticalArrangement
+            }
+            set(maxItemsInEachRow) { nodeMaxItemsInEachRow ->
+                this.maxItemsInEachRow = nodeMaxItemsInEachRow
+            }
+            set(maxLines) { nodeMaxLines -> this.maxLines = nodeMaxLines }
+            set(layoutDirection) { nodeLayoutDirection ->
+                this.layoutDirection = nodeLayoutDirection
+            }
+        },
+        content = content,
+    )
 }

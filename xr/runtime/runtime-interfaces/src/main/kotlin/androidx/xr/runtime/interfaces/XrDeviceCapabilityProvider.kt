@@ -24,4 +24,16 @@ import androidx.lifecycle.LifecycleOwner
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public interface XrDeviceCapabilityProvider : LifecycleOwner {
     public val context: Context
+
+    public fun getPreferredDisplayBlendMode(): DisplayBlendMode
+
+    public fun isHandTrackingModeSupported(mode: HandTrackingMode): Boolean
+
+    public fun isEyeTrackingModeSupported(mode: EyeTrackingMode): Boolean
+
+    public fun isGeospatialModeSupported(mode: GeospatialMode): Boolean
+
+    public fun isDepthEstimationModeSupported(mode: DepthEstimationMode): Boolean
+
+    public fun isRenderingModeSupported(mode: RenderingMode): Boolean
 }

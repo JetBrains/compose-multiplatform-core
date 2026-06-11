@@ -30,6 +30,8 @@
     <string name="label_page_single" msgid="456123685879261101">"<xliff:g id="PAGE">%1$d</xliff:g> / <xliff:g id="TOTAL">%2$d</xliff:g>"</string>
     <string name="desc_page_single" msgid="8459583146661044094">"halaman <xliff:g id="PAGE">%1$d</xliff:g> daripada <xliff:g id="TOTAL">%2$d</xliff:g>"</string>
     <string name="desc_zoom" msgid="7318480946145947242">"zum <xliff:g id="FIRST">%1$d</xliff:g> peratus"</string>
+    <!-- no translation found for desc_pdf_view (4353979540148077296) -->
+    <skip />
     <string name="desc_goto" msgid="1333698934111921601">"Akses"</string>
     <string name="desc_goto_link" msgid="2461368384824849714">"Akses halaman <xliff:g id="PAGE_NUMBER">%1$d</xliff:g>"</string>
     <string name="desc_copy" msgid="385275789223074637">"Menyalin kandungan yang dipilih kepada papan keratan anda"</string>
@@ -67,6 +69,7 @@
     <string name="page_broken" msgid="2968770793669433462">"Halaman rosak untuk dokumen PDF"</string>
     <string name="needs_more_data" msgid="3520133467908240802">"Data tidak mencukupi untuk memproses dokumen PDF"</string>
     <string name="error_cannot_open_pdf" msgid="2361919778558145071">"Tidak dapat membuka fail PDF"</string>
+    <string name="error_cannot_open_password_protected_pdf" msgid="3400883576932438749">"PDF yang dilindungi kata laluan tidak disokong."</string>
     <string name="cannot_edit_pdf" msgid="7677598370087228978">"PDF ini tidak dapat diedit"</string>
     <string name="clipboard_label" msgid="8943155331324944981">"Kandungan disalin daripada PDF"</string>
     <string name="fast_scroller_thumb" msgid="6712048991132846541">"Bar Tatal"</string>
@@ -90,5 +93,4 @@
     <string name="form_widget_type_list_box" msgid="8052623180309553495">"Kotak Senarai"</string>
     <string name="form_widget_type_text_field" msgid="581285155951215607">"Medan Teks"</string>
     <string name="form_widget_type_signature" msgid="3811511096215331673">"Tandatangan"</string>
-    <string name="form_filling_tooltip" msgid="1715428076993648563">"Ketik medan untuk memasuki mod pengisian borang"</string>
 </resources>

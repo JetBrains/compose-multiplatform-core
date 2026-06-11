@@ -27,10 +27,9 @@ android {
     }
     buildTypes {
         release {
-            minifyEnabled = true
-            shrinkResources = true
-            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"),
-                    "proguard-rules.pro")
+            optimization {
+                enable = true
+            }
         }
     }
     namespace = "androidx.camera.integration.camera2.pipe"

@@ -34,17 +34,18 @@ import kotlin.hashCode
 /**
  * Defines the interaction policy for a spatial object. This policy enables reacting to a user's
  * spatial inputs.
- *
- * @property isEnabled Whether an interaction policy is enabled for this object. If `false`, spatial
- *   interaction input events will not returned.
- * @property onInputEvent Raw event executed with every input update.
  */
-public class InteractionPolicy(
-    public val isEnabled: Boolean = true,
-    public val onInputEvent: ((SpatialInputEvent) -> Unit),
-) {
-    public companion object {
+public interface InteractionPolicy {
+    /**
+     * Whether an interaction policy is enabled for this object. If `false`, spatial interaction
+     * input events will not be returned.
+     */
+    public val isEnabled: Boolean
 
+    /** Raw event executed with every input update. */
+    public fun onInputEvent(event: SpatialInputEvent)
+
+    public companion object {
         /**
          * An [InteractionPolicy] that detects only click inputs
          *
@@ -54,32 +55,15 @@ public class InteractionPolicy(
          * @return an [InteractionPolicy] that filters for click events.
          */
         public fun clickable(isEnabled: Boolean = true, onClick: () -> Unit): InteractionPolicy =
-            InteractionPolicy(
-                isEnabled = isEnabled,
-                onInputEvent = { event ->
+            object : InteractionPolicy {
+                override val isEnabled: Boolean = isEnabled
+
+                override fun onInputEvent(event: SpatialInputEvent) {
                     if (event.action == Action.UP && event.hitPosition != null) {
                         onClick()
                     }
-                },
-            )
-    }
-
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (other !is InteractableElement) return false
-        if (isEnabled != other.enabled) return false
-        if (onInputEvent !== other.onInputEvent) return false
-        return true
-    }
-
-    override fun hashCode(): Int {
-        var result = isEnabled.hashCode()
-        result = 31 * result + onInputEvent.hashCode()
-        return result
-    }
-
-    override fun toString(): String {
-        return "InteractionPolicy(isEnabled=$isEnabled, onInputEvent=$onInputEvent)"
+                }
+            }
     }
 }
 

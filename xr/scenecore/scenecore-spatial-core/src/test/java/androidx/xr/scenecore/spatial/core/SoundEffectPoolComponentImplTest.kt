@@ -18,18 +18,18 @@ package androidx.xr.scenecore.spatial.core
 
 import android.app.Activity
 import androidx.xr.runtime.math.Pose
-import androidx.xr.runtime.testing.FakeSpatialApiVersionProvider.Companion.testSpatialApiVersion
+import androidx.xr.runtime.testing.XrDeviceTestRule
 import androidx.xr.scenecore.runtime.Entity
 import androidx.xr.scenecore.runtime.PointSourceParams
 import androidx.xr.scenecore.runtime.SoundEffect
 import androidx.xr.scenecore.runtime.SoundEffectPlayer
 import androidx.xr.scenecore.runtime.SoundPoolExtensionsWrapper
 import androidx.xr.scenecore.runtime.Stream
-import androidx.xr.scenecore.runtime.extensions.XrExtensionsProvider.getXrExtensions
 import androidx.xr.scenecore.testing.FakeScheduledExecutorService
 import com.google.common.truth.Truth.assertThat
 import org.junit.After
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.kotlin.eq
@@ -47,12 +47,14 @@ class SoundEffectPoolComponentImplTest {
         Robolectric.buildActivity(Activity::class.java)
     private val activity: Activity = activityController.create().start().get()
     private val fakeExecutor = FakeScheduledExecutorService()
-    private val xrExtensions = getXrExtensions()
+    private val xrExtensions = SpatialCoreXrExtensionsHolderProvider.extensionsLegacy
     private lateinit var fakeRuntime: SpatialSceneRuntime
+
+    @Rule @JvmField val xrDeviceTestRule = XrDeviceTestRule()
 
     @Before
     fun setUp() {
-        testSpatialApiVersion = 1
+        xrDeviceTestRule.spatialApiVersion = 1
         fakeRuntime =
             SpatialSceneRuntime.create(activity, fakeExecutor, xrExtensions!!, SceneNodeRegistry())
     }
@@ -61,7 +63,6 @@ class SoundEffectPoolComponentImplTest {
     fun tearDown() {
         // Destroy the runtime between test cases to clean up lingering references.
         fakeRuntime.destroy()
-        testSpatialApiVersion = null
     }
 
     private fun createTestEntity(): Entity {

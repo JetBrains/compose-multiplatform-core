@@ -16,6 +16,7 @@
 
 package androidx.appfunctions
 
+import android.app.AppInteractionAttribution
 import android.os.Build
 import android.os.Bundle
 import androidx.annotation.RequiresApi
@@ -32,6 +33,8 @@ import androidx.appfunctions.metadata.AppFunctionMetadata
  *   [AppFunctionData], the property names are the names of the function parameters and the property
  *   values are the values of those parameters. The data object may have missing parameters.
  *   Developers are advised to implement defensive handling measures.
+ * @property attribution The attribution that can be used by the privacy setting to provide
+ *   transparency to the user about why an app function was invoked.
  */
 public class ExecuteAppFunctionRequest
 @RestrictTo(LIBRARY_GROUP)
@@ -39,14 +42,57 @@ constructor(
     public val targetPackageName: String,
     public val functionIdentifier: String,
     public val functionParameters: AppFunctionData,
+    @get:RequiresApi(37) public val attribution: AppInteractionAttribution? = null,
     /** Whether the parameters in this request is encoded in the jetpack format or not. */
     @get:RestrictTo(LIBRARY_GROUP) public val useJetpackSchema: Boolean,
 ) {
+    /**
+     * Creates a new [ExecuteAppFunctionRequest].
+     *
+     * @param targetPackageName The package name of the app that hosts the function.
+     * @param functionIdentifier The unique string identifier of the app function to be executed.
+     * @param functionParameters The parameters required to invoke this function. Within this
+     *   [AppFunctionData], the property names are the names of the function parameters and the
+     *   property values are the values of those parameters. The data object may have missing
+     *   parameters. Developers are advised to implement defensive handling measures.
+     */
     public constructor(
         targetPackageName: String,
         functionIdentifier: String,
         functionParameters: AppFunctionData,
-    ) : this(targetPackageName, functionIdentifier, functionParameters, useJetpackSchema = true)
+    ) : this(
+        targetPackageName,
+        functionIdentifier,
+        functionParameters,
+        attribution = null,
+        useJetpackSchema = true,
+    )
+
+    /**
+     * Creates a new [ExecuteAppFunctionRequest] with attribution.
+     *
+     * @param targetPackageName The package name of the app that hosts the function.
+     * @param functionIdentifier The unique string identifier of the app function to be executed.
+     * @param functionParameters The parameters required to invoke this function. Within this
+     *   [AppFunctionData], the property names are the names of the function parameters and the
+     *   property values are the values of those parameters. The data object may have missing
+     *   parameters. Developers are advised to implement defensive handling measures.
+     * @param attribution The attribution that can be used by the privacy setting to provide
+     *   transparency to the user about why an app function was invoked.
+     */
+    @RequiresApi(37)
+    public constructor(
+        targetPackageName: String,
+        functionIdentifier: String,
+        functionParameters: AppFunctionData,
+        attribution: AppInteractionAttribution,
+    ) : this(
+        targetPackageName,
+        functionIdentifier,
+        functionParameters,
+        attribution = attribution,
+        useJetpackSchema = true,
+    )
 
     internal fun toPlatformExtensionClass():
         com.android.extensions.appfunctions.ExecuteAppFunctionRequest {
@@ -84,6 +130,11 @@ constructor(
                     putBoolean(EXTRA_USE_JETPACK_SCHEMA, useJetpackSchema)
                 }
             )
+            .apply {
+                if (Build.VERSION.SDK_INT >= 37 && attribution != null) {
+                    setAttribution(attribution)
+                }
+            }
             .build()
     }
 
@@ -103,6 +154,7 @@ constructor(
             targetPackageName,
             functionIdentifier,
             functionParameters,
+            attribution,
             useJetpackSchema,
         )
 
@@ -157,6 +209,12 @@ constructor(
                         ),
                     ),
                 useJetpackSchema = this.extras.getBoolean(EXTRA_USE_JETPACK_SCHEMA, false),
+                attribution =
+                    if (Build.VERSION.SDK_INT >= 37) {
+                        this.attribution
+                    } else {
+                        null
+                    },
             )
 
         @RequiresApi(Build.VERSION_CODES.TIRAMISU)

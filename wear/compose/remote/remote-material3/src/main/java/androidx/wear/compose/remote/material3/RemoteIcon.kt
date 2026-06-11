@@ -25,9 +25,13 @@ import androidx.compose.remote.creation.compose.modifier.RemoteModifier
 import androidx.compose.remote.creation.compose.modifier.contentDescription
 import androidx.compose.remote.creation.compose.modifier.fillMaxSize
 import androidx.compose.remote.creation.compose.modifier.semantics
+import androidx.compose.remote.creation.compose.modifier.size
+import androidx.compose.remote.creation.compose.painter.RemotePainter
 import androidx.compose.remote.creation.compose.state.RemoteColor
 import androidx.compose.remote.creation.compose.state.RemotePaint
 import androidx.compose.remote.creation.compose.state.RemoteString
+import androidx.compose.remote.creation.compose.state.asRemoteDp
+import androidx.compose.remote.creation.compose.state.rdp
 import androidx.compose.remote.creation.compose.vector.painterRemoteVector
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -57,8 +61,10 @@ public fun RemoteIcon(
     modifier: RemoteModifier = RemoteModifier,
     tint: RemoteColor = LocalRemoteContentColor.current,
 ) {
-    RemoteBox(modifier.semantics { this.contentDescription = contentDescription }) {
-        val painter = painterRemoteVector(imageVector, tint)
+    val painter = painterRemoteVector(imageVector, tint)
+    RemoteBox(
+        modifier.semantics { this.contentDescription = contentDescription }.defaultSizeFor(painter)
+    ) {
         RemoteCanvas(modifier = RemoteModifier.fillMaxSize()) {
             with(painter) { onDraw() }
             // TODO(b/474687917): Temporary fix to reset tinted paint
@@ -89,8 +95,25 @@ public fun RemoteIcon(
     modifier: RemoteModifier = RemoteModifier,
     tint: RemoteColor = LocalRemoteContentColor.current,
 ) {
-    RemoteBox(modifier.semantics { this.contentDescription = contentDescription }) {
-        val painter = painterRemoteVector(imageVector, tint)
+    val painter = painterRemoteVector(imageVector, tint)
+    RemoteBox(
+        modifier.semantics { this.contentDescription = contentDescription }.defaultSizeFor(painter)
+    ) {
         RemoteCanvas(modifier = RemoteModifier.fillMaxSize()) { with(painter) { onDraw() } }
     }
+}
+
+/** Sets a default icon size if painter doesn't specify a size, else sets to intrinsic size. */
+private fun RemoteModifier.defaultSizeFor(painter: RemotePainter): RemoteModifier {
+    val intrinsicSize = painter.intrinsicSize
+    return this.then(
+        if (intrinsicSize != null) {
+            RemoteModifier.size(
+                width = intrinsicSize.width.asRemoteDp(),
+                height = intrinsicSize.height.asRemoteDp(),
+            )
+        } else {
+            RemoteModifier.size(24.rdp)
+        }
+    )
 }

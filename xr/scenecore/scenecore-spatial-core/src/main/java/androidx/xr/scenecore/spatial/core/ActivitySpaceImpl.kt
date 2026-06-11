@@ -87,10 +87,6 @@ public class ActivitySpaceImpl(
                 }
             }
 
-    /** Returns the identity pose since this entity defines the origin of the activity space. */
-    override val poseInActivitySpace: Pose
-        get() = Pose()
-
     public val poseInPerceptionSpace: Pose
         get() {
             val perceptionSpaceScenePose =
@@ -100,7 +96,7 @@ public class ActivitySpaceImpl(
             return transformPoseTo(Pose(), perceptionSpaceScenePose)
         }
 
-    /** Returns the identity pose since we assume the activity space is the world space root. */
+    /** Returns the identity pose since this entity defines the origin of the activity space. */
     override val activitySpacePose: Pose
         get() = Pose()
 
@@ -147,7 +143,7 @@ public class ActivitySpaceImpl(
                 throw UnsupportedOperationException(
                     "ActivitySpace is a root space and it does not have a parent."
                 )
-            Space.ACTIVITY -> poseInActivitySpace
+            Space.ACTIVITY -> activitySpacePose
             Space.REAL_WORLD -> poseInPerceptionSpace
             else -> throw IllegalArgumentException("Unsupported relativeTo value: $relativeTo")
         }
@@ -180,6 +176,8 @@ public class ActivitySpaceImpl(
 
     internal var sceneParentScaleAbs: Vector3 = Vector3.One
 
+    private val lastSceneParentTransform = AtomicReference<Matrix4?>(null)
+
     /**
      * Handles the updates to scene core root transform.
      * <pre>
@@ -205,10 +203,12 @@ public class ActivitySpaceImpl(
      * @param newTransform New scene parent transform relative to OpenXR unbounded reference space.
      */
     public fun handleOriginUpdate(newTransform: Matrix4) {
-        openXrReferenceSpaceTransform.set(newTransform)
+        if (lastSceneParentTransform.getAndSet(newTransform) == newTransform) {
+            return
+        }
         var activitySpaceRotation = Quaternion.Identity
         if (unscaledGravityAlignedActivitySpace) {
-            // Get the absolute scale of the scene parent)
+            // Get the absolute scale of the scene parent
             sceneParentScaleAbs = Vector3.abs(newTransform.scale)
             val sceneParentScaleInv = sceneParentScaleAbs.inverse()
             // Get the unscaled rotation of the activity space.

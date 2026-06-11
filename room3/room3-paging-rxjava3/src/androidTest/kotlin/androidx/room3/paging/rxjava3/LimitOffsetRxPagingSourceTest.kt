@@ -36,7 +36,6 @@ import androidx.room3.RoomRawQuery
 import androidx.room3.util.getColumnIndexOrThrow
 import androidx.room3.util.performSuspending
 import androidx.sqlite.driver.AndroidSQLiteDriver
-import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.testutils.TestExecutor
@@ -355,9 +354,7 @@ class LimitOffsetRxPagingSourceTest {
     fun assert_usesQueryExecutor() {
         val queryExecutor = TestExecutor()
         val testDb =
-            Room.inMemoryDatabaseBuilder<LimitOffsetTestDb>(
-                    ApplicationProvider.getApplicationContext()
-                )
+            Room.inMemoryDatabaseBuilder<LimitOffsetTestDb>()
                 .setDriver(AndroidSQLiteDriver())
                 .setQueryCoroutineContext(queryExecutor.asCoroutineDispatcher())
                 .build()
@@ -394,9 +391,7 @@ class LimitOffsetRxPagingSourceTest {
     @Test
     fun cancelledCoroutine_disposesSingle() {
         val testDb =
-            Room.inMemoryDatabaseBuilder<LimitOffsetTestDb>(
-                    ApplicationProvider.getApplicationContext()
-                )
+            Room.inMemoryDatabaseBuilder<LimitOffsetTestDb>()
                 .setDriver(AndroidSQLiteDriver())
                 .build()
 
@@ -434,9 +429,7 @@ class LimitOffsetRxPagingSourceTest {
 
     private fun setupAndRun(test: suspend (LimitOffsetTestDb) -> Unit) {
         val db =
-            Room.inMemoryDatabaseBuilder<LimitOffsetTestDb>(
-                    ApplicationProvider.getApplicationContext()
-                )
+            Room.inMemoryDatabaseBuilder<LimitOffsetTestDb>()
                 .setDriver(AndroidSQLiteDriver())
                 .setQueryCoroutineContext(
                     ArchTaskExecutor.getIOThreadExecutor().asCoroutineDispatcher()

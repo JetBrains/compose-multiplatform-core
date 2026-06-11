@@ -206,10 +206,7 @@ internal abstract class SnapshotFlowManagerImpl internal constructor() {
      * This must be called by a [snapshotFlow] when it is in the process of exiting to dispose of
      * all subscriptions associated with it.
      */
-    internal fun reportSnapshotFlowCancellation(channel: SendChannel<Unit>) {
-        clearWatchSet(channel)
-        commitSubscriptionChanges()
-    }
+    internal abstract fun reportSnapshotFlowCancellation(channel: SendChannel<Unit>)
 
     /**
      * Disposes of this manager. Disposing of a manager disconnects it from the [Snapshot] system,
@@ -335,6 +332,12 @@ private class SingleSubscriptionSnapshotFlowManager : SnapshotFlowManagerImpl() 
         }
     }
 
+    override fun reportSnapshotFlowCancellation(channel: SendChannel<Unit>) {
+        subscribedChannel = null
+        clearWatchSet(channel)
+        commitSubscriptionChanges()
+    }
+
     override fun dispose() {
         unregisterApplyObserver.dispose()
         clearWatchSetImpl()
@@ -396,25 +399,28 @@ private class MultiSubscriptionSnapshotFlowManager : SnapshotFlowManagerImpl() {
      */
     private val pendingChanges = mutableListOf<SubscriptionChange>()
 
-    /** Used by the apply observer to keep track of the channels that it needs to notify. */
-    private val toNotify = mutableScatterSetOf<SendChannel<Unit>>()
-
     // Used by [readObserverFor] to cache partially applied functions.
     private val readObserverCache = mutableScatterMapOf<SendChannel<Unit>, (Any) -> Unit>()
 
     private val unregisterApplyObserver =
         Snapshot.registerApplyObserver { changed, _ ->
+            var toNotify: MutableList<SendChannel<Unit>>? = null
+
             synchronized(lock) {
                 // Assumption: there will typically be fewer keys in [subscriptions] than elements
                 // in [changed].
                 subscriptions.forEachKey { key ->
                     if (changed.contains(key)) {
-                        subscriptions.forEachScopeOf(key) { toNotify.add(it) }
+                        subscriptions.forEachScopeOf(key) {
+                            if (toNotify == null) {
+                                toNotify = mutableListOf()
+                            }
+                            toNotify.add(it)
+                        }
                     }
                 }
 
-                toNotify.forEach { it.trySend(Unit) }
-                toNotify.clear()
+                toNotify?.fastForEach { it.trySend(Unit) }
             }
         }
 
@@ -445,6 +451,12 @@ private class MultiSubscriptionSnapshotFlowManager : SnapshotFlowManagerImpl() {
             }
         }
         pendingChanges.clear()
+    }
+
+    override fun reportSnapshotFlowCancellation(channel: SendChannel<Unit>) {
+        readObserverCache.remove(channel)
+        clearWatchSet(channel)
+        commitSubscriptionChanges()
     }
 
     override fun dispose() {

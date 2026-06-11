@@ -63,6 +63,10 @@ internal class PdfViewAccessibilityManager(
     private val fastScrollVerticalThumbDrawableId = FAST_SCROLLER_OFFSET + 1
     private val fastScrollPageIndicatorBackgroundDrawableId = FAST_SCROLLER_OFFSET + 2
 
+    init {
+        pdfView.contentDescription = pdfView.context.getString(R.string.desc_pdf_view)
+    }
+
     public override fun getVirtualViewAt(x: Float, y: Float): Int {
         val visiblePages = pageLayoutManager.visiblePages
 
@@ -142,10 +146,8 @@ internal class PdfViewAccessibilityManager(
             addAll(gotoLinks.keys)
             addAll(urlLinks.keys)
             addAll(formWidgetInfos.keys)
-            if (isFastScrollerStateValid()) {
-                add(fastScrollVerticalThumbDrawableId)
-                add(fastScrollPageIndicatorBackgroundDrawableId)
-            }
+            add(fastScrollVerticalThumbDrawableId)
+            add(fastScrollPageIndicatorBackgroundDrawableId)
         }
     }
 
@@ -171,14 +173,8 @@ internal class PdfViewAccessibilityManager(
     }
 
     private fun populateFastScrollThumbNode(node: AccessibilityNodeInfoCompat) {
-        if (!isFastScrollerStateValid()) {
-            node.contentDescription = ""
-            node.setBoundsInScreen(Rect())
-            node.isFocusable = false
-            return
-        }
-
         val thumbBounds = getFastScroller()?.getThumbScreenBounds() ?: Rect()
+        thumbBounds.offset(pdfView.scrollX, pdfView.scrollY + pdfView.paddingTop)
         node.apply {
             contentDescription = pdfView.context.getString(R.string.fast_scroller_thumb)
             setBoundsInScreenFromBoundsInParent(node, thumbBounds)
@@ -187,14 +183,8 @@ internal class PdfViewAccessibilityManager(
     }
 
     private fun populateFastScrollPageIndicatorNode(node: AccessibilityNodeInfoCompat) {
-        if (!isFastScrollerStateValid()) {
-            node.contentDescription = ""
-            node.setBoundsInScreen(Rect())
-            node.isFocusable = false
-            return
-        }
-
         val indicatorBounds = getFastScroller()?.getIndicatorScreenBounds() ?: Rect()
+        indicatorBounds.offset(pdfView.scrollX, pdfView.scrollY + pdfView.paddingTop)
         val currentLabel =
             buildPageIndicatorLabel(
                 pdfView.context,
@@ -209,15 +199,6 @@ internal class PdfViewAccessibilityManager(
             isFocusable = pdfView.lastFastScrollerVisibility
         }
     }
-
-    /**
-     * Checks and sets the AccessibilityNodeInfoCompat to an invalid state if the fast scroller
-     * state is invalid.
-     *
-     * @return True if the fast scroller state is valid, false otherwise.
-     */
-    private fun isFastScrollerStateValid(): Boolean =
-        pdfView.lastFastScrollerVisibility && pdfView.positionIsStable
 
     public override fun onPerformActionForVirtualView(
         virtualViewId: Int,
@@ -273,7 +254,9 @@ internal class PdfViewAccessibilityManager(
     }
 
     private fun populateNodeForPage(virtualViewId: Int, node: AccessibilityNodeInfoCompat) {
-        val pageText = pageManager.pages[virtualViewId]?.pageText
+        val page = pageManager.pages[virtualViewId]
+        val pageText = page?.pageText
+        val ocrText = page?.ocrText
         val pageBounds =
             pageLayoutManager.getPageLocation(
                 virtualViewId,
@@ -282,8 +265,7 @@ internal class PdfViewAccessibilityManager(
 
         node.apply {
             contentDescription =
-                pageText?.let { getContentDescriptionForPage(pdfView.context, virtualViewId, it) }
-                    ?: getDefaultDesc(pdfView.context, virtualViewId)
+                getContentDescriptionForPage(pdfView.context, virtualViewId, pageText, ocrText)
 
             setBoundsInScreenFromBoundsInParent(
                 node,
@@ -449,9 +431,11 @@ internal class PdfViewAccessibilityManager(
      * @param pageNum 0-indexed page number.
      */
     fun onPageTextReady(pageNum: Int) {
-        val pageText = pageManager.pages.get(pageNum)?.pageText
+        val page = pageManager.pages.get(pageNum)
+        val pageText = page?.pageText
+        val ocrText = page?.ocrText
 
-        if (pageText != null) {
+        if (pageText != null || ocrText != null) {
             // Update accessibility node with new text.
             invalidateVirtualView(pageNum)
         }
@@ -466,6 +450,8 @@ internal class PdfViewAccessibilityManager(
          *
          * @param context The context for accessing resources.
          * @param pageText The extracted text content of the page, or null if not loaded.
+         * @param ocrText The OCR-extracted text content of images on the page, or null if not
+         *   loaded.
          * @param pageNum The 0-indexed page number.
          * @return The content description string.
          */
@@ -473,11 +459,19 @@ internal class PdfViewAccessibilityManager(
             context: Context,
             pageNum: Int,
             pageText: String?,
+            ocrText: String?,
         ): String {
-            return when {
-                pageText == null -> getDefaultDesc(context, pageNum)
-                pageText.trim().isEmpty() -> context.getString(R.string.desc_empty_page)
-                else -> context.getString(R.string.desc_page_with_text, pageNum + 1, pageText)
+            if (pageText == null && ocrText == null) {
+                return getDefaultDesc(context, pageNum)
+            }
+
+            val combinedText =
+                listOfNotNull(pageText, ocrText).joinToString(separator = "\n").trim()
+
+            return if (combinedText.isEmpty()) {
+                context.getString(R.string.desc_empty_page)
+            } else {
+                context.getString(R.string.desc_page_with_text, pageNum + 1, combinedText)
             }
         }
 

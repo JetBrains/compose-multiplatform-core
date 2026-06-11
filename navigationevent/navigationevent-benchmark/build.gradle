@@ -48,11 +48,10 @@ dependencies {
 }
 
 android {
-    compileSdk { version = release(36) }
+    compileSdk { version = release(37) }
     namespace = "androidx.navigationevent.benchmark"
 }
 
 androidx {
     type = SoftwareType.BENCHMARK
-    kotlinTarget = KotlinTarget.KOTLIN_2_1
 }

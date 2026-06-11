@@ -29,17 +29,15 @@ import androidx.compose.foundation.text.modifiers.TextStyleProviderNode
 import androidx.compose.runtime.CompositionLocal
 import androidx.compose.runtime.CompositionLocalAccessorScope
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.CornerRadius
-import androidx.compose.ui.geometry.RoundRect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.GraphicsLayerScope
 import androidx.compose.ui.graphics.Outline
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.PathOperation
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.drawOutline
 import androidx.compose.ui.graphics.drawscope.ContentDrawScope
 import androidx.compose.ui.graphics.isSpecified
@@ -59,6 +57,7 @@ import androidx.compose.ui.node.ObserverModifierNode
 import androidx.compose.ui.node.TraversableNode
 import androidx.compose.ui.node.currentValueOf
 import androidx.compose.ui.node.findNearestAncestor
+import androidx.compose.ui.node.invalidateDraw
 import androidx.compose.ui.node.invalidateDrawForSubtree
 import androidx.compose.ui.node.invalidateLayer
 import androidx.compose.ui.node.invalidateMeasurement
@@ -70,15 +69,22 @@ import androidx.compose.ui.node.traverseAncestors
 import androidx.compose.ui.node.updateLayerBlock
 import androidx.compose.ui.platform.InspectorInfo
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.style.Hyphens
+import androidx.compose.ui.text.style.LineBreak
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDirection
+import androidx.compose.ui.text.style.isSpecified
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.constrainHeight
 import androidx.compose.ui.unit.constrainWidth
+import androidx.compose.ui.unit.isSpecified
 import androidx.compose.ui.unit.offset
 import androidx.compose.ui.util.fastCoerceAtLeast
 import androidx.compose.ui.util.fastCoerceIn
 import androidx.compose.ui.util.fastRoundToInt
-import kotlin.math.max
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
@@ -92,7 +98,7 @@ import kotlinx.coroutines.launch
  * component internally is applying the [styleable], and that [Style] parameter should be used
  * instead of applying [styleable] again.
  *
- * If [styleable] is added to a modifier chain that is after a another [styleable], then the second
+ * If [styleable] is added to a modifier chain that is after an another [styleable], then the second
  * region will wrap around the first. For example, if the two regions both supply padding then the
  * padding will the sum of both regions.
  *
@@ -118,7 +124,7 @@ fun Modifier.styleable(styleState: StyleState? = null, style: Style): Modifier =
  * component already takes a [Style] parameter, then that component internally is applying the
  * [styleable], and that [Style] parameter should be used instead of applying [styleable] again,
  *
- * If [styleable] is added to a modifier chain that is after a another [styleable], then the second
+ * If [styleable] is added to a modifier chain that is after an another [styleable], then the second
  * region will wrap around the first. For example, if the two regions both supply padding then the
  * padding will the sum of both regions.
  *
@@ -144,7 +150,7 @@ fun Modifier.styleable(styleState: StyleState?, vararg styles: Style): Modifier 
  * component already takes a [Style] parameter, then that component internally is applying the
  * [styleable], and that [Style] parameter should be used instead of applying [styleable] again,
  *
- * If [styleable] is added to a modifier chain that is after a another [styleable], then the second
+ * If [styleable] is added to a modifier chain that is after an another [styleable], then the second
  * region will wrap around the first. For example, if the two regions both supply padding then the
  * padding will the sum of both regions.
  *
@@ -210,7 +216,11 @@ internal object StyleInnerElement : ModifierNodeElement<StyleInnerNode>() {
     override fun hashCode(): Int = identityHashCode(this)
 }
 
-internal class StyleOuterNode(styleState: StyleState?, style: Style) :
+internal class StyleOuterNode(
+    styleState: StyleState?,
+    style: Style,
+    val overrideScope: CoroutineScope? = null,
+) :
     DelegatingNode(),
     LayoutModifierNode,
     DrawModifierNode,
@@ -221,7 +231,7 @@ internal class StyleOuterNode(styleState: StyleState?, style: Style) :
     TextStyleProviderNode {
 
     // It is very important that we invalidate only the subsystems that we _need_ to, based on what
-    // resolved styles have changed. We set this to false, and do all of the invalidations in
+    // resolved styles have changed. We set this to false, and do all the invalidations in
     // resolveStyleAndInvalidate
     override val shouldAutoInvalidate: Boolean
         get() = false
@@ -243,24 +253,26 @@ internal class StyleOuterNode(styleState: StyleState?, style: Style) :
             resolveStyleAndInvalidate()
         }
 
-    // ResolvedStyle instances are expensive to allocate. We will always need at least one, so we go
-    // ahead and allocate that here. This is a pointer to the "currently valid ResolvedStyle" of
-    // this node, however we also store a ResolvedStyle in _bufferOrNull that we flip
-    // between _resolved and _bufferOrNull every time we re-resolve, and we use the other as a
-    // "previous copy" that we can use to compare against and figure out what has changed. Since
-    // many style modifiers will be static and never change, we don't allocate a 2nd ResolvedStyle
+    internal val animationScope: CoroutineScope
+        get() = overrideScope ?: coroutineScope
+
+    private val builder = ResolvedStyle()
+
+    // StyleProperties instances are expensive to allocate. We will always need at least one, so we
+    // go ahead and allocate that here. This is a pointer to the "currently valid StyleProperties"
+    // of
+    // this node, however we also store a StyleProperties in _bufferOrNull that we flip
+    // between _resolved and _bufferOrNull every time we re-resolve. We use the other as a
+    // "previous copy" that we can use to compare against and figure out what changed. Since
+    // many style modifiers will be static and never change, we don't allocate a 2nd StyleProperties
     // until we need it.
-    private var _resolved = ResolvedStyle()
-    private var _bufferOrNull: ResolvedStyle? = null
-    private val bufferNonNull: ResolvedStyle
+    private var _resolved = StyleProperties()
+    private var _bufferOrNull: StyleProperties? = null
+    private val bufferNonNull: StyleProperties
         get() {
-            if (_bufferOrNull == null) _bufferOrNull = ResolvedStyle()
+            if (_bufferOrNull == null) _bufferOrNull = StyleProperties()
             return _bufferOrNull!!
         }
-
-    // We start out with null animations because most nodes won't ever be animated. We will lazily
-    // create one if it ends up being needed.
-    internal var animations: StyleAnimations? = null
 
     private var borderLayer: GraphicsLayer? = null
     private var borderLayerProvider: (() -> GraphicsLayer)? = null
@@ -281,47 +293,65 @@ internal class StyleOuterNode(styleState: StyleState?, style: Style) :
         }
 
     /**
-     * This method will calculate an up-to-date value for ResolvedStyle, including the interpolated
-     * styles from any animations which are ongoing. If there are no animations currently happening,
-     * this method will just directly return the already-resolved style that was passed in to the
-     * [base] parameter. This defaults to be the one calculated in resolveStyleAndInvalidate.
+     * This method will calculate an up-to-date value for StyleProperties, including the
+     * interpolated styles from any animations which are ongoing. If there are no animations
+     * currently happening, this method will just directly return the already-resolved style that
+     * was passed in to the [base] parameter. This defaults to be the one calculated in
+     * resolveStyleAndInvalidate.
      *
-     * If there are animations happening, this will return a ResolvedStyle which has the
+     * If there are animations happening, this will return a StyleProperties which has the
      * interpolated styles of the animation applied to it, and the execution of this function will
      * end up reading an AnimatedValue in the process, which means if this function is used inside
-     * of an observation scope, then it will automatically be subscribed to any animations that
-     * affect the [flags] passed in.
+     * an observation scope, then it will automatically be subscribed to any animations that affect
+     * the phases specified by [flags].
      *
      * The [flags] passed in are a way to indicate specifically which style properties you care
-     * about, and it is possible that the style returned does not have up to date properties for the
+     * about, and it is possible that the style returned does not have up-to-date properties for the
      * properties not covered by [flags]. This allows for animations which only affect (for example)
      * Draw to not end up causing something like Layout to be invalidated during the animation.
      */
     internal fun resolveAnimatedStyleFor(
         flags: Int,
-        base: ResolvedStyle = _resolved,
-    ): ResolvedStyle {
-        val animations = animations
-        @Suppress("VerboseNullabilityAndEmptiness")
-        return if (animations != null && animations.isNotEmpty()) {
-            animations.withAnimations(requireDensity(), base, this, flags)
+        base: StyleProperties = _resolved,
+    ): StyleProperties {
+        return if (builder.animatingFlags and flags != 0) {
+            val properties = StyleProperties()
+            builder.resolveInto(flags, properties)
+            properties
         } else base
+    }
+
+    internal fun resolveAnimatedStyleForInto(flags: Int, target: StyleProperties) {
+        if (builder.animatingFlags and flags != 0) {
+            builder.resolveInto(flags, target)
+        }
     }
 
     private fun currentLayerStyle() = resolveAnimatedStyleFor(LayerFlag)
 
-    private fun currentLayoutStyle() = resolveAnimatedStyleFor(OuterLayoutFlag)
+    private fun currentLayoutStyle() = resolveAnimatedStyleFor(OuterLayoutFlag or LayerFlag)
 
     override fun MeasureScope.measure(
         measurable: Measurable,
         constraints: Constraints,
     ): MeasureResult {
         val resolved = currentLayoutStyle()
-        // TODO: do an early exit if OuterLayoutFlags zero?
-        val start = resolved.externalPaddingStart.addIfSpecified(resolved.left)
-        val end = resolved.externalPaddingEnd.addIfSpecified(resolved.right)
-        val top = resolved.externalPaddingTop.addIfSpecified(resolved.top)
-        val bottom = resolved.externalPaddingBottom.addIfSpecified(resolved.bottom)
+        val start =
+            resolved
+                .hasOrZero(ExternalPaddingStartId) { externalPaddingStart }
+                .addIfSpecified(resolved.hasOrZero(LeftId) { left })
+        val end =
+            resolved
+                .hasOrZero(ExternalPaddingEndId) { externalPaddingEnd }
+                .addIfSpecified(resolved.hasOrZero(RightId) { right })
+        val top =
+            resolved
+                .hasOrZero(ExternalPaddingTopId) { externalPaddingTop }
+                .addIfSpecified(resolved.hasOrZero(TopId) { top })
+        val bottom =
+            resolved
+                .hasOrZero(ExternalPaddingBottomId) { externalPaddingBottom }
+                .addIfSpecified(resolved.hasOrZero(BottomId) { bottom })
 
         val horizontal = (start + end).fastRoundToInt()
         val vertical = (top + bottom).fastRoundToInt()
@@ -331,39 +361,92 @@ internal class StyleOuterNode(styleState: StyleState?, style: Style) :
         var minHeight = (constraints.minHeight - vertical).fastCoerceAtLeast(0)
         var maxHeight = addMaxWithMinimum(constraints.maxHeight, vertical)
 
-        minWidth = resolved.minWidth.takeRoundedOrElse(minWidth)
-        maxWidth = resolved.maxWidth.takeRoundedOrElse(maxWidth)
-        minHeight = resolved.minHeight.takeRoundedOrElse(minHeight)
-        maxHeight = resolved.maxHeight.takeRoundedOrElse(maxHeight)
+        // Resolve width constraints from Style
+        var styleMinWidth = 0
+        var styleMaxWidth = Constraints.Infinity
 
-        if (resolved.width.isSpecified) {
-            val width = resolved.width.fastRoundToInt()
-            minWidth = width
-            maxWidth = width
-        } else if (resolved.widthFraction.isSpecified && constraints.hasBoundedWidth) {
-            val width =
-                (maxWidth * resolved.widthFraction)
-                    .fastRoundToInt()
-                    .fastCoerceIn(minWidth, maxWidth)
-            minWidth = width
-            maxWidth = width
-        } else if (resolved.left.isSpecified && resolved.right.isSpecified) {
-            minWidth = maxWidth
+        if (resolved.hasId(MaxWidthId)) {
+            styleMaxWidth = resolved.maxWidth.fastRoundToInt().fastCoerceAtLeast(0)
+        }
+        if (resolved.hasId(MinWidthId)) {
+            styleMinWidth = resolved.minWidth.fastRoundToInt().fastCoerceIn(0, styleMaxWidth)
+        }
+        if (resolved.hasId(WidthId)) {
+            styleMinWidth =
+                resolved.width.fastRoundToInt().fastCoerceIn(styleMinWidth, styleMaxWidth)
+            styleMaxWidth = styleMinWidth
         }
 
-        if (resolved.height.isSpecified) {
-            val height = resolved.height.fastRoundToInt()
-            minHeight = height
-            maxHeight = height
-        } else if (resolved.heightFraction.isSpecified && constraints.hasBoundedHeight) {
-            val height =
-                (maxHeight * resolved.heightFraction)
-                    .fastRoundToInt()
-                    .fastCoerceIn(minHeight, maxHeight)
-            minHeight = height
-            maxHeight = height
-        } else if (resolved.top.isSpecified && resolved.bottom.isSpecified) {
-            minHeight = maxHeight
+        // Apply style width constraints to adjusted incoming constraints
+        minWidth =
+            if (styleMinWidth == 0) {
+                minWidth
+            } else {
+                styleMinWidth.fastCoerceIn(minWidth, maxWidth)
+            }
+        maxWidth =
+            if (styleMaxWidth == Constraints.Infinity) {
+                maxWidth
+            } else {
+                styleMaxWidth.fastCoerceIn(minWidth, maxWidth)
+            }
+
+        // Handle fractional width, after adjusting for the incoming constraints
+        if (!resolved.hasId(WidthId)) {
+            if (resolved.hasId(WidthFractionId) && constraints.hasBoundedWidth) {
+                val width =
+                    (maxWidth * resolved.widthFraction)
+                        .fastRoundToInt()
+                        .fastCoerceIn(minWidth, maxWidth)
+                minWidth = width
+                maxWidth = width
+            } else if (resolved.hasId(LeftId) && resolved.hasId(RightId)) {
+                minWidth = maxWidth
+            }
+        }
+
+        // Resolve height constraints from Style
+        var styleMinHeight = 0
+        var styleMaxHeight = Constraints.Infinity
+
+        if (resolved.hasId(MaxHeightId)) {
+            styleMaxHeight = resolved.maxHeight.fastRoundToInt().fastCoerceAtLeast(0)
+        }
+        if (resolved.hasId(MinHeightId)) {
+            styleMinHeight = resolved.minHeight.fastRoundToInt().fastCoerceIn(0, styleMaxHeight)
+        }
+        if (resolved.hasId(HeightId)) {
+            styleMinHeight =
+                resolved.height.fastRoundToInt().fastCoerceIn(styleMinHeight, styleMaxHeight)
+            styleMaxHeight = styleMinHeight
+        }
+
+        // Apply style height constraints to adjusted incoming constraints
+        minHeight =
+            if (styleMinHeight == 0) {
+                minHeight
+            } else {
+                styleMinHeight.fastCoerceIn(minHeight, maxHeight)
+            }
+        maxHeight =
+            if (styleMaxHeight == Constraints.Infinity) {
+                maxHeight
+            } else {
+                styleMaxHeight.fastCoerceIn(minHeight, maxHeight)
+            }
+
+        // Handle fractional height, after adjusting for the incoming constraints
+        if (!resolved.hasId(HeightId)) {
+            if (resolved.hasId(HeightFractionId) && constraints.hasBoundedHeight) {
+                val height =
+                    (maxHeight * resolved.heightFraction)
+                        .fastRoundToInt()
+                        .fastCoerceIn(minHeight, maxHeight)
+                minHeight = height
+                maxHeight = height
+            } else if (resolved.hasId(TopId) && resolved.hasId(BottomId)) {
+                minHeight = maxHeight
+            }
         }
 
         val placeable = measurable.measure(Constraints(minWidth, maxWidth, minHeight, maxHeight))
@@ -382,20 +465,12 @@ internal class StyleOuterNode(styleState: StyleState?, style: Style) :
                     top.fastRoundToInt()
                 }
             // TODO: zIndex
-            if (resolvedLayoutStyle.flags and LayerFlag != 0) {
+            if (resolvedLayoutStyle.phaseFlags and LayerFlag != 0) {
                 placeable.placeWithLayer(x, y, layerBlock = layerBlockNonNull)
             } else {
                 placeable.place(x, y)
             }
         }
-    }
-
-    private fun ResolvedStyle.shouldPlaceRelativeToRight(): Boolean {
-        return right.isSpecified && left.isUnspecified
-    }
-
-    private fun ResolvedStyle.shouldPlaceRelativeToBottom(): Boolean {
-        return bottom.isSpecified && top.isUnspecified
     }
 
     internal var layerBlock: (GraphicsLayerScope.() -> Unit)? = null
@@ -410,17 +485,29 @@ internal class StyleOuterNode(styleState: StyleState?, style: Style) :
 
     private fun GraphicsLayerScope.updateLayer() {
         val resolved = currentLayerStyle()
-        alpha = resolved.alpha
-        scaleX = resolved.scaleX
-        scaleY = resolved.scaleY
-        translationX = resolved.translationX
-        translationY = resolved.translationY
-        rotationX = resolved.rotationX
-        rotationY = resolved.rotationY
-        rotationZ = resolved.rotationZ
-        transformOrigin = resolved.transformOrigin
-        clip = resolved.clip
-        shape = resolved.shape
+        alpha = resolved.hasOrOne(AlphaId) { alpha }
+        scaleX = resolved.hasOrOne(ScaleXId) { scaleX }
+        scaleY = resolved.hasOrOne(ScaleYId) { scaleY }
+        translationX = resolved.hasOrZero(TranslationXId) { translationX }
+        translationY = resolved.hasOrZero(TranslationYId) { translationY }
+        rotationX = resolved.hasOrZero(RotationXId) { rotationX }
+        rotationY = resolved.hasOrZero(RotationYId) { rotationY }
+        rotationZ = resolved.hasOrZero(RotationZId) { rotationZ }
+        colorFilter = resolved.hasOrNull(ColorFilterId) { colorFilter!! }
+        val center = TransformOrigin.Center
+        transformOrigin =
+            if (resolved.hasId(TransformOriginXId) || resolved.hasId(TransformOriginYId)) {
+                TransformOrigin(
+                    resolved.hasOrElse(TransformOriginXId, center.pivotFractionX) {
+                        transformOriginX
+                    },
+                    resolved.hasOrElse(TransformOriginYId, center.pivotFractionY) {
+                        transformOriginY
+                    },
+                )
+            } else center
+        clip = resolved.hasOrElse(ClipId, false) { clip }
+        shape = resolved.hasOrElse(ShapeId, RectangleShape) { shape }
     }
 
     // Outline caching
@@ -444,21 +531,21 @@ internal class StyleOuterNode(styleState: StyleState?, style: Style) :
 
     override fun ContentDrawScope.draw() {
         val resolved = resolveAnimatedStyleFor(DrawFlag)
-
-        val bgColor = resolved.backgroundColor
-        val bgBrush = resolved.backgroundBrush
-        val foregroundColor = resolved.foregroundColor
-        val foregroundBrush = resolved.foregroundBrush
-        val borderColor = resolved.borderColor
-        val borderBrush = resolved.borderBrush
-        val borderWidth = resolved.borderWidth
+        val bgColor = resolved.hasOrElse(BackgroundColorId, Color.Unspecified) { backgroundColor }
+        val bgBrush = resolved.hasOrNull(BackgroundBrushId) { backgroundBrush!! }
+        val foregroundColor =
+            resolved.hasOrElse(ForegroundColorId, Color.Unspecified) { foregroundColor }
+        val foregroundBrush = resolved.hasOrNull(ForegroundBrushId) { foregroundBrush!! }
+        val borderColor = resolved.hasOrElse(BorderColorId, Color.Black) { borderColor }
+        val borderBrush = resolved.hasOrNull(BorderBrushId) { borderBrush!! }
+        val borderWidth = resolved.hasOrZero(BorderWidthId) { borderWidth }
         val halfStrokeWidth = borderWidth / 2f
         val shape = resolved.shape
         val hasBorder = halfStrokeWidth > 0
         val hasBackground = bgColor.isSpecified || bgBrush != null
         val hasForeground = foregroundColor.isSpecified || foregroundBrush != null
-        drawDropShadow(resolved)
 
+        drawDropShadow(resolved)
         drawForShape(
             shape = shape,
             hasBackground = hasBackground,
@@ -473,6 +560,7 @@ internal class StyleOuterNode(styleState: StyleState?, style: Style) :
             borderWidth = borderWidth,
         )
         drawInnerShadow(resolved)
+
         // since we use shape as a cache key in multiple places, we set "lastShape" here at the
         // end of the full draw function body
         lastShape = shape
@@ -510,10 +598,10 @@ internal class StyleOuterNode(styleState: StyleState?, style: Style) :
         }
     }
 
-    fun ContentDrawScope.drawInnerShadow(resolved: ResolvedStyle) {
-        val shadowOrArray = resolved.innerShadow
-        if (shadowOrArray == null) return
-        val shape = resolved.shape
+    fun ContentDrawScope.drawInnerShadow(resolved: StyleProperties) {
+        if (!resolved.hasId(InnerShadowId)) return
+        val shadowOrArray = resolved.innerShadow ?: return
+        val shape = resolved.hasOrElse(ShapeId, RectangleShape) { shape }
 
         reconcileInnerShadowCache(shadowOrArray, shape)
 
@@ -561,9 +649,10 @@ internal class StyleOuterNode(styleState: StyleState?, style: Style) :
         }
     }
 
-    fun ContentDrawScope.drawDropShadow(resolved: ResolvedStyle) {
+    fun ContentDrawScope.drawDropShadow(resolved: StyleProperties) {
+        if (!resolved.hasId(DropShadowId)) return
         val shadowOrArray = resolved.dropShadow ?: return
-        val shape = resolved.shape
+        val shape = resolved.hasOrElse(ShapeId, RectangleShape) { shape }
 
         reconcileDropShadowCache(shadowOrArray, shape)
 
@@ -643,29 +732,27 @@ internal class StyleOuterNode(styleState: StyleState?, style: Style) :
         val next = if (initial) _resolved else bufferNonNull
         val density = requireDensity()
 
-        // reset the style back to default/unset values
-        next.clear()
-
-        animations?.preResolve()
-
         // We declare a separate int var for the animation changes which need to be calculated
-        // inside of observeReads. We do this because observeReads is not inline, which means that
+        // inside  observeReads. We do this because observeReads is not inline, which means that
         // animChanges will get compiled into a captured Ref.
         var animChanges = 0
+        builder.prepareBuild()
         observeReads {
-            next.resolve(style, this, density, false)
+            builder.build(style, this, density)
 
+            // Passing 0 for the phase indicates that no animations should be read.
+            builder.resolveInto(0, next)
             _resolved = next
             _bufferOrNull = prev
 
             // if animations are scheduled, we need to make sure those changes are included
-            animChanges = (animations?.postResolve(this, density, !initial) ?: 0)
+            animChanges = builder.animatingFlags
         }
 
         // these are the flags of the types of properties that have updated, and will help us
         // selectively invalidate only the phases that NEED to be invalidated. We use diff() with
         // the previous resolved style to figure out which phases need to be invalidated
-        val changes = animChanges or (prev?.diff(next) ?: next.flags)
+        val changes = animChanges or (prev?.diff(next) ?: next.phaseFlags)
 
         if (_state.interactionSource != currentInteractionSource) {
             updateInteractionSources()
@@ -685,6 +772,7 @@ internal class StyleOuterNode(styleState: StyleState?, style: Style) :
             // TODO: invalidateDraw() doesn't seem to correct invalidate the drawing of THIS node,
             //  but it probably should. I think this is a bug. By calling invalidateLayer of the
             //  inner node, we sidestep the bug, but should probably investigate separately.
+            invalidateDraw()
             innerNode.invalidateLayer()
         }
         if (changes and LayerFlag != 0) {
@@ -699,7 +787,7 @@ internal class StyleOuterNode(styleState: StyleState?, style: Style) :
     }
 
     override fun onObservedReadsChanged() {
-        // if this method is getting called, it means that a state that was read inside of the
+        // if this method is getting called, it means that a state that was read inside the
         // resolving of the Style was invalidated. We need to re-run the resolve so that we get the
         // most up to date ResolvedStyle, and invalidate whichever systems need to be invalidated.
         resolveStyleAndInvalidate()
@@ -742,10 +830,13 @@ internal class StyleOuterNode(styleState: StyleState?, style: Style) :
 
     internal var ancestorNodes: MutableObjectList<StyleOuterNode>? = null
 
-    internal fun resolveInheritedStyle(flags: Int): ResolvedStyle? {
+    internal fun resolveInheritedStyle(flags: Int): StyleProperties? {
         var nodes = ancestorNodes
 
-        if (_resolved.flags and InheritedFlags != 0 || animations?.isNotEmpty() == true) {
+        if (
+            _resolved.phaseFlags and InheritedFlags != 0 ||
+                builder.animatingFlags and InheritedFlags != 0
+        ) {
             (nodes
                     ?: mutableObjectListOf<StyleOuterNode>().also {
                         nodes = it
@@ -759,8 +850,8 @@ internal class StyleOuterNode(styleState: StyleState?, style: Style) :
         traverseAncestors(OuterNodeKey) { node ->
             if (node !is StyleOuterNode) return@traverseAncestors true
             if (
-                node._resolved.flags and InheritedFlags != 0 ||
-                    node.animations?.isNotEmpty() == true
+                node._resolved.phaseFlags and InheritedFlags != 0 ||
+                    node.builder.animatingFlags and InheritedFlags != 0
             ) {
                 (nodes
                         ?: mutableObjectListOf<StyleOuterNode>().also {
@@ -772,16 +863,16 @@ internal class StyleOuterNode(styleState: StyleState?, style: Style) :
             true
         }
 
-        var startStyle: ResolvedStyle? = getCachedInheritedStyle()
+        var startStyle: StyleProperties? = getCachedInheritedStyle()
         var startIndex = if (startStyle != null) -1 else -2
-        var hasAnimations = animations?.isNotEmpty() ?: false
-        var hasInheritedStyles = _resolved.flags and (TextLayoutFlag or TextDrawFlag)
+        var hasAnimations = builder.animatingFlags and InheritedFlags != 0
+        var hasInheritedStyles = _resolved.phaseFlags and InheritedFlags
 
         nodes?.forEachIndexed { index, node ->
             val cached = node.getCachedInheritedStyle()
-            hasAnimations = hasAnimations || node.animations?.isNotEmpty() ?: false
+            hasAnimations = hasAnimations || node.builder.animatingFlags and InheritedFlags != 0
             hasInheritedStyles =
-                hasInheritedStyles or (node._resolved.flags and (TextLayoutFlag or TextDrawFlag))
+                hasInheritedStyles or (node._resolved.phaseFlags and InheritedFlags)
             if (cached == null) {
                 // can't use any cached styles we've found up until this point
                 startStyle = null
@@ -805,21 +896,20 @@ internal class StyleOuterNode(styleState: StyleState?, style: Style) :
         startIndex = if (nodes != null && startIndex < -1) nodes.size - 1 else startIndex
         for (index in startIndex downTo -1) {
             val node = if (index < 0) this else (nodes ?: continue)[index]
-            val cachedStyle = node.cachedInheritedStyle ?: ResolvedStyle()
-            ancestorStyle?.copyInheritedStylesInto(cachedStyle)
-            cachedStyle.applyInheritableStyles(node._resolved)
+            val cachedStyle = node.cachedInheritedStyle ?: StyleProperties()
+            ancestorStyle?.copyInto(cachedStyle, InheritedFlags)
+            node._resolved.copyInto(cachedStyle, InheritedFlags)
             ancestorStyle = cachedStyle
             node.saveInheritedStyles(cachedStyle)
         }
 
         if (hasAnimations) {
-            val animatingStyle = ResolvedStyle()
-            ancestorStyle?.copyInheritedStylesInto(animatingStyle)
+            val animatingStyle = StyleProperties()
+            ancestorStyle?.copyInto(animatingStyle, InheritedFlags)
             val size = nodes?.size ?: 0
-            val density = requireDensity()
             for (index in size - 1 downTo -1) {
                 val node = if (index < 0) this else (nodes ?: continue)[index]
-                node.animations?.applyAnimationsTo(animatingStyle, density, node, flags)
+                node.resolveAnimatedStyleForInto(flags, animatingStyle)
             }
             ancestorStyle = animatingStyle
         }
@@ -827,21 +917,21 @@ internal class StyleOuterNode(styleState: StyleState?, style: Style) :
         return ancestorStyle
     }
 
-    private var cachedInheritedStyle: ResolvedStyle? = null
+    private var cachedInheritedStyle: StyleProperties? = null
     // We track the invalid cache with a boolean to avoid having to reallocate it when the
     // cache is updated.
     private var inheritedStyleDirty = false
 
-    internal fun getCachedInheritedStyle(): ResolvedStyle? =
+    internal fun getCachedInheritedStyle(): StyleProperties? =
         if (inheritedStyleDirty) null else cachedInheritedStyle
 
     /**
-     * This takes the ResolvedStyle passed in and copies the inherited styles of it into the cached
-     * style on this node. This means that the cached style will be a "snapshot" of the passed in
-     * style, and the passed in style can continue to mutate elsewhere and it won't effect the
-     * cached style on this node.
+     * This takes the StyleProperties passed in and copies the inherited styles of it into the
+     * cached style on this node. This means that the cached style will be a "snapshot" of the
+     * passed in style, and the passed in style can continue to mutate elsewhere, and it won't
+     * affect the cached style on this node.
      */
-    internal fun saveInheritedStyles(style: ResolvedStyle) {
+    internal fun saveInheritedStyles(style: StyleProperties) {
         inheritedStyleDirty = false
         cachedInheritedStyle = style
     }
@@ -869,7 +959,7 @@ internal class StyleOuterNode(styleState: StyleState?, style: Style) :
 }
 
 /**
- * The style modifier currently requires two modifier nodes in order to make all of the different
+ * The style modifier currently requires two modifier nodes in order to make all the different
  * styles work properly. More specifically, two LayoutModifierNodes are required. The "outer"
  * modifier implements _almost_ everything, except for padding. In order for padding, drawing, etc.
  * to work properly, we need this inner modifier to add the "padding". If padding isn't used, then
@@ -878,7 +968,7 @@ internal class StyleOuterNode(styleState: StyleState?, style: Style) :
  * We should think more about ways in which we could make it so this modifier isn't necessary while
  * still allowing for style to define padding.
  */
-internal class StyleInnerNode() : Modifier.Node(), LayoutModifierNode {
+internal class StyleInnerNode : Modifier.Node(), LayoutModifierNode {
     // This is only ever invalidated manually from StyleOuterModifier::resolveStyleAndInvalidate
     override val shouldAutoInvalidate: Boolean
         get() = false
@@ -893,10 +983,12 @@ internal class StyleInnerNode() : Modifier.Node(), LayoutModifierNode {
         constraints: Constraints,
     ): MeasureResult {
         val resolved = currentLayoutStyle()
-        val start = resolved.contentPaddingStart + resolved.borderWidth
-        val end = resolved.contentPaddingEnd + resolved.borderWidth
-        val top = resolved.contentPaddingTop + resolved.borderWidth
-        val bottom = resolved.contentPaddingBottom + resolved.borderWidth
+        val borderWidth = resolved.hasOrZero(BorderWidthId) { borderWidth }
+        val start = resolved.hasOrZero(ContentPaddingStartId) { contentPaddingStart } + borderWidth
+        val end = resolved.hasOrZero(ContentPaddingEndId) { contentPaddingEnd } + borderWidth
+        val top = resolved.hasOrZero(ContentPaddingTopId) { contentPaddingTop } + borderWidth
+        val bottom =
+            resolved.hasOrZero(ContentPaddingBottomId) { contentPaddingBottom } + borderWidth
 
         val horizontal = (start + end).fastRoundToInt()
         val vertical = (top + bottom).fastRoundToInt()
@@ -913,7 +1005,7 @@ internal class StyleInnerNode() : Modifier.Node(), LayoutModifierNode {
 
     override fun onAttach() {
         // We attach top-down, so by the time we get to the inner node's "onAttach", the outer node
-        // is already attached. finding ancestors is cheap and quick and we know that the Outer
+        // is already attached. finding ancestors is cheap and quick, and we know that the Outer
         // node is guaranteed to be there.
         val outer = findNearestAncestor(OuterNodeKey) as StyleOuterNode
         val inner = this
@@ -925,16 +1017,118 @@ internal class StyleInnerNode() : Modifier.Node(), LayoutModifierNode {
     }
 }
 
-private inline val Float.isSpecified: Boolean
-    get() = !isNaN()
+private inline fun StyleProperties.suppliedOrHas(
+    value: Color,
+    propertyId: Byte,
+    read: StyleProperties.() -> Color,
+): Color =
+    when {
+        value.isSpecified -> value
+        hasId(propertyId) -> read()
+        else -> value
+    }
 
-private inline val Float.isUnspecified: Boolean
-    get() = isNaN()
+private inline fun StyleProperties.suppliedOrHas(
+    value: TextUnit,
+    propertyId: Byte,
+    read: StyleProperties.() -> TextUnit,
+): TextUnit =
+    when {
+        value.isSpecified -> value
+        hasId(propertyId) -> read()
+        else -> value
+    }
+
+private inline fun StyleProperties.suppliedOrHas(
+    value: TextAlign,
+    propertyId: Byte,
+    read: StyleProperties.() -> TextAlign,
+): TextAlign =
+    when {
+        value != TextAlign.Unspecified -> value
+        hasId(propertyId) -> read()
+        else -> value
+    }
+
+private inline fun StyleProperties.suppliedOrHas(
+    value: TextDirection,
+    propertyId: Byte,
+    read: StyleProperties.() -> TextDirection,
+): TextDirection =
+    when {
+        value.isSpecified -> value
+        hasId(propertyId) -> read()
+        else -> value
+    }
+
+private inline fun StyleProperties.suppliedOrHas(
+    value: LineBreak,
+    propertyId: Byte,
+    read: StyleProperties.() -> LineBreak,
+): LineBreak =
+    when {
+        value.isSpecified -> value
+        hasId(propertyId) -> read()
+        else -> value
+    }
+
+private inline fun StyleProperties.suppliedOrHas(
+    value: Hyphens,
+    propertyId: Byte,
+    read: StyleProperties.() -> Hyphens,
+): Hyphens =
+    when {
+        value.isSpecified -> value
+        hasId(propertyId) -> read()
+        else -> value
+    }
+
+private inline fun <T> StyleProperties.suppliedOrHas(
+    value: T?,
+    propertyId: Byte,
+    read: StyleProperties.() -> T?,
+): T? =
+    when {
+        value != null -> value
+        hasId(propertyId) -> read()
+        else -> null
+    }
+
+private inline fun <T> StyleProperties.suppliedOrHas(
+    value: T?,
+    propertyId: Int,
+    read: StyleProperties.() -> T?,
+): T? =
+    when {
+        value != null -> value
+        hasId(propertyId) -> read()
+        else -> null
+    }
+
+private inline fun <T> StyleProperties.hasOrElse(
+    propertyId: Byte,
+    value: T,
+    read: StyleProperties.() -> T,
+) = if (hasId(propertyId)) read() else value
+
+private inline fun StyleProperties.hasOrZero(propertyId: Byte, read: StyleProperties.() -> Float) =
+    if (hasId(propertyId)) read() else 0f
+
+private inline fun StyleProperties.hasOrOne(propertyId: Byte, read: StyleProperties.() -> Float) =
+    if (hasId(propertyId)) read() else 1f
+
+private inline fun <T : Any> StyleProperties.hasOrNull(
+    propertyId: Int,
+    read: StyleProperties.() -> T,
+): T? = if (hasId(propertyId)) read() else null
+
+private inline fun <T> StyleProperties.hasOrElse(
+    propertyId: Int,
+    value: T,
+    read: StyleProperties.() -> T,
+) = if (hasId(propertyId)) read() else value
 
 private inline fun Float.addIfSpecified(abs: Float): Float = if (abs.isNaN()) this else (this + abs)
-
-private inline fun Float.takeRoundedOrElse(fallback: Int): Int =
-    if (isNaN()) fallback else fastRoundToInt()
 
 private inline fun addMaxWithMinimum(max: Int, value: Int): Int {
     return if (max == Constraints.Infinity) {
@@ -944,9 +1138,6 @@ private inline fun addMaxWithMinimum(max: Int, value: Int): Int {
     }
 }
 
-private operator fun CornerRadius.minus(value: Float): CornerRadius =
-    CornerRadius(max(0f, x - value), max(0f, y - value))
-
 private fun StylePhase.toFlags(): Int =
     when (this) {
         StylePhase.Layout -> TextLayoutFlag
@@ -954,40 +1145,48 @@ private fun StylePhase.toFlags(): Int =
         else -> InheritedFlags
     }
 
-/**
- * Helper method that creates a round rect with the inner region removed by the given stroke width
- */
-private fun createRoundRectPath(
-    targetPath: Path,
-    roundedRect: RoundRect,
-    strokeWidth: Float,
-    fillArea: Boolean,
-): Path =
-    targetPath.apply {
-        reset()
-        addRoundRect(roundedRect)
-        if (!fillArea) {
-            val insetPath =
-                Path().apply { addRoundRect(createInsetRoundedRect(strokeWidth, roundedRect)) }
-            op(this, insetPath, PathOperation.Difference)
+private fun StyleProperties.shouldPlaceRelativeToRight() = !hasId(LeftId) && hasId(RightId)
+
+private fun StyleProperties.shouldPlaceRelativeToBottom() = hasId(BottomId) && !hasId(TopId)
+
+internal fun StyleProperties.toTextStyle(supplied: TextStyle): TextStyle {
+    return TextStyle(
+            color = suppliedOrHas(supplied.color, ContentColorId) { contentColor },
+            fontSize = suppliedOrHas(supplied.fontSize, FontSizeId) { fontSize },
+            fontWeight = suppliedOrHas(supplied.fontWeight, FontWeightId) { fontWeight },
+            fontStyle = suppliedOrHas(supplied.fontStyle, FontStyleId) { fontStyle },
+            fontSynthesis =
+                suppliedOrHas(supplied.fontSynthesis, FontSynthesisId) { fontSynthesis },
+            fontFamily = suppliedOrHas(supplied.fontFamily, FontFamilyId) { fontFamily },
+            fontFeatureSettings = supplied.fontFeatureSettings,
+            letterSpacing =
+                suppliedOrHas(supplied.letterSpacing, LetterSpacingId) { letterSpacing },
+            baselineShift =
+                suppliedOrHas(supplied.baselineShift, BaselineShiftId) { baselineShift },
+            textGeometricTransform = supplied.textGeometricTransform,
+            localeList = supplied.localeList,
+            background = supplied.background,
+            textDecoration =
+                suppliedOrHas(supplied.textDecoration, TextDecorationId) { textDecoration },
+            shadow = supplied.shadow,
+            drawStyle = supplied.drawStyle,
+            textAlign = suppliedOrHas(supplied.textAlign, TextAlignId) { textAlign },
+            textDirection =
+                suppliedOrHas(supplied.textDirection, TextDirectionId) { textDirection },
+            lineHeight = suppliedOrHas(supplied.lineHeight, LineHeightId) { lineHeight },
+            textIndent = suppliedOrHas(supplied.textIndent, TextIndentId) { textIndent },
+            platformStyle = supplied.platformStyle,
+            lineHeightStyle = supplied.lineHeightStyle,
+            lineBreak = suppliedOrHas(supplied.lineBreak, LineBreakId) { lineBreak },
+            hyphens = suppliedOrHas(supplied.hyphens, HyphensId) { hyphens },
+            textMotion = suppliedOrHas(supplied.textMotion, TextMotionId) { textMotion },
+        )
+        .let {
+            when {
+                supplied.color.isSpecified -> it
+                supplied.brush != null -> it.copy(brush = supplied.brush)
+                hasId(ContentBrushId) -> it.copy(brush = contentBrush)
+                else -> it
+            }
         }
-    }
-
-private fun createInsetRoundedRect(widthPx: Float, roundedRect: RoundRect) =
-    RoundRect(
-        left = widthPx,
-        top = widthPx,
-        right = roundedRect.width - widthPx,
-        bottom = roundedRect.height - widthPx,
-        topLeftCornerRadius = roundedRect.topLeftCornerRadius.shrink(widthPx),
-        topRightCornerRadius = roundedRect.topRightCornerRadius.shrink(widthPx),
-        bottomLeftCornerRadius = roundedRect.bottomLeftCornerRadius.shrink(widthPx),
-        bottomRightCornerRadius = roundedRect.bottomRightCornerRadius.shrink(widthPx),
-    )
-
-/**
- * Helper method to shrink the corner radius by the given value, clamping to 0 if the resultant
- * corner radius would be negative
- */
-private fun CornerRadius.shrink(value: Float): CornerRadius =
-    CornerRadius(max(0f, this.x - value), max(0f, this.y - value))
+}

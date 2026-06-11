@@ -108,11 +108,22 @@ internal constructor(private val dataStore: DataStore<WearWidgetCacheProto>) {
             ?: throw WidgetCacheMissException("No container type found for instance $instanceId")
     }
 
+    /**
+     * Reads the service-to-widget class mapping from the cache.
+     *
+     * @return The mapping from service class name to widget class name.
+     */
+    open suspend fun getServiceToWidgetMapping(): Map<String, String> {
+        val cacheProto = dataStore.data.first()
+        return cacheProto.service_to_widget_name
+    }
+
     /** Scope for updating the widget cache. */
     @Suppress("PrimitiveInCollection") // Underlying proto code already creates the maps.
     class WidgetCacheUpdateScope(private val initialProto: WearWidgetCacheProto) {
         private val instanceIdToType = initialProto.instance_id_to_type.toMutableMap()
         private val containerTypeToSpec = initialProto.container_type_to_spec.toMutableMap()
+        private val serviceToWidgetName = initialProto.service_to_widget_name.toMutableMap()
 
         /**
          * Sets the container type for a given widget instance. Overwrites any existing entry for
@@ -145,10 +156,21 @@ internal constructor(private val dataStore: DataStore<WearWidgetCacheProto>) {
                 )
         }
 
+        /**
+         * Puts the widget class name for a given service class name, overriding existing values.
+         *
+         * @param serviceName The class name of the service.
+         * @param widgetName The class name of the widget.
+         */
+        fun putServiceToWidgetMapping(serviceName: String, widgetName: String) {
+            serviceToWidgetName[serviceName] = widgetName
+        }
+
         internal fun toProto(): WearWidgetCacheProto {
             return initialProto.copy(
                 instance_id_to_type = instanceIdToType,
                 container_type_to_spec = containerTypeToSpec,
+                service_to_widget_name = serviceToWidgetName,
             )
         }
     }

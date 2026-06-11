@@ -82,7 +82,7 @@ internal class HorizontalEmphasisSpanLayout(
 
         // Calculate drawing position of emphasis letter.
         positions = FloatArray(copied.length) { Float.NaN }
-        copied.forStyleRuns(0, end - start, wPaint, false) { ss, se, paint, _, _, _, _ ->
+        copied.forStyleRuns(0, end - start, wPaint) { ss, se, paint, _, _, _, _ ->
             copied.forEachGrapheme(ss, se, paint.textLocale) { gs, ge ->
                 if (isEmphasisTarget(Character.codePointAt(copied, gs))) {
                     val width = paint.measureText(copied, gs, ge)
@@ -105,17 +105,14 @@ internal class HorizontalEmphasisSpanLayout(
 
     override fun draw(canvas: Canvas, x: Float, y: Float, paint: Paint) {
         // Draw Body Text
-        canvas.save()
-        try {
+        canvas.withSave {
             val bodyDrawY = y + bodyAscent
-            canvas.translate(x, bodyDrawY)
+            translate(x, bodyDrawY)
 
             // The paint object stored in the layout is a shared cache, so reset it to the drawing
             // paint before calling draw ops.
             bodyLayout.paint.set(paint)
-            bodyLayout.draw(canvas)
-        } finally {
-            canvas.restore()
+            bodyLayout.draw(this)
         }
 
         // Draw Emphasis Text

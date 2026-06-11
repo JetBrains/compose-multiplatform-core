@@ -32,8 +32,8 @@ import androidx.compose.remote.creation.compose.modifier.size
 import androidx.compose.remote.creation.compose.modifier.width
 import androidx.compose.remote.creation.compose.painter.RemotePainter
 import androidx.compose.remote.creation.compose.shaders.RemoteBrush
-import androidx.compose.remote.creation.compose.shaders.bitmap
 import androidx.compose.remote.creation.compose.shaders.horizontalGradient
+import androidx.compose.remote.creation.compose.shaders.image
 import androidx.compose.remote.creation.compose.shaders.linearGradient
 import androidx.compose.remote.creation.compose.shaders.radialGradient
 import androidx.compose.remote.creation.compose.shaders.sweepGradient
@@ -45,13 +45,16 @@ import androidx.compose.remote.creation.compose.state.RemotePaint
 import androidx.compose.remote.creation.compose.state.RemoteState
 import androidx.compose.remote.creation.compose.state.rc
 import androidx.compose.remote.creation.compose.state.rdp
-import androidx.compose.remote.creation.compose.state.rememberNamedRemoteBitmap
+import androidx.compose.remote.creation.compose.state.rememberNamedRemoteImageBitmap
 import androidx.compose.remote.creation.compose.state.rf
-import androidx.compose.remote.player.compose.test.utils.screenshot.rule.RemoteComposeScreenshotTestRule
+import androidx.compose.remote.player.compose.test.utils.RemoteScreenshotTestRule
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.TileMode
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
+import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
@@ -65,12 +68,12 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class RemoteBrushTest {
     @get:Rule
-    val remoteComposeTestRule: RemoteComposeScreenshotTestRule by lazy {
-        RemoteComposeScreenshotTestRule(
+    val remoteComposeTestRule =
+        RemoteScreenshotTestRule(
             moduleDirectory = SCREENSHOT_GOLDEN_DIRECTORY,
+            context = ApplicationProvider.getApplicationContext(),
             matcher = MSSIMMatcher(threshold = 0.9995),
         )
-    }
 
     private val colors = listOf(Color.Red.rc, Color.Blue.rc)
     private val dynamicColors =
@@ -209,7 +212,10 @@ class RemoteBrushTest {
     fun bitmapBrushTest() {
         remoteComposeTestRule.runScreenshotTest {
             val image =
-                rememberNamedRemoteBitmap(name = "background", domain = RemoteState.Domain.User) {
+                rememberNamedRemoteImageBitmap(
+                    name = "background",
+                    domain = RemoteState.Domain.User,
+                ) {
                     createImage(400, 400).asImageBitmap()
                 }
             val imageSize = RemoteSize(image.width, image.height)
@@ -225,7 +231,7 @@ class RemoteBrushTest {
                                 object : RemotePainter() {
                                     override fun RemoteDrawScope.onDraw() {
                                         val paint = RemotePaint {
-                                            with(RemoteBrush.bitmap(image)) {
+                                            with(RemoteBrush.image(image)) {
                                                 applyTo(this@RemotePaint, size, matrix33)
                                             }
                                         }
@@ -244,6 +250,58 @@ class RemoteBrushTest {
                 )
             }
         }
+    }
+
+    @Test
+    fun bitmapBrushContentScaleFitTest() {
+        remoteComposeTestRule.runScreenshotTest { BitmapBrushBox(ContentScale.Fit) }
+    }
+
+    @Test
+    fun bitmapBrushContentScaleCropTest() {
+        remoteComposeTestRule.runScreenshotTest { BitmapBrushBox(ContentScale.Crop) }
+    }
+
+    @Test
+    fun bitmapBrushContentScaleFillBoundsTest() {
+        remoteComposeTestRule.runScreenshotTest { BitmapBrushBox(ContentScale.FillBounds) }
+    }
+
+    @Test
+    fun bitmapBrushContentScaleFillWidthTest() {
+        remoteComposeTestRule.runScreenshotTest { BitmapBrushBox(ContentScale.FillWidth) }
+    }
+
+    @Test
+    fun bitmapBrushContentScaleFillHeightTest() {
+        remoteComposeTestRule.runScreenshotTest { BitmapBrushBox(ContentScale.FillHeight) }
+    }
+
+    @Test
+    fun bitmapBrushContentScaleInsideTest() {
+        remoteComposeTestRule.runScreenshotTest { BitmapBrushBox(ContentScale.Inside) }
+    }
+
+    @Test
+    fun bitmapBrushContentScaleNoneTest() {
+        remoteComposeTestRule.runScreenshotTest { BitmapBrushBox(ContentScale.None) }
+    }
+
+    @Composable
+    @RemoteComposable
+    private fun BitmapBrushBox(contentScale: ContentScale) {
+        val backgroundImage =
+            rememberNamedRemoteImageBitmap(name = "background") {
+                createImage(300, 400).asImageBitmap()
+            }
+        val backgroundBrush =
+            RemoteBrush.image(
+                image = backgroundImage,
+                tileModeX = TileMode.Decal,
+                tileModeY = TileMode.Decal,
+                contentScale = contentScale,
+            )
+        RemoteBox(modifier = RemoteModifier.fillMaxSize().background(backgroundBrush))
     }
 
     @Composable

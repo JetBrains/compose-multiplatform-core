@@ -60,13 +60,22 @@ public interface RemoteState<T> {
     /** The constant value held by this state, or `null` if the state is dynamic. */
     public val constantValueOrNull: T?
 
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public val asEncoded: RemoteState<*>
+        get() = this
+
+    /** Returns the expression as a human-readable string. */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public fun toDebugString(): String
+
     /**
      * Represents the domain (namespace) for named remote states.
      *
      * Named states are used to identify variables that can be updated externally or shared across
      * different parts of a remote document.
      */
-    public open class Domain internal constructor(internal val coreDomain: String?) {
+    public open class Domain
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    constructor(@get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public val coreDomain: String?) {
         /**
          * A string representation of the domain followed by a colon separator, or an empty string
          * if the domain is null. This is used to namespace named remote states.
@@ -94,6 +103,9 @@ public interface RemoteState<T> {
         /** The system-defined domain, used for platform-level or framework state. */
         public object System : Domain(RemoteDomains.SYSTEM.toString())
 
+        /** The domain for states that do not belong to any specific domain. */
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public object None : Domain(null)
+
         override fun toString(): String {
             return coreDomain ?: ""
         }
@@ -109,13 +121,20 @@ public interface RemoteState<T> {
 }
 
 /** Common base interface for all Remote types. */
-public abstract class BaseRemoteState<T : Any> internal constructor() : RemoteState<T> {
-    /**
-     * A unique key used for caching the remote representation (e.g., expression or ID) of this
-     * state.
-     */
+public abstract class BaseRemoteState<T : Any>
+internal constructor(initialCacheKey: RemoteStateCacheKey) : RemoteState<T> {
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    internal abstract val cacheKey: RemoteStateCacheKey
+    internal open val cacheKey: RemoteStateCacheKey = initialCacheKey
+
+    init {
+        // Register with RemoteOperationCacheKey.
+        if (initialCacheKey is RemoteOperationCacheKey) {
+            initialCacheKey.state = this
+        }
+    }
+
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    override fun toDebugString(): String = cacheKey.toDebugString()
 
     /** The constant value or null if there isn't one. */
     public abstract override val constantValueOrNull: T?
@@ -166,7 +185,12 @@ public abstract class BaseRemoteState<T : Any> internal constructor() : RemoteSt
  *
  * @param T The type of the value held by this state.
  */
-@Stable public interface MutableRemoteState<T> : RemoteState<T>
+@Stable
+public interface MutableRemoteState<T> : RemoteState<T> {
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public val asEncodedMutable: MutableRemoteState<*>
+        get() = this
+}
 
 /**
  * Remembers a named state value.

@@ -58,13 +58,4 @@ androidx {
     type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2025"
     description = "Use SupportSQLite APIs backed by a RoomDatabase"
-    kotlinTarget = KotlinTarget.KOTLIN_2_1
-}
-
-// TODO(b/430983364): Workaround KSP incremental issues
-tasks.withType(KotlinCompile).configureEach {
-    incremental = false
-}
-tasks.withType(KspAATask).configureEach {
-    it.kspConfig.incremental.set(false)
 }

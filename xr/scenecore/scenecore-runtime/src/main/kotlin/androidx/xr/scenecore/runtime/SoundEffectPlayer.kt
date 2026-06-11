@@ -19,7 +19,7 @@ package androidx.xr.scenecore.runtime
 import androidx.annotation.RestrictTo
 
 /** Provides playback control for [SoundEffect]s. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public interface SoundEffectPlayer {
     /**
      * Plays a loaded sound effect.
@@ -29,8 +29,8 @@ public interface SoundEffectPlayer {
      * @param priority The playback priority (0 = lowest). If the max stream count is exceeded,
      *   streams with lower priority are stopped first.
      * @param isLooping True to loop indefinitely, false to play once.
-     * @return A non-zero stream ID for controlling this specific instance of the sound, or 0 if
-     *   playback failed.
+     * @return A stream for controlling this specific instance of the sound.
+     * @throws RuntimeException if the sound effect fails to play.
      */
     public fun play(
         soundEffect: SoundEffect,

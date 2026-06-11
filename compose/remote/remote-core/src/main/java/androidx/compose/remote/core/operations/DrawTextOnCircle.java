@@ -50,16 +50,44 @@ public class DrawTextOnCircle extends PaintOperation implements VariableSupport,
     public enum Alignment {
         START,
         CENTER,
-        END,
+        END;
+
+        /** Cached values array to avoid allocations. */
+        private static final Alignment[] VALUES = Alignment.values();
+
+        /** Maps an integer to Alignment safely. */
+        public static @NonNull Alignment fromInt(int value) {
+            if (value < 0 || value >= VALUES.length) {
+                return START;
+            }
+            return VALUES[value];
+        }
     }
 
     public enum Placement {
         OUTSIDE,
-        INSIDE,
+        INSIDE;
+
+        /** Cached values array to avoid allocations. */
+        private static final Placement[] VALUES = Placement.values();
+
+        /** Maps an integer to Placement safely. */
+        public static @NonNull Placement fromInt(int value) {
+            if (value < 0 || value >= VALUES.length) {
+                return OUTSIDE;
+            }
+            return VALUES[value];
+        }
     }
 
-    public DrawTextOnCircle(int textId, float centerX, float centerY, float radius,
-            float startAngle, float warpRadiusOffset, @NonNull Alignment alignment,
+    public DrawTextOnCircle(
+            int textId,
+            float centerX,
+            float centerY,
+            float radius,
+            float startAngle,
+            float warpRadiusOffset,
+            @NonNull Alignment alignment,
             @NonNull Placement placement) {
         mTextId = textId;
         mCenterX = centerX;
@@ -72,8 +100,7 @@ public class DrawTextOnCircle extends PaintOperation implements VariableSupport,
     }
 
     @Override
-    public void updateVariables(@NonNull RemoteContext context) {
-    }
+    public void updateVariables(@NonNull RemoteContext context) {}
 
     @Override
     public void registerListening(@NonNull RemoteContext context) {
@@ -82,37 +109,50 @@ public class DrawTextOnCircle extends PaintOperation implements VariableSupport,
 
     @Override
     public void write(@NonNull WireBuffer buffer) {
-        apply(buffer, mTextId, mCenterX, mCenterY, mRadius, mStartAngle, mWarpRadiusOffset,
-                mAlignment, mPlacement);
+        apply(
+                buffer,
+                mTextId,
+                mCenterX,
+                mCenterY,
+                mRadius,
+                mStartAngle,
+                mWarpRadiusOffset,
+                mAlignment,
+                mPlacement);
     }
 
     @NonNull
     @Override
     public String toString() {
-        return "DrawTextOnCircle ["
-                + mTextId
-                + "]";
+        return "DrawTextOnCircle [" + mTextId + "]";
     }
 
     /**
      * Read this operation and add it to the list of operations
      *
-     * @param buffer     the buffer to read
+     * @param buffer the buffer to read
      * @param operations the list of operations that will be added to
      */
     public static void read(@NonNull WireBuffer buffer, @NonNull List<Operation> operations) {
-        int textId = buffer.readInt();
-        float centerX = buffer.readFloat();
-        float centerY = buffer.readFloat();
-        float radius = buffer.readFloat();
-        float startAngle = buffer.readFloat();
-        float warpRadiusOffset = buffer.readFloat();
-        Alignment alignment = Alignment.values()[buffer.readByte()];
-        Placement placement = Placement.values()[buffer.readByte()];
+        int textId = buffer.readId();
+        float centerX = buffer.readNanId();
+        float centerY = buffer.readNanId();
+        float radius = buffer.readNanId();
+        float startAngle = buffer.readNanId();
+        float warpRadiusOffset = buffer.readNanId();
+        Alignment alignment = Alignment.fromInt(buffer.readByte());
+        Placement placement = Placement.fromInt(buffer.readByte());
 
         operations.add(
-                new DrawTextOnCircle(textId, centerX, centerY, radius, startAngle, warpRadiusOffset,
-                        alignment, placement));
+                new DrawTextOnCircle(
+                        textId,
+                        centerX,
+                        centerY,
+                        radius,
+                        startAngle,
+                        warpRadiusOffset,
+                        alignment,
+                        placement));
     }
 
     /**
@@ -134,12 +174,16 @@ public class DrawTextOnCircle extends PaintOperation implements VariableSupport,
         return Operations.DRAW_TEXT_ON_CIRCLE;
     }
 
-    /**
-     * add a draw text on circle operation to the buffer
-     */
+    /** add a draw text on circle operation to the buffer */
     public static void apply(
-            @NonNull WireBuffer buffer, int textId, float centerX, float centerY, float radius,
-            float startAngle, float warpRadiusOffset, @NonNull Alignment alignment,
+            @NonNull WireBuffer buffer,
+            int textId,
+            float centerX,
+            float centerY,
+            float radius,
+            float startAngle,
+            float warpRadiusOffset,
+            @NonNull Alignment alignment,
             @NonNull Placement placement) {
         buffer.start(OP_CODE);
         buffer.writeInt(textId);
@@ -192,7 +236,6 @@ public class DrawTextOnCircle extends PaintOperation implements VariableSupport,
                 .add("startAngle", mStartAngle)
                 .add("warpRadiusOffset", mWarpRadiusOffset)
                 .add("alignment", mAlignment)
-                .add("placement", mPlacement)
-        ;
+                .add("placement", mPlacement);
     }
 }

@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("DEPRECATION")
+
 package androidx.xr.scenecore
 
 import android.widget.TextView
@@ -23,6 +25,7 @@ import androidx.xr.runtime.SessionCreateSuccess
 import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.scenecore.testing.FakeSpatialPointerComponent
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Before
 import org.junit.Test
@@ -39,7 +42,7 @@ class SpatialPointerComponentTest {
     private lateinit var session: Session
 
     @Before
-    fun setUp() {
+    fun setUp(): Unit = runBlocking {
         val testDispatcher = StandardTestDispatcher()
         val result = Session.create(activity, testDispatcher)
 
@@ -50,7 +53,14 @@ class SpatialPointerComponentTest {
 
     @Test
     fun addSpatialPointerComponent_addsRuntimeSpatialPointerComponent() {
-        val entity = PanelEntity.create(session, TextView(activity), IntSize2d(720, 480), "test")
+        val entity =
+            PanelEntity.create(
+                session,
+                TextView(activity),
+                IntSize2d(720, 480),
+                "test",
+                parent = session.scene.activitySpace,
+            )
         assertThat(entity).isNotNull()
         val pointerComponent = SpatialPointerComponent.create(session)
 
@@ -71,7 +81,14 @@ class SpatialPointerComponentTest {
 
     @Test
     fun getSpatialPointerIcon_returnsSetValue() {
-        val entity = PanelEntity.create(session, TextView(activity), IntSize2d(720, 480), "test")
+        val entity =
+            PanelEntity.create(
+                session,
+                TextView(activity),
+                IntSize2d(720, 480),
+                "test",
+                parent = session.scene.activitySpace,
+            )
         assertThat(entity).isNotNull()
 
         val pointerComponent = SpatialPointerComponent.create(session)
@@ -87,7 +104,14 @@ class SpatialPointerComponentTest {
 
     @Test
     fun getSpatialPointerIcon_addAndRemoveComponentSetsDefaultIcon() {
-        val entity = PanelEntity.create(session, TextView(activity), IntSize2d(720, 480), "test")
+        val entity =
+            PanelEntity.create(
+                session,
+                TextView(activity),
+                IntSize2d(720, 480),
+                "test",
+                parent = session.scene.activitySpace,
+            )
         assertThat(entity).isNotNull()
 
         val pointerComponent = SpatialPointerComponent.create(session)

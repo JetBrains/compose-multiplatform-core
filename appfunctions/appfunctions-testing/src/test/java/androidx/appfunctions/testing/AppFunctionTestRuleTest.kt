@@ -24,6 +24,7 @@ import androidx.appfunctions.ExecuteAppFunctionRequest
 import androidx.appfunctions.ExecuteAppFunctionResponse
 import androidx.appfunctions.metadata.AppFunctionComponentsMetadata
 import androidx.appfunctions.metadata.AppFunctionLongTypeMetadata
+import androidx.appfunctions.metadata.AppFunctionName
 import androidx.appfunctions.metadata.AppFunctionParameterMetadata
 import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
@@ -43,10 +44,13 @@ import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import org.junit.Rule
 import org.junit.Test
+import org.junit.runner.Description
 import org.junit.runner.RunWith
+import org.junit.runners.model.Statement
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.junit.rules.TimeoutRule
+import org.robolectric.shadows.ShadowSystemProperties
 
 @RunWith(RobolectricTestRunner::class)
 @Config(minSdk = Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
@@ -175,6 +179,50 @@ class AppFunctionTestRuleTest {
         }
 
     @Test(timeout = 5000)
+    fun returnedAppFunctionManagerCompat_filterByFunctionName_success() =
+        runBlocking<Unit> {
+            val results =
+                mAppFunctionManager
+                    .observeAppFunctions(
+                        AppFunctionSearchSpec(
+                            functionNames =
+                                setOf(
+                                    AppFunctionName(
+                                        context.packageName,
+                                        "androidx.appfunctions.testing.NotesFunctions#createNote",
+                                    )
+                                )
+                        )
+                    )
+                    .timeout(FLOW_COLLECTION_TIMEOUT)
+                    .take(1)
+                    .toList()
+
+            assertThat(results.single().flatMap { it.appFunctions }.map { it.id })
+                .containsExactly("androidx.appfunctions.testing.NotesFunctions#createNote")
+        }
+
+    @Test(timeout = 5000)
+    fun returnedAppFunctionManagerCompat_searchAppFunctions_filterByFunctionName_success() =
+        runBlocking<Unit> {
+            val results =
+                mAppFunctionManager.searchAppFunctions(
+                    AppFunctionSearchSpec(
+                        functionNames =
+                            setOf(
+                                AppFunctionName(
+                                    context.packageName,
+                                    "androidx.appfunctions.testing.NotesFunctions#createNote",
+                                )
+                            )
+                    )
+                )
+
+            assertThat(results.map { it.id })
+                .containsExactly("androidx.appfunctions.testing.NotesFunctions#createNote")
+        }
+
+    @Test(timeout = 5000)
     fun returnedAppFunctionManagerCompat_filterByMinSchemaVersion_success() =
         runBlocking<Unit> {
             val results =
@@ -281,7 +329,43 @@ class AppFunctionTestRuleTest {
             assertThat(mAppFunctionManager.isAppFunctionEnabled(functionId)).isFalse()
         }
 
+    @Test(timeout = 5000)
+    fun apply_correctlyOverridesTExtensionPropertyForTestBody() {
+        val rule = AppFunctionTestRule(targetContext)
+        // The class-level rule already set the property for this test method; reset it to a
+        // sentinel
+        // so this assertion observes the fresh rule's effect, not the outer rule's.
+        ShadowSystemProperties.override(T_EXTENSION_PROPERTY, SENTINEL_T_EXTENSION_PROPERTY)
+        val propertyBeforeApply = readTExtensionProperty()
+        var propertyDuringTest: String? = null
+        val statement =
+            object : Statement() {
+                override fun evaluate() {
+                    propertyDuringTest = readTExtensionProperty()
+                }
+            }
+
+        rule.apply(statement, Description.EMPTY).evaluate()
+
+        assertThat(propertyBeforeApply).isEqualTo(SENTINEL_T_EXTENSION_PROPERTY)
+        assertThat(propertyDuringTest).isEqualTo("13")
+    }
+
+    /**
+     * Reads the T-extension system property. [android.os.SystemProperties] is a hidden API, so it
+     * is read reflectively to let the Robolectric shadow intercept the call and return the
+     * override.
+     */
+    private fun readTExtensionProperty(): String {
+        val systemProperties = Class.forName("android.os.SystemProperties")
+        val get = systemProperties.getMethod("get", String::class.java, String::class.java)
+        return get.invoke(null, T_EXTENSION_PROPERTY, "") as String
+    }
+
     private companion object {
         val FLOW_COLLECTION_TIMEOUT = 2.seconds
+        const val T_EXTENSION_PROPERTY = "build.version.extensions.t"
+        // A value other than "13" so a reversed set/evaluate order is observable.
+        const val SENTINEL_T_EXTENSION_PROPERTY = "0"
     }
 }

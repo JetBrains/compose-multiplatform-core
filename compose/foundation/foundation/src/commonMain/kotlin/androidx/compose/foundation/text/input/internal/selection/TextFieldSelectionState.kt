@@ -125,7 +125,6 @@ import kotlinx.coroutines.launch
  * @param density The [Density] used for this text field.
  * @param enabled If false, all selection behaviors and gestures will be disabled.
  * @param readOnly If true, selection behaviors still work, but the text field cannot be edited.
- * @param isFocused True iff component is focused and the window is focused.
  * @param isPassword True if the text field is for a password.
  * @param toolbarRequester The [ToolbarRequester] used to show and hide text floating toolbar.
  * @param coroutineScope The [coroutineScope] bounds to the composition.
@@ -139,13 +138,15 @@ internal class TextFieldSelectionState(
     private var density: Density,
     enabled: Boolean,
     readOnly: Boolean,
-    var isFocused: Boolean,
     private var isPassword: Boolean,
     private val toolbarRequester: ToolbarRequester,
     private val coroutineScope: CoroutineScope,
     internal val platformSelectionBehaviors: PlatformSelectionBehaviors?,
     private var clipboard: Clipboard,
 ) {
+    // This field is updated from `TextFieldCoreModifier`.
+    var isWindowAndTextFieldFocused: Boolean = false
+
     var enabled: Boolean = enabled
         private set
 
@@ -363,7 +364,7 @@ internal class TextFieldSelectionState(
     fun getFocusRect(): Rect {
         val layoutResult = textLayoutState.layoutResult ?: return Rect.Zero
         // if not focused, use the entire bounding box of the TextField.
-        if (!isFocused) return UnsetFocusRect
+        if (!isWindowAndTextFieldFocused) return UnsetFocusRect
         val value = textFieldState.visualText
 
         val focusRectInTextLayout =
@@ -1342,9 +1343,11 @@ internal class TextFieldSelectionState(
             textLayoutCoordinates
                 .localToRoot(Offset(0f, layoutResult.getCursorRect(text.selection.end).top))
                 .y
+        val left = min(startOffset.x, endOffset.x)
+        val right = max(startOffset.x, endOffset.x)
         return Rect(
-            left = min(startOffset.x, endOffset.x),
-            right = max(startOffset.x, endOffset.x),
+            left = left,
+            right = if (left == right) right + 1f else right,
             top = min(startTop, endTop),
             bottom = max(startOffset.y, endOffset.y),
         )
@@ -1565,11 +1568,14 @@ internal class TextFieldSelectionState(
      */
     @Suppress("NOTHING_TO_INLINE") inline fun isPasteAllowed(): Boolean = editable
 
-    suspend fun paste() {
+    suspend fun paste(isFromHardwareSource: Boolean = false) {
         val receiveContentConfiguration =
-            receiveContentConfiguration?.invoke() ?: return pasteAsPlainText()
+            receiveContentConfiguration?.invoke()
+                ?: return pasteAsPlainText(isFromHardwareSource = isFromHardwareSource)
 
-        val clipEntry = clipboard.getClipEntry() ?: return pasteAsPlainText()
+        val clipEntry =
+            clipboard.getClipEntry()
+                ?: return pasteAsPlainText(isFromHardwareSource = isFromHardwareSource)
         val clipMetadata = clipEntry.clipMetadata
 
         val remaining =
@@ -1587,6 +1593,7 @@ internal class TextFieldSelectionState(
             textFieldState.replaceSelectedText(
                 clipboardText,
                 undoBehavior = TextFieldEditUndoBehavior.NeverMerge,
+                isFromHardwareSource = isFromHardwareSource,
             )
         }
     }
@@ -1599,12 +1606,13 @@ internal class TextFieldSelectionState(
      * selected text. Then the selection should collapse, and the new cursor offset should be at the
      * end of the newly added text.
      */
-    private suspend fun pasteAsPlainText() {
+    private suspend fun pasteAsPlainText(isFromHardwareSource: Boolean) {
         val clipboardText = clipboard.getClipEntry()?.readText() ?: return
 
         textFieldState.replaceSelectedText(
             clipboardText,
             undoBehavior = TextFieldEditUndoBehavior.NeverMerge,
+            isFromHardwareSource = isFromHardwareSource,
         )
     }
 
@@ -1617,11 +1625,12 @@ internal class TextFieldSelectionState(
      * This overload doesn't interact with the Clipboard directly. It covers the case when handling
      * a 'paste' ClipboardEvent.
      */
-    internal fun onPasteEvent(value: AnnotatedString) {
+    internal fun onPasteEvent(value: AnnotatedString, isFromHardwareSource: Boolean = false) {
         if (!isPasteAllowed()) return
         textFieldState.replaceSelectedText(
             value.text,
             undoBehavior = TextFieldEditUndoBehavior.NeverMerge,
+            isFromHardwareSource = isFromHardwareSource,
         )
     }
 
@@ -1798,7 +1807,7 @@ internal suspend fun TextFieldSelectionState.defaultDetectTextFieldTapGestures(
             logDebug { "onTapTextField" }
             requestFocus()
 
-            if (enabled && isFocused) {
+            if (enabled && isWindowAndTextFieldFocused) {
                 if (!readOnly) {
                     showKeyboard()
                     if (textFieldState.visualText.isNotEmpty()) {

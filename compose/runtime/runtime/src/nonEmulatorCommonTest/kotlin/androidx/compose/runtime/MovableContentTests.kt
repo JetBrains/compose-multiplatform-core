@@ -39,6 +39,7 @@ import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.CancellableContinuation
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.test.TestResult
 
 @Stable
 class MovableContentTests {
@@ -1830,10 +1831,10 @@ class MovableContentTests {
 
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
-    fun movableContentInvalidatedWhileDeleted_linkComposer() {
+    fun movableContentInvalidatedWhileDeleted_linkComposer(): TestResult {
         val clock = ManualClock()
 
-        compositionTest(clock = clock, composerToUse = ComposerToUse.Link) {
+        return compositionTest(clock = clock, composerToUse = ComposerToUse.Link) {
             var value by mutableStateOf(true)
             var targetScope: RecomposeScope? = null
             val movableContent = movableContentOf { key: Int ->
@@ -1876,10 +1877,10 @@ class MovableContentTests {
 
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
-    fun movableContentInvalidatedWhileDeleted_gapComposer() {
+    fun movableContentInvalidatedWhileDeleted_gapComposer(): TestResult {
         val clock = ManualClock()
 
-        compositionTest(clock = clock, composerToUse = ComposerToUse.Gap) {
+        return compositionTest(clock = clock, composerToUse = ComposerToUse.Gap) {
             var value by mutableStateOf(true)
             var targetScope: RecomposeScope? = null
             val movableContent = movableContentOf { key: Int ->
@@ -1946,6 +1947,47 @@ class MovableContentTests {
 
         validate {}
     }
+
+    @Test
+    fun moveNestedMovableContentFromNodeGroup() =
+        compositionTest(ComposerToUse.Link) {
+            var moveNested by mutableStateOf(false)
+            var showOuter by mutableStateOf(true)
+
+            val innerMovable = movableContentOf { repeat(10) { Text("$it") } }
+            val outerMovable = movableContentOf {
+                Linear {
+                    Text("Hello")
+                    innerMovable()
+                }
+            }
+
+            compose {
+                Linear {
+                    if (showOuter) {
+                        outerMovable()
+                    }
+                    if (moveNested) {
+                        innerMovable()
+                    }
+                }
+            }
+
+            validate {
+                Linear {
+                    Linear {
+                        Text("Hello")
+                        repeat(10) { Text("$it") }
+                    }
+                }
+            }
+
+            showOuter = false
+            moveNested = true
+            expectChanges()
+
+            validate { Linear { repeat(10) { Text("$it") } } }
+        }
 }
 
 @Composable

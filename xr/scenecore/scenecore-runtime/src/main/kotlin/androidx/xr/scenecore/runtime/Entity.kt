@@ -22,7 +22,7 @@ import androidx.xr.runtime.math.Vector3
 import java.util.concurrent.Executor
 
 /** Interface for an XR Runtime Entity. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public interface Entity : ScenePose {
 
     /** Sets the provided Entities to be children of the Entity. */
@@ -46,7 +46,7 @@ public interface Entity : ScenePose {
      *
      * @param hidden The new local hidden state of this Entity.
      */
-    public fun setHidden(hidden: Boolean): Unit
+    public fun setHidden(hidden: Boolean)
 
     /**
      * Add given Entity as child. The child Entity's pose will be relative to the pose of its parent

@@ -42,24 +42,23 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.xr.arcore.AugmentedObject
-import androidx.xr.arcore.Trackable
+import androidx.xr.arcore.TrackingState
 import androidx.xr.arcore.perceptionState
 import androidx.xr.arcore.testapp.common.BackToMainActivityButton
 import androidx.xr.arcore.testapp.common.SessionLifecycleHelper
 import androidx.xr.arcore.testapp.common.TrackablesList
 import androidx.xr.arcore.testapp.ui.theme.GoogleYellow
 import androidx.xr.compose.spatial.Subspace
-import androidx.xr.compose.subspace.ResizePolicy
 import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.layout.SubspaceModifier
-import androidx.xr.compose.subspace.layout.movable
 import androidx.xr.compose.subspace.layout.size
+import androidx.xr.compose.subspace.layout.transformingMovable
+import androidx.xr.compose.subspace.layout.transformingResizable
 import androidx.xr.compose.unit.DpVolumeSize
 import androidx.xr.runtime.AugmentedObjectCategory
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.DeviceTrackingMode
 import androidx.xr.runtime.Session
-import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.GltfModel
 import androidx.xr.scenecore.GltfModelEntity
@@ -86,15 +85,16 @@ class HelloArObjectActivity : ComponentActivity() {
         sessionHelper =
             SessionLifecycleHelper(
                 this,
-                Config(
-                    deviceTracking = DeviceTrackingMode.SPATIAL_LAST_KNOWN,
-                    augmentedObjectCategories =
+                Config.Builder()
+                    .setDeviceTracking(DeviceTrackingMode.SPATIAL)
+                    .setAugmentedObjectCategories(
                         setOf(
                             AugmentedObjectCategory.KEYBOARD,
                             AugmentedObjectCategory.MOUSE,
                             AugmentedObjectCategory.LAPTOP,
-                        ),
-                ),
+                        )
+                    )
+                    .build(),
                 onSessionAvailable = { session ->
                     this.session = session
 
@@ -103,8 +103,8 @@ class HelloArObjectActivity : ComponentActivity() {
                             SpatialPanel(
                                 modifier =
                                     SubspaceModifier.size(DpVolumeSize(640.dp, 480.dp, 0.dp))
-                                        .movable(),
-                                resizePolicy = ResizePolicy(),
+                                        .transformingMovable()
+                                        .transformingResizable()
                             ) {
                                 HelloObjects(session)
                             }
@@ -122,10 +122,11 @@ class HelloArObjectActivity : ComponentActivity() {
         state: AugmentedObject.State,
     ) {
         if (objectCategoryMap[augmentedObject] != state.category) {
-            objectEntitiesMap[augmentedObject]?.dispose()
+            objectEntitiesMap[augmentedObject]?.parent = null
             objectEntitiesMap.remove(augmentedObject)
             gltfModelMap[state.category]?.let { gltfModel ->
-                objectEntitiesMap[augmentedObject] = GltfModelEntity.create(session, gltfModel)
+                objectEntitiesMap[augmentedObject] =
+                    GltfModelEntity.create(session, gltfModel, parent = session.scene.activitySpace)
             }
             objectCategoryMap[augmentedObject] = state.category
         }
@@ -217,8 +218,10 @@ class HelloArObjectActivity : ComponentActivity() {
             Column(modifier = Modifier.padding(innerPadding).background(color = Color.White)) {
                 Text(text = "CoreState: ${state.timeMark}")
                 TrackablesList(
-                    state.perceptionState!!.trackables.filterIsInstance<AugmentedObject>()
-                        as List<Trackable<Trackable.State>>
+                    state.perceptionState!!
+                        .trackableStates
+                        .filterIsInstance<AugmentedObject.State>()
+                        .map { it.owner }
                 )
             }
         }

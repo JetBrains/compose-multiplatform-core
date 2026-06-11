@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("DEPRECATION")
+
 package androidx.xr.scenecore
 
 import android.app.Activity
@@ -27,8 +29,10 @@ import androidx.xr.scenecore.runtime.Dimensions
 import androidx.xr.scenecore.runtime.SceneRuntime
 import androidx.xr.scenecore.testing.FakeActivitySpace
 import androidx.xr.scenecore.testing.FakeSceneRuntimeFactory
+import androidx.xr.scenecore.testing.MemoryUtils
 import com.google.common.truth.Truth.assertThat
 import com.google.common.util.concurrent.MoreExecutors.directExecutor
+import java.lang.ref.WeakReference
 import java.util.function.Consumer
 import org.junit.Assert.assertThrows
 import org.junit.Before
@@ -62,7 +66,7 @@ class ActivitySpaceTest {
     }
 
     @Test
-    fun addOnBoundsChangedListener_receivesBoundsChangedCallback() {
+    fun addBoundsChangedListener_receivesBoundsChangedCallback() {
         val activitySpace = ActivitySpace.create(fakeRuntime, entityRegistry)
         val rtActivitySpace = activitySpace.rtEntity as FakeActivitySpace
         val boundsChangedListener =
@@ -72,7 +76,7 @@ class ActivitySpaceTest {
                 assertThat(newBounds.depth).isEqualTo(0.1f)
             }
 
-        activitySpace.addOnBoundsChangedListener(directExecutor(), boundsChangedListener)
+        activitySpace.addBoundsChangedListener(directExecutor(), boundsChangedListener)
 
         // Already one listener by default.
         assertThat((activitySpace.rtEntity as FakeActivitySpace).onBoundsChangedListeners)
@@ -81,19 +85,19 @@ class ActivitySpaceTest {
         // Simulates a runtime callback.
         rtActivitySpace.onBoundsChanged(Dimensions(0.3f, 0.2f, 0.1f))
 
-        activitySpace.removeOnBoundsChangedListener(boundsChangedListener)
+        activitySpace.removeBoundsChangedListener(boundsChangedListener)
 
         assertThat((activitySpace.rtEntity as FakeActivitySpace).onBoundsChangedListeners)
             .hasSize(1)
     }
 
     @Test
-    fun addOnOriginChangedListener_receivesRuntimeSetOnOriginChangedListenerCallbacks() {
+    fun addOriginChangedListener_receivesRuntimeSetOnOriginChangedListenerCallbacks() {
         val activitySpace = ActivitySpace.create(fakeRuntime, entityRegistry)
         val rtActivitySpace = activitySpace.rtEntity as FakeActivitySpace
 
         var listenerCalled = false
-        activitySpace.addOnOriginChangedListener(directExecutor()) { listenerCalled = true }
+        activitySpace.addOriginChangedListener(directExecutor()) { listenerCalled = true }
         // Simulates a runtime callback.
         rtActivitySpace.onOriginChanged()
 
@@ -101,19 +105,19 @@ class ActivitySpaceTest {
     }
 
     @Test
-    fun removeOnOriginChangedListener_callsRuntimeSetOnOriginChangedListener() {
+    fun removeOriginChangedListener_callsRuntimeSetOnOriginChangedListener() {
         val activitySpace = ActivitySpace.create(fakeRuntime, entityRegistry)
         val rtActivitySpace = activitySpace.rtEntity as FakeActivitySpace
 
         var listenCount = 0
         val listener = Runnable { listenCount++ }
-        activitySpace.addOnOriginChangedListener(listener)
+        activitySpace.addOriginChangedListener(listener)
         // Simulates a runtime callback.
         rtActivitySpace.onOriginChanged()
 
         assertThat(listenCount).isEqualTo(1)
 
-        activitySpace.removeOnOriginChangedListener(listener)
+        activitySpace.removeOriginChangedListener(listener)
         // Simulates a runtime callback.
         rtActivitySpace.onOriginChanged()
 
@@ -151,6 +155,7 @@ class ActivitySpaceTest {
     @Test
     fun getRealWorldSpacePose_returnsPerceptionSpacePose() {
         val activitySpace = ActivitySpace.create(fakeRuntime, entityRegistry)
+        @Suppress("DEPRECATION") // TODO - b/415320653: Space.REAL_WORLD
         val pose = activitySpace.getPose(Space.REAL_WORLD)
         assertThat(pose.translation).isEqualTo(Vector3.Zero)
         assertThat(pose.rotation).isEqualTo(Quaternion.Identity)
@@ -194,6 +199,7 @@ class ActivitySpaceTest {
     @Test
     fun getRealWorldSpaceScale_returnsIdentity() {
         val activitySpace = ActivitySpace.create(fakeRuntime, entityRegistry)
+        @Suppress("DEPRECATION") // TODO - b/415320653: Space.REAL_WORLD
         val scale = activitySpace.getScale(Space.REAL_WORLD)
         assertThat(scale).isEqualTo(1f)
     }
@@ -201,6 +207,7 @@ class ActivitySpaceTest {
     @Test
     fun getRealWorldSpaceNonUniformScale_returnsIdentity() {
         val activitySpace = ActivitySpace.create(fakeRuntime, entityRegistry)
+        @Suppress("DEPRECATION") // TODO - b/415320653: Space.REAL_WORLD
         val scale = activitySpace.getNonUniformScale(Space.REAL_WORLD)
         assertThat(scale).isEqualTo(Vector3.One)
     }
@@ -222,34 +229,34 @@ class ActivitySpaceTest {
     }
 
     @Test
-    fun dispose_removesBoundsChangedListeners() {
+    fun disposeInternal_removesBoundsChangedListeners() {
         val activitySpace = ActivitySpace.create(fakeRuntime, entityRegistry)
         val rtActivitySpace = activitySpace.rtEntity as FakeActivitySpace
         val listener = Consumer<FloatSize3d> {}
 
-        activitySpace.addOnBoundsChangedListener(listener)
+        activitySpace.addBoundsChangedListener(listener)
 
         // Already one listener by default.
         assertThat(rtActivitySpace.onBoundsChangedListeners).hasSize(2)
 
-        activitySpace.dispose()
+        activitySpace.disposeInternal()
 
         assertThat(rtActivitySpace.onBoundsChangedListeners).hasSize(1)
     }
 
     @Test
-    fun dispose_removesOriginChangedListeners() {
+    fun disposeInternal_removesOriginChangedListeners() {
         val activitySpace = ActivitySpace.create(fakeRuntime, entityRegistry)
         val rtActivitySpace = activitySpace.rtEntity as FakeActivitySpace
         var listenCount = 0
         val listener = Runnable { listenCount++ }
-        activitySpace.addOnOriginChangedListener(listener)
+        activitySpace.addOriginChangedListener(listener)
         // Simulates a runtime callback.
         rtActivitySpace.onOriginChanged()
 
         assertThat(listenCount).isEqualTo(1) // 0 -> 1
 
-        activitySpace.dispose()
+        activitySpace.disposeInternal()
         // Simulates a runtime callback.
         rtActivitySpace.onOriginChanged()
 
@@ -257,9 +264,22 @@ class ActivitySpaceTest {
     }
 
     @Test
-    fun dispose_callingTwiceDoesNotCrash() {
+    fun disposeInternal_callingTwiceDoesNotCrash() {
         val activitySpace = ActivitySpace.create(fakeRuntime, entityRegistry)
-        activitySpace.dispose()
-        activitySpace.dispose()
+        activitySpace.disposeInternal()
+        activitySpace.disposeInternal()
+    }
+
+    @Test
+    fun garbageCollection_disposesEntity() {
+        fun createActivitySpace(): WeakReference<ActivitySpace> {
+            val activitySpace = ActivitySpace.create(fakeRuntime, entityRegistry)
+            return WeakReference(activitySpace)
+        }
+
+        val activitySpaceRef = createActivitySpace()
+        assertThat(activitySpaceRef.get()).isNotNull()
+
+        MemoryUtils.assertGarbageCollected(activitySpaceRef)
     }
 }

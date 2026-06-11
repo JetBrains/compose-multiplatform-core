@@ -147,12 +147,11 @@ object MaterialTheme {
         @Composable @ReadOnlyComposable get() = LocalMaterialTheme.current.shapes
 
     /** Retrieves the current [MotionScheme] at the call site's position in the hierarchy. */
-    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
     val motionScheme: MotionScheme
         @Composable @ReadOnlyComposable get() = LocalMaterialTheme.current.motionScheme
 
     /**
-     * [CompositionLocal] providing [MaterialThemeSubsystems] throughout the hierarchy. You can use
+     * [CompositionLocal] providing [MaterialTheme] subsystems throughout the hierarchy. You can use
      * properties in the companion object to access specific subsystems, for example [colorScheme].
      * To provide a new value for this, use [MaterialTheme]. This API is exposed to allow retrieving
      * values from inside CompositionLocalConsumerModifierNode implementations - in most cases you
@@ -256,7 +255,6 @@ object MaterialTheme {
  * @param typography A set of text styles to be used as this hierarchy's typography system
  * @param content The content inheriting this theme
  */
-@ExperimentalMaterial3ExpressiveApi
 @Composable
 fun MaterialExpressiveTheme(
     colorScheme: ColorScheme? = null,

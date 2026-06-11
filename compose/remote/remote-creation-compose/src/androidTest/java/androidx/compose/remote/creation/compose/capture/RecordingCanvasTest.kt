@@ -33,6 +33,8 @@ import androidx.compose.remote.core.RcProfiles
 import androidx.compose.remote.core.RecordingRemoteComposeBuffer
 import androidx.compose.remote.core.RemoteContext
 import androidx.compose.remote.core.SystemClock
+import androidx.compose.remote.core.operations.ConditionalOperations
+import androidx.compose.remote.core.operations.DrawRect
 import androidx.compose.remote.core.operations.Header
 import androidx.compose.remote.core.operations.PaintData
 import androidx.compose.remote.core.operations.paint.PaintBundle
@@ -40,15 +42,16 @@ import androidx.compose.remote.creation.RemoteComposeWriter
 import androidx.compose.remote.creation.compose.SCREENSHOT_GOLDEN_DIRECTORY
 import androidx.compose.remote.creation.compose.shaders.RemoteLinearShader
 import androidx.compose.remote.creation.compose.shaders.RemoteSweepShader
-import androidx.compose.remote.creation.compose.state.RemoteBitmap
 import androidx.compose.remote.creation.compose.state.RemoteBlendModeColorFilter
 import androidx.compose.remote.creation.compose.state.RemoteBoolean
 import androidx.compose.remote.creation.compose.state.RemoteColor
 import androidx.compose.remote.creation.compose.state.RemoteFloat
+import androidx.compose.remote.creation.compose.state.RemoteImageBitmap
 import androidx.compose.remote.creation.compose.state.RemoteMatrix3x3
 import androidx.compose.remote.creation.compose.state.RemotePaint
 import androidx.compose.remote.creation.compose.state.RemoteString
 import androidx.compose.remote.creation.compose.state.StandardRemotePaint
+import androidx.compose.remote.creation.compose.state.rb
 import androidx.compose.remote.creation.compose.state.rc
 import androidx.compose.remote.creation.compose.state.rf
 import androidx.compose.remote.creation.compose.state.tween
@@ -72,6 +75,7 @@ import androidx.test.filters.SdkSuppress
 import androidx.test.screenshot.AndroidXScreenshotTestRule
 import androidx.test.screenshot.assertAgainstGolden
 import com.google.common.truth.Truth.assertThat
+import java.text.DecimalFormat
 import java.time.Clock
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -144,9 +148,9 @@ class RecordingCanvasTest {
 
     @Test
     fun creationDisplayInfo() {
-        assertThat(recordingCanvas.creationDisplayInfo.width).isEqualTo(WIDTH)
-        assertThat(recordingCanvas.creationDisplayInfo.height).isEqualTo(HEIGHT)
-        assertThat(recordingCanvas.creationDisplayInfo.densityDpi).isEqualTo(160)
+        assertThat(recordingCanvas.creationDisplayInfo.size.width).isEqualTo(WIDTH.toFloat())
+        assertThat(recordingCanvas.creationDisplayInfo.size.height).isEqualTo(HEIGHT.toFloat())
+        assertThat(recordingCanvas.creationDisplayInfo.density.density).isEqualTo(1f)
     }
 
     @Test
@@ -159,6 +163,44 @@ class RecordingCanvasTest {
         recordingCanvas.drawBitmap(bitmap, 0f, 0f, paint)
         val document = constructDocument()
         assertScreenshot(document, "remotePaint")
+    }
+
+    @Test
+    fun drawConditionally_constantTrue() {
+        recordingCanvas.drawConditionally(true.rb) {
+            recordingCanvas.drawRect(
+                10f.rf,
+                10f.rf,
+                300f.rf,
+                300f.rf,
+                Paint().apply { color = Color.YELLOW },
+            )
+        }
+
+        val operations = inflateOperations()
+        // Should not contain ConditionalOperations
+        assertThat(operations.any { it is ConditionalOperations }).isFalse()
+        // Should contain the drawRect
+        assertThat(operations.any { it is DrawRect }).isTrue()
+    }
+
+    @Test
+    fun drawConditionally_constantFalse() {
+        recordingCanvas.drawConditionally(false.rb) {
+            recordingCanvas.drawRect(
+                10f.rf,
+                10f.rf,
+                300f.rf,
+                300f.rf,
+                Paint().apply { color = Color.YELLOW },
+            )
+        }
+
+        val operations = inflateOperations()
+        // Should not contain ConditionalOperations
+        assertThat(operations.any { it is ConditionalOperations }).isFalse()
+        // Should NOT contain the drawRect
+        assertThat(operations.any { it is DrawRect }).isFalse()
     }
 
     @Test
@@ -230,8 +272,8 @@ class RecordingCanvasTest {
         val tweenFactor = RemoteFloat(RemoteContext.FLOAT_CONTINUOUS_SEC) / 30f % 1f
         val colorRamp = tween(ComposeColor.Red.rc, ComposeColor.Blue.rc, tweenFactor)
         val hue = colorRamp.hue
-        val hueString1 = hue.toRemoteString(1)
-        val hueString2 = RemoteString("hue") + hue.toRemoteString(1)
+        val hueString1 = hue.toRemoteString(DecimalFormat("0.00"))
+        val hueString2 = RemoteString("hue") + hue.toRemoteString(DecimalFormat("0.00"))
         // Conditional drop shadow.
         recordingCanvas.drawConditionally(flag) {
             recordingCanvas.drawText(
@@ -455,7 +497,7 @@ class RecordingCanvasTest {
             (HEIGHT - 20).rf,
             Paint().apply { color = Color.YELLOW },
         )
-        val bitmap = RemoteBitmap.createOffscreenRemoteBitmap(WIDTH, HEIGHT)
+        val bitmap = RemoteImageBitmap.createOffscreenRemoteBitmap(WIDTH, HEIGHT)
         recordingCanvas.drawToOffscreenBitmap(bitmap, Color.TRANSPARENT) {
             recordingCanvas.drawOval(
                 20.rf,
@@ -503,7 +545,7 @@ class RecordingCanvasTest {
             (HEIGHT - 20).rf,
             Paint().apply { color = Color.YELLOW },
         )
-        val bitmap = RemoteBitmap.createOffscreenRemoteBitmap(WIDTH, HEIGHT)
+        val bitmap = RemoteImageBitmap.createOffscreenRemoteBitmap(WIDTH, HEIGHT)
         recordingCanvas.drawToOffscreenBitmap(bitmap, Color.TRANSPARENT) {
             recordingCanvas.drawOval(
                 20.rf,
@@ -548,7 +590,7 @@ class RecordingCanvasTest {
         )
 
         // Create the outer offscreen bitmap.
-        val outerBitmap = RemoteBitmap.createOffscreenRemoteBitmap(WIDTH, HEIGHT)
+        val outerBitmap = RemoteImageBitmap.createOffscreenRemoteBitmap(WIDTH, HEIGHT)
         recordingCanvas.drawToOffscreenBitmap(outerBitmap, Color.TRANSPARENT) {
             // Draw a blue background on the outer bitmap.
             recordingCanvas.drawRect(
@@ -562,7 +604,7 @@ class RecordingCanvasTest {
             recordingCanvas.save()
 
             // Create the inner (nested) offscreen bitmap.
-            val innerBitmap = RemoteBitmap.createOffscreenRemoteBitmap(WIDTH / 2, HEIGHT / 2)
+            val innerBitmap = RemoteImageBitmap.createOffscreenRemoteBitmap(WIDTH / 2, HEIGHT / 2)
             recordingCanvas.drawToOffscreenBitmap(innerBitmap, Color.TRANSPARENT) {
                 // Draw a red circle in the inner bitmap.
                 recordingCanvas.drawOval(
@@ -705,8 +747,81 @@ class RecordingCanvasTest {
         assertScreenshot(document, "morphCircleToStar_progress_1")
     }
 
+    @Test
+    fun drawConditionally_colorFilterState() {
+        val flag = RemoteBoolean.createNamedRemoteBoolean("flag", true)
+
+        // 1. Draw something with a color filter
+        val paintWithFilter =
+            Paint().apply { colorFilter = BlendModeColorFilter(Color.RED, BlendMode.SRC_IN) }
+        recordingCanvas.drawRect(0f, 0f, 10f, 10f, paintWithFilter)
+
+        // 2. Draw conditionally, without color filter inside
+        recordingCanvas.drawConditionally(flag) {
+            val paintNoFilter = Paint().apply { color = Color.BLUE }
+            recordingCanvas.drawRect(10f, 10f, 20f, 20f, paintNoFilter)
+        }
+
+        // 3. Draw something after, without color filter
+        val paintNoFilterPost = Paint().apply { color = Color.GREEN }
+        recordingCanvas.drawRect(20f, 20f, 30f, 30f, paintNoFilterPost)
+
+        val operations = inflateOperations()
+        val paintOps = operations.filterIsInstance<PaintData>()
+        assertThat(paintOps.size).isAtLeast(3)
+
+        // The first paint should have a color filter
+        assertThat(paintOps[0].mPaintData.toString()).contains("ColorFilter")
+
+        // The second paint (inside conditional) should EXPLICITLY clear the color filter
+        // because forceSendingPaint(true) was called before it.
+        assertThat(paintOps[1].mPaintData.toString()).contains("clearColorFilter")
+
+        // The third paint (after conditional) should also EXPLICITLY clear the color filter
+        // because forceSendingPaint(true) was called after the conditional block.
+        assertThat(paintOps[2].mPaintData.toString()).contains("clearColorFilter")
+    }
+
+    @Test
+    fun drawConditionally_colorFilterState_differentFilterInside() {
+        val flag = RemoteBoolean.createNamedRemoteBoolean("flag", true)
+
+        // 1. Draw something with color filter A
+        val paintWithFilterA =
+            Paint().apply { colorFilter = BlendModeColorFilter(Color.RED, BlendMode.SRC_IN) }
+        recordingCanvas.drawRect(0f, 0f, 10f, 10f, paintWithFilterA)
+
+        // 2. Draw conditionally, with color filter B inside
+        recordingCanvas.drawConditionally(flag) {
+            val paintWithFilterB =
+                Paint().apply { colorFilter = BlendModeColorFilter(Color.BLUE, BlendMode.SRC_IN) }
+            recordingCanvas.drawRect(10f, 10f, 20f, 20f, paintWithFilterB)
+        }
+
+        // 3. Draw something after, without color filter
+        val paintNoFilterPost = Paint().apply { color = Color.GREEN }
+        recordingCanvas.drawRect(20f, 20f, 30f, 30f, paintNoFilterPost)
+
+        val operations = inflateOperations()
+        val paintOps = operations.filterIsInstance<PaintData>()
+        assertThat(paintOps.size).isAtLeast(3)
+
+        // The first paint should have color filter A (Red)
+        assertThat(paintOps[0].mPaintData.toString()).contains("ColorFilter(color=0xffff0000")
+
+        // The second paint (inside conditional) should have color filter B (Blue)
+        assertThat(paintOps[1].mPaintData.toString()).contains("ColorFilter(color=0xff0000ff")
+
+        // The third paint (after conditional) should EXPLICITLY clear the color filter
+        // because forceSendingPaint(true) was called after the conditional block.
+        assertThat(paintOps[2].mPaintData.toString()).contains("clearColorFilter")
+    }
+
     private fun constructDocument() =
         CoreDocument(clock).apply {
+            // Needed because RecordingCanvas buffers up operations to facilitate global CSE &
+            // hoisting passes.
+            recordingCanvas.buffer.flush(creationState)
             recordingBuffer.writeToBuffer()
             val buffer = creationState.document.buffer
             buffer.buffer.index = 0
@@ -722,6 +837,9 @@ class RecordingCanvasTest {
     }
 
     private fun inflateOperations(): ArrayList<Operation> {
+        // Needed because RecordingCanvas buffers up operations to facilitate global CSE &
+        // hoisting passes.
+        recordingCanvas.flush()
         recordingBuffer.writeToBuffer()
         val buffer = creationState.document.buffer
         buffer.buffer.index = 0

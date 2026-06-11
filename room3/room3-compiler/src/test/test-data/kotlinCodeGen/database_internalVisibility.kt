@@ -7,7 +7,7 @@ import androidx.room3.util.TableInfo.Companion.read
 import androidx.room3.util.dropFtsSyncTriggers
 import androidx.room3.util.performClear
 import androidx.sqlite.SQLiteConnection
-import androidx.sqlite.executeSQL
+import androidx.sqlite.execSQL
 import javax.`annotation`.processing.Generated
 import kotlin.Lazy
 import kotlin.String
@@ -33,13 +33,13 @@ internal class MyDatabase_Impl : MyDatabase() {
   protected override fun createOpenDelegate(): RoomOpenDelegate {
     val _openDelegate: RoomOpenDelegate = object : RoomOpenDelegate(1, "195d7974660177325bd1a32d2c7b8b8c", "7458a901120796c5bbc554e2fefd262f") {
       public override suspend fun createAllTables(connection: SQLiteConnection) {
-        connection.executeSQL("CREATE TABLE IF NOT EXISTS `MyEntity` (`pk` INTEGER NOT NULL, PRIMARY KEY(`pk`))")
-        connection.executeSQL("CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)")
-        connection.executeSQL("INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '195d7974660177325bd1a32d2c7b8b8c')")
+        connection.execSQL("CREATE TABLE IF NOT EXISTS `MyEntity` (`pk` INTEGER NOT NULL, PRIMARY KEY(`pk`))")
+        connection.execSQL("CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)")
+        connection.execSQL("INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '195d7974660177325bd1a32d2c7b8b8c')")
       }
 
       public override suspend fun dropAllTables(connection: SQLiteConnection) {
-        connection.executeSQL("DROP TABLE IF EXISTS `MyEntity`")
+        connection.execSQL("DROP TABLE IF EXISTS `MyEntity`")
       }
 
       public override suspend fun onCreate(connection: SQLiteConnection) {
@@ -88,10 +88,16 @@ internal class MyDatabase_Impl : MyDatabase() {
     performClear(this, false, "MyEntity")
   }
 
-  protected override fun getRequiredTypeConverterClasses(): Map<KClass<*>, List<KClass<*>>> {
-    val _typeConvertersMap: MutableMap<KClass<*>, List<KClass<*>>> = mutableMapOf()
-    _typeConvertersMap.put(MyDao::class, MyDao_Impl.getRequiredConverters())
-    return _typeConvertersMap
+  protected override fun getRequiredColumnTypeConverterClasses(): Map<KClass<*>, List<KClass<*>>> {
+    val _columnTypeConvertersMap: MutableMap<KClass<*>, List<KClass<*>>> = mutableMapOf()
+    _columnTypeConvertersMap.put(MyDao::class, MyDao_Impl.getRequiredColumnConverters())
+    return _columnTypeConvertersMap
+  }
+
+  protected override fun getRequiredDaoReturnTypeConverterClasses(): Map<KClass<*>, List<KClass<*>>> {
+    val _daoReturnTypeConvertersMap: MutableMap<KClass<*>, List<KClass<*>>> = mutableMapOf()
+    _daoReturnTypeConvertersMap.put(MyDao::class, MyDao_Impl.getRequiredDaoReturnTypeConverters())
+    return _daoReturnTypeConvertersMap
   }
 
   public override fun getRequiredAutoMigrationSpecClasses(): Set<KClass<out AutoMigrationSpec>> {

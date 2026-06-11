@@ -50,7 +50,11 @@ class DiscouragedGradleMethodDetector : Detector(), Detector.UastScanner {
                 checkForConfigurationToConfigurableFileCollection(node)
                 val methodName = node.methodName
                 val potentialReplacements = REPLACEMENTS[methodName] ?: return
-                val containingClass = (node.receiverType as? PsiClassType)?.resolve() ?: return
+                val method = node.resolve() ?: return
+                val containingClass =
+                    (node.receiver?.getExpressionType() as? PsiClassType)?.resolve()
+                        ?: method.containingClass
+                        ?: return
                 // Check that the called method is from the expected class (or a child class) and
                 // not an unrelated method with the same name).
                 potentialReplacements.forEach { (containingClassName, replacement) ->
@@ -58,6 +62,9 @@ class DiscouragedGradleMethodDetector : Detector(), Detector.UastScanner {
 
                     val fix =
                         replacement.recommendedReplacement?.let {
+                            // Autofixes where the replacement is on a different class are
+                            // unsupported for now.
+                            if (replacement.replacementOnDifferentClass) return@let null
                             fix()
                                 .replace()
                                 .with(it)
@@ -193,6 +200,7 @@ class DiscouragedGradleMethodDetector : Detector(), Detector.UastScanner {
         private const val NAMED_DOMAIN_OBJECT_COLLECTION =
             "org.gradle.api.NamedDomainObjectCollection"
         private const val PROVIDER = "org.gradle.api.provider.Provider"
+        private const val SYSTEM = "java.lang.System"
 
         val EAGER_CONFIGURATION_ISSUE =
             Issue.create(
@@ -255,6 +263,20 @@ class DiscouragedGradleMethodDetector : Detector(), Detector.UastScanner {
                 Implementation(DiscouragedGradleMethodDetector::class.java, Scope.JAVA_FILE_SCOPE),
             )
 
+        val CONFIGURATION_CACHE_BROAD_INPUTS_ISSUE =
+            Issue.create(
+                "GradleConfigurationCacheBroadInputs",
+                "Use of this API results in unnecessary configuration cache invalidations",
+                """
+                    Use of this API results in unnecessary configuration cache invalidations due to capturing
+                    more of the environment than required as configuration cache input.
+                    """,
+                Category.CORRECTNESS,
+                5,
+                Severity.ERROR,
+                Implementation(DiscouragedGradleMethodDetector::class.java, Scope.JAVA_FILE_SCOPE),
+            )
+
         // A map from eager method name to the containing class of the method and the name of the
         // replacement method, if there is a direct equivalent.
         private val REPLACEMENTS =
@@ -306,6 +328,15 @@ class DiscouragedGradleMethodDetector : Detector(), Detector.UastScanner {
                     mapOf(TASK_CONTAINER to Replacement(null, EAGER_CONFIGURATION_ISSUE)),
                 "getByName" to
                     mapOf(TASK_CONTAINER to Replacement("named", EAGER_CONFIGURATION_ISSUE)),
+                "getenv" to
+                    mapOf(
+                        SYSTEM to
+                            Replacement(
+                                "Project.providers.environmentVariable",
+                                CONFIGURATION_CACHE_BROAD_INPUTS_ISSUE,
+                                replacementOnDifferentClass = true,
+                            )
+                    ),
                 "getParent" to mapOf(PROJECT to Replacement(null, PROJECT_ISOLATION_ISSUE)),
                 "getProperties" to
                     mapOf(
@@ -344,4 +375,8 @@ class DiscouragedGradleMethodDetector : Detector(), Detector.UastScanner {
     }
 }
 
-private data class Replacement(val recommendedReplacement: String?, val issue: Issue)
+private data class Replacement(
+    val recommendedReplacement: String?,
+    val issue: Issue,
+    val replacementOnDifferentClass: Boolean = false,
+)

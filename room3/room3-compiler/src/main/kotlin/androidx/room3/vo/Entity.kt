@@ -34,6 +34,7 @@ open class Entity(
     val foreignKeys: List<ForeignKey>,
     constructor: Constructor?,
     val shadowTableName: String?,
+    val withoutRowId: Boolean = false,
 ) :
     DataClass(element, type, properties, embeddedProperties, emptyList(), constructor),
     HasSchemaIdentity,
@@ -49,18 +50,33 @@ open class Entity(
         identityKey.appendSorted(this@Entity.properties)
         identityKey.appendSorted(indices)
         identityKey.appendSorted(foreignKeys)
+        // withoutRowId was newly added; it should affect the ID only when set
+        if (withoutRowId) {
+            identityKey.append("1")
+        }
         return identityKey.hash()
     }
 
     private fun createTableQuery(tableName: String): String {
         val definitions =
-            (this@Entity.properties.map {
-                    val autoIncrement =
-                        primaryKey.autoGenerateId && primaryKey.properties.contains(it)
-                    it.databaseDefinition(autoIncrement)
+            (properties.map {
+                    it.databaseDefinition(
+                        if (primaryKey.autoGenerateId && primaryKey.properties.contains(it)) {
+                            primaryKey.algorithm
+                        } else {
+                            null
+                        }
+                    )
                 } + createPrimaryKeyDefinition() + createForeignKeyDefinitions())
                 .filterNotNull()
-        return "CREATE TABLE IF NOT EXISTS `$tableName` (${definitions.joinToString(", ")})"
+        return buildString {
+            append("CREATE TABLE IF NOT EXISTS")
+            append(" `$tableName`")
+            append(" (${definitions.joinToString(", ")})")
+            if (withoutRowId) {
+                append(" WITHOUT ROWID")
+            }
+        }
     }
 
     private fun createForeignKeyDefinitions(): List<String> {
@@ -92,6 +108,7 @@ open class Entity(
             primaryKey.toBundle(),
             indices.map { it.toBundle() },
             foreignKeys.map { it.toBundle() },
+            withoutRowId,
         )
 
     fun isUnique(columns: List<String>): Boolean {

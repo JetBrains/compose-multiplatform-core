@@ -17,13 +17,12 @@
 package androidx.compose.remote.creation.compose.layout
 
 import androidx.annotation.RestrictTo
-import androidx.compose.remote.core.operations.DrawTextOnCircle.Alignment
-import androidx.compose.remote.core.operations.DrawTextOnCircle.Placement
+import androidx.compose.remote.core.operations.DrawTextOnCircle
 import androidx.compose.remote.creation.RemotePath
 import androidx.compose.remote.creation.compose.capture.RemoteComposeCreationState
-import androidx.compose.remote.creation.compose.state.RemoteBitmap
 import androidx.compose.remote.creation.compose.state.RemoteBoolean
 import androidx.compose.remote.creation.compose.state.RemoteFloat
+import androidx.compose.remote.creation.compose.state.RemoteImageBitmap
 import androidx.compose.remote.creation.compose.state.RemotePaint
 import androidx.compose.remote.creation.compose.state.RemoteStateScope
 import androidx.compose.remote.creation.compose.state.RemoteString
@@ -153,7 +152,7 @@ internal constructor(
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public fun drawImage(
-        image: RemoteBitmap,
+        image: RemoteImageBitmap,
         topLeft: RemoteOffset = RemoteOffset.Zero,
         paint: RemotePaint? = RemotePaint(),
     ) {
@@ -164,7 +163,7 @@ internal constructor(
     /** Draws a bitmap scaled to the destination rectangle. */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public fun drawScaledBitmap(
-        image: RemoteBitmap,
+        image: RemoteImageBitmap,
         srcOffset: RemoteOffset = RemoteOffset.Zero,
         srcSize: RemoteSize = RemoteSize(image.width, image.height),
         dstOffset: RemoteOffset = RemoteOffset.Zero,
@@ -327,7 +326,7 @@ internal constructor(
      * @param radius The radius of the circle.
      * @param startAngle The starting angle for the text.
      * @param warpRadiusOffset the offset of the text from the circle.
-     * @param paint The [RemotePaint] to use for drawing.
+     * @param paint paint of the text
      */
     public fun drawTextOnCircle(
         text: RemoteString,
@@ -345,8 +344,8 @@ internal constructor(
             radius,
             startAngle,
             warpRadiusOffset,
-            Alignment.CENTER,
-            Placement.OUTSIDE,
+            DrawTextOnCircle.Alignment.CENTER,
+            DrawTextOnCircle.Placement.OUTSIDE,
             paint,
         )
     }
@@ -382,7 +381,7 @@ internal constructor(
 
     /** Draws into an offscreen bitmap and executes [body]. */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public fun drawToOffscreenBitmap(bitmap: RemoteBitmap, body: RemoteDrawScope.() -> Unit) {
+    public fun drawToOffscreenBitmap(bitmap: RemoteImageBitmap, body: RemoteDrawScope.() -> Unit) {
         remoteCanvas.drawToOffscreenBitmap(bitmap) { this.body() }
     }
 

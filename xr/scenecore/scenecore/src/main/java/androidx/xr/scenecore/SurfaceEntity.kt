@@ -23,12 +23,15 @@ import androidx.annotation.MainThread
 import androidx.annotation.RestrictTo
 import androidx.xr.arcore.RenderViewpoint
 import androidx.xr.runtime.Session
-import androidx.xr.runtime.XrLog
+import androidx.xr.runtime.math.FieldOfView
 import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.FloatSize3d
 import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.runtime.math.Pose
+import androidx.xr.scenecore.runtime.RenderingRuntime
 import androidx.xr.scenecore.runtime.SurfaceEntity as RtSurfaceEntity
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
 import java.nio.FloatBuffer
 import java.nio.IntBuffer
 
@@ -52,13 +55,17 @@ import java.nio.IntBuffer
 public class SurfaceEntity
 private constructor(
     private val perceptionSpace: PerceptionSpace,
-    rtEntity: RtSurfaceEntity,
+    rtSurfaceEntity: RtSurfaceEntity,
     entityRegistry: EntityRegistry,
     shape: Shape,
-) : BaseEntity<RtSurfaceEntity>(rtEntity, entityRegistry) {
+) : Entity(rtSurfaceEntity, entityRegistry) {
+
+    private val rtSurfaceEntity: RtSurfaceEntity
+        get() = rtEntity as RtSurfaceEntity
 
     /** Represents the shape of the Canvas that backs a SurfaceEntity. */
     public interface Shape {
+
         /**
          * A Quadrilateral-shaped canvas. Width and height are expressed in the X and Y axis in the
          * local spatial coordinate system of the entity. (0,0) is the center of the Quad mesh; the
@@ -66,35 +73,25 @@ private constructor(
          *
          * @property extents The size of the Quad in the local spatial coordinate system of the
          *   entity.
+         * @property cornerRadius The radius of the rounded corners of the Quad in the local spatial
+         *   coordinate system of the entity. The maximum allowed value is half of the smaller
+         *   dimension of [extents]. If set to 0.0f, the corners will be sharp.
          */
-        public class Quad : Shape {
-            public val extents: FloatSize2d
-            @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public val cornerRadius: Float
-
-            /**
-             * A Quadrilateral-shaped canvas.
-             *
-             * @param extents The size of the Quad in the local spatial coordinate system of the
-             *   entity.
-             */
-            public constructor(extents: FloatSize2d) : this(extents, 0.0f)
-
-            /**
-             * A Quadrilateral-shaped canvas with rounded corners.
-             *
-             * @param extents The size of the Quad in the local spatial coordinate system of the
-             *   entity.
-             * @param cornerRadius The radius of the rounded corners of the Quad in the local
-             *   spatial coordinate system of the entity. If set to 0.0f, the corners will be sharp.
-             */
-            @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-            public constructor(extents: FloatSize2d, cornerRadius: Float) {
+        public class Quad
+        @JvmOverloads
+        constructor(
+            public val extents: FloatSize2d,
+            @FloatRange(from = 0.0) public val cornerRadius: Float = 0.0f,
+        ) : Shape {
+            init {
                 require(extents.width >= 0.0f && extents.height >= 0.0f) {
                     "extents must be non-negative"
                 }
                 require(cornerRadius >= 0.0f) { "cornerRadius must be non-negative" }
-                this.extents = extents
-                this.cornerRadius = cornerRadius
+                val maxRadius = minOf(extents.width, extents.height) / 2.0f
+                require(cornerRadius <= maxRadius) {
+                    "cornerRadius ($cornerRadius) must not be greater than half of the smaller dimension (width or height): $maxRadius"
+                }
             }
         }
 
@@ -145,12 +142,56 @@ private constructor(
          *   geometry will be assembled (according to the [DrawMode]) from the vertex data
          *   sequentially.
          */
-        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         public class TriangleMesh(
-            public val positions: FloatBuffer,
-            public val texCoords: FloatBuffer,
-            public val indices: IntBuffer? = null,
-        ) {}
+            positions: FloatBuffer,
+            texCoords: FloatBuffer,
+            indices: IntBuffer? = null,
+        ) {
+            public val positions: FloatBuffer =
+                if (positions.isDirect) positions
+                else {
+                    copyToDirect(positions)
+                }
+            public val texCoords: FloatBuffer =
+                if (texCoords.isDirect) texCoords
+                else {
+                    copyToDirect(texCoords)
+                }
+            public val indices: IntBuffer? =
+                if (indices == null || indices.isDirect) indices
+                else {
+                    copyToDirect(indices)
+                }
+
+            private companion object {
+                private fun copyToDirect(buffer: FloatBuffer): FloatBuffer {
+                    val direct =
+                        ByteBuffer.allocateDirect(buffer.capacity() * 4)
+                            .order(ByteOrder.nativeOrder())
+                            .asFloatBuffer()
+                    val duplicate = buffer.duplicate()
+                    duplicate.clear()
+                    direct.put(duplicate)
+                    direct.position(buffer.position())
+                    direct.limit(buffer.limit())
+                    return direct
+                }
+
+                private fun copyToDirect(buffer: IntBuffer): IntBuffer {
+                    val direct =
+                        ByteBuffer.allocateDirect(buffer.capacity() * 4)
+                            .order(ByteOrder.nativeOrder())
+                            .asIntBuffer()
+                    val duplicate = buffer.duplicate()
+                    duplicate.clear()
+                    direct.put(duplicate)
+                    direct.position(buffer.position())
+                    direct.limit(buffer.limit())
+                    return direct
+                }
+            }
+        }
 
         /**
          * Specifies vertex geometry for the projection surface. Vertex positions should be
@@ -178,7 +219,7 @@ private constructor(
          * @property drawMode The [DrawMode] to use when drawing the mesh. Default is
          *   [DrawMode.TRIANGLES].
          */
-        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         public class CustomMesh(
             public val leftEye: TriangleMesh,
             public val rightEye: TriangleMesh? = null,
@@ -217,59 +258,53 @@ private constructor(
      * See [MediaDrm](https://developer.android.com/reference/android/media/MediaDrm) for more
      * details.
      */
-    public class SurfaceProtection private constructor(private val name: String) {
+    public class SurfaceProtection private constructor(private val value: Int) {
         public companion object {
             /**
              * The Surface content is not protected. Non-protected content can be decoded into this
              * surface. Protected content can not be decoded into this Surface. Screen captures of
              * the SurfaceEntity will show the Surface content.
              */
-            @JvmField public val NONE: SurfaceProtection = SurfaceProtection("NONE")
+            @JvmField public val NONE: SurfaceProtection = SurfaceProtection(0)
 
             /**
              * The Surface content is protected. Non-protected content can be decoded into this
              * surface. Protected content can be decoded into this Surface. Screen captures of the
              * SurfaceEntity will redact the Surface content.
              */
-            @JvmField public val PROTECTED: SurfaceProtection = SurfaceProtection("PROTECTED")
+            @JvmField public val PROTECTED: SurfaceProtection = SurfaceProtection(1)
         }
-
-        override fun toString(): String = name
     }
 
     /**
      * Specifies whether super sampling should be enabled for this surface. Super sampling can
      * improve text clarity at a performance cost.
      */
-    public class SuperSampling private constructor(private val name: String) {
+    public class SuperSampling private constructor(private val value: Int) {
         public companion object {
 
             /** Super sampling is disabled. */
-            @JvmField public val NONE: SuperSampling = SuperSampling("NONE")
+            @JvmField public val NONE: SuperSampling = SuperSampling(0)
 
             /**
              * Super sampling is enabled with a default sampling pattern. This is the value that is
              * set if SuperSampling is not specified when the Entity is created.
              */
-            @JvmField public val PENTAGON: SuperSampling = SuperSampling("PENTAGON")
+            @JvmField public val PENTAGON: SuperSampling = SuperSampling(1)
         }
-
-        override fun toString(): String = name
     }
 
     /** Specifies the drawing mode for a [Shape.TriangleMesh]. */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-    public class DrawMode private constructor(private val name: String) {
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public class DrawMode private constructor(private val value: Int) {
         public companion object {
             /** Draw the mesh as a list of triangles. */
-            @JvmField public val TRIANGLES: DrawMode = DrawMode("TRIANGLES")
+            @JvmField public val TRIANGLES: DrawMode = DrawMode(1)
             /** Draw the mesh as a triangle strip. */
-            @JvmField public val TRIANGLE_STRIP: DrawMode = DrawMode("TRIANGLE_STRIP")
+            @JvmField public val TRIANGLE_STRIP: DrawMode = DrawMode(2)
             /** Draw the mesh as a triangle fan. */
-            @JvmField public val TRIANGLE_FAN: DrawMode = DrawMode("TRIANGLE_FAN")
+            @JvmField public val TRIANGLE_FAN: DrawMode = DrawMode(3)
         }
-
-        override fun toString(): String = name
     }
 
     /**
@@ -280,42 +315,36 @@ private constructor(
      * Values here match values from
      * [androidx.media3.common.C.StereoMode](https://developer.android.com/reference/androidx/media3/common/C.StereoMode).
      */
-    public class StereoMode private constructor(private val name: String) {
+    public class StereoMode private constructor(private val value: Int) {
         public companion object {
 
             /** Each eye will see the entire surface (no separation) */
-            @JvmField public val MONO: StereoMode = StereoMode("MONO")
+            @JvmField public val MONO: StereoMode = StereoMode(1)
 
             /** The [top, bottom] halves of the surface will map to [left, right] eyes */
-            @JvmField public val TOP_BOTTOM: StereoMode = StereoMode("TOP_BOTTOM")
+            @JvmField public val TOP_BOTTOM: StereoMode = StereoMode(2)
 
             /** The [left, right] halves of the surface will map to [left, right] eyes */
-            @JvmField public val SIDE_BY_SIDE: StereoMode = StereoMode("SIDE_BY_SIDE")
+            @JvmField public val SIDE_BY_SIDE: StereoMode = StereoMode(3)
 
             /** Multiview video, [primary, auxiliary] views will map to [left, right] eyes */
-            @JvmField
-            public val MULTIVIEW_LEFT_PRIMARY: StereoMode = StereoMode("MULTIVIEW_LEFT_PRIMARY")
+            @JvmField public val MULTIVIEW_LEFT_PRIMARY: StereoMode = StereoMode(4)
 
             /** Multiview video, [primary, auxiliary] views will map to [right, left] eyes */
-            @JvmField
-            public val MULTIVIEW_RIGHT_PRIMARY: StereoMode = StereoMode("MULTIVIEW_RIGHT_PRIMARY")
+            @JvmField public val MULTIVIEW_RIGHT_PRIMARY: StereoMode = StereoMode(5)
         }
-
-        override fun toString(): String = name
     }
 
     /** Specifies the blending mode of the content. */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-    public class MediaBlendingMode private constructor(private val name: String) {
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public class MediaBlendingMode private constructor(private val value: Int) {
         public companion object {
             /** Content is alpha-blended with the background. */
-            @JvmField public val TRANSPARENT: MediaBlendingMode = MediaBlendingMode("TRANSPARENT")
+            @JvmField public val TRANSPARENT: MediaBlendingMode = MediaBlendingMode(1)
 
             /** Content is opaque and does not blend with the background. */
-            @JvmField public val OPAQUE: MediaBlendingMode = MediaBlendingMode("OPAQUE")
+            @JvmField public val OPAQUE: MediaBlendingMode = MediaBlendingMode(2)
         }
-
-        override fun toString(): String = name
     }
 
     /**
@@ -327,7 +356,7 @@ private constructor(
      * @property colorRange The color range of the content.
      * @property maxContentLightLevel The maximum brightness of the content (in nits).
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public class ContentColorMetadata(
         public val colorSpace: ColorSpace = ColorSpace.BT709,
         public val colorTransfer: ColorTransfer = ColorTransfer.SRGB,
@@ -340,31 +369,29 @@ private constructor(
          *
          * These values are a superset of androidx.media3.common.C.ColorSpace.
          */
-        public class ColorSpace private constructor(private val name: String) {
+        public class ColorSpace private constructor(private val value: Int) {
             public companion object {
                 /** Please see androidx.media3.common.C.COLOR_SPACE_BT709 (1) */
-                @JvmField public val BT709: ColorSpace = ColorSpace("BT709")
+                @JvmField public val BT709: ColorSpace = ColorSpace(1)
 
                 /** Please see androidx.media3.common.C.COLOR_SPACE_BT601 (2) */
-                @JvmField public val BT601_PAL: ColorSpace = ColorSpace("BT601_PAL")
+                @JvmField public val BT601_PAL: ColorSpace = ColorSpace(2)
 
                 /** Please see androidx.media3.common.C.COLOR_SPACE_BT2020 (6) */
-                @JvmField public val BT2020: ColorSpace = ColorSpace("BT2020")
+                @JvmField public val BT2020: ColorSpace = ColorSpace(6)
 
                 /** Please see ADataSpace::ADATASPACE_BT601_525 (0xf0) */
-                @JvmField public val BT601_525: ColorSpace = ColorSpace("BT601_525")
+                @JvmField public val BT601_525: ColorSpace = ColorSpace(0xf0)
 
                 /** Please see ADataSpace::ADATASPACE_DISPLAY_P3 (0xf1) */
-                @JvmField public val DISPLAY_P3: ColorSpace = ColorSpace("DISPLAY_P3")
+                @JvmField public val DISPLAY_P3: ColorSpace = ColorSpace(0xf1)
 
                 /** Please see ADataSpace::ADATASPACE_DCI_P3 (0xf2) */
-                @JvmField public val DCI_P3: ColorSpace = ColorSpace("DCI_P3")
+                @JvmField public val DCI_P3: ColorSpace = ColorSpace(0xf2)
 
                 /** Please see ADataSpace::ADATASPACE_ADOBE_RGB (0xf3) */
-                @JvmField public val ADOBE_RGB: ColorSpace = ColorSpace("ADOBE_RGB")
+                @JvmField public val ADOBE_RGB: ColorSpace = ColorSpace(0xf3)
             }
-
-            override fun toString(): String = name
         }
 
         /**
@@ -373,39 +400,37 @@ private constructor(
          * Enum members cover the transfer functions available in android::ADataSpace Enum values
          * match values from androidx.media3.common.C.ColorTransfer.
          */
-        public class ColorTransfer private constructor(private val name: String) {
+        public class ColorTransfer private constructor(private val value: Int) {
             public companion object {
 
                 /** Linear transfer characteristic curve. */
-                @JvmField public val LINEAR: ColorTransfer = ColorTransfer("LINEAR")
+                @JvmField public val LINEAR: ColorTransfer = ColorTransfer(1)
 
                 /**
                  * The standard RGB transfer function, used for some SDR use-cases like image input.
                  */
-                @JvmField public val SRGB: ColorTransfer = ColorTransfer("SRGB")
+                @JvmField public val SRGB: ColorTransfer = ColorTransfer(2)
 
                 /**
                  * SMPTE 170M transfer characteristic curve used by BT.601/BT.709/BT.2020. This is
                  * the curve used by most non-HDR video content.
                  */
-                @JvmField public val SDR: ColorTransfer = ColorTransfer("SDR")
+                @JvmField public val SDR: ColorTransfer = ColorTransfer(3)
 
                 /**
                  * The Gamma 2.2 transfer function, used for some SDR use-cases like tone-mapping.
                  */
-                @JvmField public val GAMMA_2_2: ColorTransfer = ColorTransfer("GAMMA_2_2")
+                @JvmField public val GAMMA_2_2: ColorTransfer = ColorTransfer(4)
 
                 /** SMPTE ST 2084 transfer function. This is used by some HDR video content. */
-                @JvmField public val ST2084: ColorTransfer = ColorTransfer("ST2084")
+                @JvmField public val ST2084: ColorTransfer = ColorTransfer(5)
 
                 /**
                  * ARIB STD-B67 hybrid-log-gamma transfer function. This is used by some HDR video
                  * content.
                  */
-                @JvmField public val HLG: ColorTransfer = ColorTransfer("HLG")
+                @JvmField public val HLG: ColorTransfer = ColorTransfer(6)
             }
-
-            override fun toString(): String = name
         }
 
         /**
@@ -413,16 +438,14 @@ private constructor(
          *
          * Enum values match values from androidx.media3.common.C.ColorRange.
          */
-        public class ColorRange private constructor(private val name: String) {
+        public class ColorRange private constructor(private val value: Int) {
             public companion object {
                 /** Please see android.media.MediaFormat.COLOR_RANGE_FULL */
-                @JvmField public val FULL: ColorRange = ColorRange("FULL")
+                @JvmField public val FULL: ColorRange = ColorRange(1)
 
                 /** Please see android.media.MedaiFormat.COLOR_RANGE_LIMITED */
-                @JvmField public val LIMITED: ColorRange = ColorRange("LIMITED")
+                @JvmField public val LIMITED: ColorRange = ColorRange(2)
             }
-
-            override fun toString(): String = name
         }
 
         public companion object {
@@ -606,6 +629,7 @@ private constructor(
          */
         internal fun create(
             session: Session,
+            renderingRuntime: RenderingRuntime,
             stereoMode: StereoMode = StereoMode.MONO,
             mediaBlendingMode: MediaBlendingMode = MediaBlendingMode.TRANSPARENT,
             pose: Pose = Pose.Identity,
@@ -634,26 +658,19 @@ private constructor(
             val surfaceEntity =
                 SurfaceEntity(
                     session.scene.perceptionSpace,
-                    session.renderingRuntime.createSurfaceEntity(
+                    renderingRuntime.createSurfaceEntity(
                         getRtStereoMode(stereoMode),
                         getRtMediaBlendingMode(mediaBlendingMode),
                         pose,
                         rtShape,
                         getRtSurfaceProtection(surfaceProtection),
                         getRtSuperSampling(superSampling),
-                        if (parent != null && parent !is BaseEntity<*>) {
-                            XrLog.warn(
-                                "The provided parent is not a BaseEntity. The SurfaceEntity will " +
-                                    "be created without a parent."
-                            )
-                            null
-                        } else {
-                            parent?.rtEntity
-                        },
+                        parent?.rtEntity,
                     ),
                     session.scene.entityRegistry,
                     shape,
                 )
+            surfaceEntity.parent = parent
             surfaceEntity.contentColorMetadata = contentColorMetadata
             return surfaceEntity
         }
@@ -669,6 +686,11 @@ private constructor(
          *   surface should support Widevine DRM.
          * @param superSampling The [SuperSampling] which describes whether super sampling is
          *   enabled for the surface.
+         * @param parent Parent entity. Defaults to `null`. If `null`, the entity is created but not
+         *   attached to the scene graph, meaning it will be invisible. If a parent entity (e.g.,
+         *   [ActivitySpace] or any other [Entity] already present in the scene) is assigned later,
+         *   the entity will become visible (provided it is enabled). This allows for [Entity]
+         *   pre-configuration before making it visible.
          * @return a SurfaceEntity instance
          */
         @MainThread
@@ -681,9 +703,11 @@ private constructor(
             stereoMode: StereoMode = StereoMode.MONO,
             superSampling: SuperSampling = SuperSampling.PENTAGON,
             surfaceProtection: SurfaceProtection = SurfaceProtection.NONE,
+            parent: Entity? = null,
         ): SurfaceEntity =
             SurfaceEntity.create(
                 session,
+                session.renderingRuntime,
                 stereoMode,
                 MediaBlendingMode.TRANSPARENT,
                 pose,
@@ -691,6 +715,7 @@ private constructor(
                 surfaceProtection,
                 null,
                 superSampling,
+                parent,
             )
 
         /**
@@ -707,16 +732,16 @@ private constructor(
          *   enabled for the surface. The default value is [SuperSampling.PENTAGON].
          * @param surfaceProtection The [SurfaceProtection] which describes whether the hosted
          *   surface should support Widevine DRM. The default value is [SurfaceProtection.NONE].
-         * @param parent Parent entity. If `null`, the entity is created but not attached to the
-         *   scene graph and will not be visible until a parent is set. The default value is
-         *   [Scene]'s [ActivitySpace].
+         * @param parent Parent entity. Defaults to `null`. If `null`, the entity is created but not
+         *   attached to the scene graph, meaning it will be invisible. If a parent entity (e.g.,
+         *   [ActivitySpace] or any other [Entity] already present in the scene) is assigned later,
+         *   the entity will become visible (provided it is enabled). This allows for [Entity]
+         *   pre-configuration before making it visible.
          * @return a SurfaceEntity instance
          */
         @MainThread
         @JvmStatic
-        // TODO: b/462865943 - Replace @RestrictTo with @JvmOverloads and remove the other overload
-        //  once the API proposal is approved.
-        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         public fun create(
             session: Session,
             pose: Pose = Pose.Identity,
@@ -725,10 +750,11 @@ private constructor(
             mediaBlendingMode: MediaBlendingMode = MediaBlendingMode.TRANSPARENT,
             superSampling: SuperSampling = SuperSampling.PENTAGON,
             surfaceProtection: SurfaceProtection = SurfaceProtection.NONE,
-            parent: Entity? = session.scene.activitySpace,
+            parent: Entity? = null,
         ): SurfaceEntity =
             SurfaceEntity.create(
                 session,
+                session.renderingRuntime,
                 stereoMode,
                 mediaBlendingMode,
                 pose,
@@ -748,14 +774,10 @@ private constructor(
      * @throws IllegalStateException when setting this value if the Entity has been disposed.
      */
     public var stereoMode: StereoMode
-        get() {
-            checkNotDisposed()
-            return getStereoModeFromRt(rtEntity!!.stereoMode)
-        }
+        get() = getStereoModeFromRt(rtSurfaceEntity.stereoMode)
         @MainThread
         set(value) {
-            checkNotDisposed()
-            rtEntity!!.stereoMode = getRtStereoMode(value)
+            rtSurfaceEntity.stereoMode = getRtStereoMode(value)
         }
 
     /**
@@ -764,17 +786,13 @@ private constructor(
      * @throws IllegalStateException when setting this value if the Entity has been disposed.
      */
     public var mediaBlendingMode: MediaBlendingMode
-        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-        get() {
-            checkNotDisposed()
-            return getMediaBlendingModeFromRt(rtEntity!!.mediaBlendingMode)
-        }
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+        get() = getMediaBlendingModeFromRt(rtSurfaceEntity.mediaBlendingMode)
         @MainThread
         @SuppressLint("HiddenTypeParameter")
-        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         set(value) {
-            checkNotDisposed()
-            rtEntity!!.mediaBlendingMode = getRtMediaBlendingMode(value)
+            rtSurfaceEntity.mediaBlendingMode = getRtMediaBlendingMode(value)
         }
 
     /**
@@ -783,10 +801,7 @@ private constructor(
      * This value is entirely determined by the value of [shape].
      */
     public val dimensions: FloatSize3d
-        get() {
-            checkNotDisposed()
-            return rtEntity!!.dimensions.toFloatSize3d()
-        }
+        get() = rtSurfaceEntity.dimensions.toFloatSize3d()
 
     /**
      * The shape of the canvas that backs the Entity. Updating this value will alter the
@@ -812,7 +827,7 @@ private constructor(
                         )
                     else -> throw IllegalArgumentException("Unsupported canvas shape: $value")
                 }
-            rtEntity!!.shape = rtShape
+            rtSurfaceEntity.shape = rtShape
             field = value
         }
 
@@ -822,19 +837,18 @@ private constructor(
      *
      * @throws IllegalStateException when setting this value if the Entity has been disposed.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public var primaryAlphaMaskTexture: Texture? = null
-        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         get() {
             checkNotDisposed()
             return field
         }
         @MainThread
         @SuppressLint("HiddenTypeParameter")
-        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         set(value) {
-            checkNotDisposed()
-            rtEntity!!.setPrimaryAlphaMaskTexture(value?.texture)
+            rtSurfaceEntity.setPrimaryAlphaMaskTexture(value?.texture)
             field = value
         }
 
@@ -844,19 +858,18 @@ private constructor(
      *
      * @throws IllegalStateException when setting this value if the Entity has been disposed.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public var auxiliaryAlphaMaskTexture: Texture? = null
-        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         get() {
             checkNotDisposed()
             return field
         }
         @MainThread
         @SuppressLint("HiddenTypeParameter")
-        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         set(value) {
-            checkNotDisposed()
-            rtEntity!!.setAuxiliaryAlphaMaskTexture(value?.texture)
+            rtSurfaceEntity.setAuxiliaryAlphaMaskTexture(value?.texture)
             field = value
         }
 
@@ -885,7 +898,7 @@ private constructor(
                         )
                     else -> throw IllegalArgumentException("Unsupported edge feather: $value")
                 }
-            rtEntity!!.edgeFeather = rtEdgeFeather
+            rtSurfaceEntity.edgeFeather = rtEdgeFeather
             field = value
         }
 
@@ -903,32 +916,32 @@ private constructor(
      *
      * @throws IllegalStateException when setting this value if the Entity has been disposed.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public var contentColorMetadata: ContentColorMetadata? = null
-        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         get() {
-            checkNotDisposed()
-            return if (!rtEntity!!.contentColorMetadataSet) {
+            return if (!rtSurfaceEntity.contentColorMetadataSet) {
                 null
             } else {
                 ContentColorMetadata(
-                    colorSpace = ContentColorMetadata.getColorSpaceFromRt(rtEntity!!.colorSpace),
+                    colorSpace =
+                        ContentColorMetadata.getColorSpaceFromRt(rtSurfaceEntity.colorSpace),
                     colorTransfer =
-                        ContentColorMetadata.getColorTransferFromRt(rtEntity!!.colorTransfer),
-                    colorRange = ContentColorMetadata.getColorRangeFromRt(rtEntity!!.colorRange),
-                    maxContentLightLevel = rtEntity!!.maxContentLightLevel,
+                        ContentColorMetadata.getColorTransferFromRt(rtSurfaceEntity.colorTransfer),
+                    colorRange =
+                        ContentColorMetadata.getColorRangeFromRt(rtSurfaceEntity.colorRange),
+                    maxContentLightLevel = rtSurfaceEntity.maxContentLightLevel,
                 )
             }
         }
         @MainThread
         @SuppressLint("HiddenTypeParameter")
-        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         set(value) {
-            checkNotDisposed()
             if (value == null) {
-                rtEntity!!.resetContentColorMetadata()
+                rtSurfaceEntity.resetContentColorMetadata()
             } else {
-                rtEntity!!.setContentColorMetadata(
+                rtSurfaceEntity.setContentColorMetadata(
                     ContentColorMetadata.getRtColorSpace(value.colorSpace),
                     ContentColorMetadata.getRtColorTransfer(value.colorTransfer),
                     ContentColorMetadata.getRtColorRange(value.colorRange),
@@ -946,8 +959,7 @@ private constructor(
      */
     @MainThread
     public fun getSurface(): Surface {
-        checkNotDisposed()
-        return rtEntity!!.surface
+        return rtSurfaceEntity.surface
     }
 
     /**
@@ -972,15 +984,14 @@ private constructor(
     @MainThread
     @ExperimentalSurfaceEntityPixelDimensionsApi
     public fun setSurfacePixelDimensions(dimensions: IntSize2d) {
-        checkNotDisposed()
-        rtEntity!!.setSurfacePixelDimensions(dimensions.width, dimensions.height)
+        rtSurfaceEntity.setSurfacePixelDimensions(dimensions.width, dimensions.height)
     }
 
     /**
      * Gets the perceived resolution of the entity in the provided [RenderViewpoint].
      *
-     * This API is only intended for use in Full Space Mode and will return
-     * [PerceivedResolutionResult.InvalidRenderViewpoint] in Home Space Mode.
+     * This API is only intended for use in Full Space and will return
+     * [PerceivedResolutionResult.InvalidRenderViewpoint] in Home Space.
      *
      * The entity's own rotation and the camera's viewing direction are disregarded; this value
      * represents the dimensions of the entity on the camera view if its largest surface was facing
@@ -995,18 +1006,22 @@ private constructor(
      *       for the calculation is invalid or unavailable.
      *
      * @throws [IllegalStateException] if [Session.config] is not set to
-     *   [androidx.xr.runtime.Config.DeviceTrackingMode.SPATIAL_LAST_KNOWN].
+     *   [androidx.xr.runtime.DeviceTrackingMode.SPATIAL].
      * @see PerceivedResolutionResult
      */
     public fun getPerceivedResolution(renderViewpoint: RenderViewpoint): PerceivedResolutionResult {
-        checkNotDisposed()
         val renderViewpointState = renderViewpoint.state.value
-        return rtEntity!!
+        return rtSurfaceEntity
             .getPerceivedResolution(
                 (perceptionSpace.getScenePoseFromPerceptionPose(renderViewpointState.pose)
                         as PerceptionScenePose)
                     .rtScenePose,
-                renderViewpointState.fieldOfView,
+                FieldOfView(
+                    renderViewpointState.fieldOfView.angleLeft,
+                    renderViewpointState.fieldOfView.angleRight,
+                    renderViewpointState.fieldOfView.angleUp,
+                    renderViewpointState.fieldOfView.angleDown,
+                ),
             )
             .toPerceivedResolutionResult()
     }

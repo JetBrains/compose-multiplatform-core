@@ -61,8 +61,8 @@ class GltfModelMaterialTextureActivity : AppCompatActivity() {
     private val TAG = "GltfModelMaterialTextureActivity"
     private val ANIMATION_NAME = "Fast_Flying"
     private val NODE_NAME = "Dragon"
-    private val DRAGON_SCALE = 0.2f
-    private val DRAGON_TRANSLATION = Vector3(0f, 0.3f, 0f)
+    private val DRAGON_SCALE = 0.4f
+    private val DRAGON_TRANSLATION = Vector3(0f, 0.85f, 0f)
     private var session: Session? = null
     private var spatialMode = SpatialMode.FSM
 
@@ -82,30 +82,36 @@ class GltfModelMaterialTextureActivity : AppCompatActivity() {
             insets
         }
 
-        session = SessionManager(this).createSession()
-        if (session == null) this.finish()
-        session!!.configure(Config(PlaneTrackingMode.HORIZONTAL_AND_VERTICAL))
-        session?.scene?.keyEntity = session?.scene?.mainPanelEntity
-
-        findViewById<Toolbar>(R.id.gltf_model_topAppBar).also {
-            setSupportActionBar(it)
-            it.setNavigationOnClickListener { this@GltfModelMaterialTextureActivity.finish() }
-            it.setTitle(getString(R.string.cuj_gltf_model_material_texture_test))
-        }
-
-        findViewById<FloatingActionButton>(R.id.bottomCenterFab).also {
-            it.tooltipText = getString(R.string.fab_recreate_activity_tooltip)
-            it.setOnClickListener { ActivityCompat.recreate(this@GltfModelMaterialTextureActivity) }
-        }
-
-        findViewById<Button>(R.id.gltf_model_toggle_hsm_fsm).also { button ->
-            button.text = getString(R.string.switch_to_hsm_button_text)
-            button.setOnClickListener { button.text = toggleMode() }
-        }
-
         lifecycleScope.launch {
-            loadResources()
-            setupButtons()
+            session = SessionManager(this@GltfModelMaterialTextureActivity).createSession()
+            if (session == null) this@GltfModelMaterialTextureActivity.finish()
+            session!!.configure(
+                Config.Builder().setPlaneTracking(PlaneTrackingMode.HORIZONTAL_AND_VERTICAL).build()
+            )
+            session?.scene?.keyEntity = session?.scene?.mainPanelEntity
+
+            findViewById<Toolbar>(R.id.gltf_model_topAppBar).also {
+                setSupportActionBar(it)
+                it.setNavigationOnClickListener { this@GltfModelMaterialTextureActivity.finish() }
+                it.setTitle(getString(R.string.cuj_gltf_model_material_texture_test))
+            }
+
+            findViewById<FloatingActionButton>(R.id.bottomCenterFab).also {
+                it.tooltipText = getString(R.string.fab_recreate_activity_tooltip)
+                it.setOnClickListener {
+                    ActivityCompat.recreate(this@GltfModelMaterialTextureActivity)
+                }
+            }
+
+            findViewById<Button>(R.id.gltf_model_toggle_hsm_fsm).also { button ->
+                button.text = getString(R.string.switch_to_hsm_button_text)
+                button.setOnClickListener { button.text = toggleMode() }
+            }
+
+            lifecycleScope.launch {
+                loadResources()
+                setupButtons()
+            }
         }
     }
 
@@ -160,11 +166,12 @@ class GltfModelMaterialTextureActivity : AppCompatActivity() {
         // Dispose Texture explicitly
         findViewById<Button>(R.id.gltf_model_button1_3).setOnClickListener {
             patternTexture?.close()
+            patternTexture = null
         }
         // Create Khronos PBR Material
         findViewById<Button>(R.id.gltf_model_button2_1).setOnClickListener {
             lifecycleScope.launch {
-                khronosPbrMaterial = KhronosPbrMaterial.create(session!!, AlphaMode.BLEND)
+                khronosPbrMaterial = KhronosPbrMaterial.create(session!!, AlphaMode.OPAQUE)
             }
         }
         // Dispose Khronos PBR Material via GC
@@ -175,6 +182,7 @@ class GltfModelMaterialTextureActivity : AppCompatActivity() {
         // Dispose Khronos PBR Material explicitly
         findViewById<Button>(R.id.gltf_model_button2_3).setOnClickListener {
             khronosPbrMaterial?.close()
+            khronosPbrMaterial = null
         }
         // Set Base Color Texture
         findViewById<Button>(R.id.gltf_model_button3_1).setOnClickListener {
@@ -203,6 +211,7 @@ class GltfModelMaterialTextureActivity : AppCompatActivity() {
                             session!!,
                             dragonModel,
                             Pose(translation = DRAGON_TRANSLATION),
+                            parent = session!!.scene.activitySpace,
                         )
                     dragonModelEntity?.setScale(DRAGON_SCALE)
 
@@ -220,14 +229,15 @@ class GltfModelMaterialTextureActivity : AppCompatActivity() {
         // Dispose GLTF Model Entity
         findViewById<Button>(R.id.gltf_model_button4_2).setOnClickListener {
             dragonModelEntity?.let {
-                it.dispose()
+                it.removeAllComponents()
+                it.parent = null
                 dragonModelEntity = null
             }
             dropdownRow.visibility = View.GONE
             matRow.visibility = View.GONE
             slidersRow.visibility = View.GONE
             selectedNode = null
-            nodeDropdown.setText("")
+            nodeDropdown.setText("Choose Model Node")
         }
         // Toggle Animation
         findViewById<Button>(R.id.gltf_model_button4_3).setOnClickListener {
@@ -305,13 +315,13 @@ class GltfModelMaterialTextureActivity : AppCompatActivity() {
     private fun toggleMode(): String {
         when (spatialMode) {
             SpatialMode.FSM -> {
-                session!!.scene.requestHomeSpaceMode()
+                session!!.scene.requestHomeSpace()
                 spatialMode = SpatialMode.HSM
                 return getString(R.string.switch_to_fsm_button_text)
             }
 
             SpatialMode.HSM -> {
-                session!!.scene.requestFullSpaceMode()
+                session!!.scene.requestFullSpace()
                 spatialMode = SpatialMode.FSM
                 return getString(R.string.switch_to_hsm_button_text)
             }

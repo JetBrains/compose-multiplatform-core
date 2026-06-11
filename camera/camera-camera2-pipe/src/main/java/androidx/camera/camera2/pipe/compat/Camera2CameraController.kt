@@ -32,7 +32,6 @@ import androidx.camera.camera2.pipe.StreamId
 import androidx.camera.camera2.pipe.StrictMode
 import androidx.camera.camera2.pipe.SurfaceTracker
 import androidx.camera.camera2.pipe.config.Camera2ControllerScope
-import androidx.camera.camera2.pipe.core.DurationNs
 import androidx.camera.camera2.pipe.core.Log
 import androidx.camera.camera2.pipe.core.Threads
 import androidx.camera.camera2.pipe.core.TimeSource
@@ -42,6 +41,7 @@ import androidx.camera.camera2.pipe.graph.StreamGraphImpl
 import androidx.camera.camera2.pipe.internal.CameraStatusMonitor
 import androidx.camera.camera2.pipe.internal.CameraStatusMonitor.CameraStatus
 import javax.inject.Inject
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -55,30 +55,42 @@ import kotlinx.coroutines.launch
  * A camera graph will receive start / stop signals from the application. When started, it will do
  * everything possible to bring up and maintain an active camera instance with the given
  * configuration.
- *
- * TODO: Reorganize these constructor parameters.
  */
 @Camera2ControllerScope
 internal class Camera2CameraController
 @Inject
 constructor(
+    // Config & Identifiers
+    override val cameraGraphId: CameraGraphId,
+    private val graphConfig: CameraGraph.Config,
+
+    // Execution Context
     private val scope: CoroutineScope,
     private val threads: Threads,
+
+    // Core Infrastructure
     private val strictMode: StrictMode,
-    private val graphConfig: CameraGraph.Config,
-    private val graphListener: GraphListener,
-    private val surfaceTracker: SurfaceTracker,
+    private val timeSource: TimeSource,
+    private val camera2Quirks: Camera2Quirks,
+
+    // Camera & Device Management
+    private val camera2DeviceManager: Camera2DeviceManager,
+    private val camera2SystemState: Camera2SystemState,
     private val cameraStatusMonitor: CameraStatusMonitor,
+    concurrentSessionSequencers: ConcurrentSessionSequencers,
+
+    // Stream & Surface Management
+    private val streamGraph: StreamGraphImpl,
+    private val cameraSurfaceManager: CameraSurfaceManager,
+    private val surfaceTracker: SurfaceTracker,
+
+    // Capture Session Factories
     private val captureSessionFactory: CaptureSessionFactory,
     private val captureSequenceProcessorFactory: Camera2CaptureSequenceProcessorFactory,
-    private val camera2DeviceManager: Camera2DeviceManager,
-    private val cameraSurfaceManager: CameraSurfaceManager,
-    private val camera2Quirks: Camera2Quirks,
-    private val timeSource: TimeSource,
-    override val cameraGraphId: CameraGraphId,
+
+    // Listeners
+    private val graphListener: GraphListener,
     private val shutdownListener: ShutdownListener,
-    private val streamGraph: StreamGraphImpl,
-    concurrentSessionSequencers: ConcurrentSessionSequencers,
 ) : CameraController {
     private val lock = Any()
 
@@ -175,12 +187,13 @@ constructor(
             return
         }
 
-        val delayMs =
-            if (graphConfig.flags.enableRestartDelays) RESTART_TIMEOUT_WHEN_ENABLED_MS else 0L
+        val restartDelay =
+            if (graphConfig.flags.enableRestartDelays) RESTART_TIMEOUT_WHEN_ENABLED
+            else 0.milliseconds
         restartJob?.cancel()
         restartJob =
             scope.launch {
-                delay(delayMs)
+                delay(restartDelay)
                 synchronized(lock) {
                     if (
                         !isClosed() &&
@@ -205,6 +218,11 @@ constructor(
             Log.warn { "Ignoring start(): $this is already started" }
             return
         }
+
+        // Before opening the camera, make sure the camera2SystemState knows that the graph
+        // is now in an active state.
+        camera2SystemState.onGraphStarting(cameraGraphId)
+
         lastCameraError = null
         val cameraId = graphConfig.camera
         val allCameraIds = graphConfig.concurrentCameraGraphs?.cameraIds ?: setOf(cameraId)
@@ -426,6 +444,7 @@ constructor(
 
     @GuardedBy("lock")
     private fun detachSessionAndCamera(session: CaptureSessionState?, camera: VirtualCamera?) {
+        camera2SystemState.onGraphStopped(cameraGraphId)
         val job =
             scope.launch {
                 session?.shutdown()
@@ -459,9 +478,9 @@ constructor(
 
     companion object {
         private const val DEBUG = false
-        private const val RESTART_TIMEOUT_WHEN_ENABLED_MS = 700L // 0.7s
+        private val RESTART_TIMEOUT_WHEN_ENABLED = 700.milliseconds
         private const val MS_TO_NS = 1_000_000
-        private val PRIORITIES_CHANGED_THRESHOLD_NS = DurationNs(200_000_000L) // 200ms
+        private val PRIORITIES_CHANGED_THRESHOLD = 200.milliseconds
 
         @VisibleForTesting
         internal fun shouldRestart(
@@ -482,7 +501,7 @@ constructor(
             // camera priorities changed if we've received such a signal within the last 200ms.
             val prioritiesChanged =
                 if (lastCameraPrioritiesChangedTs == null) false
-                else (currentTs - lastCameraPrioritiesChangedTs) <= PRIORITIES_CHANGED_THRESHOLD_NS
+                else (currentTs - lastCameraPrioritiesChangedTs) <= PRIORITIES_CHANGED_THRESHOLD
 
             when (controllerState) {
                 ControllerState.DISCONNECTED ->

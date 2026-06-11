@@ -21,7 +21,6 @@ import androidx.annotation.ColorInt
 import androidx.core.graphics.ColorUtils
 import androidx.ink.brush.Brush
 import androidx.ink.brush.BrushFamily
-import androidx.ink.brush.ExperimentalInkCustomBrushApi
 import androidx.ink.brush.StockBrushes
 import androidx.ink.strokes.Stroke
 import androidx.test.core.app.ApplicationProvider
@@ -33,7 +32,6 @@ import org.junit.Test
 
 /** Emulator-based screenshot test of brushes defined by [StockBrushes] */
 @SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
-@OptIn(ExperimentalInkCustomBrushApi::class)
 @MediumTest
 class StockBrushesConsistencyTest() {
 
@@ -73,7 +71,7 @@ class StockBrushesConsistencyTest() {
                     listOf(
                         Stroke(
                             makeBrush(family = family, alpha = alpha),
-                            helper.octogonStylusInputs,
+                            helper.octagonStylusInputs,
                         )
                     )
                 }
@@ -88,7 +86,7 @@ class StockBrushesConsistencyTest() {
             families.map { family ->
                 sizes.map { size ->
                     listOf(
-                        Stroke(makeBrush(family = family, size = size), helper.octogonStylusInputs)
+                        Stroke(makeBrush(family = family, size = size), helper.octagonStylusInputs)
                     )
                 }
             },
@@ -104,7 +102,7 @@ class StockBrushesConsistencyTest() {
                     listOf(
                         Stroke(
                             makeBrush(family = family, color = color),
-                            helper.octogonStylusInputs,
+                            helper.octagonStylusInputs,
                         )
                     )
                 }

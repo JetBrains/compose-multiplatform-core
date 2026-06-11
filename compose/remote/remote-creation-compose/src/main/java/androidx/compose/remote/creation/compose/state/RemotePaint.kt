@@ -20,7 +20,8 @@ package androidx.compose.remote.creation.compose.state
 import android.graphics.BlendModeColorFilter as AndroidBlendModeColorFilter
 import android.graphics.ColorFilter as AndroidColorFilter
 import android.graphics.Paint as AndroidPaint
-import android.graphics.Typeface
+import android.graphics.fonts.FontVariationAxis
+import android.util.Log
 import androidx.annotation.ColorInt
 import androidx.annotation.RestrictTo
 import androidx.compose.remote.creation.compose.layout.toAndroidBlendMode
@@ -32,6 +33,7 @@ import androidx.compose.remote.creation.compose.layout.toPaintingStyle
 import androidx.compose.remote.creation.compose.layout.toStrokeCap
 import androidx.compose.remote.creation.compose.layout.toStrokeJoin
 import androidx.compose.remote.creation.compose.shaders.RemoteShader
+import androidx.compose.remote.creation.compose.text.RemoteTypeface
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.FilterQuality
@@ -46,6 +48,8 @@ import androidx.compose.ui.graphics.asAndroidPathEffect
 import androidx.compose.ui.graphics.nativePaint
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.toComposePathEffect
+import androidx.compose.ui.text.font.FontVariation
+import androidx.compose.ui.util.fastJoinToString
 
 /**
  * A paint object used for remote drawing operations.
@@ -106,8 +110,11 @@ public sealed interface RemotePaint {
     @set:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public var colorFilter: RemoteColorFilter?
 
-    /** The [Typeface] to use for drawing text. */
-    public var typeface: Typeface?
+    /** The [RemoteTypeface] to use for drawing text. */
+    public var typeface: RemoteTypeface?
+
+    /** The [FontVariation.Settings] to use for drawing text. */
+    public var fontVariationSettings: FontVariation.Settings?
 
     public companion object {
         /**
@@ -134,9 +141,10 @@ public class StandardRemotePaint() : RemotePaint {
     public override var shader: Shader? = null
     public override var pathEffect: PathEffect? = null
     public override var textSize: RemoteFloat = 12f.rf
-    public override var typeface: Typeface? = Typeface.DEFAULT
+    public override var typeface: RemoteTypeface? = RemoteTypeface.Default
     public override var color: RemoteColor = Color.Black.rc
     public override var colorFilter: RemoteColorFilter? = null
+    public override var fontVariationSettings: FontVariation.Settings? = null
 
     /**
      * Creates a [StandardRemotePaint] by copying properties from another [RemotePaint].
@@ -157,11 +165,15 @@ public class StandardRemotePaint() : RemotePaint {
         this.textSize = other.textSize
         this.typeface = other.typeface
         this.color = other.color
+        this.fontVariationSettings = other.fontVariationSettings
     }
 
-    override fun toString(): String {
-        return "RemotePaint(isAntiAlias=$isAntiAlias, blendMode=$blendMode, style=$style, strokeWidth=$strokeWidth, strokeCap=$strokeCap, strokeJoin=$strokeJoin, filterQuality=$filterQuality, shader=$shader, pathEffect=$pathEffect, textSize=$textSize, typeface=$typeface, remoteColor=$color, colorFilter=$colorFilter)"
-    }
+    override fun toString(): String =
+        "RemotePaint(isAntiAlias=$isAntiAlias, blendMode=$blendMode, style=$style, " +
+            "strokeWidth=$strokeWidth, strokeCap=$strokeCap, strokeJoin=$strokeJoin, " +
+            "filterQuality=$filterQuality, shader=$shader, pathEffect=$pathEffect, " +
+            "textSize=$textSize, typeface=$typeface, remoteColor=$color, " +
+            "colorFilter=$colorFilter, fontVariationSettings=$fontVariationSettings)"
 }
 
 /**
@@ -254,9 +266,104 @@ public open class CompatAndroidRemotePaint : AndroidPaint, RemotePaintConvertibl
             shader = value
         }
 
+    private inner class CompatRemotePaint : RemotePaint {
+        override var isAntiAlias: Boolean
+            get() = this@CompatAndroidRemotePaint.isAntiAlias
+            set(value) {
+                this@CompatAndroidRemotePaint.isAntiAlias = value
+            }
+
+        override var blendMode: BlendMode
+            get() =
+                this@CompatAndroidRemotePaint.blendMode?.toComposeBlendMode() ?: BlendMode.SrcOver
+            set(value) {
+                this@CompatAndroidRemotePaint.blendMode = value.toAndroidBlendMode()
+            }
+
+        override var style: PaintingStyle
+            get() = this@CompatAndroidRemotePaint.style.toPaintingStyle()
+            set(value) {
+                this@CompatAndroidRemotePaint.style = value.toAndroidStyle()
+            }
+
+        override var strokeWidth: RemoteFloat
+            get() = this@CompatAndroidRemotePaint.strokeWidth.rf
+            set(value) {
+                // Can fail on non constant values
+                this@CompatAndroidRemotePaint.strokeWidth = value.constantValue
+            }
+
+        override var strokeCap: StrokeCap
+            get() = this@CompatAndroidRemotePaint.strokeCap.toStrokeCap()
+            set(value) {
+                this@CompatAndroidRemotePaint.strokeCap = value.toAndroidCap()
+            }
+
+        override var strokeJoin: StrokeJoin
+            get() = this@CompatAndroidRemotePaint.strokeJoin.toStrokeJoin()
+            set(value) {
+                this@CompatAndroidRemotePaint.strokeJoin = value.toAndroidJoin()
+            }
+
+        override var filterQuality: FilterQuality
+            get() =
+                if (isFilterBitmap) {
+                    FilterQuality.None
+                } else {
+                    FilterQuality.Low
+                }
+            set(value) {
+                isFilterBitmap = value != FilterQuality.None
+            }
+
+        override var shader: Shader?
+            get() = this@CompatAndroidRemotePaint.shader
+            set(value) {
+                this@CompatAndroidRemotePaint.shader = value
+            }
+
+        override var pathEffect: PathEffect?
+            get() = this@CompatAndroidRemotePaint.pathEffect.toComposePathEffect()
+            set(value) {
+                this@CompatAndroidRemotePaint.pathEffect = value?.asAndroidPathEffect()
+            }
+
+        override var color: RemoteColor
+            get() = remoteColor ?: RemoteColor(this@CompatAndroidRemotePaint.color)
+            set(value) {
+                remoteColor = value
+            }
+
+        override var colorFilter: RemoteColorFilter?
+            get() = remoteColorFilter
+            set(value) {
+                remoteColorFilter = value
+            }
+
+        override var textSize: RemoteFloat
+            get() = this@CompatAndroidRemotePaint.textSize.rf
+            set(value) {
+                // Can fail on non constant values
+                this@CompatAndroidRemotePaint.textSize = value.constantValue
+            }
+
+        override var typeface: RemoteTypeface?
+            get() = RemoteTypeface.fromAndroidTypeface(this@CompatAndroidRemotePaint.typeface)
+            set(value) {
+                this@CompatAndroidRemotePaint.typeface = value?.toAndroidTypeface()
+            }
+
+        override var fontVariationSettings: FontVariation.Settings?
+            get() = parseFontVariationSettings(this@CompatAndroidRemotePaint.fontVariationSettings)
+            set(value) {
+                this@CompatAndroidRemotePaint.fontVariationSettings =
+                    fontVariationSettingsToAndroidString(value)
+            }
+    }
+
     /** Converts this paint to a [RemotePaint]. */
     override val remotePaint: RemotePaint
-        get() = AndroidRemotePaint(this)
+        get() = CompatRemotePaint()
 }
 
 /** An implementation of [RemotePaint] that wraps an [android.graphics.Paint]. */
@@ -326,10 +433,19 @@ public class AndroidRemotePaint(internal val frameworkPaint: android.graphics.Pa
         }
 
     override var color: RemoteColor
-        get() = RemoteColor(frameworkPaint.color)
+        get() =
+            if (frameworkPaint is CompatAndroidRemotePaint) {
+                frameworkPaint.remoteColor ?: RemoteColor(frameworkPaint.color)
+            } else {
+                RemoteColor(frameworkPaint.color)
+            }
         set(value) {
-            // Can fail on non constant values
-            frameworkPaint.color = value.constantValue.toArgb()
+            if (frameworkPaint is CompatAndroidRemotePaint) {
+                frameworkPaint.remoteColor = value
+            } else {
+                // Can fail on non constant values
+                frameworkPaint.color = value.constantValue.toArgb()
+            }
         }
 
     override var colorFilter: RemoteColorFilter?
@@ -357,10 +473,16 @@ public class AndroidRemotePaint(internal val frameworkPaint: android.graphics.Pa
             frameworkPaint.textSize = value.constantValue
         }
 
-    override var typeface: Typeface?
-        get() = frameworkPaint.typeface
+    override var typeface: RemoteTypeface?
+        get() = RemoteTypeface.fromAndroidTypeface(frameworkPaint.typeface)
         set(value) {
-            frameworkPaint.typeface = value
+            frameworkPaint.typeface = value?.toAndroidTypeface()
+        }
+
+    override var fontVariationSettings: FontVariation.Settings?
+        get() = parseFontVariationSettings(frameworkPaint.fontVariationSettings)
+        set(value) {
+            frameworkPaint.fontVariationSettings = fontVariationSettingsToAndroidString(value)
         }
 
     override fun toString(): String {
@@ -446,10 +568,17 @@ public class ComposeRemotePaint(internal val composePaint: Paint) : RemotePaint 
             composePaint.nativePaint.textSize = value.constantValue
         }
 
-    override var typeface: Typeface?
-        get() = composePaint.nativePaint.typeface
+    override var typeface: RemoteTypeface?
+        get() = RemoteTypeface.fromAndroidTypeface(composePaint.nativePaint.typeface)
         set(value) {
-            composePaint.nativePaint.typeface = value
+            composePaint.nativePaint.typeface = value?.toAndroidTypeface()
+        }
+
+    override var fontVariationSettings: FontVariation.Settings?
+        get() = parseFontVariationSettings(composePaint.nativePaint.fontVariationSettings)
+        set(value) {
+            composePaint.nativePaint.fontVariationSettings =
+                fontVariationSettingsToAndroidString(value)
         }
 
     override fun toString(): String {
@@ -467,6 +596,26 @@ public fun android.graphics.Paint.asRemotePaint(): RemotePaint =
     } else {
         AndroidRemotePaint(this)
     }
+
+private fun parseFontVariationSettings(settingsString: String?): FontVariation.Settings? {
+    if (settingsString == null) return null
+    try {
+        val axes = FontVariationAxis.fromFontVariationSettings(settingsString)
+        if (axes != null) {
+            val settingsList = axes.map { axis -> FontVariation.Setting(axis.tag, axis.styleValue) }
+            return FontVariation.Settings(*settingsList.toTypedArray())
+        }
+    } catch (e: IllegalArgumentException) {
+        Log.w("RemoteCompose", "invalid font variation string", e)
+    }
+    return null
+}
+
+private fun fontVariationSettingsToAndroidString(settings: FontVariation.Settings?): String? {
+    return settings?.settings?.fastJoinToString(", ") {
+        "'${it.axisName}' ${it.toVariationValue(null)}"
+    }
+}
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public interface RemotePaintConvertible {

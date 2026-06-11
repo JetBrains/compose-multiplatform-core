@@ -16,6 +16,7 @@
 
 package androidx.compose.ui.input.nestedscroll
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -33,7 +34,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.background
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
@@ -1630,10 +1630,11 @@ class NestedScrollModifierTest {
         assertThat(innerDispatcher.calculateNestedScrollScope()).isNotNull()
         assertThat(innerDispatcher.coroutineScope).isNotNull()
         assertThat(innerDispatcher.coroutineScope.isActive).isTrue()
-        keepAround = false
-        rule.waitForIdle()
+
         val calculatedScope = innerDispatcher.calculateNestedScrollScope()
         val coroutineScope = innerDispatcher.coroutineScope
+        keepAround = false
+        rule.waitForIdle()
         keepAround = true
         outerDispatcher.coroutineScope.cancel() // cancelling parent node
         rule.waitForIdle()
@@ -1641,6 +1642,50 @@ class NestedScrollModifierTest {
         assertThat(innerDispatcher.calculateNestedScrollScope()?.isActive).isTrue()
         assertThat(innerDispatcher.coroutineScope).isNotEqualTo(coroutineScope)
         assertThat(innerDispatcher.coroutineScope.isActive).isTrue()
+    }
+
+    @Test
+    fun modifierIsRemoved_scopeIsCleared() {
+        val innerDispatcher = NestedScrollDispatcher()
+        val outerDispatcher = NestedScrollDispatcher()
+        var keepAround by mutableStateOf(true)
+
+        rule.setContent {
+            Column(
+                modifier =
+                    Modifier.nestedScroll(
+                        dispatcher = outerDispatcher,
+                        connection = object : NestedScrollConnection {},
+                    )
+            ) {
+                Box(
+                    Modifier.size(400.dp)
+                        .then(
+                            if (keepAround)
+                                Modifier.nestedScroll(
+                                    dispatcher = innerDispatcher,
+                                    connection = object : NestedScrollConnection {},
+                                )
+                            else Modifier
+                        )
+                )
+            }
+        }
+
+        rule.waitForIdle()
+        assertThat(innerDispatcher.calculateNestedScrollScope()).isNotNull()
+        assertThat(innerDispatcher.coroutineScope).isNotNull()
+        assertThat(innerDispatcher.coroutineScope.isActive).isTrue()
+
+        val calculatedScope = innerDispatcher.calculateNestedScrollScope()
+        val coroutineScope = innerDispatcher.coroutineScope
+        keepAround = false
+        rule.waitForIdle()
+
+        assertThat(innerDispatcher.calculateNestedScrollScope()).isNotEqualTo(calculatedScope)
+        assertThat(innerDispatcher.calculateNestedScrollScope()?.isActive).isFalse()
+        assertThat(innerDispatcher.scope).isNotEqualTo(coroutineScope)
+        assertThat(innerDispatcher.scope).isNull()
     }
 }
 

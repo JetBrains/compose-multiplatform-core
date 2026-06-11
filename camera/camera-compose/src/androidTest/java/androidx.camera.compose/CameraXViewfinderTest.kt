@@ -32,6 +32,7 @@ import androidx.camera.testing.impl.CameraUtil.PreTestCameraIdList
 import androidx.camera.testing.impl.fakes.FakeLifecycleOwner
 import androidx.camera.viewfinder.core.ImplementationMode
 import androidx.compose.foundation.layout.Column
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.movableContentOf
@@ -39,23 +40,31 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotDisplayed
+import androidx.compose.ui.test.click
 import androidx.compose.ui.test.isNotDisplayed
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.pinch
 import androidx.concurrent.futures.await
+import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
+import java.util.concurrent.atomic.AtomicInteger
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.resume
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
+import kotlin.time.TimeSource
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
@@ -72,6 +81,7 @@ import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.withTimeoutOrNull
+import org.junit.Assume
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -304,6 +314,210 @@ class CameraXViewfinderTest(private val implName: String, private val cameraConf
         ensureCameraIsStreaming()
     }
 
+    @Test
+    fun streamState_transitionsToStreamingAndBackToIdle_whenRequestRemoved() = runViewfinderTest {
+        assertStreamStateTest {
+            // Scenario: Pipeline Reconfiguration (Request removed)
+            setSurfaceRequest(null)
+        }
+    }
+
+    @Test
+    fun streamState_transitionsToIdle_whenRequestInvalidated() = runViewfinderTest {
+        assertStreamStateTest { currentRequest ->
+            // Scenario: Pipeline Reconfiguration (Invalidation)
+            withContext(Dispatchers.Main) { currentRequest?.invalidate() }
+        }
+    }
+
+    @Test
+    fun streamState_transitionsToIdle_whenCameraStopped() = runViewfinderTest {
+        assertStreamStateTest {
+            // Scenario: Hardware Shutdown (Camera stopped/unbound)
+            stopCamera()
+        }
+    }
+
+    @Test
+    fun streamState_transitionsToIdle_whenDisposed() = runViewfinderTest {
+        var showViewfinder by mutableStateOf(true)
+        assertStreamStateTest(shouldShowViewfinder = { showViewfinder }) {
+            // Scenario: UI Detachment (Disposal)
+            showViewfinder = false
+        }
+    }
+
+    @Test
+    fun streamState_transitionsToIdle_whenLifecycleStopped() = runViewfinderTest {
+        assertStreamStateTest {
+            // Scenario: Hardware Shutdown (Lifecycle STOPPED)
+            val startTime = TimeSource.Monotonic.markNow()
+            pauseLifecycle()
+
+            // Verifying transition to IDLE
+            composeTest.waitUntil(timeoutMillis = 5000) {
+                currentStreamState.get() == Preview.STREAM_STATE_IDLE
+            }
+            val elapsed = startTime.elapsedNow()
+
+            // Should be immediate (less than 1s) even if device close is delayed
+            assertThat(elapsed).isLessThan(1.seconds)
+        }
+    }
+
+    @Test
+    fun streamState_recoversToStreaming_whenLifecycleResumed() = runViewfinderTest {
+        assertStreamStateTest {
+            // Pause lifecycle and wait for IDLE
+            pauseLifecycle()
+            composeTest.waitUntil(timeoutMillis = 5000) {
+                currentStreamState.get() == Preview.STREAM_STATE_IDLE
+            }
+
+            // Resume lifecycle
+            resumeLifecycle()
+
+            // Verifying transition back to STREAMING
+            composeTest.waitUntil(timeoutMillis = 10000) {
+                currentStreamState.get() == Preview.STREAM_STATE_STREAMING
+            }
+
+            // Finally trigger IDLE for assertStreamStateTest to complete
+            stopCamera()
+        }
+    }
+
+    private suspend fun PreviewTestScope.assertStreamStateTest(
+        shouldShowViewfinder: @Composable () -> Boolean = { true },
+        block: suspend PreviewTestScope.(currentRequest: SurfaceRequest?) -> Unit,
+    ) {
+        var currentRequest: SurfaceRequest? = null
+        composeTest.setContent {
+            if (shouldShowViewfinder()) {
+                val currentSurfaceRequest: SurfaceRequest? by surfaceRequests.collectAsState()
+                currentSurfaceRequest?.let { surfaceRequest ->
+                    currentRequest = surfaceRequest
+                    CameraXViewfinder(
+                        surfaceRequest = surfaceRequest,
+                        onStreamStateChanged = { currentStreamState.set(it) },
+                        modifier = Modifier.testTag(CAMERAX_VIEWFINDER_TEST_TAG),
+                    )
+                }
+            }
+        }
+
+        // Wait for composition
+        composeTest.awaitIdle()
+        assertThat(currentStreamState.get()).isEqualTo(Preview.STREAM_STATE_IDLE)
+
+        // Start the camera
+        startCamera()
+
+        // Wait for state to become STREAMING
+        composeTest.waitUntil(timeoutMillis = 10000) {
+            currentStreamState.get() == Preview.STREAM_STATE_STREAMING
+        }
+
+        block(currentRequest)
+
+        // Wait for state to become IDLE (if not already handled in block)
+        composeTest.waitUntil(timeoutMillis = 10000) {
+            currentStreamState.get() == Preview.STREAM_STATE_IDLE
+        }
+    }
+
+    @Test
+    fun cameraxViewfinder_tapToFocus_triggersCallback() = runViewfinderTest {
+        var isTapped = false
+        var tappedOffset = Offset.Zero
+        composeTest.setContent {
+            val currentSurfaceRequest: SurfaceRequest? by surfaceRequests.collectAsState()
+            currentSurfaceRequest?.let { surfaceRequest ->
+                CameraXViewfinder(
+                    surfaceRequest = surfaceRequest,
+                    isTapToFocusEnabled = true,
+                    onTapToFocus = { offset, _ ->
+                        isTapped = true
+                        tappedOffset = offset
+                    },
+                    modifier = Modifier.testTag(CAMERAX_VIEWFINDER_TEST_TAG),
+                )
+            }
+        }
+
+        startCamera()
+        surfaceRequests.filterNotNull().first()
+        composeTest.awaitIdle()
+
+        composeTest.onNodeWithTag(CAMERAX_VIEWFINDER_TEST_TAG).performTouchInput {
+            click(Offset(100f, 100f))
+        }
+
+        composeTest.awaitIdle()
+        assertThat(isTapped).isTrue()
+        assertThat(tappedOffset).isEqualTo(Offset(100f, 100f))
+    }
+
+    @Test
+    @SdkSuppress(minSdkVersion = 24)
+    fun cameraxViewfinder_pinchToZoom_triggersCallback() = runViewfinderTest {
+        var latestZoomRatio = 1f
+        composeTest.setContent {
+            val currentSurfaceRequest: SurfaceRequest? by surfaceRequests.collectAsState()
+            currentSurfaceRequest?.let { surfaceRequest ->
+                CameraXViewfinder(
+                    surfaceRequest = surfaceRequest,
+                    isPinchToZoomEnabled = true,
+                    onZoomRatioChanged = { ratio -> latestZoomRatio = ratio },
+                    modifier = Modifier.testTag(CAMERAX_VIEWFINDER_TEST_TAG),
+                )
+            }
+        }
+
+        val camera = startCamera()
+        Assume.assumeTrue(
+            camera.cameraInfo.zoomState.value!!.maxZoomRatio >
+                camera.cameraInfo.zoomState.value!!.minZoomRatio
+        )
+        surfaceRequests.filterNotNull().first()
+        composeTest.awaitIdle()
+
+        composeTest.onNodeWithTag(CAMERAX_VIEWFINDER_TEST_TAG).performTouchInput {
+            pinch(
+                start0 = Offset(centerX - 10f, centerY),
+                end0 = Offset(centerX - 50f, centerY),
+                start1 = Offset(centerX + 10f, centerY),
+                end1 = Offset(centerX + 50f, centerY),
+            )
+        }
+
+        composeTest.awaitIdle()
+        assertThat(latestZoomRatio).isGreaterThan(1f)
+    }
+
+    @Test
+    fun cameraxViewfinder_screenFlashReady_triggersCallback() = runViewfinderTest {
+        var isScreenFlashReady = false
+        composeTest.setContent {
+            val currentSurfaceRequest: SurfaceRequest? by surfaceRequests.collectAsState()
+            val context = LocalContext.current
+            val window = (context as? android.app.Activity)?.window
+            currentSurfaceRequest?.let { surfaceRequest ->
+                CameraXViewfinder(
+                    surfaceRequest = surfaceRequest,
+                    onScreenFlashReady = { isScreenFlashReady = true },
+                    modifier = Modifier.testTag(CAMERAX_VIEWFINDER_TEST_TAG),
+                )
+            }
+        }
+
+        startCamera()
+        surfaceRequests.filterNotNull().first()
+        composeTest.awaitIdle()
+
+        assertThat(isScreenFlashReady).isTrue()
+    }
+
     companion object {
         @JvmStatic
         @Parameterized.Parameters(name = "{0}")
@@ -377,11 +591,61 @@ class CameraXViewfinderTest(private val implName: String, private val cameraConf
                     }
                 }
 
+                val stopCamera = suspend {
+                    withContext(Dispatchers.Main) {
+                        fakeLifecycleOwner?.apply {
+                            if (lifecycle.currentState == Lifecycle.State.RESUMED) {
+                                pauseAndStop()
+                            }
+                            if (lifecycle.currentState == Lifecycle.State.STARTED) {
+                                stop()
+                            }
+                            if (lifecycle.currentState == Lifecycle.State.CREATED) {
+                                destroy()
+                            }
+                        }
+                        fakeLifecycleOwner = null
+                        cameraProvider.unbindAll()
+                    }
+                }
+
+                val pauseLifecycle = suspend {
+                    withContext(Dispatchers.Main) {
+                        fakeLifecycleOwner?.apply {
+                            if (lifecycle.currentState == Lifecycle.State.RESUMED) {
+                                pauseAndStop()
+                            } else if (lifecycle.currentState == Lifecycle.State.STARTED) {
+                                stop()
+                            }
+                        }
+                    }
+                    Unit
+                }
+
+                val resumeLifecycle = suspend {
+                    withContext(Dispatchers.Main) {
+                        if (
+                            fakeLifecycleOwner?.lifecycle?.currentState == Lifecycle.State.CREATED
+                        ) {
+                            fakeLifecycleOwner?.startAndResume()
+                        } else if (
+                            fakeLifecycleOwner?.lifecycle?.currentState == Lifecycle.State.STARTED
+                        ) {
+                            fakeLifecycleOwner?.start()
+                        }
+                    }
+                    Unit
+                }
+
                 with(
                     PreviewTestScope(
                         surfaceRequests = surfaceRequests.asStateFlow(),
+                        setSurfaceRequest = { surfaceRequests.value = it },
                         resetPreviewSurfaceProvider = resetPreviewSurfaceProvider,
                         startCamera = startCamera,
+                        stopCamera = stopCamera,
+                        pauseLifecycle = pauseLifecycle,
+                        resumeLifecycle = resumeLifecycle,
                         coroutineContext = coroutineContext,
                         lastFrames = latestDeliveredFrameNumber.asStateFlow(),
                     )
@@ -389,10 +653,17 @@ class CameraXViewfinderTest(private val implName: String, private val cameraConf
                     block()
                 }
             } finally {
-                fakeLifecycleOwner?.apply {
-                    withContext(Dispatchers.Main) {
-                        pauseAndStop()
-                        destroy()
+                withContext(Dispatchers.Main) {
+                    fakeLifecycleOwner?.apply {
+                        if (lifecycle.currentState == Lifecycle.State.RESUMED) {
+                            pauseAndStop()
+                        }
+                        if (lifecycle.currentState == Lifecycle.State.STARTED) {
+                            stop()
+                        }
+                        if (lifecycle.currentState == Lifecycle.State.CREATED) {
+                            destroy()
+                        }
                     }
                 }
                 withTimeout(30.seconds) { cameraProvider.shutdownAsync().await() }
@@ -401,10 +672,15 @@ class CameraXViewfinderTest(private val implName: String, private val cameraConf
 
     private data class PreviewTestScope(
         val surfaceRequests: StateFlow<SurfaceRequest?>,
+        val setSurfaceRequest: (SurfaceRequest?) -> Unit,
         val resetPreviewSurfaceProvider: suspend () -> Unit,
         val startCamera: suspend () -> Camera,
+        val stopCamera: suspend () -> Unit,
+        val pauseLifecycle: suspend () -> Unit,
+        val resumeLifecycle: suspend () -> Unit,
         override val coroutineContext: CoroutineContext,
         private val lastFrames: StateFlow<Long>,
+        val currentStreamState: AtomicInteger = AtomicInteger(Preview.STREAM_STATE_IDLE),
     ) : CoroutineScope {
         suspend fun ensureCameraIsStreaming(timeout: Duration = 5.seconds) {
             withTimeout(timeout) { lastFrames.take(NUM_FRAMES_TO_WAIT_FOR).collect {} }

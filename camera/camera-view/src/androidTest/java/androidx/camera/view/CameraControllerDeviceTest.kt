@@ -195,8 +195,8 @@ class CameraControllerDeviceTest(
     }
 
     @Test
-    fun previewViewNotAttached_useCaseGroupIsNotBuilt() {
-        assertThat(controller!!.createUseCaseGroup(/* checkPreviewViewAttached= */ true)).isNull()
+    fun previewViewNotAttached_boundSessionConfigIsNotBuilt() {
+        assertThat(controller!!.boundSessionConfig).isNull()
     }
 
     @Test

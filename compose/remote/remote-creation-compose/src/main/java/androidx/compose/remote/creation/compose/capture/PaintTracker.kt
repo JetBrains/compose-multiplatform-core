@@ -13,14 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@file:OptIn(androidx.compose.remote.creation.compose.ExperimentalRemoteCreationComposeApi::class)
 
 package androidx.compose.remote.creation.compose.capture
 
 import android.annotation.SuppressLint
-import android.graphics.Typeface
-import android.os.Build
-import androidx.annotation.RestrictTo
 import androidx.compose.remote.core.operations.paint.PaintBundle
+import androidx.compose.remote.creation.compose.RemoteComposeCreationComposeFlags
 import androidx.compose.remote.creation.compose.layout.toAndroidCap
 import androidx.compose.remote.creation.compose.layout.toAndroidJoin
 import androidx.compose.remote.creation.compose.layout.toAndroidStyle
@@ -32,12 +31,13 @@ import androidx.compose.remote.creation.compose.state.RemoteBlendModeColorFilter
 import androidx.compose.remote.creation.compose.state.RemoteColor
 import androidx.compose.remote.creation.compose.state.RemoteColorFilter
 import androidx.compose.remote.creation.compose.state.RemotePaint
+import androidx.compose.remote.creation.compose.text.RemoteTypeface
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.asAndroidColorFilter
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.text.font.FontVariation
 
 /** Tracks the state of a [RemotePaint] to optimize serialization by only sending deltas. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 internal class PaintTracker {
     var force: Boolean = false
     var isChanged: Boolean = false
@@ -56,6 +56,7 @@ internal class PaintTracker {
     var blendMode: BlendMode? = null
     var shader: RemoteShader? = null
     var usingShaderMatrix: Boolean = false
+    var fontVariationSettings: FontVariation.Settings? = null
 
     fun reset(force: Boolean) {
         this.force = force
@@ -145,15 +146,15 @@ internal class PaintTracker {
             }
 
         val paintTypeface = newPaint.typeface
-        val targetTypefaceId = getTypefaceId(paintTypeface)
+        val targetTypefaceId = getTypefaceId(paintTypeface, creationState)
         val targetWeight =
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                paintTypeface?.weight ?: 0
-            } else {
-                0
+            when (paintTypeface) {
+                RemoteTypeface.DefaultBold -> 700
+                is RemoteTypeface.Named -> paintTypeface.weight
+                else -> 400
             }
-
-        val targetIsItalic = paintTypeface?.isItalic ?: false
+        val targetIsItalic =
+            if (paintTypeface is RemoteTypeface.Named) paintTypeface.isItalic else false
         if (
             force ||
                 typefaceId != targetTypefaceId ||
@@ -167,13 +168,37 @@ internal class PaintTracker {
             isChanged = true
         }
 
+        val targetFontVariationSettings = newPaint.fontVariationSettings
+        val settingsToUse =
+            if (RemoteComposeCreationComposeFlags.allowSendingEmptyFontAxis) {
+                targetFontVariationSettings
+            } else {
+                targetFontVariationSettings
+                    ?: FontVariation.Settings(FontVariation.weight(DEFAULT_FONT_WEIGHT))
+            }
+        updateIfChanged(settingsToUse, fontVariationSettings) {
+            fontVariationSettings = settingsToUse
+            if (settingsToUse != null) {
+                val (fontAxisNames, fontAxisValues) = extractFontSettings(settingsToUse.settings)
+                if (fontAxisNames != null && fontAxisValues != null) {
+                    val axisTags =
+                        IntArray(fontAxisNames.size) { i ->
+                            creationState.document.addText(fontAxisNames[i])
+                        }
+                    paintBundle.setTextAxis(axisTags, fontAxisValues)
+                }
+            } else {
+                paintBundle.setTextAxis(intArrayOf(), floatArrayOf())
+            }
+        }
+
         val targetColorFilter = newPaint.colorFilter
         updateIfChanged(targetColorFilter, colorFilter) {
             val wasSet = colorFilter != null
             colorFilter = targetColorFilter
             when (targetColorFilter) {
                 null -> {
-                    if (wasSet) {
+                    if (wasSet || force) {
                         paintBundle.clearColorFilter()
                     }
                 }
@@ -242,26 +267,41 @@ internal class PaintTracker {
         }
     }
 
-    private fun getTypefaceId(paintTypeface: Typeface?): Int {
+    private fun getTypefaceId(
+        paintTypeface: RemoteTypeface?,
+        creationState: RemoteComposeCreationState,
+    ): Int {
         return when (paintTypeface) {
             null -> PaintBundle.FONT_TYPE_DEFAULT
-            Typeface.DEFAULT -> PaintBundle.FONT_TYPE_DEFAULT
-            Typeface.DEFAULT_BOLD -> PaintBundle.FONT_TYPE_DEFAULT
-            Typeface.SERIF -> PaintBundle.FONT_TYPE_SERIF
-            Typeface.SANS_SERIF -> PaintBundle.FONT_TYPE_SANS_SERIF
-            Typeface.MONOSPACE -> PaintBundle.FONT_TYPE_MONOSPACE
-            else -> {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-                    when (paintTypeface.systemFontFamilyName) {
-                        "serif" -> PaintBundle.FONT_TYPE_SERIF
-                        "sans-serif" -> PaintBundle.FONT_TYPE_SANS_SERIF
-                        "monospace" -> PaintBundle.FONT_TYPE_MONOSPACE
-                        else -> PaintBundle.FONT_TYPE_DEFAULT
-                    }
-                } else {
-                    PaintBundle.FONT_TYPE_DEFAULT
+            RemoteTypeface.Default -> PaintBundle.FONT_TYPE_DEFAULT
+            RemoteTypeface.DefaultBold -> PaintBundle.FONT_TYPE_DEFAULT
+            RemoteTypeface.Serif -> PaintBundle.FONT_TYPE_SERIF
+            RemoteTypeface.SansSerif -> PaintBundle.FONT_TYPE_SANS_SERIF
+            RemoteTypeface.Monospace -> PaintBundle.FONT_TYPE_MONOSPACE
+            is RemoteTypeface.Named -> {
+                when (paintTypeface.name.lowercase()) {
+                    "sans-serif" -> PaintBundle.FONT_TYPE_SANS_SERIF
+                    "serif" -> PaintBundle.FONT_TYPE_SERIF
+                    "monospace" -> PaintBundle.FONT_TYPE_MONOSPACE
+                    "default" -> PaintBundle.FONT_TYPE_DEFAULT
+                    else -> creationState.document.addText(paintTypeface.name)
                 }
             }
         }
+    }
+
+    private fun extractFontSettings(
+        settings: List<FontVariation.Setting>?
+    ): Pair<Array<String>?, FloatArray?> {
+        val size = settings?.size ?: return Pair(null, null)
+
+        val fontAxisNames = Array(size) { settings[it].axisName }
+        val fontAxisValues = FloatArray(size) { settings[it].toVariationValue(null) }
+
+        return Pair(fontAxisNames, fontAxisValues)
+    }
+
+    private companion object {
+        const val DEFAULT_FONT_WEIGHT = 400
     }
 }

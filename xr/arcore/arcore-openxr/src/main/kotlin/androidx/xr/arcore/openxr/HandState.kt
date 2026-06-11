@@ -16,8 +16,7 @@
 
 package androidx.xr.arcore.openxr
 
-import androidx.annotation.RestrictTo
-import androidx.xr.runtime.TrackingState
+import androidx.xr.arcore.runtime.TrackingState
 import androidx.xr.runtime.math.Pose
 
 /**
@@ -27,10 +26,9 @@ import androidx.xr.runtime.math.Pose
  * @property handJoints the list of [Pose]s for each hand joint, ordered according to
  *   [XrHandJointEXT](https://registry.khronos.org/OpenXR/specs/1.0/man/html/XrHandJointEXT.html)
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public class HandState(
-    internal val trackingState: TrackingState = TrackingState.PAUSED,
-    internal val handJoints: List<Pose> = listOf(),
+internal class HandState(
+    val trackingState: TrackingState = TrackingState.PAUSED,
+    val handJoints: List<Pose> = listOf(),
 ) {
     init {
         require(trackingState != TrackingState.TRACKING || handJoints.isNotEmpty()) {

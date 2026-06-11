@@ -28,9 +28,13 @@ import androidx.annotation.CallSuper
 import androidx.annotation.MainThread
 import androidx.annotation.RequiresApi
 import androidx.appfunctions.ExecuteAppFunctionRequest.Companion.toCompatExecuteAppFunctionRequest
+import androidx.appfunctions.internal.AppFunctionInventoryProvider
 import androidx.appfunctions.internal.AppFunctionMetadataUtils.getAppFunctionMetadata
 import androidx.appfunctions.internal.Dispatchers
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -54,8 +58,10 @@ import kotlinx.coroutines.withContext
  * @see [android.app.appfunctions.AppFunctionService]
  */
 @RequiresApi(Build.VERSION_CODES.BAKLAVA)
-public abstract class AppFunctionService : PlatformAppFunctionService() {
-    private val workerCoroutineScope = CoroutineScope(Dispatchers.Worker)
+public abstract class AppFunctionService :
+    PlatformAppFunctionService(), AppFunctionInventoryProvider {
+    private lateinit var workerExecutor: ExecutorService
+    private lateinit var workerCoroutineScope: CoroutineScope
 
     /**
      * Implements [AppFunctionService.onExecuteFunction] and delegates the execution to
@@ -88,6 +94,7 @@ public abstract class AppFunctionService : PlatformAppFunctionService() {
                         val appFunctionMetadata =
                             getAppFunctionMetadata(
                                 this@AppFunctionService,
+                                resolveInventory(),
                                 request.functionIdentifier,
                             )
                                 ?: throw AppFunctionFunctionNotFoundException(
@@ -152,10 +159,28 @@ public abstract class AppFunctionService : PlatformAppFunctionService() {
      * reported as [androidx.appfunctions.AppFunctionAppUnknownException].
      *
      * ### Cancellation
+     *
      * The agent app can cancel the execution of an app function at any time. When this happens, the
-     * coroutine executing this `executeFunction` will be cancelled. Implementations should handle
-     * the [kotlinx.coroutines.CancellationException] appropriately, for example, by ceasing any
-     * ongoing work and releasing resources.
+     * coroutine executing this `executeFunction` will be canceled. Therefore, the implementation is
+     * recommended to handle coroutine cancellation gradefully.
+     *
+     * For example:
+     * ```kotlin
+     * override suspend fun executeFunction(
+     *     request: ExecuteAppFunctionRequest
+     * ): ExecuteAppFunctionResponse {
+     *     return withContext(backgroundDispatcher) {
+     *         // Perform CPU-intensive work cooperatively
+     *         val data = request.functionParameters.getStringList("myData") ?: emptyList()
+     *         val results = mutableListOf<String>()
+     *         for (item in data) {
+     *             ensureActive()
+     *             // Process item...
+     *         }
+     *         ExecuteAppFunctionResponse.Success(AppFunctionData.EMPTY)
+     *     }
+     * }
+     * ```
      *
      * @param request The function execution request.
      */
@@ -165,12 +190,24 @@ public abstract class AppFunctionService : PlatformAppFunctionService() {
     ): ExecuteAppFunctionResponse
 
     /**
+     * Implementing class can override this method to perform setup but should always call the
+     * superclass implementation.
+     */
+    @CallSuper
+    override fun onCreate() {
+        super.onCreate()
+        workerExecutor = Executors.newSingleThreadExecutor()
+        workerCoroutineScope = CoroutineScope(workerExecutor.asCoroutineDispatcher())
+    }
+
+    /**
      * Implementing class can override this method to perform cleanup but should always call the
      * superclass implementation.
      */
     @CallSuper
     override fun onDestroy() {
-        super.onDestroy()
         workerCoroutineScope.cancel()
+        workerExecutor.shutdown()
+        super.onDestroy()
     }
 }

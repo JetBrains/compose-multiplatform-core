@@ -34,6 +34,7 @@ import android.util.Size;
 
 import androidx.annotation.MainThread;
 import androidx.camera.core.CameraEffect;
+import androidx.camera.core.CompositionSettings;
 import androidx.camera.core.Logger;
 import androidx.camera.core.ProcessingException;
 import androidx.camera.core.SurfaceOutput;
@@ -280,6 +281,18 @@ public class DualSurfaceProcessorNode implements
                 }
             }
         });
+    }
+
+    /**
+     * Updates the composition settings.
+     */
+    public void updateCompositionSettings(
+            @NonNull CompositionSettings primaryCompositionSettings,
+            @NonNull CompositionSettings secondaryCompositionSettings) {
+        if (mSurfaceProcessor instanceof DualSurfaceProcessor) {
+            ((DualSurfaceProcessor) mSurfaceProcessor).updateCompositionSettings(
+                    primaryCompositionSettings, secondaryCompositionSettings);
+        }
     }
 
     /**

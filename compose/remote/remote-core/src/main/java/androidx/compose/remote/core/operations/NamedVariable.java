@@ -65,7 +65,7 @@ public class NamedVariable extends Operation implements Serializable {
         return "VariableName["
                 + mVarId
                 + "] = \""
-                + Utils.trimString(mVarName, 10)
+                + Utils.trimString(mVarName, 30)
                 + "\" type="
                 + mVarType;
     }
@@ -92,10 +92,10 @@ public class NamedVariable extends Operation implements Serializable {
     /**
      * Writes out the operation to the buffer
      *
-     * @param buffer  The buffer to write into
-     * @param varId   id to label
+     * @param buffer The buffer to write into
+     * @param varId id to label
      * @param varType The type of variable
-     * @param text    String
+     * @param text String
      */
     public static void apply(
             @NonNull WireBuffer buffer, int varId, int varType, @NonNull String text) {
@@ -108,11 +108,11 @@ public class NamedVariable extends Operation implements Serializable {
     /**
      * Read this operation and add it to the list of operations
      *
-     * @param buffer     the buffer to read
+     * @param buffer the buffer to read
      * @param operations the list of operations that will be added to
      */
     public static void read(@NonNull WireBuffer buffer, @NonNull List<Operation> operations) {
-        int id = buffer.readInt();
+        int id = buffer.declareId();
         int type = buffer.readInt();
         String name = buffer.readUTF8(Limits.MAX_STRING_SIZE);
         operations.add(new NamedVariable(id, type, name));

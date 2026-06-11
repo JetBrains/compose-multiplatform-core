@@ -46,8 +46,7 @@ android {
     namespace = "androidx.tracing.benchmark"
     buildTypes.release {
         androidTest {
-            enableMinification = false
-            testProguardFiles "proguard-rules.pro"
+            enableMinification = true
         }
     }
 }

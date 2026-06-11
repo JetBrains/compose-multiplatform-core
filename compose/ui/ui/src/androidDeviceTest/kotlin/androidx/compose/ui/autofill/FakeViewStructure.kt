@@ -16,11 +16,15 @@
 
 package androidx.compose.ui.autofill
 
+import android.credentials.GetCredentialException
+import android.credentials.GetCredentialRequest
+import android.credentials.GetCredentialResponse
 import android.graphics.Matrix
 import android.graphics.Rect
 import android.os.Build
 import android.os.Bundle
 import android.os.LocaleList
+import android.os.OutcomeReceiver
 import android.view.View
 import android.view.ViewStructure
 import android.view.autofill.AutofillId
@@ -75,8 +79,11 @@ internal data class FakeViewStructure(
     @JvmField var visibility: Int = View.VISIBLE,
     @JvmField var maxTextLength: Int = -1,
     @JvmField var webDomain: String? = null,
+    @JvmField var localeList: LocaleList? = null,
 ) : ViewStructure() {
     @JvmField var extras: Bundle = Bundle()
+    @JvmField var credentialRequest: Any? = null
+    @JvmField var credentialCallback: Any? = null
 
     override fun getChildCount() = children.count()
 
@@ -250,6 +257,11 @@ internal data class FakeViewStructure(
         webDomain = domain
     }
 
+    override fun setChildCount(num: Int) {
+        children.clear()
+        repeat(num) { children.add(FakeViewStructure()) }
+    }
+
     // Unimplemented methods.
     override fun asyncCommit() {
         TODO("not implemented")
@@ -271,15 +283,26 @@ internal data class FakeViewStructure(
         TODO("not implemented")
     }
 
-    override fun setChildCount(num: Int) {
-        TODO("not implemented")
-    }
-
     override fun setLocaleList(localeList: LocaleList?) {
-        TODO("not implemented")
+        this.localeList = localeList
     }
 
     override fun setTextStyle(size: Float, fgColor: Int, bgColor: Int, style: Int) {
         TODO("not implemented")
+    }
+
+    @RequiresApi(35)
+    override fun setPendingCredentialRequest(
+        request: GetCredentialRequest,
+        callback: OutcomeReceiver<GetCredentialResponse, GetCredentialException>,
+    ) {
+        this.credentialRequest = request
+        this.credentialCallback = callback
+    }
+
+    @RequiresApi(35)
+    override fun clearCredentialManagerRequest() {
+        this.credentialRequest = null
+        this.credentialCallback = null
     }
 }

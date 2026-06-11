@@ -19,11 +19,14 @@
 package androidx.compose.foundation.style
 
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.ComposeFoundationFlags
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -44,7 +47,6 @@ import androidx.compose.ui.unit.sp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import kotlinx.coroutines.test.StandardTestDispatcher
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -60,6 +62,37 @@ class StyleLayoutTest {
             .onParentWith(parent = { contentPadding(10.dp) }, child = { size(10.dp) })
             .assertWidthIsEqualTo(30.dp) // 10.dp (child) + 10.dp (padding) + 10.dp (padding)
             .assertHeightIsEqualTo(30.dp) // 10.dp (child) + 10.dp (padding) + 10.dp (padding)
+    }
+
+    @Test
+    fun testPaddingValues() {
+        rule
+            .onParentWith(
+                parent = {
+                    contentPadding(
+                        PaddingValues(start = 10.dp, top = 20.dp, end = 30.dp, bottom = 40.dp)
+                    )
+                },
+                child = { size(10.dp) },
+            )
+            .assertWidthIsEqualTo(50.dp)
+            .assertHeightIsEqualTo(70.dp)
+    }
+
+    @Test
+    fun testExternalPaddingValues() {
+        rule
+            .onParentWith(
+                parent = {
+                    externalPadding(
+                        PaddingValues(start = 10.dp, top = 20.dp, end = 30.dp, bottom = 40.dp)
+                    )
+                    size(100.dp)
+                },
+                child = { fillSize() },
+            )
+            .assertWidthIsEqualTo(140.dp)
+            .assertHeightIsEqualTo(160.dp)
     }
 
     @Test
@@ -91,8 +124,7 @@ class StyleLayoutTest {
     }
 
     @Test
-    @Ignore("maxWith not implemented yet")
-    fun testMaxWidth() {
+    fun testMaxWidth_limitedByParent() {
         rule
             .onChildWith(
                 parent = { size(50.dp) },
@@ -102,7 +134,10 @@ class StyleLayoutTest {
                 },
             )
             .assertWidthIsEqualTo(50.dp) // Limited by parent
+    }
 
+    @Test
+    fun testMaxWidth_limitedByStyle() {
         rule
             .onLeafWith {
                 size(200.dp)
@@ -112,13 +147,25 @@ class StyleLayoutTest {
     }
 
     @Test
+    fun testFractionalWidth_withStyleMaxWidth() {
+        rule
+            .onChildWith(
+                parent = { size(200.dp) },
+                child = {
+                    maxWidth(100.dp)
+                    width(0.5f) // Should be 50% of 100.dp (maxWidth), not 200.dp (parent)
+                },
+            )
+            .assertWidthIsEqualTo(50.dp)
+    }
+
+    @Test
     fun testMinHeight() {
         rule.onLeafWith { minHeight(100.dp) }.assertHeightIsEqualTo(100.dp)
     }
 
     @Test
-    @Ignore("maxHeight not implemented yet")
-    fun testMaxHeight() {
+    fun testMaxHeight_limitedByParent() {
         rule
             .onChildWith(
                 parent = { size(50.dp) },
@@ -128,13 +175,29 @@ class StyleLayoutTest {
                 },
             )
             .assertHeightIsEqualTo(50.dp) // Limited by parent
+    }
 
+    @Test
+    fun testMaxHeight_limitedByStyle() {
         rule
             .onLeafWith {
                 size(200.dp)
                 maxHeight(100.dp)
             }
             .assertHeightIsEqualTo(100.dp) // limited by maxHeight
+    }
+
+    @Test
+    fun testFractionalHeight_withStyleMaxHeight() {
+        rule
+            .onChildWith(
+                parent = { size(200.dp) },
+                child = {
+                    maxHeight(100.dp)
+                    height(0.5f) // Should be 50% of 100.dp (maxHeight)
+                },
+            )
+            .assertHeightIsEqualTo(50.dp)
     }
 
     @Test
@@ -419,4 +482,15 @@ private fun ComposeContentTestRule.onChildWith(
     }
 
     return onNodeWithTag(tag)
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+internal fun withStyleInheritance(block: () -> Unit) {
+    val previous = ComposeFoundationFlags.isInheritedTextStyleEnabled
+    ComposeFoundationFlags.isInheritedTextStyleEnabled = true
+    try {
+        block()
+    } finally {
+        ComposeFoundationFlags.isInheritedTextStyleEnabled = previous
+    }
 }

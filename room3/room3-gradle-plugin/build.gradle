@@ -29,6 +29,7 @@ plugins {
     id("AndroidXPlugin")
     id("kotlin")
     id("java-gradle-plugin")
+    id("org.gradle.plugin-compatibility")
 }
 
 configurations {
@@ -41,7 +42,7 @@ configurations {
 
 dependencies {
     implementation(gradleApi())
-    compileOnly("com.android.tools.build:gradle-api:8.4.2")
+    compileOnly("com.android.tools.build:gradle-api:8.10.0")
     compileOnly(libs.kotlinGradlePlugin)
     compileOnly(libs.kspGradlePlugin)
 
@@ -51,10 +52,10 @@ dependencies {
     testImplementation(project(":kruth:kruth"))
     testImplementation(libs.testParameterInjector)
 
-    testPlugin("com.android.tools.build:gradle:8.4.2")
-    testPlugin("com.android.tools.build:aapt2:8.4.2-11315950")
-    testPlugin("com.android.tools.build:aapt2:8.4.2-11315950:linux")
-    testPlugin("com.android.tools.build:aapt2:8.4.2-11315950:osx")
+    testPlugin("com.android.tools.build:gradle:8.10.0")
+    testPlugin("com.android.tools.build:aapt2:8.10.0-12782657")
+    testPlugin("com.android.tools.build:aapt2:8.10.0-12782657:linux")
+    testPlugin("com.android.tools.build:aapt2:8.10.0-12782657:osx")
     testPlugin(libs.kotlinGradlePlugin)
     testPlugin(libs.kspGradlePlugin)
 }
@@ -78,6 +79,7 @@ tasks.withType(Test).configureEach { test ->
             ":room3:room3-compiler-processing:publish",
             ":room3:room3-external-antlr:publish",
             ":sqlite:sqlite:publish",
+            ":sqlite:sqlite-async:publish",
             ":sqlite:sqlite-framework:publish",
     )
 }
@@ -87,6 +89,11 @@ gradlePlugin {
         room {
             id = "androidx.room3"
             implementationClass = "androidx.room3.gradle.RoomGradlePlugin"
+            compatibility {
+                features {
+                    configurationCache = true
+                }
+            }
         }
     }
 }
@@ -97,5 +104,4 @@ androidx {
     minimumGradleVersion = "8.6"
     inceptionYear = "2023"
     description = "Android Room Gradle Plugin"
-    kotlinTarget = KotlinTarget.KOTLIN_2_1
 }

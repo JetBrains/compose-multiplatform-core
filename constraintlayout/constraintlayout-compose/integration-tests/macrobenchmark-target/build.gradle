@@ -21,7 +21,7 @@ plugins {
 }
 
 android {
-    compileSdk { version = release(35) }
+    compileSdk { version = release(37) }
     defaultConfig {
         minSdk { version = release(26) }
     }
@@ -29,10 +29,9 @@ android {
 
     buildTypes {
         release {
-            minifyEnabled = true
-            shrinkResources = true
-            proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"),
-                    'proguard-rules.pro'
+            optimization {
+                enable = true
+            }
         }
     }
 }

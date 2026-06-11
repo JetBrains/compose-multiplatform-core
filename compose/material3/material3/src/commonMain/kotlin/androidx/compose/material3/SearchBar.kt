@@ -48,6 +48,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.DraggableState
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.draggable
+import androidx.compose.foundation.indication
 import androidx.compose.foundation.interaction.Interaction
 import androidx.compose.foundation.interaction.InteractionSource
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -538,7 +539,6 @@ fun AppBarWithSearch(
  * @param content the content of this search bar to display search results below the [inputField].
  */
 @OptIn(ExperimentalMaterial3Api::class)
-@ExperimentalMaterial3ExpressiveApi
 @Composable
 fun ExpandedFullScreenContainedSearchBar(
     state: SearchBarState,
@@ -718,7 +718,6 @@ private fun ExpandedFullScreenSearchBarImpl(
  * @param content the content of this search bar to display search results below the [inputField].
  */
 @OptIn(ExperimentalMaterial3Api::class)
-@ExperimentalMaterial3ExpressiveApi
 @Composable
 fun ExpandedDockedSearchBarWithGap(
     state: SearchBarState,
@@ -1378,7 +1377,7 @@ fun rememberContainedSearchBarState(
  */
 @ExperimentalMaterial3Api
 @Composable
-fun rememberWithGapSearchBarState(
+fun rememberSearchBarWithGapState(
     initialValue: SearchBarValue = SearchBarValue.Collapsed,
     animationSpecForExpand: AnimationSpec<Float> = MotionSchemeKeyTokens.DefaultSpatial.value(),
     animationSpecForCollapse: AnimationSpec<Float> = MotionSchemeKeyTokens.FastSpatial.value(),
@@ -2138,12 +2137,18 @@ object SearchBarDefaults {
                 modifier
                     .onPreviewKeyEvent {
                         val expandOnDownKey = !isInTouchMode && !searchBarState.isExpanded
-                        if (expandOnDownKey && it.key == Key.DirectionDown) {
+                        if (
+                            expandOnDownKey &&
+                                (it.key == Key.DirectionDown || it.key == Key.NumPadDirectionDown)
+                        ) {
                             coroutineScope.launch { searchBarState.animateToExpanded() }
                             return@onPreviewKeyEvent true
                         }
                         // Make sure arrow key down moves to list of suggestions.
-                        if (searchBarState.isExpanded && it.key == Key.DirectionDown) {
+                        if (
+                            searchBarState.isExpanded &&
+                                (it.key == Key.DirectionDown || it.key == Key.NumPadDirectionDown)
+                        ) {
                             focusManager.moveFocus(FocusDirection.Down)
                             return@onPreviewKeyEvent true
                         }
@@ -2207,7 +2212,29 @@ object SearchBarDefaults {
                                     ),
                                 animationSpec = MotionSchemeKeyTokens.FastEffects.value(),
                             )
-                        Box(Modifier.textFieldBackground(containerColor::value, shape))
+                        Box(
+                            Modifier.textFieldBackground(containerColor::value, shape)
+                                .then(
+                                    if (
+                                        !isInTouchMode &&
+                                            LocalRippleThemeConfiguration.current.focus is
+                                                RippleThemeConfiguration.Focus.InsetRing
+                                    ) {
+                                        Modifier.indication(
+                                            interactionSource,
+                                            ripple(
+                                                focusRingShape = shape,
+                                                enablePressIndication = false,
+                                                enableFocusIndication = true,
+                                                enableDragIndication = false,
+                                                enableHoverIndication = false,
+                                            ),
+                                        )
+                                    } else {
+                                        Modifier
+                                    }
+                                )
+                        )
                     },
                 ),
         )
@@ -2393,7 +2420,22 @@ object SearchBarDefaults {
                                     ),
                                 animationSpec = MotionSchemeKeyTokens.FastEffects.value(),
                             )
-                        Box(Modifier.textFieldBackground(containerColor::value, shape))
+                        Box(
+                            Modifier.textFieldBackground(containerColor::value, shape)
+                                .then(
+                                    if (
+                                        LocalRippleThemeConfiguration.current.focus
+                                            is RippleThemeConfiguration.Focus.InsetRing
+                                    ) {
+                                        Modifier.indication(
+                                            interactionSource,
+                                            ripple(focusRingShape = shape),
+                                        )
+                                    } else {
+                                        Modifier
+                                    }
+                                )
+                        )
                     },
                 ),
         )

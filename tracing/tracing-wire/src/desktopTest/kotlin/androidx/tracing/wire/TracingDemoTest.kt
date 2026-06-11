@@ -21,6 +21,7 @@ import java.io.File
 import kotlin.concurrent.thread
 import kotlin.random.Random
 import kotlin.test.Test
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -39,7 +40,11 @@ class TracingDemoTest {
     // Tracks the number of batches completed
     @Volatile internal var count = 0L
     internal val driver =
-        TraceDriver(sink = TraceSink(sequenceId = 1, directory = File("/tmp")), isEnabled = true)
+        TraceDriver(
+            sink = TraceSink(sequenceId = 1, directory = File("/tmp")),
+            isGloballyEnabled = true,
+            attributes = { addAttribute("java_version", "${Runtime.version()}") },
+        )
     internal val tracer = driver.tracer
     internal val counter = tracer.counter(category = "Counters", name = "Batches Completed")
 
@@ -62,7 +67,7 @@ class TracingDemoTest {
                     tracer.instant(category = "category", name = "Delaying") {
                         addMetadataEntry("key", "value")
                     }
-                    coroutineScope { delay(10L) }
+                    coroutineScope { delay(10L.milliseconds) }
                 }
             }
         }
@@ -78,14 +83,14 @@ class TracingDemoTest {
                     "section",
                     metadataBlock = { addCorrelationId(correlationId) },
                 ) {
-                    delay(100L)
+                    delay(100L.milliseconds)
                 }
                 tracer.traceCoroutine(
                     "category",
                     "section2",
                     metadataBlock = { addCorrelationId(correlationId) },
                 ) {
-                    delay(1000L)
+                    delay(1000L.milliseconds)
                 }
             }
         }
@@ -101,16 +106,32 @@ class TracingDemoTest {
                     metadataBlock = { addMetadataEntry("context", "end to end tracing test") },
                 ) {
                     coroutineScope {
-                        delay(20L)
+                        delay(20L.milliseconds)
                         tracer.traceCoroutine(
                             category = "category",
                             name = "histograms-end-to-end",
                         ) {
                             computeHistograms()
                         }
-                        tracer.traceCoroutine(category = "category", name = "end") { delay(20L) }
-                        delay(40L)
+                        tracer.traceCoroutine(category = "category", name = "end") {
+                            delay(20L.milliseconds)
+                        }
+                        delay(40L.milliseconds)
                     }
+                }
+            }
+        }
+    }
+
+    @Test
+    internal fun testContextSwitching(): Unit = runBlocking {
+        var index = 0
+        driver.use {
+            tracer.traceCoroutine(category = "category", name = "switch") {
+                repeat(100) {
+                    index += 1
+                    val dispatcher = if (index % 2 == 0) Dispatchers.Default else Dispatchers.IO
+                    withContext(dispatcher) { delay(100L.milliseconds) }
                 }
             }
         }
@@ -136,7 +157,7 @@ class TracingDemoTest {
                                 name = "third",
                                 token = token,
                             ) {
-                                delay(200L)
+                                delay(200L.milliseconds)
                             }
                         }
                     }
@@ -173,7 +194,7 @@ class TracingDemoTest {
             val count = frequency[element] ?: 0
             frequency[element] = count + 1
         }
-        delay(random.nextLong(10L, 20L)) // Waterfall
+        delay(random.nextLong(10L, 20L).milliseconds) // Waterfall
         count += 1
         counter.setValue(count)
         return frequency
@@ -191,7 +212,7 @@ class TracingDemoTest {
             }
             frequency[element] = count
         }
-        delay(random.nextLong(10L, 20L)) // Waterfall
+        delay(random.nextLong(10L, 20L).milliseconds) // Waterfall
         return frequency
     }
 }

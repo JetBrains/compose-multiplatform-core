@@ -17,7 +17,9 @@
 package androidx.xr.scenecore.spatial.core
 
 import android.content.Context
+import androidx.xr.runtime.math.Matrix4
 import androidx.xr.scenecore.runtime.Entity
+import androidx.xr.scenecore.runtime.MaterialResource
 import androidx.xr.scenecore.runtime.MeshEntity
 import androidx.xr.scenecore.runtime.MeshFeature
 import com.android.extensions.xr.XrExtensions
@@ -33,5 +35,24 @@ internal class MeshEntityImpl(
 ) : BaseRenderingEntity(context, meshFeature, extensions, sceneNodeRegistry, executor), MeshEntity {
     init {
         parent = parentEntity
+    }
+
+    override val meshBoundingBox: androidx.xr.runtime.math.BoundingBox
+        get() = meshFeature.meshBoundingBox
+
+    override fun setMaterial(material: MaterialResource, subsetIndex: Int) {
+        meshFeature.setMaterial(material, subsetIndex)
+    }
+
+    override fun setBoneTransforms(transforms: List<Matrix4>) {
+        meshFeature.setBoneTransforms(transforms)
+    }
+
+    override fun setReformAffordanceEnabled(enabled: Boolean, systemMovable: Boolean) {
+        meshFeature.setReformAffordanceEnabled(this, enabled, scheduledExecutor, systemMovable)
+    }
+
+    override fun setColliderEnabled(enabled: Boolean) {
+        meshFeature.setColliderEnabled(enabled)
     }
 }

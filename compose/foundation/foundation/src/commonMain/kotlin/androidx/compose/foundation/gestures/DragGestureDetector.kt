@@ -47,9 +47,7 @@ import androidx.compose.ui.util.fastAll
 import androidx.compose.ui.util.fastAny
 import androidx.compose.ui.util.fastFirstOrNull
 import androidx.compose.ui.util.fastForEach
-import kotlin.math.PI
 import kotlin.math.absoluteValue
-import kotlin.math.atan2
 import kotlin.math.sign
 import kotlinx.coroutines.CancellationException
 
@@ -957,11 +955,12 @@ internal class TouchSlopDetector(
     fun Offset.crossAxis() = if (orientation == Orientation.Horizontal) y else x
 
     /** The accumulation of drag deltas in this detector. */
-    private var totalPositionChange: Offset = initialPositionChange
+    var totalPositionChange: Offset = initialPositionChange
+        private set
 
     /**
-     * Adds [dragEvent] to this detector. If the accumulated position changes crosses the touch slop
-     * provided by [touchSlop], this method will return the post slop offset, that is the total
+     * Adds [positionChange] to this detector. If the accumulated position changes crosses the touch
+     * slop provided by [touchSlop], this method will return the post slop offset, that is the total
      * accumulated delta change minus the touch slop value, otherwise this should return null. If
      * [shouldCommit] is true, the delta will be added to the total position change.
      */
@@ -985,7 +984,7 @@ internal class TouchSlopDetector(
                 finalChange.mainAxis().absoluteValue
             }
 
-        val hasCrossedSlop = inDirection >= touchSlop
+        val hasCrossedSlop = inDirection > 0.0f && inDirection >= touchSlop
 
         return if (hasCrossedSlop) {
             calculatePostSlopOffset(touchSlop)
@@ -1003,26 +1002,6 @@ internal class TouchSlopDetector(
      */
     fun reset(initialPositionAccumulator: Offset = Offset.Zero) {
         totalPositionChange = initialPositionAccumulator
-    }
-
-    fun isDeltaAtAngleOfInterest(delta: Offset): Boolean {
-        val projectedPositionChange = totalPositionChange + delta
-        val angle =
-            atan2(
-                x = projectedPositionChange.x.absoluteValue,
-                y = projectedPositionChange.y.absoluteValue,
-            ) * 180 / PI
-        return when (orientation) {
-            Orientation.Horizontal -> {
-                angle < GestureAngleThreshold
-            }
-            Orientation.Vertical -> {
-                angle > GestureAngleThreshold
-            }
-            else -> {
-                false
-            }
-        }
     }
 
     private fun calculatePostSlopOffset(touchSlop: Float): Offset {
@@ -1150,6 +1129,3 @@ internal fun ViewConfiguration.pointerSlop(pointerType: PointerType): Float {
         else -> touchSlop
     }
 }
-
-// An angle in degrees where horizontal and vertical gestures are disambiguated.
-private const val GestureAngleThreshold = 30

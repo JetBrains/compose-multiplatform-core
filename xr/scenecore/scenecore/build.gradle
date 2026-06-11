@@ -35,7 +35,7 @@ dependencies {
     api(project(":xr:arcore:arcore"))
     api(project(":xr:runtime:runtime"))
     api(project(":xr:scenecore:scenecore-runtime"))
-    api("androidx.media3:media3-exoplayer:1.9.0-beta01")
+    api("androidx.media3:media3-exoplayer:1.10.0")
 
     implementation(project(":xr:scenecore:scenecore-spatial-core"))
     implementation(project(":xr:scenecore:scenecore-spatial-rendering"))
@@ -60,14 +60,12 @@ dependencies {
     testImplementation("androidx.appcompat:appcompat:1.2.0")
 
     // For com.android.extensions.xr
-    compileOnly(libs.androidExtensionsXr)
     testImplementation(files(new File(AndroidXConfig.getPrebuiltsRoot(project), "androidx/xr/extensions/com.android.extensions.xr.host.test.jar")))
     testImplementation(libs.androidExtensionsXr)
 }
 
 android {
     defaultConfig {
-        consumerProguardFiles("proguard-rules.pro")
         minSdk { version = release(24) }
         compileSdk { version = release(36) }
     }

@@ -1,6 +1,57 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <appfunctions>
     <appfunction>
+        <id>com.testdata.oneofserializable.OneOfFunctions#oneOfNonSealedOneOfSerializableParam</id>
+        <enabledByDefault>true</enabledByDefault>
+        <parameters>
+            <dataTypeMetadata>
+                <dataTypeReference>com.testdata.oneofserializable.NonSealedOneOfSerializable</dataTypeReference>
+                <id>unused</id>
+                <isNullable>false</isNullable>
+                <type>11</type>
+            </dataTypeMetadata>
+            <id>unused</id>
+            <isRequired>true</isRequired>
+            <name>nonSealedOneOfSerializable</name>
+        </parameters>
+        <parameters>
+            <dataTypeMetadata>
+                <dataTypeReference>com.testdata.oneofserializable.NonSealedOneOfSerializable</dataTypeReference>
+                <id>unused</id>
+                <isNullable>true</isNullable>
+                <type>11</type>
+            </dataTypeMetadata>
+            <id>unused</id>
+            <isRequired>true</isRequired>
+            <name>nonSealedOneOfSerializableNullable</name>
+        </parameters>
+        <parameters>
+            <dataTypeMetadata>
+                <id>unused</id>
+                <isNullable>false</isNullable>
+                <itemType>
+                    <dataTypeReference>com.testdata.oneofserializable.NonSealedOneOfSerializable</dataTypeReference>
+                    <id>unused</id>
+                    <isNullable>false</isNullable>
+                    <type>11</type>
+                </itemType>
+                <type>10</type>
+            </dataTypeMetadata>
+            <id>unused</id>
+            <isRequired>true</isRequired>
+            <name>nonSealedOneOfSerializableList</name>
+        </parameters>
+        <response>
+            <id>unused</id>
+            <valueType>
+                <id>unused</id>
+                <isNullable>false</isNullable>
+                <type>0</type>
+            </valueType>
+        </response>
+        <functionId>com.testdata.oneofserializable.OneOfFunctions#oneOfNonSealedOneOfSerializableParam</functionId>
+    </appfunction>
+    <appfunction>
         <id>com.testdata.oneofserializable.OneOfFunctions#oneOfSealedListReturn</id>
         <enabledByDefault>true</enabledByDefault>
         <response>
@@ -57,6 +108,17 @@
             <id>unused</id>
             <isRequired>true</isRequired>
             <name>oneOfSealedInterface</name>
+        </parameters>
+        <parameters>
+            <dataTypeMetadata>
+                <dataTypeReference>com.testdata.oneofserializable.OneOfSealedInterface</dataTypeReference>
+                <id>unused</id>
+                <isNullable>true</isNullable>
+                <type>11</type>
+            </dataTypeMetadata>
+            <id>unused</id>
+            <isRequired>true</isRequired>
+            <name>oneOfSealedInterfaceNullable</name>
         </parameters>
         <parameters>
             <dataTypeMetadata>
@@ -188,6 +250,91 @@
             </dataTypeMetadata>
             <id>unused</id>
             <name>com.testdata.oneofserializable.BSubclass</name>
+        </dataTypes>
+        <dataTypes>
+            <dataTypeMetadata>
+                <oneOf>
+                    <dataTypeReference>com.testdata.oneofserializable.NonSealedOneOfSerializable$ASubclass</dataTypeReference>
+                    <id>unused</id>
+                    <isNullable>true</isNullable>
+                    <type>11</type>
+                </oneOf>
+                <oneOf>
+                    <dataTypeReference>com.testdata.oneofserializable.NonSealedOneOfSerializable$BSubclass</dataTypeReference>
+                    <id>unused</id>
+                    <isNullable>true</isNullable>
+                    <type>11</type>
+                </oneOf>
+                <id>unused</id>
+                <isNullable>true</isNullable>
+                <objectQualifiedName>com.testdata.oneofserializable.NonSealedOneOfSerializable</objectQualifiedName>
+                <description>I am a KDoc for OneOfSealedClass </description>
+                <type>14</type>
+            </dataTypeMetadata>
+            <id>unused</id>
+            <name>com.testdata.oneofserializable.NonSealedOneOfSerializable</name>
+        </dataTypes>
+        <dataTypes>
+            <dataTypeMetadata>
+                <id>unused</id>
+                <isNullable>true</isNullable>
+                <objectQualifiedName>com.testdata.oneofserializable.NonSealedOneOfSerializable$ASubclass</objectQualifiedName>
+                <description>I am a KDoc for OneOfSealedClass.ASubclass </description>
+                <properties>
+                    <dataTypeMetadata>
+                        <id>unused</id>
+                        <isNullable>false</isNullable>
+                        <type>8</type>
+                    </dataTypeMetadata>
+                    <id>unused</id>
+                    <name>interfaceProperty</name>
+                </properties>
+                <properties>
+                    <dataTypeMetadata>
+                        <id>unused</id>
+                        <isNullable>false</isNullable>
+                        <type>8</type>
+                    </dataTypeMetadata>
+                    <id>unused</id>
+                    <name>str</name>
+                </properties>
+                <required>interfaceProperty</required>
+                <required>str</required>
+                <type>3</type>
+            </dataTypeMetadata>
+            <id>unused</id>
+            <name>com.testdata.oneofserializable.NonSealedOneOfSerializable$ASubclass</name>
+        </dataTypes>
+        <dataTypes>
+            <dataTypeMetadata>
+                <id>unused</id>
+                <isNullable>true</isNullable>
+                <objectQualifiedName>com.testdata.oneofserializable.NonSealedOneOfSerializable$BSubclass</objectQualifiedName>
+                <description>I am a KDoc for OneOfSealedClass.BSubclass </description>
+                <properties>
+                    <dataTypeMetadata>
+                        <id>unused</id>
+                        <isNullable>false</isNullable>
+                        <type>8</type>
+                    </dataTypeMetadata>
+                    <id>unused</id>
+                    <name>interfaceProperty</name>
+                </properties>
+                <properties>
+                    <dataTypeMetadata>
+                        <id>unused</id>
+                        <isNullable>false</isNullable>
+                        <type>7</type>
+                    </dataTypeMetadata>
+                    <id>unused</id>
+                    <name>integer</name>
+                </properties>
+                <required>interfaceProperty</required>
+                <required>integer</required>
+                <type>3</type>
+            </dataTypeMetadata>
+            <id>unused</id>
+            <name>com.testdata.oneofserializable.NonSealedOneOfSerializable$BSubclass</name>
         </dataTypes>
         <dataTypes>
             <dataTypeMetadata>

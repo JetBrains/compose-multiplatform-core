@@ -16,6 +16,7 @@
 
 package androidx.room3.paging
 
+import android.content.Context
 import androidx.arch.core.executor.ArchTaskExecutor
 import androidx.arch.core.executor.testing.CountingTaskExecutorRule
 import androidx.kruth.assertThat
@@ -71,7 +72,7 @@ class LimitOffsetPagingSourceTest {
     fun init() {
         database =
             Room.inMemoryDatabaseBuilder<LimitOffsetTestDb>(
-                    ApplicationProvider.getApplicationContext()
+                    ApplicationProvider.getApplicationContext<Context>()
                 )
                 .setDriver(AndroidSQLiteDriver())
                 .setQueryCoroutineContext(
@@ -107,7 +108,7 @@ class LimitOffsetPagingSourceTest {
         val testExecutor = TestExecutor()
         database =
             Room.inMemoryDatabaseBuilder<LimitOffsetTestDb>(
-                    ApplicationProvider.getApplicationContext()
+                    ApplicationProvider.getApplicationContext<Context>()
                 )
                 .setDriver(AndroidSQLiteDriver())
                 .setQueryCoroutineContext(testExecutor.asCoroutineDispatcher())
@@ -734,7 +735,7 @@ class LimitOffsetPagingSourceTestWithFilteringCoroutineDispatcher {
     fun init() {
         db =
             Room.inMemoryDatabaseBuilder<LimitOffsetTestDb>(
-                    ApplicationProvider.getApplicationContext()
+                    ApplicationProvider.getApplicationContext<Context>()
                 )
                 .setDriver(AndroidSQLiteDriver())
                 .setQueryCoroutineContext(queryContext)

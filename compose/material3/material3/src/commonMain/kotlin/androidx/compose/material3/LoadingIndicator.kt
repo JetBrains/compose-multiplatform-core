@@ -355,7 +355,7 @@ private fun LoadingIndicatorImpl(
  *   indicator will morph between. The loading indicator expects at least two items in that list.
  * @throws IllegalArgumentException if the [indicatorPolygons] list holds less than two items
  */
-@ExperimentalMaterial3ExpressiveApi
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun LoadingIndicatorImpl(
     modifier: Modifier,

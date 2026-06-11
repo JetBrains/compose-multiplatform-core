@@ -43,6 +43,7 @@ import androidx.room3.processor.ProcessorErrors.cannotFindQueryResultAdapter
 import androidx.room3.processor.ProcessorErrors.mayNeedMapColumn
 import androidx.room3.solver.query.result.DataClassRowAdapter
 import androidx.room3.solver.query.result.ListQueryResultAdapter
+import androidx.room3.solver.query.result.PairTripleRowAdapter
 import androidx.room3.solver.query.result.SingleColumnRowAdapter
 import androidx.room3.solver.query.result.SingleItemQueryResultAdapter
 import androidx.room3.testing.context
@@ -704,7 +705,7 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
         singleQueryMethod<ReadQueryFunction>(
             """
                 static class Merged extends User {
-                   @Relation(parentColumn = "name", entityColumn = "lastName",
+                   @Relation(parentColumns = {"name"}, entityColumns = {"lastName"},
                              entity = User.class)
                    java.util.List<? extends User> users;
                 }
@@ -1038,7 +1039,7 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
                     )
                 )
                 hasErrorContaining(
-                    ProcessorErrors.dataClassMissingNonNull(
+                    ProcessorErrors.dataClassMissingRequiredColumns(
                         dataClassTypeName = "foo.bar.MyClass.DataClass",
                         missingDataClassProperties = listOf("name"),
                         allQueryColumns = listOf("lastName"),
@@ -1175,6 +1176,36 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
                 )
             val parsedQuery = parser.process()
             @Suppress("UNCHECKED_CAST") handler(parsedQuery as T, invocation)
+        }
+    }
+
+    @Test
+    fun testPairRowAdapter() {
+        singleQueryFunction<ReadQueryFunction>(
+            """
+                @Query("SELECT name, uid from User LIMIT 1")
+                abstract fun getNameAndUid(): Pair<String, Int>
+            """
+        ) { parsedQuery, _ ->
+            val adapter = parsedQuery.queryResultBinder.adapter
+            assertThat(adapter).isInstanceOf<SingleItemQueryResultAdapter>()
+            val rowAdapter = adapter!!.rowAdapters.single()
+            assertThat(rowAdapter).isInstanceOf<PairTripleRowAdapter>()
+        }
+    }
+
+    @Test
+    fun testTripleRowAdapter() {
+        singleQueryFunction<ReadQueryFunction>(
+            """
+                @Query("SELECT name, uid, ageColumn from User LIMIT 1")
+                abstract fun getNameUidAge(): Triple<String, Int, Int>
+            """
+        ) { parsedQuery, _ ->
+            val adapter = parsedQuery.queryResultBinder.adapter
+            assertThat(adapter).isInstanceOf<SingleItemQueryResultAdapter>()
+            val rowAdapter = adapter!!.rowAdapters.single()
+            assertThat(rowAdapter).isInstanceOf<PairTripleRowAdapter>()
         }
     }
 
@@ -1535,7 +1566,7 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
     fun testMissingMapColumnImmutableListMultimapOneToOneTypeConverterKey() {
         singleQueryMethod<ReadQueryFunction>(
             """
-                @TypeConverters(DateConverter.class)
+                @ColumnTypeConverters(DateConverter.class)
                 @Query("SELECT * FROM Image JOIN Artist ON Artist.mArtistName = Image.mArtistInImage")
                 ImmutableMap<java.util.Date, Artist> getAlbumDateWithBandActivity();
             """
@@ -1550,7 +1581,7 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
     fun testMissingMapColumnImmutableListMultimapOneToOneTypeConverterValue() {
         singleQueryMethod<ReadQueryFunction>(
             """
-                @TypeConverters(DateConverter.class)
+                @ColumnTypeConverters(DateConverter.class)
                 @Query("SELECT * FROM Artist JOIN Image ON Artist.mArtistName = Image.mArtistInImage")
                 ImmutableMap<Artist, java.util.Date> getAlbumDateWithBandActivity();
             """

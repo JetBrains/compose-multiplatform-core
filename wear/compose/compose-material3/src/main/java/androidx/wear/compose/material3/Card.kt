@@ -73,6 +73,9 @@ import androidx.wear.compose.materialcore.Text
  *
  * @sample androidx.wear.compose.material3.samples.CardSample
  *
+ * ![CardSample Composite
+ * Image](https://developer.android.com/wear/images/design/WearComposeM3_CardSample_CompositeImage.png)
+ *
  * Example of [Card] with onLongClick:
  *
  * @sample androidx.wear.compose.material3.samples.CardWithOnLongClickSample
@@ -165,6 +168,10 @@ public fun Card(
  * Example of a [Card] with an image background:
  *
  * @sample androidx.wear.compose.material3.samples.ImageCardSample
+ *
+ * ![ImageCardSample Composite
+ * Image](https://developer.android.com/wear/images/design/WearComposeM3_ImageCardSample_CompositeImage.png)
+ *
  * @param onClick Will be called when the user clicks the card
  * @param containerPainter The [Painter] to use to draw the container image of the [Card], such as
  *   returned by [CardDefaults.containerPainter].
@@ -255,26 +262,38 @@ public fun Card(
  *
  * @sample androidx.wear.compose.material3.samples.AppCardSample
  *
+ * ![AppCardSample Composite
+ * Image](https://developer.android.com/wear/images/design/WearComposeM3_AppCardSample_CompositeImage.png)
+ *
  * Example of an [AppCard] with icon:
  *
  * @sample androidx.wear.compose.material3.samples.AppCardWithIconSample
+ *
+ * ![AppCardWithIconSample Composite
+ * Image](https://developer.android.com/wear/images/design/WearComposeM3_AppCardWithIconSample_CompositeImage.png)
  *
  * Example of an [AppCard] with image [content]:
  *
  * @sample androidx.wear.compose.material3.samples.AppCardWithImageSample
  *
+ * ![AppCardWithImageSample Composite
+ * Image](https://developer.android.com/wear/images/design/WearComposeM3_AppCardWithImageSample_CompositeImage.png)
+ *
  * Example of an outlined [AppCard]:
  *
  * @sample androidx.wear.compose.material3.samples.OutlinedAppCardSample
+ *
+ * ![OutlinedAppCardSample Composite
+ * Image](https://developer.android.com/wear/images/design/WearComposeM3_OutlinedAppCardSample_CompositeImage.png)
  *
  * For more information, see the
  * [Cards](https://developer.android.com/training/wearables/components/cards) guide.
  *
  * @param onClick Will be called when the user clicks the card
  * @param appName A slot for displaying the application name, expected to be a single line of start
- *   aligned text of [Typography.labelSmall]
+ *   aligned text
  * @param title A slot for displaying the title of the card, expected to be one or two lines of
- *   start aligned text of [Typography.titleMedium]
+ *   start aligned text
  * @param modifier Modifier to be applied to the card
  * @param onLongClick Called when this card is long clicked (long-pressed). When this callback is
  *   set, [onLongClickLabel] should be set as well.
@@ -298,7 +317,7 @@ public fun Card(
  * @param appImage A slot for a small ([CardDefaults.AppImageSize]x[CardDefaults.AppImageSize] )
  *   [Image] associated with the application.
  * @param time A slot for displaying the time relevant to the contents of the card, expected to be a
- *   short piece of end aligned text of [Typography.labelSmall].
+ *   short piece of end aligned text
  * @param content The main slot for a content of this card
  */
 @Composable
@@ -357,17 +376,29 @@ public fun AppCard(
  *
  * @sample androidx.wear.compose.material3.samples.TitleCardSample
  *
+ * ![TitleCardSample Composite
+ * Image](https://developer.android.com/wear/images/design/WearComposeM3_TitleCardSample_CompositeImage.png)
+ *
  * Example of a [TitleCard] with [time], [title] and [subtitle]:
  *
  * @sample androidx.wear.compose.material3.samples.TitleCardWithSubtitleAndTimeSample
+ *
+ * ![TitleCardWithSubtitleAndTimeSample Composite
+ * Image](https://developer.android.com/wear/images/design/WearComposeM3_TitleCardWithSubtitleAndTimeSample_CompositeImage.png)
  *
  * Example of a [TitleCard] with images [content]:
  *
  * @sample androidx.wear.compose.material3.samples.TitleCardWithMultipleImagesSample
  *
+ * ![TitleCardWithMultipleImagesSample Composite
+ * Image](https://developer.android.com/wear/images/design/WearComposeM3_TitleCardWithMultipleImagesSample_CompositeImage.png)
+ *
  * Example of an outlined [TitleCard]:
  *
  * @sample androidx.wear.compose.material3.samples.OutlinedTitleCardSample
+ *
+ * ![OutlinedTitleCardSample Composite
+ * Image](https://developer.android.com/wear/images/design/WearComposeM3_OutlinedTitleCardSample_CompositeImage.png)
  *
  * For more information, see the
  * [Cards](https://developer.android.com/training/wearables/components/cards) guide.
@@ -466,6 +497,9 @@ public fun TitleCard(
  *
  * @sample androidx.wear.compose.material3.samples.TitleCardWithImageWithTimeAndTitleSample
  *
+ * ![TitleCardWithImageWithTimeAndTitleSample Composite
+ * Image](https://developer.android.com/wear/images/design/WearComposeM3_TitleCardWithImageWithTimeAndTitleSample_CompositeImage.png)
+ *
  * For more information, see the
  * [Cards](https://developer.android.com/training/wearables/components/cards) guide.
  *
@@ -555,6 +589,9 @@ public fun TitleCard(
  * Example of an [OutlinedCard]:
  *
  * @sample androidx.wear.compose.material3.samples.OutlinedCardSample
+ *
+ * ![OutlinedCardSample Composite
+ * Image](https://developer.android.com/wear/images/design/WearComposeM3_OutlinedCardSample_CompositeImage.png)
  *
  * For more information, see the
  * [Cards](https://developer.android.com/training/wearables/components/cards) Wear OS Material
@@ -987,35 +1024,40 @@ internal fun CardImpl(
     transformation: SurfaceTransformation?,
     content: @Composable ColumnScope.() -> Unit,
 ) =
-    Column(
-        modifier =
-            modifier
-                .fillMaxWidth()
-                .surface(
-                    transformation = transformation,
-                    painter = containerPainter ?: ColorPainter(colors.containerColor),
-                    shape = shape,
-                    border = border,
-                )
-                .then(
-                    if (onClick != null)
-                        Modifier.combinedClickable(
-                            enabled = enabled,
-                            onClick = onClick,
-                            onLongClick =
-                                onLongClick, // NB combinedClickable calls LongPress haptic
-                            onLongClickLabel = onLongClickLabel,
-                            role = null,
-                            indication = ripple(),
-                            interactionSource = interactionSource,
-                        )
-                    else
-                        Modifier.focusable(enabled = true, interactionSource = interactionSource)
-                            .semantics(mergeDescendants = true) {}
-                )
-                .padding(contentPadding),
-        content = content,
-    )
+    CompositionLocalProvider(LocalContentColor provides colors.contentColor) {
+        Column(
+            modifier =
+                modifier
+                    .fillMaxWidth()
+                    .surface(
+                        transformation = transformation,
+                        painter = containerPainter ?: ColorPainter(colors.containerColor),
+                        shape = shape,
+                        border = border,
+                    )
+                    .then(
+                        if (onClick != null)
+                            Modifier.combinedClickable(
+                                enabled = enabled,
+                                onClick = onClick,
+                                onLongClick =
+                                    onLongClick, // NB combinedClickable calls LongPress haptic
+                                onLongClickLabel = onLongClickLabel,
+                                role = null,
+                                indication = ripple(),
+                                interactionSource = interactionSource,
+                            )
+                        else
+                            Modifier.focusable(
+                                    enabled = true,
+                                    interactionSource = interactionSource,
+                                )
+                                .semantics(mergeDescendants = true) {}
+                    )
+                    .padding(contentPadding),
+            content = content,
+        )
+    }
 
 @Composable
 internal fun CardImpl(

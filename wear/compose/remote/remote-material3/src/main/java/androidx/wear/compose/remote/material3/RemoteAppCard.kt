@@ -16,12 +16,12 @@
 
 package androidx.wear.compose.remote.material3
 
-import androidx.annotation.RestrictTo
 import androidx.compose.remote.creation.compose.action.Action
 import androidx.compose.remote.creation.compose.layout.RemoteAlignment
 import androidx.compose.remote.creation.compose.layout.RemoteArrangement
 import androidx.compose.remote.creation.compose.layout.RemoteBox
 import androidx.compose.remote.creation.compose.layout.RemoteComposable
+import androidx.compose.remote.creation.compose.layout.RemotePaddingValues
 import androidx.compose.remote.creation.compose.layout.RemoteRow
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
 import androidx.compose.remote.creation.compose.modifier.fillMaxWidth
@@ -29,7 +29,6 @@ import androidx.compose.remote.creation.compose.modifier.height
 import androidx.compose.remote.creation.compose.modifier.width
 import androidx.compose.remote.creation.compose.shapes.RemoteShape
 import androidx.compose.remote.creation.compose.state.RemoteBoolean
-import androidx.compose.remote.creation.compose.state.RemoteDp
 import androidx.compose.remote.creation.compose.state.rb
 import androidx.compose.remote.creation.compose.state.rdp
 import androidx.compose.remote.creation.compose.state.rf
@@ -41,9 +40,12 @@ import androidx.compose.runtime.CompositionLocalProvider
  * about an application, e.g. a notification.
  *
  * @sample androidx.wear.compose.remote.material3.samples.RemoteAppCardSample
+ * @param onClick Will be called when the user clicks the card.
  * @param appName A slot for displaying the application name.
  * @param title A slot for displaying the title of the card.
  * @param modifier Modifier to be applied to the card
+ * @param enabled Controls the enabled state of the card. When false, this component will not
+ *   respond to user input.
  * @param shape Defines the card's shape.
  * @param colors [RemoteCardColors] that will be used to resolve the colors used for this card.
  * @param contentPadding The spacing values to apply internally between the container and the
@@ -53,7 +55,6 @@ import androidx.compose.runtime.CompositionLocalProvider
  * @param time A slot for displaying the time relevant to the contents of the card.
  * @param content The main slot for a content of this card
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @RemoteComposable
 @Composable
 public fun RemoteAppCard(
@@ -64,7 +65,7 @@ public fun RemoteAppCard(
     enabled: RemoteBoolean = true.rb,
     shape: RemoteShape = RemoteCardDefaults.shape,
     colors: RemoteCardColors = RemoteCardDefaults.cardColors(),
-    contentPadding: RemoteDp = RemoteCardDefaults.ContentPadding,
+    contentPadding: RemotePaddingValues = RemoteCardDefaults.ContentPadding,
     appImage: (@Composable @RemoteComposable () -> Unit)? = null,
     time: (@Composable @RemoteComposable () -> Unit)? = null,
     content: @Composable @RemoteComposable () -> Unit,

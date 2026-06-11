@@ -20,14 +20,28 @@ import androidx.annotation.RestrictTo
 import androidx.xr.arcore.runtime.Anchor
 import androidx.xr.arcore.runtime.Geospatial as RuntimeGeospatial
 import androidx.xr.arcore.runtime.Geospatial.GeospatialPoseResult
-import androidx.xr.runtime.VpsAvailabilityAvailable
-import androidx.xr.runtime.VpsAvailabilityResult
+import androidx.xr.arcore.runtime.VpsAvailabilityAvailable
+import androidx.xr.arcore.runtime.VpsAvailabilityResult
 import androidx.xr.runtime.math.GeospatialPose
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 
+// TODO b/500091606 Remove when no longer used in G3
 /**
- * Fake implementation of [Geospatial][RuntimeGeospatial] for testing purposes.
+ * Fake implementation of [Geospatial][RuntimeGeospatial] for testing purposes. This should not be
+ * used to unit test `Geospatial` APIs. Instead, use an [ArCoreTestRule]. Example:
+ * ```
+ * @Rule @JvmField val arCoreTestRule = ArCoreTestRule()
+ *
+ * @Test
+ * fun update_stateMatchesDeviceState_whenNotAuthorized() = runTest(testDispatcher) {
+ *     val underTest = Geospatial.getInstance(session)
+ *     arCoreTestRule.geospatial.state = Geospatial.State.ERROR_NOT_AUTHORIZED
+ *     advanceUntilIdle()
+ *
+ *     assertThat(underTest.state.value).isEqualTo(Geospatial.State.ERROR_NOT_AUTHORIZED)
+ * }
+ * ```
  *
  * @property nextGeospatialPoseResult the next [GeospatialPoseResult] that will be returned by
  *   [createGeospatialPoseFromPose]
@@ -36,11 +50,24 @@ import androidx.xr.runtime.math.Quaternion
  * @property nextAnchor the next [Anchor] that will be returned by [createAnchor]
  * @property nextVpsAvailabilityResult the [VpsAvailabilityResult] to be returned by
  *   [checkVpsAvailability]
+ * @deprecated This will be removed in a future release. In order to test androidx.xr.arcore APIs,
+ *   use an [ArCoreTestRule] in your tests.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+@RestrictTo(RestrictTo.Scope.LIBRARY)
+@Deprecated(
+    "arcore-testing fakes have been moved internal and should no longer be used by unit tests."
+)
 public class FakeRuntimeGeospatial(
     override var state: RuntimeGeospatial.State = RuntimeGeospatial.State.NOT_RUNNING
 ) : RuntimeGeospatial {
+
+    override var geospatialPose: GeospatialPose = GeospatialPose()
+
+    override var horizontalAccuracy: Double = 0.0
+
+    override var verticalAccuracy: Double = 0.0
+
+    override var orientationYawAccuracy: Double = 0.0
 
     public var nextGeospatialPoseResult: GeospatialPoseResult? = null
 

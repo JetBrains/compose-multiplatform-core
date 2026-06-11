@@ -18,22 +18,20 @@ package androidx.compose.remote.creation.compose.modifier
 
 import androidx.annotation.RestrictTo
 import androidx.compose.remote.creation.compose.action.Action
+import androidx.compose.remote.creation.compose.action.RemoteAction
 import androidx.compose.remote.creation.compose.state.RemoteStateScope
 import androidx.compose.remote.creation.modifiers.RecordingModifier
 import androidx.compose.remote.creation.modifiers.TouchActionModifier
 
-internal class TouchUpActionModifier(public val actions: List<Action>) : RemoteModifier.Element {
+internal class TouchUpActionModifier(public val action: Action) : RemoteModifier.Element {
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     override fun RemoteStateScope.toRecordingModifierElement(): RecordingModifier.Element {
-        return androidx.compose.remote.creation.modifiers.TouchActionModifier(
+        return TouchActionModifier(
             TouchActionModifier.UP,
-            @Suppress("ListIterator") actions.map { action -> with(action) { toRemoteAction() } },
+            if (action is RemoteAction) with(action) { listOf(toRemoteAction()) } else emptyList(),
         )
     }
 }
 
-public fun RemoteModifier.onTouchUp(vararg actions: Action): RemoteModifier =
-    then(TouchUpActionModifier(actions.toList()))
-
-public fun RemoteModifier.onTouchUp(actions: List<Action>): RemoteModifier =
-    then(TouchUpActionModifier(actions))
+public fun RemoteModifier.onTouchUp(action: Action): RemoteModifier =
+    then(TouchUpActionModifier(action))

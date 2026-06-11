@@ -149,8 +149,8 @@ class ProcessCameraProviderTest {
         val appConfigBuilder =
             CameraXConfig.Builder()
                 .setCameraFactoryProvider(cameraFactoryProvider)
-                .setDeviceSurfaceManagerProvider { _, _, _ -> FakeCameraDeviceSurfaceManager() }
-                .setUseCaseConfigFactoryProvider { FakeUseCaseConfigFactory() }
+                .setDeviceSurfaceManagerProvider { _, _, _, _ -> FakeCameraDeviceSurfaceManager() }
+                .setUseCaseConfigFactoryProvider { _, _ -> FakeUseCaseConfigFactory() }
 
         ProcessCameraProvider.configureInstance(appConfigBuilder.build())
 
@@ -273,9 +273,17 @@ class ProcessCameraProviderTest {
             .setCameraFactoryProvider(cameraFactoryProvider)
             .apply {
                 surfaceManager?.let {
-                    setDeviceSurfaceManagerProvider { _: Context?, _: Any?, _: Set<String?>? -> it }
+                    setDeviceSurfaceManagerProvider {
+                        _: Context?,
+                        _: Any?,
+                        _: Set<String?>?,
+                        _: String? ->
+                        it
+                    }
                 }
-                useCaseConfigFactory?.let { setUseCaseConfigFactoryProvider { _: Context? -> it } }
+                useCaseConfigFactory?.let {
+                    setUseCaseConfigFactoryProvider { _: Context?, _: Boolean -> it }
+                }
             }
             .build()
     }
@@ -331,10 +339,15 @@ class ProcessCameraProviderTest {
     }
 
     private class CustomSessionConfig(
-        override val cameraFilter: CameraFilter,
-        override val requireNonEmptyUseCases: Boolean = false,
+        cameraFilter: CameraFilter,
+        requireNonEmptyUseCases: Boolean = false,
         useCases: List<UseCase> = emptyList(),
-    ) : SessionConfig(useCases) {}
+    ) :
+        SessionConfig(
+            useCases,
+            cameraFilter = cameraFilter,
+            requireNonEmptyUseCases = requireNonEmptyUseCases,
+        ) {}
 
     companion object {
         private const val CAMERA_ID_0 = "0"

@@ -22,6 +22,7 @@ import android.os.Binder
 import android.os.IBinder
 import android.os.Process.myUid
 import androidx.security.state.IUpdateInfoService
+import androidx.security.state.SecurityPatchState
 import androidx.security.state.UpdateInfo
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -170,12 +171,68 @@ class UpdateInfoServiceTest {
     }
 
     @Test
+    fun fetchUpdates_callsFetchUpdatesAsync_whenOverridden() = runBlocking {
+        // Create a service that ONLY overrides fetchUpdatesAsync
+        val asyncService =
+            object : ListenableFutureUpdateInfoService() {
+                    // Guarantee the network fetch is attempted
+                    override fun shouldFetchUpdates(): Boolean = true
+
+                    // Guarantee the request is never throttled by the rate limiter
+                    override fun shouldThrottle(): Boolean = false
+
+                    override fun fetchUpdatesAsync():
+                        com.google.common.util.concurrent.ListenableFuture<
+                            @JvmSuppressWildcards
+                            List<UpdateInfo>
+                        > {
+                        return androidx.concurrent.futures.SuspendToFutureAdapter.launchFuture(
+                            kotlinx.coroutines.Dispatchers.IO
+                        ) {
+                            listOf(
+                                UpdateInfo.Builder()
+                                    .setComponent("SYSTEM")
+                                    .setSecurityPatchLevel(
+                                        SecurityPatchState.DateBasedSecurityPatchLevel.fromString(
+                                            "2025-01-01"
+                                        )
+                                    )
+                                    .build()
+                            )
+                        }
+                    }
+
+                    fun attach(c: Context) {
+                        super.attachBaseContext(c)
+                    }
+                }
+                .apply { attach(context) }
+
+        // We can't call fetchUpdates directly because it's protected,
+        // so we'll test it via the same path as callListAvailableUpdates
+        val intent = Intent("androidx.security.state.provider.UPDATE_INFO_SERVICE")
+        val factory = asyncService.onBind(intent) as IUpdateInfoService
+        val session = factory.openSession(context.packageName, Binder())
+
+        // Use reflection or just test via the public API that it successfully fetches
+        // For simplicity, we just trigger listAvailableUpdates and see if it succeeds.
+        val result = session.listAvailableUpdates()
+        session.close()
+
+        assertEquals(1, result.updates.size)
+        assertEquals("SYSTEM", result.updates[0].component)
+        assertEquals("2025-01-01", result.updates[0].securityPatchLevel.toString())
+    }
+
+    @Test
     fun listAvailableUpdates_returnsCachedDataFromManager() {
         // 1. Setup: Seed the SharedPreferences with data
         val updateInfo =
             UpdateInfo.Builder()
                 .setComponent("SYSTEM")
-                .setSecurityPatchLevel("2025-01-01")
+                .setSecurityPatchLevel(
+                    SecurityPatchState.DateBasedSecurityPatchLevel.fromString("2025-01-01")
+                )
                 .setPublishedDateMillis(1L)
                 .setLastCheckTimeMillis(1000L)
                 .build()
@@ -198,7 +255,7 @@ class UpdateInfoServiceTest {
         // 3. Verify
         assertEquals("Should return 1 update", 1, result.updates.size)
         assertEquals("SYSTEM", result.updates[0].component)
-        assertEquals("2025-01-01", result.updates[0].securityPatchLevel)
+        assertEquals("2025-01-01", result.updates[0].securityPatchLevel.toString())
         assertEquals(1L, result.updates[0].publishedDateMillis)
         assertEquals(1000L, result.updates[0].lastCheckTimeMillis)
 
@@ -320,14 +377,18 @@ class UpdateInfoServiceTest {
         val u1 =
             UpdateInfo.Builder()
                 .setComponent("SYSTEM")
-                .setSecurityPatchLevel(futureDate)
+                .setSecurityPatchLevel(
+                    SecurityPatchState.DateBasedSecurityPatchLevel.fromString(futureDate)
+                )
                 .setPublishedDateMillis(1L)
                 .build()
 
         val u2 =
             UpdateInfo.Builder()
                 .setComponent("SYSTEM_MODULES")
-                .setSecurityPatchLevel(futureDate)
+                .setSecurityPatchLevel(
+                    SecurityPatchState.DateBasedSecurityPatchLevel.fromString(futureDate)
+                )
                 .setPublishedDateMillis(1L)
                 .build()
 
