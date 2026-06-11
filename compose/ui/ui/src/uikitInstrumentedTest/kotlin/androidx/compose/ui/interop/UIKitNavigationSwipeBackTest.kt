@@ -31,30 +31,28 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.background
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.test.AccessibilityTestNode
 import androidx.compose.ui.test.UIKitInstrumentedTest
-import androidx.compose.ui.test.UIKitInstrumentedTestBlock
 import androidx.compose.ui.test.findNodeWithTag
 import androidx.compose.ui.test.findNodeWithTagOrNull
-import androidx.compose.ui.test.runUIKitInstrumentedTestInHostingView
-import androidx.compose.ui.test.runUIKitInstrumentedTestInHostingViewController
-import androidx.compose.ui.test.utils.up
+import androidx.compose.ui.test.runUIKitInstrumentedTest
+import androidx.compose.ui.test.utils.center
+import androidx.compose.ui.test.utils.rightCenter
 import androidx.compose.ui.unit.dp
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
-import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.cinterop.ExperimentalForeignApi
+import org.jetbrains.skiko.OS
+import org.jetbrains.skiko.OSVersion
+import org.jetbrains.skiko.available
 import platform.UIKit.UINavigationController
 import platform.UIKit.UIViewController
 
 @OptIn(ExperimentalForeignApi::class)
-internal abstract class UIKitNavigationContentSwipeTest(
-    private val runUIKitInstrumentedTest: (UIKitInstrumentedTestBlock) -> Unit
+internal abstract class UIKitNavigationSwipeBackTest(
+    private val runUIKitInstrumentedTest: (UIKitInstrumentedTest.() -> Unit) -> Unit
 ) {
-    private val SwipeDuration = 100.milliseconds
-
     @Test
     fun testSwipeRightOnPagerDoesNotPopController() = runUIKitInstrumentedTest {
         val currentPage = mutableIntStateOf(0)
@@ -65,7 +63,7 @@ internal abstract class UIKitNavigationContentSwipeTest(
 
         delay(10)
 
-        swipeRight(fromNode = findNodeWithTag("pager"))
+        findNodeWithTag("pager").swipeRight()
 
         delay(500)
 
@@ -84,7 +82,9 @@ internal abstract class UIKitNavigationContentSwipeTest(
 
         delay(10)
 
-        swipeLeft(fromNode = findNodeWithTag("pager"))
+        findNodeWithTag("pager").swipeLeft()
+
+        waitForIdle()
 
         assertEquals(1, currentPage.value)
         assertEquals(2, navigationController.viewControllers.size)
@@ -101,24 +101,21 @@ internal abstract class UIKitNavigationContentSwipeTest(
 
         delay(10)
 
-        swipeLeft(fromNode = findNodeWithTag("outsideBox"))
+        findNodeWithTag("outsideBox").swipeLeft()
 
         assertEquals(initialPage, currentPage.value)
         assertEquals(2, navigationController.viewControllers.size)
     }
 
     @Test
-    fun testSwipeRightOutsidePagerPopsController() = runUIKitInstrumentedTest {
-        val initialPage = 1
-        val currentPage = mutableIntStateOf(initialPage)
-
+    fun testSwipeRightFromEdgePopsController() = runUIKitInstrumentedTest {
         setNavigationControllerContent {
-            TestContent(currentPage = currentPage)
+            TestContent(currentPage = mutableIntStateOf(1))
         }
 
         delay(10)
 
-        swipeRight(fromNode = findNodeWithTag("outsideBox"))
+        swipeRightFromEdge()
 
         // wait for pop animation to finish
         delay(500)
@@ -128,20 +125,106 @@ internal abstract class UIKitNavigationContentSwipeTest(
         assertEquals(1, navigationController.viewControllers.size)
     }
 
-    private fun UIKitInstrumentedTest.swipeRight(fromNode: AccessibilityTestNode) {
-        fromNode.touchDown()
-            .dragTo(x = screenSize.width - 16.dp, duration = SwipeDuration)
-            .up()
+    @Test
+    fun testSwipeRightFromCenterOutsidePagerDoesNotPopController() = runUIKitInstrumentedTest(
+        ignoreIf = available(OS.Ios to OSVersion(major = 26)),
+        ignoreNotes = "Full-width swipe gesture is not recognized on iOS < 26"
+    ){
+        val initialPage = 1
+        val currentPage = mutableIntStateOf(initialPage)
 
-        waitForIdle()
+        setNavigationControllerContent {
+            TestContent(currentPage = currentPage)
+        }
+
+        delay(10)
+
+        findNodeWithTag("outsideBox").swipe(
+            fromPosition = { center() },
+            toPosition = { rightCenter() },
+        )
+
+        // wait for pop animation to finish if any
+        delay(500)
+
+        assertNotNull(findNodeWithTagOrNull("pager"))
+        assertNotNull(findNodeWithTagOrNull("outsideBox"))
+        assertEquals(2, navigationController.viewControllers.size)
     }
 
-    private fun UIKitInstrumentedTest.swipeLeft(fromNode: AccessibilityTestNode) {
-        fromNode.touchDown()
-            .dragTo(x = 16.dp, duration = SwipeDuration)
-            .up()
+    @Test
+    fun testSwipeRightOutsidePagerPopsControllerOnIos26() = runUIKitInstrumentedTest(
+        ignoreIf = !available(OS.Ios to OSVersion(major = 26)),
+        ignoreNotes = "Full-width swipe gesture is not recognized on iOS < 26"
+    ) {
+        val initialPage = 1
+        val currentPage = mutableIntStateOf(initialPage)
 
-        waitForIdle()
+        setNavigationControllerContent {
+            TestContent(currentPage = currentPage)
+        }
+
+        delay(10)
+
+        findNodeWithTag("outsideBox").swipeRight()
+
+        // wait for pop animation to finish
+        delay(500)
+
+        assertNull(findNodeWithTagOrNull("pager"))
+        assertNull(findNodeWithTagOrNull("outsideBox"))
+        assertEquals(1, navigationController.viewControllers.size)
+    }
+
+    @Test
+    fun testSwipeRightFromEdgeOutsidePagerPopsControllerOnIos26() = runUIKitInstrumentedTest(
+        ignoreIf = !available(OS.Ios to OSVersion(major = 26)),
+        ignoreNotes = "Full-width swipe gesture is not recognized on iOS < 26"
+    ) {
+        val initialPage = 1
+        val currentPage = mutableIntStateOf(initialPage)
+
+        setNavigationControllerContent {
+            TestContent(currentPage = currentPage)
+        }
+
+        delay(10)
+
+        swipeRightFromEdge()
+
+        // wait for pop animation to finish
+        delay(500)
+
+        assertNull(findNodeWithTagOrNull("pager"))
+        assertNull(findNodeWithTagOrNull("outsideBox"))
+        assertEquals(1, navigationController.viewControllers.size)
+    }
+
+    @Test
+    fun testSwipeRightFromCenterOutsidePagerPopsControllerOnIos26() = runUIKitInstrumentedTest(
+        ignoreIf = !available(OS.Ios to OSVersion(major = 26)),
+        ignoreNotes = "Full-width swipe gesture is not recognized on iOS < 26",
+    ) {
+        val initialPage = 1
+        val currentPage = mutableIntStateOf(initialPage)
+
+        setNavigationControllerContent {
+            TestContent(currentPage = currentPage)
+        }
+
+        delay(10)
+
+        findNodeWithTag("outsideBox").swipe(
+            fromPosition = { center() },
+            toPosition = { rightCenter() },
+        )
+
+        // wait for pop animation to finish
+        delay(500)
+
+        assertNull(findNodeWithTagOrNull("pager"))
+        assertNull(findNodeWithTagOrNull("outsideBox"))
+        assertEquals(1, navigationController.viewControllers.size)
     }
 
     private val UIKitInstrumentedTest.navigationController: UINavigationController get() {
@@ -150,18 +233,23 @@ internal abstract class UIKitNavigationContentSwipeTest(
 
     private fun UIKitInstrumentedTest.setNavigationControllerContent(
         content: @Composable () -> Unit = {}
-    ) {
+    ) = setupWindow {
         val firstViewController = UIViewController()
         val secondViewController = createRootViewController(content = content)
-        val navigationController = UINavigationController()
 
-        navigationController.setViewControllers(
-            listOf(firstViewController, secondViewController), false
-        )
+        UINavigationController().also {
+            it.setViewControllers(listOf(firstViewController, secondViewController), false)
+        }
+    }
 
-        appDelegate.setUpWindow(navigationController)
-
-        waitForIdle()
+    private fun runUIKitInstrumentedTest(
+        ignoreIf: Boolean,
+        ignoreNotes: String,
+        testBlock: UIKitInstrumentedTest.() -> Unit
+    ) = if (ignoreIf) {
+        println("Debug: Ignored test: $ignoreNotes")
+    } else {
+        runUIKitInstrumentedTest(testBlock)
     }
 }
 
@@ -190,7 +278,6 @@ private fun TestContent(
                 .background(pagerColors[page])
             )
         }
-
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -200,10 +287,10 @@ private fun TestContent(
     }
 }
 
-internal class UIKitNavigationContentSwipeInHostingViewTest : UIKitNavigationContentSwipeTest(
-    runUIKitInstrumentedTest = ::runUIKitInstrumentedTestInHostingView
+internal class UIKitNavigationSwipeBackInHostingViewTest : UIKitNavigationSwipeBackTest(
+    runUIKitInstrumentedTest = { runUIKitInstrumentedTest(useHostingView = true, it) }
 )
 
-internal class UIKitNavigationContentSwipeInHostingViewControllerTest : UIKitNavigationContentSwipeTest(
-   runUIKitInstrumentedTest = ::runUIKitInstrumentedTestInHostingViewController
+internal class UIKitNavigationSwipeBackInHostingViewControllerTest : UIKitNavigationSwipeBackTest(
+   runUIKitInstrumentedTest = { runUIKitInstrumentedTest(useHostingView = false, it) }
 )

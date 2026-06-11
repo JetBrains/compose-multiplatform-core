@@ -29,10 +29,13 @@ import androidx.compose.ui.test.utils.beginPress
 import androidx.compose.ui.test.utils.center
 import androidx.compose.ui.test.utils.getTouchesEvent
 import androidx.compose.ui.test.utils.hold
+import androidx.compose.ui.test.utils.leftCenter
 import androidx.compose.ui.test.utils.mouseDown
 import androidx.compose.ui.test.utils.moveToLocationOnWindow
+import androidx.compose.ui.test.utils.offsetBy
 import androidx.compose.ui.test.utils.release
 import androidx.compose.ui.test.utils.resetTouches
+import androidx.compose.ui.test.utils.rightCenter
 import androidx.compose.ui.test.utils.toCGPoint
 import androidx.compose.ui.test.utils.touchDown
 import androidx.compose.ui.test.utils.up
@@ -107,8 +110,6 @@ import platform.darwin.NSObject
 import platform.darwin.dispatch_async
 import platform.darwin.dispatch_get_main_queue
 
-internal typealias UIKitInstrumentedTestBlock = UIKitInstrumentedTest.() -> Unit
-
 /**
  * Sets up the test environment for iOS instrumented tests, runs the given [test][testBlock] against
  * UIView- and UIViewController-based Compose Container.
@@ -117,25 +118,14 @@ internal typealias UIKitInstrumentedTestBlock = UIKitInstrumentedTest.() -> Unit
  * assertions on it.
  * @param [testBlock] The test function.
  */
-internal fun runUIKitInstrumentedTest(testBlock: UIKitInstrumentedTestBlock) {
-    runUIKitInstrumentedTestInHostingView(testBlock)
-    runUIKitInstrumentedTestInHostingViewController(testBlock)
+internal fun runUIKitInstrumentedTest(testBlock: UIKitInstrumentedTest.() -> Unit) {
+    runUIKitInstrumentedTest(useHostingView = true, testBlock)
+    runUIKitInstrumentedTest(useHostingView = false, testBlock)
 }
 
-internal fun runUIKitInstrumentedTestInHostingView(testBlock: UIKitInstrumentedTestBlock) {
-    println("Debug: Running test with ComposeHostingView")
-    with(UIKitInstrumentedTest(useHostingView = true)) {
-        try {
-            testBlock()
-        } finally {
-            tearDown()
-        }
-    }
-}
-
-internal fun runUIKitInstrumentedTestInHostingViewController(testBlock: UIKitInstrumentedTestBlock) {
-    println("Debug: Running test with ComposeHostingViewController")
-    with(UIKitInstrumentedTest(useHostingView = false)) {
+internal fun runUIKitInstrumentedTest(useHostingView: Boolean, testBlock: UIKitInstrumentedTest.() -> Unit) {
+    println("Debug: Running test with ${if (useHostingView) "ComposeHostingView" else "ComposeHostingViewController"}")
+    with(UIKitInstrumentedTest(useHostingView = useHostingView)) {
         try {
             testBlock()
         } finally {
@@ -167,21 +157,7 @@ internal fun <T> runUIKitInstrumentedTest(
     }
 
     for (param in params) {
-        with(UIKitInstrumentedTest(useHostingView = true)) {
-            try {
-                testBlock(param)
-            } finally {
-                tearDown()
-            }
-        }
-
-        with(UIKitInstrumentedTest(useHostingView = false)) {
-            try {
-                testBlock(param)
-            } finally {
-                tearDown()
-            }
-        }
+        runUIKitInstrumentedTest(testBlock = { testBlock(param) })
     }
 }
 
@@ -196,7 +172,7 @@ internal fun <T> runUIKitInstrumentedTest(
 internal fun runUIKitInstrumentedTest(
     ignoreIf: Boolean,
     ignoreNotes: String,
-    testBlock: UIKitInstrumentedTestBlock
+    testBlock: UIKitInstrumentedTest.() -> Unit
 ) {
     if (ignoreIf) {
         println("Debug: Ignored test: $ignoreNotes")
@@ -287,15 +263,21 @@ internal class UIKitInstrumentedTest(
         configure: ComposeContainerConfiguration.() -> Unit = {},
         interfaceOrientation: UIInterfaceOrientation = UIInterfaceOrientationPortrait,
         content: @Composable () -> Unit
+    ) = setupWindow(
+        interfaceOrientation = interfaceOrientation,
+        rootViewController = { createRootViewController(configure, content) }
+    )
+
+    fun setupWindow(
+        interfaceOrientation: UIInterfaceOrientation = UIInterfaceOrientationPortrait,
+        rootViewController: () -> UIViewController,
     ) {
         accessibilityNotifications.clear()
         AccessibilityNotification.onNotificationPostedForTests = {
             accessibilityNotifications.add(it)
         }
 
-        appDelegate.setUpWindow(
-            createRootViewController(configure, content)
-        )
+        appDelegate.setUpWindow(rootViewController())
 
         waitForIdle()
 
@@ -399,8 +381,26 @@ internal class UIKitInstrumentedTest(
      * the window hosting the view will be used.
      * @return A UITouch object representing the touch interaction.
      */
-    fun touchDown(position: DpOffset, window: UIWindow? = null): UITouch {
-        return getTargetWindow(position, window).touchDown(position)
+    fun touchDown(position: DpOffset, window: UIWindow? = null, fromEdge: Boolean = false): UITouch {
+        return getTargetWindow(position, window).touchDown(position, fromEdge)
+    }
+
+    private val EdgeSwipeDuration = 100.milliseconds
+
+    fun swipeRightFromEdge() {
+        val swipeToLocation = screenBounds.rightCenter().offsetBy(dx = (-16).dp)
+
+        touchDown(screenBounds.leftCenter(), fromEdge = true)
+            .dragTo(swipeToLocation, duration = EdgeSwipeDuration)
+            .up()
+    }
+
+    fun swipeLeftFromEdge() {
+        val swipeToLocation = screenBounds.leftCenter().offsetBy(dx = 16.dp)
+
+        touchDown(screenBounds.rightCenter(), fromEdge = true)
+            .dragTo(swipeToLocation, duration = EdgeSwipeDuration)
+            .up()
     }
 
     /**
@@ -614,6 +614,28 @@ internal class UIKitInstrumentedTest(
     fun UITouch.dragTo(x: Dp? = null, y: Dp? = null, duration: Duration = 0.5.seconds): UITouch {
         val location = locationInView(null).toDpOffset()
         return dragTo(DpOffset(x ?: location.x, y ?: location.y), duration)
+    }
+
+    private val SwipeDuration = 100.milliseconds
+
+    fun AccessibilityTestNode.swipe(
+        fromPosition: DpRect.() -> DpOffset = { center() },
+        toPosition: DpRect.() -> DpOffset = { center() },
+        fromEdge: Boolean = false,
+        duration: Duration = SwipeDuration
+    ) {
+        val frame = frame ?: error("Internal error. Frame is missing.")
+        touchDown(frame.fromPosition(), fromEdge = fromEdge)
+            .dragTo(frame.toPosition(), duration)
+            .up()
+    }
+
+    fun AccessibilityTestNode.swipeRight(fromEdge: Boolean = false, duration: Duration = SwipeDuration) {
+        swipe(fromPosition = { center() }, toPosition = { rightCenter() }, fromEdge = fromEdge, duration = duration)
+    }
+
+    fun AccessibilityTestNode.swipeLeft(fromEdge: Boolean = false, duration: Duration = SwipeDuration) {
+        swipe(fromPosition = { center() }, toPosition = { leftCenter() }, fromEdge = fromEdge, duration = duration)
     }
 }
 
