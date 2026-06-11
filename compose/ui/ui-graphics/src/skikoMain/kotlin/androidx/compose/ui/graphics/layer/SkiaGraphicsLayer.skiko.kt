@@ -368,6 +368,9 @@ actual class GraphicsLayer internal constructor(
         discardContentIfReleasedAndHaveNoParentLayerUsages()
     }
 
+    // Temporary value holders to reuse an object (not part of a state):
+    private var radii: FloatArray? = null
+
     @OptIn(InternalComposeUiApi::class)
     private fun configureOutlineAndClip() {
         if (!outlineDirty) return
@@ -386,23 +389,30 @@ actual class GraphicsLayer internal constructor(
                     tmpOutline.rect.bottom,
                     antiAlias = true
                 )
-                is Outline.Rounded -> renderNode.setClipRRect(
-                    tmpOutline.roundRect.left,
-                    tmpOutline.roundRect.top,
-                    tmpOutline.roundRect.right,
-                    tmpOutline.roundRect.bottom,
-                    floatArrayOf(
-                        tmpOutline.roundRect.topLeftCornerRadius.x,
-                        tmpOutline.roundRect.topLeftCornerRadius.y,
-                        tmpOutline.roundRect.topRightCornerRadius.x,
-                        tmpOutline.roundRect.topRightCornerRadius.y,
-                        tmpOutline.roundRect.bottomRightCornerRadius.x,
-                        tmpOutline.roundRect.bottomRightCornerRadius.y,
-                        tmpOutline.roundRect.bottomLeftCornerRadius.x,
-                        tmpOutline.roundRect.bottomLeftCornerRadius.y
-                    ),
-                    antiAlias = true
-                )
+                is Outline.Rounded -> {
+                    if (radii == null) radii = FloatArray(8)
+                    with(radii!!) {
+                        this[0] = tmpOutline.roundRect.topLeftCornerRadius.x
+                        this[1] = tmpOutline.roundRect.topLeftCornerRadius.y
+
+                        this[2] = tmpOutline.roundRect.topRightCornerRadius.x
+                        this[3] = tmpOutline.roundRect.topRightCornerRadius.y
+
+                        this[4] = tmpOutline.roundRect.bottomRightCornerRadius.x
+                        this[5] = tmpOutline.roundRect.bottomRightCornerRadius.y
+
+                        this[6] = tmpOutline.roundRect.bottomLeftCornerRadius.x
+                        this[7] = tmpOutline.roundRect.bottomLeftCornerRadius.y
+                    }
+                    renderNode.setClipRRect(
+                        tmpOutline.roundRect.left,
+                        tmpOutline.roundRect.top,
+                        tmpOutline.roundRect.right,
+                        tmpOutline.roundRect.bottom,
+                        radii!!,
+                        antiAlias = true
+                    )
+                }
                 is Outline.Generic -> renderNode.setClipPath(tmpOutline.path.materializeSkiaPath(), antiAlias = true)
             }
         }

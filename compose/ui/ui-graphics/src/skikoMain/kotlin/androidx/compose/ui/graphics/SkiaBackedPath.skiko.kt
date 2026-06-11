@@ -90,6 +90,8 @@ internal class SkiaBackedPath(
      */
     internal var isSkiaPathObserved = false
 
+    // Temporary value holders to reuse an object (not part of a state):
+    private var radii: FloatArray? = null
 
     private var mMatrix: Matrix33? = null
 
@@ -302,41 +304,30 @@ internal class SkiaBackedPath(
         level = DeprecationLevel.HIDDEN
     )
     override fun addRoundRect(roundRect: RoundRect) = mutatePath {
-        addRRect(
-            roundRect.left,
-            roundRect.top,
-            roundRect.right,
-            roundRect.bottom,
-            floatArrayOf(
-                roundRect.topLeftCornerRadius.x,
-                roundRect.topLeftCornerRadius.y,
-                roundRect.topRightCornerRadius.x,
-                roundRect.topRightCornerRadius.y,
-                roundRect.bottomRightCornerRadius.x,
-                roundRect.bottomRightCornerRadius.y,
-                roundRect.bottomLeftCornerRadius.x,
-                roundRect.bottomLeftCornerRadius.y
-            ),
-            PathDirection.COUNTER_CLOCKWISE
-        )
+        addRoundRect(roundRect)
     }
 
     override fun addRoundRect(roundRect: RoundRect, direction: Path.Direction) = mutatePath {
+        if (radii == null) radii = FloatArray(8)
+        with(radii!!) {
+            this[0] = roundRect.topLeftCornerRadius.x
+            this[1] = roundRect.topLeftCornerRadius.y
+
+            this[2] = roundRect.topRightCornerRadius.x
+            this[3] = roundRect.topRightCornerRadius.y
+
+            this[4] = roundRect.bottomRightCornerRadius.x
+            this[5] = roundRect.bottomRightCornerRadius.y
+
+            this[6] = roundRect.bottomLeftCornerRadius.x
+            this[7] = roundRect.bottomLeftCornerRadius.y
+        }
         addRRect(
             roundRect.left,
             roundRect.top,
             roundRect.right,
             roundRect.bottom,
-            floatArrayOf(
-                roundRect.topLeftCornerRadius.x,
-                roundRect.topLeftCornerRadius.y,
-                roundRect.topRightCornerRadius.x,
-                roundRect.topRightCornerRadius.y,
-                roundRect.bottomRightCornerRadius.x,
-                roundRect.bottomRightCornerRadius.y,
-                roundRect.bottomLeftCornerRadius.x,
-                roundRect.bottomLeftCornerRadius.y
-            ),
+            radii!!,
             direction.toSkiaPathDirection()
         )
     }
