@@ -305,8 +305,8 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
                         frameRecomposer.performFrame(
                             frameTimeNanos = mainClock.currentTime * NanoSecondsPerMilliSecond,
                         )
+                        redraw()
                     }
-                    redraw()
                 }
             }
             block()
@@ -358,7 +358,7 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
                 // the currently-due tasks via the test scheduler, then run measure/layout.
                 // Never [frameRecomposer.performFrame], so withFrameNanos awaiters are not resumed.
                 compositionCoroutineDispatcher.scheduler.runCurrent()
-                scene.measureAndLayout()
+                redraw()
 
                 // Publish global snapshot writes produced during this settle,
                 // so the next isIdle() sees an applied state.
@@ -516,7 +516,6 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
 
     fun captureToImage(): ImageBitmap {
         waitForIdle()
-        redraw()
         return surface.makeImageSnapshot().toComposeImageBitmap()
     }
 

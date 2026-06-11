@@ -28,11 +28,11 @@ class DrawOnlyInvalidationTest {
 
     /**
      * Paused clock: the first frame is drawn by `waitForIdle`, and a subsequent draw-only
-     * invalidation is also flushed by `waitForIdle` - without `captureToImage`. Android-verified:
+     * invalidation is also flushed by `waitForIdle`. Android-verified:
      * `afterSetContent=[0] afterFirstWait=[0] afterMutate=[0] afterWaitAfterMutate=[0, 1]`.
      */
     @Test
-    fun pausedClock_drawOnlyInvalidationIsFlushedByWaitForIdle() = runComposeUiTest {
+    fun pausedClock_drawInvalidationIsFlushedByWaitForIdle() = runComposeUiTest {
         mainClock.autoAdvance = false
         val state = mutableStateOf(0)
         val drawn = mutableListOf<Int>()
@@ -46,7 +46,7 @@ class DrawOnlyInvalidationTest {
         assertEquals(listOf(0), drawn, "first frame should be drawn by waitForIdle")
 
         state.value = 1 // draw-only invalidation: no measure/layout/recomposition
-        waitForIdle() // no clock advance, no captureToImage
+        waitForIdle() // no clock advance
         assertEquals(listOf(0, 1), drawn, "draw-only update should be flushed by waitForIdle")
     }
 
