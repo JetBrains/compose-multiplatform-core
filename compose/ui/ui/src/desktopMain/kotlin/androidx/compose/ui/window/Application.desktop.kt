@@ -229,9 +229,9 @@ suspend fun awaitApplication(
                     }
                     recomposer.close()
                     recomposer.join()
-                    globalSnapshotRegistration?.close()
                 } finally {
                     composition.dispose()
+                    globalSnapshotRegistration?.close()
                 }
             }
         }

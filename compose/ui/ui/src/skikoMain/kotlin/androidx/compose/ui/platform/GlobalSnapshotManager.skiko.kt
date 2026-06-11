@@ -16,6 +16,7 @@
 
 package androidx.compose.ui.platform
 
+import androidx.annotation.VisibleForTesting
 import androidx.compose.runtime.snapshots.ObserverHandle
 import androidx.compose.runtime.snapshots.Snapshot
 import kotlin.coroutines.ContinuationInterceptor
@@ -66,12 +67,8 @@ internal object GlobalSnapshotManager {
     @OptIn(ExperimentalCoroutinesApi::class)
     fun register(coroutineContext: CoroutineContext): AutoCloseable? {
         val dispatcher = coroutineContext[ContinuationInterceptor] as? CoroutineDispatcher
-        // isDispatchNeeded is a per-resume, thread-dependent property, so an immediate dispatcher
-        // cannot be soundly classified by this one-time registration check.
-        if (dispatcher == null || !dispatcher.isDispatchNeeded(coroutineContext)) {
-            return null
-        }
-        return registerInternal(dispatcher)
+            ?: return null
+        return register(dispatcher)
     }
 
     /**
@@ -91,10 +88,6 @@ internal object GlobalSnapshotManager {
         if (!dispatcher.isDispatchNeeded(dispatcher)) {
             return null
         }
-        return registerInternal(dispatcher)
-    }
-
-    private fun registerInternal(dispatcher: CoroutineDispatcher): AutoCloseable {
         val registration = synchronized(lock) {
             registrations.getOrPut(dispatcher) { Registration(dispatcher) }
                 .also { it.refCount++ }
@@ -114,6 +107,14 @@ internal object GlobalSnapshotManager {
             registrations.remove(registration.dispatcher)
         }
         registration.dispose()
+    }
+
+    @VisibleForTesting
+    fun clear() {
+        synchronized(lock) {
+            registrations.values.forEach { it.dispose() }
+            registrations.clear()
+        }
     }
 
     /** A shared observer + coalescing apply pump for one host [dispatcher]. */
@@ -141,8 +142,8 @@ internal object GlobalSnapshotManager {
         }
 
         fun dispose() {
+            if (!channel.close()) return
             writeObserverHandle.dispose()
-            channel.close()
             scope.cancel()
         }
     }

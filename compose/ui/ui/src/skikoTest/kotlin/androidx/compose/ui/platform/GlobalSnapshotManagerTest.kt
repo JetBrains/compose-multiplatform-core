@@ -18,6 +18,7 @@ package androidx.compose.ui.platform
 
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.snapshots.Snapshot
+import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -28,6 +29,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.test.StandardTestDispatcher
 
 class GlobalSnapshotManagerTest {
+
+    @AfterTest
+    fun clear() {
+        GlobalSnapshotManager.clear()
+    }
 
     @Test
     fun refcountKeepsPumpAliveUntilLastHandleClosed() {
