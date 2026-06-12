@@ -120,15 +120,13 @@ inline fun <T> state(
 
 @Composable
 inline fun <T> state(vararg inputs: Any?, crossinline init: () -> T): StateCell<T> {
-    val effectCoroutineContext = EffectCoroutineContextCompositionLocal.current
     return remember(*inputs) {
-        stateCellNoRemember(effectCoroutineContext, init)
+        stateCellNoRemember(init)
     }
 }
 
 @OptIn(InternalComposeApi::class)
 inline fun <T> stateCellNoRemember(
-    effectCoroutineContext: CoroutineContext,
     init: () -> T,
 ): StateCell<T> {
     var backingState by mutableStateOf(init())
@@ -136,9 +134,7 @@ inline fun <T> stateCellNoRemember(
         override fun read(): T = backingState
 
         override fun update(f: (T) -> T) {
-                GlobalScope.launch(effectCoroutineContext) {
-                        backingState = f(backingState)
-            }
+            backingState = f(backingState)
         }
     }
 }
