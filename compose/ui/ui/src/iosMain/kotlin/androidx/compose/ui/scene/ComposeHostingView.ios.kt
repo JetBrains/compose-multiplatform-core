@@ -108,13 +108,11 @@ internal class ComposeHostingView(
     }
 
     override fun viewDidAppear() {
-        lifecycleDelegate.composeContainerWillAppear()
         container.sceneDidAppear()
     }
 
     override fun viewDidDisappear() {
         container.sceneWillDisappear()
-        lifecycleDelegate.composeContainerDidDisappear()
     }
 
     override fun userInterfaceStyleDidChange() {

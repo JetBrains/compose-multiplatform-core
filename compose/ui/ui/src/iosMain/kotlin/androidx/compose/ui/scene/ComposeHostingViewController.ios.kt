@@ -116,7 +116,6 @@ internal class ComposeHostingViewController(
     override fun viewWillAppear(animated: Boolean) {
         super.viewWillAppear(animated)
 
-        lifecycleDelegate.composeContainerWillAppear()
         configuration.delegate.viewWillAppear(animated)
     }
 
@@ -144,7 +143,6 @@ internal class ComposeHostingViewController(
         super.viewDidDisappear(animated)
 
         configuration.delegate.viewDidDisappear(animated)
-        lifecycleDelegate.composeContainerDidDisappear()
     }
 
     override fun viewControllerDidEnterWindowHierarchy() {
