@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableIntState
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.ui.Modifier
@@ -41,7 +42,6 @@ import androidx.compose.ui.unit.dp
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
-import kotlin.test.assertNull
 import kotlinx.cinterop.ExperimentalForeignApi
 import org.jetbrains.skiko.OS
 import org.jetbrains.skiko.OSVersion
@@ -55,38 +55,36 @@ internal abstract class UIKitNavigationSwipeBackTest(
 ) {
     @Test
     fun testSwipeRightOnPagerDoesNotPopController() = runUIKitInstrumentedTest {
-        val currentPage = mutableIntStateOf(0)
+        val initialPage = 0
+        val currentPage = mutableIntStateOf(initialPage)
 
         setNavigationControllerContent {
             TestContent(currentPage = currentPage)
         }
 
-        delay(10)
-
         findNodeWithTag("pager").swipeRight()
 
-        delay(500)
+        waitForIdle()
 
         assertEquals(2, navigationController.viewControllers.size)
         assertNotNull(findNodeWithTagOrNull("pager"))
-        assertEquals(0, currentPage.value)
+        assertEquals(initialPage, currentPage.value)
     }
 
     @Test
     fun testSwipeLeftOnPagerChangesPage() = runUIKitInstrumentedTest {
-        val currentPage = mutableIntStateOf(0)
+        val initialPage = 0
+        val currentPage = mutableIntStateOf(initialPage)
 
         setNavigationControllerContent {
             TestContent(currentPage = currentPage)
         }
-
-        delay(10)
 
         findNodeWithTag("pager").swipeLeft()
 
         waitForIdle()
 
-        assertEquals(1, currentPage.value)
+        assertEquals(initialPage + 1, currentPage.value)
         assertEquals(2, navigationController.viewControllers.size)
     }
 
@@ -98,8 +96,6 @@ internal abstract class UIKitNavigationSwipeBackTest(
         setNavigationControllerContent {
             TestContent(currentPage = currentPage)
         }
-
-        delay(10)
 
         findNodeWithTag("outsideBox").swipeLeft()
 
@@ -113,16 +109,11 @@ internal abstract class UIKitNavigationSwipeBackTest(
             TestContent(currentPage = mutableIntStateOf(1))
         }
 
-        delay(10)
-
         swipeRightFromEdge()
 
-        // wait for pop animation to finish
-        delay(500)
-
-        assertNull(findNodeWithTagOrNull("pager"))
-        assertNull(findNodeWithTagOrNull("outsideBox"))
-        assertEquals(1, navigationController.viewControllers.size)
+        waitUntil("Waiting for view controller to be popped") {
+            navigationController.viewControllers.size == 1
+        }
     }
 
     @Test
@@ -137,15 +128,12 @@ internal abstract class UIKitNavigationSwipeBackTest(
             TestContent(currentPage = currentPage)
         }
 
-        delay(10)
-
         findNodeWithTag("outsideBox").swipe(
             fromPosition = { center() },
             toPosition = { rightCenter() },
         )
 
-        // wait for pop animation to finish if any
-        delay(500)
+        waitForIdle()
 
         assertNotNull(findNodeWithTagOrNull("pager"))
         assertNotNull(findNodeWithTagOrNull("outsideBox"))
@@ -164,16 +152,11 @@ internal abstract class UIKitNavigationSwipeBackTest(
             TestContent(currentPage = currentPage)
         }
 
-        delay(10)
-
         findNodeWithTag("outsideBox").swipeRight()
 
-        // wait for pop animation to finish
-        delay(500)
-
-        assertNull(findNodeWithTagOrNull("pager"))
-        assertNull(findNodeWithTagOrNull("outsideBox"))
-        assertEquals(1, navigationController.viewControllers.size)
+        waitUntil("Waiting for view controller to be popped") {
+            navigationController.viewControllers.size == 1
+        }
     }
 
     @Test
@@ -188,16 +171,11 @@ internal abstract class UIKitNavigationSwipeBackTest(
             TestContent(currentPage = currentPage)
         }
 
-        delay(10)
-
         swipeRightFromEdge()
 
-        // wait for pop animation to finish
-        delay(500)
-
-        assertNull(findNodeWithTagOrNull("pager"))
-        assertNull(findNodeWithTagOrNull("outsideBox"))
-        assertEquals(1, navigationController.viewControllers.size)
+        waitUntil("Waiting for view controller to be popped") {
+            navigationController.viewControllers.size == 1
+        }
     }
 
     @Test
@@ -212,19 +190,16 @@ internal abstract class UIKitNavigationSwipeBackTest(
             TestContent(currentPage = currentPage)
         }
 
-        delay(10)
-
         findNodeWithTag("outsideBox").swipe(
             fromPosition = { center() },
             toPosition = { rightCenter() },
         )
 
-        // wait for pop animation to finish
-        delay(500)
+        waitForIdle()
 
-        assertNull(findNodeWithTagOrNull("pager"))
-        assertNull(findNodeWithTagOrNull("outsideBox"))
-        assertEquals(1, navigationController.viewControllers.size)
+        waitUntil("Waiting for view controller to be popped") {
+            navigationController.viewControllers.size == 1
+        }
     }
 
     private val UIKitInstrumentedTest.navigationController: UINavigationController get() {
@@ -233,12 +208,17 @@ internal abstract class UIKitNavigationSwipeBackTest(
 
     private fun UIKitInstrumentedTest.setNavigationControllerContent(
         content: @Composable () -> Unit = {}
-    ) = setupWindow {
-        val firstViewController = UIViewController()
-        val secondViewController = createRootViewController(content = content)
+    ) {
+        val composeViewController = createViewControllerHostingCompose(content = content)
 
-        UINavigationController().also {
-            it.setViewControllers(listOf(firstViewController, secondViewController), false)
+        setupWindow {
+            UINavigationController().also {
+                it.setViewControllers(listOf(UIViewController(), composeViewController), false)
+            }
+        }
+
+        waitUntil {
+            composeViewController.view.window != null
         }
     }
 
@@ -259,6 +239,10 @@ private fun TestContent(
 ) {
     val pagerColors = listOf(Color.Red, Color.Green, Color.Blue)
     val pagerState = rememberPagerState(initialPage = currentPage.value) { 3 }
+
+    LaunchedEffect(pagerState.currentPage) {
+        currentPage.value = pagerState.currentPage
+    }
 
     Column(
         modifier = Modifier

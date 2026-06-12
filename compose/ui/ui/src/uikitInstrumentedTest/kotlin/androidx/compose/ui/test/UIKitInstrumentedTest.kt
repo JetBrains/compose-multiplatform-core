@@ -265,9 +265,16 @@ internal class UIKitInstrumentedTest(
         content: @Composable () -> Unit
     ) = setupWindow(
         interfaceOrientation = interfaceOrientation,
-        rootViewController = { createRootViewController(configure, content) }
+        rootViewController = { createViewControllerHostingCompose(configure, content) }
     )
 
+    /**
+     * Installs [rootViewController] into the test window and waits until the Compose scene owned by
+     * this [UIKitInstrumentedTest] is idle.
+     *
+     * Use this when a test needs a custom UIKit hierarchy around Compose, for example a navigation
+     * controller or a view controller presented by UIKit.
+     */
     fun setupWindow(
         interfaceOrientation: UIInterfaceOrientation = UIInterfaceOrientationPortrait,
         rootViewController: () -> UIViewController,
@@ -286,18 +293,26 @@ internal class UIKitInstrumentedTest(
         }
     }
 
-    fun createRootViewController(
+    /**
+     * Creates a [UIViewController] that hosts [content] using the container variant selected by
+     * [useHostingView].
+     */
+    fun createViewControllerHostingCompose(
         configure: ComposeContainerConfiguration.() -> Unit = {},
         content: @Composable () -> Unit
     ): UIViewController = if (useHostingView) {
         UIViewController().also {
-            it.view.embedSubview(createHostingView(configure, content))
+            it.view.embedSubview(createComposeHostingView(configure, content))
         }
     } else {
-        createHostingViewController(configure, content)
+        createComposeHostingViewController(configure, content)
     }
 
-    fun createHostingView(
+    /**
+     * Creates a [ComposeHostingView] for [content] and records it as the active Compose container
+     * for idleness and redrawer checks.
+     */
+    fun createComposeHostingView(
         configure: ComposeUIViewConfiguration.() -> Unit = {},
         content: @Composable () -> Unit
     ): ComposeHostingView {
@@ -314,7 +329,11 @@ internal class UIKitInstrumentedTest(
         }
     }
 
-    fun createHostingViewController(
+    /**
+     * Creates a [ComposeHostingViewController] for [content] and records it as the active Compose
+     * container for idleness and redrawer checks.
+     */
+    fun createComposeHostingViewController(
         configure: ComposeUIViewControllerConfiguration.() -> Unit = {},
         content: @Composable () -> Unit
     ): ComposeHostingViewController {
