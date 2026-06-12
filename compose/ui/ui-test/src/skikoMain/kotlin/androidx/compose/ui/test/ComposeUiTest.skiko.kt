@@ -325,8 +325,9 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
      */
     private fun redraw() = runOnUiThread {
         scene.measureAndLayout()
-        canvasHolder.drawInto(surface.canvas) {
-            clear(Color.TRANSPARENT)
+        val skCanvas = surface.canvas
+        skCanvas.clear(Color.TRANSPARENT)
+        canvasHolder.drawInto(skCanvas) {
             scene.draw(this)
         }
     }
