@@ -355,8 +355,8 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
         } else {
             runOnUiThread {
                 // Settle non-frame work WITHOUT advancing the frame clock - drain
-                // the currently-due tasks via the test scheduler, then run measure/layout.
-                // Never [frameRecomposer.performFrame], so withFrameNanos awaiters are not resumed.
+                // the currently-due tasks via the test scheduler, then run layout and draw.
+                // Never run [frameRecomposer.performFrame],so withFrameNanos awaiters are not resumed.
                 compositionCoroutineDispatcher.scheduler.runCurrent()
                 redraw()
 
