@@ -1,0 +1,180 @@
+/*
+ * Copyright 2026 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.jetbrains.androidx.build
+
+import androidx.build.AndroidXMultiplatformExtension
+import org.gradle.api.Project
+import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
+
+/**
+ * Parallel-graph back-end for artifact redirection.
+ *
+ * For every target declared inside a `redirect { }` block (recorded in
+ * [AndroidXMultiplatformExtension.redirectTargetDecls]), the redirect target is built **empty**: its
+ * leaf source-set is re-rooted onto an empty parallel graph (`redirectCommonMain`) that carries only
+ * `api(<androidx-coord>)`, instead of compiling the real `commonMain`. The fork then publishes an
+ * empty-but-valid per-target klib/jar that depends on the `androidx.*` coordinate, and Gradle metadata
+ * (`available-at`) carries the redirect. This is the sole redirection mechanism: the older
+ * property-driven `CustomRootComponent` zero-artifact path was removed once every published module
+ * had migrated to `redirect { }`.
+ */
+internal fun Project.applyParallelRedirectGraph(
+    kmp: KotlinMultiplatformExtension,
+    mpe: AndroidXMultiplatformExtension,
+) {
+    afterEvaluate {
+        val decls = mpe.redirectTargetDecls
+        if (decls.isEmpty()) return@afterEvaluate
+
+        val redirectTargetNames = decls.map { it.targetName }.toSet()
+
+        // A redirect android target publishes an EMPTY AAR; it must not bundle the fork-built lint
+        // checks declared via `lintPublish(project(":...-lint"))`. Consumers get the real lint.jar
+        // from the `androidx.*` AAR the redirect points to — a second fork-built registry would
+        // double-register the same issue IDs. Detaching `lintPublish` also drops the `-lint`
+        // projects from the publish task graph entirely: jb-main never builds them during publish
+        // (the CRC path skips android publications), and they cannot even compile under the fork's
+        // JVM-11 target pin (lint-api ships JVM-17 bytecode), which any fresh cache-less build hits.
+        // TODO(artifactRedirection): alternative — delete the `lintPublish(project(...))` lines from
+        //  the migrated modules' build.gradle instead of clearing here. More declarative, but adds
+        //  one more fork-local diff per module to every AOSP merge and silently regresses if a
+        //  future migration forgets the line; keeping it centralized for now. Revisit at CRC removal.
+        if ("android" in redirectTargetNames) {
+            configurations.findByName("lintPublish")?.let { lintPublish ->
+                lintPublish.dependencies.clear()
+                // Also clear lazily at resolution time, in case AGP reads the configuration
+                // (directly or via extendsFrom) only later — withDependencies runs on the whole
+                // extendsFrom hierarchy when the consuming configuration resolves.
+                lintPublish.withDependencies { it.clear() }
+            }
+        }
+
+        // --- Resolve the redirect coordinate (one per module). ---
+        // Each redirect target carries its own RedirectCoordinate, but the published module has a
+        // SINGLE shared `metadataApiElements` (commonMain) variant. That variant is the door a
+        // consumer's commonMain resolves through, and it must list the redirect dependency (baseline
+        // does: `androidx.annotation:annotation:1.9.1`) — otherwise common code compiles against the
+        // empty fork metadata and loses every redirected symbol. One variant can carry only one
+        // coordinate, so all redirect targets in a module must resolve to the same group:name:version;
+        // `redirectCommonMain.api(coord)` then populates both that shared variant and every leaf.
+        val coords = decls.map { decl ->
+            val group = decl.redirectCoordinate.group
+            val version = decl.redirectCoordinate.version
+                ?: findArtifactRedirectionVersion(group)
+                ?: error(
+                    "[artifactRedirection] $path: target '${decl.targetName}' has no version " +
+                        "argument and no `artifactRedirection.version.$group` (or any prefix) is " +
+                        "set in gradle.properties",
+                )
+            "$group:$name:$version"
+        }.distinct()
+        val redirectCoord = coords.singleOrNull()
+            ?: error(
+                "[artifactRedirection] $path: redirect { } targets resolved to multiple distinct " +
+                    "redirect coordinates $coords. The published commonMain metadata variant is " +
+                    "singular and can carry only one redirect dependency — all redirect targets in a " +
+                    "module must point at the same group:name:version.",
+            )
+
+        // Each source-set gets its OWN empty kotlin dir: KGP rejects the same .kt file appearing in
+        // two fragments ("can be a part of only one module"). One generated tree, per-set subdirs.
+        val graphRoot = layout.buildDirectory.dir("generated/redirectGraph").get().asFile
+        fun emptyDirFor(name: String, withFile: Boolean): java.io.File {
+            val dir = graphRoot.resolve(name).resolve("kotlin")
+            dir.mkdirs()
+            if (withFile) {
+                val f = dir.resolve("EmptyRedirectRoot.kt")
+                if (!f.exists()) {
+                    f.writeText("// Auto-generated by artifactRedirection redirect { } for '$path'.\n")
+                }
+            }
+            return dir
+        }
+
+        val allTargetNames = kmp.targets.map { it.name }.filter { it != "metadata" }.toSet()
+        val forkBuiltExists = (allTargetNames - redirectTargetNames).isNotEmpty()
+
+        // Parallel root: the redirect leaves were already wired to `redirectCommonMain` at
+        // target-creation time (in `recordRedirect`), which opts them out of the default-hierarchy
+        // auto-wiring to `commonMain`. Here we only fill it in: one empty .kt + api(coord), which
+        // propagates to every redirect leaf's published variant.
+        val redirectCommonMain = kmp.sourceSets.maybeCreate("redirectCommonMain")
+        redirectCommonMain.kotlin.setSrcDirs(listOf(emptyDirFor("redirectCommonMain", withFile = true)))
+        redirectCommonMain.resources.setSrcDirs(emptyList<Any>())
+        dependencies.add("${redirectCommonMain.name}Api", redirectCoord)
+
+        // Mirror commonMain's declared dependencies onto redirectCommonMain so they reach the redirect
+        // targets' published metadata. These are the "keep-deps" (api(project(":lifecycle:...")) etc.)
+        // that pin redirected versions and prevent stale fork-version pulls.
+        // Since redirect targets are excluded from commonMain here, we re-add them explicitly. A
+        // project dep publishes as its fork coordinate, which itself redirects onward to androidx.*.
+        listOf("Api", "Implementation").forEach { kind ->
+            configurations.findByName("commonMain$kind")?.dependencies?.toList()?.forEach { dep ->
+                dependencies.add("${redirectCommonMain.name}$kind", dep)
+            }
+        }
+
+        // Compose modules apply the Compose compiler plugin, whose version check requires the Compose
+        // runtime on the compile classpath even for an empty redirect compilation (otherwise
+        // `compileAndroidMain`/etc. fail with "requires the Compose Runtime"). Mirror the same
+        // `:compose:runtime:runtime` project dep the module's real compilations use — on a redirect
+        // target's classpath it resolves through the redirect to Google's real runtime (which carries
+        // `ComposeVersion`), so the empty compilation type-checks. compileOnly: not published.
+        if (plugins.hasPlugin("AndroidXComposePlugin") && path != ":compose:runtime:runtime") {
+            dependencies.add("${redirectCommonMain.name}CompileOnly", project(":compose:runtime:runtime"))
+        }
+
+        if (!forkBuiltExists) {
+            // FULL STUB: no fork-built target needs the real `commonMain`. Empty it (and its
+            // intermediates) so the published common-metadata variant carries no real classes. The
+            // redirect leaves don't depend on commonMain (parallel root), so this only affects the
+            // metadata variant.
+            kmp.sourceSets.configureEach { ss ->
+                if (ss.name == redirectCommonMain.name) return@configureEach
+                ss.kotlin.setSrcDirs(listOf(emptyDirFor(ss.name, withFile = false)))
+                ss.resources.setSrcDirs(emptyList<Any>())
+            }
+        } else {
+            // PARTIAL redirect: each redirect leaf is excluded from the common hierarchy, so its only
+            // parent is `redirectCommonMain`. But the leaf may carry per-target real source on disk
+            // (e.g. `androidMain/AndroidTrace.android.kt`). Empty the leaf's own srcDirs so the
+            // redirect artifact (klib/jar/AAR) compiles nothing — only the redirect dependency remains.
+            redirectTargetNames.forEach { tname ->
+                kmp.sourceSets.findByName("${tname}Main")?.let { leaf ->
+                    leaf.kotlin.setSrcDirs(listOf(emptyDirFor("${tname}Main", withFile = false)))
+                    leaf.resources.setSrcDirs(emptyList<Any>())
+                }
+            }
+        }
+
+        // Java sources (e.g. src/jvmMain/java/*.java) compile via separate JavaCompile tasks
+        // (compileJvmMainJava), not kotlinc — so the kotlin-srcDir wipe above does not empty them.
+        // Clear JavaCompile sources for redirect targets so the empty artifact carries no .class.
+        // Full stub: clear all; partial: only the redirect targets' `compile<Target>MainJava`.
+        val redirectJavaTasks =
+            if (!forkBuiltExists) null
+            else redirectTargetNames.map { "compile${it.replaceFirstChar(Char::uppercase)}MainJava" }.toSet()
+        tasks.withType(org.gradle.api.tasks.compile.JavaCompile::class.java).configureEach { jc ->
+            if (redirectJavaTasks == null || jc.name in redirectJavaTasks) jc.setSource(files())
+        }
+
+        logger.lifecycle(
+            "[artifactRedirection] {} -> {} (parallel graph: {} redirect target(s), forkBuilt={})",
+            path, redirectCoord, redirectTargetNames.size, forkBuiltExists,
+        )
+    }
+}
