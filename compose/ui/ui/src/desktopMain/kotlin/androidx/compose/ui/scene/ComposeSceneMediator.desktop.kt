@@ -625,6 +625,7 @@ internal class ComposeSceneMediator(
     }
 
     fun onComponentAttached() {
+        require(!isDisposed) { "ComposeSceneMediator is already disposed" }
         isComponentAttached = true
         onChangeDensity()
 
@@ -636,6 +637,7 @@ internal class ComposeSceneMediator(
     }
 
     fun onComponentDetached() {
+        require(!isDisposed) { "ComposeSceneMediator is already disposed" }
         isComponentAttached = false
         architectureComponentsOwner.navigationEventDispatcherOwner
             .navigationEventDispatcher.removeInput(navigationEventInput)
@@ -691,7 +693,7 @@ internal class ComposeSceneMediator(
     fun onComponentPositionChanged() = catchExceptions {
         if (!container.isDisplayable) return
 
-        offsetInWindow = windowContext.offsetInWindow(container)
+        offsetInWindow = windowContext.locationInWindow(container)
     }
 
     fun onContainerSizeChanged() = catchExceptions {
