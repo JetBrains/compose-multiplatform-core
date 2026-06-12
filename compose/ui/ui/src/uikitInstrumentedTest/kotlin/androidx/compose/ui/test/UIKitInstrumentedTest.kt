@@ -351,6 +351,8 @@ internal class UIKitInstrumentedTest(
     }
 
     fun tearDown() {
+        clearComposeContainerReferencesIfDetached()
+
         // Stop text editing and hide keyboard if any
         viewController.view.endEditing(force = true)
         waitForIdle()
@@ -362,6 +364,15 @@ internal class UIKitInstrumentedTest(
     fun stopComposeScene() {
         hostingView?.viewDidLeaveWindowHierarchy()
         hostingViewController?.viewControllerDidLeaveWindowHierarchy()
+    }
+
+    private fun clearComposeContainerReferencesIfDetached() {
+        if (hostingView != null && hostingView?.window == null) {
+            hostingView = null
+        }
+        if (hostingViewController != null && hostingViewController?.view?.window == null) {
+            hostingViewController = null
+        }
     }
 
     private val isIdle: Boolean
