@@ -16,6 +16,7 @@
 
 package androidx.compose.ui.scene
 
+import androidx.annotation.VisibleForTesting
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.animation.withAnimationProgress
 import androidx.compose.ui.platform.PlatformWindowContext
@@ -56,9 +57,13 @@ internal class ComposeHostingViewController(
         lifecycleDelegate = lifecycleDelegate
     )
 
-    // Used for testing
+    @VisibleForTesting
     val rootRedrawer: MetalRedrawer? get() = container.view.redrawer
+
+    @VisibleForTesting
     fun hasInvalidations(): Boolean = container.hasInvalidations()
+
+    @VisibleForTesting
     val lifecycleState: Lifecycle.State get() = container.currentLifecycleState
 
     @Suppress("DEPRECATION")

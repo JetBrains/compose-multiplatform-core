@@ -54,8 +54,8 @@ interface PlatformArchitectureComponentsOwner {
 @InternalComposeUiApi
 class DefaultArchitectureComponentsOwner(
     savedState: SavedState? = null,
+    override val viewModelStore: ViewModelStore = ViewModelStore(),
     enforceMainThread: Boolean = true,
-    override val viewModelStore: ViewModelStore = ViewModelStore()
 ) : PlatformArchitectureComponentsOwner,
     LifecycleOwner,
     ViewModelStoreOwner,

@@ -16,6 +16,7 @@
 
 package androidx.compose.ui.scene
 
+import androidx.annotation.VisibleForTesting
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.uikit.ComposeUIViewConfiguration
@@ -53,9 +54,13 @@ internal class ComposeHostingView(
         lifecycleDelegate = lifecycleDelegate
     )
 
-    // Used for testing
+    @VisibleForTesting
     val rootRedrawer: MetalRedrawer? get() = container.view.redrawer
+
+    @VisibleForTesting
     fun hasInvalidations(): Boolean = container.hasInvalidations()
+
+    @VisibleForTesting
     val lifecycleState: Lifecycle.State get() = container.currentLifecycleState
 
     init {
