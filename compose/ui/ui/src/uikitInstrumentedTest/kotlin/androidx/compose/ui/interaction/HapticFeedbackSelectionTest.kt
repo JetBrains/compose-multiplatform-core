@@ -156,6 +156,8 @@ class HapticFeedbackSelectionTest {
         waitForIdle()
         // Verify that haptic feedback was NOT triggered
         hapticFeedback.assertNoHaptic()
+
+        assertFalse(textFieldValue.selection.collapsed)
     }
 
     @Test
@@ -220,6 +222,8 @@ class HapticFeedbackSelectionTest {
         waitForIdle()
         // Verify that haptic feedback was NOT triggered
         hapticFeedback.assertNoHaptic()
+
+        assertFalse(textFieldState.selection.collapsed)
     }
 
     @Test
