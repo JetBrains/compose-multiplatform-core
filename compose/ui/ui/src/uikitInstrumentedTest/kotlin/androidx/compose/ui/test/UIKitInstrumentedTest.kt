@@ -385,7 +385,7 @@ internal class UIKitInstrumentedTest(
         return getTargetWindow(position, window).touchDown(position, fromEdge)
     }
 
-    private val EdgeSwipeDuration = 100.milliseconds
+    private val EdgeSwipeDuration = 200.milliseconds
 
     fun swipeRightFromEdge() {
         val swipeToLocation = screenBounds.rightCenter().offsetBy(dx = (-16).dp)
