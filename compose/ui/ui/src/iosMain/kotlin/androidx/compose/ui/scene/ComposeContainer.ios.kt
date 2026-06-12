@@ -48,6 +48,7 @@ import androidx.compose.ui.window.ComposeContainerView
 import androidx.compose.ui.window.FocusedViewsList
 import androidx.compose.ui.window.MetalView
 import androidx.compose.ui.window.SceneActiveStateListener
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.enableSavedStateHandles
 import androidx.savedstate.SavedState
@@ -98,7 +99,7 @@ internal class ComposeContainer(
     private val viewModelStore = ViewModelStore()
     private var savedState: SavedState? = null
     private var mediatorComponentsOwner: DefaultArchitectureComponentsOwner? = null
-    val architectureComponentsOwner: DefaultArchitectureComponentsOwner
+    private val architectureComponentsOwner: DefaultArchitectureComponentsOwner
         get() = mediatorComponentsOwner
             ?: error("ArchitectureComponentsOwner is not initialized yet.")
 
@@ -122,6 +123,9 @@ internal class ComposeContainer(
     private val systemThemeState: MutableState<SystemTheme> = mutableStateOf(SystemTheme.Unknown)
 
     private val focusedViewsList = FocusedViewsList()
+
+    val currentLifecycleState: Lifecycle.State get() =
+        architectureComponentsOwner.lifecycle.currentState
 
     init {
         if (configuration.enforceStrictPlistSanityCheck) {

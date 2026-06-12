@@ -56,7 +56,7 @@ internal class ComposeHostingView(
     // Used for testing
     val rootRedrawer: MetalRedrawer? get() = container.view.redrawer
     fun hasInvalidations(): Boolean = container.hasInvalidations()
-    val lifecycleState: Lifecycle.State get() = container.architectureComponentsOwner.lifecycle.currentState
+    val lifecycleState: Lifecycle.State get() = container.currentLifecycleState
 
     init {
         addSubview(container.view)

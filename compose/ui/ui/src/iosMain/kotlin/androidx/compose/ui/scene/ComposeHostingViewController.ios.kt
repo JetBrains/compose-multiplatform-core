@@ -59,7 +59,7 @@ internal class ComposeHostingViewController(
     // Used for testing
     val rootRedrawer: MetalRedrawer? get() = container.view.redrawer
     fun hasInvalidations(): Boolean = container.hasInvalidations()
-    val lifecycleState: Lifecycle.State get() = container.architectureComponentsOwner.lifecycle.currentState
+    val lifecycleState: Lifecycle.State get() = container.currentLifecycleState
 
     @Suppress("DEPRECATION")
     override fun preferredStatusBarStyle(): UIStatusBarStyle =
