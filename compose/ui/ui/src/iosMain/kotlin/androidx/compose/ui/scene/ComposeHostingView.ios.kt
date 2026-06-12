@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.dpSize
 import androidx.compose.ui.window.ComposeContainerLifecycleDelegate
 import androidx.compose.ui.window.DisplayLinkListener
 import androidx.compose.ui.window.MetalRedrawer
+import androidx.lifecycle.Lifecycle
 import kotlin.coroutines.CoroutineContext
 import kotlin.math.abs
 import kotlinx.cinterop.BetaInteropApi
@@ -55,6 +56,7 @@ internal class ComposeHostingView(
     // Used for testing
     val rootRedrawer: MetalRedrawer? get() = container.view.redrawer
     fun hasInvalidations(): Boolean = container.hasInvalidations()
+    val lifecycleState: Lifecycle.State get() = container.architectureComponentsOwner.lifecycle.currentState
 
     init {
         addSubview(container.view)
@@ -106,11 +108,13 @@ internal class ComposeHostingView(
     }
 
     override fun viewDidAppear() {
+        lifecycleDelegate.composeContainerWillAppear()
         container.sceneDidAppear()
     }
 
     override fun viewDidDisappear() {
         container.sceneWillDisappear()
+        lifecycleDelegate.composeContainerDidDisappear()
     }
 
     override fun userInterfaceStyleDidChange() {

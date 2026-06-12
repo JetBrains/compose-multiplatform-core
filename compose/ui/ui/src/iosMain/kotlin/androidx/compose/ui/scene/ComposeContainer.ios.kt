@@ -48,6 +48,7 @@ import androidx.compose.ui.window.ComposeContainerView
 import androidx.compose.ui.window.FocusedViewsList
 import androidx.compose.ui.window.MetalView
 import androidx.compose.ui.window.SceneActiveStateListener
+import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.enableSavedStateHandles
 import androidx.savedstate.SavedState
 import kotlin.coroutines.CoroutineContext
@@ -94,9 +95,10 @@ internal class ComposeContainer(
         // The `initializeComposeScene` must be called to set the active `sceneJob`.
         it.cancel()
     }
+    private val viewModelStore = ViewModelStore()
     private var savedState: SavedState? = null
     private var mediatorComponentsOwner: DefaultArchitectureComponentsOwner? = null
-    private val architectureComponentsOwner: DefaultArchitectureComponentsOwner
+    val architectureComponentsOwner: DefaultArchitectureComponentsOwner
         get() = mediatorComponentsOwner
             ?: error("ArchitectureComponentsOwner is not initialized yet.")
 
@@ -217,7 +219,10 @@ internal class ComposeContainer(
             layersHolder = it
         }
 
-        mediatorComponentsOwner = DefaultArchitectureComponentsOwner(savedState)
+        mediatorComponentsOwner = DefaultArchitectureComponentsOwner(
+            savedState = savedState,
+            viewModelStore = viewModelStore
+        )
         architectureComponentsOwner.enableSavedStateHandles()
         lifecycleDelegate.onLifecycleStateUpdated = architectureComponentsOwner::setLifecycleState
 
@@ -265,12 +270,12 @@ internal class ComposeContainer(
     }
 
     fun disposeComposeScene() {
-        sceneJob.cancel()
         // Store the current state in the local savedState property. It is used to
         // provide the saved state to the next Compose scene when the container re-enters
         // the window hierarchy.
         savedState = architectureComponentsOwner.saveState()
-        lifecycleDelegate.onLifecycleStateUpdated = null
+
+        sceneJob.cancel()
 
         view.updateMetalView(metalView = null)
         navigationEventInput.onDidMoveToWindow(null, view)

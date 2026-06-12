@@ -25,6 +25,7 @@ import androidx.compose.ui.window.ComposeContainerLifecycleDelegate
 import androidx.compose.ui.window.ComposeContainerView
 import androidx.compose.ui.window.DisplayLinkListener
 import androidx.compose.ui.window.MetalRedrawer
+import androidx.lifecycle.Lifecycle
 import kotlin.coroutines.CoroutineContext
 import kotlin.native.runtime.NativeRuntimeApi
 import kotlin.time.Duration
@@ -58,6 +59,7 @@ internal class ComposeHostingViewController(
     // Used for testing
     val rootRedrawer: MetalRedrawer? get() = container.view.redrawer
     fun hasInvalidations(): Boolean = container.hasInvalidations()
+    val lifecycleState: Lifecycle.State get() = container.architectureComponentsOwner.lifecycle.currentState
 
     @Suppress("DEPRECATION")
     override fun preferredStatusBarStyle(): UIStatusBarStyle =
@@ -114,6 +116,7 @@ internal class ComposeHostingViewController(
     override fun viewWillAppear(animated: Boolean) {
         super.viewWillAppear(animated)
 
+        lifecycleDelegate.composeContainerWillAppear()
         configuration.delegate.viewWillAppear(animated)
     }
 
@@ -141,6 +144,7 @@ internal class ComposeHostingViewController(
         super.viewDidDisappear(animated)
 
         configuration.delegate.viewDidDisappear(animated)
+        lifecycleDelegate.composeContainerDidDisappear()
     }
 
     override fun viewControllerDidEnterWindowHierarchy() {
