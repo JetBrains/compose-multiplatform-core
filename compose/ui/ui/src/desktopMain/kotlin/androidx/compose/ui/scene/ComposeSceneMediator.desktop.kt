@@ -972,19 +972,37 @@ private val MouseEvent.buttons get() = PointerButtons(
     // info about the pressed mouse button when using touchpad on MacOS 12 (AWT only).
     // When the [Tap to click] feature is activated on Mac OS 12, half of all clicks are not
     // handled because [event.modifiersEx] may not provide info about the pressed mouse button.
-    isPrimaryPressed = ((modifiersEx and MouseEvent.BUTTON1_DOWN_MASK) != 0
+    isPrimaryPressed = (isButtonDown(MouseEvent.BUTTON1)
         || (id == MouseEvent.MOUSE_PRESSED && button == MouseEvent.BUTTON1))
         && !isMacOsCtrlClick,
-    isSecondaryPressed = (modifiersEx and MouseEvent.BUTTON3_DOWN_MASK) != 0
+    isSecondaryPressed = isButtonDown(MouseEvent.BUTTON3)
         || (id == MouseEvent.MOUSE_PRESSED && button == MouseEvent.BUTTON3)
         || isMacOsCtrlClick,
-    isTertiaryPressed = (modifiersEx and MouseEvent.BUTTON2_DOWN_MASK) != 0
+    isTertiaryPressed = isButtonDown(MouseEvent.BUTTON2)
         || (id == MouseEvent.MOUSE_PRESSED && button == MouseEvent.BUTTON2),
-    isBackPressed = (modifiersEx and MouseEvent.getMaskForButton(4)) != 0
+    isBackPressed = isButtonDown(4)
         || (id == MouseEvent.MOUSE_PRESSED && button == 4),
-    isForwardPressed = (modifiersEx and MouseEvent.getMaskForButton(5)) != 0
+    isForwardPressed = isButtonDown(5)
         || (id == MouseEvent.MOUSE_PRESSED && button == 5),
 )
+
+/**
+ * Returns whether AWT reports [button] as currently pressed, with one correction for release events.
+ *
+ * In normal mouse input, `modifiersEx` carries `BUTTON*_DOWN_MASK` while the button is down, so
+ * press, drag, move with a pressed button, and wheel while the button is held all return `true`.
+ * A release of a different button also keeps returning `true` for [button] if its mask is still set.
+ *
+ * Some AWT paths, including touchscreen taps on X11/JBR, can send `MOUSE_RELEASED` for [button]
+ * while still leaving that button's down mask in `modifiersEx`. For that event, the release itself
+ * is the more specific state transition, so this helper treats [button] as no longer pressed.
+ *
+ * This helper intentionally does not repair the opposite case where `MOUSE_PRESSED` has no down
+ * mask; callers handle that by also checking `id == MOUSE_PRESSED && button == ...`.
+ */
+private fun MouseEvent.isButtonDown(button: Int): Boolean =
+    (modifiersEx and MouseEvent.getMaskForButton(button)) != 0 &&
+        !(id == MouseEvent.MOUSE_RELEASED && this.button == button)
 
 private val MouseEvent.keyboardModifiers get() = PointerKeyboardModifiers(
     isCtrlPressed = (modifiersEx and InputEvent.CTRL_DOWN_MASK) != 0,
@@ -1002,11 +1020,13 @@ private val MouseEvent.keyboardModifiers get() = PointerKeyboardModifiers(
 private fun Component.subscribeToMouseEvents(mouseAdapter: MouseAdapter) {
     addMouseListener(mouseAdapter)
     addMouseMotionListener(mouseAdapter)
+    addMouseWheelListener(mouseAdapter)
 }
 
 private fun Component.unsubscribeFromMouseEvents(mouseAdapter: MouseAdapter) {
     removeMouseListener(mouseAdapter)
     removeMouseMotionListener(mouseAdapter)
+    removeMouseWheelListener(mouseAdapter)
 }
 
 private fun getLockingKeyStateSafe(
@@ -1020,6 +1040,6 @@ private fun getLockingKeyStateSafe(
 private val MouseEvent.isMacOsCtrlClick
     get() = (
         hostOs.isMacOS &&
-            ((modifiersEx and InputEvent.BUTTON1_DOWN_MASK) != 0) &&
+            isButtonDown(MouseEvent.BUTTON1) &&
             ((modifiersEx and InputEvent.CTRL_DOWN_MASK) != 0)
         )
