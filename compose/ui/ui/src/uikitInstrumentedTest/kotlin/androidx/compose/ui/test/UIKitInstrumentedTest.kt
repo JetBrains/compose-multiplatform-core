@@ -390,7 +390,10 @@ internal class UIKitInstrumentedTest(
         waitUntil(
             conditionDescription = "waitForIdle: timeout ${timeoutMillis}ms reached.",
             timeoutMillis = timeoutMillis
-        ) { isIdle }
+        ) {
+            clearComposeContainerReferencesIfDetached()
+            isIdle
+        }
     }
 
     fun delay(timeoutMillis: Long) = UIKitInstrumentedTest.delay(timeoutMillis)

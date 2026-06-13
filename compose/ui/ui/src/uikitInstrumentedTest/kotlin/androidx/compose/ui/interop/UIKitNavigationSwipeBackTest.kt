@@ -105,15 +105,13 @@ internal abstract class UIKitNavigationSwipeBackTest(
 
     @Test
     fun testSwipeRightFromEdgePopsController() = runUIKitInstrumentedTest {
-        setNavigationControllerContent {
+        val viewControllerHostingCompose = setNavigationControllerContent {
             TestContent(currentPage = mutableIntStateOf(1))
         }
 
         swipeRightFromEdge()
 
-        waitUntil("Waiting for view controller to be popped") {
-            navigationController.viewControllers.size == 1
-        }
+        waitForPopped(viewControllerHostingCompose)
     }
 
     @Test
@@ -148,15 +146,13 @@ internal abstract class UIKitNavigationSwipeBackTest(
         val initialPage = 1
         val currentPage = mutableIntStateOf(initialPage)
 
-        setNavigationControllerContent {
+        val viewControllerHostingCompose = setNavigationControllerContent {
             TestContent(currentPage = currentPage)
         }
 
         findNodeWithTag("outsideBox").swipeRight()
 
-        waitUntil("Waiting for view controller to be popped") {
-            navigationController.viewControllers.size == 1
-        }
+        waitForPopped(viewControllerHostingCompose)
     }
 
     @Test
@@ -167,15 +163,13 @@ internal abstract class UIKitNavigationSwipeBackTest(
         val initialPage = 1
         val currentPage = mutableIntStateOf(initialPage)
 
-        setNavigationControllerContent {
+        val viewControllerHostingCompose = setNavigationControllerContent {
             TestContent(currentPage = currentPage)
         }
 
         swipeRightFromEdge()
 
-        waitUntil("Waiting for view controller to be popped") {
-            navigationController.viewControllers.size == 1
-        }
+        waitForPopped(viewControllerHostingCompose)
     }
 
     @Test
@@ -186,7 +180,7 @@ internal abstract class UIKitNavigationSwipeBackTest(
         val initialPage = 1
         val currentPage = mutableIntStateOf(initialPage)
 
-        setNavigationControllerContent {
+        val viewControllerHostingCompose = setNavigationControllerContent {
             TestContent(currentPage = currentPage)
         }
 
@@ -195,11 +189,7 @@ internal abstract class UIKitNavigationSwipeBackTest(
             toPosition = { rightCenter() },
         )
 
-        waitForIdle()
-
-        waitUntil("Waiting for view controller to be popped") {
-            navigationController.viewControllers.size == 1
-        }
+        waitForPopped(viewControllerHostingCompose)
     }
 
     private val UIKitInstrumentedTest.navigationController: UINavigationController get() {
@@ -208,17 +198,28 @@ internal abstract class UIKitNavigationSwipeBackTest(
 
     private fun UIKitInstrumentedTest.setNavigationControllerContent(
         content: @Composable () -> Unit = {}
-    ) {
-        val composeViewController = createViewControllerHostingCompose(content = content)
+    ): UIViewController {
+        val viewControllerHostingCompose = createViewControllerHostingCompose(content = content)
 
         setupWindow {
             UINavigationController().also {
-                it.setViewControllers(listOf(UIViewController(), composeViewController), false)
+                it.setViewControllers(listOf(UIViewController(), viewControllerHostingCompose), false)
             }
         }
 
         waitUntil {
-            composeViewController.view.window != null
+            viewControllerHostingCompose.view.window != null
+        }
+
+        return viewControllerHostingCompose
+    }
+
+    private fun UIKitInstrumentedTest.waitForPopped(
+        viewController: UIViewController
+    ) {
+        waitUntil("Waiting for view controller to be popped and detached") {
+            navigationController.viewControllers.size == 1 &&
+                viewController.view.window == null
         }
     }
 
