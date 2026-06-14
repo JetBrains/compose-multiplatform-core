@@ -5,66 +5,33 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.SoftwareType
 import androidx.build.PlatformIdentifier
-import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
+    id("JetBrainsAndroidXPlugin")
 }
 
 androidXMultiplatform {
-    androidNative()
-    ios()
-    js()
-    jvm()
-    linux()
-    mac()
-    mingwX64()
-    tvos()
-    wasmJs()
-    watchos()
+    redirect("androidx.annotation") {
+        ios()
+        js()
+        jvm()
+        linux()
+        mac()
+        mingwX64()
+        tvos()
+        wasmJs()
+        watchos()
+    }
 
     defaultPlatform(PlatformIdentifier.JVM)
-}
-
-jvmJar {
-    // Strip out typedef classes. For Android libraries, this is done
-    // automatically by the Gradle plugin, but the Annotation library is a
-    // plain jar, built by the regular Gradle java plugin. The typedefs
-    // themselves have been manually extracted into the
-    // external-annotations directory, and those are packaged separately
-    // below by the annotationsZip task.
-    exclude("androidx/annotation/ProductionVisibility.class")
-    exclude("androidx/annotation/DimensionUnit.class")
-}
-
-task annotationsZip(type: Zip) {
-    archiveClassifier.set("annotations")
-    from("external-annotations")
-}
-
-// add annotations jar task as artifacts
-artifacts {
-    archives jvmJar
-    archives annotationsZip
-}
-
-dependencies {
-    constraints {
-        // Prevents symbols duplication with old versions of JetBrains' fork.
-        // Starting with Compose Multiplatform 1.8.0, "annotation-internal" published as empty
-        // artifact with dependency to this androidx module.
-        commonMainImplementation("org.jetbrains.compose.annotation-internal:annotation:1.8.0") {
-            because "prevents symbols duplication"
-        }
-    }
 }
 
 androidx {
     name = "Annotation"
     type = SoftwareType.PUBLISHED_LIBRARY
-    mavenVersion = LibraryVersions.ANNOTATION
     inceptionYear = "2013"
     description = "Provides source annotations for tooling and readability."
 }

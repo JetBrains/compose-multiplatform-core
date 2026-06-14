@@ -27,69 +27,23 @@ import androidx.build.PlatformIdentifier
 
 plugins {
     id("AndroidXPlugin")
+    id("JetBrainsAndroidXPlugin")
 }
 
 androidXMultiplatform {
-    ios()
-    js()
-    jvm()
-    linux()
-    mac()
-    mingwX64()
-    tvos()
-    wasmJs()
-    watchos()
+    redirect("androidx.collection") {
+        ios()
+        js()
+        jvm()
+        linux()
+        mac()
+        mingwX64()
+        tvos()
+        wasmJs()
+        watchos()
+    }
 
     defaultPlatform(PlatformIdentifier.JVM)
-
-    sourceSets {
-        configureEach {
-            languageSettings.optIn("kotlin.RequiresOptIn")
-            languageSettings.optIn("kotlin.contracts.ExperimentalContracts")
-        }
-
-        commonMain.dependencies {
-            api("androidx.annotation:annotation:1.9.1")
-        }
-
-        commonTest.dependencies {
-            implementation(libs.kotlinTest)
-            implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")
-            implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.9.0")
-        }
-
-        jvmMain.dependencies {
-            api(libs.jspecify)
-        }
-
-        nonJsTest.dependsOn(commonTest)
-        jvmTest {
-            dependsOn(nonJsTest)
-            dependencies {
-                implementation(libs.kotlinTestJunit)
-                implementation(libs.truth)
-                implementation(project(":internal-testutils-truth"))
-            }
-        }
-
-        unixMain.dependsOn(nativeMain)
-        appleMain.dependsOn(unixMain)
-        linuxMain.dependsOn(unixMain)
-
-        nativeTest.dependsOn(nonJsTest)
-        wasmJsTest.dependsOn(nonJsTest)
-    }
-}
-
-dependencies {
-    constraints {
-        // Prevents symbols duplication with old versions of JetBrains' fork.
-        // Starting with Compose Multiplatform 1.8.0, "collection-internal" published as empty
-        // artifact with dependency to this androidx module.
-        commonMainImplementation("org.jetbrains.compose.collection-internal:collection:1.8.0") {
-            because "prevents symbols duplication"
-        }
-    }
 }
 
 androidx {
