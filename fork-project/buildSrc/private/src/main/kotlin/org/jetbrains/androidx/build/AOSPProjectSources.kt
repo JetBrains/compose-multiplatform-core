@@ -32,6 +32,7 @@ import org.gradle.process.ExecOperations
 import org.gradle.work.DisableCachingByDefault
 
 private const val USE_AOSP_PROJECT_SOURCES = "useAOSPProjectSources"
+private const val EXPECTED_AGP_VERSION = "EXPECTED_AGP_VERSION"
 
 private val aospSourceRoots =
     mapOf(
@@ -62,6 +63,15 @@ private val metadataResolvingTaskNames =
 
 fun Project.configureAOSPProjectSources() {
     if (!providers.gradleProperty(USE_AOSP_PROJECT_SOURCES).map(String::toBoolean).getOrElse(false)) {
+        return
+    }
+
+    val aospGradleVersionCatalog = aospProjectDirectory().resolve("gradle/libs.versions.toml")
+    if (!aospGradleVersionCatalog.isFile || aospGradleVersionCatalog.length() == 0L) {
+        logger.warn(
+            "$USE_AOSP_PROJECT_SOURCES is enabled, but `$aospGradleVersionCatalog` is missing " +
+                "or empty. Falling back to configured fork dependencies."
+        )
         return
     }
 
@@ -136,9 +146,6 @@ abstract class PrepareAOSPProjectSourcesTask : DefaultTask() {
     @get:Internal
     abstract val aospRepositoryDirectory: DirectoryProperty
 
-    @get:Internal
-    abstract val forkProjectDirectory: DirectoryProperty
-
     @get:Input
     abstract val parentGradleCommand: Property<String>
 
@@ -156,7 +163,6 @@ abstract class PrepareAOSPProjectSourcesTask : DefaultTask() {
                 aospProjectDir = aospProjectDirectory.get().asFile,
                 aospOutDir = aospOutDirectory.get().asFile,
                 aospRepository = aospRepositoryDirectory.get().asFile,
-                forkProjectDir = forkProjectDirectory.get().asFile,
                 parentGradleCommand = parentGradleCommand.get(),
                 targetNames = targetNames,
                 roots = roots,
@@ -170,7 +176,6 @@ private fun PrepareAOSPProjectSourcesTask.configureAospLocations(project: Projec
     aospProjectDirectory.set(project.aospProjectDirectory())
     aospOutDirectory.set(project.aospOutDirectory())
     aospRepositoryDirectory.set(project.aospRepositoryDirectory())
-    forkProjectDirectory.set(project.rootProject.projectDir)
     parentGradleCommand.set(project.parentGradleCommand())
 }
 
@@ -178,7 +183,6 @@ private class AospPrepareContext(
     private val aospProjectDir: File,
     private val aospOutDir: File,
     private val aospRepository: File,
-    private val forkProjectDir: File,
     private val parentGradleCommand: String,
     private val targetNames: Set<String>,
     private val roots: Map<AospCoordinate, String>,
@@ -279,11 +283,15 @@ private class AospPrepareContext(
 
     private fun runAospGradle(taskPaths: List<String>) {
         execOperations.exec { spec ->
-            spec.workingDir = forkProjectDir
+            spec.workingDir = aospProjectDir
+            spec.environment(
+                EXPECTED_AGP_VERSION,
+                System.getenv(EXPECTED_AGP_VERSION) ?: "from-fork-project",
+            )
             spec.commandLine(
                 parentGradleCommand,
                 "-p",
-                "..",
+                aospProjectDir.absolutePath,
                 *taskPaths.toTypedArray(),
                 "-x",
                 "generateApi",
@@ -428,11 +436,13 @@ private class AospVersionCatalog(private val file: File) {
 }
 
 private fun Project.parentGradleCommand(): String =
-    if (System.getProperty("os.name").lowercase(Locale.US).contains("windows")) {
-        "..\\gradlew.bat"
-    } else {
-        "../gradlew"
-    }
+    aospProjectDirectory().resolve(
+        if (System.getProperty("os.name").lowercase(Locale.US).contains("windows")) {
+            "gradlew.bat"
+        } else {
+            "gradlew"
+        }
+    ).absolutePath
 
 private fun Project.aospProjectDirectory(): File =
     rootProject.projectDir.parentFile
