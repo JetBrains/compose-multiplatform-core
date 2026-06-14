@@ -34,10 +34,13 @@ plugins {
 }
 
 androidXMultiplatform {
-    androidLibrary {
-        compileSdk = 35
-        namespace = "androidx.compose.material"
-        androidResources.enable = true
+    redirect("androidx.compose.material") {
+        androidLibrary {
+            compileSdk = 35
+            namespace = "org.jetbrains.androidx.compose.material"
+
+            androidResources.enable = true
+        }
     }
     desktop()
     mac()
@@ -162,7 +165,6 @@ dependencies {
 androidx {
     name = "Compose Material Components"
     type = SoftwareType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
-    mavenVersion = LibraryVersions.COMPOSE
     inceptionYear = "2018"
     description = "Compose Material Design Components library"
     legacyDisableKotlinStrictApiMode = true

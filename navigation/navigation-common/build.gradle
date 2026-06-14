@@ -35,15 +35,18 @@ plugins {
 }
 
 androidXMultiplatform {
-    androidLibrary {
-        namespace = "androidx.navigation.common"
-        optimization {
-            it.consumerKeepRules.publish = true
-            it.consumerKeepRules.files.add(new File("proguard-rules.pro"))
-        }
-        androidResources.enable = true
-        compilations.withType(KotlinMultiplatformAndroidHostTestCompilation) {
-            it.returnDefaultValues = true
+    redirect("androidx.navigation") {
+        androidLibrary {
+            namespace = "org.jetbrains.androidx.navigation.common"
+
+            optimization {
+                it.consumerKeepRules.publish = true
+                it.consumerKeepRules.files.add(new File("proguard-rules.pro"))
+            }
+            androidResources.enable = true
+            compilations.withType(KotlinMultiplatformAndroidHostTestCompilation) {
+                it.returnDefaultValues = true
+            }
         }
     }
     desktop()

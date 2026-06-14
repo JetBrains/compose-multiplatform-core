@@ -33,10 +33,13 @@ plugins {
 }
 
 androidXMultiplatform {
-    androidLibrary {
-        compileSdk = 36
-        namespace = "androidx.navigation3.ui"
-        androidResources.enable = true
+    redirect("androidx.navigation3") {
+        androidLibrary {
+            compileSdk = 36
+            namespace = "org.jetbrains.androidx.navigation3.ui"
+
+            androidResources.enable = true
+        }
     }
     desktop()
     mac()

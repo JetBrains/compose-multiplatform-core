@@ -33,10 +33,13 @@ plugins {
 }
 
 androidXMultiplatform {
-    androidLibrary {
-        namespace = "androidx.navigation"
-        androidResources.enable = true
-        withJava()
+    redirect("androidx.navigation") {
+        androidLibrary {
+            namespace = "org.jetbrains.androidx.navigation"
+
+            androidResources.enable = true
+            withJava()
+        }
     }
     desktop()
     linux()
