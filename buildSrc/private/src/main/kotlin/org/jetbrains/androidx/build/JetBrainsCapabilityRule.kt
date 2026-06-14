@@ -103,41 +103,6 @@ fun Project.configureJetBrainsCapabilityResolution() {
     }
 }
 
-fun Project.configureRedirectionCapability() {
-    // Compatibility stubs already wrap androidx artifacts directly; adding extra outgoing
-    // redirection capability here can break IDE metadata resolution for stubbed KMP modules.
-    if (JetBrainsPublication.isCompatibilityStubProject(this)) return
-    if (!JetBrainsPublication.shouldPublish(this)) return
-    val redirection = artifactRedirection() ?: return
-    if (redirection.targetNames.isEmpty()) return
-
-    // Configure resolution strategy to handle all capability conflicts
-    configurations.configureEach { configuration ->
-        if (configuration.isCanBeConsumed) {
-            // It's important to declare the implicit capability explicitly because once you define
-            // any explicit capability, all capabilities must be declared, including the implicit one.
-            configuration.outgoing.capability("$group:$name:$version")
-
-            // Add the androidx.* capability in addition to the implicit project capability
-            val redirectedVersion = redirection.versionForConfigurationOrDefault(configuration.name)
-            configuration.outgoing.capability("${redirection.groupId}:$name:$redirectedVersion")
-        }
-    }
-}
-
-internal fun Project.publishedRedirectionCapabilities(): Set<String> {
-    val redirection = artifactRedirection() ?: return emptySet()
-    if (redirection.targetNames.isEmpty()) return emptySet()
-
-    return buildSet {
-        add("$group:$name:$version")
-        add("${redirection.groupId}:$name:${redirection.defaultVersion}")
-        redirection.targetVersions.values.forEach { redirectedVersion ->
-            add("${redirection.groupId}:$name:$redirectedVersion")
-        }
-    }
-}
-
 private fun CapabilityResolutionDetails.selectPreferredAndroidXCandidate() {
     // Only intervene if there are multiple candidates
     if (candidates.size <= 1) {

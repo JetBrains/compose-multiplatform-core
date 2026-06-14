@@ -20,6 +20,24 @@ import androidx.build.AndroidXMultiplatformExtension
 import org.gradle.api.Project
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 
+private fun Project.strProperty(name: String): String? = findProperty(name)?.toString()
+
+/**
+ * Look up an `artifactRedirection.version.*` property hierarchically from the most specific
+ * (`<groupId>.<projectName>`) down to the least specific (`<groupId-prefix>`). E.g. for
+ * `groupId = "androidx.compose.runtime"` and `project.name = "runtime"` searches:
+ * `…androidx.compose.runtime.runtime`, `…androidx.compose.runtime`, `…androidx.compose`,
+ * `…androidx`. Returns null if none is set.
+ *
+ * Consumed by the `redirect { }` parallel-graph back-end ([applyParallelRedirectGraph]) to resolve
+ * the version of the `androidx.*` coordinate a redirect target points at.
+ */
+fun Project.findArtifactRedirectionVersion(groupId: String): String? {
+    val parts = groupId.split(".") + name
+    val variations = (parts.size downTo 1).map { i -> parts.take(i).joinToString(".") }
+    return variations.firstNotNullOfOrNull { strProperty("artifactRedirection.version.$it") }
+}
+
 /**
  * Parallel-graph back-end for artifact redirection.
  *
