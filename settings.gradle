@@ -17,6 +17,8 @@ pluginManagement {
 }
 
 buildscript {
+    if (System.getenv("EXPECTED_AGP_VERSION") == null) return
+
     ext.supportRootFolder = buildscript.sourceFile.getParentFile()
     apply(from: "buildSrc/repos.gradle")
     apply(from: "buildSrc/settingsScripts/project-dependency-graph.groovy")
@@ -44,6 +46,14 @@ buildscript {
 
 plugins {
     id("AndroidXHostTestFailureHandlerPlugin")
+}
+
+includeBuild("fork-project")
+
+if (System.getenv("EXPECTED_AGP_VERSION") == null) {
+    rootProject.name = "compose-multiplatform-core"
+    rootProject.buildFileName = "placeholder/build.gradle"
+    return
 }
 
 enableFeaturePreview "STABLE_CONFIGURATION_CACHE"
