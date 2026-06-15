@@ -738,7 +738,11 @@ class MacOsWindow internal constructor(
     private class TimeMarkWrapper(val timeMark: TimeSource.Monotonic.ValueTimeMark)
 
     private fun setupDisplayLink() {
+        if (!nativeWindow.isVisible) {
+            return
+        }
         displayLink?.close()
+        displayLink = null
         displayLink = DisplayLink.create(nativeWindow.screenId()) {
             val frameStartTimeMarkWrapper = TimeMarkWrapper(TimeSource.Monotonic.markNow())
             if (
