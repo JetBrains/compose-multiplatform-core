@@ -69,9 +69,6 @@ internal actual val pointerIconDefault: PointerIcon = AndroidPointerIconType(And
 internal actual val pointerIconCrosshair: PointerIcon = AndroidPointerIconType(AndroidViewPointerIcon.TYPE_CROSSHAIR)
 internal actual val pointerIconText: PointerIcon = AndroidPointerIconType(AndroidViewPointerIcon.TYPE_TEXT)
 internal actual val pointerIconHand: PointerIcon = AndroidPointerIconType(AndroidViewPointerIcon.TYPE_HAND)
-
-internal actual val pointerIconMove: PointerIcon = AndroidPointerIconType(AndroidViewPointerIcon.TYPE_ALL_SCROLL)
-internal actual val pointerIconWait: PointerIcon = AndroidPointerIconType(AndroidViewPointerIcon.TYPE_WAIT)
 internal actual val pointerIconColResize: PointerIcon = AndroidPointerIconType(AndroidViewPointerIcon.TYPE_HORIZONTAL_DOUBLE_ARROW)
 internal actual val pointerIconRowResize: PointerIcon = AndroidPointerIconType(AndroidViewPointerIcon.TYPE_VERTICAL_DOUBLE_ARROW)
 internal actual val pointerIconNResize: PointerIcon = AndroidPointerIconType(AndroidViewPointerIcon.TYPE_VERTICAL_DOUBLE_ARROW)
@@ -86,4 +83,3 @@ internal actual val pointerIconNSResize: PointerIcon = AndroidPointerIconType(An
 internal actual val pointerIconEWResize: PointerIcon = AndroidPointerIconType(AndroidViewPointerIcon.TYPE_HORIZONTAL_DOUBLE_ARROW)
 internal actual val pointerIconNeSwResize: PointerIcon = AndroidPointerIconType(AndroidViewPointerIcon.TYPE_TOP_RIGHT_DIAGONAL_DOUBLE_ARROW)
 internal actual val pointerIconNwSeResize: PointerIcon = AndroidPointerIconType(AndroidViewPointerIcon.TYPE_TOP_LEFT_DIAGONAL_DOUBLE_ARROW)
-internal actual val pointerIconNone: PointerIcon = AndroidPointerIconType(AndroidViewPointerIcon.TYPE_NULL)

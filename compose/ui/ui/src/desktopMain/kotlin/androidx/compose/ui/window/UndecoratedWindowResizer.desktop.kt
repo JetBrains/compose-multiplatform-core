@@ -122,14 +122,15 @@ internal class UndecoratedWindowResizer(
     @Composable
     private fun Side(cursorId: Int, sides: Int) = Layout(
         {},
-        Modifier.cursor(cursorId).resizeOnDrag(sides),
+//        Modifier.cursor(cursorId).resizeOnDrag(sides),
+        Modifier.resizeOnDrag(sides),
         measurePolicy = { _, constraints ->
             layout(constraints.maxWidth, constraints.maxHeight) {}
         }
     )
 
-    private fun Modifier.cursor(awtCursorId: Int) =
-        pointerHoverIcon(PointerIcon(Cursor(awtCursorId)))
+//    private fun Modifier.cursor(awtCursorId: Int) =
+//        pointerHoverIcon(PointerIcon(Cursor(awtCursorId)))
 
     private fun resize(sides: Int, pointPos: Point) {
         val diffX = pointPos.x - initialPointPos.x

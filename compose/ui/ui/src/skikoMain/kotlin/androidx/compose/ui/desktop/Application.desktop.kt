@@ -36,6 +36,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.yield
 import kotlinx.io.files.Path
 import androidx.compose.runtime.Applier
+import androidx.compose.ui.input.pointer.PointerIconService
 import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.withContext
 
@@ -211,8 +212,8 @@ interface Application : Clipboard, UriHandler, AutoCloseable {
 
     val nativeApplication: Any
 
-    // these locals are provided through compose/ui/ui/src/commonMain/kotlin/androidx/compose/ui/platform/CompositionLocals.kt,
-    // but they are only available in ComposeScene, and Air uses them outside of a scene too
+    // these locals are the same as compose/ui/ui/src/commonMain/kotlin/androidx/compose/ui/platform/CompositionLocals.kt,
+    // but we want to provide outside a scene too
     @Composable
     fun withCompositionLocal(content: @Composable () -> Unit)
 

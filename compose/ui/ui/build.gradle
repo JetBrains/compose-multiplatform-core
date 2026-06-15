@@ -230,6 +230,14 @@ androidXMultiplatform {
             dependsOn(skikoMain)
             dependencies {
                 implementation(libs.kotlinDesktopToolkitCommon)
+                implementation(libs.kotlinDesktopToolkitGtkLinuxArm64)
+                implementation(libs.kotlinDesktopToolkitGtkLinuxX64)
+                implementation(libs.kotlinDesktopToolkitLinuxArm64)
+                implementation(libs.kotlinDesktopToolkitLinuxX64)
+                implementation(libs.kotlinDesktopToolkitMacOsArm64)
+                implementation(libs.kotlinDesktopToolkitMacOsX64)
+                implementation(libs.kotlinDesktopToolkitWindowsArm64)
+                implementation(libs.kotlinDesktopToolkitWindowsX64)
             }
         }
 
