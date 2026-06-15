@@ -60,10 +60,6 @@ interface PointerIcon {
         /** Commonly used to indicate to a user that an element is clickable. */
         val Hand = pointerIconHand
 
-        @NoriaOnly val Move = pointerIconMove
-
-        @NoriaOnly val Wait = pointerIconWait
-
         @NoriaOnly val ColResize = pointerIconColResize
 
         @NoriaOnly val RowResize = pointerIconRowResize
@@ -91,8 +87,6 @@ interface PointerIcon {
         @NoriaOnly val NeSwResize = pointerIconNeSwResize
 
         @NoriaOnly val NwSeResize = pointerIconNwSeResize
-
-        @NoriaOnly val None = pointerIconNone
     }
 }
 
@@ -101,8 +95,6 @@ internal expect val pointerIconCrosshair: PointerIcon
 internal expect val pointerIconText: PointerIcon
 internal expect val pointerIconHand: PointerIcon
 
-internal expect val pointerIconMove: PointerIcon
-internal expect val pointerIconWait: PointerIcon
 internal expect val pointerIconColResize: PointerIcon
 internal expect val pointerIconRowResize: PointerIcon
 internal expect val pointerIconNResize: PointerIcon
@@ -117,7 +109,6 @@ internal expect val pointerIconNSResize: PointerIcon
 internal expect val pointerIconEWResize: PointerIcon
 internal expect val pointerIconNeSwResize: PointerIcon
 internal expect val pointerIconNwSeResize: PointerIcon
-internal expect val pointerIconNone: PointerIcon
 
 internal interface PointerIconService {
     fun getIcon(): PointerIcon
