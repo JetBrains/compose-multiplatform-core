@@ -91,6 +91,7 @@ import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.contains
 import androidx.compose.ui.unit.round
 import androidx.compose.ui.unit.toRect
 import androidx.compose.ui.useLegacyRenderNodeLayers
@@ -371,7 +372,7 @@ internal class RootNodeOwner(
     }
 
     private fun isInBounds(localPosition: Offset): Boolean =
-        size?.toRect()?.contains(localPosition) ?: true
+        size?.contains(localPosition) ?: true
 
     private fun calculateBoundsInWindow(): Rect? {
         val rect = size?.toRect() ?: return null
