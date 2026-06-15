@@ -44,7 +44,7 @@ androidXMultiplatform {
     redirect("androidx.compose.ui") {
         androidLibrary {
             withJava()
-            compileSdk = 37
+            compileSdk = 35
             androidResources.enable = true
             namespace = "org.jetbrains.androidx.compose.ui"
             // namespace has to be unique, but default androidx.compose.ui.test package is taken by

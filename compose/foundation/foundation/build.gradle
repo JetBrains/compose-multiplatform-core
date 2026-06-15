@@ -37,7 +37,7 @@ plugins {
 androidXMultiplatform {
     redirect("androidx.compose.foundation") {
         androidLibrary {
-            compileSdk = 37
+            compileSdk = 35
             namespace = "org.jetbrains.androidx.compose.foundation"
             androidResources.enable = true
         }
