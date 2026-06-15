@@ -140,7 +140,7 @@ abstract class AndroidXMultiplatformExtension(val project: Project) {
      *
      * `redirectCoordinate` carries the `androidx.*` group from the `redirect("group") { }` argument
      * (required) and the optional version override; when its version is null the back-end resolves it
-     * from `artifactRedirection.version.*` gradle.properties.
+     * from the `[versions]` table of `redirectversions.toml`.
      */
     internal data class RedirectTargetDecl(
         val targetName: String,
@@ -782,7 +782,7 @@ abstract class AndroidXMultiplatformExtension(val project: Project) {
      *
      * [group] is the target `androidx.*` group and is **required** — every redirect declares it
      * explicitly (no property fallback, no derivation). [version] is optional: omit it to resolve
-     * from `artifactRedirection.version.*` gradle.properties; one redirect coordinate per module.
+     * from the `[versions]` table of `redirectversions.toml`; one redirect coordinate per module.
      *
      * The receiver is the decorated `androidXMultiplatform` extension itself (no separate scope
      * object), so the target list is not duplicated and Groovy nested config closures (e.g.

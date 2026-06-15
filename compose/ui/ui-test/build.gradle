@@ -121,7 +121,7 @@ androidXMultiplatform {
             }
         }
 
-        def navigationEventVersion = project.findProperty('artifactRedirection.version.androidx.navigationevent')
+        def navigationEventVersion = project.redirectVersions.get('androidx.navigationevent')
 
         // TODO: Align naming: nonAndroidMain
         skikoMain {

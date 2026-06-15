@@ -119,6 +119,7 @@ import org.gradle.plugin.devel.tasks.ValidatePlugins
 import org.gradle.process.CommandLineArgumentProvider
 import org.jetbrains.androidx.build.jetBrainsGetDefaultAndroidBaseJavaVersion
 import org.jetbrains.androidx.build.jetBrainsGetDefaultTargetJavaVersion
+import org.jetbrains.androidx.build.registerRedirectVersionsExtension
 import org.jetbrains.kotlin.gradle.dsl.ExplicitApiMode
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.dsl.KotlinAndroidProjectExtension
@@ -153,6 +154,10 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
                 AndroidXMultiplatformExtension.EXTENSION_NAME,
                 project,
             )
+
+        // Exposes the redirectversions.toml registry as `project.redirectVersions` for build scripts
+        // that build redirect-coordinate dependency strings (e.g. compose/ui/ui).
+        project.registerRedirectVersionsExtension()
 
         project.tasks.register(BUILD_ON_SERVER_TASK, DefaultTask::class.java)
         // Perform different actions based on which plugins have been applied to the project.

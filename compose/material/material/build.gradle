@@ -51,7 +51,7 @@ androidXMultiplatform {
     defaultPlatform(PlatformIdentifier.ANDROID)
 
     sourceSets {
-        def navigationEventVersion = project.findProperty('artifactRedirection.version.androidx.navigationevent')
+        def navigationEventVersion = project.redirectVersions.get('androidx.navigationevent')
         commonMain.dependencies {
             api(project(":compose:animation:animation-core"))
             api(project(":compose:foundation:foundation"))

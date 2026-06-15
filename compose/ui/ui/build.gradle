@@ -71,7 +71,7 @@ androidXMultiplatform {
     configureDarwinFlags()
 
     sourceSets {
-        def composeVersion = project.findProperty('artifactRedirection.version.androidx.compose')
+        def composeVersion = project.redirectVersions.get('androidx.compose')
         commonMain.dependencies {
             implementation(libs.kotlinCoroutinesCore)
             api("androidx.annotation:annotation:1.9.1")
@@ -195,7 +195,7 @@ androidXMultiplatform {
             implementation(project(":compose:test-utils"))
         }
 
-        def lifecycleVersion = project.findProperty('artifactRedirection.version.androidx.lifecycle')
+        def lifecycleVersion = project.redirectVersions.get('androidx.lifecycle')
         // TODO: Align naming: nonAndroidMain
         skikoMain {
             dependsOn(commonMain)

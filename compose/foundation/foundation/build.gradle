@@ -63,7 +63,7 @@ androidXMultiplatform {
             implementation(project(":compose:foundation:foundation-layout"))
         }
 
-        def navigationEventVersion = project.findProperty('artifactRedirection.version.androidx.navigationevent')
+        def navigationEventVersion = project.redirectVersions.get('androidx.navigationevent')
         commonTest.dependencies {
             implementation(libs.kotlinTest)
             implementation(libs.kotlinCoroutinesTest)
