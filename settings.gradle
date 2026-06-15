@@ -17,7 +17,10 @@ pluginManagement {
 }
 
 buildscript {
-    if (System.getenv("EXPECTED_AGP_VERSION") == null) return
+// if project is opened via "gradlew studio" - open the original and the fork projects
+// otherwise open only the fork project and stub the original
+    def isRunFromGradlewStudioTask = System.getenv("EXPECTED_AGP_VERSION") != null
+    if (!isRunFromGradlewStudioTask) return
 
     ext.supportRootFolder = buildscript.sourceFile.getParentFile()
     apply(from: "buildSrc/repos.gradle")
@@ -50,7 +53,10 @@ plugins {
 
 includeBuild("fork-project")
 
-if (System.getenv("EXPECTED_AGP_VERSION") == null) {
+// if project is opened via "gradlew studio" - open the original and the fork projects
+// otherwise open only the fork project and stub the original
+def isRunFromGradlewStudioTask = System.getenv("EXPECTED_AGP_VERSION") != null
+if (!isRunFromGradlewStudioTask) {
     rootProject.name = "compose-multiplatform-core"
     rootProject.buildFileName = "placeholder/build.gradle"
     return
