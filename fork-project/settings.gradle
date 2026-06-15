@@ -51,6 +51,13 @@ enableFeaturePreview "STABLE_CONFIGURATION_CACHE"
 
 def supportRootFolder = buildscript.sourceFile.getParentFile().getParentFile()
 skikoSetup.defineSkikoInVersionCatalog(settings)
+def isRunFromGradlewStudioTask = System.getenv("EXPECTED_AGP_VERSION") != null
+def useAOSPProjectSources = isRunFromGradlewStudioTask
+if (useAOSPProjectSources) {
+    includeBuild("..") {
+        name = "aospProjectSources"
+    }
+}
 
 /* In JetBrains Fork we don't force Android Studio usage.
 // Abort immediately if we're running in Studio, but not a managed instance of Studio.

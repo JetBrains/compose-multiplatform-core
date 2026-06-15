@@ -146,22 +146,22 @@ private def configure(target, isDevice) {
 
         tasks[compileTaskProvider.name].dependsOn(libTaskName)
 
-        cinterops {
-            XCTest {
-                def path = frameworksPath(target.konanTarget)
-                compilerOpts("-iframework", path)
-            }
-            CMPTestUtils {
-                def cinteropTask = tasks[interopProcessingTaskName]
-                headersPath.eachFileRecurse {
-                    if (it.name.endsWith('.h')) {
-                        extraOpts("-header", it.name)
-                        cinteropTask.inputs.file(it)
-                    }
-                }
-                compilerOpts("-I${headersPath}")
-            }
-        }
+//        cinterops {
+//            XCTest {
+//                def path = frameworksPath(target.konanTarget)
+//                compilerOpts("-iframework", path)
+//            }
+//            CMPTestUtils {
+//                def cinteropTask = tasks[interopProcessingTaskName]
+//                headersPath.eachFileRecurse {
+//                    if (it.name.endsWith('.h')) {
+//                        extraOpts("-header", it.name)
+//                        cinteropTask.inputs.file(it)
+//                    }
+//                }
+//                compilerOpts("-I${headersPath}")
+//            }
+//        }
     }
 
     target.binaries.all {
