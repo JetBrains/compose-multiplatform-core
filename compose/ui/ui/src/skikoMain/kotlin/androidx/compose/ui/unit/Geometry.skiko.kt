@@ -98,6 +98,17 @@ internal inline fun DpSize.coerceAtMost(size: DpSize): DpSize =
 internal inline fun IntSize.toRect(): Rect =
     Rect(0f, 0f, width.toFloat(), height.toFloat())
 
+/**
+ * Returns true if the given [offset] is contained within this [IntSize] and (0,0)
+ * This is used to avoid [Rect] object allocations on hot paths
+ */
+@Stable
+internal inline fun IntSize.contains(offset: Offset): Boolean {
+    val offsetY = offset.y
+    val offsetX = offset.x
+    return (offsetX >= 0f) and (offsetX < width) and (offsetY >= 0f) and (offsetY < height)
+}
+
 @Stable
 internal fun IntSize.toDpSize(density: Density): DpSize {
     with(density) {
