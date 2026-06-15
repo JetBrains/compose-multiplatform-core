@@ -141,8 +141,11 @@ internal class UIKitTextInputService(
 
     val textToolbar: TextToolbar by lazy(LazyThreadSafetyMode.NONE) {
         object : TextToolbar {
-            override val status: TextToolbarStatus
-                get() = (currentInputConnection as? ComposeTextInputConnection)?.toolbarStatus ?: TextToolbarStatus.Hidden
+            // Reflects whether the hosting CMPEditMenuView is alive, not the menu's literal visibility,
+            // so hide() always runs and the view can't linger in an orphaned state. Android's TextToolbar
+            // status is intent-based in a similar way (see AndroidTextToolbar.android.kt)
+            override var status: TextToolbarStatus = TextToolbarStatus.Hidden
+                private set
 
             override fun showMenu(
                 rect: Rect,
@@ -151,42 +154,19 @@ internal class UIKitTextInputService(
                 onCutRequested: (() -> Unit)?,
                 onSelectAllRequested: (() -> Unit)?
             ) {
+                status = TextToolbarStatus.Shown
                 if (currentInputConnection == null) {
                     // Entry point for showing the context menu in SelectionContainer scenarios, where
                     // there is no active text input session. iOS requires a UIView that can become first
                     // responder in order to host the context menu, so we create a dedicated connection
-                    // backed by a hidden view for this purpose.
-                    // Note: start() is intentionally not called here — it establishes a text editing
-                    // session (requiring a PlatformTextInputMethodRequest) which is not applicable for
-                    // SelectionContainer.
+                    // without the text input session backed by a hidden view for this purpose.
                     currentInputConnection = SelectionContainerConnection(
                         view = view,
                         coroutineScope = coroutineScope,
                         viewConfiguration = viewConfiguration,
                         focusManager = focusManager
                     )
-                    currentInputConnection?.start(
-                        object : PlatformTextInputMethodRequest {
-                            override val value: () -> TextFieldValue get() = { TextFieldValue() }
-                            override val state: TextEditorState = object : TextEditorState {
-                                override val selection: TextRange get() = TextRange(0, 0)
-                                override val composition: TextRange? get() = null
-                                override val length: Int get() = 0
-                                override fun get(index: Int): Char = ' '
-                                override fun subSequence(startIndex: Int, endIndex: Int): CharSequence = ""
-                                override val text: String get() = ""
-                            }
-                            override val imeOptions: ImeOptions get() = ImeOptions.Default
-                            override val onEditCommand: (List<EditCommand>) -> Unit get() = { _ -> }
-                            override val onImeAction: ((ImeAction) -> Unit)? get() = null
-                            override val textLayoutResult: () -> TextLayoutResult? get() = { null }
-                            override val focusedRectInRoot: () -> Rect? get() = { null }
-                            override val textFieldRectInRoot: () -> Rect? get() = { null }
-                            override val textClippingRectInRoot: () -> Rect? get() = { null }
-                            override val unclippedTextOffsetInRoot: () -> Offset? get() = { null }
-                            override val editText: (block: TextEditingScope.() -> Unit) -> Unit get() = { _ -> }
-                        }
-                    )
+                    currentInputConnection?.start(emptyTextInputRequest())
                 }
                 (currentInputConnection as? ComposeTextInputConnection)?.showToolbarMenu(
                     rect = rect,
@@ -198,11 +178,11 @@ internal class UIKitTextInputService(
             }
 
             override fun hide() {
+                status = TextToolbarStatus.Hidden
                 (currentInputConnection as? ComposeTextInputConnection)?.hideToolbar()
 
                 if (currentInputConnection is SelectionContainerConnection) {
-                    // stop() removes the view from the hierarchy and resigns first responder,
-                    // without requiring a prior start() call.
+                    // stop() removes the view from the hierarchy and resigns first responder.
                     currentInputConnection?.stop()
                     currentInputConnection = null
                 }
@@ -255,3 +235,30 @@ internal class UIKitTextInputService(
         focusManager = { null }
     }
 }
+
+/**
+ * A stub [PlatformTextInputMethodRequest] with no real editing state. Used to start a
+ * [SelectionContainerConnection] purely to attach its hosting view for the context menu —
+ * there is no text editing session behind it.
+ */
+private fun emptyTextInputRequest(): PlatformTextInputMethodRequest =
+    object : PlatformTextInputMethodRequest {
+        override val value: () -> TextFieldValue get() = { TextFieldValue() }
+        override val state: TextEditorState = object : TextEditorState {
+            override val selection: TextRange get() = TextRange(0, 0)
+            override val composition: TextRange? get() = null
+            override val length: Int get() = 0
+            override fun get(index: Int): Char = ' '
+            override fun subSequence(startIndex: Int, endIndex: Int): CharSequence = ""
+            override val text: String get() = ""
+        }
+        override val imeOptions: ImeOptions get() = ImeOptions.Default
+        override val onEditCommand: (List<EditCommand>) -> Unit get() = { _ -> }
+        override val onImeAction: ((ImeAction) -> Unit)? get() = null
+        override val textLayoutResult: () -> TextLayoutResult? get() = { null }
+        override val focusedRectInRoot: () -> Rect? get() = { null }
+        override val textFieldRectInRoot: () -> Rect? get() = { null }
+        override val textClippingRectInRoot: () -> Rect? get() = { null }
+        override val unclippedTextOffsetInRoot: () -> Offset? get() = { null }
+        override val editText: (block: TextEditingScope.() -> Unit) -> Unit get() = { _ -> }
+    }

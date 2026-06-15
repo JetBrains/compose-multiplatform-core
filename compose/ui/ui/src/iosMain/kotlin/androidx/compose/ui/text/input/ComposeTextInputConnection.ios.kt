@@ -17,7 +17,6 @@
 package androidx.compose.ui.text.input
 
 import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.platform.TextToolbarStatus
 import androidx.compose.ui.platform.UIKitNativeTextInputContextMenuCustomAction
 import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.scene.ComposeSceneFocusManager
@@ -128,13 +127,6 @@ internal open class ComposeTextInputConnection(
             selectAll = selectAll
         )
     }
-
-    val toolbarStatus: TextToolbarStatus
-        get() = if (textInputView.isTextMenuShown()) {
-            TextToolbarStatus.Shown
-        } else {
-            TextToolbarStatus.Hidden
-        }
 
     fun showToolbarMenu(
         rect: Rect,

@@ -476,8 +476,6 @@ internal class ComposeTextInputView(
 
     fun hideTextMenu() = this.hideEditMenu()
 
-    fun isTextMenuShown() = isEditMenuShown
-
     private val _tokenizer = TextInputStringTokenizer(textInput = this) {
         input?.let { it.textInRange(TextRange(0, it.endOfDocument())) }
     }
