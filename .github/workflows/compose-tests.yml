@@ -119,6 +119,7 @@ jobs:
         runtime: [ 'ios18', 'ios26' ]
         form_factor: [ 'phone', 'tablet' ]
         include:
+          # Resolve runtime-specific Xcode and runner configuration.
           - runtime: 'ios18'
             runtime_name: 'iOS 18.6'
             runner: macos-15-xlarge
@@ -131,6 +132,7 @@ jobs:
             simulator_os: '26.5'
             xcode_path: '/Applications/Xcode_26.5.app'
             xcode_cache_key_suffix: '26.5'
+          # Resolve runtime/device_type combinations to concrete simulator devices.
           - runtime: 'ios18'
             form_factor: 'phone'
             device: 'iPhone 16'

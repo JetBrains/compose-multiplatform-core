@@ -11,7 +11,8 @@ inputs:
 runs:
   using: "composite"
   steps:
-    # See the runner-images readmes for Xcode versions available on each macOS image.
+    # See the runner-images macOS readmes for Xcode versions available on each image:
+    # https://github.com/actions/runner-images/blob/main/images/macos
     - name: Setup Xcode version
       shell: bash
       run: |
