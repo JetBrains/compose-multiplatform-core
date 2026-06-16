@@ -130,7 +130,7 @@ class SelectionContainerInteractionTest {
         }
 
     @Test
-    fun testSelectionContainer_LongPressDragExtendsSelectionAcrossTextChildren() =
+    fun testSelectionContainer_LongPressDragExtendsSelectionAcrossMultipleBasicTexts() =
         runUIKitInstrumentedTest {
             val selectionState = SelectionState()
             val firstText = "accomplishment"
@@ -156,7 +156,7 @@ class SelectionContainerInteractionTest {
                 endXFraction = 0.98f,
             )
 
-            waitUntil("SelectionContainer should extend selection across text children") {
+            waitUntil("SelectionContainer should extend selection across multiple BasicTexts") {
                 selectionState.selectedText() == firstText + secondText
             }
 
