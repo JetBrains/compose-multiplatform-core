@@ -42,7 +42,7 @@ internal actual fun CompositionLocalConsumerModifierNode.platformScrollConfig():
 
 private object JsConfig : ScrollConfig {
     override fun Density.calculateMouseWheelScroll(event: PointerEvent, bounds: IntSize): Offset {
-        return when ((event.domEventOrNull as? WheelEvent)?.deltaMode) {
+        return when (val deltaMode = (event.domEventOrNull as? WheelEvent)?.deltaMode) {
             WheelEvent.DOM_DELTA_LINE -> event.totalScrollDelta * -defaultLineScrollHeight.dp.toPx()
 
             WheelEvent.DOM_DELTA_PAGE ->
@@ -51,7 +51,12 @@ private object JsConfig : ScrollConfig {
                     y = event.totalScrollDelta.y * bounds.height,
                 ) * -1f
 
-            else -> event.totalScrollDelta * -1.dp.toPx()
+            WheelEvent.DOM_DELTA_PIXEL -> event.totalScrollDelta * -1.dp.toPx()
+
+            else -> {
+                println("Unknown delta mode: $deltaMode")
+                event.totalScrollDelta * -1.dp.toPx()
+            }
         }
     }
 
@@ -70,13 +75,14 @@ private object JsConfig : ScrollConfig {
             return false
         }
         val isTrackpad = isTrackpadEvent(wheelEvent)
+        val isPrecise = wheelEvent.deltaMode != WheelEvent.DOM_DELTA_PIXEL || isTrackpad
         lastWheelEvent = LastWheelEvent(
             deltaX = wheelEvent.deltaX,
             deltaY = wheelEvent.deltaY,
             timeStamp = wheelEvent.timeStamp.toDouble(),
         )
         lastWheelEventWasTrackpad = isTrackpad
-        return isTrackpad
+        return isPrecise
     }
 
     /**
@@ -86,6 +92,12 @@ private object JsConfig : ScrollConfig {
      * wheel animates between ticks.
      */
     private fun isTrackpadEvent(event: WheelEvent): Boolean {
+        // The disambiguation below reasons about pixel deltas. Line- and page-mode deltas are
+        // already discrete, device-independent units (a line, a viewport), so there is no
+        // trackpad/stepping-wheel ambiguity to resolve.
+        if (event.deltaMode != WheelEvent.DOM_DELTA_PIXEL) {
+            return false
+        }
         // Firefox restricts the legacy wheelDelta properties, so they don't provide enough
         // information to reliably disambiguate trackpad events from mouse wheel events.
         // wheelDelta* are non-standard/deprecated (never adopted into the spec; present only
