@@ -48,6 +48,7 @@ object JetBrainsPublication {
                 supportedPlatforms = ComposePlatforms.SKIKO_SUPPORT,
             ),
             ComposeComponent(":compose:ui:ui-graphics"),
+            ComposeComponent(":compose:ui:ui-skiko"),
             ComposeComponent(":compose:ui:ui-test"),
             ComposeComponent(
                 ":compose:ui:ui-test-junit4",
