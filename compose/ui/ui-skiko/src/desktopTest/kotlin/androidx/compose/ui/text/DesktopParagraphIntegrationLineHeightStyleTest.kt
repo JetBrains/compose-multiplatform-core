@@ -17,7 +17,6 @@
 package androidx.compose.ui.text
 
 import androidx.compose.ui.InternalComposeUiApi
-import androidx.compose.ui.platform.registerSkikoComposeImplementation
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -36,21 +35,15 @@ import kotlin.math.abs
 import kotlin.math.ceil
 import kotlin.math.roundToInt
 import org.jetbrains.skia.FontMetrics
-import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
 
 @RunWith(JUnit4::class)
 @OptIn(InternalComposeUiApi::class)
-class DesktopParagraphIntegrationLineHeightStyleTest {
-    @Before
-    fun setup() {
-        registerSkikoComposeImplementation()
-    }
+class DesktopParagraphIntegrationLineHeightStyleTest : SkikoComposeTestBase() {
 
-    // Lazy so the registry is populated by [setup] before the resolver is created.
-    private val fontFamilyResolver by lazy { createFontFamilyResolver() }
+    private val fontFamilyResolver = createFontFamilyResolver()
     private val fontFamilyMeasureFont =
         FontFamily(
             Font(

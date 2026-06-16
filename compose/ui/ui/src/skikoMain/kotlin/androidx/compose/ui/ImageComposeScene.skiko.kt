@@ -34,6 +34,7 @@ import androidx.compose.ui.input.pointer.PointerType
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.WindowInfo
 import androidx.compose.ui.platform.WindowInfoImpl
+import androidx.compose.ui.platform.registerSkikoComposeImplementation
 import androidx.compose.ui.scene.CanvasLayersComposeScene
 import androidx.compose.ui.platform.FrameRecomposer
 import androidx.compose.ui.scene.ComposeScene
@@ -185,6 +186,10 @@ class ImageComposeScene @ExperimentalComposeUiApi constructor(
 
         override val windowInfo: WindowInfo
             get() = _windowInfo
+    }
+
+    init {
+        registerSkikoComposeImplementation()
     }
 
     private val scene = CanvasLayersComposeScene(

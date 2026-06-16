@@ -46,7 +46,7 @@ import kotlinx.coroutines.test.runTest
 
 @ExperimentalCoroutinesApi
 @OptIn(ExperimentalFoundationApi::class, InternalComposeUiApi::class)
-class OnClickTest {
+class OnClickTest : SkikoComposeTestBase() {
 
     private fun testClick(
         pointerMatcher: PointerMatcher,
