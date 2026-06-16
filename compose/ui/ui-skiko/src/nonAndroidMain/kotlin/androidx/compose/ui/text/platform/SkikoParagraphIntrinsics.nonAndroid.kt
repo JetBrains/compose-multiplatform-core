@@ -1,3 +1,5 @@
+@file:OptIn(InternalComposeUiApi::class)
+
 /*
  * Copyright 2023 The Android Open Source Project
  *
@@ -18,8 +20,14 @@ package androidx.compose.ui.text.platform
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.text.*
+import androidx.compose.ui.InternalComposeUiApi
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.AnnotatedString.Range
+import androidx.compose.ui.text.ParagraphIntrinsics
+import androidx.compose.ui.text.Placeholder
+import androidx.compose.ui.text.StrongDirectionType
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.firstStrongDirectionType
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.text.intl.LocaleList
@@ -29,7 +37,7 @@ import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.Density
 import kotlin.math.ceil
 
-internal class SkiaParagraphIntrinsics(
+internal class SkikoParagraphIntrinsics(
     val text: String,
     private val style: TextStyle,
     private val annotations: List<AnnotatedString.Range<out AnnotatedString.Annotation>>,
@@ -82,7 +90,9 @@ internal fun resolveTextDirection(
     return when (textDirection ?: TextDirection.Content) {
         TextDirection.Ltr -> ResolvedTextDirection.Ltr
         TextDirection.Rtl -> ResolvedTextDirection.Rtl
-        TextDirection.Content, TextDirection.Unspecified -> contentBasedTextDirection(text) { localeBasedTextDirection(localeList?.firstOrNull()) }
+        TextDirection.Content, TextDirection.Unspecified -> {
+            contentBasedTextDirection(text) { localeBasedTextDirection(localeList?.firstOrNull()) }
+        }
         TextDirection.ContentOrLtr -> contentBasedTextDirection(text) { ResolvedTextDirection.Ltr }
         TextDirection.ContentOrRtl -> contentBasedTextDirection(text) { ResolvedTextDirection.Rtl }
         else -> error("Invalid TextDirection.")

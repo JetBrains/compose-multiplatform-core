@@ -14,9 +14,12 @@
  * limitations under the License.
  */
 
+@file:OptIn(InternalComposeUiApi::class)
+
 package androidx.compose.ui.text
 
 import org.jetbrains.skia.Rect as SkRect
+import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
@@ -30,8 +33,8 @@ import androidx.compose.ui.graphics.asComposePath
 import androidx.compose.ui.graphics.drawscope.DrawStyle
 import androidx.compose.ui.graphics.skiaCanvas
 import androidx.compose.ui.graphics.toComposeRect
-import androidx.compose.ui.text.internal.requirePrecondition
-import androidx.compose.ui.text.platform.SkiaParagraphIntrinsics
+import androidx.compose.ui.text.PlatformParagraph
+import androidx.compose.ui.text.platform.SkikoParagraphIntrinsics
 import androidx.compose.ui.text.platform.cursorHorizontalPosition
 import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.text.style.ResolvedTextDirection
@@ -51,12 +54,12 @@ import org.jetbrains.skia.paragraph.RectWidthMode
 import org.jetbrains.skia.paragraph.TextBox
 import org.jetbrains.skia.paragraph.Paragraph as SkParagraph
 
-internal class SkiaParagraph(
-    private val paragraphIntrinsics: SkiaParagraphIntrinsics,
+internal class SkikoParagraph(
+    private val paragraphIntrinsics: SkikoParagraphIntrinsics,
     val maxLines: Int,
     private val overflow: TextOverflow,
     val constraints: Constraints
-) : Paragraph {
+) : PlatformParagraph {
     private val layouter = paragraphIntrinsics.layouter().apply {
         setParagraphStyle(maxLines, ellipsis)
     }
@@ -77,11 +80,11 @@ internal class SkiaParagraph(
         }
 
     init {
-        requirePrecondition(constraints.minHeight == 0 && constraints.minWidth == 0) {
+        require(constraints.minHeight == 0 && constraints.minWidth == 0) {
             "Setting Constraints.minWidth and Constraints.minHeight is not supported, " +
                 "these should be the default zero values instead."
         }
-        requirePrecondition(maxLines >= 1) { "maxLines should be greater than 0" }
+        require(maxLines >= 1) { "maxLines should be greater than 0" }
 
         // Size is not known until layout is complete but to apply it, we need to re-create
         // skia's paragraph :'(
@@ -160,7 +163,7 @@ internal class SkiaParagraph(
             }
 
     override fun getPathForRange(start: Int, end: Int): Path {
-        requirePrecondition(start in 0..end && end <= text.length) {
+        require(start in 0..end && end <= text.length) {
             "start($start) or end($end) is out of range [0..${text.length}]," +
                 " or start > end!"
         }
@@ -229,13 +232,13 @@ internal class SkiaParagraph(
             floor((line.baseline + line.descent).toFloat())
         } ?: 0f
 
-    internal fun getLineAscent(lineIndex: Int): Float =
+    override fun getLineAscent(lineIndex: Int): Float =
         -(lineMetrics.getOrNull(lineIndex)?.ascent?.toFloat() ?: 0f)
 
     override fun getLineBaseline(lineIndex: Int): Float =
         lineMetrics.getOrNull(lineIndex)?.baseline?.toFloat() ?: 0f
 
-    internal fun getLineDescent(lineIndex: Int): Float =
+    override fun getLineDescent(lineIndex: Int): Float =
         lineMetrics.getOrNull(lineIndex)?.descent?.toFloat() ?: 0f
 
     private fun lineMetricsForOffset(offset: Int): LineMetrics? =
@@ -497,7 +500,7 @@ internal class SkiaParagraph(
     }
 
     override fun getBoundingBox(offset: Int): Rect {
-        requirePrecondition(offset in text.indices) {
+        require(offset in text.indices) {
             "offset($offset) is out of bounds [0,${text.length})"
         }
         val box = getBoxForwardByOffset(offset) ?: getBoxBackwardByOffset(offset, text.length)!!
@@ -617,7 +620,7 @@ internal class SkiaParagraph(
      */
     @Suppress("NOTHING_TO_INLINE")
     private inline fun checkOffsetIsValid(offset: Int) {
-        requirePrecondition(offset in 0..text.length) {
+        require(offset in 0..text.length) {
             "offset($offset) is out of bounds [0,${text.length}]"
         }
     }
@@ -629,6 +632,7 @@ private fun LineMetrics.trimFirstAscent(
 ): LineMetrics {
     if (textStyle.lineHeight.isUnspecified) return this
     val style = textStyle.lineHeightStyle ?: LineHeightStyle.Default
+    @Suppress("INVISIBLE_REFERENCE") // FIXME: Make [isTrimFirstLineTop] public
     val ascent = if (style.trim.isTrimFirstLineTop()) {
         -fontMetrics.ascent.toDouble()
     } else {
@@ -643,6 +647,7 @@ private fun LineMetrics.trimLastDescent(
 ): LineMetrics {
     if (textStyle.lineHeight.isUnspecified) return this
     val style = textStyle.lineHeightStyle ?: LineHeightStyle.Default
+    @Suppress("INVISIBLE_REFERENCE") // FIXME: Make [isTrimLastLineBottom] public
     val descent = if (style.trim.isTrimLastLineBottom()) {
         fontMetrics.descent.toDouble()
     } else {
@@ -681,7 +686,7 @@ private fun LineMetrics.copy(
     lineNumber = lineNumber
 )
 
-private fun Paragraph.numberOfLinesThatFitMaxHeight(maxHeight: Int): Int {
+private fun SkikoParagraph.numberOfLinesThatFitMaxHeight(maxHeight: Int): Int {
     for (lineIndex in 0 until lineCount) {
         if (getLineBottom(lineIndex) > maxHeight) return lineIndex
     }

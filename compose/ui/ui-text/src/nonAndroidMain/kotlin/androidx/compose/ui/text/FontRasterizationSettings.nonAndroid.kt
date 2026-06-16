@@ -16,8 +16,8 @@
 
 package androidx.compose.ui.text
 
-import androidx.compose.ui.text.platform.Platform
-import androidx.compose.ui.text.platform.currentPlatform
+import androidx.compose.ui.InternalComposeUiApi
+import androidx.compose.ui.text.platform.PlatformTextRegistry
 
 /**
  * Whether edge pixels draw opaque or with partial transparency.
@@ -74,40 +74,14 @@ class FontRasterizationSettings(
     val autoHintingForced: Boolean
 ) {
     companion object {
-        val PlatformDefault by lazy {
-            when (currentPlatform()) {
-                Platform.Windows -> FontRasterizationSettings(
-                    subpixelPositioning = true,
-                    // Most UIs still use ClearType on Windows, so we should match this
-                    // We temporarily disabled `SubpixelAntiAlias` until we figure out
-                    // how to properly retrieve default OS settings
-                    smoothing = FontSmoothing.AntiAlias,
-                    hinting = FontHinting.Normal, // None would trigger some potentially unwanted behavior, but everything else is forced into Normal on Windows
-                    autoHintingForced = false,
-                )
-
-                Platform.Linux, Platform.Unknown -> FontRasterizationSettings(
-                    subpixelPositioning = true,
-                    smoothing = FontSmoothing.AntiAlias,
-                    hinting = FontHinting.Slight, // Most distributions use Slight now by default
-                    autoHintingForced = false,
-                )
-
-                Platform.Android -> FontRasterizationSettings(
-                    subpixelPositioning = true,
-                    smoothing = FontSmoothing.AntiAlias,
-                    hinting = FontHinting.Slight,
-                    autoHintingForced = false,
-                )
-
-                Platform.MacOS, Platform.IOS, Platform.TvOS, Platform.WatchOS -> FontRasterizationSettings(
-                    subpixelPositioning = true,
-                    smoothing = FontSmoothing.AntiAlias, // macOS doesn't support SubpixelAntiAlias anymore as of Catalina
-                    hinting = FontHinting.Normal, // Completely ignored on macOS
-                    autoHintingForced = false, // Completely ignored on macOS
-                )
-            }
-        }
+        /**
+         * The platform-default rasterization settings. The concrete values are produced by the
+         * registered text backend (see [androidx.compose.ui.text.platform.PlatformText.defaultFontRasterizationSettings]), keeping
+         * the platform/skia-specific detection out of ui-text.
+         */
+        @OptIn(InternalComposeUiApi::class)
+        val PlatformDefault: FontRasterizationSettings
+            get() = PlatformTextRegistry.requireCurrent().defaultFontRasterizationSettings
     }
 
     override fun equals(other: Any?): Boolean {
@@ -136,19 +110,4 @@ class FontRasterizationSettings(
             "subpixelPositioning=$subpixelPositioning, " +
             "autoHintingForced=$autoHintingForced)"
     }
-}
-
-@OptIn(ExperimentalTextApi::class)
-internal fun FontSmoothing.toSkFontEdging() = when (this) {
-    FontSmoothing.None -> org.jetbrains.skia.FontEdging.ALIAS
-    FontSmoothing.AntiAlias -> org.jetbrains.skia.FontEdging.ANTI_ALIAS
-    FontSmoothing.SubpixelAntiAlias -> org.jetbrains.skia.FontEdging.SUBPIXEL_ANTI_ALIAS
-}
-
-@OptIn(ExperimentalTextApi::class)
-internal fun FontHinting.toSkFontHinting() = when (this) {
-    FontHinting.None -> org.jetbrains.skia.FontHinting.NONE
-    FontHinting.Slight -> org.jetbrains.skia.FontHinting.SLIGHT
-    FontHinting.Normal -> org.jetbrains.skia.FontHinting.NORMAL
-    FontHinting.Full -> org.jetbrains.skia.FontHinting.FULL
 }

@@ -15,6 +15,7 @@
  */
 package androidx.compose.ui.text.platform
 
+import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
@@ -23,18 +24,12 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontVariation
 import androidx.compose.ui.text.font.FontWeight
 import java.io.File
-import org.jetbrains.skia.Data
-import org.jetbrains.skia.FontMgr
-import org.jetbrains.skia.FontSlant
-import org.jetbrains.skia.FontStyle as SkFontStyle
-import org.jetbrains.skia.FontWeight as SkFontWeight
-import org.jetbrains.skia.FontWidth
-import org.jetbrains.skia.Typeface as SkTypeface
 
 actual sealed class PlatformFont : Font {
     actual abstract val identity: String
     actual abstract val variationSettings: FontVariation.Settings
-    internal actual val cacheKey: String
+    @InternalComposeUiApi
+    actual val cacheKey: String
         get() = "${this::class.qualifiedName}|$identity|weight=${weight.weight}|style=$style"
 }
 
@@ -51,13 +46,14 @@ actual sealed class PlatformFont : Font {
  * @see FontFamily
  */
 
-class ResourceFont internal constructor(
+class ResourceFont @InternalComposeUiApi constructor(
     val name: String,
     override val weight: FontWeight = FontWeight.Normal,
     override val style: FontStyle = FontStyle.Normal,
     override val variationSettings: FontVariation.Settings = FontVariation.Settings(weight, style),
 ) : PlatformFont() {
 
+    @OptIn(InternalComposeUiApi::class)
     constructor(
         name: String,
         weight: FontWeight = FontWeight.Normal,
@@ -96,31 +92,6 @@ class ResourceFont internal constructor(
 }
 
 /**
- * Creates a Font using a resource name.
- *
- * @param resource The resource name in classpath.
- * @param weight The weight of the font. The system uses this to match a
- *     font to a font request that is given in a
- *     [androidx.compose.ui.text.SpanStyle].
- * @param style The style of the font, normal or italic. The system uses
- *     this to match a font to a font request that is given in a
- *     [androidx.compose.ui.text.SpanStyle].
- * @see FontFamily
- */
-fun Font(
-    resource: String,
-    weight: FontWeight = FontWeight.Normal,
-    style: FontStyle = FontStyle.Normal
-): Font = ResourceFont(resource, weight, style, FontVariation.Settings())
-
-fun Font(
-    resource: String,
-    weight: FontWeight = FontWeight.Normal,
-    style: FontStyle = FontStyle.Normal,
-    variationSettings: FontVariation.Settings = FontVariation.Settings(weight, style)
-): Font = ResourceFont(resource, weight, style, variationSettings)
-
-/**
  * Defines a Font using a file path.
  *
  * @param file File path to font.
@@ -132,13 +103,14 @@ fun Font(
  *     [androidx.compose.ui.text.SpanStyle].
  * @see FontFamily
  */
-class FileFont internal constructor(
+class FileFont @InternalComposeUiApi constructor(
     val file: File,
     override val weight: FontWeight = FontWeight.Normal,
     override val style: FontStyle = FontStyle.Normal,
     override val variationSettings: FontVariation.Settings = FontVariation.Settings(weight, style),
 ) : PlatformFont() {
 
+    @OptIn(InternalComposeUiApi::class)
     constructor(
         file: File,
         weight: FontWeight = FontWeight.Normal,
@@ -173,71 +145,5 @@ class FileFont internal constructor(
 
     override fun toString(): String {
         return "FileFont(file=$file, weight=$weight, style=$style, variationSettings=${variationSettings.settings})"
-    }
-}
-
-/**
- * Creates a Font using a file path.
- *
- * @param file File path to font.
- * @param weight The weight of the font. The system uses this to match a
- *     font to a font request that is given in a
- *     [androidx.compose.ui.text.SpanStyle].
- * @param style The style of the font, normal or italic. The system uses
- *     this to match a font to a font request that is given in a
- *     [androidx.compose.ui.text.SpanStyle].
- * @see FontFamily
- */
-fun Font(
-    file: File,
-    weight: FontWeight = FontWeight.Normal,
-    style: FontStyle = FontStyle.Normal
-): Font = FileFont(file, weight, style, FontVariation.Settings())
-
-fun Font(
-    file: File,
-    weight: FontWeight = FontWeight.Normal,
-    style: FontStyle = FontStyle.Normal,
-    variationSettings: FontVariation.Settings = FontVariation.Settings(weight, style)
-): Font = FileFont(file, weight, style, variationSettings)
-
-internal actual fun loadTypeface(font: Font): SkTypeface {
-    if (font !is PlatformFont) {
-        throw IllegalArgumentException("Unsupported font type: $font")
-    }
-    val typeface = when (font) {
-        is ResourceFont -> typefaceResource(font.name)
-        is FileFont -> FontMgr.default.makeFromFile(font.file.toString())
-        is LoadedFont -> FontMgr.default.makeFromData(Data.makeFromBytes(font.getData()))
-        is SystemFont -> FontMgr.default.matchFamilyStyle(font.identity, font.skFontStyle)
-    } ?: (FontMgr.default.legacyMakeTypeface(font.identity, font.skFontStyle)
-        ?: error("loadTypeface legacyMakeTypeface failed"))
-    return typeface.cloneWithVariationSettings(font.variationSettings)
-}
-
-private fun typefaceResource(resourceName: String): SkTypeface {
-    val contextClassLoader = Thread.currentThread().contextClassLoader!!
-    val resource = contextClassLoader.getResourceAsStream(resourceName)
-        ?: (::typefaceResource.javaClass).getResourceAsStream(resourceName)
-        ?: error("Can't load font from $resourceName")
-
-    val bytes = resource.use { it.readAllBytes() }
-    return FontMgr.default.makeFromData(Data.makeFromBytes(bytes))!!
-}
-
-private val Font.skFontStyle: SkFontStyle
-    get() = SkFontStyle(
-        weight = SkFontWeight(weight.weight),
-        width = FontWidth.NORMAL,
-        slant = if (style == FontStyle.Italic) FontSlant.ITALIC else FontSlant.UPRIGHT
-    )
-
-internal actual fun currentPlatform(): Platform {
-    val name = System.getProperty("os.name")
-    return when {
-        name.startsWith("Linux") -> Platform.Linux
-        name.startsWith("Win") -> Platform.Windows
-        name == "Mac OS X" -> Platform.MacOS
-        else -> Platform.Unknown
     }
 }

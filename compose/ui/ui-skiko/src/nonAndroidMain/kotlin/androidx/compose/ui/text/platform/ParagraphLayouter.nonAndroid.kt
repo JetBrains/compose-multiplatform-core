@@ -45,7 +45,7 @@ internal expect fun getUnresolvedSymbolsRegistry(): UnresolvedSymbolsRegistry?
 
 /**
  * The purpose of this class is to store already built paragraph and pass it between
- * different internal entities (from SkiaParagraphIntrinsics to SkiaParagraph).
+ * different internal entities (from PlatformParagraphIntrinsics to PlatformParagraph).
  *
  * An alternative to passing and reusing existed paragraph is to build it again, but it is 2.5x
  * slower.
@@ -183,8 +183,10 @@ internal class ParagraphLayouter(
             // Since it affects only [ShaderBrush] we can keep the cache if it's not used.
             if (builder.textStyle.brush is ShaderBrush ||
                 builder.annotations.fastAny {
-                    it.item is SpanStyle && // TODO(ivan): Verify that we need only [SpanStyle] here
-                    it.item.brush is ShaderBrush }) {
+                    // TODO(ivan): Verify that we need only [SpanStyle] here
+                    val spanStyle = it.item as? SpanStyle
+                    spanStyle?.brush is ShaderBrush
+                }) {
                 invalidateParagraph(onlyForeground = true)
             }
         }

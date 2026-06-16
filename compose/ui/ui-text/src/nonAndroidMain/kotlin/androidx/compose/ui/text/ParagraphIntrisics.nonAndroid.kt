@@ -15,12 +15,14 @@
  */
 
 @file:JvmName("ParagraphIntrinsicsKt")
+@file:OptIn(InternalComposeUiApi::class)
 
 package androidx.compose.ui.text
-import androidx.compose.ui.text.platform.SkiaParagraphIntrinsics
+import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.createFontFamilyResolver
+import androidx.compose.ui.text.platform.PlatformTextRegistry
 import androidx.compose.ui.unit.Density
 import kotlin.jvm.JvmName
 
@@ -39,7 +41,7 @@ actual fun ParagraphIntrinsics(
     density: Density,
     resourceLoader: Font.ResourceLoader,
 ): ParagraphIntrinsics =
-    SkiaParagraphIntrinsics(
+    PlatformTextRegistry.requireCurrent().createParagraphIntrinsics(
         text = text,
         style = style,
         annotations = spanStyles,
@@ -62,7 +64,7 @@ actual fun ParagraphIntrinsics(
     density: Density,
     fontFamilyResolver: FontFamily.Resolver,
 ): ParagraphIntrinsics =
-    SkiaParagraphIntrinsics(
+    PlatformTextRegistry.requireCurrent().createParagraphIntrinsics(
         text = text,
         style = style,
         annotations = spanStyles,
@@ -79,7 +81,7 @@ actual fun ParagraphIntrinsics(
     fontFamilyResolver: FontFamily.Resolver,
     placeholders: List<AnnotatedString.Range<Placeholder>>,
 ): ParagraphIntrinsics =
-    SkiaParagraphIntrinsics(
+    PlatformTextRegistry.requireCurrent().createParagraphIntrinsics(
         text = text,
         style = style,
         annotations = annotations,
@@ -97,7 +99,7 @@ actual fun ParagraphIntrinsics(
     placeholders: List<AnnotatedString.Range<Placeholder>>,
     softWrap: Boolean,
 ): ParagraphIntrinsics =
-    SkiaParagraphIntrinsics(
+    PlatformTextRegistry.requireCurrent().createParagraphIntrinsics(
         text = text,
         style = style,
         annotations = annotations,
@@ -105,3 +107,4 @@ actual fun ParagraphIntrinsics(
         density = density,
         fontFamilyResolver = fontFamilyResolver,
     )
+

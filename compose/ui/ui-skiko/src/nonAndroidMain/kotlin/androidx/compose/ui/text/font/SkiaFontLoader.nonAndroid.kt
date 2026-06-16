@@ -14,25 +14,31 @@
  * limitations under the License.
  */
 
+@file:OptIn(InternalComposeUiApi::class)
+
 package androidx.compose.ui.text.font
 
+import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.text.font.FontLoadingStrategy.Companion.Async
 import androidx.compose.ui.text.font.FontLoadingStrategy.Companion.Blocking
 import androidx.compose.ui.text.font.FontLoadingStrategy.Companion.OptionalLocal
 import androidx.compose.ui.text.platform.FontCache
 import androidx.compose.ui.text.platform.FontLoadResult
 import androidx.compose.ui.text.platform.PlatformFont
-import org.jetbrains.skia.paragraph.FontCollection
 
+/**
+ * Skia-backed [PlatformTypefacesLoader]. ui-text adapts this into its internal `PlatformFontLoader`
+ * via `createPlatformFontFamilyResolver`, so no skia type or ui-text internal leaks across modules.
+ */
 internal class SkiaFontLoader(
     fontCacheProvider: () -> FontCache
-) : PlatformFontLoader {
+) : PlatformTypefacesLoader {
 
     constructor(fontCache: FontCache = FontCache()) : this (fontCacheProvider = { fontCache })
 
     private val fontCache: FontCache by lazy(fontCacheProvider)
 
-    val fontCollection: FontCollection
+    override val fontCollection: Any
         get() = fontCache.fonts
 
     override fun loadBlocking(font: Font): FontLoadResult? {
@@ -53,11 +59,11 @@ internal class SkiaFontLoader(
         }
     }
 
-    internal fun loadPlatformTypes(
+    override fun loadPlatformTypes(
         fontFamily: FontFamily,
-        fontWeight: FontWeight = FontWeight.Normal,
-        fontStyle: FontStyle = FontStyle.Normal
-    ): FontLoadResult = fontCache.loadPlatformTypes(fontFamily, fontWeight, fontStyle)
+        fontWeight: FontWeight,
+        fontStyle: FontStyle
+    ): Any = fontCache.loadPlatformTypes(fontFamily, fontWeight, fontStyle)
 
     override suspend fun awaitLoad(font: Font): FontLoadResult? {
         // TODO: This should actually do async loading, but for now desktop only supports local
@@ -67,6 +73,6 @@ internal class SkiaFontLoader(
         return loadBlocking(font)
     }
 
-    override val cacheKey: Any
+    override val cacheKey: Any?
         get() = fontCache // results are valid for all shared caches
 }

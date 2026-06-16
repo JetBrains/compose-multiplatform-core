@@ -16,39 +16,21 @@
 
 package androidx.compose.ui.text
 
-import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontStyle
-import androidx.compose.ui.text.font.SkiaFontLoader
-import androidx.compose.ui.text.platform.Font
+import androidx.compose.ui.text.platform.FontCache
 import androidx.compose.ui.text.platform.Typeface
 import androidx.compose.ui.text.platform.aliases
 import com.google.common.truth.Truth
 import org.jetbrains.skia.Data
 import org.jetbrains.skia.FontMgr
-import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
 
 @RunWith(JUnit4::class)
 class DesktopFontTest {
-    @get:Rule
-    val rule = createComposeRule()
 
-    private val fontLoader = SkiaFontLoader()
-
-    private val fontListFontFamily by lazy {
-        FontFamily(
-            Font(
-                "font_desktop/sample_font.ttf"
-            ),
-            Font(
-                "font/test_400_italic.ttf",
-                style = FontStyle.Italic
-            )
-        )
-    }
+    private val fontCache = FontCache()
 
     private val loadedTypeface by lazy {
         val bytes = Thread
@@ -66,13 +48,13 @@ class DesktopFontTest {
 
     @Test
     fun ensureRegistered() {
-        Truth.assertThat(fontLoader.loadPlatformTypes(FontFamily.Cursive).aliases)
+        Truth.assertThat(fontCache.loadPlatformTypes(FontFamily.Cursive).aliases)
             .isEqualTo(FontFamily.Cursive.aliases)
 
-        Truth.assertThat(fontLoader.loadPlatformTypes(FontFamily.Default).aliases)
+        Truth.assertThat(fontCache.loadPlatformTypes(FontFamily.Default).aliases)
             .isEqualTo(FontFamily.SansSerif.aliases)
 
-        Truth.assertThat(fontLoader.loadPlatformTypes(loadedFontFamily).aliases)
+        Truth.assertThat(fontCache.loadPlatformTypes(loadedFontFamily).aliases)
             .isEqualTo(listOf("Sample Font"))
     }
 }

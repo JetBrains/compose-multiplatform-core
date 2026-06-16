@@ -14,12 +14,11 @@
  * limitations under the License.
  */
 
-@file:OptIn(ExperimentalTextApi::class, InternalTextApi::class)
-@file:JvmName("SkiaParagraph_skikoKt")
-@file:JvmMultifileClass
+@file:OptIn(ExperimentalTextApi::class, InternalTextApi::class, InternalComposeUiApi::class)
 
 package androidx.compose.ui.text.platform
 
+import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
@@ -30,7 +29,9 @@ import androidx.compose.ui.graphics.isSpecified
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.ExperimentalTextApi
+import androidx.compose.ui.text.FontHinting
 import androidx.compose.ui.text.FontRasterizationSettings
+import androidx.compose.ui.text.FontSmoothing
 import androidx.compose.ui.text.InternalTextApi
 import androidx.compose.ui.text.Placeholder
 import androidx.compose.ui.text.PlaceholderVerticalAlign
@@ -40,21 +41,16 @@ import androidx.compose.ui.text.TextDecorationLineStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.WeakKeysCache
 import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontFamilyResolverImpl
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontSynthesis
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.font.SkiaFontLoader
 import androidx.compose.ui.text.intl.LocaleList
 import androidx.compose.ui.text.style.BaselineShift
 import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.text.style.ResolvedTextDirection
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
-import androidx.compose.ui.text.style.TextForegroundStyle
 import androidx.compose.ui.text.style.TextGeometricTransform
-import androidx.compose.ui.text.toSkFontEdging
-import androidx.compose.ui.text.toSkFontHinting
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.isSpecified
@@ -62,11 +58,11 @@ import androidx.compose.ui.unit.isUnspecified
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastForEachReversed
-import kotlin.jvm.JvmMultifileClass
 import kotlin.jvm.JvmName
 import org.jetbrains.skia.Font as SkFont
+import org.jetbrains.skia.FontEdging as SkFontEdging
 import org.jetbrains.skia.FontFeature
-import org.jetbrains.skia.FontStyle as SkFontStyle
+import org.jetbrains.skia.FontHinting as SkFontHinting
 import org.jetbrains.skia.Paint as SkPaint
 import org.jetbrains.skia.PaintMode
 import org.jetbrains.skia.paragraph.Alignment as SkAlignment
@@ -86,13 +82,26 @@ import org.jetbrains.skia.paragraph.TextBox
 import org.jetbrains.skia.paragraph.TextIndent as SkTextIndent
 import org.jetbrains.skia.paragraph.TextStyle as SkTextStyle
 
+private fun FontSmoothing.toSkFontEdging(): SkFontEdging = when (this) {
+    FontSmoothing.None -> SkFontEdging.ALIAS
+    FontSmoothing.AntiAlias -> SkFontEdging.ANTI_ALIAS
+    FontSmoothing.SubpixelAntiAlias -> SkFontEdging.SUBPIXEL_ANTI_ALIAS
+}
+
+private fun FontHinting.toSkFontHinting(): SkFontHinting = when (this) {
+    FontHinting.None -> SkFontHinting.NONE
+    FontHinting.Slight -> SkFontHinting.SLIGHT
+    FontHinting.Normal -> SkFontHinting.NORMAL
+    FontHinting.Full -> SkFontHinting.FULL
+}
+
 private val DefaultFontSize = 16.sp
 
 // Computed ComputedStyles always have font/letter size in pixels for particular `density`.
 // It's important because density could be changed in runtime, and it should force
 // SkTextStyle to be recalculated. Or we can have different densities in different windows.
 private sealed interface ComputedStyle {
-    val textForegroundStyle: TextForegroundStyle
+    val textForegroundStyle: ParagraphTextForegroundStyle
     val brushSize: Size
     val fontSize: Float
     val fontWeight: FontWeight?
@@ -116,7 +125,7 @@ private sealed interface ComputedStyle {
 
     // Compile-time guarantee to be used as a key in the cache
     data class Immutable(
-        override val textForegroundStyle: TextForegroundStyle = TextForegroundStyle.Unspecified,
+        override val textForegroundStyle: ParagraphTextForegroundStyle = ParagraphTextForegroundStyle.Unspecified,
         override val brushSize: Size = Size.Unspecified,
         override val fontSize: Float = Float.NaN,
         override val fontWeight: FontWeight? = null,
@@ -138,7 +147,7 @@ private sealed interface ComputedStyle {
         override val lineHeight: Float? = null,
         override val topRatio: Float = -1f,
     ) : ComputedStyle {
-        private val _foregroundPaint = SkiaTextPaint()
+        private val _foregroundPaint = ParagraphTextPaint()
         fun getForegroundPaint(): SkPaint {
             // `skiaPaint` doesn't create a copy,
             // so all the changes will be applied to skia paint.
@@ -241,7 +250,7 @@ private sealed interface ComputedStyle {
 
     // Keep mutable variant to merge in place, without additional allocations
     class Mutable(
-        override var textForegroundStyle: TextForegroundStyle,
+        override var textForegroundStyle: ParagraphTextForegroundStyle,
         override var brushSize: Size,
         override var fontSize: Float,
         override var fontWeight: FontWeight?,
@@ -265,7 +274,7 @@ private sealed interface ComputedStyle {
     ) : ComputedStyle {
         fun merge(density: Density, other: SpanStyle) {
             val fontSize = other.fontSize.toPx(density, fontSize)
-            textForegroundStyle = textForegroundStyle.merge(other.textForegroundStyle)
+            textForegroundStyle = textForegroundStyle.merge(other.toParagraphTextForegroundStyle())
             other.fontFamily?.let { fontFamily = it }
             this.fontSize = fontSize
             other.fontWeight?.let { fontWeight = it }
@@ -317,6 +326,7 @@ private sealed interface ComputedStyle {
     }
 }
 
+@Suppress("INVISIBLE_REFERENCE") // FIXME: Make [Alignment.topRatio] public
 private fun ComputedStyle(
     density: Density,
     spanStyle: SpanStyle,
@@ -326,7 +336,7 @@ private fun ComputedStyle(
     lineHeight: TextUnit,
     lineHeightStyle: LineHeightStyle?,
 ) = ComputedStyle.Mutable(
-    textForegroundStyle = spanStyle.textForegroundStyle,
+    textForegroundStyle = spanStyle.toParagraphTextForegroundStyle(),
     brushSize = brushSize,
     fontSize = with(density) { spanStyle.fontSize.toPx() },
     fontWeight = spanStyle.fontWeight,
@@ -383,7 +393,7 @@ internal class ParagraphBuilder(
         defaultStyle = ComputedStyle(
             density = density,
             spanStyle = initialStyle,
-            platformParagraphStyle = textStyle.paragraphStyle.platformStyle,
+            platformParagraphStyle = textStyle.toParagraphStyle().platformStyle,
             brushSize = brushSize,
             blendMode = blendMode,
             lineHeight = textStyle.lineHeight,
@@ -422,12 +432,7 @@ internal class ParagraphBuilder(
             ps.ellipsis = ellipsis
         }
 
-        // this downcast is always safe because of sealed types, and we control construction
-        val platformFontLoader = (fontFamilyResolver as FontFamilyResolverImpl).platformFontLoader
-        val fontCollection = when (platformFontLoader) {
-            is SkiaFontLoader -> platformFontLoader.fontCollection
-            else -> throw IllegalStateException("Unsupported font loader $platformFontLoader")
-        }
+        val fontCollection = resolveParagraphFontCollection(fontFamilyResolver)
 
         val pb = SkParagraphBuilder(ps, fontCollection)
 
@@ -535,10 +540,10 @@ internal class ParagraphBuilder(
         val cuts = mutableListOf<Cut>()
         annotations.fastForEach { annotation ->
             // TODO https://youtrack.jetbrains.com/issue/CMP-7151
-            if (annotation.item !is SpanStyle) return@fastForEach
+            val spanStyle = annotation.item as? SpanStyle ?: return@fastForEach
 
-            cuts.add(Cut.StyleAdd(annotation.start, annotation.item))
-            cuts.add(Cut.StyleRemove(annotation.end, annotation.item))
+            cuts.add(Cut.StyleAdd(annotation.start, spanStyle))
+            cuts.add(Cut.StyleRemove(annotation.end, spanStyle))
         }
 
         placeholders.fastForEach { placeholder ->
@@ -597,7 +602,7 @@ internal class ParagraphBuilder(
         val style = ComputedStyle(
             density = density,
             spanStyle = activeStyles[0],
-            platformParagraphStyle = textStyle.paragraphStyle.platformStyle,
+            platformParagraphStyle = textStyle.toParagraphStyle().platformStyle,
             brushSize = brushSize,
             blendMode = blendMode,
             lineHeight = textStyle.lineHeight,
@@ -755,13 +760,6 @@ private fun SpanStyle.copyWithDefaultFontSize(drawStyle: DrawStyle? = null): Spa
     )
 }
 
-internal fun FontStyle.toSkFontStyle(): SkFontStyle {
-    return when (this) {
-        FontStyle.Italic -> SkFontStyle.ITALIC
-        else -> SkFontStyle.NORMAL
-    }
-}
-
 private fun TextDecoration.toSkDecorationStyle(
     color: Color,
     textDecorationLineStyle: TextDecorationLineStyle?
@@ -795,7 +793,7 @@ private fun TextDecorationLineStyle.toSkDecorationLineStyle(): SkDecorationLineS
     }
 }
 
-private fun PlaceholderVerticalAlign.toSkPlaceholderAlignment(): PlaceholderAlignment {
+internal fun PlaceholderVerticalAlign.toSkPlaceholderAlignment(): PlaceholderAlignment {
     return when (this) {
         PlaceholderVerticalAlign.AboveBaseline -> PlaceholderAlignment.ABOVE_BASELINE
         PlaceholderVerticalAlign.TextTop -> PlaceholderAlignment.TOP

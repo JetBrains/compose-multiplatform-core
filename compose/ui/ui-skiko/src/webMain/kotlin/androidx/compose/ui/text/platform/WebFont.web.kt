@@ -13,10 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package androidx.compose.ui.text.platform
 
 import org.jetbrains.skia.FontStyle as SkFontStyle
 import org.jetbrains.skia.Typeface as SkTypeface
+import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontStyle
 import org.jetbrains.skia.Data
@@ -27,12 +29,13 @@ import org.jetbrains.skia.FontWidth
 import org.jetbrains.skiko.OS
 import org.jetbrains.skiko.hostOs
 
+@OptIn(ExperimentalTextApi::class)
 internal actual fun loadTypeface(font: Font): SkTypeface {
     if (font !is PlatformFont) {
         throw IllegalArgumentException("Unsupported font type: $font")
     }
     return when (font) {
-        is LoadedFont -> FontMgr.default.makeFromData(Data.makeFromBytes(font.getData()))
+        is LoadedFont -> FontMgr.default.makeFromData(Data.makeFromBytes(font.data))
             ?: error("loadTypeface makeFromData failed")
 
         is SystemFont -> FontMgr.default.legacyMakeTypeface(font.identity, font.skFontStyle)

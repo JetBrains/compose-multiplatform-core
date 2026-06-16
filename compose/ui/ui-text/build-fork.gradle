@@ -109,28 +109,28 @@ androidXMultiplatform {
             implementation(libs.byteBuddy)
         }
 
-        // TODO: Align naming: nonAndroidMain
-        skikoMain {
+        nonAndroidMain {
             dependsOn(commonMain)
             dependencies {
-                api(libs.skiko)
+                // ui-text is skia-free: the skia-backed font/paragraph backend lives in ui-skiko.
                 implementation(libs.atomicFu)
             }
         }
 
-        skikoTest {
+        nonAndroidTest {
             dependsOn(commonTest)
             dependencies {
+                implementation(project(":compose:ui:ui-skiko"))
                 implementation(project(":kruth:kruth"))
             }
         }
 
         desktopMain {
-            dependsOn(skikoMain)
+            dependsOn(nonAndroidMain)
         }
 
         desktopTest {
-            dependsOn(skikoTest)
+            dependsOn(nonAndroidTest)
             dependencies {
                 implementation(libs.truth)
                 implementation(libs.junit)
@@ -147,7 +147,7 @@ androidXMultiplatform {
         }
 
         nonJvmMain {
-            dependsOn(skikoMain)
+            dependsOn(nonAndroidMain)
             dependencies {
                 // To comply with Klib resolver until https://youtrack.jetbrains.com/issue/KT-61096 is fixed
                 implementation("org.jetbrains.compose.collection-internal:collection:1.10.0")
@@ -155,7 +155,7 @@ androidXMultiplatform {
         }
 
         nonJvmTest {
-            dependsOn(skikoTest)
+            dependsOn(nonAndroidTest)
         }
 
         nativeMain {
@@ -188,12 +188,6 @@ androidXMultiplatform {
 
         iosTest {
             dependsOn(darwinTest)
-        }
-
-        wasmJsMain {
-            dependencies {
-                implementation(libs.skikoWasmJs)
-            }
         }
 
         // TODO: Align it with AOSP or make explicit

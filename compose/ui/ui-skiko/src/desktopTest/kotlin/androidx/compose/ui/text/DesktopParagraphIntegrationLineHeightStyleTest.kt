@@ -16,11 +16,14 @@
 
 package androidx.compose.ui.text
 
+import androidx.compose.ui.InternalComposeUiApi
+import androidx.compose.ui.platform.registerSkikoComposeImplementation
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.font.createFontFamilyResolver
 import androidx.compose.ui.text.platform.Font
+import androidx.compose.ui.text.PlatformParagraph
 import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.text.style.LineHeightStyle.Alignment
 import androidx.compose.ui.text.style.LineHeightStyle.Trim
@@ -33,13 +36,21 @@ import kotlin.math.abs
 import kotlin.math.ceil
 import kotlin.math.roundToInt
 import org.jetbrains.skia.FontMetrics
+import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
 
 @RunWith(JUnit4::class)
+@OptIn(InternalComposeUiApi::class)
 class DesktopParagraphIntegrationLineHeightStyleTest {
-    private val fontFamilyResolver = createFontFamilyResolver()
+    @Before
+    fun setup() {
+        registerSkikoComposeImplementation()
+    }
+
+    // Lazy so the registry is populated by [setup] before the resolver is created.
+    private val fontFamilyResolver by lazy { createFontFamilyResolver() }
     private val fontFamilyMeasureFont =
         FontFamily(
             Font(
@@ -868,12 +879,12 @@ class DesktopParagraphIntegrationLineHeightStyleTest {
         val paragraphWithEmptyLastLine = simpleParagraph(
             text = textWithEmptyLine,
             style = textStyle
-        ) as SkiaParagraph
+        ) as PlatformParagraph
 
         val otherParagraph = simpleParagraph(
             text = textWithoutEmptyLine,
             style = textStyle
-        ) as SkiaParagraph
+        ) as PlatformParagraph
 
         with(paragraphWithEmptyLastLine) {
             for (line in 0 until lineCount) {
@@ -892,7 +903,7 @@ class DesktopParagraphIntegrationLineHeightStyleTest {
         lineHeightTrim: Trim,
         lineHeightAlignment: Alignment,
         text: String = "AAA"
-    ): SkiaParagraph {
+    ): PlatformParagraph {
         val textStyle = TextStyle(
             lineHeightStyle = LineHeightStyle(
                 trim = lineHeightTrim,
@@ -904,7 +915,7 @@ class DesktopParagraphIntegrationLineHeightStyleTest {
             text = text,
             style = textStyle,
             width = text.length * fontSizeInPx
-        ) as SkiaParagraph
+        ) as PlatformParagraph
 
         assertThat(paragraph.lineCount).isEqualTo(1)
 
@@ -914,7 +925,7 @@ class DesktopParagraphIntegrationLineHeightStyleTest {
     private fun multiLineParagraph(
         lineHeightTrim: Trim,
         lineHeightAlignment: Alignment,
-    ): SkiaParagraph {
+    ): PlatformParagraph {
         val lineCount = 3
         val word = "AAA"
         val text = "AAA".repeat(lineCount)
@@ -930,7 +941,7 @@ class DesktopParagraphIntegrationLineHeightStyleTest {
             text = text,
             style = textStyle,
             width = word.length * fontSizeInPx
-        ) as SkiaParagraph
+        ) as PlatformParagraph
 
         assertThat(paragraph.lineCount).isEqualTo(lineCount)
 
@@ -953,14 +964,14 @@ class DesktopParagraphIntegrationLineHeightStyleTest {
                 lineHeight = lineHeight,
             ).merge(style),
             maxLines = maxLines,
-            constraints = Constraints(maxWidth = width.ceilToInt()),
+            constraints = Constraints(maxWidth = ceil(width).toInt()),
             density = defaultDensity,
             fontFamilyResolver = fontFamilyResolver,
         )
     }
 
     private fun defaultFontMetrics(): FontMetricsInt {
-        val defaultFont = (simpleParagraph() as SkiaParagraph).defaultFont
+        val defaultFont = (simpleParagraph() as PlatformParagraph).skiaDefaultFont
         return FontMetricsInt(defaultFont.metrics)
     }
 

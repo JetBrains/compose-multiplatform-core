@@ -15,7 +15,6 @@
  */
 package androidx.compose.ui.text
 
-
 /**
  * Get strong (R, L or AL) direction type.
  * See https://www.unicode.org/reports/tr9/
@@ -29,6 +28,7 @@ internal actual fun CodePoint.strongDirectionType(): StrongDirectionType =
 
         else -> StrongDirectionType.None
     }
+
 internal actual fun CodePoint.isNeutralDirection(): Boolean =
     when (getDirectionality()) {
         CharDirectionality.OTHER_NEUTRALS,

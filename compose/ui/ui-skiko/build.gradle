@@ -77,6 +77,11 @@ androidXMultiplatform {
             dependsOn(nonAndroidTest)
             dependencies {
                 implementation(libs.skikoAwtRuntime)
+                implementation(libs.junit)
+                implementation(libs.truth)
+                implementation(project(":internal-testutils-fonts"))
+                implementation(project(":compose:foundation:foundation"))
+                implementation(project(":compose:ui:ui-test-junit4"))
             }
         }
 

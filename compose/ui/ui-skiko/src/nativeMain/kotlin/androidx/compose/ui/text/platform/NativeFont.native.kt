@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package androidx.compose.ui.text.platform
 
 import androidx.compose.ui.text.ExperimentalTextApi
@@ -35,7 +36,7 @@ internal actual fun loadTypeface(font: Font): SkTypeface {
     }
     @Suppress("REDUNDANT_ELSE_IN_WHEN")
     return when (font) {
-        is LoadedFont -> FontMgr.default.makeFromData(Data.makeFromBytes(font.getData()))
+        is LoadedFont -> FontMgr.default.makeFromData(Data.makeFromBytes(font.data))
             ?: error("loadTypeface makeFromData failed")
         is SystemFont -> FontMgr.default.legacyMakeTypeface(font.identity, font.skFontStyle)
             ?: error("loadTypeface legacyMakeTypeface failed")

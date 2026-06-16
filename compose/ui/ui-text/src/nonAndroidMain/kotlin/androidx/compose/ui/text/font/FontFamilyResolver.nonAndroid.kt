@@ -1,5 +1,3 @@
-@file:JvmName("FontFamilyResolver_sikioKt")
-
 /*
  * Copyright 2022 The Android Open Source Project
  *
@@ -16,10 +14,13 @@
  * limitations under the License.
  */
 
+@file:JvmName("FontFamilyResolver_sikioKt")
+
 package androidx.compose.ui.text.font
 
+import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.text.ExperimentalTextApi
-import androidx.compose.ui.text.platform.FontCache
+import androidx.compose.ui.text.platform.PlatformTextRegistry
 import kotlin.coroutines.CoroutineContext
 import kotlin.jvm.JvmName
 
@@ -32,11 +33,9 @@ import kotlin.jvm.JvmName
  *
  * Usages inside of Composition should use LocalFontFamilyResolver.current
  */
+@OptIn(InternalComposeUiApi::class)
 fun createFontFamilyResolver(): FontFamily.Resolver {
-    return FontFamilyResolverImpl(
-        SkiaFontLoader(),
-        createPlatformResolveInterceptor()
-    )
+    return PlatformTextRegistry.requireCurrent().createFontFamilyResolver()
 }
 
 /**
@@ -59,11 +58,31 @@ fun createFontFamilyResolver(): FontFamily.Resolver {
  * @param coroutineContext context to launch async requests in during resolution.
  */
 @ExperimentalTextApi
-fun createFontFamilyResolver(
-    coroutineContext: CoroutineContext
+@OptIn(InternalComposeUiApi::class)
+fun createFontFamilyResolver(coroutineContext: CoroutineContext): FontFamily.Resolver {
+    return PlatformTextRegistry.requireCurrent().createFontFamilyResolver(coroutineContext)
+}
+
+/**
+ * Builds the internal [FontFamilyResolverImpl] from the [backend] supplied by the registered
+ * backend. All resolver internals stay in ui-text; the backend only provides the loader seam.
+ */
+@InternalComposeUiApi
+fun createPlatformFontFamilyResolver(backend: PlatformTypefacesLoader): FontFamily.Resolver {
+    return FontFamilyResolverImpl(
+        PlatformFontLoaderAdapter(backend),
+        createPlatformResolveInterceptor(),
+    )
+}
+
+@OptIn(InternalComposeUiApi::class, ExperimentalTextApi::class)
+@InternalComposeUiApi
+fun createPlatformFontFamilyResolver(
+    backend: PlatformTypefacesLoader,
+    coroutineContext: CoroutineContext,
 ): FontFamily.Resolver {
     return FontFamilyResolverImpl(
-        SkiaFontLoader(),
+        PlatformFontLoaderAdapter(backend),
         createPlatformResolveInterceptor(),
         GlobalTypefaceRequestCache,
         FontListFontFamilyTypefaceAdapter(
@@ -71,12 +90,6 @@ fun createFontFamilyResolver(
             coroutineContext
         )
     )
-}
-/**
- * For bridging between FontLoader and FontFamily.ResourceLoader. Can remove with FontLoader.
- */
-internal fun createFontFamilyResolver(fontCache: FontCache): FontFamily.Resolver {
-    return FontFamilyResolverImpl(SkiaFontLoader(fontCache), createPlatformResolveInterceptor())
 }
 
 internal expect fun createPlatformResolveInterceptor(): PlatformResolveInterceptor

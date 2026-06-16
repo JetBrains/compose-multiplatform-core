@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 The Android Open Source Project
+ * Copyright 2024 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,9 +14,19 @@
  * limitations under the License.
  */
 
-package androidx.compose.ui.text.intl
+package androidx.compose.ui.text.platform
 
-import androidx.compose.ui.InternalComposeUiApi
+// Host platform detection used by the skia-backed font subsystem. The per-platform actuals live in
+// the platform leaves (desktop/web/native).
+internal enum class Platform {
+    Unknown,
+    Linux,
+    Windows,
+    MacOS,
+    IOS,
+    TvOS,
+    WatchOS,
+    Android, // use case: a web app running in Chrome Android
+}
 
-@InternalComposeUiApi
-expect fun Locale.isRtl(): Boolean
+internal expect fun currentPlatform(): Platform

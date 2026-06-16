@@ -22,21 +22,83 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.geometry.isSpecified
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.PaintingStyle
 import androidx.compose.ui.graphics.Shader
 import androidx.compose.ui.graphics.ShaderBrush
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.isSpecified
 import androidx.compose.ui.graphics.skiaPaint
 import androidx.compose.ui.graphics.drawscope.DrawStyle
 import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.isSpecified
-import androidx.compose.ui.text.style.modulate
+import androidx.compose.ui.text.SpanStyle
+
+internal data class ParagraphTextForegroundStyle(
+    val color: Color,
+    val brush: Brush?,
+    val alpha: Float,
+) {
+    companion object {
+        val Unspecified = ParagraphTextForegroundStyle(
+            color = Color.Unspecified,
+            brush = null,
+            alpha = Float.NaN,
+        )
+    }
+
+    fun merge(other: ParagraphTextForegroundStyle): ParagraphTextForegroundStyle =
+        when {
+            other.brush is ShaderBrush && brush is ShaderBrush ->
+                ParagraphTextForegroundStyle(other.color, other.brush, other.alpha.takeOrElse { alpha })
+            other.brush is ShaderBrush -> other
+            brush is ShaderBrush -> this
+            else -> if (other != Unspecified) other else this
+        }
+}
+
+internal fun SpanStyle.toParagraphTextForegroundStyle(): ParagraphTextForegroundStyle {
+    val currentBrush = brush
+    return when (currentBrush) {
+        null -> {
+            if (color.isSpecified) {
+                ParagraphTextForegroundStyle(
+                    color = color,
+                    brush = null,
+                    alpha = color.alpha,
+                )
+            } else {
+                ParagraphTextForegroundStyle.Unspecified
+            }
+        }
+
+        is SolidColor -> ParagraphTextForegroundStyle(
+            color = currentBrush.value.modulate(alpha),
+            brush = null,
+            alpha = currentBrush.value.alpha,
+        )
+
+        else -> ParagraphTextForegroundStyle(
+            color = Color.Unspecified,
+            brush = currentBrush,
+            alpha = alpha,
+        )
+    }
+}
+
+private fun Color.modulate(alpha: Float): Color =
+    when {
+        alpha.isNaN() || alpha >= 1f -> this
+        else -> copy(alpha = this.alpha * alpha)
+    }
+
+private fun Float.takeOrElse(block: () -> Float): Float =
+    if (isNaN()) block() else this
 
 // Copied from AndroidTextPaint.
 
-internal class SkiaTextPaint(
+internal class ParagraphTextPaint(
     private val original: Paint = Paint(),
 ) : Paint by original {
     internal val skiaPaint
@@ -107,9 +169,6 @@ internal class SkiaTextPaint(
         }
     }
 
-    /**
-     * Clears all shader related cache parameters and native shader property.
-     */
     private fun clearShader() {
         this.shaderState = null
         this.brush = null

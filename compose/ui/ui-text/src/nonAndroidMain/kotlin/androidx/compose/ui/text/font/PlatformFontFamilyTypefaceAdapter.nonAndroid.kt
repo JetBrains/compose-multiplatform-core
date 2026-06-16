@@ -16,6 +16,9 @@
 
 package androidx.compose.ui.text.font
 
+import androidx.compose.ui.InternalComposeUiApi
+
+@OptIn(InternalComposeUiApi::class)
 internal actual class PlatformFontFamilyTypefaceAdapter actual constructor() :
     FontFamilyTypefaceAdapter {
 
@@ -26,8 +29,8 @@ internal actual class PlatformFontFamilyTypefaceAdapter actual constructor() :
         createDefaultTypeface: (TypefaceRequest) -> Any
     ): TypefaceResult? {
         if (typefaceRequest.fontFamily is FontListFontFamily) return null
-        val skiaFontLoader = (platformFontLoader as SkiaFontLoader)
-        val result = skiaFontLoader.loadPlatformTypes(
+        val backend = (platformFontLoader as PlatformFontLoaderAdapter).backend
+        val result = backend.loadPlatformTypes(
             typefaceRequest.fontFamily ?: FontFamily.Default,
             typefaceRequest.fontWeight,
             typefaceRequest.fontStyle

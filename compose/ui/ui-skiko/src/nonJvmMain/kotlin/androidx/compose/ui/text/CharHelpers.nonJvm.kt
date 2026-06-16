@@ -17,7 +17,6 @@ package androidx.compose.ui.text
 
 import org.jetbrains.skia.icu.CharDirection
 
-
 /**
  * Get strong (R, L or AL) direction type.
  * See https://www.unicode.org/reports/tr9/

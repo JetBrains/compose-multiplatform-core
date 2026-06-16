@@ -18,6 +18,7 @@ package androidx.compose.ui.text.platform
 
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.ui.renderComposeScene
+import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
@@ -29,6 +30,7 @@ import org.junit.Assume.assumeTrue
 import org.junit.Before
 import org.junit.Test
 
+@OptIn(ExperimentalTextApi::class)
 class AwtFontInteropTest {
 
     @Before

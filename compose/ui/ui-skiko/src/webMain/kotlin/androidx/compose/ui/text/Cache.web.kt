@@ -82,3 +82,16 @@ internal actual class WeakKeysCache<K : Any, V: Any>  {
 internal external class FinalizationRegistry(cleanup: (JsAny) -> Unit) {
     fun register(target: JsAny, heldValue: JsAny)
 }
+
+// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/WeakRef
+@OptIn(ExperimentalWasmJsInterop::class)
+private external class WeakRef {
+    constructor(target: JsAny)
+    fun deref(): JsAny?
+}
+
+@OptIn(ExperimentalWasmJsInterop::class)
+private class WeakReference<T : Any>(reference: T) {
+    private val weakRef = WeakRef(reference.toJsReference())
+    fun get(): T? = weakRef.deref()?.unsafeCast<JsReference<T>>()?.get()
+}

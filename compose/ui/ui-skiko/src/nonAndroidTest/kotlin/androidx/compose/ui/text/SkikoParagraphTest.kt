@@ -16,7 +16,10 @@
 
 package androidx.compose.ui.text
 
+import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.platform.clearSkikoComposeImplementation
+import androidx.compose.ui.platform.registerSkikoComposeImplementation
 import androidx.compose.ui.text.font.createFontFamilyResolver
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDirection
@@ -25,6 +28,8 @@ import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
+import kotlin.test.AfterTest
+import kotlin.test.BeforeTest
 import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -34,8 +39,21 @@ import kotlinx.test.IgnoreJsTarget
 import kotlinx.test.IgnoreWasmTarget
 
 // Adopted tests from text/text/src/androidTest/java/androidx/compose/ui/text/android/selection/WordBoundaryTest.kt
+@OptIn(InternalComposeUiApi::class)
 class SkikoParagraphTest {
-    private val fontFamilyResolver = createFontFamilyResolver()
+    @BeforeTest
+    fun setup() {
+        registerSkikoComposeImplementation()
+    }
+
+    @AfterTest
+    fun tearDown() {
+        clearSkikoComposeImplementation()
+    }
+
+    // Lazy so the registry is populated by [setup] before the resolver is created (the property
+    // initializer would otherwise run at construction time, before @BeforeTest).
+    private val fontFamilyResolver by lazy { createFontFamilyResolver() }
     private val defaultDensity = Density(density = 1f)
     private val maxWidthConstraint = 1000
 

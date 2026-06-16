@@ -17,7 +17,6 @@
 package androidx.compose.ui.text.platform
 
 import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontListFontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.util.fastDistinctBy
@@ -112,7 +111,7 @@ internal object JetBrainsRuntimeFontFamilies {
                 .distinctBy { (_, font) -> font.file.absolutePath }
                 .groupBy { (familyName, _) -> familyName }
                 .forEach { (identity, fileFonts) ->
-                    val fontFamily = FontListFontFamily(fileFonts.fastMap { it.second })
+                    val fontFamily = FontFamily(fileFonts.fastMap { it.second })
                     embeddedFamilies += identity.lowercase() to fontFamily
                 }
         } finally {
