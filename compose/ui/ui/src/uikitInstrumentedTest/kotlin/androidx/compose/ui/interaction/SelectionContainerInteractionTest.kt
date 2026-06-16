@@ -183,9 +183,7 @@ class SelectionContainerInteractionTest {
                     DisableSelection {
                         BasicText(
                             text = "hidden",
-                            modifier =
-                                Modifier.width(SelectableTextWidth)
-                                    .testTag("SelectionContainerDisabledText"),
+                            modifier = Modifier.width(SelectableTextWidth),
                         )
                     }
                     BasicText(
