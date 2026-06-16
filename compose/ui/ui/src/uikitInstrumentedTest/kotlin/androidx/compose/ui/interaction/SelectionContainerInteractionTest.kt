@@ -85,7 +85,7 @@ class SelectionContainerInteractionTest {
 
         setSelectionContainerContent(state = selectionState, text = text)
 
-        focusThenDoubleTap()
+        focusThenDoubleTap(Tag, delayMillis = DoubleTapPreparationDelayMillis)
         waitUntil("SelectionContainer should select the word after double tap") {
             selectionState.selectedText() == text
         }
@@ -267,7 +267,7 @@ class SelectionContainerInteractionTest {
             setSelectionContainerContent(state = selectionState, text = "copyable second")
 
             awaitNodeLaidOut(Tag)
-            focusThenDoubleTap()
+            focusThenDoubleTap(Tag, delayMillis = DoubleTapPreparationDelayMillis)
             waitForContextMenu()
             waitUntil("SelectionContainer should create a selection before menu open") {
                 selectionState.selectedTexts.isNotEmpty()
@@ -329,13 +329,6 @@ class SelectionContainerInteractionTest {
         delay(ManualDoubleTapIntervalDelayMillis)
         tap(tapPoint)
         waitForContextMenu()
-    }
-
-    private fun UIKitInstrumentedTest.focusThenDoubleTap() {
-        val node = findNodeWithTag(Tag)
-        node.tap()
-        delay(DoubleTapPreparationDelayMillis)
-        node.doubleTap()
     }
 
     @OptIn(ExperimentalFoundationApi::class)
