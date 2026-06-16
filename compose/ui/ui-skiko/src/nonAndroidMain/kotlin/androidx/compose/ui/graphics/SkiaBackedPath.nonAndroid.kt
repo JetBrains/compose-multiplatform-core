@@ -14,19 +14,23 @@
  * limitations under the License.
  */
 
+@file:JvmName("SkiaBackedPath_skikoKt")
+@file:JvmMultifileClass
+
 package androidx.compose.ui.graphics
 
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.RoundRect
+import kotlin.jvm.JvmMultifileClass
+import kotlin.jvm.JvmName
 import org.jetbrains.skia.Path as SkPath
 import org.jetbrains.skia.PathDirection
 import org.jetbrains.skia.PathBuilder
 import org.jetbrains.skia.PathFillMode
 import org.jetbrains.skia.PathOp
 
-actual fun Path(): Path = SkiaBackedPath()
 
 /**
  * Convert the [org.jetbrains.skia.Path] instance into a Compose-compatible Path
@@ -43,7 +47,7 @@ fun SkPath.asComposePath(): Path = SkiaBackedPath(this).also {
  * It throws an exception if accessed on unsupported types.
  */
 fun Path.asSkiaPath(): SkPath {
-    requirePrecondition(this is SkiaBackedPath) {
+    require(this is SkiaBackedPath) {
         "Extracting skia path reference is only supported from androidx.compose.ui.graphics.SkiaBackedPath instances but received ${this::class}"
     }
     isSkiaPathObserved = true
@@ -62,7 +66,7 @@ fun Path.asSkiaPath(): SkPath {
  */
 @InternalComposeUiApi
 fun Path.materializeSkiaPath(): SkPath {
-    requirePrecondition(this is SkiaBackedPath) {
+    require(this is SkiaBackedPath) {
         "Materializing skia path snapshot is only supported from androidx.compose.ui.graphics.SkiaBackedPath instances but received ${this::class}"
     }
     synchronizeSkiaPathIfNeeded()

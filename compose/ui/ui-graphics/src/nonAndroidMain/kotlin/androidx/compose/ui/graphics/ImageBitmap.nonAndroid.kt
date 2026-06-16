@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,26 @@
 
 package androidx.compose.ui.graphics
 
-import org.jetbrains.skia.Image
+import androidx.compose.ui.InternalComposeUiApi
+import androidx.compose.ui.graphics.colorspace.ColorSpace
+import androidx.compose.ui.graphics.platform.PlatformGraphicsRegistry
 
+@OptIn(InternalComposeUiApi::class)
+internal actual fun ActualImageBitmap(
+    width: Int,
+    height: Int,
+    config: ImageBitmapConfig,
+    hasAlpha: Boolean,
+    colorSpace: ColorSpace,
+): ImageBitmap =
+    PlatformGraphicsRegistry.requireCurrent().createImageBitmap(
+        width = width,
+        height = height,
+        config = config,
+        hasAlpha = hasAlpha,
+        colorSpace = colorSpace,
+    )
+
+@OptIn(InternalComposeUiApi::class)
 internal actual fun createImageBitmap(bytes: ByteArray): ImageBitmap =
-    Image.makeFromEncoded(bytes).toComposeImageBitmap()
+    PlatformGraphicsRegistry.requireCurrent().decodeImageBitmap(bytes)

@@ -17,9 +17,7 @@
 package androidx.compose.ui.graphics
 
 import org.jetbrains.skia.Bitmap
-import org.jetbrains.skia.ColorAlphaType
 import org.jetbrains.skia.Image
-import org.jetbrains.skia.ImageInfo
 
 /*
      The default implementation (used for all but web) based on `canvas.drawImage` call is slow for web:

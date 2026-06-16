@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,60 +17,51 @@
 package androidx.compose.ui.graphics
 
 import androidx.compose.ui.InternalComposeUiApi
-import androidx.compose.ui.graphics.layer.GraphicsLayer
+import androidx.compose.ui.graphics.layer.SkikoGraphicsLayer
+import androidx.compose.ui.graphics.platform.PlatformGraphicsContext
+import androidx.compose.ui.graphics.platform.PlatformGraphicsLayer
+import androidx.compose.ui.graphics.platform.PlatformGraphicsRegistry
 import org.jetbrains.skiko.node.RenderNode
 import org.jetbrains.skiko.node.RenderNodeContext
 
 @InternalComposeUiApi
 class SkiaGraphicsContext(
     measureDrawBounds: Boolean = false,
-): GraphicsContext {
+) : PlatformGraphicsContext() {
+    init {
+        PlatformGraphicsRegistry.checkIfRegistered(SkikoGraphics)
+    }
+
     private val renderNodeContext = RenderNodeContext(
         measureDrawBounds = measureDrawBounds,
     )
-    private var isClosed = false
 
-    // Temporary workaround to disable state tracking workaround inside old internal layers
-    var activeGraphicsLayersCount = 0
-        private set
-
-    fun dispose() {
-        require(!isClosed) { "GraphicsContext is already closed" }
-        isClosed = true
+    override fun close() {
+        super.close()
         renderNodeContext.close()
     }
 
-    fun setLightingInfo(
-        centerX: Float = Float.MIN_VALUE,
-        centerY: Float = Float.MIN_VALUE,
-        centerZ: Float = Float.MIN_VALUE,
-        radius: Float = 0f,
-        ambientShadowAlpha: Float = 0f,
-        spotShadowAlpha: Float = 0f
+    override fun setLightingInfo(
+        centerX: Float,
+        centerY: Float,
+        centerZ: Float,
+        radius: Float,
+        ambientShadowAlpha: Float,
+        spotShadowAlpha: Float,
     ) {
-        require(!isClosed) { "GraphicsContext is already closed" }
+        super.setLightingInfo(centerX, centerY, centerZ, radius, ambientShadowAlpha, spotShadowAlpha)
         renderNodeContext.setLightingInfo(
             centerX,
             centerY,
             centerZ,
             radius,
             ambientShadowAlpha,
-            spotShadowAlpha
+            spotShadowAlpha,
         )
     }
 
-    override fun createGraphicsLayer(): GraphicsLayer {
-        require(!isClosed) { "GraphicsContext is already closed" }
-        activeGraphicsLayersCount++
-        return GraphicsLayer(
-            renderNode = RenderNode(renderNodeContext)
-        )
-    }
-
-    override fun releaseGraphicsLayer(layer: GraphicsLayer) {
-        if (!layer.isReleased) {
-            activeGraphicsLayersCount--
-        }
-        layer.release()
+    override fun createPlatformGraphicsLayer(): PlatformGraphicsLayer {
+        val renderNode = RenderNode(renderNodeContext)
+        return SkikoGraphicsLayer(renderNode)
     }
 }

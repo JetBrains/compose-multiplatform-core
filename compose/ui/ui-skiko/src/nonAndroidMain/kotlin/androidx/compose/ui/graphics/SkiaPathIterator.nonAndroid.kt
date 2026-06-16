@@ -1,3 +1,5 @@
+@file:OptIn(InternalComposeUiApi::class)
+
 /*
  * Copyright 2024 The Android Open Source Project
  *
@@ -18,12 +20,6 @@ package androidx.compose.ui.graphics
 
 import androidx.compose.ui.InternalComposeUiApi
 import org.jetbrains.skia.PathVerb
-
-actual fun PathIterator(
-    path: Path,
-    conicEvaluation: PathIterator.ConicEvaluation,
-    tolerance: Float
-): PathIterator = SkiaPathIterator(path, conicEvaluation, tolerance)
 
 // The code below would be used to handle conic to quadratic conversions.
 // The core Skia API exposed by Skiko accepts a "power of 2" number of
@@ -67,8 +63,7 @@ actual fun PathIterator(
 //     return subdivisions
 // }
 
-@OptIn(InternalComposeUiApi::class)
-private class SkiaPathIterator(
+internal class SkiaPathIterator(
     override val path: Path,
     override val conicEvaluation: PathIterator.ConicEvaluation,
     override val tolerance: Float
@@ -139,6 +134,7 @@ private class SkiaPathIterator(
         }
     }
 
+    @Suppress("INVISIBLE_REFERENCE", "INVISIBLE_MEMBER") // FIXME: Make [PathSegment] constructor public
     override fun next(): PathSegment {
         if (!hasNext()) return DoneSegment
 

@@ -14,10 +14,15 @@
  * limitations under the License.
  */
 
+@file:JvmName("SkiaBackedPathMeasure_skikoKt")
+@file:JvmMultifileClass
+
 package androidx.compose.ui.graphics
 
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.geometry.Offset
+import kotlin.jvm.JvmMultifileClass
+import kotlin.jvm.JvmName
 import org.jetbrains.skia.PathMeasure as SkPathMeasure
 
 /**
@@ -31,7 +36,7 @@ fun SkPathMeasure.asComposePathEffect(): PathMeasure = SkiaBackedPathMeasure(thi
  * It throws an exception if accessed on unsupported types.
  */
 fun PathMeasure.asSkiaPathMeasure(): SkPathMeasure {
-    requirePrecondition(this is SkiaBackedPathMeasure) {
+    require(this is SkiaBackedPathMeasure) {
         "Extracting skia path measure reference is only supported from androidx.compose.ui.graphics.SkiaBackedPathMeasure instances but received ${this::class}"
     }
     return internalSkiaPathMeasure
@@ -52,7 +57,7 @@ internal class SkiaBackedPathMeasure(
         destination: Path,
         startWithMoveTo: Boolean
     ): Boolean {
-        requirePrecondition(destination is SkiaBackedPath) {
+        require(destination is SkiaBackedPath) {
             "Getting a segment into a path is only supported for androidx.compose.ui.graphics.SkiaBackedPath instances but received ${destination::class}"
         }
         return destination.appendToPathBuilder {
@@ -90,6 +95,3 @@ internal class SkiaBackedPathMeasure(
         }
     }
 }
-
-actual fun PathMeasure(): PathMeasure =
-    SkiaBackedPathMeasure()

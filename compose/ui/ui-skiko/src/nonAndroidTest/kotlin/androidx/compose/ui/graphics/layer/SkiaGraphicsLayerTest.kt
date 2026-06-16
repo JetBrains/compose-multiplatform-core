@@ -36,6 +36,8 @@ import androidx.compose.ui.graphics.drawscope.inset
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.toComposeImageBitmap
 import androidx.compose.ui.graphics.toPixelMap
+import androidx.compose.ui.platform.clearSkikoComposeImplementation
+import androidx.compose.ui.platform.registerSkikoComposeImplementation
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
@@ -45,6 +47,8 @@ import androidx.compose.ui.unit.toIntSize
 import androidx.compose.ui.unit.toOffset
 import androidx.compose.ui.unit.toSize
 import kotlin.math.roundToInt
+import kotlin.test.AfterTest
+import kotlin.test.BeforeTest
 import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -56,6 +60,16 @@ import org.jetbrains.skia.Surface
 // Adopted copy from AndroidGraphicsLayerTest
 @OptIn(InternalComposeUiApi::class)
 class SkiaGraphicsLayerTest {
+
+    @BeforeTest
+    fun setup() {
+        registerSkikoComposeImplementation()
+    }
+
+    @AfterTest
+    fun tearDown() {
+        clearSkikoComposeImplementation()
+    }
 
     @Test
     fun testDrawLayer() {
@@ -1120,7 +1134,7 @@ class SkiaGraphicsLayerTest {
             verify?.invoke(imageBitmap.toPixelMap())
         } finally {
             surface.close()
-            graphicsContext.dispose()
+            graphicsContext.close()
         }
     }
 

@@ -17,6 +17,7 @@
 package androidx.compose.ui.graphics
 
 import org.jetbrains.skia.Bitmap
+import org.jetbrains.skia.Canvas as SkCanvas
 import org.jetbrains.skia.ColorAlphaType
 import org.jetbrains.skia.Image
 import org.jetbrains.skia.ImageInfo
@@ -26,13 +27,13 @@ import org.jetbrains.skia.ImageInfo
    The difference becomes noticeable when running a loop of 100 calls.
    On Desktop/JVM:
    11 ms for the current (default) implementation vs ~50ms for Bitmap.fromImage.
-   
-   The implementation for web uses `Bitmap.fromImage`, see Actuals.jsWasm.kt
+
+   The implementation for web uses `Bitmap.fromImage`, see Actuals.web.kt.
 */
-internal  actual fun Image.toBitmap(): Bitmap {
+internal actual fun Image.toBitmap(): Bitmap {
     val bitmap = Bitmap()
     bitmap.allocPixels(ImageInfo.makeN32(width, height, ColorAlphaType.PREMUL))
-    val canvas = org.jetbrains.skia.Canvas(bitmap)
+    val canvas = SkCanvas(bitmap)
     canvas.drawImage(this, 0f, 0f)
     bitmap.setImmutable()
     return bitmap

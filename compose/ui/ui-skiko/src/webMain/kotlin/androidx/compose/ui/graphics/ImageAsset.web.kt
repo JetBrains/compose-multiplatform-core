@@ -17,20 +17,22 @@
 package androidx.compose.ui.graphics
 
 internal actual fun ByteArray.putBytesInto(array: IntArray, offset: Int, length: Int) {
-   if (offset < 0 || length < 0 || offset + length > array.size) {
-      throw IndexOutOfBoundsException("Invalid offset or length")
-   }
+    if (offset < 0 || length < 0 || offset + length > array.size) {
+        throw IndexOutOfBoundsException("Invalid offset or length")
+    }
 
-   if (length * 4 > this.size) {
-      throw IndexOutOfBoundsException("ByteArray not big enough to hold the requested number of integers")
-   }
+    if (length * 4 > this.size) {
+        throw IndexOutOfBoundsException(
+            "ByteArray not big enough to hold the requested number of integers"
+        )
+    }
 
-   for (i in 0 until length) {
-      val byteIndex = i * 4
-      array[offset + i] = (this[byteIndex].toInt() and 0xFF) or
-          ((this[byteIndex + 1].toInt() and 0xFF) shl 8) or
-          ((this[byteIndex + 2].toInt() and 0xFF) shl 16) or
-          ((this[byteIndex + 3].toInt() and 0xFF) shl 24)
-   }
+    for (index in 0 until length) {
+        val byteIndex = index * 4
+        array[offset + index] =
+            (this[byteIndex].toInt() and 0xFF) or
+                ((this[byteIndex + 1].toInt() and 0xFF) shl 8) or
+                ((this[byteIndex + 2].toInt() and 0xFF) shl 16) or
+                ((this[byteIndex + 3].toInt() and 0xFF) shl 24)
+    }
 }
-

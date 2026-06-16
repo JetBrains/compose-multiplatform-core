@@ -14,9 +14,11 @@
  * limitations under the License.
  */
 
+@file:JvmName("SkiaBackedPathEffect_skikoKt")
+
 package androidx.compose.ui.graphics
 
-import androidx.compose.ui.InternalComposeUiApi
+import kotlin.jvm.JvmName
 import org.jetbrains.skia.PathEffect as SkPathEffect
 
 internal class SkiaBackedPathEffect(
@@ -34,38 +36,11 @@ fun SkPathEffect.asComposePathEffect(): PathEffect = SkiaBackedPathEffect(this)
  * It throws an exception if accessed on unsupported types.
  */
 fun PathEffect.asSkiaPathEffect(): SkPathEffect {
-    requirePrecondition(this is SkiaBackedPathEffect) {
+    require(this is SkiaBackedPathEffect) {
         "Extracting skia path effect reference is only supported from androidx.compose.ui.graphics.SkiaBackedPathEffect instances but received ${this::class}"
     }
     return internalSkiaPathEffect
 }
-
-internal actual fun actualCornerPathEffect(radius: Float): PathEffect =
-    SkiaBackedPathEffect(SkPathEffect.makeCorner(radius))
-
-internal actual fun actualDashPathEffect(
-    intervals: FloatArray,
-    phase: Float
-): PathEffect = SkiaBackedPathEffect(SkPathEffect.makeDash(intervals, phase))
-
-internal actual fun actualChainPathEffect(outer: PathEffect, inner: PathEffect): PathEffect =
-    SkiaBackedPathEffect(outer.asSkiaPathEffect().makeCompose(inner.asSkiaPathEffect()))
-
-@OptIn(InternalComposeUiApi::class)
-internal actual fun actualStampedPathEffect(
-    shape: Path,
-    advance: Float,
-    phase: Float,
-    style: StampedPathEffectStyle
-): PathEffect =
-    SkiaBackedPathEffect(
-        SkPathEffect.makePath1D(
-            shape.materializeSkiaPath(),
-            advance,
-            phase,
-            style.toSkiaStampedPathEffectStyle()
-        )
-    )
 
 internal fun StampedPathEffectStyle.toSkiaStampedPathEffectStyle(): SkPathEffect.Style =
     when (this) {

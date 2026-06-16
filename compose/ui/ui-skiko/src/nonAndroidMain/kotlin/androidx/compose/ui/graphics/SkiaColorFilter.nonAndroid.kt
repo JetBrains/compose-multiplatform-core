@@ -14,45 +14,35 @@
  * limitations under the License.
  */
 
+@file:OptIn(InternalComposeUiApi::class)
+@file:JvmName("SkiaColorFilter_skikoKt")
+
 package androidx.compose.ui.graphics
 
+import androidx.compose.ui.InternalComposeUiApi
+import androidx.compose.ui.graphics.platform.PlatformColorFilter
+import androidx.compose.ui.graphics.platform.asComposeColorFilter
+import androidx.compose.ui.graphics.platform.platformColorFilter
+import kotlin.jvm.JvmName
 import org.jetbrains.skia.ColorFilter as SkColorFilter
-import org.jetbrains.skia.ColorMatrix as SkColorMatrix
 
-internal actual typealias NativeColorFilter = SkColorFilter
+internal class SkikoColorFilter(
+    val skiaColorFilter: SkColorFilter,
+) : PlatformColorFilter()
 
-/**
- * Obtain a [org.jetbrains.skia.ColorFilter] instance from this [ColorFilter]
- */
-fun ColorFilter.asSkiaColorFilter(): SkColorFilter = nativeColorFilter
-
-/**
- * Create a [ColorFilter] from the given [org.jetbrains.skia.ColorFilter] instance
- */
-fun SkColorFilter.asComposeColorFilter(): ColorFilter = ColorFilter(this)
-
-internal actual fun actualTintColorFilter(color: Color, blendMode: BlendMode): NativeColorFilter =
-    SkColorFilter.makeBlend(color.toArgb(), blendMode.toSkia())
-
-/**
- * Remaps compose [ColorMatrix] to [org.jetbrains.skia.ColorMatrix] and returns [ColorFilter]
- * applying this matrix to draw color result
- */
-internal actual fun actualColorMatrixColorFilter(colorMatrix: ColorMatrix): NativeColorFilter {
-    val remappedValues = colorMatrix.values.copyOf()
-    remappedValues[4] *= (1f / 255f)
-    remappedValues[9] *= (1f / 255f)
-    remappedValues[14] *= (1f / 255f)
-    remappedValues[19] *= (1f / 255f)
-
-    return SkColorFilter.makeMatrix(
-        SkColorMatrix(remappedValues)
-    )
+/** Obtain a [org.jetbrains.skia.ColorFilter] instance from this [ColorFilter] */
+@OptIn(InternalComposeUiApi::class)
+fun ColorFilter.asSkiaColorFilter(): SkColorFilter {
+    val platform = platformColorFilter
+    require(platform is SkikoColorFilter) {
+        "Extracting the Skia color filter reference is only supported from ColorFilters created " +
+            "by the registered Skiko implementation (registerSkikoComposeImplementation()), but " +
+            "the binding was ${platform::class}"
+    }
+    return platform.skiaColorFilter
 }
 
-internal actual fun actualLightingColorFilter(multiply: Color, add: Color): NativeColorFilter =
-    SkColorFilter.makeLighting(multiply.toArgb(), add.toArgb())
-
-// TODO: https://youtrack.jetbrains.com/issue/CMP-739
-internal actual fun actualColorMatrixFromFilter(filter: NativeColorFilter): ColorMatrix =
-    ColorMatrix()
+/** Create a [ColorFilter] from the given [org.jetbrains.skia.ColorFilter] instance */
+@OptIn(InternalComposeUiApi::class)
+fun SkColorFilter.asComposeColorFilter(): ColorFilter =
+    SkikoColorFilter(this).asComposeColorFilter()

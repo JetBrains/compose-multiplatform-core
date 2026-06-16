@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Android Open Source Project
+ * Copyright 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,14 +14,19 @@
  * limitations under the License.
  */
 
+@file:JvmName("SkiaPathIterator_skikoKt")
+
 package androidx.compose.ui.graphics
 
-import org.jetbrains.skia.Path as SkPath
+import kotlin.jvm.JvmName
 
-@Suppress("NOTHING_TO_INLINE")
 @Deprecated(
-    message = "Use asSkiaPath()",
-    replaceWith = ReplaceWith("asSkiaPath()"),
+    "Binary-compatibility shim for the relocated PathIterator() factory.",
     level = DeprecationLevel.HIDDEN,
 )
-inline fun Path.asDesktopPath(): SkPath = asSkiaPath()
+@JvmName("PathIterator")
+fun pathIteratorBinaryCompatShim(
+    path: Path,
+    conicEvaluation: PathIterator.ConicEvaluation = PathIterator.ConicEvaluation.AsQuadratics,
+    tolerance: Float = 0.25f,
+): PathIterator = PathIterator(path, conicEvaluation, tolerance)

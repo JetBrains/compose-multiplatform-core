@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Android Open Source Project
+ * Copyright 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,14 +14,15 @@
  * limitations under the License.
  */
 
+@file:JvmName("SkiaTileMode_skikoKt")
+
 package androidx.compose.ui.graphics
 
-import org.jetbrains.skia.Path as SkPath
+import kotlin.jvm.JvmName
 
-@Suppress("NOTHING_TO_INLINE")
 @Deprecated(
-    message = "Use asSkiaPath()",
-    replaceWith = ReplaceWith("asSkiaPath()"),
+    "Binary-compatibility shim for the relocated TileMode.isSupported().",
     level = DeprecationLevel.HIDDEN,
 )
-inline fun Path.asDesktopPath(): SkPath = asSkiaPath()
+@JvmName("isSupported-0vamqd0")
+fun tileModeIsSupportedBinaryCompatShim(tileMode: TileMode): Boolean = tileMode.isSupported()

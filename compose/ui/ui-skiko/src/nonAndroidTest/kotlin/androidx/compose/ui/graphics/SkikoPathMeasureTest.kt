@@ -16,6 +16,8 @@
 
 package androidx.compose.ui.graphics
 
+import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.runSkikoComposeUiTest
 import androidx.compose.ui.util.lerp
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
@@ -23,9 +25,9 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class SkikoPathMeasureTest {
-
     @Test
-    fun getSegment_reusedDestinationUpdatesRetainedSkiaPath() {
+    @OptIn(ExperimentalTestApi::class)
+    fun getSegment_reusedDestinationUpdatesRetainedSkiaPath() = runSkikoComposeUiTest {
         val startX = 300f
         val startY = 450f
         val endX = 800f

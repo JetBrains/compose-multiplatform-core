@@ -14,9 +14,13 @@
  * limitations under the License.
  */
 
+@file:OptIn(InternalComposeUiApi::class)
+@file:JvmName("SkiaBackedCanvas_skikoKt")
+
 package androidx.compose.ui.graphics
 
 import androidx.compose.ui.InternalComposeUiApi
+import kotlin.jvm.JvmName
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.unit.IntOffset
@@ -33,21 +37,6 @@ import org.jetbrains.skia.MipmapMode
 import org.jetbrains.skia.SamplingMode
 import org.jetbrains.skia.impl.use
 
-@Deprecated(
-    message = "Use direct reference to org.jetbrains.skia.Canvas instead of typealias",
-    replaceWith = ReplaceWith("Canvas", "org.jetbrains.skia.Canvas"),
-    level = DeprecationLevel.ERROR,
-)
-actual typealias NativeCanvas = SkCanvas
-
-internal actual fun ActualCanvas(image: ImageBitmap): Canvas {
-    val skiaBitmap = image.asSkiaBitmap()
-    require(!skiaBitmap.isImmutable) {
-        "Cannot draw on immutable ImageBitmap"
-    }
-    return SkiaBackedCanvas(SkCanvas(skiaBitmap))
-}
-
 /**
  * Convert the [org.jetbrains.skia.Canvas] instance into a Compose-compatible Canvas
  */
@@ -60,7 +49,7 @@ fun SkCanvas.asComposeCanvas(): Canvas = SkiaBackedCanvas(this)
  */
 val Canvas.skiaCanvas: SkCanvas
     get() {
-        requirePrecondition(this is SkiaBackedCanvas) {
+        require(this is SkiaBackedCanvas) {
             "Extracting skia canvas reference is only supported from androidx.compose.ui.graphics.SkiaBackedCanvas instances but received ${this::class}"
         }
         return internalSkiaCanvas
@@ -128,7 +117,6 @@ internal class SkiaBackedCanvas(
         )
     }
 
-    @OptIn(InternalComposeUiApi::class)
     override fun clipPath(path: Path, clipOp: ClipOp) {
         val antiAlias = true
         internalSkiaCanvas.clipPath(path.materializeSkiaPath(), clipOp.toSkia(), antiAlias)
@@ -214,7 +202,6 @@ internal class SkiaBackedCanvas(
         )
     }
 
-    @OptIn(InternalComposeUiApi::class)
     override fun drawPath(path: Path, paint: Paint) {
         internalSkiaCanvas.drawPath(
             path = path.materializeSkiaPath(),

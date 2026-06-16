@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Android Open Source Project
+ * Copyright 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-package androidx.compose.ui.graphics
+package androidx.compose.ui.graphics.shadow
 
-import org.jetbrains.skia.VertexMode as SkVertexMode
+import androidx.compose.ui.InternalComposeUiApi
+import androidx.compose.ui.graphics.platform.PlatformBlurFilter
+import org.jetbrains.skia.MaskFilter
 
-internal fun VertexMode.toSkiaVertexMode(): SkVertexMode = when (this) {
-    VertexMode.Triangles -> SkVertexMode.TRIANGLES
-    VertexMode.TriangleStrip -> SkVertexMode.TRIANGLE_STRIP
-    VertexMode.TriangleFan -> SkVertexMode.TRIANGLE_FAN
-    else -> SkVertexMode.TRIANGLES
-}
+@OptIn(InternalComposeUiApi::class)
+internal class SkikoBlurFilter(
+    val maskFilter: MaskFilter,
+) : PlatformBlurFilter()

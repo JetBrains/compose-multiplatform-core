@@ -14,21 +14,17 @@
  * limitations under the License.
  */
 
+@file:JvmName("SkiaBackedPaint_skikoKt")
+@file:JvmMultifileClass
+
 package androidx.compose.ui.graphics
 
+import kotlin.jvm.JvmMultifileClass
+import kotlin.jvm.JvmName
 import org.jetbrains.skia.Paint as SkPaint
 import org.jetbrains.skia.PaintMode as SkPaintMode
 import org.jetbrains.skia.PaintStrokeCap as SkPaintStrokeCap
 import org.jetbrains.skia.PaintStrokeJoin as SkPaintStrokeJoin
-
-@Deprecated(
-    message = "Use org.jetbrains.skia.Paint directly instead",
-    replaceWith = ReplaceWith("org.jetbrains.skia.Paint"),
-    level = DeprecationLevel.ERROR,
-)
-actual typealias NativePaint = SkPaint
-
-actual fun Paint(): Paint = SkiaBackedPaint()
 
 /**
  * Convert the [org.jetbrains.skia.Paint] instance into a Compose-compatible Paint
@@ -44,8 +40,9 @@ fun SkPaint.asComposePaint(): Paint = SkiaBackedPaint(this)
  */
 val Paint.skiaPaint: SkPaint
     get() {
-        requirePrecondition(this is SkiaBackedPaint) {
-            "Extracting skia paint reference is only supported from androidx.compose.ui.graphics.SkiaBackedPaint instances but received ${this::class}"
+        require(this is SkiaBackedPaint) {
+            "Extracting the Skia paint reference is only supported from " +
+                "androidx.compose.ui.graphics.SkiaBackedPaint instances but received ${this::class}"
         }
         return internalSkiaPaint
     }
@@ -154,5 +151,3 @@ internal class SkiaBackedPaint(
         else -> SkPaintStrokeJoin.MITER
     }
 }
-
-actual fun BlendMode.isSupported(): Boolean = true

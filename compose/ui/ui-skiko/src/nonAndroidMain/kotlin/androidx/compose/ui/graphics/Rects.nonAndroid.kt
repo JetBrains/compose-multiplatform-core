@@ -13,10 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+@file:JvmName("Rects_skikoKt")
+
 package androidx.compose.ui.graphics
 
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.RoundRect
+import kotlin.jvm.JvmName
 import org.jetbrains.skia.Rect as SkRect
 import org.jetbrains.skia.RRect as SkRRect
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Android Open Source Project
+ * Copyright 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,11 @@
 
 package androidx.compose.ui.graphics
 
-import org.jetbrains.skia.Path as SkPath
+import org.jetbrains.skia.Canvas as SkCanvas
 
-@Suppress("NOTHING_TO_INLINE")
 @Deprecated(
-    message = "Use asSkiaPath()",
-    replaceWith = ReplaceWith("asSkiaPath()"),
-    level = DeprecationLevel.HIDDEN,
+    message = "Use direct reference to org.jetbrains.skia.Canvas instead of typealias",
+    replaceWith = ReplaceWith("Canvas", "org.jetbrains.skia.Canvas"),
+    level = DeprecationLevel.ERROR,
 )
-inline fun Path.asDesktopPath(): SkPath = asSkiaPath()
+actual typealias NativeCanvas = SkCanvas

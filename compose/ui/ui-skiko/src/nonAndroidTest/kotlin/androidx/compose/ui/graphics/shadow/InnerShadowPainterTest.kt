@@ -18,15 +18,18 @@ package androidx.compose.ui.graphics.shadow
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.runSkikoComposeUiTest
 import androidx.compose.ui.unit.dp
 import kotlin.test.Test
 import kotlin.test.assertTrue
 
 // A copy from androidInstrumentedTest/kotlin/androidx/compose/ui/graphics/shadow/InnerShadowPainterTest.kt
+@OptIn(ExperimentalTestApi::class)
 class InnerShadowPainterTest {
 
     @Test
-    fun testInnerShadowPainterWithColor() {
+    fun testInnerShadowPainterWithColor() = runSkikoComposeUiTest {
         val innerShadow = InnerShadowPainter(RectangleShape, Shadow(20.dp, Color.Red))
         shadowTest(
             block = {
@@ -46,7 +49,7 @@ class InnerShadowPainterTest {
     }
 
     @Test
-    fun testInnerShadowPainterWithPathAndColor() {
+    fun testInnerShadowPainterWithPathAndColor() = runSkikoComposeUiTest {
         val innerShadow = InnerShadowPainter(RectangleShape, Shadow(20.dp, Color.Red))
         shadowTest(
             block = {

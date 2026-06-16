@@ -17,8 +17,8 @@
 package androidx.compose.ui.graphics
 
 import kotlinx.cinterop.ExperimentalForeignApi
-import kotlinx.cinterop.usePinned
 import kotlinx.cinterop.addressOf
+import kotlinx.cinterop.usePinned
 import platform.posix.memcpy
 
 @OptIn(ExperimentalForeignApi::class)
@@ -26,8 +26,7 @@ internal actual fun ByteArray.putBytesInto(array: IntArray, offset: Int, length:
     this.usePinned { bytes ->
         array.usePinned { ints ->
             // Assuming little endian.
-            memcpy(ints.addressOf(offset), bytes.addressOf(0), (length*4).toULong())
+            memcpy(ints.addressOf(offset), bytes.addressOf(0), (length * 4).toULong())
         }
     }
 }
-

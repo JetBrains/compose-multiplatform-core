@@ -19,21 +19,9 @@ package androidx.compose.ui.graphics
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.platform.PlatformGraphicsRegistry
+import androidx.compose.ui.graphics.platform.PlatformRenderEffect
 import org.jetbrains.skia.ImageFilter
-
-/**
- * Convert the [org.jetbrains.skia.ImageFilter] instance into a Compose-compatible [RenderEffect]
- */
-fun ImageFilter.asComposeRenderEffect(): RenderEffect =
-    SkiaBackedRenderEffect(this)
-
-/**
- * Provides access to the underlying [org.jetbrains.skia.ImageFilter] instance.
- *
- * It throws an exception if accessed on unsupported types.
- */
-val RenderEffect.skiaImageFilter: ImageFilter
-    get() = internalSkiaImageFilter
 
 /**
  * Intermediate rendering step used to render drawing commands with a corresponding
@@ -43,18 +31,18 @@ val RenderEffect.skiaImageFilter: ImageFilter
 @Immutable
 actual sealed class RenderEffect actual constructor() {
 
-    private var _internalSkiaImageFilter: ImageFilter? = null
-    internal val internalSkiaImageFilter: ImageFilter
-        get() = _internalSkiaImageFilter ?: createImageFilter().also { _internalSkiaImageFilter = it }
+    @InternalComposeUiApi
+    abstract val platformRenderEffect: PlatformRenderEffect
 
     @Deprecated(
         message = "Use [RenderEffect.skiaImageFilter] extension instead",
         replaceWith = ReplaceWith("skiaImageFilter", "androidx.compose.ui.graphics.skiaImageFilter"),
         level = DeprecationLevel.ERROR,
     )
-    fun asSkiaImageFilter(): ImageFilter = internalSkiaImageFilter
-
-    protected abstract fun createImageFilter(): ImageFilter
+    @Suppress("DEPRECATION")
+    @OptIn(InternalComposeUiApi::class)
+    fun asSkiaImageFilter(): ImageFilter =
+        SkikoGraphicsCompatRegistry.requireCurrent().imageFilter(platformRenderEffect)
 
     /**
      * Capability query to determine if the particular platform supports the [RenderEffect]. Not
@@ -64,11 +52,14 @@ actual sealed class RenderEffect actual constructor() {
 }
 
 @Immutable
-internal class SkiaBackedRenderEffect(
-    val imageFilter: ImageFilter
-) : RenderEffect() {
-    override fun createImageFilter(): ImageFilter = imageFilter
-}
+@OptIn(InternalComposeUiApi::class)
+internal class CustomPlatformRenderEffect(
+    override val platformRenderEffect: PlatformRenderEffect,
+) : RenderEffect()
+
+/** Wraps a platform render-effect binding into a [RenderEffect]. */
+@InternalComposeUiApi
+fun PlatformRenderEffect.asComposeRenderEffect(): RenderEffect = CustomPlatformRenderEffect(this)
 
 @Immutable
 actual class BlurEffect actual constructor(
@@ -78,23 +69,11 @@ actual class BlurEffect actual constructor(
     private val edgeTreatment: TileMode
 ) : RenderEffect() {
 
-    @OptIn(InternalComposeUiApi::class)
-    override fun createImageFilter(): ImageFilter =
-        if (renderEffect == null) {
-            ImageFilter.makeBlur(
-                convertRadiusToSigma(radiusX),
-                convertRadiusToSigma(radiusY),
-                edgeTreatment.toSkiaTileMode()
-            )
-        } else {
-            ImageFilter.makeBlur(
-                convertRadiusToSigma(radiusX),
-                convertRadiusToSigma(radiusY),
-                edgeTreatment.toSkiaTileMode(),
-                renderEffect.skiaImageFilter,
-                null
-            )
-        }
+    @InternalComposeUiApi
+    override val platformRenderEffect: PlatformRenderEffect by lazy {
+        PlatformGraphicsRegistry.requireCurrent()
+            .createBlurRenderEffect(renderEffect, radiusX, radiusY, edgeTreatment)
+    }
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -121,23 +100,7 @@ actual class BlurEffect actual constructor(
             "edgeTreatment=$edgeTreatment)"
     }
 
-    companion object {
-
-        // Constant used to convert blur radius into a corresponding sigma value
-        // for the gaussian blur algorithm used within SkImageFilter.
-        // This constant approximates the scaling done in the software path's
-        // "high quality" mode, in SkBlurMask::Blur() (1 / sqrt(3)).
-        @InternalComposeUiApi // Never supposed to be used public. Will be hidden in future versions
-        val BlurSigmaScale = 0.57735f
-
-        @InternalComposeUiApi // Never supposed to be used public. Will be hidden in future versions
-        fun convertRadiusToSigma(radius: Float) =
-            if (radius > 0) {
-                BlurSigmaScale * radius + 0.5f
-            } else {
-                0.0f
-            }
-    }
+    companion object
 }
 
 @Immutable
@@ -146,8 +109,11 @@ actual class OffsetEffect actual constructor(
     private val offset: Offset
 ) : RenderEffect() {
 
-    override fun createImageFilter(): ImageFilter =
-        ImageFilter.makeOffset(offset.x, offset.y, renderEffect?.skiaImageFilter, null)
+    @InternalComposeUiApi
+    override val platformRenderEffect: PlatformRenderEffect by lazy {
+        PlatformGraphicsRegistry.requireCurrent()
+            .createOffsetRenderEffect(renderEffect, offset)
+    }
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

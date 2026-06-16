@@ -24,6 +24,8 @@ import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.runSkikoComposeUiTest
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
@@ -31,10 +33,11 @@ import kotlin.test.Test
 import kotlin.test.assertTrue
 
 // A copy from androidInstrumentedTest/kotlin/androidx/compose/ui/graphics/shadow/DropShadowPainterTest.kt
+@OptIn(ExperimentalTestApi::class)
 class DropShadowPainterTest {
 
     @Test
-    fun testDropShadowPainterWithColor() {
+    fun testDropShadowPainterWithColor() = runSkikoComposeUiTest {
         val dropShadow = DropShadowPainter(RectangleShape, Shadow(200.dp, Color.Red))
         shadowTest(
             block = {
@@ -54,7 +57,7 @@ class DropShadowPainterTest {
     }
 
     @Test
-    fun testDropShadowPainterWithPathAndColor() {
+    fun testDropShadowPainterWithPathAndColor() = runSkikoComposeUiTest {
         val dropShadow =
             DropShadowPainter(
                 object : Shape {
@@ -93,7 +96,7 @@ class DropShadowPainterTest {
     }
 
     @Test
-    fun testDropShadowPainterWithBrush() {
+    fun testDropShadowPainterWithBrush() = runSkikoComposeUiTest {
         val dropShadow =
             DropShadowPainter(RectangleShape, Shadow(200.dp, createTestImageShaderBrush()))
         shadowTest(
@@ -114,7 +117,7 @@ class DropShadowPainterTest {
     }
 
     @Test
-    fun testDropShadowPainterPathWithBrush() {
+    fun testDropShadowPainterPathWithBrush() = runSkikoComposeUiTest {
         val dropShadow =
             DropShadowPainter(
                 object : Shape {
@@ -153,7 +156,7 @@ class DropShadowPainterTest {
     }
 
     @Test
-    fun testDropShadowPainterWithBrushAndColorFilter() {
+    fun testDropShadowPainterWithBrushAndColorFilter() = runSkikoComposeUiTest {
         val dropShadow =
             DropShadowPainter(RectangleShape, Shadow(200.dp, createTestImageShaderBrush()))
         shadowTest(
@@ -174,7 +177,7 @@ class DropShadowPainterTest {
     }
 
     @Test
-    fun testDropShadowPainterWithBrushAndAlpha() {
+    fun testDropShadowPainterWithBrushAndAlpha() = runSkikoComposeUiTest {
         val dropShadow =
             DropShadowPainter(
                 RectangleShape,

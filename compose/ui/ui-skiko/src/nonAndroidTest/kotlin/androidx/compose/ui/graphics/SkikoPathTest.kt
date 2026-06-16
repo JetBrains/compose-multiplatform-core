@@ -16,7 +16,12 @@
 
 package androidx.compose.ui.graphics
 
+import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.platform.clearSkikoComposeImplementation
+import androidx.compose.ui.platform.registerSkikoComposeImplementation
+import kotlin.test.AfterTest
+import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
@@ -24,7 +29,18 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import org.jetbrains.skia.PathBuilder as SkPathBuilder
 
+@OptIn(InternalComposeUiApi::class)
 class SkikoPathTest {
+
+    @BeforeTest
+    fun setup() {
+        registerSkikoComposeImplementation()
+    }
+
+    @AfterTest
+    fun tearDown() {
+        clearSkikoComposeImplementation()
+    }
 
     @Test
     fun asSkiaPath_observesSubsequentComposeMutations() {

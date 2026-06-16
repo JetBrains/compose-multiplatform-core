@@ -14,160 +14,36 @@
  * limitations under the License.
  */
 
+@file:OptIn(InternalComposeUiApi::class)
+@file:JvmName("SkiaShader_skikoKt")
+
 package androidx.compose.ui.graphics
 
-import androidx.compose.ui.geometry.Offset
-import org.jetbrains.skia.Color4f
-import org.jetbrains.skia.Gradient
-import org.jetbrains.skia.Matrix33
+import androidx.compose.ui.InternalComposeUiApi
+import androidx.compose.ui.graphics.platform.PlatformShader
+import kotlin.jvm.JvmName
 import org.jetbrains.skia.Shader as SkShader
 
-actual class Shader internal constructor(
-    internal val internalSkiaShader: SkShader,
-)
+internal class SkikoShader(
+    val skiaShader: SkShader,
+) : PlatformShader
 
-/**
- * Convert the [org.jetbrains.skia.Shader] instance into a Compose-compatible Shader
- */
-fun SkShader.asComposeShader(): Shader = Shader(internalSkiaShader = this)
+/** Convert the [org.jetbrains.skia.Shader] instance into a Compose-compatible Shader */
+fun SkShader.asComposeShader(): Shader = Shader(SkikoShader(this))
 
-/**
- * Provides access to the underlying [org.jetbrains.skia.Shader] instance.
- */
+/** Provides access to the underlying [org.jetbrains.skia.Shader] instance. */
 val Shader.skiaShader: SkShader
-    get() = internalSkiaShader
-
-internal actual class TransformShader {
-    private var _shader: Shader? = null
-    private var _wrapper: Shader? = null
-    private var _matrix: Matrix33? = null
-
-    actual fun transform(matrix: Matrix?) {
-        _matrix = if (matrix != null) {
-            Matrix33.makeTranslate(0f, 0f).apply { setFrom(matrix) }
-        } else null
-        _wrapper = null
+    get() {
+        val platform = platformShader
+        require(platform is SkikoShader) {
+            "Extracting the Skia shader reference is only supported from Shaders created by the " +
+                "registered Skiko implementation (registerSkikoComposeImplementation()), but the " +
+                "binding was ${platform::class}"
+        }
+        return platform.skiaShader
     }
 
-    actual var shader: Shader?
-        get() {
-            val matrix = _matrix ?: return _shader
-            if (_wrapper == null) {
-                _wrapper = _shader
-                    ?.skiaShader
-                    ?.makeWithLocalMatrix(matrix)
-                    ?.asComposeShader()
-            }
-            return _wrapper
-        }
-        set(value) {
-            _shader = value
-            _wrapper = null
-        }
-}
-
-internal actual fun ActualLinearGradientShader(
-    from: Offset,
-    to: Offset,
-    colors: List<Color>,
-    colorStops: List<Float>?,
-    tileMode: TileMode
-): Shader {
-    validateColorStops(colors, colorStops)
-    return SkShader.makeLinearGradient(
-        from.x,
-        from.y,
-        to.x,
-        to.y,
-        colors.toSkiaGradient(
-            colorStops = colorStops,
-            tileMode = tileMode
-        )
-    ).asComposeShader()
-}
-
-internal actual fun ActualRadialGradientShader(
-    center: Offset,
-    radius: Float,
-    colors: List<Color>,
-    colorStops: List<Float>?,
-    tileMode: TileMode
-): Shader {
-    validateColorStops(colors, colorStops)
-    return SkShader.makeRadialGradient(
-        center.x,
-        center.y,
-        radius,
-        colors.toSkiaGradient(
-            colorStops = colorStops,
-            tileMode = tileMode
-        )
-    ).asComposeShader()
-}
-
-internal actual fun ActualSweepGradientShader(
-    center: Offset,
-    colors: List<Color>,
-    colorStops: List<Float>?
-): Shader {
-    validateColorStops(colors, colorStops)
-    return SkShader.makeSweepGradient(
-        center.x,
-        center.y,
-        colors.toSkiaGradient(colorStops = colorStops)
-    ).asComposeShader()
-}
-
-internal actual fun ActualImageShader(
-    image: ImageBitmap,
-    tileModeX: TileMode,
-    tileModeY: TileMode
-): Shader {
-    return image.asSkiaBitmap().makeShader(
-        tileModeX.toSkiaTileMode(),
-        tileModeY.toSkiaTileMode()
-    ).asComposeShader()
-}
-
-internal actual fun ActualCompositeShader(dst: Shader, src: Shader, blendMode: BlendMode): Shader =
-    SkShader.makeBlend(
-        mode = blendMode.toSkia(),
-        dst = dst.skiaShader,
-        src = src.skiaShader
-    ).asComposeShader()
-
-private fun List<Color>.toSkiaGradient(
-    colorStops: List<Float>?,
-    tileMode: TileMode = TileMode.Clamp
-): Gradient = Gradient(
-    colors = Gradient.Colors(
-        colors = toColor4fArray(),
-        positions = colorStops?.toFloatArray(),
-        tileMode = tileMode.toSkiaTileMode()
-    ),
-    interpolation = Gradient.Interpolation(
-        inPremul = Gradient.Interpolation.InPremul.YES
-    )
-)
-
-private fun List<Color>.toColor4fArray(): Array<Color4f> =
-    Array(size) { i ->
-        val color = this[i]
-        Color4f(color.red, color.green, color.blue, color.alpha)
-    }
-
-private fun validateColorStops(colors: List<Color>, colorStops: List<Float>?) {
-    if (colorStops == null) {
-        if (colors.size < 2) {
-            throw IllegalArgumentException(
-                "colors must have length of at least 2 if colorStops " +
-                    "is omitted."
-            )
-        }
-    } else if (colors.size != colorStops.size) {
-        throw IllegalArgumentException(
-            "colors and colorStops arguments must have" +
-                " equal length."
-        )
-    }
-}
+internal fun transformSkikoShader(shader: Shader, matrix: Matrix): Shader =
+    shader.skiaShader
+        .makeWithLocalMatrix(identityMatrix33().apply { setFrom(matrix) })
+        .asComposeShader()

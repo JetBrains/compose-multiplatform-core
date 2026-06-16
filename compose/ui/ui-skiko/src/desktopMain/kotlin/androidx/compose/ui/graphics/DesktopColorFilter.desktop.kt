@@ -26,7 +26,7 @@ import org.jetbrains.skia.ColorFilter as SkColorFilter
     replaceWith = ReplaceWith("asSkiaColorFilter()"),
     level = DeprecationLevel.HIDDEN,
 )
-fun ColorFilter.asDesktopColorFilter(): SkColorFilter = nativeColorFilter
+fun ColorFilter.asDesktopColorFilter(): SkColorFilter = asSkiaColorFilter()
 
 /**
  * Obtain a [org.jetbrains.skia.ColorFilter] instance from this [ColorFilter]
@@ -36,4 +36,4 @@ fun ColorFilter.asDesktopColorFilter(): SkColorFilter = nativeColorFilter
     replaceWith = ReplaceWith("asComposeColorFilter()"),
     level = DeprecationLevel.HIDDEN,
 )
-fun SkColorFilter.toComposeColorFilter(): ColorFilter = ColorFilter(this)
+fun SkColorFilter.toComposeColorFilter(): ColorFilter = asComposeColorFilter()

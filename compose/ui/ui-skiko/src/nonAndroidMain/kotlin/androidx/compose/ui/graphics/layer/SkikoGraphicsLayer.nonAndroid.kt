@@ -16,19 +16,13 @@
 
 package androidx.compose.ui.graphics.layer
 
-import androidx.annotation.IntRange
 import androidx.compose.ui.InternalComposeUiApi
-import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.geometry.RoundRect
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.geometry.isUnspecified
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Canvas
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.RenderEffect
@@ -39,7 +33,7 @@ import androidx.compose.ui.graphics.drawscope.CanvasDrawScope
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.draw
 import androidx.compose.ui.graphics.materializeSkiaPath
-import androidx.compose.ui.graphics.requirePrecondition
+import androidx.compose.ui.graphics.platform.PlatformGraphicsLayer
 import androidx.compose.ui.graphics.skiaCanvas
 import androidx.compose.ui.graphics.skiaImageFilter
 import androidx.compose.ui.graphics.toArgb
@@ -55,19 +49,15 @@ import org.jetbrains.skia.Point
 import org.jetbrains.skia.Rect as SkRect
 import org.jetbrains.skiko.node.RenderNode
 
-actual class GraphicsLayer internal constructor(
+@OptIn(InternalComposeUiApi::class)
+internal class SkikoGraphicsLayer(
     renderNode: RenderNode,
-) {
+) : PlatformGraphicsLayer {
     private var renderNode: RenderNode? = renderNode
     private val pictureDrawScope = CanvasDrawScope()
 
-    private var outlineDirty = true
-    private var roundRectOutlineTopLeft: Offset = Offset.Zero
-    private var roundRectOutlineSize: Size = Size.Unspecified
-    private var roundRectCornerRadius: Float = 0f
-
-    private var internalOutline: Outline? = null
-    private var outlinePath: Path? = null
+    private var topLeft: IntOffset = IntOffset.Zero
+    private var size: IntSize = IntSize.Zero
 
     private var outsetLeft: Int = 0
     private var outsetTop: Int = 0
@@ -75,358 +65,170 @@ actual class GraphicsLayer internal constructor(
     private var outsetBottom: Int = 0
     private var cachedLayerPaint: SkPaint? = null
 
-    private var parentLayerUsages = 0
-    private val childDependenciesTracker = ChildLayerDependenciesTracker()
+    private var cachedOutline: Outline? = null
+    private var cachedClip: Boolean = false
 
-    actual var compositingStrategy: CompositingStrategy = CompositingStrategy.Auto
+    override var compositingStrategy: CompositingStrategy = CompositingStrategy.Auto
         set(value) {
-            if (field != value) {
-                field = value
-                updateLayerProperties()
-            }
+            field = value
+            updateLayerProperties()
         }
 
-    actual var topLeft: IntOffset = IntOffset.Zero
+    override var pivotOffset: Offset = Offset.Unspecified
         set(value) {
-            if (field != value) {
-                field = value
-                updateRenderNodeBounds()
-            }
+            field = value
+            updateRenderNodePivot()
         }
 
-    actual var size: IntSize = IntSize.Zero
-        private set(value) {
-            if (field != value) {
-                field = value
-                updateRenderNodeBounds()
-                updateRenderNodePivot()
-                if (roundRectOutlineSize.isUnspecified) {
-                    outlineDirty = true
-                    configureOutlineAndClip()
-                }
-            }
-        }
-
-    actual var pivotOffset: Offset = Offset.Unspecified
+    override var alpha: Float = 1f
         set(value) {
-            if (field != value) {
-                field = value
-                updateRenderNodePivot()
-            }
+            field = value
+            renderNode?.alpha = value
+            updateLayerProperties()
         }
 
-    actual var alpha: Float = 1f
+    override var scaleX: Float = 1f
         set(value) {
-            if (field != value) {
-                field = value
-                renderNode?.alpha = value
-                updateLayerProperties()
-            }
+            field = value
+            renderNode?.scaleX = value
         }
 
-    actual var scaleX: Float = 1f
+    override var scaleY: Float = 1f
         set(value) {
-            if (field != value) {
-                field = value
-                renderNode?.scaleX = value
-            }
+            field = value
+            renderNode?.scaleY = value
         }
 
-    actual var scaleY: Float = 1f
+    override var translationX: Float = 0f
         set(value) {
-            if (field != value) {
-                field = value
-                renderNode?.scaleY = value
-            }
+            field = value
+            renderNode?.translationX = value
         }
 
-    actual var translationX: Float = 0f
+    override var translationY: Float = 0f
         set(value) {
-            if (field != value) {
-                field = value
-                renderNode?.translationX = value
-            }
+            field = value
+            renderNode?.translationY = value
         }
-    actual var translationY: Float = 0f
+
+    override var shadowElevation: Float = 0f
         set(value) {
-            if (field != value) {
-                field = value
-                renderNode?.translationY = value
-            }
+            field = value
+            renderNode?.shadowElevation = value
         }
 
-    actual var shadowElevation: Float = 0f
+    override var ambientShadowColor: Color = Color.Black
         set(value) {
-            if (field != value) {
-                field = value
-                renderNode?.shadowElevation = value
-                outlineDirty = true
-                configureOutlineAndClip()
-            }
+            field = value
+            renderNode?.ambientShadowColor = value.toArgb()
         }
 
-    actual var ambientShadowColor: Color = Color.Black
+    override var spotShadowColor: Color = Color.Black
         set(value) {
-            if (field != value) {
-                field = value
-                renderNode?.ambientShadowColor = value.toArgb()
-            }
+            field = value
+            renderNode?.spotShadowColor = value.toArgb()
         }
 
-    actual var spotShadowColor: Color = Color.Black
+    override var blendMode: BlendMode = BlendMode.SrcOver
         set(value) {
-            if (field != value) {
-                field = value
-                renderNode?.spotShadowColor = value.toArgb()
-            }
+            field = value
+            updateLayerProperties()
         }
 
-    actual var blendMode: BlendMode = BlendMode.SrcOver
+    override var colorFilter: ColorFilter? = null
         set(value) {
-            if (field != value) {
-                field = value
-                updateLayerProperties()
-            }
+            field = value
+            updateLayerProperties()
         }
 
-    actual var colorFilter: ColorFilter? = null
+    override var rotationX: Float = 0f
         set(value) {
-            if (field != value) {
-                field = value
-                updateLayerProperties()
-            }
+            field = value
+            renderNode?.rotationX = value
         }
 
-    actual val outline: Outline
-        get() {
-            val tmpOutline = internalOutline
-            val tmpPath = outlinePath
-            return if (tmpOutline != null) {
-                tmpOutline
-            } else if (tmpPath != null) {
-                Outline.Generic(tmpPath).also { internalOutline = it }
-            } else {
-                resolveOutlinePosition { outlineTopLeft, outlineSize ->
-                    val left = outlineTopLeft.x
-                    val top = outlineTopLeft.y
-                    val right = left + outlineSize.width
-                    val bottom = top + outlineSize.height
-                    val cornerRadius = this.roundRectCornerRadius
-                    if (cornerRadius > 0f) {
-                        Outline.Rounded(
-                            RoundRect(left, top, right, bottom, CornerRadius(cornerRadius))
-                        )
-                    } else {
-                        Outline.Rectangle(Rect(left, top, right, bottom))
-                    }
-                }.also { internalOutline = it }
-            }
-        }
-
-    private fun resetOutlineParams() {
-        internalOutline = null
-        outlinePath = null
-        roundRectOutlineSize = Size.Unspecified
-        roundRectOutlineTopLeft = Offset.Zero
-        roundRectCornerRadius = 0f
-        outlineDirty = true
-    }
-
-    actual fun setPathOutline(path: Path) {
-        resetOutlineParams()
-        this.outlinePath = path
-        configureOutlineAndClip()
-    }
-
-    actual fun setRoundRectOutline(topLeft: Offset, size: Size, cornerRadius: Float) {
-        val topLeftWithOutsets = topLeft + outsetOffset()
-        if (this.roundRectOutlineTopLeft != topLeftWithOutsets ||
-            this.roundRectOutlineSize != size ||
-            this.roundRectCornerRadius != cornerRadius ||
-            this.outlinePath != null
-        ) {
-            resetOutlineParams()
-            this.roundRectOutlineTopLeft = topLeftWithOutsets
-            this.roundRectOutlineSize = size
-            this.roundRectCornerRadius = cornerRadius
-            configureOutlineAndClip()
-        }
-    }
-
-    actual fun setRectOutline(topLeft: Offset, size: Size) {
-        setRoundRectOutline(topLeft, size, 0f)
-    }
-
-    actual var rotationX: Float = 0f
+    override var rotationY: Float = 0f
         set(value) {
-            if (field != value) {
-                field = value
-                renderNode?.rotationX = value
-            }
+            field = value
+            renderNode?.rotationY = value
         }
 
-    actual var rotationY: Float = 0f
+    override var rotationZ: Float = 0f
         set(value) {
-            if (field != value) {
-                field = value
-                renderNode?.rotationY = value
-            }
+            field = value
+            renderNode?.rotationZ = value
         }
 
-    actual var rotationZ: Float = 0f
+    override var cameraDistance: Float = DefaultCameraDistance
         set(value) {
-            if (field != value) {
-                field = value
-                renderNode?.rotationZ = value
-            }
+            field = value
+            renderNode?.cameraDistance = value
         }
 
-    actual var cameraDistance: Float = DefaultCameraDistance
+    override var renderEffect: RenderEffect? = null
         set(value) {
-            if (field != value) {
-                field = value
-                renderNode?.cameraDistance = value
-            }
+            field = value
+            updateLayerProperties()
         }
 
-    actual var clip: Boolean = false
-        set(value) {
-            if (field != value) {
-                field = value
-                outlineDirty = true
-                configureOutlineAndClip()
-            }
-        }
-
-    actual var renderEffect: RenderEffect? = null
-        set(value) {
-            if (field != value) {
-                field = value
-                updateLayerProperties()
-            }
-        }
-
-    actual var isReleased: Boolean = false
-        private set
-
-    actual fun record(
-        density: Density,
-        layoutDirection: LayoutDirection,
-        size: IntSize,
-        block: DrawScope.() -> Unit
-    ) {
+    override fun setBounds(topLeft: IntOffset, size: IntSize) {
+        this.topLeft = topLeft
         this.size = size
-        recordWithTracking { canvas ->
-            pictureDrawScope.draw(
-                density = density,
-                layoutDirection = layoutDirection,
-                canvas = canvas,
-                size = size.toSize(),
-                graphicsLayer = this,
-                block = block
-            )
-        }
+        updateRenderNodeBounds()
+        updateRenderNodePivot()
     }
 
-    private fun recordWithTracking(block: (SkiaBackedCanvas) -> Unit) {
+    override fun setOutline(outline: Outline?, clip: Boolean) {
+        cachedOutline = outline
+        cachedClip = clip
+        applyOutline()
+    }
+
+    private fun applyOutline() {
         val renderNode = renderNode ?: return
-        val recordingCanvas = renderNode.beginRecording()
-        try {
-            val composeCanvas = recordingCanvas.asComposeCanvas() as SkiaBackedCanvas
-            childDependenciesTracker.withTracking(
-                onDependencyRemoved = { it.onRemovedFromParentLayer() },
-            ) {
-                if (outsetLeft > 0 || outsetTop > 0) {
-                    composeCanvas.save()
-                    composeCanvas.translate(outsetLeft.toFloat(), outsetTop.toFloat())
-                    block(composeCanvas)
-                    composeCanvas.restore()
-                } else {
-                    block(composeCanvas)
-                }
-            }
-        } finally {
-            renderNode.endRecording()
-        }
-    }
-
-    private fun addSubLayer(graphicsLayer: GraphicsLayer) {
-        if (childDependenciesTracker.onDependencyAdded(graphicsLayer)) {
-            graphicsLayer.onAddedToParentLayer()
-        }
-    }
-
-    internal actual fun draw(canvas: Canvas, parentLayer: GraphicsLayer?) {
-        if (isReleased) return
-        configureOutlineAndClip()
-        parentLayer?.addSubLayer(this)
-        renderNode?.drawInto(canvas.skiaCanvas)
-    }
-
-    private fun onAddedToParentLayer() {
-        parentLayerUsages++
-    }
-
-    private fun onRemovedFromParentLayer() {
-        parentLayerUsages--
-        discardContentIfReleasedAndHaveNoParentLayerUsages()
-    }
-
-    private fun configureOutlineAndClip() {
-        if (!outlineDirty) return
-        val renderNode = renderNode ?: return
-        val outlineIsNeeded = clip || shadowElevation > 0f
-        if (!outlineIsNeeded) {
+        val outline = cachedOutline
+        if (outline == null) {
             renderNode.clip = false
             renderNode.setClipPath(null)
         } else {
-            renderNode.clip = clip
-            when (val tmpOutline = outline) {
+            renderNode.clip = cachedClip
+            // The recorded content and the render node bounds are shifted by the outsets (see
+            // record()/updateRenderNodeBounds()), so the clip outline has to be shifted to match.
+            val dx = outsetLeft.toFloat()
+            val dy = outsetTop.toFloat()
+            when (outline) {
                 is Outline.Rectangle -> renderNode.setClipRect(
-                    tmpOutline.rect.left,
-                    tmpOutline.rect.top,
-                    tmpOutline.rect.right,
-                    tmpOutline.rect.bottom,
+                    outline.rect.left + dx,
+                    outline.rect.top + dy,
+                    outline.rect.right + dx,
+                    outline.rect.bottom + dy,
                     antiAlias = true
                 )
                 is Outline.Rounded -> renderNode.setClipRRect(
-                    tmpOutline.roundRect.left,
-                    tmpOutline.roundRect.top,
-                    tmpOutline.roundRect.right,
-                    tmpOutline.roundRect.bottom,
+                    outline.roundRect.left + dx,
+                    outline.roundRect.top + dy,
+                    outline.roundRect.right + dx,
+                    outline.roundRect.bottom + dy,
                     floatArrayOf(
-                        tmpOutline.roundRect.topLeftCornerRadius.x,
-                        tmpOutline.roundRect.topLeftCornerRadius.y,
-                        tmpOutline.roundRect.topRightCornerRadius.x,
-                        tmpOutline.roundRect.topRightCornerRadius.y,
-                        tmpOutline.roundRect.bottomRightCornerRadius.x,
-                        tmpOutline.roundRect.bottomRightCornerRadius.y,
-                        tmpOutline.roundRect.bottomLeftCornerRadius.x,
-                        tmpOutline.roundRect.bottomLeftCornerRadius.y
+                        outline.roundRect.topLeftCornerRadius.x,
+                        outline.roundRect.topLeftCornerRadius.y,
+                        outline.roundRect.topRightCornerRadius.x,
+                        outline.roundRect.topRightCornerRadius.y,
+                        outline.roundRect.bottomRightCornerRadius.x,
+                        outline.roundRect.bottomRightCornerRadius.y,
+                        outline.roundRect.bottomLeftCornerRadius.x,
+                        outline.roundRect.bottomLeftCornerRadius.y
                     ),
                     antiAlias = true
                 )
-                is Outline.Generic -> renderNode.setClipPath(updatePathOutline(tmpOutline.path), antiAlias = true)
+                is Outline.Generic -> renderNode.setClipPath(
+                    updatePathOutline(outline.path),
+                    antiAlias = true
+                )
             }
         }
-        outlineDirty = false
     }
 
-    private inline fun <T> resolveOutlinePosition(block: (Offset, Size) -> T): T {
-        val layerSize = this.size.toSize()
-        val rRectTopLeft = roundRectOutlineTopLeft
-        val rRectSize = roundRectOutlineSize
-
-        val outlineSize =
-            if (rRectSize.isUnspecified) {
-                layerSize
-            } else {
-                rRectSize
-            }
-        return block(rRectTopLeft, outlineSize)
-    }
-
-    @OptIn(InternalComposeUiApi::class)
     private fun updatePathOutline(path: Path): SkPath =
         if (hasOutsets()) {
             Path().apply { addPath(path, outsetOffset()) }
@@ -434,60 +236,47 @@ actual class GraphicsLayer internal constructor(
             path
         }.materializeSkiaPath()
 
-    internal fun release() {
-        if (!isReleased) {
-            isReleased = true
-            discardContentIfReleasedAndHaveNoParentLayerUsages()
-        }
-    }
-
-    private fun discardContentIfReleasedAndHaveNoParentLayerUsages() {
-        if (isReleased && parentLayerUsages == 0) {
-            // discarding means we don't draw children layer anymore and need to remove dependencies:
-            childDependenciesTracker.removeDependencies { it.onRemovedFromParentLayer() }
-
-            renderNode?.close()
-            renderNode = null
-        }
-    }
-
-    actual suspend fun toImageBitmap(): ImageBitmap =
-        ImageBitmap(size.width, size.height).apply { draw(Canvas(this), null) }
-
-    private fun updateLayerProperties() {
-        val paint = if (requiresLayer()) {
-            SkPaint().also {
-                it.setAlphaf(alpha)
-                it.imageFilter = renderEffect?.skiaImageFilter
-                it.colorFilter = colorFilter?.asSkiaColorFilter()
-                it.blendMode = blendMode.toSkia()
-            }
-        } else {
-            null
-        }
-        cachedLayerPaint = paint
-        renderNode?.layerPaint = paint
-    }
-
-    private fun hasOutsets() = outsetLeft > 0 || outsetTop > 0 || outsetRight > 0 || outsetBottom > 0
-
-    private fun requiresLayer(): Boolean {
-        val alphaNeedsLayer = alpha < 1f && compositingStrategy != CompositingStrategy.ModulateAlpha
-        val hasColorFilter = colorFilter != null
-        val hasBlendMode = blendMode != BlendMode.SrcOver
-        val hasRenderEffect = renderEffect != null
-        val offscreenBufferRequested = compositingStrategy == CompositingStrategy.Offscreen
-        return alphaNeedsLayer || hasColorFilter || hasBlendMode || hasRenderEffect ||
-            offscreenBufferRequested
-    }
-
-    actual fun setOutsets(
-        @IntRange(from = 0) left: Int,
-        @IntRange(from = 0) top: Int,
-        @IntRange(from = 0) right: Int,
-        @IntRange(from = 0) bottom: Int
+    override fun record(
+        density: Density,
+        layoutDirection: LayoutDirection,
+        layer: GraphicsLayer,
+        block: DrawScope.() -> Unit,
     ) {
-        requirePrecondition(left >= 0 && top >= 0 && right >= 0 && bottom >= 0) {
+        val renderNode = renderNode ?: return
+        val recordingCanvas = renderNode.beginRecording()
+        try {
+            val composeCanvas = recordingCanvas.asComposeCanvas() as SkiaBackedCanvas
+            if (outsetLeft > 0 || outsetTop > 0) {
+                composeCanvas.save()
+                composeCanvas.translate(outsetLeft.toFloat(), outsetTop.toFloat())
+            }
+            pictureDrawScope.draw(
+                density = density,
+                layoutDirection = layoutDirection,
+                canvas = composeCanvas,
+                size = layer.size.toSize(),
+                graphicsLayer = layer,
+                block = block,
+            )
+            if (outsetLeft > 0 || outsetTop > 0) {
+                composeCanvas.restore()
+            }
+        } finally {
+            renderNode.endRecording()
+        }
+    }
+
+    override fun draw(canvas: Canvas) {
+        renderNode?.drawInto(canvas.skiaCanvas)
+    }
+
+    override fun discardDisplayList() {
+        renderNode?.close()
+        renderNode = null
+    }
+
+    override fun setOutsets(left: Int, top: Int, right: Int, bottom: Int) {
+        require(left >= 0 && top >= 0 && right >= 0 && bottom >= 0) {
             "Outsets cannot be negative! Left: $left, Top: $top, Right: $right, Bottom: $bottom"
         }
         if (left != outsetLeft || top != outsetTop || right != outsetRight || bottom != outsetBottom) {
@@ -497,6 +286,9 @@ actual class GraphicsLayer internal constructor(
             outsetBottom = bottom
             updateRenderNodeBounds()
             updateRenderNodePivot()
+            // Re-apply the clip so its outset shift matches the new outsets even when the outline
+            // itself did not change.
+            applyOutline()
         }
     }
 
@@ -526,4 +318,31 @@ actual class GraphicsLayer internal constructor(
     }
 
     private fun outsetOffset(): Offset = Offset(outsetLeft.toFloat(), outsetTop.toFloat())
+
+    private fun updateLayerProperties() {
+        val paint = if (requiresLayer()) {
+            SkPaint().also {
+                it.setAlphaf(alpha)
+                it.imageFilter = renderEffect?.skiaImageFilter
+                it.colorFilter = colorFilter?.asSkiaColorFilter()
+                it.blendMode = blendMode.toSkia()
+            }
+        } else {
+            null
+        }
+        cachedLayerPaint = paint
+        renderNode?.layerPaint = paint
+    }
+
+    private fun hasOutsets() = outsetLeft > 0 || outsetTop > 0 || outsetRight > 0 || outsetBottom > 0
+
+    private fun requiresLayer(): Boolean {
+        val alphaNeedsLayer = alpha < 1f && compositingStrategy != CompositingStrategy.ModulateAlpha
+        val hasColorFilter = colorFilter != null
+        val hasBlendMode = blendMode != BlendMode.SrcOver
+        val hasRenderEffect = renderEffect != null
+        val offscreenBufferRequested = compositingStrategy == CompositingStrategy.Offscreen
+        return alphaNeedsLayer || hasColorFilter || hasBlendMode || hasRenderEffect ||
+            offscreenBufferRequested
+    }
 }

@@ -14,14 +14,18 @@
  * limitations under the License.
  */
 
+@file:JvmName("SkiaImageAsset_skikoKt")
+
 package androidx.compose.ui.graphics
 
 import androidx.compose.ui.graphics.colorspace.ColorSpace
 import androidx.compose.ui.graphics.colorspace.ColorSpaces
+import kotlin.jvm.JvmName
 import kotlin.math.abs
 import org.jetbrains.skia.Bitmap
 import org.jetbrains.skia.ColorAlphaType
 import org.jetbrains.skia.ColorInfo
+import org.jetbrains.skia.ColorSpace as SkColorSpace
 import org.jetbrains.skia.ColorType
 import org.jetbrains.skia.Image
 import org.jetbrains.skia.ImageInfo
@@ -41,24 +45,6 @@ fun Image.toComposeImageBitmap(): ImageBitmap = SkiaBackedImageBitmap(toBitmap()
 // Split into expect/actual to use a faster implementation for web
 // See web implementation for details and the reason.
 internal expect fun Image.toBitmap(): Bitmap
-
-internal actual fun ActualImageBitmap(
-    width: Int,
-    height: Int,
-    config: ImageBitmapConfig,
-    hasAlpha: Boolean,
-    colorSpace: ColorSpace
-): ImageBitmap {
-    require(width > 0 && height > 0) { "width and height must be > 0" }
-    val colorType = config.toSkiaColorType()
-    val alphaType = if (hasAlpha) ColorAlphaType.PREMUL else ColorAlphaType.OPAQUE
-    val skiaColorSpace = colorSpace.toSkiaColorSpace()
-    val colorInfo = ColorInfo(colorType, alphaType, skiaColorSpace)
-    val imageInfo = ImageInfo(colorInfo, width, height)
-    val bitmap = Bitmap()
-    bitmap.allocPixels(imageInfo)
-    return SkiaBackedImageBitmap(bitmap)
-}
 
 /**
  * Obtain a reference to the [org.jetbrains.skia.Bitmap]
@@ -102,7 +88,7 @@ private class SkiaBackedImageBitmap(val bitmap: Bitmap) : ImageBitmap {
         val colorInfo = ColorInfo(
             ColorType.BGRA_8888,
             ColorAlphaType.UNPREMUL,
-            org.jetbrains.skia.ColorSpace.sRGB
+            SkColorSpace.sRGB
         )
         val imageInfo = ImageInfo(colorInfo, width, height)
         val bytesPerPixel = 4
@@ -134,22 +120,22 @@ private fun ColorType.toComposeConfig() = when (this) {
     else -> ImageBitmapConfig.Argb8888
 }
 
-private fun org.jetbrains.skia.ColorSpace?.toComposeColorSpace(): ColorSpace {
+private fun SkColorSpace?.toComposeColorSpace(): ColorSpace {
     return when (this) {
-        org.jetbrains.skia.ColorSpace.sRGB -> ColorSpaces.Srgb
-        org.jetbrains.skia.ColorSpace.sRGBLinear -> ColorSpaces.LinearSrgb
-        org.jetbrains.skia.ColorSpace.displayP3 -> ColorSpaces.DisplayP3
+        SkColorSpace.sRGB -> ColorSpaces.Srgb
+        SkColorSpace.sRGBLinear -> ColorSpaces.LinearSrgb
+        SkColorSpace.displayP3 -> ColorSpaces.DisplayP3
         else -> ColorSpaces.Srgb
     }
 }
 
 // TODO(demin): support all color spaces.
 //  to do this we need to implement SkColorSpace::MakeRGB in skia
-private fun ColorSpace.toSkiaColorSpace(): org.jetbrains.skia.ColorSpace {
+private fun ColorSpace.toSkiaColorSpace(): SkColorSpace {
     return when (this) {
-        ColorSpaces.Srgb -> org.jetbrains.skia.ColorSpace.sRGB
-        ColorSpaces.LinearSrgb -> org.jetbrains.skia.ColorSpace.sRGBLinear
-        ColorSpaces.DisplayP3 -> org.jetbrains.skia.ColorSpace.displayP3
-        else -> org.jetbrains.skia.ColorSpace.sRGB
+        ColorSpaces.Srgb -> SkColorSpace.sRGB
+        ColorSpaces.LinearSrgb -> SkColorSpace.sRGBLinear
+        ColorSpaces.DisplayP3 -> SkColorSpace.displayP3
+        else -> SkColorSpace.sRGB
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Android Open Source Project
+ * Copyright 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,98 +14,12 @@
  * limitations under the License.
  */
 
-package androidx.compose.ui.graphics
+package androidx.compose.ui.node
 
-import androidx.compose.ui.InternalComposeUiApi
+import androidx.compose.ui.graphics.Matrix
 import kotlin.math.abs
-import org.jetbrains.skia.Matrix33
 
-internal fun identityMatrix33() = Matrix33(
-    1f, 0f, 0f,
-    0f, 1f, 0f,
-    0f, 0f, 1f
-)
-
-internal fun Matrix.setFrom(matrix: Matrix33) {
-    val v = values
-    val m = matrix.mat
-    val scaleX = m[0] // MSCALE_X
-    val skewX = m[1] // MSKEW_X
-    val translateX = m[2] // MTRANS_X
-    val skewY = m[3] // MSKEW_Y
-    val scaleY = m[4] // MSCALE_Y
-    val translateY = m[5] // MTRANS_Y
-    val persp0 = m[6] // MPERSP_0
-    val persp1 = m[7] // MPERSP_1
-    val persp2 = m[8] // MPERSP_2
-
-    v[Matrix.ScaleX] = scaleX // 0
-    v[Matrix.SkewY] = skewY // 1
-    v[2] = 0f // 2
-    v[Matrix.Perspective0] = persp0 // 3
-    v[Matrix.SkewX] = skewX // 4
-    v[Matrix.ScaleY] = scaleY // 5
-    v[6] = 0f // 6
-    v[Matrix.Perspective1] = persp1 // 7
-    v[8] = 0f // 8
-    v[9] = 0f // 9
-    v[Matrix.ScaleZ] = 1.0f // 10
-    v[11] = 0f // 11
-    v[Matrix.TranslateX] = translateX // 12
-    v[Matrix.TranslateY] = translateY // 13
-    v[14] = 0f // 14
-    v[Matrix.Perspective2] = persp2 // 15
-}
-
-internal fun Matrix33.setFrom(matrix: Matrix) {
-    // We'll reuse the array used in Matrix to avoid allocation by temporarily
-    // setting it to the 3x3 matrix used by android.graphics.Matrix
-    // Store the values of the 4 x 4 matrix into temporary variables
-    // to be reset after the 3 x 3 matrix is configured
-    val scaleX = matrix.values[Matrix.ScaleX] // 0
-    val skewY = matrix.values[Matrix.SkewY] // 1
-    val v2 = matrix.values[2] // 2
-    val persp0 = matrix.values[Matrix.Perspective0] // 3
-    val skewX = matrix.values[Matrix.SkewX] // 4
-    val scaleY = matrix.values[Matrix.ScaleY] // 5
-    val v6 = matrix.values[6] // 6
-    val persp1 = matrix.values[Matrix.Perspective1] // 7
-    val v8 = matrix.values[8] // 8
-
-    val translateX = matrix.values[Matrix.TranslateX]
-    val translateY = matrix.values[Matrix.TranslateY]
-    val persp2 = matrix.values[Matrix.Perspective2]
-
-    val v = matrix.values
-
-    v[0] = scaleX // MSCALE_X = 0
-    v[1] = skewX // MSKEW_X = 1
-    v[2] = translateX // MTRANS_X = 2
-    v[3] = skewY // MSKEW_Y = 3
-    v[4] = scaleY // MSCALE_Y = 4
-    v[5] = translateY // MTRANS_Y
-    v[6] = persp0 // MPERSP_0 = 6
-    v[7] = persp1 // MPERSP_1 = 7
-    v[8] = persp2 // MPERSP_2 = 8
-
-    for (i in 0..8) {
-        mat[i] = v[i]
-    }
-
-    // Reset the values back after the android.graphics.Matrix is configured
-    v[Matrix.ScaleX] = scaleX // 0
-    v[Matrix.SkewY] = skewY // 1
-    v[2] = v2 // 2
-    v[Matrix.Perspective0] = persp0 // 3
-    v[Matrix.SkewX] = skewX // 4
-    v[Matrix.ScaleY] = scaleY // 5
-    v[6] = v6 // 6
-    v[Matrix.Perspective1] = persp1 // 7
-    v[8] = v8 // 8
-}
-
-@InternalComposeUiApi
-fun prepareTransformationMatrix(
+internal fun prepareTransformationMatrix(
     matrix: Matrix,
     pivotX: Float,
     pivotY: Float,

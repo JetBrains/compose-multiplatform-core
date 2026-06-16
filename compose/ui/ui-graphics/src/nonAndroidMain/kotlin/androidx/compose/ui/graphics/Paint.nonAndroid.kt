@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Android Open Source Project
+ * Copyright 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,24 +14,15 @@
  * limitations under the License.
  */
 
-package androidx.compose.ui.graphics.shadow
+package androidx.compose.ui.graphics
 
 import androidx.compose.ui.InternalComposeUiApi
-import androidx.compose.ui.graphics.Paint
-import androidx.compose.ui.graphics.platform.PlatformBlurFilter
 import androidx.compose.ui.graphics.platform.PlatformGraphicsRegistry
 
 @OptIn(InternalComposeUiApi::class)
-internal actual typealias BlurFilter = PlatformBlurFilter
+actual fun Paint(): Paint =
+    PlatformGraphicsRegistry.requireCurrent().createPaint()
 
 @OptIn(InternalComposeUiApi::class)
-internal actual fun BlurFilter(radius: Float): BlurFilter =
-    PlatformGraphicsRegistry.requireCurrent().createBlurFilter(radius)
-
-@OptIn(InternalComposeUiApi::class)
-internal actual fun Paint.setBlurFilter(blur: BlurFilter?) {
-    PlatformGraphicsRegistry.requireCurrent().setBlurFilter(
-        paint = this,
-        blur = blur,
-    )
-}
+actual fun BlendMode.isSupported(): Boolean =
+    PlatformGraphicsRegistry.requireCurrent().isBlendModeSupported(this)

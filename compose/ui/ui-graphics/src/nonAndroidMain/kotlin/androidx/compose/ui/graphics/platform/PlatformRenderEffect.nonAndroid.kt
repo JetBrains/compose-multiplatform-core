@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Android Open Source Project
+ * Copyright 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-package androidx.compose.ui.graphics
+package androidx.compose.ui.graphics.platform
 
-import org.jetbrains.skia.Path as SkPath
+import androidx.compose.ui.InternalComposeUiApi
 
-@Suppress("NOTHING_TO_INLINE")
-@Deprecated(
-    message = "Use asSkiaPath()",
-    replaceWith = ReplaceWith("asSkiaPath()"),
-    level = DeprecationLevel.HIDDEN,
-)
-inline fun Path.asDesktopPath(): SkPath = asSkiaPath()
+/**
+ * Opaque platform binding held by [androidx.compose.ui.graphics.RenderEffect] so ui-graphics stays
+ * decoupled from any concrete graphics backend. The registered backend provides the implementation
+ * and the interop extensions to and from its native image-filter type.
+ */
+@InternalComposeUiApi
+interface PlatformRenderEffect
