@@ -27,8 +27,10 @@ import androidx.compose.ui.test.utils.beginKeyPress
 import androidx.compose.ui.test.utils.beginModifierKeyPress
 import androidx.compose.ui.test.utils.beginPress
 import androidx.compose.ui.test.utils.center
+import androidx.compose.ui.test.utils.findFirstDescendant
 import androidx.compose.ui.test.utils.getTouchesEvent
 import androidx.compose.ui.test.utils.hold
+import androidx.compose.ui.test.utils.isLoupeView
 import androidx.compose.ui.test.utils.mouseDown
 import androidx.compose.ui.test.utils.moveToLocationOnWindow
 import androidx.compose.ui.test.utils.release
@@ -511,6 +513,13 @@ internal class UIKitInstrumentedTest(
         return tap(frame.center())
     }
 
+    fun focusThenDoubleTap(tag: String, delayMillis: Long = 500L) {
+        val node = findNodeWithTag(tag)
+        node.tap()
+        delay(delayMillis)
+        node.doubleTap()
+    }
+
     /**
      * Simulates a touch-down event at the center of a given AccessibilityTestNode.
      */
@@ -756,4 +765,27 @@ internal fun UIKitInstrumentedTest.waitForContextMenu() {
         } != null
     }
     delay(500) // wait for toolbar animation
+}
+
+internal fun UIKitInstrumentedTest.longPressAndAwaitContextMenu(tag: String) {
+    val touch = findNodeWithTag(tag).touchDown()
+    waitUntil {
+        findFirstDescendant { it.isLoupeView } != null
+    }
+    touch.up()
+    waitForContextMenu()
+}
+
+internal fun UIKitInstrumentedTest.tapContextMenuButton(label: String) {
+    if (available(OS.Ios to OSVersion(16))) {
+        findNodeWithLabel(label).tap()
+    } else {
+        // Because on iOS < 16 the context menu is shown in a separate window,
+        // it's not fully interactive with the default Tap action.
+        findNodeWithLabel(label)
+            .touchDown(useNodeWindow = true)
+            .hold()
+            .also { delay(100) }
+            .up()
+    }
 }
