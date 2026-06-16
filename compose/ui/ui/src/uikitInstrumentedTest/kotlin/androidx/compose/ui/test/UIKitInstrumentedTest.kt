@@ -882,3 +882,17 @@ private fun UIViewController.setLayoutDirection(
         )
     }
 }
+
+internal fun UIKitInstrumentedTest.tapContextMenuButton(label: String) {
+    if (available(OS.Ios to OSVersion(16))) {
+        findNodeWithLabel(label).tap()
+    } else {
+        // Because on iOS < 16 the context menu is shown in a separate window,
+        // it's not fully interactive with the default Tap action.
+        findNodeWithLabel(label)
+            .touchDown(useNodeWindow = true)
+            .hold()
+            .also { delay(100) }
+            .up()
+    }
+}

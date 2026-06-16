@@ -38,6 +38,7 @@ import androidx.compose.ui.test.findNodeWithTag
 import androidx.compose.ui.test.findNodeWithTagOrNull
 import androidx.compose.ui.test.firstNodeOrNull
 import androidx.compose.ui.test.runUIKitInstrumentedTest
+import androidx.compose.ui.test.tapContextMenuButton
 import androidx.compose.ui.test.utils.findFirstDescendant
 import androidx.compose.ui.test.utils.hold
 import androidx.compose.ui.test.utils.isLoupeView
@@ -382,18 +383,6 @@ class SelectionContainerInteractionTest {
         )
     }
 
-    private fun UIKitInstrumentedTest.tapContextMenuButton(label: String) {
-        if (available(OS.Ios to OSVersion(16))) {
-            findNodeWithLabel(label).tap()
-        } else {
-            findNodeWithLabel(label)
-                .touchDown(useNodeWindow = true)
-                .hold()
-                .also { delay(LegacyContextMenuButtonHoldDelayMillis) }
-                .up()
-        }
-    }
-
     private fun UIKitInstrumentedTest.assertNoContextMenu() {
         assertNull(
             firstNodeOrNull { node ->
@@ -422,8 +411,6 @@ class SelectionContainerInteractionTest {
         private const val ManualDoubleTapIntervalDelayMillis = 50L
         // Gives long-press state a brief moment to settle before starting a drag extension.
         private const val LongPressDragSettleDelayMillis = 100L
-        // On iOS < 16, hold the menu item briefly so the separate-window press is registered.
-        private const val LegacyContextMenuButtonHoldDelayMillis = 100L
         private val SelectableTextWidth = 160.dp
     }
 }

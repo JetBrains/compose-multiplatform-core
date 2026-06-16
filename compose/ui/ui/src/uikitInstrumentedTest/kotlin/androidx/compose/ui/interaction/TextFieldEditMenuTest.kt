@@ -51,8 +51,8 @@ import androidx.compose.ui.test.findNodeWithLabel
 import androidx.compose.ui.test.findNodeWithLabelOrNull
 import androidx.compose.ui.test.findNodeWithTag
 import androidx.compose.ui.test.runUIKitInstrumentedTest
+import androidx.compose.ui.test.tapContextMenuButton
 import androidx.compose.ui.test.utils.findFirstDescendant
-import androidx.compose.ui.test.utils.hold
 import androidx.compose.ui.test.utils.isLoupeView
 import androidx.compose.ui.test.utils.up
 import androidx.compose.ui.test.waitForContextMenu
@@ -67,9 +67,6 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.cinterop.ExperimentalForeignApi
-import org.jetbrains.skiko.OS
-import org.jetbrains.skiko.OSVersion
-import org.jetbrains.skiko.available
 import platform.UIKit.UIPasteboard
 
 class TextFieldEditMenuTest {
@@ -845,19 +842,5 @@ class TextFieldEditMenuTest {
     @OptIn(ExperimentalForeignApi::class)
     private fun UIKitInstrumentedTest.verifyFullToolbarPresent() {
         verifyContextMenuItemsVisible(listOf("Cut", "Copy", "Paste", "Select All"))
-    }
-
-    private fun UIKitInstrumentedTest.tapContextMenuButton(label: String) {
-        if (available(OS.Ios to OSVersion(16))) {
-            findNodeWithLabel(label).tap()
-        } else {
-            // Because on iOS < 16 the context menu is shown in a separate window,
-            // it's not fully interactive with the default Tap action.
-            findNodeWithLabel(label)
-                .touchDown(useNodeWindow = true)
-                .hold()
-                .also { delay(100) }
-                .up()
-        }
     }
 }
