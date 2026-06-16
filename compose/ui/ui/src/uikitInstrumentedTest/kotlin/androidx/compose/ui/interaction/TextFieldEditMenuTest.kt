@@ -283,32 +283,40 @@ class TextFieldEditMenuTest {
     }
 
     @Test
-    fun testOldContextMenuBasicTextFieldEditableCollapsedClipboardText() =
-        runEditableCollapsedClipboardTextContextMenuTest(
-            textFieldKind = EditableTextFieldKind.BasicTextField,
-            newContextMenu = false
-        )
+    fun testEditableCollapsedClipboardText() =
+        runComplexTextFieldTest { textFieldKind, newContextMenu ->
+            UIPasteboard.generalPasteboard().string = "Paste text"
+            setTextFieldContent(
+                textFieldKind = textFieldKind,
+                initialValue = TextFieldValue("Text", TextRange(4, 4)),
+                readOnly = false
+            )
 
-    @Test
-    fun testOldContextMenuBasicTextField2EditableCollapsedClipboardText() =
-        runEditableCollapsedClipboardTextContextMenuTest(
-            textFieldKind = EditableTextFieldKind.BasicTextField2,
-            newContextMenu = false
-        )
+            longPressAndAwaitContextMenu("TextField")
+            verifyContextMenuItemsVisible(labels = if (newContextMenu) {
+                listOf("Paste", "Select All")
+            } else {
+                listOf("Paste", "Select", "Select All")
+            })
 
-    @Test
-    fun testNewContextMenuBasicTextFieldEditableCollapsedClipboardText() =
-        runEditableCollapsedClipboardTextContextMenuTest(
-            textFieldKind = EditableTextFieldKind.BasicTextField,
-            newContextMenu = true
-        )
+            verifyContextMenuItemsHidden(
+                labels = if (newContextMenu) {
+                    listOf("Cut", "Copy", "Select")
+                } else {
+                    listOf("Cut", "Copy")
+                }
+            )
+        }
 
-    @Test
-    fun testNewContextMenuBasicTextField2EditableCollapsedClipboardText() =
-        runEditableCollapsedClipboardTextContextMenuTest(
-            textFieldKind = EditableTextFieldKind.BasicTextField2,
-            newContextMenu = true
-        )
+    private fun runComplexTextFieldTest(test: UIKitInstrumentedTest.(EditableTextFieldKind, newContextMenuEnabled: Boolean) -> Unit) {
+        for (newContextMenuEnabled in arrayOf(false, true)) {
+            for (textFieldKind in EditableTextFieldKind.entries) {
+                runContextMenuTest(newContextMenuEnabled) {
+                    test(textFieldKind, newContextMenuEnabled)
+                }
+            }
+        }
+    }
 
     @Test
     fun testOldContextMenuBasicTextFieldEditableCollapsedClipboardEmpty() =
