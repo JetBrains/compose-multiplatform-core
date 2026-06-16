@@ -386,7 +386,7 @@ class SkikoParagraphTest {
 
     @Test
     fun getOffsetForPosition_midpointOfComplexCharacter_snapsToClusterStart() {
-        val text = "abc\u0915\u094D abc" // "abcक् abc"
+        val text = "abca\u030B abc" // "abc abc"
         val paragraph = simpleParagraph(text)
 
         val complexCharStart = 3 // Index of 'क'; the cluster "क्" spans indices 3..4
