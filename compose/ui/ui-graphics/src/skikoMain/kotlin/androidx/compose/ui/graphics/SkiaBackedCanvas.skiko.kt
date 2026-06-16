@@ -99,7 +99,7 @@ class CanvasHolder {
 @PublishedApi
 internal class SkiaBackedCanvas : Canvas {
 
-    // Keep the internal canvas as a var prevent having to allocate an AndroidCanvas
+    // Keep the internal canvas as a var prevent having to allocate a SkiaBackedCanvas
     // instance on each draw call
     @PublishedApi internal var internalSkiaCanvas: SkCanvas = EmptyCanvas
     override fun save() {
