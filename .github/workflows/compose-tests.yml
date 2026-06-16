@@ -117,7 +117,7 @@ jobs:
       fail-fast: false
       matrix:
         runtime: [ 'ios18', 'ios26' ]
-        form_factor: [ 'phone', 'tablet' ]
+        device_type: [ 'phone', 'tablet' ]
         include:
           # Resolve runtime-specific Xcode and runner configuration.
           - runtime: 'ios18'
@@ -134,16 +134,16 @@ jobs:
             xcode_cache_key_suffix: '26.5'
           # Resolve runtime/device_type combinations to concrete simulator devices.
           - runtime: 'ios18'
-            form_factor: 'phone'
+            device_type: 'phone'
             device: 'iPhone 16'
           - runtime: 'ios18'
-            form_factor: 'tablet'
+            device_type: 'tablet'
             device: 'iPad Pro 11-inch (M4)'
           - runtime: 'ios26'
-            form_factor: 'phone'
+            device_type: 'phone'
             device: 'iPhone 17'
           - runtime: 'ios26'
-            form_factor: 'tablet'
+            device_type: 'tablet'
             device: 'iPad Pro 11-inch (M5)'
     name: Compose iOS Instrumented Tests ${{ matrix.runtime_name }} / ${{ matrix.device }}
     env:
@@ -176,7 +176,7 @@ jobs:
         uses: actions/upload-artifact@v4
         if: failure()
         with:
-          name: TestResults-${{ github.run_number }}-${{ matrix.runtime }}-${{ matrix.form_factor }}.xcresult
+          name: TestResults-${{ github.run_number }}-${{ matrix.runtime }}-${{ matrix.device_type }}.xcresult
           path: compose/ui/ui/src/uikitInstrumentedTest/launcher/TestResults.xcresult
 
       - name: Test Summary
