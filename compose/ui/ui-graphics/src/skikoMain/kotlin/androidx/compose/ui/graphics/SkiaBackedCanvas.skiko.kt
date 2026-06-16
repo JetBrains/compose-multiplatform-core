@@ -112,7 +112,7 @@ var Canvas.alphaMultiplier: Float
 @PublishedApi
 internal class SkiaBackedCanvas : Canvas {
 
-    // Keep the internal canvas as a var prevent having to allocate an AndroidCanvas
+    // Keep the internal canvas as a var prevent having to allocate a SkiaBackedCanvas
     // instance on each draw call
     @PublishedApi internal var internalSkiaCanvas: SkCanvas = EmptyCanvas
     internal var alphaMultiplier: Float = 1.0f
