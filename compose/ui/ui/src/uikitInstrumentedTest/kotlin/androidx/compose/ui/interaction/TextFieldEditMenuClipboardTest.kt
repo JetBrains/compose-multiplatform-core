@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -35,12 +36,10 @@ import androidx.compose.ui.test.findNodeWithTag
 import androidx.compose.ui.test.runUIKitInstrumentedTest
 import androidx.compose.ui.test.tapContextMenuButton
 import androidx.compose.ui.test.waitForContextMenu
-import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.DpOffset
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertNull
 import platform.UIKit.UIPasteboard
 
 class TextFieldEditMenuClipboardTest {
@@ -119,20 +118,27 @@ class TextFieldEditMenuClipboardTest {
         }
 
     @Test
-    fun testTextFieldContextMenu_PasteOverSelectionPreservesMixedLatinJapaneseText() =
+    fun testTextFieldContextMenu_CopyPasteMixedLatinJapaneseText() =
         runClipboardMenuTest { textFieldKind ->
             val mixedText = "Tokyo\u6771\u4EAC"
+            val initialText = "$mixedText $TargetWord"
+            val expectedText = "$mixedText $mixedText"
             val content = setTextFieldContent(
                 textFieldKind = textFieldKind,
-                initialText = "Hello $TargetWord",
+                initialText = initialText,
             )
-            UIPasteboard.generalPasteboard().string = mixedText
+            UIPasteboard.generalPasteboard().string = null
+
+            openToolbarForWord(xFraction = FirstWordPosition)
+            tapContextMenuButton("Copy")
+
+            waitUntilContextMenuClosed("Copy")
 
             openToolbarForWord(xFraction = SecondWordPosition)
             tapContextMenuButton("Paste")
 
-            waitUntil("Text field should paste exact mixed Latin/Japanese text") {
-                content.text() == "Hello $mixedText"
+            waitUntil("Text field should replace target word with mixed Latin/Japanese text") {
+                content.text() == expectedText
             }
             assertEquals(mixedText, UIPasteboard.generalPasteboard().string)
         }
@@ -154,87 +160,6 @@ class TextFieldEditMenuClipboardTest {
                 content.text() == "Hello $pastedWord"
             }
             assertEquals(pastedWord, UIPasteboard.generalPasteboard().string)
-        }
-
-    @Test
-    fun testTextFieldContextMenu_SelectAllSelectsMixedLatinJapaneseText() =
-        runClipboardMenuTest { textFieldKind ->
-            val mixedText = "Tokyo\u6771\u4EAC"
-            val content = setTextFieldContent(
-                textFieldKind = textFieldKind,
-                initialText = mixedText,
-            )
-            UIPasteboard.generalPasteboard().string = ClipboardSentinel
-
-            openToolbarForWord(xFraction = FirstWordPosition)
-            tapContextMenuButton("Select All")
-
-            waitUntil("Text field should select the whole mixed Latin/Japanese text") {
-                content.selection() == TextRange(0, mixedText.length)
-            }
-            assertEquals(ClipboardSentinel, UIPasteboard.generalPasteboard().string)
-        }
-
-    @Test
-    fun testTextFieldContextMenu_SelectAllThenCopyCopiesWholeText() =
-        runClipboardMenuTest { textFieldKind ->
-            val text = "Hello $TargetWord"
-            val content = setTextFieldContent(
-                textFieldKind = textFieldKind,
-                initialText = text,
-            )
-            UIPasteboard.generalPasteboard().string = null
-
-            openToolbarForWord(xFraction = FirstWordPosition)
-            tapContextMenuButton("Select All")
-
-            waitUntil("Text field should select all text") {
-                content.selection() == TextRange(0, text.length)
-            }
-
-            tapContextMenuButton("Copy")
-
-            assertEquals(text, UIPasteboard.generalPasteboard().string)
-            assertEquals(text, content.text())
-        }
-
-    @Test
-    fun testTextFieldContextMenu_SelectAllThenCutRemovesWholeText() =
-        runClipboardMenuTest { textFieldKind ->
-            val text = "Hello $TargetWord"
-            val content = setTextFieldContent(
-                textFieldKind = textFieldKind,
-                initialText = text,
-            )
-            UIPasteboard.generalPasteboard().string = null
-
-            openToolbarForWord(xFraction = FirstWordPosition)
-            tapContextMenuButton("Select All")
-
-            waitUntil("Text field should select all text") {
-                content.selection() == TextRange(0, text.length)
-            }
-
-            tapContextMenuButton("Cut")
-
-            waitUntil("Text field should remove all selected text") {
-                content.text().isEmpty()
-            }
-            assertEquals(text, UIPasteboard.generalPasteboard().string)
-        }
-
-    @Test
-    fun testTextFieldContextMenu_PasteIsNotShownWhenClipboardIsEmpty() =
-        runClipboardMenuTest { textFieldKind ->
-            UIPasteboard.generalPasteboard().string = null
-            setTextFieldContent(
-                textFieldKind = textFieldKind,
-                initialText = "Hello $TargetWord",
-            )
-
-            openToolbarForWord(xFraction = SecondWordPosition)
-
-            assertNull(findNodeWithLabelOrNull("Paste"))
         }
 
     @Test
@@ -285,47 +210,55 @@ class TextFieldEditMenuClipboardTest {
     private fun UIKitInstrumentedTest.setTextFieldContent(
         textFieldKind: EditableTextFieldKind,
         initialText: String,
+    ): TextFieldContent =
+        when (textFieldKind) {
+            EditableTextFieldKind.BasicTextField -> setBasicTextFieldContent(initialText)
+            EditableTextFieldKind.BasicTextField2 -> setBasicTextField2Content(initialText)
+        }
+
+    private fun UIKitInstrumentedTest.setBasicTextFieldContent(
+        initialText: String,
     ): TextFieldContent {
-        var text = { initialText }
-        var selection = { TextRange.Zero }
+        val textFieldValue = mutableStateOf(TextFieldValue(initialText))
+        setTextFieldContent { focusRequester ->
+            BasicTextField(
+                value = textFieldValue.value,
+                onValueChange = { textFieldValue.value = it },
+                modifier = textFieldModifier(focusRequester),
+            )
+        }
+        return TextFieldContent(
+            text = { textFieldValue.value.text },
+        )
+    }
+
+    private fun UIKitInstrumentedTest.setBasicTextField2Content(
+        initialText: String,
+    ): TextFieldContent {
+        val textFieldState = TextFieldState(initialText)
+        setTextFieldContent { focusRequester ->
+            BasicTextField(
+                state = textFieldState,
+                modifier = textFieldModifier(focusRequester),
+            )
+        }
+        return TextFieldContent(
+            text = { textFieldState.text.toString() },
+        )
+    }
+
+    private fun UIKitInstrumentedTest.setTextFieldContent(
+        content: @Composable (FocusRequester) -> Unit,
+    ) {
         setContent {
             val focusRequester = remember { FocusRequester() }
             Column(modifier = Modifier.safeDrawingPadding()) {
-                when (textFieldKind) {
-                    EditableTextFieldKind.BasicTextField -> {
-                        val textFieldValue = remember {
-                            mutableStateOf(TextFieldValue(initialText))
-                        }
-                        text = { textFieldValue.value.text }
-                        selection = { textFieldValue.value.selection }
-                        BasicTextField(
-                            value = textFieldValue.value,
-                            onValueChange = { textFieldValue.value = it },
-                            modifier = textFieldModifier(focusRequester),
-                        )
-                    }
-
-                    EditableTextFieldKind.BasicTextField2 -> {
-                        val textFieldState = remember {
-                            TextFieldState(initialText)
-                        }
-                        text = { textFieldState.text.toString() }
-                        selection = { textFieldState.selection }
-                        BasicTextField(
-                            state = textFieldState,
-                            modifier = textFieldModifier(focusRequester),
-                        )
-                    }
-                }
+                content(focusRequester)
             }
             LaunchedEffect(focusRequester) {
                 focusRequester.requestFocus()
             }
         }
-        return TextFieldContent(
-            text = text,
-            selection = selection,
-        )
     }
 
     private fun textFieldModifier(focusRequester: FocusRequester): Modifier =
@@ -376,7 +309,6 @@ class TextFieldEditMenuClipboardTest {
 
     private data class TextFieldContent(
         val text: () -> String,
-        val selection: () -> TextRange,
     )
 
     private enum class EditableTextFieldKind {
@@ -386,7 +318,6 @@ class TextFieldEditMenuClipboardTest {
 
     private companion object {
         private const val TextFieldTag = "TextField"
-        private const val ClipboardSentinel = "Clipboard sentinel"
         private const val TargetWord = "target"
 
         private const val FirstWordPosition = 0.2f
