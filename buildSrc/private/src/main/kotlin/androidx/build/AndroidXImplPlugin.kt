@@ -155,10 +155,6 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
                 project,
             )
 
-        // Exposes the redirectversions.toml registry as `project.redirectVersions` for build scripts
-        // that build redirect-coordinate dependency strings (e.g. compose/ui/ui).
-        project.registerRedirectVersionsExtension()
-
         project.tasks.register(BUILD_ON_SERVER_TASK, DefaultTask::class.java)
         // Perform different actions based on which plugins have been applied to the project.
         // Many of the actions overlap, ex. API tracking.
