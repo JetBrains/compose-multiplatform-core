@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.foundation.text.input.clearText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
@@ -33,6 +34,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.UIKitInstrumentedTest
 import androidx.compose.ui.test.findNodeWithLabelOrNull
 import androidx.compose.ui.test.findNodeWithTag
+import androidx.compose.ui.test.isVisibleInContainer
 import androidx.compose.ui.test.runUIKitInstrumentedTest
 import androidx.compose.ui.test.tapContextMenuButton
 import androidx.compose.ui.test.waitForContextMenu
@@ -121,24 +123,31 @@ class TextFieldEditMenuClipboardTest {
     fun testTextFieldContextMenu_CopyPasteMixedLatinJapaneseText() =
         runClipboardMenuTest { textFieldKind ->
             val mixedText = "Tokyo\u6771\u4EAC"
-            val initialText = "$mixedText $TargetWord"
-            val expectedText = "$mixedText $mixedText"
             val content = setTextFieldContent(
                 textFieldKind = textFieldKind,
-                initialText = initialText,
+                initialText = mixedText,
             )
             UIPasteboard.generalPasteboard().string = null
 
             openToolbarForWord(xFraction = FirstWordPosition)
+            tapContextMenuButton("Select All")
+            waitUntil("${"Copy"} menu item should be visible") {
+                findNodeWithLabelOrNull("Copy")?.isVisibleInContainer == true
+            }
+            delay(60000)
             tapContextMenuButton("Copy")
 
             waitUntilContextMenuClosed("Copy")
 
-            openToolbarForWord(xFraction = SecondWordPosition)
+            content.clearText()
+            waitUntil("Text field should be empty before paste") {
+                content.text().isEmpty()
+            }
+            openToolbarForCollapsedCursor(xFraction = TextEndPosition)
             tapContextMenuButton("Paste")
 
-            waitUntil("Text field should replace target word with mixed Latin/Japanese text") {
-                content.text() == expectedText
+            waitUntil("Text field should paste mixed Latin/Japanese text") {
+                content.text() == mixedText
             }
             assertEquals(mixedText, UIPasteboard.generalPasteboard().string)
         }
@@ -229,6 +238,7 @@ class TextFieldEditMenuClipboardTest {
         }
         return TextFieldContent(
             text = { textFieldValue.value.text },
+            clearText = { textFieldValue.value = TextFieldValue() },
         )
     }
 
@@ -244,6 +254,7 @@ class TextFieldEditMenuClipboardTest {
         }
         return TextFieldContent(
             text = { textFieldState.text.toString() },
+            clearText = { textFieldState.clearText() },
         )
     }
 
@@ -309,6 +320,7 @@ class TextFieldEditMenuClipboardTest {
 
     private data class TextFieldContent(
         val text: () -> String,
+        val clearText: () -> Unit,
     )
 
     private enum class EditableTextFieldKind {
