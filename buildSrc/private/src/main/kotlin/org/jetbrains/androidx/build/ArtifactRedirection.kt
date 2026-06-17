@@ -16,6 +16,7 @@
 
 package org.jetbrains.androidx.build
 
+import androidx.build.AndroidXComposeImplPlugin
 import androidx.build.AndroidXMultiplatformExtension
 import androidx.build.lazyReadFile
 import org.gradle.api.GradleException
@@ -239,7 +240,7 @@ internal fun Project.applyParallelRedirectGraph(
         // `:compose:runtime:runtime` project dep the module's real compilations use — on a redirect
         // target's classpath it resolves through the redirect to Google's real runtime (which carries
         // `ComposeVersion`), so the empty compilation type-checks. compileOnly: not published.
-        if (plugins.hasPlugin("AndroidXComposePlugin") && path != ":compose:runtime:runtime") {
+        if (plugins.hasPlugin(AndroidXComposeImplPlugin::class.java) && path != ":compose:runtime:runtime") {
             dependencies.add("${redirectCommonMain.name}CompileOnly", project(":compose:runtime:runtime"))
         }
 
