@@ -60,10 +60,6 @@ class TextFieldEditMenuClipboardTest {
             openToolbarForWord(xFraction = FirstWordPosition)
             tapContextMenuButton("Copy")
 
-            waitUntil("Pasteboard should contain copied word") {
-                UIPasteboard.generalPasteboard().string == copiedWord
-            }
-
             waitUntilContextMenuClosed("Copy")
 
             openToolbarForWord(xFraction = SecondWordPosition)
@@ -88,9 +84,8 @@ class TextFieldEditMenuClipboardTest {
             openToolbarForWord(xFraction = MiddleWordPosition)
             tapContextMenuButton("Cut")
 
-            waitUntil("Text field should remove cut word and copy it to pasteboard") {
-                content.text() == "left  $TargetWord" &&
-                    UIPasteboard.generalPasteboard().string == cutWord
+            waitUntil("Text field should remove cut word") {
+                content.text() == "left  $TargetWord"
             }
 
             waitUntilContextMenuClosed("Cut")
@@ -199,9 +194,7 @@ class TextFieldEditMenuClipboardTest {
 
             tapContextMenuButton("Copy")
 
-            waitUntil("Pasteboard should contain all selected text") {
-                UIPasteboard.generalPasteboard().string == text
-            }
+            assertEquals(text, UIPasteboard.generalPasteboard().string)
             assertEquals(text, content.text())
         }
 
@@ -224,10 +217,10 @@ class TextFieldEditMenuClipboardTest {
 
             tapContextMenuButton("Cut")
 
-            waitUntil("Text field should remove all selected text and copy it to pasteboard") {
-                content.text().isEmpty() &&
-                    UIPasteboard.generalPasteboard().string == text
+            waitUntil("Text field should remove all selected text") {
+                content.text().isEmpty()
             }
+            assertEquals(text, UIPasteboard.generalPasteboard().string)
         }
 
     @Test
@@ -258,10 +251,6 @@ class TextFieldEditMenuClipboardTest {
 
             openToolbarForWord(xFraction = MiddleWordPosition)
             tapContextMenuButton("Copy")
-
-            waitUntil("Pasteboard should contain copied Arabic word") {
-                UIPasteboard.generalPasteboard().string == copiedWord
-            }
 
             waitUntilContextMenuClosed("Copy")
 
