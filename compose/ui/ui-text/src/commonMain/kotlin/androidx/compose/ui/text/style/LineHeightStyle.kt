@@ -16,6 +16,7 @@
 
 package androidx.compose.ui.text.style
 
+import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.text.PlatformParagraphStyle
 import androidx.compose.ui.text.internal.checkPrecondition
 import kotlin.jvm.JvmInline
@@ -206,11 +207,13 @@ class LineHeightStyle(val alignment: Alignment, val trim: Trim, val mode: Mode) 
             val None = Trim(0)
         }
 
-        internal fun isTrimFirstLineTop(): Boolean {
+        @InternalComposeUiApi
+        fun isTrimFirstLineTop(): Boolean {
             return value and FlagTrimTop > 0
         }
 
-        internal fun isTrimLastLineBottom(): Boolean {
+        @InternalComposeUiApi
+        fun isTrimLastLineBottom(): Boolean {
             return value and FlagTrimBottom > 0
         }
     }
@@ -222,7 +225,7 @@ class LineHeightStyle(val alignment: Alignment, val trim: Trim, val mode: Mode) 
      *   0f (inclusive) and 1f (inclusive).
      */
     @kotlin.jvm.JvmInline
-    value class Alignment constructor(internal val topRatio: Float) {
+    value class Alignment constructor(@property:InternalComposeUiApi val topRatio: Float) {
 
         init {
             checkPrecondition(topRatio in 0f..1f || topRatio == -1f) {
