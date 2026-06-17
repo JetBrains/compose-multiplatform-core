@@ -20,7 +20,7 @@
 package androidx.compose.foundation.gestures
 
 import androidx.annotation.VisibleForTesting
-import androidx.compose.runtime.InternalComposeApi
+import androidx.compose.foundation.InternalFoundationApi
 import androidx.compose.ui.dom.domEventOrNull
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.PointerEvent
@@ -173,15 +173,16 @@ private object JsConfig : ScrollConfig {
  * must reset it between cases to avoid one test's last event leaking into the next.
  */
 @VisibleForTesting
-@InternalComposeApi
+@InternalFoundationApi
 public fun resetWheelEventTrackingForTests(): Unit = JsConfig.resetWheelTracking()
 
 private val PointerEvent.totalScrollDelta
     get() = this.changes.fastFold(Offset.Zero) { acc, c -> acc + c.scrollDelta }
 
 /** Whether the current browser is Firefox, detected once from the user agent. */
-private val isFirefox: Boolean by lazy { detectFirefox() }
-private fun detectFirefox(): Boolean = js("/firefox/i.test(window.navigator.userAgent)")
+private val isFirefox: Boolean by lazy {
+    window.navigator.userAgent.contains("firefox", ignoreCase = true)
+}
 
 // The legacy wheelDeltaX/wheelDeltaY properties are non-standard and may be absent (e.g. in
 // Firefox), in which case these helpers return NaN to represent an unavailable value.

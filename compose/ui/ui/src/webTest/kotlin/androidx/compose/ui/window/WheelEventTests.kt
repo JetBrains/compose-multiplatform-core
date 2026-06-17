@@ -16,6 +16,7 @@
 
 package androidx.compose.ui.window
 
+import androidx.compose.foundation.InternalFoundationApi
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.gestures.resetWheelEventTrackingForTests
 import androidx.compose.foundation.horizontalScroll
@@ -33,10 +34,12 @@ import androidx.compose.ui.unit.dp
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlinx.browser.window
 import kotlinx.coroutines.test.runTest
 import org.w3c.dom.events.WheelEvent
 import org.w3c.dom.events.WheelEventInit
 
+@OptIn(InternalFoundationApi::class)
 class WheelEventTests : OnCanvasTests {
 
     @OptIn(InternalComposeApi::class)
@@ -89,12 +92,19 @@ class WheelEventTests : OnCanvasTests {
         assertEquals(0, verticalScrollState.value)
 
         // A delta that is not divisible by 120 looks like high-resolution input (a trackpad
-        // or a freely rotating wheel), so the whole delta must be applied immediately:
+        // or a freely rotating wheel), so the whole delta is applied immediately:
         // 100 * density(2f) = 200px.
+        //
+        // This trackpad/stepping-wheel disambiguation relies on the legacy wheelDelta* fields,
+        // which Firefox does not expose. There a pixel-mode event can't be recognized as
+        // high-resolution, so it falls back to the animated stepping-wheel path and only the
+        // animation threshold (6.dp * density(2f) = 12px) is applied immediately.
+        val isFirefox = window.navigator.userAgent.contains("firefox", ignoreCase = true)
+        val expected = if (isFirefox) 12 else 200
         getCanvas().dispatchEvent(WheelEvent("wheel", WheelEventInit(deltaY = 100.0)))
 
         assertEquals(
-            200,
+            expected,
             verticalScrollState.value,
             "high-resolution wheel scroll should apply immediately"
         )
