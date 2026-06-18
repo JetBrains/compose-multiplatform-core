@@ -50,6 +50,7 @@ import androidx.compose.remote.player.core.RemoteDocument;
 import androidx.compose.remote.player.core.platform.AndroidRemoteContext;
 import androidx.compose.remote.player.core.platform.BitmapLoader;
 import androidx.compose.remote.player.core.platform.SettingsRetriever;
+import androidx.compose.remote.player.core.platform.TypefaceResolver;
 import androidx.compose.remote.player.core.state.StateUpdater;
 import androidx.compose.remote.player.core.state.StateUpdaterImpl;
 import androidx.compose.remote.player.view.accessibility.platform.RemoteComposeTouchHelper;
@@ -95,8 +96,7 @@ public class RemoteComposePlayer extends FrameLayout implements RemoteContextAct
     public static final int THEME_DARK = Theme.DARK;
 
     // Expose to subclasses to enable player extensibility.
-    @NonNull
-    protected RemoteComposeView mInner;
+    @NonNull protected RemoteComposeView mInner;
     private StateUpdater mStateUpdater;
 
     private final @NonNull ThemeSupport mThemeSupport = new ThemeSupport();
@@ -112,8 +112,8 @@ public class RemoteComposePlayer extends FrameLayout implements RemoteContextAct
     private final PatternCallback mPatternCallbackInternal =
             new PatternCallback() {
                 @Override
-                public void patternFound(@NonNull String name,
-                        @NonNull RemoteComposeBuffer buffer) {
+                public void patternFound(
+                        @NonNull String name, @NonNull RemoteComposeBuffer buffer) {
                     saveMacro(name, buffer);
                 }
             };
@@ -156,8 +156,8 @@ public class RemoteComposePlayer extends FrameLayout implements RemoteContextAct
                     RemoteComposeBuffer buffer = RemoteComposeBuffer.fromInputStream(fis);
                     mLoadedMacros.put(name, buffer);
                     if (mInner.getDocument() != null) {
-                        mInner.getDocument().getDocument()
-                                .mLoomManager.addMacroFromBuffer(name, buffer);
+                        CoreDocument doc = mInner.getDocument().getDocument();
+                        doc.mLoomManager.addMacroFromBuffer(name, buffer);
                     }
                 } catch (IOException e) {
                     Log.e("RemoteComposePlayer", "Error loading macro " + file.getName(), e);
@@ -400,7 +400,8 @@ public class RemoteComposePlayer extends FrameLayout implements RemoteContextAct
     public void setDocument(@Nullable RemoteDocument value) {
         if (value != null) {
             for (Map.Entry<String, RemoteComposeBuffer> entry : mLoadedMacros.entrySet()) {
-                value.getDocument().mLoomManager
+                value.getDocument()
+                        .mLoomManager
                         .addMacroFromBuffer(entry.getKey(), entry.getValue());
             }
             value.reinflate();
@@ -531,6 +532,26 @@ public class RemoteComposePlayer extends FrameLayout implements RemoteContextAct
     @RestrictTo(LIBRARY_GROUP)
     public void setBitmapLoader(@NonNull BitmapLoader bitmapLoader) {
         ((AndroidRemoteContext) mInner.getRemoteContext()).setBitmapLoader(bitmapLoader);
+    }
+
+    /**
+     * Sets the TypefaceResolver to be used by the PaintContext.
+     *
+     * @param typefaceResolver The TypefaceResolver to be used.
+     */
+    @RestrictTo(LIBRARY_GROUP)
+    public void setTypefaceResolver(@NonNull TypefaceResolver typefaceResolver) {
+        ((AndroidRemoteContext) mInner.getRemoteContext()).setTypefaceResolver(typefaceResolver);
+    }
+
+    /**
+     * Gets the current TypefaceResolver used by the PaintContext.
+     *
+     * @return The current TypefaceResolver.
+     */
+    @RestrictTo(LIBRARY_GROUP)
+    public @Nullable TypefaceResolver getTypefaceResolver() {
+        return ((AndroidRemoteContext) mInner.getRemoteContext()).getTypefaceResolver();
     }
 
     /** Sets a FloatSystemVariables on the RemoteContext. */

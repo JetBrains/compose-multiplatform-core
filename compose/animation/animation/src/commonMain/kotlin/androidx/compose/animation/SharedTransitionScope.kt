@@ -17,6 +17,7 @@
 package androidx.compose.animation
 
 import androidx.annotation.VisibleForTesting
+import androidx.collection.MutableObjectList
 import androidx.collection.MutableScatterMap
 import androidx.compose.animation.SharedTransitionScope.OverlayClip
 import androidx.compose.animation.SharedTransitionScope.PlaceholderSize
@@ -43,6 +44,7 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -93,7 +95,6 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.round
-import androidx.compose.ui.util.fastForEach
 import kotlin.js.JsName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -1237,13 +1238,13 @@ internal constructor(lookaheadScope: LookaheadScope, val coroutineScope: Corouti
         val sharedElements = sharedElementsIterator
         var isActive = false
         sharedElements.forEach { element ->
+            element.updateMatch()
             isActive =
                 isActive ||
                     (
                     // Note: This should evaluate to true for animating shared elements that lost
                     // its match (e.g.ActiveMatchRemovedDuringTransition)
                     element.foundMatch && element.isAnimating())
-            element.updateMatch()
         }
         if (isActive != isTransitionActive) {
             isTransitionActive = isActive
@@ -1426,8 +1427,8 @@ internal constructor(lookaheadScope: LookaheadScope, val coroutineScope: Corouti
 
     private var _nullableLookaheadRoot: LayoutCoordinates? = null
 
-    // TODO: Use MutableObjectList and impl sort
-    private var renderers: List<LayerRenderer> by mutableStateOf(mutableListOf())
+    private var renderersVersion by mutableIntStateOf(0)
+    private val renderers = MutableObjectList<LayerRenderer>()
 
     // sharedElements are being observed for the edge events of 1) any transition has started,
     // and 2) all transitions are finished. As such, the map containing the key-sharedElement pairs
@@ -1452,14 +1453,19 @@ internal constructor(lookaheadScope: LookaheadScope, val coroutineScope: Corouti
         return sharedElements.getOrPut(key) { SharedElement(key, this) }
     }
 
+    private var lastSortedVersion = -1
+
+    internal fun zOrderChanged() {
+        renderersVersion++
+    }
+
     internal fun drawInOverlay(scope: ContentDrawScope, graphicsContext: GraphicsContext) {
-        renderers =
-            renderers.run {
-                @Suppress("ListIterator") // stdlib sort is /only/ available with an iterator
-                val sorted = sortedWith(LayerRenderer.LayerRendererComparator)
-                sorted.fastForEach { it.drawInOverlay(drawScope = scope, graphicsContext) }
-                sorted
-            }
+        val version = renderersVersion // Read to register dependency
+        if (lastSortedVersion != version) {
+            renderers.sortWith(LayerRenderer.LayerRendererComparator)
+            lastSortedVersion = version
+        }
+        renderers.forEach { it.drawInOverlay(drawScope = scope, graphicsContext) }
     }
 
     internal fun onEntryRemoved(sharedElementState: SharedElementEntry) {
@@ -1471,6 +1477,7 @@ internal constructor(lookaheadScope: LookaheadScope, val coroutineScope: Corouti
             removeEntry(sharedElementState)
             updateTransitionActiveness()
             renderers -= sharedElementState
+            renderersVersion++
             if (allEntries.isEmpty()) {
                 scope.coroutineScope.launch {
                     if (allEntries.isEmpty()) {
@@ -1490,29 +1497,27 @@ internal constructor(lookaheadScope: LookaheadScope, val coroutineScope: Corouti
         with(sharedElementState.sharedElement) {
             addEntry(sharedElementState)
             updateTransitionActiveness()
-            val renderersList = renderers
             val id =
-                renderersList.indexOfFirst {
+                renderers.indexOfFirst {
                     (it as? SharedElementEntry)?.sharedElement == sharedElementState.sharedElement
                 }
-            if (id == -1 || id >= renderersList.size - 1) {
+            if (id == -1 || id >= renderers.size - 1) {
                 renderers += sharedElementState
             } else {
-                renderers = buildList {
-                    addAll(renderersList.subList(0, id + 1))
-                    add(sharedElementState)
-                    addAll(renderersList.subList(id + 1, renderersList.size))
-                }
+                renderers.add(id + 1, sharedElementState)
             }
+            renderersVersion++
         }
     }
 
     internal fun onLayerRendererCreated(renderer: LayerRenderer) {
         renderers += renderer
+        renderersVersion++
     }
 
     internal fun onLayerRendererRemoved(renderer: LayerRenderer) {
         renderers -= renderer
+        renderersVersion++
     }
 
     private class ShapeBasedClip(val clipShape: Shape) : OverlayClip {
@@ -1639,4 +1644,19 @@ public object SharedTransitionDefaults {
      * @see SharedTransitionScope.SharedContentConfig
      */
     public object SharedContentConfig : SharedTransitionScope.SharedContentConfig
+}
+
+// In-place insertion sort, because we expect the list to be somewhat small and mostly sorted most
+// of the time.
+private fun <T> MutableObjectList<T>.sortWith(comparator: Comparator<T>) {
+    for (i in 1 until size) {
+        val current = this[i]
+        var j = i - 1
+        // Shift elements to the right to make room for the current item
+        while (j >= 0 && comparator.compare(this[j], current) > 0) {
+            this[j + 1] = this[j]
+            j--
+        }
+        this[j + 1] = current
+    }
 }

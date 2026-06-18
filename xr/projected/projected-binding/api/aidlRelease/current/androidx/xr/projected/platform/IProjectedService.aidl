@@ -44,4 +44,6 @@ interface IProjectedService {
   int[] getAudioDeviceIds();
   void registerBatteryStateListener(in androidx.xr.projected.platform.IBatteryStateListener listener);
   void unregisterBatteryStateListener(in androidx.xr.projected.platform.IBatteryStateListener listener);
+  void launchProjectedPermissionRequest(in androidx.xr.projected.platform.ProjectedPermissionRequestData data, in androidx.xr.projected.platform.IProjectedPermissionRequestCallback callback);
+  void finishProjectedPermissionRequest();
 }

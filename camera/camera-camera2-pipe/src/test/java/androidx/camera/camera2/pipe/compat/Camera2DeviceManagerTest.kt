@@ -19,7 +19,7 @@ package androidx.camera.camera2.pipe.compat
 import android.content.Context
 import android.content.pm.PackageManager.PERMISSION_GRANTED
 import android.hardware.camera2.CameraDevice
-import android.os.Build
+import androidx.camera.camera2.pipe.CameraError
 import androidx.camera.camera2.pipe.CameraId
 import androidx.camera.camera2.pipe.CameraPipe
 import androidx.camera.camera2.pipe.StrictMode
@@ -32,11 +32,13 @@ import androidx.camera.camera2.pipe.internal.CriticalCameraErrorListener
 import androidx.camera.camera2.pipe.testing.FakeCamera2MetadataProvider
 import androidx.camera.camera2.pipe.testing.FakeCameraMetadata
 import androidx.camera.camera2.pipe.testing.FakeThreads
+import androidx.camera.camera2.pipe.testing.HighEndDeviceTemplate
 import androidx.camera.camera2.pipe.testing.RobolectricCameraPipeTestRunner
 import com.google.common.truth.Truth.assertThat
 import javax.inject.Provider
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
@@ -54,9 +56,9 @@ import org.mockito.kotlin.whenever
 import org.robolectric.annotation.Config
 
 @RunWith(RobolectricCameraPipeTestRunner::class)
-@Config(minSdk = Build.VERSION_CODES.M)
+@Config(sdk = [Config.ALL_SDKS])
 @OptIn(ExperimentalCoroutinesApi::class)
-internal class PruningCamera2DeviceManagerImplTest {
+internal class Camera2DeviceManagerImplTest {
     private val testScope = TestScope()
 
     private val fakeContext: Context = mock()
@@ -80,8 +82,13 @@ internal class PruningCamera2DeviceManagerImplTest {
                 cameraId: CameraId,
                 camera2DeviceCloser: Camera2DeviceCloser,
                 isForegroundObserver: (Unit) -> Boolean,
+                cameraOpenAborted: Deferred<Unit>,
             ): OpenCameraResult {
-                val fakeCameraMetadata = FakeCameraMetadata(cameraId = cameraId)
+                val fakeCameraMetadata =
+                    FakeCameraMetadata.fromTemplate(
+                        template = HighEndDeviceTemplate,
+                        cameraId = cameraId,
+                    )
                 val fakeCamera2MetadataProvider =
                     FakeCamera2MetadataProvider(mapOf(cameraId to fakeCameraMetadata))
                 val fakeCamera2Quirks =
@@ -123,12 +130,51 @@ internal class PruningCamera2DeviceManagerImplTest {
         Camera2SystemState(CameraPipe.CameraInteropConfig(), fakeThreads)
 
     private val deviceManager =
-        PruningCamera2DeviceManager(
+        Camera2DeviceManagerImpl(
             fakePermissions,
             fakeRetryingCameraStateOpener,
             fakeCamera2DeviceCloser,
             fakeCamera2ErrorProcessor,
             fakeCamera2SystemState,
+            CameraPipe.Flags(),
+            fakeThreads,
+        )
+
+    private val awaitAbortedRetryingCameraStateOpener =
+        object : RetryingCameraStateOpener {
+            var abortedCameraIds = mutableListOf<CameraId>()
+
+            override suspend fun openCameraWithRetry(
+                cameraId: CameraId,
+                camera2DeviceCloser: Camera2DeviceCloser,
+                isForegroundObserver: (Unit) -> Boolean,
+                cameraOpenAborted: Deferred<Unit>,
+            ): OpenCameraResult {
+                cameraOpenAborted.await()
+                abortedCameraIds.add(cameraId)
+                return OpenCameraResult(errorCode = CameraError.ERROR_CAMERA_OPEN_TIMEOUT)
+            }
+
+            override fun openAndAwaitCameraWithRetry(
+                cameraId: CameraId,
+                camera2DeviceCloser: Camera2DeviceCloser,
+            ): AwaitOpenCameraResult {
+                TODO("Not yet implemented")
+            }
+
+            override fun cancelOpen() {
+                TODO("Not yet implemented")
+            }
+        }
+
+    val awaitAbortedDeviceManager =
+        Camera2DeviceManagerImpl(
+            fakePermissions,
+            awaitAbortedRetryingCameraStateOpener,
+            fakeCamera2DeviceCloser,
+            fakeCamera2ErrorProcessor,
+            fakeCamera2SystemState,
+            CameraPipe.Flags(cameraOpenAbortEnabled = true),
             fakeThreads,
         )
 
@@ -710,13 +756,203 @@ internal class PruningCamera2DeviceManagerImplTest {
         }
 
     @Test
+    fun cameraDeviceManagerAbortsSingleCameraOpenRequestsOnDifferentCamera() =
+        testScope.runTest {
+            // Open camera 0, which would hang unless the camera open request was aborted.
+            awaitAbortedDeviceManager.open(cameraId0, emptyList(), fakeGraphListener1, false) {
+                true
+            }
+            advanceTimeBy(50)
+
+            // Open camera 1, which should abort the (hanging) camera open request for camera 0.
+            awaitAbortedDeviceManager.open(cameraId1, emptyList(), fakeGraphListener2, false) {
+                true
+            }
+            advanceTimeBy(50)
+
+            assertThat(awaitAbortedRetryingCameraStateOpener.abortedCameraIds)
+                .containsExactly(cameraId0)
+        }
+
+    @Test
+    fun cameraDeviceManagerDoesNotAbortSingleCameraOpenRequestsOnSameCamera() =
+        testScope.runTest {
+            // Open camera 0, which would hang unless the camera open request was aborted.
+            awaitAbortedDeviceManager.open(cameraId0, emptyList(), fakeGraphListener1, true) {
+                true
+            }
+            advanceTimeBy(50)
+
+            // Open camera 0, which should not abort the (hanging) camera open request for camera 0.
+            awaitAbortedDeviceManager.open(cameraId0, emptyList(), fakeGraphListener2, false) {
+                true
+            }
+            advanceTimeBy(50)
+
+            assertThat(awaitAbortedRetryingCameraStateOpener.abortedCameraIds).isEmpty()
+        }
+
+    @Test
+    fun cameraDeviceManagerAbortsConcurrentCameraOpenRequestsOnConflictingCamera() =
+        testScope.runTest {
+            // Open camera 0 (with camera 1 shared) concurrently, which would hang unless the camera
+            // open request was aborted.
+            awaitAbortedDeviceManager.open(
+                cameraId0,
+                listOf(cameraId1),
+                fakeGraphListener1,
+                false,
+            ) {
+                true
+            }
+            advanceTimeBy(50)
+
+            // Open camera 1, which should abort the (hanging) camera open request for camera 0
+            // since it's a conflicting transition even though we can go from concurrent cameras to
+            // single camera.
+            awaitAbortedDeviceManager.open(cameraId1, emptyList(), fakeGraphListener2, false) {
+                true
+            }
+            advanceTimeBy(50)
+
+            assertThat(awaitAbortedRetryingCameraStateOpener.abortedCameraIds)
+                .containsExactly(cameraId0)
+        }
+
+    @Test
+    fun cameraDeviceManagerDoesNotAbortConcurrentCameraOpenRequestsOnCompatibleCamera() =
+        testScope.runTest {
+            // Open camera 0 (with camera 1 shared) concurrently, which would hang unless the camera
+            // open request was aborted.
+            awaitAbortedDeviceManager.open(
+                cameraId0,
+                listOf(cameraId1),
+                fakeGraphListener1,
+                false,
+            ) {
+                true
+            }
+            advanceTimeBy(50)
+
+            // Open camera 0, which should not abort the (hanging) camera open request for camera 0
+            // since we can go from concurrent cameras to single camera.
+            awaitAbortedDeviceManager.open(cameraId0, emptyList(), fakeGraphListener2, false) {
+                true
+            }
+            advanceTimeBy(50)
+
+            assertThat(awaitAbortedRetryingCameraStateOpener.abortedCameraIds).isEmpty()
+        }
+
+    @Test
+    fun cameraDeviceManagerAbortsSingleCameraOpenRequestsOnConcurrentCameras() =
+        testScope.runTest {
+            // Open camera 0, which would hang unless the camera open request was aborted.
+            awaitAbortedDeviceManager.open(cameraId0, emptyList(), fakeGraphListener1, false) {
+                true
+            }
+            advanceTimeBy(50)
+
+            // Open camera 0 (with camera 1 shared) concurrently, which should abort the (hanging)
+            // camera open request for camera 0 since we cannot go from single camera to concurrent
+            // cameras.
+            awaitAbortedDeviceManager.open(
+                cameraId0,
+                listOf(cameraId1),
+                fakeGraphListener2,
+                false,
+            ) {
+                true
+            }
+            advanceTimeBy(50)
+
+            assertThat(awaitAbortedRetryingCameraStateOpener.abortedCameraIds)
+                .containsExactly(cameraId0)
+        }
+
+    @Test
+    fun cameraDeviceManagerDoesNotAbortCompatibleConcurrentCameras() =
+        testScope.runTest {
+            // Open camera 0 (with camera 1 shared), which would hang unless the camera open request
+            // was aborted.
+            awaitAbortedDeviceManager.open(
+                cameraId0,
+                listOf(cameraId1),
+                fakeGraphListener1,
+                false,
+            ) {
+                true
+            }
+            advanceTimeBy(50)
+
+            // Open camera 1 (with camera 0 shared), which should not abort the previous request.
+            awaitAbortedDeviceManager.open(
+                cameraId1,
+                listOf(cameraId0),
+                fakeGraphListener2,
+                false,
+            ) {
+                true
+            }
+            advanceTimeBy(50)
+
+            assertThat(awaitAbortedRetryingCameraStateOpener.abortedCameraIds).isEmpty()
+        }
+
+    @Test
+    fun cameraDeviceManagerAbortsCameraOpenRequestsOnCloseAll() =
+        testScope.runTest {
+            // Open camera 0, which would hang unless the camera open request was aborted.
+            awaitAbortedDeviceManager.open(cameraId0, emptyList(), fakeGraphListener1, false) {
+                true
+            }
+            advanceTimeBy(50)
+
+            // Open camera 1, which would hang unless the camera open request was aborted.
+            awaitAbortedDeviceManager.open(cameraId1, emptyList(), fakeGraphListener2, false) {
+                true
+            }
+            advanceTimeBy(50)
+
+            // Close all cameras, which should abort all requests.
+            awaitAbortedDeviceManager.closeAll(false)
+            advanceTimeBy(50)
+
+            assertThat(awaitAbortedRetryingCameraStateOpener.abortedCameraIds)
+                .containsExactly(cameraId0, cameraId1)
+        }
+
+    @Test
+    fun cameraDeviceManagerAbortsCameraOpenRequestsOnCloseById() =
+        testScope.runTest {
+            // Open camera 0, which would hang unless the camera open request was aborted.
+            awaitAbortedDeviceManager.open(cameraId0, emptyList(), fakeGraphListener1, false) {
+                true
+            }
+            advanceTimeBy(50)
+
+            // Open camera 1, which would hang unless the camera open request was aborted.
+            awaitAbortedDeviceManager.open(cameraId1, emptyList(), fakeGraphListener2, false) {
+                true
+            }
+            advanceTimeBy(50)
+
+            // Close camera 0, which should abort just the camera 0 open request.
+            awaitAbortedDeviceManager.close(cameraId0)
+            advanceTimeBy(50)
+
+            assertThat(awaitAbortedRetryingCameraStateOpener.abortedCameraIds)
+                .containsExactly(cameraId0)
+        }
+
+    @Test
     fun prunePrioritizesRequestCloseAndOrdersAreRetained() =
         testScope.runTest {
             val requestOpen1 = createFakeRequestOpen(cameraId0, emptyList(), fakeGraphListener1)
             val requestClose1 = createFakeRequestClose(cameraId0)
             var requestList =
                 mutableListOf<CameraRequest>(RequestCloseById(cameraId0), requestClose1)
-            deviceManager.prune(requestList)
+            deviceManager.prune(requestList, null)
             assertThat(requestList.first()).isEqualTo(requestClose1)
 
             val requestOpen2 = createFakeRequestOpen(cameraId1, emptyList(), fakeGraphListener2)
@@ -730,7 +966,7 @@ internal class PruningCamera2DeviceManagerImplTest {
                     requestClose1,
                     requestClose2,
                 )
-            deviceManager.prune(requestList)
+            deviceManager.prune(requestList, null)
             assertThat(requestList[0]).isEqualTo(requestClose1)
             assertThat(requestList[1]).isEqualTo(requestClose2)
         }
@@ -748,7 +984,7 @@ internal class PruningCamera2DeviceManagerImplTest {
                     RequestCloseAll(),
                     createFakeRequestOpen(cameraId0, emptyList(), fakeGraphListener1),
                 )
-            deviceManager.prune(requestList)
+            deviceManager.prune(requestList, null)
             assertThat(requestList[0]).isInstanceOf(RequestCloseAll::class.java)
             // The former RequestCloseAll should be superseded, and thus we should only have one.
             assertThat(requestList[1]).isNotInstanceOf(RequestCloseAll::class.java)
@@ -769,7 +1005,7 @@ internal class PruningCamera2DeviceManagerImplTest {
                     requestOpen2,
                     requestOpen3,
                 )
-            deviceManager.prune(requestList)
+            deviceManager.prune(requestList, null)
             val remainingRequestOpens = requestList.filterIsInstance<RequestOpen>()
             assertThat(remainingRequestOpens.size).isEqualTo(1)
             assertThat(remainingRequestOpens.first()).isEqualTo(requestOpen3)
@@ -793,7 +1029,7 @@ internal class PruningCamera2DeviceManagerImplTest {
                     requestOpen3,
                     requestOpen4,
                 )
-            deviceManager.prune(requestList)
+            deviceManager.prune(requestList, null)
             val remainingRequestOpens = requestList.filterIsInstance<RequestOpen>()
             // 1. requestOpen1 should be pruned by requestOpen2 since their camera IDs are
             //    different, and they don't share the set of concurrent cameras.
@@ -816,7 +1052,7 @@ internal class PruningCamera2DeviceManagerImplTest {
                     createFakeRequestOpen(cameraId0, listOf(cameraId1), fakeGraphListener3),
                     RequestCloseById(cameraId1),
                 )
-            deviceManager.prune(requestList)
+            deviceManager.prune(requestList, null)
             // 1. The first RequestOpen should be pruned by RequestCloseById(cameraId0)
             // 2. The latter RequestOpen for concurrent cameras should be pruned altogether by
             //    RequestCloseById(cameraId1), because by closing cameraId1, neither would succeed.
@@ -835,7 +1071,7 @@ internal class PruningCamera2DeviceManagerImplTest {
                 createFakeRequestOpen(cameraId0, emptyList(), fakeGraphListener2, isPrewarm = true)
 
             val requestList = mutableListOf<CameraRequest>(fakeRequestOpen1, fakeRequestOpen2)
-            deviceManager.prune(requestList)
+            deviceManager.prune(requestList, null)
             // The latter RequestOpen is a prewarm, and should thus not prune the former RequestOpen
             assertThat(requestList.size).isEqualTo(2)
             assertThat(requestList[0]).isEqualTo(fakeRequestOpen1)
@@ -852,14 +1088,14 @@ internal class PruningCamera2DeviceManagerImplTest {
                 createFakeRequestOpen(cameraId0, emptyList(), fakeGraphListener3, isPrewarm = true)
 
             var requestList = mutableListOf<CameraRequest>(fakeRequestOpen1, fakeRequestOpen2)
-            deviceManager.prune(requestList)
+            deviceManager.prune(requestList, null)
             // If we have a prewarm request with the same camera that hasn't be processed, it should
             // be pruned.
             assertThat(requestList.size).isEqualTo(1)
             assertThat(requestList.first()).isEqualTo(fakeRequestOpen2)
 
             requestList = mutableListOf<CameraRequest>(fakeRequestOpen1, fakeRequestOpen3)
-            deviceManager.prune(requestList)
+            deviceManager.prune(requestList, null)
             // If we have consecutive prewarm requests for the same camera, the former can be pruned
             assertThat(requestList.size).isEqualTo(1)
             assertThat(requestList.first()).isEqualTo(fakeRequestOpen3)
@@ -887,7 +1123,7 @@ internal class PruningCamera2DeviceManagerImplTest {
                     requestCloseById3,
                     requestCloseById4,
                 )
-            deviceManager.prune(requestList)
+            deviceManager.prune(requestList, null)
             assertThat(requestList).isEqualTo(listOf(requestCloseAll3, requestCloseById4))
 
             advanceUntilIdle()
@@ -929,7 +1165,8 @@ internal class PruningCamera2DeviceManagerImplTest {
         cameraId: CameraId,
         allCameraIds: Set<CameraId> = setOf(cameraId),
     ): RequestClose {
-        val fakeCameraMetadata = FakeCameraMetadata(cameraId = cameraId)
+        val fakeCameraMetadata =
+            FakeCameraMetadata.fromTemplate(template = HighEndDeviceTemplate, cameraId = cameraId)
         val fakeCamera2MetadataProvider =
             FakeCamera2MetadataProvider(mapOf(cameraId to fakeCameraMetadata))
         val fakeCamera2Quirks = Camera2Quirks(fakeCamera2MetadataProvider, StrictMode(false))

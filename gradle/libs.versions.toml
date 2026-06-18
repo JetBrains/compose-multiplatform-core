@@ -67,7 +67,7 @@ kotlinCoroutines = "1.9.0"
 kotlinNativeUtils = "2.3.10"
 kotlinSerialization = "1.8.0"
 kotlinToolingCore = "2.3.10"
-ksp = "2.3.6"
+ksp = "2.3.9"
 ktfmt = "0.61"
 # Version format is: 1.KOTLIN_MAJOR_VERSION.0.KTFMT_VERSION
 # When updated, the id and checksum in StudioTask needs to be updated too
@@ -143,7 +143,7 @@ byteBuddyAgent = { module = "net.bytebuddy:byte-buddy-agent", version.ref = "byt
 checkerframework = { module = "org.checkerframework:checker-qual", version = "2.5.3" }
 checkmark = { module = "net.saff.checkmark:checkmark", version = "0.1.6" }
 constraintLayout = { module = "androidx.constraintlayout:constraintlayout", version = "2.0.1"}
-dackka = { module = "com.google.devsite:dackka", version = "1.10.0" }
+dackka = { module = "com.google.devsite:dackka", version = "1.10.1" }
 dagger = { module = "com.google.dagger:dagger", version.ref = "dagger" }
 datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "datetime" }
 daggerCompiler = { module = "com.google.dagger:dagger-compiler", version.ref = "dagger" }

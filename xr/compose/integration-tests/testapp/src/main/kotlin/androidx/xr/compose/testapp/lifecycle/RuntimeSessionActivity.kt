@@ -55,15 +55,13 @@ import androidx.xr.runtime.SessionCreateSuccess
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
-import androidx.xr.scenecore.AnchorEntity
+import androidx.xr.scenecore.AnchorSpace
 import androidx.xr.scenecore.GltfModel
 import androidx.xr.scenecore.GltfModelEntity
 import java.nio.file.Paths
 import kotlin.random.Random
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 /*
  * Testing if the session lifecycle fires with the activity lifecycle by creating
@@ -77,33 +75,24 @@ class RuntimeSessionActivity : BaseLifecycleTestActivity() {
     private var latestCreatedAnchor: Anchor? by mutableStateOf(null)
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        Log.i("corycook", "preCreate peekDecorView: " + window.peekDecorView())
-
         super.onCreate(savedInstanceState)
 
-        Log.i("corycook", "onCreate peekDecorView: " + window.peekDecorView())
+        val result: SessionCreateResult = Session.create(context = this)
+        currentSession =
+            if (result is SessionCreateSuccess) {
+                result.session
+            } else {
+                Log.e(
+                    TAG,
+                    "[$activityName] Failed to create Session: ${result.javaClass.simpleName}",
+                )
+                null
+            }
 
-        lifecycleScope.launch {
-            val result: SessionCreateResult =
-                withContext(Dispatchers.IO) {
-                    Session.create(context = this@RuntimeSessionActivity)
-                }
-            currentSession =
-                if (result is SessionCreateSuccess) {
-                    result.session
-                } else {
-                    Log.e(
-                        TAG,
-                        "[$activityName] Failed to create Session: ${result.javaClass.simpleName}",
-                    )
-                    null
-                }
+        // Load 3D models once the session is created
+        currentSession?.let { session -> lifecycleScope.launch { load3DModels(session) } }
 
-            // Load 3D models once the session is created
-            currentSession?.let { session -> launch { load3DModels(session) } }
-
-            setContent { RuntimeSessionContent() }
-        }
+        setContent { RuntimeSessionContent() }
     }
 
     override fun onDestroy() {
@@ -183,10 +172,10 @@ class RuntimeSessionActivity : BaseLifecycleTestActivity() {
             is AnchorCreateSuccess -> {
                 Log.i(TAG, "[$activityName] [PASS] ANCHOR_SPAWN: success: ${result.anchor}")
                 val anchor = result.anchor
-                val anchorEntity = AnchorEntity.create(session, anchor)
+                val anchorSpace = AnchorSpace.create(session, anchor)
                 val gltfEntity = GltfModelEntity.create(session, model, Pose.Identity)
                 gltfEntity.setScale(0.5f)
-                anchorEntity.addChild(gltfEntity)
+                anchorSpace.addChild(gltfEntity)
                 Log.i(TAG, "[$activityName] [PASS] Visual entity attached to anchor.")
                 return anchor
             }

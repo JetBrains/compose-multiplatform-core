@@ -38,8 +38,6 @@ package androidx.xr.compose.platform {
   public sealed nonexhaustive interface SpatialConfiguration {
     method @InaccessibleFromKotlin public androidx.xr.compose.unit.DpVolumeSize getBounds();
     method @InaccessibleFromKotlin public boolean hasXrSpatialFeature();
-    method @Deprecated public void requestFullSpaceMode();
-    method @Deprecated public void requestHomeSpaceMode();
     property public abstract androidx.xr.compose.unit.DpVolumeSize bounds;
     property public abstract boolean hasXrSpatialFeature;
     field public static final androidx.xr.compose.platform.SpatialConfiguration.Companion Companion;
@@ -335,7 +333,7 @@ package androidx.xr.compose.subspace {
   }
 
   public static final class FollowTarget.Companion {
-    method public androidx.xr.compose.subspace.FollowTarget Anchor(androidx.xr.scenecore.AnchorEntity anchorEntity);
+    method public androidx.xr.compose.subspace.FollowTarget Anchor(androidx.xr.scenecore.AnchorSpace anchorSpace);
     method public androidx.xr.compose.subspace.FollowTarget ArDevice(androidx.xr.runtime.Session session);
   }
 
@@ -495,12 +493,14 @@ package androidx.xr.compose.subspace {
   public interface SpatialGltfModelSource {
     method public suspend Object? createModel(androidx.xr.runtime.Session session, kotlin.coroutines.Continuation<? super androidx.xr.scenecore.GltfModel>);
     method public static androidx.xr.compose.subspace.SpatialGltfModelSource fromPath(java.nio.file.Path path);
+    method public static androidx.xr.compose.subspace.SpatialGltfModelSource fromResource(android.content.Context context, @RawRes int resId);
     method public static androidx.xr.compose.subspace.SpatialGltfModelSource fromUri(android.net.Uri uri);
     field public static final androidx.xr.compose.subspace.SpatialGltfModelSource.Companion Companion;
   }
 
   public static final class SpatialGltfModelSource.Companion {
     method public androidx.xr.compose.subspace.SpatialGltfModelSource fromPath(java.nio.file.Path path);
+    method public androidx.xr.compose.subspace.SpatialGltfModelSource fromResource(android.content.Context context, @RawRes int resId);
     method public androidx.xr.compose.subspace.SpatialGltfModelSource fromUri(android.net.Uri uri);
   }
 
@@ -951,7 +951,7 @@ package androidx.xr.compose.subspace.layout {
   }
 
   public interface SpatialAlignment {
-    method public int depthOffset(int depth, int space);
+    method public androidx.xr.runtime.math.Vector3 align(androidx.xr.compose.unit.IntVolumeSize size, androidx.xr.compose.unit.IntVolumeSize space, androidx.compose.ui.unit.LayoutDirection layoutDirection);
     method @InaccessibleFromKotlin public static androidx.xr.compose.subspace.layout.SpatialAlignment.Depth getBack();
     method @InaccessibleFromKotlin public static androidx.xr.compose.subspace.layout.SpatialAlignment.Vertical getBottom();
     method @InaccessibleFromKotlin public static androidx.xr.compose.subspace.layout.SpatialAlignment getBottomCenter();
@@ -970,9 +970,6 @@ package androidx.xr.compose.subspace.layout {
     method @InaccessibleFromKotlin public static androidx.xr.compose.subspace.layout.SpatialAlignment getTopCenter();
     method @InaccessibleFromKotlin public static androidx.xr.compose.subspace.layout.SpatialAlignment getTopEnd();
     method @InaccessibleFromKotlin public static androidx.xr.compose.subspace.layout.SpatialAlignment getTopStart();
-    method public int horizontalOffset(int width, int space, androidx.compose.ui.unit.LayoutDirection layoutDirection);
-    method public androidx.xr.runtime.math.Vector3 position(androidx.xr.compose.unit.IntVolumeSize size, androidx.xr.compose.unit.IntVolumeSize space, androidx.compose.ui.unit.LayoutDirection layoutDirection);
-    method public int verticalOffset(int height, int space);
     field public static final androidx.xr.compose.subspace.layout.SpatialAlignment.Companion Companion;
   }
 
@@ -1016,15 +1013,15 @@ package androidx.xr.compose.subspace.layout {
   }
 
   public static interface SpatialAlignment.Depth {
-    method public int offset(int depth, int space);
+    method public int align(int size, int space);
   }
 
   public static interface SpatialAlignment.Horizontal {
-    method public int offset(int width, int space, androidx.compose.ui.unit.LayoutDirection layoutDirection);
+    method public int align(int size, int space, androidx.compose.ui.unit.LayoutDirection layoutDirection);
   }
 
   public static interface SpatialAlignment.Vertical {
-    method public int offset(int height, int space);
+    method public int align(int size, int space);
   }
 
   public final class SpatialArrangement {
@@ -1092,15 +1089,12 @@ package androidx.xr.compose.subspace.layout {
 
   public final class SpatialBiasAbsoluteAlignment implements androidx.xr.compose.subspace.layout.SpatialAlignment {
     ctor public SpatialBiasAbsoluteAlignment(@FloatRange(from=-1.0, to=1.0) float horizontalBias, @FloatRange(from=-1.0, to=1.0) float verticalBias, @FloatRange(from=-1.0, to=1.0) float depthBias);
+    method public androidx.xr.runtime.math.Vector3 align(androidx.xr.compose.unit.IntVolumeSize size, androidx.xr.compose.unit.IntVolumeSize space, androidx.compose.ui.unit.LayoutDirection layoutDirection);
     method public androidx.xr.compose.subspace.layout.SpatialBiasAbsoluteAlignment copy(optional float horizontalBias, optional float verticalBias, optional float depthBias);
     method @BytecodeOnly public static androidx.xr.compose.subspace.layout.SpatialBiasAbsoluteAlignment! copy$default(androidx.xr.compose.subspace.layout.SpatialBiasAbsoluteAlignment!, float, float, float, int, Object!);
-    method public int depthOffset(int depth, int space);
     method @InaccessibleFromKotlin public float getDepthBias();
     method @InaccessibleFromKotlin public float getHorizontalBias();
     method @InaccessibleFromKotlin public float getVerticalBias();
-    method public int horizontalOffset(int width, int space, androidx.compose.ui.unit.LayoutDirection layoutDirection);
-    method public androidx.xr.runtime.math.Vector3 position(androidx.xr.compose.unit.IntVolumeSize size, androidx.xr.compose.unit.IntVolumeSize space, androidx.compose.ui.unit.LayoutDirection layoutDirection);
-    method public int verticalOffset(int height, int space);
     property public float depthBias;
     property public float horizontalBias;
     property public float verticalBias;
@@ -1112,24 +1106,21 @@ package androidx.xr.compose.subspace.layout {
 
   public static final class SpatialBiasAbsoluteAlignment.Horizontal implements androidx.xr.compose.subspace.layout.SpatialAlignment.Horizontal {
     ctor public SpatialBiasAbsoluteAlignment.Horizontal(@FloatRange(from=-1.0, to=1.0) float horizontalBias);
+    method public int align(int size, int space, androidx.compose.ui.unit.LayoutDirection layoutDirection);
     method public androidx.xr.compose.subspace.layout.SpatialBiasAbsoluteAlignment.Horizontal copy(optional float bias);
     method @BytecodeOnly public static androidx.xr.compose.subspace.layout.SpatialBiasAbsoluteAlignment.Horizontal! copy$default(androidx.xr.compose.subspace.layout.SpatialBiasAbsoluteAlignment.Horizontal!, float, int, Object!);
     method @InaccessibleFromKotlin public float getHorizontalBias();
-    method public int offset(int width, int space, androidx.compose.ui.unit.LayoutDirection layoutDirection);
     property public float horizontalBias;
   }
 
   public final class SpatialBiasAlignment implements androidx.xr.compose.subspace.layout.SpatialAlignment {
     ctor public SpatialBiasAlignment(@FloatRange(from=-1.0, to=1.0) float horizontalBias, @FloatRange(from=-1.0, to=1.0) float verticalBias, @FloatRange(from=-1.0, to=1.0) float depthBias);
+    method public androidx.xr.runtime.math.Vector3 align(androidx.xr.compose.unit.IntVolumeSize size, androidx.xr.compose.unit.IntVolumeSize space, androidx.compose.ui.unit.LayoutDirection layoutDirection);
     method public androidx.xr.compose.subspace.layout.SpatialBiasAlignment copy(optional float horizontalBias, optional float verticalBias, optional float depthBias);
     method @BytecodeOnly public static androidx.xr.compose.subspace.layout.SpatialBiasAlignment! copy$default(androidx.xr.compose.subspace.layout.SpatialBiasAlignment!, float, float, float, int, Object!);
-    method public int depthOffset(int depth, int space);
     method @InaccessibleFromKotlin public float getDepthBias();
     method @InaccessibleFromKotlin public float getHorizontalBias();
     method @InaccessibleFromKotlin public float getVerticalBias();
-    method public int horizontalOffset(int width, int space, androidx.compose.ui.unit.LayoutDirection layoutDirection);
-    method public androidx.xr.runtime.math.Vector3 position(androidx.xr.compose.unit.IntVolumeSize size, androidx.xr.compose.unit.IntVolumeSize space, androidx.compose.ui.unit.LayoutDirection layoutDirection);
-    method public int verticalOffset(int height, int space);
     property public float depthBias;
     property public float horizontalBias;
     property public float verticalBias;
@@ -1141,28 +1132,28 @@ package androidx.xr.compose.subspace.layout {
 
   public static final class SpatialBiasAlignment.Depth implements androidx.xr.compose.subspace.layout.SpatialAlignment.Depth {
     ctor public SpatialBiasAlignment.Depth(@FloatRange(from=-1.0, to=1.0) float depthBias);
+    method public int align(int size, int space);
     method public androidx.xr.compose.subspace.layout.SpatialBiasAlignment.Depth copy(optional float bias);
     method @BytecodeOnly public static androidx.xr.compose.subspace.layout.SpatialBiasAlignment.Depth! copy$default(androidx.xr.compose.subspace.layout.SpatialBiasAlignment.Depth!, float, int, Object!);
     method @InaccessibleFromKotlin public float getDepthBias();
-    method public int offset(int depth, int space);
     property public float depthBias;
   }
 
   public static final class SpatialBiasAlignment.Horizontal implements androidx.xr.compose.subspace.layout.SpatialAlignment.Horizontal {
     ctor public SpatialBiasAlignment.Horizontal(@FloatRange(from=-1.0, to=1.0) float horizontalBias);
+    method public int align(int size, int space, androidx.compose.ui.unit.LayoutDirection layoutDirection);
     method public androidx.xr.compose.subspace.layout.SpatialBiasAlignment.Horizontal copy(optional float bias);
     method @BytecodeOnly public static androidx.xr.compose.subspace.layout.SpatialBiasAlignment.Horizontal! copy$default(androidx.xr.compose.subspace.layout.SpatialBiasAlignment.Horizontal!, float, int, Object!);
     method @InaccessibleFromKotlin public float getHorizontalBias();
-    method public int offset(int width, int space, androidx.compose.ui.unit.LayoutDirection layoutDirection);
     property public float horizontalBias;
   }
 
   public static final class SpatialBiasAlignment.Vertical implements androidx.xr.compose.subspace.layout.SpatialAlignment.Vertical {
     ctor public SpatialBiasAlignment.Vertical(@FloatRange(from=-1.0, to=1.0) float verticalBias);
+    method public int align(int size, int space);
     method public androidx.xr.compose.subspace.layout.SpatialBiasAlignment.Vertical copy(optional float bias);
     method @BytecodeOnly public static androidx.xr.compose.subspace.layout.SpatialBiasAlignment.Vertical! copy$default(androidx.xr.compose.subspace.layout.SpatialBiasAlignment.Vertical!, float, int, Object!);
     method @InaccessibleFromKotlin public float getVerticalBias();
-    method public int offset(int height, int space);
     property public float verticalBias;
   }
 
@@ -1412,7 +1403,7 @@ package androidx.xr.compose.subspace.node {
     method @InaccessibleFromKotlin public androidx.xr.runtime.math.Pose getPose();
     method @InaccessibleFromKotlin public androidx.xr.runtime.math.Pose getPoseInRoot();
     method @InaccessibleFromKotlin public default float getScale();
-    method @InaccessibleFromKotlin public androidx.compose.ui.semantics.SemanticsConfiguration getSemanticsConfiguration();
+    method @InaccessibleFromKotlin public androidx.xr.compose.subspace.semantics.SubspaceSemanticsConfiguration? getSemanticsConfiguration();
     method @InaccessibleFromKotlin public androidx.xr.scenecore.Entity? getSemanticsEntity();
     method @InaccessibleFromKotlin public int getSemanticsId();
     method @InaccessibleFromKotlin public androidx.xr.compose.unit.IntVolumeSize getSize();
@@ -1424,14 +1415,14 @@ package androidx.xr.compose.subspace.node {
     property public abstract androidx.xr.runtime.math.Pose pose;
     property public abstract androidx.xr.runtime.math.Pose poseInRoot;
     property public default float scale;
-    property public abstract androidx.compose.ui.semantics.SemanticsConfiguration semanticsConfiguration;
+    property public abstract androidx.xr.compose.subspace.semantics.SubspaceSemanticsConfiguration? semanticsConfiguration;
     property public abstract androidx.xr.scenecore.Entity? semanticsEntity;
     property public abstract int semanticsId;
     property public abstract androidx.xr.compose.unit.IntVolumeSize size;
   }
 
   public interface SubspaceSemanticsModifierNode {
-    method public void applySemantics(androidx.compose.ui.semantics.SemanticsPropertyReceiver);
+    method public void applySemantics(androidx.xr.compose.subspace.semantics.SubspaceSemanticsPropertyReceiver);
   }
 
 }
@@ -1439,7 +1430,32 @@ package androidx.xr.compose.subspace.node {
 package androidx.xr.compose.subspace.semantics {
 
   public final class SemanticsModifierKt {
-    method public static androidx.xr.compose.subspace.layout.SubspaceModifier semantics(androidx.xr.compose.subspace.layout.SubspaceModifier, kotlin.jvm.functions.Function1<? super androidx.compose.ui.semantics.SemanticsPropertyReceiver,kotlin.Unit> properties);
+    method @BytecodeOnly @Deprecated public static androidx.xr.compose.subspace.layout.SubspaceModifier! semantics(androidx.xr.compose.subspace.layout.SubspaceModifier!, kotlin.jvm.functions.Function1!);
+    method @KotlinOnly public static androidx.xr.compose.subspace.layout.SubspaceModifier semantics(androidx.xr.compose.subspace.layout.SubspaceModifier, kotlin.jvm.functions.Function1<androidx.xr.compose.subspace.semantics.SubspaceSemanticsPropertyReceiver,kotlin.Unit> properties);
+    method @InaccessibleFromKotlin public static androidx.xr.compose.subspace.layout.SubspaceModifier semanticsSubspace(androidx.xr.compose.subspace.layout.SubspaceModifier, kotlin.jvm.functions.Function1<? super androidx.xr.compose.subspace.semantics.SubspaceSemanticsPropertyReceiver,kotlin.Unit> properties);
+  }
+
+  public final class SubspaceSemanticsConfiguration implements java.lang.Iterable<java.util.Map.Entry<? extends androidx.compose.ui.semantics.SemanticsPropertyKey<? extends java.lang.Object?>,? extends java.lang.Object?>> kotlin.jvm.internal.markers.KMappedMarker androidx.xr.compose.subspace.semantics.SubspaceSemanticsPropertyReceiver {
+    method public operator <T> boolean contains(androidx.compose.ui.semantics.SemanticsPropertyKey<T> key);
+    method public operator <T> T get(androidx.compose.ui.semantics.SemanticsPropertyKey<T> key);
+    method public <T> T getOrElse(androidx.compose.ui.semantics.SemanticsPropertyKey<T> key, kotlin.jvm.functions.Function0<? extends T> defaultValue);
+    method public <T> T? getOrElseNullable(androidx.compose.ui.semantics.SemanticsPropertyKey<T> key, kotlin.jvm.functions.Function0<? extends T?> defaultValue);
+    method public <T> T? getOrNull(androidx.compose.ui.semantics.SemanticsPropertyKey<T> key);
+    method public java.util.Iterator<java.util.Map.Entry<androidx.compose.ui.semantics.SemanticsPropertyKey<? extends java.lang.Object?>,java.lang.Object?>> iterator();
+    method public operator <T> void set(androidx.compose.ui.semantics.SemanticsPropertyKey<T> key, T value);
+  }
+
+  public interface SubspaceSemanticsPropertyReceiver {
+    method public operator <T> void set(androidx.compose.ui.semantics.SemanticsPropertyKey<T> key, T value);
+  }
+
+  public final class SubspaceSemanticsPropertyReceiverKt {
+    method @InaccessibleFromKotlin public static String getContentDescription(androidx.xr.compose.subspace.semantics.SubspaceSemanticsPropertyReceiver);
+    method @InaccessibleFromKotlin public static String getTestTag(androidx.xr.compose.subspace.semantics.SubspaceSemanticsPropertyReceiver);
+    method @InaccessibleFromKotlin public static void setContentDescription(androidx.xr.compose.subspace.semantics.SubspaceSemanticsPropertyReceiver, String);
+    method @InaccessibleFromKotlin public static void setTestTag(androidx.xr.compose.subspace.semantics.SubspaceSemanticsPropertyReceiver, String);
+    property public static String androidx.xr.compose.subspace.semantics.SubspaceSemanticsPropertyReceiver.contentDescription;
+    property public static String androidx.xr.compose.subspace.semantics.SubspaceSemanticsPropertyReceiver.testTag;
   }
 
   public final class TestTagKt {

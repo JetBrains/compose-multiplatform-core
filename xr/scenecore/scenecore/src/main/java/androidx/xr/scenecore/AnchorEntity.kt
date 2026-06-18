@@ -52,6 +52,8 @@ import kotlinx.coroutines.launch
  * reachable, and it will be garbage collected.
  */
 @SuppressLint("NewApi") // TODO: b/413661481 - Remove this suppression prior to JXR stable release.
+@RestrictTo(Scope.LIBRARY_GROUP)
+@Deprecated("Use AnchorSpace", replaceWith = ReplaceWith("AnchorSpace"))
 public class AnchorEntity
 private constructor(rtAnchorEntity: RtAnchorEntity, entityRegistry: EntityRegistry) :
     Entity(rtAnchorEntity, entityRegistry) {
@@ -167,6 +169,7 @@ private constructor(rtAnchorEntity: RtAnchorEntity, entityRegistry: EntityRegist
             return SystemClock.uptimeMillis() + anchorSearchTimeout.toMillis()
         }
 
+        @Suppress("DEPRECATION")
         private fun findAndSetPlaneAnchor(
             session: Session,
             info: PlaneFindingInfo,
@@ -227,6 +230,7 @@ private constructor(rtAnchorEntity: RtAnchorEntity, entityRegistry: EntityRegist
          * @param timeout Maximum time to search for the anchor, if a suitable plane is not found
          *   within the timeout time the AnchorEntity state will be set to TIMED_OUT.
          */
+        @Suppress("DEPRECATION")
         internal fun create(
             session: Session,
             entityRegistry: EntityRegistry,
@@ -264,6 +268,7 @@ private constructor(rtAnchorEntity: RtAnchorEntity, entityRegistry: EntityRegist
          *
          * @param rtAnchorEntity Runtime AnchorEntity instance.
          */
+        @Suppress("DEPRECATION")
         internal fun create(
             rtAnchorEntity: RtAnchorEntity,
             entityRegistry: EntityRegistry,
@@ -301,6 +306,7 @@ private constructor(rtAnchorEntity: RtAnchorEntity, entityRegistry: EntityRegist
         @Deprecated(
             "Use the factory which accepts Set<PlaneOrientation> and Set<PlaneSemanticType> instead."
         )
+        @Suppress("DEPRECATION")
         // TODO: b/500464864 - Remove this factory method.
         @RestrictTo(Scope.LIBRARY_GROUP)
         public fun create(
@@ -341,6 +347,7 @@ private constructor(rtAnchorEntity: RtAnchorEntity, entityRegistry: EntityRegist
          */
         @JvmStatic
         @JvmOverloads
+        @Suppress("DEPRECATION")
         public fun create(
             session: Session,
             minimumPlaneExtents: FloatSize2d,
@@ -365,6 +372,7 @@ private constructor(rtAnchorEntity: RtAnchorEntity, entityRegistry: EntityRegist
          * @param anchor The [Anchor] to use for this AnchorEntity.
          */
         @JvmStatic
+        @Suppress("DEPRECATION")
         public fun create(session: Session, anchor: Anchor): AnchorEntity {
             val rtAnchorEntity = session.sceneRuntime.createAnchorEntity()
             val anchorEntity = AnchorEntity(rtAnchorEntity, session.scene.entityRegistry)

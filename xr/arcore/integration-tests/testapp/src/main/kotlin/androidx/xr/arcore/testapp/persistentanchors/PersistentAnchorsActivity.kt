@@ -66,6 +66,7 @@ import androidx.xr.arcore.RenderViewpoint
 import androidx.xr.arcore.TrackingState
 import androidx.xr.arcore.testapp.common.BackToMainActivityButton
 import androidx.xr.arcore.testapp.common.SessionLifecycleHelper
+import androidx.xr.arcore.testapp.common.asString
 import androidx.xr.arcore.testapp.ui.theme.GoogleYellow
 import androidx.xr.runtime.AnchorPersistenceMode
 import androidx.xr.runtime.Config
@@ -78,7 +79,7 @@ import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
-import androidx.xr.scenecore.AnchorEntity
+import androidx.xr.scenecore.AnchorSpace
 import androidx.xr.scenecore.Entity
 import androidx.xr.scenecore.PanelEntity
 import androidx.xr.scenecore.scene
@@ -429,7 +430,7 @@ class PersistentAnchorsActivity : ComponentActivity() {
 
     private fun createAnchorPanel(anchor: Anchor) {
         val composeView = ComposeView(this)
-        val anchorEntity = AnchorEntity.create(session, anchor)
+        val anchorSpace = AnchorSpace.create(session, anchor)
         val activity = this
 
         lifecycleScope.launch {
@@ -440,9 +441,9 @@ class PersistentAnchorsActivity : ComponentActivity() {
                             session,
                             composeView,
                             IntSize2d(640, 640),
-                            "anchorEntity ${anchor.hashCode()}",
+                            "anchorSpace ${anchor.hashCode()}",
                             Pose(),
-                            parent = anchorEntity,
+                            parent = anchorSpace,
                         )
                     composeView.setContent { AnchorPanel(anchor, panelEntity) }
                     configureComposeView(composeView, activity)
@@ -465,7 +466,7 @@ class PersistentAnchorsActivity : ComponentActivity() {
         ) {
             Text(
                 modifier = Modifier.padding(top = 10.dp),
-                text = "Tracking State: ${anchorState.value.trackingState}",
+                text = "Tracking State: ${anchorState.value.trackingState.asString()}",
                 fontSize = 32.sp,
             )
             Button(modifier = Modifier.padding(top = 10.dp), onClick = { persistAnchor(anchor) }) {

@@ -118,6 +118,12 @@ package androidx.appfunctions {
     ctor @BytecodeOnly public AppFunctionFunctionNotFoundException(String!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
   }
 
+  @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) @kotlin.annotation.Target(allowedTargets={kotlin.annotation.AnnotationTarget.FUNCTION, kotlin.annotation.AnnotationTarget.PROPERTY, kotlin.annotation.AnnotationTarget.VALUE_PARAMETER, kotlin.annotation.AnnotationTarget.TYPE, kotlin.annotation.AnnotationTarget.CLASS}) public @interface AppFunctionInstruction {
+    ctor @KotlinOnly public AppFunctionInstruction(String instruction);
+    method @InaccessibleFromKotlin public abstract String instruction();
+    property public abstract String instruction;
+  }
+
   @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) @kotlin.annotation.Target(allowedTargets={kotlin.annotation.AnnotationTarget.FUNCTION, kotlin.annotation.AnnotationTarget.PROPERTY, kotlin.annotation.AnnotationTarget.VALUE_PARAMETER}) public @interface AppFunctionIntValueConstraint {
     ctor @KotlinOnly public AppFunctionIntValueConstraint(optional int[] enumValues);
     method @InaccessibleFromKotlin public abstract int[] enumValues() default {};
@@ -209,6 +215,14 @@ package androidx.appfunctions {
     ctor public AppFunctionService();
     method @MainThread public abstract suspend Object? executeFunction(androidx.appfunctions.ExecuteAppFunctionRequest request, kotlin.coroutines.Continuation<? super androidx.appfunctions.ExecuteAppFunctionResponse>);
     method public final void onExecuteFunction(android.app.appfunctions.ExecuteAppFunctionRequest request, String callingPackage, android.content.pm.SigningInfo signingInfo, android.os.CancellationSignal cancellationSignal, android.os.OutcomeReceiver<android.app.appfunctions.ExecuteAppFunctionResponse,android.app.appfunctions.AppFunctionException> callback);
+  }
+
+  @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.SOURCE) @kotlin.annotation.Target(allowedTargets=kotlin.annotation.AnnotationTarget.CLASS) public @interface AppFunctionServiceEntryPoint {
+    ctor @KotlinOnly public AppFunctionServiceEntryPoint(String serviceName, String appFunctionXmlFileName);
+    method @InaccessibleFromKotlin public abstract String appFunctionXmlFileName();
+    method @InaccessibleFromKotlin public abstract String serviceName();
+    property public abstract String appFunctionXmlFileName;
+    property public abstract String serviceName;
   }
 
   @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) @kotlin.annotation.Target(allowedTargets={kotlin.annotation.AnnotationTarget.FUNCTION, kotlin.annotation.AnnotationTarget.PROPERTY, kotlin.annotation.AnnotationTarget.VALUE_PARAMETER}) public @interface AppFunctionStringValueConstraint {

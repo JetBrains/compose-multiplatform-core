@@ -22,6 +22,7 @@ import androidx.camera.camera2.pipe.FrameBuffer
 import androidx.camera.camera2.pipe.FrameReference
 import androidx.camera.camera2.pipe.StreamId
 import androidx.camera.camera2.pipe.internal.FrameDistributor
+import androidx.camera.camera2.pipe.internal.FrameImpl
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -110,11 +111,11 @@ internal class FrameBufferImpl(
             return
         }
 
-        val acquiredFrame = frameReference.tryAcquire()
+        val acquiredFrameForInternalUse = frameReference.tryAcquireForInternalUse()
 
         val entryToAdd: BufferEntry =
-            if (acquiredFrame != null) {
-                BufferEntry.WithFrame(acquiredFrame)
+            if (acquiredFrameForInternalUse != null) {
+                BufferEntry.WithFrame(acquiredFrameForInternalUse)
             } else {
                 BufferEntry.WithoutFrame(frameReference)
             }
@@ -142,6 +143,7 @@ internal class FrameBufferImpl(
         frameToClose?.close()
     }
 
+    @Deprecated("Use removeFirst instead.")
     override fun removeFirstReference(): FrameReference? =
         synchronized(lock) {
             if (closed) return null
@@ -151,6 +153,7 @@ internal class FrameBufferImpl(
             }
         }
 
+    @Deprecated("Use removeLast instead.")
     override fun removeLastReference(): FrameReference? =
         synchronized(lock) {
             if (closed) return null
@@ -160,6 +163,7 @@ internal class FrameBufferImpl(
             }
         }
 
+    @Deprecated("Use removeAll instead")
     override fun removeAllReferences(): List<FrameReference> =
         synchronized(lock) {
             if (closed) return emptyList()
@@ -169,14 +173,17 @@ internal class FrameBufferImpl(
             references
         }
 
+    @Deprecated("Use removeFirst instead")
     override fun removeFirstFrameReferenceAndAcquire(
         predicate: (FrameReference) -> Boolean
-    ): Frame? = removeAndAcquire(frameQueue.iterator(), predicate)
+    ): Frame? = removeAndAcquire(predicate, reversed = false)
 
+    @Deprecated("Use removeLast instead")
     override fun removeLastFrameReferenceAndAcquire(
         predicate: (FrameReference) -> Boolean
-    ): Frame? = removeAndAcquire(frameQueue.asReversed().iterator(), predicate)
+    ): Frame? = removeAndAcquire(predicate, reversed = true)
 
+    @Deprecated("Use removeAll instead")
     override fun removeAllFrameReferencesAndAcquire(
         predicate: (FrameReference) -> Boolean
     ): List<Frame> =
@@ -190,7 +197,39 @@ internal class FrameBufferImpl(
                 val bufferEntry = iterator.next()
                 if (predicate(bufferEntry.frameReference)) {
                     iterator.remove()
-                    (bufferEntry as? BufferEntry.WithFrame)?.let { removedFrames.add(it.frame) }
+                    bufferEntry.tryAcquireFrameForExternalUse()?.let { frame ->
+                        removedFrames.add(frame)
+                    }
+                }
+            }
+            _size.value = frameQueue.size
+            return removedFrames
+        }
+
+    override fun removeFirst(predicate: ((FrameReference) -> Boolean)?): Frame? =
+        removeAndAcquire(predicate ?: { true }, reversed = false)
+
+    override fun removeLast(predicate: ((FrameReference) -> Boolean)?): Frame? =
+        removeAndAcquire(predicate ?: { true }, reversed = true)
+
+    override fun removeAll(predicate: ((FrameReference) -> Boolean)?): List<Frame> =
+        synchronized(lock) {
+            if (closed || frameQueue.isEmpty()) return emptyList()
+
+            if (predicate == null) {
+                return clearQueueAndExtractFrames()
+            }
+
+            val removedFrames = buildList {
+                val iterator = frameQueue.iterator()
+                while (iterator.hasNext()) {
+                    val entry = iterator.next()
+                    if (predicate(entry.frameReference)) {
+                        iterator.remove()
+                        if (entry is BufferEntry.WithFrame) {
+                            add(entry.frame)
+                        }
+                    }
                 }
             }
             _size.value = frameQueue.size
@@ -247,21 +286,34 @@ internal class FrameBufferImpl(
         frameGraphBuffers.detach(this)
     }
 
-    @GuardedBy("lock")
     private fun removeAndAcquire(
-        iterator: MutableIterator<BufferEntry>,
         predicate: (FrameReference) -> Boolean,
+        reversed: Boolean = false,
     ): Frame? {
-        while (iterator.hasNext()) {
-            val bufferEntry = iterator.next()
-            if (predicate(bufferEntry.frameReference)) {
-                iterator.remove()
+        synchronized(lock) {
+            if (closed) return null
+
+            val indexToRemove =
+                if (reversed) {
+                    frameQueue.indexOfLast { predicate(it.frameReference) }
+                } else {
+                    frameQueue.indexOfFirst { predicate(it.frameReference) }
+                }
+
+            if (indexToRemove != -1) {
+                val bufferEntry = frameQueue.removeAt(indexToRemove)
                 _size.value = frameQueue.size
-                return (bufferEntry as? BufferEntry.WithFrame)?.let { it.frame }
+                return bufferEntry.tryAcquireFrameForExternalUse()
             }
         }
         return null
     }
+
+    private fun FrameReference.tryAcquireForInternalUse(): Frame? =
+        (this as? FrameImpl)?.tryAcquireForInternalUse(streams)
+
+    private fun BufferEntry.tryAcquireFrameForExternalUse(): Frame? =
+        (this as? BufferEntry.WithFrame)?.frame?.also { (it as FrameImpl).isExternal = true }
 
     private companion object {
         const val FRAME_FLOW_EXTRA_BUFFER_CAPACITY = 4

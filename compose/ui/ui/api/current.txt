@@ -161,6 +161,7 @@ package androidx.compose.ui {
     property public boolean isMediaQueryIntegrationEnabled;
     property public boolean isOutOfFrameSchedulerForTextInputEventsEnabled;
     property public boolean isSkipNonImportantSemanticsNodesHitTestEnabled;
+    property public boolean isTriggerMoveEventsWhenLocationHasNotChangedEnabled;
     property public boolean isViewFocusFixEnabled;
     field public static final androidx.compose.ui.ComposeUiFlags INSTANCE;
     field public static boolean isAccessibilityShouldIncludeOffscreenChildrenEnabled;
@@ -172,6 +173,7 @@ package androidx.compose.ui {
     field public static boolean isMediaQueryIntegrationEnabled;
     field public static boolean isOutOfFrameSchedulerForTextInputEventsEnabled;
     field public static boolean isSkipNonImportantSemanticsNodesHitTestEnabled;
+    field public static boolean isTriggerMoveEventsWhenLocationHasNotChangedEnabled;
     field public static boolean isViewFocusFixEnabled;
   }
 
@@ -1595,10 +1597,10 @@ package androidx.compose.ui.input.indirect {
 
   public final class AndroidIndirectPointerEvent_androidKt {
     method @KotlinOnly @SuppressCompatibility @androidx.compose.ui.ExperimentalIndirectPointerApi public static androidx.compose.ui.input.indirect.IndirectPointerEvent IndirectPointerEvent(android.view.MotionEvent motionEvent, optional androidx.compose.ui.input.indirect.IndirectPointerEventPrimaryDirectionalMotionAxis primaryDirectionalMotionAxis, optional android.view.MotionEvent? previousMotionEvent);
-    method @KotlinOnly public static androidx.compose.ui.input.indirect.IndirectPointerEvent IndirectPointerEvent(java.util.List<androidx.compose.ui.input.indirect.IndirectPointerInputChange> changes, androidx.compose.ui.input.indirect.IndirectPointerEventType type, androidx.compose.ui.input.indirect.IndirectPointerEventPrimaryDirectionalMotionAxis primaryDirectionalMotionAxis, android.view.MotionEvent motionEvent);
+    method @KotlinOnly @org.jetbrains.annotations.TestOnly public static androidx.compose.ui.input.indirect.IndirectPointerEvent IndirectPointerEvent(java.util.List<androidx.compose.ui.input.indirect.IndirectPointerInputChange> changes, androidx.compose.ui.input.indirect.IndirectPointerEventType type, androidx.compose.ui.input.indirect.IndirectPointerEventPrimaryDirectionalMotionAxis primaryDirectionalMotionAxis, android.view.MotionEvent motionEvent);
     method @BytecodeOnly @SuppressCompatibility @androidx.compose.ui.ExperimentalIndirectPointerApi public static androidx.compose.ui.input.indirect.IndirectPointerEvent IndirectPointerEvent-eAXfkT4(android.view.MotionEvent, int, android.view.MotionEvent?);
     method @BytecodeOnly @SuppressCompatibility @androidx.compose.ui.ExperimentalIndirectPointerApi public static androidx.compose.ui.input.indirect.IndirectPointerEvent! IndirectPointerEvent-eAXfkT4$default(android.view.MotionEvent!, int, android.view.MotionEvent!, int, Object!);
-    method @BytecodeOnly public static androidx.compose.ui.input.indirect.IndirectPointerEvent IndirectPointerEvent-ixkH3tc(java.util.List<androidx.compose.ui.input.indirect.IndirectPointerInputChange!>, int, int, android.view.MotionEvent);
+    method @BytecodeOnly @org.jetbrains.annotations.TestOnly public static androidx.compose.ui.input.indirect.IndirectPointerEvent IndirectPointerEvent-ixkH3tc(java.util.List<androidx.compose.ui.input.indirect.IndirectPointerInputChange!>, int, int, android.view.MotionEvent);
     method @InaccessibleFromKotlin public static android.view.MotionEvent getNativeEvent(androidx.compose.ui.input.indirect.IndirectPointerEvent);
     property public static android.view.MotionEvent androidx.compose.ui.input.indirect.IndirectPointerEvent.nativeEvent;
   }
@@ -3973,6 +3975,12 @@ package androidx.compose.ui.platform {
   @kotlin.jvm.JvmDefaultWithCompatibility public interface AccessibilityManager {
     method public long calculateRecommendedTimeoutMillis(long originalTimeoutMillis, optional boolean containsIcons, optional boolean containsText, optional boolean containsControls);
     method @BytecodeOnly public static long calculateRecommendedTimeoutMillis$default(androidx.compose.ui.platform.AccessibilityManager!, long, boolean, boolean, boolean, int, Object!);
+  }
+
+  @VisibleForTesting public interface AndroidClipboard extends androidx.compose.ui.platform.Clipboard {
+    method @InaccessibleFromKotlin public android.content.ClipboardManager getClipboardManager();
+    property public abstract android.content.ClipboardManager clipboardManager;
+    property @Deprecated public default android.content.ClipboardManager nativeClipboard;
   }
 
   public final class AndroidClipboardManager_androidKt {

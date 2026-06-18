@@ -565,7 +565,7 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
     override val semanticsOwner: SemanticsOwner =
         SemanticsOwner(root, EmptySemanticsModifier(), layoutNodes)
     private val composeAccessibilityDelegate = AndroidComposeViewAccessibilityDelegateCompat(this)
-    internal val contentCaptureManager =
+    internal var contentCaptureManager =
         AndroidContentCaptureManager(
             view = this,
             onContentCaptureSession = ::getContentCaptureSessionCompat,
@@ -2301,6 +2301,10 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
         composeAccessibilityDelegate.boundsUpdatesEventLoop()
     }
 
+    suspend fun boundsUpdatesContentCaptureEventLoop() {
+        contentCaptureManager.boundsUpdatesEventLoop()
+    }
+
     /** Walks the entire LayoutNode sub-hierarchy and marks all nodes as needing measurement. */
     private fun invalidateLayoutNodeMeasurement(node: LayoutNode) {
         measureAndLayoutDelegate.requestRemeasure(node)
@@ -2563,6 +2567,7 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
     }
 
     // TODO(shepshapard): Test this method.
+    @OptIn(ExperimentalComposeUiApi::class)
     override fun dispatchTouchEvent(motionEvent: MotionEvent): Boolean {
         if (hoverExitReceived) {
             // Go ahead and send ACTION_HOVER_EXIT if this isn't an ACTION_DOWN for the same
@@ -2581,7 +2586,11 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
             return false // Bad MotionEvent. Don't handle it.
         }
 
-        if (motionEvent.actionMasked == ACTION_MOVE && !isPositionChanged(motionEvent)) {
+        if (
+            motionEvent.actionMasked == ACTION_MOVE &&
+                !isPositionChanged(motionEvent) &&
+                !ComposeUiFlags.isTriggerMoveEventsWhenLocationHasNotChangedEnabled
+        ) {
             // There was no movement from previous MotionEvent, so we don't need to dispatch this.
             // This could be a scroll event or some other non-touch event that results in an
             // ACTION_MOVE without any movement.

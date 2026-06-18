@@ -149,6 +149,7 @@ public interface CameraPipe {
         val imageSources: ImageSources? = null,
         val flags: Flags = Flags(),
         val platformApiCompat: PlatformApiCompat? = null,
+        val memoryEstimator: MemoryEstimator = MemoryEstimator.create(),
     )
 
     /**
@@ -156,9 +157,14 @@ public interface CameraPipe {
      *
      * @param strictModeEnabled disable all special treatment in
      *   [androidx.camera.camera2.pipe.compat.Camera2Quirks]
+     * @param cameraOpenAbortEnabled enable fast track camera open cancellation on superseding
+     *   requests
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public data class Flags(val strictModeEnabled: Boolean = false)
+    public data class Flags(
+        val strictModeEnabled: Boolean = false,
+        val cameraOpenAbortEnabled: Boolean = false,
+    )
 
     /**
      * Application level configuration for Camera2Interop callbacks. If set, these callbacks will be

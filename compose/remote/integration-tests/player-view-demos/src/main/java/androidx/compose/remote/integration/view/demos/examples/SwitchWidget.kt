@@ -18,7 +18,7 @@
 package androidx.compose.remote.integration.view.demos.examples
 
 import androidx.compose.remote.core.operations.layout.Component
-import androidx.compose.remote.creation.compose.action.ValueChange
+import androidx.compose.remote.creation.compose.action.valueChange
 import androidx.compose.remote.creation.compose.layout.RemoteAlignment
 import androidx.compose.remote.creation.compose.layout.RemoteArrangement
 import androidx.compose.remote.creation.compose.layout.RemoteBox
@@ -123,7 +123,7 @@ enum class SwitchState(val visibility: RemoteInt) {
 fun SwitchWidget(value: MutableRemoteEnum<SwitchState>) {
     val modifier =
         RemoteModifier.clickable(
-            ValueChange(remoteState = value.remoteInt, updatedValue = (value.remoteInt + 1) % 2)
+            valueChange(remoteState = value.remoteInt, updatedValue = (value.remoteInt + 1) % 2)
         )
 
     RemoteBox(
@@ -131,7 +131,8 @@ fun SwitchWidget(value: MutableRemoteEnum<SwitchState>) {
         contentAlignment = RemoteAlignment.CenterStart,
     ) {
         val modifierSize = RemoteModifier.size(60.rdp, 36.rdp)
-        RemoteStateLayout(modifier = RemoteModifier.wrapContentSize(), state = value) { state ->
+        RemoteStateLayout(modifier = RemoteModifier.wrapContentSize(), currentState = value) { state
+            ->
             RemoteBox {
                 when (state) {
                     Off -> SwitchWidgetOffState(modifier = modifierSize)

@@ -285,24 +285,33 @@ public open class RemoteBoolean internal constructor(internal val intValue: Remo
     /**
      * Equality operator for [RemoteBoolean]s.
      *
-     * Returns a new [RemoteBoolean] that evaluates to `true` if this boolean\'s underlying
-     * [RemoteInt] is equal to another [RemoteBoolean]\'s underlying [RemoteInt].
+     * Returns a new [RemoteBoolean] that evaluates to `true` if this boolean's underlying
+     * [RemoteInt] is equal to another [RemoteBoolean]'s underlying [RemoteInt].
      *
-     * @param b The other [RemoteBoolean] to compare with.
+     * @param other The other [RemoteBoolean] to compare with.
      * @return A new [RemoteBoolean] representing the result of the equality comparison.
      */
-    public infix fun eq(b: RemoteBoolean): RemoteBoolean = intValue eq b.intValue
+    public fun isEqualTo(other: RemoteBoolean): RemoteBoolean = intValue.isEqualTo(other.intValue)
+
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    @Deprecated("Use isEqualTo instead", ReplaceWith("isEqualTo(other)"))
+    public infix fun eq(other: RemoteBoolean): RemoteBoolean = isEqualTo(other)
 
     /**
      * Inequality operator for [RemoteBoolean]s.
      *
-     * Returns a new [RemoteBoolean] that evaluates to `true` if this boolean\'s underlying
-     * [RemoteInt] is *not* equal to another [RemoteBoolean]\'s underlying [RemoteInt].
+     * Returns a new [RemoteBoolean] that evaluates to `true` if this boolean's underlying
+     * [RemoteInt] is *not* equal to another [RemoteBoolean]'s underlying [RemoteInt].
      *
-     * @param b The other [RemoteBoolean] to compare with.
+     * @param other The other [RemoteBoolean] to compare with.
      * @return A new [RemoteBoolean] representing the result of the inequality comparison.
      */
-    public infix fun ne(b: RemoteBoolean): RemoteBoolean = intValue ne b.intValue
+    public fun isNotEqualTo(other: RemoteBoolean): RemoteBoolean =
+        intValue.isNotEqualTo(other.intValue)
+
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    @Deprecated("Use isNotEqualTo instead", ReplaceWith("isNotEqualTo(other)"))
+    public infix fun ne(other: RemoteBoolean): RemoteBoolean = isNotEqualTo(other)
 
     /**
      * Logical OR operator for [RemoteBoolean]s.
@@ -310,10 +319,13 @@ public open class RemoteBoolean internal constructor(internal val intValue: Remo
      * Performs a bitwise OR operation on the underlying [RemoteInt] values of this boolean and the
      * other [RemoteBoolean]. The result is a new [RemoteBoolean].
      *
-     * @param b The other [RemoteBoolean] to perform the OR operation with.
+     * This is designed to align with the standard Kotlin [Boolean.or] infix function.
+     *
+     * @param other The other [RemoteBoolean] to perform the OR operation with.
      * @return A new [RemoteBoolean] representing the result of the logical OR.
      */
-    public infix fun or(b: RemoteBoolean): RemoteBoolean = RemoteBoolean(intValue or b.intValue)
+    public infix fun or(other: RemoteBoolean): RemoteBoolean =
+        RemoteBoolean(intValue or other.intValue)
 
     /**
      * Logical AND operator for [RemoteBoolean]s.
@@ -321,10 +333,13 @@ public open class RemoteBoolean internal constructor(internal val intValue: Remo
      * Performs a bitwise AND operation on the underlying [RemoteInt] values of this boolean and the
      * other [RemoteBoolean]. The result is a new [RemoteBoolean].
      *
-     * @param b The other [RemoteBoolean] to perform the AND operation with.
+     * This is designed to align with the standard Kotlin [Boolean.and] infix function.
+     *
+     * @param other The other [RemoteBoolean] to perform the AND operation with.
      * @return A new [RemoteBoolean] representing the result of the logical AND.
      */
-    public infix fun and(b: RemoteBoolean): RemoteBoolean = RemoteBoolean(intValue and b.intValue)
+    public infix fun and(other: RemoteBoolean): RemoteBoolean =
+        RemoteBoolean(intValue and other.intValue)
 
     /**
      * Logical XOR operator for [RemoteBoolean]s.
@@ -332,10 +347,13 @@ public open class RemoteBoolean internal constructor(internal val intValue: Remo
      * Performs a bitwise XOR operation on the underlying [RemoteInt] values of this boolean and the
      * other [RemoteBoolean]. The result is a new [RemoteBoolean].
      *
-     * @param b The other [RemoteBoolean] to perform the XOR operation with.
+     * This is designed to align with the standard Kotlin [Boolean.xor] infix function.
+     *
+     * @param other The other [RemoteBoolean] to perform the XOR operation with.
      * @return A new [RemoteBoolean] representing the result of the logical XOR.
      */
-    public infix fun xor(b: RemoteBoolean): RemoteBoolean = RemoteBoolean(intValue xor b.intValue)
+    public infix fun xor(other: RemoteBoolean): RemoteBoolean =
+        RemoteBoolean(intValue xor other.intValue)
 
     public companion object {
         /**

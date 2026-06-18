@@ -629,11 +629,13 @@ public fun <T> Transition<T>.AnimatedVisibility(
  * [DeferredTransitionState.defer] is called and ends when [DeferredTransitionState.animateTo] is
  * called to start the automatic transition. During this phase, you can manually manipulate the
  * content's transformations (like [TransformScope.alpha] and [TransformScope.scale]). These
- * transformations are applied **on top of** the transition's initial state. Once the transition
- * starts, the manually applied transformations are seamlessly handed off to the configured [enter]
- * and [exit] transitions. For exiting content, a "sustain unless specified" policy is applied: if
- * an exit transition (e.g. `fadeOut`) is specified, the hand-off will animate towards the target
- * value of that transition. However, if no exit transition is specified for a given property (e.g.
+ * transformations are combined with (i.e., applied on top of) the transition's initial state.
+ * Properties like alpha and scale are applied multiplicatively, while offset is applied additively.
+ * Properties that are not manually set default to the transition's values. Once the transition
+ * starts, the manually applied transformations are handed off to the configured [enter] and [exit]
+ * transitions. For exiting content, a "sustain unless specified" policy is applied: if an exit
+ * transition (e.g. `fadeOut`) is specified, the hand-off will animate towards the target value of
+ * that transition. However, if no exit transition is specified for a given property (e.g.
  * `slideOut` is missing), that property will sustain its last manual value until the entire
  * transition completes. While in the deferred phase, entering content remains in the
  * [EnterExitState.PreEnter] state, and exiting content remains in the [EnterExitState.Visible]
@@ -797,20 +799,16 @@ internal fun <T> AnimatedEnterExitImpl(
     shouldDisposeBlock: (EnterExitState, EnterExitState) -> Boolean,
     onLookaheadMeasured: OnLookaheadMeasured? = null,
     mutableTransformData: MutableTransform? = null,
+    forceVisible: Boolean = false,
     content: @Composable() AnimatedVisibilityScope.() -> Unit,
 ) {
     val localPendingTargetState = transition.pendingTargetState
-    var hasBeenPending by remember { mutableStateOf(false) }
-    transition.DeferredTransitionCleanupEffect { hasBeenPending = false }
-    if (localPendingTargetState != null && visible(localPendingTargetState)) {
-        hasBeenPending = true
-    }
 
     if (
-        visible(transition.targetState) ||
+        forceVisible ||
+            visible(transition.targetState) ||
             visible(transition.currentState) ||
             (localPendingTargetState != null && visible(localPendingTargetState)) ||
-            (hasBeenPending && transition.currentState != transition.targetState) ||
             transition.isSeeking ||
             transition.hasInitialValueAnimations
     ) {

@@ -33,7 +33,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.State
 import androidx.compose.runtime.currentComposer
-import androidx.compose.runtime.currentCompositeKeyHash
+import androidx.compose.runtime.currentCompositeKeyHashCode
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCompositionContext
@@ -482,16 +482,17 @@ public fun SpatialPanel(
             resizePolicy = resizePolicy,
             interactionPolicy = interactionPolicy,
         )
-    // TODO(b/474652577): Update from deprecated currentCompositeKey to currentCompositeKeyCode
-    //  once we update JXR Compose to Compile SDK 35
-    @Suppress("DEPRECATION") val localId = currentCompositeKeyHash
+
+    val localId = currentCompositeKeyHashCode
     val context = LocalContext.current
     val parentView = LocalView.current
     val compositionContext = rememberCompositionContext()
     val dialogManager = LocalDialogManager.current
     val isDialogActive = dialogManager.isSpatialDialogActive.value
     AndroidViewPanel(
-        factory = { spatialComposeView(parentView, context, compositionContext, localId) },
+        factory = {
+            spatialComposeView(parentView, context, compositionContext, localId = localId)
+        },
         modifier = finalModifier,
         update = { composeView ->
             composeView.setContent {
@@ -632,7 +633,7 @@ public fun SpatialMainPanel(
 @Composable
 private fun requestMainPanelOwnership(): State<CoreMainPanelEntity?> {
     val result = remember { mutableStateOf<CoreMainPanelEntity?>(null) }
-    val mainPanel = LocalComposeXrOwners.current?.coreMainPanelEntity ?: return result
+    val mainPanel = LocalComposeXrOwners.current.coreMainPanelEntity ?: return result
     // TODO(b/460459113) - For now we are using the decorView but we should be able to use LocalView
     //  once the view tree is properly connected via `setViewTreeDisjointParent`.
     val ownerQueue =

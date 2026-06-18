@@ -19,7 +19,6 @@ package androidx.compose.remote.creation.compose.state
 import androidx.annotation.IntDef
 import androidx.annotation.RestrictTo
 import androidx.compose.remote.core.RemoteContext
-import androidx.compose.remote.core.operations.TextFromFloat
 import androidx.compose.remote.core.operations.TextFromFloat.GROUPING_BY3
 import androidx.compose.remote.core.operations.TextFromFloat.GROUPING_BY32
 import androidx.compose.remote.core.operations.TextFromFloat.GROUPING_BY4
@@ -162,72 +161,6 @@ public abstract class RemoteFloat internal constructor(cacheKey: RemoteStateCach
     }
 
     /**
-     * Returns a [RemoteString] that converts the result of this [RemoteFloat] with specified
-     * formatting.
-     *
-     * @param before The number of digits to show before the decimal point.
-     * @param after The number of digits to show after the decimal point (defaults to 2).
-     * @param flags Formatting flags for the string conversion (defaults to
-     *   [TextFromFloat.PAD_AFTER_ZERO]).
-     * @return A [RemoteString] representing the formatted float.
-     */
-    public fun toRemoteString(
-        before: Int,
-        after: Int = 2,
-        flags: Int = PAD_AFTER_ZERO,
-    ): RemoteString {
-        constantValueOrNull?.let {
-            return RemoteString(floatToString(it, before, after, flags))
-        }
-        return MutableRemoteString(
-            constantValueOrNull = null,
-            cacheKey =
-                RemoteOperationCacheKey.create(
-                    OperationKey.ToRemoteString,
-                    this,
-                    before,
-                    after,
-                    flags,
-                ),
-            lazyRemoteString =
-                object : LazyRemoteString {
-                    override fun reserveTextId(creationState: RemoteComposeCreationState): Int {
-                        return creationState.document.createTextFromFloat(
-                            asNan(getIdForCreationState(creationState)),
-                            before,
-                            after,
-                            flags,
-                        )
-                    }
-
-                    override fun computeRequiredCodePointSet(
-                        creationState: RemoteComposeCreationState
-                    ): Set<String>? {
-                        val preFlags = flags and 12
-                        val afterFlags = flags and 3
-                        if (after == 0) {
-                            if (before == 1 || preFlags != PAD_PRE_SPACE) {
-                                return setOf("0", "1", "2", "3", "4", "5", "6", "7", "8", "9")
-                            } else {
-                                return setOf("0", "1", "2", "3", "4", "5", "6", "7", "8", "9", " ")
-                            }
-                        }
-
-                        // If flags is non-zero then we may pad with a space.
-                        if (
-                            (before == 1 && after == 1) ||
-                                (preFlags != PAD_PRE_SPACE && afterFlags != PAD_AFTER_SPACE)
-                        ) {
-                            return setOf("0", "1", "2", "3", "4", "5", "6", "7", "8", "9", ".")
-                        } else {
-                            return setOf("0", "1", "2", "3", "4", "5", "6", "7", "8", "9", ".", " ")
-                        }
-                    }
-                },
-        )
-    }
-
-    /**
      * Returns a [RemoteString] that evaluates to the result of this [RemoteFloat] formatted
      * according to the provided [android.icu.text.DecimalFormat].
      *
@@ -240,7 +173,6 @@ public abstract class RemoteFloat internal constructor(cacheKey: RemoteStateCach
      *   options like separators, grouping, and padding width.
      * @return A [RemoteString] representing the formatted float.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public fun toRemoteString(
         format: android.icu.text.DecimalFormat = DefaultDecimalFormat
     ): RemoteString {
@@ -265,10 +197,10 @@ public abstract class RemoteFloat internal constructor(cacheKey: RemoteStateCach
                     threshold *= 10f
                 }
 
-                val isNegative = this lt 0f.rf
+                val isNegative = this.isLessThan(0f.rf)
                 val absValue = isNegative.select(-this, this)
 
-                return (absValue lt threshold.rf).select(
+                return (absValue.isLessThan(threshold.rf)).select(
                     toRemoteStringOptions(padWidth, after, flagsPadded),
                     unpadded,
                 )
@@ -594,13 +526,13 @@ public abstract class RemoteFloat internal constructor(cacheKey: RemoteStateCach
     }
 
     /**
-     * Returns a [RemoteBoolean] that evaluates to `true` if [b] is equal to the value of this
+     * Returns a [RemoteBoolean] that evaluates to `true` if [other] is equal to the value of this
      * [RemoteFloat] or `false` otherwise.
      */
-    public infix fun eq(b: RemoteFloat): RemoteBoolean =
+    public fun isEqualTo(other: RemoteFloat): RemoteBoolean =
         comparisonOp(
             this,
-            b,
+            other,
             OperationKey.CompareEQ,
             { a, b ->
                 floatArrayOf(
@@ -617,14 +549,18 @@ public abstract class RemoteFloat internal constructor(cacheKey: RemoteStateCach
             a == b
         }
 
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    @Deprecated("Use isEqualTo instead", ReplaceWith("isEqualTo(other)"))
+    public infix fun eq(other: RemoteFloat): RemoteBoolean = isEqualTo(other)
+
     /**
-     * Returns a [RemoteBoolean] that evaluates to `true` if [b] is not equal to the value of this
-     * [RemoteFloat] or `false` otherwise.
+     * Returns a [RemoteBoolean] that evaluates to `true` if [other] is not equal to the value of
+     * this [RemoteFloat] or `false` otherwise.
      */
-    public infix fun ne(b: RemoteFloat): RemoteBoolean =
+    public fun isNotEqualTo(other: RemoteFloat): RemoteBoolean =
         comparisonOp(
             this,
-            b,
+            other,
             OperationKey.CompareNE,
             { a, b ->
                 floatArrayOf(
@@ -641,14 +577,18 @@ public abstract class RemoteFloat internal constructor(cacheKey: RemoteStateCach
             a != b
         }
 
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    @Deprecated("Use isNotEqualTo instead", ReplaceWith("isNotEqualTo(other)"))
+    public infix fun ne(other: RemoteFloat): RemoteBoolean = isNotEqualTo(other)
+
     /**
-     * Returns a [RemoteBoolean] that evaluates to `true` if [b] is less than the value of this
+     * Returns a [RemoteBoolean] that evaluates to `true` if [other] is less than the value of this
      * [RemoteFloat] or `false` otherwise.
      */
-    public infix fun lt(b: RemoteFloat): RemoteBoolean =
+    public fun isLessThan(other: RemoteFloat): RemoteBoolean =
         comparisonOp(
             this,
-            b,
+            other,
             OperationKey.CompareLT,
             { a, b ->
                 floatArrayOf(
@@ -664,14 +604,18 @@ public abstract class RemoteFloat internal constructor(cacheKey: RemoteStateCach
             a < b
         }
 
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    @Deprecated("Use isLessThan instead", ReplaceWith("isLessThan(other)"))
+    public infix fun lt(other: RemoteFloat): RemoteBoolean = isLessThan(other)
+
     /**
-     * Returns a [RemoteBoolean] that evaluates to `true` if [b] is less than or equal to the value
-     * of this [RemoteFloat] or `false` otherwise.
+     * Returns a [RemoteBoolean] that evaluates to `true` if [other] is less than or equal to the
+     * value of this [RemoteFloat] or `false` otherwise.
      */
-    public infix fun le(b: RemoteFloat): RemoteBoolean =
+    public fun isLessThanOrEqual(other: RemoteFloat): RemoteBoolean =
         comparisonOp(
             this,
-            b,
+            other,
             OperationKey.CompareLE,
             { a, b ->
                 floatArrayOf(
@@ -687,14 +631,18 @@ public abstract class RemoteFloat internal constructor(cacheKey: RemoteStateCach
             a <= b
         }
 
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    @Deprecated("Use isLessThanOrEqual instead", ReplaceWith("isLessThanOrEqual(other)"))
+    public infix fun le(other: RemoteFloat): RemoteBoolean = isLessThanOrEqual(other)
+
     /**
-     * Returns a [RemoteBoolean] that evaluates to `true` if [b] is greater than the value of this
-     * [RemoteFloat] or `false` otherwise.
+     * Returns a [RemoteBoolean] that evaluates to `true` if [other] is greater than the value of
+     * this [RemoteFloat] or `false` otherwise.
      */
-    public infix fun gt(b: RemoteFloat): RemoteBoolean =
+    public fun isGreaterThan(other: RemoteFloat): RemoteBoolean =
         comparisonOp(
             this,
-            b,
+            other,
             OperationKey.CompareGT,
             { a, b ->
                 floatArrayOf(
@@ -710,14 +658,18 @@ public abstract class RemoteFloat internal constructor(cacheKey: RemoteStateCach
             a > b
         }
 
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    @Deprecated("Use isGreaterThan instead", ReplaceWith("isGreaterThan(other)"))
+    public infix fun gt(other: RemoteFloat): RemoteBoolean = isGreaterThan(other)
+
     /**
-     * Returns a [RemoteBoolean] that evaluates to `true` if [b] is greater than or equal to the
+     * Returns a [RemoteBoolean] that evaluates to `true` if [other] is greater than or equal to the
      * value of this [RemoteFloat] or `false` otherwise.
      */
-    public infix fun ge(b: RemoteFloat): RemoteBoolean =
+    public fun isGreaterThanOrEqual(other: RemoteFloat): RemoteBoolean =
         comparisonOp(
             this,
-            b,
+            other,
             OperationKey.CompareGE,
             { a, b ->
                 floatArrayOf(
@@ -732,6 +684,10 @@ public abstract class RemoteFloat internal constructor(cacheKey: RemoteStateCach
         ) { a, b ->
             a >= b
         }
+
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    @Deprecated("Use isGreaterThanOrEqual instead", ReplaceWith("isGreaterThanOrEqual(other)"))
+    public infix fun ge(other: RemoteFloat): RemoteBoolean = isGreaterThanOrEqual(other)
 
     public companion object {
         internal val DefaultDecimalFormat = android.icu.text.DecimalFormat()
