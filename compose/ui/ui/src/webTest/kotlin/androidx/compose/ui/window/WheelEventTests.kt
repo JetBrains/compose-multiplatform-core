@@ -22,6 +22,7 @@ import androidx.compose.foundation.gestures.resetWheelEventTrackingForTests
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.CompositionLocalProvider
@@ -176,8 +177,13 @@ class WheelEventTests : OnCanvasTests {
 
         createComposeWindow {
             CompositionLocalProvider(LocalDensity provides Density(2f)) {
+                // requiredSize (not size) so the viewport keeps its 100.dp even when the test
+                // canvas is smaller than 200px. The canvas is only 30% of the karma iframe (see
+                // compose_context.html), which on CI can be < 200px; a plain size() would then be
+                // coerced down to the canvas height and page-mode scroll (= bounds.height) would
+                // no longer equal the expected viewport size.
                 Box(
-                    modifier = Modifier.size(100.dp).verticalScroll(verticalScrollState)
+                    modifier = Modifier.requiredSize(100.dp).verticalScroll(verticalScrollState)
                 ) {
                     Column(modifier = Modifier.size(400.dp)) { }
                 }
