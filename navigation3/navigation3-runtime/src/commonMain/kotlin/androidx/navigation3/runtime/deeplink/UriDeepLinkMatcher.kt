@@ -141,7 +141,7 @@ private const val STRICT_SCHEME_PATTERN = "https://"
 public open class UriDeepLinkMatcher<T : Any>(
     private val uriPattern: DeepLinkUri,
     private val serializer: KSerializer<T>,
-    filters: List<Filter<Any>> = emptyList(),
+    filters: List<Filter> = emptyList(),
 ) : DeepLinkMatcher<T>(filters) {
 
     // Pair of path pattern regex to list of extracted arg names. List is empty if path
@@ -276,6 +276,14 @@ public open class UriMatchResult<T : Any>(key: T, public val arguments: Map<Stri
         this.matchingPathArgumentCount = matchingPathArgumentCount
     }
 
+    /**
+     * Indicates whether the [UriDeepLinkMatcher] and [DeepLinkRequest] match that produced this
+     * result was matched on an exact uri path, meaning a path that
+     * 1. does not contain any arguments
+     * 2. does not contain any wildcards
+     *
+     * True if it is an exact path, false otherwise.
+     */
     protected var isExactPath: Boolean = false
     private var matchingPathArgumentCount: Int = -1
 

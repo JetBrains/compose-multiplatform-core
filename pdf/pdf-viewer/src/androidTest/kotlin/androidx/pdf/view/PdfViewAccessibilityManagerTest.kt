@@ -74,6 +74,7 @@ class PdfViewAccessibilityManagerTest {
                 requireNotNull(pdfView) { "PdfView must not be null." }
                 pdfView.isAccessibilityEnabled = true
                 pdfView.pdfDocument = pdfDocument
+                pdfView.fastScrollVisibility = PdfView.FastScrollVisibility.ALWAYS_HIDE
             }
     }
 
@@ -219,9 +220,9 @@ class PdfViewAccessibilityManagerTest {
                 10 to "Go to page 5",
                 11 to "Link: www.example.com",
                 FORM_WIDGET_VIRTUAL_VIEW_ID_OFFSET to
-                    "Form widget Type: Radio Button. Title: Radio. Current value: false. Click will toggle value.",
+                    "Form widget Type: Radio button. Title: Radio. Current value: false. Click will toggle value.",
                 FORM_WIDGET_VIRTUAL_VIEW_ID_OFFSET + 1 to
-                    "Form widget Type: Multi select List Box. Title: ListBox. Value: Banana. Widget is read only and cannot be changed.",
+                    "Form widget Type: Multi-select List box. Title: ListBox. Value: Banana. Widget is read only and cannot be changed.",
             )
         testCases.forEach { (virtualViewId, expectedDescription) ->
             val node = AccessibilityNodeInfoCompat.obtain()
@@ -327,7 +328,7 @@ class PdfViewAccessibilityManagerTest {
         val node = AccessibilityNodeInfoCompat.obtain()
         val thumbVirtualId = PdfViewAccessibilityManager.FAST_SCROLLER_OFFSET + 1
         pdfViewAccessibilityManager.onPopulateNodeForVirtualView(thumbVirtualId, node)
-        assertThat(node.contentDescription).isEqualTo("Scroll Bar")
+        assertThat(node.contentDescription).isEqualTo("Scroll bar")
         assertThat(node.isFocusable).isTrue()
     }
 
@@ -430,6 +431,20 @@ class PdfViewAccessibilityManagerTest {
                     null,
                 )
             assertThat(result).isTrue()
+        }
+    }
+
+    @Test
+    fun isAccessibilityEnabled_updatesFastScrollVisibility() {
+        activityScenario.onActivity {
+            pdfView.isAccessibilityEnabled = false
+            assertThat(pdfView.fastScrollVisibility)
+                .isEqualTo(PdfView.FastScrollVisibility.AUTO_HIDE)
+
+            pdfView.isAccessibilityEnabled = true
+            assertThat(pdfView.fastScrollVisibility)
+                .isEqualTo(PdfView.FastScrollVisibility.ALWAYS_SHOW)
+            assertThat(pdfView.lastFastScrollerVisibility).isTrue()
         }
     }
 }

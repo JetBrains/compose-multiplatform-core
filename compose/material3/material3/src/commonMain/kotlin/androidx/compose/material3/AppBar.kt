@@ -163,7 +163,7 @@ import kotlin.math.roundToInt
     message = "Deprecated in favor of TopAppBar with contentPadding parameter",
     level = DeprecationLevel.HIDDEN,
 )
-@OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TopAppBar(
     title: @Composable () -> Unit,
@@ -223,7 +223,7 @@ fun TopAppBar(
  *   scrolls. See [TopAppBarScrollBehavior.nestedScrollConnection].
  * @param contentPadding the padding applied to the content of this TopAppBar.
  */
-@OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TopAppBar(
     title: @Composable () -> Unit,
@@ -296,7 +296,7 @@ fun TopAppBar(
     message = "Deprecated in favor of CenterAlignedTopAppBar with contentPadding parameter",
     level = DeprecationLevel.HIDDEN,
 )
-@OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CenterAlignedTopAppBar(
     title: @Composable () -> Unit,
@@ -356,7 +356,7 @@ fun CenterAlignedTopAppBar(
  *   scrolls. See [TopAppBarScrollBehavior.nestedScrollConnection].
  * @param contentPadding the padding applied to the content of this TopAppBar.
  */
-@OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CenterAlignedTopAppBar(
     title: @Composable () -> Unit,
@@ -427,7 +427,6 @@ fun CenterAlignedTopAppBar(
  * @param contentPadding the padding applied to the content of this TopAppBar.
  */
 @OptIn(ExperimentalMaterial3Api::class)
-@ExperimentalMaterial3ExpressiveApi
 @Composable
 fun TopAppBar(
     title: @Composable () -> Unit,
@@ -505,7 +504,7 @@ fun TopAppBar(
  * @throws IllegalArgumentException if the provided [expandedHeight] is smaller than the
  *   [collapsedHeight]
  */
-@OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MediumTopAppBar(
     title: @Composable () -> Unit,
@@ -598,7 +597,6 @@ fun MediumTopAppBar(
  *   [collapsedHeight]
  */
 @OptIn(ExperimentalMaterial3Api::class)
-@ExperimentalMaterial3ExpressiveApi
 @Composable
 fun MediumFlexibleTopAppBar(
     title: @Composable () -> Unit,
@@ -695,7 +693,7 @@ fun MediumFlexibleTopAppBar(
  * @throws IllegalArgumentException if the provided [expandedHeight] is smaller to the
  *   [collapsedHeight]
  */
-@OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LargeTopAppBar(
     title: @Composable () -> Unit,
@@ -788,7 +786,6 @@ fun LargeTopAppBar(
  *   [collapsedHeight]
  */
 @OptIn(ExperimentalMaterial3Api::class)
-@ExperimentalMaterial3ExpressiveApi
 @Composable
 fun LargeFlexibleTopAppBar(
     title: @Composable () -> Unit,
@@ -900,7 +897,6 @@ fun LargeFlexibleTopAppBar(
  *   [collapsedHeight]
  */
 @OptIn(ExperimentalMaterial3Api::class)
-@ExperimentalMaterial3ExpressiveApi
 @Composable
 fun TwoRowsTopAppBar(
     title: @Composable (expanded: Boolean) -> Unit,
@@ -1243,7 +1239,6 @@ fun BottomAppBar(
  *   inside will be placed horizontally.
  */
 @OptIn(ExperimentalMaterial3Api::class)
-@ExperimentalMaterial3ExpressiveApi
 @Composable
 fun FlexibleBottomAppBar(
     modifier: Modifier = Modifier,
@@ -1500,6 +1495,13 @@ object TopAppBarDefaults {
      */
     val snapAnimationSpec: AnimationSpec<Float>
         @Composable get() = MotionSchemeKeyTokens.DefaultEffects.value()
+
+    /**
+     * Default [DecayAnimationSpec] that defines how to fling the top app bar when the user flings
+     * the app bar itself, or the scrollable content.
+     */
+    val flingAnimationSpec: DecayAnimationSpec<Float>
+        @Composable get() = rememberSplineBasedDecay()
 
     /**
      * Creates a [TopAppBarColors] for [CenterAlignedTopAppBar]s. The default implementation
@@ -1859,7 +1861,7 @@ object TopAppBarDefaults {
         state: TopAppBarState = rememberTopAppBarState(),
         canScroll: () -> Boolean = { true },
         snapAnimationSpec: AnimationSpec<Float>? = TopAppBarDefaults.snapAnimationSpec,
-        flingAnimationSpec: DecayAnimationSpec<Float>? = rememberSplineBasedDecay(),
+        flingAnimationSpec: DecayAnimationSpec<Float>? = TopAppBarDefaults.flingAnimationSpec,
     ): TopAppBarScrollBehavior =
         remember(state, canScroll, snapAnimationSpec, flingAnimationSpec) {
             EnterAlwaysScrollBehavior(
@@ -1906,7 +1908,7 @@ object TopAppBarDefaults {
         state: TopAppBarState = rememberTopAppBarState(),
         canScroll: () -> Boolean = { true },
         snapAnimationSpec: AnimationSpec<Float>? = TopAppBarDefaults.snapAnimationSpec,
-        flingAnimationSpec: DecayAnimationSpec<Float>? = rememberSplineBasedDecay(),
+        flingAnimationSpec: DecayAnimationSpec<Float>? = TopAppBarDefaults.flingAnimationSpec,
         reverseLayout: Boolean = false,
     ): TopAppBarScrollBehavior =
         remember(state, canScroll, snapAnimationSpec, flingAnimationSpec, reverseLayout) {
@@ -1960,7 +1962,7 @@ object TopAppBarDefaults {
         state: TopAppBarState = rememberTopAppBarState(),
         canScroll: () -> Boolean = { true },
         snapAnimationSpec: AnimationSpec<Float>? = TopAppBarDefaults.snapAnimationSpec,
-        flingAnimationSpec: DecayAnimationSpec<Float>? = rememberSplineBasedDecay(),
+        flingAnimationSpec: DecayAnimationSpec<Float>? = TopAppBarDefaults.flingAnimationSpec,
     ): TopAppBarScrollBehavior {
         return enterAlwaysScrollBehavior(
             scrollableState = lazyListState,
@@ -2019,7 +2021,7 @@ object TopAppBarDefaults {
         state: TopAppBarState = rememberTopAppBarState(),
         canScroll: () -> Boolean = { true },
         snapAnimationSpec: AnimationSpec<Float>? = TopAppBarDefaults.snapAnimationSpec,
-        flingAnimationSpec: DecayAnimationSpec<Float>? = rememberSplineBasedDecay(),
+        flingAnimationSpec: DecayAnimationSpec<Float>? = TopAppBarDefaults.flingAnimationSpec,
     ): TopAppBarScrollBehavior {
         return enterAlwaysScrollBehavior(
             scrollableState = scrollState,
@@ -2066,7 +2068,7 @@ object TopAppBarDefaults {
         state: TopAppBarState = rememberTopAppBarState(),
         canScroll: () -> Boolean = { true },
         snapAnimationSpec: AnimationSpec<Float>? = TopAppBarDefaults.snapAnimationSpec,
-        flingAnimationSpec: DecayAnimationSpec<Float>? = rememberSplineBasedDecay(),
+        flingAnimationSpec: DecayAnimationSpec<Float>? = TopAppBarDefaults.flingAnimationSpec,
         isScrollingContentAtStart: () -> Boolean = { true },
     ): TopAppBarScrollBehavior =
         remember(state, canScroll, snapAnimationSpec, flingAnimationSpec) {
@@ -2115,7 +2117,7 @@ object TopAppBarDefaults {
         state: TopAppBarState = rememberTopAppBarState(),
         canScroll: () -> Boolean = { true },
         snapAnimationSpec: AnimationSpec<Float>? = TopAppBarDefaults.snapAnimationSpec,
-        flingAnimationSpec: DecayAnimationSpec<Float>? = rememberSplineBasedDecay(),
+        flingAnimationSpec: DecayAnimationSpec<Float>? = TopAppBarDefaults.flingAnimationSpec,
     ): TopAppBarScrollBehavior {
         return remember(scrollableState, state, canScroll, snapAnimationSpec, flingAnimationSpec) {
             EnterAlwaysScrollBehavior(
@@ -2160,7 +2162,7 @@ object TopAppBarDefaults {
         state: TopAppBarState = rememberTopAppBarState(),
         canScroll: () -> Boolean = { true },
         snapAnimationSpec: AnimationSpec<Float>? = TopAppBarDefaults.snapAnimationSpec,
-        flingAnimationSpec: DecayAnimationSpec<Float>? = rememberSplineBasedDecay(),
+        flingAnimationSpec: DecayAnimationSpec<Float>? = TopAppBarDefaults.flingAnimationSpec,
     ): TopAppBarScrollBehavior =
         remember(state, canScroll, snapAnimationSpec, flingAnimationSpec) {
             ExitUntilCollapsedScrollBehavior(
@@ -2527,7 +2529,6 @@ object BottomAppBarDefaults {
     val bottomAppBarFabColor: Color
         @Composable get() = FabSecondaryContainerTokens.ContainerColor.value
 
-    @ExperimentalMaterial3ExpressiveApi
     /** Default padding used for [FlexibleBottomAppBar]. */
     val FlexibleContentPadding =
         PaddingValues(
@@ -2539,17 +2540,14 @@ object BottomAppBarDefaults {
      * Default height of a flexible [FlexibleBottomAppBar]. The height here represents the height of
      * the bottom app bar in its expanded state.
      */
-    @ExperimentalMaterial3ExpressiveApi
     val FlexibleBottomAppBarHeight = DockedToolbarTokens.ContainerHeight
 
     /** A default [Arrangement] that will be used to space a [FlexibleBottomAppBar]'s content. */
-    @ExperimentalMaterial3ExpressiveApi
     val FlexibleHorizontalArrangement: Arrangement.Horizontal = Arrangement.SpaceBetween
 
     /**
      * An [Arrangement] that will be used to space [FlexibleBottomAppBar]'s with a fixed spacing.
      */
-    @ExperimentalMaterial3ExpressiveApi
     val FlexibleFixedHorizontalArrangement: Arrangement.Horizontal =
         Arrangement.spacedBy(DockedToolbarTokens.ContainerMaxSpacing, Alignment.CenterHorizontally)
 
@@ -2847,11 +2845,7 @@ private val FABVerticalPadding = 12.dp - BottomAppBarVerticalPadding
  *
  * This SingleRowTopAppBar has slots for a title, subtitle, navigation icon, and actions.
  */
-@OptIn(
-    ExperimentalMaterial3Api::class,
-    ExperimentalMaterial3ExpressiveApi::class,
-    ExperimentalMaterial3ComponentOverrideApi::class,
-)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ComponentOverrideApi::class)
 @Composable
 private fun SingleRowTopAppBar(
     modifier: Modifier = Modifier,
@@ -3067,11 +3061,7 @@ val LocalSingleRowTopAppBarOverride: ProvidableCompositionLocal<SingleRowTopAppB
  * A two-rows top app bar that is designed to be called by the Large and Medium top app bar
  * composables.
  */
-@OptIn(
-    ExperimentalMaterial3Api::class,
-    ExperimentalMaterial3ExpressiveApi::class,
-    ExperimentalMaterial3ComponentOverrideApi::class,
-)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ComponentOverrideApi::class)
 @Composable
 private fun TwoRowsTopAppBar(
     modifier: Modifier = Modifier,
@@ -3373,7 +3363,6 @@ private fun Modifier.adjustHeightOffsetLimit(scrollBehavior: TopAppBarScrollBeha
  * @param height this app bar's requested height
  * @param contentPadding the padding applied to the content of this TopAppBar.
  */
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun TopAppBarLayout(
     modifier: Modifier,
@@ -3473,7 +3462,6 @@ private fun TopAppBarLayout(
     )
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 private class TopAppBarMeasurePolicy(
     val scrolledOffset: FloatProducer,
     val titleVerticalArrangement: Arrangement.Vertical,
