@@ -108,8 +108,8 @@ object JetBrainsPublication {
             ),
             ComposeComponent(":lifecycle:lifecycle-viewmodel-savedstate", supportedPlatforms = ComposePlatforms.ALL),
             ComposeComponent(":lifecycle:lifecycle-runtime-compose", supportedPlatforms = ComposePlatforms.ALL),
-            ComposeComponent(":lifecycle:lifecycle-viewmodel-compose"),
-            ComposeComponent(":lifecycle:lifecycle-viewmodel-navigation3"),
+            ComposeComponent(":lifecycle:lifecycle-viewmodel-compose", supportedPlatforms = ComposePlatforms.ALL),
+            ComposeComponent(":lifecycle:lifecycle-viewmodel-navigation3", supportedPlatforms = ComposePlatforms.ALL),
         ),
         "NAVIGATION" to listOf(
             ComposeComponent(":navigation:navigation-compose"),
@@ -120,7 +120,7 @@ object JetBrainsPublication {
             ComposeComponent(":navigation3:navigation3-ui"),
         ),
         "NAVIGATION_EVENT" to listOf(
-            ComposeComponent(":navigationevent:navigationevent-compose"),
+            ComposeComponent(":navigationevent:navigationevent-compose", supportedPlatforms = ComposePlatforms.ALL),
         ),
         "SAVEDSTATE" to listOf(
             ComposeComponent(":savedstate:savedstate", supportedPlatforms = ComposePlatforms.ALL),
