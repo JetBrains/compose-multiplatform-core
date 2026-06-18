@@ -32,6 +32,7 @@ import androidx.compose.ui.input.InputModeManager
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.isClearFocusOnMouseDownEnabled
 import androidx.compose.ui.node.LayoutNode
+import androidx.compose.ui.node.OutOfFrameExecutor
 import androidx.compose.ui.node.OwnedLayer
 import androidx.compose.ui.node.Owner
 import androidx.compose.ui.node.RootForTest
@@ -101,6 +102,8 @@ interface PlatformContext {
      * the containing window.
      * If the [ComposeScene] is rotated, scaled, or otherwise transformed relative to the window,
      * this will not be a simple translation.
+     *
+     * Note: It might return [Offset.Unspecified] if it's not attached to a window.
      */
     fun convertLocalToWindowPosition(localPosition: Offset): Offset =
         localPosition
@@ -110,6 +113,8 @@ interface PlatformContext {
      * the [ComposeScene].
      * If the [ComposeScene] is rotated, scaled, or otherwise transformed relative to the window,
      * this will not be a simple translation.
+     *
+     * Note: It might return [Offset.Unspecified] if it's not attached to a window.
      */
     fun convertWindowToLocalPosition(positionInWindow: Offset): Offset =
         positionInWindow
@@ -117,6 +122,8 @@ interface PlatformContext {
     /**
      * Converts [localPosition] relative to the [ComposeScene] into an [Offset] relative to
      * the device's screen.
+     *
+     * Note: It might return [Offset.Unspecified] if it's not attached to a window.
      */
     fun convertLocalToScreenPosition(localPosition: Offset): Offset =
         convertLocalToWindowPosition(localPosition)
@@ -124,6 +131,8 @@ interface PlatformContext {
     /**
      * Converts [positionOnScreen] relative to the device's screen into an [Offset] relative to
      * the [ComposeScene].
+     *
+     * Note: It might return [Offset.Unspecified] if it's not attached to a window.
      */
     fun convertScreenToLocalPosition(positionOnScreen: Offset): Offset =
         convertWindowToLocalPosition(positionOnScreen)
@@ -191,6 +200,15 @@ interface PlatformContext {
      */
     val isClearFocusOnMouseDownEnabled: Boolean
         get() = ComposeUiFlags.isClearFocusOnMouseDownEnabled
+
+    /**
+     * Schedules work that should be deferred out of the current
+     * composition/layout/rendering stack.
+     *
+     * @see PlatformOutOfFrameExecutor
+     * @see OutOfFrameExecutor
+     */
+    val outOfFrameExecutor: PlatformOutOfFrameExecutor? get() = null
 
     interface RootForTestListener {
         fun onRootForTestCreated(root: PlatformRootForTest)
