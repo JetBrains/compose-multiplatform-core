@@ -21,6 +21,7 @@ import androidx.room3.DaoReturnTypeConverter
 import androidx.room3.DaoReturnTypeConverters
 import androidx.room3.Database
 import androidx.room3.OperationType
+import androidx.room3.ProvidedDaoReturnTypeConverter
 import androidx.room3.compiler.codegen.asClassName
 import androidx.room3.compiler.processing.XElement
 import androidx.room3.compiler.processing.XExecutableElement
@@ -46,6 +47,7 @@ import androidx.room3.processor.ProcessorErrors.DAO_RETURN_TYPE_CONVERTER_EMPTY_
 import androidx.room3.processor.ProcessorErrors.DAO_RETURN_TYPE_CONVERTER_FUNCTIONS_MUST_HAVE_AT_MOST_ONE_TYPE_PARAMETER
 import androidx.room3.processor.ProcessorErrors.DAO_RETURN_TYPE_CONVERTER_FUNCTIONS_WITHOUT_TYPE_PARAM_SHOULD_RETURN_UNIT
 import androidx.room3.processor.ProcessorErrors.DAO_RETURN_TYPE_CONVERTER_LAMBDA_MUST_BE_LAST_PARAM
+import androidx.room3.processor.ProcessorErrors.DAO_RETURN_TYPE_CONVERTER_LAMBDA_WITH_RAW_QUERY_MISSING_FUNCTION_PARAM
 import androidx.room3.processor.ProcessorErrors.DAO_RETURN_TYPE_CONVERTER_MUST_CONTAIN_AN_ANNOTATED_FUNCTION
 import androidx.room3.processor.ProcessorErrors.DAO_RETURN_TYPE_CONVERTER_MUST_HAVE_ONE_LAMBDA_PARAM_THAT_IS_SUSPEND
 import androidx.room3.processor.ProcessorErrors.FOUND_DAO_TYPE_CONVERTER_WITH_NON_SUSPEND_LAMBDA
@@ -166,6 +168,14 @@ class DaoReturnTypeConverterProcessor(
                 suspendLambdaParam = suspendLambdaParam,
             ) ?: return null
 
+        context.checker.check(
+            predicate =
+                !executeAndReturnLambda.hasRawQueryParam ||
+                    requiredParameters.contains(OptionalParam.RAW_QUERY),
+            element = function,
+            errorMsg = DAO_RETURN_TYPE_CONVERTER_LAMBDA_WITH_RAW_QUERY_MISSING_FUNCTION_PARAM,
+        )
+
         return DaoReturnTypeConverterWrapper(
             converter =
                 CustomDaoReturnTypeConverter(
@@ -173,7 +183,8 @@ class DaoReturnTypeConverterProcessor(
                     enclosingClass = containerTypeElement,
                     isEnclosingClassKotlinObject = isContainerKotlinObject,
                     function = function,
-                    isProvidedConverter = false,
+                    isProvidedConverter =
+                        containerTypeElement.hasAnnotation(ProvidedDaoReturnTypeConverter::class),
                     requiredParameters = requiredParameters,
                     operationTypes = operationTypes,
                     executeAndReturnLambda = executeAndReturnLambda,

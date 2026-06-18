@@ -13,6 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@file:Suppress("DEPRECATION")
+
 package androidx.xr.arcore.projected.testapp
 
 import android.Manifest
@@ -67,6 +69,7 @@ import androidx.xr.projected.permissions.ProjectedPermissionsRequestParams
 import androidx.xr.projected.permissions.ProjectedPermissionsResultContract
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.DeviceTrackingMode
+import androidx.xr.runtime.ExperimentalInertialTrackingApi
 import androidx.xr.runtime.GeospatialMode
 import androidx.xr.runtime.PreviewSpatialApi
 import androidx.xr.runtime.Session
@@ -236,8 +239,6 @@ class LowPowerGeospatialActivity : ComponentActivity() {
             }
 
         val deviceGeoPoseState = geospatialState.geospatialPose
-        val deviceGeoPose =
-            deviceGeoPoseState ?: (geoPoseResult as? CreateGeospatialPoseFromPoseSuccess)?.pose
 
         val localPoseResult =
             remember(deviceGeoPoseState, geospatialState.geospatialTrackingState) {
@@ -266,7 +267,12 @@ class LowPowerGeospatialActivity : ComponentActivity() {
             Column(modifier = Modifier.align(Alignment.TopStart)) {
                 DashboardHeader(geospatialState, arDeviceState)
                 LocalTrackingSection(arDeviceState)
-                GeospatialTrackingSection(deviceGeoPose, geoPoseResult, arDeviceState)
+                GeospatialTrackingSection(
+                    geospatialState.geospatialPose,
+                    geospatialState.horizontalAccuracy,
+                    geospatialState.verticalAccuracy,
+                    geospatialState.orientationYawAccuracy,
+                )
 
                 Spacer(modifier = Modifier.height(8.dp))
                 HudTitleText("— CONVERSION VALUES —")
@@ -312,33 +318,20 @@ class LowPowerGeospatialActivity : ComponentActivity() {
 
     @Composable
     private fun GeospatialTrackingSection(
-        dispGeoPose: GeospatialPose?,
-        locResult: CreateGeospatialPoseFromPoseResult?,
-        arDeviceState: ArDevice.State?,
+        dispGeoPose: GeospatialPose,
+        horizontalAccuracy: Double,
+        verticalAccuracy: Double,
+        orientationYawAccuracy: Double,
     ) {
-        if (dispGeoPose != null) {
-            HudDataText(dispGeoPose.toFormattedString())
-        } else {
-            HudDataText("Lat/Lon: N/A | Alt: N/A")
-        }
-
-        if (locResult is CreateGeospatialPoseFromPoseSuccess) {
-            HudDataText(locResult.toAccuracyString())
-        } else {
-            HudDataText("Acc(H/V/Yaw): N/A")
-        }
-
-        if (dispGeoPose != null) {
-            val eusStr = dispGeoPose.eastUpSouthQuaternion.toFormattedString()
-            HudDataText("EUS Quat: $eusStr")
-        } else {
-            HudDataText("EUS Quat: N/A")
-        }
-
-        if (arDeviceState != null) {
-            val orientStr = getOrientationDescription(arDeviceState.devicePose.rotation)
-            HudDataText("Orientation: $orientStr")
-        }
+        HudDataText(dispGeoPose.toFormattedString())
+        HudDataText(
+            "Acc(H/V/Yaw): %.1fm / %.1fm / %.1f°"
+                .format(horizontalAccuracy, verticalAccuracy, orientationYawAccuracy)
+        )
+        val eusStr = dispGeoPose.eastUpSouthQuaternion.toFormattedString()
+        HudDataText("EUS Quat: $eusStr")
+        val orientStr = getOrientationDescription(dispGeoPose.eastUpSouthQuaternion)
+        HudDataText("Orientation: $orientStr")
     }
 
     @Composable
@@ -375,10 +368,6 @@ class LowPowerGeospatialActivity : ComponentActivity() {
 
     private fun GeospatialPose.toFormattedString(): String =
         "Lat/Lon: %.6f, %.6f | Alt: %.1fm".format(latitude, longitude, altitude)
-
-    private fun CreateGeospatialPoseFromPoseSuccess.toAccuracyString(): String =
-        "Acc(H/V/Yaw): %.1fm / %.1fm / %.1f°"
-            .format(horizontalAccuracy, verticalAccuracy, orientationYawAccuracy)
 
     private fun calculateLocalConversionText(
         localPoseResult: CreatePoseFromGeospatialPoseResult?,
@@ -464,6 +453,7 @@ class LowPowerGeospatialActivity : ComponentActivity() {
         return kotlin.math.sqrt(dx * dx + dy * dy + dz * dz)
     }
 
+    @OptIn(ExperimentalInertialTrackingApi::class)
     private fun TrackingState?.getTrackingStateMessage(): String {
         return when (this) {
             TrackingState.TRACKING -> "TRACKING"

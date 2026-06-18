@@ -47,6 +47,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.lifecycleScope
 import androidx.xr.arcore.Anchor
 import androidx.xr.arcore.AnchorCreateResourcesExhausted
 import androidx.xr.arcore.AnchorCreateSuccess
@@ -72,6 +73,7 @@ import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.AnchorSpace
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 /** Represents the different states of the AnchorFollowingSubspaceActivity. */
 sealed interface AppState {
@@ -106,17 +108,19 @@ class AnchorFollowingSubspaceActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        setContent {
-            session =
-                remember(this) { (Session.create(context = this) as SessionCreateSuccess).session }
-            LaunchedEffect(session) {
+        lifecycleScope.launch {
+            val sessionResult = Session.create(context = this@AnchorFollowingSubspaceActivity)
+            if (sessionResult is SessionCreateSuccess) {
+                session = sessionResult.session
                 session.configure(
                     Config.Builder()
                         .setPlaneTracking(PlaneTrackingMode.HORIZONTAL_AND_VERTICAL)
                         .build()
                 )
+                setContent { MainApp() }
+            } else {
+                finish()
             }
-            MainApp()
         }
     }
 
@@ -190,10 +194,11 @@ class AnchorFollowingSubspaceActivity : ComponentActivity() {
     fun SingleAnchorButtonWithPoseListener(text: String, position: Pose, onClick: () -> Unit) {
         var rootAnchor by remember { mutableStateOf<AnchorSpace?>(null) }
         DisposableEffect(Unit) {
-            val anchor = createAnchorSpace(session, position)
-            rootAnchor = anchor
+            val anchorSpace = createAnchorSpace(session, position)
+            val anchor = anchorSpace?.anchor
+            rootAnchor = anchorSpace
 
-            onDispose { anchor?.anchor?.detach() }
+            onDispose { anchor?.detach() }
         }
 
         val currentAnchor = rootAnchor
@@ -248,9 +253,12 @@ class AnchorFollowingSubspaceActivity : ComponentActivity() {
             rootAnchor = localRoot
             alternateAnchor = localAlternative
 
+            val rootAnchorObj = localRoot?.anchor
+            val alternativeAnchorObj = localAlternative?.anchor
+
             onDispose {
-                localRoot?.anchor?.detach()
-                localAlternative?.anchor?.detach()
+                rootAnchorObj?.detach()
+                alternativeAnchorObj?.detach()
             }
         }
 

@@ -2,8 +2,8 @@
 package androidx.xr.compose.platform {
 
   public final class ActivityExtKt {
-    method public static suspend Object? requestFullSpace(androidx.activity.ComponentActivity, kotlin.coroutines.Continuation<? super kotlin.Unit>);
-    method public static suspend Object? requestHomeSpace(androidx.activity.ComponentActivity, kotlin.coroutines.Continuation<? super kotlin.Unit>);
+    method public static suspend Object? requestFullSpace(androidx.activity.ComponentActivity, kotlin.coroutines.Continuation<? super androidx.xr.compose.platform.SpaceRequestResult>);
+    method public static suspend Object? requestHomeSpace(androidx.activity.ComponentActivity, kotlin.coroutines.Continuation<? super androidx.xr.compose.platform.SpaceRequestResult>);
   }
 
   public final class LocalCoreEntityKt {
@@ -14,6 +14,23 @@ package androidx.xr.compose.platform {
   public final class LocalSessionKt {
     method @InaccessibleFromKotlin public static androidx.compose.runtime.ProvidableCompositionLocal<androidx.xr.runtime.Session?> getLocalSession();
     property public static androidx.compose.runtime.ProvidableCompositionLocal<androidx.xr.runtime.Session?> LocalSession;
+  }
+
+  public sealed nonexhaustive interface SpaceRequestResult {
+  }
+
+  public static final class SpaceRequestResult.Error implements androidx.xr.compose.platform.SpaceRequestResult {
+    ctor public SpaceRequestResult.Error(Throwable cause);
+    method @InaccessibleFromKotlin public Throwable getCause();
+    property public Throwable cause;
+  }
+
+  public static final class SpaceRequestResult.Success implements androidx.xr.compose.platform.SpaceRequestResult {
+    field public static final androidx.xr.compose.platform.SpaceRequestResult.Success INSTANCE;
+  }
+
+  public static final class SpaceRequestResult.Unsupported implements androidx.xr.compose.platform.SpaceRequestResult {
+    field public static final androidx.xr.compose.platform.SpaceRequestResult.Unsupported INSTANCE;
   }
 
   public sealed nonexhaustive interface SpatialCapabilities {
@@ -289,12 +306,14 @@ package androidx.xr.compose.spatial {
   }
 
   public final class SubspaceKt {
-    method @KotlinOnly @SuppressCompatibility @androidx.compose.runtime.Composable @androidx.compose.runtime.ComposableOpenTarget(index=0xffffffff) @androidx.xr.compose.spatial.ExperimentalFollowingSubspaceApi public static void FollowingSubspace(androidx.xr.compose.subspace.FollowTarget target, androidx.xr.compose.subspace.FollowBehavior behavior, optional androidx.xr.compose.subspace.layout.SubspaceModifier modifier, optional androidx.xr.compose.subspace.TrackedDimensions dimensions, optional boolean allowUnboundedSubspace, kotlin.jvm.functions.Function1<androidx.xr.compose.subspace.SpatialBoxScope,kotlin.Unit> content);
-    method @BytecodeOnly @SuppressCompatibility @androidx.compose.runtime.Composable @androidx.compose.runtime.ComposableOpenTarget(index=0xffffffff) @androidx.xr.compose.spatial.ExperimentalFollowingSubspaceApi public static void FollowingSubspace(androidx.xr.compose.subspace.FollowTarget, androidx.xr.compose.subspace.FollowBehavior, androidx.xr.compose.subspace.layout.SubspaceModifier?, androidx.xr.compose.subspace.TrackedDimensions?, boolean, kotlin.jvm.functions.Function3<? super androidx.xr.compose.subspace.SpatialBoxScope!,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>, androidx.compose.runtime.Composer?, int, int);
+    method @KotlinOnly @SuppressCompatibility @androidx.compose.runtime.Composable @androidx.compose.runtime.ComposableOpenTarget(index=0xffffffff) @androidx.xr.compose.spatial.ExperimentalFollowingSubspaceApi public static void FollowingSubspace(androidx.xr.compose.subspace.FollowTarget target, androidx.xr.compose.subspace.FollowBehavior behavior, optional androidx.xr.compose.subspace.layout.SubspaceModifier modifier, optional androidx.xr.compose.subspace.TrackedDimensions dimensions, kotlin.jvm.functions.Function1<androidx.xr.compose.subspace.SpatialBoxScope,kotlin.Unit> content);
+    method @BytecodeOnly @SuppressCompatibility @androidx.compose.runtime.Composable @androidx.compose.runtime.ComposableOpenTarget(index=0xffffffff) @androidx.xr.compose.spatial.ExperimentalFollowingSubspaceApi public static void FollowingSubspace(androidx.xr.compose.subspace.FollowTarget, androidx.xr.compose.subspace.FollowBehavior, androidx.xr.compose.subspace.layout.SubspaceModifier?, androidx.xr.compose.subspace.TrackedDimensions?, kotlin.jvm.functions.Function3<? super androidx.xr.compose.subspace.SpatialBoxScope!,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>, androidx.compose.runtime.Composer?, int, int);
     method @KotlinOnly @androidx.compose.runtime.Composable @androidx.compose.ui.UiComposable public static void PlanarEmbeddedSubspace(optional androidx.xr.compose.subspace.layout.SubspaceModifier modifier, kotlin.jvm.functions.Function1<androidx.xr.compose.subspace.SpatialBoxScope,kotlin.Unit> content);
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.ui.UiComposable public static void PlanarEmbeddedSubspace(androidx.xr.compose.subspace.layout.SubspaceModifier?, kotlin.jvm.functions.Function3<? super androidx.xr.compose.subspace.SpatialBoxScope!,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>, androidx.compose.runtime.Composer?, int, int);
-    method @KotlinOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ComposableOpenTarget(index=0xffffffff) public static void Subspace(optional androidx.xr.compose.subspace.layout.SubspaceModifier modifier, optional boolean allowUnboundedSubspace, kotlin.jvm.functions.Function1<androidx.xr.compose.subspace.SpatialBoxScope,kotlin.Unit> content);
-    method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ComposableOpenTarget(index=0xffffffff) public static void Subspace(androidx.xr.compose.subspace.layout.SubspaceModifier?, boolean, kotlin.jvm.functions.Function3<? super androidx.xr.compose.subspace.SpatialBoxScope!,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>, androidx.compose.runtime.Composer?, int, int);
+    method @KotlinOnly @Deprecated @androidx.compose.runtime.Composable @androidx.compose.runtime.ComposableOpenTarget(index=0xffffffff) public static void Subspace(optional androidx.xr.compose.subspace.layout.SubspaceModifier modifier, boolean allowUnboundedSubspace, kotlin.jvm.functions.Function1<androidx.xr.compose.subspace.SpatialBoxScope,kotlin.Unit> content);
+    method @BytecodeOnly @Deprecated @androidx.compose.runtime.Composable @androidx.compose.runtime.ComposableOpenTarget(index=0xffffffff) public static void Subspace(androidx.xr.compose.subspace.layout.SubspaceModifier?, boolean, kotlin.jvm.functions.Function3<? super androidx.xr.compose.subspace.SpatialBoxScope!,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>, androidx.compose.runtime.Composer?, int, int);
+    method @KotlinOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ComposableOpenTarget(index=0xffffffff) public static void Subspace(optional androidx.xr.compose.subspace.layout.SubspaceModifier modifier, kotlin.jvm.functions.Function1<androidx.xr.compose.subspace.SpatialBoxScope,kotlin.Unit> content);
+    method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ComposableOpenTarget(index=0xffffffff) public static void Subspace(androidx.xr.compose.subspace.layout.SubspaceModifier?, kotlin.jvm.functions.Function3<? super androidx.xr.compose.subspace.SpatialBoxScope!,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>, androidx.compose.runtime.Composer?, int, int);
   }
 
 }
@@ -1394,6 +1413,40 @@ package androidx.xr.compose.subspace.layout {
 
 }
 
+package androidx.xr.compose.subspace.media {
+
+  public final class PointSourceExoplayerAudioOutput extends androidx.xr.compose.subspace.media.SpatializedExoplayerAudioOutput {
+    ctor @androidx.compose.runtime.annotation.RememberInComposition public PointSourceExoplayerAudioOutput(androidx.xr.runtime.Session session, androidx.xr.scenecore.PointSourceParams params);
+    method @InaccessibleFromKotlin public androidx.media3.exoplayer.audio.AudioOutputProvider getAudioOutputProvider();
+    method @InaccessibleFromKotlin public androidx.xr.scenecore.PointSourceParams getParams();
+    method @InaccessibleFromKotlin public void setParams(androidx.xr.scenecore.PointSourceParams);
+    property public androidx.media3.exoplayer.audio.AudioOutputProvider audioOutputProvider;
+    property public androidx.xr.scenecore.PointSourceParams params;
+  }
+
+  public final class SoundFieldExoplayerAudioOutput extends androidx.xr.compose.subspace.media.SpatializedExoplayerAudioOutput {
+    ctor @androidx.compose.runtime.annotation.RememberInComposition public SoundFieldExoplayerAudioOutput(androidx.xr.runtime.Session session, androidx.xr.scenecore.SoundFieldAttributes soundFieldAttributes);
+    method @InaccessibleFromKotlin public androidx.media3.exoplayer.audio.AudioOutputProvider getAudioOutputProvider();
+    property public androidx.media3.exoplayer.audio.AudioOutputProvider audioOutputProvider;
+  }
+
+  public abstract sealed nonexhaustive class SpatializedAudioOutput {
+  }
+
+  public final class SpatializedAudioOutputKt {
+    method public static androidx.xr.compose.subspace.media.SpatializedAudioOutput asSpatializedAudioOutput(androidx.xr.scenecore.SoundEffectPoolComponent);
+    method @KotlinOnly @androidx.compose.runtime.Composable public static androidx.xr.compose.subspace.media.PointSourceExoplayerAudioOutput rememberPointSourceExoplayerAudioOutput(androidx.xr.scenecore.PointSourceParams params);
+    method @BytecodeOnly @androidx.compose.runtime.Composable public static androidx.xr.compose.subspace.media.PointSourceExoplayerAudioOutput rememberPointSourceExoplayerAudioOutput(androidx.xr.scenecore.PointSourceParams, androidx.compose.runtime.Composer?, int);
+    method public static androidx.xr.compose.subspace.layout.SubspaceModifier spatializedAudioOutput(androidx.xr.compose.subspace.layout.SubspaceModifier, androidx.xr.compose.subspace.media.SpatializedAudioOutput spatializedAudioOutput);
+  }
+
+  public abstract class SpatializedExoplayerAudioOutput extends androidx.xr.compose.subspace.media.SpatializedAudioOutput {
+    method @InaccessibleFromKotlin public abstract androidx.media3.exoplayer.audio.AudioOutputProvider getAudioOutputProvider();
+    property public abstract androidx.media3.exoplayer.audio.AudioOutputProvider audioOutputProvider;
+  }
+
+}
+
 package androidx.xr.compose.subspace.node {
 
   @kotlin.PublishedApi internal interface ComposeSubspaceNode {
@@ -1498,6 +1551,7 @@ package androidx.xr.compose.subspace.semantics {
   }
 
   public final class SubspaceSemanticsConfiguration implements java.lang.Iterable<java.util.Map.Entry<? extends androidx.compose.ui.semantics.SemanticsPropertyKey<? extends java.lang.Object?>,? extends java.lang.Object?>> kotlin.jvm.internal.markers.KMappedMarker androidx.xr.compose.subspace.semantics.SubspaceSemanticsPropertyReceiver {
+    ctor public SubspaceSemanticsConfiguration();
     method public operator <T> boolean contains(androidx.compose.ui.semantics.SemanticsPropertyKey<T> key);
     method public operator <T> T get(androidx.compose.ui.semantics.SemanticsPropertyKey<T> key);
     method public <T> T getOrElse(androidx.compose.ui.semantics.SemanticsPropertyKey<T> key, kotlin.jvm.functions.Function0<? extends T> defaultValue);

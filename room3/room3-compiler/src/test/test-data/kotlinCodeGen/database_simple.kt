@@ -88,10 +88,16 @@ internal class MyDatabase_Impl : MyDatabase() {
     performClear(this, false, "MyEntity")
   }
 
-  protected override fun getRequiredTypeConverterClasses(): Map<KClass<*>, List<KClass<*>>> {
-    val _typeConvertersMap: MutableMap<KClass<*>, List<KClass<*>>> = mutableMapOf()
-    _typeConvertersMap.put(MyDao::class, MyDao_Impl.getRequiredConverters())
-    return _typeConvertersMap
+  protected override fun getRequiredColumnTypeConverterClasses(): Map<KClass<*>, List<KClass<*>>> {
+    val _columnTypeConvertersMap: MutableMap<KClass<*>, List<KClass<*>>> = mutableMapOf()
+    _columnTypeConvertersMap.put(MyDao::class, MyDao_Impl.getRequiredColumnConverters())
+    return _columnTypeConvertersMap
+  }
+
+  protected override fun getRequiredDaoReturnTypeConverterClasses(): Map<KClass<*>, List<KClass<*>>> {
+    val _daoReturnTypeConvertersMap: MutableMap<KClass<*>, List<KClass<*>>> = mutableMapOf()
+    _daoReturnTypeConvertersMap.put(MyDao::class, MyDao_Impl.getRequiredDaoReturnTypeConverters())
+    return _daoReturnTypeConvertersMap
   }
 
   public override fun getRequiredAutoMigrationSpecClasses(): Set<KClass<out AutoMigrationSpec>> {

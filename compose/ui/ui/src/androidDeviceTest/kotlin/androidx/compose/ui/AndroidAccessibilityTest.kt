@@ -2217,8 +2217,8 @@ class AndroidAccessibilityTest {
         val colSemanticsNode =
             rule.onNodeWithTag(columnTag).fetchSemanticsNode("can't find node with tag $columnTag")
         val viewHolder =
-            androidComposeView.androidViewsHandler.layoutNodeToHolder[
-                    colSemanticsNode.replacedChildren[1].layoutNode]
+            androidComposeView.androidViewsHandler
+                ?.layoutNodeToHolder[colSemanticsNode.replacedChildren[1].layoutNode]
         checkNotNull(viewHolder)
         val firstButtonId = rule.onNodeWithText(firstButtonText).semanticsId()
         val lastButtonId = rule.onNodeWithText(lastButtonText).semanticsId()
@@ -2315,8 +2315,8 @@ class AndroidAccessibilityTest {
         val colSemanticsNode =
             rule.onNodeWithTag(columnTag).fetchSemanticsNode("can't find node with tag $columnTag")
         val viewHolder =
-            androidComposeView.androidViewsHandler.layoutNodeToHolder[
-                    colSemanticsNode.replacedChildren[1].layoutNode]
+            androidComposeView.androidViewsHandler
+                ?.layoutNodeToHolder[colSemanticsNode.replacedChildren[1].layoutNode]
         checkNotNull(viewHolder) // Check that the View exists
         val firstButtonId = rule.onNodeWithText(firstButtonText).semanticsId()
         val thirdButtonId = rule.onNodeWithText(thirdButtonText).semanticsId()
@@ -4312,8 +4312,9 @@ class AndroidAccessibilityTest {
         val androidView =
             rule.onNodeWithTag(tag).fetchSemanticsNode("can't find node with tag $tag")
         val viewGroup =
-            androidComposeView.androidViewsHandler.layoutNodeToHolder[androidView.layoutNode]!!.view
-                as ViewGroup
+            androidComposeView.androidViewsHandler
+                ?.layoutNodeToHolder[androidView.layoutNode]!!
+                .view as ViewGroup
         val getAccessibilityViewIdMethod =
             View::class.java.getDeclaredMethod("getAccessibilityViewId")
         getAccessibilityViewIdMethod.isAccessible = true
@@ -4349,8 +4350,8 @@ class AndroidAccessibilityTest {
         // Act.
         val buttonHolder =
             rule.runOnIdle {
-                androidComposeView.androidViewsHandler.layoutNodeToHolder[
-                        colSemanticsNode.replacedChildren[0].layoutNode]
+                androidComposeView.androidViewsHandler
+                    ?.layoutNodeToHolder[colSemanticsNode.replacedChildren[0].layoutNode]
             }
         checkNotNull(buttonHolder)
 
@@ -4468,9 +4469,9 @@ class AndroidAccessibilityTest {
     @OptIn(ExperimentalComposeUiApi::class)
     @Test
     fun dispatchHoverEvent_returnsTrueForHandledAndFalseForUnhandled_featureFlagOff() {
-        val original = ComposeUiFlags.isExploreByTouchHoverHandled
+        val original = AndroidComposeUiFlags.isExploreByTouchHoverHandled
         try {
-            ComposeUiFlags.isExploreByTouchHoverHandled = false
+            AndroidComposeUiFlags.isExploreByTouchHoverHandled = false
             val hoverableBoxTag = "hoverable"
             val unhoverableBoxTag = "unhoverable"
 
@@ -4513,7 +4514,7 @@ class AndroidAccessibilityTest {
                 assertThat(androidComposeView.dispatchHoverEvent(hoverEnter)).isFalse()
             }
         } finally {
-            ComposeUiFlags.isExploreByTouchHoverHandled = original
+            AndroidComposeUiFlags.isExploreByTouchHoverHandled = original
         }
     }
 

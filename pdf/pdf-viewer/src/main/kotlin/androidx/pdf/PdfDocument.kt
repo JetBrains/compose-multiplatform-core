@@ -25,9 +25,9 @@ import android.util.SparseArray
 import androidx.annotation.IntDef
 import androidx.annotation.LongDef
 import androidx.annotation.RestrictTo
-import androidx.pdf.annotation.KeyedPdfAnnotation
-import androidx.pdf.annotation.models.KeyedPdfObject
-import androidx.pdf.annotation.models.PdfObject
+import androidx.pdf.annotation.content.KeyedPdfAnnotation
+import androidx.pdf.annotation.content.KeyedPdfObject
+import androidx.pdf.annotation.content.PdfObject
 import androidx.pdf.content.PageMatchBounds
 import androidx.pdf.content.PageSelection
 import androidx.pdf.content.PdfPageGotoLinkContent
@@ -189,7 +189,6 @@ public interface PdfDocument : Closeable {
      *   are no edits on the page.
      * @throws IllegalArgumentException if the page number is invalid.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public suspend fun getAnnotationsForPage(pageNum: Int): List<KeyedPdfAnnotation>
 
     /**
@@ -281,21 +280,19 @@ public interface PdfDocument : Closeable {
 
     /**
      * Adds a listener to be notified when an edit is applied on the document. Remove the listener
-     * using [removeOnEditsAppliedListener].
+     * using [removeOnEditAppliedListener].
      *
      * @param executor The executor on which the listener's methods will be called.
      * @param listener the listener to add.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY)
-    public fun addOnEditsAppliedListener(executor: Executor, listener: OnEditsAppliedListener) {}
+    public fun addOnEditAppliedListener(executor: Executor, listener: OnEditAppliedListener) {}
 
     /**
      * Remove a listener for applied edits.
      *
      * @param listener the listener for notification of applied edit.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY)
-    public fun removeOnEditsAppliedListener(listener: OnEditsAppliedListener) {}
+    public fun removeOnEditAppliedListener(listener: OnEditAppliedListener) {}
 
     /**
      * Represents information about a single page in the PDF document.
@@ -341,7 +338,7 @@ public interface PdfDocument : Closeable {
      *
      * @property textContents A list of [PdfPageTextContent] objects representing the text elements
      *   on the page.
-     * @property imageContents A list of ]PdfPageImageContent] objects representing the image
+     * @property imageContents A list of [PdfPageImageContent] objects representing the image
      *   elements on the page.
      */
     public class PdfPageContent(
@@ -441,8 +438,7 @@ public interface PdfDocument : Closeable {
      * Interface definition for a callback that notifies when an edit is applied using the
      * [EditablePdfDocument.applyEdits] method.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY)
-    public interface OnEditsAppliedListener {
+    public interface OnEditAppliedListener {
         /**
          * Called when an edit is applied on the document. The order of the callback is preserved
          * according to the order of the sorted list returned by

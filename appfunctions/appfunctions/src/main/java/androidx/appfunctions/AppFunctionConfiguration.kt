@@ -16,10 +16,8 @@
 
 package androidx.appfunctions
 
-import androidx.annotation.RestrictTo
-
 /** The configuration object used to customize AppFunction setup. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+// TODO(b/517876475): Remove this class once migration is finished
 public class AppFunctionConfiguration
 internal constructor(
     /**
@@ -37,14 +35,12 @@ internal constructor(
      * To provide the configuration, implements the [AppFunctionConfiguration.Provider] interface on
      * your [android.app.Application] class.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public interface Provider {
         /** The [AppFunctionConfiguration] used to customize AppFunction setup. */
         public val appFunctionConfiguration: AppFunctionConfiguration
     }
 
     /** A builder for [AppFunctionConfiguration]. */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public class Builder {
 
         private val enclosingClassFactories = mutableMapOf<Class<*>, (() -> Any)>()

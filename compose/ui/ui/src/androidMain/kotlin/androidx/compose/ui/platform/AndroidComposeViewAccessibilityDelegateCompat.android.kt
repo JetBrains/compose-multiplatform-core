@@ -665,7 +665,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
         var childDrawingOrder = 0
         semanticsNode.replacedChildren.fastForEach { child ->
             if (currentSemanticsNodes.contains(child.id)) {
-                val holder = view.androidViewsHandler.layoutNodeToHolder[child.layoutNode]
+                val holder = view.androidViewsHandler?.layoutNodeToHolder[child.layoutNode]
                 // Do not add children if the ID is not valid.
                 if (child.id == View.NO_ID) {
                     return@fastForEach
@@ -1144,7 +1144,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
         // `beforeId` refers to the semanticsId that should be read before this `virtualViewId`.
         val beforeId = idToBeforeMap.getOrDefault(virtualViewId, -1)
         if (beforeId != -1) {
-            val beforeView = view.androidViewsHandler.semanticsIdToView(beforeId)
+            val beforeView = view.androidViewsHandler?.semanticsIdToView(beforeId)
             if (beforeView != null) {
                 // If the node that should come before this one is a view, we want to pass in the
                 // "before" view itself, which is retrieved from our `idToViewMap`.
@@ -1163,7 +1163,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
 
         val afterId = idToAfterMap.getOrDefault(virtualViewId, -1)
         if (afterId != -1) {
-            val afterView = view.androidViewsHandler.semanticsIdToView(afterId)
+            val afterView = view.androidViewsHandler?.semanticsIdToView(afterId)
             // Specially use `traversalAfter` value if the node after is a View,
             // as expressing the order using traversalBefore in this case would require mutating the
             // View itself, which is not under Compose's full control.
@@ -2161,7 +2161,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                 // Note that this should be before calling "updateHoveredVirtualView" so that in
                 // the corner case of overlapped nodes, the final hover enter event is sent from
                 // the node/view that we want to focus.
-                val handled = view.androidViewsHandler.dispatchGenericMotionEvent(event)
+                val handled = view.androidViewsHandler?.dispatchGenericMotionEvent(event) ?: false
                 updateHoveredVirtualView(virtualViewId)
                 return if (virtualViewId == InvalidId) handled else true
             }
@@ -2172,7 +2172,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                         true
                     }
                     else -> {
-                        view.androidViewsHandler.dispatchGenericMotionEvent(event)
+                        view.androidViewsHandler?.dispatchGenericMotionEvent(event) ?: false
                     }
                 }
             }
@@ -2202,7 +2202,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
 
             // If this node corresponds to an AndroidView, then we should return InvalidId
             // to let the View System handle it.
-            val androidView = view.androidViewsHandler.layoutNodeToHolder[layoutNode]
+            val androidView = view.androidViewsHandler?.layoutNodeToHolder[layoutNode]
             if (androidView != null) {
                 return InvalidId
             }
@@ -2287,8 +2287,8 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
     // fun clearNode(semanticsNodeId: Int) { // clear the actionIdToId and labelToActionId nodes }
 
     private val semanticsChangeChecker = Runnable {
-        trace("measureAndLayout") { view.measureAndLayout() }
-        trace("checkForSemanticsChanges") { checkForSemanticsChanges() }
+        trace("Compose:semantics:measureAndLayout") { view.measureAndLayout() }
+        trace("Compose:semantics:checkForSemanticsChanges") { checkForSemanticsChanges() }
         checkingForSemanticsChanges = false
     }
 
@@ -2315,15 +2315,17 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
             val subtreeChangedSemanticsNodesIds = MutableIntSet()
             for (notification in boundsUpdateChannel) {
                 if (isEnabled) {
-                    for (i in subtreeChangedLayoutNodes.indices) {
-                        val layoutNode = subtreeChangedLayoutNodes.valueAt(i)
-                        sendSubtreeChangeAccessibilityEvents(
-                            layoutNode,
-                            subtreeChangedSemanticsNodesIds,
-                        )
-                        sendTypeViewScrolledAccessibilityEvent(layoutNode)
+                    trace("Compose:semantics:boundUpdates") {
+                        for (i in subtreeChangedLayoutNodes.indices) {
+                            val layoutNode = subtreeChangedLayoutNodes.valueAt(i)
+                            sendSubtreeChangeAccessibilityEvents(
+                                layoutNode,
+                                subtreeChangedSemanticsNodesIds,
+                            )
+                            sendTypeViewScrolledAccessibilityEvent(layoutNode)
+                        }
+                        subtreeChangedSemanticsNodesIds.clear()
                     }
-                    subtreeChangedSemanticsNodesIds.clear()
                     // When the bounds of layout nodes change, we will not always get semantics
                     // change notifications because bounds is not part of semantics. And bounds
                     // change from a layout node without semantics will affect the global bounds
@@ -2384,7 +2386,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
             return
         }
         // Android Views will send proper events themselves.
-        if (view.androidViewsHandler.layoutNodeToHolder.contains(layoutNode)) {
+        if (view.androidViewsHandler?.layoutNodeToHolder?.contains(layoutNode) == true) {
             return
         }
 
@@ -2417,7 +2419,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
             return
         }
         // Android Views will send proper events themselves.
-        if (view.androidViewsHandler.layoutNodeToHolder.contains(layoutNode)) {
+        if (view.androidViewsHandler?.layoutNodeToHolder?.contains(layoutNode) == true) {
             return
         }
 
@@ -2449,7 +2451,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
 
     private fun checkForSemanticsChanges() {
         // Accessibility structural change
-        trace("sendAccessibilitySemanticsStructureChangeEvents") {
+        trace("Compose:semantics:sendAccessibilitySemanticsStructureChangeEvents") {
             if (isEnabled) {
                 sendAccessibilitySemanticsStructureChangeEvents(
                     view.semanticsOwner.unmergedRootSemanticsNode,
@@ -2458,10 +2460,12 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
             }
         }
         // Accessibility property change
-        trace("sendSemanticsPropertyChangeEvents") {
+        trace("Compose:semantics:sendSemanticsPropertyChangeEvents") {
             sendSemanticsPropertyChangeEvents(currentSemanticsNodes)
         }
-        trace("updateSemanticsNodesCopyAndPanes") { updateSemanticsNodesCopyAndPanes() }
+        trace("Compose:semantics:updateSemanticsNodesCopyAndPanes") {
+            updateSemanticsNodesCopyAndPanes()
+        }
     }
 
     private fun updateSemanticsNodesCopyAndPanes() {

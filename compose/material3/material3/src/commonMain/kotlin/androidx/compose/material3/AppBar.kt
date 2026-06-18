@@ -1378,13 +1378,15 @@ interface TopAppBarScrollBehavior {
 
     /**
      * An optional [AnimationSpec] that defines how the top app bar snaps to either fully collapsed
-     * or fully extended state when a fling or a drag scrolled it into an intermediate position.
+     * or fully extended state when a fling or a drag scrolled it into an intermediate position. If
+     * `null` is provided, the app bar will not snap and will remain in its current state.
      */
     val snapAnimationSpec: AnimationSpec<Float>?
 
     /**
      * An optional [DecayAnimationSpec] that defines how to fling the top app bar when the user
-     * flings the app bar itself, or the content below it.
+     * flings the app bar itself, or the scrollable content. If `null` is provided, the app bar will
+     * not continue to animate its height based on the scroll velocity.
      */
     val flingAnimationSpec: DecayAnimationSpec<Float>?
 
@@ -1491,6 +1493,13 @@ object TopAppBarDefaults {
             WindowInsets.systemBarsForVisualComponents.only(
                 WindowInsetsSides.Horizontal + WindowInsetsSides.Top
             )
+
+    /**
+     * Default [AnimationSpec] that defines how the top app bar snaps to either fully collapsed or
+     * fully extended state when a fling or a drag scrolled it into an intermediate position.
+     */
+    val snapAnimationSpec: AnimationSpec<Float>
+        @Composable get() = MotionSchemeKeyTokens.DefaultEffects.value()
 
     /**
      * Creates a [TopAppBarColors] for [CenterAlignedTopAppBar]s. The default implementation
@@ -1839,15 +1848,17 @@ object TopAppBarDefaults {
      *   [TopAppBarScrollBehavior]
      * @param snapAnimationSpec an optional [AnimationSpec] that defines how the top app bar snaps
      *   to either fully collapsed or fully extended state when a fling or a drag scrolled it into
-     *   an intermediate position
+     *   an intermediate position. If `null` is provided, the app bar will not snap and will remain
+     *   in its current state.
      * @param flingAnimationSpec an optional [DecayAnimationSpec] that defines how to fling the top
-     *   app bar when the user flings the app bar itself, or the content below it
+     *   app bar when the user flings the app bar itself, or the scrollable content. If `null` is
+     *   provided, the app bar will not continue to animate its height based on the scroll velocity.
      */
     @Composable
     fun enterAlwaysScrollBehavior(
         state: TopAppBarState = rememberTopAppBarState(),
         canScroll: () -> Boolean = { true },
-        snapAnimationSpec: AnimationSpec<Float>? = MotionSchemeKeyTokens.DefaultEffects.value(),
+        snapAnimationSpec: AnimationSpec<Float>? = TopAppBarDefaults.snapAnimationSpec,
         flingAnimationSpec: DecayAnimationSpec<Float>? = rememberSplineBasedDecay(),
     ): TopAppBarScrollBehavior =
         remember(state, canScroll, snapAnimationSpec, flingAnimationSpec) {
@@ -1872,9 +1883,11 @@ object TopAppBarDefaults {
      *   [EnterAlwaysScrollBehavior]
      * @param snapAnimationSpec an optional [AnimationSpec] that defines how the top app bar snaps
      *   to either fully collapsed or fully extended state when a fling or a drag scrolled it into
-     *   an intermediate position
+     *   an intermediate position. If `null` is provided, the app bar will not snap and will remain
+     *   in its current state.
      * @param flingAnimationSpec an optional [DecayAnimationSpec] that defines how to fling the top
-     *   app bar when the user flings the app bar itself, or the content below it
+     *   app bar when the user flings the app bar itself, or the scrollable content. If `null` is
+     *   provided, the app bar will not continue to animate its height based on the scroll velocity.
      * @param reverseLayout indicates that this behavior is applied to a scrollable content that has
      *   a reversed direction of scrolling and layout
      */
@@ -1892,7 +1905,7 @@ object TopAppBarDefaults {
     fun enterAlwaysScrollBehavior(
         state: TopAppBarState = rememberTopAppBarState(),
         canScroll: () -> Boolean = { true },
-        snapAnimationSpec: AnimationSpec<Float>? = MotionSchemeKeyTokens.DefaultEffects.value(),
+        snapAnimationSpec: AnimationSpec<Float>? = TopAppBarDefaults.snapAnimationSpec,
         flingAnimationSpec: DecayAnimationSpec<Float>? = rememberSplineBasedDecay(),
         reverseLayout: Boolean = false,
     ): TopAppBarScrollBehavior =
@@ -1925,9 +1938,11 @@ object TopAppBarDefaults {
      *   [TopAppBarScrollBehavior]
      * @param snapAnimationSpec an optional [AnimationSpec] that defines how the top app bar snaps
      *   to either fully collapsed or fully extended state when a fling or a drag scrolled it into
-     *   an intermediate position
+     *   an intermediate position. If `null` is provided, the app bar will not snap and will remain
+     *   in its current state.
      * @param flingAnimationSpec an optional [DecayAnimationSpec] that defines how to fling the top
-     *   app bar when the user flings the app bar itself, or the content below it
+     *   app bar when the user flings the app bar itself, or the scrollable content. If `null` is
+     *   provided, the app bar will not continue to animate its height based on the scroll velocity.
      */
     @Deprecated(
         message =
@@ -1944,7 +1959,7 @@ object TopAppBarDefaults {
         lazyListState: LazyListState,
         state: TopAppBarState = rememberTopAppBarState(),
         canScroll: () -> Boolean = { true },
-        snapAnimationSpec: AnimationSpec<Float>? = MotionSchemeKeyTokens.DefaultEffects.value(),
+        snapAnimationSpec: AnimationSpec<Float>? = TopAppBarDefaults.snapAnimationSpec,
         flingAnimationSpec: DecayAnimationSpec<Float>? = rememberSplineBasedDecay(),
     ): TopAppBarScrollBehavior {
         return enterAlwaysScrollBehavior(
@@ -1981,9 +1996,11 @@ object TopAppBarDefaults {
      *   [TopAppBarScrollBehavior]
      * @param snapAnimationSpec an optional [AnimationSpec] that defines how the top app bar snaps
      *   to either fully collapsed or fully extended state when a fling or a drag scrolled it into
-     *   an intermediate position
+     *   an intermediate position. If `null` is provided, the app bar will not snap and will remain
+     *   in its current state.
      * @param flingAnimationSpec an optional [DecayAnimationSpec] that defines how to fling the top
-     *   app bar when the user flings the app bar itself, or the content below it
+     *   app bar when the user flings the app bar itself, or the scrollable content. If `null` is
+     *   provided, the app bar will not continue to animate its height based on the scroll velocity.
      */
     @Deprecated(
         message =
@@ -2001,7 +2018,7 @@ object TopAppBarDefaults {
         reverseScrolling: Boolean = false,
         state: TopAppBarState = rememberTopAppBarState(),
         canScroll: () -> Boolean = { true },
-        snapAnimationSpec: AnimationSpec<Float>? = MotionSchemeKeyTokens.DefaultEffects.value(),
+        snapAnimationSpec: AnimationSpec<Float>? = TopAppBarDefaults.snapAnimationSpec,
         flingAnimationSpec: DecayAnimationSpec<Float>? = rememberSplineBasedDecay(),
     ): TopAppBarScrollBehavior {
         return enterAlwaysScrollBehavior(
@@ -2030,9 +2047,11 @@ object TopAppBarDefaults {
      *   [TopAppBarScrollBehavior]
      * @param snapAnimationSpec an optional [AnimationSpec] that defines how the top app bar snaps
      *   to either fully collapsed or fully extended state when a fling or a drag scrolled it into
-     *   an intermediate position
+     *   an intermediate position. If `null` is provided, the app bar will not snap and will remain
+     *   in its current state.
      * @param flingAnimationSpec an optional [DecayAnimationSpec] that defines how to fling the top
-     *   app bar when the user flings the app bar itself, or the content below it
+     *   app bar when the user flings the app bar itself, or the scrollable content. If `null` is
+     *   provided, the app bar will not continue to animate its height based on the scroll velocity.
      * @param isScrollingContentAtStart A callback that returns true when the scrollable is at the
      *   origin of its content. Handles reversed layouts to ensure "start" always refers to the
      *   first logical item.
@@ -2046,7 +2065,7 @@ object TopAppBarDefaults {
     fun enterAlwaysScrollBehavior(
         state: TopAppBarState = rememberTopAppBarState(),
         canScroll: () -> Boolean = { true },
-        snapAnimationSpec: AnimationSpec<Float>? = MotionSchemeKeyTokens.DefaultEffects.value(),
+        snapAnimationSpec: AnimationSpec<Float>? = TopAppBarDefaults.snapAnimationSpec,
         flingAnimationSpec: DecayAnimationSpec<Float>? = rememberSplineBasedDecay(),
         isScrollingContentAtStart: () -> Boolean = { true },
     ): TopAppBarScrollBehavior =
@@ -2084,16 +2103,18 @@ object TopAppBarDefaults {
      *   [TopAppBarScrollBehavior]
      * @param snapAnimationSpec an optional [AnimationSpec] that defines how the top app bar snaps
      *   to either fully collapsed or fully extended state when a fling or a drag scrolled it into
-     *   an intermediate position
+     *   an intermediate position. If `null` is provided, the app bar will not snap and will remain
+     *   in its current state.
      * @param flingAnimationSpec an optional [DecayAnimationSpec] that defines how to fling the top
-     *   app bar when the user flings the app bar itself, or the content below it
+     *   app bar when the user flings the app bar itself, or the scrollable content. If `null` is
+     *   provided, the app bar will not continue to animate its height based on the scroll velocity.
      */
     @Composable
     fun enterAlwaysScrollBehavior(
         scrollableState: ScrollableState,
         state: TopAppBarState = rememberTopAppBarState(),
         canScroll: () -> Boolean = { true },
-        snapAnimationSpec: AnimationSpec<Float>? = MotionSchemeKeyTokens.DefaultEffects.value(),
+        snapAnimationSpec: AnimationSpec<Float>? = TopAppBarDefaults.snapAnimationSpec,
         flingAnimationSpec: DecayAnimationSpec<Float>? = rememberSplineBasedDecay(),
     ): TopAppBarScrollBehavior {
         return remember(scrollableState, state, canScroll, snapAnimationSpec, flingAnimationSpec) {
@@ -2128,15 +2149,17 @@ object TopAppBarDefaults {
      *   [ExitUntilCollapsedScrollBehavior]
      * @param snapAnimationSpec an optional [AnimationSpec] that defines how the top app bar snaps
      *   to either fully collapsed or fully extended state when a fling or a drag scrolled it into
-     *   an intermediate position
+     *   an intermediate position. If `null` is provided, the app bar will not snap and will remain
+     *   in its current state.
      * @param flingAnimationSpec an optional [DecayAnimationSpec] that defines how to fling the top
-     *   app bar when the user flings the app bar itself, or the content below it
+     *   app bar when the user flings the app bar itself, or the scrollable content. If `null` is
+     *   provided, the app bar will not continue to animate its height based on the scroll velocity.
      */
     @Composable
     fun exitUntilCollapsedScrollBehavior(
         state: TopAppBarState = rememberTopAppBarState(),
         canScroll: () -> Boolean = { true },
-        snapAnimationSpec: AnimationSpec<Float>? = MotionSchemeKeyTokens.DefaultEffects.value(),
+        snapAnimationSpec: AnimationSpec<Float>? = TopAppBarDefaults.snapAnimationSpec,
         flingAnimationSpec: DecayAnimationSpec<Float>? = rememberSplineBasedDecay(),
     ): TopAppBarScrollBehavior =
         remember(state, canScroll, snapAnimationSpec, flingAnimationSpec) {
@@ -2458,7 +2481,7 @@ interface BottomAppBarScrollBehavior {
 
     /**
      * An optional [DecayAnimationSpec] that defines how to fling the bottom app bar when the user
-     * flings the app bar itself, or the content below it.
+     * flings the app bar itself, or the scrollable content.
      */
     val flingAnimationSpec: DecayAnimationSpec<Float>?
 
@@ -2546,9 +2569,12 @@ object BottomAppBarDefaults {
      *   [ExitAlwaysScrollBehavior]
      * @param snapAnimationSpec an optional [AnimationSpec] that defines how the bottom app bar
      *   snaps to either fully collapsed or fully extended state when a fling or a drag scrolled it
-     *   into an intermediate position
+     *   into an intermediate position. If `null` is provided, the app bar will not snap and will
+     *   remain in its current state.
      * @param flingAnimationSpec an optional [DecayAnimationSpec] that defines how to fling the
-     *   bottom app bar when the user flings the app bar itself, or the content below it
+     *   bottom app bar when the user flings the app bar itself, or the scrollable content. If
+     *   `null` is provided, the app bar will not continue to animate its height based on the scroll
+     *   velocity.
      */
     @ExperimentalMaterial3Api
     @Composable
@@ -2707,9 +2733,11 @@ private class BottomAppBarStateImpl(
  * @param state a [BottomAppBarState]
  * @param snapAnimationSpec an optional [AnimationSpec] that defines how the bottom app bar snaps to
  *   either fully collapsed or fully extended state when a fling or a drag scrolled it into an
- *   intermediate position
+ *   intermediate position. If `null` is provided, the app bar will not snap and will remain in its
+ *   current state.
  * @param flingAnimationSpec an optional [DecayAnimationSpec] that defines how to fling the bottom
- *   app bar when the user flings the app bar itself, or the content below it
+ *   app bar when the user flings the app bar itself, or the scrollable content. If `null` is
+ *   provided, the app bar will not continue to animate its height based on the scroll velocity.
  * @param canScroll a callback used to determine whether scroll events are to be handled by this
  *   [ExitAlwaysScrollBehavior]
  */
@@ -3698,9 +3726,11 @@ private class PinnedScrollBehavior(
  * @param state a [TopAppBarState]
  * @param snapAnimationSpec an optional [AnimationSpec] that defines how the top app bar snaps to
  *   either fully collapsed or fully extended state when a fling or a drag scrolled it into an
- *   intermediate position
+ *   intermediate position. If `null` is provided, the app bar will not snap and will remain in its
+ *   current state.
  * @param flingAnimationSpec an optional [DecayAnimationSpec] that defines how to fling the top app
- *   bar when the user flings the app bar itself, or the content below it
+ *   bar when the user flings the app bar itself, or the scrollable content. If `null` is provided,
+ *   the app bar will not continue to animate its height based on the scroll velocity.
  * @param canScroll a callback used to determine whether scroll events are to be handled by this
  *   [EnterAlwaysScrollBehavior]
  * @param reverseLayout indicates that this behavior is applied to a scrollable content that has a
@@ -3773,9 +3803,11 @@ private class LegacyEnterAlwaysScrollBehavior(
  * @param state a [TopAppBarState]
  * @param snapAnimationSpec an optional [AnimationSpec] that defines how the top app bar snaps to
  *   either fully collapsed or fully extended state when a fling or a drag scrolled it into an
- *   intermediate position
+ *   intermediate position. If `null` is provided, the app bar will not snap and will remain in its
+ *   current state.
  * @param flingAnimationSpec an optional [DecayAnimationSpec] that defines how to fling the top app
- *   bar when the user flings the app bar itself, or the content below it
+ *   bar when the user flings the app bar itself, or the scrollable content. If `null` is provided,
+ *   the app bar will not continue to animate its height based on the scroll velocity.
  * @param canScroll a callback used to determine whether scroll events are to be handled by this
  *   [EnterAlwaysScrollBehavior]
  */
@@ -3847,9 +3879,11 @@ private class EnterAlwaysScrollBehavior(
  * @param state a [TopAppBarState]
  * @param snapAnimationSpec an optional [AnimationSpec] that defines how the top app bar snaps to
  *   either fully collapsed or fully extended state when a fling or a drag scrolled it into an
- *   intermediate position
+ *   intermediate position. If `null` is provided, the app bar will not snap and will remain in its
+ *   current state.
  * @param flingAnimationSpec an optional [DecayAnimationSpec] that defines how to fling the top app
- *   bar when the user flings the app bar itself, or the content below it
+ *   bar when the user flings the app bar itself, or the scrollable content. If `null` is provided,
+ *   the app bar will not continue to animate its height based on the scroll velocity.
  * @param canScroll a callback used to determine whether scroll events are to be handled by this
  *   [ExitUntilCollapsedScrollBehavior]
  */

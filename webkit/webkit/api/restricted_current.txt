@@ -111,8 +111,8 @@ package androidx.webkit {
     method @SuppressCompatibility @RequiresFeature(name="PREFETCH_CACHE_V1", enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") @UiThread @androidx.webkit.Profile.ExperimentalUrlPrefetch public void clearPrefetchTtl();
     method @SuppressCompatibility @RequiresFeature(name="PREFETCH_CACHE_V1", enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") @UiThread @androidx.webkit.Profile.ExperimentalUrlPrefetch public int getMaxPrefetches();
     method @SuppressCompatibility @RequiresFeature(name="PREFETCH_CACHE_V1", enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") @UiThread @androidx.webkit.Profile.ExperimentalUrlPrefetch public int getPrefetchTtlSeconds();
-    method @SuppressCompatibility @AnyThread @RequiresFeature(name=androidx.webkit.WebViewFeature.PROFILE_URL_PREFETCH, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") @androidx.webkit.Profile.ExperimentalUrlPrefetch public void prefetchUrlAsync(String, android.os.CancellationSignal?, java.util.concurrent.Executor?, androidx.webkit.PrefetchParameters, androidx.webkit.WebViewOutcomeReceiver<java.lang.Void?,androidx.webkit.PrefetchException!>);
-    method @SuppressCompatibility @AnyThread @RequiresFeature(name=androidx.webkit.WebViewFeature.PROFILE_URL_PREFETCH, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") @androidx.webkit.Profile.ExperimentalUrlPrefetch public void prefetchUrlAsync(String, android.os.CancellationSignal?, java.util.concurrent.Executor?, androidx.webkit.WebViewOutcomeReceiver<java.lang.Void?,androidx.webkit.PrefetchException!>);
+    method @SuppressCompatibility @AnyThread @RequiresFeature(name=androidx.webkit.WebViewFeature.PROFILE_URL_PREFETCH, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") @androidx.webkit.Profile.ExperimentalUrlPrefetch public void prefetchUrlAsync(String, android.os.CancellationSignal?, java.util.concurrent.Executor?, androidx.webkit.PrefetchParameters, androidx.webkit.WebViewOutcomeReceiver<androidx.webkit.PrefetchResult,androidx.webkit.PrefetchException!>);
+    method @SuppressCompatibility @AnyThread @RequiresFeature(name=androidx.webkit.WebViewFeature.PROFILE_URL_PREFETCH, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") @androidx.webkit.Profile.ExperimentalUrlPrefetch public void prefetchUrlAsync(String, android.os.CancellationSignal?, java.util.concurrent.Executor?, androidx.webkit.WebViewOutcomeReceiver<androidx.webkit.PrefetchResult,androidx.webkit.PrefetchException!>);
     method @SuppressCompatibility @RequiresFeature(name="PREFETCH_CACHE_V1", enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") @UiThread @androidx.webkit.Profile.ExperimentalUrlPrefetch public void setMaxPrefetches(@IntRange(from=1) int);
     method @SuppressCompatibility @RequiresFeature(name="PREFETCH_CACHE_V1", enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") @UiThread @androidx.webkit.Profile.ExperimentalUrlPrefetch public void setPrefetchTtlSeconds(@IntRange(from=1) int);
   }
@@ -133,7 +133,8 @@ package androidx.webkit {
 
   @SuppressCompatibility @androidx.webkit.Profile.ExperimentalUrlPrefetch public final class PrefetchParameters {
     method public java.util.Map<java.lang.String!,java.lang.String!> getAdditionalHeaders();
-    method public androidx.webkit.NoVarySearchHeader? getExpectedNoVarySearchData();
+    method @Deprecated public androidx.webkit.NoVarySearchHeader? getExpectedNoVarySearchData();
+    method public androidx.webkit.NoVarySearchHeader? getExpectedNoVarySearchHeader();
     method public Integer? getVariationsId();
     method public boolean isJavaScriptEnabled();
   }
@@ -143,9 +144,14 @@ package androidx.webkit {
     method @SuppressCompatibility @androidx.webkit.Profile.ExperimentalUrlPrefetch public androidx.webkit.PrefetchParameters.Builder addAdditionalHeader(String, String);
     method @SuppressCompatibility @androidx.webkit.Profile.ExperimentalUrlPrefetch public androidx.webkit.PrefetchParameters.Builder addAdditionalHeaders(java.util.Map<java.lang.String!,java.lang.String!>);
     method @SuppressCompatibility @androidx.webkit.Profile.ExperimentalUrlPrefetch public androidx.webkit.PrefetchParameters build();
-    method @SuppressCompatibility @androidx.webkit.Profile.ExperimentalUrlPrefetch public androidx.webkit.PrefetchParameters.Builder setExpectedNoVarySearchData(androidx.webkit.NoVarySearchHeader);
+    method @Deprecated @SuppressCompatibility @androidx.webkit.Profile.ExperimentalUrlPrefetch public androidx.webkit.PrefetchParameters.Builder setExpectedNoVarySearchData(androidx.webkit.NoVarySearchHeader);
+    method @SuppressCompatibility @androidx.webkit.Profile.ExperimentalUrlPrefetch public androidx.webkit.PrefetchParameters.Builder setExpectedNoVarySearchHeader(androidx.webkit.NoVarySearchHeader);
     method @SuppressCompatibility @androidx.webkit.Profile.ExperimentalUrlPrefetch public androidx.webkit.PrefetchParameters.Builder setJavaScriptEnabled(boolean);
     method @SuppressCompatibility @androidx.webkit.Profile.ExperimentalUrlPrefetch public androidx.webkit.PrefetchParameters.Builder setVariationsId(Integer?);
+  }
+
+  @SuppressCompatibility @androidx.webkit.Profile.ExperimentalUrlPrefetch public final class PrefetchResult {
+    method public boolean wasDuplicate();
   }
 
   public class PrerenderException extends java.lang.Exception {
@@ -159,7 +165,8 @@ package androidx.webkit {
 
   @SuppressCompatibility @androidx.webkit.Profile.ExperimentalUrlPrefetch public final class PrerenderParameters {
     method public java.util.Map<java.lang.String!,java.lang.String!> getAdditionalHeaders();
-    method public androidx.webkit.NoVarySearchHeader? getExpectedNoVarySearchData();
+    method @Deprecated public androidx.webkit.NoVarySearchHeader? getExpectedNoVarySearchData();
+    method public androidx.webkit.NoVarySearchHeader? getExpectedNoVarySearchHeader();
     method public Integer? getVariationsId();
   }
 
@@ -168,18 +175,19 @@ package androidx.webkit {
     method @SuppressCompatibility @androidx.webkit.Profile.ExperimentalUrlPrefetch public androidx.webkit.PrerenderParameters.Builder addAdditionalHeader(String, String);
     method @SuppressCompatibility @androidx.webkit.Profile.ExperimentalUrlPrefetch public androidx.webkit.PrerenderParameters.Builder addAdditionalHeaders(java.util.Map<java.lang.String!,java.lang.String!>);
     method @SuppressCompatibility @androidx.webkit.Profile.ExperimentalUrlPrefetch public androidx.webkit.PrerenderParameters build();
-    method @SuppressCompatibility @androidx.webkit.Profile.ExperimentalUrlPrefetch public androidx.webkit.PrerenderParameters.Builder setExpectedNoVarySearchData(androidx.webkit.NoVarySearchHeader);
+    method @Deprecated @SuppressCompatibility @androidx.webkit.Profile.ExperimentalUrlPrefetch public androidx.webkit.PrerenderParameters.Builder setExpectedNoVarySearchData(androidx.webkit.NoVarySearchHeader);
+    method @SuppressCompatibility @androidx.webkit.Profile.ExperimentalUrlPrefetch public androidx.webkit.PrerenderParameters.Builder setExpectedNoVarySearchHeader(androidx.webkit.NoVarySearchHeader);
     method @SuppressCompatibility @androidx.webkit.Profile.ExperimentalUrlPrefetch public androidx.webkit.PrerenderParameters.Builder setVariationsId(Integer?);
   }
 
   public class ProcessGlobalConfig {
     ctor public ProcessGlobalConfig();
     method public static void apply(androidx.webkit.ProcessGlobalConfig);
-    method @RequiresFeature(name=androidx.webkit.WebViewFeature.STARTUP_FEATURE_SET_DATA_DIRECTORY_SUFFIX, enforcement="androidx.webkit.WebViewFeature#isConfigFeatureSupported(String, Context)") public androidx.webkit.ProcessGlobalConfig setDataDirectorySuffix(android.content.Context, String);
-    method @Deprecated @RequiresFeature(name=androidx.webkit.WebViewFeature.STARTUP_FEATURE_SET_DIRECTORY_BASE_PATHS, enforcement="androidx.webkit.WebViewFeature#isConfigFeatureSupported(String, Context)") public androidx.webkit.ProcessGlobalConfig setDirectoryBasePaths(android.content.Context, java.io.File, java.io.File);
-    method @RequiresFeature(name=androidx.webkit.WebViewFeature.STARTUP_FEATURE_CONFIGURE_PARTITIONED_COOKIES, enforcement="androidx.webkit.WebViewFeature#isConfigFeatureSupported(String, Context)") public androidx.webkit.ProcessGlobalConfig setPartitionedCookiesEnabled(android.content.Context, boolean);
-    method @Deprecated @SuppressCompatibility @RequiresFeature(name=androidx.webkit.WebViewFeature.STARTUP_FEATURE_SET_UI_THREAD_STARTUP_MODE, enforcement="androidx.webkit.WebViewFeature#isConfigFeatureSupported(String, Context)") @androidx.webkit.WebViewCompat.ExperimentalAsyncStartUp public androidx.webkit.ProcessGlobalConfig setUiThreadStartupMode(android.content.Context, int);
-    method @SuppressCompatibility @RequiresFeature(name=androidx.webkit.WebViewFeature.STARTUP_FEATURE_SET_UI_THREAD_STARTUP_MODE_V2, enforcement="androidx.webkit.WebViewFeature#isConfigFeatureSupported(String, Context)") @androidx.webkit.WebViewCompat.ExperimentalAsyncStartUp public androidx.webkit.ProcessGlobalConfig setUiThreadStartupModeV2(android.content.Context, int);
+    method @RequiresFeature(name=androidx.webkit.WebViewFeature.STARTUP_FEATURE_SET_DATA_DIRECTORY_SUFFIX, enforcement="androidx.webkit.WebViewFeature#isStartupFeatureSupported(String, Context)") public androidx.webkit.ProcessGlobalConfig setDataDirectorySuffix(android.content.Context, String);
+    method @Deprecated @RequiresFeature(name=androidx.webkit.WebViewFeature.STARTUP_FEATURE_SET_DIRECTORY_BASE_PATHS, enforcement="androidx.webkit.WebViewFeature#isStartupFeatureSupported(String, Context)") public androidx.webkit.ProcessGlobalConfig setDirectoryBasePaths(android.content.Context, java.io.File, java.io.File);
+    method @RequiresFeature(name=androidx.webkit.WebViewFeature.STARTUP_FEATURE_CONFIGURE_PARTITIONED_COOKIES, enforcement="androidx.webkit.WebViewFeature#isStartupFeatureSupported(String, Context)") public androidx.webkit.ProcessGlobalConfig setPartitionedCookiesEnabled(android.content.Context, boolean);
+    method @Deprecated @SuppressCompatibility @RequiresFeature(name=androidx.webkit.WebViewFeature.STARTUP_FEATURE_SET_UI_THREAD_STARTUP_MODE, enforcement="androidx.webkit.WebViewFeature#isStartupFeatureSupported(String, Context)") @androidx.webkit.WebViewCompat.ExperimentalAsyncStartUp public androidx.webkit.ProcessGlobalConfig setUiThreadStartupMode(android.content.Context, int);
+    method @SuppressCompatibility @RequiresFeature(name=androidx.webkit.WebViewFeature.STARTUP_FEATURE_SET_UI_THREAD_STARTUP_MODE_V2, enforcement="androidx.webkit.WebViewFeature#isStartupFeatureSupported(String, Context)") @androidx.webkit.WebViewCompat.ExperimentalAsyncStartUp public androidx.webkit.ProcessGlobalConfig setUiThreadStartupModeV2(android.content.Context, int);
     field @SuppressCompatibility @androidx.webkit.WebViewCompat.ExperimentalAsyncStartUp public static final int UI_THREAD_STARTUP_MODE_ASYNC = 3; // 0x3
     field @Deprecated @SuppressCompatibility @androidx.webkit.WebViewCompat.ExperimentalAsyncStartUp public static final int UI_THREAD_STARTUP_MODE_ASYNC_LONG_TASKS = 3; // 0x3
     field @Deprecated @SuppressCompatibility @androidx.webkit.WebViewCompat.ExperimentalAsyncStartUp public static final int UI_THREAD_STARTUP_MODE_ASYNC_SHORT_TASKS = 3; // 0x3

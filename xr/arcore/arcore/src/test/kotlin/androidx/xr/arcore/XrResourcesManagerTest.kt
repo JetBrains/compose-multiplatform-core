@@ -47,6 +47,7 @@ import com.google.common.truth.Truth.assertThat
 import java.nio.ByteBuffer
 import java.nio.FloatBuffer
 import java.util.UUID
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.TestScope
@@ -70,7 +71,7 @@ class XrResourcesManagerTest {
     private lateinit var session: Session
 
     @Before
-    fun setUp() {
+    fun setUp(): Unit = runBlocking {
         testDispatcher = StandardTestDispatcher()
         testScope = TestScope(testDispatcher)
         activityController = Robolectric.buildActivity(ComponentActivity::class.java)
@@ -416,6 +417,12 @@ class XrResourcesManagerTest {
         override var state = RuntimeGeospatial.State.NOT_RUNNING
 
         override val geospatialPose: GeospatialPose = GeospatialPose()
+
+        override val horizontalAccuracy: Double = 0.0
+
+        override val verticalAccuracy: Double = 0.0
+
+        override val orientationYawAccuracy: Double = 0.0
 
         override fun createPoseFromGeospatialPose(geospatialPose: GeospatialPose): Pose = Pose()
 

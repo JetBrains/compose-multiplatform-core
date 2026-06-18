@@ -291,10 +291,12 @@ public class BitmapData extends Operation
         if (width < 1
                 || height < 1
                 || height > Limits.MAX_IMAGE_DIMENSION
-                || width > Limits.MAX_IMAGE_DIMENSION) {
+                || width > Limits.MAX_IMAGE_DIMENSION
+                || width * height > Limits.MAX_BITMAP_MEMORY) {
             throw new RuntimeException("Dimension of image is invalid " + width + "x" + height);
         }
-        byte[] bitmap = buffer.readBuffer();
+        // This can be reading a JPEG, GIF, PNG or RAW image. Make sure the size is reasonable.
+        byte[] bitmap = buffer.readBuffer(width * height * 4 + Limits.MAX_IMAGE_HEADER_SIZE);
         BitmapData bitmapData = new BitmapData(imageId, width, height, bitmap);
         bitmapData.mType = (short) type;
         bitmapData.mEncoding = (short) encoding;

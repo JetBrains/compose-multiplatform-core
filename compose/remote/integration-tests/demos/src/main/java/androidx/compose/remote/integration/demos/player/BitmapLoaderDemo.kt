@@ -19,12 +19,13 @@ package androidx.compose.remote.integration.demos.player
 import android.graphics.Bitmap
 import android.graphics.Color
 import androidx.collection.intListOf
+import androidx.compose.remote.core.Limits
 import androidx.compose.remote.creation.compose.layout.RemoteColumn
 import androidx.compose.remote.creation.compose.layout.RemoteImage
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
 import androidx.compose.remote.creation.compose.modifier.size
 import androidx.compose.remote.creation.compose.state.rdp
-import androidx.compose.remote.creation.compose.state.rememberNamedRemoteBitmap
+import androidx.compose.remote.creation.compose.state.rememberNamedRemoteImageBitmap
 import androidx.compose.remote.creation.compose.state.rs
 import androidx.compose.remote.integration.demos.common.RemoteDemo
 import androidx.compose.remote.player.core.platform.BitmapLoader
@@ -65,13 +66,14 @@ class SolidColorBitmapLoader : BitmapLoader {
 @Suppress("RestrictedApiAndroidX")
 @Composable
 fun BitmapLoaderDemo() {
+    Limits.ENABLE_IMAGE_URLS = true
     val colors = intListOf(Color.RED, Color.GREEN, Color.BLUE, Color.YELLOW, Color.MAGENTA)
     RemoteDemo(bitmapLoader = SolidColorBitmapLoader()) {
         RemoteColumn {
             colors.forEach { color ->
                 val hex = String.format("%06X", 0xFFFFFF and color)
                 val bitmap =
-                    rememberNamedRemoteBitmap(
+                    rememberNamedRemoteImageBitmap(
                         name = "color_$hex",
                         url = "${SolidColorBitmapLoader.PREFIX}$hex",
                     )

@@ -16,11 +16,13 @@
 
 package androidx.core.locationbutton
 
+import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.permissionui.LocationButtonSession
 import android.content.Context
 import android.content.ContextWrapper
+import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.graphics.PixelFormat
 import android.hardware.display.DisplayManager
@@ -30,19 +32,26 @@ import android.util.Log
 import android.view.SurfaceView
 import android.view.View
 import android.view.ViewGroup
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.ActivityResultRegistryOwner
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.IntDef
 import androidx.annotation.RequiresApi
 import androidx.annotation.RestrictTo
 import androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX
+import androidx.core.content.ContextCompat
 import androidx.core.content.res.use
 
 /**
  * A widget that provides a session-based precise location permission button. It either draws the
- * button remotely rendered by System on supported platforms on and after
- * `Build.VERSION_CODES.CINNAMON_BUN`, or falls back to a locally rendered button on older
- * platforms. On older platforms, the button click delegates to
- * [LocationButtonListener.onRequestPermissions], allowing the app to handle the click (e.g., by
- * requesting permissions or performing actions).
+ * button remotely rendered by the system on [Build.VERSION_CODES.CINNAMON_BUN] and above platforms,
+ * or falls back to a locally rendered button on platforms before
+ * [Build.VERSION_CODES.CINNAMON_BUN].
+ *
+ * On platforms before [Build.VERSION_CODES.CINNAMON_BUN], the button click delegates to
+ * [OnRequestPermissionsListener] if provided, allowing the app to handle the click manually (e.g.,
+ * by requesting permissions or displaying rationale). If no custom listener is provided, the
+ * library automatically requests location permissions.
  */
 public class LocationButton
 @JvmOverloads
@@ -69,18 +78,64 @@ constructor(
 
     /**
      * Locally rendered location button, this button provides an alternate to remote location button
-     * on older platforms. Clicking on this button will trigger existing permission request dialog.
+     * on platforms before [Build.VERSION_CODES.CINNAMON_BUN]. Clicking on this button will trigger
+     * regular permission request flow.
      *
      * This button is also used in measuring the width for remote location button to help implement
      * wrap_content for SurfaceView.
      */
     internal val localButtonView: LocalLocationButton
 
-    /** Location button provider helper for API 37+ remote rendering */
+    /**
+     * Location button provider helper for remote rendering on [Build.VERSION_CODES.CINNAMON_BUN]
+     * and above
+     */
     internal var remoteDelegate: RemoteLocationButtonDelegate? = null
 
-    /** Client callback for location button events, provided by apps. */
-    internal var locationButtonListener: LocationButtonListener? = null
+    internal var onPermissionResultListener: OnPermissionResultListener? = null
+    internal var onRequestPermissionsListener: OnRequestPermissionsListener? = null
+    internal var onErrorListener: OnErrorListener? = null
+
+    internal var activityResultLauncher: ActivityResultLauncher<Array<String>>? = null
+
+    /**
+     * The [Activity] that hosts this button.
+     *
+     * This activity is used to host the location button. If not explicitly set, the library will
+     * attempt to resolve the hosting activity by traversing the [Context] wrapper chain of the
+     * context passed to the constructor.
+     */
+    public var parentActivity: Activity? = null
+        set(value) {
+            if (!isAttachedToWindow) {
+                field = value
+                return
+            }
+
+            val oldActivity = findActivityOrNull()
+            field = value
+            val newActivity = findActivityOrNull()
+
+            if (oldActivity == newActivity) {
+                return
+            }
+
+            if (isRemoteButtonSupported) {
+                if (isRemoteSessionActive) {
+                    closeSession()
+                }
+                if (newActivity != null) {
+                    openSession()
+                }
+            } else {
+                if (newActivity != null) {
+                    registerForPermissionResult()
+                } else {
+                    activityResultLauncher?.unregister()
+                    activityResultLauncher = null
+                }
+            }
+        }
 
     /** Once initialized, can't add more views. */
     private var initialized = false
@@ -112,7 +167,14 @@ constructor(
 
         localButtonView = LocalLocationButton(context)
         if (!isRemoteButtonSupported) {
-            localButtonView.setOnClickListener { locationButtonListener?.onRequestPermissions() }
+            localButtonView.setOnClickListener {
+                val requestListener = onRequestPermissionsListener
+                if (requestListener != null) {
+                    requestListener.onRequestPermissions()
+                } else {
+                    handleDefaultPermissionRequest()
+                }
+            }
         }
         addView(localButtonView)
 
@@ -124,13 +186,15 @@ constructor(
         val surfaceView = surfaceView ?: return@Runnable
         val delegate = remoteDelegate ?: return@Runnable
 
-        delegate.openSession(findActivity(), getDisplayId(), surfaceView)
+        delegate.openSession(requireActivity(), getDisplayId(), surfaceView)
     }
 
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
         if (isRemoteButtonSupported) {
             openSession()
+        } else {
+            registerForPermissionResult()
         }
     }
 
@@ -138,6 +202,8 @@ constructor(
         super.onDetachedFromWindow()
         removeCallbacks(openSessionRunnable)
         closeSession()
+        activityResultLauncher?.unregister()
+        activityResultLauncher = null
     }
 
     private fun openSession() {
@@ -146,6 +212,23 @@ constructor(
 
     private fun closeSession() {
         remoteDelegate?.closeSession(surfaceView)
+    }
+
+    private fun registerForPermissionResult() {
+        activityResultLauncher?.unregister()
+        activityResultLauncher = null
+        val activity = findActivityOrNull() ?: return
+
+        if (activity is ActivityResultRegistryOwner && id != View.NO_ID) {
+            activityResultLauncher =
+                activity.activityResultRegistry.register(
+                    "androidx.core.locationbutton.PERMISSION_REQUEST_KEY_$id",
+                    ActivityResultContracts.RequestMultiplePermissions(),
+                ) { results ->
+                    val granted = results[Manifest.permission.ACCESS_FINE_LOCATION] ?: false
+                    onPermissionResultListener?.onPermissionResult(granted)
+                }
+        }
     }
 
     override fun onLayout(changed: Boolean, left: Int, top: Int, right: Int, bottom: Int) {
@@ -221,13 +304,46 @@ constructor(
     }
 
     /**
-     * Sets the listener to receive permission results and session error events.
+     * Sets the listener to receive permission results.
      *
-     * @param client The [LocationButtonListener] that will handle callbacks, or null to clear a
+     * **Note:** On platforms before [Build.VERSION_CODES.CINNAMON_BUN], if you rely on the default
+     * permission request flow (i.e. you do not provide a custom [OnRequestPermissionsListener]),
+     * the hosting [Activity] must implement [androidx.activity.result.ActivityResultRegistryOwner]
+     * and the [LocationButton] must have an `android:id` to deliver the permission result to this
+     * listener.
+     *
+     * @param listener The [OnPermissionResultListener] that will handle callbacks, or null to clear
+     *   a previously set listener.
+     */
+    public fun setOnPermissionResultListener(listener: OnPermissionResultListener?) {
+        onPermissionResultListener = listener
+    }
+
+    /**
+     * Sets the listener to handle permission requests on platforms before
+     * [Build.VERSION_CODES.CINNAMON_BUN].
+     *
+     * Provide this listener if you want to customize the permission request flow (e.g. to show
+     * rationale) or if the hosting [Activity] does not implement
+     * [androidx.activity.result.ActivityResultRegistryOwner] on platforms before
+     * [Build.VERSION_CODES.CINNAMON_BUN].
+     *
+     * @param listener The [OnRequestPermissionsListener] that will handle callbacks, or null to
+     *   clear a previously set listener.
+     */
+    public fun setOnRequestPermissionsListener(listener: OnRequestPermissionsListener?) {
+        onRequestPermissionsListener = listener
+    }
+
+    /**
+     * Sets the listener to receive remote session errors on [Build.VERSION_CODES.CINNAMON_BUN] and
+     * above platforms.
+     *
+     * @param listener The [OnErrorListener] that will handle callbacks, or null to clear a
      *   previously set listener.
      */
-    public fun setLocationButtonListener(client: LocationButtonListener?) {
-        this.locationButtonListener = client
+    public fun setOnErrorListener(listener: OnErrorListener?) {
+        onErrorListener = listener
     }
 
     private fun applyStyleAttributes(attrs: AttributeSet?, defStyleAttr: Int, defStyleRes: Int) {
@@ -447,13 +563,44 @@ constructor(
             }
     }
 
-    private fun findActivity(): Activity {
+    private fun requireActivity(): Activity =
+        checkNotNull(findActivityOrNull()) {
+            "LocationButton must be hosted within an Activity context"
+        }
+
+    private fun findActivityOrNull(): Activity? {
+        parentActivity?.let {
+            return it
+        }
         var context = context
         while (context is ContextWrapper) {
             if (context is Activity) return context
             context = context.baseContext
         }
-        throw IllegalStateException("LocationButton must be hosted within an Activity context")
+        return null
+    }
+
+    private fun handleDefaultPermissionRequest() {
+        val launcher =
+            checkNotNull(activityResultLauncher) {
+                "Activity should support ActivityResultRegistry and LocationButton should have an `android:id`."
+            }
+
+        val hasFineLocation =
+            ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) ==
+                PackageManager.PERMISSION_GRANTED
+
+        if (hasFineLocation) {
+            onPermissionResultListener?.onPermissionResult(true)
+            return
+        }
+
+        val permissions =
+            arrayOf(
+                Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.ACCESS_COARSE_LOCATION,
+            )
+        launcher.launch(permissions)
     }
 
     // enforce restrictions on adding child views to this ViewGroup
@@ -527,8 +674,8 @@ constructor(
         get() = localButtonView.visibility == View.VISIBLE
 
     @RestrictTo(LIBRARY_GROUP_PREFIX)
-    public fun checkActivityContextForTesting() {
-        findActivity()
+    public fun resolveActivityForTesting(): Activity {
+        return requireActivity()
     }
 
     @RequiresApi(Build.VERSION_CODES.CINNAMON_BUN)
@@ -565,34 +712,34 @@ constructor(
     }
 }
 
-/** Callbacks for location button events triggered by user interaction. */
-public interface LocationButtonListener {
+/** Callback for location button permission result. */
+public fun interface OnPermissionResultListener {
     /**
-     * Triggered when the user interacts with the button and a permission decision is made. This
-     * callback is only invoked on platforms on and after `Build.VERSION_CODES.CINNAMON_BUN`
-     * supporting remote rendering, after the system-managed permission flow completes.
+     * Triggered after the user interacts with the system rendered location button and makes a
+     * decision.
      *
      * @param isGranted True if the precise location permission was granted, false otherwise.
      */
     public fun onPermissionResult(isGranted: Boolean)
+}
 
+/**
+ * Callback to handle permission requests on platforms before [Build.VERSION_CODES.CINNAMON_BUN].
+ */
+public fun interface OnRequestPermissionsListener {
+    /**
+     * Developers can override this to handle the location button click (e.g., by requesting
+     * permissions or showing UI to explain why the permission is needed).
+     */
+    public fun onRequestPermissions()
+}
+
+/** Callback for remote session errors on [Build.VERSION_CODES.CINNAMON_BUN] and above platforms. */
+public fun interface OnErrorListener {
     /**
      * Triggered when a critical error occurs while establishing or maintaining the remote session.
-     * This callback is only invoked on platforms on and after `Build.VERSION_CODES.CINNAMON_BUN`
-     * supporting remote rendering. Apps typically do not need to handle this, as the library
-     * automatically falls back to local rendering on failure.
      *
      * @param throwable The underlying exception that caused the session failure.
      */
-    public fun onSessionError(throwable: Throwable) {}
-
-    /**
-     * Triggered when the button is clicked on platforms before `Build.VERSION_CODES.CINNAMON_BUN`
-     * that do not support remote rendering.
-     *
-     * Developers should implement this to handle the button click. They should check if the
-     * required permissions are already granted; if so, they can proceed with the location-based
-     * action, otherwise they should request the permissions.
-     */
-    public fun onRequestPermissions()
+    public fun onError(throwable: Throwable)
 }

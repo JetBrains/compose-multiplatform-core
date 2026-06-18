@@ -26,7 +26,6 @@ import androidx.annotation.VisibleForTesting
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionContext
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LocalHostDefaultProvider
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.currentComposer
@@ -297,6 +296,18 @@ private constructor(
         }
     }
 
+    private var _soundEffect: SoundEffect? = null
+    @OptIn(ExperimentalComposeUiApi::class)
+    private val soundEffect: SoundEffect
+        get() =
+            _soundEffect
+                ?: if (AndroidComposeUiFlags.isInteractionSoundEffectsEnabled) {
+                        AndroidSoundEffect(view)
+                    } else {
+                        NoSoundEffect
+                    }
+                    .also { _soundEffect = it }
+
     /**
      * A single callback that handles observing configuration changes, memory calls, window focus
      * changes, and [view] attach state changes.
@@ -473,35 +484,21 @@ private constructor(
             inspectionTable.add(currentComposer.compositionData)
             currentComposer.collectParameterInformation()
         }
-        val saveableStateRegistry = remember {
-            DisposableSaveableStateRegistry(owner, savedStateRegistryOwner)
-        }
-        DisposableEffect(Unit) { onDispose { saveableStateRegistry.dispose() } }
 
         val scrollCaptureInProgress =
             LocalScrollCaptureInProgress.current or owner.scrollCaptureInProgress
         val hostDefaultProvider = remember(owner.view) { ViewTreeHostDefaultProvider(owner.view) }
-        val soundEffect =
-            remember(owner.view) {
-                if (AndroidComposeUiFlags.isInteractionSoundEffectsEnabled) {
-                    AndroidSoundEffect(owner.view)
-                } else {
-                    object : SoundEffect {
-                        override fun playClickSound() {}
-                    }
-                }
-            }
         @Suppress("UNCHECKED_CAST")
         CompositionLocalProvider(
             LocalLifecycleOwner provides lifecycleOwner,
             LocalSavedStateRegistryOwner provides savedStateRegistryOwner,
             LocalImageVectorCache provides imageVectorCache,
             LocalResourceIdCache provides resourceIdCache,
-            LocalSoundEffect provides soundEffect,
+            LocalSoundEffect providesComputed { soundEffect },
             LocalContext provides owner.context,
             LocalInspectionTables provides inspectionTable,
             LocalConfiguration provides owner.configuration,
-            LocalSaveableStateRegistry provides saveableStateRegistry,
+            LocalSaveableStateRegistry providesComputed { owner.savedStateRegistry },
             LocalView provides owner.view,
             LocalProvidableScrollCaptureInProgress provides scrollCaptureInProgress,
             LocalViewConfiguration provides owner.viewConfiguration,
@@ -551,3 +548,7 @@ private const val MaskForNonWindowMetricsChanges =
         ActivityInfo.CONFIG_GRAMMATICAL_GENDER or
         ActivityInfo.CONFIG_FONT_WEIGHT_ADJUSTMENT or
         ActivityInfo.CONFIG_ASSETS_PATHS
+
+private object NoSoundEffect : SoundEffect {
+    override fun playClickSound() {}
+}

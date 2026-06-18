@@ -28,6 +28,13 @@ import androidx.compose.remote.integration.demos.modifier.PaddingDemo
 import androidx.compose.remote.integration.demos.modifier.RotateDemo
 import androidx.compose.remote.integration.demos.modifier.ScaleDemo
 import androidx.compose.remote.integration.demos.modifier.TouchActionDemo
+import androidx.compose.remote.integration.demos.modifier.scroll.ControlledScrollableRowDemo
+import androidx.compose.remote.integration.demos.modifier.scroll.HorizontalScrollDemo
+import androidx.compose.remote.integration.demos.modifier.scroll.HorizontalScrollersInVerticalScrollerDemo
+import androidx.compose.remote.integration.demos.modifier.scroll.HorizontalSnapScrollDemo
+import androidx.compose.remote.integration.demos.modifier.scroll.NestedSnapScrollDemo
+import androidx.compose.remote.integration.demos.modifier.scroll.VerticalScrollDemo
+import androidx.compose.remote.integration.demos.modifier.scroll.VerticalSnapScrollDemo
 import androidx.compose.remote.integration.demos.player.BitmapLoaderDemo
 import androidx.compose.remote.integration.demos.settings.SettingsScreen
 import androidx.compose.runtime.Composable
@@ -42,6 +49,13 @@ private object ScreenKeys {
     const val ALPHA = "ALPHA"
     const val ROTATE = "ROTATE"
     const val SCALE = "SCALE"
+    const val VERTICAL_SCROLL = "VERTICAL_SCROLL"
+    const val HORIZONTAL_SCROLL = "HORIZONTAL_SCROLL"
+    const val NESTED_SCROLL = "NESTED_SCROLL"
+    const val VERTICAL_SNAP_SCROLL = "VERTICAL_SNAP_SCROLL"
+    const val HORIZONTAL_SNAP_SCROLL = "HORIZONTAL_SNAP_SCROLL"
+    const val CONTROLLED_SCROLL = "CONTROLLED_SCROLL"
+    const val NESTED_SNAP_SCROLL = "NESTED_SNAP_SCROLL"
     const val TOUCH_ACTION = "TOUCH_ACTION"
     const val BITMAP_LOADER = "BITMAP_LOADER"
     const val GESTURE_PROPAGATION = "GESTURE_PROPAGATION"
@@ -58,6 +72,13 @@ fun ComposableScreenNavigation(key: String, onNavigateUp: () -> Unit) {
         ScreenKeys.ALPHA -> AlphaDemo()
         ScreenKeys.ROTATE -> RotateDemo()
         ScreenKeys.SCALE -> ScaleDemo()
+        ScreenKeys.VERTICAL_SCROLL -> VerticalScrollDemo()
+        ScreenKeys.HORIZONTAL_SCROLL -> HorizontalScrollDemo()
+        ScreenKeys.NESTED_SCROLL -> HorizontalScrollersInVerticalScrollerDemo()
+        ScreenKeys.VERTICAL_SNAP_SCROLL -> VerticalSnapScrollDemo()
+        ScreenKeys.HORIZONTAL_SNAP_SCROLL -> HorizontalSnapScrollDemo()
+        ScreenKeys.NESTED_SNAP_SCROLL -> NestedSnapScrollDemo()
+        ScreenKeys.CONTROLLED_SCROLL -> ControlledScrollableRowDemo()
         ScreenKeys.CLICKABLE -> ClickableDemo()
         ScreenKeys.COMBINED_CLICKABLE -> CombinedClickableDemo()
         ScreenKeys.TOUCH_ACTION -> TouchActionDemo()
@@ -102,6 +123,34 @@ val Screens =
                             ComposableScreen(key = ScreenKeys.ALPHA, title = "Alpha"),
                             ComposableScreen(key = ScreenKeys.ROTATE, title = "Rotate"),
                             ComposableScreen(key = ScreenKeys.SCALE, title = "Scale"),
+                            ComposableScreen(
+                                key = ScreenKeys.VERTICAL_SCROLL,
+                                title = "VerticalScroll",
+                            ),
+                            ComposableScreen(
+                                key = ScreenKeys.HORIZONTAL_SCROLL,
+                                title = "HorizontalScroll",
+                            ),
+                            ComposableScreen(
+                                key = ScreenKeys.NESTED_SCROLL,
+                                title = "Nested scroll",
+                            ),
+                            ComposableScreen(
+                                key = ScreenKeys.VERTICAL_SNAP_SCROLL,
+                                title = "Vertical snap scroll",
+                            ),
+                            ComposableScreen(
+                                key = ScreenKeys.HORIZONTAL_SNAP_SCROLL,
+                                title = "Horizontal snap scroll",
+                            ),
+                            ComposableScreen(
+                                key = ScreenKeys.NESTED_SNAP_SCROLL,
+                                title = "Nested snap scroll",
+                            ),
+                            ComposableScreen(
+                                key = ScreenKeys.CONTROLLED_SCROLL,
+                                title = "Controlled scrollable row",
+                            ),
                             ComposableScreen(key = ScreenKeys.CLICKABLE, title = "Clickable"),
                             ComposableScreen(
                                 key = ScreenKeys.COMBINED_CLICKABLE,

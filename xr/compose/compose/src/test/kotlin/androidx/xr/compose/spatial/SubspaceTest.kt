@@ -57,6 +57,7 @@ import androidx.xr.arcore.testing.FakePerceptionRuntimeFactory
 import androidx.xr.arcore.testing.TestPlane
 import androidx.xr.compose.platform.LocalSession
 import androidx.xr.compose.platform.SceneManager
+import androidx.xr.compose.subspace.AnchorTarget
 import androidx.xr.compose.subspace.ArDeviceTarget
 import androidx.xr.compose.subspace.FollowBehavior
 import androidx.xr.compose.subspace.FollowTarget
@@ -126,6 +127,9 @@ import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
@@ -208,7 +212,7 @@ class SubspaceTest {
     private fun configureSessionWithDeviceTrackingMode(
         mode: DeviceTrackingMode = DeviceTrackingMode.SPATIAL
     ): Session {
-        val result = Session.create(composeTestRule.activity, testDispatcher)
+        val result = runBlocking { Session.create(composeTestRule.activity, testDispatcher) }
         val session = assertIs<SessionCreateSuccess>(result).session
         session.configure(Config.Builder(session.config).setDeviceTracking(mode).build())
 
@@ -224,6 +228,8 @@ class SubspaceTest {
     ) {
         val arDevice = fakeRuntime.perceptionManager.arDevice
         arDevice.devicePose = arDevice.devicePose.translate(translation = offset)
+        testDispatcher.scheduler.advanceUntilIdle()
+        fakeRuntime.allowOneMoreCallToUpdate()
         advanceTimeBy(fakeRuntime, durationMs)
     }
 
@@ -455,7 +461,14 @@ class SubspaceTest {
     @Test
     fun subspace_whenUnbounded_withFillMaxSize_doesNotRespectConstraints() {
         composeTestRule.setContent {
-            Subspace(allowUnboundedSubspace = true) {
+            Subspace(
+                modifier =
+                    SubspaceModifier.requiredSizeIn(
+                        maxWidth = Dp.Infinity,
+                        maxHeight = Dp.Infinity,
+                        maxDepth = Dp.Infinity,
+                    )
+            ) {
                 SpatialBox(
                     SubspaceModifier.fillMaxWidth(1.0f).fillMaxHeight(1.0f).testTag("box")
                 ) {}
@@ -516,7 +529,14 @@ class SubspaceTest {
                         .roundToPx(this)
                         .toDp()
                 }
-            Subspace(allowUnboundedSubspace = true) {
+            Subspace(
+                modifier =
+                    SubspaceModifier.requiredSizeIn(
+                        maxWidth = Dp.Infinity,
+                        maxHeight = Dp.Infinity,
+                        maxDepth = Dp.Infinity,
+                    )
+            ) {
                 SpatialPanel(
                     SubspaceModifier.width(widthLargerThanRecommendedBox)
                         .height(heightLargerThanRecommendedBox)
@@ -1655,8 +1675,8 @@ class SubspaceTest {
             composeTestRule.session = configureSessionWithDeviceTrackingMode()
             val session = assertNotNull(composeTestRule.session)
             val fakeRuntime = session.runtimes.filterIsInstance<FakePerceptionRuntime>().first()
-            val animationTime = 2200
-            val subAnimationTime = 1500L
+            val animationTime = 2000
+            val subAnimationTime = 500L
 
             composeTestRule.setContent {
                 FollowingSubspace(
@@ -1667,12 +1687,11 @@ class SubspaceTest {
             }
 
             val unitVector = Vector3(x = 1F, y = 1F, z = 1F)
-            val arDevice = fakeRuntime.perceptionManager.arDevice
-            arDevice.devicePose = arDevice.devicePose.translate(translation = unitVector)
-
-            // TODO(b/491579552): Update unit test to use runCurrent instead of advanceTimeBy
-            testDispatcher.scheduler.advanceTimeBy(subAnimationTime)
-            fakeRuntime.allowOneMoreCallToUpdate()
+            translateDevice(
+                fakeRuntime = fakeRuntime,
+                offset = unitVector,
+                durationMs = subAnimationTime,
+            )
 
             // The first device pose should cause the subspace to instantly spawn at that location.
             // The animation durationMs parameter only affects subsequent movements.
@@ -1682,8 +1701,11 @@ class SubspaceTest {
 
             // Demonstrate how the next pose movement is not completed if adequate time is not
             // given.
-            arDevice.devicePose = arDevice.devicePose.translate(translation = unitVector)
-            advanceTimeBy(fakeRuntime, subAnimationTime)
+            translateDevice(
+                fakeRuntime = fakeRuntime,
+                offset = unitVector,
+                durationMs = subAnimationTime,
+            )
 
             subspaceTranslation =
                 assertExistenceAndGetNodeWorldPose("FollowingSubspace").translation
@@ -2175,7 +2197,12 @@ class SubspaceTest {
             FollowingSubspace(
                 target = FollowTarget.ArDevice(session),
                 behavior = FollowBehavior.Soft(),
-                allowUnboundedSubspace = true,
+                modifier =
+                    SubspaceModifier.requiredSizeIn(
+                        maxWidth = Dp.Infinity,
+                        maxHeight = Dp.Infinity,
+                        maxDepth = Dp.Infinity,
+                    ),
             ) {
                 SpatialBox(
                     SubspaceModifier.fillMaxWidth(1.0f).fillMaxHeight(1.0f).testTag("box")
@@ -2543,6 +2570,33 @@ class SubspaceTest {
 
         assertThat(session.scene.activitySpace.isDisposed).isTrue()
     }
+
+    @Test
+    @OptIn(ExperimentalFollowingSubspaceApi::class)
+    fun followingSubspace_whenAnchorSpaceDisposed_doesNotCrash() =
+        runTest(testDispatcher) {
+            composeTestRule.session = composeTestRule.configureFakeSession()
+            val session = assertNotNull(composeTestRule.session)
+            session.configure(Config.Builder().build())
+
+            val anchorResult = Anchor.create(session, Pose.Identity)
+            val success = assertIs<AnchorCreateSuccess>(anchorResult)
+            val anchorSpace = AnchorSpace.create(session, anchor = success.anchor)
+            val anchorTarget = AnchorTarget(anchorSpace)
+
+            val job = launch { anchorTarget.poseUpdates.collect {} }
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            // Close the session/scene, which disposes of all entities including anchorSpace
+            session.scene.close()
+
+            assertThat(anchorSpace.isDisposed).isTrue()
+
+            // Canceling the collection coroutine triggers the awaitClose block in poseUpdates.
+            // This verifies that unregistering the listener on a disposed AnchorSpace does not
+            // crash.
+            job.cancelAndJoin()
+        }
 }
 
 @RunWith(AndroidJUnit4::class)

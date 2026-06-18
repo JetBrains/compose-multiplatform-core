@@ -20,6 +20,7 @@ import android.annotation.SuppressLint
 import android.content.ComponentName
 import android.content.Intent
 import android.os.IBinder
+import androidx.annotation.CallSuper
 import androidx.compose.remote.creation.compose.RemoteComposeCreationComposeFlags
 import androidx.glance.wear.core.RendererVersion
 import androidx.glance.wear.core.WearWidgetProviderInfo
@@ -44,12 +45,12 @@ import kotlinx.coroutines.launch
  */
 public abstract class GlanceWearWidgetService : LifecycleService() {
 
-    // Restrict lifecycle methods from being overridden since clients shouldn't rely on the
-    // lifecycle of the service. If this is changed in the future, the lifecycle methods should be
-    // annotated with @CallSuper.
+    // Ensure super is called for lifecycle methods. Clients should not rely on the lifecycle of
+    // the service.
+    @CallSuper
     @SuppressLint("RestrictedApiAndroidX")
     @OptIn(androidx.compose.remote.creation.compose.ExperimentalRemoteCreationComposeApi::class)
-    final override fun onCreate() {
+    override fun onCreate() {
         super.onCreate()
         // We need this flag to be false (meaning empty axis won't be send and default normal weight
         // would be used, for the 1.6 renderer and the player that has a bug in it.
@@ -95,16 +96,16 @@ public abstract class GlanceWearWidgetService : LifecycleService() {
         }
     }
 
-    // Restrict lifecycle methods from being overridden since clients shouldn't rely on the
-    // lifecycle of the service. If this is changed in the future, the lifecycle methods should be
-    // annotated with @CallSuper.
-    final override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int =
+    // Ensure super is called for lifecycle methods. Clients should not rely on the lifecycle of
+    // the service.
+    @CallSuper
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int =
         super.onStartCommand(intent, flags, startId)
 
-    // Restrict lifecycle methods from being overridden since clients shouldn't rely on the
-    // lifecycle of the service. If this is changed in the future, the lifecycle methods should be
-    // annotated with @CallSuper.
-    final override fun onDestroy() {
+    // Ensure super is called for lifecycle methods. Clients should not rely on the lifecycle of
+    // the service.
+    @CallSuper
+    override fun onDestroy() {
         super.onDestroy()
     }
 

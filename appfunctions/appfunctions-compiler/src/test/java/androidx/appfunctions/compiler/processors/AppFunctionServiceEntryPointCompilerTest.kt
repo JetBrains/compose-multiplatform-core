@@ -18,6 +18,7 @@ package androidx.appfunctions.compiler.processors
 
 import androidx.appfunctions.compiler.AppFunctionCompiler
 import androidx.appfunctions.compiler.testings.CompilationTestHelper
+import com.google.common.truth.Truth.assertThat
 import java.io.File
 import org.junit.Before
 import org.junit.Test
@@ -59,6 +60,26 @@ class AppFunctionServiceEntryPointCompilerTest {
             expectGeneratedResourceFileName = "my_simple_service.xml",
             goldenFileName = "entrypoints/my_simple_service.xml",
         )
+        val legacySchemaXmlFile =
+            report.generatedResourceFiles.singleOrNull { resourceFile ->
+                resourceFile.resource.relativePath.contains("my_simple_service-v1.xml")
+            }
+        assertThat(legacySchemaXmlFile).isNull()
+    }
+
+    @Test
+    fun testAppFunctionEntryPoint_generatesV1Xml() {
+        val report =
+            compilationTestHelper.compileAll(
+                sourceFileNames = listOf("entrypoints/valid/SimpleEntryPoint.KT"),
+                processorOptions = mapOf("appfunctions:generateV1Xml" to "true"),
+            )
+
+        compilationTestHelper.assertSuccessWithResourceContent(
+            report = report,
+            expectGeneratedResourceFileName = "my_simple_service-v1.xml",
+            goldenFileName = "entrypoints/my_simple_service-v1.xml",
+        )
     }
 
     @Test
@@ -84,6 +105,26 @@ class AppFunctionServiceEntryPointCompilerTest {
             expectGeneratedResourceFileName = "my_extension_service.xml",
             goldenFileName = "entrypoints/my_extension_service.xml",
         )
+        val legacySchemaXmlFile =
+            report.generatedResourceFiles.singleOrNull { resourceFile ->
+                resourceFile.resource.relativePath.contains("my_extension_service-v1.xml")
+            }
+        assertThat(legacySchemaXmlFile).isNull()
+    }
+
+    @Test
+    fun testAppFunctionEntryPoint_withRequiresApi_generatesServiceClassWithRequiresApi() {
+        val report =
+            compilationTestHelper.compileAll(
+                sourceFileNames = listOf("entrypoints/valid/RequiresApiEntryPoint.KT"),
+                processorOptions = emptyMap(),
+            )
+
+        compilationTestHelper.assertSuccessWithSourceContent(
+            report = report,
+            expectGeneratedSourceFileName = "MyRequiresApiService.kt",
+            goldenFileName = "entrypoints/MyRequiresApiService.KT",
+        )
     }
 
     @Test
@@ -96,7 +137,27 @@ class AppFunctionServiceEntryPointCompilerTest {
 
         compilationTestHelper.assertErrorWithMessage(
             report,
-            "lass must extend either " +
+            "Class must extend either " +
+                "androidx.appfunctions.AppFunctionService or " +
+                "androidx.appfunctions.ExtensionsAppFunctionService",
+        )
+    }
+
+    @Test
+    fun testHiltIncorrectSuperClass_hasCompileError() {
+        val report =
+            compilationTestHelper.compileAll(
+                sourceFileNames =
+                    listOf(
+                        "entrypoints/invalid/HiltNonAppFunctionServiceEntryPoint.KT",
+                        "dagger/hilt/android/AndroidEntryPoint.JAVA",
+                    ),
+                processorOptions = emptyMap(),
+            )
+
+        compilationTestHelper.assertErrorWithMessage(
+            report,
+            "Class must extend either " +
                 "androidx.appfunctions.AppFunctionService or " +
                 "androidx.appfunctions.ExtensionsAppFunctionService",
         )
@@ -142,6 +203,24 @@ class AppFunctionServiceEntryPointCompilerTest {
         compilationTestHelper.assertErrorWithMessage(
             report,
             "Class must have at least one AppFunction",
+        )
+    }
+
+    @Test
+    fun testHiltAppFunctionServiceEntryPoint_success() {
+        val report =
+            compilationTestHelper.compileAll(
+                sourceFileNames =
+                    listOf(
+                        "entrypoints/valid/HiltAppFunctionServiceEntryPoint.KT",
+                        "dagger/hilt/android/AndroidEntryPoint.JAVA",
+                    )
+            )
+
+        compilationTestHelper.assertSuccessWithSourceContent(
+            report = report,
+            expectGeneratedSourceFileName = "MyHiltAppFunctionServiceEntryPoint.kt",
+            goldenFileName = "entrypoints/MyHiltAppFunctionServiceEntryPoint.KT",
         )
     }
 }

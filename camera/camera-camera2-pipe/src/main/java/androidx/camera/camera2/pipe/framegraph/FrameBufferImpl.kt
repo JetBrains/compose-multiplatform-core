@@ -143,69 +143,6 @@ internal class FrameBufferImpl(
         frameToClose?.close()
     }
 
-    @Deprecated("Use removeFirst instead.")
-    override fun removeFirstReference(): FrameReference? =
-        synchronized(lock) {
-            if (closed) return null
-            frameQueue.removeFirstOrNull()?.let { entry ->
-                _size.value = frameQueue.size
-                entry.frameReference
-            }
-        }
-
-    @Deprecated("Use removeLast instead.")
-    override fun removeLastReference(): FrameReference? =
-        synchronized(lock) {
-            if (closed) return null
-            frameQueue.removeLastOrNull()?.let { entry ->
-                _size.value = frameQueue.size
-                entry.frameReference
-            }
-        }
-
-    @Deprecated("Use removeAll instead")
-    override fun removeAllReferences(): List<FrameReference> =
-        synchronized(lock) {
-            if (closed) return emptyList()
-            val references = frameQueue.map { it.frameReference }
-            frameQueue.clear()
-            _size.value = 0
-            references
-        }
-
-    @Deprecated("Use removeFirst instead")
-    override fun removeFirstFrameReferenceAndAcquire(
-        predicate: (FrameReference) -> Boolean
-    ): Frame? = removeAndAcquire(predicate, reversed = false)
-
-    @Deprecated("Use removeLast instead")
-    override fun removeLastFrameReferenceAndAcquire(
-        predicate: (FrameReference) -> Boolean
-    ): Frame? = removeAndAcquire(predicate, reversed = true)
-
-    @Deprecated("Use removeAll instead")
-    override fun removeAllFrameReferencesAndAcquire(
-        predicate: (FrameReference) -> Boolean
-    ): List<Frame> =
-        synchronized(lock) {
-            if (closed) return emptyList()
-
-            val iterator = frameQueue.iterator()
-
-            val removedFrames = mutableListOf<Frame>()
-            while (iterator.hasNext()) {
-                val bufferEntry = iterator.next()
-                if (predicate(bufferEntry.frameReference)) {
-                    iterator.remove()
-                    bufferEntry.tryAcquireFrameForExternalUse()?.let { frame ->
-                        removedFrames.add(frame)
-                    }
-                }
-            }
-            _size.value = frameQueue.size
-            return removedFrames
-        }
-
     override fun removeFirst(predicate: ((FrameReference) -> Boolean)?): Frame? =
         removeAndAcquire(predicate ?: { true }, reversed = false)
 
@@ -236,22 +173,75 @@ internal class FrameBufferImpl(
             return removedFrames
         }
 
-    override fun peekFirstReference(): FrameReference? =
+    override fun releaseFirst(predicate: ((FrameReference) -> Boolean)?): Boolean =
+        release(predicate ?: { true }, reversed = false)
+
+    override fun releaseLast(predicate: ((FrameReference) -> Boolean)?): Boolean =
+        release(predicate ?: { true }, reversed = true)
+
+    override fun releaseAll(predicate: ((FrameReference) -> Boolean)?): Boolean {
+        val removedFrames = mutableListOf<BufferEntry>()
         synchronized(lock) {
-            if (closed) return null
-            frameQueue.firstOrNull()?.frameReference
+            if (closed || frameQueue.isEmpty()) return false
+
+            val iterator = frameQueue.iterator()
+            while (iterator.hasNext()) {
+                val entry = iterator.next()
+                if (predicate == null || predicate(entry.frameReference)) {
+                    iterator.remove()
+                    removedFrames.add(entry)
+                }
+            }
+            _size.value = frameQueue.size
         }
 
-    override fun peekLastReference(): FrameReference? =
-        synchronized(lock) {
-            if (closed) return null
-            frameQueue.lastOrNull()?.frameReference
+        for (entry in removedFrames) {
+            if (entry is BufferEntry.WithFrame) {
+                entry.frame.close()
+            }
         }
 
-    override fun peekAllReferences(): List<FrameReference> =
+        return removedFrames.isNotEmpty()
+    }
+
+    override fun release(frameReference: FrameReference): Boolean = releaseFirst {
+        it === frameReference
+    }
+
+    override fun peekFirstReference(predicate: ((FrameReference) -> Boolean)?): FrameReference? =
+        synchronized(lock) {
+            if (closed) return null
+            val entry =
+                if (predicate == null) {
+                    frameQueue.firstOrNull()
+                } else {
+                    frameQueue.firstOrNull { predicate(it.frameReference) }
+                }
+            entry?.frameReference
+        }
+
+    override fun peekLastReference(predicate: ((FrameReference) -> Boolean)?): FrameReference? =
+        synchronized(lock) {
+            if (closed) return null
+            val entry =
+                if (predicate == null) {
+                    frameQueue.lastOrNull()
+                } else {
+                    frameQueue.lastOrNull { predicate(it.frameReference) }
+                }
+            entry?.frameReference
+        }
+
+    override fun peekAllReferences(
+        predicate: ((FrameReference) -> Boolean)?
+    ): List<FrameReference> =
         synchronized(lock) {
             if (closed) return emptyList()
-            frameQueue.map { it.frameReference }
+            if (predicate == null) {
+                frameQueue.map { it.frameReference }
+            } else {
+                frameQueue.mapNotNull { it.frameReference.takeIf(predicate) }
+            }
         }
 
     fun trimAll() {
@@ -307,6 +297,34 @@ internal class FrameBufferImpl(
             }
         }
         return null
+    }
+
+    private fun release(
+        predicate: (FrameReference) -> Boolean,
+        reversed: Boolean = false,
+    ): Boolean {
+        var entryToClose: BufferEntry? = null
+        synchronized(lock) {
+            if (closed) return false
+
+            val indexToRemove =
+                if (reversed) {
+                    frameQueue.indexOfLast { predicate(it.frameReference) }
+                } else {
+                    frameQueue.indexOfFirst { predicate(it.frameReference) }
+                }
+
+            if (indexToRemove != -1) {
+                val bufferEntry = frameQueue.removeAt(indexToRemove)
+                _size.value = frameQueue.size
+                entryToClose = bufferEntry
+            }
+        }
+        // Close entry outside of synchronized block to avoid deadlocks
+        if (entryToClose is BufferEntry.WithFrame) {
+            entryToClose.frame.close()
+        }
+        return entryToClose != null
     }
 
     private fun FrameReference.tryAcquireForInternalUse(): Frame? =

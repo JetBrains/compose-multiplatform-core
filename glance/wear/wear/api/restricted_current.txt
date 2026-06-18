@@ -1,6 +1,12 @@
 // Signature format: 4.0
 package androidx.glance.wear {
 
+  @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.RUNTIME) @kotlin.annotation.Target(allowedTargets=kotlin.annotation.AnnotationTarget.CLASS) public @interface AssociateWithGlanceWearWidget {
+    ctor @KotlinOnly public AssociateWithGlanceWearWidget(kotlin.reflect.KClass<? extends androidx.glance.wear.GlanceWearWidget> value);
+    method @InaccessibleFromKotlin public abstract Class<? extends androidx.glance.wear.GlanceWearWidget> value();
+    property public abstract kotlin.reflect.KClass<? extends androidx.glance.wear.GlanceWearWidget> value;
+  }
+
   @SuppressCompatibility @kotlin.RequiresOptIn(message="This API is experimental and is likely to change in the future.") @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) public @interface ExperimentalGlanceWearApi {
   }
 
@@ -24,9 +30,6 @@ package androidx.glance.wear {
     ctor public GlanceWearWidgetService();
     method @InaccessibleFromKotlin public abstract androidx.glance.wear.GlanceWearWidget getWidget();
     method public final android.os.IBinder? onBind(android.content.Intent intent);
-    method public final void onCreate();
-    method public final void onDestroy();
-    method public final int onStartCommand(android.content.Intent? intent, int flags, int startId);
     property public abstract androidx.glance.wear.GlanceWearWidget widget;
     field public static final String ACTION_BIND_WIDGET_PROVIDER = "androidx.glance.wear.action.BIND_WIDGET_PROVIDER";
     field public static final androidx.glance.wear.GlanceWearWidgetService.Companion Companion;
@@ -46,6 +49,8 @@ package androidx.glance.wear {
   public final class WearWidgetBrushKt {
     method public static androidx.glance.wear.WearWidgetBrush color(androidx.glance.wear.WearWidgetBrush, androidx.compose.remote.creation.compose.state.RemoteColor color);
     method public static androidx.glance.wear.WearWidgetBrush horizontalGradient(androidx.glance.wear.WearWidgetBrush, java.util.List<? extends androidx.compose.remote.creation.compose.state.RemoteColor> colors);
+    method public static androidx.glance.wear.WearWidgetBrush image(androidx.glance.wear.WearWidgetBrush, androidx.compose.remote.creation.compose.state.RemoteImageBitmap bitmap, optional androidx.compose.ui.layout.ContentScale contentScale);
+    method @BytecodeOnly public static androidx.glance.wear.WearWidgetBrush! image$default(androidx.glance.wear.WearWidgetBrush!, androidx.compose.remote.creation.compose.state.RemoteImageBitmap!, androidx.compose.ui.layout.ContentScale!, int, Object!);
     method public static androidx.glance.wear.WearWidgetBrush verticalGradient(androidx.glance.wear.WearWidgetBrush, java.util.List<? extends androidx.compose.remote.creation.compose.state.RemoteColor> colors);
   }
 
@@ -61,7 +66,7 @@ package androidx.glance.wear {
 
 package @SuppressCompatibility androidx.glance.wear.health {
 
-  @SuppressCompatibility @androidx.glance.wear.ExperimentalGlanceWearApi public final class DataTypes {
+  @SuppressCompatibility @androidx.glance.wear.ExperimentalGlanceWearApi public final class HealthData {
     method @InaccessibleFromKotlin @RequiresPermission(android.Manifest.permission.ACTIVITY_RECOGNITION) public androidx.compose.remote.creation.compose.state.RemoteFloat getDailyCalories();
     method @InaccessibleFromKotlin @RequiresPermission(android.Manifest.permission.ACTIVITY_RECOGNITION) public androidx.compose.remote.creation.compose.state.RemoteFloat getDailyDistanceMeters();
     method @InaccessibleFromKotlin @RequiresPermission(android.Manifest.permission.ACTIVITY_RECOGNITION) public androidx.compose.remote.creation.compose.state.RemoteFloat getDailyFloors();
@@ -96,7 +101,7 @@ package @SuppressCompatibility androidx.glance.wear.health {
     field public static final androidx.compose.remote.creation.compose.state.RemoteInt HEART_RATE_ACCURACY_NO_CONTACT;
     field public static final androidx.compose.remote.creation.compose.state.RemoteInt HEART_RATE_ACCURACY_UNKNOWN;
     field public static final androidx.compose.remote.creation.compose.state.RemoteInt HEART_RATE_ACCURACY_UNRELIABLE;
-    field public static final androidx.glance.wear.health.DataTypes INSTANCE;
+    field public static final androidx.glance.wear.health.HealthData INSTANCE;
   }
 
 }

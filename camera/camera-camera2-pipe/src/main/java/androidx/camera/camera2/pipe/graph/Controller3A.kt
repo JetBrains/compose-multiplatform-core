@@ -104,18 +104,18 @@ constructor(
             )
 
         val parameterForAfTriggerStart =
-            mapOf<CaptureRequest.Key<*>, Any>(CONTROL_AF_TRIGGER to CONTROL_AF_TRIGGER_START)
+            mapOf<CaptureRequest.Key<*>, Any?>(CONTROL_AF_TRIGGER to CONTROL_AF_TRIGGER_START)
 
         val parameterForAfTriggerCancel =
-            mapOf<CaptureRequest.Key<*>, Any>(CONTROL_AF_TRIGGER to CONTROL_AF_TRIGGER_CANCEL)
+            mapOf<CaptureRequest.Key<*>, Any?>(CONTROL_AF_TRIGGER to CONTROL_AF_TRIGGER_CANCEL)
 
         private val parametersForAePrecapture =
-            mapOf<CaptureRequest.Key<*>, Any>(
+            mapOf<CaptureRequest.Key<*>, Any?>(
                 CONTROL_AE_PRECAPTURE_TRIGGER to CONTROL_AE_PRECAPTURE_TRIGGER_START
             )
 
         private val parametersForAePrecaptureAndAfTrigger =
-            mapOf<CaptureRequest.Key<*>, Any>(
+            mapOf<CaptureRequest.Key<*>, Any?>(
                 CONTROL_AF_TRIGGER to CONTROL_AF_TRIGGER_START,
                 CONTROL_AE_PRECAPTURE_TRIGGER to CONTROL_AE_PRECAPTURE_TRIGGER_START,
             )
@@ -153,15 +153,15 @@ constructor(
             mapOf(CONTROL_AF_TRIGGER to CONTROL_AF_TRIGGER_CANCEL, CONTROL_AE_LOCK to true)
 
         private val unlock3APostCaptureUnlockAeParams =
-            mapOf<CaptureRequest.Key<*>, Any>(CONTROL_AE_LOCK to false)
+            mapOf<CaptureRequest.Key<*>, Any?>(CONTROL_AE_LOCK to false)
 
         private val aePrecaptureCancelParams =
-            mapOf<CaptureRequest.Key<*>, Any>(
+            mapOf<CaptureRequest.Key<*>, Any?>(
                 CONTROL_AE_PRECAPTURE_TRIGGER to CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER_CANCEL
             )
 
         private val aePrecaptureAndAfCancelParams =
-            mapOf<CaptureRequest.Key<*>, Any>(
+            mapOf<CaptureRequest.Key<*>, Any?>(
                 CONTROL_AF_TRIGGER to CONTROL_AF_TRIGGER_CANCEL,
                 CONTROL_AE_PRECAPTURE_TRIGGER to CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER_CANCEL,
             )
@@ -197,9 +197,6 @@ constructor(
         awbRegions: List<MeteringRectangle>? = null,
         retainLocks: Boolean = false,
     ): Deferred<Result3A> {
-        // TODO(b/496247476): Handle cases when retainLocks is true but the lock will not be
-        // retained.
-
         // If the GraphProcessor does not have a repeating request we should update the current
         // parameters, but should not invalidate or trigger set a new listener.
         if (graphProcessor.repeatingRequest == null) {
@@ -251,10 +248,28 @@ constructor(
         // Locks for AF will only be retained if AF is previously locked and AfMode is continuous
         // and the new AfMode is different from the previous
         // To retain the locks, we will send af trigger
-        val needAfTrigger =
-            retainLocks && currentState3A.afLock == true && isAfContinuousAndDifferent
+        val afLockedAndContinuous = currentState3A.afLock == true && isAfContinuousAndDifferent
+        val needAfTrigger = retainLocks && afLockedAndContinuous
         if (needAfTrigger) {
             parameters = parameters + parameterForAfTriggerStart
+        }
+
+        if (retainLocks) {
+            if (aeLock != true) {
+                debug {
+                    "Controller3A#update3A: AE lock will not be retained because previous AE is not locked"
+                }
+            }
+            if (awbLock != true) {
+                debug {
+                    "Controller3A#update3A: AWB lock will not be retained because previous AWB is not locked"
+                }
+            }
+            if (!afLockedAndContinuous) {
+                debug {
+                    "Controller3A#update3A: AF lock will not be retained because previous AF is not locked or AfMode is not continuous and different"
+                }
+            }
         }
 
         // Try submitting a new repeating request with the 3A parameters corresponding to the new
@@ -660,7 +675,7 @@ constructor(
      *   either frame limit or time limit was reached.
      */
     private fun lock3AForCapture(
-        triggerCondition: Map<CaptureRequest.Key<*>, Any>? = null,
+        triggerCondition: Map<CaptureRequest.Key<*>, Any?>? = null,
         lockedCondition: ((FrameMetadata) -> Boolean)? = null,
         frameLimit: Int = DEFAULT_FRAME_LIMIT,
         timeLimitNs: Long = DEFAULT_TIME_LIMIT_NS,

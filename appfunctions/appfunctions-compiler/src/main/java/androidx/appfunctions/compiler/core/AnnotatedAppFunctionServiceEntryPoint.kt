@@ -21,8 +21,10 @@ import androidx.appfunctions.compiler.core.IntrospectionHelper.AppFunctionServic
 import androidx.appfunctions.compiler.core.IntrospectionHelper.ExtensionsAppFunctionServiceClass
 import com.google.devtools.ksp.getAllSuperTypes
 import com.google.devtools.ksp.symbol.KSClassDeclaration
+import com.google.devtools.ksp.symbol.KSDeclaration
 import com.google.devtools.ksp.symbol.KSFile
 import com.google.devtools.ksp.symbol.KSFunctionDeclaration
+import com.google.devtools.ksp.symbol.KSType
 import com.google.devtools.ksp.symbol.Modifier
 
 /** Represents a class annotated with @AppFunctionServiceEntryPoint. */
@@ -95,17 +97,12 @@ class AnnotatedAppFunctionServiceEntryPoint(
     }
 
     private fun validateSuperClass() {
-        val isAppFunctionService =
-            serviceDeclaration.getAllSuperTypes().any {
-                it.declaration.qualifiedName?.asString() ==
-                    AppFunctionServiceClass.CLASS_NAME.canonicalName
-            }
-        val isExtensionAppFunctionService =
-            serviceDeclaration.getAllSuperTypes().any {
-                it.declaration.qualifiedName?.asString() ==
-                    ExtensionsAppFunctionServiceClass.CLASS_NAME.canonicalName
-            }
-        if (!isAppFunctionService && !isExtensionAppFunctionService) {
+        val isValid =
+            serviceDeclaration.isValidAppFunctionServiceEntryPointSuperClass() ||
+                serviceDeclaration.getAllSuperTypes().any {
+                    it.declaration.isValidAppFunctionServiceEntryPointSuperClass()
+                }
+        if (!isValid) {
             throw ProcessingException(
                 "Class must extend either " +
                     "${AppFunctionServiceClass.CLASS_NAME.canonicalName} or " +
@@ -113,6 +110,87 @@ class AnnotatedAppFunctionServiceEntryPoint(
                 serviceDeclaration,
             )
         }
+    }
+
+    private fun KSDeclaration.isValidAppFunctionServiceEntryPointSuperClass(): Boolean {
+        return isAppFunctionService() ||
+            isExtensionAppFunctionService() ||
+            isExtendingHiltGeneratedClass()
+    }
+
+    /**
+     * Check if the [serviceDeclaration] is overriding a Hilt generated class without bytecode
+     * transformation.
+     *
+     * For build system that doesn't use bytecode transformation, the Hilt usage looks like this
+     *
+     * ```
+     * @AndroidEntryPoint(AppFunctionService::class)
+     * @AppFunctionServiceEntryPoint(...)
+     * abstract class BaseAppFunctionService: Hilt_BaseAppFunctionService() { ... }
+     * ```
+     *
+     * If the Hilt class is not processed by KSP, the multi-round feature would not work. Therefore,
+     * the build would result in failure that AppFunction compiler is unable to resolve the
+     * generated Hilt class to check its super types.
+     *
+     * To avoid this issue, this method is to detect such scenario and fallback to check the class
+     * declared in AndroidEntryPoint.
+     */
+    private fun KSDeclaration.isExtendingHiltGeneratedClass(): Boolean {
+        if (this !is KSClassDeclaration) {
+            return false
+        }
+        val androidEntryPointAnnotation =
+            annotations.findAnnotation(IntrospectionHelper.AndroidEntryPointAnnotation.CLASS_NAME)
+                ?: return false
+        var hasHiltGeneratedPrefix = false
+        for (superType in superTypes) {
+            val simpleName = superType.toString().substringAfterLast('.')
+            if (simpleName.startsWith(HILT_CLASS_PREFIX)) {
+                hasHiltGeneratedPrefix = true
+                break
+            }
+        }
+        if (!hasHiltGeneratedPrefix) {
+            return false
+        }
+        // Service annotated with AndroidEntryPoint and overrides a Hilt_ prefix class, it's
+        // safe to assume that this is running on Hilt setup. Check the target class to see
+        // if it is AppFunctionService or the subtype of AppFunctionService
+        val overrideService =
+            androidEntryPointAnnotation.requirePropertyValueOfType(
+                IntrospectionHelper.AndroidEntryPointAnnotation.PROPERTY_VALUE,
+                KSType::class,
+            )
+        val overrideServiceDeclaration = overrideService.declaration
+        if (overrideServiceDeclaration !is KSClassDeclaration) {
+            return false
+        }
+        if (
+            overrideServiceDeclaration.isAppFunctionService() ||
+                overrideServiceDeclaration.isExtensionAppFunctionService()
+        ) {
+            return true
+        }
+        for (superType in overrideServiceDeclaration.getAllSuperTypes()) {
+            if (
+                superType.declaration.isAppFunctionService() ||
+                    superType.declaration.isExtensionAppFunctionService()
+            ) {
+                return true
+            }
+        }
+        return false
+    }
+
+    private fun KSDeclaration.isAppFunctionService(): Boolean {
+        return qualifiedName?.asString() == AppFunctionServiceClass.CLASS_NAME.canonicalName
+    }
+
+    private fun KSDeclaration.isExtensionAppFunctionService(): Boolean {
+        return qualifiedName?.asString() ==
+            ExtensionsAppFunctionServiceClass.CLASS_NAME.canonicalName
     }
 
     private fun validateIsAbstract() {
@@ -148,5 +226,9 @@ class AnnotatedAppFunctionServiceEntryPoint(
         for (appFunction in appFunctions) {
             appFunction.validate(skipFirstParameterValidation = true)
         }
+    }
+
+    private companion object {
+        const val HILT_CLASS_PREFIX = "Hilt_"
     }
 }

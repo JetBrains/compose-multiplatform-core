@@ -28,19 +28,20 @@ import android.os.ParcelFileDescriptor
 import android.os.RemoteException
 import android.util.Size
 import androidx.annotation.RequiresExtension
-import androidx.pdf.annotation.models.ImagePdfObject
+import androidx.pdf.annotation.content.ImagePdfObject
 import androidx.pdf.annotation.processor.BatchPdfAnnotationsProcessor
 import androidx.pdf.annotation.processor.BatchPdfAnnotationsProcessor.Companion.parcelSizeInBytes
 import androidx.pdf.content.PdfPageTextContent
 import androidx.pdf.content.SelectionBoundary
 import androidx.pdf.models.FormEditInfo
 import androidx.pdf.models.FormWidgetInfo
+import androidx.pdf.models.PdfModelMapper.toParcelable
 import androidx.pdf.service.connect.FakePdfServiceConnection
 import androidx.pdf.service.connect.PdfServiceConnection
 import androidx.pdf.utils.TestUtils
 import androidx.pdf.utils.areCorePdfApisAvailableInSdk
-import androidx.pdf.utils.createStampAnnotationWithPath
-import androidx.pdf.utils.getSampleStampAnnotation
+import androidx.pdf.utils.createContentStampAnnotationWithPath
+import androidx.pdf.utils.getSampleContentStampAnnotation
 import androidx.pdf.utils.isAnnotationsFeatureAvailable
 import androidx.pdf.utils.isFormFillingAvailable
 import androidx.pdf.utils.isGetTopObjectAvailable
@@ -595,9 +596,9 @@ class SandboxedPdfDocumentTest {
             val numAnnots = 2
             val draft = MutableEditsDraft()
 
-            repeat(numAnnots) { draft.insert(getSampleStampAnnotation(pageNum)) }
+            repeat(numAnnots) { draft.insert(getSampleContentStampAnnotation(pageNum)) }
 
-            val totalPayloadSize = draft.operations.sumOf { it.parcelSizeInBytes() }
+            val totalPayloadSize = draft.operations.sumOf { it.toParcelable().parcelSizeInBytes() }
             val result = editablePdfDocument.applyEdits(draft.toEditsDraft())
 
             assertThat(totalPayloadSize < BatchPdfAnnotationsProcessor.MAX_BATCH_SIZE_IN_BYTES)
@@ -616,7 +617,7 @@ class SandboxedPdfDocumentTest {
             val numAnnots = 20
             val draft = createDraftWithLargeAnnotations(numAnnots)
 
-            val totalPayloadSize = draft.operations.sumOf { it.parcelSizeInBytes() }
+            val totalPayloadSize = draft.operations.sumOf { it.toParcelable().parcelSizeInBytes() }
 
             val result = editablePdfDocument.applyEdits(draft.toEditsDraft())
 
@@ -634,11 +635,11 @@ class SandboxedPdfDocumentTest {
             val pageNum = 1
             val draft = MutableEditsDraft()
 
-            draft.insert(getSampleStampAnnotation(pageNum))
+            draft.insert(getSampleContentStampAnnotation(pageNum))
             // Insert invalid annotation
-            draft.insert(getSampleStampAnnotation(pageNum = -1))
+            draft.insert(getSampleContentStampAnnotation(pageNum = -1))
 
-            val totalPayloadSize = draft.operations.sumOf { it.parcelSizeInBytes() }
+            val totalPayloadSize = draft.operations.sumOf { it.toParcelable().parcelSizeInBytes() }
             assertThat(totalPayloadSize < BatchPdfAnnotationsProcessor.MAX_BATCH_SIZE_IN_BYTES)
                 .isTrue()
 
@@ -649,7 +650,7 @@ class SandboxedPdfDocumentTest {
 
             assertThat(thrownException.failureIndex).isEqualTo(0)
             assertThat(thrownException.appliedEditIds.size).isEqualTo(0)
-            assertThat(thrownException.error.message).isEqualTo("Invalid page index")
+            assertThat(thrownException.cause?.message).isEqualTo("Invalid page index")
         }
     }
 
@@ -664,9 +665,10 @@ class SandboxedPdfDocumentTest {
                 val numAnnots = 19
                 val draft = createDraftWithLargeAnnotations(numAnnots)
                 // Insert invalid annotation
-                draft.insert(getSampleStampAnnotation(pageNum = -1))
+                draft.insert(getSampleContentStampAnnotation(pageNum = -1))
 
-                val totalPayloadSize = draft.operations.sumOf { it.parcelSizeInBytes() }
+                val totalPayloadSize =
+                    draft.operations.sumOf { it.toParcelable().parcelSizeInBytes() }
                 assertThat(totalPayloadSize > BatchPdfAnnotationsProcessor.MAX_BATCH_SIZE_IN_BYTES)
                     .isTrue()
 
@@ -677,17 +679,17 @@ class SandboxedPdfDocumentTest {
 
                 assertThat(thrownException.failureIndex).isEqualTo(0)
                 assertThat(thrownException.appliedEditIds.size).isEqualTo(0)
-                assertThat(thrownException.error.message).isEqualTo("Invalid page index")
+                assertThat(thrownException.cause?.message).isEqualTo("Invalid page index")
             }
         }
 
     @Test
-    fun addOnEditsAppliedListener_singleListener_isNotified() = runTest {
+    fun addOnEditAppliedListener_singleListener_isNotified() = runTest {
         if (!isAnnotationsFeatureAvailable()) return@runTest
 
         val appliedEdits = mutableListOf<BatchPdfAnnotationsProcessor.AppliedEdit>()
         val listener =
-            object : PdfDocument.OnEditsAppliedListener {
+            object : PdfDocument.OnEditAppliedListener {
                 override fun onEditApplied(pageNum: Int, editId: String) {
                     appliedEdits.add(BatchPdfAnnotationsProcessor.AppliedEdit(pageNum, editId))
                 }
@@ -698,9 +700,9 @@ class SandboxedPdfDocumentTest {
             val numAnnots = 2
             val draft = MutableEditsDraft()
 
-            repeat(numAnnots) { draft.insert(getSampleStampAnnotation(pageNum++)) }
+            repeat(numAnnots) { draft.insert(getSampleContentStampAnnotation(pageNum++)) }
 
-            editablePdfDocument.addOnEditsAppliedListener(executor = Runnable::run, listener)
+            editablePdfDocument.addOnEditAppliedListener(executor = Runnable::run, listener)
             editablePdfDocument.applyEdits(draft.toEditsDraft())
 
             assertThat(appliedEdits.size).isEqualTo(numAnnots)
@@ -708,25 +710,25 @@ class SandboxedPdfDocumentTest {
             assertThat(appliedEdits[1].pageNum).isEqualTo(1)
 
             // Clean up
-            editablePdfDocument.removeOnEditsAppliedListener(listener)
+            editablePdfDocument.removeOnEditAppliedListener(listener)
         }
     }
 
     @Test
-    fun addOnEditsAppliedListener_multipleListeners_sameNotification() = runTest {
+    fun addOnEditAppliedListener_multipleListeners_sameNotification() = runTest {
         if (!isAnnotationsFeatureAvailable()) return@runTest
 
         val appliedEdits1 = mutableListOf<BatchPdfAnnotationsProcessor.AppliedEdit>()
         val appliedEdits2 = mutableListOf<BatchPdfAnnotationsProcessor.AppliedEdit>()
 
         val listener1 =
-            object : PdfDocument.OnEditsAppliedListener {
+            object : PdfDocument.OnEditAppliedListener {
                 override fun onEditApplied(pageNum: Int, editId: String) {
                     appliedEdits1.add(BatchPdfAnnotationsProcessor.AppliedEdit(pageNum, editId))
                 }
             }
         val listener2 =
-            object : PdfDocument.OnEditsAppliedListener {
+            object : PdfDocument.OnEditAppliedListener {
                 override fun onEditApplied(pageNum: Int, editId: String) {
                     appliedEdits2.add(BatchPdfAnnotationsProcessor.AppliedEdit(pageNum, editId))
                 }
@@ -737,10 +739,10 @@ class SandboxedPdfDocumentTest {
             val numAnnots = 2
             val draft = MutableEditsDraft()
 
-            repeat(numAnnots) { draft.insert(getSampleStampAnnotation(pageNum++)) }
+            repeat(numAnnots) { draft.insert(getSampleContentStampAnnotation(pageNum++)) }
 
-            editablePdfDocument.addOnEditsAppliedListener(executor = Runnable::run, listener1)
-            editablePdfDocument.addOnEditsAppliedListener(executor = Runnable::run, listener2)
+            editablePdfDocument.addOnEditAppliedListener(executor = Runnable::run, listener1)
+            editablePdfDocument.addOnEditAppliedListener(executor = Runnable::run, listener2)
             editablePdfDocument.applyEdits(draft.toEditsDraft())
 
             assertThat(appliedEdits1.size).isEqualTo(appliedEdits2.size)
@@ -748,18 +750,18 @@ class SandboxedPdfDocumentTest {
             assertThat(appliedEdits1[1]).isEqualTo(appliedEdits2[1])
 
             // Clean up
-            editablePdfDocument.removeOnEditsAppliedListener(listener1)
-            editablePdfDocument.removeOnEditsAppliedListener(listener2)
+            editablePdfDocument.removeOnEditAppliedListener(listener1)
+            editablePdfDocument.removeOnEditAppliedListener(listener2)
         }
     }
 
     @Test
-    fun removeOnEditsAppliedListener_singleListener_isEmpty() = runTest {
+    fun removeOnEditAppliedListener_singleListener_isEmpty() = runTest {
         if (!isAnnotationsFeatureAvailable()) return@runTest
 
         val appliedEdits = mutableListOf<BatchPdfAnnotationsProcessor.AppliedEdit>()
         val listener =
-            object : PdfDocument.OnEditsAppliedListener {
+            object : PdfDocument.OnEditAppliedListener {
                 override fun onEditApplied(pageNum: Int, editId: String) {
                     appliedEdits.add(BatchPdfAnnotationsProcessor.AppliedEdit(pageNum, editId))
                 }
@@ -770,10 +772,10 @@ class SandboxedPdfDocumentTest {
             val numAnnots = 2
             val draft = MutableEditsDraft()
 
-            repeat(numAnnots) { draft.insert(getSampleStampAnnotation(pageNum++)) }
+            repeat(numAnnots) { draft.insert(getSampleContentStampAnnotation(pageNum++)) }
 
-            editablePdfDocument.addOnEditsAppliedListener(executor = Runnable::run, listener)
-            editablePdfDocument.removeOnEditsAppliedListener(listener)
+            editablePdfDocument.addOnEditAppliedListener(executor = Runnable::run, listener)
+            editablePdfDocument.removeOnEditAppliedListener(listener)
             editablePdfDocument.applyEdits(draft.toEditsDraft())
 
             assertThat(appliedEdits).isEmpty()
@@ -915,7 +917,7 @@ class SandboxedPdfDocumentTest {
 
         private fun createDraftWithLargeAnnotations(count: Int): MutableEditsDraft {
             val draft = MutableEditsDraft()
-            repeat(count) { draft.insert(createStampAnnotationWithPath(0, it * 100)) }
+            repeat(count) { draft.insert(createContentStampAnnotationWithPath(0, it * 100)) }
             return draft
         }
     }

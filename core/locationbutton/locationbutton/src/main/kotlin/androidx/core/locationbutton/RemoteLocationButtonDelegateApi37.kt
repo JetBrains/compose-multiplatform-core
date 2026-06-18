@@ -132,12 +132,12 @@ internal class RemoteLocationButtonDelegateApi37(
         val clientCallback =
             object : LocationButtonClient {
                 override fun onPermissionResult(granted: Boolean) {
-                    view.locationButtonListener?.onPermissionResult(granted)
+                    view.onPermissionResultListener?.onPermissionResult(granted)
                 }
 
                 override fun onSessionError(t: Throwable) {
                     closeSession(surfaceView)
-                    view.locationButtonListener?.onSessionError(t)
+                    view.onErrorListener?.onError(t)
                 }
 
                 override fun onSessionOpened(openedSession: LocationButtonSession) {
@@ -151,9 +151,7 @@ internal class RemoteLocationButtonDelegateApi37(
                         surfaceView.apply {
                             visibility = View.VISIBLE
                             setChildSurfacePackage(openedSession.surfacePackage)
-                            setCompositionOrder(
-                                this@RemoteLocationButtonDelegateApi37.getCompositionOrder()
-                            )
+                            setCompositionOrder(LocationButton.DEFAULT_COMPOSITION_ORDER)
                             invalidate()
                         }
                         view.localButtonView.visibility = View.INVISIBLE

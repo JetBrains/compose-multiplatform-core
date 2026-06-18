@@ -36,6 +36,8 @@ import androidx.xr.runtime.internal.LibraryNotLinkedException
 import androidx.xr.runtime.internal.PerceptionRuntimeFactory
 import androidx.xr.runtime.internal.RenderingRuntimeFactory
 import androidx.xr.runtime.internal.SceneRuntimeFactory
+import androidx.xr.runtime.internal.SessionResultProvider
+import androidx.xr.runtime.internal.SessionResultProviderFactory
 import androidx.xr.runtime.internal.UnsupportedDeviceException
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.coroutines.CoroutineContext
@@ -81,6 +83,7 @@ public constructor(
     public val runtimes: List<JxrRuntime> = emptyList(),
     public val coroutineScope: CoroutineScope = CoroutineScope(context = EmptyCoroutineContext),
     public val lifecycleOwner: LifecycleOwner,
+    private val sessionResultProvider: SessionResultProvider? = null,
 ) {
 
     @Deprecated(
@@ -129,15 +132,11 @@ public constructor(
 
         /**
          * Creates a new [Session].
-         *
-         * The thread on which this method should be called depends on the features being used:
-         * - If you are using SceneCore rendering APIs, this method must be called on the **Main
-         *   Thread**.
          * > **Thread Safety Warning:** This method performs significant disk I/O, including loading
          * > native libraries. If StrictMode is enabled, calling this on the **Main Thread** (UI
          * > Thread) will trigger a [android.os.StrictMode] `DiskReadViolation`.
          *
-         * **Example for calling on a WorkerThread for Projected devices:**
+         * **Example for calling on a worker thread:**
          *
          * ```kotlin
          * lifecycleScope.launch {
@@ -160,7 +159,7 @@ public constructor(
          */
         @JvmOverloads
         @JvmStatic
-        public fun create(
+        public suspend fun create(
             context: Context,
             coroutineContext: CoroutineContext = EmptyCoroutineContext,
             lifecycleOwner: LifecycleOwner = context as LifecycleOwner,
@@ -179,15 +178,16 @@ public constructor(
             activity: Activity,
             coroutineContext: CoroutineContext = EmptyCoroutineContext,
             unscaledGravityAlignedActivitySpace: Boolean = true,
-        ): SessionCreateResult =
+        ): SessionCreateResult = runBlocking {
             createInternal(
                 activity,
                 coroutineContext,
                 activity as LifecycleOwner,
                 unscaledGravityAlignedActivitySpace,
             )
+        }
 
-        private fun createInternal(
+        private suspend fun createInternal(
             context: Context,
             coroutineContext: CoroutineContext,
             lifecycleOwner: LifecycleOwner,
@@ -198,6 +198,21 @@ public constructor(
             }
 
             val coroutineScope = CoroutineScope(coroutineContext)
+
+            val sessionResultProviderFactory: SessionResultProviderFactory? =
+                selectProvider(
+                    loadProviders(
+                        SessionResultProviderFactory::class.java,
+                        SESSION_RESULT_PROVIDERS,
+                    ),
+                    /* features= */ emptySet(),
+                )
+
+            val sessionResultProvider =
+                sessionResultProviderFactory?.createProvider(context, coroutineScope)
+            sessionResultProvider?.createResult?.let {
+                return it
+            }
 
             if (contextSessionMap.containsKey(context)) {
                 return SessionCreateSuccess(contextSessionMap[context]!!)
@@ -281,6 +296,7 @@ public constructor(
                     runtimes,
                     coroutineScope,
                     lifecycleOwner,
+                    sessionResultProvider,
                 )
 
             lifecycleOwner.lifecycleScope.launch {
@@ -336,6 +352,9 @@ public constructor(
                 "androidx.xr.runtime.testing.FakeSessionConnector",
                 "androidx.xr.runtime.StubSessionConnector",
             )
+
+        private val SESSION_RESULT_PROVIDERS =
+            listOf("androidx.xr.runtime.testing.internal.FakeSessionResultProviderFactory")
     }
 
     private val _state = MutableStateFlow<CoreState>(CoreState(TimeSource.Monotonic.markNow()))
@@ -380,9 +399,14 @@ public constructor(
      * [androidx.xr.runtime.XrDevice] before configuring. Example:
      * [androidx.xr.runtime.XrDevice.isGeospatialModeSupported].
      *
-     * It is recommended to use and modify an instance of [Config.Builder] to maintain the current
-     * desired configuration state. A instance of [Config] to pass to this function can be created
-     * using [Config.Builder.build].
+     * It is recommended to modify the current [Config] to avoid unnecessarily resetting the system.
+     * This can be done using [Config.Builder] as follows:
+     * ```kotlin
+     * val newConfig = Config.Builder(session.config)
+     *     .setFeature(Feature.ENABLED)
+     *     .build()
+     * session.configure(newConfig)
+     * ```
      *
      * Note that enabling most configurations will increase hardware resource consumption and should
      * only be enabled if needed.
@@ -400,6 +424,9 @@ public constructor(
     public fun configure(config: Config): SessionConfigureResult {
         check(lifecycleOwner.lifecycle.currentState != Lifecycle.State.DESTROYED) {
             "Session has been destroyed."
+        }
+        sessionResultProvider?.configureResult?.let {
+            return it
         }
         return runBlocking {
             lock.withLock {

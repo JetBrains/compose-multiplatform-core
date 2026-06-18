@@ -18,8 +18,6 @@
 package androidx.compose.remote.creation.compose.modifier
 
 import androidx.annotation.RestrictTo
-import androidx.compose.foundation.ScrollState
-import androidx.compose.remote.core.operations.Utils
 import androidx.compose.remote.creation.compose.capture.LocalRemoteComposeCreationState
 import androidx.compose.remote.creation.compose.state.MutableRemoteFloat
 import androidx.compose.remote.creation.compose.state.RemoteStateScope
@@ -34,18 +32,16 @@ public class RemoteScrollState(
     public val notches: Int,
 ) {
     public constructor(position: Float, notches: Int) : this(MutableRemoteFloat(position), notches)
-
-    public fun toComposeUi(): ScrollState {
-        return ScrollState(0)
-    }
 }
 
 @Composable
 public fun rememberRemoteScrollState(evenNotches: Int = 0): RemoteScrollState {
     val state = LocalRemoteComposeCreationState.current
     val scrollState = remember {
-        val positionId = Utils.asNan(state.document.nextId())
-        RemoteScrollState(positionId, evenNotches)
+        // TODO(b/520313106) - It shouldn't be writing id at this point.
+        val positionId = state.document.nextId()
+        val position = MutableRemoteFloat(positionId)
+        RemoteScrollState(position, evenNotches)
     }
     return scrollState
 }

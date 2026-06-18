@@ -60,6 +60,7 @@ androidXMultiplatform {
             implementation("org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-compose:2.11.0-beta01")
             implementation("androidx.savedstate:savedstate:1.4.0")
             implementation("androidx.savedstate:savedstate-compose:1.4.0")
+            implementation("org.jetbrains.androidx.navigationevent:navigationevent-compose:1.1.0")
             implementation(libs.kotlinCoroutinesCore)
             implementation(libs.kotlinSerializationCore)
         }
@@ -92,7 +93,7 @@ androidXMultiplatform {
         desktopTest.dependsOn(jvmTest)
 
         androidMain.dependencies {
-            api("androidx.activity:activity-compose:1.8.0")
+            api("androidx.activity:activity-compose:1.9.0")
             api("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.2")
             implementation("androidx.activity:activity:1.8.0")
         }

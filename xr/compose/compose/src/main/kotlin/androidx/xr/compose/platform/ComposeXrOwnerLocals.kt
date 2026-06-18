@@ -151,9 +151,9 @@ private val ComponentActivity.sessionCreationMutex: Mutex
 private val ComponentActivity.sessionFactoryDispatcher: CoroutineDispatcher
     get() =
         contentView.getTag(R.id.compose_xr_session_factory_dispatcher) as? CoroutineDispatcher
-            ?: Dispatchers.Main
+            ?: Dispatchers.Main.immediate
 
-private val ComponentActivity.sessionFactory: () -> Session?
+private val ComponentActivity.sessionFactory: suspend () -> Session?
     get() =
         getOrCreateCachedValue(R.id.compose_xr_session_factory) {
             { (Session.create(context = this) as? SessionCreateSuccess)?.session }

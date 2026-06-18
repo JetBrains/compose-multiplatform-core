@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@file:Suppress("DEPRECATION")
 
 package androidx.xr.arcore.projected.testapp
 
@@ -396,7 +397,7 @@ class ProjectedTestAppActivity : ComponentActivity() {
         }
     }
 
-    public fun tryCreateSession() {
+    public suspend fun tryCreateSession() {
         Log.i("JetpackXR", "Session.create(this)")
         when (val result = Session.create(context = this, lifecycleOwner = this)) {
             is SessionCreateSuccess -> {
