@@ -142,7 +142,7 @@ internal class UIKitTextInputService(
     val textToolbar: TextToolbar by lazy(LazyThreadSafetyMode.NONE) {
         object : TextToolbar {
             // Reflects whether the hosting CMPEditMenuView is alive, not the menu's literal visibility,
-            // so hide() always runs and the view can't linger in an orphaned state.
+            // TODO: https://youtrack.jetbrains.com/issue/CMP-10352
             override var status: TextToolbarStatus = TextToolbarStatus.Hidden
                 private set
 
