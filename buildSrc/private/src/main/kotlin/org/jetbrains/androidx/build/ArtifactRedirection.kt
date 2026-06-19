@@ -16,7 +16,6 @@
 
 package org.jetbrains.androidx.build
 
-import androidx.build.AndroidXComposeImplPlugin
 import androidx.build.AndroidXMultiplatformExtension
 import androidx.build.lazyReadFile
 import org.gradle.api.GradleException
@@ -232,16 +231,6 @@ internal fun Project.applyParallelRedirectGraph(
             configurations.findByName("commonMain$kind")?.dependencies?.toList()?.forEach { dep ->
                 dependencies.add("${redirectCommonMain.name}$kind", dep)
             }
-        }
-
-        // Compose modules apply the Compose compiler plugin, whose version check requires the Compose
-        // runtime on the compile classpath even for an empty redirect compilation (otherwise
-        // `compileAndroidMain`/etc. fail with "requires the Compose Runtime"). Mirror the same
-        // `:compose:runtime:runtime` project dep the module's real compilations use — on a redirect
-        // target's classpath it resolves through the redirect to Google's real runtime (which carries
-        // `ComposeVersion`), so the empty compilation type-checks. compileOnly: not published.
-        if (plugins.hasPlugin(AndroidXComposeImplPlugin::class.java) && path != ":compose:runtime:runtime") {
-            dependencies.add("${redirectCommonMain.name}CompileOnly", project(":compose:runtime:runtime"))
         }
 
         if (!forkBuiltExists) {
