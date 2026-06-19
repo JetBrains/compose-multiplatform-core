@@ -142,8 +142,7 @@ internal class UIKitTextInputService(
     val textToolbar: TextToolbar by lazy(LazyThreadSafetyMode.NONE) {
         object : TextToolbar {
             // Reflects whether the hosting CMPEditMenuView is alive, not the menu's literal visibility,
-            // so hide() always runs and the view can't linger in an orphaned state. Android's TextToolbar
-            // status is intent-based in a similar way (see AndroidTextToolbar.android.kt)
+            // so hide() always runs and the view can't linger in an orphaned state.
             override var status: TextToolbarStatus = TextToolbarStatus.Hidden
                 private set
 
@@ -156,6 +155,7 @@ internal class UIKitTextInputService(
             ) {
                 status = TextToolbarStatus.Shown
                 if (currentInputConnection == null) {
+                    // TODO: https://youtrack.jetbrains.com/issue/CMP-10352
                     // Entry point for showing the context menu in SelectionContainer scenarios, where
                     // there is no active text input session. iOS requires a UIView that can become first
                     // responder in order to host the context menu, so we create a dedicated connection
