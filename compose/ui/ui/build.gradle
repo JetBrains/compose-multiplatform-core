@@ -302,7 +302,6 @@ androidXMultiplatform {
 
 dependencies {
     lintChecks(project(":compose:ui:ui-lint"))
-    lintPublish(project(":compose:ui:ui-lint"))
 }
 
 androidx {

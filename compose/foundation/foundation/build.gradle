@@ -213,7 +213,6 @@ androidXMultiplatform {
 
 dependencies {
     lintChecks(project(":compose:foundation:foundation-lint"))
-    lintPublish(project(":compose:foundation:foundation-lint"))
 }
 
 androidx {

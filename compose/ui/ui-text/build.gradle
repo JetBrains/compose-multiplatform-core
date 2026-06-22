@@ -205,7 +205,6 @@ androidXMultiplatform {
 }
 
 dependencies {
-    lintPublish(project(":compose:ui:ui-text-lint"))
     lintChecks(project(":compose:ui:ui-text-lint"))
 }
 

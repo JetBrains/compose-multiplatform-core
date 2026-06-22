@@ -147,27 +147,6 @@ internal fun Project.applyParallelRedirectGraph(
 
         val redirectTargetNames = decls.map { it.targetName }.toSet()
 
-        // A redirect android target publishes an EMPTY AAR; it must not bundle the fork-built lint
-        // checks declared via `lintPublish(project(":...-lint"))`. Consumers get the real lint.jar
-        // from the `androidx.*` AAR the redirect points to — a second fork-built registry would
-        // double-register the same issue IDs. Detaching `lintPublish` also drops the `-lint`
-        // projects from the publish task graph entirely: jb-main never builds them during publish
-        // (the CRC path skips android publications), and they cannot even compile under the fork's
-        // JVM-11 target pin (lint-api ships JVM-17 bytecode), which any fresh cache-less build hits.
-        // TODO(artifactRedirection): alternative — delete the `lintPublish(project(...))` lines from
-        //  the migrated modules' build.gradle instead of clearing here. More declarative, but adds
-        //  one more fork-local diff per module to every AOSP merge and silently regresses if a
-        //  future migration forgets the line; keeping it centralized for now. Revisit at CRC removal.
-        if ("android" in redirectTargetNames) {
-            configurations.findByName("lintPublish")?.let { lintPublish ->
-                lintPublish.dependencies.clear()
-                // Also clear lazily at resolution time, in case AGP reads the configuration
-                // (directly or via extendsFrom) only later — withDependencies runs on the whole
-                // extendsFrom hierarchy when the consuming configuration resolves.
-                lintPublish.withDependencies { it.clear() }
-            }
-        }
-
         // --- Resolve the redirect coordinate (one per module). ---
         // Each redirect target carries its own RedirectCoordinate, but the published module has a
         // SINGLE shared `metadataApiElements` (commonMain) variant. That variant is the door a

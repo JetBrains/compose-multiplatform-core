@@ -165,10 +165,6 @@ androidXMultiplatform {
     }
 }
 
-dependencies {
-    lintPublish(project(":compose:ui:ui-graphics-lint"))
-}
-
 androidx {
     name = "Compose Graphics"
     type = SoftwareType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS

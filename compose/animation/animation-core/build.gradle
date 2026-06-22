@@ -132,10 +132,6 @@ androidXMultiplatform {
     }
 }
 
-dependencies {
-    lintPublish(project(":compose:animation:animation-core-lint"))
-}
-
 androidx {
     name = "Compose Animation Core"
     type = SoftwareType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS

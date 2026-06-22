@@ -179,7 +179,6 @@ androidXMultiplatform {
 
 dependencies {
     lintChecks(project(":navigation:navigation-compose-lint"))
-    lintPublish(project(":navigation:navigation-compose-lint"))
 }
 
 androidx {
