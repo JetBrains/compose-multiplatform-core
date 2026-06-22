@@ -528,7 +528,9 @@ private class CanvasLayersComposeSceneImpl(
         onOwnerRemoved(layer.owner)
 
         inputHandler.onPointerUpdate()
-        invokeInvalidationCallbacks()
+        // Removing a layer changes the scene's composited output (e.g. it removes a dialog scrim)
+        // without dirtying any remaining owner, so force a draw pass to repaint without it.
+        invokeInvalidationCallbacks(forceDraw = true)
     }
 
     private fun requestFocus(layer: AttachedComposeSceneLayer) {

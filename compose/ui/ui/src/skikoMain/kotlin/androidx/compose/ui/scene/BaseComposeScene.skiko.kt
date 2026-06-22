@@ -82,12 +82,15 @@ internal abstract class BaseComposeScene(
             }
         }
 
-    protected fun invokeInvalidationCallbacks() {
+    protected fun invokeInvalidationCallbacks(
+        forceLayout: Boolean = false,
+        forceDraw: Boolean = false,
+    ) {
         if (isInvalidationDisabled || isClosed || composition == null) return
-        if (hasPendingMeasureOrLayout) {
+        if (forceLayout || hasPendingMeasureOrLayout) {
             invalidateLayout()
         }
-        if (hasPendingDraw) {
+        if (forceDraw || hasPendingDraw) {
             invalidateDraw()
         }
     }
