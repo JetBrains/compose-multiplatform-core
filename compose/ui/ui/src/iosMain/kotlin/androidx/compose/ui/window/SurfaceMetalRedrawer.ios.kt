@@ -64,6 +64,16 @@ internal class DisplayLinkConditions(
         }
 
     /**
+     * Indicates that prefetch work is waiting for display-link time.
+     */
+    var needsToPrefetch: Boolean = false
+        set(value) {
+            field = value
+
+            update()
+        }
+
+    /**
      * Number of subsequent vsync that will issue a draw
      */
     private var scheduledRedrawsCount = 0
@@ -91,7 +101,8 @@ internal class DisplayLinkConditions(
     }
 
     private fun update() {
-        val isUnpaused = isActive && (needsToBeProactive || scheduledRedrawsCount > 0)
+        val isUnpaused =
+            isActive && (needsToBeProactive || needsToPrefetch || scheduledRedrawsCount > 0)
         setPausedCallback(!isUnpaused)
     }
 
@@ -161,12 +172,15 @@ internal class SurfaceMetalRedrawer(
     override val currentTargetFrameDuration: NSTimeInterval?
         get() {
             val currentTargetTimestamp = currentTargetTimestamp ?: return null
-            val currentTimestamp = caDisplayLink?.timestamp ?: return null
+            val currentTimestamp = currentTimestamp ?: return null
             return currentTargetTimestamp - currentTimestamp
         }
 
     private val displayLinkConditions = DisplayLinkConditions { paused ->
         caDisplayLink?.paused = paused
+    }
+    override val prefetchScheduler = PlatformPrefetchSchedulerImpl { hasWork ->
+        displayLinkConditions.needsToPrefetch = hasWork
     }
 
     /**
@@ -217,17 +231,24 @@ internal class SurfaceMetalRedrawer(
      */
     private var caDisplayLink: CADisplayLink? = CADisplayLink.displayLinkWithTarget(
         target = SurfaceDisplayLinkProxy {
+            val timestamp = currentTimestamp ?: return@SurfaceDisplayLinkProxy
             val targetTimestamp = currentTargetTimestamp ?: return@SurfaceDisplayLinkProxy
 
+            var didDraw = false
             displayLinkConditions.onDisplayLinkTick {
                 draw(waitUntilCompletion = false, targetTimestamp)
+                didDraw = true
             }
+            prefetchScheduler.execute(timestamp, targetTimestamp, didDraw)
         },
         selector = NSSelectorFromString(SurfaceDisplayLinkProxy::handleDisplayLinkTick.name)
     )
 
     private val currentTargetTimestamp: NSTimeInterval?
         get() = caDisplayLink?.targetTimestamp
+
+    private val currentTimestamp: NSTimeInterval?
+        get() = caDisplayLink?.timestamp
 
     init {
         val caDisplayLink = caDisplayLink
@@ -270,6 +291,7 @@ internal class SurfaceMetalRedrawer(
     override fun dispose() {
         check(caDisplayLink != null) { "MetalRedrawer.dispose() was called more than once" }
         outOfFrameExecutor.dispose()
+        prefetchScheduler.dispose()
 
         retrieveInteropTransaction = {
             object : UIKitInteropTransaction {
