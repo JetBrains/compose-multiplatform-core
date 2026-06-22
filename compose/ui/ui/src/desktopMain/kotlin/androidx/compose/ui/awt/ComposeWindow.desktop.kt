@@ -17,6 +17,7 @@ package androidx.compose.ui.awt
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalContext
+import androidx.compose.ui.ComposeDesktopEntryPoint
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.Modifier
@@ -60,7 +61,7 @@ class ComposeWindow @ExperimentalComposeUiApi constructor(
     skiaLayerAnalytics: SkiaLayerAnalytics = SkiaLayerAnalytics.Empty,
     savedState: SavedState? = null,
     coroutineContext: CoroutineContext = EmptyCoroutineContext
-) : JFrame(graphicsConfiguration) {
+) : JFrame(graphicsConfiguration), ComposeDesktopEntryPoint {
     /**
      * System window for displaying Compose UI, inheriting [javax.swing.JFrame].
      *
@@ -87,11 +88,12 @@ class ComposeWindow @ExperimentalComposeUiApi constructor(
      * Returns the [SemanticsOwner]s corresponding to the roots of the semantics trees in this
      * [ComposeWindow].
      *
-     * This is backed by snapshot state, so reading this property in a restartable function (e.g., a
-     * composable function) will cause the function to restart when set of semantics owners changes.
+     * This is backed by Snapshot state, so reading this property in a restartable function (e.g., a
+     * composable function) will cause the function to restart when the set of semantics owners
+     * changes.
      */
     @ExperimentalComposeUiApi
-    val semanticsOwners: Collection<SemanticsOwner>
+    override val semanticsOwners: Collection<SemanticsOwner>
         get() = composePanel.semanticsOwners
 
     /**
