@@ -2285,9 +2285,12 @@ final class androidx.compose.ui.semantics/CustomAccessibilityAction { // android
 
 final class androidx.compose.ui.semantics/InputTextSuggestionState { // androidx.compose.ui.semantics/InputTextSuggestionState|null[0]
     constructor <init>(kotlin/Boolean = ...) // androidx.compose.ui.semantics/InputTextSuggestionState.<init>|<init>(kotlin.Boolean){}[0]
+    constructor <init>(kotlin/Boolean = ..., kotlin/Boolean = ...) // androidx.compose.ui.semantics/InputTextSuggestionState.<init>|<init>(kotlin.Boolean;kotlin.Boolean){}[0]
 
     final val isCommittedByInputMethodEditor // androidx.compose.ui.semantics/InputTextSuggestionState.isCommittedByInputMethodEditor|{}isCommittedByInputMethodEditor[0]
         final fun <get-isCommittedByInputMethodEditor>(): kotlin/Boolean // androidx.compose.ui.semantics/InputTextSuggestionState.isCommittedByInputMethodEditor.<get-isCommittedByInputMethodEditor>|<get-isCommittedByInputMethodEditor>(){}[0]
+    final val isTransliterationSuggestionSelected // androidx.compose.ui.semantics/InputTextSuggestionState.isTransliterationSuggestionSelected|{}isTransliterationSuggestionSelected[0]
+        final fun <get-isTransliterationSuggestionSelected>(): kotlin/Boolean // androidx.compose.ui.semantics/InputTextSuggestionState.isTransliterationSuggestionSelected.<get-isTransliterationSuggestionSelected>|<get-isTransliterationSuggestionSelected>(){}[0]
 
     final fun equals(kotlin/Any?): kotlin/Boolean // androidx.compose.ui.semantics/InputTextSuggestionState.equals|equals(kotlin.Any?){}[0]
     final fun hashCode(): kotlin/Int // androidx.compose.ui.semantics/InputTextSuggestionState.hashCode|hashCode(){}[0]
@@ -4911,6 +4914,10 @@ final object androidx.compose.ui.input.pointer/DummyPointerIcon : androidx.compo
 // Targets: [js, wasmJs]
 final val androidx.compose.ui.dom/domEventOrNull // androidx.compose.ui.dom/domEventOrNull|@androidx.compose.ui.input.key.KeyEvent{}domEventOrNull[0]
     final fun (androidx.compose.ui.input.key/KeyEvent).<get-domEventOrNull>(): org.w3c.dom.events/KeyboardEvent? // androidx.compose.ui.dom/domEventOrNull.<get-domEventOrNull>|<get-domEventOrNull>@androidx.compose.ui.input.key.KeyEvent(){}[0]
+
+// Targets: [js, wasmJs]
+final val androidx.compose.ui.dom/domEventOrNull // androidx.compose.ui.dom/domEventOrNull|@androidx.compose.ui.input.pointer.PointerEvent{}domEventOrNull[0]
+    final fun (androidx.compose.ui.input.pointer/PointerEvent).<get-domEventOrNull>(): org.w3c.dom.events/Event? // androidx.compose.ui.dom/domEventOrNull.<get-domEventOrNull>|<get-domEventOrNull>@androidx.compose.ui.input.pointer.PointerEvent(){}[0]
 
 // Targets: [js, wasmJs]
 final val androidx.compose.ui.input.pointer/androidx_compose_ui_input_pointer_DummyPointerIcon$stableprop // androidx.compose.ui.input.pointer/androidx_compose_ui_input_pointer_DummyPointerIcon$stableprop|#static{}androidx_compose_ui_input_pointer_DummyPointerIcon$stableprop[0]
