@@ -166,7 +166,7 @@ internal class UIKitTextInputService(
                         viewConfiguration = viewConfiguration,
                         focusManager = focusManager
                     )
-                    currentInputConnection?.start(emptyTextInputRequest())
+                    currentInputConnection?.start(noopTextInputRequest())
                 }
                 (currentInputConnection as? ComposeTextInputConnection)?.showToolbarMenu(
                     rect = rect,
@@ -241,7 +241,7 @@ internal class UIKitTextInputService(
  * [SelectionContainerConnection] purely to attach its hosting view for the context menu —
  * there is no text editing session behind it.
  */
-private fun emptyTextInputRequest(): PlatformTextInputMethodRequest =
+private fun noopTextInputRequest(): PlatformTextInputMethodRequest =
     object : PlatformTextInputMethodRequest {
         override val value: () -> TextFieldValue get() = { TextFieldValue() }
         override val state: TextEditorState = object : TextEditorState {
