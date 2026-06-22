@@ -17,6 +17,7 @@ package androidx.compose.ui.awt
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalContext
+import androidx.compose.runtime.tooling.ComposeToolingApi
 import androidx.compose.ui.ComposeDesktopEntryPoint
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.InternalComposeUiApi
@@ -56,6 +57,7 @@ import org.jetbrains.skiko.SkiaLayerAnalytics
  * @param savedState The saved state to restore the UI state from a previous instance.
  * @param coroutineContext The coroutine context for Compose content rendering and effects.
  */
+@OptIn(ComposeToolingApi::class)
 class ComposeWindow @ExperimentalComposeUiApi constructor(
     graphicsConfiguration: GraphicsConfiguration? = null,
     skiaLayerAnalytics: SkiaLayerAnalytics = SkiaLayerAnalytics.Empty,
@@ -92,7 +94,7 @@ class ComposeWindow @ExperimentalComposeUiApi constructor(
      * composable function) will cause the function to restart when the set of semantics owners
      * changes.
      */
-    @ExperimentalComposeUiApi
+    @ComposeToolingApi
     override val semanticsOwners: Collection<SemanticsOwner>
         get() = composePanel.semanticsOwners
 

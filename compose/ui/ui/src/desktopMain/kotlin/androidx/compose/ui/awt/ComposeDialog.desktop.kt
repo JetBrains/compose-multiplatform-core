@@ -17,6 +17,7 @@ package androidx.compose.ui.awt
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalContext
+import androidx.compose.runtime.tooling.ComposeToolingApi
 import androidx.compose.ui.ComposeDesktopEntryPoint
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.InternalComposeUiApi
@@ -53,6 +54,7 @@ import org.jetbrains.skiko.SkiaLayerAnalytics
 /**
  * System dialog for displaying Compose UI, inheriting [javax.swing.JDialog].
  */
+@OptIn(ComposeToolingApi::class)
 class ComposeDialog : JDialog, ComposeDesktopEntryPoint {
     private val composePanel: ComposeWindowPanel
 
@@ -222,7 +224,7 @@ class ComposeDialog : JDialog, ComposeDesktopEntryPoint {
      * composable function) will cause the function to restart when the set of semantics owners
      * changes.
      */
-    @ExperimentalComposeUiApi
+    @ComposeToolingApi
     override val semanticsOwners: Collection<SemanticsOwner>
         get() = composePanel.semanticsOwners
 

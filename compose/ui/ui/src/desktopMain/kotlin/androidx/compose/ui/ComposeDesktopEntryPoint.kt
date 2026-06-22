@@ -16,12 +16,13 @@
 
 package androidx.compose.ui
 
+import androidx.compose.runtime.tooling.ComposeToolingApi
 import androidx.compose.ui.semantics.SemanticsOwner
 
 /**
  * The interface for classes that are an entry point for using Compose on the desktop.
  */
-@InternalComposeUiApi
+@ComposeToolingApi
 interface ComposeDesktopEntryPoint {
     /**
      * Returns the [SemanticsOwner]s corresponding to the roots of the semantics trees in this
