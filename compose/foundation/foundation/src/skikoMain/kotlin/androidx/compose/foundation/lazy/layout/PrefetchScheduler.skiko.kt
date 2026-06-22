@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-@file:Suppress("DEPRECATION") // b/420551535
+@file:Suppress("DEPRECATION")
 
 package androidx.compose.foundation.lazy.layout
 
@@ -28,8 +28,6 @@ import androidx.compose.ui.platform.PlatformPrefetchRequest
 import androidx.compose.ui.platform.PlatformPrefetchRequestScope
 import androidx.compose.ui.platform.PlatformPrefetchScheduler
 
-// TODO: https://youtrack.jetbrains.com/issue/CMP-1265
-
 @Composable
 @ExperimentalFoundationApi
 @OptIn(InternalComposeUiApi::class)
@@ -40,10 +38,9 @@ internal actual fun rememberDefaultPrefetchScheduler(): PrefetchScheduler {
     }
 }
 
-@Suppress("DEPRECATION")
 @OptIn(InternalComposeUiApi::class)
 private class SkikoPrefetchScheduler(
-    private var prefetchScheduler: PlatformPrefetchScheduler
+    private val prefetchScheduler: PlatformPrefetchScheduler
 ) :
     PrefetchScheduler,
     PriorityPrefetchScheduler {
@@ -61,18 +58,28 @@ private class SkikoPrefetchScheduler(
         priority: PlatformPrefetchPriority,
     ) {
         prefetchScheduler.schedulePrefetch(
-            request = object : PlatformPrefetchRequest {
-                override fun PlatformPrefetchRequestScope.execute(): Boolean {
-                    val platformScope = this
-                    return with(prefetchRequest) {
-                        object : PrefetchRequestScope {
-                            override fun availableTimeNanos(): Long =
-                                platformScope.availableTimeNanos()
-                        }.execute()
-                    }
-                }
-            },
+            request = PlatformPrefetchRequestAdapter(prefetchRequest),
             priority = priority,
         )
     }
+}
+
+@OptIn(InternalComposeUiApi::class)
+private class PlatformPrefetchRequestAdapter(
+    private val prefetchRequest: PrefetchRequest,
+) : PlatformPrefetchRequest {
+    override fun PlatformPrefetchRequestScope.execute(): Boolean {
+        val prefetchScope = PrefetchRequestScopeAdapter(this)
+        return with(prefetchRequest) {
+            prefetchScope.execute()
+        }
+    }
+}
+
+@OptIn(InternalComposeUiApi::class)
+private class PrefetchRequestScopeAdapter(
+    private val platformScope: PlatformPrefetchRequestScope,
+) : PrefetchRequestScope {
+    override fun availableTimeNanos(): Long =
+        platformScope.availableTimeNanos()
 }
