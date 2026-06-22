@@ -210,6 +210,13 @@ interface PlatformContext {
      */
     val outOfFrameExecutor: PlatformOutOfFrameExecutor? get() = null
 
+    /**
+     * Schedules lazy layout prefetch work using platform-specific frame timing.
+     *
+     * @see PlatformPrefetchScheduler
+     */
+    val prefetchScheduler: PlatformPrefetchScheduler get() = NoOpPlatformPrefetchScheduler
+
     interface RootForTestListener {
         fun onRootForTestCreated(root: PlatformRootForTest)
         fun onRootForTestDisposed(root: PlatformRootForTest)
@@ -283,6 +290,10 @@ interface PlatformContext {
 
 private object EmptyPlatformScreenReader : PlatformScreenReader {
     override val isActive: Boolean = false
+}
+
+private object NoOpPlatformPrefetchScheduler : PlatformPrefetchScheduler {
+    override fun schedulePrefetch(request: PlatformPrefetchRequest, priority: PlatformPrefetchPriority) = Unit
 }
 
 private val EmptyArchitectureComponentsOwner = DefaultArchitectureComponentsOwner(
