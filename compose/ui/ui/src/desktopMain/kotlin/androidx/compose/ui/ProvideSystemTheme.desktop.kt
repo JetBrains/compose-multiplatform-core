@@ -30,12 +30,18 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import org.jetbrains.skiko.SystemTheme
+import org.jetbrains.skiko.hostOs
 
 private var subscriberCount = 0
 private var pollingJob: Job? = null
 private val subscribeLock = Any()
-private var currentSystemTheme = mutableStateOf(SystemTheme.UNKNOWN)
+private var currentSystemTheme = mutableStateOf(org.jetbrains.skiko.currentSystemTheme)
+
+private val pollSystemTheme by lazy {
+    System.getProperty("compose.systemtheme.poll")?.toBoolean() ?: defaultPollSystemTheme()
+}
+
+private fun defaultPollSystemTheme() = !hostOs.isLinux
 
 @OptIn(DelicateCoroutinesApi::class)
 private fun onSubscriberAdded() {
@@ -63,6 +69,7 @@ private fun onSubscriberRemoved() {
 
 private suspend fun pollCurrentSystemTheme() {
     while (true) {
+        println("Polling system theme")
         currentSystemTheme.value = org.jetbrains.skiko.currentSystemTheme
         delay(1.seconds)
     }
@@ -75,10 +82,12 @@ internal fun ProvideSystemTheme(content: @Composable () -> Unit) {
         content = content
     )
 
-    DisposableEffect(Unit) {
-        onSubscriberAdded()
-        onDispose {
-            onSubscriberRemoved()
+    if (pollSystemTheme) {
+        DisposableEffect(Unit) {
+            onSubscriberAdded()
+            onDispose {
+                onSubscriberRemoved()
+            }
         }
     }
 }
