@@ -27,6 +27,7 @@ import org.gradle.api.Project
 import org.gradle.api.tasks.bundling.Zip
 import org.gradle.jvm.tasks.Jar
 import org.gradle.kotlin.dsl.withType
+import org.jetbrains.androidx.build.JetBrainsPublication
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 import org.jetbrains.kotlin.gradle.tasks.CInteropProcess
 
@@ -37,7 +38,7 @@ internal fun Project.addLicensesToPublishedArtifacts(license: License) {
     // artifact both carry `META-INF/androidx/<g>/<n>/LICENSE.txt` at the SAME path and collide in the
     // consumer's `mergeJavaResource`/AAR packaging. The license belongs at the publishing coordinate.
     val forkGroup = runCatching {
-        org.jetbrains.androidx.build.JetBrainsPublication.mavenGroupFor(project.path)
+        JetBrainsPublication.mavenGroupFor(project.path)
     }.getOrNull()
     val groupSubdir = (forkGroup ?: androidXExtension.mavenGroup?.group!!).replace('.', '/')
     val projectSubdir = File(groupSubdir, project.name)

@@ -18,6 +18,7 @@
 
 package org.jetbrains.androidx.build
 
+import androidx.build.AndroidXMultiplatformExtension
 import androidx.build.ProjectLayoutType.Companion.isJetBrainsFork
 import javax.inject.Inject
 import kotlinx.validation.ApiValidationExtension
@@ -59,7 +60,7 @@ class JetBrainsAndroidXImplPlugin @Inject constructor(
 
         // Parallel-graph back-end: consume `redirect { }` target declarations and re-root each
         // redirect target onto an empty `redirectCommonMain` that depends on the androidx.* coord.
-        project.extensions.findByType(androidx.build.AndroidXMultiplatformExtension::class.java)
+        project.extensions.findByType(AndroidXMultiplatformExtension::class.java)
             ?.let { mpe -> project.applyParallelRedirectGraph(multiplatformExtension, mpe) }
     }
 }

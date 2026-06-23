@@ -23,6 +23,7 @@ import org.gradle.api.Project
 import org.gradle.api.provider.Provider
 import org.gradle.api.services.BuildService
 import org.gradle.api.services.BuildServiceParameters
+import org.gradle.api.tasks.compile.JavaCompile
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.tomlj.Toml
 import org.tomlj.TomlTable
@@ -242,7 +243,7 @@ internal fun Project.applyParallelRedirectGraph(
         val redirectJavaTasks =
             if (!forkBuiltExists) null
             else redirectTargetNames.map { "compile${it.replaceFirstChar(Char::uppercase)}MainJava" }.toSet()
-        tasks.withType(org.gradle.api.tasks.compile.JavaCompile::class.java).configureEach { jc ->
+        tasks.withType(JavaCompile::class.java).configureEach { jc ->
             if (redirectJavaTasks == null || jc.name in redirectJavaTasks) jc.setSource(files())
         }
 
