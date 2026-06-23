@@ -420,9 +420,7 @@ includeProject(":navigationevent:navigationevent-compose", "navigationevent/navi
 includeProject(":savedstate:savedstate", "savedstate/savedstate-compatibility-stub")
 includeProject(":savedstate:savedstate-compose", "savedstate/savedstate-compose-compatibility-stub")
 
-includeProject(":annotation:annotation")
 includeProject(":annotation:annotation-sampled")
-includeProject(":collection:collection")
 includeProject(":compose:animation")
 includeProject(":compose:animation:animation")
 includeProject(":compose:animation:animation-lint")

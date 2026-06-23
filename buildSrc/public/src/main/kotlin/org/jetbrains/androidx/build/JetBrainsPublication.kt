@@ -142,10 +142,6 @@ object JetBrainsPublication {
     }
 
     fun mavenGroupFor(projectPath: String): String = when {
-        projectPath == ":annotation:annotation" ->
-            "org.jetbrains.compose.annotation-internal"
-        projectPath == ":collection:collection" ->
-            "org.jetbrains.compose.collection-internal"
         projectPath.startsWith(":compose:") ->
             JETBRAINS_COMPOSE_GROUP_PREFIX + projectPath
                 .removePrefix(":compose:")
@@ -162,10 +158,6 @@ object JetBrainsPublication {
     fun projectPathForCoordinates(group: String, name: String): String? = when {
         isAndroidXGroup(group) ->
             ":${group.removePrefix(ANDROIDX_GROUP_PREFIX).replace(".", ":")}:$name"
-        group == "org.jetbrains.compose.annotation-internal" ->
-            ":annotation:annotation"
-        group == "org.jetbrains.compose.collection-internal" ->
-            ":collection:collection"
         group.startsWith(JETBRAINS_COMPOSE_GROUP_PREFIX) ->
             ":compose:${group.removePrefix(JETBRAINS_COMPOSE_GROUP_PREFIX).replace(".", ":")}:$name"
         group.startsWith(JETBRAINS_FORK_GROUP_PREFIX) ->
