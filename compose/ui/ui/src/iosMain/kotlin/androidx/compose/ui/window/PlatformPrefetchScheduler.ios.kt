@@ -28,6 +28,7 @@ import platform.Foundation.NSTimeInterval
 import platform.QuartzCore.CACurrentMediaTime
 
 internal class PlatformPrefetchSchedulerImpl(
+    private val currentTime: () -> NSTimeInterval = { CACurrentMediaTime() },
     private val onHasWorkScheduled: (Boolean) -> Unit,
 ) : PlatformPrefetchScheduler {
     private val prefetchRequests = ArrayDeque<PlatformPrefetchRequest>()
@@ -37,7 +38,7 @@ internal class PlatformPrefetchSchedulerImpl(
     /**
      * Marks the start of the display-link interval where drawing happened.
      */
-    private var lastDrawTimestamp: NSTimeInterval = CACurrentMediaTime()
+    private var lastDrawTimestamp: NSTimeInterval = currentTime()
 
     /**
      * Timestamp after which the draw loop is considered idle enough for prefetch work to ignore the
@@ -116,7 +117,7 @@ internal class PlatformPrefetchSchedulerImpl(
             return
         }
 
-        val isPastDrawIdleThreshold = !isDrawIdleThresholdPending && CACurrentMediaTime() > drawIdleThresholdTimestamp
+        val isPastDrawIdleThreshold = !isDrawIdleThresholdPending && currentTime() > drawIdleThresholdTimestamp
         scope.isDrawIdle = !didDraw && isPastDrawIdleThreshold
         scope.nextFrameTimestamp = targetTimestamp
 
@@ -178,7 +179,7 @@ internal class PlatformPrefetchSchedulerImpl(
         }
     }
 
-    private class PrefetchRequestScopeImpl : PlatformPrefetchRequestScope {
+    private inner class PrefetchRequestScopeImpl : PlatformPrefetchRequestScope {
         var isDrawIdle: Boolean = false
         var nextFrameTimestamp: NSTimeInterval = 0.0
 
@@ -186,7 +187,7 @@ internal class PlatformPrefetchSchedulerImpl(
             if (isDrawIdle) {
                 Long.MAX_VALUE
             } else {
-                val availableTime = nextFrameTimestamp - CACurrentMediaTime()
+                val availableTime = nextFrameTimestamp - currentTime()
                 maxOf(0.0, availableTime).toNanoSeconds()
             }
     }
