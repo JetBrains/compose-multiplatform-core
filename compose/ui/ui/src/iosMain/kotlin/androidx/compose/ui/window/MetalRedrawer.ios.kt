@@ -17,7 +17,6 @@
 package androidx.compose.ui.window
 
 import androidx.collection.IntIntPair
-import androidx.compose.ui.FrameRateCategory
 import androidx.compose.ui.platform.PlatformOutOfFrameExecutor
 import androidx.compose.ui.uikit.utils.CMPMetalDrawablesHandler
 import androidx.compose.ui.util.trace
@@ -425,48 +424,5 @@ private class LegacyDisplayLinkProxy(
     @ObjCAction
     fun handleDisplayLinkTick() {
         callback()
-    }
-}
-
-internal class FrameRateManager(
-    private val caDisplayLink: CADisplayLink,
-) {
-    var frameRateVote: Float = Float.NaN
-    var maximumFramesPerSecond: NSInteger = 0
-
-    var preferredFramesPerSecond: NSInteger
-        get() = caDisplayLink.preferredFramesPerSecond
-        set(value) {
-            if (caDisplayLink.preferredFramesPerSecond == value) return
-            caDisplayLink.preferredFramesPerSecond = value
-        }
-
-    private val isFrameRateVoteSet: Boolean get() = !frameRateVote.isNaN()
-
-    fun voteFrameRate(frameRate: Float, frameRateCategory: Float) {
-        val frameRateCategoryValue = when (frameRateCategory) {
-            FrameRateCategory.Default.value -> CAFrameRateRangeDefault.preferred
-            FrameRateCategory.Normal.value -> 60f
-            FrameRateCategory.High.value -> maximumFramesPerSecond.toFloat()
-            else -> Float.NaN
-        }
-
-        val resolvedFrameRate = when {
-            !frameRate.isNaN() && !frameRateCategoryValue.isNaN() -> maxOf(frameRate, frameRateCategoryValue)
-            !frameRate.isNaN() -> frameRate
-            !frameRateCategoryValue.isNaN() -> frameRateCategoryValue
-            else -> return
-        }
-
-        if (!isFrameRateVoteSet || resolvedFrameRate > frameRateVote) {
-            frameRateVote = resolvedFrameRate
-        }
-    }
-
-    fun updateFrameRateIfNeeded() {
-        if (isFrameRateVoteSet) {
-            preferredFramesPerSecond = frameRateVote.toLong()
-            frameRateVote = Float.NaN
-        }
     }
 }
