@@ -61,7 +61,7 @@ private class WebPrefetchScheduler : RememberObserver, PriorityPrefetchScheduler
 
     private var scope: WebPrefetchRequestScope? = null
 
-    private val onIdleCallback = toJsCallback { deadline ->
+    private val onIdleCallback = idleCallbackToJs { deadline ->
         processPrefetchRequests(deadline)
     }
 
@@ -175,6 +175,6 @@ private fun cancelIdleCallback(handle: Int) {
 }
 
 @OptIn(ExperimentalWasmJsInterop::class)
-private fun toJsCallback(callback: (IdleDeadline) -> Unit): JsAny =
+private fun idleCallbackToJs(callback: (IdleDeadline) -> Unit): JsAny =
     //language=JavaScript
     js("(deadline) => callback(deadline)")
