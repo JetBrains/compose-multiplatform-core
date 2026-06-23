@@ -19,9 +19,8 @@ package androidx.compose.ui.platform
 import androidx.compose.ui.InternalComposeUiApi
 
 /**
- * Implementations of this interface accept prefetch requests via [schedulePrefetch] and decide when
- * to execute them in a way that will have minimal impact on user experience, e.g. during frame idle
- * time.
+ * Implementations of this interface accept prefetch requests and decide when to execute them in a
+ * way that will have minimal impact on user experience, e.g. during frame idle time.
  *
  * Requests should be executed by invoking [PlatformPrefetchRequest.execute]. The implementation of
  * [PlatformPrefetchRequest.execute] will return `false` when all work for that request is done,
@@ -31,22 +30,16 @@ import androidx.compose.ui.InternalComposeUiApi
 @InternalComposeUiApi
 interface PlatformPrefetchScheduler {
     /**
-     * Accepts a prefetch request. Implementations should find time to execute them, which will
-     * have minimal impact on user experience.
+     * Accepts a high-priority prefetch request. Implementations should find time to execute it
+     * before lower-priority work, with minimal impact on user experience.
      */
-    fun schedulePrefetch(
-        request: PlatformPrefetchRequest,
-        priority: PlatformPrefetchPriority,
-    )
-}
+    fun scheduleHighPriorityPrefetch(request: PlatformPrefetchRequest)
 
-/**
- * Priority for [PlatformPrefetchRequest] scheduled by [PlatformPrefetchScheduler].
- */
-@InternalComposeUiApi
-enum class PlatformPrefetchPriority {
-    Low,
-    High,
+    /**
+     * Accepts a low-priority prefetch request. Implementations should find time to execute it with
+     * minimal impact on user experience.
+     */
+    fun scheduleLowPriorityPrefetch(request: PlatformPrefetchRequest)
 }
 
 /**

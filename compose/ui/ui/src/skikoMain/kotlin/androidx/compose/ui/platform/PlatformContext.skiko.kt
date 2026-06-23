@@ -293,7 +293,9 @@ private object EmptyPlatformScreenReader : PlatformScreenReader {
 }
 
 private object NoOpPlatformPrefetchScheduler : PlatformPrefetchScheduler {
-    override fun schedulePrefetch(request: PlatformPrefetchRequest, priority: PlatformPrefetchPriority) = Unit
+    override fun scheduleHighPriorityPrefetch(request: PlatformPrefetchRequest) = Unit
+
+    override fun scheduleLowPriorityPrefetch(request: PlatformPrefetchRequest) = Unit
 }
 
 private val EmptyArchitectureComponentsOwner = DefaultArchitectureComponentsOwner(

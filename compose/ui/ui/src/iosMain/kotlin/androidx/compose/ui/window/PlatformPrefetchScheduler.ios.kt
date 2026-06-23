@@ -16,7 +16,6 @@
 
 package androidx.compose.ui.window
 
-import androidx.compose.ui.platform.PlatformPrefetchPriority
 import androidx.compose.ui.platform.PlatformPrefetchRequest
 import androidx.compose.ui.platform.PlatformPrefetchRequestScope
 import androidx.compose.ui.platform.PlatformPrefetchScheduler
@@ -68,9 +67,17 @@ internal class PlatformPrefetchSchedulerImpl(
     private var isDrawIdleThresholdPending: Boolean = true
     private var isDisposed = false
 
-    override fun schedulePrefetch(
+    override fun scheduleHighPriorityPrefetch(request: PlatformPrefetchRequest) {
+        enqueuePrefetch(request, highPriorityPrefetchRequests)
+    }
+
+    override fun scheduleLowPriorityPrefetch(request: PlatformPrefetchRequest) {
+        enqueuePrefetch(request, lowPriorityPrefetchRequests)
+    }
+
+    private fun enqueuePrefetch(
         request: PlatformPrefetchRequest,
-        priority: PlatformPrefetchPriority
+        requestQueue: ArrayDeque<PlatformPrefetchRequest>,
     ) {
         check(NSThread.isMainThread) {
             "PlatformPrefetchSchedulerImpl.schedule() must be called on main thread"
@@ -79,11 +86,7 @@ internal class PlatformPrefetchSchedulerImpl(
             return
         }
 
-        when (priority) {
-            PlatformPrefetchPriority.High -> highPriorityPrefetchRequests.addLast(request)
-            PlatformPrefetchPriority.Low -> lowPriorityPrefetchRequests.addLast(request)
-        }
-
+        requestQueue.addLast(request)
         onHasWorkScheduled(hasWorkScheduled)
     }
 
@@ -172,27 +175,22 @@ internal class PlatformPrefetchSchedulerImpl(
     private fun executeRequest(): Boolean {
         val availableTimeNanos = scope.availableTimeNanos()
         traceValue("compose:lazy:prefetch:available_time_nanos", availableTimeNanos)
+
         return if (availableTimeNanos > 0) {
-            val request = nextRequest()
+            val requestQueue = when {
+                highPriorityPrefetchRequests.isNotEmpty() -> highPriorityPrefetchRequests
+                lowPriorityPrefetchRequests.isNotEmpty() -> lowPriorityPrefetchRequests
+                else -> return false
+            }
+            val request = requestQueue.first()
             val hasMoreWorkToDo = with(request) { scope.execute() }
             if (!hasMoreWorkToDo) {
-                removeNextRequest()
+                requestQueue.removeFirst()
             }
             scope.isDrawIdle = false
             hasMoreWorkToDo
         } else {
             true
-        }
-    }
-
-    private fun nextRequest(): PlatformPrefetchRequest =
-        highPriorityPrefetchRequests.firstOrNull() ?: lowPriorityPrefetchRequests.first()
-
-    private fun removeNextRequest() {
-        if (highPriorityPrefetchRequests.isNotEmpty()) {
-            highPriorityPrefetchRequests.removeFirst()
-        } else {
-            lowPriorityPrefetchRequests.removeFirst()
         }
     }
 

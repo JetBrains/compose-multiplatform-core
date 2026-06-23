@@ -22,7 +22,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.platform.LocalPlatformPrefetchScheduler
-import androidx.compose.ui.platform.PlatformPrefetchPriority
 import androidx.compose.ui.platform.PlatformPrefetchRequest
 import androidx.compose.ui.platform.PlatformPrefetchRequestScope
 import androidx.compose.ui.platform.PlatformPrefetchScheduler
@@ -44,20 +43,14 @@ private class PlatformPrefetchSchedulerAdapter(
     PriorityPrefetchScheduler {
 
     override fun scheduleHighPriorityPrefetch(prefetchRequest: PrefetchRequest) {
-        schedule(prefetchRequest, PlatformPrefetchPriority.High)
+        prefetchScheduler.scheduleHighPriorityPrefetch(
+            PlatformPrefetchRequestAdapter(prefetchRequest)
+        )
     }
 
     override fun scheduleLowPriorityPrefetch(prefetchRequest: PrefetchRequest) {
-        schedule(prefetchRequest, PlatformPrefetchPriority.Low)
-    }
-
-    private fun schedule(
-        prefetchRequest: PrefetchRequest,
-        priority: PlatformPrefetchPriority,
-    ) {
-        prefetchScheduler.schedulePrefetch(
-            request = PlatformPrefetchRequestAdapter(prefetchRequest),
-            priority = priority,
+        prefetchScheduler.scheduleLowPriorityPrefetch(
+            PlatformPrefetchRequestAdapter(prefetchRequest)
         )
     }
 }

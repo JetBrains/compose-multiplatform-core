@@ -17,7 +17,6 @@
 package androidx.compose.ui.window
 
 import androidx.compose.ui.InternalComposeUiApi
-import androidx.compose.ui.platform.PlatformPrefetchPriority
 import androidx.compose.ui.platform.PlatformPrefetchRequest
 import androidx.compose.ui.platform.PlatformPrefetchRequestScope
 import kotlin.test.Test
@@ -32,10 +31,10 @@ class PlatformPrefetchSchedulerTest {
         val scheduler = scheduler()
         val executedRequests = mutableListOf<String>()
 
-        scheduler.schedulePrefetch(request("low-0", executedRequests), PlatformPrefetchPriority.Low)
-        scheduler.schedulePrefetch(request("high-0", executedRequests), PlatformPrefetchPriority.High)
-        scheduler.schedulePrefetch(request("low-1", executedRequests), PlatformPrefetchPriority.Low)
-        scheduler.schedulePrefetch(request("high-1", executedRequests), PlatformPrefetchPriority.High)
+        scheduler.scheduleLowPriorityPrefetch(request("low-0", executedRequests))
+        scheduler.scheduleHighPriorityPrefetch(request("high-0", executedRequests))
+        scheduler.scheduleLowPriorityPrefetch(request("low-1", executedRequests))
+        scheduler.scheduleHighPriorityPrefetch(request("high-1", executedRequests))
 
         scheduler.execute(lastFrameTimestamp = 0.0, targetTimestamp = 1.0, didDraw = false)
 
@@ -47,11 +46,10 @@ class PlatformPrefetchSchedulerTest {
         val scheduler = scheduler()
         val executedRequests = mutableListOf<String>()
 
-        scheduler.schedulePrefetch(
-            request("request-0", executedRequests, executeResults = listOf(true, false)),
-            PlatformPrefetchPriority.Low,
+        scheduler.scheduleLowPriorityPrefetch(
+            request("request-0", executedRequests, executeResults = listOf(true, false))
         )
-        scheduler.schedulePrefetch(request("request-1", executedRequests), PlatformPrefetchPriority.Low)
+        scheduler.scheduleLowPriorityPrefetch(request("request-1", executedRequests))
 
         scheduler.execute(lastFrameTimestamp = 0.0, targetTimestamp = 1.0, didDraw = false)
 
@@ -67,16 +65,15 @@ class PlatformPrefetchSchedulerTest {
         val scheduler = scheduler()
         val executedRequests = mutableListOf<String>()
 
-        scheduler.schedulePrefetch(
-            request("request-0", executedRequests, executeResults = listOf(true, false)),
-            PlatformPrefetchPriority.High,
+        scheduler.scheduleHighPriorityPrefetch(
+            request("request-0", executedRequests, executeResults = listOf(true, false))
         )
 
         scheduler.execute(lastFrameTimestamp = 0.0, targetTimestamp = 1.0, didDraw = false)
 
         assertEquals(listOf("request-0"), executedRequests)
 
-        scheduler.schedulePrefetch(request("request-1", executedRequests), PlatformPrefetchPriority.High)
+        scheduler.scheduleHighPriorityPrefetch(request("request-1", executedRequests))
         scheduler.execute(lastFrameTimestamp = 1.0, targetTimestamp = 2.0, didDraw = false)
 
         assertEquals(listOf("request-0", "request-0", "request-1"), executedRequests)
@@ -87,7 +84,7 @@ class PlatformPrefetchSchedulerTest {
         val scheduler = scheduler(currentTime = { 1.01 })
         val executedRequests = mutableListOf<String>()
 
-        scheduler.schedulePrefetch(request("request", executedRequests), PlatformPrefetchPriority.Low)
+        scheduler.scheduleLowPriorityPrefetch(request("request", executedRequests))
         scheduler.execute(lastFrameTimestamp = 1.0, targetTimestamp = 1.01, didDraw = false)
 
         assertTrue(executedRequests.isEmpty())
@@ -118,7 +115,7 @@ class PlatformPrefetchSchedulerTest {
         val hasWorkEvents = mutableListOf<Boolean>()
         val scheduler = scheduler(onHasWorkScheduled = hasWorkEvents::add)
 
-        scheduler.schedulePrefetch(request("request"), PlatformPrefetchPriority.Low)
+        scheduler.scheduleLowPriorityPrefetch(request("request"))
         scheduler.execute(lastFrameTimestamp = 0.0, targetTimestamp = 1.0, didDraw = false)
 
         assertEquals(listOf(true, false), hasWorkEvents)
@@ -130,9 +127,8 @@ class PlatformPrefetchSchedulerTest {
         val scheduler = scheduler(currentTime = { currentTime })
         val availableTimes = mutableListOf<Long>()
 
-        scheduler.schedulePrefetch(
-            request("request", availableTimes = availableTimes),
-            PlatformPrefetchPriority.Low,
+        scheduler.scheduleLowPriorityPrefetch(
+            request("request", availableTimes = availableTimes)
         )
 
         scheduler.execute(lastFrameTimestamp = 1.0, targetTimestamp = 1.01, didDraw = false)
@@ -149,9 +145,8 @@ class PlatformPrefetchSchedulerTest {
         scheduler.execute(lastFrameTimestamp = 1.0, targetTimestamp = 1.01, didDraw = true)
         scheduler.execute(lastFrameTimestamp = 1.01, targetTimestamp = 1.03, didDraw = false)
 
-        scheduler.schedulePrefetch(
-            request("request", availableTimes = availableTimes),
-            PlatformPrefetchPriority.Low,
+        scheduler.scheduleLowPriorityPrefetch(
+            request("request", availableTimes = availableTimes)
         )
         currentTime = 1.031
 
@@ -165,9 +160,9 @@ class PlatformPrefetchSchedulerTest {
         val scheduler = scheduler()
         val executedRequests = mutableListOf<String>()
 
-        scheduler.schedulePrefetch(request("request-0", executedRequests), PlatformPrefetchPriority.Low)
+        scheduler.scheduleLowPriorityPrefetch(request("request-0", executedRequests))
         scheduler.dispose()
-        scheduler.schedulePrefetch(request("request-1", executedRequests), PlatformPrefetchPriority.High)
+        scheduler.scheduleHighPriorityPrefetch(request("request-1", executedRequests))
         scheduler.execute(lastFrameTimestamp = 0.0, targetTimestamp = 1.0, didDraw = false)
 
         assertTrue(executedRequests.isEmpty())
