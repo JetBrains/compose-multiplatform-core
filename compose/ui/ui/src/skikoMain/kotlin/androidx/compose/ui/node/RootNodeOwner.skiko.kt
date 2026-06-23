@@ -1035,38 +1035,3 @@ private class RootPlatformWindowInsetsProviderNode(
         }
     }
 }
-
-private class FrameRateVotingManager(
-    private val voteFrameRate: (frameRate: Float, frameRateCategory: Float) -> Unit,
-) {
-    private var frameRateVote = Float.NaN
-    private var frameRateCategoryVote = 0f
-
-    private val isFrameRateVoteSet get() = !frameRateVote.isNaN()
-    private val isFrameRateCategoryVoteSet get() = frameRateCategoryVote != 0f
-    private val isAnyFrameRateVoteSet get() = isFrameRateVoteSet || isFrameRateCategoryVoteSet
-
-    fun prepareForVoting(frameRate: Float) {
-        if (frameRate > 0) {
-            if (!isFrameRateVoteSet || frameRate > frameRateVote) {
-                frameRateVote = frameRate
-            }
-        } else if (frameRate.isNaN() && !isFrameRateCategoryVoteSet) {
-            frameRateCategoryVote = frameRate
-        } else if (!frameRate.isNaN() && frameRate < 0 && (frameRateCategoryVote.isNaN() || frameRate < frameRateCategoryVote)) {
-            frameRateCategoryVote = frameRate
-        }
-    }
-
-    fun voteFrameRateIfNeeded() {
-        if (isAnyFrameRateVoteSet) {
-            voteFrameRate(frameRateVote, frameRateCategoryVote)
-            clear()
-        }
-    }
-
-    private fun clear() {
-        frameRateVote = Float.NaN
-        frameRateCategoryVote = 0f
-    }
-}
