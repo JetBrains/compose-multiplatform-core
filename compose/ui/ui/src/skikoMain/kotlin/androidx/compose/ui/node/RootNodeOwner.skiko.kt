@@ -960,23 +960,9 @@ internal class RootNodeOwner(
             requestDraw()
         }
 
-        private var currentFrameRate = Float.NaN
-        private var currentFrameRateCategory = 0f
+        private val frameRateVotingManager = FrameRateVotingManager(platformContext::voteFrameRate)
 
-        override fun voteFrameRate(frameRate: Float) {
-            val isCurrentFrameRateUnset = currentFrameRate.isNaN()
-            val isCurrentFrameRateCategoryUnset = currentFrameRateCategory == 0f
-
-            if (frameRate > 0) {
-                if (isCurrentFrameRateUnset || frameRate > currentFrameRate) {
-                    currentFrameRate = frameRate
-                }
-            } else if (frameRate.isNaN() && isCurrentFrameRateCategoryUnset) {
-                currentFrameRateCategory = frameRate
-            } else if (!frameRate.isNaN() && frameRate < 0 && (currentFrameRateCategory.isNaN() || frameRate < currentFrameRateCategory)) {
-                currentFrameRateCategory = frameRate
-            }
-        }
+        override fun voteFrameRate(frameRate: Float) = frameRateVotingManager.prepareForVoting(frameRate)
 
         fun draw(canvas: Canvas) {
             isDrawingContent = true
@@ -1009,13 +995,7 @@ internal class RootNodeOwner(
                 postponed.clear()
             }
 
-            val isAnyCurrentFrameRateSet =
-                !currentFrameRate.isNaN() || currentFrameRateCategory != 0f
-            if (isAnyCurrentFrameRateSet) {
-                platformContext.voteFrameRate(currentFrameRate, currentFrameRateCategory)
-                currentFrameRate = Float.NaN
-                currentFrameRateCategory = 0f
-            }
+            frameRateVotingManager.voteFrameRateIfNeeded()
 
             isDrawingContent = false
         }
@@ -1053,5 +1033,40 @@ private class RootPlatformWindowInsetsProviderNode(
             insets = windowInsets
             windowInsetsInvalidated()
         }
+    }
+}
+
+private class FrameRateVotingManager(
+    private val voteFrameRate: (frameRate: Float, frameRateCategory: Float) -> Unit,
+) {
+    private var frameRateVote = Float.NaN
+    private var frameRateCategoryVote = 0f
+
+    private val isFrameRateVoteSet get() = !frameRateVote.isNaN()
+    private val isFrameRateCategoryVoteSet get() = frameRateCategoryVote != 0f
+    private val isAnyFrameRateVoteSet get() = isFrameRateVoteSet || isFrameRateCategoryVoteSet
+
+    fun prepareForVoting(frameRate: Float) {
+        if (frameRate > 0) {
+            if (!isFrameRateVoteSet || frameRate > frameRateVote) {
+                frameRateVote = frameRate
+            }
+        } else if (frameRate.isNaN() && !isFrameRateCategoryVoteSet) {
+            frameRateCategoryVote = frameRate
+        } else if (!frameRate.isNaN() && frameRate < 0 && (frameRateCategoryVote.isNaN() || frameRate < frameRateCategoryVote)) {
+            frameRateCategoryVote = frameRate
+        }
+    }
+
+    fun voteFrameRateIfNeeded() {
+        if (isAnyFrameRateVoteSet) {
+            voteFrameRate(frameRateVote, frameRateCategoryVote)
+            clear()
+        }
+    }
+
+    private fun clear() {
+        frameRateVote = Float.NaN
+        frameRateCategoryVote = 0f
     }
 }
