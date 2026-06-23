@@ -32,35 +32,47 @@ import kotlin.test.assertNull
 class SystemThemeTest {
     @OptIn(ExperimentalTestApi::class)
     @Test
-    fun testSystemThemePollingState() = runComposeUiTest {
-        var provideSystemTheme1 by mutableStateOf(false)
-        var provideSystemTheme2 by mutableStateOf(false)
-        setContent {
-            if (provideSystemTheme1) {
-                ProvideSystemTheme { }
+    fun testSystemThemePollingState() {
+        val prevValue = System.getProperty("compose.systemtheme.poll")
+        System.setProperty("compose.systemtheme.poll", "true")
+        try {
+            runComposeUiTest {
+                var provideSystemTheme1 by mutableStateOf(false)
+                var provideSystemTheme2 by mutableStateOf(false)
+                setContent {
+                    if (provideSystemTheme1) {
+                        ProvideSystemTheme { }
+                    }
+                    if (provideSystemTheme2) {
+                        ProvideSystemTheme { }
+                    }
+                }
+
+                assertEquals(0, systemThemeSubscriberCount())
+                assertNull(systemThemePollingJob())
+
+                provideSystemTheme1 = true
+                waitForIdle()
+                assertEquals(1, systemThemeSubscriberCount())
+                assertNotNull(systemThemePollingJob())
+
+                provideSystemTheme2 = true
+                waitForIdle()
+                assertEquals(2, systemThemeSubscriberCount())
+                assertNotNull(systemThemePollingJob())
+
+                provideSystemTheme1 = false
+                provideSystemTheme2 = false
+                waitForIdle()
+                assertEquals(0, systemThemeSubscriberCount())
+                assertNull(systemThemePollingJob())
             }
-            if (provideSystemTheme2) {
-                ProvideSystemTheme { }
+        } finally {
+            if (prevValue != null) {
+                System.setProperty("compose.systemtheme.poll", prevValue)
+            } else {
+                System.clearProperty("compose.systemtheme.poll")
             }
         }
-
-        assertEquals(0, systemThemeSubscriberCount())
-        assertNull(systemThemePollingJob())
-
-        provideSystemTheme1 = true
-        waitForIdle()
-        assertEquals(1, systemThemeSubscriberCount())
-        assertNotNull(systemThemePollingJob())
-
-        provideSystemTheme2 = true
-        waitForIdle()
-        assertEquals(2, systemThemeSubscriberCount())
-        assertNotNull(systemThemePollingJob())
-
-        provideSystemTheme1 = false
-        provideSystemTheme2 = false
-        waitForIdle()
-        assertEquals(0, systemThemeSubscriberCount())
-        assertNull(systemThemePollingJob())
     }
 }
