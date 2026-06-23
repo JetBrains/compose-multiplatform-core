@@ -192,7 +192,7 @@ internal class LegacyMetalRedrawer(
 
         releaseCachedCommandQueue(queue)
 
-        frameRateManager = null
+        displayLinkFrameRate = null
 
         caDisplayLink?.invalidate()
         caDisplayLink = null
@@ -219,11 +219,11 @@ internal class LegacyMetalRedrawer(
         draw(waitUntilCompletion, CACurrentMediaTime())
     }
 
-    var frameRateManager: FrameRateManager? = caDisplayLink?.let { FrameRateManager(it) }
+    var displayLinkFrameRate: DisplayLinkFrameRate? = caDisplayLink?.let { DisplayLinkFrameRate(it) }
         private set
 
     override fun voteFrameRate(frameRate: Float, frameRateCategory: Float) {
-        frameRateManager?.voteFrameRate(frameRate, frameRateCategory)
+        displayLinkFrameRate?.voteFrameRate(frameRate, frameRateCategory)
     }
 
     /**
@@ -268,7 +268,7 @@ internal class LegacyMetalRedrawer(
                     pictureRecorder.finishRecordingAsPicture()
                 }
 
-                frameRateManager?.updateFrameRateIfNeeded()
+                displayLinkFrameRate?.updateFrameRateIfNeeded()
 
                 val metalDrawable = trace("MetalRedrawer:draw:nextDrawable") {
                     metalDrawablesHandler.nextDrawable()

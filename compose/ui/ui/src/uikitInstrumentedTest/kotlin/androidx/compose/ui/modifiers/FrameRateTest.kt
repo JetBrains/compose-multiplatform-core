@@ -94,8 +94,8 @@ internal class FrameRateTest {
 
 private val MetalRedrawer.preferredFramesPerSecond: Long?
     get() = when (this) {
-        is LegacyMetalRedrawer -> frameRateManager?.preferredFramesPerSecond
-        is SurfaceMetalRedrawer -> frameRateManager?.preferredFramesPerSecond
+        is LegacyMetalRedrawer -> displayLinkFrameRate?.preferredFramesPerSecond
+        is SurfaceMetalRedrawer -> displayLinkFrameRate?.preferredFramesPerSecond
     }
 
 private fun checkEqual(expected: Double, actual: Double, absoluteTolerance: Double): Boolean =

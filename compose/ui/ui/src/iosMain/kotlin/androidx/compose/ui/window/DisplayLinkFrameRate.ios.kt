@@ -28,7 +28,7 @@ import platform.darwin.NSInteger
  * highest resolved value. [updateFrameRateIfNeeded] applies the pending value to
  * [CADisplayLink.preferredFramesPerSecond] and clears it.
  */
-internal class FrameRateManager(
+internal class DisplayLinkFrameRate(
     private val caDisplayLink: CADisplayLink,
 ) {
     var frameRateVote: Float = Float.NaN

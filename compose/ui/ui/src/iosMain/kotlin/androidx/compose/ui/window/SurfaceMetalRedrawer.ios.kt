@@ -272,7 +272,7 @@ internal class SurfaceMetalRedrawer(
 
         releaseCachedCommandQueue(queue)
 
-        frameRateManager = null
+        displayLinkFrameRate = null
 
         caDisplayLink?.invalidate()
         caDisplayLink = null
@@ -301,11 +301,11 @@ internal class SurfaceMetalRedrawer(
         draw(waitUntilCompletion, CACurrentMediaTime())
     }
 
-    var frameRateManager: FrameRateManager? = caDisplayLink?.let { FrameRateManager(it) }
+    var displayLinkFrameRate: DisplayLinkFrameRate? = caDisplayLink?.let { DisplayLinkFrameRate(it) }
         private set
 
     override fun voteFrameRate(frameRate: Float, frameRateCategory: Float) {
-        frameRateManager?.voteFrameRate(frameRate, frameRateCategory)
+        displayLinkFrameRate?.voteFrameRate(frameRate, frameRateCategory)
     }
 
     private fun awaitRenderingQueueTasksCompletion() {
@@ -361,7 +361,7 @@ internal class SurfaceMetalRedrawer(
                     pictureRecorder.finishRecordingAsPicture()
                 }
 
-                frameRateManager?.updateFrameRateIfNeeded()
+                displayLinkFrameRate?.updateFrameRateIfNeeded()
 
                 val transaction = retrieveInteropTransaction()
                 isInteropActive = transaction.isInteropActive
