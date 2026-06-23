@@ -42,7 +42,6 @@ internal sealed interface MetalRedrawer {
     fun setNeedsRedraw()
     val outOfFrameExecutor: PlatformOutOfFrameExecutor
     var ongoingInteractionEventsCount: Int
-    var preferredFramesPerSecond: NSInteger
     var isForcedToPresentWithTransactionEveryFrame: Boolean
     val currentTargetFrameDuration: NSTimeInterval?
     fun voteFrameRate(frameRate: Float, frameRateCategory: Float)
@@ -81,15 +80,6 @@ internal class LegacyMetalRedrawer(
     private var isDrawRecursiveCall = false
 
     override var isForcedToPresentWithTransactionEveryFrame = false
-
-    var maximumFramesPerSecond: NSInteger = 0
-
-    override var preferredFramesPerSecond: NSInteger
-        get() = caDisplayLink?.preferredFramesPerSecond ?: 0
-        set(value) {
-            if (caDisplayLink?.preferredFramesPerSecond == value) return
-            caDisplayLink?.preferredFramesPerSecond = value
-        }
 
     override val currentTargetFrameDuration: NSTimeInterval?
         get() {
@@ -203,6 +193,8 @@ internal class LegacyMetalRedrawer(
 
         releaseCachedCommandQueue(queue)
 
+        frameRateManager = null
+
         caDisplayLink?.invalidate()
         caDisplayLink = null
 
@@ -228,26 +220,11 @@ internal class LegacyMetalRedrawer(
         draw(waitUntilCompletion, CACurrentMediaTime())
     }
 
-    private var currentFrameRate: Float = Float.NaN
+    var frameRateManager: FrameRateManager? = caDisplayLink?.let { FrameRateManager(it) }
+        private set
 
     override fun voteFrameRate(frameRate: Float, frameRateCategory: Float) {
-        val frameRateCategoryValue = when (frameRateCategory) {
-            FrameRateCategory.Default.value -> CAFrameRateRangeDefault.preferred
-            FrameRateCategory.Normal.value -> 60f
-            FrameRateCategory.High.value -> maximumFramesPerSecond.toFloat()
-            else -> Float.NaN
-        }
-
-        val resolvedFrameRate = when {
-            !frameRate.isNaN() && !frameRateCategoryValue.isNaN() -> maxOf(frameRate, frameRateCategoryValue)
-            !frameRate.isNaN() -> frameRate
-            !frameRateCategoryValue.isNaN() -> frameRateCategoryValue
-            else -> return
-        }
-
-        if (currentFrameRate.isNaN() || resolvedFrameRate > currentFrameRate) {
-            currentFrameRate = resolvedFrameRate
-        }
+        frameRateManager?.voteFrameRate(frameRate, frameRateCategory)
     }
 
     /**
@@ -292,10 +269,7 @@ internal class LegacyMetalRedrawer(
                     pictureRecorder.finishRecordingAsPicture()
                 }
 
-                if (!currentFrameRate.isNaN()) {
-                    preferredFramesPerSecond = currentFrameRate.toLong()
-                    currentFrameRate = Float.NaN
-                }
+                frameRateManager?.updateFrameRateIfNeeded()
 
                 val metalDrawable = trace("MetalRedrawer:draw:nextDrawable") {
                     metalDrawablesHandler.nextDrawable()
@@ -451,5 +425,48 @@ private class LegacyDisplayLinkProxy(
     @ObjCAction
     fun handleDisplayLinkTick() {
         callback()
+    }
+}
+
+internal class FrameRateManager(
+    private val caDisplayLink: CADisplayLink,
+) {
+    var frameRateVote: Float = Float.NaN
+    var maximumFramesPerSecond: NSInteger = 0
+
+    var preferredFramesPerSecond: NSInteger
+        get() = caDisplayLink.preferredFramesPerSecond
+        set(value) {
+            if (caDisplayLink.preferredFramesPerSecond == value) return
+            caDisplayLink.preferredFramesPerSecond = value
+        }
+
+    private val isFrameRateVoteSet: Boolean get() = !frameRateVote.isNaN()
+
+    fun voteFrameRate(frameRate: Float, frameRateCategory: Float) {
+        val frameRateCategoryValue = when (frameRateCategory) {
+            FrameRateCategory.Default.value -> CAFrameRateRangeDefault.preferred
+            FrameRateCategory.Normal.value -> 60f
+            FrameRateCategory.High.value -> maximumFramesPerSecond.toFloat()
+            else -> Float.NaN
+        }
+
+        val resolvedFrameRate = when {
+            !frameRate.isNaN() && !frameRateCategoryValue.isNaN() -> maxOf(frameRate, frameRateCategoryValue)
+            !frameRate.isNaN() -> frameRate
+            !frameRateCategoryValue.isNaN() -> frameRateCategoryValue
+            else -> return
+        }
+
+        if (!isFrameRateVoteSet || resolvedFrameRate > frameRateVote) {
+            frameRateVote = resolvedFrameRate
+        }
+    }
+
+    fun updateFrameRateIfNeeded() {
+        if (isFrameRateVoteSet) {
+            preferredFramesPerSecond = frameRateVote.toLong()
+            frameRateVote = Float.NaN
+        }
     }
 }
