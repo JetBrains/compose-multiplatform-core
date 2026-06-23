@@ -95,8 +95,8 @@ internal class LegacyMetalRedrawer(
     override val currentTargetFrameDuration: NSTimeInterval?
         get() {
             val currentTargetTimestamp = currentTargetTimestamp ?: return null
-            val currentTimestamp = currentTimestamp ?: return null
-            return currentTargetTimestamp - currentTimestamp
+            val lastFrameTimestamp = lastFrameTimestamp ?: return null
+            return currentTargetTimestamp - lastFrameTimestamp
         }
 
     private val displayLinkConditions = DisplayLinkConditions { paused ->
@@ -155,7 +155,7 @@ internal class LegacyMetalRedrawer(
      */
     private var caDisplayLink: CADisplayLink? = CADisplayLink.displayLinkWithTarget(
         target = LegacyDisplayLinkProxy {
-            val timestamp = currentTimestamp ?: return@LegacyDisplayLinkProxy
+            val lastFrameTimestamp = lastFrameTimestamp ?: return@LegacyDisplayLinkProxy
             val targetTimestamp = currentTargetTimestamp ?: return@LegacyDisplayLinkProxy
 
             var didDraw = false
@@ -163,7 +163,7 @@ internal class LegacyMetalRedrawer(
                 draw(waitUntilCompletion = false, targetTimestamp)
                 didDraw = true
             }
-            prefetchScheduler.execute(timestamp, targetTimestamp, didDraw)
+            prefetchScheduler.execute(lastFrameTimestamp, targetTimestamp, didDraw)
         },
         selector = NSSelectorFromString(LegacyDisplayLinkProxy::handleDisplayLinkTick.name)
     )
@@ -175,9 +175,9 @@ internal class LegacyMetalRedrawer(
         get() = caDisplayLink?.targetTimestamp
 
     /**
-     * Indicates when the [CADisplayLink]'s frame began
+     * Indicates when the last frame displayed.
      */
-    private val currentTimestamp: NSTimeInterval?
+    private val lastFrameTimestamp: NSTimeInterval?
         get() = caDisplayLink?.timestamp
 
     init {

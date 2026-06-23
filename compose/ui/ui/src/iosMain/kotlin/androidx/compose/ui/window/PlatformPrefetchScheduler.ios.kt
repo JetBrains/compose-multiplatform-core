@@ -86,13 +86,13 @@ internal class PlatformPrefetchSchedulerImpl(
     /**
      * Executes scheduler prefetch requests during a display-link callback.
      *
-     * @param timestamp Timestamp of the last displayed frame. Used as the start of the current
-     * display-link interval.
+     * @param lastFrameTimestamp Timestamp of the last displayed frame. Used as the start of the
+     * current display-link interval.
      * @param targetTimestamp Deadline for prefetch work that runs before the next frame.
      * @param didDraw `true` when `draw()` was invoked during this display-link callback.
      */
     fun execute(
-        timestamp: NSTimeInterval,
+        lastFrameTimestamp: NSTimeInterval,
         targetTimestamp: NSTimeInterval,
         didDraw: Boolean,
     ) {
@@ -104,10 +104,10 @@ internal class PlatformPrefetchSchedulerImpl(
             return
         }
 
-        val frameInterval = targetTimestamp - timestamp
+        val frameInterval = targetTimestamp - lastFrameTimestamp
 
         if (didDraw) {
-            recordDraw(timestamp, frameInterval)
+            recordDraw(lastFrameTimestamp, frameInterval)
         } else {
             updateDrawIdleThresholdIfNeeded(frameInterval)
         }
@@ -136,10 +136,10 @@ internal class PlatformPrefetchSchedulerImpl(
     }
 
     private fun recordDraw(
-        timestamp: NSTimeInterval,
+        lastFrameTimestamp: NSTimeInterval,
         frameInterval: NSTimeInterval,
     ) {
-        lastDrawTimestamp = timestamp
+        lastDrawTimestamp = lastFrameTimestamp
         drawFrameIntervalForIdleThreshold = maxOf(0.0, frameInterval)
         isDrawIdleThresholdPending = true
     }

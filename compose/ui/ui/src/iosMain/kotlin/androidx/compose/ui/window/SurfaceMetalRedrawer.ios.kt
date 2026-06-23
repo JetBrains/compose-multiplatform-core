@@ -172,8 +172,8 @@ internal class SurfaceMetalRedrawer(
     override val currentTargetFrameDuration: NSTimeInterval?
         get() {
             val currentTargetTimestamp = currentTargetTimestamp ?: return null
-            val currentTimestamp = currentTimestamp ?: return null
-            return currentTargetTimestamp - currentTimestamp
+            val lastFrameTimestamp = lastFrameTimestamp ?: return null
+            return currentTargetTimestamp - lastFrameTimestamp
         }
 
     private val displayLinkConditions = DisplayLinkConditions { paused ->
@@ -231,7 +231,7 @@ internal class SurfaceMetalRedrawer(
      */
     private var caDisplayLink: CADisplayLink? = CADisplayLink.displayLinkWithTarget(
         target = SurfaceDisplayLinkProxy {
-            val timestamp = currentTimestamp ?: return@SurfaceDisplayLinkProxy
+            val lastFrameTimestamp = lastFrameTimestamp ?: return@SurfaceDisplayLinkProxy
             val targetTimestamp = currentTargetTimestamp ?: return@SurfaceDisplayLinkProxy
 
             var didDraw = false
@@ -239,7 +239,7 @@ internal class SurfaceMetalRedrawer(
                 draw(waitUntilCompletion = false, targetTimestamp)
                 didDraw = true
             }
-            prefetchScheduler.execute(timestamp, targetTimestamp, didDraw)
+            prefetchScheduler.execute(lastFrameTimestamp, targetTimestamp, didDraw)
         },
         selector = NSSelectorFromString(SurfaceDisplayLinkProxy::handleDisplayLinkTick.name)
     )
@@ -247,7 +247,7 @@ internal class SurfaceMetalRedrawer(
     private val currentTargetTimestamp: NSTimeInterval?
         get() = caDisplayLink?.targetTimestamp
 
-    private val currentTimestamp: NSTimeInterval?
+    private val lastFrameTimestamp: NSTimeInterval?
         get() = caDisplayLink?.timestamp
 
     init {
