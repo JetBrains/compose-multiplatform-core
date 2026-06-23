@@ -29,7 +29,7 @@ import platform.QuartzCore.CACurrentMediaTime
 
 internal class PlatformPrefetchSchedulerImpl(
     private val currentTime: () -> NSTimeInterval = { CACurrentMediaTime() },
-    private val onHasWorkScheduled: (Boolean) -> Unit,
+    private var onHasWorkScheduled: (Boolean) -> Unit,
 ) : PlatformPrefetchScheduler {
     private val prefetchRequests = ArrayDeque<PlatformPrefetchRequest>()
     private val scope = PrefetchRequestScopeImpl()
@@ -161,6 +161,7 @@ internal class PlatformPrefetchSchedulerImpl(
         isDisposed = true
         prefetchRequests.clear()
         onHasWorkScheduled(false)
+        onHasWorkScheduled = {}
     }
 
     private fun executeRequest(): Boolean {
