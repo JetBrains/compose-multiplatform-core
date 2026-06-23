@@ -960,9 +960,9 @@ internal class RootNodeOwner(
             requestDraw()
         }
 
-        private val frameRateVotingManager = FrameRateVotingManager(platformContext::voteFrameRate)
+        private val frameRateVoteCollector = FrameRateVoteCollector(platformContext::voteFrameRate)
 
-        override fun voteFrameRate(frameRate: Float) = frameRateVotingManager.prepareForVoting(frameRate)
+        override fun voteFrameRate(frameRate: Float) = frameRateVoteCollector.collectVote(frameRate)
 
         fun draw(canvas: Canvas) {
             isDrawingContent = true
@@ -995,7 +995,7 @@ internal class RootNodeOwner(
                 postponed.clear()
             }
 
-            frameRateVotingManager.voteFrameRateIfNeeded()
+            frameRateVoteCollector.submitVoteIfNeeded()
 
             isDrawingContent = false
         }

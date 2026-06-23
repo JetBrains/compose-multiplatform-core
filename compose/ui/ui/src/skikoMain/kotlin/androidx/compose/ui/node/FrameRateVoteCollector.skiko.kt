@@ -16,8 +16,14 @@
 
 package androidx.compose.ui.node
 
-internal class FrameRateVotingManager(
-    private val voteFrameRate: (frameRate: Float, frameRateCategory: Float) -> Unit,
+/**
+ * Collects and aggregates frame-rate votes before forwarding them.
+ *
+ * [collectVote] keeps the highest exact frame-rate vote and the most demanding category vote.
+ * [submitVoteIfNeeded] forwards the aggregated values and clears the pending state.
+ */
+internal class FrameRateVoteCollector(
+    private val submitVote: (frameRate: Float, frameRateCategory: Float) -> Unit,
 ) {
     private var frameRateVote = Float.NaN
     private var frameRateCategoryVote = 0f
@@ -26,7 +32,7 @@ internal class FrameRateVotingManager(
     private val isFrameRateCategoryVoteSet get() = frameRateCategoryVote != 0f
     private val isAnyFrameRateVoteSet get() = isFrameRateVoteSet || isFrameRateCategoryVoteSet
 
-    fun prepareForVoting(frameRate: Float) {
+    fun collectVote(frameRate: Float) {
         if (frameRate > 0) {
             if (!isFrameRateVoteSet || frameRate > frameRateVote) {
                 frameRateVote = frameRate
@@ -38,9 +44,9 @@ internal class FrameRateVotingManager(
         }
     }
 
-    fun voteFrameRateIfNeeded() {
+    fun submitVoteIfNeeded() {
         if (isAnyFrameRateVoteSet) {
-            voteFrameRate(frameRateVote, frameRateCategoryVote)
+            submitVote(frameRateVote, frameRateCategoryVote)
             clear()
         }
     }
