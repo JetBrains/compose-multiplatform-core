@@ -69,7 +69,6 @@ private fun onSubscriberRemoved() {
 
 private suspend fun pollCurrentSystemTheme() {
     while (true) {
-        println("Polling system theme")
         currentSystemTheme.value = org.jetbrains.skiko.currentSystemTheme
         delay(1.seconds)
     }
