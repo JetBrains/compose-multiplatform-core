@@ -21,6 +21,13 @@ import platform.QuartzCore.CADisplayLink
 import platform.QuartzCore.CAFrameRateRangeDefault
 import platform.darwin.NSInteger
 
+/**
+ * Stores a pending frame-rate vote for a [CADisplayLink].
+ *
+ * [voteFrameRate] resolves exact and category votes into a concrete frame rate and keeps the
+ * highest resolved value. [updateFrameRateIfNeeded] applies the pending value to
+ * [CADisplayLink.preferredFramesPerSecond] and clears it.
+ */
 internal class FrameRateManager(
     private val caDisplayLink: CADisplayLink,
 ) {
