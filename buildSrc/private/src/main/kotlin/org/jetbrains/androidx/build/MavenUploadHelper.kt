@@ -24,6 +24,7 @@ import androidx.build.multiplatformExtension
 import com.android.build.gradle.LibraryPlugin
 import com.android.utils.childrenIterator
 import com.android.utils.forEach
+import com.android.utils.mapValuesNotNull
 import com.google.gson.GsonBuilder
 import com.google.gson.JsonObject
 import com.google.gson.stream.JsonWriter
@@ -64,6 +65,7 @@ import org.xml.sax.InputSource
 import org.xml.sax.XMLReader
 import org.gradle.api.artifacts.ModuleIdentifier
 import org.gradle.api.artifacts.ModuleVersionIdentifier
+import org.gradle.api.artifacts.ResolvedDependency
 import org.gradle.api.internal.artifacts.DefaultModuleIdentifier
 import org.w3c.dom.Node
 
@@ -152,6 +154,12 @@ private fun Project.configureComponentPublishing(
             }
         }
         publications.withType(MavenPublication::class.java).all { publication ->
+            // TODO CMP-10368 fix old capability mechanism after migration to new artifact redirection
+//            if (kmpExtension.redirectTargetDecls.isNotEmpty()) {
+//                // Gradle cannot map variant capabilities into POM metadata, so redirected
+//                // publications emit warning noise for their published component variants.
+//                publication.suppressRedirectionPomMetadataWarnings()
+//            }
             publication.pom { pom ->
                 addInformativeMetadata(extension, pom)
                 tweakDependenciesMetadata(
@@ -162,10 +170,12 @@ private fun Project.configureComponentPublishing(
     }
 
     project.tasks.withType(GenerateModuleMetadata::class.java).configureEach { task ->
+//        val capabilitiesToRemove = publishedRedirectionCapabilities() // TODO CMP-10368 fix old capability mechanism after migration to new artifact redirection
         task.doLast {
             val metadataFile = task.outputFile.asFile.get()
             val metadataString = metadataFile.readText()
             val modifiedMetadataString = modifyGradleMetadata(metadataString) { metadata ->
+//                filterGradleMetadataCapabilities(metadata, capabilitiesToRemove)  // TODO CMP-10368 fix old capability mechanism after migration to new artifact redirection
                 sortGradleMetadataDependencies(metadata)
             }
 
@@ -174,6 +184,202 @@ private fun Project.configureComponentPublishing(
             }
         }
     }
+    // run code only after all projects because it depends on redirection info,
+    // which is constructed at a project evaluation step
+    gradle.projectsEvaluated {
+        project.tasks.withType(GenerateMavenPom::class.java).configureEach { task ->
+            fun hasTargetWithComponent(componentName: String) =
+                task.project.multiplatformExtension?.targets?.find { target ->
+                    target.components.any { it.name == componentName }
+                } != null
+
+            // extract heuristically from the task name:
+            // generatePomFileForKotlinMultiplatformDecoratedPublication
+            // generatePomFileForDesktopDecoratedPublication
+            // ...
+            // and take only if it is a target's component (we redirect only targets)
+            val componentName: String? = Regex("^generatePomFileFor(.*)Publication$")
+                .matchEntire(task.name)
+                ?.groupValues?.get(1)
+                ?.replaceFirstChar { it.lowercase() }
+                ?.takeIf(::hasTargetWithComponent)
+
+            val originalToRedirected: Map<ModuleIdentifier, ModuleVersionIdentifier> = if (componentName != null) {
+                originalToRedirectedDependency(componentName)
+            } else {
+                emptyMap()
+            }
+
+            task.doLast {
+                val pomFile = task.destination
+                val pom = pomFile.readText()
+                val modifiedPom = modifyPomDependencies(pom, originalToRedirected)
+                if (pom != modifiedPom) {
+                    pomFile.writeText(modifiedPom)
+                }
+            }
+        }
+    }
+}
+/**
+ * Build a `fork-coordinate -> androidx-coordinate` map used to rewrite published POM dependencies
+ * (see [modifyPomDependencies]). The fork publishes under `org.jetbrains.*` group ids that redirect
+ * to `androidx.*`; this discovers, per resolved first-level dependency, the `androidx.*` module it
+ * ultimately resolves to so the POM can reference the real coordinate.
+ *
+ * Workaround for
+ * https://youtrack.jetbrains.com/issue/CMP-7764/Redirection-of-artifacts-breaks-poms-for-multiplatform-libraries-that-use-them
+ * After it is resolved, this shouldn't be needed.
+ */
+internal fun Project.originalToRedirectedDependency(
+    componentName: String
+): Map<ModuleIdentifier, ModuleVersionIdentifier> {
+    /**
+     * Find a redirect to another group and version.
+     *
+     * Use heuristic method that compares modules names. Example:
+     *   [first-level-dependency] org.jetbrains.androidx.lifecycle:lifecycle-runtime:2.8.4 ->
+     *   [artifact-with-the-same-name] androidx.lifecycle:lifecycle-runtime:2.8.5 ->
+     *   [artifact-with-the-same-name-plus-suffix] androidx.lifecycle:lifecycle-runtime-desktop:2.8.5
+     *
+     * The first dependency redirects to the last one.
+     */
+    fun ResolvedDependency.findRedirectedDependencyHeuristically() =
+        children
+            .find { it.moduleName == moduleName }
+            ?.children
+            // don't check `it.moduleName == "moduleName-$target"` here,
+            // as it can be resolved to any other suitable target
+            // (for example, to jvm, or any other custom)
+            ?.find { it.moduleName.startsWith(moduleName) }
+
+    fun mainConfiguration() =
+        configurations.find { it.name == "${componentName}RuntimeClasspath" } ?:
+        configurations.find { it.name == "${componentName}CompileKlibraries" }!!
+
+    /**
+     * Extract redirections for dependencies using heuristic method (for both project, and external)
+     *
+     * Example for compose:ui
+     * org.jetbrains.androidx.lifecycle:lifecycle-common=androidx.lifecycle:lifecycle-common-jvm:2.8.5
+     * org.jetbrains.androidx.lifecycle:lifecycle-runtime=androidx.lifecycle:lifecycle-runtime-desktop:2.8.5
+     * org.jetbrains.androidx.lifecycle:lifecycle-viewmodel=androidx.lifecycle:lifecycle-viewmodel-desktop:2.8.5
+     */
+    return mainConfiguration()
+        .resolvedConfiguration
+        .firstLevelModuleDependencies
+        .orEmpty()
+        .associateBy { DefaultModuleIdentifier.newId(it.moduleGroup, it.moduleName) }
+        .mapValuesNotNull { it.value.findRedirectedDependencyHeuristically()?.module?.id }
+}
+
+/**
+ * Looks for a dependencies XML element within [pom], sorts its contents and modify it by redirecting coordinates
+ * TODO CMP-10368 fix old capability mechanism after migration to new artifact redirection
+ */
+internal fun modifyPomDependencies(
+    pom: String,
+    originalToRedirected: Map<ModuleIdentifier, ModuleVersionIdentifier>
+): String {
+    // Workaround for using the default namespace in dom4j.
+    val namespaceUris = mapOf("ns" to "http://maven.apache.org/POM/4.0.0")
+    val docFactory = DocumentFactory()
+    docFactory.xPathNamespaceURIs = namespaceUris
+    // Ensure that we're consistently using JAXP parser.
+    val xmlReader = JAXPSAXParser()
+    val document = parseText(docFactory, xmlReader, pom)
+
+    // For each <dependencies> element, sort the contained elements in-place.
+    document.rootElement
+        .selectNodes("ns:dependencies")
+        .filterIsInstance<Element>()
+        .forEach { element ->
+            val deps = element.elements()
+            val modifiedDeps = deps
+                .onEach { modifyPomDependency(it, originalToRedirected) }
+                .sortedBy { it.stringValue }
+
+            // Content contains formatting nodes, so to avoid modifying those we replace
+            // each element with the sorted element from its respective index. Note this
+            // will not move adjacent elements, so any comments would remain in their
+            // original order.
+            element.content().replaceAll {
+                val index = deps.indexOf(it)
+                if (index >= 0) {
+                    modifiedDeps[index]
+                } else {
+                    it
+                }
+            }
+        }
+
+    // Write to string. Note that this does not preserve the original indent level, but it
+    // does preserve line breaks -- not that any of this matters for client XML parsing.
+    val stringWriter = StringWriter()
+    XMLWriter(stringWriter).apply {
+        setIndentLevel(2)
+        write(document)
+        close()
+    }
+
+    return stringWriter.toString()
+}
+
+internal fun modifyPomDependency(
+    dependency: Element,
+    originalToRedirected: Map<ModuleIdentifier, ModuleVersionIdentifier>
+) {
+    val groupIdNode = dependency.selectSingleNode("ns:groupId")
+    val artifactIdNode = dependency.selectSingleNode("ns:artifactId")
+    val versionNode = dependency.selectSingleNode("ns:version")
+    val id = DefaultModuleIdentifier.newId(groupIdNode.stringValue, artifactIdNode.stringValue)
+    val redirected = originalToRedirected[id]
+    if (redirected != null) {
+        groupIdNode.text = redirected.group
+        artifactIdNode.text = redirected.name
+        versionNode.text = redirected.version
+    }
+}
+
+// Coped from org.dom4j.DocumentHelper with modifications to allow SAXReader configuration.
+@Throws(DocumentException::class)
+fun parseText(
+    documentFactory: DocumentFactory,
+    xmlReader: XMLReader,
+    text: String,
+): Document {
+    val reader = SAXReader.createDefault()
+    reader.documentFactory = documentFactory
+    reader.xmlReader = xmlReader
+    val encoding = getEncoding(text)
+    val source = InputSource(StringReader(text))
+    source.encoding = encoding
+    val result = reader.read(source)
+    if (result.xmlEncoding == null) {
+        result.xmlEncoding = encoding
+    }
+    return result
+}
+
+// Coped from org.dom4j.DocumentHelper.
+private fun getEncoding(text: String): String? {
+    var result: String? = null
+    val xml = text.trim { it <= ' ' }
+    if (xml.startsWith("<?xml")) {
+        val end = xml.indexOf("?>")
+        val sub = xml.substring(0, end)
+        val tokens = StringTokenizer(sub, " =\"'")
+        while (tokens.hasMoreTokens()) {
+            val token = tokens.nextToken()
+            if ("encoding" == token) {
+                if (tokens.hasMoreTokens()) {
+                    result = tokens.nextToken()
+                }
+                break
+            }
+        }
+    }
+    return result
 }
 
 /**
@@ -186,6 +392,30 @@ private fun sortGradleMetadataDependencies(metadata: JsonObject) {
             val sortedSet = jsonArray.toSortedSet(compareBy { it.toString() })
             jsonArray.removeAll { true }
             sortedSet.forEach { element -> jsonArray.add(element) }
+        }
+    }
+}
+
+/**
+ * Removes only the capability declarations introduced by [Project.configureRedirectionCapability].
+ * These capabilities are needed for local resolution inside the current build, but they should not
+ * leak into published module metadata.
+ */
+private fun filterGradleMetadataCapabilities(
+    metadata: JsonObject,
+    capabilitiesToRemove: Set<String>,
+) {
+    if (capabilitiesToRemove.isEmpty()) return
+
+    metadata.getAsJsonArray("variants").forEach { entry ->
+        val variant = entry as? JsonObject ?: return@forEach
+        val capabilities = variant.getAsJsonArray("capabilities") ?: return@forEach
+        capabilities.removeAll { capabilityElement ->
+            val capability = capabilityElement as? JsonObject ?: return@removeAll false
+            capability.notation() in capabilitiesToRemove
+        }
+        if (capabilities.isEmpty) {
+            variant.remove("capabilities")
         }
     }
 }
@@ -203,6 +433,14 @@ private fun modifyGradleMetadata(
     gson.toJson(jsonObj, jsonWriter)
     return stringWriter.toString()
 }
+
+private fun MavenPublication.suppressRedirectionPomMetadataWarnings() {
+    listOf("ApiElements", "RuntimeElements", "SourcesElements", "MetadataElements").forEach { suffix ->
+        suppressPomMetadataWarningsFor("${name}$suffix-published")
+    }
+}
+
+private fun JsonObject.notation(): String = "${get("group").asString}:${get("name").asString}:${get("version").asString}"
 
 private fun Project.isMultiplatformPublicationEnabled(): Boolean {
     return extensions.findByType<KotlinMultiplatformExtension>() != null
