@@ -20,8 +20,6 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.RememberObserver
 import androidx.compose.runtime.remember
-import kotlin.js.ExperimentalWasmJsInterop
-import kotlin.js.js
 
 @OptIn(ExperimentalFoundationApi::class)
 @Suppress("DEPRECATION")
@@ -63,7 +61,7 @@ private class WebPrefetchScheduler : RememberObserver, PriorityPrefetchScheduler
 
     private var scope: WebPrefetchRequestScope? = null
 
-    private val onIdleCallback: (IdleDeadline) -> Unit = { deadline ->
+    private val onIdleCallback = toJsCallback { deadline ->
         processPrefetchRequests(deadline)
     }
 
@@ -164,9 +162,8 @@ private external interface IdleDeadline {
 
 
 @OptIn(ExperimentalWasmJsInterop::class)
-private fun requestIdleCallback(
-    callback: (IdleDeadline) -> Unit,
-): Int = //language=JavaScript
+private fun requestIdleCallback(callback: JsAny): Int =
+    //language=JavaScript
     js("window.requestIdleCallback(callback)")
 
 @OptIn(ExperimentalWasmJsInterop::class)
@@ -174,3 +171,8 @@ private fun cancelIdleCallback(handle: Int) {
     //language=JavaScript
     js("window.cancelIdleCallback(handle)")
 }
+
+@OptIn(ExperimentalWasmJsInterop::class)
+private fun toJsCallback(callback: (IdleDeadline) -> Unit): JsAny =
+    //language=JavaScript
+    js("(deadline) => callback(deadline)")
