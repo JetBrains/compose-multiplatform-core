@@ -185,6 +185,7 @@ public final class androidx/compose/ui/ImageComposeScene {
 	public final fun close ()V
 	public final fun getConstraints-msEJaDk ()J
 	public final fun getContentSize-YbymL2g ()J
+	public final fun getSemanticsOwners ()Ljava/util/Collection;
 	public final fun hasInvalidations ()Z
 	public final fun render (J)Lorg/jetbrains/skia/Image;
 	public static synthetic fun render$default (Landroidx/compose/ui/ImageComposeScene;JILjava/lang/Object;)Lorg/jetbrains/skia/Image;
