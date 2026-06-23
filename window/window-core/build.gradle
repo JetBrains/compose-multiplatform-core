@@ -28,26 +28,50 @@ import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
-    id("JetBrainsAndroidXPlugin")
 }
 
 androidXMultiplatform {
-    redirect("androidx.window") {
-        desktop()
-        androidLibrary {
-            namespace = "org.jetbrains.window.core"
-        }
-        mac()
-        linux()
-        ios()
-        watchos()
-        tvos()
-        mingwX64()
-        js()
-        wasmJs()
+    jvm()
+    androidLibrary {
+        namespace = "androidx.window.core"
     }
+    mac()
+    linux()
+    ios()
+    watchos()
+    tvos()
+    mingwX64()
+    js()
+    wasmJs()
 
-    defaultPlatform(PlatformIdentifier.ANDROID)
+    defaultPlatform(PlatformIdentifier.JVM)
+
+    sourceSets {
+        commonMain.dependencies {
+            api("androidx.annotation:annotation:1.9.1")
+        }
+
+        commonTest.dependencies {
+            implementation(libs.kotlinTest)
+            implementation(libs.kotlinCoroutinesCore)
+        }
+
+        androidDeviceTest.dependencies {
+            implementation(libs.testRunner)
+        }
+    }
+}
+
+dependencies {
+    constraints {
+        // Prevents symbols duplication with old versions of JetBrains' fork.
+        // Starting with version 1.5.0-beta01, this module is published as empty artifact with dependency
+        // to this androidx module.
+        // TODO: update this stable version once out
+        commonMainImplementation("org.jetbrains.androidx.window:window-core:1.5.0-beta01") {
+            because "prevents symbols duplication"
+        }
+    }
 }
 
 androidx {
@@ -55,4 +79,5 @@ androidx {
     type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2022"
     description = "WindowManager Core Library."
+    samples(project(":window:window-core-samples"))
 }
