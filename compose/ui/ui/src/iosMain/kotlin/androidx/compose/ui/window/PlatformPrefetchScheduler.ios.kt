@@ -31,9 +31,13 @@ internal class PlatformPrefetchSchedulerImpl(
     private val currentTime: () -> NSTimeInterval = { CACurrentMediaTime() },
     private var onHasWorkScheduled: (Boolean) -> Unit,
 ) : PlatformPrefetchScheduler {
-    private val prefetchRequests = ArrayDeque<PlatformPrefetchRequest>()
+    private val highPriorityPrefetchRequests = ArrayDeque<PlatformPrefetchRequest>()
+    private val lowPriorityPrefetchRequests = ArrayDeque<PlatformPrefetchRequest>()
     private val scope = PrefetchRequestScopeImpl()
-    private val hasWorkScheduled: Boolean get() = prefetchRequests.isNotEmpty()
+    private val hasWorkScheduled: Boolean
+        get() =
+            highPriorityPrefetchRequests.isNotEmpty() ||
+                lowPriorityPrefetchRequests.isNotEmpty()
 
     /**
      * Marks the start of the display-link interval where drawing happened.
@@ -76,8 +80,8 @@ internal class PlatformPrefetchSchedulerImpl(
         }
 
         when (priority) {
-            PlatformPrefetchPriority.High -> prefetchRequests.addFirst(request)
-            PlatformPrefetchPriority.Low -> prefetchRequests.addLast(request)
+            PlatformPrefetchPriority.High -> highPriorityPrefetchRequests.addLast(request)
+            PlatformPrefetchPriority.Low -> lowPriorityPrefetchRequests.addLast(request)
         }
 
         onHasWorkScheduled(hasWorkScheduled)
@@ -159,7 +163,8 @@ internal class PlatformPrefetchSchedulerImpl(
             "PlatformPrefetchSchedulerImpl.dispose() must be called on main thread"
         }
         isDisposed = true
-        prefetchRequests.clear()
+        highPriorityPrefetchRequests.clear()
+        lowPriorityPrefetchRequests.clear()
         onHasWorkScheduled(false)
         onHasWorkScheduled = {}
     }
@@ -168,15 +173,26 @@ internal class PlatformPrefetchSchedulerImpl(
         val availableTimeNanos = scope.availableTimeNanos()
         traceValue("compose:lazy:prefetch:available_time_nanos", availableTimeNanos)
         return if (availableTimeNanos > 0) {
-            val request = prefetchRequests.first()
+            val request = nextRequest()
             val hasMoreWorkToDo = with(request) { scope.execute() }
             if (!hasMoreWorkToDo) {
-                prefetchRequests.removeFirst()
+                removeNextRequest()
             }
             scope.isDrawIdle = false
             hasMoreWorkToDo
         } else {
             true
+        }
+    }
+
+    private fun nextRequest(): PlatformPrefetchRequest =
+        highPriorityPrefetchRequests.firstOrNull() ?: lowPriorityPrefetchRequests.first()
+
+    private fun removeNextRequest() {
+        if (highPriorityPrefetchRequests.isNotEmpty()) {
+            highPriorityPrefetchRequests.removeFirst()
+        } else {
+            lowPriorityPrefetchRequests.removeFirst()
         }
     }
 

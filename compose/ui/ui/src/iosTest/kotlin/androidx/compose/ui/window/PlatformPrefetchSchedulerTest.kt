@@ -39,7 +39,7 @@ class PlatformPrefetchSchedulerTest {
 
         scheduler.execute(lastFrameTimestamp = 0.0, targetTimestamp = 1.0, didDraw = false)
 
-        assertEquals(listOf("high-1", "high-0", "low-0", "low-1"), executedRequests)
+        assertEquals(listOf("high-0", "high-1", "low-0", "low-1"), executedRequests)
     }
 
     @Test
@@ -57,6 +57,26 @@ class PlatformPrefetchSchedulerTest {
 
         assertEquals(listOf("request-0"), executedRequests)
 
+        scheduler.execute(lastFrameTimestamp = 1.0, targetTimestamp = 2.0, didDraw = false)
+
+        assertEquals(listOf("request-0", "request-0", "request-1"), executedRequests)
+    }
+
+    @Test
+    fun testKeepsExecutingStartedHighPriorityRequestBeforeNewerHighPriorityRequests() {
+        val scheduler = scheduler()
+        val executedRequests = mutableListOf<String>()
+
+        scheduler.schedulePrefetch(
+            request("request-0", executedRequests, executeResults = listOf(true, false)),
+            PlatformPrefetchPriority.High,
+        )
+
+        scheduler.execute(lastFrameTimestamp = 0.0, targetTimestamp = 1.0, didDraw = false)
+
+        assertEquals(listOf("request-0"), executedRequests)
+
+        scheduler.schedulePrefetch(request("request-1", executedRequests), PlatformPrefetchPriority.High)
         scheduler.execute(lastFrameTimestamp = 1.0, targetTimestamp = 2.0, didDraw = false)
 
         assertEquals(listOf("request-0", "request-0", "request-1"), executedRequests)
