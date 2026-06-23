@@ -18,8 +18,16 @@
 
 package androidx.compose.foundation.lazy.layout
 
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.runtime.Composable
+
 // TODO: https://youtrack.jetbrains.com/issue/CMP-1265
-internal object NoOpPrefetchScheduler: PrefetchScheduler {
-    override fun schedulePrefetch(prefetchRequest: PrefetchRequest) {
+
+@Composable
+@ExperimentalFoundationApi
+internal actual fun rememberDefaultPrefetchScheduler(): PrefetchScheduler {
+    return object : PrefetchScheduler {
+        override fun schedulePrefetch(prefetchRequest: PrefetchRequest) {
+        }
     }
 }
