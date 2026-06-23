@@ -42,7 +42,7 @@ internal class NotoFontDownloader : FallbackFontDownloader {
                 null
             }
         }
-        if (fonts.all { it == null }) {
+        if (fonts.isNotEmpty() && fonts.all { it == null }) {
             // we need to throw an error because we want to retry it later
             error("Failed to download fallback fonts for codepoints: $codepoints")
         }
