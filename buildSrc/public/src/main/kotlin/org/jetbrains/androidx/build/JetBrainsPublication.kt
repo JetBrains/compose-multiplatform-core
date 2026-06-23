@@ -32,10 +32,6 @@ object JetBrainsPublication {
 
     val libraryToComponents = mapOf(
         "COMPOSE" to listOf(
-            // publish for compatibility
-            ComposeComponent(":annotation:annotation", supportedPlatforms = ComposePlatforms.ALL - ComposePlatforms.ANDROID),
-            ComposeComponent(":collection:collection", supportedPlatforms = ComposePlatforms.ALL - ComposePlatforms.ANDROID),
-
             ComposeComponent(":compose:animation:animation"),
             ComposeComponent(":compose:animation:animation-core"),
             ComposeComponent(":compose:animation:animation-graphics"),
@@ -130,9 +126,6 @@ object JetBrainsPublication {
         "SAVEDSTATE" to listOf(
             ComposeComponent(":savedstate:savedstate", supportedPlatforms = ComposePlatforms.ALL),
             ComposeComponent(":savedstate:savedstate-compose", supportedPlatforms = ComposePlatforms.ALL),
-        ),
-        "WINDOW" to listOf(
-            ComposeComponent(":window:window-core", supportedPlatforms = ComposePlatforms.ALL - ComposePlatforms.WINDOWS_NATIVE),
         ),
     )
 
