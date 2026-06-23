@@ -57,7 +57,7 @@ private class WebPrefetchScheduler : RememberObserver, PriorityPrefetchScheduler
     private var highPriorityCount = 0
     private var prefetchScheduled = false
     private var isActive = false
-    private var idleCallbackHandle: Int? = null
+    private var idleCallbackHandle: Int = -1
 
     private var scope: WebPrefetchRequestScope? = null
 
@@ -84,12 +84,14 @@ private class WebPrefetchScheduler : RememberObserver, PriorityPrefetchScheduler
     }
 
     private fun scheduleIdleCallback() {
-        idleCallbackHandle?.let { cancelIdleCallback(it) }
+        if (idleCallbackHandle != -1) {
+            cancelIdleCallback(idleCallbackHandle)
+        }
         idleCallbackHandle = requestIdleCallback(onIdleCallback)
     }
 
     private fun processPrefetchRequests(deadline: IdleDeadline) {
-        idleCallbackHandle = null
+        idleCallbackHandle = -1
 
         if (!isActive || prefetchRequests.isEmpty()) {
             prefetchScheduled = false
@@ -129,9 +131,9 @@ private class WebPrefetchScheduler : RememberObserver, PriorityPrefetchScheduler
 
     override fun onForgotten() {
         isActive = false
-        idleCallbackHandle?.let {
-            cancelIdleCallback(it)
-            idleCallbackHandle = null
+        if (idleCallbackHandle != -1) {
+            cancelIdleCallback(idleCallbackHandle)
+            idleCallbackHandle = -1
         }
         prefetchRequests.clear()
         highPriorityCount = 0
