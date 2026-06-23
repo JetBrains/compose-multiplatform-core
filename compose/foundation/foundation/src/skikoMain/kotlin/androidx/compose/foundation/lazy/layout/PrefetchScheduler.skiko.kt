@@ -28,18 +28,17 @@ import androidx.compose.ui.platform.PlatformPrefetchRequest
 import androidx.compose.ui.platform.PlatformPrefetchRequestScope
 import androidx.compose.ui.platform.PlatformPrefetchScheduler
 
-@Composable
-@ExperimentalFoundationApi
 @OptIn(InternalComposeUiApi::class)
+@Composable
 internal actual fun rememberDefaultPrefetchScheduler(): PrefetchScheduler {
     val platformScheduler = LocalPlatformPrefetchScheduler.current
     return remember(platformScheduler) {
-        SkikoPrefetchScheduler(platformScheduler)
+        PlatformPrefetchSchedulerAdapter(platformScheduler)
     }
 }
 
 @OptIn(InternalComposeUiApi::class)
-private class SkikoPrefetchScheduler(
+private class PlatformPrefetchSchedulerAdapter(
     private val prefetchScheduler: PlatformPrefetchScheduler
 ) :
     PrefetchScheduler,
