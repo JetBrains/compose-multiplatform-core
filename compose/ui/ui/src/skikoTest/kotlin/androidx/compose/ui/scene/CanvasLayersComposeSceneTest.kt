@@ -102,11 +102,14 @@ class CanvasLayersComposeSceneTest {
             // the close below would invalidate simply because an owner was still dirty.
             scene.measureAndLayout()
             scene.draw(surface.canvas.asComposeCanvas())
-            assertFalse(scene.hasInvalidations())
+            assertFalse(scene.hasPendingMeasureOrLayout)
+            assertFalse(scene.hasPendingDraw)
 
             val drawInvalidationsBeforeClose = drawInvalidations
             layer!!.close()
 
+            assertTrue(scene.hasPendingMeasureOrLayout)
+            assertTrue(scene.hasPendingDraw)
             assertTrue(
                 drawInvalidations > drawInvalidationsBeforeClose,
                 "Detaching a layer must request a draw pass to repaint the scene without it",
