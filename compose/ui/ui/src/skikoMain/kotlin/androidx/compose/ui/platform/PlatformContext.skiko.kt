@@ -292,7 +292,7 @@ private object EmptyPlatformScreenReader : PlatformScreenReader {
     override val isActive: Boolean = false
 }
 
-private object NoOpPlatformPrefetchScheduler : PlatformPrefetchScheduler {
+internal object NoOpPlatformPrefetchScheduler : PlatformPrefetchScheduler {
     override fun scheduleHighPriorityPrefetch(request: PlatformPrefetchRequest) = Unit
 
     override fun scheduleLowPriorityPrefetch(request: PlatformPrefetchRequest) = Unit
