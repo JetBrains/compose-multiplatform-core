@@ -269,7 +269,7 @@ private class InternalStartTransferScope(
     ): Boolean {
         this.transferData = transferData
 
-        val imageData = captureAsImageData(decorationSize, drawDragDecoration)
+        val imageData = captureAsImageData(transferData.dragDecorationSize ?: decorationSize, drawDragDecoration)
         ghostImage = imageData.asHtmlCanvas()
 
         return true

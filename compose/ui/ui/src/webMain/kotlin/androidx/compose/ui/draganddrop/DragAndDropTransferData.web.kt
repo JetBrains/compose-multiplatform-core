@@ -1,6 +1,7 @@
 package androidx.compose.ui.draganddrop
 
 import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.geometry.Size
 import org.w3c.dom.DataTransfer
 
 /**
@@ -10,6 +11,7 @@ import org.w3c.dom.DataTransfer
 actual class DragAndDropTransferData @ExperimentalComposeUiApi constructor(
     internal val nativeTransferData: DataTransfer? = null,
     internal val onTransferCompleted: ((Boolean) -> Unit)? = null,
+    internal val dragDecorationSize: Size? = null,
 )
 
 /**
