@@ -32,6 +32,8 @@ import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.asComposeCanvas
+import androidx.compose.ui.graphics.toAwtImage
+import androidx.compose.ui.graphics.toComposeImageBitmap
 import androidx.compose.ui.input.InputModeManager
 import androidx.compose.ui.input.key.KeyEvent as ComposeKeyEvent
 import androidx.compose.ui.input.key.internal
@@ -64,9 +66,12 @@ import androidx.compose.ui.scene.skia.SkiaLayerComponent
 import androidx.compose.ui.semantics.SemanticsOwner
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.roundToIntRect
+import androidx.compose.ui.unit.roundToIntSize
 import androidx.compose.ui.unit.toOffset
 import androidx.compose.ui.util.fastCoerceAtLeast
 import androidx.compose.ui.util.fastRoundToInt
@@ -75,6 +80,7 @@ import androidx.compose.ui.window.WindowExceptionHandler
 import androidx.compose.ui.window.density
 import androidx.compose.ui.window.sizeInPx
 import androidx.compose.ui.window.toDpOffset
+import java.awt.AlphaComposite
 import java.awt.Component
 import java.awt.Cursor
 import java.awt.Dimension
@@ -96,10 +102,13 @@ import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import java.awt.event.MouseWheelEvent
 import java.awt.im.InputMethodRequests
+import java.awt.image.BufferedImage
 import javax.swing.JComponent
 import javax.swing.SwingUtilities
+import javax.swing.SwingUtilities.isEventDispatchThread
 import kotlin.coroutines.CoroutineContext
 import org.jetbrains.skia.Canvas as SkCanvas
+import org.jetbrains.skia.Surface
 import org.jetbrains.skiko.ClipRectangle
 import org.jetbrains.skiko.ExperimentalSkikoApi
 import org.jetbrains.skiko.GraphicsApi
@@ -917,6 +926,52 @@ internal class ComposeSceneMediator(
         fun requestFocusTemporary(): Boolean {
             return super.requestFocus(true)
         }
+    }
+
+    /**
+     * Returns the bounds of the scene on the screen in pixels; null if it has not been made
+     * visible yet.
+     */
+    fun boundsOnScreenPx(): IntRect? {
+        if (!container.isDisplayable) return null
+
+        val sceneBounds = (sceneBoundsInPx ?: Rect(offset = Offset.Zero, size = container.sizeInPx))
+        val containerScreenCoords = Point(0, 0)
+            .also {
+                SwingUtilities.convertPointToScreen(it, contentComponent)
+            }
+            .toDpOffset()
+            .toOffset(container.density)
+        return sceneBounds.translate(containerScreenCoords.x, containerScreenCoords.y).roundToIntRect()
+    }
+
+    /**
+     * Draws the scene into [target] at the given offset.
+     *
+     * May be called only on the event dispatching thread.
+     */
+    fun drawContentInto(target: BufferedImage, offsetX: Int, offsetY: Int): Boolean {
+        require(isEventDispatchThread())
+
+        val g = target.createGraphics()
+        g.translate(offsetX, offsetY)
+
+        // Draw Compose to a Surface and then draw that to the target
+        val size = contentComponent.sizeInPx.roundToIntSize()
+        val surface = Surface.makeRasterN32Premul(size.width, size.height)
+        val canvas = surface.canvas
+        canvas.clear(contentComponent.background?.rgb ?: 0)
+        canvas.withSceneOffset { scene.draw(canvas.asComposeCanvas()) }
+        g.drawImage(surface.makeImageSnapshot().toComposeImageBitmap().toAwtImage(), 0, 0, null)
+
+        // Draw interop
+        val density = contentComponent.density.density.toDouble()
+        g.scale(density, density)
+        interopContainer.root.paint(g)
+
+        g.dispose()
+
+        return true
     }
 }
 
