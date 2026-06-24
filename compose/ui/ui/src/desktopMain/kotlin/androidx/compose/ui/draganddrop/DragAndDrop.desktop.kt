@@ -23,6 +23,7 @@ import androidx.compose.ui.desktop.LinuxDragAndDropClipboardEntry
 import androidx.compose.ui.desktop.macos.MacOsClipboardEntry
 import androidx.compose.ui.desktop.macos.MacOsDragAndDropClipboardEntry
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.platform.DesktopPlatform
 import java.awt.datatransfer.Transferable
@@ -60,6 +61,13 @@ actual class DragAndDropTransferData @ExperimentalComposeUiApi constructor(
      */
     @property:ExperimentalComposeUiApi
     val onTransferCompleted: ((userAction: DragAndDropTransferAction?) -> Unit)? = null,
+
+    /**
+     * The size of the drag decoration to be drawn. When `null`, the decoration size provided by the
+     * layout is used.
+     */
+    @property:ExperimentalComposeUiApi
+    val dragDecorationSize: Size? = null,
 ) {
     init {
         require(supportedActions.firstOrNull() != null) { "supportedActions may not be empty" }

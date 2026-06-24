@@ -33,7 +33,7 @@ internal class KdtDragAndDropManager(
                 startDrag(
                     offset,
                     transferData,
-                    decorationSize,
+                    transferData.dragDecorationSize ?: decorationSize,
                     drawDragDecoration,
                 )
                 return isTransferStarted
