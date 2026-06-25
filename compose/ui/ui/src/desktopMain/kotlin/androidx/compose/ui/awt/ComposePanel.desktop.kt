@@ -529,6 +529,7 @@ class ComposePanel @ExperimentalComposeUiApi constructor(
      *
      * May be called only on the event dispatching thread.
      */
+    @ComposeToolingApi
     override fun captureContentToImage(): BufferedImage? {
         return _composeContainer?.captureContentToImage()
     }

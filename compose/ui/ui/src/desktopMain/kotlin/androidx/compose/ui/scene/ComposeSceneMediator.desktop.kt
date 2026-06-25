@@ -953,21 +953,36 @@ internal class ComposeSceneMediator(
     fun drawContentInto(target: BufferedImage, offsetX: Int, offsetY: Int): Boolean {
         require(isEventDispatchThread())
 
+        val size = contentComponent.sizeInPx.roundToIntSize()
+
         val g = target.createGraphics()
         g.translate(offsetX, offsetY)
 
+        // Draw the background
+        g.color = contentComponent.background ?: java.awt.Color(0, 0, 0, 0)
+        g.fillRect(0, 0, size.width, size.height)
+
+        fun drawInterop() {
+            val density = contentComponent.density.density.toDouble()
+            g.scale(density, density)
+            interopContainer.root.paint(g)
+        }
+
+        // Draw interop below
+        if (!shouldPlaceInteropAbove) {
+            drawInterop()
+        }
+
         // Draw Compose to a Surface and then draw that to the target
-        val size = contentComponent.sizeInPx.roundToIntSize()
         val surface = Surface.makeRasterN32Premul(size.width, size.height)
         val canvas = surface.canvas
-        canvas.clear(contentComponent.background?.rgb ?: 0)
         canvas.withSceneOffset { scene.draw(canvas.asComposeCanvas()) }
         g.drawImage(surface.makeImageSnapshot().toComposeImageBitmap().toAwtImage(), 0, 0, null)
 
-        // Draw interop
-        val density = contentComponent.density.density.toDouble()
-        g.scale(density, density)
-        interopContainer.root.paint(g)
+        // Draw interop above
+        if (shouldPlaceInteropAbove) {
+            drawInterop()
+        }
 
         g.dispose()
 
