@@ -19,7 +19,9 @@ package androidx.compose.platform
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.ComposeUiFlags
 import androidx.compose.ui.ProvideSystemTheme
+import androidx.compose.ui.pollSystemTheme
 import androidx.compose.ui.systemThemePollingJob
 import androidx.compose.ui.systemThemeSubscriberCount
 import androidx.compose.ui.test.ExperimentalTestApi
@@ -33,8 +35,8 @@ class SystemThemeTest {
     @OptIn(ExperimentalTestApi::class)
     @Test
     fun testSystemThemePollingState() {
-        val prevValue = System.getProperty("compose.systemtheme.poll")
-        System.setProperty("compose.systemtheme.poll", "true")
+        val prevValue = ComposeUiFlags.pollSystemTheme
+        ComposeUiFlags.pollSystemTheme = true
         try {
             runComposeUiTest {
                 var provideSystemTheme1 by mutableStateOf(false)
@@ -68,11 +70,7 @@ class SystemThemeTest {
                 assertNull(systemThemePollingJob())
             }
         } finally {
-            if (prevValue != null) {
-                System.setProperty("compose.systemtheme.poll", prevValue)
-            } else {
-                System.clearProperty("compose.systemtheme.poll")
-            }
+            ComposeUiFlags.pollSystemTheme = prevValue
         }
     }
 }

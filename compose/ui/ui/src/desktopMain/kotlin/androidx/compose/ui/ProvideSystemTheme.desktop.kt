@@ -37,12 +37,6 @@ private var pollingJob: Job? = null
 private val subscribeLock = Any()
 private var currentSystemTheme = mutableStateOf(org.jetbrains.skiko.currentSystemTheme)
 
-private val pollSystemTheme by lazy {
-    System.getProperty("compose.systemtheme.poll")?.toBoolean() ?: defaultPollSystemTheme()
-}
-
-private fun defaultPollSystemTheme() = !hostOs.isLinux
-
 @OptIn(DelicateCoroutinesApi::class)
 private fun onSubscriberAdded() {
     synchronized(subscribeLock) {
@@ -81,7 +75,7 @@ internal fun ProvideSystemTheme(content: @Composable () -> Unit) {
         content = content
     )
 
-    if (pollSystemTheme) {
+    if (DesktopComposeUiFlags.pollSystemTheme) {
         DisposableEffect(Unit) {
             onSubscriberAdded()
             onDispose {
