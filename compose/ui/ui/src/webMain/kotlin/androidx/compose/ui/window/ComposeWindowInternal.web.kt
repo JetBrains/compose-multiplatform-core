@@ -274,7 +274,7 @@ internal class ComposeWindow(
             }
 
             override val prefetchScheduler: PlatformPrefetchScheduler =
-                if (isIdleCallbackSupported) WebPrefetchScheduler() else NoOpPlatformPrefetchScheduler
+                if (isIdleCallbackSupported) WebPrefetchScheduler() else super.prefetchScheduler
 
             override val semanticsOwnerListener: PlatformContext.SemanticsOwnerListener? =
                 if (configuration.isA11YEnabled) {
