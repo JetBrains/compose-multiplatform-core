@@ -80,10 +80,10 @@ import androidx.compose.ui.window.WindowExceptionHandler
 import androidx.compose.ui.window.density
 import androidx.compose.ui.window.sizeInPx
 import androidx.compose.ui.window.toDpOffset
-import java.awt.AlphaComposite
 import java.awt.Component
 import java.awt.Cursor
 import java.awt.Dimension
+import java.awt.Graphics2D
 import java.awt.Point
 import java.awt.Toolkit
 import java.awt.event.ContainerEvent
@@ -964,8 +964,10 @@ internal class ComposeSceneMediator(
 
         fun drawInterop() {
             val density = contentComponent.density.density.toDouble()
-            g.scale(density, density)
-            interopContainer.root.paint(g)
+            val gTemp = g.create() as Graphics2D
+            gTemp.scale(density, density)
+            interopContainer.root.paint(gTemp)
+            gTemp.dispose()
         }
 
         // Draw interop below
@@ -978,6 +980,7 @@ internal class ComposeSceneMediator(
         val canvas = surface.canvas
         canvas.withSceneOffset { scene.draw(canvas.asComposeCanvas()) }
         g.drawImage(surface.makeImageSnapshot().toComposeImageBitmap().toAwtImage(), 0, 0, null)
+        surface.close()
 
         // Draw interop above
         if (shouldPlaceInteropAbove) {
