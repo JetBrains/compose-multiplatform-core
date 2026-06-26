@@ -127,7 +127,6 @@ internal class SyntheticEventSender(
             PointerEventType.PanMove,
             PointerEventType.PanEnd,
                 -> isMousePointerInside = true
-
             PointerEventType.Exit
                 -> isMousePointerInside = false
         }
