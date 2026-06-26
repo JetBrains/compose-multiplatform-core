@@ -476,8 +476,6 @@ internal class ComposeWindow(
         initEvents(canvas)
         state.init()
 
-        canvas.setAttribute("tabindex", "0")
-        canvas.setAttribute("draggable", "true")
 
         scene.density = density
         archComponentsOwner.enableSavedStateHandles()
