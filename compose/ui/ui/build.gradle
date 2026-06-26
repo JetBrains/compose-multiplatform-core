@@ -278,6 +278,7 @@ androidXMultiplatform {
                 implementation(project(":compose:material:material"))
                 implementation(project(":compose:material3:material3"))
                 implementation(project(":compose:foundation:foundation"))
+                implementation(project(":navigation3:navigation3-ui"))
                 implementation(project(":compose:ui:ui-test-junit4"))
                 implementation(project(":internal-testutils-xctest"))
             }
