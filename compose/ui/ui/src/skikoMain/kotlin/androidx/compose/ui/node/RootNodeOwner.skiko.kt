@@ -97,6 +97,7 @@ import androidx.compose.ui.unit.toMaxConstraints
 import androidx.compose.ui.unit.toRect
 import androidx.compose.ui.useLegacyRenderNodeLayers
 import androidx.compose.ui.util.fastAll
+import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.trace
 import androidx.compose.ui.viewinterop.InteropPointerInputModifier
 import androidx.compose.ui.viewinterop.InteropView
@@ -974,12 +975,11 @@ internal class RootNodeOwner(
             // So, we applying it before drawing to reflect the changes from previous phases.
             // Changes that requires another round of invalidation will be scheduled to next frame.
             if (dirtyLayers.isNotEmpty()) {
-                for (i in 0 until dirtyLayers.size) {
-                    val layer = dirtyLayers[i]
+                dirtyLayers.fastForEach { layer ->
                     layer.updateDisplayList()
                 }
+                dirtyLayers.clear()
             }
-            dirtyLayers.clear()
 
             // Draw root node
             owner.root.draw(
