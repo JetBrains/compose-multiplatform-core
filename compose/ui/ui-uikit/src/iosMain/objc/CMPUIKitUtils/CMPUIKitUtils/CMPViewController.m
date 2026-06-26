@@ -33,7 +33,7 @@
         for (UIScene *scene in [UIApplication.sharedApplication connectedScenes]) {
             if ([scene isKindOfClass:[UIWindowScene class]]) {
                 UIWindowScene *windowScene = (UIWindowScene *)scene;
-                
+
                 for (UIWindow *window in windowScene.windows) {
                     if (window.rootViewController == self) {
                         return YES;
@@ -48,7 +48,7 @@
             }
         }
     }
-    
+
     return NO;
 }
 
@@ -76,27 +76,27 @@
 
 - (id)initWithLifecycleDelegate:(id<CMPComposeContainerLifecycleDelegate>)delegate {
     self = [super initWithNibName:nil bundle:nil];
-    
+
     if (self) {
         _lifecycleDelegate = delegate;
         _lifecycleState = CMPComposeContainerLifecycleStateInitialized;
-        
+
         [self addTraitCollectionObserverIfNeeded];
     }
-    
+
     return self;
 }
 
 - (instancetype)initWithNibName:(NSString *)nibNameOrNil bundle:(NSBundle *)nibBundleOrNil {
     self = [super initWithNibName:nibNameOrNil bundle:nibBundleOrNil];
-    
+
     if (self) {
         _lifecycleDelegate = nil;
         _lifecycleState = CMPComposeContainerLifecycleStateInitialized;
 
         [self addTraitCollectionObserverIfNeeded];
     }
-    
+
     return self;
 }
 
@@ -122,7 +122,7 @@
 - (void)viewDidAppear:(BOOL)animated {
     // In some cases viewWillAppear may not be called for the view controller.
     // The code in the viewDidAppear used as a backup scenario for this case.
-    
+
     [self transitLifecycleToStarted];
 
     [super viewDidAppear:animated];
@@ -135,7 +135,7 @@
 
 - (void)viewDidDisappear:(BOOL)animated {
     [super viewDidDisappear:animated];
-    
+
     [_lifecycleDelegate composeContainerDidDisappear];
     _isViewAppeared = NO;
 }
@@ -155,7 +155,7 @@
 
 - (void)scheduleHierarchyContainmentCheck {
     double delayInSeconds = 0.5;
-    
+
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delayInSeconds * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
         switch (self->_lifecycleState) {
             case CMPComposeContainerLifecycleStateInitialized:
@@ -204,7 +204,7 @@
     if (_lifecycleState == CMPComposeContainerLifecycleStateStarted) {
         [self viewControllerDidLeaveWindowHierarchy];
     }
-    
+
     [_lifecycleDelegate composeContainerWillDealloc];
 }
 
