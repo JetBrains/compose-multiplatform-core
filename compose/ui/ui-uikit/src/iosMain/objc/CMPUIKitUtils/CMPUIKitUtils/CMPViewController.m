@@ -71,6 +71,7 @@
 @implementation CMPViewController {
     CMPComposeContainerLifecycleState _lifecycleState;
     id<CMPComposeContainerLifecycleDelegate> _lifecycleDelegate;
+    BOOL _isViewAppeared;
 }
 
 - (id)initWithLifecycleDelegate:(id<CMPComposeContainerLifecycleDelegate>)delegate {
@@ -115,12 +116,28 @@
 
     [super viewWillAppear:animated];
     [_lifecycleDelegate composeContainerWillAppear];
+    _isViewAppeared = YES;
+}
+
+- (void)viewDidAppear:(BOOL)animated {
+    // In some cases viewWillAppear may not be called for the view controller.
+    // The code in the viewDidAppear used as a backup scenario for this case.
+    
+    [self transitLifecycleToStarted];
+
+    [super viewDidAppear:animated];
+
+    if (!_isViewAppeared) {
+        _isViewAppeared = YES;
+        [_lifecycleDelegate composeContainerWillAppear];
+    }
 }
 
 - (void)viewDidDisappear:(BOOL)animated {
     [super viewDidDisappear:animated];
     
     [_lifecycleDelegate composeContainerDidDisappear];
+    _isViewAppeared = NO;
 }
 
 - (void)transitLifecycleToStarted {
