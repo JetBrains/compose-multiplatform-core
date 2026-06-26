@@ -58,6 +58,7 @@ import kotlinx.cinterop.CPointed
 import kotlinx.cinterop.CPointer
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import org.jetbrains.skiko.SystemTheme
 import platform.Foundation.NSKeyValueObservingOptionNew
 import platform.Foundation.addObserver
 import platform.Foundation.removeObserver
@@ -120,7 +121,7 @@ internal class ComposeContainer(
     private val interfaceOrientationState: MutableState<InterfaceOrientation> = mutableStateOf(
         InterfaceOrientation.Portrait
     )
-    private val systemThemeState: MutableState<SystemTheme> = mutableStateOf(SystemTheme.Unknown)
+    private val systemThemeState: MutableState<SystemTheme> = mutableStateOf(SystemTheme.UNKNOWN)
 
     private val focusedViewsList = FocusedViewsList()
     private val canvasHolder = CanvasHolder()
@@ -412,9 +413,9 @@ internal class ComposeContainer(
 
 private fun UIUserInterfaceStyle.asComposeSystemTheme(): SystemTheme {
     return when (this) {
-        UIUserInterfaceStyle.UIUserInterfaceStyleLight -> SystemTheme.Light
-        UIUserInterfaceStyle.UIUserInterfaceStyleDark -> SystemTheme.Dark
-        else -> SystemTheme.Unknown
+        UIUserInterfaceStyle.UIUserInterfaceStyleLight -> SystemTheme.LIGHT
+        UIUserInterfaceStyle.UIUserInterfaceStyleDark -> SystemTheme.DARK
+        else -> SystemTheme.UNKNOWN
     }
 }
 
