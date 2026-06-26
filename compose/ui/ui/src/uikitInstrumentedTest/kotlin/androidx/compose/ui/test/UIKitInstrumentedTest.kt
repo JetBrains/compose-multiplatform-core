@@ -599,12 +599,14 @@ internal class UIKitInstrumentedTest(
         val startLocation = locationInView(null).toDpOffset()
 
         val startTime = TimeSource.Monotonic.markNow()
-        while (TimeSource.Monotonic.markNow() <= startTime + duration) {
-            val progress = ((TimeSource.Monotonic.markNow() - startTime) / duration).coerceIn(0.0, 1.0)
+        var currentTime = startTime
+        while (currentTime <= startTime + duration) {
+            val progress = ((currentTime - startTime) / duration).coerceIn(0.0, 1.0)
             val touchLocation = lerp(startLocation, location, progress.toFloat())
 
             this.moveToLocationOnWindow(touchLocation)
             NSRunLoop.currentRunLoop().runUntilDate(NSDate.dateWithTimeIntervalSinceNow(1.0 / 60))
+            currentTime = TimeSource.Monotonic.markNow()
         }
         this.moveToLocationOnWindow(location)
         return this
