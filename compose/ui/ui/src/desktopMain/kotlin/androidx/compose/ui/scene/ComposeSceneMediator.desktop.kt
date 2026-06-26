@@ -950,46 +950,16 @@ internal class ComposeSceneMediator(
      *
      * May be called only on the event dispatching thread.
      */
-    fun drawContentInto(target: BufferedImage, offsetX: Int, offsetY: Int): Boolean {
+    fun drawContentInto(target: BufferedImage, offsetX: Int, offsetY: Int) {
         require(isEventDispatchThread())
 
         val size = contentComponent.sizeInPx.roundToIntSize()
-
-        val g = target.createGraphics()
-        g.translate(offsetX, offsetY)
-
-        // Draw the background
-        g.color = contentComponent.background ?: java.awt.Color(0, 0, 0, 0)
-        g.fillRect(0, 0, size.width, size.height)
-
-        fun drawInterop() {
-            val density = contentComponent.density.density.toDouble()
-            val gTemp = g.create() as Graphics2D
-            gTemp.scale(density, density)
-            interopContainer.root.paint(gTemp)
-            gTemp.dispose()
+        target.drawScene(offsetX, offsetY, size, contentComponent.density) {
+            fillBackground(contentComponent.background)
+            if (!shouldPlaceInteropAbove) drawInterop(interopContainer.root)
+            drawCompose { canvas -> canvas.withSceneOffset { scene.draw(asComposeCanvas()) } }
+            if (shouldPlaceInteropAbove) drawInterop(interopContainer.root)
         }
-
-        // Draw interop below
-        if (!shouldPlaceInteropAbove) {
-            drawInterop()
-        }
-
-        // Draw Compose to a Surface and then draw that to the target
-        val surface = Surface.makeRasterN32Premul(size.width, size.height)
-        val canvas = surface.canvas
-        canvas.withSceneOffset { scene.draw(canvas.asComposeCanvas()) }
-        g.drawImage(surface.makeImageSnapshot().toComposeImageBitmap().toAwtImage(), 0, 0, null)
-        surface.close()
-
-        // Draw interop above
-        if (shouldPlaceInteropAbove) {
-            drawInterop()
-        }
-
-        g.dispose()
-
-        return true
     }
 }
 
@@ -1104,3 +1074,50 @@ private val MouseEvent.isMacOsCtrlClick
             ((modifiersEx and InputEvent.BUTTON1_DOWN_MASK) != 0) &&
             ((modifiersEx and InputEvent.CTRL_DOWN_MASK) != 0)
         )
+
+
+private class SceneImageDrawScope(
+    private val g: Graphics2D,
+    private val size: IntSize,
+    private val density: Density,
+) {
+    fun fillBackground(color: java.awt.Color?) {
+        g.color = color ?: java.awt.Color(0, 0, 0, 0)
+        g.fillRect(0, 0, size.width, size.height)
+    }
+
+    fun drawInterop(root: Component) {
+        val gInterop = g.create() as Graphics2D
+        try {
+            gInterop.scale(density.density.toDouble(), density.density.toDouble())
+            root.paint(gInterop)
+        } finally {
+            gInterop.dispose()
+        }
+    }
+
+    /** Draws the Compose content via Skia and paints it into the region. */
+    fun drawCompose(draw: (SkCanvas) -> Unit) {
+        Surface.makeRasterN32Premul(size.width, size.height).use { surface ->
+            draw(surface.canvas)
+            g.drawImage(surface.makeImageSnapshot().toComposeImageBitmap().toAwtImage(), 0, 0, null)
+        }
+    }
+}
+
+
+private inline fun BufferedImage.drawScene(
+    offsetX: Int,
+    offsetY: Int,
+    size: IntSize,
+    density: Density,
+    block: SceneImageDrawScope.() -> Unit,
+) {
+    val g = createGraphics()
+    try {
+        g.translate(offsetX, offsetY)
+        SceneImageDrawScope(g, size, density).block()
+    } finally {
+        g.dispose()
+    }
+}

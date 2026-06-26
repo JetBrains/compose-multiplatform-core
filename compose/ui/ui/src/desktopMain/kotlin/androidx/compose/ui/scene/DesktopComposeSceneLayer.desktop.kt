@@ -239,8 +239,9 @@ internal abstract class DesktopComposeSceneLayer(
         return drawBounds.translate(layerBounds.topLeft)
     }
 
-    fun drawContentInto(target: BufferedImage, offsetX: Int, offsetY: Int) =
-        mediator?.drawContentInto(target, offsetX + drawBounds.left, offsetY + drawBounds.top) ?: false
+    fun drawContentInto(target: BufferedImage, offsetX: Int, offsetY: Int) {
+        mediator?.drawContentInto(target, offsetX + drawBounds.left, offsetY + drawBounds.top)
+    }
 
     /**
      * Detect and trigger [DesktopComposeSceneLayer.onMouseEventOutside] if event happened below
