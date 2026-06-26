@@ -161,3 +161,7 @@ internal fun DpOffset.requireReal(): DpOffset {
     y.requireReal("y")
     return this
 }
+
+@Stable
+internal inline fun IntSize?.toMaxConstraints() =
+    if (this == null) Constraints() else Constraints(maxWidth = width, maxHeight = height)

@@ -93,6 +93,7 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.contains
 import androidx.compose.ui.unit.round
+import androidx.compose.ui.unit.toMaxConstraints
 import androidx.compose.ui.unit.toRect
 import androidx.compose.ui.useLegacyRenderNodeLayers
 import androidx.compose.ui.util.fastAll
@@ -1002,9 +1003,6 @@ internal class RootNodeOwner(
         }
     }
 }
-
-private fun IntSize?.toMaxConstraints() =
-    if (this == null) Constraints() else Constraints(maxWidth = width, maxHeight = height)
 
 private object IdentityPositionCalculator : PositionCalculator {
     override fun screenToLocal(positionOnScreen: Offset): Offset = positionOnScreen
