@@ -649,7 +649,7 @@ internal class UIKitInstrumentedTest(
         return dragTo(DpOffset(x ?: location.x, y ?: location.y), duration)
     }
 
-    private val SwipeDuration = 200.milliseconds
+    private val SwipeDuration = 0.5.seconds
 
     fun AccessibilityTestNode.swipe(
         fromPosition: DpRect.() -> DpOffset = { center() },
