@@ -258,7 +258,6 @@ private fun TestContent(
                 .weight(1f)
                 .testTag("pager")
         ) { page ->
-            currentPage.value = page
             Box(modifier = Modifier
                 .fillMaxSize()
                 .background(pagerColors[page])

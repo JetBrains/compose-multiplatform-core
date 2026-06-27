@@ -652,7 +652,7 @@ internal class UIKitInstrumentedTest(
         return dragTo(DpOffset(x ?: location.x, y ?: location.y), duration)
     }
 
-    private val SwipeDuration = 500.milliseconds
+    private val SwipeDuration = 200.milliseconds
 
     fun AccessibilityTestNode.swipe(
         fromPosition: DpRect.() -> DpOffset = { center() },
@@ -667,11 +667,11 @@ internal class UIKitInstrumentedTest(
     }
 
     fun AccessibilityTestNode.swipeRight(fromEdge: Boolean = false, duration: Duration = SwipeDuration) {
-        swipe(fromPosition = { center() }, toPosition = { rightCenter() }, fromEdge = fromEdge, duration = duration)
+        swipe(fromPosition = { leftCenter().offsetBy(dx = 16.dp) }, toPosition = { rightCenter().offsetBy(dx = (-16).dp) }, fromEdge = fromEdge, duration = duration)
     }
 
     fun AccessibilityTestNode.swipeLeft(fromEdge: Boolean = false, duration: Duration = SwipeDuration) {
-        swipe(fromPosition = { center() }, toPosition = { leftCenter() }, fromEdge = fromEdge, duration = duration)
+        swipe(fromPosition = { rightCenter().offsetBy(dx = (-16).dp) }, toPosition = { leftCenter().offsetBy(dx = 16.dp) }, fromEdge = fromEdge, duration = duration)
     }
 }
 
