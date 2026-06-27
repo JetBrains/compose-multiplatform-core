@@ -19,7 +19,6 @@ package androidx.compose.ui.window
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.ExperimentalComposeUiApi
 import kotlinx.browser.document
-import kotlinx.dom.clear
 import org.w3c.dom.Element
 import org.w3c.dom.HTMLCanvasElement
 import org.w3c.dom.HTMLDivElement
@@ -84,8 +83,8 @@ fun ComposeViewport(
     configure: ComposeViewportConfiguration.() -> Unit = {},
     content: @Composable () -> Unit = { }
 ) = onSkikoReady {
-    viewportContainer.clear()
 
+    clearNodeChildren(viewportContainer)
     // Create a common positioning container (parent html element) for shadow and the interop containers
     // to position at the same place - the interop container is position at 0,0 relative to the shadow.
     // It simplifies the positioning of the interop views in the container.
@@ -199,3 +198,7 @@ fun ComposeViewport(
         state = DefaultWindowState(viewportContainer)
     )
 }
+
+private fun clearNodeChildren(node: Element): Unit =
+    //language=JavaScript
+    js("node.replaceChildren()")
