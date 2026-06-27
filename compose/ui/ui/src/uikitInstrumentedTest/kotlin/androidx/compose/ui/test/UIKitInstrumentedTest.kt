@@ -600,11 +600,10 @@ internal class UIKitInstrumentedTest(
         return tap(frame.center())
     }
 
-    fun focusThenDoubleTap(tag: String, delayMillis: Long = 500L) {
-        val node = findNodeWithTag(tag)
-        node.tap()
+    fun AccessibilityTestNode.focusThenDoubleTap(delayMillis: Long = 500L) {
+        tap()
         delay(delayMillis)
-        node.doubleTap()
+        doubleTap()
     }
 
     /**

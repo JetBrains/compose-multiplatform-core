@@ -739,7 +739,7 @@ class TextFieldEditMenuTest {
     }
 
     private fun UIKitInstrumentedTest.openToolbar(textFieldTag: String) {
-        focusThenDoubleTap(textFieldTag)
+        findNodeWithTag(textFieldTag).focusThenDoubleTap()
         waitForContextMenu()
     }
 

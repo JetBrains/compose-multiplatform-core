@@ -85,7 +85,7 @@ class SelectionContainerInteractionTest {
 
         setSelectionContainerContent(state = selectionState, text = text)
 
-        focusThenDoubleTap(Tag, delayMillis = DoubleTapPreparationDelayMillis)
+        findNodeWithTag(Tag).focusThenDoubleTap()
         waitUntil("SelectionContainer should select the word after double tap") {
             selectionState.selectedText() == text
         }
@@ -267,7 +267,7 @@ class SelectionContainerInteractionTest {
             setSelectionContainerContent(state = selectionState, text = "copyable second")
 
             awaitNodeLaidOut(Tag)
-            focusThenDoubleTap(Tag, delayMillis = DoubleTapPreparationDelayMillis)
+            findNodeWithTag(Tag).focusThenDoubleTap()
             waitForContextMenu()
             waitUntil("SelectionContainer should create a selection before menu open") {
                 selectionState.selectedTexts.isNotEmpty()
