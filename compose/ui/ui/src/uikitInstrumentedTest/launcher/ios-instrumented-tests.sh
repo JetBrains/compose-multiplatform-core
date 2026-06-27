@@ -1,0 +1,96 @@
+#!/bin/bash
+
+set -euo pipefail
+
+# Edit these values directly when you want to change the target simulator or run count.
+platform="iOS Simulator"
+os_version="26.5"
+device_name="iPhone 17"
+iterations="1"
+derived_data_path="./tmp/ios-instrumented-tests"
+open_result="false"
+run_until_failure="false"
+
+if [[ -z "$platform" || -z "$os_version" || -z "$device_name" ]]; then
+  echo "Platform, OS, and device name must be non-empty." >&2
+  exit 1
+fi
+
+if [[ ! "$iterations" =~ ^[1-9][0-9]*$ ]]; then
+  echo "Iterations must be a positive integer, got: $iterations" >&2
+  exit 1
+fi
+
+if [[ "$open_result" != "true" && "$open_result" != "false" ]]; then
+  echo "open_result must be true or false, got: $open_result" >&2
+  exit 1
+fi
+
+if [[ "$run_until_failure" != "true" && "$run_until_failure" != "false" ]]; then
+  echo "run_until_failure must be true or false, got: $run_until_failure" >&2
+  exit 1
+fi
+
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$script_dir"
+
+mkdir -p "$derived_data_path"
+results_dir="${derived_data_path%/}/results"
+mkdir -p "$results_dir"
+
+timestamp="$(date '+%Y-%m-%d-%H-%M-%S')"
+result_bundle_path="${results_dir}/${timestamp}.xcresult"
+destination="platform=${platform},OS=${os_version},name=${device_name}"
+
+echo "Running iOS instrumented tests with:"
+echo "  destination: ${destination}"
+echo "  iterations: ${iterations}"
+echo "  derivedDataPath: ${derived_data_path}"
+echo "  resultBundlePath: ${result_bundle_path}"
+
+xcodebuild \
+  -project Launcher.xcodeproj \
+  -scheme Launcher \
+  -destination "$destination" \
+  -derivedDataPath "$derived_data_path" \
+  build-for-testing
+
+test_args=(
+  -collect-test-diagnostics on-failure
+  -resultBundlePath "$result_bundle_path"
+)
+
+if [[ "$iterations" -gt 1 ]]; then
+  test_args=(
+    -test-iterations "$iterations"
+    -test-repetition-relaunch-enabled YES
+    "${test_args[@]}"
+  )
+
+  if [[ "$run_until_failure" == "true" ]]; then
+    test_args=(
+      -run-tests-until-failure
+      "${test_args[@]}"
+    )
+  fi
+fi
+
+set +e
+xcodebuild \
+  -project Launcher.xcodeproj \
+  -scheme Launcher \
+  -destination "$destination" \
+  -derivedDataPath "$derived_data_path" \
+  test-without-building \
+  "${test_args[@]}"
+test_exit_code=$?
+set -e
+
+if [[ -d "$result_bundle_path" ]]; then
+  echo "xcresult bundle: $result_bundle_path"
+  if [[ "$open_result" == "true" ]]; then
+    open "$result_bundle_path"
+  fi
+fi
+
+exit "$test_exit_code"
