@@ -231,7 +231,7 @@ class TextFieldEditMenuTest {
         }
 
         // A long press positions the cursor and, on release, reveals the context menu.
-        longPressAndAwaitContextMenu("TextField")
+        longPressNodeWithTagAndAwaitContextMenu("TextField")
 
         waitForContextMenu()
         findNodeWithLabel("Paste").assertVisibleInContainer()
@@ -243,7 +243,7 @@ class TextFieldEditMenuTest {
         }
 
         // A tap again brings the context menu back.
-        longPressAndAwaitContextMenu("TextField")
+        longPressNodeWithTagAndAwaitContextMenu("TextField")
         findNodeWithLabel("Paste").assertVisibleInContainer()
     }
 
@@ -265,7 +265,7 @@ class TextFieldEditMenuTest {
         }
 
         // A long press positions the cursor and, on release, reveals the context menu.
-        longPressAndAwaitContextMenu("TextField")
+        longPressNodeWithTagAndAwaitContextMenu("TextField")
         findNodeWithLabel("Paste").assertVisibleInContainer()
 
         // A short tap elsewhere dismisses the context menu.
@@ -275,7 +275,7 @@ class TextFieldEditMenuTest {
         }
 
         // A long press again brings the context menu back.
-        longPressAndAwaitContextMenu("TextField")
+        longPressNodeWithTagAndAwaitContextMenu("TextField")
         findNodeWithLabel("Paste").assertVisibleInContainer()
     }
 
@@ -289,7 +289,7 @@ class TextFieldEditMenuTest {
                 readOnly = false
             )
 
-            longPressAndAwaitContextMenu("TextField")
+            longPressNodeWithTagAndAwaitContextMenu("TextField")
             verifyContextMenuItemsVisible(
                 labels = if (newContextMenu) {
                     listOf("Paste", "Select All")
@@ -327,7 +327,7 @@ class TextFieldEditMenuTest {
                 readOnly = false
             )
 
-            longPressAndAwaitContextMenu("TextField")
+            longPressNodeWithTagAndAwaitContextMenu("TextField")
             verifyContextMenuItemsVisible(
                 labels = if (newContextMenu) {
                     listOf("Select All")
@@ -430,7 +430,7 @@ class TextFieldEditMenuTest {
             UIPasteboard.generalPasteboard().string = "Paste text"
             val isFullySelected = setContentAndGetIsFullySelected()
 
-            longPressAndAwaitContextMenu("TextField")
+            longPressNodeWithTagAndAwaitContextMenu("TextField")
             tapContextMenuButton("Select All")
             waitUntil("Text field should be fully selected") {
                 isFullySelected()
@@ -458,7 +458,7 @@ class TextFieldEditMenuTest {
                 readOnly = true
             )
 
-            longPressAndAwaitContextMenu("TextField")
+            longPressNodeWithTagAndAwaitContextMenu("TextField")
             verifyContextMenuItemsVisible(labels = listOf("Select All"))
             verifyContextMenuItemsHidden(labels = listOf("Cut", "Copy", "Paste", "Select"))
         }
@@ -748,7 +748,7 @@ class TextFieldEditMenuTest {
             .testTag("TextField")
             .focusRequester(focusRequester)
 
-    private fun UIKitInstrumentedTest.longPressAndAwaitContextMenu(textFieldTag: String) {
+    private fun UIKitInstrumentedTest.longPressNodeWithTagAndAwaitContextMenu(textFieldTag: String) {
         val touch = findNodeWithTag(textFieldTag).touchDown()
         waitUntil {
             findFirstDescendant { it.isLoupeView } != null
