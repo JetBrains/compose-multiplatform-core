@@ -21,6 +21,7 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.selection.DisableSelection
@@ -288,7 +289,7 @@ class SelectionContainerInteractionTest {
         content: @Composable () -> Unit,
     ) {
         setContent {
-            Box(modifier = Modifier.fillMaxSize()) {
+            Box(modifier = Modifier.fillMaxSize().safeDrawingPadding()) {
                 SelectionContainer(
                     state = state,
                     modifier = Modifier.align(Alignment.Center).testTag(Tag),
