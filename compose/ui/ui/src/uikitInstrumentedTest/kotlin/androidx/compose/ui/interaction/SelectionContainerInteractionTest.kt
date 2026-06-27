@@ -45,7 +45,6 @@ import androidx.compose.ui.test.utils.isLoupeView
 import androidx.compose.ui.test.utils.up
 import androidx.compose.ui.test.waitForContextMenu
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -66,7 +65,7 @@ class SelectionContainerInteractionTest {
 
         setSelectionContainerContent(state = selectionState, text = text)
 
-        longPressAndReleaseAfterLoupe(Tag)
+        findNodeWithTag(Tag).longPressAndReleaseAfterLoupe()
 
         waitUntil("SelectionContainer should select the word after long press") {
             selectionState.selectedText() == text
@@ -223,7 +222,10 @@ class SelectionContainerInteractionTest {
             setSelectionContainerContent(state = selectionState, text = text)
 
             awaitNodeLaidOut(Tag)
-            openToolbarForLeadingWord(Tag)
+            findNodeWithTag(Tag).openToolbarForLeadingWord(
+                DoubleTapPreparationDelayMillis,
+                ManualDoubleTapIntervalDelayMillis
+            )
             waitUntil("SelectionContainer should create the expected word selection before Copy") {
                 selectionState.selectedText() == firstWord
             }
@@ -307,28 +309,10 @@ class SelectionContainerInteractionTest {
         }
     }
 
-    private fun UIKitInstrumentedTest.longPressAndReleaseAfterLoupe(tag: String) {
-        val touch = findNodeWithTag(tag).touchDown()
-        waitUntil("Selection loupe should appear after long press") {
-            findFirstDescendant { it.isLoupeView } != null
-        }
-        touch.up()
-    }
-
     private fun UIKitInstrumentedTest.awaitNodeLaidOut(tag: String) {
         waitUntil("Node with tag $tag should be laid out") {
             findNodeWithTagOrNull(tag)?.frame != null
         }
-    }
-
-    private fun UIKitInstrumentedTest.openToolbarForLeadingWord(tag: String) {
-        findNodeWithTag(tag).tap()
-        delay(DoubleTapPreparationDelayMillis)
-        val tapPoint = pointInNode(tag, xFraction = 0.1f, yFraction = 0.5f)
-        tap(tapPoint)
-        delay(ManualDoubleTapIntervalDelayMillis)
-        tap(tapPoint)
-        waitForContextMenu()
     }
 
     @OptIn(ExperimentalFoundationApi::class)
@@ -351,8 +335,8 @@ class SelectionContainerInteractionTest {
         startYFraction: Float = 0.5f,
         endYFraction: Float = 0.5f,
     ) {
-        val startPoint = pointInNode(startTag, startXFraction, startYFraction)
-        val endPoint = pointInNode(endTag, endXFraction, endYFraction)
+        val startPoint = findNodeWithTag(startTag).pointInNode(startXFraction, startYFraction)
+        val endPoint = findNodeWithTag(endTag).pointInNode(endXFraction, endYFraction)
 
         val touch = touchDown(startPoint)
         waitUntil("Selection loupe should appear after long press") {
@@ -362,18 +346,6 @@ class SelectionContainerInteractionTest {
         delay(LongPressDragSettleDelayMillis)
         touch.dragTo(x = endPoint.x, y = endPoint.y, duration = 0.3.seconds)
         touch.up()
-    }
-
-    private fun UIKitInstrumentedTest.pointInNode(
-        tag: String,
-        xFraction: Float,
-        yFraction: Float,
-    ): DpOffset {
-        val frame = findNodeWithTag(tag).frame!!
-        return DpOffset(
-            x = frame.left + (frame.right - frame.left) * xFraction,
-            y = frame.top + (frame.bottom - frame.top) * yFraction,
-        )
     }
 
     private fun UIKitInstrumentedTest.assertNoContextMenu() {
