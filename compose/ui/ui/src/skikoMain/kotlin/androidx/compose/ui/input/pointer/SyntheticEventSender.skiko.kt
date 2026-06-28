@@ -446,7 +446,7 @@ private inline fun PointerIdList.filter(predicate: (Long) -> Boolean): PointerId
 private inline operator fun PointerIdSet.contains(id: PointerId): Boolean = contains(id.value)
 
 private fun PointerIdList.toSet(): PointerIdSet = buildLongSet(size) {
-    forEach { add(it) }
+    this@toSet.forEach { add(it) }
 } as PointerIdSet //Safe cast
 
 internal operator fun PointerIdList.minus(elements: PointerIdSet): PointerIdList {
