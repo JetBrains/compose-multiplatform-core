@@ -747,11 +747,14 @@ internal class ComposeWindow(
         // for us (report deltaX instead of deltaY), some don't.
         val horizontalScroll: Double
         val verticalScroll: Double
-        if (event.shiftKey && event.deltaX == 0.0) {
+        val isShifting = event.shiftKey
+        val deltaX = event.deltaX
+
+        if (isShifting && deltaX == 0.0) {
             horizontalScroll = event.deltaY
             verticalScroll = 0.0
         } else {
-            horizontalScroll = event.deltaX
+            horizontalScroll = deltaX
             verticalScroll = event.deltaY
         }
 
@@ -771,7 +774,7 @@ internal class ComposeWindow(
                 isCtrlPressed = event.ctrlKey,
                 isMetaPressed = event.metaKey,
                 isAltPressed = event.altKey,
-                isShiftPressed = event.shiftKey,
+                isShiftPressed = isShifting,
             ),
             nativeEvent = event,
             button = event.composeButton,
