@@ -404,6 +404,7 @@ internal class ComposeWindow(
 
     private fun initEvents(canvas: HTMLCanvasElement) {
 
+        val onPointerCallback: (PointerEvent) -> Unit = { onPointerEvent(it) }
         listOf(
             "pointerenter",
             "pointerdown",
@@ -411,8 +412,8 @@ internal class ComposeWindow(
             "pointerup",
             "pointerleave",
             "pointercancel"
-        ).forEach { name ->
-            addTypedEvent<PointerEvent>(name, passive = false) { onPointerEvent(it) }
+        ).fastForEach { name ->
+            addTypedEvent<PointerEvent>(name, passive = false, handler = onPointerCallback)
         }
 
         state.globalEvents.addDisposableEvent("dragend") {
@@ -440,13 +441,11 @@ internal class ComposeWindow(
             event.preventDefault()
         })
 
-        addTypedEvent<KeyboardEvent>("keydown") { event ->
+        val onKeyboardEventCallback: (KeyboardEvent) -> Unit = { event ->
             processKeyboardEvent(event)
         }
-
-        addTypedEvent<KeyboardEvent>("keyup") { event ->
-            processKeyboardEvent(event)
-        }
+        addTypedEvent<KeyboardEvent>("keydown", onKeyboardEventCallback)
+        addTypedEvent<KeyboardEvent>("keyup", onKeyboardEventCallback)
 
         addTypedEvent<FocusEvent>("focus") { event ->
             canvasFocused = true
