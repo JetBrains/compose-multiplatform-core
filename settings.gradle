@@ -50,6 +50,12 @@ plugins {
     id("AndroidXHostTestFailureHandlerPlugin")
 }
 
+def isRunFromGradlewStudio = System.getenv().get("EXPECTED_AGP_VERSION")
+if (!isRunFromGradlewStudio) {
+    apply from: "settings-fork.gradle"
+    return
+}
+
 enableFeaturePreview "STABLE_CONFIGURATION_CACHE"
 
 def supportRootFolder = buildscript.sourceFile.getParentFile()
