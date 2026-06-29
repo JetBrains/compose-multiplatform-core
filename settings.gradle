@@ -1,6 +1,13 @@
 import groovy.transform.Field
 
 pluginManagement {
+    def isRunFromGradlewStudio = System.getenv().get("EXPECTED_AGP_VERSION")
+    if (!isRunFromGradlewStudio) {
+        apply from: "settings-plugin-management-fork.gradle"
+        this.ext.configureForkPluginManagement.call(delegate)
+        return
+    }
+
     repositories {
         maven {
             url = new File(buildscript.sourceFile.parent + "/../../prebuilts/androidx/external").getCanonicalFile()
@@ -20,6 +27,13 @@ pluginManagement {
 }
 
 buildscript {
+    def isRunFromGradlewStudio = System.getenv().get("EXPECTED_AGP_VERSION")
+    if (!isRunFromGradlewStudio) {
+        apply from: "settings-buildscript-fork.gradle"
+        this.ext.configureForkBuildscript.call(delegate)
+        return
+    }
+
     ext.supportRootFolder = buildscript.sourceFile.getParentFile()
     apply(from: "buildSrc/repos.gradle")
     apply(from: "buildSrc/settingsScripts/project-dependency-graph.groovy")
@@ -48,6 +62,12 @@ buildscript {
 plugins {
     id("org.gradle.toolchains.foojay-resolver-convention") version "1.0.0"
     id("AndroidXHostTestFailureHandlerPlugin")
+}
+
+def isRunFromGradlewStudio = System.getenv().get("EXPECTED_AGP_VERSION")
+if (!isRunFromGradlewStudio) {
+    apply from: "settings-fork.gradle"
+    return
 }
 
 enableFeaturePreview "STABLE_CONFIGURATION_CACHE"
