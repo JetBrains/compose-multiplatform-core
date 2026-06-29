@@ -53,7 +53,7 @@ internal class DomInputStrategy(
 
     private var lastMeaningfulUpdate = TextFieldValue("")
     private var latestSelection = TextSelection(0, 0)
-    var isInCompositionMode = false
+    private var isInCompositionMode = false
 
     // To avoid the re-triggering of the selection change
     private var pauseSelectionChangeListener = false
