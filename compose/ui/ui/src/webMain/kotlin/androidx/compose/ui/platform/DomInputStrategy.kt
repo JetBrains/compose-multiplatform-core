@@ -17,6 +17,7 @@
 package androidx.compose.ui.platform
 
 import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.ImeOptions
 import androidx.compose.ui.text.input.KeyboardType
@@ -24,19 +25,25 @@ import androidx.compose.ui.text.input.SetSelectionCommand
 import androidx.compose.ui.text.input.TextFieldValue
 import kotlin.js.ExperimentalWasmJsInterop
 import kotlin.js.JsAny
+import kotlin.js.JsArray
 import kotlin.js.JsName
 import kotlin.js.definedExternally
+import kotlin.js.get
 import kotlin.js.js
+import kotlin.js.length
 import kotlin.js.unsafeCast
 import kotlinx.browser.document
 import kotlinx.browser.window
 import org.w3c.dom.HTMLElement
 import org.w3c.dom.EventInit
+import org.w3c.dom.Node
+import org.w3c.dom.Range
 import org.w3c.dom.events.CompositionEvent
 import org.w3c.dom.events.Event
 import org.w3c.dom.events.UIEvent
 import org.w3c.dom.events.InputEvent
 import org.w3c.dom.events.KeyboardEvent
+
 
 internal class DomInputStrategy(
     imeOptions: ImeOptions,
@@ -45,6 +52,8 @@ internal class DomInputStrategy(
     val htmlInput = imeOptions.createDomElement()
 
     private var lastMeaningfulUpdate = TextFieldValue("")
+    private var latestSelection = TextSelection(0, 0)
+    var isInCompositionMode = false
 
     // To avoid the re-triggering of the selection change
     private var pauseSelectionChangeListener = false
@@ -63,16 +72,17 @@ internal class DomInputStrategy(
     }
 
     fun updateState(textFieldValue: TextFieldValue) {
-        htmlInput as HTMLElementWithValue
-
-        val needsTextUpdate = lastMeaningfulUpdate.text != textFieldValue.text
-        val needsSelectionUpdate = lastMeaningfulUpdate.selection != textFieldValue.selection
+        val needsTextUpdate = (lastMeaningfulUpdate.text != textFieldValue.text) && !isInCompositionMode
+        val needsSelectionUpdate = (lastMeaningfulUpdate.selection != textFieldValue.selection) && !isInCompositionMode
         lastMeaningfulUpdate = textFieldValue
 
         if (needsTextUpdate) {
-            htmlInput.value = textFieldValue.text
+            htmlInput.textContent = textFieldValue.text
+
+            htmlInput.focus()
         }
-        if (needsSelectionUpdate) {
+
+        if (needsTextUpdate || needsSelectionUpdate) {
             pauseSelectionChangeListener = true
             htmlInput.setSelectionRange(textFieldValue.selection.min, textFieldValue.selection.max)
             pauseSelectionChangeListener = false
@@ -81,6 +91,7 @@ internal class DomInputStrategy(
 
     private val tabKeyCode = Key.Tab.keyCode.toInt()
 
+    @OptIn(ExperimentalWasmJsInterop::class)
     private fun initEvents() {
         // Whenever new type of event is processed, don't forget to sync the NativeInputEventsProcessor::runCheckpoint isIME check
         htmlInput.addEventListener("keydown", { evt ->
@@ -101,26 +112,34 @@ internal class DomInputStrategy(
 
         htmlInput.addEventListener("beforeinput", { evt ->
             if (evt is InputEvent) {
-                htmlInput as HTMLElementWithValue
 
                 val inputExt = evt.asInputEventExt()
-                inputExt.textRangeStart = htmlInput.selectionStart
-                inputExt.textRangeEnd = htmlInput.selectionEnd
+
+                inputExt.textRangeStart = latestSelection.start
+                inputExt.textRangeEnd = latestSelection.end
 
                 nativeInputEventsProcessor.registerEvent(evt)
             }
         })
 
+        htmlInput.addEventListener("compositionstart", {evt ->
+            isInCompositionMode = true
+        })
+
         htmlInput.addEventListener("compositionend", { evt ->
+            isInCompositionMode = false
             nativeInputEventsProcessor.registerEvent(evt as CompositionEvent)
         })
 
         selectionChangeListener = listener@{ _ ->
             if (pauseSelectionChangeListener || !isInputActive()) return@listener
-            htmlInput as HTMLElementWithValue
-            val start = htmlInput.selectionStart
-            val end = htmlInput.selectionEnd
+
+            val currentSelection = htmlInput.getSelectionRange()
+            latestSelection = currentSelection
+
             val selection = lastMeaningfulUpdate.selection
+            val start = currentSelection.start
+            val end = currentSelection.end
 
             if (start != selection.min || end != selection.max) {
                 val normalizedStart = minOf(start, end)
@@ -161,17 +180,41 @@ internal external class InputEventExt : UIEvent {
     var textRangeEnd: Int
 
     constructor(type: String, eventInitDict: EventInit = definedExternally)
+
+    /**
+     * Returns an array of static ranges that will be affected by a change to the DOM
+     * if the input event is not canceled.
+     *
+     * See https://developer.mozilla.org/en-US/docs/Web/API/InputEvent/getTargetRanges
+     */
+    fun getTargetRanges(): JsArray<StaticRange>
 }
+
+/**
+ * Represents a [StaticRange] - a range of content in a document that is not updated
+ * when the underlying DOM tree is modified.
+ *
+ * See https://developer.mozilla.org/en-US/docs/Web/API/StaticRange
+ */
+@OptIn(ExperimentalWasmJsInterop::class)
+internal external interface StaticRange : JsAny {
+    val startContainer: JsAny
+    val startOffset: Int
+    val endContainer: JsAny
+    val endOffset: Int
+    val collapsed: Boolean
+}
+
 
 internal inline fun UIEvent.asInputEventExt(): InputEventExt =  unsafeCast<InputEventExt>()
 
-internal val InputEventExt.textRangeSize: Int
-    get() = this.asInputEventExt().let { it.textRangeEnd - it.textRangeStart }
+internal val InputEventExt.textRangeCollapsed: Boolean
+    get() = this.asInputEventExt().let { it.textRangeEnd == it.textRangeStart }
 
 
 private fun ImeOptions.createDomElement(): HTMLElement {
     val htmlElement = document.createElement(
-        if (singleLine) "input" else "textarea"
+        if (singleLine) "span" else "div"
     ) as HTMLElement
 
     // without autocorrect set "on" iOS virtual keyboard won't suggest
@@ -180,6 +223,8 @@ private fun ImeOptions.createDomElement(): HTMLElement {
     htmlElement.setAttribute("autocomplete", "off")
     htmlElement.setAttribute("autocapitalize", "off")
     htmlElement.setAttribute("spellcheck", "false")
+
+    htmlElement.setAttribute("contenteditable", "true")
 
     val inputMode = when (keyboardType) {
         KeyboardType.Text -> "text"
@@ -213,13 +258,80 @@ private fun ImeOptions.createDomElement(): HTMLElement {
     return htmlElement
 }
 
-private external interface HTMLElementWithValue {
-    var value: String
-    val selectionStart: Int
-    val selectionEnd: Int
-    val selectionDirection: String?
-    fun setSelectionRange(start: Int, end: Int, direction: String = definedExternally)
+@OptIn(ExperimentalWasmJsInterop::class)
+private external interface HasDomSelection : JsAny {
+    fun getSelection(): Selection?
+}
+
+/**
+ * Represents a [Selection] - the range of text selected by the user or the current position of the caret.
+ *
+ * Minimal definition sufficient for [setSelectionRange] and [getSelectionOffsets].
+ *
+ * See https://developer.mozilla.org/en-US/docs/Web/API/Selection
+ */
+@OptIn(ExperimentalWasmJsInterop::class)
+private external interface Selection : JsAny {
+    val rangeCount: Int
+    fun getRangeAt(index: Int): Range
+    fun removeAllRanges()
+    fun addRange(range: Range)
+    val anchorOffset: Int
+    val focusOffset: Int
+    // https://developer.mozilla.org/en-US/docs/Web/API/Selection/setBaseAndExtent
+    fun setBaseAndExtent(anchorNode: Node, anchorOffset: Int, focusNode: Node, focusOffset: Int)
+
+    /**
+     * See https://developer.mozilla.org/en-US/docs/Web/API/Selection/getComposedRanges
+     */
+    fun getComposedRanges(options: GetComposedRangesOptions = definedExternally): JsArray<StaticRange>
+
+    fun getComposedRanges(fallbackRoot: DocumentOrShadowRootLike): JsArray<StaticRange>
+}
+
+private fun HTMLElement.getSelectionRange(): TextSelection {
+    val selection = window.unsafeCast<HasDomSelection>().getSelection() ?: return TextSelection(0, 0)
+    val root = this.unsafeCast<NodeWithRootNode>().getRootNode() ?: return TextSelection(0, 0)
+
+    val composedRanges = try {
+        // Try the modern standard approach
+        selection.getComposedRanges(GetComposedRangesOptions(root))
+    } catch (e: Throwable) {
+        // Fallback for older Safari 17 point-releases
+        selection.getComposedRanges(root)
+    }
+
+    if (composedRanges.length > 0) {
+        val firstRange = composedRanges[0]!!
+        return TextSelection(firstRange.startOffset, firstRange.endOffset)
+    }
+
+    return TextSelection(0, 0)
+}
+
+/**
+ * Options for [Selection.getComposedRanges].
+ * See https://developer.mozilla.org/en-US/docs/Web/API/Selection/getComposedRanges#parameters
+ */
+@OptIn(ExperimentalWasmJsInterop::class)
+private external interface GetComposedRangesOptions : JsAny {
+    var shadowRoots: JsArray<DocumentOrShadowRootLike>
+}
+private fun GetComposedRangesOptions(root: DocumentOrShadowRootLike): GetComposedRangesOptions =  js("({ shadowRoots: [root] })")
+
+internal fun HTMLElement.setSelectionRange(startOffset: Int, endOffset: Int) {
+    val selection = window.unsafeCast<HasDomSelection>().getSelection()
+
+    val textNode = firstChild
+    if (textNode != null) {
+        selection?.setBaseAndExtent(textNode, startOffset, textNode, endOffset)
+    } else {
+        selection?.setBaseAndExtent(this, 0, this, 0)
+    }
 }
 
 internal fun isTypedEvent(evt: KeyboardEvent): Boolean =
     js("!evt.metaKey && !evt.ctrlKey && evt.key.charAt(0) === evt.key")
+
+
+private data class TextSelection(val start: Int, val end: Int)

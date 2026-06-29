@@ -25,7 +25,7 @@ import androidx.compose.ui.events.eventsSequence
 import androidx.compose.ui.events.keyEvent
 import kotlin.test.Test
 import kotlin.test.assertIs
-import org.w3c.dom.HTMLTextAreaElement
+import org.w3c.dom.HTMLDivElement
 
 internal interface СompositeInputTestSpec : TextFieldTestSpec {
 
@@ -39,8 +39,8 @@ internal interface СompositeInputTestSpec : TextFieldTestSpec {
     fun compositeInput() = runApplicationTest {
         val textFieldValue = createApplicationWithHolder()
 
-        val backingTextField = getShadowRoot().querySelector("textarea")
-        assertIs<HTMLTextAreaElement>(backingTextField)
+        val backingTextField = getShadowRoot().querySelector("div.compose-backing-field")
+        assertIs<HTMLDivElement>(backingTextField)
 
         triggerComposingSequence("a", "1", "啊").sendToHtmlInput()
 

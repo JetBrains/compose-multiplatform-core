@@ -172,14 +172,14 @@ internal abstract class NativeInputEventsProcessor(
                     // This happens when an autocorrection is applied on mobile:
                     // The system first tells us to delete the old text,
                     // and then it would send the "insertText" event.
-                    if (textRangeSize > 0) {
+                    if (!textRangeCollapsed) {
                         // deleteContentBackward can happen under very non-trivial circumstances:
                         // - for instance, when an input suggestion on Android Chrome is accepted,
                         // the browser then deletes space after the word just to add space again;
                         // - or when a browser performs Fast Delete;
                         add(SetSelectionCommand(textRangeStart, textRangeEnd))
                         add(BackspaceCommand())
-                    } else if (textRangeSize == 0 && lastProcessedKeydown?.isBackspace() != true) {
+                    } else if (textRangeCollapsed && lastProcessedKeydown?.isBackspace() != true) {
                         // We skip this branch if the lastProcessedKeydown is Backspace, because Compose must have already processed this.
                         // Otherwise, under specific circumstance previous symbol can be deleted while inputting the new one
                         // see https://youtrack.jetbrains.com/issue/CMP-8773
@@ -205,8 +205,8 @@ internal abstract class NativeInputEventsProcessor(
 
             "insertReplacementText" -> buildList {
                 if (data == null) return@buildList
-                if (textRangeSize > 0) {
-                    add(SetSelectionCommand(textRangeStart, textRangeEnd))
+                if (!textRangeCollapsed) {
+                        add(SetSelectionCommand(textRangeStart, textRangeEnd))
                 }
 
                 add(CommitTextCommand(data, 1))
@@ -214,8 +214,8 @@ internal abstract class NativeInputEventsProcessor(
 
             "insertText" -> buildList {
                 if (data == null) return@buildList
-                if (textRangeSize > 0 && currentTextFieldValue.selection.collapsed) {
-                    add(SetSelectionCommand(textRangeStart, textRangeEnd))
+                if (!textRangeCollapsed && currentTextFieldValue.selection.collapsed) {
+                    add(resolveAsSelectionCommand())
                 }
 
                 add(CommitTextCommand(data, 1))
@@ -223,8 +223,8 @@ internal abstract class NativeInputEventsProcessor(
 
             "insertCompositionText" -> buildList {
                 if (data == null) return@buildList
-                if (textRangeSize > 0) {
-                    add(SetSelectionCommand(textRangeStart, textRangeEnd))
+                if (!textRangeCollapsed) {
+                    add(resolveAsSelectionCommand())
                 }
                 add(SetComposingTextCommand(data, 1))
             }
@@ -248,4 +248,9 @@ internal abstract class NativeInputEventsProcessor(
     internal fun getCollectedEvents() = collectedEvents
 }
 
+
 private fun KeyboardEvent.isBackspace(): Boolean = key == "Backspace"
+
+private fun InputEventExt.resolveAsSelectionCommand(): SetSelectionCommand {
+    return SetSelectionCommand(textRangeStart, textRangeEnd)
+}

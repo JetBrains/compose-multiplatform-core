@@ -23,7 +23,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.yield
-import org.w3c.dom.HTMLTextAreaElement
+import org.w3c.dom.HTMLDivElement
 import org.w3c.dom.pointerevents.PointerEvent
 import org.w3c.dom.pointerevents.PointerEventInit
 
@@ -70,10 +70,10 @@ class MouseTextInputTests: OnCanvasTests {
         awaitIdle()
         assertEquals(TextRange(0, 0), textRange.value)
 
-        val textArea = getShadowRoot().querySelector("textarea")
-        assertIs<HTMLTextAreaElement>(textArea)
+        val backintInput = getShadowRoot().querySelector("div.compose-backing-field")
+        assertIs<HTMLDivElement>(backintInput)
 
-        val textAreaRect = textArea.getBoundingClientRect()
+        val textAreaRect = backintInput.getBoundingClientRect()
         // Do a manual hit-test
         val elementsAtPos = getShadowRoot().elementFromPoint(
             textAreaRect.left + textAreaRect.width / 2 ,
