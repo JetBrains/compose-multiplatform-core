@@ -70,10 +70,10 @@ class MouseTextInputTests: OnCanvasTests {
         awaitIdle()
         assertEquals(TextRange(0, 0), textRange.value)
 
-        val backintInput = getShadowRoot().querySelector("div.compose-backing-field")
-        assertIs<HTMLDivElement>(backintInput)
+        val backingInput = getShadowRoot().querySelector("div.compose-backing-field")
+        assertIs<HTMLDivElement>(backingInput)
 
-        val textAreaRect = backintInput.getBoundingClientRect()
+        val textAreaRect = backingInput.getBoundingClientRect()
         // Do a manual hit-test
         val elementsAtPos = getShadowRoot().elementFromPoint(
             textAreaRect.left + textAreaRect.width / 2 ,
