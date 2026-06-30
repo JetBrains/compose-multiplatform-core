@@ -309,9 +309,6 @@ boolean shouldIncludeForFilter(List<BuildType> includeList) {
     return false
 }
 
-def includeProject(name, List<BuildType> filter = []) {
-    includeProject(name, null, filter)
-}
 // createProjectDependencyGraph is provided by project-dependency-graph.groovy
 ext.projectDependencyGraph = createProjectDependencyGraph(
         settings,
@@ -320,6 +317,8 @@ ext.projectDependencyGraph = createProjectDependencyGraph(
 // A set of projects that the user asked to filter to.
 @Field Set<String> filteredProjects = new HashSet<String>()
 filteredProjects.add(":lint-checks")
+
+@Field Map<String, String> projectToSubstituteArtifact = new HashMap<String, String>()
 
 // Calling includeProject(name, filePath) is shorthand for:
 //
@@ -330,12 +329,12 @@ filteredProjects.add(":lint-checks")
 //   the project name in the IDE
 //   the Maven artifactId
 //
-def includeProject(String name, filePath, List<BuildType> filter = []) {
+def includeProject(String name, filePath = null, String substituteArtifact = null) {
     if (projectPrefixFilter.isConfigured) {
         if (projectPrefixFilter.matches(name)) {
             filteredProjects.add(name)
         }
-    } else if (shouldIncludeForFilter(filter)) {
+    } else  {
         filteredProjects.add(name)
     }
     def file
@@ -352,6 +351,10 @@ def includeProject(String name, filePath, List<BuildType> filter = []) {
         file = new File(rootDir, name.substring(1).replace(":", "/"))
     }
     projectDependencyGraph.addToAllProjects(name, file)
+
+    if (substituteArtifact != null) {
+        projectToSubstituteArtifact[name] = substituteArtifact
+    }
 }
 
 // TODO(https://youtrack.jetbrains.com/issue/CMP-9524/Support-the-same-setup-for-integration-and-jb-main-branches)
@@ -543,6 +546,13 @@ includeProject(":test:screenshot:screenshot", "mpp/stub-project")
 includeProject(":window:window-core", "mpp/stub-project")
 includeProject(":window:window-testing", "mpp/stub-project")
 
+if (providers.gradleProperty("jetbrains.androidx.use.androidx.sources.instead.of.artifacts").getOrElse("false").toBoolean()) {
+    includeProject(":androidx.compose", "compose")
+    includeProject(":androidx.compose:runtime", "compose/runtime")
+    includeProject(":androidx.compose:runtime:runtime", "compose/runtime/runtime", "androidx.compose.runtime:runtime")
+    includeProject(":androidx.compose:runtime:runtime-annotation", "compose/runtime/runtime-annotation", "androidx.compose.runtime:runtime-annotation")
+}
+
 // ---------------------------------------------------------------------
 // --- there should be no includeProject additions after this line -----
 // ---------------------------------------------------------------------
@@ -562,3 +572,14 @@ void includeRequestedProjectsAndDependencies() {
 }
 includeRequestedProjectsAndDependencies()
 gradle.ext.allProjectConsumers = allProjectsConsumers(projectDependencyGraph)
+
+def projectToSubstituteArtifactLocal = projectToSubstituteArtifact
+gradle.allprojects {
+    configurations.all {
+        resolutionStrategy.dependencySubstitution {
+            projectToSubstituteArtifactLocal.each { projectPath, artifact ->
+                substitute module(artifact) using project(projectPath)
+            }
+        }
+    }
+}
