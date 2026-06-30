@@ -17,7 +17,6 @@
 package androidx.compose.ui.platform
 
 import androidx.compose.ui.input.key.Key
-import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.ImeOptions
 import androidx.compose.ui.text.input.KeyboardType
@@ -27,10 +26,14 @@ import kotlin.js.ExperimentalWasmJsInterop
 import kotlin.js.JsAny
 import kotlin.js.JsArray
 import kotlin.js.JsName
+import kotlin.js.JsNumber
 import kotlin.js.definedExternally
 import kotlin.js.get
 import kotlin.js.js
 import kotlin.js.length
+import kotlin.js.toInt
+import kotlin.js.toJsArray
+import kotlin.js.toJsNumber
 import kotlin.js.unsafeCast
 import kotlinx.browser.document
 import kotlinx.browser.window
@@ -134,12 +137,12 @@ internal class DomInputStrategy(
         selectionChangeListener = listener@{ _ ->
             if (pauseSelectionChangeListener || !isInputActive()) return@listener
 
-            val currentSelection = getSelectionRange(htmlInput) ?: TextSelection(0, 0)
-            latestSelection = currentSelection
+            val currentSelection = getSelectionRange(htmlInput)
+            val start = currentSelection?.get(0)?.toInt() ?: 0
+            val end = currentSelection?.get(1)?.toInt() ?: 0
+            latestSelection = TextSelection(start, end)
 
             val selection = lastMeaningfulUpdate.selection
-            val start = currentSelection.start
-            val end = currentSelection.end
 
             if (start != selection.min || end != selection.max) {
                 val normalizedStart = minOf(start, end)
@@ -272,57 +275,55 @@ private external interface HasDomSelection : JsAny {
  */
 @OptIn(ExperimentalWasmJsInterop::class)
 private external interface Selection : JsAny {
-    val rangeCount: Int
-    fun getRangeAt(index: Int): Range
-    fun removeAllRanges()
-    fun addRange(range: Range)
-    val anchorOffset: Int
-    val focusOffset: Int
     // https://developer.mozilla.org/en-US/docs/Web/API/Selection/setBaseAndExtent
     fun setBaseAndExtent(anchorNode: Node, anchorOffset: Int, focusNode: Node, focusOffset: Int)
-
-    /**
-     * See https://developer.mozilla.org/en-US/docs/Web/API/Selection/getComposedRanges
-     */
-    fun getComposedRanges(options: GetComposedRangesOptions = definedExternally): JsArray<StaticRange>
-
-    fun getComposedRanges(fallbackRoot: DocumentOrShadowRootLike): JsArray<StaticRange>
 }
 
-private fun getSelectionRange(element: HTMLElement): TextSelection? {
-    val selection = window.unsafeCast<HasDomSelection>().getSelection() ?: return null
-    val root = element.unsafeCast<NodeWithRootNode>().getRootNode() ?: return null
+@OptIn(ExperimentalWasmJsInterop::class)
+private fun getSelectionRange(element: HTMLElement): JsArray<JsNumber>? = js(
+    """{
+        var selection = window.getSelection();
+        if (selection == null) return null;
+        var root = element.getRootNode();
+        if (root == null) return null;
 
-    return try {
-        // The modern standard approach
-        val composedRanges = selection.getComposedRanges(GetComposedRangesOptions(root))
-        if (composedRanges.length > 0) {
-            val firstRange = composedRanges[0]!!
-            return TextSelection(firstRange.startOffset, firstRange.endOffset)
-        } else null
-    } catch (e: Throwable) {
-        try {// Fallback for early Safari 17 point-releases
-            val composedRanges = selection.getComposedRanges(root)
+        try {
+            // The modern standard approach
+            var composedRanges = selection.getComposedRanges({ shadowRoots: [root] });
             if (composedRanges.length > 0) {
-                val firstRange = composedRanges[0]!!
-                return TextSelection(firstRange.startOffset, firstRange.endOffset)
-            } else null
-        } catch (e: Throwable) {
+                var firstRange = composedRanges[0];
+                return [firstRange.startOffset, firstRange.endOffset];
+            }
+            return null;
+        } catch (e) {
+            // Fallback for early Safari 17 point-releases
             try {
-                val rootSelection = root.unsafeCast<HasDomSelection>().getSelection() ?: return TextSelection(0, 0)
-                if (rootSelection.rangeCount > 0) {
-                    val rootRange = rootSelection.getRangeAt(0)
-                    return TextSelection(rootRange.startOffset, rootRange.endOffset)
-                } else null
-            } catch (e: Throwable) {
-                if (selection.rangeCount > 0) {
-                    val selectionRange = selection.getRangeAt(0)
-                    return TextSelection(selectionRange.startOffset, selectionRange.endOffset)
-                } else null
+                var composedRanges = selection.getComposedRanges(root);
+                if (composedRanges.length > 0) {
+                    var firstRange = composedRanges[0];
+                    return [firstRange.startOffset, firstRange.endOffset];
+                }
+                return null;
+            } catch (e) {
+                try {
+                    var rootSelection = root.getSelection();
+                    if (rootSelection == null) return [0, 0];
+                    if (rootSelection.rangeCount > 0) {
+                        var rootRange = rootSelection.getRangeAt(0);
+                        return [rootRange.startOffset, rootRange.endOffset];
+                    }
+                    return null;
+                } catch (e) {
+                    if (selection.rangeCount > 0) {
+                        var selectionRange = selection.getRangeAt(0);
+                        return [selectionRange.startOffset, selectionRange.endOffset];
+                    }
+                    return null;
+                }
             }
         }
-    }
-}
+    }"""
+)
 
 internal fun setSelectionRange(element: HTMLElement, startOffset: Int, endOffset: Int) {
     val selection = window.unsafeCast<HasDomSelection>().getSelection()
@@ -335,16 +336,6 @@ internal fun setSelectionRange(element: HTMLElement, startOffset: Int, endOffset
     }
 }
 
-
-/**
- * Options for [Selection.getComposedRanges].
- * See https://developer.mozilla.org/en-US/docs/Web/API/Selection/getComposedRanges#parameters
- */
-@OptIn(ExperimentalWasmJsInterop::class)
-private external interface GetComposedRangesOptions : JsAny {
-    var shadowRoots: JsArray<DocumentOrShadowRootLike>
-}
-private fun GetComposedRangesOptions(root: DocumentOrShadowRootLike): GetComposedRangesOptions =  js("({ shadowRoots: [root] })")
 
 internal fun isTypedEvent(evt: KeyboardEvent): Boolean =
     js("!evt.metaKey && !evt.ctrlKey && evt.key.charAt(0) === evt.key")
