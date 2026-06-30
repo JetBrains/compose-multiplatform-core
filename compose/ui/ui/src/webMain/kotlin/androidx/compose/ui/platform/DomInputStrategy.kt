@@ -84,7 +84,7 @@ internal class DomInputStrategy(
 
         if (needsTextUpdate || needsSelectionUpdate) {
             pauseSelectionChangeListener = true
-            htmlInput.setSelectionRange(textFieldValue.selection.min, textFieldValue.selection.max)
+            setSelectionRange(htmlInput,textFieldValue.selection.min, textFieldValue.selection.max)
             pauseSelectionChangeListener = false
         }
     }
@@ -134,7 +134,7 @@ internal class DomInputStrategy(
         selectionChangeListener = listener@{ _ ->
             if (pauseSelectionChangeListener || !isInputActive()) return@listener
 
-            val currentSelection = htmlInput.getSelectionRange()
+            val currentSelection = getSelectionRange(htmlInput) ?: TextSelection(0, 0)
             latestSelection = currentSelection
 
             val selection = lastMeaningfulUpdate.selection
@@ -289,25 +289,52 @@ private external interface Selection : JsAny {
     fun getComposedRanges(fallbackRoot: DocumentOrShadowRootLike): JsArray<StaticRange>
 }
 
-private fun HTMLElement.getSelectionRange(): TextSelection {
-    val selection = window.unsafeCast<HasDomSelection>().getSelection() ?: return TextSelection(0, 0)
-    val root = this.unsafeCast<NodeWithRootNode>().getRootNode() ?: return TextSelection(0, 0)
+private fun getSelectionRange(element: HTMLElement): TextSelection? {
+    val selection = window.unsafeCast<HasDomSelection>().getSelection() ?: return null
+    val root = element.unsafeCast<NodeWithRootNode>().getRootNode() ?: return null
 
-    val composedRanges = try {
-        // Try the modern standard approach
-        selection.getComposedRanges(GetComposedRangesOptions(root))
+    return try {
+        // The modern standard approach
+        val composedRanges = selection.getComposedRanges(GetComposedRangesOptions(root))
+        if (composedRanges.length > 0) {
+            val firstRange = composedRanges[0]!!
+            return TextSelection(firstRange.startOffset, firstRange.endOffset)
+        } else null
     } catch (e: Throwable) {
-        // Fallback for older Safari 17 point-releases
-        selection.getComposedRanges(root)
+        try {// Fallback for early Safari 17 point-releases
+            val composedRanges = selection.getComposedRanges(root)
+            if (composedRanges.length > 0) {
+                val firstRange = composedRanges[0]!!
+                return TextSelection(firstRange.startOffset, firstRange.endOffset)
+            } else null
+        } catch (e: Throwable) {
+            try {
+                val rootSelection = root.unsafeCast<HasDomSelection>().getSelection() ?: return TextSelection(0, 0)
+                if (rootSelection.rangeCount > 0) {
+                    val rootRange = rootSelection.getRangeAt(0)
+                    return TextSelection(rootRange.startOffset, rootRange.endOffset)
+                } else null
+            } catch (e: Throwable) {
+                if (selection.rangeCount > 0) {
+                    val selectionRange = selection.getRangeAt(0)
+                    return TextSelection(selectionRange.startOffset, selectionRange.endOffset)
+                } else null
+            }
+        }
     }
-
-    if (composedRanges.length > 0) {
-        val firstRange = composedRanges[0]!!
-        return TextSelection(firstRange.startOffset, firstRange.endOffset)
-    }
-
-    return TextSelection(0, 0)
 }
+
+internal fun setSelectionRange(element: HTMLElement, startOffset: Int, endOffset: Int) {
+    val selection = window.unsafeCast<HasDomSelection>().getSelection()
+
+    val textNode = element.firstChild
+    if (textNode != null) {
+        selection?.setBaseAndExtent(textNode, startOffset, textNode, endOffset)
+    } else {
+        selection?.setBaseAndExtent(element, 0, element, 0)
+    }
+}
+
 
 /**
  * Options for [Selection.getComposedRanges].
@@ -318,17 +345,6 @@ private external interface GetComposedRangesOptions : JsAny {
     var shadowRoots: JsArray<DocumentOrShadowRootLike>
 }
 private fun GetComposedRangesOptions(root: DocumentOrShadowRootLike): GetComposedRangesOptions =  js("({ shadowRoots: [root] })")
-
-internal fun HTMLElement.setSelectionRange(startOffset: Int, endOffset: Int) {
-    val selection = window.unsafeCast<HasDomSelection>().getSelection()
-
-    val textNode = firstChild
-    if (textNode != null) {
-        selection?.setBaseAndExtent(textNode, startOffset, textNode, endOffset)
-    } else {
-        selection?.setBaseAndExtent(this, 0, this, 0)
-    }
-}
 
 internal fun isTypedEvent(evt: KeyboardEvent): Boolean =
     js("!evt.metaKey && !evt.ctrlKey && evt.key.charAt(0) === evt.key")

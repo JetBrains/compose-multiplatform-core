@@ -20,7 +20,6 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.OnCanvasTests
-import androidx.compose.ui.WebApplicationScope
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.setSelectionRange
@@ -61,14 +60,14 @@ class ExternalSelectionChangeListenerTest : OnCanvasTests {
 
         assertEquals(TextRange(text.length), textFieldValue.value.selection)
 
-        htmlInput.setSelectionRange(1, 7)
+        setSelectionRange(htmlInput, 1, 7)
         document.dispatchEvent(Event("selectionchange"))
         awaitAnimationFrame()
         awaitIdle()
 
         assertEquals(TextRange(1, 7), textFieldValue.value.selection)
 
-        htmlInput.setSelectionRange(8, 8)
+        setSelectionRange(htmlInput, 8, 8)
         document.dispatchEvent(Event("selectionchange"))
         awaitAnimationFrame()
         awaitIdle()
