@@ -115,7 +115,6 @@ internal class DomInputStrategy(
 
         htmlInput.addEventListener("beforeinput", { evt ->
             if (evt is InputEvent) {
-
                 val inputExt = evt.asInputEventExt()
 
                 inputExt.textRangeStart = latestSelection.start
@@ -287,41 +286,41 @@ private fun getSelectionRange(element: HTMLElement): JsArray<JsNumber>? = js(
         var root = element.getRootNode();
         if (root == null) return null;
 
-        try {
-            // The modern standard approach
-            var composedRanges = selection.getComposedRanges({ shadowRoots: [root] });
-            if (composedRanges.length > 0) {
-                var firstRange = composedRanges[0];
-                return [firstRange.startOffset, firstRange.endOffset];
-            }
-            return null;
-        } catch (e) {
-            // Fallback for early Safari 17 point-releases
+        if (typeof selection.getComposedRanges === 'function') {
             try {
-                var composedRanges = selection.getComposedRanges(root);
+                // The modern standard approach
+                var composedRanges = selection.getComposedRanges({ shadowRoots: [root] });
                 if (composedRanges.length > 0) {
                     var firstRange = composedRanges[0];
                     return [firstRange.startOffset, firstRange.endOffset];
                 }
                 return null;
             } catch (e) {
-                try {
-                    var rootSelection = root.getSelection();
-                    if (rootSelection == null) return [0, 0];
-                    if (rootSelection.rangeCount > 0) {
-                        var rootRange = rootSelection.getRangeAt(0);
-                        return [rootRange.startOffset, rootRange.endOffset];
-                    }
-                    return null;
-                } catch (e) {
-                    if (selection.rangeCount > 0) {
-                        var selectionRange = selection.getRangeAt(0);
-                        return [selectionRange.startOffset, selectionRange.endOffset];
-                    }
-                    return null;
+                // Fallback for early Safari 17 point-releases
+                var composedRanges = selection.getComposedRanges(root);
+                if (composedRanges.length > 0) {
+                    var firstRange = composedRanges[0];
+                    return [firstRange.startOffset, firstRange.endOffset];
                 }
+                return null;
             }
         }
+
+        if (typeof root.getSelection === 'function') {
+            var rootSelection = root.getSelection();
+            if (rootSelection == null) return [0, 0];
+            if (rootSelection.rangeCount > 0) {
+                var rootRange = rootSelection.getRangeAt(0);
+                return [rootRange.startOffset, rootRange.endOffset];
+            }
+            return null;
+        }
+
+        if (selection.rangeCount > 0) {
+            var selectionRange = selection.getRangeAt(0);
+            return [selectionRange.startOffset, selectionRange.endOffset];
+        }
+        return null;
     }"""
 )
 
