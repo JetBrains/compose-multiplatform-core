@@ -23,6 +23,8 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.geometry.isSpecified
+import kotlin.math.max
+import kotlin.math.min
 import kotlin.math.roundToInt
 
 /**
@@ -165,3 +167,11 @@ internal fun DpOffset.requireReal(): DpOffset {
 @Stable
 internal inline fun IntSize?.toMaxConstraints() =
     if (this == null) Constraints() else Constraints(maxWidth = width, maxHeight = height)
+    
+internal fun IntRect.union(other: IntRect): IntRect =
+    IntRect(
+        left = min(left, other.left),
+        top = min(top, other.top),
+        right = max(right, other.right),
+        bottom = max(bottom, other.bottom)
+    )
