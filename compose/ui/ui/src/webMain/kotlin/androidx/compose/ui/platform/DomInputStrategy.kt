@@ -214,10 +214,6 @@ internal external interface StaticRange : JsAny {
 
 internal inline fun UIEvent.asInputEventExt(): InputEventExt =  unsafeCast<InputEventExt>()
 
-internal val InputEventExt.textRangeCollapsed: Boolean
-    get() = this.asInputEventExt().let { it.textRangeEnd == it.textRangeStart }
-
-
 private fun ImeOptions.createDomElement(): HTMLElement {
     val htmlElement = document.createElement(
         if (singleLine) "span" else "div"

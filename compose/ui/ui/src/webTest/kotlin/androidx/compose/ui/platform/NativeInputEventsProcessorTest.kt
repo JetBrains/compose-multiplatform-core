@@ -219,8 +219,7 @@ class NativeInputEventsProcessorTest {
 
         processor.registerEvent(
             beforeInput("insertText", "a").asInputEventExt().apply {
-                    textRangeStart = 3
-                    textRangeEnd = 4
+                setFirstRange(3, 4)
             }
         )
         processor.manuallyRunCheckpoint(communicator.currentTextFieldValue())
@@ -318,8 +317,7 @@ class NativeInputEventsProcessorTest {
 
         processor.registerEvent(
             beforeInput("insertReplacementText", "replacement").asInputEventExt().apply {
-                textRangeStart = 5
-                textRangeEnd = 9
+                setFirstRange(5, 9)
             },
         )
 
@@ -378,8 +376,7 @@ class NativeInputEventsProcessorTest {
         // 3. Simulate the input event for the accented character
         processor.registerEvent(
             beforeInput("insertText", "é").asInputEventExt().apply {
-                textRangeStart = 0
-                textRangeEnd = 1
+                setFirstRange(0, 1)
             }
         )
 
@@ -446,8 +443,7 @@ class NativeInputEventsProcessorTest {
         processor.registerEvent(
             beforeInput("insertText", "è").asInputEventExt().apply {
                 // to replace `e`
-                textRangeStart = 0
-                textRangeEnd = 1
+                setFirstRange(0, 1)
             },
         )
 
@@ -511,8 +507,7 @@ class NativeInputEventsProcessorTest {
         processor.registerEvent(keyEvent(key = "ArrowRight", code = "ArrowRight", isComposing = true))
         processor.registerEvent(
             beforeInput("insertText", "è", isComposing = true).asInputEventExt().apply {
-                textRangeStart = 0
-                textRangeEnd = 1
+                setFirstRange(0, 1)
             }
         )
         processor.manuallyRunCheckpoint(communicator.currentTextFieldValue())
@@ -522,8 +517,7 @@ class NativeInputEventsProcessorTest {
         processor.registerEvent(keyEvent(key = "ArrowRight", code = "ArrowRight", isComposing = true))
         processor.registerEvent(
             beforeInput("insertCompositionText", "é").asInputEventExt().apply {
-                textRangeStart = 0
-                textRangeEnd = 1
+                setFirstRange(0, 1)
             }
         )
 
@@ -534,8 +528,7 @@ class NativeInputEventsProcessorTest {
         processor.registerEvent(keyEvent(key = "ArrowRight", code = "ArrowRight", isComposing = true))
         processor.registerEvent(
             beforeInput("insertCompositionText", "ê").asInputEventExt().apply {
-                textRangeStart = 0
-                textRangeEnd = 1
+                setFirstRange(0, 1)
             }
         )
 
@@ -553,8 +546,7 @@ class NativeInputEventsProcessorTest {
 
         processor.registerEvent(
             beforeInput("insertCompositionText", "é").asInputEventExt().apply {
-                textRangeStart = 0
-                textRangeEnd = 1
+                setFirstRange(0, 1)
             }
         )
 
@@ -568,8 +560,7 @@ class NativeInputEventsProcessorTest {
         // 4. Simulate the input event for the selected accented character
         processor.registerEvent(
             beforeInput("insertCompositionText", "é").asInputEventExt().apply {
-                textRangeStart = 0
-                textRangeEnd = 1
+                setFirstRange(0, 1)
             }
         )
 

@@ -205,17 +205,18 @@ internal abstract class NativeInputEventsProcessor(
 
             "insertReplacementText" -> buildList {
                 if (data == null) return@buildList
-                if (!textRangeCollapsed) {
-                        add(SetSelectionCommand(textRangeStart, textRangeEnd))
-                }
+                resolveSelection()?.let { add(it) }
 
                 add(CommitTextCommand(data, 1))
             }
 
             "insertText" -> buildList {
                 if (data == null) return@buildList
-                if (!textRangeCollapsed && currentTextFieldValue.selection.collapsed) {
-                    add(resolveAsSelectionCommand())
+
+                resolveSelection()?.let {
+                    if (currentTextFieldValue.selection.collapsed) {
+                        add(it)
+                    }
                 }
 
                 add(CommitTextCommand(data, 1))
@@ -223,9 +224,7 @@ internal abstract class NativeInputEventsProcessor(
 
             "insertCompositionText" -> buildList {
                 if (data == null) return@buildList
-                if (!textRangeCollapsed) {
-                    add(resolveAsSelectionCommand())
-                }
+                resolveSelection()?.let { add(it) }
                 add(SetComposingTextCommand(data, 1))
             }
 
@@ -251,6 +250,12 @@ internal abstract class NativeInputEventsProcessor(
 
 private fun KeyboardEvent.isBackspace(): Boolean = key == "Backspace"
 
-private fun InputEventExt.resolveAsSelectionCommand(): SetSelectionCommand {
-    return SetSelectionCommand(textRangeStart, textRangeEnd)
+private fun InputEventExt.resolveSelection(): SetSelectionCommand? {
+    firstRange?.let { targetRange ->
+        if (!targetRange.collapsed) {
+            return SetSelectionCommand(targetRange.startOffset, targetRange.endOffset)
+        }
+    }
+
+    return null
 }
