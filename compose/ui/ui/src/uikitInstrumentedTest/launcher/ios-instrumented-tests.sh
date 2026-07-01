@@ -3,12 +3,14 @@
 set -euo pipefail
 
 # Edit these values directly when you want to change the target simulator or run count.
+# Use `xcrun xctrace list devices` to find the simulator names and OS versions available locally.
 platform="iOS Simulator"
 os_version="26.5"
 device_name="iPhone 17"
 iterations="1"
 derived_data_path="./tmp/ios-instrumented-tests"
 open_result="false"
+# `run_until_failure` is applied only when iterations > 1.
 run_until_failure="false"
 
 if [[ -z "$platform" || -z "$os_version" || -z "$device_name" ]]; then
@@ -48,6 +50,12 @@ echo "  iterations: ${iterations}"
 echo "  derivedDataPath: ${derived_data_path}"
 echo "  resultBundlePath: ${result_bundle_path}"
 
+# The keyboard preference is picked up when a simulator boots, so shut them all down
+# before forcing the detached-keyboard setup required by these instrumented tests.
+xcrun simctl shutdown all
+defaults write com.apple.iphonesimulator ConnectHardwareKeyboard -bool false
+
+# Build once, then reuse the build products for the actual test execution.
 xcodebuild \
   -project Launcher.xcodeproj \
   -scheme Launcher \
