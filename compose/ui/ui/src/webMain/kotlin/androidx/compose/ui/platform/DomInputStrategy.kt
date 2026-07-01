@@ -120,6 +120,8 @@ internal class DomInputStrategy(
                 inputExt.textRangeStart = latestSelection.start
                 inputExt.textRangeEnd = latestSelection.end
 
+                inputExt.firstRange = inputExt.getTargetRanges()[0]
+
                 nativeInputEventsProcessor.registerEvent(evt)
             }
         })
@@ -180,6 +182,8 @@ internal external class InputEventExt : UIEvent {
     val inputType: String
     var textRangeStart: Int
     var textRangeEnd: Int
+
+    var firstRange: StaticRange?
 
     constructor(type: String, eventInitDict: EventInit = definedExternally)
 

@@ -16,6 +16,8 @@
 
 package androidx.compose.ui.events
 
+import androidx.compose.ui.platform.InputEventExt
+import androidx.compose.ui.platform.StaticRange
 import org.w3c.dom.events.UIEvent
 
 private external interface InputEventInit {
@@ -29,3 +31,10 @@ private  external class InputEvent(type: String, options: InputEventInit) : UIEv
 
 internal fun beforeInput(inputType: String, data: String?, isComposing: Boolean = false): UIEvent =
     InputEvent("beforeinput", InputEventInit(inputType = inputType, data = data, isComposing = isComposing))
+
+private fun createStaticRange(startOffset: Int, endOffset: Int): StaticRange =
+    js("({ startContainer: null, endContainer: null, startOffset: startOffset, endOffset: endOffset, collapsed: startOffset === endOffset })")
+
+internal fun InputEventExt.setFirstRange(startOffset: Int, endOffset: Int) {
+    firstRange = createStaticRange(startOffset, endOffset)
+}

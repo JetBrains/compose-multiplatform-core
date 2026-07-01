@@ -168,18 +168,18 @@ internal abstract class NativeInputEventsProcessor(
                         // When Compose TextField has text selection, a good UX for deleteContentBackward would be to emulate Backspace.
                         add(BackspaceCommand())
                     }
-                } else { // Empty selection case.
-                    // This happens when an autocorrection is applied on mobile:
-                    // The system first tells us to delete the old text,
-                    // and then it would send the "insertText" event.
-                    if (!textRangeCollapsed) {
-                        // deleteContentBackward can happen under very non-trivial circumstances:
-                        // - for instance, when an input suggestion on Android Chrome is accepted,
-                        // the browser then deletes space after the word just to add space again;
-                        // - or when a browser performs Fast Delete;
-                        add(SetSelectionCommand(textRangeStart, textRangeEnd))
-                        add(BackspaceCommand())
-                    } else if (textRangeCollapsed && lastProcessedKeydown?.isBackspace() != true) {
+                } else {
+                    val targetRange = firstRange
+                    if (targetRange != null) {
+                        // Empty selection case.
+                        // This happens when an autocorrection is applied on mobile:
+                        // The system first tells us to delete the old text,
+                        // and then it would send the "insertText" event.
+                        if (!targetRange.collapsed) {
+                            add(SetSelectionCommand(targetRange.startOffset, targetRange.endOffset))
+                            add(BackspaceCommand())
+                        }
+                    } else {
                         // We skip this branch if the lastProcessedKeydown is Backspace, because Compose must have already processed this.
                         // Otherwise, under specific circumstance previous symbol can be deleted while inputting the new one
                         // see https://youtrack.jetbrains.com/issue/CMP-8773

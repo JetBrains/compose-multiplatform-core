@@ -41,6 +41,7 @@ import androidx.compose.ui.events.beforeInput
 import androidx.compose.ui.events.compositionEnd
 import androidx.compose.ui.events.compositionStart
 import androidx.compose.ui.events.keyEvent
+import androidx.compose.ui.events.setFirstRange
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -246,8 +247,7 @@ class NativeInputEventsProcessorTest {
 
         processor.registerEvent(
             beforeInput("deleteContentBackward", "").asInputEventExt().apply {
-                textRangeStart = 3
-                textRangeEnd = 4
+                setFirstRange(3, 4)
             }
         )
         processor.manuallyRunCheckpoint(communicator.currentTextFieldValue())
@@ -624,8 +624,7 @@ class NativeInputEventsProcessorTest {
         // Add deleteContentBackward event
         processor.registerEvent(
             beforeInput("deleteContentBackward", "").asInputEventExt().apply {
-                textRangeStart = 3
-                textRangeEnd = 5
+                setFirstRange(3, 5)
             },
         )
 
@@ -694,8 +693,7 @@ class NativeInputEventsProcessorTest {
 
         processor.registerEvent(
             beforeInput("deleteContentBackward", "").asInputEventExt().apply {
-                textRangeStart = 8
-                textRangeEnd = 12
+                setFirstRange(8, 12)
             },
         )
 
@@ -736,8 +734,7 @@ class NativeInputEventsProcessorTest {
         // Then add a deleteContentBackward event
         processor.registerEvent(
             beforeInput("deleteContentBackward", "").asInputEventExt().apply {
-                textRangeStart = 0
-                textRangeEnd = 1
+                setFirstRange(0, 1)
             },
         )
 
