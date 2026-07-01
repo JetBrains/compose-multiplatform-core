@@ -21,10 +21,10 @@ import androidx.build.ProjectLayoutType
 import androidx.build.checkapi.ApiTaskConfig
 import androidx.build.checkapi.configureCompilationInputsAndManifest
 import androidx.build.checkapi.createReleaseApiConfiguration
+import androidx.build.getDefaultTargetJavaVersion
 import androidx.build.getSupportRootFolder
 import java.io.File
 import org.gradle.api.Project
-import org.jetbrains.androidx.build.jetBrainsGetDefaultTargetJavaVersion
 
 /** Sets up tasks for generating kzip files that are used for generating xref support on website. */
 fun Project.configureProjectForKzipTasks(config: ApiTaskConfig, extension: AndroidXExtension) {
@@ -63,7 +63,7 @@ fun Project.configureProjectForKzipTasks(config: ApiTaskConfig, extension: Andro
             compilationInputs,
             compiledSources,
             extension.kotlinTarget,
-            jetBrainsGetDefaultTargetJavaVersion(extension.type.get(), project),
+            getDefaultTargetJavaVersion(extension.type.get(), project.name),
         )
 
         GenerateJavaKzipTask.setupProject(project, compilationInputs, compiledSources)

@@ -27,9 +27,6 @@ dependencies {
     compileOnly(libs.kotlinAbiTools)
     implementation(libs.kotlinAbiToolsApi)
 
-    // TODO: keep it in our fork until https://youtrack.jetbrains.com/issue/CMP-9512/Migrate-to-BCV-from-KGP
-    implementation(libs.binaryCompatibilityValidator)
-
     // For Room Gradle Plugin
     implementation(libs.kspGradlePlugin) {
         // ensure that AGP dependency doesn't override KSP version we use
