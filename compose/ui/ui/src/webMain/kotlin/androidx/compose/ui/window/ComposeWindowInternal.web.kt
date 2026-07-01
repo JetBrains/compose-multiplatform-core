@@ -67,7 +67,6 @@ import androidx.compose.ui.platform.accessibility.ComposeWebSemanticsListener
 import androidx.compose.ui.platform.installFallbackFontDownloader
 import androidx.compose.ui.scene.CanvasLayersComposeScene
 import androidx.compose.ui.platform.FrameRecomposer
-import androidx.compose.ui.platform.NoOpPlatformPrefetchScheduler
 import androidx.compose.ui.platform.PlatformPrefetchScheduler
 import androidx.compose.ui.platform.WebPrefetchScheduler
 import androidx.compose.ui.platform.isIdleCallbackSupported
