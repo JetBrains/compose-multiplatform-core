@@ -201,4 +201,10 @@ fun ComposeViewport(
 
 private fun clearNodeChildren(node: Element): Unit =
     //language=JavaScript
-    js("node.replaceChildren()")
+    js(
+        """
+        {
+            if (node.hasChildNodes()) node.replaceChildren();
+        }
+    """
+    )
