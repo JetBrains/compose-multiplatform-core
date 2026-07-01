@@ -16,9 +16,14 @@
 
 package androidx.compose.ui.scene
 
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.PointerEvent
@@ -29,11 +34,14 @@ import androidx.compose.ui.node.DelegatingNode
 import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.node.PointerInputModifierNode
 import androidx.compose.ui.platform.FrameRecomposer
+import androidx.compose.ui.touch
 import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.dp
 import kotlin.coroutines.CoroutineContext
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNotEquals
 import kotlin.test.assertTrue
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
@@ -111,6 +119,96 @@ class BaseComposeSceneTest {
                 scene.cancelPointerInput()
 
                 assertEquals(1, cancellationsCount)
+            }
+        } finally {
+            scenes.forEach { (_, dispose) -> dispose.close() }
+        }
+    }
+
+    @Test
+    fun dragScrollIsAppliedSynchronously() = runTest(StandardTestDispatcher()) {
+        val scenes = listOf(
+            createPlatformLayersScene(coroutineContext, IntSize(100, 100)),
+            createCanvasLayersScene(coroutineContext, IntSize(100, 100))
+        )
+
+        try {
+            scenes.forEach { (scene, _) ->
+                val scrollState = ScrollState(0)
+                var observedScroll = 0
+                scene.setContent {
+                    LaunchedEffect(Unit) {
+                        snapshotFlow { scrollState.value }.collect { observedScroll = it }
+                    }
+                    Box(Modifier.size(100.dp).verticalScroll(scrollState)) {
+                        Box(Modifier.size(200.dp))
+                    }
+                }
+
+                scene.sendPointerEvent(
+                    eventType = PointerEventType.Press,
+                    pointers = listOf(touch(50f, 50f, pressed = true))
+                )
+                testScheduler.advanceUntilIdle()
+
+                scene.sendPointerEvent(
+                    eventType = PointerEventType.Move,
+                    pointers = listOf(touch(50f, 10f, pressed = true))
+                )
+
+                assertNotEquals(0, scrollState.value)
+                assertEquals(
+                    scrollState.value,
+                    observedScroll,
+                    "the scroll must be applied within sendPointerEvent"
+                )
+                assertTrue(
+                    scene.hasInvalidations(),
+                    "the scroll must schedule a frame within sendPointerEvent"
+                )
+            }
+        } finally {
+            scenes.forEach { (_, dispose) -> dispose.close() }
+        }
+    }
+
+    @Test
+    fun scrollWheelIsAppliedSynchronously() = runTest(StandardTestDispatcher()) {
+        val scenes = listOf(
+            createPlatformLayersScene(coroutineContext, IntSize(100, 100)),
+            createCanvasLayersScene(coroutineContext, IntSize(100, 100))
+        )
+
+        try {
+            scenes.forEach { (scene, _) ->
+                val scrollState = ScrollState(0)
+                var observedScroll = 0
+                scene.setContent {
+                    LaunchedEffect(Unit) {
+                        snapshotFlow { scrollState.value }.collect { observedScroll = it }
+                    }
+                    Box(Modifier.size(100.dp).verticalScroll(scrollState)) {
+                        Box(Modifier.size(200.dp))
+                    }
+                }
+                testScheduler.advanceUntilIdle()
+
+                scene.sendPointerEvent(
+                    eventType = PointerEventType.Scroll,
+                    position = Offset(50f, 50f),
+                    scrollDelta = Offset(0f, 40f)
+                )
+
+                assertNotEquals(0, scrollState.value)
+                assertEquals(
+                    scrollState.value,
+                    observedScroll,
+                    "the scroll must be applied within sendPointerEvent"
+                )
+                assertTrue(
+                    scene.hasInvalidations(),
+                    "the scroll must schedule a frame within sendPointerEvent"
+                )
             }
         } finally {
             scenes.forEach { (_, dispose) -> dispose.close() }

@@ -19,8 +19,7 @@ package androidx.compose.ui.platform
 import androidx.annotation.VisibleForTesting
 import androidx.compose.runtime.snapshots.ObserverHandle
 import androidx.compose.runtime.snapshots.Snapshot
-import kotlin.coroutines.ContinuationInterceptor
-import kotlin.coroutines.CoroutineContext
+import androidx.compose.ui.internal.getCurrentThreadId
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -54,24 +53,6 @@ internal object GlobalSnapshotManager {
     private val registrations = mutableMapOf<CoroutineDispatcher, Registration>()
 
     /**
-     * Ensures global snapshot writes schedule coalesced [Snapshot.sendApplyNotifications] on the
-     * [CoroutineDispatcher] carried by [coroutineContext], starting a shared registration on the first
-     * call for that dispatcher. Nothing else from the context is used.
-     *
-     * @param coroutineContext the host context whose [CoroutineDispatcher] the apply pump runs on.
-     * @return an [AutoCloseable] that releases this caller's share of the registration on close
-     * (the underlying observer/pump is released only once every caller for that dispatcher has
-     * closed its handle), or `null` if [coroutineContext] carries no dispatcher or an *immediate*
-     * (non-dispatching) one - the cases where no pump is started.
-     */
-    @OptIn(ExperimentalCoroutinesApi::class)
-    fun register(coroutineContext: CoroutineContext): AutoCloseable? {
-        val dispatcher = coroutineContext[ContinuationInterceptor] as? CoroutineDispatcher
-            ?: return null
-        return register(dispatcher)
-    }
-
-    /**
      * Ensures global snapshot writes schedule coalesced [Snapshot.sendApplyNotifications] on
      * [dispatcher], starting a shared registration on the first call for that dispatcher.
      *
@@ -88,26 +69,9 @@ internal object GlobalSnapshotManager {
         if (!dispatcher.isDispatchNeeded(dispatcher)) {
             return null
         }
-        // FlushCoroutineDispatcher is an internal class, and all cases where it's passed here are
-        // about using [Recomposer.effectCoroutineContext] and means that we're already registered
-        // Snapshot forwarding in this tread in parent composition.
-        // This check is temporary to prevent multiple registrations. The proper solution is to
-        // avoid creating a separate [Recomposer] for all child compositions if they are in
-        // the same window. In case if they are not, it shouldn't use the parent's
-        // [Recomposer.effectCoroutineContext].
-        // TODO: Remove this check once all platform properly adapt shared [Recomposer].
-        if (dispatcher is FlushCoroutineDispatcher) {
-            return null
-        }
         val registration = synchronized(lock) {
             registrations.getOrPut(dispatcher) { Registration(dispatcher) }
                 .also { it.refCount++ }
-            }
-        if (registrations.size > 1) {
-            // There are a couple of problems with it e.g. b/418800424
-            println("GlobalSnapshotManager: concurrent registrations of apply dispatchers " +
-                "might lead to races; prefer a single apply dispatcher."
-            )
         }
         return AutoCloseable { release(registration) }
     }
@@ -118,6 +82,13 @@ internal object GlobalSnapshotManager {
             registrations.remove(registration.dispatcher)
         }
         registration.dispose()
+    }
+
+    private fun warnIfMultipleThreads() = synchronized(lock) {
+        if (registrations.values.mapNotNull { it.threadId }.distinct().size > 1) {
+            // There are a couple of problems with it e.g. b/418800424
+            println("GlobalSnapshotManager: concurrent registrations on multiple threads might lead to races")
+        }
     }
 
     @VisibleForTesting
@@ -132,6 +103,7 @@ internal object GlobalSnapshotManager {
     private class Registration(val dispatcher: CoroutineDispatcher) {
         /** Number of live handles. Guarded by [GlobalSnapshotManager.lock]. */
         var refCount = 0
+        var threadId: Long? = null
 
         private val scheduled = atomic(false)
         private val channel = Channel<Unit>(Channel.CONFLATED)
@@ -140,6 +112,8 @@ internal object GlobalSnapshotManager {
 
         init {
             scope.launch {
+                threadId = getCurrentThreadId()
+                warnIfMultipleThreads()
                 channel.consumeEach {
                     scheduled.value = false
                     Snapshot.sendApplyNotifications()
