@@ -17,7 +17,7 @@
 package androidx.compose.ui.text.intl
 
 import androidx.compose.runtime.Immutable
-import androidx.compose.ui.util.fastMap
+import androidx.compose.ui.util.fastMapNotNull
 import kotlin.js.JsName
 import kotlin.js.js
 
@@ -53,15 +53,22 @@ actual class Locale internal constructor(internal val platformLocale: IntlLocale
     actual constructor(languageTag: String): this(languageTag.toIntlLocale())
 }
 
+// Used when the browser reports no usable preferred language, so that Locale.current always
+// returns at least one locale as required by PlatformLocaleDelegate's contract.
+private const val FALLBACK_LANGUAGE_TAG = "en-US"
+
 internal actual fun createPlatformLocaleDelegate(): PlatformLocaleDelegate =
     object : PlatformLocaleDelegate {
         override val current: LocaleList
-            get() = LocaleList(
-                userPreferredLanguages().fastMap {
-                    Locale(it.toIntlLocale())
-                }
-            )
+            get() = localeListFromLanguageTags(userPreferredLanguages())
     }
+
+internal fun localeListFromLanguageTags(tags: List<String>): LocaleList {
+    val locales = tags.fastMapNotNull { it.toIntlLocaleOrNull()?.let(::Locale) }
+    return LocaleList(
+        locales.ifEmpty { listOf(Locale(FALLBACK_LANGUAGE_TAG.toIntlLocale())) }
+    )
+}
 
 // The list of RTL languages is taken from https://github.com/openjdk/jdk/blob/master/src/java.desktop/share/classes/java/awt/ComponentOrientation.java#L156
 private val rtlLanguagesSet = setOf("ar", "fa", "he", "iw", "ji", "ur", "yi")
@@ -91,3 +98,11 @@ internal fun parseLanguageTagToIntlLocale(languageTag: String): IntlLocale =
     js("new Intl.Locale(languageTag)")
 
 private fun String.toIntlLocale(): IntlLocale = parseLanguageTagToIntlLocale(this)
+
+// `new Intl.Locale(tag)` throws a RangeError for tags the browser considers invalid, so we
+// guard against those cases when the tag comes from an untrusted source like navigator.languages.
+private fun String.toIntlLocaleOrNull(): IntlLocale? = try {
+    parseLanguageTagToIntlLocale(this)
+} catch (_: Throwable) {
+    null
+}
