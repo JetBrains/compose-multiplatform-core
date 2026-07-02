@@ -16,12 +16,7 @@
 
 package androidx.compose.ui.platform
 
-import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.text.MultiParagraph
-import androidx.compose.ui.text.TextLayoutInput
-import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextRange
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.createFontFamilyResolver
 import androidx.compose.ui.text.input.BackspaceCommand
 import androidx.compose.ui.text.input.CommitTextCommand
@@ -30,11 +25,6 @@ import androidx.compose.ui.text.input.EditingBuffer
 import androidx.compose.ui.text.input.SetComposingTextCommand
 import androidx.compose.ui.text.input.SetSelectionCommand
 import androidx.compose.ui.text.input.TextFieldValue
-import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.Constraints
-import androidx.compose.ui.unit.Density
-import androidx.compose.ui.unit.IntSize
-import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.input.key.InternalKeyEvent
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.events.beforeInput
@@ -82,37 +72,6 @@ class NativeInputEventsProcessorTest {
         override fun sendKeyboardEvent(keyboardEvent: KeyEvent): Boolean {
             keyboardEvents.add(keyboardEvent)
             return true
-        }
-
-        override fun currentTextLayoutResult(): TextLayoutResult? {
-            val text = editingBuffer.toString()
-            val annotatedString = AnnotatedString(text)
-            val density = Density(1f)
-            val constraints = Constraints()
-            val style = TextStyle.Default
-
-            return TextLayoutResult(
-                layoutInput = TextLayoutInput(
-                    text = annotatedString,
-                    style = style,
-                    placeholders = emptyList(),
-                    maxLines = Int.MAX_VALUE,
-                    softWrap = true,
-                    overflow = TextOverflow.Clip,
-                    density = density,
-                    layoutDirection = LayoutDirection.Ltr,
-                    fontFamilyResolver = fontFamilyResolver,
-                    constraints = constraints
-                ),
-                multiParagraph = MultiParagraph(
-                    annotatedString = annotatedString,
-                    style = style,
-                    constraints = constraints,
-                    density = density,
-                    fontFamilyResolver = fontFamilyResolver
-                ),
-                size = IntSize(0, 0)
-            )
         }
 
         @Suppress("INVISIBLE_REFERENCE")
@@ -313,7 +272,9 @@ class NativeInputEventsProcessorTest {
         val processor = TestNativeInputEventsProcessor(communicator)
 
         processor.registerEvent(
-            beforeInput("insertReplacementText", "replacement")
+            beforeInput("insertReplacementText", "replacement").asInputEventExt().apply {
+                setFirstRange(5, 9)
+            }
         )
 
         processor.manuallyRunCheckpoint(communicator.currentTextFieldValue())
