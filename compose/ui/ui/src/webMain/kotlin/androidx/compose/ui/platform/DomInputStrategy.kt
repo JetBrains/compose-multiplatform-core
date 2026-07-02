@@ -87,8 +87,13 @@ internal class DomInputStrategy(
 
         if (needsTextUpdate || needsSelectionUpdate) {
             pauseSelectionChangeListener = true
-            setSelectionRange(htmlInput,textFieldValue.selection.min, textFieldValue.selection.max)
-            pauseSelectionChangeListener = false
+            setSelectionRange(htmlInput, textFieldValue.selection.min, textFieldValue.selection.max)
+
+            // Resetting `pauseSelectionChangeListener` synchronously right after is not enough
+            // TODO: this is the cheapest way to make sure that DOM <=> Compose sync won't self-trigger but we need to consider better possible options
+            window.requestAnimationFrame {
+                pauseSelectionChangeListener = false
+            }
         }
     }
 
