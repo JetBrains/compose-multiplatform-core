@@ -8,7 +8,6 @@ platform="iOS Simulator"
 os_version="26.5"
 device_name="iPhone 17"
 iterations="1"
-open_result="false"
 # `run_until_failure` is applied only when iterations > 1.
 run_until_failure="false"
 
@@ -22,11 +21,6 @@ if [[ ! "$iterations" =~ ^[1-9][0-9]*$ ]]; then
   exit 1
 fi
 
-if [[ "$open_result" != "true" && "$open_result" != "false" ]]; then
-  echo "open_result must be true or false, got: $open_result" >&2
-  exit 1
-fi
-
 if [[ "$run_until_failure" != "true" && "$run_until_failure" != "false" ]]; then
   echo "run_until_failure must be true or false, got: $run_until_failure" >&2
   exit 1
@@ -35,20 +29,12 @@ fi
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$script_dir"
 
-results_root="${TMPDIR%/}/ios-instrumented-tests-results"
-mkdir -p "$results_root"
-results_dir="$(mktemp -d "${results_root%/}/run-${USER:-user}-XXXXXX")"
-mkdir -p "$results_dir"
-
-timestamp="$(date '+%Y-%m-%d-%H-%M-%S')"
-result_bundle_path="${results_dir}/${timestamp}.xcresult"
 destination="platform=${platform},OS=${os_version},name=${device_name}"
 
 echo "Running iOS instrumented tests with:"
 echo "  destination: ${destination}"
 echo "  iterations: ${iterations}"
 echo "  derivedDataPath: Xcode default"
-echo "  resultBundlePath: ${result_bundle_path}"
 
 # The keyboard preference is picked up when a simulator boots, so shut them all down
 # before forcing the detached-keyboard setup required by these instrumented tests.
@@ -64,7 +50,6 @@ xcodebuild \
 
 test_args=(
   -collect-test-diagnostics on-failure
-  -resultBundlePath "$result_bundle_path"
 )
 
 if [[ "$iterations" -gt 1 ]]; then
@@ -91,12 +76,5 @@ xcodebuild \
   "${test_args[@]}"
 test_exit_code=$?
 set -e
-
-if [[ -d "$result_bundle_path" ]]; then
-  echo "xcresult bundle: $result_bundle_path"
-  if [[ "$open_result" == "true" ]]; then
-    open "$result_bundle_path"
-  fi
-fi
 
 exit "$test_exit_code"
