@@ -23,6 +23,7 @@ import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.draganddrop.UIKitDragAndDropManager
 import androidx.compose.ui.geometry.Offset
@@ -481,6 +482,11 @@ internal class ComposeSceneMediator(
             nativeEvent = event,
             keyboardModifiers = PointerKeyboardModifiers(event.modifierFlagsOrZero)
         )
+
+        // Fixes the issue when the `sendPointerEvent` does not trigger `setNeedsRedraw` synchronously,
+        // which lead to frame drops during input.
+        // TODO: Remove after CMP-10411
+        Snapshot.sendApplyNotifications()
     }
 
     private fun onHoverEvent(
@@ -508,6 +514,11 @@ internal class ComposeSceneMediator(
             nativeEvent = event,
             keyboardModifiers = PointerKeyboardModifiers(event.modifierFlagsOrZero)
         )
+
+        // Fixes the issue when the `sendPointerEvent` does not trigger `setNeedsRedraw` synchronously,
+        // which lead to frame drops during input.
+        // TODO: Remove after CMP-10411
+        Snapshot.sendApplyNotifications()
     }
 
     private fun onCancelScroll() {
@@ -582,6 +593,11 @@ internal class ComposeSceneMediator(
             if (eventKind != TouchesEventKind.MOVED) {
                 previousTouchEventKind = eventKind
             }
+
+            // Fixes the issue when the `sendPointerEvent` does not trigger `setNeedsRedraw` synchronously,
+            // which lead to frame drops during input.
+            // TODO: Remove after CMP-10411
+            Snapshot.sendApplyNotifications()
         }
     }
     private var previousButtonMask: Long = 0L
