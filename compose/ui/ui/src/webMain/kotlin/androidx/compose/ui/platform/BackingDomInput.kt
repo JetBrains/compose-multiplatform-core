@@ -69,6 +69,7 @@ internal class BackingDomInput(
         window.requestAnimationFrame {
             backingElement.focus()
         }
+
     }
 
     fun blur() {

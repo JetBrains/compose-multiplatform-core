@@ -51,7 +51,6 @@ internal class DomInputStrategy(
     val htmlInput = imeOptions.createDomElement()
 
     private var lastMeaningfulUpdate = TextFieldValue("")
-    private var latestSelection = TextSelection(0, 0)
     private var isInCompositionMode = false
 
     // To avoid the re-triggering of the selection change
@@ -139,7 +138,6 @@ internal class DomInputStrategy(
             val currentSelection = getSelectionRange(htmlInput)
             val start = currentSelection?.get(0)?.toInt() ?: 0
             val end = currentSelection?.get(1)?.toInt() ?: 0
-            latestSelection = TextSelection(start, end)
 
             val selection = lastMeaningfulUpdate.selection
 
@@ -334,6 +332,3 @@ internal fun setSelectionRange(element: HTMLElement, startOffset: Int, endOffset
 
 internal fun isTypedEvent(evt: KeyboardEvent): Boolean =
     js("!evt.metaKey && !evt.ctrlKey && evt.key.charAt(0) === evt.key")
-
-
-private data class TextSelection(val start: Int, val end: Int)
