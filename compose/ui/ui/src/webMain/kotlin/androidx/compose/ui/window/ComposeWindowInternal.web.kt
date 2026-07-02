@@ -539,11 +539,6 @@ internal class ComposeWindow(
         canvas.width = sizeInPx.width
         canvas.height = sizeInPx.height
 
-        // Scale canvas to allow high DPI rendering as suggested in
-        // https://www.khronos.org/webgl/wiki/HandlingHighDPI.
-        canvas.style.width = "${boxSize.width.value}px"
-        canvas.style.height = "${boxSize.height.value}px"
-
         // The a11y container is sized via CSS (`width: 100%; height: 100%`) at construction
         // time, so it tracks the canvas automatically without a per-resize bridge call across
         // the wasm2js boundary. See ComposeViewport for the setup.
