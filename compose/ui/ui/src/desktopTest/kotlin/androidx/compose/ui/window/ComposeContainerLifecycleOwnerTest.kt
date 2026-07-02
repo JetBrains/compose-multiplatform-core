@@ -106,9 +106,9 @@ class ComposeContainerLifecycleOwnerTest {
     @Test
     fun detachAndReattach() = runApplicationTest {
         val window = JFrame()
+        val allEvents = ChannelEventObserver()
+        val pane = TestComposePanel(window, allEvents)
         try {
-            val allEvents = ChannelEventObserver()
-            val pane = TestComposePanel(window, allEvents)
             window.contentPane.add(pane)
 
             // initial state
@@ -130,20 +130,21 @@ class ComposeContainerLifecycleOwnerTest {
             assertTrue(allEvents.tryReceive().isFailure)
         } finally {
             window.dispose()
+            pane.dispose()
         }
     }
 
     @Test
     fun windowDeiconifiedWithoutAddNotify() = runApplicationTest {
         val window = JFrame()
+        val pane = JLayeredPane()
+        val allEvents = ChannelEventObserver()
+        val container = ComposeContainer(
+            container = pane,
+            skiaLayerAnalytics = SkiaLayerAnalytics.Empty,
+            window = window,
+        )
         try {
-            val pane = JLayeredPane()
-            val allEvents = ChannelEventObserver()
-            val container = ComposeContainer(
-                container = pane,
-                skiaLayerAnalytics = SkiaLayerAnalytics.Empty,
-                window = window,
-            )
             container.architectureComponentsOwner.lifecycle.addObserver(allEvents)
             window.contentPane.add(pane)
 
@@ -156,20 +157,21 @@ class ComposeContainerLifecycleOwnerTest {
             assertTrue(allEvents.tryReceive().isFailure)
         } finally {
             window.dispose()
+            container.dispose()
         }
     }
 
     @Test
     fun windowFocusedWithoutAddNotify() = runApplicationTest {
         val window = JFrame()
+        val pane = JLayeredPane()
+        val allEvents = ChannelEventObserver()
+        val container = ComposeContainer(
+            container = pane,
+            skiaLayerAnalytics = SkiaLayerAnalytics.Empty,
+            window = window,
+        )
         try {
-            val pane = JLayeredPane()
-            val allEvents = ChannelEventObserver()
-            val container = ComposeContainer(
-                container = pane,
-                skiaLayerAnalytics = SkiaLayerAnalytics.Empty,
-                window = window,
-            )
             container.architectureComponentsOwner.lifecycle.addObserver(allEvents)
             window.contentPane.add(pane)
 
@@ -182,6 +184,7 @@ class ComposeContainerLifecycleOwnerTest {
             assertTrue(allEvents.tryReceive().isFailure)
         } finally {
             window.dispose()
+            container.dispose()
         }
     }
 
@@ -216,6 +219,7 @@ class ComposeContainerLifecycleOwnerTest {
         assertTrue(allEvents.tryReceive().isFailure)
 
         window.dispose()
+        container.dispose()
     }
 
     private class ChannelEventObserver: LifecycleEventObserver, Channel<Lifecycle.Event> by Channel(capacity = 8) {
