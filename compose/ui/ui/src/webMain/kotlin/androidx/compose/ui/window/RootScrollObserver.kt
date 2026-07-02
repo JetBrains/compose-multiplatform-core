@@ -26,17 +26,16 @@ import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastMap
 import androidx.compose.ui.util.fastMaxOfOrNull
-import androidx.compose.ui.viewinterop.TrackInteropPlacementContainer
 
 internal class RootScrollObserver : NestedScrollConnection {
-    // Reset before each pointer event; read after sendPointerEvent returns.
-    private var consumedAcc: Offset = Offset.Zero
+    private var consumedDistance = 0f
 
+    // Reset when all pointers are up.
     fun reset() {
-        consumedAcc = Offset.Zero
+        consumedDistance = 0f
     }
 
-    fun consumedScroll() = consumedAcc != Offset.Zero
+    fun consumedAnyScroll() = consumedDistance > 0f
 
     // Descendants call dispatchPreScroll BEFORE trying to scroll themselves.
     // We don't want to steal anything — return Zero.
@@ -53,7 +52,7 @@ internal class RootScrollObserver : NestedScrollConnection {
     ): Offset {
         // Only care about drag-driven scrolls, not fling/programmatic.
         if (source == NestedScrollSource.UserInput) {
-            consumedAcc += consumed
+            consumedDistance += consumed.getDistanceSquared()
         }
         return Offset.Zero
     }

@@ -438,7 +438,7 @@ internal class ComposeWindow(
         addTypedEvent<TouchEvent>("touchmove") { evt ->
             // This event happens after pointermove.
             // By calling preventDefault here we prevent a browser from overtaking a scroll gesture.
-            if (rootScrollObserver.consumedScroll()) {
+            if (rootScrollObserver.consumedAnyScroll()) {
                 evt.preventDefault()
             }
         }
@@ -669,7 +669,7 @@ internal class ComposeWindow(
                 return
             }
 
-            if (eventType == PointerEventType.Press) {
+            if (activeTouchPointers.isEmpty()) {
                 rootScrollObserver.reset()
             }
 
