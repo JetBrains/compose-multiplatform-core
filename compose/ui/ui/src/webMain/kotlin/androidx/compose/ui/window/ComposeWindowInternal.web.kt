@@ -436,6 +436,9 @@ internal class ComposeWindow(
             }
         }
 
+        // While we don't pass touchmove(s) to Compose, we need to track them to prevent the browser from taking over the gestures.
+        // https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/touch-action
+        // > Applications using Touch events disable the browser handling of gestures by calling preventDefault()
         addTypedEvent<TouchEvent>("touchmove") { evt ->
             // This event happens after pointermove.
             if (rootScrollObserver.consumedAnyScroll()) {
