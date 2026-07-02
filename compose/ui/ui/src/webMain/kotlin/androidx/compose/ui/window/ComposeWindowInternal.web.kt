@@ -91,7 +91,6 @@ import androidx.lifecycle.enableSavedStateHandles
 import kotlinx.browser.document
 import kotlinx.browser.window
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.Channel.Factory.CONFLATED
 import kotlinx.coroutines.coroutineScope
@@ -311,7 +310,7 @@ internal class ComposeWindow(
 
             override val viewConfiguration =
                 object : ViewConfiguration by PlatformContext.DefaultViewConfiguration {
-                    override val touchSlop: Float get() = with(density) { 18.dp.toPx() }
+                    override val touchSlop: Float get() = with(density) { 8.dp.toPx() }
                     override val maximumFlingVelocity: Float
                         //https://cs.android.com/android/platform/superproject/+/android-latest-release:frameworks/base/core/java/android/view/ViewConfiguration.java;l=240;drc=733537294b158d22f2ae383f2ed77c93741798e9
                         get() = with(density) { 8000.dp.toPx() }
@@ -402,6 +401,10 @@ internal class ComposeWindow(
         }
     }
 
+    // It helps Compose to co-operate with the browser's scroll when the ComposeViewport
+    // is nested in a scrollable html container
+    private val rootScrollObserver = RootScrollObserver()
+
     private fun initEvents(canvas: HTMLCanvasElement) {
 
         listOf(
@@ -428,6 +431,14 @@ internal class ComposeWindow(
 
             val backingInput = (platformContext.textInputService as WebTextInputService).getBackingInput()
             if (backingInput?.isFocused() == true) {
+                evt.preventDefault()
+            }
+        }
+
+        addTypedEvent<TouchEvent>("touchmove") { evt ->
+            // This event happens after pointermove.
+            // By calling preventDefault here we prevent a browser from overtaking a scroll gesture.
+            if (rootScrollObserver.consumedScroll()) {
                 evt.preventDefault()
             }
         }
@@ -496,8 +507,10 @@ internal class ComposeWindow(
                 LocalComposeWindow provides this,
                 content = {
                     installFallbackFontDownloader()
-                    interopContainer.TrackInteropPlacementContainer {
-                        content()
+                    WithNestedScrollObserver(rootScrollObserver) {
+                        interopContainer.TrackInteropPlacementContainer {
+                            content()
+                        }
                     }
 
                     LaunchedEffect(Unit) {
@@ -654,6 +667,10 @@ internal class ComposeWindow(
             if (eventType == PointerEventType.Enter || eventType == PointerEventType.Exit) {
                 //Enter and Exit events have no sense for touches (Firefox and Safari send them)
                 return
+            }
+
+            if (eventType == PointerEventType.Press) {
+                rootScrollObserver.reset()
             }
 
             // iOS Safari doesn't request focus when the page is shown,
