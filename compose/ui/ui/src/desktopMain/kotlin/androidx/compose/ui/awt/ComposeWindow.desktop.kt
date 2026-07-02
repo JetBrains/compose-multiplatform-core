@@ -17,14 +17,18 @@ package androidx.compose.ui.awt
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalContext
+import androidx.compose.runtime.tooling.ComposeToolingApi
+import androidx.compose.ui.ComposeDesktopEntryPoint
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.key.KeyEvent
-import androidx.compose.ui.layout.MeasurableRootContent
 import androidx.compose.ui.layout.layoutId
 import androidx.compose.ui.semantics.SemanticsOwner
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.ExperimentalUnitApi
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.window.FrameWindowScope
 import androidx.compose.ui.window.UndecoratedWindowResizer
 import androidx.compose.ui.window.WindowExceptionHandler
@@ -32,10 +36,12 @@ import androidx.compose.ui.window.WindowPlacement
 import androidx.savedstate.SavedState
 import java.awt.Component
 import java.awt.ComponentOrientation
+import java.awt.Dimension
 import java.awt.GraphicsConfiguration
 import java.awt.event.MouseListener
 import java.awt.event.MouseMotionListener
 import java.awt.event.MouseWheelListener
+import java.awt.image.BufferedImage
 import java.util.*
 import javax.swing.JFrame
 import kotlin.coroutines.CoroutineContext
@@ -52,12 +58,13 @@ import org.jetbrains.skiko.SkiaLayerAnalytics
  * @param savedState The saved state to restore the UI state from a previous instance.
  * @param coroutineContext The coroutine context for Compose content rendering and effects.
  */
+@OptIn(ComposeToolingApi::class)
 class ComposeWindow @ExperimentalComposeUiApi constructor(
     graphicsConfiguration: GraphicsConfiguration? = null,
     skiaLayerAnalytics: SkiaLayerAnalytics = SkiaLayerAnalytics.Empty,
     savedState: SavedState? = null,
     coroutineContext: CoroutineContext = EmptyCoroutineContext
-) : JFrame(graphicsConfiguration) {
+) : JFrame(graphicsConfiguration), ComposeDesktopEntryPoint {
     /**
      * System window for displaying Compose UI, inheriting [javax.swing.JFrame].
      *
@@ -79,17 +86,6 @@ class ComposeWindow @ExperimentalComposeUiApi constructor(
 
     internal val windowContext by composePanel::windowContext
     internal var rootForTestListener by composePanel::rootForTestListener
-
-    /**
-     * Returns the [SemanticsOwner]s corresponding to the roots of the semantics trees in this
-     * [ComposeWindow].
-     *
-     * This is backed by snapshot state, so reading this property in a restartable function (e.g., a
-     * composable function) will cause the function to restart when set of semantics owners changes.
-     */
-    @ExperimentalComposeUiApi
-    val semanticsOwners: Collection<SemanticsOwner>
-        get() = composePanel.semanticsOwners
 
     /**
      * Controls whether mouse-down on an unfocusable element clears focus.
@@ -197,13 +193,6 @@ class ComposeWindow @ExperimentalComposeUiApi constructor(
         return composePanel.saveState()
     }
 
-    /**
-     * Returns an object through which the composable content of the window can be queried for its
-     * size preferences, such as its intrinsic size.
-     */
-    @ExperimentalComposeUiApi
-    val measurableContent: MeasurableRootContent by composePanel::measurableContent
-
     override fun dispose() {
         super.dispose()
         composePanel.dispose()
@@ -217,6 +206,30 @@ class ComposeWindow @ExperimentalComposeUiApi constructor(
     override fun setResizable(value: Boolean) {
         super.setResizable(value)
         undecoratedWindowResizer.enabled = isUndecorated && isResizable
+    }
+
+    private fun Dimension.actualize(): Dimension {
+        return composePanel.actualizeSize(this, insets)
+    }
+
+    /**
+     * Sets the preferred size of the window.
+     *
+     * The width and height of [size] can either be a regular, specific, value or
+     * [UNSPECIFIED_DIMENSION_VALUE], which means the content will
+     * determine the preferred size on the corresponding axis. The content will be measured
+     * unconstrained on that axis, and the resulting size will be used.
+     */
+    @Suppress("RedundantOverride")
+    override fun setPreferredSize(size: Dimension?) {
+        super.setPreferredSize(size)
+    }
+
+    @OptIn(ExperimentalUnitApi::class)
+    @Suppress("RedundantNullableReturnType")  // https://youtrack.jetbrains.com/issue/KT-31094
+    override fun getPreferredSize(): Dimension? {
+        val size = if (isPreferredSizeSet) super.getPreferredSize() else UnspecifiedDimension()
+        return size.actualize()
     }
 
     /**
@@ -350,4 +363,32 @@ class ComposeWindow @ExperimentalComposeUiApi constructor(
         set(value) {
             composePanel.showLayoutBounds = value
         }
+
+    internal fun measureContent(constraints: Constraints): IntSize {
+        return composePanel.measureContent(constraints)
+    }
+
+    /**
+     * Returns the [SemanticsOwner]s corresponding to the roots of the semantics trees in this
+     * [ComposeWindow].
+     *
+     * This is backed by Snapshot state, so reading this property in a restartable function (e.g., a
+     * composable function) will cause the function to restart when the set of semantics owners
+     * changes.
+     */
+    @ComposeToolingApi
+    override val semanticsOwners: Collection<SemanticsOwner>
+        get() = composePanel.semanticsOwners
+
+    /**
+     * Captures the content of this window into an image.
+     *
+     * Returns `null` if the window has not been made visible yet.
+     *
+     * May be called only on the event dispatching thread.
+     */
+    @ComposeToolingApi
+    override fun captureContentToImage(): BufferedImage? {
+        return composePanel.captureContentToImage()
+    }
 }

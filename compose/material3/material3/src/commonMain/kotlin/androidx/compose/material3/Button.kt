@@ -231,6 +231,7 @@ fun Button(
  *   still happen internally.
  * @param content The content displayed on the button, expected to be text, icon or image.
  */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun Button(
     onClick: () -> Unit,
@@ -407,6 +408,7 @@ fun ElevatedButton(
  *   still happen internally.
  * @param content The content displayed on the button, expected to be text, icon or image.
  */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun ElevatedButton(
     onClick: () -> Unit,
@@ -557,6 +559,7 @@ fun FilledTonalButton(
  *   still happen internally.
  * @param content The content displayed on the button, expected to be text, icon or image.
  */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun FilledTonalButton(
     onClick: () -> Unit,
@@ -705,6 +708,7 @@ fun OutlinedButton(
  *   still happen internally.
  * @param content The content displayed on the button, expected to be text, icon or image.
  */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun OutlinedButton(
     onClick: () -> Unit,
@@ -855,6 +859,7 @@ fun TextButton(
  *   still happen internally.
  * @param content The content displayed on the button, expected to be text.
  */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun TextButton(
     onClick: () -> Unit,
@@ -1553,10 +1558,17 @@ object ButtonDefaults {
     /**
      * Recommended [PaddingValues] for a provided button height.
      *
+     * The returned content padding is based on the ButtonDefaults.<Size>ContainerHeight (or
+     * ButtonDefaults.MinHeight for a small button) height values and is not directly interpolated
+     * from the provided buttonHeight (e.g. any buttonHeight equal or bigger than
+     * ButtonDefaults.MinHeight and smaller than ButtonDefaults.MediumContainerHeight will return
+     * the same small content padding).
+     *
      * @param buttonHeight The height of the button
      * @param hasStartIcon Whether the button has a leading icon
      * @param hasEndIcon Whether the button has a trailing icon
      */
+    @ExperimentalMaterial3ExpressiveApi
     fun contentPaddingFor(
         buttonHeight: Dp,
         hasStartIcon: Boolean = false,

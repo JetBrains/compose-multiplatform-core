@@ -28,6 +28,7 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.toComposeImageBitmap
 import androidx.compose.ui.node.RootForTest
 import androidx.compose.ui.platform.DefaultArchitectureComponentsOwner
+import androidx.compose.ui.platform.FrameRecomposer
 import androidx.compose.ui.platform.InfiniteAnimationPolicy
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.PlatformDragAndDropManager
@@ -50,8 +51,7 @@ import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.math.roundToInt
 import kotlin.time.Duration
-import kotlin.time.DurationUnit
-import kotlin.time.toDuration
+import kotlin.time.TimeSource
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
@@ -219,7 +219,8 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
 
     private val recomposerCoroutineScope = CoroutineScope(
         effectContext +
-            compositionCoroutineDispatcher +
+            // Apply snapshot changes after every resumed continuation.
+            ApplyingContinuationInterceptor(compositionCoroutineDispatcher) +
             infiniteAnimationPolicy +
             uncaughtExceptionHandler +
             Job()
@@ -232,6 +233,8 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
     lateinit var scene: ComposeScene
         @InternalTestApi
         set
+
+    private lateinit var frameRecomposer: FrameRecomposer
 
     private val architectureComponentsOwner =
         DefaultArchitectureComponentsOwner(enforceMainThread = false)
@@ -270,7 +273,7 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
                         // > Anything that might result in animation may require the MonotonicFrameClock,
                         // > and to get the timing right it should be the clock provided by the Recomposer's effect context
                         // It's covered by SkikoComposeUiTestTest.canDriveAnimationsFromTest.
-                        scene.withMonotonicFrameClock {
+                        frameRecomposer.withMonotonicFrameClock {
                             block()
                         }
                     }
@@ -299,7 +302,10 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
                 while (isActive) {
                     delay(FRAME_DELAY_MILLIS)
                     runOnUiThread {
-                        render(mainClock.currentTime)
+                        frameRecomposer.performFrame(
+                            frameTimeNanos = mainClock.currentTime * NanoSecondsPerMilliSecond,
+                        )
+                        redraw()
                     }
                 }
             }
@@ -310,23 +316,27 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
     }
 
     /**
-     * Render the scene at the given time.
+     * Redraws the current (already-settled) state into [surface] WITHOUT advancing the frame clock,
+     * so a capture reflects the latest state. Draw is decoupled from idle, so producing
+     * an up-to-date image is the capture's responsibility rather than the idle loop's.
      */
-    private fun render(timeMillis: Long) {
-        surface.canvas.clear(Color.TRANSPARENT)
-        scene.render(
-            surface.canvas.asComposeCanvas(),
-            timeMillis * NanoSecondsPerMilliSecond
-        )
+    private fun redraw() = runOnUiThread {
+        scene.measureAndLayout()
+        with(surface.canvas) {
+            clear(Color.TRANSPARENT)
+            scene.draw(asComposeCanvas())
+        }
     }
 
     private fun createScene() {
+        frameRecomposer = FrameRecomposer(recomposerCoroutineScope.coroutineContext)
         scene = CanvasLayersComposeScene(
+            frameRecomposer = frameRecomposer,
             density = density,
             size = size,
-            coroutineContext = recomposerCoroutineScope.coroutineContext,
             platformContext = TestContext(),
-            invalidate = { }
+            invalidateLayout = { },
+            invalidateDraw = { },
         )
         architectureComponentsOwner.enableSavedStateHandles()
         architectureComponentsOwner.lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_RESUME)
@@ -335,6 +345,7 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
     private fun closeScene() {
         architectureComponentsOwner.lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_DESTROY)
         scene.close()
+        frameRecomposer.close()
     }
 
     private fun advanceIfNeededAndRenderNextFrame() {
@@ -343,7 +354,15 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
             // The rendering is done by withRenderLoop
         } else {
             runOnUiThread {
-                render(mainClock.currentTime)
+                // Settle non-frame work WITHOUT advancing the frame clock - drain
+                // the currently-due tasks via the test scheduler, then run layout and draw.
+                // Never run [frameRecomposer.performFrame],so withFrameNanos awaiters are not resumed.
+                compositionCoroutineDispatcher.scheduler.runCurrent()
+                redraw()
+
+                // Publish global snapshot writes produced during this settle,
+                // so the next isIdle() sees an applied state.
+                Snapshot.sendApplyNotifications()
             }
         }
     }
@@ -354,47 +373,74 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
             return false
         }
 
-        if (!mainClock.autoAdvance) {
-            return true
+        // Only an auto-advancing clock waits for recomposition/effects/frame work to drain.
+        // With a frozen clock the test drives frames itself, so a parked withFrameNanos awaiter
+        // only resumes when the test advances the clock - gating on it here would hang.
+        if (mainClock.autoAdvance && frameRecomposer.hasPendingWork()) {
+            return false
         }
 
+        // Idle once pending snapshot writes are applied and measure/layout has settled.
+        // Do NOT gate on draw, matching Android's ComposeIdlingResource.isIdleNow.
+        // A pending draw is instead flushed after the wait loop by [ensureScheduledDrawCompleted],
+        // mirroring Android's waitForNextChoreographerFrame.
         return !Snapshot.current.hasPendingChanges()
             && !Snapshot.isApplyObserverNotificationPending
-            && !scene.hasInvalidations()
+            && !scene.hasPendingMeasureOrLayout
             && areAllResourcesIdle()
     }
 
-    override fun waitForIdle() {
-        val startedAt = currentNanoTime().toDuration(DurationUnit.NANOSECONDS)
-        var lastReportedElapsedSeconds = 0L
-        // always check even if we are idle
+    /**
+     * Awaits composition, measure and layout - the analog of Android's idlingStrategy.runUntilIdle().
+     * Draw is intentionally NOT awaited here.
+     */
+    private inline fun runUntilIdle(block: () -> Unit) {
+        // Always check even if we are idle.
         uncaughtExceptionHandler.throwUncaught()
+        val startedAt = TimeSource.Monotonic.markNow()
         while (!isIdle()) {
             advanceIfNeededAndRenderNextFrame()
             uncaughtExceptionHandler.throwUncaught()
-            if (!areAllResourcesIdle()) {
-                sleep(IDLING_RESOURCES_CHECK_INTERVAL_MS)
+            // Bound the wait by [testTimeout] so a test that never settles fails fast.
+            if (startedAt.elapsedNow() > testTimeout) {
+                throw ComposeTimeoutException("waitForIdle: timeout $testTimeout reached")
             }
-            val currentTime = currentNanoTime().toDuration(DurationUnit.NANOSECONDS)
-            val elapsedSeconds = (currentTime - startedAt).inWholeSeconds
-            if (elapsedSeconds > lastReportedElapsedSeconds) {
-                println("Suspicious! waitForIdle has not finished after $elapsedSeconds seconds.")
-                lastReportedElapsedSeconds = elapsedSeconds
-            }
+            block()
         }
     }
 
+    /**
+     * Ensures a scheduled draw has completed before returning from a wait.
+     * On Android the draw is produced by the Choreographer/ViewRootImpl pipeline running during
+     * the wait in `waitForNextChoreographerFrame()`; there is no such pipeline here,
+     * so we render the pending draw directly.
+     */
+    private fun ensureScheduledDrawCompleted() {
+        if (scene.hasPendingDraw) {
+            redraw()
+        }
+    }
+
+    override fun waitForIdle() {
+        // Mirrors Android's two-step waitForIdle(): await idleness, then ensure the scheduled draw
+        // has completed (see idlingStrategy.runUntilIdle() + waitForNextChoreographerFrame()).
+        runUntilIdle {
+            if (!areAllResourcesIdle()) {
+                sleep(IDLING_RESOURCES_CHECK_INTERVAL_MS)
+            }
+        }
+        ensureScheduledDrawCompleted()
+    }
+
     override suspend fun awaitIdle() {
-        // always check even if we are idle
-        uncaughtExceptionHandler.throwUncaught()
-        while (!isIdle()) {
-            advanceIfNeededAndRenderNextFrame()
-            uncaughtExceptionHandler.throwUncaught()
+        // Same two-step shape as [waitForIdle], but suspending: await idleness, then flush the draw.
+        runUntilIdle {
             if (!areAllResourcesIdle()) {
                 delay(IDLING_RESOURCES_CHECK_INTERVAL_MS)
             }
             yield()
         }
+        ensureScheduledDrawCompleted()
     }
 
     override fun <T> runOnUiThread(action: () -> T): T {
@@ -404,6 +450,10 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
     override fun <T> runOnIdle(action: () -> T): T {
         waitForIdle()
         return runOnUiThread(action)
+    }
+
+    override fun <T> runWithoutImplicitWait(block: () -> T): T {
+        return testOwner.withImplicitWaitSuppression(isSuppressed = true, block = block)
     }
 
     override fun waitUntil(
@@ -444,16 +494,6 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
         }
     }
 
-    override fun <T> runWhenIdle(action: () -> T): T {
-        waitForIdle()
-        return action()
-    }
-
-    override suspend fun <T> awaitAndRunWhenIdle(action: () -> T): T {
-        awaitIdle()
-        return action()
-    }
-
     override fun hasPendingWork(): Boolean {
         return !isIdle()
     }
@@ -478,6 +518,7 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
     }
 
     fun captureToImage(semanticsNode: SemanticsNode): ImageBitmap {
+        redraw()
         val rect = semanticsNode.boundsInWindow
         val image = surface.makeImageSnapshot(
             rect.left.toInt(),
@@ -490,6 +531,21 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
 
     fun SemanticsNodeInteraction.captureToImage(): ImageBitmap {
         return captureToImage(fetchSemanticsNode())
+    }
+
+    /** Executes the given [block] while temporarily setting the implicit wait suppression state. */
+    private inline fun <T> TestOwner.withImplicitWaitSuppression(
+        isSuppressed: Boolean,
+        block: () -> T,
+    ): T {
+        val previousState = this.isImplicitWaitSuppressed
+        this.isImplicitWaitSuppressed = isSuppressed
+        return try {
+            block()
+        } finally {
+            // Always restore the original synchronization state
+            this.isImplicitWaitSuppressed = previousState
+        }
     }
 
     @OptIn(InternalComposeUiApi::class)
@@ -573,26 +629,6 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
             awaitCancellation()
         }
     }
-}
-
-@ExperimentalTestApi
-actual sealed interface ComposeUiTest : SemanticsNodeInteractionsProvider {
-    actual val density: Density
-    actual val mainClock: MainTestClock
-    actual fun <T> runOnUiThread(action: () -> T): T
-    actual fun <T> runOnIdle(action: () -> T): T
-    actual fun waitForIdle()
-    actual suspend fun awaitIdle()
-    actual fun waitUntil(
-        conditionDescription: String?,
-        timeoutMillis: Long,
-        condition: () -> Boolean
-    )
-
-    actual fun setContent(composable: @Composable () -> Unit)
-    actual fun <T> runWhenIdle(action: () -> T): T
-    actual suspend fun <T> awaitAndRunWhenIdle(action: () -> T): T
-    actual fun hasPendingWork(): Boolean
 }
 
 private const val FRAME_DELAY_MILLIS = 16L

@@ -24,9 +24,9 @@ import androidx.compose.ui.platform.TextInputStringTokenizer
 import androidx.compose.ui.platform.PlatformTextLayoutDirection
 import androidx.compose.ui.platform.NativeTextEditingDelegate
 import androidx.compose.ui.platform.SkikoUITextInputTraits
+import androidx.compose.ui.platform.selectTextNearCursor
 import androidx.compose.ui.platform.toTextRange
 import androidx.compose.ui.platform.toUITextRange
-import androidx.compose.ui.platform.withDeferredEditBatch
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.uikit.utils.CMPEditMenuCustomAction
 import androidx.compose.ui.uikit.utils.CMPTextInputView
@@ -40,7 +40,6 @@ import kotlinx.cinterop.COpaquePointer
 import kotlinx.cinterop.CValue
 import kotlinx.cinterop.readValue
 import kotlinx.cinterop.useContents
-import kotlinx.coroutines.CoroutineScope
 import org.jetbrains.skiko.OS
 import org.jetbrains.skiko.OSVersion
 import org.jetbrains.skiko.available
@@ -76,7 +75,6 @@ import platform.UIKit.UIKeyboardAppearance
 import platform.UIKit.UIKeyboardType
 import platform.UIKit.UIMenu
 import platform.UIKit.UIMenuElement
-import platform.UIKit.UIPressesEvent
 import platform.UIKit.UIReturnKeyType
 import platform.UIKit.UIScrollView
 import platform.UIKit.UITextAutocapitalizationType
@@ -103,9 +101,8 @@ import platform.UIKit.addInteraction
 import platform.UIKit.systemBlueColor
 import platform.darwin.NSInteger
 
-internal class NativeTextInputView(
-    private val coroutineScope: CoroutineScope,
-): CMPTextInputView(frame = CGRectZero.readValue()), UIKeyInputProtocol, UITextInputProtocol {
+internal class NativeTextInputView
+    : CMPTextInputView(frame = CGRectZero.readValue()), UIKeyInputProtocol, UITextInputProtocol {
 
     var input: NativeTextEditingDelegate? = null
 
@@ -116,6 +113,10 @@ internal class NativeTextInputView(
 
     private val touchesTrackerGestureRecognizer = TouchTrackingGestureRecognizer().also {
         addGestureRecognizer(it)
+    }
+
+    init {
+        clipsToBounds = false
     }
 
     override fun canBecomeFirstResponder() = true
@@ -170,16 +171,6 @@ internal class NativeTextInputView(
 
     override fun endFloatingCursor() {
         input?.endFloatingCursor()
-    }
-
-    override fun pressesBegan(presses: Set<*>, withEvent: UIPressesEvent?) {
-        input?.onKeyboardPresses(presses)
-        super.pressesBegan(presses, withEvent)
-    }
-
-    override fun pressesEnded(presses: Set<*>, withEvent: UIPressesEvent?) {
-        input?.onKeyboardPresses(presses)
-        super.pressesEnded(presses, withEvent)
     }
 
     override fun hitTest(point: CValue<CGPoint>, withEvent: UIEvent?): UIView? {
@@ -244,9 +235,7 @@ internal class NativeTextInputView(
      */
     override fun replaceRange(range: UITextRange, withText: String) {
         val textRange = range.toTextRange() ?: return
-        input?.withDeferredEditBatch(coroutineScope) {
-            replaceRange(textRange, withText)
-        }
+        input?.replaceRange(textRange, withText)
     }
 
     override fun setSelectedTextRange(selectedTextRange: UITextRange?) {
@@ -260,9 +249,7 @@ internal class NativeTextInputView(
         if (notifySelectionChanges) {
             selectionWillChange()
         }
-        input?.withDeferredEditBatch(coroutineScope) {
-            setSelectedTextRange(range)
-        }
+        input?.setSelectedTextRange(range)
         if (notifySelectionChanges) {
             selectionDidChange()
         }
@@ -309,22 +296,12 @@ internal class NativeTextInputView(
      * This range is always relative to markedText.
      */
     override fun setMarkedText(markedText: String?, selectedRange: CValue<NSRange>) {
-        val (locationRelative, lengthRelative) = selectedRange.useContents {
-            location.toInt() to length.toInt()
+        val relativeTextRange = selectedRange.useContents {
+            val loc = location.toInt()
+            TextRange(loc, loc + length.toInt())
         }
-        val relativeTextRange = TextRange(locationRelative, locationRelative + lengthRelative)
 
-        // Due to iOS specifics, [setMarkedText] can be called several times in a row. Batching
-        // helps to avoid text input problems, when Composables use parameters set during
-        // recomposition instead of the current ones. Example:
-        // 1. State "1" -> TextField(text = "1")
-        // 2. setMarkedText "12" -> Not equal to TextField(text = "1") -> State "12"
-        // 3. setMarkedText "1" -> Equal to TextField(text = "1") -> State remains "12"
-        // scene.render() - Recomposes TextField
-        // 4. State "12" -> TextField(text = "12") - Invalid state. Should be TextField(text = "1")
-        input?.withDeferredEditBatch(coroutineScope) {
-            setMarkedText(markedText, relativeTextRange)
-        }
+        input?.setMarkedText(markedText, relativeTextRange)
     }
 
     /**
@@ -609,16 +586,28 @@ internal class NativeTextInputView(
         onCut?.invoke()
     }
 
+    override fun select(sender: Any?) {
+        selectionWillChange()
+        input?.selectTextNearCursor()
+        selectionDidChange()
+    }
+
     override fun selectAll(sender: Any?) {
         onSelectAll?.invoke()
     }
+
+    // On iOS Select and Select All buttons appear only when text selection is empty.
+    // The presence of the onSelectAll lambda indicates that the select action is available.
+    private val showSelectAndSelectAllMenus: Boolean get() =
+        onSelectAll != null && hasText() && input?.getSelectedTextRange()?.length == 0
 
     override fun canPerformAction(action: COpaquePointer?, withSender: Any?): Boolean =
         when (NSStringFromSelector(action)) {
             "copy:" -> onCopy != null
             "paste:" -> onPaste != null
             "cut:" -> onCut != null
-            "selectAll:" -> onSelectAll != null
+            "selectAll:" -> showSelectAndSelectAllMenus
+            "select:" -> showSelectAndSelectAllMenus
             else -> super.canPerformAction(action, withSender)
         }
 
@@ -689,7 +678,7 @@ internal class NativeTextInputView(
  * This view does not handle user-driven scrolling; scrolling is still managed by Compose,
  * which then updates this scroll view's state.
  */
-internal class NativeTextInputScrollView(): UIScrollView(frame = CGRectZero.readValue()) {
+internal class NativeTextInputScrollView: UIScrollView(frame = CGRectZero.readValue()) {
     init {
         setScrollEnabled(false)
         setShowsVerticalScrollIndicator(false)

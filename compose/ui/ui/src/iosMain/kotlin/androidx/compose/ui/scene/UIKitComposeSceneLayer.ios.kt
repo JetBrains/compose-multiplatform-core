@@ -17,6 +17,7 @@
 package androidx.compose.ui.scene
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionContext
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.State
 import androidx.compose.ui.graphics.Canvas
@@ -26,6 +27,7 @@ import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.pointer.PointerButton
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.navigationevent.UIKitNavigationEventInput
+import androidx.compose.ui.platform.FrameRecomposer
 import androidx.compose.ui.platform.PlatformArchitectureComponentsOwner
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.uikit.ComposeContainerConfiguration
@@ -55,7 +57,7 @@ internal class UIKitComposeSceneLayer(
 
     private val layersViewController: ComposeLayersViewController,
     private val initialLayoutDirection: LayoutDirection,
-    private val onAccessibilityChanged: () -> Unit,
+    private val onFocusConditionsChanged: () -> Unit,
     configuration: ComposeContainerConfiguration,
     private var focusedViewsList: FocusedViewsList?,
     consumePointerInputOutside: Boolean = focusedViewsList != null,
@@ -70,7 +72,7 @@ internal class UIKitComposeSceneLayer(
         set(value) {
             if (field != value) {
                 field = value
-                onAccessibilityChanged()
+                onFocusConditionsChanged()
             }
         }
 
@@ -79,7 +81,7 @@ internal class UIKitComposeSceneLayer(
             if (field != value) {
                 field = value
                 mediator.isInterceptingOutsideEvents = value
-                onAccessibilityChanged()
+                onFocusConditionsChanged()
             }
         }
 
@@ -116,19 +118,23 @@ internal class UIKitComposeSceneLayer(
 
     private fun createComposeScene(
         invalidate: () -> Unit,
-        platformContext: PlatformContext
+        platformContext: PlatformContext,
+        frameRecomposer: FrameRecomposer
     ): ComposeScene =
         PlatformLayersComposeScene(
+            frameRecomposer = frameRecomposer,
             density = mediator.screenDensity,
             layoutDirection = initialLayoutDirection,
-            coroutineContext = layerCoroutineContext,
             composeSceneContext = createComposeSceneContext(platformContext),
-            invalidate = invalidate,
+            // TODO: Split these into UIKit layout vs display invalidation instead of using the
+            //  same invalidation callback for both phases.
+            invalidateLayout = invalidate,
+            invalidateDraw = invalidate,
         )
 
     val hasInvalidations by mediator::hasInvalidations
 
-    var isAccessibilityEnabled by mediator::isAccessibilityEnabled
+    var isFocusEnabled by mediator::isFocusEnabled
 
     override var density: Density
         get() = mediator.composeSceneDensity
@@ -202,7 +208,11 @@ internal class UIKitComposeSceneLayer(
         content = content
     )
 
-    override fun setContent(content: @Composable () -> Unit) {
+    override fun setContent(
+        parentCompositionContext: CompositionContext,
+        content: @Composable () -> Unit,
+    ) {
+        // TODO: pass [parentCompositionContext] once a shared [Recomposer] exists.
         mediator.setContent {
             hostCompositionLocals {
                 ProvideComposeSceneLayerCompositionLocals(content)

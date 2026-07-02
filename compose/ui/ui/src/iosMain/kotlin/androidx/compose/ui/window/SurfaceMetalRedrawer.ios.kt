@@ -16,7 +16,7 @@
 
 package androidx.compose.ui.window
 
-import androidx.compose.ui.FrameRateCategory
+import androidx.collection.IntIntPair
 import androidx.compose.ui.uikit.utils.CMPMetalLayer
 import androidx.compose.ui.uikit.utils.CMPDrawable
 import androidx.compose.ui.util.trace
@@ -63,6 +63,16 @@ internal class DisplayLinkConditions(
         }
 
     /**
+     * Indicates that prefetch work is waiting for display-link time.
+     */
+    var needsToPrefetch: Boolean = false
+        set(value) {
+            field = value
+
+            update()
+        }
+
+    /**
      * Number of subsequent vsync that will issue a draw
      */
     private var scheduledRedrawsCount = 0
@@ -90,7 +100,8 @@ internal class DisplayLinkConditions(
     }
 
     private fun update() {
-        val isUnpaused = isActive && (needsToBeProactive || scheduledRedrawsCount > 0)
+        val isUnpaused =
+            isActive && (needsToBeProactive || needsToPrefetch || scheduledRedrawsCount > 0)
         setPausedCallback(!isUnpaused)
     }
 
@@ -120,6 +131,7 @@ internal class SurfaceMetalRedrawer(
     private var lastRenderTimestamp: NSTimeInterval = CACurrentMediaTime()
     private val pictureRecorder = PictureRecorder()
     private val transactionQueue = InteropTransactionQueue()
+    override val outOfFrameExecutor = MetalOutOfFrameExecutor()
 
     private val inflightCommandBuffersGroup = dispatch_group_create()
     // A guard flag to have proper assertion when draw() method is called recursively.
@@ -143,28 +155,22 @@ internal class SurfaceMetalRedrawer(
             attr = dispatch_queue_attr_make_with_qos_class(null, QOS_CLASS_USER_INTERACTIVE, 0)
         )
 
-    var maximumFramesPerSecond: NSInteger = 0
-
     // https://youtrack.jetbrains.com/issue/CMP-9722
     // Left here for compatibility reasons. Does not make any effect and must be removed.
     override var isForcedToPresentWithTransactionEveryFrame: Boolean = false
 
-    override var preferredFramesPerSecond: NSInteger
-        get() = caDisplayLink?.preferredFramesPerSecond ?: 0
-        set(value) {
-            if (caDisplayLink?.preferredFramesPerSecond == value) return
-            caDisplayLink?.preferredFramesPerSecond = value
-        }
-
     override val currentTargetFrameDuration: NSTimeInterval?
         get() {
             val currentTargetTimestamp = currentTargetTimestamp ?: return null
-            val currentTimestamp = caDisplayLink?.timestamp ?: return null
-            return currentTargetTimestamp - currentTimestamp
+            val lastFrameTimestamp = lastFrameTimestamp ?: return null
+            return currentTargetTimestamp - lastFrameTimestamp
         }
 
     private val displayLinkConditions = DisplayLinkConditions { paused ->
         caDisplayLink?.paused = paused
+    }
+    override val prefetchScheduler = PlatformPrefetchSchedulerImpl { hasWork ->
+        displayLinkConditions.needsToPrefetch = hasWork
     }
 
     /**
@@ -215,17 +221,24 @@ internal class SurfaceMetalRedrawer(
      */
     private var caDisplayLink: CADisplayLink? = CADisplayLink.displayLinkWithTarget(
         target = SurfaceDisplayLinkProxy {
+            val lastFrameTimestamp = lastFrameTimestamp ?: return@SurfaceDisplayLinkProxy
             val targetTimestamp = currentTargetTimestamp ?: return@SurfaceDisplayLinkProxy
 
+            var didDraw = false
             displayLinkConditions.onDisplayLinkTick {
                 draw(waitUntilCompletion = false, targetTimestamp)
+                didDraw = true
             }
+            prefetchScheduler.execute(lastFrameTimestamp, targetTimestamp, didDraw)
         },
         selector = NSSelectorFromString(SurfaceDisplayLinkProxy::handleDisplayLinkTick.name)
     )
 
     private val currentTargetTimestamp: NSTimeInterval?
         get() = caDisplayLink?.targetTimestamp
+
+    private val lastFrameTimestamp: NSTimeInterval?
+        get() = caDisplayLink?.timestamp
 
     init {
         val caDisplayLink = caDisplayLink
@@ -267,6 +280,8 @@ internal class SurfaceMetalRedrawer(
 
     override fun dispose() {
         check(caDisplayLink != null) { "MetalRedrawer.dispose() was called more than once" }
+        outOfFrameExecutor.dispose()
+        prefetchScheduler.dispose()
 
         retrieveInteropTransaction = {
             object : UIKitInteropTransaction {
@@ -278,6 +293,8 @@ internal class SurfaceMetalRedrawer(
         render = { _, _ -> }
 
         releaseCachedCommandQueue(queue)
+
+        displayLinkFrameRate = null
 
         caDisplayLink?.invalidate()
         caDisplayLink = null
@@ -306,26 +323,11 @@ internal class SurfaceMetalRedrawer(
         draw(waitUntilCompletion, CACurrentMediaTime())
     }
 
-    private var currentFrameRate: Float = Float.NaN
+    var displayLinkFrameRate: DisplayLinkFrameRate? = caDisplayLink?.let { DisplayLinkFrameRate(it) }
+        private set
 
     override fun voteFrameRate(frameRate: Float, frameRateCategory: Float) {
-        val frameRateCategoryValue = when (frameRateCategory) {
-            FrameRateCategory.Default.value -> CAFrameRateRangeDefault.preferred
-            FrameRateCategory.Normal.value -> 60f
-            FrameRateCategory.High.value -> maximumFramesPerSecond.toFloat()
-            else -> Float.NaN
-        }
-
-        val resolvedFrameRate = when {
-            !frameRate.isNaN() && !frameRateCategoryValue.isNaN() -> maxOf(frameRate, frameRateCategoryValue)
-            !frameRate.isNaN() -> frameRate
-            !frameRateCategoryValue.isNaN() -> frameRateCategoryValue
-            else -> return
-        }
-
-        if (currentFrameRate.isNaN() || resolvedFrameRate > currentFrameRate) {
-            currentFrameRate = resolvedFrameRate
-        }
+        displayLinkFrameRate?.voteFrameRate(frameRate, frameRateCategory)
     }
 
     private fun awaitRenderingQueueTasksCompletion() {
@@ -354,12 +356,13 @@ internal class SurfaceMetalRedrawer(
             }
 
             isDrawRecursiveCall = true
+            outOfFrameExecutor.onFrameStart()
 
             try {
                 lastRenderTimestamp = maxOf(targetTimestamp, lastRenderTimestamp)
 
                 val (width, height) = metalLayer.drawableSize.useContents {
-                    width.roundToInt() to height.roundToInt()
+                    IntIntPair(width.roundToInt(), height.roundToInt())
                 }
 
                 if (width <= 0 || height <= 0) {
@@ -380,10 +383,7 @@ internal class SurfaceMetalRedrawer(
                     pictureRecorder.finishRecordingAsPicture()
                 }
 
-                if (!currentFrameRate.isNaN()) {
-                    preferredFramesPerSecond = currentFrameRate.toLong()
-                    currentFrameRate = Float.NaN
-                }
+                displayLinkFrameRate?.updateFrameRateIfNeeded()
 
                 val transaction = retrieveInteropTransaction()
                 isInteropActive = transaction.isInteropActive
@@ -407,6 +407,7 @@ internal class SurfaceMetalRedrawer(
                 }
             } finally {
                 isDrawRecursiveCall = false
+                outOfFrameExecutor.onFrameEnd()
             }
         }
 

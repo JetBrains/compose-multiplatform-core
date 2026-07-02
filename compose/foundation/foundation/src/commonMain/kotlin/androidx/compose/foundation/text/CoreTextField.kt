@@ -19,10 +19,12 @@
 package androidx.compose.foundation.text
 
 import androidx.compose.foundation.ComposeFoundationFlags
+import androidx.compose.foundation.ComposeFoundationFlags.isBasicTextFieldSizeOptimizationEnabled
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.interaction.Interaction
+import androidx.compose.foundation.interaction.InteractionSource
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.heightIn
@@ -31,6 +33,8 @@ import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.text.handwriting.stylusHandwriting
 import androidx.compose.foundation.text.input.internal.CoreTextFieldSemanticsModifier
+import androidx.compose.foundation.text.input.internal.HeightForSingleLineFieldProvider
+import androidx.compose.foundation.text.input.internal.createLegacyPlatformTextInputServiceAdapter
 import androidx.compose.foundation.text.input.internal.legacyTextInputAdapter
 import androidx.compose.foundation.text.input.internal.createLegacyPlatformTextInputServiceAdapter
 import androidx.compose.foundation.text.selection.LocalTextSelectionColors
@@ -537,6 +541,7 @@ internal fun CoreTextField(
             .then(semanticsModifier)
             .onGloballyPositioned @DontMemoize { state.layoutResult?.decorationBoxCoordinates = it }
             .addContextMenuComponents(manager, coroutineScope)
+            .textFieldOverlay(state, imeOptions, interactionSource)
 
     val showHandleAndMagnifier =
         enabled && state.hasFocus && state.isInTouchMode && windowInfo.isWindowFocused
@@ -547,25 +552,45 @@ internal fun CoreTextField(
             Modifier
         }
 
+    @OptIn(ExperimentalFoundationApi::class)
     CoreTextFieldRootBox(decorationBoxModifier, manager) {
         decorationBox {
             // Modifiers applied directly to the internal input field implementation. In general,
             // these will most likely include draw, layout and IME related modifiers.
-            val coreTextFieldModifier =
-                Modifier
-                    // min height is set for maxLines == 1 in order to prevent text cuts for single
-                    // line
-                    // TextFields
-                    .run {
-                        val height = state.heightForSingleLineField
-                        heightIn(min = height, max = if (height == 0.dp) Dp.Unspecified else height)
-                    }
-                    .heightInLines(
+            val sizingModifier =
+                if (isBasicTextFieldSizeOptimizationEnabled) {
+                    Modifier.textFieldSize(
                         textStyle = textStyle,
+                        singleLineHeightProvider = state,
                         minLines = minLines,
                         maxLines = maxLines,
-                        softWrap = softWrap,
+                        singleLine =
+                            maxLines ==
+                                1, // in legacy code heightForSingleLineField was calculated for
+                        // `maxLines == 1` instead of a more narrow `isSingleLine` check.
                     )
+                } else {
+                    Modifier
+                        // min height is set for maxLines == 1 in order to prevent text cuts for
+                        // single
+                        // line
+                        // TextFields
+                        .run {
+                            val height = state.heightForSingleLineField
+                            heightIn(
+                                min = height,
+                                max = if (height == 0.dp) Dp.Unspecified else height,
+                            )
+                        }
+                        .heightInLines(
+                            textStyle = textStyle,
+                            minLines = minLines,
+                            maxLines = maxLines,
+                            softWrap = softWrap,
+                        )
+                }
+            val coreTextFieldModifier =
+                sizingModifier
                     .textFieldScroll(
                         scrollerPosition = scrollerPosition,
                         textFieldValue = value,
@@ -575,7 +600,11 @@ internal fun CoreTextField(
                     )
                     .then(cursorModifier)
                     .then(drawModifier)
-                    .textFieldMinSize(textStyle)
+                    .then(
+                        if (!isBasicTextFieldSizeOptimizationEnabled)
+                            Modifier.textFieldMinSize(textStyle)
+                        else Modifier
+                    )
                     .then(onPositionedModifier)
                     .then(magnifierModifier)
                     .bringIntoViewRequester(bringIntoViewRequester)
@@ -752,7 +781,7 @@ internal class LegacyTextFieldState(
     var textDelegate: TextDelegate,
     val recomposeScope: RecomposeScope,
     val keyboardController: SoftwareKeyboardController?,
-) {
+) : HeightForSingleLineFieldProvider {
     val processor = EditProcessor()
     var inputSession: TextInputSession? = null
 
@@ -763,7 +792,7 @@ internal class LegacyTextFieldState(
     var hasFocus by mutableStateOf(false)
 
     /** Set to a non-zero value for single line TextFields in order to prevent text cuts. */
-    var heightForSingleLineField by mutableStateOf(0.dp)
+    override var heightForSingleLineField by mutableStateOf(0.dp)
 
     /**
      * The last layout coordinates for the inner text field LayoutNode, used by selection and
@@ -1220,3 +1249,15 @@ private fun Modifier.addContextMenuComponents(
     if (ComposeFoundationFlags.isNewContextMenuEnabled)
         addBasicTextFieldTextContextMenuComponents(textFieldSelectionManager, coroutineScope)
     else this
+
+/**
+ * A modifier that can be used to determine the location and state of the text field. It is used on
+ * multiplatform, where knowledge of the text field's state and location is required in order to
+ * support platform-dependent features such as VoiceOver or Autofill (password autofill, one-time
+ * codes, etc.).
+ */
+internal expect fun Modifier.textFieldOverlay(
+    state: LegacyTextFieldState,
+    imeOptions: ImeOptions,
+    interactionSource: InteractionSource?,
+): Modifier

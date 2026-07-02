@@ -53,34 +53,28 @@ internal class NativeTextInputConnection(
     view: UIView,
     coroutineScope: CoroutineScope,
     focusedViewsList: FocusedViewsList?,
-    onKeyboardPresses: (Set<*>) -> Unit,
     focusManager: () -> ComposeSceneFocusManager?
 ) : TextInputConnection(
     updateView,
     view,
     coroutineScope,
     focusedViewsList,
-    onKeyboardPresses,
     focusManager
 ), NativeTextEditingDelegate {
     private val scrollView by lazy { NativeTextInputScrollView() }
 
-    override val textInputView = NativeTextInputView(
-        coroutineScope = coroutineScope
-    ).also {
-        it.clipsToBounds = false
-    }
+    override val textInputView = NativeTextInputView()
 
     override fun attachInputToView() {
         view.addSubview(scrollView)
         scrollView.textView = textInputView
-        // The view frame will be set later via updateTextViewPosition;
 
         textInputView.input = this
 
         textInputView.resignFirstResponder()
         textInputView.becomeFirstResponder()
         setupTintColor()
+        onViewGeometryUpdated()
     }
 
     override fun detachView() {
@@ -118,11 +112,19 @@ internal class NativeTextInputConnection(
         }
     }
 
+    override fun onTextFieldValueUpdated(newValue: TextFieldValue) {
+        super.onTextFieldValueUpdated(newValue)
+
+        // textLayoutResult might be updated after the text fiend value change
+        onViewGeometryUpdated()
+    }
+
     private var currentContentBounds: Rect? = null
     private var currentContentInsets: DpInsets? = null
 
-    override fun updateTextViewPosition(unclippedTextPosition: Offset) {
-        val rect = textFieldFrameInRoot ?: return
+    override fun onViewGeometryUpdated() {
+        val rect = textFieldRectInRoot ?: return
+        val offset = unclippedTextOffsetInRoot ?: return
         // Since Compose content is rendered on a MetalView and the UITextInput-implementing
         // view is overlayed on top of it, we need to synchronize the Compose text
         // field with the IntermediateTextScrollView (which contains IntermediateUITextView)
@@ -130,7 +132,7 @@ internal class NativeTextInputConnection(
         // align correctly with the rendered text.
         val layoutResult = textLayoutResult ?: return
 
-        val contentBounds = calculateContentBounds(layoutResult, rect, unclippedTextPosition)
+        val contentBounds = calculateContentBounds(layoutResult, rect, offset)
         currentContentBounds = contentBounds
         val contentInsets = calculateContentInsets(rect, contentBounds)
         currentContentInsets = contentInsets
@@ -162,23 +164,8 @@ internal class NativeTextInputConnection(
         )
     }
 
-    override fun sendEditCommand(vararg commands: EditCommand) {
-        super.sendEditCommand(*commands)
-        // For Native Text Input it's essential to trigger view update right after send edit command,
-        // otherwise UIKit calls may use an invalid layout state
-        coroutineScope.launch {
-            updateView()
-        }
-    }
-
-    override fun beginFloatingCursor(offset: DpOffset) {
-        val cursorPos = getState()?.selection?.start ?: return
-        val cursorRect = textLayoutResult?.getCursorRect(cursorPos) ?: return
-        floatingCursorTranslation = cursorRect.center - offset.toOffset(view.density)
-    }
-
     override fun caretDpRectForPosition(position: Int): DpRect? {
-        val text = getState()?.text ?: return null
+        val text = currentTextFieldValue?.text ?: return null
         if (position < 0 || position > text.length) {
             return null
         }
@@ -375,13 +362,10 @@ internal class NativeTextInputConnection(
     // If not specified, iOS would use the default system tint color
     private var selectionTintColor: Color? = null
     private fun setupTintColor() {
-        textInputView.let {
-            val uiColor = selectionTintColor?.toUIColor()
-            it.setTintColor(uiColor)
-        }
+        textInputView.setTintColor(selectionTintColor?.toUIColor())
     }
 
-    fun updateNativeTextInputEditMenuState(
+    override fun setAvailableEditMenuActions(
         copy: (() -> Unit)?,
         paste: (() -> Unit)?,
         cut: (() -> Unit)?,

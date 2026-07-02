@@ -22,9 +22,9 @@ import androidx.compose.ui.platform.TextInputRange
 import androidx.compose.ui.platform.TextInputStringTokenizer
 import androidx.compose.ui.platform.SkikoUITextInputTraits
 import androidx.compose.ui.platform.TextEditingDelegate
+import androidx.compose.ui.platform.selectTextNearCursor
 import androidx.compose.ui.platform.toTextRange
 import androidx.compose.ui.platform.toUITextRange
-import androidx.compose.ui.platform.withDeferredEditBatch
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.uikit.utils.CMPEditMenuView
 import androidx.compose.ui.unit.DpOffset
@@ -34,7 +34,6 @@ import kotlin.time.DurationUnit
 import kotlinx.cinterop.CValue
 import kotlinx.cinterop.readValue
 import kotlinx.cinterop.useContents
-import kotlinx.coroutines.CoroutineScope
 import platform.CoreGraphics.CGPoint
 import platform.CoreGraphics.CGRect
 import platform.CoreGraphics.CGRectMake
@@ -52,7 +51,6 @@ import platform.UIKit.NSWritingDirectionNatural
 import platform.UIKit.UIKeyInputProtocol
 import platform.UIKit.UIKeyboardAppearance
 import platform.UIKit.UIKeyboardType
-import platform.UIKit.UIPressesEvent
 import platform.UIKit.UIReturnKeyType
 import platform.UIKit.UITextAutocapitalizationType
 import platform.UIKit.UITextAutocorrectionType
@@ -78,7 +76,6 @@ import platform.darwin.NSInteger
  */
 internal class ComposeTextInputView(
     private val doubleTapTimeoutMillis: Long,
-    private val coroutineScope: CoroutineScope
 ) : CMPEditMenuView(frame = CGRectZero.readValue()),
     UIKeyInputProtocol, UITextInputProtocol {
     private var _inputDelegate: UITextInputDelegateProtocol? = null
@@ -116,14 +113,37 @@ internal class ComposeTextInputView(
         input?.endFloatingCursor()
     }
 
-    override fun pressesBegan(presses: Set<*>, withEvent: UIPressesEvent?) {
-        input?.onKeyboardPresses(presses)
-        super.pressesBegan(presses, withEvent)
+    override fun showEditMenuAtRect(
+        targetRect: CValue<CGRect>,
+        copy: (() -> Unit)?,
+        cut: (() -> Unit)?,
+        paste: (() -> Unit)?,
+        select: (() -> Unit)?,
+        selectAll: (() -> Unit)?,
+        customActions: List<*>?
+    ) {
+        val patchedSelect = select ?: {
+            this.select()
+        }.takeIf { selectAll != null && showSelectMenu }
+
+        super.showEditMenuAtRect(
+            targetRect = targetRect,
+            copy = copy,
+            cut = cut,
+            paste = paste,
+            select = patchedSelect,
+            selectAll = selectAll,
+            customActions = customActions,
+        )
     }
 
-    override fun pressesEnded(presses: Set<*>, withEvent: UIPressesEvent?) {
-        input?.onKeyboardPresses(presses)
-        super.pressesEnded(presses, withEvent)
+    private val showSelectMenu: Boolean
+        get() = input?.getSelectedTextRange()?.length == 0 && input?.hasText() == true
+
+    private fun select() {
+        selectionWillChange()
+        input?.selectTextNearCursor()
+        selectionDidChange()
     }
 
     /**
@@ -180,16 +200,12 @@ internal class ComposeTextInputView(
      */
     override fun replaceRange(range: UITextRange, withText: String) {
         val textRange = range.toTextRange() ?: return
-        input?.withDeferredEditBatch(coroutineScope) {
-            replaceRange(textRange, withText)
-        }
+        input?.replaceRange(textRange, withText)
     }
 
     override fun setSelectedTextRange(selectedTextRange: UITextRange?) {
         val range = selectedTextRange?.toTextRange()
-        input?.withDeferredEditBatch(coroutineScope) {
-            setSelectedTextRange(range)
-        }
+        input?.setSelectedTextRange(range)
     }
 
     /**
@@ -233,22 +249,12 @@ internal class ComposeTextInputView(
      * This range is always relative to markedText.
      */
     override fun setMarkedText(markedText: String?, selectedRange: CValue<NSRange>) {
-        val (locationRelative, lengthRelative) = selectedRange.useContents {
-            location.toInt() to length.toInt()
+        val relativeTextRange = selectedRange.useContents {
+            val loc = location.toInt()
+            TextRange(loc, loc + length.toInt())
         }
-        val relativeTextRange = TextRange(locationRelative, locationRelative + lengthRelative)
 
-        // Due to iOS specifics, [setMarkedText] can be called several times in a row. Batching
-        // helps to avoid text input problems, when Composables use parameters set during
-        // recomposition instead of the current ones. Example:
-        // 1. State "1" -> TextField(text = "1")
-        // 2. setMarkedText "12" -> Not equal to TextField(text = "1") -> State "12"
-        // 3. setMarkedText "1" -> Equal to TextField(text = "1") -> State remains "12"
-        // scene.render() - Recomposes TextField
-        // 4. State "12" -> TextField(text = "12") - Invalid state. Should be TextField(text = "1")
-        input?.withDeferredEditBatch(withScope = coroutineScope) {
-            setMarkedText(markedText, relativeTextRange)
-        }
+        input?.setMarkedText(markedText, relativeTextRange)
     }
 
     /**
@@ -362,7 +368,7 @@ internal class ComposeTextInputView(
     override fun positionWithinRange(
         range: UITextRange,
         farthestInDirection: UITextLayoutDirection
-    ): UITextPosition? = TextInputPosition(0)
+    ): UITextPosition = TextInputPosition(0)
 
     override fun characterRangeByExtendingPosition(
         position: UITextPosition,

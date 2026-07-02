@@ -16,22 +16,19 @@
 
 package androidx.compose.ui.text.input
 
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.platform.TextToolbar
 import androidx.compose.ui.platform.TextToolbarStatus
+import androidx.compose.ui.platform.UIKitNativeTextInputContextMenuCustomAction
 import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.scene.ComposeSceneFocusManager
 import androidx.compose.ui.uikit.density
 import androidx.compose.ui.uikit.utils.CMPEditMenuCustomAction
-import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.toCGRect
 import androidx.compose.ui.unit.toDpOffset
 import androidx.compose.ui.unit.toDpRect
 import androidx.compose.ui.unit.toOffset
-import androidx.compose.ui.window.FocusedViewsList
 import androidx.compose.ui.window.ComposeTextInputView
-import kotlin.time.Duration.Companion.milliseconds
+import androidx.compose.ui.window.FocusedViewsList
 import kotlinx.cinterop.useContents
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
@@ -47,21 +44,20 @@ internal open class ComposeTextInputConnection(
     coroutineScope: CoroutineScope,
     viewConfiguration: ViewConfiguration,
     focusedViewsList: FocusedViewsList?,
-    onKeyboardPresses: (Set<*>) -> Unit,
     focusManager: () -> ComposeSceneFocusManager?
 ) : TextInputConnection(
     updateView,
     view,
     coroutineScope,
     focusedViewsList,
-    onKeyboardPresses,
     focusManager
-), TextToolbar {
+) {
+    // Fixes a problem where the menu is shown before the textInputView gets its final layout.
+    private var showMenuOrUpdatePosition = {}
 
     override val textInputView =
         ComposeTextInputView(
             doubleTapTimeoutMillis = viewConfiguration.doubleTapTimeoutMillis,
-            coroutineScope = coroutineScope
         ).also {
             it.setAutoresizingMask(
                 UIViewAutoresizingFlexibleWidth or UIViewAutoresizingFlexibleHeight
@@ -73,6 +69,7 @@ internal open class ComposeTextInputConnection(
         textInputView.setFrame(view.bounds)
 
         textInputView.input = this
+        onViewGeometryUpdated()
     }
 
     override fun detachView() {
@@ -89,6 +86,7 @@ internal open class ComposeTextInputConnection(
                 view.removeFromSuperview()
             }
         }
+        textInputView.updateAvailableSystemActions(null, null, null, null, null)
     }
 
     override fun stateWillChange(textChanged: Boolean, selectionChanged: Boolean) {
@@ -107,49 +105,38 @@ internal open class ComposeTextInputConnection(
         if (selectionChanged) {
             textInputView.selectionDidChange()
         }
-        if (textChanged || selectionChanged) {
-            updateView()
-        }
     }
 
-    override fun updateViewGeometry(
-        textFieldFrame: Rect,
-        unclippedTextPosition: Offset
-    ) {
-        super.updateViewGeometry(textFieldFrame, unclippedTextPosition)
+    override fun onViewGeometryUpdated() {
+        val rect = textFieldRectInRoot ?: return
+        textInputView.setFrame(rect.toDpRect(view.density).toCGRect())
         showMenuOrUpdatePosition()
     }
 
-    override fun updateTextViewPosition(unclippedTextPosition: Offset) {
-        val rect = textFieldFrameInRoot ?: return
-        textInputView.setFrame(rect.toDpRect(view.density).toCGRect())
+    override fun setAvailableEditMenuActions(
+        copy: (() -> Unit)?,
+        paste: (() -> Unit)?,
+        cut: (() -> Unit)?,
+        selectAll: (() -> Unit)?,
+        customActions: List<UIKitNativeTextInputContextMenuCustomAction>?
+    ) {
+        textInputView.updateAvailableSystemActions(
+            copyBlock = copy,
+            cut = cut,
+            paste = paste,
+            select = null,
+            selectAll = selectAll
+        )
     }
 
-    override fun beginFloatingCursor(offset: DpOffset) {
-        val cursorPos = getCursorPos() ?: getState()?.selection?.start ?: return
-        val cursorRect = textLayoutResult?.getCursorRect(cursorPos) ?: return
-        floatingCursorTranslation = cursorRect.center - offset.toOffset(view.density)
-    }
-
-    private fun textMenuAppearanceChanged() {
-        textInputServiceInvalidationsCount++
-        coroutineScope.launch {
-            // Time to show, hide or update state of context menu
-            delay(500.milliseconds)
-            textInputServiceInvalidationsCount--
-        }
-    }
-    // Fixes a problem where the menu is shown before the textInputView gets its final layout.
-    private var showMenuOrUpdatePosition = {}
-
-    override val status: TextToolbarStatus
+    val toolbarStatus: TextToolbarStatus
         get() = if (textInputView.isTextMenuShown()) {
             TextToolbarStatus.Shown
         } else {
             TextToolbarStatus.Hidden
         }
 
-    override fun showMenu(
+    fun showToolbarMenu(
         rect: Rect,
         onCopyRequested: (() -> Unit)?,
         onPasteRequested: (() -> Unit)?,
@@ -157,30 +144,26 @@ internal open class ComposeTextInputConnection(
         onSelectAllRequested: (() -> Unit)?
     ) {
         showMenuOrUpdatePosition = {
-            textInputView.let { textInputView ->
-                val density = view.density
-                val offset = textInputView.frame.useContents { origin.toDpOffset().toOffset(density) }
-                val target = rect.translate(-offset).toDpRect(density).toCGRect()
-                textInputView.showEditMenuAtRect(
-                    targetRect = target,
-                    copy = onCopyRequested,
-                    cut = onCutRequested,
-                    paste = onPasteRequested,
-                    selectAll = onSelectAllRequested,
-                    customActions = emptyList<CMPEditMenuCustomAction>()
-                )
-                textMenuAppearanceChanged()
-            }
+            val density = view.density
+            val offset = textInputView.frame.useContents { origin.toDpOffset().toOffset(density) }
+            val target = rect.translate(-offset).toDpRect(density).toCGRect()
+            textInputView.showEditMenuAtRect(
+                targetRect = target,
+                copy = onCopyRequested,
+                cut = onCutRequested,
+                paste = onPasteRequested,
+                select = null,
+                selectAll = onSelectAllRequested,
+                customActions = emptyList<CMPEditMenuCustomAction>()
+            )
+            textMenuAppearanceChanged()
         }
         showMenuOrUpdatePosition()
     }
 
-
-    override fun hide() {
+    fun hideToolbar() {
         showMenuOrUpdatePosition = {}
-        textInputView.let {
-            it.hideTextMenu()
-            textMenuAppearanceChanged()
-        }
+        textInputView.hideTextMenu()
+        textMenuAppearanceChanged()
     }
 }

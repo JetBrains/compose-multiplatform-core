@@ -24,6 +24,7 @@ import androidx.compose.ui.text.style.TextIndent
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.em
+import androidx.compose.ui.unit.sp
 import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -384,22 +385,36 @@ class SkikoParagraphTest {
     }
 
     @Test
-    fun getOffsetForPosition_insideComplexCharacter_shouldJumpToEnd() {
-        val text = "abc\u0915\u094D abc" // "abcक् abc"
+    // Ignored on web: skiko shapes the cluster with an inflated advance there (see note below),
+    // which moves the box midpoint and breaks this check. A stable web run needs a bundled font.
+    // TODO: CMP-10342
+    @IgnoreJsTarget
+    @IgnoreWasmTarget
+    fun getOffsetForPosition_midpointOfComplexCharacter_snapsToClusterStart() {
+        val text = "abca\u030B abc" // "abc" + 'a' + U+030B (combining double acute) + " abc"
         val paragraph = simpleParagraph(text)
 
-        val complexCharStart = 3 // Index of 'क'
+        val complexCharStart = 3 // Index of the base 'a'; the 'a' + U+030B cluster spans indices 3..4
         val complexCharBox = paragraph.getBoundingBox(complexCharStart)
 
-        // Try to position the caret inside the complex character
+        // On web the default font shapes 'a' + U+030B with an inflated cluster advance (the
+        // combining acute consumes width), so getBoundingBox returns a much wider box than on
+        // desktop and this midpoint check would resolve to the cluster end. A deterministic web
+        // run would require an explicitly bundled font.
+
+        // Click exactly in the middle of the complex character's box.
         val insideOffset =
             Offset(complexCharBox.left + complexCharBox.width / 2, complexCharBox.center.y)
         val position = paragraph.getOffsetForPosition(insideOffset)
 
+        // A midpoint click is a tie between the two valid caret positions (before the
+        // cluster = 3, after it = 5). Matching Android's Layout.getOffsetForHorizontal,
+        // the exact-midpoint tie resolves to the before-char side, i.e. the cluster start.
+        // The caret must never land on the internal code-unit index (4).
         assertEquals(
-            5, // after 'क्'
+            3, // start of the 'a' + U+030B cluster (before-char), Android-compatible midpoint tie-break
             position,
-            message = "The position should be at the end of the complex character, not inside it"
+            message = "A midpoint click on a complex cluster should snap to the cluster start (before-char)"
         )
     }
 
@@ -446,6 +461,33 @@ class SkikoParagraphTest {
 
         // Verify paragraph was created successfully without crashing
         assertEquals(1, paragraph.lineCount)
+    }
+
+    // Regression test for https://youtrack.jetbrains.com/issue/CMP-10034
+    @Test
+    fun getCursorRect_doesNotCrash_inRtlParagraphsWithNewlinesAndSpecialCharacters() {
+        val problemTexts = listOf(
+            // Arabic with diacritics across a newline: "اّ\nبَ"
+            "\u0627\u0651\n\u0628\u064E",
+            // Hebrew followed by newline and emoji: "אב\n😀"
+            "\u05D0\u05D1\n\uD83D\uDE00",
+            // RTL with multiple newlines and combining marks: "א\nבְ\nג"
+            "\u05D0\n\u05D1\u05B0\n\u05D2",
+            // Newline at start: "\nאב"
+            "\n\u05D0\u05D1",
+            // Newline followed by combining mark: "א\nְב"
+            "\u05D0\n\u05B0\u05D1",
+        )
+
+        for (text in problemTexts) {
+            val paragraph = simpleParagraph(
+                text = text,
+                textStyle = TextStyle(textDirection = TextDirection.Rtl, fontSize = 20.sp)
+            )
+            for (offset in 0..text.length) {
+                paragraph.getCursorRect(offset)
+            }
+        }
     }
 
     private fun simpleParagraph(text: String, textStyle: TextStyle = TextStyle()) = Paragraph(

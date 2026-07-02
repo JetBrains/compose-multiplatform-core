@@ -21,6 +21,8 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.tooling.ComposeToolingApi
+import androidx.compose.ui.ComposeDesktopEntryPoint
 import androidx.compose.ui.ComposeFeatureFlags
 import androidx.compose.ui.ComposeUiFlags
 import androidx.compose.ui.ExperimentalComposeUiApi
@@ -30,9 +32,9 @@ import androidx.compose.ui.awt.RenderSettings.SkiaSurface
 import androidx.compose.ui.awt.RenderSettings.SwingGraphics
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.isClearFocusOnMouseDownEnabled
-import androidx.compose.ui.node.InternalCoreApi
 import androidx.compose.ui.scene.ComposeContainer
 import androidx.compose.ui.semantics.SemanticsOwner
+import androidx.compose.ui.unit.ExperimentalUnitApi
 import androidx.compose.ui.window.WindowExceptionHandler
 import androidx.savedstate.SavedState
 import java.awt.Color
@@ -44,6 +46,7 @@ import java.awt.FocusTraversalPolicy
 import java.awt.Window
 import java.awt.event.FocusEvent
 import java.awt.event.FocusListener
+import java.awt.image.BufferedImage
 import java.util.*
 import javax.swing.JLayeredPane
 import javax.swing.SwingUtilities
@@ -54,21 +57,23 @@ import org.jetbrains.skiko.GraphicsApi
 import org.jetbrains.skiko.SkiaLayerAnalytics
 
 /**
- * ComposePanel is a panel for building UI using Compose for Desktop.
+ * A component for embedding Compose content into Swing applications.
  *
- * @param skiaLayerAnalytics Analytics that helps to know more about SkiaLayer behaviour.
- * SkiaLayer is underlying class used internally to draw Compose content.
- * Implementation usually uses third-party solution to send info to some centralized analytics gatherer.
+ * @param skiaLayerAnalytics An object to which analytics about the underlying Skia layer is
+ *   reported. Skia layer is the underlying implementation used internally to draw Compose content.
+ *   The [SkiaLayerAnalytics] could, for example, send the information to a centralized analytics
+ *   gatherer.
  * @param savedState The saved state to restore the UI state from a previous instance.
  * @param renderSettings Configuration class for rendering settings.
  * @param coroutineContext The coroutine context for Compose content rendering and effects.
  */
+@OptIn(ComposeToolingApi::class)
 class ComposePanel @ExperimentalComposeUiApi constructor(
     private val skiaLayerAnalytics: SkiaLayerAnalytics = SkiaLayerAnalytics.Empty,
     private var savedState: SavedState? = null,
     private val renderSettings: RenderSettings = DefaultRenderSettings,
     private val coroutineContext: CoroutineContext = EmptyCoroutineContext
-) : JLayeredPane() {
+) : JLayeredPane(), ComposeDesktopEntryPoint {
     constructor() : this(
         savedState = null,
         skiaLayerAnalytics = SkiaLayerAnalytics.Empty,
@@ -147,7 +152,7 @@ class ComposePanel @ExperimentalComposeUiApi constructor(
 
     /**
      * Determines whether the Compose state in [ComposePanel] should be disposed
-     * when panel is detached from Swing hierarchy (when [removeNotify] is called).
+     * when the panel is detached from the Swing hierarchy (when [removeNotify] is called).
      *
      * If it is set to false, it is developer's responsibility to call [dispose] function
      * when Compose state and all related to [ComposePanel] resources are no longer needed.
@@ -217,10 +222,63 @@ class ComposePanel @ExperimentalComposeUiApi constructor(
         _composeContainer?.setBounds(0, 0, width, height)
     }
 
-    override fun getPreferredSize(): Dimension? = if (isPreferredSizeSet) {
-        super.getPreferredSize()
-    } else {
-        _composeContainer?.preferredSize ?: Dimension(0, 0)
+    private fun Dimension.actualize(): Dimension {
+        return _composeContainer?.actualizeSize(this, insets) ?: this
+    }
+
+    /**
+     * Sets the minimum size of the composable content.
+     *
+     * The width and height of [size] can either be a regular, specific, value or
+     * [UNSPECIFIED_DIMENSION_VALUE], which means the content will
+     * determine the minimum size on the corresponding axis. The content will be measured
+     * unconstrained on that axis, and the resulting size will be used.
+     */
+    override fun setMinimumSize(size: Dimension?) {
+        super.setMinimumSize(size)
+    }
+
+    @OptIn(ExperimentalUnitApi::class)
+    @Suppress("RedundantNullableReturnType")  // https://youtrack.jetbrains.com/issue/KT-31094
+    override fun getMinimumSize(): Dimension? {
+        return super.getMinimumSize().actualize()
+    }
+
+    /**
+     * Sets the preferred size of the [ComposePanel].
+     *
+     * The width and height of [size] can either be a regular, specific, value or
+     * [UNSPECIFIED_DIMENSION_VALUE], which means the content will
+     * determine the preferred size on the corresponding axis. The content will be measured
+     * unconstrained on that axis, and the resulting size will be used.
+     */
+    override fun setPreferredSize(size: Dimension?) {
+        super.setPreferredSize(size)
+    }
+
+    @OptIn(ExperimentalUnitApi::class)
+    @Suppress("RedundantNullableReturnType")  // https://youtrack.jetbrains.com/issue/KT-31094
+    override fun getPreferredSize(): Dimension? {
+        val size = if (isPreferredSizeSet) super.getPreferredSize() else UnspecifiedDimension()
+        return size.actualize()
+    }
+
+    /**
+     * Sets the maximum size of the composable content.
+     *
+     * The width and height of [size] can either be a regular, specific, value or
+     * [UNSPECIFIED_DIMENSION_VALUE], which means the content will
+     * determine the maximum size on the corresponding axis. The content will be measured
+     * unconstrained on that axis, and the resulting size will be used.
+     */
+    override fun setMaximumSize(size: Dimension?) {
+        super.setMaximumSize(size)
+    }
+
+    @OptIn(ExperimentalUnitApi::class)
+    @Suppress("RedundantNullableReturnType")  // https://youtrack.jetbrains.com/issue/KT-31094
+    override fun getMaximumSize(): Dimension? {
+        return super.getMaximumSize().actualize()
     }
 
     override fun setBackground(bg: Color?) {
@@ -236,9 +294,8 @@ class ComposePanel @ExperimentalComposeUiApi constructor(
      */
     fun setContent(content: @Composable () -> Unit) {
         // The window (or root container) may not be ready to render composable content, so we need
-        // to keep the lambda describing composable content and set the content only when
-        // everything is ready to avoid accidental crashes and memory leaks on all supported OS
-        // types.
+        // to store the composable lambda and set the content only when everything is ready to
+        // avoid accidental crashes and memory leaks.
         val wrappedContent = wrapContent(content)
         _composeContent = wrappedContent
         _composeContainer?.setContent(wrappedContent)
@@ -265,7 +322,7 @@ class ComposePanel @ExperimentalComposeUiApi constructor(
         }
 
     /**
-     * A container used for additional layers and as reference for window coordinate space.
+     * A container used for additional layers and as the reference for window coordinate space.
      * It might be customized only with [LayerType.OnComponent].
      *
      * See [ComposeFeatureFlags.layerType]
@@ -276,17 +333,6 @@ class ComposePanel @ExperimentalComposeUiApi constructor(
             field = value
             _composeContainer?.windowContainer = value
         }
-
-    /**
-     * Returns the [SemanticsOwner]s corresponding to the roots of the semantics trees in this
-     * [ComposePanel].
-     *
-     * This is backed by snapshot state, so reading this property in a restartable function (e.g., a
-     * composable function) will cause the function to restart when set of semantics owners changes.
-     */
-    @ExperimentalComposeUiApi
-    val semanticsOwners: Collection<SemanticsOwner>
-        get() = _composeContainer?.semanticsOwners ?: emptyList()
 
     // Needed to preserve binary compatibility
     @Suppress("RedundantOverride")
@@ -299,13 +345,12 @@ class ComposePanel @ExperimentalComposeUiApi constructor(
     override fun addNotify() {
         super.addNotify()
 
-        // After [super.addNotify] is called we can safely initialize the bridge and composable
+        // After [super.addNotify] is called, we can safely initialize the bridge and composable
         // content.
         val composeContainer = _composeContainer ?: createComposeContainer().also {
             _composeContainer = it
             windowParent = SwingUtilities.getWindowAncestor(this)
             it.redispatchUnconsumedMouseWheelEvents = redispatchUnconsumedMouseWheelEvents
-            @OptIn(InternalCoreApi::class)
             it.showLayoutBounds = showLayoutBounds
             val composeContent = _composeContent
             if (composeContent != null) {
@@ -462,7 +507,30 @@ class ComposePanel @ExperimentalComposeUiApi constructor(
             // We're assuming we own the scene and thus this value, and nobody
             // else will change it from under us, so we never get out of sync.
             field = value
-            @OptIn(InternalCoreApi::class)
             _composeContainer?.showLayoutBounds = value
         }
+
+    /**
+     * Returns the [SemanticsOwner]s corresponding to the roots of the semantics trees in this
+     * [ComposePanel].
+     *
+     * This is backed by Snapshot state, so reading this property in a restartable function (e.g., a
+     * composable function) will cause the function to restart when the set of semantics owners
+     * changes.
+     */
+    @ComposeToolingApi
+    override val semanticsOwners: Collection<SemanticsOwner>
+        get() = _composeContainer?.semanticsOwners ?: emptyList()
+
+    /**
+     * Captures the content of this panel into an image.
+     *
+     * Returns `null` if the panel has not been made visible yet.
+     *
+     * May be called only on the event dispatching thread.
+     */
+    @ComposeToolingApi
+    override fun captureContentToImage(): BufferedImage? {
+        return _composeContainer?.captureContentToImage()
+    }
 }

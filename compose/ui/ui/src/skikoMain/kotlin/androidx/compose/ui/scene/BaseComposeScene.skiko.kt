@@ -16,12 +16,10 @@
 
 package androidx.compose.ui.scene
 
-import androidx.compose.runtime.BroadcastFrameClock
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Composition
 import androidx.compose.runtime.CompositionContext
 import androidx.compose.runtime.CompositionLocalContext
-import androidx.compose.runtime.MonotonicFrameClock
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -37,13 +35,10 @@ import androidx.compose.ui.input.pointer.PointerInputEvent
 import androidx.compose.ui.input.pointer.PointerKeyboardModifiers
 import androidx.compose.ui.input.pointer.PointerType
 import androidx.compose.ui.input.rotary.RotaryScrollEvent
-import androidx.compose.ui.node.SnapshotInvalidationTracker
-import androidx.compose.ui.platform.GlobalSnapshotManager
+import androidx.compose.ui.platform.FrameRecomposer
 import androidx.compose.ui.platform.ProvidePlatformCompositionLocals
 import androidx.compose.ui.util.trace
 import kotlin.concurrent.Volatile
-import kotlin.coroutines.CoroutineContext
-import kotlinx.coroutines.withContext
 
 /**
  * BaseComposeScene is an internal abstract class that implements the ComposeScene interface.
@@ -54,10 +49,10 @@ import kotlinx.coroutines.withContext
  */
 @OptIn(InternalComposeUiApi::class)
 internal abstract class BaseComposeScene(
-    coroutineContext: CoroutineContext,
-    private val invalidate: () -> Unit,
+    protected val frameRecomposer: FrameRecomposer,
+    private val invalidateLayout: () -> Unit,
+    private val invalidateDraw: () -> Unit,
 ) : ComposeScene {
-    protected val snapshotInvalidationTracker = SnapshotInvalidationTracker(::updateInvalidations)
     protected val inputHandler: ComposeSceneInputHandler =
         ComposeSceneInputHandler(
             prepareForPointerInputEvent = ::doMeasureAndLayout,
@@ -66,13 +61,7 @@ internal abstract class BaseComposeScene(
             processKeyEvent = ::processKeyEvent,
         )
 
-    private val frameClock = BroadcastFrameClock(onNewAwaiters = ::updateInvalidations)
-    private val recomposer: ComposeSceneRecomposer =
-        ComposeSceneRecomposer(coroutineContext, frameClock)
     private var composition: Composition? = null
-
-    protected val compositionContext: CompositionContext
-        get() = recomposer.compositionContext
 
     abstract val composeSceneContext: ComposeSceneContext
 
@@ -80,30 +69,40 @@ internal abstract class BaseComposeScene(
         private set
 
     private var isInvalidationDisabled = false
-    private inline fun <T> postponeInvalidation(traceTag: String, crossinline block: () -> T): T = trace(traceTag) {
-        check(!isClosed) { "postponeInvalidation called after ComposeScene is closed" }
-        isInvalidationDisabled = true
-        return try {
-            // Try to get see the up-to-date state before running block
-            // Note that this doesn't guarantee it, if sendApplyNotifications is called concurrently
-            // in a different thread than this code.
-            snapshotInvalidationTracker.sendAndPerformSnapshotChanges()
-            snapshotInvalidationTracker.performSnapshotChangesSynchronously(block)
-        } finally {
-            snapshotInvalidationTracker.sendAndPerformSnapshotChanges()
-            isInvalidationDisabled = false
-        }.also {
-            updateInvalidations()
+    private inline fun <T> postponeInvalidation(traceTag: String, crossinline block: () -> T): T =
+        trace(traceTag) {
+            check(!isClosed) { "postponeInvalidation called after ComposeScene is closed" }
+            if (isInvalidationDisabled) return block()
+            isInvalidationDisabled = true
+            return try {
+                block()
+            } finally {
+                isInvalidationDisabled = false
+            }.also {
+                invokeInvalidationCallbacks()
+            }
         }
-    }
 
     @Volatile
-    private var hasPendingDraws = true
-    protected fun updateInvalidations() {
-        hasPendingDraws = frameClock.hasAwaiters ||
-            snapshotInvalidationTracker.hasInvalidations
-        if (hasPendingDraws && !isInvalidationDisabled && !isClosed && composition != null) {
-            invalidate()
+    protected var hasForcedLayout: Boolean = false
+        private set
+
+    @Volatile
+    protected var hasForcedDraw: Boolean = false
+        private set
+
+    protected fun invokeInvalidationCallbacks(
+        forceLayout: Boolean = false,
+        forceDraw: Boolean = false,
+    ) {
+        hasForcedLayout = hasForcedLayout || forceLayout
+        hasForcedDraw = hasForcedDraw || forceDraw
+        if (isInvalidationDisabled || isClosed || composition == null) return
+        if (hasForcedLayout || hasPendingMeasureOrLayout) {
+            invalidateLayout()
+        }
+        if (hasForcedDraw || hasPendingDraw) {
+            invalidateDraw()
         }
     }
 
@@ -116,33 +115,31 @@ internal abstract class BaseComposeScene(
      */
     val lastKnownPointerPosition by inputHandler::lastKnownPointerPosition
 
-    init {
-        GlobalSnapshotManager.ensureStarted()
-    }
-
     override fun close() {
         check(!isClosed) { "ComposeScene is already closed" }
         isClosed = true
 
         composition?.dispose()
-        recomposer.cancel()
     }
 
-    override fun hasInvalidations(): Boolean = hasPendingDraws || recomposer.hasPendingWork
-
-    override fun setContent(content: @Composable () -> Unit) =
-        postponeInvalidation("BaseComposeScene:setContent") {
+    override fun setContent(
+        parentCompositionContext: CompositionContext?,
+        content: @Composable () -> Unit,
+    ) = postponeInvalidation("BaseComposeScene:setContent") {
             check(!isClosed) { "setContent called after ComposeScene is closed" }
             inputHandler.onChangeContent()
 
             /*
-             * It's required before setting content to apply changed parameters
-             * before first recomposition. Otherwise, it can lead to double recomposition.
+             * This is usually a no-op for the first composition, but it must drain any stale
+             * host work from the previous content before replacing the composition. Otherwise,
+             * changed parameters can be applied in a separate turn and trigger double
+             * recomposition when new content is installed.
              */
-            recomposer.performScheduledRecomposerTasks()
-
+            frameRecomposer.performFrameDispatch()
             composition?.dispose()
-            composition = createComposition {
+            composition = createComposition(
+                parentCompositionContext = parentCompositionContext ?: frameRecomposer.compositionContext,
+            ) {
                 ProvidePlatformCompositionLocals(
                     @Suppress("DEPRECATION")
                     LocalComposeScene provides this,
@@ -151,52 +148,48 @@ internal abstract class BaseComposeScene(
                     content = content
                 )
             }
-
-            recomposer.performScheduledRecomposerTasks()
+            frameRecomposer.performFrameDispatch()
         }
 
-    override fun recomposeAndLayout(nanoTime: Long) {
+    override fun measureAndLayout() {
         if (isClosed) return
-        postponeInvalidation("BaseComposeScene:drainPendingWork") {
-            recompose(nanoTime)
-            doMeasureAndLayout()
-        }
-    }
+        hasForcedLayout = false
 
-    override fun render(canvas: Canvas, nanoTime: Long) {
-        // This is a no-op if the scene is closed, this situation can happen if the scene is
-        // in the list for rendering, but recomposition in another scene from the same list
-        // processed earlier has closed it.
-
-        if (isClosed) return
-
-        postponeInvalidation("BaseComposeScene:render") {
-            // We try to run the phases here in the same order Android does.
-            recompose(nanoTime)
-
+        postponeInvalidation("BaseComposeScene:measureAndLayout") {
             doMeasureAndLayout()
 
-            // Schedule synthetic events to be sent after `render` completes
+            // Schedule synthetic events to be sent after measure/layout completes.
             if (inputHandler.needUpdatePointerPosition) {
-                recomposer.scheduleAsEffect {
+                frameRecomposer.dispatch {
                     inputHandler.updatePointerPosition()
                 }
             }
+        }
+    }
 
-            // Between layout and draw, Android's Choreographer flushes the main dispatcher.
-            // We can't do quite that, but an important side effect of that is that the
-            // GlobalSnapshotManager gets to run and call `Snapshot.sendApplyNotifications()`, which
-            // we can (and must) do.
+    override fun draw(canvas: Canvas) {
+        if (isClosed) return
+        hasForcedDraw = false
+
+        postponeInvalidation("BaseComposeScene:draw") {
+            // FIXME: Remove applying the global snapshot here.
+            //  Android never applies the snapshot *between* the layout and draw phases
+            //  (applies happen once per frame on the main looper, not between phases).
+            //  This between-phase apply is a temporary workaround kept only to preserve current
+            //  behavior for OffsetToFocusedRect (iOS FocusableAboveKeyboard).
             Snapshot.sendApplyNotifications()
 
-            // The drawing phase.
-            // Android calls these two before drawing (AndroidComposeView.dispatchDraw)
+            // AndroidComposeView.dispatchDraw() begins with measureAndLayout() so layout changes
+            // discovered after the host layout traversal are still settled before drawing. Keep
+            // that trailing layout pass here even though measureAndLayout() is also a public phase.
             doMeasureAndLayout()
-            Snapshot.sendApplyNotifications()
 
-            // Actually draw
-            snapshotInvalidationTracker.onDraw()
-            draw(canvas)
+            // Advance the global snapshot before drawing so writes made since the last pass
+            // including state objects created during a prior draw are recorded as modified and
+            // visible to this draw. Lighter than sendApplyNotifications, matches what Android does.
+            Snapshot.notifyObjectsInitialized()
+
+            doDraw(canvas)
         }
     }
 
@@ -228,7 +221,7 @@ internal abstract class BaseComposeScene(
             scaleGestureFactor = scaleGestureFactor,
             panGestureOffset = panGestureOffset,
         ).also {
-            recomposer.performScheduledEffects()
+            frameRecomposer.performTrampolineDispatch()
         }
     }
 
@@ -259,7 +252,7 @@ internal abstract class BaseComposeScene(
             scaleGestureFactor = scaleGestureFactor,
             panGestureOffset = panGestureOffset,
         ).also {
-            recomposer.performScheduledEffects()
+            frameRecomposer.performTrampolineDispatch()
         }
     }
 
@@ -267,11 +260,12 @@ internal abstract class BaseComposeScene(
         inputHandler.cancelPointerInput()
     }
 
-    override fun sendKeyEvent(keyEvent: KeyEvent): Boolean = postponeInvalidation("BaseComposeScene:sendKeyEvent") {
-        inputHandler.onKeyEvent(keyEvent).also {
-            recomposer.performScheduledEffects()
+    override fun sendKeyEvent(keyEvent: KeyEvent): Boolean =
+        postponeInvalidation("BaseComposeScene:sendKeyEvent") {
+            inputHandler.onKeyEvent(keyEvent).also {
+                frameRecomposer.performTrampolineDispatch()
+            }
         }
-    }
 
     override fun sendRotaryScrollEvent(
         verticalScrollPixels: Float,
@@ -284,33 +278,14 @@ internal abstract class BaseComposeScene(
             uptimeMillis = timeMillis
         )
         processRotaryScrollEvent(event).also {
-            recomposer.performScheduledEffects()
+            frameRecomposer.performTrampolineDispatch()
         }
     }
 
-    override suspend fun withMonotonicFrameClock(block: suspend () -> Unit) {
-        val monotonicFrameClock = compositionContext.effectCoroutineContext[MonotonicFrameClock]
-            ?: error("No MonotonicFrameClock found in compositionContext")
-        withContext(monotonicFrameClock) {
-            block()
-        }
-    }
-
-    private fun recompose(nanoTime: Long) {
-        // Flush composition effects (e.g. LaunchedEffect, coroutines launched in
-        // rememberCoroutineScope()) before everything else
-        recomposer.performScheduledEffects()
-
-        recomposer.performScheduledRecomposerTasks()
-        frameClock.sendFrame(nanoTime) // withFrameMillis/Nanos and recomposition
-    }
-
-    protected fun doMeasureAndLayout() {
-        snapshotInvalidationTracker.onMeasureAndLayout()
-        measureAndLayout()
-    }
-
-    protected abstract fun createComposition(content: @Composable () -> Unit): Composition
+    protected abstract fun createComposition(
+        parentCompositionContext: CompositionContext,
+        content: @Composable () -> Unit
+    ): Composition
 
     private fun onPointerInputEvent(event: PointerInputEvent) = processPointerInputEvent(event)
         .also {
@@ -332,9 +307,9 @@ internal abstract class BaseComposeScene(
 
     protected abstract fun processRotaryScrollEvent(event: RotaryScrollEvent): Boolean
 
-    protected abstract fun measureAndLayout()
+    protected abstract fun doMeasureAndLayout()
 
-    protected abstract fun draw(canvas: Canvas)
+    protected abstract fun doDraw(canvas: Canvas)
 }
 
 internal val BaseComposeScene.semanticsOwnerListener

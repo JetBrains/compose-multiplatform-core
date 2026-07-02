@@ -17,17 +17,14 @@
 package androidx.compose.ui.scene
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionContext
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.LocalSystemTheme
-import androidx.compose.ui.SystemTheme
 import androidx.compose.ui.graphics.asComposeCanvas
-import androidx.compose.ui.hapticfeedback.CupertinoHapticFeedback
 import androidx.compose.ui.navigationevent.UIKitNavigationEventInput
 import androidx.compose.ui.platform.DefaultArchitectureComponentsOwner
-import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.FrameRecomposer
 import androidx.compose.ui.platform.MotionDurationScaleImpl
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.PlatformWindowContext
@@ -50,6 +47,8 @@ import androidx.compose.ui.window.ComposeContainerView
 import androidx.compose.ui.window.FocusedViewsList
 import androidx.compose.ui.window.MetalView
 import androidx.compose.ui.window.SceneActiveStateListener
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.enableSavedStateHandles
 import androidx.savedstate.SavedState
 import kotlin.coroutines.CoroutineContext
@@ -58,6 +57,7 @@ import kotlinx.cinterop.CPointed
 import kotlinx.cinterop.CPointer
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import org.jetbrains.skiko.SystemTheme
 import platform.Foundation.NSKeyValueObservingOptionNew
 import platform.Foundation.addObserver
 import platform.Foundation.removeObserver
@@ -79,7 +79,6 @@ internal class ComposeContainer(
     private val coroutineContext: CoroutineContext,
     private val lifecycleDelegate: ComposeContainerLifecycleDelegate
 ) {
-    private val hapticFeedback = CupertinoHapticFeedback()
 
     val view = ComposeContainerView(
         transparentForTouches = false,
@@ -97,6 +96,7 @@ internal class ComposeContainer(
         // The `initializeComposeScene` must be called to set the active `sceneJob`.
         it.cancel()
     }
+    private val viewModelStore = ViewModelStore()
     private var savedState: SavedState? = null
     private var mediatorComponentsOwner: DefaultArchitectureComponentsOwner? = null
     private val architectureComponentsOwner: DefaultArchitectureComponentsOwner
@@ -120,9 +120,12 @@ internal class ComposeContainer(
     private val interfaceOrientationState: MutableState<InterfaceOrientation> = mutableStateOf(
         InterfaceOrientation.Portrait
     )
-    private val systemThemeState: MutableState<SystemTheme> = mutableStateOf(SystemTheme.Unknown)
+    private val systemThemeState: MutableState<SystemTheme> = mutableStateOf(SystemTheme.UNKNOWN)
 
     private val focusedViewsList = FocusedViewsList()
+
+    val currentLifecycleState: Lifecycle.State get() =
+        architectureComponentsOwner.lifecycle.currentState
 
     init {
         if (configuration.enforceStrictPlistSanityCheck) {
@@ -220,7 +223,10 @@ internal class ComposeContainer(
             layersHolder = it
         }
 
-        mediatorComponentsOwner = DefaultArchitectureComponentsOwner(savedState)
+        mediatorComponentsOwner = DefaultArchitectureComponentsOwner(
+            savedState = savedState,
+            viewModelStore = viewModelStore
+        )
         architectureComponentsOwner.enableSavedStateHandles()
         lifecycleDelegate.onLifecycleStateUpdated = architectureComponentsOwner::setLifecycleState
 
@@ -232,8 +238,8 @@ internal class ComposeContainer(
             architectureComponentsOwner = architectureComponentsOwner,
             coroutineContext = sceneCoroutineContext,
             redrawer = metalView.redrawer,
-            composeSceneFactory = { invalidate, context ->
-                createComposeScene(invalidate, context, holder, sceneCoroutineContext)
+            composeSceneFactory = { invalidate, context, frameRecomposer ->
+                createComposeScene(invalidate, context, holder, frameRecomposer)
             },
             navigationEventInput = navigationEventInput,
             interfaceOrientationState = interfaceOrientationState,
@@ -264,16 +270,16 @@ internal class ComposeContainer(
         architectureComponentsOwner.navigationEventDispatcher.addInput(navigationEventInput)
         lifecycleDelegate.windowScene = windowScene
         navigationEventInput.onDidMoveToWindow(view.window, view)
-        onAccessibilityChanged()
+        onFocusConditionsChanged()
     }
 
     fun disposeComposeScene() {
-        sceneJob.cancel()
         // Store the current state in the local savedState property. It is used to
         // provide the saved state to the next Compose scene when the container re-enters
         // the window hierarchy.
         savedState = architectureComponentsOwner.saveState()
-        lifecycleDelegate.onLifecycleStateUpdated = null
+
+        sceneJob.cancel()
 
         view.updateMetalView(metalView = null)
         navigationEventInput.onDidMoveToWindow(null, view)
@@ -291,13 +297,13 @@ internal class ComposeContainer(
 
     private fun createComposeSceneContext(
         platformContext: PlatformContext,
-        layersHolder: ComposeLayersHolder
+        layersHolder: ComposeLayersHolder,
+        frameRecomposer: FrameRecomposer,
     ): ComposeSceneContext {
         return object : ComposeSceneContext {
             override val platformContext: PlatformContext = platformContext
 
             override fun createLayer(
-                compositionContext: CompositionContext,
                 density: Density,
                 layoutDirection: LayoutDirection,
                 focusable: Boolean,
@@ -306,23 +312,27 @@ internal class ComposeContainer(
                 val layer = UIKitComposeSceneLayer(
                     onClosed = {
                         layersHolder.getLayersViewController().detach(it)
-                        onAccessibilityChanged()
+                        onFocusConditionsChanged()
                     },
-                    createComposeSceneContext = { createComposeSceneContext(it, layersHolder) },
+                    createComposeSceneContext = {
+                        createComposeSceneContext(it, layersHolder, frameRecomposer)
+                    },
                     hostCompositionLocals = { ProvideContainerCompositionLocals(it) },
                     layersViewController = layersHolder.getLayersViewController(),
                     initialLayoutDirection = layoutDirection,
                     configuration = configuration,
-                    onAccessibilityChanged = ::onAccessibilityChanged,
+                    onFocusConditionsChanged = ::onFocusConditionsChanged,
                     focusedViewsList = if (focusable) focusedViewsList.childFocusedViewsList() else null,
                     consumePointerInputOutside = consumePointerInputOutside,
-                    parentCoroutineContext = compositionContext.effectCoroutineContext,
+                    // FIXME: Do not use [compositionContext.effectCoroutineContext] for
+                    //  [FrameRecomposer] creation.
+                    parentCoroutineContext = frameRecomposer.compositionContext.effectCoroutineContext,
                     ownerProvider = architectureComponentsOwner,
                     interfaceOrientationState = interfaceOrientationState,
                 )
 
                 layersHolder.getLayersViewController().attach(layer)
-                onAccessibilityChanged()
+                onFocusConditionsChanged()
 
                 return layer
             }
@@ -333,31 +343,35 @@ internal class ComposeContainer(
         invalidate: () -> Unit,
         platformContext: PlatformContext,
         layersHolder: ComposeLayersHolder,
-        coroutineContext: CoroutineContext
+        frameRecomposer: FrameRecomposer,
     ): ComposeScene = PlatformLayersComposeScene(
+        frameRecomposer = frameRecomposer,
         density = view.density,
         layoutDirection = layoutDirection,
-        coroutineContext = coroutineContext,
         composeSceneContext = createComposeSceneContext(
             platformContext = platformContext,
-            layersHolder = layersHolder
+            layersHolder = layersHolder,
+            frameRecomposer = frameRecomposer,
         ),
-        invalidate = invalidate,
+        // TODO: Split these into UIKit layout vs display invalidation. `invalidateLayout`
+        // should call into layout scheduling, while `invalidateDraw` should schedule display.
+        invalidateLayout = invalidate,
+        invalidateDraw = invalidate,
     )
 
     /**
      * Enables or disables accessibility for each layer, as well as the root mediator, taking into
      * account layer order and ability to overlay underlying content.
      */
-    private fun onAccessibilityChanged() {
-        var isAccessibilityEnabled = true
+    private fun onFocusConditionsChanged() {
+        var isFocusEnabled = true
         layersHolder?.layersViewController?.withLayers {
             it.fastForEachReversed { layer ->
-                layer.isAccessibilityEnabled = isAccessibilityEnabled
-                isAccessibilityEnabled = isAccessibilityEnabled && !layer.focusable
+                layer.isFocusEnabled = isFocusEnabled
+                isFocusEnabled = isFocusEnabled && !layer.focusable
             }
         }
-        mediator?.isAccessibilityEnabled = isAccessibilityEnabled
+        mediator?.isFocusEnabled = isFocusEnabled
     }
 
     private val containingViewController: UIViewController get() {
@@ -374,7 +388,6 @@ internal class ComposeContainer(
     @Composable
     private fun ProvideContainerCompositionLocals(content: @Composable () -> Unit) =
         CompositionLocalProvider(
-            LocalHapticFeedback provides hapticFeedback,
             LocalUIViewController provides containingViewController,
             LocalSystemTheme provides systemThemeState.value,
             content = content
@@ -396,9 +409,9 @@ internal class ComposeContainer(
 
 private fun UIUserInterfaceStyle.asComposeSystemTheme(): SystemTheme {
     return when (this) {
-        UIUserInterfaceStyle.UIUserInterfaceStyleLight -> SystemTheme.Light
-        UIUserInterfaceStyle.UIUserInterfaceStyleDark -> SystemTheme.Dark
-        else -> SystemTheme.Unknown
+        UIUserInterfaceStyle.UIUserInterfaceStyleLight -> SystemTheme.LIGHT
+        UIUserInterfaceStyle.UIUserInterfaceStyleDark -> SystemTheme.DARK
+        else -> SystemTheme.UNKNOWN
     }
 }
 

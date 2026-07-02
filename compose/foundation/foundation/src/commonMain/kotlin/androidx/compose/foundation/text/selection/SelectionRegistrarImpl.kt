@@ -27,6 +27,7 @@ import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.layout.LayoutCoordinates
+import androidx.compose.ui.util.fastForEach
 import kotlin.math.max
 import kotlin.math.min
 
@@ -102,13 +103,14 @@ internal class SelectionRegistrarImpl private constructor(initialIncrementId: Lo
     override var subselections: LongObjectMap<Selection> by mutableStateOf(emptyLongObjectMap())
 
     override fun subscribe(selectable: Selectable): Selectable {
-        requirePrecondition(selectable.selectableId != SelectionRegistrar.InvalidSelectableId) {
-            "The selectable contains an invalid id: ${selectable.selectableId}"
+        val selectableId = selectable.selectableId
+        requirePrecondition(selectableId != SelectionRegistrar.InvalidSelectableId) {
+            "The selectable contains an invalid id: $selectableId"
         }
-        requirePrecondition(!_selectableMap.containsKey(selectable.selectableId)) {
-            "Another selectable with the id: $selectable.selectableId has already subscribed."
+        requirePrecondition(!_selectableMap.containsKey(selectableId)) {
+            "Another selectable with the id: $selectableId has already subscribed."
         }
-        _selectableMap[selectable.selectableId] = selectable
+        _selectableMap[selectableId] = selectable
         _selectables.add(selectable)
         sorted = false
         return selectable
@@ -130,11 +132,24 @@ internal class SelectionRegistrarImpl private constructor(initialIncrementId: Lo
     }
 
     /**
-     * Sort the list of registered [Selectable]s in [SelectionRegistrar]. Currently the order of
+     * Sort the list of registered [Selectable]s in [SelectionRegistrar]. Currently, the order of
      * selectables is geometric-based.
      */
     fun sort(containerLayoutCoordinates: LayoutCoordinates): List<Selectable> {
         if (!sorted) {
+            // Trying to sort selectables when some of them have no LayoutCoordinates is a mistake,
+            // as the order will necessarily be wrong. Unfortunately, there are too many flows where
+            // this can potentially happen to be sure that this actually does not happen. So this
+            // debug-only check is in-lieu of requireNotNull(layoutCoordinates), which would crash
+            // the app if not satisfied.
+            if (DEBUG) {
+                _selectables.fastForEach {
+                    if (it.getLayoutCoordinates() == null) {
+                        logDebug { "Asked to sort selectable $it, with null LayoutCoordinates" }
+                    }
+                }
+            }
+
             // Sort selectables by y-coordinate first, and then x-coordinate, to match English
             // hand-writing habit.
             _selectables.sortWith { a: Selectable, b: Selectable ->
@@ -296,4 +311,13 @@ internal fun inARow(
         horzIntersection < (widthA * 0.5f) && horzIntersection < (widthB * 0.5f)
 
     return isVerticallyAligned && isHorizontallyDistinct
+}
+
+private const val DEBUG = false
+private const val DEBUG_TAG = "SelectionRegistrarImpl"
+
+private inline fun logDebug(text: () -> String) {
+    if (DEBUG) {
+        println("$DEBUG_TAG: ${text()}")
+    }
 }

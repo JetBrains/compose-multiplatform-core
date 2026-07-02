@@ -23,12 +23,20 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.window.ComposeViewport
 import androidx.compose.ui.window.ComposeViewportConfiguration
-import kotlin.coroutines.suspendCoroutine
+import androidx.compose.ui.window.ComposeWindow
+import androidx.compose.ui.window.LocalComposeWindow
+import kotlin.js.ExperimentalWasmJsInterop
+import kotlin.js.JsReference
+import kotlin.js.get
+import kotlin.js.js
+import kotlin.js.toJsReference
+import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
+import kotlin.time.measureTime
 import kotlinx.browser.document
 import kotlinx.browser.window
 import kotlinx.coroutines.CoroutineScope
@@ -40,6 +48,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.takeWhile
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.test.TestResult
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
@@ -67,19 +76,37 @@ private external interface CanReplaceChildren {
     fun replaceChildren()
 }
 
+@OptIn(ExperimentalWasmJsInterop::class)
 internal interface OnCanvasTests {
 
     @BeforeTest
     fun beforeTest() {
-        /** TODO: [kotlin.test.AfterTest] is fixed only in kotlin 2.0
-        see https://youtrack.jetbrains.com/issue/KT-61888
-         */
+        // We call ensureCleanState in both beforeTest and afterTest to ensure the clean initial state,
+        // since afterTest might fail due to timeout, etc.
+        ensureCleanState()
+    }
+
+    @AfterTest
+    fun afterTest() {
+        ensureCleanState()
+    }
+
+    private fun ensureCleanState() {
+        composeWindow?.dispose()
+        composeWindow = null
         resetCanvas()
     }
 
     private fun resetCanvas() {
         (getContainer() as CanReplaceChildren).replaceChildren()
     }
+
+    private var composeWindow: ComposeWindow?
+        get() = getStoredComposeWindow(getContainer())?.get()
+        set(value) {
+            val jsReference = value?.toJsReference()
+            storeComposeWindow(getContainer(), jsReference)
+        }
 
     /*
     <container>
@@ -95,7 +122,7 @@ internal interface OnCanvasTests {
       <positioning_container/>
     </container>
     */
-    private fun getContainer() = document.getElementById(containerId) ?: error("failed to get canvas with id ${containerId}")
+    fun getContainer() = document.getElementById(containerId) ?: error("failed to get canvas with id ${containerId}")
     private fun getPositioningContainer() = getContainer().children[0] ?: error("failed to get positioning container")
     fun getShadowRoot() = (getPositioningContainer().children[0]?.shadowRoot as? ExtendedShadowRoot) ?: error("failed to get shadowRoot")
     private fun getAppRoot() = getShadowRoot().children[1] as? HTMLElement ?: error("failed to get app root")
@@ -106,14 +133,17 @@ internal interface OnCanvasTests {
         configure: ComposeViewportConfiguration.() -> Unit = {},
         content: @Composable () -> Unit
     ) {
-        ComposeViewport(viewportContainerId = containerId, configure = configure, content = content)
+        ComposeViewport(viewportContainerId = containerId, configure = configure, content = {
+            composeWindow = LocalComposeWindow.current
+            content()
+        })
 
         withContext(Dispatchers.Default) {
             val timeoutDuration = 1.seconds
             try {
                 // Using withTimeout here for diagnostic. Some flaky tests fail due to timeout. But there is nothing else except this suspend call.
                 withTimeout(timeoutDuration) {
-                    suspendCoroutine<Unit> { continuation ->
+                    suspendCancellableCoroutine<Unit> { continuation ->
                         // This helps reduce the flakiness.
                         // A potential cause of flakiness: the default Coroutine Dispatcher regularly postpones
                         // the resumption of the tasks in its queue to the next frame.
@@ -128,14 +158,13 @@ internal interface OnCanvasTests {
         }
     }
 
-    suspend fun awaitA11YChanges(timeout: Duration = 2.seconds) {
+    suspend fun awaitA11YChanges(timeout: Duration = 5.seconds) {
         val a11yContainer = getA11YContainer() ?: return
-        var prevTime = currentTimeMillis()
+        val startTime = currentTimeMillis()
 
         fun skipFramesUntil(condition: () -> Boolean, onTrue: () -> Unit) {
             val currentTime = currentTimeMillis()
-            assertTrue(currentTime - prevTime < timeout.inWholeMilliseconds, "awaitA11YChanges timed out after $timeout")
-            prevTime = currentTime
+            assertTrue(currentTime - startTime < timeout.inWholeMilliseconds, "awaitA11YChanges timed out after $timeout")
             window.requestAnimationFrame {
                 if (!condition()) {
                     skipFramesUntil(condition, onTrue)
@@ -145,7 +174,7 @@ internal interface OnCanvasTests {
             }
         }
 
-        suspendCoroutine { continuation ->
+        suspendCancellableCoroutine { continuation ->
             val initialContent = a11yContainer.innerHTML
             skipFramesUntil(
                 condition = { a11yContainer.innerHTML != initialContent },
@@ -213,8 +242,15 @@ internal class WebApplicationScope(
      * due to DomInputStrategy implementation relying on animation frame events.
      */
     internal suspend fun awaitAnimationFrame() {
-        suspendCoroutine { continuation ->
-            window.requestAnimationFrame { continuation.resumeWith(Result.success(Unit)) }
+        measureTime {
+            suspendCancellableCoroutine { continuation ->
+                window.requestAnimationFrame { continuation.resumeWith(Result.success(Unit)) }
+            }
+        }.also {
+            if (it.inWholeMilliseconds > 60) {
+                // Longer raf could cause tests flakiness, so let's print it for diagnostics
+                println("raf took ${it.inWholeMilliseconds}ms\n")
+            }
         }
     }
 
@@ -253,3 +289,12 @@ internal external class ExtendedShadowRoot : ShadowRoot {
 
     fun elementFromPoint(x: Double, y: Double): Element
 }
+
+// OnCanvasTests is an interface, so it can't have a backing field for composeWindow.
+// We store the reference as a JS property on the DOM container element instead.
+private fun storeComposeWindow(container: Element, ref: JsReference<ComposeWindow>?) {
+    js("container._composeWindowRef = ref")
+}
+
+private fun getStoredComposeWindow(container: Element): JsReference<ComposeWindow>? =
+    js("container._composeWindowRef")

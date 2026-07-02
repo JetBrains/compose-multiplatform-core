@@ -19,14 +19,17 @@ package androidx.compose.ui.platform
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asComposeCanvas
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.skiaCanvas
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.scene.CanvasLayersComposeScene
+import androidx.compose.ui.scene.SingleComposeSceneRenderingScope
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntSize
 import kotlin.coroutines.CoroutineContext
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.yield
 import org.jetbrains.skia.Surface
 import org.jetbrains.skiko.FrameDispatcher
@@ -36,13 +39,16 @@ internal fun renderingTest(
     width: Int,
     height: Int,
     context: CoroutineContext = MainUIDispatcher,
+    timeoutMillis: Long = 10000,
     block: suspend RenderingTestScope.() -> Unit
 ) = runBlocking(MainUIDispatcher) {
-    val scope = RenderingTestScope(width, height, context)
-    try {
-        scope.block()
-    } finally {
-        scope.dispose()
+    withTimeout(timeoutMillis.milliseconds) {
+        val scope = RenderingTestScope(width, height, context)
+        try {
+            scope.block()
+        } finally {
+            scope.dispose()
+        }
     }
 }
 
@@ -56,12 +62,15 @@ internal class RenderingTestScope(
     private val frameDispatcher = FrameDispatcher(coroutineContext) {
         onRender(currentTimeMillis * 1_000_000)
     }
+    private val frameRecomposer = FrameRecomposer(coroutineContext, frameDispatcher::scheduleFrame)
+    private val sceneRenderingScope = SingleComposeSceneRenderingScope(frameDispatcher::scheduleFrame)
 
     val surface: Surface = Surface.makeRasterN32Premul(width, height)
     private val canvas = surface.canvas.asComposeCanvas()
     val scene = CanvasLayersComposeScene(
-        coroutineContext = coroutineContext,
-        invalidate = frameDispatcher::scheduleFrame
+        frameRecomposer = frameRecomposer,
+        invalidateLayout = sceneRenderingScope::onSceneInvalidation,
+        invalidateDraw = sceneRenderingScope::onSceneInvalidation,
     ).apply {
         size = IntSize(width = width, height = height)
     }
@@ -74,20 +83,21 @@ internal class RenderingTestScope(
 
     fun dispose() {
         scene.close()
+        frameRecomposer.close()
         frameDispatcher.cancel()
     }
 
     private var onRender = CompletableDeferred<Unit>()
 
     fun setContent(content: @Composable () -> Unit) {
-        scene.setContent {
-            content()
-        }
+        scene.setContent(content = content)
     }
 
     private fun onRender(timeNanos: Long) {
         canvas.skiaCanvas.clear(Color.Transparent.toArgb())
-        scene.render(canvas, timeNanos)
+        with(sceneRenderingScope) {
+            scene.render(frameRecomposer, canvas, timeNanos)
+        }
         onRender.complete(Unit)
     }
 
@@ -96,9 +106,17 @@ internal class RenderingTestScope(
         onRender.await()
     }
 
-    suspend fun skipRenders() {
-        repeat(1000) {
-            yield()
+    suspend fun skipRendersUntilIdle(maxFrames: Int = 1000) {
+        var frames = 0
+        while (frames < maxFrames) {
+            currentTimeMillis += 16
+            if (!hasRenders()) {
+                yield()
+                if (!hasRenders()) {
+                    return
+                }
+            }
+            frames++
         }
     }
 

@@ -46,6 +46,7 @@ import platform.CoreGraphics.CGPoint
 import platform.CoreGraphics.CGRectIsEmpty
 import platform.CoreGraphics.CGRectZero
 import platform.Foundation.NSSelectorFromString
+import platform.Foundation.NSStringFromClass
 import platform.UIKit.UIEvent
 import platform.UIKit.UIEventTypeTouches
 import platform.UIKit.UIGestureRecognizer
@@ -66,6 +67,7 @@ import platform.UIKit.UIView
 import platform.UIKit.endEditing
 import platform.UIKit.setAccessibilityElements
 import platform.UIKit.setState
+import platform.darwin.NSObject
 
 /**
  * A reason for why touches are sent to Compose
@@ -295,7 +297,7 @@ private class TouchesGestureRecognizer(
         return if (isInChildHierarchy(preventedGestureRecognizer.view)) {
             super.canPreventGestureRecognizer(preventedGestureRecognizer)
         } else if (preventedGestureRecognizer is UIScreenEdgePanGestureRecognizer) {
-            false
+            preventedGestureRecognizer.isUINavigationControllerContentSwipeGestureRecognizer()
         } else {
             state == UIGestureRecognizerStatePossible || state.isOngoing
         }
@@ -514,6 +516,7 @@ internal class OverlayInputView(
     private var onHoverEvent: (position: DpOffset, event: UIEvent?, eventKind: TouchesEventKind) -> Unit,
     private var onKeyboardPresses: (Set<*>) -> Unit,
     ignoreTouchChanges: () -> Boolean,
+    private var onRemoveSubview: () -> Unit,
 ) : CMPScrollView(CGRectZero.readValue()) {
     /**
      * Gesture recognizer responsible for processing touches
@@ -576,6 +579,15 @@ internal class OverlayInputView(
         scrollsToTop = false
     }
 
+    override fun willRemoveSubview(subview: UIView) {
+        super.willRemoveSubview(subview)
+
+        // `willRemoveSubview` is called during the deinit operation of UIView.
+        // Employ safe calls to prevent access to `this` reference that has already been invalidated.
+        @Suppress("UNNECESSARY_SAFE_CALL")
+        this?.onRemoveSubview?.invoke()
+    }
+
     override fun canBecomeFirstResponder() = true
 
     override fun canBecomeFocused(): Boolean = false
@@ -588,6 +600,11 @@ internal class OverlayInputView(
     override fun pressesEnded(presses: Set<*>, withEvent: UIPressesEvent?) {
         onKeyboardPresses(presses)
         super.pressesEnded(presses, withEvent)
+    }
+
+    override fun pressesCancelled(presses: Set<*>, withEvent: UIPressesEvent?) {
+        onKeyboardPresses(presses)
+        super.pressesCancelled(presses, withEvent)
     }
 
     private val trackedTouchesOutside: MutableSet<UITouch> = mutableSetOf()
@@ -716,6 +733,7 @@ internal class OverlayInputView(
         onOutsidePointerEvent = {}
         onTouchesEvent = { _, _, _ -> PointerEventResult() }
         onCancelAllTouches = {}
+        onRemoveSubview = {}
         trackedTouchesOutside.clear()
     }
 }
@@ -726,6 +744,7 @@ internal class OverlayInputView(
  * All other user input events should be handled by the [OverlayInputView] or with its help.
  */
 internal class BackgroundInputView(
+    private var onMovedToWindow: () -> Unit,
     private var onLayoutSubviews: () -> Unit,
     private var hitTestInteropView: (point: CValue<CGPoint>) -> UIView?,
     private var isPointInsideInteractionBounds: (CValue<CGPoint>) -> Boolean,
@@ -763,6 +782,9 @@ internal class BackgroundInputView(
     override fun didMoveToWindow() {
         super.didMoveToWindow()
 
+        window?.let {
+            onMovedToWindow()
+        }
         setNeedsLayout()
     }
 
@@ -800,6 +822,7 @@ internal class BackgroundInputView(
         removeGestureRecognizer(touchesGestureRecognizer)
         touchesGestureRecognizer.dispose()
 
+        onMovedToWindow = {}
         hitTestInteropView = { null }
         isPointInsideInteractionBounds = { false }
         onLayoutSubviews = {}
@@ -851,3 +874,21 @@ private fun UIView?.hasTrackingUIScrollView(): Boolean {
     }
     return false
 }
+
+/**
+ * Detects the private UIKit recognizer that drives iOS 26 full-width `UINavigationController`
+ * swipe-back interaction. It is a subclass of `UIScreenEdgePanGestureRecognizer` which can start
+ * anywhere across the horizontal axis of the screen.
+ *
+ * Compose needs to be able to prevent this recognizer after Compose content consumes horizontal
+ * movement, for example when a `HorizontalPager` handles the drag. Without that, UIKit can start
+ * the navigation pop transition first and cancel Compose's touch stream.
+ */
+private fun UIGestureRecognizer.isUINavigationControllerContentSwipeGestureRecognizer(): Boolean =
+    available(OS.Ios to OSVersion(major = 26)) &&
+        this is UIScreenEdgePanGestureRecognizer &&
+        className() == "_UIParallaxTransitionPanGestureRecognizer" &&
+        name == "UINavigationController.contentSwipe"
+
+@OptIn(BetaInteropApi::class)
+private fun NSObject.className() = this.`class`()?.let { NSStringFromClass(it) }

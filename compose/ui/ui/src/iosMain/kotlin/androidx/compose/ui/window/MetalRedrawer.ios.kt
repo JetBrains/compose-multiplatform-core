@@ -16,7 +16,9 @@
 
 package androidx.compose.ui.window
 
-import androidx.compose.ui.FrameRateCategory
+import androidx.collection.IntIntPair
+import androidx.compose.ui.platform.PlatformOutOfFrameExecutor
+import androidx.compose.ui.platform.PlatformPrefetchScheduler
 import androidx.compose.ui.uikit.utils.CMPMetalDrawablesHandler
 import androidx.compose.ui.util.trace
 import androidx.compose.ui.viewinterop.UIKitInteropAction
@@ -38,8 +40,9 @@ internal sealed interface MetalRedrawer {
     var isActive: Boolean
     fun draw(waitUntilCompletion: Boolean)
     fun setNeedsRedraw()
+    val outOfFrameExecutor: PlatformOutOfFrameExecutor
+    val prefetchScheduler: PlatformPrefetchScheduler
     var ongoingInteractionEventsCount: Int
-    var preferredFramesPerSecond: NSInteger
     var isForcedToPresentWithTransactionEveryFrame: Boolean
     val currentTargetFrameDuration: NSTimeInterval?
     fun voteFrameRate(frameRate: Float, frameRateCategory: Float)
@@ -70,7 +73,7 @@ internal class LegacyMetalRedrawer(
     private val context = DirectContext.makeMetal(device.objcPtr(), queue.objcPtr())
     private var lastRenderTimestamp: NSTimeInterval = CACurrentMediaTime()
     private val pictureRecorder = PictureRecorder()
-
+    override val outOfFrameExecutor = MetalOutOfFrameExecutor()
     private val inflightCommandBuffersGroup = dispatch_group_create()
     private val drawCanvasSemaphore = dispatch_semaphore_create(1)
     // A guard flag to have proper assertion when draw() method is called recursively.
@@ -78,24 +81,18 @@ internal class LegacyMetalRedrawer(
 
     override var isForcedToPresentWithTransactionEveryFrame = false
 
-    var maximumFramesPerSecond: NSInteger = 0
-
-    override var preferredFramesPerSecond: NSInteger
-        get() = caDisplayLink?.preferredFramesPerSecond ?: 0
-        set(value) {
-            if (caDisplayLink?.preferredFramesPerSecond == value) return
-            caDisplayLink?.preferredFramesPerSecond = value
-        }
-
     override val currentTargetFrameDuration: NSTimeInterval?
         get() {
             val currentTargetTimestamp = currentTargetTimestamp ?: return null
-            val currentTimestamp = caDisplayLink?.timestamp ?: return null
-            return currentTargetTimestamp - currentTimestamp
+            val lastFrameTimestamp = lastFrameTimestamp ?: return null
+            return currentTargetTimestamp - lastFrameTimestamp
         }
 
     private val displayLinkConditions = DisplayLinkConditions { paused ->
         caDisplayLink?.paused = paused
+    }
+    override val prefetchScheduler = PlatformPrefetchSchedulerImpl { hasWork ->
+        displayLinkConditions.needsToPrefetch = hasWork
     }
 
     /**
@@ -147,17 +144,30 @@ internal class LegacyMetalRedrawer(
      */
     private var caDisplayLink: CADisplayLink? = CADisplayLink.displayLinkWithTarget(
         target = LegacyDisplayLinkProxy {
+            val lastFrameTimestamp = lastFrameTimestamp ?: return@LegacyDisplayLinkProxy
             val targetTimestamp = currentTargetTimestamp ?: return@LegacyDisplayLinkProxy
 
+            var didDraw = false
             displayLinkConditions.onDisplayLinkTick {
                 draw(waitUntilCompletion = false, targetTimestamp)
+                didDraw = true
             }
+            prefetchScheduler.execute(lastFrameTimestamp, targetTimestamp, didDraw)
         },
         selector = NSSelectorFromString(LegacyDisplayLinkProxy::handleDisplayLinkTick.name)
     )
 
+    /**
+     * Indicates when the [CADisplayLink]'s frame is expected to be displayed
+     */
     private val currentTargetTimestamp: NSTimeInterval?
         get() = caDisplayLink?.targetTimestamp
+
+    /**
+     * Indicates when the last frame displayed.
+     */
+    private val lastFrameTimestamp: NSTimeInterval?
+        get() = caDisplayLink?.timestamp
 
     init {
         val caDisplayLink = caDisplayLink
@@ -186,6 +196,8 @@ internal class LegacyMetalRedrawer(
 
     override fun dispose() {
         check(caDisplayLink != null) { "MetalRedrawer.dispose() was called more than once" }
+        outOfFrameExecutor.dispose()
+        prefetchScheduler.dispose()
 
         retrieveInteropTransaction = {
             object : UIKitInteropTransaction {
@@ -197,6 +209,8 @@ internal class LegacyMetalRedrawer(
         render = { _, _ -> }
 
         releaseCachedCommandQueue(queue)
+
+        displayLinkFrameRate = null
 
         caDisplayLink?.invalidate()
         caDisplayLink = null
@@ -223,26 +237,11 @@ internal class LegacyMetalRedrawer(
         draw(waitUntilCompletion, CACurrentMediaTime())
     }
 
-    private var currentFrameRate: Float = Float.NaN
+    var displayLinkFrameRate: DisplayLinkFrameRate? = caDisplayLink?.let { DisplayLinkFrameRate(it) }
+        private set
 
     override fun voteFrameRate(frameRate: Float, frameRateCategory: Float) {
-        val frameRateCategoryValue = when (frameRateCategory) {
-            FrameRateCategory.Default.value -> CAFrameRateRangeDefault.preferred
-            FrameRateCategory.Normal.value -> 60f
-            FrameRateCategory.High.value -> maximumFramesPerSecond.toFloat()
-            else -> Float.NaN
-        }
-
-        val resolvedFrameRate = when {
-            !frameRate.isNaN() && !frameRateCategoryValue.isNaN() -> maxOf(frameRate, frameRateCategoryValue)
-            !frameRate.isNaN() -> frameRate
-            !frameRateCategoryValue.isNaN() -> frameRateCategoryValue
-            else -> return
-        }
-
-        if (currentFrameRate.isNaN() || resolvedFrameRate > currentFrameRate) {
-            currentFrameRate = resolvedFrameRate
-        }
+        displayLinkFrameRate?.voteFrameRate(frameRate, frameRateCategory)
     }
 
     /**
@@ -259,13 +258,14 @@ internal class LegacyMetalRedrawer(
             "Attempt to call MetalRedrawer.draw() recursively which may lead to the PictureRecorder corruption."
         }
         isDrawRecursiveCall = true
+        outOfFrameExecutor.onFrameStart()
 
         try {
             lastRenderTimestamp = maxOf(targetTimestamp, lastRenderTimestamp)
 
             autoreleasepool {
                 val (width, height) = metalLayer.drawableSize.useContents {
-                    width.roundToInt() to height.roundToInt()
+                    IntIntPair(width.roundToInt(), height.roundToInt())
                 }
 
                 if (width <= 0 || height <= 0) {
@@ -286,10 +286,7 @@ internal class LegacyMetalRedrawer(
                     pictureRecorder.finishRecordingAsPicture()
                 }
 
-                if (!currentFrameRate.isNaN()) {
-                    preferredFramesPerSecond = currentFrameRate.toLong()
-                    currentFrameRate = Float.NaN
-                }
+                displayLinkFrameRate?.updateFrameRateIfNeeded()
 
                 val metalDrawable = trace("MetalRedrawer:draw:nextDrawable") {
                     metalDrawablesHandler.nextDrawable()
@@ -391,6 +388,7 @@ internal class LegacyMetalRedrawer(
             }
         } finally {
             isDrawRecursiveCall = false
+            outOfFrameExecutor.onFrameEnd()
         }
     }
 

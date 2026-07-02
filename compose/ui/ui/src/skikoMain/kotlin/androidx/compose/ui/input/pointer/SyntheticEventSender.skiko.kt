@@ -16,14 +16,17 @@
 
 package androidx.compose.ui.input.pointer
 
+import androidx.collection.LongLongMap
+import androidx.collection.buildLongLongMap
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.isSpecified
 import androidx.compose.ui.scene.PointerEventResult
 import androidx.compose.ui.scene.merging
-import androidx.compose.ui.util.fastAll
 import androidx.compose.ui.util.fastAny
+import androidx.compose.ui.util.fastFilteredMap
 import androidx.compose.ui.util.fastFirstOrNull
+import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastMap
-import androidx.compose.ui.util.fastMapNotNull
 
 /**
  * Compose or user code can't work well if we miss some events.
@@ -191,11 +194,15 @@ internal class SyntheticEventSender(
         pointersSourceEvent: PointerInputEvent
     ): PointerEventResult {
         val previousEvent = previousEvent ?: return UnconsumedEventResult
-        val idToPosition = pointersSourceEvent.pointers.associate { it.id to it.position }
+        val idToPosition = pointersSourceEvent.pointers.mapPointersToPosition()
         return sendInternal(
             previousEvent.copySynthetic(
                 type = PointerEventType.Move,
-                copyPointer = { it.copySynthetic(position = idToPosition[it.id] ?: it.position) },
+                copyPointer = {
+                    it.copySynthetic(
+                        position = idToPosition.getPositionOrDefault(it.id, it.position)
+                    )
+                },
             )
         )
     }
@@ -277,7 +284,7 @@ internal class SyntheticEventSender(
     }
 
     private fun PointerInputEvent.pressedIds(): List<PointerId> =
-        pointers.fastMapNotNull { if (it.down) it.id else null }
+        pointers.fastFilteredMap(PointerInputEventData::down, PointerInputEventData::id)
 
 
     private fun sendInternal(event: PointerInputEvent): PointerEventResult {
@@ -344,18 +351,29 @@ internal class SyntheticEventSender(
     private fun isMoveEventMissing(
         previousEvent: PointerInputEvent?,
         currentEvent: PointerInputEvent,
-    ) = !currentEvent.isMove() && !currentEvent.isSamePosition(previousEvent)
+    ) = !currentEvent.isMove() && currentEvent.anyPointerPositionChangedSince(previousEvent)
 
     private fun PointerInputEvent.isMove() =
         eventType == PointerEventType.Move ||
             eventType == PointerEventType.Enter ||
             eventType == PointerEventType.Exit
 
-    private fun PointerInputEvent.isSamePosition(previousEvent: PointerInputEvent?): Boolean {
-        val previousIdToPosition = previousEvent?.pointers?.associate { it.id to it.position }
-        return pointers.fastAll {
-            val previousPosition = previousIdToPosition?.get(it.id)
-            previousPosition == null || it.position == previousPosition
+    private fun PointerInputEvent.anyPointerPositionChangedSince(
+        previousEvent: PointerInputEvent?
+    ): Boolean {
+        val previousPointers = previousEvent?.pointers ?: return false
+
+        // Typical case: only one pointer
+        if ((pointers.size == 1) && (previousPointers.size == 1)) {
+            val current = pointers[0]
+            val previous = previousPointers[0]
+            return (current.id == previous.id) && (current.position != previous.position)
+        }
+
+        val previousIdToPosition = previousEvent.pointers.mapPointersToPosition()
+        return pointers.fastAny {
+            val previousPosition = previousIdToPosition.getPositionOrDefault(it.id, Offset.Unspecified)
+            previousPosition.isSpecified && (it.position != previousPosition)
         }
     }
 
@@ -393,5 +411,17 @@ internal class SyntheticEventSender(
         originalEventPosition = position,
     )
 }
+
+private typealias PointerToPositionMap = LongLongMap
+
+private fun List<PointerInputEventData>.mapPointersToPosition(): PointerToPositionMap =
+    buildLongLongMap(size) {
+        this@mapPointersToPosition.fastForEach { ptr ->
+            put(ptr.id.value, ptr.position.packedValue)
+        }
+    }
+
+private fun PointerToPositionMap.getPositionOrDefault(key: PointerId, default: Offset): Offset =
+    Offset(getOrDefault(key.value, default.packedValue))
 
 private val UnconsumedEventResult = PointerEventResult(anyMovementConsumed = false)

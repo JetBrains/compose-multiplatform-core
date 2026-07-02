@@ -28,7 +28,7 @@ import androidx.compose.ui.Modifier
 internal fun EmptyLayout(modifier: Modifier) = Layout(
     content = {},
     modifier = modifier,
-    measurePolicy = { _, constraints ->
-        layout(constraints.minWidth, constraints.minHeight) {}
+    measurePolicy = { _, _ ->
+        layout(0, 0) {}
     }
 )
