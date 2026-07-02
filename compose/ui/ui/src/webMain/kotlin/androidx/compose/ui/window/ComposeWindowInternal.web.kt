@@ -20,6 +20,7 @@ package androidx.compose.ui.window
 
 import androidx.annotation.VisibleForTesting
 import androidx.collection.mutableIntObjectMapOf
+import androidx.collection.mutableIntSetOf
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.InternalComposeApi
@@ -437,8 +438,14 @@ internal class ComposeWindow(
 
         addTypedEvent<TouchEvent>("touchmove") { evt ->
             // This event happens after pointermove.
-            // By calling preventDefault here we prevent a browser from overtaking a scroll gesture.
             if (rootScrollObserver.consumedAnyScroll()) {
+                // By calling preventDefault here we prevent a browser from overtaking a scroll gesture.
+                evt.preventDefault()
+            } else if (!rootScrollObserver.hadAnyScroll() && !activeTouchPointersConsumedMoves.isEmpty()) {
+                // The pointermove(s) didn't hit any Compose scrollable content, but
+                // we registered at least 1 pointermove event for one or more currently active pointers,
+                // and that pointermove was consumed by Compose.
+                // So here we prevent the browser from taking over the gestures.
                 evt.preventDefault()
             }
         }
@@ -607,6 +614,7 @@ internal class ComposeWindow(
     }
 
     private val activeTouchPointers = mutableIntObjectMapOf<TouchEventWithContainerOffset>()
+    private val activeTouchPointersConsumedMoves = mutableIntSetOf()
     private val reusableTouchPointerList = mutableListOf<ComposeScenePointer>()
     private fun getActivePointers(): MutableList<ComposeScenePointer> {
         reusableTouchPointerList.clear()
@@ -633,6 +641,7 @@ internal class ComposeWindow(
 
         val eventType = event.getPointerEventType()
         var result: PointerEventResult? = null
+        var anyChangeConsumed = false
 
         if (isMouseEvent(event)) {
             keyboardModeState = KeyboardModeState.Hardware
@@ -731,6 +740,7 @@ internal class ComposeWindow(
                         nativeEvent = coalescedEvent,
                         button = null
                     )
+                    anyChangeConsumed = anyChangeConsumed || result.anyChangeConsumed
                 }
             } else {
                 result = scene.sendPointerEvent(
@@ -743,16 +753,21 @@ internal class ComposeWindow(
                     nativeEvent = event,
                     button = null
                 )
+                anyChangeConsumed = result.anyChangeConsumed
             }
 
             activeTouchOffset = null
 
             if (eventType == PointerEventType.Release) {
                 activeTouchPointers.remove(event.pointerId)
+                activeTouchPointersConsumedMoves.remove(event.pointerId)
             }
 
-            if (result != null && result.anyChangeConsumed && event.cancelable) {
+            if (anyChangeConsumed && event.cancelable) {
                 event.preventDefault()
+                if (eventType == PointerEventType.Move) {
+                    activeTouchPointersConsumedMoves.add(event.pointerId)
+                }
             }
         }
     }
