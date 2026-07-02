@@ -17,6 +17,7 @@
 package androidx.compose.ui.input
 
 import androidx.compose.ui.events.beforeInput
+import androidx.compose.ui.events.beforeInputWithTargetRange
 import androidx.compose.ui.events.keyEvent
 import androidx.compose.ui.input.specs.TextFieldTestSpec
 import androidx.compose.ui.text.TextRange
@@ -39,7 +40,17 @@ class DeleteWordBackwardTests : TextFieldTestSpec, BasicTextFieldWithValue {
         )
     }
 
-    fun sendVirtualDeleteWordBackward() {
+    fun sendVirtualDeleteWordBackward(targetRange: Pair<Int, Int>? = null) {
+        val beforeInputEvent = if (targetRange != null) {
+            beforeInputWithTargetRange(
+                inputType = "deleteWordBackward",
+                data = null,
+                startOffset = targetRange.first,
+                endOffset = targetRange.second
+            )
+        } else {
+            beforeInput("deleteWordBackward", null)
+        }
         sendToHtmlInput(
             keyEvent(
                 key = "Backspace",
@@ -47,7 +58,7 @@ class DeleteWordBackwardTests : TextFieldTestSpec, BasicTextFieldWithValue {
                 type = "keydown",
                 repeat = true,
             ),
-            beforeInput("deleteWordBackward", null)
+            beforeInputEvent
         )
     }
 
@@ -58,8 +69,8 @@ class DeleteWordBackwardTests : TextFieldTestSpec, BasicTextFieldWithValue {
 
         awaitAnimationFrame()
 
-        sendVirtualDeleteWordBackward()
-        textFieldValue.awaitAndAssertTextEquals("here  go again!!!", "deleteWordBackward is not processed")
+        sendVirtualDeleteWordBackward(targetRange = 6 to 14)
+        textFieldValue.awaitAndAssertTextEquals("here go again!!!", "deleteWordBackward is not processed")
     }
 
     @Test
@@ -170,10 +181,10 @@ class DeleteWordBackwardTests : TextFieldTestSpec, BasicTextFieldWithValue {
 
         awaitIdle()
 
-        sendVirtualDeleteWordBackward()
+        sendVirtualDeleteWordBackward(targetRange = 7 to 10)
         textFieldValue.awaitAndAssertTextEquals("천천히 말해")
 
-        sendVirtualDeleteWordBackward()
+        sendVirtualDeleteWordBackward(targetRange = 4 to 6)
         textFieldValue.awaitAndAssertTextEquals("천천히")
     }
 

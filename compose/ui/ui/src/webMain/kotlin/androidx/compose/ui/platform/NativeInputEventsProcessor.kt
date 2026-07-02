@@ -197,7 +197,7 @@ internal abstract class NativeInputEventsProcessor(
                         if (!targetRange.collapsed) {
                             add(
                                 DeleteSurroundingTextCommand(
-                                    targetRange.startOffset - targetRange.endOffset,
+                                    targetRange.endOffset - targetRange.startOffset,
                                     0
                                 )
                             )
