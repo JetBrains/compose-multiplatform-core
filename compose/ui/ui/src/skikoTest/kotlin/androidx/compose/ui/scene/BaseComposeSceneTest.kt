@@ -37,258 +37,208 @@ import androidx.compose.ui.platform.FrameRecomposer
 import androidx.compose.ui.touch
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
-import kotlin.coroutines.CoroutineContext
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
 import kotlin.test.assertTrue
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 
 class BaseComposeSceneTest {
 
     @Test
-    fun testMoveEventsConsumption() = runTest(StandardTestDispatcher()) {
-        val scenes = listOf(
-            createPlatformLayersScene(coroutineContext, IntSize(100, 100)),
-            createCanvasLayersScene(coroutineContext, IntSize(100, 100))
-        )
-
-        try {
-            scenes.forEach { (scene, _) ->
-                var consumeAll = false
-                scene.setContent {
-                    Box(modifier = Modifier.fillMaxSize().pointerInput(PointerEventPass.Initial) {
-                        awaitPointerEventScope {
-                            while (true) {
-                                val event = awaitPointerEvent()
-                                if (consumeAll) {
-                                    event.changes.forEach {
-                                        if ((it.previousPosition - it.position) != Offset.Zero) it.consume()
-                                    }
-                                }
+    fun testMoveEventsConsumption() = runComposeSceneTest { scene ->
+        var consumeAll = false
+        scene.setContent {
+            Box(modifier = Modifier.fillMaxSize().pointerInput(PointerEventPass.Initial) {
+                awaitPointerEventScope {
+                    while (true) {
+                        val event = awaitPointerEvent()
+                        if (consumeAll) {
+                            event.changes.forEach {
+                                if ((it.previousPosition - it.position) != Offset.Zero) it.consume()
                             }
                         }
-                    })
+                    }
                 }
-                scene.sendPointerEvent(PointerEventType.Press, Offset(10f, 10f))
-                assertFalse(
-                    scene.sendPointerEvent(PointerEventType.Move, Offset(11f, 10f))
-                        .anyMovementConsumed
-                )
-                assertFalse(
-                    scene.sendPointerEvent(PointerEventType.Release, Offset(12f, 10f))
-                        .anyMovementConsumed
-                )
-
-                consumeAll = true
-
-                scene.sendPointerEvent(PointerEventType.Press, Offset(10f, 10f))
-                assertTrue(
-                    scene.sendPointerEvent(PointerEventType.Move, Offset(11f, 10f))
-                        .anyMovementConsumed
-                )
-                assertTrue(
-                    scene.sendPointerEvent(PointerEventType.Release, Offset(12f, 10f))
-                        .anyMovementConsumed
-                )
-            }
-        } finally {
-            scenes.forEach { (_, dispose) -> dispose.close() }
+            })
         }
+        scene.sendPointerEvent(PointerEventType.Press, Offset(10f, 10f))
+        assertFalse(
+            scene.sendPointerEvent(PointerEventType.Move, Offset(11f, 10f))
+                .anyMovementConsumed
+        )
+        assertFalse(
+            scene.sendPointerEvent(PointerEventType.Release, Offset(12f, 10f))
+                .anyMovementConsumed
+        )
+
+        consumeAll = true
+
+        scene.sendPointerEvent(PointerEventType.Press, Offset(10f, 10f))
+        assertTrue(
+            scene.sendPointerEvent(PointerEventType.Move, Offset(11f, 10f))
+                .anyMovementConsumed
+        )
+        assertTrue(
+            scene.sendPointerEvent(PointerEventType.Release, Offset(12f, 10f))
+                .anyMovementConsumed
+        )
     }
 
     @Test
-    fun cancelAllPointersShouldCancelInputCoroutines() = runTest(StandardTestDispatcher()) {
-        val scenes = listOf(
-            createPlatformLayersScene(coroutineContext, IntSize(100, 100)),
-            createCanvasLayersScene(coroutineContext, IntSize(100, 100))
-        )
-
-        try {
-            scenes.forEach { (scene, _) ->
-                var cancellationsCount = 0
-                scene.setContent {
-                    Box(modifier = Modifier.fillMaxSize().onCancel {
-                        cancellationsCount++
-                    })
-                }
-
-                scene.sendPointerEvent(PointerEventType.Press, Offset(10f, 10f))
-                scene.cancelPointerInput()
-
-                assertEquals(1, cancellationsCount)
-            }
-        } finally {
-            scenes.forEach { (_, dispose) -> dispose.close() }
+    fun cancelAllPointersShouldCancelInputCoroutines() = runComposeSceneTest { scene ->
+        var cancellationsCount = 0
+        scene.setContent {
+            Box(modifier = Modifier.fillMaxSize().onCancel {
+                cancellationsCount++
+            })
         }
+
+        scene.sendPointerEvent(PointerEventType.Press, Offset(10f, 10f))
+        scene.cancelPointerInput()
+
+        assertEquals(1, cancellationsCount)
     }
 
     @Test
-    fun dragScrollIsAppliedSynchronously() = runTest(StandardTestDispatcher()) {
-        val scenes = listOf(
-            createPlatformLayersScene(coroutineContext, IntSize(100, 100)),
-            createCanvasLayersScene(coroutineContext, IntSize(100, 100))
+    fun dragScrollIsAppliedSynchronously() = runComposeSceneTest { scene ->
+        val scrollState = ScrollState(0)
+        var observedScroll = 0
+        scene.setContent {
+            LaunchedEffect(Unit) {
+                snapshotFlow { scrollState.value }.collect { observedScroll = it }
+            }
+            Box(Modifier.size(100.dp).verticalScroll(scrollState)) {
+                Box(Modifier.size(200.dp))
+            }
+        }
+
+        scene.sendPointerEvent(
+            eventType = PointerEventType.Press,
+            pointers = listOf(touch(50f, 50f, pressed = true))
+        )
+        testScheduler.advanceUntilIdle()
+
+        resetInvalidations()
+        scene.sendPointerEvent(
+            eventType = PointerEventType.Move,
+            pointers = listOf(touch(50f, 10f, pressed = true))
         )
 
-        try {
-            scenes.forEach { (scene, _) ->
-                val scrollState = ScrollState(0)
-                var observedScroll = 0
-                scene.setContent {
-                    LaunchedEffect(Unit) {
-                        snapshotFlow { scrollState.value }.collect { observedScroll = it }
-                    }
-                    Box(Modifier.size(100.dp).verticalScroll(scrollState)) {
-                        Box(Modifier.size(200.dp))
-                    }
-                }
-
-                scene.sendPointerEvent(
-                    eventType = PointerEventType.Press,
-                    pointers = listOf(touch(50f, 50f, pressed = true))
-                )
-                testScheduler.advanceUntilIdle()
-
-                scene.sendPointerEvent(
-                    eventType = PointerEventType.Move,
-                    pointers = listOf(touch(50f, 10f, pressed = true))
-                )
-
-                assertNotEquals(0, scrollState.value)
-                assertEquals(
-                    scrollState.value,
-                    observedScroll,
-                    "the scroll must be applied within sendPointerEvent"
-                )
-                assertTrue(
-                    scene.hasInvalidations(),
-                    "the scroll must schedule a frame within sendPointerEvent"
-                )
-            }
-        } finally {
-            scenes.forEach { (_, dispose) -> dispose.close() }
-        }
+        assertNotEquals(0, scrollState.value)
+        assertEquals(
+            scrollState.value,
+            observedScroll,
+            "the scroll must be applied within sendPointerEvent"
+        )
+        assertTrue(
+            scene.hasInvalidations() && invalidateTotal > 0,
+            "the scroll must invalidate the scene within sendPointerEvent"
+        )
     }
 
     @Test
-    fun scrollWheelIsAppliedSynchronously() = runTest(StandardTestDispatcher()) {
-        val scenes = listOf(
-            createPlatformLayersScene(coroutineContext, IntSize(100, 100)),
-            createCanvasLayersScene(coroutineContext, IntSize(100, 100))
+    fun scrollWheelIsAppliedSynchronously() = runComposeSceneTest { scene ->
+        val scrollState = ScrollState(0)
+        var observedScroll = 0
+        scene.setContent {
+            LaunchedEffect(Unit) {
+                snapshotFlow { scrollState.value }.collect { observedScroll = it }
+            }
+            Box(Modifier.size(100.dp).verticalScroll(scrollState)) {
+                Box(Modifier.size(200.dp))
+            }
+        }
+        testScheduler.advanceUntilIdle()
+
+        resetInvalidations()
+        scene.sendPointerEvent(
+            eventType = PointerEventType.Scroll,
+            position = Offset(50f, 50f),
+            scrollDelta = Offset(0f, 40f)
         )
 
-        try {
-            scenes.forEach { (scene, _) ->
-                val scrollState = ScrollState(0)
-                var observedScroll = 0
-                scene.setContent {
-                    LaunchedEffect(Unit) {
-                        snapshotFlow { scrollState.value }.collect { observedScroll = it }
-                    }
-                    Box(Modifier.size(100.dp).verticalScroll(scrollState)) {
-                        Box(Modifier.size(200.dp))
-                    }
-                }
-                testScheduler.advanceUntilIdle()
-
-                scene.sendPointerEvent(
-                    eventType = PointerEventType.Scroll,
-                    position = Offset(50f, 50f),
-                    scrollDelta = Offset(0f, 40f)
-                )
-
-                assertNotEquals(0, scrollState.value)
-                assertEquals(
-                    scrollState.value,
-                    observedScroll,
-                    "the scroll must be applied within sendPointerEvent"
-                )
-                assertTrue(
-                    scene.hasInvalidations(),
-                    "the scroll must schedule a frame within sendPointerEvent"
-                )
-            }
-        } finally {
-            scenes.forEach { (_, dispose) -> dispose.close() }
-        }
+        assertNotEquals(0, scrollState.value)
+        assertEquals(
+            scrollState.value,
+            observedScroll,
+            "the scroll must be applied within sendPointerEvent"
+        )
+        assertTrue(
+            scene.hasInvalidations() && invalidateTotal > 0,
+            "the scroll must invalidate the scene within sendPointerEvent"
+        )
     }
 
     @Test
-    fun cancelAllPointersShouldCancelClicks() = runTest(StandardTestDispatcher()) {
-        val scenes = listOf(
-            createPlatformLayersScene(coroutineContext, IntSize(100, 100)),
-            createCanvasLayersScene(coroutineContext, IntSize(100, 100))
-        )
-
-        try {
-            scenes.forEach { (scene, _) ->
-                var clicksCount = 0
-                scene.setContent {
-                    Box(modifier = Modifier.fillMaxSize().clickable {
-                        clicksCount++
-                    })
-                }
-
-                // Perform first click
-                scene.sendPointerEvent(PointerEventType.Press, Offset(10f, 10f))
-                scene.sendPointerEvent(PointerEventType.Release, Offset(40f, 40f))
-
-                // Start and cancel click
-                scene.sendPointerEvent(PointerEventType.Press, Offset(10f, 10f))
-                scene.cancelPointerInput()
-                scene.sendPointerEvent(PointerEventType.Release, Offset(40f, 40f))
-
-                // Perform second click
-                scene.sendPointerEvent(PointerEventType.Press, Offset(10f, 10f))
-                scene.sendPointerEvent(PointerEventType.Release, Offset(40f, 40f))
-
-                // Should be only two clicks
-                assertEquals(2, clicksCount)
-            }
-        } finally {
-            scenes.forEach { (_, dispose) -> dispose.close() }
+    fun cancelAllPointersShouldCancelClicks() = runComposeSceneTest { scene ->
+        var clicksCount = 0
+        scene.setContent {
+            Box(modifier = Modifier.fillMaxSize().clickable {
+                clicksCount++
+            })
         }
+
+        // Perform first click
+        scene.sendPointerEvent(PointerEventType.Press, Offset(10f, 10f))
+        scene.sendPointerEvent(PointerEventType.Release, Offset(40f, 40f))
+
+        // Start and cancel click
+        scene.sendPointerEvent(PointerEventType.Press, Offset(10f, 10f))
+        scene.cancelPointerInput()
+        scene.sendPointerEvent(PointerEventType.Release, Offset(40f, 40f))
+
+        // Perform second click
+        scene.sendPointerEvent(PointerEventType.Press, Offset(10f, 10f))
+        scene.sendPointerEvent(PointerEventType.Release, Offset(40f, 40f))
+
+        // Should be only two clicks
+        assertEquals(2, clicksCount)
     }
 }
 
-private fun createPlatformLayersScene(
-    coroutineContext: CoroutineContext,
-    size: IntSize,
-    invalidateLayout: () -> Unit = {},
-    invalidateDraw: () -> Unit = {},
-): Pair<ComposeScene, AutoCloseable> {
-    val frameRecomposer = FrameRecomposer(coroutineContext)
-    val scene = PlatformLayersComposeScene(
-        frameRecomposer = frameRecomposer,
-        size = size,
-        invalidateLayout = invalidateLayout,
-        invalidateDraw = invalidateDraw,
-    )
-    return scene to AutoCloseable {
-        scene.close()
-        frameRecomposer.close()
+class ComposeSceneTestScope(private val testScope: TestScope) {
+    val testScheduler by testScope::testScheduler
+
+    var invalidateLayout = 0
+    var invalidateDraw = 0
+
+    val invalidateTotal get() = invalidateLayout + invalidateDraw
+
+    fun resetInvalidations() {
+        invalidateLayout = 0
+        invalidateDraw = 0
     }
 }
 
-private fun createCanvasLayersScene(
-    coroutineContext: CoroutineContext,
-    size: IntSize,
-    invalidateLayout: () -> Unit = {},
-    invalidateDraw: () -> Unit = {},
-): Pair<ComposeScene, AutoCloseable> {
+private fun runComposeSceneTest(
+    size: IntSize = IntSize(100, 100),
+    block: suspend ComposeSceneTestScope.(scene: ComposeScene) -> Unit,
+) = runTest(StandardTestDispatcher()) {
     val frameRecomposer = FrameRecomposer(coroutineContext)
-    val scene = CanvasLayersComposeScene(
+    val testScope = ComposeSceneTestScope(this)
+    CanvasLayersComposeScene(
         frameRecomposer = frameRecomposer,
         size = size,
-        invalidateLayout = invalidateLayout,
-        invalidateDraw = invalidateDraw,
-    )
-    return scene to AutoCloseable {
-        scene.close()
-        frameRecomposer.close()
+        invalidateLayout = { testScope.invalidateLayout++ },
+        invalidateDraw = { testScope.invalidateDraw++ },
+    ).use {
+        testScope.block(it)
+        testScope.resetInvalidations()
     }
+    PlatformLayersComposeScene(
+        frameRecomposer = frameRecomposer,
+        size = size,
+        invalidateLayout = { testScope.invalidateLayout++ },
+        invalidateDraw = { testScope.invalidateDraw++ },
+    ).use {
+        testScope.block(it)
+        testScope.resetInvalidations()
+    }
+    frameRecomposer.close()
 }
 
 internal fun Modifier.onCancel(onCancel: () -> Unit) = this then TestCancellable(onCancel)
