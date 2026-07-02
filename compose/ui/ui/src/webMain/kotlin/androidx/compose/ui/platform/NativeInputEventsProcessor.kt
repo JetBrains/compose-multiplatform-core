@@ -193,12 +193,16 @@ internal abstract class NativeInputEventsProcessor(
 
                 // This would mean event was triggered by long press on mobile device (iOS)
                 if (lastProcessedKeydown?.repeat == true) {
-                    val layoutResult = composeSender.currentTextLayoutResult() ?: return@buildList
-
-
-                    val offset = layoutResult.getPrevWordOffset(textRangeEnd)
-                    val deleteCommand = DeleteSurroundingTextCommand((textRangeEnd - offset).coerceAtLeast(0), 0)
-                    add(deleteCommand)
+                    firstRange?.let { targetRange ->
+                        if (!targetRange.collapsed) {
+                            add(
+                                DeleteSurroundingTextCommand(
+                                    targetRange.startOffset - targetRange.endOffset,
+                                    0
+                                )
+                            )
+                        }
+                    }
                 }
             }
 
