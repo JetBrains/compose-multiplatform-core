@@ -8,7 +8,6 @@ platform="iOS Simulator"
 os_version="26.5"
 device_name="iPhone 17"
 iterations="1"
-derived_data_path="./tmp/ios-instrumented-tests"
 open_result="false"
 # `run_until_failure` is applied only when iterations > 1.
 run_until_failure="false"
@@ -36,8 +35,9 @@ fi
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$script_dir"
 
-mkdir -p "$derived_data_path"
-results_dir="${derived_data_path%/}/results"
+results_root="${TMPDIR%/}/ios-instrumented-tests-results"
+mkdir -p "$results_root"
+results_dir="$(mktemp -d "${results_root%/}/run-${USER:-user}-XXXXXX")"
 mkdir -p "$results_dir"
 
 timestamp="$(date '+%Y-%m-%d-%H-%M-%S')"
@@ -47,7 +47,7 @@ destination="platform=${platform},OS=${os_version},name=${device_name}"
 echo "Running iOS instrumented tests with:"
 echo "  destination: ${destination}"
 echo "  iterations: ${iterations}"
-echo "  derivedDataPath: ${derived_data_path}"
+echo "  derivedDataPath: Xcode default"
 echo "  resultBundlePath: ${result_bundle_path}"
 
 # The keyboard preference is picked up when a simulator boots, so shut them all down
@@ -60,7 +60,6 @@ xcodebuild \
   -project Launcher.xcodeproj \
   -scheme Launcher \
   -destination "$destination" \
-  -derivedDataPath "$derived_data_path" \
   build-for-testing
 
 test_args=(
@@ -88,7 +87,6 @@ xcodebuild \
   -project Launcher.xcodeproj \
   -scheme Launcher \
   -destination "$destination" \
-  -derivedDataPath "$derived_data_path" \
   test-without-building \
   "${test_args[@]}"
 test_exit_code=$?
