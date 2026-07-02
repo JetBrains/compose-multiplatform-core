@@ -219,8 +219,7 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
 
     private val recomposerCoroutineScope = CoroutineScope(
         effectContext +
-            // Apply snapshot changes after every resumed continuation.
-            ApplyingContinuationInterceptor(compositionCoroutineDispatcher) +
+            compositionCoroutineDispatcher +
             infiniteAnimationPolicy +
             uncaughtExceptionHandler +
             Job()

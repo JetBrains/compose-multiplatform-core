@@ -96,10 +96,9 @@ class FrameRecomposer(
     /**
      * Registers the [trampolineDispatcher] with the shared [GlobalSnapshotManager] so ambient
      * global writes schedule apply notifications onto the trampoline queue, where they are rolled
-     * synchronously by [performTrampolineDispatch]. `null` when the host is not a deferring
-     * dispatcher.
+     * synchronously by [performTrampolineDispatch].
      */
-    private val globalSnapshotRegistration: AutoCloseable?
+    private val globalSnapshotRegistration = GlobalSnapshotManager.register(trampolineDispatcher)
 
     init {
         // The host must carry a (single-thread) continuation interceptor that work is dispatched
@@ -107,19 +106,6 @@ class FrameRecomposer(
         // ApplyingContinuationInterceptor that delegates to the test dispatcher.
         requireNotNull(coroutineContext[ContinuationInterceptor]) {
             "FrameRecomposer requires a ContinuationInterceptor in its coroutineContext"
-        }
-        val hostDispatcher = coroutineContext[ContinuationInterceptor] as? CoroutineDispatcher
-        // Register only when the host [CoroutineDispatcher] always posts dispatched work
-        // asynchronously and never runs it inline, otherwise apply notifications run inside
-        // a write observer, which compose:runtime does not support and it will deadlock.
-        globalSnapshotRegistration = if (hostDispatcher != null) {
-            // Use the wrapped [trampolineDispatcher] for the registration so scheduled global
-            // apply notifications are enqueued as ordinary trampoline tasks. Since [flush]
-            // keeps draining until the queue is empty, any apply work scheduled while flushing
-            // is processed in the same trampoline pass.
-            GlobalSnapshotManager.register(trampolineDispatcher)
-        } else {
-            null
         }
         coroutineScope.launch(
             frameDispatcher + frameClock,
