@@ -290,10 +290,7 @@ class NativeInputEventsProcessorTest {
         processor.registerEvent(backspaceEvent)
 
         processor.registerEvent(
-            beforeInput("deleteContentBackward", null).asInputEventExt().apply {
-                textRangeStart = 3
-                textRangeEnd = 4
-            }
+            beforeInput("deleteContentBackward", null).asInputEventExt()
         )
         processor.manuallyRunCheckpoint(TextFieldValue("test", selection = TextRange(3, 4)))
 
@@ -316,9 +313,7 @@ class NativeInputEventsProcessorTest {
         val processor = TestNativeInputEventsProcessor(communicator)
 
         processor.registerEvent(
-            beforeInput("insertReplacementText", "replacement").asInputEventExt().apply {
-                setFirstRange(5, 9)
-            },
+            beforeInput("insertReplacementText", "replacement")
         )
 
         processor.manuallyRunCheckpoint(communicator.currentTextFieldValue())
@@ -646,10 +641,7 @@ class NativeInputEventsProcessorTest {
 
         // Then add a deleteContentBackward event
         processor.registerEvent(
-            beforeInput("deleteContentBackward", "").asInputEventExt().apply {
-                textRangeStart = 0
-                textRangeEnd = 1
-            },
+            beforeInput("deleteContentBackward", ""),
         )
 
         // With a non-collapsed selection

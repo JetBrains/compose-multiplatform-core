@@ -30,17 +30,13 @@ import kotlin.js.JsNumber
 import kotlin.js.definedExternally
 import kotlin.js.get
 import kotlin.js.js
-import kotlin.js.length
 import kotlin.js.toInt
-import kotlin.js.toJsArray
-import kotlin.js.toJsNumber
 import kotlin.js.unsafeCast
 import kotlinx.browser.document
 import kotlinx.browser.window
 import org.w3c.dom.HTMLElement
 import org.w3c.dom.EventInit
 import org.w3c.dom.Node
-import org.w3c.dom.Range
 import org.w3c.dom.events.CompositionEvent
 import org.w3c.dom.events.Event
 import org.w3c.dom.events.UIEvent
@@ -122,9 +118,6 @@ internal class DomInputStrategy(
             if (evt is InputEvent) {
                 val inputExt = evt.asInputEventExt()
 
-                inputExt.textRangeStart = latestSelection.start
-                inputExt.textRangeEnd = latestSelection.end
-
                 inputExt.firstRange = inputExt.getTargetRanges()[0]
 
                 nativeInputEventsProcessor.registerEvent(evt)
@@ -185,8 +178,6 @@ private external interface DocumentOrShadowRootLike : JsAny {
 internal external class InputEventExt : UIEvent {
     val data: String?
     val inputType: String
-    var textRangeStart: Int
-    var textRangeEnd: Int
 
     var firstRange: StaticRange?
 
