@@ -631,6 +631,7 @@ internal class ComposeWindow(
         if (event.type == "pointercancel") {
             if (isTouchEvent(event)) {
                 activeTouchPointers.clear()
+                activeTouchPointersConsumedMoves.remove(event.pointerId)
                 activeTouchOffset = null
             } else {
                 actualActivePointerButtons = null

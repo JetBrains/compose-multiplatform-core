@@ -57,7 +57,6 @@ internal class RootScrollObserver : NestedScrollConnection {
         if (source == NestedScrollSource.UserInput) {
             totalScrollEvents++
             consumedDistance += consumed.getDistanceSquared()
-            println("consumed distance: $consumedDistance / $totalScrollEvents")
         }
         return Offset.Zero
     }
