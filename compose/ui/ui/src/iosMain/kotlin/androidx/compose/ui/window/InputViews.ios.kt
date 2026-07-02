@@ -533,14 +533,10 @@ internal class OverlayInputView(
     )
 
     private val scrollGestureRecognizer by lazy {
-        if (available(OS.Ios to OSVersion(major = 13, minor = 4))) {
-            ScrollGestureRecognizer(
-                onScrollEvent = onScrollEvent,
-                onCancelScroll = onCancelScroll
-            )
-        } else {
-            null
-        }
+        ScrollGestureRecognizer(
+            onScrollEvent = onScrollEvent,
+            onCancelScroll = onCancelScroll
+        )
     }
 
     private val hoverGestureRecognizer by lazy {
