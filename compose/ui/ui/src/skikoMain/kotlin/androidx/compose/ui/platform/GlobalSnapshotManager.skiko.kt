@@ -20,6 +20,7 @@ import androidx.annotation.VisibleForTesting
 import androidx.compose.runtime.snapshots.ObserverHandle
 import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.internal.getCurrentThreadId
+import kotlin.concurrent.Volatile
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -103,6 +104,8 @@ internal object GlobalSnapshotManager {
     private class Registration(val dispatcher: CoroutineDispatcher) {
         /** Number of live handles. Guarded by [GlobalSnapshotManager.lock]. */
         var refCount = 0
+
+        @Volatile
         var threadId: Long? = null
 
         private val scheduled = atomic(false)
