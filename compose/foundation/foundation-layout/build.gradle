@@ -23,13 +23,10 @@
 
 import androidx.build.SoftwareType
 import androidx.build.PlatformIdentifier
-import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
-import org.jetbrains.kotlin.konan.target.Family
 
 plugins {
     id("AndroidXPlugin")
     id("AndroidXComposePlugin")
-    id("JetBrainsAndroidXPlugin")
 }
 
 androidXMultiplatform {
@@ -37,11 +34,8 @@ androidXMultiplatform {
         compileSdk { version = release(37) }
         namespace = "androidx.compose.foundation.layout"
     }
-    desktop()
-    mac()
-    ios()
-    js()
-    wasmJs()
+    jvmStubs()
+    linuxX64Stubs()
 
     defaultPlatform(PlatformIdentifier.ANDROID)
 
@@ -49,13 +43,9 @@ androidXMultiplatform {
         commonMain.dependencies {
             api(project(":compose:ui:ui"))
             implementation(project(":compose:runtime:runtime"))
-            implementation(project(":compose:ui:ui-util"))
+            implementation("androidx.compose.ui:ui-util:1.10.0")
             implementation("androidx.collection:collection:1.5.0")
-            implementation(project(":compose:ui:ui-unit"))
-        }
-
-        commonTest.dependencies {
-            implementation(libs.kotlinTest)
+            implementation("androidx.compose.ui:ui-unit:1.10.0")
         }
 
         androidMain.dependencies {
@@ -85,39 +75,6 @@ androidXMultiplatform {
             implementation(libs.testRunner)
             implementation(libs.junit)
             implementation(libs.truth)
-        }
-
-        // TODO: Align naming: nonAndroidMain
-        skikoMain {
-            dependsOn(commonMain)
-        }
-
-        skikoTest {
-            dependsOn(commonTest)
-        }
-
-        desktopMain {
-            dependsOn(skikoMain)
-        }
-
-        desktopTest {
-            dependsOn(skikoTest)
-        }
-
-        nonJvmMain {
-            dependsOn(skikoMain)
-        }
-
-        nonJvmTest {
-            dependsOn(skikoTest)
-        }
-
-        nativeMain {
-            dependsOn(nonJvmMain)
-        }
-
-        nativeTest {
-            dependsOn(nonJvmTest)
         }
     }
 }
