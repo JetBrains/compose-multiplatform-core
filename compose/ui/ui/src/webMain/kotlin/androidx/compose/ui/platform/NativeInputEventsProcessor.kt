@@ -18,11 +18,9 @@ package androidx.compose.ui.platform
 
 import androidx.compose.runtime.TestOnly
 import androidx.compose.ui.input.key.toComposeEvent
-import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.input.BackspaceCommand
 import androidx.compose.ui.text.input.CommitTextCommand
 import androidx.compose.ui.text.input.DeleteSurroundingTextCommand
-import androidx.compose.ui.text.input.OffsetMapping
 import androidx.compose.ui.text.input.SetComposingTextCommand
 import androidx.compose.ui.text.input.SetSelectionCommand
 import androidx.compose.ui.text.input.TextFieldValue
@@ -55,29 +53,6 @@ internal abstract class NativeInputEventsProcessor(
     internal var isCheckpointScheduled = false
 
     internal var lastCompositionEndTimestamp = 0.0 // Double because of k/wasm where Number.toLong() leads to a compilation error
-    private var lastProcessedKeydown: KeyboardEvent? = null
-
-    private tailrec fun TextLayoutResult.getPrevWordOffset(
-        currentOffset: Int,
-        offsetMapping: OffsetMapping = OffsetMapping.Identity
-    ): Int {
-        if (currentOffset <= 0) {
-            return 0
-        }
-        val text = layoutInput.text
-
-        val offset = currentOffset.coerceAtMost(text.length - 1)
-        if (offset <= 0) {
-            return 0
-        }
-
-        val currentWord = getWordBoundary(offset)
-        return if (currentWord.start >= currentOffset) {
-            getPrevWordOffset(currentOffset - 1)
-        } else {
-            offsetMapping.transformedToOriginal(currentWord.start)
-        }
-    }
 
     /**
      * Schedules a checkpoint for processing input events.
@@ -115,10 +90,8 @@ internal abstract class NativeInputEventsProcessor(
                     if (isInIMEComposition) return@fastForEach
 
                     evt as KeyboardEvent
-                    if (isTypedEvent(evt)) {
-                        // we need to reset this each time we consider something to be typed
+                    if (isModifyingEvent(evt)) {
                         // see  https://youtrack.jetbrains.com/issue/CMP-8773
-                        lastProcessedKeydown = null
                         return@fastForEach
                     }
 
@@ -133,10 +106,7 @@ internal abstract class NativeInputEventsProcessor(
                     val shouldBeProcessed = timestamp == 0.0 || !isFromLastComposition
 
                     if (shouldBeProcessed) {
-                        val isProcessed = composeSender.sendKeyboardEvent(evt.toComposeEvent())
-                        if (isProcessed) {
-                            lastProcessedKeydown = evt
-                        }
+                        composeSender.sendKeyboardEvent(evt.toComposeEvent())
                     }
                 }
 
@@ -146,9 +116,7 @@ internal abstract class NativeInputEventsProcessor(
                 }
 
                 "beforeinput" -> {
-                    evt.asInputEventExt().process(
-                        currentTextFieldValue = currentTextFieldValue
-                    )
+                    evt.asInputEventExt().process()
                 }
             }
         }
@@ -156,56 +124,23 @@ internal abstract class NativeInputEventsProcessor(
         collectedEvents.clear()
     }
 
-    private fun InputEventExt.process(currentTextFieldValue: TextFieldValue) {
+    private fun InputEventExt.process() {
         val editCommands = when (inputType) {
             "deleteContentBackward" -> buildList {
-                if (!currentTextFieldValue.selection.collapsed) {
-                    // If the lastProcessedKeydown was Backspace, then Compose must have already processed this.
-                    if (lastProcessedKeydown?.isBackspace() != true) {
-                        // If we got here, then it's likely one of the mobile browsers, where the Backspace has Unidentified key value.
-                        // Compose doesn't handle Unidentified keys - it does not have any context about them.
-                        // And here in `deleteContentBackward` we have this context.
-                        // When Compose TextField has text selection, a good UX for deleteContentBackward would be to emulate Backspace.
-                        add(BackspaceCommand())
-                    }
-                } else {
-                    val targetRange = firstRange
-                    if (targetRange != null) {
-                        // Empty selection case.
-                        // This happens when an autocorrection is applied on mobile:
-                        // The system first tells us to delete the old text,
-                        // and then it would send the "insertText" event.
-                        if (!targetRange.collapsed) {
-                            add(SetSelectionCommand(targetRange.startOffset, targetRange.endOffset))
-                            add(BackspaceCommand())
-                        }
-                    } else {
-                        // We skip this branch if the lastProcessedKeydown is Backspace, because Compose must have already processed this.
-                        // Otherwise, under specific circumstance previous symbol can be deleted while inputting the new one
-                        // see https://youtrack.jetbrains.com/issue/CMP-8773
-                        add(BackspaceCommand())
-                    }
-                }
+                resolveSelection()?.let { add(it) }
+                add(BackspaceCommand())
             }
 
             "deleteWordBackward" -> buildList {
-                if (lastProcessedKeydown?.isBackspace() != true) return@buildList
-
-                // This would mean event was triggered by long press on mobile device (iOS)
-                if (lastProcessedKeydown?.repeat == true) {
-                    firstRange?.let { targetRange ->
-                        if (!targetRange.collapsed) {
-                            add(
-                                DeleteSurroundingTextCommand(
-                                    targetRange.endOffset - targetRange.startOffset,
-                                    0
-                                )
-                            )
-                        }
-                    }
+                firstRange?.let { targetRange ->
+                    add(
+                        DeleteSurroundingTextCommand(
+                            targetRange.endOffset - targetRange.startOffset,
+                            0
+                        )
+                    )
                 }
             }
-
 
             "insertReplacementText" -> buildList {
                 if (data == null) return@buildList
@@ -217,11 +152,7 @@ internal abstract class NativeInputEventsProcessor(
             "insertText" -> buildList {
                 if (data == null) return@buildList
 
-                resolveSelection()?.let {
-                    if (currentTextFieldValue.selection.collapsed) {
-                        add(it)
-                    }
-                }
+                resolveSelection()?.let { add(it) }
 
                 add(CommitTextCommand(data, 1))
             }
@@ -250,9 +181,6 @@ internal abstract class NativeInputEventsProcessor(
     @TestOnly
     internal fun getCollectedEvents() = collectedEvents
 }
-
-
-private fun KeyboardEvent.isBackspace(): Boolean = key == "Backspace"
 
 private fun InputEventExt.resolveSelection(): SetSelectionCommand? {
     firstRange?.let { targetRange ->

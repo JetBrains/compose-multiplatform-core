@@ -24,7 +24,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.events.beforeInput
 import androidx.compose.ui.events.keyEvent
+import androidx.compose.ui.events.setFirstRange
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.platform.asInputEventExt
 import androidx.compose.ui.unit.dp
 import kotlin.math.absoluteValue
 import kotlin.test.Test
@@ -105,8 +107,13 @@ internal interface RegularInputTestSpec : TextFieldTestSpec {
 
         sendToHtmlInput(
             keyEvent("Backspace", code = "Backspace"),
+            beforeInput("deleteContentBackward", null).asInputEventExt().apply {
+                setFirstRange(4, 5)
+            },
             keyEvent("X"),
-            beforeInput(inputType = "insertText", data = "X"),
+            beforeInput(inputType = "insertText", data = "X").asInputEventExt().apply {
+                setFirstRange(4, 4)
+            },
         )
 
         textFieldValue.awaitAndAssertTextEquals(

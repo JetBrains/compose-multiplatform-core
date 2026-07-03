@@ -330,5 +330,12 @@ internal fun setSelectionRange(element: HTMLElement, startOffset: Int, endOffset
 }
 
 
-internal fun isTypedEvent(evt: KeyboardEvent): Boolean =
+private fun isTypedEvent(evt: KeyboardEvent): Boolean =
     js("!evt.metaKey && !evt.ctrlKey && evt.key.charAt(0) === evt.key")
+
+internal fun isModifyingEvent(evt: KeyboardEvent): Boolean {
+    return when (evt.key) {
+        "Backspace" -> true
+        else -> isTypedEvent(evt)
+    }
+}
