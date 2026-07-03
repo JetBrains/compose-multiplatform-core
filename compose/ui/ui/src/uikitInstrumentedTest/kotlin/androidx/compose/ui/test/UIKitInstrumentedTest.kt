@@ -438,22 +438,24 @@ internal class UIKitInstrumentedTest(
 
     private val EdgeSwipeDuration = 500.milliseconds
 
-    fun swipeRightFromEdge(
+    fun swipeFromLeftEdge(
         duration: Duration = EdgeSwipeDuration,
     ): UITouch {
-        val swipeToLocation = screenBounds.rightCenter().offsetBy(dx = (-16).dp)
+        val fromPosition = screenBounds.leftCenter()
+        val toPosition = screenBounds.rightCenter().offsetBy(dx = (-16).dp)
 
-        return touchDown(screenBounds.leftCenter(), fromEdge = true)
-            .dragTo(swipeToLocation, duration = duration)
+        return touchDown(fromPosition, fromEdge = true)
+            .dragTo(toPosition, duration = duration)
     }
 
-    fun swipeLeftFromEdge(
+    fun swipeFromRightEdge(
         duration: Duration = EdgeSwipeDuration,
     ): UITouch {
-        val swipeToLocation = screenBounds.leftCenter().offsetBy(dx = 16.dp)
+        val fromPosition = screenBounds.rightCenter().offsetBy(dx = (-1).dp)
+        val toPosition = screenBounds.leftCenter().offsetBy(dx = 16.dp)
 
-        return touchDown(screenBounds.rightCenter(), fromEdge = true)
-            .dragTo(swipeToLocation, duration = duration)
+        return touchDown(fromPosition, fromEdge = true)
+            .dragTo(toPosition, duration = duration)
     }
 
     /**
@@ -678,19 +680,18 @@ internal class UIKitInstrumentedTest(
         toPosition: DpRect.() -> DpOffset = { center() },
         fromEdge: Boolean = false,
         duration: Duration = SwipeDuration
-    ) {
+    ): UITouch {
         val frame = frame ?: error("Internal error. Frame is missing.")
-        touchDown(frame.fromPosition(), fromEdge = fromEdge)
+        return touchDown(frame.fromPosition(), fromEdge = fromEdge)
             .dragTo(frame.toPosition(), duration)
-            .up()
     }
 
-    fun AccessibilityTestNode.swipeRight(fromEdge: Boolean = false, duration: Duration = SwipeDuration) {
-        swipe(fromPosition = { leftCenter().offsetBy(dx = 16.dp) }, toPosition = { rightCenter().offsetBy(dx = (-16).dp) }, fromEdge = fromEdge, duration = duration)
+    fun AccessibilityTestNode.swipeRight(fromEdge: Boolean = false, duration: Duration = SwipeDuration): UITouch {
+        return swipe(fromPosition = { leftCenter().offsetBy(dx = 16.dp) }, toPosition = { rightCenter().offsetBy(dx = (-16).dp) }, fromEdge = fromEdge, duration = duration)
     }
 
-    fun AccessibilityTestNode.swipeLeft(fromEdge: Boolean = false, duration: Duration = SwipeDuration) {
-        swipe(fromPosition = { rightCenter().offsetBy(dx = (-16).dp) }, toPosition = { leftCenter().offsetBy(dx = 16.dp) }, fromEdge = fromEdge, duration = duration)
+    fun AccessibilityTestNode.swipeLeft(fromEdge: Boolean = false, duration: Duration = SwipeDuration): UITouch {
+        return swipe(fromPosition = { rightCenter().offsetBy(dx = (-16).dp) }, toPosition = { leftCenter().offsetBy(dx = 16.dp) }, fromEdge = fromEdge, duration = duration)
     }
 }
 

@@ -63,7 +63,7 @@ internal abstract class UIKitNavigationSwipeBackTest(
             TestContent(currentPage = currentPage)
         }
 
-        findNodeWithTag("pager").swipeRight()
+        findNodeWithTag("pager").swipeRight().up()
 
         waitForIdle()
 
@@ -81,7 +81,7 @@ internal abstract class UIKitNavigationSwipeBackTest(
             TestContent(currentPage = currentPage)
         }
 
-        findNodeWithTag("pager").swipeLeft()
+        findNodeWithTag("pager").swipeLeft().up()
 
         waitForIdle()
 
@@ -98,7 +98,7 @@ internal abstract class UIKitNavigationSwipeBackTest(
             TestContent(currentPage = currentPage)
         }
 
-        findNodeWithTag("outsideBox").swipeLeft()
+        findNodeWithTag("outsideBox").swipeLeft().up()
 
         assertEquals(initialPage, currentPage.value)
         assertEquals(2, navigationController.viewControllers.size)
@@ -110,7 +110,7 @@ internal abstract class UIKitNavigationSwipeBackTest(
             TestContent(currentPage = mutableIntStateOf(1))
         }
 
-        swipeRightFromEdge().up()
+        swipeFromLeftEdge().up()
 
         waitForPopped(viewControllerHostingCompose)
     }
@@ -151,7 +151,7 @@ internal abstract class UIKitNavigationSwipeBackTest(
             TestContent(currentPage = currentPage)
         }
 
-        findNodeWithTag("outsideBox").swipeRight()
+        findNodeWithTag("outsideBox").swipeRight().up()
 
         waitForPopped(viewControllerHostingCompose)
     }
@@ -168,7 +168,7 @@ internal abstract class UIKitNavigationSwipeBackTest(
             TestContent(currentPage = currentPage)
         }
 
-        swipeRightFromEdge().up()
+        swipeFromLeftEdge().up()
 
         waitForPopped(viewControllerHostingCompose)
     }
