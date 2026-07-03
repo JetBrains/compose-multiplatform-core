@@ -1,5 +1,3 @@
-// Plugin needs to be in a separate sub-project to avoid breaking task up-to-dateness due to
-// https://github.com/gradle/gradle/issues/34848
 plugins {
     id("java-gradle-plugin")
     id("groovy")
