@@ -33,7 +33,9 @@ import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.input.InputMode
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.pointer.BrowserCursor
+import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.PointerIcon
+import androidx.compose.ui.input.pointer.composeButton
 import androidx.compose.ui.navigationevent.BackNavigationEventInput
 import androidx.compose.ui.platform.DefaultArchitectureComponentsOwner
 import androidx.compose.ui.platform.PlatformContext
@@ -91,6 +93,7 @@ import org.w3c.dom.HTMLElement
 import org.w3c.dom.LOADING
 import org.w3c.dom.MediaQueryListEvent
 import org.w3c.dom.Node
+import org.w3c.dom.pointerevents.PointerEvent
 
 private val actualDensity
     get() = window.devicePixelRatio
@@ -179,6 +182,21 @@ internal class ComposeWindow(
     // Layers created via [createComposeSceneContext] (CMP-8359 slice 2/3); shared across nesting
     // depth so a layer created from within another layer's content registers here too.
     internal val layers = mutableListOf<WebComposeSceneLayer>()
+
+    // Outside-click/dismiss registry (CMP-8359 slice 2 sub-step 4). Walks [layers] top-down
+    // (reverse of append order, i.e. topmost/most-recently-opened layer first), notifying any
+    // layer whose canvas doesn't contain the event target, stopping at the first layer that
+    // consumes pointer input outside its own bounds — mirrors desktop's `DetectEventOutsideLayer`.
+    private fun handleOutsidePointerEvent(event: PointerEvent, eventType: PointerEventType) {
+        if (layers.isEmpty()) return
+        val target = event.target as? Node
+        for (layer in layers.asReversed()) {
+            if (!layer.containsEventTarget(target)) {
+                layer.onOutsidePointerEvent(eventType, event.composeButton)
+            }
+            if (layer.consumePointerInputOutside) break
+        }
+    }
 
     @VisibleForTesting
     internal val archComponentsOwner = DefaultArchitectureComponentsOwner()
@@ -382,6 +400,18 @@ internal class ComposeWindow(
                 if (documentIsVisible()) Lifecycle.Event.ON_START
                 else Lifecycle.Event.ON_STOP
             )
+        }
+
+        // Outside-click/dismiss for WebComposeSceneLayer (CMP-8359 slice 2). A no-op while
+        // [layers] is empty, i.e. always with the feature flag off. No capture-phase/stopPropagation
+        // concerns here: nothing in WebComposeSceneMediator's own pointer handling calls
+        // stopPropagation, so a bubble-phase listener on window sees every pointerdown/up exactly
+        // like a capture-phase one would.
+        state.globalEvents.addDisposableEvent("pointerdown") { event ->
+            handleOutsidePointerEvent(event as PointerEvent, PointerEventType.Press)
+        }
+        state.globalEvents.addDisposableEvent("pointerup") { event ->
+            handleOutsidePointerEvent(event as PointerEvent, PointerEventType.Release)
         }
 
         scene.density = density

@@ -26,9 +26,13 @@ import androidx.compose.ui.viewinterop.HtmlElementView
 import androidx.compose.ui.window.Popup
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
 import kotlinx.browser.document
 import org.w3c.dom.HTMLDivElement
+import org.w3c.dom.pointerevents.PointerEvent
+import org.w3c.dom.pointerevents.PointerEventInit
 
 /**
  * Smoke tests for [WebComposeSceneLayer], gated behind
@@ -47,7 +51,7 @@ class WebComposeSceneLayerTest : OnCanvasTests {
 
     @Test
     fun popupSharesMainCanvasWhenFlagDisabled() = runApplicationTest {
-        createComposeWindow {
+        createComposeWindow(configure = { isPerCanvasSceneLayerEnabled = false }) {
             Popup {
                 Text("popup content")
             }
@@ -92,5 +96,35 @@ class WebComposeSceneLayerTest : OnCanvasTests {
         // own (the bug this test guards against), the div would land as a sibling of
         // layersRoot rather than inside it.
         assertNotNull(getLayersRoot().querySelector("#$divId"))
+    }
+
+    @Test
+    fun clickOutsidePopupDismissesItWhenFlagEnabled() = runApplicationTest {
+        var dismissed = false
+        createComposeWindow(configure = { isPerCanvasSceneLayerEnabled = true }) {
+            Popup(onDismissRequest = { dismissed = true }) {
+                Box(Modifier.size(10.dp)) {
+                    Text("popup content")
+                }
+            }
+        }
+        awaitIdle()
+        assertFalse(dismissed)
+
+        // Dispatched on the main window's own canvas — a real Node outside the popup layer's
+        // canvas. bubbles=true + composed=true so it reaches the window-level outside-click
+        // listener despite the canvas living inside a shadow root — matching what a genuine
+        // user-generated PointerEvent gets by spec (real UI events are always composed; only
+        // synthetic test-constructed ones need it set explicitly).
+        dispatchEvents(
+            getCanvas(),
+            PointerEvent(
+                "pointerdown",
+                PointerEventInit(clientX = 5, clientY = 5, button = 0, buttons = 1, bubbles = true, composed = true, pointerType = "mouse")
+            )
+        )
+        awaitIdle()
+
+        assertTrue(dismissed)
     }
 }
