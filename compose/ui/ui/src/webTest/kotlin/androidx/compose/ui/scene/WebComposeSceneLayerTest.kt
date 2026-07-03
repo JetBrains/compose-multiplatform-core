@@ -19,10 +19,17 @@ package androidx.compose.ui.scene
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.Text
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.OnCanvasTests
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.HtmlElementView
+import androidx.compose.ui.window.ComposeWindow
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.LocalComposeWindow
 import androidx.compose.ui.window.Popup
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -30,7 +37,9 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import kotlinx.browser.document
+import org.w3c.dom.HTMLCanvasElement
 import org.w3c.dom.HTMLDivElement
+import org.w3c.dom.get
 import org.w3c.dom.pointerevents.PointerEvent
 import org.w3c.dom.pointerevents.PointerEventInit
 
@@ -126,5 +135,79 @@ class WebComposeSceneLayerTest : OnCanvasTests {
         awaitIdle()
 
         assertTrue(dismissed)
+    }
+
+    @Test
+    fun twoPopupsStackInDomAppendOrder() = runApplicationTest {
+        var window: ComposeWindow? = null
+        createComposeWindow(configure = { isPerCanvasSceneLayerEnabled = true }) {
+            window = LocalComposeWindow.current
+            Popup { Box(Modifier.size(10.dp)) { Text("first") } }
+            Popup { Box(Modifier.size(10.dp)) { Text("second") } }
+        }
+        awaitIdle()
+
+        val layers = window!!.layers
+        assertEquals(2, layers.size)
+
+        val domCanvasList = getLayersRoot().querySelectorAll("canvas").let { nodeList ->
+            (0 until nodeList.length).map { nodeList[it] as HTMLCanvasElement }
+        }
+        // Z-order falls out of DOM append order: each layer's own canvas must appear later in
+        // the DOM than the previously-attached layer's, matching `layers`'s attach order.
+        val domIndices = layers.map { domCanvasList.indexOf(it.canvas) }
+        assertEquals(listOf(0, 1), domIndices)
+    }
+
+    @Test
+    fun dialogRendersScrimWithDefaultColor() = runApplicationTest {
+        createComposeWindow(configure = { isPerCanvasSceneLayerEnabled = true }) {
+            Dialog(onDismissRequest = {}) {
+                Box(Modifier.size(10.dp)) { Text("dialog content") }
+            }
+        }
+        awaitIdle()
+
+        val scrimDivs = getLayersRoot().querySelectorAll("div").let { nodeList ->
+            (0 until nodeList.length).map { nodeList[it] as HTMLDivElement }
+        }
+        val scrim = scrimDivs.firstOrNull {
+            it.style.backgroundColor.isNotBlank() && it.style.backgroundColor != "transparent"
+        }
+        assertNotNull(scrim, "expected a scrim <div> with a non-transparent background")
+    }
+
+    @Test
+    fun popupLayerRepositionsWhenOffsetChanges() = runApplicationTest {
+        var offset by mutableStateOf(IntOffset.Zero)
+        var window: ComposeWindow? = null
+        createComposeWindow(configure = { isPerCanvasSceneLayerEnabled = true }) {
+            window = LocalComposeWindow.current
+            Popup(offset = offset) {
+                Box(Modifier.size(10.dp)) { Text("content") }
+            }
+        }
+        awaitIdle()
+
+        val layer = window!!.layers.single()
+        val initialLeft = layer.boundsInWindow.left
+        val initialWidth = layer.canvas.width
+        assertTrue(initialWidth > 0)
+
+        // A new offset value creates a new AlignmentOffsetPositionProvider instance (it's
+        // remembered keyed on alignment+offset), which is itself a remember key for the popup's
+        // measure policy — forcing a full remeasure/reposition, unlike a plain content-size change
+        // which may or may not force the *parent* Layout to remeasure depending on the measure
+        // policy's own constraints.
+        offset = IntOffset(50, 50)
+        awaitIdle()
+        // The resize/reposition triggered by the new bounds is deferred to the next animation
+        // frame (to avoid reentering the measure pass that computed them — see
+        // WebComposeSceneLayer.boundsInWindow).
+        awaitAnimationFrame()
+
+        assertTrue(layer.boundsInWindow.left > initialLeft)
+        // Canvas pixel dimensions are untouched by a pure reposition (content size didn't change).
+        assertEquals(initialWidth, layer.canvas.width)
     }
 }

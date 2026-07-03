@@ -243,22 +243,18 @@ internal class ComposeWindow(
                     get() = scene.rootDragAndDropNode
             }
 
+            // This canvas *is* the window (Window Rect == Canvas Rect always holds for the main
+            // window, regardless of per-layer canvases existing elsewhere), so the identity
+            // passthrough from PlatformContext.Empty() is correct here. Per-layer conversion
+            // (where Window Rect != Canvas Rect) is handled by WebComposeSceneLayer's own
+            // platformContext instead — see https://youtrack.jetbrains.com/issue/CMP-8359.
             @Suppress("RedundantOverride")
             override fun convertLocalToWindowPosition(localPosition: Offset): Offset {
-                // TODO (o.karpovich): Currently, CfW uses AttachedComposeSceneLayer, so
-                // Window Rect == Canvas Rect, although a canvas might take only a portion of the browser's
-                // viewport: Window Rect > Canvas Rect.
-                // Update this implementation when implementing https://youtrack.jetbrains.com/issue/CMP-8359
-                // The implementation will have to rely on the <canvas> of a particular layer.
                 return super.convertLocalToWindowPosition(localPosition)
             }
 
             @Suppress("RedundantOverride")
             override fun convertWindowToLocalPosition(positionInWindow: Offset): Offset {
-                // TODO (o.karpovich): Currently, CfW uses AttachedComposeSceneLayer, so
-                // Window Rect == Canvas Rect, although a canvas might take only a portion of the browser's
-                // viewport: Window Rect > Canvas Rect.
-                // Update this implementation when implementing https://youtrack.jetbrains.com/issue/CMP-8359
                 return super.convertWindowToLocalPosition(positionInWindow)
             }
 
