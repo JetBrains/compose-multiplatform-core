@@ -19,7 +19,6 @@
 package androidx.compose.ui.window
 
 import androidx.annotation.VisibleForTesting
-import androidx.collection.mutableIntObjectMapOf
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.InternalComposeApi
@@ -32,24 +31,9 @@ import androidx.compose.ui.events.EventTargetListener
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.input.InputMode
-import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEvent
-import androidx.compose.ui.input.key.KeyEventType
-import androidx.compose.ui.input.key.isCtrlPressed
-import androidx.compose.ui.input.key.isMetaPressed
-import androidx.compose.ui.input.key.key
-import androidx.compose.ui.input.key.toComposeEvent
-import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.BrowserCursor
-import androidx.compose.ui.input.pointer.PointerButtons
-import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.PointerIcon
-import androidx.compose.ui.input.pointer.PointerId
-import androidx.compose.ui.input.pointer.PointerKeyboardModifiers
-import androidx.compose.ui.input.pointer.PointerType
-import androidx.compose.ui.input.pointer.composeButton
-import androidx.compose.ui.input.pointer.composeButtons
-import androidx.compose.ui.internal.focusExt
 import androidx.compose.ui.navigationevent.BackNavigationEventInput
 import androidx.compose.ui.platform.DefaultArchitectureComponentsOwner
 import androidx.compose.ui.platform.PlatformContext
@@ -65,11 +49,8 @@ import androidx.compose.ui.platform.WindowInfoImpl
 import androidx.compose.ui.platform.accessibility.ComposeWebSemanticsListener
 import androidx.compose.ui.platform.installFallbackFontDownloader
 import androidx.compose.ui.scene.CanvasLayersComposeScene
-import androidx.compose.ui.platform.FrameRecomposer
 import androidx.compose.ui.scene.ComposeSceneDragAndDropNode
-import androidx.compose.ui.scene.ComposeScenePointer
-import androidx.compose.ui.scene.PointerEventResult
-import androidx.compose.ui.scene.WebComposeSceneRenderLoop
+import androidx.compose.ui.scene.WebComposeSceneMediator
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.DpRect
@@ -80,7 +61,6 @@ import androidx.compose.ui.unit.size
 import androidx.compose.ui.unit.toDpRect
 import androidx.compose.ui.unit.toIntSize
 import androidx.compose.ui.unit.toSize
-import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.viewinterop.InteropViewGroup
 import androidx.compose.ui.viewinterop.LocalInteropContainer
 import androidx.compose.ui.viewinterop.TrackInteropPlacementContainer
@@ -96,25 +76,15 @@ import kotlinx.coroutines.channels.Channel.Factory.CONFLATED
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.receiveAsFlow
-import org.jetbrains.skiko.hostOs
 import org.w3c.dom.AddEventListenerOptions
 import org.w3c.dom.DocumentReadyState
 import org.w3c.dom.Element
 import org.w3c.dom.HTMLCanvasElement
 import org.w3c.dom.HTMLDivElement
 import org.w3c.dom.HTMLElement
-import org.w3c.dom.HTMLTextAreaElement
 import org.w3c.dom.LOADING
 import org.w3c.dom.MediaQueryListEvent
 import org.w3c.dom.Node
-import org.w3c.dom.TouchEvent
-import org.w3c.dom.events.Event
-import org.w3c.dom.events.EventTarget
-import org.w3c.dom.events.FocusEvent
-import org.w3c.dom.events.KeyboardEvent
-import org.w3c.dom.events.MouseEvent
-import org.w3c.dom.events.WheelEvent
-import org.w3c.dom.pointerevents.PointerEvent
 
 private val actualDensity
     get() = window.devicePixelRatio
@@ -128,11 +98,6 @@ internal interface ComposeWindowState {
     fun dispose() {
         globalEvents.dispose()
     }
-}
-
-private sealed interface KeyboardModeState {
-    object Virtual : KeyboardModeState
-    object Hardware : KeyboardModeState
 }
 
 internal class DefaultWindowState(private val viewportContainer: Element) : ComposeWindowState {
@@ -191,8 +156,6 @@ internal class ComposeWindow(
 ) {
     private var isDisposed = false
 
-    private var actualActivePointerButtons: PointerButtons? = null
-
     private val density: Density = Density(
         density = actualDensity.toFloat(),
         fontScale = 1f
@@ -207,15 +170,6 @@ internal class ComposeWindow(
 
     private val navigationEventInput = BackNavigationEventInput()
 
-    private val canvasEvents = EventTargetListener(canvas)
-
-    private var keyboardModeState: KeyboardModeState = KeyboardModeState.Hardware
-
-    // Used in WebTextInputService. Also see https://youtrack.jetbrains.com/issue/CMP-8611
-    private var activeTouchOffset: Offset? = null
-
-    private val clipTarget = clipTargetElement(canvas)
-
     // TODO: [frameRecomposer] must be shared between Compose instances.
     //  It's supposed to be stored in platform's root view or window.
     // TODO: It cannot be used in case of shared [FrameRecomposer], replace this helper with calling
@@ -224,8 +178,26 @@ internal class ComposeWindow(
     //    by platform view invalidation (which is triggered by [scene.invalidateLayout] OR by regular platform invalidation)
     //  - [scene.draw] during drawing phase of platform views (which is triggered by [scene.invalidateDraw]).
     //    Note that in case of custom GPU surface/V-Sync handling, it needs to be handled differently.
-    private val renderLoop = WebComposeSceneRenderLoop(canvas, Dispatchers.Main)
-    private val frameRecomposer get() = renderLoop.frameRecomposer
+    private val mediator = WebComposeSceneMediator(
+        canvas = canvas,
+        coroutineContext = Dispatchers.Main,
+        archComponentsOwner = archComponentsOwner,
+        navigationEventInput = navigationEventInput,
+        globalEvents = state.globalEvents,
+        clipTargetContainer = layerRoot,
+        density = density,
+        isBackingInputFocused = {
+            (platformContext.textInputService as WebTextInputService).getBackingInput()?.isFocused() == true
+        },
+        requestTouchInputMode = ::requestTouchInputMode,
+    )
+
+    private fun requestTouchInputMode() {
+        val inputModeManager = platformContext.inputModeManager
+        if (inputModeManager.inputMode != InputMode.Touch) {
+            inputModeManager.requestInputMode(InputMode.Touch)
+        }
+    }
 
     private val platformContext: PlatformContext =
         object : PlatformContext by PlatformContext.Empty() {
@@ -233,7 +205,7 @@ internal class ComposeWindow(
             override val architectureComponentsOwner get() = archComponentsOwner
 
             override val dragAndDropManager: PlatformDragAndDropManager = object :
-                WebDragAndDropManager(rootNode, canvasEvents, state.globalEvents, density) {
+                WebDragAndDropManager(rootNode, mediator.canvasEvents, state.globalEvents, density) {
                 override val rootDragAndDropNode: ComposeSceneDragAndDropNode
                     get() = scene.rootDragAndDropNode
             }
@@ -285,7 +257,7 @@ internal class ComposeWindow(
                 object : WebTextInputService() {
 
                     override val currentTouchOffset: Offset?
-                        get() = activeTouchOffset
+                        get() = mediator.activeTouchOffset
 
                     override val backingDomInputContainer: HTMLElement
                         get() = layerRoot
@@ -335,114 +307,19 @@ internal class ComposeWindow(
         }
 
     private val scene = CanvasLayersComposeScene(
-        frameRecomposer = frameRecomposer,
+        frameRecomposer = mediator.frameRecomposer,
         platformContext = platformContext,
         density = density,
         // TODO: Split layout invalidation from draw invalidation once the web host has distinct
         //  scheduling paths for relayout vs redraw.
-        invalidateLayout = renderLoop.invalidateLayout,
-        invalidateDraw = renderLoop.invalidateDraw,
-    ).also { renderLoop.scene = it }
+        invalidateLayout = mediator.invalidateLayout,
+        invalidateDraw = mediator.invalidateDraw,
+    ).also { mediator.scene = it }
 
     private val systemThemeObserver = getSystemThemeObserver()
 
-    private fun <T : Event> addTypedEvent(
-        type: String,
-        handler: (event: T) -> Unit
-    ) {
-        canvasEvents.addDisposableEvent(type) { event -> handler(event as T) }
-    }
-
-    private fun <T : Event> addTypedEvent(
-        type: String,
-        passive: Boolean,
-        handler: (event: T) -> Unit
-    ) {
-        canvasEvents.addDisposableEvent(type, passive) { event -> handler(event as T) }
-    }
-
-    private fun processKeyboardEvent(keyboardEvent: KeyboardEvent) {
-        val keyEvent = keyboardEvent.toComposeEvent()
-        val processed = scene.sendKeyEvent(keyEvent) ||
-            navigationEventInput.onKeyEvent(keyEvent)
-
-        if (processed) {
-            keyboardEvent.preventDefault()
-        } else if (keyEvent.type == KeyEventType.KeyDown) {
-            processClipKeyDown(keyEvent)
-        }
-    }
-
-    private val isMacOS = hostOs.isMacOS
-
-    private var canvasFocused = false
-
-    private fun processClipKeyDown(keyEvent: KeyEvent) {
-        val mod = if (isMacOS) keyEvent.isMetaPressed else keyEvent.isCtrlPressed
-        if (!mod) return
-        if (keyEvent.key == Key.C || keyEvent.key == Key.V || keyEvent.key == Key.X) {
-            // A browser is about to dispatch a Clipboard Event.
-            // Some browsers do not dispatch Clipboard events to <canvas> despite it having focus,
-            // so let it dispatch the event to clipTarget (text area).
-            // By focusing on it, we let a browser dispatch the event to it.
-            layerRoot.appendChild(clipTarget)
-            focusExt(clipTarget, true)
-        }
-    }
-
-    private fun initEvents(canvas: HTMLCanvasElement) {
-
-        listOf(
-            "pointerenter",
-            "pointerdown",
-            "pointermove",
-            "pointerup",
-            "pointerleave",
-            "pointercancel"
-        ).forEach { name ->
-            addTypedEvent<PointerEvent>(name, passive = false) { onPointerEvent(it) }
-        }
-
-        state.globalEvents.addDisposableEvent("dragend") {
-            // in Safari pointerup event is not firing when we drop or cancel drop
-            // see https://youtrack.jetbrains.com/issue/CMP-10102
-            actualActivePointerButtons = null
-        }
-
-        addTypedEvent<TouchEvent>("touchstart") { evt ->
-            // in most cases we don't care about touches since in Compose we do not process them at all
-            // there's one case however when we need to cancel them - it's when we are focussed in a DOM backing field
-            // see https://youtrack.jetbrains.com/issue/CMP-10079
-
-            val backingInput = (platformContext.textInputService as WebTextInputService).getBackingInput()
-            if (backingInput?.isFocused() == true) {
-                evt.preventDefault()
-            }
-        }
-
-        addTypedEvent<WheelEvent>("wheel", passive = false) { event ->
-            onWheelEvent(event)
-        }
-
-        canvas.addEventListener("contextmenu", { event ->
-            event.preventDefault()
-        })
-
-        addTypedEvent<KeyboardEvent>("keydown") { event ->
-            processKeyboardEvent(event)
-        }
-
-        addTypedEvent<KeyboardEvent>("keyup") { event ->
-            processKeyboardEvent(event)
-        }
-
-        addTypedEvent<FocusEvent>("focus") { event ->
-            canvasFocused = true
-        }
-
-        addTypedEvent<FocusEvent>("blur") { event ->
-            canvasFocused = false
-        }
+    init {
+        state.init()
 
         state.globalEvents.addDisposableEvent("focus") {
             archComponentsOwner.lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_RESUME)
@@ -458,14 +335,6 @@ internal class ComposeWindow(
                 else Lifecycle.Event.ON_STOP
             )
         }
-    }
-
-    init {
-        initEvents(canvas)
-        state.init()
-
-        canvas.setAttribute("tabindex", "0")
-        canvas.setAttribute("draggable", "true")
 
         scene.density = density
         archComponentsOwner.enableSavedStateHandles()
@@ -474,7 +343,7 @@ internal class ComposeWindow(
 
         val clipEventsTargetProvider: () -> HTMLElement = {
             (platformContext.textInputService as WebTextInputService).getBackingInput()
-                ?: clipTarget
+                ?: mediator.clipTarget
         }
         scene.setContent {
             CompositionLocalProvider(
@@ -525,7 +394,7 @@ internal class ComposeWindow(
         _windowInfo.containerSize = sizeInPx
         _windowInfo.containerDpSize = boxSize
 
-        renderLoop.resize(sizeInPx)
+        mediator.resize(sizeInPx)
     }
 
     // TODO: need to call .dispose() on window close.
@@ -537,237 +406,12 @@ internal class ComposeWindow(
             .navigationEventDispatcher.removeInput(navigationEventInput)
 
         scene.close()
-        renderLoop.dispose()
+        mediator.dispose()
 
         systemThemeObserver.dispose()
         state.dispose()
-        // modern browsers supposed to garbage collect all events on the element disposed
-        // but actually we never can be sure dom element was collected in first place
-        canvasEvents.dispose()
         isDisposed = true
     }
-
-    private inner class TouchEventWithContainerOffset(
-        val event: PointerEvent,
-        val containerOffset: Offset
-    ) {
-        val composePointer = event.toScenePointerEvent(containerOffset, density)
-
-        override fun equals(other: Any?): Boolean {
-            if (this === other) return true
-            if (other == null || this::class != other::class) return false
-
-            other as TouchEventWithContainerOffset
-
-            if (event != other.event) return false
-            if (containerOffset != other.containerOffset) return false
-
-            return true
-        }
-
-        override fun hashCode(): Int {
-            var result = event.hashCode()
-            result = 31 * result + containerOffset.hashCode()
-            return result
-        }
-    }
-
-    private val activeTouchPointers = mutableIntObjectMapOf<TouchEventWithContainerOffset>()
-    private val reusableTouchPointerList = mutableListOf<ComposeScenePointer>()
-    private fun getActivePointers(): MutableList<ComposeScenePointer> {
-        reusableTouchPointerList.clear()
-        activeTouchPointers.forEachValue {
-            reusableTouchPointerList.add(it.composePointer)
-        }
-        return reusableTouchPointerList
-    }
-
-    private fun onPointerEvent(event: PointerEvent) {
-        if (event.type == "pointercancel") {
-            if (isTouchEvent(event)) {
-                activeTouchPointers.clear()
-                activeTouchOffset = null
-            } else {
-                actualActivePointerButtons = null
-            }
-
-            event.target?.let { releasePointerCapture(it, event.pointerId) }
-
-            scene.cancelPointerInput()
-            return
-        }
-
-        val eventType = event.getPointerEventType()
-        var result: PointerEventResult? = null
-
-        if (isMouseEvent(event)) {
-            keyboardModeState = KeyboardModeState.Hardware
-
-            // Track active mouse buttons. Used as a fallback for unreliable
-            // `buttons` in wheel events (see CMP-9900) and to reset state on
-            // `dragend` in Safari (see CMP-10102).
-            when (eventType) {
-                PointerEventType.Press -> {
-                    actualActivePointerButtons = event.composeButtons
-                }
-                PointerEventType.Release -> {
-                    actualActivePointerButtons = null
-                }
-            }
-
-            scene.sendPointerEvent(
-                eventType = eventType,
-                position = event.offset,
-                timeMillis = event.timeStamp.toInt().toLong(),
-                buttons = event.composeButtons,
-                keyboardModifiers = PointerKeyboardModifiers(
-                    isCtrlPressed = event.ctrlKey,
-                    isMetaPressed = event.metaKey,
-                    isAltPressed = event.altKey,
-                    isShiftPressed = event.shiftKey,
-                ),
-                nativeEvent = event,
-                button = event.composeButton,
-            )
-        } else {
-            if (eventType == PointerEventType.Enter || eventType == PointerEventType.Exit) {
-                //Enter and Exit events have no sense for touches (Firefox and Safari send them)
-                return
-            }
-
-            // iOS Safari doesn't request focus when the page is shown,
-            // and the lifecycle doesn't trigger ON_RESUME.
-            // so, we decided to handle every touch
-            archComponentsOwner.lifecycle.currentState = Lifecycle.State.RESUMED
-
-            val inputModeManager = platformContext.inputModeManager
-            if (inputModeManager.inputMode != InputMode.Touch) {
-                inputModeManager.requestInputMode(InputMode.Touch)
-            }
-            keyboardModeState = KeyboardModeState.Virtual
-
-            val current: TouchEventWithContainerOffset
-            val active = activeTouchPointers[event.pointerId]
-            if (active == null) {
-                event.target?.let { setPointerCapture(it, event.pointerId) }
-                val containerOffset = canvas.getBoundingClientRect().let {
-                    Offset(it.left.toFloat(), it.top.toFloat())
-                }
-                current = TouchEventWithContainerOffset(event, containerOffset)
-            } else {
-                current = TouchEventWithContainerOffset(event, active.containerOffset)
-            }
-            activeTouchPointers[event.pointerId] = current
-
-            activeTouchOffset = current.composePointer.position
-
-            val pointers = getActivePointers()
-            val buttons = PointerButtons()
-            val keyboardModifiers = PointerKeyboardModifiers()
-
-            var coalescedEvents: List<PointerEvent>? = null
-            if (eventType == PointerEventType.Move) {
-                coalescedEvents = getCoalescedEvents(event).toList()
-            }
-
-            if (coalescedEvents != null && coalescedEvents.size > 1) {
-                var indexOfCurrentPointer = -1
-                for (index in pointers.indices) {
-                    if (pointers[index] == current.composePointer) {
-                        indexOfCurrentPointer = index
-                        break
-                    }
-                }
-
-                coalescedEvents.fastForEach { coalescedEvent ->
-                    val coalescedEventType = coalescedEvent.getPointerEventType()
-                    val sceneEvent = coalescedEvent.toScenePointerEvent(current.containerOffset, density)
-                    pointers[indexOfCurrentPointer] = sceneEvent
-                    result = scene.sendPointerEvent(
-                        eventType = coalescedEventType,
-                        pointers = pointers,
-                        buttons = buttons,
-                        keyboardModifiers = keyboardModifiers,
-                        scrollDelta = Offset.Zero,
-                        timeMillis = coalescedEvent.timeStamp.toInt().toLong(),
-                        nativeEvent = coalescedEvent,
-                        button = null
-                    )
-                }
-            } else {
-                result = scene.sendPointerEvent(
-                    eventType = eventType,
-                    pointers = pointers,
-                    buttons = buttons,
-                    keyboardModifiers = keyboardModifiers,
-                    scrollDelta = Offset.Zero,
-                    timeMillis = event.timeStamp.toInt().toLong(),
-                    nativeEvent = event,
-                    button = null
-                )
-            }
-
-            activeTouchOffset = null
-
-            if (eventType == PointerEventType.Release) {
-                activeTouchPointers.remove(event.pointerId)
-            }
-
-            if (result != null && result.anyChangeConsumed && event.cancelable) {
-                event.preventDefault()
-            }
-        }
-    }
-
-    private fun onWheelEvent(
-        event: WheelEvent,
-    ) {
-        keyboardModeState = KeyboardModeState.Hardware
-
-        // Shift + mouse wheel means horizontal scroll. Some browsers swap the axes
-        // for us (report deltaX instead of deltaY), some don't.
-        val horizontalScroll: Double
-        val verticalScroll: Double
-        if (event.shiftKey && event.deltaX == 0.0) {
-            horizontalScroll = event.deltaY
-            verticalScroll = 0.0
-        } else {
-            horizontalScroll = event.deltaX
-            verticalScroll = event.deltaY
-        }
-
-        // wheels event own buttons property is unreliable in Safari and Firefox
-        // see CMP-9900 [web] Wheel event resolves buttons state incorrectly in Safari and Firefox
-        val buttons = actualActivePointerButtons ?: event.composeButtons
-
-        val result = scene.sendPointerEvent(
-            eventType = PointerEventType.Scroll,
-            position = event.offset,
-            scrollDelta = Offset(
-                x = horizontalScroll.toFloat(),
-                y = verticalScroll.toFloat()
-            ),
-            buttons = buttons,
-            keyboardModifiers = PointerKeyboardModifiers(
-                isCtrlPressed = event.ctrlKey,
-                isMetaPressed = event.metaKey,
-                isAltPressed = event.altKey,
-                isShiftPressed = event.shiftKey,
-            ),
-            nativeEvent = event,
-            button = event.composeButton,
-        )
-
-        if (result.anyChangeConsumed && event.cancelable) {
-            event.preventDefault()
-        }
-    }
-
-    private val MouseEvent.offset
-        get() = Offset(
-            x = offsetX.toFloat() * density.density,
-            y = offsetY.toFloat() * density.density
-        )
 }
 
 //https://developer.mozilla.org/en-US/docs/Web/API/Document/visibilityState
@@ -790,108 +434,6 @@ internal fun onDomReady(block: () -> Unit) {
         block()
     }
 }
-
-private fun releasePointerCapture(target: EventTarget, pointerId: Int) {
-    js("try { target.releasePointerCapture(pointerId) } catch (e) {}")
-}
-
-private fun setPointerCapture(target: EventTarget, pointerId: Int) {
-    js("try { target.setPointerCapture(pointerId) } catch (e) {}")
-}
-
-private fun getCoalescedEvents(pointerEvent: PointerEvent): JsArray<PointerEvent> =
-    js("pointerEvent.getCoalescedEvents ? pointerEvent.getCoalescedEvents() : []")
-
-private fun PointerEvent.toScenePointerEvent(
-    containerOffset: Offset,
-    density: Density,
-    pointerType: PointerType = PointerType.Touch
-): ComposeScenePointer {
-    val event = this
-    val type = event.getPointerEventType()
-    val position = Offset(
-        x = (event.clientX - containerOffset.x) * density.density,
-        y = (event.clientY - containerOffset.y) * density.density
-    )
-    return ComposeScenePointer(
-        id = PointerId(event.pointerId.toLong()),
-        position = position,
-        pressed = type == PointerEventType.Press || type == PointerEventType.Move,
-        type = pointerType,
-        pressure = event.pressure
-    )
-}
-
-/**
- * The purpose of the clipTarget element is to briefly steal the focus to let the browser dispatch
- * ClipboardEvent to it. Then it returns the focus to the canvas.
- */
-private fun clipTargetElement(canvas: HTMLCanvasElement): HTMLTextAreaElement {
-    val clipTarget = (document.createElement("textarea") as HTMLTextAreaElement).apply {
-        tabIndex = -1
-        setAttribute("aria-hidden", "true")
-        style.position = "fixed"
-        style.left = "-1000px"
-        style.top = "0"
-        style.opacity = "0"
-        style.width = "1px"
-        style.height = "1px"
-    }
-
-    val clipEventListener: (Event) -> Unit = { _ ->
-        window.requestAnimationFrame {
-            focusExt(canvas, true)
-            clipTarget.remove()
-        }
-    }
-
-    // Here just return the focus to canvas.
-    // For the actual event handling see rememberClipboardEventsHandler implementations.
-    clipTarget.addEventListener("copy", clipEventListener)
-    clipTarget.addEventListener("cut", clipEventListener)
-    clipTarget.addEventListener("paste", clipEventListener)
-
-    return clipTarget
-}
-
-// strings checks are faster on a JS side
-// language=js
-private fun isTouchEvent(event: PointerEvent): Boolean = js("event.pointerType === 'touch'")
-
-// strings checks are faster on a JS side
-// language=js
-private fun isMouseEvent(event: PointerEvent): Boolean = js("event.pointerType === 'mouse'")
-
-// strings checks are faster on a JS side
-// language=js
-private fun getPointerEventCode(event: PointerEvent): Int = js(
-    """{
-        switch (event.type) {
-          case 'pointerdown':
-            return 1; // PointerEventType.Press
-          case 'pointerup':
-            return 2; // PointerEventType.Release
-          case 'pointermove':
-            return 3; // PointerEventType.Move
-          case 'pointerenter':
-            return 4; //PointerEventType.Enter
-          case 'pointerleave':
-            return 5; //PointerEventType.Exit
-          default:
-            return 0; // PointerEventType.Unknown
-        } 
-    }"""
-)
-
-private fun PointerEvent.getPointerEventType(): PointerEventType =
-    when (getPointerEventCode(this)) {
-        PointerEventType.Press.value -> PointerEventType.Press
-        PointerEventType.Release.value -> PointerEventType.Release
-        PointerEventType.Move.value -> PointerEventType.Move
-        PointerEventType.Enter.value -> PointerEventType.Enter
-        PointerEventType.Exit.value -> PointerEventType.Exit
-        else -> PointerEventType.Unknown
-    }
 
 private fun Element.isFocused(): Boolean {
     val activeElement = when {
