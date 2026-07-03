@@ -37,7 +37,6 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import kotlinx.browser.document
-import org.w3c.dom.HTMLCanvasElement
 import org.w3c.dom.HTMLDivElement
 import org.w3c.dom.get
 import org.w3c.dom.pointerevents.PointerEvent
@@ -60,19 +59,27 @@ class WebComposeSceneLayerTest : OnCanvasTests {
 
     @Test
     fun popupSharesMainCanvasWhenFlagDisabled() = runApplicationTest {
+        var window: ComposeWindow? = null
         createComposeWindow(configure = { isPerCanvasSceneLayerEnabled = false }) {
+            window = LocalComposeWindow.current
             Popup {
                 Text("popup content")
             }
         }
         awaitIdle()
 
-        assertEquals(0, getLayersRoot().querySelectorAll("canvas").length)
+        // Compat mode never creates a WebComposeSceneLayer, so the registry stays empty — the
+        // popup's content is composited into the main window's own canvas instead (which, like
+        // every layer's own canvas, now lives inside a shadow root, so it's not queryable via
+        // plain CSS selectors from outside — checking the registry is more robust anyway).
+        assertTrue(window!!.layers.isEmpty())
     }
 
     @Test
     fun popupGetsOwnCanvasWhenFlagEnabled() = runApplicationTest {
+        var window: ComposeWindow? = null
         createComposeWindow(configure = { isPerCanvasSceneLayerEnabled = true }) {
+            window = LocalComposeWindow.current
             Popup {
                 Box(Modifier.size(10.dp)) {
                     Text("popup content")
@@ -81,7 +88,7 @@ class WebComposeSceneLayerTest : OnCanvasTests {
         }
         awaitIdle()
 
-        assertEquals(1, getLayersRoot().querySelectorAll("canvas").length)
+        assertEquals(1, window!!.layers.size)
     }
 
     @Test
@@ -150,13 +157,18 @@ class WebComposeSceneLayerTest : OnCanvasTests {
         val layers = window!!.layers
         assertEquals(2, layers.size)
 
-        val domCanvasList = getLayersRoot().querySelectorAll("canvas").let { nodeList ->
-            (0 until nodeList.length).map { nodeList[it] as HTMLCanvasElement }
+        // Each layer's own canvas now lives inside that layer's own shadow root, so it isn't
+        // reachable via a plain CSS selector from outside — check the DOM position of each
+        // layer's own (light-DOM) root container instead. Z-order falls out of DOM append order:
+        // each layer's container must appear later than the previously-attached layer's,
+        // matching `layers`'s attach order (children also include each layer's scrim `<div>`,
+        // so indices aren't contiguous — just strictly increasing).
+        val domChildren = getLayersRoot().children.let { collection ->
+            (0 until collection.length).map { collection[it] }
         }
-        // Z-order falls out of DOM append order: each layer's own canvas must appear later in
-        // the DOM than the previously-attached layer's, matching `layers`'s attach order.
-        val domIndices = layers.map { domCanvasList.indexOf(it.canvas) }
-        assertEquals(listOf(0, 1), domIndices)
+        val domIndices = layers.map { domChildren.indexOf(it.layerContainer) }
+        assertTrue(domIndices.all { it >= 0 })
+        assertEquals(domIndices, domIndices.sorted())
     }
 
     @Test

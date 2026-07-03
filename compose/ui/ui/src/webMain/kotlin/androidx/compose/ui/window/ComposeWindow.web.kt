@@ -24,9 +24,6 @@ import org.w3c.dom.Element
 import org.w3c.dom.HTMLCanvasElement
 import org.w3c.dom.HTMLDivElement
 import org.w3c.dom.HTMLElement
-import org.w3c.dom.OPEN
-import org.w3c.dom.ShadowRootInit
-import org.w3c.dom.ShadowRootMode
 
 /**
  * EXPERIMENTAL! Might be deleted or changed in the future!
@@ -96,65 +93,9 @@ fun ComposeViewport(
     }
     viewportContainer.appendChild(positioningContainer)
 
-    //shadow container
-    val shadowContainer = document.createElement("div") as HTMLDivElement
-    shadowContainer.style.apply {
-        position = "relative"
-    }
+    //shadow container + app container (canvas + a11y), isolated from the page's own CSS
+    val (shadowContainer, shadowRoot, appContainer) = createShadowedAppContainer()
     positioningContainer.appendChild(shadowContainer)
-
-    //shadow
-    val shadowRoot = shadowContainer.attachShadow(ShadowRootInit(ShadowRootMode.OPEN))
-    val shadowRootStyle = document.createElement("style")
-
-    // don't style backing .compose-backing-field with opacity, see https://youtrack.jetbrains.com/projects/CMP/issues/CMP-8611
-    shadowRootStyle.textContent = """
-        :host {
-            -webkit-touch-callout: none; 
-            -webkit-user-select: none; 
-            user-select: none;
-            
-            position: relative;
-            padding: 0;
-        }
-        
-        canvas {
-               display: block;
-               width: 100%;
-               height: 100%;
-        }
-        
-       .compose-backing-field {
-            position: absolute;
-            height: calc(var(--compose-internal-web-backing-input-height) * 1px);
-            width: calc(var(--compose-internal-web-backing-input-width) * 1px);
-            left: min(var(--compose-internal-web-backing-input-left) * 1px, 100vw - var(--compose-internal-web-backing-input-width) * 1px);
-            top: min(var(--compose-internal-web-backing-input-top) * 1px, 100vh - var(--compose-internal-web-backing-input-height) * 1px);
-       
-            align-content: center;
-            background: transparent;
-            border: none;
-            caret-color: transparent;
-            color: transparent;
-            font-size: 20px;
-            forced-color-adjust: none;
-            outline: none;
-            padding: 0;
-            resize: none;
-            text-shadow: none;
-            user-select: none;
-            white-space: pre;
-            z-index: -1;
-       }
-    """.trimIndent()
-    shadowRoot.appendChild(shadowRootStyle)
-
-    //app container (canvas + a11y)
-    val appContainer = document.createElement("div") as HTMLElement
-    appContainer.style.apply {
-        position = "relative"
-    }
-    shadowRoot.appendChild(appContainer)
 
     //canvas
     val canvas = document.createElement("canvas") as HTMLCanvasElement

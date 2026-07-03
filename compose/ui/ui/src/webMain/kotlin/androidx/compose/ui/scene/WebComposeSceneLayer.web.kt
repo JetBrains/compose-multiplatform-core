@@ -55,6 +55,7 @@ import androidx.compose.ui.viewinterop.TrackInteropPlacementContainer
 import androidx.compose.ui.viewinterop.WebInteropContainer
 import androidx.compose.ui.window.ComposeWindow
 import androidx.compose.ui.window.WebTextInputSession
+import androidx.compose.ui.window.createShadowedAppContainer
 import androidx.compose.ui.window.isFocused
 import kotlinx.browser.document
 import kotlinx.browser.window
@@ -147,15 +148,18 @@ internal class WebComposeSceneLayer(
         button: PointerButton?
     ) -> Unit)? = null
 
+    // Own shadow root, not just a bare canvas appended into the light DOM — isolates this
+    // layer's canvas (and a11y container / backing text-input field) from the embedding page's
+    // own CSS, exactly like the main window's canvas. See CMP-8359-plan.md's "Interop views"
+    // section for why the interop container, below, deliberately stays *outside* this shadow
+    // root instead.
+    private val shadowedAppContainer = createShadowedAppContainer()
+
     internal val canvas: HTMLCanvasElement = (document.createElement("canvas") as HTMLCanvasElement).apply {
         setAttribute("role", "generic")
-        style.position = "absolute"
-        style.top = "0"
-        style.left = "0"
-        style.width = "100%"
-        style.height = "100%"
         style.outline = "none"
         style.setProperty("touch-action", "none")
+        shadowedAppContainer.appContainer.appendChild(this)
     }
 
     private val a11yContainerElement: HTMLDivElement? = if (composeWindow.configuration.isA11YEnabled) {
@@ -163,6 +167,7 @@ internal class WebComposeSceneLayer(
             style.position = "absolute"
             style.top = "0"
             style.left = "0"
+            shadowedAppContainer.appContainer.appendChild(this)
         }
     } else {
         null
@@ -179,10 +184,9 @@ internal class WebComposeSceneLayer(
     // interop views once there's more than one canvas.
     private val interopContainer = WebInteropContainer(InteropViewGroup(interopContainerElement))
 
-    private val layerContainer: HTMLDivElement = (document.createElement("div") as HTMLDivElement).apply {
+    internal val layerContainer: HTMLDivElement = (document.createElement("div") as HTMLDivElement).apply {
         style.position = "absolute"
-        appendChild(canvas)
-        a11yContainerElement?.let { appendChild(it) }
+        appendChild(shadowedAppContainer.host)
         appendChild(interopContainerElement)
     }
 
@@ -209,7 +213,7 @@ internal class WebComposeSceneLayer(
         archComponentsOwner = composeWindow.archComponentsOwner,
         navigationEventInput = navigationEventInput,
         globalEvents = composeWindow.globalEvents,
-        clipTargetContainer = layerContainer,
+        clipTargetContainer = shadowedAppContainer.appContainer,
         density = density,
         isBackingInputFocused = {
             (platformContext.textInputService as WebTextInputService).getBackingInput()?.isFocused() == true
@@ -264,7 +268,7 @@ internal class WebComposeSceneLayer(
                         get() = mediator.activeTouchOffset
 
                     override val backingDomInputContainer: HTMLElement
-                        get() = layerContainer
+                        get() = shadowedAppContainer.appContainer
 
                     override fun getNewGeometryForBackingInput(rect: Rect): DpRect {
                         val dpRect = rect.toDpRect(density)
