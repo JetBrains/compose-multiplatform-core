@@ -492,7 +492,7 @@ includeProject(":internal-testutils-mockito", "testutils/testutils-mockito")
 includeProject(":internal-testutils-xctest", "testutils/testutils-xctest")
 
 // Workaround for b/203825166
-includeBuild("placeholder")
+includeBuild("placeholder-fork")
 
 includeProject(":mpp")
 
