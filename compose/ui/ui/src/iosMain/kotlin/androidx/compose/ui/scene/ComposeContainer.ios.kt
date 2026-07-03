@@ -21,6 +21,7 @@ import androidx.compose.runtime.CompositionContext
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.LocalSystemTheme
 import androidx.compose.ui.graphics.asComposeCanvas
 import androidx.compose.ui.navigationevent.IosBackNavigationEventInput
@@ -111,6 +112,17 @@ internal class ComposeContainer(
         get() = view.window?.windowScene?.let { FrameChoreographer.choreographerForScene(it) }
 
     private var mediator: ComposeSceneMediator? = null
+
+    @OptIn(InternalComposeUiApi::class)
+    var rootForTestListener: PlatformContext.RootForTestListener? = null
+        set(value) {
+            field = value
+            mediator?.rootForTestListener = value
+            layersHolder?.layersViewController?.withLayers { layers ->
+                layers.forEach { it.rootForTestListener = value }
+            }
+        }
+
     private val sceneSizing = ComposeSceneSizing(
         view = view,
         measureSceneSize = { constraints -> mediator?.measureSceneSize(constraints) },
@@ -327,6 +339,7 @@ internal class ComposeContainer(
             navigationEventInput = navigationEventInput,
             interfaceOrientationState = interfaceOrientationState,
         ).also { mediator ->
+            mediator.rootForTestListener = rootForTestListener
             view.embedSubview(mediator.backgroundView)
             view.updateMetalView(
                 metalView = metalView,
@@ -425,6 +438,7 @@ internal class ComposeContainer(
                     invalidateDraw = { layersHolder.getLayersViewController().invalidateDraw() },
                 )
 
+                layer.rootForTestListener = rootForTestListener
                 layersHolder.getLayersViewController().attach(layer)
                 onFocusConditionsChanged()
 

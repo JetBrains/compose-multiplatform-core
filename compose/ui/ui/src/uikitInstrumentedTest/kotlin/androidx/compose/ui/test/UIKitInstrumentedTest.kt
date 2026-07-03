@@ -18,12 +18,19 @@ package androidx.compose.ui.test
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.snapshots.Snapshot
+import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.platform.AccessibilityNotification
 import androidx.compose.ui.platform.FrameChoreographer
 import androidx.compose.ui.platform.InfiniteAnimationPolicy
+import androidx.compose.ui.platform.PlatformContext
+import androidx.compose.ui.platform.PlatformRootForTest
 import androidx.compose.ui.scene.ComposeHostingView
 import androidx.compose.ui.scene.ComposeHostingViewController
 import androidx.compose.ui.scene.ComposeLayersViewController
+import androidx.compose.ui.semantics.SemanticsNode
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.getAllSemanticsNodes
+import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.utils.beginKeyPress
 import androidx.compose.ui.test.utils.beginModifierKeyPress
 import androidx.compose.ui.test.utils.beginPress
@@ -201,7 +208,7 @@ internal fun runUIKitInstrumentedTest(
  * Constructor properties are initialized with the attributes of the main screen and a mock delegate to simulate
  * the application setup.
  */
-@OptIn(ExperimentalForeignApi::class)
+@OptIn(ExperimentalForeignApi::class, InternalComposeUiApi::class)
 internal class UIKitInstrumentedTest(
     val useHostingView: Boolean
 ) {
@@ -231,6 +238,8 @@ internal class UIKitInstrumentedTest(
 
         val isRunningOnIPad: Boolean get() = UIDevice.currentDevice.userInterfaceIdiom == UIUserInterfaceIdiomPad
     }
+
+    internal val rootForTestRegistry = RootForTestRegistry()
 
     private val screen = UIScreen.mainScreen()
     val density = Density(density = screen.scale.toFloat())
@@ -344,6 +353,7 @@ internal class UIKitInstrumentedTest(
             configuration = configuration,
             content = content,
         ).also {
+            it.rootForTestListener = rootForTestRegistry
             this.hostingView = it
         }
     }
@@ -364,6 +374,7 @@ internal class UIKitInstrumentedTest(
             configuration = configuration,
             content = content,
         ).also {
+            it.rootForTestListener = rootForTestRegistry
             this.hostingViewController = it
         }
     }
@@ -878,6 +889,45 @@ internal fun UIKitInstrumentedTest.findFocusedUITextInput(): UITextInputProtocol
         findFirstResponder(view = it as UIView)
     } as? UITextInputProtocol
 }
+
+/**
+ * A registry to track roots for testing purposes in the context of the platform UI.
+ * Implements the `PlatformContext.RootForTestListener` interface to manage the lifecycle
+ * of roots being created and disposed.
+ */
+@OptIn(InternalComposeUiApi::class)
+internal class RootForTestRegistry : PlatformContext.RootForTestListener {
+    private val trackedRoots = mutableSetOf<PlatformRootForTest>()
+
+    val roots: Set<PlatformRootForTest> get() = trackedRoots.toSet()
+
+    override fun onRootForTestCreated(root: PlatformRootForTest) {
+        trackedRoots.add(root)
+    }
+
+    override fun onRootForTestDisposed(root: PlatformRootForTest) {
+        trackedRoots.remove(root)
+    }
+}
+
+@OptIn(InternalComposeUiApi::class)
+internal fun UIKitInstrumentedTest.allSemanticsNodes(): List<SemanticsNode> =
+    rootForTestRegistry.roots.flatMap {
+        it.semanticsOwner.getAllSemanticsNodes(mergingEnabled = false)
+    }
+
+internal fun UIKitInstrumentedTest.findSemanticsNodeOrNull(tag: String): SemanticsNode? {
+    waitForIdle()
+    return allSemanticsNodes().firstOrNull {
+        it.config.getOrNull(SemanticsProperties.TestTag) == tag
+    }
+}
+
+internal fun UIKitInstrumentedTest.findSemanticsNode(tag: String): SemanticsNode =
+    findSemanticsNodeOrNull(tag) ?: run {
+        val knownTags = allSemanticsNodes().mapNotNull { it.config.getOrNull(SemanticsProperties.TestTag) }
+        error("No semantics node with testTag \"$tag\". Known tags: $knownTags")
+    }
 
 internal fun ComposeHostingViewController.waitForIdle() {
     UIKitInstrumentedTest.waitUntil { !this.hasInvalidations() }

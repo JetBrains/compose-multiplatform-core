@@ -40,15 +40,22 @@ import androidx.compose.ui.test.findNodeWithTagOrNull
 import androidx.compose.ui.test.firstNodeOrNull
 import androidx.compose.ui.test.runUIKitInstrumentedTest
 import androidx.compose.ui.test.tapContextMenuButton
+import androidx.compose.ui.test.utils.TestHandle
+import androidx.compose.ui.test.utils.TestSelectionHandleAnchor
+import androidx.compose.ui.test.utils.dragSelectionHandle
 import androidx.compose.ui.test.utils.findFirstDescendant
 import androidx.compose.ui.test.utils.hold
 import androidx.compose.ui.test.utils.isLoupeView
+import androidx.compose.ui.test.utils.multiTapCharacter
+import androidx.compose.ui.test.utils.selectionHandles
+import androidx.compose.ui.test.utils.tapCharacter
 import androidx.compose.ui.test.utils.up
 import androidx.compose.ui.test.waitForContextMenu
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.seconds
@@ -85,14 +92,50 @@ class SelectionContainerInteractionTest {
 
         setSelectionContainerContent(state = selectionState, text = text)
 
-        findNodeWithTag(Tag).focusThenDoubleTap()
-        waitUntil("SelectionContainer should select the word after double tap") {
-            selectionState.selectedText() == text
-        }
+        selectWordAt(selectionState, offset = 5, word = text)
 
         assertEquals(
             listOf(text),
             selectionState.selectedTexts.map { it.text },
+        )
+    }
+
+    @Test
+    fun testSelectionContainer_SelectionHandleAnchors() = runUIKitInstrumentedTest {
+        val selectionState = SelectionState()
+
+        setSelectionContainerContent(state = selectionState, text = "The quick brown fox")
+
+        selectWordAt(selectionState, offset = 6, word = "quick")
+
+        val handles = assertNotNull(
+            selectionHandles(),
+            "expected the selected '${selectionState.selectedText()}' to show handles",
+        )
+        assertEquals(
+            listOf(TestSelectionHandleAnchor.Left, TestSelectionHandleAnchor.Right),
+            listOf(handles.start.info.anchor, handles.end.info.anchor),
+            "the start handle should be drawn on the left of the selection and the end handle on its right",
+        )
+    }
+
+    @Test
+    fun testSelectionContainer_DragEndHandleExtendsSelection() = runUIKitInstrumentedTest {
+        val selectionState = SelectionState()
+
+        setSelectionContainerContent(state = selectionState, text = "The quick brown fox jumps")
+
+        selectWordAt(selectionState, offset = 6, word = "quick")
+
+        dragSelectionHandle(TestHandle.SelectionEnd, FirstTextTag, toOffset = 18)
+        waitForIdle()
+
+        // A SelectionContainer publishes no selection to aim a handle drag against, so the edge lands
+        // only approximately: all that can be asserted is that the selection grew past the word.
+        val selectedText = selectionState.selectedText()
+        assertTrue(
+            selectedText.startsWith("quick") && selectedText.length > "quick".length,
+            "Expected the end handle drag to extend the selection, but got: $selectedText",
         )
     }
 
@@ -306,8 +349,16 @@ class SelectionContainerInteractionTest {
         contentWidth: Dp = 320.dp,
     ) {
         setSelectionContainerContent(state = state) {
-            BasicText(text = text, modifier = Modifier.width(contentWidth))
+            BasicText(text = text, modifier = Modifier.width(contentWidth).testTag(FirstTextTag))
         }
+    }
+
+    private fun UIKitInstrumentedTest.selectWordAt(state: SelectionState, offset: Int, word: String) {
+        awaitNodeLaidOut(FirstTextTag)
+        tapCharacter(FirstTextTag, offset)
+        delay(DoubleTapPreparationDelayMillis)
+        multiTapCharacter(FirstTextTag, offset, count = 2)
+        waitUntil("Double tap at $offset should select '$word'") { state.selectedText() == word }
     }
 
     private fun UIKitInstrumentedTest.awaitNodeLaidOut(tag: String) {
