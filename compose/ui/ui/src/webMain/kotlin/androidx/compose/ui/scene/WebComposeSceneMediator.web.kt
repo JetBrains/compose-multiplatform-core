@@ -112,6 +112,17 @@ internal class WebComposeSceneMediator(
 
     val clipTarget: HTMLTextAreaElement = clipTargetElement(canvas)
 
+    private var onPreviewKeyEvent: (KeyEvent) -> Boolean = { false }
+    private var onKeyEvent: (KeyEvent) -> Boolean = { false }
+
+    fun setKeyEventListeners(
+        onPreviewKeyEvent: (KeyEvent) -> Boolean = { false },
+        onKeyEvent: (KeyEvent) -> Boolean = { false },
+    ) {
+        this.onPreviewKeyEvent = onPreviewKeyEvent
+        this.onKeyEvent = onKeyEvent
+    }
+
     init {
         canvas.setAttribute("tabindex", "0")
         canvas.setAttribute("draggable", "true")
@@ -148,7 +159,9 @@ internal class WebComposeSceneMediator(
 
     private fun processKeyboardEvent(keyboardEvent: KeyboardEvent) {
         val keyEvent = keyboardEvent.toComposeEvent()
-        val processed = scene.sendKeyEvent(keyEvent) ||
+        val processed = onPreviewKeyEvent(keyEvent) ||
+            scene.sendKeyEvent(keyEvent) ||
+            onKeyEvent(keyEvent) ||
             navigationEventInput.onKeyEvent(keyEvent)
 
         if (processed) {
