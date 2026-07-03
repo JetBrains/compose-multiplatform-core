@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,19 +14,18 @@
  * limitations under the License.
  */
 
-package org.jetbrains.androidx.build
+package androidx.build
 
-import androidx.build.getSupportRootFolder
 import org.gradle.api.Plugin
-import org.gradle.api.Project
+import org.gradle.api.initialization.Settings
 
-class JetBrainsAndroidXPlugin : Plugin<Project> {
-    override fun apply(project: Project) {
-        val supportRoot = project.getSupportRootFolder()
-        project.apply(
-            mapOf<String, String>(
-                "from" to "$supportRoot/buildSrc-fork/apply/applyJetBrainsAndroidXImplPlugin.gradle"
-            )
-        )
+/**
+ * A stub of plugin that is applied in the root AOSP settings.gradle,
+ * but not needed in settings-fork.gradle, where plugins not applied
+ */
+@SuppressWarnings("unused")
+abstract class AndroidXHostTestFailureHandlerPluginStub implements Plugin<Settings> {
+    @Override
+    void apply(Settings settings) {
     }
 }

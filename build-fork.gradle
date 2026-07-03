@@ -29,7 +29,7 @@ buildscript {
     SdkHelperKt.setSupportRootFolder(project, project.projectDir)
 
     // Needed for atomicfu plugin
-    apply(from: "buildSrc/repos.gradle")
+    apply(from: "buildSrc-fork/repos.gradle")
     repos.addMavenRepositories(repositories)
 }
 

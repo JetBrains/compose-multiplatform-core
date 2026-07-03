@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,19 +14,11 @@
  * limitations under the License.
  */
 
-package org.jetbrains.androidx.build
+apply from: "../buildSrc-fork/settingsScripts/out-setup.groovy"
 
-import androidx.build.getSupportRootFolder
-import org.gradle.api.Plugin
-import org.gradle.api.Project
-
-class JetBrainsAndroidXPlugin : Plugin<Project> {
-    override fun apply(project: Project) {
-        val supportRoot = project.getSupportRootFolder()
-        project.apply(
-            mapOf<String, String>(
-                "from" to "$supportRoot/buildSrc-fork/apply/applyJetBrainsAndroidXImplPlugin.gradle"
-            )
-        )
-    }
+getGradle().beforeProject { project ->
+    def checkoutRoot = new File("${buildscript.sourceFile.parent}/../../..")
+    init.chooseBuildDirectory(checkoutRoot, rootProject.name, project)
 }
+
+include ":hostTestFailureHandlerPlugin"
