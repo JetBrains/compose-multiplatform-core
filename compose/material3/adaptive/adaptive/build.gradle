@@ -24,10 +24,12 @@
 import androidx.build.KotlinTarget
 import androidx.build.SoftwareType
 import androidx.build.PlatformIdentifier
+import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 
 plugins {
     id("AndroidXPlugin")
     id("AndroidXComposePlugin")
+    id("JetBrainsAndroidXPlugin")
 }
 
 androidXMultiplatform {
@@ -35,16 +37,19 @@ androidXMultiplatform {
         compileSdk { version = release(37) }
         namespace = "androidx.compose.material3.adaptive"
     }
-    jvmStubs()
-    linuxX64Stubs()
+    desktop()
+    mac()
+    ios()
+    js()
+    wasmJs()
 
     defaultPlatform(PlatformIdentifier.ANDROID)
 
     sourceSets {
         commonMain.dependencies {
-            implementation("androidx.compose.foundation:foundation:1.10.0")
-            implementation("androidx.compose.ui:ui:1.10.0")
-            api("androidx.window:window-core:1.5.0")
+            implementation("org.jetbrains.compose.foundation:foundation:1.10.0")
+            implementation("org.jetbrains.compose.ui:ui:1.10.0")
+            api("org.jetbrains.androidx.window:window-core:1.5.0")
         }
 
         androidMain.dependencies {
@@ -66,6 +71,38 @@ androidXMultiplatform {
             implementation(libs.junit)
             implementation(libs.testRunner)
             implementation(libs.truth)
+        }
+
+        nonAndroidMain {
+            dependsOn(commonMain)
+        }
+
+        nonAndroidTest {
+            dependsOn(commonTest)
+        }
+
+        desktopMain {
+            dependsOn(nonAndroidMain)
+        }
+
+        desktopTest {
+            dependsOn(nonAndroidTest)
+        }
+
+        nativeMain {
+            dependsOn(nonAndroidMain)
+        }
+
+        nativeTest {
+            dependsOn(nonAndroidTest)
+        }
+
+        webMain {
+            dependsOn(nonAndroidMain)
+        }
+
+        webTest {
+            dependsOn(nonAndroidTest)
         }
     }
 }

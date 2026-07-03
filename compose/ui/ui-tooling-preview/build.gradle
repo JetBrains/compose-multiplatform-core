@@ -22,18 +22,26 @@
  */
 import androidx.build.SoftwareType
 import androidx.build.PlatformIdentifier
+import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 
 plugins {
     id("AndroidXPlugin")
     id("AndroidXComposePlugin")
+    id("JetBrainsAndroidXPlugin")
 }
 
 androidXMultiplatform {
-    androidLibrary {
-        namespace = "androidx.compose.ui.tooling.preview"
+    redirect("androidx.compose.ui") {
+        androidLibrary {
+            namespace = "org.jetbrains.androidx.compose.ui.tooling.preview"
+
+        }
     }
-    jvmStubs()
-    linuxX64Stubs()
+    desktop()
+    mac()
+    ios()
+    js()
+    wasmJs()
 
     defaultPlatform(PlatformIdentifier.ANDROID)
 
@@ -45,6 +53,42 @@ androidXMultiplatform {
 
         androidHostTest.dependencies {
             implementation(libs.junit)
+        }
+
+        nonAndroidMain {
+            dependsOn(commonMain)
+        }
+
+        nonAndroidTest {
+            dependsOn(commonTest)
+        }
+
+        desktopMain {
+            dependsOn(nonAndroidMain)
+        }
+
+        desktopTest {
+            dependsOn(nonAndroidTest)
+        }
+
+        nonJvmMain {
+            dependsOn(nonAndroidMain)
+            dependencies {
+                // To comply with Klib resolver until https://youtrack.jetbrains.com/issue/KT-61096 is fixed
+                implementation("org.jetbrains.compose.annotation-internal:annotation:1.10.0")
+            }
+        }
+
+        nonJvmTest {
+            dependsOn(nonAndroidTest)
+        }
+
+        nativeMain {
+            dependsOn(nonJvmMain)
+        }
+
+        nativeTest {
+            dependsOn(nonJvmTest)
         }
     }
 }

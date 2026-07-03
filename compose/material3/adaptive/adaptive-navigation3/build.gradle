@@ -23,10 +23,12 @@
 
 import androidx.build.SoftwareType
 import androidx.build.PlatformIdentifier
+import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 
 plugins {
     id("AndroidXPlugin")
     id("AndroidXComposePlugin")
+    id("JetBrainsAndroidXPlugin")
 }
 
 androidXMultiplatform {
@@ -35,17 +37,20 @@ androidXMultiplatform {
         namespace = "androidx.compose.material3.adaptive.navigation3"
         androidResources.enable = true
     }
-    jvmStubs()
-    linuxX64Stubs()
+    desktop()
+    mac()
+    ios()
+    js()
+    wasmJs()
 
     defaultPlatform(PlatformIdentifier.ANDROID)
 
     sourceSets {
         commonMain.dependencies {
             api(project(":compose:material3:adaptive:adaptive-navigation"))
-            api("androidx.navigation3:navigation3-ui:1.0.0")
+            api("org.jetbrains.androidx.navigation3:navigation3-ui:1.1.0")
             implementation("androidx.collection:collection:1.5.0")
-            implementation("androidx.navigationevent:navigationevent-compose:1.0.1")
+            implementation("org.jetbrains.androidx.navigationevent:navigationevent-compose:1.0.1")
         }
 
         androidMain.dependencies {
@@ -61,6 +66,38 @@ androidXMultiplatform {
             implementation(libs.testRunner)
             implementation(libs.junit)
             implementation(libs.truth)
+        }
+
+        nonAndroidMain {
+            dependsOn(commonMain)
+        }
+
+        nonAndroidTest {
+            dependsOn(commonTest)
+        }
+
+        desktopMain {
+            dependsOn(nonAndroidMain)
+        }
+
+        desktopTest {
+            dependsOn(nonAndroidTest)
+        }
+
+        nativeMain {
+            dependsOn(nonAndroidMain)
+        }
+
+        nativeTest {
+            dependsOn(nonAndroidTest)
+        }
+
+        webMain {
+            dependsOn(nonAndroidMain)
+        }
+
+        webTest {
+            dependsOn(nonAndroidTest)
         }
     }
 }
