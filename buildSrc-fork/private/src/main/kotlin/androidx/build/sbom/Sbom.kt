@@ -25,8 +25,6 @@ import androidx.build.getDistributionDirectory
 import androidx.build.getPrebuiltsRoot
 import androidx.build.getSupportRootFolder
 import androidx.build.gitclient.getHeadShaProvider
-import androidx.inspection.gradle.EXPORT_INSPECTOR_DEPENDENCIES
-import androidx.inspection.gradle.IMPORT_INSPECTOR_DEPENDENCIES
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import java.io.File
 import java.net.URI
@@ -61,8 +59,6 @@ private fun Project.shouldSbomIncludeConfigurationName(configurationName: String
         // declare a "shadowed" configuration exclude the "compileClasspath" configuration from
         // the shadowJar task
         "compileClasspath" -> appliesShadowPlugin() && configurations.findByName("shadowed") == null
-        EXPORT_INSPECTOR_DEPENDENCIES -> true
-        IMPORT_INSPECTOR_DEPENDENCIES -> true
         // https://github.com/spdx/spdx-gradle-plugin/issues/12
         sbomEmptyConfiguration -> true
         else -> false
@@ -118,13 +114,6 @@ private fun Project.listSbomConfigurationNamesForArchive(task: AbstractArchiveTa
     // some tasks that embed other configurations
     if (taskName == BundleInsideHelper.REPACKAGE_TASK_NAME) {
         return listOf(BundleInsideHelper.CONFIGURATION_NAME)
-    }
-    if (
-        projectPath.contains("inspection") &&
-            (taskName == "assembleInspectorJarRelease" ||
-                taskName == "inspectionShadowDependenciesRelease")
-    ) {
-        return listOf(EXPORT_INSPECTOR_DEPENDENCIES)
     }
 
     if (excludeTaskNames.contains(taskName)) return listOf()
