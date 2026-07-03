@@ -45,19 +45,23 @@ import androidx.compose.ui.platform.WebHapticFeedback
 import androidx.compose.ui.platform.WebTextInputService
 import androidx.compose.ui.platform.WebTextToolbar
 import androidx.compose.ui.platform.WebWakeLockManager
+import androidx.compose.ui.platform.WindowInfo
 import androidx.compose.ui.platform.WindowInfoImpl
 import androidx.compose.ui.platform.accessibility.ComposeWebSemanticsListener
 import androidx.compose.ui.platform.installFallbackFontDownloader
 import androidx.compose.ui.scene.CanvasLayersComposeScene
 import androidx.compose.ui.scene.ComposeSceneContext
 import androidx.compose.ui.scene.ComposeSceneDragAndDropNode
+import androidx.compose.ui.scene.ComposeSceneLayer
 import androidx.compose.ui.scene.PlatformLayersComposeScene
+import androidx.compose.ui.scene.WebComposeSceneLayer
 import androidx.compose.ui.scene.WebComposeSceneMediator
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.size
 import androidx.compose.ui.unit.toDpRect
@@ -151,9 +155,9 @@ internal class ComposeWindow(
     private val rootNode: Node,
     private val layerRoot: HTMLElement,
     private val interopContainerElement: HTMLDivElement,
-    private val layersRoot: HTMLElement,
+    internal val layersRoot: HTMLElement,
     private val a11yContainerElement: HTMLDivElement?,
-    private val configuration: ComposeViewportConfiguration,
+    internal val configuration: ComposeViewportConfiguration,
     content: @Composable () -> Unit,
     private val state: ComposeWindowState
 ) {
@@ -167,6 +171,14 @@ internal class ComposeWindow(
     private val _windowInfo = WindowInfoImpl().apply {
         isWindowFocused = true
     }
+
+    internal val windowInfo: WindowInfo get() = _windowInfo
+
+    internal val globalEvents: EventTargetListener get() = state.globalEvents
+
+    // Layers created via [createComposeSceneContext] (CMP-8359 slice 2/3); shared across nesting
+    // depth so a layer created from within another layer's content registers here too.
+    internal val layers = mutableListOf<WebComposeSceneLayer>()
 
     @VisibleForTesting
     internal val archComponentsOwner = DefaultArchitectureComponentsOwner()
@@ -315,6 +327,19 @@ internal class ComposeWindow(
     internal fun createComposeSceneContext(context: PlatformContext): ComposeSceneContext =
         object : ComposeSceneContext {
             override val platformContext = context
+
+            override fun createLayer(
+                density: Density,
+                layoutDirection: LayoutDirection,
+                focusable: Boolean,
+                consumePointerInputOutside: Boolean,
+            ): ComposeSceneLayer = WebComposeSceneLayer(
+                composeWindow = this@ComposeWindow,
+                initialDensity = density,
+                initialLayoutDirection = layoutDirection,
+                initialFocusable = focusable,
+                consumePointerInputOutside = consumePointerInputOutside,
+            )
         }
 
     private val scene = if (configuration.isPerCanvasSceneLayerEnabled) {
@@ -423,13 +448,17 @@ internal class ComposeWindow(
     // TODO: need to call .dispose() on window close.
     fun dispose() {
         check(!isDisposed)
+
+        // Dispose compositions (which may still reference the lifecycle/ViewModelStore while
+        // tearing down) before destroying the shared owner they reference.
+        layers.toList().forEach { it.close() }
+        scene.close()
+        mediator.dispose()
+
         archComponentsOwner.lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_DESTROY)
         archComponentsOwner.viewModelStore.clear()
         archComponentsOwner.navigationEventDispatcherOwner
             .navigationEventDispatcher.removeInput(navigationEventInput)
-
-        scene.close()
-        mediator.dispose()
 
         systemThemeObserver.dispose()
         state.dispose()
@@ -458,7 +487,7 @@ internal fun onDomReady(block: () -> Unit) {
     }
 }
 
-private fun Element.isFocused(): Boolean {
+internal fun Element.isFocused(): Boolean {
     val activeElement = when {
         document.activeElement?.shadowRoot != null -> (document.activeElement?.shadowRoot as? ShadowRootExt)?.activeElement
         else -> document.activeElement

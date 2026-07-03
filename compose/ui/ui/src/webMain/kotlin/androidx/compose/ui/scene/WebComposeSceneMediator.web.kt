@@ -225,6 +225,18 @@ internal class WebComposeSceneMediator(
         }
     }
 
+    /**
+     * Attaches the render loop to [canvas] without touching [ComposeScene.size]. Layers need this
+     * called before their first [resize] — unlike the main window (whose size comes from the
+     * browser viewport, known immediately), a layer's size is *derived from* measuring its own
+     * content (e.g. popup positioning), which requires a live render/measure loop to happen at
+     * all. Calling [resize] instead would constrain `scene.size` to the given size upfront,
+     * defeating that unconstrained first measure pass.
+     */
+    fun attach() {
+        skiaLayer.attachTo(canvas)
+    }
+
     fun resize(sizeInPx: IntSize) {
         // we need to scale canvas both via CSS styling and HTML attributes
         // https://www.khronos.org/webgl/wiki/HandlingHighDPI

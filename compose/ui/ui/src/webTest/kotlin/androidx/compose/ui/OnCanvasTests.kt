@@ -119,6 +119,7 @@ internal interface OnCanvasTests {
           </app_container>
         </shadow_container>
         <interopContainer/>
+        <layersRoot/>
       <positioning_container/>
     </container>
     */
@@ -128,6 +129,7 @@ internal interface OnCanvasTests {
     private fun getAppRoot() = getShadowRoot().children[1] as? HTMLElement ?: error("failed to get app root")
     fun getCanvas() = getAppRoot().children[0] as? HTMLCanvasElement ?: error("failed to get canvas")
     fun getA11YContainer() = getAppRoot().children[1] as? HTMLDivElement
+    fun getLayersRoot() = getPositioningContainer().children[2] as? HTMLDivElement ?: error("failed to get layersRoot")
 
     suspend fun createComposeWindow(
         configure: ComposeViewportConfiguration.() -> Unit = {},
