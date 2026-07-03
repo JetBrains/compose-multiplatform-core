@@ -31,7 +31,6 @@ import androidx.compose.ui.draganddrop.WebDragAndDropManager
 import androidx.compose.ui.events.EventTargetListener
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.graphics.asComposeCanvas
 import androidx.compose.ui.input.InputMode
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEvent
@@ -70,7 +69,7 @@ import androidx.compose.ui.platform.FrameRecomposer
 import androidx.compose.ui.scene.ComposeSceneDragAndDropNode
 import androidx.compose.ui.scene.ComposeScenePointer
 import androidx.compose.ui.scene.PointerEventResult
-import androidx.compose.ui.scene.SingleComposeSceneRenderingScope
+import androidx.compose.ui.scene.WebComposeSceneRenderLoop
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.DpRect
@@ -97,8 +96,6 @@ import kotlinx.coroutines.channels.Channel.Factory.CONFLATED
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.receiveAsFlow
-import org.jetbrains.skiko.SkiaLayer
-import org.jetbrains.skiko.SkikoRenderDelegate
 import org.jetbrains.skiko.hostOs
 import org.w3c.dom.AddEventListenerOptions
 import org.w3c.dom.DocumentReadyState
@@ -219,17 +216,16 @@ internal class ComposeWindow(
 
     private val clipTarget = clipTargetElement(canvas)
 
-    // TODO: It must be shared between Compose instances.
+    // TODO: [frameRecomposer] must be shared between Compose instances.
     //  It's supposed to be stored in platform's root view or window.
-    private val frameRecomposer = FrameRecomposer(Dispatchers.Main, invalidate = { skiaLayer.needRender() })
-
     // TODO: It cannot be used in case of shared [FrameRecomposer], replace this helper with calling
     //  - [frameRecomposer.performFrame] once per frame (across all instances) before platform views layout phase
     //  - [scene.measureAndLayout] during platform views layout phase. Note that it should be triggered
     //    by platform view invalidation (which is triggered by [scene.invalidateLayout] OR by regular platform invalidation)
     //  - [scene.draw] during drawing phase of platform views (which is triggered by [scene.invalidateDraw]).
     //    Note that in case of custom GPU surface/V-Sync handling, it needs to be handled differently.
-    private val sceneRenderingScope = SingleComposeSceneRenderingScope { skiaLayer.needRender() }
+    private val renderLoop = WebComposeSceneRenderLoop(canvas, Dispatchers.Main)
+    private val frameRecomposer get() = renderLoop.frameRecomposer
 
     private val platformContext: PlatformContext =
         object : PlatformContext by PlatformContext.Empty() {
@@ -338,23 +334,15 @@ internal class ComposeWindow(
                 get() = configuration.isClearFocusOnMouseDownEnabled
         }
 
-    private val skiaLayer: SkiaLayer = SkiaLayer().apply {
-        renderDelegate = SkikoRenderDelegate { canvas, _, _, nanoTime ->
-            with(sceneRenderingScope) {
-                scene.render(frameRecomposer, canvas.asComposeCanvas(), nanoTime)
-            }
-        }
-    }
-
     private val scene = CanvasLayersComposeScene(
         frameRecomposer = frameRecomposer,
         platformContext = platformContext,
         density = density,
         // TODO: Split layout invalidation from draw invalidation once the web host has distinct
         //  scheduling paths for relayout vs redraw.
-        invalidateLayout = sceneRenderingScope::onSceneInvalidation,
-        invalidateDraw = sceneRenderingScope::onSceneInvalidation,
-    )
+        invalidateLayout = renderLoop.invalidateLayout,
+        invalidateDraw = renderLoop.invalidateDraw,
+    ).also { renderLoop.scene = it }
 
     private val systemThemeObserver = getSystemThemeObserver()
 
@@ -534,18 +522,10 @@ internal class ComposeWindow(
     private fun resize(boxSize: DpSize) {
         val sizeInPx = boxSize.toSize(density).toIntSize()
 
-        // we need to scale canvas both via CSS styling and HTML attributes
-        // https://www.khronos.org/webgl/wiki/HandlingHighDPI
-        canvas.width = sizeInPx.width
-        canvas.height = sizeInPx.height
-
         _windowInfo.containerSize = sizeInPx
         _windowInfo.containerDpSize = boxSize
 
-        // TODO: Align with Container/Mediator architecture
-        skiaLayer.attachTo(canvas)
-        scene.size = sizeInPx
-        skiaLayer.needRender()
+        renderLoop.resize(sizeInPx)
     }
 
     // TODO: need to call .dispose() on window close.
@@ -557,8 +537,7 @@ internal class ComposeWindow(
             .navigationEventDispatcher.removeInput(navigationEventInput)
 
         scene.close()
-        frameRecomposer.close()
-        skiaLayer.detach()
+        renderLoop.dispose()
 
         systemThemeObserver.dispose()
         state.dispose()
