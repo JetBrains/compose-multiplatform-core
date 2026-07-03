@@ -56,5 +56,5 @@ class ComposeViewportConfiguration internal constructor() {
      * Note: This API is experimental and subject to change in the future.
      */
     @ExperimentalComposeUiApi
-    var isPerCanvasSceneLayerEnabled: Boolean = true
+    var isPerCanvasSceneLayerEnabled: Boolean = false
 }
