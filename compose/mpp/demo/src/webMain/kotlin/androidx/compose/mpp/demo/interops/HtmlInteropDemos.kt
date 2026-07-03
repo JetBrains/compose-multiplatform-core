@@ -19,21 +19,33 @@ package androidx.compose.mpp.demo.interops
 import Map
 import Directions
 import LazyDirections
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.input.rememberTextFieldState
+import androidx.compose.material.Button
+import androidx.compose.material.Text
 import androidx.compose.material.TextField
 import androidx.compose.mpp.demo.Screen
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.HtmlElementView
+import androidx.compose.ui.window.Dialog
 import kotlinx.browser.document
 import org.w3c.dom.HTMLDivElement
+import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.HTMLTextAreaElement
 
 val HtmlInteropDemos = Screen.Selection(
@@ -45,7 +57,8 @@ val HtmlInteropDemos = Screen.Selection(
     Screen.Example("SyncTextStateViaParameter") { SyncTextStateViaParameter() },
     Screen.Example("Nested Compose Viewport") {
         NestedComposeViewportDemo()
-    }
+    },
+    Screen.Example("Dialog with HTML interop") { DialogWithHtmlInterop() },
 )
 
 
@@ -100,4 +113,52 @@ private fun TextInDiv(text: String) {
         modifier = Modifier.size(300.dp).padding(50.dp),
         update = { div -> div.innerText = text }
     )
+}
+
+/**
+ * Shows a native `<input>` living inside a [Dialog] — exercises `WebComposeSceneLayer`
+ * (see CMP-8359-plan.md) when `isPerCanvasSceneLayerEnabled` is on: the dialog gets its own
+ * `<canvas>`, and this interop element must be anchored to *that* canvas's own interop container,
+ * not the main window's.
+ */
+@OptIn(ExperimentalComposeUiApi::class)
+@Composable
+fun DialogWithHtmlInterop() {
+    var open by remember { mutableStateOf(false) }
+    var lastTypedValue by remember { mutableStateOf("") }
+
+    Column(modifier = Modifier.padding(16.dp)) {
+        Button(onClick = { open = true }) {
+            Text("Open dialog with HTML interop")
+        }
+        Spacer(Modifier.height(8.dp))
+        Text("Last value read back from the native <input>: \"$lastTypedValue\"")
+    }
+
+    if (open) {
+        Dialog(onDismissRequest = { open = false }) {
+            Column(
+                modifier = Modifier
+                    .background(Color.White)
+                    .padding(24.dp)
+            ) {
+                Text("This is a native <input> element, rendered inside the dialog's own canvas:")
+                Spacer(Modifier.height(8.dp))
+                HtmlElementView(
+                    modifier = Modifier.size(250.dp, 40.dp),
+                    factory = {
+                        (document.createElement("input") as HTMLInputElement).apply {
+                            type = "text"
+                            placeholder = "Type here..."
+                            oninput = { lastTypedValue = value }
+                        }
+                    }
+                )
+                Spacer(Modifier.height(16.dp))
+                Button(onClick = { open = false }) {
+                    Text("Close")
+                }
+            }
+        }
+    }
 }

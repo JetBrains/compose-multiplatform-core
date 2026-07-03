@@ -115,6 +115,38 @@ class WebComposeSceneLayerTest : OnCanvasTests {
     }
 
     @Test
+    fun popupInteropViewIsPositionedWithinItsOwnLayerCanvas() = runApplicationTest {
+        val divId = "positionedInteropDiv"
+        var window: ComposeWindow? = null
+        createComposeWindow(configure = { isPerCanvasSceneLayerEnabled = true }) {
+            window = LocalComposeWindow.current
+            // Push the popup well away from the window origin so a double-counted screen offset
+            // (positionInWindow() including boundsInWindow *and* layerContainer's own CSS
+            // position both applying it) would be obviously wrong, not accidentally close.
+            Popup(offset = IntOffset(200, 200)) {
+                Box(Modifier.size(60.dp)) {
+                    HtmlElementView(
+                        modifier = Modifier.size(20.dp),
+                        factory = {
+                            (document.createElement("div") as HTMLDivElement).apply { id = divId }
+                        }
+                    )
+                }
+            }
+        }
+        awaitIdle()
+
+        val canvasRect = window!!.layers.single().canvas.getBoundingClientRect()
+        val interopRect = (document.getElementById(divId) as HTMLDivElement).getBoundingClientRect()
+
+        // The interop view must render within its own layer's canvas bounds (plus a small margin
+        // for its own local placement within the popup's content) — a double-counted offset bug
+        // would place it far outside the canvas entirely (shifted by another ~200px).
+        assertTrue(interopRect.left >= canvasRect.left - 1.0 && interopRect.left < canvasRect.left + 60.0)
+        assertTrue(interopRect.top >= canvasRect.top - 1.0 && interopRect.top < canvasRect.top + 60.0)
+    }
+
+    @Test
     fun clickOutsidePopupDismissesItWhenFlagEnabled() = runApplicationTest {
         var dismissed = false
         createComposeWindow(configure = { isPerCanvasSceneLayerEnabled = true }) {

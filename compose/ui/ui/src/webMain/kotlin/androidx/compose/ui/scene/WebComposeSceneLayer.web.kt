@@ -48,7 +48,6 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.size
 import androidx.compose.ui.unit.toDpRect
-import androidx.compose.ui.unit.toOffset
 import androidx.compose.ui.viewinterop.InteropViewGroup
 import androidx.compose.ui.viewinterop.LocalInteropContainer
 import androidx.compose.ui.viewinterop.TrackInteropPlacementContainer
@@ -237,11 +236,19 @@ internal class WebComposeSceneLayer(
             // matching desktop's AttachedComposeSceneLayer/DesktopComposeSceneLayer.
             override val parentFocusManager: FocusManager get() = PlatformContext.EmptyFocusManager
 
-            override fun convertLocalToWindowPosition(localPosition: Offset): Offset =
-                localPosition + boundsInWindow.topLeft.toOffset()
-
-            override fun convertWindowToLocalPosition(positionInWindow: Offset): Offset =
-                positionInWindow - boundsInWindow.topLeft.toOffset()
+            // Deliberately identity (the PlatformContext.Empty() default), NOT offset by
+            // boundsInWindow: "window" here means this layer's own canvas, exactly like the main
+            // ComposeWindow's own (identity) override — this layer's canvas *is* its scene's
+            // window. Framework internals that call positionInWindow() (interop view placement
+            // in particular — see WebInteropElementHolder.layoutAccordingTo, which writes it
+            // straight into the wrapper's CSS position) rely on that identity, since the layer's
+            // own interop container sits at (0,0) of this same canvas, not the app's overall
+            // window. Adding boundsInWindow here previously double-counted the layer's screen
+            // offset (once via this conversion, once via layerContainer's own CSS position),
+            // pushing interop views away from where their compose siblings actually render.
+            // boundsInWindow-aware conversion belongs *only* in calculateLocalPosition, which
+            // popup positioning uses explicitly to bridge the overall-window frame into this
+            // layer's local one.
 
             override val textToolbar: TextToolbar by lazy(LazyThreadSafetyMode.NONE) {
                 WebTextToolbar()

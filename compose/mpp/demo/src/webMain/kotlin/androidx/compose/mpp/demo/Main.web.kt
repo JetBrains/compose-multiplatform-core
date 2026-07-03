@@ -40,7 +40,15 @@ import kotlinx.serialization.decodeFromString
 @OptIn(ExperimentalComposeUiApi::class)
 @ExperimentalBrowserHistoryApi
 fun main() {
-    ComposeViewport(viewportContainerId = "composeApplication") {
+    ComposeViewport(
+        viewportContainerId = "composeApplication",
+        configure = {
+            // Exercises WebComposeSceneLayer (CMP-8359) regardless of the library's shipped
+            // default, so demos like "Dialog with HTML interop" reliably show the real per-canvas
+            // layer behavior rather than the compatibility mode.
+            isPerCanvasSceneLayerEnabled = true
+        }
+    ) {
         val navController = rememberNavController()
         val fontFamilyResolver = LocalFontFamilyResolver.current
         val fontsLoaded = remember { mutableStateOf(false) }
