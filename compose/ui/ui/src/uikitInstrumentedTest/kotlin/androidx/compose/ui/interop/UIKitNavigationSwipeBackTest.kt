@@ -37,6 +37,7 @@ import androidx.compose.ui.test.findNodeWithTag
 import androidx.compose.ui.test.findNodeWithTagOrNull
 import androidx.compose.ui.test.runUIKitInstrumentedTest
 import androidx.compose.ui.test.utils.center
+import androidx.compose.ui.test.utils.offsetBy
 import androidx.compose.ui.test.utils.rightCenter
 import androidx.compose.ui.test.utils.up
 import androidx.compose.ui.unit.dp
@@ -129,8 +130,8 @@ internal abstract class UIKitNavigationSwipeBackTest(
 
         findNodeWithTag("outsideBox").swipe(
             fromPosition = { center() },
-            toPosition = { rightCenter() },
-        )
+            toPosition = { rightCenter().offsetBy(dx = (-16).dp) },
+        ).up()
 
         waitForIdle()
 
@@ -187,8 +188,8 @@ internal abstract class UIKitNavigationSwipeBackTest(
 
         findNodeWithTag("outsideBox").swipe(
             fromPosition = { center() },
-            toPosition = { rightCenter() },
-        )
+            toPosition = { rightCenter().offsetBy(dx = (-16).dp) },
+        ).up()
 
         waitForPopped(viewControllerHostingCompose)
     }
