@@ -99,13 +99,18 @@ import platform.UIKit.UIKeyModifierFlags
 import platform.UIKit.UIPressesEvent
 import platform.UIKit.UIPressType
 import platform.UIKit.UITouch
+import platform.UIKit.UITraitCollection
+import platform.UIKit.UITraitEnvironmentLayoutDirection
+import platform.UIKit.UITraitEnvironmentLayoutDirectionLeftToRight
 import platform.UIKit.UIUserInterfaceIdiomPad
 import platform.UIKit.UIView
 import platform.UIKit.UIViewController
 import platform.UIKit.UIWindow
 import platform.UIKit.UIWindowScene
 import platform.UIKit.endEditing
+import platform.UIKit.setOverrideTraitCollection
 import platform.UIKit.systemBackgroundColor
+import platform.UIKit.traitOverrides
 import platform.darwin.NSObject
 import platform.darwin.dispatch_async
 import platform.darwin.dispatch_get_main_queue
@@ -245,8 +250,12 @@ internal class UIKitInstrumentedTest(
     private var hostingViewController: ComposeHostingViewController? = null
     private var hostingView: ComposeHostingView? = null
 
-    val viewController: UIViewController get() =
-        appDelegate.window?.rootViewController ?: error("Cannot find active UIViewController")
+    val viewController: UIViewController get() {
+        val rootViewController = appDelegate.window?.rootViewController
+        if (rootViewController != null) { return rootViewController }
+        waitUntil { appDelegate.window?.rootViewController != null }
+        return appDelegate.window?.rootViewController ?: error("Cannot find active UIViewController")
+    }
 
     val rootRedrawer: MetalRedrawer? get() =
         hostingView?.rootRedrawer ?: hostingViewController?.rootRedrawer
@@ -262,10 +271,15 @@ internal class UIKitInstrumentedTest(
     fun setContent(
         configure: ComposeContainerConfiguration.() -> Unit = {},
         interfaceOrientation: UIInterfaceOrientation = UIInterfaceOrientationPortrait,
+        layoutDirection: UITraitEnvironmentLayoutDirection = UITraitEnvironmentLayoutDirectionLeftToRight,
         content: @Composable () -> Unit
     ) = setupWindow(
         interfaceOrientation = interfaceOrientation,
-        rootViewController = { createViewControllerHostingCompose(configure, content) }
+        rootViewController = {
+            createViewControllerHostingCompose(configure, content).also {
+                it.setLayoutDirection(layoutDirection)
+            }
+        }
     )
 
     /**
@@ -403,6 +417,9 @@ internal class UIKitInstrumentedTest(
         timeoutMillis: Long = 5_000,
         condition: () -> Boolean
     ) = UIKitInstrumentedTest.waitUntil(conditionDescription, timeoutMillis, condition)
+
+    fun setLayoutDirection(layoutDirection: UITraitEnvironmentLayoutDirection) =
+        viewController.setLayoutDirection(layoutDirection)
 
     // Touches:
 
@@ -850,4 +867,17 @@ internal fun UIKitInstrumentedTest.waitForContextMenu() {
         } != null
     }
     delay(500) // wait for toolbar animation
+}
+
+private fun UIViewController.setLayoutDirection(
+    layoutDirection: UITraitEnvironmentLayoutDirection
+) {
+    if (available(OS.Ios to OSVersion(major = 17))) {
+        traitOverrides.setLayoutDirection(layoutDirection)
+    } else {
+        setOverrideTraitCollection(
+            collection = UITraitCollection.traitCollectionWithLayoutDirection(layoutDirection),
+            forChildViewController = this
+        )
+    }
 }
