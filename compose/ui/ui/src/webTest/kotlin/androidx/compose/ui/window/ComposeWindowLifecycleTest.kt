@@ -44,6 +44,7 @@ class ComposeWindowLifecycleTest : OnCanvasTests {
             rootNode = getShadowRoot(),
             layerRoot = document.createElement("div") as HTMLElement,
             interopContainerElement = document.createElement("div") as HTMLDivElement,
+            layersRoot = document.createElement("div") as HTMLElement,
             a11yContainerElement = null,
             content = {},
             configuration = ComposeViewportConfiguration(),

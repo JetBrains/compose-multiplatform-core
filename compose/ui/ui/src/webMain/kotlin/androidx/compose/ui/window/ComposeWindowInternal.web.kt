@@ -49,7 +49,9 @@ import androidx.compose.ui.platform.WindowInfoImpl
 import androidx.compose.ui.platform.accessibility.ComposeWebSemanticsListener
 import androidx.compose.ui.platform.installFallbackFontDownloader
 import androidx.compose.ui.scene.CanvasLayersComposeScene
+import androidx.compose.ui.scene.ComposeSceneContext
 import androidx.compose.ui.scene.ComposeSceneDragAndDropNode
+import androidx.compose.ui.scene.PlatformLayersComposeScene
 import androidx.compose.ui.scene.WebComposeSceneMediator
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.DpOffset
@@ -149,6 +151,7 @@ internal class ComposeWindow(
     private val rootNode: Node,
     private val layerRoot: HTMLElement,
     private val interopContainerElement: HTMLDivElement,
+    private val layersRoot: HTMLElement,
     private val a11yContainerElement: HTMLDivElement?,
     private val configuration: ComposeViewportConfiguration,
     content: @Composable () -> Unit,
@@ -306,15 +309,35 @@ internal class ComposeWindow(
                 get() = configuration.isClearFocusOnMouseDownEnabled
         }
 
-    private val scene = CanvasLayersComposeScene(
-        frameRecomposer = mediator.frameRecomposer,
-        platformContext = platformContext,
-        density = density,
-        // TODO: Split layout invalidation from draw invalidation once the web host has distinct
-        //  scheduling paths for relayout vs redraw.
-        invalidateLayout = mediator.invalidateLayout,
-        invalidateDraw = mediator.invalidateDraw,
-    ).also { mediator.scene = it }
+    // Bound to a [WebComposeSceneLayer] created via [createComposeSceneContext] (CMP-8359 slice 2);
+    // returns the same context type regardless of nesting depth, so a layer created from within
+    // another layer's content still shares this window's [layers] registry.
+    internal fun createComposeSceneContext(context: PlatformContext): ComposeSceneContext =
+        object : ComposeSceneContext {
+            override val platformContext = context
+        }
+
+    private val scene = if (configuration.isPerCanvasSceneLayerEnabled) {
+        PlatformLayersComposeScene(
+            frameRecomposer = mediator.frameRecomposer,
+            density = density,
+            composeSceneContext = createComposeSceneContext(platformContext),
+            // TODO: Split layout invalidation from draw invalidation once the web host has distinct
+            //  scheduling paths for relayout vs redraw.
+            invalidateLayout = mediator.invalidateLayout,
+            invalidateDraw = mediator.invalidateDraw,
+        )
+    } else {
+        CanvasLayersComposeScene(
+            frameRecomposer = mediator.frameRecomposer,
+            platformContext = platformContext,
+            density = density,
+            // TODO: Split layout invalidation from draw invalidation once the web host has distinct
+            //  scheduling paths for relayout vs redraw.
+            invalidateLayout = mediator.invalidateLayout,
+            invalidateDraw = mediator.invalidateDraw,
+        )
+    }.also { mediator.scene = it }
 
     private val systemThemeObserver = getSystemThemeObserver()
 

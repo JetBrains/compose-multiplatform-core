@@ -44,4 +44,17 @@ class ComposeViewportConfiguration internal constructor() {
      */
     @ExperimentalComposeUiApi
     var isClearFocusOnMouseDownEnabled: Boolean = ComposeUiFlags.isClearFocusOnMouseDownEnabled
+
+    /**
+     * Controls whether [androidx.compose.ui.window.Popup]/[androidx.compose.ui.window.Dialog]
+     * content is rendered into its own `<canvas>` and scene ([WebComposeSceneLayer]), instead of
+     * being composited into the main window's canvas (the current default, compatibility-mode
+     * behavior). This is an incremental, experimental rollout — see `CMP-8359-plan.md`.
+     *
+     * By default, it is set to `false`.
+     *
+     * Note: This API is experimental and subject to change in the future.
+     */
+    @ExperimentalComposeUiApi
+    var isPerCanvasSceneLayerEnabled: Boolean = false
 }

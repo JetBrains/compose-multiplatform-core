@@ -73,6 +73,7 @@ fun ComposeViewport(
  *       </app_container>
  *     </shadow_container>
  *     <interopContainer/>
+ *     <layersRoot/>
  *   <positioning_container/>
  * </container>
  *
@@ -187,11 +188,21 @@ fun ComposeViewport(
     }
     positioningContainer.appendChild(interopContainerElement)
 
+    // root for WebComposeSceneLayer canvases/scrims/interop/a11y (see CMP-8359-plan.md)
+    val layersRoot = document.createElement("div") as HTMLDivElement
+    layersRoot.style.apply {
+        position = "absolute"
+        top = "0"
+        left = "0"
+    }
+    positioningContainer.appendChild(layersRoot)
+
     ComposeWindow(
         canvas = canvas,
         rootNode = shadowRoot,
         layerRoot = appContainer,
         interopContainerElement = interopContainerElement,
+        layersRoot = layersRoot,
         a11yContainerElement = a11yContainerElement,
         content = content,
         configuration = configuration,
