@@ -184,12 +184,18 @@ private class ComposeWindow(
      * Handles every X11 event queued for this window's display and returns how many were
      * processed. Stops as soon as the window is disposed: [handleEvent] may close the
      * display (WM_DELETE_WINDOW → [dispose]), after which it must not be touched again.
+     *
+     * The main dispatcher is drained after each event so work it schedules (gesture
+     * coroutines, focus changes) runs before the next event, as on the AWT/AppKit loops.
+     * Otherwise a synthetic click-then-type burst delivers every key before the click's
+     * tap gesture has focused the text field, and the typed characters are dropped.
      */
     fun pumpPendingEvents(event: XEvent): Int =
         generateSequence {
             event.takeIf { !isDisposed && XPending(x11Window.display) > 0 }?.also {
                 XNextEvent(x11Window.display, it.ptr)
                 handleEvent(it)
+                LinuxMainDispatcher.drain()
             }
         }.count()
 
