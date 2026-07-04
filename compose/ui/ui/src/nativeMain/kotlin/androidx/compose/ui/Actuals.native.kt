@@ -28,3 +28,10 @@ internal actual fun currentTimeMillis(): Long {
     return markNow.elapsedNow().inWholeMilliseconds
 }
 
+internal actual val PostDelayedDispatcher: kotlin.coroutines.CoroutineContext
+    get() = if (Platform.osFamily == OsFamily.LINUX) {
+        org.jetbrains.skiko.SkikoDispatchers.Main
+    } else {
+        kotlinx.coroutines.Dispatchers.Main
+    }
+

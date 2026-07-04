@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 The Android Open Source Project
+ * Copyright 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,19 +14,11 @@
  * limitations under the License.
  */
 
-package androidx.compose.ui
+package androidx.compose.ui.input.pointer
 
-import kotlinx.browser.window
+internal class LinuxCursor(val type: String) : PointerIcon
 
-internal actual fun areObjectsOfSameType(a: Any, b: Any): Boolean {
-    return (js(
-        "Object.getPrototypeOf(a).constructor == Object.getPrototypeOf(b).constructor"
-    )) as Boolean
-}
-
-internal actual fun currentTimeMillis(): Long {
-    return window.performance.now().toLong()
-}
-
-internal actual val PostDelayedDispatcher: kotlin.coroutines.CoroutineContext
-    get() = kotlinx.coroutines.Dispatchers.Main
+internal actual val pointerIconDefault: PointerIcon = LinuxCursor("default")
+internal actual val pointerIconCrosshair: PointerIcon = LinuxCursor("crosshair")
+internal actual val pointerIconText: PointerIcon = LinuxCursor("text")
+internal actual val pointerIconHand: PointerIcon = LinuxCursor("hand")

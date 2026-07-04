@@ -25,3 +25,6 @@ internal actual fun areObjectsOfSameType(a: Any, b: Any): Boolean {
 internal actual fun currentTimeMillis(): Long {
     return window.performance.now().toLong()
 }
+
+internal actual val PostDelayedDispatcher: kotlin.coroutines.CoroutineContext
+    get() = kotlinx.coroutines.Dispatchers.Main
