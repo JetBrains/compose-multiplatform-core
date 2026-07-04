@@ -19,9 +19,12 @@ package androidx.compose.ui.window
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.asComposeCanvas
+import androidx.compose.ui.input.key.InternalKeyEvent
+import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.key.KeyEventType
-import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.keysymToKey
+import androidx.compose.ui.input.key.xKeyboardModifiers
 import androidx.compose.ui.input.pointer.PointerButton
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.PointerIcon
@@ -208,21 +211,24 @@ private class ComposeWindow(
             MotionNotify -> {
                 val x = event.xmotion.x.toFloat()
                 val y = event.xmotion.y.toFloat()
-                onMouseEvent(PointerEventType.Move, x, y)
+                val modifiers = xKeyboardModifiers(event.xmotion.state.toLong())
+                onMouseEvent(PointerEventType.Move, x, y, modifiers)
             }
 
             ButtonPress -> {
                 val x = event.xbutton.x.toFloat()
                 val y = event.xbutton.y.toFloat()
                 val button = event.xbutton.button.toInt()
-                handleButton(x, y, button, pressed = true)
+                val modifiers = xKeyboardModifiers(event.xbutton.state.toLong())
+                handleButton(x, y, button, modifiers, pressed = true)
             }
 
             ButtonRelease -> {
                 val x = event.xbutton.x.toFloat()
                 val y = event.xbutton.y.toFloat()
                 val button = event.xbutton.button.toInt()
-                handleButton(x, y, button, pressed = false)
+                val modifiers = xKeyboardModifiers(event.xbutton.state.toLong())
+                handleButton(x, y, button, modifiers, pressed = false)
             }
 
             KeyPress -> handleKey(event, KeyEventType.KeyDown)
@@ -231,14 +237,26 @@ private class ComposeWindow(
         }
     }
 
-    private fun onMouseEvent(eventType: PointerEventType, x: Float, y: Float) {
+    private fun onMouseEvent(
+        eventType: PointerEventType,
+        x: Float,
+        y: Float,
+        modifiers: PointerKeyboardModifiers,
+    ) {
         scene.sendPointerEvent(
             eventType = eventType,
-            position = Offset(x, y)
+            position = Offset(x, y),
+            keyboardModifiers = modifiers,
         )
     }
 
-    private fun handleButton(x: Float, y: Float, button: Int, pressed: Boolean) {
+    private fun handleButton(
+        x: Float,
+        y: Float,
+        button: Int,
+        modifiers: PointerKeyboardModifiers,
+        pressed: Boolean,
+    ) {
         when (button) {
             4, 5 -> {
                 if (pressed) {
@@ -246,7 +264,8 @@ private class ComposeWindow(
                     scene.sendPointerEvent(
                         eventType = PointerEventType.Scroll,
                         position = Offset(x, y),
-                        scrollDelta = Offset(0f, deltaY)
+                        scrollDelta = Offset(0f, deltaY),
+                        keyboardModifiers = modifiers,
                     )
                 }
             }
@@ -261,61 +280,45 @@ private class ComposeWindow(
                 scene.sendPointerEvent(
                     eventType = eventType,
                     position = Offset(x, y),
-                    button = composeButton
+                    keyboardModifiers = modifiers,
+                    button = composeButton,
                 )
             }
         }
     }
 
+    /**
+     * Sends the X11 key event to the scene. The [Key] identity comes from the effective
+     * keysym (post Shift/NumLock, so keypad digits resolve correctly) with a fallback to
+     * the unshifted keysym (so shifted punctuation lands on its physical key, e.g. `!` on
+     * [Key.One]); unmapped keysyms still go through as [Key.Unknown] so their typed
+     * character reaches text fields via the code point.
+     */
     private fun handleKey(event: XEvent, type: KeyEventType) = memScoped {
         val buffer = allocArray<ByteVar>(32)
         val keysym = alloc<KeySymVar>()
         val length = XLookupString(event.xkey.ptr, buffer, 32, keysym.ptr, null)
-        val text = if (type == KeyEventType.KeyDown && length > 0) {
-            buffer.readBytes(length).decodeToString()
-        } else {
-            ""
-        }
-        keysymToKey[keysym.value.toLong()]?.let { key ->
-            scene.sendKeyEvent(
-                KeyEvent(
+        val key = keysymToKey[keysym.value.toLong()]
+            ?: keysymToKey[XLookupKeysym(event.xkey.ptr, 0).toLong()]
+            ?: Key.Unknown
+        val modifiers = xKeyboardModifiers(
+            state = event.xkey.state.toLong(),
+            key = key,
+            isKeyDown = type == KeyEventType.KeyDown,
+        )
+        _windowInfo.keyboardModifiers = modifiers
+        // XLookupString emits Latin-1, one byte per character.
+        val codePoint = if (length > 0) buffer[0].toUByte().toInt() else 0
+        scene.sendKeyEvent(
+            KeyEvent(
+                nativeKeyEvent = InternalKeyEvent(
                     key = key,
                     type = type,
-                    codePoint = text.firstOrNull()?.code ?: 0,
+                    codePoint = codePoint,
+                    modifiers = modifiers,
                     nativeEvent = event,
                 )
             )
-        }
+        )
     }
 }
-
-private val letterKeys = listOf(
-    Key.A, Key.B, Key.C, Key.D, Key.E, Key.F, Key.G, Key.H, Key.I, Key.J, Key.K, Key.L, Key.M,
-    Key.N, Key.O, Key.P, Key.Q, Key.R, Key.S, Key.T, Key.U, Key.V, Key.W, Key.X, Key.Y, Key.Z,
-)
-
-private val digitKeys = listOf(
-    Key.Zero, Key.One, Key.Two, Key.Three, Key.Four,
-    Key.Five, Key.Six, Key.Seven, Key.Eight, Key.Nine,
-)
-
-/**
- * X11 keysym → Compose [Key]. Latin letter keysyms equal their ASCII codes, so both
- * cases map to the same key; keysyms absent from this table are ignored.
- */
-private val keysymToKey: Map<Long, Key> =
-    mapOf(
-        0xff1bL to Key.Escape,
-        0xff0dL to Key.Enter,
-        0x0020L to Key.Spacebar,
-        0xff08L to Key.Backspace,
-        0xffffL to Key.Delete,
-        0xff52L to Key.DirectionUp,
-        0xff54L to Key.DirectionDown,
-        0xff51L to Key.DirectionLeft,
-        0xff53L to Key.DirectionRight,
-    ) +
-        ('a'..'z').zip(letterKeys).flatMap { (char, key) ->
-            listOf(char.code.toLong() to key, char.uppercaseChar().code.toLong() to key)
-        } +
-        ('0'..'9').zip(digitKeys).map { (char, key) -> char.code.toLong() to key }
