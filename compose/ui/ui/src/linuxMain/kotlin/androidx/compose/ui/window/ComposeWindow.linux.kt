@@ -31,6 +31,7 @@ import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.PointerButtons
 import androidx.compose.ui.input.pointer.PointerKeyboardModifiers
 import androidx.compose.ui.platform.DefaultArchitectureComponentsOwner
+import androidx.compose.ui.platform.LinuxTextInputService
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.WindowInfoImpl
 import androidx.compose.ui.scene.CanvasLayersComposeScene
@@ -121,10 +122,13 @@ private class ComposeWindow(
     private val frameRecomposer = FrameRecomposer(SkikoDispatchers.Main) { skiaLayer.needRender() }
     private val sceneRenderingScope = SingleComposeSceneRenderingScope { skiaLayer.needRender() }
 
+    private val linuxTextInputService = LinuxTextInputService()
+
     private val platformContext: PlatformContext =
         object : PlatformContext by PlatformContext.Empty() {
             override val windowInfo get() = _windowInfo
             override val architectureComponentsOwner get() = archComponentsOwner
+            override val textInputService get() = linuxTextInputService
             override fun setPointerIcon(pointerIcon: PointerIcon) {
                 // Ignore
             }
