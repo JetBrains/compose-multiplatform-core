@@ -66,6 +66,7 @@ def addMavenRepositories(RepositoryHandler handler) {
     }
     */
     if (true /* In JetBrains Fork */) {
+        handler.mavenLocal()
         handler.mavenCentral()
         handler.google {
             content {
