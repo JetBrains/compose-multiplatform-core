@@ -367,6 +367,8 @@ includeProject(":compose:desktop:desktop:desktop-samples-material3", "compose/de
 includeProject(":compose:mpp")
 includeProject(":compose:mpp:demo")
 includeProject(":compose:mpp:demo-swiftui")
+includeProject(":compose:mpp:linux-demo")
+
 
 includeProject(":compose:foundation")
 includeProject(":compose:foundation:foundation")

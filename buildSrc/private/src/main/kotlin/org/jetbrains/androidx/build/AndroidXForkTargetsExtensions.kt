@@ -202,10 +202,9 @@ fun addIosInstrumentedTestSourceset(project: Project) {
                 isStatic = true
             }
         }
-        testableTargets.getByName(
-            "iosSimulatorArm64",
-            KotlinNativeTargetWithSimulatorTests::class,
-            KotlinNativeTargetWithSimulatorTests::configureTestRun
-        )
+        val iosSimulatorArm64 = testableTargets.findByName("iosSimulatorArm64")
+        if (iosSimulatorArm64 is KotlinNativeTargetWithSimulatorTests) {
+            iosSimulatorArm64.configureTestRun()
+        }
     }
 }

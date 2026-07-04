@@ -21,6 +21,10 @@ import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 import org.jetbrains.kotlin.gradle.plugin.mpp.NativeBuildType
 import org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpackConfig
+import androidx.build.enableJs
+import androidx.build.enableWasmJs
+import androidx.build.enableMac
+
 
 plugins {
     id("AndroidXComposePlugin")
@@ -40,79 +44,86 @@ val unzipTask = tasks.register("unzipWasm", Copy::class) {
     from(skikoWasm.map { zipTree(it) })
 }
 
+
 kotlin {
     applyDefaultHierarchyTemplate()
     jvm("desktop")
-    js {
-        outputModuleName = "mpp-demo"
-        browser {
-            commonWebpackConfig {
-                outputFileName = "demo.js"
+    if (enableJs()) {
+        js {
+            outputModuleName = "mpp-demo"
+            browser {
+                commonWebpackConfig {
+                    outputFileName = "demo.js"
+                }
             }
+            binaries.executable()
         }
-        binaries.executable()
     }
-    wasmJs {
-        outputModuleName = "mpp-demo"
-        browser {
-            // https://youtrack.jetbrains.com/issue/KT-68614
-            val rootDirPath = project.rootDir.path
-            val projectDirPath = project.projectDir.path
-            commonWebpackConfig {
-                outputFileName = "demo.js"
-                devServer = (devServer ?: KotlinWebpackConfig.DevServer()).apply {
-                    open = mapOf(
-                        "app" to mapOf(
-                            "name" to "google-chrome",
+    if (enableWasmJs()) {
+        wasmJs {
+            outputModuleName = "mpp-demo"
+            browser {
+                // https://youtrack.jetbrains.com/issue/KT-68614
+                val rootDirPath = project.rootDir.path
+                val projectDirPath = project.projectDir.path
+                commonWebpackConfig {
+                    outputFileName = "demo.js"
+                    devServer = (devServer ?: KotlinWebpackConfig.DevServer()).apply {
+                        open = mapOf(
+                            "app" to mapOf(
+                                "name" to "google-chrome",
+                            )
                         )
-                    )
-                    static = (static ?: mutableListOf()).apply {
-                        // Serve sources to debug inside browser
-                        add(rootDirPath)
-                        add(projectDirPath)
+                        static = (static ?: mutableListOf()).apply {
+                            // Serve sources to debug inside browser
+                            add(rootDirPath)
+                            add(projectDirPath)
+                        }
                     }
                 }
             }
+            binaries.executable()
         }
-        binaries.executable()
     }
-    macosArm64() {
-        binaries {
-            executable() {
-                entryPoint = "androidx.compose.mpp.demo.main"
-                freeCompilerArgs += listOf(
-                    "-linker-option", "-framework", "-linker-option", "Metal"
-                )
-                // TODO: the current release binary surprises LLVM, so disable checks for now.
-                freeCompilerArgs += "-Xdisable-phases=VerifyBitcode"
+    if (enableMac()) {
+        macosArm64() {
+            binaries {
+                executable() {
+                    entryPoint = "androidx.compose.mpp.demo.main"
+                    freeCompilerArgs += listOf(
+                        "-linker-option", "-framework", "-linker-option", "Metal"
+                    )
+                    // TODO: the current release binary surprises LLVM, so disable checks for now.
+                    freeCompilerArgs += "-Xdisable-phases=VerifyBitcode"
+                }
             }
         }
-    }
-    iosArm64("iosArm64") {
-        binaries {
-            executable() {
-                entryPoint = "androidx.compose.mpp.demo.main"
-                freeCompilerArgs += listOf(
-                    "-linker-option", "-framework", "-linker-option", "Metal",
-                    "-linker-option", "-framework", "-linker-option", "CoreText",
-                    "-linker-option", "-framework", "-linker-option", "CoreGraphics"
-                )
-                // TODO: the current compose binary surprises LLVM, so disable checks for now.
-                freeCompilerArgs += "-Xdisable-phases=VerifyBitcode"
+        iosArm64("iosArm64") {
+            binaries {
+                executable() {
+                    entryPoint = "androidx.compose.mpp.demo.main"
+                    freeCompilerArgs += listOf(
+                        "-linker-option", "-framework", "-linker-option", "Metal",
+                        "-linker-option", "-framework", "-linker-option", "CoreText",
+                        "-linker-option", "-framework", "-linker-option", "CoreGraphics"
+                    )
+                    // TODO: the current compose binary surprises LLVM, so disable checks for now.
+                    freeCompilerArgs += "-Xdisable-phases=VerifyBitcode"
+                }
             }
         }
-    }
-    iosSimulatorArm64("iosSimArm64") {
-        binaries {
-            executable() {
-                entryPoint = "androidx.compose.mpp.demo.main"
-                freeCompilerArgs += listOf(
-                    "-linker-option", "-framework", "-linker-option", "Metal",
-                    "-linker-option", "-framework", "-linker-option", "CoreText",
-                    "-linker-option", "-framework", "-linker-option", "CoreGraphics"
-                )
-                // TODO: the current compose binary surprises LLVM, so disable checks for now.
-                freeCompilerArgs += "-Xdisable-phases=VerifyBitcode"
+        iosSimulatorArm64("iosSimArm64") {
+            binaries {
+                executable() {
+                    entryPoint = "androidx.compose.mpp.demo.main"
+                    freeCompilerArgs += listOf(
+                        "-linker-option", "-framework", "-linker-option", "Metal",
+                        "-linker-option", "-framework", "-linker-option", "CoreText",
+                        "-linker-option", "-framework", "-linker-option", "CoreGraphics"
+                    )
+                    // TODO: the current compose binary surprises LLVM, so disable checks for now.
+                    freeCompilerArgs += "-Xdisable-phases=VerifyBitcode"
+                }
             }
         }
     }
@@ -169,7 +180,8 @@ kotlin {
             }
         }
 
-        val webMain by getting {
+        val webMain = findByName("webMain")
+        webMain?.run {
             dependsOn(skikoMain)
             resources.setSrcDirs(resources.srcDirs)
             resources.srcDirs(unzipTask.map { it.destinationDir })
@@ -179,16 +191,25 @@ kotlin {
             }
         }
 
-        val wasmJsMain by getting {
+        val wasmJsMain = findByName("wasmJsMain")
+        wasmJsMain?.run {
             dependencies {
                 api(libs.kotlinXw3c)
             }
         }
 
-        val nativeMain by getting { dependsOn(skikoMain) }
-        val darwinMain by creating { dependsOn(nativeMain) }
-        val macosMain by getting { dependsOn(darwinMain) }
-        val iosMain by getting { dependsOn(darwinMain) }
+        val nativeMain = findByName("nativeMain")
+        nativeMain?.dependsOn(skikoMain)
+
+        val macosMain = findByName("macosMain")
+        val iosMain = findByName("iosMain")
+        if (macosMain != null || iosMain != null) {
+            val darwinMain = create("darwinMain") {
+                dependsOn(nativeMain!!)
+            }
+            macosMain?.dependsOn(darwinMain)
+            iosMain?.dependsOn(darwinMain)
+        }
     }
 }
 
