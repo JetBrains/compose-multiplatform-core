@@ -21,38 +21,33 @@ import androidx.compose.ui.text.AnnotatedString
 
 actual typealias NativeClipboard = Any
 
-private var memoryClipboardText: String? = null
-
 private class LinuxPlatformClipboardManager : ClipboardManager {
     override fun getText(): AnnotatedString? =
-        memoryClipboardText?.let { AnnotatedString(it) }
+        X11Clipboard.getText()?.let { AnnotatedString(it) }
 
     override fun setText(annotatedString: AnnotatedString) {
-        memoryClipboardText = annotatedString.text
+        X11Clipboard.setText(annotatedString.text)
     }
 
-    override fun hasText(): Boolean = !memoryClipboardText.isNullOrEmpty()
+    override fun hasText(): Boolean = X11Clipboard.hasText()
 
-    override fun getClip(): ClipEntry? = memoryClipboardText?.let { ClipEntry.withPlainText(it) }
+    override fun getClip(): ClipEntry? = X11Clipboard.getText()?.let { ClipEntry.withPlainText(it) }
 
     override fun setClip(clipEntry: ClipEntry?) {
-        memoryClipboardText = clipEntry?.plainText
+        X11Clipboard.setText(clipEntry?.plainText)
     }
 }
 
 internal class LinuxPlatformClipboard : Clipboard {
-    override suspend fun getClipEntry(): ClipEntry? {
-        val str = memoryClipboardText
-        if (str.isNullOrEmpty()) return null
-        return ClipEntry.withPlainText(str)
-    }
+    override suspend fun getClipEntry(): ClipEntry? =
+        X11Clipboard.getText()?.takeIf { it.isNotEmpty() }?.let { ClipEntry.withPlainText(it) }
 
     override suspend fun setClipEntry(clipEntry: ClipEntry?) {
-        memoryClipboardText = clipEntry?.plainText
+        X11Clipboard.setText(clipEntry?.plainText)
     }
 
     override val nativeClipboard: NativeClipboard
-        get() = Any()
+        get() = X11Clipboard
 }
 
 internal actual fun createPlatformClipboardManager(): ClipboardManager = LinuxPlatformClipboardManager()

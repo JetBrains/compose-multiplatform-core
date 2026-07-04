@@ -34,6 +34,7 @@ import androidx.compose.ui.platform.DefaultArchitectureComponentsOwner
 import androidx.compose.ui.platform.LinuxTextInputService
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.WindowInfoImpl
+import androidx.compose.ui.platform.X11Clipboard
 import androidx.compose.ui.scene.CanvasLayersComposeScene
 import androidx.compose.ui.scene.SingleComposeSceneRenderingScope
 import androidx.compose.ui.platform.FrameRecomposer
@@ -158,6 +159,7 @@ private class ComposeWindow(
         skiaLayer.renderDelegate = renderDelegate
         skiaLayer.attachTo(x11Window)
         x11Window.show()
+        X11Clipboard.register(x11Window.display, x11Window.window)
 
         scene.density = Density(x11Window.contentScale)
         scene.setContent {
@@ -172,6 +174,7 @@ private class ComposeWindow(
         if (isDisposed) return
         archComponentsOwner.lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_DESTROY)
         archComponentsOwner.viewModelStore.clear()
+        X11Clipboard.unregister(x11Window.window)
         skiaLayer.detach()
         scene.close()
         frameRecomposer.close()
@@ -244,6 +247,11 @@ private class ComposeWindow(
             KeyPress -> handleKey(event, KeyEventType.KeyDown)
 
             KeyRelease -> handleKey(event, KeyEventType.KeyUp)
+
+            // Another client is pasting from us / took clipboard ownership.
+            SelectionRequest -> X11Clipboard.handleSelectionRequest(event.xselectionrequest)
+
+            SelectionClear -> X11Clipboard.handleSelectionClear(event.xselectionclear)
         }
     }
 
