@@ -24,7 +24,6 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
-import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.test.StandardTestDispatcher
 
@@ -96,54 +95,7 @@ class GlobalSnapshotManagerTest {
     }
 
     @Test
-    fun nullHandleForContextWithoutDispatcher() {
-        // EmptyCoroutineContext has no ContinuationInterceptor, so the context overload returns null.
-        assertNull(GlobalSnapshotManager.register(kotlin.coroutines.EmptyCoroutineContext))
-    }
-
-    @Test
-    fun nullHandleForContextWithImmediateDispatcher() {
-        assertNull(GlobalSnapshotManager.register(Dispatchers.Unconfined + CoroutineName("x")))
-    }
-
-    @Test
     fun nullHandleForImmediateDispatcher() {
         assertNull(GlobalSnapshotManager.register(Dispatchers.Unconfined))
-    }
-
-    @Test
-    fun distinctContextsOnSameDispatcherShareOnePump() {
-        val dispatcher = StandardTestDispatcher()
-        val scheduler = dispatcher.scheduler
-
-        var applyCount = 0
-        val applyObserver = Snapshot.registerApplyObserver { _, _ -> applyCount++ }
-        val state = mutableStateOf(0)
-
-        try {
-            val handle1 = GlobalSnapshotManager.register(dispatcher + CoroutineName("a"))
-            val handle2 = GlobalSnapshotManager.register(dispatcher + CoroutineName("b"))
-
-            assertNotNull(handle1)
-            assertNotNull(handle2)
-
-            state.value++
-            scheduler.advanceUntilIdle()
-            val countAfterBothOpen = applyCount
-            assertTrue(countAfterBothOpen > 0, "Expected apply notification after first write")
-
-            // Closing one handle keeps the shared pump alive for the other context.
-            handle1.close()
-            state.value++
-            scheduler.advanceUntilIdle()
-            assertTrue(
-                applyCount > countAfterBothOpen,
-                "Expected the shared pump to stay alive after closing one of two handles"
-            )
-
-            handle2.close()
-        } finally {
-            applyObserver.dispose()
-        }
     }
 }

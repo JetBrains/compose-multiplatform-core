@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package androidx.compose.platform
+package androidx.compose.ui.platform
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
