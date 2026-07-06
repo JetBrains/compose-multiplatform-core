@@ -681,7 +681,7 @@ class LinuxWindow internal constructor(
             density = density,
             layoutDirection = layoutDirection,
             drawDragDecoration = drawDragDecoration,
-        ).encodeToPngBytes()
+        ).encodeToPng()
 
         application.activeDragSource = LinuxApplication.ActiveDragSource(
             windowId = id,
