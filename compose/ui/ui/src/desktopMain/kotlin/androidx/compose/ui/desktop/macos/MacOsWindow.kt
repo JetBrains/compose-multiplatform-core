@@ -92,6 +92,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.enableSavedStateHandles
 import kotlin.concurrent.atomics.AtomicReference
 import kotlin.concurrent.atomics.ExperimentalAtomicApi
+import kotlin.math.ceil
 import kotlin.time.TimeSource
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.io.files.Path
@@ -629,12 +630,14 @@ class MacOsWindow internal constructor(
             ?: return
         val pasteboardItems = itemsEntry.items.toPasteboardItems()
 
+        // AIR-5862: odd-sized drag images look blurry, so we pad the canvas up to even pixels.
+        val canvasSize = decorationSize.roundUpToEvenPixels()
         val image = DragAndDropImage(
             decorationSize,
             density(),
             layoutDirection(),
             drawDragDecoration,
-        ).encodeToPngBytes()
+        ).encodeToPng(canvasSize = canvasSize)
 
         val imageOffset = mouseOffset.toLogicalPoint() -
             offset.toLogicalPoint(density) +
@@ -645,7 +648,7 @@ class MacOsWindow internal constructor(
         val emptyImageSize = Size(1f, 1f)
         val emptyImage = DragAndDropImage(
             emptyImageSize, density, layoutDirection,
-        ) {}.encodeToPngBytes()!!
+        ) {}.encodeToPng()!!
         val emptyImageRect = LogicalRect(
             imageOffset,
             emptyImageSize.toLogicalSize(density),
@@ -657,7 +660,7 @@ class MacOsWindow internal constructor(
                 if (index == 0)
                     LogicalRect(
                         imageOffset,
-                        decorationSize.toLogicalSize(density),
+                        canvasSize.toLogicalSize(density),
                     ) else emptyImageRect,
                 Image(if (index == 0 && image != null) image else emptyImage),
             )
@@ -765,7 +768,7 @@ class MacOsWindow internal constructor(
                                                 .timeMark
                                                 .elapsedNow()
                                             if (elapsedTime.inWholeMilliseconds > 10) {
-//                                                logger.debug("Long frame: ${elapsedTime}")
+                                                logger.debug("Long frame: ${elapsedTime}")
                                             }
                                         },
                                     )
@@ -1019,6 +1022,15 @@ class MacOsWindow internal constructor(
 
 private fun org.jetbrains.desktop.macos.Window.isMaximizedButNotInFullScreen(): Boolean {
     return !isFullScreen && isMaximized
+}
+
+/** Rounds a size (in pixels) up so that both dimensions are even integers. */
+private fun Size.roundUpToEvenPixels(): Size {
+    fun evenCeil(value: Float): Float {
+        val ceiled = ceil(value).toInt()
+        return (if (ceiled % 2 == 0) ceiled else ceiled + 1).toFloat()
+    }
+    return Size(evenCeil(width), evenCeil(height))
 }
 
 private

@@ -681,7 +681,7 @@ class GtkWindow internal constructor(
             density = density,
             layoutDirection = layoutDirection,
             drawDragDecoration = drawDragDecoration,
-        ).encodeToPngBytes()
+        ).encodeToPng()
 
         application.activeDragSource = GtkApplication.ActiveDragSource(
             windowId = id,
