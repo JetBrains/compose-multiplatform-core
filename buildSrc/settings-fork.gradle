@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 
-rootProject.buildFileName = "../buildSrc-fork/build.gradle"
+rootProject.name = "buildSrc-fork"
+rootProject.buildFileName = "build-fork.gradle"
 
 dependencyResolutionManagement {
     // the default libs.version.toml is automatically registered by Gradle under `libs` name.
