@@ -16,7 +16,6 @@
 
 package androidx.build
 
-import androidx.benchmark.gradle.BenchmarkPlugin
 import androidx.build.AndroidXImplPlugin.Companion.TASK_TIMEOUT_MINUTES
 import androidx.build.ProjectLayoutType.Companion.isJetBrainsFork
 import androidx.build.Release.DEFAULT_PUBLISH_CONFIG
@@ -206,7 +205,6 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
             if (buildFeatures.isIsolatedProjectsEnabled()) return@configureMavenArtifactUpload
             project.addCreateLibraryBuildInfoFileTasks(androidXExtension, androidXKmpExtension)
         }
-        project.publishInspectionArtifacts()
         project.configureProjectStructureValidation(androidXExtension)
         project.configureProjectVersionValidation(androidXExtension)
         project.validateMultiplatformPluginHasNotBeenApplied()
@@ -1513,7 +1511,7 @@ private fun Project.configureJavaCompilationWarnings(
 }
 
 fun Project.hasBenchmarkPlugin(): Boolean {
-    return this.plugins.hasPlugin(BenchmarkPlugin::class.java)
+    return false
 }
 
 fun Project.isMacrobenchmark(): Boolean {
