@@ -1,5 +1,7 @@
 #!/bin/sh
 
+# Conflicts in this file should be solved as "ours"
+
 #
 # Copyright © 2015 the original authors.
 #
@@ -63,6 +65,40 @@
 #       You can find Gradle at https://github.com/gradle/gradle/.
 #
 ##############################################################################
+
+# --------- androidx specific code needed for build server. ------------------
+if [ "$PROJECT_MODE" == "AOSP" ]; then
+    SCRIPT_PATH="$(cd $(dirname $0) && pwd -P)"
+    if [ -n "$OUT_DIR" ] ; then
+        mkdir -p "$OUT_DIR"
+        OUT_DIR="$(cd $OUT_DIR && pwd -P)"
+        export TMPDIR="$OUT_DIR/tmp"
+    elif [[ $SCRIPT_PATH == /google/cog/* ]] ; then
+        export OUT_DIR="$HOME/androidxout"
+    else
+        CHECKOUT_ROOT="$(cd $SCRIPT_PATH/../.. && pwd -P)"
+        export OUT_DIR="$CHECKOUT_ROOT/out"
+    fi
+    export GRADLE_USER_HOME="$OUT_DIR/.gradle"
+    export KONAN_DATA_DIR="$OUT_DIR/.konan"
+
+    ORG_GRADLE_JVMARGS="$(cd $SCRIPT_PATH && grep org.gradle.jvmargs gradle.properties | sed 's/^/-D/')"
+    if [ -n "$DIST_DIR" ]; then
+        mkdir -p "$DIST_DIR"
+        DIST_DIR="$(cd $DIST_DIR && pwd -P)"
+
+        # tell Gradle where to put a heap dump on failure
+        ORG_GRADLE_JVMARGS="$(echo $ORG_GRADLE_JVMARGS | sed "s|$| -XX:HeapDumpPath=$DIST_DIR|")"
+
+        # We don't set a default DIST_DIR in an else clause here because Studio doesn't use gradlew
+        # and doesn't set DIST_DIR and we want gradlew and Studio to match
+    fi
+
+    # unset ANDROID_BUILD_TOP so that Lint doesn't think we're building the platform itself
+    unset ANDROID_BUILD_TOP
+fi
+
+# ----------------------------------------------------------------------------
 
 # Attempt to set APP_HOME
 

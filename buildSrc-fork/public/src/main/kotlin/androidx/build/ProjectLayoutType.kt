@@ -19,6 +19,7 @@ package androidx.build
 import androidx.build.gradle.extraPropertyOrNull
 import org.gradle.api.Project
 
+// TODO remove, there is only one type of the project for buildSrc-fork
 enum class ProjectLayoutType {
     ANDROIDX,
     PLAYGROUND,
@@ -26,16 +27,10 @@ enum class ProjectLayoutType {
 
     companion object {
         /** Returns the project layout type for the project (PLAYGROUND or ANDROIDX) */
+        @Suppress("unused")
         @JvmStatic
         fun from(project: Project): ProjectLayoutType {
-            val value = project.extraPropertyOrNull(STUDIO_TYPE)
-            return when (value) {
-                "playground" -> PLAYGROUND
-                null,
-                "androidx" -> ANDROIDX
-                "jetbrains-fork" -> JETBRAINS_FORK
-                else -> error("Invalid project type $value")
-            }
+            return JETBRAINS_FORK
         }
 
         /** @return `true` if running in a Playground (Github) setup, `false` otherwise. */

@@ -201,8 +201,9 @@ fun Project.isDisplayTestOutput(): Boolean = findBooleanProperty(DISPLAY_TEST_OU
  * and `<version>.txt`. When set to `false`, only `current.txt` will be written. The default value
  * is `true`.
  */
+@Suppress("UnusedReceiverParameter")
 fun Project.isWriteVersionedApiFilesEnabled(): Boolean =
-    findBooleanProperty(WRITE_VERSIONED_API_FILES) ?: true
+    false
 
 /** Returns whether the build is for checking forward compatibility across projects */
 fun Project.usingMaxDepVersions(): Provider<Boolean> {
