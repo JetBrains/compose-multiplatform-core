@@ -35,10 +35,15 @@ internal class DragAndDropImage(
     private val drawDragDecoration: DrawScope.() -> Unit
 ) {
 
-    internal fun encodeToPngBytes(): ByteArray? {
+    /**
+     * The decoration is drawn at [size]; [canvasSize] can be larger to pad the bitmap, leaving the
+     * extra edge transparent. On macOS this is used to round the canvas up to even pixels, which
+     * works around blurry drag images (AIR-5862).
+     */
+    internal fun encodeToPng(canvasSize: Size = size): ByteArray? {
         val imageBitmap = ImageBitmap(
-            width = size.width.roundToInt(),
-            height = size.height.roundToInt()
+            width = canvasSize.width.roundToInt(),
+            height = canvasSize.height.roundToInt()
         )
         val canvas = Canvas(imageBitmap)
         val canvasScope = CanvasDrawScope()
