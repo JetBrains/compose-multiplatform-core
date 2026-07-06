@@ -27,6 +27,7 @@ import androidx.compose.ui.util.trace
 import kotlin.coroutines.ContinuationInterceptor
 import kotlin.coroutines.CoroutineContext
 import kotlinx.atomicfu.atomic
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Job
@@ -88,16 +89,16 @@ class FrameRecomposer(
 
     /**
      * Id of the host (compose) thread. Snapshot-observer callbacks run inline when on this thread,
-     * otherwise they are posted to the shared [effectDispatcher].
+     * otherwise they are posted to the shared [trampolineDispatcher].
      */
     private var composeThreadId: Long? by atomic(null)
 
     /**
-     * Registers `coroutineContext` with the shared [GlobalSnapshotManager] so ambient global writes
-     * schedule apply notifications onto this host. Several [FrameRecomposer]s built on the same
-     * host context share one observer and it's released only when the last of them is closed.
+     * Registers the [trampolineDispatcher] with the shared [GlobalSnapshotManager] so ambient
+     * global writes schedule apply notifications onto the trampoline queue, where they are rolled
+     * synchronously by [performTrampolineDispatch].
      */
-    private val globalSnapshotRegistration = GlobalSnapshotManager.register(coroutineContext)
+    private val globalSnapshotRegistration = GlobalSnapshotManager.register(trampolineDispatcher)
 
     init {
         // The host must carry a (single-thread) continuation interceptor that work is dispatched
@@ -211,14 +212,14 @@ class FrameRecomposer(
         }
 
     /**
-     * Synchronously rolls the trampoline loop: first flushes pending snapshot apply notifications
-     * (so writes made since the last turn are visible to the queued work), then drains the
-     * [trampolineDispatcher] queue (coroutine dispatch / composition effects).
+     * Synchronously rolls the trampoline loop: flushes pending snapshot apply notifications
+     * implicitly by [GlobalSnapshotManager] or explicitly if there is no active registration.
      */
     internal fun performTrampolineDispatch(): Unit =
         trace("FrameRecomposer:performTrampolineDispatch") {
-            Snapshot.sendApplyNotifications()
-
+            if (globalSnapshotRegistration == null) {
+                Snapshot.sendApplyNotifications()
+            }
             trampolineDispatcher.flush()
         }
 }
