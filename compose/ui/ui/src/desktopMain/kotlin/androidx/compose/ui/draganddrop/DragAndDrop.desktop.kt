@@ -20,7 +20,6 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.desktop.ClipboardEntry
 import androidx.compose.ui.desktop.ClipboardFormat
 import androidx.compose.ui.desktop.LinuxDragAndDropClipboardEntry
-import androidx.compose.ui.desktop.macos.MacOsClipboardEntry
 import androidx.compose.ui.desktop.macos.MacOsDragAndDropClipboardEntry
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -29,7 +28,6 @@ import androidx.compose.ui.platform.DesktopPlatform
 import java.awt.datatransfer.Transferable
 import java.awt.dnd.DropTargetDragEvent
 import java.awt.dnd.DropTargetDropEvent
-import org.jetbrains.desktop.macos.DragInfo
 
 /**
  * Encapsulates the information needed to start a drag-and-drop session from Compose on the desktop.
@@ -213,8 +211,8 @@ interface DragData {
 val DragAndDropEvent.clipboardEntry: ClipboardEntry
     get() {
         return when (DesktopPlatform.Current) {
-            DesktopPlatform.MacOS -> MacOsClipboardEntry((nativeEvent as DragInfo).pasteboard)
-            DesktopPlatform.Linux -> nativeEvent as ClipboardEntry
+            DesktopPlatform.MacOS -> nativeEvent as MacOsDragAndDropClipboardEntry
+            DesktopPlatform.Linux -> nativeEvent as LinuxDragAndDropClipboardEntry
             DesktopPlatform.Windows -> throw UnsupportedOperationException("Drag and drop is not supported on Windows")
             DesktopPlatform.Unknown -> error("Unsupported desktop platform: ${DesktopPlatform.Current}")
         }
