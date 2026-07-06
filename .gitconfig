@@ -1,0 +1,9 @@
+# This config is not applied automatically. Currently it is only needed for AOSP merges
+#
+# Run once after cloning:
+#   git config --local include.path ../.gitconfig
+
+# A custom no-op merge driver that is used to solve conflicts
+[merge "ours"]
+    # "true" is a just a command that does nothing during a merge resolution
+	driver = true
