@@ -31,7 +31,7 @@ abstract class AndroidXRootPlugin : Plugin<Project> {
         val supportRoot = project.getSupportRootFolder()
         project.apply(
             mapOf<String, String>(
-                "from" to "$supportRoot/buildSrc/apply/applyAndroidXRootImplPlugin.gradle"
+                "from" to "$supportRoot/buildSrc-fork/apply/applyAndroidXRootImplPlugin.gradle"
             )
         )
     }

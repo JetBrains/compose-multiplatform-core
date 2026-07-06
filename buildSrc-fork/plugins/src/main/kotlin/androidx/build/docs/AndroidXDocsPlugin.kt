@@ -32,7 +32,7 @@ class AndroidXDocsPlugin : Plugin<Project> {
         val supportRoot = project.getSupportRootFolder()
         project.apply(
             mapOf<String, String>(
-                "from" to "$supportRoot/buildSrc/apply/applyAndroidXDocsImplPlugin.gradle"
+                "from" to "$supportRoot/buildSrc-fork/apply/applyAndroidXDocsImplPlugin.gradle"
             )
         )
     }
