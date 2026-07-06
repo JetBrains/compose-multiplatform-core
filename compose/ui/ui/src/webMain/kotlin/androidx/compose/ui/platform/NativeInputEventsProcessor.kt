@@ -134,13 +134,9 @@ internal abstract class NativeInputEventsProcessor(
             }
 
             "deleteWordBackward" -> buildList {
-                firstRange?.let { targetRange ->
-                    add(
-                        DeleteSurroundingTextCommand(
-                            targetRange.endOffset - targetRange.startOffset,
-                            0
-                        )
-                    )
+                resolveSelection()?.let {
+                    add(it)
+                    add(BackspaceCommand())
                 }
             }
 
