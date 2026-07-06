@@ -20,14 +20,12 @@ import androidx.build.AndroidXExtension
 import androidx.build.ProjectLayoutType.Companion.isJetBrainsFork
 import androidx.build.Release
 import androidx.build.RunApiTasks
-import androidx.build.binarycompatibilityvalidator.BinaryCompatibilityValidation
 import androidx.build.getSupportRootFolder
 import androidx.build.hasAndroidMultiplatformPlugin
 import androidx.build.isWriteVersionedApiFilesEnabled
 import androidx.build.metalava.MetalavaTasks
 import androidx.build.multiplatformExtension
 import androidx.build.resources.ResourceTasks
-import androidx.build.stableaidl.setupWithStableAidlPlugin
 import androidx.build.version
 import com.android.build.api.artifact.SingleArtifact
 import com.android.build.api.attributes.BuildTypeAttr
@@ -122,8 +120,6 @@ fun Project.configureProjectForApiTasks(config: ApiTaskConfig, extension: Androi
             outputApiLocations,
         )
 
-        project.setupWithStableAidlPlugin()
-
         if (config is LibraryApiTaskConfig) {
             ResourceTasks.setupProject(
                 project,
@@ -142,10 +138,6 @@ fun Project.configureProjectForApiTasks(config: ApiTaskConfig, extension: Androi
                 builtApiLocation,
                 outputApiLocations,
             )
-        }
-        multiplatformExtension?.let { multiplatformExtension ->
-            BinaryCompatibilityValidation(project, multiplatformExtension)
-                .setupBinaryCompatibilityValidatorTasks()
         }
     }
 }
