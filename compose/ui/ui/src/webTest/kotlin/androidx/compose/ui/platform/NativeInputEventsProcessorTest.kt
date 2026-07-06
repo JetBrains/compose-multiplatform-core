@@ -539,14 +539,16 @@ class NativeInputEventsProcessorTest {
 
         // Add deleteContentBackward event
         processor.registerEvent(
-            beforeInput("deleteContentBackward", "") as InputEvent
+            beforeInput("deleteContentBackward", "").asInputEventExt().apply {
+                setFirstRange(2, 7)
+            }
         )
 
         // Process the event with a non-collapsed selection
         processor.manuallyRunCheckpoint(communicator.currentTextFieldValue())
 
-        assertEquals(1, communicator.editCommands.size)
-        val command = communicator.editCommands[0]
+        assertEquals(2, communicator.editCommands.size)
+        val command = communicator.editCommands[1]
         assertTrue(command is BackspaceCommand)
 
         assertEquals("ex text", communicator.currentTextFieldValue().text)

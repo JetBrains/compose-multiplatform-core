@@ -127,8 +127,10 @@ internal abstract class NativeInputEventsProcessor(
     private fun InputEventExt.process() {
         val editCommands = when (inputType) {
             "deleteContentBackward" -> buildList {
-                resolveSelection()?.let { add(it) }
-                add(BackspaceCommand())
+                resolveSelection()?.let {
+                    add(it)
+                    add(BackspaceCommand())
+                }
             }
 
             "deleteWordBackward" -> buildList {
