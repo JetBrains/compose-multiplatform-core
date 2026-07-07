@@ -14,6 +14,9 @@
  * limitations under the License.
  */
 
+@file:Suppress("INVISIBLE_MEMBER", "INVISIBLE_REFERENCE")
+@file:OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
+
 package androidx.compose.mpp.demo.textfield
 
 import androidx.compose.foundation.background
@@ -26,7 +29,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.input.InputTransformation
 import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.foundation.text.input.internal.ChangeTracker
 import androidx.compose.material.OutlinedTextField
 import androidx.compose.material.Text
 import androidx.compose.material.TextField
@@ -92,6 +97,17 @@ val TextFields = Screen.Selection(
         var textFieldState by remember { mutableStateOf("I am an old TextField") }
         val textFieldState2 = remember { TextFieldState("I am a BasicTextField(TextFieldState)") }
         val textFieldState3 = remember { TextFieldState(bigTextExampleString) }
+        var isFromHardwareSource by remember { mutableStateOf<Boolean?>(null) }
+        val hardwareSourceTracker = remember {
+            InputTransformation {
+                val tracker = changes as? ChangeTracker
+                isFromHardwareSource = if (tracker != null && tracker.changeCount > 0) {
+                    tracker.isFromHardwareSource(0)
+                } else {
+                    null
+                }
+            }
+        }
 
         val defaultModifier = Modifier
             .padding(16.dp)
@@ -117,7 +133,12 @@ val TextFields = Screen.Selection(
                 Box(Modifier.height(16.dp))
                 BasicTextField(
                     textFieldState3,
-                    defaultModifier
+                    defaultModifier,
+                    inputTransformation = hardwareSourceTracker,
+                )
+                Text(
+                    text = "isFromHardwareSource: $isFromHardwareSource",
+                    modifier = Modifier.padding(horizontal = 16.dp),
                 )
             }
         }
