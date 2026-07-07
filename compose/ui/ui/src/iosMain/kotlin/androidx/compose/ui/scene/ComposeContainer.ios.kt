@@ -65,7 +65,10 @@ import platform.Foundation.removeObserver
 import platform.UIKit.UIAccessibilityIsReduceMotionEnabled
 import platform.UIKit.UIApplication
 import platform.UIKit.UIResponder
+import platform.UIKit.UITraitCollection
 import platform.UIKit.UIUserInterfaceLayoutDirection
+import platform.UIKit.UIUserInterfaceLayoutDirection.UIUserInterfaceLayoutDirectionLeftToRight
+import platform.UIKit.UIUserInterfaceLayoutDirection.UIUserInterfaceLayoutDirectionRightToLeft
 import platform.UIKit.UIUserInterfaceStyle
 import platform.UIKit.UIViewController
 import platform.UIKit.UIWindow
@@ -89,7 +92,12 @@ internal class ComposeContainer(
     private var mediator: ComposeSceneMediator? = null
     private val windowContext = PlatformWindowContext()
     private var layersHolder: ComposeLayersHolder? = null
-    private val layoutDirection get() = getApplicationLayoutDirection()
+    private var layoutDirection = getApplicationLayoutDirection()
+        set(value) {
+            field = value
+            mediator?.layoutDirection = value
+            navigationEventInput.layoutDirection = value
+        }
     private val motionDurationScale = MotionDurationScaleImpl()
     private var activeStateListener: SceneActiveStateListener? = null
     private var sceneJob: Job = Job().also {
@@ -109,6 +117,7 @@ internal class ComposeContainer(
     }
     private val navigationEventInput = UIKitNavigationEventInput(
         density = view.density,
+        initialLayoutDirection = layoutDirection,
         getTopLeftOffsetInWindow = { IntOffset.Zero }, //full screen
         endEdgePanGestureBehavior = configuration.endEdgePanGestureBehavior
     )
@@ -161,6 +170,10 @@ internal class ComposeContainer(
 
     private fun onLayoutSubviews() {
         windowContext.updateWindowContainerSize()
+    }
+
+    private fun onTraitCollectionDidChange(previousTraitCollection: UITraitCollection?) {
+        layoutDirection = view.effectiveUserInterfaceLayoutDirection.asLayoutDirection()
     }
 
     private fun onDidMoveToWindow(window: UIWindow?) {
@@ -252,7 +265,8 @@ internal class ComposeContainer(
             view.updateMetalView(
                 metalView = metalView,
                 onDidMoveToWindow = ::onDidMoveToWindow,
-                onLayoutSubviews = ::onLayoutSubviews
+                onLayoutSubviews = ::onLayoutSubviews,
+                onTraitCollectionDidChange = ::onTraitCollectionDidChange,
             )
             view.embedSubview(mediator.overlayView)
 
@@ -421,7 +435,7 @@ private fun UIUserInterfaceStyle.asComposeSystemTheme(): SystemTheme {
 
 private fun getApplicationLayoutDirection() =
     when (UIApplication.sharedApplication().userInterfaceLayoutDirection) {
-        UIUserInterfaceLayoutDirection.UIUserInterfaceLayoutDirectionRightToLeft -> LayoutDirection.Rtl
+        UIUserInterfaceLayoutDirectionRightToLeft -> LayoutDirection.Rtl
         else -> LayoutDirection.Ltr
     }
 
@@ -492,5 +506,14 @@ private class SceneGeometryObserver(
         context: CPointer<out CPointed>?
     ) {
         onGeometryChanged()
+    }
+}
+
+private fun UIUserInterfaceLayoutDirection.asLayoutDirection(): LayoutDirection = when (this) {
+    UIUserInterfaceLayoutDirectionLeftToRight -> LayoutDirection.Ltr
+    UIUserInterfaceLayoutDirectionRightToLeft -> LayoutDirection.Rtl
+    else -> {
+        println("ComposeContainer: unexpected UIUserInterfaceLayoutDirection=$this, falling back to Ltr")
+        LayoutDirection.Ltr
     }
 }
