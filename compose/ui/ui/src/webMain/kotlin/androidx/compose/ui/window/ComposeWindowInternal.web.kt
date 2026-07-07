@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-@file:OptIn(ExperimentalWasmJsInterop::class)
+@file:OptIn(ExperimentalWasmJsInterop::class, ExperimentalWasmJsInterop::class)
 
 package androidx.compose.ui.window
 
@@ -88,6 +88,8 @@ import androidx.compose.ui.viewinterop.TrackInteropPlacementContainer
 import androidx.compose.ui.viewinterop.WebInteropContainer
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.enableSavedStateHandles
+import kotlin.js.ExperimentalWasmJsInterop
+import kotlin.js.js
 import kotlinx.browser.document
 import kotlinx.browser.window
 import kotlinx.coroutines.Dispatchers
@@ -473,6 +475,10 @@ internal class ComposeWindow(
     }
 
     init {
+        if (configuration.enableBrowserWindowInsets) {
+            checkViewportFitCover()
+        }
+
         initEvents(canvas)
         state.init()
 
@@ -874,6 +880,22 @@ private fun clipTargetElement(canvas: HTMLCanvasElement): HTMLTextAreaElement {
 
     return clipTarget
 }
+
+// language=js
+private fun checkViewportFitCover(): Unit = js(
+    """(function() {
+        let meta = document.querySelector('meta[name=viewport]');
+        let content = meta ? (meta.getAttribute('content') || '') : '';
+        if (!content.includes('viewport-fit=cover')) {
+            console.warn(
+                "[ComposeWeb] enableBrowserWindowInsets is set to true, but " +
+                "'viewport-fit=cover' is not found in the viewport meta tag. " +
+                "Safe area insets will be zero. Add viewport-fit=cover to your viewport meta tag: " +
+                "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1, viewport-fit=cover\">"
+            );
+        }
+    })()"""
+)
 
 // strings checks are faster on a JS side
 // language=js
