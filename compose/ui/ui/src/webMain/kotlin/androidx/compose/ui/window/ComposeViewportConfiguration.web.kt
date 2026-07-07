@@ -44,4 +44,27 @@ class ComposeViewportConfiguration internal constructor() {
      */
     @ExperimentalComposeUiApi
     var isClearFocusOnMouseDownEnabled: Boolean = ComposeUiFlags.isClearFocusOnMouseDownEnabled
+
+    /**
+     * Controls whether the Compose scene handles system window insets (status bar, navigation bar,
+     * IME keyboard) and exposes them via [androidx.compose.foundation.layout.WindowInsets] APIs
+     * such as `WindowInsets.safeDrawing`, `WindowInsets.ime`, etc.
+     *
+     * When set to `true`, the scene reads safe area insets from the browser using CSS
+     * `env(safe-area-inset-*)` environment variables, and tracks IME (virtual keyboard) geometry.
+     *
+     * **Prerequisite**: the page must opt in to edge-to-edge rendering by including
+     * `viewport-fit=cover` in the viewport meta tag:
+     * ```html
+     * <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+     * ```
+     * Without `viewport-fit=cover`, the browser applies safe area padding automatically and all
+     * `env(safe-area-inset-*)` variables return `0px`, so insets will always be zero.
+     *
+     * By default, this is `false` and the scene reports zero insets.
+     *
+     * Note: This API is experimental and subject to change in the future.
+     */
+    @ExperimentalComposeUiApi
+    var enableBrowserWindowInsets: Boolean = false
 }
