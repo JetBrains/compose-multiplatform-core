@@ -16,21 +16,28 @@
 
 package androidx.compose.mpp.demo.components
 
+import androidx.compose.foundation.ComposeFoundationFlags
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.contextmenu.builder.item
 import androidx.compose.foundation.text.contextmenu.modifier.appendTextContextMenuComponents
 import androidx.compose.foundation.text.selection.DisableSelection
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.Checkbox
 import androidx.compose.material.TextField
 import androidx.compose.material3.Button
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.mpp.demo.textfield.ClearFocusBox
 import androidx.compose.runtime.Composable
@@ -38,6 +45,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
@@ -45,6 +53,10 @@ import androidx.compose.ui.unit.dp
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun SelectionExample() {
+    var isAutoScrollEnabled by remember {
+        mutableStateOf(ComposeFoundationFlags.isSelectionAutoScrollEnabled)
+    }
+
     var count by remember { mutableStateOf(0) }
     val textState = remember {
         mutableStateOf(
@@ -60,6 +72,7 @@ fun SelectionExample() {
             Button(onClick = { count++ }) {
                 Text("Outside Count: $count")
             }
+
             SelectionContainer(
                 Modifier.padding(24.dp).fillMaxWidth()
                     .appendTextContextMenuComponents {
@@ -110,6 +123,27 @@ fun SelectionExample() {
                     Text("I'm yet another Text() with multiparagraph structure block.\nLet's try to select me!")
                 }
             }
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(bottom = 16.dp)
+            ) {
+                Checkbox(
+                    checked = isAutoScrollEnabled,
+                    onCheckedChange = { checked ->
+                        isAutoScrollEnabled = checked
+                        // Mutate the global Compose flag directly
+                        ComposeFoundationFlags.isSelectionAutoScrollEnabled = checked
+                    }
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(text = "isSelectionAutoScrollEnabled", style = MaterialTheme.typography.bodyLarge)
+            }
+
+            HorizontalDivider()
+            Spacer(modifier = Modifier.height(16.dp))
+
+
             Column(
                 Modifier
                     .height(100.dp)
@@ -122,6 +156,61 @@ fun SelectionExample() {
                     Text(
                         text = "Select text and scroll\n".repeat(100),
                         modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+            }
+        }
+    }
+}
+
+
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun SelectionExample2() {
+    // 1. Local state to manage the Checkbox UI
+    var isAutoScrollEnabled by remember {
+        mutableStateOf(ComposeFoundationFlags.isSelectionAutoScrollEnabled)
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+    ) {
+        // 2. Control Toggle
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(bottom = 16.dp)
+        ) {
+            Checkbox(
+                checked = isAutoScrollEnabled,
+                onCheckedChange = { checked ->
+                    isAutoScrollEnabled = checked
+                    // Mutate the global Compose flag directly
+                    ComposeFoundationFlags.isSelectionAutoScrollEnabled = checked
+                }
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(text = "isSelectionAutoScrollEnabled", style = MaterialTheme.typography.bodyLarge)
+        }
+
+        HorizontalDivider()
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // 3. Scrollable Selection Container
+        SelectionContainer {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+                    .verticalScroll(rememberScrollState())
+            ) {
+                // Generate a dense block of text to force scrolling
+                repeat(50) { index ->
+                    Text(
+                        text = "[$index] Drag your selection past the bottom edge of the view to test auto-scrolling mechanics.",
+                        modifier = Modifier.padding(vertical = 6.dp)
                     )
                 }
             }
