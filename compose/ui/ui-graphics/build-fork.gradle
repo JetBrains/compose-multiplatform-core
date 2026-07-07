@@ -129,7 +129,6 @@ androidXMultiplatform {
             dependencies {
                 implementation(libs.junit)
                 implementation(libs.truth)
-                implementation(libs.skikoCurrentOs)
                 implementation(project(":compose:ui:ui-test-junit4"))
             }
         }

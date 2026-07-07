@@ -68,17 +68,7 @@ object JetBrainsPublication {
             ComposeComponent(":compose:ui:ui-util"),
             ComposeComponent(
                 ":compose:desktop:desktop",
-                supportedPlatforms = setOf(ComposePlatforms.Desktop),
-                customTasks = listOf(
-                    "KotlinMultiplatform",
-                    "Jvm",
-                    "Jvmlinux-x64",
-                    "Jvmlinux-arm64",
-                    "Jvmmacos-x64",
-                    "Jvmmacos-arm64",
-                    "Jvmwindows-x64",
-                    "Jvmwindows-arm64",
-                )
+                supportedPlatforms = setOf(ComposePlatforms.Desktop)
             ),
         ),
         "COMPOSE_MATERIAL3" to listOf(

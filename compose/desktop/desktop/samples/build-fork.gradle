@@ -33,7 +33,6 @@ kotlin {
             resources.srcDirs += "src/jvmMain/res"
 
             dependencies {
-                implementation(libs.skikoCurrentOs)
                 implementation(project(":compose:desktop:desktop"))
 
                 implementation("org.jetbrains.compose.material:material-icons-core:1.7.3") {

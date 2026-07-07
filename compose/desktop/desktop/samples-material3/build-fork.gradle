@@ -30,7 +30,6 @@ kotlin {
         }
 
         jvmMain.dependencies {
-            implementation(libs.skikoCurrentOs)
             implementation(project(":compose:material3:material3"))
             implementation(project(":compose:desktop:desktop"))
         }

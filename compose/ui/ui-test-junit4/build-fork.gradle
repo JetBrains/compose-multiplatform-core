@@ -130,7 +130,6 @@ androidXMultiplatform {
             dependencies {
                 implementation(libs.truth)
                 implementation(libs.junit)
-                implementation(libs.skikoCurrentOs)
             }
         }
     }
