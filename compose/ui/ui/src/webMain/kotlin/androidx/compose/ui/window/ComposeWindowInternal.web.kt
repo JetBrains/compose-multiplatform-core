@@ -62,6 +62,7 @@ import androidx.compose.ui.platform.WebHapticFeedback
 import androidx.compose.ui.platform.WebTextInputService
 import androidx.compose.ui.platform.WebTextToolbar
 import androidx.compose.ui.platform.WebWakeLockManager
+import androidx.compose.ui.platform.WebWindowInsetsManager
 import androidx.compose.ui.platform.WindowInfoImpl
 import androidx.compose.ui.platform.accessibility.ComposeWebSemanticsListener
 import androidx.compose.ui.platform.installFallbackFontDownloader
@@ -213,6 +214,8 @@ internal class ComposeWindow(
     private val navigationEventInput = BackNavigationEventInput()
 
     private val canvasEvents = EventTargetListener(canvas)
+
+    private var insetsManager: WebWindowInsetsManager? = null
 
     private var keyboardModeState: KeyboardModeState = KeyboardModeState.Hardware
 
@@ -477,6 +480,7 @@ internal class ComposeWindow(
     init {
         if (configuration.enableBrowserWindowInsets) {
             checkViewportFitCover()
+            insetsManager = WebWindowInsetsManager(density, state.globalEvents)
         }
 
         initEvents(canvas)
