@@ -19,7 +19,6 @@
 package androidx.compose.ui.platform
 
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.events.EventTargetListener
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
@@ -27,6 +26,28 @@ import kotlin.js.ExperimentalWasmJsInterop
 import kotlin.js.js
 import kotlinx.browser.window
 import org.w3c.dom.events.EventTarget
+
+private class WebWindowInsets(
+    private val safeArea: () -> PlatformInsets,
+    private val keyboard: () -> PlatformInsets,
+) : PlatformWindowInsets {
+    override val statusBars: PlatformInsets
+        get() = PlatformInsets(getTop = { safeArea().top })
+    override val navigationBars: PlatformInsets
+        get() = PlatformInsets(getBottom = { safeArea().bottom })
+    override val systemBars: PlatformInsets
+        get() = safeArea()
+    override val displayCutout: PlatformInsets
+        get() = safeArea()
+    override val ime: PlatformInsets
+        get() = keyboard()
+    override val systemGestures: PlatformInsets
+        get() = safeArea()
+    override val mandatorySystemGestures: PlatformInsets
+        get() = PlatformInsets(getTop = { safeArea().top }, getBottom = { safeArea().bottom })
+    override val tappableElement: PlatformInsets
+        get() = PlatformInsets(getTop = { safeArea().top })
+}
 
 /**
  * Reads system window insets (safe area and IME) from the browser and exposes them as Compose
@@ -41,13 +62,17 @@ import org.w3c.dom.events.EventTarget
  *   between `window.innerHeight` and `visualViewport.height`.
  *
  */
-@OptIn(InternalComposeUiApi::class)
 internal class WebWindowInsetsManager(
     private val density: Density
 ) {
 
-    val safeAreaInsets = mutableStateOf(PlatformInsets.Zero)
-    val imeInsets = mutableStateOf(PlatformInsets.Zero)
+    private val safeAreaInsets = mutableStateOf(PlatformInsets.Zero)
+    private val imeInsets = mutableStateOf(PlatformInsets.Zero)
+
+    val windowInsets: PlatformWindowInsets = WebWindowInsets(
+        safeArea = { safeAreaInsets.value },
+        keyboard = { imeInsets.value },
+    )
 
     private val hasVirtualKeyboardApi: Boolean = hasVirtualKeyboard()
 
