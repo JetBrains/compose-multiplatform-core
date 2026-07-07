@@ -25,49 +25,99 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import kotlin.js.ExperimentalWasmJsInterop
 import kotlin.js.js
+import kotlinx.browser.window
+import org.w3c.dom.events.EventTarget
 
 /**
- * Reads system window insets (safe area) from the browser via CSS custom properties and
- * exposes them as Compose state.
+ * Reads system window insets (safe area and IME) from the browser and exposes them as Compose
+ * state.
+ *
+ * Safe area insets are read from CSS `env(safe-area-inset-*)` environment variables via CSS custom
+ * properties, and re-read on each window resize event.
+ *
+ * IME (virtual keyboard) insets are tracked using:
+ * - **VirtualKeyboard API** when available — the most precise source.
+ * - **VisualViewport API** as a fallback for Safari and Firefox — derived from the difference
+ *   between `window.innerHeight` and `visualViewport.height`.
+ *
  */
 @OptIn(InternalComposeUiApi::class)
 internal class WebWindowInsetsManager(
-    private val density: Density,
-    globalEvents: EventTargetListener
+    private val density: Density
 ) {
 
     val safeAreaInsets = mutableStateOf(PlatformInsets.Zero)
+    val imeInsets = mutableStateOf(PlatformInsets.Zero)
+
+    private val hasVirtualKeyboardApi: Boolean = hasVirtualKeyboard()
+
+    private val safeAreaListener: EventTargetListener
+    private val imeEventsListener: EventTargetListener?
 
     init {
         installSafeAreaCssProperties()
-        readAndUpdate()
-        globalEvents.addDisposableEvent("resize") {
-            readAndUpdate()
+        safeAreaListener = initSafeAreaTracking()
+        imeEventsListener = initImeTracking()
+    }
+
+    fun dispose() {
+        safeAreaListener.dispose()
+        imeEventsListener?.dispose()
+    }
+
+
+    private fun initSafeAreaTracking(): EventTargetListener {
+        readAndUpdateSafeArea()
+        return EventTargetListener(window).apply {
+            addDisposableEvent("resize") { readAndUpdateSafeArea() }
         }
     }
 
-    private fun readAndUpdate() {
-        val top = readCssVarTop()
-        val right = readCssVarRight()
-        val bottom = readCssVarBottom()
-        val left = readCssVarLeft()
+    private fun initImeTracking(): EventTargetListener? {
+        readAndUpdateIme()
+        return if (hasVirtualKeyboardApi) {
+            enableVirtualKeyboardOverlay()
+            val vk = getVirtualKeyboard() ?: return null
+            EventTargetListener(vk).apply {
+                addDisposableEvent("geometrychange") { readAndUpdateIme() }
+            }
+        } else {
+            val vv = getVisualViewport() ?: return null
+            EventTargetListener(vv).apply {
+                addDisposableEvent("resize") { readAndUpdateIme() }
+                addDisposableEvent("scroll") { readAndUpdateIme() }
+            }
+        }
+    }
+
+    private fun readAndUpdateSafeArea() {
         safeAreaInsets.value = with(density) {
             PlatformInsets(
-                left = left.dp.roundToPx(),
-                top = top.dp.roundToPx(),
-                right = right.dp.roundToPx(),
-                bottom = bottom.dp.roundToPx()
+                left = readCssVarLeft().dp.roundToPx(),
+                top = readCssVarTop().dp.roundToPx(),
+                right = readCssVarRight().dp.roundToPx(),
+                bottom = readCssVarBottom().dp.roundToPx()
             )
+        }
+    }
+
+    private fun readAndUpdateIme() {
+        val bottomCssPx = if (hasVirtualKeyboardApi) {
+            readVirtualKeyboardHeight()
+        } else {
+            readVisualViewportImeHeight()
+        }
+        imeInsets.value = with(density) {
+            PlatformInsets(bottom = bottomCssPx.dp.roundToPx())
         }
     }
 }
 
 /**
- * Installs CSS custom properties on `document.documentElement` that mirror the browser's
- * `env(safe-area-inset-*)` environment variables.
+ * Installs CSS custom properties on `document.documentElement` that mirror `env(safe-area-inset-*)`.
  *
- * Setting them on the root element (rather than on a canvas or shadow root) works around a WebKit
- * bug where `env()` values return 0 inside canvas-based shadow roots on some iOS versions.
+ * Setting them on the root element (rather than inside a canvas shadow root) works around a WebKit
+ * bug where `env()` values return 0 in canvas-based shadow roots on some iOS versions.
  */
 // language=js
 private fun installSafeAreaCssProperties(): Unit = js(
@@ -95,3 +145,34 @@ private fun readCssVarBottom(): Float =
 // language=js
 private fun readCssVarLeft(): Float =
     js("(parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--cmp-safe-left')) || 0)")
+
+// language=js
+private fun hasVirtualKeyboard(): Boolean = js("('virtualKeyboard' in navigator)")
+
+// language=js
+private fun enableVirtualKeyboardOverlay(): Unit =
+    js("(navigator.virtualKeyboard.overlaysContent = true)")
+
+// language=js
+private fun getVirtualKeyboard(): EventTarget? = js("navigator.virtualKeyboard")
+
+/** Returns the current keyboard height in CSS pixels (0 when keyboard is hidden). */
+// language=js
+private fun readVirtualKeyboardHeight(): Float =
+    js("(navigator.virtualKeyboard.boundingRect.height || 0)")
+
+// --- IME: VisualViewport API fallback (Safari, Firefox) ---
+
+// language=js
+private fun getVisualViewport(): EventTarget? = js("(window.visualViewport || null)")
+
+/**
+ * Estimates the IME height in CSS pixels from the visual viewport geometry.
+ * Returns 0 when the keyboard is not visible.
+ */
+// language=js
+private fun readVisualViewportImeHeight(): Float = js("""(function() {
+    let vv = window.visualViewport;
+    if (!vv) return 0;
+    return Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+})()""")

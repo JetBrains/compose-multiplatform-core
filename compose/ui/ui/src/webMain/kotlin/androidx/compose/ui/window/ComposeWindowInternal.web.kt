@@ -480,7 +480,7 @@ internal class ComposeWindow(
     init {
         if (configuration.enableBrowserWindowInsets) {
             checkViewportFitCover()
-            insetsManager = WebWindowInsetsManager(density, state.globalEvents)
+            insetsManager = WebWindowInsetsManager(density)
         }
 
         initEvents(canvas)
@@ -570,6 +570,7 @@ internal class ComposeWindow(
         frameRecomposer.close()
         skiaLayer.detach()
 
+        insetsManager?.dispose()
         systemThemeObserver.dispose()
         state.dispose()
         // modern browsers supposed to garbage collect all events on the element disposed
