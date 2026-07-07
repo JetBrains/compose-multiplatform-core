@@ -38,10 +38,10 @@ import androidx.compose.ui.graphics.asSkiaColorFilter
 import androidx.compose.ui.graphics.drawscope.CanvasDrawScope
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.draw
-import androidx.compose.ui.graphics.skiaCanvas
-import androidx.compose.ui.graphics.skiaImageFilter
 import androidx.compose.ui.graphics.materializeSkiaPath
 import androidx.compose.ui.graphics.requirePrecondition
+import androidx.compose.ui.graphics.skiaCanvas
+import androidx.compose.ui.graphics.skiaImageFilter
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.toSkia
 import androidx.compose.ui.unit.Density
@@ -50,6 +50,7 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.toSize
 import org.jetbrains.skia.Paint as SkPaint
+import org.jetbrains.skia.Path as SkPath
 import org.jetbrains.skia.Point
 import org.jetbrains.skia.Rect as SkRect
 import org.jetbrains.skiko.node.RenderNode
@@ -89,12 +90,7 @@ actual class GraphicsLayer internal constructor(
         set(value) {
             if (field != value) {
                 field = value
-                renderNode?.bounds = SkRect.makeXYWH(
-                    value.x.toFloat(),
-                    value.y.toFloat(),
-                    size.width.toFloat(),
-                    size.height.toFloat()
-                )
+                updateRenderNodeBounds()
             }
         }
 
@@ -102,12 +98,8 @@ actual class GraphicsLayer internal constructor(
         private set(value) {
             if (field != value) {
                 field = value
-                renderNode?.bounds = SkRect.makeXYWH(
-                    topLeft.x.toFloat(),
-                    topLeft.y.toFloat(),
-                    value.width.toFloat(),
-                    value.height.toFloat()
-                )
+                updateRenderNodeBounds()
+                updateRenderNodePivot()
                 if (roundRectOutlineSize.isUnspecified) {
                     outlineDirty = true
                     configureOutlineAndClip()
@@ -119,7 +111,7 @@ actual class GraphicsLayer internal constructor(
         set(value) {
             if (field != value) {
                 field = value
-                renderNode?.pivot = Point(value.x, value.y)
+                updateRenderNodePivot()
             }
         }
 
@@ -247,13 +239,14 @@ actual class GraphicsLayer internal constructor(
     }
 
     actual fun setRoundRectOutline(topLeft: Offset, size: Size, cornerRadius: Float) {
-        if (this.roundRectOutlineTopLeft != topLeft ||
+        val topLeftWithOutsets = topLeft + outsetOffset()
+        if (this.roundRectOutlineTopLeft != topLeftWithOutsets ||
             this.roundRectOutlineSize != size ||
             this.roundRectCornerRadius != cornerRadius ||
             this.outlinePath != null
         ) {
             resetOutlineParams()
-            this.roundRectOutlineTopLeft = topLeft
+            this.roundRectOutlineTopLeft = topLeftWithOutsets
             this.roundRectOutlineSize = size
             this.roundRectCornerRadius = cornerRadius
             configureOutlineAndClip()
@@ -324,6 +317,7 @@ actual class GraphicsLayer internal constructor(
     ) {
         this.size = size
         recordWithTracking { canvas ->
+            // FIXME: Remove it to fix https://youtrack.jetbrains.com/issue/CMP-10436
             canvas.alphaMultiplier = if (compositingStrategy == CompositingStrategy.ModulateAlpha) {
                 this@GraphicsLayer.alpha
             } else {
@@ -347,7 +341,16 @@ actual class GraphicsLayer internal constructor(
             val composeCanvas = recordingCanvas.asComposeCanvas() as SkiaBackedCanvas
             childDependenciesTracker.withTracking(
                 onDependencyRemoved = { it.onRemovedFromParentLayer() },
-            ) { block(composeCanvas) }
+            ) {
+                if (outsetLeft > 0 || outsetTop > 0) {
+                    composeCanvas.save()
+                    composeCanvas.translate(outsetLeft.toFloat(), outsetTop.toFloat())
+                    block(composeCanvas)
+                    composeCanvas.restore()
+                } else {
+                    block(composeCanvas)
+                }
+            }
         } finally {
             renderNode.endRecording()
         }
@@ -363,21 +366,7 @@ actual class GraphicsLayer internal constructor(
         if (isReleased) return
         configureOutlineAndClip()
         parentLayer?.addSubLayer(this)
-        val paint = cachedLayerPaint
-        if (hasOutsets() && paint != null) {
-            val skCanvas = canvas.skiaCanvas
-            skCanvas.saveLayer(
-                left = topLeft.x - outsetLeft.toFloat(),
-                top = topLeft.y - outsetTop.toFloat(),
-                right = topLeft.x + size.width + outsetRight.toFloat(),
-                bottom = topLeft.y + size.height + outsetBottom.toFloat(),
-                paint = paint,
-            )
-            renderNode?.drawInto(skCanvas)
-            skCanvas.restore()
-        } else {
-            renderNode?.drawInto(canvas.skiaCanvas)
-        }
+        renderNode?.drawInto(canvas.skiaCanvas)
     }
 
     private fun onAddedToParentLayer() {
@@ -389,7 +378,6 @@ actual class GraphicsLayer internal constructor(
         discardContentIfReleasedAndHaveNoParentLayerUsages()
     }
 
-    @OptIn(InternalComposeUiApi::class)
     private fun configureOutlineAndClip() {
         if (!outlineDirty) return
         val renderNode = renderNode ?: return
@@ -424,7 +412,7 @@ actual class GraphicsLayer internal constructor(
                     ),
                     antiAlias = true
                 )
-                is Outline.Generic -> renderNode.setClipPath(tmpOutline.path.materializeSkiaPath(), antiAlias = true)
+                is Outline.Generic -> renderNode.setClipPath(updatePathOutline(tmpOutline.path), antiAlias = true)
             }
         }
         outlineDirty = false
@@ -443,6 +431,14 @@ actual class GraphicsLayer internal constructor(
             }
         return block(rRectTopLeft, outlineSize)
     }
+
+    @OptIn(InternalComposeUiApi::class)
+    private fun updatePathOutline(path: Path): SkPath =
+        if (hasOutsets()) {
+            Path().apply { addPath(path, outsetOffset()) }
+        } else {
+            path
+        }.materializeSkiaPath()
 
     internal fun release() {
         if (!isReleased) {
@@ -476,9 +472,7 @@ actual class GraphicsLayer internal constructor(
             null
         }
         cachedLayerPaint = paint
-        // When outsets are present, we manage the offscreen layer manually in draw() using an
-        // expanded saveLayer bounds, so the renderNode must not create its own inner layer.
-        renderNode?.layerPaint = if (hasOutsets()) null else paint
+        renderNode?.layerPaint = paint
     }
 
     private fun hasOutsets() = outsetLeft > 0 || outsetTop > 0 || outsetRight > 0 || outsetBottom > 0
@@ -507,7 +501,35 @@ actual class GraphicsLayer internal constructor(
             outsetTop = top
             outsetRight = right
             outsetBottom = bottom
-            updateLayerProperties()
+            updateRenderNodeBounds()
+            updateRenderNodePivot()
         }
     }
+
+    private fun updateRenderNodeBounds() {
+        renderNode?.bounds = SkRect.makeXYWH(
+            topLeft.x.toFloat() - outsetLeft,
+            topLeft.y.toFloat() - outsetTop,
+            size.width.toFloat() + outsetLeft + outsetRight,
+            size.height.toFloat() + outsetTop + outsetBottom
+        )
+    }
+
+    private fun updateRenderNodePivot() {
+        val renderNode = renderNode ?: return
+        renderNode.pivot =
+            if (pivotOffset.isUnspecified) {
+                Point(
+                    size.width / 2f + outsetLeft,
+                    size.height / 2f + outsetTop
+                )
+            } else {
+                Point(
+                    pivotOffset.x + outsetLeft,
+                    pivotOffset.y + outsetTop
+                )
+            }
+    }
+
+    private fun outsetOffset(): Offset = Offset(outsetLeft.toFloat(), outsetTop.toFloat())
 }
