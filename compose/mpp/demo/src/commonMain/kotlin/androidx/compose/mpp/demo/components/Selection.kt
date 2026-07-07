@@ -154,7 +154,7 @@ fun SelectionExample() {
             ) {
                 SelectionContainer {
                     Text(
-                        text = "Select text and scroll\n".repeat(100),
+                        text = (1..100).joinToString("\n") { "[$it] Select text and scroll" },
                         modifier = Modifier.fillMaxWidth(),
                     )
                 }
