@@ -1,6 +1,6 @@
 buildscript {
     project.ext.supportRootFolder = project.projectDir.getParentFile()
-    apply from: "repos.gradle"
+    apply from: "../buildSrc-fork/repos.gradle"
     repos.addMavenRepositories(repositories)
 
     dependencies {
@@ -17,7 +17,7 @@ buildscript {
 }
 
 ext.supportRootFolder = project.projectDir.getParentFile()
-apply from: "repos.gradle"
+apply from: "../buildSrc-fork/repos.gradle"
 apply plugin: "kotlin"
 
 repos.addMavenRepositories(repositories)

@@ -47,7 +47,7 @@ class TextFieldMultiTapSelectionTest {
     @Test
     fun double_tap_selects_word() = runUIKitInstrumentedTest(params = tfOptions) { textFieldOption ->
         textFieldOption.setup(this, MULTI_WORD_TEXT, TAG)
-        focusThenDoubleTap(TAG)
+        findNodeWithTag(TAG).focusThenDoubleTap()
         assertFalse(textFieldOption.selection.collapsed, "[${textFieldOption.name}] Expected a word to be selected after double tap")
         assertTrue(
             textFieldOption.selection.length < MULTI_WORD_TEXT.length,
@@ -68,7 +68,7 @@ class TextFieldMultiTapSelectionTest {
     @Test
     fun multitap_does_not_show_magnifier() = runUIKitInstrumentedTest(params = tfOptions) { textFieldOption ->
         textFieldOption.setup(this, MULTI_WORD_TEXT, TAG)
-        focusThenDoubleTap(TAG) // double tap is enough
+        findNodeWithTag(TAG).focusThenDoubleTap() // double tap is enough
         delay(200)
         assertEquals(
             findFirstDescendant { it.isLoupeView },

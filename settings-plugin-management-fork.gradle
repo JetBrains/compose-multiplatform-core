@@ -7,6 +7,6 @@ ext.configureForkPluginManagement = { PluginManagementSpec pluginManagement ->
                 url = "https://plugins.gradle.org/m2/"
             }
         }
-        includeBuild("androidx-settings-plugins")
+        includeBuild("androidx-settings-plugins-fork")
     }
 }
