@@ -51,8 +51,8 @@ import androidx.compose.ui.test.findNodeWithLabel
 import androidx.compose.ui.test.findNodeWithLabelOrNull
 import androidx.compose.ui.test.findNodeWithTag
 import androidx.compose.ui.test.runUIKitInstrumentedTest
+import androidx.compose.ui.test.tapContextMenuButton
 import androidx.compose.ui.test.utils.findFirstDescendant
-import androidx.compose.ui.test.utils.hold
 import androidx.compose.ui.test.utils.isLoupeView
 import androidx.compose.ui.test.utils.up
 import androidx.compose.ui.test.waitForContextMenu
@@ -67,9 +67,6 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.cinterop.ExperimentalForeignApi
-import org.jetbrains.skiko.OS
-import org.jetbrains.skiko.OSVersion
-import org.jetbrains.skiko.available
 import platform.UIKit.UIPasteboard
 
 class TextFieldEditMenuTest {
@@ -234,7 +231,7 @@ class TextFieldEditMenuTest {
         }
 
         // A long press positions the cursor and, on release, reveals the context menu.
-        longPressAndAwaitContextMenu("TextField")
+        longPressNodeWithTagAndAwaitContextMenu("TextField")
 
         waitForContextMenu()
         findNodeWithLabel("Paste").assertVisibleInContainer()
@@ -246,7 +243,7 @@ class TextFieldEditMenuTest {
         }
 
         // A tap again brings the context menu back.
-        longPressAndAwaitContextMenu("TextField")
+        longPressNodeWithTagAndAwaitContextMenu("TextField")
         findNodeWithLabel("Paste").assertVisibleInContainer()
     }
 
@@ -268,7 +265,7 @@ class TextFieldEditMenuTest {
         }
 
         // A long press positions the cursor and, on release, reveals the context menu.
-        longPressAndAwaitContextMenu("TextField")
+        longPressNodeWithTagAndAwaitContextMenu("TextField")
         findNodeWithLabel("Paste").assertVisibleInContainer()
 
         // A short tap elsewhere dismisses the context menu.
@@ -278,7 +275,7 @@ class TextFieldEditMenuTest {
         }
 
         // A long press again brings the context menu back.
-        longPressAndAwaitContextMenu("TextField")
+        longPressNodeWithTagAndAwaitContextMenu("TextField")
         findNodeWithLabel("Paste").assertVisibleInContainer()
     }
 
@@ -292,7 +289,7 @@ class TextFieldEditMenuTest {
                 readOnly = false
             )
 
-            longPressAndAwaitContextMenu("TextField")
+            longPressNodeWithTagAndAwaitContextMenu("TextField")
             verifyContextMenuItemsVisible(
                 labels = if (newContextMenu) {
                     listOf("Paste", "Select All")
@@ -330,7 +327,7 @@ class TextFieldEditMenuTest {
                 readOnly = false
             )
 
-            longPressAndAwaitContextMenu("TextField")
+            longPressNodeWithTagAndAwaitContextMenu("TextField")
             verifyContextMenuItemsVisible(
                 labels = if (newContextMenu) {
                     listOf("Select All")
@@ -433,7 +430,7 @@ class TextFieldEditMenuTest {
             UIPasteboard.generalPasteboard().string = "Paste text"
             val isFullySelected = setContentAndGetIsFullySelected()
 
-            longPressAndAwaitContextMenu("TextField")
+            longPressNodeWithTagAndAwaitContextMenu("TextField")
             tapContextMenuButton("Select All")
             waitUntil("Text field should be fully selected") {
                 isFullySelected()
@@ -461,7 +458,7 @@ class TextFieldEditMenuTest {
                 readOnly = true
             )
 
-            longPressAndAwaitContextMenu("TextField")
+            longPressNodeWithTagAndAwaitContextMenu("TextField")
             verifyContextMenuItemsVisible(labels = listOf("Select All"))
             verifyContextMenuItemsHidden(labels = listOf("Cut", "Copy", "Paste", "Select"))
         }
@@ -742,9 +739,7 @@ class TextFieldEditMenuTest {
     }
 
     private fun UIKitInstrumentedTest.openToolbar(textFieldTag: String) {
-        findNodeWithTag(textFieldTag).tap()
-        delay(500)
-        findNodeWithTag(textFieldTag).doubleTap()
+        findNodeWithTag(textFieldTag).focusThenDoubleTap()
         waitForContextMenu()
     }
 
@@ -753,7 +748,7 @@ class TextFieldEditMenuTest {
             .testTag("TextField")
             .focusRequester(focusRequester)
 
-    private fun UIKitInstrumentedTest.longPressAndAwaitContextMenu(textFieldTag: String) {
+    private fun UIKitInstrumentedTest.longPressNodeWithTagAndAwaitContextMenu(textFieldTag: String) {
         val touch = findNodeWithTag(textFieldTag).touchDown()
         waitUntil {
             findFirstDescendant { it.isLoupeView } != null
@@ -845,19 +840,5 @@ class TextFieldEditMenuTest {
     @OptIn(ExperimentalForeignApi::class)
     private fun UIKitInstrumentedTest.verifyFullToolbarPresent() {
         verifyContextMenuItemsVisible(listOf("Cut", "Copy", "Paste", "Select All"))
-    }
-
-    private fun UIKitInstrumentedTest.tapContextMenuButton(label: String) {
-        if (available(OS.Ios to OSVersion(16))) {
-            findNodeWithLabel(label).tap()
-        } else {
-            // Because on iOS < 16 the context menu is shown in a separate window,
-            // it's not fully interactive with the default Tap action.
-            findNodeWithLabel(label)
-                .touchDown(useNodeWindow = true)
-                .hold()
-                .also { delay(100) }
-                .up()
-        }
     }
 }
