@@ -25,6 +25,8 @@ import androidx.compose.ui.unit.dp
 import kotlin.js.ExperimentalWasmJsInterop
 import kotlin.js.js
 import kotlinx.browser.window
+import org.w3c.dom.DOMRect
+import org.w3c.dom.Element
 import org.w3c.dom.events.EventTarget
 
 private class WebWindowInsets(
@@ -61,10 +63,21 @@ private class WebWindowInsets(
  * - **VisualViewport API** as a fallback for Safari and Firefox — derived from the difference
  *   between `window.innerHeight` and `visualViewport.height`.
  *
+ * All insets are clipped to the portion of the system UI zones that the [composeScene] actually
+ * overlaps. For example, if the canvas is positioned below the status bar, the top inset will be
+ * zero; if it extends into the navigation bar area, the bottom inset will reflect the overlap.
+ *
  */
 internal class WebWindowInsetsManager(
-    private val density: Density
+    private val density: Density,
+    canvas: Element
 ) {
+    private var canvasRect: DOMRect = canvas.getBoundingClientRect()
+        set(value) {
+            field = value
+            readAndUpdateSafeArea()
+            readAndUpdateIme()
+        }
 
     private val safeAreaInsets = mutableStateOf(PlatformInsets.Zero)
     private val imeInsets = mutableStateOf(PlatformInsets.Zero)
@@ -76,30 +89,22 @@ internal class WebWindowInsetsManager(
 
     private val hasVirtualKeyboardApi: Boolean = hasVirtualKeyboard()
 
-    private val safeAreaListener: EventTargetListener
     private val imeEventsListener: EventTargetListener?
 
     init {
         installSafeAreaCssProperties()
-        safeAreaListener = initSafeAreaTracking()
         imeEventsListener = initImeTracking()
     }
 
     fun dispose() {
-        safeAreaListener.dispose()
         imeEventsListener?.dispose()
     }
 
-
-    private fun initSafeAreaTracking(): EventTargetListener {
-        readAndUpdateSafeArea()
-        return EventTargetListener(window).apply {
-            addDisposableEvent("resize") { readAndUpdateSafeArea() }
-        }
+    fun onCanvasResized(canvas: Element) {
+        canvasRect = canvas.getBoundingClientRect()
     }
 
     private fun initImeTracking(): EventTargetListener? {
-        readAndUpdateIme()
         return if (hasVirtualKeyboardApi) {
             enableVirtualKeyboardOverlay()
             val vk = getVirtualKeyboard() ?: return null
@@ -110,30 +115,39 @@ internal class WebWindowInsetsManager(
             val vv = getVisualViewport() ?: return null
             EventTargetListener(vv).apply {
                 addDisposableEvent("resize") { readAndUpdateIme() }
-                addDisposableEvent("scroll") { readAndUpdateIme() }
             }
         }
     }
 
     private fun readAndUpdateSafeArea() {
+        val vw = window.innerWidth.toFloat()
+        val vh = window.innerHeight.toFloat()
+        val adjustedLeft = maxOf(0f, readCssVarLeft() - canvasRect.left.toFloat())
+        val adjustedTop = maxOf(0f, readCssVarTop() - canvasRect.top.toFloat())
+        val adjustedRight = maxOf(0f, readCssVarRight() - (vw - canvasRect.right.toFloat()))
+        val adjustedBottom = maxOf(0f, readCssVarBottom() - (vh - canvasRect.bottom.toFloat()))
+
         safeAreaInsets.value = with(density) {
             PlatformInsets(
-                left = readCssVarLeft().dp.roundToPx(),
-                top = readCssVarTop().dp.roundToPx(),
-                right = readCssVarRight().dp.roundToPx(),
-                bottom = readCssVarBottom().dp.roundToPx()
+                left = adjustedLeft.dp.roundToPx(),
+                top = adjustedTop.dp.roundToPx(),
+                right = adjustedRight.dp.roundToPx(),
+                bottom = adjustedBottom.dp.roundToPx()
             )
         }
     }
 
     private fun readAndUpdateIme() {
-        val bottomCssPx = if (hasVirtualKeyboardApi) {
+        val rawHeight = if (hasVirtualKeyboardApi) {
             readVirtualKeyboardHeight()
         } else {
             readVisualViewportImeHeight()
         }
+        val vh = window.innerHeight.toFloat()
+        val adjustedBottom = maxOf(0f, rawHeight - (vh - canvasRect.bottom.toFloat()))
+
         imeInsets.value = with(density) {
-            PlatformInsets(bottom = bottomCssPx.dp.roundToPx())
+            PlatformInsets(bottom = adjustedBottom.dp.roundToPx())
         }
     }
 }
@@ -148,10 +162,10 @@ internal class WebWindowInsetsManager(
 private fun installSafeAreaCssProperties(): Unit = js(
     """(function() {
         let s = document.documentElement.style;
-        s.setProperty('--cmp-safe-top',    'env(safe-area-inset-top,    0px)');
-        s.setProperty('--cmp-safe-right',  'env(safe-area-inset-right,  0px)');
+        s.setProperty('--cmp-safe-top', 'env(safe-area-inset-top, 0px)');
+        s.setProperty('--cmp-safe-right', 'env(safe-area-inset-right, 0px)');
         s.setProperty('--cmp-safe-bottom', 'env(safe-area-inset-bottom, 0px)');
-        s.setProperty('--cmp-safe-left',   'env(safe-area-inset-left,   0px)');
+        s.setProperty('--cmp-safe-left', 'env(safe-area-inset-left, 0px)');
     })()"""
 )
 

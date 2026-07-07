@@ -482,7 +482,7 @@ internal class ComposeWindow(
     init {
         if (configuration.enableBrowserWindowInsets) {
             checkViewportFitCover()
-            insetsManager = WebWindowInsetsManager(density)
+            insetsManager = WebWindowInsetsManager(density, canvas)
         }
 
         initEvents(canvas)
@@ -558,6 +558,8 @@ internal class ComposeWindow(
         skiaLayer.attachTo(canvas)
         scene.size = sizeInPx
         skiaLayer.needRender()
+
+        insetsManager?.onCanvasResized(canvas)
     }
 
     // TODO: need to call .dispose() on window close.

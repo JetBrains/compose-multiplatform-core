@@ -63,6 +63,12 @@ class ComposeViewportConfiguration internal constructor() {
      *
      * By default, this is `false` and the scene reports zero insets.
      *
+     * **Scrollable containers:** insets are re-read on `window resize` and keyboard geometry events,
+     * but not on page scroll. If the [composeScene] is inside a scrollable page, its viewport position
+     * changes as the user scrolls, so the insets may become invalid. In that case
+     * it is recommended to disable inset handling entirely (`enableBrowserWindowInsets = false`) and
+     * manage padding manually.
+     *
      * Note: This API is experimental and subject to change in the future.
      */
     @ExperimentalComposeUiApi
