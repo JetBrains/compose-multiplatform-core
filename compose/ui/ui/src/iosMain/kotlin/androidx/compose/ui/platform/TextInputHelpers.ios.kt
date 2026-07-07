@@ -447,8 +447,7 @@ internal class TextInputStringTokenizer(
             }
         } else {
             while (location > 0) {
-                if (string[location].isNewLineCharacter()) {
-                    location++
+                if (string[location - 1].isNewLineCharacter()) {
                     break
                 }
                 location--
