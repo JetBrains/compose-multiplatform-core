@@ -107,6 +107,7 @@ class ComposeSceneMediatorTest {
             ),
             navigationEventInput = UIKitNavigationEventInput(
                 density = Density(1f),
+                initialLayoutDirection = LayoutDirection.Ltr,
                 getTopLeftOffsetInWindow = { IntOffset.Zero },
                 endEdgePanGestureBehavior = EndEdgePanGestureBehavior.Disabled,
             ),

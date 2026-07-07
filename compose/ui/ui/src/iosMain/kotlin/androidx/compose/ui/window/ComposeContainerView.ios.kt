@@ -53,6 +53,7 @@ internal class ComposeContainerView(
     private var onDidMoveToWindow: (UIWindow?) -> Unit = {}
     private var onWillMoveToWindow: (UIWindow?) -> Unit = {}
     private var onLayoutSubviews: () -> Unit = {}
+    private var onTraitCollectionDidChange: (UITraitCollection?) -> Unit = {}
     private var foregroundStateListener: SceneForegroundStateListener? = null
 
     val redrawer: MetalRedrawer? get() = metalView?.redrawer
@@ -65,6 +66,7 @@ internal class ComposeContainerView(
         super.traitCollectionDidChange(previousTraitCollection)
 
         updateBackgroundColor()
+        onTraitCollectionDidChange(previousTraitCollection)
     }
 
     private fun updateBackgroundColor() {
@@ -83,7 +85,8 @@ internal class ComposeContainerView(
         metalView: MetalViewHolder?,
         onWillMoveToWindow: (UIWindow?) -> Unit = {},
         onDidMoveToWindow: (UIWindow?) -> Unit = {},
-        onLayoutSubviews: () -> Unit = {}
+        onLayoutSubviews: () -> Unit = {},
+        onTraitCollectionDidChange: (UITraitCollection?) -> Unit = {},
     ) {
         this.metalView?.dispose()
         this.metalView?.view?.removeFromSuperview()
@@ -92,6 +95,7 @@ internal class ComposeContainerView(
         this.onDidMoveToWindow = onDidMoveToWindow
         this.onWillMoveToWindow = onWillMoveToWindow
         this.onLayoutSubviews = onLayoutSubviews
+        this.onTraitCollectionDidChange = onTraitCollectionDidChange
 
         metalView?.let {
             addSubview(metalView.view)
@@ -99,6 +103,8 @@ internal class ComposeContainerView(
         updateLayout()
         window?.let(onWillMoveToWindow)
         window?.let(onDidMoveToWindow)
+
+        onTraitCollectionDidChange(traitCollection)
 
         if (metalView == null) {
             foregroundStateListener?.dispose()
