@@ -27,8 +27,10 @@ import androidx.compose.ui.test.utils.beginKeyPress
 import androidx.compose.ui.test.utils.beginModifierKeyPress
 import androidx.compose.ui.test.utils.beginPress
 import androidx.compose.ui.test.utils.center
+import androidx.compose.ui.test.utils.findFirstDescendant
 import androidx.compose.ui.test.utils.getTouchesEvent
 import androidx.compose.ui.test.utils.hold
+import androidx.compose.ui.test.utils.isLoupeView
 import androidx.compose.ui.test.utils.leftCenter
 import androidx.compose.ui.test.utils.mouseDown
 import androidx.compose.ui.test.utils.moveToLocationOnWindow
@@ -600,6 +602,12 @@ internal class UIKitInstrumentedTest(
         return tap(frame.center())
     }
 
+    fun AccessibilityTestNode.focusThenDoubleTap(delayMillis: Long = 500L) {
+        tap()
+        delay(delayMillis)
+        doubleTap()
+    }
+
     /**
      * Simulates a touch-down event at the center of a given AccessibilityTestNode.
      */
@@ -607,6 +615,38 @@ internal class UIKitInstrumentedTest(
         val frame = frame ?: error("Internal error. Frame is missing.")
         val window = (element as? UIView)?.window?.takeIf { useNodeWindow }
         return touchDown(frame.center(), window)
+    }
+
+    fun AccessibilityTestNode.longPressAndReleaseAfterLoupe() {
+        val touch = touchDown()
+        waitUntil("Selection loupe should appear after long press") {
+            findFirstDescendant { it.isLoupeView } != null
+        }
+        touch.up()
+    }
+
+    fun AccessibilityTestNode.openToolbarForLeadingWord(
+        doubleTapPreparationDelay: Long,
+        manualDoubleTapIntervalDelay: Long
+    ) {
+        tap()
+        delay(doubleTapPreparationDelay)
+        val tapPoint = pointInNode(xFraction = 0.1f, yFraction = 0.5f)
+        tap(tapPoint)
+        delay(manualDoubleTapIntervalDelay)
+        tap(tapPoint)
+        waitForContextMenu()
+    }
+
+    fun AccessibilityTestNode.pointInNode(
+        xFraction: Float,
+        yFraction: Float,
+    ): DpOffset {
+        val frame = frame!!
+        return DpOffset(
+            x = frame.left + (frame.right - frame.left) * xFraction,
+            y = frame.top + (frame.bottom - frame.top) * yFraction,
+        )
     }
 
     /**
@@ -880,5 +920,19 @@ private fun UIViewController.setLayoutDirection(
             collection = UITraitCollection.traitCollectionWithLayoutDirection(layoutDirection),
             forChildViewController = this
         )
+    }
+}
+
+internal fun UIKitInstrumentedTest.tapContextMenuButton(label: String) {
+    if (available(OS.Ios to OSVersion(16))) {
+        findNodeWithLabel(label).tap()
+    } else {
+        // Because on iOS < 16 the context menu is shown in a separate window,
+        // it's not fully interactive with the default Tap action.
+        findNodeWithLabel(label)
+            .touchDown(useNodeWindow = true)
+            .hold()
+            .also { delay(100) }
+            .up()
     }
 }
