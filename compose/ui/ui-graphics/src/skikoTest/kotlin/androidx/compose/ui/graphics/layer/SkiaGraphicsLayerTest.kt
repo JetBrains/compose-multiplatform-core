@@ -688,6 +688,8 @@ class SkiaGraphicsLayerTest {
             block = { graphicsContext ->
                 layer =
                     graphicsContext.createGraphicsLayer().apply {
+                        // FIXME: Move it after `record` block to match android
+                        //  https://youtrack.jetbrains.com/issue/CMP-10436
                         compositingStrategy = CompositingStrategy.ModulateAlpha
                         alpha = 0.5f
                         record {
@@ -698,13 +700,14 @@ class SkiaGraphicsLayerTest {
                                 drawRect(color = Color.Blue)
                             }
                         }
+//                        alpha = 0.5f
+//                        compositingStrategy = CompositingStrategy.ModulateAlpha
                     }
                 drawRect(bgColor)
                 drawLayer(layer!!)
             },
             verify = { pixelMap ->
                 with(pixelMap) {
-                    println("Pixmap size: " + this.width + " height: " + this.height)
                     val redWithAlpha = Color.Red.copy(alpha = 0.5f)
                     val blueWithAlpha = Color.Blue.copy(alpha = 0.5f)
                     val bg = Color.Black
