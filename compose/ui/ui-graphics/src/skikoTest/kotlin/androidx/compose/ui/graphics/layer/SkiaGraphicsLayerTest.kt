@@ -689,6 +689,7 @@ class SkiaGraphicsLayerTest {
                 layer =
                     graphicsContext.createGraphicsLayer().apply {
                         // FIXME: Move it after `record` block to match android
+                        //  https://youtrack.jetbrains.com/issue/CMP-10436
                         compositingStrategy = CompositingStrategy.ModulateAlpha
                         alpha = 0.5f
                         record {
