@@ -123,6 +123,11 @@ class FrameRecomposer(
 
     private var isInFrame = false
 
+    /**
+     * Whether a [performFrame] call is currently in progress on this recomposer.
+     */
+    val isPerformingFrame: Boolean get() = isInFrame
+
     private fun onNewAwaiters() {
         if (isInFrame) return
         invalidate()

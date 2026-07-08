@@ -409,9 +409,14 @@ internal class ComposeSceneMediator(
     private val textInputService: UIKitTextInputService by lazy {
         UIKitTextInputService(
             updateView = {
-                frameRecomposer.performFrame(lastRenderTime)
-                scene.measureAndLayout()
-                CATransaction.flush()
+                if (frameRecomposer.isPerformingFrame) {
+                    // Prevent FrameRecomposer.performFrame to be called recursively.
+                    redrawer.setNeedsRedraw()
+                } else {
+                    frameRecomposer.performFrame(lastRenderTime)
+                    scene.measureAndLayout()
+                    CATransaction.flush()
+                }
             },
             view = _overlayView,
             viewConfiguration = viewConfiguration,
