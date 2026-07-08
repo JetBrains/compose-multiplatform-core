@@ -25,6 +25,7 @@ import kotlin.experimental.ExperimentalNativeApi
 import org.jetbrains.skia.Data
 import org.jetbrains.skia.FontMgr
 import org.jetbrains.skia.FontSlant
+import org.jetbrains.skia.FontWeight
 import org.jetbrains.skia.FontWidth
 
 @OptIn(ExperimentalTextApi::class)
@@ -45,7 +46,7 @@ internal actual fun loadTypeface(font: Font): SkTypeface {
 
 private val Font.skFontStyle: SkFontStyle
     get() = SkFontStyle(
-        weight = weight.weight,
+        weight = FontWeight(weight.weight),
         width = FontWidth.NORMAL,
         slant = if (style == FontStyle.Italic) FontSlant.ITALIC else FontSlant.UPRIGHT
     )
