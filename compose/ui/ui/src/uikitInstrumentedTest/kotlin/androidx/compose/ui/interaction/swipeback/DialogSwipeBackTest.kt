@@ -75,7 +75,7 @@ internal abstract class DialogSwipeBackTest(
 
         waitUntilReady { !dragDistance.isNaN() && backCompletedCount == 0 }
 
-        val backSwipe = swipeRightFromEdge().hold()
+        val backSwipe = swipeFromLeftEdge().hold()
 
         waitForIdle()
 

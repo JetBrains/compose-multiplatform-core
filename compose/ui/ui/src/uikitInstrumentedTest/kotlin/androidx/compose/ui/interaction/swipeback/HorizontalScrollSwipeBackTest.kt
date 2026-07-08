@@ -77,7 +77,7 @@ internal abstract class HorizontalScrollSwipeBackTest(
 
         waitUntilReady { !scrollOffset.isNaN() && backCompletedCount == 0 }
 
-        val backSwipe = swipeRightFromEdge().hold()
+        val backSwipe = swipeFromLeftEdge().hold()
         waitUntil("Back swipe over horizontal scroll content should start") {
             transitionState is InProgress
         }
