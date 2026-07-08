@@ -144,6 +144,9 @@ private class NativeKeyboardVisibilityListener : NSObject() {
     private val NSNotification.animationOptions: UIViewAnimationOptions
         get() {
             val value = userInfo?.get(UIKeyboardAnimationCurveUserInfoKey) as? NSNumber
-            return value?.unsignedIntegerValue() ?: UIViewAnimationOptionCurveEaseInOut
+            // Convert the animation curve constant to animation options.
+            // See https://developer.apple.com/documentation/uikit/uiresponder/keyboardanimationcurveuserinfokey
+            return value?.unsignedIntegerValue()?.let { it shl 16 }
+                ?: UIViewAnimationOptionCurveEaseInOut
         }
 }
