@@ -951,19 +951,9 @@ private fun UIEvent.historicalChangesForTouch(
     }
 }
 
-private val UIEvent?.buttonMaskOrZero: Long get() =
-    if (available(OS.Ios to OSVersion(13, 4))) {
-        this?.buttonMask ?: 0L
-    } else {
-        0L
-    }
+private val UIEvent?.buttonMaskOrZero: Long get() = this?.buttonMask ?: 0L
 
-private val UIEvent?.modifierFlagsOrZero: Long get() =
-    if (available(OS.Ios to OSVersion(13, 4))) {
-        this?.modifierFlags ?: 0L
-    } else {
-        0L
-    }
+private val UIEvent?.modifierFlagsOrZero: Long get() = this?.modifierFlags ?: 0L
 
 private val UITouch.isPressed
     get() = when (phase) {
