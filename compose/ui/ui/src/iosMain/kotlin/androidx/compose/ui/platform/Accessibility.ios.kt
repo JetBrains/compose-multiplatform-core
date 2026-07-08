@@ -563,7 +563,7 @@ private class AccessibilityElement(
     private val scrollableProtocol = objc_getProtocol("UIFocusItemScrollableContainer")!!
     override fun conformsToProtocol(aProtocol: Protocol?): Boolean {
         if (protocol_isEqual(proto = aProtocol, other = scrollableProtocol)) {
-            return node.canScroll
+            return runIfAlive(false) { node.canScroll }
         }
         return super.conformsToProtocol(aProtocol)
     }
@@ -586,7 +586,7 @@ private class AccessibilityElement(
     }
 
     private fun nodeSemanticsElements(): List<Any> =
-        getOrElse(CachedAccessibilityPropertyKeys.accessibilityElements) {
+        getOrElseIfAlive(CachedAccessibilityPropertyKeys.accessibilityElements, emptyList()) {
             listOfNotNull(node.accessibilityInteropView?.also {
                 it.actualAccessibilityContainer = this
             })
@@ -623,15 +623,21 @@ private class AccessibilityElement(
         cachedProperties.clear()
     }
 
-    /**
-     * Returns the value for the given [key] from the cache if it's present, otherwise computes the
-     * value using the given [block] and caches it.
-     */
+    private inline fun <T> getOrElseIfAlive(
+        key: CachedAccessibilityPropertyKey<T>,
+        defaultValue: T,
+        crossinline block: () -> T
+    ): T = getOrElseIfAlive(key, block) ?: defaultValue
+
     @Suppress("UNCHECKED_CAST") // cast is safe because the set value is constrained by the key T
-    private inline fun <T> getOrElse(
+    private inline fun <T> getOrElseIfAlive(
         key: CachedAccessibilityPropertyKey<T>,
         crossinline block: () -> T
-    ): T {
+    ): T? {
+        if (!isAlive) {
+            return null
+        }
+
         val value = cachedProperties.getOrElse(key) {
             val newValue = block()
             cachedProperties[key] = newValue
@@ -641,96 +647,85 @@ private class AccessibilityElement(
         return value as T
     }
 
+    private inline fun runIfAlive(crossinline block: () -> Unit) = runIfAlive(Unit, block)
+
+    private inline fun <T> runIfAlive(
+        defaultValue: T,
+        crossinline block: () -> T
+    ): T {
+        if (!isAlive) {
+            return defaultValue
+        }
+        return block()
+    }
+
     override fun accessibilityLabel(): String? = accessibilityAttributedLabel()?.string
 
     override fun accessibilityAttributedLabel(): NSAttributedString? =
-        getOrElse(CachedAccessibilityPropertyKeys.accessibilityAttributedLabel) {
+        getOrElseIfAlive(CachedAccessibilityPropertyKeys.accessibilityAttributedLabel) {
             makeAccessibilityAttributedLabel()
         }
 
     override fun accessibilityValue(): String? = accessibilityAttributedValue()?.string
 
     override fun accessibilityAttributedValue(): NSAttributedString? =
-        getOrElse(CachedAccessibilityPropertyKeys.accessibilityAttributedValue) {
+        getOrElseIfAlive(CachedAccessibilityPropertyKeys.accessibilityAttributedValue) {
             node.accessibilityAttributedValue
         }
 
-    override fun accessibilityElementDidBecomeFocused() {
-        if (!isAlive) {
-            return
-        }
-
+    override fun accessibilityElementDidBecomeFocused() = runIfAlive {
         node.accessibilityElementDidBecomeFocused()
     }
 
-    override fun accessibilityElementDidLoseFocus() {
+    override fun accessibilityElementDidLoseFocus() = runIfAlive {
         node.accessibilityElementDidLoseFocus()
     }
 
-    override fun accessibilityActivate(): Boolean {
-        if (!isAlive) {
-            return false
-        }
-
-        return node.accessibilityActivate()
+    override fun accessibilityActivate(): Boolean = runIfAlive(false) {
+        node.accessibilityActivate()
     }
 
-    override fun accessibilityIncrement() {
-        if (!isAlive) {
-            return
-        }
-
+    override fun accessibilityIncrement() = runIfAlive {
         node.accessibilityIncrement()
     }
 
-    override fun accessibilityDecrement() {
-        if (!isAlive) {
-            return
-        }
-
+    override fun accessibilityDecrement() = runIfAlive {
         node.accessibilityDecrement()
     }
 
-    override fun accessibilityScroll(direction: UIAccessibilityScrollDirection): Boolean {
-        if (!isAlive) {
-            return false
+    override fun accessibilityScroll(direction: UIAccessibilityScrollDirection): Boolean =
+        runIfAlive(false) {
+            node.accessibilityScroll(direction)
         }
 
-        return node.accessibilityScroll(direction)
-    }
-
-    override fun isAccessibilityElement(): Boolean {
+    override fun isAccessibilityElement(): Boolean = runIfAlive(defaultValue = false) {
         // Node visibility changes don't trigger accessibility semantic recalculation.
         // This value should not be cached. See [SemanticsNode.isScreenReaderFocusable()]
-        return isAlive && node.isAccessibilityElement
+        node.isAccessibilityElement
     }
 
     override fun accessibilityIdentifier(): String? =
-        getOrElse(CachedAccessibilityPropertyKeys.accessibilityIdentifier) {
+        getOrElseIfAlive(CachedAccessibilityPropertyKeys.accessibilityIdentifier) {
             node.accessibilityIdentifier
         }
 
     override fun accessibilityHint(): String? =
-        getOrElse(CachedAccessibilityPropertyKeys.accessibilityHint) {
+        getOrElseIfAlive(CachedAccessibilityPropertyKeys.accessibilityHint) {
             node.accessibilityHint
         }
 
     override fun accessibilityCustomActions(): List<UIAccessibilityCustomAction> =
-        getOrElse(CachedAccessibilityPropertyKeys.accessibilityCustomActions) {
+        getOrElseIfAlive(CachedAccessibilityPropertyKeys.accessibilityCustomActions, emptyList()) {
             node.accessibilityCustomActions
         }
 
     override fun accessibilityTraits(): UIAccessibilityTraits =
-        getOrElse(CachedAccessibilityPropertyKeys.accessibilityTraits) {
+        getOrElseIfAlive(CachedAccessibilityPropertyKeys.accessibilityTraits, UIAccessibilityTraitNone) {
             node.accessibilityTraits
         }
 
-    override fun accessibilityPerformEscape(): Boolean {
-        if (!isAlive) {
-            return false
-        }
-
-        return if (node.accessibilityPerformEscape()) {
+    override fun accessibilityPerformEscape(): Boolean = runIfAlive(defaultValue = false) {
+        if (node.accessibilityPerformEscape()) {
             true
         } else {
             super.accessibilityPerformEscape()
@@ -738,7 +733,9 @@ private class AccessibilityElement(
     }
 
     override fun accessibilityContainerType(): UIAccessibilityContainerType =
-        node.accessibilityContainerType
+        runIfAlive(UIAccessibilityContainerTypeNone) {
+            node.accessibilityContainerType
+        }
 
     private fun debugContainmentChain() = debugContainmentChain(this)
 
@@ -759,16 +756,12 @@ private class AccessibilityElement(
 
     // UIFocusItemProtocol & UIFocusItemContainerProtocol
 
-    override fun canBecomeFocused(): Boolean = isAlive && node.canBecomeFocused
+    override fun canBecomeFocused(): Boolean = runIfAlive(false) { node.canBecomeFocused }
 
     override fun didUpdateFocusInContext(
         context: UIFocusUpdateContext,
         withAnimationCoordinator: UIFocusAnimationCoordinator
-    ) {
-        if (!isAlive) {
-            return
-        }
-
+    ) = runIfAlive {
         if (context.previouslyFocusedItem === this) {
             node.didResignFocused()
         }
@@ -835,17 +828,21 @@ private class AccessibilityElement(
 
     override fun isTransparentFocusItem(): Boolean = true
 
-    override fun drawsFocusRingWhenChildrenFocused(): Boolean = node.canScroll
+    override fun drawsFocusRingWhenChildrenFocused(): Boolean =
+        runIfAlive(false) { node.canScroll }
 
     // Scrolling
 
-    override fun visibleSize(): CValue<CGSize> = node.scrollVisibleSize
+    override fun visibleSize(): CValue<CGSize> =
+        runIfAlive(CGSizeZero.readValue()) { node.scrollVisibleSize }
 
-    override fun contentSize(): CValue<CGSize> = node.scrollContentSize
+    override fun contentSize(): CValue<CGSize> =
+        runIfAlive(CGSizeZero.readValue()) { node.scrollContentSize }
 
-    override fun contentOffset(): CValue<CGPoint> = node.scrollContentOffset
+    override fun contentOffset(): CValue<CGPoint> =
+        runIfAlive(CGPointZero.readValue()) { node.scrollContentOffset }
 
-    override fun setContentOffset(contentOffset: CValue<CGPoint>) {
+    override fun setContentOffset(contentOffset: CValue<CGPoint>) = runIfAlive {
         val currentContentOffset = contentOffset()
         val delta = CGPointMake(
             x = contentOffset.useContents { x } - currentContentOffset.useContents { x },
