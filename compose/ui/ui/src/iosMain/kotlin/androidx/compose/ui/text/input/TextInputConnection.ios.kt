@@ -248,21 +248,27 @@ internal abstract class TextInputConnection(
     }
 
     /**
-     * Returns true if there is a focused view in the window hierarchy that is an external
-     * text input — i.e. a native UITextField or UITextView inserted via interop, not one of
-     * Compose's own input views.
+     * Returns true if there is a focused view in the window hierarchy that is an external text
+     * input — i.e. a native UITextField or UITextView inserted via interop, or a Compose text input
+     * view owned by another independent scene.
      *
      * Used to distinguish the case where the user tapped a native interop text field (in which
-     * case Compose focus should be released) from the case where focus simply moved to another
-     * Compose text field (in which case Compose handles focus internally and no action is needed).
+     * case Compose focus should be released) or another Compose scene's text field from the case
+     * where focus simply moved inside the same focused views hierarchy (in which case Compose
+     * handles focus internally and no action is needed).
      */
     private fun hasFocusedExternalInputViewInWindowHierarchy(): Boolean {
         fun hasFocusedExternalInputView(view: UIView): Boolean {
             if (view.isFirstResponder) {
-                return view !is NativeTextInputView &&
-                    view !is ComposeTextInputView &&
-                    view !is OverlayInputView &&
-                    view !is BackgroundInputView
+                return if (view is NativeTextInputView ||
+                    view is ComposeTextInputView ||
+                    view is OverlayInputView ||
+                    view is BackgroundInputView
+                ) {
+                    focusedViewsList?.contains(view) == false
+                } else {
+                    true
+                }
             }
             return view.subviews.any { it is UIView && hasFocusedExternalInputView(it) }
         }
