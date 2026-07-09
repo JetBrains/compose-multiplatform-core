@@ -188,6 +188,12 @@ private fun readCssVarLeft(): Float =
 // language=js
 private fun hasVirtualKeyboard(): Boolean = js("('virtualKeyboard' in navigator)")
 
+/**
+ * Enables VirtualKeyboard overlay mode so the browser does not resize the layout viewport when
+ * the virtual keyboard appears, allowing us to read and apply IME insets ourselves.
+ *
+ * See https://developer.mozilla.org/en-US/docs/Web/API/VirtualKeyboard/overlaysContent
+ */
 // language=js
 private fun enableVirtualKeyboardOverlay(): Unit =
     js("(navigator.virtualKeyboard.overlaysContent = true)")
@@ -202,6 +208,12 @@ private fun readVirtualKeyboardHeight(): Float =
 
 // --- IME: VisualViewport API fallback (Safari, Firefox) ---
 
+/**
+ * Returns the browser's VisualViewport, which represents the visible portion of the viewport
+ * after browser UI and the virtual keyboard have reduced it.
+ *
+ * See https://developer.mozilla.org/en-US/docs/Web/API/VisualViewport
+ */
 // language=js
 private fun getVisualViewport(): EventTarget? = js("(window.visualViewport || null)")
 

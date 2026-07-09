@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-@file:OptIn(ExperimentalWasmJsInterop::class, ExperimentalWasmJsInterop::class)
+@file:OptIn(ExperimentalWasmJsInterop::class)
 
 package androidx.compose.ui.window
 
