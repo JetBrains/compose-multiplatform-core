@@ -52,7 +52,6 @@ import androidx.compose.ui.platform.DefaultInputModeManager
 import androidx.compose.ui.platform.FrameRecomposer
 import androidx.compose.ui.platform.PlatformArchitectureComponentsOwner
 import androidx.compose.ui.platform.PlatformContext
-import androidx.compose.ui.platform.PlatformOutOfFrameExecutor
 import androidx.compose.ui.platform.PlatformScreenReader
 import androidx.compose.ui.platform.PlatformTextInputMethodRequest
 import androidx.compose.ui.platform.PlatformWindowContext
@@ -312,7 +311,7 @@ internal class ComposeSceneMediator(
         onCancelScroll = ::onCancelScroll,
         onHoverEvent = ::onHoverEvent,
         onKeyboardPresses = ::onKeyboardPresses,
-        ignoreTouchChanges = navigationEventInput::isBackGestureActive,
+        ignoreTouchChanges = navigationEventInput::isBackGestureTrackingTouches,
         onRemoveSubview = {
             CoroutineScope(coroutineContext).launch {
                 finishUnattachedKeysPresses()
@@ -333,7 +332,7 @@ internal class ComposeSceneMediator(
         isPointInsideInteractionBounds = ::isPointInsideInteractionBounds,
         onTouchesEvent = ::onTouchesEvent,
         onCancelAllTouches = ::onCancelAllTouches,
-        ignoreTouchChanges = navigationEventInput::isBackGestureActive
+        ignoreTouchChanges = navigationEventInput::isBackGestureTrackingTouches
     )
 
     val backgroundView: UIView get() = _backgroundView
@@ -409,7 +408,10 @@ internal class ComposeSceneMediator(
     private val textInputService: UIKitTextInputService by lazy {
         UIKitTextInputService(
             updateView = {
-                frameRecomposer.performFrame(lastRenderTime)
+                if (!isPerformingFrame) {
+                    // Fixes issue with reentrant redraws from native text-input edits mid-frame
+                    frameRecomposer.performFrame(lastRenderTime)
+                }
                 scene.measureAndLayout()
                 CATransaction.flush()
             },
@@ -637,11 +639,17 @@ internal class ComposeSceneMediator(
         }
     }
 
+    private var isPerformingFrame = false
     private var lastRenderTime = CACurrentMediaTime().toNanoSeconds()
     fun render(canvas: Canvas, nanoTime: Long) {
         lastRenderTime = nanoTime
-        with(sceneRenderingScope) {
-            scene.render(frameRecomposer, canvas, nanoTime)
+        isPerformingFrame = true
+        try {
+            with(sceneRenderingScope) {
+                scene.render(frameRecomposer, canvas, nanoTime)
+            }
+        } finally {
+            isPerformingFrame = false
         }
     }
 
@@ -871,6 +879,7 @@ internal class ComposeSceneMediator(
         override val dragAndDropManager get() = this@ComposeSceneMediator.dragAndDropManager
         override val windowInsets get() = this@ComposeSceneMediator.windowInsetsManager.windowInsets
         override val outOfFrameExecutor get() = this@ComposeSceneMediator.redrawer.outOfFrameExecutor
+        override val prefetchScheduler get() = this@ComposeSceneMediator.redrawer.prefetchScheduler
         override val isClearFocusOnMouseDownEnabled: Boolean
             get() = this@ComposeSceneMediator.isClearFocusOnMouseDownEnabled
 
@@ -950,19 +959,9 @@ private fun UIEvent.historicalChangesForTouch(
     }
 }
 
-private val UIEvent?.buttonMaskOrZero: Long get() =
-    if (available(OS.Ios to OSVersion(13, 4))) {
-        this?.buttonMask ?: 0L
-    } else {
-        0L
-    }
+private val UIEvent?.buttonMaskOrZero: Long get() = this?.buttonMask ?: 0L
 
-private val UIEvent?.modifierFlagsOrZero: Long get() =
-    if (available(OS.Ios to OSVersion(13, 4))) {
-        this?.modifierFlags ?: 0L
-    } else {
-        0L
-    }
+private val UIEvent?.modifierFlagsOrZero: Long get() = this?.modifierFlags ?: 0L
 
 private val UITouch.isPressed
     get() = when (phase) {

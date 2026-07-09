@@ -128,17 +128,11 @@ internal class DomInputStrategy(
                 composeSender.sendEditCommand(SetSelectionCommand(normalizedStart, normalizedEnd))
             }
         }
-        // In Chrome, we need to listen to the selection change on the document
         document.addEventListener("selectionchange", selectionChangeListener)
-        // In Firefox and Safari we listen to the selection change on the input element.
-        // Chrome is expected to dispatch this event too (https://chromium-review.googlesource.com/c/chromium/src/+/5598393),
-        // but it doesn't: https://issuetracker.google.com/issues/518751607
-        htmlInput.addEventListener("selectionchange", selectionChangeListener)
     }
 
     fun dispose() {
         document.removeEventListener("selectionchange", selectionChangeListener)
-        htmlInput.removeEventListener("selectionchange", selectionChangeListener)
         selectionChangeListener = null
     }
 
@@ -214,43 +208,7 @@ private fun ImeOptions.createDomElement(): HTMLElement {
 
     htmlElement.setAttribute("inputmode", inputMode)
     htmlElement.setAttribute("enterkeyhint", enterKeyHint)
-
-
-    htmlElement.style.apply {
-        setProperty("position", "absolute")
-        setProperty("user-select", "none")
-        setProperty("forced-color-adjust", "none")
-        setProperty("white-space", "pre")
-        setProperty("align-content", "center")
-        setProperty(
-            "top",
-            "calc(min(var(--compose-internal-web-backing-input-top) * 1px, 100vh - var(--compose-internal-web-backing-input-height) * 1px))"
-        )
-        setProperty(
-            "left",
-            "calc(min(var(--compose-internal-web-backing-input-left) * 1px, 100vw - var(--compose-internal-web-backing-input-width) * 1px))"
-        )
-        setProperty("width", "calc(var(--compose-internal-web-backing-input-width) * 1px")
-        setProperty("height", "calc(var(--compose-internal-web-backing-input-height) * 1px")
-        setProperty("padding", "0")
-        setProperty("color", "transparent")
-        setProperty("background", "transparent")
-        setProperty("caret-color", "transparent")
-        setProperty("outline", "none")
-        setProperty("border", "none")
-        setProperty("resize", "none")
-        setProperty("text-shadow", "none")
-        setProperty("z-index", "-1")
-        // TODO: do we need pointer-events: none
-        //setProperty("pointer-events", "none")
-
-        // I keep "opacity" commented to make it explicit that we can't use this property.
-        // Reason: Safari iOS keyboard overlaps the text input. See CMP-8611
-        // setProperty("opacity", "0")
-
-        // To prevent auto-zoom in some mobile browsers, we set a larger font-size
-        setProperty("font-size", "20px")
-    }
+    htmlElement.classList.add("compose-backing-field")
 
     return htmlElement
 }

@@ -70,6 +70,9 @@ import androidx.compose.ui.platform.installFallbackFontDownloader
 import androidx.compose.ui.scene.CanvasLayersComposeScene
 import androidx.compose.ui.platform.FrameRecomposer
 import androidx.compose.ui.platform.PlatformOutOfFrameExecutor
+import androidx.compose.ui.platform.PlatformPrefetchScheduler
+import androidx.compose.ui.platform.WebPrefetchScheduler
+import androidx.compose.ui.platform.isIdleCallbackSupported
 import androidx.compose.ui.scene.ComposeSceneDragAndDropNode
 import androidx.compose.ui.scene.ComposeScenePointer
 import androidx.compose.ui.scene.PointerEventResult
@@ -91,7 +94,6 @@ import androidx.compose.ui.viewinterop.TrackInteropPlacementContainer
 import androidx.compose.ui.viewinterop.WebInteropContainer
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.enableSavedStateHandles
-import kotlin.math.absoluteValue
 import kotlinx.browser.document
 import kotlinx.browser.window
 import kotlinx.coroutines.Dispatchers
@@ -279,6 +281,9 @@ internal class ComposeWindow(
             override val hapticFeedback by lazy(LazyThreadSafetyMode.NONE) {
                 WebHapticFeedback.webHapticFeedbackOrDefault()
             }
+
+            override val prefetchScheduler: PlatformPrefetchScheduler =
+                if (isIdleCallbackSupported) WebPrefetchScheduler() else super.prefetchScheduler
 
             override val semanticsOwnerListener: PlatformContext.SemanticsOwnerListener? =
                 if (configuration.isA11YEnabled) {
@@ -562,6 +567,7 @@ internal class ComposeWindow(
     // TODO: need to call .dispose() on window close.
     fun dispose() {
         check(!isDisposed)
+        (platformContext.prefetchScheduler as? WebPrefetchScheduler)?.dispose()
         archComponentsOwner.lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_DESTROY)
         archComponentsOwner.viewModelStore.clear()
         archComponentsOwner.navigationEventDispatcherOwner
@@ -757,13 +763,17 @@ internal class ComposeWindow(
     ) {
         keyboardModeState = KeyboardModeState.Hardware
 
-        val horizontalScroll = when {
-            event.deltaX.absoluteValue >= event.deltaY.absoluteValue -> event.deltaX
-            event.shiftKey -> event.deltaY
-            else -> 0f
+        // Shift + mouse wheel means horizontal scroll. Some browsers swap the axes
+        // for us (report deltaX instead of deltaY), some don't.
+        val horizontalScroll: Double
+        val verticalScroll: Double
+        if (event.shiftKey && event.deltaX == 0.0) {
+            horizontalScroll = event.deltaY
+            verticalScroll = 0.0
+        } else {
+            horizontalScroll = event.deltaX
+            verticalScroll = event.deltaY
         }
-
-        val verticalScroll = if (horizontalScroll == 0f) event.deltaY else 0f
 
         // wheels event own buttons property is unreliable in Safari and Firefox
         // see CMP-9900 [web] Wheel event resolves buttons state incorrectly in Safari and Firefox

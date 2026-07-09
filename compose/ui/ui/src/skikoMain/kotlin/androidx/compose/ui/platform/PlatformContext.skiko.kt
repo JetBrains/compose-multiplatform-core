@@ -102,6 +102,8 @@ interface PlatformContext {
      * the containing window.
      * If the [ComposeScene] is rotated, scaled, or otherwise transformed relative to the window,
      * this will not be a simple translation.
+     *
+     * Note: It might return [Offset.Unspecified] if it's not attached to a window.
      */
     fun convertLocalToWindowPosition(localPosition: Offset): Offset =
         localPosition
@@ -111,6 +113,8 @@ interface PlatformContext {
      * the [ComposeScene].
      * If the [ComposeScene] is rotated, scaled, or otherwise transformed relative to the window,
      * this will not be a simple translation.
+     *
+     * Note: It might return [Offset.Unspecified] if it's not attached to a window.
      */
     fun convertWindowToLocalPosition(positionInWindow: Offset): Offset =
         positionInWindow
@@ -118,6 +122,8 @@ interface PlatformContext {
     /**
      * Converts [localPosition] relative to the [ComposeScene] into an [Offset] relative to
      * the device's screen.
+     *
+     * Note: It might return [Offset.Unspecified] if it's not attached to a window.
      */
     fun convertLocalToScreenPosition(localPosition: Offset): Offset =
         convertLocalToWindowPosition(localPosition)
@@ -125,6 +131,8 @@ interface PlatformContext {
     /**
      * Converts [positionOnScreen] relative to the device's screen into an [Offset] relative to
      * the [ComposeScene].
+     *
+     * Note: It might return [Offset.Unspecified] if it's not attached to a window.
      */
     fun convertScreenToLocalPosition(positionOnScreen: Offset): Offset =
         convertWindowToLocalPosition(positionOnScreen)
@@ -202,6 +210,13 @@ interface PlatformContext {
      */
     val outOfFrameExecutor: PlatformOutOfFrameExecutor? get() = null
 
+    /**
+     * Schedules lazy layout prefetch work using platform-specific frame timing.
+     *
+     * @see PlatformPrefetchScheduler
+     */
+    val prefetchScheduler: PlatformPrefetchScheduler get() = NoOpPlatformPrefetchScheduler
+
     interface RootForTestListener {
         fun onRootForTestCreated(root: PlatformRootForTest)
         fun onRootForTestDisposed(root: PlatformRootForTest)
@@ -275,6 +290,12 @@ interface PlatformContext {
 
 private object EmptyPlatformScreenReader : PlatformScreenReader {
     override val isActive: Boolean = false
+}
+
+private object NoOpPlatformPrefetchScheduler : PlatformPrefetchScheduler {
+    override fun scheduleHighPriorityPrefetch(request: PlatformPrefetchRequest) = Unit
+
+    override fun scheduleLowPriorityPrefetch(request: PlatformPrefetchRequest) = Unit
 }
 
 private val EmptyArchitectureComponentsOwner = DefaultArchitectureComponentsOwner(

@@ -45,6 +45,7 @@ import androidx.compose.ui.unit.toIntSize
 import androidx.compose.ui.unit.toOffset
 import androidx.compose.ui.unit.toSize
 import kotlin.math.roundToInt
+import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -52,6 +53,7 @@ import kotlin.test.assertTrue
 import org.jetbrains.skia.IRect
 import org.jetbrains.skia.Surface
 
+// Adopted copy from AndroidGraphicsLayerTest
 @OptIn(InternalComposeUiApi::class)
 class SkiaGraphicsLayerTest {
 
@@ -688,8 +690,6 @@ class SkiaGraphicsLayerTest {
             block = { graphicsContext ->
                 layer =
                     graphicsContext.createGraphicsLayer().apply {
-                        compositingStrategy = CompositingStrategy.ModulateAlpha
-                        alpha = 0.5f
                         record {
                             inset(0f, 0f, size.width / 3, size.height / 3) {
                                 drawRect(color = Color.Red)
@@ -698,13 +698,14 @@ class SkiaGraphicsLayerTest {
                                 drawRect(color = Color.Blue)
                             }
                         }
+                        alpha = 0.5f
+                        compositingStrategy = CompositingStrategy.ModulateAlpha
                     }
                 drawRect(bgColor)
                 drawLayer(layer!!)
             },
             verify = { pixelMap ->
                 with(pixelMap) {
-                    println("Pixmap size: " + this.width + " height: " + this.height)
                     val redWithAlpha = Color.Red.copy(alpha = 0.5f)
                     val blueWithAlpha = Color.Blue.copy(alpha = 0.5f)
                     val bg = Color.Black
@@ -983,6 +984,70 @@ class SkiaGraphicsLayerTest {
                             assertEquals(this[x, y], targetColor)
                         }
                     }
+                }
+            }
+        )
+    }
+
+    @Test
+    fun testSetOutsets_clipsContentWithoutOutsets() {
+        // Without outsets, alpha-triggered offscreen buffer clips overflow content
+        val halfWidth = TEST_WIDTH / 2
+        val halfHeight = TEST_HEIGHT / 2
+        graphicsLayerTest(
+            block = { graphicsContext ->
+                val layer =
+                    graphicsContext.createGraphicsLayer().apply {
+                        record(size = IntSize(halfWidth, halfHeight)) {
+                            // Draw red filling the full TEST_SIZE, overflowing the layer bounds
+                            drawRect(Color.Red, size = Size(TEST_WIDTH.toFloat(), TEST_HEIGHT.toFloat()))
+                        }
+                        alpha = 0.5f
+                    }
+                drawRect(Color.White)
+                drawLayer(layer)
+            },
+            verify = { pixelMap ->
+                with(pixelMap) {
+                    // Content within layer bounds is composited
+                    assertPixelColor(
+                        Color.Red.copy(alpha = 0.5f).compositeOver(Color.White),
+                        halfWidth / 2,
+                        halfHeight / 2
+                    )
+                    // Overflow content is clipped — white background shows through
+                    assertPixelColor(Color.White, halfWidth + 10, halfHeight + 10)
+                }
+            }
+        )
+    }
+
+    @Test
+    fun testSetOutsets_expandsOffscreenBufferToShowOverflow() {
+        // With outsets matching the overflow, alpha-triggered offscreen buffer captures overflow
+        val halfWidth = TEST_WIDTH / 2
+        val halfHeight = TEST_HEIGHT / 2
+        graphicsLayerTest(
+            block = { graphicsContext ->
+                val layer =
+                    graphicsContext.createGraphicsLayer().apply {
+                        record(size = IntSize(halfWidth, halfHeight)) {
+                            // Draw red filling the full TEST_SIZE, overflowing the layer bounds
+                            drawRect(Color.Red, size = Size(TEST_WIDTH.toFloat(), TEST_HEIGHT.toFloat()))
+                        }
+                        alpha = 0.5f
+                        setOutsets(left = 0, top = 0, right = halfWidth, bottom = halfHeight)
+                    }
+                drawRect(Color.White)
+                drawLayer(layer)
+            },
+            verify = { pixelMap ->
+                with(pixelMap) {
+                    val compositedRed = Color.Red.copy(alpha = 0.5f).compositeOver(Color.White)
+                    // Content within original layer bounds is composited
+                    assertPixelColor(compositedRed, halfWidth / 2, halfHeight / 2)
+                    // Overflow content is now captured by the expanded offscreen buffer
+                    assertPixelColor(compositedRed, halfWidth + 10, halfHeight + 10)
                 }
             }
         )

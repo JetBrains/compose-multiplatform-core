@@ -41,23 +41,21 @@ plugins {
 }
 
 androidXMultiplatform {
-    androidLibrary {
-        withJava()
-        compileSdk = 37
-        androidResources.enable = true
-        optimization {
-            it.consumerKeepRules.publish = true
-            it.consumerKeepRules.files.add(new File("proguard-rules.pro"))
-        }
-        namespace = "androidx.compose.ui"
-        // namespace has to be unique, but default androidx.compose.ui.test package is taken by
-        // the androidx.compose.ui:ui-test library
-        testNamespace = "androidx.compose.ui.tests"
+    redirect("androidx.compose.ui") {
+        androidLibrary {
+            withJava()
+            compileSdk = 35
+            androidResources.enable = true
+            namespace = "org.jetbrains.androidx.compose.ui"
+            // namespace has to be unique, but default androidx.compose.ui.test package is taken by
+            // the androidx.compose.ui:ui-test library
+            testNamespace = "androidx.compose.ui.tests"
 
-        packaging {
-            it.resources {
-                it.pickFirsts.add("mockito-extensions/org.mockito.plugins.MockMaker")
-                it.pickFirsts.add("mockito-extensions/org.mockito.plugins.StackTraceCleanerProvider")
+            packaging {
+                it.resources {
+                    it.pickFirsts.add("mockito-extensions/org.mockito.plugins.MockMaker")
+                    it.pickFirsts.add("mockito-extensions/org.mockito.plugins.StackTraceCleanerProvider")
+                }
             }
         }
     }
@@ -73,7 +71,7 @@ androidXMultiplatform {
     configureDarwinFlags()
 
     sourceSets {
-        def composeVersion = project.findProperty('artifactRedirection.version.androidx.compose')
+        def composeVersion = project.redirectVersions.get('androidx.compose')
         commonMain.dependencies {
             implementation(libs.kotlinCoroutinesCore)
             api("androidx.annotation:annotation:1.9.1")
@@ -136,13 +134,11 @@ androidXMultiplatform {
             // the `lifecycle-viewmodel-savedstate` dependency directly works around the issue.
             // See https://github.com/gradle/gradle/issues/14220 for details.
             compileOnly("androidx.lifecycle:lifecycle-viewmodel-savedstate:2.9.2")
-
-            implementation("androidx.navigationevent:navigationevent:1.1.0")
         }
 
         androidDeviceTest.dependencies {
             implementation("androidx.fragment:fragment:1.3.0")
-            implementation("androidx.appcompat:appcompat:1.7.1")
+            implementation(project(":appcompat:appcompat"))
             implementation("androidx.activity:activity:1.9.1")
             implementation("androidx.transition:transition:1.7.0")
             implementation("androidx.core:core:1.16.0-beta01")
@@ -182,7 +178,6 @@ androidXMultiplatform {
             implementation("androidx.core:core-ktx:1.2.0")
             implementation("androidx.activity:activity-compose:1.7.0")
             implementation("androidx.fragment:fragment-testing:1.4.1")
-            implementation("androidx.navigationevent:navigationevent:1.1.0")
         }
 
         androidHostTest.dependencies {
@@ -200,7 +195,7 @@ androidXMultiplatform {
             implementation(project(":compose:test-utils"))
         }
 
-        def lifecycleVersion = project.findProperty('artifactRedirection.version.androidx.lifecycle')
+        def lifecycleVersion = project.redirectVersions.get('androidx.lifecycle')
         // TODO: Align naming: nonAndroidMain
         skikoMain {
             dependsOn(commonMain)
@@ -307,7 +302,6 @@ androidXMultiplatform {
 
 dependencies {
     lintChecks(project(":compose:ui:ui-lint"))
-    lintPublish(project(":compose:ui:ui-lint"))
 }
 
 androidx {
@@ -327,14 +321,6 @@ if (!ProjectLayoutType.isPlayground(project)) {
         onVariants(selector().all(), { variant ->
             packageInspector(variant, project, project(":compose:ui:ui-inspection"))
         })
-    }
-}
-
-// TODO(b/407725586): Remove this block when AndroidAssistTest passes on API Level 21
-tasks.withType(KotlinCompile).configureEach { task ->
-    if (task.name != "compileAndroidMain") return
-    task.compilerOptions {
-        it.freeCompilerArgs.addAll("-Xlambdas=class")
     }
 }
 

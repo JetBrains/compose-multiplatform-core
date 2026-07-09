@@ -21,7 +21,6 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.LocalSystemTheme
-import androidx.compose.ui.SystemTheme
 import androidx.compose.ui.graphics.asComposeCanvas
 import androidx.compose.ui.navigationevent.UIKitNavigationEventInput
 import androidx.compose.ui.platform.DefaultArchitectureComponentsOwner
@@ -48,6 +47,8 @@ import androidx.compose.ui.window.ComposeContainerView
 import androidx.compose.ui.window.FocusedViewsList
 import androidx.compose.ui.window.MetalView
 import androidx.compose.ui.window.SceneActiveStateListener
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.enableSavedStateHandles
 import androidx.savedstate.SavedState
 import kotlin.coroutines.CoroutineContext
@@ -56,13 +57,17 @@ import kotlinx.cinterop.CPointed
 import kotlinx.cinterop.CPointer
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import org.jetbrains.skiko.SystemTheme
 import platform.Foundation.NSKeyValueObservingOptionNew
 import platform.Foundation.addObserver
 import platform.Foundation.removeObserver
 import platform.UIKit.UIAccessibilityIsReduceMotionEnabled
 import platform.UIKit.UIApplication
 import platform.UIKit.UIResponder
+import platform.UIKit.UITraitCollection
 import platform.UIKit.UIUserInterfaceLayoutDirection
+import platform.UIKit.UIUserInterfaceLayoutDirection.UIUserInterfaceLayoutDirectionLeftToRight
+import platform.UIKit.UIUserInterfaceLayoutDirection.UIUserInterfaceLayoutDirectionRightToLeft
 import platform.UIKit.UIUserInterfaceStyle
 import platform.UIKit.UIViewController
 import platform.UIKit.UIWindow
@@ -86,7 +91,12 @@ internal class ComposeContainer(
     private var mediator: ComposeSceneMediator? = null
     private val windowContext = PlatformWindowContext()
     private var layersHolder: ComposeLayersHolder? = null
-    private val layoutDirection get() = getApplicationLayoutDirection()
+    private var layoutDirection = getApplicationLayoutDirection()
+        set(value) {
+            field = value
+            mediator?.layoutDirection = value
+            navigationEventInput.layoutDirection = value
+        }
     private val motionDurationScale = MotionDurationScaleImpl()
     private var activeStateListener: SceneActiveStateListener? = null
     private var sceneJob: Job = Job().also {
@@ -94,6 +104,7 @@ internal class ComposeContainer(
         // The `initializeComposeScene` must be called to set the active `sceneJob`.
         it.cancel()
     }
+    private val viewModelStore = ViewModelStore()
     private var savedState: SavedState? = null
     private var mediatorComponentsOwner: DefaultArchitectureComponentsOwner? = null
     private val architectureComponentsOwner: DefaultArchitectureComponentsOwner
@@ -105,6 +116,7 @@ internal class ComposeContainer(
     }
     private val navigationEventInput = UIKitNavigationEventInput(
         density = view.density,
+        initialLayoutDirection = layoutDirection,
         getTopLeftOffsetInWindow = { IntOffset.Zero }, //full screen
         endEdgePanGestureBehavior = configuration.endEdgePanGestureBehavior
     )
@@ -117,9 +129,12 @@ internal class ComposeContainer(
     private val interfaceOrientationState: MutableState<InterfaceOrientation> = mutableStateOf(
         InterfaceOrientation.Portrait
     )
-    private val systemThemeState: MutableState<SystemTheme> = mutableStateOf(SystemTheme.Unknown)
+    private val systemThemeState: MutableState<SystemTheme> = mutableStateOf(SystemTheme.UNKNOWN)
 
     private val focusedViewsList = FocusedViewsList()
+
+    val currentLifecycleState: Lifecycle.State get() =
+        architectureComponentsOwner.lifecycle.currentState
 
     init {
         if (configuration.enforceStrictPlistSanityCheck) {
@@ -153,6 +168,10 @@ internal class ComposeContainer(
 
     private fun onLayoutSubviews() {
         windowContext.updateWindowContainerSize()
+    }
+
+    private fun onTraitCollectionDidChange(previousTraitCollection: UITraitCollection?) {
+        layoutDirection = view.effectiveUserInterfaceLayoutDirection.asLayoutDirection()
     }
 
     private fun onDidMoveToWindow(window: UIWindow?) {
@@ -217,7 +236,10 @@ internal class ComposeContainer(
             layersHolder = it
         }
 
-        mediatorComponentsOwner = DefaultArchitectureComponentsOwner(savedState)
+        mediatorComponentsOwner = DefaultArchitectureComponentsOwner(
+            savedState = savedState,
+            viewModelStore = viewModelStore
+        )
         architectureComponentsOwner.enableSavedStateHandles()
         lifecycleDelegate.onLifecycleStateUpdated = architectureComponentsOwner::setLifecycleState
 
@@ -239,7 +261,8 @@ internal class ComposeContainer(
             view.updateMetalView(
                 metalView = metalView,
                 onDidMoveToWindow = ::onDidMoveToWindow,
-                onLayoutSubviews = ::onLayoutSubviews
+                onLayoutSubviews = ::onLayoutSubviews,
+                onTraitCollectionDidChange = ::onTraitCollectionDidChange,
             )
             view.embedSubview(mediator.overlayView)
 
@@ -265,12 +288,12 @@ internal class ComposeContainer(
     }
 
     fun disposeComposeScene() {
-        sceneJob.cancel()
         // Store the current state in the local savedState property. It is used to
         // provide the saved state to the next Compose scene when the container re-enters
         // the window hierarchy.
         savedState = architectureComponentsOwner.saveState()
-        lifecycleDelegate.onLifecycleStateUpdated = null
+
+        sceneJob.cancel()
 
         view.updateMetalView(metalView = null)
         navigationEventInput.onDidMoveToWindow(null, view)
@@ -315,6 +338,8 @@ internal class ComposeContainer(
                     onFocusConditionsChanged = ::onFocusConditionsChanged,
                     focusedViewsList = if (focusable) focusedViewsList.childFocusedViewsList() else null,
                     consumePointerInputOutside = consumePointerInputOutside,
+                    // FIXME: Do not use [compositionContext.effectCoroutineContext] for
+                    //  [FrameRecomposer] creation.
                     parentCoroutineContext = frameRecomposer.compositionContext.effectCoroutineContext,
                     ownerProvider = architectureComponentsOwner,
                     interfaceOrientationState = interfaceOrientationState,
@@ -398,15 +423,15 @@ internal class ComposeContainer(
 
 private fun UIUserInterfaceStyle.asComposeSystemTheme(): SystemTheme {
     return when (this) {
-        UIUserInterfaceStyle.UIUserInterfaceStyleLight -> SystemTheme.Light
-        UIUserInterfaceStyle.UIUserInterfaceStyleDark -> SystemTheme.Dark
-        else -> SystemTheme.Unknown
+        UIUserInterfaceStyle.UIUserInterfaceStyleLight -> SystemTheme.LIGHT
+        UIUserInterfaceStyle.UIUserInterfaceStyleDark -> SystemTheme.DARK
+        else -> SystemTheme.UNKNOWN
     }
 }
 
 private fun getApplicationLayoutDirection() =
     when (UIApplication.sharedApplication().userInterfaceLayoutDirection) {
-        UIUserInterfaceLayoutDirection.UIUserInterfaceLayoutDirectionRightToLeft -> LayoutDirection.Rtl
+        UIUserInterfaceLayoutDirectionRightToLeft -> LayoutDirection.Rtl
         else -> LayoutDirection.Ltr
     }
 
@@ -477,5 +502,14 @@ private class SceneGeometryObserver(
         context: CPointer<out CPointed>?
     ) {
         onGeometryChanged()
+    }
+}
+
+private fun UIUserInterfaceLayoutDirection.asLayoutDirection(): LayoutDirection = when (this) {
+    UIUserInterfaceLayoutDirectionLeftToRight -> LayoutDirection.Ltr
+    UIUserInterfaceLayoutDirectionRightToLeft -> LayoutDirection.Rtl
+    else -> {
+        println("ComposeContainer: unexpected UIUserInterfaceLayoutDirection=$this, falling back to Ltr")
+        LayoutDirection.Ltr
     }
 }

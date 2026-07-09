@@ -90,7 +90,8 @@ class ComposeContainerLifecycleOwnerTest {
             }
 
             // close window
-            pane.container.dispose()
+            window.contentPane.remove(pane)
+            pane.dispose()
             allEvents.waitFor(Lifecycle.Event.ON_PAUSE)
             allEvents.waitFor(Lifecycle.Event.ON_STOP)
             allEvents.waitFor(Lifecycle.Event.ON_DESTROY)
@@ -105,9 +106,9 @@ class ComposeContainerLifecycleOwnerTest {
     @Test
     fun detachAndReattach() = runApplicationTest {
         val window = JFrame()
+        val allEvents = ChannelEventObserver()
+        val pane = TestComposePanel(window, allEvents)
         try {
-            val allEvents = ChannelEventObserver()
-            val pane = TestComposePanel(window, allEvents)
             window.contentPane.add(pane)
 
             // initial state
@@ -129,20 +130,21 @@ class ComposeContainerLifecycleOwnerTest {
             assertTrue(allEvents.tryReceive().isFailure)
         } finally {
             window.dispose()
+            pane.dispose()
         }
     }
 
     @Test
     fun windowDeiconifiedWithoutAddNotify() = runApplicationTest {
         val window = JFrame()
+        val pane = JLayeredPane()
+        val allEvents = ChannelEventObserver()
+        val container = ComposeContainer(
+            container = pane,
+            skiaLayerAnalytics = SkiaLayerAnalytics.Empty,
+            window = window,
+        )
         try {
-            val pane = JLayeredPane()
-            val allEvents = ChannelEventObserver()
-            val container = ComposeContainer(
-                container = pane,
-                skiaLayerAnalytics = SkiaLayerAnalytics.Empty,
-                window = window,
-            )
             container.architectureComponentsOwner.lifecycle.addObserver(allEvents)
             window.contentPane.add(pane)
 
@@ -155,20 +157,21 @@ class ComposeContainerLifecycleOwnerTest {
             assertTrue(allEvents.tryReceive().isFailure)
         } finally {
             window.dispose()
+            container.dispose()
         }
     }
 
     @Test
     fun windowFocusedWithoutAddNotify() = runApplicationTest {
         val window = JFrame()
+        val pane = JLayeredPane()
+        val allEvents = ChannelEventObserver()
+        val container = ComposeContainer(
+            container = pane,
+            skiaLayerAnalytics = SkiaLayerAnalytics.Empty,
+            window = window,
+        )
         try {
-            val pane = JLayeredPane()
-            val allEvents = ChannelEventObserver()
-            val container = ComposeContainer(
-                container = pane,
-                skiaLayerAnalytics = SkiaLayerAnalytics.Empty,
-                window = window,
-            )
             container.architectureComponentsOwner.lifecycle.addObserver(allEvents)
             window.contentPane.add(pane)
 
@@ -181,6 +184,7 @@ class ComposeContainerLifecycleOwnerTest {
             assertTrue(allEvents.tryReceive().isFailure)
         } finally {
             window.dispose()
+            container.dispose()
         }
     }
 
@@ -215,6 +219,7 @@ class ComposeContainerLifecycleOwnerTest {
         assertTrue(allEvents.tryReceive().isFailure)
 
         window.dispose()
+        container.dispose()
     }
 
     private class ChannelEventObserver: LifecycleEventObserver, Channel<Lifecycle.Event> by Channel(capacity = 8) {
@@ -227,7 +232,7 @@ class ComposeContainerLifecycleOwnerTest {
     }
 
     private class TestComposePanel(window: JFrame, observer: LifecycleEventObserver) : JLayeredPane() {
-        val container: ComposeContainer = ComposeContainer(
+        private val container: ComposeContainer = ComposeContainer(
             container = this,
             skiaLayerAnalytics = SkiaLayerAnalytics.Empty,
             window = window,
@@ -244,8 +249,12 @@ class ComposeContainerLifecycleOwnerTest {
         }
 
         override fun removeNotify() {
-            super.removeNotify()
             container.removeNotify()
+            super.removeNotify()
+        }
+
+        fun dispose() {
+            container.dispose()
         }
     }
 
