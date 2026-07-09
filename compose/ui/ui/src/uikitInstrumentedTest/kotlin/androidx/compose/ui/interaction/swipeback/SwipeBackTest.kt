@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package androidx.compose.ui.interaction
+package androidx.compose.ui.interaction.swipeback
 
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.draggable
@@ -34,10 +34,12 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.UIKitInstrumentedTest
 import androidx.compose.ui.test.findNodeWithTag
 import androidx.compose.ui.test.runUIKitInstrumentedTest
+import androidx.compose.ui.test.setLayoutDirection
 import androidx.compose.ui.test.utils.hold
 import androidx.compose.ui.test.utils.up
 import androidx.compose.ui.uikit.EndEdgePanGestureBehavior
 import androidx.compose.ui.unit.LayoutDirection
+import androidx.navigationevent.NavigationEvent
 import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.NavigationEventTransitionState
 import androidx.navigationevent.NavigationEventTransitionState.InProgress
@@ -47,8 +49,11 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import platform.UIKit.UISemanticContentAttributeForceLeftToRight
+import platform.UIKit.UISemanticContentAttributeForceRightToLeft
 import platform.UIKit.UITraitEnvironmentLayoutDirectionLeftToRight
 import platform.UIKit.UITraitEnvironmentLayoutDirectionRightToLeft
+import platform.UIKit.UIView
 
 internal class SwipeBackInHostingViewTest : SwipeBackTest(
     runUIKitInstrumentedTest = { runUIKitInstrumentedTest(useHostingView = true, it) }
@@ -119,6 +124,12 @@ internal abstract class SwipeBackTest(
             transitionState is InProgress
         }
 
+        assertEquals(
+            expected = NavigationEvent.EDGE_LEFT,
+            actual = (transitionState as InProgress).latestEvent.swipeEdge,
+            message = "left edge swipe back should report EDGE_LEFT in LTR"
+        )
+
         swipeBack.up()
 
         waitUntil("left edge back swipe should complete in LTR") {
@@ -141,6 +152,12 @@ internal abstract class SwipeBackTest(
         val swipeBack = swipeFromRightEdge().hold()
 
         assertTrue(transitionState is InProgress, message = "right edge swipe back should be in progress in RTL")
+
+        assertEquals(
+            expected = NavigationEvent.EDGE_RIGHT,
+            actual = (transitionState as InProgress).latestEvent.swipeEdge,
+            message = "right edge swipe back should report EDGE_RIGHT in RTL"
+        )
 
         swipeBack.up()
 
@@ -598,10 +615,11 @@ internal abstract class SwipeBackTest(
             message = "left edge swipe back should complete in LTR"
         )
     }
+
 }
 
 @Composable
-private fun TestContent(
+internal fun TestContent(
     onDragDistanceChanged: (Float) -> Unit = {},
     onTransitionStateChanged: (NavigationEventTransitionState) -> Unit = {},
     onBackCompletedCountChanged: (Int) -> Unit = {},
@@ -643,4 +661,4 @@ private fun TestContent(
     )
 }
 
-private const val DRAG_SURFACE = "dragSurface"
+internal const val DRAG_SURFACE = "dragSurface"

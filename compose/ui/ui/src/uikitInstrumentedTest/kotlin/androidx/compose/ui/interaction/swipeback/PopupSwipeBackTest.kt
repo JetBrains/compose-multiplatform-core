@@ -45,6 +45,8 @@ import androidx.navigationevent.compose.rememberNavigationEventState
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import platform.UIKit.UITraitEnvironmentLayoutDirectionLeftToRight
+import platform.UIKit.UITraitEnvironmentLayoutDirectionRightToLeft
 
 internal class PopupSwipeBackInHostingViewTest : PopupSwipeBackTest(
     runUIKitInstrumentedTest = { runUIKitInstrumentedTest(useHostingView = true, it) }
@@ -58,12 +60,12 @@ internal abstract class PopupSwipeBackTest(
     private val runUIKitInstrumentedTest: (UIKitInstrumentedTest.() -> Unit) -> Unit
 ) {
     @Test
-    fun testEdgeBackSwipeOverPopupDoesNotDispatchHorizontalDragToCompose() = runComposeContainerTest {
+    fun testEdgeBackSwipeOverPopupDoesNotDispatchHorizontalDragToComposeLtr() = runComposeContainerTest {
         var dragDistance = Float.NaN
         var transitionState: NavigationEventTransitionState = NavigationEventTransitionState.Idle
         var backCompletedCount = -1
 
-        setContent {
+        setContent(layoutDirection = UITraitEnvironmentLayoutDirectionLeftToRight) {
             PopupBackGestureContent(
                 onDragDistanceChanged = { dragDistance = it },
                 onTransitionStateChanged = { transitionState = it },
@@ -107,12 +109,61 @@ internal abstract class PopupSwipeBackTest(
     }
 
     @Test
-    fun testInnerSwipeOverPopupDispatchesHorizontalDragWithoutStartingBack() = runComposeContainerTest {
+    fun testEdgeBackSwipeOverPopupDoesNotDispatchHorizontalDragToComposeRtl() = runComposeContainerTest {
         var dragDistance = Float.NaN
         var transitionState: NavigationEventTransitionState = NavigationEventTransitionState.Idle
         var backCompletedCount = -1
 
-        setContent {
+        setContent(layoutDirection = UITraitEnvironmentLayoutDirectionRightToLeft) {
+            PopupBackGestureContent(
+                onDragDistanceChanged = { dragDistance = it },
+                onTransitionStateChanged = { transitionState = it },
+                onBackCompletedCountChanged = { backCompletedCount = it }
+            )
+        }
+
+        waitUntilReady { !dragDistance.isNaN() && backCompletedCount == 0 }
+
+        val backSwipe = swipeFromRightEdge().hold()
+        waitForIdle()
+
+        assertFalse(
+            transitionState is InProgress,
+            "Edge swipe over Popup should not start root back navigation"
+        )
+        assertEquals(
+            expected = 0f,
+            actual = dragDistance,
+            absoluteTolerance = 0.01f,
+            message = "Edge back swipe over Popup should not dispatch horizontal drag deltas to Compose"
+        )
+        assertEquals(
+            expected = 0,
+            actual = backCompletedCount,
+            message = "Back gesture over Popup should not complete before release"
+        )
+
+        backSwipe.up()
+        waitForIdle()
+
+        assertFalse(
+            transitionState is InProgress,
+            "Releasing edge swipe over Popup should still not start root back navigation"
+        )
+        assertEquals(
+            expected = 0,
+            actual = backCompletedCount,
+            message = "Edge swipe over Popup should not complete root back navigation"
+        )
+    }
+
+    @Test
+    fun testInnerSwipeOverPopupDispatchesHorizontalDragWithoutStartingBackLtr() = runComposeContainerTest {
+        var dragDistance = Float.NaN
+        var transitionState: NavigationEventTransitionState = NavigationEventTransitionState.Idle
+        var backCompletedCount = -1
+
+        setContent(layoutDirection = UITraitEnvironmentLayoutDirectionLeftToRight) {
             PopupBackGestureContent(
                 onDragDistanceChanged = { dragDistance = it },
                 onTransitionStateChanged = { transitionState = it },
@@ -126,6 +177,39 @@ internal abstract class PopupSwipeBackTest(
 
         waitUntil("Inner swipe should dispatch drag deltas over Popup") {
             dragDistance > 0f
+        }
+
+        assertFalse(
+            transitionState is InProgress,
+            "Inner swipe over Popup should not start back navigation"
+        )
+        assertEquals(
+            expected = 0,
+            actual = backCompletedCount,
+            message = "Inner swipe over Popup should not complete back navigation"
+        )
+    }
+
+    @Test
+    fun testInnerSwipeOverPopupDispatchesHorizontalDragWithoutStartingBackRtl() = runComposeContainerTest {
+        var dragDistance = Float.NaN
+        var transitionState: NavigationEventTransitionState = NavigationEventTransitionState.Idle
+        var backCompletedCount = -1
+
+        setContent(layoutDirection = UITraitEnvironmentLayoutDirectionRightToLeft) {
+            PopupBackGestureContent(
+                onDragDistanceChanged = { dragDistance = it },
+                onTransitionStateChanged = { transitionState = it },
+                onBackCompletedCountChanged = { backCompletedCount = it }
+            )
+        }
+
+        waitUntilReady { !dragDistance.isNaN() && backCompletedCount == 0 }
+
+        findNodeWithTag(OVERLAY_SURFACE).swipeLeft()
+
+        waitUntil("Inner swipe should dispatch drag deltas over Popup") {
+            dragDistance < 0f
         }
 
         assertFalse(

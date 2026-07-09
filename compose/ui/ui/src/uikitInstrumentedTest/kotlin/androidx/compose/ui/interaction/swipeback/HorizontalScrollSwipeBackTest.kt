@@ -41,6 +41,7 @@ import androidx.compose.ui.test.runUIKitInstrumentedTest
 import androidx.compose.ui.test.utils.hold
 import androidx.compose.ui.test.utils.up
 import androidx.compose.ui.unit.dp
+import androidx.navigationevent.NavigationEvent
 import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.NavigationEventTransitionState
 import androidx.navigationevent.NavigationEventTransitionState.InProgress
@@ -49,6 +50,8 @@ import androidx.navigationevent.compose.rememberNavigationEventState
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import platform.UIKit.UITraitEnvironmentLayoutDirectionLeftToRight
+import platform.UIKit.UITraitEnvironmentLayoutDirectionRightToLeft
 
 internal class HorizontalScrollSwipeBackInHostingViewTest : HorizontalScrollSwipeBackTest(
     runUIKitInstrumentedTest = { runUIKitInstrumentedTest(useHostingView = true, it) }
@@ -62,12 +65,12 @@ internal abstract class HorizontalScrollSwipeBackTest(
     private val runUIKitInstrumentedTest: (UIKitInstrumentedTest.() -> Unit) -> Unit
 ) {
     @Test
-    fun testEdgeBackSwipeOverHorizontalScrollDoesNotScrollComposeContent() = runUIKitInstrumentedTest {
+    fun testEdgeBackSwipeOverHorizontalScrollDoesNotScrollComposeContentLtr() = runUIKitInstrumentedTest {
         var scrollOffset = Float.NaN
         var transitionState: NavigationEventTransitionState = NavigationEventTransitionState.Idle
         var backCompletedCount = -1
 
-        setContent {
+        setContent(layoutDirection = UITraitEnvironmentLayoutDirectionLeftToRight) {
             HorizontalScrollBackGestureContent(
                 onScrollOffsetChanged = { scrollOffset = it },
                 onTransitionStateChanged = { transitionState = it },
@@ -82,6 +85,51 @@ internal abstract class HorizontalScrollSwipeBackTest(
             transitionState is InProgress
         }
 
+        assertEquals(
+            expected = NavigationEvent.EDGE_LEFT,
+            actual = (transitionState as InProgress).latestEvent.swipeEdge,
+            message = "Back swipe over horizontal scroll content should report the expected edge"
+        )
+        assertEquals(
+            expected = 0f,
+            actual = scrollOffset,
+            absoluteTolerance = 0.01f,
+            message = "Edge back swipe should not scroll horizontal Compose content"
+        )
+
+        backSwipe.up()
+
+        waitUntil("Back swipe over horizontal scroll content should complete") {
+            backCompletedCount == 1
+        }
+    }
+
+    @Test
+    fun testEdgeBackSwipeOverHorizontalScrollDoesNotScrollComposeContentRtl() = runUIKitInstrumentedTest {
+        var scrollOffset = Float.NaN
+        var transitionState: NavigationEventTransitionState = NavigationEventTransitionState.Idle
+        var backCompletedCount = -1
+
+        setContent(layoutDirection = UITraitEnvironmentLayoutDirectionRightToLeft) {
+            HorizontalScrollBackGestureContent(
+                onScrollOffsetChanged = { scrollOffset = it },
+                onTransitionStateChanged = { transitionState = it },
+                onBackCompletedCountChanged = { backCompletedCount = it }
+            )
+        }
+
+        waitUntilReady { !scrollOffset.isNaN() && backCompletedCount == 0 }
+
+        val backSwipe = swipeFromRightEdge().hold()
+        waitUntil("Back swipe over horizontal scroll content should start") {
+            transitionState is InProgress
+        }
+
+        assertEquals(
+            expected = NavigationEvent.EDGE_RIGHT,
+            actual = (transitionState as InProgress).latestEvent.swipeEdge,
+            message = "Back swipe over horizontal scroll content should report the expected edge"
+        )
         assertEquals(
             expected = 0f,
             actual = scrollOffset,
@@ -128,6 +176,7 @@ internal abstract class HorizontalScrollSwipeBackTest(
             message = "Inner swipe over horizontal scroll content should not complete back navigation"
         )
     }
+
 }
 
 @Composable
