@@ -73,8 +73,6 @@ internal abstract class PopupSwipeBackTest(
             )
         }
 
-        waitUntilReady { !dragDistance.isNaN() && backCompletedCount == 0 }
-
         val backSwipe = swipeFromLeftEdge().hold()
         waitForIdle()
 
@@ -121,8 +119,6 @@ internal abstract class PopupSwipeBackTest(
                 onBackCompletedCountChanged = { backCompletedCount = it }
             )
         }
-
-        waitUntilReady { !dragDistance.isNaN() && backCompletedCount == 0 }
 
         val backSwipe = swipeFromRightEdge().hold()
         waitForIdle()
@@ -171,8 +167,6 @@ internal abstract class PopupSwipeBackTest(
             )
         }
 
-        waitUntilReady { !dragDistance.isNaN() && backCompletedCount == 0 }
-
         findNodeWithTag(OVERLAY_SURFACE).swipeRight()
 
         waitUntil("Inner swipe should dispatch drag deltas over Popup") {
@@ -203,8 +197,6 @@ internal abstract class PopupSwipeBackTest(
                 onBackCompletedCountChanged = { backCompletedCount = it }
             )
         }
-
-        waitUntilReady { !dragDistance.isNaN() && backCompletedCount == 0 }
 
         findNodeWithTag(OVERLAY_SURFACE).swipeLeft()
 
@@ -297,14 +289,6 @@ private fun BackGestureHost(
 
     Box(modifier = Modifier.fillMaxSize()) {
         content()
-    }
-}
-
-private fun UIKitInstrumentedTest.waitUntilReady(
-    otherConditions: () -> Boolean,
-) {
-    waitUntil("$OVERLAY_SURFACE should be ready") {
-        findNodeWithTagOrNull(OVERLAY_SURFACE) != null && otherConditions()
     }
 }
 

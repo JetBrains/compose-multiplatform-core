@@ -78,8 +78,6 @@ internal abstract class HorizontalScrollSwipeBackTest(
             )
         }
 
-        waitUntilReady { !scrollOffset.isNaN() && backCompletedCount == 0 }
-
         val backSwipe = swipeFromLeftEdge().hold()
         waitUntil("Back swipe over horizontal scroll content should start") {
             transitionState is InProgress
@@ -118,8 +116,6 @@ internal abstract class HorizontalScrollSwipeBackTest(
             )
         }
 
-        waitUntilReady { !scrollOffset.isNaN() && backCompletedCount == 0 }
-
         val backSwipe = swipeFromRightEdge().hold()
         waitUntil("Back swipe over horizontal scroll content should start") {
             transitionState is InProgress
@@ -157,8 +153,6 @@ internal abstract class HorizontalScrollSwipeBackTest(
                 onBackCompletedCountChanged = { backCompletedCount = it }
             )
         }
-
-        waitUntilReady { !scrollOffset.isNaN() && backCompletedCount == 0 }
 
         findNodeWithTag(SCROLL_SURFACE).swipeLeft()
 
@@ -239,14 +233,6 @@ private fun BackGestureHost(
 
     Box(modifier = Modifier.fillMaxSize()) {
         content()
-    }
-}
-
-private fun UIKitInstrumentedTest.waitUntilReady(
-    otherConditions: () -> Boolean,
-) {
-    waitUntil("$SCROLL_SURFACE should be ready") {
-        findNodeWithTagOrNull(SCROLL_SURFACE) != null && otherConditions()
     }
 }
 

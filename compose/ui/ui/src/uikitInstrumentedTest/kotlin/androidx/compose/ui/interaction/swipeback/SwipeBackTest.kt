@@ -34,7 +34,6 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.UIKitInstrumentedTest
 import androidx.compose.ui.test.findNodeWithTag
 import androidx.compose.ui.test.runUIKitInstrumentedTest
-import androidx.compose.ui.test.setLayoutDirection
 import androidx.compose.ui.test.utils.hold
 import androidx.compose.ui.test.utils.up
 import androidx.compose.ui.uikit.EndEdgePanGestureBehavior
@@ -49,11 +48,8 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
-import platform.UIKit.UISemanticContentAttributeForceLeftToRight
-import platform.UIKit.UISemanticContentAttributeForceRightToLeft
 import platform.UIKit.UITraitEnvironmentLayoutDirectionLeftToRight
 import platform.UIKit.UITraitEnvironmentLayoutDirectionRightToLeft
-import platform.UIKit.UIView
 
 internal class SwipeBackInHostingViewTest : SwipeBackTest(
     runUIKitInstrumentedTest = { runUIKitInstrumentedTest(useHostingView = true, it) }
@@ -71,7 +67,7 @@ internal abstract class SwipeBackTest(
         var dragDistance = Float.NaN
 
         setContent(layoutDirection = UITraitEnvironmentLayoutDirectionLeftToRight) {
-            TestContent(
+            SwipeBackTestContent(
                 onDragDistanceChanged = { dragDistance = it }
             )
         }
@@ -91,7 +87,7 @@ internal abstract class SwipeBackTest(
         var dragDistance = Float.NaN
 
         setContent(layoutDirection = UITraitEnvironmentLayoutDirectionRightToLeft) {
-            TestContent(
+            SwipeBackTestContent(
                 onDragDistanceChanged = { dragDistance = it }
             )
         }
@@ -112,7 +108,7 @@ internal abstract class SwipeBackTest(
         var backCompletedCount = -1
 
         setContent(layoutDirection = UITraitEnvironmentLayoutDirectionLeftToRight) {
-            TestContent(
+            SwipeBackTestContent(
                 onTransitionStateChanged = { transitionState = it },
                 onBackCompletedCountChanged = { backCompletedCount = it }
             )
@@ -143,7 +139,7 @@ internal abstract class SwipeBackTest(
         var backCompletedCount = -1
 
         setContent(layoutDirection = UITraitEnvironmentLayoutDirectionRightToLeft) {
-            TestContent(
+            SwipeBackTestContent(
                 onTransitionStateChanged = { transitionState = it },
                 onBackCompletedCountChanged = { backCompletedCount = it }
             )
@@ -172,7 +168,7 @@ internal abstract class SwipeBackTest(
         var backCompletedCount = -1
 
         setContent(layoutDirection = UITraitEnvironmentLayoutDirectionLeftToRight) {
-            TestContent(
+            SwipeBackTestContent(
                 onTransitionStateChanged = { transitionState = it },
                 onBackCompletedCountChanged = { backCompletedCount = it }
             )
@@ -195,7 +191,7 @@ internal abstract class SwipeBackTest(
         var backCompletedCount = -1
 
         setContent(layoutDirection = UITraitEnvironmentLayoutDirectionRightToLeft) {
-            TestContent(
+            SwipeBackTestContent(
                 onTransitionStateChanged = { transitionState = it },
                 onBackCompletedCountChanged = { backCompletedCount = it }
             )
@@ -217,7 +213,7 @@ internal abstract class SwipeBackTest(
         var dragDistance = Float.NaN
 
         setContent(layoutDirection = UITraitEnvironmentLayoutDirectionLeftToRight) {
-            TestContent(
+            SwipeBackTestContent(
                 onDragDistanceChanged = { dragDistance = it }
             )
         }
@@ -234,7 +230,7 @@ internal abstract class SwipeBackTest(
         var dragDistance = Float.NaN
 
         setContent(layoutDirection = UITraitEnvironmentLayoutDirectionRightToLeft) {
-            TestContent(
+            SwipeBackTestContent(
                 onDragDistanceChanged = { dragDistance = it }
             )
         }
@@ -251,7 +247,7 @@ internal abstract class SwipeBackTest(
         var dragDistance = Float.NaN
 
         setContent(layoutDirection = UITraitEnvironmentLayoutDirectionLeftToRight) {
-            TestContent(
+            SwipeBackTestContent(
                 onDragDistanceChanged = { dragDistance = it }
             )
         }
@@ -268,7 +264,7 @@ internal abstract class SwipeBackTest(
         var dragDistance = Float.NaN
 
         setContent(layoutDirection = UITraitEnvironmentLayoutDirectionLeftToRight) {
-            TestContent(
+            SwipeBackTestContent(
                 onDragDistanceChanged = { dragDistance = it }
             )
         }
@@ -285,7 +281,7 @@ internal abstract class SwipeBackTest(
         var dragDistance = Float.NaN
 
         setContent(layoutDirection = UITraitEnvironmentLayoutDirectionRightToLeft) {
-            TestContent(
+            SwipeBackTestContent(
                 onDragDistanceChanged = { dragDistance = it }
             )
         }
@@ -302,7 +298,7 @@ internal abstract class SwipeBackTest(
         var dragDistance = Float.NaN
 
         setContent(layoutDirection = UITraitEnvironmentLayoutDirectionRightToLeft) {
-            TestContent(
+            SwipeBackTestContent(
                 onDragDistanceChanged = { dragDistance = it }
             )
         }
@@ -320,7 +316,7 @@ internal abstract class SwipeBackTest(
         var backCompletedCount = -1
 
         setContent(layoutDirection = UITraitEnvironmentLayoutDirectionLeftToRight) {
-            TestContent(
+            SwipeBackTestContent(
                 onTransitionStateChanged = { transitionState = it },
                 onBackCompletedCountChanged = { backCompletedCount = it }
             )
@@ -343,7 +339,7 @@ internal abstract class SwipeBackTest(
         var backCompletedCount = -1
 
         setContent(layoutDirection = UITraitEnvironmentLayoutDirectionRightToLeft) {
-            TestContent(
+            SwipeBackTestContent(
                 onTransitionStateChanged = { transitionState = it },
                 onBackCompletedCountChanged = { backCompletedCount = it }
             )
@@ -366,7 +362,7 @@ internal abstract class SwipeBackTest(
         var backCompletedCount = -1
 
         setContent(layoutDirection = UITraitEnvironmentLayoutDirectionLeftToRight) {
-            TestContent(
+            SwipeBackTestContent(
                 onTransitionStateChanged = { transitionState = it },
                 onBackCompletedCountChanged = { backCompletedCount = it }
             )
@@ -389,7 +385,7 @@ internal abstract class SwipeBackTest(
         var backCompletedCount = -1
 
         setContent(layoutDirection = UITraitEnvironmentLayoutDirectionRightToLeft) {
-            TestContent(
+            SwipeBackTestContent(
                 onTransitionStateChanged = { transitionState = it },
                 onBackCompletedCountChanged = { backCompletedCount = it }
             )
@@ -415,7 +411,7 @@ internal abstract class SwipeBackTest(
             configure = { endEdgePanGestureBehavior = EndEdgePanGestureBehavior.Back },
             layoutDirection = UITraitEnvironmentLayoutDirectionRightToLeft
         ) {
-            TestContent(
+            SwipeBackTestContent(
                 onTransitionStateChanged = { transitionState = it },
                 onBackCompletedCountChanged = { backCompletedCount = it }
             )
@@ -444,7 +440,7 @@ internal abstract class SwipeBackTest(
             configure = { endEdgePanGestureBehavior = EndEdgePanGestureBehavior.Back },
             layoutDirection = UITraitEnvironmentLayoutDirectionLeftToRight
         ) {
-            TestContent(
+            SwipeBackTestContent(
                 onTransitionStateChanged = { transitionState = it },
                 onBackCompletedCountChanged = { backCompletedCount = it }
             )
@@ -473,7 +469,7 @@ internal abstract class SwipeBackTest(
             configure = { endEdgePanGestureBehavior = EndEdgePanGestureBehavior.Back },
             layoutDirection = UITraitEnvironmentLayoutDirectionLeftToRight
         ) {
-            TestContent(
+            SwipeBackTestContent(
                 onTransitionStateChanged = { transitionState = it },
                 onBackCompletedCountChanged = { backCompletedCount = it }
             )
@@ -509,7 +505,7 @@ internal abstract class SwipeBackTest(
             configure = { endEdgePanGestureBehavior = EndEdgePanGestureBehavior.Back },
             layoutDirection = UITraitEnvironmentLayoutDirectionRightToLeft
         ) {
-            TestContent(
+            SwipeBackTestContent(
                 onTransitionStateChanged = { transitionState = it },
                 onBackCompletedCountChanged = { backCompletedCount = it }
             )
@@ -548,7 +544,7 @@ internal abstract class SwipeBackTest(
                 composeLayoutDirection = currentLayoutDirection
             }
 
-            TestContent(
+            SwipeBackTestContent(
                 onBackCompletedCountChanged = { backCompletedCount = it }
             )
         }
@@ -588,7 +584,7 @@ internal abstract class SwipeBackTest(
                 composeLayoutDirection = currentLayoutDirection
             }
 
-            TestContent(
+            SwipeBackTestContent(
                 onBackCompletedCountChanged = { backCompletedCount = it }
             )
         }
@@ -619,7 +615,7 @@ internal abstract class SwipeBackTest(
 }
 
 @Composable
-internal fun TestContent(
+internal fun SwipeBackTestContent(
     onDragDistanceChanged: (Float) -> Unit = {},
     onTransitionStateChanged: (NavigationEventTransitionState) -> Unit = {},
     onBackCompletedCountChanged: (Int) -> Unit = {},

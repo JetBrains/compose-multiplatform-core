@@ -17,7 +17,6 @@
 package androidx.compose.ui.interaction.swipeback
 
 import androidx.compose.ui.test.UIKitInstrumentedTest
-import androidx.compose.ui.test.findNodeWithTagOrNull
 import androidx.compose.ui.test.runUIKitInstrumentedTest
 import androidx.compose.ui.test.setLayoutDirection
 import androidx.compose.ui.test.utils.hold
@@ -55,7 +54,7 @@ internal abstract class NonFullscreenContainerSwipeBackTest(
 
         setupWindow {
             val composeViewController = createViewControllerHostingCompose {
-                TestContent(
+                SwipeBackTestContent(
                     onTransitionStateChanged = { transitionState = it },
                     onBackCompletedCountChanged = { backCompletedCount = it }
                 )
@@ -101,7 +100,7 @@ internal abstract class NonFullscreenContainerSwipeBackTest(
 
         setupWindow {
             val composeViewController = createViewControllerHostingCompose {
-                TestContent(
+                SwipeBackTestContent(
                     onTransitionStateChanged = { transitionState = it },
                     onBackCompletedCountChanged = { backCompletedCount = it }
                 )
