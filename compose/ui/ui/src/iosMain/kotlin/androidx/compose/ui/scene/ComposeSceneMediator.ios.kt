@@ -52,7 +52,6 @@ import androidx.compose.ui.platform.DefaultInputModeManager
 import androidx.compose.ui.platform.FrameRecomposer
 import androidx.compose.ui.platform.PlatformArchitectureComponentsOwner
 import androidx.compose.ui.platform.PlatformContext
-import androidx.compose.ui.platform.PlatformOutOfFrameExecutor
 import androidx.compose.ui.platform.PlatformScreenReader
 import androidx.compose.ui.platform.PlatformTextInputMethodRequest
 import androidx.compose.ui.platform.PlatformWindowContext
@@ -409,7 +408,10 @@ internal class ComposeSceneMediator(
     private val textInputService: UIKitTextInputService by lazy {
         UIKitTextInputService(
             updateView = {
-                frameRecomposer.performFrame(lastRenderTime)
+                if (!isPerformingFrame) {
+                    // Fixes issue with reentrant redraws from native text-input edits mid-frame
+                    frameRecomposer.performFrame(lastRenderTime)
+                }
                 scene.measureAndLayout()
                 CATransaction.flush()
             },
@@ -637,11 +639,17 @@ internal class ComposeSceneMediator(
         }
     }
 
+    private var isPerformingFrame = false
     private var lastRenderTime = CACurrentMediaTime().toNanoSeconds()
     fun render(canvas: Canvas, nanoTime: Long) {
         lastRenderTime = nanoTime
-        with(sceneRenderingScope) {
-            scene.render(frameRecomposer, canvas, nanoTime)
+        isPerformingFrame = true
+        try {
+            with(sceneRenderingScope) {
+                scene.render(frameRecomposer, canvas, nanoTime)
+            }
+        } finally {
+            isPerformingFrame = false
         }
     }
 
