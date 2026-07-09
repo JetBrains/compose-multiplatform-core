@@ -39,7 +39,6 @@ androidXMultiplatform {
         }
         desktop()
         mac()
-        linux()
         ios()
         watchos()
         tvos()
@@ -47,6 +46,7 @@ androidXMultiplatform {
         js()
         wasmJs()
     }
+    linux()
 
     defaultPlatform(PlatformIdentifier.ANDROID)
 
@@ -55,6 +55,15 @@ androidXMultiplatform {
             // Keep direct references to fork versions to correctly resolve
             // new redirections to Google's artifacts.
             api("org.jetbrains.compose.runtime:runtime:1.11.0")
+            api(project(":navigationevent:navigationevent"))
+        }
+
+        nonAndroidMain {
+            dependsOn(commonMain)
+        }
+
+        linuxMain {
+            dependsOn(nonAndroidMain)
         }
     }
 }

@@ -30,6 +30,7 @@ androidXMultiplatform {
     }
     desktop()
     mac()
+    linux()
     ios()
     js()
     wasmJs()
@@ -62,7 +63,7 @@ androidXMultiplatform {
         jbMain {
             dependsOn(commonMain)
             dependencies {
-                implementation("org.jetbrains.androidx.navigationevent:navigationevent-compose:1.1.0")
+                implementation(project(":navigationevent:navigationevent-compose"))
             }
         }
 
