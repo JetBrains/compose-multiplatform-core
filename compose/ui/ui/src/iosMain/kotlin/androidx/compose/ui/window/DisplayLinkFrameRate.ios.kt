@@ -17,7 +17,7 @@
 package androidx.compose.ui.window
 
 import androidx.compose.ui.FrameRateCategory
-import androidx.compose.ui.uikit.utils.CMPDisplayLinkDefaultPreferredFrameRate
+import androidx.compose.ui.uikit.utils.CMPFrameRateRangeDefault
 import platform.QuartzCore.CADisplayLink
 import platform.darwin.NSInteger
 
@@ -45,7 +45,7 @@ internal class DisplayLinkFrameRate(
 
     fun voteFrameRate(frameRate: Float, frameRateCategory: Float) {
         val frameRateCategoryValue = when (frameRateCategory) {
-            FrameRateCategory.Default.value -> CMPDisplayLinkDefaultPreferredFrameRate()
+            FrameRateCategory.Default.value -> CMPFrameRateRangeDefault.preferred
             FrameRateCategory.Normal.value -> 60f
             FrameRateCategory.High.value -> maximumFramesPerSecond.toFloat()
             else -> Float.NaN

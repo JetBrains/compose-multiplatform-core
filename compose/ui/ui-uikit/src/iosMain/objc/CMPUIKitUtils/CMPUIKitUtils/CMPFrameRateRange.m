@@ -17,7 +17,9 @@
 #import "CMPFrameRateRange.h"
 #import <QuartzCore/QuartzCore.h>
 
-float CMPDisplayLinkDefaultPreferredFrameRate(void) {
+@implementation CMPFrameRateRangeDefault
+
++ (float)preferred {
     if (@available(iOS 15.0, *)) {
         return CAFrameRateRangeDefault.preferred;
     } else {
@@ -25,3 +27,5 @@ float CMPDisplayLinkDefaultPreferredFrameRate(void) {
         return 0.0f;
     }
 }
+
+@end

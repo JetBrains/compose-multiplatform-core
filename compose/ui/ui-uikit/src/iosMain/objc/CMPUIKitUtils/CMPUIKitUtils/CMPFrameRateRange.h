@@ -18,7 +18,14 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+@interface CMPFrameRateRangeDefault : NSObject
+
+- (instancetype)init NS_UNAVAILABLE;
++ (instancetype)new NS_UNAVAILABLE;
+
 /// Returns the default preferred frame rate for CADisplayLink on the current OS version.
-float CMPDisplayLinkDefaultPreferredFrameRate(void);
+@property (class, nonatomic, readonly) float preferred;
+
+@end
 
 NS_ASSUME_NONNULL_END
