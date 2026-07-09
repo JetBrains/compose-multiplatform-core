@@ -67,6 +67,9 @@ import androidx.compose.ui.platform.accessibility.ComposeWebSemanticsListener
 import androidx.compose.ui.platform.installFallbackFontDownloader
 import androidx.compose.ui.scene.CanvasLayersComposeScene
 import androidx.compose.ui.platform.FrameRecomposer
+import androidx.compose.ui.platform.PlatformPrefetchScheduler
+import androidx.compose.ui.platform.WebPrefetchScheduler
+import androidx.compose.ui.platform.isIdleCallbackSupported
 import androidx.compose.ui.scene.ComposeSceneDragAndDropNode
 import androidx.compose.ui.scene.ComposeScenePointer
 import androidx.compose.ui.scene.PointerEventResult
@@ -268,6 +271,9 @@ internal class ComposeWindow(
             override val hapticFeedback by lazy(LazyThreadSafetyMode.NONE) {
                 WebHapticFeedback.webHapticFeedbackOrDefault()
             }
+
+            override val prefetchScheduler: PlatformPrefetchScheduler =
+                if (isIdleCallbackSupported) WebPrefetchScheduler() else super.prefetchScheduler
 
             override val semanticsOwnerListener: PlatformContext.SemanticsOwnerListener? =
                 if (configuration.isA11YEnabled) {
@@ -553,6 +559,7 @@ internal class ComposeWindow(
     // TODO: need to call .dispose() on window close.
     fun dispose() {
         check(!isDisposed)
+        (platformContext.prefetchScheduler as? WebPrefetchScheduler)?.dispose()
         archComponentsOwner.lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_DESTROY)
         archComponentsOwner.viewModelStore.clear()
         archComponentsOwner.navigationEventDispatcherOwner
