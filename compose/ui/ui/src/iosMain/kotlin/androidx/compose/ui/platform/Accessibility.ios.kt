@@ -563,7 +563,7 @@ private class AccessibilityElement(
     private val scrollableProtocol = objc_getProtocol("UIFocusItemScrollableContainer")!!
     override fun conformsToProtocol(aProtocol: Protocol?): Boolean {
         if (protocol_isEqual(proto = aProtocol, other = scrollableProtocol)) {
-            return runIfAlive { node.canScroll } ?: false
+            return getIfAlive { node.canScroll } ?: false
         }
         return super.conformsToProtocol(aProtocol)
     }
@@ -647,9 +647,16 @@ private class AccessibilityElement(
         return value as T
     }
 
-    private inline fun <T> runIfAlive(crossinline block: () -> T?): T? {
+    private inline fun <T> getIfAlive(crossinline block: () -> T?): T? {
         if (!isAlive) {
             return null
+        }
+        return block()
+    }
+
+    private inline fun runIfAlive(crossinline block: () -> Unit) {
+        if (!isAlive) {
+            return
         }
         return block()
     }
@@ -670,30 +677,30 @@ private class AccessibilityElement(
 
     override fun accessibilityElementDidBecomeFocused() = runIfAlive {
         node.accessibilityElementDidBecomeFocused()
-    } ?: Unit
+    }
 
     override fun accessibilityElementDidLoseFocus() = runIfAlive {
         node.accessibilityElementDidLoseFocus()
-    } ?: Unit
+    }
 
-    override fun accessibilityActivate(): Boolean = runIfAlive {
+    override fun accessibilityActivate(): Boolean = getIfAlive {
         node.accessibilityActivate()
     } ?: false
 
     override fun accessibilityIncrement() = runIfAlive {
         node.accessibilityIncrement()
-    } ?: Unit
+    }
 
     override fun accessibilityDecrement() = runIfAlive {
         node.accessibilityDecrement()
-    } ?: Unit
+    }
 
     override fun accessibilityScroll(direction: UIAccessibilityScrollDirection): Boolean =
-        runIfAlive {
+        getIfAlive {
             node.accessibilityScroll(direction)
         } ?: false
 
-    override fun isAccessibilityElement(): Boolean = runIfAlive {
+    override fun isAccessibilityElement(): Boolean = getIfAlive {
         // Node visibility changes don't trigger accessibility semantic recalculation.
         // This value should not be cached. See [SemanticsNode.isScreenReaderFocusable()]
         node.isAccessibilityElement
@@ -719,7 +726,7 @@ private class AccessibilityElement(
             node.accessibilityTraits
         }
 
-    override fun accessibilityPerformEscape(): Boolean = runIfAlive {
+    override fun accessibilityPerformEscape(): Boolean = getIfAlive {
         if (node.accessibilityPerformEscape()) {
             true
         } else {
@@ -728,7 +735,7 @@ private class AccessibilityElement(
     } ?: false
 
     override fun accessibilityContainerType(): UIAccessibilityContainerType =
-        runIfAlive {
+        getIfAlive {
             node.accessibilityContainerType
         } ?: UIAccessibilityContainerTypeNone
 
@@ -751,7 +758,7 @@ private class AccessibilityElement(
 
     // UIFocusItemProtocol & UIFocusItemContainerProtocol
 
-    override fun canBecomeFocused(): Boolean = runIfAlive { node.canBecomeFocused } ?: false
+    override fun canBecomeFocused(): Boolean = getIfAlive { node.canBecomeFocused } ?: false
 
     override fun didUpdateFocusInContext(
         context: UIFocusUpdateContext,
@@ -763,7 +770,7 @@ private class AccessibilityElement(
         if (context.nextFocusedItem === this) {
             node.didBecomeFocused()
         }
-    } ?: Unit
+    }
 
     override fun focusItemContainer(): UIFocusItemContainerProtocol = this
 
@@ -824,18 +831,18 @@ private class AccessibilityElement(
     override fun isTransparentFocusItem(): Boolean = true
 
     override fun drawsFocusRingWhenChildrenFocused(): Boolean =
-        runIfAlive { node.canScroll } ?: false
+        getIfAlive { node.canScroll } ?: false
 
     // Scrolling
 
     override fun visibleSize(): CValue<CGSize> =
-        runIfAlive { node.scrollVisibleSize } ?: CGSizeZero.readValue()
+        getIfAlive { node.scrollVisibleSize } ?: CGSizeZero.readValue()
 
     override fun contentSize(): CValue<CGSize> =
-        runIfAlive { node.scrollContentSize } ?: CGSizeZero.readValue()
+        getIfAlive { node.scrollContentSize } ?: CGSizeZero.readValue()
 
     override fun contentOffset(): CValue<CGPoint> =
-        runIfAlive { node.scrollContentOffset } ?: CGPointZero.readValue()
+        getIfAlive { node.scrollContentOffset } ?: CGPointZero.readValue()
 
     override fun setContentOffset(contentOffset: CValue<CGPoint>) = runIfAlive {
         val currentContentOffset = contentOffset()
@@ -860,8 +867,7 @@ private class AccessibilityElement(
             node.scrollBy(delta)
             timerJob.cancel()
         }
-        Unit
-    } ?: Unit
+    }
 
     // UICoordinateSpaceProtocol
 
