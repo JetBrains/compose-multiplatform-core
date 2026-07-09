@@ -110,6 +110,7 @@ afterEvaluate {
             jvmOs(it, "macos-arm64", libs.skikoAwtRuntimeMacOsArm64.get())
             jvmOs(it, "windows-x64", libs.skikoAwtRuntimeWindowsX64.get())
             jvmOs(it, "windows-arm64", libs.skikoAwtRuntimeWindowsArm64.get())
+            jvmOs(it, "all", libs.skikoAwtRuntime.get())
         }
     }
 }

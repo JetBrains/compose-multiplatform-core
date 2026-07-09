@@ -301,6 +301,7 @@ skikoAwtRuntimeWindowsX64 = { module = "org.jetbrains.skiko:skiko-awt-runtime-wi
 skikoAwtRuntimeWindowsArm64 = { module = "org.jetbrains.skiko:skiko-awt-runtime-windows-arm64", version.ref = "skiko" }
 skikoAwtRuntimeLinuxX64 = { module = "org.jetbrains.skiko:skiko-awt-runtime-linux-x64", version.ref = "skiko" }
 skikoAwtRuntimeLinuxArm64 = { module = "org.jetbrains.skiko:skiko-awt-runtime-linux-arm64", version.ref = "skiko" }
+skikoAwtRuntime = { module = "org.jetbrains.skiko:skiko-awt-runtime-all", version.ref = "skiko" }
 skikoWasmJs = { module = "org.jetbrains.skiko:skiko-wasm-js", version.ref = "skiko" }
 spdxGradlePluginz = { module = "org.spdx:spdx-gradle-plugin", version.ref = "spdxGradlePlugin" }
 sqldelightAndroid = { module = "com.squareup.sqldelight:android-driver", version.ref = "sqldelight" }
