@@ -176,12 +176,9 @@ private class MultiSelectionLayout(
             when {
                 startSlot < endSlot -> CrossStatus.NOT_CROSSED
                 startSlot > endSlot -> CrossStatus.CROSSED
-                // because one of the slots is not-dragging, it must be on a text directly
-                // because one of the slots is on a text directly and the start/end slots are equal,
-                // they both must be odd. Given this, dividing the slot by 2 should give us the
-                // correct
-                // info index.
-                else -> infoList[startSlot / 2].rawCrossStatus
+                // Clamp: when the gesture starts past every selectable, both slots default
+                // to lastSlot = 2 * infoList.size, so slot / 2 would be out of bounds.
+                else -> infoList[(startSlot / 2).coerceAtMost(infoList.lastIndex)].rawCrossStatus
             }
 
     override val startInfo: SelectableInfo
@@ -303,7 +300,9 @@ private class MultiSelectionLayout(
 
     private fun slotToIndex(slot: Int, isMinimumSlot: Boolean): Int {
         val slotAdjustment = if (isMinimumSlot) 0 else 1
-        return (slot - slotAdjustment) / 2
+        // Clamp: when the gesture starts past every selectable, slots default
+        // to lastSlot = 2 * infoList.size, so slot / 2 would be out of bounds.
+        return ((slot - slotAdjustment) / 2).coerceIn(0, infoList.lastIndex)
     }
 
     private fun getInfoListIndexBySelectableId(id: Long): Int =
