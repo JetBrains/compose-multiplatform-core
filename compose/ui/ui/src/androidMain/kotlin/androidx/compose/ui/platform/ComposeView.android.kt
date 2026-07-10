@@ -638,21 +638,13 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
 }
 
 /**
- * Flag to disable WindowInsetsRulers. System UI needs to disable WindowInsets Rulers for all
- * ComposeViews, so this is a global switch. We don't want to have them add a ComposeView and the
- * new ComposeView suddenly requests WindowInsets updates, changing the behavior so that the insets
- * suddenly notify.
- */
-internal var areWindowInsetsRulersEnabled = true
-
-/**
  * Used to disable [androidx.compose.ui.layout.WindowInsetsRulers]. This can be used when UI never
  * reads WindowInsets across all ComposeViews to reduce the overhead of requesting WindowInsets
  * updates. Only call this when no ComposeViews will ever need to handle insets over the lifetime of
  * the application. This should be called before the first [ComposeView] is created.
  */
 fun ComposeView.Companion.disableWindowInsetsRulers() {
-    areWindowInsetsRulersEnabled = false
+    androidx.compose.ui.disableWindowInsetsRulers()
 }
 
 @OptIn(ExperimentalComposeUiApi::class)
