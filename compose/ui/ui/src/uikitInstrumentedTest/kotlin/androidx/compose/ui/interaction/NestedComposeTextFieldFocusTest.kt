@@ -42,9 +42,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import kotlinx.cinterop.ExperimentalForeignApi
-import platform.CoreGraphics.CGRectMake
 import platform.UIKit.UITextInputProtocol
-import platform.UIKit.UIView
 
 @OptIn(ExperimentalComposeUiApi::class, ExperimentalForeignApi::class)
 class NestedComposeTextFieldFocusTest {
@@ -62,22 +60,18 @@ class NestedComposeTextFieldFocusTest {
             ) {
                 UIKitView(
                     factory = {
-                        UIView().apply {
-                            val nestedComposeView = ComposeUIView(
-                                configure = { enforceStrictPlistSanityCheck = false }
-                            ) {
-                                FocusReportingTextField(
-                                    value = NestedFieldText,
-                                    onFocusChanged = { nestedFocused = it }
-                                )
-                            }
-                            nestedComposeView.setFrame(CGRectMake(16.0, 16.0, 300.0, 80.0))
-                            addSubview(nestedComposeView)
+                        ComposeUIView(
+                            configure = { enforceStrictPlistSanityCheck = false }
+                        ) {
+                            FocusReportingTextField(
+                                value = NestedFieldText,
+                                onFocusChanged = { nestedFocused = it }
+                            )
                         }
                     },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(120.dp)
+                        .height(80.dp)
                         .testTag(NestedFieldHostTag),
                     properties = UIKitInteropProperties(placedAsOverlay = true)
                 )
