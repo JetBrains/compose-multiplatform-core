@@ -245,6 +245,19 @@ interface IconDecoratedWindow : Window {
     fun setIcon(icon: ByteArray)
 }
 
+enum class CaptionButtonKind { Minimize, Maximize, Close }
+
+@ExperimentalComposeUiApi
+interface CaptionButtonsHostWindow : Window {
+    /**
+     * Reports where a caption button is laid out, in logical client coordinates, so the platform
+     * can route native non-client hit-testing (Snap Layouts, system minimize/maximize/close) to it.
+     * Pass `null` to clear (e.g. the button is disabled or left the composition).
+     */
+    @MainThread
+    fun setCaptionButtonBounds(kind: CaptionButtonKind, bounds: DpRect?)
+}
+
 @OptIn(InternalComposeUiApi::class, ExperimentalComposeUiApi::class)
 @Composable
 fun Window(
