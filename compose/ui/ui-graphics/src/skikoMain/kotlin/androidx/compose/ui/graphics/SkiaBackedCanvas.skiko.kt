@@ -16,7 +16,6 @@
 
 package androidx.compose.ui.graphics
 
-import androidx.compose.runtime.InternalComposeApi
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
@@ -31,7 +30,6 @@ import org.jetbrains.skia.FilterMode
 import org.jetbrains.skia.Image
 import org.jetbrains.skia.Matrix44
 import org.jetbrains.skia.MipmapMode
-import org.jetbrains.skia.Paint as SkPaint
 import org.jetbrains.skia.SamplingMode
 import org.jetbrains.skia.impl.use
 
@@ -75,28 +73,9 @@ val Canvas.skiaCanvas: SkCanvas
 val Canvas.nativeCanvas: SkCanvas
     get() = skiaCanvas
 
-// This was added for internal usage from old render layers (another submodule),
-// but wasn't properly marked as internal. Keep it as deprecated for some time to be safe.
-@InternalComposeApi
-@Deprecated(
-    level = DeprecationLevel.ERROR,
-    message = "This API is not supposed to be used outside of Compose UI package"
-)
-var Canvas.alphaMultiplier: Float
-    get() = (this as SkiaBackedCanvas).alphaMultiplier
-    set(value) { (this as SkiaBackedCanvas).alphaMultiplier = value }
-
 internal class SkiaBackedCanvas(
     internal val internalSkiaCanvas: SkCanvas,
 ) : Canvas {
-    internal var alphaMultiplier: Float = 1.0f
-
-    private fun Paint.asSkiaPaintWithAppliedAlphaMultiplier(): SkPaint {
-        require(this is SkiaBackedPaint)
-        this.alphaMultiplier = this@SkiaBackedCanvas.alphaMultiplier
-        return internalSkiaPaint
-    }
-
     override fun save() {
         internalSkiaCanvas.save()
     }
@@ -111,7 +90,7 @@ internal class SkiaBackedCanvas(
             bounds.top,
             bounds.right,
             bounds.bottom,
-            paint.asSkiaPaintWithAppliedAlphaMultiplier()
+            paint.skiaPaint
         )
     }
 
@@ -161,7 +140,7 @@ internal class SkiaBackedCanvas(
             y0 = p1.y,
             x1 = p2.x,
             y1 = p2.y,
-            paint = paint.asSkiaPaintWithAppliedAlphaMultiplier(),
+            paint = paint.skiaPaint,
         )
     }
 
@@ -171,7 +150,7 @@ internal class SkiaBackedCanvas(
             top = top,
             right = right,
             bottom = bottom,
-            paint = paint.asSkiaPaintWithAppliedAlphaMultiplier(),
+            paint = paint.skiaPaint,
         )
     }
 
@@ -190,7 +169,7 @@ internal class SkiaBackedCanvas(
             right = right,
             bottom = bottom,
             radii = floatArrayOf(radiusX, radiusY),
-            paint = paint.asSkiaPaintWithAppliedAlphaMultiplier(),
+            paint = paint.skiaPaint,
         )
     }
 
@@ -200,7 +179,7 @@ internal class SkiaBackedCanvas(
             top = top,
             right = right,
             bottom = bottom,
-            paint = paint.asSkiaPaintWithAppliedAlphaMultiplier(),
+            paint = paint.skiaPaint,
         )
     }
 
@@ -209,7 +188,7 @@ internal class SkiaBackedCanvas(
             x = center.x,
             y = center.y,
             radius = radius,
-            paint = paint.asSkiaPaintWithAppliedAlphaMultiplier(),
+            paint = paint.skiaPaint,
         )
     }
 
@@ -231,7 +210,7 @@ internal class SkiaBackedCanvas(
             startAngle = startAngle,
             sweepAngle = sweepAngle,
             includeCenter = useCenter,
-            paint = paint.asSkiaPaintWithAppliedAlphaMultiplier(),
+            paint = paint.skiaPaint,
         )
     }
 
@@ -239,7 +218,7 @@ internal class SkiaBackedCanvas(
     override fun drawPath(path: Path, paint: Paint) {
         internalSkiaCanvas.drawPath(
             path = path.materializeSkiaPath(),
-            paint = paint.asSkiaPaintWithAppliedAlphaMultiplier(),
+            paint = paint.skiaPaint,
         )
     }
 
@@ -307,7 +286,7 @@ internal class SkiaBackedCanvas(
                 dstRight = dstRight,
                 dstBottom = dstBottom,
                 samplingMode = paint.filterQuality.toSkia(),
-                paint = paint.asSkiaPaintWithAppliedAlphaMultiplier(),
+                paint = paint.skiaPaint,
                 strict = true,
             )
         }
@@ -332,7 +311,7 @@ internal class SkiaBackedCanvas(
     override fun disableZ() = Unit
 
     private fun drawPoints(points: List<Offset>, paint: Paint) {
-        val skiaPaint = paint.asSkiaPaintWithAppliedAlphaMultiplier()
+        val skiaPaint = paint.skiaPaint
         points.fastForEach { point ->
             internalSkiaCanvas.drawPoint(
                 x = point.x,
@@ -356,7 +335,7 @@ internal class SkiaBackedCanvas(
      */
     private fun drawLines(points: List<Offset>, paint: Paint, stepBy: Int) {
         if (points.size >= 2) {
-            val skiaPaint = paint.asSkiaPaintWithAppliedAlphaMultiplier()
+            val skiaPaint = paint.skiaPaint
             var i = 0
             while (i < points.size - 1) {
                 val p1 = points[i]
@@ -383,7 +362,7 @@ internal class SkiaBackedCanvas(
 
     private fun drawRawPoints(points: FloatArray, paint: Paint, stepBy: Int) {
         if (points.size % 2 == 0) {
-            val skiaPaint = paint.asSkiaPaintWithAppliedAlphaMultiplier()
+            val skiaPaint = paint.skiaPaint
             var i = 0
             while (i < points.size - 1) {
                 val x = points[i]
@@ -411,7 +390,7 @@ internal class SkiaBackedCanvas(
         // Float array is treated as alternative set of x and y coordinates
         // x1, y1, x2, y2, x3, y3, ... etc.
         if (points.size >= 4 && points.size % 2 == 0) {
-            val skiaPaint = paint.asSkiaPaintWithAppliedAlphaMultiplier()
+            val skiaPaint = paint.skiaPaint
             var i = 0
             while (i < points.size - 3) {
                 val x1 = points[i]
@@ -432,7 +411,7 @@ internal class SkiaBackedCanvas(
             texCoords = vertices.textureCoordinates,
             indices = vertices.indices,
             blendMode = blendMode.toSkia(),
-            paint = paint.asSkiaPaintWithAppliedAlphaMultiplier(),
+            paint = paint.skiaPaint,
         )
     }
 
