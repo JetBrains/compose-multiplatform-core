@@ -67,15 +67,6 @@ internal class ComposeLayersViewController(
         canBeOpaque = false
     }
 
-    enum class AppearanceTransitionState {
-        Appearing,
-        Appeared,
-        Disappearing,
-        Disappeared
-    }
-
-    private var transitionState: AppearanceTransitionState = AppearanceTransitionState.Disappeared
-
     private val composeContainerView = ComposeContainerView(
         useOpaqueConfiguration = false,
         transparentForTouches = true
@@ -91,6 +82,15 @@ internal class ComposeLayersViewController(
         coroutineContext.job.invokeOnCompletion {
             dispose()
         }
+    }
+
+    fun setNeedsLayout() {
+        composeContainerView.setNeedsLayout()
+        composeContainerView.invalidateIntrinsicContentSize()
+    }
+
+    fun setNeedsDisplay() {
+        composeContainerView.setNeedsDisplay()
     }
 
     override fun viewDidLayoutSubviews() {
@@ -233,6 +233,7 @@ internal class ComposeLayersViewController(
         if (hasViewAppeared) {
             layer.sceneDidAppear()
         }
+        setNeedsDisplay()
     }
 
     fun detach(layer: UIKitComposeSceneLayer) {
@@ -255,7 +256,7 @@ internal class ComposeLayersViewController(
             removedLayersTransactions.add(transaction)
 
             // Redraw content with layer removed
-            metalView.redrawer.setNeedsRedraw()
+            setNeedsDisplay()
         }
     }
 
@@ -266,6 +267,7 @@ internal class ComposeLayersViewController(
         this.layers.fastForEach {
             it.sceneDidAppear()
         }
+        setNeedsDisplay()
     }
 
     override fun viewWillDisappear(animated: Boolean) {

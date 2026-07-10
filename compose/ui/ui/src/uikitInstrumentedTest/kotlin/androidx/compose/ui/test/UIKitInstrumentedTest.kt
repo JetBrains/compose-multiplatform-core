@@ -19,6 +19,7 @@ package androidx.compose.ui.test
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.platform.AccessibilityNotification
+import androidx.compose.ui.platform.FrameChoreographer
 import androidx.compose.ui.platform.InfiniteAnimationPolicy
 import androidx.compose.ui.scene.ComposeHostingView
 import androidx.compose.ui.scene.ComposeHostingViewController
@@ -261,6 +262,9 @@ internal class UIKitInstrumentedTest(
 
     val rootRedrawer: MetalRedrawer? get() =
         hostingView?.rootRedrawer ?: hostingViewController?.rootRedrawer
+
+    val frameChoreographer: FrameChoreographer? get() =
+        appDelegate.window()?.windowScene?.let { FrameChoreographer.choreographerForScene(it) }
 
     private val infiniteAnimationPolicy = object : InfiniteAnimationPolicy {
         override suspend fun <R> onInfiniteOperation(block: suspend () -> R): R {

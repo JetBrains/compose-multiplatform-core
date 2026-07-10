@@ -135,8 +135,6 @@ private class LegacyMetalView(
 
         val screen = window?.screen ?: return
         contentScaleFactor = screen.scale
-        redrawer.displayLinkFrameRate?.maximumFramesPerSecond = screen.maximumFramesPerSecond
-        redrawer.displayLinkFrameRate?.preferredFramesPerSecond = screen.maximumFramesPerSecond
     }
 
     override fun layoutSubviews() {

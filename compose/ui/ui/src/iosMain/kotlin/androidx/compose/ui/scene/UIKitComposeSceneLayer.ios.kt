@@ -30,6 +30,7 @@ import androidx.compose.ui.navigationevent.UIKitNavigationEventInput
 import androidx.compose.ui.platform.FrameRecomposer
 import androidx.compose.ui.platform.PlatformArchitectureComponentsOwner
 import androidx.compose.ui.platform.PlatformContext
+import androidx.compose.ui.platform.FrameChoreographer
 import androidx.compose.ui.uikit.ComposeContainerConfiguration
 import androidx.compose.ui.uikit.InterfaceOrientation
 import androidx.compose.ui.uikit.LocalUIViewController
@@ -49,6 +50,7 @@ import platform.UIKit.UIView
 import platform.UIKit.UIWindow
 
 internal class UIKitComposeSceneLayer(
+    frameChoreographer: FrameChoreographer,
     private val onClosed: (UIKitComposeSceneLayer) -> Unit,
     private val createComposeSceneContext: (PlatformContext) -> ComposeSceneContext,
 
@@ -64,6 +66,8 @@ internal class UIKitComposeSceneLayer(
     parentCoroutineContext: CoroutineContext,
     private val ownerProvider: PlatformArchitectureComponentsOwner,
     private val interfaceOrientationState: State<InterfaceOrientation>,
+    private var invalidateLayout: () -> Unit,
+    private var invalidateDraw: () -> Unit,
 ) : ComposeSceneLayer {
     private val layerJob = Job()
     private val layerCoroutineContext = parentCoroutineContext + layerJob
@@ -104,13 +108,13 @@ internal class UIKitComposeSceneLayer(
     }
 
     private val mediator = ComposeSceneMediator(
+        frameChoreographer = frameChoreographer,
         onFocusBehavior = configuration.onFocusBehavior,
         isClearFocusOnMouseDownEnabled = configuration.isClearFocusOnMouseDownEnabled,
         focusedViewsList = focusedViewsList,
         windowContext = layersViewController.windowContext,
         architectureComponentsOwner = ownerProvider,
         coroutineContext = layerCoroutineContext,
-        redrawer = layersViewController.metalView.redrawer,
         composeSceneFactory = ::createComposeScene,
         navigationEventInput = navigationEventInput,
         interfaceOrientationState = interfaceOrientationState
@@ -120,7 +124,6 @@ internal class UIKitComposeSceneLayer(
     }
 
     private fun createComposeScene(
-        invalidate: () -> Unit,
         platformContext: PlatformContext,
         frameRecomposer: FrameRecomposer
     ): ComposeScene =
@@ -129,10 +132,8 @@ internal class UIKitComposeSceneLayer(
             density = mediator.screenDensity,
             layoutDirection = initialLayoutDirection,
             composeSceneContext = createComposeSceneContext(platformContext),
-            // TODO: Split these into UIKit layout vs display invalidation instead of using the
-            //  same invalidation callback for both phases.
-            invalidateLayout = invalidate,
-            invalidateDraw = invalidate,
+            invalidateLayout = invalidateLayout,
+            invalidateDraw = invalidateDraw,
         )
 
     val hasInvalidations by mediator::hasInvalidations
@@ -206,6 +207,8 @@ internal class UIKitComposeSceneLayer(
         interactionView.removeFromSuperview()
         interactionView.dispose()
         layerJob.cancel()
+        invalidateLayout = {}
+        invalidateDraw = {}
     }
 
     @Composable

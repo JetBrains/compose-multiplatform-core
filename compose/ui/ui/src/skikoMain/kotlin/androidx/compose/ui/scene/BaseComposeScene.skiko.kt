@@ -50,8 +50,8 @@ import kotlin.concurrent.Volatile
 @OptIn(InternalComposeUiApi::class)
 internal abstract class BaseComposeScene(
     protected val frameRecomposer: FrameRecomposer,
-    private val invalidateLayout: () -> Unit,
-    private val invalidateDraw: () -> Unit,
+    private var invalidateLayout: () -> Unit,
+    private var invalidateDraw: () -> Unit,
 ) : ComposeScene {
     protected val inputHandler: ComposeSceneInputHandler =
         ComposeSceneInputHandler(
@@ -120,6 +120,8 @@ internal abstract class BaseComposeScene(
         isClosed = true
 
         composition?.dispose()
+        invalidateDraw = {}
+        invalidateLayout = {}
     }
 
     override fun setContent(

@@ -19,6 +19,7 @@ package androidx.compose.ui.window
 import androidx.compose.ui.uikit.toNanoSeconds
 import androidx.compose.ui.uikit.utils.CMPMetalLayer
 import androidx.compose.ui.viewinterop.UIKitInteropTransaction
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.cinterop.BetaInteropApi
 import kotlinx.cinterop.CValue
 import kotlinx.cinterop.ObjCClass
@@ -107,7 +108,7 @@ internal class SurfaceMetalView(
         drainJob?.cancel()
         drainJob = MainScope().launch {
             // Await a safe time to ensure the metal view won't be displayed again soon
-            delay(500)
+            delay(500.milliseconds)
             if (window == null) {
                 redrawer.drainSkiaSurfaces()
             }
@@ -129,8 +130,6 @@ internal class SurfaceMetalView(
         cancelPendingDrawableDrain()
 
         val screen = window?.screen ?: return
-        redrawer.displayLinkFrameRate?.maximumFramesPerSecond = screen.maximumFramesPerSecond
-        redrawer.displayLinkFrameRate?.preferredFramesPerSecond = screen.maximumFramesPerSecond
 
         contentScaleFactor = screen.scale
         metalLayer.contentsScale = screen.scale
