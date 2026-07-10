@@ -147,3 +147,8 @@ annotation class OptOutFromOuterScopes
 
 @Target(AnnotationTarget.FUNCTION)
 annotation class OptOutFromInnerScopes
+
+fun onReconcileCompleted(block: () -> Unit) {
+    // TODO
+    block()
+}
