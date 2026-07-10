@@ -159,7 +159,6 @@ androidXMultiplatform {
         wasmJsMain {
             dependencies {
                 implementation(libs.skikoWasmJs)
-                implementation(libs.skikoJsWasmRuntime)
             }
         }
     }

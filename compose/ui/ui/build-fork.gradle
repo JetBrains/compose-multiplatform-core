@@ -287,7 +287,6 @@ androidXMultiplatform {
 
         wasmJsMain.dependencies {
             implementation(libs.skikoWasmJs)
-            implementation(libs.skikoJsWasmRuntime)
         }
 
         // TODO: Align it with AOSP or make explicit
