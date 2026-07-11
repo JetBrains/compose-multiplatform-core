@@ -846,13 +846,6 @@ private fun clipTargetElement(canvas: HTMLCanvasElement): HTMLTextAreaElement {
     return clipTarget
 }
 
-// strings checks are faster on a JS side
-// language=js
-private fun isTouchEvent(event: PointerEvent): Boolean = js("event.pointerType === 'touch'")
-
-// strings checks are faster on a JS side
-// language=js
-private fun isMouseEvent(event: PointerEvent): Boolean = js("event.pointerType === 'mouse'")
 
 // strings checks are faster on a JS side
 // language=js
