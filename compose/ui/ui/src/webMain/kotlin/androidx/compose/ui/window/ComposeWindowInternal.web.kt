@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-@file:OptIn(ExperimentalWasmJsInterop::class)
+@file:OptIn(ExperimentalWasmJsInterop::class, ExperimentalMediaQueryApi::class)
 
 package androidx.compose.ui.window
 
@@ -26,7 +26,9 @@ import androidx.compose.runtime.InternalComposeApi
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.ProvidableCompositionLocal
 import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.ui.ExperimentalMediaQueryApi
 import androidx.compose.ui.LocalSystemTheme
+import androidx.compose.ui.UiMediaScope
 import androidx.compose.ui.draganddrop.WebDragAndDropManager
 import androidx.compose.ui.events.EventTargetListener
 import androidx.compose.ui.geometry.Offset
@@ -59,6 +61,7 @@ import androidx.compose.ui.platform.PlatformTextInputMethodRequest
 import androidx.compose.ui.platform.TextToolbar
 import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.platform.WebHapticFeedback
+import androidx.compose.ui.platform.WebMediaEnvironment
 import androidx.compose.ui.platform.WebTextInputService
 import androidx.compose.ui.platform.WebTextToolbar
 import androidx.compose.ui.platform.WebWakeLockManager
@@ -184,7 +187,6 @@ internal val LocalComposeWindow: ProvidableCompositionLocal<ComposeWindow?> = st
     error("ComposeWindow is not available in this composition")
 }
 
-@OptIn(InternalComposeApi::class)
 internal class ComposeWindow(
     private val canvas: HTMLCanvasElement,
     private val rootNode: Node,
@@ -199,13 +201,12 @@ internal class ComposeWindow(
 
     private var actualActivePointerButtons: PointerButtons? = null
 
-    private val density: Density = Density(
-        density = actualDensity.toFloat(),
-        fontScale = 1f
-    )
-
     private val _windowInfo = WindowInfoImpl().apply {
         isWindowFocused = true
+    }
+
+    private val webMediaEnvironment : WebMediaEnvironment = WebMediaEnvironment(_windowInfo) { newDensity ->
+        scene.density = newDensity
     }
 
     @VisibleForTesting
@@ -214,8 +215,6 @@ internal class ComposeWindow(
     private val navigationEventInput = BackNavigationEventInput()
 
     private val canvasEvents = EventTargetListener(canvas)
-
-    private var keyboardModeState: KeyboardModeState = KeyboardModeState.Hardware
 
     // Used in WebTextInputService. Also see https://youtrack.jetbrains.com/issue/CMP-8611
     private var activeTouchOffset: Offset? = null
@@ -237,6 +236,7 @@ internal class ComposeWindow(
     private val platformContext: PlatformContext =
         object : PlatformContext by PlatformContext.Empty() {
             override val windowInfo get() = _windowInfo
+            override val mediaEnvironment get() = webMediaEnvironment
             override val architectureComponentsOwner get() = archComponentsOwner
 
             override val dragAndDropManager: PlatformDragAndDropManager = object :
@@ -301,7 +301,7 @@ internal class ComposeWindow(
                         get() = layerRoot
 
                     override fun getNewGeometryForBackingInput(rect: Rect): DpRect {
-                        val dpRect = rect.toDpRect(density)
+                        val dpRect = rect.toDpRect(webMediaEnvironment.systemDensity)
                         val left = dpRect.left.value
                         val top = dpRect.top.value
 
@@ -317,10 +317,10 @@ internal class ComposeWindow(
 
             override val viewConfiguration =
                 object : ViewConfiguration by PlatformContext.DefaultViewConfiguration {
-                    override val touchSlop: Float get() = with(density) { 18.dp.toPx() }
+                    override val touchSlop: Float get() = with(webMediaEnvironment.systemDensity) { 18.dp.toPx() }
                     override val maximumFlingVelocity: Float
                         //https://cs.android.com/android/platform/superproject/+/android-latest-release:frameworks/base/core/java/android/view/ViewConfiguration.java;l=240;drc=733537294b158d22f2ae383f2ed77c93741798e9
-                        get() = with(density) { 8000.dp.toPx() }
+                        get() = with(webMediaEnvironment.systemDensity) { 8000.dp.toPx() }
                 }
 
             override var isKeepScreenOnEnabled: Boolean
@@ -355,14 +355,12 @@ internal class ComposeWindow(
     private val scene = CanvasLayersComposeScene(
         frameRecomposer = frameRecomposer,
         platformContext = platformContext,
-        density = density,
+        density = webMediaEnvironment.systemDensity,
         // TODO: Split layout invalidation from draw invalidation once the web host has distinct
         //  scheduling paths for relayout vs redraw.
         invalidateLayout = sceneRenderingScope::onSceneInvalidation,
         invalidateDraw = sceneRenderingScope::onSceneInvalidation,
     )
-
-    private val systemThemeObserver = getSystemThemeObserver()
 
     private fun <T : Event> addTypedEvent(
         type: String,
@@ -485,7 +483,7 @@ internal class ComposeWindow(
         canvas.setAttribute("tabindex", "0")
         canvas.setAttribute("draggable", "true")
 
-        scene.density = density
+        scene.density = webMediaEnvironment.systemDensity
         archComponentsOwner.enableSavedStateHandles()
 
         val interopContainer = WebInteropContainer(InteropViewGroup(interopContainerElement))
@@ -496,7 +494,7 @@ internal class ComposeWindow(
         }
         scene.setContent {
             CompositionLocalProvider(
-                LocalSystemTheme provides systemThemeObserver.currentSystemTheme.value,
+                LocalSystemTheme provides webMediaEnvironment.systemTheme,
                 LocalInteropContainer provides interopContainer,
                 LocalActiveClipEventsTarget provides clipEventsTargetProvider,
                 LocalComposeWindow provides this,
@@ -538,7 +536,7 @@ internal class ComposeWindow(
     }
 
     private fun resize(boxSize: DpSize) {
-        val sizeInPx = boxSize.toSize(density).toIntSize()
+        val sizeInPx = boxSize.toSize(webMediaEnvironment.systemDensity).toIntSize()
 
         // we need to scale canvas both via CSS styling and HTML attributes
         // https://www.khronos.org/webgl/wiki/HandlingHighDPI
@@ -567,8 +565,8 @@ internal class ComposeWindow(
         frameRecomposer.close()
         skiaLayer.detach()
 
-        systemThemeObserver.dispose()
         state.dispose()
+        webMediaEnvironment.dispose()
         // modern browsers supposed to garbage collect all events on the element disposed
         // but actually we never can be sure dom element was collected in first place
         canvasEvents.dispose()
@@ -579,7 +577,7 @@ internal class ComposeWindow(
         val event: PointerEvent,
         val containerOffset: Offset
     ) {
-        val composePointer = event.toScenePointerEvent(containerOffset, density)
+        val composePointer = event.toScenePointerEvent(containerOffset, webMediaEnvironment.systemDensity)
 
         override fun equals(other: Any?): Boolean {
             if (this === other) return true
@@ -611,8 +609,30 @@ internal class ComposeWindow(
     }
 
     private fun onPointerEvent(event: PointerEvent) {
+        val pointerType = event.getPointerType()
+        when(pointerType) {
+            PointerType.Mouse -> {
+                webMediaEnvironment.updateHardwareType(
+                    UiMediaScope.KeyboardKind.Physical,
+                    UiMediaScope.PointerPrecision.Fine
+                )
+            }
+            PointerType.Stylus -> {
+                webMediaEnvironment.updateHardwareType(
+                    UiMediaScope.KeyboardKind.Virtual,
+                    UiMediaScope.PointerPrecision.Fine
+                )
+            }
+            PointerType.Touch -> {
+                webMediaEnvironment.updateHardwareType(
+                    UiMediaScope.KeyboardKind.Virtual,
+                    UiMediaScope.PointerPrecision.Coarse
+                )
+            }
+        }
+
         if (event.type == "pointercancel") {
-            if (isTouchEvent(event)) {
+            if (pointerType == PointerType.Touch) {
                 activeTouchPointers.clear()
                 activeTouchOffset = null
             } else {
@@ -628,9 +648,7 @@ internal class ComposeWindow(
         val eventType = event.getPointerEventType()
         var result: PointerEventResult? = null
 
-        if (isMouseEvent(event)) {
-            keyboardModeState = KeyboardModeState.Hardware
-
+        if (pointerType == PointerType.Mouse) {
             // Track active mouse buttons. Used as a fallback for unreliable
             // `buttons` in wheel events (see CMP-9900) and to reset state on
             // `dragend` in Safari (see CMP-10102).
@@ -648,6 +666,7 @@ internal class ComposeWindow(
                 position = event.offset,
                 timeMillis = event.timeStamp.toInt().toLong(),
                 buttons = event.composeButtons,
+                type = pointerType,
                 keyboardModifiers = PointerKeyboardModifiers(
                     isCtrlPressed = event.ctrlKey,
                     isMetaPressed = event.metaKey,
@@ -672,8 +691,6 @@ internal class ComposeWindow(
             if (inputModeManager.inputMode != InputMode.Touch) {
                 inputModeManager.requestInputMode(InputMode.Touch)
             }
-            keyboardModeState = KeyboardModeState.Virtual
-
             val current: TouchEventWithContainerOffset
             val active = activeTouchPointers[event.pointerId]
             if (active == null) {
@@ -708,11 +725,16 @@ internal class ComposeWindow(
                 }
 
                 coalescedEvents.fastForEach { coalescedEvent ->
-                    val coalescedEventType = coalescedEvent.getPointerEventType()
-                    val sceneEvent = coalescedEvent.toScenePointerEvent(current.containerOffset, density)
+                    val coalescedPointerEventType = coalescedEvent.getPointerEventType()
+                    val coalescedPointerType = coalescedEvent.getPointerType()
+                    val sceneEvent = coalescedEvent.toScenePointerEvent(
+                        current.containerOffset,
+                        webMediaEnvironment.systemDensity,
+                        coalescedPointerType
+                    )
                     pointers[indexOfCurrentPointer] = sceneEvent
                     result = scene.sendPointerEvent(
-                        eventType = coalescedEventType,
+                        eventType = coalescedPointerEventType,
                         pointers = pointers,
                         buttons = buttons,
                         keyboardModifiers = keyboardModifiers,
@@ -750,7 +772,11 @@ internal class ComposeWindow(
     private fun onWheelEvent(
         event: WheelEvent,
     ) {
-        keyboardModeState = KeyboardModeState.Hardware
+        //Inferred PointerPrecision.Fine for wheel-based events
+        webMediaEnvironment.updateHardwareType(
+            UiMediaScope.KeyboardKind.Physical,
+            UiMediaScope.PointerPrecision.Fine
+        )
 
         // Shift + mouse wheel means horizontal scroll. Some browsers swap the axes
         // for us (report deltaX instead of deltaY), some don't.
@@ -791,11 +817,14 @@ internal class ComposeWindow(
         }
     }
 
-    private val MouseEvent.offset
-        get() = Offset(
-            x = offsetX.toFloat() * density.density,
-            y = offsetY.toFloat() * density.density
-        )
+    private val MouseEvent.offset: Offset
+        get() {
+            val density = webMediaEnvironment.systemDensity
+            return Offset(
+                x = offsetX.toFloat() * density.density,
+                y = offsetY.toFloat() * density.density
+            )
+        }
 }
 
 //https://developer.mozilla.org/en-US/docs/Web/API/Document/visibilityState
@@ -919,6 +948,30 @@ private fun PointerEvent.getPointerEventType(): PointerEventType =
         PointerEventType.Enter.value -> PointerEventType.Enter
         PointerEventType.Exit.value -> PointerEventType.Exit
         else -> PointerEventType.Unknown
+    }
+
+// strings checks are faster on a JS side
+// language=js
+private fun getPointerTypeCode(event: PointerEvent): Int = js(
+    """{
+        switch (event.pointerType) {
+          case 'touch':
+            return 1; // PointerType.Touch
+          case 'mouse':
+            return 2; // PointerType.Mouse
+          case 'pen':
+            return 3; // PointerType.Stylus
+          default:
+            return 0; // PointerType.Unknown
+        } 
+    }"""
+)
+private fun PointerEvent.getPointerType(): PointerType =
+    when (getPointerTypeCode(this)) {
+        1 -> PointerType.Touch
+        2 -> PointerType.Mouse
+        3 -> PointerType.Stylus
+        else -> PointerType.Unknown
     }
 
 private fun Element.isFocused(): Boolean {
