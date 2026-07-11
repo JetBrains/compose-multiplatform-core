@@ -139,10 +139,6 @@ internal interface ComposeWindowState {
     }
 }
 
-private sealed interface KeyboardModeState {
-    object Virtual : KeyboardModeState
-    object Hardware : KeyboardModeState
-}
 
 internal class DefaultWindowState(private val viewportContainer: Element) : ComposeWindowState {
     private val channel = Channel<IntSize>(CONFLATED)
@@ -565,8 +561,8 @@ internal class ComposeWindow(
         frameRecomposer.close()
         skiaLayer.detach()
 
-        state.dispose()
         webMediaEnvironment.dispose()
+        windowState.dispose()
         // modern browsers supposed to garbage collect all events on the element disposed
         // but actually we never can be sure dom element was collected in first place
         canvasEvents.dispose()
