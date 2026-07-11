@@ -36,7 +36,7 @@ internal actual inline fun rememberClipboardEventsHandler(
     isEnabled: Boolean,
 ): Boolean {
     if (isEnabled) {
-        val clipEventsTargetProvider = LocalActiveClipEventsTarget.current
+        val clipEventsTarget = LocalActiveClipEventsTarget.current
         DisposableEffect(Unit) {
             val copyListener = EventListener { event ->
                 val textToCopy = onCopy()
@@ -62,15 +62,14 @@ internal actual inline fun rememberClipboardEventsHandler(
                 }
             }
 
-            val eventsTarget = clipEventsTargetProvider()
-            eventsTarget?.addEventListener("copy", copyListener)
-            eventsTarget?.addEventListener("paste", pasteListener)
-            eventsTarget?.addEventListener("cut", cutListener)
+            clipEventsTarget?.addEventListener("copy", copyListener)
+            clipEventsTarget?.addEventListener("paste", pasteListener)
+            clipEventsTarget?.addEventListener("cut", cutListener)
 
             onDispose {
-                eventsTarget?.removeEventListener("copy", copyListener)
-                eventsTarget?.removeEventListener("paste", pasteListener)
-                eventsTarget?.removeEventListener("cut", cutListener)
+                clipEventsTarget?.removeEventListener("copy", copyListener)
+                clipEventsTarget?.removeEventListener("paste", pasteListener)
+                clipEventsTarget?.removeEventListener("cut", cutListener)
             }
         }
     }

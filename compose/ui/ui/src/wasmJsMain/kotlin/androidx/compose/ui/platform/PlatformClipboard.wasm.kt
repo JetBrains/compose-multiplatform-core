@@ -30,10 +30,6 @@ private val browserClipboard by lazy {
     getW3CClipboard()
 }
 
-private val isSecureContext: Boolean by lazy {
-    isSecureContext()
-}
-
 // We don't expect the availability of browser APIs to change at runtime, so detect it and save
 // It's necessary for https://youtrack.jetbrains.com/issue/CMP-8631
 private val isFullClipboardApiSupported: Boolean by lazy {

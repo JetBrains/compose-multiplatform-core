@@ -155,7 +155,7 @@ internal class ComposeWindow(
     // Used in WebTextInputService. Also see https://youtrack.jetbrains.com/issue/CMP-8611
     private var activeTouchOffset: Offset? = null
 
-    private val clipTarget = clipTargetElement(canvas)
+    private val clipTarget by lazy(LazyThreadSafetyMode.NONE) { clipTargetElement(canvas) }
 
     // TODO: It must be shared between Compose instances.
     //  It's supposed to be stored in platform's root view or window.
@@ -425,15 +425,14 @@ internal class ComposeWindow(
 
         val interopContainer = WebInteropContainer(InteropViewGroup(interopContainerElement))
 
-        val clipEventsTargetProvider: () -> HTMLElement = {
-            (platformContext.textInputService as WebTextInputService).getBackingInput()
-                ?: clipTarget
-        }
         scene.setContent {
             CompositionLocalProvider(
                 LocalSystemTheme provides webMediaEnvironment.systemTheme,
                 LocalInteropContainer provides interopContainer,
-                LocalActiveClipEventsTarget provides clipEventsTargetProvider,
+                LocalActiveClipEventsTarget providesComputed {
+                    (platformContext.textInputService as WebTextInputService).getBackingInput()
+                        ?: clipTarget
+                },
                 LocalComposeWindow provides this,
                 content = {
                     installFallbackFontDownloader()

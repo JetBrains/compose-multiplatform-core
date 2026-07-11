@@ -44,6 +44,10 @@ internal fun isFullClipboardApiSupported(): Boolean =
 
 internal fun isSecureContext(): Boolean = js("window.isSecureContext === true")
 
+internal val isSecureContext: Boolean by lazy {
+    isSecureContext()
+}
+
 internal fun isFallbackWriteTextApiAvailable(): Boolean =
     js("Boolean(window.navigator.clipboard && window.navigator.clipboard.writeText)")
 
