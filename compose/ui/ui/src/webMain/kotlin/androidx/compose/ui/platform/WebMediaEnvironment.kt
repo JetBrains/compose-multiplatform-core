@@ -58,8 +58,7 @@ internal class WebMediaEnvironment(
         _currentSystemTheme = if ((event as MediaQueryListEvent).matches)
             SystemTheme.DARK else SystemTheme.LIGHT
     }
-    //</editor-fold>
-    //<editor-fold desc="Resolution Media Query">
+
     private var _currentSystemTheme by mutableStateOf(
         when {
             !isMediaQuerySupported -> SystemTheme.UNKNOWN
@@ -68,6 +67,8 @@ internal class WebMediaEnvironment(
         }
     )
 
+    //</editor-fold>
+    //<editor-fold desc="Resolution Media Query">
     private fun initializeResolutionMediaQuery() {
         val contentScale = window.devicePixelRatio
         currentResolutionMediaQuery = window.matchMedia("(resolution: ${contentScale}dppx)")
