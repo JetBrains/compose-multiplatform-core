@@ -105,6 +105,22 @@ internal object ComposeFeatureFlags {
     val redispatchUnconsumedMouseWheelEvents = FeatureFlag {
         System.getProperty("compose.swing.redispatchMouseWheelEvents", "true").toBoolean()
     }
+
+    /**
+     * Indicates whether the window should receive raw touch input on Windows.
+     *
+     * By default, Windows synthesizes mouse events for touch input, so touch screens are
+     * handled as a mouse with a single pointer. Enabling this flag makes Compose receive
+     * native touch events with [androidx.compose.ui.input.pointer.PointerType.Touch]
+     * (or [androidx.compose.ui.input.pointer.PointerType.Stylus] for a pen) pointers
+     * instead, which restores touch semantics (such as touch slop) and enables multi-touch
+     * gestures.
+     *
+     * This flag has no effect on other operating systems.
+     */
+    val useWindowsNativeTouch = FeatureFlag {
+        System.getProperty("compose.windows.nativeTouch").toBoolean()
+    }
 }
 
 
