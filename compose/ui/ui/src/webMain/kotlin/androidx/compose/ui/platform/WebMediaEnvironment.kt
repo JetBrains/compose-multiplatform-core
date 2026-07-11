@@ -122,6 +122,8 @@ internal class WebMediaEnvironment(
     private val isDevicePostureSupported = isDevicePostureApiSupported()
     //</editor-fold>
     private var _systemDensity by mutableStateOf(Density(window.devicePixelRatio.toFloat()))
+
+    //TODO Hookup to virtualKeyboard.isShowing after https://github.com/JetBrains/compose-multiplatform-core/pull/3202 is merged
     private var isImeVisible by mutableStateOf(false)
     private var hasPhysicalKeyboard by mutableStateOf(true)
     private var _pointerPrecision by mutableStateOf(UiMediaScope.PointerPrecision.None)
