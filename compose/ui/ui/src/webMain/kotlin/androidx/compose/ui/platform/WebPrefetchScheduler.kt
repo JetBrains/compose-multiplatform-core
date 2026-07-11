@@ -127,12 +127,8 @@ private external interface IdleDeadline : JsAny {
     val didTimeout: Boolean
 }
 
-internal val isIdleCallbackSupported: Boolean by lazy {
-    isIdleApiSupported()
-}
-
 @OptIn(ExperimentalWasmJsInterop::class)
-private fun isIdleApiSupported(): Boolean = js("Boolean('requestIdleCallback' in window)")
+internal fun isIdleCallbackApiSupported(): Boolean = js("Boolean('requestIdleCallback' in window)")
 
 @OptIn(ExperimentalWasmJsInterop::class)
 private fun requestIdleCallback(callback: (IdleDeadline) -> Unit): Int =

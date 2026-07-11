@@ -39,8 +39,6 @@ internal class WebHapticFeedback : HapticFeedback {
         private val SoftTickVibrationPattern = vibrationPatternOf(6)
         private val LongPressVibrationPattern = vibrationPatternOf(0, 30)
         private val VirtualKeyVibrationPattern = vibrationPatternOf(0, 20)
-
-        fun webHapticFeedbackOrDefault(): HapticFeedback =  if (isVibrationSupported()) WebHapticFeedback() else DefaultHapticFeedback
     }
 
     override fun performHapticFeedback(hapticFeedbackType: HapticFeedbackType) {
@@ -81,7 +79,7 @@ private fun vibrate(pattern: JsArray<JsNumber>) {
     js("window.navigator.vibrate(pattern)")
 }
 
-private fun isVibrationSupported(): Boolean = js(
+internal fun isVibrationApiSupported(): Boolean = js(
     //language=javascript
     """
         typeof window !== 'undefined' &&

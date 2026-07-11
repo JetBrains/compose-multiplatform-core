@@ -67,11 +67,12 @@ import androidx.compose.ui.platform.WebWakeLockManager
 import androidx.compose.ui.platform.WindowInfoImpl
 import androidx.compose.ui.platform.accessibility.ComposeWebSemanticsListener
 import androidx.compose.ui.platform.installFallbackFontDownloader
+import androidx.compose.ui.platform.isIdleCallbackApiSupported
+import androidx.compose.ui.platform.isVibrationApiSupported
 import androidx.compose.ui.scene.CanvasLayersComposeScene
 import androidx.compose.ui.platform.FrameRecomposer
 import androidx.compose.ui.platform.PlatformPrefetchScheduler
 import androidx.compose.ui.platform.WebPrefetchScheduler
-import androidx.compose.ui.platform.isIdleCallbackSupported
 import androidx.compose.ui.scene.ComposeSceneDragAndDropNode
 import androidx.compose.ui.scene.ComposeScenePointer
 import androidx.compose.ui.scene.PointerEventResult
@@ -204,11 +205,12 @@ internal class ComposeWindow(
             }
 
             override val hapticFeedback by lazy(LazyThreadSafetyMode.NONE) {
-                WebHapticFeedback.webHapticFeedbackOrDefault()
+                if (isVibrationApiSupported()) WebHapticFeedback() else super.hapticFeedback
             }
 
-            override val prefetchScheduler: PlatformPrefetchScheduler =
-                if (isIdleCallbackSupported) WebPrefetchScheduler() else super.prefetchScheduler
+            override val prefetchScheduler: PlatformPrefetchScheduler by lazy(LazyThreadSafetyMode.NONE) {
+                if (isIdleCallbackApiSupported()) WebPrefetchScheduler() else super.prefetchScheduler
+            }
 
             override val semanticsOwnerListener: PlatformContext.SemanticsOwnerListener? =
                 if (configuration.isA11YEnabled) {
