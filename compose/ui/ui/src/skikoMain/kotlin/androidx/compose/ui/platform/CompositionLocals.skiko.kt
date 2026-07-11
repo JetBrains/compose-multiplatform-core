@@ -94,6 +94,7 @@ internal fun ProvidePlatformCompositionLocals(
         LocalPlatformScreenReader provides platformContext.screenReader,
         LocalPlatformWindowInsets provides platformContext.windowInsets,
         LocalPlatformPrefetchScheduler provides platformContext.prefetchScheduler,
+        LocalUiMediaScope provides platformContext.mediaEnvironment,
         androidx.lifecycle.compose.LocalLifecycleOwner provides platformContext.architectureComponentsOwner.lifecycleOwner,
         LocalSavedStateRegistryOwner provides platformContext.architectureComponentsOwner.savedStateRegistryOwner,
         LocalSaveableStateRegistry provides saveableStateRegistry,

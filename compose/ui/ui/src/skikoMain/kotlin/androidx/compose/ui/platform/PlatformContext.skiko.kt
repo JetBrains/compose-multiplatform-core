@@ -13,6 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@file:OptIn(ExperimentalMediaQueryApi::class)
+
 package androidx.compose.ui.platform
 
 import androidx.compose.runtime.getValue
@@ -20,8 +22,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.ComposeUiFlags
 import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.ExperimentalMediaQueryApi
 import androidx.compose.ui.FrameRateCategory
 import androidx.compose.ui.InternalComposeUiApi
+import androidx.compose.ui.UiMediaScope
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.geometry.Offset
@@ -45,12 +49,15 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.ImeOptions
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.intl.LocaleList
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.Dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.enableSavedStateHandles
 import kotlin.reflect.KProperty
 import kotlinx.coroutines.awaitCancellation
+import org.jetbrains.skiko.SystemTheme
 
 /**
  * Platform context that provides platform-specific bindings.
@@ -216,6 +223,8 @@ interface PlatformContext {
      * @see PlatformPrefetchScheduler
      */
     val prefetchScheduler: PlatformPrefetchScheduler get() = NoOpPlatformPrefetchScheduler
+
+    val mediaEnvironment : PlatformMediaEnvironment get() = NoOpMediaEnvironment
 
     interface RootForTestListener {
         fun onRootForTestCreated(root: PlatformRootForTest)
@@ -388,4 +397,30 @@ internal class DelegateRootForTestListener : PlatformContext.RootForTestListener
             listener?.onRootForTestCreated(root)
         }
     }
+}
+
+private object NoOpMediaEnvironment : PlatformMediaEnvironment {
+    override val systemTheme: SystemTheme
+        get() = SystemTheme.UNKNOWN
+    override val systemDensity: Density
+        get() = Density(1f)
+
+    override fun dispose() = Unit
+
+    override val windowPosture: UiMediaScope.Posture
+        get() = UiMediaScope.Posture.Flat
+    override val windowWidth: Dp
+        get() = Dp.Unspecified
+    override val windowHeight: Dp
+        get() = Dp.Unspecified
+    override val pointerPrecision: UiMediaScope.PointerPrecision
+        get() = UiMediaScope.PointerPrecision.None
+    override val keyboardKind: UiMediaScope.KeyboardKind
+        get() = UiMediaScope.KeyboardKind.None
+    override val hasMicrophone: Boolean
+        get() = false
+    override val hasCamera: Boolean
+        get() = false
+    override val viewingDistance: UiMediaScope.ViewingDistance
+        get() = UiMediaScope.ViewingDistance.Near
 }
