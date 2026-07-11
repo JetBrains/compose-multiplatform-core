@@ -31,6 +31,7 @@ import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.hapticfeedback.HapticFeedback
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.InputMode
 import androidx.compose.ui.input.InputModeManager
 import androidx.compose.ui.input.pointer.PointerIcon
@@ -163,7 +164,7 @@ interface PlatformContext {
     }
 
     val textToolbar: TextToolbar get() = EmptyTextToolbar
-    val hapticFeedback: HapticFeedback get() = DefaultHapticFeedback
+    val hapticFeedback: HapticFeedback get() = NoOpHapticFeedback
     fun setPointerIcon(pointerIcon: PointerIcon) = Unit
 
     val parentFocusManager: FocusManager get() = EmptyFocusManager
@@ -396,6 +397,12 @@ internal class DelegateRootForTestListener : PlatformContext.RootForTestListener
         for (root in roots) {
             listener?.onRootForTestCreated(root)
         }
+    }
+}
+
+// TODO(demin): implement HapticFeedback
+private object NoOpHapticFeedback : HapticFeedback {
+    override fun performHapticFeedback(hapticFeedbackType: HapticFeedbackType) {
     }
 }
 
