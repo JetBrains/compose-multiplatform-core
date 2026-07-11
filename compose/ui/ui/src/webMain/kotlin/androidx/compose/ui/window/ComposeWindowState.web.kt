@@ -17,15 +17,12 @@
 package androidx.compose.ui.window
 
 import androidx.compose.ui.events.EventTargetListener
-import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntSize
 import kotlinx.browser.window
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.receiveAsFlow
-import org.w3c.dom.AddEventListenerOptions
 import org.w3c.dom.Element
-import org.w3c.dom.MediaQueryListEvent
 
 internal interface ComposeWindowState {
     fun init() {}

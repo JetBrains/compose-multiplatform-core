@@ -21,10 +21,7 @@ package androidx.compose.ui.platform
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.text.AnnotatedString
-import kotlin.getValue
-import kotlin.js.Promise
 import kotlinx.coroutines.await
-import org.w3c.files.Blob
 
 private val browserClipboard by lazy {
     getW3CClipboard()
