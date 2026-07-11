@@ -47,7 +47,7 @@ class ComposeWindowLifecycleTest : OnCanvasTests {
             a11yContainerElement = null,
             content = {},
             configuration = ComposeViewportConfiguration(),
-            state = DefaultWindowState(document.documentElement!!)
+            windowState = DefaultWindowState(document.documentElement!!)
         )
 
         val eventsChannel = Channel<Lifecycle.Event>(10)

@@ -195,6 +195,6 @@ fun ComposeViewport(
         a11yContainerElement = a11yContainerElement,
         content = content,
         configuration = configuration,
-        state = DefaultWindowState(viewportContainer)
+        windowState = DefaultWindowState(viewportContainer)
     )
 }

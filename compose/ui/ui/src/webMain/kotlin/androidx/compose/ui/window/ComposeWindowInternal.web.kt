@@ -22,7 +22,6 @@ import androidx.annotation.VisibleForTesting
 import androidx.collection.mutableIntObjectMapOf
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.InternalComposeApi
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.ProvidableCompositionLocal
 import androidx.compose.runtime.staticCompositionLocalOf
@@ -81,7 +80,6 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.DpSize
-import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.size
 import androidx.compose.ui.unit.toDpRect
@@ -97,16 +95,10 @@ import androidx.lifecycle.enableSavedStateHandles
 import kotlinx.browser.document
 import kotlinx.browser.window
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.MainScope
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.Channel.Factory.CONFLATED
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.receiveAsFlow
 import org.jetbrains.skiko.SkiaLayer
 import org.jetbrains.skiko.SkikoRenderDelegate
 import org.jetbrains.skiko.hostOs
-import org.w3c.dom.AddEventListenerOptions
 import org.w3c.dom.DocumentReadyState
 import org.w3c.dom.Element
 import org.w3c.dom.HTMLCanvasElement
@@ -114,7 +106,6 @@ import org.w3c.dom.HTMLDivElement
 import org.w3c.dom.HTMLElement
 import org.w3c.dom.HTMLTextAreaElement
 import org.w3c.dom.LOADING
-import org.w3c.dom.MediaQueryListEvent
 import org.w3c.dom.Node
 import org.w3c.dom.TouchEvent
 import org.w3c.dom.events.Event
@@ -124,58 +115,6 @@ import org.w3c.dom.events.KeyboardEvent
 import org.w3c.dom.events.MouseEvent
 import org.w3c.dom.events.WheelEvent
 import org.w3c.dom.pointerevents.PointerEvent
-
-private val actualDensity
-    get() = window.devicePixelRatio
-
-internal interface ComposeWindowState {
-    fun init() {}
-    fun sizeFlow(): Flow<IntSize>
-
-    val globalEvents: EventTargetListener
-
-    fun dispose() {
-        globalEvents.dispose()
-    }
-}
-
-
-internal class DefaultWindowState(private val viewportContainer: Element) : ComposeWindowState {
-    private val channel = Channel<IntSize>(CONFLATED)
-
-    override val globalEvents = EventTargetListener(window)
-
-    override fun init() {
-
-        globalEvents.addDisposableEvent("resize") {
-            channel.trySend(getParentContainerBox())
-        }
-
-        initMediaEventListener {
-            channel.trySend(getParentContainerBox())
-        }
-
-        channel.trySend(getParentContainerBox())
-    }
-
-    private fun getParentContainerBox(): IntSize {
-        return IntSize(viewportContainer.clientWidth, viewportContainer.clientHeight)
-    }
-
-    private fun initMediaEventListener(handler: (Double) -> Unit) {
-        val contentScale = actualDensity
-        window.matchMedia("(resolution: ${contentScale}dppx)")
-            .addEventListener("change", { evt ->
-                evt as MediaQueryListEvent
-                if (!evt.matches) {
-                    handler(contentScale)
-                }
-                initMediaEventListener(handler)
-            }, AddEventListenerOptions(capture = true, once = true))
-    }
-
-    override fun sizeFlow() = channel.receiveAsFlow()
-}
 
 @VisibleForTesting
 // This value is for internal usage, for example, to call ComposeWindow.dispose() in the tests
@@ -191,7 +130,7 @@ internal class ComposeWindow(
     private val a11yContainerElement: HTMLDivElement?,
     private val configuration: ComposeViewportConfiguration,
     content: @Composable () -> Unit,
-    private val state: ComposeWindowState
+    private val windowState: ComposeWindowState
 ) {
     private var isDisposed = false
 
@@ -236,7 +175,7 @@ internal class ComposeWindow(
             override val architectureComponentsOwner get() = archComponentsOwner
 
             override val dragAndDropManager: PlatformDragAndDropManager = object :
-                WebDragAndDropManager(rootNode, canvasEvents, state.globalEvents, density) {
+                WebDragAndDropManager(rootNode, canvasEvents, windowState.globalEvents, webMediaEnvironment.systemDensity) {
                 override val rootDragAndDropNode: ComposeSceneDragAndDropNode
                     get() = scene.rootDragAndDropNode
             }
@@ -415,7 +354,7 @@ internal class ComposeWindow(
             addTypedEvent<PointerEvent>(name, passive = false) { onPointerEvent(it) }
         }
 
-        state.globalEvents.addDisposableEvent("dragend") {
+        windowState.globalEvents.addDisposableEvent("dragend") {
             // in Safari pointerup event is not firing when we drop or cancel drop
             // see https://youtrack.jetbrains.com/issue/CMP-10102
             actualActivePointerButtons = null
@@ -456,15 +395,15 @@ internal class ComposeWindow(
             canvasFocused = false
         }
 
-        state.globalEvents.addDisposableEvent("focus") {
+        windowState.globalEvents.addDisposableEvent("focus") {
             archComponentsOwner.lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_RESUME)
         }
 
-        state.globalEvents.addDisposableEvent("blur") {
+        windowState.globalEvents.addDisposableEvent("blur") {
             archComponentsOwner.lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_PAUSE)
         }
 
-        state.globalEvents.addDisposableEvent("visibilitychange") { event ->
+        windowState.globalEvents.addDisposableEvent("visibilitychange") { event ->
             archComponentsOwner.lifecycle.handleLifecycleEvent(
                 if (documentIsVisible()) Lifecycle.Event.ON_START
                 else Lifecycle.Event.ON_STOP
@@ -474,7 +413,7 @@ internal class ComposeWindow(
 
     init {
         initEvents(canvas)
-        state.init()
+        windowState.init()
 
         canvas.setAttribute("tabindex", "0")
         canvas.setAttribute("draggable", "true")
@@ -501,7 +440,7 @@ internal class ComposeWindow(
                     }
 
                     LaunchedEffect(Unit) {
-                        state.sizeFlow().collect { size ->
+                        windowState.sizeFlow().collect { size ->
                             // Convert to proper type: IntSize was exposed to public API with meaning of DPs.
                             val boxSize = DpSize(size.width.dp, size.height.dp)
                             this@ComposeWindow.resize(boxSize)
