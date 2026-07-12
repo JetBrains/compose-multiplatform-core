@@ -632,6 +632,8 @@ internal class ComposeSceneMediator(
         // Since rendering will not happen after, we need to execute all scheduled updates
         interopContainer.dispose()
 
+        desktopMediaEnvironment.dispose()
+
         _onComponentAttached = null
     }
 
