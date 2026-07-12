@@ -52,7 +52,6 @@ import androidx.compose.ui.platform.DefaultInputModeManager
 import androidx.compose.ui.platform.FrameRecomposer
 import androidx.compose.ui.platform.PlatformArchitectureComponentsOwner
 import androidx.compose.ui.platform.PlatformContext
-import androidx.compose.ui.platform.PlatformScreenReader
 import androidx.compose.ui.platform.PlatformTextInputMethodRequest
 import androidx.compose.ui.platform.PlatformWindowContext
 import androidx.compose.ui.platform.UIKitIdleTimerManager
@@ -74,6 +73,11 @@ import androidx.compose.ui.input.pointer.isAltPressed
 import androidx.compose.ui.input.pointer.isCtrlPressed
 import androidx.compose.ui.input.pointer.isMetaPressed
 import androidx.compose.ui.input.pointer.isShiftPressed
+import androidx.compose.ui.platform.Clipboard
+import androidx.compose.ui.platform.ClipboardManager
+import androidx.compose.ui.platform.PlatformAccessibilityManager
+import androidx.compose.ui.platform.createPlatformClipboard
+import androidx.compose.ui.platform.createPlatformClipboardManager
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.IntRect
@@ -85,7 +89,6 @@ import androidx.compose.ui.unit.roundToIntRect
 import androidx.compose.ui.unit.roundToIntSize
 import androidx.compose.ui.unit.toDpOffset
 import androidx.compose.ui.unit.toDpRect
-import androidx.compose.ui.unit.toDpSize
 import androidx.compose.ui.unit.toOffset
 import androidx.compose.ui.unit.toSize
 import androidx.compose.ui.viewinterop.LocalInteropContainer
@@ -107,9 +110,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
-import org.jetbrains.skiko.OS
-import org.jetbrains.skiko.OSVersion
-import org.jetbrains.skiko.available
 import platform.CoreGraphics.CGPoint
 import platform.QuartzCore.CACurrentMediaTime
 import platform.QuartzCore.CATransaction
@@ -209,8 +209,17 @@ internal class ComposeSceneMediator(
 
     private var onKeyEvent: (KeyEvent) -> Boolean = { false }
     private var animateKeyboardOffsetChanges by mutableStateOf(false)
-    private var platformScreenReader = object : PlatformScreenReader {
-        override var isActive by mutableStateOf(false)
+    private var platformAccessibilityManager = object : PlatformAccessibilityManager {
+        var isActive by mutableStateOf(false)
+        override val isScreenReaderActive: Boolean
+            get() = isActive
+
+        override fun calculateRecommendedTimeoutMillis(
+            originalTimeoutMillis: Long,
+            containsIcons: Boolean,
+            containsText: Boolean,
+            containsControls: Boolean
+        ): Long = originalTimeoutMillis
     }
 
     private val coroutineScope = CoroutineScope(coroutineContext)
@@ -377,7 +386,7 @@ internal class ComposeSceneMediator(
 
                 down || up
             },
-            onScreenReaderActive = { platformScreenReader.isActive = it }
+            onScreenReaderActive = { platformAccessibilityManager.isActive = it }
         )
     }
 
@@ -849,10 +858,19 @@ internal class ComposeSceneMediator(
     private inner class PlatformContextImpl : PlatformContext {
         override val windowInfo: WindowInfo get() = windowContext.windowInfo
         override val architectureComponentsOwner get() = this@ComposeSceneMediator.architectureComponentsOwner
-        override val screenReader: PlatformScreenReader get() = platformScreenReader
+
+        override val accessibilityManager: PlatformAccessibilityManager
+            get() = platformAccessibilityManager
 
         override val hapticFeedback: HapticFeedback by lazy(LazyThreadSafetyMode.NONE) {
             CupertinoHapticFeedback()
+        }
+
+        override val clipboard: Clipboard by lazy(LazyThreadSafetyMode.NONE) {
+            createPlatformClipboard()
+        }
+        override val clipboardManager: ClipboardManager by lazy(LazyThreadSafetyMode.NONE) {
+            createPlatformClipboardManager()
         }
 
         override fun convertLocalToWindowPosition(localPosition: Offset): Offset =

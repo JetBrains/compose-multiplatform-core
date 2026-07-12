@@ -63,6 +63,8 @@ import androidx.compose.ui.platform.PlatformWindowContext
 import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.platform.WindowInfo
 import androidx.compose.ui.platform.a11y.ComposeSceneAccessibility
+import androidx.compose.ui.platform.createPlatformClipboard
+import androidx.compose.ui.platform.createPlatformClipboardManager
 import androidx.compose.ui.scene.skia.SkiaLayerComponent
 import androidx.compose.ui.semantics.SemanticsOwner
 import androidx.compose.ui.unit.Constraints
@@ -860,6 +862,13 @@ internal class ComposeSceneMediator(
 
         override val inputModeManager: InputModeManager by lazy(LazyThreadSafetyMode.NONE) {
             DefaultInputModeManager()
+        }
+
+        override val clipboard: Clipboard by lazy(LazyThreadSafetyMode.NONE) {
+            createPlatformClipboard()
+        }
+        override val clipboardManager: ClipboardManager by lazy(LazyThreadSafetyMode.NONE) {
+            createPlatformClipboardManager()
         }
 
         override val textInputService get() = this@ComposeSceneMediator.textInputService

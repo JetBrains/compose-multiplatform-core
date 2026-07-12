@@ -18,7 +18,8 @@ package androidx.compose.foundation.lazy
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.InternalComposeUiApi
-import androidx.compose.ui.platform.LocalPlatformScreenReader
+import androidx.compose.ui.platform.LocalAccessibilityManager
+import androidx.compose.ui.platform.PlatformAccessibilityManager
 
 /**
  * A minimum number of preloaded elements to allow the iOS accessibility engine to traverse the
@@ -29,7 +30,8 @@ private const val SCREEN_READER_BEYOND_BOUNDS_ITEM_COUNT = 3
 @OptIn(InternalComposeUiApi::class)
 @Composable
 internal actual fun defaultLazyListBeyondBoundsItemCount(): Int {
-    return if (LocalPlatformScreenReader.current.isActive) {
+    val accessibilityManager = LocalAccessibilityManager.current
+    return if (accessibilityManager is PlatformAccessibilityManager && accessibilityManager.isScreenReaderActive) {
         SCREEN_READER_BEYOND_BOUNDS_ITEM_COUNT
     } else {
         0

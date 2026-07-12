@@ -22,6 +22,8 @@ import androidx.compose.ui.ComposeUiFlags
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.FrameRateCategory
 import androidx.compose.ui.InternalComposeUiApi
+import androidx.compose.ui.autofill.AutofillManager
+import androidx.compose.ui.autofill.AutofillTree
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.geometry.Offset
@@ -61,11 +63,6 @@ interface PlatformContext {
      * The value that will be provided to [LocalWindowInfo] by default.
      */
     val windowInfo: WindowInfo
-
-    /**
-     * The value that will be provided to [LocalPlatformScreenReader] by default.
-     */
-    val screenReader: PlatformScreenReader get() = EmptyPlatformScreenReader
 
     /**
      * Provider of platform owners such as [LifecycleOwner] or [ViewModelStoreOwner].
@@ -217,6 +214,25 @@ interface PlatformContext {
      */
     val prefetchScheduler: PlatformPrefetchScheduler get() = NoOpPlatformPrefetchScheduler
 
+    val accessibilityManager: PlatformAccessibilityManager get() = NoOpPlatformAccessibilityManager
+
+    val clipboard : Clipboard
+
+    @Suppress("DEPRECATION")
+    val clipboardManager : ClipboardManager
+
+    @Suppress("DEPRECATION")
+    val autofillTree : AutofillTree
+        get() = AutofillTree()
+
+    @Suppress("DEPRECATION")
+    val autofill: androidx.compose.ui.autofill.Autofill?
+        get() = null
+
+    // TODO https://youtrack.jetbrains.com/issue/CMP-1572
+    val autofillManager: AutofillManager?
+        get() = null
+
     interface RootForTestListener {
         fun onRootForTestCreated(root: PlatformRootForTest)
         fun onRootForTestDisposed(root: PlatformRootForTest)
@@ -267,6 +283,12 @@ interface PlatformContext {
         override val inputModeManager: InputModeManager by lazy(LazyThreadSafetyMode.NONE) {
             DefaultInputModeManager()
         }
+        override val clipboard: Clipboard by lazy(LazyThreadSafetyMode.NONE) {
+            createPlatformClipboard()
+        }
+        override val clipboardManager: ClipboardManager by lazy(LazyThreadSafetyMode.NONE) {
+            createPlatformClipboardManager()
+        }
     }
 
     // This object must be immutable because it is used as a delegate in other ViewConfiguration
@@ -288,8 +310,16 @@ interface PlatformContext {
     }
 }
 
-private object EmptyPlatformScreenReader : PlatformScreenReader {
-    override val isActive: Boolean = false
+private object NoOpPlatformAccessibilityManager : PlatformAccessibilityManager {
+    override fun calculateRecommendedTimeoutMillis(
+        originalTimeoutMillis: Long,
+        containsIcons: Boolean,
+        containsText: Boolean,
+        containsControls: Boolean
+    ): Long = originalTimeoutMillis
+
+    override val isScreenReaderActive: Boolean
+        get() = false
 }
 
 private object NoOpPlatformPrefetchScheduler : PlatformPrefetchScheduler {

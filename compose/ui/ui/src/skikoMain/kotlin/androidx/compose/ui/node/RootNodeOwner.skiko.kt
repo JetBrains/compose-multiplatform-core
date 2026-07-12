@@ -65,7 +65,6 @@ import androidx.compose.ui.input.rotary.RotaryScrollEvent
 import androidx.compose.ui.layout.RootMeasurePolicy
 import androidx.compose.ui.layout.RulerProviderModifierElement
 import androidx.compose.ui.modifier.ModifierLocalManager
-import androidx.compose.ui.platform.DefaultAccessibilityManager
 import androidx.compose.ui.platform.DelegatingSoftwareKeyboardController
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.PlatformRootForTest
@@ -73,8 +72,6 @@ import androidx.compose.ui.platform.PlatformTextInputMethodRequest
 import androidx.compose.ui.platform.PlatformTextInputSessionScope
 import androidx.compose.ui.platform.PlatformWindowInsets
 import androidx.compose.ui.platform.PlatformWindowInsetsProviderNode
-import androidx.compose.ui.platform.createPlatformClipboard
-import androidx.compose.ui.platform.createPlatformClipboardManager
 import androidx.compose.ui.scene.ComposeScene
 import androidx.compose.ui.scene.ComposeSceneInputHandler
 import androidx.compose.ui.scene.ComposeScenePointer
@@ -468,21 +465,21 @@ internal class RootNodeOwner(
         override val rootForTest get() = this@RootNodeOwner.rootForTest
         override val hapticFeedBack get() = platformContext.hapticFeedback
         override val inputModeManager get() = platformContext.inputModeManager
-        override val clipboardManager = createPlatformClipboardManager()
-        override val clipboard = createPlatformClipboard()
-        override val accessibilityManager = DefaultAccessibilityManager()
+        override val clipboardManager get() = platformContext.clipboardManager
+        override val clipboard get() = platformContext.clipboard
+        override val accessibilityManager get() = platformContext.accessibilityManager
         override val graphicsContext get() = this@RootNodeOwner.graphicsContext
         override val textToolbar get() = platformContext.textToolbar
 
         @Suppress("DEPRECATION")
-        override val autofillTree = androidx.compose.ui.autofill.AutofillTree()
+        override val autofillTree get() = platformContext.autofillTree
 
         @Suppress("DEPRECATION")
         override val autofill: androidx.compose.ui.autofill.Autofill?
-            get() = null
+            get() = platformContext.autofill
 
         // TODO https://youtrack.jetbrains.com/issue/CMP-1572
-        override val autofillManager: AutofillManager? get() = null
+        override val autofillManager: AutofillManager? get() = platformContext.autofillManager
         override val density get() = this@RootNodeOwner.density
         override val textInputService by lazy(LazyThreadSafetyMode.NONE) {
             TextInputService(platformContext.textInputService)
