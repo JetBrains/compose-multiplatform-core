@@ -44,8 +44,11 @@ internal class WebMediaEnvironment(
     val onDensityChanged: (Density) -> Unit
 ) : PlatformMediaEnvironment {
 
+    private var isDisposed = false
+
     //Microphone And Camera detection Api supported
-    private val isMediaDevicesEnumerateSupported: Boolean = isSecureContext && isMediaDevicesEnumerateSupported()
+    private val isMediaDevicesEnumerateSupported: Boolean =
+        isSecureContext && isMediaDevicesEnumerateSupported()
 
     private val isMediaQuerySupported: Boolean = isMatchMediaSupported()
 
@@ -70,26 +73,34 @@ internal class WebMediaEnvironment(
     //</editor-fold>
     //<editor-fold desc="Resolution Media Query">
     private fun initializeResolutionMediaQuery() {
+        if (isDisposed) return
         val contentScale = window.devicePixelRatio
         currentResolutionMediaQuery = window.matchMedia("(resolution: ${contentScale}dppx)")
-        currentResolutionMediaQuery?.addEventListener(
-            "change",
-            resolutionListenerCallback,
-            resolutionListenerOptions
-        )
+        try {
+            currentResolutionMediaQuery?.addEventListener(
+                "change",
+                resolutionListenerCallback,
+                resolutionListenerOptions
+            )
+        } catch (t: Throwable) {
+            currentResolutionMediaQuery?.addListener(resolutionListenerCallback)
+        }
     }
 
     private var currentResolutionMediaQuery: MediaQueryList? = null
     private val resolutionListenerOptions = AddEventListenerOptions(capture = true, once = true)
     private val resolutionListenerCallback: (Event) -> Unit = { evt ->
-        evt as MediaQueryListEvent
-        if (!evt.matches) {
-            val density = Density(window.devicePixelRatio.toFloat())
-            onDensityChanged(density)
-            _systemDensity = density
+        if (!isDisposed) {
+            evt as MediaQueryListEvent
+            if (!evt.matches) {
+                val density = Density(window.devicePixelRatio.toFloat())
+                onDensityChanged(density)
+                _systemDensity = density
+            }
+            initializeResolutionMediaQuery()
         }
-        initializeResolutionMediaQuery()
     }
+
     //</editor-fold>
     //<editor-fold desc="Orientation Media Query">
     private val orientationMediaQuery: MediaQueryList by lazy(LazyThreadSafetyMode.NONE) {
@@ -101,6 +112,7 @@ internal class WebMediaEnvironment(
     }
 
     private var isOrientationPortrait by mutableStateOf(orientationMediaQuery.matches)
+
     //</editor-fold>
     //<editor-fold desc="Device Posture Media Query">
     private var _windowPosture by mutableStateOf(UiMediaScope.Posture.Flat)
@@ -113,14 +125,14 @@ internal class WebMediaEnvironment(
         val postureType = getDevicePostureType()
         val isPortrait = Snapshot.withoutReadObservation { isOrientationPortrait }
         return when (postureType) {
-            1 if isPortrait -> UiMediaScope.Posture.Book
-            1 if !isPortrait -> UiMediaScope.Posture.Tabletop
+            1 -> if (isPortrait) UiMediaScope.Posture.Book else UiMediaScope.Posture.Tabletop
             else -> UiMediaScope.Posture.Flat
         }
 
     }
 
     private val isDevicePostureSupported = isDevicePostureApiSupported()
+
     //</editor-fold>
     private var _systemDensity by mutableStateOf(Density(window.devicePixelRatio.toFloat()))
 
@@ -153,6 +165,7 @@ internal class WebMediaEnvironment(
             null
         }
     }
+
     //</editor-fold>
     //<editor-fold desc="Viewing Distance">
     private var _viewingDistance by mutableStateOf(getViewingDistance())
@@ -182,8 +195,9 @@ internal class WebMediaEnvironment(
         "Mercedes",
         "Audi",
     )
+
     private fun getViewingDistance(): UiMediaScope.ViewingDistance {
-        return when  {
+        return when {
             automotiveAgentStrings.any(userAgent::contains) -> UiMediaScope.ViewingDistance.Medium
             tvAgentStrings.any(userAgent::contains) -> UiMediaScope.ViewingDistance.Far
             else -> UiMediaScope.ViewingDistance.Near
@@ -230,8 +244,11 @@ internal class WebMediaEnvironment(
             }
             initializeResolutionMediaQuery()
 
-            orientationMediaQuery.addEventListener("change", orientationListenerCallback)
-
+            try {
+                orientationMediaQuery.addEventListener("change", orientationListenerCallback)
+            } catch (t: Throwable) {
+                orientationMediaQuery.addListener(orientationListenerCallback)
+            }
         }
         if (isMediaDevicesEnumerateSupported) {
             initializeMediaDevicesInfo()
@@ -276,15 +293,23 @@ internal class WebMediaEnvironment(
             }
 
             if (currentResolutionMediaQuery != null) {
-                currentResolutionMediaQuery?.removeEventListener(
-                    "change",
-                    resolutionListenerCallback,
-                    resolutionListenerOptions
-                )
+                try {
+                    currentResolutionMediaQuery?.removeEventListener(
+                        "change",
+                        resolutionListenerCallback,
+                        resolutionListenerOptions
+                    )
+                } catch (t: Throwable) {
+                    currentResolutionMediaQuery?.removeListener(resolutionListenerCallback)
+                }
                 currentResolutionMediaQuery = null
             }
 
-            orientationMediaQuery.removeEventListener("change", orientationListenerCallback)
+            try {
+                orientationMediaQuery.removeEventListener("change", orientationListenerCallback)
+            } catch (t: Throwable) {
+                orientationMediaQuery.removeListener(orientationListenerCallback)
+            }
         }
 
         if (isMediaDevicesEnumerateSupported && isMediaDevicesChangeEventSupported()) {
