@@ -159,42 +159,27 @@ internal class WebMediaEnvironment(
             }
             _hasMicrophone = hasMic
             _hasCamera = hasCam
-            null
+            extDevices
         }.catch {
-            println("Failed to enumerate media devices: ${it.asJsException()}")
+            println("Failed to enumerate media devices: ${it.asJsException().message}")
             null
         }
     }
 
     //</editor-fold>
     //<editor-fold desc="Viewing Distance">
-    private var _viewingDistance by mutableStateOf(getViewingDistance())
+    private val userAgent = window.navigator.userAgent
 
     private val tvAgentStrings = setOf(
-        "TV",
-        "Chromecast",
-        "Nexus Player",
-        "Roku",
-        "Tizen",
-        "WebOS",
-        "Viera",
-        "AFT",
-        "BRAVIA",
-        "TCL",
-        "Hisense",
-        "Xbox One",
-        "PlayStation"
+        "TV", "Chromecast", "Nexus Player", "Roku", "Tizen", "WebOS",
+        "Viera", "AFT", "BRAVIA", "TCL", "Hisense", "Xbox One", "PlayStation"
     )
 
     private val automotiveAgentStrings = setOf(
-        "Android Auto",
-        "Apple CarPlay",
-        "Tesla",
-        "QtCarBrowser",
-        "BMW",
-        "Mercedes",
-        "Audi",
+        "Android Auto", "Apple CarPlay", "Tesla", "QtCarBrowser", "BMW", "Mercedes", "Audi"
     )
+
+    private var _viewingDistance by mutableStateOf(getViewingDistance())
 
     private fun getViewingDistance(): UiMediaScope.ViewingDistance {
         return when {
@@ -203,8 +188,6 @@ internal class WebMediaEnvironment(
             else -> UiMediaScope.ViewingDistance.Near
         }
     }
-
-    private val userAgent = window.navigator.userAgent
     //</editor-fold>
 
     override val systemTheme: SystemTheme
