@@ -18,24 +18,20 @@ package androidx.compose.ui.scene
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.LocalSystemTheme
 import androidx.compose.ui.graphics.asComposeCanvas
 import androidx.compose.ui.navigationevent.UIKitNavigationEventInput
 import androidx.compose.ui.platform.DefaultArchitectureComponentsOwner
 import androidx.compose.ui.platform.FrameRecomposer
+import androidx.compose.ui.platform.IosMediaEnvironment
 import androidx.compose.ui.platform.MotionDurationScaleImpl
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.PlatformWindowContext
 import androidx.compose.ui.uikit.ComposeContainerConfiguration
-import androidx.compose.ui.uikit.InterfaceOrientation
 import androidx.compose.ui.uikit.LocalUIViewController
 import androidx.compose.ui.uikit.PlistSanityCheck
 import androidx.compose.ui.uikit.density
 import androidx.compose.ui.uikit.embedSubview
-import androidx.compose.ui.uikit.utils.CMPKeyValueObserver
-import androidx.compose.ui.uikit.utils.CMPUIWindowSceneUtils
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.LayoutDirection
@@ -53,14 +49,8 @@ import androidx.lifecycle.enableSavedStateHandles
 import androidx.savedstate.SavedState
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
-import kotlinx.cinterop.CPointed
-import kotlinx.cinterop.CPointer
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
-import org.jetbrains.skiko.SystemTheme
-import platform.Foundation.NSKeyValueObservingOptionNew
-import platform.Foundation.addObserver
-import platform.Foundation.removeObserver
 import platform.UIKit.UIAccessibilityIsReduceMotionEnabled
 import platform.UIKit.UIApplication
 import platform.UIKit.UIResponder
@@ -111,9 +101,8 @@ internal class ComposeContainer(
         get() = mediatorComponentsOwner
             ?: error("ArchitectureComponentsOwner is not initialized yet.")
 
-    private val interfaceOrientationObserver = SceneGeometryObserver {
-        updateInterfaceOrientationState()
-    }
+    private val iosMediaEnvironment = IosMediaEnvironment(windowContext.windowInfo, ::windowScene)
+
     private val navigationEventInput = UIKitNavigationEventInput(
         density = view.density,
         initialLayoutDirection = layoutDirection,
@@ -122,14 +111,6 @@ internal class ComposeContainer(
     )
     val hasInteropViews: Boolean get() = mediator?.hasInteropViews ?: false
 
-    /*
-     * Initial value is arbitrarily chosen to avoid propagating invalid value logic
-     * It's never the case in the real usage scenario to reflect that in type system
-     */
-    private val interfaceOrientationState: MutableState<InterfaceOrientation> = mutableStateOf(
-        InterfaceOrientation.Portrait
-    )
-    private val systemThemeState: MutableState<SystemTheme> = mutableStateOf(SystemTheme.UNKNOWN)
 
     private val focusedViewsList = FocusedViewsList()
 
@@ -159,12 +140,6 @@ internal class ComposeContainer(
         return mediator?.hasInvalidations == true || layersHolder?.layersViewController?.hasInvalidations == true
     }
 
-    private val currentInterfaceOrientation: InterfaceOrientation?
-        get() {
-            return InterfaceOrientation.getByRawValue(
-                CMPUIWindowSceneUtils.interfaceOrientationForWindowScene(windowScene)
-            )
-        }
 
     private fun onLayoutSubviews() {
         windowContext.updateWindowContainerSize()
@@ -176,11 +151,8 @@ internal class ComposeContainer(
 
     private fun onDidMoveToWindow(window: UIWindow?) {
         navigationEventInput.onDidMoveToWindow(window, view)
-        interfaceOrientationObserver.windowScene = window?.windowScene
-
+        iosMediaEnvironment.onDidMoveToWindow(window)
         window ?: return
-
-        updateInterfaceOrientationState()
 
         layersHolder?.layersViewController?.containerWindow = view.window
         windowContext.window = window
@@ -188,11 +160,7 @@ internal class ComposeContainer(
         lifecycleDelegate.windowScene = window.windowScene
     }
 
-    fun updateInterfaceOrientationState() {
-        currentInterfaceOrientation?.let {
-            interfaceOrientationState.value = it
-        }
-    }
+    fun updateInterfaceOrientationState() = iosMediaEnvironment.updateInterfaceOrientationState()
 
     fun sceneDidAppear() {
         mediator?.sceneDidAppear()
@@ -208,9 +176,7 @@ internal class ComposeContainer(
         navigationEventInput.onDidMoveToWindow(null, view)
     }
 
-    fun updateUserInterfaceStyle(style: UIUserInterfaceStyle) {
-        systemThemeState.value = style.asComposeSystemTheme()
-    }
+    fun updateUserInterfaceStyle(style: UIUserInterfaceStyle) = iosMediaEnvironment.updateUserInterfaceStyle(style)
 
     fun initializeComposeScene() {
         sceneJob = Job()
@@ -255,7 +221,7 @@ internal class ComposeContainer(
                 createComposeScene(invalidate, context, holder, frameRecomposer)
             },
             navigationEventInput = navigationEventInput,
-            interfaceOrientationState = interfaceOrientationState,
+            mediaEnvironment = iosMediaEnvironment,
         ).also { mediator ->
             view.embedSubview(mediator.backgroundView)
             view.updateMetalView(
@@ -279,7 +245,7 @@ internal class ComposeContainer(
             }
         }
 
-        interfaceOrientationObserver.isObservingEnabled = true
+        iosMediaEnvironment.initialize()
 
         architectureComponentsOwner.navigationEventDispatcher.addInput(navigationEventInput)
         lifecycleDelegate.windowScene = windowScene
@@ -306,7 +272,7 @@ internal class ComposeContainer(
 
         layersHolder = null
 
-        interfaceOrientationObserver.isObservingEnabled = false
+        iosMediaEnvironment.dispose()
     }
 
     private fun createComposeSceneContext(
@@ -342,7 +308,7 @@ internal class ComposeContainer(
                     //  [FrameRecomposer] creation.
                     parentCoroutineContext = frameRecomposer.compositionContext.effectCoroutineContext,
                     ownerProvider = architectureComponentsOwner,
-                    interfaceOrientationState = interfaceOrientationState,
+                    mediaEnvironment = iosMediaEnvironment
                 )
 
                 layersHolder.getLayersViewController().attach(layer)
@@ -403,7 +369,7 @@ internal class ComposeContainer(
     private fun ProvideContainerCompositionLocals(content: @Composable () -> Unit) =
         CompositionLocalProvider(
             LocalUIViewController provides containingViewController,
-            LocalSystemTheme provides systemThemeState.value,
+            LocalSystemTheme provides iosMediaEnvironment.systemTheme,
             content = content
         )
 
@@ -419,14 +385,6 @@ internal class ComposeContainer(
 
     private val windowScene: UIWindowScene?
         get() = view.window?.windowScene
-}
-
-private fun UIUserInterfaceStyle.asComposeSystemTheme(): SystemTheme {
-    return when (this) {
-        UIUserInterfaceStyle.UIUserInterfaceStyleLight -> SystemTheme.LIGHT
-        UIUserInterfaceStyle.UIUserInterfaceStyleDark -> SystemTheme.DARK
-        else -> SystemTheme.UNKNOWN
-    }
 }
 
 private fun getApplicationLayoutDirection() =
@@ -457,53 +415,6 @@ private class ComposeLayersHolder(
     }
 }
 
-private class SceneGeometryObserver(
-    val onGeometryChanged: () -> Unit
-) : CMPKeyValueObserver() {
-    private val observingKey = "effectiveGeometry"
-
-    var windowScene: UIWindowScene? = null
-        set(value) {
-            if (field == value) return
-            removeObserverIfNeeded()
-            field = value
-            addObserverIfNeeded()
-        }
-
-    var isObservingEnabled = false
-        set(value) {
-            if (field == value) return
-            field = value
-            if (value) {
-                addObserverIfNeeded()
-            } else {
-                removeObserverIfNeeded()
-            }
-        }
-
-    private var isObservingAdded = false
-
-    private fun addObserverIfNeeded() {
-        if (isObservingEnabled && !isObservingAdded) {
-            isObservingAdded = true
-            windowScene?.addObserver(this, observingKey, NSKeyValueObservingOptionNew, null)
-        }
-    }
-
-    private fun removeObserverIfNeeded() {
-        windowScene?.removeObserver(this, observingKey)
-        isObservingAdded = false
-    }
-
-    override fun observeValueForKeyPath(
-        keyPath: String?,
-        ofObject: Any?,
-        change: Map<Any?, *>?,
-        context: CPointer<out CPointed>?
-    ) {
-        onGeometryChanged()
-    }
-}
 
 private fun UIUserInterfaceLayoutDirection.asLayoutDirection(): LayoutDirection = when (this) {
     UIUserInterfaceLayoutDirectionLeftToRight -> LayoutDirection.Ltr

@@ -16,16 +16,15 @@
 
 package androidx.compose.ui.integrations
 
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.navigationevent.UIKitNavigationEventInput
 import androidx.compose.ui.platform.DefaultArchitectureComponentsOwner
+import androidx.compose.ui.platform.IosMediaEnvironment
 import androidx.compose.ui.platform.PlatformWindowContext
 import androidx.compose.ui.scene.ComposeSceneContext
 import androidx.compose.ui.scene.ComposeSceneMediator
 import androidx.compose.ui.scene.PlatformLayersComposeScene
 import androidx.compose.ui.test.runUIKitInstrumentedTest
 import androidx.compose.ui.uikit.EndEdgePanGestureBehavior
-import androidx.compose.ui.uikit.InterfaceOrientation
 import androidx.compose.ui.uikit.OnFocusBehavior
 import androidx.compose.ui.uikit.utils.CMPMetalLayer
 import androidx.compose.ui.unit.Density
@@ -88,11 +87,13 @@ class ComposeSceneMediatorTest {
 
     @OptIn(ExperimentalForeignApi::class)
     private fun makeMediator(coroutineContext: CoroutineContext): ComposeSceneMediator {
+        val windowContext = PlatformWindowContext()
+        val mediaEnvironment = IosMediaEnvironment(windowContext.windowInfo, { null })
         val mediator = ComposeSceneMediator(
             onFocusBehavior = OnFocusBehavior.DoNothing,
             isClearFocusOnMouseDownEnabled = false,
             focusedViewsList = null,
-            windowContext = PlatformWindowContext(),
+            windowContext = windowContext,
             architectureComponentsOwner = DefaultArchitectureComponentsOwner(),
             coroutineContext = coroutineContext,
             redrawer = SurfaceMetalRedrawer(
@@ -111,7 +112,7 @@ class ComposeSceneMediatorTest {
                 getTopLeftOffsetInWindow = { IntOffset.Zero },
                 endEdgePanGestureBehavior = EndEdgePanGestureBehavior.Disabled,
             ),
-            interfaceOrientationState = mutableStateOf(InterfaceOrientation.Portrait),
+            mediaEnvironment = mediaEnvironment,
             composeSceneFactory = { invalidate, platformContext, frameRecomposer ->
                 PlatformLayersComposeScene(
                     frameRecomposer = frameRecomposer,

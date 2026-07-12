@@ -19,7 +19,6 @@ package androidx.compose.ui.scene
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionContext
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.State
 import androidx.compose.ui.graphics.Canvas
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Paint
@@ -28,10 +27,10 @@ import androidx.compose.ui.input.pointer.PointerButton
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.navigationevent.UIKitNavigationEventInput
 import androidx.compose.ui.platform.FrameRecomposer
+import androidx.compose.ui.platform.IosMediaEnvironment
 import androidx.compose.ui.platform.PlatformArchitectureComponentsOwner
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.uikit.ComposeContainerConfiguration
-import androidx.compose.ui.uikit.InterfaceOrientation
 import androidx.compose.ui.uikit.LocalUIViewController
 import androidx.compose.ui.uikit.density
 import androidx.compose.ui.uikit.embedSubview
@@ -63,7 +62,7 @@ internal class UIKitComposeSceneLayer(
     consumePointerInputOutside: Boolean = focusedViewsList != null,
     parentCoroutineContext: CoroutineContext,
     private val ownerProvider: PlatformArchitectureComponentsOwner,
-    private val interfaceOrientationState: State<InterfaceOrientation>,
+    private val mediaEnvironment: IosMediaEnvironment,
 ) : ComposeSceneLayer {
     private val layerJob = Job()
     private val layerCoroutineContext = parentCoroutineContext + layerJob
@@ -113,7 +112,7 @@ internal class UIKitComposeSceneLayer(
         redrawer = layersViewController.metalView.redrawer,
         composeSceneFactory = ::createComposeScene,
         navigationEventInput = navigationEventInput,
-        interfaceOrientationState = interfaceOrientationState
+        mediaEnvironment = mediaEnvironment
     ).also {
         interactionView.embedSubview(it.backgroundView)
         it.isInterceptingOutsideEvents = consumePointerInputOutside

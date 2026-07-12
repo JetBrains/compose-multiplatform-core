@@ -58,6 +58,21 @@ internal val UIView.density: Density
         )
     }
 
+internal val UIWindow.density: Density
+    get() {
+        // TODO: It's a code smell that we have to retrive a default UIScreen here.
+        //   We probably should reorder the code so that density is either injected from outside
+        //   or view is attached to a window before this is called.
+        val screen = this.screen
+
+        val contentSizeCategory = traitCollection.preferredContentSizeCategory ?: UIContentSizeCategoryUnspecified
+
+        return Density(
+            density = screen.scale.toFloat(),
+            fontScale = uiContentSizeCategoryToFontScaleMap[contentSizeCategory] ?: 1.0f
+        )
+    }
+
 private val uiContentSizeCategoryToFontScaleMap = mapOf(
     UIContentSizeCategoryExtraSmall to 0.8f,
     UIContentSizeCategorySmall to 0.85f,

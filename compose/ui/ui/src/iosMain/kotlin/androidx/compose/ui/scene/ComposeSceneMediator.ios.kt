@@ -14,16 +14,19 @@
  * limitations under the License.
  */
 
+@file:OptIn(ExperimentalMediaQueryApi::class)
+
 package androidx.compose.ui.scene
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalContext
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.ExperimentalMediaQueryApi
 import androidx.compose.ui.InternalComposeUiApi
+import androidx.compose.ui.UiMediaScope
 import androidx.compose.ui.draganddrop.UIKitDragAndDropManager
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
@@ -50,8 +53,10 @@ import androidx.compose.ui.platform.AccessibilityMediator
 import androidx.compose.ui.platform.CUPERTINO_TOUCH_SLOP
 import androidx.compose.ui.platform.DefaultInputModeManager
 import androidx.compose.ui.platform.FrameRecomposer
+import androidx.compose.ui.platform.IosMediaEnvironment
 import androidx.compose.ui.platform.PlatformArchitectureComponentsOwner
 import androidx.compose.ui.platform.PlatformContext
+import androidx.compose.ui.platform.PlatformMediaEnvironment
 import androidx.compose.ui.platform.PlatformScreenReader
 import androidx.compose.ui.platform.PlatformTextInputMethodRequest
 import androidx.compose.ui.platform.PlatformWindowContext
@@ -61,7 +66,6 @@ import androidx.compose.ui.platform.UIKitWindowInsetsManager
 import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.platform.WindowInfo
 import androidx.compose.ui.semantics.SemanticsOwner
-import androidx.compose.ui.uikit.InterfaceOrientation
 import androidx.compose.ui.uikit.LocalNativeTextInputContext
 import androidx.compose.ui.uikit.LocalUIView
 import androidx.compose.ui.uikit.OnFocusBehavior
@@ -85,7 +89,6 @@ import androidx.compose.ui.unit.roundToIntRect
 import androidx.compose.ui.unit.roundToIntSize
 import androidx.compose.ui.unit.toDpOffset
 import androidx.compose.ui.unit.toDpRect
-import androidx.compose.ui.unit.toDpSize
 import androidx.compose.ui.unit.toOffset
 import androidx.compose.ui.unit.toSize
 import androidx.compose.ui.viewinterop.LocalInteropContainer
@@ -107,9 +110,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
-import org.jetbrains.skiko.OS
-import org.jetbrains.skiko.OSVersion
-import org.jetbrains.skiko.available
 import platform.CoreGraphics.CGPoint
 import platform.QuartzCore.CACurrentMediaTime
 import platform.QuartzCore.CATransaction
@@ -198,7 +198,7 @@ internal class ComposeSceneMediator(
     private val coroutineContext: CoroutineContext,
     private val redrawer: MetalRedrawer,
     private val navigationEventInput: UIKitNavigationEventInput,
-    interfaceOrientationState: State<InterfaceOrientation>,
+    private val mediaEnvironment: IosMediaEnvironment,
     composeSceneFactory: (
         invalidate: () -> Unit,
         platformContext: PlatformContext,
@@ -356,7 +356,7 @@ internal class ComposeSceneMediator(
             { _overlayView },
             { windowContext.window?.rootViewController?.view },
         ),
-        interfaceOrientation = interfaceOrientationState
+        interfaceOrientation = mediaEnvironment.interfaceOrientationState
     )
 
     /**
@@ -396,6 +396,7 @@ internal class ComposeSceneMediator(
         ComposeSceneKeyboardOffsetManager(
             view = _overlayView,
             keyboardOverlapHeightChanged = { height ->
+                mediaEnvironment.onKeyboardOverlapHeightChanged(height)
                 val heightPx = with(screenDensity) { height.roundToPx() }
                 if (windowInsetsManager.keyboardOverlapHeight.value != heightPx) {
                     animateKeyboardOffsetChanges = false
@@ -462,6 +463,7 @@ internal class ComposeSceneMediator(
         event: UIEvent?,
         eventKind: TouchesEventKind
     ) {
+        mediaEnvironment.updatePointerPrecision(UiMediaScope.PointerPrecision.Fine)
         when (eventKind) {
             TouchesEventKind.BEGAN -> redrawer.ongoingInteractionEventsCount += 1
             TouchesEventKind.MOVED -> {}
@@ -490,6 +492,7 @@ internal class ComposeSceneMediator(
         event: UIEvent?,
         eventKind: TouchesEventKind
     ) {
+        mediaEnvironment.updatePointerPrecision(UiMediaScope.PointerPrecision.Fine)
         val eventType = when (eventKind) {
             TouchesEventKind.BEGAN -> PointerEventType.Enter
             TouchesEventKind.MOVED -> PointerEventType.Move
@@ -533,6 +536,7 @@ internal class ComposeSceneMediator(
         event: UIEvent?,
         eventKind: TouchesEventKind
     ): PointerEventResult {
+        mediaEnvironment.updatePointerPrecision(UiMediaScope.PointerPrecision.Coarse)
         when (eventKind) {
             TouchesEventKind.BEGAN -> redrawer.ongoingInteractionEventsCount += touches.count()
             TouchesEventKind.ENDED -> redrawer.ongoingInteractionEventsCount -= touches.count()
@@ -848,6 +852,7 @@ internal class ComposeSceneMediator(
 
     private inner class PlatformContextImpl : PlatformContext {
         override val windowInfo: WindowInfo get() = windowContext.windowInfo
+        override val mediaEnvironment: PlatformMediaEnvironment get() = mediaEnvironment
         override val architectureComponentsOwner get() = this@ComposeSceneMediator.architectureComponentsOwner
         override val screenReader: PlatformScreenReader get() = platformScreenReader
 
