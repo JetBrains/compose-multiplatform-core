@@ -53,6 +53,7 @@ import androidx.compose.ui.input.pointer.composeButtons
 import androidx.compose.ui.internal.focusExt
 import androidx.compose.ui.navigationevent.BackNavigationEventInput
 import androidx.compose.ui.platform.DefaultArchitectureComponentsOwner
+import androidx.compose.ui.platform.EmptyPlatformWindowInsets
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.PlatformDragAndDropManager
 import androidx.compose.ui.platform.PlatformTextInputMethodRequest
@@ -62,6 +63,7 @@ import androidx.compose.ui.platform.WebHapticFeedback
 import androidx.compose.ui.platform.WebTextInputService
 import androidx.compose.ui.platform.WebTextToolbar
 import androidx.compose.ui.platform.WebWakeLockManager
+import androidx.compose.ui.platform.WebWindowInsetsManager
 import androidx.compose.ui.platform.WindowInfoImpl
 import androidx.compose.ui.platform.accessibility.ComposeWebSemanticsListener
 import androidx.compose.ui.platform.installFallbackFontDownloader
@@ -91,6 +93,8 @@ import androidx.compose.ui.viewinterop.TrackInteropPlacementContainer
 import androidx.compose.ui.viewinterop.WebInteropContainer
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.enableSavedStateHandles
+import kotlin.js.ExperimentalWasmJsInterop
+import kotlin.js.js
 import kotlinx.browser.document
 import kotlinx.browser.window
 import kotlinx.coroutines.Dispatchers
@@ -215,6 +219,8 @@ internal class ComposeWindow(
 
     private val canvasEvents = EventTargetListener(canvas)
 
+    private var insetsManager: WebWindowInsetsManager? = null
+
     private var keyboardModeState: KeyboardModeState = KeyboardModeState.Hardware
 
     // Used in WebTextInputService. Also see https://youtrack.jetbrains.com/issue/CMP-8611
@@ -238,6 +244,7 @@ internal class ComposeWindow(
         object : PlatformContext by PlatformContext.Empty() {
             override val windowInfo get() = _windowInfo
             override val architectureComponentsOwner get() = archComponentsOwner
+            override val windowInsets get() = insetsManager?.windowInsets ?: EmptyPlatformWindowInsets
 
             override val dragAndDropManager: PlatformDragAndDropManager = object :
                 WebDragAndDropManager(rootNode, canvasEvents, state.globalEvents, density) {
@@ -481,6 +488,11 @@ internal class ComposeWindow(
     }
 
     init {
+        if (configuration.enableBrowserWindowInsets) {
+            checkViewportFitCover()
+            insetsManager = WebWindowInsetsManager(density, canvas)
+        }
+
         initEvents(canvas)
         state.init()
 
@@ -554,6 +566,8 @@ internal class ComposeWindow(
         skiaLayer.attachTo(canvas)
         scene.size = sizeInPx
         skiaLayer.needRender()
+
+        insetsManager?.onCanvasResized(canvas)
     }
 
     // TODO: need to call .dispose() on window close.
@@ -569,6 +583,7 @@ internal class ComposeWindow(
         frameRecomposer.close()
         skiaLayer.detach()
 
+        insetsManager?.dispose()
         systemThemeObserver.dispose()
         state.dispose()
         // modern browsers supposed to garbage collect all events on the element disposed
@@ -883,6 +898,22 @@ private fun clipTargetElement(canvas: HTMLCanvasElement): HTMLTextAreaElement {
 
     return clipTarget
 }
+
+// language=js
+private fun checkViewportFitCover(): Unit = js(
+    """(function() {
+        let meta = document.querySelector('meta[name=viewport]');
+        let content = meta ? (meta.getAttribute('content') || '') : '';
+        if (!content.includes('viewport-fit=cover')) {
+            console.warn(
+                "[ComposeWeb] enableBrowserWindowInsets is set to true, but " +
+                "'viewport-fit=cover' is not found in the viewport meta tag. " +
+                "Safe area insets will be zero. Add viewport-fit=cover to your viewport meta tag: " +
+                "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1, viewport-fit=cover\">"
+            );
+        }
+    })()"""
+)
 
 // strings checks are faster on a JS side
 // language=js
