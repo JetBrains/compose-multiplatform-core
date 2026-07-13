@@ -537,13 +537,13 @@ internal class ComposeSceneMediator(
         event: UIEvent?,
         eventKind: TouchesEventKind
     ): PointerEventResult {
-        mediaEnvironment.updatePointerPrecision(UiMediaScope.PointerPrecision.Coarse)
         when (eventKind) {
             TouchesEventKind.BEGAN -> redrawer.ongoingInteractionEventsCount += touches.count()
             TouchesEventKind.ENDED -> redrawer.ongoingInteractionEventsCount -= touches.count()
             TouchesEventKind.MOVED -> {}
         }
 
+        var anyIsStylus = false
         val pointers = touches.mapIndexed { index, touch ->
             touch as UITouch
             val position = touch.offsetInView(_backgroundView, screenDensity.density)
@@ -552,6 +552,9 @@ internal class ComposeSceneMediator(
                 UITouchTypeIndirect, UITouchTypeIndirectPointer -> PointerType.Mouse
                 UITouchTypePencil -> PointerType.Stylus
                 else -> PointerType.Touch
+            }
+            if (pointerType == PointerType.Stylus) {
+                anyIsStylus = true
             }
             val id = touch.hashCode().toLong().takeIf {
                 pointerType != PointerType.Mouse
@@ -568,6 +571,12 @@ internal class ComposeSceneMediator(
                     screenDensity.density
                 ) ?: emptyList()
             )
+        }
+
+        if (anyIsStylus) {
+            mediaEnvironment.updatePointerPrecision(UiMediaScope.PointerPrecision.Fine)
+        } else {
+            mediaEnvironment.updatePointerPrecision(UiMediaScope.PointerPrecision.Coarse)
         }
 
         // UIKit sends buttonMask that was before the release action. It should be empty if no
