@@ -23,9 +23,12 @@ import androidx.build.getVersionByName
 import androidx.build.multiplatformExtension
 import org.gradle.api.Action
 import org.gradle.api.Project
+import org.gradle.api.attributes.Attribute
+import org.gradle.api.attributes.Usage
 import org.gradle.api.tasks.Copy
 import org.gradle.kotlin.dsl.dependencies
 import org.gradle.kotlin.dsl.getByName
+import org.jetbrains.kotlin.gradle.plugin.KotlinTarget
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTargetWithSimulatorTests
 import org.jetbrains.kotlin.gradle.targets.js.dsl.KotlinJsTargetDsl
@@ -45,16 +48,12 @@ private fun KotlinJsTest.passTestFlagsToEnvironment() {
     }
 }
 
-fun <T> AndroidXMultiplatformExtension.configureForkWebTarget(
+fun <T: KotlinTarget> AndroidXMultiplatformExtension.configureForkWebTarget(
     platform: PlatformIdentifier,
     isEnabled: Boolean,
     createTarget: (KotlinJsTargetDsl.() -> Unit) -> T,
     block: Action<KotlinJsTargetDsl>? = null,
 ): T? {
-    val skikoVersion = project.getVersionByName("skiko")
-    val skikoWasm = project.configurations.findByName("skikoWasm")
-        ?: project.configurations.create("skikoWasm")
-
     supportedPlatforms.add(platform)
     return if (isEnabled) {
         val target = createTarget {
@@ -85,13 +84,22 @@ fun <T> AndroidXMultiplatformExtension.configureForkWebTarget(
             }
         }
 
+        val mainCompilation = target.compilations.findByName("main")!!
+        val runtimeDepsConfig = project.configurations.findByName(mainCompilation.runtimeDependencyConfigurationName!!)!!
+        val skikoWasm = runtimeDepsConfig.incoming.artifactView { artifactView ->
+            @Suppress("UnstableApiUsage")
+            artifactView.withVariantReselection()
+            artifactView.attributes { attrs ->
+                runtimeDepsConfig.attributes.keySet().forEach {
+                    @Suppress("UNCHECKED_CAST")
+                    attrs.attribute(it as Attribute<Any>, runtimeDepsConfig.attributes.getAttribute(it) as Any)
+                }
+                attrs.attribute(Usage.USAGE_ATTRIBUTE, project.objects.named(Usage::class.java, "skiko-runtime"))
+            }
+        }.files
+
         if (platform == PlatformIdentifier.JS) {
             val resourcesDir = project.layout.buildDirectory.asFile.get().resolve("resources/skiko-js")
-
-            // Below code helps configure the tests for k/wasm targets
-            project.dependencies {
-                skikoWasm("org.jetbrains.skiko:skiko-js-wasm-runtime:${skikoVersion}")
-            }
 
             val fetchSkikoWasmRuntime = project.tasks.register("fetchSkikoJsWasmRuntime", Copy::class.java) {
                 it.destinationDir = project.file(resourcesDir)
@@ -114,11 +122,6 @@ fun <T> AndroidXMultiplatformExtension.configureForkWebTarget(
         } else {
             val resourcesDir = project.layout.buildDirectory.asFile.get().resolve("resources/skiko-wasm")
 
-            // Below code helps configure the tests for k/wasm targets
-            project.dependencies {
-                skikoWasm("org.jetbrains.skiko:skiko-js-wasm-runtime:${skikoVersion}")
-            }
-
             val fetchSkikoWasmRuntime = project.tasks.register("fetchSkikoWasmRuntime", Copy::class.java) {
                 it.destinationDir = project.file(resourcesDir)
                 it.from(skikoWasm.map { artifact ->
@@ -138,7 +141,6 @@ fun <T> AndroidXMultiplatformExtension.configureForkWebTarget(
                 it.resources.srcDirs(fetchSkikoWasmRuntime.map { it.destinationDir })
             }
         }
-
         target
     } else null
 }

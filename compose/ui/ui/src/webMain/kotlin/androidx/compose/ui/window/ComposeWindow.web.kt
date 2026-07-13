@@ -160,7 +160,7 @@ fun ComposeViewport(
     canvas.setAttribute("role", "generic")
     canvas.setAttribute("draggable", "true")
     canvas.style.outline = "none" // Fixes https://youtrack.jetbrains.com/issue/CMP-9040
-    canvas.style.setProperty("touch-action", "none") //blocks default browser touch handling
+    canvas.style.setProperty("touch-action", "pan-x pan-y") // allow the browser to scroll when compose is not scrolling
     appContainer.appendChild(canvas)
 
     //a11y container
@@ -171,6 +171,8 @@ fun ComposeViewport(
                 position = "absolute"
                 top = "0"
                 left = "0"
+                width = "100%"
+                height = "100%"
             }
             appContainer.appendChild(a11yContainer)
         }

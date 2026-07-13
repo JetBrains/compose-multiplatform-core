@@ -101,7 +101,7 @@ internal object JetBrainsRuntimeFontFamilies {
                     // We need to parse the typeface to extract its weight and style
                     val typeface = FontMgr.default.makeFromFile(absolutePath)
                         ?: error("makeFromFile $absolutePath failed")
-                    val weight = FontWeight(typeface.fontStyle.weight)
+                    val weight = FontWeight(typeface.fontStyle.weight.value)
                     val style = when (typeface.fontStyle.slant) {
                         FontSlant.UPRIGHT -> FontStyle.Normal
                         FontSlant.ITALIC, FontSlant.OBLIQUE -> FontStyle.Italic

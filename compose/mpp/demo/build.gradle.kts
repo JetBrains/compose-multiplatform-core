@@ -17,27 +17,18 @@
 @file:OptIn(ExperimentalWasmDsl::class)
 
 import java.util.*
+import kotlin.collections.map
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
+import org.jetbrains.kotlin.gradle.plugin.KotlinCompilation
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 import org.jetbrains.kotlin.gradle.plugin.mpp.NativeBuildType
+import org.jetbrains.kotlin.gradle.targets.js.ir.KotlinJsIrTarget
 import org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpackConfig
 
 plugins {
     id("AndroidXComposePlugin")
     id("kotlin-multiplatform")
     alias(libs.plugins.kotlinSerialization)
-}
-
-val resourcesDir = layout.buildDirectory.get().asFile.resolve("resources")
-val skikoWasm = configurations.findByName("skikoWasm") ?: configurations.create("skikoWasm")
-
-dependencies {
-    skikoWasm(libs.skikoJsWasmRuntime)
-}
-
-val unzipTask = tasks.register("unzipWasm", Copy::class) {
-    destinationDir = file(resourcesDir)
-    from(skikoWasm.map { zipTree(it) })
 }
 
 kotlin {
@@ -165,14 +156,12 @@ kotlin {
             dependsOn(skikoMain)
             dependencies {
                 implementation(libs.kotlinCoroutinesSwing)
-                implementation(libs.skikoCurrentOs)
+                implementation(libs.skikoAwtRuntime)
             }
         }
 
         val webMain by getting {
             dependsOn(skikoMain)
-            resources.setSrcDirs(resources.srcDirs)
-            resources.srcDirs(unzipTask.map { it.destinationDir })
 
             dependencies {
                 implementation(libs.kotlinSerializationJson)
@@ -190,6 +179,8 @@ kotlin {
         val macosMain by getting { dependsOn(darwinMain) }
         val iosMain by getting { dependsOn(darwinMain) }
     }
+
+    targets.withType<KotlinJsIrTarget>().all { configureSkikoWebRuntime(project, this) }
 }
 
 enum class Target(val simulator: Boolean, val key: String) {
@@ -278,4 +269,54 @@ project.tasks.withType<org.jetbrains.kotlin.gradle.dsl.KotlinJsCompile>().config
         "-Xwasm-generate-wat",
         "-Xwasm-enable-array-range-checks"
     )
+}
+
+private fun configureSkikoWebRuntime(
+    project: Project,
+    target: KotlinJsIrTarget,
+) {
+    val titledTargetName = target.name.replaceFirstChar { it.titlecase() }
+    val mainCompilation = target.compilations.findByName(KotlinCompilation.MAIN_COMPILATION_NAME)!!
+    val runtimeDepsConfig = project.configurations.findByName(mainCompilation.runtimeDependencyConfigurationName)!!
+    val skikoWebRuntimeJarFiles = runtimeDepsConfig.incoming.artifactView {
+        @Suppress("UnstableApiUsage")
+        withVariantReselection()
+        attributes {
+            runtimeDepsConfig.attributes.keySet().forEach {
+                @Suppress("UNCHECKED_CAST")
+                attribute(it as Attribute<Any>, runtimeDepsConfig.attributes.getAttribute(it) as Any)
+            }
+            attribute(Usage.USAGE_ATTRIBUTE, project.objects.named(Usage::class.java, "skiko-runtime"))
+        }
+    }.files
+    val unpackedRuntimeDir = project.layout.buildDirectory.dir("compose/skiko-${target.name}-runtime")
+
+    val unpackRuntime = project.tasks.register("unpackSkikoRuntimeFor$titledTargetName", Copy::class.java) {
+        destinationDir = project.file(unpackedRuntimeDir)
+        from(
+            skikoWebRuntimeJarFiles.map { artifact -> project.zipTree(artifact) }
+        )
+    }
+
+    target.compilations.all {
+        if (target.wasmTargetType != null) {
+            // Kotlin/Wasm uses ES module system to depend on skiko through skiko.mjs.
+            // Further bundler could process all files by its own (both skiko.mjs and skiko.wasm) and then emits its own version.
+            // So that’s why we need to provide skiko.mjs and skiko.wasm only for webpack, but not in the final dist.
+            binaries.all {
+                linkSyncTask.configure {
+                    dependsOn(unpackRuntime)
+                    from.from(unpackedRuntimeDir)
+                }
+            }
+        } else {
+            // Kotlin/JS depends on Skiko through global space.
+            // Bundler cannot know anything about global externals, so that’s why we need to copy it to final dist
+            project.tasks.named(processResourcesTaskName, ProcessResources::class.java) {
+                from(unpackedRuntimeDir)
+                dependsOn(unpackRuntime)
+                exclude("META-INF")
+            }
+        }
+    }
 }
