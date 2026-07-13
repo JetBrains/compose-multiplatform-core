@@ -91,7 +91,7 @@ import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
-import androidx.compose.ui.unit.contains
+import androidx.compose.ui.unit.bounds
 import androidx.compose.ui.unit.round
 import androidx.compose.ui.unit.toMaxConstraints
 import androidx.compose.ui.unit.toRect
@@ -396,7 +396,7 @@ internal class RootNodeOwner(
     }
 
     private fun isInBounds(localPosition: Offset): Boolean =
-        size?.contains(localPosition) ?: true
+        size?.bounds(localPosition) ?: true
 
     private fun calculateBoundsInWindow(): Rect? {
         val rect = size?.toRect() ?: return null
