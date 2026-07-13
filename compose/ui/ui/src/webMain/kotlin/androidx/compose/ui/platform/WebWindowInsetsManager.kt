@@ -68,11 +68,15 @@ private class WebWindowInsets(
  * zero; if it extends into the navigation bar area, the bottom inset will reflect the overlap.
  *
  */
-internal class WebWindowInsetsManager(
-    private val density: Density,
-    canvas: Element
-) {
+internal class WebWindowInsetsManager(canvas: Element) {
     private var canvasRect: DOMRect = canvas.getBoundingClientRect()
+        set(value) {
+            field = value
+            readAndUpdateSafeArea()
+            readAndUpdateIme()
+        }
+
+    internal var density: Density = Density(window.devicePixelRatio.toFloat())
         set(value) {
             field = value
             readAndUpdateSafeArea()

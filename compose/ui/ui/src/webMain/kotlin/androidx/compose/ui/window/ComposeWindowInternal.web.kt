@@ -147,6 +147,7 @@ internal class ComposeWindow(
 
     private val webMediaEnvironment : WebMediaEnvironment = WebMediaEnvironment(_windowInfo) { newDensity ->
         scene.density = newDensity
+        insetsManager?.density = newDensity
     }
 
     @VisibleForTesting
@@ -423,7 +424,9 @@ internal class ComposeWindow(
     init {
         if (configuration.enableBrowserWindowInsets) {
             checkViewportFitCover()
-            insetsManager = WebWindowInsetsManager(density, canvas)
+            insetsManager = WebWindowInsetsManager(canvas).apply {
+                density = webMediaEnvironment.systemDensity
+            }
         }
 
         initEvents(canvas)
