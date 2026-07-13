@@ -88,7 +88,7 @@ internal class ComposeContainer(
     )
 
     private val frameChoreographer: FrameChoreographer?
-        get() = view.window?.scene?.let { FrameChoreographer.choreographerForScene(it) }
+        get() = view.window?.windowScene?.let { FrameChoreographer.choreographerForScene(it) }
 
     private val coroutineContext: CoroutineContext
         get() = frameChoreographer?.coroutineContext ?: Dispatchers.Main
