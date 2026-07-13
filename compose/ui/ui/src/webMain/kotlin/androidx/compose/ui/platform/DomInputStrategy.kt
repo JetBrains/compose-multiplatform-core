@@ -278,6 +278,10 @@ private external interface Selection : JsAny {
     fun setBaseAndExtent(anchorNode: Node, anchorOffset: Int, focusNode: Node, focusOffset: Int)
 }
 
+// getSelectionRange in browsers acts in two modes - if we are in a single text node, then actual offset is returned, nothing yet to be done
+// but browser can decide that we need to return the indices of the child nodes [start, end) and we'll need to calculate the actual offsets
+// this happens only when we trigger selection via keyboard (Cmd + A) - Chrome and Firefox return (0, 1)
+// so, don't be put off by the complexity of logic, in our case n is always 1 and c.nodeType is always 3
 @OptIn(ExperimentalWasmJsInterop::class)
 private fun computeSelectionRange(container: JsAny, offset: Int): Int = js(
         """{          
