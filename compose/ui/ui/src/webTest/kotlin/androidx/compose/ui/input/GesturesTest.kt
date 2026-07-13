@@ -62,9 +62,10 @@ class GesturesTest : OnCanvasTests {
         )
 
         val actualPan = 10f * currentDensity.density
-        assertEquals(2, pans.size)
-        assertEquals(Offset(0f, actualPan), pans[0])
-        assertEquals(Offset(actualPan, 0f), pans[1])
+        assertEquals(3, pans.size)
+        assertEquals(Offset(actualPan, actualPan), pans[0])
+        assertEquals(Offset(0f, actualPan), pans[1])
+        assertEquals(Offset(actualPan, 0f), pans[2])
     }
 
     @Test
@@ -103,10 +104,10 @@ class GesturesTest : OnCanvasTests {
         )
 
         // Verify that at least one zoom value greater than 1.0 was recorded.
-        assertEquals(7, zooms.size)
+        assertEquals(9, zooms.size)
         println(zooms.joinToString(","))
-        assertTrue(zooms[0] > 1 && zooms[0] < zooms[2]) // according to the Offset change
-        assertTrue(zooms[3] < 1 && zooms[3] < zooms[5]) // according to the Offset change
+        assertTrue(zooms[2] > 1 && zooms[2] < zooms[4]) // according to the Offset change
+        assertTrue(zooms[5] < 1 && zooms[5] < zooms[7]) // according to the Offset change
     }
 
     @Test
