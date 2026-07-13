@@ -143,7 +143,7 @@ fun ComposeViewport(
             resize: none;
             text-shadow: none;
             user-select: none;
-            white-space: break-spaces;
+            white-space: pre;
             z-index: -1;
        }
     """.trimIndent()
