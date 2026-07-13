@@ -30,11 +30,22 @@ import org.jetbrains.skiko.SystemTheme
 import androidx.compose.ui.uikit.utils.CMPKeyValueObserver
 import androidx.compose.ui.uikit.utils.CMPUIWindowSceneUtils
 import androidx.compose.ui.unit.dp
+import kotlinx.cinterop.BetaInteropApi
 import kotlinx.cinterop.CPointed
 import kotlinx.cinterop.CPointer
+import kotlinx.cinterop.ObjCAction
+import platform.AVFoundation.AVCaptureDevice
+import platform.AVFoundation.AVCaptureDeviceWasConnectedNotification
+import platform.AVFoundation.AVCaptureDeviceWasDisconnectedNotification
+import platform.AVFoundation.AVMediaTypeAudio
+import platform.AVFoundation.AVMediaTypeVideo
 import platform.Foundation.NSKeyValueObservingOptionNew
+import platform.Foundation.NSNotification
+import platform.Foundation.NSNotificationCenter
+import platform.Foundation.NSSelectorFromString
 import platform.Foundation.addObserver
 import platform.Foundation.removeObserver
+import platform.darwin.NSObject
 import platform.UIKit.UIUserInterfaceStyle
 import platform.UIKit.UIWindow
 import platform.UIKit.UIWindowScene
@@ -57,6 +68,23 @@ internal class MediaEnvironment(val windowInfo: WindowInfo) : PlatformMediaEnvir
     private val pointerPrecisionState: MutableState<UiMediaScope.PointerPrecision> = mutableStateOf(
         UiMediaScope.PointerPrecision.Coarse
     )
+
+    private val hasMicrophoneState: MutableState<Boolean> = mutableStateOf(detectHasMicrophone())
+    private val hasCameraState: MutableState<Boolean> = mutableStateOf(detectHasCamera())
+
+    private fun detectHasMicrophone(): Boolean =
+        AVCaptureDevice.defaultDeviceWithMediaType(AVMediaTypeAudio) != null
+
+    private fun detectHasCamera(): Boolean =
+        AVCaptureDevice.defaultDeviceWithMediaType(AVMediaTypeVideo) != null
+
+
+    private fun updateCaptureDeviceAvailabilityState() {
+        hasMicrophoneState.value = detectHasMicrophone()
+        hasCameraState.value = detectHasCamera()
+    }
+
+    private val captureDeviceAvailabilityObserver = CaptureDeviceAvailabilityObserver(::updateCaptureDeviceAvailabilityState)
 
     fun updateInterfaceOrientationState() {
         currentInterfaceOrientation?.let {
@@ -101,10 +129,12 @@ internal class MediaEnvironment(val windowInfo: WindowInfo) : PlatformMediaEnvir
 
     fun startObserving() {
         interfaceOrientationObserver.isObservingEnabled = true
+        captureDeviceAvailabilityObserver.isObservingEnabled = true
     }
 
     fun stopObserving() {
         interfaceOrientationObserver.isObservingEnabled = false
+        captureDeviceAvailabilityObserver.isObservingEnabled = false
     }
 
     override val windowPosture: UiMediaScope.Posture
@@ -121,9 +151,9 @@ internal class MediaEnvironment(val windowInfo: WindowInfo) : PlatformMediaEnvir
             else -> UiMediaScope.KeyboardKind.None
         }
     override val hasMicrophone: Boolean
-        get() = true
+        get() = hasMicrophoneState.value
     override val hasCamera: Boolean
-        get() = true
+        get() = hasCameraState.value
     override val viewingDistance: UiMediaScope.ViewingDistance
         get() = UiMediaScope.ViewingDistance.Near
 }
@@ -176,6 +206,49 @@ private class SceneGeometryObserver(
         onGeometryChanged()
     }
 }
+
+private class CaptureDeviceAvailabilityObserver(
+    val onDeviceAvailabilityChanged: () -> Unit,
+    private val notificationCenter: NSNotificationCenter = NSNotificationCenter.defaultCenter
+) : NSObject() {
+
+    var isObservingEnabled = false
+        set(value) {
+            if (field == value) return
+            field = value
+            if (value) {
+                addObservers()
+            } else {
+                removeObservers()
+            }
+        }
+
+    private fun addObservers() {
+        notificationCenter.addObserver(
+            observer = this,
+            selector = NSSelectorFromString(::deviceAvailabilityDidChange.name + ":"),
+            name = AVCaptureDeviceWasConnectedNotification,
+            `object` = null
+        )
+        notificationCenter.addObserver(
+            observer = this,
+            selector = NSSelectorFromString(::deviceAvailabilityDidChange.name + ":"),
+            name = AVCaptureDeviceWasDisconnectedNotification,
+            `object` = null
+        )
+    }
+
+    private fun removeObservers() {
+        notificationCenter.removeObserver(this)
+    }
+
+    @OptIn(BetaInteropApi::class)
+    @ObjCAction
+    fun deviceAvailabilityDidChange(arg: NSNotification) {
+        onDeviceAvailabilityChanged()
+    }
+}
+
 private fun UIUserInterfaceStyle.asComposeSystemTheme(): SystemTheme {
     return when (this) {
         UIUserInterfaceStyle.UIUserInterfaceStyleLight -> SystemTheme.LIGHT
