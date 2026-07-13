@@ -657,4 +657,4 @@ internal fun SwipeBackTestContent(
     )
 }
 
-internal const val DRAG_SURFACE = "dragSurface"
+private const val DRAG_SURFACE = "dragSurface"
