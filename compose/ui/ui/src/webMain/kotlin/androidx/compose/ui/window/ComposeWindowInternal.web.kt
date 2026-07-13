@@ -311,6 +311,8 @@ internal class ComposeWindow(
 
             override val viewConfiguration =
                 object : ViewConfiguration by PlatformContext.DefaultViewConfiguration {
+                    // Aligning the touchSlop value with the Android default:
+                    // https://android.googlesource.com/platform/frameworks/base/+/master/core/java/android/view/ViewConfiguration.java?pli=1#191
                     override val touchSlop: Float get() = with(density) { 8.dp.toPx() }
                     override val maximumFlingVelocity: Float
                         //https://cs.android.com/android/platform/superproject/+/android-latest-release:frameworks/base/core/java/android/view/ViewConfiguration.java;l=240;drc=733537294b158d22f2ae383f2ed77c93741798e9
@@ -440,15 +442,17 @@ internal class ComposeWindow(
         // https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/touch-action
         // > Applications using Touch events disable the browser handling of gestures by calling preventDefault()
         addTypedEvent<TouchEvent>("touchmove") { evt ->
-            // This event happens after pointermove.
-            if (rootScrollObserver.consumedAnyScroll()) {
-                // By calling preventDefault here we prevent a browser from overtaking a scroll gesture.
-                evt.preventDefault()
-            } else if (!rootScrollObserver.hadAnyScroll() && !activeTouchPointersConsumedMoves.isEmpty()) {
-                // The pointermove(s) didn't hit any Compose scrollable content, but
-                // we registered at least 1 pointermove event for one or more currently active pointers,
-                // and that pointermove was consumed by Compose.
-                // So here we prevent the browser from taking over the gestures.
+            // This event happens after pointermove. Here we decide if the browser should take over the gesture.
+            val shouldPreventDefault = when {
+                // First case: Scrolling happened in Compose, so the browser shouldn't take over the gesture.
+                rootScrollObserver.consumedAnyScroll() -> true
+                // Second case: No scrolling in Compose, but still some component (e.g., drag) consumed at least one pointermove event.
+                !rootScrollObserver.hadAnyScroll() && !activeTouchPointersConsumedMoves.isEmpty() -> true
+                // Third case: usually it's when scroll gestures happened at the edge (nowhere to scroll anymore),
+                // so they were not consumed by Compose. We let the browser handle this gesture.
+                else -> false
+            }
+            if (shouldPreventDefault) {
                 evt.preventDefault()
             }
         }
@@ -617,6 +621,9 @@ internal class ComposeWindow(
     }
 
     private val activeTouchPointers = mutableIntObjectMapOf<TouchEventWithContainerOffset>()
+
+    // Pointer IDs whose move events were consumed during the active touch sequence.
+    // It's a part of touch events preventDefault logic.
     private val activeTouchPointersConsumedMoves = mutableIntSetOf()
     private val reusableTouchPointerList = mutableListOf<ComposeScenePointer>()
     private fun getActivePointers(): MutableList<ComposeScenePointer> {
@@ -683,6 +690,7 @@ internal class ComposeWindow(
             }
 
             if (activeTouchPointers.isEmpty()) {
+                require(activeTouchPointersConsumedMoves.isEmpty())
                 rootScrollObserver.reset()
             }
 
