@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-@file:OptIn(ExperimentalMediaQueryApi::class)
-
 package androidx.compose.ui.scene
 
 import androidx.compose.runtime.Composable
@@ -457,6 +455,7 @@ internal class ComposeSceneMediator(
             }
         }
 
+    @OptIn(ExperimentalMediaQueryApi::class)
     private fun onScrollEvent(
         position: DpOffset,
         delta: DpOffset,
@@ -487,6 +486,7 @@ internal class ComposeSceneMediator(
         )
     }
 
+    @OptIn(ExperimentalMediaQueryApi::class)
     private fun onHoverEvent(
         position: DpOffset,
         event: UIEvent?,
@@ -531,6 +531,7 @@ internal class ComposeSceneMediator(
      * @param event the [UIEvent] associated with the touches
      * @param eventKind the [TouchesEventKind] of the touches
      */
+    @OptIn(ExperimentalMediaQueryApi::class)
     private fun onTouchesEvent(
         touches: Set<*>,
         event: UIEvent?,
