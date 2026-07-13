@@ -16,7 +16,6 @@ dependencyResolutionManagement {
 }
 
 def supportRootFolder = buildscript.sourceFile.getParentFile()
-skikoSetup.defineSkikoInVersionCatalog(settings)
 
 /* In JetBrains Fork we don't force Android Studio usage.
 // Abort immediately if we're running in Studio, but not a managed instance of Studio.
