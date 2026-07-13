@@ -280,13 +280,14 @@ private external interface Selection : JsAny {
 
 @OptIn(ExperimentalWasmJsInterop::class)
 private fun computeSelectionRange(container: JsAny, offset: Int): Int = js(
-        """{                
-    if (container.nodeType === 3) return offset;
+        """{          
+    // container.nodeType stands for textNodes                   
+    if (container.nodeType == 3) return offset;
     var chars = 0;
     var n = Math.min(offset, container.childNodes.length);
     for (var i = 0; i < n; i++) {
         var c = container.childNodes[i];
-        chars += (c.nodeType === 3)
+        chars += (c.nodeType == 3)
             ? c.nodeValue.length
             : ((c.textContent && c.textContent.length) || 0);
     }
