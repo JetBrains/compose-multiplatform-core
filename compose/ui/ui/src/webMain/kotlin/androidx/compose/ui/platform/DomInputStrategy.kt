@@ -69,7 +69,7 @@ internal class DomInputStrategy(
 
     fun updateState(textFieldValue: TextFieldValue) {
         val needsTextUpdate = (lastMeaningfulUpdate.text != textFieldValue.text) && !isInCompositionMode
-        val needsSelectionUpdate = (lastMeaningfulUpdate.selection != textFieldValue.selection) && !isInCompositionMode
+        val needsSelectionUpdate = !isInCompositionMode && (lastMeaningfulUpdate.selection != textFieldValue.selection)
         lastMeaningfulUpdate = textFieldValue
 
         if (needsTextUpdate) {
