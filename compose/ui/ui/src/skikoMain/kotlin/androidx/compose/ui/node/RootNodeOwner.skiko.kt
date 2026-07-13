@@ -478,7 +478,7 @@ internal class RootNodeOwner(
         override val autofill: androidx.compose.ui.autofill.Autofill?
             get() = platformContext.autofill
 
-        // TODO https://youtrack.jetbrains.com/issue/CMP-1572
+        // TODO https://youtrack.jetbrains.com/issue/CMP-7485
         override val autofillManager: AutofillManager? get() = platformContext.autofillManager
         override val density get() = this@RootNodeOwner.density
         override val textInputService by lazy(LazyThreadSafetyMode.NONE) {

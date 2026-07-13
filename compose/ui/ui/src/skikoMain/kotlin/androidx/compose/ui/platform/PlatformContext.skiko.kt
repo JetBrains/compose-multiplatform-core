@@ -229,7 +229,7 @@ interface PlatformContext {
     val autofill: androidx.compose.ui.autofill.Autofill?
         get() = null
 
-    // TODO https://youtrack.jetbrains.com/issue/CMP-1572
+    // TODO https://youtrack.jetbrains.com/issue/CMP-7485
     val autofillManager: AutofillManager?
         get() = null
 
