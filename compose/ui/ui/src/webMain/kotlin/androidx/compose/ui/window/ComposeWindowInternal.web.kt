@@ -59,6 +59,7 @@ import androidx.compose.ui.platform.PlatformDragAndDropManager
 import androidx.compose.ui.platform.PlatformTextInputMethodRequest
 import androidx.compose.ui.platform.TextToolbar
 import androidx.compose.ui.platform.ViewConfiguration
+import androidx.compose.ui.platform.WebOutOfFrameExecutor
 import androidx.compose.ui.platform.WebHapticFeedback
 import androidx.compose.ui.platform.WebTextInputService
 import androidx.compose.ui.platform.WebTextToolbar
@@ -66,9 +67,11 @@ import androidx.compose.ui.platform.WebWakeLockManager
 import androidx.compose.ui.platform.WebWindowInsetsManager
 import androidx.compose.ui.platform.WindowInfoImpl
 import androidx.compose.ui.platform.accessibility.ComposeWebSemanticsListener
+import androidx.compose.ui.platform.isPostingTasksSupported
 import androidx.compose.ui.platform.installFallbackFontDownloader
 import androidx.compose.ui.scene.CanvasLayersComposeScene
 import androidx.compose.ui.platform.FrameRecomposer
+import androidx.compose.ui.platform.PlatformOutOfFrameExecutor
 import androidx.compose.ui.platform.PlatformPrefetchScheduler
 import androidx.compose.ui.platform.WebPrefetchScheduler
 import androidx.compose.ui.platform.isIdleCallbackSupported
@@ -217,6 +220,10 @@ internal class ComposeWindow(
 
     private val navigationEventInput = BackNavigationEventInput()
 
+    private val webOutOfFrameExecutor by lazy(LazyThreadSafetyMode.NONE) {
+        if (isPostingTasksSupported) WebOutOfFrameExecutor() else null
+    }
+
     private val canvasEvents = EventTargetListener(canvas)
 
     private var insetsManager: WebWindowInsetsManager? = null
@@ -242,6 +249,9 @@ internal class ComposeWindow(
 
     private val platformContext: PlatformContext =
         object : PlatformContext by PlatformContext.Empty() {
+
+            override val outOfFrameExecutor: PlatformOutOfFrameExecutor? get() = webOutOfFrameExecutor
+
             override val windowInfo get() = _windowInfo
             override val architectureComponentsOwner get() = archComponentsOwner
             override val windowInsets get() = insetsManager?.windowInsets ?: EmptyPlatformWindowInsets
@@ -577,6 +587,7 @@ internal class ComposeWindow(
         archComponentsOwner.navigationEventDispatcherOwner
             .navigationEventDispatcher.removeInput(navigationEventInput)
 
+        webOutOfFrameExecutor?.dispose()
         scene.close()
         frameRecomposer.close()
         skiaLayer.detach()
