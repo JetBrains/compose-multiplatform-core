@@ -41,6 +41,7 @@ import platform.UIKit.UIWindowScene
 
 internal class MediaEnvironment(val windowInfo: WindowInfo) : PlatformMediaEnvironment {
 
+    private var window: UIWindow? = null
     /*
      * Initial value is arbitrarily chosen to avoid propagating invalid value logic
      * It's never the case in the real usage scenario to reflect that in type system
@@ -49,8 +50,8 @@ internal class MediaEnvironment(val windowInfo: WindowInfo) : PlatformMediaEnvir
         InterfaceOrientation.Portrait
     )
     private val systemThemeState: MutableState<SystemTheme> = mutableStateOf(SystemTheme.UNKNOWN)
-    private val systemDensityState: MutableState<Density> =
-        mutableStateOf(getViewWindowScene.invoke()?.keyWindow?.density ?: Density(1f))
+
+    private val systemDensityState: MutableState<Density> = mutableStateOf(window?.density ?: Density(1f))
 
     private val isImeShowing = mutableStateOf(false)
     private val pointerPrecisionState: MutableState<UiMediaScope.PointerPrecision> = mutableStateOf(
@@ -76,7 +77,7 @@ internal class MediaEnvironment(val windowInfo: WindowInfo) : PlatformMediaEnvir
     private val currentInterfaceOrientation: InterfaceOrientation?
         get() {
             return InterfaceOrientation.getByRawValue(
-                CMPUIWindowSceneUtils.interfaceOrientationForWindowScene(getViewWindowScene())
+                CMPUIWindowSceneUtils.interfaceOrientationForWindowScene(window?.windowScene)
             )
         }
 
@@ -84,6 +85,7 @@ internal class MediaEnvironment(val windowInfo: WindowInfo) : PlatformMediaEnvir
         updateInterfaceOrientationState()
     }
     fun onDidMoveToWindow(window: UIWindow?) {
+        this.window = window
         interfaceOrientationObserver.windowScene = window?.windowScene
         window ?: return
 
