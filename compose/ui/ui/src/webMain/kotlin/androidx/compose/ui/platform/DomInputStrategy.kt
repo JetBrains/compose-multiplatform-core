@@ -306,16 +306,14 @@ private fun getSelectionRange(element: HTMLElement): StaticRange? = js(
                 // The modern standard approach
                 var composedRanges = selection.getComposedRanges({ shadowRoots: [root] });
                 if (composedRanges.length > 0) {
-                    var firstRange = composedRanges[0];
-                    return firstRange;
+                    return composedRanges[0];
                 }
                 return null;
             } catch (e) {
                 // Fallback for early Safari 17 point-releases
                 var composedRanges = selection.getComposedRanges(root);
                 if (composedRanges.length > 0) {
-                    var firstRange = composedRanges[0];
-                    return firstRange;
+                    return composedRanges[0];
                 }
                 return null;
             }
@@ -325,15 +323,13 @@ private fun getSelectionRange(element: HTMLElement): StaticRange? = js(
             var rootSelection = root.getSelection();
             if (rootSelection == null) return [0, 0];
             if (rootSelection.rangeCount > 0) {
-                var rootRange = rootSelection.getRangeAt(0);
-                return rootRange;
+                return rootSelection.getRangeAt(0);
             }
             return null;
         }
 
         if (selection.rangeCount > 0) {
-            var selectionRange = selection.getRangeAt(0);
-            return selectionRange;
+            return selection.getRangeAt(0);
         }
         return null;
     }"""
