@@ -134,7 +134,7 @@ androidXMultiplatform {
             dependencies {
                 implementation(libs.truth)
                 implementation(libs.junit)
-                implementation(libs.skikoCurrentOs)
+                implementation(libs.skikoAwtRuntime)
                 implementation(project(":compose:foundation:foundation"))
                 implementation(project(":compose:ui:ui-test-junit4"))
                 implementation(project(":internal-testutils-fonts"))
