@@ -412,8 +412,6 @@ private object NoOpMediaEnvironment : PlatformMediaEnvironment {
     override val systemDensity: Density
         get() = Density(1f)
 
-    override fun dispose() = Unit
-
     override val windowPosture: UiMediaScope.Posture
         get() = UiMediaScope.Posture.Flat
     override val windowWidth: Dp

@@ -245,7 +245,7 @@ internal class ComposeContainer(
             }
         }
 
-        iosMediaEnvironment.initialize()
+        mediaEnvironment.startObserving()
 
         architectureComponentsOwner.navigationEventDispatcher.addInput(navigationEventInput)
         lifecycleDelegate.windowScene = windowScene
@@ -272,7 +272,7 @@ internal class ComposeContainer(
 
         layersHolder = null
 
-        iosMediaEnvironment.dispose()
+        mediaEnvironment.stopObserving()
     }
 
     private fun createComposeSceneContext(

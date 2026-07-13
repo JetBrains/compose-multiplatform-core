@@ -99,11 +99,11 @@ internal class MediaEnvironment(val windowInfo: WindowInfo) : PlatformMediaEnvir
     override val systemDensity: Density
         get() = systemDensityState.value
 
-    fun initialize() {
+    fun startObserving() {
         interfaceOrientationObserver.isObservingEnabled = true
     }
 
-    override fun dispose() {
+    fun stopObserving() {
         interfaceOrientationObserver.isObservingEnabled = false
     }
 

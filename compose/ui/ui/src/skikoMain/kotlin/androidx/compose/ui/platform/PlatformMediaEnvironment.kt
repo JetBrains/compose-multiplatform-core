@@ -28,5 +28,4 @@ interface PlatformMediaEnvironment : UiMediaScope {
 
     val systemTheme: SystemTheme
     val systemDensity: Density
-    fun dispose()
 }

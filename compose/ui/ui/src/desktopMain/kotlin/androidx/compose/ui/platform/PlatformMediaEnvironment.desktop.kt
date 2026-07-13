@@ -111,7 +111,7 @@ internal class DesktopMediaEnvironment(val windowInfo: WindowInfo) : PlatformMed
     override val viewingDistance: UiMediaScope.ViewingDistance
         get() = UiMediaScope.ViewingDistance.Near
 
-    override fun dispose() {
+    fun dispose() {
         pollingSystemThemeJob?.cancel()
     }
 }

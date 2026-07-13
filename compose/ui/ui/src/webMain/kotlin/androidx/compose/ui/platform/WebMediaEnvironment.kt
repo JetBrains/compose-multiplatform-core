@@ -267,7 +267,7 @@ internal class WebMediaEnvironment(
         }
     }
 
-    override fun dispose() {
+    fun dispose() {
         if (isMediaQuerySupported) {
             try {
                 themeMediaQuery.removeEventListener("change", themeListenerCallback)
