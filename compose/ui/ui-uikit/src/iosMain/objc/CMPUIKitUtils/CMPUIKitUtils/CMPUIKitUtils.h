@@ -24,6 +24,7 @@ FOUNDATION_EXPORT const unsigned char CMPUIKitUtilsVersionString[];
 
 #import "CMPAccessibilityElement.h"
 #import "CMPComposeContainerLifecycleDelegate.h"
+#import "CMPFrameRateRange.h"
 #import "CMPDragInteractionProxy.h"
 #import "CMPDrawable.h"
 #import "CMPDropInteractionProxy.h"
