@@ -27,7 +27,7 @@ import androidx.compose.ui.input.pointer.PointerButton
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.navigationevent.UIKitNavigationEventInput
 import androidx.compose.ui.platform.FrameRecomposer
-import androidx.compose.ui.platform.IosMediaEnvironment
+import androidx.compose.ui.platform.MediaEnvironment
 import androidx.compose.ui.platform.PlatformArchitectureComponentsOwner
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.uikit.ComposeContainerConfiguration
@@ -62,7 +62,7 @@ internal class UIKitComposeSceneLayer(
     consumePointerInputOutside: Boolean = focusedViewsList != null,
     parentCoroutineContext: CoroutineContext,
     private val ownerProvider: PlatformArchitectureComponentsOwner,
-    private val mediaEnvironment: IosMediaEnvironment,
+    private val mediaEnvironment: MediaEnvironment,
 ) : ComposeSceneLayer {
     private val layerJob = Job()
     private val layerCoroutineContext = parentCoroutineContext + layerJob

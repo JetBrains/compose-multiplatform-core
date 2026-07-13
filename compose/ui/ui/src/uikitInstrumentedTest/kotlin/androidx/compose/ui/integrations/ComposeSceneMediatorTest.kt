@@ -18,7 +18,7 @@ package androidx.compose.ui.integrations
 
 import androidx.compose.ui.navigationevent.UIKitNavigationEventInput
 import androidx.compose.ui.platform.DefaultArchitectureComponentsOwner
-import androidx.compose.ui.platform.IosMediaEnvironment
+import androidx.compose.ui.platform.MediaEnvironment
 import androidx.compose.ui.platform.PlatformWindowContext
 import androidx.compose.ui.scene.ComposeSceneContext
 import androidx.compose.ui.scene.ComposeSceneMediator
@@ -88,7 +88,7 @@ class ComposeSceneMediatorTest {
     @OptIn(ExperimentalForeignApi::class)
     private fun makeMediator(coroutineContext: CoroutineContext): ComposeSceneMediator {
         val windowContext = PlatformWindowContext()
-        val mediaEnvironment = IosMediaEnvironment(windowContext.windowInfo, { null })
+        val mediaEnvironment = MediaEnvironment(windowContext.windowInfo)
         val mediator = ComposeSceneMediator(
             onFocusBehavior = OnFocusBehavior.DoNothing,
             isClearFocusOnMouseDownEnabled = false,

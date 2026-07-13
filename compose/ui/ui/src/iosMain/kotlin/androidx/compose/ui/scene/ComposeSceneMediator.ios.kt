@@ -53,7 +53,7 @@ import androidx.compose.ui.platform.AccessibilityMediator
 import androidx.compose.ui.platform.CUPERTINO_TOUCH_SLOP
 import androidx.compose.ui.platform.DefaultInputModeManager
 import androidx.compose.ui.platform.FrameRecomposer
-import androidx.compose.ui.platform.IosMediaEnvironment
+import androidx.compose.ui.platform.MediaEnvironment
 import androidx.compose.ui.platform.PlatformArchitectureComponentsOwner
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.PlatformMediaEnvironment
@@ -198,7 +198,7 @@ internal class ComposeSceneMediator(
     private val coroutineContext: CoroutineContext,
     private val redrawer: MetalRedrawer,
     private val navigationEventInput: UIKitNavigationEventInput,
-    private val mediaEnvironment: IosMediaEnvironment,
+    private val mediaEnvironment: MediaEnvironment,
     composeSceneFactory: (
         invalidate: () -> Unit,
         platformContext: PlatformContext,
@@ -852,7 +852,7 @@ internal class ComposeSceneMediator(
 
     private inner class PlatformContextImpl : PlatformContext {
         override val windowInfo: WindowInfo get() = windowContext.windowInfo
-        override val mediaEnvironment: PlatformMediaEnvironment get() = mediaEnvironment
+        override val mediaEnvironment: PlatformMediaEnvironment get() = this@ComposeSceneMediator.mediaEnvironment
         override val architectureComponentsOwner get() = this@ComposeSceneMediator.architectureComponentsOwner
         override val screenReader: PlatformScreenReader get() = platformScreenReader
 

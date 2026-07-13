@@ -23,7 +23,7 @@ import androidx.compose.ui.graphics.asComposeCanvas
 import androidx.compose.ui.navigationevent.UIKitNavigationEventInput
 import androidx.compose.ui.platform.DefaultArchitectureComponentsOwner
 import androidx.compose.ui.platform.FrameRecomposer
-import androidx.compose.ui.platform.IosMediaEnvironment
+import androidx.compose.ui.platform.MediaEnvironment
 import androidx.compose.ui.platform.MotionDurationScaleImpl
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.PlatformWindowContext
@@ -101,7 +101,7 @@ internal class ComposeContainer(
         get() = mediatorComponentsOwner
             ?: error("ArchitectureComponentsOwner is not initialized yet.")
 
-    private val iosMediaEnvironment = IosMediaEnvironment(windowContext.windowInfo, ::windowScene)
+    private val mediaEnvironment = MediaEnvironment(windowContext.windowInfo)
 
     private val navigationEventInput = UIKitNavigationEventInput(
         density = view.density,
@@ -151,7 +151,7 @@ internal class ComposeContainer(
 
     private fun onDidMoveToWindow(window: UIWindow?) {
         navigationEventInput.onDidMoveToWindow(window, view)
-        iosMediaEnvironment.onDidMoveToWindow(window)
+        mediaEnvironment.onDidMoveToWindow(window)
         window ?: return
 
         layersHolder?.layersViewController?.containerWindow = view.window
@@ -160,7 +160,7 @@ internal class ComposeContainer(
         lifecycleDelegate.windowScene = window.windowScene
     }
 
-    fun updateInterfaceOrientationState() = iosMediaEnvironment.updateInterfaceOrientationState()
+    fun updateInterfaceOrientationState() = mediaEnvironment.updateInterfaceOrientationState()
 
     fun sceneDidAppear() {
         mediator?.sceneDidAppear()
@@ -176,7 +176,7 @@ internal class ComposeContainer(
         navigationEventInput.onDidMoveToWindow(null, view)
     }
 
-    fun updateUserInterfaceStyle(style: UIUserInterfaceStyle) = iosMediaEnvironment.updateUserInterfaceStyle(style)
+    fun updateUserInterfaceStyle(style: UIUserInterfaceStyle) = mediaEnvironment.updateUserInterfaceStyle(style)
 
     fun initializeComposeScene() {
         sceneJob = Job()
@@ -221,7 +221,7 @@ internal class ComposeContainer(
                 createComposeScene(invalidate, context, holder, frameRecomposer)
             },
             navigationEventInput = navigationEventInput,
-            mediaEnvironment = iosMediaEnvironment,
+            mediaEnvironment = mediaEnvironment,
         ).also { mediator ->
             view.embedSubview(mediator.backgroundView)
             view.updateMetalView(
@@ -308,7 +308,7 @@ internal class ComposeContainer(
                     //  [FrameRecomposer] creation.
                     parentCoroutineContext = frameRecomposer.compositionContext.effectCoroutineContext,
                     ownerProvider = architectureComponentsOwner,
-                    mediaEnvironment = iosMediaEnvironment
+                    mediaEnvironment = mediaEnvironment
                 )
 
                 layersHolder.getLayersViewController().attach(layer)
@@ -369,7 +369,7 @@ internal class ComposeContainer(
     private fun ProvideContainerCompositionLocals(content: @Composable () -> Unit) =
         CompositionLocalProvider(
             LocalUIViewController provides containingViewController,
-            LocalSystemTheme provides iosMediaEnvironment.systemTheme,
+            LocalSystemTheme provides mediaEnvironment.systemTheme,
             content = content
         )
 

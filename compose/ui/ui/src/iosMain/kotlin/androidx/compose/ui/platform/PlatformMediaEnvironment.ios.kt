@@ -39,7 +39,7 @@ import platform.UIKit.UIUserInterfaceStyle
 import platform.UIKit.UIWindow
 import platform.UIKit.UIWindowScene
 
-internal class IosMediaEnvironment(val windowInfo: WindowInfo, val getViewWindowScene: () -> UIWindowScene?) : PlatformMediaEnvironment {
+internal class MediaEnvironment(val windowInfo: WindowInfo) : PlatformMediaEnvironment {
 
     /*
      * Initial value is arbitrarily chosen to avoid propagating invalid value logic
