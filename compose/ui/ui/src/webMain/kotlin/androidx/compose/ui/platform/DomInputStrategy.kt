@@ -26,11 +26,9 @@ import kotlin.js.ExperimentalWasmJsInterop
 import kotlin.js.JsAny
 import kotlin.js.JsArray
 import kotlin.js.JsName
-import kotlin.js.JsNumber
 import kotlin.js.definedExternally
 import kotlin.js.get
 import kotlin.js.js
-import kotlin.js.toInt
 import kotlin.js.unsafeCast
 import kotlinx.browser.document
 import kotlinx.browser.window
@@ -138,8 +136,8 @@ internal class DomInputStrategy(
             val currentSelection = getSelectionRange(htmlInput)
             val (start, end) = if (currentSelection != null) {
                 Pair(
-                    computeSelectionRange(currentSelection.startContainer, currentSelection.startOffset),
-                    computeSelectionRange(currentSelection.endContainer, currentSelection.endOffset)
+                    computeSelectionOffset(currentSelection.startContainer, currentSelection.startOffset),
+                    computeSelectionOffset(currentSelection.endContainer, currentSelection.endOffset)
                 )
             } else {
                 Pair(0, 0)
@@ -283,7 +281,7 @@ private external interface Selection : JsAny {
 // this happens only when we trigger selection via keyboard (Cmd + A) - Chrome and Firefox return (0, 1)
 // so, don't be put off by the complexity of logic, in our case n is always 1 and c.nodeType is always 3 (that is,  child is always a text node)
 @OptIn(ExperimentalWasmJsInterop::class)
-private fun computeSelectionRange(container: JsAny, offset: Int): Int = js(
+private fun computeSelectionOffset(container: JsAny, offset: Int): Int = js(
         """{          
     // container.nodeType stands for textNodes                   
     if (container.nodeType == 3) return offset;
