@@ -266,14 +266,6 @@ internal class UIKitInstrumentedTest(
     val frameChoreographer: FrameChoreographer? get() =
         appDelegate.window()?.windowScene?.let { FrameChoreographer.choreographerForScene(it) }
 
-    private val infiniteAnimationPolicy = object : InfiniteAnimationPolicy {
-        override suspend fun <R> onInfiniteOperation(block: suspend () -> R): R {
-            throw CancellationException("Infinite animations are disabled on tests")
-        }
-    }
-
-    private val coroutineContext = Dispatchers.Main + infiniteAnimationPolicy
-
     fun setContent(
         configure: ComposeContainerConfiguration.() -> Unit = {},
         interfaceOrientation: UIInterfaceOrientation = UIInterfaceOrientationPortrait,
@@ -343,7 +335,6 @@ internal class UIKitInstrumentedTest(
         return ComposeHostingView(
             configuration = configuration,
             content = content,
-            coroutineContext = coroutineContext
         ).also {
             hostingView = it
         }
@@ -364,7 +355,6 @@ internal class UIKitInstrumentedTest(
         return ComposeHostingViewController(
             configuration = configuration,
             content = content,
-            coroutineContext = coroutineContext
         ).also {
             this.hostingViewController = it
         }
@@ -402,7 +392,6 @@ internal class UIKitInstrumentedTest(
             val containerInvalidations =
                 hostingViewController?.hasInvalidations() ?: hostingView?.hasInvalidations()
                 ?: false
-
             return !hadSnapshotChanges && !isApplyObserverNotificationPending && !containerInvalidations
         }
 
@@ -746,11 +735,20 @@ internal class MockAppDelegate: NSObject(), UIApplicationDelegateProtocol {
 
     private var supportedInterfaceOrientations: UIInterfaceOrientationMask = UIInterfaceOrientationMaskAll
 
+    private val infiniteAnimationPolicy = object : InfiniteAnimationPolicy {
+        override suspend fun <R> onInfiniteOperation(block: suspend () -> R): R {
+            throw CancellationException("Infinite animations are disabled on tests")
+        }
+    }
+
     fun setUpWindow(viewController: UIViewController) {
         UIApplication.sharedApplication().setDelegate(this)
 
         val scene = UIApplication.sharedApplication().connectedScenes.first() as? UIWindowScene
             ?: error("No window scene found")
+
+        FrameChoreographer.configureForScene(scene, Dispatchers.Main + infiniteAnimationPolicy)
+
         val allWindows = scene.windows - _window
 
         _window?.backgroundColor = UIColor.systemBackgroundColor

@@ -19,6 +19,7 @@ package androidx.compose.ui.integrations
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.navigationevent.UIKitNavigationEventInput
 import androidx.compose.ui.platform.DefaultArchitectureComponentsOwner
+import androidx.compose.ui.platform.FrameChoreographer
 import androidx.compose.ui.platform.PlatformWindowContext
 import androidx.compose.ui.scene.ComposeSceneContext
 import androidx.compose.ui.scene.ComposeSceneMediator
@@ -27,15 +28,11 @@ import androidx.compose.ui.test.runUIKitInstrumentedTest
 import androidx.compose.ui.uikit.EndEdgePanGestureBehavior
 import androidx.compose.ui.uikit.InterfaceOrientation
 import androidx.compose.ui.uikit.OnFocusBehavior
-import androidx.compose.ui.uikit.utils.CMPMetalLayer
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.center
-import androidx.compose.ui.viewinterop.UIKitInteropAction
-import androidx.compose.ui.viewinterop.UIKitInteropTransaction
-import androidx.compose.ui.window.SurfaceMetalRedrawer
 import kotlin.coroutines.CoroutineContext
 import kotlin.test.Test
 import kotlinx.cinterop.ExperimentalForeignApi
@@ -44,6 +41,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.runBlocking
 import platform.CoreGraphics.CGRectMake
+import platform.UIKit.UIWindowScene
 
 class ComposeSceneMediatorTest {
     @Test
@@ -89,22 +87,13 @@ class ComposeSceneMediatorTest {
     @OptIn(ExperimentalForeignApi::class)
     private fun makeMediator(coroutineContext: CoroutineContext): ComposeSceneMediator {
         val mediator = ComposeSceneMediator(
+            frameChoreographer = FrameChoreographer(UIWindowScene()),
             onFocusBehavior = OnFocusBehavior.DoNothing,
             isClearFocusOnMouseDownEnabled = false,
             focusedViewsList = null,
             windowContext = PlatformWindowContext(),
             architectureComponentsOwner = DefaultArchitectureComponentsOwner(),
             coroutineContext = coroutineContext,
-            redrawer = SurfaceMetalRedrawer(
-                metalLayer = CMPMetalLayer(),
-                retrieveInteropTransaction = {
-                    object : UIKitInteropTransaction {
-                        override val actions: List<UIKitInteropAction> = emptyList()
-                        override val isInteropActive: Boolean = false
-                    }
-                },
-                render = { _, _ -> }
-            ),
             navigationEventInput = UIKitNavigationEventInput(
                 density = Density(1f),
                 initialLayoutDirection = LayoutDirection.Ltr,
@@ -112,15 +101,15 @@ class ComposeSceneMediatorTest {
                 endEdgePanGestureBehavior = EndEdgePanGestureBehavior.Disabled,
             ),
             interfaceOrientationState = mutableStateOf(InterfaceOrientation.Portrait),
-            composeSceneFactory = { invalidate, platformContext, frameRecomposer ->
+            composeSceneFactory = { platformContext, frameRecomposer ->
                 PlatformLayersComposeScene(
                     frameRecomposer = frameRecomposer,
                     density = Density(1f),
                     composeSceneContext = object : ComposeSceneContext {
                         override val platformContext = platformContext
                     },
-                    invalidateLayout = invalidate,
-                    invalidateDraw = invalidate,
+                    invalidateLayout = {},
+                    invalidateDraw = {},
                 )
             },
         )

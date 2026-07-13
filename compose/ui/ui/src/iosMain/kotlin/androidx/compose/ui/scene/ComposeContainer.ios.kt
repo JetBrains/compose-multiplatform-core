@@ -57,6 +57,7 @@ import kotlin.coroutines.EmptyCoroutineContext
 import kotlinx.cinterop.CPointed
 import kotlinx.cinterop.CPointer
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import org.jetbrains.skiko.SystemTheme
 import platform.Foundation.NSKeyValueObservingOptionNew
@@ -79,14 +80,18 @@ import platform.UIKit.UIWindowScene
 internal class ComposeContainer(
     private val configuration: ComposeContainerConfiguration,
     private val content: @Composable () -> Unit,
-    private val coroutineContext: CoroutineContext,
     private val lifecycleDelegate: ComposeContainerLifecycleDelegate
 ) {
-
     val view = ComposeContainerView(
         transparentForTouches = false,
         useOpaqueConfiguration = configuration.opaque,
     )
+
+    private val frameChoreographer: FrameChoreographer?
+        get() = view.window?.scene?.let { FrameChoreographer.choreographerForScene(it) }
+
+    private val coroutineContext: CoroutineContext
+        get() = frameChoreographer?.coroutineContext ?: Dispatchers.Main
 
     private var mediator: ComposeSceneMediator? = null
     private val windowContext = PlatformWindowContext()
@@ -216,10 +221,8 @@ internal class ComposeContainer(
     }
 
     fun initializeComposeScene() {
-        val frameChoreographer = view.window?.windowScene?.let { FrameChoreographer.choreographerForScene(it) }
-            ?: error("No window scene found")
-
         sceneJob = Job()
+        val frameChoreographer = frameChoreographer ?: error("No window scene found")
         val sceneCoroutineContext = coroutineContext + motionDurationScale + sceneJob
         val metalView = MetalView(
             retrieveInteropTransaction = {

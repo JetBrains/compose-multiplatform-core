@@ -256,7 +256,7 @@ internal class ComposeSceneMediator(
                 }
         }
 
-    val scene: ComposeScene by lazy {
+    private val scene: ComposeScene by lazy {
         composeSceneFactory(
             PlatformContextImpl(),
             frameChoreographer.frameRecomposer,
@@ -449,12 +449,14 @@ internal class ComposeSceneMediator(
         )
     }
 
-    val hasInvalidations: Boolean
-        get() = scene.hasInvalidations() ||
+    val hasInvalidations: Boolean get() {
+        return scene.hasInvalidations() ||
+            frameChoreographer.frameRecomposer.hasPendingWork() ||
             keyboardManager.isAnimating ||
             isLayoutTransitionAnimating ||
             semanticsOwnerListener.hasInvalidations ||
             textInputService.hasInvalidations
+    }
 
     init {
         coroutineContext.job.invokeOnCompletion { dispose() }

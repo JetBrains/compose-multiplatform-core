@@ -176,6 +176,8 @@ internal class UIKitComposeSceneLayer(
         navigationEventInput.onDidMoveToWindow(window, interactionView)
     }
 
+    fun doMeasureAndLayout() = mediator.doMeasureAndLayout()
+
     fun render(canvas: Canvas, nanoTime: Long) {
         if (scrimColor != null) {
             val density = layersViewController.metalView.view.density

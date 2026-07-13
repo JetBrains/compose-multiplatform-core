@@ -74,7 +74,8 @@ internal class ComposeLayersViewController(
         updateMetalView(
             metalView = metalView,
             onWillMoveToWindow = { beginAppearanceTransition(it != null, animated = false) },
-            onDidMoveToWindow = { endAppearanceTransition() }
+            onDidMoveToWindow = { endAppearanceTransition() },
+            onLayoutSubviews = ::measureAndLayoutLayers,
         )
     }
 
@@ -149,6 +150,10 @@ internal class ComposeLayersViewController(
                 sizeTransitionScope.launch { animation.invoke() }
             }.joinAll()
         }
+    }
+
+    private fun measureAndLayoutLayers() = layersCache.withCopy { layers ->
+        layers.fastForEach { it.doMeasureAndLayout() }
     }
 
     fun withLayers(block: (List<UIKitComposeSceneLayer>) -> Unit) = layersCache.withCopy(block)

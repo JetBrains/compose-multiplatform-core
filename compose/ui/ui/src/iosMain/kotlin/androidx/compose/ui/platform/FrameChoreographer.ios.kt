@@ -16,10 +16,12 @@
 
 package androidx.compose.ui.platform
 
+import androidx.compose.runtime.TestOnly
 import androidx.compose.ui.uikit.toNanoSeconds
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.window.DisplayLinkFrameRate
 import androidx.compose.ui.window.MetalOutOfFrameExecutor
+import kotlin.coroutines.CoroutineContext
 import kotlinx.cinterop.BetaInteropApi
 import kotlinx.cinterop.COpaquePointer
 import kotlinx.cinterop.ExperimentalForeignApi
@@ -28,6 +30,7 @@ import kotlinx.cinterop.ObjCAction
 import kotlinx.cinterop.alloc
 import kotlinx.cinterop.nativeHeap
 import kotlinx.cinterop.ptr
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.MainScope
 import platform.Foundation.NSRunLoop
 import platform.Foundation.NSRunLoopCommonModes
@@ -43,12 +46,20 @@ import platform.objc.OBJC_ASSOCIATION_RETAIN
 import platform.objc.objc_getAssociatedObject
 import platform.objc.objc_setAssociatedObject
 
-internal class FrameChoreographer(scene: UIWindowScene) {
+internal class FrameChoreographer(
+    scene: UIWindowScene,
+    val coroutineContext: CoroutineContext = Dispatchers.Main
+) {
     companion object {
         fun choreographerForScene(scene: UIWindowScene): FrameChoreographer {
             return scene.frameChoreographer ?: FrameChoreographer(scene).also {
                 scene.frameChoreographer = it
             }
+        }
+
+        @TestOnly
+        fun configureForScene(scene: UIWindowScene, coroutineContext: CoroutineContext) {
+            scene.frameChoreographer = FrameChoreographer(scene, coroutineContext)
         }
     }
 
@@ -59,7 +70,7 @@ internal class FrameChoreographer(scene: UIWindowScene) {
     }
 
     val frameRecomposer = FrameRecomposer(
-        coroutineContext = MainScope().coroutineContext,
+        coroutineContext = coroutineContext,
         invalidate = ::setNeedsRedraw
     )
 
