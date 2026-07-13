@@ -20,19 +20,16 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.OnCanvasTests
-import androidx.compose.ui.WebApplicationScope
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.setSelectionRange
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlinx.browser.document
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.withContext
 import kotlinx.coroutines.yield
-import org.w3c.dom.HTMLTextAreaElement
+import org.w3c.dom.HTMLDivElement
 import org.w3c.dom.events.Event
 
 class ExternalSelectionChangeListenerTest : OnCanvasTests {
@@ -63,14 +60,14 @@ class ExternalSelectionChangeListenerTest : OnCanvasTests {
 
         assertEquals(TextRange(text.length), textFieldValue.value.selection)
 
-        htmlInput.setSelectionRange(1, 7)
+        setSelectionRange(htmlInput, 1, 7)
         document.dispatchEvent(Event("selectionchange"))
         awaitAnimationFrame()
         awaitIdle()
 
         assertEquals(TextRange(1, 7), textFieldValue.value.selection)
 
-        htmlInput.setSelectionRange(8, 8)
+        setSelectionRange(htmlInput, 8, 8)
         document.dispatchEvent(Event("selectionchange"))
         awaitAnimationFrame()
         awaitIdle()
@@ -78,10 +75,10 @@ class ExternalSelectionChangeListenerTest : OnCanvasTests {
         assertEquals(TextRange(8, 8), textFieldValue.value.selection)
     }
 
-    private suspend fun WebApplicationScope.waitForHtmlInput(): HTMLTextAreaElement {
+    private suspend fun waitForHtmlInput(): HTMLDivElement {
         while (true) {
-            val element = getShadowRoot().querySelector("textarea")
-            if (element is HTMLTextAreaElement) {
+            val element = getShadowRoot().querySelector("div.compose-backing-field")
+            if (element is HTMLDivElement) {
                 return element
             }
             yield()

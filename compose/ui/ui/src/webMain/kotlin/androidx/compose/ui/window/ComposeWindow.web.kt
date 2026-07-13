@@ -137,7 +137,8 @@ fun ComposeViewport(
             width: calc(var(--compose-internal-web-backing-input-width) * 1px);
             left: min(var(--compose-internal-web-backing-input-left) * 1px, 100vw - var(--compose-internal-web-backing-input-width) * 1px);
             top: min(var(--compose-internal-web-backing-input-top) * 1px, 100vh - var(--compose-internal-web-backing-input-height) * 1px);
-       
+            
+            overflow: hidden;
             align-content: center;
             background: transparent;
             border: none;
