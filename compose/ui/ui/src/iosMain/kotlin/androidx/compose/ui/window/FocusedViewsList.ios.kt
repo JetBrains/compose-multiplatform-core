@@ -70,6 +70,8 @@ internal class FocusedViewsList {
         }
     }
 
+    fun contains(view: UIView): Boolean = rootList().containsInHierarchy(view)
+
     /**
      * Dispose the child list, providing focus back to the parent list.
      */
@@ -112,6 +114,12 @@ internal class FocusedViewsList {
     private fun lastViewToFocus(): UIView? {
         return children.reversed().firstNotNullOfOrNull { it.lastViewToFocus() }
             ?: activeViews.lastOrNull()
+    }
+
+    private fun containsInHierarchy(view: UIView): Boolean {
+        return activeViews.contains(view) ||
+            resignedViews.contains(view) ||
+            children.any { it.containsInHierarchy(view) }
     }
 
     private fun resignScheduledViews() {
