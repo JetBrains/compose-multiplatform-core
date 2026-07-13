@@ -910,7 +910,7 @@ internal fun UIKitInstrumentedTest.waitForContextMenu() {
     delay(500) // wait for toolbar animation
 }
 
-private fun UIViewController.setLayoutDirection(
+internal fun UIViewController.setLayoutDirection(
     layoutDirection: UITraitEnvironmentLayoutDirection
 ) {
     if (available(OS.Ios to OSVersion(major = 17))) {
