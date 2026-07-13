@@ -86,6 +86,14 @@ fun ComposeViewport(
 ) = onSkikoReady {
     viewportContainer.clear()
 
+    if (!isWebGL2Supported()) {
+        // We can't do anything meaningful in this case, except showing a meaningful message.
+        // Otherwise, the app will crash with an obscure error (e.g. TypeError) like in
+        // https://youtrack.jetbrains.com/issue/CMP-10270
+        viewportContainer.appendChild(document.createTextNode(WEBGL2_NOT_SUPPORTED_MSG))
+        return@onSkikoReady
+    }
+
     // Create a common positioning container (parent html element) for shadow and the interop containers
     // to position at the same place - the interop container is position at 0,0 relative to the shadow.
     // It simplifies the positioning of the interop views in the container.
@@ -200,3 +208,8 @@ fun ComposeViewport(
         state = DefaultWindowState(viewportContainer)
     )
 }
+
+private const val WEBGL2_NOT_SUPPORTED_MSG = "This application requires WebGL2. " +
+    "Please ensure your browser is updated and hardware acceleration is enabled in the browser settings."
+private fun isWebGL2Supported(): Boolean =
+    js("!!document.createElement('canvas').getContext('webgl2')")
