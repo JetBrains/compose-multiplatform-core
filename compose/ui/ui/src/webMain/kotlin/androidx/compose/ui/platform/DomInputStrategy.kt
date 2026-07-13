@@ -136,8 +136,14 @@ internal class DomInputStrategy(
             if (pauseSelectionChangeListener || !isInputActive()) return@listener
 
             val currentSelection = getSelectionRange(htmlInput)
-            val start = currentSelection?.get(0)?.toInt() ?: 0
-            val end = currentSelection?.get(1)?.toInt() ?: 0
+            val (start, end) = if (currentSelection != null) {
+                Pair(
+                    computeSelectionRange(currentSelection.startContainer, currentSelection.startOffset),
+                    computeSelectionRange(currentSelection.endContainer, currentSelection.endOffset)
+                )
+            } else {
+                Pair(0, 0)
+            }
 
             val selection = lastMeaningfulUpdate.selection
 
@@ -273,7 +279,22 @@ private external interface Selection : JsAny {
 }
 
 @OptIn(ExperimentalWasmJsInterop::class)
-private fun getSelectionRange(element: HTMLElement): JsArray<JsNumber>? = js(
+private fun computeSelectionRange(container: JsAny, offset: Int): Int = js(
+        """{                
+    if (container.nodeType === 3) return offset;
+    var chars = 0;
+    var n = Math.min(offset, container.childNodes.length);
+    for (var i = 0; i < n; i++) {
+        var c = container.childNodes[i];
+        chars += (c.nodeType === 3)
+            ? c.nodeValue.length
+            : ((c.textContent && c.textContent.length) || 0);
+    }
+    return chars;
+    }""")
+
+@OptIn(ExperimentalWasmJsInterop::class)
+private fun getSelectionRange(element: HTMLElement): StaticRange? = js(
     """{
         var selection = window.getSelection();
         if (selection == null) return null;
@@ -286,7 +307,7 @@ private fun getSelectionRange(element: HTMLElement): JsArray<JsNumber>? = js(
                 var composedRanges = selection.getComposedRanges({ shadowRoots: [root] });
                 if (composedRanges.length > 0) {
                     var firstRange = composedRanges[0];
-                    return [firstRange.startOffset, firstRange.endOffset];
+                    return firstRange;
                 }
                 return null;
             } catch (e) {
@@ -294,7 +315,7 @@ private fun getSelectionRange(element: HTMLElement): JsArray<JsNumber>? = js(
                 var composedRanges = selection.getComposedRanges(root);
                 if (composedRanges.length > 0) {
                     var firstRange = composedRanges[0];
-                    return [firstRange.startOffset, firstRange.endOffset];
+                    return firstRange;
                 }
                 return null;
             }
@@ -305,14 +326,14 @@ private fun getSelectionRange(element: HTMLElement): JsArray<JsNumber>? = js(
             if (rootSelection == null) return [0, 0];
             if (rootSelection.rangeCount > 0) {
                 var rootRange = rootSelection.getRangeAt(0);
-                return [rootRange.startOffset, rootRange.endOffset];
+                return rootRange;
             }
             return null;
         }
 
         if (selection.rangeCount > 0) {
             var selectionRange = selection.getRangeAt(0);
-            return [selectionRange.startOffset, selectionRange.endOffset];
+            return selectionRange;
         }
         return null;
     }"""
