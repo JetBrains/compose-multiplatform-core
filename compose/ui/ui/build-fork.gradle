@@ -232,7 +232,7 @@ androidXMultiplatform {
                 implementation(libs.mockitoCore4)
                 implementation(libs.mockitoKotlin)
                 implementation(libs.mockitoKotlin4)
-                implementation(libs.skikoCurrentOs)
+                implementation(libs.skikoAwtRuntime)
                 implementation(libs.kotlinCoroutinesSwing)
                 implementation(libs.kotlinCoroutinesTest)
                 implementation(project(":compose:material:material"))

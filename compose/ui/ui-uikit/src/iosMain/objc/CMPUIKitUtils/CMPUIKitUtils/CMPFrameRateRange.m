@@ -14,16 +14,18 @@
  * limitations under the License.
  */
 
+#import "CMPFrameRateRange.h"
+#import <QuartzCore/QuartzCore.h>
 
+@implementation CMPFrameRateRangeDefault
 
-body::after {
-	content: "Wasm";
-	position: fixed;
-	top: 4px;
-	right: 4px;
-	font-family: monospace;
-	font-size: 15px;
-	color: #AAA;
-	pointer-events: none;
-	z-index: 9999;
++ (float)preferred {
+    if (@available(iOS 15.0, *)) {
+        return CAFrameRateRangeDefault.preferred;
+    } else {
+        // `preferredFramesPerSecond = 0` is CADisplayLink's documented default
+        return 0.0f;
+    }
 }
+
+@end

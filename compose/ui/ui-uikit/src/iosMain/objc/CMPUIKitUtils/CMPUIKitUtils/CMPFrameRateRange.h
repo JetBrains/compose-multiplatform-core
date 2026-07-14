@@ -14,16 +14,18 @@
  * limitations under the License.
  */
 
+#import <Foundation/Foundation.h>
 
+NS_ASSUME_NONNULL_BEGIN
 
-body::after {
-	content: "Wasm";
-	position: fixed;
-	top: 4px;
-	right: 4px;
-	font-family: monospace;
-	font-size: 15px;
-	color: #AAA;
-	pointer-events: none;
-	z-index: 9999;
-}
+@interface CMPFrameRateRangeDefault : NSObject
+
+- (instancetype)init NS_UNAVAILABLE;
++ (instancetype)new NS_UNAVAILABLE;
+
+/// Returns the default preferred frame rate for CADisplayLink on the current OS version.
+@property (class, nonatomic, readonly) float preferred;
+
+@end
+
+NS_ASSUME_NONNULL_END

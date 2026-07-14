@@ -63,7 +63,7 @@ private fun ExampleLazyColumn() {
         }
     }
     LazyColumn(Modifier.fillMaxSize(), state = state) {
-        items(100) {
+        items(100000) {
             Box(Modifier.size(100.dp).background(remember { Color(Random.nextInt()) })) {
                 Text("I = $it")
             }
@@ -74,12 +74,14 @@ private fun ExampleLazyColumn() {
 @Composable
 private fun ExampleLazyGrid() {
     LazyVerticalGrid(GridCells.Fixed(3), Modifier.fillMaxSize()) {
-        items(100) {
+        items(100000) {
             Box(
                 Modifier.fillMaxWidth()
                     .aspectRatio(1f)
                     .background(remember { Color(Random.nextInt()) })
-            )
+            ){
+                Text("$it", Modifier.align(Alignment.Center))
+            }
         }
     }
 }
@@ -89,7 +91,7 @@ private data class StaggeredGridItem(val color: Color, val height: Dp)
 @Composable
 private fun ExampleStaggeredGrid() {
     val items: List<StaggeredGridItem> = remember {
-        List(100) {
+        List(100000) {
             StaggeredGridItem(color = Color(Random.nextInt()), height = Random.nextInt(100, 200).dp)
         }
     }
@@ -99,7 +101,9 @@ private fun ExampleStaggeredGrid() {
                 Modifier.fillMaxSize()
                     .height(it.height)
                     .background(it.color)
-            )
+            ){
+                Text("$it", Modifier.align(Alignment.Center))
+            }
         }
     }
 }
@@ -113,8 +117,8 @@ private fun ExampleTwoDirectionsAndRTL() {
         Color.Gray
     )
 
-    val rows = 20
-    val columns = 20
+    val rows = 10000
+    val columns = 10000
 
     val rowHeight = 200.dp
 
