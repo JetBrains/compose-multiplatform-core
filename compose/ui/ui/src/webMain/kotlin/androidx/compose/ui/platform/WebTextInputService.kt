@@ -79,8 +79,6 @@ internal abstract class WebTextInputService :
                 override fun sendEditCommand(commands: List<EditCommand>) {
                     onEditCommand(commands)
                 }
-
-                override fun currentTextLayoutResult() = request.textLayoutResult()
             },
             inputContainer = backingDomInputContainer,
         )
