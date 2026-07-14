@@ -17,6 +17,7 @@
 #import "CMPViewController.h"
 #import <objc/runtime.h>
 #import "CMPComposeContainerLifecycleState.h"
+#import "CMPContainerView.h"
 
 #pragma mark - UIViewController + CMPUIKitUtilsPrivate
 
@@ -103,26 +104,51 @@
     }
 }
 
-- (void)viewWillAppear:(BOOL)animated {
-    [self transitLifecycleToStarted];
-
-    [super viewWillAppear:animated];
-    [_lifecycleDelegate composeContainerWillAppear];
-    _isViewAppeared = YES;
+- (void)loadView {
+    self.view = [[CMPContainerView alloc] initWithFrame:CGRectZero];
 }
 
-- (void)viewDidAppear:(BOOL)animated {
-    // In some cases viewWillAppear may not be called for the view controller.
-    // The code in the viewDidAppear used as a backup scenario for this case.
+- (void)viewDidLoad {
+    [super viewDidLoad];
 
-    [self transitLifecycleToStarted];
+    if (![self.view isKindOfClass:[CMPContainerView class]]) {
+        [NSException raise:NSInternalInconsistencyException
+                    format:@"CMPViewController's view must be a kind of CMPContainerView, but was %@", [self.view class]];
+    }
 
-    [super viewDidAppear:animated];
+    __weak typeof(self) weakSelf = self;
+    CMPContainerView *containerView = (CMPContainerView *)self.view;
+    containerView.onDidMoveToWindowBlock = ^{
+        [weakSelf onDidMoveToWindow];
+    };
+}
 
+- (void)viewWillAppear:(BOOL)animated {
+    [super viewWillAppear:animated];
+
+    [self notifyContainerWillAppearIfNeeded];
+}
+
+- (void)onDidMoveToWindow {
+    if (self.view.window != nil) {
+        [self transitLifecycleToStarted];
+        [self notifyContainerWillAppearIfNeeded];
+    }
+}
+
+- (void)notifyContainerWillAppearIfNeeded {
     if (!_isViewAppeared) {
         _isViewAppeared = YES;
         [_lifecycleDelegate composeContainerWillAppear];
     }
+}
+
+- (void)viewDidAppear:(BOOL)animated {
+    [super viewDidAppear:animated];
+
+    // In some cases viewWillAppear may not be called for the view controller.
+    // The code in the viewDidAppear used as a backup scenario for this case.
+    [self onDidMoveToWindow];
 }
 
 - (void)viewDidDisappear:(BOOL)animated {
