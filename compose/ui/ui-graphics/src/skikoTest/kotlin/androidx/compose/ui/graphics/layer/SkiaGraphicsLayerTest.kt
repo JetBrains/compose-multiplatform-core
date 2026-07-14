@@ -45,6 +45,7 @@ import androidx.compose.ui.unit.toIntSize
 import androidx.compose.ui.unit.toOffset
 import androidx.compose.ui.unit.toSize
 import kotlin.math.roundToInt
+import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -52,6 +53,7 @@ import kotlin.test.assertTrue
 import org.jetbrains.skia.IRect
 import org.jetbrains.skia.Surface
 
+// Adopted copy from AndroidGraphicsLayerTest
 @OptIn(InternalComposeUiApi::class)
 class SkiaGraphicsLayerTest {
 
@@ -688,8 +690,6 @@ class SkiaGraphicsLayerTest {
             block = { graphicsContext ->
                 layer =
                     graphicsContext.createGraphicsLayer().apply {
-                        compositingStrategy = CompositingStrategy.ModulateAlpha
-                        alpha = 0.5f
                         record {
                             inset(0f, 0f, size.width / 3, size.height / 3) {
                                 drawRect(color = Color.Red)
@@ -698,13 +698,14 @@ class SkiaGraphicsLayerTest {
                                 drawRect(color = Color.Blue)
                             }
                         }
+                        alpha = 0.5f
+                        compositingStrategy = CompositingStrategy.ModulateAlpha
                     }
                 drawRect(bgColor)
                 drawLayer(layer!!)
             },
             verify = { pixelMap ->
                 with(pixelMap) {
-                    println("Pixmap size: " + this.width + " height: " + this.height)
                     val redWithAlpha = Color.Red.copy(alpha = 0.5f)
                     val blueWithAlpha = Color.Blue.copy(alpha = 0.5f)
                     val bg = Color.Black

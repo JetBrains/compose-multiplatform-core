@@ -31,8 +31,6 @@ import org.jetbrains.kotlin.gradle.targets.jvm.tasks.KotlinJvmTest
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.jetbrains.kotlin.konan.target.Family
 
-import static androidx.inspection.gradle.InspectionPluginKt.packageInspector
-
 plugins {
     id("AndroidXPlugin")
     id("AndroidXComposePlugin")
@@ -234,7 +232,7 @@ androidXMultiplatform {
                 implementation(libs.mockitoCore4)
                 implementation(libs.mockitoKotlin)
                 implementation(libs.mockitoKotlin4)
-                implementation(libs.skikoCurrentOs)
+                implementation(libs.skikoAwtRuntime)
                 implementation(libs.kotlinCoroutinesSwing)
                 implementation(libs.kotlinCoroutinesTest)
                 implementation(project(":compose:material:material"))
@@ -289,7 +287,6 @@ androidXMultiplatform {
 
         wasmJsMain.dependencies {
             implementation(libs.skikoWasmJs)
-            implementation(libs.skikoJsWasmRuntime)
         }
 
         // TODO: Align it with AOSP or make explicit
@@ -314,14 +311,6 @@ androidx {
     addGoldenImageAssets()
     enableRobolectric()
     deviceTests.minSdkForFtlOverride = 24 // b/437944630
-}
-
-if (!ProjectLayoutType.isPlayground(project)) {
-    androidComponents {
-        onVariants(selector().all(), { variant ->
-            packageInspector(variant, project, project(":compose:ui:ui-inspection"))
-        })
-    }
 }
 
 // This task updates the translations of the localizable strings for the desktopMain target.

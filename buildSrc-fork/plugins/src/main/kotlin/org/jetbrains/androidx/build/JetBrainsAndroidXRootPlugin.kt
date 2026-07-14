@@ -28,7 +28,7 @@ abstract class JetBrainsAndroidXRootPlugin : Plugin<Project> {
         val supportRoot = project.getSupportRootFolder()
         project.apply(
             mapOf<String, String>(
-                "from" to "$supportRoot/buildSrc/apply/applyJetBrainsAndroidXRootImplPlugin.gradle"
+                "from" to "$supportRoot/buildSrc-fork/apply/applyJetBrainsAndroidXRootImplPlugin.gradle"
             )
         )
     }

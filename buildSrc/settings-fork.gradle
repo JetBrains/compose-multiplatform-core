@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 
-rootProject.buildFileName = "../buildSrc-fork/build.gradle"
+rootProject.name = "buildSrc-fork"
+rootProject.buildFileName = "build-fork.gradle"
 
 dependencyResolutionManagement {
     // the default libs.version.toml is automatically registered by Gradle under `libs` name.
@@ -50,11 +51,4 @@ include ":jetpad-integration"
 includeProject(":plugins", "../buildSrc-fork/plugins")
 includeProject(":private", "../buildSrc-fork/private")
 includeProject(":public", "../buildSrc-fork/public")
-includeProject(":imports:binary-compatibility-validator", "../buildSrc-fork/imports/binary-compatibility-validator")
-includeProject(":imports:benchmark-gradle-plugin", "../buildSrc-fork/imports/benchmark-gradle-plugin")
-includeProject(":imports:benchmark-darwin-plugin", "../buildSrc-fork/imports/benchmark-darwin-plugin")
-includeProject(":imports:baseline-profile-gradle-plugin", "../buildSrc-fork/imports/baseline-profile-gradle-plugin")
-includeProject(":imports:inspection-gradle-plugin", "../buildSrc-fork/imports/inspection-gradle-plugin")
-includeProject(":imports:room-gradle-plugin", "../buildSrc-fork/imports/room-gradle-plugin")
-includeProject(":imports:glance-layout-generator", "../buildSrc-fork/imports/glance-layout-generator")
-includeProject(":imports:stableaidl-gradle-plugin", "../buildSrc-fork/imports/stableaidl-gradle-plugin")
+

@@ -30,7 +30,8 @@ Run tests for iOS:
 ./gradlew :mpp:testIos'
 ```
 
-Run iOS instrumented tests.
+Run iOS instrumented tests using CLI:
+
 Note: To ensure the test runs on an iOS simulator with a detached hardware keyboard,
 we must shut down all simulators and update the ConnectHardwareKeyboard flag.
 ```bash
@@ -41,6 +42,17 @@ defaults write com.apple.iphonesimulator ConnectHardwareKeyboard -bool false
 cd compose/ui/ui/src/uikitInstrumentedTest/launcher
 
 xcodebuild test -scheme Launcher -project Launcher.xcodeproj -destination 'platform=iOS Simulator,name=iPhone 16'
+```
+
+Run configured iOS instrumented tests from IDE or using CLI:
+
+1. Choose which tests to run in [Configuration.kt](https://github.com/JetBrains/compose-multiplatform-core/blob/jb-main/compose/ui/ui/src/uikitInstrumentedTest/kotlin/androidx/compose/ui/Configuration.kt) or leave `setupXCTestSuite(...)` empty to run the full instrumented suite.
+2. Update the configuration values in `ios-instrumented-tests.sh` when you need a different simulator, OS version, number of iterations,...
+3. Run the instrumented tests:
+   - from the IDE run configuration `iOS Instrumented Tests`
+   - or using CLI from the repository root:
+```bash
+./compose/ui/ui/src/uikitInstrumentedTest/launcher/ios-instrumented-tests.sh
 ```
 
 ### API checks

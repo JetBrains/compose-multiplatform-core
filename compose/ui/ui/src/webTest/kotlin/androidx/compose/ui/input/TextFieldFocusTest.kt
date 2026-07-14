@@ -44,7 +44,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import kotlinx.coroutines.yield
-import org.w3c.dom.HTMLInputElement
+import org.w3c.dom.HTMLSpanElement
 import org.w3c.dom.events.Event
 import org.w3c.dom.events.KeyboardEvent
 import org.w3c.dom.pointerevents.PointerEvent
@@ -56,10 +56,10 @@ class TextFieldFocusTest : OnCanvasTests {
     fun canMoveFocusForwardAndBackUsingTab() = runApplicationTest {
         val focusRequester = FocusRequester()
 
-        suspend fun waitForSingleLineHtmlInput(): HTMLInputElement {
+        suspend fun waitForSingleLineHtmlInput(): HTMLSpanElement {
             while (true) {
-                val element = getShadowRoot().querySelector("input")
-                if (element is HTMLInputElement) {
+                val element = getShadowRoot().querySelector("span.compose-backing-field")
+                if (element is HTMLSpanElement) {
                     return element
                 }
                 yield()
