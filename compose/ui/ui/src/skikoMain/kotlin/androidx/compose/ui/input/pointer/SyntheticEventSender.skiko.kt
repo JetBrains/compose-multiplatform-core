@@ -20,8 +20,6 @@ import androidx.collection.LongLongMap
 import androidx.collection.MutableLongList
 import androidx.collection.MutableLongSet
 import androidx.collection.buildLongLongMap
-import androidx.collection.buildLongSet
-import androidx.collection.mutableLongSetOf
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.isSpecified
 import androidx.compose.ui.scene.PointerEventResult
@@ -142,7 +140,7 @@ internal class SyntheticEventSender(
         // modifiers as the previous event.
         // Note that missing move events for this event should have already been sent
         fun areSameParams(e1: PointerInputEvent, e2: PointerInputEvent): Boolean {
-            if (e1.pressedIds() != e2.pressedIds()) return false
+            if (e1.pressedIdsAsSet() != e2.pressedIdsAsSet()) return false
             if (e1.buttons != e2.buttons) return false
             if (e1.keyboardModifiers != e2.keyboardModifiers) return false
             return true
@@ -226,8 +224,9 @@ internal class SyntheticEventSender(
     private fun sendMissingReleases(currentEvent: PointerInputEvent): PointerEventResult {
         val previousEvent = previousEvent ?: return UnconsumedEventResult
         val previousPressed = previousEvent.pressedIds()
-        val currentPressed = currentEvent.pressedIds()
+        val currentPressed = currentEvent.pressedIdsAsSet()
         val newReleased = previousPressed - currentPressed
+        if (newReleased.isEmpty()) return UnconsumedEventResult
         val sendingAsUp = PointerIdSet(newReleased.size)
 
         var result = UnconsumedEventResult
@@ -256,9 +255,10 @@ internal class SyntheticEventSender(
     }
 
     private fun sendMissingPresses(currentEvent: PointerInputEvent): PointerEventResult {
-        val previousPressed = previousEvent?.pressedIds()?.toSet() ?: mutableLongSetOf()
+        val previousPressed = previousEvent?.pressedIdsAsSet()
         val currentPressed = currentEvent.pressedIds()
         val newPressed = currentPressed - previousPressed
+        if (newPressed.isEmpty()) return UnconsumedEventResult
         val sendingAsDown = PointerIdSet(newPressed.size)
 
         var result = UnconsumedEventResult
@@ -275,7 +275,7 @@ internal class SyntheticEventSender(
                     type = PointerEventType.Press,
                     copyPointer = {
                         it.copySynthetic(
-                            down = previousPressed.contains(it.id) || sendingAsDown.contains(it.id)
+                            down = previousPressed?.contains(it.id) == true || sendingAsDown.contains(it.id)
                         )
                     }
                 )
@@ -425,16 +425,13 @@ private fun PointerInputEvent.pressedIds(): PointerIdList {
     return target
 }
 
-private operator fun PointerIdList.minus(elements: PointerIdList): PointerIdList =
-    when {
-        elements.isEmpty() -> this
-        elements.size > 16 -> {
-            //Optimizing for when the element list is large, converting to a Set is cheaper than repeated O(N) contains checks
-            val set = elements.toSet()
-            filter { it !in set }
-        }
-        else -> filter { it !in elements }
+private fun PointerInputEvent.pressedIdsAsSet(): PointerIdSet {
+    val target = MutableLongSet(pointers.size)
+    pointers.fastForEach {
+        if (it.down) target += it.id.value
     }
+    return target
+}
 
 private inline fun PointerIdList.filter(predicate: (Long) -> Boolean): PointerIdList {
     val target = MutableLongList(size)
@@ -445,11 +442,8 @@ private inline fun PointerIdList.filter(predicate: (Long) -> Boolean): PointerId
 @Suppress("NOTHING_TO_INLINE")
 private inline operator fun PointerIdSet.contains(id: PointerId): Boolean = contains(id.value)
 
-private fun PointerIdList.toSet(): PointerIdSet = buildLongSet(size) {
-    this@toSet.forEach { add(it) }
-} as PointerIdSet //Safe cast
-
-internal operator fun PointerIdList.minus(elements: PointerIdSet): PointerIdList {
+internal operator fun PointerIdList.minus(elements: PointerIdSet?): PointerIdList {
+    if (elements == null) return this
     if (elements.isEmpty()) return this
     return filter { it !in elements }
 }
