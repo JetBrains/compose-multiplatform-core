@@ -289,11 +289,33 @@ internal abstract class TextInputConnection(
 
     override fun updateFloatingCursor(offset: DpOffset) {
         val translation = floatingCursorTranslation ?: return
-        val offsetPx = offset.toOffset(view.density)
-        val pos = textLayoutResult?.getOffsetForPosition(offsetPx + translation) ?: return
+        val layout = textLayoutResult ?: return
+
+        val fingerPx = offset.toOffset(view.density)
+        val virtualCursorPx = fingerPx + translation
+        val cursorOffset = layout.getOffsetForPosition(virtualCursorPx)
+
+
+        val line = layout.getLineForOffset(cursorOffset)
+        val lineLeft = layout.getLineLeft(line)
+        val lineRight = layout.getLineRight(line)
+        val textTop = layout.getLineTop(0)
+        val textBottom = layout.getLineBottom(layout.lineCount - 1)
+
+        val boundedX = virtualCursorPx.x.coerceIn(lineLeft, lineRight)
+        val boundedY = virtualCursorPx.y.coerceIn(textTop, textBottom)
+        val outOfBoundsX = virtualCursorPx.x != boundedX
+        val outOfBoundsY = virtualCursorPx.y != boundedY
+
+        if (outOfBoundsX || outOfBoundsY) {
+            floatingCursorTranslation = Offset(
+                x = if (outOfBoundsX) boundedX - fingerPx.x else translation.x,
+                y = if (outOfBoundsY) boundedY - fingerPx.y else translation.y,
+            )
+        }
 
         edit(requireUpdateView = false) {
-            setSelection(pos, pos)
+            setSelection(cursorOffset, cursorOffset)
         }
     }
 
