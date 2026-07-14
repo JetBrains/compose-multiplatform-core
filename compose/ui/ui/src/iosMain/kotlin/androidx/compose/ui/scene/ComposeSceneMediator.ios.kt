@@ -52,6 +52,7 @@ import androidx.compose.ui.platform.DefaultInputModeManager
 import androidx.compose.ui.platform.FrameRecomposer
 import androidx.compose.ui.platform.PlatformArchitectureComponentsOwner
 import androidx.compose.ui.platform.PlatformContext
+import androidx.compose.ui.platform.PlatformScreenReader
 import androidx.compose.ui.platform.PlatformTextInputMethodRequest
 import androidx.compose.ui.platform.PlatformWindowContext
 import androidx.compose.ui.platform.UIKitIdleTimerManager
@@ -75,7 +76,6 @@ import androidx.compose.ui.input.pointer.isMetaPressed
 import androidx.compose.ui.input.pointer.isShiftPressed
 import androidx.compose.ui.platform.Clipboard
 import androidx.compose.ui.platform.ClipboardManager
-import androidx.compose.ui.platform.PlatformAccessibilityManager
 import androidx.compose.ui.platform.createPlatformClipboard
 import androidx.compose.ui.platform.createPlatformClipboardManager
 import androidx.compose.ui.unit.Density
@@ -209,17 +209,8 @@ internal class ComposeSceneMediator(
 
     private var onKeyEvent: (KeyEvent) -> Boolean = { false }
     private var animateKeyboardOffsetChanges by mutableStateOf(false)
-    private var platformAccessibilityManager = object : PlatformAccessibilityManager {
-        var isActive by mutableStateOf(false)
-        override val isScreenReaderActive: Boolean
-            get() = isActive
-
-        override fun calculateRecommendedTimeoutMillis(
-            originalTimeoutMillis: Long,
-            containsIcons: Boolean,
-            containsText: Boolean,
-            containsControls: Boolean
-        ): Long = originalTimeoutMillis
+    private var platformScreenReader = object : PlatformScreenReader {
+        override var isActive by mutableStateOf(false)
     }
 
     private val coroutineScope = CoroutineScope(coroutineContext)
@@ -386,7 +377,7 @@ internal class ComposeSceneMediator(
 
                 down || up
             },
-            onScreenReaderActive = { platformAccessibilityManager.isActive = it }
+            onScreenReaderActive = { platformScreenReader.isActive = it }
         )
     }
 
@@ -858,9 +849,7 @@ internal class ComposeSceneMediator(
     private inner class PlatformContextImpl : PlatformContext {
         override val windowInfo: WindowInfo get() = windowContext.windowInfo
         override val architectureComponentsOwner get() = this@ComposeSceneMediator.architectureComponentsOwner
-
-        override val accessibilityManager: PlatformAccessibilityManager
-            get() = platformAccessibilityManager
+        override val screenReader: PlatformScreenReader get() = platformScreenReader
 
         override val hapticFeedback: HapticFeedback by lazy(LazyThreadSafetyMode.NONE) {
             CupertinoHapticFeedback()

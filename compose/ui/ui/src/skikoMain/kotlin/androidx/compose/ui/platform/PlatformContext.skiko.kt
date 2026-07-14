@@ -65,6 +65,11 @@ interface PlatformContext {
     val windowInfo: WindowInfo
 
     /**
+     * The value that will be provided to [LocalPlatformScreenReader] by default.
+     */
+    val screenReader: PlatformScreenReader get() = EmptyPlatformScreenReader
+
+    /**
      * Provider of platform owners such as [LifecycleOwner] or [ViewModelStoreOwner].
      */
     val architectureComponentsOwner: PlatformArchitectureComponentsOwner get() = EmptyArchitectureComponentsOwner
@@ -214,7 +219,7 @@ interface PlatformContext {
      */
     val prefetchScheduler: PlatformPrefetchScheduler get() = NoOpPlatformPrefetchScheduler
 
-    val accessibilityManager: PlatformAccessibilityManager get() = NoOpPlatformAccessibilityManager
+    val accessibilityManager: AccessibilityManager get() = NoOpAccessibilityManager
 
     val clipboard : Clipboard
 
@@ -310,7 +315,11 @@ interface PlatformContext {
     }
 }
 
-private object NoOpPlatformAccessibilityManager : PlatformAccessibilityManager {
+private object EmptyPlatformScreenReader : PlatformScreenReader {
+    override val isActive: Boolean = false
+}
+
+private object NoOpAccessibilityManager : AccessibilityManager {
     override fun calculateRecommendedTimeoutMillis(
         originalTimeoutMillis: Long,
         containsIcons: Boolean,
@@ -318,8 +327,6 @@ private object NoOpPlatformAccessibilityManager : PlatformAccessibilityManager {
         containsControls: Boolean
     ): Long = originalTimeoutMillis
 
-    override val isScreenReaderActive: Boolean
-        get() = false
 }
 
 private object NoOpPlatformPrefetchScheduler : PlatformPrefetchScheduler {

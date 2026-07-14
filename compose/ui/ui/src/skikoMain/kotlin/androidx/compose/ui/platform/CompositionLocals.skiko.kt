@@ -39,6 +39,14 @@ import androidx.savedstate.compose.LocalSavedStateRegistryOwner
 )
 actual val LocalLifecycleOwner get() = androidx.lifecycle.compose.LocalLifecycleOwner
 
+/**
+ * The CompositionLocal that provides information about Screen Reader state associated with
+ * the current scene.
+ */
+@InternalComposeUiApi
+val LocalPlatformScreenReader = staticCompositionLocalOf<PlatformScreenReader> {
+    error("CompositionLocal LocalPlatformScreenReader not present")
+}
 
 // TODO: Remove as part of https://youtrack.jetbrains.com/issue/CMP-9379
 /**
@@ -83,6 +91,7 @@ internal fun ProvidePlatformCompositionLocals(
 
     CompositionLocalProvider(
         *values,
+        LocalPlatformScreenReader provides platformContext.screenReader,
         LocalPlatformWindowInsets provides platformContext.windowInsets,
         LocalPlatformPrefetchScheduler provides platformContext.prefetchScheduler,
         androidx.lifecycle.compose.LocalLifecycleOwner provides platformContext.architectureComponentsOwner.lifecycleOwner,
