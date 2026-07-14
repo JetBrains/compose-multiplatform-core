@@ -28,7 +28,6 @@ import androidx.build.PlatformIdentifier
 plugins {
     id("AndroidXPlugin")
     id("AndroidXComposePlugin")
-    id("JetBrainsAndroidXPlugin")
 }
 
 androidXMultiplatform {
@@ -36,20 +35,16 @@ androidXMultiplatform {
         namespace = "androidx.compose.material3.adaptive.navigationsuite"
         compileSdk { version = release(37) }
     }
-    desktop()
-    mac()
-    ios()
-    js()
-    wasmJs()
+    jvmStubs()
 
     defaultPlatform(PlatformIdentifier.ANDROID)
 
     sourceSets {
         commonMain {
             dependencies {
-                api(project(":compose:material3:material3"))
-                api("org.jetbrains.compose.material3.adaptive:adaptive:1.2.0")
-                implementation("org.jetbrains.androidx.window:window-core:1.4.0")
+                api("androidx.compose.material3:material3:1.4.0")
+                api("androidx.compose.material3.adaptive:adaptive:1.2.0")
+                implementation("androidx.window:window-core:1.4.0")
             }
         }
 
@@ -80,42 +75,6 @@ androidXMultiplatform {
             implementation(libs.truth)
             implementation(project(":compose:ui:ui"))
             implementation(project(":window:window-core"))
-        }
-
-        // TODO: Align naming: nonAndroidMain
-        skikoMain {
-            dependsOn(commonMain)
-        }
-
-        skikoTest {
-            dependsOn(commonTest)
-            dependencies {
-                implementation(project(":kruth:kruth"))
-            }
-        }
-
-        desktopMain {
-            dependsOn(skikoMain)
-        }
-
-        desktopTest {
-            dependsOn(skikoTest)
-        }
-
-        nativeMain {
-            dependsOn(skikoMain)
-        }
-
-        nativeTest {
-            dependsOn(skikoTest)
-        }
-
-        webMain {
-            dependsOn(skikoMain)
-        }
-
-        webTest {
-            dependsOn(skikoTest)
         }
     }
 }

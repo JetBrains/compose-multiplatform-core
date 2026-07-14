@@ -27,7 +27,6 @@ import androidx.build.PlatformIdentifier
 plugins {
     id("AndroidXPlugin")
     id("AndroidXComposePlugin")
-    id("JetBrainsAndroidXPlugin")
 }
 
 androidXMultiplatform {
@@ -35,7 +34,7 @@ androidXMultiplatform {
         namespace = "androidx.compose.ui.tooling.data"
         compileSdk { version = release(37) }
     }
-    desktop()
+    jvmStubs()
 
     defaultPlatform(PlatformIdentifier.ANDROID)
 

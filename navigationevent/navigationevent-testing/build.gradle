@@ -26,7 +26,6 @@ import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
-    id("JetBrainsAndroidXPlugin")
 }
 
 androidXMultiplatform {
@@ -47,10 +46,8 @@ androidXMultiplatform {
     defaultPlatform(PlatformIdentifier.ANDROID)
 
     sourceSets {
-        def navigationEventVersion = project.redirectVersions.get('androidx.navigationevent')
-
         commonMain.dependencies {
-            implementation("androidx.navigationevent:navigationevent:$navigationEventVersion")
+            api(project(":navigationevent:navigationevent"))
         }
     }
 }
