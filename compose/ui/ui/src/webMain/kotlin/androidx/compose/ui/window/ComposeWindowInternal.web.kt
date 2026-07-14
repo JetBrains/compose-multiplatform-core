@@ -56,29 +56,29 @@ import androidx.compose.ui.internal.focusExt
 import androidx.compose.ui.navigationevent.BackNavigationEventInput
 import androidx.compose.ui.platform.DefaultArchitectureComponentsOwner
 import androidx.compose.ui.platform.EmptyPlatformWindowInsets
+import androidx.compose.ui.platform.FrameRecomposer
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.PlatformDragAndDropManager
+import androidx.compose.ui.platform.PlatformOutOfFrameExecutor
+import androidx.compose.ui.platform.PlatformPrefetchScheduler
 import androidx.compose.ui.platform.PlatformTextInputMethodRequest
 import androidx.compose.ui.platform.TextToolbar
 import androidx.compose.ui.platform.ViewConfiguration
-import androidx.compose.ui.platform.WebOutOfFrameExecutor
 import androidx.compose.ui.platform.WebHapticFeedback
 import androidx.compose.ui.platform.WebMediaEnvironment
+import androidx.compose.ui.platform.WebOutOfFrameExecutor
+import androidx.compose.ui.platform.WebPrefetchScheduler
 import androidx.compose.ui.platform.WebTextInputService
 import androidx.compose.ui.platform.WebTextToolbar
 import androidx.compose.ui.platform.WebWakeLockManager
 import androidx.compose.ui.platform.WebWindowInsetsManager
 import androidx.compose.ui.platform.WindowInfoImpl
 import androidx.compose.ui.platform.accessibility.ComposeWebSemanticsListener
-import androidx.compose.ui.platform.isPostingTasksSupported
 import androidx.compose.ui.platform.installFallbackFontDownloader
 import androidx.compose.ui.platform.isIdleCallbackApiSupported
+import androidx.compose.ui.platform.isPostingTasksSupported
 import androidx.compose.ui.platform.isVibrationApiSupported
 import androidx.compose.ui.scene.CanvasLayersComposeScene
-import androidx.compose.ui.platform.FrameRecomposer
-import androidx.compose.ui.platform.PlatformOutOfFrameExecutor
-import androidx.compose.ui.platform.PlatformPrefetchScheduler
-import androidx.compose.ui.platform.WebPrefetchScheduler
 import androidx.compose.ui.scene.ComposeSceneDragAndDropNode
 import androidx.compose.ui.scene.ComposeScenePointer
 import androidx.compose.ui.scene.PointerEventResult
@@ -99,13 +99,9 @@ import androidx.compose.ui.viewinterop.TrackInteropPlacementContainer
 import androidx.compose.ui.viewinterop.WebInteropContainer
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.enableSavedStateHandles
-import kotlin.js.ExperimentalWasmJsInterop
-import kotlin.js.js
 import kotlinx.browser.document
 import kotlinx.browser.window
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.Channel.Factory.CONFLATED
 import kotlinx.coroutines.coroutineScope
 import org.jetbrains.skiko.SkiaLayer
 import org.jetbrains.skiko.SkikoRenderDelegate
@@ -277,7 +273,7 @@ internal class ComposeWindow(
                 object : ViewConfiguration by PlatformContext.DefaultViewConfiguration {
                     // Aligning the touchSlop value with the Android default:
                     // https://android.googlesource.com/platform/frameworks/base/+/master/core/java/android/view/ViewConfiguration.java?pli=1#191
-                    override val touchSlop: Float get() = with(webMediaEnvironment.systemDensit) { 8.dp.toPx() }
+                    override val touchSlop: Float get() = with(webMediaEnvironment.systemDensity) { 8.dp.toPx() }
                     override val maximumFlingVelocity: Float
                         //https://cs.android.com/android/platform/superproject/+/android-latest-release:frameworks/base/core/java/android/view/ViewConfiguration.java;l=240;drc=733537294b158d22f2ae383f2ed77c93741798e9
                         get() = with(webMediaEnvironment.systemDensity) { 8000.dp.toPx() }
