@@ -59,20 +59,24 @@ fun main() {
     ExperimentalBrowserHistoryApi::class
 )
 fun defaultComposeDemo() {
-    ComposeViewport(viewportContainerId = "composeApplication") {
+    ComposeViewport {
         val navController = rememberNavController()
         val fontFamilyResolver = LocalFontFamilyResolver.current
         val fontsLoaded = remember { mutableStateOf(false) }
-        val app = remember { App(
-            extraScreens = listOf(
-                BugsScreen,
-                Screen.Example("Web Clipboard API example") {
-                    WebClipboardDemo()
-                },
-                HtmlInteropDemos,
-                HapticFeedbackExample,
-            )
-        ) }
+        val app =
+            remember {
+                App(
+                    extraScreens =
+                        listOf(
+                            BugsScreen,
+                            Screen.Example("Web Clipboard API example") {
+                                WebClipboardDemo()
+                            },
+                            HtmlInteropDemos,
+                            HapticFeedbackExample,
+                        ),
+                )
+            }
 
         if (fontsLoaded.value) {
             app.Content(navController)
