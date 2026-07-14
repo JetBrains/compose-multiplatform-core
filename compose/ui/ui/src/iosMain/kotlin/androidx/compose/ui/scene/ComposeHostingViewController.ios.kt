@@ -90,10 +90,6 @@ internal class ComposeHostingViewController(
         container.updateUserInterfaceStyle(traitCollection.userInterfaceStyle)
     }
 
-    override fun safeAreaInsetsDidUpdate() {
-        container.onSafeAreaInsetsDidChange()
-    }
-
     override fun viewWillTransitionToSize(
         size: CValue<CGSize>,
         withTransitionCoordinator: UIViewControllerTransitionCoordinatorProtocol

@@ -322,9 +322,9 @@ internal class ComposeSceneMediator(
         getComposeRootDragAndDropNode = { scene.rootDragAndDropNode },
     )
 
-    // Insets are read from the host view only. Adding `window.rootViewController.view`
-    // (the union introduced in #2946 for CMP-9931) over-reports when CMP is positioned
-    // below window-level chrome that does not intersect `_overlayView`.
+    // Read insets from the host view only: a per-edge union with the window's root view would
+    // report window-level chrome that does not intersect this view (e.g. when the host is
+    // positioned below the status bar by its parent).
     private val windowInsetsManager = UIKitWindowInsetsManager(
         windowInsetsViews = listOf({ _overlayView }),
         interfaceOrientation = interfaceOrientationState
