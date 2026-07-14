@@ -29,16 +29,20 @@ import androidx.compose.ui.unit.Dp
 import org.jetbrains.skiko.SystemTheme
 import androidx.compose.ui.uikit.utils.CMPKeyValueObserver
 import androidx.compose.ui.uikit.utils.CMPUIWindowSceneUtils
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.KeyboardVisibilityListener
+import androidx.compose.ui.window.KeyboardVisibilityObserver
 import kotlinx.cinterop.BetaInteropApi
 import kotlinx.cinterop.CPointed
 import kotlinx.cinterop.CPointer
+import kotlinx.cinterop.CValue
 import kotlinx.cinterop.ObjCAction
+import kotlinx.cinterop.useContents
 import platform.AVFoundation.AVCaptureDevice
 import platform.AVFoundation.AVCaptureDeviceWasConnectedNotification
 import platform.AVFoundation.AVCaptureDeviceWasDisconnectedNotification
 import platform.AVFoundation.AVMediaTypeAudio
 import platform.AVFoundation.AVMediaTypeVideo
+import platform.CoreGraphics.CGRect
 import platform.Foundation.NSKeyValueObservingOptionNew
 import platform.Foundation.NSNotification
 import platform.Foundation.NSNotificationCenter
@@ -47,10 +51,11 @@ import platform.Foundation.addObserver
 import platform.Foundation.removeObserver
 import platform.darwin.NSObject
 import platform.UIKit.UIUserInterfaceStyle
+import platform.UIKit.UIViewAnimationOptions
 import platform.UIKit.UIWindow
 import platform.UIKit.UIWindowScene
 
-internal class MediaEnvironment(val windowInfo: WindowInfo) : PlatformMediaEnvironment {
+internal class MediaEnvironment(val windowInfo: WindowInfo) : PlatformMediaEnvironment, KeyboardVisibilityObserver {
 
     private var window: UIWindow? = null
     /*
@@ -64,7 +69,7 @@ internal class MediaEnvironment(val windowInfo: WindowInfo) : PlatformMediaEnvir
 
     private val systemDensityState: MutableState<Density> = mutableStateOf(window?.density ?: Density(1f))
 
-    private val isImeShowing = mutableStateOf(false)
+    private val isImeShowing = mutableStateOf(KeyboardVisibilityListener.keyboardFrame.useContents { size.height > 0 })
     private val pointerPrecisionState: MutableState<UiMediaScope.PointerPrecision> = mutableStateOf(
         UiMediaScope.PointerPrecision.Coarse
     )
@@ -97,10 +102,6 @@ internal class MediaEnvironment(val windowInfo: WindowInfo) : PlatformMediaEnvir
     fun updatePointerPrecision(precision: UiMediaScope.PointerPrecision) {
         pointerPrecisionState.value = precision
     }
-    private val zeroDP = 0.dp
-    fun onKeyboardOverlapHeightChanged(height: Dp) {
-        isImeShowing.value = height > zeroDP
-    }
 
     private val currentInterfaceOrientation: InterfaceOrientation?
         get() {
@@ -130,11 +131,13 @@ internal class MediaEnvironment(val windowInfo: WindowInfo) : PlatformMediaEnvir
     fun startObserving() {
         interfaceOrientationObserver.isObservingEnabled = true
         captureDeviceAvailabilityObserver.isObservingEnabled = true
+        KeyboardVisibilityListener.addObserver(this)
     }
 
     fun stopObserving() {
         interfaceOrientationObserver.isObservingEnabled = false
         captureDeviceAvailabilityObserver.isObservingEnabled = false
+        KeyboardVisibilityListener.removeObserver(this)
     }
 
     override val windowPosture: UiMediaScope.Posture
@@ -156,6 +159,30 @@ internal class MediaEnvironment(val windowInfo: WindowInfo) : PlatformMediaEnvir
         get() = hasCameraState.value
     override val viewingDistance: UiMediaScope.ViewingDistance
         get() = UiMediaScope.ViewingDistance.Near
+
+    override fun keyboardWillShow(
+        targetFrame: CValue<CGRect>,
+        duration: Double,
+        animationOptions: UIViewAnimationOptions
+    ) {
+        isImeShowing.value = targetFrame.useContents { size.height > 0 }
+    }
+
+    override fun keyboardWillHide(
+        targetFrame: CValue<CGRect>,
+        duration: Double,
+        animationOptions: UIViewAnimationOptions
+    ) {
+        isImeShowing.value = false //targetFrame is CGRectZero.readValue()
+    }
+
+    override fun keyboardWillChangeFrame(
+        targetFrame: CValue<CGRect>,
+        duration: Double,
+        animationOptions: UIViewAnimationOptions
+    ) {
+        isImeShowing.value = targetFrame.useContents { size.height > 0 }
+    }
 }
 
 

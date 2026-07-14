@@ -395,7 +395,6 @@ internal class ComposeSceneMediator(
         ComposeSceneKeyboardOffsetManager(
             view = _overlayView,
             keyboardOverlapHeightChanged = { height ->
-                mediaEnvironment.onKeyboardOverlapHeightChanged(height)
                 val heightPx = with(screenDensity) { height.roundToPx() }
                 if (windowInsetsManager.keyboardOverlapHeight.value != heightPx) {
                     animateKeyboardOffsetChanges = false
