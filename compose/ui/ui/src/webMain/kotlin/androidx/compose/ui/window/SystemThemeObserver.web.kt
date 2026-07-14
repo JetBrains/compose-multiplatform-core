@@ -18,13 +18,7 @@ package androidx.compose.ui.window
 
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
-import kotlin.js.js
-import kotlinx.browser.window
 import org.jetbrains.skiko.SystemTheme
-import org.w3c.dom.MediaQueryList
-import org.w3c.dom.MediaQueryListEvent
-import org.w3c.dom.Window
-import org.w3c.dom.events.Event
 
 internal interface SystemThemeObserver {
     val currentSystemTheme: State<SystemTheme>
@@ -32,54 +26,27 @@ internal interface SystemThemeObserver {
     fun dispose()
 }
 
-internal class SystemThemeObserverImpl(window : Window) : SystemThemeObserver {
-
+private class SystemThemeObserverImpl : SystemThemeObserver {
     override val currentSystemTheme: State<SystemTheme>
         get() = _currentSystemTheme
 
-    private val media: MediaQueryList by lazy {
-        window.matchMedia("(prefers-color-scheme: dark)")
+    private val mediaQueryListener: MediaQueryListener = object : MediaQueryListener("(prefers-color-scheme: dark)") {
+        override fun onChange(matches: Boolean) {
+            _currentSystemTheme.value = if (matches) SystemTheme.DARK else SystemTheme.LIGHT
+        }
     }
 
     private val _currentSystemTheme = mutableStateOf(
-        when {
-            !isMatchMediaSupported() -> SystemTheme.UNKNOWN
-            media.matches -> SystemTheme.DARK
-            else -> SystemTheme.LIGHT
+        when(mediaQueryListener.matches()) {
+            true -> SystemTheme.DARK
+            false -> SystemTheme.LIGHT
+            else -> SystemTheme.UNKNOWN
         }
     )
 
-    private val listener: (Event) -> Unit = { event ->
-        _currentSystemTheme.value = if ((event as MediaQueryListEvent).matches)
-            SystemTheme.DARK else SystemTheme.LIGHT
-    }
-
     override fun dispose() {
-        if (isMatchMediaSupported()) {
-            try {
-                media.removeEventListener("change", listener)
-            } catch (t : Throwable) {
-                media.removeListener(listener)
-            }
-        }
-    }
-
-    init {
-        if (isMatchMediaSupported()) {
-            try {
-                media.addEventListener("change", listener)
-            } catch (t: Throwable) {
-                media.addListener(listener)
-            }
-        }
+        mediaQueryListener.dispose()
     }
 }
 
-internal fun getSystemThemeObserver(): SystemThemeObserver =
-    SystemThemeObserverImpl(window)
-
-// supported by all browsers since 2015
-// https://developer.mozilla.org/en-US/docs/Web/API/Window/matchMedia
-// Changed from `@JsFun` annotation because in 2.2.20 it's marked as not available on LV = 2.0
-// TODO: Cannot add opt-in with LV = 2.0 due to https://youtrack.jetbrains.com/issue/KT-79716
-private fun isMatchMediaSupported(): Boolean = js("window.matchMedia != undefined")
+internal fun getSystemThemeObserver(): SystemThemeObserver = SystemThemeObserverImpl()
