@@ -59,7 +59,7 @@ fun main() {
     ExperimentalBrowserHistoryApi::class
 )
 fun defaultComposeDemo() {
-    ComposeViewport(viewportContainerId = "composeApplication") {
+    ComposeViewport {
         val navController = rememberNavController()
         val fontFamilyResolver = LocalFontFamilyResolver.current
         val fontsLoaded = remember { mutableStateOf(false) }
