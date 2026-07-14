@@ -74,6 +74,7 @@ fun PointerInputDebugOverlay(
                                     logString("- $idValue")
                                     pointers.value -= idValue
                                 }
+                                change.consume()
                             }
                         }
                     }

@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		55F0AA132F70000100ABC123 /* CMPFrameRateRange.m in Sources */ = {isa = PBXBuildFile; fileRef = 55F0AA122F70000100ABC123 /* CMPFrameRateRange.m */; };
 		99009B7A2F322B4700518C1F /* CMPMetalLayer.m in Sources */ = {isa = PBXBuildFile; fileRef = 99009B792F322B4700518C1F /* CMPMetalLayer.m */; };
 		99009B7B2F322B4700518C1F /* CMPMetalLayer.m in Sources */ = {isa = PBXBuildFile; fileRef = 99009B792F322B4700518C1F /* CMPMetalLayer.m */; };
 		991A97F72E1FB99300B47130 /* CMPScrollView.m in Sources */ = {isa = PBXBuildFile; fileRef = 991A97F62E1FB99300B47130 /* CMPScrollView.m */; };
@@ -82,6 +83,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		55F0AA112F70000100ABC123 /* CMPFrameRateRange.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CMPFrameRateRange.h; sourceTree = "<group>"; };
+		55F0AA122F70000100ABC123 /* CMPFrameRateRange.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = CMPFrameRateRange.m; sourceTree = "<group>"; };
 		99009B782F322B4700518C1F /* CMPMetalLayer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CMPMetalLayer.h; sourceTree = "<group>"; };
 		99009B792F322B4700518C1F /* CMPMetalLayer.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = CMPMetalLayer.m; sourceTree = "<group>"; };
 		991A97F52E1FB99300B47130 /* CMPScrollView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CMPScrollView.h; sourceTree = "<group>"; };
@@ -195,6 +198,8 @@
 				C4C07E842F57037300A9DC94 /* CMPEditMenuCustomAction.m */,
 				99D97A862BF73A9B0035552B /* CMPEditMenuView.h */,
 				99D97A872BF73A9B0035552B /* CMPEditMenuView.m */,
+				55F0AA112F70000100ABC123 /* CMPFrameRateRange.h */,
+				55F0AA122F70000100ABC123 /* CMPFrameRateRange.m */,
 				EA4B52942C2EDEF200FBB55C /* CMPGestureRecognizer.h */,
 				EA4B52952C2EDEF200FBB55C /* CMPGestureRecognizer.m */,
 				9968C35F2D7746BD005E8DE4 /* CMPHoverGestureRecognizer.h */,
@@ -409,6 +414,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				55F0AA132F70000100ABC123 /* CMPFrameRateRange.m in Sources */,
 				997DFCDE2B18D135000B56B5 /* CMPViewController.m in Sources */,
 				9968C38B2D7892DF005E8DE4 /* CMPScreenEdgePanGestureRecognizer.m in Sources */,
 				EAB33E182C12E746002CFF44 /* CMPMetalDrawablesHandler.m in Sources */,
