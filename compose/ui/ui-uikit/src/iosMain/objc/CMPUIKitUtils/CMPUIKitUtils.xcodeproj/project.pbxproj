@@ -35,6 +35,7 @@
 		99D97A882BF73A9B0035552B /* CMPEditMenuView.m in Sources */ = {isa = PBXBuildFile; fileRef = 99D97A872BF73A9B0035552B /* CMPEditMenuView.m */; };
 		99DCAB0E2BD00F5C002E6AC7 /* CMPTextLoupeSession.m in Sources */ = {isa = PBXBuildFile; fileRef = 99DCAB0D2BD00F5C002E6AC7 /* CMPTextLoupeSession.m */; };
 		A01609822EB42A3300FB9790 /* CMPLayoutRegion.m in Sources */ = {isa = PBXBuildFile; fileRef = A01609812EB42A3300FB9790 /* CMPLayoutRegion.m */; };
+		A0CEE0303006417800F0D942 /* CMPUIKitSwiftUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0CEE02E3006417800F0D942 /* CMPUIKitSwiftUtils.swift */; };
 		AABB11112F5A0000000000A3 /* CMPUIWindowSceneExtensions.m in Sources */ = {isa = PBXBuildFile; fileRef = AABB11112F5A0000000000A2 /* CMPUIWindowSceneExtensions.m */; };
 		C4C07E892F57037300A9DC94 /* CMPTextInputView.m in Sources */ = {isa = PBXBuildFile; fileRef = C4C07E882F57037300A9DC94 /* CMPTextInputView.m */; };
 		C4C07E8A2F57037300A9DC94 /* CMPEditMenuCustomAction.m in Sources */ = {isa = PBXBuildFile; fileRef = C4C07E842F57037300A9DC94 /* CMPEditMenuCustomAction.m */; };
@@ -72,6 +73,15 @@
 
 /* Begin PBXCopyFilesBuildPhase section */
 		996EFEE82B02CE5D0000FE0F /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "include/$(PRODUCT_NAME)";
+			dstSubfolderSpec = 16;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A0CEE0253006417400F0D942 /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
 			dstPath = "include/$(PRODUCT_NAME)";
@@ -124,6 +134,8 @@
 		99DCAB0C2BD00F5C002E6AC7 /* CMPTextLoupeSession.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CMPTextLoupeSession.h; sourceTree = "<group>"; };
 		99DCAB0D2BD00F5C002E6AC7 /* CMPTextLoupeSession.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = CMPTextLoupeSession.m; sourceTree = "<group>"; };
 		A01609812EB42A3300FB9790 /* CMPLayoutRegion.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = CMPLayoutRegion.m; sourceTree = "<group>"; };
+		A0CEE0273006417400F0D942 /* libCMPUIKitSwiftUtils.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libCMPUIKitSwiftUtils.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		A0CEE02E3006417800F0D942 /* CMPUIKitSwiftUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CMPUIKitSwiftUtils.swift; sourceTree = "<group>"; };
 		A0E69B242EB4227A0049B20F /* CMPLayoutRegion.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CMPLayoutRegion.h; sourceTree = "<group>"; };
 		AABB11112F5A0000000000A1 /* CMPUIWindowSceneExtensions.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CMPUIWindowSceneExtensions.h; sourceTree = "<group>"; };
 		AABB11112F5A0000000000A2 /* CMPUIWindowSceneExtensions.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = CMPUIWindowSceneExtensions.m; sourceTree = "<group>"; };
@@ -170,6 +182,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		997DFCF72B18E5D3000B56B5 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A0CEE0243006417400F0D942 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -249,6 +268,7 @@
 				996EFEEB2B02CE5D0000FE0F /* CMPUIKitUtils */,
 				997DFCE42B18D99E000B56B5 /* CMPUIKitUtilsTests */,
 				997DFCFB2B18E5D3000B56B5 /* CMPUIKitUtilsTestApp */,
+				A0CEE02F3006417800F0D942 /* CMPUIKitSwiftUtils */,
 				9975AACB2AEABB5600AF155F /* Products */,
 			);
 			sourceTree = "<group>";
@@ -259,6 +279,7 @@
 				996EFEEA2B02CE5D0000FE0F /* libCMPUIKitUtils.a */,
 				997DFCE32B18D99E000B56B5 /* CMPUIKitUtilsTests.xctest */,
 				997DFCFA2B18E5D3000B56B5 /* CMPUIKitUtilsTestApp.app */,
+				A0CEE0273006417400F0D942 /* libCMPUIKitSwiftUtils.a */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -291,6 +312,14 @@
 				EAC703DF2B8C8154001ECDA6 /* CMPUIKitUtilsTestApp-Bridging-Header.h */,
 			);
 			path = CMPUIKitUtilsTestApp;
+			sourceTree = "<group>";
+		};
+		A0CEE02F3006417800F0D942 /* CMPUIKitSwiftUtils */ = {
+			isa = PBXGroup;
+			children = (
+				A0CEE02E3006417800F0D942 /* CMPUIKitSwiftUtils.swift */,
+			);
+			path = CMPUIKitSwiftUtils;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -349,6 +378,26 @@
 			productReference = 997DFCFA2B18E5D3000B56B5 /* CMPUIKitUtilsTestApp.app */;
 			productType = "com.apple.product-type.application";
 		};
+		A0CEE0263006417400F0D942 /* CMPUIKitSwiftUtils */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A0CEE02D3006417400F0D942 /* Build configuration list for PBXNativeTarget "CMPUIKitSwiftUtils" */;
+			buildPhases = (
+				A0CEE0233006417400F0D942 /* Sources */,
+				A0CEE03130064B0000F0D942 /* Copy Swift ObjC Header */,
+				A0CEE0243006417400F0D942 /* Frameworks */,
+				A0CEE0253006417400F0D942 /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = CMPUIKitSwiftUtils;
+			packageProductDependencies = (
+			);
+			productName = CMPUIKitSwiftUtils;
+			productReference = A0CEE0273006417400F0D942 /* libCMPUIKitSwiftUtils.a */;
+			productType = "com.apple.product-type.library.static";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -356,7 +405,7 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
-				LastSwiftUpdateCheck = 1500;
+				LastSwiftUpdateCheck = 2650;
 				LastUpgradeCheck = 1520;
 				TargetAttributes = {
 					996EFEE92B02CE5D0000FE0F = {
@@ -369,6 +418,9 @@
 					997DFCF92B18E5D3000B56B5 = {
 						CreatedOnToolsVersion = 15.0;
 						LastSwiftMigration = 1500;
+					};
+					A0CEE0263006417400F0D942 = {
+						CreatedOnToolsVersion = 26.5;
 					};
 				};
 			};
@@ -388,9 +440,35 @@
 				996EFEE92B02CE5D0000FE0F /* CMPUIKitUtils */,
 				997DFCE22B18D99E000B56B5 /* CMPUIKitUtilsTests */,
 				997DFCF92B18E5D3000B56B5 /* CMPUIKitUtilsTestApp */,
+				A0CEE0263006417400F0D942 /* CMPUIKitSwiftUtils */,
 			);
 		};
 /* End PBXProject section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		A0CEE03130064B0000F0D942 /* Copy Swift ObjC Header */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"$(DERIVED_SOURCES_DIR)/$(PRODUCT_MODULE_NAME)-Swift.h",
+			);
+			name = "Copy Swift ObjC Header";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(BUILT_PRODUCTS_DIR)/include/$(PRODUCT_MODULE_NAME)/$(PRODUCT_MODULE_NAME)-Swift.h",
+				"$(DSTROOT)$(PUBLIC_HEADERS_FOLDER_PATH)/$(PRODUCT_MODULE_NAME)/$(PRODUCT_MODULE_NAME)-Swift.h",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "set -euo pipefail\nHEADER_NAME=\"${PRODUCT_MODULE_NAME}-Swift.h\"\nSOURCE_HEADER=\"${DERIVED_SOURCES_DIR}/${HEADER_NAME}\"\nif [ ! -f \"${SOURCE_HEADER}\" ]; then\n  echo \"error: ${HEADER_NAME} was not generated at ${SOURCE_HEADER}\" >&2\n  exit 1\nfi\ncopy_header() {\n  mkdir -p \"$1\"\n  cp \"${SOURCE_HEADER}\" \"$1/${HEADER_NAME}\"\n}\ncopy_header \"${BUILT_PRODUCTS_DIR}/include/${PRODUCT_MODULE_NAME}\"\nif [ \"${ACTION:-}\" = \"install\" ] && [ -n \"${DSTROOT:-}\" ]; then\n  copy_header \"${DSTROOT}${PUBLIC_HEADERS_FOLDER_PATH}/${PRODUCT_MODULE_NAME}\"\nfi\n";
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXResourcesBuildPhase section */
 		997DFCE12B18D99E000B56B5 /* Resources */ = {
@@ -474,6 +552,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		A0CEE0233006417400F0D942 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A0CEE0303006417800F0D942 /* CMPUIKitSwiftUtils.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -497,6 +583,7 @@
 				BUILD_LIBRARY_FOR_DISTRIBUTION = YES;
 				CODE_SIGN_STYLE = Automatic;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				IPHONEOS_DEPLOYMENT_TARGET = 14.0;
 				OTHER_LDFLAGS = "-ObjC";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -511,6 +598,7 @@
 				ALLOW_TARGET_PLATFORM_SPECIALIZATION = NO;
 				BUILD_LIBRARY_FOR_DISTRIBUTION = YES;
 				CODE_SIGN_STYLE = Automatic;
+				IPHONEOS_DEPLOYMENT_TARGET = 14.0;
 				OTHER_LDFLAGS = "-ObjC";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -754,6 +842,48 @@
 			};
 			name = Release;
 		};
+		A0CEE02B3006417400F0D942 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUILD_LIBRARY_FOR_DISTRIBUTION = YES;
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_STYLE = Automatic;
+				DEFINES_MODULE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 14.0;
+				OTHER_LDFLAGS = "-ObjC";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = NO;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_INSTALL_OBJC_HEADER = YES;
+				SWIFT_OBJC_INTERFACE_HEADER_NAME = "CMPUIKitSwiftUtils-Swift.h";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		A0CEE02C3006417400F0D942 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUILD_LIBRARY_FOR_DISTRIBUTION = YES;
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_STYLE = Automatic;
+				DEFINES_MODULE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 14.0;
+				OTHER_LDFLAGS = "-ObjC";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_INSTALL_OBJC_HEADER = YES;
+				SWIFT_OBJC_INTERFACE_HEADER_NAME = "CMPUIKitSwiftUtils-Swift.h";
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -789,6 +919,15 @@
 			buildConfigurations = (
 				997DFD062B18E5D4000B56B5 /* Debug */,
 				997DFD072B18E5D4000B56B5 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A0CEE02D3006417400F0D942 /* Build configuration list for PBXNativeTarget "CMPUIKitSwiftUtils" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A0CEE02B3006417400F0D942 /* Debug */,
+				A0CEE02C3006417400F0D942 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
