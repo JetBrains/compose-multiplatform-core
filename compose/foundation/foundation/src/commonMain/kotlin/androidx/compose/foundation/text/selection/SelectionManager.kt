@@ -76,6 +76,7 @@ import androidx.compose.ui.platform.TextToolbarStatus
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.style.ResolvedTextDirection
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.util.fastAll
 import androidx.compose.ui.util.fastAny
@@ -163,13 +164,16 @@ import kotlinx.coroutines.launch
     /** Modifier for selection container. */
     val modifier
         get() =
-            Modifier.onClearSelectionRequested { onRelease() }
+            Modifier
+                // TODO review, removed for FL-27497 //.onClearSelectionRequested { onRelease() }
                 .onGloballyPositioned { containerLayoutCoordinates = it }
                 .focusRequester(focusRequester)
                 .onFocusChanged { focusState ->
-                    if (!focusState.hasFocus && hasFocus) {
-                        onRelease()
-                    }
+                    // TODO[unterhofer, CR] reactivate dropping selection on focus loss when we have
+                    // native popup containers
+                    // if (!focusState.hasFocus && hasFocus) {
+                    //     onRelease()
+                    // }
                     this.hasFocus = focusState.hasFocus
                 }
                 .focusable()
@@ -250,6 +254,10 @@ import kotlinx.coroutines.launch
     internal var dragTotalDistance by mutableStateOf(Offset.Zero)
         private set
 
+    /** The adjustment mode used in the current drag. Stored for auto-scroll refresh. */
+    internal var lastAdjustment: SelectionAdjustment = SelectionAdjustment.None
+        private set
+
     /**
      * The calculated position of the start handle in the [SelectionContainer] coordinates. It is
      * null when handle shouldn't be displayed. It is a [State] so reading it during the composition
@@ -295,6 +303,18 @@ import kotlinx.coroutines.launch
      */
     var currentDragPosition: Offset? by mutableStateOf(null)
         private set
+
+    /**
+     * Selected text from selectables that scrolled out above the viewport during active drag.
+     * Stored in visual order (topmost item first).
+     */
+    private val scrolledOutTextAbove = mutableListOf<AnnotatedString>()
+
+    /**
+     * Selected text from selectables that scrolled out below the viewport during active drag.
+     * Stored in reverse visual order (bottommost item first); reversed when reading.
+     */
+    private val scrolledOutTextBelow = mutableListOf<AnnotatedString>()
 
     private val shouldShowMagnifier
         get() = isDraggingInProgress && isInTouchMode && !isTriviallyCollapsedSelection()
@@ -387,11 +407,13 @@ import kotlinx.coroutines.launch
             }
 
         selectionRegistrar.onSelectionUpdateEndCallback = {
-            showToolbar = true
-            // This property is set by updateSelection while dragging, so we need to clear it after
-            // the original selection drag.
-            draggingHandle = null
-            currentDragPosition = null
+            if (!selectionRegistrar.containerHandlesDragEnd) {
+                showToolbar = true
+                // This property is set by updateSelection while dragging, so we need to clear it
+                // after the original selection drag.
+                draggingHandle = null
+                currentDragPosition = null
+            }
 
             if (isLongPressOrClickSelection && isNonEmptySelection()) {
                 suggestSelectionForLongPressOrDoubleClick()
@@ -409,7 +431,7 @@ import kotlinx.coroutines.launch
             }
         }
 
-        selectionRegistrar.afterSelectableUnsubscribe = { selectableId ->
+        selectionRegistrar.afterSelectableUnsubscribe = { selectableId, selectable ->
             if (selectableId == selection?.start?.selectableId) {
                 // The selectable that contains a selection handle just unsubscribed.
                 // Hide the associated selection handle
@@ -422,6 +444,12 @@ import kotlinx.coroutines.launch
             if (selectableId in selectionRegistrar.subselections) {
                 // Unsubscribing the selectable may make the selection empty, which would hide it.
                 updateSelectionToolbar()
+
+                // Cache the selected text before the selectable is gone, so copy
+                // includes text from items that scrolled out of the viewport.
+                if (draggingHandle != null) {
+                    cacheScrolledOutSelectedText(selectableId, selectable)
+                }
             }
         }
     }
@@ -608,7 +636,7 @@ import kotlinx.coroutines.launch
     }
 
     /** Creates and sets a selection spanning the entire container. */
-    internal fun selectAll() {
+    fun selectAll() {
         val selectables = selectionRegistrar.sort(requireContainerCoordinates())
         if (selectables.isEmpty()) return
 
@@ -684,15 +712,24 @@ import kotlinx.coroutines.launch
     }
 
     /* internal */ fun getSelectedText(): AnnotatedString? {
-        if (selection == null || selectionRegistrar.subselections.isEmpty()) {
+        if (selection == null ||
+            (selectionRegistrar.subselections.isEmpty() &&
+                scrolledOutTextAbove.isEmpty() && scrolledOutTextBelow.isEmpty())
+        ) {
             return null
         }
 
         return buildAnnotatedString {
+            for (text in scrolledOutTextAbove) append(text)
+
             forEachSelectableWithSelection { _, text, selection, isLastSelectable ->
                 append(text, selection.min, selection.max)
                 if (!isLastSelectable) append('\n')
                 true
+            }
+
+            for (i in scrolledOutTextBelow.lastIndex downTo 0) {
+                append(scrolledOutTextBelow[i])
             }
         }
     }
@@ -784,7 +821,7 @@ import kotlinx.coroutines.launch
         }
     }
 
-    internal fun copy() {
+    fun copy() {
         getSelectedText()
             ?.takeIf { it.isNotEmpty() }
             ?.let { textToCopy -> onCopyHandler?.invoke(textToCopy) }
@@ -878,9 +915,80 @@ import kotlinx.coroutines.launch
         return rootRect.copy(bottom = rootRect.bottom + HandleHeight.value * 4)
     }
 
+    /**
+     * Caches the selected text from a [selectable] that is being unsubscribed during an
+     * active drag. The text is placed into either [scrolledOutTextAbove] or
+     * [scrolledOutTextBelow] depending on the drag direction so that [getSelectedText]
+     * can reconstruct the full selected text in visual order.
+     */
+    private fun cacheScrolledOutSelectedText(selectableId: Long, selectable: Selectable) {
+        val subSelection = selectionRegistrar.subselections[selectableId] ?: return
+        val fullText = selectable.getText()
+        if (fullText.isEmpty()) return
+        val start: Int
+        val end: Int
+        if (subSelection.handlesCrossed) {
+            start = subSelection.end.offset
+            end = subSelection.start.offset
+        } else {
+            start = subSelection.start.offset
+            end = subSelection.end.offset
+        }
+        if (start == end) return
+        val selectedText = fullText.subSequence(
+            start.coerceIn(0, fullText.length),
+            end.coerceIn(0, fullText.length),
+        )
+        if (selectedText.isEmpty()) return
+
+        // Determine which side the item scrolled out from based on drag direction.
+        // When dragging the end handle in a non-crossed selection (or start handle in a
+        // crossed one), the pointer is at the bottom and items exit from the top.
+        val exitedFromTop = when (draggingHandle) {
+            Handle.SelectionEnd -> selection?.handlesCrossed != true
+            Handle.SelectionStart -> selection?.handlesCrossed == true
+            else -> true
+        }
+        if (exitedFromTop) {
+            scrolledOutTextAbove.add(selectedText)
+        } else {
+            scrolledOutTextBelow.add(selectedText)
+        }
+    }
+
+    private fun clearScrolledOutTextCache() {
+        scrolledOutTextAbove.clear()
+        scrolledOutTextBelow.clear()
+    }
+
+    /**
+     * Ends the current drag without clearing the selection.
+     * Called from the container level when the pointer is released but the text composable
+     * that started the gesture may have been removed (e.g. scrolled out of a lazy list), so
+     * the normal selection-update-end callback never fired.
+     */
+    fun endDrag() {
+        showToolbar = true
+        draggingHandle = null
+        currentDragPosition = null
+    }
+
+    /**
+     * Updates [currentDragPosition] from the container level.
+     * Called when the pointer moves while a drag is in progress so the auto-scroll loop
+     * sees the real pointer position even when the text composable that started the gesture
+     * has been removed from composition (e.g. scrolled off a lazy list).
+     */
+    fun updateDragPosition(position: Offset) {
+        if (draggingHandle != null) {
+            currentDragPosition = position
+        }
+    }
+
     // This is for PressGestureDetector to cancel the selection.
     fun onRelease() {
         selectionRegistrar.subselections = emptyLongObjectMap()
+        clearScrolledOutTextCache()
         showToolbar = false
         if (selection != null) {
             onSelectionChange(null)
@@ -1037,6 +1145,7 @@ import kotlinx.coroutines.launch
         adjustment: SelectionAdjustment,
     ) {
         previousSelectionLayout = null
+        clearScrolledOutTextCache()
         updateSelection(
             position = position,
             previousHandlePosition = Offset.Unspecified,
@@ -1095,6 +1204,7 @@ import kotlinx.coroutines.launch
         isStartHandle: Boolean,
         adjustment: SelectionAdjustment,
     ): Boolean {
+        lastAdjustment = adjustment
         draggingHandle = if (isStartHandle) Handle.SelectionStart else Handle.SelectionEnd
         currentDragPosition = position
 
@@ -1113,6 +1223,56 @@ import kotlinx.coroutines.launch
         return true
     }
 
+    /*
+    * Re-evaluates the selection at the current drag position after a programmatic scroll.
+    * New selectables may have registered (lazy list items), so we force a full recomputation.
+    *
+    * Unlike [updateSelection], this does NOT re-set [draggingHandle] or [currentDragPosition],
+    * because those are managed exclusively by the gesture system.  Re-setting them here would
+    * race with the gesture-end callback and keep the auto-scroll loop alive after the user
+    * releases the pointer.
+    */
+    fun refreshSelectionAfterScroll() {
+        val position = currentDragPosition ?: return
+        val handle = draggingHandle ?: return
+
+        previousSelectionLayout = null
+        selectionRegistrar.sorted = false
+
+        val isStartHandle = handle == Handle.SelectionStart
+        val selectionLayout =
+            getSelectionLayout(position, position, isStartHandle) ?: return
+        if (!selectionLayout.shouldRecomputeSelection(previousSelectionLayout)) return
+
+        val newSelection = lastAdjustment.adjust(selectionLayout)
+        if (newSelection != selection) {
+            selectionChanged(selectionLayout, newSelection)
+        }
+        previousSelectionLayout = selectionLayout
+    }
+
+    /**
+     * Lightweight version of [refreshSelectionAfterScroll] that re-evaluates the selection
+     * at the current drag position WITHOUT forcing a full recomputation. Used by the
+     * container-level auto-scroll loop to keep the selection tracking the pointer after
+     * the text composable's gesture handler has ended (e.g. pointer exited the scroll view).
+     */
+    fun refreshSelectionAtCurrentPosition() {
+        val position = currentDragPosition ?: return
+        val handle = draggingHandle ?: return
+
+        val isStartHandle = handle == Handle.SelectionStart
+        val selectionLayout =
+            getSelectionLayout(position, position, isStartHandle) ?: return
+        if (!selectionLayout.shouldRecomputeSelection(previousSelectionLayout)) return
+
+        val newSelection = lastAdjustment.adjust(selectionLayout)
+        if (newSelection != selection) {
+            selectionChanged(selectionLayout, newSelection)
+        }
+        previousSelectionLayout = selectionLayout
+    }
+
     private fun getSelectionLayout(
         position: Offset,
         previousHandlePosition: Offset,
@@ -1129,7 +1289,26 @@ import kotlinx.coroutines.launch
         val selectableIdOrderingComparator = compareBy<Long> { idToIndexMap[it] }
 
         // if previous handle is null, then treat this as a new selection.
-        val previousSelection = if (previousHandlePosition.isUnspecified) null else selection
+        val previousSelection = if (previousHandlePosition.isUnspecified) {
+            null
+        } else {
+            selection?.let { sel ->
+                val startRegistered = idToIndexMap.containsKey(sel.start.selectableId)
+                val endRegistered = idToIndexMap.containsKey(sel.end.selectableId)
+                when {
+                    startRegistered && endRegistered -> sel
+                    // Active drag: the non-dragging anchor may have scrolled out of
+                    // a lazy list. Remap it to the viewport edge so the selection
+                    // is not lost.
+                    draggingHandle != null && (startRegistered || endRegistered) ->
+                        remapSelectionForScrolledAnchor(
+                            sel, startRegistered, endRegistered, sortedSelectables,
+                        )
+                    else -> null
+                }
+            }
+        }
+
         val builder =
             SelectionLayoutBuilder(
                 currentPosition = position,
@@ -1143,6 +1322,46 @@ import kotlinx.coroutines.launch
         sortedSelectables.fastForEach { it.appendSelectableInfoToBuilder(builder) }
 
         return builder.build()
+    }
+
+    /**
+     * Remaps a [Selection] whose start or end anchor references an unregistered
+     * [Selectable] (scrolled out of a lazy list) to the first/last visible selectable.
+     * This keeps `previousSelection` non-null during active drag so the selection
+     * adjustment logic preserves the multi-item selection instead of resetting it.
+     */
+    private fun remapSelectionForScrolledAnchor(
+        sel: Selection,
+        startRegistered: Boolean,
+        endRegistered: Boolean,
+        sortedSelectables: List<Selectable>,
+    ): Selection? {
+        if (sortedSelectables.isEmpty()) return null
+
+        val first = sortedSelectables.first()
+        val last = sortedSelectables.last()
+
+        val newStart = if (startRegistered) {
+            sel.start
+        } else if (!sel.handlesCrossed) {
+            // NOT crossed: start is visually before end → scrolled out from top
+            AnchorInfo(ResolvedTextDirection.Ltr, 0, first.selectableId)
+        } else {
+            // CROSSED: start is visually after end → scrolled out from bottom
+            AnchorInfo(ResolvedTextDirection.Ltr, last.getText().length, last.selectableId)
+        }
+
+        val newEnd = if (endRegistered) {
+            sel.end
+        } else if (!sel.handlesCrossed) {
+            // NOT crossed: end is visually after start → scrolled out from bottom
+            AnchorInfo(ResolvedTextDirection.Ltr, last.getText().length, last.selectableId)
+        } else {
+            // CROSSED: end is visually before start → scrolled out from top
+            AnchorInfo(ResolvedTextDirection.Ltr, 0, first.selectableId)
+        }
+
+        return Selection(start = newStart, end = newEnd, handlesCrossed = sel.handlesCrossed)
     }
 
     private fun selectionChanged(selectionLayout: SelectionLayout, newSelection: Selection) {

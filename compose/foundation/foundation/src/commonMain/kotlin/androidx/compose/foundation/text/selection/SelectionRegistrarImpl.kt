@@ -97,7 +97,15 @@ import kotlin.math.min
     /**
      * The callback to be invoked after a selectable is unsubscribed from this [SelectionRegistrar].
      */
-    internal var afterSelectableUnsubscribe: ((Long) -> Unit)? = null
+    internal var afterSelectableUnsubscribe: ((Long, Selectable) -> Unit)? = null
+
+    /**
+     * When `true`, the enclosing [SelectionContainer] drives auto-scroll and owns the drag
+     * lifecycle: the per-selectable bring-into-view is disabled and [SelectionManager] leaves
+     * drag-state cleanup to the container-level detector. Set by the container when auto-scroll
+     * is enabled.
+     */
+    var containerHandlesDragEnd: Boolean by mutableStateOf(false)
 
     override var subselections: LongObjectMap<Selection> by mutableStateOf(emptyLongObjectMap())
 
@@ -118,7 +126,7 @@ import kotlin.math.min
         if (!_selectableMap.containsKey(selectable.selectableId)) return
         _selectables.remove(selectable)
         _selectableMap.remove(selectable.selectableId)
-        afterSelectableUnsubscribe?.invoke(selectable.selectableId)
+        afterSelectableUnsubscribe?.invoke(selectable.selectableId, selectable)
     }
 
     override fun nextSelectableId(): Long {
