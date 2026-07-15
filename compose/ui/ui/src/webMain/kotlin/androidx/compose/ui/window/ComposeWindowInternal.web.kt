@@ -474,14 +474,15 @@ internal class ComposeWindow(
 
         val interopContainer = WebInteropContainer(InteropViewGroup(interopContainerElement))
 
+        val clipEventsTargetProvider: () -> HTMLElement = {
+            (platformContext.textInputService as WebTextInputService).getBackingInput()
+                ?: clipTarget
+        }
         scene.setContent {
             CompositionLocalProvider(
                 LocalSystemTheme provides webMediaEnvironment.systemTheme,
                 LocalInteropContainer provides interopContainer,
-                LocalActiveClipEventsTarget providesComputed {
-                    (platformContext.textInputService as WebTextInputService).getBackingInput()
-                        ?: clipTarget
-                },
+                LocalActiveClipEventsTarget provides clipEventsTargetProvider,
                 LocalComposeWindow provides this,
                 content = {
                     installFallbackFontDownloader()

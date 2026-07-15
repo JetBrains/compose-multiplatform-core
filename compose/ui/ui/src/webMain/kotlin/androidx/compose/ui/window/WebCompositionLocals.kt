@@ -25,4 +25,6 @@ import org.w3c.dom.HTMLElement
  * Usually, it would be either an active backing HTML input/textarea or the canvas
  */
 @InternalComposeUiApi
-val LocalActiveClipEventsTarget = staticCompositionLocalOf<HTMLElement?> { null }
+val LocalActiveClipEventsTarget = staticCompositionLocalOf<() -> HTMLElement?> {
+    { null }
+}
