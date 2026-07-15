@@ -14,18 +14,13 @@
  * limitations under the License.
  */
 
-@file:OptIn(ExperimentalAtomicApi::class)
-
 package androidx.compose.ui.platform
 
 import androidx.annotation.VisibleForTesting
-import androidx.compose.runtime.DataSource
 import androidx.compose.runtime.snapshots.ObserverHandle
 import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.internal.getCurrentThreadId
 import kotlin.concurrent.Volatile
-import kotlin.concurrent.atomics.AtomicReference
-import kotlin.concurrent.atomics.ExperimentalAtomicApi
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -54,12 +49,6 @@ import kotlinx.coroutines.launch
  */
 internal object GlobalSnapshotManager {
     private val lock = makeSynchronizedObject()
-
-    private val callbackInterceptor: AtomicReference<(() -> Unit) -> Unit> = AtomicReference { it() }
-
-    fun setCallbackInterceptor(f: (() -> Unit) -> Unit) {
-        callbackInterceptor.store(f)
-    }
 
     /** Live registrations keyed by the dispatcher they pump on. Guarded by [lock]. */
     private val registrations = mutableMapOf<CoroutineDispatcher, Registration>()
@@ -130,10 +119,10 @@ internal object GlobalSnapshotManager {
                 warnIfMultipleThreads()
                 channel.consumeEach {
                     scheduled.value = false
-                    val withMainThreadPrepared = callbackInterceptor.load()
-                    withMainThreadPrepared {
-                        DataSource.advanceGlobalSnapshot()
-                    }
+                    // Substrate-only: the raw-write flush of the global snapshot
+                    // (upstream-stock behavior). Foreign sources are pumped per scene
+                    // through their DataSourceContext, not from this process singleton.
+                    Snapshot.sendApplyNotifications()
                 }
             }
             writeObserverHandle = Snapshot.registerGlobalWriteObserver {

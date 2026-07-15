@@ -40,6 +40,7 @@ import androidx.compose.ui.platform.LocalGraphicsContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.InternalTestApi
+import androidx.compose.ui.test.SchedulingDispatcherFixture
 import androidx.compose.ui.test.SkikoComposeUiTest
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.v2.runInternalSkikoComposeUiTest
@@ -234,12 +235,18 @@ class GraphicsLayerRegressionTest {
 
     @OptIn(InternalTestApi::class)
     private fun runLayerTest(body: suspend SkikoComposeUiTest.() -> Unit) {
-        runInternalSkikoComposeUiTest {
-            runOnUiThread {
-                runTest(timeout = 10.seconds) {
-                    body()
+        val schedulingDispatcher = SchedulingDispatcherFixture()
+        schedulingDispatcher.install()
+        try {
+            runInternalSkikoComposeUiTest {
+                runOnUiThread {
+                    runTest(timeout = 10.seconds) {
+                        body()
+                    }
                 }
             }
+        } finally {
+            schedulingDispatcher.uninstall()
         }
     }
 }

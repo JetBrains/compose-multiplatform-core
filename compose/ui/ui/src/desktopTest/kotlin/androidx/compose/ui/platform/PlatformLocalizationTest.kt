@@ -39,9 +39,25 @@ import androidx.compose.ui.window.runApplicationTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
+import androidx.compose.ui.test.SchedulingDispatcherFixture
+import kotlin.test.AfterTest
+import kotlin.test.BeforeTest
 
 @OptIn(ExperimentalTestApi::class)
 class PlatformLocalizationTest {
+
+    private val schedulingDispatcher = SchedulingDispatcherFixture()
+
+    @BeforeTest
+    fun installSchedulingDispatcher() {
+        schedulingDispatcher.install()
+    }
+
+    @AfterTest
+    fun uninstallSchedulingDispatcher() {
+        schedulingDispatcher.uninstall()
+    }
+
     /**
      * Verify that [LocalLocalization] exists in [ApplicationScope].
      */

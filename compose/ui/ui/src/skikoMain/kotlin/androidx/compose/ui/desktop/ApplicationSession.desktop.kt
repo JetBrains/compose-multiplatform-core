@@ -17,33 +17,24 @@
 package androidx.compose.ui.desktop
 
 import androidx.compose.runtime.CompositionLocal
+import androidx.compose.runtime.DataSourceContext
 import androidx.compose.runtime.staticCompositionLocalOf
-import kotlin.contracts.ExperimentalContracts
-import kotlin.contracts.InvocationKind
-import kotlin.contracts.contract
 import kotlinx.coroutines.CoroutineScope
 
 
 // TODO[wojciech.krystyniak] This should be internal, but we need it for TestWindow
-class Scene<T> /* internal */ constructor(
+class ApplicationSession /* internal */ constructor(
     internal val coroutineScope: CoroutineScope,
-    @PublishedApi internal val prepareMainThread: () -> T,
-    @PublishedApi internal val restoreMainThread: (T) -> Unit,
-) {
-    @OptIn(ExperimentalContracts::class)
-    inline fun <R> withPreparedMainThread(block: () -> R): R {
-        contract { callsInPlace(block, InvocationKind.EXACTLY_ONCE) }
-        val token = prepareMainThread()
-        try {
-            return block()
-        } finally {
-            restoreMainThread(token)
-        }
-    }
-}
+    /**
+     * The application-wide [DataSourceContext], fixed at session start: the application
+     * composition's frame domain and every window scene created in this session take
+     * their frame-cycle units from it.
+     */
+    val dataSourceContext: DataSourceContext = DataSourceContext(),
+)
 
-/* internal */ val ProvidableLocalScene = staticCompositionLocalOf<Scene<*>> {
-    error("No Scene provided")
-}
+/* internal */ val ProvidableLocalApplicationSession =
+    staticCompositionLocalOf<ApplicationSession> { error("No ApplicationSession provided") }
 
-val LocalScene: CompositionLocal<Scene<*>> = ProvidableLocalScene
+val LocalApplicationSession: CompositionLocal<ApplicationSession> =
+    ProvidableLocalApplicationSession

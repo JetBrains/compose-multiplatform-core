@@ -22,6 +22,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.PlatformTextInputMethodRequest
+import androidx.compose.ui.platform.PlatformTextInputSessionScope
 import androidx.compose.ui.scene.ComposeSceneInputHandler
 import androidx.compose.ui.scene.PointerEventResult
 import androidx.compose.ui.text.TextLayoutResult
@@ -46,8 +47,23 @@ import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
+import androidx.compose.ui.test.SchedulingDispatcherFixture
+import kotlin.test.AfterTest
+import kotlin.test.BeforeTest
 
 class RootNodeOwnerTest : SkikoComposeTestBase() {
+
+    private val schedulingDispatcher = SchedulingDispatcherFixture()
+
+    @BeforeTest
+    fun installSchedulingDispatcher() {
+        schedulingDispatcher.install()
+    }
+
+    @AfterTest
+    fun uninstallSchedulingDispatcher() {
+        schedulingDispatcher.uninstall()
+    }
 
     @Test
     fun textTextInputSession() = runTest {
@@ -90,7 +106,9 @@ class RootNodeOwnerTest : SkikoComposeTestBase() {
 
         val job = CoroutineScope(coroutineContext).launch(start = CoroutineStart.UNDISPATCHED) {
             owner.owner.textInputSession {
-                startInputMethod(request = TestInputRequest())
+                @Suppress("UNCHECKED_CAST")
+                (this as PlatformTextInputSessionScope<PlatformTextInputMethodRequest>)
+                    .startInputMethod(request = TestInputRequest())
             }
         }
 
@@ -146,7 +164,9 @@ class RootNodeOwnerTest : SkikoComposeTestBase() {
 
         val job = CoroutineScope(coroutineContext).launch(start = CoroutineStart.UNDISPATCHED) {
             owner.owner.textInputSession {
-                startInputMethod(request = TestInputRequest())
+                @Suppress("UNCHECKED_CAST")
+                (this as PlatformTextInputSessionScope<PlatformTextInputMethodRequest>)
+                    .startInputMethod(request = TestInputRequest())
             }
         }
 

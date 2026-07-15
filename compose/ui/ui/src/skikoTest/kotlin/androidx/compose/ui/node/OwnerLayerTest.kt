@@ -56,8 +56,23 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import org.jetbrains.skia.Surface
+import androidx.compose.ui.test.SchedulingDispatcherFixture
+import kotlin.test.AfterTest
+import kotlin.test.BeforeTest
 
 class OwnerLayerTest : SkikoComposeTestBase() {
+
+    private val schedulingDispatcher = SchedulingDispatcherFixture()
+
+    @BeforeTest
+    fun installSchedulingDispatcher() {
+        schedulingDispatcher.install()
+    }
+
+    @AfterTest
+    fun uninstallSchedulingDispatcher() {
+        schedulingDispatcher.uninstall()
+    }
 
     private val layer = TestRenderNodeLayer()
     private val cos45 = cos(PI / 4).toFloat()
@@ -537,7 +552,7 @@ class OwnerLayerTest : SkikoComposeTestBase() {
 
             val surface = Surface.makeRasterN32Premul(100, 100)
             val canvas = surface.canvas
-            val stateObserver = SnapshotStateObserver { it.invoke() }
+            val stateObserver = SnapshotStateObserver() { it.invoke() }
 
             fun draw() {
                 stateObserver.observeReads(Unit, { layer.invalidate() }) {

@@ -20,6 +20,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionContext
 import androidx.compose.runtime.CompositionLocalContext
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DataSource
 import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -153,6 +154,7 @@ private class SemanticsOwnerListenerImpl(
     private val coroutineContext: CoroutineContext,
     private val performEscape: () -> Boolean,
     private val onScreenReaderActive: (Boolean) -> Unit,
+    private val currentFrameSnapshot: () -> DataSource.Snapshot?,
 ) : PlatformContext.SemanticsOwnerListener {
 
     private var accessibilityMediator: AccessibilityMediator? = null
@@ -170,7 +172,8 @@ private class SemanticsOwnerListenerImpl(
                 semanticsOwner,
                 coroutineContext,
                 performEscape,
-                onScreenReaderActive
+                onScreenReaderActive,
+                currentFrameSnapshot
             ).also {
                 it.isEnabled = isEnabled
             }
@@ -400,6 +403,7 @@ internal class ComposeSceneMediator(
     private val dragAndDropManager = IosDragAndDropManager(
         view = _overlayView,
         getComposeRootDragAndDropNode = { scene.rootDragAndDropNode },
+        currentFrameSnapshot = { scene.currentFrameSnapshot },
     )
 
     private val windowInsetsManager = WindowInsetsManager(
@@ -431,7 +435,8 @@ internal class ComposeSceneMediator(
 
                 down || up
             },
-            onScreenReaderActive = { platformScreenReader.isActive = it }
+            onScreenReaderActive = { platformScreenReader.isActive = it },
+            currentFrameSnapshot = { scene.currentFrameSnapshot }
         )
     }
 
@@ -482,6 +487,7 @@ internal class ComposeSceneMediator(
                 }
             },
             focusManager = { scene.focusManager },
+            currentFrameSnapshot = { scene.currentFrameSnapshot },
             coroutineContext = coroutineContext,
         )
 
@@ -509,7 +515,7 @@ internal class ComposeSceneMediator(
     private fun hitTestInteropView(point: CValue<CGPoint>): UIView? =
         point.useContents {
             val position = toDpOffset().toOffset(composeSceneDensity)
-            val interopView = scene.hitTestInteropView(position)
+            val interopView = scene.withFrameTransaction { scene.hitTestInteropView(position) }
 
             // Find a group of a holder associated with a given interop view or view controller
             interopView?.let {
@@ -620,17 +626,17 @@ internal class ComposeSceneMediator(
 
     private fun onCancelScroll() {
         activitiesHandler.onActivitiesEnded()
-        scene.cancelPointerInput()
+        scene.withFrameTransaction { scene.cancelPointerInput() }
     }
 
     private fun onCancelPinch() {
         activitiesHandler.onActivitiesEnded()
-        scene.cancelPointerInput()
+        scene.withFrameTransaction { scene.cancelPointerInput() }
     }
 
     private fun onCancelAllTouches(cancelledTouches: Set<UITouch>) {
         activitiesHandler.onActivitiesEnded(cancelledTouches.count())
-        scene.cancelPointerInput()
+        scene.withFrameTransaction { scene.cancelPointerInput() }
     }
 
     private fun onTouchesEvent(
@@ -696,7 +702,7 @@ internal class ComposeSceneMediator(
 
     private var lastFocusedRect: Rect? = null
     private fun getFocusedRect(): Rect? {
-        return scene.focusManager.getFocusRect(afterLayout = false)?.also {
+        return scene.withFrameTransaction { scene.focusManager.getFocusRect(afterLayout = false) }?.also {
             lastFocusedRect = it
         } ?: lastFocusedRect
     }
@@ -829,10 +835,17 @@ internal class ComposeSceneMediator(
         if (isLayoutTransitionAnimating) {
             return
         }
-        windowInsetsManager.updateInsets()
-        composeSceneSize = currentViewSize.roundToIntSize()
-        interactionBounds = with(screenDensity) {
-            _overlayView.bounds.toDpRect().toRect().roundToIntRect()
+        // Naked UIKit layout ingress (layoutSubviews and friends): insets/size writes must land
+        // in this scene's frame unit. Un-sliced, they commit globally AFTER the unit's base pin,
+        // and the first render slice then repeats the same layout writes against a base that
+        // cannot see them - a guaranteed publish conflict on structural state like the
+        // display-cutout ruler list.
+        scene.withFrameTransaction {
+            windowInsetsManager.updateInsets()
+            composeSceneSize = currentViewSize.roundToIntSize()
+            interactionBounds = with(screenDensity) {
+                _overlayView.bounds.toDpRect().toRect().roundToIntRect()
+            }
         }
     }
 
@@ -943,25 +956,29 @@ internal class ComposeSceneMediator(
     }
 
     private fun onKeyboardEvent(keyEvent: KeyEvent): Boolean {
-        val result = textInputService.onPreviewKeyEvent(keyEvent)
-            || onPreviewKeyEvent(keyEvent)
-            || scene.sendKeyEvent(keyEvent)
-            || onKeyEvent(keyEvent)
-            || navigationEventInput.onKeyEvent(keyEvent)
+        // The whole key ingress is one slice: the pressed-key bookkeeping below has to be
+        // published together with whatever the handlers wrote.
+        return scene.withFrameTransaction {
+            val result = textInputService.onPreviewKeyEvent(keyEvent)
+                || onPreviewKeyEvent(keyEvent)
+                || scene.sendKeyEvent(keyEvent)
+                || onKeyEvent(keyEvent)
+                || navigationEventInput.onKeyEvent(keyEvent)
 
-        val identifier = keyEvent.keyIdentifier()
-        if (keyEvent.type == KeyEventType.KeyDown) {
-            pressedKeysState.add(identifier)
-        } else if (keyEvent.type == KeyEventType.KeyUp) {
-            if (pressedKeysState.contains(identifier)) {
-                pressedKeysState.removeAll { it == identifier }
-            } else {
-                // Dirty state - remove all events to prevent further errors
-                pressedKeysState.clear()
+            val identifier = keyEvent.keyIdentifier()
+            if (keyEvent.type == KeyEventType.KeyDown) {
+                pressedKeysState.add(identifier)
+            } else if (keyEvent.type == KeyEventType.KeyUp) {
+                if (pressedKeysState.contains(identifier)) {
+                    pressedKeysState.removeAll { it == identifier }
+                } else {
+                    // Dirty state - remove all events to prevent further errors
+                    pressedKeysState.clear()
+                }
             }
-        }
 
-        return result
+            result
+        }
     }
 
     private inner class IosPlatformContext : PlatformContext {

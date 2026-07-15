@@ -33,9 +33,25 @@ import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
+import androidx.compose.ui.test.SchedulingDispatcherFixture
+import kotlin.test.AfterTest
+import kotlin.test.BeforeTest
 
 @RunWith(JUnit4::class)
 class MouseScrollFilterTest {
+
+    private val schedulingDispatcher = SchedulingDispatcherFixture()
+
+    @BeforeTest
+    fun installSchedulingDispatcher() {
+        schedulingDispatcher.install()
+    }
+
+    @AfterTest
+    fun uninstallSchedulingDispatcher() {
+        schedulingDispatcher.uninstall()
+    }
+
     @Test
     fun `inside box`() = ImageComposeScene(
         width = 100,

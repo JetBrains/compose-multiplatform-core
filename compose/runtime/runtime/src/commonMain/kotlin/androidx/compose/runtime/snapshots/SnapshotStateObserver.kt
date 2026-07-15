@@ -20,8 +20,9 @@ import androidx.collection.MutableObjectIntMap
 import androidx.collection.MutableScatterMap
 import androidx.collection.MutableScatterSet
 import androidx.compose.runtime.ComputedState
+import androidx.compose.runtime.DataSourceContext
 import androidx.compose.runtime.DerivedState
-import androidx.compose.runtime.DataSource
+import androidx.compose.runtime.observeDataSourceReads
 import androidx.compose.runtime.TestOnly
 import androidx.compose.runtime.collection.MutableVector
 import androidx.compose.runtime.collection.ScopeMap
@@ -29,6 +30,7 @@ import androidx.compose.runtime.collection.fastForEach
 import androidx.compose.runtime.collection.mutableVectorOf
 import androidx.compose.runtime.composeRuntimeError
 import androidx.compose.runtime.internal.AtomicReference
+import androidx.compose.runtime.internal.SnapshotHolder
 import androidx.compose.runtime.internal.currentThreadId
 import androidx.compose.runtime.internal.currentThreadName
 import androidx.compose.runtime.platform.makeSynchronizedObject
@@ -45,7 +47,10 @@ import kotlin.contracts.contract
  * different threads to avoid race conditions.
  */
 @Suppress("NotCloseable") // we can't implement AutoCloseable from commonMain
-public class SnapshotStateObserver(private val onChangedExecutor: (callback: () -> Unit) -> Unit) {
+public class SnapshotStateObserver(
+    private val deliveryDomain: SnapshotHolder? = null,
+    private val onChangedExecutor: (callback: () -> Unit) -> Unit,
+) {
     private val pendingChanges = AtomicReference<Any?>(null)
     private var sendingNotifications = false
 
@@ -166,7 +171,6 @@ public class SnapshotStateObserver(private val onChangedExecutor: (callback: () 
     private val readObserver: (Any) -> Boolean = { state ->
         if (!isPaused) {
             synchronized(observedScopeMapsLock) { currentMap!!.recordRead(state) }
-            true
         } else {
             false
         }
@@ -261,7 +265,7 @@ public class SnapshotStateObserver(private val onChangedExecutor: (callback: () 
                 currentMapThreadId = currentThreadId
             }
 
-            scopeMap.observe(scope, readObserver, block)
+            scopeMap.observe(scope, deliveryDomain?.context, readObserver, block)
         } finally {
             withScopeMapLock {
                 currentMap = oldMap
@@ -328,7 +332,10 @@ public class SnapshotStateObserver(private val onChangedExecutor: (callback: () 
 
     /** Starts watching for state commits. */
     public fun start() {
-        applyUnsubscribe = Snapshot.registerApplyObserver { applied, _ -> applyObserver(applied) }
+        applyUnsubscribe =
+            deliveryDomain?.takeIf { it.isolating }?.registerApplyObserver { applied, _ ->
+                applyObserver(applied)
+            } ?: Snapshot.registerApplyObserver { applied, _ -> applyObserver(applied) }
     }
 
     /** Stops watching for state commits. */
@@ -469,9 +476,9 @@ public class SnapshotStateObserver(private val onChangedExecutor: (callback: () 
                     _recordedIndirectStateValues = it
                 }
 
-        fun recordRead(value: Any) {
+        fun recordRead(value: Any): Boolean {
             val scope = currentScope!!
-            recordRead(
+            return recordRead(
                 value = value,
                 currentToken = currentToken,
                 currentScope = scope,
@@ -490,10 +497,10 @@ public class SnapshotStateObserver(private val onChangedExecutor: (callback: () 
             currentToken: Int,
             currentScope: Any,
             recordedValues: MutableObjectIntMap<Any>,
-        ) {
+        ): Boolean {
             if (deriveStateScopeCount > 0) {
                 // Reads coming from derivedStateOf block
-                return
+                return false
             }
 
             val rootComputingState = rootComputingState
@@ -539,6 +546,7 @@ public class SnapshotStateObserver(private val onChangedExecutor: (callback: () 
                 }
                 valueToScopes.add(value, currentScope)
             }
+            return true
         }
 
         /** Setup new scope for state read observation, observe them, and cleanup afterwards */
@@ -546,6 +554,7 @@ public class SnapshotStateObserver(private val onChangedExecutor: (callback: () 
         @Suppress("NOTHING_TO_INLINE")
         inline fun observe(
             scope: Any,
+            context: DataSourceContext?,
             noinline readObserver: (Any) -> Boolean,
             noinline block: () -> Unit,
         ) {
@@ -560,7 +569,8 @@ public class SnapshotStateObserver(private val onChangedExecutor: (callback: () 
             }
 
             observeIndirectStateRecalculations(derivedStateObserver) {
-                DataSource.observe(
+                observeDataSourceReads(
+                    context = context,
                     recordDependency = readObserver,
                     block = block,
                 )

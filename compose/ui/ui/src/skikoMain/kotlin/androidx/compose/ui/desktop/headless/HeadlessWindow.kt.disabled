@@ -358,7 +358,7 @@ class HeadlessWindow internal constructor(
                         positionCalculator,
                     )
                 }
-                scene?.withPreparedMainThread { process() } ?: process()
+                process()
             } ?: ProcessResult(0)
         },
         sendKeyEvent = { keyEvent ->
@@ -367,9 +367,7 @@ class HeadlessWindow internal constructor(
                     focusOwner.dispatchKeyEvent(keyEvent) ||
                     onKeyEventState.value(keyEvent)
             }
-            scene?.withPreparedMainThread {
-                process()
-            } ?: process()
+            process()
         },
     )
 

@@ -17,6 +17,7 @@
 package androidx.compose.ui.scene
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DataSourceContext
 import androidx.compose.runtime.Composition
 import androidx.compose.runtime.CompositionContext
 import androidx.compose.runtime.CompositionLocalContext
@@ -73,6 +74,9 @@ import kotlin.math.max
  * @param size The size of the [ComposeScene]. Default value is `null`, which means the size will be
  * determined by the content.
  * @param platformContext The the platform-specific context used for platform interaction.
+ * @param dataSourceContext The [DataSourceContext] this scene takes its frame-cycle units
+ * from. Scenes sharing one context share its sources; the default is a fresh private
+ * substrate-only context.
  * @param invalidateLayout The function to be called when the content requires another
  * measure/layout pass.
  * @param invalidateDraw The function to be called when the content requires another draw pass.
@@ -87,6 +91,7 @@ fun CanvasLayersComposeScene(
     layoutDirection: LayoutDirection = LayoutDirection.Ltr,
     size: IntSize? = null,
     platformContext: PlatformContext = PlatformContext.Empty(),
+    dataSourceContext: DataSourceContext = DataSourceContext(),
     invalidateLayout: () -> Unit = {},
     invalidateDraw: () -> Unit = {},
 ): ComposeScene = CanvasLayersComposeSceneImpl(
@@ -95,9 +100,15 @@ fun CanvasLayersComposeScene(
     layoutDirection = layoutDirection,
     size = size,
     platformContext = platformContext,
+    dataSourceContext = dataSourceContext,
     invalidateLayout = invalidateLayout,
     invalidateDraw = invalidateDraw,
-)
+).also {
+    // Activate the frame domain only after construction completes, so every scene-owned
+    // snapshot state (base + subclass initializers) predates the standing pin. See
+    // BaseComposeScene.activateFrameDomain.
+    it.activateFrameDomain()
+}
 
 private class CanvasLayersComposeSceneImpl(
     frameRecomposer: FrameRecomposer,
@@ -105,10 +116,12 @@ private class CanvasLayersComposeSceneImpl(
     layoutDirection: LayoutDirection,
     size: IntSize?,
     override val platformContext: PlatformContext,
+    dataSourceContext: DataSourceContext,
     invalidateLayout: () -> Unit = {},
     invalidateDraw: () -> Unit = {},
 ) : BaseComposeScene(
     frameRecomposer = frameRecomposer,
+    dataSourceContext = dataSourceContext,
     invalidateLayout = invalidateLayout,
     invalidateDraw = invalidateDraw,
 ), ComposeSceneContext {
@@ -125,6 +138,10 @@ private class CanvasLayersComposeSceneImpl(
 
     override val composeSceneContext: ComposeSceneContext
         get() = this
+
+    // This scene IS its own ComposeSceneContext: expose the context its cycle units come
+    // from, so child scenes created against this context inherit it.
+    override val dataSourceContext: DataSourceContext = dataSourceContext
 
     override var density: Density = density
         set(value) {
@@ -202,9 +219,9 @@ private class CanvasLayersComposeSceneImpl(
         super.close()
     }
 
-    override fun measureContent(constraints: Constraints): IntSize {
+    override fun measureContent(constraints: Constraints): IntSize = withFrameTransaction {
         val mainSize = mainOwner.measureContentWithConstraints(constraints)
-        if (layers.isEmpty()) return mainSize
+        if (layers.isEmpty()) return@withFrameTransaction mainSize
 
         var width = mainSize.width
         var height = mainSize.height
@@ -213,7 +230,7 @@ private class CanvasLayersComposeSceneImpl(
             width = max(width, layerSize.width)
             height = max(height, layerSize.height)
         }
-        return IntSize(width, height)
+        IntSize(width, height)
     }
 
     override fun invalidatePositionInWindow() {

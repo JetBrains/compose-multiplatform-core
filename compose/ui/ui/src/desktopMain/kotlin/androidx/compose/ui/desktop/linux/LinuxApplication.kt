@@ -11,6 +11,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.SnapshotStateMap
+import androidx.compose.ui.ComposeSchedulingDispatcher
+import androidx.compose.ui.ComposeUIDispatcher
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.SystemTheme
 import androidx.compose.ui.draganddrop.DragAndDropTransferAction
@@ -21,7 +23,7 @@ import androidx.compose.ui.desktop.DefaultDragThreshold
 import androidx.compose.ui.desktop.LightweightWindowId
 import androidx.compose.ui.desktop.LinuxTextInputContext
 import androidx.compose.ui.desktop.LinuxTextInputSurroundingText
-import androidx.compose.ui.desktop.Scene
+import androidx.compose.ui.desktop.ApplicationSession
 import androidx.compose.ui.desktop.Window
 import androidx.compose.ui.desktop.WindowCloseRequestReason
 import androidx.compose.ui.desktop.codepointFromOffset
@@ -83,6 +85,9 @@ object LinuxApplication : Application {
         uriHandler: UriHandler,
         customQuit: (() -> Boolean)?,
     ) {
+        // Compose's internal scheduling must run on this backend's UI thread, the same one that mutates
+        // LayoutNode state. ComposeUIDispatcher already resolves the correct per-platform KDT dispatcher.
+        ComposeSchedulingDispatcher = ComposeUIDispatcher
         synchronized(lock) {
             check(!shutdown) {
                 "LinuxApplication has already been shut down and cannot be reinitialized in the same process"
@@ -649,10 +654,10 @@ object LinuxApplication : Application {
     }
 
     override fun createWindow(
-        scene: Scene<*>,
+        session: ApplicationSession,
         onCloseRequest: (WindowCloseRequestReason) -> Unit,
     ): Window {
-        val window = LinuxWindow(this, scene, onCloseRequest)
+        val window = LinuxWindow(this, session, onCloseRequest)
         windows[window.id] = window
         return window
     }
@@ -661,7 +666,7 @@ object LinuxApplication : Application {
 
     override fun reuseWindow(
         id: LightweightWindowId,
-        scene: Scene<*>,
+        session: ApplicationSession,
         onCloseRequest: (WindowCloseRequestReason) -> Unit,
     ): Window? = null
 

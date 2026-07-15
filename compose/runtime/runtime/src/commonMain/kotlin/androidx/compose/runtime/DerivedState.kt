@@ -219,7 +219,7 @@ private class DerivedSnapshotState<T>(
                 calculationLevelRef.element = nestedCalculationLevel + 1
 
                 val result =
-                    DataSource.observe(
+                    observeDataSourceReads(
                         {
                             if (it === this) error("A derived state calculation cannot read itself")
                             // Not a foreign key: a computed state runs its calculation inside this

@@ -105,6 +105,15 @@ internal object ComposeFeatureFlags {
     val redispatchUnconsumedMouseWheelEvents = FeatureFlag {
         System.getProperty("compose.swing.redispatchMouseWheelEvents", "true").toBoolean()
     }
+
+    /**
+     * Enables frame-cycle data source isolation for scenes.
+     *
+     * @see androidx.compose.ui.scene.ComposeSceneFeatureFlags.isFrameIsolationEnabled
+     */
+    val isFrameIsolationEnabled = FeatureFlag {
+        System.getProperty("compose.frameIsolation").toBoolean()
+    }
 }
 
 

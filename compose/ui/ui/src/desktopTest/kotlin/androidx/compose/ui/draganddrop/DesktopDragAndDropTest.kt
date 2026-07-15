@@ -26,10 +26,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.awt.ComposeWindow
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.Window
-import androidx.compose.ui.window.rememberWindowState
+import androidx.compose.ui.window.WindowDecoration
 import androidx.compose.ui.window.runApplicationTest
 import java.awt.Component
 import java.awt.Container
@@ -75,8 +76,8 @@ class DesktopDragAndDropTest {
         launchTestApplication {
             Window(
                 onCloseRequest = ::exitApplication,
-                undecorated = true,
-                state = rememberWindowState(width = 200.dp, height = 100.dp)
+                decoration = WindowDecoration.Undecorated(),
+                initialSize = DpSize(200.dp, 100.dp)
             ) {
                 window = this.window
 
@@ -129,8 +130,8 @@ class DesktopDragAndDropTest {
         launchTestApplication {
             Window(
                 onCloseRequest = ::exitApplication,
-                undecorated = true,
-                state = rememberWindowState(width = 200.dp, height = 100.dp)
+                decoration = WindowDecoration.Undecorated(),
+                initialSize = DpSize(200.dp, 100.dp)
             ) {
                 window = this.window
 

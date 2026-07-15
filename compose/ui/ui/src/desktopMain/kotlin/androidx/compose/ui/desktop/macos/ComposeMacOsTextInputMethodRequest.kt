@@ -36,7 +36,9 @@ import androidx.compose.ui.unit.dp
  * adding the window's content origin.
  *
  * Thread confinement: all callbacks are invoked from [MacOsTextInputSessionOwner.toTextInputClient]
- * inside `scene.withPreparedMainThread { }`, so this adapter must not wrap them again.
+ * inside `composeScene.withFrameTransaction { }`. Nesting a slice is safe and free (an inner
+ * transaction folds silently into the outer one), so this adapter re-wrapping would simply be
+ * unnecessary, not incorrect.
  */
 @OptIn(ExperimentalComposeUiApi::class)
 internal fun PlatformTextInputMethodRequest.toMacOsRequest(

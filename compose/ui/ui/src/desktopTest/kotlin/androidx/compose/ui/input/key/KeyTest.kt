@@ -23,9 +23,21 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
+import androidx.compose.ui.test.SchedulingDispatcherFixture
+import kotlin.test.AfterTest
 
 @RunWith(JUnit4::class)
 class KeyTest {
+
+    // `createComposeRule()`'s Rule creates the ComposeScene while applying itself, before
+    // class-level @BeforeTest methods run, so the fixture must be installed at construction time.
+    private val schedulingDispatcher = SchedulingDispatcherFixture().apply { install() }
+
+    @AfterTest
+    fun uninstallSchedulingDispatcher() {
+        schedulingDispatcher.uninstall()
+    }
+
     @Suppress("DEPRECATION")
     @get:Rule
     val rule = createComposeRule()

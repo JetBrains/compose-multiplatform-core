@@ -16,9 +16,12 @@
 
 package androidx.compose.ui.platform
 
+import androidx.compose.runtime.DataSource
+import androidx.compose.runtime.enter
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withTransaction
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.geometry.Offset
@@ -66,6 +69,7 @@ internal class TextInputService(
     private val focusedViewsList: FocusedViewsList?,
     private var listener: Listener,
     private var focusManager: () -> ComposeSceneFocusManager?,
+    private val currentFrameSnapshot: () -> DataSource.Snapshot?,
     coroutineContext: CoroutineContext
 ) {
 
@@ -78,6 +82,12 @@ internal class TextInputService(
     private object EmptyListener : Listener
 
     private val coroutineScope = CoroutineScope(coroutineContext)
+
+    private inline fun <T> withFrameTransaction(block: () -> T): T {
+        val frame = currentFrameSnapshot() ?: return block()
+        // Enter before transacting: the read scope is what binds a source's view.
+        return frame.enter { frame.withTransaction(block) }
+    }
 
     private var currentInputConnection: TextInputConnection? by mutableStateOf(null)
 
@@ -187,10 +197,12 @@ internal class TextInputService(
                 }
                 toolbarConnection?.showToolbarMenu(
                     rect = rect,
-                    onCopyRequested = onCopyRequested,
-                    onPasteRequested = onPasteRequested,
-                    onCutRequested = onCutRequested,
-                    onSelectAllRequested = onSelectAllRequested,
+                    // UIKit invokes these from its own event loop, outside any frame, so each
+                    // one has to open its own slice.
+                    onCopyRequested = onCopyRequested?.let { cb -> { withFrameTransaction { cb() } } },
+                    onPasteRequested = onPasteRequested?.let { cb -> { withFrameTransaction { cb() } } },
+                    onCutRequested = onCutRequested?.let { cb -> { withFrameTransaction { cb() } } },
+                    onSelectAllRequested = onSelectAllRequested?.let { cb -> { withFrameTransaction { cb() } } },
                     customActions = null,
                 )
             }

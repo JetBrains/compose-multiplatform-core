@@ -33,6 +33,7 @@ fun KotlinNativeBinaryContainer.configureFramework() {
             "-linker-option", "-framework", "-linker-option", "CoreText",
             "-linker-option", "-framework", "-linker-option", "CoreGraphics"
         )
+        this.optimized = false
     }
 }
 
