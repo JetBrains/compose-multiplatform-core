@@ -78,9 +78,11 @@ internal class WebWindowInsetsManager(canvas: Element) {
 
     internal var density: Density = Density(window.devicePixelRatio.toFloat())
         set(value) {
-            field = value
-            readAndUpdateSafeArea()
-            readAndUpdateIme()
+            if (field != value) {
+                field = value
+                readAndUpdateSafeArea()
+                readAndUpdateIme()
+            }
         }
 
     private val safeAreaInsets = mutableStateOf(PlatformInsets.Zero)
