@@ -16,6 +16,7 @@
 
 package androidx.compose.ui.window
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.Box
@@ -25,6 +26,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.OnCanvasTests
 import androidx.compose.ui.events.touchEvent
@@ -66,7 +68,7 @@ class TouchPreventDefaultTest : OnCanvasTests {
     @Test
     fun touchstartIsNotPrevented() = runTest {
         createComposeWindow {
-            Box(Modifier.fillMaxSize().clickable { })
+            Box(Modifier.fillMaxSize().background(Color.LightGray).clickable { })
         }
 
         // Even though Compose consumes the pointerdown of an interactive area, touchstart must
@@ -76,14 +78,14 @@ class TouchPreventDefaultTest : OnCanvasTests {
         val touchstart = touchEvent("touchstart")
         dispatchEvents(touchstart)
 
-        assertFalse(touchstart.defaultPrevented)
+        assertFalse(touchstart.defaultPrevented, "touchstart should not be prevented")
     }
 
     @Test
     fun touchendPreventedWhenReleaseConsumed() = runApplicationTest {
         var clicksCount = 0
         createComposeWindow {
-            Box(Modifier.fillMaxSize().clickable { clicksCount++ })
+            Box(Modifier.fillMaxSize().background(Color.LightGray).clickable { clicksCount++ })
         }
 
         dispatchEvents(
@@ -94,21 +96,21 @@ class TouchPreventDefaultTest : OnCanvasTests {
         dispatchEvents(touchend)
 
         // The tap was consumed, so the synthetic mouse events (incl. click) must be suppressed.
-        assertTrue(touchend.defaultPrevented)
+        assertTrue(touchend.defaultPrevented, "touchend should be prevented when release is consumed")
 
         awaitIdle()
-        assertEquals(1, clicksCount)
+        assertEquals(1, clicksCount, "click should have been registered")
 
         // The flag is single-use: a touchend with no fresh pointerup must stay untouched.
         val strayTouchend = touchEvent("touchend")
         dispatchEvents(strayTouchend)
-        assertFalse(strayTouchend.defaultPrevented)
+        assertFalse(strayTouchend.defaultPrevented, "stray touchend without fresh pointerup should not be prevented")
     }
 
     @Test
     fun touchendNotPreventedWhenReleaseNotConsumed() = runTest {
         createComposeWindow {
-            Box(Modifier.fillMaxSize()) // nothing consumes the tap
+            Box(Modifier.fillMaxSize().background(Color.LightGray)) // nothing consumes the tap
         }
 
         dispatchEvents(
@@ -119,13 +121,13 @@ class TouchPreventDefaultTest : OnCanvasTests {
         dispatchEvents(touchend)
 
         // The browser keeps its default actions (compatibility mouse events, click).
-        assertFalse(touchend.defaultPrevented)
+        assertFalse(touchend.defaultPrevented, "touchend should not be prevented when nothing consumes the tap")
     }
 
     @Test
     fun nonCancelableTouchendStillResetsTheFlag() = runTest {
         createComposeWindow {
-            Box(Modifier.fillMaxSize().clickable { })
+            Box(Modifier.fillMaxSize().background(Color.LightGray).clickable { })
         }
 
         dispatchEvents(
@@ -137,19 +139,19 @@ class TouchPreventDefaultTest : OnCanvasTests {
         // performing a default action; preventDefault() must not be attempted then.
         val nonCancelable = touchEvent("touchend", cancelable = false)
         dispatchEvents(nonCancelable)
-        assertFalse(nonCancelable.defaultPrevented)
+        assertFalse(nonCancelable.defaultPrevented, "non-cancelable touchend should not be prevented")
 
         // The consumed-release flag must be reset even on that path: a later touchend
         // must not be canceled based on stale state.
         val nextTouchend = touchEvent("touchend")
         dispatchEvents(nextTouchend)
-        assertFalse(nextTouchend.defaultPrevented)
+        assertFalse(nextTouchend.defaultPrevented, "subsequent touchend should not be prevented after flag reset")
     }
 
     @Test
     fun pointercancelResetsTheReleaseFlag() = runTest {
         createComposeWindow {
-            Box(Modifier.fillMaxSize().clickable { })
+            Box(Modifier.fillMaxSize().background(Color.LightGray).clickable { })
         }
 
         dispatchEvents(
@@ -160,7 +162,7 @@ class TouchPreventDefaultTest : OnCanvasTests {
         val touchend = touchEvent("touchend")
         dispatchEvents(touchend)
 
-        assertFalse(touchend.defaultPrevented)
+        assertFalse(touchend.defaultPrevented, "touchend should not be prevented after pointercancel resets the flag")
     }
 
     @Test
@@ -168,7 +170,7 @@ class TouchPreventDefaultTest : OnCanvasTests {
         createComposeWindow {
             Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
                 repeat(50) {
-                    Box(Modifier.fillMaxWidth().height(100.dp))
+                    Box(Modifier.fillMaxWidth().height(100.dp).background(Color.LightGray))
                 }
             }
         }
@@ -184,13 +186,13 @@ class TouchPreventDefaultTest : OnCanvasTests {
         dispatchEvents(touchmove)
 
         // Scrolling happened in Compose - the browser must not take over the gesture.
-        assertTrue(touchmove.defaultPrevented)
+        assertTrue(touchmove.defaultPrevented, "touchmove should be prevented when Compose scrolls")
     }
 
     @Test
     fun touchmovePreventedWhenDragConsumesMovesWithoutScroll() = runTest {
         createComposeWindow {
-            Box(Modifier.fillMaxSize().pointerInput(Unit) {
+            Box(Modifier.fillMaxSize().background(Color.LightGray).pointerInput(Unit) {
                 detectTransformGestures { _, _, _, _ -> }
             })
         }
@@ -206,13 +208,13 @@ class TouchPreventDefaultTest : OnCanvasTests {
 
         // No scroll happened, but a component (drag) consumed the moves -
         // the browser must not take over the gesture.
-        assertTrue(touchmove.defaultPrevented)
+        assertTrue(touchmove.defaultPrevented, "touchmove should be prevented when drag consumes moves")
     }
 
     @Test
     fun touchmoveNotPreventedWhenNothingConsumesMoves() = runTest {
         createComposeWindow {
-            Box(Modifier.fillMaxSize()) // nothing consumes the moves
+            Box(Modifier.fillMaxSize().background(Color.LightGray)) // nothing consumes the moves
         }
 
         dispatchEvents(
@@ -224,7 +226,7 @@ class TouchPreventDefaultTest : OnCanvasTests {
         dispatchEvents(touchmove)
 
         // The browser is free to handle the gesture.
-        assertFalse(touchmove.defaultPrevented)
+        assertFalse(touchmove.defaultPrevented, "touchmove should not be prevented when nothing consumes moves")
     }
 
     @Test
@@ -232,7 +234,7 @@ class TouchPreventDefaultTest : OnCanvasTests {
         createComposeWindow {
             Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
                 repeat(50) {
-                    Box(Modifier.fillMaxWidth().height(100.dp))
+                    Box(Modifier.fillMaxWidth().height(100.dp).background(Color.LightGray))
                 }
             }
         }
@@ -250,6 +252,6 @@ class TouchPreventDefaultTest : OnCanvasTests {
 
         // The gesture hit the scroll edge - the browser should take it over
         // (e.g. scroll of an outer html container, pull-to-refresh).
-        assertFalse(touchmove.defaultPrevented)
+        assertFalse(touchmove.defaultPrevented, "touchmove should not be prevented when scrolling at the edge")
     }
 }
