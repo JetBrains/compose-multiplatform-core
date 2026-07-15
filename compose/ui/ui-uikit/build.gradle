@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-import androidx.build.KotlinTarget
 import org.jetbrains.androidx.build.XcodeBuildLock
 
 plugins {
