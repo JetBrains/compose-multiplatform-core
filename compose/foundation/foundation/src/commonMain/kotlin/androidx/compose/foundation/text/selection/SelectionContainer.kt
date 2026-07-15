@@ -108,19 +108,17 @@ fun DisableSelection(content: @Composable () -> Unit) {
  */
 @Suppress("ComposableLambdaParameterNaming")
 @Composable
-internal fun SelectionContainer(
+/* internal */ fun SelectionContainer(
     /** A [Modifier] for SelectionContainer. */
     modifier: Modifier = Modifier,
     /** A [SelectionState] that holds current selection, selected text, and selection actions. */
     state: SelectionState,
     /** Used for tests */
     onSelectionManagerCreated: ((SelectionManager) -> Unit)? = null,
+    registrarImpl: SelectionRegistrarImpl = rememberSaveable(saver = SelectionRegistrarImpl.Saver) { SelectionRegistrarImpl() },
+    manager: SelectionManager = remember { SelectionManager(registrarImpl) },
     children: @Composable () -> Unit,
 ) {
-    val registrarImpl =
-        rememberSaveable(saver = SelectionRegistrarImpl.Saver) { SelectionRegistrarImpl() }
-
-    val manager = remember { SelectionManager(registrarImpl) }
     if (onSelectionManagerCreated != null) {
         LaunchedEffect(onSelectionManagerCreated) { onSelectionManagerCreated.invoke(manager) }
     }
