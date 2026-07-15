@@ -20,6 +20,7 @@ import androidx.compose.foundation.text.TextDragObserver
 import androidx.compose.foundation.text.selection.MouseSelectionObserver
 import androidx.compose.foundation.text.selection.SelectionAdjustment
 import androidx.compose.foundation.text.selection.SelectionRegistrar
+import androidx.compose.foundation.text.selection.SelectionRegistrarImpl
 import androidx.compose.foundation.text.selection.awaitSelectionGestures
 import androidx.compose.foundation.text.selection.hasSelection
 import androidx.compose.ui.geometry.Offset
