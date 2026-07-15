@@ -295,7 +295,8 @@ internal abstract class TextInputConnection(
         val virtualCursorPx = fingerPx + translation
         val cursorOffset = layout.getOffsetForPosition(virtualCursorPx)
 
-
+        // Re-anchor translation to the text edge, not the touch position — otherwise a fast
+        // swipe past the text makes the user drag that whole distance back (and cursor looks frozen)
         val line = layout.getLineForOffset(cursorOffset)
         val lineLeft = layout.getLineLeft(line)
         val lineRight = layout.getLineRight(line)
