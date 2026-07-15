@@ -1,0 +1,10 @@
+#
+# The Gradle build copies these stable cinterop settings to a generated .def
+# file and appends target-specific Swift linker options resolved from the
+# selected Xcode toolchain. See configureUIKitSwiftUtils in build.gradle.
+#
+
+package = androidx.compose.ui.uikit.utils
+language = Objective-C
+compilerOpts = -D_Float16=short
+headerFilter = CMP*
