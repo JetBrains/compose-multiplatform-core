@@ -23,6 +23,7 @@ import androidx.compose.runtime.Recomposer
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.ComposeFeatureFlags
 import androidx.compose.ui.desktop.gtk.GtkApplication
 import androidx.compose.ui.desktop.gtk.GtkUriHandler
 import androidx.compose.ui.desktop.linux.LinuxApplication
@@ -34,6 +35,7 @@ import androidx.compose.ui.desktop.macos.MacOsUriHandler
 import androidx.compose.ui.platform.DesktopPlatform
 import androidx.compose.ui.platform.GlobalSnapshotManager
 import androidx.compose.ui.platform.UriHandler
+import androidx.compose.ui.scene.ComposeSceneFeatureFlags
 import androidx.compose.ui.window.ApplicationScope
 import java.nio.file.Path
 import kotlin.concurrent.thread
@@ -69,6 +71,11 @@ actual fun initializeApplication(
     uriHandler: UriHandler,
     customQuit: (() -> Boolean)?,
 ) {
+    // Apply the frame-isolation feature flag before any KDT window constructs its scene
+    // (scenes read it once at construction) - parity with ComposeContainer's init on the
+    // Swing path.
+    ComposeSceneFeatureFlags.isFrameIsolationEnabled =
+        ComposeFeatureFlags.isFrameIsolationEnabled.value
     val libraryFolderPath = Path.of(libraryFolder.toString())
     val logFolderPath = Path.of(logFolder.toString())
     val application = initializeJvmApplication(

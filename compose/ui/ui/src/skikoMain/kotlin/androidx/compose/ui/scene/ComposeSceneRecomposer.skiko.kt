@@ -18,7 +18,11 @@ package androidx.compose.ui.scene
 
 import androidx.compose.runtime.Composition
 import androidx.compose.runtime.CompositionContext
+import androidx.compose.runtime.DataSource
 import androidx.compose.runtime.Recomposer
+import androidx.compose.runtime.internal.SnapshotHolder
+import androidx.compose.runtime.isolate
+import androidx.compose.ui.desktop.logging.logger
 import androidx.compose.ui.platform.FlushCoroutineDispatcher
 import androidx.compose.ui.util.trace
 import kotlin.coroutines.CoroutineContext
@@ -35,10 +39,14 @@ import kotlinx.coroutines.launch
  * recompositions that allows more precise status checking.
  *
  * @param coroutineContext The coroutine context to use for the compositor.
+ * @param frameSnapshotHolder The scene-owned cell carrying the current frame-cycle
+ * [DataSource.Snapshot]; effect-dispatcher slices run inside it (publishing on return)
+ * and the [Recomposer] reads it from its context. `null` when frame isolation is off.
  * @param elements Additional coroutine context elements to include in context.
  */
 internal class ComposeSceneRecomposer(
     coroutineContext: CoroutineContext,
+    private val frameSnapshotHolder: SnapshotHolder?,
     vararg elements: CoroutineContext.Element
 ) {
     private val job = Job()
@@ -46,11 +54,19 @@ internal class ComposeSceneRecomposer(
 
     /**
      * We use [FlushCoroutineDispatcher] not only because we need [FlushCoroutineDispatcher.flush]
-     * for LaunchEffect tasks, but also to know whether it is idle (has no scheduled tasks)
+     * for LaunchEffect tasks, but also to know whether it is idle (has no scheduled tasks).
+     *
+     * Each task is one slice of the frame cycle when frame isolation is enabled: it runs
+     * inside the cycle snapshot and publishes its writes atomically on return.
      */
-    private val effectDispatcher = FlushCoroutineDispatcher(coroutineScope)
+    private val effectDispatcher = FlushCoroutineDispatcher(coroutineScope) { task ->
+        frameSnapshotHolder?.checkedCurrent?.isolate(task) ?: task()
+    }
     private val recomposeDispatcher = FlushCoroutineDispatcher(coroutineScope)
-    private val recomposer = Recomposer(coroutineContext + job + effectDispatcher)
+    private val recomposer =
+        frameSnapshotHolder?.let {
+            Recomposer(coroutineContext + job + effectDispatcher + it)
+        } ?: Recomposer(coroutineContext + job + effectDispatcher)
 
     /**
      * `true` if there is any pending work scheduled, regardless of whether it is currently running.
@@ -106,5 +122,9 @@ internal class ComposeSceneRecomposer(
     fun cancel() {
         recomposer.cancel()
         job.cancel()
+    }
+
+    private companion object {
+        val logger = logger<ComposeSceneRecomposer>()
     }
 }

@@ -189,6 +189,8 @@ internal class ComposeContainer(
     var isClearFocusOnMouseDownEnabled by mediator::isClearFocusOnMouseDownEnabled
 
     init {
+        ComposeSceneFeatureFlags.isFrameIsolationEnabled =
+            ComposeFeatureFlags.isFrameIsolationEnabled.value
         architectureComponentsOwner.enableSavedStateHandles()
         setWindow(window)
         this.windowContainer = windowContainer

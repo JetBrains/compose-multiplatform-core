@@ -22,9 +22,8 @@ import androidx.compose.runtime.internal.ReadTrackingIndex
 import androidx.compose.runtime.internal.SnapshotThreadLocal
 import androidx.compose.runtime.platform.makeSynchronizedObject
 import androidx.compose.runtime.platform.synchronized
-import androidx.compose.runtime.snapshots.Snapshot
-import androidx.compose.runtime.snapshots.applyObservers
-import androidx.compose.runtime.snapshots.sync
+import androidx.compose.runtime.snapshots.Snapshot as ComposeSnapshot
+import androidx.compose.runtime.snapshots.dispatchOrParkApplyNotifications
 import kotlin.concurrent.atomics.AtomicReference
 import kotlin.concurrent.atomics.ExperimentalAtomicApi
 import kotlin.contracts.ExperimentalContracts
@@ -88,6 +87,61 @@ interface DataSource {
 
     fun advanceGlobalSnapshot(): Set<Any>
 
+    /**
+     * Takes a root isolation unit pinned to this source's current state.
+     *
+     * Until [Snapshot.dispose], reads within the unit's isolation observe the pinned state
+     * plus everything published through the unit itself; changes published by others stay
+     * invisible.
+     */
+    fun takeSnapshot(): Snapshot
+
+    /**
+     * An explicit unit of isolation over one or more data sources. All work runs inside it
+     * via [isolate], which opens a nested transaction for the block and publishes it (or
+     * abandons it on failure) when the block ends. Transactions nest: an [isolate] called
+     * while the calling thread is already inside one of this unit's transactions opens a
+     * transaction nested in THAT one, whose publication folds into it silently - only
+     * top-level transactions publish to the unit's surrounding and deliver invalidations.
+     *
+     * [beginIsolation] and [endIsolation] are the implementation surface [isolate] is
+     * built on; call [isolate] instead of using them directly.
+     */
+    interface Snapshot {
+        /**
+         * SPI for [isolate]: opens a nested transaction of this unit's innermost
+         * transaction active on the calling thread (of the unit itself when none) and
+         * makes it current. Returns an opaque frame that must be passed to [endIsolation]
+         * exactly once. Must not leave any thread state changed when it throws.
+         */
+        fun beginIsolation(): Any?
+
+        /**
+         * SPI for [isolate]: ends the transaction opened by the [beginIsolation] that
+         * returned [frame], in this canonical order:
+         * 1. ALWAYS restore the calling thread's previous state first.
+         * 2. If [cause] is `null`, publish the transaction's writes to its surrounding
+         *    (resolve-or-fail: a conflicting concurrent publication discards the writes
+         *    and throws, after step 3).
+         * 3. ALWAYS release the transaction, abandoning unpublished writes.
+         *
+         * Must not throw when [cause] is non-null (the block already failed with it;
+         * secondary failures must not mask it).
+         */
+        fun endIsolation(frame: Any?, cause: Throwable?)
+
+        /**
+         * Ends the unit: abandons pending writes and releases the pin.
+         *
+         * Invalidations for changes published by others while a root unit is open are
+         * PARKED by the runtime rather than dispatched (a pinned view would consume them
+         * while still hiding the values). Disposing the unit rotates its pin and releases
+         * every parked batch no other open unit's pin still predates, so dependents are
+         * invalidated exactly when the values become visible to them.
+         */
+        fun dispose()
+    }
+
     companion object {
         private val registeredDataSources = AtomicReference(emptyList<DataSource>())
         private val threadDependencyRecorder = SnapshotThreadLocal<((Any) -> Boolean)>()
@@ -147,10 +201,13 @@ interface DataSource {
          * Invalidates all cacheable computations which depend on any of the given
          * [identifiers]. Dependencies are set up by calling the `recordDependency`
          * function passed into [DataSource.observe].
+         *
+         * While a frame-isolation unit is open, the invalidations are parked and released
+         * at the next pin rotation, when the changed values become visible to observers.
          */
         @JvmStatic
         fun invalidateDependants(identifiers: Set<Any>) {
-            sync { applyObservers }.forEach { it(identifiers, Snapshot.current) }
+            dispatchOrParkApplyNotifications(identifiers, ComposeSnapshot.current)
         }
 
         /**
@@ -163,7 +220,7 @@ interface DataSource {
          */
         @JvmStatic
         fun registerInvalidator(invalidator: (identifiers: Set<Any>) -> Unit): ObserverHandle {
-            val snapshotApplyObserver = Snapshot.registerApplyObserver { identifiers, _ ->
+            val snapshotApplyObserver = ComposeSnapshot.registerApplyObserver { identifiers, _ ->
                 invalidator(identifiers)
             }
             return ObserverHandle {
@@ -227,7 +284,7 @@ interface DataSource {
             val previousDependencyRecorder = threadDependencyRecorder.get()
             threadDependencyRecorder.set { false }
             try {
-                return Snapshot.withoutReadObservation(block)
+                return ComposeSnapshot.withoutReadObservation(block)
             } finally {
                 threadDependencyRecorder.set(previousDependencyRecorder)
             }
@@ -254,6 +311,21 @@ interface DataSource {
                 @Suppress("UNCHECKED_CAST")
                 invoke() as T
             }
+        }
+
+        /**
+         * Takes one isolation unit per registered [DataSource], composed as a single
+         * [DataSource.Snapshot]. [isolate] fans out over the children; a failing child's
+         * publication aborts the composite transaction and every remaining child discards
+         * its writes (already-published children are not rolled back).
+         */
+        fun takeSnapshot(): Snapshot {
+            // Ensure the snapshot runtime (and with it the built-in snapshot data
+            // source, registered by its initializer) is loaded before consulting the
+            // registry, so a unit taken before any other snapshot use isolates properly.
+            ComposeSnapshot.current
+            val children = registeredDataSources.load().map { it.takeSnapshot() }
+            return children.singleOrNull() ?: CompositeDataSourceSnapshot(children)
         }
 
         /**
@@ -299,12 +371,10 @@ interface DataSource {
                     }
                 }
                 if (unioned.isNotEmpty()) {
-                    val observers = sync { applyObservers }
-                    val snapshot = Snapshot.current
-                    observers.forEach { it(unioned, snapshot) }
+                    dispatchOrParkApplyNotifications(unioned, ComposeSnapshot.current)
                 }
             }
-            Snapshot.sendApplyNotifications()
+            ComposeSnapshot.sendApplyNotifications()
         }
 
         private val readTrackingIndicesLock = makeSynchronizedObject()
@@ -359,6 +429,34 @@ interface DataSource {
 }
 
 /**
+ * Runs [block] in a nested transaction of this unit and publishes it (or abandons it when
+ * [block] throws) on return.
+ *
+ * Transactions nest by thread: called while the calling thread is already inside one of
+ * this unit's transactions, the new transaction nests in that one - its writes are visible
+ * to the rest of the enclosing transaction after the block, its publication folds silently
+ * into it (the enclosing boundary owns the delivery), and a failure discards only the
+ * nested writes. Called outside, the transaction is top-level: its publication commits to
+ * the unit's surrounding and delivers the invalidations.
+ *
+ * This facade owns the begin/end pairing (guaranteed by inlining even across non-local
+ * returns from [block]); implementations own the lifecycle order inside
+ * [DataSource.Snapshot.endIsolation].
+ */
+inline fun <T> DataSource.Snapshot.isolate(block: () -> T): T {
+    val frame = beginIsolation()
+    var cause: Throwable? = null
+    try {
+        return block()
+    } catch (e: Throwable) {
+        cause = e
+        throw e
+    } finally {
+        endIsolation(frame, cause)
+    }
+}
+
+/**
  * The type returned by observer registration methods that unregisters the observer when it is
  * disposed.
  */
@@ -383,6 +481,48 @@ private object DataSourceObservationWrapper : Function0<Any?> {
             block()
         }
     }
+}
+
+private class CompositeDataSourceSnapshot(
+    private val children: List<DataSource.Snapshot>
+) : DataSource.Snapshot {
+    override fun beginIsolation(): Any? {
+        val frames = ArrayList<Any?>(children.size)
+        try {
+            children.forEach { frames.add(it.beginIsolation()) }
+        } catch (e: Throwable) {
+            // A child failed to open: unwind the already-opened ones (in reverse, with the
+            // failure as the cause so nothing publishes) and rethrow.
+            for (index in frames.indices.reversed()) {
+                try {
+                    children[index].endIsolation(frames[index], e)
+                } catch (secondary: Throwable) {
+                    e.addSuppressed(secondary)
+                }
+            }
+            throw e
+        }
+        return frames
+    }
+
+    override fun endIsolation(frame: Any?, cause: Throwable?) {
+        @Suppress("UNCHECKED_CAST")
+        val frames = frame as List<Any?>
+        // Children began first-to-last; end last-to-first. The first failure (e.g. a
+        // publish conflict) becomes the cause for every remaining child, so their writes
+        // are discarded rather than left pending, and is rethrown once all have ended.
+        var failure: Throwable? = cause
+        for (index in children.indices.reversed()) {
+            try {
+                children[index].endIsolation(frames[index], failure)
+            } catch (e: Throwable) {
+                if (failure == null) failure = e else failure.addSuppressed(e)
+            }
+        }
+        if (cause == null && failure != null) throw failure
+    }
+
+    override fun dispose() = children.forEach { it.dispose() }
 }
 
 @Suppress("IMPLEMENTING_FUNCTION_INTERFACE")

@@ -692,6 +692,26 @@ public sealed class Snapshot(
 
         @InternalComposeApi public fun openSnapshotCount(): Int = openSnapshots.toList().size
 
+        /**
+         * `true` while apply notifications are parked behind an open frame-isolation
+         * context. Parked work is invisible to apply observers until a pin rotation
+         * releases it, so schedulers deciding idleness or rendering need must treat it as
+         * pending work.
+         */
+        @InternalComposeApi
+        public fun hasParkedApplyNotifications(): Boolean = hasParkedApplyNotificationsInternal()
+
+        /**
+         * Registers [notifier], invoked (on the committing thread) whenever an apply
+         * notification is parked instead of dispatched. Parking replaces the dispatch that
+         * would otherwise wake render scheduling, so integrations use this content-free
+         * nudge to keep an otherwise idle scene rendering - and therefore rotating the pin
+         * that releases the parked work.
+         */
+        @InternalComposeApi
+        public fun registerParkedApplyNotifier(notifier: () -> Unit): ObserverHandle =
+            registerParkedApplyNotifierInternal(notifier)
+
         @PublishedApi
         internal fun removeCurrent(): Snapshot? {
             val previous = threadSnapshot.get()
@@ -876,20 +896,31 @@ internal constructor(
         // Mark as applied
         applied = true
 
-        // Notify any apply observers that changes applied were seen
-        if (globalModified != null) {
-            val nonNullGlobalModified = globalModified!!.wrapIntoSet()
-            if (nonNullGlobalModified.isNotEmpty()) {
+        // Notify any apply observers that changes applied were seen. While a
+        // frame-isolation context is open, park the notifications instead of dispatching:
+        // pinned receivers would consume them against views that still hide the committed
+        // values. Only the notification is deferred - the values are already visible to
+        // everything unpinned - and the batch is released at a pin rotation.
+        val globalModifiedSet =
+            globalModified?.let { if (it.isNotEmpty()) it.wrapIntoSet() else null }
+        val modifiedSet =
+            if (modified != null && modified.isNotEmpty()) modified.wrapIntoSet() else null
+        val combined =
+            when {
+                globalModifiedSet == null -> modifiedSet
+                modifiedSet == null -> globalModifiedSet
+                else -> globalModifiedSet + modifiedSet
+            }
+        if (combined != null && !parkApplyNotifications(combined)) {
+            if (globalModifiedSet != null) {
                 verboseTrace("Compose:applyObservers") {
-                    observers.fastForEach { it(nonNullGlobalModified, this) }
+                    observers.fastForEach { it(globalModifiedSet, this) }
                 }
             }
-        }
-
-        if (modified != null && modified.isNotEmpty()) {
-            val modifiedSet = modified.wrapIntoSet()
-            verboseTrace("Compose:applyObservers") {
-                observers.fastForEach { it(modifiedSet, this) }
+            if (modifiedSet != null) {
+                verboseTrace("Compose:applyObservers") {
+                    observers.fastForEach { it(modifiedSet, this) }
+                }
             }
         }
 
@@ -1596,7 +1627,7 @@ internal class GlobalSnapshot(snapshotId: SnapshotId, invalid: SnapshotIdSet) :
 }
 
 /** A nested mutable snapshot created by [MutableSnapshot.takeNestedMutableSnapshot]. */
-internal class NestedMutableSnapshot(
+internal open class NestedMutableSnapshot(
     snapshotId: SnapshotId,
     invalid: SnapshotIdSet,
     readObserver: ((Any) -> Boolean)?,
@@ -1682,7 +1713,7 @@ internal class NestedMutableSnapshot(
 
 /** A pseudo snapshot that doesn't introduce isolation but does introduce observers. */
 internal class TransparentObserverMutableSnapshot(
-    private val parentSnapshot: MutableSnapshot?,
+    internal val parentSnapshot: MutableSnapshot?,
     specifiedReadObserver: ((Any) -> Boolean)?,
     specifiedWriteObserver: ((Any) -> Unit)?,
     private val mergeParentObservers: Boolean,
@@ -1794,7 +1825,7 @@ internal class TransparentObserverMutableSnapshot(
 
 /** A pseudo snapshot that doesn't introduce isolation but does introduce observers. */
 internal class TransparentObserverSnapshot(
-    private val parentSnapshot: Snapshot?,
+    internal val parentSnapshot: Snapshot?,
     specifiedReadObserver: ((Any) -> Boolean)?,
     private val mergeParentObservers: Boolean,
     private val ownsParentSnapshot: Boolean,
@@ -1982,6 +2013,434 @@ private val globalSnapshot =
             DataSource.register(SnapshotDataSource)
         }
 
+// ---------------------------------------------------------------------------------------
+// Parked apply notifications: the frame-isolation back-pressure.
+//
+// While any ApplyThroughSnapshot is open, apply notifications for commits that did NOT go
+// through one of them are PARKED instead of dispatched: a pinned receiver would consume the
+// notification against a view that still hides the committed values - its dependents would
+// re-read stale state and consider themselves valid again, and nothing would ever
+// invalidate them once the values become visible. Parking defers only the NOTIFICATION;
+// the values themselves commit normally and are visible to everything unpinned.
+//
+// A parked batch is released once every open context that could still be hiding its values
+// has rotated: `pinEpoch >= epoch` for all open contexts except the batch's owner (whose
+// own view includes the commit). Release is evaluated when a context unregisters - the pin
+// rotation - and dispatches the union to the apply observers, which by then all read
+// through views that include the values. With no context open (frame isolation off), every
+// dispatch is immediate: stock behavior.
+// ---------------------------------------------------------------------------------------
+
+private class ParkedApplyBatch(
+    val epoch: SnapshotId,
+    val owner: ApplyThroughSnapshot?,
+    val changes: Set<Any>,
+)
+
+/** Open apply-through contexts; the gate parks while this is non-empty. Guarded by sync. */
+private val openApplyThroughSnapshots = mutableListOf<ApplyThroughSnapshot>()
+
+/** Batches awaiting their watermark, in commit order. Guarded by sync. */
+private val parkedApplyBatches = mutableListOf<ParkedApplyBatch>()
+
+/** Content-free wake-up hooks invoked whenever a batch is parked. Guarded by sync. */
+private var parkedApplyNotifiers = emptyList<() -> Unit>()
+
+internal fun hasParkedApplyNotificationsInternal(): Boolean =
+    sync { parkedApplyBatches.isNotEmpty() }
+
+internal fun registerParkedApplyNotifierInternal(notifier: () -> Unit): ObserverHandle {
+    sync { parkedApplyNotifiers += notifier }
+    return ObserverHandle { sync { parkedApplyNotifiers -= notifier } }
+}
+
+/**
+ * Parks [changed] if an apply-through context is open; returns `false` when the caller
+ * should dispatch immediately (stock behavior).
+ */
+internal fun parkApplyNotifications(changed: Set<Any>): Boolean {
+    sync {
+        if (openApplyThroughSnapshots.isEmpty()) return false
+        parkedApplyBatches.add(ParkedApplyBatch(nextSnapshotId, owner = null, changed))
+    }
+    notifyParkedApplyNotifiers()
+    return true
+}
+
+/** Immediate-or-park dispatch for sites without their own instrumentation. */
+internal fun dispatchOrParkApplyNotifications(changed: Set<Any>, snapshot: Snapshot) {
+    if (changed.isEmpty()) return
+    if (parkApplyNotifications(changed)) return
+    val observers = sync { applyObservers }
+    verboseTrace("Compose:applyObservers") { observers.fastForEach { it(changed, snapshot) } }
+}
+
+/**
+ * Called by a through-commit after its immediate dispatch: sibling contexts pinned before
+ * the commit consumed that dispatch against views that still hide its values, so enqueue a
+ * redelivery for their rotation. No-op when no such sibling exists (the single-context
+ * case), so own commits are never redelivered then.
+ */
+private fun enqueueForPinnedSiblings(changes: Set<Any>, owner: ApplyThroughSnapshot) {
+    val enqueued = sync {
+        val epoch = nextSnapshotId
+        if (openApplyThroughSnapshots.any { it !== owner && it.pinEpoch < epoch }) {
+            parkedApplyBatches.add(ParkedApplyBatch(epoch, owner, changes))
+            true
+        } else {
+            false
+        }
+    }
+    if (enqueued) notifyParkedApplyNotifiers()
+}
+
+private fun notifyParkedApplyNotifiers() {
+    val notifiers = sync { parkedApplyNotifiers }
+    notifiers.fastForEach { it() }
+}
+
+private fun registerOpenApplyThroughSnapshot(snapshot: ApplyThroughSnapshot) {
+    sync { openApplyThroughSnapshots.add(snapshot) }
+}
+
+/**
+ * Unregisters [snapshot] (its pin rotation) and dispatches every parked batch that no
+ * remaining open pin still predates: all remaining receivers see the values, so the
+ * released invalidations land on fresh views only.
+ */
+private fun closeOpenApplyThroughSnapshot(snapshot: ApplyThroughSnapshot) {
+    var released: MutableSet<Any>? = null
+    sync {
+        openApplyThroughSnapshots.remove(snapshot)
+        if (parkedApplyBatches.isNotEmpty()) {
+            val iterator = parkedApplyBatches.iterator()
+            while (iterator.hasNext()) {
+                val batch = iterator.next()
+                val blocked =
+                    openApplyThroughSnapshots.any {
+                        it !== batch.owner && it.pinEpoch < batch.epoch
+                    }
+                if (!blocked) {
+                    (released ?: mutableSetOf<Any>().also { released = it })
+                        .addAll(batch.changes)
+                    iterator.remove()
+                }
+            }
+        }
+    }
+    val changes = released ?: return
+    val observers = sync { applyObservers }
+    verboseTrace("Compose:applyObservers") {
+        observers.fastForEach { it(changes, globalSnapshot) }
+    }
+}
+
+/**
+ * Takes an [ApplyThroughSnapshot]: the read-pinned, apply-through snapshot kind. Reads inside
+ * it (and inside children taken from it) see the state at creation plus everything already
+ * applied through it; every child apply commits through to the global immediately. Nothing is
+ * ever left pending - the context itself rejects direct writes - so disposing moves no values.
+ */
+internal fun takeApplyThroughSnapshot(): ApplyThroughSnapshot =
+    takeNewSnapshot { invalid ->
+            ApplyThroughSnapshot(
+                snapshotId = sync { nextSnapshotId.also { nextSnapshotId += 1 } },
+                invalid = invalid,
+            )
+        }
+        // From now on external apply notifications are parked until this pin rotates.
+        // Registration is plain lock-guarded bookkeeping, safe outside the factory block.
+        .also { registerOpenApplyThroughSnapshot(it) }
+
+/**
+ * The missing snapshot quadrant: read-pinned, apply-through. Compare: [MutableSnapshot] is
+ * read-pinned/write-pinned-until-apply, [TransparentObserverMutableSnapshot] is
+ * read-through/write-through, [GlobalSnapshot] is the write stream itself. This kind isolates
+ * what its subtree SEES (the pin) without ever deferring what the world GETS (the commits).
+ *
+ * The context itself is read-only: a write site has no failure handling, so committing
+ * per-write would be neither transactional nor conflict-checked. All mutation goes through
+ * children ([takeNestedMutableSnapshot]), whose [NestedApplyThroughSnapshot.apply] is the
+ * guarded commit point: world conflict check, stock fold into this context, then the
+ * write-through commit to the global. The stock fold adoption keeps this context's view
+ * current - every child apply advances it past the child's ids and carves them out of its
+ * invalid set - while external commits land in the advance gaps and stay pinned out until
+ * the context is disposed and a successor is taken.
+ */
+internal class ApplyThroughSnapshot
+internal constructor(snapshotId: SnapshotId, invalid: SnapshotIdSet) :
+    MutableSnapshot(snapshotId, invalid, null, null) {
+
+    /**
+     * The creation-time id, before any fold advances [snapshotId]: commits with an epoch
+     * at or below it are part of this context's pinned view; newer ones are hidden by the
+     * pin, so their parked notifications must wait for this context to rotate.
+     */
+    internal val pinEpoch: SnapshotId = snapshotId
+
+    /** Open (taken, not yet applied or disposed) apply-through children. Guarded by sync. */
+    private var openChildren = 0
+
+    override val readOnly: Boolean
+        get() = true
+
+    override fun recordModified(state: StateObject) = reportReadonlySnapshotWrite()
+
+    @OptIn(ExperimentalComposeRuntimeApi::class)
+    override fun takeNestedMutableSnapshot(
+        readObserver: ((Any) -> Boolean)?,
+        writeObserver: ((Any) -> Unit)?,
+    ): MutableSnapshot {
+        validateNotDisposed()
+        checkPrecondition(!applied) { "Cannot take a child of an applied snapshot" }
+        // The stock takeNestedMutableSnapshot body, constructing the apply-through child:
+        // the child inherits this context's view (the pin plus everything already applied
+        // through) exactly like any nested mutable snapshot inherits its parent's.
+        return creatingSnapshot(this, readObserver, writeObserver, readonly = false) {
+            actualReadObserver,
+            actualWriteObserver ->
+            advance {
+                sync {
+                    val newId = nextSnapshotId
+                    nextSnapshotId += 1
+                    openSnapshots = openSnapshots.set(newId)
+                    val currentInvalid = invalid
+                    this.invalid = currentInvalid.set(newId)
+                    NestedApplyThroughSnapshot(
+                        newId,
+                        currentInvalid.addRange(snapshotId + 1, newId),
+                        mergedReadObserver(actualReadObserver, this.readObserver),
+                        mergedWriteObserver(actualWriteObserver, this.writeObserver),
+                        this,
+                    )
+                }
+            }
+        }
+    }
+
+    override fun nestedActivated(snapshot: Snapshot) {
+        if (snapshot is NestedApplyThroughSnapshot) sync { openChildren++ }
+        super.nestedActivated(snapshot)
+    }
+
+    override fun nestedDeactivated(snapshot: Snapshot) {
+        if (snapshot is NestedApplyThroughSnapshot) sync { openChildren-- }
+        super.nestedDeactivated(snapshot)
+    }
+
+    override fun dispose() {
+        if (disposed) return
+        checkPrecondition(sync { openChildren } == 0) {
+            "Cannot dispose while a child snapshot is open"
+        }
+        // Everything ever written through this context has already committed, so this is the
+        // stock applied-close: the no-op apply retires our current and previous ids and
+        // refreshes the global (any raw writes pending on it get parked and released just
+        // below), and the stock dispose of an APPLIED snapshot skips the abandon path that
+        // would otherwise destroy records the world already sees.
+        if (!applied) apply().check()
+        super.dispose()
+        // The pin rotation: retire this pin from the parked-notification watermark and
+        // release every batch it was the last one hiding - the successor context is taken
+        // after this and pins the now-visible values, so the released invalidations land
+        // on fresh views only and dependents converge.
+        closeOpenApplyThroughSnapshot(this)
+    }
+}
+
+/**
+ * A child of an [ApplyThroughSnapshot]: a stock nested mutable snapshot whose [apply] first
+ * checks its writes against the WORLD (resolve-or-fail, before anything folds), then performs
+ * the stock silent fold into the context, and then commits the folded ids through to the
+ * global - retiring them from the open set, refreshing the global snapshot, and dispatching
+ * the batch to apply observers. One child apply = one atomic, world-visible commit; a failed
+ * apply leaves the context untouched and the child intact for the caller to dispose (which
+ * abandons its writes, stock).
+ */
+internal class NestedApplyThroughSnapshot
+internal constructor(
+    snapshotId: SnapshotId,
+    invalid: SnapshotIdSet,
+    readObserver: ((Any) -> Boolean)?,
+    writeObserver: ((Any) -> Unit)?,
+    private val owner: ApplyThroughSnapshot,
+) : NestedMutableSnapshot(snapshotId, invalid, readObserver, writeObserver, owner) {
+
+    override fun apply(): SnapshotApplyResult {
+        // The batch reference survives the fold: the stock nested apply hands this very set
+        // to the parent (whose modified is null by this class's own invariant).
+        val batch = modified
+        var globalModified: MutableScatterSet<StateObject>? = null
+        val result = sync {
+            // The world conflict check must precede the fold UNDER THE SAME LOCK: post-fold
+            // there is no discard (the records already belong to the context), and a
+            // check-then-fold window would let a racing external commit through unchecked.
+            checkAgainstWorldLocked(batch)?.let {
+                return it
+            }
+            val folded = super.apply()
+            if (folded == SnapshotApplyResult.Success) {
+                // Commit through. Every id the fold handed to the context - this child's ids
+                // and the context ids they superseded - is retired from the open set, making
+                // the records world-visible. The context has no writes of its own (it is
+                // read-only), so its superseded ids are always recordless and safe to
+                // retire. The clear covers this child's current id for the merge path, where
+                // the stock fold advances the child one last time without recording it.
+                openSnapshots = openSnapshots.andNot(owner.previousIds).clear(snapshotId)
+                // The folded batch is committed and dispatched here; the context must not
+                // deliver or commit it again.
+                owner.modified = null
+                // Refresh the global so raw (snapshot-less) reads see the commit, capturing
+                // the raw writes pending on it for dispatch below - the same two steps as
+                // the stock root apply.
+                globalModified = globalSnapshot.modified
+                resetGlobalSnapshotLocked(globalSnapshot, emptyLambda)
+            }
+            folded
+        }
+        if (result != SnapshotApplyResult.Success) return result
+
+        // Stock dispatch order, outside the lock: the global's pending raw writes first,
+        // then this child's own batch. These dispatch IMMEDIATELY - the owning cycle's
+        // same-frame machinery (animation pump -> recompose pass) depends on it.
+        val globalModifiedSet =
+            globalModified?.let { if (it.isNotEmpty()) it.wrapIntoSet() else null }
+        val batchSet = if (batch != null && batch.isNotEmpty()) batch.wrapIntoSet() else null
+        if (globalModifiedSet != null) {
+            val observers = sync { applyObservers }
+            verboseTrace("Compose:applyObservers") {
+                observers.fastForEach { it(globalModifiedSet, this) }
+            }
+        }
+        if (batchSet != null) {
+            val observers = sync { applyObservers }
+            verboseTrace("Compose:applyObservers") {
+                observers.fastForEach { it(batchSet, this) }
+            }
+        }
+        // Sibling contexts pinned before this commit consumed those dispatches against
+        // views that still hide its values; enqueue a redelivery released once every such
+        // pin has rotated past it. The owning context is excluded from that watermark (its
+        // view already includes the fold), at the cost of one benign echo delivery to it.
+        val redeliver =
+            when {
+                globalModifiedSet == null -> batchSet
+                batchSet == null -> globalModifiedSet
+                else -> globalModifiedSet + batchSet
+            }
+        if (redeliver != null) enqueueForPinnedSiblings(redeliver, owner)
+
+        sync {
+            checkAndOverwriteUnusedRecordsLocked()
+            globalModified?.forEach { processForUnusedRecordsLocked(it) }
+            batch?.forEach { processForUnusedRecordsLocked(it) }
+        }
+        return SnapshotApplyResult.Success
+    }
+
+    /**
+     * The resolve-or-fail check of this child's writes against the world's current view.
+     * Own-chain commits never conflict: they are world-visible AND context-visible, so the
+     * world's newest record and this child's base record are the same record. A genuinely
+     * concurrent commit (external, or a sibling child applied after this child was taken)
+     * yields a differing world record; [StateObject.mergeRecords] may resolve it in this
+     * child's favor (`applied`) or as equivalent (`current` - the stock policies return it
+     * only from their equivalence branch, so folding our record on top is observationally
+     * identical). Anything else fails this apply.
+     */
+    private fun checkAgainstWorldLocked(
+        modified: MutableScatterSet<StateObject>?
+    ): SnapshotApplyResult? {
+        if (modified == null || modified.isEmpty()) return null
+        val worldId = nextSnapshotId
+        val worldInvalid = openSnapshots.clear(globalSnapshot.snapshotId)
+        val start = invalid.set(snapshotId).or(previousIds)
+        modified.forEach { state ->
+            val first = state.firstStateRecord
+            val current = readable(first, worldId, worldInvalid) ?: return@forEach
+            val previous = readable(first, snapshotId, start) ?: return@forEach
+            if (previous.snapshotId == Snapshot.PreexistingSnapshotId.toSnapshotId()) {
+                return@forEach
+            }
+            if (current != previous) {
+                val applied = readable(first, snapshotId, invalid) ?: readError()
+                val merged = state.mergeRecords(previous, current, applied)
+                if (merged !== applied && merged !== current) {
+                    return SnapshotApplyResult.Failure(this)
+                }
+            }
+        }
+        return null
+    }
+}
+
+private data class SnapshotDataSourceSnapshot(private val mutableSnapshot: MutableSnapshot) :
+    DataSource.Snapshot {
+    private class IsolationFrame(val nested: MutableSnapshot, val previous: Snapshot?)
+
+    override fun beginIsolation(): Any? {
+        val nested = isolationBase().takeNestedMutableSnapshot()
+        return IsolationFrame(nested, nested.makeCurrent())
+    }
+
+    override fun endIsolation(frame: Any?, cause: Throwable?) {
+        val isolation = frame as IsolationFrame
+        // The canonical order (see the interface KDoc): restore the thread first, so a
+        // publish conflict propagates with clean thread state; then publish unless the
+        // block failed; always release the transaction, abandoning unpublished writes.
+        isolation.nested.restoreCurrent(isolation.previous)
+        try {
+            if (cause == null) {
+                // A failed apply's check() throws SnapshotApplyConflictException after
+                // disposing the snapshot; the writes are discarded either way.
+                isolation.nested.apply().check()
+            }
+        } finally {
+            isolation.nested.dispose()
+        }
+    }
+
+    /**
+     * Where a new transaction nests: the innermost mutable snapshot of this unit's subtree
+     * active on the calling thread, or the unit's own backing when the thread is outside
+     * it. Nesting on the innermost keeps mid-transaction work (nested slices, effect
+     * tasks) visible to the rest of the enclosing transaction - a fold, not a sibling -
+     * while its publication stays silent: only transactions taken directly from the
+     * backing deliver invalidations when they publish (the apply-through children).
+     */
+    private fun isolationBase(): MutableSnapshot {
+        var innermostMutable: MutableSnapshot? = null
+        var current: Snapshot? = Snapshot.currentThreadSnapshot
+        while (current != null) {
+            if (innermostMutable == null && current is MutableSnapshot) {
+                innermostMutable = current
+            }
+            if (current === mutableSnapshot) {
+                return innermostMutable ?: mutableSnapshot
+            }
+            current = current.enclosingSnapshot()
+        }
+        return mutableSnapshot
+    }
+
+    override fun dispose() {
+        mutableSnapshot.dispose()
+    }
+}
+
+/**
+ * The snapshot this one stacks on for thread-currency purposes: the parent of a nested
+ * snapshot, the wrapped snapshot of an observer-transparent one, `null` for roots.
+ */
+private fun Snapshot.enclosingSnapshot(): Snapshot? =
+    when (this) {
+        is NestedMutableSnapshot -> parent
+        is NestedReadonlySnapshot -> parent
+        is TransparentObserverMutableSnapshot -> parentSnapshot
+        is TransparentObserverSnapshot -> parentSnapshot
+        else -> null
+    }
+
 private object SnapshotDataSource : DataSource {
     override fun <T> observe(
         recordDependency: (Any) -> Boolean,
@@ -1994,6 +2453,9 @@ private object SnapshotDataSource : DataSource {
     override fun <T> isolate(block: () -> T): T {
         return Snapshot.withMutableSnapshot(block)
     }
+
+    override fun takeSnapshot(): DataSource.Snapshot =
+        SnapshotDataSourceSnapshot(takeApplyThroughSnapshot())
 
     override fun advanceGlobalSnapshot(): Set<Any> {
         val changes = sync { globalSnapshot.hasPendingChanges() }
@@ -2036,25 +2498,41 @@ private fun <T> advanceGlobalSnapshot(block: (invalid: SnapshotIdSet) -> T): T {
     val globalSnapshot = globalSnapshot
 
     val modified: MutableScatterSet<StateObject>?
+    var parked = false
     val result = sync {
-        modified = globalSnapshot.modified
-        if (modified != null) {
-            pendingApplyObserverCount.add(1)
+        val currentModified = globalSnapshot.modified
+        modified = currentModified
+        if (currentModified != null) {
+            // While a frame-isolation context is open, park the notification instead of
+            // dispatching it: a pinned receiver would consume it against a view that still
+            // hides the values. The batch is released at a pin rotation.
+            if (openApplyThroughSnapshots.isNotEmpty()) {
+                parkedApplyBatches.add(
+                    ParkedApplyBatch(nextSnapshotId, owner = null, currentModified.wrapIntoSet())
+                )
+                parked = true
+            } else {
+                pendingApplyObserverCount.add(1)
+            }
         }
         resetGlobalSnapshotLocked(globalSnapshot, block)
     }
 
-    // If the previous global snapshot had any modified states then notify the registered apply
-    // observers.
-    modified?.let {
-        try {
-            val observers = applyObservers
-            val modifiedSet = it.wrapIntoSet()
-            verboseTrace("Compose:applyObservers") {
-                observers.fastForEach { observer -> observer(modifiedSet, globalSnapshot) }
+    if (parked) {
+        notifyParkedApplyNotifiers()
+    } else {
+        // If the previous global snapshot had any modified states then notify the registered
+        // apply observers.
+        modified?.let {
+            try {
+                val observers = applyObservers
+                val modifiedSet = it.wrapIntoSet()
+                verboseTrace("Compose:applyObservers") {
+                    observers.fastForEach { observer -> observer(modifiedSet, globalSnapshot) }
+                }
+            } finally {
+                pendingApplyObserverCount.add(-1)
             }
-        } finally {
-            pendingApplyObserverCount.add(-1)
         }
     }
 

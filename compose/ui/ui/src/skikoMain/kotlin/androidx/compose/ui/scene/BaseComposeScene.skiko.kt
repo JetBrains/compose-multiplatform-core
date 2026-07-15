@@ -21,10 +21,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Composition
 import androidx.compose.runtime.CompositionContext
 import androidx.compose.runtime.CompositionLocalContext
+import androidx.compose.runtime.DataSource
+import androidx.compose.runtime.InternalComposeApi
 import androidx.compose.runtime.MonotonicFrameClock
+import androidx.compose.runtime.internal.SnapshotHolder
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.isolate
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshots.ObserverHandle
 import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.geometry.Offset
@@ -52,7 +57,7 @@ import kotlinx.coroutines.withContext
  * @property composeSceneContext the object that used to share "context" between multiple scenes
  * on the screen. Also, it provides a way for platform interaction that is required within a scene.
  */
-@OptIn(InternalComposeUiApi::class)
+@OptIn(InternalComposeUiApi::class, InternalComposeApi::class)
 internal abstract class BaseComposeScene(
     coroutineContext: CoroutineContext,
     private val invalidate: () -> Unit,
@@ -67,8 +72,35 @@ internal abstract class BaseComposeScene(
         )
 
     private val frameClock = BroadcastFrameClock(onNewAwaiters = ::updateInvalidations)
+
+    /**
+     * Carries the scene's current frame-cycle [DataSource.Snapshot].
+     * Empty while frame isolation is disabled,
+     * rotated by [rotateCycleSnapshot] at the latest frame's start,
+     * re-entered by every span/slice.
+     */
+    private val frameSnapshotHolder: SnapshotHolder? =
+        if (ComposeSceneFeatureFlags.isFrameIsolationEnabled) {
+            SnapshotHolder().apply { current = DataSource.takeSnapshot() }
+        } else {
+            null
+        }
+
+    /**
+     * Wakes render scheduling when an external commit's invalidations get parked behind an
+     * open frame-isolation pin: parking replaces the dispatch that would otherwise reach
+     * the invalidation tracker, so without this content-free nudge an idle scene would
+     * never render - and never rotate the pin that releases the parked work.
+     */
+    private val parkedInvalidationHandle: ObserverHandle? =
+        if (frameSnapshotHolder != null) {
+            Snapshot.registerParkedApplyNotifier { updateInvalidations() }
+        } else {
+            null
+        }
+
     private val recomposer: ComposeSceneRecomposer =
-        ComposeSceneRecomposer(coroutineContext, frameClock)
+        ComposeSceneRecomposer(coroutineContext, frameSnapshotHolder, frameClock)
     private var composition: Composition? = null
 
     protected val compositionContext: CompositionContext
@@ -80,7 +112,11 @@ internal abstract class BaseComposeScene(
         private set
 
     private var isInvalidationDisabled = false
-    private inline fun <T> postponeInvalidation(traceTag: String, crossinline block: () -> T): T =
+    private inline fun <T> postponeInvalidation(
+        traceTag: String,
+        isolated: Boolean = true,
+        crossinline block: () -> T
+    ): T =
         trace(traceTag) {
             check(!isClosed) { "postponeInvalidation called after ComposeScene is closed" }
             isInvalidationDisabled = true
@@ -89,7 +125,13 @@ internal abstract class BaseComposeScene(
                 // Note that this doesn't guarantee it, if sendApplyNotifications is called concurrently
                 // in a different thread than this code.
                 snapshotInvalidationTracker.sendAndPerformSnapshotChanges()
-                snapshotInvalidationTracker.performSnapshotChangesSynchronously(block)
+                snapshotInvalidationTracker.performSnapshotChangesSynchronously {
+                    if (isolated && frameSnapshotHolder != null) {
+                        frameSnapshotHolder.checkedCurrent.isolate(block)
+                    } else {
+                        block()
+                    }
+                }
             } finally {
                 snapshotInvalidationTracker.sendAndPerformSnapshotChanges()
                 isInvalidationDisabled = false
@@ -98,11 +140,48 @@ internal abstract class BaseComposeScene(
             }
         }
 
+    protected inline fun <T> withIsolationIfEnabled(block: () -> T): T {
+        return if (frameSnapshotHolder != null) {
+            frameSnapshotHolder.checkedCurrent.isolate(block)
+        } else {
+            block()
+        }
+    }
+
+    /**
+     * Runs [block] as one slice of the frame cycle, published atomically (with delivery of
+     * its invalidations) when the block ends — [isolate] merges into an enclosing slice
+     * instead if one is already current, so the outermost boundary owns the publish. With
+     * frame isolation disabled, runs [block] directly and flushes the global snapshot's
+     * pending invalidations after it, preserving the stock phase-boundary behavior.
+     */
+    private inline fun withIsolationOrApplyNotifications(block: () -> Unit) {
+        return if (frameSnapshotHolder != null) {
+            frameSnapshotHolder.checkedCurrent.isolate(block)
+        } else {
+            block()
+            Snapshot.sendApplyNotifications()
+        }
+    }
+
+    /**
+     * The frame-start pin swap: publishes nothing itself; external changes published
+     * since the previous swap become visible to the new cycle, and invalidations that
+     * were consumed against the old pinned view are re-armed by the dispose.
+     */
+    private fun rotateCycleSnapshot() {
+        val old = frameSnapshotHolder?.checkedCurrent ?: return
+        frameSnapshotHolder.current = null
+        old.dispose()
+        frameSnapshotHolder.current = DataSource.takeSnapshot()
+    }
+
     @Volatile
     private var hasPendingDraws = true
     protected fun updateInvalidations() {
         hasPendingDraws = frameClock.hasAwaiters ||
-            snapshotInvalidationTracker.hasInvalidations
+            snapshotInvalidationTracker.hasInvalidations ||
+            (frameSnapshotHolder != null && Snapshot.hasParkedApplyNotifications())
         if (hasPendingDraws && !isInvalidationDisabled && !isClosed && composition != null) {
             invalidate()
         }
@@ -125,6 +204,15 @@ internal abstract class BaseComposeScene(
         check(!isClosed) { "ComposeScene is already closed" }
         isClosed = true
 
+        parkedInvalidationHandle?.dispose()
+        val oldSnapshot = frameSnapshotHolder?.current
+        frameSnapshotHolder?.current = null
+        // With frame isolation enabled, close() must not be called from within a frame,
+        // input, or effect slice (e.g. an event handler that synchronously closes its own
+        // scene): the slice's child snapshot is still open there and dispose() fails fast
+        // with "Cannot dispose while a child snapshot is open". Previously this same
+        // reentrant pattern silently corrupted the unit's state instead of failing.
+        oldSnapshot?.dispose()
         composition?.dispose()
         recomposer.cancel()
     }
@@ -163,40 +251,53 @@ internal abstract class BaseComposeScene(
 
         if (isClosed) return
 
-        postponeInvalidation("BaseComposeScene:render") {
+        postponeInvalidation("BaseComposeScene:render", isolated = false) {
             // We try to run the phases here in the same order Android does.
 
             // Flush composition effects (e.g. LaunchedEffect, coroutines launched in
-            // rememberCoroutineScope()) before everything else
+            // rememberCoroutineScope()) before everything else. Their slices run and
+            // publish on the previous frame's pin - they are inter-frame work.
             recomposer.performScheduledEffects()
 
+            // Pin swap: publishes nothing itself; external changes published since the
+            // previous swap become visible to this frame.
+            rotateCycleSnapshot()
+
+            // The frame dispatch is deliberately NOT wrapped in a scene-level slice: with
+            // frame isolation on, the Recomposer slices its own pipeline (the animation
+            // pump, then the recompose+apply pass) into sequential child slices, and each
+            // must publish - with delivery of its invalidations - before the next one is
+            // taken (the same-frame animation contract). An enclosing slice would merge
+            // them and defer that delivery to its own end.
             recomposer.performScheduledRecomposerTasks()
             frameClock.sendFrame(nanoTime) // withFrameMillis/Nanos and recomposition
 
-            doMeasureAndLayout()  // Layout
+            // Between layout and draw, Android's Choreographer flushes the main
+            // dispatcher. We can't do quite that, but an important side effect of
+            // that is that pending invalidations get dispatched, which we can (and
+            // must) do - by publishing each phase slice when frame isolation is on,
+            // and via the global snapshot otherwise.
+            withIsolationOrApplyNotifications {
+                doMeasureAndLayout()  // Layout
 
-            // Schedule synthetic events to be sent after `render` completes
-            if (inputHandler.needUpdatePointerPosition) {
-                recomposer.scheduleAsEffect {
-                    inputHandler.updatePointerPosition()
+                // Schedule synthetic events to be sent after `render` completes
+                if (inputHandler.needUpdatePointerPosition) {
+                    recomposer.scheduleAsEffect {
+                        inputHandler.updatePointerPosition()
+                    }
                 }
             }
 
-            // Between layout and draw, Android's Choreographer flushes the main dispatcher.
-            // We can't do quite that, but an important side effect of that is that the
-            // GlobalSnapshotManager gets to run and call `Snapshot.sendApplyNotifications()`, which
-            // we can (and must) do.
-            Snapshot.sendApplyNotifications()
-
             // The drawing phase.
             // Android calls these two before drawing (AndroidComposeView.dispatchDraw)
-            doMeasureAndLayout()
-            Snapshot.sendApplyNotifications()
+            withIsolationOrApplyNotifications { doMeasureAndLayout() }
 
             // Actually draw
-            snapshotInvalidationTracker.onDraw()
-            draw(canvas)
-        }
+            withIsolationOrApplyNotifications {
+                snapshotInvalidationTracker.onDraw()
+                draw(canvas)
+            }
+        } // the frame's writes publish here - visible immediately after the frame
     }
 
     override fun sendPointerEvent(

@@ -147,7 +147,7 @@ private class PlatformLayersComposeSceneImpl(
 
     override fun calculateContentSize(): IntSize {
         check(!isClosed) { "calculateContentSize called after ComposeScene is closed" }
-        return mainOwner.measureInConstraints(Constraints())
+        return withIsolationIfEnabled { mainOwner.measureInConstraints(Constraints()) }
     }
 
     override fun invalidatePositionInWindow() {

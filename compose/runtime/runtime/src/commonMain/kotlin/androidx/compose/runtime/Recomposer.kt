@@ -30,9 +30,11 @@ import androidx.compose.runtime.collection.mutableVectorOf
 import androidx.compose.runtime.collection.wrapIntoSet
 import androidx.compose.runtime.external.kotlinx.collections.immutable.persistentSetOf
 import androidx.compose.runtime.internal.AtomicReference
+import androidx.compose.runtime.internal.SnapshotHolder
 import androidx.compose.runtime.internal.SnapshotThreadLocal
 import androidx.compose.runtime.internal.logError
 import androidx.compose.runtime.internal.trace
+import androidx.compose.runtime.isolate
 import androidx.compose.runtime.platform.SynchronizedObject
 import androidx.compose.runtime.platform.makeSynchronizedObject
 import androidx.compose.runtime.platform.synchronized
@@ -332,6 +334,12 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
     /** The [effectCoroutineContext] is derived from the parameter of the same name. */
     override val effectCoroutineContext: CoroutineContext =
         effectCoroutineContext + broadcastFrameClock + effectJob
+
+    /**
+     * The scene-owned cell carrying the current frame-cycle [DataSource.Snapshot], when frame
+     * isolation is enabled. `null` on hosts that don't isolate frames.
+     */
+    private val frameSnapshotHolder: SnapshotHolder? = this.effectCoroutineContext[SnapshotHolder]
 
     private val hasBroadcastFrameClockAwaitersLocked: Boolean
         get() = !frameClockPaused && broadcastFrameClock.hasAwaiters
@@ -652,12 +660,11 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
                     // composer invalidations that we must handle during the same frame.
                     if (hasBroadcastFrameClockAwaiters) {
                         trace("Recomposer:animation") {
-                            // Propagate the frame time to anyone who is awaiting from the
-                            // recomposer clock.
-                            broadcastFrameClock.sendFrame(frameTime)
-
-                            // Ensure any global changes are observed
-                            Snapshot.sendApplyNotifications()
+                            withIsolationOrApplyNotifications {
+                                // Propagate the frame time to anyone who is awaiting from the
+                                // recomposer clock.
+                                broadcastFrameClock.sendFrame(frameTime)
+                            }
                         }
                     }
 
@@ -675,150 +682,147 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
                         // Perform recomposition for any invalidated composers
                         modifiedValues.clear()
                         alreadyComposed.clear()
-                        while (toRecompose.isNotEmpty() || toInsert.isNotEmpty()) {
-                            try {
-                                toRecompose.fastForEach { composition ->
-                                    if (shouldSkipParentDrivenComposition(composition)) {
-                                        skippedParentDriven.add(composition)
-                                        onParentDrivenCompositionSkipped(composition)
-                                    } else {
-                                        performRecompose(composition, modifiedValues)?.let {
-                                            toApply += it
-                                        }
-                                        alreadyComposed.add(composition)
-                                    }
-                                }
-                            } catch (e: Throwable) {
-                                processCompositionError(e, recoverable = true)
-                                clearRecompositionState()
-                                return@withFrameNanos
-                            } finally {
-                                toRecompose.clear()
-                            }
-
-                            // Find any trailing recompositions that need to be composed because
-                            // of a value change by a composition. This can happen, for example, if
-                            // a CompositionLocal changes in a parent and was read in a child
-                            // composition that was otherwise valid.
-                            if (
-                                modifiedValues.isNotEmpty() || compositionInvalidations.isNotEmpty()
-                            ) {
-                                synchronized(stateLock) {
-                                    knownCompositionsLocked().fastForEach { value ->
-                                        if (
-                                            value !in alreadyComposed &&
-                                                value !in skippedParentDriven &&
-                                                value.observesAnyOf(modifiedValuesSet)
-                                        ) {
-                                            enqueueForRecompose(value)
-                                        }
-                                    }
-
-                                    // Composable lambda is a special kind of value that is not
-                                    // observed
-                                    // by the snapshot system, but invalidates composition scope
-                                    // directly instead.
-                                    compositionInvalidations.removeIf { value ->
-                                        if (
-                                            value !in alreadyComposed &&
-                                                value !in skippedParentDriven &&
-                                                value !in toRecompose
-                                        ) {
-                                            enqueueForRecompose(value)
-                                            true
-                                        } else {
-                                            false
-                                        }
-                                    }
-                                }
-                            }
-
-                            if (toRecompose.isEmpty()) {
+                        withIsolationOrNotifyObjectsInitialized {
+                            while (toRecompose.isNotEmpty() || toInsert.isNotEmpty()) {
                                 try {
-                                    fillToInsert()
-                                    while (toInsert.isNotEmpty()) {
-                                        toLateApply += performInsertValues(toInsert, modifiedValues)
-                                        fillToInsert()
+                                    toRecompose.fastForEach { composition ->
+                                        if (shouldSkipParentDrivenComposition(composition)) {
+                                            skippedParentDriven.add(composition)
+                                        onParentDrivenCompositionSkipped(composition)} else {
+                                            performRecompose(composition, modifiedValues)?.let {
+                                                toApply += it
+                                            }
+                                            alreadyComposed.add(composition)
+                                        }
                                     }
                                 } catch (e: Throwable) {
                                     processCompositionError(e, recoverable = true)
                                     clearRecompositionState()
                                     return@withFrameNanos
+                                } finally {
+                                    toRecompose.clear()
+                                }
+
+                                // Find any trailing recompositions that need to be composed because
+                                // of a value change by a composition. This can happen, for example, if
+                                // a CompositionLocal changes in a parent and was read in a child
+                                // composition that was otherwise valid.
+                                if (
+                                    modifiedValues.isNotEmpty() || compositionInvalidations.isNotEmpty()
+                                ) {
+                                    synchronized(stateLock) {
+                                        knownCompositionsLocked().fastForEach { value ->
+                                            if (
+                                                value !in alreadyComposed &&
+                                                value !in skippedParentDriven &&
+                                                value.observesAnyOf(modifiedValuesSet)
+                                            ) {
+                                                enqueueForRecompose(value)
+                                            }
+                                        }
+
+                                        // Composable lambda is a special kind of value that is not
+                                        // observed
+                                        // by the snapshot system, but invalidates composition scope
+                                        // directly instead.
+                                        compositionInvalidations.removeIf { value ->
+                                            if (
+                                                value !in alreadyComposed &&
+                                                value !in skippedParentDriven &&
+                                                value !in toRecompose
+                                            ) {
+                                                enqueueForRecompose(value)
+                                                true
+                                            } else {
+                                                false
+                                            }
+                                        }
+                                    }
+                                }
+
+                                if (toRecompose.isEmpty()) {
+                                    try {
+                                        fillToInsert()
+                                        while (toInsert.isNotEmpty()) {
+                                            toLateApply += performInsertValues(
+                                                toInsert,
+                                                modifiedValues
+                                            )
+                                            fillToInsert()
+                                        }
+                                    } catch (e: Throwable) {
+                                        processCompositionError(e, recoverable = true)
+                                        clearRecompositionState()
+                                        return@withFrameNanos
+                                    }
+                                }
+                            }
+
+                            // This is an optimization to avoid reallocating TransparentSnapshot for
+                            // each observeChanges within `apply`. Many modifiers use observation in
+                            // `onAttach` and other lifecycle methods, and allocations can be mitigated
+                            // by updating read observer in the snapshot allocated here.
+                            withTransparentSnapshot {
+                                if (toApply.isNotEmpty()) {
+                                    changeCount++
+
+                                    // Perform apply changes
+                                    try {
+                                        // We could do toComplete += toApply but doing it like below
+                                        // avoids unnecessary allocations since toApply is a mutable
+                                        // list
+                                        // toComplete += toApply
+                                        toApply.fastForEach { composition ->
+                                            toComplete.add(composition)
+                                        }
+                                        toApply.fastForEach { composition ->
+                                            composition.applyChanges()
+                                        }
+                                    } catch (e: Throwable) {
+                                        processCompositionError(e)
+                                        clearRecompositionState()
+                                        return@withFrameNanos
+                                    } finally {
+                                        toApply.clear()
+                                    }
+                                }
+
+                                if (toLateApply.isNotEmpty()) {
+                                    try {
+                                        toComplete += toLateApply
+                                        toLateApply.forEach { composition ->
+                                            composition.applyLateChanges()
+                                        }
+                                    } catch (e: Throwable) {
+                                        processCompositionError(e)
+                                        clearRecompositionState()
+                                        return@withFrameNanos
+                                    } finally {
+                                        toLateApply.clear()
+                                    }
+                                }
+
+                                if (toComplete.isNotEmpty()) {
+                                    try {
+                                        toComplete.forEach { composition ->
+                                            composition.changesApplied()
+                                        }
+                                    } catch (e: Throwable) {
+                                        processCompositionError(e)
+                                        clearRecompositionState()
+                                        return@withFrameNanos
+                                    } finally {
+                                        toComplete.clear()
+                                    }
+                                }
+                            }
+
+                            synchronized(stateLock) {
+                                runtimeCheck(deriveStateLocked() == null) {
+                                    "unexpected to get continuation here"
                                 }
                             }
                         }
-
-                        // This is an optimization to avoid reallocating TransparentSnapshot for
-                        // each observeChanges within `apply`. Many modifiers use observation in
-                        // `onAttach` and other lifecycle methods, and allocations can be mitigated
-                        // by updating read observer in the snapshot allocated here.
-                        withTransparentSnapshot {
-                            if (toApply.isNotEmpty()) {
-                                changeCount++
-
-                                // Perform apply changes
-                                try {
-                                    // We could do toComplete += toApply but doing it like below
-                                    // avoids unnecessary allocations since toApply is a mutable
-                                    // list
-                                    // toComplete += toApply
-                                    toApply.fastForEach { composition ->
-                                        toComplete.add(composition)
-                                    }
-                                    toApply.fastForEach { composition ->
-                                        composition.applyChanges()
-                                    }
-                                } catch (e: Throwable) {
-                                    processCompositionError(e)
-                                    clearRecompositionState()
-                                    return@withFrameNanos
-                                } finally {
-                                    toApply.clear()
-                                }
-                            }
-
-                            if (toLateApply.isNotEmpty()) {
-                                try {
-                                    toComplete += toLateApply
-                                    toLateApply.forEach { composition ->
-                                        composition.applyLateChanges()
-                                    }
-                                } catch (e: Throwable) {
-                                    processCompositionError(e)
-                                    clearRecompositionState()
-                                    return@withFrameNanos
-                                } finally {
-                                    toLateApply.clear()
-                                }
-                            }
-
-                            if (toComplete.isNotEmpty()) {
-                                try {
-                                    toComplete.forEach { composition ->
-                                        composition.changesApplied()
-                                    }
-                                } catch (e: Throwable) {
-                                    processCompositionError(e)
-                                    clearRecompositionState()
-                                    return@withFrameNanos
-                                } finally {
-                                    toComplete.clear()
-                                }
-                            }
-                        }
-
-                        synchronized(stateLock) {
-                            runtimeCheck(deriveStateLocked() == null) {
-                                "unexpected to get continuation here"
-                            }
-                        }
-
-                        // Ensure any state objects that were written during apply changes, e.g.
-                        // nodes with state-backed properties, get sent apply notifications to
-                        // invalidate anything observing the nodes. Call this method instead of
-                        // sendApplyNotifications to ensure that objects that were _created_ in this
-                        // snapshot are also considered changed after this point.
-                        Snapshot.notifyObjectsInitialized()
                         alreadyComposed.clear()
                         skippedParentDriven.clear()
                         modifiedValues.clear()
@@ -1233,7 +1237,7 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
         }
 
         // TODO(b/143755743)
-        if (!composerWasComposing) {
+        if (!composerWasComposing && frameSnapshotHolder == null) {
             Snapshot.notifyObjectsInitialized()
         }
 
@@ -1252,7 +1256,7 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
             return
         }
 
-        if (!composerWasComposing) {
+        if (!composerWasComposing && frameSnapshotHolder == null) {
             // Ensure that any state objects created during applyChanges are seen as changed
             // if modified after this call.
             Snapshot.notifyObjectsInitialized()
@@ -1487,12 +1491,47 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
         modifiedValues: MutableScatterSet<Any>?,
         noinline block: () -> T,
     ): T {
-        return DataSource.isolate {
-            DataSource.observe(
-                recordDependency = readObserverOf(composition),
-                recordChange = writeObserverOf(composition, modifiedValues),
-                block = block,
-            )
+        val frameSnapshot = frameSnapshotHolder?.checkedCurrent
+        return if (frameSnapshot != null) {
+            frameSnapshot.isolate {
+                DataSource.observe(
+                    recordDependency = readObserverOf(composition),
+                    recordChange = writeObserverOf(composition, modifiedValues),
+                    block = block,
+                )
+            }
+        } else {
+            DataSource.isolate {
+                DataSource.observe(
+                    recordDependency = readObserverOf(composition),
+                    recordChange = writeObserverOf(composition, modifiedValues),
+                    block = block,
+                )
+            }
+        }
+    }
+
+    private inline fun withIsolationOrApplyNotifications(block: () -> Unit) {
+        if (frameSnapshotHolder != null) {
+            frameSnapshotHolder.checkedCurrent.isolate(block)
+        } else {
+            block()
+            // Ensure any global changes are observed
+            Snapshot.sendApplyNotifications()
+        }
+    }
+
+    private inline fun withIsolationOrNotifyObjectsInitialized(block: () -> Unit) {
+        if (frameSnapshotHolder != null) {
+            frameSnapshotHolder.checkedCurrent.isolate(block)
+        } else {
+            block()
+            // Ensure any state objects that were written during apply changes, e.g.
+            // nodes with state-backed properties, get sent apply notifications to
+            // invalidate anything observing the nodes. Call this method instead of
+            // sendApplyNotifications to ensure that objects that were _created_ in this
+            // snapshot are also considered changed after this point.
+            Snapshot.notifyObjectsInitialized()
         }
     }
 
