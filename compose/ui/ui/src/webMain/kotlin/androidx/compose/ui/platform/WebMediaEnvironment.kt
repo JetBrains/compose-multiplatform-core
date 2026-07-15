@@ -123,7 +123,7 @@ internal class WebMediaEnvironment(
 
     private fun getDevicePosture(): UiMediaScope.Posture {
         val postureType = getDevicePostureType()
-        val isPortrait = Snapshot.withoutReadObservation { isOrientationPortrait }
+        val isPortrait = isOrientationPortrait
         return when (postureType) {
             1 -> if (isPortrait) UiMediaScope.Posture.Book else UiMediaScope.Posture.Tabletop
             else -> UiMediaScope.Posture.Flat
@@ -251,8 +251,8 @@ internal class WebMediaEnvironment(
         keyboardKind: UiMediaScope.KeyboardKind,
         pointerPrecision: UiMediaScope.PointerPrecision
     ) {
-        val currentHasPhysicalKeyboard = Snapshot.withoutReadObservation { hasPhysicalKeyboard }
-        val currentPointerPrecision = Snapshot.withoutReadObservation { _pointerPrecision }
+        val currentHasPhysicalKeyboard = hasPhysicalKeyboard
+        val currentPointerPrecision = _pointerPrecision
         when (keyboardKind) {
             UiMediaScope.KeyboardKind.Physical if !currentHasPhysicalKeyboard -> {
                 hasPhysicalKeyboard = true
