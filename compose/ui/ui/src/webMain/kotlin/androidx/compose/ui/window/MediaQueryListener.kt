@@ -35,6 +35,7 @@ internal abstract class MediaQueryListener(private val query: String) {
     }
 
     fun dispose() {
+        if (!isMatchMediaSupported()) return
         try {
             media.removeEventListener("change", listener)
         } catch (t : Throwable) {
