@@ -587,22 +587,15 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
                 }
             }
 
-            fun parentCompositionOf(
-                composition: ControlledComposition
-            ): ControlledComposition? =
-                ((composition as? CompositionImpl)?.parent?.composition as? ControlledComposition)
-
+            // The gate returns true when the composition's host has a measure pass pending:
+            // that pass re-runs the content lambda with fresh captures, so the standalone
+            // recomposition would pair stale captures with fresh reads. The parent's measure
+            // read every value it captured, so measure-not-pending proves the captures are
+            // current and the standalone pass is coherent.
             fun shouldSkipParentDrivenComposition(
                 composition: ControlledComposition
-            ): Boolean {
-                if ((composition as? CompositionImpl)?.parentDrivenContent != true) return false
-                val parent = parentCompositionOf(composition) ?: return false
-                return parent in toApply || parent in skippedParentDriven
-            }
-
-            fun onParentDrivenCompositionSkipped(composition: ControlledComposition) {
-                (composition as? CompositionImpl)?.onSkippedParentDrivenRecompose?.invoke()
-            }
+            ): Boolean =
+                (composition as? CompositionImpl)?.parentDrivenRecomposeGate?.invoke() == true
 
             fun clearRecompositionState() {
                 synchronized(stateLock) {
@@ -682,26 +675,25 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
                         // Perform recomposition for any invalidated composers
                         modifiedValues.clear()
                         alreadyComposed.clear()
-                        withIsolationOrNotifyObjectsInitialized {
-                            while (toRecompose.isNotEmpty() || toInsert.isNotEmpty()) {
-                                try {
-                                    toRecompose.fastForEach { composition ->
-                                        if (shouldSkipParentDrivenComposition(composition)) {
-                                            skippedParentDriven.add(composition)
-                                        onParentDrivenCompositionSkipped(composition)} else {
-                                            performRecompose(composition, modifiedValues)?.let {
-                                                toApply += it
-                                            }
-                                            alreadyComposed.add(composition)
+                        withIsolationOrNotifyObjectsInitialized {while (toRecompose.isNotEmpty() || toInsert.isNotEmpty()) {
+                            try {
+                                toRecompose.fastForEach { composition ->
+                                    if (shouldSkipParentDrivenComposition(composition)) {
+                                        skippedParentDriven.add(composition)
+                                    } else {
+                                        performRecompose(composition, modifiedValues)?.let {
+                                            toApply += it
                                         }
+                                        alreadyComposed.add(composition)
                                     }
-                                } catch (e: Throwable) {
-                                    processCompositionError(e, recoverable = true)
-                                    clearRecompositionState()
-                                    return@withFrameNanos
-                                } finally {
-                                    toRecompose.clear()
                                 }
+                            } catch (e: Throwable) {
+                                processCompositionError(e, recoverable = true)
+                                clearRecompositionState()
+                                return@withFrameNanos
+                            } finally {
+                                toRecompose.clear()
+                            }
 
                                 // Find any trailing recompositions that need to be composed because
                                 // of a value change by a composition. This can happen, for example, if

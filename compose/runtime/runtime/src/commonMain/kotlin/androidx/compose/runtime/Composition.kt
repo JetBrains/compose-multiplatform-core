@@ -390,18 +390,16 @@ public fun ControlledComposition(
 ): ControlledComposition = CompositionImpl(parent, applier)
 
 /**
- * Marks a composition whose content is refreshed directly by its parent via [Composition.setContent]
- * or [ReusableComposition.setContentWithReuse], such as subcompositions managed by
- * `SubcomposeLayout`.
+ * Installs a gate consulted when this composition is due for a standalone recomposition:
+ * returning true means its content is about to be refreshed by its host's pending measure
+ * pass (which re-runs the content lambda with fresh captures), so the standalone pass is
+ * skipped - it would pair stale captured values with fresh reads. null (the default) never
+ * skips. The gate must only return true when that refresh is genuinely scheduled: a skipped
+ * invalidation is consumed, and only re-arms via the refresh or a new change.
  */
 @InternalComposeApi
-public fun Composition.markParentDrivenContent(enabled: Boolean = true) {
-    (this as? CompositionImpl)?.parentDrivenContent = enabled
-}
-
-@InternalComposeApi
-public fun Composition.setOnSkippedParentDrivenRecompose(block: (() -> Unit)?) {
-    (this as? CompositionImpl)?.onSkippedParentDrivenRecompose = block
+public fun Composition.setParentDrivenRecomposeGate(gate: (() -> Boolean)?) {
+    (this as? CompositionImpl)?.parentDrivenRecomposeGate = gate
 }
 
 private val PendingApplyNoModifications = Any()
@@ -520,8 +518,7 @@ internal class CompositionImpl(
     // Held when making changes to self or composer
     private val lock = makeSynchronizedObject()
 
-    internal var parentDrivenContent: Boolean = false
-    internal var onSkippedParentDrivenRecompose: (() -> Unit)? = null
+    internal var parentDrivenRecomposeGate: (() -> Boolean)? = null
 
     /**
      * A set of remember observers that were potentially abandoned between [composeContent] or
