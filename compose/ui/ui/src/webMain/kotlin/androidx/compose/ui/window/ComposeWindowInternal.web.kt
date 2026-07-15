@@ -451,22 +451,50 @@ internal class ComposeWindow(
             actualActivePointerButtons = PointerButtons()
         }
 
-        addTypedEvent<TouchEvent>("touchstart") { evt ->
-            // in most cases we don't care about touches since in Compose we do not process them at all
-            // there's one case however when we need to cancel them - it's when we are focussed in a DOM backing field
-            // see https://youtrack.jetbrains.com/issue/CMP-10079
-
-            val backingInput = (platformContext.textInputService as WebTextInputService).getBackingInput()
-            if (backingInput?.isFocused() == true) {
-                evt.preventDefault()
-            }
+        addTypedEvent<TouchEvent>("touchstart", passive = true) { _ ->
+            // We deliberately never preventDefault() touchstart, even though Compose consumes
+            // the corresponding pointerdown on interactive areas. Per the Touch Events spec,
+            // canceling touchstart suppresses the browser's default actions for the entire
+            // touch sequence: scrolling, back gesture, pull-to-refresh, AND the compatibility
+            // mouse events - and at touchstart time we can't yet know whether Compose will
+            // actually handle the gesture. The decision is deferred to where it can be made
+            // correctly: touchmove (move-based gestures) and touchend (tap-based defaults).
+            // The listener is passive and empty; it exists to document this decision.
         }
 
-        // While we don't pass touchmove(s) to Compose, we need to track them to prevent the browser from taking over the gestures.
+        addTypedEvent<TouchEvent>("touchend", passive = false) { evt ->
+            // Browsers dispatch pointerup before the corresponding touchend (de facto true in
+            // all engines, though the specs don't mandate the relative order), so at this
+            // point we already know whether Compose consumed the release - see onPointerEvent.
+            //
+            // If it did, we cancel touchend to suppress the tap's remaining default actions,
+            // primarily the "compatibility mouse events" - https://w3c.github.io/touch-events/#mouse-events
+            //
+            // Suppressing the synthetic mouse events prevents:
+            // - a duplicate click reaching the page for a tap Compose already handled;
+            // - the synthetic mousedown moving DOM focus, e.g. blurring the backing input of
+            //   a focused Compose text field and hiding the virtual keyboard
+            //   (https://youtrack.jetbrains.com/issue/CMP-10079).
+            //
+            // Move-based gestures (scroll, back gesture, pull-to-refresh) are NOT affected:
+            // those are decided earlier, in the touchmove handler and by the canvas
+            // touch-action style.
+            if (lastPointerReleaseConsumed && evt.cancelable) {
+                evt.preventDefault()
+            }
+            lastPointerReleaseConsumed = false // reset
+        }
+
+        // While we don't pass touchmove(s) to Compose (it processes pointermove instead), only
+        // touchmove's preventDefault() can stop the browser from taking over a move-based
+        // gesture (scroll, back gesture, pull-to-refresh): per the Pointer Events spec,
+        // canceling pointer events has no effect on the browser's direct manipulation
+        // behaviors - only touch-action and canceling touch events do.
         // https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/touch-action
         // > Applications using Touch events disable the browser handling of gestures by calling preventDefault()
-        addTypedEvent<TouchEvent>("touchmove") { evt ->
-            // This event happens after pointermove. Here we decide if the browser should take over the gesture.
+        addTypedEvent<TouchEvent>("touchmove", passive = false) { evt ->
+            // This event happens after the corresponding pointermove, so Compose has already
+            // processed the move. Here we decide if the browser should take over the gesture.
             val shouldPreventDefault = when {
                 // First case: Scrolling happened in Compose, so the browser shouldn't take over the gesture.
                 rootScrollObserver.consumedAnyScroll() -> true
@@ -476,7 +504,7 @@ internal class ComposeWindow(
                 // so they were not consumed by Compose. We let the browser handle this gesture.
                 else -> false
             }
-            if (shouldPreventDefault) {
+            if (shouldPreventDefault && evt.cancelable) {
                 evt.preventDefault()
             }
         }
@@ -656,6 +684,14 @@ internal class ComposeWindow(
 
     private val activeTouchPointers = mutableIntObjectMapOf<TouchEventWithContainerOffset>()
 
+    // Whether Compose consumed the most recent touch pointerup. Read (and then reset) by the
+    // touchend handler, which the browser dispatches right after pointerup, to decide whether
+    // to suppress the compatibility mouse events. A single flag suffices because every
+    // touchend is immediately preceded by its own pointerup; in the rare case where several
+    // simultaneously lifted fingers are coalesced into one touchend, the flag reflects only
+    // the last release.
+    private var lastPointerReleaseConsumed = false
+
     // Pointer IDs whose move events were consumed during the active touch sequence.
     // It's a part of touch events preventDefault logic.
     private val activeTouchPointersConsumedMoves = mutableIntSetOf()
@@ -674,6 +710,7 @@ internal class ComposeWindow(
                 activeTouchPointers.clear()
                 activeTouchPointersConsumedMoves.remove(event.pointerId)
                 activeTouchOffset = Offset.Unspecified
+                lastPointerReleaseConsumed = false
             } else {
                 actualActivePointerButtons = PointerButtons()
             }
@@ -805,10 +842,13 @@ internal class ComposeWindow(
             activeTouchOffset = Offset.Unspecified
 
             if (eventType == PointerEventType.Release) {
+                lastPointerReleaseConsumed = anyChangeConsumed
                 activeTouchPointers.remove(event.pointerId)
                 activeTouchPointersConsumedMoves.remove(event.pointerId)
             }
 
+            // Canceling a pointer event does not block scrolling or other native gestures
+            // (per the Pointer Events spec, only touch-action / canceling touch events do);
             if (anyChangeConsumed && event.cancelable) {
                 event.preventDefault()
                 if (eventType == PointerEventType.Move) {

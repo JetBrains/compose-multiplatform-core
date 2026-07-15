@@ -16,6 +16,7 @@
 
 package androidx.compose.ui.window
 
+import androidx.compose.ui.uikit.utils.CMPContainerView
 import androidx.compose.ui.unit.toDpSize
 import kotlin.math.max
 import kotlinx.cinterop.CValue
@@ -42,7 +43,7 @@ import platform.UIKit.UIWindow
 internal class ComposeContainerView(
     private val useOpaqueConfiguration: Boolean,
     private val transparentForTouches: Boolean,
-): UIView(frame = UIScreen.mainScreen.bounds) {
+): CMPContainerView(frame = UIScreen.mainScreen.bounds) {
     init {
         setClipsToBounds(true)
         setOpaque(useOpaqueConfiguration)
