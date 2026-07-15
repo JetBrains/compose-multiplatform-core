@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import androidx.build.KotlinTarget
 import org.jetbrains.androidx.build.XcodeBuildLock
 
 plugins {
@@ -174,6 +175,12 @@ private def configureSwiftUtils(target, xcodeProjectDir, sdkName, destination, a
     def generatedHeaderPath = new File(headersPath, "${libraryName}-Swift.h")
     def sourceDefPath = new File(project.projectDir, "src/nativeInterop/cinterop/swiftUtils.def")
     def generatedDefPath = new File(project.buildDir, "generated/nativeInterop/cinterop/${libraryName}-${sdkName}/swiftUtils.def")
+    // The provider is created during configuration but runs xcrun only if the Swift .def task needs it.
+    def swiftcPathProvider = providers.exec {
+        commandLine("xcrun", "--find", "swiftc")
+    }.standardOutput.asText.map {
+        it.trim()
+    }
     def compilerArgs = [
             "-include-binary", libraryPath.toString(),
     ]
@@ -221,6 +228,7 @@ private def configureSwiftUtils(target, xcodeProjectDir, sdkName, destination, a
                     .withPropertyName("${libraryName}-${sdkName}-source-def")
                     .withPathSensitivity(PathSensitivity.RELATIVE)
             inputs.property("sdkName", sdkName)
+            inputs.property("swiftcPath", swiftcPathProvider)
             outputs.file(generatedDefPath)
                     .withPropertyName("${libraryName}-${sdkName}-def")
             outputs.upToDateWhen { false }
@@ -228,9 +236,7 @@ private def configureSwiftUtils(target, xcodeProjectDir, sdkName, destination, a
             doLast {
                 // Resolve the selected Xcode toolchain only when this iOS task runs. Some CI jobs
                 // configure this project on non-macOS hosts where xcrun is unavailable.
-                def swiftcPath = providers.exec {
-                    commandLine("xcrun", "--find", "swiftc")
-                }.standardOutput.asText.get().trim()
+                def swiftcPath = swiftcPathProvider.get()
                 def swiftToolchainDir = new File(swiftcPath).parentFile.parentFile.parentFile
                 def swiftToolchainLibPath = new File(swiftToolchainDir, "usr/lib/swift/${sdkName}")
                 def swiftLinkerOpts = [
