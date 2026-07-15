@@ -270,11 +270,11 @@ fun Window(
 ) {
     val currentOnCloseRequest by rememberUpdatedState(onCloseRequested)
     val application = Application.current
-    val scene = LocalScene.current
+    val session = LocalApplicationSession.current
     val window = remember {
         object : RememberObserver {
             val window = application.createWindow(
-                scene,
+                session,
                 { reason -> currentOnCloseRequest(reason) },
             )
 

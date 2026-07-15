@@ -63,6 +63,7 @@ import androidx.compose.ui.node.TraversableNode.Companion.TraverseDescendantsAct
 import androidx.compose.ui.node.checkMeasuredSize
 import androidx.compose.ui.node.requireOwner
 import androidx.compose.ui.node.traverseDescendants
+import androidx.compose.runtime.setParentDrivenRecomposeGate
 import androidx.compose.ui.platform.createPausableSubcomposition
 import androidx.compose.ui.platform.createSubcomposition
 import androidx.compose.ui.unit.Constraints
@@ -546,7 +547,7 @@ fun SubcomposeSlotReusePolicy(maxSlotsToRetainForReuse: Int): SubcomposeSlotReus
  * SubcomposeLayout and even when the SubcomposeLayout's LayoutNode is reused via the
  * ReusableComposeNode mechanism.
  */
-@OptIn(ExperimentalComposeUiApi::class)
+@OptIn(ExperimentalComposeUiApi::class, androidx.compose.runtime.InternalComposeApi::class)
 internal class LayoutNodeSubcompositionsState(
     private val root: LayoutNode,
     slotReusePolicy: SubcomposeSlotReusePolicy,
@@ -723,11 +724,22 @@ internal class LayoutNodeSubcompositionsState(
                 }
                 val composition =
                     if (existing == null || existing.isDisposed) {
-                        if (pausable) {
-                            createPausableSubcomposition(node, parentComposition)
-                        } else {
-                            createSubcomposition(node, parentComposition)
+                        val created =
+                            if (pausable) {
+                                createPausableSubcomposition(node, parentComposition)
+                            } else {
+                                createSubcomposition(node, parentComposition)
+                            }
+                        // Skip a standalone recomposition only while the HOST's measure is
+                        // already pending: that pass re-runs subcompose with fresh captures.
+                        // The host is the SubcomposeLayout's own node (root) - the slot node's
+                        // measure never re-supplies content. Measure-not-pending proves the
+                        // captured values are current (the measure read them), so the
+                        // standalone pass is coherent.
+                        created.setParentDrivenRecomposeGate {
+                            root.measurePending || root.lookaheadMeasurePending
                         }
+                        created
                     } else {
                         existing
                     }

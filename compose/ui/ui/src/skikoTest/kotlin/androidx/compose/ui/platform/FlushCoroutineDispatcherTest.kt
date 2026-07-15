@@ -21,6 +21,7 @@ import kotlin.coroutines.EmptyCoroutineContext
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.milliseconds
@@ -147,6 +148,39 @@ class FlushCoroutineDispatcherTest {
         }
 
         assertEquals(2, executionCount)
+    }
+
+    @Test
+    fun throwing_task_is_not_rerun_and_later_tasks_still_run_on_next_flush() = runTest {
+        // Collect the launched coroutines without running them, so tasks execute only via
+        // explicit flush() (same technique as duplicate_identical_tasks_are_executed).
+        val controlledCoroutineDispatcher = object : CoroutineDispatcher() {
+            override fun dispatch(context: CoroutineContext, block: Runnable) {
+                // Intentionally drop: flush() drives execution in this test.
+            }
+        }
+        val coroutineScope = CoroutineScope(controlledCoroutineDispatcher)
+        val dispatcher = FlushCoroutineDispatcher(coroutineScope)
+
+        val runOrder = mutableListOf<Int>()
+        dispatcher.dispatch(EmptyCoroutineContext, Runnable { runOrder.add(1) })
+        dispatcher.dispatch(EmptyCoroutineContext, Runnable {
+            runOrder.add(2)
+            throw RuntimeException("boom")
+        })
+        dispatcher.dispatch(EmptyCoroutineContext, Runnable { runOrder.add(3) })
+
+        // First flush: task 1 runs, task 2 runs and throws (aborting this flush); task 3
+        // has not run yet.
+        assertFailsWith<RuntimeException> {
+            dispatcher.flush()
+        }
+        assertEquals(listOf(1, 2), runOrder)
+
+        // Next flush: the throwing task 2 must not be re-executed, and task 3 (queued
+        // after it) must still run.
+        dispatcher.flush()
+        assertEquals(listOf(1, 2, 3), runOrder)
     }
 
     @Test

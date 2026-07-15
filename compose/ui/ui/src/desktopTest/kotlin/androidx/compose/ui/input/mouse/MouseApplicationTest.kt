@@ -24,9 +24,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.awt.SwingPanel
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
-import androidx.compose.ui.window.rememberWindowState
 import androidx.compose.ui.window.runApplicationTest
 import com.google.common.truth.Truth.assertThat
 import javax.swing.JPanel
@@ -46,7 +46,7 @@ class MouseApplicationTest {
         launchTestApplication {
             Window(
                 onCloseRequest = ::exitApplication,
-                state = rememberWindowState(width = 250.dp, height = 250.dp)
+                initialSize = DpSize(250.dp, 250.dp)
             ) {
                 density = LocalDensity.current
 

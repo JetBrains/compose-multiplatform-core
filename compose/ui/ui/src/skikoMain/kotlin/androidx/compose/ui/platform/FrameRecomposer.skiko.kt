@@ -20,9 +20,13 @@ import androidx.compose.runtime.BroadcastFrameClock
 import androidx.compose.runtime.CompositionContext
 import androidx.compose.runtime.MonotonicFrameClock
 import androidx.compose.runtime.Recomposer
+import androidx.compose.runtime.enter
+import androidx.compose.runtime.internal.SnapshotHolder
+import androidx.compose.runtime.pumpScenelessDomainRotations
 import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.internal.getCurrentThreadId
+import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.trace
 import kotlin.coroutines.ContinuationInterceptor
 import kotlin.coroutines.CoroutineContext
@@ -100,6 +104,36 @@ class FrameRecomposer(
      */
     private val globalSnapshotRegistration = GlobalSnapshotManager.register(trampolineDispatcher)
 
+    /**
+     * The frame domains of the scenes this host drives. Their pins are swapped once per frame, at
+     * the start of [performFrame] - the non-Android analog of the point in
+     * `Choreographer.doFrame` where a new frame's state becomes visible. A scene registers on
+     * construction and releases on close; an empty registry makes every frame-domain step below a
+     * no-op, which is what keeps the frame-isolation-off path identical to stock.
+     */
+    private val frameDomains = mutableListOf<SnapshotHolder>()
+
+    internal fun registerFrameDomain(holder: SnapshotHolder): AutoCloseable {
+        frameDomains.add(holder)
+        return AutoCloseable { frameDomains.remove(holder) }
+    }
+
+    /**
+     * Binds every registered domain's read view around [block], nesting one [enter] per domain.
+     * Binds views only: no transaction is opened, so the recomposer keeps slicing its own pipeline
+     * into sequential child slices that each publish before the next is taken (the same-frame
+     * animation contract).
+     */
+    private fun enterFrameDomains(index: Int, block: () -> Unit) {
+        if (index == frameDomains.size) return block()
+        val unit = frameDomains[index].checkedCurrent
+        if (unit == null) {
+            enterFrameDomains(index + 1, block)
+        } else {
+            unit.enter { enterFrameDomains(index + 1, block) }
+        }
+    }
+
     init {
         // The host must carry a (single-thread) continuation interceptor that work is dispatched
         // through. It need not be a CoroutineDispatcher directly - e.g. tests wrap it with an
@@ -145,9 +179,29 @@ class FrameRecomposer(
      */
     fun performFrame(frameTimeNanos: Long) {
         postponeFrameInvalidation {
-            performFrameDispatch()
+            composeThreadId = getCurrentThreadId()
 
-            frameClock.sendFrame(frameTimeNanos)
+            // Inter-frame work - coroutine dispatch and composition effects - belongs to the
+            // PREVIOUS frame and must run before the pin swap, on the pin it was scheduled under.
+            performTrampolineDispatch()
+
+            // Scene-less domains (e.g. an application-level composition) can only rotate through
+            // the platform's async main-thread queue, which starves under sustained rendering.
+            // Pump their due swaps here, on the ingress that survives saturation, so their pins
+            // stop retaining superseded state records.
+            pumpScenelessDomainRotations()
+
+            // Pin swap. Publishes nothing itself: changes published externally since the previous
+            // swap become visible to this frame, and each domain's pending delivery is dispatched
+            // against that new view. Swap-first ordering lives in SnapshotHolder.rotate.
+            frameDomains.fastForEach { it.rotate() }
+
+            // Everything from here on reads the successor's view.
+            enterFrameDomains(0) {
+                frameDispatcher.flush()
+
+                frameClock.sendFrame(frameTimeNanos)
+            }
         }
         if (frameClock.hasAwaiters) {
             invalidate()
@@ -167,6 +221,7 @@ class FrameRecomposer(
      * Cancels the host recomposer and releases host-owned resources.
      */
     override fun close() {
+        frameDomains.clear()
         globalSnapshotRegistration?.close()
         recomposer.cancel()
         job.cancel()

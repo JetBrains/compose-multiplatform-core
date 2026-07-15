@@ -88,11 +88,26 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import kotlin.test.fail
 import org.jetbrains.skia.Bitmap
+import androidx.compose.ui.test.SchedulingDispatcherFixture
+import kotlin.test.AfterTest
+import kotlin.test.BeforeTest
 
 // A copy from androidInstrumentedTest/kotlin/androidx/compose/ui/draw/GraphicsLayerTest.kt
 
 @OptIn(ExperimentalTestApi::class)
 class CommonGraphicsLayerTest {
+
+    private val schedulingDispatcher = SchedulingDispatcherFixture()
+
+    @BeforeTest
+    fun installSchedulingDispatcher() {
+        schedulingDispatcher.install()
+    }
+
+    @AfterTest
+    fun uninstallSchedulingDispatcher() {
+        schedulingDispatcher.uninstall()
+    }
 
     @Test
     fun testLayerBoundsPosition() = runComposeUiTest {

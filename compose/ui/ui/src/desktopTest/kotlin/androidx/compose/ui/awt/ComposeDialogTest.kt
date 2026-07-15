@@ -63,6 +63,9 @@ import org.jetbrains.skiko.SkiaLayerAnalytics
 import org.junit.Assume
 import org.junit.Rule
 import org.junit.Test
+import androidx.compose.ui.test.SchedulingDispatcherFixture
+import kotlin.test.AfterTest
+import kotlin.test.BeforeTest
 import org.junit.rules.Timeout
 
 // A copy of ComposeWindowTest adapted for ComposeDialog. Don't change it, if it isn't specific for ComposeDialog.
@@ -71,6 +74,18 @@ import org.junit.rules.Timeout
 class ComposeDialogTest {
     @get:Rule
     val timeout: Timeout = Timeout.seconds(60)
+
+    private val schedulingDispatcher = SchedulingDispatcherFixture()
+
+    @BeforeTest
+    fun installSchedulingDispatcher() {
+        schedulingDispatcher.install()
+    }
+
+    @AfterTest
+    fun uninstallSchedulingDispatcher() {
+        schedulingDispatcher.uninstall()
+    }
 
     @Test
     fun `catch exception on setContent`() = runApplicationTest {

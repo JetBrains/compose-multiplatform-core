@@ -26,7 +26,7 @@ internal class WebInteropContainer(
     override var rootModifier: TrackInteropPlacementModifierNode? = null
     private var interopViews = mutableMapOf<InteropView, InteropViewHolder>()
 
-    override val snapshotObserver = SnapshotStateObserver { command ->
+    override val snapshotObserver = SnapshotStateObserver() { command ->
         command()
     }
 

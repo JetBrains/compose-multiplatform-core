@@ -18,6 +18,7 @@ package androidx.compose.ui.scene
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DataSourceContext
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.LocalSystemTheme
@@ -137,6 +138,7 @@ internal class ComposeContainer(
         architectureComponentsOwner.lifecycle.currentState
 
     init {
+        applyFrameIsolationFlag(configuration.isFrameIsolationEnabled)
         if (configuration.enforceStrictPlistSanityCheck) {
             PlistSanityCheck.performIfNeeded()
         }
@@ -315,6 +317,9 @@ internal class ComposeContainer(
         frameRecomposer: FrameRecomposer,
     ): ComposeSceneContext {
         return object : ComposeSceneContext {
+            override val dataSourceContext: DataSourceContext
+                get() = configuration.dataSourceContext
+
             override val platformContext: PlatformContext = platformContext
 
             override fun createLayer(
@@ -434,6 +439,33 @@ private fun getApplicationLayoutDirection() =
         UIUserInterfaceLayoutDirectionRightToLeft -> LayoutDirection.Rtl
         else -> LayoutDirection.Ltr
     }
+
+/**
+ * The first container's applied flag value; frame isolation is process-wide (read once
+ * per scene at construction), so every later container must request the same value.
+ */
+private var appliedFrameIsolationFlag: Boolean? = null
+
+private fun applyFrameIsolationFlag(requested: Boolean) {
+    val applied = appliedFrameIsolationFlag
+    if (applied == null) {
+        appliedFrameIsolationFlag = requested
+        ComposeSceneFeatureFlags.isFrameIsolationEnabled = requested
+    } else {
+        check(applied == requested) {
+            "Divergent ComposeContainerConfiguration.isFrameIsolationEnabled values in " +
+                "one process are unsupported: frame isolation is process-wide and read " +
+                "once per scene at construction (first applied: $applied, now " +
+                "requested: $requested)."
+        }
+    }
+}
+
+/** Test seam: lets one test process run flag-on and flag-off containers sequentially. */
+internal fun resetFrameIsolationFlagApplicationForTests() {
+    appliedFrameIsolationFlag = null
+    ComposeSceneFeatureFlags.isFrameIsolationEnabled = false
+}
 
 private class ComposeLayersHolder(
     private val useSeparateRenderThreadWhenPossible: Boolean,

@@ -47,12 +47,28 @@ import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import kotlinx.coroutines.launch
+import androidx.compose.ui.test.SchedulingDispatcherFixture
+import kotlin.test.AfterTest
+import kotlin.test.BeforeTest
 
 /**
  * Tests the ordering of the split frame, measure/layout, and draw phases.
  */
 @OptIn(ExperimentalTestApi::class, InternalTestApi::class)
 class RenderPhasesTest {
+
+    private val schedulingDispatcher = SchedulingDispatcherFixture()
+
+    @BeforeTest
+    fun installSchedulingDispatcher() {
+        schedulingDispatcher.install()
+    }
+
+    @AfterTest
+    fun uninstallSchedulingDispatcher() {
+        schedulingDispatcher.uninstall()
+    }
+
     /**
      * Test the order of the basic phases:
      * 1. withFrameMillis/Nanos

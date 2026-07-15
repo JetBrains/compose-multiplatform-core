@@ -20,7 +20,7 @@ import androidx.compose.ui.desktop.InteractiveMoveInitiator
 import androidx.compose.ui.desktop.KdtDragAndDropManager
 import androidx.compose.ui.desktop.KdtDragAndDropTransferable
 import androidx.compose.ui.desktop.LightweightWindowId
-import androidx.compose.ui.desktop.Scene
+import androidx.compose.ui.desktop.ApplicationSession
 import androidx.compose.ui.desktop.Window
 import androidx.compose.ui.desktop.WindowCloseRequestReason
 import androidx.compose.ui.desktop.WindowScope
@@ -62,6 +62,7 @@ import androidx.compose.ui.platform.WindowInfo
 import androidx.compose.ui.scene.CanvasLayersComposeScene
 import androidx.compose.ui.scene.ComposeScene
 import androidx.compose.ui.scene.PointerEventResult
+import androidx.compose.ui.scene.withFrameTransaction
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextInputContext
 import androidx.compose.ui.unit.Density
@@ -113,7 +114,7 @@ import org.jetbrains.skia.makeGLWithInterface
 
 class GtkWindow internal constructor(
     private val application: GtkApplication,
-    internal val scene: Scene<*>,
+    internal val session: ApplicationSession,
     private val onCloseRequest: (WindowCloseRequestReason) -> Unit,
 ) : InteractiveMoveInitiator {
     private val nativeWindowId = application.allocateNativeWindowId()
@@ -286,7 +287,7 @@ class GtkWindow internal constructor(
         density = { density },
         callbackInterceptor = object : CallbackInterceptor {
             override fun <T> execute(f: () -> T): T {
-                return scene.withPreparedMainThread {
+                return composeScene.withFrameTransaction {
                     f()
                 }
             }
@@ -352,9 +353,10 @@ class GtkWindow internal constructor(
         density = density,
         layoutDirection = layoutDirection,
         size = contentSizeInPx(),
-        coroutineContext = scene.coroutineScope.coroutineContext +
+        coroutineContext = session.coroutineScope.coroutineContext +
             GtkKdtMainDispatcher.INSTANCE.immediate,
         platformContext = platformContext,
+        dataSourceContext = session.dataSourceContext,
         invalidate = { isFrameRequested = true },
     )
 
@@ -449,7 +451,7 @@ class GtkWindow internal constructor(
     }
 
     internal fun requestCloseFromSystem() {
-        scene.withPreparedMainThread {
+        composeScene.withFrameTransaction {
             onCloseRequest(WindowCloseRequestReason.UserRequest)
         }
     }
@@ -553,11 +555,14 @@ class GtkWindow internal constructor(
             }
 
             is Event.TextInput -> {
-                gtkTextInputSessionOwner.handleTextInputEvent(
-                    event.preeditStringData,
-                    event.commitStringData,
-                    event.deleteSurroundingTextData,
-                )
+                // Naked IME ingress joins the current frame slice.
+                composeScene.withFrameTransaction {
+                    gtkTextInputSessionOwner.handleTextInputEvent(
+                        event.preeditStringData,
+                        event.commitStringData,
+                        event.deleteSurroundingTextData,
+                    )
+                }
                 EventHandlerResult.Stop
             }
 

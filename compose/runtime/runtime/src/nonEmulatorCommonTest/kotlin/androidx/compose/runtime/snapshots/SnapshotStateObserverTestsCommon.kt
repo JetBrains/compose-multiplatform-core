@@ -16,16 +16,25 @@
 
 package androidx.compose.runtime.snapshots
 
+import androidx.compose.runtime.DataSource
+import androidx.compose.runtime.DataSourceContext
+import androidx.compose.runtime.DerivedState
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.derivedStateObservers
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.internal.SnapshotHolder
+import androidx.compose.runtime.mock.BufferedTestDataSource
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.referentialEqualityPolicy
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.structuralEqualityPolicy
+import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
 class SnapshotStateObserverTestsCommon {
 
@@ -426,6 +435,97 @@ class SnapshotStateObserverTestsCommon {
         assertEquals(1, changes)
     }
 
+    // The derived-state hole, first-read path: a hook-based source's read during the FIRST
+    // recalculation of a derivedStateOf was recorded by neither mechanism -- the derived state's
+    // own recorder was never called, and the captured outer readObserver dropped it at the
+    // deriveStateScopeCount guard. This is now fixed: the first recalculation runs inside
+    // context.observe(), so the hook is installed and the dependency is captured correctly.
+    //
+    // A residual limitation remains on the RE-READ path (recordInvalidation -> rereadDerivedState),
+    // which runs outside context.observe() and can silently drop the dependency again after an
+    // equal recalculation -- see aHookBasedSourceDependencyIsLostAfterAnEqualRereadOutsideContext
+    // below, which pins that as a known, not-yet-fixed limitation.
+    @Test
+    fun aHookBasedSourceReadInsideDerivedStateInvalidatesTheScope() {
+        val source = BufferedTestDataSource()
+        val holder = SnapshotHolder(DataSourceContext(source), isolating = false)
+        val scope = ValueWrapper("scope")
+        var changes = 0
+        val stateObserver = SnapshotStateObserver(holder) { it() }
+        try {
+            stateObserver.start()
+            val derived = derivedStateOf { source.read("a") }
+            stateObserver.observeReads(scope, { changes++ }) { derived.value }
+            source.write("a", 1)
+            source.advanceAndInvalidate()
+            assertEquals(1, changes)
+        } finally {
+            stateObserver.stop()
+        }
+    }
+
+    // KNOWN LIMITATION (not fixed by task 4, needs a design decision about how the re-read path
+    // reaches a hook-based source's observe() hook): SnapshotStateObserver.recordInvalidation
+    // reads a recalculated derived value that turns out EQUAL to the previously recorded one, and
+    // takes the rereadDerivedState() path instead of invalidating. That re-read runs OUTSIDE any
+    // context.observe(), so the hook-based source's `hook` is null, the recalculation's
+    // newDependencies comes back empty, and recordRead's dependencyToDerivedStates.removeScope
+    // (value) clears the old dependency edges and re-adds nothing. The derived state's record is
+    // left with alwaysInvalid = false and an empty dependency set, so `resultHash == readableHash`
+    // holds forever afterwards: the record is permanently cached, and re-observing it from a NEW
+    // scope does not recover it either -- every reader, old and new, keeps getting the stale value
+    // this source produced at the last equal re-read, silently, for as long as the process runs.
+    // This can render visibly wrong UI, not merely delay a refresh.
+    //
+    // Cheap mitigation: a source that calls DataSource.recordDependency unconditionally on every
+    // read -- instead of only when it has a hook/witness installed -- has no gap at all here,
+    // because the re-read path does install a snapshot read observer and thread-local recorder;
+    // it just never invokes a per-source `observe()` hook. That is exactly why
+    // stockWithoutReadObservationSuppressesAStaticRecorderSource (DataSourceContextTests.kt) keeps
+    // working. Integrators can sidestep this entire class of bug by taking that shape instead of
+    // this one.
+    //
+    // Reproduced with 1 -> 2 -> 0: 1 -> 2 is a same-truthiness recalculation (both > 0), which
+    // walks the buggy re-read path and drops the dependency; 2 -> 0 is a genuine value change that
+    // SHOULD invalidate the scope but no longer can.
+    // Known limitation: rereadDerivedState() runs outside context.observe() and silently drops a
+    // hook-based source's dependency after an equal recalculation. See task 4 report.
+    @Ignore
+    @Test
+    fun aHookBasedSourceDependencyIsLostAfterAnEqualRereadOutsideContext() {
+        val source = BufferedTestDataSource()
+        val holder = SnapshotHolder(DataSourceContext(source), isolating = false)
+        val scope = ValueWrapper("scope")
+        var changes = 0
+        val stateObserver = SnapshotStateObserver(holder) { it() }
+        try {
+            stateObserver.start()
+            source.write("k", 1)
+            source.advanceAndInvalidate()
+            val derived = derivedStateOf { (source.read("k") ?: 0) > 0 }
+            stateObserver.observeReads(scope, { changes++ }) { derived.value }
+
+            // 1 -> 2: still > 0. The recalculated value is EQUAL to the recorded one, so this
+            // takes the rereadDerivedState() path and drops the dependency -- it must not itself
+            // invalidate the scope.
+            source.write("k", 2)
+            source.advanceAndInvalidate()
+            assertEquals(0, changes, "an equal recalculation must not itself invalidate the scope")
+
+            // 2 -> 0: > 0 flips to false, a genuine change that SHOULD invalidate the scope. It
+            // does not, because the previous re-read already lost the "k" dependency.
+            source.write("k", 0)
+            source.advanceAndInvalidate()
+            assertEquals(
+                1,
+                changes,
+                "the derived state's value actually changed and must invalidate",
+            )
+        } finally {
+            stateObserver.stop()
+        }
+    }
+
     @Suppress("MutableCollectionMutableState") // The point of this test
     @Test
     fun derivedStateOfReferentialChangeDoesNotInvalidateObserver() {
@@ -798,6 +898,202 @@ class SnapshotStateObserverTestsCommon {
         } finally {
             stateObserver.stop()
         }
+    }
+
+    // I2: a source whose reads are recorded by its observe() setup hook (not by the static
+    // DataSource.recordDependency) must establish dependencies in the SnapshotStateObserver
+    // path too - that path is what measure, layout, draw and semantics all run through.
+    //
+    // isolating = false deliberately: read tracking is a correctness property independent of
+    // frame isolation, so it must work with the flag off. It also means the observer
+    // registers a GLOBAL apply observer, so invalidateDependants reaches it immediately.
+    @Test
+    fun setupHookSourceReadsAreObservedThroughTheDeliveryDomainsContext() {
+        val source = BufferedTestDataSource()
+        val holder = SnapshotHolder(DataSourceContext(source), isolating = false)
+        val scope = ValueWrapper("scope")
+        var changes = 0
+        val stateObserver = SnapshotStateObserver(holder) { it() }
+        try {
+            stateObserver.start()
+            stateObserver.observeReads(scope, { changes++ }) { source.read("a") }
+            source.write("a", 1)
+            source.advanceAndInvalidate()
+            assertEquals(1, changes)
+        } finally {
+            stateObserver.stop()
+        }
+    }
+
+    // The wildcard path, through the same route.
+    @Test
+    fun theWildcardTokenInvalidatesAnObservedScopeThatReadTheSource() {
+        val source = BufferedTestDataSource()
+        val holder = SnapshotHolder(DataSourceContext(source), isolating = false)
+        val scope = ValueWrapper("scope")
+        var changes = 0
+        val stateObserver = SnapshotStateObserver(holder) { it() }
+        try {
+            stateObserver.start()
+            stateObserver.observeReads(scope, { changes++ }) { source.read("a") }
+            source.write("a", 1)
+            source.loseExactDelta()
+            source.advanceAndInvalidate()
+            assertEquals(1, changes)
+        } finally {
+            stateObserver.stop()
+        }
+    }
+
+    // Parity guard: a substrate-only delivery domain must behave exactly as a null one.
+    @Test
+    fun aSubstrateOnlyDeliveryDomainObservesExactlyAsBefore() {
+        val state = mutableIntStateOf(0)
+        val holder = SnapshotHolder(DataSourceContext(), isolating = false)
+        val scope = ValueWrapper("scope")
+        var changes = 0
+        val stateObserver = SnapshotStateObserver(holder) { it() }
+        try {
+            stateObserver.start()
+            stateObserver.observeReads(scope, { changes++ }) { state.intValue }
+            Snapshot.notifyObjectsInitialized()
+            state.intValue++
+            Snapshot.sendApplyNotifications()
+            assertEquals(1, changes)
+        } finally {
+            stateObserver.stop()
+        }
+    }
+
+    // Nested observeReads through a foreign context: the inner scope's reads must not be
+    // attributed to the outer scope, and both must be invalidated by their own key.
+    @Test
+    fun nestedObserveReadsThroughAContextAttributeToTheirOwnScopes() {
+        val source = BufferedTestDataSource()
+        val holder = SnapshotHolder(DataSourceContext(source), isolating = false)
+        val outer = ValueWrapper("outer")
+        val inner = ValueWrapper("inner")
+        var outerChanges = 0
+        var innerChanges = 0
+        val stateObserver = SnapshotStateObserver(holder) { it() }
+        try {
+            stateObserver.start()
+            stateObserver.observeReads(outer, { outerChanges++ }) {
+                source.read("o")
+                stateObserver.observeReads(inner, { innerChanges++ }) { source.read("i") }
+            }
+            source.write("i", 1)
+            source.advanceAndInvalidate()
+            assertEquals(0, outerChanges, "the outer scope never read \"i\"")
+            assertEquals(1, innerChanges)
+        } finally {
+            stateObserver.stop()
+        }
+    }
+
+    // White-box test for the recordRead guard itself, bypassing DerivedState.kt entirely.
+    // derivedStateObservers() (DerivedState.kt:387) is internal and reachable from this test
+    // source set. Driving start()/done() manually reproduces exactly what a real derivedStateOf
+    // recalculation would trigger on ObservedScopeMap.derivedStateObserver
+    // (SnapshotStateObserver.kt:411-420) without going through an actual calculation, so there is
+    // no local calculation observer merged above readObserver here - it is the top of the chain,
+    // and DataSource.recordDependency reports exactly what the guard returns.
+    @Test
+    fun aReadDroppedByTheDerivedStateGuardReportsFalse() {
+        val source = BufferedTestDataSource()
+        val holder = SnapshotHolder(DataSourceContext(source), isolating = false)
+        val scope = ValueWrapper("scope")
+        val marker = derivedStateOf { 0 } as DerivedState<*>
+        val stateObserver = SnapshotStateObserver(holder) { it() }
+        try {
+            stateObserver.start()
+            stateObserver.observeReads(scope, {}) {
+                val observers = derivedStateObservers()
+                observers.forEach { it.start(marker) }
+                try {
+                    assertFalse(
+                        DataSource.recordDependency("x"),
+                        "a read made while a derived-state recalculation is in progress must be " +
+                            "reported as dropped",
+                    )
+                } finally {
+                    observers.forEach { it.done(marker) }
+                }
+            }
+        } finally {
+            stateObserver.stop()
+        }
+    }
+
+    // ObservedScopeMap.recordRead used to silently drop a read at the deriveStateScopeCount guard
+    // (a bare `return`, no signal) rather than reporting that it did so. It now returns Boolean,
+    // and readObserver propagates it instead of hardcoding true (SnapshotStateObserver.kt:172,
+    // :441, :457) - matching Composition.recordReadOf, which already returns false in the same
+    // case (see aReadDroppedByTheDerivedStateGuardReportsFalse above for a direct test of the
+    // guard).
+    //
+    // The fix is not observable as a black-box test through DataSource.recordDependency from
+    // inside an actual derivedStateOf recalculation, though: every such recalculation wraps the
+    // calculation in observeDataSourceReads with DerivedState.kt's own local observer (:226-239),
+    // which unconditionally returns true and is OR-merged with whatever readObserver reports - the
+    // derived state legitimately needs the read for its own dependency tracking regardless of what
+    // SnapshotStateObserver decides, so the composite true a caller observes there is correct, not
+    // a lie. A non-StateObject identifier such as a plain source key also sets alwaysInvalid = true
+    // (DerivedState.kt:229-231), so the calculation reruns on every access (see
+    // aDerivedStateReadingACustomSourceShouldCacheBetweenReads below) rather than once - every
+    // recorded result here is therefore true, confirmed by stack traces rooted in
+    // DerivedSnapshotState.currentRecord. This test pins that externally visible merge behavior so
+    // a future change to it does not go unnoticed.
+    @Test
+    fun dataSourceRecordDependencyStaysTrueInsideADerivedStateRecalculation() {
+        val source = BufferedTestDataSource()
+        val holder = SnapshotHolder(DataSourceContext(source), isolating = false)
+        val scope = ValueWrapper("scope")
+        val results = mutableListOf<Boolean>()
+        val stateObserver = SnapshotStateObserver(holder) { it() }
+        try {
+            stateObserver.start()
+            val derived = derivedStateOf {
+                results.add(DataSource.recordDependency("inner"))
+                0
+            }
+            stateObserver.observeReads(scope, {}) { derived.value }
+            assertTrue(
+                results.isNotEmpty() && results.all { it },
+                "every read made during a derived-state recalculation must be reported as " +
+                    "recorded, since the derived state's own local observer always records it",
+            )
+        } finally {
+            stateObserver.stop()
+        }
+    }
+
+    // The deferred caching gap, pinned so it is not forgotten. A foreign identifier sets
+    // alwaysInvalid = true (DerivedState.kt:228-231) and is skipped by readableHash (:143-146), so
+    // a
+    // derivedStateOf touching a custom source recalculates on EVERY read rather than every change.
+    // Fixing it needs a per-source generation hook that readableHash can consult -- separate
+    // design.
+    @Ignore
+    @Test
+    fun aDerivedStateReadingACustomSourceShouldCacheBetweenReads() {
+        val source = BufferedTestDataSource()
+        val context = DataSourceContext(source)
+        var recalculations = 0
+        val derived = derivedStateOf {
+            recalculations++
+            source.read("a")
+        }
+        context.observe(recordDependency = { true }, recordChange = null) {
+            derived.value
+            derived.value
+            derived.value
+        }
+        assertEquals(
+            1,
+            recalculations,
+            "a derived state should cache across reads when nothing changed",
+        )
     }
 }
 

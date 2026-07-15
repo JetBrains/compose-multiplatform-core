@@ -18,6 +18,9 @@ package androidx.compose.ui.platform
 
 import androidx.collection.MutableIntSet
 import androidx.compose.runtime.BroadcastFrameClock
+import androidx.compose.runtime.DataSource
+import androidx.compose.runtime.enter
+import androidx.compose.runtime.withTransaction
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.node.HitTestResult
@@ -156,6 +159,17 @@ import platform.objc.protocol_isEqual
 
 private val DUMMY_UI_ACCESSIBILITY_CONTAINER = NSObject()
 private val USE_HIERARCHICAL_COORDINATE_SPACE = available(OS.Ios to OSVersion(major = 18))
+
+/**
+ * Isolates [block] within the mediator's current frame data source unit, if any, so that reads of
+ * semantics/layout state triggered by UIKit accessibility callbacks are consistent with the frame
+ * that produced the current accessibility tree snapshot.
+ */
+private inline fun <T> AccessibilityMediator.withFrameTransaction(block: () -> T): T {
+    val frame = currentFrameSnapshot() ?: return block()
+    // Enter before transacting: the read scope is what binds a source's view.
+    return frame.enter { frame.withTransaction(block) }
+}
 
 internal sealed interface AccessibilityElementKey {
     val id: Int
@@ -463,27 +477,28 @@ private class AccessibilityRoot(
             setAccessibilityElements(value?.let { listOf(it) })
         }
 
-    override fun accessibilityElements(): List<*> {
+    override fun accessibilityElements(): List<*> = mediator.withFrameTransaction {
         if (mediator.isEnabled) {
             mediator.activateAccessibilityIfNeeded()
         }
 
-        return super.accessibilityElements()
+        super.accessibilityElements()
     }
 
     override fun isAccessibilityElement(): Boolean = false
 
     override fun accessibilityContainer() = mediator.view
 
-    override fun accessibilityFrame(): CValue<CGRect> =
+    override fun accessibilityFrame(): CValue<CGRect> = mediator.withFrameTransaction {
         mediator.view.convertRect(mediator.view.bounds, toView = null)
+    }
 
     // UIFocusItemContainerProtocol
 
     override fun coordinateSpace(): UICoordinateSpaceProtocol = mediator.view
 
-    override fun focusItemsInRect(rect: CValue<CGRect>): List<*> {
-        return if (mediator.isEnabled) {
+    override fun focusItemsInRect(rect: CValue<CGRect>): List<*> = mediator.withFrameTransaction {
+        if (mediator.isEnabled) {
             mediator.activateAccessibilityIfNeeded()
             listOfNotNull(element)
         } else {
@@ -491,9 +506,9 @@ private class AccessibilityRoot(
         }
     }
 
-    override fun accessibilityHitTest(point: CValue<CGPoint>, withEvent: UIEvent?): Any? {
+    override fun accessibilityHitTest(point: CValue<CGPoint>, withEvent: UIEvent?): Any? = mediator.withFrameTransaction {
         if (!mediator.isEnabled) {
-            return null
+            return@withFrameTransaction null
         }
 
         mediator.activateAccessibilityIfNeeded()
@@ -525,7 +540,7 @@ private class AccessibilityRoot(
                 }
 
                 interopView.accessibilityHitTest(pointInElement, withEvent)?.let {
-                    return it
+                    return@withFrameTransaction it
                 }
             }
 
@@ -533,11 +548,11 @@ private class AccessibilityRoot(
                 continue
             }
 
-            return element
+            return@withFrameTransaction element
         }
 
         // Used as a backup to iOS-like focus behavior
-        return super.accessibilityHitTest(point, withEvent)
+        super.accessibilityHitTest(point, withEvent)
     }
 }
 
@@ -638,10 +653,16 @@ private class AccessibilityElement(
             return null
         }
 
-        val value = cachedProperties.getOrElse(key) {
-            val newValue = getValue()
-            cachedProperties[key] = newValue
-            newValue
+        // These three helpers are the single funnel every UIKit accessibility ingress of this
+        // element goes through, so the frame slice is taken here rather than repeated at each
+        // of the ~20 overrides. withFrameTransaction is a no-op when frame isolation is off and
+        // folds into an enclosing slice when one is already open.
+        val value = mediator.withFrameTransaction {
+            cachedProperties.getOrElse(key) {
+                val newValue = getValue()
+                cachedProperties[key] = newValue
+                newValue
+            }
         }
 
         return value as T
@@ -651,14 +672,14 @@ private class AccessibilityElement(
         if (!isAlive) {
             return null
         }
-        return block()
+        return mediator.withFrameTransaction { block() }
     }
 
     private inline fun runIfAlive(crossinline block: () -> Unit) {
         if (!isAlive) {
             return
         }
-        return block()
+        return mediator.withFrameTransaction { block() }
     }
 
     override fun accessibilityLabel(): String? = accessibilityAttributedLabel()?.string
@@ -710,21 +731,25 @@ private class AccessibilityElement(
         getCachedIfAlive(CachedAccessibilityPropertyKeys.accessibilityIdentifier) {
             node.accessibilityIdentifier
         }
+    }
 
     override fun accessibilityHint(): String? =
         getCachedIfAlive(CachedAccessibilityPropertyKeys.accessibilityHint) {
             node.accessibilityHint
         }
+    }
 
     override fun accessibilityCustomActions(): List<UIAccessibilityCustomAction> =
         getCachedIfAlive(CachedAccessibilityPropertyKeys.accessibilityCustomActions, emptyList()) {
             node.accessibilityCustomActions
         }
+    }
 
     override fun accessibilityTraits(): UIAccessibilityTraits =
         getCachedIfAlive(CachedAccessibilityPropertyKeys.accessibilityTraits, UIAccessibilityTraitNone) {
             node.accessibilityTraits
         }
+    }
 
     override fun accessibilityPerformEscape(): Boolean = getIfAlive {
         if (node.accessibilityPerformEscape()) {
@@ -775,17 +800,21 @@ private class AccessibilityElement(
     override fun focusItemContainer(): UIFocusItemContainerProtocol = this
 
     var focusFrame: CValue<CGRect> = CGRectZero.readValue()
-    override fun frame(): CValue<CGRect> = if (USE_HIERARCHICAL_COORDINATE_SPACE) {
-        focusFrame
-    } else {
-        convertRect(rect = bounds(), toCoordinateSpace = mediator.view)
+    override fun frame(): CValue<CGRect> = mediator.withFrameTransaction {
+        if (USE_HIERARCHICAL_COORDINATE_SPACE) {
+            focusFrame
+        } else {
+            convertRect(rect = bounds(), toCoordinateSpace = mediator.view)
+        }
     }
 
-    override fun focusEffectRect(): CValue<CGRect> = convertRect(rect = bounds, toCoordinateSpace = mediator.view)
+    override fun focusEffectRect(): CValue<CGRect> = mediator.withFrameTransaction {
+        convertRect(rect = bounds, toCoordinateSpace = mediator.view)
+    }
 
-    override fun bounds(): CValue<CGRect> {
+    override fun bounds(): CValue<CGRect> = mediator.withFrameTransaction {
         val offset = contentOffset()
-        return CGRectMake(
+        CGRectMake(
             x = offset.useContents { x },
             y = offset.useContents { y },
             width = focusFrame.useContents { size.width },
@@ -864,6 +893,8 @@ private class AccessibilityElement(
                     delay(1.milliseconds)
                 }
             }
+            // Suspend ingress: a frame slice must not be held across suspension (isolation is
+            // thread-confined); the scroll action runs bare.
             node.scrollBy(delta)
             timerJob.cancel()
         }
@@ -875,9 +906,9 @@ private class AccessibilityElement(
     override fun convertPoint(
         point: CValue<CGPoint>,
         toCoordinateSpace: UICoordinateSpaceProtocol
-    ): CValue<CGPoint> {
+    ): CValue<CGPoint> = mediator.withFrameTransaction {
         val globalPoint = convertPointToGlobal(point)
-        return when (toCoordinateSpace) {
+        when (toCoordinateSpace) {
             is AccessibilityElement -> toCoordinateSpace.convertPointFromGlobal(globalPoint)
             is UIView -> toCoordinateSpace.convertPoint(globalPoint, fromView = null)
             else -> mediator.view.window!!.convertPoint(globalPoint, toCoordinateSpace = toCoordinateSpace)
@@ -888,22 +919,22 @@ private class AccessibilityElement(
     override fun convertPoint(
         point: CValue<CGPoint>,
         fromCoordinateSpace: UICoordinateSpaceProtocol
-    ): CValue<CGPoint> {
+    ): CValue<CGPoint> = mediator.withFrameTransaction {
         val globalPoint = when (fromCoordinateSpace) {
             is AccessibilityElement -> fromCoordinateSpace.convertPointToGlobal(point)
             is UIView -> fromCoordinateSpace.convertPoint(point, toView = null)
             else -> mediator.view.window!!.convertPoint(point, fromCoordinateSpace = fromCoordinateSpace)
         }
-        return convertPointFromGlobal(globalPoint)
+        convertPointFromGlobal(globalPoint)
     }
 
     @ObjCSignatureOverride
     override fun convertRect(
         rect: CValue<CGRect>,
         toCoordinateSpace: UICoordinateSpaceProtocol
-    ): CValue<CGRect> {
+    ): CValue<CGRect> = mediator.withFrameTransaction {
         val globalRect = convertRectToGlobal(rect)
-        return when (toCoordinateSpace) {
+        when (toCoordinateSpace) {
             is AccessibilityElement -> toCoordinateSpace.convertRectFromGlobal(globalRect)
             is UIView -> toCoordinateSpace.convertRect(globalRect, fromView = null)
             else -> mediator.view.window!!.convertRect(globalRect, toCoordinateSpace = toCoordinateSpace)
@@ -914,13 +945,13 @@ private class AccessibilityElement(
     override fun convertRect(
         rect: CValue<CGRect>,
         fromCoordinateSpace: UICoordinateSpaceProtocol
-    ): CValue<CGRect> {
+    ): CValue<CGRect> = mediator.withFrameTransaction {
         val globalRect = when (fromCoordinateSpace) {
             is AccessibilityElement -> fromCoordinateSpace.convertRectToGlobal(rect)
             is UIView -> fromCoordinateSpace.convertRect(rect, toView = null)
             else -> mediator.view.window!!.convertRect(rect, fromCoordinateSpace = fromCoordinateSpace)
         }
-        return convertRectFromGlobal(globalRect)
+        convertRectFromGlobal(globalRect)
     }
 
     private fun convertPointToGlobal(point: CValue<CGPoint>): CValue<CGPoint> {
@@ -1088,6 +1119,7 @@ internal class AccessibilityMediator(
     val coroutineContext: CoroutineContext,
     val performEscape: () -> Boolean,
     val onScreenReaderActive: (Boolean) -> Unit,
+    internal val currentFrameSnapshot: () -> DataSource.Snapshot?,
 ) {
     private var focusMode: AccessibilityElementFocusMode = AccessibilityElementFocusMode.None
 
@@ -1266,7 +1298,9 @@ internal class AccessibilityMediator(
                     if (isAccessibilityActive) {
                         scheduleAccessibilityDisablingAndCleanup()
                         val time = measureTime {
-                            sync()
+                            withFrameTransaction {
+                                sync()
+                            }
                         }
                         accessibilityDebugLogger?.log("AccessibilityMediator.sync took $time")
                     }
@@ -1328,7 +1362,7 @@ internal class AccessibilityMediator(
         disableAccessibilityJob = null
     }
 
-    fun activateAccessibilityIfNeeded() {
+    fun activateAccessibilityIfNeeded() = withFrameTransaction {
         isAccessibilityActive = true
         if (root.element == null) {
             sync()

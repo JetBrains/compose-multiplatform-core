@@ -17,6 +17,7 @@
 package androidx.compose.ui.scene
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DataSourceContext
 import androidx.compose.runtime.Composition
 import androidx.compose.runtime.CompositionContext
 import androidx.compose.ui.InternalComposeUiApi
@@ -52,6 +53,9 @@ import androidx.compose.ui.viewinterop.InteropView
  * determined by the content.
  * @param composeSceneContext The context to share resources between multiple scenes and provide
  * a way for platform interaction.
+ * @param dataSourceContext The [DataSourceContext] this scene takes its frame-cycle units
+ * from. Defaults to [composeSceneContext]'s context, so layer scenes inherit their parent
+ * context's sources.
  * @param invalidateLayout The function to be called when the content requires another
  * measure/layout pass.
  * @param invalidateDraw The function to be called when the content requires another draw pass.
@@ -66,6 +70,7 @@ fun PlatformLayersComposeScene(
     layoutDirection: LayoutDirection = LayoutDirection.Ltr,
     size: IntSize? = null,
     composeSceneContext: ComposeSceneContext = ComposeSceneContext.Empty(),
+    dataSourceContext: DataSourceContext = composeSceneContext.dataSourceContext,
     invalidateLayout: () -> Unit = {},
     invalidateDraw: () -> Unit = {},
 ): ComposeScene = PlatformLayersComposeSceneImpl(
@@ -74,9 +79,15 @@ fun PlatformLayersComposeScene(
     layoutDirection = layoutDirection,
     size = size,
     composeSceneContext = composeSceneContext,
+    dataSourceContext = dataSourceContext,
     invalidateLayout = invalidateLayout,
     invalidateDraw = invalidateDraw,
-)
+).also {
+    // Activate the frame domain only after construction completes, so every scene-owned
+    // snapshot state (base + subclass initializers) predates the standing pin. See
+    // BaseComposeScene.activateFrameDomain.
+    it.activateFrameDomain()
+}
 
 private class PlatformLayersComposeSceneImpl(
     frameRecomposer: FrameRecomposer,
@@ -84,10 +95,12 @@ private class PlatformLayersComposeSceneImpl(
     layoutDirection: LayoutDirection,
     size: IntSize?,
     override val composeSceneContext: ComposeSceneContext,
+    dataSourceContext: DataSourceContext,
     invalidateLayout: () -> Unit,
     invalidateDraw: () -> Unit,
 ) : BaseComposeScene(
     frameRecomposer = frameRecomposer,
+    dataSourceContext = dataSourceContext,
     invalidateLayout = invalidateLayout,
     invalidateDraw = invalidateDraw,
 ) {
@@ -148,7 +161,7 @@ private class PlatformLayersComposeSceneImpl(
     }
 
     override fun measureContent(constraints: Constraints): IntSize {
-        return mainOwner.measureContentWithConstraints(constraints)
+        return withFrameTransaction { mainOwner.measureContentWithConstraints(constraints) }
     }
 
     override fun invalidatePositionInWindow() {

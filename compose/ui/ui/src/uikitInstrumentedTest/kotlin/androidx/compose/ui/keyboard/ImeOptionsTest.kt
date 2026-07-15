@@ -400,7 +400,7 @@ internal class ImeOptionsTest {
         val inputState = mutableStateOf("")
         var startInputCount = 0
 
-        val testTextInputSession = object : PlatformTextInputSession {
+        val testTextInputSession = object : PlatformTextInputSession<PlatformTextInputMethodRequest> {
                 override suspend fun startInputMethod(
                     request: PlatformTextInputMethodRequest
                 ): Nothing {

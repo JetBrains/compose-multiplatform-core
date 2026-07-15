@@ -21,7 +21,6 @@
 package androidx.compose.ui.desktop.macos
 
 import androidx.annotation.MainThread
-import androidx.compose.runtime.BroadcastFrameClock
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
@@ -41,11 +40,7 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asComposeCanvas
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.input.InputModeManager
-import androidx.compose.ui.input.key.InternalKeyEvent
 import androidx.compose.ui.input.key.KeyEvent
-import androidx.compose.ui.input.key.KeyEventType
-import androidx.compose.ui.input.key.key
-import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.PointerEvent
 import androidx.compose.ui.input.pointer.PointerKeyboardModifiers
 import androidx.compose.ui.desktop.ClipboardItemsEntry
@@ -54,25 +49,20 @@ import androidx.compose.ui.desktop.KdtDragAndDropManager
 import androidx.compose.ui.desktop.KdtDragAndDropTransferable
 import androidx.compose.ui.desktop.LightweightWindowId
 import androidx.compose.ui.desktop.PositionAwareWindow
-import androidx.compose.ui.desktop.Scene
+import androidx.compose.ui.desktop.ApplicationSession
 import androidx.compose.ui.desktop.Window
 import androidx.compose.ui.desktop.WindowCloseRequestReason
 import androidx.compose.ui.desktop.WindowScope
 import androidx.compose.ui.node.InternalCoreApi
 import androidx.compose.ui.platform.DefaultTextToolbar
-import androidx.compose.ui.platform.InterceptPlatformTextInput
-import androidx.compose.ui.platform.LocalTextInputContext
 import androidx.compose.ui.platform.LocalTextToolbar
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.PlatformDragAndDropManager
-import androidx.compose.ui.platform.PlatformTextInputMethodRequest
-import androidx.compose.ui.platform.PlatformTextInputSession
 import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.platform.WindowInfo
 import androidx.compose.ui.platform.DefaultArchitectureComponentsOwner
 import androidx.compose.ui.scene.ComposeScene
-import androidx.compose.ui.text.input.TextInputContext
-import androidx.compose.ui.scene.PointerEventResult
+import androidx.compose.ui.scene.withFrameTransaction
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpOffset
@@ -94,10 +84,10 @@ import kotlin.concurrent.atomics.AtomicReference
 import kotlin.concurrent.atomics.ExperimentalAtomicApi
 import kotlin.math.ceil
 import kotlin.time.TimeSource
-import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.io.files.Path
 import noria.CallbackInterceptor
 import noria.ui.core.LocalWindow
+import noria.ui.core.WindowData
 import org.jetbrains.annotations.ApiStatus
 import org.jetbrains.desktop.macos.AppMenuManager
 import org.jetbrains.desktop.macos.Appearance
@@ -115,7 +105,6 @@ import org.jetbrains.desktop.macos.MouseButton
 import org.jetbrains.desktop.macos.Pasteboard
 import org.jetbrains.desktop.macos.Screen
 import org.jetbrains.desktop.macos.TextDirection
-import org.jetbrains.desktop.macos.TextInputClient
 import org.jetbrains.desktop.macos.TitlebarConfiguration
 import org.jetbrains.desktop.macos.WindowEvent
 import org.jetbrains.skia.PictureRecorder
@@ -123,7 +112,7 @@ import org.jetbrains.skia.Rect
 
 class MacOsWindow internal constructor(
     private val application: MacOsApplication,
-    internal val scene: Scene<*>,
+    internal val session: ApplicationSession,
     nativeWindow: org.jetbrains.desktop.macos.Window = org.jetbrains.desktop.macos.Window.create(),
     val viewContext: MetalViewContext = application.desktopGpuContext.createMetalViewContext(),
     private val onCloseRequest: (WindowCloseRequestReason) -> Unit,
@@ -445,9 +434,6 @@ class MacOsWindow internal constructor(
         setLifecycleState(Lifecycle.State.RESUMED)
     }
 
-    private val macOsTextInputSessionOwner =
-        MacOsTextInputSessionOwner(nativeWindow, scene, density = { density })
-
     private val platformContext: PlatformContext = object : PlatformContext by PlatformContext.Empty() {
         override val windowInfo: WindowInfo
             get() = this@MacOsWindow.windowInfo
@@ -476,11 +462,15 @@ class MacOsWindow internal constructor(
         density = density,
         layoutDirection = layoutDirection,
         size = contentSizeInPx(),
-        coroutineContext = scene.coroutineScope.coroutineContext +
+        coroutineContext = session.coroutineScope.coroutineContext +
             MacOsKdtMainDispatcher.INSTANCE.immediate,
         platformContext = this@MacOsWindow.platformContext,
+        dataSourceContext = session.dataSourceContext,
         invalidate = { isFrameRequested = true },
     )
+
+    private val macOsTextInputSessionOwner =
+        MacOsTextInputSessionOwner(nativeWindow, composeScene, density = { density })
 
     init {
         nativeWindow.registerForDraggedTypes(
@@ -498,7 +488,7 @@ class MacOsWindow internal constructor(
             density = { density },
             callbackInterceptor = object : CallbackInterceptor {
                 override fun <T> execute(f: () -> T): T {
-                    return scene.withPreparedMainThread {
+                    return composeScene.withFrameTransaction {
                         f()
                     }
                 }
@@ -722,9 +712,9 @@ class MacOsWindow internal constructor(
 
     @Composable
     @ApiStatus.Internal
-    override fun Content(onLayout: (LightweightWindowId) -> Unit) {
+    override fun Content(onLayout: (WindowData) -> Unit) {
         // ComposeScene drives its own composition; nothing to host here.
-        onLayout(id)
+        onLayout(WindowData(id))
     }
 
     private fun preparePicture(): PresentablePicture? {
@@ -756,38 +746,36 @@ class MacOsWindow internal constructor(
                 GrandCentralDispatch.dispatchOnMain(highPriority = true) {
                     isFrameRequested = false
                     try {
-                        scene.withPreparedMainThread {
-                            preparePicture()?.let { presentablePicture ->
-                                try {
-                                    viewContext.presentAsync(
-                                        presentablePicture, waitForCATransaction = false,
-                                        onComplete = {
-                                            presentablePicture.close()
-                                            val elapsedTime = displayLinkFrameStartTimeMark
-                                                .exchange(null)!!
-                                                .timeMark
-                                                .elapsedNow()
-                                            if (elapsedTime.inWholeMilliseconds > 10) {
-                                                logger.debug("Long frame: ${elapsedTime}")
-                                            }
-                                        },
-                                    )
-                                } catch (throwable: Throwable) {
-                                    logger.error(throwable) { "Could not schedule frame presentation" }
-                                    isFrameRequested = true
-                                    displayLinkFrameStartTimeMark.compareAndSet(
-                                        frameStartTimeMarkWrapper,
-                                        null,
-                                    )
-                                    presentablePicture.close()
-                                }
-                            } ?: run {
+                        preparePicture()?.let { presentablePicture ->
+                            try {
+                                viewContext.presentAsync(
+                                    presentablePicture, waitForCATransaction = false,
+                                    onComplete = {
+                                        presentablePicture.close()
+                                        val elapsedTime = displayLinkFrameStartTimeMark
+                                            .exchange(null)!!
+                                            .timeMark
+                                            .elapsedNow()
+                                        if (elapsedTime.inWholeMilliseconds > 10) {
+                                            logger.debug("Long frame: ${elapsedTime}")
+                                        }
+                                    },
+                                )
+                            } catch (throwable: Throwable) {
+                                logger.error(throwable) { "Could not schedule frame presentation" }
                                 isFrameRequested = true
                                 displayLinkFrameStartTimeMark.compareAndSet(
                                     frameStartTimeMarkWrapper,
                                     null,
                                 )
+                                presentablePicture.close()
                             }
+                        } ?: run {
+                            isFrameRequested = true
+                            displayLinkFrameStartTimeMark.compareAndSet(
+                                frameStartTimeMarkWrapper,
+                                null,
+                            )
                         }
                     } catch (throwable: Throwable) {
                         logger.error(throwable) { "Could not prepare frame" }
@@ -808,13 +796,11 @@ class MacOsWindow internal constructor(
         val wasFrameRequestedPreviously = isFrameRequested
         isFrameRequested = false
         try {
-            scene.withPreparedMainThread {
-                preparePicture()?.use { picture ->
-                    viewContext.presentSync(picture, waitForCATransaction = true)
-                } ?: run {
-                    logger.debug { "No picture was produced before display layer" }
-                    isFrameRequested = true
-                }
+            preparePicture()?.use { picture ->
+                viewContext.presentSync(picture, waitForCATransaction = true)
+            } ?: run {
+                logger.debug { "No picture was produced before display layer" }
+                isFrameRequested = true
             }
         } catch (throwable: Throwable) {
             logger.error(throwable) { "Could not prepare frame synchronously" }
@@ -830,19 +816,17 @@ class MacOsWindow internal constructor(
     private val inputStateTracker = InputStateTracker(
         inputModeManager = application.inputModeManager,
         sendPointerEvent = { eventType, position, scrollDelta, timeMillis, type, buttons, modifiers, nativeEvent, button ->
-            scene.withPreparedMainThread {
-                composeScene.sendPointerEvent(
-                    eventType = eventType,
-                    position = position,
-                    scrollDelta = scrollDelta,
-                    timeMillis = timeMillis,
-                    type = type,
-                    buttons = buttons,
-                    keyboardModifiers = modifiers,
-                    nativeEvent = nativeEvent,
-                    button = button,
-                )
-            }
+            composeScene.sendPointerEvent(
+                eventType = eventType,
+                position = position,
+                scrollDelta = scrollDelta,
+                timeMillis = timeMillis,
+                type = type,
+                buttons = buttons,
+                keyboardModifiers = modifiers,
+                nativeEvent = nativeEvent,
+                button = button,
+            )
         },
         sendKeyEvent =
             { keyEvent ->
@@ -851,7 +835,7 @@ class MacOsWindow internal constructor(
                 val textInputConsumed =
                     macOsTextInputSessionOwner.offerEventBeforeSendingToApplication(keyEvent)
 
-                val finalResult = textInputConsumed || scene.withPreparedMainThread {
+                val finalResult = textInputConsumed || composeScene.withFrameTransaction {
                     onPreviewKeyEvent(keyEvent) ||
                         composeScene.sendKeyEvent(keyEvent) ||
                         onKeyEvent(keyEvent)
@@ -946,7 +930,7 @@ class MacOsWindow internal constructor(
                 }
             }
             is Event.WindowCloseRequest -> {
-                scene.withPreparedMainThread {
+                composeScene.withFrameTransaction {
                     onCloseRequest(WindowCloseRequestReason.UserRequest)
                 }
                 EventHandlerResult.Stop

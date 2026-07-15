@@ -18,6 +18,7 @@
 
 package androidx.compose.ui
 
+import androidx.compose.runtime.DataSourceContext
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateSetOf
@@ -133,6 +134,7 @@ class ImageComposeScene @ExperimentalComposeUiApi constructor(
     density: Density = Density(1f),
     layoutDirection: LayoutDirection = LayoutDirection.Ltr,
     coroutineContext: CoroutineContext = Dispatchers.Unconfined,
+    dataSourceContext: DataSourceContext = DataSourceContext(),
     content: @Composable () -> Unit = {},
 ) {
 
@@ -148,6 +150,7 @@ class ImageComposeScene @ExperimentalComposeUiApi constructor(
         density,
         LayoutDirection.Ltr,
         coroutineContext,
+        DataSourceContext(),
         content
     )
 
@@ -191,7 +194,8 @@ class ImageComposeScene @ExperimentalComposeUiApi constructor(
         density = density,
         layoutDirection = layoutDirection,
         size = imageSize,
-        platformContext = _platformContext
+        platformContext = _platformContext,
+        dataSourceContext = dataSourceContext,
     ).also {
         it.setContent(content = content)
     }
