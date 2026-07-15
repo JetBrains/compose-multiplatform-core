@@ -20,6 +20,9 @@ package androidx.compose.foundation.internal
 
 import androidx.annotation.VisibleForTesting
 import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.desktop.ClipboardFormat
+import androidx.compose.ui.desktop.ClipboardItem
+import androidx.compose.ui.desktop.clipboardEntry
 import androidx.compose.ui.platform.ClipEntry
 import androidx.compose.ui.platform.Clipboard
 import androidx.compose.ui.platform.asAwtTransferable
@@ -72,8 +75,12 @@ internal actual suspend fun ClipEntry.readAnnotatedString(): AnnotatedString? {
 
 internal actual fun AnnotatedString?.toClipEntry(): ClipEntry? {
     if (this == null) return null
-    val transferable = AnnotatedStringTransferable(this)
-    return ClipEntry(transferable)
+    // TODO[wojciech.krystyniak]: Maybe we should consider a separate type for annotated string clipboard entries
+    return ClipEntry(
+        clipboardEntry(
+            ClipboardItem(this.text, ClipboardFormat.Utf8PlainText)
+        )
+    )
 }
 
 internal fun ClipEntry?.hasAnnotatedString(): Boolean {
