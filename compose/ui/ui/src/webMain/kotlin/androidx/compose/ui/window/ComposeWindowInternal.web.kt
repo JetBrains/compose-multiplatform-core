@@ -193,7 +193,7 @@ internal class ComposeWindow(
             override val windowInsets get() = insetsManager?.windowInsets ?: EmptyPlatformWindowInsets
 
             override val dragAndDropManager: PlatformDragAndDropManager = object :
-                WebDragAndDropManager(rootNode, canvasEvents, windowState.globalEvents, webMediaEnvironment.systemDensity) {
+                WebDragAndDropManager(rootNode, canvasEvents, windowState.globalEvents, webMediaEnvironment::systemDensity) {
                 override val rootDragAndDropNode: ComposeSceneDragAndDropNode
                     get() = scene.rootDragAndDropNode
             }

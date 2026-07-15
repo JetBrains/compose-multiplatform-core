@@ -40,7 +40,7 @@ import org.w3c.dom.ImageData
 import org.w3c.dom.HTMLElement
 import org.w3c.dom.Node
 
-internal abstract class WebDragAndDropManager(private val rootNode: Node, eventListener: EventTargetListener, globalEventsListener: EventTargetListener, private val density: Density) :
+internal abstract class WebDragAndDropManager(private val rootNode: Node, eventListener: EventTargetListener, globalEventsListener: EventTargetListener, private val densityProvider: () -> Density) :
     PlatformDragAndDropManager {
     override val isRequestDragAndDropTransferRequired: Boolean
         get() = false
@@ -120,7 +120,7 @@ internal abstract class WebDragAndDropManager(private val rootNode: Node, eventL
             previousDragEventIsStart = true
             event as DragEvent
 
-            val scope = InternalStartTransferScope(density)
+            val scope = InternalStartTransferScope(densityProvider)
 
             if (scope.startTransfer(event)) {
                 // without setting any kind of data in data transfer Safari on iOS won't proceed with drag action
@@ -176,7 +176,7 @@ internal abstract class WebDragAndDropManager(private val rootNode: Node, eventL
     private val DragEvent.offset get() = Offset(
         x = offsetX.toFloat(),
         y = offsetY.toFloat()
-    ) * density.density
+    ) * densityProvider().density
 }
 
 @Suppress("UNUSED_PARAMETER")
@@ -209,7 +209,7 @@ private fun IntArray.toUint8ClampedArray(): Uint8ClampedArray {
 }
 
 private class InternalStartTransferScope(
-    private val density: Density
+    private val densityProvider: () -> Density
 ) : PlatformDragAndDropSource.StartTransferScope {
     /**
      * Context for an ongoing drag session initiated from Compose.
@@ -231,7 +231,7 @@ private class InternalStartTransferScope(
         val canvas = Canvas(imageBitmap)
         val canvasScope = CanvasDrawScope()
 
-        canvasScope.draw(density, LayoutDirection.Ltr, canvas, decorationSize, drawDragDecoration)
+        canvasScope.draw(densityProvider(), LayoutDirection.Ltr, canvas, decorationSize, drawDragDecoration)
 
         val intArray = IntArray(imageBitmap.width * imageBitmap.height)
         imageBitmap.readPixels(intArray)
@@ -247,7 +247,7 @@ private class InternalStartTransferScope(
         canvasConverter.width = width
         canvasConverter.height = height
 
-        val scale = density.density
+        val scale = densityProvider().density
         require(scale > 0f)
 
         val widthNormalized = (width / scale).toInt()
