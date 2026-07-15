@@ -83,20 +83,17 @@ fun DisableSelection(content: @Composable () -> Unit) {
  */
 @Suppress("ComposableLambdaParameterNaming")
 @Composable
-internal fun SelectionContainer(
+/* internal */ fun SelectionContainer(
     /** A [Modifier] for SelectionContainer. */
     modifier: Modifier = Modifier,
     /** Current Selection status. */
     selection: Selection?,
     /** A function containing customized behaviour when selection changes. */
     onSelectionChange: (Selection?) -> Unit,
+    registrarImpl: SelectionRegistrarImpl = rememberSaveable(saver = SelectionRegistrarImpl.Saver) { SelectionRegistrarImpl() },
+    manager: SelectionManager = remember { SelectionManager(registrarImpl) },
     children: @Composable () -> Unit,
 ) {
-    val registrarImpl =
-        rememberSaveable(saver = SelectionRegistrarImpl.Saver) { SelectionRegistrarImpl() }
-
-    val manager = remember { SelectionManager(registrarImpl) }
-
     val clipboard = LocalClipboard.current
     val coroutineScope = rememberCoroutineScope()
     manager.hapticFeedBack = LocalHapticFeedback.current
