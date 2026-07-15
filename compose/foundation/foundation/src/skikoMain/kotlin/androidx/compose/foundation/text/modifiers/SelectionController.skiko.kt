@@ -20,6 +20,7 @@ import androidx.compose.foundation.text.TextDragObserver
 import androidx.compose.foundation.text.selection.MouseSelectionObserver
 import androidx.compose.foundation.text.selection.SelectionAdjustment
 import androidx.compose.foundation.text.selection.SelectionRegistrar
+import androidx.compose.foundation.text.selection.SelectionRegistrarImpl
 import androidx.compose.foundation.text.selection.awaitSelectionGestures
 import androidx.compose.foundation.text.selection.hasSelection
 import androidx.compose.ui.Modifier
@@ -197,6 +198,9 @@ internal class SkikoSelectionModifierNode(
     private var mouseSelectionObserver = createMouseSelectionObserver()
 
     private fun bringIntoView(offset: Offset) {
+        // When the container drives auto-scroll (e.g. the lazy chat list), it owns scrolling and
+        // selection refresh; disable the per-selectable bring-into-view so the two don't fight.
+        if ((selectionRegistrar as? SelectionRegistrarImpl)?.containerHandlesDragEnd == true) return
         coroutineScope.launch(start = CoroutineStart.UNDISPATCHED) {
             bringIntoView {
                 Rect(offset = offset, size = Size.Zero)
