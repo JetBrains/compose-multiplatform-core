@@ -53,12 +53,18 @@ internal abstract class MediaQueryListener(private val query: String) {
         }
     }
 
-    fun matches(): Boolean? {
+    fun matches(): MediaQueryStatus {
         return when {
-            !isMatchMediaSupported() -> null
-            else -> media.matches
+            !isMatchMediaSupported() -> MediaQueryStatus.UNSUPPORTED
+            else -> if (media.matches) MediaQueryStatus.MATCH else MediaQueryStatus.NO_MATCH
         }
     }
+}
+
+internal sealed interface MediaQueryStatus {
+    object UNSUPPORTED : MediaQueryStatus
+    object MATCH : MediaQueryStatus
+    object NO_MATCH : MediaQueryStatus
 }
 
 // supported by all browsers since 2015

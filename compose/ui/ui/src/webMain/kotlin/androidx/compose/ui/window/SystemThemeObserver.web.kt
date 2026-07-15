@@ -38,9 +38,9 @@ private class SystemThemeObserverImpl : SystemThemeObserver {
 
     private val _currentSystemTheme = mutableStateOf(
         when(mediaQueryListener.matches()) {
-            true -> SystemTheme.DARK
-            false -> SystemTheme.LIGHT
-            else -> SystemTheme.UNKNOWN
+            MediaQueryStatus.MATCH -> SystemTheme.DARK
+            MediaQueryStatus.NO_MATCH -> SystemTheme.LIGHT
+            MediaQueryStatus.UNSUPPORTED -> SystemTheme.UNKNOWN
         }
     )
 
