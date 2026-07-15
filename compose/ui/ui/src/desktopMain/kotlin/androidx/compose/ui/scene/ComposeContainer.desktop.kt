@@ -18,6 +18,7 @@ package androidx.compose.ui.scene
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionContext
+import androidx.compose.runtime.DataSourceContext
 import androidx.compose.ui.ComposeFeatureFlags
 import androidx.compose.ui.LayerType
 import androidx.compose.ui.awt.AwtEventFilter
@@ -95,6 +96,10 @@ internal class ComposeContainer(
 ) : WindowFocusListener,
     WindowListener {
     val windowContext = PlatformWindowContext()
+
+    /** The container's sources: shared by its main scene and every platform-layer scene. */
+    private val dataSourceContext = DataSourceContext()
+
     var window: Window? = null
         private set
 
@@ -189,6 +194,8 @@ internal class ComposeContainer(
     var isClearFocusOnMouseDownEnabled by mediator::isClearFocusOnMouseDownEnabled
 
     init {
+        ComposeSceneFeatureFlags.isFrameIsolationEnabled =
+            ComposeFeatureFlags.isFrameIsolationEnabled.value
         architectureComponentsOwner.enableSavedStateHandles()
         setWindow(window)
         this.windowContainer = windowContainer
@@ -387,6 +394,7 @@ internal class ComposeContainer(
                     layoutDirection = layoutDirection,
                     coroutineContext = mediator.coroutineContext,
                     platformContext = mediator.platformContext,
+                    dataSourceContext = dataSourceContext,
                     invalidate = mediator::onComposeInvalidation,
                 )
             else -> PlatformLayersComposeScene(
@@ -498,6 +506,11 @@ internal class ComposeContainer(
     private inner class ComposeSceneContextImpl(
         override val platformContext: PlatformContext,
     ) : ComposeSceneContext {
+        // One context per container: the main scene and every platform layer (popup/dialog)
+        // scene created below share the container's sources.
+        override val dataSourceContext: DataSourceContext
+            get() = this@ComposeContainer.dataSourceContext
+
         override fun createLayer(
             density: Density,
             layoutDirection: LayoutDirection,

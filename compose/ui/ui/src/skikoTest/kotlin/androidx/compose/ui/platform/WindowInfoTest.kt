@@ -29,9 +29,24 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import androidx.compose.ui.test.SchedulingDispatcherFixture
+import kotlin.test.AfterTest
+import kotlin.test.BeforeTest
 
 @OptIn(ExperimentalTestApi::class)
 class WindowInfoTest {
+
+    private val schedulingDispatcher = SchedulingDispatcherFixture()
+
+    @BeforeTest
+    fun installSchedulingDispatcher() {
+        schedulingDispatcher.install()
+    }
+
+    @AfterTest
+    fun uninstallSchedulingDispatcher() {
+        schedulingDispatcher.uninstall()
+    }
 
     @Test
     fun windowInfoContainerSize() = runSkikoComposeUiTest(

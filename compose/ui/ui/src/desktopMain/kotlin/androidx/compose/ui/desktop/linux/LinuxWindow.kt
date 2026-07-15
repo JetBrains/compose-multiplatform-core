@@ -20,7 +20,7 @@ import androidx.compose.ui.desktop.InteractiveResizeInitiator
 import androidx.compose.ui.desktop.KdtDragAndDropManager
 import androidx.compose.ui.desktop.KdtDragAndDropTransferable
 import androidx.compose.ui.desktop.LightweightWindowId
-import androidx.compose.ui.desktop.Scene
+import androidx.compose.ui.desktop.ApplicationSession
 import androidx.compose.ui.desktop.Window
 import androidx.compose.ui.desktop.WindowCloseRequestReason
 import androidx.compose.ui.desktop.WindowResizeHandle
@@ -63,6 +63,7 @@ import androidx.compose.ui.platform.WindowInfo
 import androidx.compose.ui.scene.CanvasLayersComposeScene
 import androidx.compose.ui.scene.ComposeScene
 import androidx.compose.ui.scene.PointerEventResult
+import androidx.compose.ui.scene.withFrameTransaction
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextInputContext
@@ -115,7 +116,7 @@ import org.jetbrains.skia.makeGLWithInterface
 
 class LinuxWindow internal constructor(
     private val application: LinuxApplication,
-    internal val scene: Scene<*>,
+    internal val session: ApplicationSession,
     private val onCloseRequest: (WindowCloseRequestReason) -> Unit,
 ) : InteractiveMoveInitiator, InteractiveResizeInitiator {
     private val nativeWindowId = application.allocateNativeWindowId()
@@ -326,7 +327,7 @@ class LinuxWindow internal constructor(
         density = { density },
         callbackInterceptor = object : CallbackInterceptor {
             override fun <T> execute(f: () -> T): T {
-                return scene.withPreparedMainThread {
+                return composeScene.withFrameTransaction {
                     f()
                 }
             }
@@ -396,9 +397,10 @@ class LinuxWindow internal constructor(
         density = density,
         layoutDirection = layoutDirection,
         size = contentSizeInPx(),
-        coroutineContext = scene.coroutineScope.coroutineContext +
+        coroutineContext = session.coroutineScope.coroutineContext +
             LinuxKdtMainDispatcher.INSTANCE.immediate,
         platformContext = platformContext,
+        dataSourceContext = session.dataSourceContext,
         invalidate = { isFrameRequested = true },
     )
 
@@ -578,7 +580,7 @@ class LinuxWindow internal constructor(
             }
 
             is Event.WindowCloseRequest -> {
-                scene.withPreparedMainThread {
+                composeScene.withFrameTransaction {
                     onCloseRequest(WindowCloseRequestReason.UserRequest)
                 }
                 EventHandlerResult.Stop
@@ -609,11 +611,14 @@ class LinuxWindow internal constructor(
     }
 
     internal fun handleTextInput(event: Event.TextInput): EventHandlerResult {
-        linuxTextInputSessionOwner.handleTextInputEvent(
-            event.preeditStringData,
-            event.commitStringData,
-            event.deleteSurroundingTextData,
-        )
+        // Naked IME ingress joins the current frame slice.
+        composeScene.withFrameTransaction {
+            linuxTextInputSessionOwner.handleTextInputEvent(
+                event.preeditStringData,
+                event.commitStringData,
+                event.deleteSurroundingTextData,
+            )
+        }
         return EventHandlerResult.Stop
     }
 

@@ -822,13 +822,14 @@ public fun <T> rememberTransition(
         val coroutineScope = rememberCoroutineScope()
         DisposableEffect(coroutineScope) {
             val thread = getCurrentThread()
-            val snapshotStateObserver = SnapshotStateObserver {
-                if (thread === getCurrentThread()) {
-                    it()
-                } else {
-                    coroutineScope.launch { it() }
+            val snapshotStateObserver =
+                SnapshotStateObserver {
+                    if (thread === getCurrentThread()) {
+                        it()
+                    } else {
+                        coroutineScope.launch { it() }
+                    }
                 }
-            }
             transitionState.snapshotStateObserver = snapshotStateObserver
             onDispose { transitionState.snapshotStateObserver = null }
         }

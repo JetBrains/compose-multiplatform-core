@@ -41,10 +41,10 @@ import androidx.compose.ui.input.pointer.isSecondaryPressed
 import androidx.compose.ui.input.pointer.isShiftPressed
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.density
-import androidx.compose.ui.window.rememberWindowState
 import androidx.compose.ui.window.runApplicationTest
 import com.google.common.truth.Truth.assertThat
 import java.awt.Dimension
@@ -80,7 +80,7 @@ class WindowInputEventTest {
         launchTestApplication {
             Window(
                 onCloseRequest = ::exitApplication,
-                state = rememberWindowState(width = 200.dp, height = 100.dp)
+                initialSize = DpSize(200.dp, 100.dp)
             ) {
                 window = this.window
 
@@ -306,7 +306,7 @@ class WindowInputEventTest {
         launchTestApplication {
             Window(
                 onCloseRequest = ::exitApplication,
-                state = rememberWindowState(width = 200.dp, height = 100.dp)
+                initialSize = DpSize(200.dp, 100.dp)
             ) {
                 window = this.window
 
@@ -367,7 +367,7 @@ class WindowInputEventTest {
         launchTestApplication {
             Window(
                 onCloseRequest = ::exitApplication,
-                state = rememberWindowState(width = 200.dp, height = 100.dp)
+                initialSize = DpSize(200.dp, 100.dp)
             ) {
                 window = this.window
 
@@ -428,7 +428,7 @@ class WindowInputEventTest {
         launchTestApplication {
             Window(
                 onCloseRequest = ::exitApplication,
-                state = rememberWindowState(width = 200.dp, height = 100.dp)
+                initialSize = DpSize(200.dp, 100.dp)
             ) {
                 window = this.window
 
@@ -465,7 +465,7 @@ class WindowInputEventTest {
         launchTestApplication {
             Window(
                 onCloseRequest = ::exitApplication,
-                state = rememberWindowState(width = 200.dp, height = 100.dp)
+                initialSize = DpSize(200.dp, 100.dp)
             ) {
                 window = this.window
 
@@ -502,7 +502,7 @@ class WindowInputEventTest {
         launchTestApplication {
             Window(
                 onCloseRequest = ::exitApplication,
-                state = rememberWindowState(width = 200.dp, height = 100.dp)
+                initialSize = DpSize(200.dp, 100.dp)
             ) {
                 window = this.window
 

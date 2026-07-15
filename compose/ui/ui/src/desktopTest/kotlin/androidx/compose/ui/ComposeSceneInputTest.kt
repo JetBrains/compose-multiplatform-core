@@ -21,9 +21,25 @@ import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.unit.IntRect
 import kotlin.test.Ignore
 import org.junit.Test
+import androidx.compose.ui.test.SchedulingDispatcherFixture
+import kotlin.test.AfterTest
+import kotlin.test.BeforeTest
 
 @OptIn(ExperimentalComposeUiApi::class)
 class ComposeSceneInputTest {
+
+    private val schedulingDispatcher = SchedulingDispatcherFixture()
+
+    @BeforeTest
+    fun installSchedulingDispatcher() {
+        schedulingDispatcher.install()
+    }
+
+    @AfterTest
+    fun uninstallSchedulingDispatcher() {
+        schedulingDispatcher.uninstall()
+    }
+
     @Test
     fun move() = ImageComposeScene(100, 100).useInUiThread { scene ->
         val background = FillBox()

@@ -17,6 +17,7 @@
 package androidx.compose.ui.scene
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DataSourceContext
 import androidx.compose.runtime.Composition
 import androidx.compose.runtime.CompositionContext
 import androidx.compose.runtime.CompositionLocalContext
@@ -74,6 +75,9 @@ import kotlinx.coroutines.Dispatchers
  * @param coroutineContext Context which will be used to launch effects ([LaunchedEffect],
  * [rememberCoroutineScope]) and run recompositions.
  * @param platformContext The the platform-specific context used for platform interaction.
+ * @param dataSourceContext The [DataSourceContext] this scene takes its frame-cycle units
+ * from. Scenes sharing one context share its sources; the default is a fresh private
+ * substrate-only context.
  * @param invalidate The function to be called when the content need to be recomposed or
  * re-rendered. If you draw your content using [ComposeScene.render] method, in this callback you
  * should schedule the next [ComposeScene.render] in your rendering loop.
@@ -89,6 +93,7 @@ fun CanvasLayersComposeScene(
     // TODO: Remove `Dispatchers.Unconfined` as a default
     coroutineContext: CoroutineContext = Dispatchers.Unconfined,
     platformContext: PlatformContext = PlatformContext.Empty(),
+    dataSourceContext: DataSourceContext = DataSourceContext(),
     invalidate: () -> Unit = {},
 ): ComposeScene = CanvasLayersComposeSceneImpl(
     density = density,
@@ -96,8 +101,14 @@ fun CanvasLayersComposeScene(
     size = size,
     coroutineContext = coroutineContext,
     platformContext = platformContext,
+    dataSourceContext = dataSourceContext,
     invalidate = invalidate
-)
+).also {
+    // Activate the frame domain only after construction completes, so every scene-owned
+    // snapshot state (base + subclass initializers) predates the standing pin. See
+    // BaseComposeScene.activateFrameDomain.
+    it.activateFrameDomain()
+}
 
 private class CanvasLayersComposeSceneImpl(
     density: Density,
@@ -105,9 +116,11 @@ private class CanvasLayersComposeSceneImpl(
     size: IntSize?,
     coroutineContext: CoroutineContext,
     override val platformContext: PlatformContext,
+    dataSourceContext: DataSourceContext,
     invalidate: () -> Unit = {},
 ) : BaseComposeScene(
     coroutineContext = coroutineContext,
+    dataSourceContext = dataSourceContext,
     invalidate = invalidate
 ), ComposeSceneContext {
     private val mainOwner = RootNodeOwner(
@@ -122,6 +135,10 @@ private class CanvasLayersComposeSceneImpl(
 
     override val composeSceneContext: ComposeSceneContext
         get() = this
+
+    // This scene IS its own ComposeSceneContext: expose the context its cycle units come
+    // from, so child scenes created against this context inherit it.
+    override val dataSourceContext: DataSourceContext = dataSourceContext
 
     override var density: Density = density
         set(value) {
@@ -201,7 +218,7 @@ private class CanvasLayersComposeSceneImpl(
 
     override fun calculateContentSize(): IntSize {
         check(!isClosed) { "calculateContentSize called after ComposeScene is closed" }
-        return mainOwner.measureInConstraints(Constraints())
+        return withFrameTransaction { mainOwner.measureInConstraints(Constraints()) }
     }
 
     override fun invalidatePositionInWindow() {

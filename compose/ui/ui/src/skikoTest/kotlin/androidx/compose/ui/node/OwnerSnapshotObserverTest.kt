@@ -27,6 +27,9 @@ import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.runComposeUiTest
 import kotlin.test.Test
 import kotlin.test.assertTrue
+import androidx.compose.ui.test.SchedulingDispatcherFixture
+import kotlin.test.AfterTest
+import kotlin.test.BeforeTest
 
 
 /**
@@ -34,6 +37,18 @@ import kotlin.test.assertTrue
  */
 @OptIn(ExperimentalTestApi::class)
 class OwnerSnapshotObserverTest {
+
+    private val schedulingDispatcher = SchedulingDispatcherFixture()
+
+    @BeforeTest
+    fun installSchedulingDispatcher() {
+        schedulingDispatcher.install()
+    }
+
+    @AfterTest
+    fun uninstallSchedulingDispatcher() {
+        schedulingDispatcher.uninstall()
+    }
 
     /**
      * Verifies that [ObserverModifierNode.onObservedReadsChanged] is called before `onDispose` of

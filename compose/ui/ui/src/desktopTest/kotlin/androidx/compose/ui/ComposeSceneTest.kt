@@ -108,8 +108,30 @@ import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 
+// NOTE (task 3b): deliberately NOT installing SchedulingDispatcherFixture here.
+// `createComposeRule()`'s Rule creates the ComposeScene while applying itself, before any
+// class-level @BeforeTest runs, so a fixture install would have to happen at field-construction
+// time. That was tried twice:
+//   1. With the fixture's original StandardTestDispatcher-based install(): deadlocks via
+//      SwingUtilities.invokeAndWait blocking the caller while posted dispatcher work only queues
+//      (jstack-confirmed on this class's `rendering of Text state change`).
+//   2. After SchedulingDispatcherFixture.install() was changed to an immediate
+//      Dispatchers.Unconfined dispatcher (fixing case 1 generally): most tests in this class then
+//      run and pass, but `sendApplyNotificationsFromNonUiThreadDoesntDeadlock` (line ~713, no
+//      @Test timeout) hits a genuine Java-level deadlock inside the Compose runtime itself, between
+//      SnapshotStateObserver.drainChanges and DerivedSnapshotState.currentRecord acquiring two
+//      SynchronizedObjects in opposite order across the AWT-EventQueue-0 thread and a
+//      sendApplyNotifications-thread. jstack reports "Found one Java-level deadlock" for this
+//      exact pair. This is a pre-existing production concurrency bug (androidx.compose.runtime),
+//      out of scope for this test-only task, and reachable only once the dispatcher seam is fixed
+//      enough for this test to actually run. See task-3b-report.md, category (a): the other 16
+//      tests in this class fail only for lack of the fixture, but the fix is gated on this
+//      runtime bug (or on giving this one test a @Test timeout, left to the user to decide).
+// Leaving this class without the fixture keeps it at its prior (already-failing-for-other-reasons)
+// baseline rather than hanging the whole suite.
 @OptIn(InternalTestApi::class, ExperimentalComposeUiApi::class)
 class ComposeSceneTest {
+
     @get:Rule
     val screenshotRule = DesktopScreenshotTestRule("compose/ui/ui-desktop")
 

@@ -37,12 +37,28 @@ import org.jetbrains.skiko.MainUIDispatcher
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
+import androidx.compose.ui.test.SchedulingDispatcherFixture
+import kotlin.test.AfterTest
+import kotlin.test.BeforeTest
 
 /**
  * Collection of tests for encountered bugs
  */
 @RunWith(JUnit4::class)
 class GraphicLayerBugDesktopTest {
+
+    private val schedulingDispatcher = SchedulingDispatcherFixture()
+
+    @BeforeTest
+    fun installSchedulingDispatcher() {
+        schedulingDispatcher.install()
+    }
+
+    @AfterTest
+    fun uninstallSchedulingDispatcher() {
+        schedulingDispatcher.uninstall()
+    }
+
     // https://youtrack.jetbrains.com/issue/CMP-6729/iOS-Runtime-crash.-Unsupported-concurrent-change-during-composition
     // sendApplyNotifications can be called anywhere. When it was called inside composition, it triggers wrongly written observers
     @Test

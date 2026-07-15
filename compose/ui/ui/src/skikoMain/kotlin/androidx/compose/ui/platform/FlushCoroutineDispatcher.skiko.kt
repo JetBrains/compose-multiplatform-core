@@ -31,10 +31,14 @@ import kotlinx.coroutines.launch
 /**
  * Dispatcher with the ability to immediately perform (flush) all pending tasks.
  * Without a flush all tasks are dispatched in the dispatcher provided by [scope]
+ *
+ * @param taskWrapper optional wrapper around each task execution (immediate, flushed and
+ * delayed) — used to run every dispatched slice inside the scene's frame-cycle snapshot.
  */
 @OptIn(InternalCoroutinesApi::class)
 internal class FlushCoroutineDispatcher(
-    scope: CoroutineScope
+    scope: CoroutineScope,
+    private val taskWrapper: ((task: () -> Unit) -> Unit)? = null,
 ) : CoroutineDispatcher(), Delay {
     // Dispatcher should always be alive, even if Job is cancelled. Otherwise coroutines which
     // use this dispatcher won't be properly cancelled.
@@ -59,10 +63,15 @@ internal class FlushCoroutineDispatcher(
                     immediateTasks.remove(block)
                 }
                 if (isTaskAlive) {
-                    block.run()
+                    runTask(block)
                 }
             }
         }
+    }
+
+    private fun runTask(block: Runnable) {
+        val wrapper = taskWrapper
+        if (wrapper == null) block.run() else wrapper { block.run() }
     }
 
     /**
@@ -93,8 +102,26 @@ internal class FlushCoroutineDispatcher(
                 immediateTasks = tmp
             }
 
-            immediateTasksSwap.forEach(Runnable::run)
-            immediateTasksSwap.clear()
+            // Drain by removing each task before running it, so a task that throws is
+            // already out of the buffer (a later flush cannot re-run it) and the tasks
+            // queued after it stay in the buffer.
+            try {
+                while (immediateTasksSwap.isNotEmpty()) {
+                    runTask(immediateTasksSwap.removeFirst())
+                }
+            } finally {
+                // On the normal path the buffer is already empty here. If a task threw,
+                // move the still-queued tasks back to the front of immediateTasks
+                // (preserving order) so they are not stranded in the swap buffer —
+                // hasImmediateTasks() and the next flush observe them there.
+                if (immediateTasksSwap.isNotEmpty()) {
+                    synchronized(immediateTasksLock) {
+                        while (immediateTasksSwap.isNotEmpty()) {
+                            immediateTasks.addFirst(immediateTasksSwap.removeLast())
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -121,7 +148,7 @@ internal class FlushCoroutineDispatcher(
                     delayedTasks.remove(block)
                 }
                 if (isTaskAlive) {
-                    block.run()
+                    runTask(block)
                 }
             }
         }

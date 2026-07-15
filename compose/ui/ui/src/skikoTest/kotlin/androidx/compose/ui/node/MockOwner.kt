@@ -36,6 +36,8 @@ import androidx.compose.ui.input.pointer.PointerIconService
 import androidx.compose.ui.modifier.ModifierLocalManager
 import androidx.compose.ui.platform.AccessibilityManager
 import androidx.compose.ui.platform.Clipboard
+import androidx.compose.runtime.NoriaOnly
+import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.platform.PlatformTextInputSessionScope
 import androidx.compose.ui.platform.SoftwareKeyboardController
 import androidx.compose.ui.platform.TextToolbar
@@ -220,8 +222,18 @@ internal class MockOwner(
     }
 
     override suspend fun textInputSession(
-        session: suspend PlatformTextInputSessionScope.() -> Nothing
+        session: suspend PlatformTextInputSessionScope<*>.() -> Nothing
     ): Nothing {
+        TODO("Not yet implemented")
+    }
+
+    @NoriaOnly
+    override fun isTextInputSessionActive(): Boolean {
+        TODO("Not yet implemented")
+    }
+
+    @NoriaOnly
+    override fun handleEventWithInputSession(keyEvent: KeyEvent): Boolean {
         TODO("Not yet implemented")
     }
 

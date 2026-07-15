@@ -46,7 +46,7 @@ class SnapshotStateObserverTestsJvm {
             for (i in 1..1000) {
                 val state1 by mutableStateOf(0)
                 var state2 by mutableStateOf(true)
-                val observer = SnapshotStateObserver({}).apply { start() }
+                val observer = SnapshotStateObserver {}.apply { start() }
                 repeat(1000) {
                     observer.observeReads(Unit, {}) {
                         @Suppress("UNUSED_EXPRESSION") state1
@@ -81,7 +81,7 @@ class SnapshotStateObserverTestsJvm {
             for (i in 1..1000) {
                 val state1 by mutableStateOf(0)
                 var state2 by mutableStateOf(true)
-                val observer = SnapshotStateObserver({}).apply { start() }
+                val observer = SnapshotStateObserver {}.apply { start() }
                 observer.observeReads(Unit, {}) {
                     repeat(1000) {
                         @Suppress("UNUSED_EXPRESSION") state1

@@ -4,12 +4,13 @@ import androidx.compose.ui.ComposeUIDispatcher
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.SessionMutex
 import androidx.compose.ui.desktop.NativePlatformTextInputMethodRequest
-import androidx.compose.ui.desktop.Scene
 import androidx.compose.ui.desktop.TextInputSessionOwner
 import androidx.compose.ui.desktop.logging.logger
 import androidx.compose.ui.platform.PlatformTextInputSessionScope
 import androidx.compose.ui.input.key.InternalKeyEvent
 import androidx.compose.ui.input.key.KeyEvent
+import androidx.compose.ui.scene.ComposeScene
+import androidx.compose.ui.scene.withFrameTransaction
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.DpOffset
@@ -57,7 +58,7 @@ interface PlatformTextInputMethodRequestMacOs : NativePlatformTextInputMethodReq
 class PlatformTextInputSessionMacOs(
     coroutineScope: CoroutineScope,
     private val nativeWindow: Window,
-    private val scene: Scene<*>,
+    private val composeScene: ComposeScene,
     internal val density: () -> Density,
 ) : PlatformTextInputSessionScope<PlatformTextInputMethodRequestMacOs>,
     CoroutineScope by coroutineScope {
@@ -67,7 +68,7 @@ class PlatformTextInputSessionMacOs(
 
     override suspend fun startInputMethod(request: PlatformTextInputMethodRequestMacOs): Nothing {
         withContext(ComposeUIDispatcher.immediate) {
-            val textInputClient = request.toTextInputClient(scene, nativeWindow)
+            val textInputClient = request.toTextInputClient(composeScene, nativeWindow)
             nativeWindow.setTextInputClient(textInputClient)
             currentTextInputClient = textInputClient
             imeLogger.trace { "setTextInputClient(request=$textInputClient)" }
@@ -89,7 +90,7 @@ class PlatformTextInputSessionMacOs(
 @OptIn(InternalComposeUiApi::class)
 class MacOsTextInputSessionOwner(
     private val nativeWindow: Window,
-    private val scene: Scene<*>,
+    private val composeScene: ComposeScene,
     private val density: () -> Density,
 ) : TextInputSessionOwner {
     @OptIn(InternalComposeUiApi::class)
@@ -102,7 +103,7 @@ class MacOsTextInputSessionOwner(
                 PlatformTextInputSessionMacOs(
                     coroutineScope = it,
                     nativeWindow = nativeWindow,
-                    scene = scene,
+                    composeScene = composeScene,
                     density = density,
                 )
             },
@@ -159,38 +160,38 @@ class MacOsTextInputSessionOwner(
 }
 
 private fun PlatformTextInputMethodRequestMacOs.toTextInputClient(
-    scene: Scene<*>,
+    composeScene: ComposeScene,
     nativeWindow: Window,
 ): TextInputClient {
     val request = this
     return object : TextInputClient {
-        override fun hasMarkedText(): Boolean = scene.withPreparedMainThread {
+        override fun hasMarkedText(): Boolean = composeScene.withFrameTransaction {
             request.hasMarkedText().also { imeLogger.trace { "hasMarkedText() -> $it" } }
         }
 
         override fun markedRange(): org.jetbrains.desktop.macos.TextRange? =
-            scene.withPreparedMainThread {
+            composeScene.withFrameTransaction {
                 request.markedRange()?.toKdtTextRange().also { imeLogger.trace { "markedRange() -> $it" } }
             }
 
         override fun selectedRange(): org.jetbrains.desktop.macos.TextRange =
-            scene.withPreparedMainThread {
+            composeScene.withFrameTransaction {
                 request.selectedRange().toKdtTextRange().also { imeLogger.trace { "selectedRange() -> $it" } }
             }
 
         override fun insertText(
             text: String,
             replacementRange: org.jetbrains.desktop.macos.TextRange?,
-        ) = scene.withPreparedMainThread {
+        ) = composeScene.withFrameTransaction {
             imeLogger.trace { "insertText(text='$text', replacementRange=$replacementRange)" }
             request.insertText(text, replacementRange?.toComposeTextRange())
         }
 
-        override fun doCommand(command: String): Boolean = scene.withPreparedMainThread {
+        override fun doCommand(command: String): Boolean = composeScene.withFrameTransaction {
             request.doCommand(command).also { imeLogger.trace { "doCommand(command='$command') -> $it" } }
         }
 
-        override fun unmarkText() = scene.withPreparedMainThread {
+        override fun unmarkText() = composeScene.withFrameTransaction {
             imeLogger.trace { "unmarkText()" }
             request.unmarkText()
         }
@@ -199,7 +200,7 @@ private fun PlatformTextInputMethodRequestMacOs.toTextInputClient(
             text: String,
             selectedRange: org.jetbrains.desktop.macos.TextRange?,
             replacementRange: org.jetbrains.desktop.macos.TextRange?,
-        ) = scene.withPreparedMainThread {
+        ) = composeScene.withFrameTransaction {
             imeLogger.trace { "setMarkedText(text='$text', selectedRange=$selectedRange, replacementRange=$replacementRange)" }
             request.setMarkedText(
                 text,
@@ -209,7 +210,7 @@ private fun PlatformTextInputMethodRequestMacOs.toTextInputClient(
         }
 
         override fun attributedStringForRange(range: org.jetbrains.desktop.macos.TextRange): TextInputClient.StringAndRange =
-            scene.withPreparedMainThread {
+            composeScene.withFrameTransaction {
                 val result = request.attributedStringForRange(range.toComposeTextRange())
                 TextInputClient.StringAndRange(result.text, result.actualRange?.toKdtTextRange()).also {
                     imeLogger.trace { "attributedStringForRange(range=$range) -> StringAndRange(text='${it.text}', actualRange=${it.actualRange})" }
@@ -217,7 +218,7 @@ private fun PlatformTextInputMethodRequestMacOs.toTextInputClient(
             }
 
         override fun firstRectForCharacterRange(range: org.jetbrains.desktop.macos.TextRange): TextInputClient.RectAndRange =
-            scene.withPreparedMainThread {
+            composeScene.withFrameTransaction {
                 val result = request.firstRectForCharacterRange(range.toComposeTextRange())
                 TextInputClient.RectAndRange(
                     result.rect.toScreenLogicalRect(nativeWindow.contentOrigin),
@@ -228,7 +229,7 @@ private fun PlatformTextInputMethodRequestMacOs.toTextInputClient(
             }
 
         override fun characterIndexForPoint(point: LogicalPoint): Long? =
-            scene.withPreparedMainThread {
+            composeScene.withFrameTransaction {
                 val pointInWindow = point - nativeWindow.contentOrigin
                 request.characterIndexForPoint(pointInWindow.toDpOffset()).also {
                     imeLogger.trace { "characterIndexForPoint(point=$point) -> $it" }

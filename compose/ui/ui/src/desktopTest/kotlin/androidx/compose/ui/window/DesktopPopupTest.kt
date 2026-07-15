@@ -46,8 +46,25 @@ import java.awt.Window
 import kotlin.test.assertTrue
 import org.junit.Rule
 import org.junit.Test
+import androidx.compose.ui.test.SchedulingDispatcherFixture
+import kotlin.test.AfterTest
 
 class DesktopPopupTest {
+
+    // `createComposeRule()`'s Rule creates the ComposeScene while applying itself, before
+    // class-level @BeforeTest methods run, so the fixture must be installed at construction time.
+    // Re-attempted after SchedulingDispatcherFixture.install() switched to an immediate
+    // (Dispatchers.Unconfined) dispatcher, which fixes the general
+    // invokeAndWait-blocks-while-StandardTestDispatcher-only-queues deadlock. Verified with an
+    // isolated `--tests` run (this class alone, apart from ComposeSceneTest, which has an
+    // unrelated pre-existing runtime deadlock of its own): all 9 tests pass, no hang.
+    private val schedulingDispatcher = SchedulingDispatcherFixture().apply { install() }
+
+    @AfterTest
+    fun uninstallSchedulingDispatcher() {
+        schedulingDispatcher.uninstall()
+    }
+
     @get:Rule
     val rule = createComposeRule()
 

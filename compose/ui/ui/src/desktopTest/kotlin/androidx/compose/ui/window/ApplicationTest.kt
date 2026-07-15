@@ -102,9 +102,7 @@ class ApplicationTest {
             if (isOpen1) {
                 Window(
                     onCloseRequest = {},
-                    state = rememberWindowState(
-                        size = DpSize(600.dp, 600.dp),
-                    )
+                    initialSize = DpSize(600.dp, 600.dp)
                 ) {
                     window1 = this.window
                     Box(Modifier.size(32.dp).background(Color.Red))
@@ -116,9 +114,7 @@ class ApplicationTest {
             if (isOpen2) {
                 Window(
                     onCloseRequest = {},
-                    state = rememberWindowState(
-                        size = DpSize(300.dp, 300.dp),
-                    )
+                    initialSize = DpSize(300.dp, 300.dp)
                 ) {
                     window2 = this.window
                     Box(Modifier.size(32.dp).background(Color.Blue))

@@ -33,6 +33,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusTarget
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.performClick
+import androidx.compose.ui.test.SchedulingDispatcherFixture
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
@@ -938,13 +939,19 @@ class ComposeFocusTest {
 
 fun runFocusTest(action: suspend FocusTestScope.() -> Unit) {
     assumeFalse(GraphicsEnvironment.getLocalGraphicsEnvironment().isHeadlessInstance)
-    runBlocking(MainUIDispatcher) {
-        val scope = FocusTestScope()
-        try {
-            scope.action()
-        } finally {
-            scope.onEnd()
+    val schedulingDispatcher = SchedulingDispatcherFixture()
+    schedulingDispatcher.install()
+    try {
+        runBlocking(MainUIDispatcher) {
+            val scope = FocusTestScope()
+            try {
+                scope.action()
+            } finally {
+                scope.onEnd()
+            }
         }
+    } finally {
+        schedulingDispatcher.uninstall()
     }
 }
 

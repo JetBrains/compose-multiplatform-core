@@ -48,10 +48,26 @@ import androidx.compose.ui.unit.dp
 import kotlin.test.Test
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import androidx.compose.ui.test.SchedulingDispatcherFixture
+import kotlin.test.AfterTest
+import kotlin.test.BeforeTest
 
 // Tests for fixed bugs
 @OptIn(ExperimentalTestApi::class, ExperimentalFoundationApi::class)
 class GraphicLayerBugTest {
+
+    private val schedulingDispatcher = SchedulingDispatcherFixture()
+
+    @BeforeTest
+    fun installSchedulingDispatcher() {
+        schedulingDispatcher.install()
+    }
+
+    @AfterTest
+    fun uninstallSchedulingDispatcher() {
+        schedulingDispatcher.uninstall()
+    }
+
     // https://github.com/JetBrains/compose-multiplatform/issues/4681
     @Test
     fun draw_invalidates_inside_complex_layout() = runComposeUiTest {

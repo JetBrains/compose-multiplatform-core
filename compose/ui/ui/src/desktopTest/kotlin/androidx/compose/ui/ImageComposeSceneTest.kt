@@ -44,12 +44,28 @@ import org.jetbrains.skiko.MainUIDispatcher
 import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
+import androidx.compose.ui.test.SchedulingDispatcherFixture
+import kotlin.test.AfterTest
+import kotlin.test.BeforeTest
 
 @OptIn(
     ExperimentalTime::class,
     InternalTestApi::class
 )
 class ImageComposeSceneTest {
+
+    private val schedulingDispatcher = SchedulingDispatcherFixture()
+
+    @BeforeTest
+    fun installSchedulingDispatcher() {
+        schedulingDispatcher.install()
+    }
+
+    @AfterTest
+    fun uninstallSchedulingDispatcher() {
+        schedulingDispatcher.uninstall()
+    }
+
     @get:Rule
     val screenshotRule = DesktopScreenshotTestRule("compose/ui/ui-desktop")
 

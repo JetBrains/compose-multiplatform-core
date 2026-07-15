@@ -16,6 +16,7 @@
 
 package androidx.compose.ui.uikit
 
+import androidx.compose.runtime.DataSourceContext
 import androidx.compose.ui.ComposeUiFlags
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.isClearFocusOnMouseDownEnabled
@@ -72,6 +73,26 @@ sealed class ComposeContainerConfiguration {
      */
     @ExperimentalComposeUiApi
     var isClearFocusOnMouseDownEnabled: Boolean = ComposeUiFlags.isClearFocusOnMouseDownEnabled
+
+    /**
+     * The [DataSourceContext] this container's scenes take their frame-cycle units from.
+     * The main scene and every layer scene (popups, dialogs) created by this container
+     * share it. Pass the same instance to multiple containers to share sources across
+     * view controllers (each hosts its own frame domain; delivery is per-domain).
+     * Fixed at container creation.
+     */
+    var dataSourceContext: DataSourceContext = DataSourceContext.Empty
+
+    /**
+     * Enables frame-cycle DataSource isolation for scenes created by this container.
+     *
+     * PROCESS-WIDE: the underlying flag is global and read once per scene at
+     * construction. All containers created in one process must agree on this value;
+     * a divergent value fails fast at container creation (mixed-flag processes are
+     * unsupported, matching desktop semantics where the flag comes from the
+     * `compose.frameIsolation` system property).
+     */
+    var isFrameIsolationEnabled: Boolean = false
 }
 
 /**

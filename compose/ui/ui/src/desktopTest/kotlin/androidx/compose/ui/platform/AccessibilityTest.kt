@@ -57,6 +57,7 @@ import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.InternalTestApi
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.SemanticsNodeInteractionsProvider
+import androidx.compose.ui.test.SchedulingDispatcherFixture
 import androidx.compose.ui.test.SkikoComposeUiTest
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performTextInputSelection
@@ -620,16 +621,22 @@ private fun runDesktopA11yTest(block: suspend ComposeA11yTestScope.() -> Unit) {
     // Reset the a11y usage to avoid having one test affect the next
     SemanticsOwnerAccessibility.AccessibilityUsage.reset()
 
-    runInternalSkikoComposeUiTest(
-        semanticsOwnerListener = sceneAccessibility,
-        effectContext = testDispatcher
-    ) {
-        block(
-            ComposeA11yTestScope(
-                test = this,
-                sceneAccessibility = sceneAccessibility
+    val schedulingDispatcher = SchedulingDispatcherFixture()
+    schedulingDispatcher.install()
+    try {
+        runInternalSkikoComposeUiTest(
+            semanticsOwnerListener = sceneAccessibility,
+            effectContext = testDispatcher
+        ) {
+            block(
+                ComposeA11yTestScope(
+                    test = this,
+                    sceneAccessibility = sceneAccessibility
+                )
             )
-        )
+        }
+    } finally {
+        schedulingDispatcher.uninstall()
     }
 }
 

@@ -19,7 +19,10 @@ package androidx.compose.ui.scene
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocal
 import androidx.compose.runtime.CompositionLocalContext
+import androidx.compose.runtime.DataSource
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.enter
+import androidx.compose.runtime.withTransaction
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.runtime.withFrameNanos
@@ -301,4 +304,27 @@ sealed interface ComposeScene : AutoCloseable {
      * Set the visual debug option that shows bounds for all nodes in the hierarchy.
      */
     var showLayoutBounds: Boolean
+
+    /**
+     * The scene's current frame-cycle unit, or null when frame isolation is off or the scene
+     * is closed. Consumed by [withFrameTransaction]; not intended for direct use.
+     * The scene owns the unit's lifecycle: do not call begin/end or dispose on it directly —
+     * use [withFrameTransaction].
+     */
+    val currentFrameSnapshot: DataSource.Snapshot? get() = null
+}
+
+/**
+ * Runs [block] as one slice of the scene's current frame cycle: reads observe the frame's
+ * pinned generation and the scene's sources are installed on the calling thread for the
+ * duration (their unit beginTransaction/endTransaction runs around it). Nests freely into an
+ * already-open slice (the nested transaction folds silently). With frame isolation off,
+ * runs [block] directly (stock behavior). Safe on a closed scene (runs bare).
+ */
+inline fun <T> ComposeScene.withFrameTransaction(block: () -> T): T {
+    val frame = currentFrameSnapshot ?: return block()
+    // Enter FIRST, then transact. A transaction alone does not give a data source its read view -
+    // binding the view is the read scope's job (DataSource.Snapshot.makeCurrent), and a source that
+    // binds there would otherwise be blind in every platform hook that uses this helper.
+    return frame.enter { frame.withTransaction(block) }
 }

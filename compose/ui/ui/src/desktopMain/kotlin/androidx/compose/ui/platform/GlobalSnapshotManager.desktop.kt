@@ -16,7 +16,8 @@
 
 package androidx.compose.ui.platform
 
-import androidx.compose.ui.ComposeUIDispatcher
+import androidx.compose.ui.requiredSchedulingDispatcher
 import kotlinx.coroutines.CoroutineDispatcher
 
-internal actual val GlobalSnapshotManagerDispatcher: CoroutineDispatcher = ComposeUIDispatcher
+internal actual val GlobalSnapshotManagerDispatcher: CoroutineDispatcher
+    get() = requiredSchedulingDispatcher

@@ -57,11 +57,27 @@ import org.jetbrains.skiko.OS
 import org.jetbrains.skiko.SkiaLayerAnalytics
 import org.junit.Assume
 import org.junit.Test
+import androidx.compose.ui.test.SchedulingDispatcherFixture
+import kotlin.test.AfterTest
+import kotlin.test.BeforeTest
 
 // A copy of ComposeWindowTest adapted for ComposeDialog. Don't change it, if it isn't specific for ComposeDialog.
 // A copy because it is better to keep tests less abstract, and we can't properly abstract away from JFrame/JDialog.
 @OptIn(ExperimentalComposeUiApi::class)
 class ComposeDialogTest {
+
+    private val schedulingDispatcher = SchedulingDispatcherFixture()
+
+    @BeforeTest
+    fun installSchedulingDispatcher() {
+        schedulingDispatcher.install()
+    }
+
+    @AfterTest
+    fun uninstallSchedulingDispatcher() {
+        schedulingDispatcher.uninstall()
+    }
+
     @Test
     fun `catch exception on setContent`() = runApplicationTest {
         val caughtExceptions = mutableListOf<Throwable>()

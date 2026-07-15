@@ -16,6 +16,9 @@
 
 package androidx.compose.ui.draganddrop
 
+import androidx.compose.runtime.DataSource
+import androidx.compose.runtime.enter
+import androidx.compose.runtime.withTransaction
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.geometry.toRect
@@ -168,10 +171,17 @@ internal class DropSessionContext(
  */
 internal class UIKitDragAndDropManager(
     private val view: OverlayInputView,
-    private val getComposeRootDragAndDropNode: () -> ComposeSceneDragAndDropNode
+    private val getComposeRootDragAndDropNode: () -> ComposeSceneDragAndDropNode,
+    private val currentFrameSnapshot: () -> DataSource.Snapshot?
 ) : PlatformDragAndDropManager {
     private val rootNode: ComposeSceneDragAndDropNode
         get() = getComposeRootDragAndDropNode()
+
+    private inline fun <T> withFrameTransaction(block: () -> T): T {
+        val frame = currentFrameSnapshot() ?: return block()
+        // Enter before transacting: the read scope is what binds a source's view.
+        return frame.enter { frame.withTransaction(block) }
+    }
 
     /**
      * Context for an ongoing drag session initiated from Compose.
@@ -196,7 +206,7 @@ internal class UIKitDragAndDropManager(
 
         override fun itemsForBeginningSession(
             session: UIDragSessionProtocol, interaction: UIDragInteraction
-        ): List<*> {
+        ): List<*> = withFrameTransaction {
             val startTransferScope = object : PlatformDragAndDropSource.StartTransferScope {
                 override fun startDragAndDropTransfer(
                     transferData: DragAndDropTransferData,
@@ -225,15 +235,17 @@ internal class UIKitDragAndDropManager(
                 )
             }
 
-            return dragSessionContext?.transferData?.items ?: emptyList<UIDragItem>()
+            dragSessionContext?.transferData?.items ?: emptyList<UIDragItem>()
         }
 
         override fun previewForLiftingItemInSession(
             session: UIDragSessionProtocol,
             item: UIDragItem,
             interaction: UIDragInteraction
-        ): UITargetedDragPreview? = withDragSessionContext {
-            getCachedPreviewOrCreate(view, session)
+        ): UITargetedDragPreview? = withFrameTransaction {
+            withDragSessionContext {
+                getCachedPreviewOrCreate(view, session)
+            }
         }
 
         override fun doesSessionAllowMoveOperation(
@@ -246,7 +258,7 @@ internal class UIKitDragAndDropManager(
             session: UIDragSessionProtocol,
             interaction: UIDragInteraction,
             operation: UIDropOperation
-        ) {
+        ) = withFrameTransaction {
             dragSessionContext = null
         }
     }
@@ -258,9 +270,9 @@ internal class UIKitDragAndDropManager(
     private val dropInteractionProxy = object : CMPDropInteractionProxy() {
         override fun canHandleSession(
             session: UIDropSessionProtocol, interaction: UIDropInteraction
-        ): Boolean {
+        ): Boolean = withFrameTransaction {
             // Can't handle multiple drop sessions at the same time
-            if (dropSessionContext != null) return false
+            if (dropSessionContext != null) return@withFrameTransaction false
 
             val context = DropSessionContext(view, session)
             val accepts = rootNode.acceptDragAndDropTransfer(context.event)
@@ -268,35 +280,41 @@ internal class UIKitDragAndDropManager(
                 dropSessionContext = context
             }
 
-            return accepts
+            accepts
         }
 
 
         override fun performDropFromSession(
             session: UIDropSessionProtocol, interaction: UIDropInteraction
         ) {
-            withDropSessionContext {
-                rootNode.onDrop(event)
+            withFrameTransaction {
+                withDropSessionContext {
+                    rootNode.onDrop(event)
+                }
             }
         }
 
         override fun proposalForSessionUpdate(
             session: UIDropSessionProtocol, interaction: UIDropInteraction
-        ): UIDropProposal = withDropSessionContext {
-            rootNode.onMoved(event)
-            if (rootNode.hasEligibleDropTarget) {
-                UIDropProposal(UIDropOperationCopy)
-            } else {
-                UIDropProposal(UIDropOperationForbidden)
-            }
-        } ?: UIDropProposal(UIDropOperationForbidden)
+        ): UIDropProposal = withFrameTransaction {
+            withDropSessionContext {
+                rootNode.onMoved(event)
+                if (rootNode.hasEligibleDropTarget) {
+                    UIDropProposal(UIDropOperationCopy)
+                } else {
+                    UIDropProposal(UIDropOperationForbidden)
+                }
+            } ?: UIDropProposal(UIDropOperationForbidden)
+        }
 
         override fun sessionDidEnter(
             session: UIDropSessionProtocol,
             interaction: UIDropInteraction
         ) {
-            withDropSessionContext {
-                rootNode.onEntered(event)
+            withFrameTransaction {
+                withDropSessionContext {
+                    rootNode.onEntered(event)
+                }
             }
         }
 
@@ -304,12 +322,14 @@ internal class UIKitDragAndDropManager(
             session: UIDropSessionProtocol,
             interaction: UIDropInteraction
         ) {
-            withDropSessionContext {
-                rootNode.onExited(event)
+            withFrameTransaction {
+                withDropSessionContext {
+                    rootNode.onExited(event)
+                }
             }
         }
 
-        override fun sessionDidEnd(session: UIDropSessionProtocol, interaction: UIDropInteraction) {
+        override fun sessionDidEnd(session: UIDropSessionProtocol, interaction: UIDropInteraction) = withFrameTransaction {
             withDropSessionContext {
                 rootNode.onEnded(event)
             }

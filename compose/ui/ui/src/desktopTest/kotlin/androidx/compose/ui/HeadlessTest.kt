@@ -18,6 +18,7 @@ package androidx.compose.ui
 
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.SchedulingDispatcherFixture
 import androidx.compose.ui.test.runComposeUiTest
 import java.awt.GraphicsEnvironment
 import kotlin.test.assertTrue
@@ -32,7 +33,21 @@ interface HeadlessTest
  * Runs [runComposeUiTest] but first verifies that the test is executed in headless mode.
  */
 @OptIn(ExperimentalTestApi::class)
-internal fun runHeadlessComposeUiTest(block: suspend ComposeUiTest.() -> Unit) = runComposeUiTest {
-    assertTrue(GraphicsEnvironment.isHeadless(), "This is a headless test, but it's run not in headless mode")
-    block()
+internal fun runHeadlessComposeUiTest(block: suspend ComposeUiTest.() -> Unit) {
+    // This is the only path that builds a ComposeUiTest scene without going through
+    // WindowTestScope/runApplicationTest, so unlike TestUtils.kt it has no dispatcher fixture
+    // installed anywhere in its call chain. Plain install() (immediate/inline execution) is
+    // correct here: nobody in this helper calls advanceUntilIdle().
+    val schedulingDispatcher = SchedulingDispatcherFixture().apply { install() }
+    try {
+        runComposeUiTest {
+            assertTrue(
+                GraphicsEnvironment.isHeadless(),
+                "This is a headless test, but it's run not in headless mode"
+            )
+            block()
+        }
+    } finally {
+        schedulingDispatcher.uninstall()
+    }
 }

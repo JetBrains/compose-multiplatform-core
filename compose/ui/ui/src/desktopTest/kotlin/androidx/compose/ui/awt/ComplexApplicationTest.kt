@@ -121,7 +121,6 @@ import androidx.compose.ui.window.FrameWindowScope
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.awaitApplication
 import androidx.compose.ui.window.launchApplication
-import androidx.compose.ui.window.rememberWindowState
 import androidx.compose.ui.window.runApplicationTest
 import com.google.common.truth.Truth
 import kotlin.random.Random
@@ -446,7 +445,7 @@ private fun FrameWindowScope.ScrollableContent(scrollState: ScrollState) {
                         GlobalScope.launchApplication {
                             Window(
                                 onCloseRequest = ::exitApplication,
-                                state = rememberWindowState(size = DpSize(400.dp, 200.dp)),
+                                initialSize = DpSize(400.dp, 200.dp),
                                 onPreviewKeyEvent = {
                                     if (it.key == Key.Escape) {
                                         exitApplication()
@@ -633,7 +632,7 @@ fun AppWindow() {
     Window(
         onCloseRequest = {},
         title = title,
-        state = rememberWindowState(width = 1024.dp, height = 850.dp),
+        initialSize = DpSize(1024.dp, 850.dp),
         onPreviewKeyEvent = {
             isCtrlPressed.value = it.isCtrlPressed
             false

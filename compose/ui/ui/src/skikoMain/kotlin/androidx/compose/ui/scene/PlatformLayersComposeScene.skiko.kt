@@ -17,6 +17,7 @@
 package androidx.compose.ui.scene
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DataSourceContext
 import androidx.compose.runtime.Composition
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
@@ -54,6 +55,9 @@ import kotlinx.coroutines.Dispatchers
  * [rememberCoroutineScope]) and run recompositions.
  * @param composeSceneContext The context to share resources between multiple scenes and provide
  * a way for platform interaction.
+ * @param dataSourceContext The [DataSourceContext] this scene takes its frame-cycle units
+ * from. Defaults to [composeSceneContext]'s context, so layer scenes inherit their parent
+ * context's sources.
  * @param invalidate The function to be called when the content need to be recomposed or
  * re-rendered. If you draw your content using [ComposeScene.render] method, in this callback you
  * should schedule the next [ComposeScene.render] in your rendering loop.
@@ -69,6 +73,7 @@ fun PlatformLayersComposeScene(
     // TODO: Remove `Dispatchers.Unconfined` as a default
     coroutineContext: CoroutineContext = Dispatchers.Unconfined,
     composeSceneContext: ComposeSceneContext = ComposeSceneContext.Empty(),
+    dataSourceContext: DataSourceContext = composeSceneContext.dataSourceContext,
     invalidate: () -> Unit = {},
 ): ComposeScene = PlatformLayersComposeSceneImpl(
     density = density,
@@ -76,8 +81,14 @@ fun PlatformLayersComposeScene(
     size = size,
     coroutineContext = coroutineContext,
     composeSceneContext = composeSceneContext,
+    dataSourceContext = dataSourceContext,
     invalidate = invalidate
-)
+).also {
+    // Activate the frame domain only after construction completes, so every scene-owned
+    // snapshot state (base + subclass initializers) predates the standing pin. See
+    // BaseComposeScene.activateFrameDomain.
+    it.activateFrameDomain()
+}
 
 private class PlatformLayersComposeSceneImpl(
     density: Density,
@@ -85,9 +96,11 @@ private class PlatformLayersComposeSceneImpl(
     size: IntSize?,
     coroutineContext: CoroutineContext,
     override val composeSceneContext: ComposeSceneContext,
+    dataSourceContext: DataSourceContext,
     invalidate: () -> Unit,
 ) : BaseComposeScene(
     coroutineContext = coroutineContext,
+    dataSourceContext = dataSourceContext,
     invalidate = invalidate
 ) {
     private val mainOwner: RootNodeOwner by lazy {
@@ -147,7 +160,7 @@ private class PlatformLayersComposeSceneImpl(
 
     override fun calculateContentSize(): IntSize {
         check(!isClosed) { "calculateContentSize called after ComposeScene is closed" }
-        return mainOwner.measureInConstraints(Constraints())
+        return withFrameTransaction { mainOwner.measureInConstraints(Constraints()) }
     }
 
     override fun invalidatePositionInWindow() {

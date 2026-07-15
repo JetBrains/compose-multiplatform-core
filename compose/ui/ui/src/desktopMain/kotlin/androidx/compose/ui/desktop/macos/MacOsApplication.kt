@@ -26,6 +26,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.SnapshotStateMap
+import androidx.compose.ui.ComposeSchedulingDispatcher
+import androidx.compose.ui.ComposeUIDispatcher
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.SystemTheme
 import androidx.compose.ui.draganddrop.DragAndDropTransferAction
@@ -35,7 +37,7 @@ import androidx.compose.ui.input.InputModeManagerImpl
 import androidx.compose.ui.desktop.Application
 import androidx.compose.ui.desktop.IconDecoratedApplication
 import androidx.compose.ui.desktop.LightweightWindowId
-import androidx.compose.ui.desktop.Scene
+import androidx.compose.ui.desktop.ApplicationSession
 import androidx.compose.ui.desktop.Window
 import androidx.compose.ui.desktop.WindowCloseRequestReason
 import androidx.compose.ui.desktop.deactivateApplication
@@ -117,6 +119,9 @@ object MacOsApplication : Application,
         uriHandler: UriHandler,
         customQuit: (() -> Boolean)?,
     ) {
+        // Compose's internal scheduling must run on this backend's UI thread, the same one that mutates
+        // LayoutNode state. ComposeUIDispatcher already resolves the correct per-platform KDT dispatcher.
+        ComposeSchedulingDispatcher = ComposeUIDispatcher
         synchronized(lock) {
             check(!shutdown) {
                 "MacOsApplication has already been shut down and cannot be reinitialized in the same process"
@@ -430,12 +435,12 @@ object MacOsApplication : Application,
     }
 
     override fun createWindow(
-        scene: Scene<*>,
+        session: ApplicationSession,
         onCloseRequest: (WindowCloseRequestReason) -> Unit,
     ): Window {
         return MacOsWindow(
             this,
-            scene,
+            session,
             onCloseRequest = onCloseRequest,
         )
     }
@@ -448,14 +453,14 @@ object MacOsApplication : Application,
 
     override fun reuseWindow(
         id: LightweightWindowId,
-        scene: Scene<*>,
+        session: ApplicationSession,
         onCloseRequest: (WindowCloseRequestReason) -> Unit,
     ): Window? {
         return reusableNativeWindowResources[id]?.let { (nativeWindow, viewContext) ->
             logger.debug { "Reusing window $id" }
             windows[id]?.dispose()
             reusableNativeWindowResources.remove(id)
-            MacOsWindow(this, scene, nativeWindow, viewContext, onCloseRequest)
+            MacOsWindow(this, session, nativeWindow, viewContext, onCloseRequest)
         }
     }
 

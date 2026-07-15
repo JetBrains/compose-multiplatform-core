@@ -52,8 +52,23 @@ import kotlinx.coroutines.*
 import org.jetbrains.skiko.MainUIDispatcher
 import org.junit.Assume.assumeFalse
 import org.junit.Ignore
+import androidx.compose.ui.test.SchedulingDispatcherFixture
+import kotlin.test.AfterTest
+import kotlin.test.BeforeTest
 
 class WindowTest {
+
+    private val schedulingDispatcher = SchedulingDispatcherFixture()
+
+    @BeforeTest
+    fun installSchedulingDispatcher() {
+        schedulingDispatcher.install()
+    }
+
+    @AfterTest
+    fun uninstallSchedulingDispatcher() {
+        schedulingDispatcher.uninstall()
+    }
 
     @Test
     fun `open and close custom window`() = runApplicationTest {
@@ -260,9 +275,7 @@ class WindowTest {
             if (isOpen) {
                 Window(
                     onCloseRequest = {},
-                    state = rememberWindowState(
-                        size = DpSize(600.dp, 600.dp),
-                    )
+                    initialSize = DpSize(600.dp, 600.dp)
                 ) {
                     window1 = this.window
                     Box(Modifier.size(32.dp).background(Color.Red))
@@ -270,9 +283,7 @@ class WindowTest {
                     if (isNestedOpen) {
                         Window(
                             onCloseRequest = {},
-                            state = rememberWindowState(
-                                size = DpSize(300.dp, 300.dp),
-                            )
+                            initialSize = DpSize(300.dp, 300.dp)
                         ) {
                             window2 = this.window
                             Box(Modifier.size(32.dp).background(Color.Blue))
@@ -318,9 +329,7 @@ class WindowTest {
                 CompositionLocalProvider(*locals) {
                     Window(
                         onCloseRequest = {},
-                        state = rememberWindowState(
-                            size = DpSize(600.dp, 600.dp),
-                        )
+                        initialSize = DpSize(600.dp, 600.dp)
                     ) {
                         actualValue1 = local1TestValue.current
                         actualValue2 = local2TestValue.current
@@ -328,9 +337,7 @@ class WindowTest {
 
                         Window(
                             onCloseRequest = {},
-                            state = rememberWindowState(
-                                size = DpSize(300.dp, 300.dp),
-                            )
+                            initialSize = DpSize(300.dp, 300.dp)
                         ) {
                             actualValue3 = local1TestValue.current
                             Box(Modifier.size(32.dp).background(Color.Blue))
@@ -446,7 +453,8 @@ class WindowTest {
         launchTestApplication {
             Window(
                 onCloseRequest = ::exitApplication,
-                state = windowState
+                initialSize = windowState.size,
+                initialPosition = windowState.position
             ) {
                 if (!isComposed) {
                     isVisibleOnFirstComposition = window.isVisible
@@ -584,8 +592,8 @@ class WindowTest {
         launchTestApplication {
             Window(
                 onCloseRequest = { },
-                state = rememberWindowState(width = Dp.Unspecified, height = Dp.Unspecified),
-                undecorated = true,
+                initialSize = DpSize(Dp.Unspecified, Dp.Unspecified),
+                decoration = WindowDecoration.Undecorated(),
                 resizable = true,
             ) {
                 window = this.window
@@ -610,7 +618,7 @@ class WindowTest {
         launchTestApplication {
             Window(
                 onCloseRequest = { },
-                state = rememberWindowState(size = windowSize),
+                initialSize = windowSize,
             ) {
                 window = this.window
                 Layout(
@@ -772,10 +780,8 @@ class WindowTest {
             if (showInnerWindow) {
                 Window(
                     onCloseRequest = {},
-                    state = rememberWindowState(
-                        size = windowSize,
-                        position = outerWindowState.position
-                    ),
+                    initialSize = windowSize,
+                    initialPosition = outerWindowState.position,
                 ) {
                     innerWindow = this.window
                     Box(Modifier.fillMaxSize().background(Color.Black))

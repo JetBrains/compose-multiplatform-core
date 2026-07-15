@@ -30,6 +30,9 @@ import androidx.compose.ui.test.performMouseInput
 import androidx.compose.ui.test.runComposeUiTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import androidx.compose.ui.test.SchedulingDispatcherFixture
+import kotlin.test.AfterTest
+import kotlin.test.BeforeTest
 
 /**
  * Tests relating to [SelectionContainer].
@@ -39,6 +42,19 @@ import kotlin.test.assertEquals
  */
 @OptIn(ExperimentalTestApi::class)
 class SelectionContainerUiTest {
+
+    private val schedulingDispatcher = SchedulingDispatcherFixture()
+
+    @BeforeTest
+    fun installSchedulingDispatcher() {
+        schedulingDispatcher.install()
+    }
+
+    @AfterTest
+    fun uninstallSchedulingDispatcher() {
+        schedulingDispatcher.uninstall()
+    }
+
     @Test
     fun selectionContainerSetsTextPointerIcon() = runComposeUiTest {
         lateinit var pointerIconService: PointerIconService

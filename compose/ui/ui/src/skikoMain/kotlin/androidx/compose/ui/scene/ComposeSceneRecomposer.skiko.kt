@@ -18,7 +18,11 @@ package androidx.compose.ui.scene
 
 import androidx.compose.runtime.Composition
 import androidx.compose.runtime.CompositionContext
+import androidx.compose.runtime.DataSource
 import androidx.compose.runtime.Recomposer
+import androidx.compose.runtime.internal.SnapshotHolder
+import androidx.compose.runtime.withTransaction
+import androidx.compose.ui.desktop.logging.logger
 import androidx.compose.ui.platform.FlushCoroutineDispatcher
 import androidx.compose.ui.util.trace
 import kotlin.coroutines.CoroutineContext
@@ -35,10 +39,15 @@ import kotlinx.coroutines.launch
  * recompositions that allows more precise status checking.
  *
  * @param coroutineContext The coroutine context to use for the compositor.
+ * @param frameSnapshotHolder The scene-owned cell carrying the scene's DataSourceContext
+ * and (while frame isolation is on) the current frame-cycle [DataSource.Snapshot];
+ * effect-dispatcher slices run inside it (publishing on return) and the [Recomposer]
+ * reads it from its context.
  * @param elements Additional coroutine context elements to include in context.
  */
 internal class ComposeSceneRecomposer(
     coroutineContext: CoroutineContext,
+    private val frameSnapshotHolder: SnapshotHolder,
     vararg elements: CoroutineContext.Element
 ) {
     private val job = Job()
@@ -46,11 +55,22 @@ internal class ComposeSceneRecomposer(
 
     /**
      * We use [FlushCoroutineDispatcher] not only because we need [FlushCoroutineDispatcher.flush]
-     * for LaunchEffect tasks, but also to know whether it is idle (has no scheduled tasks)
+     * for LaunchEffect tasks, but also to know whether it is idle (has no scheduled tasks).
+     *
+     * Each task is one slice of the frame cycle when frame isolation is enabled: it runs
+     * inside the cycle snapshot and publishes its writes atomically on return.
      */
-    private val effectDispatcher = FlushCoroutineDispatcher(coroutineScope)
+    private val effectDispatcher = FlushCoroutineDispatcher(coroutineScope) { task ->
+        // Use `current` (not the fail-fast `checkedCurrent`): effect tasks can be dispatched
+        // during scene construction, before the factory activates the frame domain (e.g.
+        // RootNodeOwner's init synchronously launches a snapshotFlow collector). In that
+        // pre-activation window `current` is null and the task runs bare, exactly as on the
+        // flag-off path; once activated it runs isolated in the standing pin.
+        frameSnapshotHolder.current?.withTransaction(task) ?: task()
+    }
     private val recomposeDispatcher = FlushCoroutineDispatcher(coroutineScope)
-    private val recomposer = Recomposer(coroutineContext + job + effectDispatcher)
+    private val recomposer =
+        Recomposer(coroutineContext + job + effectDispatcher + frameSnapshotHolder)
 
     /**
      * `true` if there is any pending work scheduled, regardless of whether it is currently running.
@@ -106,5 +126,9 @@ internal class ComposeSceneRecomposer(
     fun cancel() {
         recomposer.cancel()
         job.cancel()
+    }
+
+    private companion object {
+        val logger = logger<ComposeSceneRecomposer>()
     }
 }

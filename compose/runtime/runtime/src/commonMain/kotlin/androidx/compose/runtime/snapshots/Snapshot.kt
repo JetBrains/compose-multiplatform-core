@@ -28,6 +28,7 @@ import androidx.compose.runtime.collection.wrapIntoSet
 import androidx.compose.runtime.internal.AtomicInt
 import androidx.compose.runtime.internal.JvmDefaultWithCompatibility
 import androidx.compose.runtime.internal.SnapshotThreadLocal
+import androidx.compose.runtime.internal.committerAndOtherDomains
 import androidx.compose.runtime.internal.currentThreadId
 import androidx.compose.runtime.platform.SynchronizedObject
 import androidx.compose.runtime.platform.makeSynchronizedObject
@@ -836,7 +837,6 @@ internal constructor(
                 )
             } else null
 
-        var observers = emptyList<(Set<Any>, Snapshot) -> Unit>()
         var globalModified: MutableScatterSet<StateObject>? = null
         sync {
             validateOpen(this)
@@ -846,7 +846,6 @@ internal constructor(
                 val previousModified = globalSnapshot.modified
                 resetGlobalSnapshotLocked(globalSnapshot, emptyLambda)
                 if (previousModified != null && previousModified.isNotEmpty()) {
-                    observers = applyObservers
                     globalModified = previousModified
                 }
             } else {
@@ -868,7 +867,6 @@ internal constructor(
                 this.modified = null
                 globalSnapshot.modified = null
 
-                observers = applyObservers
                 globalModified = previousModified
             }
         }
@@ -876,21 +874,21 @@ internal constructor(
         // Mark as applied
         applied = true
 
-        // Notify any apply observers that changes applied were seen
-        if (globalModified != null) {
-            val nonNullGlobalModified = globalModified!!.wrapIntoSet()
-            if (nonNullGlobalModified.isNotEmpty()) {
-                verboseTrace("Compose:applyObservers") {
-                    observers.fastForEach { it(nonNullGlobalModified, this) }
-                }
+        // Notify any apply observers that changes applied were seen: per-consumer delivery
+        // (see deliverInvalidations) - global observers and the committing domain hear
+        // immediately, every other open frame domain at its own next pin rotation.
+        val globalModifiedSet =
+            globalModified?.let { if (it.isNotEmpty()) it.wrapIntoSet() else null }
+        val modifiedSet =
+            if (modified != null && modified.isNotEmpty()) modified.wrapIntoSet() else null
+        val combined =
+            when {
+                globalModifiedSet == null -> modifiedSet
+                modifiedSet == null -> globalModifiedSet
+                else -> globalModifiedSet + modifiedSet
             }
-        }
-
-        if (modified != null && modified.isNotEmpty()) {
-            val modifiedSet = modified.wrapIntoSet()
-            verboseTrace("Compose:applyObservers") {
-                observers.fastForEach { it(modifiedSet, this) }
-            }
+        if (combined != null) {
+            deliverInvalidations(combined, this)
         }
 
         dispatchObserverOnApplied(this, modified)
@@ -1596,7 +1594,7 @@ internal class GlobalSnapshot(snapshotId: SnapshotId, invalid: SnapshotIdSet) :
 }
 
 /** A nested mutable snapshot created by [MutableSnapshot.takeNestedMutableSnapshot]. */
-internal class NestedMutableSnapshot(
+internal open class NestedMutableSnapshot(
     snapshotId: SnapshotId,
     invalid: SnapshotIdSet,
     readObserver: ((Any) -> Boolean)?,
@@ -1682,7 +1680,7 @@ internal class NestedMutableSnapshot(
 
 /** A pseudo snapshot that doesn't introduce isolation but does introduce observers. */
 internal class TransparentObserverMutableSnapshot(
-    private val parentSnapshot: MutableSnapshot?,
+    internal val parentSnapshot: MutableSnapshot?,
     specifiedReadObserver: ((Any) -> Boolean)?,
     specifiedWriteObserver: ((Any) -> Unit)?,
     private val mergeParentObservers: Boolean,
@@ -1794,7 +1792,7 @@ internal class TransparentObserverMutableSnapshot(
 
 /** A pseudo snapshot that doesn't introduce isolation but does introduce observers. */
 internal class TransparentObserverSnapshot(
-    private val parentSnapshot: Snapshot?,
+    internal val parentSnapshot: Snapshot?,
     specifiedReadObserver: ((Any) -> Boolean)?,
     private val mergeParentObservers: Boolean,
     private val ownsParentSnapshot: Boolean,
@@ -1977,12 +1975,341 @@ private val globalSnapshot =
             snapshotId = nextSnapshotId.also { nextSnapshotId += 1 },
             invalid = SnapshotIdSet.EMPTY,
         )
-        .also {
-            openSnapshots = openSnapshots.set(it.snapshotId)
-            DataSource.register(SnapshotDataSource)
-        }
+        .also { openSnapshots = openSnapshots.set(it.snapshotId) }
 
-private object SnapshotDataSource : DataSource {
+// ---------------------------------------------------------------------------------------
+// Per-consumer invalidation delivery.
+//
+// There is no global parking gate any more: nothing is ever deferred at the substrate
+// level. Every open frame domain (a SnapshotHolder acting as a delivery domain, see
+// androidx.compose.runtime.internal.SnapshotHolder) OWNS a pending union of invalidations
+// published since its last pin rotation - global observers and the committing domain's own
+// observers hear immediately, every other open domain gets the tokens folded into its
+// union and hears at its OWN next rotation, when its view starts including the committed
+// values. With no domain open (frame isolation off everywhere) this degenerates to stock
+// immediate dispatch.
+// ---------------------------------------------------------------------------------------
+
+/** Attribution for domain-rotation deliveries: the values live in the global by then. */
+internal fun globalAttributionSnapshot(): Snapshot = globalSnapshot
+
+/**
+ * THE delivery function (see the per-consumer delivery spec): global observers hear
+ * immediately, the committing domain's observers hear immediately (same-frame contract),
+ * every other open domain gets the tokens in its pending union, delivered at its own
+ * rotation. With no domains open this degenerates to the stock global dispatch.
+ */
+internal fun deliverInvalidations(changed: Set<Any>, snapshot: Snapshot) {
+    if (changed.isEmpty()) return
+    dispatchApplyObserversNow(changed, snapshot)
+    val root = (snapshot as? MutableSnapshot)?.root
+    val (committer, others) = committerAndOtherDomains(root)
+    committer?.dispatchNow(changed, snapshot)
+    others.fastForEach { it.pushPendingDelivery(changed) }
+}
+
+/**
+ * The apply-through backing root of a built-in substrate unit, used as the identity of
+ * the frame cycle a composite unit belongs to; null for foreign units.
+ */
+internal fun substrateRootOf(unit: DataSource.Snapshot): Snapshot? =
+    (unit as? SnapshotDataSourceSnapshot)?.backingRoot
+
+/** Immediate apply-observer dispatch with explicit attribution. */
+internal fun dispatchApplyObserversNow(changed: Set<Any>, snapshot: Snapshot) {
+    if (changed.isEmpty()) return
+    val observers = sync { applyObservers }
+    verboseTrace("Compose:applyObservers") { observers.fastForEach { it(changed, snapshot) } }
+}
+
+/**
+ * Takes an [ApplyThroughSnapshot]: the read-pinned, apply-through snapshot kind. Reads inside
+ * it (and inside children taken from it) see the state at creation plus everything already
+ * applied through it; every child apply commits through to the global immediately. Nothing is
+ * ever left pending - the context itself rejects direct writes - so disposing moves no values.
+ */
+internal fun takeApplyThroughSnapshot(): ApplyThroughSnapshot =
+    takeNewSnapshot { invalid ->
+        ApplyThroughSnapshot(
+            snapshotId = sync { nextSnapshotId.also { nextSnapshotId += 1 } },
+            invalid = invalid,
+        )
+    }
+
+/**
+ * The missing snapshot quadrant: read-pinned, apply-through. Compare: [MutableSnapshot] is
+ * read-pinned/write-pinned-until-apply, [TransparentObserverMutableSnapshot] is
+ * read-through/write-through, [GlobalSnapshot] is the write stream itself. This kind isolates
+ * what its subtree SEES (the pin) without ever deferring what the world GETS (the commits).
+ *
+ * The context itself is read-only: a write site has no failure handling, so committing
+ * per-write would be neither transactional nor conflict-checked. All mutation goes through
+ * children ([takeNestedMutableSnapshot]), whose [NestedApplyThroughSnapshot.apply] is the
+ * guarded commit point: world conflict check, stock fold into this context, then the
+ * write-through commit to the global. The stock fold adoption keeps this context's view
+ * current - every child apply advances it past the child's ids and carves them out of its
+ * invalid set - while external commits land in the advance gaps and stay pinned out until
+ * the context is disposed and a successor is taken.
+ */
+internal class ApplyThroughSnapshot
+internal constructor(snapshotId: SnapshotId, invalid: SnapshotIdSet) :
+    MutableSnapshot(snapshotId, invalid, null, null) {
+
+    /** Open (taken, not yet applied or disposed) apply-through children. Guarded by sync. */
+    private var openChildren = 0
+
+    override val readOnly: Boolean
+        get() = true
+
+    override fun recordModified(state: StateObject) = reportReadonlySnapshotWrite()
+
+    @OptIn(ExperimentalComposeRuntimeApi::class)
+    override fun takeNestedMutableSnapshot(
+        readObserver: ((Any) -> Boolean)?,
+        writeObserver: ((Any) -> Unit)?,
+    ): MutableSnapshot {
+        validateNotDisposed()
+        checkPrecondition(!applied) { "Cannot take a child of an applied snapshot" }
+        // The stock takeNestedMutableSnapshot body, constructing the apply-through child:
+        // the child inherits this context's view (the pin plus everything already applied
+        // through) exactly like any nested mutable snapshot inherits its parent's.
+        return creatingSnapshot(this, readObserver, writeObserver, readonly = false) {
+            actualReadObserver,
+            actualWriteObserver ->
+            advance {
+                sync {
+                    val newId = nextSnapshotId
+                    nextSnapshotId += 1
+                    openSnapshots = openSnapshots.set(newId)
+                    val currentInvalid = invalid
+                    this.invalid = currentInvalid.set(newId)
+                    NestedApplyThroughSnapshot(
+                        newId,
+                        currentInvalid.addRange(snapshotId + 1, newId),
+                        mergedReadObserver(actualReadObserver, this.readObserver),
+                        mergedWriteObserver(actualWriteObserver, this.writeObserver),
+                        this,
+                    )
+                }
+            }
+        }
+    }
+
+    override fun nestedActivated(snapshot: Snapshot) {
+        if (snapshot is NestedApplyThroughSnapshot) sync { openChildren++ }
+        super.nestedActivated(snapshot)
+    }
+
+    override fun nestedDeactivated(snapshot: Snapshot) {
+        if (snapshot is NestedApplyThroughSnapshot) sync { openChildren-- }
+        super.nestedDeactivated(snapshot)
+    }
+
+    override fun dispose() {
+        if (disposed) return
+        checkPrecondition(sync { openChildren } == 0) {
+            "Cannot dispose while a child snapshot is open"
+        }
+        // Everything ever written through this context has already committed, so this is the
+        // stock applied-close: the no-op apply retires our current and previous ids and
+        // refreshes the global (any raw writes pending on it get parked and released just
+        // below), and the stock dispose of an APPLIED snapshot skips the abandon path that
+        // would otherwise destroy records the world already sees.
+        if (!applied) apply().check()
+        super.dispose()
+    }
+}
+
+/**
+ * A child of an [ApplyThroughSnapshot]: a stock nested mutable snapshot whose [apply] first
+ * checks its writes against the WORLD (resolve-or-fail, before anything folds), then performs
+ * the stock silent fold into the context, and then commits the folded ids through to the
+ * global - retiring them from the open set, refreshing the global snapshot, and dispatching
+ * the batch to apply observers. One child apply = one atomic, world-visible commit; a failed
+ * apply leaves the context untouched and the child intact for the caller to dispose (which
+ * abandons its writes, stock).
+ */
+internal class NestedApplyThroughSnapshot
+internal constructor(
+    snapshotId: SnapshotId,
+    invalid: SnapshotIdSet,
+    readObserver: ((Any) -> Boolean)?,
+    writeObserver: ((Any) -> Unit)?,
+    private val owner: ApplyThroughSnapshot,
+) : NestedMutableSnapshot(snapshotId, invalid, readObserver, writeObserver, owner) {
+
+    override fun apply(): SnapshotApplyResult {
+        // The batch reference survives the fold: the stock nested apply hands this very set
+        // to the parent (whose modified is null by this class's own invariant).
+        val batch = modified
+        var globalModified: MutableScatterSet<StateObject>? = null
+        val result = sync {
+            // The world conflict check must precede the fold UNDER THE SAME LOCK: post-fold
+            // there is no discard (the records already belong to the context), and a
+            // check-then-fold window would let a racing external commit through unchecked.
+            checkAgainstWorldLocked(batch)?.let {
+                return it
+            }
+            val folded = super.apply()
+            if (folded == SnapshotApplyResult.Success) {
+                // Commit through. Every id the fold handed to the context - this child's ids
+                // and the context ids they superseded - is retired from the open set, making
+                // the records world-visible. The context has no writes of its own (it is
+                // read-only), so its superseded ids are always recordless and safe to
+                // retire. The clear covers this child's current id for the merge path, where
+                // the stock fold advances the child one last time without recording it.
+                openSnapshots = openSnapshots.andNot(owner.previousIds).clear(snapshotId)
+                // The folded batch is committed and dispatched here; the context must not
+                // deliver or commit it again.
+                owner.modified = null
+                // Refresh the global so raw (snapshot-less) reads see the commit, capturing
+                // the raw writes pending on it for dispatch below - the same two steps as
+                // the stock root apply.
+                globalModified = globalSnapshot.modified
+                resetGlobalSnapshotLocked(globalSnapshot, emptyLambda)
+            }
+            folded
+        }
+        if (result != SnapshotApplyResult.Success) return result
+
+        // Stock dispatch order, outside the lock: the global's pending raw writes first,
+        // then this child's own batch. These dispatch IMMEDIATELY - the owning cycle's
+        // same-frame machinery (animation pump -> recompose pass) depends on it. this.root
+        // is the owning ApplyThroughSnapshot, so deliverInvalidations resolves it as the
+        // committer: immediate own + global, pending union for every other open domain.
+        val globalModifiedSet =
+            globalModified?.let { if (it.isNotEmpty()) it.wrapIntoSet() else null }
+        val batchSet = if (batch != null && batch.isNotEmpty()) batch.wrapIntoSet() else null
+        if (globalModifiedSet != null) deliverInvalidations(globalModifiedSet, this)
+        if (batchSet != null) deliverInvalidations(batchSet, this)
+
+        sync {
+            checkAndOverwriteUnusedRecordsLocked()
+            globalModified?.forEach { processForUnusedRecordsLocked(it) }
+            batch?.forEach { processForUnusedRecordsLocked(it) }
+        }
+        return SnapshotApplyResult.Success
+    }
+
+    /**
+     * The resolve-or-fail check of this child's writes against the world's current view.
+     * Own-chain commits never conflict: they are world-visible AND context-visible, so the
+     * world's newest record and this child's base record are the same record. A genuinely
+     * concurrent commit (external, or a sibling child applied after this child was taken)
+     * yields a differing world record; [StateObject.mergeRecords] may resolve it in this
+     * child's favor (`applied`) or as equivalent (`current` - the stock policies return it
+     * only from their equivalence branch, so folding our record on top is observationally
+     * identical). Anything else fails this apply.
+     */
+    private fun checkAgainstWorldLocked(
+        modified: MutableScatterSet<StateObject>?
+    ): SnapshotApplyResult? {
+        if (modified == null || modified.isEmpty()) return null
+        val worldId = nextSnapshotId
+        val worldInvalid = openSnapshots.clear(globalSnapshot.snapshotId)
+        val start = invalid.set(snapshotId).or(previousIds)
+        modified.forEach { state ->
+            val first = state.firstStateRecord
+            val current = readable(first, worldId, worldInvalid) ?: return@forEach
+            val previous = readable(first, snapshotId, start) ?: return@forEach
+            if (previous.snapshotId == Snapshot.PreexistingSnapshotId.toSnapshotId()) {
+                return@forEach
+            }
+            if (current != previous) {
+                val applied = readable(first, snapshotId, invalid) ?: readError()
+                val merged = state.mergeRecords(previous, current, applied)
+                if (merged !== applied && merged !== current) {
+                    return SnapshotApplyResult.Failure(this)
+                }
+            }
+        }
+        return null
+    }
+}
+
+private data class SnapshotDataSourceSnapshot(private val mutableSnapshot: MutableSnapshot) :
+    DataSource.Snapshot {
+    /** The frame-cycle identity this unit belongs to (see [substrateRootOf]). */
+    internal val backingRoot: Snapshot
+        get() = mutableSnapshot.root
+
+    private class TransactionFrame(val nested: MutableSnapshot, val previous: Snapshot?)
+
+    // The read scope binds the backing pin itself - no new snapshot, no transaction. Because
+    // ApplyThroughSnapshot is read-only, reads see the frame's view and writes are rejected;
+    // and because it is a MutableSnapshot, transactionBase() still resolves it as the base for
+    // a transaction opened inside the scope, so depth-1 delivery is unaffected.
+    override fun makeCurrent(): Any? = mutableSnapshot.makeCurrent()
+
+    override fun restoreCurrent(previous: Any?) {
+        mutableSnapshot.restoreCurrent(previous as Snapshot?)
+    }
+
+    override fun beginTransaction(): Any? {
+        val nested = transactionBase().takeNestedMutableSnapshot()
+        return TransactionFrame(nested, nested.makeCurrent())
+    }
+
+    override fun endTransaction(frame: Any?, cause: Throwable?) {
+        val isolation = frame as TransactionFrame
+        // The canonical order (see the interface KDoc): restore the thread first, so a
+        // publish conflict propagates with clean thread state; then publish unless the
+        // block failed; always release the transaction, abandoning unpublished writes.
+        isolation.nested.restoreCurrent(isolation.previous)
+        try {
+            if (cause == null) {
+                // A failed apply's check() throws SnapshotApplyConflictException after
+                // disposing the snapshot; the writes are discarded either way.
+                isolation.nested.apply().check()
+            }
+        } finally {
+            isolation.nested.dispose()
+        }
+    }
+
+    /**
+     * Where a new transaction nests: the innermost mutable snapshot of this unit's subtree
+     * active on the calling thread, or the unit's own backing when the thread is outside
+     * it. Nesting on the innermost keeps mid-transaction work (nested slices, effect
+     * tasks) visible to the rest of the enclosing transaction - a fold, not a sibling -
+     * while its publication stays silent: only transactions taken directly from the
+     * backing deliver invalidations when they publish (the apply-through children).
+     */
+    private fun transactionBase(): MutableSnapshot {
+        var innermostMutable: MutableSnapshot? = null
+        var current: Snapshot? = Snapshot.currentThreadSnapshot
+        while (current != null) {
+            if (innermostMutable == null && current is MutableSnapshot) {
+                innermostMutable = current
+            }
+            if (current === mutableSnapshot) {
+                return innermostMutable ?: mutableSnapshot
+            }
+            current = current.enclosingSnapshot()
+        }
+        return mutableSnapshot
+    }
+
+    override fun dispose() {
+        mutableSnapshot.dispose()
+    }
+}
+
+/**
+ * The snapshot this one stacks on for thread-currency purposes: the parent of a nested
+ * snapshot, the wrapped snapshot of an observer-transparent one, `null` for roots.
+ */
+private fun Snapshot.enclosingSnapshot(): Snapshot? =
+    when (this) {
+        is NestedMutableSnapshot -> parent
+        is NestedReadonlySnapshot -> parent
+        is TransparentObserverMutableSnapshot -> parentSnapshot
+        is TransparentObserverSnapshot -> parentSnapshot
+        else -> null
+    }
+
+/** The built-in snapshot substrate: an implicit member of every [DataSourceContext]. */
+internal object SnapshotDataSource : DataSource {
     override fun <T> observe(
         recordDependency: (Any) -> Boolean,
         recordChange: ((Any) -> Unit)?,
@@ -1991,9 +2318,12 @@ private object SnapshotDataSource : DataSource {
         return Snapshot.observe(recordDependency, recordChange, block)
     }
 
-    override fun <T> isolate(block: () -> T): T {
+    override fun <T> withTransaction(block: () -> T): T {
         return Snapshot.withMutableSnapshot(block)
     }
+
+    override fun takeSnapshot(): DataSource.Snapshot =
+        SnapshotDataSourceSnapshot(takeApplyThroughSnapshot())
 
     override fun advanceGlobalSnapshot(): Set<Any> {
         val changes = sync { globalSnapshot.hasPendingChanges() }
@@ -2037,22 +2367,21 @@ private fun <T> advanceGlobalSnapshot(block: (invalid: SnapshotIdSet) -> T): T {
 
     val modified: MutableScatterSet<StateObject>?
     val result = sync {
-        modified = globalSnapshot.modified
-        if (modified != null) {
+        val currentModified = globalSnapshot.modified
+        modified = currentModified
+        if (currentModified != null) {
             pendingApplyObserverCount.add(1)
         }
         resetGlobalSnapshotLocked(globalSnapshot, block)
     }
 
-    // If the previous global snapshot had any modified states then notify the registered apply
-    // observers.
+    // If the previous global snapshot had any modified states then notify the registered
+    // apply observers: per-consumer delivery (see deliverInvalidations) - global observers
+    // and the committing domain (null here: an external commit has none) hear immediately,
+    // every other open frame domain at its own next pin rotation.
     modified?.let {
         try {
-            val observers = applyObservers
-            val modifiedSet = it.wrapIntoSet()
-            verboseTrace("Compose:applyObservers") {
-                observers.fastForEach { observer -> observer(modifiedSet, globalSnapshot) }
-            }
+            deliverInvalidations(it.wrapIntoSet(), globalSnapshot)
         } finally {
             pendingApplyObserverCount.add(-1)
         }

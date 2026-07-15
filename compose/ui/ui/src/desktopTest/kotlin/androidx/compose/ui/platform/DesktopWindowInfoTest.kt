@@ -21,7 +21,7 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
-import androidx.compose.ui.window.rememberWindowState
+import androidx.compose.ui.window.WindowDecoration
 import androidx.compose.ui.window.runApplicationTest
 import com.google.common.truth.Truth.assertThat
 import kotlin.math.roundToInt
@@ -67,9 +67,7 @@ class DesktopWindowInfoTest {
     @Test
     fun windowInfoContainerSizeIsSet() = runApplicationTest {
         lateinit var windowInfo: WindowInfo
-        launchTestWindowApplication {
-            windowInfo = LocalWindowInfo.current
-        }
+        launchTestWindowApplication { windowInfo = LocalWindowInfo.current }
         awaitIdle()
 
         val containerSize = windowInfo.containerSize
@@ -86,13 +84,11 @@ class DesktopWindowInfoTest {
         lateinit var windowInfo: WindowInfo
         lateinit var density: Density
         launchTestApplication {
-            val state = rememberWindowState(
-                size = DpSize(234.dp, 432.dp)
-            )
             Window(
                 onCloseRequest = {},
-                undecorated = true, // To match the size without a title bar.
-                state = state
+                // Undecorated to match the size without a title bar.
+                decoration = WindowDecoration.Undecorated(),
+                initialSize = DpSize(234.dp, 432.dp),
             ) {
                 windowInfo = LocalWindowInfo.current
                 density = LocalDensity.current

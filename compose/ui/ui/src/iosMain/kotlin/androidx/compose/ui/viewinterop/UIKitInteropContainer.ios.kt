@@ -48,7 +48,7 @@ internal class UIKitInteropContainer(
      * It starts observing when the first interop view is added and stops when the last one is
      * removed.
      */
-    override val snapshotObserver = SnapshotStateObserver { command ->
+    override val snapshotObserver = SnapshotStateObserver() { command ->
         command()
     }
 

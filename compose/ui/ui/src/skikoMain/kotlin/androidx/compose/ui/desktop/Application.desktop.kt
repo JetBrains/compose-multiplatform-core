@@ -18,6 +18,8 @@ package androidx.compose.ui.desktop
 
 import androidx.annotation.MainThread
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DataSourceCompositionDomain
+import androidx.compose.runtime.DataSourceContext
 import androidx.compose.runtime.Composition
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.MonotonicFrameClock
@@ -27,17 +29,15 @@ import androidx.compose.ui.SystemTheme
 import androidx.compose.ui.platform.Clipboard
 import androidx.compose.ui.platform.GlobalSnapshotManager
 import androidx.compose.ui.platform.UriHandler
+import androidx.compose.ui.scene.ComposeSceneFeatureFlags
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.yield
 import kotlinx.io.files.Path
 import androidx.compose.runtime.Applier
-import androidx.compose.ui.input.pointer.PointerIconService
-import kotlin.coroutines.CoroutineContext
+import androidx.compose.runtime.ProvidedValue
 import kotlinx.coroutines.withContext
 
 suspend fun awaitApplication(
@@ -45,6 +45,7 @@ suspend fun awaitApplication(
     openUrls: (List<String>) -> Unit,
     libraryFolder: Path,
     logFolder: Path,
+    dataSourceContext: DataSourceContext = DataSourceContext(),
     content: @Composable () -> Unit,
 ) {
     val terminationSignal = Job()
@@ -56,60 +57,19 @@ suspend fun awaitApplication(
     ) { terminationSignal.complete() }
     val application = Application.current
     application.awaitWhenReady()
-    coroutineScope {
-        launchScene(context = coroutineContext, { }, {}, content = content)
-        terminationSignal.join()
-        // Cancel the composition/recomposition coroutines so this function returns.
-        this.coroutineContext.cancel()
-    }
+    application.runSession(
+        dataSourceContext = dataSourceContext,
+        awaitShutdown = { terminationSignal.join() },
+        content = content,
+    )
     application.stopAndJoin()
 }
 
-suspend fun <T> launchScene(
-    context: CoroutineContext,
-    prepareMainThread: () -> T,
-    restoreMainThread: (T) -> Unit,
-    content: @Composable () -> Unit,
-) {
-    withContext(context + ComposeUIDispatcher + YieldFrameClock) {
-        val scene = Scene(
-            coroutineScope = this,
-            prepareMainThread = prepareMainThread,
-            restoreMainThread = restoreMainThread,
-        )
-        GlobalSnapshotManager.setCallbackInterceptor(scene::withPreparedMainThread)
-        GlobalSnapshotManager.ensureStarted()
-
-        val recomposer = Recomposer(coroutineContext)
-
-        launch {
-            recomposer.runRecomposeAndApplyChanges()
-        }
-
-        launch {
-            val application = Application.current
-            val composition = Composition(ApplicationApplier(), recomposer)
-            try {
-                composition.setContent {
-                    application.withCompositionLocal {
-                        CompositionLocalProvider(
-                            ProvidableLocalScene provides scene,
-                        ) {
-                            content()
-                        }
-                    }
-                }
-                recomposer.close()
-                recomposer.join()
-            } finally {
-                composition.dispose()
-            }
-        }
-    }
-}
-
+/**
+ * The cooperative-yield application frame clock; default for [Application.runSession].
+ */
 @OptIn(kotlin.time.ExperimentalTime::class)
-internal object YieldFrameClock : MonotonicFrameClock {
+object YieldFrameClock : MonotonicFrameClock {
     private val origin = kotlin.time.TimeSource.Monotonic.markNow()
 
     override suspend fun <R> withFrameNanos(
@@ -176,7 +136,7 @@ interface Application : Clipboard, UriHandler, AutoCloseable {
         get() = DefaultDoubleClickDistance
 
     fun createWindow(
-        scene: Scene<*>,
+        session: ApplicationSession,
         onCloseRequest: (WindowCloseRequestReason) -> Unit,
     ): Window
 
@@ -184,7 +144,7 @@ interface Application : Clipboard, UriHandler, AutoCloseable {
 
     fun reuseWindow(
         id: LightweightWindowId,
-        scene: Scene<*>,
+        session: ApplicationSession,
         onCloseRequest: (WindowCloseRequestReason) -> Unit,
     ): Window?
 
@@ -227,6 +187,79 @@ interface Application : Clipboard, UriHandler, AutoCloseable {
 interface IconDecoratedApplication : Application {
     @MainThread
     fun setIcon(icon: ByteArray)
+}
+
+/**
+ * Composes [content] as this application's root composition and SUSPENDS until
+ * [awaitShutdown] returns, then tears the session down (the composition is disposed
+ * BEFORE the recomposer is closed and joined: disposal cancels the content's effect
+ * coroutines, without which the join would deadlock). The coroutine context is
+ * inherited from the caller — elements installed around this call reach every session
+ * coroutine, window scenes included. Overlay: ComposeUIDispatcher + [frameClock].
+ *
+ * [awaitShutdown]'s default returns immediately: the session closes right after the
+ * first composition (windows created during composition keep themselves alive). Pass
+ * a suspending body to keep the root composition reactive (windows added/removed by
+ * state).
+ */
+suspend fun Application.runSession(
+    dataSourceContext: DataSourceContext = DataSourceContext(),
+    frameClock: MonotonicFrameClock = YieldFrameClock,
+    onSessionReady: () -> Unit = {},
+    awaitShutdown: suspend () -> Unit = {},
+    vararg locals: ProvidedValue<*>,
+    content: @Composable () -> Unit,
+) {
+    withContext(ComposeUIDispatcher + frameClock) {
+        val session = ApplicationSession(
+            coroutineScope = this,
+            dataSourceContext = dataSourceContext,
+        )
+        GlobalSnapshotManager.ensureStarted()
+
+        // The application composition's frame domain: read tracking over the launch-time
+        // context, per-slice isolation (flag off) or a standing rotated cycle unit (flag on).
+        val domain = DataSourceCompositionDomain(
+            dataSourceContext = dataSourceContext,
+            isolating = ComposeSceneFeatureFlags.isFrameIsolationEnabled,
+            coroutineScope = this,
+            dispatcher = ComposeUIDispatcher,
+        )
+
+        val recomposer = Recomposer(coroutineContext + domain.recomposerContext)
+
+        launch {
+            recomposer.runRecomposeAndApplyChanges()
+        }
+
+        val composition = Composition(ApplicationApplier(), recomposer)
+        try {
+            composition.setContent {
+                withCompositionLocal {
+                    CompositionLocalProvider(
+                        ProvidableLocalApplicationSession provides session,
+                        *locals
+                    ) {
+                        content()
+                    }
+                }
+            }
+            onSessionReady()
+            awaitShutdown()
+        } finally {
+            // Dispose the composition BEFORE joining the recomposer. Disposal cancels the
+            // content's still-running effect coroutines (LaunchedEffect, produceState, flow
+            // collectors, awaitCancellation, ...), which are children of the recomposer's
+            // effectJob. recomposer.close() only *completes* that job (no new children) — it does
+            // not cancel the running ones — so join() would otherwise wait forever for effects
+            // that never finish on their own, deadlocking shutdown (the scene coroutine never
+            // completes, so stopAndJoin()/withScene hang).
+            composition.dispose()
+            domain.close()
+            recomposer.close()
+            recomposer.join()
+        }
+    }
 }
 
 internal val DefaultDragThreshold = 8.dp

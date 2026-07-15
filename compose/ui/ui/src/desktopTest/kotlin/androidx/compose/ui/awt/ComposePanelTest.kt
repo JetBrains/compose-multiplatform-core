@@ -93,8 +93,24 @@ import org.jetbrains.skiko.SkiaLayerAnalytics
 import org.junit.Assume.assumeFalse
 import org.junit.Rule
 import org.junit.Test
+import androidx.compose.ui.test.SchedulingDispatcherFixture
+import kotlin.test.AfterTest
+import kotlin.test.BeforeTest
 
 class ComposePanelTest {
+
+    private val schedulingDispatcher = SchedulingDispatcherFixture()
+
+    @BeforeTest
+    fun installSchedulingDispatcher() {
+        schedulingDispatcher.install()
+    }
+
+    @AfterTest
+    fun uninstallSchedulingDispatcher() {
+        schedulingDispatcher.uninstall()
+    }
+
     @get:Rule
     val throwUncaughtExceptionRule = ThrowUncaughtExceptionRule()
 

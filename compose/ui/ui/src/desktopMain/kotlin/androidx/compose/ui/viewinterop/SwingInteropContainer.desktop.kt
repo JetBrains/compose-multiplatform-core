@@ -137,9 +137,7 @@ internal class SwingInteropContainer(
 
     override var rootModifier: TrackInteropPlacementModifierNode? = null
 
-    override val snapshotObserver: SnapshotStateObserver = SnapshotStateObserver { command ->
-        command()
-    }
+    override val snapshotObserver: SnapshotStateObserver = SnapshotStateObserver { command -> command() }
 
     private val scheduledUpdatesSwapchain = ScheduledUpdatesSwapchain(requestRedraw)
 

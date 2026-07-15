@@ -16,6 +16,7 @@
 
 package androidx.compose.ui.node
 
+import androidx.compose.runtime.internal.SnapshotHolder
 import androidx.compose.runtime.snapshots.SnapshotStateObserver
 
 /**
@@ -26,9 +27,12 @@ import androidx.compose.runtime.snapshots.SnapshotStateObserver
     "CallbackName", // TODO rename this and SnapshotStateObserver. b/173401548
     "NOTHING_TO_INLINE",
 )
-internal class OwnerSnapshotObserver(onChangedExecutor: (callback: () -> Unit) -> Unit) {
+internal class OwnerSnapshotObserver(
+    deliveryDomain: SnapshotHolder? = null,
+    onChangedExecutor: (callback: () -> Unit) -> Unit,
+) {
 
-    private val observer = SnapshotStateObserver(onChangedExecutor)
+    private val observer = SnapshotStateObserver(deliveryDomain, onChangedExecutor)
 
     private val onCommitAffectingLookaheadMeasure: (LayoutNode) -> Unit = { layoutNode ->
         if (layoutNode.isValidOwnerScope) {

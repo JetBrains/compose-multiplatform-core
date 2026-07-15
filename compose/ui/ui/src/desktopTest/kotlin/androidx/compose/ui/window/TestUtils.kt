@@ -24,6 +24,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.awaitEDT
 import androidx.compose.ui.awt.ComposeWindow
+import androidx.compose.ui.test.SchedulingDispatcherFixture
 import java.awt.GraphicsEnvironment
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -66,23 +67,35 @@ internal fun runApplicationTest(
 ) {
     assumeFalse(GraphicsEnvironment.getLocalGraphicsEnvironment().isHeadlessInstance)
 
-    runBlocking(MainUIDispatcher) {
-        withTimeout(timeoutMillis) {
-            val exceptionHandler = TestExceptionHandler()
-            withExceptionHandler(exceptionHandler) {
-                val scope = WindowTestScope(
-                    scope = this,
-                    delayMillis = if (useDelay) delayMillis else -1,
-                    animationsDelayMillis = if (hasAnimations) animationsDelayMillis else -1,
-                    exceptionHandler = exceptionHandler)
-                try {
-                    scope.body()
-                } finally {
-                    scope.exitTestApplication()
+    // installControlled(): awaitIdle() below deliberately drains debounced work via
+    // schedulingDispatcher.scheduler.advanceUntilIdle() from a coroutine that is free to do so
+    // (this runs on MainUIDispatcher via runBlocking below, not inside a blocking
+    // runOnUiThread/invokeAndWait call), so the plain install() (Dispatchers.Unconfined) would
+    // leave `scheduler` unavailable and there would be nothing to advance anyway.
+    val schedulingDispatcher = SchedulingDispatcherFixture()
+    schedulingDispatcher.installControlled()
+    try {
+        runBlocking(MainUIDispatcher) {
+            withTimeout(timeoutMillis) {
+                val exceptionHandler = TestExceptionHandler()
+                withExceptionHandler(exceptionHandler) {
+                    val scope = WindowTestScope(
+                        scope = this,
+                        delayMillis = if (useDelay) delayMillis else -1,
+                        animationsDelayMillis = if (hasAnimations) animationsDelayMillis else -1,
+                        exceptionHandler = exceptionHandler,
+                        schedulingDispatcher = schedulingDispatcher)
+                    try {
+                        scope.body()
+                    } finally {
+                        scope.exitTestApplication()
+                    }
                 }
+                exceptionHandler.throwIfCaught()
             }
-            exceptionHandler.throwIfCaught()
         }
+    } finally {
+        schedulingDispatcher.uninstall()
     }
 }
 
@@ -121,7 +134,8 @@ internal class WindowTestScope(
     private val scope: CoroutineScope,
     private val delayMillis: Long,
     private val animationsDelayMillis: Long,
-    private val exceptionHandler: TestExceptionHandler
+    private val exceptionHandler: TestExceptionHandler,
+    private val schedulingDispatcher: SchedulingDispatcherFixture
 ) : CoroutineScope by CoroutineScope(scope.coroutineContext + Job()) {
     var isOpen by mutableStateOf(true)
     private val initialRecomposers = Recomposer.runningRecomposers.value
@@ -145,8 +159,13 @@ internal class WindowTestScope(
     ) = launchTestApplication {
        Window(
            onCloseRequest = ::exitApplication,
-           state = state,
-           undecorated = undecorated
+           initialSize = state.size,
+           initialPosition = state.position,
+           decoration = if (undecorated) {
+               WindowDecoration.Undecorated()
+           } else {
+               WindowDecoration.Decorated
+           }
        ) {
            this@WindowTestScope.window = window
            content()
@@ -177,6 +196,7 @@ internal class WindowTestScope(
         robot.awaitEDT()
 
         Snapshot.sendApplyNotifications()
+        schedulingDispatcher.scheduler.advanceUntilIdle()
 
         if (animationsDelayMillis >= 0) {
             delay(animationsDelayMillis)

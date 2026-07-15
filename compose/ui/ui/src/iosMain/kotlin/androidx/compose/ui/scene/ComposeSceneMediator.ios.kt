@@ -19,6 +19,7 @@ package androidx.compose.ui.scene
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalContext
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DataSource
 import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -130,6 +131,7 @@ private class SemanticsOwnerListenerImpl(
     private val coroutineContext: CoroutineContext,
     private val performEscape: () -> Boolean,
     private val onScreenReaderActive: (Boolean) -> Unit,
+    private val currentFrameSnapshot: () -> DataSource.Snapshot?,
 ) : PlatformContext.SemanticsOwnerListener {
 
     private var accessibilityMediator: AccessibilityMediator? = null
@@ -147,7 +149,8 @@ private class SemanticsOwnerListenerImpl(
                 semanticsOwner,
                 coroutineContext,
                 performEscape,
-                onScreenReaderActive
+                onScreenReaderActive,
+                currentFrameSnapshot
             ).also {
                 it.isEnabled = isEnabled
             }
@@ -320,6 +323,7 @@ internal class ComposeSceneMediator(
     private val dragAndDropManager = UIKitDragAndDropManager(
         view = _overlayView,
         getComposeRootDragAndDropNode = { scene.rootDragAndDropNode },
+        currentFrameSnapshot = { scene.currentFrameSnapshot },
     )
 
     private val windowInsetsManager = UIKitWindowInsetsManager(
@@ -348,7 +352,8 @@ internal class ComposeSceneMediator(
 
                 down || up
             },
-            onScreenReaderActive = { platformScreenReader.isActive = it }
+            onScreenReaderActive = { platformScreenReader.isActive = it },
+            currentFrameSnapshot = { scene.currentFrameSnapshot }
         )
     }
 
@@ -389,6 +394,7 @@ internal class ComposeSceneMediator(
             },
             onKeyboardPresses = ::onKeyboardPresses,
             focusManager = { scene.focusManager },
+            currentFrameSnapshot = { scene.currentFrameSnapshot },
             coroutineContext = coroutineContext
         ).also {
             KeyboardVisibilityListener.initialize()
@@ -409,7 +415,7 @@ internal class ComposeSceneMediator(
     private fun hitTestInteropView(point: CValue<CGPoint>): UIView? =
         point.useContents {
             val position = asDpOffset().toOffset(composeSceneDensity)
-            val interopView = scene.hitTestInteropView(position)
+            val interopView = scene.withFrameTransaction { scene.hitTestInteropView(position) }
 
             // Find a group of a holder associated with a given interop view or view controller
             interopView?.let {
@@ -475,12 +481,12 @@ internal class ComposeSceneMediator(
 
     private fun onCancelScroll() {
         redrawer.ongoingInteractionEventsCount -= 1
-        scene.cancelPointerInput()
+        scene.withFrameTransaction { scene.cancelPointerInput() }
     }
 
     private fun onCancelAllTouches(touches: Set<*>) {
         redrawer.ongoingInteractionEventsCount -= touches.count()
-        scene.cancelPointerInput()
+        scene.withFrameTransaction { scene.cancelPointerInput() }
     }
 
     /**
@@ -552,7 +558,7 @@ internal class ComposeSceneMediator(
 
     private var lastFocusedRect: Rect? = null
     private fun getFocusedRect(): Rect? {
-        return scene.focusManager.getFocusRect(afterLayout = false)?.also {
+        return scene.withFrameTransaction { scene.focusManager.getFocusRect(afterLayout = false) }?.also {
             lastFocusedRect = it
         } ?: lastFocusedRect
     }
@@ -601,7 +607,7 @@ internal class ComposeSceneMediator(
     }
 
     fun render(canvas: Canvas, nanoTime: Long) {
-        textInputService.flushEditCommandsIfNeeded(force = true)
+        scene.withFrameTransaction { textInputService.flushEditCommandsIfNeeded(force = true) }
         scene.render(canvas, nanoTime)
     }
 
@@ -664,10 +670,17 @@ internal class ComposeSceneMediator(
         if (isLayoutTransitionAnimating) {
             return
         }
-        windowInsetsManager.updateInsets()
-        composeSceneSize = currentViewSize.roundToIntSize()
-        interactionBounds = with(screenDensity) {
-            _overlayView.bounds.asDpRect().toRect().roundToIntRect()
+        // Naked UIKit layout ingress (layoutSubviews and friends): insets/size writes must land
+        // in this scene's frame unit. Un-sliced, they commit globally AFTER the unit's base pin,
+        // and the first render slice then repeats the same layout writes against a base that
+        // cannot see them — a guaranteed publish conflict on structural state like the
+        // display-cutout ruler list.
+        scene.withFrameTransaction {
+            windowInsetsManager.updateInsets()
+            composeSceneSize = currentViewSize.roundToIntSize()
+            interactionBounds = with(screenDensity) {
+                _overlayView.bounds.asDpRect().toRect().roundToIntRect()
+            }
         }
     }
 
@@ -706,11 +719,13 @@ internal class ComposeSceneMediator(
     }
 
     private fun onKeyboardEvent(keyEvent: KeyEvent): Boolean =
-        textInputService.onPreviewKeyEvent(keyEvent) // TODO: fix redundant call
-            || onPreviewKeyEvent(keyEvent)
-            || scene.sendKeyEvent(keyEvent)
-            || onKeyEvent(keyEvent)
-            || navigationEventInput.onKeyEvent(keyEvent)
+        scene.withFrameTransaction {
+            textInputService.onPreviewKeyEvent(keyEvent) // TODO: fix redundant call
+                || onPreviewKeyEvent(keyEvent)
+                || scene.sendKeyEvent(keyEvent)
+                || onKeyEvent(keyEvent)
+                || navigationEventInput.onKeyEvent(keyEvent)
+        }
 
     private inner class PlatformContextImpl : PlatformContext {
         override val windowInfo: WindowInfo get() = windowContext.windowInfo

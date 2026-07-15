@@ -19,6 +19,7 @@ package androidx.compose.ui.scene
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionContext
 import androidx.compose.runtime.CompositionLocal
+import androidx.compose.runtime.DataSourceContext
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.node.LayoutNode
@@ -47,6 +48,14 @@ internal fun CompositionLocal<ComposeSceneContext?>.requireCurrent(): ComposeSce
  */
 @InternalComposeUiApi
 interface ComposeSceneContext {
+    /**
+     * The [DataSourceContext] shared by this context's scenes: a scene constructed for this
+     * context takes its frame-cycle units from it, and child scenes created through
+     * [createLayer] inherit it. Defaults to the shared substrate-only
+     * [DataSourceContext.Empty] (safe to share: no foreign members, so no source pins).
+     */
+    val dataSourceContext: DataSourceContext get() = DataSourceContext.Empty
+
     /**
      * Represents the platform-specific context used for platform interaction in a [ComposeScene].
      */
