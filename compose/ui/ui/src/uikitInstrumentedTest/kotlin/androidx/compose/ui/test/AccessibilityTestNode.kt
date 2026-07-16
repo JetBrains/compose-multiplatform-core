@@ -223,8 +223,11 @@ internal data class AccessibilityTestNode(
     var children: List<AccessibilityTestNode>? = null,
     var traits: List<UIAccessibilityTraits>? = null,
     var element: NSObject? = null,
-    var parent: AccessibilityTestNode? = null,
 ) {
+    // Kept out of the primary constructor so the generated equals/hashCode/toString
+    // don't recurse through the parent <-> children cycle and overflow the stack.
+    var parent: AccessibilityTestNode? = null
+
     fun node(builder: AccessibilityTestNode.() -> Unit) {
         children = (children ?: emptyList()) + AccessibilityTestNode().apply(builder)
     }
