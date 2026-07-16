@@ -229,7 +229,7 @@ androidXMultiplatform {
         desktopMain {
             dependsOn(skikoMain)
             dependencies {
-                implementation(libs.kotlinDesktopToolkitCommon)
+                api(libs.kotlinDesktopToolkitCommon)
                 implementation(libs.kotlinDesktopToolkitGtkLinuxArm64)
                 implementation(libs.kotlinDesktopToolkitGtkLinuxX64)
                 implementation(libs.kotlinDesktopToolkitLinuxArm64)
