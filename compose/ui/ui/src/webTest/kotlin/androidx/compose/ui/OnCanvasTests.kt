@@ -164,7 +164,7 @@ internal interface OnCanvasTests {
 
         fun skipFramesUntil(condition: () -> Boolean, onTrue: () -> Unit) {
             val currentTime = currentTimeMillis()
-            assertTrue(currentTime - startTime < timeout.inWholeMilliseconds, "awaitA11YChanges timed out after $timeout")
+            assertTrue(currentTime - startTime < timeout.inWholeMilliseconds, "awaitA11YChanges timed out after $timeout.\ninnerHtml = ${a11yContainer.innerHTML}")
             window.requestAnimationFrame {
                 if (!condition()) {
                     skipFramesUntil(condition, onTrue)

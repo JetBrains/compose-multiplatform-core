@@ -48,7 +48,7 @@ class A11yContainerSizingTest : OnCanvasTests {
     private val epsilon = 1.0
 
     @Test
-    fun a11yContainerHasNonZeroRenderedSizeAfterInit() = runTest {
+    fun a11yContainerHasNonZeroRenderedSizeAfterInit() = runApplicationTest {
         createComposeWindow {
             Text("a11y sizing regression")
         }
@@ -77,7 +77,7 @@ class A11yContainerSizingTest : OnCanvasTests {
      * size, so this comparison would fail.
      */
     @Test
-    fun a11yContainerCoversCanvasForHitTesting() = runTest {
+    fun a11yContainerCoversCanvasForHitTesting() = runApplicationTest {
         createComposeWindow {
             Text("a11y hit region regression")
         }
