@@ -57,6 +57,7 @@ import androidx.compose.ui.platform.DefaultArchitectureComponentsOwner
 import androidx.compose.ui.platform.EmptyPlatformWindowInsets
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.PlatformDragAndDropManager
+import androidx.compose.ui.platform.PlatformScreenReader
 import androidx.compose.ui.platform.PlatformTextInputMethodRequest
 import androidx.compose.ui.platform.TextToolbar
 import androidx.compose.ui.platform.ViewConfiguration
@@ -350,6 +351,11 @@ internal class ComposeWindow(
             override var isKeepScreenOnEnabled: Boolean
                 get() = WebWakeLockManager.isWakeLockActive()
                 set(value) = WebWakeLockManager.sendWakeLockRequest(this@ComposeWindow, value)
+
+            override val screenReader: PlatformScreenReader = object : PlatformScreenReader {
+                override val isActive: Boolean
+                    get() = configuration.isA11YEnabled
+            }
 
             override fun setPointerIcon(pointerIcon: PointerIcon) {
                 if (pointerIcon is BrowserCursor) {

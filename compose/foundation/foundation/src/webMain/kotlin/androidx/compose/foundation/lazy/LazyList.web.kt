@@ -17,5 +17,21 @@
 package androidx.compose.foundation.lazy
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.InternalComposeUiApi
+import androidx.compose.ui.platform.LocalPlatformScreenReader
 
-@Composable internal actual fun defaultLazyListBeyondBoundsItemCount(): Int = 0
+/**
+ * A minimum number of preloaded elements to allow the Web accessibility engine to traverse the
+ * lazy list elements without delay for semantic tree reloads after scrolling.
+ */
+private const val SCREEN_READER_BEYOND_BOUNDS_ITEM_COUNT = 3
+
+@OptIn(InternalComposeUiApi::class)
+@Composable
+internal actual fun defaultLazyListBeyondBoundsItemCount(): Int {
+    return if (LocalPlatformScreenReader.current.isActive) {
+        SCREEN_READER_BEYOND_BOUNDS_ITEM_COUNT
+    } else {
+        0
+    }
+}

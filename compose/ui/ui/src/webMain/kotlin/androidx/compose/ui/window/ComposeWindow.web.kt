@@ -168,6 +168,7 @@ fun ComposeViewport(
     val canvas = document.createElement("canvas") as HTMLCanvasElement
     canvas.setAttribute("tabindex", "0")
     canvas.setAttribute("role", "generic")
+    canvas.setAttribute("aria-hidden", "true")
     canvas.style.outline = "none" // Fixes https://youtrack.jetbrains.com/issue/CMP-9040
     canvas.style.setProperty("touch-action", "pan-x pan-y") // allow the browser to scroll when compose is not scrolling
     appContainer.appendChild(canvas)
