@@ -1,0 +1,45 @@
+/*
+ * Copyright 2026 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+import androidx.build.SoftwareType
+
+plugins {
+    id("AndroidXPlugin")
+    id("AndroidXComposePlugin")
+    id("JetBrainsAndroidXPlugin")
+}
+
+androidXMultiplatform {
+    // Desktop/JVM-only: this integration bridges kotlinx.coroutines Dispatchers.Main
+    // to the Compose UI dispatcher for the kotlin-desktop-toolkit backend.
+    jvm()
+
+    sourceSets {
+        jvmMain.dependencies {
+            // Provides androidx.compose.ui.ComposeUIDispatcher.
+            implementation(project(":compose:ui:ui"))
+            implementation(libs.kotlinCoroutinesCore)
+        }
+    }
+}
+
+androidx {
+    name = "Compose KDT Dispatcher"
+    type = SoftwareType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
+    inceptionYear = "2026"
+    description = "Provides a kotlinx.coroutines Main dispatcher backed by the Compose UI " +
+            "dispatcher for the kotlin-desktop-toolkit backend."
+}
