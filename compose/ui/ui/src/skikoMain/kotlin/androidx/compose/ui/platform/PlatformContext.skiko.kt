@@ -400,7 +400,6 @@ internal class DelegateRootForTestListener : PlatformContext.RootForTestListener
     }
 }
 
-// TODO(demin): implement HapticFeedback
 private object NoOpHapticFeedback : HapticFeedback {
     override fun performHapticFeedback(hapticFeedbackType: HapticFeedbackType) {
     }
