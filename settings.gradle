@@ -533,6 +533,7 @@ includeProject(":compose:ui:ui:ui-samples", "compose/ui/ui/samples")
 includeProject(":compose:ui:ui-uikit")
 includeProject(":compose:ui:ui-backhandler")
 includeProject(":compose:ui:ui-all-desktop")
+includeProject(":compose:kdt-dispatcher")
 
 includeProject(":kruth:kruth")
 

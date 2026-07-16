@@ -86,6 +86,11 @@ object JetBrainsPublication {
                     "Jvmwindows-arm64",
                 )
             ),
+            ComposeComponent(
+                ":compose:kdt-dispatcher",
+                supportedPlatforms = setOf(ComposePlatforms.Desktop),
+                customTasks = listOf("KotlinMultiplatform", "Jvm"),
+            ),
         ),
         "COMPOSE_MATERIAL3" to listOf(
             ComposeComponent(":compose:material3:material3"),
@@ -154,6 +159,8 @@ object JetBrainsPublication {
             "org.jetbrains.compose.annotation-internal"
         projectPath == ":collection:collection" ->
             "org.jetbrains.compose.collection-internal"
+        projectPath == ":compose:kdt-dispatcher" ->
+            "org.jetbrains.compose"
         projectPath.startsWith(":compose:") ->
             JETBRAINS_COMPOSE_GROUP_PREFIX + projectPath
                 .removePrefix(":compose:")
@@ -174,6 +181,8 @@ object JetBrainsPublication {
             ":annotation:annotation"
         group == "org.jetbrains.compose.collection-internal" ->
             ":collection:collection"
+        group == "org.jetbrains.compose" && name == "kdt-dispatcher" ->
+            ":compose:kdt-dispatcher"
         group.startsWith(JETBRAINS_COMPOSE_GROUP_PREFIX) ->
             ":compose:${group.removePrefix(JETBRAINS_COMPOSE_GROUP_PREFIX).replace(".", ":")}:$name"
         group.startsWith(JETBRAINS_FORK_GROUP_PREFIX) ->
