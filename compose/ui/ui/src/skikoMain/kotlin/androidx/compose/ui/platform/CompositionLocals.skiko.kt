@@ -19,7 +19,6 @@ package androidx.compose.ui.platform
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.InternalComposeApi
 import androidx.compose.runtime.LocalHostDefaultProvider
 import androidx.compose.runtime.ProvidedValue
 import androidx.compose.runtime.remember
@@ -66,7 +65,18 @@ val LocalPlatformPrefetchScheduler = staticCompositionLocalOf<PlatformPrefetchSc
     error("CompositionLocal LocalPlatformPrefetchScheduler not present")
 }
 
-@OptIn(InternalComposeApi::class)
+/**
+ * CompositionLocal that provides an optional [PlatformBackgroundTextMeasurementExecutor] associated
+ * with the current scene. When not present, `null` will be provided.
+ *
+ * Intended for scheduling or performing background text measurement work on platforms that
+ * support off-main-thread text measurement.
+ */
+@InternalComposeUiApi
+val LocalPlatformBackgroundTextMeasurementExecutor = staticCompositionLocalOf<PlatformBackgroundTextMeasurementExecutor?> {
+    null
+}
+
 @Composable
 internal fun ProvidePlatformCompositionLocals(
     vararg values: ProvidedValue<*>,
@@ -94,6 +104,7 @@ internal fun ProvidePlatformCompositionLocals(
         LocalPlatformScreenReader provides platformContext.screenReader,
         LocalPlatformWindowInsets provides platformContext.windowInsets,
         LocalPlatformPrefetchScheduler provides platformContext.prefetchScheduler,
+        LocalPlatformBackgroundTextMeasurementExecutor provides platformContext.backgroundTextMeasurementExecutor,
         androidx.lifecycle.compose.LocalLifecycleOwner provides platformContext.architectureComponentsOwner.lifecycleOwner,
         LocalSavedStateRegistryOwner provides platformContext.architectureComponentsOwner.savedStateRegistryOwner,
         LocalSaveableStateRegistry provides saveableStateRegistry,
