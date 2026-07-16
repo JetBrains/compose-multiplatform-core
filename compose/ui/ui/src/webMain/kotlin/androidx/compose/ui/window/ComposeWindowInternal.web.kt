@@ -110,7 +110,6 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import org.jetbrains.skiko.SkiaLayer
 import org.jetbrains.skiko.SkikoRenderDelegate
 import org.jetbrains.skiko.hostOs
-import org.w3c.dom.AddEventListenerOptions
 import org.w3c.dom.DocumentReadyState
 import org.w3c.dom.Element
 import org.w3c.dom.HTMLCanvasElement
@@ -118,7 +117,6 @@ import org.w3c.dom.HTMLDivElement
 import org.w3c.dom.HTMLElement
 import org.w3c.dom.HTMLTextAreaElement
 import org.w3c.dom.LOADING
-import org.w3c.dom.MediaQueryListEvent
 import org.w3c.dom.Node
 import org.w3c.dom.TouchEvent
 import org.w3c.dom.events.Event
@@ -128,6 +126,7 @@ import org.w3c.dom.events.KeyboardEvent
 import org.w3c.dom.events.MouseEvent
 import org.w3c.dom.events.WheelEvent
 import org.w3c.dom.pointerevents.PointerEvent
+import androidx.compose.ui.window.MediaQueryListener
 
 private val actualDensity
     get() = window.devicePixelRatio
@@ -153,15 +152,15 @@ internal class DefaultWindowState(private val viewportContainer: Element) : Comp
 
     override val globalEvents = EventTargetListener(window)
 
+    private var mediaQueryListener: MediaQueryListener? = null
+
     override fun init() {
 
         globalEvents.addDisposableEvent("resize") {
             channel.trySend(getParentContainerBox())
         }
 
-        initMediaEventListener {
-            channel.trySend(getParentContainerBox())
-        }
+        recreateMediaQueryListener()
 
         channel.trySend(getParentContainerBox())
     }
@@ -170,16 +169,22 @@ internal class DefaultWindowState(private val viewportContainer: Element) : Comp
         return IntSize(viewportContainer.clientWidth, viewportContainer.clientHeight)
     }
 
-    private fun initMediaEventListener(handler: (Double) -> Unit) {
+    private fun recreateMediaQueryListener() {
+        mediaQueryListener?.dispose()
         val contentScale = actualDensity
-        window.matchMedia("(resolution: ${contentScale}dppx)")
-            .addEventListener("change", { evt ->
-                evt as MediaQueryListEvent
-                if (!evt.matches) {
-                    handler(contentScale)
+        mediaQueryListener = object : MediaQueryListener("(resolution: ${contentScale}dppx)") {
+            override fun onChange(matches: Boolean) {
+                if (!matches) {
+                    channel.trySend(getParentContainerBox())
                 }
-                initMediaEventListener(handler)
-            }, AddEventListenerOptions(capture = true, once = true))
+                recreateMediaQueryListener()
+            }
+        }
+    }
+
+    override fun dispose() {
+        mediaQueryListener?.dispose()
+        super.dispose()
     }
 
     override fun sizeFlow() = channel.receiveAsFlow()
