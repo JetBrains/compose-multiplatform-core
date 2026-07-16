@@ -18,6 +18,9 @@ package androidx.compose.ui.platform.a11y
 
 import androidx.compose.material.Button
 import androidx.compose.material.Text
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.OnCanvasTests
 import kotlin.test.Test
 import kotlin.test.assertNotNull
@@ -126,14 +129,19 @@ class A11yContainerSizingTest : OnCanvasTests {
      */
     @Test
     fun semanticNodeLiesWithinA11yHitRegion() = runApplicationTest {
+        var showButton by mutableStateOf(false)
+
         createComposeWindow {
-            Button(onClick = {}) {
-                Text("Hittable")
+            if (showButton) {
+                Button(onClick = {}) {
+                    Text("Hittable")
+                }
             }
         }
 
         val a11yContainer = assertNotNull(getA11YContainer())
 
+        showButton = true
         awaitA11YChanges()
 
         val button = a11yContainer.children[0]?.children[0] as? HTMLElement
