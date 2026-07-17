@@ -186,6 +186,32 @@ tasks.register('runVsyncKdt', JavaExec) {
                     compilation.runtimeDependencyFiles
 }
 
+// The frame-consistency sample: the same app with frame isolation off and on. Off, the
+// tear counters climb continuously; on ("Isolated"), every counter must stay at zero.
+// See androidx.compose.desktop.examples.frameconsistency.FrameConsistencyApp.
+[runFrameConsistency: false, runFrameConsistencyIsolated: true].each { taskName, isolationEnabled ->
+    tasks.register(taskName, JavaExec) {
+        dependsOn(":compose:desktop:desktop:jvmJar", "downloadAndUnpackKdt")
+        mainClass = "androidx.compose.desktop.examples.frameconsistency.Main_jvmKt"
+        def logFolder = layout.buildDirectory.file("test-logs")
+        def kdtExtractedDir = layout.buildDirectory.dir("kdt-extracted")
+        environment("MTL_HUD_ENABLED", "1")
+        jvmArgs("-ea",
+                "--add-opens",
+                "java.desktop/sun.font=ALL-UNNAMED",
+                "--enable-preview",
+                "--enable-native-access=ALL-UNNAMED",
+                "-Dkdt.native.log.path=${logFolder.get().asFile.absolutePath}",
+                "-Dkdt.library.folder.path=${kdtExtractedDir.get().asFile.absolutePath}",
+                "-Dkdt.debug=false",
+                "-Dcompose.frameIsolation=${isolationEnabled}")
+        def compilation = kotlin.jvm().compilations["main"]
+        classpath =
+                compilation.output.allOutputs +
+                        compilation.runtimeDependencyFiles
+    }
+}
+
 // Selects the kotlin-desktop-toolkit native library variant(s) for the host OS/arch.
 def kdtArch = {
     def osArch = System.getProperty("os.arch").toLowerCase(Locale.ROOT)

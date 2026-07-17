@@ -17,6 +17,7 @@
 package androidx.compose.runtime.internal
 
 import androidx.compose.runtime.DataSource
+import kotlin.concurrent.Volatile
 import kotlin.coroutines.CoroutineContext
 
 /**
@@ -26,8 +27,31 @@ import kotlin.coroutines.CoroutineContext
 class SnapshotHolder : CoroutineContext.Element {
     var current: DataSource.Snapshot? = null
 
-    val checkedCurrent: DataSource.Snapshot get() = checkNotNull(current) {
-        "Frame isolation is enabled but no snapshot has been set at frame start"
+    /** Set once by [close]; late frame work then runs un-isolated instead of failing. */
+    @Volatile
+    var isClosed: Boolean = false
+        private set
+
+    /**
+     * The active frame-cycle unit, or `null` once the holder is [close]d — a frame
+     * dispatch or effect task that was already queued when its scene closed falls back
+     * to the stock, un-isolated path (the scene is gone; nothing consumes its output).
+     * While the holder is open, a missing unit is a lifecycle bug and fails fast.
+     */
+    val checkedCurrent: DataSource.Snapshot?
+        get() =
+            current
+                ?: run {
+                    check(isClosed) {
+                        "Frame isolation is enabled but no snapshot has been set at frame start"
+                    }
+                    null
+                }
+
+    /** Ends the holder's life: [checkedCurrent] returns `null` from now on. */
+    fun close() {
+        isClosed = true
+        current = null
     }
 
     override val key: CoroutineContext.Key<*>

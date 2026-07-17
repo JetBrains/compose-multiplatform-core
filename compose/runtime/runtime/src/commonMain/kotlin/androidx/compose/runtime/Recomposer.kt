@@ -587,11 +587,20 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
                 }
             }
 
-            // The gate returns true when the composition's host has a measure pass pending:
-            // that pass re-runs the content lambda with fresh captures, so the standalone
-            // recomposition would pair stale captures with fresh reads. The parent's measure
-            // read every value it captured, so measure-not-pending proves the captures are
-            // current and the standalone pass is coherent.
+            // Parent-driven compositions (those with a recompose gate installed) are handled
+            // in two phases. The recompose pass DEFERS all of them: a standalone
+            // recomposition would pair the captures baked into their content lambda by the
+            // parent with fresh direct reads, and whether the parent is about to refresh
+            // those captures is not knowable yet - the refreshed content (e.g. a
+            // SubcomposeLayout measure policy capturing new values) is only installed, and
+            // the host's measure only marked pending, by applyChanges. AFTER the apply stage
+            // the gate is exact: gated compositions are left to the pending measure pass
+            // (which recomposes them with fresh captures), and the rest recompose in a
+            // second wave - same frame, with captures that are provably current (had any
+            // value they capture changed, the parent's body or measure would be dirty).
+            fun isParentDrivenComposition(composition: ControlledComposition): Boolean =
+                (composition as? CompositionImpl)?.parentDrivenRecomposeGate != null
+
             fun shouldSkipParentDrivenComposition(
                 composition: ControlledComposition
             ): Boolean =
@@ -678,7 +687,7 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
                         withIsolationOrNotifyObjectsInitialized {while (toRecompose.isNotEmpty() || toInsert.isNotEmpty()) {
                             try {
                                 toRecompose.fastForEach { composition ->
-                                    if (shouldSkipParentDrivenComposition(composition)) {
+                                    if (isParentDrivenComposition(composition)) {
                                         skippedParentDriven.add(composition)
                                     } else {
                                         performRecompose(composition, modifiedValues)?.let {
@@ -791,6 +800,40 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
                                         return@withFrameNanos
                                     } finally {
                                         toLateApply.clear()
+                                    }
+                                }
+
+                                // The second wave for the deferred parent-driven
+                                // compositions: the apply stage above has installed any
+                                // refreshed parent content and marked the affected hosts'
+                                // measure pending, so the gate is exact here (see the note
+                                // at its declaration). Still-gated compositions are left to
+                                // the pending measure pass; the rest recompose and apply
+                                // now, within the same frame.
+                                if (skippedParentDriven.isNotEmpty()) {
+                                    skippedParentDriven.forEach { composition ->
+                                        if (!shouldSkipParentDrivenComposition(composition)) {
+                                            val needsApply =
+                                                try {
+                                                    performRecompose(composition, modifiedValues)
+                                                } catch (e: Throwable) {
+                                                    processCompositionError(e, recoverable = true)
+                                                    clearRecompositionState()
+                                                    return@withFrameNanos
+                                                }
+                                            if (needsApply != null) {
+                                                toComplete.add(needsApply)
+                                                try {
+                                                    needsApply.applyChanges()
+                                                    needsApply.applyLateChanges()
+                                                } catch (e: Throwable) {
+                                                    processCompositionError(e)
+                                                    clearRecompositionState()
+                                                    return@withFrameNanos
+                                                }
+                                            }
+                                            alreadyComposed.add(composition)
+                                        }
                                     }
                                 }
 
@@ -1504,8 +1547,11 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
     }
 
     private inline fun withIsolationOrApplyNotifications(block: () -> Unit) {
-        if (frameSnapshotHolder != null) {
-            frameSnapshotHolder.checkedCurrent.isolate(block)
+        // checkedCurrent is null once the holder is closed: work already queued when the
+        // scene closed runs on the stock path instead of failing.
+        val frameSnapshot = frameSnapshotHolder?.checkedCurrent
+        if (frameSnapshot != null) {
+            frameSnapshot.isolate(block)
         } else {
             block()
             // Ensure any global changes are observed
@@ -1514,8 +1560,10 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
     }
 
     private inline fun withIsolationOrNotifyObjectsInitialized(block: () -> Unit) {
-        if (frameSnapshotHolder != null) {
-            frameSnapshotHolder.checkedCurrent.isolate(block)
+        // See withIsolationOrApplyNotifications for the null-after-close semantics.
+        val frameSnapshot = frameSnapshotHolder?.checkedCurrent
+        if (frameSnapshot != null) {
+            frameSnapshot.isolate(block)
         } else {
             block()
             // Ensure any state objects that were written during apply changes, e.g.

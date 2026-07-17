@@ -126,8 +126,9 @@ internal abstract class BaseComposeScene(
                 // in a different thread than this code.
                 snapshotInvalidationTracker.sendAndPerformSnapshotChanges()
                 snapshotInvalidationTracker.performSnapshotChangesSynchronously {
-                    if (isolated && frameSnapshotHolder != null) {
-                        frameSnapshotHolder.checkedCurrent.isolate(block)
+                    val unit = if (isolated) frameSnapshotHolder?.checkedCurrent else null
+                    if (unit != null) {
+                        unit.isolate(block)
                     } else {
                         block()
                     }
@@ -141,8 +142,9 @@ internal abstract class BaseComposeScene(
         }
 
     protected inline fun <T> withIsolationIfEnabled(block: () -> T): T {
-        return if (frameSnapshotHolder != null) {
-            frameSnapshotHolder.checkedCurrent.isolate(block)
+        val unit = frameSnapshotHolder?.checkedCurrent
+        return if (unit != null) {
+            unit.isolate(block)
         } else {
             block()
         }
@@ -156,8 +158,9 @@ internal abstract class BaseComposeScene(
      * pending invalidations after it, preserving the stock phase-boundary behavior.
      */
     private inline fun withIsolationOrApplyNotifications(block: () -> Unit) {
-        return if (frameSnapshotHolder != null) {
-            frameSnapshotHolder.checkedCurrent.isolate(block)
+        val unit = frameSnapshotHolder?.checkedCurrent
+        return if (unit != null) {
+            unit.isolate(block)
         } else {
             block()
             Snapshot.sendApplyNotifications()
@@ -165,15 +168,24 @@ internal abstract class BaseComposeScene(
     }
 
     /**
-     * The frame-start pin swap: publishes nothing itself; external changes published
-     * since the previous swap become visible to the new cycle, and invalidations that
-     * were consumed against the old pinned view are re-armed by the dispose.
+     * The frame-start pin swap: publishes nothing itself; external changes committed
+     * since the previous swap become visible to the new cycle, and their parked
+     * invalidations are released by the dispose.
+     *
+     * The successor is taken BEFORE the predecessor is disposed: the runtime's
+     * parked-notification registry then never empties across the swap, so a commit racing
+     * the rotation parks - and its invalidations are released here, on the scene thread,
+     * inside the render pass's synchronous-notification window - instead of dispatching
+     * immediately from the committing thread, where remeasure marking runs through an
+     * asynchronous executor and could miss the recompose pass that follows (the ordering
+     * gate's premise is that invalidation marks precede the pass). Batches parked after
+     * the successor's pin simply wait for the next rotation.
      */
     private fun rotateCycleSnapshot() {
-        val old = frameSnapshotHolder?.checkedCurrent ?: return
-        frameSnapshotHolder.current = null
+        val holder = frameSnapshotHolder ?: return
+        val old = holder.current ?: return
+        holder.current = DataSource.takeSnapshot()
         old.dispose()
-        frameSnapshotHolder.current = DataSource.takeSnapshot()
     }
 
     @Volatile
@@ -206,7 +218,10 @@ internal abstract class BaseComposeScene(
 
         parkedInvalidationHandle?.dispose()
         val oldSnapshot = frameSnapshotHolder?.current
-        frameSnapshotHolder?.current = null
+        // Closing the holder makes checkedCurrent return null from now on: a frame
+        // dispatch or effect task that was already queued runs on the stock, un-isolated
+        // path instead of failing on a missing unit.
+        frameSnapshotHolder?.close()
         // With frame isolation enabled, close() must not be called from within a frame,
         // input, or effect slice (e.g. an event handler that synchronously closes its own
         // scene): the slice's child snapshot is still open there and dispose() fails fast

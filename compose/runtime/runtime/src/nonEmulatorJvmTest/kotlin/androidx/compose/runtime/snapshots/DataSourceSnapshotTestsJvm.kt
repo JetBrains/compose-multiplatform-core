@@ -130,6 +130,45 @@ class DataSourceSnapshotTestsJvm {
     }
 
     @Test
+    fun aClosedHolderYieldsNullInsteadOfFailing() {
+        val holder = SnapshotHolder()
+        // Open but empty is a lifecycle bug and fails fast.
+        assertFailsWith<IllegalStateException> { holder.checkedCurrent }
+        val unit = DataSource.takeSnapshot()
+        holder.current = unit
+        assertEquals(unit, holder.checkedCurrent)
+        holder.close()
+        // After close, straggler frame work falls back to the stock, un-isolated path.
+        assertEquals(null, holder.checkedCurrent)
+        unit.dispose()
+    }
+
+    @Test
+    fun invalidateDependantsDispatchesImmediatelyFromInsideASliceAndParksOutside() {
+        // A foreign data source publishing at a slice boundary dispatches while the slice
+        // child is still current: that is the cycle's OWN commit and must deliver
+        // immediately (same-frame contract). The same call outside any slice is an
+        // external commit and parks until the pin rotation.
+        val token = Any()
+        val notified = mutableListOf<Set<Any>>()
+        val handle = Snapshot.registerApplyObserver { changed, _ -> notified.add(changed) }
+        val unit = DataSource.takeSnapshot()
+        try {
+            unit.isolate {
+                DataSource.invalidateDependants(setOf(token))
+                assertEquals(1, notified.count { token in it }) // delivered immediately
+            }
+            DataSource.invalidateDependants(setOf(token)) // outside any slice: external
+            assertEquals(1, notified.count { token in it }) // parked...
+            unit.dispose()
+            assertEquals(2, notified.count { token in it }) // ...released at the rotation
+        } finally {
+            unit.dispose()
+            handle.dispose()
+        }
+    }
+
+    @Test
     fun ownChainPublishesNeverConflictWithEachOther() {
         val state = mutableStateOf(0)
         val unit = DataSource.takeSnapshot()
@@ -191,12 +230,14 @@ class DataSourceSnapshotTestsJvm {
             // Between frames: an external thread publishes a change.
             thread { Snapshot.withMutableSnapshot { state.value = 1 } }.join()
 
-            // Frame: pin swap FIRST (publishes nothing, releases the parked invalidation),
-            // then the frame is dispatched WITHOUT an enclosing slice, like the scene does:
-            // the Recomposer slices its own pipeline into sequential children.
-            holder.current = null
-            unit.dispose()
+            // Frame: pin swap FIRST (publishes nothing, releases the parked invalidation)
+            // in the scene's order - successor taken BEFORE the predecessor is disposed,
+            // so the parked-notification registry never empties - then the frame is
+            // dispatched WITHOUT an enclosing slice, like the scene does: the Recomposer
+            // slices its own pipeline into sequential children.
+            val previous = unit
             unit = DataSource.takeSnapshot().also { holder.current = it }
+            previous.dispose()
             frameClock.sendFrame(1L)
 
             assertEquals(2, compositions) // exactly one recompose - no stale extra frame

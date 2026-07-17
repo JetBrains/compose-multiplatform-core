@@ -2070,9 +2070,19 @@ internal fun parkApplyNotifications(changed: Set<Any>): Boolean {
 /** Immediate-or-park dispatch for sites without their own instrumentation. */
 internal fun dispatchOrParkApplyNotifications(changed: Set<Any>, snapshot: Snapshot) {
     if (changed.isEmpty()) return
-    if (parkApplyNotifications(changed)) return
+    // A dispatch attributed to a snapshot rooted in an open context is the cycle's OWN
+    // work - e.g. a foreign data source publishing at a slice boundary while the slice
+    // child is still current. Deliver it immediately (the same-frame machinery depends on
+    // it) and enqueue the sibling redelivery, exactly like the apply-through child's own
+    // commit. Everything else parks until a pin rotation.
+    val owner = sync {
+        val root = (snapshot as? MutableSnapshot)?.root
+        openApplyThroughSnapshots.firstOrNull { it === root }
+    }
+    if (owner == null && parkApplyNotifications(changed)) return
     val observers = sync { applyObservers }
     verboseTrace("Compose:applyObservers") { observers.fastForEach { it(changed, snapshot) } }
+    if (owner != null) enqueueForPinnedSiblings(changed, owner)
 }
 
 /**

@@ -90,4 +90,53 @@ class ParentDrivenRecomposeGateTests {
             runner.join()
         }
     }
+
+    @Test
+    fun theGateIsEvaluatedAfterTheApplyStage(): Unit = runBlocking {
+        // A parent's applyChanges is what installs refreshed child content (e.g. a
+        // SubcomposeLayout measure policy capturing new values) and marks the host's
+        // measure pending. The gate decision must therefore come AFTER the apply stage of
+        // the same pass: a child invalidated alongside its parent must not recompose
+        // standalone against captures the parent is just about to refresh.
+        val frameClock = BroadcastFrameClock()
+        val recomposer = Recomposer(coroutineContext + Dispatchers.Unconfined + frameClock)
+        val runner =
+            launch(Dispatchers.Unconfined + frameClock, start = CoroutineStart.UNDISPATCHED) {
+                recomposer.runRecomposeAndApplyChanges()
+            }
+        val state = mutableStateOf(0)
+        var measurePending = false
+        var parentComposed = 0
+        var childComposed = 0
+        val parent = Composition(UnitApplier(), recomposer)
+        val child = Composition(UnitApplier(), recomposer)
+        child.setParentDrivenRecomposeGate { measurePending }
+        try {
+            parent.setContent {
+                parentComposed++
+                state.value // the parent depends on the same state as the child
+                // What installing a refreshed measure policy does to the host node,
+                // reduced to its timing essence: it happens during applyChanges.
+                SideEffect { measurePending = true }
+            }
+            child.setContent {
+                childComposed++
+                state.value
+            }
+            assertEquals(1, parentComposed)
+            assertEquals(1, childComposed)
+
+            measurePending = false // not pending when the frame begins
+            state.value = 1
+            Snapshot.sendApplyNotifications()
+            frameClock.sendFrame(1L)
+            assertEquals(2, parentComposed) // the parent recomposed and applied first...
+            assertEquals(1, childComposed) // ...so the gate was already true for the child
+        } finally {
+            child.dispose()
+            parent.dispose()
+            recomposer.cancel()
+            runner.join()
+        }
+    }
 }
