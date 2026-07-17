@@ -355,7 +355,7 @@ val generateDemoBuildInfo = tasks.register("generateDemoBuildInfo") {
         val hash = git("rev-parse", "--short", "HEAD")
         val author = git("log", "-1", "--format=%an")
         val message = git("log", "-1", "--format=%B")
-        val buildTime = exec(listOf("date", "+%Y-%m-%d %H:%M:%S %Z (%z)"))
+        val buildTime = "%1\$tF %1\$tT %1\$tZ (%1\$tz)".format(Date())
 
         val outFile = outputDir.get()
             .file("androidx/compose/mpp/demo/BuildInfo.kt").asFile
