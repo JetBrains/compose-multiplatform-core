@@ -1,0 +1,42 @@
+apply from: "../shared.gradle"
+
+dependencies {
+    testImplementation(project(":private"))
+    testImplementation(gradleTestKit())
+    testImplementation(libs.junit)
+    testImplementation(libs.truth)
+}
+
+def originalTestClasspath = objects.fileCollection()
+def testClasspathJar = tasks.register("testClasspathJar", Jar) { jar ->
+    jar.archiveClassifier.set("test-classpath")
+    jar.inputs.files(originalTestClasspath)
+    jar.doFirst {
+        jar.manifest {
+            attributes(
+                    "Class-Path": originalTestClasspath.files.collect {
+                        it.toURI().toASCIIString()
+                    }.join(" ")
+            )
+        }
+    }
+}
+
+tasks.named("test", Test).configure { task ->
+    task.useJUnit()
+    originalTestClasspath.from(task.classpath)
+    task.classpath = files(testClasspathJar.flatMap { it.archiveFile })
+    task.dependsOn(testClasspathJar)
+    def testRuntimeClasspath = configurations.testRuntimeClasspath
+    def pluginClasspathFileProvider = layout.buildDirectory.file("generated/plugin-classpath/test.txt")
+    task.inputs.files(testRuntimeClasspath)
+    task.doFirst {
+        def pluginClasspathFile = pluginClasspathFileProvider.get().asFile
+        pluginClasspathFile.parentFile.mkdirs()
+        pluginClasspathFile.text = testRuntimeClasspath.asPath
+        task.systemProperty(
+                "test.plugin.classpath.file",
+                pluginClasspathFile.absolutePath
+        )
+    }
+}
