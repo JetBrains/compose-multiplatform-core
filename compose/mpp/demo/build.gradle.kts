@@ -323,3 +323,57 @@ private fun configureSkikoWebRuntime(
         }
     }
 }
+
+val demoBuildInfoDir = layout.buildDirectory.dir("generated/buildInfo/kotlin")
+
+val generateDemoBuildInfo = tasks.register("generateDemoBuildInfo") {
+    val outputDir = demoBuildInfoDir
+    val repoDir = projectDir
+    outputs.dir(outputDir)
+    outputs.upToDateWhen { false }
+    doLast {
+        fun exec(command: List<String>): String = try {
+            val process = ProcessBuilder(command)
+                .directory(repoDir)
+                .start()
+            val output = process.inputStream.bufferedReader().readText().trim()
+            process.waitFor()
+            output
+        } catch (e: Exception) {
+            ""
+        }
+
+        fun git(vararg args: String) = exec(listOf("git") + args)
+
+        fun esc(value: String) = value
+            .replace("\\", "\\\\")
+            .replace("\"", "\\\"")
+            .replace("\r", "")
+            .replace("\n", "\\n")
+
+        val branch = git("rev-parse", "--abbrev-ref", "HEAD")
+        val hash = git("rev-parse", "--short", "HEAD")
+        val author = git("log", "-1", "--format=%an")
+        val message = git("log", "-1", "--format=%B")
+        val buildTime = exec(listOf("date", "+%Y-%m-%d %H:%M:%S %Z (%z)"))
+
+        val outFile = outputDir.get()
+            .file("androidx/compose/mpp/demo/BuildInfo.kt").asFile
+        outFile.parentFile.mkdirs()
+        outFile.writeText(
+            """
+            |package androidx.compose.mpp.demo
+            |
+            |internal object BuildInfo {
+            |    const val branch: String = "${esc(branch)}"
+            |    const val commitHash: String = "${esc(hash)}"
+            |    const val author: String = "${esc(author)}"
+            |    const val buildTime: String = "${esc(buildTime)}"
+            |    const val commitMessage: String = "${esc(message)}"
+            |}
+            |""".trimMargin()
+        )
+    }
+}
+
+kotlin.sourceSets.getByName("commonMain").kotlin.srcDir(generateDemoBuildInfo)
