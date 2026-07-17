@@ -437,7 +437,6 @@ internal class RootNodeOwner(
         override val focusOwner: FocusOwner = FocusOwnerImpl(platformFocusOwner, this)
 
         val rootModifier = Modifier
-            .then(RootWindowInsetsProviderModifierElement(platformContext.windowInsets))
             .rulerProvider(platformContext.windowInsets)
             .then(EmptySemanticsElement(rootSemanticsNode))
             .focusProperties {
@@ -1012,26 +1011,3 @@ private object IdentityPositionCalculator : PositionCalculator {
 
 private fun Modifier.rulerProvider(windowInsets: PlatformWindowInsets) =
     if (ComposeUiFlags.areWindowInsetsRulersEnabled) then(RulerProviderModifierElement(windowInsets)) else this
-
-private data class RootWindowInsetsProviderModifierElement(
-    val windowInsets: PlatformWindowInsets,
-) : ModifierNodeElement<RootPlatformWindowInsetsProviderNode>() {
-    override fun create(): RootPlatformWindowInsetsProviderNode =
-        RootPlatformWindowInsetsProviderNode(windowInsets)
-
-    override fun update(node: RootPlatformWindowInsetsProviderNode) = node.update(windowInsets)
-}
-
-private class RootPlatformWindowInsetsProviderNode(
-    private var insets: PlatformWindowInsets,
-) : PlatformWindowInsetsProviderNode(insets) {
-    override fun calculatePlatformInsets(ancestorWindowInsets: PlatformWindowInsets): PlatformWindowInsets =
-        insets
-
-    fun update(windowInsets: PlatformWindowInsets) {
-        if (insets != windowInsets) {
-            insets = windowInsets
-            windowInsetsInvalidated()
-        }
-    }
-}

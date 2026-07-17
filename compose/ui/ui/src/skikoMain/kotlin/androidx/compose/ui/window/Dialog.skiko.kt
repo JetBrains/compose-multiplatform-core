@@ -250,16 +250,13 @@ private fun DialogLayout(
             containerSize = containerSize
         )
 
-        // TODO: remove exclude in favor of excludeWindowInsets https://youtrack.jetbrains.com/issue/CMP-9379
         LocalPlatformWindowInsets.current.exclude(
             safeInsets = properties.usePlatformInsets,
             ime = properties.useSoftwareKeyboardInset
         ) {
             Layout(
                 content = currentContent,
-                modifier = animator.modifier
-                    .then(modifier)
-                    .excludeWindowInsets(properties.usePlatformInsets, properties.useSoftwareKeyboardInset),
+                modifier = animator.modifier.then(modifier),
                 measurePolicy = measurePolicy
             )
         }
