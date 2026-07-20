@@ -58,7 +58,7 @@ internal abstract class WebTextInputService :
      * We need the correct position, so the software keyboard wouldn't overlap the text input.
      * See https://youtrack.jetbrains.com/issue/CMP-8611 for details.
      */
-    internal open val currentTouchOffset: Offset? = null
+    internal open val currentTouchOffset: Offset = Offset.Unspecified
 
     /**
      * This container will host the actual hidden HTML input element.
@@ -79,19 +79,17 @@ internal abstract class WebTextInputService :
                 override fun sendEditCommand(commands: List<EditCommand>) {
                     onEditCommand(commands)
                 }
-
-                override fun currentTextLayoutResult() = request.textLayoutResult()
             },
             inputContainer = backingDomInputContainer,
         )
         backingDomInput?.register()
 
-        if (currentTouchOffset != null) {
+        if (currentTouchOffset != Offset.Unspecified) {
             // We don't know the real position yet, but it's reasonable to assume that
             // if startInput is caused by a touch event,
             // then the TextField is positioned around the touch coordinates.
             // See the currentTouchOffset KDoc for the details.
-            notifyFocusedRect(Rect(currentTouchOffset!!, Size(1f, 1f)))
+            notifyFocusedRect(Rect(currentTouchOffset, Size(1f, 1f)))
         }
         showSoftwareKeyboard()
     }

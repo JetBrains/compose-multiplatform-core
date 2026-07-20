@@ -44,6 +44,11 @@ window.addEventListener("rejectionhandled", (event) => {
 
 const awaitAnimationFrame = () => new Promise(resolve => requestAnimationFrame(resolve));
 
+before(async function() {
+    const {awaitSkiko} = await import('/base/kotlin/skiko.mjs');
+    await awaitSkiko;
+});
+
 beforeEach(async function() {
     // Wait for skiko.wasm to be ready before each test
     await awaitAnimationFrame;

@@ -248,21 +248,27 @@ internal abstract class TextInputConnection(
     }
 
     /**
-     * Returns true if there is a focused view in the window hierarchy that is an external
-     * text input — i.e. a native UITextField or UITextView inserted via interop, not one of
-     * Compose's own input views.
+     * Returns true if there is a focused view in the window hierarchy that is an external text
+     * input — i.e. a native UITextField or UITextView inserted via interop, or a Compose text input
+     * view owned by another independent scene.
      *
      * Used to distinguish the case where the user tapped a native interop text field (in which
-     * case Compose focus should be released) from the case where focus simply moved to another
-     * Compose text field (in which case Compose handles focus internally and no action is needed).
+     * case Compose focus should be released) or another Compose scene's text field from the case
+     * where focus simply moved inside the same focused views hierarchy (in which case Compose
+     * handles focus internally and no action is needed).
      */
     private fun hasFocusedExternalInputViewInWindowHierarchy(): Boolean {
         fun hasFocusedExternalInputView(view: UIView): Boolean {
             if (view.isFirstResponder) {
-                return view !is NativeTextInputView &&
-                    view !is ComposeTextInputView &&
-                    view !is OverlayInputView &&
-                    view !is BackgroundInputView
+                return if (view is NativeTextInputView ||
+                    view is ComposeTextInputView ||
+                    view is OverlayInputView ||
+                    view is BackgroundInputView
+                ) {
+                    focusedViewsList?.contains(view) == false
+                } else {
+                    true
+                }
             }
             return view.subviews.any { it is UIView && hasFocusedExternalInputView(it) }
         }
@@ -283,11 +289,34 @@ internal abstract class TextInputConnection(
 
     override fun updateFloatingCursor(offset: DpOffset) {
         val translation = floatingCursorTranslation ?: return
-        val offsetPx = offset.toOffset(view.density)
-        val pos = textLayoutResult?.getOffsetForPosition(offsetPx + translation) ?: return
+        val layout = textLayoutResult ?: return
+
+        val fingerPx = offset.toOffset(view.density)
+        val virtualCursorPx = fingerPx + translation
+        val cursorOffset = layout.getOffsetForPosition(virtualCursorPx)
+
+        // Re-anchor translation to the text edge, not the touch position — otherwise a fast
+        // swipe past the text makes the user drag that whole distance back (and cursor looks frozen)
+        val line = layout.getLineForOffset(cursorOffset)
+        val lineLeft = layout.getLineLeft(line)
+        val lineRight = layout.getLineRight(line)
+        val textTop = layout.getLineTop(0)
+        val textBottom = layout.getLineBottom(layout.lineCount - 1)
+
+        val boundedX = virtualCursorPx.x.coerceIn(lineLeft, lineRight)
+        val boundedY = virtualCursorPx.y.coerceIn(textTop, textBottom)
+        val outOfBoundsX = virtualCursorPx.x != boundedX
+        val outOfBoundsY = virtualCursorPx.y != boundedY
+
+        if (outOfBoundsX || outOfBoundsY) {
+            floatingCursorTranslation = Offset(
+                x = if (outOfBoundsX) boundedX - fingerPx.x else translation.x,
+                y = if (outOfBoundsY) boundedY - fingerPx.y else translation.y,
+            )
+        }
 
         edit(requireUpdateView = false) {
-            setSelection(pos, pos)
+            setSelection(cursorOffset, cursorOffset)
         }
     }
 

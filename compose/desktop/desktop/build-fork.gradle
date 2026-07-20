@@ -45,7 +45,7 @@ androidXMultiplatform {
             resources.srcDirs += "src/jvmTest/res"
             dependencies {
                 implementation(libs.kotlinCoroutinesTest)
-                implementation(libs.skikoCurrentOs)
+                implementation(libs.skikoAwtRuntime)
                 implementation(project(":compose:ui:ui-test-junit4"))
                 implementation(libs.junit)
                 implementation(libs.truth)
@@ -110,6 +110,7 @@ afterEvaluate {
             jvmOs(it, "macos-arm64", libs.skikoAwtRuntimeMacOsArm64.get())
             jvmOs(it, "windows-x64", libs.skikoAwtRuntimeWindowsX64.get())
             jvmOs(it, "windows-arm64", libs.skikoAwtRuntimeWindowsArm64.get())
+            jvmOs(it, "all", libs.skikoAwtRuntime.get())
         }
     }
 }

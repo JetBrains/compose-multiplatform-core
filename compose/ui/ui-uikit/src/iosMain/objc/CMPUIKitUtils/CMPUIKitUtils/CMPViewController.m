@@ -104,6 +104,7 @@
     }
 }
 
+
 - (void)loadView {
     self.view = [[CMPContainerView alloc] initWithFrame:CGRectZero];
 }
@@ -126,7 +127,6 @@
 - (void)onDidMoveToWindow {
     if (self.view.window != nil) {
         [self transitLifecycleToStarted];
-
         if (!_isViewAppeared) {
             _isViewAppeared = YES;
             [_lifecycleDelegate composeContainerWillAppear];

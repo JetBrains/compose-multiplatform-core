@@ -20,6 +20,7 @@ import androidx.compose.mpp.demo.bugs.BugsScreen
 import androidx.compose.mpp.demo.components.text.loadResource
 import androidx.compose.mpp.demo.interops.HtmlInteropDemos
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.mpp.demo.embedded.embeddedScrollDemo
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.ExperimentalComposeUiApi
@@ -30,17 +31,35 @@ import androidx.compose.ui.window.ComposeViewport
 import androidx.navigation.ExperimentalBrowserHistoryApi
 import androidx.navigation.bindToBrowserNavigation
 import androidx.navigation.compose.rememberNavController
-import kotlin.js.ExperimentalJsReflectionCreateInstance
+import kotlinx.browser.window
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.decodeFromString
 
-@OptIn(ExperimentalComposeUiApi::class)
-@ExperimentalBrowserHistoryApi
+private fun queryParams(): Map<String, String> {
+    return window.location.search
+        .removePrefix("?")
+        .split("&")
+        .filter { it.contains("=") }
+        .associate { val (k, v) = it.split("=", limit = 2); k to v }
+}
+
 fun main() {
-    ComposeViewport(viewportContainerId = "composeApplication") {
+    val demo = queryParams()["demo"] ?: "default"
+    when (demo) {
+        "default" -> defaultComposeDemo()
+        "embedded" -> embeddedScrollDemo(composeScroll = false)
+        "embeddedWithScroll" -> embeddedScrollDemo(composeScroll = true)
+    }
+}
+
+@OptIn(
+    ExperimentalComposeUiApi::class,
+    ExperimentalBrowserHistoryApi::class
+)
+fun defaultComposeDemo() {
+    ComposeViewport {
         val navController = rememberNavController()
         val fontFamilyResolver = LocalFontFamilyResolver.current
         val fontsLoaded = remember { mutableStateOf(false) }
@@ -83,7 +102,6 @@ fun main() {
         }
     }
 }
-
 
 @Serializable
 private data class FontsManifest(val fonts: List<String>)

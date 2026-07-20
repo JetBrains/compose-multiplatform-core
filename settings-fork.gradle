@@ -16,7 +16,6 @@ dependencyResolutionManagement {
 }
 
 def supportRootFolder = buildscript.sourceFile.getParentFile()
-skikoSetup.defineSkikoInVersionCatalog(settings)
 
 /* In JetBrains Fork we don't force Android Studio usage.
 // Abort immediately if we're running in Studio, but not a managed instance of Studio.
@@ -54,14 +53,10 @@ getGradle().beforeProject { project ->
     def checkoutRoot = new File("${buildscript.sourceFile.parent}")
     init.chooseBuildDirectory(checkoutRoot, rootProject.name, project)
 
-    /*
-    Could not set unknown property 'kotlin.project.persistent.dir' for project ':buildSrc' of type org.gradle.api.Project.
-
     // https://youtrack.jetbrains.com/issue/KT-58223
-    def kotlinDir = new File(System.env.OUT_DIR ?: checkoutRoot, ".kotlin")
+    def kotlinDir = new File("${checkoutRoot}/out", ".kotlin")
     project.setProperty("kotlin.project.persistent.dir", kotlinDir.absolutePath)
     project.setProperty("kotlin.user.home", kotlinDir.absolutePath)
-    */
 }
 
 apply(plugin: "com.gradle.develocity")
