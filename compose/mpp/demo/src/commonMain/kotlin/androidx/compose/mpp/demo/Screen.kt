@@ -17,6 +17,7 @@
 package androidx.compose.mpp.demo
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -154,10 +155,20 @@ private fun ExampleTopBar(
     back: () -> Unit,
 ) {
     TopAppBar(
+        backgroundColor = topAppBarBackgroundColor(),
+        contentColor = topAppBarContentColor(),
         title = { Text(title) },
         navigationIcon = { ArrowBackIcon(back) }
     )
 }
+
+@Composable
+private fun topAppBarBackgroundColor(): Color =
+    if (isSystemInDarkTheme()) Color(0xFF3F1D6E) else MaterialTheme.colors.primary
+
+@Composable
+private fun topAppBarContentColor(): Color =
+    if (isSystemInDarkTheme()) Color.White else MaterialTheme.colors.onPrimary
 
 @Composable
 private fun SelectionScaffold(
@@ -191,6 +202,8 @@ private fun SelectionTopBar(
      * out of box in android development or with Material3 Scaffold
      */
     TopAppBar(
+        backgroundColor = topAppBarBackgroundColor(),
+        contentColor = topAppBarContentColor(),
         contentPadding = WindowInsets.systemBars
             .only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal)
             .union(WindowInsets(left = 20.dp))

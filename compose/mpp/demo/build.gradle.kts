@@ -112,6 +112,7 @@ kotlin {
             dependencies {
                 implementation(libs.kotlinCoroutinesCore)
                 implementation(libs.kotlinSerializationCore)
+                implementation(libs.skiko.skottie)
 
                 implementation(project(":compose:foundation:foundation"))
                 implementation(project(":compose:foundation:foundation-layout"))
@@ -157,6 +158,7 @@ kotlin {
             dependencies {
                 implementation(libs.kotlinCoroutinesSwing)
                 implementation(libs.skikoAwtRuntime)
+                implementation(libs.skikoSkottieAwtRuntime)
             }
         }
 
@@ -293,6 +295,7 @@ private fun configureSkikoWebRuntime(
 
     val unpackRuntime = project.tasks.register("unpackSkikoRuntimeFor$titledTargetName", Copy::class.java) {
         destinationDir = project.file(unpackedRuntimeDir)
+        duplicatesStrategy = DuplicatesStrategy.EXCLUDE
         from(
             skikoWebRuntimeJarFiles.map { artifact -> project.zipTree(artifact) }
         )

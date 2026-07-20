@@ -17,8 +17,6 @@
 package androidx.compose.ui.events
 
 import kotlin.js.js
-import kotlinx.browser.document
-import kotlinx.browser.window
 import org.w3c.dom.AddEventListenerOptions
 import org.w3c.dom.events.Event
 import org.w3c.dom.events.EventTarget
@@ -57,4 +55,3 @@ internal class EventTargetListener(private val eventTarget: EventTarget) {
         abortController.abort()
     }
 }
-
