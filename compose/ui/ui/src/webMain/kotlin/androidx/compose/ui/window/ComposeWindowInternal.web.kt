@@ -209,7 +209,7 @@ internal class ComposeWindow(
 ) {
     private var isDisposed = false
 
-    private var actualActivePointerButtons: PointerButtons? = null
+    private var actualActivePointerButtons: PointerButtons = PointerButtons()
 
     private val density: Density = Density(
         density = actualDensity.toFloat(),
@@ -237,7 +237,7 @@ internal class ComposeWindow(
     private var keyboardModeState: KeyboardModeState = KeyboardModeState.Hardware
 
     // Used in WebTextInputService. Also see https://youtrack.jetbrains.com/issue/CMP-8611
-    private var activeTouchOffset: Offset? = null
+    private var activeTouchOffset: Offset = Offset.Unspecified
 
     private val clipTarget = clipTargetElement(canvas)
 
@@ -317,7 +317,7 @@ internal class ComposeWindow(
             override val textInputService: WebTextInputService by lazy(LazyThreadSafetyMode.NONE) {
                 object : WebTextInputService() {
 
-                    override val currentTouchOffset: Offset?
+                    override val currentTouchOffset: Offset
                         get() = activeTouchOffset
 
                     override val backingDomInputContainer: HTMLElement
@@ -441,6 +441,7 @@ internal class ComposeWindow(
 
     private fun initEvents(canvas: HTMLCanvasElement) {
 
+        val onPointerCallback: (PointerEvent) -> Unit = { onPointerEvent(it) }
         listOf(
             "pointerenter",
             "pointerdown",
@@ -448,14 +449,14 @@ internal class ComposeWindow(
             "pointerup",
             "pointerleave",
             "pointercancel"
-        ).forEach { name ->
-            addTypedEvent<PointerEvent>(name, passive = false) { onPointerEvent(it) }
+        ).fastForEach { name ->
+            addTypedEvent<PointerEvent>(name, passive = false, handler = onPointerCallback)
         }
 
         state.globalEvents.addDisposableEvent("dragend") {
             // in Safari pointerup event is not firing when we drop or cancel drop
             // see https://youtrack.jetbrains.com/issue/CMP-10102
-            actualActivePointerButtons = null
+            actualActivePointerButtons = PointerButtons()
         }
 
         addTypedEvent<TouchEvent>("touchstart", passive = true) { _ ->
@@ -524,13 +525,11 @@ internal class ComposeWindow(
             event.preventDefault()
         })
 
-        addTypedEvent<KeyboardEvent>("keydown") { event ->
+        val onKeyboardEventCallback: (KeyboardEvent) -> Unit = { event ->
             processKeyboardEvent(event)
         }
-
-        addTypedEvent<KeyboardEvent>("keyup") { event ->
-            processKeyboardEvent(event)
-        }
+        addTypedEvent<KeyboardEvent>("keydown", onKeyboardEventCallback)
+        addTypedEvent<KeyboardEvent>("keyup", onKeyboardEventCallback)
 
         addTypedEvent<FocusEvent>("focus") { event ->
             canvasFocused = true
@@ -565,8 +564,6 @@ internal class ComposeWindow(
         initEvents(canvas)
         state.init()
 
-        canvas.setAttribute("tabindex", "0")
-        canvas.setAttribute("draggable", "true")
 
         scene.density = density
         archComponentsOwner.enableSavedStateHandles()
@@ -720,10 +717,10 @@ internal class ComposeWindow(
             if (isTouchEvent(event)) {
                 activeTouchPointers.clear()
                 activeTouchPointersConsumedMoves.remove(event.pointerId)
-                activeTouchOffset = null
+                activeTouchOffset = Offset.Unspecified
                 lastPointerReleaseConsumed = false
             } else {
-                actualActivePointerButtons = null
+                actualActivePointerButtons = PointerButtons()
             }
 
             event.target?.let { releasePointerCapture(it, event.pointerId) }
@@ -747,7 +744,7 @@ internal class ComposeWindow(
                     actualActivePointerButtons = event.composeButtons
                 }
                 PointerEventType.Release -> {
-                    actualActivePointerButtons = null
+                    actualActivePointerButtons = PointerButtons()
                 }
             }
 
@@ -850,7 +847,7 @@ internal class ComposeWindow(
                 anyChangeConsumed = result.anyChangeConsumed
             }
 
-            activeTouchOffset = null
+            activeTouchOffset = Offset.Unspecified
 
             if (eventType == PointerEventType.Release) {
                 lastPointerReleaseConsumed = anyChangeConsumed
@@ -878,17 +875,20 @@ internal class ComposeWindow(
         // for us (report deltaX instead of deltaY), some don't.
         val horizontalScroll: Double
         val verticalScroll: Double
-        if (event.shiftKey && event.deltaX == 0.0) {
+        val isShifting = event.shiftKey
+        val deltaX = event.deltaX
+
+        if (isShifting && deltaX == 0.0) {
             horizontalScroll = event.deltaY
             verticalScroll = 0.0
         } else {
-            horizontalScroll = event.deltaX
+            horizontalScroll = deltaX
             verticalScroll = event.deltaY
         }
 
         // wheels event own buttons property is unreliable in Safari and Firefox
         // see CMP-9900 [web] Wheel event resolves buttons state incorrectly in Safari and Firefox
-        val buttons = actualActivePointerButtons ?: event.composeButtons
+        val buttons = if(actualActivePointerButtons != PointerButtons()) actualActivePointerButtons else event.composeButtons
 
         val result = scene.sendPointerEvent(
             eventType = PointerEventType.Scroll,
@@ -902,7 +902,7 @@ internal class ComposeWindow(
                 isCtrlPressed = event.ctrlKey,
                 isMetaPressed = event.metaKey,
                 isAltPressed = event.altKey,
-                isShiftPressed = event.shiftKey,
+                isShiftPressed = isShifting,
             ),
             nativeEvent = event,
             button = event.composeButton,

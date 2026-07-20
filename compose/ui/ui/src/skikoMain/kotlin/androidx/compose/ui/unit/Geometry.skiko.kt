@@ -101,11 +101,11 @@ internal inline fun IntSize.toRect(): Rect =
     Rect(0f, 0f, width.toFloat(), height.toFloat())
 
 /**
- * Returns true if the given [offset] is contained within this [IntSize] and (0,0)
+ * Returns true if the given [offset] is contained within the bounds that [IntSize] creates together with (0,0)
  * This is used to avoid [Rect] object allocations on hot paths
  */
 @Stable
-internal inline fun IntSize.contains(offset: Offset): Boolean {
+internal inline fun IntSize.bounds(offset: Offset): Boolean {
     val offsetY = offset.y
     val offsetX = offset.x
     return (offsetX >= 0f) and (offsetX < width) and (offsetY >= 0f) and (offsetY < height)
@@ -165,6 +165,9 @@ internal fun DpOffset.requireReal(): DpOffset {
 }
 
 @Stable
+internal inline fun IntSize?.toMaxConstraints() =
+    if (this == null) Constraints() else Constraints(maxWidth = width, maxHeight = height)
+
 internal fun IntRect.union(other: IntRect): IntRect =
     IntRect(
         left = min(left, other.left),
