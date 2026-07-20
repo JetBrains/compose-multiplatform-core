@@ -70,8 +70,8 @@ private def configure(target, isDevice, architecture, testTarget) {
 }
 
 private def configureObjcUtils(target, xcodeProjectDir, sdkName, destination, architecture, isDevice, testTarget) {
-    def libraryName = "CMPUIKitUtils"
-    def testSchemeName = "${libraryName}Tests"
+    def libraryName = "CMPUIKitObjcUtils"
+    def testSchemeName = "CMPUIKitUtilsTests"
     def buildDir = new File(project.buildDir, "objc/${libraryName}-${sdkName}.xcarchive")
     def libraryPath = archivedStaticLibraryPath(buildDir, libraryName)
     def headersPath = new File(xcodeProjectDir, libraryName)
