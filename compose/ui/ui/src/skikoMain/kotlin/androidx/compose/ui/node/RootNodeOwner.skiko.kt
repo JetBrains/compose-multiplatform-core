@@ -25,7 +25,6 @@ import androidx.compose.runtime.retain.ForgetfulRetainedValuesStore
 import androidx.compose.runtime.retain.RetainedValuesStore
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
-import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.ComposeUiFlags
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.InternalComposeUiApi
@@ -93,7 +92,6 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.round
 import androidx.compose.ui.unit.toRect
-import androidx.compose.ui.useLegacyRenderNodeLayers
 import androidx.compose.ui.util.fastAll
 import androidx.compose.ui.util.trace
 import androidx.compose.ui.viewinterop.InteropPointerInputModifier
@@ -908,29 +906,13 @@ internal class RootNodeOwner(
             drawBlock: (canvas: Canvas, parentLayer: GraphicsLayer?) -> Unit,
             invalidateParentLayer: () -> Unit,
             explicitLayer: GraphicsLayer?
-        ) = if (explicitLayer != null || !ComposeUiFlags.useLegacyRenderNodeLayers) {
-            GraphicsLayerOwnerLayer(
-                graphicsLayer = explicitLayer ?: graphicsContext.createGraphicsLayer(),
-                context = if (explicitLayer != null) null else graphicsContext,
-                layerManager = this,
-                drawBlock = drawBlock,
-                invalidateParentLayer = invalidateParentLayer,
-            )
-        } else {
-            LegacyRenderNodeLayer(
-                density = Snapshot.withoutReadObservation {
-                    // density is a mutable state that is observed whenever layer is created. the layer
-                    // is updated manually on draw, so not observing the density changes here helps with
-                    // performance in layout.
-                    density
-                },
-                measureDrawBounds = platformContext.measureDrawLayerBounds,
-                layerManager = this,
-                requiresStateWorkaround = { graphicsContext.activeGraphicsLayersCount > 0 },
-                invalidateParentLayer = invalidateParentLayer,
-                drawBlock = drawBlock,
-            )
-        }
+        ) = GraphicsLayerOwnerLayer(
+            graphicsLayer = explicitLayer ?: graphicsContext.createGraphicsLayer(),
+            context = if (explicitLayer != null) null else graphicsContext,
+            layerManager = this,
+            drawBlock = drawBlock,
+            invalidateParentLayer = invalidateParentLayer,
+        )
 
         override fun recycle(layer: OwnedLayer): Boolean {
             needClearObservations = true
