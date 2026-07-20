@@ -642,7 +642,10 @@ internal class ComposeWindow(
 
     // TODO: need to call .dispose() on window close.
     fun dispose() {
-        check(!isDisposed)
+        // dispose() can be called both explicitly and via the DOM disconnectedCallback
+        // when the container element is removed from the document. Make it idempotent so
+        // the auto-dispose fallback doesn't fail after an explicit dispose.
+        if (isDisposed) return
         (platformContext.prefetchScheduler as? WebPrefetchScheduler)?.dispose()
         archComponentsOwner.lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_DESTROY)
         archComponentsOwner.viewModelStore.clear()
