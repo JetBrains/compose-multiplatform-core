@@ -90,9 +90,12 @@ import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.bounds
 import androidx.compose.ui.unit.round
+import androidx.compose.ui.unit.toMaxConstraints
 import androidx.compose.ui.unit.toRect
 import androidx.compose.ui.util.fastAll
+import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.trace
 import androidx.compose.ui.viewinterop.InteropPointerInputModifier
 import androidx.compose.ui.viewinterop.InteropView
@@ -391,7 +394,7 @@ internal class RootNodeOwner(
     }
 
     private fun isInBounds(localPosition: Offset): Boolean =
-        size?.toRect()?.contains(localPosition) ?: true
+        size?.bounds(localPosition) ?: true
 
     private fun calculateBoundsInWindow(): Rect? {
         val rect = size?.toRect() ?: return null
@@ -954,12 +957,11 @@ internal class RootNodeOwner(
             // So, we applying it before drawing to reflect the changes from previous phases.
             // Changes that requires another round of invalidation will be scheduled to next frame.
             if (dirtyLayers.isNotEmpty()) {
-                for (i in 0 until dirtyLayers.size) {
-                    val layer = dirtyLayers[i]
+                dirtyLayers.fastForEach { layer ->
                     layer.updateDisplayList()
                 }
+                dirtyLayers.clear()
             }
-            dirtyLayers.clear()
 
             // Draw root node
             owner.root.draw(
@@ -983,9 +985,6 @@ internal class RootNodeOwner(
         }
     }
 }
-
-private fun IntSize?.toMaxConstraints() =
-    if (this == null) Constraints() else Constraints(maxWidth = width, maxHeight = height)
 
 private object IdentityPositionCalculator : PositionCalculator {
     override fun screenToLocal(positionOnScreen: Offset): Offset = positionOnScreen
