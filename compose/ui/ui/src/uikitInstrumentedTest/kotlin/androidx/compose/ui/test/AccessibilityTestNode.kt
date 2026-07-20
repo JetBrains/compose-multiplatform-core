@@ -334,19 +334,6 @@ internal class AccessibilityTestNode(
         return builder.toString()
     }
 
-    override fun equals(other: Any?): Boolean =
-        other is AccessibilityTestNode &&
-            identifier == other.identifier &&
-            label == other.label &&
-            frame == other.frame
-
-    override fun hashCode(): Int {
-        var result = identifier?.hashCode() ?: 0
-        result = 31 * result + (label?.hashCode() ?: 0)
-        result = 31 * result + (frame?.hashCode() ?: 0)
-        return result
-    }
-
     override fun toString(): String =
         "AccessibilityTestNode(" +
             "isAccessibilityElement=$isAccessibilityElement, " +
