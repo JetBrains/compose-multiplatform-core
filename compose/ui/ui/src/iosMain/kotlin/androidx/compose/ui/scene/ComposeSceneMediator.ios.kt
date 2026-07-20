@@ -328,6 +328,7 @@ internal class ComposeSceneMediator(
     private val _backgroundView = BackgroundInputView(
         onMovedToWindow = ::focusOverlayViewIfNeeded,
         onLayoutSubviews = ::updateLayout,
+        onSafeAreaInsetsDidChange = ::onSafeAreaInsetsDidChange,
         hitTestInteropView = ::hitTestInteropView,
         isPointInsideInteractionBounds = ::isPointInsideInteractionBounds,
         onTouchesEvent = ::onTouchesEvent,
@@ -351,11 +352,11 @@ internal class ComposeSceneMediator(
         getComposeRootDragAndDropNode = { scene.rootDragAndDropNode },
     )
 
+    // Read insets from the host view only: a per-edge union with the window's root view would
+    // report window-level chrome that does not intersect this view (e.g. when the host is
+    // positioned below the status bar by its parent).
     private val windowInsetsManager = UIKitWindowInsetsManager(
-        windowInsetsViews = listOf(
-            { _overlayView },
-            { windowContext.window?.rootViewController?.view },
-        ),
+        windowInsetsViews = listOf({ _overlayView }),
         interfaceOrientation = interfaceOrientationState
     )
 
@@ -717,6 +718,11 @@ internal class ComposeSceneMediator(
         interactionBounds = with(screenDensity) {
             _overlayView.bounds.toDpRect().toRect().roundToIntRect()
         }
+    }
+
+    /** Re-reads safe-area insets in response to UIKit's `safeAreaInsetsDidChange`. */
+    internal fun onSafeAreaInsetsDidChange() {
+        windowInsetsManager.updateInsets()
     }
 
     private val currentViewSize: Size get() {

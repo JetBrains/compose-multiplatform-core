@@ -783,6 +783,7 @@ internal class OverlayInputView(
 internal class BackgroundInputView(
     private var onMovedToWindow: () -> Unit,
     private var onLayoutSubviews: () -> Unit,
+    private var onSafeAreaInsetsDidChange: () -> Unit,
     private var hitTestInteropView: (point: CValue<CGPoint>) -> UIView?,
     private var isPointInsideInteractionBounds: (CValue<CGPoint>) -> Boolean,
     onTouchesEvent: (touches: Set<*>, event: UIEvent?, phase: TouchesEventKind) -> PointerEventResult,
@@ -825,6 +826,14 @@ internal class BackgroundInputView(
         setNeedsLayout()
     }
 
+    override fun safeAreaInsetsDidChange() {
+        super.safeAreaInsetsDidChange()
+        // Direct callback, no `setNeedsLayout`: UIKit defers scheduled layout passes
+        // while the view is occluded (e.g. behind a presented sheet's interactive
+        // dismissal), which would leave Compose with stale insets until full reappear.
+        onSafeAreaInsetsDidChange()
+    }
+
     private val touchesGestureRecognizer = TouchesGestureRecognizer(
         onTouchesEvent = onTouchesEvent,
         onCancelAllTouches = onCancelAllTouches,
@@ -863,6 +872,7 @@ internal class BackgroundInputView(
         hitTestInteropView = { null }
         isPointInsideInteractionBounds = { false }
         onLayoutSubviews = {}
+        onSafeAreaInsetsDidChange = {}
         onAppeared = null
     }
 }

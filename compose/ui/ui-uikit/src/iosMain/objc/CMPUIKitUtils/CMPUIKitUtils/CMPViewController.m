@@ -217,7 +217,6 @@
     CMP_ABSTRACT_FUNCTION_CALLED
 }
 
-
 - (void)dealloc {
     if (_lifecycleState == CMPComposeContainerLifecycleStateStarted) {
         [self viewControllerDidLeaveWindowHierarchy];
