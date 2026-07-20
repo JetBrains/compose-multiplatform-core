@@ -19,8 +19,6 @@
 
 @interface CMPEditMenuView : UIView
 
-@property (readonly) BOOL isEditMenuShown;
-
 - (void)showEditMenuAtRect:(CGRect)targetRect
                       copy:(void (^)(void))copyBlock
                        cut:(void (^)(void))cutBlock
