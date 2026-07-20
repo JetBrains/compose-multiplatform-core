@@ -19,7 +19,6 @@ package androidx.compose.ui.window
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.ExperimentalComposeUiApi
 import kotlinx.browser.document
-import kotlinx.dom.clear
 import org.w3c.dom.Element
 import org.w3c.dom.HTMLCanvasElement
 import org.w3c.dom.HTMLDivElement
@@ -84,8 +83,8 @@ fun ComposeViewport(
     configure: ComposeViewportConfiguration.() -> Unit = {},
     content: @Composable () -> Unit = { }
 ) = onSkikoReady {
-    viewportContainer.clear()
 
+    clearNodeChildren(viewportContainer)
     if (!isWebGL2Supported()) {
         // We can't do anything meaningful in this case, except showing a meaningful message.
         // Otherwise, the app will crash with an obscure error (e.g. TypeError) like in
@@ -168,6 +167,7 @@ fun ComposeViewport(
     val canvas = document.createElement("canvas") as HTMLCanvasElement
     canvas.setAttribute("tabindex", "0")
     canvas.setAttribute("role", "generic")
+    canvas.setAttribute("draggable", "true")
     canvas.style.outline = "none" // Fixes https://youtrack.jetbrains.com/issue/CMP-9040
     canvas.style.setProperty("touch-action", "pan-x pan-y") // allow the browser to scroll when compose is not scrolling
     appContainer.appendChild(canvas)
@@ -210,6 +210,15 @@ fun ComposeViewport(
     )
 }
 
+private fun clearNodeChildren(node: Element): Unit =
+    //language=JavaScript
+    js(
+        """
+        {
+            if (node.hasChildNodes()) node.replaceChildren();
+        }
+    """
+    )
 private const val WEBGL2_NOT_SUPPORTED_MSG = "This application requires WebGL2. " +
     "Please ensure your browser is updated and hardware acceleration is enabled in the browser settings."
 private fun isWebGL2Supported(): Boolean =
