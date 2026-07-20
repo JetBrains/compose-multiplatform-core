@@ -864,7 +864,7 @@ abstract class AndroidXMultiplatformExtension(val project: Project) {
                     testTask {
                         it.useKarma {
                             useChromeHeadless()
-                            useConfigDirectory(File(getSupportRootFolder(), "buildSrc/karmaconfig"))
+                            useConfigDirectory(File(getSupportRootFolder(), "buildSrc-fork/karmaconfig"))
                         }
                     }
                 }
