@@ -85,6 +85,7 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.io.files.Path
 import noria.CallbackInterceptor
+import noria.ui.core.WindowData
 import org.jetbrains.desktop.gtk.DataSource
 import org.jetbrains.desktop.gtk.DragAndDropAction
 import org.jetbrains.desktop.gtk.DragAndDropQueryData
@@ -635,9 +636,9 @@ class GtkWindow internal constructor(
     }
 
     @Composable
-    override fun Content(onLayout: (LightweightWindowId) -> Unit) {
+    override fun Content(onLayout: (WindowData) -> Unit) {
         // ComposeScene drives its own composition; nothing to host here.
-        onLayout(id)
+        onLayout(WindowData(id))
     }
 
     private val inputStateTracker = InputStateTracker(
