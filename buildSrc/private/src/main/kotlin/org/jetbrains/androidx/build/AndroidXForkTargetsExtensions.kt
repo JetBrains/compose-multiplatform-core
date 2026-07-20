@@ -63,6 +63,12 @@ fun <T> AndroidXMultiplatformExtension.configureForkWebTarget(
         val target = createTarget {
             block?.execute(this)
             project.configurePinnedKotlinLibraries(platform)
+            if (platform == PlatformIdentifier.JS) {
+                compilerOptions {
+                    target.set("es2015")
+                    useEsClasses.set(true)
+                }
+            }
             browser {
                 testTask {
                     it.testLogging.showStandardStreams = true
