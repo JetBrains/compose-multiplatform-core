@@ -60,24 +60,10 @@ internal class SkiaBackedPaint(
     )
     override fun asFrameworkPaint(): SkPaint = internalSkiaPaint
 
-    private var mAlphaMultiplier = 1.0f
-
-    var alphaMultiplier: Float
-        get() = mAlphaMultiplier
-        set(value) {
-            val multiplier = value.coerceIn(0f, 1f)
-            updateAlpha(multiplier = multiplier)
-            mAlphaMultiplier = multiplier
-        }
-
-    private fun updateAlpha(alpha: Float = this.alpha, multiplier: Float = this.mAlphaMultiplier) {
-        internalSkiaPaint.color = Color(internalSkiaPaint.color).copy(alpha = alpha * multiplier).toArgb()
-    }
-
     override var alpha: Float
         get() = Color(internalSkiaPaint.color).alpha
         set(value) {
-            updateAlpha(alpha = value)
+            internalSkiaPaint.color = Color(internalSkiaPaint.color).copy(alpha = value).toArgb()
         }
 
     override var isAntiAlias: Boolean
