@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package noria.ui.layout
+package noria.foundation.layout
 
 import androidx.compose.runtime.staticCompositionLocalOf
 

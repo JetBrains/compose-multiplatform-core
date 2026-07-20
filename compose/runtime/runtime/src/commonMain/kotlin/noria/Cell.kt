@@ -121,12 +121,13 @@ inline fun <T> state(
 @Composable
 inline fun <T> state(vararg inputs: Any?, crossinline init: () -> T): StateCell<T> {
     return remember(*inputs) {
-        stateCellNoRemember(init)
+        stateCellNoRemember(null, init)
     }
 }
 
 @OptIn(InternalComposeApi::class)
 inline fun <T> stateCellNoRemember(
+    composer: Composer?, // unused, for Noria compability
     init: () -> T,
 ): StateCell<T> {
     var backingState by mutableStateOf(init())

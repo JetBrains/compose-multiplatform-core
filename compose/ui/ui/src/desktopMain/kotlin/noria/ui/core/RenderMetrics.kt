@@ -16,6 +16,7 @@
 
 package noria.ui.core
 
+import androidx.compose.ui.desktop.LightweightWindowId
 import kotlin.time.TimeSource
 
 class FrameBar {
@@ -169,7 +170,7 @@ class RenderPerfMetrics {
     currentBar().endPainting(windowId, timeReference.elapsedNow().inWholeNanoseconds)
   }
 
-  fun averageFpsPerWindow(): Map<Long, Double> {
+  fun averageFpsPerWindow(): Map<LightweightWindowId, Double> {
     val nsPerSec = 1_000_000_000.0
     return frameBars()
       .groupBy {
@@ -183,7 +184,7 @@ class RenderPerfMetrics {
             .filter { it > 0 }
             .average()
           val fps = nsPerSec / averageDuration
-          Pair(barsPerPaintedWindow.key!!, fps)
+          Pair(LightweightWindowId(barsPerPaintedWindow.key!!), fps)
         }
         else null
       }.toMap()

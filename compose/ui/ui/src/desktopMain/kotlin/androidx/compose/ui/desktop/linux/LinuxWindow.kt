@@ -85,6 +85,7 @@ import kotlinx.coroutines.CancellableContinuation
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.io.files.Path
 import noria.CallbackInterceptor
+import noria.ui.core.WindowData
 import org.jetbrains.desktop.linux.DataSource
 import org.jetbrains.desktop.linux.DesktopTitlebarAction
 import org.jetbrains.desktop.linux.DragAndDropAction
@@ -635,9 +636,9 @@ class LinuxWindow internal constructor(
     }
 
     @Composable
-    override fun Content(onLayout: (LightweightWindowId) -> Unit) {
+    override fun Content(onLayout: (WindowData) -> Unit) {
         // ComposeScene drives its own composition; nothing to host here.
-        onLayout(id)
+        onLayout(WindowData(id))
     }
 
     private val inputStateTracker = InputStateTracker(

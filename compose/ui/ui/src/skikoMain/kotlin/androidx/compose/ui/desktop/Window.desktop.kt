@@ -43,6 +43,7 @@ import androidx.compose.ui.window.WindowDecoration
 import androidx.compose.ui.window.WindowPlacement
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.io.files.Path
+import noria.ui.core.WindowData
 
 interface WindowScope {
     val application: Application
@@ -199,7 +200,7 @@ interface Window {
     )
 
     @Composable
-    fun Content(onLayout: (LightweightWindowId) -> Unit)
+    fun Content(onLayout: (WindowData) -> Unit)
 }
 
 interface PositionAwareWindow : Window {
@@ -265,7 +266,7 @@ fun Window(
     configure: Window.() -> Unit = {},
     onPreviewKeyEvent: (KeyEvent) -> Boolean = { false },
     onKeyEvent: (KeyEvent) -> Boolean = { false },
-    onLayout: (LightweightWindowId) -> Unit = {},
+    onLayout: (WindowData) -> Unit = {},
     content: @Composable WindowScope.() -> Unit,
 ) {
     val currentOnCloseRequest by rememberUpdatedState(onCloseRequested)
@@ -316,8 +317,7 @@ fun Window(
     create: () -> Window,
     dispose: (Window) -> Unit,
     update: (Window) -> Unit,
-//    onLayout: (WindowData) -> Unit,
-    onLayout: (LightweightWindowId) -> Unit,
+    onLayout: (WindowData) -> Unit,
     content: @Composable WindowScope.() -> Unit,
 ) {
     val window = remember { create() }
