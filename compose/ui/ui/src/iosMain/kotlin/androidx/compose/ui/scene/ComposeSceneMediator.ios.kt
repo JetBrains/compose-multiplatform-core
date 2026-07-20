@@ -16,6 +16,8 @@
 
 package androidx.compose.ui.scene
 
+import androidx.compose.ui.uikit.utils.CMPUIKitSwiftInteropBox
+import androidx.compose.ui.uikit.utils.CMPUIKitSwiftInteropProtocol
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalContext
 import androidx.compose.runtime.CompositionLocalProvider
@@ -442,6 +444,11 @@ internal class ComposeSceneMediator(
             textInputService.hasInvalidations
 
     init {
+        val box = CMPUIKitSwiftInteropBox(seed = 7)
+        val interop: CMPUIKitSwiftInteropProtocol = box
+        println("CMPUIKitSwiftInterop: ${interop.seed()}, ${box.seed()}")
+        println("CMPUIKitSwiftInterop: ${interop.combinedValueWithSuffix("swift")}, ${box.combinedValueWithSuffix("kotlin")}")
+
         coroutineContext.job.invokeOnCompletion { dispose() }
     }
 
