@@ -16,11 +16,11 @@
 
 #import <Foundation/Foundation.h>
 
-//! Project version number for CMPUIKitUtils.
-FOUNDATION_EXPORT double CMPUIKitUtilsVersionNumber;
+//! Project version number for CMPUIKitObjcUtils.
+FOUNDATION_EXPORT double CMPUIKitObjcUtilsVersionNumber;
 
-//! Project version string for CMPUIKitUtils.
-FOUNDATION_EXPORT const unsigned char CMPUIKitUtilsVersionString[];
+//! Project version string for CMPUIKitObjcUtils.
+FOUNDATION_EXPORT const unsigned char CMPUIKitObjcUtilsVersionString[];
 
 #import "CMPAccessibilityElement.h"
 #import "CMPComposeContainerLifecycleDelegate.h"
