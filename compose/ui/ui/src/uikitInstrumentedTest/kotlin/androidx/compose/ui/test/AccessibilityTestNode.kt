@@ -211,7 +211,7 @@ private val allContainerTypes = mapOf(
  * within a UI hierarchy. This class captures various accessibility properties of UI components
  * and structures them into a tree.
  */
-internal data class AccessibilityTestNode(
+internal class AccessibilityTestNode(
     var isAccessibilityElement: Boolean? = null,
     var identifier: String? = null,
     var label: String? = null,
@@ -223,10 +223,21 @@ internal data class AccessibilityTestNode(
     var children: List<AccessibilityTestNode>? = null,
     var traits: List<UIAccessibilityTraits>? = null,
     var element: NSObject? = null,
+    var parent: AccessibilityTestNode? = null,
 ) {
-    // Kept out of the primary constructor so the generated equals/hashCode/toString
-    // don't recurse through the parent <-> children cycle and overflow the stack.
-    var parent: AccessibilityTestNode? = null
+    fun copyWith(children: List<AccessibilityTestNode>?) = AccessibilityTestNode(
+        isAccessibilityElement = isAccessibilityElement,
+        identifier = identifier,
+        label = label,
+        accessibilityLabel = accessibilityLabel,
+        value = value,
+        accessibilityValue = accessibilityValue,
+        frame = frame,
+        containerType = containerType,
+        children = children,
+        traits = traits,
+        element = element,
+    ).also { copy -> children?.forEach { it.parent = copy } }
 
     fun node(builder: AccessibilityTestNode.() -> Unit) {
         children = (children ?: emptyList()) + AccessibilityTestNode().apply(builder)
@@ -322,6 +333,38 @@ internal data class AccessibilityTestNode(
 
         return builder.toString()
     }
+
+    override fun equals(other: Any?): Boolean =
+        other is AccessibilityTestNode &&
+            identifier == other.identifier &&
+            label == other.label &&
+            frame == other.frame
+
+    override fun hashCode(): Int {
+        var result = identifier?.hashCode() ?: 0
+        result = 31 * result + (label?.hashCode() ?: 0)
+        result = 31 * result + (frame?.hashCode() ?: 0)
+        return result
+    }
+
+    override fun toString(): String =
+        "AccessibilityTestNode(" +
+            "isAccessibilityElement=$isAccessibilityElement, " +
+            "identifier=$identifier, " +
+            "label=$label, " +
+            "accessibilityLabel=$accessibilityLabel, " +
+            "value=$value, " +
+            "accessibilityValue=$accessibilityValue, " +
+            "frame=$frame, " +
+            "containerType=$containerType, " +
+            "traits=$traits, " +
+            "element=$element, " +
+            "children=$children, " +
+            "parent=${parent?.shallowToString()}" +
+            ")"
+
+    private fun shallowToString(): String =
+        "AccessibilityTestNode(identifier=$identifier, label=$label, frame=$frame)"
 }
 
 /**
@@ -340,7 +383,7 @@ internal fun AccessibilityTestNode.normalized(): AccessibilityTestNode? {
     } ?: emptyList()
 
     return if (hasAccessibilityComponents || normalizedChildren.count() > 1) {
-        this.copy(children = normalizedChildren)
+        this.copyWith(children = normalizedChildren)
     } else if (normalizedChildren.count() == 1) {
         normalizedChildren.single()
     } else {
