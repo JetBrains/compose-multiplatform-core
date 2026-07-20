@@ -36,7 +36,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.yield
 import kotlinx.io.files.Path
 import androidx.compose.runtime.Applier
-import androidx.compose.ui.input.pointer.PointerIconService
+import androidx.compose.runtime.ProvidedValue
 import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.withContext
 
@@ -57,7 +57,13 @@ suspend fun awaitApplication(
     val application = Application.current
     application.awaitWhenReady()
     coroutineScope {
-        launchScene(context = coroutineContext, { }, {}, content = content)
+        runComposeScene(
+            context = coroutineContext,
+            frameClock = YieldFrameClock,
+            prepareMainThread = { },
+            restoreMainThread = { },
+            content = content,
+        )
         terminationSignal.join()
         // Cancel the composition/recomposition coroutines so this function returns.
         this.coroutineContext.cancel()
@@ -65,13 +71,35 @@ suspend fun awaitApplication(
     application.stopAndJoin()
 }
 
-suspend fun <T> launchScene(
+/**
+ * Sets up and runs a Compose "application scene": creates the [Scene], installs the snapshot
+ * callback interceptor, starts a [Recomposer] and root [Composition], composes [content], then
+ * keeps the scene alive until [awaitShutdown] returns before tearing everything down.
+ *
+ * This is the single shared scene-launching core reused by both [launchScene] (and therefore
+ * [awaitApplication]) and the desktop `noria.ui.loop.withScene` render loop. Everything that differs
+ * between those callers is injected:
+ *  - [frameClock]: the [MonotonicFrameClock] driving recomposition (e.g. [YieldFrameClock] for the
+ *    application entry points, or a frame-emitting clock for the render loop).
+ *  - [locals]: extra composition locals wrapped around [content] (e.g. the effect coroutine
+ *    context for the render loop).
+ *  - [onSceneReady]: invoked once, right after the initial composition has been applied.
+ *  - [awaitShutdown]: suspends for as long as the scene should stay alive. The default returns
+ *    immediately, closing the recomposer right after the first composition (windows created during
+ *    composition keep themselves alive); pass a suspending body to keep the root composition
+ *    reactive (needed when windows are added/removed based on state).
+ */
+internal suspend fun <T> runComposeScene(
     context: CoroutineContext,
+    frameClock: MonotonicFrameClock,
     prepareMainThread: () -> T,
     restoreMainThread: (T) -> Unit,
+    onSceneReady: () -> Unit = {},
+    awaitShutdown: suspend () -> Unit = {},
+    vararg locals: ProvidedValue<*>,
     content: @Composable () -> Unit,
 ) {
-    withContext(context + ComposeUIDispatcher + YieldFrameClock) {
+    withContext(context + ComposeUIDispatcher + frameClock) {
         val scene = Scene(
             coroutineScope = this,
             prepareMainThread = prepareMainThread,
@@ -86,24 +114,25 @@ suspend fun <T> launchScene(
             recomposer.runRecomposeAndApplyChanges()
         }
 
-        launch {
-            val application = Application.current
-            val composition = Composition(ApplicationApplier(), recomposer)
-            try {
-                composition.setContent {
-                    application.withCompositionLocal {
-                        CompositionLocalProvider(
-                            ProvidableLocalScene provides scene,
-                        ) {
-                            content()
-                        }
+        val application = Application.current
+        val composition = Composition(ApplicationApplier(), recomposer)
+        try {
+            composition.setContent {
+                application.withCompositionLocal {
+                    CompositionLocalProvider(
+                        ProvidableLocalScene provides scene,
+                        *locals
+                    ) {
+                        content()
                     }
                 }
-                recomposer.close()
-                recomposer.join()
-            } finally {
-                composition.dispose()
             }
+            onSceneReady()
+            awaitShutdown()
+            recomposer.close()
+            recomposer.join()
+        } finally {
+            composition.dispose()
         }
     }
 }
