@@ -1105,8 +1105,17 @@ private external interface ShadowRootExt {
 // the Kotlin/js `js(...)` intrinsic uses a restricted JS parser that does not
 // accept ES6 `class` declarations directly in the code string.
 @OptIn(ExperimentalWasmJsInterop::class)
-private fun composeComponentElementCtor(weakMap: WeakMap<JsAny>): JsAny =
-    js("(new Function('weakMap', 'return class ComposeComponentElement extends HTMLElement { disconnectedCallback() { const cb = weakMap.get(this); if (cb) cb(); }};'))(weakMap)")
+private fun composeComponentElementCtor(weakMap: WeakMap<JsAny>): JsAny = js("""
+    (() => {
+        class ComposeComponentElement extends HTMLElement {
+            disconnectedCallback() {
+                const cb = weakMap.get(this);
+                if (cb) cb();
+            }
+        }
+        return ComposeComponentElement;
+    })()
+""")
 
 
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/WeakMap
