@@ -28,6 +28,7 @@ import androidx.compose.ui.focus.FocusTargetNode
 import androidx.compose.ui.focus.focusTarget
 import androidx.compose.ui.focus.performRequestFocus
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.input.InputMode
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.node.CompositionLocalConsumerModifierNode
 import androidx.compose.ui.node.DelegatingNode
@@ -39,6 +40,7 @@ import androidx.compose.ui.node.visitLocalDescendants
 import androidx.compose.ui.node.Nodes
 import androidx.compose.ui.node.currentValueOf
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalInputModeManager
 import androidx.compose.ui.window.LocalComposeWindow
 import kotlin.js.js
 import kotlinx.browser.document
@@ -165,28 +167,40 @@ private class FocusGroupPropertiesNode :
 
             lastTabKeyDown = (event as? KeyboardEvent)?.takeIf { it.key == "Tab" }
 
-            window.requestAnimationFrame {
-                lastTabKeyDown = null
+
+            if (lastTabKeyDown != null) {
+                // This will ensure focus indication:
+                currentValueOf(LocalInputModeManager).requestInputMode(InputMode.Keyboard)
+                window.requestAnimationFrame {
+                    lastTabKeyDown = null
+                }
             }
 
             Unit
         }
         htmlElement.addEventListener("focus") {
+            println("focus::: HTML element gained focus")
             htmlElement.addEventListener("keydown", tabKeyDownListener)
+            // HTML element (or a child) gained focus. Sync Compose focus to the interop wrapper.
+            val focusTargetNode = getFocusTargetOfEmbeddedViewWrapper()
+            if (!focusTargetNode.focusState.hasFocus) {
+                focusTargetNode.performRequestFocus()
+            }
         }
         htmlElement.addEventListener("blur") {
+            println("blur::: HTML element lost focus")
             htmlElement.removeEventListener("keydown", tabKeyDownListener)
             if (lastTabKeyDown != null) {
+                println("blur::: Tab - $lastTabKeyDown")
                 val localComposeWindow = currentValueOf(LocalComposeWindow)
                 localComposeWindow?.focusCanvas()
                 val focusManager = currentValueOf(LocalFocusManager)
                 val direction = if (lastTabKeyDown?.shiftKey == true) FocusDirection.Previous else FocusDirection.Next
                 focusManager.moveFocus(direction)
+                println("blur::: Tab - direction: $direction")
                 lastTabKeyDown = null
             }
         }
-//        htmlElement.addEventListener("focusin") { onFocusIn(it)}
-//        htmlElement.addEventListener("focusout") { onFocusOut(it) }
     }
 
     override fun onDetach() {
