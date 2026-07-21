@@ -48,8 +48,14 @@ public class CreatePoseFromGeospatialPoseNotTracking : CreatePoseFromGeospatialP
  *
  * @property error a human-readable description of the error that occurred
  */
-public class CreatePoseFromGeospatialPoseErrorInternal(public val error: String) :
+public class CreatePoseFromGeospatialPoseInternalError(public val error: String) :
     CreatePoseFromGeospatialPoseResult()
+
+/**
+ * Prevent exhaustive when by consumers to allow for future extension of
+ * [CreatePoseFromGeospatialPoseResult].
+ */
+private class CreatePoseFromGeospatialPoseResultHidden() : CreatePoseFromGeospatialPoseResult()
 
 /**
  * Result of a successful [Geospatial.createGeospatialPoseFromPose] call.
@@ -87,7 +93,7 @@ public class CreatePoseFromGeospatialPoseErrorInternal(public val error: String)
  * @property horizontalAccuracy the estimated horizontal accuracy in meters with respect to latitude
  *   and longitude
  * @property verticalAccuracy the estimated altitude accuracy in meters
- * @property orientationYawAccuracy the estimated orientation yaw angle accuracy
+ * @property orientationYawAccuracy the estimated orientation yaw angle accuracy in degrees
  */
 public class CreateGeospatialPoseFromPoseSuccess
 internal constructor(
@@ -112,5 +118,11 @@ public class CreateGeospatialPoseFromPoseNotTracking : CreateGeospatialPoseFromP
  *
  * @property error a human-readable description of the error that occurred
  */
-public class CreateGeospatialPoseFromPoseErrorInternal(public val error: String) :
+public class CreateGeospatialPoseFromPoseInternalError(public val error: String) :
     CreateGeospatialPoseFromPoseResult()
+
+/**
+ * Prevent exhaustive when by consumers to allow for future extension of
+ * [CreateGeospatialPoseFromPoseResult].
+ */
+private class CreateGeospatialPoseFromPoseResultHidden() : CreateGeospatialPoseFromPoseResult()

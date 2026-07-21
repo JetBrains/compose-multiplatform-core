@@ -47,7 +47,7 @@ class PerceivedResolutionManager(
     private val surfaceEntityManager: SurfaceEntityManager,
     private val panelEntityManager: PanelEntityManager,
 ) : LifecycleEventObserver {
-    private val cameraLeft: RenderViewpoint = RenderViewpoint.left(session)!!
+    private val cameraLeft: RenderViewpoint = RenderViewpoint.left(session)
     private val _mPanelEntityFlow = MutableStateFlow<PanelEntity?>(null)
     var mPanelEntity: PanelEntity?
         get() = _mPanelEntityFlow.value
@@ -192,7 +192,7 @@ class PerceivedResolutionManager(
     }
 
     private fun createPanelEntity() {
-        mTextView = DebugTextLinearView(context = session.context)
+        mTextView = DebugTextLinearView(context = activity)
         mTextView?.setName("Perceived Resolution")
         // Create PanelEntity and Components if they don't exist.
         if (mPanelEntity == null) {
@@ -203,6 +203,7 @@ class PerceivedResolutionManager(
                     pixelDimensions = IntSize2d(1000, 500),
                     name = "perceivedResolutionPanel",
                     pose = Pose(Vector3(0.5f, 0f, 0.1f)),
+                    parent = session.scene.mainPanelEntity,
                 )
 
             mMovableComponent = MovableComponent.createSystemMovable(session)
@@ -212,7 +213,8 @@ class PerceivedResolutionManager(
     }
 
     private fun destroyPerceivedResolutionPanel() {
-        mPanelEntity?.dispose()
+        mPanelEntity?.removeAllComponents()
+        mPanelEntity?.parent = null
         mPanelEntity = null
         updateButtonStates()
     }

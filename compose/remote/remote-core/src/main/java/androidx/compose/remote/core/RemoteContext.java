@@ -419,6 +419,7 @@ public abstract class RemoteContext {
 
     /**
      * Set the theme under which it will be painted
+     *
      * @param theme the theme
      */
     public void setPaintTheme(int theme) {
@@ -427,6 +428,7 @@ public abstract class RemoteContext {
 
     /**
      * Get the theme under which it will be painted
+     *
      * @return the paint theme
      */
     public int getPaintTheme() {
@@ -435,6 +437,7 @@ public abstract class RemoteContext {
 
     /**
      * Set the touch version
+     *
      * @param touchVersion
      */
     public void setTouchVersion(int touchVersion) {
@@ -443,6 +446,7 @@ public abstract class RemoteContext {
 
     /**
      * Get the touch version
+     *
      * @return
      */
     public int getTouchVersion() {
@@ -451,11 +455,21 @@ public abstract class RemoteContext {
 
     /**
      * Return true if the provided feature is enabled in the document
+     *
      * @param feature feature id
      * @return
      */
     public boolean useFeature(short feature) {
         return mDocument.useFeature(feature);
+    }
+
+    /**
+     * Return the document density behavior
+     *
+     * @return
+     */
+    public int getDensityBehavior() {
+        return mDocument.mDensityBehavior;
     }
 
     /** The font information */
@@ -509,8 +523,7 @@ public abstract class RemoteContext {
     }
 
     /**
-     * Create an edge effect
-     * Used in scroll views when hitting start/end of the scroll area
+     * Create an edge effect Used in scroll views when hitting start/end of the scroll area
      *
      * @param direction : TOP/BOTTOM/LEFT/RIGHT
      * @return a platform-specific implementation or null
@@ -623,6 +636,7 @@ public abstract class RemoteContext {
 
     /**
      * Mark the variable as dirty
+     *
      * @param id
      */
     public void markVariableDirty(int id) {
@@ -772,7 +786,6 @@ public abstract class RemoteContext {
     /**
      * Notify commands with variables have changed
      *
-     *
      * @return the number of ms to next update
      */
     public abstract int updateOps();
@@ -841,12 +854,6 @@ public abstract class RemoteContext {
 
     /** The YEAR e.g. 2026 */
     public static final int ID_YEAR = 35;
-
-    /** First baseline (for alignment) */
-    public static final int ID_FIRST_BASELINE = 36;
-
-    /** last baseline (for alignment) */
-    public static final int ID_LAST_BASELINE = 37;
 
     public static final float FLOAT_DENSITY = Utils.asNan(ID_DENSITY);
 
@@ -944,12 +951,6 @@ public abstract class RemoteContext {
 
     /** The time in seconds since the epoch. */
     public static final long INT_EPOCH_SECOND = ((long) ID_EPOCH_SECOND) + 0x100000000L;
-
-    /** First Baseline */
-    public static final float FIRST_BASELINE = Utils.asNan(ID_FIRST_BASELINE);
-
-    /** Last Baseline */
-    public static final float LAST_BASELINE = Utils.asNan(ID_LAST_BASELINE);
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
     // Click handling

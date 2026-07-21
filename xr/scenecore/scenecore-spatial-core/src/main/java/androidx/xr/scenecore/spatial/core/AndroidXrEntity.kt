@@ -26,6 +26,7 @@ import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.runtime.ActivitySpace
+import androidx.xr.scenecore.runtime.CleanupAction
 import androidx.xr.scenecore.runtime.Entity
 import androidx.xr.scenecore.runtime.HitTestResult
 import androidx.xr.scenecore.runtime.InputEventListener
@@ -74,9 +75,26 @@ public abstract class AndroidXrEntity(
         ConcurrentHashMap()
     private var reformOptions: ReformOptions? = null
 
+    private val androidXrCleanupAction: AndroidXrEntityCleanupAction
+
     init {
         sceneNodeRegistry.setEntityForNode(node, this)
+        androidXrCleanupAction = AndroidXrEntityCleanupAction(node, extensions, sceneNodeRegistry)
+        registerCleanup(scheduledExecutor, androidXrCleanupAction)
     }
+
+    private class AndroidXrEntityCleanupAction(
+        node: Node,
+        extensions: XrExtensions,
+        sceneNodeRegistry: SceneNodeRegistry,
+    ) :
+        CleanupAction({
+            node.stopListeningForInput()
+            extensions.createNodeTransaction().use { transaction ->
+                transaction.disableReform(node).apply()
+            }
+            sceneNodeRegistry.removeEntityForNode(node)
+        })
 
     override var parent: Entity?
         get() = super.parent
@@ -88,8 +106,7 @@ public abstract class AndroidXrEntity(
 
             extensions.createNodeTransaction().use { transaction ->
                 if (newParent == null) {
-                    @Suppress("UNUSED_VARIABLE")
-                    val unused = transaction.setVisibility(node, false).setParent(node, null)
+                    @Suppress("UNUSED_VARIABLE") val unused = transaction.setParent(node, null)
                 } else {
                     @Suppress("UNUSED_VARIABLE")
                     val unused = transaction.setParent(node, newParent.node)
@@ -101,7 +118,7 @@ public abstract class AndroidXrEntity(
     override fun getPose(@SpaceValue relativeTo: Int): Pose {
         return when (relativeTo) {
             Space.PARENT -> super<BaseEntity>.getPose(relativeTo)
-            Space.ACTIVITY -> poseInActivitySpace
+            Space.ACTIVITY -> activitySpacePose
             Space.REAL_WORLD -> poseInPerceptionSpace
             else -> throw IllegalArgumentException("Unsupported relativeTo value: $relativeTo")
         }
@@ -143,28 +160,6 @@ public abstract class AndroidXrEntity(
             transaction.setScale(node, localScale.x, localScale.y, localScale.z).apply()
         }
     }
-
-    /** Returns the pose for this entity, relative to the activity space root. */
-    override val poseInActivitySpace: Pose
-        get() {
-            // This code might produce unexpected results when non-uniform scale
-            // is involved in the parent-child entity hierarchy.
-
-            // Any parentless "space" entities (such as the root and anchor entities) are expected
-            // to override this method non-recursively so that this error is never thrown.
-            if (parent !is AndroidXrEntity) {
-                throw IllegalStateException(
-                    "Cannot get pose in Activity Space with a non-AndroidXrEntity parent"
-                )
-            }
-            val xrParent = parent as AndroidXrEntity
-            return xrParent.poseInActivitySpace.compose(
-                Pose(
-                    getPose(Space.PARENT).translation.scale(xrParent.activitySpaceScale),
-                    getPose(Space.PARENT).rotation,
-                )
-            )
-        }
 
     private val poseInPerceptionSpace: Pose
         get() {
@@ -280,7 +275,10 @@ public abstract class AndroidXrEntity(
     private fun maybeSetupInputListeners() {
         // Only set up the listener if it doesn't already exist.
         if (inputEventListenerMap.isEmpty() && pointerCaptureInputEventListener.isEmpty) {
-            node.listenForInput(scheduledExecutor, this::handleInputEvent)
+            val weakThis = WeakReference(this)
+            node.listenForInput(scheduledExecutor) { inputEvent ->
+                weakThis.get()?.handleInputEvent(inputEvent)
+            }
         }
     }
 
@@ -333,18 +331,7 @@ public abstract class AndroidXrEntity(
 
     override fun dispose() {
         inputEventListenerMap.clear()
-        node.stopListeningForInput()
         reformEventConsumerMap.clear()
-        extensions.createNodeTransaction().use { transaction ->
-            @Suppress("UNUSED_VARIABLE") val unused = transaction.disableReform(node)
-            transaction.apply()
-        }
-
-        // SystemSpaceEntityImpls (Anchors, ActivitySpace, etc) should have null parents.
-        if (parent != null) {
-            parent = null
-        }
-        sceneNodeRegistry.removeEntityForNode(node)
         super.dispose()
     }
 
@@ -446,7 +433,7 @@ public abstract class AndroidXrEntity(
     ): HitTestResult {
         // Hit tests need to be issued in the activity space then converted to the entity's space.
         val activitySpace =
-            sceneNodeRegistry.getSystemSpaceScenePoseOfType(ActivitySpace::class.java)[0]
+            sceneNodeRegistry.getSystemSpaceScenePoseOfType(ActivitySpace::class.java).firstOrNull()
                 ?: throw IllegalStateException("ActivitySpace is null")
         return activitySpace.hitTestRelativeToActivityPose(origin, direction, hitTestFilter, this)
     }

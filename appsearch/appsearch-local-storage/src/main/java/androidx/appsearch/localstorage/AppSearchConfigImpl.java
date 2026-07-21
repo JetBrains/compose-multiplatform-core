@@ -121,18 +121,8 @@ public class AppSearchConfigImpl implements AppSearchConfig {
     }
 
     @Override
-    public boolean getLiteIndexSortAtIndexing() {
-        return mIcingOptionsConfig.getLiteIndexSortAtIndexing();
-    }
-
-    @Override
     public int getLiteIndexSortSize() {
         return mIcingOptionsConfig.getLiteIndexSortSize();
-    }
-
-    @Override
-    public boolean getUseNewQualifiedIdJoinIndex() {
-        return mIcingOptionsConfig.getUseNewQualifiedIdJoinIndex();
     }
 
     @Override

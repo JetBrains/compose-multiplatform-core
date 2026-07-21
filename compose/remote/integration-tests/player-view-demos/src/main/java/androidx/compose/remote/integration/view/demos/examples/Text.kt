@@ -23,6 +23,7 @@ import androidx.compose.remote.core.operations.layout.managers.BoxLayout
 import androidx.compose.remote.core.operations.layout.managers.ColumnLayout
 import androidx.compose.remote.core.operations.layout.managers.CoreText
 import androidx.compose.remote.core.operations.layout.managers.RowLayout
+import androidx.compose.remote.core.operations.layout.managers.TextStyle
 import androidx.compose.remote.creation.RemoteComposeContext
 import androidx.compose.remote.creation.RemoteComposeContextAndroid
 import androidx.compose.remote.creation.RemoteComposeWriter.hTag
@@ -49,19 +50,23 @@ fun RcTextDemo8(): RemoteComposeContext {
                 vertical = RowLayout.CENTER,
             ) {
                 column(Modifier.horizontalWeight(1f).background(Color.YELLOW)) {
-                    text("New Arsenal Game", maxLines = 1, overflow = CoreText.OVERFLOW_ELLIPSIS)
-                    text(
+                    advancedText(
+                        "New Arsenal Game",
+                        maxLines = 1,
+                        overflow = CoreText.OVERFLOW_ELLIPSIS,
+                    )
+                    advancedText(
                         "Arsenal vs Bayern Munich",
                         fontSize = 64f,
                         maxLines = 3,
                         overflow = CoreText.OVERFLOW_ELLIPSIS,
                     )
-                    text(
+                    advancedText(
                         "UEFA Champions League Group Stage",
                         maxLines = 2,
                         overflow = CoreText.OVERFLOW_ELLIPSIS,
                     )
-                    text(
+                    advancedText(
                         "Wednesday 26th November",
                         maxLines = 1,
                         overflow = CoreText.OVERFLOW_ELLIPSIS,
@@ -77,7 +82,7 @@ fun RcTextDemo8(): RemoteComposeContext {
                         BoxLayout.CENTER,
                         BoxLayout.CENTER,
                     ) {
-                        text("IMG")
+                        advancedText("IMG")
                     }
                 }
             }
@@ -635,26 +640,64 @@ fun RcTextDemo(): RemoteComposeContext {
     }
 }
 
-@Preview @Composable private fun RcCardAutosizePreview() = RemoteDocPreview(RcTextDemo2b())
+@Preview @Composable private fun RcCardAutosizePreview() = RemoteDocumentPreview(RcTextDemo2b())
 
-@Preview @Composable private fun RcTextDemoPreview() = RemoteDocPreview(RcTextDemo())
+@Preview @Composable private fun RcTextDemoPreview() = RemoteDocumentPreview(RcTextDemo())
 
-@Preview @Composable private fun RcTextDemo2Preview() = RemoteDocPreview(RcTextDemo2())
+@Preview @Composable private fun RcTextDemo2Preview() = RemoteDocumentPreview(RcTextDemo2())
 
-@Preview @Composable private fun RcTextDemo3Preview() = RemoteDocPreview(RcTextDemo3())
+@Preview @Composable private fun RcTextDemo3Preview() = RemoteDocumentPreview(RcTextDemo3())
 
 @Preview(group = "alignment")
 @Composable
-private fun RcTextDemo3bPreview() = RemoteDocPreview(RcTextDemo3b())
+private fun RcTextDemo3bPreview() = RemoteDocumentPreview(RcTextDemo3b())
 
-@Preview @Composable private fun RcTextDemo4Preview() = RemoteDocPreview(RcTextDemo4())
+@Preview @Composable private fun RcTextDemo4Preview() = RemoteDocumentPreview(RcTextDemo4())
 
-@Preview @Composable private fun RcTextDemo5Preview() = RemoteDocPreview(RcTextDemo5())
+@Preview @Composable private fun RcTextDemo5Preview() = RemoteDocumentPreview(RcTextDemo5())
 
-@Preview @Composable private fun RcTextDemo6Preview() = RemoteDocPreview(RcTextDemo6())
+@Preview @Composable private fun RcTextDemo6Preview() = RemoteDocumentPreview(RcTextDemo6())
 
-@Preview @Composable private fun RcTextDemo7Preview() = RemoteDocPreview(RcTextDemo7())
+@Preview @Composable private fun RcTextDemo7Preview() = RemoteDocumentPreview(RcTextDemo7())
 
-@Preview @Composable private fun RcTextDemo8Preview() = RemoteDocPreview(RcTextDemo8())
+@Preview @Composable private fun RcTextDemo8Preview() = RemoteDocumentPreview(RcTextDemo8())
 
-@Preview @Composable private fun RcTextDemo9Preview() = RemoteDocPreview(RcTextDemo9())
+@Preview @Composable private fun RcTextDemo9Preview() = RemoteDocumentPreview(RcTextDemo9())
+
+@Suppress("RestrictedApiAndroidX")
+private fun RemoteComposeContext.advancedText(
+    text: String,
+    fontSize: Float = TextStyle.DEFAULT_FONT_SIZE,
+    maxLines: Int = Integer.MAX_VALUE,
+    overflow: Int = 1,
+) {
+    mRemoteWriter.startTextComponent(
+        RecordingModifier(),
+        mRemoteWriter.addText(text),
+        -1, // textStyleId
+        0xFF000000.toInt(),
+        -1, // colorId
+        fontSize,
+        -1f,
+        -1f,
+        0,
+        400f,
+        null,
+        5, // textAlign (start)
+        overflow,
+        maxLines,
+        0f,
+        0f,
+        1f,
+        0,
+        0,
+        0,
+        false,
+        false,
+        null,
+        null,
+        false,
+        0,
+    )
+    mRemoteWriter.endTextComponent()
+}

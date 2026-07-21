@@ -16,9 +16,14 @@
 
 package androidx.compose.foundation.text.selection
 
+import androidx.compose.foundation.ComposeFoundationFlags
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
@@ -32,6 +37,7 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.doubleClick
+import androidx.compose.ui.test.dragAndDrop
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performMouseInput
@@ -43,6 +49,7 @@ import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth.assertThat
+import kotlin.test.assertNotNull
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -76,8 +83,8 @@ internal class SelectionContainerPointerTest : AbstractSelectionContainerTest() 
             release()
         }
 
-        assertAnchorInfo(selection.value?.start, offset = 0, selectableId = 1)
-        assertAnchorInfo(selection.value?.end, offset = 4, selectableId = 2)
+        assertAnchorInfo(state.selection?.start, offset = 0, selectableId = 1)
+        assertAnchorInfo(state.selection?.end, offset = 4, selectableId = 2)
     }
 
     @Test
@@ -106,8 +113,8 @@ internal class SelectionContainerPointerTest : AbstractSelectionContainerTest() 
             release()
         }
 
-        assertAnchorInfo(selection.value?.start, offset = 7, selectableId = 2)
-        assertAnchorInfo(selection.value?.end, offset = 5, selectableId = 1)
+        assertAnchorInfo(state.selection?.start, offset = 7, selectableId = 2)
+        assertAnchorInfo(state.selection?.end, offset = 5, selectableId = 1)
     }
 
     @Test
@@ -123,8 +130,8 @@ internal class SelectionContainerPointerTest : AbstractSelectionContainerTest() 
             }
 
             // Assert. Should select "Demo".
-            assertThat(selection.value!!.start.offset).isEqualTo(textContent.indexOf('D'))
-            assertThat(selection.value!!.end.offset).isEqualTo(textContent.indexOf('o') + 1)
+            assertThat(state.selection!!.start.offset).isEqualTo(textContent.indexOf('D'))
+            assertThat(state.selection!!.end.offset).isEqualTo(textContent.indexOf('o') + 1)
         }
 
     @Test
@@ -138,14 +145,14 @@ internal class SelectionContainerPointerTest : AbstractSelectionContainerTest() 
             rule.onSelectionContainer().performMouseInput {
                 doubleClick(Offset(textContent.indexOf('m') * characterSize, 0.5f * characterSize))
             }
-            rule.runOnIdle { assertThat(selection.value).isNotNull() }
+            rule.runOnIdle { assertThat(state.selection).isNotNull() }
 
             // Act. Click on the same place, and selection should be cleared.
             rule.onSelectionContainer().performMouseInput { click() }
 
             // Assert.
             // TODO(b/384750891) Cleared selection should be null
-            rule.runOnIdle { assertThat(selection.value!!.toTextRange()).isEqualTo(14.collapsed) }
+            rule.runOnIdle { assertThat(state.selection!!.toTextRange()).isEqualTo(14.collapsed) }
         }
 
     @Test
@@ -185,7 +192,7 @@ internal class SelectionContainerPointerTest : AbstractSelectionContainerTest() 
 
             // Assert.
             // TODO(b/384750891) Cleared selection should be null
-            rule.runOnIdle { assertThat(selection.value!!.toTextRange()).isEqualTo(3.collapsed) }
+            rule.runOnIdle { assertThat(state.selection!!.toTextRange()).isEqualTo(3.collapsed) }
             rule.runOnIdle { assertThat(clickCounter).isEqualTo(1) }
         }
 
@@ -215,7 +222,7 @@ internal class SelectionContainerPointerTest : AbstractSelectionContainerTest() 
             rule.onNodeWithTag(tag1, useUnmergedTree = true).performMouseInput { click() }
 
             // Assert.
-            rule.runOnIdle { assertThat(selection.value).isNull() }
+            rule.runOnIdle { assertThat(state.selection).isNull() }
             rule.runOnIdle { assertThat(clickCounter).isEqualTo(1) }
         }
 
@@ -233,10 +240,7 @@ internal class SelectionContainerPointerTest : AbstractSelectionContainerTest() 
                             ) {
                                 TestText("Button")
                             }
-                            SelectionContainer(
-                                selection = selection.value,
-                                onSelectionChange = { selection.value = it },
-                            ) {
+                            SelectionContainer(state = state) {
                                 TestText(textContent, Modifier.fillMaxSize())
                             }
                         }
@@ -253,7 +257,7 @@ internal class SelectionContainerPointerTest : AbstractSelectionContainerTest() 
             rule.onNodeWithTag(tag1, useUnmergedTree = true).performMouseInput { click() }
 
             // Assert.
-            rule.runOnIdle { assertThat(selection.value).isNull() }
+            rule.runOnIdle { assertThat(state.selection).isNull() }
             rule.runOnIdle { assertThat(clickCounter).isEqualTo(1) }
         }
 
@@ -274,14 +278,14 @@ internal class SelectionContainerPointerTest : AbstractSelectionContainerTest() 
             rule.onSelectionContainer().performMouseInput {
                 doubleClick(Offset(textContent.indexOf('m') * characterSize, 0.5f * characterSize))
             }
-            rule.runOnIdle { assertThat(selection.value).isNotNull() }
+            rule.runOnIdle { assertThat(state.selection).isNotNull() }
 
             // Act. Click on the same place, and selection should be cleared.
             rule.onSelectionContainer().performMouseInput { click() }
 
             // Assert.
             // TODO(b/384750891) Cleared selection should be null
-            rule.runOnIdle { assertThat(selection.value!!.toTextRange()).isEqualTo(14.collapsed) }
+            rule.runOnIdle { assertThat(state.selection!!.toTextRange()).isEqualTo(14.collapsed) }
         }
 
     @Test
@@ -310,8 +314,8 @@ internal class SelectionContainerPointerTest : AbstractSelectionContainerTest() 
             release()
         }
 
-        assertAnchorInfo(selection.value?.start, offset = 0, selectableId = 1)
-        assertAnchorInfo(selection.value?.end, offset = 4, selectableId = 2)
+        assertAnchorInfo(state.selection?.start, offset = 0, selectableId = 1)
+        assertAnchorInfo(state.selection?.end, offset = 4, selectableId = 2)
     }
 
     @Test
@@ -340,8 +344,8 @@ internal class SelectionContainerPointerTest : AbstractSelectionContainerTest() 
             release()
         }
 
-        assertAnchorInfo(selection.value?.start, offset = 7, selectableId = 2)
-        assertAnchorInfo(selection.value?.end, offset = 5, selectableId = 1)
+        assertAnchorInfo(state.selection?.start, offset = 7, selectableId = 2)
+        assertAnchorInfo(state.selection?.end, offset = 5, selectableId = 1)
     }
 
     @Test
@@ -357,8 +361,8 @@ internal class SelectionContainerPointerTest : AbstractSelectionContainerTest() 
             }
 
             // Assert. Should select "Demo".
-            assertThat(selection.value!!.start.offset).isEqualTo(textContent.indexOf('D'))
-            assertThat(selection.value!!.end.offset).isEqualTo(textContent.indexOf('o') + 1)
+            assertThat(state.selection!!.start.offset).isEqualTo(textContent.indexOf('D'))
+            assertThat(state.selection!!.end.offset).isEqualTo(textContent.indexOf('o') + 1)
         }
 
     @Test
@@ -372,14 +376,14 @@ internal class SelectionContainerPointerTest : AbstractSelectionContainerTest() 
             rule.onSelectionContainer().performTrackpadInput {
                 doubleClick(Offset(textContent.indexOf('m') * characterSize, 0.5f * characterSize))
             }
-            rule.runOnIdle { assertThat(selection.value).isNotNull() }
+            rule.runOnIdle { assertThat(state.selection).isNotNull() }
 
             // Act. Click on the same place, and selection should be cleared.
             rule.onSelectionContainer().performTrackpadInput { click() }
 
             // Assert.
             // TODO(b/384750891) Cleared selection should be null
-            rule.runOnIdle { assertThat(selection.value!!.toTextRange()).isEqualTo(14.collapsed) }
+            rule.runOnIdle { assertThat(state.selection!!.toTextRange()).isEqualTo(14.collapsed) }
         }
 
     @Test
@@ -419,7 +423,7 @@ internal class SelectionContainerPointerTest : AbstractSelectionContainerTest() 
 
             // Assert.
             // TODO(b/384750891) Cleared selection should be null
-            rule.runOnIdle { assertThat(selection.value!!.toTextRange()).isEqualTo(3.collapsed) }
+            rule.runOnIdle { assertThat(state.selection!!.toTextRange()).isEqualTo(3.collapsed) }
             rule.runOnIdle { assertThat(clickCounter).isEqualTo(1) }
         }
 
@@ -449,7 +453,7 @@ internal class SelectionContainerPointerTest : AbstractSelectionContainerTest() 
             rule.onNodeWithTag(tag1, useUnmergedTree = true).performTrackpadInput { click() }
 
             // Assert.
-            rule.runOnIdle { assertThat(selection.value).isNull() }
+            rule.runOnIdle { assertThat(state.selection).isNull() }
             rule.runOnIdle { assertThat(clickCounter).isEqualTo(1) }
         }
 
@@ -467,10 +471,7 @@ internal class SelectionContainerPointerTest : AbstractSelectionContainerTest() 
                             ) {
                                 TestText("Button")
                             }
-                            SelectionContainer(
-                                selection = selection.value,
-                                onSelectionChange = { selection.value = it },
-                            ) {
+                            SelectionContainer(state = state) {
                                 TestText(textContent, Modifier.fillMaxSize())
                             }
                         }
@@ -487,7 +488,7 @@ internal class SelectionContainerPointerTest : AbstractSelectionContainerTest() 
             rule.onNodeWithTag(tag1, useUnmergedTree = true).performTrackpadInput { click() }
 
             // Assert.
-            rule.runOnIdle { assertThat(selection.value).isNull() }
+            rule.runOnIdle { assertThat(state.selection).isNull() }
             rule.runOnIdle { assertThat(clickCounter).isEqualTo(1) }
         }
 
@@ -508,13 +509,112 @@ internal class SelectionContainerPointerTest : AbstractSelectionContainerTest() 
             rule.onSelectionContainer().performTrackpadInput {
                 doubleClick(Offset(textContent.indexOf('m') * characterSize, 0.5f * characterSize))
             }
-            rule.runOnIdle { assertThat(selection.value).isNotNull() }
+            rule.runOnIdle { assertThat(state.selection).isNotNull() }
 
             // Act. Click on the same place, and selection should be cleared.
             rule.onSelectionContainer().performTrackpadInput { click() }
 
             // Assert.
             // TODO(b/384750891) Cleared selection should be null
-            rule.runOnIdle { assertThat(selection.value!!.toTextRange()).isEqualTo(14.collapsed) }
+            rule.runOnIdle { assertThat(state.selection!!.toTextRange()).isEqualTo(14.collapsed) }
         }
+
+    @Test
+    fun mouseSelectionStartBetweenSelectablesVertically() = withMouseSelectionBetweenTextEnabled {
+        val topText = "Top Text"
+        val bottomText = "Bottom Text"
+
+        // Setup
+        createSelectionContainer {
+            Column(
+                modifier = Modifier.fillMaxHeight(),
+                verticalArrangement = Arrangement.SpaceBetween,
+            ) {
+                TestText(topText)
+                TestText(bottomText)
+            }
+        }
+
+        // Act. Select from middle of container to start.
+        rule.onSelectionContainer().performMouseInput { dragAndDrop(start = center, end = topLeft) }
+
+        // Assert
+        rule.runOnIdle {
+            val selection = state.selection
+            assertNotNull(selection)
+            assertThat(selection.end.selectableId).isEqualTo(1)
+            assertThat(selection.end.offset).isEqualTo(0)
+            assertThat(state.selectedTexts.joinToString(separator = "")).isEqualTo(topText)
+        }
+
+        // Act. Select from middle of container to end.
+        rule.onSelectionContainer().performMouseInput {
+            dragAndDrop(start = center, end = bottomRight)
+        }
+
+        // Assert
+        rule.runOnIdle {
+            val selection = state.selection
+            assertNotNull(selection)
+            assertThat(selection.end.selectableId).isEqualTo(2)
+            assertThat(selection.end.offset).isEqualTo(bottomText.length)
+            assertThat(state.selectedTexts.joinToString(separator = "")).isEqualTo(bottomText)
+        }
+    }
+
+    @Test
+    fun mouseSelectionStartBetweenSelectablesHorizontally() = withMouseSelectionBetweenTextEnabled {
+        val leftText = "Left" // Shorter text to make it fit horizontally
+        val rightText = "Right"
+
+        // Setup
+        createSelectionContainer {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                TestText(leftText)
+                TestText(rightText)
+            }
+        }
+
+        // Act. Select from middle of container to start.
+        rule.onSelectionContainer().performMouseInput {
+            dragAndDrop(start = center, end = centerLeft)
+        }
+
+        // Assert
+        rule.runOnIdle {
+            val selection = state.selection
+            assertNotNull(selection)
+            assertThat(selection.end.selectableId).isEqualTo(1)
+            assertThat(selection.end.offset).isEqualTo(0)
+            assertThat(state.selectedTexts.joinToString(separator = "")).isEqualTo(leftText)
+        }
+
+        // Act. Select from middle of container to end.
+        rule.onSelectionContainer().performMouseInput {
+            dragAndDrop(start = center, end = centerRight)
+        }
+
+        // Assert
+        rule.runOnIdle {
+            val selection = state.selection
+            assertNotNull(selection)
+            assertThat(selection.end.selectableId).isEqualTo(2)
+            assertThat(selection.end.offset).isEqualTo(rightText.length)
+            assertThat(state.selectedTexts.joinToString(separator = "")).isEqualTo(rightText)
+        }
+    }
+
+    @OptIn(ExperimentalFoundationApi::class)
+    private inline fun withMouseSelectionBetweenTextEnabled(block: () -> Unit) {
+        val savedValue = ComposeFoundationFlags.isMouseSelectionBetweenTextEnabled
+        ComposeFoundationFlags.isMouseSelectionBetweenTextEnabled = true
+        try {
+            block()
+        } finally {
+            ComposeFoundationFlags.isMouseSelectionBetweenTextEnabled = savedValue
+        }
+    }
 }

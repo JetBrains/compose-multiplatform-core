@@ -13,13 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@file:Suppress("TYPEALIAS_EXPANSION_DEPRECATION")
 
 package androidx.xr.scenecore
 
-import android.os.Handler
-import android.os.Looper
 import android.util.Log
-import androidx.xr.arcore.Plane
+import androidx.annotation.RestrictTo
+import androidx.xr.arcore.PlaneLabel
+import androidx.xr.arcore.PlaneType
 import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.FloatSize3d
 import androidx.xr.runtime.math.IntSize2d
@@ -31,6 +32,7 @@ import androidx.xr.scenecore.SurfaceEntity.Shape.TriangleMesh
 import androidx.xr.scenecore.runtime.AnchorEntity as RtAnchorEntity
 import androidx.xr.scenecore.runtime.AnchorPlacement as RtAnchorPlacement
 import androidx.xr.scenecore.runtime.Dimensions as RtDimensions
+import androidx.xr.scenecore.runtime.DirectExecutor
 import androidx.xr.scenecore.runtime.HitTestResult as RtHitTestResult
 import androidx.xr.scenecore.runtime.HitTestResult.HitTestSurfaceType as RtHitTestSurfaceType
 import androidx.xr.scenecore.runtime.InputEvent as RtInputEvent
@@ -52,20 +54,9 @@ import androidx.xr.scenecore.runtime.SpatialVisibility as RtSpatialVisibility
 import androidx.xr.scenecore.runtime.SurfaceEntity.Shape.TriangleMesh as RtTriangleMesh
 import androidx.xr.scenecore.runtime.TextureSampler as RtTextureSampler
 import com.google.common.util.concurrent.ListenableFuture
-import java.util.concurrent.Executor
 import kotlin.coroutines.coroutineContext
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Job
-
-internal class HandlerExecutor(val handler: Handler) : Executor {
-    override fun execute(command: Runnable) {
-        handler.post(command)
-    }
-
-    companion object {
-        val mainThreadExecutor: Executor = HandlerExecutor(Handler(Looper.getMainLooper()))
-    }
-}
 
 /**
  * Extension function that converts a [androidx.xr.runtime.math.FloatSize3d] to
@@ -101,7 +92,8 @@ internal fun RtDimensions.toFloatSize2d(): FloatSize2d {
  * Extension function that converts a [androidx.xr.runtime.math.IntSize2d] to
  * [androidx.xr.scenecore.runtime.PixelDimensions].
  */
-internal fun IntSize2d.toRtPixelDimensions(): RtPixelDimensions {
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public fun IntSize2d.toRtPixelDimensions(): RtPixelDimensions {
     return RtPixelDimensions(width, height)
 }
 
@@ -109,18 +101,18 @@ internal fun IntSize2d.toRtPixelDimensions(): RtPixelDimensions {
  * Extension function that converts a [androidx.xr.scenecore.runtime.PixelDimensions] to
  * [IntSize2d].
  */
-internal fun RtPixelDimensions.toIntSize2d(): IntSize2d {
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public fun RtPixelDimensions.toIntSize2d(): IntSize2d {
     return IntSize2d(width, height)
 }
 
 /**
  * Extension function that converts [PlaneOrientation] to [androidx.xr.scenecore.runtime.PlaneType].
  */
-internal fun Int.toRtPlaneType(): RtPlaneType {
+internal fun PlaneOrientation.toRtPlaneType(): RtPlaneType {
     return when (this) {
         PlaneOrientation.HORIZONTAL -> RtPlaneType.HORIZONTAL
         PlaneOrientation.VERTICAL -> RtPlaneType.VERTICAL
-        PlaneOrientation.ANY -> RtPlaneType.ANY
         else -> error("Unknown Plane Type: $PlaneOrientation")
     }
 }
@@ -129,13 +121,12 @@ internal fun Int.toRtPlaneType(): RtPlaneType {
  * Extension function that converts [PlaneSemanticType] to
  * [androidx.xr.scenecore.runtime.PlaneSemantic].
  */
-internal fun Int.toRtPlaneSemantic(): RtPlaneSemantic {
+internal fun PlaneSemanticType.toRtPlaneSemantic(): RtPlaneSemantic {
     return when (this) {
         PlaneSemanticType.WALL -> RtPlaneSemantic.WALL
         PlaneSemanticType.FLOOR -> RtPlaneSemantic.FLOOR
         PlaneSemanticType.CEILING -> RtPlaneSemantic.CEILING
         PlaneSemanticType.TABLE -> RtPlaneSemantic.TABLE
-        PlaneSemanticType.ANY -> RtPlaneSemantic.ANY
         else -> error("Unknown Plane Semantic: $PlaneSemanticType")
     }
 }
@@ -147,6 +138,7 @@ internal fun Space.toRtSpace(): Int {
     return when (this) {
         Space.PARENT -> RtSpace.PARENT
         Space.ACTIVITY -> RtSpace.ACTIVITY
+        @Suppress("DEPRECATION") // TODO - b/415320653
         Space.REAL_WORLD -> RtSpace.REAL_WORLD
         else -> error("Unknown Space Value: $this")
     }
@@ -169,7 +161,7 @@ internal fun RtMoveEvent.toMoveEvent(entityRegistry: EntityRegistry): MoveEvent 
         entityRegistry.getEntityForRtEntity(initialParent)!!,
         updatedParent?.let {
             entityRegistry.getEntityForRtEntity(it)
-                ?: AnchorEntity.create(it as RtAnchorEntity, entityRegistry)
+                ?: AnchorSpace.create(it as RtAnchorEntity, entityRegistry)
         },
     )
 }
@@ -208,7 +200,8 @@ private fun checkBitfield(value: Int, mask: Int): Boolean = ((value and mask) ==
  * Extension function that converts a [androidx.xr.scenecore.runtime.SpatialCapabilities] to a
  * [SpatialCapability].
  */
-internal fun RtSpatialCapabilities.toSpatialCapabilities(): Set<SpatialCapability> {
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public fun RtSpatialCapabilities.toSpatialCapabilities(): Set<SpatialCapability> {
     val caps = HashSet<SpatialCapability>()
     with(RtSpatialCapabilities) {
         if (checkBitfield(capabilities, SPATIAL_CAPABILITY_3D_CONTENT)) {
@@ -237,7 +230,8 @@ internal fun RtSpatialCapabilities.toSpatialCapabilities(): Set<SpatialCapabilit
  * Extension function that converts a [androidx.xr.scenecore.runtime.SpatialVisibility] to a
  * [SpatialVisibility] constant.
  */
-internal fun RtSpatialVisibility.toSpatialVisibility(): SpatialVisibility {
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public fun RtSpatialVisibility.toSpatialVisibility(): SpatialVisibility {
     return visibility.toSpatialVisibilityValue()
 }
 
@@ -270,23 +264,29 @@ internal fun Set<AnchorPlacement>.toRtAnchorPlacement(
     return rtAnchorPlacementSet
 }
 
-/** Extension function that converts an ARCore [Plane.Type] to a Scene [PlaneOrientationValue] */
-internal fun Plane.Type.toSceneCoreOrientation(): @PlaneOrientationValue Int =
+/** Extension function that converts an ARCore [PlaneType] to a Scene [PlaneOrientation] */
+internal fun PlaneType.toSceneCoreOrientation(): PlaneOrientation =
     when (this) {
-        Plane.Type.HORIZONTAL_UPWARD_FACING -> PlaneOrientation.HORIZONTAL
-        Plane.Type.HORIZONTAL_DOWNWARD_FACING -> PlaneOrientation.HORIZONTAL
-        Plane.Type.VERTICAL -> PlaneOrientation.VERTICAL
+        PlaneType.HORIZONTAL_UPWARD_FACING -> PlaneOrientation.HORIZONTAL
+        PlaneType.HORIZONTAL_DOWNWARD_FACING -> PlaneOrientation.HORIZONTAL
+        PlaneType.VERTICAL -> PlaneOrientation.VERTICAL
         else -> error("Unknown plane orientation: $this")
     }
 
-/** Extension function that converts an ARCore [Plane.Label] to a Scene [PlaneSemanticTypeValue] */
-internal fun Plane.Label.toSceneCoreSemanticType(): @PlaneSemanticTypeValue Int =
+/**
+ * Extension function that converts an ARCore [androidx.xr.arcore.PlaneLabel] to a Scene
+ * [PlaneSemanticType]
+ */
+// TODO: b/500464864 - Cleanup when PlaneSemanticType.ANY is removed.
+@Suppress("DEPRECATION")
+internal fun PlaneLabel.toSceneCoreSemanticType(): PlaneSemanticType =
     when (this) {
-        Plane.Label.FLOOR -> PlaneSemanticType.FLOOR
-        Plane.Label.TABLE -> PlaneSemanticType.TABLE
-        Plane.Label.WALL -> PlaneSemanticType.WALL
-        Plane.Label.CEILING -> PlaneSemanticType.CEILING
-        Plane.Label.UNKNOWN -> PlaneSemanticType.ANY
+        PlaneLabel.FLOOR -> PlaneSemanticType.FLOOR
+        PlaneLabel.TABLE -> PlaneSemanticType.TABLE
+        PlaneLabel.WALL -> PlaneSemanticType.WALL
+        PlaneLabel.CEILING -> PlaneSemanticType.CEILING
+        // TODO: b/500464864 - Cleanup when PlaneSemanticType.ANY is removed.
+        PlaneLabel.UNKNOWN -> PlaneSemanticType.ANY
         else -> error("Unknown semantic type: $this")
     }
 
@@ -446,7 +446,8 @@ internal fun Int.toRtHitTestFilter(): Int {
 }
 
 /** Extension function that converts a [RtHitTestSurfaceType] to a [HitTestResult.SurfaceType]. */
-internal fun Int.toHitTestSurfaceType(): Int {
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public fun Int.toHitTestSurfaceType(): Int {
     return when (this) {
         RtHitTestSurfaceType.HIT_TEST_RESULT_SURFACE_TYPE_UNKNOWN -> SurfaceType.UNKNOWN
         RtHitTestSurfaceType.HIT_TEST_RESULT_SURFACE_TYPE_PLANE -> SurfaceType.PLANE
@@ -459,16 +460,12 @@ internal fun Int.toHitTestSurfaceType(): Int {
  * Extension function that converts a [androidx.xr.scenecore.runtime.HitTestResult] to a
  * [HitTestResult].
  */
-internal fun RtHitTestResult.toHitTestResult(): HitTestResult? {
-    if (hitPosition == null) {
-        return null
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public fun RtHitTestResult.toHitTestResult(): HitTestResult? {
+    return if (hitPosition == null) {
+        null
     } else {
-        return HitTestResult(
-            hitPosition!!,
-            surfaceNormal,
-            surfaceType.toHitTestSurfaceType(),
-            distance,
-        )
+        HitTestResult(hitPosition!!, surfaceNormal, surfaceType.toHitTestSurfaceType(), distance)
     }
 }
 
@@ -528,7 +525,8 @@ internal fun AlphaMode.toRtKhronosPbrMaterialSpec(): RtKhronosPbrMaterialSpec {
  * Extension function that converts a [androidx.xr.scenecore.runtime.PerceivedResolutionResult] to
  * [PerceivedResolutionResult].
  */
-internal fun RtPerceivedResolutionResult.toPerceivedResolutionResult(): PerceivedResolutionResult {
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public fun RtPerceivedResolutionResult.toPerceivedResolutionResult(): PerceivedResolutionResult {
     return when (this) {
         is RtPerceivedResolutionResult.Success ->
             PerceivedResolutionResult.Success(this.perceivedResolution.toIntSize2d())
@@ -555,12 +553,6 @@ internal suspend fun <T> ListenableFuture<T>.awaitSuspending(): T {
     )
 
     return deferred.await()
-}
-
-internal object DirectExecutor : Executor {
-    override fun execute(command: Runnable) {
-        command.run()
-    }
 }
 
 internal fun RtTriangleMesh.toTriangleMesh(): TriangleMesh {

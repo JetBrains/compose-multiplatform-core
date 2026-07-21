@@ -16,7 +16,7 @@
 
 package androidx.glance.wear
 
-import androidx.compose.remote.creation.CreationDisplayInfo
+import androidx.compose.remote.creation.compose.capture.RemoteCreationDisplayInfo
 import androidx.compose.remote.creation.compose.layout.RemoteBox
 import androidx.compose.remote.creation.compose.layout.RemoteComposable
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
@@ -25,10 +25,12 @@ import androidx.compose.remote.creation.compose.modifier.fillMaxSize
 import androidx.compose.remote.creation.compose.state.rc
 import androidx.compose.remote.creation.compose.state.rdp
 import androidx.compose.remote.creation.profile.RcPlatformProfiles
-import androidx.compose.remote.player.compose.test.utils.screenshot.rule.RemoteComposeScreenshotTestRule
+import androidx.compose.remote.player.compose.test.utils.ComposableWrappers
+import androidx.compose.remote.player.compose.test.utils.RemoteScreenshotTestRule
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.glance.wear.composable.WearWidgetContainer
+import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SdkSuppress
 import kotlin.test.Test
@@ -41,13 +43,16 @@ class WearWidgetContainerScreenshotTest {
 
     @get:Rule
     val remoteComposeTestRule =
-        RemoteComposeScreenshotTestRule(moduleDirectory = SCREENSHOT_GOLDEN_DIRECTORY)
+        RemoteScreenshotTestRule(
+            moduleDirectory = SCREENSHOT_GOLDEN_DIRECTORY,
+            context = ApplicationProvider.getApplicationContext(),
+        )
 
     @Test
     fun containerSmall_appliesCornerAndPadding() {
         remoteComposeTestRule.runScreenshotTest(
-            creationDisplayInfo = getCreationDisplayInfo(SMALL_WIDGET_HEIGHT),
-            backgroundColor = Color.Black,
+            remoteCreationDisplayInfo = getCreationDisplayInfo(SMALL_WIDGET_HEIGHT),
+            playComposableWrapper = ComposableWrappers.blackBackground,
             profile = RcPlatformProfiles.WEAR_WIDGETS,
         ) {
             TestWearWidget()
@@ -57,8 +62,8 @@ class WearWidgetContainerScreenshotTest {
     @Test
     fun containerLarge_appliesCornerAndPadding() {
         remoteComposeTestRule.runScreenshotTest(
-            creationDisplayInfo = getCreationDisplayInfo(LARGE_WIDGET_HEIGHT),
-            backgroundColor = Color.Black,
+            remoteCreationDisplayInfo = getCreationDisplayInfo(LARGE_WIDGET_HEIGHT),
+            playComposableWrapper = ComposableWrappers.blackBackground,
             profile = RcPlatformProfiles.WEAR_WIDGETS,
         ) {
             TestWearWidget()
@@ -71,8 +76,8 @@ class WearWidgetContainerScreenshotTest {
         const val LARGE_WIDGET_HEIGHT = 128
         const val DENSITY_DPI = 160
 
-        private fun getCreationDisplayInfo(height: Int): CreationDisplayInfo {
-            return CreationDisplayInfo(WIDGET_WIDTH, height, DENSITY_DPI)
+        private fun getCreationDisplayInfo(height: Int): RemoteCreationDisplayInfo {
+            return RemoteCreationDisplayInfo(WIDGET_WIDTH, height, DENSITY_DPI, 1.0f)
         }
     }
 }

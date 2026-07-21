@@ -30,7 +30,7 @@ import org.jspecify.annotations.Nullable;
 /**
  * A container for optional plugins and instrumentation builders used by {@link AppSearchImpl}.
  *
- * <p> All params in this class MUST be optional or has default value.
+ * <p> All params in this class MUST be optional.
  *
  * <p>This class encapsulates optional dependencies and stateful builders (like stats collectors)
  * to keep the {@link AppSearchImpl#create} signature clean and extensible.
@@ -44,7 +44,7 @@ public final class AppSearchUserPlugins {
     private final @Nullable IcingSearchEngineInterface mIcingSearchEngine;
     private final InitializeStats.@Nullable Builder mInitStatsBuilder;
     private final CallStats.@Nullable Builder mCallStatsBuilder;
-    private final @NonNull LaunchVMFeatures mLaunchVMFeatures;
+    private final @Nullable LaunchVmFeatures mLaunchVmFeatures;
 
     /** An empty {@link AppSearchUserPlugins} instance with no plugins or stats builders. */
     public static final AppSearchUserPlugins EMPTY = new Builder().build();
@@ -55,7 +55,7 @@ public final class AppSearchUserPlugins {
         mIcingSearchEngine = builder.mIcingSearchEngine;
         mInitStatsBuilder = builder.mInitStatsBuilder;
         mCallStatsBuilder = builder.mCallStatsBuilder;
-        mLaunchVMFeatures = builder.mLaunchVMFeatures;
+        mLaunchVmFeatures = builder.mLaunchVmFeatures;
     }
 
     /**
@@ -96,10 +96,10 @@ public final class AppSearchUserPlugins {
         return mCallStatsBuilder;
     }
 
-    /** Returns whether the AI seal feature is enabled.  */
-    @NonNull
-    public LaunchVMFeatures getLaunchVMFeatures() {
-        return mLaunchVMFeatures;
+    /** Returns the configuration of Virtual Machine features for system launches.  */
+    @Nullable
+    public LaunchVmFeatures getLaunchVmFeatures() {
+        return mLaunchVmFeatures;
     }
 
     /** Builder for {@link AppSearchUserPlugins}. */
@@ -109,7 +109,7 @@ public final class AppSearchUserPlugins {
         private @Nullable IcingSearchEngineInterface mIcingSearchEngine;
         private InitializeStats.@Nullable Builder mInitStatsBuilder;
         private CallStats.@Nullable Builder mCallStatsBuilder;
-        private @NonNull LaunchVMFeatures mLaunchVMFeatures = new LaunchVMFeatures();
+        private @Nullable LaunchVmFeatures mLaunchVmFeatures;
 
         public Builder() {}
 
@@ -158,10 +158,10 @@ public final class AppSearchUserPlugins {
             return this;
         }
 
-        /** Sets whether the AI seal feature is enabled. */
+        /** Sets whether the vm features are enabled. */
         @NonNull
-        public Builder setLaunchVMFeatures(@NonNull LaunchVMFeatures launchVMFeatures) {
-            mLaunchVMFeatures = launchVMFeatures;
+        public Builder setLaunchVmFeatures(@NonNull LaunchVmFeatures launchVmFeatures) {
+            mLaunchVmFeatures = launchVmFeatures;
             return this;
         }
 

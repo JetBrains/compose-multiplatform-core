@@ -22,7 +22,8 @@ import androidx.build.Release.DEFAULT_PUBLISH_CONFIG
 import androidx.build.buildInfo.addCreateLibraryBuildInfoFileTasks
 import androidx.build.checkapi.AndroidMultiplatformApiTaskConfig
 import androidx.build.checkapi.JavaApiTaskConfig
-import androidx.build.checkapi.KmpApiTaskConfig
+import androidx.build.checkapi.KmpJvmApiTaskConfig
+import androidx.build.checkapi.KmpNoJvmApiTaskConfig
 import androidx.build.checkapi.LibraryApiTaskConfig
 import androidx.build.checkapi.configureProjectForApiTasks
 import androidx.build.dependencyTracker.AffectedModuleDetector
@@ -81,7 +82,6 @@ import org.gradle.api.GradleException
 import org.gradle.api.JavaVersion
 import org.gradle.api.JavaVersion.VERSION_11
 import org.gradle.api.JavaVersion.VERSION_17
-import org.gradle.api.JavaVersion.VERSION_1_8
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.Task
@@ -185,6 +185,10 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
         project.configureKotlinVersion()
         project.configureJavaFormat()
 
+        // We want to set up the check docs task for all projects. For more information, see
+        // b/491430873
+        project.setUpCheckDocsTask(androidXExtension)
+
         // Avoid conflicts between full Guava and LF-only Guava.
         project.configureGuavaUpgradeHandler()
 
@@ -281,6 +285,12 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
         project.addToModuleInfo(testName, buildFeatures.isIsolatedProjectsEnabled())
         androidXExtension.testModuleNames.add(testName)
         val archiveName = "$testName.zip"
+        project.afterEvaluate {
+            if (androidXExtension.usePlatformSpecificCacheForJvmTests.get()) {
+                task.inputs.property("os.name", System.getProperty("os.name"))
+                task.inputs.property("os.arch", System.getProperty("os.arch"))
+            }
+        }
         if (project.isDisplayTestOutput()) {
             // Enable tracing to see results in command line
             task.testLogging.apply {
@@ -436,38 +446,60 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
                         }
                     }
                 }
-                targets.withType(KotlinJvmTarget::class.java).configureEach { target ->
-                    val defaultTargetVersionForNonAndroidTargets =
-                        androidXExtension.type.map {
-                            getDefaultTargetJavaVersion(
-                                    softwareType = it,
-                                    projectName = project.name,
-                                    targetName = target.name,
-                                )
-                                .toString()
-                        }
-                    val defaultJvmTargetForNonAndroidTargets =
-                        defaultTargetVersionForNonAndroidTargets.map { JvmTarget.fromTarget(it) }
+                targets.withType<KotlinJvmTarget>().configureEach { target ->
+                    val resolvedJvmVersion =
+                        targetsAndroid
+                            .zip(defaultJavaTargetVersion) { hasAndroid, androidVer ->
+                                hasAndroid to androidVer
+                            }
+                            .zip(androidXExtension.type) { (hasAndroid, androidVer), softwareType ->
+                                val targetVer =
+                                    getDefaultTargetJavaVersion(
+                                        softwareType = softwareType,
+                                        projectName = project.name,
+                                        targetName = target.name,
+                                    )
+                                // Use the higher of the Android version and the target-specific
+                                // version. This respects target overrides (like Desktop needing
+                                // 11) while aligning with Android when Android requires a
+                                // higher version.
+                                if (hasAndroid && JavaVersion.toVersion(androidVer) > targetVer) {
+                                    androidVer
+                                } else {
+                                    targetVer.toString()
+                                }
+                            }
+
+                    val jvmTargetEnum = resolvedJvmVersion.map { JvmTarget.fromTarget(it) }
+
+                    val jdkReleaseArgs =
+                        resolvedJvmVersion.map { version -> listOf("-Xjdk-release=$version") }
+
                     target.compilations.configureEach { compilation ->
                         compilation.compileJavaTaskProvider?.configure { javaCompile ->
-                            javaCompile.targetCompatibility =
-                                defaultTargetVersionForNonAndroidTargets.get()
-                            javaCompile.sourceCompatibility =
-                                defaultTargetVersionForNonAndroidTargets.get()
+                            javaCompile.targetCompatibility = resolvedJvmVersion.get()
+                            javaCompile.sourceCompatibility = resolvedJvmVersion.get()
                         }
                         compilation.compileTaskProvider.configure { kotlinCompile ->
                             kotlinCompile.compilerOptions {
-                                jvmTarget.set(defaultJvmTargetForNonAndroidTargets)
-                                // Set jdk-release version for non-Android KMP targets
-                                freeCompilerArgs.add(
-                                    defaultTargetVersionForNonAndroidTargets.map {
-                                        "-Xjdk-release=$it"
-                                    }
-                                )
+                                jvmTarget.set(jvmTargetEnum)
+                                freeCompilerArgs.addAll(jdkReleaseArgs)
                             }
                         }
                     }
                 }
+
+                // Projects with an Android target will have API tasks configured through
+                // `configureWithKotlinMultiplatformAndroidPlugin`, projects with a jvm target will
+                // have API tasks configured through `configureWithJavaPlugin`. Configure API tasks
+                // for projects with neither target here.
+                project.configureProjectForApiTasks(
+                    KmpNoJvmApiTaskConfig,
+                    androidXExtension,
+                    // Only configure API tasks if there won't already be tasks configured based on
+                    // the android or jvm target.
+                    shouldConfigure = targetsAndroid.map { !it && !hasJvmTarget() },
+                )
             }
         } else {
             project.tasks.withType(KotlinJvmCompile::class.java).configureEach { task ->
@@ -643,7 +675,6 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
 
         project.disableStrictVersionConstraints()
         project.configureJavaCompilationWarnings(androidXExtension)
-        project.setUpCheckDocsTask(androidXExtension)
     }
 
     private fun KotlinSourceSet.includesSourceSet(otherName: String): Boolean =
@@ -661,6 +692,7 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
                     34 -> "8.1.1"
                     35 -> "8.6.0"
                     36 -> "8.9.1"
+                    37 -> "9.1.0"
                     else -> throw Exception("Unknown compileSdk to minAgpVersion mapping")
                 }
             }
@@ -689,14 +721,6 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
         }
 
         kotlinMultiplatformAndroidComponentsExtension.onVariants { variant ->
-            @Suppress("UnstableApiUsage")
-            variant.configureJavaCompileTask { compile ->
-                val defaultTargetJavaVersion =
-                    getDefaultTargetJavaVersion(androidXExtension.type.get(), project.name)
-                        .toString()
-                compile.sourceCompatibility = defaultTargetJavaVersion
-                compile.targetCompatibility = defaultTargetJavaVersion
-            }
             project.configureProjectForApiTasks(
                 AndroidMultiplatformApiTaskConfig(variant),
                 androidXExtension,
@@ -923,14 +947,13 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
 
         val apiTaskConfig =
             if (project.multiplatformExtension != null) {
-                KmpApiTaskConfig
+                KmpJvmApiTaskConfig
             } else {
                 JavaApiTaskConfig
             }
 
         project.configureProjectForApiTasks(apiTaskConfig, androidXExtension)
         project.configureProjectForKzipTasks(apiTaskConfig, androidXExtension)
-        project.setUpCheckDocsTask(androidXExtension)
 
         if (project.multiplatformExtension == null) {
             project.addToBuildOnServer("jar")
@@ -979,8 +1002,8 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
             throw IllegalArgumentException("Unexpected extension: $this")
         }
         compileOptions.apply {
-            sourceCompatibility = VERSION_1_8
-            targetCompatibility = VERSION_1_8
+            sourceCompatibility = VERSION_11
+            targetCompatibility = VERSION_11
         }
 
         val defaultMinSdk = project.defaultAndroidConfig.minSdk
@@ -988,7 +1011,14 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
         // Suppress output of android:compileSdkVersion and related attributes (b/277836549).
         androidResources.additionalParameters += "--no-compile-sdk-metadata"
 
-        compileSdk { version = release(project.defaultAndroidConfig.compileSdk) }
+        val minor = project.defaultAndroidConfig.minorApiLevel
+        if (minor != null) {
+            compileSdk {
+                version = release(project.defaultAndroidConfig.compileSdk) { minorApiLevel = minor }
+            }
+        } else {
+            compileSdk { version = release(project.defaultAndroidConfig.compileSdk) }
+        }
 
         buildToolsVersion = project.defaultAndroidConfig.buildToolsVersion
 
@@ -1058,7 +1088,14 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
         androidXExtension: AndroidXExtension,
     ) {
         val defaultMinSdkVersion = project.defaultAndroidConfig.minSdk
-        compileSdk { version = release(project.defaultAndroidConfig.compileSdk) }
+        val minor = project.defaultAndroidConfig.minorApiLevel
+        if (minor != null) {
+            compileSdk {
+                version = release(project.defaultAndroidConfig.compileSdk) { minorApiLevel = minor }
+            }
+        } else {
+            compileSdk { version = release(project.defaultAndroidConfig.compileSdk) }
+        }
         buildToolsVersion = project.defaultAndroidConfig.buildToolsVersion
         minSdk { version = release(defaultMinSdkVersion) }
 
@@ -1383,7 +1420,7 @@ internal fun getDefaultTargetJavaVersion(
         projectName != null && projectName.contains("desktop") -> VERSION_11
         targetName != null && (targetName == "desktop" || targetName == "jvmStubs") -> VERSION_11
         softwareType.compilationTarget == CompilationTarget.HOST -> VERSION_17
-        else -> VERSION_1_8
+        else -> VERSION_11
     }
 }
 
@@ -1432,6 +1469,8 @@ internal fun Project.configureTaskTimeouts() {
     // A set of tasks that sometimes take >60 minutes. b/383874664
     val slowTasks =
         setOf(
+            ":docs-public:docs", // b/508392874
+            ":docs-tip-of-tree:docs", // b/508392874
             ":compose:ui:ui:compileReleaseAndroidTestKotlinAndroid",
             ":compose:foundation:foundation:compileReleaseAndroidTestKotlinAndroid",
             ":compose:foundation:foundation:integration-tests:lazy-tests:compileReleaseAndroidTestKotlin",
@@ -1624,6 +1663,9 @@ internal fun KotlinMultiplatformExtension.hasJavaEnabled(): Boolean =
 
 internal fun KotlinMultiplatformExtension.hasJvmTarget(): Boolean =
     targets.withType(KotlinJvmTarget::class.java).isEmpty().not()
+
+internal fun KotlinMultiplatformExtension.hasAndroidTarget(): Boolean =
+    targets.withType(KotlinMultiplatformAndroidLibraryTarget::class.java).isEmpty().not()
 
 internal fun String.camelCase() = replaceFirstChar {
     if (it.isLowerCase()) it.titlecase() else it.toString()

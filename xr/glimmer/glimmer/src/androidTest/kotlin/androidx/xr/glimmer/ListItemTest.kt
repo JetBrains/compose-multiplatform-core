@@ -57,6 +57,7 @@ import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.isFocusable
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.requestFocus
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -66,8 +67,10 @@ import androidx.core.view.InputDeviceCompat.SOURCE_TOUCH_NAVIGATION
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
+import androidx.test.screenshot.matchers.MSSIMMatcher
 import androidx.xr.glimmer.testutils.captureToImage
 import androidx.xr.glimmer.testutils.createGlimmerRule
+import androidx.xr.glimmer.testutils.toIntArray
 import com.google.common.truth.Truth.assertThat
 import kotlin.properties.Delegates
 import kotlinx.coroutines.CoroutineScope
@@ -182,13 +185,11 @@ class ListItemTest {
 
     @Test
     fun setsContentColor() {
-        var primary = Color.Unspecified
         var leadingIconContentColor = Color.Unspecified
         var trailingIconContentColor = Color.Unspecified
         var primaryLabelContentColor = Color.Unspecified
         var supportingLabelContentColor = Color.Unspecified
         rule.setGlimmerThemeContent {
-            primary = GlimmerTheme.colors.primary
             ListItem(
                 supportingLabel = {
                     Box(
@@ -223,8 +224,8 @@ class ListItemTest {
         }
 
         rule.runOnIdle {
-            assertThat(leadingIconContentColor).isEqualTo(primary)
-            assertThat(trailingIconContentColor).isEqualTo(primary)
+            assertThat(leadingIconContentColor).isEqualTo(Color.White)
+            assertThat(trailingIconContentColor).isEqualTo(Color.White)
             assertThat(primaryLabelContentColor).isEqualTo(Color.White)
             assertThat(supportingLabelContentColor).isEqualTo(Color.White)
         }
@@ -378,6 +379,60 @@ class ListItemTest {
             assertThat((interactions[1] as PressInteraction.Release).press)
                 .isEqualTo(interactions[0])
         }
+    }
+
+    @Test
+    fun defaultInteractionSource_isShared_betweenSurfaceAndFocusable() {
+        rule.setGlimmerThemeContent(addInitialFocusInterceptor = true) {
+            ListItem(modifier = Modifier.testTag("list_item")) { Text("Focusable item") }
+        }
+
+        val imageBefore = rule.onNodeWithTag("list_item").captureToImage()
+
+        rule.onNodeWithTag("list_item").requestFocus()
+        rule.waitForIdle()
+
+        val imageAfter = rule.onNodeWithTag("list_item").captureToImage()
+
+        val result =
+            // Expect similarity < 85% due to focused border.
+            MSSIMMatcher(threshold = 0.85)
+                .compareBitmaps(
+                    imageBefore.toIntArray(),
+                    imageAfter.toIntArray(),
+                    imageBefore.width,
+                    imageBefore.height,
+                )
+
+        assertThat(result.matches).isFalse()
+    }
+
+    @Test
+    fun defaultInteractionSource_isShared_betweenSurfaceAndClickable() {
+        rule.setGlimmerThemeContent(addInitialFocusInterceptor = true) {
+            ListItem(onClick = {}, modifier = Modifier.testTag("list_item")) {
+                Text("Clickable item")
+            }
+        }
+
+        val imageBefore = rule.onNodeWithTag("list_item").captureToImage()
+
+        rule.onNodeWithTag("list_item").requestFocus()
+        rule.waitForIdle()
+
+        val imageAfter = rule.onNodeWithTag("list_item").captureToImage()
+
+        val result =
+            // Expect similarity < 85% due to focused border.
+            MSSIMMatcher(threshold = 0.85)
+                .compareBitmaps(
+                    imageBefore.toIntArray(),
+                    imageAfter.toIntArray(),
+                    imageBefore.width,
+                    imageBefore.height,
+                )
+
+        assertThat(result.matches).isFalse()
     }
 
     @Test

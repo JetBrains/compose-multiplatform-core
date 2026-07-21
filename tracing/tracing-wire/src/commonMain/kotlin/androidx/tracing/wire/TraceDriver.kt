@@ -19,4 +19,15 @@ package androidx.tracing.wire
 import androidx.tracing.AbstractTraceDriver
 
 /** The entry point to tracing APIs. */
-public expect class TraceDriver : AbstractTraceDriver
+public expect class TraceDriver : AbstractTraceDriver {
+    public companion object {
+        /**
+         * @return a [TraceDriver] instance that is a stub (does nothing). This is useful as a
+         *   placeholder when you want to enable / disable tracing for the program.
+         *
+         * Effectively, this uses a [androidx.tracing.Tracer] that drops all trace packets. To get a
+         * stub tracer, you can also use the [androidx.tracing.Tracer.getStubTracer] API.
+         */
+        @JvmStatic public fun getStubTraceDriver(): TraceDriver
+    }
+}

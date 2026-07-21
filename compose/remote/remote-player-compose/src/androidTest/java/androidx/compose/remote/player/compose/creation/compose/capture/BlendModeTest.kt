@@ -17,9 +17,8 @@
 package androidx.compose.remote.player.compose.creation.compose.capture
 
 import android.content.Context
-import android.util.Log
-import androidx.compose.remote.core.WireBuffer
-import androidx.compose.remote.creation.CreationDisplayInfo
+import androidx.compose.remote.core.CoreDocument
+import androidx.compose.remote.creation.compose.capture.createCreationDisplayInfo
 import androidx.compose.remote.creation.compose.layout.RemoteAlignment
 import androidx.compose.remote.creation.compose.layout.RemoteBox
 import androidx.compose.remote.creation.compose.layout.RemoteCanvas
@@ -40,17 +39,15 @@ import androidx.compose.remote.creation.compose.state.rdp
 import androidx.compose.remote.creation.compose.state.rf
 import androidx.compose.remote.creation.compose.state.rsp
 import androidx.compose.remote.player.compose.SCREENSHOT_GOLDEN_DIRECTORY
-import androidx.compose.remote.player.compose.test.utils.screenshot.rule.RemoteComposeScreenshotTestRule
+import androidx.compose.remote.player.compose.test.utils.RemoteScreenshotTestRule
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PaintingStyle
-import androidx.compose.ui.unit.dp
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
-import java.io.File
-import kotlinx.coroutines.runBlocking
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -101,36 +98,23 @@ class BlendModeTest {
 
     @get:Rule
     val remoteComposeTestRule =
-        RemoteComposeScreenshotTestRule(moduleDirectory = SCREENSHOT_GOLDEN_DIRECTORY)
+        RemoteScreenshotTestRule(
+            moduleDirectory = SCREENSHOT_GOLDEN_DIRECTORY,
+            context = ApplicationProvider.getApplicationContext(),
+        )
     private val context: Context = ApplicationProvider.getApplicationContext()
-
-    private val saveDocument = false
 
     @Test
     fun all_blend_modes() {
-        runBlocking {
-            remoteComposeTestRule.runScreenshotTest(
-                creationDisplayInfo =
-                    CreationDisplayInfo(2000, 2500, context.resources.displayMetrics.densityDpi)
-            ) {
-                AllBlendModes()
-            }
-
-            if (!saveDocument) return@runBlocking
-            val document = remoteComposeTestRule.captureDocument(context) { AllBlendModes() }
-            val wireBuffer: WireBuffer = document.buffer.buffer
-            val file =
-                File(
-                    "/sdcard/Android/data/androidx.compose.remote.player.compose.test/cache/documents",
-                    "test_blend_mode.rc",
-                )
-            file.parentFile?.mkdirs()
-            try {
-                file.writeBytes(wireBuffer.buffer.copyOf(wireBuffer.size))
-            } catch (e: Exception) {
-                Log.e("BlendModeTest", "Failed to save document: $file", e)
-            }
+        var document: CoreDocument? = null
+        remoteComposeTestRule.setContent(
+            remoteCreationDisplayInfo = createCreationDisplayInfo(context, Size(2000f, 2500f)),
+            onCoreDocumentCreated = { document = it },
+        ) {
+            AllBlendModes()
         }
+
+        remoteComposeTestRule.verifyScreenshot()
     }
 
     @RemoteComposable
@@ -156,7 +140,7 @@ class BlendModeTest {
     @Composable
     private fun RemoteBlendModeVisual(blendMode: BlendMode, name: String) {
         RemoteBox(
-            RemoteModifier.size(100.rdp).border(1.rdp, Color.Black.rc).padding(8.dp),
+            RemoteModifier.size(100.rdp).border(1.rdp, Color.Black.rc).padding(8.rdp),
             contentAlignment = RemoteAlignment.TopStart,
         ) {
             RemoteCanvas(RemoteModifier.size(100.rdp)) {

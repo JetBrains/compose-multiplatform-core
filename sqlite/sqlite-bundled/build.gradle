@@ -182,10 +182,6 @@ androidXMultiplatform {
 
     androidLibrary {
         namespace = "androidx.sqlite.driver.bundled"
-        optimization {
-            it.consumerKeepRules.publish = true
-            it.consumerKeepRules.files.add(new File("src/androidMain/proguard-rules.pro"))
-        }
         androidResources.enable = true
         addNativeLibrariesToJniLibs(it, jvmArtJniImplementation)
     }
@@ -226,5 +222,5 @@ androidx {
     type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2023"
     description = "The implementation of SQLite library using the bundled SQLite."
-    kotlinTarget = KotlinTarget.KOTLIN_2_1
+    usePlatformSpecificCacheForJvmTests = true
 }

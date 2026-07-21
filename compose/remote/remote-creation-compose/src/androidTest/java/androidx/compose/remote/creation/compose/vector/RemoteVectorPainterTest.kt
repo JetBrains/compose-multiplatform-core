@@ -17,9 +17,11 @@
 package androidx.compose.remote.creation.compose.vector
 
 import android.content.Context
-import androidx.compose.remote.creation.CreationDisplayInfo
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.remote.creation.compose.SCREENSHOT_GOLDEN_DIRECTORY
 import androidx.compose.remote.creation.compose.capture.RemoteImageVector
+import androidx.compose.remote.creation.compose.capture.createCreationDisplayInfo
 import androidx.compose.remote.creation.compose.capture.path
 import androidx.compose.remote.creation.compose.layout.RemoteBox
 import androidx.compose.remote.creation.compose.layout.RemoteCanvas
@@ -31,8 +33,10 @@ import androidx.compose.remote.creation.compose.state.RemoteColor
 import androidx.compose.remote.creation.compose.state.rdp
 import androidx.compose.remote.creation.compose.state.rf
 import androidx.compose.remote.creation.compose.test.R
-import androidx.compose.remote.player.compose.test.utils.screenshot.rule.RemoteComposeScreenshotTestRule
+import androidx.compose.remote.player.compose.test.utils.RemoteScreenshotTestRule
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -52,22 +56,27 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class RemoteVectorPainterTest {
     @get:Rule
-    val remoteComposeTestRule by lazy {
-        RemoteComposeScreenshotTestRule(moduleDirectory = SCREENSHOT_GOLDEN_DIRECTORY)
-    }
+    val remoteComposeTestRule =
+        RemoteScreenshotTestRule(
+            moduleDirectory = SCREENSHOT_GOLDEN_DIRECTORY,
+            context = ApplicationProvider.getApplicationContext(),
+        )
 
     private val context: Context = ApplicationProvider.getApplicationContext()
+
+    private val whiteBackground: @Composable (composable: @Composable () -> Unit) -> Unit = {
+        Box(modifier = Modifier.background(Color.White)) { it() }
+    }
 
     @Test
     fun fromImageVector() {
         remoteComposeTestRule.runScreenshotTest(
-            creationDisplayInfo =
-                CreationDisplayInfo(48, 48, context.resources.displayMetrics.densityDpi),
-            backgroundColor = Color.White,
+            remoteCreationDisplayInfo = createCreationDisplayInfo(context, Size(48f, 48f)),
+            playComposableWrapper = whiteBackground,
         ) {
             LoadFromImageVector(
                 imageVector = TestImageVectors.VolumeUp,
-                modifier = RemoteModifier.size(48.rdp),
+                modifier = RemoteModifier.size(size),
             )
         }
     }
@@ -75,24 +84,22 @@ class RemoteVectorPainterTest {
     @Test
     fun fromRes() {
         remoteComposeTestRule.runScreenshotTest(
-            creationDisplayInfo =
-                CreationDisplayInfo(48, 48, context.resources.displayMetrics.densityDpi),
-            backgroundColor = Color.White,
+            remoteCreationDisplayInfo = createCreationDisplayInfo(context, Size(48f, 48f)),
+            playComposableWrapper = whiteBackground,
         ) {
-            LoadFromRes(res = R.drawable.android, modifier = RemoteModifier.size(48.rdp))
+            LoadFromRes(res = R.drawable.android, modifier = RemoteModifier.size(size))
         }
     }
 
     @Test
     fun fromRemoteImageVector() {
         remoteComposeTestRule.runScreenshotTest(
-            creationDisplayInfo =
-                CreationDisplayInfo(48, 48, context.resources.displayMetrics.densityDpi),
-            backgroundColor = Color.White,
+            remoteCreationDisplayInfo = createCreationDisplayInfo(context, Size(48f, 48f)),
+            playComposableWrapper = whiteBackground,
         ) {
             LoadFromRemoteImageVector(
                 imageVector = TestImageVectors.RemoteVolumeUp,
-                modifier = RemoteModifier.size(48.rdp),
+                modifier = RemoteModifier.size(size),
             )
         }
     }
@@ -100,13 +107,12 @@ class RemoteVectorPainterTest {
     @Test
     fun tinted_fromImageVector() {
         remoteComposeTestRule.runScreenshotTest(
-            creationDisplayInfo =
-                CreationDisplayInfo(48, 48, context.resources.displayMetrics.densityDpi),
-            backgroundColor = Color.White,
+            remoteCreationDisplayInfo = createCreationDisplayInfo(context, Size(48f, 48f)),
+            playComposableWrapper = whiteBackground,
         ) {
             LoadFromImageVector(
                 imageVector = TestImageVectors.VolumeUp,
-                modifier = RemoteModifier.size(48.rdp),
+                modifier = RemoteModifier.size(size),
                 tint = RemoteColor(Color.Red),
             )
         }
@@ -115,13 +121,12 @@ class RemoteVectorPainterTest {
     @Test
     fun tinted_fromRes() {
         remoteComposeTestRule.runScreenshotTest(
-            creationDisplayInfo =
-                CreationDisplayInfo(48, 48, context.resources.displayMetrics.densityDpi),
-            backgroundColor = Color.White,
+            remoteCreationDisplayInfo = createCreationDisplayInfo(context, Size(48f, 48f)),
+            playComposableWrapper = whiteBackground,
         ) {
             LoadFromRes(
                 res = R.drawable.android,
-                modifier = RemoteModifier.size(48.rdp),
+                modifier = RemoteModifier.size(size),
                 tint = RemoteColor(Color.Red),
             )
         }
@@ -130,13 +135,12 @@ class RemoteVectorPainterTest {
     @Test
     fun tinted_fromRemoteImageVector() {
         remoteComposeTestRule.runScreenshotTest(
-            creationDisplayInfo =
-                CreationDisplayInfo(48, 48, context.resources.displayMetrics.densityDpi),
-            backgroundColor = Color.White,
+            remoteCreationDisplayInfo = createCreationDisplayInfo(context, Size(48f, 48f)),
+            playComposableWrapper = whiteBackground,
         ) {
             LoadFromRemoteImageVector(
                 imageVector = TestImageVectors.RemoteVolumeUp,
-                modifier = RemoteModifier.size(48.rdp),
+                modifier = RemoteModifier.size(size),
                 tint = RemoteColor(Color.Red),
             )
         }
@@ -147,7 +151,7 @@ class RemoteVectorPainterTest {
 @Composable
 private fun LoadFromImageVector(
     imageVector: ImageVector,
-    modifier: RemoteModifier = RemoteModifier.size(size),
+    modifier: RemoteModifier = RemoteModifier,
     tint: RemoteColor = RemoteColor(color),
 ) {
     RemoteBox(modifier) {
@@ -173,7 +177,7 @@ private fun LoadFromRes(
 @Composable
 private fun LoadFromRemoteImageVector(
     imageVector: RemoteImageVector,
-    modifier: RemoteModifier = RemoteModifier.size(size),
+    modifier: RemoteModifier = RemoteModifier,
     tint: RemoteColor = RemoteColor(color),
 ) {
     RemoteBox(modifier) {

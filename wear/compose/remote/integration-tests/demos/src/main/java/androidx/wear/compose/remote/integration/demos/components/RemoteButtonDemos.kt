@@ -19,6 +19,7 @@ package androidx.wear.compose.remote.integration.demos.components
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
 import androidx.wear.compose.foundation.lazy.TransformingLazyColumn
 import androidx.wear.compose.foundation.lazy.rememberTransformingLazyColumnState
 import androidx.wear.compose.material3.ListHeader
@@ -28,10 +29,12 @@ import androidx.wear.compose.material3.Text
 import androidx.wear.compose.material3.lazy.rememberTransformationSpec
 import androidx.wear.compose.material3.lazy.transformedHeight
 import androidx.wear.compose.remote.material3.previews.RemoteButtonEnabled
+import androidx.wear.compose.remote.material3.previews.RemoteButtonWithBackground
 import androidx.wear.compose.remote.material3.previews.RemoteButtonWithBorder
 import androidx.wear.compose.remote.material3.previews.RemoteButtonWithIcon
 import androidx.wear.compose.remote.material3.previews.RemoteButtonWithIconAndSecondaryLabel
 import androidx.wear.compose.remote.material3.previews.RemoteButtonWithSecondaryLabel
+import androidx.wear.compose.remote.material3.previews.RemoteButtonWithShape
 import androidx.wear.compose.ui.tooling.preview.WearPreviewDevices
 
 @Composable
@@ -51,18 +54,20 @@ fun RemoteButtonDemos(modifier: Modifier = Modifier) {
                             ),
                     transformation = SurfaceTransformation(transformationSpec),
                 ) {
-                    Text("RemoteButton Demos")
+                    Text(
+                        "RemoteButton Demos",
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.Center,
+                    )
                 }
             }
-            item { RemoteDemoItem("With label") { RemoteButtonEnabled() } }
-            item { RemoteDemoItem("With border") { RemoteButtonWithBorder() } }
-            item { RemoteDemoItem("With secondary label") { RemoteButtonWithSecondaryLabel() } }
-            item { RemoteDemoItem("With icon") { RemoteButtonWithIcon() } }
-            item {
-                RemoteDemoItem("With icon and secondary label") {
-                    RemoteButtonWithIconAndSecondaryLabel()
-                }
-            }
+            remoteDemoItem("Label") { RemoteButtonEnabled() }
+            remoteDemoItem("Border") { RemoteButtonWithBorder() }
+            remoteDemoItem("Secondary label") { RemoteButtonWithSecondaryLabel() }
+            remoteDemoItem("Icon") { RemoteButtonWithIcon() }
+            remoteDemoItem("Icon and secondary label") { RemoteButtonWithIconAndSecondaryLabel() }
+            remoteDemoItem("Custom shape") { RemoteButtonWithShape() }
+            remoteDemoItem("Background") { RemoteButtonWithBackground() }
         }
     }
 }

@@ -225,7 +225,7 @@ class WindowInfoCompositionLocalTest {
     @Test
     fun windowInfo_providesKeyModifiers() {
         lateinit var ownerView: View
-        var keyModifiers = PointerKeyboardModifiers(0)
+        var keyModifiers = PointerKeyboardModifiers()
 
         rule.setFocusableContent {
             ownerView = LocalView.current
@@ -497,7 +497,6 @@ class WindowInfoCompositionLocalTest {
             view = LocalView.current
             containerSize = LocalWindowInfo.current.containerSize
         }
-        @OptIn(ExperimentalComposeViewContextApi::class)
         rule.runOnIdle {
             val composeViewContext = view.findViewTreeComposeViewContext()
             val resources = rule.activity.resources

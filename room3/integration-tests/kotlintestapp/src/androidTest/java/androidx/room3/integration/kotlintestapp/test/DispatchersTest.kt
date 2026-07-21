@@ -23,7 +23,6 @@ import androidx.room3.useReaderConnection
 import androidx.room3.useWriterConnection
 import androidx.sqlite.driver.AndroidSQLiteDriver
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
-import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.SmallTest
 import kotlin.coroutines.ContinuationInterceptor
 import kotlinx.coroutines.Dispatchers
@@ -66,7 +65,7 @@ class DispatchersTest(driver: UseDriver) : TestDatabaseTest(driver) {
     @Test
     fun publicUseConnectionConfiguredDispatcher() = runTest {
         val database =
-            Room.inMemoryDatabaseBuilder<TestDatabase>(ApplicationProvider.getApplicationContext())
+            Room.inMemoryDatabaseBuilder<TestDatabase>()
                 .setDriver(
                     when (useDriver) {
                         UseDriver.ANDROID -> AndroidSQLiteDriver()

@@ -47,10 +47,7 @@ internal object FragmentUtils {
         // Load the document in the fragment
         scenario.onFragment { fragment ->
             // Increment pdf load idling resource to wait for background task to complete.
-            if (fragment is TestPdfViewerFragmentV1) {
-                fragment.pdfLoadingIdlingResource.increment()
-                fragment.documentUri = TestUtils.saveStream(inputStream, fragment.requireContext())
-            } else if (fragment is TestPdfViewerFragment) {
+            if (fragment is TestPdfViewerFragment) {
                 fragment.pdfLoadingIdlingResource.increment()
                 fragment.documentUri = TestUtils.saveStream(inputStream, fragment.requireContext())
             } else if (fragment is TestEditablePdfViewerFragment) {

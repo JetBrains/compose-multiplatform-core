@@ -50,6 +50,7 @@ import androidx.xr.runtime.math.Vector3
  * @param depthAlignment The default depth alignment for child elements within the column.
  * @param verticalArrangement The vertical arrangement of the children.
  * @param content The composable content to be laid out vertically.
+ * @sample androidx.xr.compose.samples.SpatialColumnSample
  */
 @Composable
 @SubspaceComposable
@@ -175,10 +176,10 @@ internal class SpatialColumnMeasurePolicy(
     }
 
     override val SubspacePlaceable.mainAxisSize: Int
-        get() = measuredHeight
+        get() = height
 
     override val SubspacePlaceable.crossAxisSize: Int
-        get() = measuredWidth
+        get() = width
 
     override val VolumeConstraints.mainAxisTargetSpace: Int
         get() = if (maxHeight != VolumeConstraints.INFINITY) maxHeight else minHeight
@@ -212,11 +213,14 @@ internal class SpatialColumnMeasurePolicy(
         containerSize: IntVolumeSize,
         layoutDirection: LayoutDirection,
     ): Int {
-        // Each child will have its main-axis offset adjusted, based on extra space available and
-        // the provided alignment. `mainAxisOffset` represents the top edge of the content in the
-        // container space.
-        return (alignment.verticalOffset(contentSize.height, containerSize.height) +
-                containerSize.height / 2.0)
+        return (alignment
+                .align(
+                    size = IntVolumeSize(0, contentSize.height, 0),
+                    space = IntVolumeSize(0, containerSize.height, 0),
+                    layoutDirection = layoutDirection,
+                )
+                .y
+                .toInt() + containerSize.height / 2.0)
             .fastRoundToInt()
     }
 
@@ -283,7 +287,7 @@ internal class SpatialColumnMeasurePolicy(
 
         val depthPosition =
             resolvedMeasurable.depthOffset(
-                depth = placeable.measuredDepth,
+                depth = placeable.depth,
                 space = containerSize.depth,
                 parentSpatialAlignment = alignment,
             )

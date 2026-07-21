@@ -37,6 +37,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.remember
@@ -71,9 +72,8 @@ import androidx.wear.compose.material3.tokens.ShapeTokens
  * labels.
  *
  * The [Button] is stadium-shaped by default and its standard height is designed to take 2 lines of
- * text of [Typography.labelMedium] style. With localisation and/or large font sizes, the text can
- * extend to a maximum of 3 lines in which case, the [Button] height adjusts to accommodate the
- * contents.
+ * text. With localisation and/or large font sizes, the text can extend to a maximum of 3 lines in
+ * which case, the [Button] height adjusts to accommodate the contents.
  *
  * [Button] takes the [ButtonDefaults.buttonColors] color scheme by default, with colored
  * background, contrasting content color and no border. This is a high-emphasis button for the
@@ -90,6 +90,10 @@ import androidx.wear.compose.material3.tokens.ShapeTokens
  * Example of a [Button]:
  *
  * @sample androidx.wear.compose.material3.samples.SimpleButtonSample
+ *
+ * ![SimpleButtonSample Composite
+ * Image](https://developer.android.com/wear/images/design/WearComposeM3_SimpleButtonSample_CompositeImage.png)
+ *
  * @param onClick Will be called when the user clicks the button
  * @param modifier Modifier to be applied to the button
  * @param onLongClick Called when this button is long clicked (long-pressed). When this callback is
@@ -161,15 +165,18 @@ public fun Button(
  * drawn on top of the container image, ensuring that any content above the background is legible.
  *
  * The [Button] is Stadium-shaped by default and has a max height designed to take no more than two
- * lines of text of [Typography.labelMedium] style. With localisation and/or large font sizes, the
- * text can extend to a maximum of 3 lines in which case, the [Button] height adjusts to accommodate
- * the contents.
+ * lines of text. With localisation and/or large font sizes, the text can extend to a maximum of 3
+ * lines in which case, the [Button] height adjusts to accommodate the contents.
  *
  * [Button] can be enabled or disabled. A disabled button will not respond to click events.
  *
  * Example of a [Button] with an image background:
  *
  * @sample androidx.wear.compose.material3.samples.ButtonWithImageSample
+ *
+ * ![ButtonWithImageSample Composite
+ * Image](https://developer.android.com/wear/images/design/WearComposeM3_ButtonWithImageSample_CompositeImage.png)
+ *
  * @param onClick Will be called when the user clicks the button
  * @param containerPainter The [Painter] to use to draw the container image of the [Button], such as
  *   returned by [ButtonDefaults.containerPainter].
@@ -242,10 +249,10 @@ public fun Button(
  * such as icons and labels.
  *
  * The [FilledTonalButton] is Stadium-shaped by default and has a max height designed to take no
- * more than two lines of text of [Typography.labelMedium] style. With localisation and/or large
- * font sizes, the text can extend to a maximum of 3 lines in which case, the [FilledTonalButton]
- * height adjusts to accommodate the contents. The [FilledTonalButton] can have an icon or image
- * horizontally parallel to the two lines of text.
+ * more than two lines of text. With localisation and/or large font sizes, the text can extend to a
+ * maximum of 3 lines in which case, the [FilledTonalButton] height adjusts to accommodate the
+ * contents. The [FilledTonalButton] can have an icon or image horizontally parallel to the two
+ * lines of text.
  *
  * [FilledTonalButton] takes the [ButtonDefaults.filledTonalButtonColors] color scheme by default,
  * with muted background, contrasting content color and no border. This is a medium-emphasis button
@@ -263,6 +270,10 @@ public fun Button(
  * Example of a [FilledTonalButton]:
  *
  * @sample androidx.wear.compose.material3.samples.SimpleFilledTonalButtonSample
+ *
+ *   ![SimpleFilledTonalButtonSample Composite
+ *   Image](https://developer.android.com/wear/images/design/WearComposeM3_SimpleFilledTonalButtonSample_CompositeImage.png)
+ *
  * @param onClick Will be called when the user clicks the button
  * @param modifier Modifier to be applied to the button
  * @param onLongClick Called when this button is long clicked (long-pressed). When this callback is
@@ -326,10 +337,10 @@ public fun FilledTonalButton(
  * icons and labels.
  *
  * The [OutlinedButton] is Stadium-shaped by default and has a max height designed to take no more
- * than two lines of text of [Typography.labelMedium] style. With localisation and/or large font
- * sizes, the text can extend to a maximum of 3 lines in which case, the [OutlinedButton] height
- * adjusts to accommodate the contents. The [OutlinedButton] can have an icon or image horizontally
- * parallel to the two lines of text.
+ * than two lines of text. With localisation and/or large font sizes, the text can extend to a
+ * maximum of 3 lines in which case, the [OutlinedButton] height adjusts to accommodate the
+ * contents. The [OutlinedButton] can have an icon or image horizontally parallel to the two lines
+ * of text.
  *
  * [OutlinedButton] takes the [ButtonDefaults.outlinedButtonColors] color scheme by default, with a
  * transparent background and a thin border. This is a medium-emphasis button for important,
@@ -346,6 +357,10 @@ public fun FilledTonalButton(
  * Example of an [OutlinedButton]:
  *
  * @sample androidx.wear.compose.material3.samples.SimpleOutlinedButtonSample
+ *
+ *   ![SimpleOutlinedButtonSample Composite
+ *   Image](https://developer.android.com/wear/images/design/WearComposeM3_SimpleOutlinedButtonSample_CompositeImage.png)
+ *
  * @param onClick Will be called when the user clicks the button
  * @param modifier Modifier to be applied to the button
  * @param onLongClick Called when this button is long clicked (long-pressed). When this callback is
@@ -409,10 +424,9 @@ public fun OutlinedButton(
  * icons and labels.
  *
  * The [ChildButton] is stadium-shaped by default and its standard height is designed to take 2
- * lines of text of [Typography.labelMedium] style. With localisation and/or large font sizes, the
- * text can extend to a maximum of 3 lines in which case, the [ChildButton] height adjusts to
- * accommodate the contents. The [ChildButton] can have an icon or image horizontally parallel to
- * the two lines of text.
+ * lines of text. With localisation and/or large font sizes, the text can extend to a maximum of 3
+ * lines in which case, the [ChildButton] height adjusts to accommodate the contents. The
+ * [ChildButton] can have an icon or image horizontally parallel to the two lines of text.
  *
  * [ChildButton] takes the [ButtonDefaults.childButtonColors] color scheme by default, with a
  * transparent background and no border. This is a low-emphasis button for optional or supplementary
@@ -429,6 +443,10 @@ public fun OutlinedButton(
  * Example of a [ChildButton]:
  *
  * @sample androidx.wear.compose.material3.samples.SimpleChildButtonSample
+ *
+ * ![SimpleChildButtonSample Composite
+ * Image](https://developer.android.com/wear/images/design/WearComposeM3_SimpleChildButtonSample_CompositeImage.png)
+ *
  * @param onClick Will be called when the user clicks the button
  * @param modifier Modifier to be applied to the button
  * @param onLongClick Called when this button is long clicked (long-pressed). When this callback is
@@ -492,9 +510,9 @@ public fun ChildButton(
  * if provided, at the start of a row, with a column next containing the two label slots.
  *
  * The [Button] is stadium-shaped by default and its standard height is designed to take 2 lines of
- * text of [Typography.labelMedium] style - either a two-line label or both a single line label and
- * a secondary label. With localisation and/or large font sizes, the [Button] height adjusts to
- * accommodate the contents. The label and secondary label should be consistently aligned.
+ * text - either a two-line label or both a single line label and a secondary label. With
+ * localisation and/or large font sizes, the [Button] height adjusts to accommodate the contents.
+ * The label and secondary label should be consistently aligned.
  *
  * If a icon is provided then the labels should be "start" aligned, e.g. left aligned in ltr so that
  * the text starts next to the icon.
@@ -515,13 +533,23 @@ public fun ChildButton(
  *
  * @sample androidx.wear.compose.material3.samples.ButtonSample
  *
+ * ![ButtonSample Composite
+ * Image](https://developer.android.com/wear/images/design/WearComposeM3_ButtonSample_CompositeImage.png)
+ *
  * Example of a [Button] with a large icon and adjusted content padding:
  *
  * @sample androidx.wear.compose.material3.samples.ButtonLargeIconSample
  *
+ * ![ButtonLargeIconSample Composite
+ * Image](https://developer.android.com/wear/images/design/WearComposeM3_ButtonLargeIconSample_CompositeImage.png)
+ *
  * Example of a [Button] with an extra large icon and adjusted content padding:
  *
  * @sample androidx.wear.compose.material3.samples.ButtonExtraLargeIconSample
+ *
+ *   ![ButtonExtraLargeIconSample Composite
+ *   Image](https://developer.android.com/wear/images/design/WearComposeM3_ButtonExtraLargeIconSample_CompositeImage.png)
+ *
  * @param onClick Will be called when the user clicks the button
  * @param modifier Modifier to be applied to the button
  * @param onLongClick Called when this button is long clicked (long-pressed). When this callback is
@@ -632,15 +660,19 @@ public fun Button(
  * legible.
  *
  * The [Button] is stadium-shaped by default and its standard height is designed to take 2 lines of
- * text of [Typography.labelMedium] style - either a two-line label or both a single line label and
- * a secondary label. With localisation and/or large font sizes, the [Button] height adjusts to
- * accommodate the contents. The label and secondary label should be consistently aligned.
+ * text - either a two-line label or both a single line label and a secondary label. With
+ * localisation and/or large font sizes, the [Button] height adjusts to accommodate the contents.
+ * The label and secondary label should be consistently aligned.
  *
  * [Button] can be enabled or disabled. A disabled button will not respond to click events.
  *
  * Example of a [Button] with an image background, an icon and a secondary label:
  *
  * @sample androidx.wear.compose.material3.samples.ButtonWithImageSample
+ *
+ * ![ButtonWithImageSample Composite
+ * Image](https://developer.android.com/wear/images/design/WearComposeM3_ButtonWithImageSample_CompositeImage.png)
+ *
  * @param onClick Will be called when the user clicks the button
  * @param containerPainter The [Painter] to use to draw the container image of the [Button], such as
  *   returned by [ButtonDefaults.containerPainter].
@@ -747,10 +779,9 @@ public fun Button(
  * the icon, if provided, at the start of a row, with a column next containing the two label slots.
  *
  * The [FilledTonalButton] is stadium-shaped by default and its standard height is designed to take
- * 2 lines of text of [Typography.labelMedium] style - either a two-line label or both a single line
- * label and a secondary label. With localisation and/or large font sizes, the [FilledTonalButton]
- * height adjusts to accommodate the contents. The label and secondary label should be consistently
- * aligned.
+ * 2 lines of text - either a two-line label or both a single line label and a secondary label. With
+ * localisation and/or large font sizes, the [FilledTonalButton] height adjusts to accommodate the
+ * contents. The label and secondary label should be consistently aligned.
  *
  * If a icon is provided then the labels should be "start" aligned, e.g. left aligned in ltr so that
  * the text starts next to the icon.
@@ -775,6 +806,10 @@ public fun Button(
  * Example of a [FilledTonalButton] with an icon and secondary label:
  *
  * @sample androidx.wear.compose.material3.samples.FilledTonalButtonSample
+ *
+ * ![FilledTonalButtonSample Composite
+ * Image](https://developer.android.com/wear/images/design/WearComposeM3_FilledTonalButtonSample_CompositeImage.png)
+ *
  * @param onClick Will be called when the user clicks the button
  * @param modifier Modifier to be applied to the button
  * @param onLongClick Called when this button is long clicked (long-pressed). When this callback is
@@ -873,10 +908,9 @@ public fun FilledTonalButton(
  * icon, if provided, at the start of a row, with a column next containing the two label slots.
  *
  * The [OutlinedButton] is stadium-shaped by default and its standard height is designed to take 2
- * lines of text of [Typography.labelMedium] style - either a two-line label or both a single line
- * label and a secondary label. With localisation and/or large font sizes, the [OutlinedButton]
- * height adjusts to accommodate the contents. The label and secondary label should be consistently
- * aligned.
+ * lines of text - either a two-line label or both a single line label and a secondary label. With
+ * localisation and/or large font sizes, the [OutlinedButton] height adjusts to accommodate the
+ * contents. The label and secondary label should be consistently aligned.
  *
  * If a icon is provided then the labels should be "start" aligned, e.g. left aligned in ltr so that
  * the text starts next to the icon.
@@ -896,6 +930,10 @@ public fun FilledTonalButton(
  * Example of an [OutlinedButton] with an icon and secondary label:
  *
  * @sample androidx.wear.compose.material3.samples.OutlinedButtonSample
+ *
+ * ![OutlinedButtonSample Composite
+ * Image](https://developer.android.com/wear/images/design/WearComposeM3_OutlinedButtonSample_CompositeImage.png)
+ *
  * @param onClick Will be called when the user clicks the button
  * @param modifier Modifier to be applied to the button
  * @param onLongClick Called when this button is long clicked (long-pressed). When this callback is
@@ -994,10 +1032,9 @@ public fun OutlinedButton(
  * if provided, at the start of a row, with a column next containing the two label slots.
  *
  * The [ChildButton] is stadium-shaped by default and its standard height is designed to take 2
- * lines of text of [Typography.labelMedium] style - either a two-line label or both a single line
- * label and a secondary label. With localisation and/or large font sizes, the [ChildButton] height
- * adjusts to accommodate the contents. The label and secondary label should be consistently
- * aligned.
+ * lines of text - either a two-line label or both a single line label and a secondary label. With
+ * localisation and/or large font sizes, the [ChildButton] height adjusts to accommodate the
+ * contents. The label and secondary label should be consistently aligned.
  *
  * If a icon is provided then the labels should be "start" aligned, e.g. left aligned in ltr so that
  * the text starts next to the icon.
@@ -1017,6 +1054,10 @@ public fun OutlinedButton(
  * Example of a [ChildButton] with an icon and secondary label:
  *
  * @sample androidx.wear.compose.material3.samples.ChildButtonSample
+ *
+ * ![ChildButtonSample Composite
+ * Image](https://developer.android.com/wear/images/design/WearComposeM3_ChildButtonSample_CompositeImage.png)
+ *
  * @param onClick Will be called when the user clicks the button
  * @param modifier Modifier to be applied to the button
  * @param onLongClick Called when this button is long clicked (long-pressed). When this callback is
@@ -1147,16 +1188,25 @@ public fun ChildButton(
  *
  * @sample androidx.wear.compose.material3.samples.CompactButtonSample
  *
+ * ![CompactButtonSample Composite
+ * Image](https://developer.android.com/wear/images/design/WearComposeM3_CompactButtonSample_CompositeImage.png)
+ *
  * Example of a [CompactButton] with an icon and label and with
  * [ButtonDefaults.filledTonalButtonColors]
  *
  * @sample androidx.wear.compose.material3.samples.FilledTonalCompactButtonSample
+ *
+ *   ![FilledTonalCompactButtonSample Composite
+ *   Image](https://developer.android.com/wear/images/design/WearComposeM3_FilledTonalCompactButtonSample_CompositeImage.png)
  *
  * Example of a [CompactButton] with an icon and label and with
  * [ButtonDefaults.outlinedButtonBorder] and [ButtonDefaults.outlinedButtonColors]. The example
  * includes a [Text] that expands and collapses when the [CompactButton] is clicked.
  *
  * @sample androidx.wear.compose.material3.samples.OutlinedCompactButtonSample
+ *
+ *   ![OutlinedCompactButtonSample Composite
+ *   Image](https://developer.android.com/wear/images/design/WearComposeM3_OutlinedCompactButtonSample_CompositeImage.png)
  *
  * Example of a [CompactButton] with onLongClick:
  *
@@ -1167,8 +1217,9 @@ public fun ChildButton(
  *   set, [onLongClickLabel] should be set as well.
  * @param onLongClickLabel Semantic / accessibility label for the [onLongClick] action.
  * @param icon A slot for providing the button's icon. The contents are expected to be a
- *   horizontally and vertically aligned icon of size [ButtonDefaults.ExtraSmallIconSize] when used
- *   with a label or [ButtonDefaults.SmallIconSize] when used as the only content in the button.
+ *   horizontally and vertically aligned icon of size [CompactButtonDefaults.ExtraSmallIconSize]
+ *   when used with a label or [CompactButtonDefaults.SmallIconSize] when used as the only content
+ *   in the button.
  * @param enabled Controls the enabled state of the button. When `false`, this button will not be
  *   clickable.
  * @param shape Defines the button's shape. It is strongly recommended to use the default as this
@@ -1353,6 +1404,9 @@ public object ButtonDefaults {
      * Example of a [Button] with [filledVariantButtonColors]:
      *
      * @sample androidx.wear.compose.material3.samples.SimpleFilledVariantButtonSample
+     *
+     *   ![SimpleFilledVariantButtonSample Composite
+     *   Image](https://developer.android.com/wear/images/design/WearComposeM3_SimpleFilledVariantButtonSample_CompositeImage.png)
      */
     @Composable
     public fun filledVariantButtonColors(): ButtonColors =
@@ -1370,6 +1424,10 @@ public object ButtonDefaults {
      * Example of a [Button] with [filledVariantButtonColors]:
      *
      * @sample androidx.wear.compose.material3.samples.FilledVariantButtonSample
+     *
+     *   ![FilledVariantButtonSample Composite
+     *   Image](https://developer.android.com/wear/images/design/WearComposeM3_FilledVariantButtonSample_CompositeImage.png)
+     *
      * @param containerColor The background color of this [Button] when enabled
      * @param contentColor The content color of this [Button] when enabled
      * @param secondaryContentColor The secondary content color of this [Button] when enabled, used
@@ -1512,6 +1570,10 @@ public object ButtonDefaults {
      * Example of a Button with an image background:
      *
      * @sample androidx.wear.compose.material3.samples.ButtonWithImageSample
+     *
+     * ![ButtonWithImageSample Composite
+     * Image](https://developer.android.com/wear/images/design/WearComposeM3_ButtonWithImageSample_CompositeImage.png)
+     *
      * @param contentColor The content color of this [Button] when enabled
      * @param secondaryContentColor The secondary content color of this [Button] when enabled, used
      *   for secondaryLabel content
@@ -1549,6 +1611,10 @@ public object ButtonDefaults {
      * Example of a Button with an image background:
      *
      * @sample androidx.wear.compose.material3.samples.ButtonWithImageSample
+     *
+     * ![ButtonWithImageSample Composite
+     * Image](https://developer.android.com/wear/images/design/WearComposeM3_ButtonWithImageSample_CompositeImage.png)
+     *
      * @param image The [Painter] to use to draw the container background of the [Button].
      * @param scrim The [Brush] to use to paint a scrim over the container image to ensure that any
      *   text drawn over the image is legible.
@@ -1718,9 +1784,17 @@ public object ButtonDefaults {
         @Composable get() = screenHeightFraction(LARGE_VERTICAL_CONTENT_PADDING_FRACTION)
 
     /** The recommended icon size when used in [CompactButton]s containing both icon and text. */
+    @Deprecated(
+        "Use CompactButtonDefaults.ExtraSmallIconSize instead",
+        replaceWith = ReplaceWith("CompactButtonDefaults.ExtraSmallIconSize"),
+    )
     public val ExtraSmallIconSize: Dp = CompactButtonTokens.IconSize
 
     /** The recommended icon size when used in [CompactButton]s containing icon-only content. */
+    @Deprecated(
+        "Use CompactButtonDefaults.SmallIconSize instead",
+        replaceWith = ReplaceWith("CompactButtonDefaults.SmallIconSize"),
+    )
     public val SmallIconSize: Dp = CompactButtonTokens.IconOnlyIconSize
 
     /** The recommended default size for icons when used inside a [Button]. */
@@ -2038,6 +2112,9 @@ public object CompactButtonDefaults {
      * padding values and its own contentPadding parameter.
      *
      * @sample androidx.wear.compose.material3.samples.TransformingLazyColumnMinimumVerticalContentPaddingSample
+     *
+     *   ![TransformingLazyColumnMinimumVerticalContentPaddingSample Composite
+     *   Image](https://developer.android.com/wear/images/design/WearComposeM3_TransformingLazyColumnMinimumVerticalContentPaddingSample_CompositeImage.png)
      */
     public val minimumVerticalListContentPadding: Dp
         @Composable get() = screenHeightFraction(SMALL_VERTICAL_CONTENT_PADDING_FRACTION)
@@ -2063,6 +2140,12 @@ public object CompactButtonDefaults {
      * you can override it by applying Modifier.width directly on [CompactButton].
      */
     internal val IconOnlyWidth = CompactButtonTokens.IconOnlyWidth
+
+    /** The recommended icon size when used in [CompactButton]s containing both icon and text. */
+    public val ExtraSmallIconSize: Dp = CompactButtonTokens.IconSize
+
+    /** The recommended icon size when used in [CompactButton]s containing icon-only content. */
+    public val SmallIconSize: Dp = CompactButtonTokens.IconOnlyIconSize
 }
 
 /**
@@ -2229,32 +2312,38 @@ private fun ButtonImpl(
         } else {
             ColorPainter(colors.containerColor(enabled = enabled))
         }
+    val contentColor = colors.contentColor(enabled = enabled)
 
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        // Fill the container height but not its width as buttons have fixed size height but we
-        // want them to be able to fit their content
-        modifier =
-            modifier
-                .width(intrinsicSize = IntrinsicSize.Max)
-                .surface(
-                    transformation = transformation,
-                    painter = painter,
-                    shape = shape,
-                    border = border,
-                )
-                .combinedClickable(
-                    enabled = enabled,
-                    onClick = onClick,
-                    onLongClick = onLongClick, // NB CombinedClickable calls LongPress haptic
-                    onLongClickLabel = onLongClickLabel,
-                    role = Role.Button,
-                    indication = ripple(),
-                    interactionSource = interactionSource,
-                )
-                .padding(contentPadding),
-        content = provideScopeContent(colors.contentColor(enabled = enabled), labelFont, content),
-    )
+    CompositionLocalProvider(
+        LocalContentColor provides contentColor,
+        LocalTextStyle provides labelFont,
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            // Fill the container height but not its width as buttons have fixed size height but we
+            // want them to be able to fit their content
+            modifier =
+                modifier
+                    .width(intrinsicSize = IntrinsicSize.Max)
+                    .surface(
+                        transformation = transformation,
+                        painter = painter,
+                        shape = shape,
+                        border = border,
+                    )
+                    .combinedClickable(
+                        enabled = enabled,
+                        onClick = onClick,
+                        onLongClick = onLongClick, // NB CombinedClickable calls LongPress haptic
+                        onLongClickLabel = onLongClickLabel,
+                        role = Role.Button,
+                        indication = ripple(),
+                        interactionSource = interactionSource,
+                    )
+                    .padding(contentPadding),
+            content = content,
+        )
+    }
 }
 
 /**

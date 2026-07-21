@@ -22,6 +22,7 @@ import android.opengl.GLES30
 import android.opengl.GLSurfaceView
 import android.opengl.Matrix
 import android.os.Bundle
+import android.util.Log
 import android.view.MotionEvent
 import android.view.Surface
 import androidx.activity.ComponentActivity
@@ -45,9 +46,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.opengl.EGLExt
@@ -57,6 +56,7 @@ import androidx.xr.arcore.Anchor
 import androidx.xr.arcore.AnchorCreateSuccess
 import androidx.xr.arcore.HitResult
 import androidx.xr.arcore.Plane
+import androidx.xr.arcore.TrackingState
 import androidx.xr.arcore.apps.whitebox.mobile.common.ArCoreVerificationHelper
 import androidx.xr.arcore.apps.whitebox.mobile.common.BackToMainActivityButton
 import androidx.xr.arcore.apps.whitebox.mobile.common.SessionLifecycleHelper
@@ -69,14 +69,13 @@ import androidx.xr.arcore.apps.whitebox.mobile.samplerender.maybeThrowGLExceptio
 import androidx.xr.arcore.apps.whitebox.mobile.samplerender.renderers.BackgroundRenderer
 import androidx.xr.arcore.apps.whitebox.mobile.samplerender.renderers.PlaneRenderer
 import androidx.xr.arcore.hitTest
-import androidx.xr.arcore.playservices.ArCoreRuntime
-import androidx.xr.arcore.playservices.UnsupportedArCoreCompatApi
+import androidx.xr.arcore.perceptionState
 import androidx.xr.arcore.playservices.cameraState
+import androidx.xr.arcore.runtime.PerceptionRuntime
 import androidx.xr.runtime.Config
+import androidx.xr.runtime.DeviceTrackingMode
 import androidx.xr.runtime.PlaneTrackingMode
 import androidx.xr.runtime.Session
-import androidx.xr.runtime.TrackingState
-import androidx.xr.runtime.XrLog
 import androidx.xr.runtime.math.Matrix4
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Ray
@@ -90,8 +89,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 
 /** Activity to test the Anchor APIs. */
-class AnchorsPlanesHitTestActivity :
-    ComponentActivity(), DefaultLifecycleObserver, SampleRender.Companion.Renderer {
+class AnchorsPlanesHitTestActivity : ComponentActivity(), SampleRender.Companion.Renderer {
     companion object {
         private const val TAG = "AnchorsPlanesHitTestActivity"
         private const val MAX_HIT_TEST_RESULTS = 10
@@ -134,7 +132,10 @@ class AnchorsPlanesHitTestActivity :
         sessionHelper =
             SessionLifecycleHelper(
                 this,
-                Config(planeTracking = PlaneTrackingMode.HORIZONTAL_AND_VERTICAL),
+                Config.Builder()
+                    .setDeviceTracking(DeviceTrackingMode.SPATIAL)
+                    .setPlaneTracking(PlaneTrackingMode.HORIZONTAL_AND_VERTICAL)
+                    .build(),
                 onSessionAvailable = { session ->
                     this.session = session
                     surfaceView = GLSurfaceView(this)
@@ -155,7 +156,7 @@ class AnchorsPlanesHitTestActivity :
     }
 
     override fun onResume() {
-        super<ComponentActivity>.onResume()
+        super.onResume()
         if (::session.isInitialized) {
             val supervisorJob = SupervisorJob()
             val scope = CoroutineScope(supervisorJob + lifecycleScope.coroutineContext)
@@ -172,9 +173,15 @@ class AnchorsPlanesHitTestActivity :
         }
     }
 
-    override fun onPause(owner: LifecycleOwner) {
-        super<ComponentActivity>.onPause()
+    override fun onPause() {
+        super.onPause()
         if (::surfaceView.isInitialized) {
+            surfaceView.queueEvent {
+                image?.let {
+                    EGLExt.eglDestroyImageKHR(EGL14.eglGetCurrentDisplay(), it)
+                    image = null
+                }
+            }
             surfaceView.onPause()
         }
         if (::updatePlanesJob.isInitialized) {
@@ -213,23 +220,28 @@ class AnchorsPlanesHitTestActivity :
                     )
                     .setTexture("u_AlbedoTexture", virtualObjectAlbedoTexture)
         } catch (e: IOException) {
-            XrLog.error(e) { "Failed to create background renderer" }
+            Log.e("JetpackXR", "Failed to create background renderer", e)
             return
         }
     }
 
+    @Suppress("RestrictedApiAndroidX")
     override fun onSurfaceChanged(render: SampleRender, width: Int, height: Int) {
-        (session.runtimes.filterIsInstance<ArCoreRuntime>().first().perceptionManager)
+        session.runtimes
+            .filterIsInstance<PerceptionRuntime>()
+            .first()
+            .perceptionManager
             .setDisplayRotation(Surface.ROTATION_0, width, height)
         virtualSceneFramebuffer.resize(width, height)
     }
 
+    @SuppressWarnings("RestrictedApiAndroidX")
     override fun onDrawFrame(render: SampleRender) {
         try {
             backgroundRenderer.setUseDepthVisualization(render, false)
             backgroundRenderer.setUseOcclusion(render, false)
         } catch (e: IOException) {
-            XrLog.error(e) { "Failed to read a required asset file" }
+            Log.e("JetpackXR", "Failed to read a required asset file", e)
             return
         }
 
@@ -237,18 +249,23 @@ class AnchorsPlanesHitTestActivity :
             return
         }
 
-        val cameraState = session.state.value.cameraState
+        val sessionState = session.state.value
+        val perceptionState = sessionState.perceptionState
+        val cameraState = sessionState.cameraState
         if (cameraState != null && cameraState.transformCoordinates2D != null) {
             backgroundRenderer.updateDisplayGeometry(cameraState.transformCoordinates2D!!)
         }
-        if (cameraState?.trackingState == TrackingState.TRACKING) {
-            if (image != null) {
-                EGLExt.eglDestroyImageKHR(EGL14.eglGetCurrentDisplay(), image!!)
-            }
+        // TODO(b/519686129): Use perceptionState?.arDeviceState?.trackingState ==
+        // TrackingState.TRACKING
+        // once the tracking state issue is resolved. Using cameraState?.hardwareBuffer as a
+        // workaround
+        // to render background feed.
+        cameraState?.hardwareBuffer?.let { hardwareBuffer ->
+            image?.let { EGLExt.eglDestroyImageKHR(EGL14.eglGetCurrentDisplay(), it) }
             image =
                 EGLExt.eglCreateImageFromHardwareBuffer(
                     EGL14.eglGetCurrentDisplay(),
-                    cameraState.hardwareBuffer!!,
+                    hardwareBuffer,
                 )
             maybeThrowGLException(
                 "Failed to create image from hardware buffer",
@@ -259,15 +276,17 @@ class AnchorsPlanesHitTestActivity :
                 backgroundRenderer.cameraColorTexture.textureId,
             )
             maybeThrowGLException("Failed to bind texture", "glBindTexture")
-            EGLExt.glEGLImageTargetTexture2DOES(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, image!!)
-            maybeThrowGLException(
-                "Failed to set image target texture",
-                "glEGLImageTargetTexture2DOES",
-            )
-            backgroundRenderer.drawBackground(render)
+            image?.let {
+                EGLExt.glEGLImageTargetTexture2DOES(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, it)
+                maybeThrowGLException(
+                    "Failed to set image target texture",
+                    "glEGLImageTargetTexture2DOES",
+                )
+                backgroundRenderer.drawBackground(render)
+            }
 
             // If not tracking, don't draw 3D objects.
-            if (cameraState.trackingState == TrackingState.PAUSED) {
+            if (perceptionState?.arDeviceState?.trackingState != TrackingState.TRACKING) {
                 return
             }
 
@@ -289,7 +308,7 @@ class AnchorsPlanesHitTestActivity :
             for (anchor in anchors) {
                 // Get the current pose of an Anchor in world space. The Anchor pose is updated
                 // during calls to session.update() as ARCore refines its estimate of the world.
-                modelMatrix = Matrix4.fromPose(anchor.runtimeAnchor.pose)
+                modelMatrix = Matrix4.fromPose(anchor.state.value.pose)
 
                 // Calculate model/view/projection matrices
                 modelViewMatrix = viewMatrix * modelMatrix
@@ -306,8 +325,9 @@ class AnchorsPlanesHitTestActivity :
                 getHits(tap.x, tap.y)
             }
 
-            for (hit in foundHits.value) {
-                addAnchor(hit.hitPose)
+            val firstHit = foundHits.value.firstOrNull()
+            if (firstHit != null) {
+                addAnchor(firstHit.hitPose)
             }
             foundHits.value = emptyList() // So we don't keep duplicating anchors
 
@@ -324,8 +344,9 @@ class AnchorsPlanesHitTestActivity :
     @Composable
     private fun MainPanel() {
         val state by session.state.collectAsStateWithLifecycle()
-        val cameraState = state.cameraState
-        val hasCameraTracking = cameraState?.trackingState == TrackingState.TRACKING
+        val perceptionState = state.perceptionState
+        val hasCameraTracking =
+            perceptionState?.arDeviceState?.trackingState == TrackingState.TRACKING
 
         Scaffold(
             modifier = Modifier.fillMaxSize(),
@@ -382,11 +403,11 @@ class AnchorsPlanesHitTestActivity :
             try {
                 Anchor.create(session, anchorPose)
             } catch (e: IllegalStateException) {
-                XrLog.error(e) { "Failed to create anchor: ${e.message}" }
+                Log.e("JetpackXR", "Failed to create anchor: ${e.message}", e)
                 return
             }
         if (anchorResult !is AnchorCreateSuccess) {
-            XrLog.error { "Failed to create anchor: ${anchorResult::class.simpleName}" }
+            Log.e("JetpackXR", "Failed to create anchor: ${anchorResult::class.simpleName}")
             return
         }
         anchors.add(anchorResult.anchor)
@@ -399,7 +420,7 @@ class AnchorsPlanesHitTestActivity :
         anchors.clear()
     }
 
-    @OptIn(UnsupportedArCoreCompatApi::class)
+    @SuppressWarnings("RestrictedApiAndroidX")
     private fun getHits(x: Float, y: Float) {
         if (lifecycle.currentStateFlow.value != Lifecycle.State.RESUMED) {
             return

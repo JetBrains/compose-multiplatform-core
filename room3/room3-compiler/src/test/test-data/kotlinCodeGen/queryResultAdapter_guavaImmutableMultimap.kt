@@ -2,8 +2,6 @@ import androidx.room3.RoomDatabase
 import androidx.room3.util.getColumnIndexOrThrow
 import androidx.room3.util.performBlocking
 import androidx.sqlite.SQLiteStatement
-import androidx.sqlite.prepare
-import androidx.sqlite.step
 import com.google.common.collect.ImmutableListMultimap
 import com.google.common.collect.ImmutableSetMultimap
 import javax.`annotation`.processing.Generated
@@ -90,6 +88,8 @@ internal class MyDao_Impl(
   }
 
   public companion object {
-    public fun getRequiredConverters(): List<KClass<*>> = emptyList()
+    public fun getRequiredColumnConverters(): List<KClass<*>> = emptyList()
+
+    public fun getRequiredDaoReturnTypeConverters(): List<KClass<*>> = emptyList()
   }
 }

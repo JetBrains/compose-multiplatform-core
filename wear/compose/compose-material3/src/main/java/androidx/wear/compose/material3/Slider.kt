@@ -85,6 +85,9 @@ import kotlin.math.roundToInt
  *
  * @sample androidx.wear.compose.material3.samples.SliderSample
  *
+ * ![SliderSample Composite
+ * Image](https://developer.android.com/wear/images/design/WearComposeM3_SliderSample_CompositeImage.png)
+ *
  * A segmented slider sample:
  *
  * @sample androidx.wear.compose.material3.samples.SliderSegmentedSample
@@ -155,9 +158,11 @@ public fun Slider(
         val containerColor = colors.containerColor(enabled)
         val selectedBarSeparatorColor = colors.barSeparatorColor(enabled, true)
         val unselectedBarSeparatorColor = colors.barSeparatorColor(enabled, false)
+        val buttonIconColor = colors.buttonIconColor(enabled).value
 
         CompositionLocalProvider(
-            LocalIndication provides ripple(bounded = false, radius = this.maxWidth)
+            LocalIndication provides ripple(bounded = false, radius = this.maxWidth),
+            LocalContentColor provides buttonIconColor,
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -257,6 +262,9 @@ public fun Slider(
  * A continuous non-segmented slider sample:
  *
  * @sample androidx.wear.compose.material3.samples.SliderWithIntegerSample
+ *
+ * ![SliderWithIntegerSample Composite
+ * Image](https://developer.android.com/wear/images/design/WearComposeM3_SliderWithIntegerSample_CompositeImage.png)
  *
  * A segmented slider sample:
  *

@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Android Open Source Project
+ * Copyright 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,9 +19,8 @@ package androidx.xr.scenecore
 import androidx.annotation.RestrictTo
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.math.FloatSize3d
+import androidx.xr.scenecore.runtime.NodeHolder
 import androidx.xr.scenecore.runtime.SubspaceNodeEntity as RtSubspaceNodeEntity
-import androidx.xr.scenecore.spatial.core.SpatialSceneRuntime
-import com.android.extensions.xr.node.Node
 
 /**
  * Represents an entity that manages a subspace node.
@@ -30,36 +29,43 @@ import com.android.extensions.xr.node.Node
  * for Entity features (such as managing parents and children or attaching user input Components) to
  * be used with split-engine SubspaceNodes.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class SubspaceNodeEntity
-private constructor(rtEntity: RtSubspaceNodeEntity, entityRegistry: EntityRegistry) :
-    BaseEntity<RtSubspaceNodeEntity>(rtEntity, entityRegistry) {
+private constructor(rtSubspaceNodeEntity: RtSubspaceNodeEntity, entityRegistry: EntityRegistry) :
+    Entity(rtSubspaceNodeEntity, entityRegistry) {
+
+    private val rtSubspaceNodeEntity: RtSubspaceNodeEntity
+        get() = rtEntity as RtSubspaceNodeEntity
 
     /** The size of the [SubspaceNodeEntity] in meters, in unscaled local space. */
     public var size: FloatSize3d
         get() {
             checkNotDisposed()
-            return rtEntity!!.size.toFloatSize3d()
+            return rtSubspaceNodeEntity.size.toFloatSize3d()
         }
         set(value) {
             checkNotDisposed()
-            rtEntity!!.size = value.toRtDimensions()
+            rtSubspaceNodeEntity.size = value.toRtDimensions()
         }
 
     public companion object {
         /**
-         * Creates a [SubspaceNodeEntity] from a [Node] with a given [FloatSize3d].
+         * Creates a [SubspaceNodeEntity] from a [NodeHolder] with a given [FloatSize3d].
          *
          * @param session The [Session].
-         * @param node [Node] to create the [SubspaceNodeEntity] from.
+         * @param NodeHolder The NodeHolder is a XrExtensions Node container. Use the [NodeHolder]
+         *   to get the XrExtensions's Node to create the [SubspaceNodeEntity] from.
          * @param size The initial [FloatSize3d] of the [SubspaceNodeEntity] in meters in unscaled
          *   local space.
          */
         @JvmStatic
-        public fun create(session: Session, node: Node, size: FloatSize3d): SubspaceNodeEntity {
-            val sceneRuntime: SpatialSceneRuntime = session.sceneRuntime as SpatialSceneRuntime
+        public fun create(
+            session: Session,
+            nodeHolder: NodeHolder<*>,
+            size: FloatSize3d,
+        ): SubspaceNodeEntity {
             return SubspaceNodeEntity(
-                sceneRuntime.createSubspaceNodeEntity(node, size.toRtDimensions()),
+                session.sceneRuntime.createSubspaceNodeEntity(nodeHolder, size.toRtDimensions()),
                 session.scene.entityRegistry,
             )
         }

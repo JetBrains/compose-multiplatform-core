@@ -38,6 +38,7 @@ import android.media.Image
 import android.media.ImageReader
 import android.media.ImageWriter
 import android.os.Handler
+import android.util.Range
 import android.util.Size
 import android.view.Surface
 import androidx.annotation.RequiresApi
@@ -45,7 +46,6 @@ import androidx.annotation.RequiresPermission
 import androidx.camera.camera2.pipe.CameraMetadata
 import androidx.camera.camera2.pipe.CameraMetadata.Companion.availableVideoStabilizationModes
 import java.util.concurrent.Executor
-import kotlin.reflect.KClass
 
 @RequiresApi(24)
 internal object Api24Compat {
@@ -230,8 +230,8 @@ internal object Api28Compat {
 
     @JvmStatic
     @Suppress("UNCHECKED_CAST")
-    fun <T : Any> unwrapAsHardwareBuffer(image: Image, type: KClass<T>): T? {
-        if (type == HardwareBuffer::class) {
+    fun <T : Any> unwrapAsHardwareBuffer(image: Image, type: Class<T>): T? {
+        if (type == HardwareBuffer::class.java) {
             return image.getHardwareBuffer() as T?
         }
         return null
@@ -365,6 +365,19 @@ internal object Api31Compat {
         extension: Int,
         klass: Class<*>,
     ): List<Size> = extensionCharacteristics.getExtensionSupportedSizes(extension, klass)
+
+    @JvmStatic
+    fun getEstimatedCaptureLatencyRangeMillis(
+        extensionCharacteristics: CameraExtensionCharacteristics,
+        extension: Int,
+        captureSize: Size,
+        imageFormat: Int,
+    ): Range<Long>? =
+        extensionCharacteristics.getEstimatedCaptureLatencyRangeMillis(
+            extension,
+            captureSize,
+            imageFormat,
+        )
 }
 
 @RequiresApi(33)
@@ -560,5 +573,22 @@ internal object Api35Compat {
         cameraCharacteristics: CameraCharacteristics
     ): List<CameraCharacteristics.Key<*>>? {
         return cameraCharacteristics.availableSessionCharacteristicsKeys
+    }
+
+    @JvmStatic
+    fun getExtensionKeys(
+        extensionCharacteristics: CameraExtensionCharacteristics,
+        extension: Int,
+    ): Set<CameraCharacteristics.Key<*>> {
+        return extensionCharacteristics.getKeys(extension)
+    }
+
+    @JvmStatic
+    fun <T> getExtensionCharacteristic(
+        extensionCharacteristics: CameraExtensionCharacteristics,
+        extension: Int,
+        key: CameraCharacteristics.Key<T>,
+    ): T? {
+        return extensionCharacteristics.get(extension, key)
     }
 }

@@ -21,6 +21,7 @@ import android.os.Build
 import androidx.camera.camera2.pipe.OutputId
 import androidx.camera.camera2.pipe.StreamId
 import androidx.camera.camera2.pipe.testing.FakeImage
+import androidx.camera.common.unwrapAs
 import com.google.common.truth.Truth.assertThat
 import org.junit.After
 import org.junit.Before
@@ -126,7 +127,7 @@ class SharedOutputImageTest {
         val outputImage = OutputImage.from(streamId, outputId, fakeImageWithHardwareBuffer)
         val sharedImage = SharedOutputImage.from(outputImage)
 
-        val hardwareBuffer = sharedImage.unwrapAs(HardwareBuffer::class)
+        val hardwareBuffer = sharedImage.unwrapAs<HardwareBuffer>()
 
         checkNotNull(hardwareBuffer)
         assertThat(imageHardwareBuffer).isSameInstanceAs(hardwareBuffer)
@@ -206,6 +207,55 @@ class SharedOutputImageTest {
         sharedImage1.close()
         sharedImage1.setFinalizer(finalizer)
         verify(finalizer, times(1)).finalize(null)
+    }
+
+    @Test
+    fun acquireWithOnCloseLambdaInvokesLambdaWhenClosed() {
+        var lambdaInvokedCount = 0
+        val sharedImage1 = SharedOutputImage.from(outputImage)
+
+        // Acquire with the lambda
+        val sharedImage2 = sharedImage1.acquire(onClose = { lambdaInvokedCount++ })
+
+        // Ensure it doesn't invoke prematurely
+        assertThat(lambdaInvokedCount).isEqualTo(0)
+
+        sharedImage2.close()
+
+        // Ensure it invoked upon closing
+        assertThat(lambdaInvokedCount).isEqualTo(1)
+    }
+
+    @Test
+    fun acquireOrNullWithOnCloseLambdaInvokesLambdaWhenClosed() {
+        var lambdaInvokedCount = 0
+        val sharedImage1 = SharedOutputImage.from(outputImage)
+
+        // Acquire with the lambda
+        val sharedImage2 = sharedImage1.acquireOrNull(onClose = { lambdaInvokedCount++ })
+
+        assertThat(sharedImage2).isNotNull()
+        assertThat(lambdaInvokedCount).isEqualTo(0)
+
+        sharedImage2!!.close()
+
+        // Ensure it was invoked upon closing
+        assertThat(lambdaInvokedCount).isEqualTo(1)
+    }
+
+    @Test
+    fun onCloseLambdaInvokedOnlyOnceOnMultipleCloses() {
+        var lambdaInvokedCount = 0
+        val sharedImage1 = SharedOutputImage.from(outputImage)
+        val sharedImage2 = sharedImage1.acquire(onClose = { lambdaInvokedCount++ })
+
+        // Invoke close multiple times.
+        sharedImage2.close()
+        sharedImage2.close()
+        sharedImage2.close()
+
+        // Guarantee that the lambda was executed exactly once.
+        assertThat(lambdaInvokedCount).isEqualTo(1)
     }
 
     companion object {

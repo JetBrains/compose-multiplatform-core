@@ -112,6 +112,9 @@ internal class PrePackagedCopySQLiteDriver(
         val input: ReadableByteChannel = Channels.newChannel(copyConfig.getInputStream())
         // An intermediate file is used so that we never end up with a half-copied database file
         // in the internal directory.
+        checkNotNull(configuration.context) {
+            "Cannot copy from asset or file when no Context was provided in Room's Builder."
+        }
         val intermediateFile =
             File.createTempFile("room-copy-helper", ".tmp", configuration.context.cacheDir)
         intermediateFile.deleteOnExit()
@@ -134,7 +137,8 @@ internal class PrePackagedCopySQLiteDriver(
 
     private fun deleteDatabase(fileName: String): Boolean {
         var deleted = false
-        for (postfix in arrayOf("", "-wal", "-shm")) {
+        // Also delete journal file if it exists, along with WAL and SHM
+        for (postfix in arrayOf("", "-wal", "-shm", "-journal")) {
             val dbFile = File(fileName + postfix)
             if (dbFile.exists()) {
                 deleted = deleted || dbFile.delete()

@@ -11,6 +11,11 @@
       </key-servers>
       <trusted-artifacts>
          <trust file="apiLevels.json" reason="We do not sign this metadata"/>
+         <trust group="com.android.extensions.xr" name="extensions-xr" version="1.0.0" reason="old version, before signing"/>
+         <trust group="com.android.extensions.xr" name="extensions-xr" version="1.1.0" reason="old version, before signing"/>
+         <trust group="com.android.extensions.xr" name="extensions-xr" version="1.2.0" reason="old version, before signing"/>
+         <trust group="com.android.extensions.xr" name="extensions-xr" version="1.3.0-alpha01" reason="old version, before signing"/>
+         <trust group="com.android.extensions.xr" name="extensions-xr" version="1.3.0-alpha02" reason="old version, before signing"/>
          <trust group="com.android.ndk.thirdparty" reason="b/215430394"/>
          <trust group="com.android.tools" name="desugar_jdk_libs" reason="b/215430394"/>
          <trust group="com.android.tools" name="desugar_jdk_libs_configuration" reason="b/215430394"/>
@@ -68,9 +73,10 @@
          <trust group="com.google.android.libraries.identity.googleid" reason="old version, before signing"/>
          <trust group="com.google.android.material" reason="b/216192082"/>
          <trust group="com.google.android.play" reason="b/255621183"/>
-         <trust group="com.google.ar" name="impress" version="0.0.9" reason="b/378946732"/>
+         <trust group="com.google.ar" name="core" version="1.49.0" reason="b/378946732"/>
          <trust group="com.google.ar" name="impress" version="0.0.11" reason="b/378946732"/>
-         <trust group="com.google.ar" name="core" reason="b/378946732"/>
+         <trust group="com.google.ar" name="impress" version="0.0.12" reason="b/378946732"/>
+         <trust group="com.google.ar" name="impress" version="0.0.9" reason="b/378946732"/>
          <trust group="com.google.devsite" reason="developed by our own team, not signed yet"/>
          <trust group="com.google.firebase" reason="b/223907608"/>
          <trust group="com.google.mlkit" reason="b/223907608"/>
@@ -126,34 +132,17 @@
          <trusted-key id="0D5D634755737A19ABBE2930D4DA5EAB3CD7E958" group="com.google.devtools.ksp"/>
          <trusted-key id="0D8F8561AA7A5DD20BAE27043C0A8F4744F37328" group="com.github.ben-manes.caffeine"/>
          <trusted-key id="0E225917414670F4442C250DFD533C07C264648F">
-            <trusting group="^androidx\..*" regex="true"/>
             <trusting group="com.android"/>
+            <trusting group="^androidx\..*" regex="true"/>
             <trusting group="^com\.android\..*" regex="true"/>
-            <trusting group="com.google.ar" name="impress"/>
+            <trusting group="^com\.google\..*" regex="true"/>
          </trusted-key>
          <trusted-key id="0EB9D7C468F97E44051D650AD73C68EE4152C255" group="com.google.dagger"/>
          <trusted-key id="0F06FF86BEEAF4E71866EE5232EE5355A6BC6E42">
             <trusting group="com.android"/>
-            <trusting group="com.android.databinding"/>
-            <trusting group="com.android.extensions.xr"/>
-            <trusting group="com.android.kotlin.multiplatform.library"/>
-            <trusting group="com.android.legacy-kapt"/>
-            <trusting group="com.android.settings"/>
-            <trusting group="com.android.tools"/>
-            <trusting group="com.android.tools.analytics-library"/>
-            <trusting group="com.android.tools.build"/>
-            <trusting group="com.android.tools.build.jetifier"/>
-            <trusting group="com.android.tools.ddms"/>
-            <trusting group="com.android.tools.emulator"/>
-            <trusting group="com.android.tools.external.com-intellij"/>
-            <trusting group="com.android.tools.external.org-jetbrains"/>
-            <trusting group="com.android.tools.layoutlib"/>
-            <trusting group="com.android.tools.lint"/>
-            <trusting group="com.android.tools.utp"/>
-            <trusting group="com.google.ads.interactivemedia.v3"/>
-            <trusting group="com.google.android.gms"/>
-            <trusting group="com.google.android.libraries.identity.googleid"/>
             <trusting group="^androidx\..*" regex="true"/>
+            <trusting group="^com\.android\..*" regex="true"/>
+            <trusting group="^com\.google\..*" regex="true"/>
          </trusted-key>
          <trusted-key id="0F07D1201BDDAB67CFB84EB479752DB6C966F0B8" group="com.google.android"/>
          <trusted-key id="10F3C7A02ECA55E502BADCF3991EFB94DB91127D" group="org.ow2"/>
@@ -176,6 +165,10 @@
          <trusted-key id="19BEAB2D799C020F17C69126B16698A4ADF4D638" group="org.checkerframework"/>
          <trusted-key id="1A55F091AD28C07F831FA44D7905DE25C78AD456" group="com.google.protobuf"/>
          <trusted-key id="1BC86444BBD2A24C3A40904A438E9634A2319637" group="co.nstant.in"/>
+         <trusted-key id="1BD97A6A154E7810EE0BC832E2F38302C8075E3D">
+            <trusting group="org.gradle.plugin" name="compatibility-plugin"/>
+            <trusting group="org.gradle.toolchains" name="foojay-resolver"/>
+         </trusted-key>
          <trusted-key id="1CB7A3DBC99B562D69BFDFEDAE7AF7AE095EB290" group="net.saff.checkmark"/>
          <trusted-key id="1D0A8B5E77C678A7C724445ABF984B4145EA13F7" group="com.squareup"/>
          <trusted-key id="1D217F8475EEE9F19AB8DD6B793FD5751A0F0780">
@@ -252,6 +245,7 @@
          <trusted-key id="32B92F2FF75FDF37DC811C3C2F566D4221D3EC52" group="com.ryanharter.auto.value"/>
          <trusted-key id="33FD4BFD33554634053D73C0C2148900BCD3C2AF">
             <trusting group="org.jetbrains" name="annotations"/>
+            <trusting group="org.jetbrains.intellij.deps.kotlinx"/>
             <trusting group="org.jetbrains.trove4j" name="trove4j"/>
          </trusted-key>
          <trusted-key id="34441E504A937F43EB0DAEF96A65176A0FB1CD0B">
@@ -393,6 +387,7 @@
          <trusted-key id="7186BBF993566D8C2F4F7ED7D945E643368FEF62" group="io.github.eisop"/>
          <trusted-key id="719F7C29985A8E95F58F47194D8159D6A1159B69" group="dev.zacsweers.moshix"/>
          <trusted-key id="720746177725A89207A7075BFD5DEA07FCB690A8" group="org.codehaus.mojo"/>
+         <trusted-key id="72ECF46A56B4AD39C907BBB71646B01B86E50310" group="com.yarnpkg"/>
          <trusted-key id="73976C9C39C1479B84E2641A5A68A2249128E2C6" group="com.google.crypto.tink"/>
          <trusted-key id="7440F1F7D27BAC115F953D55EB095DA7D2F6AC0E" group="org.tensorflow"/>
          <trusted-key id="748F15B2CF9BA8F024155E6ED7C92B70FA1C814D" group="org.apache.logging.log4j"/>
@@ -419,7 +414,12 @@
          <trusted-key id="82F833963889D7ED06F1E4DC6525FD70CC303655" group="org.codehaus.mojo"/>
          <trusted-key id="835A685C8C6F49C54980E5CAF406F31BC1468EBA" group="org.jcodec"/>
          <trusted-key id="842AFB86375D805422835BFD82B5574242C20D6F" group="org.antlr"/>
-         <trusted-key id="8461EFA0E74ABAE010DE66994EB27DB2A3B88B8B" group="^androidx\..*" regex="true"/>
+         <trusted-key id="8461EFA0E74ABAE010DE66994EB27DB2A3B88B8B">
+            <trusting group="com.android"/>
+            <trusting group="^androidx\..*" regex="true"/>
+            <trusting group="^com\.android\..*" regex="true"/>
+            <trusting group="^com\.google\..*" regex="true"/>
+         </trusted-key>
          <trusted-key id="84789D24DF77A32433CE1F079EB80E92EB2135B1">
             <trusting group="org.apache"/>
             <trusting group="org.apache.maven" name="maven-parent"/>
@@ -462,6 +462,7 @@
             <trusting group="org.apache"/>
             <trusting group="org.apache.maven"/>
          </trusted-key>
+         <trusted-key id="9A762C93B8C54128A3FC73B8CED3EF3DDAF4D9AB" group="com.microsoft.playwright"/>
          <trusted-key id="9BBC1C3E408CA09CF76D1A029C538D5A79281639" group="com.squareup.sqldelight"/>
          <trusted-key id="9D0A56AAA0D60E0C0C7DCCC0B4C70893B62BABE8">
             <trusting group="org.apache.logging"/>
@@ -488,21 +489,9 @@
          <trusted-key id="A5BD02B93E7A40482EB1D66A5F69AD087600B22C" group="org.ow2.asm"/>
          <trusted-key id="A5F483CD733A4EBAEA378B2AE88979FB9B30ACF2">
             <trusting group="com.android"/>
-            <trusting group="com.android.databinding"/>
-            <trusting group="com.android.kotlin.multiplatform.library"/>
-            <trusting group="com.android.settings"/>
-            <trusting group="com.android.tools"/>
-            <trusting group="com.android.tools.analytics-library"/>
-            <trusting group="com.android.tools.build"/>
-            <trusting group="com.android.tools.build.jetifier"/>
-            <trusting group="com.android.tools.ddms"/>
-            <trusting group="com.android.tools.emulator"/>
-            <trusting group="com.android.tools.external.com-intellij"/>
-            <trusting group="com.android.tools.external.org-jetbrains"/>
-            <trusting group="com.android.tools.layoutlib"/>
-            <trusting group="com.android.tools.lint"/>
-            <trusting group="com.android.tools.utp"/>
             <trusting group="^androidx\..*" regex="true"/>
+            <trusting group="^com\.android\..*" regex="true"/>
+            <trusting group="^com\.google\..*" regex="true"/>
          </trusted-key>
          <trusted-key id="A6D6C97108B8585F91B158748671A8DF71296252">
             <trusting group="com.squareup"/>
@@ -690,15 +679,15 @@
       </trusted-keys>
    </configuration>
    <components>
-      <component group="com.github.webassembly" name="binaryen" version="123">
-         <artifact name="binaryen-123-arm64-macos.tar.gz">
-            <sha256 value="74428be348c1a09863e7b642a1fa948cabf8ec9561052233d8288e941951725b" origin="Generated by Gradle" reason="https://github.com/WebAssembly/binaryen/issues/6783"/>
+      <component group="com.github.webassembly" name="binaryen" version="125">
+         <artifact name="binaryen-125-arm64-macos.tar.gz">
+            <sha256 value="28bab047c4ce845c5c1da111222ffee5fafcec0bbedd046ad8b3dcae0fd57076" origin="Generated by Gradle" reason="https://github.com/WebAssembly/binaryen/issues/6783"/>
          </artifact>
-         <artifact name="binaryen-123-x86_64-linux.tar.gz">
-            <sha256 value="e959f2170af4c20c552e9de3a0253704d6a9d2766e8fdb88e4d6ac4bae9388fe" origin="Generated by Gradle" reason="https://github.com/WebAssembly/binaryen/issues/6783"/>
+         <artifact name="binaryen-125-x86_64-linux.tar.gz">
+            <sha256 value="7c3bc16599c8274a04d34a504fe4be2047884f900e0e2da2f6fb9cd667183be4" origin="Generated by Gradle" reason="https://github.com/WebAssembly/binaryen/issues/6783"/>
          </artifact>
-         <artifact name="binaryen-version_123-x86_64-macos.tar.gz">
-            <sha256 value="cc18b14d2b673d9c66bf54f31ff2b0ceb23ba5132455b893965ae2792f9e00dd" origin="Generated by Gradle" reason="https://github.com/WebAssembly/binaryen/issues/6783"/>
+         <artifact name="binaryen-125-x86_64-macos.tar.gz">
+            <sha256 value="72a98df1bfb81dd1e241d2b022e15c72edbd49e29d84abc6a1129c7d083072dd" origin="Generated by Gradle" reason="https://github.com/WebAssembly/binaryen/issues/6783"/>
          </artifact>
       </component>
       <component group="com.google" name="google" version="1">
@@ -777,14 +766,19 @@
             <sha256 value="8d25d21f7f2aca27dc10638ad417bbb08a189310274bc322aa620aafe7e82c92" origin="Generated by Gradle" reason="Unsigned. Used by media3. b/372529250"/>
          </artifact>
       </component>
-      <component group="org.jetbrains.kotlinx.benchmark" name="org.jetbrains.kotlinx.benchmark.gradle.plugin" version="0.4.15">
-         <artifact name="org.jetbrains.kotlinx.benchmark.gradle.plugin-0.4.15.pom">
-            <sha256 value="ff7d15b453f99b22da52a7f9d31b2e8251b762823c9a83c88d84b9b47ddb0913" origin="Generated by Gradle" reason="https://github.com/Kotlin/kotlinx-benchmark/issues/115"/>
+      <component group="org.gradle.toolchains.foojay-resolver-convention" name="org.gradle.toolchains.foojay-resolver-convention.gradle.plugin" version="1.0.0">
+         <artifact name="org.gradle.toolchains.foojay-resolver-convention.gradle.plugin-1.0.0.pom">
+            <sha256 value="f133249a18754ae6a1d2701d00d849b1afba7b0683ddb5fc1b18a70071cec2fa" origin="Generated by Gradle" reason="Artifact is not signed"/>
          </artifact>
       </component>
       <component group="org.jetbrains.kotlin" name="kotlin-gradle-plugin" version="2.3.20-RC2">
          <artifact name="kotlin-gradle-plugin-2.3.20-RC2-gradle813.jar">
             <sha256 value="2f6e63efd5f31f1a2f93c1aa4d2abd1efb5b09dc13482e435a15fe2b9367ff16" origin="Generated by Gradle" reason="https://github.com/Kotlin/kotlinx-benchmark/issues/115"/>
+         </artifact>
+      </component>
+      <component group="org.jetbrains.kotlinx.benchmark" name="org.jetbrains.kotlinx.benchmark.gradle.plugin" version="0.4.15">
+         <artifact name="org.jetbrains.kotlinx.benchmark.gradle.plugin-0.4.15.pom">
+            <sha256 value="ff7d15b453f99b22da52a7f9d31b2e8251b762823c9a83c88d84b9b47ddb0913" origin="Generated by Gradle" reason="https://github.com/Kotlin/kotlinx-benchmark/issues/115"/>
          </artifact>
       </component>
       <component group="org.nodejs" name="node" version="22.0.0">

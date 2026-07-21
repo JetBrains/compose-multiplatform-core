@@ -45,6 +45,8 @@ import androidx.xr.glimmer.Icon
 import androidx.xr.glimmer.Text
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.DeviceTrackingMode
+import androidx.xr.runtime.ExperimentalInertialTrackingApi
+import androidx.xr.runtime.PreviewSpatialApi
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.SessionConfigureSuccess
 import androidx.xr.runtime.SessionCreateApkRequired
@@ -89,7 +91,7 @@ class TiltGestureTrackingActivity : ComponentActivity() {
             }
     }
 
-    @OptIn(ExperimentalGesturesApi::class)
+    @OptIn(ExperimentalGesturesApi::class, PreviewSpatialApi::class)
     @Composable
     private fun TiltDemoApp(state: TiltGesture.State) {
         Column(
@@ -118,15 +120,17 @@ class TiltGestureTrackingActivity : ComponentActivity() {
         }
     }
 
-    private fun tryCreateSession() {
+    @OptIn(PreviewSpatialApi::class, ExperimentalInertialTrackingApi::class)
+    private suspend fun tryCreateSession() {
         Log.i(TAG, "Session.create($this)")
-        when (val result = Session.create(this)) {
+        // TODO(b/510012792): Use Projected Device Context after 1.55.
+        when (val result = Session.create(context = this, lifecycleOwner = this)) {
             is SessionCreateSuccess -> {
                 session = result.session
                 try {
                     val configResult =
                         session.configure(
-                            Config(deviceTracking = DeviceTrackingMode.INERTIAL_LAST_KNOWN)
+                            Config.Builder().setDeviceTracking(DeviceTrackingMode.INERTIAL).build()
                         )
                     when (configResult) {
                         is SessionConfigureSuccess -> {

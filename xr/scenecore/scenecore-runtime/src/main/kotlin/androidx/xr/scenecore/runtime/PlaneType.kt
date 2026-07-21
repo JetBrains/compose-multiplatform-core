@@ -19,9 +19,8 @@ package androidx.xr.scenecore.runtime
 import androidx.annotation.RestrictTo
 
 /** Type of plane based on orientation i.e. Horizontal or Vertical. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public enum class PlaneType {
     HORIZONTAL,
     VERTICAL,
-    ANY,
 }

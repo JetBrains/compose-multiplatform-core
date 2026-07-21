@@ -27,9 +27,7 @@ import androidx.compose.ui.graphics.PaintingStyle
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
-import androidx.compose.ui.text.font.GenericFontFamily
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 
@@ -37,6 +35,9 @@ import androidx.compose.ui.text.style.TextOverflow
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public fun BlendMode.toAndroidBlendMode(): android.graphics.BlendMode {
     return when (this) {
+        BlendMode.Clear -> AndroidBlendMode.CLEAR
+        BlendMode.Src -> AndroidBlendMode.SRC
+        BlendMode.Dst -> AndroidBlendMode.DST
         BlendMode.SrcOver -> AndroidBlendMode.SRC_OVER
         BlendMode.SrcIn -> AndroidBlendMode.SRC_IN
         BlendMode.SrcOut -> AndroidBlendMode.SRC_OUT
@@ -137,17 +138,6 @@ internal fun FontStyle.encode(): Int =
         FontStyle.Normal -> 0
         FontStyle.Italic -> 1
         else -> -1
-    }
-
-internal fun FontFamily?.encode(): String? =
-    when (this) {
-        FontFamily.Default -> "default"
-        FontFamily.SansSerif -> "sans-serif"
-        FontFamily.Serif -> "serif"
-        FontFamily.Monospace -> "monospace"
-        FontFamily.Cursive -> "cursive"
-        is GenericFontFamily -> name
-        else -> null
     }
 
 internal fun AndroidBlendMode.toComposeBlendMode(): BlendMode {

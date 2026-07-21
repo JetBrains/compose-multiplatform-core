@@ -14,36 +14,64 @@
  * limitations under the License.
  */
 
-import androidx.build.SoftwareType
-import androidx.build.PlatformIdentifier
 import androidx.build.AndroidXConfig
+import androidx.build.PlatformIdentifier
+import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
+import org.jetbrains.kotlin.konan.target.KonanTarget
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
 }
 
+def prebuiltsRoot = AndroidXConfig.getPrebuiltsRoot(project)
+def nativePrebuiltsDir = new File(prebuiltsRoot, "androidx/ink/native").path
+def nativeHeadersDir = new File(nativePrebuiltsDir, "headers").path
+
 androidXMultiplatform {
+  // Only supported on non-Android JVM for Linux on x86_64
   jvm()
+
   androidLibrary {
     namespace = "androidx.ink.nativeloader"
     optimization {
       it.consumerKeepRules.publish = true
-      it.consumerKeepRules.files.add(new File("ink_jni.pgcfg"))
     }
     androidResources.enable = true
   }
 
+  ios()
+
   defaultPlatform(PlatformIdentifier.JVM)
+
+  targets.configureEach { target ->
+    if (target.platformType == KotlinPlatformType.native) {
+      target.compilations.main.cinterops.register("ink") {
+          def platformName
+          if (target.konanTarget instanceof KonanTarget.IOS_ARM64) {
+            platformName = "IosArm64"
+          } else if (target.konanTarget instanceof KonanTarget.IOS_SIMULATOR_ARM64) {
+            platformName = "IosSimArm64"
+          }
+          definitionFile = file("src/nativeInterop/cinterop/ink${platformName}.def")
+          includeDirs(nativeHeadersDir)
+      }
+    }
+  }
 
   sourceSets {
     commonMain.dependencies {
+      implementation(libs.kotlinCoroutinesCore)
       implementation("androidx.annotation:annotation:1.8.0")
     }
 
     jvmMain {
-      resources.srcDir(new File(
-          AndroidXConfig.getPrebuiltsRoot(project),
-          "androidx/ink/jvm"))
+      resources.srcDir(new File(prebuiltsRoot, "androidx/ink/jvm"))
+    }
+
+    commonTest.dependencies {
+      implementation(project(":kruth:kruth"))
+      implementation(libs.kotlinTest)
     }
 
     jvmAndAndroidTest.dependencies {
@@ -60,9 +88,7 @@ androidXMultiplatform {
 androidComponents {
   onVariants(selector().all()) { variant ->
     variant.sources.jniLibs.addStaticSourceDirectory(
-            new File(
-                    AndroidXConfig.getPrebuiltsRoot(project),
-                    "androidx/ink/android").absolutePath
+            new File(prebuiltsRoot, "androidx/ink/android").absolutePath
     )
   }
 }
@@ -72,4 +98,12 @@ androidx {
     type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2024"
     description = "Native dependencies for Ink"
+    usePlatformSpecificCacheForJvmTests = true
+}
+
+// TODO: b/374774638 - Run tests on host as well as device.
+afterEvaluate {
+    project.tasks.named("testAndroidHostTest").configure {
+        it.enabled = false
+    }
 }

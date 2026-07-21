@@ -15,15 +15,20 @@
  */
 package androidx.wear.compose.remote.material3
 
-import androidx.compose.remote.creation.compose.action.HostAction
+import androidx.compose.remote.creation.compose.action.hostAction
+import androidx.compose.remote.creation.compose.capture.createCreationDisplayInfo
+import androidx.compose.remote.creation.compose.layout.RemoteComposable
 import androidx.compose.remote.creation.compose.state.rs
-import androidx.compose.remote.player.compose.test.utils.screenshot.rule.RemoteComposeScreenshotTestRule
+import androidx.compose.remote.testing.RemoteContentTestRule
+import androidx.compose.runtime.Composable
 import androidx.core.view.accessibility.AccessibilityNodeInfoCompat
+import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.uiautomator.UiObject2
 import androidx.test.uiautomator.uiAutomator
+import androidx.wear.compose.remote.material3.util.TestImageVectors
 import com.google.common.truth.Truth.assertThat
 import org.junit.Rule
 import org.junit.Test
@@ -33,14 +38,12 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 @MediumTest
 class RemoteButtonA11yTest {
-    @get:Rule
-    val remoteComposeTestRule =
-        RemoteComposeScreenshotTestRule(moduleDirectory = SCREENSHOT_GOLDEN_DIRECTORY)
+    @get:Rule val remoteComposeTestRule = RemoteContentTestRule()
 
     @Test
     fun button_isFocusable() {
         remoteComposeTestRule.runTest {
-            RemoteButton(onClick = HostAction("click".rs)) { RemoteText("text".rs) }
+            RemoteButton(onClick = hostAction("click".rs)) { RemoteText("text".rs) }
         }
 
         uiAutomator {
@@ -54,7 +57,7 @@ class RemoteButtonA11yTest {
     @Test
     fun compactButton_isFocusable() {
         remoteComposeTestRule.runTest {
-            RemoteCompactButton(onClick = HostAction("click".rs)) { RemoteText("text".rs) }
+            RemoteCompactButton(onClick = hostAction("click".rs)) { RemoteText("text".rs) }
         }
 
         uiAutomator {
@@ -69,7 +72,7 @@ class RemoteButtonA11yTest {
     fun buttonWithSecondaryLabelAndIcon_isFocusable() {
         remoteComposeTestRule.runTest {
             RemoteButton(
-                onClick = HostAction("click".rs),
+                onClick = hostAction("click".rs),
                 secondaryLabel = { RemoteText("text".rs) },
                 icon = { RemoteIcon(TestImageVectors.VolumeUp, contentDescription = "VolumeUp".rs) },
             ) {}
@@ -86,7 +89,7 @@ class RemoteButtonA11yTest {
     @Test
     fun iconButton_isFocusable() {
         remoteComposeTestRule.runTest {
-            RemoteIconButton(onClick = HostAction("click".rs)) {
+            RemoteIconButton(onClick = hostAction("click".rs)) {
                 RemoteIcon(TestImageVectors.VolumeUp, contentDescription = "Add".rs)
             }
         }
@@ -102,7 +105,7 @@ class RemoteButtonA11yTest {
     @Test
     fun textButton_isFocusable() {
         remoteComposeTestRule.runTest {
-            RemoteTextButton(onClick = HostAction("click".rs)) { RemoteText("text".rs) }
+            RemoteTextButton(onClick = hostAction("click".rs)) { RemoteText("text".rs) }
         }
 
         uiAutomator {
@@ -116,5 +119,15 @@ class RemoteButtonA11yTest {
     private fun assertHasButtonRole(button: UiObject2) {
         val role = AccessibilityNodeInfoCompat.wrap(button.accessibilityNodeInfo).roleDescription
         assertThat(role).isEqualTo("Button")
+    }
+
+    private fun RemoteContentTestRule.runTest(
+        composable: @Composable @RemoteComposable () -> Unit
+    ) {
+        setContent(
+            remoteCreationDisplayInfo =
+                createCreationDisplayInfo(ApplicationProvider.getApplicationContext()),
+            composable = composable,
+        )
     }
 }

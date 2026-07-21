@@ -27,6 +27,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material3.tokens.MotionSchemeKeyTokens
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -239,7 +240,6 @@ class FloatingActionButtonScreenshotTest {
         assertClickableAgainstGolden("fab_small_size")
     }
 
-    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
     @Test
     fun mediumFab() {
         rule.setMaterialContent(lightColorScheme()) {
@@ -292,7 +292,6 @@ class FloatingActionButtonScreenshotTest {
         assertClickableAgainstGolden("fab_extended_text_and_icon")
     }
 
-    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
     @Test
     fun smallExtendedFabTextOnly() {
         rule.setMaterialContent(lightColorScheme()) {
@@ -302,7 +301,6 @@ class FloatingActionButtonScreenshotTest {
         assertClickableAgainstGolden("fab_small_extended_text")
     }
 
-    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
     @Test
     fun smallExtendedFabTextAndIcon() {
         rule.setMaterialContent(lightColorScheme()) {
@@ -316,7 +314,6 @@ class FloatingActionButtonScreenshotTest {
         assertClickableAgainstGolden("fab_small_extended_text_and_icon")
     }
 
-    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
     @Test
     fun mediumExtendedFabTextOnly() {
         rule.setMaterialContent(lightColorScheme()) {
@@ -326,7 +323,6 @@ class FloatingActionButtonScreenshotTest {
         assertClickableAgainstGolden("fab_medium_extended_text")
     }
 
-    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
     @Test
     fun mediumExtendedFabTextAndIcon() {
         rule.setMaterialContent(lightColorScheme()) {
@@ -346,7 +342,6 @@ class FloatingActionButtonScreenshotTest {
         assertClickableAgainstGolden("fab_medium_extended_text_and_icon")
     }
 
-    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
     @Test
     fun largeExtendedFabTextOnly() {
         rule.setMaterialContent(lightColorScheme()) {
@@ -356,7 +351,6 @@ class FloatingActionButtonScreenshotTest {
         assertClickableAgainstGolden("fab_large_extended_text")
     }
 
-    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
     @Test
     fun largeExtendedFabTextAndIcon() {
         rule.setMaterialContent(lightColorScheme()) {
@@ -442,7 +436,39 @@ class FloatingActionButtonScreenshotTest {
         assertRootAgainstGolden("fab_focus")
     }
 
-    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
+    @Test
+    fun fab_focused_insetFocusRings() {
+        val focusRequester = FocusRequester()
+        var localInputModeManager: InputModeManager? = null
+
+        rule.setMaterialContent(lightColorScheme()) {
+            @OptIn(ExperimentalMaterial3Api::class)
+            CompositionLocalProvider(
+                LocalRippleThemeConfiguration provides
+                    RippleDefaults.InsetFocusRingRippleThemeConfiguration
+            ) {
+                localInputModeManager = LocalInputModeManager.current
+                Box(Modifier.requiredSize(100.dp, 100.dp).wrapContentSize()) {
+                    FloatingActionButton(
+                        onClick = {},
+                        modifier = Modifier.focusRequester(focusRequester),
+                    ) {
+                        Icon(Icons.Filled.Favorite, contentDescription = null)
+                    }
+                }
+            }
+        }
+
+        rule.runOnIdle {
+            localInputModeManager!!.requestInputMode(InputMode.Keyboard)
+            focusRequester.requestFocus()
+        }
+
+        rule.waitForIdle()
+
+        assertRootAgainstGolden("fab_focused_insetFocusRings")
+    }
+
     @Test
     fun extended_fab_half_way_animation() {
         rule.mainClock.autoAdvance = false

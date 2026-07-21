@@ -34,7 +34,7 @@ import androidx.xr.runtime.Session
 fun getARCoreSession(session: Session): com.google.ar.core.Session? {
     // This code assumes the ARCore for Play Services runtime is being used.
     val runtime = session.runtimes.first() as? ArCoreRuntime
-    return runtime?.lifecycleManager?.session()
+    return runtime?.session()
 }
 
 /**
@@ -54,6 +54,7 @@ fun getARCoreFrame(session: Session): com.google.ar.core.Frame? {
  * @return the [HardwareBuffer] obtained by the [CameraState]
  */
 @Sampled
+@SuppressWarnings("RestrictedApiAndroidX")
 fun getARCoreHardwareBuffer(session: Session): HardwareBuffer? {
     val coreState = session.state.value
     val cameraState = coreState.cameraState

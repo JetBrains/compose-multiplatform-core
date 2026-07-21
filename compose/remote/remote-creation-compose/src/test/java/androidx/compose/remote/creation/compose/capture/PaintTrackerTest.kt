@@ -17,16 +17,17 @@
 package androidx.compose.remote.creation.compose.capture
 
 import android.graphics.Bitmap
-import android.graphics.Typeface
-import androidx.annotation.NonNull
-import androidx.annotation.Nullable
+import android.graphics.Canvas
 import androidx.compose.remote.core.PaintContext
 import androidx.compose.remote.core.operations.paint.PaintBundle
 import androidx.compose.remote.core.operations.paint.PaintChanges
+import androidx.compose.remote.creation.compose.RemoteComposeCreationComposeFlags
+import androidx.compose.remote.creation.compose.state.AndroidRemotePaint
 import androidx.compose.remote.creation.compose.state.RemotePaint
 import androidx.compose.remote.creation.compose.state.asRemotePaint
 import androidx.compose.remote.creation.compose.state.rc
 import androidx.compose.remote.creation.compose.state.rf
+import androidx.compose.remote.creation.compose.text.RemoteTypeface
 import androidx.compose.remote.player.core.platform.AndroidRemoteContext
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
@@ -35,7 +36,9 @@ import androidx.compose.ui.graphics.PaintingStyle
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.text.font.FontVariation
 import com.google.common.truth.Truth.assertThat
+import org.junit.Assume.assumeTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -48,7 +51,8 @@ class PaintTrackerTest {
     private lateinit var creationState: RemoteComposeCreationState
     private lateinit var recordingCanvas: RecordingCanvas
     private lateinit var tracker: PaintTracker
-    private lateinit var paintContext: DummyPaintContext
+    private lateinit var remoteContext: AndroidRemoteContext
+    private lateinit var paintContext: PaintContext
 
     @Before
     fun setUp() {
@@ -62,7 +66,9 @@ class PaintTrackerTest {
         recordingCanvas = RecordingCanvas(bitmap)
         recordingCanvas.creationState = creationState
         tracker = PaintTracker()
-        paintContext = DummyPaintContext(AndroidRemoteContext())
+        remoteContext = AndroidRemoteContext()
+        remoteContext.useCanvas(Canvas(Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888)))
+        paintContext = remoteContext.paintContext!!
     }
 
     @Test
@@ -77,7 +83,7 @@ class PaintTrackerTest {
         assertThat(tracker.isChanged).isTrue()
 
         val changes = TestPaintChanges()
-        bundle.applyPaintChange(DummyPaintContext(AndroidRemoteContext()), changes)
+        bundle.applyPaintChange(paintContext, changes)
 
         assertThat(changes.mColor).isEqualTo(Color.Red.toArgb())
         assertThat(changes.mStrokeWidth).isEqualTo(5f)
@@ -102,7 +108,7 @@ class PaintTrackerTest {
         assertThat(tracker.isChanged).isTrue()
 
         val changes = TestPaintChanges()
-        bundle2.applyPaintChange(DummyPaintContext(AndroidRemoteContext()), changes)
+        bundle2.applyPaintChange(paintContext, changes)
 
         assertThat(changes.colorSet).isFalse()
         assertThat(changes.strokeWidthSet).isTrue()
@@ -121,7 +127,7 @@ class PaintTrackerTest {
 
         assertThat(tracker.isChanged).isTrue()
         val changes = TestPaintChanges()
-        bundle2.applyPaintChange(DummyPaintContext(AndroidRemoteContext()), changes)
+        bundle2.applyPaintChange(paintContext, changes)
         assertThat(changes.colorSet).isTrue()
         assertThat(changes.mColor).isEqualTo(Color.Red.toArgb())
     }
@@ -137,7 +143,7 @@ class PaintTrackerTest {
         tracker.updateWithPaint(paint, bundle, recordingCanvas)
 
         val changes = TestPaintChanges()
-        bundle.applyPaintChange(DummyPaintContext(AndroidRemoteContext()), changes)
+        bundle.applyPaintChange(paintContext, changes)
 
         assertThat(changes.mStyle).isEqualTo(1) // STYLE_STROKE
         assertThat(changes.mStrokeCap).isEqualTo(1) // ROUND
@@ -162,7 +168,7 @@ class PaintTrackerTest {
 
         assertThat(tracker.isChanged).isTrue()
         val changes = TestPaintChanges()
-        bundle2.applyPaintChange(DummyPaintContext(AndroidRemoteContext()), changes)
+        bundle2.applyPaintChange(paintContext, changes)
         assertThat(changes.mColor).isEqualTo(android.graphics.Color.GREEN)
     }
 
@@ -180,24 +186,237 @@ class PaintTrackerTest {
 
         assertThat(tracker.isChanged).isTrue()
         val changes = TestPaintChanges()
-        bundle2.applyPaintChange(DummyPaintContext(AndroidRemoteContext()), changes)
+        bundle2.applyPaintChange(paintContext, changes)
         assertThat(changes.mColor).isEqualTo(Color.Yellow.toArgb())
     }
 
     @Test
     fun testTypefaceSync() {
-        val paint = RemotePaint { typeface = Typeface.MONOSPACE }
+        val paint = RemotePaint { typeface = RemoteTypeface.Monospace }
         val bundle = PaintBundle()
         tracker.updateWithPaint(paint, bundle, recordingCanvas)
 
         val changes = TestPaintChanges()
-        bundle.applyPaintChange(DummyPaintContext(AndroidRemoteContext()), changes)
+        bundle.applyPaintChange(paintContext, changes)
 
         assertThat(changes.mFontType).isEqualTo(3) // FONT_TYPE_MONOSPACE
     }
 
+    @Test
+    fun testNamedTypefaceSync() {
+        val paint = RemotePaint {
+            typeface = RemoteTypeface.Named("RobotoFlex", weight = 700, isItalic = true)
+        }
+        val bundle = PaintBundle()
+        val typefaceId = creationState.document.addText("RobotoFlex")
+        remoteContext.loadText(typefaceId, "RobotoFlex")
+
+        tracker.updateWithPaint(paint, bundle, recordingCanvas)
+
+        val changes = TestPaintChanges()
+        bundle.applyPaintChange(paintContext, changes)
+
+        assertThat(changes.mFontString).isEqualTo("RobotoFlex")
+        assertThat(changes.mWeight).isEqualTo(700)
+        assertThat(changes.mItalic).isTrue()
+    }
+
+    @Test
+    fun testNamedTypefaceMapsToFontType() {
+        val paintDefault = RemotePaint { typeface = RemoteTypeface.create("default") }
+        val paintMono = RemotePaint { typeface = RemoteTypeface.create("monospace") }
+        val paintSerif = RemotePaint { typeface = RemoteTypeface.create("serif") }
+        val paintSansSerif = RemotePaint { typeface = RemoteTypeface.create("sans-serif") }
+
+        val bundleDefault = PaintBundle()
+        val bundleMono = PaintBundle()
+        val bundleSerif = PaintBundle()
+        val bundleSansSerif = PaintBundle()
+
+        val changesDefault = TestPaintChanges()
+        val changesMono = TestPaintChanges()
+        val changesSerif = TestPaintChanges()
+        val changesSansSerif = TestPaintChanges()
+
+        tracker.updateWithPaint(paintDefault, bundleDefault, recordingCanvas)
+        tracker.updateWithPaint(paintMono, bundleMono, recordingCanvas)
+        tracker.updateWithPaint(paintSerif, bundleSerif, recordingCanvas)
+        tracker.updateWithPaint(paintSansSerif, bundleSansSerif, recordingCanvas)
+
+        bundleDefault.applyPaintChange(paintContext, changesDefault)
+        bundleMono.applyPaintChange(paintContext, changesMono)
+        bundleSerif.applyPaintChange(paintContext, changesSerif)
+        bundleSansSerif.applyPaintChange(paintContext, changesSansSerif)
+
+        assertThat(changesDefault.mFontType).isEqualTo(0) // FONT_TYPE_DEFAULT
+        assertThat(changesMono.mFontType).isEqualTo(3) // FONT_TYPE_MONOSPACE
+        assertThat(changesSerif.mFontType).isEqualTo(2) // FONT_TYPE_SERIF
+        assertThat(changesSansSerif.mFontType).isEqualTo(1) // FONT_TYPE_SANS_SERIF
+    }
+
+    @Test
+    fun testTypefaceStyleSync() {
+        val paintNormal = RemotePaint {
+            typeface = RemoteTypeface.create("sans-serif", RemoteTypeface.Style.Normal)
+        }
+        val paintBold = RemotePaint {
+            typeface = RemoteTypeface.create("sans-serif", RemoteTypeface.Style.Bold)
+        }
+        val paintItalic = RemotePaint {
+            typeface = RemoteTypeface.create("sans-serif", RemoteTypeface.Style.Italic)
+        }
+        val paintBoldItalic = RemotePaint {
+            typeface = RemoteTypeface.create("sans-serif", RemoteTypeface.Style.BoldItalic)
+        }
+
+        val bundleNormal = PaintBundle()
+        val bundleBold = PaintBundle()
+        val bundleItalic = PaintBundle()
+        val bundleBoldItalic = PaintBundle()
+
+        val changesNormal = TestPaintChanges()
+        val changesBold = TestPaintChanges()
+        val changesItalic = TestPaintChanges()
+        val changesBoldItalic = TestPaintChanges()
+
+        tracker.updateWithPaint(paintNormal, bundleNormal, recordingCanvas)
+        tracker.updateWithPaint(paintBold, bundleBold, recordingCanvas)
+        tracker.updateWithPaint(paintItalic, bundleItalic, recordingCanvas)
+        tracker.updateWithPaint(paintBoldItalic, bundleBoldItalic, recordingCanvas)
+
+        bundleNormal.applyPaintChange(paintContext, changesNormal)
+        bundleBold.applyPaintChange(paintContext, changesBold)
+        bundleItalic.applyPaintChange(paintContext, changesItalic)
+        bundleBoldItalic.applyPaintChange(paintContext, changesBoldItalic)
+
+        assertThat(changesNormal.mWeight).isEqualTo(400)
+        assertThat(changesNormal.mItalic).isFalse()
+
+        assertThat(changesBold.mWeight).isEqualTo(700)
+        assertThat(changesBold.mItalic).isFalse()
+
+        assertThat(changesItalic.mWeight).isEqualTo(400)
+        assertThat(changesItalic.mItalic).isTrue()
+
+        assertThat(changesBoldItalic.mWeight).isEqualTo(700)
+        assertThat(changesBoldItalic.mItalic).isTrue()
+    }
+
+    @Test
+    fun testFontVariationSettingsSync() {
+        val settings = FontVariation.Settings(FontVariation.weight(500), FontVariation.width(100f))
+        val paint = RemotePaint { fontVariationSettings = settings }
+        val bundle = PaintBundle()
+
+        val wghtId = creationState.document.addText("wght")
+        val wdthId = creationState.document.addText("wdth")
+        remoteContext.loadText(wghtId, "wght")
+        remoteContext.loadText(wdthId, "wdth")
+
+        tracker.updateWithPaint(paint, bundle, recordingCanvas)
+
+        assertThat(tracker.isChanged).isTrue()
+
+        val changes = TestPaintChanges()
+        bundle.applyPaintChange(paintContext, changes)
+
+        assertThat(changes.fontVariationAxesSet).isTrue()
+        assertThat(changes.mFontAxisTags).isEqualTo(arrayOf("wght", "wdth"))
+        assertThat(changes.mFontAxisValues).isEqualTo(floatArrayOf(500f, 100f))
+    }
+
+    @Test
+    @OptIn(androidx.compose.remote.creation.compose.ExperimentalRemoteCreationComposeApi::class)
+    fun testFontVariationSettingsSync_FallbackToWeight400() {
+        val originalFlag = RemoteComposeCreationComposeFlags.allowSendingEmptyFontAxis
+        RemoteComposeCreationComposeFlags.allowSendingEmptyFontAxis = false
+        try {
+            val paint = RemotePaint { fontVariationSettings = null }
+            val bundle = PaintBundle()
+
+            val wghtId = creationState.document.addText("wght")
+            remoteContext.loadText(wghtId, "wght")
+
+            tracker.updateWithPaint(paint, bundle, recordingCanvas)
+
+            assertThat(tracker.isChanged).isTrue()
+
+            val changes = TestPaintChanges()
+            bundle.applyPaintChange(paintContext, changes)
+
+            assertThat(changes.fontVariationAxesSet).isTrue()
+            assertThat(changes.mFontAxisTags?.single()).isEqualTo("wght")
+            assertThat(changes.mFontAxisValues?.single()).isEqualTo(400f)
+        } finally {
+            RemoteComposeCreationComposeFlags.allowSendingEmptyFontAxis = originalFlag
+        }
+    }
+
+    // Note: The following tests are partially disabled out because Robolectric does not support
+    // reading fontVariationSettings from android.graphics.Paint (the getter returns null).
+    // See https://github.com/robolectric/robolectric/issues/11126
+    // This prevents us from verifying that settings applied to Android Paint are picked up
+    // by PaintTracker in unit tests. These should work on a real device or emulator (API 26+).
+    //
+
+    @Test
+    fun testFontVariationSettingsSync_AndroidRemotePaint() {
+        assumeTrue(android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O)
+
+        val androidPaint = android.graphics.Paint()
+        val paint = AndroidRemotePaint(androidPaint)
+        val bundle = PaintBundle()
+
+        val settings = FontVariation.Settings(FontVariation.weight(500), FontVariation.width(100f))
+        paint.fontVariationSettings = settings
+
+        // TODO fix after https://github.com/robolectric/robolectric/issues/11126
+        //         assertThat(paint.fontVariationSettings).isNotNull()
+
+        val wghtId = creationState.document.addText("wght")
+        val wdthId = creationState.document.addText("wdth")
+        remoteContext.loadText(wghtId, "wght")
+        remoteContext.loadText(wdthId, "wdth")
+
+        tracker.updateWithPaint(paint, bundle, recordingCanvas)
+
+        val changes = TestPaintChanges()
+        bundle.applyPaintChange(paintContext, changes)
+
+        // TODO fix after https://github.com/robolectric/robolectric/issues/11126
+        //         assertThat(changes.fontVariationAxesSet).isTrue()
+        //         assertThat(changes.mFontAxisTags).isEqualTo(arrayOf("wght", "wdth"))
+        //         assertThat(changes.mFontAxisValues).isEqualTo(floatArrayOf(500f, 100f))
+    }
+
+    @Test
+    fun testFontVariationSettingsSync_AndroidPaintDirect() {
+        assumeTrue(android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O)
+
+        val androidPaint = android.graphics.Paint()
+        androidPaint.fontVariationSettings = "'wght' 500.0, 'wdth' 100.0"
+
+        val paint = AndroidRemotePaint(androidPaint)
+        val bundle = PaintBundle()
+
+        val wghtId = creationState.document.addText("wght")
+        val wdthId = creationState.document.addText("wdth")
+        remoteContext.loadText(wghtId, "wght")
+        remoteContext.loadText(wdthId, "wdth")
+
+        tracker.updateWithPaint(paint, bundle, recordingCanvas)
+
+        val changes = TestPaintChanges()
+        bundle.applyPaintChange(paintContext, changes)
+
+        // TODO fix after https://github.com/robolectric/robolectric/issues/11126
+        //         assertThat(changes.fontVariationAxesSet).isTrue()
+        //         assertThat(changes.mFontAxisTags).isEqualTo(arrayOf("wght", "wdth"))
+        //         assertThat(changes.mFontAxisValues).isEqualTo(floatArrayOf(500f, 100f))
+    }
+
     // Helper classes for verification
-    private class TestPaintChanges : PaintChanges {
+    class TestPaintChanges : PaintChanges {
         var mColor: Int = 0
         var colorSet = false
         var mStrokeWidth: Float = 0f
@@ -209,6 +428,12 @@ class PaintTrackerTest {
         var mStrokeJoin: Int = -1
         var mStrokeMiter: Float = 0f
         var mFontType: Int = -1
+        var mFontAxisTags: Array<out String>? = null
+        var mFontAxisValues: FloatArray? = null
+        var fontVariationAxesSet = false
+        var mFontString: String? = null
+        var mWeight: Int = -1
+        var mItalic: Boolean = false
 
         override fun setColor(color: Int) {
             this.mColor = color
@@ -243,11 +468,17 @@ class PaintTrackerTest {
 
         override fun setTypeFace(fontType: Int, weight: Int, italic: Boolean) {
             this.mFontType = fontType
+            this.mWeight = weight
+            this.mItalic = italic
         }
 
         override fun setTextSize(size: Float) {}
 
-        override fun setTypeFace(fontString: String, weight: Int, italic: Boolean) {}
+        override fun setTypeFace(fontString: String, weight: Int, italic: Boolean) {
+            this.mFontString = fontString
+            this.mWeight = weight
+            this.mItalic = italic
+        }
 
         override fun setFallbackTypeFace(fontType: Int, weight: Int, italic: Boolean) {}
 
@@ -293,7 +524,11 @@ class PaintTrackerTest {
             centerY: Float,
         ) {}
 
-        override fun setFontVariationAxes(tags: Array<out String>, values: FloatArray) {}
+        override fun setFontVariationAxes(tags: Array<out String>, values: FloatArray) {
+            this.mFontAxisTags = tags
+            this.mFontAxisValues = values
+            this.fontVariationAxesSet = true
+        }
 
         override fun setTextureShader(
             bitmapId: Int,
@@ -304,169 +539,5 @@ class PaintTrackerTest {
         ) {}
 
         override fun setPathEffect(pathEffect: FloatArray?) {}
-    }
-
-    private class DummyPaintContext(context: androidx.compose.remote.core.RemoteContext) :
-        PaintContext(context) {
-        override fun drawBitmap(
-            imageId: Int,
-            srcLeft: Int,
-            srcTop: Int,
-            srcRight: Int,
-            srcBottom: Int,
-            dstLeft: Int,
-            dstTop: Int,
-            dstRight: Int,
-            dstBottom: Int,
-            cdId: Int,
-        ) {}
-
-        override fun scale(scaleX: Float, scaleY: Float) {}
-
-        override fun translate(translateX: Float, translateY: Float) {}
-
-        override fun drawArc(
-            left: Float,
-            top: Float,
-            right: Float,
-            bottom: Float,
-            startAngle: Float,
-            sweepAngle: Float,
-        ) {}
-
-        override fun drawSector(
-            left: Float,
-            top: Float,
-            right: Float,
-            bottom: Float,
-            startAngle: Float,
-            sweepAngle: Float,
-        ) {}
-
-        override fun drawBitmap(id: Int, left: Float, top: Float, right: Float, bottom: Float) {}
-
-        override fun drawCircle(centerX: Float, centerY: Float, radius: Float) {}
-
-        override fun drawLine(x1: Float, y1: Float, x2: Float, y2: Float) {}
-
-        override fun drawOval(left: Float, top: Float, right: Float, bottom: Float) {}
-
-        override fun drawPath(id: Int, start: Float, end: Float) {}
-
-        override fun drawRect(left: Float, top: Float, right: Float, bottom: Float) {}
-
-        override fun savePaint() {}
-
-        override fun restorePaint() {}
-
-        override fun replacePaint(paintBundle: PaintBundle) {}
-
-        override fun drawRoundRect(
-            left: Float,
-            top: Float,
-            right: Float,
-            bottom: Float,
-            radiusX: Float,
-            radiusY: Float,
-        ) {}
-
-        override fun drawTextOnPath(textId: Int, pathId: Int, hOffset: Float, vOffset: Float) {}
-
-        override fun getTextBounds(
-            textId: Int,
-            start: Int,
-            end: Int,
-            flags: Int,
-            @NonNull bounds: FloatArray,
-        ) {}
-
-        override fun layoutComplexText(
-            textId: Int,
-            start: Int,
-            end: Int,
-            alignment: Int,
-            overflow: Int,
-            maxLines: Int,
-            maxWidth: Float,
-            maxHeight: Float,
-            letterSpacing: Float,
-            lineHeightAdd: Float,
-            lineHeightMultiplier: Float,
-            lineBreakStrategy: Int,
-            hyphenationFrequency: Int,
-            justificationMode: Int,
-            useUnderline: Boolean,
-            strikethrough: Boolean,
-            flags: Int,
-        ): androidx.compose.remote.core.RcPlatformServices.ComputedTextLayout? = null
-
-        override fun drawTextRun(
-            textId: Int,
-            start: Int,
-            end: Int,
-            contextStart: Int,
-            contextEnd: Int,
-            x: Float,
-            y: Float,
-            rtl: Boolean,
-        ) {}
-
-        override fun drawComplexText(
-            @Nullable
-            computedTextLayout: androidx.compose.remote.core.RcPlatformServices.ComputedTextLayout?
-        ) {}
-
-        override fun drawTweenPath(
-            path1Id: Int,
-            path2Id: Int,
-            tween: Float,
-            start: Float,
-            end: Float,
-        ) {}
-
-        override fun tweenPath(out: Int, path1: Int, path2: Int, tween: Float) {}
-
-        override fun combinePath(out: Int, path1: Int, path2: Int, operation: Byte) {}
-
-        override fun applyPaint(@NonNull mPaintData: PaintBundle) {}
-
-        override fun matrixScale(scaleX: Float, scaleY: Float, centerX: Float, centerY: Float) {}
-
-        override fun matrixTranslate(translateX: Float, translateY: Float) {}
-
-        override fun matrixSkew(skewX: Float, skewY: Float) {}
-
-        override fun matrixRotate(rotate: Float, pivotX: Float, pivotY: Float) {}
-
-        override fun matrixSave() {}
-
-        override fun matrixRestore() {}
-
-        override fun clipRect(left: Float, top: Float, right: Float, bottom: Float) {}
-
-        override fun clipPath(pathId: Int, regionOp: Int) {}
-
-        override fun roundedClipRect(
-            width: Float,
-            height: Float,
-            topStart: Float,
-            topEnd: Float,
-            bottomStart: Float,
-            bottomEnd: Float,
-        ) {}
-
-        override fun reset() {}
-
-        override fun startGraphicsLayer(w: Int, h: Int) {}
-
-        override fun setGraphicsLayer(@NonNull attributes: HashMap<Int, Any>) {}
-
-        override fun endGraphicsLayer() {}
-
-        override fun getText(id: Int): String? = null
-
-        override fun matrixFromPath(pathId: Int, fraction: Float, vOffset: Float, flags: Int) {}
-
-        override fun drawToBitmap(bitmapId: Int, mode: Int, color: Int) {}
     }
 }

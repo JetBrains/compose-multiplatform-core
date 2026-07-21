@@ -46,7 +46,7 @@ class MultiParagraphIntegrationTextDirectionTest {
     private val ltrLocaleList = LocaleList("en")
     private val rtlLocaleList = LocaleList("ar")
     private val ltrLocale = Locale.ENGLISH
-    private val rtlLocale = Locale("ar")
+    private val rtlLocale = Locale.forLanguageTag("ar")
 
     @Before
     fun before() {
@@ -266,6 +266,7 @@ class MultiParagraphIntegrationTextDirectionTest {
             placeholders = placeholders,
             density = defaultDensity,
             fontFamilyResolver = UncachedFontFamilyResolver(context),
+            softWrap = true,
         )
     }
 

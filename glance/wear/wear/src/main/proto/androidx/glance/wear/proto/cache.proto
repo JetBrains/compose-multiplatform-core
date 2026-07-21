@@ -44,5 +44,8 @@ message WearWidgetCacheProto {
 
   // The cached association between instanceId (flattened) to containerType.
   map<string, int32> instance_id_to_type = 2;
+
+  // The cached association between service class name and widget class name.
+  map<string, string> service_to_widget_name = 3;
 }
 

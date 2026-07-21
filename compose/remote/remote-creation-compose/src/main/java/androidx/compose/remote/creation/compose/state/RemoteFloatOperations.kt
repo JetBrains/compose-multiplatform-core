@@ -20,6 +20,10 @@ package androidx.compose.remote.creation.compose.state
 import androidx.annotation.RestrictTo
 import androidx.compose.remote.core.RemoteComposeBuffer
 import androidx.compose.remote.core.operations.utilities.AnimatedFloatExpression
+import androidx.compose.remote.core.operations.utilities.easing.CubicEasing
+import androidx.compose.remote.core.operations.utilities.easing.MonotonicSpline
+import androidx.compose.ui.util.fastAll
+import androidx.compose.ui.util.fastMap
 import kotlin.math.abs
 import kotlin.math.acos
 import kotlin.math.asin
@@ -42,6 +46,55 @@ import kotlin.math.tan
 
 private const val FP_TO_RAD = 57.29578f // 180/PI
 private const val FP_TO_DEG = 0.017453292f // 180/PI
+private val PI_RF = Math.PI.toFloat().rf
+
+private fun easeOutBounce(x: RemoteFloat): RemoteFloat {
+    val n1 = 7.5625f.rf
+    val d1 = 2.75f.rf
+
+    return selectIfLt(
+        x,
+        0f.rf,
+        0f.rf,
+        selectIfLt(
+            x,
+            1f.rf / d1,
+            1f.rf / (1f.rf + 1f.rf / d1) * (n1 * x * x + x),
+            selectIfLt(
+                x,
+                2f.rf / d1,
+                n1 * (x - 1.5f.rf / d1) * (x - 1.5f.rf / d1) + 0.75f.rf,
+                selectIfLt(
+                    x,
+                    2.5f.rf / d1,
+                    n1 * (x - 2.25f.rf / d1) * (x - 2.25f.rf / d1) + 0.9375f.rf,
+                    selectIfLt(
+                        x,
+                        1f.rf,
+                        n1 * (x - 2.625f.rf / d1) * (x - 2.625f.rf / d1) + 0.984375f.rf,
+                        1f.rf,
+                    ),
+                ),
+            ),
+        ),
+    )
+}
+
+private fun easeOutElastic(x: RemoteFloat): RemoteFloat {
+    val c4 = (2f.rf * PI_RF) / 3f.rf
+
+    return selectIfLt(
+        x,
+        0f.rf,
+        0f.rf,
+        selectIfLt(
+            x,
+            1f.rf,
+            pow(2f.rf, -10f.rf * x) * sin((x * 10f.rf - 0.75f.rf) * c4) + 1f.rf,
+            1f.rf,
+        ),
+    )
+}
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public fun max(a: RemoteFloat, b: Float): RemoteFloat =
@@ -398,6 +451,151 @@ public fun clamp(value: RemoteFloat, min: Float, max: Float): RemoteFloat {
 }
 
 /**
+ * Cubic easing function similar to CSS cubic-bezier, given two control point x1,y1 and x2,y2 the
+ * function is defined as: f(x) = (1-x)^3 * x1 + 3 * (1-x)^2 * x * y1 + 3 * (1-x) * x^2 * y2 + x^3 *
+ * y2
+ *
+ * @param x1 the x-coordinate of the first control point
+ * @param y1 the y-coordinate of the first control point
+ * @param x2 the x-coordinate of the second control point
+ * @param y2 the y-coordinate of the second control point
+ * @param progress A value between 0 and 1
+ * @return The computed cubic easing for the given [progress]
+ */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public fun cubicEasing(
+    x1: RemoteFloat,
+    y1: RemoteFloat,
+    x2: RemoteFloat,
+    y2: RemoteFloat,
+    progress: RemoteFloat,
+): RemoteFloat {
+    if (
+        x1.hasConstantValue &&
+            y1.hasConstantValue &&
+            x2.hasConstantValue &&
+            y2.hasConstantValue &&
+            progress.hasConstantValue
+    ) {
+        val easing = CubicEasing()
+        easing.setup(x1.constantValue, y1.constantValue, x2.constantValue, y2.constantValue)
+        return RemoteFloat(easing.get(progress.constantValue))
+    }
+
+    return RemoteFloatExpression(
+        constantValueOrNull = null,
+        cacheKey =
+            RemoteOperationCacheKey.create(RemoteFloat.OperationKey.Cubic, x1, y1, x2, y2, progress),
+    ) { creationState ->
+        combineToFloatArray(
+            creationState,
+            arrayOf(x1, y1, x2, y2, progress),
+            AnimatedFloatExpression.CUBIC,
+        )
+    }
+}
+
+/**
+ * @param controlPoints The [RemoteFloatArray] that defines the spline control points
+ * @param loop Whether or not the last control point should be treated as looping round to the first
+ *   one
+ * @param progress A value between 0 and 1
+ * @return The computed spline for the given [progress]
+ */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public fun evalSpline(
+    controlPoints: RemoteFloatArray,
+    loop: Boolean,
+    progress: RemoteFloat,
+): RemoteFloat {
+    if (controlPoints.hasConstantValue && progress.hasConstantValue) {
+        val constants = controlPoints.constantValue
+        if (constants.fastAll { it.hasConstantValue }) {
+            val spline =
+                MonotonicSpline(null, constants.fastMap { it.constantValue }.toFloatArray())
+            var p = progress.constantValue
+            if (loop) {
+                p -= p.toInt().toFloat()
+                if (p < 0) p += 1f
+            }
+            return RemoteFloat(spline.getPos(p))
+        }
+    }
+
+    return RemoteFloatExpression(
+        constantValueOrNull = null,
+        cacheKey =
+            RemoteOperationCacheKey.create(
+                if (loop) RemoteFloat.OperationKey.SplineLoop else RemoteFloat.OperationKey.Spline,
+                controlPoints,
+                progress,
+            ),
+    ) { creationState ->
+        floatArrayOf(
+            controlPoints.getFloatIdForCreationState(creationState),
+            progress.getFloatIdForCreationState(creationState),
+            if (loop) AnimatedFloatExpression.A_SPLINE_LOOP else AnimatedFloatExpression.A_SPLINE,
+        )
+    }
+}
+
+/**
+ * Calculates the interpolated RemoteFloat given a progress value from 0.0 to 1.0.
+ *
+ * @param progress A RemoteFloat progressing from 0.0 to 1.0.
+ * @param initialValue The starting value of the animation.
+ * @param targetValue The target value to animate towards.
+ * @param type The type of animation curve to apply.
+ * @param spec Parameters for custom curves (e.g., [x1, y1, x2, y2] for CUBIC_CUSTOM).
+ * @param wrap Optional wrapping bound (e.g., 360 for angles) to ensure shortest-path interpolation.
+ */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public fun interpolateRemoteFloat(
+    progress: RemoteFloat,
+    initialValue: RemoteFloat,
+    targetValue: RemoteFloat,
+    @AnimationType type: Int = CUBIC_STANDARD,
+    spec: RemoteFloatArray? = null,
+    wrap: RemoteFloat? = null,
+): RemoteFloat {
+    val easedProgress =
+        when (type) {
+            CUBIC_STANDARD -> cubicEasing(0.4f.rf, 0.0f.rf, 0.2f.rf, 1f.rf, progress)
+            CUBIC_ACCELERATE -> cubicEasing(0.4f.rf, 0.05f.rf, 0.8f.rf, 0.7f.rf, progress)
+            CUBIC_DECELERATE -> cubicEasing(0.0f.rf, 0.0f.rf, 0.2f.rf, 0.95f.rf, progress)
+            CUBIC_LINEAR -> progress
+            CUBIC_ANTICIPATE -> cubicEasing(0.36f.rf, 0f.rf, 0.66f.rf, -0.56f.rf, progress)
+            CUBIC_OVERSHOOT -> cubicEasing(0.34f.rf, 1.56f.rf, 0.64f.rf, 1f.rf, progress)
+            CUBIC_CUSTOM -> {
+                if (spec != null && (spec.constantValueOrNull?.size ?: 0) >= 4) {
+                    cubicEasing(spec[0], spec[1], spec[2], spec[3], progress)
+                } else {
+                    throw IllegalArgumentException("spec is either null or its size isn't 4")
+                }
+            }
+            SPLINE_CUSTOM -> {
+                if (spec != null) {
+                    evalSpline(spec, loop = false, progress)
+                } else {
+                    progress
+                }
+            }
+            EASE_OUT_BOUNCE -> easeOutBounce(progress)
+            EASE_OUT_ELASTIC -> easeOutElastic(progress)
+            else -> progress
+        }
+
+    var diff = targetValue - initialValue
+    if (wrap != null) {
+        // shortest path interpolation: diff = (((diff + wrap/2) % wrap + wrap) % wrap) - wrap/2
+        val halfWrap = wrap / 2f.rf
+        diff = ((diff + halfWrap) % wrap + wrap) % wrap - halfWrap
+    }
+
+    return initialValue + diff * easedProgress
+}
+
+/**
  * Returns a [RemoteFloat] which applies an animation based on the value of [rf].
  *
  * @param rf The [RemoteFloat] which the animation is keyed from
@@ -421,29 +619,4 @@ public fun animateRemoteFloat(
 ): RemoteFloat {
     val anim = RemoteComposeBuffer.packAnimation(duration, type, spec, initialValue, wrap)
     return AnimatedRemoteFloat(rf, anim)
-}
-
-/**
- * Returns a [RemoteFloat] which applies an animation based on the result of [content].
- *
- * @param duration The duration of the animation in seconds
- * @param type The type of animation
- * @param spec The parameters of the animation if any
- * @param initialValue The initial value if it animates to a start
- * @param wrap If not [Float.NaN], then all animations will be computed modulo this value. For
- *   example, if the animation is for an angle, wrap=360 means that an angle of 355 would animate
- *   to 5.
- * @param content Callback that provides a [RemoteFloat] upon which the animation is based
- * @return A [RemoteFloat] based on the result of [content] but with an animation applied to it
- */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public fun animateRemoteFloat(
-    duration: Float = 1f,
-    @AnimationType type: Int = CUBIC_STANDARD,
-    spec: FloatArray? = null,
-    initialValue: Float = Float.NaN,
-    wrap: Float = Float.NaN,
-    content: () -> RemoteFloat,
-): RemoteFloat {
-    return animateRemoteFloat(content(), duration, type, spec, initialValue, wrap)
 }

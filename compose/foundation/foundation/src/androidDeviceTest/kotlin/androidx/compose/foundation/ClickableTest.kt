@@ -18,8 +18,8 @@ package androidx.compose.foundation
 
 import android.os.Build.VERSION.SDK_INT
 import android.os.Looper
-import androidx.compose.foundation.ComposeFoundationFlags.isDelayPressesUsingGestureConsumptionEnabled
 import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.gestures.rememberDraggableState
@@ -52,6 +52,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.testutils.assertModifierIsPure
 import androidx.compose.testutils.first
+import androidx.compose.ui.ComposeUiFlags
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.focus.FocusManager
@@ -73,10 +75,14 @@ import androidx.compose.ui.input.indirect.IndirectPointerEventPrimaryDirectional
 import androidx.compose.ui.input.indirect.IndirectPointerEventType
 import androidx.compose.ui.input.indirect.IndirectPointerInputModifierNode
 import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.pointer.PointerEvent
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.SuspendingPointerInputModifierNode
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.node.DelegatableNode
+import androidx.compose.ui.node.DelegatingNode
+import androidx.compose.ui.node.PointerInputModifierNode
 import androidx.compose.ui.platform.InspectableValue
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalInputModeManager
@@ -110,6 +116,7 @@ import androidx.compose.ui.test.performMouseInput
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.pressKey
 import androidx.compose.ui.test.requestFocus
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
@@ -131,7 +138,6 @@ import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertThrows
-import org.junit.Assume
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -143,6 +149,11 @@ class ClickableTest {
 
     private val dispatcher = StandardTestDispatcher()
     @get:Rule val rule = createComposeRule(dispatcher)
+
+    @OptIn(ExperimentalComposeUiApi::class)
+    private fun expectedCount(enabled: Int, disabled: Int) =
+        if (ComposeUiFlags.isTriggerMoveEventsWhenLocationHasNotChangedEnabled) enabled
+        else disabled
 
     private val InstanceOf =
         Correspondence.from<Any, KClass<*>>(
@@ -678,10 +689,8 @@ class ClickableTest {
         }
     }
 
-    @OptIn(ExperimentalFoundationApi::class)
     @Test
     fun interactionSource_immediateDrag_insideDraggable() {
-        Assume.assumeTrue(isDelayPressesUsingGestureConsumptionEnabled)
         val interactionSource = MutableInteractionSource()
 
         lateinit var scope: CoroutineScope
@@ -719,53 +728,6 @@ class ClickableTest {
 
         // We started a drag before the timeout, so no press should be emitted
         rule.runOnIdle { assertThat(interactions).isEmpty() }
-    }
-
-    @OptIn(ExperimentalFoundationApi::class)
-    @Test
-    fun interactionSource_immediateDrag_noScrollableContainer_doNotUseGestureNode() {
-        Assume.assumeFalse(isDelayPressesUsingGestureConsumptionEnabled)
-        val interactionSource = MutableInteractionSource()
-
-        lateinit var scope: CoroutineScope
-
-        rule.mainClock.autoAdvance = false
-
-        rule.setContent {
-            scope = rememberCoroutineScope()
-            Box {
-                BasicText(
-                    "ClickableText",
-                    modifier =
-                        Modifier.testTag("myClickable")
-                            .draggable(
-                                state = rememberDraggableState {},
-                                orientation = Orientation.Horizontal,
-                            )
-                            .clickable(interactionSource = interactionSource, indication = null) {},
-                )
-            }
-        }
-
-        val interactions = mutableListOf<Interaction>()
-
-        scope.launch { interactionSource.interactions.collect { interactions.add(it) } }
-
-        rule.runOnIdle { assertThat(interactions).isEmpty() }
-
-        rule.onNodeWithTag("myClickable").performTouchInput {
-            down(centerLeft)
-            moveTo(centerRight)
-        }
-
-        // The press should fire, and then the drag should instantly cancel it
-        rule.runOnIdle {
-            assertThat(interactions).hasSize(2)
-            assertThat(interactions.first()).isInstanceOf(PressInteraction.Press::class.java)
-            assertThat(interactions[1]).isInstanceOf(PressInteraction.Cancel::class.java)
-            assertThat((interactions[1] as PressInteraction.Cancel).press)
-                .isEqualTo(interactions[0])
-        }
     }
 
     @Test
@@ -1659,11 +1621,11 @@ class ClickableTest {
 
         rule.mainClock.advanceTimeBy(halfTapIndicationDelay)
 
-        // Haven't reached the tap delay yet, so we shouldn't have started a press, we should only
-        // see the hover
+        // Scrollables don't process Mouse Press Events, so there's no need to delay.
         rule.runOnIdle {
-            assertThat(interactions).hasSize(1)
+            assertThat(interactions).hasSize(2)
             assertThat(interactions[0]).isInstanceOf(HoverInteraction.Enter::class.java)
+            assertThat(interactions[1]).isInstanceOf(PressInteraction.Press::class.java)
         }
 
         // Advance past the tap delay
@@ -2297,7 +2259,7 @@ class ClickableTest {
             assertEquals(1, originalPointerInputLambdaExecutionCount)
             // With these events, we enable the dynamic pointer input
             assertEquals(1, originalPointerInputPressCounter)
-            assertEquals(0, originalPointerInputMoveCounter)
+            assertEquals(expectedCount(1, 0), originalPointerInputMoveCounter)
             assertEquals(1, originalPointerInputReleaseCounter)
 
             assertEquals(0, dynamicPointerInputPressCounter)
@@ -2315,7 +2277,7 @@ class ClickableTest {
             // previously existing pointer input lambda will be restarted.
             assertEquals(2, originalPointerInputLambdaExecutionCount)
             assertEquals(2, originalPointerInputPressCounter)
-            assertEquals(0, originalPointerInputMoveCounter)
+            assertEquals(expectedCount(1, 0), originalPointerInputMoveCounter)
             assertEquals(1, originalPointerInputReleaseCounter)
 
             assertEquals(1, dynamicPointerInputPressCounter)
@@ -2331,7 +2293,7 @@ class ClickableTest {
         rule.runOnIdle {
             assertEquals(2, originalPointerInputLambdaExecutionCount)
             assertEquals(2, originalPointerInputPressCounter)
-            assertEquals(1, originalPointerInputMoveCounter)
+            assertEquals(expectedCount(2, 1), originalPointerInputMoveCounter)
             assertEquals(1, originalPointerInputReleaseCounter)
 
             assertEquals(1, dynamicPointerInputPressCounter)
@@ -2347,7 +2309,7 @@ class ClickableTest {
         rule.runOnIdle {
             assertEquals(2, originalPointerInputLambdaExecutionCount)
             assertEquals(2, originalPointerInputPressCounter)
-            assertEquals(1, originalPointerInputMoveCounter)
+            assertEquals(expectedCount(2, 1), originalPointerInputMoveCounter)
             assertEquals(2, originalPointerInputReleaseCounter)
 
             assertEquals(1, dynamicPointerInputPressCounter)
@@ -2367,11 +2329,11 @@ class ClickableTest {
             // previously existing pointer input lambda will be restarted.
             assertEquals(3, originalPointerInputLambdaExecutionCount)
             assertEquals(3, originalPointerInputPressCounter)
-            assertEquals(1, originalPointerInputMoveCounter)
+            assertEquals(expectedCount(3, 1), originalPointerInputMoveCounter)
             assertEquals(3, originalPointerInputReleaseCounter)
 
             assertEquals(2, dynamicPointerInputPressCounter)
-            assertEquals(1, dynamicPointerInputMoveCounter)
+            assertEquals(expectedCount(2, 1), dynamicPointerInputMoveCounter)
             assertEquals(2, dynamicPointerInputReleaseCounter)
 
             assertEquals(1, dynamicPointerInput2PressCounter)
@@ -2462,12 +2424,12 @@ class ClickableTest {
 
             assertEquals(1, firstPointerInputLambdaExecutionCount)
             assertEquals(1, firstPointerInputPressCounter)
-            assertEquals(0, firstPointerInputMoveCounter)
+            assertEquals(expectedCount(1, 0), firstPointerInputMoveCounter)
             assertEquals(1, firstPointerInputReleaseCounter)
 
             assertEquals(1, secondPointerInputLambdaExecutionCount)
             assertEquals(1, secondPointerInputPressCounter)
-            assertEquals(0, secondPointerInputMoveCounter)
+            assertEquals(expectedCount(1, 0), secondPointerInputMoveCounter)
             assertEquals(1, secondPointerInputReleaseCounter)
         }
 
@@ -2479,12 +2441,12 @@ class ClickableTest {
 
             assertEquals(1, firstPointerInputLambdaExecutionCount)
             assertEquals(1, firstPointerInputPressCounter)
-            assertEquals(0, firstPointerInputMoveCounter)
+            assertEquals(expectedCount(1, 0), firstPointerInputMoveCounter)
             assertEquals(1, firstPointerInputReleaseCounter)
 
             assertEquals(1, secondPointerInputLambdaExecutionCount)
             assertEquals(1, secondPointerInputPressCounter)
-            assertEquals(0, secondPointerInputMoveCounter)
+            assertEquals(expectedCount(1, 0), secondPointerInputMoveCounter)
             assertEquals(1, secondPointerInputReleaseCounter)
         }
 
@@ -2495,12 +2457,12 @@ class ClickableTest {
 
             assertEquals(1, firstPointerInputLambdaExecutionCount)
             assertEquals(2, firstPointerInputPressCounter)
-            assertEquals(0, firstPointerInputMoveCounter)
+            assertEquals(expectedCount(1, 0), firstPointerInputMoveCounter)
             assertEquals(1, firstPointerInputReleaseCounter)
 
             assertEquals(1, secondPointerInputLambdaExecutionCount)
             assertEquals(2, secondPointerInputPressCounter)
-            assertEquals(0, secondPointerInputMoveCounter)
+            assertEquals(expectedCount(1, 0), secondPointerInputMoveCounter)
             assertEquals(1, secondPointerInputReleaseCounter)
         }
 
@@ -2511,12 +2473,12 @@ class ClickableTest {
 
             assertEquals(1, firstPointerInputLambdaExecutionCount)
             assertEquals(2, firstPointerInputPressCounter)
-            assertEquals(1, firstPointerInputMoveCounter)
+            assertEquals(expectedCount(2, 1), firstPointerInputMoveCounter)
             assertEquals(1, firstPointerInputReleaseCounter)
 
             assertEquals(1, secondPointerInputLambdaExecutionCount)
             assertEquals(2, secondPointerInputPressCounter)
-            assertEquals(1, secondPointerInputMoveCounter)
+            assertEquals(expectedCount(2, 1), secondPointerInputMoveCounter)
             assertEquals(1, secondPointerInputReleaseCounter)
         }
 
@@ -2527,12 +2489,12 @@ class ClickableTest {
 
             assertEquals(1, firstPointerInputLambdaExecutionCount)
             assertEquals(2, firstPointerInputPressCounter)
-            assertEquals(1, firstPointerInputMoveCounter)
+            assertEquals(expectedCount(2, 1), firstPointerInputMoveCounter)
             assertEquals(2, firstPointerInputReleaseCounter)
 
             assertEquals(1, secondPointerInputLambdaExecutionCount)
             assertEquals(2, secondPointerInputPressCounter)
-            assertEquals(1, secondPointerInputMoveCounter)
+            assertEquals(expectedCount(2, 1), secondPointerInputMoveCounter)
             assertEquals(2, secondPointerInputReleaseCounter)
         }
 
@@ -2544,12 +2506,12 @@ class ClickableTest {
 
             assertEquals(1, firstPointerInputLambdaExecutionCount)
             assertEquals(2, firstPointerInputPressCounter)
-            assertEquals(1, firstPointerInputMoveCounter)
+            assertEquals(expectedCount(2, 1), firstPointerInputMoveCounter)
             assertEquals(2, firstPointerInputReleaseCounter)
 
             assertEquals(1, secondPointerInputLambdaExecutionCount)
             assertEquals(2, secondPointerInputPressCounter)
-            assertEquals(1, secondPointerInputMoveCounter)
+            assertEquals(expectedCount(2, 1), secondPointerInputMoveCounter)
             assertEquals(2, secondPointerInputReleaseCounter)
         }
     }
@@ -2629,7 +2591,7 @@ class ClickableTest {
             assertEquals(1, originalPointerInputLambdaExecutionCount)
             // With these events, we enable the dynamic pointer input
             assertEquals(1, originalPointerInputPressCounter)
-            assertEquals(0, originalPointerInputMoveCounter)
+            assertEquals(expectedCount(1, 0), originalPointerInputMoveCounter)
             assertEquals(1, originalPointerInputReleaseCounter)
 
             assertEquals(0, dynamicPointerInputPressCounter)
@@ -2646,7 +2608,7 @@ class ClickableTest {
             // previously existing pointer input lambda will be restarted.
             assertEquals(2, originalPointerInputLambdaExecutionCount)
             assertEquals(2, originalPointerInputPressCounter)
-            assertEquals(0, originalPointerInputMoveCounter)
+            assertEquals(expectedCount(1, 0), originalPointerInputMoveCounter)
             assertEquals(1, originalPointerInputReleaseCounter)
 
             assertEquals(1, dynamicPointerInputPressCounter)
@@ -2661,7 +2623,7 @@ class ClickableTest {
         rule.runOnIdle {
             assertEquals(2, originalPointerInputLambdaExecutionCount)
             assertEquals(2, originalPointerInputPressCounter)
-            assertEquals(1, originalPointerInputMoveCounter)
+            assertEquals(expectedCount(2, 1), originalPointerInputMoveCounter)
             assertEquals(1, originalPointerInputReleaseCounter)
 
             assertEquals(1, dynamicPointerInputPressCounter)
@@ -2676,7 +2638,7 @@ class ClickableTest {
         rule.runOnIdle {
             assertEquals(2, originalPointerInputLambdaExecutionCount)
             assertEquals(2, originalPointerInputPressCounter)
-            assertEquals(1, originalPointerInputMoveCounter)
+            assertEquals(expectedCount(2, 1), originalPointerInputMoveCounter)
             assertEquals(2, originalPointerInputReleaseCounter)
 
             assertEquals(1, dynamicPointerInputPressCounter)
@@ -2695,11 +2657,11 @@ class ClickableTest {
             // not directly a pointer input.
             assertEquals(2, originalPointerInputLambdaExecutionCount)
             assertEquals(3, originalPointerInputPressCounter)
-            assertEquals(1, originalPointerInputMoveCounter)
+            assertEquals(expectedCount(3, 1), originalPointerInputMoveCounter)
             assertEquals(3, originalPointerInputReleaseCounter)
 
             assertEquals(2, dynamicPointerInputPressCounter)
-            assertEquals(1, dynamicPointerInputMoveCounter)
+            assertEquals(expectedCount(2, 1), dynamicPointerInputMoveCounter)
             assertEquals(2, dynamicPointerInputReleaseCounter)
 
             assertEquals(1, dynamicClickableCounter)
@@ -2886,7 +2848,7 @@ class ClickableTest {
 
         rule.runOnIdle {
             assertEquals(1, originalPointerInputLambdaExecutionCount)
-            assertEquals(3, originalPointerInputEventCounter)
+            assertEquals(expectedCount(4, 3), originalPointerInputEventCounter)
             assertEquals(1, dynamicPressCounter)
             assertEquals(1, dynamicReleaseCounter)
         }
@@ -2895,7 +2857,7 @@ class ClickableTest {
 
         rule.runOnIdle {
             assertEquals(1, originalPointerInputLambdaExecutionCount)
-            assertEquals(4, originalPointerInputEventCounter)
+            assertEquals(expectedCount(5, 4), originalPointerInputEventCounter)
             assertEquals(1, dynamicPressCounter)
             assertEquals(1, dynamicReleaseCounter)
         }
@@ -3031,7 +2993,7 @@ class ClickableTest {
         rule.runOnIdle {
             assertTrue(activateDynamicPointerInput)
             assertEquals(1, originalPointerInputLambdaExecutionCount)
-            assertEquals(3, originalPointerInputEventCounter)
+            assertEquals(expectedCount(4, 3), originalPointerInputEventCounter)
             assertEquals(1, dynamicPressCounter)
             assertEquals(1, dynamicReleaseCounter)
         }
@@ -3041,7 +3003,7 @@ class ClickableTest {
         rule.runOnIdle {
             assertTrue(activateDynamicPointerInput)
             assertEquals(1, originalPointerInputLambdaExecutionCount)
-            assertEquals(4, originalPointerInputEventCounter)
+            assertEquals(expectedCount(5, 4), originalPointerInputEventCounter)
             assertEquals(1, dynamicPressCounter)
             assertEquals(1, dynamicReleaseCounter)
         }
@@ -3093,7 +3055,10 @@ class ClickableTest {
         rule.runOnIdle {
             assertTrue(activateDynamicPointerInput)
             assertEquals(1, originalPointerInputLambdaExecutionCount)
-            assertEquals(3, originalPointerInputEventCounter) // Enter, Press, Release
+            assertEquals(
+                expectedCount(4, 3),
+                originalPointerInputEventCounter,
+            ) // Enter, Press, Release, Hover Move
             assertEquals(0, dynamicPressCounter)
             assertEquals(0, dynamicReleaseCounter)
         }
@@ -3105,8 +3070,11 @@ class ClickableTest {
             assertEquals(1, originalPointerInputLambdaExecutionCount)
             // Because the mouse is still within the box area, Compose doesn't need to trigger an
             // Exit. Instead, it just triggers two events (Press and Release) which is why the
-            // total is only 5.
-            assertEquals(5, originalPointerInputEventCounter) // Press, Release
+            // total is only 7.
+            assertEquals(
+                expectedCount(7, 5),
+                originalPointerInputEventCounter,
+            ) // Press, Release, Hover Move
             assertEquals(1, dynamicPressCounter)
             assertEquals(1, dynamicReleaseCounter)
         }
@@ -3165,7 +3133,7 @@ class ClickableTest {
         rule.runOnIdle {
             assertTrue(activateDynamicPointerInput)
             assertEquals(1, originalPointerInputLambdaExecutionCount)
-            assertEquals(3, originalPointerInputEventCounter)
+            assertEquals(expectedCount(4, 3), originalPointerInputEventCounter)
             assertEquals(0, dynamicPressCounter)
             assertEquals(0, dynamicReleaseCounter)
         }
@@ -3175,7 +3143,7 @@ class ClickableTest {
         rule.runOnIdle {
             assertTrue(activateDynamicPointerInput)
             assertEquals(1, originalPointerInputLambdaExecutionCount)
-            assertEquals(3, originalPointerInputEventCounter)
+            assertEquals(expectedCount(4, 3), originalPointerInputEventCounter)
             assertEquals(1, dynamicPressCounter)
             assertEquals(1, dynamicReleaseCounter)
         }
@@ -3248,7 +3216,7 @@ class ClickableTest {
         rule.runOnIdle {
             assertTrue(activateDynamicPointerInput)
             assertEquals(1, originalPointerInputLambdaExecutionCount)
-            assertEquals(3, originalPointerInputEventCounter)
+            assertEquals(expectedCount(4, 3), originalPointerInputEventCounter)
             assertEquals(0, dynamicPressCounter)
             assertEquals(0, dynamicReleaseCounter)
         }
@@ -3258,7 +3226,7 @@ class ClickableTest {
         rule.runOnIdle {
             assertFalse(activateDynamicPointerInput)
             assertEquals(1, originalPointerInputLambdaExecutionCount)
-            assertEquals(3, originalPointerInputEventCounter)
+            assertEquals(expectedCount(4, 3), originalPointerInputEventCounter)
             assertEquals(1, dynamicPressCounter)
             assertEquals(1, dynamicReleaseCounter)
         }
@@ -7867,6 +7835,174 @@ class ClickableTest {
         }
     }
 
+    @Test
+    fun gestureState_shouldReflectClickableBehavior_regularBehavior() {
+        class InspectingNode(val isParent: Boolean) : DelegatingNode(), PointerInputModifierNode {
+            var gestureStateOnInitialPass: GestureState? = null
+            var gestureStateOnMainPass: GestureState? = null
+            var gestureStateOnFinalPass: GestureState? = null
+
+            val suspendingPointerInput =
+                delegate(
+                    SuspendingPointerInputModifierNode {
+                        // for each pointer event, save what was the gesture state in each pass.
+                        awaitEachGesture {
+                            while (true) {
+                                awaitPointerEvent(pass = PointerEventPass.Initial)
+                                gestureStateOnInitialPass =
+                                    if (isParent) {
+                                        getChildGestureConnection()?.gestureState
+                                    } else {
+                                        getParentGestureConnection()?.gestureState
+                                    }
+
+                                awaitPointerEvent(pass = PointerEventPass.Main)
+                                gestureStateOnMainPass =
+                                    if (isParent) {
+                                        getChildGestureConnection()?.gestureState
+                                    } else {
+                                        getParentGestureConnection()?.gestureState
+                                    }
+
+                                awaitPointerEvent(pass = PointerEventPass.Final)
+                                gestureStateOnFinalPass =
+                                    if (isParent) {
+                                        getChildGestureConnection()?.gestureState
+                                    } else {
+                                        getParentGestureConnection()?.gestureState
+                                    }
+                            }
+                        }
+                    }
+                )
+
+            override fun onPointerEvent(
+                pointerEvent: PointerEvent,
+                pass: PointerEventPass,
+                bounds: IntSize,
+            ) {
+                suspendingPointerInput.onPointerEvent(pointerEvent, pass, bounds)
+            }
+
+            override fun onCancelPointerInput() {
+                suspendingPointerInput.onCancelPointerInput()
+            }
+        }
+
+        val childNode = InspectingNode(false)
+        val parentNode = InspectingNode(true)
+
+        var enabled by mutableStateOf(true)
+
+        rule.setContent {
+            Box(
+                modifier =
+                    Modifier.testTag("myClickable").size(300.dp).elementFor(parentNode).clickable(
+                        enabled = enabled
+                    ) {}
+            ) {
+                Box(Modifier.size(300.dp).elementFor(childNode))
+            }
+        }
+
+        // haven't received any input yet so node isn't initialized
+        rule.runOnIdle { assertThat(childNode.getParentGestureConnection()).isNull() }
+
+        rule.onNodeWithTag("myClickable").performTouchInput { down(center) }
+
+        assertThat(parentNode.gestureStateOnInitialPass).isEqualTo(null)
+        assertThat(childNode.gestureStateOnInitialPass).isEqualTo(GestureState.Idle)
+
+        assertThat(parentNode.gestureStateOnMainPass).isEqualTo(GestureState.Waiting)
+        assertThat(childNode.gestureStateOnMainPass).isEqualTo(GestureState.Idle)
+
+        assertThat(parentNode.gestureStateOnFinalPass).isEqualTo(GestureState.Waiting)
+        assertThat(childNode.gestureStateOnFinalPass).isEqualTo(GestureState.Waiting)
+
+        rule.onNodeWithTag("myClickable").performTouchInput { up() }
+
+        assertThat(parentNode.gestureStateOnInitialPass).isEqualTo(GestureState.Waiting)
+        assertThat(childNode.gestureStateOnInitialPass).isEqualTo(GestureState.Waiting)
+
+        assertThat(parentNode.gestureStateOnMainPass).isEqualTo(GestureState.Recognized)
+        assertThat(childNode.gestureStateOnMainPass).isEqualTo(GestureState.Waiting)
+
+        assertThat(parentNode.gestureStateOnFinalPass).isEqualTo(GestureState.Recognized)
+        assertThat(childNode.gestureStateOnFinalPass).isEqualTo(GestureState.Idle)
+
+        enabled = false
+
+        rule.runOnIdle { assertThat(childNode.getParentGestureConnection()).isNull() }
+
+        enabled = true
+
+        // need to receive a new event after enabled to get it back to reporting.
+        rule.runOnIdle { assertThat(childNode.getParentGestureConnection()).isNull() }
+
+        rule.onNodeWithTag("myClickable").performTouchInput { down(center) }
+
+        assertThat(parentNode.gestureStateOnInitialPass).isEqualTo(null)
+        assertThat(childNode.gestureStateOnInitialPass).isEqualTo(GestureState.Idle)
+
+        assertThat(parentNode.gestureStateOnMainPass).isEqualTo(GestureState.Waiting)
+        assertThat(childNode.gestureStateOnMainPass).isEqualTo(GestureState.Idle)
+
+        assertThat(parentNode.gestureStateOnFinalPass).isEqualTo(GestureState.Waiting)
+        assertThat(childNode.gestureStateOnFinalPass).isEqualTo(GestureState.Waiting)
+    }
+
+    @Test
+    fun gestureState_shouldReflectClickableBehavior_cancelledByMove() {
+        val node = object : DelegatingNode() {}
+        var enabled by mutableStateOf(true)
+        rule.setContent {
+            Box(
+                modifier =
+                    Modifier.testTag("myClickable").size(30.dp).clickable(enabled = enabled) {}
+            ) {
+                Box(Modifier.size(30.dp).elementFor(node))
+            }
+        }
+
+        // haven't received any input yet so node isn't initialized
+        rule.runOnIdle { assertThat(node.getParentGestureConnection()).isNull() }
+
+        rule.onNodeWithTag("myClickable").performTouchInput { down(center) }
+
+        assertThat(node.getParentGestureConnection()?.gestureState).isEqualTo(GestureState.Waiting)
+
+        rule.onNodeWithTag("myClickable").performTouchInput {
+            moveBy(Offset(0f, 2f * with(rule.density) { 30.dp.roundToPx() }))
+        }
+
+        rule.runOnIdle {
+            assertThat(node.getParentGestureConnection()?.gestureState).isEqualTo(GestureState.Idle)
+        }
+    }
+
+    @Test
+    fun gestureState_shouldReflectClickableBehavior_cancelledByConsumption() {
+        val node = object : DelegatingNode() {}
+        var enabled by mutableStateOf(true)
+        rule.setContent {
+            Box(
+                modifier =
+                    Modifier.testTag("myClickable").size(30.dp).clickable(enabled = enabled) {}
+            ) {
+                Box(Modifier.size(30.dp).elementFor(node).clickable() {})
+            }
+        }
+
+        // haven't received any input yet so node isn't initialized
+        rule.runOnIdle { assertThat(node.getParentGestureConnection()).isNull() }
+
+        rule.onNodeWithTag("myClickable").performTouchInput { down(center) }
+
+        rule.runOnIdle {
+            assertThat(node.getParentGestureConnection()?.gestureState).isEqualTo(GestureState.Idle)
+        }
+    }
+
     /**
      * Test to ensure that indirect pointer cancellation (triggered when we lose focus, such as when
      * a clickable loses focus when moving to touch mode) doesn't also cancel ongoing clicks from
@@ -8023,4 +8159,22 @@ internal fun SemanticsNodeInteraction.assertOnClickLabelMatches(
             it.config.getOrElseNullable(SemanticsActions.OnClick) { null }?.label == expectedValue
         }
     )
+}
+
+private fun DelegatingNode.getParentGestureConnection(): GestureConnection? {
+    var gestureConnection: GestureConnection? = null
+    traverseAncestorGestures {
+        gestureConnection = it
+        false
+    }
+    return gestureConnection
+}
+
+private fun DelegatingNode.getChildGestureConnection(): GestureConnection? {
+    var gestureConnection: GestureConnection? = null
+    traverseChildrenGestures {
+        gestureConnection = it
+        false
+    }
+    return gestureConnection
 }

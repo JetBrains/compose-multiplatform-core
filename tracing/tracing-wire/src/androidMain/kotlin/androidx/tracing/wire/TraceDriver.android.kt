@@ -23,54 +23,148 @@ import android.app.Application
 import android.content.Context
 import android.os.Build
 import android.os.Process
+import androidx.annotation.GuardedBy
+import androidx.annotation.RestrictTo
+import androidx.annotation.RestrictTo.Scope
+import androidx.annotation.VisibleForTesting
+import androidx.startup.AppInitializer
 import androidx.tracing.AbstractTraceDriver
 import androidx.tracing.AbstractTraceSink
+import androidx.tracing.EmptyTraceContext
+import androidx.tracing.EmptyTraceSink
+import androidx.tracing.PerfettoTracer
+import androidx.tracing.Trace
+import androidx.tracing.TraceAttributes
 import androidx.tracing.TraceContext
 import androidx.tracing.Tracer
+import androidx.tracing.profiler.ConnectedProfilerTracing.disableTracing
+import androidx.tracing.profiler.ConnectedProfilerTracingInitializer
+import androidx.tracing.wire.TraceDriver.Companion.getStubTraceDriver
 
 /**
- * Constructs a [TraceDriver] instance on Android based on the provided [Context] instance.
+ * Constructs a [TraceDriver] instance on Android.
  *
- * @param context The Android application [Context].
+ * @param contextProvider The Android application [Context] provider.
  * @param sink The [TraceSink] instance.
- * @param isEnabled Set this to `true` to emit trace events. `false` disables all tracing to lower
- *   overhead.
+ * @param isGloballyEnabled Set this to `true` to conditionally emit trace events based on
+ *   [isCategoryEnabled]. `false` disables all tracing to lower overhead.
+ * @param isCategoryEnabled returns `true` if the provided trace [category] should be enabled. If
+ *   `false` then trace events corresponding to the [category] are dropped to reduce tracing
+ *   overhead. This is particularly useful when you want to lower the overhead of trace events from
+ *   uninteresting or noisy categories.
+ * @param attributes Collection of key value pairs to be attached to a trace to provide additional
+ *   context about any facet of the trace. This can include what data it contains, and properties of
+ *   the host / machine the trace was collected on, and other interesting information about a trace.
+ *   At the end of the [attributes] block, these key value pairs are dispatched to the designated
+ *   [AbstractTraceSink] to be serialized.
+ *
+ * Examples include:
+ * ```
+ * gradle_version = "9.0.10-alpha01"
+ * java_major_version = 24
+ * ```
  */
 public actual class TraceDriver
-@JvmOverloads
-constructor(context: Context, sink: AbstractTraceSink, isEnabled: Boolean = true) :
-    AbstractTraceDriver(sink = sink, isEnabled = isEnabled) {
+internal constructor(
+    contextProvider: () -> Context,
+    sink: AbstractTraceSink,
+    isGloballyEnabled: Boolean = true,
+    @JvmField internal val isCategoryEnabled: (category: String) -> Boolean = { Trace.isEnabled() },
+    attributes: (TraceAttributes.() -> Unit)? = null,
+) : AbstractTraceDriver(sink = sink) {
 
-    private val applicationContext = context.applicationContext
-    private val context = TraceContext(sink = sink, isEnabled = isEnabled)
+    /**
+     * Constructs a [TraceDriver] instance on Android based on the provided [Context] instance.
+     *
+     * @param context The Android application [Context].
+     * @param sink The [TraceSink] instance.
+     * @param isCategoryEnabled returns `true` if the provided trace [category] should be enabled.
+     *   If `false` then trace events corresponding to the [category] are dropped to reduce tracing
+     *   overhead. This is particularly useful when you want to lower the overhead of trace events
+     *   from uninteresting or noisy categories. The default implementation of this check allows all
+     *   trace categories as long as a Perfetto tracing session is active ([Trace.isEnabled]).
+     *
+     *   Note:This method should be **extremely** low overhead given it's called every time a
+     *   [Tracer] can emit trace events.
+     *
+     * @param attributes Collection of key value pairs to be attached to a trace to provide
+     *   additional context about any facet of the trace. This can include what data it contains,
+     *   and properties of the host / machine the trace was collected on, and other interesting
+     *   information about a trace. At the end of the [attributes] block, these key value pairs are
+     *   dispatched to the designated [AbstractTraceSink] to be serialized.
+     *
+     * Examples include:
+     * ```
+     * gradle_version = "9.0.10-alpha01"
+     * java_major_version = 24
+     * ```
+     */
+    @JvmOverloads
+    public constructor(
+        context: Context,
+        sink: AbstractTraceSink,
+        isCategoryEnabled: (category: String) -> Boolean = { Trace.isEnabled() },
+        attributes: (TraceAttributes.() -> Unit)? = null,
+    ) : this(
+        contextProvider = { context },
+        sink = sink,
+        isGloballyEnabled = true,
+        isCategoryEnabled = isCategoryEnabled,
+        attributes = attributes,
+    )
+
+    @get:RestrictTo(Scope.LIBRARY_GROUP)
+    public val context: TraceContext =
+        if (isGloballyEnabled) {
+            TraceContext(
+                sink = sink,
+                isGloballyEnabled = true,
+                isCategoryEnabled = isCategoryEnabled,
+            )
+        } else {
+            EmptyTraceContext
+        }
 
     init {
-        val pid = Process.myPid()
-        val processName = getProcessName(context = applicationContext)
-        // Eagerly populate a process track
-        this.context.createProcessTrack(id = pid, name = processName)
-        // Eager populate the main thread track
-        // For the main thread on Android pid = tid
-        // Main thread
-        this.context.process.getOrCreateThreadTrack(id = pid, name = processName)
-        // Thread Tracks
-        // There are multiple ways of obtaining tids.
-        // You can use android.Os.gettid(). This makes a JNI call under the hood (libcore) [SLOW].
-        // This method returns an `Int`.
-        // The fastest way of getting a `tid` is by relying on `Thread.currentThread().id`. Even
-        // though this method returns a `Long` type, given the underlying tid is an `Int` as defined
-        // in libcore - this downcast is safe.
-        val thread = Thread.currentThread()
-        val tid = thread.id.toInt()
-        // Populate additional thread tracks if necessary.
-        if (tid != pid) {
+        // Only bootstrap tracks if globally enabled.
+        if (isGloballyEnabled) {
+            val pid = Process.myPid()
+            // This is only used to eagerly create the ThreadTrack for the main thread.
+            // On Android, pid == tid for main thread.
+            val longPid = pid.toLong()
+            val processName = getProcessName(context = contextProvider().applicationContext)
+            // Eagerly populate a process track
+            this.context.createProcessTrack(id = pid, name = processName)
+            // Eager populate the main thread track
+            // For the main thread on Android pid = tid
+            // Main thread
+            val mainTrack =
+                this.context.process.getOrCreateThreadTrack(id = longPid, name = processName)
+            // Thread Tracks
+            // There are multiple ways of obtaining tids.
+            // You can use android.Os.gettid(). This makes a JNI call under the hood (libcore)
+            // [SLOW].
+            // This method returns an `Int`.
+            // The fastest way of getting a `tid` is by relying on `Thread.currentThread().id`.
             val thread = Thread.currentThread()
-            this.context.process.getOrCreateThreadTrack(id = tid, name = thread.name)
+            val tid = thread.id
+            // Populate additional thread tracks if necessary.
+            if (tid != longPid) {
+                this.context.process.getOrCreateThreadTrack(id = tid, name = thread.name)
+            }
+            // Trace attributes
+            if (attributes != null) {
+                val attributes = mainTrack.traceAttributes()
+                attributes.attributes()
+                attributes.dispatchToTraceSink()
+            }
         }
     }
 
     override val tracer: Tracer by
-        lazy(mode = LazyThreadSafetyMode.PUBLICATION) { this.context.createTracer() }
+        lazy(mode = LazyThreadSafetyMode.PUBLICATION) {
+            PerfettoTracer(context = this.context, categoryEnabled = isCategoryEnabled)
+        }
 
     override fun flush() {
         this.context.flush()
@@ -78,6 +172,93 @@ constructor(context: Context, sink: AbstractTraceSink, isEnabled: Boolean = true
 
     override fun close() {
         this.context.close()
+    }
+
+    /**
+     * Provide the instance of [TraceDriver] that can be used for in-process-tracing.
+     *
+     * On Android, The `android.app.Application` subtype should implement this, to provide a
+     * canonical process wide [TraceDriver].
+     */
+    public interface Factory {
+        /** @return The [TraceDriver] instance that can be used for in-process tracing. */
+        public fun create(): TraceDriver
+    }
+
+    public actual companion object {
+        private val lock: Any = Any()
+        @GuardedBy("lock") private var traceDriver: TraceDriver? = null
+
+        @VisibleForTesting
+        @RestrictTo(Scope.LIBRARY_GROUP)
+        public fun resetTraceDriver(context: Context) {
+            synchronized(lock) {
+                traceDriver = null
+                // Reset disabled state
+                disableTracing(context)
+            }
+        }
+
+        private val stubTraceDriver =
+            TraceDriver(
+                contextProvider = { throw IllegalStateException("Should never happen") },
+                sink = EmptyTraceSink,
+                isGloballyEnabled = false,
+                isCategoryEnabled = { false },
+                attributes = null,
+            )
+
+        @JvmStatic
+        public actual fun getStubTraceDriver(): TraceDriver {
+            return stubTraceDriver
+        }
+
+        /**
+         * Return the [TraceDriver] instance configured by the [Application] for in-process tracing.
+         *
+         * A default [TraceDriver] is provided for the application using an `androidx.startup` hook
+         * via `androidx.tracing.profiler.ConnectedProfilerTracingInitializer`. If the application
+         * wants to override or configure the [TraceDriver] differently, then the [Application]
+         * subclass should implement the [TraceDriver.Factory] interface and provide an appropriate
+         * implementation.
+         *
+         * If the application chooses to remove the startup-hook, and does **not** provide an
+         * implementation of [TraceDriver.Factory], then the instance returned by the method is the
+         * same as the one returned by [getStubTraceDriver].
+         *
+         * @param context The Android application context
+         * @return The [TraceDriver] instance that can be used for in-process tracing. If the
+         *   [android.content.Context] provides an implementation for [TraceDriver.Factory], that
+         *   will be used for in-process tracing. Otherwise, we fallback to a default implementation
+         *   of [TraceDriver] that uses the Perfetto trace format under the hood.
+         */
+        @JvmStatic
+        public fun getTraceDriver(context: Context): TraceDriver {
+            val driver = traceDriver
+            if (driver != null) return driver
+            return synchronized(lock) {
+                val traceDriver = traceDriver
+                if (traceDriver != null) return traceDriver
+                // If the application subtype provides a custom implementation of an
+                // TraceDriver, use it. Otherwise, fallback to the default initializer.
+                val provider =
+                    // Support both ContextWrappers and applicationContext based lookups.
+                    context as? Factory ?: context.applicationContext as? Factory
+                val provided = provider?.create() ?: defaultTraceDriver(context)
+                this.traceDriver = provided
+                provided
+            }
+        }
+
+        private fun defaultTraceDriver(context: Context): TraceDriver {
+            val initializer = AppInitializer.getInstance(context)
+            val klass = ConnectedProfilerTracingInitializer::class.java
+            return if (initializer.isEagerlyInitialized(klass)) {
+                initializer.initializeComponent(klass)
+            } else {
+                stubTraceDriver
+            }
+        }
     }
 }
 

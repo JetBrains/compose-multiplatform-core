@@ -1094,7 +1094,6 @@ public class AppSearchSchemaCtsTest {
     }
 
     @Test
-    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_SCHEMA_EMBEDDING_PROPERTY_CONFIG)
     public void testEmbeddingPropertyConfig() {
         AppSearchSchema schema =
                 new AppSearchSchema.Builder("Test")
@@ -1185,7 +1184,6 @@ public class AppSearchSchemaCtsTest {
     }
 
     @Test
-    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_SCHEMA_EMBEDDING_PROPERTY_CONFIG)
     public void testEmbeddingPropertyConfig_defaultValues() {
         EmbeddingPropertyConfig builder =
                 new EmbeddingPropertyConfig.Builder("test").build();
@@ -1196,22 +1194,38 @@ public class AppSearchSchemaCtsTest {
     }
 
     @Test
-    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_SCHEMA_EMBEDDING_PROPERTY_CONFIG)
+    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_EMBEDDING_APPROXIMATE_NEAREST_NEIGHBOR)
+    public void testEmbeddingPropertyConfig_setIndexingType_ann() {
+        AppSearchSchema schema =
+                new AppSearchSchema.Builder("Test")
+                        .addProperty(
+                                new EmbeddingPropertyConfig.Builder("titleAnnEmbedding")
+                                        .setIndexingType(EmbeddingPropertyConfig
+                                                .INDEXING_TYPE_APPROXIMATE_NEAREST_NEIGHBOR)
+                                        .build())
+                        .build();
+
+        List<AppSearchSchema.PropertyConfig> properties = schema.getProperties();
+        assertThat(properties).hasSize(1);
+        assertThat(properties.get(0).getName()).isEqualTo("titleAnnEmbedding");
+        assertThat(((EmbeddingPropertyConfig) properties.get(0)).getIndexingType())
+                .isEqualTo(EmbeddingPropertyConfig.INDEXING_TYPE_APPROXIMATE_NEAREST_NEIGHBOR);
+    }
+
+    @Test
     public void testEmbeddingPropertyConfig_setIndexingType() {
         assertThrows(IllegalArgumentException.class, () ->
                 new EmbeddingPropertyConfig.Builder("titleEmbedding")
                         .setIndexingType(5).build());
         assertThrows(IllegalArgumentException.class, () ->
                 new EmbeddingPropertyConfig.Builder("titleEmbedding")
-                        .setIndexingType(2).build());
+                        .setIndexingType(3).build());
         assertThrows(IllegalArgumentException.class, () ->
                 new EmbeddingPropertyConfig.Builder("titleEmbedding")
                         .setIndexingType(-1).build());
     }
 
     @Test
-    @RequiresFlagsEnabled({Flags.FLAG_ENABLE_SCHEMA_EMBEDDING_PROPERTY_CONFIG,
-            Flags.FLAG_ENABLE_SCHEMA_EMBEDDING_QUANTIZATION})
     public void testEmbeddingPropertyConfig_quantization() {
         AppSearchSchema schema =
                 new AppSearchSchema.Builder("Test")
@@ -1265,8 +1279,6 @@ public class AppSearchSchemaCtsTest {
     }
 
     @Test
-    @RequiresFlagsEnabled({Flags.FLAG_ENABLE_SCHEMA_EMBEDDING_PROPERTY_CONFIG,
-            Flags.FLAG_ENABLE_SCHEMA_EMBEDDING_QUANTIZATION})
     public void testEmbeddingPropertyConfig_defaultQuantizationValue() {
         EmbeddingPropertyConfig builder =
                 new EmbeddingPropertyConfig.Builder("test").build();
@@ -1275,8 +1287,6 @@ public class AppSearchSchemaCtsTest {
     }
 
     @Test
-    @RequiresFlagsEnabled({Flags.FLAG_ENABLE_SCHEMA_EMBEDDING_PROPERTY_CONFIG,
-            Flags.FLAG_ENABLE_SCHEMA_EMBEDDING_QUANTIZATION})
     public void testEmbeddingPropertyConfig_setQuantizationType() {
         assertThrows(IllegalArgumentException.class, () ->
                 new EmbeddingPropertyConfig.Builder("titleEmbedding")
@@ -1342,7 +1352,6 @@ public class AppSearchSchemaCtsTest {
     }
 
     @Test
-    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_BLOB_STORE)
     public void testBlobHandlePropertyConfig() {
         AppSearchSchema schema = new AppSearchSchema.Builder("Test")
                 .addProperty(
@@ -1364,7 +1373,6 @@ public class AppSearchSchemaCtsTest {
     }
 
     @Test
-    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_BLOB_STORE)
     public void testBlobHandlePropertyConfig_defaultValues() {
         AppSearchSchema.BlobHandlePropertyConfig builder =
                 new AppSearchSchema.BlobHandlePropertyConfig.Builder("test").build();
@@ -1374,9 +1382,7 @@ public class AppSearchSchemaCtsTest {
     }
 
     @Test
-    @RequiresFlagsEnabled({
-            Flags.FLAG_ENABLE_SCHEMA_EMBEDDING_PROPERTY_CONFIG, Flags.FLAG_ENABLE_SCHEMA_DESCRIPTION
-    })
+    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_SCHEMA_DESCRIPTION)
     public void testEmbeddingPropertyConfig_SetDescription() {
         AppSearchSchema.Builder schemaBuilder =
                 new AppSearchSchema.Builder("Email")

@@ -70,6 +70,7 @@ import androidx.camera.camera2.pipe.testing.CameraPipeSimulator
 import androidx.camera.camera2.pipe.testing.FakeCameraBackend
 import androidx.camera.camera2.pipe.testing.FakeCameraDevices
 import androidx.camera.camera2.pipe.testing.FakeCameraMetadata
+import androidx.camera.camera2.pipe.testing.HighEndDeviceTemplate
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.CameraSelector.LensFacing
 import androidx.camera.core.CameraX
@@ -4416,6 +4417,42 @@ class SupportedSurfaceCombinationTest {
     }
 
     @Test
+    fun filterSupportedSizes_withHighSpeed_retainAllSizes() {
+        // Arrange: Initialize preview and video capture config
+        val previewConfig = createUseCase(CaptureType.PREVIEW).currentConfig
+        val videoConfig = createUseCase(CaptureType.VIDEO_CAPTURE).currentConfig
+        val supportedSurfaceCombination = createSupportedSurfaceCombinationWithSetup()
+
+        val size720p = Size(1280, 720) // PREVIEW category
+        val size960x720 = Size(960, 720) // PREVIEW category
+
+        // Preview gets a scrambled order (smaller first, simulating aspect ratio preference)
+        val previewList = listOf(size960x720, size720p)
+        // Video capture gets strict area descending order (larger first)
+        val videoList = listOf(size720p, size960x720)
+
+        val useCaseConfigToSizesMap = mapOf(previewConfig to previewList, videoConfig to videoList)
+
+        // Act: Execute filtering in high speed mode
+        val filteredSizesMap =
+            supportedSurfaceCombination.filterSupportedSizes(
+                useCaseConfigToSizesMap,
+                SupportedSurfaceCombination.FeatureSettings(
+                    CameraMode.DEFAULT,
+                    DynamicRange.BIT_DEPTH_8_BIT,
+                    isHighSpeedOn = true,
+                ),
+            )
+
+        // Assert: In high speed mode, filtering is bypassed.
+        val filteredPreview = filteredSizesMap.getValue(previewConfig)
+        val filteredVideo = filteredSizesMap.getValue(videoConfig)
+
+        assertThat(filteredPreview).containsExactlyElementsIn(previewList)
+        assertThat(filteredVideo).containsExactlyElementsIn(videoList)
+    }
+
+    @Test
     fun checkSupported_featureComboQueryNotRequiredInSettings_featureCombinationQueryNotInvoked() {
         // Arrange: Setup resources with a FeatureCombinationQuery impl. tracking isSupported calls
         setupCamera()
@@ -5114,7 +5151,11 @@ class SupportedSurfaceCombinationTest {
 
         // set up FakeCafakeCameraMetadatameraMetadata
         fakeCameraMetadata =
-            FakeCameraMetadata(cameraId = cameraId, characteristics = characteristicsMap)
+            FakeCameraMetadata.fromTemplate(
+                template = HighEndDeviceTemplate,
+                cameraId = cameraId,
+                characteristicsOverrides = characteristicsMap,
+            )
 
         val cameraManager =
             ApplicationProvider.getApplicationContext<Context>()
@@ -5266,7 +5307,11 @@ class SupportedSurfaceCombinationTest {
         cameraFactory!!.cameraManager = mockCameraAppComponent
         val cameraXConfig =
             CameraXConfig.Builder.fromConfig(Camera2Config.defaultConfig())
-                .setDeviceSurfaceManagerProvider { context: Context?, _: Any?, _: Set<String?>? ->
+                .setDeviceSurfaceManagerProvider {
+                    context: Context?,
+                    _: Any?,
+                    _: Set<String?>?,
+                    _: String? ->
                     CameraSurfaceAdapter(context!!, mockCameraAppComponent, setOf(cameraId))
                 }
                 .setCameraFactoryProvider {

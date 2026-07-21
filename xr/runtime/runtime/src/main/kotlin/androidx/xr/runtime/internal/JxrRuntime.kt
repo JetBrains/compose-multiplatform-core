@@ -18,8 +18,6 @@ package androidx.xr.runtime.internal
 
 import androidx.annotation.RestrictTo
 import androidx.xr.runtime.Config
-import androidx.xr.runtime.Config.ConfigMode
-import androidx.xr.runtime.DisplayBlendMode
 import kotlin.time.ComparableTimeMark
 
 /**
@@ -29,6 +27,9 @@ import kotlin.time.ComparableTimeMark
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 @Suppress("NotCloseable")
 public interface JxrRuntime {
+    /** The configuration of the runtime. */
+    public val config: Config
+
     /**
      * Executes the [JxrRuntime] initialization logic. It is necessary to call [resume] after
      * calling this method to start the runtime's execution logic.
@@ -52,27 +53,6 @@ public interface JxrRuntime {
     public fun configure(config: Config) {}
 
     /**
-     * Checks whether the provided mode is supported by this runtime for the current device.
-     *
-     * @param configMode the [ConfigMode] mode to check.
-     * @return true if supported, false if not.
-     */
-    public fun isSupported(configMode: ConfigMode): Boolean {
-        return false
-    }
-
-    /**
-     * Gets the preferred [DisplayBlendMode] by the runtime.
-     *
-     * @return the preferred [DisplayBlendMode], or [DisplayBlendMode.NO_DISPLAY] if none are
-     *   supported.
-     */
-    @SuppressWarnings("UnavailableSymbol", "HiddenTypeParameter")
-    public fun getPreferredDisplayBlendMode(): DisplayBlendMode {
-        return DisplayBlendMode.NO_DISPLAY
-    }
-
-    /**
      * Updates the state of the system. The call is blocking and will return once the underlying
      * implementation has been updated or a platform-specific timeout has been reached. This method
      * can only be called when the runtime is resumed.
@@ -89,4 +69,8 @@ public interface JxrRuntime {
      * after calling [destroy]. The runtime must not be resumed when this method is called.
      */
     public fun destroy() {}
+
+    /** Gets the pointer to the underlying native session if applicable. */
+    public val sessionPointer: Long?
+        get() = null
 }

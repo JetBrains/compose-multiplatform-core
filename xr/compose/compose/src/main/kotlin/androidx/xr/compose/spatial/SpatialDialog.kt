@@ -32,7 +32,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.RememberObserver
 import androidx.compose.runtime.SideEffect
-import androidx.compose.runtime.currentCompositeKeyHash
+import androidx.compose.runtime.currentCompositeKeyHashCode
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.movableContentOf
 import androidx.compose.runtime.mutableStateOf
@@ -67,6 +67,7 @@ import androidx.xr.runtime.Session
 import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.scenecore.PanelEntity
+import androidx.xr.scenecore.scene
 
 /**
  * Properties for configuring a [SpatialDialog].
@@ -192,9 +193,7 @@ private fun LayoutSpatialDialog(
     val parentEntity = findNearestParentEntity()
     val context = LocalContext.current
     val compositionContext = rememberCompositionContext()
-    // TODO(b/474652577): Update from deprecated currentCompositeKey to currentCompositeKeyCode
-    //  once we update JXR Compose to Compile SDK 35
-    @Suppress("DEPRECATION") val localId = currentCompositeKeyHash
+    val localId = currentCompositeKeyHashCode
 
     BackHandler {
         if (properties.dismissOnBackPress) {
@@ -240,6 +239,8 @@ private fun LayoutSpatialDialog(
                 context = context,
                 session = session,
                 parentView = parentView,
+                onDismissRequest = onDismissRequest,
+                properties = properties,
                 compositionContext = compositionContext,
             )
         }
@@ -263,10 +264,12 @@ private fun LayoutSpatialDialog(
  * and the [CorePanelEntity].
  */
 private class SpatialDialogRenderer(
-    private val localId: Int,
+    private val localId: Long,
     private val context: Context,
     private val session: Session,
     private val parentView: View,
+    private val onDismissRequest: () -> Unit,
+    private val properties: SpatialDialogProperties,
     private val compositionContext: CompositionContext,
 ) : RememberObserver {
 
@@ -301,6 +304,7 @@ private class SpatialDialogRenderer(
                         view = view,
                         pixelDimensions = IntSize2d(IntSize.Zero.width, IntSize.Zero.height),
                         name = "ElevatedPanel:${view.id}",
+                        parent = session.scene.activitySpace,
                     )
                 )
                 .apply {
@@ -311,10 +315,19 @@ private class SpatialDialogRenderer(
         view.setContent {
             Box(
                 modifier =
-                    Modifier.constrainTo(Constraints()).onSizeChanged {
-                        panelEntity?.size =
-                            IntVolumeSize(width = it.width, height = it.height, depth = 0)
-                    }
+                    Modifier.onClickOutside(
+                            enabled = true,
+                            onClickOutside = {
+                                if (properties.dismissOnClickOutside) {
+                                    onDismissRequest()
+                                }
+                            },
+                        )
+                        .constrainTo(Constraints())
+                        .onSizeChanged {
+                            panelEntity?.size =
+                                IntVolumeSize(width = it.width, height = it.height, depth = 0)
+                        }
             ) {
                 content()
             }
@@ -323,6 +336,8 @@ private class SpatialDialogRenderer(
 
     override fun onForgotten() {
         panelEntity?.dispose()
+        panelEntity = null
+        view?.setContent {}
         view?.disposeComposition()
     }
 

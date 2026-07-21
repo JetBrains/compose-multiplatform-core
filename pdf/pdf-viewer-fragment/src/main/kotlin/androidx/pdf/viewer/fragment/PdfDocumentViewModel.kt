@@ -17,6 +17,8 @@
 package androidx.pdf.viewer.fragment
 
 import android.net.Uri
+import android.os.DeadObjectException
+import android.os.RemoteException
 import androidx.annotation.RestrictTo
 import androidx.core.os.OperationCanceledException
 import androidx.lifecycle.SavedStateHandle
@@ -28,10 +30,13 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.CreationExtras
 import androidx.pdf.EditablePdfDocument
 import androidx.pdf.PdfDocument
+import androidx.pdf.PdfFeature
 import androidx.pdf.PdfLoader
 import androidx.pdf.PdfPasswordException
 import androidx.pdf.SandboxedPdfLoader
 import androidx.pdf.models.FormEditInfo
+import androidx.pdf.ocr.OcrContextRepository
+import androidx.pdf.ocr.OcrProvider
 import androidx.pdf.search.SearchRepository
 import androidx.pdf.search.model.NoQuery
 import androidx.pdf.search.model.QueryResults
@@ -95,7 +100,7 @@ public open class PdfDocumentViewModel(
      * Exposes the UI state as a StateFlow to enable reactive consumption and ensure that consumers
      * always receive the latest state.
      */
-    internal val fragmentUiScreenState: StateFlow<PdfFragmentUiState>
+    public val fragmentUiScreenState: StateFlow<PdfFragmentUiState>
         get() = _fragmentUiScreenState.asStateFlow()
 
     private val _searchViewUiState = MutableStateFlow<SearchViewUiState>(SearchViewUiState.Closed)
@@ -138,6 +143,15 @@ public open class PdfDocumentViewModel(
         get() = state[IMMERSIVE_MODE_STATE_KEY] ?: false
 
     protected val formEditInfos: ArrayList<FormEditInfo> = ArrayList()
+
+    /** Provider for OCR-based search in images. */
+    internal var ocrProvider: OcrProvider? = null
+        set(value) {
+            field = value
+            if (::searchRepository.isInitialized) {
+                searchRepository.setOcrProvider(value)
+            }
+        }
 
     /** Holds business logic for search feature. */
     private lateinit var searchRepository: SearchRepository
@@ -296,10 +310,24 @@ public open class PdfDocumentViewModel(
             formApplyEditJob =
                 viewModelScope.launch {
                     previousJob?.join()
-                    currentState.pdfDocument.applyEdit(formEditInfo)
+                    applyEditToDocument(currentState.pdfDocument, formEditInfo)
                     formEditInfos.add(formEditInfo)
                     state[FORM_EDIT_INFOS_KEY] = formEditInfos
                 }
+        }
+    }
+
+    private suspend fun applyEditToDocument(
+        pdfDocument: EditablePdfDocument,
+        formEditInfo: FormEditInfo,
+    ) {
+        try {
+            if (pdfDocument.isFeatureSupported(PdfFeature.FORM_FILLING)) {
+                pdfDocument.applyEdit(formEditInfo)
+            }
+        } catch (e: RemoteException) {
+            if (!e.isHandledRemoteException) throw e
+            // TODO b/493776658 Show error/retry UI
         }
     }
 
@@ -400,6 +428,9 @@ public open class PdfDocumentViewModel(
 
             // Try opening pdf with provided params
             var document = loader.openDocument(uri, password)
+            if (document.pageCount <= 0) {
+                throw IllegalStateException("Invalid PDF: 0 pages in document $uri")
+            }
             // Restore the edited state of the document before updating the UI status to Loaded.
             val formStateRestored = restoreFormFillingState(document)
             if (!formStateRestored) {
@@ -409,7 +440,8 @@ public open class PdfDocumentViewModel(
                 resetFormEditsState()
             }
 
-            searchRepository = SearchRepository(document)
+            searchRepository =
+                SearchRepository(document, ocrProvider?.let { OcrContextRepository(document, it) })
 
             /** Successful load, move to [PdfFragmentUiState.DocumentLoaded] state. */
             _fragmentUiScreenState.update { PdfFragmentUiState.DocumentLoaded(document) }
@@ -437,7 +469,9 @@ public open class PdfDocumentViewModel(
         val savedFormEdits = state.get<ArrayList<FormEditInfo>>(FORM_EDIT_INFOS_KEY)
         if (savedFormEdits.isNullOrEmpty()) return true
         try {
-            savedFormEdits.forEach { document.applyEdit(it) }
+            savedFormEdits.forEach {
+                applyEditToDocument(pdfDocument = document, formEditInfo = it)
+            }
             // If all the edits are applied successfully update the stored formEditInfos.
             formEditInfos.addAll(savedFormEdits)
         } catch (_: IllegalArgumentException) {
@@ -519,6 +553,23 @@ public open class PdfDocumentViewModel(
         private const val QUERY_RESULT_PAGE_NUM_KEY = "queryResultPageNum"
         private const val FORM_EDIT_INFOS_KEY = "formEditInfos"
         private val EMPTY_HIGHLIGHTS = HighlightData(currentIndex = -1, highlightBounds = listOf())
+
+        /**
+         * Determines whether this [Exception] is a known remote-service issue that
+         * [PdfDocumentViewModel] should handle gracefully rather than rethrowing.
+         *
+         * This includes:
+         * - [DeadObjectException]: The remote service process has crashed or been terminated.
+         * - Unrecognized IPC calls: Scenarios where the remote binder doesn't recognize an IPC
+         *   call, often signaled by an "unimplemented" message.
+         *
+         * @return `true` if the exception should be captured and handled internally; `false`
+         *   otherwise.
+         */
+        internal val Exception.isHandledRemoteException: Boolean
+            get() =
+                message?.contains("unimplemented", ignoreCase = true) == true ||
+                    this is DeadObjectException
 
         val Factory: ViewModelProvider.Factory =
             object : ViewModelProvider.Factory {

@@ -35,11 +35,7 @@ import androidx.savedstate.savedState
  * Remembers a new [ViewModelStoreProvider] which creates a ViewModel scope linked to a parent found
  * in the composition.
  *
- * This composable creates a provider that links to any parent found in the composition, forming a
- * parent-child relationship. If no parent exists, it automatically becomes a new root provider.
- * This is useful for isolating ViewModel instances within specific UI sections, such as a
- * self-contained feature screen, dialog, or tab, ensuring they are cleared when that section is
- * removed.
+ * This function creates a provider scoped to this specific call site in the composition.
  *
  * The provider's lifecycle is automatically managed. It is created only once and automatically
  * disposed of when the composable leaves the composition. Crucially, it is aware of the parent's
@@ -50,20 +46,23 @@ import androidx.savedstate.savedState
  * throw an [IllegalStateException] if one is not present.
  *
  * @param parent The [ViewModelStoreOwner] to use as the parent, or `null` if it is a root. Defaults
- *   to the owner from [LocalViewModelStoreOwner].
- * @param key A unique identifier for this call site to isolate its provider from others. Defaults
- *   to [currentCompositeKeyHashCode]. If called multiple times in the same scope or loop, provide a
- *   custom key to ensure each instance gets its own [ViewModelStoreProvider]. A `null` key is valid
- *   and is treated as a distinct scope.
+ *   to the owner from [LocalViewModelStoreOwner]. If this value changes, the provider will be
+ *   recreated.
  * @param defaultArgs The [SavedState] containing default arguments to be passed to ViewModels
  *   created in this scope. These arguments are merged with any default arguments in
  *   [defaultCreationExtras]. If the same key exists in both, the value from [defaultArgs] takes
- *   precedence.
+ *   precedence. This value is only read during the initial creation of the provider; subsequent
+ *   recompositions with different values will not update the existing provider.
  * @param defaultCreationExtras The [CreationExtras] to use. Defaults to the [parent]'s default
- *   extras.
+ *   extras. This value is only read during the initial creation of the provider; subsequent
+ *   recompositions with different values will not update or recreate the existing provider.
  * @param defaultFactory The [ViewModelProvider.Factory] to use for creating ViewModels in this
- *   scope. Defaults to the [parent]'s default factory.
- * @return A new [ViewModelStoreProvider] that is remembered across compositions.
+ *   scope. Defaults to the [parent]'s default factory. This value is only read during the initial
+ *   creation of the provider; subsequent recompositions with different values will not update or
+ *   recreate the existing provider.
+ * @return A new [ViewModelStoreProvider] that is remembered across compositions and scoped to this
+ *   call site.
+ * @sample androidx.lifecycle.viewmodel.compose.samples.RememberViewModelStoreProviderSample
  */
 @Composable
 public fun rememberViewModelStoreProvider(
@@ -71,19 +70,82 @@ public fun rememberViewModelStoreProvider(
         checkNotNull(LocalViewModelStoreOwner.current) {
             "CompositionLocal LocalViewModelStoreOwner not present"
         },
-    key: Any? = currentCompositeKeyHashCode,
+    defaultArgs: SavedState = savedState(),
+    defaultCreationExtras: CreationExtras = parent.defaultViewModelCreationExtras,
+    defaultFactory: ViewModelProvider.Factory = parent.defaultViewModelProviderFactory,
+): ViewModelStoreProvider {
+    return rememberViewModelStoreProvider(
+        key = currentCompositeKeyHashCode,
+        parent = parent,
+        defaultArgs = defaultArgs,
+        defaultCreationExtras = defaultCreationExtras,
+        defaultFactory = defaultFactory,
+    )
+}
+
+/**
+ * Remembers a new [ViewModelStoreProvider] which creates a ViewModel scope linked to a parent found
+ * in the composition, using a specific [key].
+ *
+ * This function allows you to scope a [ViewModelStoreProvider] to a custom [key]. This is useful in
+ * cases where using a key in different parts of the UI should yield the same state or instance
+ * (similar to how a ViewModel is shared). For example, you might use a key derived from navigation
+ * arguments, such as `ViewModelNavEntryDecorator.contentKey`, to share the same owner across
+ * different screens or components.
+ *
+ * The provider's lifecycle is automatically managed. It is created only once and automatically
+ * disposed of when the composable leaves the composition. Crucially, it is aware of the parent's
+ * state and will survive configuration changes (like device rotation) if the parent does.
+ *
+ * **Null parent:** If [parent] is **EXPLICITLY** `null`, this creates a root provider that runs
+ * independently. By default, it requires a parent from the [LocalViewModelStoreOwner] and will
+ * throw an [IllegalStateException] if one is not present.
+ *
+ * @param key A unique identifier to isolate this provider from others. Providing the same [key] and
+ *   [parent] to multiple [rememberViewModelStoreProvider] calls will yield providers that share the
+ *   same internal state, so matching child keys will share the same state. If this value changes,
+ *   the provider will be recreated.
+ * @param parent The [ViewModelStoreOwner] to use as the parent, or `null` if it is a root. Defaults
+ *   to the owner from [LocalViewModelStoreOwner]. If this value changes, the provider will be
+ *   recreated.
+ * @param defaultArgs The [SavedState] containing default arguments to be passed to ViewModels
+ *   created in this scope. These arguments are merged with any default arguments in
+ *   [defaultCreationExtras]. If the same key exists in both, the value from [defaultArgs] takes
+ *   precedence. This value is only read during the initial creation of the provider; subsequent
+ *   recompositions with different values will not update the existing provider.
+ * @param defaultCreationExtras The [CreationExtras] to use. Defaults to the [parent]'s default
+ *   extras. This value is only read during the initial creation of the provider; subsequent
+ *   recompositions with different values will not update or recreate the existing provider.
+ * @param defaultFactory The [ViewModelProvider.Factory] to use for creating ViewModels in this
+ *   scope. Defaults to the [parent]'s default factory. This value is only read during the initial
+ *   creation of the provider; subsequent recompositions with different values will not update or
+ *   recreate the existing provider.
+ * @return A new [ViewModelStoreProvider] that is remembered across compositions and scoped to the
+ *   provided [key].
+ * @sample androidx.lifecycle.viewmodel.compose.samples.RememberViewModelStoreProviderWithKeySample
+ */
+@Composable
+public fun rememberViewModelStoreProvider(
+    key: Any?,
+    parent: ViewModelStoreOwner? =
+        checkNotNull(LocalViewModelStoreOwner.current) {
+            "CompositionLocal LocalViewModelStoreOwner not present"
+        },
     defaultArgs: SavedState = savedState(),
     defaultCreationExtras: CreationExtras = parent.defaultViewModelCreationExtras,
     defaultFactory: ViewModelProvider.Factory = parent.defaultViewModelProviderFactory,
 ): ViewModelStoreProvider {
     val provider =
-        remember(parent, key, defaultFactory, defaultCreationExtras) {
+        remember(parent, key) {
             ViewModelStoreProvider(parent, key, defaultArgs, defaultCreationExtras, defaultFactory)
         }
 
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     DisposableEffect(provider, lifecycle) {
+        val token = provider.acquireToken(ViewModelStoreProvider.ProviderMarkerKey)
         onDispose {
+            token.close()
+
             // We are NOT waiting for an ON_DESTROY event, instead we are executing a cleanup hook
             // that is guaranteed to run when this composable leaves the tree, and checking the
             // Parent's current state to decide *if* we should dispose.

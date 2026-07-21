@@ -194,6 +194,18 @@ class WearWidgetCacheTest {
         }
     }
 
+    @Test
+    fun setAndGetServiceToWidgetMapping_restoresValue() = runTest {
+        cacheUnderTest.update {
+            putServiceToWidgetMapping("service1", "widget1")
+            putServiceToWidgetMapping("service2", "widget2")
+        }
+
+        val mapping = cacheUnderTest.getServiceToWidgetMapping()
+
+        assertThat(mapping).containsExactly("service1", "widget1", "service2", "widget2")
+    }
+
     private companion object {
         const val DATASTORE_FILE_NAME = "test_file.pb"
         val INSTANCE_ID_1 = WidgetInstanceId("namespace1", 1)

@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("DEPRECATION")
+
 package androidx.xr.scenecore.testing
 
 import android.app.Activity
@@ -372,5 +374,12 @@ class FakeSceneRuntimeTest {
 
     private class TestInputEventListener : InputEventListener {
         override fun onInputEvent(event: InputEvent) {}
+    }
+
+    @Test
+    fun defaultPixelsPerMeter_getDefaultValue() {
+        val ppm = fakeSceneRuntime.virtualPixelDensity
+
+        assertThat(ppm).isGreaterThan(0f)
     }
 }

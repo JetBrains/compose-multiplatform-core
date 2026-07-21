@@ -270,4 +270,14 @@ fun defaultComposeScrollingMetrics(): List<Metric> =
             label = "composeDraw",
             mode = TraceSectionMetric.Mode.Sum,
         ),
+        MemoryUsageMetric(MemoryUsageMetric.Mode.Last),
+        MemoryUsageMetric(MemoryUsageMetric.Mode.Max),
+        // Measures the time to process accessibility updates. This covers sections in
+        // AndroidComposeViewAccessibilityDelegateCompat that create and update semantic nodes, or
+        // dispatch accessibility events. The relevant slices are prefixed with "Compose:semantics"
+        TraceSectionMetric(
+            sectionName = "Compose:semantics:%",
+            label = "composeSemantics",
+            mode = TraceSectionMetric.Mode.Sum,
+        ),
     )

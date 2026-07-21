@@ -109,6 +109,13 @@ class OneOfAppFunctionSerializableFactoryCodeBuilder(
             )
             endControlFlow()
         }
+        if (!oneOfClass.supportsExhaustiveWhen()) {
+            addStatement(
+                "else -> throw %T(%P)",
+                IllegalArgumentException::class,
+                "Unknown class type for OneOfType: \${appFunctionSerializable::class.java}",
+            )
+        }
         endControlFlow()
     }
 

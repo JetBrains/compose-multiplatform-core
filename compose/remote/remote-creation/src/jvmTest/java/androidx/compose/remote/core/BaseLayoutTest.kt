@@ -19,6 +19,7 @@ package androidx.compose.remote.core
 import androidx.compose.remote.core.layout.LayoutTestPlayer
 import androidx.compose.remote.core.layout.TestOperation
 import androidx.compose.remote.core.layout.TestParameters
+import androidx.compose.remote.core.operations.layout.Component
 import androidx.compose.remote.creation.RemoteComposeContext
 import java.time.Clock
 import java.time.Instant
@@ -169,6 +170,28 @@ open class BaseLayoutTest : LayoutTestPlayer() {
         }
     }
 
+    class ValidateChildCount(val id: Int, val expectedCount: Int) : TestOperation() {
+        override fun apply(
+            context: RemoteContext,
+            document: CoreDocument,
+            testParameters: TestParameters,
+            commands: MutableList<Map<String, Any>>?,
+        ): Boolean {
+            val component =
+                document.getComponent(id) ?: throw AssertionError("Component with id $id not found")
+            val children = ArrayList<Component>()
+            component.getComponents(children)
+            val visibleCount = children.count { it.isVisible }
+            if (visibleCount != expectedCount) {
+                throw AssertionError(
+                    "Component $id: Expected $expectedCount visible children, " +
+                        "actual $visibleCount"
+                )
+            }
+            return false
+        }
+    }
+
     class ValidateSize(val id: Int, val expectedW: Float, val expectedH: Float) : TestOperation() {
         override fun apply(
             context: RemoteContext,
@@ -199,6 +222,9 @@ open class BaseLayoutTest : LayoutTestPlayer() {
         ValidateBounds(id, x, y, w, h)
 
     fun validateSize(id: Int, w: Float, h: Float): TestOperation = ValidateSize(id, w, h)
+
+    fun validateChildCount(id: Int, expectedCount: Int): TestOperation =
+        ValidateChildCount(id, expectedCount)
 
     class ValidateNoAnimation() : TestOperation() {
         override fun apply(

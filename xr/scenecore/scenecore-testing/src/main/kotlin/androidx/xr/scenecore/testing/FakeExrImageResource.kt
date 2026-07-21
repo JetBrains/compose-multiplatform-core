@@ -14,14 +14,25 @@
  * limitations under the License.
  */
 
+@file:Suppress("DEPRECATION")
+
 package androidx.xr.scenecore.testing
 
 import androidx.annotation.RestrictTo
 import androidx.xr.scenecore.runtime.ExrImageResource
+import androidx.xr.scenecore.testing.internal.FakeExrImageResource as InternalFakeExrImageResource
 
 /** Test-only implementation of [androidx.xr.scenecore.runtime.ExrImageResource] */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public class FakeExrImageResource(public val mToken: Long) : ExrImageResource {
+@Deprecated("Use SceneCoreTestRule instead.")
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public class FakeExrImageResource
+internal constructor(
+    public val mToken: Long,
+    internal val fakeInternal: InternalFakeExrImageResource,
+) : ExrImageResource {
+
+    public constructor(mToken: Long) : this(mToken, InternalFakeExrImageResource())
+
     /**
      * The asset name that was used to "load" this fake resource.
      *
@@ -29,6 +40,23 @@ public class FakeExrImageResource(public val mToken: Long) : ExrImageResource {
      * [FakeRenderingRuntime.loadExrImageByAssetName] method and can be inspected by tests to verify
      * that the correct asset path was used during the model loading process.
      */
-    public var assetName: String = ""
-        internal set
+    public var assetName: String
+        get() = fakeInternal.assetName
+        internal set(value) {
+            fakeInternal.assetName = value
+        }
+
+    /** An asset in the form of a byte array. */
+    public var assetData: ByteArray
+        get() = fakeInternal.assetData
+        set(value) {
+            fakeInternal.assetData = value
+        }
+
+    /** The name of the asset to load from the cache. */
+    public var assetKey: String
+        get() = fakeInternal.assetKey
+        set(value) {
+            fakeInternal.assetKey = value
+        }
 }

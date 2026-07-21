@@ -8,8 +8,6 @@ import androidx.room3.util.getColumnIndexOrThrow
 import androidx.room3.util.getLastInsertedRowId
 import androidx.room3.util.performSuspending
 import androidx.sqlite.SQLiteStatement
-import androidx.sqlite.prepare
-import androidx.sqlite.step
 import com.google.common.util.concurrent.ListenableFuture
 import java.lang.Void
 import javax.`annotation`.processing.Generated
@@ -83,14 +81,14 @@ internal class MyDao_Impl(
   }
 
   public override fun insertListenableFuture(vararg entities: MyEntity): ListenableFuture<List<Long>> = __guavaDaoReturnTypeConverter.convertAsync(__db, true) {
-    performSuspending(__db, false, true) { _connection ->
+    performSuspending<List<Long>>(__db, false, true) { _connection ->
       val _result: List<Long> = __insertAdapterOfMyEntity.insertAndReturnIdsList(_connection, entities)
       _result
     }
   }
 
   public override fun deleteListenableFuture(entity: MyEntity): ListenableFuture<Int> = __guavaDaoReturnTypeConverter.convertAsync(__db, true) {
-    performSuspending(__db, false, true) { _connection ->
+    performSuspending<Int>(__db, false, true) { _connection ->
       var _result: Int = 0
       _result += __deleteAdapterOfMyEntity.handleAndReturnChanges(_connection, entity)
       _result
@@ -98,7 +96,7 @@ internal class MyDao_Impl(
   }
 
   public override fun updateListenableFuture(entity: MyEntity): ListenableFuture<Int> = __guavaDaoReturnTypeConverter.convertAsync(__db, true) {
-    performSuspending(__db, false, true) { _connection ->
+    performSuspending<Int>(__db, false, true) { _connection ->
       var _result: Int = 0
       _result += __updateAdapterOfMyEntity.handleAndReturnChanges(_connection, entity)
       _result
@@ -106,7 +104,7 @@ internal class MyDao_Impl(
   }
 
   public override fun upsertListenableFuture(vararg entities: MyEntity): ListenableFuture<List<Long>> = __guavaDaoReturnTypeConverter.convertAsync(__db, true) {
-    performSuspending(__db, false, true) { _connection ->
+    performSuspending<List<Long>>(__db, false, true) { _connection ->
       val _result: List<Long> = __upsertAdapterOfMyEntity.upsertAndReturnIdsList(_connection, entities)
       _result
     }
@@ -120,7 +118,7 @@ internal class MyDao_Impl(
     _stringBuilder.append(")")
     val _sql: String = _stringBuilder.toString()
     return __guavaDaoReturnTypeConverter.convertAsync(__db, false) {
-      performSuspending(__db, true, false) { _connection ->
+      performSuspending<MyEntity>(__db, true, false) { _connection ->
         val _stmt: SQLiteStatement = _connection.prepare(_sql)
         try {
           var _argIndex: Int = 1
@@ -160,7 +158,7 @@ internal class MyDao_Impl(
     _stringBuilder.append(")")
     val _sql: String = _stringBuilder.toString()
     return __guavaDaoReturnTypeConverter.convertAsync(__db, false) {
-      performSuspending(__db, true, false) { _connection ->
+      performSuspending<MyEntity?>(__db, true, false) { _connection ->
         val _stmt: SQLiteStatement = _connection.prepare(_sql)
         try {
           var _argIndex: Int = 1
@@ -195,7 +193,7 @@ internal class MyDao_Impl(
   public override fun insertListenableFuture(id: String, name: String): ListenableFuture<Long> {
     val _sql: String = "INSERT INTO MyEntity (pk, other) VALUES (?, ?)"
     return __guavaDaoReturnTypeConverter.convertAsync(__db, true) {
-      performSuspending(__db, false, true) { _connection ->
+      performSuspending<Long>(__db, false, true) { _connection ->
         val _stmt: SQLiteStatement = _connection.prepare(_sql)
         try {
           var _argIndex: Int = 1
@@ -214,7 +212,7 @@ internal class MyDao_Impl(
   public override fun updateListenableFuture(id: String, name: String): ListenableFuture<Void?> {
     val _sql: String = "UPDATE MyEntity SET other = ? WHERE pk = ?"
     return __guavaDaoReturnTypeConverter.convertAsync(__db, true) {
-      performSuspending(__db, false, true) { _connection ->
+      performSuspending<Void?>(__db, false, true) { _connection ->
         val _stmt: SQLiteStatement = _connection.prepare(_sql)
         try {
           var _argIndex: Int = 1
@@ -231,6 +229,8 @@ internal class MyDao_Impl(
   }
 
   public companion object {
-    public fun getRequiredConverters(): List<KClass<*>> = emptyList()
+    public fun getRequiredColumnConverters(): List<KClass<*>> = emptyList()
+
+    public fun getRequiredDaoReturnTypeConverters(): List<KClass<*>> = emptyList()
   }
 }

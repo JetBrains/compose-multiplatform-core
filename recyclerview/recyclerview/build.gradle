@@ -27,6 +27,11 @@ dependencies {
     androidTestImplementation(libs.espressoCore)
     androidTestImplementation(libs.mockitoCore)
     androidTestImplementation(libs.dexmakerMockito)
+    androidTestImplementation("org.hamcrest:hamcrest-library:1.3")
+    androidTestImplementation(libs.hamcrestCore)
+    androidTestImplementation(libs.kotlinCoroutinesCore)
+    androidTestImplementation(libs.kotlinStdlib)
+    androidTestImplementation(libs.testMonitor)
     androidTestImplementation(libs.truth)
     androidTestImplementation(libs.junit)
     androidTestImplementation(project(":internal-testutils-espresso"))
@@ -36,6 +41,7 @@ dependencies {
 
     testImplementation(libs.junit)
     testImplementation(libs.mockitoCore4)
+    testImplementation(libs.hamcrestCore)
     lintPublish(project(":recyclerview:recyclerview-lint"))
 
     constraints {
@@ -47,7 +53,6 @@ android {
     defaultConfig {
         compileSdk { version = release(35) }
         testInstrumentationRunner "androidx.recyclerview.test.TestRunner"
-        consumerProguardFiles("proguard-rules.pro")
     }
     testOptions.unitTests.returnDefaultValues = true
     namespace = "androidx.recyclerview"

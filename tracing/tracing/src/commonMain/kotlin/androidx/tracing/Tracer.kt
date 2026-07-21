@@ -24,13 +24,7 @@ import kotlinx.coroutines.withContext
  *
  * To obtain an instance of `Tracer` use [AbstractTraceDriver.tracer].
  */
-public abstract class Tracer(
-    /** Is set to `true` if Tracing is enabled. */
-    @JvmField
-    @field:Suppress("MutableBareField") // public / mutable to minimize overhead
-    public val isEnabled: Boolean
-) {
-
+public abstract class Tracer {
     /**
      * Creates a [PropagationToken] that can be used for manual context propagation in
      * [androidx.tracing.Tracer].
@@ -119,6 +113,18 @@ public abstract class Tracer(
         token: PropagationToken?,
         isRoot: Boolean,
     ): EventMetadataCloseable
+
+    /**
+     * @return `true` if the provided trace [category] should be enabled.
+     *
+     * If `false` then trace events corresponding to the [category] are dropped to reduce tracing
+     * overhead. This is particularly useful when you want to lower the overhead of trace events
+     * from uninteresting or noisy categories.
+     *
+     * Note:This method should be **extremely** low overhead given it's called every time a [Tracer]
+     * can emit trace events.
+     */
+    public abstract fun isCategoryEnabled(category: String): Boolean
 
     /**
      * @return The [Counter] instance for the provided [category] and [name]. This can be used to
@@ -230,8 +236,8 @@ public abstract class Tracer(
      *   sections as a forest, and require that there is at least one top level root span.
      * @param metadataBlock The lambda that can be used to decorate the trace event with additional
      *   debug annotations.
-     * @param block The block of code being traced.
-     * @return The [AutoCloseable] instance that can be used to close the trace section.
+     * @param block The [block] of code being traced.
+     * @return [T] as returned by the [block] being traced.
      */
     @JvmOverloads
     public inline fun <T> trace(
@@ -243,7 +249,7 @@ public abstract class Tracer(
         crossinline block: () -> T,
     ): T {
         val closeable =
-            if (!isEnabled) {
+            if (!isCategoryEnabled(category)) {
                 EmptyCloseable
             } else {
                 beginSection(
@@ -258,6 +264,12 @@ public abstract class Tracer(
         // AutoCloseable.use on Android.
         try {
             return block()
+        } catch (throwable: Throwable) {
+            recordExceptionAndThrow(
+                category = category,
+                name = "$name.exception",
+                throwable = throwable,
+            )
         } finally {
             closeable.close()
         }
@@ -281,8 +293,8 @@ public abstract class Tracer(
      *   sections as a forest, and require that there is at least one top level root span.
      * @param metadataBlock The lambda that can be used to decorate the trace event with additional
      *   debug annotations.
-     * @param block The suspending block of code being traced.
-     * @return The [AutoCloseable] instance that can be used to close the trace section.
+     * @param block The suspending [block] of code being traced.
+     * @return [T] as returned by the suspending [block] being traced.
      */
     @JvmOverloads
     public suspend inline fun <T> traceCoroutine(
@@ -294,7 +306,7 @@ public abstract class Tracer(
         crossinline block: suspend () -> T,
     ): T {
         val result =
-            if (!isEnabled) {
+            if (!isCategoryEnabled(category)) {
                 EmptyEventMetadataCloseable
             } else {
                 beginCoroutineSection(
@@ -319,6 +331,12 @@ public abstract class Tracer(
             } else {
                 block()
             }
+        } catch (throwable: Throwable) {
+            recordExceptionAndThrow(
+                category = category,
+                name = "$name.exception",
+                throwable = throwable,
+            )
         } finally {
             // Only have the tokenContextElement be relevant for the execution of the suspending
             // `block` and not in this finally block.
@@ -344,5 +362,19 @@ public abstract class Tracer(
         val result = instant(category = category, name = name)
         metadataBlock(result.metadata)
         result.metadata.dispatchToTraceSink()
+    }
+
+    public companion object {
+        private val stubTracer =
+            PerfettoTracer(context = EmptyTraceContext, categoryEnabled = { false })
+
+        /**
+         * @return a [Tracer] instance that is a stub (does nothing). This is useful as a
+         *   placeholder when you want to enable / disable tracing for the program.
+         */
+        @JvmStatic
+        public fun getStubTracer(): Tracer {
+            return stubTracer
+        }
     }
 }

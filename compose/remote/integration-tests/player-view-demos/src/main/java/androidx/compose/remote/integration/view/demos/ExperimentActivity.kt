@@ -25,6 +25,7 @@ import android.content.ContextWrapper
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.Configuration
+import android.graphics.BitmapFactory
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
@@ -67,14 +68,17 @@ import androidx.compose.material3.Text
 import androidx.compose.remote.core.CoreDocument
 import androidx.compose.remote.core.RemoteComposeBuffer
 import androidx.compose.remote.core.operations.Theme
-import androidx.compose.remote.creation.CreationDisplayInfo
 import androidx.compose.remote.creation.RemoteComposeContext
 import androidx.compose.remote.creation.RemoteComposeWriter
+import androidx.compose.remote.creation.compose.capture.RemoteCreationDisplayInfo
 import androidx.compose.remote.creation.compose.capture.WriterEvents
+import androidx.compose.remote.creation.compose.capture.captureSingleRemoteDocument
 import androidx.compose.remote.creation.compose.capture.rememberRemoteDocument
-import androidx.compose.remote.creation.compose.v2.captureSingleRemoteDocumentV2
 import androidx.compose.remote.creation.profile.Profile
 import androidx.compose.remote.creation.profile.RcPlatformProfiles
+import androidx.compose.remote.integration.view.demos.dsl.dslClock
+import androidx.compose.remote.integration.view.demos.dsl.dslDemo
+import androidx.compose.remote.integration.view.demos.dsl.dslTicker
 import androidx.compose.remote.integration.view.demos.examples.DemoPaths.pathTest
 import androidx.compose.remote.integration.view.demos.examples.LayoutModifierDemo1
 import androidx.compose.remote.integration.view.demos.examples.LayoutModifierDemo2
@@ -83,12 +87,24 @@ import androidx.compose.remote.integration.view.demos.examples.RcCanvasComponent
 import androidx.compose.remote.integration.view.demos.examples.RcCanvasComponents3
 import androidx.compose.remote.integration.view.demos.examples.RcCanvasComponents4
 import androidx.compose.remote.integration.view.demos.examples.RcCanvasComponents5
+import androidx.compose.remote.integration.view.demos.examples.RcClicksDemo
 import androidx.compose.remote.integration.view.demos.examples.RcCollapsiblePriority
+import androidx.compose.remote.integration.view.demos.examples.RcDrawWithContent
 import androidx.compose.remote.integration.view.demos.examples.RcFitBox
 import androidx.compose.remote.integration.view.demos.examples.RcFlow
+import androidx.compose.remote.integration.view.demos.examples.RcMacroDemo
+import androidx.compose.remote.integration.view.demos.examples.RcMacroForEachDemo
+import androidx.compose.remote.integration.view.demos.examples.RcMacroLocalDemo
+import androidx.compose.remote.integration.view.demos.examples.RcNoMacroDemo
 import androidx.compose.remote.integration.view.demos.examples.RcRatio
+import androidx.compose.remote.integration.view.demos.examples.RcReferencedMacroDemo
+import androidx.compose.remote.integration.view.demos.examples.RcReferencedModifierDemo
+import androidx.compose.remote.integration.view.demos.examples.RcReferencedOperationsMacroDemo
 import androidx.compose.remote.integration.view.demos.examples.RcScrollview
 import androidx.compose.remote.integration.view.demos.examples.RcSimpleClock1
+import androidx.compose.remote.integration.view.demos.examples.RcSimpleSwitchDemo
+import androidx.compose.remote.integration.view.demos.examples.RcStyleMacroDemo
+import androidx.compose.remote.integration.view.demos.examples.RcSwitchWidgetDemo
 import androidx.compose.remote.integration.view.demos.examples.RcTextDemo
 import androidx.compose.remote.integration.view.demos.examples.RcTextDemo2
 import androidx.compose.remote.integration.view.demos.examples.RcTextDemo2b
@@ -102,13 +118,29 @@ import androidx.compose.remote.integration.view.demos.examples.RcTextDemo7
 import androidx.compose.remote.integration.view.demos.examples.RcTextDemo8
 import androidx.compose.remote.integration.view.demos.examples.RcTextDemo9
 import androidx.compose.remote.integration.view.demos.examples.RcTicker
+import androidx.compose.remote.integration.view.demos.examples.RideShare
 import androidx.compose.remote.integration.view.demos.examples.ScrollViewDemo
 import androidx.compose.remote.integration.view.demos.examples.ShaderCalendar
 import androidx.compose.remote.integration.view.demos.examples.SimplePath
+import androidx.compose.remote.integration.view.demos.examples.SlantedButtonDemo
 import androidx.compose.remote.integration.view.demos.examples.SwitchWidgetDemo
+import androidx.compose.remote.integration.view.demos.examples.TestDrawContentDemo
 import androidx.compose.remote.integration.view.demos.examples.WeatherDemo
 import androidx.compose.remote.integration.view.demos.examples.countDown
 import androidx.compose.remote.integration.view.demos.examples.cube3d
+import androidx.compose.remote.integration.view.demos.examples.cubeInteractive
+import androidx.compose.remote.integration.view.demos.examples.demoGraphs2
+import androidx.compose.remote.integration.view.demos.examples.demoLinearRegression
+import androidx.compose.remote.integration.view.demos.examples.rcJsonGraphs2
+import androidx.compose.remote.integration.view.demos.examples.rcJsonLinearRegression
+import androidx.compose.remote.integration.view.demos.examples.rcJsonMacroDemo
+import androidx.compose.remote.integration.view.demos.examples.rcJsonMacroLocalDemo
+import androidx.compose.remote.integration.view.demos.examples.rcJsonParticleSphere
+import androidx.compose.remote.integration.view.demos.examples.rcJsonPressureGauge
+import androidx.compose.remote.integration.view.demos.examples.rcJsonReferencedOperationsMacroDemo
+import androidx.compose.remote.integration.view.demos.examples.rcJsonStyleMacroDemo
+import androidx.compose.remote.integration.view.demos.examples.rcJsonTextDemo8
+import androidx.compose.remote.integration.view.demos.examples.rcJsonTicker
 import androidx.compose.remote.integration.view.demos.examples.shaderFireworks
 import androidx.compose.remote.integration.view.demos.utils.RCDoc
 import androidx.compose.remote.player.core.RemoteDocument
@@ -264,11 +296,12 @@ fun getComposeDoc(
         suspend fun rememberRemoteDocument(
             context: Context,
             profile: Profile = DemoVersions.AndroidXCinnamonBun,
-            creationDisplayInfo: CreationDisplayInfo = CreationDisplayInfo(1000, 1000, 440),
+            creationDisplayInfo: RemoteCreationDisplayInfo =
+                RemoteCreationDisplayInfo(1000, 1000, 440, 1.0f),
             content: @Composable () -> Unit,
         ) {
             val result =
-                captureSingleRemoteDocumentV2(
+                captureSingleRemoteDocument(
                     profile = profile,
                     creationDisplayInfo = creationDisplayInfo,
                     writerEvents = WriterEvents(),
@@ -294,6 +327,7 @@ class ExperimentActivity : ComponentActivity() {
     val showComposePlayerKey = "SHOW_COMPOSE_PLAYER"
     val showOrigamiKey = "SHOW_ORIGAMI"
     val debugComposeKey = "DEBUG_ORIGAMI"
+    val rideShare = RideShare()
 
     var cmap = listOf(get("Frontend...") {}, get("Procedural...") {}, get("Java...") {})
 
@@ -301,6 +335,7 @@ class ExperimentActivity : ComponentActivity() {
         mapOf<String, List<RemoteComposeFunc>>(
             "Frontend..." to
                 listOf(
+                    get("DrawContent") { TestDrawContentDemo() },
                     get("SimplePath") { SimplePath() },
                     get("WeatherDemo") { WeatherDemo() },
                     get("Simple Clock") { RcSimpleClock1() },
@@ -309,9 +344,72 @@ class ExperimentActivity : ComponentActivity() {
                 ),
             "Procedural..." to
                 listOf(
+                    getpc("JSON Stock") { rcJsonTicker() },
+                    getpc("JSON Graphs 2") { rcJsonGraphs2() },
+                    getp("Demo Graphs 2") { demoGraphs2() },
+                    getpc("JSON Pressure Gauge") { rcJsonPressureGauge() },
+                    getpc("JSON Particle Sphere") { rcJsonParticleSphere() },
+                    getpc("JSON Linear Regression") {
+                        val nPoints = 50
+                        val trueSlope = 0.5f
+                        val trueIntercept = 10f
+                        val noiseScale = 2f
+
+                        val xData =
+                            FloatArray(nPoints) {
+                                it.toFloat() + (Random.nextFloat() - 0.5f) * noiseScale
+                            }
+                        val yData =
+                            FloatArray(nPoints) {
+                                trueSlope * it +
+                                    trueIntercept +
+                                    (Random.nextFloat() - 0.5f) * noiseScale * 4f
+                            }
+                        rcJsonLinearRegression(xData, yData)
+                    },
+                    getpc("Linear Regression") {
+                        val nPoints = 50
+                        val trueSlope = 0.5f
+                        val trueIntercept = 10f
+                        val noiseScale = 2f
+
+                        val xData =
+                            FloatArray(nPoints) {
+                                it.toFloat() + (Random.nextFloat() - 0.5f) * noiseScale
+                            }
+                        val yData =
+                            FloatArray(nPoints) {
+                                trueSlope * it +
+                                    trueIntercept +
+                                    (Random.nextFloat() - 0.5f) * noiseScale * 4f
+                            }
+                        demoLinearRegression(xData, yData)
+                    },
+                    getpc("JSON Card") { rcJsonTextDemo8() },
+                    getb("Rc DSL Clock Demo") { dslClock() },
+                    getb("Rc DSL Ticker Demo") { dslTicker() },
+                    getb("Rc DSL Demo") { dslDemo() },
+                    getpc("RcClicks") { RcClicksDemo() },
+                    getpc("RcRatio") { RcRatio() },
+                    getpc("Macros ForEach") { RcMacroForEachDemo() },
+                    getpc("Local Macros") { RcMacroLocalDemo() },
+                    getpc("No Macros") { RcNoMacroDemo() },
+                    getpc("Macros") { RcMacroDemo() },
+                    getpc("Referenced Modifiers") { RcReferencedModifierDemo() },
+                    getpc("Referenced Macro") { RcReferencedMacroDemo() },
+                    getpc("Macro Inclusion") { RcReferencedOperationsMacroDemo() },
+                    getpc("Style Macros") { RcStyleMacroDemo() },
+                    getpc("JSON Macros") { rcJsonMacroDemo() },
+                    getpc("JSON Local Macros") { rcJsonMacroLocalDemo() },
+                    getpc("JSON Macro Inclusion") { rcJsonReferencedOperationsMacroDemo() },
+                    getpc("JSON Style Macros") { rcJsonStyleMacroDemo() },
+                    getpc("Simple Switch") { RcSimpleSwitchDemo() },
+                    getpc("Switch DSL") { RcSwitchWidgetDemo() },
+                    getpc("Slanted button") { SlantedButtonDemo() },
                     getpc("RcRatio") { RcRatio() },
                     getpc("RcScrollViewport") { RcScrollview() },
                     getpc("RcFlow") { RcFlow() },
+                    getpc("RcDrawWithContent") { RcDrawWithContent() },
                     getpc("RcCollapsiblePriority") { RcCollapsiblePriority() },
                     getpc("RcFitBox") { RcFitBox() },
                     getpc("Stock") { RcTicker(applicationContext) },
@@ -337,10 +435,48 @@ class ExperimentActivity : ComponentActivity() {
                     getpc("Text baseline") { RcTextDemo() },
                     getpc("CountDown") { countDown() },
                     getpc("Cube 3D") { cube3d() },
+                    getpc("Cube 3D (Interactive)") { cubeInteractive() },
                     getpc("Shader Calendar") { ShaderCalendar() },
+                    getpc("Ride Share") { rideShare.rideShare() },
                 ),
             "Java..." to listOf(getp("pathTest") { pathTest() }),
         )
+
+    fun getdoc(
+        name: String,
+        color: Color = toRcColor(name, 0.1f),
+        gen: () -> RCDoc,
+    ): RemoteComposeFunc {
+        return object : RemoteComposeFunc {
+            private var buildTime: Float = 0f
+
+            @Composable override fun Run() {}
+
+            @Composable
+            override fun getDoc(): MutableState<CoreDocument?> {
+                val time = System.nanoTime()
+                val rcdoc = gen()
+                val doc = rcdoc.getDoc()
+                val doc2: MutableState<CoreDocument?> = remember {
+                    mutableStateOf(doc?.getDocument())
+                }
+                buildTime = (System.nanoTime() - time) * 1E-6f
+                return doc2
+            }
+
+            override fun getBuildTime(): Float {
+                return buildTime
+            }
+
+            override fun getColor(): Color {
+                return color
+            }
+
+            override fun toString(): String {
+                return name
+            }
+        }
+    }
 
     fun getpc(
         name: String,
@@ -348,6 +484,40 @@ class ExperimentActivity : ComponentActivity() {
         gen: () -> RemoteComposeContext,
     ): RemoteComposeFunc {
         return getp(name, color) { gen().mRemoteWriter }
+    }
+
+    fun getb(
+        name: String,
+        color: Color = toRcColor(name, 0.1f),
+        gen: () -> ByteArray,
+    ): RemoteComposeFunc {
+        return object : RemoteComposeFunc {
+            private var buildTime: Float = 0f
+
+            @Composable override fun Run() {}
+
+            @Composable
+            override fun getDoc(): MutableState<CoreDocument?> {
+                val time = System.nanoTime()
+                val data = gen()
+                val doc = RemoteDocument(ByteArrayInputStream(data))
+                val doc2: MutableState<CoreDocument?> = remember { mutableStateOf(doc.document) }
+                buildTime = (System.nanoTime() - time) * 1E-6f
+                return doc2
+            }
+
+            override fun getBuildTime(): Float {
+                return buildTime
+            }
+
+            override fun getColor(): Color {
+                return color
+            }
+
+            override fun toString(): String {
+                return name
+            }
+        }
     }
 
     fun getp(
@@ -404,7 +574,7 @@ class ExperimentActivity : ComponentActivity() {
             @Composable
             override fun getDoc(): MutableState<CoreDocument?> {
                 val time = System.nanoTime()
-                val creationDisplayInfo = CreationDisplayInfo(1000, 1000, 160)
+                val creationDisplayInfo = RemoteCreationDisplayInfo(1000, 1000, 160, 1.0f)
                 val d =
                     rememberRemoteDocument(creationDisplayInfo = creationDisplayInfo) {
                         cRun.invoke()
@@ -431,6 +601,11 @@ class ExperimentActivity : ComponentActivity() {
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        val carLogo = BitmapFactory.decodeResource(getResources(), R.drawable.car_logo)
+        val carDriver = BitmapFactory.decodeResource(getResources(), R.drawable.car_driver)
+        val carIcon = BitmapFactory.decodeResource(getResources(), R.drawable.car_icon)
+        rideShare.setBitmaps(carLogo, carDriver, carIcon)
 
         val fullList = cmap.toMutableList()
         fullList.addAll(subMenus.values.flatten())

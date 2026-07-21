@@ -24,6 +24,7 @@ import androidx.baselineprofile.gradle.utils.EXPECTED_PROFILE_FOLDER
 import androidx.baselineprofile.gradle.utils.Fixtures
 import androidx.baselineprofile.gradle.utils.TestAgpVersion
 import androidx.baselineprofile.gradle.utils.TestAgpVersion.TEST_AGP_VERSION_8_3_1
+import androidx.baselineprofile.gradle.utils.TestAgpVersion.TEST_AGP_VERSION_8_5_2
 import androidx.baselineprofile.gradle.utils.TestAgpVersion.TEST_AGP_VERSION_CURRENT
 import androidx.baselineprofile.gradle.utils.VariantProfile
 import androidx.baselineprofile.gradle.utils.build
@@ -1904,7 +1905,7 @@ class BaselineProfileConsumerPluginTestWithKmp(agpVersion: TestAgpVersion) {
     companion object {
         @Parameterized.Parameters(name = "agpVersion={0}")
         @JvmStatic
-        fun parameters() = TestAgpVersion.atLeast(TEST_AGP_VERSION_8_3_1)
+        fun parameters() = TestAgpVersion.atLeast(TEST_AGP_VERSION_8_5_2)
     }
 
     @get:Rule
@@ -2114,5 +2115,53 @@ class BaselineProfileConsumerPluginTestWithFtl(agpVersion: TestAgpVersion) {
 
         assertThat(projectSetup.baselineProfileFile("release").exists()).isFalse()
         assertThat(projectSetup.startupProfileFile("release").exists()).isFalse()
+    }
+
+    @Test
+    fun testBaselineProfileOutputDirNotCreatedDuringConfiguration() {
+        projectSetup.consumer.setup(
+            androidPlugin = ANDROID_APPLICATION_PLUGIN,
+            flavors = true,
+            baselineProfileBlock =
+                """
+                saveInSrc = true
+                automaticGenerationDuringBuild = true
+                """
+                    .trimIndent(),
+        )
+        projectSetup.producer.setupWithFreeAndPaidFlavors(
+            freeReleaseProfileLines = listOf(Fixtures.CLASS_1_METHOD_1, Fixtures.CLASS_1),
+            paidReleaseProfileLines = listOf(Fixtures.CLASS_2_METHOD_1, Fixtures.CLASS_2),
+        )
+
+        val freeReleaseOutputDir =
+            File(projectSetup.consumer.rootDir, "src/freeRelease/$EXPECTED_PROFILE_FOLDER")
+        val paidReleaseOutputDir =
+            File(projectSetup.consumer.rootDir, "src/paidRelease/$EXPECTED_PROFILE_FOLDER")
+
+        // Ensure dirs don't exist before the build
+        freeReleaseOutputDir.deleteRecursively()
+        paidReleaseOutputDir.deleteRecursively()
+
+        // Store the configuration cache entry without executing tasks.
+        projectSetup.consumer.gradleRunner.build(
+            "generateFreeReleaseBaselineProfile",
+            "--configuration-cache",
+            "--dry-run",
+        ) {}
+
+        // Verify configuration cache is reused and output is correct.
+        projectSetup.consumer.gradleRunner.build(
+            "generateFreeReleaseBaselineProfile",
+            "--configuration-cache",
+        ) {
+            assertThat(it).contains("Reusing configuration cache")
+            assertThat(projectSetup.readBaselineProfileFileContent("freeRelease"))
+                .containsExactly(Fixtures.CLASS_1, Fixtures.CLASS_1_METHOD_1)
+        }
+
+        assertWithMessage("Output dir should be created at execution time")
+            .that(freeReleaseOutputDir.exists())
+            .isTrue()
     }
 }

@@ -35,6 +35,7 @@ dependencies {
     compileOnly(project(":annotation:annotation-sampled"))
 
     implementation(project(":xr:glimmer:glimmer"))
+    implementation(project(":xr:glimmer:glimmer-google-fonts"))
 }
 
 androidx {
@@ -45,6 +46,6 @@ androidx {
 }
 
 android {
-    compileSdk { version = release(35) }
+    compileSdk { version = release(37) }
     namespace = "androidx.xr.glimmer.samples"
 }

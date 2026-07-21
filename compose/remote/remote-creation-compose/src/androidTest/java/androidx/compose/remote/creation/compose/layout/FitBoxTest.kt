@@ -24,13 +24,15 @@ import androidx.compose.remote.creation.compose.modifier.size
 import androidx.compose.remote.creation.compose.state.rdp
 import androidx.compose.remote.creation.compose.test.base.GridScreenshotUI
 import androidx.compose.remote.creation.compose.test.util.propertyName
-import androidx.compose.remote.player.compose.test.utils.screenshot.rule.RemoteComposeScreenshotTestRule
+import androidx.compose.remote.player.compose.test.utils.RemoteScreenshotTestRule
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.LayoutDirection
+import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
+import androidx.test.screenshot.matchers.MSSIMMatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -40,9 +42,12 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class FitBoxTest {
     @get:Rule
-    val composeTestRule: RemoteComposeScreenshotTestRule by lazy {
-        RemoteComposeScreenshotTestRule(moduleDirectory = SCREENSHOT_GOLDEN_DIRECTORY)
-    }
+    val composeTestRule =
+        RemoteScreenshotTestRule(
+            moduleDirectory = SCREENSHOT_GOLDEN_DIRECTORY,
+            context = ApplicationProvider.getApplicationContext(),
+            matcher = MSSIMMatcher(threshold = 0.999),
+        )
 
     private val gridScreenshotUI = GridScreenshotUI()
 
@@ -60,14 +65,17 @@ class FitBoxTest {
 
     @Test
     fun rtl() =
-        composeTestRule.runScreenshotTest(layoutDirection = LayoutDirection.Rtl) {
+        composeTestRule.runScreenshotTest {
             val alignments =
                 listOf(
                     RemoteAlignment.Start,
                     RemoteAlignment.CenterHorizontally,
                     RemoteAlignment.End,
                 )
-            gridScreenshotUI.GridContent(getLayoutAlignmentUIs(alignments))
+            gridScreenshotUI.GridContent(
+                getLayoutAlignmentUIs(alignments),
+                layoutDirection = LayoutDirection.Rtl,
+            )
         }
 
     @Test
@@ -84,14 +92,17 @@ class FitBoxTest {
 
     @Test
     fun rtlAbsoluteAlignment() =
-        composeTestRule.runScreenshotTest(layoutDirection = LayoutDirection.Rtl) {
+        composeTestRule.runScreenshotTest {
             val alignments =
                 listOf(
                     RemoteAbsoluteAlignment.Left,
                     RemoteAlignment.CenterHorizontally,
                     RemoteAbsoluteAlignment.Right,
                 )
-            gridScreenshotUI.GridContent(getLayoutAlignmentUIs(alignments))
+            gridScreenshotUI.GridContent(
+                getLayoutAlignmentUIs(alignments),
+                layoutDirection = LayoutDirection.Rtl,
+            )
         }
 
     private fun getLayoutAlignmentUIs(

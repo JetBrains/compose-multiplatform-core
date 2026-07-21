@@ -2,8 +2,6 @@ import androidx.room3.RoomDatabase
 import androidx.room3.util.getColumnIndexOrThrow
 import androidx.room3.util.performSuspending
 import androidx.sqlite.SQLiteStatement
-import androidx.sqlite.prepare
-import androidx.sqlite.step
 import javax.`annotation`.processing.Generated
 import kotlin.Int
 import kotlin.String
@@ -26,7 +24,7 @@ internal class MyDao_Impl(
   public override suspend fun getFooList(): Foo<List<MyEntity>> {
     val _sql: String = "SELECT * FROM MyEntity"
     return FooReturnTypeConverter.convert() {
-      performSuspending(__db, true, false) { _connection ->
+      performSuspending<List<MyEntity>>(__db, true, false) { _connection ->
         val _stmt: SQLiteStatement = _connection.prepare(_sql)
         try {
           val _columnIndexOfPk: Int = getColumnIndexOrThrow(_stmt, "pk")
@@ -47,6 +45,8 @@ internal class MyDao_Impl(
   }
 
   public companion object {
-    public fun getRequiredConverters(): List<KClass<*>> = emptyList()
+    public fun getRequiredColumnConverters(): List<KClass<*>> = emptyList()
+
+    public fun getRequiredDaoReturnTypeConverters(): List<KClass<*>> = emptyList()
   }
 }

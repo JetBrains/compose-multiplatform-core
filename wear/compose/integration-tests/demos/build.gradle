@@ -22,19 +22,19 @@ plugins {
 }
 
 android {
-    compileSdk { version = release(36) }
+    compileSdk { version = release(37) }
     defaultConfig {
         applicationId = "androidx.wear.compose.integration.demos"
         minSdk { version = release(25) }
-        versionCode = 99
-        versionName = "1.99"
+        versionCode = 108
+        versionName = "1.108"
     }
 
     buildTypes {
         release {
-            minifyEnabled = true
-            shrinkResources = true
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            optimization {
+                enable = true
+            }
         }
     }
     buildFeatures {

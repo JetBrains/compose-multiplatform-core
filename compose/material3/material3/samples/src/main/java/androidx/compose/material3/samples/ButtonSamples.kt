@@ -43,7 +43,6 @@ fun ButtonSample() {
     Button(onClick = {}) { Text("Button") }
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Preview
 @Sampled
 @Composable
@@ -51,7 +50,6 @@ fun ButtonWithAnimatedShapeSample() {
     Button(onClick = {}, shapes = ButtonDefaults.shapes()) { Text("Button") }
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Preview
 @Sampled
 @Composable
@@ -59,7 +57,6 @@ fun SquareButtonSample() {
     Button(onClick = { /* Do something! */ }, shape = ButtonDefaults.squareShape) { Text("Button") }
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Preview
 @Sampled
 @Composable
@@ -76,7 +73,6 @@ fun ElevatedButtonSample() {
     ElevatedButton(onClick = { /* Do something! */ }) { Text("Elevated Button") }
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Preview
 @Sampled
 @Composable
@@ -91,7 +87,6 @@ fun FilledTonalButtonSample() {
     FilledTonalButton(onClick = { /* Do something! */ }) { Text("Filled Tonal Button") }
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Preview
 @Sampled
 @Composable
@@ -108,7 +103,6 @@ fun OutlinedButtonSample() {
     OutlinedButton(onClick = { /* Do something! */ }) { Text("Outlined Button") }
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Preview
 @Sampled
 @Composable
@@ -123,7 +117,6 @@ fun TextButtonSample() {
     TextButton(onClick = { /* Do something! */ }) { Text("Text Button") }
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Preview
 @Sampled
 @Composable

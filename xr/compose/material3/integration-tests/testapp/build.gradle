@@ -53,16 +53,16 @@ dependencies {
 }
 
 android {
-    compileSdk { version = release(36) }
+    compileSdk { version = release(37) }
     defaultConfig {
         minSdk { version = release(24) }
     }
     namespace = "androidx.xr.compose.material3.integration.testapp"
     buildTypes {
         release {
-            minifyEnabled = true
-            shrinkResources = true
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt')
+            optimization {
+                enable = true
+            }
         }
     }
 }

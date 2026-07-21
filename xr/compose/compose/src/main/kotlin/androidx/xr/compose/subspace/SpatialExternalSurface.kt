@@ -149,8 +149,9 @@ public typealias SurfaceProtection = SpatialExternalSurfaceProtection
  * USAGE_PROTECTED_CONTENT flag set. These buffers support hardware paths for decoding protected
  * content.
  *
+ * See [MediaDrm](https://developer.android.com/reference/android/media/MediaDrm)
+ *
  * @see [SpatialExternalSurface]
- * @see https://developer.android.com/reference/android/media/MediaDrm
  */
 @JvmInline
 public value class SpatialExternalSurfaceProtection
@@ -190,7 +191,10 @@ private constructor(internal val value: SurfaceEntity.SurfaceProtection) {
  * Playing certain content will require the proper [SpatialExternalSurfaceProtection]. This is
  * mainly used to protect DRM video content.
  *
- * @param modifier SubspaceModifiers to apply to the SpatialSurfacePanel.
+ * @param modifier SubspaceModifiers to apply to the SpatialExternalSurface. The depth field in
+ *   size-based modifiers affects this surface's layout size, but will not affect how the surface is
+ *   rendered. The rendered shape will be a flat rectangle that is positioned on the front face of
+ *   the rectangular prism created by the layout size.
  * @param stereoMode The [StereoMode] which describes how parts of the surface are displayed to the
  *   user's eyes. This will affect how the content is interpreted and displayed on the surface.
  * @param featheringEffect A [SpatialFeatheringEffect] to apply to the canvas of the surface exposed
@@ -216,6 +220,7 @@ private constructor(internal val value: SurfaceEntity.SurfaceProtection) {
  */
 @Composable
 @SubspaceComposable
+@Suppress("DEPRECATION", "ReferencesDeprecated")
 public fun SpatialExternalSurface(
     stereoMode: StereoMode,
     modifier: SubspaceModifier = SubspaceModifier,
@@ -242,6 +247,7 @@ public fun SpatialExternalSurface(
                     stereoMode = stereoMode.value,
                     surfaceProtection = surfaceProtection.value,
                     superSampling = superSamplingPattern.value,
+                    parent = session.scene.activitySpace,
                 ),
                 localDensity = density,
             )
@@ -422,6 +428,7 @@ private fun SpatialExternalSurfaceBaseSphere(
                     stereoMode = stereoMode.value,
                     surfaceProtection = surfaceProtection.value,
                     superSampling = superSamplingPattern.value,
+                    parent = session.scene.activitySpace,
                     shape =
                         if (isHemisphere) {
                             SurfaceEntity.Shape.Hemisphere(meterRadius)
@@ -452,7 +459,10 @@ private fun SpatialExternalSurfaceBaseSphere(
 
         if (session.scene.spatialEnvironment.preferredSpatialEnvironment == null) {
             session.scene.spatialEnvironment.preferredSpatialEnvironment =
-                SpatialEnvironment.SpatialEnvironmentPreference(skybox = null, geometry = null)
+                SpatialEnvironment.SpatialEnvironmentPreference(
+                    imageBasedLightingAsset = null,
+                    geometry = null,
+                )
             temporaryEnvironmentSet = true
         }
 
@@ -462,11 +472,11 @@ private fun SpatialExternalSurfaceBaseSphere(
         val passthroughListener = { passthrough: Float ->
             coreSurfaceEntity.isBoundaryAvailable = passthrough != 1.0f
         }
-        session.scene.spatialEnvironment.addOnPassthroughOpacityChangedListener(passthroughListener)
+        session.scene.spatialEnvironment.addPassthroughOpacityChangedListener(passthroughListener)
         session.scene.spatialEnvironment.preferredPassthroughOpacity = 0.0f
 
         onDispose {
-            session.scene.spatialEnvironment.removeOnPassthroughOpacityChangedListener(
+            session.scene.spatialEnvironment.removePassthroughOpacityChangedListener(
                 passthroughListener
             )
             if (temporaryEnvironmentSet) {

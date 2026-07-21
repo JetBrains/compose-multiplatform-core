@@ -30,9 +30,11 @@ import androidx.annotation.OpenForTesting
 import androidx.annotation.RequiresExtension
 import androidx.pdf.PdfDocument
 import androidx.pdf.PdfDocument.Companion.LINEARIZATION_STATUS_UNKNOWN
+import androidx.pdf.PdfFeature
 import androidx.pdf.RenderParams
-import androidx.pdf.annotation.KeyedPdfAnnotation
-import androidx.pdf.annotation.models.PdfObject
+import androidx.pdf.annotation.content.KeyedPdfAnnotation
+import androidx.pdf.annotation.content.KeyedPdfObject
+import androidx.pdf.annotation.content.PdfObject
 import androidx.pdf.content.PageMatchBounds
 import androidx.pdf.content.PageSelection
 import androidx.pdf.content.PdfPageGotoLinkContent
@@ -76,20 +78,16 @@ fun interface PageSelector {
 @OpenForTesting
 internal open class FakePdfDocument(
     /** A list of (x, y) page dimensions in content coordinates */
-    private val pages: List<Point> = listOf(),
+    private val pages: List<Point> = listOf(Point(600, 800)),
     override val formType: Int = PDF_FORM_TYPE_NONE,
     override val linearizationStatus: Int = LINEARIZATION_STATUS_UNKNOWN,
-    @Deprecated(
-        "Deprecated, Use linearizationStatus instead",
-        replaceWith = ReplaceWith("linearizationStatus"),
-    )
-    override val isLinearized: Boolean = false,
     override val renderParams: RenderParams = RenderParams(RenderParams.RENDER_MODE_FOR_DISPLAY),
     private val searchResults: SparseArray<List<PageMatchBounds>> = SparseArray(),
     override val uri: Uri = Uri.parse("content://test.app/document.pdf"),
     private val pageLinks: Map<Int, PdfDocument.PdfPageLinks> = mapOf(),
     private val textContents: List<PdfPageTextContent> = emptyList(),
     private val pageSelector: PageSelector = SIMPLE_SELECTOR,
+    private val supportedFeatures: Set<PdfFeature> = setOf(),
 ) : PdfDocument {
     override val pageCount: Int = pages.size
 
@@ -113,6 +111,10 @@ internal open class FakePdfDocument(
     }
 
     override suspend fun getAnnotationsForPage(pageNum: Int): List<KeyedPdfAnnotation> {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun getPageObjects(pageNum: Int, types: Long): List<KeyedPdfObject> {
         TODO("Not yet implemented")
     }
 
@@ -143,6 +145,15 @@ internal open class FakePdfDocument(
                 stop = SelectionBoundary(0),
                 selectedContents = listOf(),
             )
+    }
+
+    @RequiresExtension(extension = Build.VERSION_CODES.S, version = 13)
+    override suspend fun getSelectionBounds(
+        pageNumber: Int,
+        start: SelectionBoundary,
+        stop: SelectionBoundary,
+    ): PageSelection {
+        return PageSelection(pageNumber, start, stop, listOf())
     }
 
     override suspend fun getSelectAllSelectionBounds(pageNumber: Int): PageSelection? {
@@ -201,6 +212,10 @@ internal open class FakePdfDocument(
         listener: PdfDocument.OnPdfContentInvalidatedListener
     ) {
         return
+    }
+
+    override fun isFeatureSupported(feature: PdfFeature): Boolean {
+        return supportedFeatures.contains(feature)
     }
 
     override fun close() {

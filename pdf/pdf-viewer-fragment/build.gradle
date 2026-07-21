@@ -28,7 +28,6 @@ plugins {
 }
 
 dependencies {
-    api(project(":pdf:pdf-viewer"))
     api(project(":pdf:pdf-document-service"))
     api("androidx.core:core:1.13.1")
 
@@ -57,7 +56,7 @@ android {
     namespace = "androidx.pdf.viewer.fragment"
     compileSdk { version = release(36) { sdkExtension = 19 }}
     defaultConfig {
-        minSdk { version = release(31) }
+        minSdk { version = release(28) }
     }
 }
 

@@ -17,14 +17,12 @@
 package androidx.tracing.benchmark.driver
 
 import android.content.Context
-import androidx.benchmark.BlackHole
 import androidx.benchmark.ExperimentalBenchmarkConfigApi
 import androidx.benchmark.junit4.BenchmarkRule
 import androidx.benchmark.junit4.measureRepeated
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
-import androidx.tracing.AbstractTraceDriver
 import androidx.tracing.PerfettoTracer
 import androidx.tracing.TRACE_PACKET_BUFFER_SIZE
 import androidx.tracing.benchmark.BASIC_STRING
@@ -50,12 +48,9 @@ import org.junit.runner.RunWith
 class TracingBenchmark {
     @get:Rule val benchmarkRule = BenchmarkRule()
 
-    private fun buildTraceDriver(
-        sink: TraceSink,
-        @Suppress("SameParameterValue") isEnabled: Boolean,
-    ): AbstractTraceDriver {
+    private fun buildTraceDriver(sink: TraceSink): TraceDriver {
         val context = ApplicationProvider.getApplicationContext<Context>()
-        return TraceDriver(context = context, sink = sink, isEnabled = isEnabled)
+        return TraceDriver(context = context, sink = sink, isCategoryEnabled = { true })
     }
 
     fun buildInMemorySink(coroutineContext: CoroutineContext): TraceSink {
@@ -74,7 +69,7 @@ class TracingBenchmark {
     // there is no good way to advance the TestScheduler by calling advanceUntilIdle().
     // Not calling close() here is okay, given we drain all trace packets before the next
     // measurement loop.
-    private val traceDriver = buildTraceDriver(sink, true)
+    private val traceDriver = buildTraceDriver(sink)
     private val tracer = traceDriver.tracer as PerfettoTracer
 
     /**
@@ -89,7 +84,7 @@ class TracingBenchmark {
                 // 32 total events (or 16 begin/end pairs) will dispatch
                 // instead, we reset after 8 begin/end pairs so we only measure
                 // producer write cost without sending to sink
-                tracer.resetFillCount()
+                runWithMeasurementDisabled { tracer.resetTraceEvents() }
             }
         }
     }
@@ -103,22 +98,32 @@ class TracingBenchmark {
                     // 32 total events (or 16 begin/end pairs) will dispatch
                     // instead, we reset after 8 begin/end pairs so we only measure
                     // producer write cost without sending to sink
-                    runWithMeasurementDisabled { tracer.resetFillCount() }
+                    runWithMeasurementDisabled { tracer.resetTraceEvents() }
                 }
             }
         }
     }
 
-    // This benchmark is a reference benchmark for `beginEndCoroutine_writeOnly`. The goal is to
-    // get the numbers for `beginEndCoroutine_writeOnly` to get as close as possible to the
-    // benchmark below.
+    // This benchmark is a reference benchmark for `beginEndCoroutine_writeOnly`. We are trying to
+    // measure the cost of context propagation by comparing it with a ThreadContextElement that
+    // does nothing.
     @Test
     fun referenceForBeginEndCoroutine() = runTest {
         benchmarkRule.measureRepeated {
             runBlocking {
-                val coroutineContext = currentCoroutineContext()
-                withContext(coroutineContext + TestThreadContextElement()) {
-                    repeat(32) { BlackHole.consume(it) }
+                repeat(4) {
+                    repeat(8) {
+                        val coroutineContext = currentCoroutineContext()
+                        withContext(coroutineContext + TestThreadContextElement()) {
+                            tracer.trace(category = CATEGORY, name = BASIC_STRING) {
+                                // Do nothing
+                            }
+                        }
+                    }
+                    // 32 total events (or 16 begin/end pairs) will dispatch
+                    // instead, we reset after 8 begin/end pairs so we only measure
+                    // producer write cost without sending to sink
+                    runWithMeasurementDisabled { tracer.resetTraceEvents() }
                 }
             }
         }
@@ -142,19 +147,58 @@ class TracingBenchmark {
         beginEndBenchmark32(measureSerialization = true)
     }
 
+    @Test
+    fun beginEnd_counter32() {
+        benchmarkCounter32(measureSerialization = false)
+    }
+
+    @Test
+    fun beginEnd_counter32_withSerialization() {
+        benchmarkCounter32(measureSerialization = true)
+    }
+
+    private fun benchmarkCounter32(measureSerialization: Boolean) {
+        // we assert this value at runtime and build the number into the method name so it's
+        // clear how many begin/ends it is measuring. test needs to be renamed if const changes.
+        assertEquals(TRACE_PACKET_BUFFER_SIZE, 32)
+        // Bootstrap a counter
+        tracer.counter(category = CATEGORY, name = BASIC_STRING)
+        benchmarkRule.measureRepeated {
+            repeat(2) {
+                repeat(16) {
+                    tracer.counter(category = CATEGORY, name = BASIC_STRING).setValue(42L)
+                }
+                if (!measureSerialization) {
+                    // Only send 16 events so we only measure producer write cost without sending to
+                    // sink.
+                    runWithMeasurementDisabled {
+                        traceDriver.context.process
+                            .getOrCreateCounterTrack(name = BASIC_STRING)
+                            .resetTraceEvents()
+                    }
+                }
+            }
+            if (measureSerialization) {
+                dispatcher.scheduler.advanceUntilIdle()
+            }
+        }
+    }
+
     private fun beginEndBenchmark32(measureSerialization: Boolean) {
         // we assert this value at runtime and build the number into the method name so it's
         // clear how many begin/ends it is measuring. test needs to be renamed if const changes.
         assertEquals(TRACE_PACKET_BUFFER_SIZE, 32)
         benchmarkRule.measureRepeated {
-            repeat(32) { tracer.trace(category = CATEGORY, name = BASIC_STRING) {} }
-            // The benchmark measurement loop creates packets extremely quickly. To avoid
-            // running OOM (when the consumer can't keep up) we wait for the packets to flush.
-            // Note that we attempt to wait a consistent amount of time to ensure consistent
-            // measurements.
-            if (!measureSerialization) {
-                runWithMeasurementDisabled { dispatcher.scheduler.advanceUntilIdle() }
-            } else {
+            repeat(4) {
+                repeat(8) { tracer.trace(category = CATEGORY, name = BASIC_STRING) {} }
+                if (!measureSerialization) {
+                    // 32 total events (or 16 begin/end pairs) will dispatch
+                    // instead, we reset after 8 begin/end pairs so we only measure
+                    // producer write cost without sending to sink
+                    runWithMeasurementDisabled { tracer.resetTraceEvents() }
+                }
+            }
+            if (measureSerialization) {
                 dispatcher.scheduler.advanceUntilIdle()
             }
         }

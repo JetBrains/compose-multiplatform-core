@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("RestrictedApiAndroidX")
+
 package androidx.wear.compose.remote.material3.previews
 
 import androidx.compose.material.icons.Icons
@@ -25,35 +27,38 @@ import androidx.compose.remote.creation.compose.layout.RemoteComposable
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
 import androidx.compose.remote.creation.compose.modifier.fillMaxSize
 import androidx.compose.remote.creation.compose.modifier.padding
-import androidx.compose.remote.creation.compose.modifier.size
 import androidx.compose.remote.creation.compose.state.rdp
 import androidx.compose.remote.creation.compose.state.rs
 import androidx.compose.remote.creation.profile.Profile
-import androidx.compose.remote.tooling.preview.RemotePreview
+import androidx.compose.remote.tooling.preview.RemoteContentPreview
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.wear.compose.remote.material3.RemoteAppCard
 import androidx.wear.compose.remote.material3.RemoteIcon
 import androidx.wear.compose.remote.material3.RemoteText
+import androidx.wear.compose.remote.material3.previews.utils.ProfilePreviewParameterProvider
 import androidx.wear.compose.ui.tooling.preview.WearPreviewDevices
 
 @WearPreviewDevices
 @Composable
 fun RemoteAppCardPreview(
     @PreviewParameter(ProfilePreviewParameterProvider::class) profile: Profile
-) = RemotePreview(profile = profile) { Container { RemoteAppCardDefault() } }
+) = RemoteContentPreview(profile = profile) { Container { RemoteAppCardDefault() } }
 
 @WearPreviewDevices
 @Composable
 fun RemoteAppCardWithAppNameTimeTitlePreview(
     @PreviewParameter(ProfilePreviewParameterProvider::class) profile: Profile
-) = RemotePreview(profile = profile) { Container { RemoteAppCardWithAppNameTimeTitle() } }
+) = RemoteContentPreview(profile = profile) { Container { RemoteAppCardWithAppNameTimeTitle() } }
 
 @WearPreviewDevices
 @Composable
 fun RemoteAppCardWithAppNameTitleSubtitlePreview(
     @PreviewParameter(ProfilePreviewParameterProvider::class) profile: Profile
-) = RemotePreview(profile = profile) { Container { RemoteAppCardWithAppNameTitleSubtitle() } }
+) =
+    RemoteContentPreview(profile = profile) {
+        Container { RemoteAppCardWithAppNameTitleSubtitle() }
+    }
 
 @Composable
 @RemoteComposable
@@ -62,13 +67,7 @@ fun RemoteAppCardDefault() {
         onClick = Action.Empty,
         appName = { RemoteText("App Name".rs) },
         time = { RemoteText("now".rs) },
-        appImage = {
-            RemoteIcon(
-                imageVector = Icons.Filled.Favorite,
-                contentDescription = null,
-                modifier = RemoteModifier.size(24.rdp),
-            )
-        },
+        appImage = { RemoteIcon(imageVector = Icons.Filled.Favorite, contentDescription = null) },
         title = { RemoteText("Card Title".rs) },
     ) {
         RemoteText("Card Content".rs)

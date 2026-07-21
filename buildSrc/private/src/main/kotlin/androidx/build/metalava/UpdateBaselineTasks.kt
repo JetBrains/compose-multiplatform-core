@@ -42,7 +42,10 @@ constructor(workerExecutor: WorkerExecutor) : SourceMetalavaTask(workerExecutor)
 
     @TaskAction
     fun updateBaseline() {
-        check(bootClasspath.files.isNotEmpty()) { "Android boot classpath not set." }
+        // Only require android jar if there is a main jvm/android target.
+        if (hasJvmOrAndroidTarget.get()) {
+            check(bootClasspath.files.isNotEmpty()) { "Android boot classpath not set." }
+        }
         val baselineFile = baselines.get().apiLintFile
         val checkArgs =
             getGenerateApiArgs(
@@ -58,6 +61,7 @@ constructor(workerExecutor: WorkerExecutor) : SourceMetalavaTask(workerExecutor)
                 emptyList(),
                 manifestPath.orNull?.asFile?.absolutePath,
                 multiplatform.get(),
+                hasJvmOrAndroidTarget.get(),
             )
         val args = checkArgs + getCommonBaselineUpdateArgs(baselineFile)
 
@@ -83,8 +87,6 @@ internal abstract class IgnoreApiChangesTask @Inject constructor(workerExecutor:
 
     @TaskAction
     fun exec() {
-        check(bootClasspath.files.isNotEmpty()) { "Android boot classpath not set." }
-
         val freezeApis = shouldFreezeApis(referenceApi.get().version(), version.get())
         updateBaseline(restricted = false, freezeApis)
         if (restrictedApisExist()) {

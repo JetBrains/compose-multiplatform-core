@@ -4,8 +4,6 @@ import androidx.room3.EntityUpsertAdapter
 import androidx.room3.RoomDatabase
 import androidx.room3.util.performSuspending
 import androidx.sqlite.SQLiteStatement
-import androidx.sqlite.prepare
-import androidx.sqlite.step
 import javax.`annotation`.processing.Generated
 import kotlin.Int
 import kotlin.String
@@ -71,25 +69,25 @@ internal class MyDao_Impl(
   }
 
   public override suspend fun insert(item: MyEntity): Foo = __fooReturnTypeConverter.convert() {
-    performSuspending(__db, false, true) { _connection ->
+    performSuspending<Unit>(__db, false, true) { _connection ->
       __insertAdapterOfMyEntity.insert(_connection, item)
     }
   }
 
   public override suspend fun delete(item: MyEntity): Foo = __fooReturnTypeConverter.convert() {
-    performSuspending(__db, false, true) { _connection ->
+    performSuspending<Unit>(__db, false, true) { _connection ->
       __deleteAdapterOfMyEntity.handle(_connection, item)
     }
   }
 
   public override suspend fun update(item: MyEntity): Foo = __fooReturnTypeConverter.convert() {
-    performSuspending(__db, false, true) { _connection ->
+    performSuspending<Unit>(__db, false, true) { _connection ->
       __updateAdapterOfMyEntity.handle(_connection, item)
     }
   }
 
   public override suspend fun upsert(item: MyEntity): Foo = __fooReturnTypeConverter.convert() {
-    performSuspending(__db, false, true) { _connection ->
+    performSuspending<Unit>(__db, false, true) { _connection ->
       __upsertAdapterOfMyEntity.upsert(_connection, item)
     }
   }
@@ -97,13 +95,12 @@ internal class MyDao_Impl(
   public override suspend fun insertWithId(pk: Int): Foo {
     val _sql: String = "INSERT INTO MyEntity (pk) VALUES (?)"
     return __fooReturnTypeConverter.convert() {
-      performSuspending(__db, false, true) { _connection ->
+      performSuspending<Unit>(__db, false, true) { _connection ->
         val _stmt: SQLiteStatement = _connection.prepare(_sql)
         try {
           var _argIndex: Int = 1
           _stmt.bindLong(_argIndex, pk.toLong())
           _stmt.step()
-          Unit
         } finally {
           _stmt.close()
         }
@@ -112,6 +109,8 @@ internal class MyDao_Impl(
   }
 
   public companion object {
-    public fun getRequiredConverters(): List<KClass<*>> = emptyList()
+    public fun getRequiredColumnConverters(): List<KClass<*>> = emptyList()
+
+    public fun getRequiredDaoReturnTypeConverters(): List<KClass<*>> = emptyList()
   }
 }

@@ -31,6 +31,7 @@ import androidx.compose.runtime.currentCompositeKeyHashCode
 import androidx.compose.runtime.currentRecomposeScope
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
+import androidx.compose.runtime.mock.ComposerToUse
 import androidx.compose.runtime.mock.Linear
 import androidx.compose.runtime.mock.Text
 import androidx.compose.runtime.mock.View
@@ -58,6 +59,7 @@ import kotlin.test.assertTrue
 import kotlin.test.fail
 import kotlinx.coroutines.CancellableContinuation
 import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.test.runTest
 import kotlinx.test.IgnoreWebTarget
 
 class RetainTests {
@@ -993,48 +995,132 @@ class RetainTests {
         }
     }
 
-    // Ignore JS targets: b/444012850
-    @IgnoreWebTarget
     @Test
-    fun abandonCompositionTest() {
+    fun abandonCompositionTest_linkComposer() = runTest {
         var failComposition by mutableStateOf(false)
         val store1 = ManagedRetainedValuesStore()
         val store2 = ManagedRetainedValuesStore()
         val events = mutableListOf<String>()
 
         try {
-            compositionTest {
-                compose {
-                    LocalRetainedValuesStoreProvider(store1) {
-                        retain<LoggingRetainObject> { LoggingRetainObject("A", events) }
+            compositionTest(composerToUse = ComposerToUse.Link) {
+                    compose {
+                        LocalRetainedValuesStoreProvider(store1) {
+                            retain<LoggingRetainObject> { LoggingRetainObject("A", events) }
+                            if (failComposition) {
+                                retain<LoggingRetainObject> { LoggingRetainObject("B", events) }
+                            }
+                        }
+
+                        LocalRetainedValuesStoreProvider(store2) {
+                            retain<LoggingRetainObject> { LoggingRetainObject("C", events) }
+                            if (failComposition) {
+                                retain<LoggingRetainObject> { LoggingRetainObject("D", events) }
+                            }
+                        }
+
                         if (failComposition) {
-                            retain<LoggingRetainObject> { LoggingRetainObject("B", events) }
+                            events += "throw"
+                            throw RuntimeException("Abandoning composition")
                         }
                     }
 
-                    LocalRetainedValuesStoreProvider(store2) {
-                        retain<LoggingRetainObject> { LoggingRetainObject("C", events) }
-                        if (failComposition) {
-                            retain<LoggingRetainObject> { LoggingRetainObject("D", events) }
-                        }
-                    }
-
-                    if (failComposition) {
-                        events += "throw"
-                        throw RuntimeException("Abandoning composition")
-                    }
+                    assertContentEquals(
+                        listOf(
+                            "Retain(A)",
+                            "EnterComposition(A)",
+                            "Retain(C)",
+                            "EnterComposition(C)",
+                        ),
+                        events,
+                    )
+                    failComposition = true
+                    events += "recompose"
+                    try {
+                        advance()
+                    } catch (_: Throwable) {}
                 }
+                .await()
+        } catch (t: Throwable) {
+            if (!failComposition) throw t
+        }
 
-                assertContentEquals(
-                    listOf("Retain(A)", "EnterComposition(A)", "Retain(C)", "EnterComposition(C)"),
-                    events,
-                )
-                failComposition = true
-                events += "recompose"
-                try {
-                    advance()
-                } catch (_: Throwable) {}
-            }
+        assertContent(events) {
+            eq("Retain(A)")
+            eq("EnterComposition(A)")
+            eq("Retain(C)")
+            eq("EnterComposition(C)")
+            eq("recompose")
+            eq("throw")
+            inAnyOrder("Unused(B)", "Unused(D)")
+            eq("ExitComposition(C)")
+            eq("ExitComposition(A)")
+        }
+
+        store2.disableRetainingExitedValues()
+        store1.disableRetainingExitedValues()
+
+        assertContent(events) {
+            eq("Retain(A)")
+            eq("EnterComposition(A)")
+            eq("Retain(C)")
+            eq("EnterComposition(C)")
+            eq("recompose")
+            eq("throw")
+            inAnyOrder("Unused(B)", "Unused(D)")
+            eq("ExitComposition(C)")
+            eq("ExitComposition(A)")
+            eq("Retire(C)")
+            eq("Retire(A)")
+        }
+    }
+
+    @Test
+    fun abandonCompositionTest_gapComposer() = runTest {
+        var failComposition by mutableStateOf(false)
+        val store1 = ManagedRetainedValuesStore()
+        val store2 = ManagedRetainedValuesStore()
+        val events = mutableListOf<String>()
+
+        try {
+            compositionTest(composerToUse = ComposerToUse.Gap) {
+                    compose {
+                        LocalRetainedValuesStoreProvider(store1) {
+                            retain<LoggingRetainObject> { LoggingRetainObject("A", events) }
+                            if (failComposition) {
+                                retain<LoggingRetainObject> { LoggingRetainObject("B", events) }
+                            }
+                        }
+
+                        LocalRetainedValuesStoreProvider(store2) {
+                            retain<LoggingRetainObject> { LoggingRetainObject("C", events) }
+                            if (failComposition) {
+                                retain<LoggingRetainObject> { LoggingRetainObject("D", events) }
+                            }
+                        }
+
+                        if (failComposition) {
+                            events += "throw"
+                            throw RuntimeException("Abandoning composition")
+                        }
+                    }
+
+                    assertContentEquals(
+                        listOf(
+                            "Retain(A)",
+                            "EnterComposition(A)",
+                            "Retain(C)",
+                            "EnterComposition(C)",
+                        ),
+                        events,
+                    )
+                    failComposition = true
+                    events += "recompose"
+                    try {
+                        advance()
+                    } catch (_: Throwable) {}
+                }
+                .await()
         } catch (t: Throwable) {
             if (!failComposition) throw t
         }
@@ -1441,7 +1527,7 @@ class RetainTests {
     // Ignore JS targets: b/444012850
     @IgnoreWebTarget
     @Test
-    fun retainedValuesStoreRegistry_manualDispose() {
+    fun retainedValuesStoreRegistry_manualDispose_linkComposer() {
         var shouldThrowException = false
         assertThrows<IllegalStateException>(
             throwableAssertion = {
@@ -1452,7 +1538,7 @@ class RetainTests {
                 )
             }
         ) {
-            compositionTest {
+            compositionTest(composerToUse = ComposerToUse.Link) {
                 val parentStore = ManagedRetainedValuesStore()
                 lateinit var childStore: RetainedValuesStore
                 lateinit var retainedValuesStoreRegistry: RetainedValuesStoreRegistry
@@ -1507,6 +1593,77 @@ class RetainTests {
         assertTrue(shouldThrowException, "Test threw expected exception too early")
     }
 
+    // Ignore JS targets: b/444012850
+    @IgnoreWebTarget
+    @Test
+    fun retainedValuesStoreRegistry_manualDispose_gapComposer() {
+        var shouldThrowException = false
+        assertThrows<IllegalStateException>(
+            throwableAssertion = {
+                assertEquals(
+                    "Cannot get a RetainedValuesStore after a RetainedValuesStoreRegistry " +
+                        "has been disposed.",
+                    it.message,
+                )
+            }
+        ) {
+            compositionTest(composerToUse = ComposerToUse.Gap) {
+                val parentStore = ManagedRetainedValuesStore()
+                lateinit var childStore: RetainedValuesStore
+                lateinit var retainedValuesStoreRegistry: RetainedValuesStoreRegistry
+                val events = mutableListOf<String>()
+                var includeChildStore by mutableStateOf(true)
+
+                compose {
+                    LocalRetainedValuesStoreProvider(parentStore) {
+                        retain<LoggingRetainObject> { LoggingRetainObject("A", events) }
+                        retainedValuesStoreRegistry = retainRetainedValuesStoreRegistry()
+                        if (includeChildStore) {
+                            retainedValuesStoreRegistry.LocalRetainedValuesStoreProvider("B") {
+                                childStore = LocalRetainedValuesStore.current
+                                retain<LoggingRetainObject> { LoggingRetainObject("B", events) }
+                            }
+                        }
+                    }
+                }
+
+                expectNoChanges()
+
+                assertEquals(
+                    listOf("Retain(A)", "EnterComposition(A)", "Retain(B)", "EnterComposition(B)"),
+                    events,
+                )
+
+                assertFalse(childStore.isRetainingExitedValues)
+
+                includeChildStore = false
+                advance()
+
+                assertEquals(
+                    listOf(
+                        "Retain(A)",
+                        "EnterComposition(A)",
+                        "Retain(B)",
+                        "EnterComposition(B)",
+                        "ExitComposition(B)",
+                    ),
+                    events,
+                )
+
+                assertTrue(childStore.isRetainingExitedValues)
+                retainedValuesStoreRegistry.dispose()
+                includeChildStore = true
+
+                shouldThrowException = true
+                advance()
+            }
+        }
+
+        assertTrue(shouldThrowException, "Test threw expected exception too early")
+    }
+
+    // Ignore JS targets: b/444012850
+    @IgnoreWebTarget
     @Test
     fun provideRetainedValuesStore_inPausableComposition() = compositionTest {
         val store = ManagedRetainedValuesStore()

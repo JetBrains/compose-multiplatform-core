@@ -27,6 +27,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CornerBasedShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.State
 import androidx.compose.ui.Modifier
@@ -63,6 +64,9 @@ import androidx.wear.compose.material3.tokens.ShapeTokens
  * Example of an [IconButton]:
  *
  * @sample androidx.wear.compose.material3.samples.IconButtonSample
+ *
+ * ![IconButtonSample Composite
+ * Image](https://developer.android.com/wear/images/design/WearComposeM3_IconButtonSample_CompositeImage.png)
  *
  * Example of an [IconButton] with onLongClick:
  *
@@ -108,20 +112,25 @@ public fun IconButton(
     interactionSource: MutableInteractionSource? = null,
     content: @Composable BoxScope.() -> Unit,
 ) {
-    IconButtonImpl(
-        onClick = onClick,
-        modifier =
-            modifier.minimumInteractiveComponentSize().size(IconButtonDefaults.DefaultButtonSize),
-        onLongClick = onLongClick,
-        onLongClickLabel = onLongClickLabel,
-        enabled = enabled,
-        backgroundColor = { colors.containerColor(enabled = it).value },
-        interactionSource = interactionSource,
-        shapes = shapes,
-        border = { border },
-        ripple = ripple(),
-        content = provideScopeContent(colors.contentColor(enabled = enabled), content),
-    )
+    val contentColor = colors.contentColor(enabled = enabled)
+    CompositionLocalProvider(LocalContentColor provides contentColor.value) {
+        IconButtonImpl(
+            onClick = onClick,
+            modifier =
+                modifier
+                    .minimumInteractiveComponentSize()
+                    .size(IconButtonDefaults.DefaultButtonSize),
+            onLongClick = onLongClick,
+            onLongClickLabel = onLongClickLabel,
+            enabled = enabled,
+            backgroundColor = { colors.containerColor(enabled = it).value },
+            interactionSource = interactionSource,
+            shapes = shapes,
+            border = { border },
+            ripple = ripple(),
+            content = content,
+        )
+    }
 }
 
 /**
@@ -145,6 +154,10 @@ public fun IconButton(
  * Example of [FilledIconButton]:
  *
  * @sample androidx.wear.compose.material3.samples.FilledIconButtonSample
+ *
+ * ![FilledIconButtonSample Composite
+ * Image](https://developer.android.com/wear/images/design/WearComposeM3_FilledIconButtonSample_CompositeImage.png)
+ *
  * @param onClick Will be called when the user clicks the button.
  * @param modifier Modifier to be applied to the button.
  * @param onLongClick Called when this button is long clicked (long-pressed). When this callback is
@@ -178,20 +191,25 @@ public fun FilledIconButton(
     interactionSource: MutableInteractionSource? = null,
     content: @Composable BoxScope.() -> Unit,
 ) {
-    IconButtonImpl(
-        onClick = onClick,
-        modifier =
-            modifier.minimumInteractiveComponentSize().size(IconButtonDefaults.DefaultButtonSize),
-        onLongClick = onLongClick,
-        onLongClickLabel = onLongClickLabel,
-        enabled = enabled,
-        backgroundColor = { colors.containerColor(enabled = it).value },
-        interactionSource = interactionSource,
-        shapes = shapes,
-        border = { border },
-        ripple = ripple(),
-        content = provideScopeContent(colors.contentColor(enabled = enabled), content),
-    )
+    val contentColor = colors.contentColor(enabled = enabled)
+    CompositionLocalProvider(LocalContentColor provides contentColor.value) {
+        IconButtonImpl(
+            onClick = onClick,
+            modifier =
+                modifier
+                    .minimumInteractiveComponentSize()
+                    .size(IconButtonDefaults.DefaultButtonSize),
+            onLongClick = onLongClick,
+            onLongClickLabel = onLongClickLabel,
+            enabled = enabled,
+            backgroundColor = { colors.containerColor(enabled = it).value },
+            interactionSource = interactionSource,
+            shapes = shapes,
+            border = { border },
+            ripple = ripple(),
+            content = content,
+        )
+    }
 }
 
 /**
@@ -215,6 +233,10 @@ public fun FilledIconButton(
  * Example of [FilledTonalIconButton]:
  *
  * @sample androidx.wear.compose.material3.samples.FilledTonalIconButtonSample
+ *
+ * ![FilledTonalIconButtonSample Composite
+ * Image](https://developer.android.com/wear/images/design/WearComposeM3_FilledTonalIconButtonSample_CompositeImage.png)
+ *
  * @param onClick Will be called when the user clicks the button.
  * @param modifier Modifier to be applied to the button.
  * @param onLongClick Called when this button is long clicked (long-pressed). When this callback is
@@ -248,20 +270,25 @@ public fun FilledTonalIconButton(
     interactionSource: MutableInteractionSource? = null,
     content: @Composable BoxScope.() -> Unit,
 ) {
-    IconButtonImpl(
-        onClick = onClick,
-        modifier =
-            modifier.minimumInteractiveComponentSize().size(IconButtonDefaults.DefaultButtonSize),
-        onLongClick = onLongClick,
-        onLongClickLabel = onLongClickLabel,
-        enabled = enabled,
-        backgroundColor = { colors.containerColor(enabled = it).value },
-        interactionSource = interactionSource,
-        shapes = shapes,
-        border = { border },
-        ripple = ripple(),
-        content = provideScopeContent(colors.contentColor(enabled = enabled), content),
-    )
+    val contentColor = colors.contentColor(enabled = enabled)
+    CompositionLocalProvider(LocalContentColor provides contentColor.value) {
+        IconButtonImpl(
+            onClick = onClick,
+            modifier =
+                modifier
+                    .minimumInteractiveComponentSize()
+                    .size(IconButtonDefaults.DefaultButtonSize),
+            onLongClick = onLongClick,
+            onLongClickLabel = onLongClickLabel,
+            enabled = enabled,
+            backgroundColor = { colors.containerColor(enabled = it).value },
+            interactionSource = interactionSource,
+            shapes = shapes,
+            border = { border },
+            ripple = ripple(),
+            content = content,
+        )
+    }
 }
 
 /**
@@ -288,6 +315,10 @@ public fun FilledTonalIconButton(
  * Example of [OutlinedIconButton]:
  *
  * @sample androidx.wear.compose.material3.samples.OutlinedIconButtonSample
+ *
+ * ![OutlinedIconButtonSample Composite
+ * Image](https://developer.android.com/wear/images/design/WearComposeM3_OutlinedIconButtonSample_CompositeImage.png)
+ *
  * @param onClick Will be called when the user clicks the button.
  * @param modifier Modifier to be applied to the button.
  * @param onLongClick Called when this button is long clicked (long-pressed). When this callback is
@@ -322,20 +353,25 @@ public fun OutlinedIconButton(
     interactionSource: MutableInteractionSource? = null,
     content: @Composable BoxScope.() -> Unit,
 ) {
-    IconButtonImpl(
-        onClick = onClick,
-        modifier =
-            modifier.minimumInteractiveComponentSize().size(IconButtonDefaults.DefaultButtonSize),
-        onLongClick = onLongClick,
-        onLongClickLabel = onLongClickLabel,
-        enabled = enabled,
-        backgroundColor = { colors.containerColor(enabled = it).value },
-        interactionSource = interactionSource,
-        shapes = shapes,
-        border = { border },
-        ripple = ripple(),
-        content = provideScopeContent(colors.contentColor(enabled = enabled), content),
-    )
+    val contentColor = colors.contentColor(enabled = enabled)
+    CompositionLocalProvider(LocalContentColor provides contentColor.value) {
+        IconButtonImpl(
+            onClick = onClick,
+            modifier =
+                modifier
+                    .minimumInteractiveComponentSize()
+                    .size(IconButtonDefaults.DefaultButtonSize),
+            onLongClick = onLongClick,
+            onLongClickLabel = onLongClickLabel,
+            enabled = enabled,
+            backgroundColor = { colors.containerColor(enabled = it).value },
+            interactionSource = interactionSource,
+            shapes = shapes,
+            border = { border },
+            ripple = ripple(),
+            content = content,
+        )
+    }
 }
 
 @Composable
@@ -509,6 +545,9 @@ public object IconButtonDefaults {
      * Example of creating a [FilledIconButton] with [filledVariantIconButtonColors]:
      *
      * @sample androidx.wear.compose.material3.samples.FilledVariantIconButtonSample
+     *
+     * ![FilledVariantIconButtonSample Composite
+     * Image](https://developer.android.com/wear/images/design/WearComposeM3_FilledVariantIconButtonSample_CompositeImage.png)
      */
     @Composable
     public fun filledVariantIconButtonColors(): IconButtonColors =
@@ -523,6 +562,10 @@ public object IconButtonDefaults {
      * Example of creating a [FilledIconButton] with [filledVariantIconButtonColors]:
      *
      * @sample androidx.wear.compose.material3.samples.FilledVariantIconButtonSample
+     *
+     * ![FilledVariantIconButtonSample Composite
+     * Image](https://developer.android.com/wear/images/design/WearComposeM3_FilledVariantIconButtonSample_CompositeImage.png)
+     *
      * @param containerColor The background color of this icon button when enabled.
      * @param contentColor The color of this icon when enabled.
      * @param disabledContainerColor The background color of this icon button when not enabled.

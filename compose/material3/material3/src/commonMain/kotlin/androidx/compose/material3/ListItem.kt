@@ -1433,7 +1433,8 @@ private fun InteractiveListItem(
                     .clip(shape)
                     .combinedClickable(
                         interactionSource = interactionSource,
-                        indication = ripple(),
+                        indication =
+                            @OptIn(ExperimentalMaterial3Api::class) ripple(focusRingShape = shape),
                         enabled = enabled,
                         onLongClick = onLongClick,
                         onLongClickLabel = onLongClickLabel,
@@ -1754,8 +1755,6 @@ private fun Modifier.zIndexLambda(zIndex: FloatProducer): Modifier =
 
 internal val InteractiveListStartPadding = ListTokens.ItemLeadingSpace
 internal val InteractiveListEndPadding = ListTokens.ItemTrailingSpace
-internal val InteractiveListTopPadding = ListTokens.ItemTopSpace
-internal val InteractiveListBottomPadding = ListTokens.ItemBottomSpace
 internal val InteractiveListInternalSpacing = ListTokens.ItemBetweenSpace
 
 /**
@@ -1764,5 +1763,5 @@ internal val InteractiveListInternalSpacing = ListTokens.ItemBetweenSpace
  */
 internal val InteractiveListVerticalAlignmentBreakpoint =
     (ListTokens.ItemThreeLineContainerHeight + ListTokens.ItemTwoLineContainerHeight) / 2 -
-        InteractiveListTopPadding -
-        InteractiveListBottomPadding
+        ListItemDefaults.InteractiveListTopPadding -
+        ListItemDefaults.InteractiveListBottomPadding

@@ -53,9 +53,17 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.kruth.assertThat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.navigation3.BlueBox
+import androidx.navigation3.GreenBox
+import androidx.navigation3.RedBox
+import androidx.navigation3.first
+import androidx.navigation3.fourth
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.NavEntryDecorator
 import androidx.navigation3.runtime.metadata
+import androidx.navigation3.scene.DialogSceneStrategy
+import androidx.navigation3.second
+import androidx.navigation3.third
 import androidx.navigation3.ui.CardStackSceneStrategy.Companion.CARD_KEY
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
@@ -1341,9 +1349,28 @@ class AnimatedTest {
         composeTestRule.onNodeWithText(first).assertIsDisplayed()
         composeTestRule.onNodeWithText(second).assertIsDisplayed()
     }
-}
 
-private const val first = "first"
-private const val second = "second"
-private const val third = "third"
-private const val fourth = "fourth"
+    @Test
+    fun testLocalAnimatedContentScopeDoesNotThrowInOverlays() {
+        lateinit var backStack: MutableList<Any>
+        composeTestRule.setContent {
+            backStack = remember { mutableStateListOf(first, second) }
+            NavDisplay(backStack = backStack, sceneStrategies = listOf(DialogSceneStrategy())) {
+                when (it) {
+                    first -> NavEntry(first) { Text("first") }
+                    second ->
+                        NavEntry(second, metadata = DialogSceneStrategy.dialog()) {
+                            LocalNavAnimatedContentScope.current
+                            Text("second")
+                        }
+                    else -> error("Invalid key passed")
+                }
+            }
+        }
+
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithText("first").assertIsDisplayed()
+        composeTestRule.onNodeWithText("second").assertIsDisplayed()
+    }
+}

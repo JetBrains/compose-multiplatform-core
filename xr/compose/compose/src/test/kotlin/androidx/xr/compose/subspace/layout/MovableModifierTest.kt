@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("DEPRECATION")
+
 package androidx.xr.compose.subspace.layout
 
 import androidx.compose.material3.Button
@@ -60,6 +62,7 @@ import org.junit.runner.RunWith
 
 /** Tests for [SubspaceModifier.movable] modifier. */
 @RunWith(AndroidJUnit4::class)
+@Suppress("DEPRECATION")
 class MovableModifierTest {
 
     // Migrate to `androidx.compose.ui.test.junit4.v2.createAndroidComposeRule`,
@@ -68,6 +71,156 @@ class MovableModifierTest {
     @Suppress("DEPRECATION")
     @get:Rule
     val composeTestRule = createAndroidComposeRule<SubspaceTestingActivity>()
+
+    // ========================================================================
+    // TESTS FOR CUSTOM MOVABLE (NEW OVERLOAD)
+    // ========================================================================
+
+    @Test
+    fun customMovable_componentIsNotNullAndIsCustomMovable() {
+        val systemMovableFlags = mutableListOf<Boolean>()
+        composeTestRule.configureFakeSessionWithWatch { systemMovable, _, _ ->
+            systemMovableFlags.add(systemMovable)
+        }
+
+        composeTestRule.setContent {
+            Subspace {
+                val customOnMove: (SpatialMoveEvent) -> Unit = { _ -> }
+                SpatialPanel(SubspaceModifier.testTag("panel").movable(onMove = customOnMove)) {
+                    Text(text = "Panel")
+                }
+            }
+        }
+
+        assertSingleMovableComponentExist()
+        // custom movable uses MovableComponent.createCustomMovable, so systemMovable should be
+        // false
+        assertThat(systemMovableFlags.single()).isFalse()
+    }
+
+    @Test
+    fun customMovable_modifierIsDisabledAndComponentDoesNotExist() {
+        composeTestRule.setContent {
+            Subspace {
+                val customOnMove: (SpatialMoveEvent) -> Unit = { _ -> }
+                SpatialPanel(
+                    SubspaceModifier.testTag("panel")
+                        .movable(enabled = false, onMove = customOnMove)
+                ) {
+                    Text(text = "Panel")
+                }
+            }
+        }
+        assertMovableComponentDoesNotExist()
+    }
+
+    @Test
+    fun customMovable_scaleWithDistance_setTrue() {
+        val scalesInZ = mutableListOf<Boolean>()
+        composeTestRule.configureFakeSessionWithWatch { _, scaleInZ, _ -> scalesInZ.add(scaleInZ) }
+
+        composeTestRule.setContent {
+            Subspace {
+                val customOnMove: (SpatialMoveEvent) -> Unit = { _ -> }
+                SpatialPanel(
+                    SubspaceModifier.testTag("panel")
+                        .width(200.dp)
+                        .movable(enabled = true, scaleWithDistance = true, onMove = customOnMove)
+                ) {}
+            }
+        }
+
+        assertThat(scalesInZ.single()).isTrue()
+    }
+
+    @Test
+    fun customMovable_scaleWithDistance_setFalse() {
+        val scalesInZ = mutableListOf<Boolean>()
+        composeTestRule.configureFakeSessionWithWatch { _, scaleInZ, _ -> scalesInZ.add(scaleInZ) }
+
+        composeTestRule.setContent {
+            Subspace {
+                val customOnMove: (SpatialMoveEvent) -> Unit = { _ -> }
+                SpatialPanel(
+                    SubspaceModifier.testTag("panel")
+                        .width(200.dp)
+                        .movable(enabled = true, scaleWithDistance = false, onMove = customOnMove)
+                ) {}
+            }
+        }
+
+        assertThat(scalesInZ.single()).isFalse()
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun customMovable_invokesCallbackWithCorrectPhases() {
+        var moveEvent: SpatialMoveEvent? = null
+        val session = composeTestRule.configureFakeSession()
+        val sceneRuntime = session.runtimes.filterIsInstance<FakeSceneRuntime>().single()
+        val activitySpace = sceneRuntime.activitySpace
+
+        composeTestRule.setContent {
+            Subspace {
+                val customOnMove: (SpatialMoveEvent) -> Unit = { event -> moveEvent = event }
+                SpatialPanel(
+                    modifier =
+                        SubspaceModifier.testTag("panel")
+                            .movable(enabled = true, onMove = customOnMove)
+                ) {
+                    Text(text = "Spatial Panel")
+                }
+            }
+        }
+
+        assertSingleMovableComponentExist()
+        val rtMovableComponent = sceneRuntime.lastMovableComponent!!
+        val expectedPose =
+            Pose(Vector3(1f, 2f, 3f), Quaternion.fromAxisAngle(axis = Vector3.Forward, 45f))
+
+        // Trigger Start
+        rtMovableComponent.onMoveEvent(
+            MoveEvent(
+                MoveEvent.MOVE_STATE_START,
+                Ray(Vector3(0f, 0f, 0f), Vector3(1f, 1f, 1f)),
+                Ray(Vector3(1f, 1f, 1f), Vector3(2f, 2f, 2f)),
+                Pose.Identity,
+                expectedPose,
+                Vector3(1f, 1f, 1f),
+                Vector3(1f, 1f, 1f),
+                activitySpace,
+                updatedParent = null,
+                disposedEntity = null,
+            )
+        )
+
+        composeTestRule.waitForIdle()
+        assertThat(moveEvent).isNotNull()
+        assertThat(moveEvent!!.type).isEqualTo(SpatialMoveEventType.Start)
+
+        // Trigger Ongoing/Dragging
+        rtMovableComponent.onMoveEvent(
+            MoveEvent(
+                MoveEvent.MOVE_STATE_ONGOING,
+                Ray(Vector3(0f, 0f, 0f), Vector3(1f, 1f, 1f)),
+                Ray(Vector3(1f, 1f, 1f), Vector3(2f, 2f, 2f)),
+                Pose.Identity,
+                expectedPose,
+                Vector3(1f, 1f, 1f),
+                Vector3(1f, 1f, 1f),
+                activitySpace,
+                updatedParent = null,
+                disposedEntity = null,
+            )
+        )
+
+        composeTestRule.waitForIdle()
+        assertThat(moveEvent!!.type).isEqualTo(SpatialMoveEventType.Moving)
+    }
+
+    // ========================================================================
+    // TESTS FOR SYSTEM DEPRECATED MOVABLE
+    // ========================================================================
 
     @Test
     fun movable_noComponentByDefault() {
@@ -87,7 +240,9 @@ class MovableModifierTest {
     fun movable_componentIsNotNullAndOnlyContainsSingleMovable() {
         composeTestRule.setContent {
             Subspace {
-                SpatialPanel(SubspaceModifier.testTag("panel").movable()) { Text(text = "Panel") }
+                SpatialPanel(SubspaceModifier.testTag("panel").movable(stickyPose = false)) {
+                    Text(text = "Panel")
+                }
             }
         }
         assertSingleMovableComponentExist()
@@ -97,7 +252,9 @@ class MovableModifierTest {
     fun movable_modifierIsDisabledAndComponentDoesNotExist() {
         composeTestRule.setContent {
             Subspace {
-                SpatialPanel(SubspaceModifier.testTag("panel").movable(false)) {
+                SpatialPanel(
+                    SubspaceModifier.testTag("panel").movable(enabled = false, stickyPose = false)
+                ) {
                     Text(text = "Panel")
                 }
             }
@@ -111,7 +268,9 @@ class MovableModifierTest {
             Subspace {
                 var panelWidth by remember { mutableStateOf(50.dp) }
                 SpatialPanel(
-                    SubspaceModifier.testTag("panel").width(panelWidth).movable(enabled = true)
+                    SubspaceModifier.testTag("panel")
+                        .width(panelWidth)
+                        .movable(enabled = true, stickyPose = false)
                 ) {
                     Button(
                         modifier = Modifier.testTag("button"),
@@ -138,7 +297,7 @@ class MovableModifierTest {
                 SpatialPanel(
                     SubspaceModifier.testTag("panel")
                         .width(200.dp)
-                        .movable(enabled = true, scaleWithDistance = true)
+                        .movable(enabled = true, stickyPose = false, scaleWithDistance = true)
                 ) {}
             }
         }
@@ -156,7 +315,7 @@ class MovableModifierTest {
                 SpatialPanel(
                     SubspaceModifier.testTag("panel")
                         .width(200.dp)
-                        .movable(enabled = true, scaleWithDistance = false)
+                        .movable(enabled = true, stickyPose = false, scaleWithDistance = false)
                 ) {}
             }
         }
@@ -175,7 +334,11 @@ class MovableModifierTest {
                 SpatialPanel(
                     SubspaceModifier.testTag("panel")
                         .width(200.dp)
-                        .movable(enabled = true, scaleWithDistance = scaleWithDistance)
+                        .movable(
+                            enabled = true,
+                            stickyPose = false,
+                            scaleWithDistance = scaleWithDistance,
+                        )
                 ) {
                     Button(
                         modifier = Modifier.testTag("button"),
@@ -202,7 +365,10 @@ class MovableModifierTest {
         composeTestRule.setContent {
             Subspace {
                 var movableEnabled by remember { mutableStateOf(true) }
-                SpatialPanel(SubspaceModifier.testTag("panel").movable(enabled = movableEnabled)) {
+                SpatialPanel(
+                    SubspaceModifier.testTag("panel")
+                        .movable(enabled = movableEnabled, stickyPose = false)
+                ) {
                     Button(
                         modifier = Modifier.testTag("button"),
                         onClick = { movableEnabled = !movableEnabled },
@@ -223,9 +389,10 @@ class MovableModifierTest {
         composeTestRule.setContent {
             Subspace {
                 var onPoseReturnValue by remember { mutableStateOf(true) }
+                val oldOnMove: (SpatialMoveEvent) -> Boolean = { _ -> onPoseReturnValue }
                 SpatialPanel(
                     SubspaceModifier.testTag("panel")
-                        .movable(enabled = true, onMove = { onPoseReturnValue })
+                        .movable(enabled = true, stickyPose = false, onMove = oldOnMove)
                 ) {
                     Button(
                         modifier = Modifier.testTag("button"),
@@ -249,9 +416,10 @@ class MovableModifierTest {
             Subspace {
                 var movableEnabled by remember { mutableStateOf(true) }
                 var onPoseReturnValue by remember { mutableStateOf(true) }
+                val oldOnMove: (SpatialMoveEvent) -> Boolean = { _ -> onPoseReturnValue }
                 SpatialPanel(
                     SubspaceModifier.testTag("panel")
-                        .movable(enabled = movableEnabled, onMove = { onPoseReturnValue })
+                        .movable(enabled = movableEnabled, stickyPose = false, onMove = oldOnMove)
                 ) {
                     Button(
                         modifier = Modifier.testTag("button"),
@@ -277,9 +445,10 @@ class MovableModifierTest {
             Subspace {
                 var movableEnabled by remember { mutableStateOf(false) }
                 var onPoseReturnValue by remember { mutableStateOf(true) }
+                val oldOnMove: (SpatialMoveEvent) -> Boolean = { _ -> onPoseReturnValue }
                 SpatialPanel(
                     SubspaceModifier.testTag("panel")
-                        .movable(enabled = movableEnabled, onMove = { onPoseReturnValue })
+                        .movable(enabled = movableEnabled, stickyPose = false, onMove = oldOnMove)
                 ) {
                     Button(
                         modifier = Modifier.testTag("button"),
@@ -304,7 +473,10 @@ class MovableModifierTest {
         composeTestRule.setContent {
             Subspace {
                 var movableEnabled by remember { mutableStateOf(true) }
-                SpatialPanel(SubspaceModifier.testTag("panel").movable(enabled = movableEnabled)) {
+                SpatialPanel(
+                    SubspaceModifier.testTag("panel")
+                        .movable(enabled = movableEnabled, stickyPose = false)
+                ) {
                     Button(
                         modifier = Modifier.testTag("button"),
                         onClick = { movableEnabled = !movableEnabled },
@@ -328,9 +500,10 @@ class MovableModifierTest {
         composeTestRule.setContent {
             Subspace {
                 var onPoseReturnValue by remember { mutableStateOf(true) }
+                val oldOnMove: (SpatialMoveEvent) -> Boolean = { _ -> onPoseReturnValue }
                 SpatialPanel(
                     SubspaceModifier.testTag("panel")
-                        .movable(enabled = true, onMove = { onPoseReturnValue })
+                        .movable(enabled = true, stickyPose = false, onMove = oldOnMove)
                 ) {
                     Button(
                         modifier = Modifier.testTag("button"),
@@ -358,9 +531,10 @@ class MovableModifierTest {
             Subspace {
                 var movableEnabled by remember { mutableStateOf(true) }
                 var onPoseReturnValue by remember { mutableStateOf(true) }
+                val oldOnMove: (SpatialMoveEvent) -> Boolean = { _ -> onPoseReturnValue }
                 SpatialPanel(
                     SubspaceModifier.testTag("panel")
-                        .movable(enabled = movableEnabled, onMove = { onPoseReturnValue })
+                        .movable(enabled = movableEnabled, stickyPose = false, onMove = oldOnMove)
                 ) {
                     Button(
                         modifier = Modifier.testTag("button"),
@@ -391,9 +565,10 @@ class MovableModifierTest {
             Subspace {
                 var movableEnabled by remember { mutableStateOf(false) }
                 var onPoseReturnValue by remember { mutableStateOf(true) }
+                val oldOnMove: (SpatialMoveEvent) -> Boolean = { _ -> onPoseReturnValue }
                 SpatialPanel(
                     SubspaceModifier.testTag("panel")
-                        .movable(enabled = movableEnabled, onMove = { onPoseReturnValue })
+                        .movable(enabled = movableEnabled, stickyPose = false, onMove = oldOnMove)
                 ) {
                     Button(
                         modifier = Modifier.testTag("button"),
@@ -440,7 +615,9 @@ class MovableModifierTest {
     fun movable_columnEntity_noComponentWhenMovableIsDisabled() {
         composeTestRule.setContent {
             Subspace {
-                SpatialColumn(SubspaceModifier.testTag("column").movable(false)) {
+                SpatialColumn(
+                    SubspaceModifier.testTag("column").movable(enabled = false, stickyPose = false)
+                ) {
                     SpatialPanel { Text(text = "Column") }
                 }
             }
@@ -468,7 +645,9 @@ class MovableModifierTest {
     fun movable_rowEntity_noComponentWhenMovableIsDisabled() {
         composeTestRule.setContent {
             Subspace {
-                SpatialRow(SubspaceModifier.testTag("row").movable(false)) {
+                SpatialRow(
+                    SubspaceModifier.testTag("row").movable(enabled = false, stickyPose = false)
+                ) {
                     SpatialPanel { Text(text = "Row") }
                 }
             }
@@ -485,7 +664,11 @@ class MovableModifierTest {
 
         composeTestRule.setContent {
             Subspace {
-                SpatialPanel(modifier = SubspaceModifier.testTag("panel").movable(enabled = true)) {
+                SpatialPanel(
+                    modifier =
+                        SubspaceModifier.testTag("panel")
+                            .movable(enabled = true, stickyPose = false)
+                ) {
                     Text(text = "Spatial Panel")
                 }
             }

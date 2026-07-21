@@ -232,6 +232,7 @@
     <string name="msg_template_demo_text" msgid="2275291617716161409">"A mensaxe vai aquí.\nMáis texto na segunda liña."</string>
     <string name="short_msg_template_demo_title" msgid="6798738013668580714">"Demostración de modelo de mensaxe curta"</string>
     <string name="sectioned_item_template_demo_title" msgid="8377594346379786774">"Versión de demostración do modelo de elemento en seccións"</string>
+    <string name="condensed_item_demo_title" msgid="225744083182855764">"Demostración de elemento contraído"</string>
     <string name="sectioned_item_alpha_jump_demo_title" msgid="1923794280863081616">"Versión de demostración de AlphaJump de elementos en seccións"</string>
     <string name="sectioned_item_template_radio_button_section_title" msgid="1014325865070733609">"Sección con botóns de acción"</string>
     <string name="sectioned_item_template_toggle_section_title" msgid="3197227971733559949">"Activar ou desactivar sección"</string>
@@ -242,8 +243,10 @@
     <string name="sectioned_item_list_two_title" msgid="4941545381743022833">"Lista 2"</string>
     <string name="sectioned_item_list_subtext" msgid="2963927693547537519">"Texto secundario debaixo de cada lista"</string>
     <string name="end_image_and_action_demo_title" msgid="6451955718459316414">"Versión de demostración de imaxe final e accións"</string>
-    <string name="filter_chip_demo_title" msgid="92190365856639582">"Demostración de etiqueta de filtro"</string>
+    <string name="chip_demo_title" msgid="814337127879515513">"Demostración de etiqueta"</string>
     <string name="progress_bar_demo_title" msgid="1759206063037269237">"Demostración da barra de progreso"</string>
+    <string name="section_header_demo_title" msgid="4880150421750399922">"Demostración de cabeceira de sección"</string>
+    <string name="spotlight_section_demo_title" msgid="4149938914167169739">"Demostración da sección de contido destacado"</string>
     <string name="pane_template_demo_title" msgid="7804292600060341608">"Demostración de modelo de panel"</string>
     <string name="place_list_template_demo_title" msgid="2054022985455460469">"Demostración de modelo de lista de lugares"</string>
     <string name="browse_places_title" msgid="7246005909846715898">"Explorar lugares"</string>

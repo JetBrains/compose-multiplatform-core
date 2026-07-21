@@ -27,6 +27,7 @@ import androidx.annotation.VisibleForTesting;
 import androidx.camera.core.Camera;
 import androidx.camera.core.CameraControl;
 import androidx.camera.core.CameraInfo;
+import androidx.camera.core.CompositionSettings;
 import androidx.camera.core.LegacySessionConfig;
 import androidx.camera.core.RotationProvider;
 import androidx.camera.core.SessionConfig;
@@ -436,5 +437,10 @@ public final class LifecycleCamera implements LifecycleObserver, Camera {
     public boolean isUseCasesCombinationSupported(boolean withStreamSharing,
             UseCase @NonNull ... useCases) {
         return mCameraUseCaseAdapter.isUseCasesCombinationSupported(withStreamSharing, useCases);
+    }
+
+    @Override
+    public void setCompositionSettings(@NonNull List<CompositionSettings> compositionSettings) {
+        mCameraUseCaseAdapter.setCompositionSettings(compositionSettings);
     }
 }

@@ -75,7 +75,11 @@ public class WebSettingsCompat {
      * <p>
      * This method should only be called if
      * {@link WebViewFeature#isFeatureSupported(String)}
-     * returns true for {@link WebViewFeature#OFF_SCREEN_PRERASTER}.
+     * returns {@code true} for {@link WebViewFeature#OFF_SCREEN_PRERASTER}.
+     *
+     * @throws UnsupportedOperationException if the
+     *                                       {@link WebViewFeature#OFF_SCREEN_PRERASTER}
+     *                                       feature is not supported.
      */
     @RequiresFeature(name = WebViewFeature.OFF_SCREEN_PRERASTER,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
@@ -90,10 +94,13 @@ public class WebSettingsCompat {
      * <p>
      * This method should only be called if
      * {@link WebViewFeature#isFeatureSupported(String)}
-     * returns true for {@link WebViewFeature#OFF_SCREEN_PRERASTER}.
+     * returns {@code true} for {@link WebViewFeature#OFF_SCREEN_PRERASTER}.
      *
      * @return {@code true} if this WebView will raster tiles when it is
      * offscreen but attached to a window.
+     * @throws UnsupportedOperationException if the
+     *                                       {@link WebViewFeature#OFF_SCREEN_PRERASTER}
+     *                                       feature is not supported.
      */
     @RequiresFeature(name = WebViewFeature.OFF_SCREEN_PRERASTER,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
@@ -116,10 +123,13 @@ public class WebSettingsCompat {
      * <p>
      * This method should only be called if
      * {@link WebViewFeature#isFeatureSupported(String)}
-     * returns true for {@link WebViewFeature#SAFE_BROWSING_ENABLE}.
+     * returns {@code true} for {@link WebViewFeature#SAFE_BROWSING_ENABLE}.
      *
      * @param settings The WebSettings object to update.
      * @param enabled  Whether Safe Browsing is enabled.
+     * @throws UnsupportedOperationException if the
+     *                                       {@link WebViewFeature#SAFE_BROWSING_ENABLE}
+     *                                       feature is not supported.
      */
     @RequiresFeature(name = WebViewFeature.SAFE_BROWSING_ENABLE,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
@@ -141,9 +151,12 @@ public class WebSettingsCompat {
      * <p>
      * This method should only be called if
      * {@link WebViewFeature#isFeatureSupported(String)}
-     * returns true for {@link WebViewFeature#SAFE_BROWSING_ENABLE}.
+     * returns {@code true} for {@link WebViewFeature#SAFE_BROWSING_ENABLE}.
      *
      * @return {@code true} if Safe Browsing is enabled and {@code false} otherwise.
+     * @throws UnsupportedOperationException if the
+     *                                       {@link WebViewFeature#SAFE_BROWSING_ENABLE}
+     *                                       feature is not supported.
      */
     @RequiresFeature(name = WebViewFeature.SAFE_BROWSING_ENABLE,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
@@ -179,10 +192,13 @@ public class WebSettingsCompat {
      * <p>
      * This method should only be called if
      * {@link WebViewFeature#isFeatureSupported(String)}
-     * returns true for {@link WebViewFeature#DISABLED_ACTION_MODE_MENU_ITEMS}.
+     * returns {@code true} for {@link WebViewFeature#DISABLED_ACTION_MODE_MENU_ITEMS}.
      *
      * @param settings  The WebSettings object to update.
      * @param menuItems an integer field flag for the menu items to be disabled.
+     * @throws UnsupportedOperationException if the
+     *                                       {@link WebViewFeature#DISABLED_ACTION_MODE_MENU_ITEMS}
+     *                                       feature is not supported.
      */
     @RequiresFeature(name = WebViewFeature.DISABLED_ACTION_MODE_MENU_ITEMS,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
@@ -205,9 +221,12 @@ public class WebSettingsCompat {
      * <p>
      * This method should only be called if
      * {@link WebViewFeature#isFeatureSupported(String)}
-     * returns true for {@link WebViewFeature#DISABLED_ACTION_MODE_MENU_ITEMS}.
+     * returns {@code true} for {@link WebViewFeature#DISABLED_ACTION_MODE_MENU_ITEMS}.
      *
      * @return all the disabled menu item flags combined with bitwise OR.
+     * @throws UnsupportedOperationException if the
+     *                                       {@link WebViewFeature#DISABLED_ACTION_MODE_MENU_ITEMS}
+     *                                       feature is not supported.
      */
     @RequiresFeature(name = WebViewFeature.DISABLED_ACTION_MODE_MENU_ITEMS,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
@@ -282,17 +301,21 @@ public class WebSettingsCompat {
     /**
      * Set the force dark mode for this WebView.
      *
-     * <p>
-     * This method should only be called if
-     * {@link WebViewFeature#isFeatureSupported(String)}
-     * returns true for {@link WebViewFeature#FORCE_DARK}.
      *
      * <p>
      * If equals to {@link ForceDark#FORCE_DARK_ON} then {@link #setForceDarkStrategy} is used to
      * specify darkening strategy.
      *
+     * <p>
+     * This method should only be called if
+     * {@link WebViewFeature#isFeatureSupported(String)} returns {@code true} for
+     * {@link WebViewFeature#FORCE_DARK}.
+     *
      * @param forceDarkMode the force dark mode to set.
      * @see #getForceDark
+     * @throws UnsupportedOperationException if the
+     *                                       {@link WebViewFeature#FORCE_DARK}
+     *                                       feature is not supported.
      * @deprecated The "force dark" model previously implemented by WebView was complex
      * and didn't interoperate well with current Web standards for
      * {@code prefers-color-scheme} and {@code color-scheme}. In apps with
@@ -325,10 +348,13 @@ public class WebSettingsCompat {
      * <p>
      * This method should only be called if
      * {@link WebViewFeature#isFeatureSupported(String)}
-     * returns true for {@link WebViewFeature#FORCE_DARK}.
+     * returns {@code true} for {@link WebViewFeature#FORCE_DARK}.
      *
      * @return the currently set force dark mode.
      * @see #setForceDark
+     * @throws UnsupportedOperationException if the
+     *                                       {@link WebViewFeature#FORCE_DARK}
+     *                                       feature is not supported.
      * @deprecated refer to {@link #setForceDark}
      */
     @Deprecated
@@ -426,14 +452,15 @@ public class WebSettingsCompat {
      * </p>
      *
      * <p>
-     * To check if {@code  WebViewFeature.ALGORITHMIC_DARKENING} is supported,
-     * {@link androidx.webkit.WebViewFeature#isFeatureSupported} should be called after WebView
-     * is created.
-     *
-     * <p>
+     * This method should only be called if
+     * {@link WebViewFeature#isFeatureSupported(String)} returns {@code true} for
+     * {@link WebViewFeature#ALGORITHMIC_DARKENING}.
      *
      * @param settings The WebSettings object to update.
      * @param allow    allow algorithmic darkening or not.
+     * @throws UnsupportedOperationException if the
+     *                                       {@link WebViewFeature#ALGORITHMIC_DARKENING}
+     *                                       feature is not supported.
      */
     @RequiresFeature(name = WebViewFeature.ALGORITHMIC_DARKENING,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
@@ -451,8 +478,16 @@ public class WebSettingsCompat {
      * Get if algorithmic darkening is allowed or not for this WebView.
      * The default is false.
      *
+     * <p>
+     * This method should only be called if
+     * {@link WebViewFeature#isFeatureSupported(String)} returns {@code true} for
+     * {@link WebViewFeature#ALGORITHMIC_DARKENING}.
+     *
      * @return if the algorithmic darkening is allowed or not.
      * @see #setAlgorithmicDarkeningAllowed
+     * @throws UnsupportedOperationException if the
+     *                                       {@link WebViewFeature#ALGORITHMIC_DARKENING}
+     *                                       feature is not supported.
      */
     @RequiresFeature(name = WebViewFeature.ALGORITHMIC_DARKENING,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
@@ -530,17 +565,21 @@ public class WebSettingsCompat {
     /**
      * Set how WebView content should be darkened.
      *
-     * <p>
-     * This method should only be called if
-     * {@link WebViewFeature#isFeatureSupported(String)}
-     * returns true for {@link WebViewFeature#FORCE_DARK_STRATEGY}.
      *
      * <p>
      * The specified strategy is only used if force dark mode is on.
      * See {@link #setForceDark}.
      *
+     * <p>
+     * This method should only be called if
+     * {@link WebViewFeature#isFeatureSupported(String)} returns {@code true} for
+     * {@link WebViewFeature#FORCE_DARK_STRATEGY}.
+     *
      * @param forceDarkBehavior the force dark strategy to set.
      * @see #getForceDarkStrategy
+     * @throws UnsupportedOperationException if the
+     *                                       {@link WebViewFeature#FORCE_DARK_STRATEGY}
+     *                                       feature is not supported.
      * @deprecated refer to {@link #setForceDark}
      */
     @RequiresFeature(name = WebViewFeature.FORCE_DARK_STRATEGY,
@@ -566,10 +605,13 @@ public class WebSettingsCompat {
      * <p>
      * This method should only be called if
      * {@link WebViewFeature#isFeatureSupported(String)}
-     * returns true for {@link WebViewFeature#FORCE_DARK_STRATEGY}.
+     * returns {@code true} for {@link WebViewFeature#FORCE_DARK_STRATEGY}.
      *
      * @return the currently set force dark strategy.
      * @see #setForceDarkStrategy
+     * @throws UnsupportedOperationException if the
+     *                                       {@link WebViewFeature#FORCE_DARK_STRATEGY}
+     *                                       feature is not supported.
      * @deprecated refer to {@link #setForceDark}
      */
     @RequiresFeature(name = WebViewFeature.FORCE_DARK_STRATEGY,
@@ -601,10 +643,13 @@ public class WebSettingsCompat {
      * <p>
      * This method should only be called if
      * {@link WebViewFeature#isFeatureSupported(String)}
-     * returns true for {@link WebViewFeature#ENTERPRISE_AUTHENTICATION_APP_LINK_POLICY}.
+     * returns {@code true} for {@link WebViewFeature#ENTERPRISE_AUTHENTICATION_APP_LINK_POLICY}.
      *
      * @param settings The WebSettings object to update.
      * @param enabled  Whether EnterpriseAuthenticationAppLinkPolicy should be enabled.
+     * @throws UnsupportedOperationException if the
+     *         {@link WebViewFeature#ENTERPRISE_AUTHENTICATION_APP_LINK_POLICY}
+     *         feature is not supported.
      */
     @RequiresFeature(name = WebViewFeature.ENTERPRISE_AUTHENTICATION_APP_LINK_POLICY,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
@@ -630,10 +675,13 @@ public class WebSettingsCompat {
      * <p>
      * This method should only be called if
      * {@link WebViewFeature#isFeatureSupported(String)}
-     * returns true for {@link WebViewFeature#ENTERPRISE_AUTHENTICATION_APP_LINK_POLICY}.
+     * returns {@code true} for {@link WebViewFeature#ENTERPRISE_AUTHENTICATION_APP_LINK_POLICY}.
      *
      * @return {@code true} if EnterpriseAuthenticationAppLinkPolicy is enabled and {@code false}
      * otherwise.
+     * @throws UnsupportedOperationException if the
+     *         {@link WebViewFeature#ENTERPRISE_AUTHENTICATION_APP_LINK_POLICY}
+     *         feature is not supported.
      */
     @RequiresFeature(name = WebViewFeature.ENTERPRISE_AUTHENTICATION_APP_LINK_POLICY,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
@@ -659,9 +707,17 @@ public class WebSettingsCompat {
      * The format of the strings in the allow-list follows the origin rules of
      * {@link WebViewCompat#addWebMessageListener(WebView, String, Set, WebViewCompat.WebMessageListener)}.
      *
+     * <p>
+     * This method should only be called if
+     * {@link WebViewFeature#isFeatureSupported(String)} returns {@code true} for
+     * {@link WebViewFeature#REQUESTED_WITH_HEADER_ALLOW_LIST}.
+     *
      * @param settings Settings retrieved from {@link WebView#getSettings()}.
      * @return The configured set of allow-listed origins.
      * @see #setRequestedWithHeaderOriginAllowList(WebSettings, Set)
+     * @throws UnsupportedOperationException if the
+     *                                       {@link WebViewFeature#REQUESTED_WITH_HEADER_ALLOW_LIST}
+     *                                       feature is not supported.
      * @deprecated The origin trial to disable the X-Requested-With feature has ended, so this
      * API now just returns an empty set.
      */
@@ -690,9 +746,17 @@ public class WebSettingsCompat {
      * The format of the strings in the allow-list follows the origin rules of
      * {@link WebViewCompat#addWebMessageListener(WebView, String, Set, WebViewCompat.WebMessageListener)}.
      *
+     * <p>
+     * This method should only be called if
+     * {@link WebViewFeature#isFeatureSupported(String)} returns {@code true} for
+     * {@link WebViewFeature#REQUESTED_WITH_HEADER_ALLOW_LIST}.
+     *
      * @param settings  Settings retrieved from {@link WebView#getSettings()}.
      * @param allowList Set of origins to allow-list.
      * @throws IllegalArgumentException if the allow-list contains a malformed origin.
+     * @throws UnsupportedOperationException if the
+     *                                       {@link WebViewFeature#REQUESTED_WITH_HEADER_ALLOW_LIST}
+     *                                       feature is not supported.
      * @deprecated The origin trial to disable the X-Requested-With feature has ended, so this
      * API no longer does anything.
      */
@@ -727,10 +791,13 @@ public class WebSettingsCompat {
      * <p>
      * This method should only be called if
      * {@link WebViewFeature#isFeatureSupported(String)}
-     * returns true for {@link WebViewFeature#USER_AGENT_METADATA}.
+     * returns {@code true} for {@link WebViewFeature#USER_AGENT_METADATA}.
      *
      * @param settings Settings retrieved from {@link WebView#getSettings()}.
      * @param metadata the WebView's user-agent metadata.
+     * @throws UnsupportedOperationException if the
+     *                                       {@link WebViewFeature#USER_AGENT_METADATA}
+     *                                       feature is not supported.
      */
     @RequiresFeature(name = WebViewFeature.USER_AGENT_METADATA,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
@@ -754,9 +821,12 @@ public class WebSettingsCompat {
      * <p>
      * This method should only be called if
      * {@link WebViewFeature#isFeatureSupported(String)}
-     * returns true for {@link WebViewFeature#USER_AGENT_METADATA}.
+     * returns {@code true} for {@link WebViewFeature#USER_AGENT_METADATA}.
      *
      * @param settings Settings retrieved from {@link WebView#getSettings()}.
+     * @throws UnsupportedOperationException if the
+     *                                       {@link WebViewFeature#USER_AGENT_METADATA}
+     *                                       feature is not supported.
      */
     @RequiresFeature(name = WebViewFeature.USER_AGENT_METADATA,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
@@ -832,6 +902,11 @@ public class WebSettingsCompat {
      * allowlist for registering web sources</a> and then set the
      * {@link #ATTRIBUTION_BEHAVIOR_WEB_SOURCE_AND_WEB_TRIGGER} behavior.
      *
+     * <p>
+     * This method should only be called if
+     * {@link WebViewFeature#isFeatureSupported(String)} returns {@code true} for
+     * {@link WebViewFeature#ATTRIBUTION_REGISTRATION_BEHAVIOR}.
+     *
      * @param settings Settings retrieved from {@link WebView#getSettings()}.
      * @param behavior New behavior to use.
      * @see
@@ -840,6 +915,9 @@ public class WebSettingsCompat {
      * @see #ATTRIBUTION_BEHAVIOR_APP_SOURCE_AND_WEB_TRIGGER
      * @see #ATTRIBUTION_BEHAVIOR_WEB_SOURCE_AND_WEB_TRIGGER
      * @see #ATTRIBUTION_BEHAVIOR_APP_SOURCE_AND_APP_TRIGGER
+     * @throws UnsupportedOperationException if the
+     *                                      {@link WebViewFeature#ATTRIBUTION_REGISTRATION_BEHAVIOR}
+     *                                       feature is not supported.
      */
     @RequiresFeature(name = WebViewFeature.ATTRIBUTION_REGISTRATION_BEHAVIOR,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
@@ -857,12 +935,20 @@ public class WebSettingsCompat {
     /**
      * Read the current behavior for attribution registration.
      *
+     * <p>
+     * This method should only be called if
+     * {@link WebViewFeature#isFeatureSupported(String)} returns {@code true} for
+     * {@link WebViewFeature#ATTRIBUTION_REGISTRATION_BEHAVIOR}.
+     *
      * @param settings Settings retrieved from {@link WebView#getSettings()}.
      * @see #setAttributionRegistrationBehavior(WebSettings, int)
      * @see #ATTRIBUTION_BEHAVIOR_DISABLED
      * @see #ATTRIBUTION_BEHAVIOR_APP_SOURCE_AND_WEB_TRIGGER
      * @see #ATTRIBUTION_BEHAVIOR_WEB_SOURCE_AND_WEB_TRIGGER
      * @see #ATTRIBUTION_BEHAVIOR_APP_SOURCE_AND_APP_TRIGGER
+     * @throws UnsupportedOperationException if the
+     *                                      {@link WebViewFeature#ATTRIBUTION_REGISTRATION_BEHAVIOR}
+     *                                       feature is not supported.
      */
     @RequiresFeature(name = WebViewFeature.ATTRIBUTION_REGISTRATION_BEHAVIOR,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
@@ -881,6 +967,15 @@ public class WebSettingsCompat {
      * Sets permissions provided through
      * {@link WebViewMediaIntegrityApiStatusConfig} for using the
      * WebView Integrity API.
+     *
+     * <p>
+     * This method should only be called if
+     * {@link WebViewFeature#isFeatureSupported(String)} returns {@code true} for
+     * {@link WebViewFeature#WEBVIEW_MEDIA_INTEGRITY_API_STATUS}.
+     *
+     * @throws UnsupportedOperationException if the
+     *                                     {@link WebViewFeature#WEBVIEW_MEDIA_INTEGRITY_API_STATUS}
+     *                                       feature is not supported.
      */
     @RequiresFeature(name = WebViewFeature.WEBVIEW_MEDIA_INTEGRITY_API_STATUS,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
@@ -898,6 +993,15 @@ public class WebSettingsCompat {
 
     /**
      * Returns the {@link WebViewMediaIntegrityApiStatusConfig} currently in use.
+     *
+     * <p>
+     * This method should only be called if
+     * {@link WebViewFeature#isFeatureSupported(String)} returns {@code true} for
+     * {@link WebViewFeature#WEBVIEW_MEDIA_INTEGRITY_API_STATUS}.
+     *
+     * @throws UnsupportedOperationException if the
+     *                                     {@link WebViewFeature#WEBVIEW_MEDIA_INTEGRITY_API_STATUS}
+     *                                       feature is not supported.
      */
     @RequiresFeature(name = WebViewFeature.WEBVIEW_MEDIA_INTEGRITY_API_STATUS,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
@@ -949,7 +1053,7 @@ public class WebSettingsCompat {
      *
      * <p>
      * This method should only be called if
-     * {@link WebViewFeature#isFeatureSupported(String)} returns true for
+     * {@link WebViewFeature#isFeatureSupported(String)} returns {@code true} for
      * {@link WebViewFeature#WEB_AUTHENTICATION}.
      *
      * @param settings Settings retrieved from {@link WebView#getSettings()}.
@@ -957,6 +1061,9 @@ public class WebSettingsCompat {
      * @see #WEB_AUTHENTICATION_SUPPORT_NONE
      * @see #WEB_AUTHENTICATION_SUPPORT_FOR_APP
      * @see #WEB_AUTHENTICATION_SUPPORT_FOR_BROWSER
+     * @throws UnsupportedOperationException if the
+     *                                       {@link WebViewFeature#WEB_AUTHENTICATION}
+     *                                       feature is not supported.
      */
     @RequiresFeature(name = WebViewFeature.WEB_AUTHENTICATION,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
@@ -977,7 +1084,7 @@ public class WebSettingsCompat {
      *
      * <p>
      * This method should only be called if
-     * {@link WebViewFeature#isFeatureSupported(String)} returns true for
+     * {@link WebViewFeature#isFeatureSupported(String)} returns {@code true} for
      * {@link WebViewFeature#WEB_AUTHENTICATION}.
      *
      * @param settings Settings retrieved from {@link WebView#getSettings()}.
@@ -986,6 +1093,9 @@ public class WebSettingsCompat {
      * @see #WEB_AUTHENTICATION_SUPPORT_NONE
      * @see #WEB_AUTHENTICATION_SUPPORT_FOR_APP
      * @see #WEB_AUTHENTICATION_SUPPORT_FOR_BROWSER
+     * @throws UnsupportedOperationException if the
+     *                                       {@link WebViewFeature#WEB_AUTHENTICATION}
+     *                                       feature is not supported.
      */
     @RequiresFeature(name = WebViewFeature.WEB_AUTHENTICATION,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
@@ -1045,12 +1155,15 @@ public class WebSettingsCompat {
      *
      * <p>
      * This method should only be called if
-     * {@link WebViewFeature#isFeatureSupported(String)} returns true for
+     * {@link WebViewFeature#isFeatureSupported(String)} returns {@code true} for
      * {@link WebViewFeature#SPECULATIVE_LOADING}.
      *
      * @param settings                 Settings retrieved from {@link WebView#getSettings()}.
      * @param speculativeLoadingStatus The new status for the speculative loading.
      *                                 It will to be one of {@link SpeculativeLoadingStatus}
+     * @throws UnsupportedOperationException if the
+     *                                       {@link WebViewFeature#SPECULATIVE_LOADING}
+     *                                       feature is not supported.
      */
     @RequiresFeature(name = WebViewFeature.SPECULATIVE_LOADING,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
@@ -1072,12 +1185,15 @@ public class WebSettingsCompat {
      *
      * <p>
      * This method should only be called if
-     * {@link WebViewFeature#isFeatureSupported(String)} returns true for
+     * {@link WebViewFeature#isFeatureSupported(String)} returns {@code true} for
      * {@link WebViewFeature#SPECULATIVE_LOADING}.
      *
      * @param settings Settings retrieved from {@link WebView#getSettings()}.
      * @return The current status for the speculative loading.
      * It will to be one of {@link SpeculativeLoadingStatus}.
+     * @throws UnsupportedOperationException if the
+     *                                       {@link WebViewFeature#SPECULATIVE_LOADING}
+     *                                       feature is not supported.
      */
     @RequiresFeature(name = WebViewFeature.SPECULATIVE_LOADING,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
@@ -1099,12 +1215,15 @@ public class WebSettingsCompat {
      *
      * <p>
      * This method should only be called if
-     * {@link WebViewFeature#isFeatureSupported(String)} returns true for
+     * {@link WebViewFeature#isFeatureSupported(String)} returns {@code true} for
      * {@link WebViewFeature#BACK_FORWARD_CACHE}.
      *
      * @param settings                Settings retrieved from {@link WebView#getSettings()}.
      * @param backForwardCacheEnabled whether BackForwardCache should be enabled for this
      *                                {@link WebSettings}
+     * @throws UnsupportedOperationException if the
+     *                                       {@link WebViewFeature#BACK_FORWARD_CACHE}
+     *                                       feature is not supported.
      */
     @RequiresFeature(name = WebViewFeature.BACK_FORWARD_CACHE,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
@@ -1123,11 +1242,14 @@ public class WebSettingsCompat {
      *
      * <p>
      * This method should only be called if
-     * {@link WebViewFeature#isFeatureSupported(String)} returns true for
+     * {@link WebViewFeature#isFeatureSupported(String)} returns {@code true} for
      * {@link WebViewFeature#BACK_FORWARD_CACHE}.
      *
      * @param settings Settings retrieved from {@link WebView#getSettings()}.
      * @return Whether BackForwardCache is enabled or not.
+     * @throws UnsupportedOperationException if the
+     *                                       {@link WebViewFeature#BACK_FORWARD_CACHE}
+     *                                       feature is not supported.
      */
     @RequiresFeature(name = WebViewFeature.BACK_FORWARD_CACHE,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
@@ -1159,11 +1281,14 @@ public class WebSettingsCompat {
      *
      * <p>
      * This method should only be called if
-     * {@link WebViewFeature#isFeatureSupported(String)} returns true for
+     * {@link WebViewFeature#isFeatureSupported(String)} returns {@code true} for
      * {@link WebViewFeature#BACK_FORWARD_CACHE_SETTINGS_EXPERIMENTAL_V3}.
      *
      * @param settings Settings retrieved from {@link WebView#getSettings()}.
      * @return The current settings for the BackForwardCache.
+     * @throws UnsupportedOperationException if the
+     *         {@link WebViewFeature#BACK_FORWARD_CACHE_SETTINGS_EXPERIMENTAL_V3}
+     *         feature is not supported.
      */
     @RequiresFeature(name = WebViewFeature.BACK_FORWARD_CACHE_SETTINGS_EXPERIMENTAL_V3,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
@@ -1228,7 +1353,7 @@ public class WebSettingsCompat {
      *
      * <p>
      * This method should only be called if
-     * {@link WebViewFeature#isFeatureSupported(String)} returns true for
+     * {@link WebViewFeature#isFeatureSupported(String)} returns {@code true} for
      * {@link WebViewFeature#PAYMENT_REQUEST}.
      *
      * @param settings Settings retrieved from {@link WebView#getSettings()}.
@@ -1236,6 +1361,9 @@ public class WebSettingsCompat {
      *                 <a href="https://w3c.github.io/payment-request/">PaymentRequest</a>
      *                 should be enabled
      *                 for this {@link WebSettings}.
+     * @throws UnsupportedOperationException if the
+     *                                       {@link WebViewFeature#PAYMENT_REQUEST}
+     *                                       feature is not supported.
      */
     @RequiresFeature(name = WebViewFeature.PAYMENT_REQUEST,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
@@ -1254,12 +1382,15 @@ public class WebSettingsCompat {
      *
      * <p>
      * This method should only be called if
-     * {@link WebViewFeature#isFeatureSupported(String)} returns true for
+     * {@link WebViewFeature#isFeatureSupported(String)} returns {@code true} for
      * {@link WebViewFeature#PAYMENT_REQUEST}.
      *
      * @param settings Settings retrieved from {@link WebView#getSettings()}.
      * @return Whether <a href="https://w3c.github.io/payment-request/">PaymentRequest</a> is
      * enabled.
+     * @throws UnsupportedOperationException if the
+     *                                       {@link WebViewFeature#PAYMENT_REQUEST}
+     *                                       feature is not supported.
      */
     @RequiresFeature(name = WebViewFeature.PAYMENT_REQUEST,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
@@ -1284,12 +1415,15 @@ public class WebSettingsCompat {
      *
      * <p>
      * This method should only be called if
-     * {@link WebViewFeature#isFeatureSupported(String)} returns true for
+     * {@link WebViewFeature#isFeatureSupported(String)} returns {@code true} for
      * {@link WebViewFeature#PAYMENT_REQUEST}.
      *
      * @param settings Settings retrieved from {@link WebView#getSettings()}.
      * @param enabled  Whether {@code PaymentRequest.hasEnrolledInstrument()} should be enabled
      *                 for this {@link WebSettings}.
+     * @throws UnsupportedOperationException if the
+     *                                       {@link WebViewFeature#PAYMENT_REQUEST}
+     *                                       feature is not supported.
      */
     @RequiresFeature(name = WebViewFeature.PAYMENT_REQUEST,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
@@ -1310,12 +1444,15 @@ public class WebSettingsCompat {
      *
      * <p>
      * This method should only be called if
-     * {@link WebViewFeature#isFeatureSupported(String)} returns true for
+     * {@link WebViewFeature#isFeatureSupported(String)} returns {@code true} for
      * {@link WebViewFeature#PAYMENT_REQUEST}.
      *
      * @param settings Settings retrieved from {@link WebView#getSettings()}.
      * @return Whether {@code PaymentRequest.hasEnrolledInstrument()} is enabled for this
      * {@link WebSettings}.
+     * @throws UnsupportedOperationException if the
+     *                                       {@link WebViewFeature#PAYMENT_REQUEST}
+     *                                       feature is not supported.
      */
     @RequiresFeature(name = WebViewFeature.PAYMENT_REQUEST,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
@@ -1342,11 +1479,14 @@ public class WebSettingsCompat {
      * the correct set of cookies for the request.
      *
      * <p>This method should only be called if
-     * {@link WebViewFeature#isFeatureSupported(String)} returns true for
+     * {@link WebViewFeature#isFeatureSupported(String)} returns {@code true} for
      * {@link WebViewFeature#COOKIE_INTERCEPT}.
      *
      * @param settings Settings retrieved from {@link WebView#getSettings()}.
      * @param enabled  Whether cookie access during request intercept should be enabled.
+     * @throws UnsupportedOperationException if the
+     *                                       {@link WebViewFeature#COOKIE_INTERCEPT}
+     *                                       feature is not supported.
      */
     @RequiresFeature(name = WebViewFeature.COOKIE_INTERCEPT,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
@@ -1362,13 +1502,17 @@ public class WebSettingsCompat {
 
     /**
      * Returns whether cookie access during request intercept is enabled.
+     *
      * <p>
      * This method should only be called if
-     * {@link WebViewFeature#isFeatureSupported(String)} returns true for
+     * {@link WebViewFeature#isFeatureSupported(String)} returns {@code true} for
      * {@link WebViewFeature#COOKIE_INTERCEPT}.
      *
      * @param settings Settings retrieved from {@link WebView#getSettings()}.
      * @see #setCookiesIncludedInShouldInterceptRequest(WebSettings, boolean)
+     * @throws UnsupportedOperationException if the
+     *                                       {@link WebViewFeature#COOKIE_INTERCEPT}
+     *                                       feature is not supported.
      */
     @RequiresFeature(name = WebViewFeature.COOKIE_INTERCEPT,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
@@ -1414,6 +1558,11 @@ public class WebSettingsCompat {
      *         WebSettingsCompat.HyperlinkContextMenuItems.OPEN_LINK);
      * }</pre>
      *
+     * <p>
+     * This method should only be called if
+     * {@link WebViewFeature#isFeatureSupported(String)} returns {@code true} for
+     * {@link WebViewFeature#HYPERLINK_CONTEXT_MENU_ITEMS}.
+     *
      * @param settings           The {@link WebSettings} instance to apply the items to.
      * @param hyperlinkMenuItems A bitwise combination of the following flags:
      *                           <ul>
@@ -1421,6 +1570,9 @@ public class WebSettingsCompat {
      *                             <li>{@link HyperlinkContextMenuItems#COPY_LINK_TEXT}</li>
      *                             <li>{@link HyperlinkContextMenuItems#OPEN_LINK}</li>
      *                           </ul>
+     * @throws UnsupportedOperationException if the
+     *                                       {@link WebViewFeature#HYPERLINK_CONTEXT_MENU_ITEMS}
+     *                                       feature is not supported.
      */
     @RequiresFeature(name = WebViewFeature.HYPERLINK_CONTEXT_MENU_ITEMS,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
@@ -1433,6 +1585,61 @@ public class WebSettingsCompat {
         }
         getAdapter(settings).setHyperlinkContextMenuItems(hyperlinkMenuItems);
     }
+
+    /**
+     * Sets whether the WebView will download a Favicon upon
+     * navigation.
+     * <p>
+     * If you are not using Favicons it is recommended to set this
+     * to false to save resources like bandwidth and memory.
+     *
+     * <p>
+     * This method should only be called if
+     * {@link WebViewFeature#isFeatureSupported(String)} returns {@code true} for
+     * {@link WebViewFeature#HYPERLINK_CONTEXT_MENU_ITEMS}.
+     *
+     * @param settings The WebSettings object to update
+     * @param enabled Whether downloading favicons is enabled
+     *
+     * @throws UnsupportedOperationException if the
+     *                                       {@link WebViewFeature#DOWNLOAD_FAVICONS_ENABLED}
+     *                                       feature is not supported.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    @RequiresFeature(name = WebViewFeature.DOWNLOAD_FAVICONS_ENABLED,
+            enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
+    public static void setDownloadFaviconsEnabled(@NonNull WebSettings settings, boolean enabled) {
+        final ApiFeature.NoFramework feature = WebViewFeatureInternal.DOWNLOAD_FAVICONS_ENABLED;
+        if (!feature.isSupportedByWebView()) {
+            throw WebViewFeatureInternal.getUnsupportedOperationException();
+        }
+        getAdapter(settings).setDownloadFaviconsEnabled(enabled);
+    }
+
+    /**
+     * Returns whether the WebView will download a Favicon upon
+     * navigation.
+     *
+     * <p>
+     * This method should only be called if
+     * {@link WebViewFeature#isFeatureSupported(String)} returns {@code true} for
+     * {@link WebViewFeature#HYPERLINK_CONTEXT_MENU_ITEMS}.
+     *
+     * @throws UnsupportedOperationException if the
+     *                                       {@link WebViewFeature#DOWNLOAD_FAVICONS_ENABLED}
+     *                                       feature is not supported.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    @RequiresFeature(name = WebViewFeature.DOWNLOAD_FAVICONS_ENABLED,
+            enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
+    public static boolean getDownloadFaviconsEnabled(@NonNull WebSettings settings) {
+        final ApiFeature.NoFramework feature = WebViewFeatureInternal.DOWNLOAD_FAVICONS_ENABLED;
+        if (!feature.isSupportedByWebView()) {
+            throw WebViewFeatureInternal.getUnsupportedOperationException();
+        }
+        return getAdapter(settings).getDownloadFaviconsEnabled();
+    }
+
 
     private static WebSettingsAdapter getAdapter(WebSettings settings) {
         try {

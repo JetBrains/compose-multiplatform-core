@@ -56,7 +56,7 @@ class LegacyTileProviderImplTest {
         val expectedWidgetHandle =
             ActiveWearWidgetHandle(
                 providerName,
-                WidgetInstanceId("", tileId),
+                WidgetInstanceId(WidgetInstanceId.WIDGET_CAROUSEL_NAMESPACE, tileId),
                 CONTAINER_TYPE_TILE_COMPAT,
             )
 
@@ -75,7 +75,7 @@ class LegacyTileProviderImplTest {
         val expectedWidgetHandle =
             ActiveWearWidgetHandle(
                 providerName,
-                WidgetInstanceId("", tileId),
+                WidgetInstanceId(WidgetInstanceId.WIDGET_CAROUSEL_NAMESPACE, tileId),
                 CONTAINER_TYPE_TILE_COMPAT,
             )
 

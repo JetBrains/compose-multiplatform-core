@@ -44,7 +44,6 @@ android {
         }
     }
     defaultConfig {
-        consumerProguardFiles("proguard-rules.pro")
         javaCompileOptions {
             annotationProcessorOptions {
                 arguments = [
@@ -89,6 +88,7 @@ dependencies {
     androidTestImplementation(libs.testUiautomator)
     androidTestImplementation(libs.espressoCore)
     androidTestImplementation(libs.mockitoCore)
+    androidTestImplementation(libs.mockitoKotlin)
     androidTestImplementation(libs.dexmakerMockito)
     androidTestImplementation(project(":internal-testutils-runtime"))
     testImplementation(libs.junit)
@@ -121,7 +121,6 @@ kotlin {
 androidx {
     name = "WorkManager Runtime"
     type = SoftwareType.PUBLISHED_LIBRARY
-    kotlinTarget = KotlinTarget.KOTLIN_2_1
     inceptionYear = "2018"
     description = "Android WorkManager runtime library"
     failOnDeprecationWarnings = false

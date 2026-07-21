@@ -53,10 +53,22 @@ import androidx.annotation.RestrictTo
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @ExperimentalRemoteCreationComposeApi
 public object RemoteComposeCreationComposeFlags {
-    /** Whether to use the remote applier. If true, it uses the remote applier. */
-    // TODO: b/485961296
+    /**
+     * When true, stops anything writing to the document (RemoteComposeWriter) before the
+     * composition has settled. This ensures that documents are not partially written during
+     * recomposition.
+     */
+    // TODO: b/503644761
     @field:Suppress("MutableBareField")
     @JvmField
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public var isRemoteApplierEnabled: Boolean = true
+    public var isEnforceCleanRecompositionEnabled: Boolean = true
+
+    /**
+     * When true, it is allowed for empty font axis to be sent when no font variation settings are
+     * specified. When false, falls back to a default weight 400 (Normal) to work around a crash.
+     */
+    // TODO: b/512099041
+    @field:Suppress("MutableBareField")
+    @JvmField
+    public var allowSendingEmptyFontAxis: Boolean = true
 }

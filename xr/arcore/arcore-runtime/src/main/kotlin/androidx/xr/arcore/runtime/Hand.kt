@@ -17,7 +17,6 @@
 package androidx.xr.arcore.runtime
 
 import androidx.annotation.RestrictTo
-import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
@@ -31,7 +30,7 @@ import java.nio.FloatBuffer
  * @property handJoints a map of [HandJointType] to [Pose] representing the current pose of each
  *   joint in the hand
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public interface Hand : Trackable {
 
     public companion object {
@@ -48,11 +47,11 @@ public interface Hand : Trackable {
             trackingState: TrackingState,
             handJointsBuffer: FloatBuffer,
         ): Map<HandJointType, Pose> {
-            if (trackingState != TrackingState.Companion.TRACKING) {
+            if (trackingState != TrackingState.TRACKING) {
                 return emptyMap()
             }
             val buffer = handJointsBuffer.duplicate()
-            val jointCount = HandJointType.values().size
+            val jointCount = HandJointType.entries.size
             val poses = mutableListOf<Pose>()
             repeat(jointCount) {
                 val qx = buffer.get()
@@ -64,7 +63,7 @@ public interface Hand : Trackable {
                 val pz = buffer.get()
                 poses.add(Pose(Vector3(px, py, pz), Quaternion(qx, qy, qz, qw)))
             }
-            return HandJointType.values().zip(poses).toMap()
+            return HandJointType.entries.toTypedArray().zip(poses).toMap()
         }
     }
 

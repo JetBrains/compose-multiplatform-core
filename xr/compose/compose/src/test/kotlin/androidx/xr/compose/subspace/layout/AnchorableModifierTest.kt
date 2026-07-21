@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("DEPRECATION")
+
 package androidx.xr.compose.subspace.layout
 
 import androidx.compose.material3.Button
@@ -31,10 +33,7 @@ import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.rule.GrantPermissionRule
 import androidx.xr.arcore.runtime.Plane
-import androidx.xr.arcore.testing.FakeLifecycleManager
-import androidx.xr.arcore.testing.FakePerceptionManager
-import androidx.xr.arcore.testing.FakePerceptionRuntime
-import androidx.xr.arcore.testing.FakeRuntimePlane
+import androidx.xr.arcore.runtime.TrackingState
 import androidx.xr.compose.spatial.Subspace
 import androidx.xr.compose.subspace.SpatialColumn
 import androidx.xr.compose.subspace.SpatialPanel
@@ -42,10 +41,10 @@ import androidx.xr.compose.subspace.SpatialRow
 import androidx.xr.compose.subspace.semantics.testTag
 import androidx.xr.compose.testing.SubspaceTestingActivity
 import androidx.xr.compose.testing.onSubspaceNodeWithTag
+import androidx.xr.runtime.Config
 import androidx.xr.runtime.PlaneTrackingMode
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.SessionCreateSuccess
-import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.manifest.SCENE_UNDERSTANDING_COARSE
 import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.Matrix4
@@ -54,7 +53,7 @@ import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Ray
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.runtime.testing.math.assertPose
-import androidx.xr.scenecore.AnchorEntity
+import androidx.xr.scenecore.AnchorSpace
 import androidx.xr.scenecore.MovableComponent
 import androidx.xr.scenecore.Space
 import androidx.xr.scenecore.runtime.MoveEvent
@@ -69,6 +68,7 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
@@ -92,23 +92,36 @@ class AnchorableModifierTest {
     @get:Rule val permissionRule = GrantPermissionRule.grant(SCENE_UNDERSTANDING_COARSE)
 
     private lateinit var session: Session
-    private lateinit var lifecycleManager: FakeLifecycleManager
-    private lateinit var perceptionManager: FakePerceptionManager
+
+    // TODO: b/494305963 Remove references to arcore-testing Fakes
+    @Suppress("DEPRECATION")
+    private lateinit var perceptionRuntime: androidx.xr.arcore.testing.FakePerceptionRuntime
+    @Suppress("DEPRECATION")
+    private lateinit var perceptionManager: androidx.xr.arcore.testing.FakePerceptionManager
     private lateinit var activitySpace: FakeActivitySpace
     private lateinit var sceneRuntime: FakeSceneRuntime
 
     @Before
+    @Suppress("DEPRECATION")
+    // TODO: b/494305963 Remove references to arcore-testing Fakes
     fun setup() {
-        val sessionCreateResult = Session.create(composeTestRule.activity, testDispatcher)
+        val sessionCreateResult = runBlocking {
+            Session.create(composeTestRule.activity, testDispatcher)
+        }
         assertThat(sessionCreateResult).isInstanceOf(SessionCreateSuccess::class.java)
         session = (sessionCreateResult as SessionCreateSuccess).session
         session.configure(
-            config = session.config.copy(planeTracking = PlaneTrackingMode.HORIZONTAL_AND_VERTICAL)
+            Config.Builder(session.config)
+                .setPlaneTracking(PlaneTrackingMode.HORIZONTAL_AND_VERTICAL)
+                .build()
         )
-        session.runtimes.filterIsInstance<FakePerceptionRuntime>().single().let {
-            lifecycleManager = it.lifecycleManager
-            perceptionManager = it.perceptionManager
-        }
+        session.runtimes
+            .filterIsInstance<androidx.xr.arcore.testing.FakePerceptionRuntime>()
+            .single()
+            .let {
+                perceptionRuntime = it
+                perceptionManager = it.perceptionManager
+            }
         session.runtimes.filterIsInstance<FakeSceneRuntime>().single().let {
             activitySpace = it.activitySpace
             sceneRuntime = it
@@ -274,7 +287,7 @@ class AnchorableModifierTest {
     }
 
     @Test
-    fun anchorable_columnEntity_noComponentWhenAnchorableIsEnabled() {
+    fun anchorable_columnEntity_oneComponentWhenAnchorableIsEnabled() {
         composeTestRule.setContent {
             Subspace {
                 SpatialColumn(
@@ -289,7 +302,7 @@ class AnchorableModifierTest {
                 }
             }
         }
-        assertMovableComponentDoesNotExist("column")
+        assertMovableComponentDoesExist("column")
     }
 
     @Test
@@ -328,7 +341,7 @@ class AnchorableModifierTest {
     }
 
     @Test
-    fun anchorable_rowEntity_noComponentWhenAnchorableIsEnabled() {
+    fun anchorable_rowEntity_oneComponentWhenAnchorableIsEnabled() {
         composeTestRule.setContent {
             Subspace {
                 SpatialRow(
@@ -343,7 +356,7 @@ class AnchorableModifierTest {
                 }
             }
         }
-        assertMovableComponentDoesNotExist("row")
+        assertMovableComponentDoesExist("row")
     }
 
     @Test
@@ -590,7 +603,7 @@ class AnchorableModifierTest {
                 getRotationMatrixFromAxes(expectedPanelX, expectedPanelY, planeNormal).rotation
             val expectedPose = Pose(expectedTranslation, expectedRotation)
             assertPose(entity.getPose(Space.ACTIVITY), expectedPose, TOLERANCE)
-            assertThat(entity.parent).isInstanceOf(AnchorEntity::class.java)
+            assertThat(entity.parent).isInstanceOf(AnchorSpace::class.java)
         }
     }
 
@@ -664,10 +677,12 @@ class AnchorableModifierTest {
                 getRotationMatrixFromAxes(expectedPanelX, expectedPanelY, planeNormal).rotation
             val expectedPose = Pose(expectedTranslation, expectedRotation)
             assertPose(entity.getPose(Space.ACTIVITY), expectedPose, TOLERANCE)
-            assertThat(entity.parent).isInstanceOf(AnchorEntity::class.java)
+            assertThat(entity.parent).isInstanceOf(AnchorSpace::class.java)
         }
     }
 
+    @Suppress("DEPRECATION")
+    // TODO: b/494305963 Remove references to arcore-testing Fakes
     private fun addPlaneToRuntime(
         type: Plane.Type = Plane.Type.HORIZONTAL_UPWARD_FACING,
         label: Plane.Label = Plane.Label.FLOOR,
@@ -676,10 +691,16 @@ class AnchorableModifierTest {
         extents: FloatSize2d = FloatSize2d(),
     ) {
         perceptionManager.trackables.add(
-            FakeRuntimePlane(type, label, trackingState, centerPose, extents)
+            androidx.xr.arcore.testing.FakeRuntimePlane(
+                type,
+                label,
+                trackingState,
+                centerPose,
+                extents,
+            )
         )
-        lifecycleManager.timeSource.plusAssign(1.milliseconds)
-        lifecycleManager.allowOneMoreCallToUpdate()
+        perceptionRuntime.timeSource.plusAssign(1.milliseconds)
+        perceptionRuntime.allowOneMoreCallToUpdate()
         testDispatcher.scheduler.advanceUntilIdle()
     }
 
@@ -745,6 +766,13 @@ class AnchorableModifierTest {
             composeTestRule.onSubspaceNodeWithTag(testTag).fetchSemanticsNode().components
         assertNotNull(components)
         assertEquals(0, components.size)
+    }
+
+    private fun assertMovableComponentDoesExist(testTag: String = "panel") {
+        val components =
+            composeTestRule.onSubspaceNodeWithTag(testTag).fetchSemanticsNode().components
+        assertNotNull(components)
+        assertEquals(1, components.size)
     }
 
     private companion object {

@@ -20,11 +20,15 @@ import android.content.Context
 import androidx.annotation.ColorInt
 import androidx.core.graphics.ColorUtils
 import androidx.ink.brush.Brush
-import androidx.ink.brush.BrushBehavior
 import androidx.ink.brush.BrushFamily
-import androidx.ink.brush.ExperimentalInkCustomBrushApi
 import androidx.ink.brush.InputToolType
 import androidx.ink.brush.StockBrushes
+import androidx.ink.brush.behavior.Node
+import androidx.ink.brush.behavior.SourceNode
+import androidx.ink.brush.behavior.SourceNode.Source
+import androidx.ink.brush.behavior.TargetNode
+import androidx.ink.brush.behavior.TargetNode.Target
+import androidx.ink.brush.behavior.ToolTypeFilterNode
 import androidx.ink.strokes.ImmutableStrokeInputBatch
 import androidx.ink.strokes.InProgressStroke
 import androidx.ink.strokes.MutableStrokeInputBatch
@@ -50,7 +54,6 @@ import org.junit.runners.Parameterized.Parameters
  * list below with an appropriate `clientBrushFamilyId` for the test prefix.
  */
 @SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
-@OptIn(ExperimentalInkCustomBrushApi::class)
 @RunWith(Parameterized::class)
 @MediumTest
 class StockBrushesTest(val brushName: String) {
@@ -157,8 +160,7 @@ class StockBrushesTest(val brushName: String) {
             for (behavior in coat.tip.behaviors) {
                 for (terminalNode in behavior.terminalNodes) {
                     if (
-                        terminalNode is BrushBehavior.TargetNode &&
-                            terminalNode.target == BrushBehavior.Target.SIZE_MULTIPLIER
+                        terminalNode is TargetNode && terminalNode.target == Target.SIZE_MULTIPLIER
                     ) {
                         assertNotEquals(0f, terminalNode.targetModifierRangeStart)
                         assertNotEquals(0f, terminalNode.targetModifierRangeEnd)
@@ -175,7 +177,7 @@ class StockBrushesTest(val brushName: String) {
                 for (terminalNode in behavior.terminalNodes) {
                     // Every `SourceNode` with a source of `NORMALIZED_PRESSURE` must pass through a
                     // `ToolTypeFilterNode` that excludes `TOUCH` input before reaching the target.
-                    val stack = mutableListOf<BrushBehavior.Node>(terminalNode)
+                    val stack = mutableListOf<Node>(terminalNode)
                     while (!stack.isEmpty()) {
                         // stack.removeLast() isn't available until API 35 (V).
                         val node = stack.removeAt(stack.lastIndex)
@@ -183,7 +185,7 @@ class StockBrushesTest(val brushName: String) {
                         // ignore
                         // everything beyond it in the node graph.
                         if (
-                            node is BrushBehavior.ToolTypeFilterNode &&
+                            node is ToolTypeFilterNode &&
                                 !node.enabledToolTypes.contains(InputToolType.TOUCH)
                         ) {
                             continue
@@ -192,8 +194,8 @@ class StockBrushesTest(val brushName: String) {
                         // that
                         // excludes `TOUCH` input, it shouldn't be using the `NORMALIZED_PRESSURE`
                         // source.
-                        if (node is BrushBehavior.SourceNode) {
-                            assertNotEquals(node.source, BrushBehavior.Source.NORMALIZED_PRESSURE)
+                        if (node is SourceNode) {
+                            assertNotEquals(node.source, Source.NORMALIZED_PRESSURE)
                         }
                         stack.addAll(node.inputs)
                     }
@@ -210,7 +212,7 @@ class StockBrushesTest(val brushName: String) {
                     listOf(
                         Stroke(
                             makeBrush(family = family, size = 10f),
-                            helper.octogonStylusInputs.overrideInputChannel(pressure = 0f),
+                            helper.octagonStylusInputs.overrideInputChannel(pressure = 0f),
                         )
                     )
                 ),
@@ -218,7 +220,7 @@ class StockBrushesTest(val brushName: String) {
                     listOf(
                         Stroke(
                             makeBrush(family = family, size = 10f),
-                            helper.octogonStylusInputs.overrideInputChannel(pressure = 0.1f),
+                            helper.octagonStylusInputs.overrideInputChannel(pressure = 0.1f),
                         )
                     )
                 ),
@@ -237,14 +239,14 @@ class StockBrushesTest(val brushName: String) {
             listOf(
                 listOf(
                     listOf(
-                        Stroke(makeBrush(family = family, size = 10f), helper.octogonStylusInputs)
+                        Stroke(makeBrush(family = family, size = 10f), helper.octagonStylusInputs)
                     )
                 ),
                 listOf(
                     listOf(
                         Stroke(
                             makeBrush(family = family, size = 10f),
-                            helper.octogonStylusInputs.overrideInputChannel(
+                            helper.octagonStylusInputs.overrideInputChannel(
                                 pressure = StrokeInput.NO_PRESSURE
                             ),
                         )
@@ -254,7 +256,7 @@ class StockBrushesTest(val brushName: String) {
                     listOf(
                         Stroke(
                             makeBrush(family = family, size = 10f),
-                            helper.octogonStylusInputs.overrideInputChannel(
+                            helper.octagonStylusInputs.overrideInputChannel(
                                 tilt = StrokeInput.NO_TILT
                             ),
                         )
@@ -264,7 +266,7 @@ class StockBrushesTest(val brushName: String) {
                     listOf(
                         Stroke(
                             makeBrush(family = family, size = 10f),
-                            helper.octogonStylusInputs.overrideInputChannel(
+                            helper.octagonStylusInputs.overrideInputChannel(
                                 orientation = StrokeInput.NO_ORIENTATION
                             ),
                         )
@@ -302,7 +304,7 @@ class StockBrushesTest(val brushName: String) {
                     listOf(
                         Stroke(
                             makeBrush(family = family, alpha = alpha, size = size),
-                            helper.octogonStylusInputs,
+                            helper.octagonStylusInputs,
                         )
                     )
                 }
@@ -336,10 +338,10 @@ class StockBrushesTest(val brushName: String) {
         val stroke =
             InProgressStroke().apply {
                 start(makeBrush(family = family, size = 10f))
-                enqueueInputs(helper.octogonStylusInputs, ImmutableStrokeInputBatch.EMPTY)
+                enqueueInputs(helper.octagonStylusInputs, ImmutableStrokeInputBatch.EMPTY)
                 updateShape(
-                    helper.octogonStylusInputs
-                        .get(helper.octogonStylusInputs.size - 1)
+                    helper.octagonStylusInputs
+                        .get(helper.octagonStylusInputs.size - 1)
                         .elapsedTimeMillis
                 )
             }
