@@ -106,7 +106,7 @@ class ComposeWindowDisposeOnDomRemovalTest : OnCanvasTests {
      */
     @Test
     fun disposeIsCalledWhenPositioningContainerIsRemovedDirectly() = runApplicationTest {
-        val destroyEvents = Channel<Lifecycle.Event>(4)
+        val destroyEvents = Channel<Lifecycle.Event>(1)
 
         createComposeWindow {}
 
