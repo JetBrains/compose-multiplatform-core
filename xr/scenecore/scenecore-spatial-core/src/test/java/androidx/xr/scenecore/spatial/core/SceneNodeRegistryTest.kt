@@ -20,7 +20,6 @@ import android.hardware.display.DisplayManager
 import android.os.SystemClock
 import android.view.View
 import android.view.ViewGroup
-import androidx.xr.runtime.NodeHolder
 import androidx.xr.runtime.math.Matrix4
 import androidx.xr.runtime.math.Pose
 import androidx.xr.scenecore.runtime.ActivityPanelEntity
@@ -28,11 +27,12 @@ import androidx.xr.scenecore.runtime.ActivitySpace
 import androidx.xr.scenecore.runtime.AnchorEntity
 import androidx.xr.scenecore.runtime.Entity
 import androidx.xr.scenecore.runtime.GltfEntity
+import androidx.xr.scenecore.runtime.GltfFeature
+import androidx.xr.scenecore.runtime.NodeHolder
 import androidx.xr.scenecore.runtime.PanelEntity
 import androidx.xr.scenecore.runtime.PerceptionSpaceScenePose
 import androidx.xr.scenecore.runtime.PixelDimensions
-import androidx.xr.scenecore.runtime.extensions.XrExtensionsProvider.getXrExtensions
-import androidx.xr.scenecore.testing.FakeGltfFeature
+import androidx.xr.scenecore.runtime.impl.PerceptionSpaceScenePoseImpl
 import androidx.xr.scenecore.testing.FakeScheduledExecutorService
 import com.android.extensions.xr.node.Node
 import com.google.common.truth.Truth.assertThat
@@ -40,6 +40,8 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mockito.Mockito.mock
+import org.mockito.kotlin.whenever
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
@@ -47,11 +49,12 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [Config.TARGET_SDK])
 class SceneNodeRegistryTest {
-    private val xrExtensions = getXrExtensions()!!
+    private val xrExtensions = SpatialCoreXrExtensionsHolderProvider.extensionsLegacy
     private val fakeScheduledExecutorService = FakeScheduledExecutorService()
     private val panelEntityNode: Node = xrExtensions.createNode()
     private val anchorEntityNode: Node = xrExtensions.createNode()
     private val sceneNodeRegistry = SceneNodeRegistry()
+    private val mockGltfFeature: GltfFeature = mock(GltfFeature::class.java)
     private lateinit var entityNode: Node
     private lateinit var gltfEntityNode: Node
     private val activity = Robolectric.buildActivity(Activity::class.java).create().start().get()
@@ -134,14 +137,10 @@ class SceneNodeRegistryTest {
         assertThat(sceneNodeRegistry.getEntitiesOfType(PanelEntity::class.java))
             .contains(panelEntity)
         // Base class of all entities.
-        assertThat(sceneNodeRegistry.getEntitiesOfType<Entity>(Entity::class.java)).contains(entity)
-        assertThat(sceneNodeRegistry.getEntitiesOfType<AnchorEntity>(AnchorEntity::class.java))
+        assertThat(sceneNodeRegistry.getEntitiesOfType(Entity::class.java)).contains(entity)
+        assertThat(sceneNodeRegistry.getEntitiesOfType(AnchorEntity::class.java))
             .containsExactly(anchorEntity)
-        assertThat(
-                sceneNodeRegistry.getEntitiesOfType<ActivityPanelEntity>(
-                    ActivityPanelEntity::class.java
-                )
-            )
+        assertThat(sceneNodeRegistry.getEntitiesOfType(ActivityPanelEntity::class.java))
             .containsExactly(activityPanelEntity)
     }
 
@@ -193,14 +192,11 @@ class SceneNodeRegistryTest {
 
     @Test
     fun getSystemSpaceScenePoseOfType_returnsSystemSpaceScenePoseOfType() {
-        assertThat(
-                sceneNodeRegistry.getSystemSpaceScenePoseOfType(ActivitySpace::class.java).get(0)
-            )
+        assertThat(sceneNodeRegistry.getSystemSpaceScenePoseOfType(ActivitySpace::class.java)[0])
             .isInstanceOf(ActivitySpaceImpl::class.java)
         assertThat(
                 sceneNodeRegistry
-                    .getSystemSpaceScenePoseOfType(PerceptionSpaceScenePose::class.java)
-                    .get(0)
+                    .getSystemSpaceScenePoseOfType(PerceptionSpaceScenePose::class.java)[0]
             )
             .isInstanceOf(PerceptionSpaceScenePoseImpl::class.java)
     }
@@ -250,10 +246,11 @@ class SceneNodeRegistryTest {
     /** Creates a generic glTF entity. */
     private fun createGltfEntity(): GltfEntity {
         val nodeHolder = NodeHolder<Node>(xrExtensions.createNode(), Node::class.java)
+        whenever(mockGltfFeature.getNodeHolder()).thenReturn(nodeHolder)
         val gltfEntity =
             GltfEntityImpl(
                 activity,
-                FakeGltfFeature(nodeHolder),
+                mockGltfFeature,
                 activitySpace,
                 xrExtensions,
                 sceneNodeRegistry,
@@ -268,7 +265,7 @@ class SceneNodeRegistryTest {
         val display = activity!!.getSystemService(DisplayManager::class.java).displays[0]
         val displayContext = activity.createDisplayContext(display!!)
         val view = View(displayContext)
-        view.setLayoutParams(ViewGroup.LayoutParams(VGA_WIDTH, VGA_HEIGHT))
+        view.layoutParams = ViewGroup.LayoutParams(VGA_WIDTH, VGA_HEIGHT)
         val panelEntity =
             PanelEntityImpl(
                 displayContext,

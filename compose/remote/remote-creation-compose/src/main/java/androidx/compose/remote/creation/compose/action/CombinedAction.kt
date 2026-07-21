@@ -20,13 +20,21 @@ import androidx.annotation.RestrictTo
 import androidx.compose.remote.creation.actions.Action as CreationAction
 import androidx.compose.remote.creation.compose.state.RemoteStateScope
 
-/** Creates an action that's a composite of multiple actions. */
-public class CombinedAction(public vararg val actions: Action) : Action {
+/**
+ * Creates an action that's a composite of multiple actions.
+ *
+ * @param actions The actions to combine.
+ */
+public fun combinedAction(vararg actions: Action): Action = CombinedAction(*actions)
+
+internal class CombinedAction(public vararg val actions: Action) : RemoteAction() {
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    override fun RemoteStateScope.toRemoteAction(): CreationAction {
+    public override fun RemoteStateScope.toRemoteAction(): CreationAction {
         return CreationAction { writer ->
             for (action in actions) {
-                with(action) { toRemoteAction().write(writer) }
+                if (action is RemoteAction) {
+                    with(action) { toRemoteAction().write(writer) }
+                }
             }
         }
     }

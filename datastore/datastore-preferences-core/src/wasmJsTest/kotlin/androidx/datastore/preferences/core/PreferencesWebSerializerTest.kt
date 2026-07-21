@@ -19,8 +19,7 @@ package androidx.datastore.preferences.core
 import androidx.datastore.core.DataStore
 import androidx.datastore.core.DataStoreFactory
 import androidx.datastore.core.okio.OkioSerializer
-import androidx.datastore.core.okio.WebStorage
-import androidx.datastore.core.okio.WebStorageType
+import androidx.datastore.core.okio.WebSessionStorage
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -56,11 +55,7 @@ class PreferencesWebSerializerTest {
     @BeforeTest
     fun setUp() {
         val sessionWebStorage =
-            WebStorage(
-                name = testSessionStorageName,
-                serializer = preferencesSerializer,
-                storageType = WebStorageType.SESSION,
-            )
+            WebSessionStorage(name = testSessionStorageName, serializer = preferencesSerializer)
         sessionDataStore = DataStoreFactory.create(sessionWebStorage)
     }
 

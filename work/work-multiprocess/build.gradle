@@ -30,7 +30,6 @@ plugins {
 
 android {
     compileSdk { version = release(35) }
-    defaultConfig.consumerProguardFiles("proguard-rules.pro")
     namespace = "androidx.work.multiprocess"
 }
 
@@ -53,7 +52,6 @@ dependencies {
 androidx {
     name = "WorkManager Multiprocess"
     type = SoftwareType.PUBLISHED_LIBRARY
-    kotlinTarget = KotlinTarget.KOTLIN_2_1
     inceptionYear = "2020"
     description = "Android WorkManager runtime library"
     failOnDeprecationWarnings = false

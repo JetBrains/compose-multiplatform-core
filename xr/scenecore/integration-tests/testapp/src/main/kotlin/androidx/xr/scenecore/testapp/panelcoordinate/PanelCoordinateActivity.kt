@@ -97,7 +97,7 @@ class PanelCoordinateActivity : AppCompatActivity() {
         setupMainPanelListeners()
 
         lifecycleScope.launch {
-            val sessionResult = Session.create(this@PanelCoordinateActivity)
+            val sessionResult = Session.create(context = this@PanelCoordinateActivity)
             if (sessionResult is SessionCreateSuccess) {
                 session = sessionResult.session
                 setupSecondaryPanelAndGltfEntity(session!!)
@@ -123,8 +123,8 @@ class PanelCoordinateActivity : AppCompatActivity() {
                 pixelDimensions = IntSize2d(1000, 1000),
                 name = "SecondaryPanel",
                 pose = Pose(Vector3(0.7f, 0.7f, -0.05f)),
+                parent = session.scene.mainPanelEntity,
             )
-        session.scene.activitySpace.addChild(panel)
 
         val movable = MovableComponent.createSystemMovable(session, scaleInZ = false)
         val resizable =
@@ -137,8 +137,7 @@ class PanelCoordinateActivity : AppCompatActivity() {
         panel.addComponent(resizable)
 
         xyzModel = GltfModel.create(session, Paths.get("models", "xyzArrows.glb"))
-        xyzEntity = GltfModelEntity.create(session, xyzModel)
-        panel.addChild(xyzEntity)
+        xyzEntity = GltfModelEntity.create(session, xyzModel, parent = panel)
         xyzEntity.setScale(0.2f)
 
         updateSizeText()

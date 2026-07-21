@@ -17,15 +17,14 @@
 package androidx.xr.arcore
 
 import androidx.annotation.RestrictTo
-import androidx.xr.arcore.Geospatial.State.Companion.RUNNING
-import androidx.xr.arcore.runtime.AnchorNotAuthorizedException
+import androidx.xr.arcore.runtime.AnchorNotAuthorizedException as RtAnchorNotAuthorizedException
+import androidx.xr.arcore.runtime.AnchorNotTrackingException
 import androidx.xr.arcore.runtime.AnchorResourcesExhaustedException
 import androidx.xr.arcore.runtime.AnchorUnsupportedLocationException
 import androidx.xr.arcore.runtime.Geospatial as RuntimeGeospatial
 import androidx.xr.arcore.runtime.GeospatialPoseNotTrackingException
 import androidx.xr.runtime.GeospatialMode
 import androidx.xr.runtime.Session
-import androidx.xr.runtime.VpsAvailabilityResult
 import androidx.xr.runtime.math.GeospatialPose
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
@@ -37,22 +36,24 @@ import kotlinx.coroutines.flow.asStateFlow
  * Provides localization ability in Earth-relative coordinates.
  *
  * To use the Geospatial object, configure the session with
- * [androidx.xr.runtime.GeospatialMode.VPS_AND_GPS].
+ * [androidx.xr.runtime.GeospatialMode.SPATIAL].
  *
- * Not all devices support [androidx.xr.runtime.GeospatialMode.VPS_AND_GPS], use
- * [androidx.xr.runtime.Config.ConfigMode.isSupported] to check if the current device supports
+ * Not all devices support [androidx.xr.runtime.GeospatialMode.SPATIAL], use
+ * [androidx.xr.runtime.XrDevice.isGeospatialModeSupported] to check if the current device supports
  * enabling this mode.
  *
- * The Geospatial object should only be used when its [State] is [State.RUNNING], and otherwise
- * should not be used. Use [Geospatial.state] to obtain the current [State].
+ * The Geospatial object should only be used when its [State.geospatialTrackingState] is
+ * [GeospatialTrackingState.RUNNING], and otherwise should not be used. Use [Geospatial.state] to
+ * obtain the current [State].
  *
  * @property state the current [State] of [Geospatial]
  */
+@SuppressWarnings("HiddenSuperclass")
 public class Geospatial
 internal constructor(
     private val runtimeGeospatial: RuntimeGeospatial,
     private val xrResourcesManager: XrResourcesManager,
-) : Updatable {
+) : Updatable() {
     public companion object {
         /**
          * Returns the Geospatial object for the given [Session].
@@ -67,87 +68,27 @@ internal constructor(
         }
     }
 
-    /**
-     * Describes the state of Geospatial. The State must be [RUNNING] to use Geospatial
-     * functionality. If Geospatial has entered an error state other than [PAUSED], Geospatial must
-     * be disabled and re-enabled to use Geospatial again.
-     */
-    public class State private constructor(private val value: Int) {
-        public companion object {
-            /**
-             * Geospatial is running and has not encountered an error. Functions to create anchors
-             * or convert poses may still fail if Geospatial is not tracking.
-             */
-            @JvmField public val RUNNING: State = State(1)
+    private val _state =
+        MutableStateFlow(
+            State(
+                GeospatialTrackingState.NOT_RUNNING,
+                GeospatialPose(),
+                horizontalAccuracy = 0.0,
+                verticalAccuracy = 0.0,
+                orientationYawAccuracy = 0.0,
+                owner = this,
+            )
+        )
 
-            /**
-             * Geospatial is not running. The Geospatial config must be enabled to use the
-             * Geospatial APIs. After enablement, Geospatial will not immediately enter the RUNNING
-             * state.
-             */
-            @JvmField public val NOT_RUNNING: State = State(0)
-
-            /**
-             * Earth localization has encountered an internal error. The app should not attempt to
-             * recover from this error. Please see the Android logs for additional information.
-             */
-            @JvmField public val ERROR_INTERNAL: State = State(-1)
-
-            /**
-             * The authorization provided by the application is not valid.
-             * - The associated Google Cloud project may not have enabled the ARCore API.
-             * - When using API key authentication, this will happen if the API key in the manifest
-             *   is invalid or unauthorized. It may also fail if the API key is restricted to a set
-             *   of apps not including the current one.
-             * - When using keyless authentication, this may happen when no OAuth client has been
-             *   created, or when the signing key and package name combination does not match the
-             *   values used in the Google Cloud project. It may also fail if Google Play Services
-             *   isn't installed, is too old, or is malfunctioning for some reason (e.g. killed due
-             *   to memory pressure).
-             */
-            @JvmField public val ERROR_NOT_AUTHORIZED: State = State(-2)
-
-            /**
-             * The application has hit the rate limit for created Geospatial Sessions. The developer
-             * should
-             * [request additional quota](https://cloud.google.com/docs/quota#requesting_higher_quota)
-             * for the ARCore API for their project from the Google Cloud Console.
-             *
-             * Sessions are limited per-minute and enabling may succeed if retried. The application
-             * can disable and re-enable Geospatial to try again.
-             */
-            @JvmField public val ERROR_RESOURCE_EXHAUSTED: State = State(-3)
-
-            /**
-             * The Geospatial connection has been paused. The connection may resume, and does not
-             * require action from the app. Tracked entities will enter the STOPPED state and must
-             * be destroyed.
-             */
-            @JvmField public val PAUSED: State = State(2)
-        }
-
-        override fun toString(): String {
-            return when (this) {
-                RUNNING -> "RUNNING"
-                NOT_RUNNING -> "NOT_RUNNING"
-                ERROR_INTERNAL -> "ERROR_INTERNAL"
-                ERROR_NOT_AUTHORIZED -> "ERROR_NOT_AUTHORIZED"
-                ERROR_RESOURCE_EXHAUSTED -> "ERROR_RESOURCE_EXHAUSTED"
-                PAUSED -> "PAUSED"
-                else -> "Unknown"
-            }
-        }
-    }
-
-    private val _state = MutableStateFlow(State.NOT_RUNNING)
-
-    public val state: StateFlow<Geospatial.State> = _state.asStateFlow()
+    public val state: StateFlow<State> = _state.asStateFlow()
 
     /**
      * Gets the availability of the Visual Positioning System (VPS) at a specified horizontal
      * position.
      *
-     * The availability of VPS in a given location helps to improve the quality of Geospatial
+     * The Visual Positioning System (VPS) provides highly accurate global localization by matching
+     * features from the device's camera against Google's global database of 3D imagery. The
+     * availability of VPS in a given location helps to improve the quality of Geospatial
      * localization and tracking accuracy.
      *
      * This launches an asynchronous operation used to query the Google Cloud ARCore API. It may be
@@ -155,7 +96,7 @@ internal constructor(
      *
      * Your app must be properly set up to communicate with the Google Cloud ARCore API in order to
      * obtain a result from this call, otherwise the result will be
-     * [androidx.xr.runtime.VpsAvailabilityNotAuthorized].
+     * [androidx.xr.arcore.runtime.VpsAvailabilityNotAuthorized].
      *
      * @param latitude the latitude in degrees
      * @param longitude the longitude in degrees
@@ -165,7 +106,7 @@ internal constructor(
         latitude: Double,
         longitude: Double,
     ): VpsAvailabilityResult {
-        return runtimeGeospatial.checkVpsAvailability(latitude, longitude)
+        return runtimeGeospatial.checkVpsAvailability(latitude, longitude).toVpsAvailabilityResult()
     }
 
     /**
@@ -221,16 +162,6 @@ internal constructor(
         }
     }
 
-    /** The type of surface on which to create an anchor. */
-    public class Surface private constructor(private val value: Int) {
-        public companion object {
-            /** The terrain surface. */
-            @JvmField public val TERRAIN: Surface = Surface(0)
-            /** The rooftop surface. */
-            @JvmField public val ROOFTOP: Surface = Surface(1)
-        }
-    }
-
     /**
      * Creates a new [Anchor] at the specified geospatial location and orientation relative to the
      * Earth.
@@ -239,14 +170,14 @@ internal constructor(
      * [WGS84 specification](https://en.wikipedia.org/wiki/World_Geodetic_System), and the altitude
      * value is defined by the elevation above the WGS84 ellipsoid in meters. To create an anchor
      * using an altitude relative to the Earth's terrain instead of altitude above the WGS84
-     * ellipsoid, use [Geospatial.createAnchorOnTerrain].
+     * ellipsoid, use [Geospatial.createAnchorOnSurface].
      *
      * The rotation quaternion provided is with respect to an east-up-south coordinate frame. An
      * identity rotation will have the anchor oriented such that X+ points to the east, Y+ points up
      * away from the center of the earth, and Z+ points to the south.
      *
      * The tracking state of an [Anchor] will permanently become
-     * [androidx.xr.runtime.TrackingState.STOPPED] if the [androidx.xr.runtime.GeospatialMode] is
+     * [androidx.xr.arcore.TrackingState.STOPPED] if the [androidx.xr.runtime.GeospatialMode] is
      * disabled, or if another full-space app uses Geospatial.
      *
      * Creating anchors near the north pole or south pole is not supported. If the latitude is
@@ -257,7 +188,7 @@ internal constructor(
      * @param longitude the longitude of the anchor
      * @param altitude the altitude of the anchor
      * @param eastUpSouthQuaternion the rotation quaternion of the anchor
-     * @return an [AnchorCreateResult] with the result of the anchor creation
+     * @return an [AnchorResult] with the result of the anchor creation
      * @throws [IllegalArgumentException] if the latitude is outside the allowable range
      */
     public fun createAnchor(
@@ -265,7 +196,7 @@ internal constructor(
         longitude: Double,
         altitude: Double,
         eastUpSouthQuaternion: Quaternion,
-    ): AnchorCreateResult {
+    ): AnchorResult {
         checkGeospatialModeEnabled()
         return try {
             val runtimeAnchor =
@@ -275,8 +206,8 @@ internal constructor(
             AnchorCreateSuccess(anchor)
         } catch (e: AnchorResourcesExhaustedException) {
             AnchorCreateResourcesExhausted()
-        } catch (e: IllegalStateException) {
-            AnchorCreateIllegalState()
+        } catch (e: AnchorNotTrackingException) {
+            AnchorCreateTrackingUnavailable()
         }
     }
 
@@ -290,22 +221,24 @@ internal constructor(
      * whereas specifying a positive altitude will position the anchor above the surface, against
      * the direction of gravity.
      *
-     * [Surface.TERRAIN] refers to the Earth's terrain (or floor) and [Surface.ROOFTOP] refers to
-     * the top of a building at the given horizontal location. If there is no building at the given
-     * location, then the rooftop surface is interpreted to be the terrain instead.
+     * [GeospatialSurface.TERRAIN] refers to the Earth's terrain (or floor) and
+     * [GeospatialSurface.ROOFTOP] refers to the top of a building at the given horizontal location.
+     * If there is no building at the given location, then the rooftop surface is interpreted to be
+     * the terrain instead.
      *
      * You may resolve multiple anchors at a time, but a session cannot be tracking more than 100
      * surface anchors at time. Attempting to resolve more than 100 surface anchors will return an
      * [AnchorCreateResourcesExhausted] result.
      *
-     * Creating a Terrain anchor requires an active Earth which is [EarthState.Running]. If it is
-     * not, then this function returns an [AnchorCreateIllegalState] result. This call also requires
-     * a working internet connection to communicate with the ARCore API on Google Cloud. ARCore will
-     * continue to retry if it is unable to establish a connection to the ARCore service.
+     * Creating a Terrain anchor requires an active Earth which is
+     * [GeospatialTrackingState.RUNNING]. If it is not, then this function returns an
+     * [AnchorCreateTrackingUnavailable] result. This call also requires a working internet
+     * connection to communicate with the ARCore API on Google Cloud. ARCore will continue to retry
+     * if it is unable to establish a connection to the ARCore service.
      *
-     * A Terrain anchor's tracking state will be [androidx.xr.runtime.TrackingState.PAUSED] if the
+     * A Terrain anchor's tracking state will be [androidx.xr.arcore.TrackingState.PAUSED] if the
      * Earth is not actively tracking. Its tracking state will permanently become
-     * [androidx.xr.runtime.TrackingState.STOPPED] if [androidx.xr.runtime.GeospatialMode] is
+     * [androidx.xr.arcore.TrackingState.STOPPED] if [androidx.xr.runtime.GeospatialMode] is
      * disabled, or if another full-space app uses Geospatial.
      *
      * Latitude and longitude are defined by the
@@ -320,17 +253,19 @@ internal constructor(
      * @param longitude the longitude of the anchor
      * @param altitudeAboveSurface the altitude of the anchor above the given surface
      * @param eastUpSouthQuaternion the rotation quaternion of the anchor
-     * @param surface the [Surface] on which to create the anchor
-     * @return an [AnchorCreateResult] with the result of the anchor creation
+     * @param surface the [GeospatialSurface] on which to create the anchor
+     * @return an [AnchorResult] with the result of the anchor creation
      * @throws IllegalArgumentException if the latitude is outside the allowable range
+     * @throws [AnchorUnsupportedLocationException] if there is no information at the provided
+     *   location
      */
     public suspend fun createAnchorOnSurface(
         latitude: Double,
         longitude: Double,
         altitudeAboveSurface: Double,
         eastUpSouthQuaternion: Quaternion,
-        surface: Surface,
-    ): AnchorCreateResult {
+        surface: GeospatialSurface,
+    ): AnchorResult {
         checkGeospatialModeEnabled()
         return try {
             val runtimeAnchor =
@@ -347,18 +282,24 @@ internal constructor(
             AnchorCreateSuccess(anchor)
         } catch (e: AnchorResourcesExhaustedException) {
             AnchorCreateResourcesExhausted()
-        } catch (e: AnchorNotAuthorizedException) {
-            AnchorCreateNotAuthorized()
-        } catch (e: AnchorUnsupportedLocationException) {
-            AnchorCreateUnsupportedLocation()
-        } catch (e: IllegalStateException) {
-            AnchorCreateIllegalState()
+        } catch (e: RtAnchorNotAuthorizedException) {
+            throw AnchorNotAuthorizedException()
+        } catch (e: AnchorNotTrackingException) {
+            AnchorCreateTrackingUnavailable()
         }
     }
 
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     override suspend fun update() {
-        _state.emit(runtimeStateToState(runtimeGeospatial.state))
+        _state.emit(
+            State(
+                runtimeStateToGeospatialTrackingState(runtimeGeospatial.state),
+                runtimeGeospatial.geospatialPose,
+                runtimeGeospatial.horizontalAccuracy,
+                runtimeGeospatial.verticalAccuracy,
+                runtimeGeospatial.orientationYawAccuracy,
+                owner = this,
+            )
+        )
     }
 
     public override fun equals(other: Any?): Boolean {
@@ -368,30 +309,131 @@ internal constructor(
     }
 
     private fun checkGeospatialModeEnabled() {
-        check(xrResourcesManager.lifecycleManager.config.geospatial == GeospatialMode.VPS_AND_GPS) {
-            "To use this function, Config.GeospatialMode must be set to VPS_AND_GPS."
+        check(xrResourcesManager.perceptionRuntime.config.geospatial != GeospatialMode.DISABLED) {
+            "To use this function, Config.GeospatialMode must be set to SPATIAL or INERTIAL."
         }
     }
 
-    private fun runtimeStateToState(runtimeState: RuntimeGeospatial.State): State {
+    private fun runtimeStateToGeospatialTrackingState(
+        runtimeState: RuntimeGeospatial.State
+    ): GeospatialTrackingState {
         return when (runtimeState) {
-            RuntimeGeospatial.State.RUNNING -> State.RUNNING
-            RuntimeGeospatial.State.NOT_RUNNING -> State.NOT_RUNNING
-            RuntimeGeospatial.State.ERROR_INTERNAL -> State.ERROR_INTERNAL
-            RuntimeGeospatial.State.ERROR_NOT_AUTHORIZED -> State.ERROR_NOT_AUTHORIZED
-            RuntimeGeospatial.State.ERROR_RESOURCE_EXHAUSTED -> State.ERROR_RESOURCE_EXHAUSTED
-            RuntimeGeospatial.State.PAUSED -> State.PAUSED
+            RuntimeGeospatial.State.RUNNING -> GeospatialTrackingState.RUNNING
+            RuntimeGeospatial.State.NOT_RUNNING -> GeospatialTrackingState.NOT_RUNNING
+            RuntimeGeospatial.State.ERROR_INTERNAL -> GeospatialTrackingState.ERROR_INTERNAL
+            RuntimeGeospatial.State.ERROR_NOT_AUTHORIZED ->
+                GeospatialTrackingState.ERROR_NOT_AUTHORIZED
+            RuntimeGeospatial.State.ERROR_RESOURCE_EXHAUSTED ->
+                GeospatialTrackingState.ERROR_RESOURCE_EXHAUSTED
+            RuntimeGeospatial.State.PAUSED -> GeospatialTrackingState.PAUSED
             else -> throw IllegalStateException("Unknown State: $runtimeState")
         }
     }
 
-    private fun surfaceToRuntimeSurface(surface: Surface): RuntimeGeospatial.Surface {
+    private fun surfaceToRuntimeSurface(surface: GeospatialSurface): RuntimeGeospatial.Surface {
         return when (surface) {
-            Surface.TERRAIN -> RuntimeGeospatial.Surface.TERRAIN
-            Surface.ROOFTOP -> RuntimeGeospatial.Surface.ROOFTOP
+            GeospatialSurface.TERRAIN -> RuntimeGeospatial.Surface.TERRAIN
+            GeospatialSurface.ROOFTOP -> RuntimeGeospatial.Surface.ROOFTOP
             else -> throw IllegalStateException("Unknown Surface: $surface")
         }
     }
 
     public override fun hashCode(): Int = runtimeGeospatial.hashCode()
+
+    /** Describes the state of Geospatial. */
+    public class GeospatialTrackingState private constructor(internal val value: Int) {
+        public companion object {
+            /**
+             * Geospatial is running and has not encountered an error. Functions to create anchors
+             * or convert poses may still fail if Geospatial is not tracking.
+             */
+            @JvmField public val RUNNING: GeospatialTrackingState = GeospatialTrackingState(1)
+
+            /**
+             * Geospatial is not running. The Geospatial config must be enabled to use the
+             * Geospatial APIs. After enablement, Geospatial will not immediately enter the RUNNING
+             * state.
+             */
+            @JvmField public val NOT_RUNNING: GeospatialTrackingState = GeospatialTrackingState(0)
+
+            /**
+             * Earth localization has encountered an internal error. The app should not attempt to
+             * recover from this error. Please see the Android logs for additional information.
+             */
+            @JvmField
+            public val ERROR_INTERNAL: GeospatialTrackingState = GeospatialTrackingState(-1)
+
+            /**
+             * The authorization provided by the application is not valid.
+             * - The associated Google Cloud project may not have enabled the ARCore API.
+             * - When using API key authentication, this will happen if the API key in the manifest
+             *   is invalid or unauthorized. It may also fail if the API key is restricted to a set
+             *   of apps not including the current one.
+             * - When using keyless authentication, this may happen when no OAuth client has been
+             *   created, or when the signing key and package name combination does not match the
+             *   values used in the Google Cloud project. It may also fail if Google Play Services
+             *   isn't installed, is too old, or is malfunctioning for some reason (e.g. killed due
+             *   to memory pressure).
+             */
+            @JvmField
+            public val ERROR_NOT_AUTHORIZED: GeospatialTrackingState = GeospatialTrackingState(-2)
+
+            /**
+             * The application has hit the rate limit for created Geospatial Sessions. The developer
+             * should
+             * [request additional quota](https://cloud.google.com/docs/quota#requesting_higher_quota)
+             * for the ARCore API for their project from the Google Cloud Console.
+             *
+             * Sessions are limited per-minute and enabling may succeed if retried. The application
+             * can disable and re-enable Geospatial to try again.
+             */
+            @JvmField
+            public val ERROR_RESOURCE_EXHAUSTED: GeospatialTrackingState =
+                GeospatialTrackingState(-3)
+
+            /**
+             * The Geospatial connection has been paused. The connection may resume, and does not
+             * require action from the app. Tracked entities will enter the STOPPED state and must
+             * be destroyed.
+             */
+            @JvmField public val PAUSED: GeospatialTrackingState = GeospatialTrackingState(2)
+        }
+    }
+
+    /**
+     * Represents the state of Geospatial at a specific point in time.
+     *
+     * @property geospatialTrackingState the current [GeospatialTrackingState] of [Geospatial]
+     * @property owner self-reference to the object that owns this state.
+     */
+    public class State
+    internal constructor(
+        public val geospatialTrackingState: GeospatialTrackingState,
+        @get:RestrictTo(RestrictTo.Scope.LIBRARY) public val geospatialPose: GeospatialPose,
+        @get:RestrictTo(RestrictTo.Scope.LIBRARY) public val horizontalAccuracy: Double,
+        @get:RestrictTo(RestrictTo.Scope.LIBRARY) public val verticalAccuracy: Double,
+        @get:RestrictTo(RestrictTo.Scope.LIBRARY) public val orientationYawAccuracy: Double,
+        public val owner: Geospatial,
+    ) {
+        override fun equals(other: Any?): Boolean {
+            if (this === other) return true
+            if (other !is State) return false
+            return geospatialTrackingState == other.geospatialTrackingState &&
+                geospatialPose == other.geospatialPose &&
+                horizontalAccuracy == other.horizontalAccuracy &&
+                verticalAccuracy == other.verticalAccuracy &&
+                orientationYawAccuracy == other.orientationYawAccuracy &&
+                owner == other.owner
+        }
+
+        override fun hashCode(): Int {
+            var result = geospatialTrackingState.hashCode()
+            result = 31 * result + geospatialPose.hashCode()
+            result = 31 * result + horizontalAccuracy.hashCode()
+            result = 31 * result + verticalAccuracy.hashCode()
+            result = 31 * result + orientationYawAccuracy.hashCode()
+            result = 31 * result + owner.hashCode()
+            return result
+        }
+    }
 }

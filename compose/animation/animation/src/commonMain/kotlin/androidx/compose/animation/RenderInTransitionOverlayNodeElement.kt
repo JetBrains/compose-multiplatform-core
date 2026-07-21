@@ -21,6 +21,7 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.GraphicsContext
 import androidx.compose.ui.graphics.drawscope.ContentDrawScope
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.translate
@@ -84,7 +85,15 @@ internal class RenderInTransitionOverlayNode(
     var renderInOverlay: () -> Boolean,
     zIndexInOverlay: Float,
 ) : Modifier.Node(), LayoutModifierNode, DrawModifierNode, ModifierLocalModifierNode {
-    var zIndexInOverlay by mutableFloatStateOf(zIndexInOverlay)
+    private var _zIndexInOverlay by mutableFloatStateOf(zIndexInOverlay)
+    var zIndexInOverlay: Float
+        get() = _zIndexInOverlay
+        set(value) {
+            if (_zIndexInOverlay != value) {
+                _zIndexInOverlay = value
+                sharedScope.zOrderChanged()
+            }
+        }
 
     val parentState: SharedElementEntry?
         get() = ModifierLocalSharedElementInternalState.current
@@ -123,7 +132,7 @@ internal class RenderInTransitionOverlayNode(
         override val zIndex: Float
             get() = this@RenderInTransitionOverlayNode.zIndexInOverlay
 
-        override fun drawInOverlay(drawScope: DrawScope) {
+        override fun drawInOverlay(drawScope: DrawScope, graphicsContext: GraphicsContext) {
             if (enabled) {
                 with(drawScope) {
                     translate(positionInOverlay.x, positionInOverlay.y) { drawLayer(layer) }

@@ -41,4 +41,9 @@ interface IProjectedService {
   boolean isDisplayCapable();
   void registerProjectedDeviceStateListener(in androidx.xr.projected.platform.IProjectedDeviceStateListener listener);
   void unregisterProjectedDeviceStateListener(in androidx.xr.projected.platform.IProjectedDeviceStateListener listener);
+  int[] getAudioDeviceIds();
+  void registerBatteryStateListener(in androidx.xr.projected.platform.IBatteryStateListener listener);
+  void unregisterBatteryStateListener(in androidx.xr.projected.platform.IBatteryStateListener listener);
+  void launchProjectedPermissionRequest(in androidx.xr.projected.platform.ProjectedPermissionRequestData data, in androidx.xr.projected.platform.IProjectedPermissionRequestCallback callback);
+  void finishProjectedPermissionRequest();
 }

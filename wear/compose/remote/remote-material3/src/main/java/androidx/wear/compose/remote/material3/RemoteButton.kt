@@ -30,6 +30,7 @@ import androidx.compose.remote.creation.compose.layout.RemoteRowScope
 import androidx.compose.remote.creation.compose.layout.RemoteSize
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
 import androidx.compose.remote.creation.compose.modifier.clickable
+import androidx.compose.remote.creation.compose.modifier.clip
 import androidx.compose.remote.creation.compose.modifier.drawWithContent
 import androidx.compose.remote.creation.compose.modifier.fillMaxSize
 import androidx.compose.remote.creation.compose.modifier.height
@@ -50,6 +51,7 @@ import androidx.compose.remote.creation.compose.state.RemoteBoolean
 import androidx.compose.remote.creation.compose.state.RemoteColor
 import androidx.compose.remote.creation.compose.state.RemoteDp
 import androidx.compose.remote.creation.compose.state.RemoteFloat
+import androidx.compose.remote.creation.compose.state.RemoteImageBitmap
 import androidx.compose.remote.creation.compose.state.RemotePaint
 import androidx.compose.remote.creation.compose.state.rb
 import androidx.compose.remote.creation.compose.state.rc
@@ -61,6 +63,7 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
 import androidx.compose.ui.graphics.DefaultAlpha
 import androidx.compose.ui.graphics.PaintingStyle
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -69,6 +72,8 @@ import androidx.wear.compose.material3.ButtonDefaults.scrimGradientEndColor
 import androidx.wear.compose.material3.ButtonDefaults.scrimGradientStartColor
 import androidx.wear.compose.material3.CompactButton
 import androidx.wear.compose.material3.TextConfiguration
+import androidx.wear.compose.remote.material3.RemoteButtonDefaults.buttonColors
+import androidx.wear.compose.remote.material3.RemoteButtonDefaults.defaultButtonWithContainerPainterColors
 
 /**
  * Base level Wear Material3 [RemoteButton] that offers a single slot to take any content. Used as
@@ -120,7 +125,7 @@ public fun RemoteButton(
         borderColor = borderColor,
         shape = shape,
         contentPadding = contentPadding,
-        labelFont = LocalRemoteTypography.current.labelMedium,
+        labelFont = RemoteMaterialTheme.typography.labelMedium,
         containerPainter = null,
         disabledContainerPainter = null,
         content = content,
@@ -182,7 +187,7 @@ public fun RemoteButton(
         contentPadding = contentPadding,
         border = border,
         borderColor = borderColor,
-        labelFont = LocalRemoteTypography.current.labelMedium,
+        labelFont = RemoteMaterialTheme.typography.labelMedium,
         content = content,
     )
 }
@@ -280,7 +285,7 @@ public fun RemoteButton(
         icon = icon,
         enabled = enabled,
         shape = shape,
-        labelFont = LocalRemoteTypography.current.labelMedium,
+        labelFont = RemoteMaterialTheme.typography.labelMedium,
         containerPainter = containerPainter,
         disabledContainerPainter = disabledContainerPainter,
         colors = colors,
@@ -290,7 +295,7 @@ public fun RemoteButton(
         labelContent =
             provideScopeContent(
                 contentColor = colors.contentColor(enabled),
-                textStyle = LocalRemoteTypography.current.labelMedium,
+                textStyle = RemoteMaterialTheme.typography.labelMedium,
                 textConfiguration =
                     TextConfiguration(
                         textAlign =
@@ -378,16 +383,19 @@ public fun RemoteCompactButton(
                 .semantics(mergeDescendants = true) { role = Role.Button }
                 .compactButtonModifier()
                 .padding(tapPadding)
-                .clickable(onClick, enabled = enabled.constantValueOrNull ?: false)
+                .clip(shape = shape)
+                .clickable(onClick, enabled = enabled.constantValueOrNull ?: false),
+        contentAlignment = RemoteAlignment.Center,
     ) {
         if (label != null) {
             RemoteButtonImpl(
+                onClick = Action.Empty,
                 modifier = RemoteModifier.height(RemoteButtonDefaults.CompactButtonVisibleHeight),
                 secondaryLabelContent = null,
                 icon = icon,
                 enabled = enabled,
                 shape = shape,
-                labelFont = LocalRemoteTypography.current.labelSmall,
+                labelFont = RemoteMaterialTheme.typography.labelSmall,
                 containerPainter = null,
                 disabledContainerPainter = null,
                 colors = colors,
@@ -397,10 +405,10 @@ public fun RemoteCompactButton(
                 labelContent =
                     provideScopeContent(
                         contentColor = colors.contentColor(enabled),
-                        textStyle = LocalRemoteTypography.current.labelSmall,
+                        textStyle = RemoteMaterialTheme.typography.labelSmall,
                         textConfiguration =
                             TextConfiguration(
-                                textAlign = if (icon != null) TextAlign.Start else TextAlign.Center,
+                                textAlign = TextAlign.Start,
                                 overflow = TextOverflow.Ellipsis,
                                 maxLines = 3,
                             ),
@@ -412,12 +420,13 @@ public fun RemoteCompactButton(
             // aligned
             // content. We use the base simple single slot Button under the covers.
             RemoteButtonImpl(
+                onClick = Action.Empty,
                 modifier =
                     RemoteModifier.height(RemoteButtonDefaults.CompactButtonVisibleHeight)
                         .width(RemoteButtonDefaults.IconOnlyCompactButtonWidth),
                 enabled = enabled,
                 shape = shape,
-                labelFont = LocalRemoteTypography.current.labelSmall,
+                labelFont = RemoteMaterialTheme.typography.labelSmall,
                 containerPainter = null,
                 disabledContainerPainter = null,
                 colors = colors,
@@ -445,7 +454,7 @@ public fun RemoteCompactButton(
 @Composable
 @RemoteComposable
 private fun RemoteButtonImpl(
-    onClick: Action? = null,
+    onClick: Action,
     modifier: RemoteModifier = RemoteModifier,
     colors: RemoteButtonColors,
     containerPainter: RemotePainter?,
@@ -459,9 +468,10 @@ private fun RemoteButtonImpl(
     content: @Composable @RemoteComposable RemoteRowScope.() -> Unit,
 ) {
     val containerModifier =
-        RemoteModifier.clickable(
-                actions = buildList { onClick?.let { add(it) } },
-                enabled = enabled.constantValueOrNull ?: false && onClick != null,
+        RemoteModifier.clip(shape = shape)
+            .clickable(
+                action = onClick,
+                enabled = enabled.constantValueOrNull ?: false && onClick != Action.Empty,
             )
             .padding(contentPadding)
             .semantics(mergeDescendants = true) { role = Role.Button }
@@ -495,7 +505,7 @@ private fun RemoteButtonImpl(
 @Composable
 @RemoteComposable
 private fun RemoteButtonImpl(
-    onClick: Action? = null,
+    onClick: Action,
     modifier: RemoteModifier = RemoteModifier,
     secondaryLabelContent: (@Composable @RemoteComposable RemoteRowScope.() -> Unit)?,
     icon: (@Composable @RemoteComposable () -> Unit)?,
@@ -729,19 +739,24 @@ public object RemoteButtonDefaults {
      * An Image background is a means to reinforce the meaning of information in a Button. Buttons
      * should have a content color that contrasts with the background image and scrim.
      *
-     * @param image The [RemotePainter] to use to draw the container background of the
+     * @param image The [RemoteImageBitmap] to use to draw the container background of the
      *   [RemoteButton].
      * @param scrim The [RemoteBrush] to use to paint a scrim over the container image to ensure
      *   that any text drawn over the image is legible.
      * @param alpha Opacity of the container image painter and scrim.
+     * @param shape Define the container shape.
+     * @param contentScale the rule to apply to scale the image when its size does not match the
+     *   layout
      */
     @Composable
     public fun containerPainter(
-        image: RemotePainter,
-        scrim: RemoteBrush? = image.intrinsicSize?.let { scrimBrush(it) },
+        image: RemoteImageBitmap,
+        scrim: RemoteBrush? = scrimBrush(RemoteSize(image.width, image.height)),
         alpha: RemoteFloat = DefaultAlpha.rf,
+        shape: RemoteShape = this.shape,
+        contentScale: ContentScale = ContentScale.Crop,
     ): RemotePainter {
-        return remoteContainerPainter(image, scrim, alpha)
+        return remoteContainerPainter(image, alpha, shape, contentScale, scrim)
     }
 
     /**
@@ -855,9 +870,6 @@ internal fun RemoteDrawScope.drawShapedBackground(
     borderColor: RemoteColor?,
     borderStrokeWidth: RemoteFloat?,
 ) {
-    val w = width
-    val h = height
-
     if (!enabled.hasConstantValue) {
         TODO("Dynamic clickable enabled value is not supported.")
     }
@@ -865,20 +877,11 @@ internal fun RemoteDrawScope.drawShapedBackground(
     val backgroundImagePainter =
         if (enabled.constantValue) containerPainter else disabledContainerPainter
 
-    if (backgroundImagePainter != null) {
-        // Draws solid shape as destination
-        drawSolidColorShape(shape, w, h)
-
-        // TODO: Fix BlendMode.SRC_IN so it draws an shaped image
-        with(backgroundImagePainter) { draw() }
-    } else {
-        // Draws solid color shape
-        drawSolidColorShape(shape, w, h, color)
-    }
+    backgroundImagePainter?.let { with(it) { onDraw() } } ?: drawSolidColorShape(shape, color)
 
     // Draw border if specified
     if (borderColor != null && borderStrokeWidth != null) {
-        drawBorder(borderColor, borderStrokeWidth, shape, w, h)
+        drawBorder(borderColor, borderStrokeWidth, shape, width, height)
     }
 }
 
@@ -900,13 +903,8 @@ private fun RemoteDrawScope.drawBorder(
     }
 }
 
-private fun RemoteDrawScope.drawSolidColorShape(
-    shape: RemoteShape,
-    w: RemoteFloat,
-    h: RemoteFloat,
-    color: RemoteColor? = null,
-) {
-    with(shape.createOutline(RemoteSize(w, h), remoteDensity, layoutDirection)) {
+private fun RemoteDrawScope.drawSolidColorShape(shape: RemoteShape, color: RemoteColor? = null) =
+    with(shape.createOutline(RemoteSize(width, height), remoteDensity, layoutDirection)) {
         drawOutline(
             RemotePaint {
                 style = PaintingStyle.Fill
@@ -914,7 +912,6 @@ private fun RemoteDrawScope.drawSolidColorShape(
             }
         )
     }
-}
 
 /**
  * Modifier to be applied to a [RemoteButton] to ensure that its size meets the recommended

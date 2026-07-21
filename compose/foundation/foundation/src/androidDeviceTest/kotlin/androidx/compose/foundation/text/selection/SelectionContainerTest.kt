@@ -18,19 +18,33 @@
 
 package androidx.compose.foundation.text.selection
 
+import androidx.compose.foundation.ComposeFoundationFlags
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.ScrollState
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.internal.readText
 import androidx.compose.foundation.internal.toClipEntry
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.requiredHeight
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListLayoutInfo
+import androidx.compose.foundation.lazy.LazyListPrefetchScope
+import androidx.compose.foundation.lazy.LazyListPrefetchStrategy
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.Handle
+import androidx.compose.foundation.text.selection.gestures.util.longPress
 import androidx.compose.foundation.text.test.assertThatIntRect
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -41,11 +55,15 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.changedToUp
 import androidx.compose.ui.layout.LayoutCoordinates
+import androidx.compose.ui.layout.LocalPinnableContainer
+import androidx.compose.ui.layout.PinnableContainer
+import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.platform.Clipboard
 import androidx.compose.ui.platform.ClipboardManager
 import androidx.compose.ui.platform.LocalClipboard
@@ -58,12 +76,14 @@ import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.TouchInjectionScope
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
+import androidx.compose.ui.test.junit4.ComposeContentTestRule
 import androidx.compose.ui.test.junit4.ComposeTestRule
 import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performKeyInput
+import androidx.compose.ui.test.performMouseInput
 import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.text.AnnotatedString
@@ -81,7 +101,10 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
+import com.google.common.truth.Truth.assertWithMessage
 import kotlin.math.sign
+import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -103,14 +126,14 @@ internal class SelectionContainerTest : AbstractSelectionContainerTest() {
         rule.onSelectionContainer().performTouchInput {
             longClick(Offset(x = position, y = position))
         }
-        rule.runOnIdle { assertThat(selection.value).isNotNull() }
+        rule.runOnIdle { assertThat(state.selection).isNotNull() }
 
         // Act.
         rule.onSelectionContainer().performTouchInput { click(Offset(x = position, y = position)) }
 
         // Assert.
         rule.runOnIdle {
-            assertThat(selection.value).isNull()
+            assertThat(state.selection).isNull()
             verify(hapticFeedback, times(2))
                 .performHapticFeedback(HapticFeedbackType.TextHandleMove)
         }
@@ -160,8 +183,8 @@ internal class SelectionContainerTest : AbstractSelectionContainerTest() {
 
             rule.mainClock.advanceTimeByFrame()
             // Assert. Should select "Demo".
-            assertThat(selection.value!!.start.offset).isEqualTo(textContent.indexOf('D'))
-            assertThat(selection.value!!.end.offset).isEqualTo(textContent.indexOf('o') + 1)
+            assertThat(state.selection!!.start.offset).isEqualTo(textContent.indexOf('D'))
+            assertThat(state.selection!!.end.offset).isEqualTo(textContent.indexOf('o') + 1)
             verify(hapticFeedback, times(1))
                 .performHapticFeedback(HapticFeedbackType.TextHandleMove)
 
@@ -202,8 +225,8 @@ internal class SelectionContainerTest : AbstractSelectionContainerTest() {
             rule.mainClock.advanceTimeByFrame()
 
             // Assert. Should select "Demo".
-            assertThat(selection.value!!.start.offset).isEqualTo(textContent.indexOf('T'))
-            assertThat(selection.value!!.end.offset).isEqualTo(textContent.indexOf('t') + 1)
+            assertThat(state.selection!!.start.offset).isEqualTo(textContent.indexOf('T'))
+            assertThat(state.selection!!.end.offset).isEqualTo(textContent.indexOf('t') + 1)
             verify(hapticFeedback, times(1))
                 .performHapticFeedback(HapticFeedbackType.TextHandleMove)
 
@@ -239,8 +262,8 @@ internal class SelectionContainerTest : AbstractSelectionContainerTest() {
         startSelection(tag1)
         dragHandleTo(Handle.SelectionEnd, offset = characterBox(tag2, 3).bottomRight)
 
-        assertAnchorInfo(selection.value?.start, offset = 0, selectableId = 1)
-        assertAnchorInfo(selection.value?.end, offset = 4, selectableId = 2)
+        assertAnchorInfo(state.selection?.start, offset = 0, selectableId = 1)
+        assertAnchorInfo(state.selection?.end, offset = 4, selectableId = 2)
     }
 
     @Test
@@ -263,8 +286,8 @@ internal class SelectionContainerTest : AbstractSelectionContainerTest() {
         startSelection(tag2, offset = 6) // second word should be selected
         dragHandleTo(Handle.SelectionStart, offset = characterBox(tag1, 5).bottomLeft)
 
-        assertAnchorInfo(selection.value?.start, offset = 5, selectableId = 1)
-        assertAnchorInfo(selection.value?.end, offset = 9, selectableId = 2)
+        assertAnchorInfo(state.selection?.start, offset = 5, selectableId = 1)
+        assertAnchorInfo(state.selection?.end, offset = 9, selectableId = 2)
     }
 
     @Test
@@ -289,8 +312,8 @@ internal class SelectionContainerTest : AbstractSelectionContainerTest() {
         startSelection(tag1)
         dragHandleTo(Handle.SelectionEnd, offset = characterBox(tag2, 3).bottomRight)
 
-        assertAnchorInfo(selection.value?.start, offset = 0, selectableId = 1)
-        assertAnchorInfo(selection.value?.end, offset = textContent.length, selectableId = 1)
+        assertAnchorInfo(state.selection?.start, offset = 0, selectableId = 1)
+        assertAnchorInfo(state.selection?.end, offset = textContent.length, selectableId = 1)
     }
 
     @Test
@@ -323,8 +346,8 @@ internal class SelectionContainerTest : AbstractSelectionContainerTest() {
         startSelection(tag1)
         dragHandleTo(Handle.SelectionEnd, offset = characterBox(tag2, 3).bottomRight)
 
-        assertAnchorInfo(selection.value?.start, offset = 0, selectableId = 1)
-        assertAnchorInfo(selection.value?.end, offset = 4, selectableId = 2)
+        assertAnchorInfo(state.selection?.start, offset = 0, selectableId = 1)
+        assertAnchorInfo(state.selection?.end, offset = 4, selectableId = 2)
     }
 
     @Test
@@ -348,8 +371,8 @@ internal class SelectionContainerTest : AbstractSelectionContainerTest() {
                 offset = characterBox(tag1, 4).bottomRight + Offset(x = 0f, y = fontSize.toPx()),
             )
 
-            assertAnchorInfo(selection.value?.start, offset = 0, selectableId = 1)
-            assertAnchorInfo(selection.value?.end, offset = longText.length, selectableId = 1)
+            assertAnchorInfo(state.selection?.start, offset = 0, selectableId = 1)
+            assertAnchorInfo(state.selection?.end, offset = longText.length, selectableId = 1)
         }
 
     @Test
@@ -374,8 +397,8 @@ internal class SelectionContainerTest : AbstractSelectionContainerTest() {
                 offset = characterBox(tag1, 4).bottomRight + Offset(x = 0f, y = fontSize.toPx()),
             )
 
-            assertAnchorInfo(selection.value?.start, offset = 0, selectableId = 1)
-            assertAnchorInfo(selection.value?.end, offset = longText.length, selectableId = 1)
+            assertAnchorInfo(state.selection?.start, offset = 0, selectableId = 1)
+            assertAnchorInfo(state.selection?.end, offset = longText.length, selectableId = 1)
         }
 
     @Test
@@ -398,8 +421,8 @@ internal class SelectionContainerTest : AbstractSelectionContainerTest() {
         startSelection(tag1)
         dragHandleTo(handle = Handle.SelectionEnd, offset = characterBox(tag2, 4).bottomRight)
 
-        assertAnchorInfo(selection.value?.start, offset = 0, selectableId = 1)
-        assertAnchorInfo(selection.value?.end, offset = 5, selectableId = 3)
+        assertAnchorInfo(state.selection?.start, offset = 0, selectableId = 1)
+        assertAnchorInfo(state.selection?.end, offset = 5, selectableId = 3)
     }
 
     @Test
@@ -422,8 +445,8 @@ internal class SelectionContainerTest : AbstractSelectionContainerTest() {
         startSelection(tag1)
         dragHandleTo(handle = Handle.SelectionEnd, offset = characterBox(tag2, 4).bottomRight)
 
-        assertAnchorInfo(selection.value?.start, offset = 0, selectableId = 1)
-        assertAnchorInfo(selection.value?.end, offset = 5, selectableId = 3)
+        assertAnchorInfo(state.selection?.start, offset = 0, selectableId = 1)
+        assertAnchorInfo(state.selection?.end, offset = 5, selectableId = 3)
     }
 
     /**
@@ -544,7 +567,7 @@ internal class SelectionContainerTest : AbstractSelectionContainerTest() {
             rule.onNodeWithTag(tag1, useUnmergedTree = true).performClick()
 
             // Assert.
-            rule.runOnIdle { assertThat(selection.value).isNull() }
+            rule.runOnIdle { assertThat(state.selection).isNull() }
             rule.runOnIdle { assertThat(clickCounter).isEqualTo(1) }
         }
 
@@ -574,7 +597,7 @@ internal class SelectionContainerTest : AbstractSelectionContainerTest() {
             rule.onNodeWithTag(tag1, useUnmergedTree = true).performClick()
 
             // Assert.
-            rule.runOnIdle { assertThat(selection.value).isNull() }
+            rule.runOnIdle { assertThat(state.selection).isNull() }
             rule.runOnIdle { assertThat(clickCounter).isEqualTo(1) }
         }
 
@@ -587,8 +610,7 @@ internal class SelectionContainerTest : AbstractSelectionContainerTest() {
                     movableContentOf {
                         SelectionContainer(
                             modifier = Modifier.testTag("selectionContainer"),
-                            selection = selection.value,
-                            onSelectionChange = { selection.value = it },
+                            state = state,
                         ) {
                             TestText(textContent)
                         }
@@ -608,16 +630,501 @@ internal class SelectionContainerTest : AbstractSelectionContainerTest() {
 
             // Assert.
             rule.mainClock.advanceTimeByFrame()
-            assertAnchorInfo(selection.value?.start, offset = 5, selectableId = 1)
-            assertAnchorInfo(selection.value?.end, offset = 9, selectableId = 1)
+            assertAnchorInfo(state.selection?.start, offset = 5, selectableId = 1)
+            assertAnchorInfo(state.selection?.end, offset = 9, selectableId = 1)
 
             // Act 2. Remove movableContentOf from composition
             toggle = false
             rule.mainClock.advanceTimeByFrame()
 
             // Assert. No crash is enough
-            assertThat(selection.value).isNull()
+            assertThat(state.selection).isNull()
         }
+
+    class DragGesture(
+        val start: ComposeContentTestRule.() -> Unit,
+        val proceed: ComposeContentTestRule.(beyondEdgeOffset: Float, iteration: Int) -> Unit,
+        val finish: ComposeContentTestRule.() -> Unit,
+    )
+
+    companion object {
+        private val LongPressDragGesture =
+            DragGesture(
+                start = { onNodeWithTag("text0").performTouchInput { longPress(Offset.Zero) } },
+                proceed = { beyondEdgeOffset, iteration ->
+                    // The events are still sent to tag0, but with performTouchInput on container
+                    // there's no need to continuously re-calculate the relative position
+                    onNodeWithTag("container").performTouchInput {
+                        moveTo(
+                            Offset(
+                                // Jiggle the pointer to keep scrolling, due to b/343917640
+                                x = (width + iteration.mod(2)).toFloat(),
+                                y = height + beyondEdgeOffset,
+                            )
+                        )
+                    }
+                },
+                finish = { onNodeWithTag("text0").performTouchInput { up() } },
+            )
+
+        private val MouseDragGesture =
+            DragGesture(
+                start = {
+                    onNodeWithTag("text0").performMouseInput {
+                        moveTo(Offset.Zero)
+                        press()
+                    }
+                },
+                proceed = { beyondEdgeOffset, iteration ->
+                    // The events are still sent to tag0, but with performMouseInput on container
+                    // there's no need to continuously re-calculate the relative position
+                    onNodeWithTag("container").performMouseInput {
+                        moveTo(
+                            Offset(
+                                // Jiggle the pointer to keep scrolling, due to b/343917640
+                                x = (width + iteration.mod(2)).toFloat(),
+                                y = height + beyondEdgeOffset,
+                            )
+                        )
+                    }
+                },
+                finish = { onNodeWithTag("text0").performMouseInput { release() } },
+            )
+
+        private val DragSelectionHandleGesture =
+            DragGesture(
+                start = {
+                    onNodeWithTag("text0").performTouchInput { longClick(Offset.Zero) }
+                    onNode(isSelectionHandle(Handle.SelectionEnd)).performTouchInput {
+                        down(Offset.Zero)
+                    }
+                },
+                proceed = { beyondEdgeOffset, _ ->
+                    onNode(isSelectionHandle(Handle.SelectionEnd)).let { selectionHandle ->
+                        // Here we have to actually send the events to the selection handle, because
+                        // it's a popup
+                        val container = onNodeWithTag("container").fetchSemanticsNode()
+                        val containerPositionOnScreen = container.positionOnScreen
+                        val containerSize = container.size
+                        val selectionHandleNode = selectionHandle.fetchSemanticsNode()
+                        val selectionHandlePositionOnScreen = selectionHandleNode.positionOnScreen
+                        val targetPositionOnScreen =
+                            Offset(
+                                x = containerPositionOnScreen.x + containerSize.width,
+                                y =
+                                    containerPositionOnScreen.y +
+                                        containerSize.height +
+                                        beyondEdgeOffset,
+                            )
+                        val delta = (targetPositionOnScreen - selectionHandlePositionOnScreen)
+                        selectionHandle.performTouchInput { moveBy(delta) }
+
+                        // This is needed due to underlying cause of b/343917640
+                        // When the selection handle is moved between pointer events,
+                        // PointerInputScope.detectDragGestures delivers the wrong delta, which
+                        // causes the next event to overshoot the target position (then undershoot
+                        // etc.). By sending this extra "neutralizing" event, the "previousPosition"
+                        // of the pointer event gets reset to the correct value.
+                        selectionHandle.performTouchInput {
+                            moveBy(-delta + Offset(x = 0f, y = 300f))
+                        }
+                    }
+                },
+                finish = {
+                    onNode(isSelectionHandle(Handle.SelectionEnd)).performTouchInput { up() }
+                },
+            )
+    }
+
+    private fun dragOutsideSelectsAndScrolls_withNonLazyContainer(
+        drag: DragGesture,
+        scrollableInsideSelectionContainer: Boolean,
+    ) {
+        withTextSelectionAutoScrollingEnabled {
+            lateinit var selectionManager: SelectionManager
+            val scrollState by mutableStateOf(ScrollState(0))
+            val selectionState = SelectionState()
+            rule.setContent {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Box(
+                        modifier =
+                            Modifier.size(200.dp)
+                                .then(
+                                    if (!scrollableInsideSelectionContainer) {
+                                        Modifier.verticalScroll(scrollState)
+                                    } else Modifier
+                                )
+                                .testTag("container")
+                    ) {
+                        SelectionContainer(
+                            state = selectionState,
+                            onSelectionManagerCreated = { selectionManager = it },
+                        ) {
+                            Box(
+                                modifier =
+                                    if (scrollableInsideSelectionContainer) {
+                                        Modifier.verticalScroll(scrollState)
+                                    } else Modifier
+                            ) {
+                                Column(Modifier.testTag("content")) {
+                                    repeat(50) {
+                                        BasicText(
+                                            "Line$it",
+                                            Modifier.height(20.dp).testTag("text$it"),
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            val contentSize = rule.onNodeWithTag("content").fetchSemanticsNode().size
+
+            drag.start(rule)
+
+            for (i in 0..100) {
+                drag.proceed(rule, 300f, i)
+
+                // Stop when scrolled to the end
+                if (scrollState.value + scrollState.viewportSize == contentSize.height) {
+                    break
+                }
+            }
+
+            drag.finish(rule)
+
+            assertWithMessage("Failed to scroll to the end")
+                .that(scrollState.value + scrollState.viewportSize)
+                .isEqualTo(contentSize.height)
+            assertAnchorInfo(selectionState.selection?.start, offset = 0, selectableId = 1)
+            assertAnchorInfo(
+                selectionState.selection?.end,
+                offset = 6, // "Line49".length
+                selectableId = 50,
+            )
+
+            assertThat(selectionManager.getSelectedText()?.text)
+                .isEqualTo((0 until 50).joinToString(separator = "\n") { "Line$it" })
+        }
+    }
+
+    @Test
+    fun longPressDragOutsideSelectsAndScrolls_withNonLazyContainer_scrollableInside() =
+        dragOutsideSelectsAndScrolls_withNonLazyContainer(LongPressDragGesture, true)
+
+    @Test
+    fun longPressDragOutsideSelectsAndScrolls_withNonLazyContainer_scrollableOutside() =
+        dragOutsideSelectsAndScrolls_withNonLazyContainer(LongPressDragGesture, false)
+
+    @Test
+    fun dragSelectionHandleOutsideSelectsAndScrolls_withNonLazyContainer_scrollableInside() =
+        dragOutsideSelectsAndScrolls_withNonLazyContainer(DragSelectionHandleGesture, true)
+
+    @Test
+    fun dragSelectionHandleOutsideSelectsAndScrolls_withNonLazyContainer_scrollableOutside() =
+        dragOutsideSelectsAndScrolls_withNonLazyContainer(DragSelectionHandleGesture, false)
+
+    @Test
+    fun mouseDragOutsideSelectsAndScrolls_withNonLazyContainer_scrollableInside() =
+        dragOutsideSelectsAndScrolls_withNonLazyContainer(MouseDragGesture, true)
+
+    @Test
+    fun mouseDragOutsideSelectsAndScrolls_withNonLazyContainer_scrollableOutside() =
+        dragOutsideSelectsAndScrolls_withNonLazyContainer(MouseDragGesture, false)
+
+    private fun dragOutsideSelectsAndScrolls_withLongTextInNonLazyContainer(
+        drag: DragGesture,
+        scrollableInsideSelectionContainer: Boolean,
+    ) {
+        withTextSelectionAutoScrollingEnabled {
+            lateinit var selectionManager: SelectionManager
+            val scrollState by mutableStateOf(ScrollState(0))
+            val selectionState = SelectionState()
+            val contentText = (0 until 50).joinToString(separator = "\n") { "Line$it" }
+            rule.setContent {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Box(
+                        modifier =
+                            Modifier.size(200.dp)
+                                .then(
+                                    if (!scrollableInsideSelectionContainer) {
+                                        Modifier.verticalScroll(scrollState)
+                                    } else Modifier
+                                )
+                                .testTag("container")
+                    ) {
+                        SelectionContainer(
+                            state = selectionState,
+                            onSelectionManagerCreated = { selectionManager = it },
+                        ) {
+                            Box(
+                                modifier =
+                                    if (scrollableInsideSelectionContainer) {
+                                        Modifier.verticalScroll(scrollState)
+                                    } else Modifier
+                            ) {
+                                Box(Modifier.testTag("content")) {
+                                    BasicText(contentText, Modifier.testTag("text0"))
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            val contentSize = rule.onNodeWithTag("content").fetchSemanticsNode().size
+
+            drag.start(rule)
+
+            for (i in 0..100) {
+                drag.proceed(rule, 300f, i)
+
+                // Stop when scrolled to the end
+                if (scrollState.value + scrollState.viewportSize == contentSize.height) {
+                    break
+                }
+            }
+
+            drag.finish(rule)
+
+            assertWithMessage("Failed to scroll to the end")
+                .that(scrollState.value + scrollState.viewportSize)
+                .isEqualTo(contentSize.height)
+
+            assertAnchorInfo(selectionState.selection?.start, offset = 0, selectableId = 1)
+            assertAnchorInfo(
+                selectionState.selection?.end,
+                offset = contentText.length,
+                selectableId = 1,
+            )
+
+            assertThat(selectionManager.getSelectedText()?.text).isEqualTo(contentText)
+        }
+    }
+
+    @Test
+    fun longPressDragOutsideSelectsAndScrolls_withLongTextInNonLazyContainer_scrollableInside() =
+        dragOutsideSelectsAndScrolls_withLongTextInNonLazyContainer(LongPressDragGesture, true)
+
+    @Test
+    fun longPressDragOutsideSelectsAndScrolls_withLongTextInNonLazyContainer_scrollableOutside() =
+        dragOutsideSelectsAndScrolls_withLongTextInNonLazyContainer(LongPressDragGesture, false)
+
+    @Test
+    fun dragSelectionHandleOutsideSelectsAndScrolls_withLongTextInNonLazyContainer_scrollableInside() =
+        dragOutsideSelectsAndScrolls_withLongTextInNonLazyContainer(
+            DragSelectionHandleGesture,
+            true,
+        )
+
+    @Test
+    fun dragSelectionHandleOutsideSelectsAndScrolls_withLongTextInNonLazyContainer_scrollableOutside() =
+        dragOutsideSelectsAndScrolls_withLongTextInNonLazyContainer(
+            DragSelectionHandleGesture,
+            false,
+        )
+
+    @Test
+    fun mouseDragOutsideSelectsAndScrolls_withLongTextInNonLazyContainer_scrollableInside() =
+        dragOutsideSelectsAndScrolls_withLongTextInNonLazyContainer(MouseDragGesture, true)
+
+    @Test
+    fun mouseDragOutsideSelectsAndScrolls_withLongTextInNonLazyContainer_scrollableOutside() =
+        dragOutsideSelectsAndScrolls_withLongTextInNonLazyContainer(MouseDragGesture, false)
+
+    class PinnableContainerWithCallbacks(
+        val delegate: PinnableContainer,
+        val onPinned: () -> Unit,
+        val onReleased: () -> Unit,
+    ) : PinnableContainer {
+        override fun pin(): PinnableContainer.PinnedHandle {
+            val pinHandle = delegate.pin()
+            onPinned()
+            return PinnableContainer.PinnedHandle {
+                pinHandle.release()
+                onReleased()
+            }
+        }
+    }
+
+    @OptIn(ExperimentalFoundationApi::class)
+    private fun dragOutsideSelectsAndScrolls_withLazyContainer(
+        drag: DragGesture,
+        useLargeOffsetBeyondEdge: Boolean,
+    ) {
+        withTextSelectionAutoScrollingEnabled {
+            val listState = LazyListState()
+            val pinnedItemIndices = mutableSetOf<Int>()
+            lateinit var selectionManager: SelectionManager
+            val selectionState = SelectionState()
+            rule.setContent {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Box(Modifier.size(200.dp).testTag("container")) {
+                        SelectionContainer(
+                            state = selectionState,
+                            onSelectionManagerCreated = { selectionManager = it },
+                        ) {
+                            LazyColumn(state = listState) {
+                                items(count = 50, key = { it }) { index ->
+                                    val pinnableContainer = LocalPinnableContainer.current!!
+                                    val trackingContainer =
+                                        remember(index, pinnableContainer) {
+                                            PinnableContainerWithCallbacks(
+                                                delegate = pinnableContainer,
+                                                onPinned = { pinnedItemIndices.add(index) },
+                                                onReleased = { pinnedItemIndices.remove(index) },
+                                            )
+                                        }
+                                    CompositionLocalProvider(
+                                        LocalPinnableContainer provides trackingContainer
+                                    ) {
+                                        BasicText("Line$index", Modifier.testTag("text$index"))
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            drag.start(rule)
+
+            val offsetBeyondEdge = if (useLargeOffsetBeyondEdge) 30000f else 300f
+            for (i in 0..100) {
+                drag.proceed(rule, offsetBeyondEdge, i)
+
+                // Stop when scrolled to the end
+                if (!listState.canScrollForward) {
+                    break
+                }
+            }
+            drag.finish(rule)
+
+            assertWithMessage("Failed to scroll to the end")
+                .that(listState.canScrollForward)
+                .isFalse()
+            assertAnchorInfo(selectionState.selection?.start, offset = 0, selectableId = 1)
+            assertAnchorInfo(
+                selectionState.selection?.end,
+                offset = 6, // "Line49".length
+                selectableId = 50,
+            )
+            assertThat(selectionManager.getSelectedText()?.text)
+                .isEqualTo((0 until 50).joinToString(separator = "\n") { "Line$it" })
+
+            assertEquals(actual = pinnedItemIndices, expected = (0 until 50).toSet())
+
+            // Clear the selection and verify everything has been unpinned
+            rule.onNodeWithTag("text49").performTouchInput { click() }
+            assertThat(selectionState.selection).isNull()
+            assertThat(pinnedItemIndices.isEmpty()).isTrue()
+        }
+    }
+
+    @Test
+    fun longPressDragOutsideSelectsAndScrolls_withLazyContainer() =
+        dragOutsideSelectsAndScrolls_withLazyContainer(LongPressDragGesture, false)
+
+    @Test
+    fun dragSelectionHandleOutsideSelectsAndScrolls_withLazyContainer() =
+        dragOutsideSelectsAndScrolls_withLazyContainer(DragSelectionHandleGesture, false)
+
+    @Test
+    fun mouseDragOutsideSelectsAndScrolls_withLazyContainer() =
+        dragOutsideSelectsAndScrolls_withLazyContainer(MouseDragGesture, false)
+
+    @Test
+    fun longPressDragOutsideSelectsAndScrolls_withLazyContainer_andLargeOffset() =
+        dragOutsideSelectsAndScrolls_withLazyContainer(LongPressDragGesture, true)
+
+    @Test
+    fun dragSelectionHandleOutsideSelectsAndScrolls_withLazyContainer_andLargeOffset() =
+        dragOutsideSelectsAndScrolls_withLazyContainer(DragSelectionHandleGesture, true)
+
+    @Test
+    fun mouseDragOutsideSelectsAndScrolls_withLazyContainer_andLargeOffset() =
+        dragOutsideSelectsAndScrolls_withLazyContainer(MouseDragGesture, true)
+
+    /**
+     * Regression test for b/238232452 - "SelectionContainer in LazyColumn, first time selection,
+     * content auto scroll up".
+     */
+    @Test
+    fun selectionContainer_doesNotScrollSelectableIntoViewOnSelectionGesture() {
+        val scrollState = ScrollState(0)
+        rule.setContent {
+            Column(Modifier.size(200.dp).verticalScroll(scrollState)) {
+                Box(Modifier.size(150.dp))
+                SelectionContainer {
+                    BasicText(
+                        text = List(20) { "Lorem Ipsum" }.joinToString("\n"),
+                        modifier = Modifier.testTag("text"),
+                    )
+                }
+            }
+        }
+
+        // b/238232452 is triggered even just by pointer down, but let's do the full gesture, just
+        // in case
+        rule.onNodeWithTag("text").performTouchInput {
+            down(center)
+            advanceEventTime(viewConfiguration.longPressTimeoutMillis + 100)
+            moveBy(Offset(x = viewConfiguration.touchSlop, y = 0f))
+            up()
+        }
+
+        // Verify that it didn't scroll
+        assertThat(scrollState.value).isEqualTo(0)
+    }
+
+    @OptIn(ExperimentalFoundationApi::class)
+    @Test
+    fun selectionRegistrar_sortsLazySelectablesCorrectly() {
+        lateinit var selectionRegistrar: SelectionRegistrarImpl
+        lateinit var layoutCoordinates: LayoutCoordinates
+        val composedItemIndices = mutableSetOf<Int>()
+        val prefetchStrategy =
+            object : LazyListPrefetchStrategy by LazyListPrefetchStrategy() {
+                override fun LazyListPrefetchScope.onVisibleItemsUpdated(
+                    layoutInfo: LazyListLayoutInfo
+                ) {
+                    // Force composing extra items
+                    schedulePrefetch(4) {}
+                    schedulePrefetch(5) {}
+                }
+            }
+        rule.setContent {
+            SelectionContainer(Modifier.onPlaced { layoutCoordinates = it }) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    selectionRegistrar = (LocalSelectionRegistrar.current as SelectionRegistrarImpl)
+                    LazyColumn(
+                        state = rememberLazyListState(prefetchStrategy = prefetchStrategy),
+                        modifier = Modifier.fillMaxWidth().height(120.dp).border(1.dp, Color.Black),
+                    ) {
+                        items(10) {
+                            composedItemIndices.add(it)
+                            BasicText(text = "$it", modifier = Modifier.requiredHeight(30.dp))
+                        }
+                    }
+                }
+            }
+        }
+
+        // Verify prefetching worked
+        assertThat(composedItemIndices.size).isAtLeast(6)
+        assertTrue(4 in composedItemIndices)
+        assertTrue(5 in composedItemIndices)
+
+        // Verify order
+        // Note that only placed items will actually be here, so the number of selectables can be
+        // less than the number of composed items.
+        val selectables = selectionRegistrar.sort(layoutCoordinates)
+        for ((s1, s2) in selectables.zipWithNext()) {
+            assertThat(s1.getText().text.toInt()).isLessThan(s2.getText().text.toInt())
+        }
+    }
 
     private fun startSelection(tag: String, offset: Int = 0) {
         val textLayoutResult = rule.onNodeWithTag(tag).fetchTextLayoutResult()
@@ -653,6 +1160,17 @@ internal class SelectionContainerTest : AbstractSelectionContainerTest() {
                 y = viewConfiguration.touchSlop * delta.y.sign,
             )
         moveBy(delta + slop)
+    }
+
+    @OptIn(ExperimentalFoundationApi::class)
+    private inline fun withTextSelectionAutoScrollingEnabled(block: () -> Unit) {
+        val savedValue = ComposeFoundationFlags.isSelectionAutoScrollEnabled
+        ComposeFoundationFlags.isSelectionAutoScrollEnabled = true
+        try {
+            block()
+        } finally {
+            ComposeFoundationFlags.isSelectionAutoScrollEnabled = savedValue
+        }
     }
 }
 

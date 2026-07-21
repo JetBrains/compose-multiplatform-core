@@ -22,7 +22,6 @@ import androidx.xr.arcore.runtime.Face as RuntimeFace
 import androidx.xr.arcore.runtime.Mesh
 import androidx.xr.runtime.FaceTrackingMode
 import androidx.xr.runtime.Session
-import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.math.Pose
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -36,22 +35,23 @@ import kotlinx.coroutines.flow.transform
  *
  * @property state the current [State] of this face
  */
+@SuppressWarnings("HiddenSuperclass")
 public class Face
 internal constructor(
     internal val runtimeFace: RuntimeFace,
     internal val xrResourceManager: XrResourcesManager,
-) : Trackable<Face.State>, Updatable {
+) : Trackable<Face.State>, Updatable() {
 
     public companion object {
         /**
          * Returns the Face object that corresponds to the user.
          *
          * @param session the currently active [Session]
-         * @throws [IllegalStateException] if [FaceTrackingMode] is set to
+         * @throws IllegalStateException if [androidx.xr.runtime.Config.faceTracking] is set to
          *   [FaceTrackingMode.DISABLED]
          */
         @JvmStatic
-        public fun getUserFace(session: Session): Face? {
+        public fun getUserFace(session: Session): Face {
             val config = session.config
             check(config.faceTracking == FaceTrackingMode.BLEND_SHAPES) {
                 "Config.FaceTrackingMode must be set to USER to read the user's face."
@@ -60,7 +60,10 @@ internal constructor(
             val perceptionStateExtender: PerceptionStateExtender? =
                 session.stateExtenders.filterIsInstance<PerceptionStateExtender>().first()
             check(perceptionStateExtender != null) { "PerceptionStateExtender is not available." }
-            return perceptionStateExtender.xrResourcesManager.userFace
+            checkNotNull(perceptionStateExtender.xrResourcesManager.userFace) {
+                "User face is not available."
+            }
+            return perceptionStateExtender.xrResourcesManager.userFace!!
         }
 
         /**
@@ -69,6 +72,8 @@ internal constructor(
          * @param session the [Session] to track faces from
          */
         @JvmStatic
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+        @SuppressWarnings("RestrictedApiAndroidX")
         public fun subscribe(session: Session): StateFlow<Collection<Face>> {
             check(session.config.faceTracking == FaceTrackingMode.MESHES) {
                 "Config.FaceTrackingMode must be set to MESHES to track face meshes."
@@ -77,14 +82,20 @@ internal constructor(
             return session.state
                 .transform { state ->
                     state.perceptionState?.let { perceptionState ->
-                        emit(perceptionState.trackables.filterIsInstance<Face>())
+                        emit(
+                            perceptionState.trackableStates.filterIsInstance<Face.State>().map {
+                                it.owner
+                            }
+                        )
                     }
                 }
                 .stateIn(
                     session.coroutineScope,
                     SharingStarted.Eagerly,
-                    session.state.value.perceptionState?.trackables?.filterIsInstance<Face>()
-                        ?: emptyList(),
+                    session.state.value.perceptionState
+                        ?.trackableStates
+                        ?.filterIsInstance<Face.State>()
+                        ?.map { it.owner } ?: emptyList(),
                 )
         }
 
@@ -171,33 +182,45 @@ internal constructor(
     /**
      * The representation of the current state of [Face].
      *
-     * @property trackingState the current [TrackingState] of the face.
-     * @property centerPose the pose at the center of the face, defined to have the origin located
-     *   behind the nose and between the two cheek bones
-     *
-     *   Z+ is forward out of the nose, Y+ is upwards, and X+ is towards the left. The units are in
-     *   meters.
-     *
-     *   [centerPose] will be null if the Session is not configured with [FaceTrackingMode.MESHES].
-     *
-     * @property mesh the polygonal representation of the face as observed by the perception system
-     *
-     *   [mesh] will be null if the Session is not configured with [FaceTrackingMode.MESHES].
+     * @property trackingState the current [androidx.xr.arcore.TrackingState] of the face
+     * @property owner self-reference to the object that owns this state.
      */
     public class State
     internal constructor(
         public override val trackingState: TrackingState,
-        public val centerPose: Pose? = null,
-        public val mesh: Mesh? = null,
+        internal val centerPose: Pose? = null,
+        internal val mesh: Mesh? = null,
         internal val blendShapeValues: FloatArray? = null,
         internal val confidenceValues: FloatArray? = null,
         internal val noseTipPose: Pose? = null,
         internal val foreheadLeftPose: Pose? = null,
         internal val foreheadRightPose: Pose? = null,
+        public val owner: Face,
     ) : Trackable.State {
 
         public val blendShapes: Map<FaceBlendShapeType, Float> =
             blendShapeMapKeys.zip(blendShapeValues?.toList() ?: emptyList()).toMap()
+
+        /**
+         * Retrieves the main [Pose] of a Face [Mesh], defined to have the origin located behind the
+         * nose and between the two cheek bones.
+         *
+         * Z+ is forward out of the nose, Y+ is upwards, and X+ is towards the left. The units are
+         * in meters and are relative to perception space.
+         *
+         * @return the [Pose] at the center of the face mesh in perception space, or `null` if the
+         *   Session is not configured with [FaceTrackingMode.MESHES]
+         */
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+        public fun getMeshCenterPose(): Pose? = centerPose
+
+        /**
+         * Get the polygonal representation of the face as observed by the perception system.
+         *
+         * @return the Face's [Mesh], or `null` if the Session is not configured with
+         *   [FaceTrackingMode.MESHES]
+         */
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public fun getMeshData(): Mesh? = mesh
 
         /**
          * Gets the confidence value of the face tracker for the given region.
@@ -220,12 +243,13 @@ internal constructor(
         }
 
         /**
-         * Map of [Pose] values on the Face for each [FaceMeshRegion]
+         * Retrieve the [Pose] value associated with each [FaceMeshRegion]. Each Pose is relative to
+         * perception space.
          *
-         * Each [Pose] value in the Map will be null if the Session is not configured with
-         * [FaceTrackingMode.MESHES].
+         * @return a [Map] of [FaceMeshRegion] to [Pose]
          */
-        public val regionPoses: Map<FaceMeshRegion, Pose?> =
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+        public fun getRegionPoseMap(): Map<FaceMeshRegion, Pose?> =
             mapOf(
                 FaceMeshRegion.NOSE_TIP to noseTipPose,
                 FaceMeshRegion.FOREHEAD_LEFT to foreheadLeftPose,
@@ -242,7 +266,8 @@ internal constructor(
                 mesh == other.mesh &&
                 noseTipPose == other.noseTipPose &&
                 foreheadLeftPose == other.foreheadLeftPose &&
-                foreheadRightPose == other.foreheadRightPose
+                foreheadRightPose == other.foreheadRightPose &&
+                owner == other.owner
         }
 
         override fun hashCode(): Int {
@@ -254,6 +279,7 @@ internal constructor(
             result = 31 * result + noseTipPose.hashCode()
             result = 31 * result + foreheadLeftPose.hashCode()
             result = 31 * result + foreheadRightPose.hashCode()
+            result = 31 * result + owner.hashCode()
             return result
         }
 
@@ -270,6 +296,7 @@ internal constructor(
                 TrackingState.PAUSED,
                 blendShapeValues = FloatArray(blendShapeMapKeys.size),
                 confidenceValues = FloatArray(confidenceRegions.size),
+                owner = this,
             )
         )
 
@@ -281,7 +308,7 @@ internal constructor(
         if (!runtimeFace.isValid) return
         _state.emit(
             State(
-                runtimeFace.trackingState,
+                runtimeFace.trackingState.toTrackingState(),
                 runtimeFace.centerPose,
                 runtimeFace.mesh,
                 runtimeFace.blendShapeValues,
@@ -289,6 +316,7 @@ internal constructor(
                 runtimeFace.noseTipPose,
                 runtimeFace.foreheadLeftPose,
                 runtimeFace.foreheadRightPose,
+                owner = this,
             )
         )
     }

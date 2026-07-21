@@ -17,7 +17,7 @@ package androidx.xr.scenecore.spatial.core
 
 import android.content.Context
 import android.view.Surface
-import androidx.xr.runtime.FieldOfView
+import androidx.xr.runtime.math.FieldOfView
 import androidx.xr.scenecore.runtime.Dimensions
 import androidx.xr.scenecore.runtime.Entity
 import androidx.xr.scenecore.runtime.PerceivedResolutionResult

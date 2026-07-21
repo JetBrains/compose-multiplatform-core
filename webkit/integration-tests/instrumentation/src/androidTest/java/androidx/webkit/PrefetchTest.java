@@ -24,6 +24,7 @@ import androidx.test.filters.SmallTest;
 import androidx.webkit.test.common.WebkitUtils;
 
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -38,6 +39,7 @@ public class PrefetchTest {
     @Test
     public void testTTLValidValues() {
         WebkitUtils.checkFeature(WebViewFeature.SPECULATIVE_LOADING_CONFIG);
+        @SuppressWarnings("deprecation")
         SpeculativeLoadingConfig.Builder builder = new SpeculativeLoadingConfig.Builder();
         // lower values
         builder.setPrefetchTtlSeconds(1);
@@ -56,6 +58,7 @@ public class PrefetchTest {
     @Test
     public void testMaxPrefetchesValidValues() {
         WebkitUtils.checkFeature(WebViewFeature.SPECULATIVE_LOADING_CONFIG);
+        @SuppressWarnings("deprecation")
         SpeculativeLoadingConfig.Builder builder = new SpeculativeLoadingConfig.Builder();
         builder.setMaxPrefetches(1);
         assertEquals(1, builder.build().getMaxPrefetches());
@@ -71,6 +74,7 @@ public class PrefetchTest {
     @Test
     public void testMaxPrerendersValidValues() {
         WebkitUtils.checkFeature(WebViewFeature.SPECULATIVE_LOADING_CONFIG);
+        @SuppressWarnings("deprecation")
         SpeculativeLoadingConfig.Builder builder = new SpeculativeLoadingConfig.Builder();
         builder.setMaxPrerenders(1);
         assertEquals(1, builder.build().getMaxPrerenders());
@@ -86,6 +90,7 @@ public class PrefetchTest {
     @Test
     public void testTTLLimit() {
         WebkitUtils.checkFeature(WebViewFeature.SPECULATIVE_LOADING_CONFIG);
+        @SuppressWarnings("deprecation")
         SpeculativeLoadingConfig.Builder builder = new SpeculativeLoadingConfig.Builder();
 
         IllegalArgumentException expectedException = assertThrows(IllegalArgumentException.class,
@@ -100,6 +105,7 @@ public class PrefetchTest {
     @Test
     public void testMaxPrefetchesLimit() {
         WebkitUtils.checkFeature(WebViewFeature.SPECULATIVE_LOADING_CONFIG);
+        @SuppressWarnings("deprecation")
         SpeculativeLoadingConfig.Builder builder = new SpeculativeLoadingConfig.Builder();
 
         // lower bound
@@ -115,6 +121,7 @@ public class PrefetchTest {
     @Test
     public void testMaxPrerendersLimit() {
         WebkitUtils.checkFeature(WebViewFeature.SPECULATIVE_LOADING_CONFIG);
+        @SuppressWarnings("deprecation")
         SpeculativeLoadingConfig.Builder builder = new SpeculativeLoadingConfig.Builder();
 
         // lower bound
@@ -129,15 +136,15 @@ public class PrefetchTest {
     @Test
     @SuppressWarnings("removal")
     public void testSettingCacheConfig() {
-        WebkitUtils.checkFeature(WebViewFeature.SPECULATIVE_LOADING_CONFIG);
-        SpeculativeLoadingConfig.Builder builder =
-                new SpeculativeLoadingConfig.Builder().setMaxPrefetches(1).setMaxPrerenders(
-                        1).setPrefetchTtlSeconds(60);
+        WebkitUtils.checkFeature(WebViewFeature.PREFETCH_CACHE_V1);
+        WebkitUtils.checkFeature(WebViewFeature.PRERENDER_WITH_URL);
         WebkitUtils.onMainThreadSync(() -> {
             Profile testProfile = ProfileStore.getInstance().getProfile(
                     Profile.DEFAULT_PROFILE_NAME);
             try {
-                testProfile.setSpeculativeLoadingConfig(builder.build());
+                testProfile.getPrefetchCache().setMaxPrefetches(1);
+                testProfile.getPrefetchCache().setPrefetchTtlSeconds(60);
+                testProfile.setMaxPrerenders(1);
             } catch (Exception exception) {
                 Assert.fail(exception.getMessage());
             }
@@ -148,13 +155,13 @@ public class PrefetchTest {
      * Test to make sure that calling the setMaxPrefetches API won't cause any obvious errors.
      */
     @Test
+    @Ignore("https://crbug.com/501069897")
     public void testSetMaxPrefetches() throws Exception {
         WebkitUtils.checkFeature(WebViewFeature.PREFETCH_CACHE_V1);
         WebkitUtils.onMainThreadSync(() -> {
             PrefetchCache prefetchCache = ProfileStore.getInstance().getProfile(
                     Profile.DEFAULT_PROFILE_NAME).getPrefetchCache();
             prefetchCache.setMaxPrefetches(5);
-            prefetchCache.setMaxPrefetches(null);
             prefetchCache.setMaxPrefetches(1);
         });
     }
@@ -163,6 +170,7 @@ public class PrefetchTest {
      * Test to make sure that calling the setPrefetchTtlSeconds API won't cause any obvious errors.
      */
     @Test
+    @Ignore("https://crbug.com/501069897")
     public void testSetPrefetchTtlSeconds() throws Exception {
         WebkitUtils.checkFeature(WebViewFeature.PREFETCH_CACHE_V1);
         WebkitUtils.onMainThreadSync(() -> {
@@ -170,7 +178,6 @@ public class PrefetchTest {
                     Profile.DEFAULT_PROFILE_NAME).getPrefetchCache();
             prefetchCache.setPrefetchTtlSeconds(60);
             prefetchCache.setPrefetchTtlSeconds(1);
-            prefetchCache.setPrefetchTtlSeconds(null);
         });
     }
 
@@ -185,7 +192,6 @@ public class PrefetchTest {
                     Profile.DEFAULT_PROFILE_NAME);
             testProfile.setMaxPrerenders(5);
             testProfile.setMaxPrerenders(1);
-            testProfile.setMaxPrerenders(null);
         });
     }
 
@@ -195,6 +201,7 @@ public class PrefetchTest {
     @Test
     public void testIntRangeThrowsException() throws Exception {
         WebkitUtils.checkFeature(WebViewFeature.SET_MAX_PRERENDERS_V1);
+        WebkitUtils.checkFeature(WebViewFeature.PREFETCH_CACHE_V1);
         WebkitUtils.onMainThreadSync(() -> {
             Profile testProfile = ProfileStore.getInstance().getProfile(
                     Profile.DEFAULT_PROFILE_NAME);

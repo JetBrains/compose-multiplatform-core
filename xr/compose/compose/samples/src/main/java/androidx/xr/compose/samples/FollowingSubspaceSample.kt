@@ -24,7 +24,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -43,10 +42,11 @@ import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.compose.subspace.layout.height
 import androidx.xr.compose.subspace.layout.rotate
 import androidx.xr.compose.subspace.layout.width
+import androidx.xr.runtime.Config
 import androidx.xr.runtime.DeviceTrackingMode
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.math.Pose
-import androidx.xr.scenecore.AnchorEntity
+import androidx.xr.scenecore.AnchorSpace
 
 @Sampled
 @OptIn(ExperimentalFollowingSubspaceApi::class)
@@ -64,7 +64,7 @@ public fun FollowingSubspaceSample() {
         val session: Session? = LocalSession.current
         if (session == null) return
         session.configure(
-            config = session.config.copy(deviceTracking = DeviceTrackingMode.SPATIAL_LAST_KNOWN)
+            Config.Builder(session.config).setDeviceTracking(DeviceTrackingMode.SPATIAL).build()
         )
         FollowingSubspace(
             target = FollowTarget.ArDevice(session),
@@ -82,10 +82,10 @@ public fun FollowingSubspaceSample() {
             }
         }
 
-        val anchor =
+        var anchor =
             remember(session) {
                 when (val anchorResult = Anchor.create(session, Pose.Identity)) {
-                    is AnchorCreateSuccess -> AnchorEntity.create(session, anchorResult.anchor)
+                    is AnchorCreateSuccess -> AnchorSpace.create(session, anchorResult.anchor)
                     else -> {
                         Log.e(TAG, "Failed to create anchor: ${anchorResult::class.simpleName}")
                         null
@@ -94,7 +94,7 @@ public fun FollowingSubspaceSample() {
             }
         if (anchor != null) {
             FollowingSubspace(
-                target = FollowTarget.Anchor(anchorEntity = anchor),
+                target = FollowTarget.Anchor(anchorSpace = anchor),
                 behavior = FollowBehavior.Tight,
                 modifier = SubspaceModifier.rotate(pitch = -90f, yaw = 0f, roll = 0f),
             ) {
@@ -103,7 +103,6 @@ public fun FollowingSubspaceSample() {
                     SpatialMainPanel()
                 }
             }
-            DisposableEffect(anchor) { onDispose { anchor.dispose() } }
         }
     }
 }

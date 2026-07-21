@@ -14,15 +14,17 @@
  * limitations under the License.
  */
 
+@file:Suppress("DEPRECATION")
+
 package androidx.xr.scenecore.testing
 
 import android.graphics.ImageFormat
 import android.media.ImageReader
-import androidx.xr.runtime.NodeHolder
 import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.IntSize2d
+import androidx.xr.scenecore.runtime.NodeHolder
 import androidx.xr.scenecore.runtime.SurfaceEntity
-import androidx.xr.scenecore.runtime.extensions.XrExtensionsProvider
+import com.android.extensions.xr.XrExtensions
 import com.android.extensions.xr.node.Node
 import com.google.common.truth.Truth.assertThat
 import org.junit.After
@@ -37,7 +39,7 @@ class FakeSurfaceFeatureTest {
     private lateinit var underTest: FakeSurfaceFeature
 
     private fun createSurfaceFeature(): FakeSurfaceFeature {
-        val xrExtensions = XrExtensionsProvider.getXrExtensions()!!
+        val xrExtensions = XrExtensions()
         val nodeHolder = NodeHolder(xrExtensions.createNode(), Node::class.java)
         val fakeSurfaceFeature = FakeSurfaceFeature(nodeHolder)
 

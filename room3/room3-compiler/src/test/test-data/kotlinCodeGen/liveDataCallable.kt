@@ -5,8 +5,6 @@ import androidx.room3.util.appendPlaceholders
 import androidx.room3.util.getColumnIndexOrThrow
 import androidx.room3.util.performSuspending
 import androidx.sqlite.SQLiteStatement
-import androidx.sqlite.prepare
-import androidx.sqlite.step
 import javax.`annotation`.processing.Generated
 import kotlin.Int
 import kotlin.String
@@ -36,7 +34,7 @@ internal class MyDao_Impl(
     _stringBuilder.append(")")
     val _sql: String = _stringBuilder.toString()
     return __liveDataDaoReturnTypeConverter.convert(__db, arrayOf("MyEntity")) {
-      performSuspending(__db, true, false) { _connection ->
+      performSuspending<MyEntity>(__db, true, false) { _connection ->
         val _stmt: SQLiteStatement = _connection.prepare(_sql)
         try {
           var _argIndex: Int = 1
@@ -76,7 +74,7 @@ internal class MyDao_Impl(
     _stringBuilder.append(")")
     val _sql: String = _stringBuilder.toString()
     return __liveDataDaoReturnTypeConverter.convert(__db, arrayOf("MyEntity")) {
-      performSuspending(__db, true, false) { _connection ->
+      performSuspending<MyEntity?>(__db, true, false) { _connection ->
         val _stmt: SQLiteStatement = _connection.prepare(_sql)
         try {
           var _argIndex: Int = 1
@@ -109,6 +107,8 @@ internal class MyDao_Impl(
   }
 
   public companion object {
-    public fun getRequiredConverters(): List<KClass<*>> = emptyList()
+    public fun getRequiredColumnConverters(): List<KClass<*>> = emptyList()
+
+    public fun getRequiredDaoReturnTypeConverters(): List<KClass<*>> = emptyList()
   }
 }

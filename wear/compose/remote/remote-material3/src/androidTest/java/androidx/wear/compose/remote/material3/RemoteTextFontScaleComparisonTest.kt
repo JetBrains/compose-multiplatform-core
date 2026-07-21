@@ -25,13 +25,17 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.remote.creation.CreationDisplayInfo
+import androidx.compose.remote.core.CoreDocument
 import androidx.compose.remote.creation.compose.capture.LocalRemoteComposeCreationState
 import androidx.compose.remote.creation.compose.capture.RemoteDensity
+import androidx.compose.remote.creation.compose.capture.createCreationDisplayInfo
+import androidx.compose.remote.creation.compose.capture.rememberRemoteDocument
 import androidx.compose.remote.creation.compose.layout.RemoteAlignment
 import androidx.compose.remote.creation.compose.layout.RemoteArrangement
 import androidx.compose.remote.creation.compose.layout.RemoteColumn
@@ -42,20 +46,34 @@ import androidx.compose.remote.creation.compose.state.RemoteColor
 import androidx.compose.remote.creation.compose.state.rf
 import androidx.compose.remote.creation.compose.state.rs
 import androidx.compose.remote.creation.compose.state.rsp
-import androidx.compose.remote.player.compose.test.utils.screenshot.rule.RemoteComposeScreenshotTestRule
+import androidx.compose.remote.player.compose.RemoteDocumentPlayer
+import androidx.compose.remote.player.compose.test.utils.GoldenScreenshotNameTestRule
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.test.captureToImage
+import androidx.compose.ui.test.junit4.ComposeContentTestRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onChild
+import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
+import androidx.test.screenshot.AndroidXScreenshotTestRule
+import androidx.test.screenshot.assertAgainstGolden
 import androidx.wear.compose.material3.Text
+import androidx.wear.compose.remote.material3.util.SCREENSHOT_GOLDEN_DIRECTORY
+import androidx.wear.compose.remote.material3.util.TestProfiles
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -69,15 +87,15 @@ class RemoteTextFontScaleComparisonTest {
 
     private val context: Context = ApplicationProvider.getApplicationContext()
 
-    private val creationDisplayInfo =
-        CreationDisplayInfo(500, 500, context.resources.displayMetrics.densityDpi)
+    private val size = Size(500f, 500f)
+    private val creationDisplayInfo = createCreationDisplayInfo(context, size)
 
     @get:Rule
-    val remoteComposeTestRule =
-        RemoteComposeScreenshotTestRule(
-            moduleDirectory = SCREENSHOT_GOLDEN_DIRECTORY,
-            profile = TestProfiles.androidXWithCoreText,
-        )
+    val composeTestRule: ComposeContentTestRule = createComposeRule(StandardTestDispatcher())
+
+    @get:Rule val screenshotTestRule = AndroidXScreenshotTestRule(SCREENSHOT_GOLDEN_DIRECTORY)
+
+    @get:Rule val goldenNameRule = GoldenScreenshotNameTestRule()
 
     private val size1 = 12
     private val size2 = 16
@@ -97,20 +115,42 @@ class RemoteTextFontScaleComparisonTest {
 
     @Test fun textComparison_fontScale_1_24() = runFontScaleTest(1.24f)
 
+    @Suppress("COMPOSE_APPLIER_CALL_MISMATCH")
     private fun runFontScaleTest(fontScale: Float) {
-        remoteComposeTestRule.runScreenshotTest(
-            creationDisplayInfo = creationDisplayInfo,
-            backgroundColor = Color.Black,
-            outerContent = { modifier, remoteDocs ->
-                OuterContent(modifier, fontScale) {
-                    ComposeText()
-                    Spacer(modifier = Modifier.width(4.dp).fillMaxHeight().background(Color.Red))
-                    Box(modifier = Modifier.weight(1f)) { remoteDocs() }
+        composeTestRule.setContent {
+            val density = LocalDensity.current
+            val sizeInDp = with(density) { size.width.toDp() }
+
+            OuterContent(
+                modifier = Modifier.requiredSize(sizeInDp).background(Color.Black),
+                fontScale = fontScale,
+            ) {
+                ComposeText()
+                Spacer(modifier = Modifier.width(4.dp).fillMaxHeight().background(Color.Red))
+                Box(modifier = Modifier.weight(1f)) {
+                    val document: CoreDocument? by
+                        rememberRemoteDocument(
+                            creationDisplayInfo = creationDisplayInfo,
+                            profile = TestProfiles.androidXWithCoreText,
+                        ) {
+                            RCText(fontScale)
+                        }
+
+                    document?.let { coreDocument ->
+                        RemoteDocumentPlayer(
+                            document = coreDocument,
+                            documentWidth = size.width.toInt(),
+                            documentHeight = size.height.toInt(),
+                        )
+                    }
                 }
-            },
-        ) {
-            RCText(fontScale)
+            }
         }
+        val bitmap = composeTestRule.onRoot().onChild().captureToImage().asAndroidBitmap()
+        bitmap.assertAgainstGolden(
+            screenshotTestRule,
+            goldenNameRule.getGoldenScreenshotName().getName(),
+        )
     }
 
     @Composable
@@ -119,24 +159,26 @@ class RemoteTextFontScaleComparisonTest {
         fontScale: Float,
         content: @Composable RowScope.() -> Unit,
     ) {
-        Column(
-            modifier = modifier.padding(8.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
-        ) {
-            Text(text = "Font Scale: $fontScale", color = Color.White)
-            Row(
-                modifier = Modifier.fillMaxWidth().wrapContentHeight(),
-                horizontalArrangement = Arrangement.SpaceAround,
+        Box(modifier = modifier) {
+            Column(
+                modifier = Modifier.fillMaxSize().padding(8.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
             ) {
-                Text(text = "Compose", color = Color.White)
-                Text(text = "RC", color = Color.White)
-            }
-            CompositionLocalProvider(
-                LocalDensity provides
-                    Density(density = LocalDensity.current.density, fontScale = fontScale)
-            ) {
-                Row(modifier = Modifier.fillMaxWidth().weight(1f)) { content() }
+                Text(text = "Font Scale: $fontScale", color = Color.White)
+                Row(
+                    modifier = Modifier.fillMaxWidth().wrapContentHeight(),
+                    horizontalArrangement = Arrangement.SpaceAround,
+                ) {
+                    Text(text = "Compose", color = Color.White)
+                    Text(text = "RC", color = Color.White)
+                }
+                CompositionLocalProvider(
+                    LocalDensity provides
+                        Density(density = LocalDensity.current.density, fontScale = fontScale)
+                ) {
+                    Row(modifier = Modifier.fillMaxWidth().weight(1f)) { content() }
+                }
             }
         }
     }

@@ -16,7 +16,6 @@
 
 package androidx.camera.camera2.pipe.compat
 
-import Camera2StreamConfigurationMap
 import android.graphics.ImageFormat
 import android.hardware.camera2.params.StreamConfigurationMap
 import android.media.ImageReader
@@ -25,6 +24,7 @@ import android.util.Range
 import android.util.Size
 import android.view.Surface
 import androidx.camera.camera2.pipe.StreamFormat
+import androidx.camera.common.unwrapAs
 import com.google.common.truth.Truth.assertThat
 import kotlin.reflect.KClass
 import org.junit.Rule
@@ -281,7 +281,7 @@ class Camera2StreamConfigurationMapTest {
 
     @Test
     fun unwrapAs_supportedType() {
-        val unwrapped = camera2StreamConfigurationMap.unwrapAs(StreamConfigurationMap::class)
+        val unwrapped = camera2StreamConfigurationMap.unwrapAs<StreamConfigurationMap>()
 
         assertThat(unwrapped).isNotNull()
         assertThat(unwrapped).isSameInstanceAs(mockStreamConfigurationMap)
@@ -289,7 +289,7 @@ class Camera2StreamConfigurationMapTest {
 
     @Test
     fun unwrapAs_unsupportedType_shouldReturnNull() {
-        val unwrapped = camera2StreamConfigurationMap.unwrapAs(KClass::class)
+        val unwrapped = camera2StreamConfigurationMap.unwrapAs<KClass<*>>()
 
         assertThat(unwrapped).isNull()
     }

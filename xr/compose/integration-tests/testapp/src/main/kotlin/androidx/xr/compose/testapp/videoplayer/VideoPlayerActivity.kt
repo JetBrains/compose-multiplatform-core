@@ -77,8 +77,8 @@ import androidx.xr.compose.spatial.Subspace
 import androidx.xr.compose.subspace.SpatialColumn
 import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.layout.SubspaceModifier
-import androidx.xr.compose.subspace.layout.movable
 import androidx.xr.compose.subspace.layout.size
+import androidx.xr.compose.subspace.layout.transformingMovable
 import androidx.xr.compose.testapp.R
 import androidx.xr.compose.testapp.common.isDrmSupported
 import androidx.xr.compose.testapp.common.isMvHevcSupported
@@ -98,7 +98,6 @@ import androidx.xr.scenecore.MovableComponent
 import androidx.xr.scenecore.PanelEntity
 import androidx.xr.scenecore.SurfaceEntity
 import androidx.xr.scenecore.Texture
-import androidx.xr.scenecore.runtime.Dimensions
 import androidx.xr.scenecore.scene
 import java.io.File
 import java.nio.file.Paths
@@ -106,6 +105,7 @@ import kotlinx.coroutines.launch
 
 private const val TAG = "JXR-SurfaceEntity-VideoPlayerActivity"
 
+@SuppressLint("RestrictedApiAndroidX") // SurfaceEntity.primaryAlphaMaskTexture
 class VideoPlayerActivity : ComponentActivity() {
     private var exoPlayer: ExoPlayer? = null
     private val activity = this
@@ -130,23 +130,30 @@ class VideoPlayerActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        session = (Session.create(this) as SessionCreateSuccess).session
-        session.scene.spatialEnvironment.preferredPassthroughOpacity = 0.0f
-        session.configure(Config(deviceTracking = DeviceTrackingMode.SPATIAL_LAST_KNOWN))
-        arDevice = ArDevice.getInstance(session)
-
-        checkExternalStoragePermission()
-
-        // Load texture
         lifecycleScope.launch {
-            alphaMaskTexture = Texture.create(session, Paths.get("textures", "alpha_mask.png"))
-        }
+            val sessionResult = Session.create(context = this@VideoPlayerActivity)
+            if (sessionResult is SessionCreateSuccess) {
+                session = sessionResult.session
+                session.scene.spatialEnvironment.preferredPassthroughOpacity = 0.0f
+                session.configure(
+                    Config.Builder().setDeviceTracking(DeviceTrackingMode.SPATIAL).build()
+                )
+                arDevice = ArDevice.getInstance(session)
 
-        setContent {
-            if (LocalSpatialCapabilities.current.isSpatialUiEnabled) {
-                SpatialVideoPlayerUi()
+                checkExternalStoragePermission()
+
+                // Load texture
+                alphaMaskTexture = Texture.create(session, Paths.get("textures", "alpha_mask.png"))
+
+                setContent {
+                    if (LocalSpatialCapabilities.current.isSpatialUiEnabled) {
+                        SpatialVideoPlayerUi()
+                    } else {
+                        VideoPlayerUi()
+                    }
+                }
             } else {
-                VideoPlayerUi()
+                finish()
             }
         }
     }
@@ -156,7 +163,9 @@ class VideoPlayerActivity : ComponentActivity() {
         Subspace {
             SpatialColumn {
                 SpatialPanel(
-                    modifier = SubspaceModifier.size(DpVolumeSize(960.dp, 720.dp, 0.dp)).movable()
+                    modifier =
+                        SubspaceModifier.size(DpVolumeSize(960.dp, 720.dp, 0.dp))
+                            .transformingMovable()
                 ) {
                     VideoPlayerTestActivityUI(true, getString(R.string.video_player_test))
                 }
@@ -224,7 +233,7 @@ class VideoPlayerActivity : ComponentActivity() {
         videoPlaying = false
         exoPlayer?.release()
         exoPlayer = null
-        surfaceEntity!!.dispose()
+        surfaceEntity!!.parent = null
         surfaceEntity = null
     }
 
@@ -252,14 +261,7 @@ class VideoPlayerActivity : ComponentActivity() {
     }
 
     private fun quad() {
-        surfaceEntity!!.shape = SurfaceEntity.Shape.Quad(FloatSize2d(1.0f, 1.0f))
-        // Move the Quad-shaped canvas to a spot in front of the User.
-        surfaceEntity!!.setPose(
-            session.scene.perceptionSpace.transformPoseTo(
-                arDevice.state.value.devicePose.translate(Vector3(0.0f, 0.0f, -1.5f)),
-                session.scene.activitySpace,
-            )
-        )
+        surfaceEntity!!.shape = SurfaceEntity.Shape.Quad(FloatSize2d(0.8f, 0.8f))
     }
 
     @Composable
@@ -306,10 +308,10 @@ class VideoPlayerActivity : ComponentActivity() {
                     val modifier = Modifier.weight(1F)
                     ApiButton("Toggle Passthrough", modifier) { togglePassthrough(session) }
                     ApiButton("Switch to FSM", modifier) {
-                        session.scene.requestFullSpaceMode()
+                        session.scene.requestFullSpace()
                         checkExternalStoragePermission()
                     }
-                    ApiButton("Switch to HSM", modifier) { session.scene.requestHomeSpaceMode() }
+                    ApiButton("Switch to HSM", modifier) { session.scene.requestHomeSpace() }
                 }
             }
         }
@@ -662,13 +664,13 @@ class VideoPlayerActivity : ComponentActivity() {
                     shape = canvasShape,
                     stereoMode = stereoMode,
                     surfaceProtection = surfaceContentLevel,
+                    parent = session.scene.activitySpace,
                 )
             // Make the video player movable (to make it easier to look at it from different
             // angles and distances)
-            movableComponent = MovableComponent.createSystemMovable(session)
-            // The quad has a radius of 1.0 meters
-            movableComponent!!.size = FloatSize3d(1.0f, 1.0f, 1.0f)
-            // component?.size = coordinates.size.toDimensionsInMeters(density)
+            movableComponent = MovableComponent.createSystemMovable(session, scaleInZ = false)
+            // The quad has a radius of 0.8 meters
+            movableComponent!!.size = FloatSize3d(0.8f, 0.8f, .001f)
             surfaceEntity!!.addComponent(movableComponent!!)
         }
     }
@@ -755,8 +757,7 @@ class VideoPlayerActivity : ComponentActivity() {
                                 FloatSize2d(dimensions.width, dimensions.height)
                             )
                         movableComponent?.size =
-                            (surfaceEntity?.dimensions ?: Dimensions(1.0f, 1.0f, 1.0f))
-                                as FloatSize3d
+                            (surfaceEntity?.dimensions ?: FloatSize3d(1.0f, 1.0f, 1.0f))
                     }
                 }
 
@@ -816,7 +817,7 @@ class VideoPlayerActivity : ComponentActivity() {
     }
 
     companion object {
-        val defaultPose = Pose(Vector3(0.0f, 0.0f, -1.5f), Quaternion(0.0f, 0.0f, 0.0f, 1.0f))
+        val defaultPose = Pose(Vector3(0.0f, -0.8f, 0.0f), Quaternion(0.0f, 0.0f, 0.0f, 1.0f))
         val defaultShape = SurfaceEntity.Shape.Quad(FloatSize2d(1.0f, 1.0f))
         var videoAttributesMap: IntObjectMap<VideoAttributes> =
             MutableIntObjectMap<VideoAttributes>(9).apply {

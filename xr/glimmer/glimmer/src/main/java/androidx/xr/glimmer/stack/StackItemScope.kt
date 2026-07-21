@@ -52,11 +52,18 @@ import kotlin.math.abs
 public sealed interface StackItemScope {
 
     /**
-     * Adds a decoration shape for this item, which is used in transition animations (to clip items
-     * behind) and depth effect. Each item must have its decoration shape set, as otherwise the
-     * clipping and depth effect will not be applied.
+     * Adds a decoration shape for this item, which is used in graphical effects applied to stack
+     * items, e.g., item masking and depth effects. For each distinct shape inside a stack item,
+     * this modifier should be applied to match that shape's bounds. For simple items with just one
+     * shape (such as a card), only one modifier is needed.
      *
-     * @param shape The shape of this stack item.
+     * Applying this modifier is optional but highly recommended. If not applied, the item will
+     * render normally but will not have the expected depth effect or masking behavior. Omitting
+     * this modifier is a valid use case when no visual item decoration effects are desired.
+     *
+     * @sample androidx.xr.glimmer.samples.VerticalStackSample
+     * @sample androidx.xr.glimmer.samples.VerticalStackWithMultipleShapesSample
+     * @param shape The shape of the element this modifier is applied to.
      */
     public fun Modifier.itemDecoration(shape: Shape): Modifier =
         this then ItemDecorationElement(this@StackItemScope as StackItemScopeImpl, shape)

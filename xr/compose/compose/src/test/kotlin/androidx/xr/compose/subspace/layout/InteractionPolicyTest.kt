@@ -83,7 +83,12 @@ class InteractionPolicyTest {
                 SpatialExternalSurface(
                     modifier = SubspaceModifier.testTag("panel"),
                     stereoMode = StereoMode.SideBySide,
-                    interactionPolicy = InteractionPolicy(isEnabled = true, onInputEvent = {}),
+                    interactionPolicy =
+                        object : InteractionPolicy {
+                            override val isEnabled = true
+
+                            override fun onInputEvent(event: SpatialInputEvent) {}
+                        },
                 ) {}
             }
         }
@@ -98,7 +103,12 @@ class InteractionPolicyTest {
                 SpatialExternalSurface(
                     modifier = SubspaceModifier.testTag("panel"),
                     stereoMode = StereoMode.SideBySide,
-                    interactionPolicy = InteractionPolicy(isEnabled = false, onInputEvent = {}),
+                    interactionPolicy =
+                        object : InteractionPolicy {
+                            override val isEnabled = false
+
+                            override fun onInputEvent(event: SpatialInputEvent) {}
+                        },
                 ) {}
             }
         }
@@ -114,7 +124,12 @@ class InteractionPolicyTest {
                 SpatialExternalSurface(
                     modifier = SubspaceModifier.testTag("panel").width(panelWidth),
                     stereoMode = StereoMode.SideBySide,
-                    interactionPolicy = InteractionPolicy(isEnabled = true, onInputEvent = {}),
+                    interactionPolicy =
+                        object : InteractionPolicy {
+                            override val isEnabled = true
+
+                            override fun onInputEvent(event: SpatialInputEvent) {}
+                        },
                 ) {
                     SpatialPanel {
                         Button(
@@ -144,7 +159,11 @@ class InteractionPolicyTest {
                     modifier = SubspaceModifier.testTag("panel"),
                     stereoMode = StereoMode.SideBySide,
                     interactionPolicy =
-                        InteractionPolicy(isEnabled = interactableEnabled, onInputEvent = {}),
+                        object : InteractionPolicy {
+                            override val isEnabled = interactableEnabled
+
+                            override fun onInputEvent(event: SpatialInputEvent) {}
+                        },
                 ) {
                     SpatialPanel {
                         Button(
@@ -173,7 +192,11 @@ class InteractionPolicyTest {
                     modifier = SubspaceModifier.testTag("panel"),
                     stereoMode = StereoMode.SideBySide,
                     interactionPolicy =
-                        InteractionPolicy(isEnabled = interactableEnabled, onInputEvent = {}),
+                        object : InteractionPolicy {
+                            override val isEnabled = interactableEnabled
+
+                            override fun onInputEvent(event: SpatialInputEvent) {}
+                        },
                 ) {
                     SpatialPanel {
                         Button(

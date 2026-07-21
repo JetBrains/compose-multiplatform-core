@@ -17,6 +17,8 @@
 package androidx.appsearch.app;
 
 import static androidx.appsearch.app.SetSchemaRequest.EXECUTE_APP_FUNCTIONS_SYSTEM;
+import static androidx.appsearch.testutil.FrameworkFlagUtils.assumeFlagIsDisabled;
+import static androidx.appsearch.testutil.FrameworkFlagUtils.assumeFlagIsEnabled;
 
 import static com.google.common.truth.Truth.assertThat;
 
@@ -59,8 +61,10 @@ public class SetSchemaRequestInternalTest {
 
     @Test
     @RequiresFlagsEnabled(
-            android.app.appfunctions.flags.Flags.FLAG_ENABLE_APP_FUNCTION_PERMISSION_V2)
+            androidx.appsearch.flags.appfunctions.Flags.FLAG_ENABLE_APP_FUNCTION_PERMISSION_V2)
     public void testSetExecuteAppFunctionsSystemPermissions() {
+        assumeFlagIsEnabled(
+                androidx.appsearch.flags.appfunctions.Flags.FLAG_ENABLE_APP_FUNCTION_PERMISSION_V2);
         SetSchemaRequest request = new SetSchemaRequest.Builder()
                 .addSchemas(new AppSearchSchema.Builder("Schema").build())
                 .addRequiredPermissionsForSchemaTypeVisibility(
@@ -74,8 +78,10 @@ public class SetSchemaRequestInternalTest {
 
     @Test
     @RequiresFlagsDisabled(
-            android.app.appfunctions.flags.Flags.FLAG_ENABLE_APP_FUNCTION_PERMISSION_V2)
+            androidx.appsearch.flags.appfunctions.Flags.FLAG_ENABLE_APP_FUNCTION_PERMISSION_V2)
     public void testSetExecuteAppFunctionsSystemPermissions_disabled() {
+        assumeFlagIsDisabled(
+                androidx.appsearch.flags.appfunctions.Flags.FLAG_ENABLE_APP_FUNCTION_PERMISSION_V2);
         assertThrows(IllegalArgumentException.class,
                 () -> new SetSchemaRequest.Builder().addRequiredPermissionsForSchemaTypeVisibility(
                         "Schema", ImmutableSet.of(EXECUTE_APP_FUNCTIONS_SYSTEM)));

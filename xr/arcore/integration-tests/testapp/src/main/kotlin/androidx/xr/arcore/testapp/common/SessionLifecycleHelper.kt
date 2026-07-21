@@ -18,10 +18,12 @@ package androidx.xr.arcore.testapp.common
 
 import android.Manifest.permission.ACCESS_FINE_LOCATION
 import android.content.Context
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.lifecycle.lifecycleScope
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.DepthEstimationMode
 import androidx.xr.runtime.DeviceTrackingMode
@@ -30,6 +32,7 @@ import androidx.xr.runtime.FaceTrackingMode
 import androidx.xr.runtime.GeospatialMode
 import androidx.xr.runtime.HandTrackingMode
 import androidx.xr.runtime.PlaneTrackingMode
+import androidx.xr.runtime.QrCodeTrackingMode
 import androidx.xr.runtime.RequiredCalibrationType
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.SessionConfigureCalibrationRequired
@@ -42,7 +45,6 @@ import androidx.xr.runtime.SessionCreateSuccess
 import androidx.xr.runtime.SessionCreateTimedOut
 import androidx.xr.runtime.SessionCreateUnknownError
 import androidx.xr.runtime.SessionCreateUnsupportedDevice
-import androidx.xr.runtime.XrLog
 import androidx.xr.runtime.manifest.EYE_TRACKING_COARSE
 import androidx.xr.runtime.manifest.EYE_TRACKING_FINE
 import androidx.xr.runtime.manifest.FACE_TRACKING
@@ -50,6 +52,7 @@ import androidx.xr.runtime.manifest.HAND_TRACKING
 import androidx.xr.runtime.manifest.HEAD_TRACKING
 import androidx.xr.runtime.manifest.SCENE_UNDERSTANDING_COARSE
 import androidx.xr.runtime.manifest.SCENE_UNDERSTANDING_FINE
+import kotlinx.coroutines.launch
 
 /**
  * Observer class to manage the lifecycle of the JXR Runtime Session based on the lifecycle owner
@@ -57,7 +60,7 @@ import androidx.xr.runtime.manifest.SCENE_UNDERSTANDING_FINE
  */
 class SessionLifecycleHelper(
     val activity: ComponentActivity,
-    val config: Config = Config(),
+    val config: Config = Config.Builder().build(),
     val onSessionAvailable: (Session) -> Unit = {},
     val onSessionCreateActionRequired: (SessionCreateResult) -> Unit = {},
     val onSessionCalibrationRequired: (RequiredCalibrationType) -> Unit = {},
@@ -115,8 +118,17 @@ class SessionLifecycleHelper(
         if (config.eyeTracking == EyeTrackingMode.FINE_TRACKING) {
             permissions.add(EYE_TRACKING_FINE)
         }
-        if (config.geospatial == GeospatialMode.VPS_AND_GPS) {
+        if (
+            config.geospatial == GeospatialMode.SPATIAL ||
+                config.geospatial == GeospatialMode.INERTIAL
+        ) {
             permissions.add(ACCESS_FINE_LOCATION)
+        }
+        if (config.augmentedImageDatabase?.entries?.isNotEmpty() == true) {
+            permissions.add(SCENE_UNDERSTANDING_COARSE)
+        }
+        if (config.qrCodeTracking != QrCodeTrackingMode.DISABLED) {
+            permissions.add(SCENE_UNDERSTANDING_COARSE)
         }
         return permissions
     }
@@ -125,63 +137,69 @@ class SessionLifecycleHelper(
     // the correct usage pattern.
     @Suppress("deprecation")
     internal fun tryCreateSession() {
-        try {
-            when (val result = Session.create(context!!, activity)) {
-                is SessionCreateSuccess -> {
-                    session = result.session
-                    try {
-                        when (val configResult = session.configure(config)) {
-                            is SessionConfigureLibraryNotLinked -> {
-                                showErrorMessage(
-                                    "Library \"${configResult.libraryName}\" not linked."
-                                )
+        activity.lifecycleScope.launch {
+            try {
+                when (val result = Session.create(context = context!!, lifecycleOwner = activity)) {
+                    is SessionCreateSuccess -> {
+                        session = result.session
+                        try {
+                            when (val configResult = session.configure(config)) {
+                                is SessionConfigureLibraryNotLinked -> {
+                                    showErrorMessage(
+                                        "Library \"${configResult.libraryName}\" not linked."
+                                    )
+                                }
+                                is SessionConfigureCalibrationRequired -> {
+                                    onSessionCalibrationRequired(configResult.calibrationType)
+                                }
+                                is SessionConfigureSuccess -> {
+                                    onSessionAvailable(session)
+                                }
+                                is SessionConfigureUnknownError -> {
+                                    showErrorMessage(configResult.errorMessage)
+                                }
+                                else -> {
+                                    showErrorMessage("Unexpected ${configResult::class.simpleName}")
+                                }
                             }
-                            is SessionConfigureCalibrationRequired -> {
-                                onSessionCalibrationRequired(configResult.calibrationType)
-                            }
-                            is SessionConfigureSuccess -> {
-                                onSessionAvailable(session)
-                            }
-                            is SessionConfigureUnknownError -> {
-                                showErrorMessage(configResult.errorMessage)
-                            }
-                            else -> {
-                                showErrorMessage("Unexpected ${configResult::class.simpleName}")
-                            }
+                        } catch (e: SecurityException) {
+                            requestPermissionLauncher.launch(
+                                getRequiredPermissions(config).toTypedArray()
+                            )
+                        } catch (e: UnsupportedOperationException) {
+                            showErrorMessage("Session configuration not supported.")
+                            activity.finish()
                         }
-                    } catch (e: SecurityException) {
-                        requestPermissionLauncher.launch(
-                            getRequiredPermissions(config).toTypedArray()
-                        )
-                    } catch (e: UnsupportedOperationException) {
-                        showErrorMessage("Session configuration not supported.")
+                    }
+                    is SessionCreateApkRequired -> {
+                        onSessionCreateActionRequired(result)
+                    }
+                    is SessionCreateUnsupportedDevice -> {
+                        showErrorMessage("Session could not be created, device is Unsupported.")
+                        activity.finish()
+                    }
+                    is SessionCreateTimedOut -> {
+                        showErrorMessage("Timed out")
+                        activity.finish()
+                    }
+                    is SessionCreateUnknownError -> {
+                        showErrorMessage(result.errorMessage)
+                        activity.finish()
+                    }
+                    else -> {
+                        showErrorMessage("Unexpected ${result::class.simpleName}")
                         activity.finish()
                     }
                 }
-                is SessionCreateApkRequired -> {
-                    onSessionCreateActionRequired(result)
-                }
-                is SessionCreateUnsupportedDevice -> {
-                    showErrorMessage("Session could not be created, device is Unsupported.")
-                    activity.finish()
-                }
-                is SessionCreateTimedOut -> {
-                    showErrorMessage("Timed out")
-                    activity.finish()
-                }
-                is SessionCreateUnknownError -> {
-                    showErrorMessage(result.errorMessage)
-                    activity.finish()
-                }
+            } catch (e: SecurityException) {
+                requestPermissionLauncher.launch(getRequiredPermissions(config).toTypedArray())
             }
-        } catch (e: SecurityException) {
-            requestPermissionLauncher.launch(getRequiredPermissions(config).toTypedArray())
         }
     }
 
     internal fun tryUpdateConfig(config: Config) {
         if (!::session.isInitialized) {
-            XrLog.error { "Can't update config, session has not been initialized" }
+            Log.e("JetpackXR", "Can't update config, session has not been initialized")
             return
         }
         try {
@@ -215,7 +233,7 @@ class SessionLifecycleHelper(
     }
 
     private fun <F> showErrorMessage(error: F) {
-        XrLog.error { error.toString() }
+        Log.e("JetpackXR", error.toString())
         Toast.makeText(activity, error.toString(), Toast.LENGTH_LONG).show()
     }
 }

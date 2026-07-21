@@ -34,15 +34,31 @@ import androidx.compose.ui.unit.isSpecified
  */
 @Stable
 public class RemoteDp
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 internal constructor(
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public val value: RemoteFloat
-) : BaseRemoteState<Dp>() {
+) : BaseRemoteState<Dp>(RemoteStateInstanceKey()) {
     internal override val cacheKey: RemoteStateCacheKey
         get() = toPx().cacheKey
 
-    internal enum class OperationKey {
-        ToPx
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    override fun toDebugString(): String {
+        val valKey = value.cacheKey
+        if (valKey is RemoteOperationCacheKey && valKey.op == OperationKey.ToDp) {
+            return "${valKey.args[0].toOperandString(100)}.toDp()"
+        }
+        return "${valKey.toOperandString(100)}.dp"
+    }
+
+    internal enum class OperationKey : DebuggableOperation {
+        ToPx,
+        ToDp;
+
+        override fun toDebugString(args: List<RemoteStateCacheKey>): String {
+            return when (this) {
+                ToPx -> "${args[0].toOperandString(100)}.toPx()"
+                ToDp -> "${args[0].toOperandString(100)}.toDp()"
+            }
+        }
     }
 
     override val constantValueOrNull: Dp?
@@ -146,12 +162,27 @@ public fun RemoteFloat.asRemoteDp(): RemoteDp {
     return RemoteDp(this)
 }
 
+/** Converts this [RemoteFloat] representing pixels to a [RemoteDp] by dividing by density. */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public fun RemoteFloat.toRemoteDp(): RemoteDp {
+    // TODO: Optimize for constant values when value and density are constants
+    return RemoteDp(
+        RemoteFloatExpression(
+            constantValueOrNull = null,
+            cacheKey = RemoteOperationCacheKey.create(RemoteDp.OperationKey.ToDp, this),
+        ) { creationState ->
+            val density = creationState.remoteDensity
+            (this / density.density).arrayForCreationState(creationState)
+        }
+    )
+}
+
 /**
  * Remembers a named remote Dp expression.
  *
  * @param name The unique name for this remote Dp.
  * @param domain The domain of the named Dp (defaults to [RemoteState.Domain.User]).
- * @param content A lambda that provides the [RemoteDp] expression.
+ * @param value A lambda that provides the [RemoteDp] expression.
  * @return A [RemoteDp] representing the named remote Dp expression.
  */
 @Composable
@@ -159,10 +190,10 @@ public fun RemoteFloat.asRemoteDp(): RemoteDp {
 public fun rememberNamedRemoteDp(
     name: String,
     domain: RemoteState.Domain = RemoteState.Domain.User,
-    content: () -> RemoteDp,
+    value: () -> RemoteDp,
 ): RemoteDp {
     return rememberNamedState(name, domain) {
-        val remoteDp = content()
+        val remoteDp = value()
         RemoteDp(
             RemoteFloatExpression(
                 constantValueOrNull = null,

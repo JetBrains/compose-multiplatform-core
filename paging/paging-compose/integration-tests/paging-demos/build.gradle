@@ -37,12 +37,18 @@ dependencies {
     implementation(project(":compose:integration-tests:demos:common"))
     implementation(project(":compose:foundation:foundation"))
     implementation(project(":compose:material:material"))
+    implementation(project(":lifecycle:lifecycle-viewmodel-compose"))
     implementation(project(":paging:paging-compose"))
     implementation(project(":paging:paging-compose:paging-compose-samples"))
 
+    // Room 2.0
     ksp("androidx.room:room-compiler:2.7.2")
     implementation("androidx.room:room-ktx:2.7.2")
     implementation("androidx.room:room-paging:2.7.2")
+
+    // Room 3.0
+    ksp("androidx.room3:room3-compiler:3.0.0-alpha03")
+    implementation("androidx.room3:room3-runtime:3.0.0-alpha03")
 }
 
 androidx {
@@ -53,6 +59,6 @@ androidx {
 }
 
 android {
-    compileSdk { version = release(35) }
+    compileSdk { version = release(37) }
     namespace = "androidx.paging.compose.demos"
 }

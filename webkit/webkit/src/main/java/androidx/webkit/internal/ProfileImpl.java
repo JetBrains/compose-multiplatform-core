@@ -17,6 +17,8 @@
 package androidx.webkit.internal;
 
 import android.os.CancellationSignal;
+import android.os.Handler;
+import android.os.Looper;
 import android.webkit.CookieManager;
 import android.webkit.GeolocationPermissions;
 import android.webkit.ServiceWorkerController;
@@ -119,19 +121,24 @@ public class ProfileImpl implements Profile {
 
     @Profile.ExperimentalUrlPrefetch
     @Override
+    @Deprecated
     public void prefetchUrlAsync(@NonNull String url,
-            @Nullable CancellationSignal cancellationSignal, @NonNull Executor callbackExecutor,
+            @Nullable CancellationSignal cancellationSignal, @Nullable Executor callbackExecutor,
             @NonNull SpeculativeLoadingParameters params,
-            @NonNull WebViewOutcomeReceiver<Void, PrefetchException> callback) {
+            @NonNull WebViewOutcomeReceiver<@Nullable Void, PrefetchException> outcomeReceiver) {
         ApiFeature.NoFramework feature = WebViewFeatureInternal.PROFILE_URL_PREFETCH;
         if (feature.isSupportedByWebView()) {
+            if (callbackExecutor == null) {
+                callbackExecutor = new Handler(Looper.getMainLooper())::post;
+            }
+
             InvocationHandler paramsBoundaryInterface =
                     BoundaryInterfaceReflectionUtil.createInvocationHandlerFor(
                             new SpeculativeLoadingParametersAdapter(params));
 
             mProfileImpl.prefetchUrl(url, cancellationSignal, callbackExecutor,
                     paramsBoundaryInterface,
-                    PrefetchOperationCallbackAdapter.buildInvocationHandler(callback));
+                    PrefetchOperationCallbackAdapter.buildInvocationHandler(outcomeReceiver));
 
         } else {
             throw WebViewFeatureInternal.getUnsupportedOperationException();
@@ -140,13 +147,17 @@ public class ProfileImpl implements Profile {
 
     @Profile.ExperimentalUrlPrefetch
     @Override
+    @Deprecated
     public void prefetchUrlAsync(@NonNull String url,
-            @Nullable CancellationSignal cancellationSignal, @NonNull Executor callbackExecutor,
-            @NonNull WebViewOutcomeReceiver<Void, PrefetchException> callback) {
+            @Nullable CancellationSignal cancellationSignal, @Nullable Executor callbackExecutor,
+            @NonNull WebViewOutcomeReceiver<@Nullable Void, PrefetchException> outcomeReceiver) {
         ApiFeature.NoFramework feature = WebViewFeatureInternal.PROFILE_URL_PREFETCH;
         if (feature.isSupportedByWebView()) {
+            if (callbackExecutor == null) {
+                callbackExecutor = new Handler(Looper.getMainLooper())::post;
+            }
             mProfileImpl.prefetchUrl(url, cancellationSignal, callbackExecutor,
-                    PrefetchOperationCallbackAdapter.buildInvocationHandler(callback));
+                    PrefetchOperationCallbackAdapter.buildInvocationHandler(outcomeReceiver));
         } else {
             throw WebViewFeatureInternal.getUnsupportedOperationException();
         }
@@ -154,7 +165,8 @@ public class ProfileImpl implements Profile {
 
     @Profile.ExperimentalUrlPrefetch
     @Override
-    @SuppressWarnings("removal")
+    @Deprecated
+    @SuppressWarnings({"deprecation", "removal"})
     public void setSpeculativeLoadingConfig(
             @NonNull SpeculativeLoadingConfig speculativeLoadingConfig) {
         ApiFeature.NoFramework feature = WebViewFeatureInternal.SPECULATIVE_LOADING_CONFIG;
@@ -170,10 +182,10 @@ public class ProfileImpl implements Profile {
 
     @Profile.ExperimentalUrlPrefetch
     @Override
-    public void setMaxPrerenders(@Nullable Integer maxPrerenders) {
+    public void setMaxPrerenders(int maxPrerenders) {
         ApiFeature.NoFramework feature = WebViewFeatureInternal.SET_MAX_PRERENDERS;
         if (feature.isSupportedByWebView()) {
-            if (maxPrerenders != null && maxPrerenders < 1) {
+            if (maxPrerenders < 1) {
                 throw new IllegalArgumentException(
                         "maxPrerenders should be greater than or equal to 1");
             }
@@ -183,59 +195,35 @@ public class ProfileImpl implements Profile {
         }
     }
 
+    @Profile.ExperimentalUrlPrefetch
+    @Override
+    public void clearMaxPrerenders() {
+        ApiFeature.NoFramework feature = WebViewFeatureInternal.SET_MAX_PRERENDERS;
+        if (feature.isSupportedByWebView()) {
+            mProfileImpl.clearMaxPrerenders();
+        } else {
+            throw WebViewFeatureInternal.getUnsupportedOperationException();
+        }
+    }
+
+    @Profile.ExperimentalUrlPrefetch
+    @Override
+    public int getMaxPrerenders() {
+        ApiFeature.NoFramework feature = WebViewFeatureInternal.SET_MAX_PRERENDERS;
+        if (feature.isSupportedByWebView()) {
+            return mProfileImpl.getMaxPrerenders();
+        } else {
+            throw WebViewFeatureInternal.getUnsupportedOperationException();
+        }
+    }
+
+
     @Override
     @ExperimentalWarmUpRendererProcess
     public void warmUpRendererProcess() {
         ApiFeature.NoFramework feature = WebViewFeatureInternal.WARM_UP_RENDERER_PROCESS;
         if (feature.isSupportedByWebView()) {
             mProfileImpl.warmUpRendererProcess();
-        } else {
-            throw WebViewFeatureInternal.getUnsupportedOperationException();
-        }
-    }
-
-    @Override
-    @ExperimentalOriginMatchedHeader
-    @SuppressWarnings("deprecation")
-    public void setOriginMatchedHeader(@NonNull String headerName, @NonNull String headerValue,
-            @NonNull Set<String> originRules) {
-        ApiFeature.NoFramework feature = WebViewFeatureInternal.ORIGIN_MATCHED_HEADERS;
-        if (feature.isSupportedByWebView()) {
-            mProfileImpl.setOriginMatchedHeader(headerName, headerValue, originRules);
-        } else {
-            throw WebViewFeatureInternal.getUnsupportedOperationException();
-        }
-    }
-
-    @Override
-    @ExperimentalOriginMatchedHeader
-    public boolean hasOriginMatchedHeader(@NonNull String headerName) {
-        ApiFeature.NoFramework feature = WebViewFeatureInternal.ORIGIN_MATCHED_HEADERS;
-        if (feature.isSupportedByWebView()) {
-            return mProfileImpl.hasOriginMatchedHeader(headerName);
-        } else {
-            throw WebViewFeatureInternal.getUnsupportedOperationException();
-        }
-    }
-
-    @Override
-    @ExperimentalOriginMatchedHeader
-    @SuppressWarnings("deprecation")
-    public void clearOriginMatchedHeader(@NonNull String headerName) {
-        ApiFeature.NoFramework feature = WebViewFeatureInternal.ORIGIN_MATCHED_HEADERS;
-        if (feature.isSupportedByWebView()) {
-            mProfileImpl.clearOriginMatchedHeader(headerName);
-        } else {
-            throw WebViewFeatureInternal.getUnsupportedOperationException();
-        }
-    }
-
-    @Override
-    @ExperimentalOriginMatchedHeader
-    public void clearAllOriginMatchedHeaders() {
-        ApiFeature.NoFramework feature = WebViewFeatureInternal.ORIGIN_MATCHED_HEADERS;
-        if (feature.isSupportedByWebView()) {
-            mProfileImpl.clearAllOriginMatchedHeaders();
         } else {
             throw WebViewFeatureInternal.getUnsupportedOperationException();
         }

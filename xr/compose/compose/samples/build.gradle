@@ -43,11 +43,11 @@ androidx {
     name = "Compose XR Samples"
     type = SoftwareType.SAMPLES
     inceptionYear = "2025"
-    description = "Contains the sample code for the Androidx JXR Compose Components"
+    description = "Contains the sample code for the AndroidX Compose for XR Components"
 }
 
 android {
-    compileSdk { version = release(36) }
+    compileSdk { version = release(37) }
     namespace = "androidx.xr.compose.samples"
     defaultConfig {
         minSdk { version = release(34) }

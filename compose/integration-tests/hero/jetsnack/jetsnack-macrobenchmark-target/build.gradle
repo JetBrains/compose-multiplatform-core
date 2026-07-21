@@ -21,14 +21,14 @@ plugins {
 }
 
 android {
-    compileSdk { version = release(35) }
+    compileSdk { version = release(37) }
     namespace = "androidx.compose.integration.hero.jetsnack.macrobenchmark.target"
 
     buildTypes {
         release {
-            minifyEnabled = true
-            shrinkResources = true
-            proguardFiles getDefaultProguardFile("proguard-android-optimize.txt")
+            optimization {
+                enable = true
+            }
         }
     }
 }

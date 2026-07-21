@@ -163,6 +163,7 @@ internal class MotionEventAdapter {
      * @param motionEvent The MotionEvent to process.
      * @return The PointerInputEvent or null if the event action was ACTION_CANCEL.
      */
+    @OptIn(ExperimentalComposeUiApi::class)
     internal fun convertToPointerInputEvent(
         motionEvent: MotionEvent,
         positionCalculator: PositionCalculator,
@@ -200,11 +201,7 @@ internal class MotionEventAdapter {
         pointers.clear()
 
         // For record keeping, determine if we are in a fake finger gesture
-        @OptIn(ExperimentalComposeUiApi::class)
-        if (
-            ComposeUiFlags.isTrackpadGestureHandlingEnabled &&
-                motionEvent.actionMasked == ACTION_DOWN
-        ) {
+        if (motionEvent.actionMasked == ACTION_DOWN) {
             val isFakeFingerGestureByClassification =
                 Build.VERSION.SDK_INT >= 34 &&
                     (motionEvent.classification == MotionEvent.CLASSIFICATION_TWO_FINGER_SWIPE ||
@@ -222,20 +219,48 @@ internal class MotionEventAdapter {
             }
         }
 
-        // Re-interpret applicable trackpad events to mouse events, if possible, avoiding passing
-        // through the fake fingers that would otherwise be added
-        // TODO: Should we also re-interpret CLASSIFICATION_PINCH?
-        @OptIn(ExperimentalComposeUiApi::class)
         if (
-            ComposeUiFlags.isTrackpadGestureHandlingEnabled &&
-                Build.VERSION.SDK_INT >= 34 &&
-                motionEvent.classification == MotionEvent.CLASSIFICATION_TWO_FINGER_SWIPE
+            Build.VERSION.SDK_INT >= 34 &&
+                (motionEvent.classification == MotionEvent.CLASSIFICATION_TWO_FINGER_SWIPE ||
+                    (ComposeUiFlags.isTrackpadPinchReinterpretationEnabled &&
+                        motionEvent.classification == MotionEvent.CLASSIFICATION_PINCH))
         ) {
+            // Skip emitting pointer input events when pointerCount is 1 for trackpad pinch
+            // gestures.
+            // This avoids reporting the cursor at an invalid offset during the fake finger
+            // touchdown
+            // and liftoff sequences, ensuring we only process the full gesture with two pointers.
+            if (
+                motionEvent.classification == MotionEvent.CLASSIFICATION_PINCH &&
+                    motionEvent.pointerCount == 1
+            ) {
+                if (motionEvent.actionMasked == ACTION_UP) {
+                    resetFakeFingerGesture()
+                }
+                removeStaleIds(motionEvent)
+                return null
+            }
+
             isReinterpretingFakeFingerGesture = true
             // If this is the fake finger action down, store the location of the fake finger
             // as a proxy for the cursor position
             if (motionEvent.actionMasked == ACTION_DOWN) {
                 inferredCursorRawOffset = Offset(motionEvent.getRawX(0), motionEvent.getRawY(0))
+            } else if (
+                motionEvent.actionMasked == ACTION_POINTER_DOWN &&
+                    motionEvent.classification == MotionEvent.CLASSIFICATION_PINCH &&
+                    motionEvent.pointerCount == 2
+            ) {
+                // For pinch, ACTION_DOWN only has one fake finger, so inferredCursorRawOffset is
+                // temporarily offset. Once the second fake finger touches down at
+                // ACTION_POINTER_DOWN,
+                // we can calculate the true midpoint (cursor position) and update
+                // inferredCursorRawOffset.
+                inferredCursorRawOffset =
+                    Offset(
+                        (motionEvent.getRawX(0) + motionEvent.getRawX(1)) / 2f,
+                        (motionEvent.getRawY(0) + motionEvent.getRawY(1)) / 2f,
+                    )
             }
 
             pointers.add(
@@ -521,17 +546,12 @@ internal class MotionEventAdapter {
                 TOOL_TYPE_UNKNOWN -> PointerType.Unknown
                 TOOL_TYPE_FINGER -> {
                     // Convert trackpad events to mouse events when it is safe to do so.
-                    @OptIn(ExperimentalComposeUiApi::class)
-                    if (ComposeUiFlags.isTrackpadGestureHandlingEnabled) {
-                        if (
-                            (motionEvent.isFromSource(InputDevice.SOURCE_MOUSE) ||
-                                motionEvent.isFromSource(InputDevice.SOURCE_TOUCHPAD)) &&
-                                (!isInFakeFingerGesture || isReinterpretingFakeFingerGesture)
-                        ) {
-                            PointerType.Mouse
-                        } else {
-                            PointerType.Touch
-                        }
+                    if (
+                        (motionEvent.isFromSource(InputDevice.SOURCE_MOUSE) ||
+                            motionEvent.isFromSource(InputDevice.SOURCE_TOUCHPAD)) &&
+                            (!isInFakeFingerGesture || isReinterpretingFakeFingerGesture)
+                    ) {
+                        PointerType.Mouse
                     } else {
                         PointerType.Touch
                     }
@@ -618,11 +638,9 @@ internal class MotionEventAdapter {
          * identity value that indicates no change - so we need to manually handle the case of
          * seeing a `0` indicating that the axis is missing.
          */
-        @OptIn(ExperimentalComposeUiApi::class)
         val gestureScaleFactor =
             if (
-                ComposeUiFlags.isTrackpadGestureHandlingEnabled &&
-                    Build.VERSION.SDK_INT >= 29 &&
+                Build.VERSION.SDK_INT >= 29 &&
                     motionEvent.classification == MotionEvent.CLASSIFICATION_PINCH
             ) {
                 motionEvent
@@ -633,11 +651,9 @@ internal class MotionEventAdapter {
             }
 
         /** The offset for scrolling, expressed as a delta in pixel coordinates. */
-        @OptIn(ExperimentalComposeUiApi::class)
         val gesturePanOffset =
             if (
-                ComposeUiFlags.isTrackpadGestureHandlingEnabled &&
-                    Build.VERSION.SDK_INT >= 29 &&
+                Build.VERSION.SDK_INT >= 29 &&
                     motionEvent.classification == MotionEvent.CLASSIFICATION_TWO_FINGER_SWIPE
             ) {
                 Offset(

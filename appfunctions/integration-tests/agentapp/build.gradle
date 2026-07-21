@@ -51,7 +51,7 @@ def prepareTargetApkTaskProvider = tasks.register("prepareTargetApk", PrepareTar
 
 android {
     namespace = "androidx.appfunctions.integration.test.agent"
-    compileSdk { version = release(36) }
+    compileSdk { version = release(37) }
     defaultConfig {
         minSdk { version = release(33) }
 
@@ -91,8 +91,8 @@ dependencies {
     implementation(libs.kotlinCoroutinesAndroid)
     implementation(project(":appfunctions:appfunctions"))
     implementation(project(":appfunctions:integration-tests:shared-schema"))
-    implementation("androidx.appsearch:appsearch:1.1.0-rc01")
-    implementation("androidx.appsearch:appsearch-platform-storage:1.1.0-rc01")
+    implementation("androidx.appsearch:appsearch:1.1.0")
+    implementation("androidx.appsearch:appsearch-platform-storage:1.1.0")
     implementation('androidx.concurrent:concurrent-futures-ktx:1.1.0')
     ksp(project(":appfunctions:appfunctions-compiler"))
     androidTestImplementation(libs.junit)

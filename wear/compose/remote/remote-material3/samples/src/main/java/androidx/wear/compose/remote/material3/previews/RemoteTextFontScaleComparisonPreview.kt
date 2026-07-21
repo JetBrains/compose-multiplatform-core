@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("RestrictedApiAndroidX")
+
 package androidx.wear.compose.remote.material3.previews
 
 import androidx.compose.foundation.background
@@ -39,7 +41,7 @@ import androidx.compose.remote.creation.compose.modifier.fillMaxSize
 import androidx.compose.remote.creation.compose.state.rf
 import androidx.compose.remote.creation.compose.state.rs
 import androidx.compose.remote.creation.compose.state.rsp
-import androidx.compose.remote.tooling.preview.RemotePreview
+import androidx.compose.remote.tooling.preview.RemoteContentPreview
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -82,8 +84,9 @@ fun RemoteTextFontScaleComparisonPreview() {
 
 @Composable
 private fun RowScope.RCText() {
+    @Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/481422057
     Box(modifier = Modifier.weight(1f)) {
-        RemotePreview {
+        RemoteContentPreview {
             Container {
                 val state = LocalRemoteComposeCreationState.current
                 val density = LocalDensity.current

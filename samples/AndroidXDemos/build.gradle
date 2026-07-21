@@ -15,7 +15,7 @@ dependencies {
     implementation(project(":appcompat:appcompat"))
     implementation(project(":appcompat:appcompat-resources"))
     implementation(project(":cardview:cardview"))
-    implementation(project(":core:core"))
+    implementation("androidx.core:core:1.17.0")
     implementation(project(":drawerlayout:drawerlayout"))
     implementation(project(":gridlayout:gridlayout"))
     implementation(project(":palette:palette"))
@@ -35,8 +35,9 @@ dependencies {
 android {
     buildTypes {
         release {
-            minifyEnabled = true
-            proguardFiles getDefaultProguardFile("proguard-android-optimize.txt")
+            optimization {
+                enable = true
+            }
         }
     }
     compileSdk { version = release(36) { minorApiLevel = 1 }}

@@ -59,7 +59,7 @@ internal class GravityAlignedNode :
     ): SubspaceMeasureResult {
         val placeable = measurable.measure(constraints)
 
-        return layout(placeable.measuredWidth, placeable.measuredHeight, placeable.measuredDepth) {
+        return layout(placeable.width, placeable.height, placeable.depth) {
             // Gravity Aligned Calculation:
             // 1. Determine the object's desired "forward" direction in World space, but projected
             // onto the horizontal (XZ) plane.
@@ -67,11 +67,8 @@ internal class GravityAlignedNode :
             // 3. Convert this goal world rotation back into a local rotation relative to the parent
             // layout.
             // 4. Apply this new local rotation to the placeable.
-            // The "World" here in variables names refer to SceneCore's [Space.REAL_WORLD] which is
-            // the global coordinate space, unscaled and gravity aligned at the root of the scene
-            // graph of the activity.
             val rootWorldRotation =
-                currentValueOf(LocalSubspaceRootNode)?.getPose(Space.REAL_WORLD)?.rotation
+                currentValueOf(LocalSubspaceRootNode)?.getPose(Space.ACTIVITY)?.rotation
                     ?: Quaternion.Identity
             val nodePoseInRoot = coordinates?.poseInRoot?.rotation ?: Quaternion.Identity
             val currentWorldRotation = rootWorldRotation * nodePoseInRoot

@@ -20,6 +20,9 @@ import android.app.Activity
 import android.content.Context
 import android.os.Bundle
 import android.view.View
+import androidx.lifecycle.LifecycleOwner
+import androidx.xr.arcore.Trackable
+import androidx.xr.runtime.Config
 import androidx.xr.runtime.math.Pose
 import androidx.xr.scenecore.runtime.ActivityPanelEntity
 import androidx.xr.scenecore.runtime.ActivitySpace
@@ -34,6 +37,7 @@ import androidx.xr.scenecore.runtime.InteractableComponent
 import androidx.xr.scenecore.runtime.LoggingEntity
 import androidx.xr.scenecore.runtime.MediaPlayerExtensionsWrapper
 import androidx.xr.scenecore.runtime.MovableComponent
+import androidx.xr.scenecore.runtime.NodeHolder
 import androidx.xr.scenecore.runtime.PanelEntity
 import androidx.xr.scenecore.runtime.PerceptionSpaceScenePose
 import androidx.xr.scenecore.runtime.PixelDimensions
@@ -55,6 +59,8 @@ import androidx.xr.scenecore.runtime.SpatialEnvironment
 import androidx.xr.scenecore.runtime.SpatialModeChangeListener
 import androidx.xr.scenecore.runtime.SpatialPointerComponent
 import androidx.xr.scenecore.runtime.SpatialVisibility
+import androidx.xr.scenecore.runtime.SubspaceNodeEntity
+import androidx.xr.scenecore.runtime.TrackableComponent
 import java.util.concurrent.Executor
 import java.util.concurrent.ScheduledExecutorService
 import java.util.function.Consumer
@@ -67,6 +73,9 @@ internal constructor(
 ) : SceneRuntime {
 
     private var mIsDestroyed = false
+
+    override var config: Config = Config.Builder().build()
+        private set
 
     override val spatialCapabilities: SpatialCapabilities
         get() = TODO("Not yet implemented")
@@ -154,6 +163,13 @@ internal constructor(
         TODO("Not yet implemented")
     }
 
+    override fun createSubspaceNodeEntity(
+        nodeHolder: NodeHolder<*>,
+        size: Dimensions,
+    ): SubspaceNodeEntity {
+        TODO("Not yet implemented")
+    }
+
     override fun addSpatialCapabilitiesChangedListener(
         callbackExecutor: Executor,
         listener: Consumer<SpatialCapabilities>,
@@ -233,6 +249,14 @@ internal constructor(
         TODO("Not yet implemented")
     }
 
+    override fun createTrackableComponent(
+        lifecycleOwner: LifecycleOwner,
+        trackable: Trackable<Trackable.State>,
+        poseExtractor: ((Any?) -> Pose?),
+    ): TrackableComponent {
+        TODO("Not yet implemented")
+    }
+
     override fun createResizableComponent(
         minimumSize: Dimensions,
         maximumSize: Dimensions,
@@ -306,4 +330,9 @@ internal constructor(
             return ProjectedSceneRuntime(activity, serviceClient, executor)
         }
     }
+
+    override val virtualPixelDensity: Float
+        get() {
+            TODO("Not yet implemented")
+        }
 }

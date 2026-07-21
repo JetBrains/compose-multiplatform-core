@@ -45,7 +45,6 @@ import androidx.compose.material3.ExpandedDockedSearchBarWithGap
 import androidx.compose.material3.ExpandedFullScreenContainedSearchBar
 import androidx.compose.material3.ExpandedFullScreenSearchBar
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
@@ -63,14 +62,18 @@ import androidx.compose.material3.TooltipBox
 import androidx.compose.material3.TooltipDefaults
 import androidx.compose.material3.rememberContainedSearchBarState
 import androidx.compose.material3.rememberSearchBarState
+import androidx.compose.material3.rememberSearchBarWithGapState
 import androidx.compose.material3.rememberTooltipState
-import androidx.compose.material3.rememberWithGapSearchBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.paneTitle
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
@@ -109,7 +112,6 @@ fun SimpleSearchBarSample() {
     }
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Preview
 @Sampled
 @Composable
@@ -174,13 +176,12 @@ fun FullScreenSearchBarScaffoldSample() {
     }
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Preview
 @Sampled
 @Composable
 fun DockedSearchBarScaffoldSample() {
     val textFieldState = rememberTextFieldState()
-    val searchBarState = rememberWithGapSearchBarState()
+    val searchBarState = rememberSearchBarWithGapState()
     val scope = rememberCoroutineScope()
     val scrollBehavior = SearchBarDefaults.enterAlwaysSearchBarScrollBehavior()
     val appBarWithSearchColors = SearchBarDefaults.appBarWithSearchColors()
@@ -257,7 +258,19 @@ private fun SampleLeadingIcon(searchBarState: SearchBarState, scope: CoroutineSc
         TooltipBox(
             positionProvider =
                 TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Above),
-            tooltip = { PlainTooltip { Text("Back") } },
+            tooltip = {
+                PlainTooltip(
+                    modifier =
+                        Modifier.semantics {
+                            // TODO(b/496338253): Remove this modifier once bug where tooltip text
+                            //  is not announced by a11y screen readers is resolved.
+                            liveRegion = LiveRegionMode.Assertive
+                            paneTitle = "Back"
+                        }
+                ) {
+                    Text("Back")
+                }
+            },
             state = rememberTooltipState(),
         ) {
             IconButton(onClick = { scope.launch { searchBarState.animateToCollapsed() } }) {
@@ -273,7 +286,19 @@ private fun SampleTrailingIcon() =
     TooltipBox(
         positionProvider =
             TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Above),
-        tooltip = { PlainTooltip { Text("Mic") } },
+        tooltip = {
+            PlainTooltip(
+                modifier =
+                    Modifier.semantics {
+                        // TODO(b/496338253): Remove this modifier once bug where tooltip text is
+                        //  not announced by a11y screen readers is resolved.
+                        liveRegion = LiveRegionMode.Assertive
+                        paneTitle = "Mic"
+                    }
+            ) {
+                Text("Mic")
+            }
+        },
         state = rememberTooltipState(),
     ) {
         IconButton(onClick = { /* doSomething() */ }) {
@@ -281,7 +306,6 @@ private fun SampleTrailingIcon() =
         }
     }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun SampleNavigationIcon(state: SearchBarState, isAnimated: Boolean = false) =
     AnimatedVisibility(
@@ -300,7 +324,19 @@ private fun SampleNavigationIcon(state: SearchBarState, isAnimated: Boolean = fa
         TooltipBox(
             positionProvider =
                 TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Above),
-            tooltip = { PlainTooltip { Text("Menu") } },
+            tooltip = {
+                PlainTooltip(
+                    modifier =
+                        Modifier.semantics {
+                            // TODO(b/496338253): Remove this modifier once bug where tooltip text
+                            //  is not announced by a11y screen readers is resolved.
+                            liveRegion = LiveRegionMode.Assertive
+                            paneTitle = "Menu"
+                        }
+                ) {
+                    Text("Menu")
+                }
+            },
             state = rememberTooltipState(),
         ) {
             IconButton(onClick = { /* doSomething() */ }) {
@@ -309,7 +345,6 @@ private fun SampleNavigationIcon(state: SearchBarState, isAnimated: Boolean = fa
         }
     }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun SampleActions(state: SearchBarState, isAnimated: Boolean = false) =
     AnimatedVisibility(
@@ -328,7 +363,19 @@ private fun SampleActions(state: SearchBarState, isAnimated: Boolean = false) =
         TooltipBox(
             positionProvider =
                 TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Above),
-            tooltip = { PlainTooltip { Text("Account") } },
+            tooltip = {
+                PlainTooltip(
+                    modifier =
+                        Modifier.semantics {
+                            // TODO(b/496338253): Remove this modifier once bug where tooltip text
+                            //  is not announced by a11y screen readers is resolved.
+                            liveRegion = LiveRegionMode.Assertive
+                            paneTitle = "Account"
+                        }
+                ) {
+                    Text("Account")
+                }
+            },
             state = rememberTooltipState(),
         ) {
             IconButton(onClick = { /* doSomething() */ }) {

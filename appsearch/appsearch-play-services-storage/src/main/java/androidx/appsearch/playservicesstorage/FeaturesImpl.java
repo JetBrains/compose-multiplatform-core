@@ -119,6 +119,12 @@ final class FeaturesImpl implements Features {
             case Features.SET_SCHEMA_REQUEST_SET_WIPEOUT_ACCOUNT:
                 // TODO(b/395128139) : Update once this features is supported.
                 // fall through
+            case Features.SCHEMA_EMBEDDING_APPROXIMATE_NEAREST_NEIGHBOR:
+                // TODO(b/448886757) : Update once this features is supported.
+                // fall through
+            case Features.SCHEMA_EMBEDDING_PRE_QUANTIZED_DATA:
+                // TODO(b/390450012) : Update once this features is supported.
+                // fall through
             default:
                 return false; // AppSearch features absent in GMSCore AppSearch.
         }

@@ -56,7 +56,6 @@ import androidx.xr.compose.subspace.semantics.testTag
 import androidx.xr.compose.testing.SubspaceTestingActivity
 import androidx.xr.compose.testing.configureFakeSession
 import androidx.xr.compose.testing.session
-import androidx.xr.compose.testing.toDp
 import androidx.xr.compose.unit.DpVolumeOffset
 import androidx.xr.compose.unit.toMeter
 import androidx.xr.scenecore.PanelEntity
@@ -86,7 +85,7 @@ class OrbiterTest {
     private val parentTestTag = "parent"
 
     @Test
-    fun orbiter_inFullSpaceMode_isElevated() {
+    fun orbiter_inFullSpace_isElevated() {
         composeTestRule.setContent {
             Box(Modifier.testTag(parentTestTag)) {
                 Orbiter(ContentEdge.Top) { Text("Main Content") }
@@ -111,8 +110,8 @@ class OrbiterTest {
     }
 
     @Test
-    fun orbiter_inHomeSpaceMode_isInline() {
-        composeTestRule.configureFakeSession().scene.requestHomeSpaceMode()
+    fun orbiter_inHomeSpace_isInline() {
+        composeTestRule.configureFakeSession().scene.requestHomeSpace()
 
         composeTestRule.setContent {
             Box(Modifier.testTag(parentTestTag)) {
@@ -124,8 +123,8 @@ class OrbiterTest {
     }
 
     @Test
-    fun orbiter_inHomeSpaceMode_whenShouldRenderInNonSpatialFalse_doesNotRenderContent() {
-        composeTestRule.configureFakeSession().scene.requestHomeSpaceMode()
+    fun orbiter_inHomeSpace_whenShouldRenderInNonSpatialFalse_doesNotRenderContent() {
+        composeTestRule.configureFakeSession().scene.requestHomeSpace()
 
         composeTestRule.setContent {
             Box {
@@ -137,7 +136,7 @@ class OrbiterTest {
     }
 
     @Test
-    fun orbiter_multipleInstances_inFullSpaceMode_areElevated() {
+    fun orbiter_multipleInstances_inFullSpace_areElevated() {
         composeTestRule.setContent {
             Box(Modifier.testTag(parentTestTag)) {
                 Orbiter(position = ContentEdge.Top) { Text("Top") }
@@ -152,20 +151,20 @@ class OrbiterTest {
 
     @Test
     fun orbiter_afterSwitchToFullSpace_isSpatialized() {
-        composeTestRule.configureFakeSession().scene.requestHomeSpaceMode()
+        composeTestRule.configureFakeSession().scene.requestHomeSpace()
 
         composeTestRule.setContent {
             Box(Modifier.testTag(parentTestTag)) {
                 Orbiter(position = ContentEdge.Bottom) { Text("Bottom") }
             }
-            checkNotNull(LocalSession.current).scene.requestFullSpaceMode()
+            checkNotNull(LocalSession.current).scene.requestFullSpace()
         }
 
         composeTestRule.onNodeWithTag(parentTestTag).onChild().assertDoesNotExist()
     }
 
     @Test
-    fun orbiter_inFullSpaceMode_whenShouldRenderInNonSpatialFalse_isElevated() {
+    fun orbiter_inFullSpace_whenShouldRenderInNonSpatialFalse_isElevated() {
         composeTestRule.setContent {
             Box(Modifier.testTag(parentTestTag)) {
                 Orbiter(ContentEdge.Top, shouldRenderInNonSpatial = false) { Text("Main Content") }
@@ -194,8 +193,8 @@ class OrbiterTest {
     }
 
     @Test
-    fun orbiter_inHomeSpaceMode_rendersContent() {
-        composeTestRule.configureFakeSession().scene.requestHomeSpaceMode()
+    fun orbiter_inHomeSpace_rendersContent() {
+        composeTestRule.configureFakeSession().scene.requestHomeSpace()
 
         composeTestRule.setContent {
             Box {
@@ -211,7 +210,7 @@ class OrbiterTest {
     @Test
     fun orbiter_whenRemovedFromComposition_removesContent() {
         var showOrbiter by mutableStateOf(true)
-        composeTestRule.configureFakeSession().scene.requestHomeSpaceMode()
+        composeTestRule.configureFakeSession().scene.requestHomeSpace()
 
         composeTestRule.setContent {
             Box(modifier = Modifier.size(100.dp)) {
@@ -246,15 +245,11 @@ class OrbiterTest {
         }
 
         composeTestRule.onNodeWithTag(parentTestTag).onChild().assertTextContains("Main Content")
-        composeTestRule.runOnIdle {
-            checkNotNull(composeTestRule.session).scene.requestHomeSpaceMode()
-        }
+        composeTestRule.runOnIdle { checkNotNull(composeTestRule.session).scene.requestHomeSpace() }
 
         // All orbiters become children of the Parent node
         composeTestRule.onNodeWithTag(parentTestTag).onChildren().assertCountEquals(5)
-        composeTestRule.runOnIdle {
-            checkNotNull(composeTestRule.session).scene.requestFullSpaceMode()
-        }
+        composeTestRule.runOnIdle { checkNotNull(composeTestRule.session).scene.requestFullSpace() }
 
         // Orbiters exist outside the compose hierarchy
         composeTestRule.onNodeWithTag(parentTestTag).onChildren().assertCountEquals(1)
@@ -277,8 +272,16 @@ class OrbiterTest {
 
         composeTestRule
             .onNodeWithTag("orbiterContentBox")
-            .assertWidthIsEqualTo((session.context as Activity).window.decorView.width.toDp())
-            .assertHeightIsEqualTo((session.context as Activity).window.decorView.height.toDp())
+            .assertWidthIsEqualTo(
+                with(composeTestRule.density) {
+                    (session.context as Activity).window.decorView.width.toDp()
+                }
+            )
+            .assertHeightIsEqualTo(
+                with(composeTestRule.density) {
+                    (session.context as Activity).window.decorView.height.toDp()
+                }
+            )
     }
 
     @Test
@@ -308,8 +311,8 @@ class OrbiterTest {
 
         composeTestRule
             .onNodeWithTag("orbiterContentBox")
-            .assertWidthIsEqualTo(200.toDp())
-            .assertHeightIsEqualTo(200.toDp())
+            .assertWidthIsEqualTo(200.dp)
+            .assertHeightIsEqualTo(200.dp)
         // Check `getMainWindowSize` is never called.
         verify(testMainPanelEntity, never()).sizeInPixels
     }
@@ -375,8 +378,8 @@ class OrbiterTest {
 
         composeTestRule
             .onNodeWithTag("orbiterContentBox")
-            .assertWidthIsEqualTo(200.toDp())
-            .assertHeightIsEqualTo(200.toDp())
+            .assertWidthIsEqualTo(200.dp)
+            .assertHeightIsEqualTo(200.dp)
         // Check `getMainWindowSize` is never called.
         verify(testMainPanelEntity, never()).sizeInPixels
     }
@@ -464,8 +467,8 @@ class OrbiterTest {
 
         composeTestRule.setContent {
             val window = composeTestRule.activity.window
-            windowWidthDp = window.decorView.width.toDp()
-            windowHeightDp = window.decorView.height.toDp()
+            windowWidthDp = with(composeTestRule.density) { window.decorView.width.toDp() }
+            windowHeightDp = with(composeTestRule.density) { window.decorView.height.toDp() }
 
             Orbiter(ContentEdge.Top) {
                 // Orbiter content that is larger than the main window
@@ -498,8 +501,8 @@ class OrbiterTest {
 
         composeTestRule
             .onNodeWithTag("orbiterContentBox")
-            .assertWidthIsEqualTo(0.toDp())
-            .assertHeightIsEqualTo(0.toDp())
+            .assertWidthIsEqualTo(0.dp)
+            .assertHeightIsEqualTo(0.dp)
     }
 
     @Test
@@ -556,15 +559,15 @@ class OrbiterTest {
 
         composeTestRule
             .onNodeWithTag("orbiterContentBox")
-            .assertWidthIsEqualTo(initialWidth.toDp())
-            .assertHeightIsEqualTo(initialHeight.toDp())
+            .assertWidthIsEqualTo(with(composeTestRule.density) { initialWidth.toDp() })
+            .assertHeightIsEqualTo(with(composeTestRule.density) { initialHeight.toDp() })
 
         triggerResize = true
 
         composeTestRule
             .onNodeWithTag("orbiterContentBox")
-            .assertWidthIsEqualTo(targetResizeWidth.toDp())
-            .assertHeightIsEqualTo(targetResizeHeight.toDp())
+            .assertWidthIsEqualTo(with(composeTestRule.density) { targetResizeWidth.toDp() })
+            .assertHeightIsEqualTo(with(composeTestRule.density) { targetResizeHeight.toDp() })
     }
 
     @Test

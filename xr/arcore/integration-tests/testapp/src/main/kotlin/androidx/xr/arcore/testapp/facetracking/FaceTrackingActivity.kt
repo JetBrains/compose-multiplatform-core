@@ -16,15 +16,9 @@
 
 package androidx.xr.arcore.testapp.facetracking
 
-import android.app.Activity
-import android.content.ComponentName
-import android.content.Intent
 import android.os.Bundle
-import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.result.ActivityResultLauncher
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -36,7 +30,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Button
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -54,20 +47,20 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.xr.arcore.Face
 import androidx.xr.arcore.FaceBlendShapeType
 import androidx.xr.arcore.FaceConfidenceRegion
+import androidx.xr.arcore.TrackingState
 import androidx.xr.arcore.testapp.common.BackToMainActivityButton
 import androidx.xr.arcore.testapp.common.SessionLifecycleHelper
+import androidx.xr.arcore.testapp.common.asString
 import androidx.xr.arcore.testapp.ui.theme.GoogleYellow
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.FaceTrackingMode
 import androidx.xr.runtime.RequiredCalibrationType
 import androidx.xr.runtime.Session
-import androidx.xr.runtime.TrackingState
 import kotlinx.coroutines.launch
 
 class FaceTrackingActivity : ComponentActivity() {
     private lateinit var session: Session
     private lateinit var sessionHelper: SessionLifecycleHelper
-    private lateinit var resultLauncher: ActivityResultLauncher<Intent>
 
     var currentExpression = Expression.NEUTRAL
 
@@ -86,25 +79,11 @@ class FaceTrackingActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        resultLauncher =
-            registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-                if (result.resultCode != Activity.RESULT_OK) {
-                    Toast.makeText(
-                            this,
-                            "Returned from calibration with result ${result.resultCode}",
-                            Toast.LENGTH_SHORT,
-                        )
-                        .show()
-                } else {
-                    sessionHelper.tryCreateSession()
-                }
-            }
-
         // Create session and renderers.
         sessionHelper =
             SessionLifecycleHelper(
                 this,
-                Config(faceTracking = FaceTrackingMode.BLEND_SHAPES),
+                Config.Builder().setFaceTracking(FaceTrackingMode.BLEND_SHAPES).build(),
                 onSessionAvailable = { session ->
                     this.session = session
                     lifecycleScope.launch {
@@ -129,6 +108,7 @@ class FaceTrackingActivity : ComponentActivity() {
                         )
                     }
                 },
+                context = applicationContext,
             )
         sessionHelper.tryCreateSession()
     }
@@ -163,11 +143,12 @@ class FaceTrackingActivity : ComponentActivity() {
                         .padding(innerPadding)
                         .padding(horizontal = 20.dp)
             ) {
-                Row { Text("Face Tracker has not been calibrated", fontSize = 30.sp) }
                 Row {
-                    Button(onClick = { launchCalibrationActivity() }) {
-                        Text(text = "Launch calibration", fontSize = 20.sp)
-                    }
+                    Text(
+                        "Face Tracking has not been calibrated!\n" +
+                            "Calibration must be completed before tracking can begin.",
+                        fontSize = 30.sp,
+                    )
                 }
             }
         }
@@ -175,7 +156,12 @@ class FaceTrackingActivity : ComponentActivity() {
 
     @Composable
     private fun MainPanel(session: Session) {
-        val face = Face.getUserFace(session)
+        val face =
+            if (session.config.faceTracking == FaceTrackingMode.BLEND_SHAPES) {
+                runCatching { Face.getUserFace(session) }.getOrNull()
+            } else {
+                null
+            }
 
         var title = intent.getStringExtra("TITLE")
         if (title == null) title = "Face Tracking"
@@ -216,7 +202,7 @@ class FaceTrackingActivity : ComponentActivity() {
                         horizontalArrangement = Arrangement.spacedBy(20.dp),
                         modifier = Modifier.padding(20.dp),
                     ) {
-                        Text("Face Tracking State: ${faceState.trackingState}")
+                        Text("Face Tracking State: ${faceState.trackingState.asString()}")
                     }
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(20.dp),
@@ -247,24 +233,6 @@ class FaceTrackingActivity : ComponentActivity() {
                     }
                 }
             }
-        }
-    }
-
-    private fun launchCalibrationActivity() {
-        val packageName =
-            "com.google.xr.facetracking.calibration" // Replace with the other app's package name
-        val className =
-            "com.google.xr.facetracking.calibration.FaceTrackingCalibrationActivity" // Replace with
-        // the other
-        // app's
-        // activity
-        // class name
-
-        val intent = Intent().apply { component = ComponentName(packageName, className) }
-        try {
-            resultLauncher.launch(intent)
-        } catch (e: android.content.ActivityNotFoundException) {
-            Toast.makeText(this, "Activity not found", Toast.LENGTH_SHORT).show()
         }
     }
 

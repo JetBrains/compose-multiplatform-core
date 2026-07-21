@@ -16,7 +16,6 @@
 package androidx.camera.extensions
 
 import android.content.Context
-import android.hardware.camera2.CameraManager
 import android.hardware.camera2.CameraMetadata
 import android.hardware.camera2.params.StreamConfigurationMap
 import android.os.Build
@@ -34,11 +33,11 @@ import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureCapabilities
 import androidx.camera.core.Preview
+import androidx.camera.core.impl.CameraInfoInternal
 import androidx.camera.core.impl.ExtendedCameraConfigProviderStore
 import androidx.camera.core.impl.utils.ContextUtil
 import androidx.camera.core.impl.utils.futures.Futures
 import androidx.camera.extensions.ExtensionsManager.Companion.getInstanceAsync
-import androidx.camera.extensions.internal.Camera2ExtensionsInfo
 import androidx.concurrent.futures.CallbackToFutureAdapter
 import androidx.concurrent.futures.await
 import androidx.lifecycle.LifecycleOwner
@@ -63,11 +62,11 @@ import java.util.concurrent.ExecutionException
  * please use [getInstanceAsync].
  *
  * After retrieving the [ExtensionsManager] instance, the availability of a specific extension mode
- * can be checked by [isExtensionAvailable]. For an available extension mode, an extension enabled
- * [CameraSelector] can be obtained by calling [getExtensionEnabledCameraSelector]. After binding
- * use cases by the extension enabled [CameraSelector], the extension mode will be applied to the
- * bound [Preview] and [ImageCapture]. The following sample code describes how to enable an
- * extension mode for use cases.
+ * can be checked by [isExtensionAvailable]. For an available extension mode, an
+ * [ExtensionSessionConfig] can be created and bound to a camera using
+ * [androidx.camera.lifecycle.ProcessCameraProvider.bindToLifecycle]. The extension mode will be
+ * applied to the bound [Preview] and [ImageCapture]. The following sample code describes how to
+ * enable an extension mode for use cases.
  *
  * @sample androidx.camera.extensions.samples.bindUseCasesWithBokehMode
  *
@@ -96,7 +95,6 @@ public final class ExtensionsManager
 internal constructor(
     internal val extensionsAvailability: ExtensionsAvailability,
     cameraProvider: CameraProvider,
-    applicationContext: Context,
 ) {
     internal enum class ExtensionsAvailability {
         /** The device extensions library exists and has been correctly loaded. */
@@ -113,7 +111,7 @@ internal constructor(
         NONE,
     }
 
-    private val extensionsInfo: ExtensionsInfo = ExtensionsInfo(cameraProvider, applicationContext)
+    private val extensionsInfo: ExtensionsInfo = ExtensionsInfo(cameraProvider)
 
     /**
      * Shutdown the extensions.
@@ -177,7 +175,10 @@ internal constructor(
      * @throws IllegalArgumentException If this device doesn't support extensions function, no
      *   camera can be found to support the specified extension mode, or the base [CameraSelector]
      *   has contained extension related configuration in it.
+     * @deprecated Enable extension modes by creating an [ExtensionSessionConfig] and binding it to
+     *   a lifecycle via [androidx.camera.lifecycle.ProcessCameraProvider.bindToLifecycle].
      */
+    @Deprecated("Use ExtensionSessionConfig instead.", ReplaceWith("ExtensionSessionConfig"))
     public fun getExtensionEnabledCameraSelector(
         cameraSelector: CameraSelector,
         @ExtensionMode.Mode mode: Int,
@@ -189,7 +190,8 @@ internal constructor(
 
         require(extensionsAvailability == ExtensionsAvailability.LIBRARY_AVAILABLE) {
             ("This device doesn't support extensions function! " +
-                "isExtensionAvailable should be checked first before calling " +
+                "isExtensionAvailable should be checked first before " +
+                "creating an ExtensionSessionConfig or calling " +
                 "getExtensionEnabledCameraSelector.")
         }
 
@@ -207,8 +209,8 @@ internal constructor(
 
         require(extensionsAvailability == ExtensionsAvailability.LIBRARY_AVAILABLE) {
             "This device doesn't support extensions function! " +
-                "isExtensionAvailable should be checked first before calling " +
-                "getExtensionEnabledCameraSelector."
+                "isExtensionAvailable should be checked first before creating an " +
+                "ExtensionSessionConfig or calling getExtensionEnabledCameraSelector."
         }
 
         // Injects CameraConfigProvider for the extension mode to the
@@ -223,9 +225,9 @@ internal constructor(
      *
      * To use Ultra HDR, you must first check for support and then enable the format. This feature
      * is available on capable devices starting from API level 34.
-     * 1. Obtain a [CameraInfo] instance by calling [CameraProvider.getCameraInfo] with the
-     *    extension-enabled `CameraSelector` from [getExtensionEnabledCameraSelector].
-     * 2. Use this `CameraInfo` to get the [ImageCaptureCapabilities] via
+     * 1. Obtain a [CameraInfo] instance by calling [CameraProvider.getCameraInfo] with an
+     *    [ExtensionSessionConfig] containing the desired extension mode.
+     * 2. Use this [CameraInfo] to get the [ImageCaptureCapabilities] via
      *    [ImageCapture.getImageCaptureCapabilities].
      * 3. Check the supported formats by calling
      *    [ImageCaptureCapabilities.getSupportedOutputFormats]. The presence of
@@ -283,7 +285,7 @@ internal constructor(
             return null
         }
 
-        return extensionsInfo.getEstimatedCaptureLatencyRange(cameraSelector, mode, null)
+        return extensionsInfo.getEstimatedCaptureLatencyRangeMillis(cameraSelector, mode, null)
     }
 
     /**
@@ -342,11 +344,6 @@ internal constructor(
     public fun getCameraExtensionsInfo(cameraInfo: CameraInfo): CameraExtensionsInfo =
         CameraExtensionsInfos.from(cameraInfo)
 
-    @VisibleForTesting
-    internal fun setVendorExtenderFactory(vendorExtenderFactory: VendorExtenderFactory) {
-        extensionsInfo.setVendorExtenderFactory(vendorExtenderFactory)
-    }
-
     public companion object {
         private const val TAG = "ExtensionsManager"
         private const val MINIMUM_SUPPORTED_API_LEVEL = Build.VERSION_CODES.TIRAMISU
@@ -391,11 +388,7 @@ internal constructor(
                 // return an empty implementation which will report all extensions as unavailable
                 if (Build.VERSION.SDK_INT < MINIMUM_SUPPORTED_API_LEVEL) {
                     return Futures.immediateFuture<ExtensionsManager>(
-                        getOrCreateExtensionsManager(
-                            ExtensionsAvailability.NONE,
-                            cameraProvider,
-                            applicationContext,
-                        )
+                        getOrCreateExtensionsManager(ExtensionsAvailability.NONE, cameraProvider)
                     )
                 }
 
@@ -403,18 +396,12 @@ internal constructor(
                     sInitializeFuture =
                         CallbackToFutureAdapter.getFuture {
                             completer: CallbackToFutureAdapter.Completer<ExtensionsManager> ->
-                            val cameraManager =
-                                applicationContext.getSystemService(CameraManager::class.java)
-
-                            val camera2ExtensionsInfo = Camera2ExtensionsInfo(cameraManager)
-
                             val isCamera2ExtensionsSupported =
-                                cameraManager.cameraIdList.find { cameraId ->
-                                    camera2ExtensionsInfo
-                                        .getExtensionCharacteristics(cameraId)
+                                cameraProvider.availableCameraInfos.any { cameraInfo ->
+                                    (cameraInfo as CameraInfoInternal)
                                         .supportedExtensions
                                         .isNotEmpty()
-                                } != null
+                                }
 
                             completer.set(
                                 getOrCreateExtensionsManager(
@@ -424,7 +411,6 @@ internal constructor(
                                         ExtensionsAvailability.LIBRARY_AVAILABLE
                                     },
                                     cameraProvider,
-                                    applicationContext,
                                 )
                             )
                             "Initialize extensions"
@@ -437,12 +423,12 @@ internal constructor(
         private fun getOrCreateExtensionsManager(
             extensionsAvailability: ExtensionsAvailability,
             cameraProvider: CameraProvider,
-            applicationContext: Context,
         ): ExtensionsManager =
             synchronized(EXTENSIONS_LOCK) {
                 sExtensionsManager
-                    ?: ExtensionsManager(extensionsAvailability, cameraProvider, applicationContext)
-                        .also { sExtensionsManager = it }
+                    ?: ExtensionsManager(extensionsAvailability, cameraProvider).also {
+                        sExtensionsManager = it
+                    }
             }
 
         /**

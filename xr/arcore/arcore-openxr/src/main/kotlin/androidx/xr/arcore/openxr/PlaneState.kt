@@ -17,7 +17,7 @@
 package androidx.xr.arcore.openxr
 
 import androidx.xr.arcore.runtime.Plane
-import androidx.xr.runtime.TrackingState
+import androidx.xr.arcore.runtime.TrackingState
 import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector2

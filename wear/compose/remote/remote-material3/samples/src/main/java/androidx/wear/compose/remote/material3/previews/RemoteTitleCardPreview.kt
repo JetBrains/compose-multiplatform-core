@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("RestrictedApiAndroidX")
+
 package androidx.wear.compose.remote.material3.previews
 
 import androidx.compose.remote.creation.compose.action.Action
@@ -26,30 +28,31 @@ import androidx.compose.remote.creation.compose.modifier.padding
 import androidx.compose.remote.creation.compose.state.rdp
 import androidx.compose.remote.creation.compose.state.rs
 import androidx.compose.remote.creation.profile.Profile
-import androidx.compose.remote.tooling.preview.RemotePreview
+import androidx.compose.remote.tooling.preview.RemoteContentPreview
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.wear.compose.remote.material3.RemoteText
 import androidx.wear.compose.remote.material3.RemoteTitleCard
+import androidx.wear.compose.remote.material3.previews.utils.ProfilePreviewParameterProvider
 import androidx.wear.compose.ui.tooling.preview.WearPreviewDevices
 
 @WearPreviewDevices
 @Composable
 fun RemoteTitleCardPreview(
     @PreviewParameter(ProfilePreviewParameterProvider::class) profile: Profile
-) = RemotePreview(profile = profile) { Container { RemoteTitleCardDefault() } }
+) = RemoteContentPreview(profile = profile) { Container { RemoteTitleCardDefault() } }
 
 @WearPreviewDevices
 @Composable
 fun RemoteTitleCardWithTitleSubtitlePreview(
     @PreviewParameter(ProfilePreviewParameterProvider::class) profile: Profile
-) = RemotePreview(profile = profile) { Container { RemoteTitleCardWithTitleSubtitle() } }
+) = RemoteContentPreview(profile = profile) { Container { RemoteTitleCardWithTitleSubtitle() } }
 
 @WearPreviewDevices
 @Composable
 fun RemoteTitleCardWithTitleTimePreview(
     @PreviewParameter(ProfilePreviewParameterProvider::class) profile: Profile
-) = RemotePreview(profile = profile) { Container { RemoteTitleCardWithTitleTime() } }
+) = RemoteContentPreview(profile = profile) { Container { RemoteTitleCardWithTitleTime() } }
 
 @Composable
 @RemoteComposable

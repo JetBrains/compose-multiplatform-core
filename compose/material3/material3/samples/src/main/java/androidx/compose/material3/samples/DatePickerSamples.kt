@@ -31,6 +31,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.Button
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDefaults
 import androidx.compose.material3.DatePickerDialog
@@ -66,6 +67,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.paneTitle
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
@@ -94,6 +99,16 @@ fun DatePickerSample() {
             "Selected date timestamp: ${datePickerState.selectedDateMillis ?: "no selection"}",
             modifier = Modifier.align(Alignment.CenterHorizontally),
         )
+
+        Button(
+            onClick = {
+                datePickerState.selectedDateMillis = System.currentTimeMillis()
+                datePickerState.displayedMonthMillis = System.currentTimeMillis()
+            },
+            modifier = Modifier.align(Alignment.CenterHorizontally),
+        ) {
+            Text("Set date to today")
+        }
     }
 }
 
@@ -254,7 +269,19 @@ fun DateRangePickerSample() {
             TooltipBox(
                 positionProvider =
                     TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Above),
-                tooltip = { PlainTooltip { Text("Close") } },
+                tooltip = {
+                    PlainTooltip(
+                        modifier =
+                            Modifier.semantics {
+                                // TODO(b/496338253): Remove this modifier once bug where tooltip
+                                //  text is not announced by a11y screen readers is resolved.
+                                liveRegion = LiveRegionMode.Assertive
+                                paneTitle = "Close"
+                            }
+                    ) {
+                        Text("Close")
+                    }
+                },
                 state = rememberTooltipState(),
             ) {
                 IconButton(onClick = { /* dismiss the UI */ }) {
@@ -307,7 +334,19 @@ fun DateRangePickerApi26Sample() {
             TooltipBox(
                 positionProvider =
                     TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Above),
-                tooltip = { PlainTooltip { Text("Close") } },
+                tooltip = {
+                    PlainTooltip(
+                        modifier =
+                            Modifier.semantics {
+                                // TODO(b/496338253): Remove this modifier once bug where tooltip
+                                //  text is not announced by a11y screen readers is resolved.
+                                liveRegion = LiveRegionMode.Assertive
+                                paneTitle = "Close"
+                            }
+                    ) {
+                        Text("Close")
+                    }
+                },
                 state = rememberTooltipState(),
             ) {
                 IconButton(onClick = { /* dismiss the UI */ }) {

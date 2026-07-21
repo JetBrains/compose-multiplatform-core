@@ -71,4 +71,20 @@ class TraceEventTest {
             actual = event.frames,
         )
     }
+
+    @Test
+    internal fun testRecyclingOfTraceEventAttributes() {
+        val event = TraceEvent()
+        val scope = TraceAttributesImpl()
+        scope.event = event
+        repeat(6) { scope.addAttribute(name = "key $it", value = it.toLong()) }
+        assertEquals(expected = 6, event.attributes.size)
+        event.reset()
+        // Make sure we resize correctly
+        assertTrue { event.attributes.size == ATTRIBUTES_EXPECTED_SIZE }
+        assertEquals(
+            expected = MutableList(size = ATTRIBUTES_EXPECTED_SIZE) { AttributeEntry() },
+            actual = event.attributes,
+        )
+    }
 }

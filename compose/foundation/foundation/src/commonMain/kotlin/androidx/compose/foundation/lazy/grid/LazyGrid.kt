@@ -33,7 +33,9 @@ import androidx.compose.foundation.lazy.layout.LazyLayoutMeasurePolicy
 import androidx.compose.foundation.lazy.layout.StickyItemsPlacement
 import androidx.compose.foundation.lazy.layout.calculateLazyLayoutPinnedIndices
 import androidx.compose.foundation.lazy.layout.lazyLayoutBeyondBoundsModifier
+import androidx.compose.foundation.lazy.layout.lazyLayoutItemAnimator
 import androidx.compose.foundation.lazy.layout.lazyLayoutSemantics
+import androidx.compose.foundation.lazy.layout.rememberLazyLayoutBringIntoViewSpec
 import androidx.compose.foundation.scrollableArea
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -105,6 +107,11 @@ internal fun LazyGrid(
             if (stickyHeadersEnabled) StickyItemsPlacement.StickToTopPlacement else null,
         )
 
+    val bringIntoViewSpec =
+        rememberLazyLayoutBringIntoViewSpec(reverseLayout, isVertical = isVertical) {
+            state.layoutInfoState.value.stickingItemsCombinedSize
+        }
+
     val orientation = if (isVertical) Orientation.Vertical else Orientation.Horizontal
 
     val beyondBoundsModifier =
@@ -132,7 +139,7 @@ internal fun LazyGrid(
                     reverseScrolling = reverseLayout,
                 )
                 .then(beyondBoundsModifier)
-                .then(state.itemAnimator.modifier)
+                .lazyLayoutItemAnimator(state.itemAnimator)
                 .scrollableArea(
                     state = state,
                     orientation = orientation,
@@ -141,6 +148,7 @@ internal fun LazyGrid(
                     flingBehavior = flingBehavior,
                     interactionSource = state.internalInteractionSource,
                     overscrollEffect = overscrollEffect,
+                    bringIntoViewSpec = bringIntoViewSpec,
                 ),
         prefetchState = state.prefetchState,
         measurePolicy = measurePolicy,

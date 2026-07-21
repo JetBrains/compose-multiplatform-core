@@ -30,6 +30,8 @@
     <string name="label_page_single" msgid="456123685879261101">"<xliff:g id="PAGE">%1$d</xliff:g> / <xliff:g id="TOTAL">%2$d</xliff:g>"</string>
     <string name="desc_page_single" msgid="8459583146661044094">"<xliff:g id="TOTAL">%2$d</xliff:g> ਵਿੱਚੋਂ <xliff:g id="PAGE">%1$d</xliff:g> ਪੰਨਾ"</string>
     <string name="desc_zoom" msgid="7318480946145947242">"ਜ਼ੂਮ <xliff:g id="FIRST">%1$d</xliff:g> ਫ਼ੀਸਦ"</string>
+    <!-- no translation found for desc_pdf_view (4353979540148077296) -->
+    <skip />
     <string name="desc_goto" msgid="1333698934111921601">"ਇਸ \'ਤੇ ਜਾਓ"</string>
     <string name="desc_goto_link" msgid="2461368384824849714">"<xliff:g id="PAGE_NUMBER">%1$d</xliff:g> ਪੰਨੇ \'ਤੇ ਜਾਓ"</string>
     <string name="desc_copy" msgid="385275789223074637">"ਚੁਣੀ ਹੋਈ ਸਮੱਗਰੀ ਨੂੰ ਤੁਹਾਡੇ ਕਲਿੱਪਬੋਰਡ \'ਤੇ ਕਾਪੀ ਕੀਤਾ ਜਾਂਦਾ ਹੈ"</string>
@@ -67,6 +69,7 @@
     <string name="page_broken" msgid="2968770793669433462">"PDF ਦਸਤਾਵੇਜ਼ ਲਈ ਪੰਨਾ ਲੋਡ ਨਹੀਂ ਹੋ ਰਿਹਾ"</string>
     <string name="needs_more_data" msgid="3520133467908240802">"PDF ਦਸਤਾਵੇਜ਼ \'ਤੇ ਪ੍ਰਕਿਰਿਆ ਕਰਨ ਲਈ ਲੋੜੀਂਦਾ ਡਾਟਾ ਨਹੀਂ ਹੈ"</string>
     <string name="error_cannot_open_pdf" msgid="2361919778558145071">"PDF ਫ਼ਾਈਲ ਖੋਲ੍ਹੀ ਨਹੀਂ ਜਾ ਸਕਦੀ"</string>
+    <string name="error_cannot_open_password_protected_pdf" msgid="3400883576932438749">"ਪਾਸਵਰਡ ਨਾਲ ਸੁਰੱਖਿਅਤ PDF ਸਮਰਥਿਤ ਨਹੀਂ ਹਨ।"</string>
     <string name="cannot_edit_pdf" msgid="7677598370087228978">"ਇਸ PDF ਦਾ ਸੰਪਾਦਨ ਨਹੀਂ ਕੀਤਾ ਜਾ ਸਕਦਾ"</string>
     <string name="clipboard_label" msgid="8943155331324944981">"PDF ਤੋਂ ਕਾਪੀ ਕੀਤੀ ਗਈ ਸਮੱਗਰੀ"</string>
     <string name="fast_scroller_thumb" msgid="6712048991132846541">"ਸਕ੍ਰੋਲ ਬਾਰ"</string>
@@ -90,5 +93,4 @@
     <string name="form_widget_type_list_box" msgid="8052623180309553495">"ਸੂਚੀ ਬਾਕਸ"</string>
     <string name="form_widget_type_text_field" msgid="581285155951215607">"ਲਿਖਤ ਖੇਤਰ"</string>
     <string name="form_widget_type_signature" msgid="3811511096215331673">"ਹਸਤਾਖਰ"</string>
-    <string name="form_filling_tooltip" msgid="1715428076993648563">"ਫ਼ਾਰਮ ਭਰਨ ਦੇ ਮੋਡ ਵਿੱਚ ਦਾਖਲ ਹੋਣ ਲਈ, ਖੇਤਰ \'ਤੇ ਟੈਪ ਕਰੋ"</string>
 </resources>

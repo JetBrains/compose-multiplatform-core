@@ -19,9 +19,6 @@ package androidx.compose.remote.integration.view.demos.widgets
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.SharedPreferences
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.remote.creation.compose.ExperimentalRemoteCreationComposeApi
-import androidx.compose.remote.creation.compose.RemoteComposeCreationComposeFlags
 import androidx.compose.remote.creation.compose.layout.RemoteAlignment
 import androidx.compose.remote.creation.compose.layout.RemoteArrangement
 import androidx.compose.remote.creation.compose.layout.RemoteBox
@@ -33,30 +30,29 @@ import androidx.compose.remote.creation.compose.modifier.background
 import androidx.compose.remote.creation.compose.modifier.clip
 import androidx.compose.remote.creation.compose.modifier.fillMaxSize
 import androidx.compose.remote.creation.compose.modifier.padding
+import androidx.compose.remote.creation.compose.shapes.RemoteRoundedCornerShape
 import androidx.compose.remote.creation.compose.state.RemoteColor
+import androidx.compose.remote.creation.compose.state.rdp
 import androidx.compose.remote.creation.compose.state.rsp
 import androidx.compose.remote.creation.compose.widgets.RemoteComposeWidget
 import androidx.compose.remote.creation.compose.widgets.onClick
+import androidx.compose.remote.tooling.preview.RemoteContentPreview
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.tooling.preview.Preview
 
-@OptIn(ExperimentalRemoteCreationComposeApi::class)
 @SuppressLint("RestrictedApiAndroidX")
 class MyWidget : RemoteComposeWidget() {
-    init {
-        RemoteComposeCreationComposeFlags.isRemoteApplierEnabled = false
-    }
-
     @RemoteComposable
     @Composable
     fun Button(text: String, modifier: RemoteModifier = RemoteModifier, onClick: () -> Unit) {
         RemoteBox(
             modifier
-                .padding(16.dp)
-                .clip(RoundedCornerShape(20.dp))
+                .padding(16.rdp)
+                .clip(RemoteRoundedCornerShape(20.rdp))
                 .background(Color.LightGray)
-                .padding(20.dp)
+                .padding(20.rdp)
                 .onClick(onClick),
             contentAlignment = RemoteAlignment.Center,
         ) {
@@ -102,3 +98,13 @@ class MyWidget : RemoteComposeWidget() {
         }
     }
 }
+
+@Suppress("RestrictedApiAndroidX")
+@Preview
+@Composable
+private fun ButtonPreview() = RemoteContentPreview { MyWidget().Button("Click me") {} }
+
+@Suppress("RestrictedApiAndroidX")
+@Preview
+@Composable
+private fun ContentPreview() = RemoteContentPreview { MyWidget().Content(LocalContext.current, 0) }

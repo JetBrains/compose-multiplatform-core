@@ -25,14 +25,16 @@ import android.util.SparseArray
 import androidx.annotation.IntDef
 import androidx.annotation.LongDef
 import androidx.annotation.RestrictTo
-import androidx.pdf.annotation.KeyedPdfAnnotation
-import androidx.pdf.annotation.models.PdfObject
+import androidx.pdf.annotation.content.KeyedPdfAnnotation
+import androidx.pdf.annotation.content.KeyedPdfObject
+import androidx.pdf.annotation.content.PdfObject
 import androidx.pdf.content.PageMatchBounds
 import androidx.pdf.content.PageSelection
 import androidx.pdf.content.PdfPageGotoLinkContent
 import androidx.pdf.content.PdfPageImageContent
 import androidx.pdf.content.PdfPageLinkContent
 import androidx.pdf.content.PdfPageTextContent
+import androidx.pdf.content.SelectionBoundary
 import androidx.pdf.models.FormWidgetInfo
 import java.io.Closeable
 import java.util.concurrent.Executor
@@ -46,13 +48,6 @@ public interface PdfDocument : Closeable {
 
     /** The total number of pages in the document. */
     public val pageCount: Int
-
-    /** Indicates whether the document is linearized (optimized for fast web viewing). */
-    @Deprecated(
-        "Deprecated, Use linearizationStatus instead",
-        replaceWith = ReplaceWith("linearizationStatus"),
-    )
-    public val isLinearized: Boolean
 
     /** Indicates the linearization status of the document. */
     @get:LinearizationStatus public val linearizationStatus: Int
@@ -143,6 +138,24 @@ public interface PdfDocument : Closeable {
     ): PageSelection?
 
     /**
+     * Asynchronously retrieves the selection bounds (in PDF coordinates) for the specified text
+     * selection.
+     *
+     * @param pageNumber The page on which text to be selected.
+     * @param start The starting boundary of the text selection.
+     * @param stop The ending boundary of the text selection.
+     * @return A [PageSelection] object representing the selection bounds on the page.
+     *
+     * TODO: b/500570239 Expose it as public api
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY)
+    public suspend fun getSelectionBounds(
+        pageNumber: Int,
+        start: SelectionBoundary,
+        stop: SelectionBoundary,
+    ): PageSelection?
+
+    /**
      * Asynchronously retrieves the selection bounds (in PDF coordinates) for the complete text on
      * the page.
      *
@@ -176,8 +189,23 @@ public interface PdfDocument : Closeable {
      *   are no edits on the page.
      * @throws IllegalArgumentException if the page number is invalid.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public suspend fun getAnnotationsForPage(pageNum: Int): List<KeyedPdfAnnotation>
+
+    /**
+     * Retrieves a list of all objects for the specified page.
+     *
+     * @param pageNum The page number (0-indexed) from which to retrieve objects.
+     * @param types Bitmask to determine the types of page objects to include in the result.
+     *   Includes all types of page objects by default.
+     * @return A list of [KeyedPdfObject] objects on the page. Returns an empty list if there are no
+     *   objects on the page.
+     * @throws IllegalArgumentException if the page number is invalid.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public suspend fun getPageObjects(
+        pageNum: Int,
+        @PageObjectTypeFlags types: Long = PAGE_OBJECT_INCLUDE_ALL_TYPES,
+    ): List<KeyedPdfObject>
 
     /**
      * Gets a [BitmapSource] for retrieving bitmap representations of the specified page.
@@ -251,6 +279,22 @@ public interface PdfDocument : Closeable {
     public fun removeOnPdfContentInvalidatedListener(listener: OnPdfContentInvalidatedListener)
 
     /**
+     * Adds a listener to be notified when an edit is applied on the document. Remove the listener
+     * using [removeOnEditAppliedListener].
+     *
+     * @param executor The executor on which the listener's methods will be called.
+     * @param listener the listener to add.
+     */
+    public fun addOnEditAppliedListener(executor: Executor, listener: OnEditAppliedListener) {}
+
+    /**
+     * Remove a listener for applied edits.
+     *
+     * @param listener the listener for notification of applied edit.
+     */
+    public fun removeOnEditAppliedListener(listener: OnEditAppliedListener) {}
+
+    /**
      * Represents information about a single page in the PDF document.
      *
      * @property pageNum The page number (0-based).
@@ -294,7 +338,7 @@ public interface PdfDocument : Closeable {
      *
      * @property textContents A list of [PdfPageTextContent] objects representing the text elements
      *   on the page.
-     * @property imageContents A list of ]PdfPageImageContent] objects representing the image
+     * @property imageContents A list of [PdfPageImageContent] objects representing the image
      *   elements on the page.
      */
     public class PdfPageContent(
@@ -327,6 +371,18 @@ public interface PdfDocument : Closeable {
         public override val message: String = "Document already closed",
         public override val cause: Throwable? = null,
     ) : CancellationException()
+
+    /**
+     * Returns true if the given feature is supported by this document implementation.
+     *
+     * This API allows clients (like PdfView) to dynamically check feature availability without
+     * relying on hardcoded SDK versions or backend implementation assumptions.
+     *
+     * @param feature the [PdfFeature] being queried
+     * @return true if supported, false otherwise
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public fun isFeatureSupported(feature: PdfFeature): Boolean
 
     @Retention(AnnotationRetention.SOURCE)
     @IntDef(
@@ -361,6 +417,14 @@ public interface PdfDocument : Closeable {
     @RestrictTo(RestrictTo.Scope.LIBRARY)
     public annotation class FormWidgetTypeFlags
 
+    @LongDef(
+        flag = true,
+        value = [PAGE_OBJECT_INCLUDE_ALL_TYPES, INCLUDE_IMAGE_PAGE_OBJECT, INCLUDE_PATH_PAGE_OBJECT],
+    )
+    @Retention(AnnotationRetention.SOURCE)
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public annotation class PageObjectTypeFlags
+
     @Retention(AnnotationRetention.SOURCE)
     @IntDef(
         LINEARIZATION_STATUS_NOT_LINEARIZED,
@@ -369,6 +433,22 @@ public interface PdfDocument : Closeable {
     )
     @RestrictTo(RestrictTo.Scope.LIBRARY)
     public annotation class LinearizationStatus
+
+    /**
+     * Interface definition for a callback that notifies when an edit is applied using the
+     * [EditablePdfDocument.applyEdits] method.
+     */
+    public interface OnEditAppliedListener {
+        /**
+         * Called when an edit is applied on the document. The order of the callback is preserved
+         * according to the order of the sorted list returned by
+         * [EditsDraft.getOperationsSortedByPage].
+         *
+         * @param pageNum page number where the annotation is applied.
+         * @param editId id of the annotation that was applied.
+         */
+        public fun onEditApplied(pageNum: Int, editId: String)
+    }
 
     public companion object {
         /** Represents a PDF with no form fields */
@@ -409,6 +489,16 @@ public interface PdfDocument : Closeable {
         public const val FORM_WIDGET_INCLUDE_TEXTFIELD_TYPE: Long = 1 shl 6
         /** Flag to include [FormWidgetInfo.WIDGET_TYPE_SIGNATURE] in [getFormWidgetInfos] */
         public const val FORM_WIDGET_INCLUDE_SIGNATURE_TYPE: Long = 1 shl 7
+
+        /** Flag to include all types of page objects in [getPageObjects] */
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+        public const val PAGE_OBJECT_INCLUDE_ALL_TYPES: Long = -1
+        /** Flag to include image page objects in [getPageObjects] */
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+        public const val INCLUDE_IMAGE_PAGE_OBJECT: Long = 1 shl 0
+        /** Flag to include path page objects in [getPageObjects] */
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+        public const val INCLUDE_PATH_PAGE_OBJECT: Long = 1 shl 1
 
         /** Indicates that the document is not linearized */
         public const val LINEARIZATION_STATUS_NOT_LINEARIZED: Int = 0

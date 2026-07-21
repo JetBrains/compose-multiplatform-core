@@ -16,14 +16,15 @@
 
 package androidx.wear.compose.remote.material3
 
-import androidx.annotation.RestrictTo
 import androidx.compose.remote.creation.compose.action.Action
 import androidx.compose.remote.creation.compose.layout.RemoteColumn
 import androidx.compose.remote.creation.compose.layout.RemoteComposable
 import androidx.compose.remote.creation.compose.layout.RemoteDrawScope
+import androidx.compose.remote.creation.compose.layout.RemotePaddingValues
 import androidx.compose.remote.creation.compose.layout.RemoteSize
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
 import androidx.compose.remote.creation.compose.modifier.clickable
+import androidx.compose.remote.creation.compose.modifier.clip
 import androidx.compose.remote.creation.compose.modifier.drawWithContent
 import androidx.compose.remote.creation.compose.modifier.fillMaxWidth
 import androidx.compose.remote.creation.compose.modifier.heightIn
@@ -48,7 +49,10 @@ import androidx.compose.ui.graphics.PaintingStyle
  * such as icons, images, titles, subtitles and labels.
  *
  * @sample androidx.wear.compose.remote.material3.samples.RemoteCardSample
+ * @param onClick Will be called when the user clicks the card
  * @param modifier Modifier to be applied to the card
+ * @param enabled Controls the enabled state of the card. When false, this component will not
+ *   respond to user input
  * @param shape Defines the card's shape.
  * @param colors [RemoteCardColors] that will be used to resolve the colors used for this card. See
  *   [RemoteCardDefaults.cardColors].
@@ -56,7 +60,6 @@ import androidx.compose.ui.graphics.PaintingStyle
  *   content
  * @param content The main slot for a content of this card
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @RemoteComposable
 @Composable
 public fun RemoteCard(
@@ -65,7 +68,7 @@ public fun RemoteCard(
     enabled: RemoteBoolean = true.rb,
     shape: RemoteShape = RemoteCardDefaults.shape,
     colors: RemoteCardColors = RemoteCardDefaults.cardColors(),
-    contentPadding: RemoteDp = RemoteCardDefaults.ContentPadding,
+    contentPadding: RemotePaddingValues = RemoteCardDefaults.ContentPadding,
     content: @Composable @RemoteComposable () -> Unit,
 ) {
     RemoteCardImpl(
@@ -84,15 +87,19 @@ public fun RemoteCard(
  * Outlined Wear Material 3 [RemoteCard] that offers a single slot to take any content.
  *
  * @sample androidx.wear.compose.remote.material3.samples.RemoteOutlinedCardSample
+ * @param onClick Will be called when the user clicks the card
  * @param modifier Modifier to be applied to the card
+ * @param enabled Controls the enabled state of the card. When false, this component will not
+ *   respond to user input
  * @param shape Defines the card's shape.
  * @param colors [RemoteCardColors] that will be used to resolve the colors used for this card. See
  *   [RemoteCardDefaults.outlinedCardColors].
+ * @param border The border width for the card
+ * @param borderColor The color of the border
  * @param contentPadding The spacing values to apply internally between the container and the
  *   content
  * @param content The main slot for a content of this card
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @RemoteComposable
 @Composable
 public fun RemoteOutlinedCard(
@@ -103,7 +110,7 @@ public fun RemoteOutlinedCard(
     colors: RemoteCardColors = RemoteCardDefaults.outlinedCardColors(),
     border: RemoteDp = RemoteCardDefaults.OutlinedBorderSize,
     borderColor: RemoteColor = RemoteCardDefaults.outlinedCardColors().contentColor,
-    contentPadding: RemoteDp = RemoteCardDefaults.ContentPadding,
+    contentPadding: RemotePaddingValues = RemoteCardDefaults.ContentPadding,
     content: @Composable @RemoteComposable () -> Unit,
 ) {
     RemoteCardImpl(
@@ -124,7 +131,6 @@ public fun RemoteOutlinedCard(
 }
 
 /** Contains the default values used by [RemoteCard] */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public object RemoteCardDefaults {
 
     /**
@@ -206,10 +212,10 @@ public object RemoteCardDefaults {
     public val OutlinedBorderSize: RemoteDp = 1.rdp
 
     /** The default content padding used by [RemoteCard] */
-    public val ContentPadding: RemoteDp = 12.rdp
+    public val ContentPadding: RemotePaddingValues = RemotePaddingValues(12.rdp)
 
     /** The default size of the app icon/image when used inside a [RemoteAppCard]. */
-    public val AppImageSize: RemoteDp = 18.rdp // From CardTokens.AppImageSize
+    public val AppImageSize: RemoteDp = 18.rdp
 
     /** The default shape of [RemoteCard], which determines its corner radius. */
     public val shape: RemoteShape
@@ -219,8 +225,8 @@ public object RemoteCardDefaults {
      * The default height of [RemoteCard], [RemoteAppCard] and [RemoteTitleCard]. The card will
      * increase its height to accommodate the contents, if necessary.
      */
-    public val Height: RemoteDp = 64.rdp // From CardTokens.ContainerMinHeight
-    public val Width: RemoteDp = 80.rdp // From CardTokens.ContainerMinHeight
+    public val Height: RemoteDp = 64.rdp
+    public val Width: RemoteDp = 80.rdp
 
     private val RemoteColorScheme.defaultCardColors: RemoteCardColors
         @Composable
@@ -262,7 +268,6 @@ public object RemoteCardDefaults {
  * @param titleColor the color used for title, applies to [RemoteAppCard] and [RemoteTitleCard].
  * @param subtitleColor the color used for subtitle, applies to [RemoteTitleCard].
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class RemoteCardColors(
     public val containerColor: RemoteColor,
     public val contentColor: RemoteColor,
@@ -301,7 +306,7 @@ internal fun RemoteCardImpl(
     modifier: RemoteModifier,
     colors: RemoteCardColors,
     enabled: RemoteBoolean,
-    contentPadding: RemoteDp,
+    contentPadding: RemotePaddingValues,
     shape: RemoteShape,
     border: RemoteDp? = null,
     borderColor: RemoteColor? = null,
@@ -310,10 +315,8 @@ internal fun RemoteCardImpl(
     val containerModifier =
         modifier
             .remoteCardSizeModifier()
-            .clickable(
-                actions = buildList { add(onClick) },
-                enabled = enabled.constantValueOrNull ?: false,
-            )
+            .clip(shape = shape)
+            .clickable(action = onClick, enabled = enabled.constantValueOrNull ?: false)
             .drawWithContent {
                 drawShapedBackground(
                     shape = shape,

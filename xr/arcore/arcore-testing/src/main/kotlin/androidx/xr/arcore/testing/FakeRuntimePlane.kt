@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@file:Suppress("DEPRECATION")
 
 package androidx.xr.arcore.testing
 
@@ -21,37 +22,43 @@ import androidx.xr.arcore.runtime.Anchor as RuntimeAnchor
 import androidx.xr.arcore.runtime.Plane as RuntimePlane
 import androidx.xr.arcore.runtime.Plane.Label
 import androidx.xr.arcore.runtime.Plane.Type
-import androidx.xr.runtime.TrackingState
+import androidx.xr.arcore.runtime.TrackingState
 import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector2
 
+// TODO b/500091606 Remove when no longer used in G3
 /**
- * Fake implementation of [Plane][RuntimePlane].
- *
- * The properties of the FakeRuntimePlane can be set manually in order to simulate a runtime plane
- * in the environment.
- *
- * For example, for a FakeRuntimePlane with [Label.WALL], [Type.VERTICAL] and
- * [TrackingState.PAUSED]:
+ * Fake implementation of [Plane][RuntimePlane]. This should not be used to unit test `Plane` APIs.
+ * Instead, use an [ArCoreTestRule]. Example:
  * ```
- * val plane = FakeRuntimePlane(type = RuntimePlane.Type.VERTICAL,
- *                              label = RuntimePlane.Label.WALL,
- *                              trackingState = TrackingState.PAUSED)
- * ```
+ * @Rule @JvmField val arCoreTestRule = ArCoreTestRule()
  *
- * And to modify the properties during the test:
- * ```
- * plane.apply {
- *     trackingState = TrackingState.TRACKING
- *     centerPose = Pose(Vector3(1f, 2f, 3f), Quaternion(0f, 0f, 0f, 1f))
+ * @Test
+ * fun update_trackingStateMatchesTestPlaneVisibility() = runTest(testDispatcher) {
+ *     val testPlane = TestPlane(PlaneType.VERTICAL, PlaneLabel.WALL)
+ *     arCoreTestRule.addTrackables(testPlane)
+ *     advanceUntilIdle()
+ *     var underTest = emptyList<Plane>()
+ *     testScope.launch(start = CoroutineStart.UNDISPATCHED) {
+ *         Plane.subscribe(session).collect { underTest = it.toList() }
+ *     }
+ *     advanceUntilIdle()
+ *     assertThat(underTest.single().state.value.trackingState).isEqualTo(TrackingState.TRACKING)
  * }
  * ```
  *
  * @property anchors list of the [FakeRuntimeAnchors][FakeRuntimeAnchor] that are attached to the
  *   plane
+ * @deprecated This will be removed in a future release. In order to test androidx.xr.arcore APIs,
+ *   use an [ArCoreTestRule] in your tests.
  */
 @SuppressWarnings("HiddenSuperclass")
+@Deprecated(
+    "arcore-testing fakes have been moved internal and should no longer be used by unit tests."
+)
+@Suppress("DEPRECATION")
+@RestrictTo(RestrictTo.Scope.LIBRARY)
 public class FakeRuntimePlane(
     override val type: Type = RuntimePlane.Type.HORIZONTAL_UPWARD_FACING,
     override val label: Label = RuntimePlane.Label.FLOOR,
@@ -64,6 +71,7 @@ public class FakeRuntimePlane(
 ) : RuntimePlane, AnchorHolder {
 
     /** Creates a new [FakeRuntimeAnchor] and adds it to [anchors]. */
+    @Suppress("DEPRECATION")
     override fun createAnchor(pose: Pose): RuntimeAnchor {
         val anchor = FakeRuntimeAnchor(centerPose.compose(pose), this)
         anchors.add(anchor)

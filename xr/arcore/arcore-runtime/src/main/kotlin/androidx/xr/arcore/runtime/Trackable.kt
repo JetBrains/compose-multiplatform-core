@@ -17,15 +17,15 @@
 package androidx.xr.arcore.runtime
 
 import androidx.annotation.RestrictTo
-import androidx.xr.runtime.TrackingState
 
 /**
  * Something that can be tracked in space.
  *
  * @property trackingState the [TrackingState] of this trackable
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public interface Trackable {
 
+    /** The [TrackingState] of this trackable */
     public val trackingState: TrackingState
 }

@@ -34,8 +34,6 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Contacts
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Snooze
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FloatingActionButtonMenu
 import androidx.compose.material3.FloatingActionButtonMenuItem
 import androidx.compose.material3.Icon
@@ -67,16 +65,18 @@ import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.semantics.CustomAccessibilityAction
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.isTraversalGroup
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.paneTitle
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.semantics.traversalIndex
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3Api::class)
 @Preview
 @Sampled
 @Composable
@@ -129,7 +129,20 @@ fun FloatingActionButtonMenuSample() {
                                 TooltipAnchorPosition.Above
                             }
                         ),
-                    tooltip = { PlainTooltip { Text("Toggle menu") } },
+                    tooltip = {
+                        PlainTooltip(
+                            modifier =
+                                Modifier.semantics {
+                                    // TODO(b/496338253): Remove this modifier once bug where
+                                    //  tooltip text is not announced by a11y screen readers is
+                                    //  resolved.
+                                    liveRegion = LiveRegionMode.Assertive
+                                    paneTitle = "Toggle menu"
+                                }
+                        ) {
+                            Text("Toggle menu")
+                        }
+                    },
                     state = rememberTooltipState(),
                 ) {
                     ToggleFloatingActionButton(
@@ -191,6 +204,7 @@ fun FloatingActionButtonMenuSample() {
                                         if (
                                             it.type == KeyEventType.KeyDown &&
                                                 (it.key == Key.DirectionUp ||
+                                                    it.key == Key.NumPadDirectionUp ||
                                                     (it.isShiftPressed && it.key == Key.Tab))
                                         ) {
                                             focusRequester.requestFocus()

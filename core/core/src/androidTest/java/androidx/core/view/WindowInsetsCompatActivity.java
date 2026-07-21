@@ -16,5 +16,26 @@
 
 package androidx.core.view;
 
+import android.os.Bundle;
+import android.view.View;
+import android.view.Window;
+
 public class WindowInsetsCompatActivity extends InsetsCompatActivity {
+
+    private WindowInsetsControllerCompat mPendingWindowInsetsControllerCompat;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        final Window window = getWindow();
+        final View decor = window.getDecorView();
+        mPendingWindowInsetsControllerCompat = new WindowInsetsControllerCompat(window, decor);
+    }
+
+    /**
+     * @return {@link WindowInsetsControllerCompat} obtained before the window is attached.
+     */
+    WindowInsetsControllerCompat getPendingWindowInsetsController() {
+        return mPendingWindowInsetsControllerCompat;
+    }
 }

@@ -51,8 +51,8 @@ public constructor(
         var bottomStart = bottomStart.toPx(size, density)
 
         val minDimension = size.minDimension
-        val shouldScaleStart = (topStart + bottomStart).gt(minDimension)
-        val shouldScaleEnd = (topEnd + bottomEnd).gt(minDimension)
+        val shouldScaleStart = (topStart + bottomStart).isGreaterThan(minDimension)
+        val shouldScaleEnd = (topEnd + bottomEnd).isGreaterThan(minDimension)
         val scaleStart = minDimension / (topStart + bottomStart)
         val scaleEnd = minDimension / (topEnd + bottomEnd)
 
@@ -85,4 +85,20 @@ public constructor(
         bottomEnd: RemoteFloat,
         bottomStart: RemoteFloat,
     ): RemoteOutline
+
+    /**
+     * Creates a copy of this Shape with new corner sizes.
+     *
+     * @param topStart a size of the top start corner
+     * @param topEnd a size of the top end corner
+     * @param bottomEnd a size of the bottom end corner
+     * @param bottomStart a size of the bottom start corner
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public abstract fun copy(
+        topStart: RemoteCornerSize = this.topStart,
+        topEnd: RemoteCornerSize = this.topEnd,
+        bottomEnd: RemoteCornerSize = this.bottomEnd,
+        bottomStart: RemoteCornerSize = this.bottomStart,
+    ): RemoteCornerBasedShape
 }

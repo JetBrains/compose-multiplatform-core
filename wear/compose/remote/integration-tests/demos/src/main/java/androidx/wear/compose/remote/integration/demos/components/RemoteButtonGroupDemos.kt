@@ -19,6 +19,7 @@ package androidx.wear.compose.remote.integration.demos.components
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
 import androidx.wear.compose.foundation.lazy.TransformingLazyColumn
 import androidx.wear.compose.foundation.lazy.rememberTransformingLazyColumnState
 import androidx.wear.compose.material3.ListHeader
@@ -48,11 +49,15 @@ fun RemoteButtonGroupDemos(modifier: Modifier = Modifier) {
                             ),
                     transformation = SurfaceTransformation(transformationSpec),
                 ) {
-                    Text("RemoteButtonGroup Demos")
+                    Text(
+                        "RemoteButtonGroup Demos",
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.Center,
+                    )
                 }
             }
-            item { RemoteDemoItem("Two buttons") { RemoteButtonGroupTwoButtons() } }
-            item { RemoteDemoItem("Three buttons") { RemoteButtonGroupThreeButtons() } }
+            remoteDemoItem("Two buttons") { RemoteButtonGroupTwoButtons() }
+            remoteDemoItem("Three buttons") { RemoteButtonGroupThreeButtons() }
         }
     }
 }

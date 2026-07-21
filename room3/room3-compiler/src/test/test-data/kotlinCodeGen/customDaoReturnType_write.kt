@@ -4,8 +4,6 @@ import androidx.room3.EntityUpsertAdapter
 import androidx.room3.RoomDatabase
 import androidx.room3.util.performSuspending
 import androidx.sqlite.SQLiteStatement
-import androidx.sqlite.prepare
-import androidx.sqlite.step
 import javax.`annotation`.processing.Generated
 import kotlin.Int
 import kotlin.Long
@@ -72,32 +70,32 @@ internal class MyDao_Impl(
   }
 
   public override suspend fun insert(item: MyEntity): Foo<Unit> = __fooReturnTypeConverter.convert() {
-    performSuspending(__db, false, true) { _connection ->
+    performSuspending<Unit>(__db, false, true) { _connection ->
       __insertAdapterOfMyEntity.insert(_connection, item)
     }
   }
 
   public override suspend fun insertReturnId(item: MyEntity): Foo<Long> = __fooReturnTypeConverter.convert() {
-    performSuspending(__db, false, true) { _connection ->
+    performSuspending<Long>(__db, false, true) { _connection ->
       val _result: Long = __insertAdapterOfMyEntity.insertAndReturnId(_connection, item)
       _result
     }
   }
 
   public override fun insertBlocking(item: MyEntity): Foo<Unit> = __fooReturnTypeConverter.convertBlocking() {
-    performSuspending(__db, false, true) { _connection ->
+    performSuspending<Unit>(__db, false, true) { _connection ->
       __insertAdapterOfMyEntity.insert(_connection, item)
     }
   }
 
   public override suspend fun delete(item: MyEntity): Foo<Unit> = __fooReturnTypeConverter.convert() {
-    performSuspending(__db, false, true) { _connection ->
+    performSuspending<Unit>(__db, false, true) { _connection ->
       __deleteAdapterOfMyEntity.handle(_connection, item)
     }
   }
 
   public override suspend fun deleteReturnChanges(item: MyEntity): Foo<Int> = __fooReturnTypeConverter.convert() {
-    performSuspending(__db, false, true) { _connection ->
+    performSuspending<Int>(__db, false, true) { _connection ->
       var _result: Int = 0
       _result += __deleteAdapterOfMyEntity.handleAndReturnChanges(_connection, item)
       _result
@@ -105,19 +103,19 @@ internal class MyDao_Impl(
   }
 
   public override suspend fun deleteBlocking(item: MyEntity): Foo<Unit> = __fooReturnTypeConverter.convert() {
-    performSuspending(__db, false, true) { _connection ->
+    performSuspending<Unit>(__db, false, true) { _connection ->
       __deleteAdapterOfMyEntity.handle(_connection, item)
     }
   }
 
   public override suspend fun update(item: MyEntity): Foo<Unit> = __fooReturnTypeConverter.convert() {
-    performSuspending(__db, false, true) { _connection ->
+    performSuspending<Unit>(__db, false, true) { _connection ->
       __updateAdapterOfMyEntity.handle(_connection, item)
     }
   }
 
   public override suspend fun updateReturnChanges(item: MyEntity): Foo<Int> = __fooReturnTypeConverter.convert() {
-    performSuspending(__db, false, true) { _connection ->
+    performSuspending<Int>(__db, false, true) { _connection ->
       var _result: Int = 0
       _result += __updateAdapterOfMyEntity.handleAndReturnChanges(_connection, item)
       _result
@@ -125,19 +123,19 @@ internal class MyDao_Impl(
   }
 
   public override suspend fun updateBlocking(item: MyEntity): Foo<Unit> = __fooReturnTypeConverter.convert() {
-    performSuspending(__db, false, true) { _connection ->
+    performSuspending<Unit>(__db, false, true) { _connection ->
       __updateAdapterOfMyEntity.handle(_connection, item)
     }
   }
 
   public override suspend fun upsert(item: MyEntity): Foo<Unit> = __fooReturnTypeConverter.convert() {
-    performSuspending(__db, false, true) { _connection ->
+    performSuspending<Unit>(__db, false, true) { _connection ->
       __upsertAdapterOfMyEntity.upsert(_connection, item)
     }
   }
 
   public override suspend fun upsertBlocking(item: MyEntity): Foo<Unit> = __fooReturnTypeConverter.convert() {
-    performSuspending(__db, false, true) { _connection ->
+    performSuspending<Unit>(__db, false, true) { _connection ->
       __upsertAdapterOfMyEntity.upsert(_connection, item)
     }
   }
@@ -145,13 +143,12 @@ internal class MyDao_Impl(
   public override suspend fun insertWithId(pk: Int): Foo<Unit> {
     val _sql: String = "INSERT INTO MyEntity (pk) VALUES (?)"
     return __fooReturnTypeConverter.convert() {
-      performSuspending(__db, false, true) { _connection ->
+      performSuspending<Unit>(__db, false, true) { _connection ->
         val _stmt: SQLiteStatement = _connection.prepare(_sql)
         try {
           var _argIndex: Int = 1
           _stmt.bindLong(_argIndex, pk.toLong())
           _stmt.step()
-          Unit
         } finally {
           _stmt.close()
         }
@@ -162,13 +159,12 @@ internal class MyDao_Impl(
   public override fun insertWithIdBlocking(pk: Int): Foo<Unit> {
     val _sql: String = "INSERT INTO MyEntity (pk) VALUES (?)"
     return __fooReturnTypeConverter.convertBlocking() {
-      performSuspending(__db, false, true) { _connection ->
+      performSuspending<Unit>(__db, false, true) { _connection ->
         val _stmt: SQLiteStatement = _connection.prepare(_sql)
         try {
           var _argIndex: Int = 1
           _stmt.bindLong(_argIndex, pk.toLong())
           _stmt.step()
-          Unit
         } finally {
           _stmt.close()
         }
@@ -177,6 +173,8 @@ internal class MyDao_Impl(
   }
 
   public companion object {
-    public fun getRequiredConverters(): List<KClass<*>> = emptyList()
+    public fun getRequiredColumnConverters(): List<KClass<*>> = emptyList()
+
+    public fun getRequiredDaoReturnTypeConverters(): List<KClass<*>> = emptyList()
   }
 }

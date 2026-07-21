@@ -48,11 +48,11 @@ import androidx.xr.arcore.testapp.common.BackToMainActivityButton
 import androidx.xr.arcore.testapp.common.SessionLifecycleHelper
 import androidx.xr.arcore.testapp.ui.theme.GoogleYellow
 import androidx.xr.compose.spatial.Subspace
-import androidx.xr.compose.subspace.ResizePolicy
 import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.layout.SubspaceModifier
-import androidx.xr.compose.subspace.layout.movable
 import androidx.xr.compose.subspace.layout.size
+import androidx.xr.compose.subspace.layout.transformingMovable
+import androidx.xr.compose.subspace.layout.transformingResizable
 import androidx.xr.compose.unit.DpVolumeSize
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.DeviceTrackingMode
@@ -67,10 +67,10 @@ class EyeTrackingActivity : ComponentActivity() {
     private lateinit var session: Session
     private lateinit var sessionHelper: SessionLifecycleHelper
     private var config: Config =
-        Config(
-            deviceTracking = DeviceTrackingMode.SPATIAL_LAST_KNOWN,
-            eyeTracking = EyeTrackingMode.COARSE_TRACKING,
-        )
+        Config.Builder()
+            .setDeviceTracking(DeviceTrackingMode.SPATIAL)
+            .setEyeTracking(EyeTrackingMode.COARSE_TRACKING)
+            .build()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -91,8 +91,8 @@ class EyeTrackingActivity : ComponentActivity() {
                                             SubspaceModifier.size(
                                                     DpVolumeSize(640.dp, 480.dp, 0.dp)
                                                 )
-                                                .movable(),
-                                        resizePolicy = ResizePolicy(),
+                                                .transformingMovable()
+                                                .transformingResizable()
                                     ) {
                                         Main(session)
                                     }
@@ -129,7 +129,10 @@ class EyeTrackingActivity : ComponentActivity() {
 
         // reconfigure the session
         config =
-            Config(deviceTracking = DeviceTrackingMode.SPATIAL_LAST_KNOWN, eyeTracking = newMode)
+            Config.Builder()
+                .setDeviceTracking(DeviceTrackingMode.SPATIAL)
+                .setEyeTracking(newMode)
+                .build()
         sessionHelper.tryUpdateConfig(config)
     }
 
@@ -158,6 +161,7 @@ class EyeTrackingActivity : ComponentActivity() {
                 }
             },
         ) { innerPadding ->
+            @Suppress("DEPRECATION")
             Column(
                 modifier =
                     Modifier.background(color = Color.White)
@@ -169,8 +173,8 @@ class EyeTrackingActivity : ComponentActivity() {
                 if (perceptionState == null) {
                     Row { Text("Perception State is null", fontSize = 20.sp) }
                 } else {
-                    val leftEye = getEyePose(perceptionState.leftEye)
-                    val rightEye = getEyePose(perceptionState.rightEye)
+                    val leftEye = getEyePose(perceptionState.leftEyeState)
+                    val rightEye = getEyePose(perceptionState.rightEyeState)
                     Row {
                         Button(onClick = { toggleEyeTrackingConfigMode() }) {
                             // button displays current eyetracking mode. click it to change.
@@ -204,7 +208,7 @@ class EyeTrackingActivity : ComponentActivity() {
         }
     }
 
-    private fun getEyePose(eye: Eye?): Pose? = eye?.state?.value?.pose
+    private fun getEyePose(eye: Eye.State?): Pose? = eye?.pose
 
     private fun EyeTrackingMode.asString(): String {
         return when (this) {

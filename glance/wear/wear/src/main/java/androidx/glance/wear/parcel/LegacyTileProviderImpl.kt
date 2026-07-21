@@ -47,11 +47,13 @@ internal class LegacyTileProviderImpl(
         mainScope.launch {
             try {
                 val addEvent = TileAddEvent.ADAPTER.decode(eventData.contents)
-                // TODO: populate id namespace
                 val widgetId =
                     ActiveWearWidgetHandle(
                         providerName,
-                        WidgetInstanceId(namespace = "", id = addEvent.tile_id),
+                        WidgetInstanceId(
+                            namespace = WidgetInstanceId.WIDGET_CAROUSEL_NAMESPACE,
+                            id = addEvent.tile_id,
+                        ),
                         CONTAINER_TYPE_TILE_COMPAT,
                     )
                 widget.onAdded(context, widgetId)
@@ -68,11 +70,13 @@ internal class LegacyTileProviderImpl(
         mainScope.launch {
             try {
                 val removeEvent = TileRemoveEvent.ADAPTER.decode(eventData.contents)
-                // TODO: populate id namespace
                 val widgetId =
                     ActiveWearWidgetHandle(
                         providerName,
-                        WidgetInstanceId(namespace = "", id = removeEvent.tile_id),
+                        WidgetInstanceId(
+                            namespace = WidgetInstanceId.WIDGET_CAROUSEL_NAMESPACE,
+                            id = removeEvent.tile_id,
+                        ),
                         CONTAINER_TYPE_TILE_COMPAT,
                     )
                 widget.onRemoved(context, widgetId)

@@ -19,6 +19,7 @@ package androidx.appfunctions
 import android.app.appfunctions.AppFunctionManager
 import android.content.Context
 import android.os.Build
+import android.os.UserManager
 import androidx.annotation.IntDef
 import androidx.annotation.RequiresPermission
 import androidx.annotation.RestrictTo
@@ -200,7 +201,29 @@ public constructor(
     public fun observeAppFunctions(
         searchSpec: AppFunctionSearchSpec
     ): Flow<List<AppFunctionPackageMetadata>> {
-        return appFunctionReader.searchAppFunctions(searchSpec)
+        return appFunctionReader.searchAppFunctionsPackageMetadata(searchSpec)
+    }
+
+    /**
+     * Searches app function [AppFunctionMetadata]s.
+     *
+     * Note that the state is not guaranteed to be the latest, as metadata can change between
+     * request and execute times when apps are updated.
+     *
+     * The calling app can search for:
+     * - Functions in its own package (no permission required).
+     * - When holding the [android.Manifest.permission.EXECUTE_APP_FUNCTIONS] permission - functions
+     *   in other packages that the calling app is allowed to query via
+     *   [android.content.pm.PackageManager.canPackageQuery].
+     *
+     * @param searchSpec The spec of app functions to search for.
+     * @return The list of search results.
+     */
+    @RequiresPermission(value = "android.permission.EXECUTE_APP_FUNCTIONS", conditional = true)
+    public suspend fun searchAppFunctions(
+        searchSpec: AppFunctionSearchSpec
+    ): List<AppFunctionMetadata> {
+        return appFunctionReader.searchAppFunctionsMetadata(searchSpec)
     }
 
     @IntDef(
@@ -251,16 +274,27 @@ public constructor(
         /**
          * Gets an instance of [AppFunctionManager] if the AppFunction feature is supported.
          *
-         * The AppFunction feature is supported,
-         * * If SDK version is greater or equal to 36
-         * * If SDK version is greater or equal to 34 and the device implements App Function
-         *   extension library.
+         * The AppFunction feature is supported if the calling user is not a profile and either of
+         * the following conditions is met:
+         * * SDK version is 36 or higher.
+         * * SDK version is 34 or higher, and the device implements the App Function extension
+         *   ibrary.
          *
          * @return an instance of [AppFunctionManager] if the AppFunction feature is supported or
          *   `null`.
          */
         @JvmStatic
         public fun getInstance(context: Context): androidx.appfunctions.AppFunctionManager? {
+            // Required AppSearch is only available on U+.
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                return null
+            }
+
+            val userManager = context.getSystemService(UserManager::class.java)
+            if (userManager?.isProfile == true) {
+                return null
+            }
+
             return when {
                 Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA -> {
                     AppFunctionManager(
@@ -273,8 +307,7 @@ public constructor(
                         Dependencies.translatorSelector,
                     )
                 }
-                Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE &&
-                    isExtensionLibraryAvailable() -> {
+                isExtensionLibraryAvailable() -> {
                     AppFunctionManager(
                         context,
                         AppSearchAppFunctionReader(

@@ -4,8 +4,6 @@ import androidx.room3.util.appendPlaceholders
 import androidx.room3.util.getColumnIndexOrThrow
 import androidx.room3.util.performSuspending
 import androidx.sqlite.SQLiteStatement
-import androidx.sqlite.prepare
-import androidx.sqlite.step
 import com.google.common.base.Optional
 import io.reactivex.rxjava3.core.Flowable
 import io.reactivex.rxjava3.core.Maybe
@@ -41,7 +39,7 @@ internal class MyDao_Impl(
     _stringBuilder.append(")")
     val _sql: String = _stringBuilder.toString()
     return __rxDaoReturnTypeConverters.convertFlowable(__db, arrayOf("MyEntity")) {
-      performSuspending(__db, true, false) { _connection ->
+      performSuspending<MyEntity?>(__db, true, false) { _connection ->
         val _stmt: SQLiteStatement = _connection.prepare(_sql)
         try {
           var _argIndex: Int = 1
@@ -81,7 +79,7 @@ internal class MyDao_Impl(
     _stringBuilder.append(")")
     val _sql: String = _stringBuilder.toString()
     return __rxDaoReturnTypeConverters.convertFlowable(__db, arrayOf("MyEntity")) {
-      performSuspending(__db, true, false) { _connection ->
+      performSuspending<Optional<MyEntity>>(__db, true, false) { _connection ->
         val _stmt: SQLiteStatement = _connection.prepare(_sql)
         try {
           var _argIndex: Int = 1
@@ -122,7 +120,7 @@ internal class MyDao_Impl(
     _stringBuilder.append(")")
     val _sql: String = _stringBuilder.toString()
     return __rxDaoReturnTypeConverters.convertObservable(__db, arrayOf("MyEntity")) {
-      performSuspending(__db, true, false) { _connection ->
+      performSuspending<MyEntity?>(__db, true, false) { _connection ->
         val _stmt: SQLiteStatement = _connection.prepare(_sql)
         try {
           var _argIndex: Int = 1
@@ -162,7 +160,7 @@ internal class MyDao_Impl(
     _stringBuilder.append(")")
     val _sql: String = _stringBuilder.toString()
     return __rxDaoReturnTypeConverters.convertSingle(__db) {
-      performSuspending(__db, true, false) { _connection ->
+      performSuspending<MyEntity?>(__db, true, false) { _connection ->
         val _stmt: SQLiteStatement = _connection.prepare(_sql)
         try {
           var _argIndex: Int = 1
@@ -202,7 +200,7 @@ internal class MyDao_Impl(
     _stringBuilder.append(")")
     val _sql: String = _stringBuilder.toString()
     return __rxDaoReturnTypeConverters.convertMaybe(__db) {
-      performSuspending(__db, true, false) { _connection ->
+      performSuspending<MyEntity?>(__db, true, false) { _connection ->
         val _stmt: SQLiteStatement = _connection.prepare(_sql)
         try {
           var _argIndex: Int = 1
@@ -242,7 +240,7 @@ internal class MyDao_Impl(
     _stringBuilder.append(")")
     val _sql: String = _stringBuilder.toString()
     return __rxDaoReturnTypeConverters.convertMaybe(__db) {
-      performSuspending(__db, true, false) { _connection ->
+      performSuspending<List<MyEntity>>(__db, true, false) { _connection ->
         val _stmt: SQLiteStatement = _connection.prepare(_sql)
         try {
           var _argIndex: Int = 1
@@ -282,7 +280,7 @@ internal class MyDao_Impl(
     _stringBuilder.append(")")
     val _sql: String = _stringBuilder.toString()
     return __rxDaoReturnTypeConverters.convertMaybe(__db) {
-      performSuspending(__db, true, false) { _connection ->
+      performSuspending<MutableList<MyEntity>>(__db, true, false) { _connection ->
         val _stmt: SQLiteStatement = _connection.prepare(_sql)
         try {
           var _argIndex: Int = 1
@@ -315,6 +313,8 @@ internal class MyDao_Impl(
   }
 
   public companion object {
-    public fun getRequiredConverters(): List<KClass<*>> = emptyList()
+    public fun getRequiredColumnConverters(): List<KClass<*>> = emptyList()
+
+    public fun getRequiredDaoReturnTypeConverters(): List<KClass<*>> = emptyList()
   }
 }

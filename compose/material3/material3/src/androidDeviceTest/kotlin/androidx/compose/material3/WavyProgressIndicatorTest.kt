@@ -52,12 +52,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Assert.assertEquals
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @LargeTest
 @RunWith(AndroidJUnit4::class)
 class WavyProgressIndicatorTest {
@@ -513,7 +511,6 @@ class WavyProgressIndicatorTest {
             .assertIsSquareWithSize(WavyProgressIndicatorDefaults.CircularContainerSize)
     }
 
-    @Ignore("b/347736702") // TODO: Ignoring this until the underlying issue at b/347771353 is fixed
     @Test
     fun indeterminateCircularWavyProgressIndicator_progress() {
         val tag = "circular"

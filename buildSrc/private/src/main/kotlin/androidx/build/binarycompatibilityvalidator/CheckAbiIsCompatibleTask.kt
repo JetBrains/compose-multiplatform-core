@@ -17,7 +17,7 @@
 package androidx.build.binarycompatibilityvalidator
 
 import androidx.binarycompatibilityvalidator.BinaryCompatibilityChecker
-import androidx.binarycompatibilityvalidator.KlibDumpParser
+import androidx.binarycompatibilityvalidator.MergedKlibDumpParser
 import androidx.binarycompatibilityvalidator.ValidationException
 import androidx.build.Version
 import androidx.build.logging.TERMINAL_RED
@@ -129,10 +129,16 @@ private abstract class CheckCompatibilityWorker : WorkAction<CheckCompatibilityP
     @OptIn(ExperimentalLibraryAbiReader::class)
     override fun execute() {
         val previousDump =
-            KlibDumpParser(parameters.previousApiDumpText.get(), parameters.previousApiPath.get())
+            MergedKlibDumpParser(
+                    parameters.previousApiDumpText.get(),
+                    parameters.previousApiPath.get(),
+                )
                 .parse()
         val currentDump =
-            KlibDumpParser(parameters.currentApiDumpText.get(), parameters.currentApiPath.get())
+            MergedKlibDumpParser(
+                    parameters.currentApiDumpText.get(),
+                    parameters.currentApiPath.get(),
+                )
                 .parse()
 
         try {

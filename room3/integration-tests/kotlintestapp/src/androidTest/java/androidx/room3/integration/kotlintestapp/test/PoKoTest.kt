@@ -17,6 +17,8 @@ package androidx.room3.integration.kotlintestapp.test
 
 import androidx.kruth.assertThat
 import androidx.room3.ColumnInfo
+import androidx.room3.ColumnTypeConverter
+import androidx.room3.ColumnTypeConverters
 import androidx.room3.Dao
 import androidx.room3.Database
 import androidx.room3.Embedded
@@ -28,14 +30,11 @@ import androidx.room3.Relation
 import androidx.room3.Room
 import androidx.room3.RoomDatabase
 import androidx.room3.Transaction
-import androidx.room3.TypeConverter
-import androidx.room3.TypeConverters
 import androidx.room3.integration.kotlintestapp.dao.RobotsDao
 import androidx.room3.integration.kotlintestapp.vo.Hivemind
 import androidx.room3.integration.kotlintestapp.vo.Robot
 import androidx.room3.withWriteTransaction
 import androidx.sqlite.driver.AndroidSQLiteDriver
-import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import java.nio.ByteBuffer
@@ -65,21 +64,22 @@ class PoKoTest {
 
     class SampleParentWithChildren(
         @Embedded val parent: SampleEntity,
-        @Relation(parentColumn = "number", entityColumn = "parentNumber")
+        @Relation(parentColumns = ["number"], entityColumns = ["parentNumber"])
         val children: Set<SampleChild>,
     )
 
     class SampleParentWithChild(
         @Embedded val parent: SampleEntity,
-        @Relation(parentColumn = "number", entityColumn = "parentNumber") val child: SampleChild?,
+        @Relation(parentColumns = ["number"], entityColumns = ["parentNumber"])
+        val child: SampleChild?,
     )
 
     class SampleParentWithChildrenIds(
         @Embedded val parent: SampleEntity,
         @Relation(
             entity = SampleChild::class,
-            parentColumn = "number",
-            entityColumn = "parentNumber",
+            parentColumns = ["number"],
+            entityColumns = ["parentNumber"],
             projection = ["childId"],
         )
         val childrenIds: List<Int>,
@@ -87,15 +87,16 @@ class PoKoTest {
 
     class SampleChildWithItems(
         @Embedded val child: SampleChild,
-        @Relation(parentColumn = "childId", entityColumn = "ownerId") val items: List<SampleItem>,
+        @Relation(parentColumns = ["childId"], entityColumns = ["ownerId"])
+        val items: List<SampleItem>,
     )
 
     class SampleParentWithChildrenAndItems(
         @Embedded val parent: SampleEntity,
         @Relation(
             entity = SampleChild::class,
-            parentColumn = "number",
-            entityColumn = "parentNumber",
+            parentColumns = ["number"],
+            entityColumns = ["parentNumber"],
         )
         val children: List<SampleChildWithItems>,
     )
@@ -143,7 +144,7 @@ class PoKoTest {
         version = 1,
         exportSchema = false,
     )
-    @TypeConverters(DateConverter::class, UUIDConverter::class)
+    @ColumnTypeConverters(DateConverter::class, UUIDConverter::class)
     abstract class PokoDatabase : RoomDatabase() {
         abstract fun dao(): SampleDao
 
@@ -151,13 +152,13 @@ class PoKoTest {
     }
 
     object DateConverter {
-        @TypeConverter fun toDate(d: Long) = Date(d)
+        @ColumnTypeConverter fun toDate(d: Long) = Date(d)
 
-        @TypeConverter fun fromDate(d: Date) = d.time
+        @ColumnTypeConverter fun fromDate(d: Date) = d.time
     }
 
     object UUIDConverter {
-        @TypeConverter
+        @ColumnTypeConverter
         fun asUuid(bytes: ByteArray): UUID {
             val bb = ByteBuffer.wrap(bytes)
             val firstLong = bb.long
@@ -165,7 +166,7 @@ class PoKoTest {
             return UUID(firstLong, secondLong)
         }
 
-        @TypeConverter
+        @ColumnTypeConverter
         fun asBytes(uuid: UUID): ByteArray {
             val bb = ByteBuffer.wrap(ByteArray(16))
             bb.putLong(uuid.mostSignificantBits)
@@ -179,10 +180,7 @@ class PoKoTest {
 
     @Before
     fun setup() {
-        db =
-            Room.inMemoryDatabaseBuilder<PokoDatabase>(ApplicationProvider.getApplicationContext())
-                .setDriver(AndroidSQLiteDriver())
-                .build()
+        db = Room.inMemoryDatabaseBuilder<PokoDatabase>().setDriver(AndroidSQLiteDriver()).build()
         dao = db.dao()
     }
 

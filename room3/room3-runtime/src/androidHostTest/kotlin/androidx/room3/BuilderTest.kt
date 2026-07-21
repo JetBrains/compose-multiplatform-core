@@ -16,6 +16,7 @@
 package androidx.room3
 
 import android.content.Context
+import android.content.Intent
 import androidx.kruth.assertThat
 import androidx.kruth.assertThrows
 import androidx.room3.Room.databaseBuilder
@@ -28,7 +29,6 @@ import androidx.sqlite.driver.AndroidSQLiteDriver
 import instantiateImpl
 import java.io.File
 import kotlin.coroutines.EmptyCoroutineContext
-import org.junit.Assert
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
@@ -38,15 +38,14 @@ import org.mockito.kotlin.mock
 class BuilderTest {
     @Test
     fun nullName() {
-        try {
-            databaseBuilder(mock(), RoomDatabase::class.java, null).build()
-        } catch (e: IllegalArgumentException) {
-            assertThat(e.message)
-                .isEqualTo(
-                    "Cannot build a database with null or empty name. If you are trying to create an " +
-                        "in memory database, use Room.inMemoryDatabaseBuilder"
-                )
-        }
+        assertThrows<IllegalArgumentException> {
+                databaseBuilder(mock(), RoomDatabase::class.java, null).build()
+            }
+            .hasMessageThat()
+            .isEqualTo(
+                "Cannot build a database with null or empty name. If you are trying to create an " +
+                    "in memory database, use Room.inMemoryDatabaseBuilder"
+            )
     }
 
     @Test
@@ -64,28 +63,26 @@ class BuilderTest {
 
     @Test
     fun emptyName() {
-        try {
-            databaseBuilder(mock(), RoomDatabase::class.java, "  ").build()
-        } catch (e: IllegalArgumentException) {
-            assertThat(e.message)
-                .isEqualTo(
-                    "Cannot build a database with null or empty name. If you are trying to create an " +
-                        "in memory database, use Room.inMemoryDatabaseBuilder"
-                )
-        }
+        assertThrows<IllegalArgumentException> {
+                databaseBuilder(mock(), RoomDatabase::class.java, "  ").build()
+            }
+            .hasMessageThat()
+            .isEqualTo(
+                "Cannot build a database with null or empty name. If you are trying to create an " +
+                    "in memory database, use Room.inMemoryDatabaseBuilder"
+            )
     }
 
     @Test
     fun specialMemoryName() {
-        try {
-            databaseBuilder(mock(), RoomDatabase::class.java, ":memory:").build()
-        } catch (e: IllegalArgumentException) {
-            assertThat(e.message)
-                .isEqualTo(
-                    "Cannot build a database with the special name ':memory:'. If you are trying " +
-                        "to create an in memory database, use Room.inMemoryDatabaseBuilder"
-                )
-        }
+        assertThrows<IllegalArgumentException> {
+                databaseBuilder(mock(), RoomDatabase::class.java, ":memory:").build()
+            }
+            .hasMessageThat()
+            .isEqualTo(
+                "Cannot build a database with the special name ':memory:'. If you are trying " +
+                    "to create an in memory database, use Room.inMemoryDatabaseBuilder"
+            )
     }
 
     @Test
@@ -353,7 +350,7 @@ class BuilderTest {
         assertThat(config.context).isEqualTo(context)
         assertThat(config.name).isNull()
         assertThat(config.allowMainThreadQueries).isFalse()
-        assertThat(config.journalMode).isEqualTo(RoomDatabase.JournalMode.TRUNCATE)
+        assertThat(config.journalMode).isEqualTo(RoomDatabase.JournalMode.WRITE_AHEAD_LOGGING)
     }
 
     @Test
@@ -381,18 +378,12 @@ class BuilderTest {
 
     @Test
     fun createFromAssetAndFromFile() {
-        var exception: Exception? = null
-        try {
-            databaseBuilder(mock(), TestDatabase::class.java, "foo")
-                .createFromAsset("assets-path")
-                .createFromFile(File("not-a--real-file"))
-                .build()
-            Assert.fail("Build should have thrown")
-        } catch (e: Exception) {
-            exception = e
-        }
-        assertThat(exception).isInstanceOf<IllegalArgumentException>()
-        assertThat(exception)
+        assertThrows<IllegalArgumentException> {
+                databaseBuilder(mock(), TestDatabase::class.java, "foo")
+                    .createFromAsset("assets-path")
+                    .createFromFile(File("not-a--real-file"))
+                    .build()
+            }
             .hasMessageThat()
             .isEqualTo(
                 "More than one of createFromAsset(), createFromInputStream() and " +
@@ -404,34 +395,22 @@ class BuilderTest {
 
     @Test
     fun createInMemoryFromAsset() {
-        var exception: Exception? = null
-        try {
-            inMemoryDatabaseBuilder(mock(), TestDatabase::class.java)
-                .createFromAsset("assets-path")
-                .build()
-            Assert.fail("Build should have thrown")
-        } catch (e: Exception) {
-            exception = e
-        }
-        assertThat(exception).isInstanceOf<IllegalArgumentException>()
-        assertThat(exception)
+        assertThrows<IllegalArgumentException> {
+                inMemoryDatabaseBuilder(mock(), TestDatabase::class.java)
+                    .createFromAsset("assets-path")
+                    .build()
+            }
             .hasMessageThat()
             .contains("Cannot create from asset or file for an in-memory")
     }
 
     @Test
     fun createInMemoryFromFile() {
-        var exception: Exception? = null
-        try {
-            inMemoryDatabaseBuilder(mock(), TestDatabase::class.java)
-                .createFromFile(File("not-a--real-file"))
-                .build()
-            Assert.fail("Build should have thrown")
-        } catch (e: Exception) {
-            exception = e
-        }
-        assertThat(exception).isInstanceOf<IllegalArgumentException>()
-        assertThat(exception)
+        assertThrows<IllegalArgumentException> {
+                inMemoryDatabaseBuilder(mock(), TestDatabase::class.java)
+                    .createFromFile(File("not-a--real-file"))
+                    .build()
+            }
             .hasMessageThat()
             .contains("Cannot create from asset or file for an in-memory")
     }
@@ -451,6 +430,86 @@ class BuilderTest {
         assertThat(db).isInstanceOf<BuilderTest_TestDatabase_Impl>()
         val config: DatabaseConfiguration = db.getConfiguration()
         assertThat(config.sqliteDriver).isInstanceOf<AndroidSQLiteDriver>()
+    }
+
+    @Test
+    @OptIn(ExperimentalRoomApi::class)
+    fun multiInstanceInvalidationWithoutContext() {
+        assertThrows<IllegalArgumentException> {
+                databaseBuilder<TestDatabase>("test.db")
+                    .setMultiInstanceInvalidationServiceIntent(Intent())
+            }
+            .hasMessageThat()
+            .isEqualTo(
+                "Multi-instance invalidation cannot be enabled when no Context is provided to this Builder."
+            )
+    }
+
+    @Test
+    fun createFromAssetWithoutContext() {
+        assertThrows<IllegalArgumentException> {
+                databaseBuilder<TestDatabase>("test.db").createFromAsset("assets-path")
+            }
+            .hasMessageThat()
+            .contains("Cannot create from asset when no Context is provided to this Builder.")
+    }
+
+    @Test
+    fun defaultPoolConfiguration() {
+        val automaticDb =
+            databaseBuilder<TestDatabase>("test.db")
+                .setJournalMode(RoomDatabase.JournalMode.AUTOMATIC)
+                .build()
+        assertThat(automaticDb.getConfiguration().connectionPoolConfiguration)
+            .isEqualTo(MultipleConnection(4, 1))
+        automaticDb.close()
+
+        val truncateDb =
+            databaseBuilder<TestDatabase>("test.db")
+                .setJournalMode(RoomDatabase.JournalMode.TRUNCATE)
+                .build()
+        assertThat(truncateDb.getConfiguration().connectionPoolConfiguration)
+            .isEqualTo(SingleConnection)
+        truncateDb.close()
+
+        val walDb =
+            databaseBuilder<TestDatabase>("test.db")
+                .setJournalMode(RoomDatabase.JournalMode.WRITE_AHEAD_LOGGING)
+                .build()
+        assertThat(walDb.getConfiguration().connectionPoolConfiguration)
+            .isEqualTo(MultipleConnection(4, 1))
+        walDb.close()
+
+        val memDb = inMemoryDatabaseBuilder<TestDatabase>().build()
+        assertThat(memDb.getConfiguration().connectionPoolConfiguration).isEqualTo(SingleConnection)
+        memDb.close()
+    }
+
+    @Test
+    fun setMultiplePoolConnection() {
+        val myDb =
+            databaseBuilder<TestDatabase>("test.db")
+                .setJournalMode(RoomDatabase.JournalMode.WRITE_AHEAD_LOGGING)
+                .setMultipleConnectionPool(2, 1)
+                .build()
+        assertThat(myDb.getConfiguration().connectionPoolConfiguration)
+            .isEqualTo(MultipleConnection(2, 1))
+        myDb.close()
+    }
+
+    @Test
+    fun setInvalidMultiplePoolConnection() {
+        assertThrows<IllegalArgumentException> {
+                databaseBuilder<TestDatabase>("test.db").setMultipleConnectionPool(0, 1)
+            }
+            .hasMessageThat()
+            .isEqualTo("Number of readers must be greater than 0")
+
+        assertThrows<IllegalArgumentException> {
+                databaseBuilder<TestDatabase>("test.db").setMultipleConnectionPool(1, 0)
+            }
+            .hasMessageThat()
+            .isEqualTo("Number of writers must be greater than 0")
     }
 
     internal abstract class TestDatabase : RoomDatabase()

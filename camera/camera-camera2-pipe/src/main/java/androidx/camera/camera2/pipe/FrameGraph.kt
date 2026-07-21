@@ -80,6 +80,12 @@ public interface FrameGraph : CameraGraphBase<FrameGraph.Session>, CameraControl
     ): FrameBuffer
 
     /**
+     * Release all internally held buffers, frames and pending images associated with the
+     * [streamId].
+     */
+    public fun drain(streamId: StreamId) {}
+
+    /**
      * A [Session] is an interactive lock for [FrameGraph].
      *
      * Holding this object prevents other systems from acquiring a [Session] until the currently

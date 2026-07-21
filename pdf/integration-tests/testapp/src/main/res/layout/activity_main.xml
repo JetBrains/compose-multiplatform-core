@@ -31,10 +31,12 @@
         android:layout_height="wrap_content"
         android:visibility="gone"
         app:navigationIcon="@drawable/ic_arrow_back"
+        app:navigationContentDescription="@string/back_string"
         app:layout_constraintTop_toTopOf="parent">
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/save_pdf_button"
+            android:contentDescription="@string/save_pdf_string"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="end"
@@ -81,11 +83,12 @@
 
     <ImageButton
         android:id="@+id/preference_button"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
         android:layout_marginStart="8dp"
         android:background="?attr/selectableItemBackgroundBorderless"
         android:contentDescription="@string/preference_string"
+        android:scaleType="center"
         android:src="@drawable/ic_settings"
         app:layout_constraintBottom_toBottomOf="@+id/launch_button"
         app:layout_constraintEnd_toEndOf="parent"

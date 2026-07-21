@@ -159,8 +159,8 @@ public final class CameraUseCaseAdapter implements Camera {
     @GuardedBy("mLock")
     private @Nullable StreamSharing mStreamSharing;
 
-    private final @NonNull CompositionSettings mCompositionSettings;
-    private final @NonNull CompositionSettings mSecondaryCompositionSettings;
+    private @NonNull CompositionSettings mCompositionSettings;
+    private @NonNull CompositionSettings mSecondaryCompositionSettings;
     private final StreamSharingForceEnabler mStreamSharingForceEnabler =
             new StreamSharingForceEnabler();
     private final StreamSpecsCalculator mStreamSpecsCalculator;
@@ -241,10 +241,44 @@ public final class CameraUseCaseAdapter implements Camera {
     }
 
     /**
+     * Updates the composition settings.
+     *
+     * @throws IllegalStateException if the camera is not in concurrent camera composition mode.
+     * @throws IllegalArgumentException if the size of the composition settings list does not
+     *                                  match the number of cameras bound.
+     */
+    @Override
+    public void setCompositionSettings(
+            @NonNull List<CompositionSettings> compositionSettings) {
+        synchronized (mLock) {
+            if (mSecondaryCameraInternal == null || mStreamSharing == null) {
+                throw new IllegalStateException("The camera is not in concurrent camera "
+                        + "composition mode.");
+            }
+            Preconditions.checkArgument(compositionSettings.size() == 2,
+                    "CompositionSettings list size should be 2.");
+            mCompositionSettings = compositionSettings.get(0);
+            mSecondaryCompositionSettings = compositionSettings.get(1);
+            mStreamSharing.updateCompositionSettings(
+                    mCompositionSettings, mSecondaryCompositionSettings);
+        }
+    }
+
+    /**
      * Returns true if the {@link CameraUseCaseAdapter} is an equivalent camera.
      */
     public boolean isEquivalent(@NonNull CameraUseCaseAdapter cameraUseCaseAdapter) {
         return getAdapterIdentifier().equals(cameraUseCaseAdapter.getAdapterIdentifier());
+    }
+
+    /**
+     * Returns the {@link CompositionSettings}.
+     */
+    @VisibleForTesting
+    public @NonNull List<CompositionSettings> getCompositionSettings() {
+        synchronized (mLock) {
+            return Arrays.asList(mCompositionSettings, mSecondaryCompositionSettings);
+        }
     }
 
     /**

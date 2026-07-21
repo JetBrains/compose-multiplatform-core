@@ -28,10 +28,13 @@ plugins {
 }
 
 dependencies {
+    api(libs.jspecify)
     api("androidx.annotation:annotation:1.8.1")
 
     implementation(libs.espressoCore)
     implementation("androidx.core:core:1.2.0")
+
+    androidTestImplementation(libs.testExtJunit)
 }
 
 android {
@@ -40,6 +43,4 @@ android {
 
 androidx {
     type = SoftwareType.INTERNAL_TEST_LIBRARY
-    // TODO: b/326456246
-    optOutJSpecify = true
 }

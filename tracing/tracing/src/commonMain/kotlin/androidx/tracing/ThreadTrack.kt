@@ -23,33 +23,54 @@ import androidx.annotation.RestrictTo.Scope
 @RestrictTo(Scope.LIBRARY_GROUP)
 public open class ThreadTrack(
     /** The thread id. */
-    public val id: Int,
+    public val id: Long,
     /** The name of the thread. */
     public val name: String,
     /** The process track that the thread belongs to. */
     public val process: ProcessTrack,
 ) : SliceTrack(context = process.context, uuid = monotonicId()) {
 
-    init {
+    override fun preamblePacket(): TraceEvent? {
         val event = obtainTraceEvent()
         event?.setPreamble(
             TrackDescriptor(
                 name = name,
                 uuid = uuid,
-                parentUuid = DEFAULT_LONG,
+                parentUuid = process.uuid,
                 pid = process.id,
                 tid = id,
                 type = TRACK_DESCRIPTOR_TYPE_THREAD,
             )
         )
-        dispatchTraceEvent(event, immediateDispatch = true)
+        return event
+    }
+
+    override fun endSection() {
+        assertThreadIdWhenNotOptimized()
+        super.endSection()
+    }
+
+    // Note: This method is optimized away by R8.
+    // Making this a public method to avoid name mangling by the Kotlin compiler so that
+    // we can write a corresponding `-assumenosideeffects` rule.
+    public fun assertThreadIdWhenNotOptimized() {
+        // Ideally we do this check in SliceTrack. But, SliceTrack is not thread id aware.
+        // Therefore, we are doing this in ThreadTrack.
+        require(id == currentThreadId()) {
+            """
+                Invariant violation. Current thread id (${currentThreadId()} does not match
+                expected $id. This means that there might be a race condition in the code
+                where begin and end sections are being called on separate threads.
+            """
+                .trimIndent()
+        }
     }
 }
 
 // An empty thread track when tracing is disabled
 
-private const val EMPTY_THREAD_ID = -1
+private const val EMPTY_THREAD_ID = -1L
 private const val EMPTY_THREAD_NAME = "Empty Thread"
 
 internal class EmptyThreadTrack(process: EmptyProcessTrack) :
-    ThreadTrack(id = EMPTY_THREAD_ID, name = EMPTY_THREAD_NAME, process = process) {}
+    ThreadTrack(id = EMPTY_THREAD_ID, name = EMPTY_THREAD_NAME, process = process)

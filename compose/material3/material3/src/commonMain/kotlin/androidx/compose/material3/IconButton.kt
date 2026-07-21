@@ -152,7 +152,6 @@ fun IconButton(
  * @param shape the [Shape] of this icon button.
  * @param content the content of this icon button, typically an [Icon]
  */
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun IconButton(
     onClick: () -> Unit,
@@ -205,7 +204,7 @@ fun IconButton(
  *   interactions will still happen internally.
  * @param content the content of this icon button, typically an [Icon]
  */
-@ExperimentalMaterial3ExpressiveApi
+@Material3ExpressiveApi
 @Composable
 fun IconButton(
     onClick: () -> Unit,
@@ -229,7 +228,6 @@ fun IconButton(
     )
 }
 
-@ExperimentalMaterial3ExpressiveApi
 @Composable
 private fun IconButtonImpl(
     modifier: Modifier,
@@ -254,7 +252,7 @@ private fun IconButtonImpl(
                     enabled = enabled,
                     role = Role.Button,
                     interactionSource = interactionSource,
-                    indication = ripple(),
+                    indication = ripple(focusRingShape = shape),
                 )
                 .childSemantics(),
         contentAlignment = Alignment.Center,
@@ -355,7 +353,6 @@ fun IconToggleButton(
  * @param shape the [Shape] of this icon button.
  * @param content the content of this icon button, typically an [Icon]
  */
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun IconToggleButton(
     checked: Boolean,
@@ -409,7 +406,7 @@ fun IconToggleButton(
  *   interactions will still happen internally.
  * @param content the content of this icon button, typically an [Icon]
  */
-@ExperimentalMaterial3ExpressiveApi
+@Material3ExpressiveApi
 @Composable
 fun IconToggleButton(
     checked: Boolean,
@@ -435,7 +432,6 @@ fun IconToggleButton(
     )
 }
 
-@ExperimentalMaterial3ExpressiveApi
 @Composable
 private fun IconToggleButtonImpl(
     checked: Boolean,
@@ -462,7 +458,7 @@ private fun IconToggleButtonImpl(
                     enabled = enabled,
                     role = Role.Checkbox,
                     interactionSource = interactionSource,
-                    indication = ripple(),
+                    indication = ripple(focusRingShape = shape),
                 ),
         contentAlignment = Alignment.Center,
     ) {
@@ -553,7 +549,7 @@ fun FilledIconButton(
  *   interactions will still happen internally.
  * @param content the content of this icon button, typically an [Icon]
  */
-@ExperimentalMaterial3ExpressiveApi
+@Material3ExpressiveApi
 @Composable
 fun FilledIconButton(
     onClick: () -> Unit,
@@ -662,7 +658,7 @@ fun FilledIconToggleButton(
  *   interactions will still happen internally.
  * @param content the content of this icon button, typically an [Icon]
  */
-@ExperimentalMaterial3ExpressiveApi
+@Material3ExpressiveApi
 @Composable
 fun FilledIconToggleButton(
     checked: Boolean,
@@ -778,7 +774,7 @@ fun FilledTonalIconButton(
  *   interactions will still happen internally.
  * @param content the content of this icon button, typically an [Icon]
  */
-@ExperimentalMaterial3ExpressiveApi
+@Material3ExpressiveApi
 @Composable
 fun FilledTonalIconButton(
     onClick: () -> Unit,
@@ -898,7 +894,7 @@ fun FilledTonalIconToggleButton(
  *   interactions will still happen internally.
  * @param content the content of this icon button, typically an [Icon]
  */
-@ExperimentalMaterial3ExpressiveApi
+@Material3ExpressiveApi
 @Composable
 fun FilledTonalIconToggleButton(
     checked: Boolean,
@@ -1030,7 +1026,7 @@ fun OutlinedIconButton(
  *   interactions will still happen internally.
  * @param content the content of this icon button, typically an [Icon]
  */
-@ExperimentalMaterial3ExpressiveApi
+@Material3ExpressiveApi
 @Composable
 fun OutlinedIconButton(
     onClick: () -> Unit,
@@ -1145,7 +1141,7 @@ fun OutlinedIconToggleButton(
  *   interactions will still happen internally.
  * @param content the content of this icon button, typically an [Icon]
  */
-@ExperimentalMaterial3ExpressiveApi
+@Material3ExpressiveApi
 @Composable
 fun OutlinedIconToggleButton(
     checked: Boolean,
@@ -1171,7 +1167,6 @@ fun OutlinedIconToggleButton(
         content = content,
     )
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun SurfaceIconButton(
     onClick: () -> Unit,
@@ -1201,7 +1196,6 @@ private fun SurfaceIconButton(
         }
     }
 
-@ExperimentalMaterial3ExpressiveApi
 @Composable
 private fun SurfaceIconButton(
     onClick: () -> Unit,
@@ -1229,7 +1223,6 @@ private fun SurfaceIconButton(
     )
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun SurfaceIconToggleButton(
     checked: Boolean,
@@ -1262,7 +1255,6 @@ private fun SurfaceIconToggleButton(
     }
 }
 
-@ExperimentalMaterial3ExpressiveApi
 @Composable
 private fun SurfaceIconToggleButton(
     checked: Boolean,
@@ -1486,7 +1478,6 @@ class IconToggleButtonColors(
  * @property shape is the unchecked shape.
  * @property pressedShape is the pressed shape.
  */
-@ExperimentalMaterial3ExpressiveApi
 class IconButtonShapes(val shape: Shape, val pressedShape: Shape = shape) {
 
     /** Returns a copy of this IconButtonShapes, optionally overriding some of the values. */
@@ -1525,7 +1516,6 @@ class IconButtonShapes(val shape: Shape, val pressedShape: Shape = shape) {
  * @property pressedShape is the pressed shape.
  * @property checkedShape is the checked shape.
  */
-@ExperimentalMaterial3ExpressiveApi
 class IconToggleButtonShapes(
     val shape: Shape,
     val pressedShape: Shape = shape,
@@ -1566,7 +1556,6 @@ class IconToggleButtonShapes(
     }
 }
 
-@ExperimentalMaterial3ExpressiveApi
 @Composable
 private fun shapeForInteraction(
     shapes: IconButtonShapes,
@@ -1584,7 +1573,6 @@ private fun shapeForInteraction(
     return shapeByInteraction(shapes, pressed, defaultAnimationSpec)
 }
 
-@ExperimentalMaterial3ExpressiveApi
 @Composable
 private fun shapeForInteraction(
     checked: Boolean,
@@ -1603,26 +1591,21 @@ private fun shapeForInteraction(
     return shapeByInteraction(shapes, pressed, checked, defaultAnimationSpec)
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 internal val IconButtonShapes.isCornerBasedShape: Boolean
     get() = shape is CornerBasedShape && pressedShape is CornerBasedShape
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 internal val IconButtonShapes.isStatic: Boolean
     get() = shape === pressedShape
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 internal val IconToggleButtonShapes.isCornerBasedShape: Boolean
     get() =
         shape is CornerBasedShape &&
             pressedShape is CornerBasedShape &&
             checkedShape is CornerBasedShape
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 internal val IconToggleButtonShapes.isStatic: Boolean
     get() = shape === pressedShape && shape === checkedShape
 
-@ExperimentalMaterial3ExpressiveApi
 @Composable
 private fun shapeByInteraction(
     shapes: IconButtonShapes,
@@ -1640,7 +1623,6 @@ private fun shapeByInteraction(
     return shape
 }
 
-@ExperimentalMaterial3ExpressiveApi
 @Composable
 private fun shapeByInteraction(
     shapes: IconToggleButtonShapes,

@@ -20,8 +20,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.lifecycle.viewmodel.HiltViewModelFactory
-import androidx.lifecycle.HasDefaultViewModelProviderFactory
-import androidx.lifecycle.SavedStateViewModelFactory
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStoreOwner
@@ -45,7 +43,7 @@ public inline fun <reified VM : ViewModel> hiltViewModel(
         },
     key: String? = null,
 ): VM {
-    val factory = rememberHiltViewModelFactory(viewModelStoreOwner)
+    val factory = rememberHiltViewModelFactory(viewModelStoreOwner.defaultViewModelProviderFactory)
     return viewModel(viewModelStoreOwner, key, factory = factory)
 }
 
@@ -67,7 +65,7 @@ public inline fun <reified VM : ViewModel, reified VMF> hiltViewModel(
     return viewModel(
         viewModelStoreOwner = viewModelStoreOwner,
         key = key,
-        factory = rememberHiltViewModelFactory(viewModelStoreOwner),
+        factory = rememberHiltViewModelFactory(viewModelStoreOwner.defaultViewModelProviderFactory),
         extras =
             viewModelStoreOwner.defaultViewModelCreationExtras.withCreationCallback(
                 creationCallback
@@ -87,22 +85,15 @@ public inline fun <reified VM : ViewModel, reified VMF> hiltViewModel(
  * or other state-holders that require a factory to properly inject Hilt dependencies into your
  * ViewModels.
  *
- * @param viewModelStoreOwner The owner used to extract the default fallback factory. Defaults to
- *   the nearest provided [LocalViewModelStoreOwner].
  * @param delegateFactory A fallback [ViewModelProvider.Factory] used to instantiate ViewModels that
- *   are not annotated with [HiltViewModel]. By default, it defers to the [viewModelStoreOwner]'s
- *   default factory (if it implements [HasDefaultViewModelProviderFactory]) to preserve standard
- *   instantiation behavior. Otherwise, it falls back to a [SavedStateViewModelFactory] to ensure
- *   state restoration continues to work safely.
+ *   are not annotated with [HiltViewModel]. Defaults to the default factory of the current
+ *   [LocalViewModelStoreOwner].
  * @return A remembered [ViewModelProvider.Factory] for Hilt-injected ViewModels.
  */
 @Composable
 public fun rememberHiltViewModelFactory(
-    viewModelStoreOwner: ViewModelStoreOwner =
-        checkNotNull(LocalViewModelStoreOwner.current) {
-            "No ViewModelStoreOwner was provided via LocalViewModelStoreOwner"
-        },
-    delegateFactory: ViewModelProvider.Factory = viewModelStoreOwner.defaultViewModelProviderFactory,
+    delegateFactory: ViewModelProvider.Factory =
+        LocalViewModelStoreOwner.current.defaultViewModelProviderFactory
 ): ViewModelProvider.Factory {
     val context = LocalContext.current
     return remember(context, delegateFactory) { HiltViewModelFactory(context, delegateFactory) }
@@ -115,4 +106,5 @@ public fun rememberHiltViewModelFactory(
 @PublishedApi
 internal fun createHiltViewModelFactory(
     viewModelStoreOwner: ViewModelStoreOwner
-): ViewModelProvider.Factory? = rememberHiltViewModelFactory(viewModelStoreOwner)
+): ViewModelProvider.Factory? =
+    rememberHiltViewModelFactory(viewModelStoreOwner.defaultViewModelProviderFactory)

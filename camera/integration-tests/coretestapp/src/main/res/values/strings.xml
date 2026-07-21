@@ -44,4 +44,5 @@
     <string name="duration_label">Duration (ms)</string>
     <string name="switch_time_label">Switch Time (ms)</string>
     <string name="enable_auto_rotation">Enable auto rotation</string>
+    <string name="tap_to_focus_ae_awb_lock">Tap-to-Focus AE/AWB Lock</string>
 </resources>

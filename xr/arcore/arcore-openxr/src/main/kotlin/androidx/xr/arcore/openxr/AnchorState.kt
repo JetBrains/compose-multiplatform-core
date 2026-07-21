@@ -16,8 +16,7 @@
 
 package androidx.xr.arcore.openxr
 
-import androidx.annotation.RestrictTo
-import androidx.xr.runtime.TrackingState
+import androidx.xr.arcore.runtime.TrackingState
 import androidx.xr.runtime.math.Pose
 
 /**
@@ -27,8 +26,7 @@ import androidx.xr.runtime.math.Pose
  * @property pose the [Pose] of the center of the detected anchor
  */
 @Suppress("DataClassDefinition")
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public data class AnchorState(
+internal data class AnchorState(
     val trackingState: TrackingState = TrackingState.PAUSED,
     val pose: Pose? = Pose(),
 ) {
@@ -36,32 +34,5 @@ public data class AnchorState(
         require(pose != null || trackingState == TrackingState.STOPPED) {
             "Pose cannot be null if tracking state is not STOPPED."
         }
-    }
-}
-
-/**
- * Create a [TrackingState] inferred from
- * [XrSpaceLocationFlags](https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#XrSpaceLocationFlags)
- * returned with the anchor location data.
- *
- * The following rules are used to determine the [TrackingState]:
- * * If both valid and tracking bits are flipped, return [TrackingState.TRACKING]
- * * If both valid bits are flipped, but not both tracking bits, return [TrackingState.PAUSED]
- * * Any other combination of flipped bits (i.e. both valid bits are not flipped), return
- *   [TrackingState.STOPPED]
- *
- * @param flags the `XrSpaceLocationFlags` value
- * @return the inferred [TrackingState]
- */
-internal fun TrackingState.Companion.fromOpenXrLocationFlags(flags: Int): TrackingState {
-    val VALID_MASK = 0x00000001 or 0x00000002
-    val TRACKING_MASK = VALID_MASK or 0x00000004 or 0x00000008
-
-    require(flags or TRACKING_MASK == TRACKING_MASK) { "Invalid location flag bits." }
-
-    return when {
-        (flags and TRACKING_MASK) == TRACKING_MASK -> TrackingState.TRACKING
-        (flags and VALID_MASK) == VALID_MASK -> TrackingState.PAUSED
-        else -> TrackingState.STOPPED
     }
 }

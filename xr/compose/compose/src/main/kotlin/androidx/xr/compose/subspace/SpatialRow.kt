@@ -47,6 +47,7 @@ import kotlin.math.sin
  * A layout composable that arranges its children in a horizontal sequence. For arranging children
  * vertically, see [SpatialColumn].
  *
+ * @sample androidx.xr.compose.samples.SimpleSpatialRowSample
  * @param modifier Appearance modifiers to apply to this Composable.
  * @param verticalAlignment The default vertical alignment for child elements within the row.
  * @param depthAlignment The default depth alignment for child elements within the row.
@@ -81,6 +82,7 @@ public inline fun SpatialRow(
 /**
  * A layout composable that arranges its children in a curved horizontal sequence.
  *
+ * @sample androidx.xr.compose.samples.SimpleSpatialCurvedRowSample
  * @param modifier Appearance modifiers to apply to this Composable.
  * @param verticalAlignment The default vertical alignment for child elements within the row.
  * @param depthAlignment The default depth alignment for child elements within the row.
@@ -174,10 +176,10 @@ internal class SpatialRowMeasurePolicy(
     }
 
     override val SubspacePlaceable.mainAxisSize: Int
-        get() = measuredWidth
+        get() = width
 
     override val SubspacePlaceable.crossAxisSize: Int
-        get() = measuredHeight
+        get() = height
 
     override val VolumeConstraints.mainAxisTargetSpace: Int
         get() = if (maxWidth != VolumeConstraints.INFINITY) maxWidth else minWidth
@@ -212,14 +214,14 @@ internal class SpatialRowMeasurePolicy(
         containerSize: IntVolumeSize,
         layoutDirection: LayoutDirection,
     ): Int {
-        // Each child will have its main-axis offset adjusted, based on extra space available and
-        // the provided alignment. `mainAxisOffset` represents the left edge of the content
-        // in the container space.
-        return (alignment.horizontalOffset(
-                contentSize.width,
-                containerSize.width,
-                layoutDirection,
-            ) - containerSize.width / 2.0)
+        return (alignment
+                .align(
+                    size = IntVolumeSize(contentSize.width, 0, 0),
+                    space = IntVolumeSize(containerSize.width, 0, 0),
+                    layoutDirection = layoutDirection,
+                )
+                .x
+                .toInt() - containerSize.width / 2.0)
             .fastRoundToInt()
     }
 
@@ -285,7 +287,7 @@ internal class SpatialRowMeasurePolicy(
 
         val depthPosition =
             resolvedMeasurable.depthOffset(
-                depth = placeable.measuredDepth,
+                depth = placeable.depth,
                 space = containerSize.depth,
                 parentSpatialAlignment = alignment,
             )

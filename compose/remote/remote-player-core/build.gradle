@@ -30,7 +30,7 @@ androidx {
 
 android {
     namespace = "androidx.compose.remote.player.core"
-    compileSdk { version = release(35) }
+    compileSdk { version = release(37) }
     defaultConfig {
         minSdk { version = release(29) }
     }
@@ -42,4 +42,14 @@ dependencies {
     implementation(project(":compose:remote:remote-core"))
     implementation("androidx.customview:customview:1.2.0")
     implementation(libs.androidx.core)
+
+    androidTestImplementation(libs.testExtJunit)
+    androidTestImplementation(libs.testRunner)
+    androidTestImplementation(libs.junit)
+    androidTestImplementation(libs.truth)
+    androidTestImplementation(project(":compose:remote:remote-core-testutils"))
+
+    testImplementation(libs.junit)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.testCore)
 }

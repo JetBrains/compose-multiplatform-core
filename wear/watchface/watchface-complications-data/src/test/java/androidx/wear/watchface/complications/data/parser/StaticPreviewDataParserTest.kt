@@ -21,6 +21,7 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.pm.PackageManager
 import android.content.pm.ServiceInfo
+import android.content.res.ColorStateList
 import android.content.res.Configuration
 import android.graphics.Color
 import android.os.Bundle
@@ -53,6 +54,7 @@ import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.spy
 import org.mockito.kotlin.stub
 import org.mockito.kotlin.whenever
+import org.robolectric.util.ReflectionHelpers
 
 @RunWith(SharedRobolectricTestRunner::class)
 @org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.TARGET_SDK])
@@ -206,6 +208,28 @@ class StaticPreviewDataParserTest {
                 expect.that(complicationData.smallImage).isNotNull()
                 expect.that(complicationData.smallImage!!.type).isEqualTo(SmallImageType.ICON)
                 expect.that(complicationData.dataSource).isEqualTo(TEST_PROVIDER)
+            }
+        }
+    }
+
+    @Test
+    fun imageTint() {
+        runTestForLocale(Locale.US) { context ->
+            context.resources.getXml(R.xml.static_preview_data_tint).use { parser ->
+                val previewData = PreviewData.inflate(TEST_PROVIDER, context, context, parser)
+
+                val complicationData =
+                    previewData[ComplicationType.RANGED_VALUE] as RangedValueComplicationData
+
+                val monochromaticImage = complicationData.monochromaticImage!!.image
+                val smallImage = complicationData.smallImage!!.image
+                val monochromaticImageTint =
+                    ReflectionHelpers.getField<ColorStateList>(monochromaticImage, "mTintList")
+                        .defaultColor
+                val smallImageTint =
+                    ReflectionHelpers.getField<ColorStateList>(smallImage, "mTintList").defaultColor
+                expect.that(monochromaticImageTint).isEqualTo(Color.RED)
+                expect.that(smallImageTint).isEqualTo(Color.GREEN)
             }
         }
     }
@@ -717,6 +741,27 @@ class StaticPreviewDataParserTest {
                     .isEqualTo("Title")
                 expect.that(complicationData.monochromaticImage).isNotNull()
                 expect.that(complicationData.smallImage).isNull()
+                expect.that(complicationData.dataSource).isEqualTo(TEST_PROVIDER)
+            }
+        }
+    }
+
+    @Test
+    @Throws(Exception::class)
+    fun integerInstantComplication() {
+        runTestForLocale(Locale.US) { context ->
+            context.resources.getXml(R.xml.static_preview_data_integer_instants).use { parser ->
+                val previewData = PreviewData.inflate(TEST_PROVIDER, context, context, parser)
+                val complicationData =
+                    previewData[ComplicationType.SHORT_TEXT] as ShortTextComplicationData
+
+                val timeText =
+                    complicationData.text.getTextAt(context.resources, Instant.ofEpochMilli(0))
+                val dateText =
+                    complicationData.title!!.getTextAt(context.resources, Instant.ofEpochMilli(0))
+
+                expect.that(timeText).isEqualTo("10:09AM")
+                expect.that(dateText).isEqualTo("May 24")
                 expect.that(complicationData.dataSource).isEqualTo(TEST_PROVIDER)
             }
         }

@@ -17,23 +17,26 @@
 package androidx.xr.scenecore.spatial.core
 
 import androidx.core.app.ComponentActivity
-import androidx.xr.arcore.testing.FakePerceptionRuntimeFactory
-import androidx.xr.runtime.FieldOfView
 import androidx.xr.runtime.Session
+import androidx.xr.runtime.math.FieldOfView
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.runtime.Dimensions
 import androidx.xr.scenecore.runtime.PerceivedResolutionResult
 import androidx.xr.scenecore.runtime.PixelDimensions
-import androidx.xr.scenecore.testing.FakeScenePose
-import androidx.xr.scenecore.testing.FakeSceneRuntime
+import androidx.xr.scenecore.runtime.ScenePose
+import androidx.xr.scenecore.runtime.SceneRuntime
+import androidx.xr.scenecore.testing.FakeScheduledExecutorService
+import com.android.extensions.xr.XrExtensions
 import com.google.common.truth.Truth.assertThat
 import kotlin.math.atan
 import kotlin.math.roundToInt
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mockito.Mockito.mock
+import org.mockito.Mockito.`when`
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
@@ -47,31 +50,41 @@ class PerceivedResolutionUtilsTest {
     private lateinit var activityController: ActivityController<ComponentActivity>
     private lateinit var activity: ComponentActivity
 
-    private lateinit var fakeCameraView: FakeScenePose
+    private val fakeCameraView: ScenePose = mock(ScenePose::class.java)
 
     // Default camera properties
     private lateinit var cameraPose: Pose
     private lateinit var cameraFov: FieldOfView
     private lateinit var cameraDisplayResolution: PixelDimensions
     private lateinit var session: Session
-    private lateinit var fakeSceneRuntime: FakeSceneRuntime
+    private lateinit var fakeSceneRuntime: SceneRuntime
 
-    private val fakePerceptionRuntimeFactory = FakePerceptionRuntimeFactory()
+    @Suppress("DEPRECATION")
+    // TODO: b/494308962 Remove references to arcore-testing Fakes
+    private val fakePerceptionRuntimeFactory =
+        androidx.xr.arcore.testing.FakePerceptionRuntimeFactory()
 
     @Before
+    @SuppressWarnings("RestrictTo")
     fun setUp() {
         activityController = Robolectric.buildActivity(ComponentActivity::class.java)
         activity = activityController.get()
 
         // Default camera setup: at origin, looking along -Z, 90deg HFOV, 90deg VFOV
-        fakeCameraView = FakeScenePose()
-        fakeCameraView.activitySpacePose = Pose(Vector3(0f, 0f, 0f), Quaternion.Identity)
+        `when`(fakeCameraView.activitySpacePose)
+            .thenReturn(Pose(Vector3(0f, 0f, 0f), Quaternion.Identity))
         cameraPose = Pose(Vector3(0f, 0f, 0f), Quaternion.Identity)
         cameraFov =
             FieldOfView(atan(1.0f), atan(1.0f), atan(1.0f), atan(1.0f)) // tan(angle) = 1 => 45 deg
         cameraDisplayResolution = PixelDimensions(1000, 1000) // 1000x1000 display
 
-        fakeSceneRuntime = FakeSceneRuntime()
+        fakeSceneRuntime =
+            SpatialSceneRuntime.create(
+                activity,
+                FakeScheduledExecutorService(),
+                XrExtensions(),
+                SceneNodeRegistry(),
+            )
         session =
             Session(
                 activity,
@@ -129,7 +142,8 @@ class PerceivedResolutionUtilsTest {
 
     @Test
     fun getDimensionsAndDistanceOfLargest3dBoxSurface_cameraNotAtOrigin() {
-        fakeCameraView.activitySpacePose = Pose(Vector3(1f, 1f, 1f), Quaternion.Identity)
+        `when`(fakeCameraView.activitySpacePose)
+            .thenReturn(Pose(Vector3(1f, 1f, 1f), Quaternion.Identity))
         val boxDimensions = Dimensions(width = 1f, height = 2f, depth = 3f) // Smallest is width
         val boxPosition =
             Vector3(1f, 1f, -2f) // Box is 3 units away from camera along -Z relative to camera

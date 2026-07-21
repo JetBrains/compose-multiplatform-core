@@ -42,8 +42,7 @@ public class LoopOperation extends PaintOperation
 
     private static final int OP_CODE = Operations.LOOP_START;
 
-    @NonNull
-    public ArrayList<Operation> mList = new ArrayList<>();
+    @NonNull public ArrayList<Operation> mList = new ArrayList<>();
 
     int mIndexVariableId;
     float mUntil;
@@ -124,6 +123,7 @@ public class LoopOperation extends PaintOperation
         RemoteContext remoteContext = context.getContext();
         if (mIndexVariableId == 0) {
             for (float i = mFromOut; i < mUntilOut; i += mStepOut) {
+                remoteContext.incrementOpCount();
                 for (Operation op : mList) {
                     remoteContext.incrementOpCount();
                     op.apply(context.getContext());
@@ -132,6 +132,7 @@ public class LoopOperation extends PaintOperation
         } else {
             for (float i = mFromOut; i < mUntilOut; i += mStepOut) {
                 context.getContext().loadFloat(mIndexVariableId, i);
+                remoteContext.incrementOpCount();
                 for (Operation op : mList) {
                     if (op instanceof VariableSupport && op.isDirty()) {
                         ((VariableSupport) op).updateVariables(context.getContext());
@@ -153,9 +154,7 @@ public class LoopOperation extends PaintOperation
         return "Loop";
     }
 
-    /**
-     * Write the operation on the buffer
-     */
+    /** Write the operation on the buffer */
     public static void apply(
             @NonNull WireBuffer buffer, int indexId, float from, float step, float until) {
         buffer.start(OP_CODE);
@@ -168,14 +167,23 @@ public class LoopOperation extends PaintOperation
     /**
      * Read this operation and add it to the list of operations
      *
-     * @param buffer     the buffer to read
+     * @param buffer the buffer to read
      * @param operations the list of operations that will be added to
      */
     public static void read(@NonNull WireBuffer buffer, @NonNull List<Operation> operations) {
-        int indexId = buffer.readInt();
-        float from = buffer.readFloat();
-        float step = buffer.readFloat();
-        float until = buffer.readFloat();
+        int indexId = buffer.readId();
+        float from = buffer.readNanId();
+        float step = buffer.readNanId();
+        float until = buffer.readNanId();
+        // Validate step is not zero (infinite loop) and is in the right direction
+        if (!Float.isNaN(step) && !Float.isNaN(from) && !Float.isNaN(until)) {
+            if (step == 0) {
+                throw new RuntimeException("Loop step cannot be zero");
+            }
+            if (step < 0 && from < until) {
+                throw new RuntimeException("Loop step is negative but from < until");
+            }
+        }
         operations.add(new LoopOperation(indexId, from, step, until));
     }
 
@@ -187,7 +195,9 @@ public class LoopOperation extends PaintOperation
     public static void documentation(@NonNull DocumentationBuilder doc) {
         doc.operation("Logic & Expressions Operations", OP_CODE, name())
                 .description("Execute a list of operations in a loop")
-                .field(DocumentedOperation.INT, "indexId",
+                .field(
+                        DocumentedOperation.INT,
+                        "indexId",
                         "The ID of the variable to store the loop index")
                 .field(DocumentedOperation.FLOAT, "from", "Starting value")
                 .field(DocumentedOperation.FLOAT, "step", "Increment value")

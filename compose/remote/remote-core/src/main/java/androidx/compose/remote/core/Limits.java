@@ -17,9 +17,7 @@ package androidx.compose.remote.core;
 
 import androidx.annotation.RestrictTo;
 
-/**
- * Constants defining the limits of the RemoteCompose player.
- */
+/** Constants defining the limits of the RemoteCompose player. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class Limits {
     /** Maximum number of operations processed per frame */
@@ -66,6 +64,36 @@ public class Limits {
 
     /** Maximum number of cached items in player-side LRU caches */
     public static final int MAX_CACHE_ENTRIES = 20;
+
+    /** Enable the player to generate haptic feedback */
+    public static final boolean ENABLE_HAPTIC_FEEDBACK = true;
+
+    /** Enable the player to support Image URLs */
+    public static boolean ENABLE_IMAGE_URLS = false;
+
+    /** Enable the player to support Image Files */
+    public static boolean ENABLE_IMAGE_FILES = false;
+
+    /** Maximum number of particles */
+    public static final int MAX_PARTICLE_COUNT = 8000;
+
+    /** Maximum number values for an easing function */
+    public static final int MAX_EASING_LEN = 200;
+
+    /** Maximum number of touch stops */
+    public static final int MAX_TOUCH_STOPS = 200;
+
+    /** Maximum size of font data (in bytes) */
+    public static final int MAX_FONT_DATA = 800_000;
+
+    /** Maximum number of font data entries */
+    public static final int MAX_SUM_TILL_ITERATIONS = 10000;
+
+    /** Maximum number of dash intervals */
+    public static final int MAX_DASH_INTERVALS = 1000;
+
+    /** Maximum size and image header can be */
+    public static final int MAX_IMAGE_HEADER_SIZE = 10000;
 
     private Limits() {}
 }

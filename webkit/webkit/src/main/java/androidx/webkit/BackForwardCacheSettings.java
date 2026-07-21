@@ -18,6 +18,7 @@ package androidx.webkit;
 
 import android.webkit.WebView;
 
+import androidx.annotation.IntRange;
 import androidx.annotation.RequiresFeature;
 import androidx.annotation.RestrictTo;
 import androidx.webkit.internal.ApiFeature;
@@ -54,14 +55,19 @@ public class BackForwardCacheSettings {
 
     /**
      * Returns the timeout for pages in the back-forward cache, in seconds.
+     *
      * <p>
      * This method should only be called if
-     * {@link WebViewFeature#isFeatureSupported(String)} returns true for
+     * {@link WebViewFeature#isFeatureSupported(String)} returns {@code true} for
      * {@link WebViewFeature#BACK_FORWARD_CACHE_SETTINGS_EXPERIMENTAL_V3}.
+     *
+     * @throws UnsupportedOperationException if the
+     *                            {@link WebViewFeature#BACK_FORWARD_CACHE_SETTINGS_EXPERIMENTAL_V3}
+     *                                       feature is not supported.
      */
     @RequiresFeature(name = WebViewFeature.BACK_FORWARD_CACHE_SETTINGS_EXPERIMENTAL_V3,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
-    public long getTimeoutSeconds() {
+    public @IntRange(from = 0) long getTimeoutSeconds() {
         final ApiFeature.NoFramework feature =
                 WebViewFeatureInternal.BACK_FORWARD_CACHE_SETTINGS_EXPERIMENTAL_V3;
         if (feature.isSupportedByWebView()) {
@@ -73,16 +79,20 @@ public class BackForwardCacheSettings {
 
     /**
      * Sets the timeout for pages in the back-forward cache.
+     *
      * <p>
      * This method should only be called if
-     * {@link WebViewFeature#isFeatureSupported(String)} returns true for
+     * {@link WebViewFeature#isFeatureSupported(String)} returns {@code true} for
      * {@link WebViewFeature#BACK_FORWARD_CACHE_SETTINGS_EXPERIMENTAL_V3}.
      *
      * @param timeoutSeconds The timeout in seconds.
+     * @throws UnsupportedOperationException if the
+     *                            {@link WebViewFeature#BACK_FORWARD_CACHE_SETTINGS_EXPERIMENTAL_V3}
+     *                                       feature is not supported.
      */
     @RequiresFeature(name = WebViewFeature.BACK_FORWARD_CACHE_SETTINGS_EXPERIMENTAL_V3,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
-    public void setTimeoutSeconds(long timeoutSeconds) {
+    public void setTimeoutSeconds(@IntRange(from = 0) long timeoutSeconds) {
         final ApiFeature.NoFramework feature =
                 WebViewFeatureInternal.BACK_FORWARD_CACHE_SETTINGS_EXPERIMENTAL_V3;
         if (feature.isSupportedByWebView()) {
@@ -94,14 +104,19 @@ public class BackForwardCacheSettings {
 
     /**
      * Returns the maximum number of pages that can be stored in the back-forward cache.
+     *
      * <p>
      * This method should only be called if
-     * {@link WebViewFeature#isFeatureSupported(String)} returns true for
+     * {@link WebViewFeature#isFeatureSupported(String)} returns {@code true} for
      * {@link WebViewFeature#BACK_FORWARD_CACHE_SETTINGS_EXPERIMENTAL_V3}.
+     *
+     * @throws UnsupportedOperationException if the
+     *                            {@link WebViewFeature#BACK_FORWARD_CACHE_SETTINGS_EXPERIMENTAL_V3}
+     *                                       feature is not supported.
      */
     @RequiresFeature(name = WebViewFeature.BACK_FORWARD_CACHE_SETTINGS_EXPERIMENTAL_V3,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
-    public int getMaxPagesInCache() {
+    public @IntRange(from = 0) int getMaxPagesInCache() {
         final ApiFeature.NoFramework feature =
                 WebViewFeatureInternal.BACK_FORWARD_CACHE_SETTINGS_EXPERIMENTAL_V3;
         if (feature.isSupportedByWebView()) {
@@ -113,20 +128,73 @@ public class BackForwardCacheSettings {
 
     /**
      * Sets the maximum number of pages that can be stored in the back-forward cache.
+     *
      * <p>
      * This method should only be called if
-     * {@link WebViewFeature#isFeatureSupported(String)} returns true for
+     * {@link WebViewFeature#isFeatureSupported(String)} returns {@code true} for
      * {@link WebViewFeature#BACK_FORWARD_CACHE_SETTINGS_EXPERIMENTAL_V3}.
      *
      * @param maxPagesInCache The maximum number of pages.
+     * @throws UnsupportedOperationException if the
+     *                            {@link WebViewFeature#BACK_FORWARD_CACHE_SETTINGS_EXPERIMENTAL_V3}
+     *                                       feature is not supported.
      */
     @RequiresFeature(name = WebViewFeature.BACK_FORWARD_CACHE_SETTINGS_EXPERIMENTAL_V3,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
-    public void setMaxPagesInCache(int maxPagesInCache) {
+    public void setMaxPagesInCache(@IntRange(from = 0) int maxPagesInCache) {
         final ApiFeature.NoFramework feature =
                 WebViewFeatureInternal.BACK_FORWARD_CACHE_SETTINGS_EXPERIMENTAL_V3;
         if (feature.isSupportedByWebView()) {
             mAdapter.setBackForwardCacheMaxPagesInCache(maxPagesInCache);
+        } else {
+            throw WebViewFeatureInternal.getUnsupportedOperationException();
+        }
+    }
+
+    /**
+     * Returns whether to keep forward cache entries when the back-forward cache is enabled.
+     * <p>
+     * This method should only be called if
+     * {@link WebViewFeature#isFeatureSupported(String)} returns {@code true} for
+     * {@link WebViewFeature#BACK_FORWARD_CACHE_SETTINGS_EXPERIMENTAL_V4}.
+     *
+     * @throws UnsupportedOperationException if the
+     *                            {@link WebViewFeature#BACK_FORWARD_CACHE_SETTINGS_EXPERIMENTAL_V4}
+     *                                       feature is not supported.
+     */
+    @RequiresFeature(name = WebViewFeature.BACK_FORWARD_CACHE_SETTINGS_EXPERIMENTAL_V4,
+            enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
+    @WebSettingsCompat.ExperimentalBackForwardCacheSettings
+    public boolean isKeepForwardEntriesEnabled() {
+        final ApiFeature.NoFramework feature =
+                WebViewFeatureInternal.BACK_FORWARD_CACHE_SETTINGS_EXPERIMENTAL_V4;
+        if (feature.isSupportedByWebView()) {
+            return mAdapter.getBackForwardCacheKeepForwardEntries();
+        } else {
+            throw WebViewFeatureInternal.getUnsupportedOperationException();
+        }
+    }
+
+    /**
+     * Sets whether to keep forward cache entries when the back-forward cache is enabled.
+     * <p>
+     * This method should only be called if
+     * {@link WebViewFeature#isFeatureSupported(String)} returns {@code true} for
+     * {@link WebViewFeature#BACK_FORWARD_CACHE_SETTINGS_EXPERIMENTAL_V4}.
+     *
+     * @param keepForwardEntries Whether to keep forward cache entries.
+     * @throws UnsupportedOperationException if the
+     *                            {@link WebViewFeature#BACK_FORWARD_CACHE_SETTINGS_EXPERIMENTAL_V4}
+     *                                       feature is not supported.
+     */
+    @RequiresFeature(name = WebViewFeature.BACK_FORWARD_CACHE_SETTINGS_EXPERIMENTAL_V4,
+            enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
+    @WebSettingsCompat.ExperimentalBackForwardCacheSettings
+    public void setKeepForwardEntriesEnabled(boolean keepForwardEntries) {
+        final ApiFeature.NoFramework feature =
+                WebViewFeatureInternal.BACK_FORWARD_CACHE_SETTINGS_EXPERIMENTAL_V4;
+        if (feature.isSupportedByWebView()) {
+            mAdapter.setBackForwardCacheKeepForwardEntries(keepForwardEntries);
         } else {
             throw WebViewFeatureInternal.getUnsupportedOperationException();
         }

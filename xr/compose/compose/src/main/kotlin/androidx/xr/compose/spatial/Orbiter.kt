@@ -31,7 +31,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.RememberObserver
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.currentComposer
-import androidx.compose.runtime.currentCompositeKeyHash
+import androidx.compose.runtime.currentCompositeKeyHashCode
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.movableContentOf
 import androidx.compose.runtime.mutableStateOf
@@ -396,7 +396,7 @@ public fun Orbiter(
 
     val session = checkNotNull(LocalSession.current) { "session must be initialized" }
     val parentView = LocalView.current
-    @Suppress("DEPRECATION") val localId = currentCompositeKeyHash
+    val localId = currentCompositeKeyHashCode
     val context = LocalContext.current
     val compositionContext = rememberCompositionContext()
     val parentEntity: CoreEntity? = findNearestParentEntity()
@@ -811,7 +811,7 @@ private fun PanelScrim() {
         Box(
             modifier =
                 Modifier.fillMaxSize().pointerInput(Unit) {
-                    detectTapGestures { dialogManager.isSpatialDialogActive.value = false }
+                    detectTapGestures { /* Prevent clicks to compose */ }
                 }
         )
     }
@@ -825,8 +825,8 @@ private fun PanelScrim() {
     }
 }
 
-private fun getWindowBoundsInPixels(session: Session): IntSize2d =
-    (session.context as Activity).window.decorView.run { IntSize2d(width, height) }
+private fun getWindowBoundsInPixels(context: Context): IntSize2d =
+    (context as Activity).window.decorView.run { IntSize2d(width, height) }
 
 /**
  * Provides the dimensions of the Android main window.
@@ -839,21 +839,22 @@ private fun getWindowBoundsInPixels(session: Session): IntSize2d =
  */
 @Composable
 private fun getMainWindowSize(session: Session): IntVolumeSize {
+    val context = LocalContext.current
     var panelSize by
         remember(session) {
-            val initialPixelDimensions = getWindowBoundsInPixels(session)
+            val initialPixelDimensions = getWindowBoundsInPixels(context)
             mutableStateOf(
                 IntVolumeSize(initialPixelDimensions.width, initialPixelDimensions.height, 0)
             )
         }
 
-    val mainView = (session.context as Activity).window.decorView
+    val mainView = (context as Activity).window.decorView
 
     DisposableEffect(Unit) {
         val listener =
             View.OnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
                 val newSize =
-                    getWindowBoundsInPixels(session).run { IntVolumeSize(width, height, 0) }
+                    getWindowBoundsInPixels(context).run { IntVolumeSize(width, height, 0) }
                 if (panelSize != newSize) {
                     panelSize = newSize
                 }
@@ -887,7 +888,7 @@ private class SpatialOrbiter(
     private var parentView: View,
     private var compositionContext: CompositionContext,
     private var session: Session,
-    private var localId: Int,
+    private var localId: Long,
     initialPoseProvider: OrbiterPoseProvider,
     initialShape: SpatialShape,
 ) : RememberObserver {
@@ -912,6 +913,7 @@ private class SpatialOrbiter(
             CorePanelEntity(
                     PanelEntity.create(
                         session = session,
+                        parent = null,
                         view = view,
                         pixelDimensions = IntSize2d(0, 0),
                         name = "Orbiter:${view.id}",

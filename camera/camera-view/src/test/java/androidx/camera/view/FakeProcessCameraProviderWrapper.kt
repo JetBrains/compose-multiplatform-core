@@ -62,7 +62,7 @@ class FakeProcessCameraProviderWrapper(
     }
 
     override fun unbind(sessionConfig: SessionConfig) {
-        // no-op.
+        unbindInvokedUseCases = sessionConfig.useCases
     }
 
     override fun unbindAll() {

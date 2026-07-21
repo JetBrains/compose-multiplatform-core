@@ -17,7 +17,11 @@
 package androidx.appfunctions
 
 import android.content.Context
+import android.os.UserManager
+import androidx.appfunctions.metadata.AppFunctionComponentsMetadata
 import androidx.appfunctions.metadata.AppFunctionMetadata
+import androidx.appfunctions.metadata.AppFunctionName
+import androidx.appfunctions.metadata.AppFunctionPackageMetadata
 import androidx.appfunctions.metadata.AppFunctionResponseMetadata
 import androidx.appfunctions.metadata.AppFunctionSchemaMetadata
 import androidx.appfunctions.metadata.AppFunctionUnitTypeMetadata
@@ -33,7 +37,9 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.Shadows
 import org.robolectric.annotation.Config
+import org.robolectric.shadows.ShadowUserManager
 
 @RunWith(RobolectricTestRunner::class)
 @Config(minSdk = 33)
@@ -77,8 +83,12 @@ class AppFunctionManagerUnitTest {
         val packageName = "com.pkg"
         fakeAppFunctionReader.addAppFunctionMetadata(
             AppFunctionMetadata(
-                id = functionId,
-                packageName = packageName,
+                name = AppFunctionName(packageName = packageName, functionIdentifier = functionId),
+                packageMetadata =
+                    AppFunctionPackageMetadata(
+                        packageName = packageName,
+                        components = AppFunctionComponentsMetadata(),
+                    ),
                 isEnabled = true,
                 schema =
                     AppFunctionSchemaMetadata(category = "notes", name = "createNote", version = 1),
@@ -108,8 +118,12 @@ class AppFunctionManagerUnitTest {
         val packageName = "com.pkg"
         fakeAppFunctionReader.addAppFunctionMetadata(
             AppFunctionMetadata(
-                id = functionId,
-                packageName = packageName,
+                name = AppFunctionName(packageName = packageName, functionIdentifier = functionId),
+                packageMetadata =
+                    AppFunctionPackageMetadata(
+                        packageName = packageName,
+                        components = AppFunctionComponentsMetadata(),
+                    ),
                 isEnabled = true,
                 schema =
                     AppFunctionSchemaMetadata(category = "notes", name = "createNote", version = 2),
@@ -132,5 +146,15 @@ class AppFunctionManagerUnitTest {
         assertThat(fakeTranslator.upgradeRequestCalled).isFalse()
         assertThat(fakeTranslator.downgradeResponseCalled).isFalse()
         assertThat(fakeTranslator.upgradeResponseCalled).isFalse()
+    }
+
+    @Test
+    fun getInstance_whenProfileUser_returnsNull() {
+        Shadows.shadowOf(context.getSystemService(UserManager::class.java)!!)
+            .addProfile(1, 0, "Profile", ShadowUserManager.FLAG_PROFILE)
+
+        val instance = AppFunctionManager.getInstance(context)
+
+        assertThat(instance).isNull()
     }
 }

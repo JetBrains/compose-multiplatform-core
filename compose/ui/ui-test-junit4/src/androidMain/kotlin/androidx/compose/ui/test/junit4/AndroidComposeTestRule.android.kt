@@ -19,6 +19,7 @@ package androidx.compose.ui.test.junit4
 import androidx.activity.ComponentActivity
 import androidx.annotation.RestrictTo
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.test.AndroidComposeUiTest
 import androidx.compose.ui.test.AndroidComposeUiTestEnvironment
 import androidx.compose.ui.test.ComposeAccessibilityValidator
 import androidx.compose.ui.test.ExperimentalTestApi
@@ -27,11 +28,14 @@ import androidx.compose.ui.test.MainTestClock
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.SemanticsNodeInteractionCollection
+import androidx.compose.ui.test.SemanticsNodeInteractionsProvider
+import androidx.compose.ui.test.onRootWithViewInteraction
 import androidx.compose.ui.test.waitUntilAtLeastOneExists
 import androidx.compose.ui.test.waitUntilDoesNotExist
 import androidx.compose.ui.test.waitUntilExactlyOneExists
 import androidx.compose.ui.test.waitUntilNodeCount
 import androidx.compose.ui.unit.Density
+import androidx.test.espresso.ViewInteraction
 import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.platform.app.InstrumentationRegistry
 import kotlin.coroutines.CoroutineContext
@@ -277,9 +281,11 @@ fun createEmptyComposeRule(
 class AndroidComposeTestRule<R : TestRule, A : ComponentActivity>
 private constructor(
     val activityRule: R,
-    private val environment: AndroidComposeUiTestEnvironment<A>,
+    private val environmentFactory: () -> AndroidComposeUiTestEnvironment<A>,
 ) : ComposeContentTestRule {
-    private val composeTest = environment.test
+    private var environment: AndroidComposeUiTestEnvironment<A> = environmentFactory()
+    private val composeTest: AndroidComposeUiTest<A>
+        get() = environment.test
 
     /**
      * Android specific implementation of [ComposeContentTestRule], where compose content is hosted
@@ -392,12 +398,14 @@ private constructor(
         useStandardTestDispatcherForComposition: Boolean,
         activityProvider: (R) -> A,
     ) : this(
-        activityRule,
-        createTestEnvironment(
-            effectContext = effectContext,
-            useStandardTestDispatcher = useStandardTestDispatcherForComposition,
-            content = { activityProvider(activityRule) },
-        ),
+        activityRule = activityRule,
+        environmentFactory = {
+            createTestEnvironment(
+                effectContext = effectContext,
+                useStandardTestDispatcher = useStandardTestDispatcherForComposition,
+                content = { activityProvider(activityRule) },
+            )
+        },
     )
 
     /**
@@ -435,7 +443,13 @@ private constructor(
 
         return object : Statement() {
             override fun evaluate() {
-                environment.runTest { activityRule.apply(testWithDisposal, description).evaluate() }
+                try {
+                    return environment.runTest {
+                        activityRule.apply(testWithDisposal, description).evaluate()
+                    }
+                } finally {
+                    environment = environmentFactory()
+                }
             }
         }
     }
@@ -473,6 +487,10 @@ private constructor(
     override fun <T> runOnUiThread(action: () -> T): T = composeTest.runOnUiThread(action)
 
     override fun <T> runOnIdle(action: () -> T): T = composeTest.runOnIdle(action)
+
+    override fun <T> runWithoutImplicitWait(block: () -> T): T {
+        return composeTest.runWithoutImplicitWait(block)
+    }
 
     override fun waitForIdle() = composeTest.waitForIdle()
 
@@ -533,6 +551,21 @@ private constructor(
      */
     fun cancelAndRecreateRecomposer() {
         environment.cancelAndRecreateRecomposer()
+    }
+
+    /**
+     * Scopes the Compose interaction to the View hierarchy matched by the provided Espresso
+     * [ViewInteraction].
+     *
+     * It resolves the View from the Espresso [interaction], locates all Compose roots within that
+     * view hierarchy, and creates a new, scoped SemanticsNodeInteractionsProvider.
+     */
+    fun onRootWithViewInteraction(interaction: ViewInteraction): SemanticsNodeInteractionsProvider {
+        return composeTest.onRootWithViewInteraction(interaction)
+    }
+
+    override fun hasPendingWork(): Boolean {
+        return composeTest.hasPendingWork()
     }
 }
 

@@ -22,12 +22,9 @@ plugins {
 android {
     buildTypes {
         release {
-            minifyEnabled = true
-            shrinkResources = true
-            proguardFiles(
-                    getDefaultProguardFile("proguard-android-optimize.txt"),
-                    "proguard-rules.pro"
-            )
+            optimization {
+                enable = true
+            }
         }
     }
     compileSdk { version = release(35) }

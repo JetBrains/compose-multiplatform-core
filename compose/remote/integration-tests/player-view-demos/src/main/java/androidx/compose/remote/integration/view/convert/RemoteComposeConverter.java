@@ -125,7 +125,7 @@ public class RemoteComposeConverter {
 
                 JSONArray fields = new JSONArray();
                 for (OpcodeRegistry.FieldSpec fSpec : spec.fields) {
-                    fields.put(encodeField(buffer, fSpec, fields));
+                    fields.put(encodeField(buffer, fSpec, fields, opcode));
                 }
                 opJson.put("fields", fields);
 
@@ -193,7 +193,13 @@ public class RemoteComposeConverter {
         for (int i = 0; i < fields.length(); i++) {
             JSONObject f = fields.getJSONObject(i);
             if (name.equals(f.getString("name"))) {
-                return Long.parseLong(f.getString("value"));
+                String val = f.optString("value", null);
+                if (val == null) return 0;
+                try {
+                    return Long.parseLong(val);
+                } catch (NumberFormatException e) {
+                    return 0;
+                }
             }
         }
         return 0;
@@ -201,12 +207,90 @@ public class RemoteComposeConverter {
 
     @SuppressLint("RestrictedApiAndroidX")
     private static int findFieldInt(JSONArray fields, String name) throws JSONException {
-        return (int) findFieldLong(fields, name);
+        for (int i = 0; i < fields.length(); i++) {
+            JSONObject f = fields.getJSONObject(i);
+            if (name.equals(f.getString("name"))) {
+                String val = f.optString("value", null);
+                if (val == null) return 0;
+                try {
+                    return Integer.parseInt(val);
+                } catch (NumberFormatException e) {
+                    return 0;
+                }
+            }
+        }
+        return 0;
     }
+
+    private static float findFieldFloat(JSONArray fields, String name) throws JSONException {
+        for (int i = 0; i < fields.length(); i++) {
+            JSONObject f = fields.getJSONObject(i);
+            if (name.equals(f.getString("name"))) {
+                String val = f.optString("value", null);
+                if (val == null) return 0f;
+                try {
+                    return Float.parseFloat(val);
+                } catch (NumberFormatException e) {
+                    return 0f;
+                }
+            }
+        }
+        return 0f;
+    }
+
+    /**
+     * Calculate the diff between two strings.
+     *
+     * @param a input string
+     * @param b input string
+     * @return diff string
+     */
+    public static @NonNull String diff(@NonNull String a, @NonNull String b) {
+        int m = a.length();
+        int n = b.length();
+
+        // dp[i][j] will store the length of LCS of a[0..i-1] and b[0..j-1]
+        int[][] dp = new int[m + 1][n + 1];
+
+        // Build the LCS matrix
+        for (int i = 1; i <= m; i++) {
+            for (int j = 1; j <= n; j++) {
+                if (a.charAt(i - 1) == b.charAt(j - 1)) {
+                    dp[i][j] = dp[i - 1][j - 1] + 1;
+                } else {
+                    dp[i][j] = Math.max(dp[i - 1][j], dp[i][j - 1]);
+                }
+            }
+        }
+
+        // Backtrack from the bottom-right corner to construct the diff output
+        StringBuilder result = new StringBuilder();
+        int i = m, j = n;
+
+        while (i > 0 || j > 0) {
+            if (i > 0 && j > 0 && a.charAt(i - 1) == b.charAt(j - 1)) {
+                // Characters are the same, keep them as is
+                result.insert(0, a.charAt(i - 1));
+                i--;
+                j--;
+            } else if (j > 0 && (i == 0 || dp[i][j - 1] >= dp[i - 1][j])) {
+                // Character was added in string b
+                result.insert(0, "+" + b.charAt(j - 1));
+                j--;
+            } else if (i > 0 && (j == 0 || dp[i - 1][j] >= dp[i][j - 1])) {
+                // Character was deleted from string a
+                result.insert(0, "-" + a.charAt(i - 1));
+                i--;
+            }
+        }
+
+        return result.toString();
+    }
+
 
     @SuppressLint("RestrictedApiAndroidX")
     private static JSONObject encodeField(WireBuffer buffer, OpcodeRegistry.FieldSpec spec,
-            JSONArray currentFields) throws JSONException {
+            JSONArray currentFields, int opcode) throws JSONException {
         JSONObject f = new JSONObject();
         f.put("name", spec.name);
         f.put("type", spec.type.name());
@@ -226,6 +310,31 @@ public class RemoteComposeConverter {
             case FLOAT:
                 f.put("value", formatFloat(buffer.readFloat()));
                 break;
+            case BITMAP_TEXT_ID: {
+                int v = buffer.readInt();
+                f.put("raw", v);
+                if ((v & 0x80000000) != 0) {
+                    v = v & 0xFFFF;
+                }
+                f.put("value", String.valueOf(v));
+                break;
+            }
+            case BITMAP_TEXT_GLYPH_SPACING: {
+                int rawTextId = 0;
+                for (int i = 0; i < currentFields.length(); i++) {
+                    JSONObject field = currentFields.getJSONObject(i);
+                    if ("textId".equals(field.getString("name"))) {
+                        rawTextId = field.getInt("raw");
+                        break;
+                    }
+                }
+                if ((rawTextId & 0x80000000) != 0) {
+                    f.put("value", formatFloat(buffer.readFloat()));
+                } else {
+                    f.put("value", formatFloat(0f));
+                }
+                break;
+            }
             case DOUBLE:
                 f.put("value", formatDouble(buffer.readDouble()));
                 break;
@@ -293,7 +402,12 @@ public class RemoteComposeConverter {
                 break;
             }
             case INT_ARRAY: {
-                int len = findFieldInt(currentFields, "length");
+                int len;
+                if (opcode == Operations.PAINT_VALUES && "paintBundle".equals(spec.name)) {
+                    len = buffer.readInt();
+                } else {
+                    len = findFieldInt(currentFields, "length");
+                }
                 JSONArray arr = new JSONArray();
                 for (int i = 0; i < len; i++) {
                     arr.put(buffer.readInt());
@@ -319,12 +433,20 @@ public class RemoteComposeConverter {
             case INT_RPN: {
                 int len = findFieldInt(currentFields, "length");
                 int mask = findFieldInt(currentFields, "mask");
+                if (mask == 0 && findFieldArray(currentFields, "mask") == null) {
+                    mask = 0xFFFFFFFF;
+                }
                 JSONArray rpnIntArr = new JSONArray();
                 for (int i = 0; i < len; i++) {
                     int v = buffer.readInt();
                     if (IntegerExpressionEvaluator.isOperation(mask, i)) {
-                        String name = IntegerExpressionEvaluator.toMathName(v);
-                        rpnIntArr.put(name != null ? name : String.valueOf(v));
+                        if (v >= IntegerExpressionEvaluator.OFFSET) {
+                            String name = IntegerExpressionEvaluator.toMathName(v);
+                            rpnIntArr.put(name != null ? name : String.valueOf(v));
+                        } else {
+                            // It's an ID (bit set in mask, but value < OFFSET)
+                            rpnIntArr.put("[" + v + "]");
+                        }
                     } else {
                         rpnIntArr.put(String.valueOf(v));
                     }
@@ -383,7 +505,7 @@ public class RemoteComposeConverter {
                     JSONObject fJson = fields.getJSONObject(j);
                     OpcodeRegistry.FieldType type = OpcodeRegistry.FieldType.valueOf(
                             fJson.getString("type"));
-                    writeField(buffer, type, fJson, opJson);
+                    writeField(buffer, type, fJson, opJson, opcode);
                 }
             } else {
                 byte[] payload = Base64.getDecoder().decode(opJson.getString("payloadBase64"));
@@ -399,7 +521,7 @@ public class RemoteComposeConverter {
     }
 
     private static void writeField(WireBuffer buffer, OpcodeRegistry.FieldType type,
-            JSONObject fJson, JSONObject opJson) throws JSONException {
+            JSONObject fJson, JSONObject opJson, int opcode) throws JSONException {
         switch (type) {
             case BYTE:
                 buffer.writeByte(Integer.parseInt(fJson.getString("value")));
@@ -447,6 +569,22 @@ public class RemoteComposeConverter {
             case BOOLEAN:
                 buffer.writeBoolean(Boolean.parseBoolean(fJson.getString("value")));
                 break;
+            case BITMAP_TEXT_ID: {
+                int textId = Integer.parseInt(fJson.getString("value"));
+                float glyphSpacing = findFieldFloat(opJson.getJSONArray("fields"), "glyphSpacing");
+                if (glyphSpacing != 0f) {
+                    textId |= 0x80000000;
+                }
+                buffer.writeInt(textId);
+                break;
+            }
+            case BITMAP_TEXT_GLYPH_SPACING: {
+                float glyphSpacing = Float.parseFloat(fJson.getString("value"));
+                if (glyphSpacing != 0f) {
+                    buffer.writeFloat(glyphSpacing);
+                }
+                break;
+            }
             case BUFFER:
                 buffer.writeBuffer(Base64.getDecoder().decode(fJson.getString("value")));
                 break;
@@ -531,6 +669,10 @@ public class RemoteComposeConverter {
             }
             case INT_ARRAY: {
                 JSONArray arr = fJson.getJSONArray("value");
+                if (opcode == Operations.PAINT_VALUES
+                        && "paintBundle".equals(fJson.getString("name"))) {
+                    buffer.writeInt(arr.length());
+                }
                 for (int i = 0; i < arr.length(); i++) {
                     buffer.writeInt(arr.getInt(i));
                 }
@@ -543,6 +685,8 @@ public class RemoteComposeConverter {
                     Integer op = sIntRpnMap.get(s);
                     if (op != null) {
                         buffer.writeInt(op);
+                    } else if (s.startsWith("[") && s.endsWith("]")) {
+                        buffer.writeInt(Integer.parseInt(s.substring(1, s.length() - 1)));
                     } else {
                         buffer.writeInt(Integer.parseInt(s));
                     }

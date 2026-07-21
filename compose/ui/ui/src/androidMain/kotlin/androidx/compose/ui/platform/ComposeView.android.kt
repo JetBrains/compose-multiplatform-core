@@ -26,16 +26,13 @@ import androidx.compose.runtime.Composition
 import androidx.compose.runtime.CompositionContext
 import androidx.compose.runtime.Recomposer
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.ui.AndroidComposeUiFlags
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.R
 import androidx.compose.ui.UiComposable
-import androidx.compose.ui.node.InternalCoreApi
 import androidx.compose.ui.node.Owner
 import androidx.compose.ui.util.trace
 import androidx.core.view.isEmpty
-import androidx.core.view.isNotEmpty
 import androidx.core.viewtree.getParentOrViewTreeDisjointParent
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
@@ -61,7 +58,6 @@ import java.lang.ref.WeakReference
  * it set up correctly as [androidx.activity.ComponentActivity], [androidx.fragment.app.Fragment]
  * and [androidx.navigation.NavController] will provide the correct values.
  */
-@OptIn(ExperimentalComposeViewContextApi::class)
 abstract class AbstractComposeView
 @JvmOverloads
 constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0) :
@@ -129,28 +125,29 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
      * compose its content when not attached to the view hierarchy. Changing this to `null` will
      * result in any existing composition being disposed.
      */
-    @ExperimentalComposeViewContextApi
     internal var composeViewContext: ComposeViewContext? = null
         set(value) {
-            val existing = field
-            if (existing !== value) {
-                if (value == null) {
-                    disposeComposition()
-                } else if (isNotEmpty()) {
-                    val child = getChildAt(0) as? AndroidComposeView
-                    if (child != null) {
-                        if (
-                            child.coroutineContext !==
-                                value.compositionContext.effectCoroutineContext
-                        ) {
-                            disposeComposition()
-                        }
-                        child.composeViewContext = value
-                    }
-                }
-                field = value
+            val current = field
+            if (current === value) {
+                return
+            }
+
+            field = value
+            updateComposeViewContext(value)
+        }
+
+    internal fun updateComposeViewContext(context: ComposeViewContext?) {
+        val restartComposition = composition?.isDisposed == false
+        disposeComposition()
+
+        val child = getChildAt(0) as? AndroidComposeView
+        if (context != null) {
+            child?.composeViewContext = context
+            if (restartComposition) {
+                ensureCompositionCreated()
             }
         }
+    }
 
     /**
      * Set the [CompositionContext] that should be the parent of this view's composition. If
@@ -196,7 +193,6 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
      * Enables the display of visual layout bounds for the Compose UI content of this view. This is
      * typically configured using the system developer setting for "Show layout bounds."
      */
-    @OptIn(InternalCoreApi::class)
     @InternalComposeUiApi
     @Suppress("GetterSetterNames")
     @get:Suppress("GetterSetterNames")
@@ -273,7 +269,6 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
      * @param composeViewContext The [ComposeViewContext] to use for the composition. The
      *   [ComposeViewContext.view] must be attached to the hierarchy.
      */
-    @ExperimentalComposeViewContextApi
     fun createComposition(composeViewContext: ComposeViewContext) {
         check(composeViewContext.view.isAttachedToWindow) {
             "createComposition requires the ComposeViewContext's view to be attached to a window."
@@ -630,7 +625,6 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
      * view becomes attached to a window or when [createComposition] is called, whichever comes
      * first.
      */
-    @OptIn(ExperimentalComposeViewContextApi::class)
     fun setContent(content: @Composable () -> Unit) {
         shouldCreateCompositionOnAttachedToWindow = true
         this.content.value = content
@@ -653,19 +647,17 @@ internal var areWindowInsetsRulersEnabled = true
 
 /**
  * Used to disable [androidx.compose.ui.layout.WindowInsetsRulers]. This can be used when UI never
- * reads WindowInsets across the process and having WindowInsets callbacks cause frame generation
- * when no content is updated. Applications typically would not use this method, but it may be
- * necessary for system UI. This should be called before the first [ComposeView] is created to avoid
- * insets calls.
+ * reads WindowInsets across all ComposeViews to reduce the overhead of requesting WindowInsets
+ * updates. Only call this when no ComposeViews will ever need to handle insets over the lifetime of
+ * the application. This should be called before the first [ComposeView] is created.
  */
-@ExperimentalComposeUiApi
 fun ComposeView.Companion.disableWindowInsetsRulers() {
     areWindowInsetsRulersEnabled = false
 }
 
-@OptIn(ExperimentalComposeUiApi::class, ExperimentalComposeViewContextApi::class)
+@OptIn(ExperimentalComposeUiApi::class)
 private fun View.findViewTreeComposeViewRoot(): View {
-    if (!isAttachedToWindow || !AndroidComposeUiFlags.isSharedComposeViewContextEnabled) return this
+    if (!isAttachedToWindow) return this
 
     val lifecycleOwnerDepth =
         findDepthToTag(androidx.lifecycle.runtime.R.id.view_tree_lifecycle_owner)
@@ -744,7 +736,6 @@ private fun View.findDepthToTag(tag: Int): Int {
  * @sample androidx.compose.ui.samples.ComposeViewContextUnattachedSample
  * @see View.composeViewContext
  */
-@ExperimentalComposeViewContextApi
 fun View.findViewTreeComposeViewContext(): ComposeViewContext? {
     return findViewTreeComposeViewRoot().composeViewContext
 }
@@ -756,7 +747,6 @@ fun View.findViewTreeComposeViewContext(): ComposeViewContext? {
  * @see View.findViewTreeComposeViewContext
  */
 @Suppress("UNCHECKED_CAST")
-@OptIn(ExperimentalComposeViewContextApi::class)
 internal var View.composeViewContext: ComposeViewContext?
     get() =
         (getTag(R.id.androidx_compose_ui_view_compose_view_context)

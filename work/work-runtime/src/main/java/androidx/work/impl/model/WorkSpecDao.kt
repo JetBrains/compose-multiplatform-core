@@ -440,6 +440,22 @@ public interface WorkSpecDao {
     public fun getScheduledWorkWithContentUris(): List<WorkSpec>
 
     /**
+     * Determines if a [WorkSpec] is scheduled.
+     *
+     * @param id The identifier for the [WorkSpec]
+     * @return `true` if the [WorkSpec] with the given id is scheduled.
+     */
+    @Query(
+        "SELECT COUNT(*) > 0 FROM workspec WHERE " +
+            "id=:id" +
+            " AND state=" +
+            ENQUEUED +
+            " AND schedule_requested_at<>" +
+            WorkSpec.SCHEDULE_NOT_REQUESTED_YET
+    )
+    public fun isWorkSpecScheduled(id: String): Boolean
+
+    /**
      * @return All [WorkSpec]s that are currently scheduled, excluding those with content URI
      *   triggers. This is used to identify jobs that may need to be unscheduled when they are no
      *   longer considered "representative".
@@ -521,6 +537,9 @@ public fun WorkSpecDao.getWorkStatusPojoFlowForTag(
 ): Flow<List<WorkInfo>> = getWorkStatusPojoFlowForTag(tag).dedup(dispatcher)
 
 public fun WorkSpecDao.getWorkInfo(id: String): WorkInfo? = getWorkStatusPojoForId(id)?.toWorkInfo()
+
+internal fun WorkSpecDao.getWorkInfos(ids: List<String>): List<WorkInfo> =
+    getWorkStatusPojoForIds(ids).map { it.toWorkInfo() }
 
 internal fun Flow<List<WorkSpec.WorkInfoPojo>>.dedup(
     dispatcher: CoroutineDispatcher

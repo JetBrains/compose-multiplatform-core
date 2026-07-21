@@ -18,6 +18,7 @@ package androidx.pdf.view.layout
 import android.graphics.RectF
 import android.os.Parcel
 import android.util.Range
+import androidx.pdf.Dimension
 import com.google.common.truth.Truth.assertThat
 import org.junit.Assert.assertThrows
 import org.junit.Before
@@ -37,8 +38,18 @@ class TwoPageLayoutStrategyTest {
                 pageCount = 10,
                 verticalPageSpacingPx = 10f,
                 horizontalPageSpacingPx = 5f,
-                topPageMarginPx = 5f,
             )
+    }
+
+    @Test
+    fun testInitialization_withZeroPageCount_throwsIllegalArgumentException() {
+        assertThrows(IllegalArgumentException::class.java) {
+            TwoPageLayoutStrategy(
+                pageCount = 0,
+                verticalPageSpacingPx = 10f,
+                horizontalPageSpacingPx = 5f,
+            )
+        }
     }
 
     @Test
@@ -100,11 +111,11 @@ class TwoPageLayoutStrategyTest {
         // Verify the layout for the intermediate rows is approximated.
         // The approximation should use the height of the newly loaded page (page 5).
         val viewport = RectF(0f, 0f, 100f, 600f)
-        val expectedPage0Location = RectF(0f, 5f, 100f, 205f)
+        val expectedPage0Location = RectF(0f, 0f, 100f, 200f)
         assertThat(twoPageLayoutStrategy.getPageLocation(viewport, 0, Dimension(100, 200)))
             .isEqualTo(expectedPage0Location)
 
-        val expectedPage5Location = RectF(105f, 465f, 205f, 685f)
+        val expectedPage5Location = RectF(105f, 460f, 205f, 680f)
         assertThat(twoPageLayoutStrategy.getPageLocation(viewport, 5, Dimension(100, 220)))
             .isEqualTo(expectedPage5Location)
     }
@@ -119,12 +130,12 @@ class TwoPageLayoutStrategyTest {
 
         // Verify the layout of page 0 is the same.
         val viewport = RectF(0f, 0f, 110f, 600f)
-        val expectedPage0Location = RectF(0f, 5f, 110f, 225f)
+        val expectedPage0Location = RectF(0f, 0f, 110f, 220f)
         assertThat(twoPageLayoutStrategy.getPageLocation(viewport, 0, Dimension(110, 220)))
             .isEqualTo(expectedPage0Location)
 
         // Verify the layout of page 5 is corrected.
-        val expectedPage5Location = RectF(115f, 545f, 225f, 765f)
+        val expectedPage5Location = RectF(115f, 540f, 225f, 760f)
         assertThat(twoPageLayoutStrategy.getPageLocation(viewport, 5, Dimension(110, 220)))
             .isEqualTo(expectedPage5Location)
     }
@@ -132,7 +143,7 @@ class TwoPageLayoutStrategyTest {
     @Test
     fun testGetVisiblePages_includePartial() {
         setupPageDimensions()
-        val viewport = RectF(0f, 200f, 100f, 500f)
+        val viewport = RectF(0f, 100f, 100f, 500f)
         val visiblePages = twoPageLayoutStrategy.getVisiblePages(viewport, includePartial = true)
         assertThat(visiblePages.pages).isEqualTo(Range(0, 5))
     }

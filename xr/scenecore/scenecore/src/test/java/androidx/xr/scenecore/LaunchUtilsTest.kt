@@ -22,6 +22,7 @@ import androidx.xr.runtime.Session
 import androidx.xr.runtime.SessionCreateSuccess
 import androidx.xr.scenecore.runtime.SceneRuntime
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Before
 import org.junit.Test
@@ -38,9 +39,9 @@ class LaunchUtilsTest {
     private lateinit var session: Session
 
     @Before
-    fun setUp() {
+    fun setUp(): Unit = runBlocking {
         val testDispatcher = StandardTestDispatcher()
-        val result = Session.create(activity, testDispatcher)
+        val result = Session.create(context = activity, coroutineContext = testDispatcher)
 
         assertThat(result).isInstanceOf(SessionCreateSuccess::class.java)
 
@@ -49,21 +50,20 @@ class LaunchUtilsTest {
     }
 
     @Test
-    fun configureBundleForFullSpaceMode_Launch_callsThrough() {
+    fun configureBundleForFullSpaceLaunch_callsThrough() {
         // Test that Session calls into the runtime.
         val bundle = Bundle().apply { putString("testkey", "testval") }
-        @Suppress("UNUSED_VARIABLE")
-        val result = createBundleForFullSpaceModeLaunch(session, bundle)
+        @Suppress("UNUSED_VARIABLE") val result = createBundleForFullSpaceLaunch(session, bundle)
 
         assertThat(result).isEqualTo(bundle)
     }
 
     @Test
-    fun configureBundleForFullSpaceModeLaunchWithEnvironmentInherited_callsThrough() {
+    fun configureBundleForFullSpaceLaunchWithEnvironmentInherited_callsThrough() {
         // Test that Session calls into the runtime.
         val bundle = Bundle().apply { putString("testkey", "testval") }
         @Suppress("UNUSED_VARIABLE")
-        val result = createBundleForFullSpaceModeLaunchWithEnvironmentInherited(session, bundle)
+        val result = createBundleForFullSpaceLaunchWithEnvironmentInherited(session, bundle)
 
         assertThat(result).isEqualTo(bundle)
     }

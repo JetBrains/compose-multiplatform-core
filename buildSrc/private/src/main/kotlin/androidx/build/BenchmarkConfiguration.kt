@@ -48,15 +48,6 @@ internal fun HasDeviceTests.enableBenchmarkInternalDefaults(project: Project) {
                 "true",
             )
 
-            // Check that speed compilation always used when benchmark invoked
-            deviceTest.instrumentationRunnerArguments.put("androidx.benchmark.requireAot", "true")
-
-            // Throw if measureRepeated() called on main thread to avoid ANRs
-            deviceTest.instrumentationRunnerArguments.put(
-                "androidx.benchmark.throwOnMainThreadMeasureRepeated",
-                "true",
-            )
-
             // Enables long-running method tracing on the UI thread, even if that risks ANR for
             // profiling convenience.
             // NOTE, this *must* be suppressed in CI!!
@@ -65,20 +56,20 @@ internal fun HasDeviceTests.enableBenchmarkInternalDefaults(project: Project) {
                 "false",
             )
 
-            // Force clock locking checks in CI to ensure result consistency and catch clock locking
-            // failures early.
+            // Temporarily disable this check while we are trialing fixed performance mode for
+            // benchmark runners (b/468041607). Fixed performance does not lock the clocks.
             deviceTest.instrumentationRunnerArguments.put(
                 "androidx.benchmark.requireLockedClocks",
-                "true",
+                "false",
             )
         }
     } else if (project.isMacrobenchmark()) {
         deviceTests.forEach { (_, deviceTest) ->
-            // Force clock locking checks in CI to ensure result consistency and catch clock locking
-            // failures early.
+            // Temporarily disable this check while we are trialing fixed performance mode for
+            // benchmark runners (b/468041607). Fixed performance does not lock the clocks.
             deviceTest.instrumentationRunnerArguments.put(
                 "androidx.benchmark.requireLockedClocks",
-                "true",
+                "false",
             )
         }
     }

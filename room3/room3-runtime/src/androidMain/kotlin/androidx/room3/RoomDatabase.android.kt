@@ -73,16 +73,14 @@ import kotlinx.coroutines.cancel
  *   [#Room.databaseBuilder] or [#Room.inMemoryDatabaseBuilder].
  * @see Database
  */
-public actual abstract class RoomDatabase
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
-actual constructor() {
+public actual abstract class RoomDatabase actual constructor() {
 
     private lateinit var configuration: DatabaseConfiguration
     private lateinit var coroutineScope: CoroutineScope
 
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public val path: String?
-        get() = configuration.name?.let { configuration.context.getDatabasePath(it).path }
+        get() = configuration.name?.let { configuration.context?.getDatabasePath(it)?.path ?: it }
 
     /**
      * The executor for thread-confined transactions, such as those from the [AndroidSQLiteDriver]
@@ -133,33 +131,59 @@ actual constructor() {
     public val suspendingTransactionContext: ThreadLocal<CoroutineContext> =
         ThreadLocal<CoroutineContext>()
 
-    private val typeConverters: MutableMap<KClass<*>, Any> = mutableMapOf()
+    private val columnTypeConverters: MutableMap<KClass<*>, Any> = mutableMapOf()
+    private val daoReturnTypeConverters: MutableMap<KClass<*>, Any> = mutableMapOf()
 
     internal var useTempTrackingTable: Boolean = true
 
     /**
-     * Gets the instance of the given type converter class.
+     * Gets the instance of the given column type converter class.
      *
      * This method should only be called by the generated DAO implementations.
      *
-     * @param klass The Type Converter class.
-     * @param T The type of the expected Type Converter subclass.
+     * @param klass The Column Type Converter class.
+     * @param T The type of the expected Column Type Converter subclass.
      * @return An instance of T.
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
     @Suppress("UNCHECKED_CAST")
-    public actual fun <T : Any> getTypeConverter(klass: KClass<T>): T {
-        return typeConverters[klass] as T
+    public actual fun <T : Any> getColumnTypeConverter(klass: KClass<T>): T {
+        return columnTypeConverters[klass] as T
     }
 
     /**
-     * Adds a provided type converter to be used in the database DAOs.
+     * Gets the instance of the given DAO return type converter class.
      *
-     * @param kclass the class of the type converter
+     * This method should only be called by the generated DAO implementations.
+     *
+     * @param klass The DAO Return Type Converter class.
+     * @param T The type of the expected DAO Return Type Converter subclass.
+     * @return An instance of T.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
+    @Suppress("UNCHECKED_CAST")
+    public actual fun <T : Any> getDaoReturnTypeConverter(klass: KClass<T>): T {
+        return daoReturnTypeConverters[klass] as T
+    }
+
+    /**
+     * Adds a provided column type converter to be used in the database DAOs.
+     *
+     * @param kclass the class of the column type converter
      * @param converter an instance of the converter
      */
-    internal actual fun addTypeConverter(kclass: KClass<*>, converter: Any) {
-        typeConverters[kclass] = converter
+    internal actual fun addColumnTypeConverter(kclass: KClass<*>, converter: Any) {
+        columnTypeConverters[kclass] = converter
+    }
+
+    /**
+     * Adds a provided DAO return type converter to be used in the database DAOs.
+     *
+     * @param kclass the class of the DAO return type converter
+     * @param converter an instance of the DAO return type converter
+     */
+    internal actual fun addDaoReturnTypeConverter(kclass: KClass<*>, converter: Any) {
+        daoReturnTypeConverters[kclass] = converter
     }
 
     /**
@@ -182,7 +206,8 @@ actual constructor() {
             invalidationTracker.setAutoCloser(it)
         }
         validateAutoMigrations(configuration)
-        validateTypeConverters(configuration)
+        validateColumnTypeConverters(configuration)
+        validateDaoReturnTypeConverters(configuration)
 
         // For Room's coroutine scope, we use the provided context but add a SupervisorJob that
         // is tied to the given Job (if any).
@@ -199,6 +224,7 @@ actual constructor() {
         // Configure multi-instance invalidation, if enabled
         if (configuration.multiInstanceInvalidationServiceIntent != null) {
             requireNotNull(configuration.name)
+            requireNotNull(configuration.context)
             invalidationTracker.initMultiInstanceInvalidation(
                 configuration.context,
                 configuration.name,
@@ -258,9 +284,11 @@ actual constructor() {
     }
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
-    public actual abstract fun createAutoMigrations(
+    public actual open fun createAutoMigrations(
         autoMigrationSpecs: Map<KClass<out AutoMigrationSpec>, AutoMigrationSpec>
-    ): List<Migration>
+    ): List<Migration> {
+        return emptyList()
+    }
 
     /**
      * Creates a delegate to configure and initialize the database when it is being opened. An
@@ -271,7 +299,11 @@ actual constructor() {
      * @throws NotImplementedError by default
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
-    protected actual abstract fun createOpenDelegate(): RoomOpenDelegateMarker
+    protected actual open fun createOpenDelegate(): RoomOpenDelegateMarker {
+        throw NotImplementedError(
+            "This function should be implemented by Room's generated database implementation."
+        )
+    }
 
     /**
      * Creates the invalidation tracker
@@ -281,7 +313,12 @@ actual constructor() {
      *
      * @return A new invalidation tracker.
      */
-    protected actual abstract fun createInvalidationTracker(): InvalidationTracker
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
+    protected actual open fun createInvalidationTracker(): InvalidationTracker {
+        throw NotImplementedError(
+            "This function should be implemented by Room's generated database implementation."
+        )
+    }
 
     internal fun getConfiguration() = configuration
 
@@ -296,39 +333,44 @@ actual constructor() {
     }
 
     /**
-     * Returns a Map of String -> List&lt;Class&gt; where each entry has the `key` as the DAO name
-     * and `value` as the list of type converter classes that are necessary for the database to
-     * function.
-     *
-     * This is implemented by the generated code.
-     *
-     * @return Creates a map that will include all required type converters for this database.
-     */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
-    protected open fun getRequiredTypeConverters(): Map<Class<*>, List<Class<*>>> {
-        return emptyMap()
-    }
-
-    /**
-     * Returns a Map of String -> List&lt;KClass&gt; where each entry has the `key` as the DAO name
-     * and `value` as the list of type converter classes that are necessary for the database to
+     * Returns a Map of String -> List<KClass> where each entry has the `key` as the DAO name and
+     * `value` as the list of column type converter classes that are necessary for the database to
      * function.
      *
      * An implementation of this function is generated by the Room processor. Note that this method
      * is called when the [RoomDatabase] is initialized.
      *
-     * @return A map that will include all required type converters for this database.
+     * @return A map that will include all required column type converters for this database.
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
-    protected actual abstract fun getRequiredTypeConverterClasses(): Map<KClass<*>, List<KClass<*>>>
+    protected actual open fun getRequiredColumnTypeConverterClasses():
+        Map<KClass<*>, List<KClass<*>>> {
+        return emptyMap()
+    }
 
-    /** Property delegate of [getRequiredTypeConverterClasses] for common ext functionality. */
-    internal actual val requiredTypeConverterClassesMap: Map<KClass<*>, List<KClass<*>>>
-        get() = getRequiredTypeConverterClasses()
+    /**
+     * Property delegate of [getRequiredColumnTypeConverterClasses] for common ext functionality.
+     */
+    internal actual val requiredColumnTypeConverterClassesMap: Map<KClass<*>, List<KClass<*>>>
+        get() = getRequiredColumnTypeConverterClasses()
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
-    public actual abstract fun getRequiredAutoMigrationSpecClasses():
-        Set<KClass<out AutoMigrationSpec>>
+    protected actual open fun getRequiredDaoReturnTypeConverterClasses():
+        Map<KClass<*>, List<KClass<*>>> {
+        return emptyMap()
+    }
+
+    /**
+     * Property delegate of [getRequiredDaoReturnTypeConverterClasses] for common ext functionality.
+     */
+    internal actual val requiredDaoReturnTypeConverterClassesMap: Map<KClass<*>, List<KClass<*>>>
+        get() = getRequiredDaoReturnTypeConverterClasses()
+
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
+    public actual open fun getRequiredAutoMigrationSpecClasses():
+        Set<KClass<out AutoMigrationSpec>> {
+        return emptySet()
+    }
 
     /**
      * Deletes all rows from all the tables that are registered to this database as
@@ -427,15 +469,15 @@ actual constructor() {
         WRITE_AHEAD_LOGGING;
 
         /** Resolves [AUTOMATIC] to either [TRUNCATE] or [WRITE_AHEAD_LOGGING]. */
-        internal fun resolve(context: Context): JournalMode {
+        internal fun resolve(context: Context?): JournalMode {
             if (this != AUTOMATIC) {
                 return this
             }
-            val manager = context.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager
-            if (manager != null && !manager.isLowRamDevice) {
-                return WRITE_AHEAD_LOGGING
+            val manager = context?.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager
+            if (manager != null && manager.isLowRamDevice) {
+                return TRUNCATE
             }
-            return TRUNCATE
+            return WRITE_AHEAD_LOGGING
         }
     }
 
@@ -448,7 +490,7 @@ actual constructor() {
     @Suppress("GetterOnBuilder")
     public actual class Builder<T : RoomDatabase> {
         private val klass: KClass<T>
-        private val context: Context
+        private val context: Context?
         private val name: String?
         private val factory: (() -> T)?
 
@@ -466,7 +508,7 @@ actual constructor() {
             klass: KClass<T>,
             name: String?,
             factory: (() -> T)?,
-            context: Context,
+            context: Context?,
         ) {
             this.klass = klass
             this.context = context
@@ -490,7 +532,8 @@ actual constructor() {
 
         private val callbacks: MutableList<Callback> = mutableListOf()
         private var prepackagedDatabaseCallback: PrepackagedDatabaseCallback? = null
-        private val typeConverters: MutableList<Any> = mutableListOf()
+        private val columnTypeConverters: MutableList<Any> = mutableListOf()
+        private val daoReturnTypeConverters: MutableList<Any> = mutableListOf()
 
         private var allowMainThreadQueries = false
         private var journalMode: JournalMode = JournalMode.AUTOMATIC
@@ -527,6 +570,7 @@ actual constructor() {
 
         private var driver: SQLiteDriver? = null
         private var queryCoroutineContext: CoroutineContext? = null
+        private var connectionPoolConfiguration: ConnectionPoolConfiguration? = null
 
         private var inMemoryTrackingTableMode = true
 
@@ -550,6 +594,9 @@ actual constructor() {
          * @return This builder instance.
          */
         public fun createFromAsset(databaseFilePath: String): Builder<T> = apply {
+            requireNotNull(context) {
+                "Cannot create from asset when no Context is provided to this Builder."
+            }
             this.copyFromAssetPath = databaseFilePath
         }
 
@@ -566,7 +613,8 @@ actual constructor() {
          * pre-packaged database schema utilizing the exported schema files generated when
          * [Database.exportSchema] is enabled.
          *
-         * This method is not supported for an in memory database [Builder].
+         * This method is not supported for an in memory database [Builder] and a [Context] is
+         * required during builder instantiation.
          *
          * @param databaseFilePath The file path within the 'assets/' directory of where the
          *   database file is located.
@@ -578,6 +626,9 @@ actual constructor() {
             databaseFilePath: String,
             callback: PrepackagedDatabaseCallback,
         ): Builder<T> = apply {
+            requireNotNull(context) {
+                "Cannot create from asset when no Context is provided to this Builder."
+            }
             this.prepackagedDatabaseCallback = callback
             this.copyFromAssetPath = databaseFilePath
         }
@@ -602,6 +653,9 @@ actual constructor() {
          * @return This builder instance.
          */
         public fun createFromFile(databaseFile: File): Builder<T> = apply {
+            requireNotNull(context) {
+                "Cannot create from file when no Context is provided to this Builder."
+            }
             this.copyFromFile = databaseFile
         }
 
@@ -619,7 +673,8 @@ actual constructor() {
          * The [Callback.onOpen] method can be used as an indicator that the pre-packaged database
          * was successfully opened by Room and can be cleaned up.
          *
-         * This method is not supported for an in memory database [Builder].
+         * This method is not supported for an in memory database [Builder] and a [Context] is
+         * required during builder instantiation.
          *
          * @param databaseFile The database file.
          * @param callback The pre-packaged callback.
@@ -630,6 +685,9 @@ actual constructor() {
             databaseFile: File,
             callback: PrepackagedDatabaseCallback,
         ): Builder<T> = apply {
+            requireNotNull(context) {
+                "Cannot create from file when no Context is provided to this Builder."
+            }
             this.prepackagedDatabaseCallback = callback
             this.copyFromFile = databaseFile
         }
@@ -649,7 +707,8 @@ actual constructor() {
          * The [Callback.onOpen] method can be used as an indicator that the pre-packaged database
          * was successfully opened by Room and can be cleaned up.
          *
-         * This method is not supported for an in memory database [Builder].
+         * This method is not supported for an in memory database [Builder] and a [Context] is
+         * required during builder instantiation.
          *
          * @param inputStreamCallable A callable that returns an InputStream from which to copy the
          *   database. The callable will be invoked in a thread from the dispatcher set via
@@ -661,6 +720,9 @@ actual constructor() {
         @SuppressLint("BuilderSetStyle") // To keep naming consistency.
         public fun createFromInputStream(inputStreamCallable: Callable<InputStream>): Builder<T> =
             apply {
+                requireNotNull(context) {
+                    "Cannot create from stream when no Context is provided to this Builder."
+                }
                 this.copyFromInputStream = inputStreamCallable
             }
 
@@ -694,6 +756,9 @@ actual constructor() {
             inputStreamCallable: Callable<InputStream>,
             callback: PrepackagedDatabaseCallback,
         ): Builder<T> = apply {
+            requireNotNull(context) {
+                "Cannot create from stream when no Context is provided to this Builder."
+            }
             this.prepackagedDatabaseCallback = callback
             this.copyFromInputStream = inputStreamCallable
         }
@@ -796,7 +861,8 @@ actual constructor() {
          * separate process. In order to enable multi-instance invalidation, this has to be turned
          * on both ends and need to point to the same [MultiInstanceInvalidationService].
          *
-         * This is not enabled by default.
+         * This is not enabled by default and requires that a [Context] is used during builder
+         * instantiation.
          *
          * This does not work for in-memory databases. This does not work between database instances
          * targeting different database files.
@@ -810,6 +876,10 @@ actual constructor() {
         public fun setMultiInstanceInvalidationServiceIntent(
             invalidationServiceIntent: Intent
         ): Builder<T> = apply {
+            requireNotNull(context) {
+                "Multi-instance invalidation cannot be enabled when no Context is provided " +
+                    "to this Builder."
+            }
             this.multiInstanceInvalidationIntent =
                 if (name != null) invalidationServiceIntent else null
         }
@@ -917,15 +987,28 @@ actual constructor() {
         }
 
         /**
-         * Adds a type converter instance to the builder.
+         * Adds a column type converter instance to the builder.
          *
          * @param typeConverter The converter instance that is annotated with
-         *   [ProvidedTypeConverter].
+         *   [ProvidedColumnTypeConverter].
          * @return This builder instance.
          */
-        public actual fun addTypeConverter(typeConverter: Any): Builder<T> = apply {
-            this.typeConverters.add(typeConverter)
+        public actual fun addColumnTypeConverter(typeConverter: Any): Builder<T> = apply {
+            this.columnTypeConverters.add(typeConverter)
         }
+
+        /**
+         * Adds a DAO return type converter instance to the builder.
+         *
+         * @param daoReturnTypeConverter The converter instance that is annotated with
+         *   [ProvidedDaoReturnTypeConverter].
+         * @return This builder instance.
+         */
+        @Suppress("MissingGetterMatchingBuilder")
+        public actual fun addDaoReturnTypeConverter(daoReturnTypeConverter: Any): Builder<T> =
+            apply {
+                this.daoReturnTypeConverters.add(daoReturnTypeConverter)
+            }
 
         /**
          * Enables auto-closing for the database to free up unused resources. The underlying
@@ -1022,6 +1105,63 @@ actual constructor() {
         }
 
         /**
+         * Sets the database connection pool to use a single connection for both reading and
+         * writing.
+         *
+         * A connection pool is only used if the supplied [SQLiteDriver] has no internal pool, i.e.
+         * [SQLiteDriver.hasConnectionPool] returns `false`. If the configured driver has an
+         * internal pool then calling this function has no effect.
+         *
+         * Calling this function overrides any previous setting. If neither this function or
+         * [setMultipleConnectionPool] are called then Room will default to a connection pool
+         * configuration that is based on the [JournalMode]. For [JournalMode.TRUNCATE] a single
+         * connection is used, while for [JournalMode.WRITE_AHEAD_LOGGING] multiple connections are
+         * used, four reader and one writer.
+         *
+         * @return This builder instance.
+         * @see setMultipleConnectionPool
+         */
+        @Suppress("MissingGetterMatchingBuilder")
+        public actual fun setSingleConnectionPool(): Builder<T> = apply {
+            this.connectionPoolConfiguration = SingleConnection
+        }
+
+        /**
+         * Sets the database connection pool to use multiple connections, separating readers and
+         * writers.
+         *
+         * A connection pool is only used if the supplied [SQLiteDriver] has no internal pool, i.e.
+         * [SQLiteDriver.hasConnectionPool] returns `false`. If the configured driver has an
+         * internal pool then calling this function has no effect.
+         *
+         * If the database being built is an in-memory database, then calling this function has no
+         * effect since a single connection will be used.
+         *
+         * Calling this function overrides any previous setting. If neither this function or
+         * [setMultipleConnectionPool] are called then Room will default to a connection pool
+         * configuration that is based on the [JournalMode]. For [JournalMode.TRUNCATE] a single
+         * connection is used, while for [JournalMode.WRITE_AHEAD_LOGGING] multiple connections are
+         * used, four reader and one writer.
+         *
+         * It is recommended to only use multiple connections when [JournalMode.WRITE_AHEAD_LOGGING]
+         * is configured. Be aware that if multiple writers are used then database operations might
+         * fail with `SQLITE_BUSY` errors. These must be handled by the callers and might be
+         * mitigated by configuring the `busy_timeout`.
+         *
+         * @param maxNumOfReaders The maximum number of reader connections.
+         * @param maxNumOfWriters The maximum number of writer connections.
+         * @return This builder instance.
+         * @see setSingleConnectionPool
+         */
+        @Suppress("MissingGetterMatchingBuilder")
+        public actual fun setMultipleConnectionPool(
+            @IntRange(from = 1) maxNumOfReaders: Int,
+            @IntRange(from = 1) maxNumOfWriters: Int,
+        ): Builder<T> = apply {
+            this.connectionPoolConfiguration = MultipleConnection(maxNumOfReaders, maxNumOfWriters)
+        }
+
+        /**
          * Creates the databases and initializes it.
          *
          * By default, all RoomDatabases use in memory storage for TEMP tables and enables recursive
@@ -1032,11 +1172,11 @@ actual constructor() {
          */
         public actual fun build(): T {
             validateMigrationsNotRequired(migrationStartAndEndVersions, migrationsNotRequiredFrom)
-
             if (driver == null) {
                 // No driver, use default one for Android
                 driver = AndroidSQLiteDriver()
             }
+            val journalMode = journalMode.resolve(context) ?: JournalMode.WRITE_AHEAD_LOGGING
             val autoCloseConfig =
                 if (autoCloseTimeout > 0) {
                     AutoCloserConfig(autoCloseTimeout, requireNotNull(autoCloseTimeUnit))
@@ -1049,6 +1189,9 @@ actual constructor() {
                 ) {
                     requireNotNull(name) {
                         "Cannot create from asset or file for an in-memory database."
+                    }
+                    requireNotNull(context) {
+                        "Cannot create from asset or file when no Context is provided to this Builder."
                     }
                     val copyFromAssetPathConfig = if (copyFromAssetPath == null) 0 else 1
                     val copyFromFileConfig = if (copyFromFile == null) 0 else 1
@@ -1067,6 +1210,21 @@ actual constructor() {
                 } else {
                     null
                 }
+            val poolConfig =
+                if (name == null) {
+                    SingleConnection
+                } else if (connectionPoolConfiguration != null) {
+                    checkNotNull(connectionPoolConfiguration)
+                } else {
+                    if (journalMode == JournalMode.TRUNCATE) {
+                        SingleConnection
+                    } else {
+                        MultipleConnection(
+                            numOfReaders = WAL_DEFAULT_NUMBER_OF_READERS,
+                            numOfWriters = WAL_DEFAULT_NUMBER_OF_WRITERS,
+                        )
+                    }
+                }
             val configuration =
                 DatabaseConfiguration(
                         context = context,
@@ -1074,18 +1232,20 @@ actual constructor() {
                         migrationContainer = migrationContainer,
                         callbacks = callbacks,
                         allowMainThreadQueries = allowMainThreadQueries,
-                        journalMode = journalMode.resolve(context),
+                        journalMode = journalMode,
                         multiInstanceInvalidationServiceIntent = multiInstanceInvalidationIntent,
                         isMigrationRequired = requireMigration,
                         allowDestructiveMigrationOnDowngrade = allowDestructiveMigrationOnDowngrade,
                         migrationNotRequiredFrom = migrationsNotRequiredFrom,
                         prepackagedDatabaseCallback = prepackagedDatabaseCallback,
-                        typeConverters = typeConverters,
+                        columnTypeConverters = columnTypeConverters,
+                        daoReturnTypeConverters = daoReturnTypeConverters,
                         autoMigrationSpecs = autoMigrationSpecs,
                         allowDestructiveMigrationForAllTables =
                             allowDestructiveMigrationForAllTables,
                         sqliteDriver = requireNotNull(driver),
                         queryCoroutineContext = queryCoroutineContext ?: Dispatchers.IO,
+                        connectionPoolConfiguration = poolConfig,
                     )
                     .apply {
                         this.useTempTrackingTable = inMemoryTrackingTableMode

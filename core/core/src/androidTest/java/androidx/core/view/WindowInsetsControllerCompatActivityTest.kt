@@ -37,6 +37,7 @@ import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.concurrent.thread
+import kotlin.test.assertTrue
 import org.hamcrest.Matchers.equalTo
 import org.hamcrest.Matchers.`is`
 import org.junit.After
@@ -329,6 +330,22 @@ public class WindowInsetsControllerCompatActivityTest {
             sysUiVis and View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY,
         )
         assertEquals(0, sysUiVis and View.SYSTEM_UI_FLAG_IMMERSIVE)
+    }
+
+    @Test
+    @SdkSuppress(minSdkVersion = 30) // Older APIs doesn't support onControllableInsetsChanged
+    fun addOnControllableInsetsChangedListener() {
+        scenario.withActivity {
+            var called = false
+            pendingWindowInsetsController.addOnControllableInsetsChangedListener { _, _ ->
+                called = true
+            }
+            assertTrue(called)
+
+            called = false
+            windowInsetsController.addOnControllableInsetsChangedListener { _, _ -> called = true }
+            assertTrue(called)
+        }
     }
 
     private fun assumeNotCuttlefish() {

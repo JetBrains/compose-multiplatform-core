@@ -18,7 +18,6 @@
     <dimen name="viewer_fastscroll_edge_offset">24dp</dimen>
     <dimen name="viewer_doc_padding_y">4dp</dimen>
     <dimen name="viewer_doc_padding_x">0dp</dimen>
-    <dimen name="top_page_margin">3dp</dimen>
     <dimen name="pdf_vertical_page_spacing">8dp</dimen>
     <!-- TODO(b/448583041): Fix the appropriate default horizontal spacing from UX. -->
     <dimen name="pdf_horizontal_page_spacing">8dp</dimen>
@@ -42,8 +41,4 @@
 
     <!-- Form Filling -->
     <dimen name="form_widget_edit_text_boundary_width">2dp</dimen>
-    <dimen name="tooltip_text_size">14sp</dimen>
-    <dimen name="tooltip_padding">16dp</dimen>
-    <dimen name="tooltip_head_offset_from_edge">34dp</dimen>
-    <dimen name="tooltip_extra_padding">8dp</dimen>
 </resources>

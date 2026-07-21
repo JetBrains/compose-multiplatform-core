@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+package androidx.camera.camera2.pipe.compat
+
 import android.hardware.camera2.params.StreamConfigurationMap
 import android.util.Range
 import android.util.Size
@@ -21,7 +23,7 @@ import android.view.Surface
 import androidx.camera.camera2.pipe.CameraColorSpaceProfiles
 import androidx.camera.camera2.pipe.CameraStreamConfigurationMap
 import androidx.camera.camera2.pipe.StreamFormat
-import kotlin.reflect.KClass
+import java.lang.Class
 
 /**
  * Implementation of the color space profile interface using Camera2 library.
@@ -107,10 +109,10 @@ internal class Camera2StreamConfigurationMap(
     }
 
     @Suppress("UNCHECKED_CAST")
-    override fun <T : Any> unwrapAs(type: KClass<T>): T? {
+    override fun <T : Any> unwrapAs(type: Class<T>): T? {
         return when (type) {
-            StreamConfigurationMap::class -> streamConfigurationMap as T
-            Camera2StreamConfigurationMap::class -> this as T
+            StreamConfigurationMap::class.java -> streamConfigurationMap as T
+            Camera2StreamConfigurationMap::class.java -> this as T
             else -> null
         }
     }

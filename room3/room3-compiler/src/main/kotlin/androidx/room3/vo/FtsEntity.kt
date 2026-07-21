@@ -46,6 +46,7 @@ class FtsEntity(
         emptyList(),
         constructor,
         shadowTableName,
+        false,
     ) {
 
     override val createTableQuery by lazy { createTableQuery(tableName) }
@@ -94,7 +95,7 @@ class FtsEntity(
                     if (ftsVersion == FtsVersion.FTS5) {
                         "`${it.columnName}`"
                     } else {
-                        it.databaseDefinition(false)
+                        it.databaseDefinition(null)
                     }
                 val isUnindexed =
                     ftsVersion == FtsVersion.FTS5 &&

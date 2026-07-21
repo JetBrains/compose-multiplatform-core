@@ -18,6 +18,7 @@ package androidx.room3.compiler.processing.javac
 
 import androidx.room3.compiler.processing.XNullability
 import androidx.room3.compiler.processing.XType
+import androidx.room3.compiler.processing.XTypeArgument
 import androidx.room3.compiler.processing.XTypeVariableType
 import androidx.room3.compiler.processing.javac.kotlin.KmBaseTypeContainer
 import com.google.auto.common.MoreTypes.asIntersection
@@ -27,34 +28,13 @@ import javax.lang.model.type.TypeVariable
 internal class JavacTypeVariableType(
     env: JavacProcessingEnv,
     override val typeMirror: TypeVariable,
-    nullability: XNullability?,
-    override val kotlinType: KmBaseTypeContainer?,
+    nullability: XNullability? = null,
+    override val kotlinType: KmBaseTypeContainer? = null,
 ) : JavacType(env, typeMirror, nullability), XTypeVariableType {
-    constructor(
-        env: JavacProcessingEnv,
-        typeMirror: TypeVariable,
-    ) : this(env = env, typeMirror = typeMirror, nullability = null, kotlinType = null)
-
-    constructor(
-        env: JavacProcessingEnv,
-        typeMirror: TypeVariable,
-        kotlinType: KmBaseTypeContainer,
-    ) : this(
-        env = env,
-        typeMirror = typeMirror,
-        nullability = kotlinType.nullability,
-        kotlinType = kotlinType,
-    )
-
-    constructor(
-        env: JavacProcessingEnv,
-        typeMirror: TypeVariable,
-        nullability: XNullability,
-    ) : this(env = env, typeMirror = typeMirror, nullability = nullability, kotlinType = null)
 
     override val equalityItems by lazy { arrayOf(typeMirror) }
 
-    override val typeArguments: List<XType>
+    override val typeArguments: List<XTypeArgument>
         get() = emptyList()
 
     override val upperBounds: List<XType>

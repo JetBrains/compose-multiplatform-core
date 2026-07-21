@@ -28,6 +28,7 @@ import androidx.appfunctions.metadata.AppFunctionComponentsMetadataDocument
 import androidx.appfunctions.metadata.AppFunctionDeprecationMetadata
 import androidx.appfunctions.metadata.AppFunctionMetadata
 import androidx.appfunctions.metadata.AppFunctionMetadataDocument
+import androidx.appfunctions.metadata.AppFunctionName
 import androidx.appfunctions.metadata.AppFunctionPackageMetadata
 import androidx.appfunctions.metadata.AppFunctionParameterMetadata
 import androidx.appfunctions.metadata.AppFunctionParameterMetadataDocument
@@ -75,9 +76,80 @@ internal class AppSearchAppFunctionReader(
     private val context: Context,
     private val schemaAppFunctionInventory: SchemaAppFunctionInventory?,
 ) : AppFunctionReader {
+    override suspend fun getAppFunctionMetadata(
+        functionId: String,
+        packageName: String,
+    ): AppFunctionMetadata? {
+        createSearchSession(context).use { session ->
+            val documentId = getAppFunctionId(packageName, functionId)
+            val staticSearchResult =
+                session
+                    .getByDocumentIdAsync(
+                        SYSTEM_PACKAGE_NAME,
+                        APP_FUNCTIONS_STATIC_DATABASE_NAME,
+                        GetByDocumentIdRequest.Builder(APP_FUNCTIONS_NAMESPACE)
+                            .addIds(documentId)
+                            .build(),
+                    )
+                    .await()
+            val runtimeSearchResult =
+                session
+                    .getByDocumentIdAsync(
+                        SYSTEM_PACKAGE_NAME,
+                        APP_FUNCTIONS_RUNTIME_DATABASE_NAME,
+                        GetByDocumentIdRequest.Builder(APP_FUNCTIONS_RUNTIME_NAMESPACE)
+                            .addIds(documentId)
+                            .build(),
+                    )
+                    .await()
+            val staticDocument =
+                staticSearchResult.successes[documentId]
+                    ?: throw AppFunctionFunctionNotFoundException(
+                        "Function $functionId is not available under $packageName"
+                    )
+            val runtimeDocument =
+                runtimeSearchResult.successes[documentId]
+                    ?: throw AppFunctionFunctionNotFoundException(
+                        "Function $functionId is not available under $packageName"
+                    )
+            val staticMetadataDocument =
+                safeCastToDocumentClass<AppFunctionMetadataDocument>(staticDocument) ?: return null
+            val runtimeMetadataDocument =
+                safeCastToDocumentClass<AppFunctionRuntimeMetadata>(runtimeDocument) ?: return null
+
+            val schemaMetadata = buildSchemaMetadataFromGdForLegacyIndexer(staticDocument)
+            val parameterMetadata =
+                getAppFunctionParameterMetadata(staticMetadataDocument, schemaMetadata)
+                    ?: return null
+            val responseMetadata =
+                getAppFunctionResponseMetadata(staticMetadataDocument, schemaMetadata)
+                    ?: return null
+            val componentMetadata =
+                getAppFunctionComponentsMetadata(
+                    packageName,
+                    staticMetadataDocument,
+                    schemaMetadata,
+                    searchTopLevelComponent(session, setOf(packageName)),
+                ) ?: return null
+
+            val deprecationMetadata = getAppFunctionDeprecationMetadata(staticMetadataDocument)
+
+            return AppFunctionMetadata(
+                name = AppFunctionName(packageName, functionId),
+                schema = schemaMetadata,
+                parameters = parameterMetadata,
+                response = responseMetadata,
+                packageMetadata = AppFunctionPackageMetadata(packageName, componentMetadata),
+                description = staticMetadataDocument.description ?: "",
+                deprecation = deprecationMetadata,
+                isEnabled =
+                    computeEffectivelyEnabled(staticMetadataDocument, runtimeMetadataDocument),
+            )
+        }
+    }
 
     @OptIn(FlowPreview::class)
-    override fun searchAppFunctions(
+    override fun searchAppFunctionsPackageMetadata(
         searchFunctionSpec: AppFunctionSearchSpec
     ): Flow<List<AppFunctionPackageMetadata>> {
         if (searchFunctionSpec.packageNames?.isEmpty() == true) {
@@ -88,7 +160,7 @@ internal class AppSearchAppFunctionReader(
             val session = createSearchSession(context)
 
             // Perform initial search immediately
-            send(performSearch(session, searchFunctionSpec))
+            send(performSearchAppFunctionPackageMetadata(session, searchFunctionSpec))
 
             val appSearchChannelObserver = AppSearchChannelObserver()
             // Register the observer callback
@@ -104,7 +176,7 @@ internal class AppSearchAppFunctionReader(
                 appSearchChannelObserver.observe().debounce(OBSERVER_DEBOUNCE_MILLIS).collect {
                     // TODO(b/403264749): Check if we can skip the running a full search again by
                     // caching the results.
-                    send(performSearch(session, searchFunctionSpec))
+                    send(performSearchAppFunctionPackageMetadata(session, searchFunctionSpec))
                 }
             }
 
@@ -115,6 +187,23 @@ internal class AppSearchAppFunctionReader(
                 session.unregisterObserverCallback(SYSTEM_PACKAGE_NAME, appSearchChannelObserver)
                 session.close()
             }
+        }
+    }
+
+    override suspend fun searchAppFunctionsMetadata(
+        searchFunctionSpec: AppFunctionSearchSpec
+    ): List<AppFunctionMetadata> {
+        if (
+            searchFunctionSpec.packageNames?.isEmpty() == true ||
+                searchFunctionSpec.functionNames?.isEmpty() == true
+        ) {
+            return emptyList()
+        }
+        val session = createSearchSession(context)
+        try {
+            return performSearchAppFunctionMetadata(session, searchFunctionSpec)
+        } finally {
+            session.close()
         }
     }
 
@@ -150,13 +239,33 @@ internal class AppSearchAppFunctionReader(
             )
             .build()
 
-    private suspend fun performSearch(
+    private suspend fun performSearchAppFunctionPackageMetadata(
         session: GlobalSearchSession,
         searchFunctionSpec: AppFunctionSearchSpec,
     ): List<AppFunctionPackageMetadata> {
+        return performSearchAppFunctionMetadata(session, searchFunctionSpec)
+            .groupBy { it.packageName }
+            .map { (packageName, appFunctions) ->
+                AppFunctionPackageMetadata(packageName, appFunctions)
+            }
+    }
+
+    private suspend fun performSearchAppFunctionMetadata(
+        session: GlobalSearchSession,
+        searchFunctionSpec: AppFunctionSearchSpec,
+    ): List<AppFunctionMetadata> {
+        val runtimeSearchSpec =
+            SearchSpec.Builder()
+                .addFilterNamespaces(APP_FUNCTIONS_RUNTIME_NAMESPACE)
+                .addFilterDocumentClasses(AppFunctionRuntimeMetadata::class.java)
+                .addFilterPackageNames(SYSTEM_PACKAGE_NAME)
+                .setVerbatimSearchEnabled(true)
+                // TODO(b/521273565): Use SearchSpec#addFilterDocumentIds once stable.
+                .build()
+
         val joinSpec =
             JoinSpec.Builder(AppFunctionRuntimeMetadata.STATIC_METADATA_JOIN_PROPERTY)
-                .setNestedSearch("", RUNTIME_SEARCH_SPEC)
+                .setNestedSearch("", runtimeSearchSpec)
                 .build()
 
         val staticMetadataSearchSpecWithJoin =
@@ -178,7 +287,13 @@ internal class AppSearchAppFunctionReader(
                 searchFunctionSpec.toStaticMetadataAppSearchQuery(),
                 staticMetadataSearchSpecWithJoin,
             )
-            .readAll { searchResult ->
+            .consumeAll { searchResult ->
+                if (searchFunctionSpec.functionNames != null) {
+                    val appFunctionName = extractAppFunctionName(searchResult)
+                    if (!searchFunctionSpec.functionNames.contains(appFunctionName)) {
+                        return@consumeAll null
+                    }
+                }
                 try {
                     convertSearchResultToAppFunctionMetadata(
                         searchResult,
@@ -195,10 +310,6 @@ internal class AppSearchAppFunctionReader(
                 }
             }
             .filterNotNull()
-            .groupBy { it.packageName }
-            .map { (packageName, appFunctions) ->
-                AppFunctionPackageMetadata(packageName, appFunctions)
-            }
     }
 
     private suspend fun searchTopLevelComponent(
@@ -219,23 +330,38 @@ internal class AppSearchAppFunctionReader(
                 .setListFilterQueryLanguageEnabled(true)
                 .build()
 
-        return session
-            .search("", topLevelComponentsSearchSpec)
-            .readAll { searchResult ->
-                val packageName = searchResult.genericDocument.getPropertyString("packageName")
-                val metadata = extractAppFunctionComponentsMetadataFromSearchResult(searchResult)
+        val topLevelComponents =
+            session
+                .search("", topLevelComponentsSearchSpec)
+                .consumeAll { searchResult ->
+                    val packageName = searchResult.genericDocument.getPropertyString("packageName")
+                    val metadata =
+                        extractAppFunctionComponentsMetadataFromSearchResult(searchResult)
 
-                // Only return a Pair if both are non-null and metadata is valid
-                if (packageName != null && metadata != null && metadata.dataTypes.isNotEmpty()) {
-                    packageName to metadata
+                    // Only return a Pair if both are non-null and metadata is valid
+                    if (
+                        packageName != null && metadata != null && metadata.dataTypes.isNotEmpty()
+                    ) {
+                        packageName to metadata
+                    } else {
+                        null
+                    }
+                }
+                .filterNotNull()
+        return buildMap {
+            for ((packageName, metadata) in topLevelComponents) {
+                if (containsKey(packageName)) {
+                    // Starting from Android 17, an app can have multiple service, therefore,
+                    // multiple top-level documents is possible. To make sure all reference types
+                    // are correctly presented, the reader must aggregate them all.
+                    val existingMetadata = checkNotNull(get(packageName))
+                    val combinedDataTypes = (existingMetadata.dataTypes + metadata.dataTypes)
+                    put(packageName, AppFunctionComponentsMetadata(combinedDataTypes))
                 } else {
-                    null
+                    put(packageName, metadata)
                 }
             }
-            .filterNotNull()
-            // There is only a single component metadata per package, so we can safely overwrite the
-            // existing value.
-            .toMap()
+        }
     }
 
     private fun extractAppFunctionComponentsMetadataFromSearchResult(
@@ -286,9 +412,8 @@ internal class AppSearchAppFunctionReader(
     ): AppFunctionMetadata? {
         // This is different from document id which for uniqueness is computed as packageName + "/"
         // + functionId.
-        val functionId = checkNotNull(searchResult.genericDocument.getPropertyString("functionId"))
-        val packageName =
-            checkNotNull(searchResult.genericDocument.getPropertyString("packageName"))
+        val appFunctionName = extractAppFunctionName(searchResult)
+        val packageName = appFunctionName.packageName
 
         val staticMetadataDocument =
             safeCastToDocumentClass<AppFunctionMetadataDocument>(searchResult.genericDocument)
@@ -319,17 +444,19 @@ internal class AppSearchAppFunctionReader(
         val deprecationMetadata = getAppFunctionDeprecationMetadata(staticMetadataDocument)
 
         return AppFunctionMetadata(
-            id = functionId,
-            packageName = packageName,
-            isEnabled = computeEffectivelyEnabled(staticMetadataDocument, runtimeMetadataDocument),
+            name = appFunctionName,
             schema = schemaMetadata,
             parameters = parameterMetadata,
             response = responseMetadata,
-            components = componentMetadata,
+            packageMetadata = AppFunctionPackageMetadata(packageName, componentMetadata),
             description = staticMetadataDocument.description ?: "",
             deprecation = deprecationMetadata,
+            isEnabled = computeEffectivelyEnabled(staticMetadataDocument, runtimeMetadataDocument),
         )
     }
+
+    private fun extractAppFunctionName(searchResult: SearchResult): AppFunctionName =
+        AppFunctionName.fromQualifiedId(searchResult.genericDocument.id)
 
     private fun computeEffectivelyEnabled(
         staticMetadata: AppFunctionMetadataDocument,
@@ -366,72 +493,6 @@ internal class AppSearchAppFunctionReader(
             name = schemaName,
             category = schemaCategory,
             version = schemaVersion,
-        )
-    }
-
-    override suspend fun getAppFunctionMetadata(
-        functionId: String,
-        packageName: String,
-    ): AppFunctionMetadata? {
-        val session = createSearchSession(context)
-
-        val documentId = getAppFunctionId(packageName, functionId)
-        val staticSearchResult =
-            session
-                .getByDocumentIdAsync(
-                    SYSTEM_PACKAGE_NAME,
-                    APP_FUNCTIONS_STATIC_DATABASE_NAME,
-                    GetByDocumentIdRequest.Builder(APP_FUNCTIONS_NAMESPACE)
-                        .addIds(documentId)
-                        .build(),
-                )
-                .await()
-        val runtimeSearchResult =
-            session
-                .getByDocumentIdAsync(
-                    SYSTEM_PACKAGE_NAME,
-                    APP_FUNCTIONS_RUNTIME_DATABASE_NAME,
-                    GetByDocumentIdRequest.Builder(APP_FUNCTIONS_RUNTIME_NAMESPACE)
-                        .addIds(documentId)
-                        .build(),
-                )
-                .await()
-        val staticDocument =
-            staticSearchResult.successes[documentId]
-                ?: throw AppFunctionFunctionNotFoundException(
-                    "Function $functionId is not available under $packageName"
-                )
-        val runtimeDocument =
-            runtimeSearchResult.successes[documentId]
-                ?: throw AppFunctionFunctionNotFoundException(
-                    "Function $functionId is not available under $packageName"
-                )
-        val staticMetadataDocument =
-            safeCastToDocumentClass<AppFunctionMetadataDocument>(staticDocument) ?: return null
-        val runtimeMetadataDocument =
-            safeCastToDocumentClass<AppFunctionRuntimeMetadata>(runtimeDocument) ?: return null
-
-        val schemaMetadata = buildSchemaMetadataFromGdForLegacyIndexer(staticDocument)
-        val parameterMetadata =
-            getAppFunctionParameterMetadata(staticMetadataDocument, schemaMetadata) ?: return null
-        val responseMetadata =
-            getAppFunctionResponseMetadata(staticMetadataDocument, schemaMetadata) ?: return null
-        val componentMetadata =
-            getAppFunctionComponentsMetadata(
-                packageName,
-                staticMetadataDocument,
-                schemaMetadata,
-                searchTopLevelComponent(session, setOf(packageName)),
-            ) ?: return null
-
-        return AppFunctionMetadata(
-            id = functionId,
-            packageName = packageName,
-            isEnabled = computeEffectivelyEnabled(staticMetadataDocument, runtimeMetadataDocument),
-            schema = schemaMetadata,
-            parameters = parameterMetadata,
-            response = responseMetadata,
-            components = componentMetadata,
         )
     }
 
@@ -510,13 +571,5 @@ internal class AppSearchAppFunctionReader(
         const val APP_FUNCTIONS_RUNTIME_DATABASE_NAME = "appfunctions-db"
 
         val OBSERVER_DEBOUNCE_MILLIS = 1.seconds
-
-        val RUNTIME_SEARCH_SPEC =
-            SearchSpec.Builder()
-                .addFilterNamespaces(APP_FUNCTIONS_RUNTIME_NAMESPACE)
-                .addFilterDocumentClasses(AppFunctionRuntimeMetadata::class.java)
-                .addFilterPackageNames(SYSTEM_PACKAGE_NAME)
-                .setVerbatimSearchEnabled(true)
-                .build()
     }
 }

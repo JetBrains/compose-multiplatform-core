@@ -36,6 +36,7 @@ internal const val APP_FUNCTION_ID_EMPTY = "unused"
  *   obtain the input/output information, and call the function accordingly.
  */
 public class AppFunctionMetadata
+// TODO(b/500667251): Replace this constructor with the secondary one once migrated all usages.
 @JvmOverloads
 constructor(
     /**
@@ -65,7 +66,57 @@ constructor(
      * if the function is not deprecated.
      */
     public val deprecation: AppFunctionDeprecationMetadata? = null,
+    /** The name of the AppFunction. */
+    internal val name: AppFunctionName = AppFunctionName(packageName, id),
+    /** The metadata of the package providing this AppFunction. */
+    internal val packageMetadata: AppFunctionPackageMetadata =
+        AppFunctionPackageMetadata(
+            packageName = packageName,
+            appFunctions = listOf(),
+            components = components,
+        ),
 ) {
+    @JvmOverloads
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public constructor(
+        /** The name of the AppFunction. */
+        name: AppFunctionName,
+        /**
+         * The predefined schema of the AppFunction. If null, it indicates this function is not
+         * implement a particular predefined schema.
+         */
+        schema: AppFunctionSchemaMetadata?,
+        /** The parameters of the AppFunction. */
+        parameters: List<AppFunctionParameterMetadata>,
+        /** The response of the AppFunction. */
+        response: AppFunctionResponseMetadata,
+        /** The metadata of the package providing this AppFunction. */
+        packageMetadata: AppFunctionPackageMetadata,
+        // TODO(b/500667251): remove isEnabled property. AppFunctionMetadata should now contain
+        //  static info only, in line with platform class, hence using a default false value until
+        //  we migrate.
+        /** Indicates whether the function is enabled currently or not. */
+        isEnabled: Boolean,
+        /** A description of the AppFunction and its intended use. */
+        description: String = "",
+        /**
+         * Deprecation details about the function, if the AppFunction is deprecated. This will be
+         * `null` if the function is not deprecated.
+         */
+        deprecation: AppFunctionDeprecationMetadata? = null,
+    ) : this(
+        id = name.functionIdentifier,
+        packageName = name.packageName,
+        isEnabled = isEnabled,
+        schema = schema,
+        parameters = parameters,
+        response = response,
+        components = packageMetadata.components,
+        description = description,
+        deprecation = deprecation,
+        packageMetadata = packageMetadata,
+        name = name,
+    )
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -82,6 +133,8 @@ constructor(
         if (components != other.components) return false
         if (description != other.description) return false
         if (deprecation != other.deprecation) return false
+        if (name != other.name) return false
+        if (packageMetadata != other.packageMetadata) return false
 
         return true
     }
@@ -97,6 +150,8 @@ constructor(
             components,
             description,
             deprecation,
+            name,
+            packageMetadata,
         )
     }
 
@@ -108,9 +163,11 @@ constructor(
         append("schema=$schema, ")
         append("parameters=$parameters, ")
         append("response=$response, ")
-        append("components=$components")
-        append("description=$description")
-        append("deprecation=$deprecation")
+        append("components=$components, ")
+        append("description='$description', ")
+        append("deprecation=$deprecation, ")
+        append("packageMetadata=$packageMetadata, ")
+        append("name=$name")
         append(")")
     }
 
@@ -124,6 +181,8 @@ constructor(
         components: AppFunctionComponentsMetadata = this.components,
         description: String = this.description,
         deprecation: AppFunctionDeprecationMetadata? = this.deprecation,
+        name: AppFunctionName = this.name,
+        packageMetadata: AppFunctionPackageMetadata = this.packageMetadata,
     ): AppFunctionMetadata {
         return AppFunctionMetadata(
             id = id,
@@ -135,7 +194,83 @@ constructor(
             components = components,
             description = description,
             deprecation = deprecation,
+            name = name,
+            packageMetadata = packageMetadata,
         )
+    }
+
+    /** Specifies the lifecycle scope of an AppFunction. */
+    @Retention(AnnotationRetention.SOURCE)
+    @androidx.annotation.StringDef(SCOPE_GLOBAL, SCOPE_ACTIVITY)
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public annotation class AppFunctionScope
+
+    public companion object {
+
+        // TODO(b/501032667): Update links to the androidx verions of
+        // ExecuteAppFunctionRequest.setActivityId,
+        // getAppFunctionStates, getAppFunctionActivityStates,
+        // registerAppFunction
+        /**
+         * Indicates it is a globally-scoped app function.
+         *
+         * There can be at most one app function implementation with the same name available with
+         * this scope. This is useful for functions that are tied to a singleton component, such as
+         * a foreground service.
+         *
+         * When using [android.app.appfunctions.AppFunctionManager.registerAppFunction], the
+         * function remains registered until it is explicitly unregistered or the calling context is
+         * destroyed.
+         *
+         * To execute a globally-scoped function, the caller of
+         * [androidx.appfunctions.AppFunctionManager.executeAppFunction] must not use
+         * [android.app.appfunctions.ExecuteAppFunctionRequest#setActivityId] (or set it to null),
+         * otherwise [androidx.appfunctions.AppFunctionFunctionNotFoundException] will be returned.
+         *
+         * This is always the scope for [androidx.appfunctions.AppFunctionService]-based functions.
+         *
+         * **IMPORTANT:** Functions provided with
+         * [android.app.appfunctions.AppFunctionManager.registerAppFunction] called from an
+         * [android.app.Activity] context should prefer [SCOPE_ACTIVITY]. Only use [SCOPE_GLOBAL]
+         * for such functions if you are absolutely sure there can be only one instance of that
+         * activity.
+         */
+        @Suppress("InlinedApi")
+        public const val SCOPE_GLOBAL: String =
+            android.app.appfunctions.AppFunctionMetadata.PROPERTY_VALUE_SCOPE_GLOBAL
+
+        /**
+         * Indicates it is an activity-scoped app function.
+         *
+         * Multiple app function implementations with the same name can exist simultaneously, each
+         * registered from a different [android.app.Activity] instance, which is identified by an
+         * [android.app.appfunctions.AppFunctionActivityId].
+         *
+         * Functions with this scope must be registered by an
+         * [androidx.appfunctions.AppFunctionManager] that is created from an [android.app.Activity]
+         * context.
+         *
+         * To execute an activity-scoped function, the caller of
+         * [androidx.appfunctions.AppFunctionManager.executeAppFunction] must use
+         * [android.app.appfunctions.ExecuteAppFunctionRequest#setActivityId], otherwise
+         * [androidx.appfunctions.AppFunctionFunctionNotFoundException] will be returned.
+         *
+         * To discover the specific activities where an activity-scoped function is currently
+         * registered, see [android.app.appfunctions.AppFunctionManager.getAppFunctionStates] and
+         * [android.app.appfunctions.AppFunctionManager.getAppFunctionActivityStates].
+         *
+         * The function remains registered until it is explicitly unregistered or the activity is
+         * destroyed.
+         *
+         * **IMPORTANT:** Functions provided with
+         * [android.app.appfunctions.AppFunctionManager.registerAppFunction] called from an
+         * [android.app.Activity] context should prefer [SCOPE_ACTIVITY]. Only use [SCOPE_GLOBAL]
+         * for such functions if you are absolutely sure there can be only one instance of that
+         * activity.
+         */
+        @Suppress("InlinedApi")
+        public const val SCOPE_ACTIVITY: String =
+            android.app.appfunctions.AppFunctionMetadata.PROPERTY_VALUE_SCOPE_ACTIVITY
     }
 }
 
@@ -225,6 +360,7 @@ public data class CompileTimeAppFunctionMetadata(
 
 /** Represents the persistent storage format of [AppFunctionMetadata]. */
 @Document(name = "AppFunctionStaticMetadata")
+@Suppress("InlinedApi")
 internal data class AppFunctionMetadataDocument(
     @Document.Namespace val namespace: String = APP_FUNCTION_NAMESPACE,
     /** The id of the AppFunction. */
@@ -252,4 +388,7 @@ internal data class AppFunctionMetadataDocument(
     @Document.StringProperty val description: String? = null,
     /** Indicates whether the function is deprecated or not. */
     @Document.DocumentProperty val deprecation: AppFunctionDeprecationMetadataDocument? = null,
+    /** The lifecycle scope of the AppFunction. */
+    @Document.StringProperty(name = android.app.appfunctions.AppFunctionMetadata.PROPERTY_SCOPE)
+    val scope: String? = null,
 )

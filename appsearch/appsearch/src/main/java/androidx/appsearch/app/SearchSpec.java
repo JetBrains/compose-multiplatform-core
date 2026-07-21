@@ -175,12 +175,26 @@ public final class SearchSpec extends AbstractSafeParcelable {
     private final boolean mRetrieveEmbeddingMatchInfos;
 
     /**
+     * The embedding query probe count.
+     */
+    @Field(id = 26, getter = "getEmbeddingQueryProbeCount")
+    private final int mEmbeddingQueryProbeCount;
+
+    /**
      * Default number of documents per page.
      *
      * @exportToFramework:hide
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public static final int DEFAULT_NUM_PER_PAGE = 10;
+
+    /**
+     * Default number of clusters to search for Approximate Nearest Neighbor (ANN) search.
+     *
+     * @exportToFramework:hide
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public static final int DEFAULT_EMBEDDING_QUERY_PROBE_COUNT = 10;
 
     // TODO(b/170371356): In framework, we may want these limits to be flag controlled.
     //  If that happens, the @IntRange() directives in this class may have to change.
@@ -349,23 +363,19 @@ public final class SearchSpec extends AbstractSafeParcelable {
      * Use the default metric set in {@link SearchSpec#getDefaultEmbeddingSearchMetricType()} for
      * embedding search and ranking.
      */
-    @FlaggedApi(Flags.FLAG_ENABLE_SCHEMA_EMBEDDING_PROPERTY_CONFIG)
     public static final int EMBEDDING_SEARCH_METRIC_TYPE_DEFAULT = 0;
 
     /**
      * Cosine similarity as metric for embedding search and ranking.
      */
-    @FlaggedApi(Flags.FLAG_ENABLE_SCHEMA_EMBEDDING_PROPERTY_CONFIG)
     public static final int EMBEDDING_SEARCH_METRIC_TYPE_COSINE = 1;
     /**
      * Dot product similarity as metric for embedding search and ranking.
      */
-    @FlaggedApi(Flags.FLAG_ENABLE_SCHEMA_EMBEDDING_PROPERTY_CONFIG)
     public static final int EMBEDDING_SEARCH_METRIC_TYPE_DOT_PRODUCT = 2;
     /**
      * Euclidean distance as metric for embedding search and ranking.
      */
-    @FlaggedApi(Flags.FLAG_ENABLE_SCHEMA_EMBEDDING_PROPERTY_CONFIG)
     public static final int EMBEDDING_SEARCH_METRIC_TYPE_EUCLIDEAN = 3;
 
 
@@ -395,7 +405,8 @@ public final class SearchSpec extends AbstractSafeParcelable {
             @Param(id = 22) @Nullable List<String> informationalRankingExpressions,
             @Param(id = 23) @Nullable List<String> searchStringParameters,
             @Param(id = 24) @Nullable List<String> filterDocumentIds,
-            @Param(id = 25) boolean retrieveEmbeddingMatchInfos) {
+            @Param(id = 25) boolean retrieveEmbeddingMatchInfos,
+            @Param(id = 26) int embeddingQueryProbeCount) {
         mTermMatchType = termMatchType;
         mSchemas = Collections.unmodifiableList(Preconditions.checkNotNull(schemas));
         mNamespaces = Collections.unmodifiableList(Preconditions.checkNotNull(namespaces));
@@ -437,6 +448,7 @@ public final class SearchSpec extends AbstractSafeParcelable {
                         ? Collections.unmodifiableList(filterDocumentIds)
                         : Collections.emptyList();
         mRetrieveEmbeddingMatchInfos = retrieveEmbeddingMatchInfos;
+        mEmbeddingQueryProbeCount = embeddingQueryProbeCount;
     }
 
 
@@ -552,7 +564,6 @@ public final class SearchSpec extends AbstractSafeParcelable {
      * Returns whether to retrieve embedding match infos as a part of
      * {@link SearchResult#getMatchInfos()}
      */
-    @FlaggedApi(Flags.FLAG_ENABLE_EMBEDDING_MATCH_INFO)
     @ExperimentalAppSearchApi
     public boolean shouldRetrieveEmbeddingMatchInfos() {
         return mRetrieveEmbeddingMatchInfos;
@@ -725,7 +736,6 @@ public final class SearchSpec extends AbstractSafeParcelable {
      *
      * @see AppSearchSession#search
      */
-    @FlaggedApi(Flags.FLAG_ENABLE_SCHEMA_EMBEDDING_PROPERTY_CONFIG)
     public @NonNull List<EmbeddingVector> getEmbeddingParameters() {
         return mEmbeddingParameters;
     }
@@ -736,7 +746,6 @@ public final class SearchSpec extends AbstractSafeParcelable {
      * (see {@link SearchSpec.Builder#setRankingStrategy(String)}).
      */
     @EmbeddingSearchMetricType
-    @FlaggedApi(Flags.FLAG_ENABLE_SCHEMA_EMBEDDING_PROPERTY_CONFIG)
     public int getDefaultEmbeddingSearchMetricType() {
         return mDefaultEmbeddingSearchMetricType;
     }
@@ -760,6 +769,26 @@ public final class SearchSpec extends AbstractSafeParcelable {
     @FlaggedApi(Flags.FLAG_ENABLE_SEARCH_SPEC_SEARCH_STRING_PARAMETERS)
     public @NonNull List<String> getSearchStringParameters() {
         return mSearchStringParameters;
+    }
+
+    /**
+     * Returns the number of clusters to search for Approximate Nearest Neighbor (ANN) search.
+     *
+     * <p>This is used globally across all semanticSearch calls in the query expression.
+     * If this value is <= 0, embeddings in properties marked with
+     * {@link AppSearchSchema.EmbeddingPropertyConfig#INDEXING_TYPE_APPROXIMATE_NEAREST_NEIGHBOR}
+     * will be skipped. Embeddings in properties marked with
+     * {@link AppSearchSchema.EmbeddingPropertyConfig#INDEXING_TYPE_SIMILARITY} will still be
+     * searched regardless of this value.
+     *
+     * <p>A larger value increases recall at the expense of higher search latency. A smaller
+     * value reduces latency but may negatively impact recall. A value of 10 is generally
+     * a good default choice.
+     */
+    @FlaggedApi(Flags.FLAG_ENABLE_EMBEDDING_APPROXIMATE_NEAREST_NEIGHBOR)
+    @ExperimentalAppSearchApi
+    public int getEmbeddingQueryProbeCount() {
+        return mEmbeddingQueryProbeCount;
     }
 
     /**
@@ -857,6 +886,7 @@ public final class SearchSpec extends AbstractSafeParcelable {
         private List<String> mInformationalRankingExpressions = new ArrayList<>();
         private @Nullable String mSearchSourceLogTag;
         private boolean mRetrieveEmbeddingMatchInfos = false;
+        private int mEmbeddingQueryProbeCount = DEFAULT_EMBEDDING_QUERY_PROBE_COUNT;
         private boolean mBuilt = false;
 
         /** Constructs a new {@link Builder} for {@link SearchSpec} objects. */
@@ -903,6 +933,7 @@ public final class SearchSpec extends AbstractSafeParcelable {
             mSearchSourceLogTag = searchSpec.getSearchSourceLogTag();
             mFilterDocumentIds = new ArrayList<>(searchSpec.getFilterDocumentIds());
             mRetrieveEmbeddingMatchInfos = searchSpec.shouldRetrieveEmbeddingMatchInfos();
+            mEmbeddingQueryProbeCount = searchSpec.getEmbeddingQueryProbeCount();
         }
 
         /**
@@ -1694,7 +1725,6 @@ public final class SearchSpec extends AbstractSafeParcelable {
         @RequiresFeature(
                 enforcement = "androidx.appsearch.app.Features#isFeatureSupported",
                 name = Features.SEARCH_EMBEDDING_MATCH_INFO)
-        @FlaggedApi(Flags.FLAG_ENABLE_EMBEDDING_MATCH_INFO)
         @ExperimentalAppSearchApi
         @SuppressLint("MissingGetterMatchingBuilder")
         public @NonNull Builder setRetrieveEmbeddingMatchInfos(
@@ -2151,7 +2181,6 @@ public final class SearchSpec extends AbstractSafeParcelable {
         @RequiresFeature(
                 enforcement = "androidx.appsearch.app.Features#isFeatureSupported",
                 name = Features.SCHEMA_EMBEDDING_PROPERTY_CONFIG)
-        @FlaggedApi(Flags.FLAG_ENABLE_SCHEMA_EMBEDDING_PROPERTY_CONFIG)
         public @NonNull Builder addEmbeddingParameters(
                 @NonNull EmbeddingVector... searchEmbeddings) {
             Preconditions.checkNotNull(searchEmbeddings);
@@ -2170,7 +2199,6 @@ public final class SearchSpec extends AbstractSafeParcelable {
         @RequiresFeature(
                 enforcement = "androidx.appsearch.app.Features#isFeatureSupported",
                 name = Features.SCHEMA_EMBEDDING_PROPERTY_CONFIG)
-        @FlaggedApi(Flags.FLAG_ENABLE_SCHEMA_EMBEDDING_PROPERTY_CONFIG)
         public @NonNull Builder addEmbeddingParameters(
                 @NonNull Collection<EmbeddingVector> searchEmbeddings) {
             Preconditions.checkNotNull(searchEmbeddings);
@@ -2203,7 +2231,6 @@ public final class SearchSpec extends AbstractSafeParcelable {
         @RequiresFeature(
                 enforcement = "androidx.appsearch.app.Features#isFeatureSupported",
                 name = Features.SCHEMA_EMBEDDING_PROPERTY_CONFIG)
-        @FlaggedApi(Flags.FLAG_ENABLE_SCHEMA_EMBEDDING_PROPERTY_CONFIG)
         public @NonNull Builder setDefaultEmbeddingSearchMetricType(
                 @EmbeddingSearchMetricType int defaultEmbeddingSearchMetricType) {
             Preconditions.checkArgumentInRange(defaultEmbeddingSearchMetricType,
@@ -2261,6 +2288,34 @@ public final class SearchSpec extends AbstractSafeParcelable {
         public @NonNull Builder clearSearchStringParameters() {
             resetIfBuilt();
             mSearchStringParameters.clear();
+            return this;
+        }
+
+        /**
+         * Sets the number of clusters to search for Approximate Nearest Neighbor (ANN) search.
+         *
+         * <p>This is used globally across all semanticSearch calls in the query expression.
+         * If this value is <= 0, embeddings in properties marked with
+         * {@link AppSearchSchema.EmbeddingPropertyConfig#INDEXING_TYPE_APPROXIMATE_NEAREST_NEIGHBOR}
+         * will be skipped. Embeddings in properties marked with
+         * {@link AppSearchSchema.EmbeddingPropertyConfig#INDEXING_TYPE_SIMILARITY} will still be
+         * searched regardless of this value.
+         *
+         * <p>A larger value increases recall at the expense of higher search latency. A smaller
+         * value reduces latency but may negatively impact recall. A value of 10 is generally
+         * a good default choice.
+         *
+         * <p>If this method is not called, the default value is 10.
+         */
+        @CanIgnoreReturnValue
+        @RequiresFeature(
+                enforcement = "androidx.appsearch.app.Features#isFeatureSupported",
+                name = Features.SCHEMA_EMBEDDING_APPROXIMATE_NEAREST_NEIGHBOR)
+        @FlaggedApi(Flags.FLAG_ENABLE_EMBEDDING_APPROXIMATE_NEAREST_NEIGHBOR)
+        @ExperimentalAppSearchApi
+        public @NonNull Builder setEmbeddingQueryProbeCount(int embeddingQueryProbeCount) {
+            resetIfBuilt();
+            mEmbeddingQueryProbeCount = embeddingQueryProbeCount;
             return this;
         }
 
@@ -2444,7 +2499,8 @@ public final class SearchSpec extends AbstractSafeParcelable {
                     mGroupingLimit, mTypePropertyWeights, mJoinSpec, mAdvancedRankingExpression,
                     new ArrayList<>(mEnabledFeatures), mSearchSourceLogTag, mEmbeddingParameters,
                     mDefaultEmbeddingSearchMetricType, mInformationalRankingExpressions,
-                    mSearchStringParameters, mFilterDocumentIds, mRetrieveEmbeddingMatchInfos);
+                    mSearchStringParameters, mFilterDocumentIds, mRetrieveEmbeddingMatchInfos,
+                    mEmbeddingQueryProbeCount);
         }
 
         private void resetIfBuilt() {

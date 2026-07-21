@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Android Open Source Project
+ * Copyright 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,8 @@ import android.content.Context
 import android.os.Bundle
 import android.view.View
 import androidx.annotation.RestrictTo
+import androidx.lifecycle.LifecycleOwner
+import androidx.xr.arcore.Trackable
 import androidx.xr.runtime.internal.JxrRuntime
 import androidx.xr.runtime.math.Pose
 import java.util.concurrent.Executor
@@ -38,7 +40,7 @@ import java.util.function.Consumer
  *
  * This API is intended for internal use only and is not a public API.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public interface SceneRuntime : JxrRuntime {
     /** Return the Spatial Capabilities set that are currently supported by the platform. */
     public val spatialCapabilities: SpatialCapabilities
@@ -165,6 +167,17 @@ public interface SceneRuntime : JxrRuntime {
 
     /** A function to create a XR Runtime Entity. */
     public fun createLoggingEntity(pose: Pose): LoggingEntity
+
+    /**
+     * A factory function to create a SubspaceNodeEntity.
+     *
+     * @param nodeHolder Hold the Node to create the SubspaceNodeEntity from.
+     * @param size The (width, depth, height) of the [SubspaceNodeEntity].
+     */
+    public fun createSubspaceNodeEntity(
+        nodeHolder: NodeHolder<*>,
+        size: Dimensions,
+    ): SubspaceNodeEntity
 
     /**
      * Adds the given {@link Consumer} as a listener to be invoked when this Session's current
@@ -414,6 +427,32 @@ public interface SceneRuntime : JxrRuntime {
     ): MovableComponent
 
     /**
+     * Creates a [TrackableComponent] that drives an entity's pose from an ARCore [Trackable].
+     *
+     * Use this to make an entity in your scene automatically follow a real-world object tracked by
+     * ARCore. For example, you could attach a virtual object to a person's hand by using a
+     * `Trackable` that represents hand tracking.
+     *
+     * The component starts tracking the [Trackable] as soon as it's created and attached to an
+     * entity. Its lifecycle is managed automatically. When the component is detached or the
+     * provided [LifecycleOwner] is destroyed, it will stop tracking.
+     *
+     * @param lifecycleOwner The [LifecycleOwner] that controls the lifecycle of this component.
+     *   When the lifecycle is destroyed, the component will stop tracking.
+     * @param trackable The ARCore [Trackable] to follow. This provides a stream of updates, such as
+     *   the position and orientation of a detected object.
+     * @param poseExtractor A function that extracts a [Pose] from the [Trackable]'s state. This
+     *   function is called for each update from the `trackable`. If it returns `null`, the entity's
+     *   pose is not updated for that frame.
+     * @return A new [TrackableComponent] instance ready to be attached to an entity.
+     */
+    public fun createTrackableComponent(
+        lifecycleOwner: LifecycleOwner,
+        trackable: Trackable<Trackable.State>,
+        poseExtractor: ((Any?) -> Pose?),
+    ): TrackableComponent
+
+    /**
      * Create an instance of [ResizableComponent]. This component allows the user to resize the
      * entity.
      *
@@ -538,4 +577,15 @@ public interface SceneRuntime : JxrRuntime {
     public fun createSoundEffectPoolComponent(
         soundEffectPool: SoundEffectPool
     ): SoundEffectPoolComponent
+
+    /**
+     * The default pixel density of a [PanelEntity], expressed in pixels per meter.
+     *
+     * This value represents the number of virtual pixels in a PanelEntity that correspond to one
+     * meter in the [ActivitySpace].
+     *
+     * This density is a static property of the user's device and does not change with user-level
+     * display preference overrides.
+     */
+    public val virtualPixelDensity: Float
 }

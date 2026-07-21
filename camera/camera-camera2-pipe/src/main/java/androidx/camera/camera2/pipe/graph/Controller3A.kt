@@ -104,18 +104,18 @@ constructor(
             )
 
         val parameterForAfTriggerStart =
-            mapOf<CaptureRequest.Key<*>, Any>(CONTROL_AF_TRIGGER to CONTROL_AF_TRIGGER_START)
+            mapOf<CaptureRequest.Key<*>, Any?>(CONTROL_AF_TRIGGER to CONTROL_AF_TRIGGER_START)
 
         val parameterForAfTriggerCancel =
-            mapOf<CaptureRequest.Key<*>, Any>(CONTROL_AF_TRIGGER to CONTROL_AF_TRIGGER_CANCEL)
+            mapOf<CaptureRequest.Key<*>, Any?>(CONTROL_AF_TRIGGER to CONTROL_AF_TRIGGER_CANCEL)
 
         private val parametersForAePrecapture =
-            mapOf<CaptureRequest.Key<*>, Any>(
+            mapOf<CaptureRequest.Key<*>, Any?>(
                 CONTROL_AE_PRECAPTURE_TRIGGER to CONTROL_AE_PRECAPTURE_TRIGGER_START
             )
 
         private val parametersForAePrecaptureAndAfTrigger =
-            mapOf<CaptureRequest.Key<*>, Any>(
+            mapOf<CaptureRequest.Key<*>, Any?>(
                 CONTROL_AF_TRIGGER to CONTROL_AF_TRIGGER_START,
                 CONTROL_AE_PRECAPTURE_TRIGGER to CONTROL_AE_PRECAPTURE_TRIGGER_START,
             )
@@ -153,15 +153,15 @@ constructor(
             mapOf(CONTROL_AF_TRIGGER to CONTROL_AF_TRIGGER_CANCEL, CONTROL_AE_LOCK to true)
 
         private val unlock3APostCaptureUnlockAeParams =
-            mapOf<CaptureRequest.Key<*>, Any>(CONTROL_AE_LOCK to false)
+            mapOf<CaptureRequest.Key<*>, Any?>(CONTROL_AE_LOCK to false)
 
         private val aePrecaptureCancelParams =
-            mapOf<CaptureRequest.Key<*>, Any>(
+            mapOf<CaptureRequest.Key<*>, Any?>(
                 CONTROL_AE_PRECAPTURE_TRIGGER to CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER_CANCEL
             )
 
         private val aePrecaptureAndAfCancelParams =
-            mapOf<CaptureRequest.Key<*>, Any>(
+            mapOf<CaptureRequest.Key<*>, Any?>(
                 CONTROL_AF_TRIGGER to CONTROL_AF_TRIGGER_CANCEL,
                 CONTROL_AE_PRECAPTURE_TRIGGER to CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER_CANCEL,
             )
@@ -195,6 +195,7 @@ constructor(
         aeRegions: List<MeteringRectangle>? = null,
         afRegions: List<MeteringRectangle>? = null,
         awbRegions: List<MeteringRectangle>? = null,
+        retainLocks: Boolean = false,
     ): Deferred<Result3A> {
         // If the GraphProcessor does not have a repeating request we should update the current
         // parameters, but should not invalidate or trigger set a new listener.
@@ -218,23 +219,62 @@ constructor(
         val listener = createListenerFor3AParams(aeMode, afMode, awbMode, controlMode, flashMode)
         graphListener3A.addListener(listener)
 
+        // If retainLocks is true and previous 3A lock is also true, we will update the locks for
+        // the specified 3A
+        val currentState3A = state3ASnapshot()
+        val aeLock: Boolean? = if (retainLocks && currentState3A.aeLock == true) true else null
+        val awbLock: Boolean? = if (retainLocks && currentState3A.awbLock == true) true else null
+
         // Update the 3A state of the graph. This will make sure then when GraphProcessor builds
         // the next request it will apply the 3A parameters corresponding to the updated 3A state
         // to the request.
         graphState3A.update(
-            aeMode,
-            afMode,
-            awbMode,
-            controlMode,
-            flashMode,
-            aeRegions,
-            afRegions,
-            awbRegions,
+            aeMode = aeMode,
+            afMode = afMode,
+            awbMode = awbMode,
+            controlMode = controlMode,
+            flashMode = flashMode,
+            aeRegions = aeRegions,
+            afRegions = afRegions,
+            awbRegions = awbRegions,
+            aeLock = aeLock,
+            awbLock = awbLock,
         )
+
+        var parameters = graphState3A.toCaptureRequestParametersMap()
+        val isAfContinuousAndDifferent =
+            (afMode?.isContinuous()) == true && (currentState3A.afMode != afMode)
+
+        // Locks for AF will only be retained if AF is previously locked and AfMode is continuous
+        // and the new AfMode is different from the previous
+        // To retain the locks, we will send af trigger
+        val afLockedAndContinuous = currentState3A.afLock == true && isAfContinuousAndDifferent
+        val needAfTrigger = retainLocks && afLockedAndContinuous
+        if (needAfTrigger) {
+            parameters = parameters + parameterForAfTriggerStart
+        }
+
+        if (retainLocks) {
+            if (aeLock != true) {
+                debug {
+                    "Controller3A#update3A: AE lock will not be retained because previous AE is not locked"
+                }
+            }
+            if (awbLock != true) {
+                debug {
+                    "Controller3A#update3A: AWB lock will not be retained because previous AWB is not locked"
+                }
+            }
+            if (!afLockedAndContinuous) {
+                debug {
+                    "Controller3A#update3A: AF lock will not be retained because previous AF is not locked or AfMode is not continuous and different"
+                }
+            }
+        }
 
         // Try submitting a new repeating request with the 3A parameters corresponding to the new
         // 3A state and corresponding listeners.
-        graphProcessor.update3AParameters(graphState3A.toCaptureRequestParametersMap())
+        graphProcessor.update3AParameters(parameters)
 
         val result = listener.result
         synchronized(this) {
@@ -635,7 +675,7 @@ constructor(
      *   either frame limit or time limit was reached.
      */
     private fun lock3AForCapture(
-        triggerCondition: Map<CaptureRequest.Key<*>, Any>? = null,
+        triggerCondition: Map<CaptureRequest.Key<*>, Any?>? = null,
         lockedCondition: ((FrameMetadata) -> Boolean)? = null,
         frameLimit: Int = DEFAULT_FRAME_LIMIT,
         timeLimitNs: Long = DEFAULT_TIME_LIMIT_NS,

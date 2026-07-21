@@ -40,6 +40,7 @@ import android.view.MotionEvent.TOOL_TYPE_MOUSE
 import android.view.View
 import android.view.ViewGroup
 import androidx.annotation.RequiresApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -62,9 +63,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.AbsoluteAlignment
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ComposeUiFlags
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.OpenComposeView
-import androidx.compose.ui.background
 import androidx.compose.ui.composed
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.scale
@@ -440,7 +442,11 @@ class AndroidPointerInputTest {
             androidComposeView.dispatchTouchEvent(upBottomBoxEvent)
 
             // Assert
-            assertThat(pointerEventsLog).hasSize(8)
+            // moveBottomBoxEvent (non-moving Move) is processed instead of skipped due to
+            // isTriggerMoveEventsWhenLocationHasNotChangedEnabled
+            @OptIn(ExperimentalComposeUiApi::class)
+            val hasExtraMove = ComposeUiFlags.isTriggerMoveEventsWhenLocationHasNotChangedEnabled
+            assertThat(pointerEventsLog).hasSize(if (hasExtraMove) 9 else 8)
 
             for (pointerEvent in pointerEventsLog) {
                 assertThat(pointerEvent.internalPointerEvent).isNotNull()
@@ -453,9 +459,16 @@ class AndroidPointerInputTest {
             assertThat(pointerEventsLog[3].type).isEqualTo(PointerEventType.Move)
             assertThat(pointerEventsLog[4].type).isEqualTo(PointerEventType.Move)
 
-            assertThat(pointerEventsLog[5].type).isEqualTo(PointerEventType.Release)
-            assertThat(pointerEventsLog[6].type).isEqualTo(PointerEventType.Release)
-            assertThat(pointerEventsLog[7].type).isEqualTo(PointerEventType.Release)
+            if (hasExtraMove) {
+                assertThat(pointerEventsLog[5].type).isEqualTo(PointerEventType.Move)
+                assertThat(pointerEventsLog[6].type).isEqualTo(PointerEventType.Move)
+                assertThat(pointerEventsLog[7].type).isEqualTo(PointerEventType.Release)
+                assertThat(pointerEventsLog[8].type).isEqualTo(PointerEventType.Release)
+            } else {
+                assertThat(pointerEventsLog[5].type).isEqualTo(PointerEventType.Release)
+                assertThat(pointerEventsLog[6].type).isEqualTo(PointerEventType.Release)
+                assertThat(pointerEventsLog[7].type).isEqualTo(PointerEventType.Release)
+            }
         }
     }
 
@@ -1087,10 +1100,18 @@ class AndroidPointerInputTest {
         assertThat(event.type).isEqualTo(expectedHoverType)
     }
 
-    private fun assertScrollEvent(event: PointerEvent, scrollExpected: Offset) {
+    private fun assertScrollEvent(
+        event: PointerEvent,
+        scrollExpected: Offset,
+        buttonPressed: Boolean = false,
+    ) {
         assertThat(event.changes).hasSize(1)
         val change = event.changes[0]
-        assertThat(change.pressed).isFalse()
+        if (buttonPressed) {
+            assertThat(change.pressed).isTrue()
+        } else {
+            assertThat(change.pressed).isFalse()
+        }
         assertThat(event.type).isEqualTo(PointerEventType.Scroll)
         // we agreed to reverse Y in android to be in line with other platforms
         assertThat(change.scrollDelta).isEqualTo(scrollExpected.copy(y = scrollExpected.y * -1))
@@ -1102,10 +1123,21 @@ class AndroidPointerInputTest {
         offset: Offset = Offset.Zero,
         scrollDelta: Offset = Offset.Zero,
         eventTime: Int = 0,
+        buttonState: Int = -1,
     ) {
         rule.runOnUiThread {
             val root = layoutCoordinates.findRootCoordinates()
             val pos = root.localPositionOf(layoutCoordinates, offset)
+
+            val buttonState: Int =
+                if (buttonState >= 0) {
+                    buttonState
+                } else if (action == ACTION_DOWN || action == ACTION_MOVE) {
+                    MotionEvent.BUTTON_PRIMARY
+                } else {
+                    0
+                }
+
             val event =
                 MotionEvent(
                     eventTime,
@@ -1114,6 +1146,7 @@ class AndroidPointerInputTest {
                     0,
                     arrayOf(PointerProperties(0).also { it.toolType = TOOL_TYPE_MOUSE }),
                     arrayOf(PointerCoords(pos.x, pos.y, scrollDelta.x, scrollDelta.y)),
+                    buttonState,
                 )
 
             val androidComposeView = findAndroidComposeView(container) as AndroidComposeView
@@ -1613,6 +1646,7 @@ class AndroidPointerInputTest {
      * in U. (Thus, why this test request at least that version.)
      */
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+    @OptIn(ExperimentalComposeUiApi::class)
     @Test
     fun motionEventDispatch_withValidClassification_shouldMatchInPointerEvent() {
         // --> Arrange
@@ -1784,6 +1818,34 @@ class AndroidPointerInputTest {
 
             val androidComposeView = findAndroidComposeView(container) as AndroidComposeView
             androidComposeView.dispatchTouchEvent(downEvent)
+
+            // When re-interpreting pinches, the first MotionEvent (ACTION_DOWN with 1 pointer) will
+            // not result in a PointerEvent being sent through Compose. Therefore, we send a
+            // second MotionEvent (ACTION_POINTER_DOWN with 2 pointers) to trigger the PointerEvent.
+            if (ComposeUiFlags.isTrackpadPinchReinterpretationEnabled) {
+                val pointerProperties2 =
+                    arrayOf(
+                        pointerProperties[0],
+                        PointerProperties(1).also { it.toolType = MotionEvent.TOOL_TYPE_FINGER },
+                    )
+                val pointerCoords2 =
+                    arrayOf(
+                        pointerCoords!![0],
+                        PointerCoords(pointerCoords!![0].x + 10f, pointerCoords!![0].y + 10f),
+                    )
+                val pointerDownEvent =
+                    MotionEvent(
+                        eventTime = eventTime,
+                        action = ACTION_POINTER_DOWN,
+                        numPointers = 2,
+                        actionIndex = 1,
+                        pointerProperties = pointerProperties2,
+                        pointerCoords = pointerCoords2,
+                        buttonState = buttonState,
+                        classification = motionEventClassification,
+                    )
+                androidComposeView.dispatchTouchEvent(pointerDownEvent)
+            }
         }
 
         // --> Assert
@@ -3750,6 +3812,7 @@ class AndroidPointerInputTest {
      *
      * Should NOT trigger any additional events (like an extra press or exit)!
      */
+    @OptIn(ExperimentalComposeUiApi::class)
     @Test
     fun mouseEventsAndPointerIds_completeMouseEventCycle_pointerIdsShouldMatchAcrossAllEvents() {
         // --> Arrange
@@ -3765,6 +3828,7 @@ class AndroidPointerInputTest {
         // mouse. These events happen between the normal press and release events.
         var unknownCount = 0
         var upCount = 0
+        var moveCount = 0
 
         // We want to assert that each updated pointer id matches the original pointer id that
         // starts the sequence of MotionEvents.
@@ -3811,6 +3875,9 @@ class AndroidPointerInputTest {
                                         PointerEventType.Unknown -> {
                                             ++unknownCount
                                         }
+                                        PointerEventType.Move -> {
+                                            ++moveCount
+                                        }
                                         else -> {
                                             eventsThatShouldNotTrigger = true
                                         }
@@ -3834,6 +3901,7 @@ class AndroidPointerInputTest {
             assertThat(downCount).isEqualTo(0)
             assertThat(unknownCount).isEqualTo(0)
             assertThat(upCount).isEqualTo(0)
+            assertThat(moveCount).isEqualTo(0)
 
             assertThat(pointerEvent).isNotNull()
             assertThat(eventsThatShouldNotTrigger).isFalse()
@@ -3855,6 +3923,7 @@ class AndroidPointerInputTest {
             assertThat(downCount).isEqualTo(1)
             assertThat(unknownCount).isEqualTo(0)
             assertThat(upCount).isEqualTo(0)
+            assertThat(moveCount).isEqualTo(0)
 
             assertThat(pointerEvent).isNotNull()
             assertThat(eventsThatShouldNotTrigger).isFalse()
@@ -3872,6 +3941,7 @@ class AndroidPointerInputTest {
             // mouse. These events happen between the normal press and release events.
             assertThat(unknownCount).isEqualTo(1)
             assertThat(upCount).isEqualTo(0)
+            assertThat(moveCount).isEqualTo(0)
 
             assertThat(pointerEvent).isNotNull()
             assertThat(eventsThatShouldNotTrigger).isFalse()
@@ -3888,6 +3958,7 @@ class AndroidPointerInputTest {
             // mouse. These events happen between the normal press and release events.
             assertThat(unknownCount).isEqualTo(2)
             assertThat(upCount).isEqualTo(0)
+            assertThat(moveCount).isEqualTo(0)
 
             assertThat(pointerEvent).isNotNull()
             assertThat(eventsThatShouldNotTrigger).isFalse()
@@ -3906,6 +3977,9 @@ class AndroidPointerInputTest {
             assertThat(downCount).isEqualTo(1)
             assertThat(unknownCount).isEqualTo(2)
             assertThat(upCount).isEqualTo(1)
+            val expectedMoves =
+                if (ComposeUiFlags.isTriggerMoveEventsWhenLocationHasNotChangedEnabled) 1 else 0
+            assertThat(moveCount).isEqualTo(expectedMoves)
 
             assertThat(pointerEvent).isNotNull()
             assertThat(eventsThatShouldNotTrigger).isFalse()
@@ -3924,6 +3998,9 @@ class AndroidPointerInputTest {
             assertThat(downCount).isEqualTo(1)
             assertThat(unknownCount).isEqualTo(2)
             assertThat(upCount).isEqualTo(1)
+            val expectedMoves =
+                if (ComposeUiFlags.isTriggerMoveEventsWhenLocationHasNotChangedEnabled) 1 else 0
+            assertThat(moveCount).isEqualTo(expectedMoves)
 
             assertThat(pointerEvent).isNotNull()
             assertThat(eventsThatShouldNotTrigger).isFalse()
@@ -4260,12 +4337,21 @@ class AndroidPointerInputTest {
         assertTrue(latch.await(1, TimeUnit.SECONDS))
         // press the button first before scroll
         dispatchMouseEvent(ACTION_DOWN, layoutCoordinates!!)
-        dispatchMouseEvent(ACTION_SCROLL, layoutCoordinates!!, scrollDelta = scrollDelta)
+
+        dispatchMouseEvent(
+            action = ACTION_SCROLL,
+            layoutCoordinates = layoutCoordinates!!,
+            offset = Offset.Zero,
+            scrollDelta = scrollDelta,
+            eventTime = 0,
+            buttonState = MotionEvent.BUTTON_PRIMARY,
+        )
         rule.runOnUiThread {
-            assertThat(events).hasSize(3) // synthetic enter, button down, scroll
+            // synthetic enter, button down, scroll
+            assertThat(events).hasSize(3)
             assertHoverEvent(events[0], isEnter = true)
             assert(events[1].changes.fastAll { it.changedToDownIgnoreConsumed() })
-            assertScrollEvent(events[2], scrollExpected = scrollDelta)
+            assertScrollEvent(events[2], scrollExpected = scrollDelta, buttonPressed = true)
         }
     }
 
@@ -4303,12 +4389,16 @@ class AndroidPointerInputTest {
             dispatchMouseEvent(ACTION_SCROLL, layoutCoordinates!!, scrollDelta = it)
         }
         rule.runOnUiThread {
-            assertThat(events).hasSize(5) // 4 + synthetic enter
+            // 4 + synthetic enter/exits (4)
+            assertThat(events).hasSize(8)
             assertHoverEvent(events[0], isEnter = true)
             assertScrollEvent(events[1], scrollExpected = scrollDelta1)
-            assertScrollEvent(events[2], scrollExpected = scrollDelta2)
-            assertScrollEvent(events[3], scrollExpected = scrollDelta3)
-            assertScrollEvent(events[4], scrollExpected = scrollDelta4)
+            assertHoverEvent(events[2], isExit = true)
+            assertScrollEvent(events[3], scrollExpected = scrollDelta2)
+            assertHoverEvent(events[4], isExit = true)
+            assertScrollEvent(events[5], scrollExpected = scrollDelta3)
+            assertHoverEvent(events[6], isExit = true)
+            assertScrollEvent(events[7], scrollExpected = scrollDelta4)
         }
     }
 

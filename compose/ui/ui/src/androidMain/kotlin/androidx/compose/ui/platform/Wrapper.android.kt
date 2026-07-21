@@ -51,7 +51,6 @@ internal actual fun createApplier(container: LayoutNode): AbstractApplier<Layout
  * @param composeViewContext The [ComposeViewContext] to use with the AndroidComposeView.
  * @param content Composable that will be the content of the view.
  */
-@OptIn(ExperimentalComposeViewContextApi::class)
 internal fun AbstractComposeView.setContent(
     composeViewContext: ComposeViewContext,
     content: @Composable () -> Unit,
@@ -59,9 +58,7 @@ internal fun AbstractComposeView.setContent(
     GlobalSnapshotManager.ensureStarted()
     val composeView =
         if (childCount > 0) {
-            (getChildAt(0) as? AndroidComposeView)?.also {
-                it.composeViewContext = composeViewContext
-            }
+            (getChildAt(0) as? AndroidComposeView)
         } else {
             removeAllViews()
             null
@@ -69,7 +66,10 @@ internal fun AbstractComposeView.setContent(
             ?: AndroidComposeView(context, composeViewContext).also {
                 addView(it.view, DefaultLayoutParams)
             }
-    composeView.composeViewContext = composeViewContext
+
+    if (composeView.composeViewContext !== composeViewContext) {
+        updateComposeViewContext(composeViewContext)
+    }
     if (this.composeViewContext != null) {
         composeViewContext.incrementViewCount()
         composeView.composeViewContextIncrementedDuringInit = true
@@ -95,7 +95,6 @@ internal fun AbstractComposeView.setContent(
     return wrapped
 }
 
-@OptIn(ExperimentalComposeViewContextApi::class)
 private class WrappedComposition(val owner: AndroidComposeView, val original: Composition) :
     Composition, LifecycleEventObserver, CompositionServices {
 
@@ -123,10 +122,8 @@ private class WrappedComposition(val owner: AndroidComposeView, val original: Co
                     }
                 } else if (lifecycle.currentState.isAtLeast(Lifecycle.State.CREATED)) {
                     original.setContent {
-                        // TODO(mnuzen): Combine the two boundsUpdatesLoop() into one LaunchedEffect
                         LaunchedEffect(owner) { owner.boundsUpdatesAccessibilityEventLoop() }
                         LaunchedEffect(owner) { owner.boundsUpdatesContentCaptureEventLoop() }
-
                         composeViewContext.ProvideCompositionLocals(owner, content)
                     }
                 }
@@ -140,6 +137,7 @@ private class WrappedComposition(val owner: AndroidComposeView, val original: Co
             owner.view.setTag(R.id.wrapped_composition_tag, null)
             addedToLifecycle?.removeObserver(this)
             addedToLifecycle = null
+            owner.disposeSavedStateRegistry()
         }
         original.dispose()
     }

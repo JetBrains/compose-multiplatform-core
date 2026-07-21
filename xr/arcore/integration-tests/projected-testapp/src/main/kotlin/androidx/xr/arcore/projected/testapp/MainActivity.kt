@@ -19,6 +19,7 @@ package androidx.xr.arcore.projected.testapp
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Arrangement
@@ -39,15 +40,11 @@ import androidx.compose.ui.unit.sp
 import androidx.xr.arcore.projected.testapp.tiltgesture.TiltGestureTrackingActivity
 import androidx.xr.projected.ProjectedContext
 import androidx.xr.projected.experimental.ExperimentalProjectedApi
-import androidx.xr.runtime.XrLog
 
 @OptIn(ExperimentalProjectedApi::class)
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        XrLog.isEnabled = true
-        XrLog.level = XrLog.Level.VERBOSE
 
         setContent {
             Column(
@@ -58,6 +55,11 @@ class MainActivity : ComponentActivity() {
                 Column(modifier = Modifier.fillMaxWidth(0.8f)) {
                     HorizontalDivider(color = Color.Gray)
                     TestActivityRow(
+                        "Inertial Tracking test",
+                        InertialTrackingActivity::class.java,
+                        this@MainActivity,
+                    )
+                    TestActivityRow(
                         "TiltGesture test",
                         TiltGestureTrackingActivity::class.java,
                         this@MainActivity,
@@ -65,6 +67,23 @@ class MainActivity : ComponentActivity() {
                     TestActivityRow(
                         "Geospatial/Tracking test",
                         ProjectedTestAppActivity::class.java,
+                        this@MainActivity,
+                    )
+                    GeospatialActivityRow(
+                        "Config Projected: INERTIAL",
+                        "INERTIAL",
+                        isProjected = true,
+                        this@MainActivity,
+                    )
+                    GeospatialActivityRow(
+                        "Config Projected: SPATIAL",
+                        "SPATIAL",
+                        isProjected = true,
+                        this@MainActivity,
+                    )
+                    TestActivityRow(
+                        "Low Power Geospatial test",
+                        LowPowerGeospatialActivity::class.java,
                         this@MainActivity,
                     )
                 }
@@ -81,7 +100,7 @@ class MainActivity : ComponentActivity() {
         ) {
             Text(name, fontSize = 18.sp)
             Button(onClick = { launchProjectedActivity(activityClass, context) }) {
-                Text("Run Test", fontSize = 18.sp)
+                Text("Run", fontSize = 18.sp)
             }
         }
         HorizontalDivider(color = Color.Gray)
@@ -92,7 +111,7 @@ class MainActivity : ComponentActivity() {
             try {
                 ProjectedContext.createProjectedDeviceContext(context)
             } catch (e: IllegalStateException) {
-                XrLog.warn(e) { "Error creating projected device" }
+                Log.w("JetpackXR", "Error creating projected device", e)
                 return
             }
         val intent = Intent(context, activityClass)
@@ -101,5 +120,52 @@ class MainActivity : ComponentActivity() {
             intent,
             ProjectedContext.createProjectedActivityOptions(projectedContext).toBundle(),
         )
+    }
+
+    @Composable
+    private fun GeospatialActivityRow(
+        name: String,
+        mode: String,
+        isProjected: Boolean,
+        context: Context,
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(name, fontSize = 18.sp)
+            Button(
+                onClick = {
+                    val targetClass = ConfigProjectedGeospatialActivity::class.java
+                    val intent = Intent(context, targetClass)
+                    intent.putExtra("GEOSPATIAL_MODE", mode)
+                    intent.putExtra("EXTRA_IS_PROJECTED", isProjected)
+                    intent.addFlags(
+                        Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                    )
+
+                    if (!isProjected) {
+                        startActivity(intent)
+                        return@Button
+                    }
+
+                    val projectedContext =
+                        try {
+                            ProjectedContext.createProjectedDeviceContext(context)
+                        } catch (e: IllegalStateException) {
+                            return@Button
+                        }
+
+                    startActivity(
+                        intent,
+                        ProjectedContext.createProjectedActivityOptions(projectedContext).toBundle(),
+                    )
+                }
+            ) {
+                Text("Run", fontSize = 18.sp)
+            }
+        }
+        HorizontalDivider(color = Color.Gray)
     }
 }
