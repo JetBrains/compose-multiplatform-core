@@ -288,6 +288,8 @@ private suspend fun awaitWithYield() {
 internal external class ExtendedShadowRoot : ShadowRoot {
 
     fun elementFromPoint(x: Double, y: Double): Element
+
+    val activeElement: Element?
 }
 
 // OnCanvasTests is an interface, so it can't have a backing field for composeWindow.

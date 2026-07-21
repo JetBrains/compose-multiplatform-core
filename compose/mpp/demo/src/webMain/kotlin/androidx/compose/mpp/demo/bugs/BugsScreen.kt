@@ -28,6 +28,10 @@ val BugsScreen = Screen.Selection("Web Bug Reproducers", screens = listOf(
     },
     Screen.Example("MagicMouse") {
         MagicMouse()
+    },
+    Screen.Example("Tab Focus") {
+        // https://youtrack.jetbrains.com/issue/CMP-9388
+        TabFocus()
     }
 ))
 
