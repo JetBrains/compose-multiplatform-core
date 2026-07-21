@@ -108,6 +108,21 @@ internal interface OnCanvasTests {
             storeComposeWindow(getContainer(), jsReference)
         }
 
+    /**
+     * Test-only accessor for the currently stored [ComposeWindow], if any.
+     * Returns `null` if the compose window has not been created yet or has already been cleared.
+     */
+    fun getComposeWindowOrNull(): ComposeWindow? = composeWindow
+
+    /**
+     * Clears the stored reference to the [ComposeWindow] without calling `dispose()`.
+     * Use this in tests that intentionally trigger disposal via DOM removal to prevent
+     * [afterTest] from disposing an already-disposed window.
+     */
+    fun clearComposeWindowReference() {
+        composeWindow = null
+    }
+
     /*
     <container>
       <positioning_container>

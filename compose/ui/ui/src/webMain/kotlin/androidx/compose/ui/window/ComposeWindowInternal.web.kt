@@ -98,6 +98,7 @@ import androidx.compose.ui.viewinterop.WebInteropContainer
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.enableSavedStateHandles
 import kotlin.js.ExperimentalWasmJsInterop
+import kotlin.js.JsAny
 import kotlin.js.js
 import kotlinx.browser.document
 import kotlinx.browser.window
@@ -126,7 +127,6 @@ import org.w3c.dom.events.KeyboardEvent
 import org.w3c.dom.events.MouseEvent
 import org.w3c.dom.events.WheelEvent
 import org.w3c.dom.pointerevents.PointerEvent
-import androidx.compose.ui.window.MediaQueryListener
 
 private val actualDensity
     get() = window.devicePixelRatio
@@ -639,9 +639,12 @@ internal class ComposeWindow(
         insetsManager?.onCanvasResized(canvas)
     }
 
-    // TODO: need to call .dispose() on window close.
+    // This is called automatically on destroying the corresponding DOM container
     fun dispose() {
-        check(!isDisposed)
+        // dispose() can be called both explicitly and via the DOM disconnectedCallback
+        // when the container element is removed from the document. Make it idempotent so
+        // the auto-dispose fallback doesn't fail after an explicit dispose.
+        if (isDisposed) return
         (platformContext.prefetchScheduler as? WebPrefetchScheduler)?.dispose()
         archComponentsOwner.lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_DESTROY)
         archComponentsOwner.viewModelStore.clear()
@@ -915,6 +918,28 @@ internal class ComposeWindow(
             x = offsetX.toFloat() * density.density,
             y = offsetY.toFloat() * density.density
         )
+
+    companion object {
+        private val DomDisposableRegistry = WeakMap<JsAny>()
+
+        fun registerDisposableFor(element: HTMLElement, handler: () -> Unit) {
+            DomDisposableRegistry.set(element, {
+                handler()
+                DomDisposableRegistry.delete(element)
+            })
+        }
+
+        fun createComposeComponent(): HTMLElement {
+            if (customElements.get("compose-component") == null) {
+                customElements.define(
+                    "compose-component",
+                    composeComponentElementCtor(DomDisposableRegistry)
+                )
+            }
+
+            return document.createElement("compose-component") as HTMLElement
+        }
+    }
 }
 
 //https://developer.mozilla.org/en-US/docs/Web/API/Document/visibilityState
@@ -1072,3 +1097,39 @@ private fun Element.isFocused(): Boolean {
 private external interface ShadowRootExt {
     val activeElement: Element?
 }
+
+// A real ES6 `class extends HTMLElement` is required by `customElements.define`.
+// Kotlin/Wasm does not emit Kotlin classes as JS constructors, so we create the
+// constructor in JS and return it as a JS function so it can be passed directly
+// to `customElements.define`.
+@OptIn(ExperimentalWasmJsInterop::class)
+private fun composeComponentElementCtor(weakMap: WeakMap<JsAny>): JsAny = js("""
+    (() => {
+        class ComposeComponentElement extends HTMLElement {
+            disconnectedCallback() {
+                const cb = weakMap.get(this);
+                if (cb) cb();
+            }
+        }
+        return ComposeComponentElement;
+    })()
+""")
+
+
+// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/WeakMap
+// Kotlin/Wasm JS interop  only allows type parameters with an upper bound of `JsAny` or its subtypes,
+// while the actual value stored here is a Kotlin function type `() -> Unit`.
+@OptIn(ExperimentalWasmJsInterop::class)
+private external class WeakMap<K : JsAny>(): JsAny {
+    fun get(key: K): (() -> Unit)?
+    fun set(key: K, value: () -> Unit): WeakMap<K>
+    fun has(key: K): Boolean
+    fun delete(key: K): Boolean
+}
+
+private external interface CustomElementRegistry : JsAny {
+    fun get(name: String): JsAny?
+    fun define(name: String, constructor: JsAny)
+}
+
+private external val customElements: CustomElementRegistry
