@@ -19,11 +19,12 @@ package androidx.compose.ui.layers
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
-import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.SideEffect
@@ -35,12 +36,14 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.UIKitInstrumentedTest
 import androidx.compose.ui.test.findFocusedUITextInput
 import androidx.compose.ui.test.findNodeWithTag
+import androidx.compose.ui.test.findNodeWithTagOrNull
 import androidx.compose.ui.test.runUIKitInstrumentedTest
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import kotlin.test.Test
 import kotlin.test.assertNotNull
 import kotlinx.cinterop.ExperimentalForeignApi
+import kotlinx.coroutines.delay
 import platform.Foundation.NSMakeRange
 import platform.UIKit.UITextInputProtocol
 
@@ -74,11 +77,16 @@ class TextInputPendingCompositionLayerTest {
                     SideEffect {
                         if (!didCommitPendingText) {
                             didCommitPendingText = true
-                            // UIKit commits pending input while the new scene layer is being applied.
+                            // UIKit commits pending input while the new scene layer is being applied
                             textInput?.unmarkText()
                         }
                     }
-                    Box(Modifier.size(10.dp).testTag(DialogTag))
+                    Surface(Modifier.testTag(DialogTag)) {
+                        Text(
+                            text = "Dialog content",
+                            modifier = Modifier.padding(24.dp)
+                        )
+                    }
                 }
             }
         }
@@ -87,13 +95,10 @@ class TextInputPendingCompositionLayerTest {
         waitForIdle()
         textInput = setPendingTextComposition()
 
-        // A real UIKit tap can commit pending text before Button.onClick runs.
-        // Change the same state directly so the pending text is still committed
-        // while the Dialog layer is being created.
-        showDialog = true
+        findNodeWithTag(OpenDialogButtonTag).tap()
         waitForIdle()
 
-        findNodeWithTag(DialogTag)
+        assertNotNull(findNodeWithTagOrNull(DialogTag), "Dialog content should be visible")
     }
 
     @OptIn(ExperimentalMaterial3Api::class)
@@ -126,11 +131,16 @@ class TextInputPendingCompositionLayerTest {
                     SideEffect {
                         if (!didCommitPendingText) {
                             didCommitPendingText = true
-                            // UIKit commits pending input while the new scene layer is being applied.
+                            // UIKit commits pending input while the new scene layer is being applied
                             textInput?.unmarkText()
                         }
                     }
-                    Box(Modifier.size(10.dp).testTag(SheetTag))
+                    Text(
+                        text = "Sheet content",
+                        modifier = Modifier
+                            .padding(24.dp)
+                            .testTag(SheetTag)
+                    )
                 }
             }
         }
@@ -139,13 +149,10 @@ class TextInputPendingCompositionLayerTest {
         waitForIdle()
         textInput = setPendingTextComposition()
 
-        // A real UIKit tap can commit pending text before Button.onClick runs.
-        // Change the same state directly so the pending text is still committed
-        // while the ModalBottomSheet layer is being created.
-        showSheet = true
+        findNodeWithTag(OpenSheetButtonTag).tap()
         waitForIdle()
 
-        findNodeWithTag(SheetTag)
+        assertNotNull(findNodeWithTagOrNull(SheetTag), "Sheet content should be visible")
     }
 
     @OptIn(ExperimentalForeignApi::class)
