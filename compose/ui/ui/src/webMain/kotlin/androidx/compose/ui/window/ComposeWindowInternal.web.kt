@@ -640,7 +640,7 @@ internal class ComposeWindow(
         insetsManager?.onCanvasResized(canvas)
     }
 
-    // TODO: need to call .dispose() on window close.
+    // This is called automatically on destroying the corresponding DOM container
     fun dispose() {
         // dispose() can be called both explicitly and via the DOM disconnectedCallback
         // when the container element is removed from the document. Make it idempotent so
@@ -1100,10 +1100,7 @@ private external interface ShadowRootExt {
 
 // A real ES6 `class extends HTMLElement` is required by `customElements.define`.
 // Kotlin/Wasm does not emit Kotlin classes as JS constructors, so we create the
-// constructor in JS and register it via a JS helper.
-// Note: the class source is built at runtime through `new Function(...)` because
-// the Kotlin/js `js(...)` intrinsic uses a restricted JS parser that does not
-// accept ES6 `class` declarations directly in the code string.
+// constructor in JS and register it via a JS helper
 @OptIn(ExperimentalWasmJsInterop::class)
 private fun composeComponentElementCtor(weakMap: WeakMap<JsAny>): JsAny = js("""
     (() => {
