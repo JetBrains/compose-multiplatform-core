@@ -43,7 +43,6 @@ import androidx.compose.ui.window.Dialog
 import kotlin.test.Test
 import kotlin.test.assertNotNull
 import kotlinx.cinterop.ExperimentalForeignApi
-import kotlinx.coroutines.delay
 import platform.Foundation.NSMakeRange
 import platform.UIKit.UITextInputProtocol
 
