@@ -26,10 +26,6 @@ internal object SkikoComposeUiFlags {
     @Suppress("MutableBareField")
     @JvmField
     var isDialogAnimationEnabled: Boolean = true
-
-    @Suppress("MutableBareField")
-    @JvmField
-    var areWindowInsetsRulersEnabled: Boolean = true
 }
 
 /**
@@ -47,20 +43,3 @@ var ComposeUiFlags.isClearFocusOnMouseDownEnabled by SkikoComposeUiFlags::isClea
  */
 @ExperimentalComposeUiApi
 var ComposeUiFlags.isDialogAnimationEnabled by SkikoComposeUiFlags::isDialogAnimationEnabled
-
-/**
- * Enable WindowInsets rulers:
- * * `SystemBarsRulers`
- * * `ImeRulers`
- * * `StatusBarsRulers`
- * * `NavigationBarsRulers`
- * * `CaptionBarRulers`
- * * `MandatorySystemGesturesRulers`
- * * `TappableElementRulers`
- * * `WaterfallRulers`
- * * `SafeDrawingRulers`
- * * `SafeGesturesRulers`
- * * `SafeContentRulers`
- */
-@ExperimentalComposeUiApi
-var ComposeUiFlags.areWindowInsetsRulersEnabled by SkikoComposeUiFlags::areWindowInsetsRulersEnabled

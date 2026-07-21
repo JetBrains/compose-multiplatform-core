@@ -992,7 +992,7 @@ private object IdentityPositionCalculator : PositionCalculator {
 }
 
 private fun Modifier.rulerProvider(windowInsets: PlatformWindowInsets) =
-    if (ComposeUiFlags.areWindowInsetsRulersEnabled) then(RulerProviderModifierElement(windowInsets)) else this
+    if (areWindowInsetsRulersEnabled) then(RulerProviderModifierElement(windowInsets)) else this
 
 private data class RootWindowInsetsProviderModifierElement(
     val windowInsets: PlatformWindowInsets,

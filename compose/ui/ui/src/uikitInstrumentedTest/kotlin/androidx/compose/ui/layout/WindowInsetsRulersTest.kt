@@ -22,9 +22,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.areWindowInsetsRulersEnabled
 import androidx.compose.ui.layout.Placeable.PlacementScope
 import androidx.compose.ui.layout.WindowInsetsRulers.Companion.DisplayCutout
+import androidx.compose.ui.layout.WindowInsetsRulers.Companion.StatusBars
 import androidx.compose.ui.platform.PlatformInsets
 import androidx.compose.ui.test.UIKitInstrumentedTest
 import androidx.compose.ui.test.runUIKitInstrumentedTest
@@ -33,9 +36,11 @@ import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.toPlatformInsets
 import kotlin.math.roundToInt
+import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
 import kotlinx.cinterop.ExperimentalForeignApi
 import platform.UIKit.UIInterfaceOrientationLandscapeLeft
 import platform.UIKit.UIInterfaceOrientationLandscapeRight
@@ -43,12 +48,17 @@ import platform.UIKit.UIInterfaceOrientationPortrait
 import platform.UIKit.UIInterfaceOrientationPortraitUpsideDown
 import platform.UIKit.UIView
 
-@OptIn(ExperimentalForeignApi::class)
+@OptIn(ExperimentalForeignApi::class, ExperimentalComposeUiApi::class)
 class WindowInsetsRulersTest {
 
     private var contentSize: IntSize = IntSize.Zero
     private var insetsRect: IntRect? = null
     private val displayCutoutRects = mutableObjectListOf<IntRect?>()
+
+    @AfterTest
+    fun tearDown() {
+        areWindowInsetsRulersEnabled = true
+    }
 
     @Test
     fun testDisplayCutoutsForPortrait() = runUIKitInstrumentedTest(
@@ -207,6 +217,36 @@ class WindowInsetsRulersTest {
         }
 
         assertEquals(boundingRectFromDisplayCutouts, insetsRect)
+    }
+
+    @Test
+    fun testDisableWindowInsetsRulers() = runUIKitInstrumentedTest {
+        androidx.compose.ui.disableWindowInsetsRulers()
+
+        var left = 0f
+        var top = 0f
+        var right = 0f
+        var bottom = 0f
+
+        setContent {
+            Box(
+                Modifier.fillMaxSize().layout { measurable, constraints ->
+                    val placeable = measurable.measure(constraints)
+                    layout(placeable.width, placeable.height) {
+                        placeable.place(0, 0)
+                        left = StatusBars.current.left.current(Float.NaN)
+                        top = StatusBars.current.top.current(Float.NaN)
+                        right = StatusBars.current.right.current(Float.NaN)
+                        bottom = StatusBars.current.bottom.current(Float.NaN)
+                    }
+                }
+            )
+        }
+
+        assertTrue(left.isNaN())
+        assertTrue(top.isNaN())
+        assertTrue(right.isNaN())
+        assertTrue(bottom.isNaN())
     }
 
     private val boundingRectFromDisplayCutouts: IntRect get() {
