@@ -66,6 +66,7 @@ def addMavenRepositories(RepositoryHandler handler) {
     }
     */
     if (true /* In JetBrains Fork */) {
+        handler.mavenLocal()
         handler.mavenCentral()
         handler.google {
             content {
@@ -87,7 +88,6 @@ def addMavenRepositories(RepositoryHandler handler) {
         handler.maven {
             url = "https://central.sonatype.com/repository/maven-snapshots"
         }
-        handler.mavenLocal()
     }
     // Ordering appears to be important: b/229733266
     def androidPluginRepoOverride = System.getenv("GRADLE_PLUGIN_REPO")

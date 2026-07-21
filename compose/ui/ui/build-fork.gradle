@@ -259,6 +259,9 @@ androidXMultiplatform {
 
         nativeMain {
             dependsOn(nonJvmMain)
+            dependencies {
+                implementation(libs.skiko.graphite)
+            }
         }
 
         nativeTest {

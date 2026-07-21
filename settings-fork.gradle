@@ -13,6 +13,9 @@ dependencyResolutionManagement {
             from(files("gradle/libs-fork.versions.toml"))
         }
     }
+        repositories {
+            mavenLocal()
+        }
 }
 
 def supportRootFolder = buildscript.sourceFile.getParentFile()
