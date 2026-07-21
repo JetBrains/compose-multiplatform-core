@@ -87,7 +87,9 @@ class TextInputPendingCompositionLayerTest {
         waitForIdle()
         textInput = setPendingTextComposition()
 
-        // Use the same state change as the button without a real tap, which would commit the text first.
+        // A real UIKit tap can commit pending text before Button.onClick runs.
+        // Change the same state directly so the pending text is still committed
+        // while the Dialog layer is being created.
         showDialog = true
         waitForIdle()
 
@@ -137,7 +139,9 @@ class TextInputPendingCompositionLayerTest {
         waitForIdle()
         textInput = setPendingTextComposition()
 
-        // Use the same state change as the button without a real tap, which would commit the text first.
+        // A real UIKit tap can commit pending text before Button.onClick runs.
+        // Change the same state directly so the pending text is still committed
+        // while the ModalBottomSheet layer is being created.
         showSheet = true
         waitForIdle()
 
