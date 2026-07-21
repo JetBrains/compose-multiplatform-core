@@ -334,6 +334,16 @@ internal class ComposeWindow(
                         //this@ComposeWindow.processKeyboardEvent(keyboardEvent)
                         return scene.sendKeyEvent(keyEvent)
                     }
+
+                    override fun stopInput() {
+                        // super.stopInput() will remove the focused backing html input.
+                        // Once a focused HTML element is removed, the browser moves focus to <body>.
+                        // Focus the canvas first so it retains focus after the backing input is removed:
+                        if (!canvas.isFocused()) {
+                            canvas.focus()
+                        }
+                        super.stopInput()
+                    }
                 }
             }
 
