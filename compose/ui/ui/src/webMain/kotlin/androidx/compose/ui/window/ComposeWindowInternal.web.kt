@@ -111,7 +111,6 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import org.jetbrains.skiko.SkiaLayer
 import org.jetbrains.skiko.SkikoRenderDelegate
 import org.jetbrains.skiko.hostOs
-import org.w3c.dom.CustomElementRegistry
 import org.w3c.dom.DocumentReadyState
 import org.w3c.dom.Element
 import org.w3c.dom.HTMLCanvasElement
@@ -932,7 +931,8 @@ internal class ComposeWindow(
 
         fun createComposeComponent(): HTMLElement {
             if (customElements.get("compose-component") == null) {
-                defineCustomElement("compose-component",
+                customElements.define(
+                    "compose-component",
                     composeComponentElementCtor(DomDisposableRegistry)
                 )
             }
@@ -1100,7 +1100,8 @@ private external interface ShadowRootExt {
 
 // A real ES6 `class extends HTMLElement` is required by `customElements.define`.
 // Kotlin/Wasm does not emit Kotlin classes as JS constructors, so we create the
-// constructor in JS and register it via a JS helper
+// constructor in JS and return it as a JS function so it can be passed directly
+// to `customElements.define`.
 @OptIn(ExperimentalWasmJsInterop::class)
 private fun composeComponentElementCtor(weakMap: WeakMap<JsAny>): JsAny = js("""
     (() => {
@@ -1116,9 +1117,8 @@ private fun composeComponentElementCtor(weakMap: WeakMap<JsAny>): JsAny = js("""
 
 
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/WeakMap
-// Note: `V` is intentionally not a type parameter because Kotlin/Wasm JS interop
-// only allows type parameters with an upper bound of `JsAny` or its subtypes,
-// while the value stored here is a Kotlin function type `() -> Unit`.
+// Kotlin/Wasm JS interop  only allows type parameters with an upper bound of `JsAny` or its subtypes,
+// while the actual value stored here is a Kotlin function type `() -> Unit`.
 @OptIn(ExperimentalWasmJsInterop::class)
 private external class WeakMap<K : JsAny>(): JsAny {
     fun get(key: K): (() -> Unit)?
@@ -1127,8 +1127,9 @@ private external class WeakMap<K : JsAny>(): JsAny {
     fun delete(key: K): Boolean
 }
 
-private external val customElements: CustomElementRegistry
+private external interface CustomElementRegistry : JsAny {
+    fun get(name: String): JsAny?
+    fun define(name: String, constructor: JsAny)
+}
 
-@OptIn(ExperimentalWasmJsInterop::class)
-private fun defineCustomElement(name: String, ctor: JsAny): Unit =
-    js("customElements.define(name, ctor)")
+private external val customElements: CustomElementRegistry
