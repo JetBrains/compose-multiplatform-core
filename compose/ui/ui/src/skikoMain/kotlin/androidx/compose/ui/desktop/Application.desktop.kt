@@ -129,10 +129,17 @@ internal suspend fun <T> runComposeScene(
             }
             onSceneReady()
             awaitShutdown()
+        } finally {
+            // Dispose the composition BEFORE joining the recomposer. Disposal cancels the
+            // content's still-running effect coroutines (LaunchedEffect, produceState, flow
+            // collectors, awaitCancellation, ...), which are children of the recomposer's
+            // effectJob. recomposer.close() only *completes* that job (no new children) — it does
+            // not cancel the running ones — so join() would otherwise wait forever for effects
+            // that never finish on their own, deadlocking shutdown (the scene coroutine never
+            // completes, so stopAndJoin()/withScene hang).
+            composition.dispose()
             recomposer.close()
             recomposer.join()
-        } finally {
-            composition.dispose()
         }
     }
 }
