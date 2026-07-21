@@ -53,6 +53,7 @@ internal abstract class WebInteropElementHolder<T : HTMLElement>(
             (document.createElement("div") as HTMLDivElement)
                 .apply {
                     style.position = "absolute"
+                    tabIndex = -1
                     // hide it until it's properly positioned,
                     // otherwise it can briefly flash at 0,0
                     toggleVisibility(this, isHidden = true)

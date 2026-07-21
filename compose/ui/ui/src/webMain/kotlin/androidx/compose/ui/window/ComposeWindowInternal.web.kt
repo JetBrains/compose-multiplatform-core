@@ -934,6 +934,10 @@ internal class ComposeWindow(
             y = offsetY.toFloat() * density.density
         )
 
+    internal fun focusCanvas() {
+        canvas.focus()
+    }
+
     companion object {
         private val DomDisposableRegistry = WeakMap<JsAny>()
 
