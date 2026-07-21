@@ -37,13 +37,20 @@ import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.PointerKeyboardModifiers
+import androidx.compose.ui.input.key.internal
 import androidx.compose.ui.input.key.toComposeEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.HistoricalChange
 import androidx.compose.ui.input.pointer.PointerButton
 import androidx.compose.ui.input.pointer.PointerButtons
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.PointerId
+import androidx.compose.ui.input.pointer.PointerKeyboardModifiers
 import androidx.compose.ui.input.pointer.PointerType
+import androidx.compose.ui.input.pointer.isAltPressed
+import androidx.compose.ui.input.pointer.isCtrlPressed
+import androidx.compose.ui.input.pointer.isMetaPressed
+import androidx.compose.ui.input.pointer.isShiftPressed
 import androidx.compose.ui.layout.OffsetToFocusedRect
 import androidx.compose.ui.navigationevent.UIKitNavigationEventInput
 import androidx.compose.ui.platform.AccessibilityMediator
@@ -425,9 +432,7 @@ internal class ComposeSceneMediator(
     private val textInputService: UIKitTextInputService by lazy {
         UIKitTextInputService(
             updateView = {
-                if (!isPerformingFrame) {
-                    frameChoreographer.frameRecomposer.performFrame(lastRenderTime)
-                }
+                frameChoreographer.frameRecomposer.performFrame(lastRenderTime)
                 scene.measureAndLayout()
                 CATransaction.flush()
             },
@@ -669,13 +674,13 @@ internal class ComposeSceneMediator(
         // can tell whether the draw loop was idle when [FrameChoreographer.Listener.onOutOfFrame]
         // runs.
         didDrawSinceDisplayLink = true
-        isPerformingFrame = true
-        try {
-            scene.draw(canvas)
-        } finally {
-            isPerformingFrame = false
+        withFrameGuard {
+            with(sceneRenderingScope) {
+                scene.render(frameRecomposer, canvas, nanoTime)
+            }
         }
     }
+
 
     fun retrieveInteropTransaction(): UIKitInteropTransaction =
         interopContainer.retrieveTransaction()
