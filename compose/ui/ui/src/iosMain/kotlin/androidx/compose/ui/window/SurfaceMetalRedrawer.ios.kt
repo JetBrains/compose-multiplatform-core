@@ -17,26 +17,31 @@
 package androidx.compose.ui.window
 
 import androidx.collection.IntIntPair
-import androidx.compose.ui.uikit.utils.CMPMetalLayer
 import androidx.compose.ui.uikit.utils.CMPDrawable
+import androidx.compose.ui.uikit.utils.CMPMetalLayer
 import androidx.compose.ui.util.trace
 import androidx.compose.ui.viewinterop.UIKitInteropAction
 import androidx.compose.ui.viewinterop.UIKitInteropTransaction
 import kotlin.math.roundToInt
 import kotlinx.cinterop.*
 import org.jetbrains.skia.*
+import org.jetbrains.skia.gpu.graphite.BackendTexture
+import org.jetbrains.skia.gpu.graphite.GraphiteContext
+import org.jetbrains.skia.gpu.graphite.makeFromBackendTexture
+import org.jetbrains.skia.impl.use
+import org.jetbrains.skiko.ExperimentalSkikoApi
 import platform.Foundation.NSLock
 import platform.Foundation.NSRunLoop
+import platform.Foundation.NSRunLoopCommonModes
 import platform.Foundation.NSSelectorFromString
 import platform.Foundation.NSThread
-import platform.QuartzCore.*
-import platform.darwin.*
-import platform.Foundation.NSRunLoopCommonModes
 import platform.Foundation.NSTimeInterval
 import platform.IOSurface.IOSurfaceGetHeight
 import platform.IOSurface.IOSurfaceGetWidth
 import platform.Metal.MTLCommandQueueProtocol
 import platform.Metal.MTLDeviceProtocol
+import platform.QuartzCore.*
+import platform.darwin.*
 import platform.posix.QOS_CLASS_USER_INTERACTIVE
 
 internal class DisplayLinkConditions(
@@ -119,6 +124,7 @@ internal class DisplayLinkConditions(
 // https://youtrack.jetbrains.com/issue/CMP-9722
 // Copy of the class LegacyMetalRedrawer with a different layer.
 // All changes made here must also be implemented in the `LegacyMetalRedrawer`.
+@OptIn(ExperimentalSkikoApi::class)
 internal class SurfaceMetalRedrawer(
     private val metalLayer: CMPMetalLayer,
     private var retrieveInteropTransaction: () -> UIKitInteropTransaction,
@@ -127,7 +133,8 @@ internal class SurfaceMetalRedrawer(
     private val device = metalLayer.device as? MTLDeviceProtocol
         ?: throw IllegalStateException("MetalRedrawer requires MTLDevice")
     private val queue = getCachedCommandQueue(device)
-    private val context = DirectContext.makeMetal(device.objcPtr(), queue.objcPtr())
+    private val context = GraphiteContext.makeMetal(device.objcPtr(), queue.objcPtr())
+    private val recorder = context.makeRecorder()
     private var lastRenderTimestamp: NSTimeInterval = CACurrentMediaTime()
     private val pictureRecorder = PictureRecorder()
     private val transactionQueue = InteropTransactionQueue()
@@ -302,6 +309,7 @@ internal class SurfaceMetalRedrawer(
         awaitRenderingQueueTasksCompletion()
         disposeDrawableAssociatedResources(null)
         pictureRecorder.close()
+        recorder.close()
         context.close()
     }
 
@@ -477,23 +485,22 @@ internal class SurfaceMetalRedrawer(
             ?.takeIf { !it.isClosed }
             ?.let { return it }
 
-        val renderTarget = BackendRenderTarget.makeMetal(
+        val backendTexture = BackendTexture.wrapMetalTexture(
             width = IOSurfaceGetWidth(drawable.surface).toInt(),
             height = IOSurfaceGetHeight(drawable.surface).toInt(),
             texturePtr = drawable.drawableTexture().rawValue,
         )
 
-        val surface = Surface.makeFromBackendRenderTarget(
-            context,
-            renderTarget,
-            SurfaceOrigin.TOP_LEFT,
-            SurfaceColorFormat.BGRA_8888,
-            ColorSpace.sRGB,
-            SurfaceProps(pixelGeometry = PixelGeometry.UNKNOWN)
+        val surface = Surface.makeFromBackendTexture(
+            recorder = recorder,
+            backendTexture = backendTexture,
+            colorFormat = SurfaceColorFormat.BGRA_8888,
+            colorSpace = ColorSpace.sRGB,
+            surfaceProps = SurfaceProps(pixelGeometry = PixelGeometry.UNKNOWN)
         )
 
         if (surface == null) {
-            renderTarget.close()
+            backendTexture.close()
             return null
         }
 
@@ -501,7 +508,7 @@ internal class SurfaceMetalRedrawer(
 
         activeDrawableAssociatedResourcesDisposes.add {
             surface.close()
-            renderTarget.close()
+            backendTexture.close()
         }
 
         return surface
@@ -541,7 +548,8 @@ internal class SurfaceMetalRedrawer(
 
         surface.canvas.drawPicture(frame.picture)
         frame.dispose()
-        surface.flushAndSubmit()
+        recorder.snap().use { recording -> context.insertRecording(recording) }
+        context.submit()
 
         val commandBuffer = queue.commandBuffer()
         if (commandBuffer == null) {
