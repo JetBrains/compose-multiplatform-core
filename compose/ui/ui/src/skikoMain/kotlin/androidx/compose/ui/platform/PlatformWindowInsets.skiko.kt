@@ -70,7 +70,6 @@ interface PlatformWindowInsets {
     ): PlatformWindowInsets = this
 }
 
-// TODO: Remove as part of https://youtrack.jetbrains.com/issue/CMP-9379
 @Composable
 internal fun PlatformWindowInsets.exclude(
     safeInsets: Boolean,

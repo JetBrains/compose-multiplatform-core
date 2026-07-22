@@ -18,8 +18,8 @@ package androidx.compose.ui.window
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.ExperimentalComposeUiApi
+import kotlin.js.js
 import kotlinx.browser.document
-import kotlinx.dom.clear
 import org.w3c.dom.Element
 import org.w3c.dom.HTMLCanvasElement
 import org.w3c.dom.HTMLDivElement
@@ -27,7 +27,6 @@ import org.w3c.dom.HTMLElement
 import org.w3c.dom.OPEN
 import org.w3c.dom.ShadowRootInit
 import org.w3c.dom.ShadowRootMode
-
 /**
  * EXPERIMENTAL! Might be deleted or changed in the future!
  *
@@ -84,8 +83,8 @@ fun ComposeViewport(
     configure: ComposeViewportConfiguration.() -> Unit = {},
     content: @Composable () -> Unit = { }
 ) = onSkikoReady {
-    viewportContainer.clear()
 
+    clearNodeChildren(viewportContainer)
     if (!isWebGL2Supported()) {
         // We can't do anything meaningful in this case, except showing a meaningful message.
         // Otherwise, the app will crash with an obscure error (e.g. TypeError) like in
@@ -97,7 +96,7 @@ fun ComposeViewport(
     // Create a common positioning container (parent html element) for shadow and the interop containers
     // to position at the same place - the interop container is position at 0,0 relative to the shadow.
     // It simplifies the positioning of the interop views in the container.
-    val positioningContainer = document.createElement("div") as HTMLDivElement
+    val positioningContainer = ComposeWindow.createComposeComponent()
     positioningContainer.style.apply {
         position = "relative"
     }
@@ -168,9 +167,12 @@ fun ComposeViewport(
     val canvas = document.createElement("canvas") as HTMLCanvasElement
     canvas.setAttribute("tabindex", "0")
     canvas.setAttribute("role", "generic")
+    canvas.setAttribute("draggable", "true")
     canvas.style.outline = "none" // Fixes https://youtrack.jetbrains.com/issue/CMP-9040
     canvas.style.setProperty("touch-action", "pan-x pan-y") // allow the browser to scroll when compose is not scrolling
     appContainer.appendChild(canvas)
+
+
 
     //a11y container
     val configuration = ComposeViewportConfiguration().apply(configure)
@@ -198,7 +200,7 @@ fun ComposeViewport(
     }
     positioningContainer.appendChild(interopContainerElement)
 
-    ComposeWindow(
+    val composeWindow = ComposeWindow(
         canvas = canvas,
         rootNode = shadowRoot,
         layerRoot = appContainer,
@@ -208,8 +210,21 @@ fun ComposeViewport(
         configuration = configuration,
         state = DefaultWindowState(viewportContainer)
     )
+
+    ComposeWindow.registerDisposableFor(positioningContainer) {
+        composeWindow.dispose()
+    }
 }
 
+private fun clearNodeChildren(node: Element): Unit =
+    //language=JavaScript
+    js(
+        """
+        {
+            if (node.hasChildNodes()) node.replaceChildren();
+        }
+    """
+    )
 private const val WEBGL2_NOT_SUPPORTED_MSG = "This application requires WebGL2. " +
     "Please ensure your browser is updated and hardware acceleration is enabled in the browser settings."
 private fun isWebGL2Supported(): Boolean =

@@ -25,7 +25,6 @@ import androidx.compose.runtime.retain.ForgetfulRetainedValuesStore
 import androidx.compose.runtime.retain.RetainedValuesStore
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
-import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.ComposeUiFlags
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.InternalComposeUiApi
@@ -72,7 +71,6 @@ import androidx.compose.ui.platform.PlatformRootForTest
 import androidx.compose.ui.platform.PlatformTextInputMethodRequest
 import androidx.compose.ui.platform.PlatformTextInputSessionScope
 import androidx.compose.ui.platform.PlatformWindowInsets
-import androidx.compose.ui.platform.PlatformWindowInsetsProviderNode
 import androidx.compose.ui.platform.createPlatformClipboard
 import androidx.compose.ui.platform.createPlatformClipboardManager
 import androidx.compose.ui.scene.ComposeScene
@@ -91,10 +89,12 @@ import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.bounds
 import androidx.compose.ui.unit.round
+import androidx.compose.ui.unit.toMaxConstraints
 import androidx.compose.ui.unit.toRect
-import androidx.compose.ui.useLegacyRenderNodeLayers
 import androidx.compose.ui.util.fastAll
+import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.trace
 import androidx.compose.ui.viewinterop.InteropPointerInputModifier
 import androidx.compose.ui.viewinterop.InteropView
@@ -393,7 +393,7 @@ internal class RootNodeOwner(
     }
 
     private fun isInBounds(localPosition: Offset): Boolean =
-        size?.toRect()?.contains(localPosition) ?: true
+        size?.bounds(localPosition) ?: true
 
     private fun calculateBoundsInWindow(): Rect? {
         val rect = size?.toRect() ?: return null
@@ -437,7 +437,6 @@ internal class RootNodeOwner(
         override val focusOwner: FocusOwner = FocusOwnerImpl(platformFocusOwner, this)
 
         val rootModifier = Modifier
-            .then(RootWindowInsetsProviderModifierElement(platformContext.windowInsets))
             .rulerProvider(platformContext.windowInsets)
             .then(EmptySemanticsElement(rootSemanticsNode))
             .focusProperties {
@@ -908,29 +907,13 @@ internal class RootNodeOwner(
             drawBlock: (canvas: Canvas, parentLayer: GraphicsLayer?) -> Unit,
             invalidateParentLayer: () -> Unit,
             explicitLayer: GraphicsLayer?
-        ) = if (explicitLayer != null || !ComposeUiFlags.useLegacyRenderNodeLayers) {
-            GraphicsLayerOwnerLayer(
-                graphicsLayer = explicitLayer ?: graphicsContext.createGraphicsLayer(),
-                context = if (explicitLayer != null) null else graphicsContext,
-                layerManager = this,
-                drawBlock = drawBlock,
-                invalidateParentLayer = invalidateParentLayer,
-            )
-        } else {
-            LegacyRenderNodeLayer(
-                density = Snapshot.withoutReadObservation {
-                    // density is a mutable state that is observed whenever layer is created. the layer
-                    // is updated manually on draw, so not observing the density changes here helps with
-                    // performance in layout.
-                    density
-                },
-                measureDrawBounds = platformContext.measureDrawLayerBounds,
-                layerManager = this,
-                requiresStateWorkaround = { graphicsContext.activeGraphicsLayersCount > 0 },
-                invalidateParentLayer = invalidateParentLayer,
-                drawBlock = drawBlock,
-            )
-        }
+        ) = GraphicsLayerOwnerLayer(
+            graphicsLayer = explicitLayer ?: graphicsContext.createGraphicsLayer(),
+            context = if (explicitLayer != null) null else graphicsContext,
+            layerManager = this,
+            drawBlock = drawBlock,
+            invalidateParentLayer = invalidateParentLayer,
+        )
 
         override fun recycle(layer: OwnedLayer): Boolean {
             needClearObservations = true
@@ -972,12 +955,11 @@ internal class RootNodeOwner(
             // So, we applying it before drawing to reflect the changes from previous phases.
             // Changes that requires another round of invalidation will be scheduled to next frame.
             if (dirtyLayers.isNotEmpty()) {
-                for (i in 0 until dirtyLayers.size) {
-                    val layer = dirtyLayers[i]
+                dirtyLayers.fastForEach { layer ->
                     layer.updateDisplayList()
                 }
+                dirtyLayers.clear()
             }
-            dirtyLayers.clear()
 
             // Draw root node
             owner.root.draw(
@@ -1002,9 +984,6 @@ internal class RootNodeOwner(
     }
 }
 
-private fun IntSize?.toMaxConstraints() =
-    if (this == null) Constraints() else Constraints(maxWidth = width, maxHeight = height)
-
 private object IdentityPositionCalculator : PositionCalculator {
     override fun screenToLocal(positionOnScreen: Offset): Offset = positionOnScreen
     override fun localToScreen(localPosition: Offset): Offset = localPosition
@@ -1012,26 +991,3 @@ private object IdentityPositionCalculator : PositionCalculator {
 
 private fun Modifier.rulerProvider(windowInsets: PlatformWindowInsets) =
     if (ComposeUiFlags.areWindowInsetsRulersEnabled) then(RulerProviderModifierElement(windowInsets)) else this
-
-private data class RootWindowInsetsProviderModifierElement(
-    val windowInsets: PlatformWindowInsets,
-) : ModifierNodeElement<RootPlatformWindowInsetsProviderNode>() {
-    override fun create(): RootPlatformWindowInsetsProviderNode =
-        RootPlatformWindowInsetsProviderNode(windowInsets)
-
-    override fun update(node: RootPlatformWindowInsetsProviderNode) = node.update(windowInsets)
-}
-
-private class RootPlatformWindowInsetsProviderNode(
-    private var insets: PlatformWindowInsets,
-) : PlatformWindowInsetsProviderNode(insets) {
-    override fun calculatePlatformInsets(ancestorWindowInsets: PlatformWindowInsets): PlatformWindowInsets =
-        insets
-
-    fun update(windowInsets: PlatformWindowInsets) {
-        if (insets != windowInsets) {
-            insets = windowInsets
-            windowInsetsInvalidated()
-        }
-    }
-}

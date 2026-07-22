@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 The Android Open Source Project
+ * Copyright 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,12 +14,10 @@
  * limitations under the License.
  */
 
-package androidx.compose.ui.text.intl
+#import <UIKit/UIKit.h>
 
-internal actual fun userPreferredLanguages(): List<String> {
-    return getUserPreferredLanguagesAsArray().toList()
-}
+@interface CMPContainerView : UIView
 
-@Suppress("UnsafeCastFromDynamic")
-private fun getUserPreferredLanguagesAsArray(): Array<String> =
-    js("window.navigator.languages")
+@property (nonatomic, copy, nullable) void (^onDidMoveToWindowBlock)(void);
+
+@end

@@ -21,10 +21,6 @@ import kotlin.jvm.JvmField
 internal object SkikoComposeUiFlags {
     @Suppress("MutableBareField")
     @JvmField
-    var useLegacyRenderNodeLayers: Boolean = false
-
-    @Suppress("MutableBareField")
-    @JvmField
     var isClearFocusOnMouseDownEnabled: Boolean = false
 
     @Suppress("MutableBareField")
@@ -35,15 +31,6 @@ internal object SkikoComposeUiFlags {
     @JvmField
     var areWindowInsetsRulersEnabled: Boolean = true
 }
-
-/**
- * Use legacy (pre 1.8) render node layers for cases without
- * [androidx.compose.ui.graphics.layer.GraphicsLayer]. `false` by default.
- *
- * Note that it's a temporary flag for compatibility purposes, it will be removed in the future.
- */
-@ExperimentalComposeUiApi
-var ComposeUiFlags.useLegacyRenderNodeLayers by SkikoComposeUiFlags::useLegacyRenderNodeLayers
 
 /**
  * This flag enables clearing focus on mouse down by default.
