@@ -1,4 +1,4 @@
-name: Compose Publish Dry Run
+name: Build
 on:
   workflow_dispatch:
   pull_request:
@@ -9,7 +9,7 @@ on:
 jobs:
   compose-native-publish:
     runs-on: macos-26-xlarge
-    name: Dry Run Compose Publish Darwin + Native Linux
+    name: Darwin + Native Linux
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v5
@@ -20,14 +20,22 @@ jobs:
       - name: Setup Xcode
         uses: ./.github/actions/setup-xcode
 
-      - name: Compose Publish Darwin + Native Linux
+      - name: Dry Publish
         run: |
           ./gradlew publishComposeJb -Pcompose.platforms=macos,ios,tvos,watchos,linux,mingw \
             --no-daemon --stacktrace
 
+      - name: Demos
+        run: |
+          ./gradlew \
+            :compose:mpp:demo:linkDebugExecutableMacosArm64 \
+            :compose:mpp:demo:linkDebugExecutableIosArm64 \
+            :compose:mpp:demo:linkDebugExecutableIosSimArm64 \
+            --no-daemon --stacktrace
+
   compose-web-publish:
     runs-on: ubuntu-24.04
-    name: Dry Run Compose Publish Web
+    name: Web
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v5
@@ -35,14 +43,21 @@ jobs:
       - name: Setup Prerequisites
         uses: ./.github/actions/setup-prerequisites
 
-      - name: Compose Publish Web
+      - name: Dry Publish
         run: |
           ./gradlew publishComposeJb -Pcompose.platforms=web \
             --no-daemon --stacktrace
 
+      - name: Demos
+        run: |
+          ./gradlew \
+            :compose:mpp:demo:compileKotlinJs \
+            :compose:mpp:demo:compileKotlinWasmJs \
+            --no-daemon --stacktrace
+
   compose-jvm-publish:
     runs-on: ubuntu-24.04
-    name: Dry Run Compose Publish JVM
+    name: JVM
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v5
@@ -50,7 +65,15 @@ jobs:
       - name: Setup Prerequisites
         uses: ./.github/actions/setup-prerequisites
 
-      - name: Compose Publish JVM
+      - name: Dry Publish
         run: |
           ./gradlew publishComposeJb -Pcompose.platforms=jvm,android \
+            --no-daemon --stacktrace
+
+      - name: Demos
+        run: |
+          ./gradlew \
+            :compose:mpp:demo:desktopMainClasses \
+            :compose:desktop:desktop:desktop-samples:jvmMainClasses \
+            :compose:desktop:desktop:desktop-samples-material3:jvmMainClasses \
             --no-daemon --stacktrace
