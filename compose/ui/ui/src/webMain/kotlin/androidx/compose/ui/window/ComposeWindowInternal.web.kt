@@ -941,7 +941,7 @@ internal class ComposeWindow(
 
     internal fun isFocusInComposeContainer(): Boolean {
         return document.activeElement != null && viewportContainer.contains(document.activeElement)
-            || rootNode.activeElement != null
+            || (rootNode as ShadowRootExt).activeElement != null
     }
 
     companion object {
