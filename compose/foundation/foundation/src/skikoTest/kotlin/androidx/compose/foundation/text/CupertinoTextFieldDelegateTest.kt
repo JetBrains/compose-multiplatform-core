@@ -21,10 +21,8 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.MultiParagraph
 import androidx.compose.ui.text.TextLayoutInput
 import androidx.compose.ui.text.TextLayoutResult
-import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.createFontFamilyResolver
-import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
@@ -48,12 +46,10 @@ class CupertinoTextFieldDelegateTest : SkikoComposeTestBase() {
     fun testDetermineCursorDesiredOffset(
         givenOffset: Int,
         expected: Int,
-        sampleString: String,
-        cursorOffset: Int? = null
+        sampleString: String
     ) {
         val actual = determineCursorDesiredOffset(
             offset = givenOffset,
-            createSimpleTextFieldValue(text = sampleText, cursorOffset = cursorOffset).selection.start,
             textLayoutResult = createSimpleTextLayoutResult(sampleText),
             currentText = sampleText
         )
@@ -158,11 +154,11 @@ class CupertinoTextFieldDelegateTest : SkikoComposeTestBase() {
     }
 
     @Test
-    fun determineCursorDesiredOffset_tap_on_the_caret_at_the_same_position() {
+    fun determineCursorDesiredOffset_tap_in_the_second_half_of_word() {
         val givenOffset = 24
-        val desiredOffset = 24
+        val desiredOffset = 28
 
-        testDetermineCursorDesiredOffset(givenOffset, desiredOffset, sampleText, 24)
+        testDetermineCursorDesiredOffset(givenOffset, desiredOffset, sampleText)
     }
 
     @Test
@@ -170,7 +166,7 @@ class CupertinoTextFieldDelegateTest : SkikoComposeTestBase() {
         val givenOffset = 218
         val desiredOffset = 218
 
-        testDetermineCursorDesiredOffset(givenOffset, desiredOffset, sampleText, 24)
+        testDetermineCursorDesiredOffset(givenOffset, desiredOffset, sampleText)
     }
 
     // TODO: remove ignore after fix two compound emojis considered as one whole word
@@ -180,11 +176,8 @@ class CupertinoTextFieldDelegateTest : SkikoComposeTestBase() {
         val givenOffset = 96
         val desiredOffset = 96
 
-        testDetermineCursorDesiredOffset(givenOffset, desiredOffset, sampleText, 24)
+        testDetermineCursorDesiredOffset(givenOffset, desiredOffset, sampleText)
     }
-
-    private fun createSimpleTextFieldValue(text: String, cursorOffset: Int?) =
-        TextFieldValue(text, selection = TextRange(cursorOffset ?: 0))
 
     private fun createSimpleTextLayoutResult(text: String) = TextLayoutResult(
         layoutInput = simpleTextLayoutInput(text),

@@ -144,6 +144,7 @@ internal open class ComposeTextInputConnection(
         onSelectAllRequested: (() -> Unit)?
     ) {
         showMenuOrUpdatePosition = {
+            syncTextFieldValueFromRequestSnapshot()
             val density = view.density
             val offset = textInputView.frame.useContents { origin.toDpOffset().toOffset(density) }
             val target = rect.translate(-offset).toDpRect(density).toCGRect()
