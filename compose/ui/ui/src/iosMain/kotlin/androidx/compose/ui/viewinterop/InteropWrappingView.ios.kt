@@ -20,7 +20,7 @@ import androidx.compose.runtime.CompositionContext
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.interop.UIKitView
 import androidx.compose.ui.interop.UIKitViewController
-import androidx.compose.ui.scene.parentCompositionContext
+import androidx.compose.ui.scene.attachedCompositionContext
 import androidx.compose.ui.semantics.AccessibilityKey
 import androidx.compose.ui.semantics.SemanticsPropertyReceiver
 import androidx.compose.ui.semantics.semantics
@@ -68,7 +68,7 @@ internal class InteropWrappingView(
 
     init {
         userInteractionEnabled = interactionMode != null
-        parentCompositionContext = compositionContext
+        attachedCompositionContext = compositionContext
     }
 
     private fun updateAccessibilityElements() {

@@ -95,6 +95,9 @@ internal class ComposeContainerView(
         this.metalView?.view?.removeFromSuperview()
         this.metalView = metalView
 
+        this.activitiesHandler?.dispose()
+        this.activitiesHandler = window?.windowScene?.let(FrameChoreographer::choreographerForScene)?.createActivitiesHandler()
+
         this.onWillMoveToWindow = onWillMoveToWindow
         this.onDidMoveToWindow = onDidMoveToWindow
         this.onLayoutSubviews = onLayoutSubviews
@@ -133,8 +136,6 @@ internal class ComposeContainerView(
     override fun didMoveToWindow() {
         super.didMoveToWindow()
 
-        activitiesHandler?.dispose()
-        activitiesHandler = window?.windowScene?.let(FrameChoreographer::choreographerForScene)?.createActivitiesHandler()
         onDidMoveToWindow(window)
 
         updateRedrawerState()

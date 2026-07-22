@@ -212,7 +212,7 @@ internal class ComposeSceneMediator(
 
     private val isActive get() = coroutineContext.isActive
 
-    private var isPrefetchVoteActive: Boolean = false
+    private var isPrefetchVoteActive: Boolean = false // TODO: Move inside the PlatformPrefetchSchedulerImpl
     private val prefetchScheduler = PlatformPrefetchSchedulerImpl(
         onHasWorkScheduled = { hasWork ->
             if (hasWork != isPrefetchVoteActive) {

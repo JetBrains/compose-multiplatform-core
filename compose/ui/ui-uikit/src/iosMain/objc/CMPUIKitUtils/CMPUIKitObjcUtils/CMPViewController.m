@@ -104,7 +104,6 @@
     }
 }
 
-
 - (void)loadView {
     self.view = [[CMPContainerView alloc] initWithFrame:CGRectZero];
 }
@@ -124,13 +123,23 @@
     };
 }
 
+- (void)viewWillAppear:(BOOL)animated {
+    [super viewWillAppear:animated];
+
+    [self notifyContainerWillAppearIfNeeded];
+}
+
 - (void)onDidMoveToWindow {
     if (self.view.window != nil) {
         [self transitLifecycleToStarted];
-        if (!_isViewAppeared) {
-            _isViewAppeared = YES;
-            [_lifecycleDelegate composeContainerWillAppear];
-        }
+        [self notifyContainerWillAppearIfNeeded];
+    }
+}
+
+- (void)notifyContainerWillAppearIfNeeded {
+    if (!_isViewAppeared) {
+        _isViewAppeared = YES;
+        [_lifecycleDelegate composeContainerWillAppear];
     }
 }
 

@@ -589,7 +589,7 @@ internal class LayoutInvalidationHandler(
 private val compositionContextAssociationKey: COpaquePointer = nativeHeap.alloc<IntVar>().ptr
 
 @OptIn(ExperimentalForeignApi::class)
-internal var UIResponder.parentCompositionContext: CompositionContext?
+internal var UIResponder.attachedCompositionContext: CompositionContext?
     get() = objc_getAssociatedObject(this, compositionContextAssociationKey) as? CompositionContext
     set(value) {
         objc_setAssociatedObject(this, compositionContextAssociationKey, value, OBJC_ASSOCIATION_RETAIN)
@@ -601,7 +601,7 @@ internal fun UIResponder.findParentCompositionContext(): CompositionContext {
             scene = windowScene ?: error("Window scene is null")
         ).frameRecomposer.compositionContext
     }
-    this.parentCompositionContext?.let {
+    this.attachedCompositionContext?.let {
         return it
     }
     return nextResponder?.findParentCompositionContext()
