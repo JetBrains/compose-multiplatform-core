@@ -59,7 +59,12 @@ private def archivedStaticLibraryPath(buildDir, libraryName) {
     return new File(buildDir, "/Products/usr/local/lib/lib${libraryName}.a")
 }
 
+private def isMacHost() {
+    return System.getProperty("os.name") == "Mac OS X"
+}
+
 private def configure(target, isDevice, architecture, testTarget) {
+    if (isMacHost()) return
     def objcDir = new File(project.projectDir, "src/iosMain/objc")
     def xcodeProjectDir = new File(objcDir, "CMPUIKitUtils")
     def sdkName = isDevice ? "iphoneos" : "iphonesimulator"
@@ -175,7 +180,6 @@ private def configureSwiftUtils(target, xcodeProjectDir, sdkName, destination, a
     def generatedHeaderPath = new File(headersPath, "${libraryName}-Swift.h")
     def sourceDefPath = new File(project.projectDir, "src/nativeInterop/cinterop/swiftUtils.def")
     def generatedDefPath = new File(project.buildDir, "generated/nativeInterop/cinterop/${libraryName}-${sdkName}/swiftUtils.def")
-    // The provider is created during configuration but runs xcrun only if the Swift .def task needs it.
     def swiftcPathProvider = providers.exec {
         commandLine("xcrun", "--find", "swiftc")
     }.standardOutput.asText.map {
@@ -234,8 +238,7 @@ private def configureSwiftUtils(target, xcodeProjectDir, sdkName, destination, a
             outputs.upToDateWhen { false }
 
             doLast {
-                // Resolve the selected Xcode toolchain only when this iOS task runs. Some CI jobs
-                // configure this project on non-macOS hosts where xcrun is unavailable.
+                // Resolve the selected Xcode toolchain only when this iOS task runs.
                 def swiftcPath = swiftcPathProvider.get()
                 def swiftToolchainDir = new File(swiftcPath).parentFile.parentFile.parentFile
                 def swiftToolchainLibPath = new File(swiftToolchainDir, "usr/lib/swift/${sdkName}")
