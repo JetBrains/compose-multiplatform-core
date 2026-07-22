@@ -202,6 +202,7 @@ internal class ComposeWindow(
     private val canvas: HTMLCanvasElement,
     private val rootNode: Node,
     private val layerRoot: HTMLElement,
+    private val viewportContainer: Element,
     private val interopContainerElement: HTMLDivElement,
     private val a11yContainerElement: HTMLDivElement?,
     private val configuration: ComposeViewportConfiguration,
@@ -938,6 +939,11 @@ internal class ComposeWindow(
         canvas.focus()
     }
 
+    internal fun isFocusInComposeContainer(): Boolean {
+        return document.activeElement != null && viewportContainer.contains(document.activeElement)
+            || rootNode.activeElement != null
+    }
+
     companion object {
         private val DomDisposableRegistry = WeakMap<JsAny>()
 
@@ -1113,7 +1119,7 @@ private fun Element.isFocused(): Boolean {
     return activeElement == this
 }
 
-private external interface ShadowRootExt {
+internal external interface ShadowRootExt {
     val activeElement: Element?
 }
 

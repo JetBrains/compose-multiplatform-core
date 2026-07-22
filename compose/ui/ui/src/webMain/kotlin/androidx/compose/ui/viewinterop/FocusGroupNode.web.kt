@@ -16,38 +16,28 @@
 
 package androidx.compose.ui.viewinterop
 
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
-import androidx.compose.ui.focus.FocusDirection.Companion.Exit
 import androidx.compose.ui.focus.FocusEnterExitScope
 import androidx.compose.ui.focus.FocusProperties
 import androidx.compose.ui.focus.FocusPropertiesModifierNode
-import androidx.compose.ui.focus.FocusState
 import androidx.compose.ui.focus.FocusTargetNode
 import androidx.compose.ui.focus.focusTarget
 import androidx.compose.ui.focus.performRequestFocus
-import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.input.InputMode
-import androidx.compose.ui.input.key.KeyEvent
+import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.node.CompositionLocalConsumerModifierNode
-import androidx.compose.ui.node.DelegatingNode
 import androidx.compose.ui.node.ModifierNodeElement
-import androidx.compose.ui.node.ObserverModifierNode
-import androidx.compose.ui.node.requireLayoutNode
-import androidx.compose.ui.node.requireOwner
-import androidx.compose.ui.node.visitLocalDescendants
 import androidx.compose.ui.node.Nodes
 import androidx.compose.ui.node.currentValueOf
+import androidx.compose.ui.node.requireLayoutNode
+import androidx.compose.ui.node.visitLocalDescendants
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalInputModeManager
 import androidx.compose.ui.window.LocalComposeWindow
-import kotlin.js.js
-import kotlinx.browser.document
 import kotlinx.browser.window
 import org.w3c.dom.HTMLElement
 import org.w3c.dom.events.Event
-import org.w3c.dom.events.FocusEvent
 import org.w3c.dom.events.KeyboardEvent
 
 /**
@@ -68,85 +58,28 @@ internal fun Modifier.focusInteropModifier(): Modifier = this
     .then(FocusTargetPropertiesElement)
     .then(FocusTargetInteropElement)
 
-private object FocusTargetInteropElement : ModifierNodeElement<FocusTargetInteropNode>() {
-    override fun create() = FocusTargetInteropNode()
-
-    override fun update(node: FocusTargetInteropNode) {}
-
+private object FocusTargetInteropElement : ModifierNodeElement<FocusTargetNode>() {
+    override fun create() = FocusTargetNode(isInteropViewHost = true, onFocusChange = { _, _, -> })
+    override fun update(node: FocusTargetNode) {}
     override fun hashCode() = "focusTargetInterop".hashCode()
-
     override fun equals(other: Any?) = other === this
-}
-
-/**
- * The node that becomes focused on the Compose side when the associated HTML element gains focus.
- */
-private class FocusTargetInteropNode :
-    DelegatingNode(), ObserverModifierNode, CompositionLocalConsumerModifierNode {
-
-    private val focusTargetNode =
-        delegate(FocusTargetNode(isInteropViewHost = true, onFocusChange = ::onFocusStateChange))
-
-    private fun onFocusStateChange(previousState: FocusState, currentState: FocusState) {
-        if (!isAttached) return
-        val isFocused = currentState.isFocused
-        val wasFocused = previousState.isFocused
-        // Ignore cases where we are initialized as unfocused, or moving between different
-        // unfocused states.
-        if (isFocused == wasFocused) return
-        // Pinning could be added here in the future if needed.
-    }
-
-    override fun onObservedReadsChanged() {}
 }
 
 private class FocusTargetPropertiesNode : Modifier.Node(), FocusPropertiesModifierNode {
     override fun applyFocusProperties(focusProperties: FocusProperties) {
-        val htmlElement = getEmbeddedHtmlElement()
-        focusProperties.canFocus = node.isAttached && true // htmlElement.isFocusable()
-//        htmlElement.getBoundingClientRect()?.let { rect ->
-//            focusProperties.focusRect = Rect(rect.left.toFloat(), rect.top.toFloat(),
-//                rect.right.toFloat(), rect.bottom.toFloat())
-//        }
+        focusProperties.canFocus = node.isAttached
     }
 }
-
-/**
- * Checks if an HTML element can receive focus.
- */
-//private fun HTMLElement.isFocusable(): Boolean = js("this.tabIndex >= 0 || this.tagName === 'BUTTON' || this.tagName === 'INPUT' || " +
-//        "this.tagName === 'SELECT' || this.tagName === 'TEXTAREA' || this.tagName === 'A'")
-
-/**
- * Gets the bounding client rect of an HTML element.
- */
-//private fun HTMLElement.getBoundingClientRect(): Rect? {
-//    // language=javascript
-//    return js("var rect = this.getBoundingClientRect(); " +
-//        "if (rect.width === 0 && rect.height === 0) return null; " +
-//        "return new androidx.compose.ui.geometry.Rect(rect.left, rect.top, rect.right, rect.bottom);")
-//}
 
 private class FocusGroupPropertiesNode :
     Modifier.Node(), FocusPropertiesModifierNode, CompositionLocalConsumerModifierNode {
 
-    var focusedChild: HTMLElement? = null
-
-    val onEnter: FocusEnterExitScope.() -> Unit = {
-        val htmlElement = getEmbeddedHtmlElement()
-        if (!htmlElement.isFocused()) {
-            htmlElement.focus()
-            // Try to focus the HTML element or its first focusable child.
-//            val target = (htmlElement.querySelector(":focusable") ?: htmlElement) as? HTMLElement
-//            target?.focus()
-        }
+    private val onEnter: FocusEnterExitScope.() -> Unit = {
+        getEmbeddedHtmlElement().focus()
     }
 
-    val onExit: FocusEnterExitScope.() -> Unit = {
-        val htmlElement = getEmbeddedHtmlElement()
-        if (htmlElement.isFocused()) {
-            htmlElement.blur()
-        }
+    private val onExit: FocusEnterExitScope.() -> Unit = {
+        getEmbeddedHtmlElement().blur()
     }
 
     override fun applyFocusProperties(focusProperties: FocusProperties) {
@@ -156,66 +89,71 @@ private class FocusGroupPropertiesNode :
     }
 
     private var lastTabKeyDown: KeyboardEvent? = null
+    private var htmlElement: HTMLElement? = null
 
-    override fun onAttach() {
-        println("FocusGroupNode.onAttach")
-        super.onAttach()
-        val htmlElement = getEmbeddedHtmlElement()
-        println("htmlElement: $htmlElement")
-        val tabKeyDownListener = { event: Event ->
-            println("Tab keydown!!! - $event")
-
-            lastTabKeyDown = (event as? KeyboardEvent)?.takeIf { it.key == "Tab" }
-
-
-            if (lastTabKeyDown != null) {
-                // This will ensure focus indication:
-                currentValueOf(LocalInputModeManager).requestInputMode(InputMode.Keyboard)
-                window.requestAnimationFrame {
-                    lastTabKeyDown = null
-                }
-            }
-
-            Unit
+    private val tabKeyDownListener = { event: Event ->
+        lastTabKeyDown = (event as? KeyboardEvent)?.takeIf {
+            it.keyCode == Key.Tab.keyCode.toInt()
         }
-        htmlElement.addEventListener("focus") {
-            println("focus::: HTML element gained focus")
-            htmlElement.addEventListener("keydown", tabKeyDownListener)
-            // HTML element (or a child) gained focus. Sync Compose focus to the interop wrapper.
-            val focusTargetNode = getFocusTargetOfEmbeddedViewWrapper()
-            if (!focusTargetNode.focusState.hasFocus) {
-                focusTargetNode.performRequestFocus()
-            }
-        }
-        htmlElement.addEventListener("blur") {
-            println("blur::: HTML element lost focus")
-            htmlElement.removeEventListener("keydown", tabKeyDownListener)
-            if (lastTabKeyDown != null) {
-                println("blur::: Tab - $lastTabKeyDown")
-                val localComposeWindow = currentValueOf(LocalComposeWindow)
-                localComposeWindow?.focusCanvas()
-                val focusManager = currentValueOf(LocalFocusManager)
-                val direction = if (lastTabKeyDown?.shiftKey == true) FocusDirection.Previous else FocusDirection.Next
-                focusManager.moveFocus(direction)
-                println("blur::: Tab - direction: $direction")
+
+        if (lastTabKeyDown != null) {
+            // This will ensure focus indication:
+            currentValueOf(LocalInputModeManager).requestInputMode(InputMode.Keyboard)
+
+            // Reset in case no downstream events occur.
+            window.requestAnimationFrame {
                 lastTabKeyDown = null
             }
         }
     }
 
+    private val onFocusEvent = { _: Event ->
+        // Listen to Tab / Tab+Shift key down events to track where the focus moves.
+        htmlElement?.addEventListener("keydown", tabKeyDownListener)
+
+        // HTML element (or a child) gained focus. Update Compose focus too.
+        val focusTargetNode = getFocusTargetOfEmbeddedViewWrapper()
+        if (!focusTargetNode.focusState.hasFocus) {
+            focusTargetNode.performRequestFocus()
+        }
+    }
+
+    private val onBlurEvent = { _: Event ->
+        htmlElement?.removeEventListener("keydown", tabKeyDownListener)
+
+        val composeWindow = currentValueOf(LocalComposeWindow)!!
+        val isFocusInComposeContainer = composeWindow.isFocusInComposeContainer()
+
+        // If the browser moved focus to a different element within the Compose-managed html-subtree,
+        // then focus canvas again so it can handle key events.
+        if (isFocusInComposeContainer) {
+            composeWindow.focusCanvas()
+        }
+
+        // Now let Compose move its own focus according to the earlier Tab keydown.
+        if (isFocusInComposeContainer && lastTabKeyDown != null) {
+            val direction = if (lastTabKeyDown?.shiftKey == true) {
+                FocusDirection.Previous
+            } else {
+                FocusDirection.Next
+            }
+            currentValueOf(LocalFocusManager).moveFocus(direction)
+        }
+
+        lastTabKeyDown = null
+    }
+
+    override fun onAttach() {
+        super.onAttach()
+        htmlElement = getEmbeddedHtmlElement()
+        htmlElement?.addEventListener("focus", onFocusEvent)
+        htmlElement?.addEventListener("blur", onBlurEvent)
+    }
+
     override fun onDetach() {
-        println("FocusGroupNode.onDetach")
-        val htmlElement = getEmbeddedHtmlElement()
-//        htmlElement.removeEventListener("focusin", ::onFocusIn)
-//        htmlElement.removeEventListener("focusout", ::onFocusOut)
-        focusedChild = null
+        htmlElement?.removeEventListener("focus", onFocusEvent)
+        htmlElement?.removeEventListener("blur", onBlurEvent)
         super.onDetach()
-    }
-
-    private val onFocusIn: (Event) -> Unit = { event ->
-    }
-
-    private val onFocusOut: (Event) -> Unit = { event ->
     }
 
     private fun getFocusTargetOfEmbeddedViewWrapper(): FocusTargetNode {
@@ -230,21 +168,15 @@ private class FocusGroupPropertiesNode :
 
 private object FocusGroupPropertiesElement : ModifierNodeElement<FocusGroupPropertiesNode>() {
     override fun create(): FocusGroupPropertiesNode = FocusGroupPropertiesNode()
-
     override fun update(node: FocusGroupPropertiesNode) {}
-
     override fun hashCode() = "FocusGroupProperties".hashCode()
-
     override fun equals(other: Any?) = other === this
 }
 
 private object FocusTargetPropertiesElement : ModifierNodeElement<FocusTargetPropertiesNode>() {
     override fun create(): FocusTargetPropertiesNode = FocusTargetPropertiesNode()
-
     override fun update(node: FocusTargetPropertiesNode) {}
-
     override fun hashCode() = "FocusTargetProperties".hashCode()
-
     override fun equals(other: Any?) = other === this
 }
 
@@ -253,14 +185,3 @@ private fun Modifier.Node.getEmbeddedHtmlElement(): HTMLElement {
         "Could not fetch interop view"
     } as HTMLElement
 }
-
-private fun HTMLElement.isFocused(): Boolean {
-    val root = getRootNode()
-    return false
-}
-
-private external interface DocumentOrShadowRootLike {
-    val activeElement: HTMLElement?
-}
-
-private fun getRootNode(): DocumentOrShadowRootLike = js("this.getRootNode()")

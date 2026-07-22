@@ -199,12 +199,13 @@ fun ComposeViewport(
     }
     positioningContainer.appendChild(interopContainerElement)
 
-    // To keep DOM focus in the canvas:
+    // To keep DOM focus on the canvas after Tabbing out of the interop container:
     positioningContainer.appendChild(createHtmlFocusDecoy(canvas))
 
     val composeWindow = ComposeWindow(
         canvas = canvas,
         rootNode = shadowRoot,
+        viewportContainer = viewportContainer,
         layerRoot = appContainer,
         interopContainerElement = interopContainerElement,
         a11yContainerElement = a11yContainerElement,
