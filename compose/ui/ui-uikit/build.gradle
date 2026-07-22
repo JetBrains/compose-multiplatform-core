@@ -64,7 +64,7 @@ private def isMacHost() {
 }
 
 private def configure(target, isDevice, architecture, testTarget) {
-    if (isMacHost()) return
+    if (!isMacHost()) return
     def objcDir = new File(project.projectDir, "src/iosMain/objc")
     def xcodeProjectDir = new File(objcDir, "CMPUIKitUtils")
     def sdkName = isDevice ? "iphoneos" : "iphonesimulator"
