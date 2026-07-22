@@ -30,6 +30,7 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.FillBox
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.PopupState
+import androidx.compose.ui.SkikoComposeTestBase
 import androidx.compose.ui.assertReceived
 import androidx.compose.ui.assertReceivedLast
 import androidx.compose.ui.assertReceivedNoEvents
@@ -78,7 +79,7 @@ import kotlinx.coroutines.test.runTest
 import org.jetbrains.skia.Surface
 
 @OptIn(ExperimentalTestApi::class)
-class PopupTest {
+class PopupTest : SkikoComposeTestBase() {
     @Test
     fun passCompositionLocalsToPopup() = runSkikoComposeUiTest {
         val compositionLocal = staticCompositionLocalOf<Int> {

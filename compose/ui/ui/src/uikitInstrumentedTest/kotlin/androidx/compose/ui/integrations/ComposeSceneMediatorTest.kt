@@ -21,6 +21,7 @@ import androidx.compose.ui.navigationevent.UIKitNavigationEventInput
 import androidx.compose.ui.platform.DefaultArchitectureComponentsOwner
 import androidx.compose.ui.platform.FrameChoreographer
 import androidx.compose.ui.platform.PlatformWindowContext
+import androidx.compose.ui.platform.registerSkikoComposeImplementation
 import androidx.compose.ui.scene.ComposeSceneContext
 import androidx.compose.ui.scene.ComposeSceneMediator
 import androidx.compose.ui.scene.PlatformLayersComposeScene
@@ -111,6 +112,7 @@ class ComposeSceneMediatorTest {
             ),
             interfaceOrientationState = mutableStateOf(InterfaceOrientation.Portrait),
             composeSceneFactory = { platformContext ->
+                registerSkikoComposeImplementation()
                 PlatformLayersComposeScene(
                     frameRecomposer = frameChoreographer.frameRecomposer,
                     density = Density(1f),
