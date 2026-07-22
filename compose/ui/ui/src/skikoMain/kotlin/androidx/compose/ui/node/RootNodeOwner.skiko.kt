@@ -197,7 +197,7 @@ internal class RootNodeOwner(
         coroutineScope.cancel()
         platformContext.rootForTestListener?.onRootForTestDisposed(rootForTest)
         snapshotObserver.stopObserving()
-        graphicsContext.dispose()
+        graphicsContext.close()
         _owner.dispose()
         // we don't need to call root.detach() because root will be garbage collected
         isDisposed = true

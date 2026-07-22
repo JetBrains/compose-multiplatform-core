@@ -16,6 +16,7 @@
 
 package androidx.compose.foundation.text
 
+import androidx.compose.foundation.SkikoComposeTestBase
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.MultiParagraph
 import androidx.compose.ui.text.TextLayoutInput
@@ -34,7 +35,8 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlinx.test.IgnoreWasmTarget
 
-class CupertinoTextFieldDelegateTest {
+class CupertinoTextFieldDelegateTest : SkikoComposeTestBase() {
+
     private val sampleText =
         "aaaa bbb cccc dd e fffffffff?????????!!!!!!!          ...\n" + "ggggggg tttt\n" +
             "Family emoji: \uD83D\uDC68\u200D\uD83D\uDC69\u200D\uD83D\uDC67\u200D\uD83D\uDC66\uD83D\uDC68\u200D\uD83D\uDC69\u200D\uD83D\uDC67\u200D\uD83D\uDC66, and some text at the end\n" +

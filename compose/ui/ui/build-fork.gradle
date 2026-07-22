@@ -199,6 +199,7 @@ androidXMultiplatform {
             dependsOn(commonMain)
             dependencies {
                 api(project(":compose:ui:ui-graphics"))
+                implementation(project(":compose:ui:ui-skiko"))
                 api(project(":compose:ui:ui-text"))
                 api(libs.skiko)
                 implementation(libs.atomicFu)

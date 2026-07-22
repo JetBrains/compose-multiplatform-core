@@ -25,6 +25,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.ImageComposeScene
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.SkikoComposeTestBase
 import androidx.compose.ui.assertThat
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -50,7 +51,7 @@ import kotlinx.coroutines.test.runTest
 import org.jetbrains.skia.Surface
 import org.jetbrains.skiko.FrameDispatcher
 
-class PointerIconTest {
+class PointerIconTest : SkikoComposeTestBase() {
     private val iconService = object : PointerIconService {
         private var current: PointerIcon = PointerIcon.Default
 
