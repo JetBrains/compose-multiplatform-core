@@ -1,5 +1,5 @@
 #
-# Copyright 2023 The Android Open Source Project
+# Copyright 2026 The Android Open Source Project
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,8 +14,12 @@
 # limitations under the License.
 #
 
-linkerOpts = -framework UIKit
-package = androidx.compose.ui.uikit.utils
-language = Objective-C
-compilerOpts = -D_Float16=short
-headerFilter = CMP*
+# This script runs the project in the original AOSP mode that uses the original build files
+# instead of the fork mode build files (settings-fork, etc)
+#
+# Note that it is supported only in "integration" branch,
+# because "jb-main" contains different copied parts that might not compile together
+
+export PROJECT_MODE=AOSP
+export ANDROIDX_PROJECTS=COMPOSE
+./gradlew studio

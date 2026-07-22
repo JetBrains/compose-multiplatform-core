@@ -46,9 +46,9 @@ abstract class AndroidConfigImpl(private val project: Project) : AndroidConfig {
     }
 
     companion object {
-        private const val COMPILE_SDK = "androidx.compileSdk"
-        private const val LATEST_STABLE_COMPILE_SDK = "androidx.latestStableCompileSdk"
-        private const val TARGET_SDK_VERSION = "androidx.targetSdkVersion"
+        private const val COMPILE_SDK = "jetbrains.androidx.android.compileSdk"
+        private const val LATEST_STABLE_COMPILE_SDK = "jetbrains.androidx.android.latestStableCompileSdk"
+        private const val TARGET_SDK_VERSION = "jetbrains.androidx.android.targetSdkVersion"
 
         /**
          * Implementation detail. This should only be used by AndroidXGradleProperties for property
