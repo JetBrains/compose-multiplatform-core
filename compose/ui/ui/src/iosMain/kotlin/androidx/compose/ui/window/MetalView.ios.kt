@@ -16,7 +16,6 @@
 
 package androidx.compose.ui.window
 
-import androidx.compose.ui.uikit.toNanoSeconds
 import androidx.compose.ui.viewinterop.UIKitInteropTransaction
 import kotlinx.cinterop.BetaInteropApi
 import kotlinx.cinterop.readValue
@@ -50,7 +49,7 @@ internal sealed interface MetalViewHolder {
 internal fun MetalView(
     retrieveInteropTransaction: () -> UIKitInteropTransaction,
     useSeparateRenderThreadWhenPossible: Boolean,
-    render: (Canvas, nanoTime: Long) -> Unit,
+    render: (Canvas) -> Unit,
 ): MetalViewHolder = if (useSeparateRenderThreadWhenPossible) {
     SurfaceMetalView(retrieveInteropTransaction, render).holder
 } else {
@@ -62,7 +61,7 @@ internal fun MetalView(
 // All changes made here must also be implemented in the `SurfaceMetalView`.
 private class LegacyMetalView(
     retrieveInteropTransaction: () -> UIKitInteropTransaction,
-    render: (Canvas, nanoTime: Long) -> Unit,
+    render: (Canvas) -> Unit,
 ) : UIView(frame = CGRectZero.readValue()) {
     companion object : UIViewMeta() {
         @BetaInteropApi
@@ -81,9 +80,9 @@ private class LegacyMetalView(
     val redrawer = LegacyMetalRedrawer(
         metalLayer,
         retrieveInteropTransaction
-    ) { canvas, targetTimestamp ->
+    ) { canvas ->
         canvas.clear(canvasBackground)
-        render(canvas, targetTimestamp.toNanoSeconds())
+        render(canvas)
     }
 
     var canBeOpaque: Boolean

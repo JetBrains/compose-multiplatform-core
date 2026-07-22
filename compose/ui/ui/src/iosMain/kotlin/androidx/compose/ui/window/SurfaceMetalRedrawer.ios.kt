@@ -41,12 +41,10 @@ import org.jetbrains.skia.SurfaceOrigin
 import org.jetbrains.skia.SurfaceProps
 import platform.Foundation.NSLock
 import platform.Foundation.NSThread
-import platform.Foundation.NSTimeInterval
 import platform.IOSurface.IOSurfaceGetHeight
 import platform.IOSurface.IOSurfaceGetWidth
 import platform.Metal.MTLCommandQueueProtocol
 import platform.Metal.MTLDeviceProtocol
-import platform.QuartzCore.CACurrentMediaTime
 import platform.darwin.DISPATCH_TIME_NOW
 import platform.darwin.NSEC_PER_SEC
 import platform.darwin.dispatch_assert_queue
@@ -67,13 +65,12 @@ import platform.posix.QOS_CLASS_USER_INTERACTIVE
 internal class SurfaceMetalRedrawer(
     private val metalLayer: CMPMetalLayer,
     private var retrieveInteropTransaction: () -> UIKitInteropTransaction,
-    private var render: (Canvas, targetTimestamp: NSTimeInterval) -> Unit,
+    private var render: (Canvas) -> Unit,
 ): MetalRedrawer {
     private val device = metalLayer.device as? MTLDeviceProtocol
         ?: throw IllegalStateException("MetalRedrawer requires MTLDevice")
     private val queue = getCachedCommandQueue(device)
     private val context = DirectContext.makeMetal(device.objcPtr(), queue.objcPtr())
-    private var lastRenderTimestamp: NSTimeInterval = CACurrentMediaTime()
     private val pictureRecorder = PictureRecorder()
     private val transactionQueue = InteropTransactionQueue()
 
@@ -161,7 +158,7 @@ internal class SurfaceMetalRedrawer(
             }
         }
 
-        render = { _, _ -> }
+        render = { _ -> }
 
         releaseCachedCommandQueue(queue)
 
@@ -194,10 +191,9 @@ internal class SurfaceMetalRedrawer(
      *
      * @param waitUntilCompletion if `true`, the method will block the thread until the frame is
      * presented on the screen. If false, the method will just dispatch GPU workload and return.
-     * @param targetTimestamp the target timestamp for the frame to drive vsync-dependant time clock.
      */
     @OptIn(BetaInteropApi::class)
-    override fun draw(waitUntilCompletion: Boolean, targetTimestamp: NSTimeInterval) =
+    override fun draw(waitUntilCompletion: Boolean) =
         trace("SurfaceMetalRedrawer:draw") {
             check(NSThread.isMainThread) { "MetalRedrawer.draw() must be called on main thread" }
             check(!isDrawRecursiveCall) {
@@ -207,8 +203,6 @@ internal class SurfaceMetalRedrawer(
             isDrawRecursiveCall = true
 
             try {
-                lastRenderTimestamp = maxOf(targetTimestamp, lastRenderTimestamp)
-
                 val (width, height) = metalLayer.drawableSize.useContents {
                     IntIntPair(width.roundToInt(), height.roundToInt())
                 }
@@ -225,7 +219,7 @@ internal class SurfaceMetalRedrawer(
                         right = width.toFloat(),
                         bottom = height.toFloat()
                     ).also { canvas ->
-                        render(canvas, lastRenderTimestamp)
+                        render(canvas)
                     }
 
                     pictureRecorder.finishRecordingAsPicture()

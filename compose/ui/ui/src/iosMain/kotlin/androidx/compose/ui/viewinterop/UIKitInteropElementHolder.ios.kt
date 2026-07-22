@@ -17,6 +17,7 @@
 package androidx.compose.ui.viewinterop
 
 import androidx.compose.runtime.CompositeKeyHashCode
+import androidx.compose.runtime.CompositionContext
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.BlendMode
@@ -35,6 +36,7 @@ import kotlinx.cinterop.CValue
 import platform.CoreGraphics.CGRect
 import platform.CoreGraphics.CGRectIntersection
 import platform.CoreGraphics.CGRectIsEmpty
+import platform.UIKit.UIResponder
 import platform.UIKit.UIView
 import platform.UIKit.accessibilityFrame
 
@@ -56,11 +58,13 @@ internal abstract class UIKitInteropElementHolder<T : InteropView>(
         interopContainer: InteropContainer,
         properties: UIKitInteropProperties,
         compositeKeyHashCode: CompositeKeyHashCode,
+        compositionContext: CompositionContext,
     ) : this(
         factory = factory,
         interopContainer = interopContainer,
         interopWrappingView = InteropWrappingView(
-            interactionMode = null
+            interactionMode = null,
+            compositionContext = compositionContext
         ),
         properties = properties,
         compositeKeyHashCode = compositeKeyHashCode

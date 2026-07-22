@@ -47,8 +47,14 @@ class ComposeSceneMediatorTest {
     @Test
     fun testDisposedMediatorShouldNotCrash() = runBlocking {
         val context = Dispatchers.Main + Job()
-        val mediator = makeMediator(coroutineContext = context)
-        mediator.setContent {}
+        val frameChoreographer = FrameChoreographer.choreographerForScene(UIWindowScene())
+        val mediator = makeMediator(
+            coroutineContext = context,
+            frameChoreographer = frameChoreographer
+        )
+        mediator.setContent(
+            parentCompositionContext = frameChoreographer.frameRecomposer.compositionContext
+        ) {}
         context.cancel()
 
         mediator.composeSceneDensity = Density(2f)
@@ -85,9 +91,12 @@ class ComposeSceneMediatorTest {
     }
 
     @OptIn(ExperimentalForeignApi::class)
-    private fun makeMediator(coroutineContext: CoroutineContext): ComposeSceneMediator {
+    private fun makeMediator(
+        coroutineContext: CoroutineContext,
+        frameChoreographer: FrameChoreographer
+    ): ComposeSceneMediator {
         val mediator = ComposeSceneMediator(
-            frameChoreographer = FrameChoreographer(UIWindowScene()),
+            frameChoreographer = frameChoreographer,
             onFocusBehavior = OnFocusBehavior.DoNothing,
             isClearFocusOnMouseDownEnabled = false,
             focusedViewsList = null,
@@ -101,9 +110,9 @@ class ComposeSceneMediatorTest {
                 endEdgePanGestureBehavior = EndEdgePanGestureBehavior.Disabled,
             ),
             interfaceOrientationState = mutableStateOf(InterfaceOrientation.Portrait),
-            composeSceneFactory = { platformContext, frameRecomposer ->
+            composeSceneFactory = { platformContext ->
                 PlatformLayersComposeScene(
-                    frameRecomposer = frameRecomposer,
+                    frameRecomposer = frameChoreographer.frameRecomposer,
                     density = Density(1f),
                     composeSceneContext = object : ComposeSceneContext {
                         override val platformContext = platformContext

@@ -61,16 +61,17 @@ class FrameChoreographerTest {
 
         val listener = CountingListener()
         choreographer.addListener(listener)
+        val activitiesHandler = choreographer.createActivitiesHandler()
         try {
             settleChoreographer()
 
             val ticksBefore = listener.displayLinkCount
-            choreographer.ongoingActivitiesCount = 1
+            activitiesHandler.onActivitiesStarted()
             waitUntil("Choreographer should keep ticking during interaction") {
                 listener.displayLinkCount > ticksBefore + 3
             }
 
-            choreographer.ongoingActivitiesCount = 0
+            activitiesHandler.onActivitiesEnded()
             settleChoreographer()
 
             val ticksAfterStop = listener.displayLinkCount
@@ -81,7 +82,7 @@ class FrameChoreographerTest {
                 "Choreographer should pause after interaction ends"
             )
         } finally {
-            choreographer.ongoingActivitiesCount = 0
+            activitiesHandler.dispose()
             choreographer.removeListener(listener)
         }
     }
@@ -94,12 +95,13 @@ class FrameChoreographerTest {
 
         val listener = CountingListener()
         choreographer.addListener(listener)
+        val activitiesHandler = choreographer.createActivitiesHandler()
         try {
-            choreographer.ongoingActivitiesCount = 1
+            activitiesHandler.onActivitiesStarted()
             waitUntil("Both callbacks should be delivered while ticking") {
                 listener.displayLinkCount > 3 && listener.outOfFrameCount > 3
             }
-            choreographer.ongoingActivitiesCount = 0
+            activitiesHandler.onActivitiesEnded()
             settleChoreographer()
 
             // Each display-link tick schedules exactly one out-of-frame callback, so the counts
@@ -110,7 +112,7 @@ class FrameChoreographerTest {
                     "callbacks (${listener.displayLinkCount})"
             )
         } finally {
-            choreographer.ongoingActivitiesCount = 0
+            activitiesHandler.dispose()
             choreographer.removeListener(listener)
         }
     }
@@ -120,10 +122,11 @@ class FrameChoreographerTest {
         setContent { Box(Modifier.fillMaxSize()) }
         val choreographer = frameChoreographer
         assertNotNull(choreographer, "frameChoreographer is null")
+        val activitiesHandler = choreographer.createActivitiesHandler()
 
         val listener = CountingListener()
         choreographer.addListener(listener)
-        choreographer.ongoingActivitiesCount = 1
+        activitiesHandler.onActivitiesStarted()
         waitUntil("Listener should receive callbacks while registered") {
             listener.displayLinkCount > 3
         }
@@ -133,7 +136,7 @@ class FrameChoreographerTest {
 
         // Keep the choreographer ticking, but the removed listener must not observe more ticks.
         delay(100)
-        choreographer.ongoingActivitiesCount = 0
+        activitiesHandler.onActivitiesEnded()
         assertEquals(
             ticksAfterRemoval,
             listener.displayLinkCount,
@@ -153,7 +156,7 @@ private class CountingListener : FrameChoreographer.Listener {
     var outOfFrameCount = 0
         private set
 
-    override fun onDisplayLink() {
+    override fun onDisplayLinkTick() {
         displayLinkCount++
     }
 

@@ -27,7 +27,6 @@ import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.pointer.PointerButton
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.navigationevent.UIKitNavigationEventInput
-import androidx.compose.ui.platform.FrameRecomposer
 import androidx.compose.ui.platform.PlatformArchitectureComponentsOwner
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.FrameChoreographer
@@ -50,13 +49,9 @@ import platform.UIKit.UIView
 import platform.UIKit.UIWindow
 
 internal class UIKitComposeSceneLayer(
-    frameChoreographer: FrameChoreographer,
+    private val frameChoreographer: FrameChoreographer,
     private val onClosed: (UIKitComposeSceneLayer) -> Unit,
     private val createComposeSceneContext: (PlatformContext) -> ComposeSceneContext,
-
-    // FIXME: Remove it. All locals should be available from the composition context
-    private val hostCompositionLocals: @Composable (@Composable () -> Unit) -> Unit,
-
     private val layersViewController: ComposeLayersViewController,
     private val initialLayoutDirection: LayoutDirection,
     private val onFocusConditionsChanged: () -> Unit,
@@ -123,12 +118,9 @@ internal class UIKitComposeSceneLayer(
         it.isInterceptingOutsideEvents = consumePointerInputOutside
     }
 
-    private fun createComposeScene(
-        platformContext: PlatformContext,
-        frameRecomposer: FrameRecomposer
-    ): ComposeScene =
+    private fun createComposeScene(platformContext: PlatformContext): ComposeScene =
         PlatformLayersComposeScene(
-            frameRecomposer = frameRecomposer,
+            frameRecomposer = frameChoreographer.frameRecomposer,
             density = mediator.screenDensity,
             layoutDirection = initialLayoutDirection,
             composeSceneContext = createComposeSceneContext(platformContext),
@@ -178,7 +170,7 @@ internal class UIKitComposeSceneLayer(
 
     fun doMeasureAndLayout() = mediator.doMeasureAndLayout()
 
-    fun render(canvas: Canvas, nanoTime: Long) {
+    fun render(canvas: Canvas) {
         if (scrimColor != null) {
             val density = layersViewController.metalView.view.density
             val rect = layersViewController.metalView.view.bounds.toDpRect().toRect(density)
@@ -186,7 +178,7 @@ internal class UIKitComposeSceneLayer(
             canvas.drawRect(rect, scrimPaint)
         }
 
-        mediator.render(canvas, nanoTime)
+        mediator.render(canvas)
     }
 
     fun retrieveInteropTransaction() = mediator.retrieveInteropTransaction()
@@ -225,11 +217,8 @@ internal class UIKitComposeSceneLayer(
         parentCompositionContext: CompositionContext,
         content: @Composable () -> Unit,
     ) {
-        // TODO: pass [parentCompositionContext] once a shared [Recomposer] exists.
-        mediator.setContent {
-            hostCompositionLocals {
-                ProvideComposeSceneLayerCompositionLocals(content)
-            }
+        mediator.setContent(parentCompositionContext) {
+            ProvideComposeSceneLayerCompositionLocals(content)
         }
     }
 

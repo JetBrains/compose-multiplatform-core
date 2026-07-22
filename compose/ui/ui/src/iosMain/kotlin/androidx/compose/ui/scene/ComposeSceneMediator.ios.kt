@@ -17,6 +17,7 @@
 package androidx.compose.ui.scene
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionContext
 import androidx.compose.runtime.CompositionLocalContext
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.State
@@ -56,7 +57,7 @@ import androidx.compose.ui.navigationevent.UIKitNavigationEventInput
 import androidx.compose.ui.platform.AccessibilityMediator
 import androidx.compose.ui.platform.CUPERTINO_TOUCH_SLOP
 import androidx.compose.ui.platform.DefaultInputModeManager
-import androidx.compose.ui.platform.FrameRecomposer
+import androidx.compose.ui.platform.FrameChoreographer
 import androidx.compose.ui.platform.PlatformArchitectureComponentsOwner
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.PlatformScreenReader
@@ -73,15 +74,6 @@ import androidx.compose.ui.uikit.LocalNativeTextInputContext
 import androidx.compose.ui.uikit.LocalUIView
 import androidx.compose.ui.uikit.OnFocusBehavior
 import androidx.compose.ui.uikit.density
-import androidx.compose.ui.uikit.toNanoSeconds
-import androidx.compose.ui.input.key.internal
-import androidx.compose.ui.input.key.type
-import androidx.compose.ui.input.pointer.PointerKeyboardModifiers
-import androidx.compose.ui.input.pointer.isAltPressed
-import androidx.compose.ui.input.pointer.isCtrlPressed
-import androidx.compose.ui.input.pointer.isMetaPressed
-import androidx.compose.ui.input.pointer.isShiftPressed
-import androidx.compose.ui.platform.FrameChoreographer
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.IntRect
@@ -202,13 +194,10 @@ internal class ComposeSceneMediator(
     focusedViewsList: FocusedViewsList?,
     private val windowContext: PlatformWindowContext,
     private val architectureComponentsOwner: PlatformArchitectureComponentsOwner,
-    private val coroutineContext: CoroutineContext,
+    val coroutineContext: CoroutineContext,
     private val navigationEventInput: UIKitNavigationEventInput,
     interfaceOrientationState: State<InterfaceOrientation>,
-    composeSceneFactory: (
-        platformContext: PlatformContext,
-        frameRecomposer: FrameRecomposer,
-    ) -> ComposeScene,
+    composeSceneFactory: (platformContext: PlatformContext) -> ComposeScene,
 ) {
     private var onPreviewKeyEvent: (KeyEvent) -> Boolean = { false }
 
@@ -217,6 +206,7 @@ internal class ComposeSceneMediator(
     private var platformScreenReader = object : PlatformScreenReader {
         override var isActive by mutableStateOf(false)
     }
+    private val activitiesHandler = frameChoreographer.createActivitiesHandler()
 
     private val coroutineScope = CoroutineScope(coroutineContext)
 
@@ -228,17 +218,22 @@ internal class ComposeSceneMediator(
             if (hasWork != isPrefetchVoteActive) {
                 isPrefetchVoteActive = hasWork
                 if (hasWork) {
-                    frameChoreographer.ongoingActivitiesCount++
+                    activitiesHandler.onActivitiesStarted()
                 } else {
-                    frameChoreographer.ongoingActivitiesCount--
+                    activitiesHandler.onActivitiesEnded()
                 }
             }
         }
     )
 
+    /**
+     * Indicates that a draw happened in the current display-link interval so the prefetch scheduler
+     * can tell whether the draw loop was idle when [FrameChoreographer.Listener.onOutOfFrame]
+     * runs.
+     */
     private var didDrawSinceDisplayLink = false
     private val frameChoreographerListener = object : FrameChoreographer.Listener {
-        override fun onDisplayLink() {
+        override fun onDisplayLinkTick() {
             didDrawSinceDisplayLink = false
         }
 
@@ -264,10 +259,7 @@ internal class ComposeSceneMediator(
         }
 
     private val scene: ComposeScene by lazy {
-        composeSceneFactory(
-            PlatformContextImpl(),
-            frameChoreographer.frameRecomposer,
-        )
+        composeSceneFactory(PlatformContextImpl())
     }
 
     private var composeSceneSize: IntSize?
@@ -432,7 +424,7 @@ internal class ComposeSceneMediator(
     private val textInputService: UIKitTextInputService by lazy {
         UIKitTextInputService(
             updateView = {
-                frameChoreographer.frameRecomposer.performFrame(lastRenderTime)
+                frameChoreographer.performFrameIfNeeded()
                 scene.measureAndLayout()
                 CATransaction.flush()
             },
@@ -486,9 +478,9 @@ internal class ComposeSceneMediator(
         eventKind: TouchesEventKind
     ) {
         when (eventKind) {
-            TouchesEventKind.BEGAN -> frameChoreographer.ongoingActivitiesCount += 1
+            TouchesEventKind.BEGAN -> activitiesHandler.onActivitiesStarted()
             TouchesEventKind.MOVED -> {}
-            TouchesEventKind.ENDED -> frameChoreographer.ongoingActivitiesCount -= 1
+            TouchesEventKind.ENDED -> activitiesHandler.onActivitiesEnded()
         }
 
         scene.sendPointerEvent(
@@ -536,12 +528,12 @@ internal class ComposeSceneMediator(
     }
 
     private fun onCancelScroll() {
-        frameChoreographer.ongoingActivitiesCount -= 1
+        activitiesHandler.onActivitiesEnded()
         scene.cancelPointerInput()
     }
 
     private fun onCancelAllTouches(touches: Set<*>) {
-        frameChoreographer.ongoingActivitiesCount -= touches.count()
+        activitiesHandler.onActivitiesEnded(touches.count())
         scene.cancelPointerInput()
     }
 
@@ -557,8 +549,8 @@ internal class ComposeSceneMediator(
         eventKind: TouchesEventKind
     ): PointerEventResult {
         when (eventKind) {
-            TouchesEventKind.BEGAN -> frameChoreographer.ongoingActivitiesCount += touches.count()
-            TouchesEventKind.ENDED -> frameChoreographer.ongoingActivitiesCount -= touches.count()
+            TouchesEventKind.BEGAN -> activitiesHandler.onActivitiesStarted(touches.count())
+            TouchesEventKind.ENDED -> activitiesHandler.onActivitiesEnded(touches.count())
             TouchesEventKind.MOVED -> {}
         }
 
@@ -623,9 +615,12 @@ internal class ComposeSceneMediator(
     var isInterceptingOutsideEvents: Boolean by _overlayView::isInterceptingOutsideEvents
     var interactionBounds = IntRect.Zero
 
-    fun setContent(content: @Composable () -> Unit) {
+    fun setContent(
+        parentCompositionContext: CompositionContext,
+        content: @Composable () -> Unit
+    ) {
         _backgroundView.runOnceOnAppeared {
-            scene.setContent {
+            scene.setContent(parentCompositionContext) {
                 ProvideComposeSceneMediatorCompositionLocals {
                     FocusAboveKeyboardIfNeeded {
                         interopContainer.TrackInteropPlacementContainer(content = content)
@@ -662,25 +657,14 @@ internal class ComposeSceneMediator(
         }
     }
 
-    private var isPerformingFrame = false
     fun doMeasureAndLayout() {
         scene.measureAndLayout()
     }
 
-    private var lastRenderTime = CACurrentMediaTime().toNanoSeconds()
-    fun render(canvas: Canvas, nanoTime: Long) {
-        lastRenderTime = nanoTime
-        // Mark that a draw happened in the current display-link interval so the prefetch scheduler
-        // can tell whether the draw loop was idle when [FrameChoreographer.Listener.onOutOfFrame]
-        // runs.
+    fun render(canvas: Canvas) {
         didDrawSinceDisplayLink = true
-        withFrameGuard {
-            with(sceneRenderingScope) {
-                scene.render(frameRecomposer, canvas, nanoTime)
-            }
-        }
+        scene.draw(canvas)
     }
-
 
     fun retrieveInteropTransaction(): UIKitInteropTransaction =
         interopContainer.retrieveTransaction()
@@ -723,6 +707,7 @@ internal class ComposeSceneMediator(
 
         frameChoreographer.removeListener(frameChoreographerListener)
         prefetchScheduler.dispose()
+        activitiesHandler.dispose()
 
         _overlayView.dispose()
         keyboardManager.dispose()

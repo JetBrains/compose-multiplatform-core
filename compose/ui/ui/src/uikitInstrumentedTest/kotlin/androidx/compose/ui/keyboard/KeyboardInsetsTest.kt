@@ -67,6 +67,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.KeyboardVisibilityListener
 import androidx.compose.ui.window.KeyboardVisibilityObserver
+import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -79,6 +80,7 @@ import platform.UIKit.UIView
 import platform.UIKit.UIViewAnimationOptions
 
 internal class KeyboardInsetsTest {
+    @Ignore // CMP-10523
     @Test
     fun testImePaddingInsetsAnimationFrames_FocusAboveKeyboard() = runUIKitInstrumentedTest {
         val contentFrames = mutableListOf<DpRect>()

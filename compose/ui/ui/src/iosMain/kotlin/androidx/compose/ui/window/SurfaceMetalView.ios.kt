@@ -16,7 +16,6 @@
 
 package androidx.compose.ui.window
 
-import androidx.compose.ui.uikit.toNanoSeconds
 import androidx.compose.ui.uikit.utils.CMPMetalLayer
 import androidx.compose.ui.viewinterop.UIKitInteropTransaction
 import kotlin.time.Duration.Companion.milliseconds
@@ -45,7 +44,7 @@ import platform.UIKit.UIViewMeta
 // All changes made here must also be implemented in the `LegacyMetalView`.
 internal class SurfaceMetalView(
     retrieveInteropTransaction: () -> UIKitInteropTransaction,
-    render: (Canvas, nanoTime: Long) -> Unit,
+    render: (Canvas) -> Unit,
 ) : UIView(frame = CGRectZero.readValue()) {
     companion object : UIViewMeta() {
         @OptIn(BetaInteropApi::class)
@@ -60,9 +59,9 @@ internal class SurfaceMetalView(
     val redrawer = SurfaceMetalRedrawer(
         metalLayer,
         retrieveInteropTransaction,
-    ) { canvas, targetTimestamp ->
+    ) { canvas ->
         canvas.clear(canvasBackground)
-        render(canvas, targetTimestamp.toNanoSeconds())
+        render(canvas)
     }
 
     var canBeOpaque: Boolean

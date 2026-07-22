@@ -79,18 +79,22 @@ internal class ComposeLayersViewController(
         )
     }
 
+    private val layoutInvalidationHandler = LayoutInvalidationHandler(coroutineContext) {
+        view.setNeedsLayout()
+        view.invalidateIntrinsicContentSize()
+    }
+
     init {
         coroutineContext.job.invokeOnCompletion {
             dispose()
         }
     }
 
-    fun setNeedsLayout() {
-        composeContainerView.setNeedsLayout()
-        composeContainerView.invalidateIntrinsicContentSize()
+    fun invalidateLayout() {
+        layoutInvalidationHandler.invalidateLayoutIfNeeded()
     }
 
-    fun setNeedsDisplay() {
+    fun invalidateDraw() {
         composeContainerView.setNeedsDisplay()
     }
 
@@ -238,7 +242,7 @@ internal class ComposeLayersViewController(
         if (hasViewAppeared) {
             layer.sceneDidAppear()
         }
-        setNeedsDisplay()
+        invalidateDraw()
     }
 
     fun detach(layer: UIKitComposeSceneLayer) {
@@ -261,7 +265,7 @@ internal class ComposeLayersViewController(
             removedLayersTransactions.add(transaction)
 
             // Redraw content with layer removed
-            setNeedsDisplay()
+            invalidateDraw()
         }
     }
 
@@ -272,7 +276,7 @@ internal class ComposeLayersViewController(
         this.layers.fastForEach {
             it.sceneDidAppear()
         }
-        setNeedsDisplay()
+        invalidateDraw()
     }
 
     override fun viewWillDisappear(animated: Boolean) {
@@ -313,14 +317,16 @@ internal class ComposeLayersViewController(
         )
     }
 
-    private fun render(canvas: Canvas, nanoTime: Long) {
-        val composeCanvas = canvas.asComposeCanvas()
+    private fun render(canvas: Canvas) {
+        layoutInvalidationHandler.postponeLayoutInvalidationCalls {
+            val composeCanvas = canvas.asComposeCanvas()
 
-        // Some layers may be removed during rendering, because recomposition will happen in the
-        // process, so we need to make a temporary copy of the list
-        layersCache.withCopy { layers ->
-            layers.fastForEach {
-                it.render(composeCanvas, nanoTime)
+            // Some layers may be removed during rendering, because recomposition will happen in the
+            // process, so we need to make a temporary copy of the list
+            layersCache.withCopy { layers ->
+                layers.fastForEach {
+                    it.render(composeCanvas)
+                }
             }
         }
     }

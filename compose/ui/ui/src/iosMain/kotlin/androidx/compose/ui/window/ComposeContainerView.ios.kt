@@ -29,7 +29,6 @@ import platform.CoreGraphics.CGPoint
 import platform.CoreGraphics.CGRect
 import platform.CoreGraphics.CGRectEqualToRect
 import platform.CoreGraphics.CGRectMake
-import platform.QuartzCore.CACurrentMediaTime
 import platform.UIKit.UIColor
 import platform.UIKit.UIEvent
 import platform.UIKit.UIGraphicsImageRenderer
@@ -58,7 +57,7 @@ internal class ComposeContainerView(
     private var onLayoutSubviews: () -> Unit = {}
     private var onTraitCollectionDidChange: () -> Unit = {}
     private var foregroundStateListener: SceneForegroundStateListener? = null
-    private var frameChoreographer: FrameChoreographer? = null
+    private var activitiesHandler: FrameChoreographer.ActivitiesHandler? = null
 
     val redrawer: MetalRedrawer? get() = metalView?.redrawer
 
@@ -134,7 +133,8 @@ internal class ComposeContainerView(
     override fun didMoveToWindow() {
         super.didMoveToWindow()
 
-        frameChoreographer = window?.windowScene?.let(FrameChoreographer::choreographerForScene)
+        activitiesHandler?.dispose()
+        activitiesHandler = window?.windowScene?.let(FrameChoreographer::choreographerForScene)?.createActivitiesHandler()
         onDidMoveToWindow(window)
 
         updateRedrawerState()
@@ -158,19 +158,13 @@ internal class ComposeContainerView(
     }
 
     override fun drawRect(rect: CValue<CGRect>) {
-        val frameChoreographer = frameChoreographer ?: return
-
-        if (needsSynchronousDraw) {
-            metalView?.redrawer?.draw(waitUntilCompletion = true, targetTimestamp = CACurrentMediaTime())
-            needsSynchronousDraw = false
-        } else {
-            metalView?.redrawer?.draw(waitUntilCompletion = false, targetTimestamp = frameChoreographer.targetTimestamp)
-        }
+        metalView?.redrawer?.draw(waitUntilCompletion = needsSynchronousDraw)
+        needsSynchronousDraw = false
 
         if (needsDisablePresentWithTransactionOnNextDraw) {
             needsDisablePresentWithTransactionOnNextDraw = false
             metalView?.redrawer?.isForcedToPresentWithTransactionEveryFrame = false
-            frameChoreographer.ongoingActivitiesCount--
+            activitiesHandler?.onActivitiesEnded()
         }
     }
 
@@ -257,15 +251,11 @@ internal class ComposeContainerView(
     }
 
     fun animateSizeTransition(scope: CoroutineScope, animations: suspend () -> Unit) {
-        val frameChoreographer = window?.windowScene?.let {
-            FrameChoreographer.choreographerForScene(it)
-        } ?: return
-
         val metalView = metalView ?: return
         isAnimating = true
         updateLayout()
         metalView.redrawer.isForcedToPresentWithTransactionEveryFrame = true
-        frameChoreographer.ongoingActivitiesCount++
+        activitiesHandler?.onActivitiesStarted()
         scope.launch {
             try {
                 animations()

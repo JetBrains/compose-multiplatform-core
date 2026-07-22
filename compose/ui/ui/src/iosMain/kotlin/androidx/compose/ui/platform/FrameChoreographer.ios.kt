@@ -16,6 +16,7 @@
 
 package androidx.compose.ui.platform
 
+import androidx.annotation.VisibleForTesting
 import androidx.compose.runtime.TestOnly
 import androidx.compose.ui.uikit.toNanoSeconds
 import androidx.compose.ui.util.fastForEach
@@ -31,7 +32,6 @@ import kotlinx.cinterop.alloc
 import kotlinx.cinterop.nativeHeap
 import kotlinx.cinterop.ptr
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.MainScope
 import platform.Foundation.NSRunLoop
 import platform.Foundation.NSRunLoopCommonModes
 import platform.Foundation.NSSelectorFromString
@@ -46,7 +46,12 @@ import platform.objc.OBJC_ASSOCIATION_RETAIN
 import platform.objc.objc_getAssociatedObject
 import platform.objc.objc_setAssociatedObject
 
-internal class FrameChoreographer(
+
+/**
+ * Manages recomposition, frame adjustment, and rendering synchronization for all Compose containers
+ * inside a single `UIWindowScene`.
+ */
+internal class FrameChoreographer private constructor(
     scene: UIWindowScene,
     val coroutineContext: CoroutineContext = Dispatchers.Main
 ) {
@@ -61,12 +66,48 @@ internal class FrameChoreographer(
         fun configureForScene(scene: UIWindowScene, coroutineContext: CoroutineContext) {
             scene.frameChoreographer = FrameChoreographer(scene, coroutineContext)
         }
+
+        private const val FramesToAdvanceAfterInvalidation = 2
     }
 
-    interface Listener {
-        fun onDisplayLink()
 
+    /**
+     * Interface for receiving callbacks related to frame rendering and out-of-frame processing.
+     */
+    interface Listener {
+        /**
+         * Callback method triggered on each frame refresh in synchronization with the display's refresh rate.
+         */
+        fun onDisplayLinkTick()
+
+        /**
+         * The next runloop is performed after all draw calls are processed and before the next
+         * runloop starts, so this is the moment out-of-frame work should run.
+         */
         fun onOutOfFrame(lastFrameTimestamp: NSTimeInterval, targetTimestamp: NSTimeInterval)
+    }
+
+    /**
+     * Tracks ongoing activities that keep the display link running (i.e. producing frames) even
+     * when there is nothing to redraw, such as an in-progress animation or gesture.
+     */
+    interface ActivitiesHandler {
+        /**
+         * Registers [count] started activities. While at least one activity is ongoing the display
+         * link keeps ticking.
+         */
+        fun onActivitiesStarted(count: Int = 1)
+
+        /**
+         * Marks [count] previously started activities as finished, allowing the display link to
+         * pause once no activities remain.
+         */
+        fun onActivitiesEnded(count: Int = 1)
+
+        /**
+         * Releases this handler and ends any activities it still holds.
+         */
+        fun dispose()
     }
 
     val frameRecomposer = FrameRecomposer(
@@ -75,8 +116,8 @@ internal class FrameChoreographer(
     )
 
     private val displayLink = CADisplayLink.displayLinkWithTarget(
-        target = SurfaceDisplayLinkProxy(::onDisplayLink),
-        selector = NSSelectorFromString(SurfaceDisplayLinkProxy::handleDisplayLinkTick.name)
+        target = DisplayLinkProxy(::onDisplayLinkTick),
+        selector = NSSelectorFromString(DisplayLinkProxy::handleDisplayLinkTick.name)
     ).also {
         it.addToRunLoop(NSRunLoop.mainRunLoop, NSRunLoopCommonModes)
     }
@@ -90,6 +131,7 @@ internal class FrameChoreographer(
     val outOfFrameExecutor = MetalOutOfFrameExecutor()
 
     private val listeners = mutableListOf<Listener>()
+    private val listenersCopy = mutableListOf<Listener>()
 
     fun addListener(listener: Listener) {
         listeners.add(listener)
@@ -103,48 +145,81 @@ internal class FrameChoreographer(
         displayLinkFrameRate.voteFrameRate(frameRate, frameRateCategory)
     }
 
-    var ongoingActivitiesCount: Int = 0
+    private var isPerformingFrame = false
+    fun performFrameIfNeeded() {
+        if (isPerformingFrame) return
+        isPerformingFrame = true
+        frameRecomposer.performFrame(targetTimestamp.toNanoSeconds())
+        isPerformingFrame = false
+    }
+
+    private var ongoingActivitiesCount: Int = 0
         set(value) {
             assert(value >= 0)
             field = value
             setNeedsRedraw()
         }
 
+    fun createActivitiesHandler(): ActivitiesHandler {
+        return object : ActivitiesHandler {
+            var handlerActivitiesCounter = 0
+            var disposed = false
+
+            override fun onActivitiesStarted(count: Int) {
+                if (disposed) return
+                handlerActivitiesCounter += count
+                ongoingActivitiesCount += count
+            }
+
+            override fun onActivitiesEnded(count: Int) {
+                if (disposed) return
+                ongoingActivitiesCount -= count
+                handlerActivitiesCounter -= count
+                assert(handlerActivitiesCounter >= 0)
+            }
+
+            override fun dispose() {
+                ongoingActivitiesCount -= handlerActivitiesCounter
+                handlerActivitiesCounter = 0
+                disposed = true
+            }
+        }
+    }
+
     private var advancedFramesCount = 2
     fun setNeedsRedraw() {
-        advancedFramesCount = 2
+        advancedFramesCount = FramesToAdvanceAfterInvalidation
         displayLink.paused = false
     }
 
     val targetTimestamp get() = displayLink.targetTimestamp
 
+    @VisibleForTesting
     val preferredFramesPerSecond: NSInteger get() = displayLink.preferredFramesPerSecond
 
     val currentTargetFrameDuration: NSTimeInterval
         get() = displayLink.targetTimestamp - displayLink.timestamp
 
-    private fun onDisplayLink() {
+    private fun onDisplayLinkTick() {
         val lastFrameTimestamp = displayLink.timestamp
         val targetTimestamp = displayLink.targetTimestamp
 
         // Drain out-of-frame work scheduled between frames before producing this frame.
         outOfFrameExecutor.onFrameStart()
 
-        val outOfFrameListeners = listeners.toList()
+        val listenersSnapshot = if (listenersCopy.isEmpty()) listenersCopy else mutableListOf()
+        listenersSnapshot.addAll(listeners)
         dispatch_async(dispatch_get_main_queue()) {
-            // The next runloop is performed after all draw calls are processed and before the next
-            // runloop starts, so this is the moment out-of-frame work should run.
             outOfFrameExecutor.onFrameEnd()
-            outOfFrameListeners.fastForEach { it.onOutOfFrame(lastFrameTimestamp, targetTimestamp) }
+            listenersSnapshot.fastForEach { it.onOutOfFrame(lastFrameTimestamp, targetTimestamp) }
+            listenersSnapshot.clear()
         }
+        listenersSnapshot.fastForEach { it.onDisplayLinkTick() }
 
-        listeners.toList().fastForEach { it.onDisplayLink() }
-
-        val timestamp = lastFrameTimestamp.toNanoSeconds()
         advancedFramesCount--
 
         displayLinkFrameRate.updateFrameRateIfNeeded()
-        frameRecomposer.performFrame(timestamp)
+        performFrameIfNeeded()
         if (advancedFramesCount <= 0 && ongoingActivitiesCount == 0) {
             advancedFramesCount = 0
             displayLink.paused = true
@@ -162,7 +237,7 @@ internal var UIWindowScene.frameChoreographer: FrameChoreographer?
         objc_setAssociatedObject(this, frameChoreographerAssociationKey, value, OBJC_ASSOCIATION_RETAIN)
     }
 
-private class SurfaceDisplayLinkProxy(
+private class DisplayLinkProxy(
     private val callback: () -> Unit
 ) : NSObject() {
     @OptIn(BetaInteropApi::class)

@@ -27,12 +27,11 @@ import org.jetbrains.skia.*
 import platform.Foundation.NSThread
 import platform.QuartzCore.*
 import platform.darwin.*
-import platform.Foundation.NSTimeInterval
 import platform.Metal.MTLCommandQueueProtocol
 import platform.Metal.MTLDeviceProtocol
 
 internal sealed interface MetalRedrawer {
-    fun draw(waitUntilCompletion: Boolean, targetTimestamp: NSTimeInterval)
+    fun draw(waitUntilCompletion: Boolean)
     var isForcedToPresentWithTransactionEveryFrame: Boolean
     fun awaitRenderingCompletion()
     fun dispose()
@@ -44,7 +43,7 @@ internal sealed interface MetalRedrawer {
 internal class LegacyMetalRedrawer(
     private val metalLayer: CAMetalLayer,
     private var retrieveInteropTransaction: () -> UIKitInteropTransaction,
-    private var render: (Canvas, targetTimestamp: NSTimeInterval) -> Unit,
+    private var render: (Canvas) -> Unit,
 ): MetalRedrawer {
     /**
      * A wrapper around CAMetalLayer that allows to perform operations on its drawables without
@@ -60,7 +59,6 @@ internal class LegacyMetalRedrawer(
         ?: throw IllegalStateException("CAMetalLayer.device can not be null")
     private val queue = getCachedCommandQueue(device)
     private val context = DirectContext.makeMetal(device.objcPtr(), queue.objcPtr())
-    private var lastRenderTimestamp: NSTimeInterval = CACurrentMediaTime()
     private val pictureRecorder = PictureRecorder()
     private val inflightCommandBuffersGroup = dispatch_group_create()
     // A guard flag to have proper assertion when draw() method is called recursively.
@@ -127,7 +125,7 @@ internal class LegacyMetalRedrawer(
             }
         }
 
-        render = { _, _ -> }
+        render = { _ -> }
 
         releaseCachedCommandQueue(queue)
 
@@ -140,10 +138,9 @@ internal class LegacyMetalRedrawer(
      *
      * @param waitUntilCompletion if `true`, the method will block the thread until the frame is
      * presented on the screen. If false, the method will just dispatch GPU workload and return.
-     * @param targetTimestamp the target timestamp for the frame to drive vsync-dependant time clock.
      */
     @OptIn(BetaInteropApi::class)
-    override fun draw(waitUntilCompletion: Boolean, targetTimestamp: NSTimeInterval) = trace("MetalRedrawer:draw") {
+    override fun draw(waitUntilCompletion: Boolean) = trace("MetalRedrawer:draw") {
         check(NSThread.isMainThread)
         check(!isDrawRecursiveCall) {
             "Attempt to call MetalRedrawer.draw() recursively which may lead to the PictureRecorder corruption."
@@ -151,8 +148,6 @@ internal class LegacyMetalRedrawer(
         isDrawRecursiveCall = true
 
         try {
-            lastRenderTimestamp = maxOf(targetTimestamp, lastRenderTimestamp)
-
             autoreleasepool {
                 val (width, height) = metalLayer.drawableSize.useContents {
                     IntIntPair(width.roundToInt(), height.roundToInt())
@@ -170,7 +165,7 @@ internal class LegacyMetalRedrawer(
                         width.toFloat(),
                         height.toFloat()
                     ).also { canvas ->
-                        render(canvas, lastRenderTimestamp)
+                        render(canvas)
                     }
 
                     pictureRecorder.finishRecordingAsPicture()
