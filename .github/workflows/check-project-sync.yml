@@ -1,0 +1,35 @@
+name: IDEA Sync
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+    branches:
+      - jb-main
+
+jobs:
+  sync-project:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-24.04, macos-26-xlarge, windows-latest ]
+    name: ${{ matrix.os }}
+    steps:
+      - name: Enable Long Paths
+        if: runner.os == 'Windows'
+        run: git config --system core.longpaths true
+
+      - name: Checkout Repository
+        uses: actions/checkout@v5
+
+      - name: Setup Prerequisites
+        uses: ./.github/actions/setup-prerequisites
+
+      - name: Setup Xcode
+        if: runner.os == 'macOS'
+        uses: ./.github/actions/setup-xcode
+
+      - name: Sync Project
+        shell: bash
+        run: |
+          ./gradlew prepareKotlinIdeaImport --no-daemon --stacktrace
