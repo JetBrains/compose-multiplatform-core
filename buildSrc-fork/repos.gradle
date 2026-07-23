@@ -67,6 +67,14 @@ def addMavenRepositories(RepositoryHandler handler) {
     */
     if (true /* In JetBrains Fork */) {
         handler.mavenCentral()
+        handler.maven {
+            url = "https://cache-redirector.jetbrains.com/dl.google.com/dl/android/maven2/"
+            content {
+                includeGroupByRegex("androidx.*")
+                includeGroupByRegex("com\\.android.*")
+                includeGroupByRegex("com\\.google.*")
+            }
+        }
         handler.google {
             content {
                 includeGroupByRegex("androidx.*")
