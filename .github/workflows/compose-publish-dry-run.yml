@@ -75,5 +75,4 @@ jobs:
           ./gradlew \
             :compose:mpp:demo:desktopMainClasses \
             :compose:desktop:desktop:desktop-samples:jvmMainClasses \
-            :compose:desktop:desktop:desktop-samples-material3:jvmMainClasses \
             --no-daemon --stacktrace
