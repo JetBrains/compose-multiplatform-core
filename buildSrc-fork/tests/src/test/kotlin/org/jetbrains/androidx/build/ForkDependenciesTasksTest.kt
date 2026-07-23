@@ -180,6 +180,39 @@ class ForkDependenciesTasksTest {
     }
 
     @Test
+    fun `updates fork dependencies without replacing compatible forked groups`() {
+        val root = createProject(
+            original = """
+                androidXMultiplatform {
+                    sourceSets {
+                        commonMain.dependencies {
+                            implementation("androidx.lifecycle:lifecycle-common:2.10.0")
+                            implementation("com.example:tool:2.0.0")
+                        }
+                    }
+                }
+            """,
+            fork = """
+                androidXForkMultiplatform {
+                    sourceSets {
+                        commonMain.dependencies {
+                            implementation("org.jetbrains.lifecycle:lifecycle-common:2.10.3")
+                            implementation("com.example:tool:1.0.0")
+                        }
+                    }
+                }
+            """,
+        )
+
+        gradle(root, "$PROJECT_PATH:jbUpdateForkDependencies")
+
+        val updatedFork = projectDir(root).resolve("build-fork.gradle").readText()
+        assertThat(updatedFork)
+            .contains("implementation(\"org.jetbrains.lifecycle:lifecycle-common:2.10.3\")")
+        assertThat(updatedFork).contains("implementation(\"com.example:tool:2.0.0\")")
+    }
+
+    @Test
     fun `allows suppressing fork dependency verification for a source set`() {
         val root = createProject(
             original = """
