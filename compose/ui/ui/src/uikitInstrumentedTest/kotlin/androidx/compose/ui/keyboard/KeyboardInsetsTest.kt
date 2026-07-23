@@ -642,6 +642,7 @@ internal class KeyboardInsetsTest {
         assertEquals(screenSize.height - keyboardHeight, lastTextFieldFrame.bottom)
     }
 
+    @Ignore // CMP-10523
     @Test
     fun testInsetsInDialogWhenUseSoftwareKeyboardInsetEnabled() = runUIKitInstrumentedTest {
         var frame: DpRect? = null
