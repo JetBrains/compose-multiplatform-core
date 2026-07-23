@@ -80,8 +80,8 @@ internal class ComposeLayersViewController(
     }
 
     private val layoutInvalidationHandler = LayoutInvalidationHandler(coroutineContext) {
-        view.setNeedsLayout()
-        view.invalidateIntrinsicContentSize()
+        composeContainerView.setNeedsLayout()
+        composeContainerView.invalidateIntrinsicContentSize()
     }
 
     init {

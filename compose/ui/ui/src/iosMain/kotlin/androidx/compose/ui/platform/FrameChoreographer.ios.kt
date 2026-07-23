@@ -23,7 +23,7 @@ import androidx.compose.ui.uikit.toNanoSeconds
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.window.DisplayLinkFrameRate
 import androidx.compose.ui.window.MetalOutOfFrameExecutor
-import androidx.compose.ui.window.SceneActiveStateListener
+import androidx.compose.ui.window.SceneForegroundStateListener
 import kotlin.coroutines.CoroutineContext
 import kotlinx.cinterop.BetaInteropApi
 import kotlinx.cinterop.COpaquePointer
@@ -131,12 +131,12 @@ internal class FrameChoreographer private constructor(
     }
 
     private val sceneRef = WeakReference(scene)
-    private val activeStateListener = SceneActiveStateListener(
+    private val foregroundStateListener = SceneForegroundStateListener(
         getScene = { sceneRef.get() },
-        onSceneActiveStateChanged = { active -> isSceneActive = active }
+        onSceneForegroundStateChanged = { inForeground -> isSceneInForeground = inForeground }
     )
 
-    private var isSceneActive: Boolean = activeStateListener.isSceneActive
+    private var isSceneInForeground: Boolean = foregroundStateListener.isSceneInForeground
         set(value) {
             if (field == value) return
             field = value
@@ -208,7 +208,7 @@ internal class FrameChoreographer private constructor(
     private var advancedFramesCount = FramesToAdvanceAfterInvalidation
     fun setNeedsRedraw() {
         advancedFramesCount = FramesToAdvanceAfterInvalidation
-        if (isSceneActive) {
+        if (isSceneInForeground) {
             displayLink.paused = false
         }
     }

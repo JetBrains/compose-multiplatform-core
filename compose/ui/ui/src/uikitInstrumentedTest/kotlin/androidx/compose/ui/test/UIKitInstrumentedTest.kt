@@ -68,6 +68,7 @@ import kotlin.time.TimeSource
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.useContents
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import org.jetbrains.skiko.OS
 import org.jetbrains.skiko.OSVersion
 import org.jetbrains.skiko.available
@@ -740,6 +741,7 @@ internal class MockAppDelegate: NSObject(), UIApplicationDelegateProtocol {
             throw CancellationException("Infinite animations are disabled on tests")
         }
     }
+    private var sceneJob = Job()
 
     fun setUpWindow(viewController: UIViewController) {
         UIApplication.sharedApplication().setDelegate(this)
@@ -747,7 +749,9 @@ internal class MockAppDelegate: NSObject(), UIApplicationDelegateProtocol {
         val scene = UIApplication.sharedApplication().connectedScenes.first() as? UIWindowScene
             ?: error("No window scene found")
 
-        FrameChoreographer.configureForScene(scene, Dispatchers.Main + infiniteAnimationPolicy)
+        sceneJob.cancel()
+        sceneJob = Job()
+        FrameChoreographer.configureForScene(scene, Dispatchers.Main + infiniteAnimationPolicy + sceneJob)
 
         val allWindows = scene.windows - _window
 
@@ -763,6 +767,7 @@ internal class MockAppDelegate: NSObject(), UIApplicationDelegateProtocol {
     }
 
     fun cleanUp() {
+        sceneJob.cancel()
         val scene = UIApplication.sharedApplication().connectedScenes.first() as? UIWindowScene
         val allWindows = scene?.windows ?: emptyList<UIWindow>()
 
