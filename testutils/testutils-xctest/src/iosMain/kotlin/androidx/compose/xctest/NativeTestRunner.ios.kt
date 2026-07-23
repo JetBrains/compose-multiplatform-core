@@ -46,11 +46,17 @@ import platform.XCTest.XCTestCase
 import platform.XCTest.XCTestCaseMeta
 import platform.XCTest.XCTestSuite
 import platform.XCTest.skipImplementation
-import platform.objc.class_addMethod
+import platform.objc.class_replaceMethod
 import platform.objc.imp_implementationWithBlock
 import platform.objc.objc_allocateClassPair
 import platform.objc.objc_registerClassPair
 import platform.objc.object_setClass
+
+// All wrapped cases by full name, for the retry factory to recover by selector.
+private val testCaseRegistry = mutableMapOf<String, TestCase>()
+
+// Last case run per selector — tiebreaker when a name is shared across suites.
+private val lastRunCaseBySelector = mutableMapOf<String, TestCase>()
 
 /**
  * An XCTest equivalent of the K/N TestCase.
@@ -68,6 +74,8 @@ internal class XCTestCaseWrapper(val testCase: TestCase) : XCTestCase(dummyInvoc
     private val fullTestName = testCase.fullName
 
     init {
+        testCaseRegistry[testCase.fullName] = testCase
+
         // Set custom test name
         val newClass = NSClassFromString(testCase.suite.name)
             ?: objc_allocateClassPair(XCTestCaseWrapper.`class`(), testCase.suite.name, 0UL)!!.also {
@@ -77,7 +85,7 @@ internal class XCTestCaseWrapper(val testCase: TestCase) : XCTestCase(dummyInvoc
         object_setClass(this, newClass)
 
         val selector = NSSelectorFromString(testCase.name)
-        createRunMethod(selector, ignored)
+        installRunMethod(selector)
         setInvocation(methodSignatureForSelector(selector)?.let { signature ->
             @Suppress("CAST_NEVER_SUCCEEDS")
             val invocation = NSInvocation.invocationWithMethodSignature(signature as NSMethodSignature)
@@ -88,29 +96,28 @@ internal class XCTestCaseWrapper(val testCase: TestCase) : XCTestCase(dummyInvoc
     }
 
     /**
-     * Creates and adds method to the metaclass with implementation block
+     * Creates and installs a method with an implementation block
      * that gets an XCTestCase instance as self to be run.
      */
-    private fun createRunMethod(selector: COpaquePointer?, isIgnored: Boolean) {
-        val imp = if (isIgnored) {
+    private fun installRunMethod(selector: COpaquePointer?) {
+        val imp = if (ignored) {
             // A special implementation that makes current test execution to skip a test case
             skipImplementation()
         } else {
             imp_implementationWithBlock(::run)
         }
-        val result = class_addMethod(
+        // Using replaceMethod since a retry rebinds the implementation to the fresh instance (addMethod would fail)
+        class_replaceMethod(
             cls = this.`class`(),
             name = selector,
             imp = imp,
             types = "v@:" // Obj-C type encodings: v (returns void), @ (id self), : (SEL sel)
         )
-        check(result) {
-            "Internal error: was unable to add method with selector $selector"
-        }
     }
 
     @ObjCAction
     private fun run() {
+        lastRunCaseBySelector[testCase.name] = testCase
         try {
             testCase.doRun()
         } catch (throwable: Throwable) {
@@ -197,6 +204,22 @@ internal class XCTestCaseWrapper(val testCase: TestCase) : XCTestCase(dummyInvoc
                 with selector @sel(${NSStringFromSelector(invocation?.selector)})
                 """.trimIndent()
             )
+        }
+
+        /**
+         * Retry entry point: XCTest re-creates a failed case here, passing only its selector.
+         * Resolve it back to a [TestCase] and rebuild it via the primary constructor.
+         */
+        override fun testCaseWithSelector(selector: COpaquePointer?): XCTestCase {
+            val selectorName = NSStringFromSelector(selector)
+            val matches = testCaseRegistry.values.filter { it.name == selectorName }
+            val testCase = when {
+                // Unique method name: unambiguous.
+                matches.size == 1 -> matches.single()
+                // Name shared across suites: pick the one that just ran (the failing case).
+                else -> lastRunCaseBySelector[selectorName] ?: matches.firstOrNull()
+            } ?: error("No Kotlin TestCase registered for selector '$selectorName'")
+            return XCTestCaseWrapper(testCase)
         }
 
         private fun dummyInvocation(): NSInvocation {
