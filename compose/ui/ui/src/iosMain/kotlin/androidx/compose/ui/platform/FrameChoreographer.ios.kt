@@ -25,6 +25,7 @@ import androidx.compose.ui.window.DisplayLinkFrameRate
 import androidx.compose.ui.window.MetalOutOfFrameExecutor
 import androidx.compose.ui.window.SceneForegroundStateListener
 import kotlin.coroutines.CoroutineContext
+import kotlin.math.min
 import kotlinx.cinterop.BetaInteropApi
 import kotlinx.cinterop.COpaquePointer
 import kotlinx.cinterop.ExperimentalForeignApi
@@ -47,7 +48,6 @@ import platform.darwin.dispatch_get_main_queue
 import platform.objc.OBJC_ASSOCIATION_RETAIN
 import platform.objc.objc_getAssociatedObject
 import platform.objc.objc_setAssociatedObject
-
 
 /**
  * Manages recomposition, frame adjustment, and rendering synchronization for all Compose containers
@@ -192,8 +192,10 @@ internal class FrameChoreographer private constructor(
 
             override fun onActivitiesEnded(count: Int) {
                 if (disposed) return
-                ongoingActivitiesCount -= count
-                handlerActivitiesCounter -= count
+                // TODO: CMP-10557 - Remove min and fix gestures counter
+                val endCount = min(count, ongoingActivitiesCount)
+                ongoingActivitiesCount -= endCount
+                handlerActivitiesCounter -= endCount
                 assert(handlerActivitiesCounter >= 0)
             }
 

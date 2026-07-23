@@ -16,7 +16,6 @@
 
 package androidx.compose.ui.window
 
-import androidx.compose.ui.platform.FrameChoreographer
 import androidx.compose.ui.uikit.utils.CMPContainerView
 import androidx.compose.ui.unit.toDpSize
 import kotlin.math.max
@@ -57,7 +56,6 @@ internal class ComposeContainerView(
     private var onLayoutSubviews: () -> Unit = {}
     private var onTraitCollectionDidChange: () -> Unit = {}
     private var foregroundStateListener: SceneForegroundStateListener? = null
-    private var activitiesHandler: FrameChoreographer.ActivitiesHandler? = null
 
     val redrawer: MetalRedrawer? get() = metalView?.redrawer
 
@@ -94,9 +92,6 @@ internal class ComposeContainerView(
         this.metalView?.dispose()
         this.metalView?.view?.removeFromSuperview()
         this.metalView = metalView
-
-        this.activitiesHandler?.dispose()
-        this.activitiesHandler = window?.windowScene?.let(FrameChoreographer::choreographerForScene)?.createActivitiesHandler()
 
         this.onWillMoveToWindow = onWillMoveToWindow
         this.onDidMoveToWindow = onDidMoveToWindow
@@ -165,7 +160,6 @@ internal class ComposeContainerView(
         if (needsDisablePresentWithTransactionOnNextDraw) {
             needsDisablePresentWithTransactionOnNextDraw = false
             metalView?.redrawer?.isForcedToPresentWithTransactionEveryFrame = false
-            activitiesHandler?.onActivitiesEnded()
         }
     }
 
@@ -256,7 +250,6 @@ internal class ComposeContainerView(
         isAnimating = true
         updateLayout()
         metalView.redrawer.isForcedToPresentWithTransactionEveryFrame = true
-        activitiesHandler?.onActivitiesStarted()
         scope.launch {
             try {
                 animations()
