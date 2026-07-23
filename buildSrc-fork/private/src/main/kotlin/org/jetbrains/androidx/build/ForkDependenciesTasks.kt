@@ -106,7 +106,7 @@ private fun problematicDependencies(
     val forkDependencies = declaredDependencies(forkScript)
     return originalDependencies.mapNotNull { (sourceSetName, originalSourceSetDependencies) ->
         val forkSourceSetDependencies = forkDependencies[sourceSetName] ?: return@mapNotNull null
-        (sourceSetName to originalSourceSetDependencies)
+        (sourceSetName to originalSourceSetDependencies.updatedForFork(forkSourceSetDependencies))
             .takeUnless { originalSourceSetDependencies.isSatisfiedByFork(forkSourceSetDependencies) }
     }.toMap()
 }
@@ -241,6 +241,14 @@ private fun List<Dependency>.isSatisfiedByFork(
     forkDependencies: List<Dependency>,
 ): Boolean = size == forkDependencies.size && zip(forkDependencies).all { (originalDependency, forkDependency) ->
     originalDependency.isSatisfiedByFork(forkDependency)
+}
+
+private fun List<Dependency>.updatedForFork(
+    forkDependencies: List<Dependency>,
+): List<Dependency> = mapIndexed { index, originalDependency ->
+    forkDependencies.getOrNull(index)
+        ?.takeIf { originalDependency.isSatisfiedByFork(it) }
+        ?: originalDependency
 }
 
 private sealed interface Dependency {
