@@ -28,6 +28,7 @@ import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
+import org.gradle.work.DisableCachingByDefault
 import org.jetbrains.androidx.build.JetBrainsPublication.isEquivalentForkGroupFor
 import org.jetbrains.androidx.build.JetBrainsPublication.projectPathForCoordinates
 
@@ -54,36 +55,76 @@ internal abstract class VerifyForkDependenciesTask : DefaultTask() {
 
     @TaskAction
     fun verify() {
-        val originalDependencies = declaredDependencies(buildFile.readText())
-        val forkDependencies = declaredDependencies(forkFile.readText())
-        val problematicDependencies =
-            originalDependencies.mapNotNull { (sourceSetName, originalSourceSetDependencies) ->
-                val forkSourceSetDependencies = forkDependencies[sourceSetName] ?: return@mapNotNull null
-                if (originalSourceSetDependencies.isSatisfiedByFork(forkSourceSetDependencies)) {
-                    null
-                } else {
-                    "$sourceSetName: ${originalSourceSetDependencies.joinToString()}"
-                }
-            }
-        if (problematicDependencies.isNotEmpty()) {
+        if (problematicSourceSetNames(buildFile.readText(), forkFile.readText()).isNotEmpty()) {
             throw GradleException(
                 buildString {
                     appendLine("Problematic fork files:")
                     appendLine(forkFile.invariantSeparatorsPath)
-                    appendLine("Expected dependencies:")
-                    problematicDependencies.sorted().forEach { appendLine(it) }
+                    appendLine("Run ./gradlew ${project.path}:jbUpdateForkDependencies to update the build file.")
                 }.trimEnd()
             )
         }
     }
 }
 
+@DisableCachingByDefault(because = "Updates source files.")
+internal abstract class UpdateForkDependenciesTask : DefaultTask() {
+    init {
+        group = "verification"
+        description = "Adds fork dependency verification suppressions for this project."
+        onlyIf { forkFile.exists() }
+        outputs.upToDateWhen { false }
+    }
+
+    private val buildFile: File get() = project.scriptFile("build")
+    private val forkFile: File get() = project.scriptFile("build-fork")
+
+    @TaskAction
+    fun update() {
+        val buildText = buildFile.readText()
+        val sourceSetNames = problematicSourceSetNames(buildText, forkFile.readText())
+        if (sourceSetNames.isNotEmpty()) {
+            buildFile.writeText(buildText.withForkDependencySuppressions(sourceSetNames))
+        }
+    }
+}
+
 internal fun Project.configureForkDependenciesTasks() {
     val verifyTask = tasks.register("jbVerifyForkDependencies", VerifyForkDependenciesTask::class.java)
+    tasks.register("jbUpdateForkDependencies", UpdateForkDependenciesTask::class.java)
     tasks.configureEach { task ->
         if (task.name.startsWith("compile")) {
             task.dependsOn(verifyTask)
         }
+    }
+}
+
+private fun problematicSourceSetNames(buildScript: String, forkScript: String): Set<String> {
+    val originalDependencies = declaredDependencies(buildScript)
+    val forkDependencies = declaredDependencies(forkScript)
+    return originalDependencies.mapNotNull { (sourceSetName, originalSourceSetDependencies) ->
+        val forkSourceSetDependencies = forkDependencies[sourceSetName] ?: return@mapNotNull null
+        sourceSetName.takeUnless { originalSourceSetDependencies.isSatisfiedByFork(forkSourceSetDependencies) }
+    }.toSet()
+}
+
+private fun String.withForkDependencySuppressions(sourceSetNames: Set<String>): String {
+    val sourceSetsBlock = extractBlock(this, "sourceSets {") ?: return this
+    val offset = indexOf(sourceSetsBlock)
+    val suppressions = MAIN_SOURCE_SET_REFERENCE.findAll(sourceSetsBlock)
+        .filter { it.groupValues[1] in sourceSetNames }
+        .map { match ->
+            val precedingLine = sourceSetsBlock.substring(0, match.range.first).trimEnd().substringAfterLast('\n')
+            match.takeUnless { precedingLine.trim() == "// $FORK_DEPENDENCIES_SUPPRESSION" }
+        }
+        .filterNotNull()
+        .map { match ->
+            val indentation = match.value.takeWhile(Char::isWhitespace)
+            offset + match.range.first to "$indentation// $FORK_DEPENDENCIES_SUPPRESSION\n"
+        }
+        .toList()
+    return suppressions.asReversed().fold(this) { script, (index, suppression) ->
+        script.substring(0, index) + suppression + script.substring(index)
     }
 }
 
