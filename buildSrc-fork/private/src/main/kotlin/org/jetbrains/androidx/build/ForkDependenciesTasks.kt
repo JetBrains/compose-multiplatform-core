@@ -58,9 +58,8 @@ internal abstract class VerifyForkDependenciesTask : DefaultTask() {
         if (problematicDependencies(buildFile.readText(), forkFile.readText()).isNotEmpty()) {
             throw GradleException(
                 buildString {
-                    appendLine("Problematic fork files:")
-                    appendLine(forkFile.invariantSeparatorsPath)
-                    appendLine("Run ./gradlew ${project.path}:jbUpdateForkDependencies to update the build file.")
+                    appendLine("Fork dependencies are out of date.")
+                    appendLine("Run ./gradlew ${project.path}:jbUpdateForkDependencies to update them.")
                 }.trimEnd()
             )
         }
