@@ -120,10 +120,8 @@ androidXMultiplatform {
         skikoMain {
             dependsOn(commonMain)
             dependencies {
-                // TODO(https://youtrack.jetbrains.com/issue/CMP-219) Remove API
-                api(libs.skiko)
                 // TODO(https://youtrack.jetbrains.com/issue/CMP-10338): Remove direct dependency
-                implementation(project(":compose:ui:ui-skiko"))
+                api(project(":compose:ui:ui-skiko"))
 
                 implementation(libs.atomicFu)
             }
