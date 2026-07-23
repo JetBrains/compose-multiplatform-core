@@ -90,15 +90,16 @@ internal fun Project.configureForkDependenciesTasks() {
 private fun declaredDependencies(script: String): Map<String, List<Dependency>> {
     val sourceSetsBlock = extractBlock(script, "sourceSets {") ?: return emptyMap()
     return MAIN_SOURCE_SET_REFERENCE.findAll(sourceSetsBlock).mapNotNull { match ->
+        val precedingLine = sourceSetsBlock.substring(0, match.range.first).trimEnd().substringAfterLast('\n')
+        if (precedingLine.trim() == "// $FORK_DEPENDENCIES_SUPPRESSION") {
+            return@mapNotNull null
+        }
         val sourceSetName = match.groupValues[1]
         val sourceSetBlock = extractBlock(sourceSetsBlock, match.value).orEmpty()
         val dependenciesBlock = if (".dependencies" in match.value) {
             sourceSetBlock
         } else {
             extractBlock(sourceSetBlock, "dependencies {").orEmpty()
-        }
-        if (FORK_DEPENDENCIES_SUPPRESSION in dependenciesBlock) {
-            return@mapNotNull null
         }
         sourceSetName to parseDependencies(dependenciesBlock)
     }.toMap()

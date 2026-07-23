@@ -154,8 +154,8 @@ class ForkDependenciesTasksTest {
             original = """
                 androidXMultiplatform {
                     sourceSets {
+                        // jbVerifyForkDependencies: suppress
                         commonMain.dependencies {
-                            // jbVerifyForkDependencies: suppress
                             api("androidx.lifecycle:lifecycle-common:2.10.0")
                         }
                     }
