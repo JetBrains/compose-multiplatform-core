@@ -89,7 +89,7 @@ internal fun Project.configureForkDependenciesTasks() {
 
 private fun declaredDependencies(script: String): Map<String, List<Dependency>> {
     val sourceSetsBlock = extractBlock(script, "sourceSets {") ?: return emptyMap()
-    return MAIN_SOURCE_SET_REFERENCE.findAll(sourceSetsBlock).associate { match ->
+    return MAIN_SOURCE_SET_REFERENCE.findAll(sourceSetsBlock).mapNotNull { match ->
         val sourceSetName = match.groupValues[1]
         val sourceSetBlock = extractBlock(sourceSetsBlock, match.value).orEmpty()
         val dependenciesBlock = if (".dependencies" in match.value) {
@@ -97,8 +97,11 @@ private fun declaredDependencies(script: String): Map<String, List<Dependency>> 
         } else {
             extractBlock(sourceSetBlock, "dependencies {").orEmpty()
         }
+        if (FORK_DEPENDENCIES_SUPPRESSION in dependenciesBlock) {
+            return@mapNotNull null
+        }
         sourceSetName to parseDependencies(dependenciesBlock)
-    }
+    }.toMap()
 }
 
 private fun Project.scriptFile(name: String): File =
@@ -129,6 +132,7 @@ private fun extractBlock(text: String, marker: String): String? {
 
 private val MAIN_SOURCE_SET_REFERENCE = Regex("""(?:val\s+)?(\w+Main)(?:\.dependencies|\s+by\s+\w+)?\s*\{""")
 private val DEPENDENCY_LINE = Regex("""(\w+)\s*\(\s*(.+?)\s*\)""")
+private const val FORK_DEPENDENCIES_SUPPRESSION = "jbVerifyForkDependencies: suppress"
 
 private fun parseDependency(declaration: String): ParsedDependency? {
     val match = DEPENDENCY_LINE.matchEntire(declaration) ?: return null
