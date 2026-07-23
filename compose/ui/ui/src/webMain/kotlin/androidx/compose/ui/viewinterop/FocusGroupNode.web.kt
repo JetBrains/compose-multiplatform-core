@@ -36,8 +36,10 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalInputModeManager
 import androidx.compose.ui.window.LocalComposeWindow
 import kotlinx.browser.window
+import org.w3c.dom.AddEventListenerOptions
 import org.w3c.dom.HTMLElement
 import org.w3c.dom.events.Event
+import org.w3c.dom.events.FocusEvent
 import org.w3c.dom.events.KeyboardEvent
 
 /**
@@ -107,7 +109,12 @@ private class FocusGroupPropertiesNode :
         }
     }
 
-    private val onFocusEvent = { _: Event ->
+    private var focusedInHtml = false
+
+    private val onFocusEvent = onFocusEvent@{ _: Event ->
+        if (focusedInHtml) return@onFocusEvent
+        focusedInHtml = true
+
         // Listen to Tab / Tab+Shift key down events to track where the focus moves.
         htmlElement?.addEventListener("keydown", tabKeyDownListener)
 
@@ -118,26 +125,33 @@ private class FocusGroupPropertiesNode :
         }
     }
 
-    private val onBlurEvent = { _: Event ->
-        htmlElement?.removeEventListener("keydown", tabKeyDownListener)
+    private val onBlurEvent = { event: Event ->
+        val blurEvent = event as FocusEvent
+        val isLeavingInteropContainer = blurEvent.relatedTarget == null
+            || htmlElement?.contains(blurEvent.relatedTarget as HTMLElement) != true
+
+      if (isLeavingInteropContainer) {
+          htmlElement?.removeEventListener("keydown", tabKeyDownListener)
+          focusedInHtml = false
+      }
 
         val composeWindow = currentValueOf(LocalComposeWindow)!!
         val isFocusInComposeContainer = composeWindow.isFocusInComposeContainer()
 
         // If the browser moved focus to a different element within the Compose-managed html-subtree,
         // then focus canvas again so it can handle key events.
-        if (isFocusInComposeContainer) {
+        if (isLeavingInteropContainer && isFocusInComposeContainer) {
             composeWindow.focusCanvas()
-        }
 
-        // Now let Compose move its own focus according to the earlier Tab keydown.
-        if (isFocusInComposeContainer && lastTabKeyDown != null) {
-            val direction = if (lastTabKeyDown?.shiftKey == true) {
-                FocusDirection.Previous
-            } else {
-                FocusDirection.Next
+            // Now let Compose move its own focus according to the earlier Tab keydown.
+            if (lastTabKeyDown != null) {
+                val direction = if (lastTabKeyDown?.shiftKey == true) {
+                    FocusDirection.Previous
+                } else {
+                    FocusDirection.Next
+                }
+                currentValueOf(LocalFocusManager).moveFocus(direction)
             }
-            currentValueOf(LocalFocusManager).moveFocus(direction)
         }
 
         lastTabKeyDown = null
@@ -146,13 +160,14 @@ private class FocusGroupPropertiesNode :
     override fun onAttach() {
         super.onAttach()
         htmlElement = getEmbeddedHtmlElement()
-        htmlElement?.addEventListener("focus", onFocusEvent)
-        htmlElement?.addEventListener("blur", onBlurEvent)
+        // capture=true to listen to focus/blur events on the children of the interop container
+        htmlElement?.addEventListener("focus", onFocusEvent, AddEventListenerOptions(capture = true))
+        htmlElement?.addEventListener("blur", onBlurEvent, AddEventListenerOptions(capture = true))
     }
 
     override fun onDetach() {
-        htmlElement?.removeEventListener("focus", onFocusEvent)
-        htmlElement?.removeEventListener("blur", onBlurEvent)
+        htmlElement?.removeEventListener("focus", onFocusEvent, AddEventListenerOptions(capture = true))
+        htmlElement?.removeEventListener("blur", onBlurEvent, AddEventListenerOptions(capture = true))
         super.onDetach()
     }
 
