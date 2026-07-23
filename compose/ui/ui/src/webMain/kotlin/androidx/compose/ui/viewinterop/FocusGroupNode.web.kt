@@ -77,11 +77,11 @@ private class FocusGroupPropertiesNode :
     Modifier.Node(), FocusPropertiesModifierNode, CompositionLocalConsumerModifierNode {
 
     private val onEnter: FocusEnterExitScope.() -> Unit = {
-        getEmbeddedHtmlElement().focus()
+        htmlElement?.focus()
     }
 
     private val onExit: FocusEnterExitScope.() -> Unit = {
-        getEmbeddedHtmlElement().blur()
+        htmlElement?.blur()
     }
 
     override fun applyFocusProperties(focusProperties: FocusProperties) {
