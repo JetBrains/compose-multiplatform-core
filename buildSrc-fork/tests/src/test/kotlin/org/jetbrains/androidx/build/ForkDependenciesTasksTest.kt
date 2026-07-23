@@ -146,6 +146,37 @@ class ForkDependenciesTasksTest {
         val result = gradleAndFail(root, "$PROJECT_PATH:jbVerifyForkDependencies")
 
         assertThat(result.output).contains("Problematic fork files:")
+        assertThat(result.output).contains("$PROJECT_PATH:jbUpdateForkDependencies")
+    }
+
+    @Test
+    fun `updates the build file with suppressions for mismatched source sets`() {
+        val root = createProject(
+            original = """
+                androidXMultiplatform {
+                    sourceSets {
+                        commonMain.dependencies {
+                            api("androidx.lifecycle:lifecycle-common:2.10.0")
+                        }
+                    }
+                }
+            """,
+            fork = """
+                androidXForkMultiplatform {
+                    sourceSets {
+                        commonMain.dependencies {
+                            api("androidx.lifecycle:lifecycle-common:2.9.0")
+                        }
+                    }
+                }
+            """,
+        )
+
+        gradle(root, "$PROJECT_PATH:jbUpdateForkDependencies")
+        gradle(root, "$PROJECT_PATH:jbVerifyForkDependencies")
+
+        assertThat(projectDir(root).resolve("build.gradle").readText())
+            .contains("// jbVerifyForkDependencies: suppress")
     }
 
     @Test
