@@ -16,6 +16,7 @@ on:
   push:
     branches:
       - jb-main
+      - integration
     paths: *gradle-paths
 
 jobs:
