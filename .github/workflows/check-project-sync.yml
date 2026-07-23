@@ -13,14 +13,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ ubuntu-24.04, macos-26-xlarge, windows-latest ]
-        include:
-          - os: ubuntu-24.04
-            name: Linux
-          - os: macos-26-xlarge
-            name: macOS
-          - os: windows-latest
-            name: Windows
-    name: ${{ matrix.name }}
+    name: ${{ matrix.os }}
     steps:
       - name: Enable Long Paths
         if: runner.os == 'Windows'
