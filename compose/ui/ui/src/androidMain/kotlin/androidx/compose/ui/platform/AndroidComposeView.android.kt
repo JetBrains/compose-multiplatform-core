@@ -290,8 +290,6 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
             }
             _composeViewContext = value
             coroutineContext = value.compositionContext.effectCoroutineContext
-            @OptIn(ExperimentalMediaQueryApi::class)
-            _uiMediaScope?._windowInfo = value.windowInfo
         }
 
     /**
