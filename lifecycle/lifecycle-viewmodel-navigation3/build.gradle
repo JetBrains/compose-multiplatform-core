@@ -47,8 +47,8 @@ androidXMultiplatform {
     defaultPlatform(PlatformIdentifier.ANDROID)
 
     sourceSets {
+        // jbVerifyForkDependencies: suppress
         commonMain.dependencies {
-            // jbVerifyForkDependencies: suppress
             api(project(":lifecycle:lifecycle-viewmodel"))
             api(project(":lifecycle:lifecycle-viewmodel-compose"))
             api(project(":lifecycle:lifecycle-viewmodel-savedstate"))

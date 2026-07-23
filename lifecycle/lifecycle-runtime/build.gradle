@@ -35,8 +35,8 @@ androidXMultiplatform {
         configureEach {
             languageSettings.optIn("kotlin.experimental.ExperimentalNativeApi")
         }
+        // jbVerifyForkDependencies: suppress
         commonMain.dependencies {
-            // jbVerifyForkDependencies: suppress
             api(project(":lifecycle:lifecycle-common"))
             api("androidx.annotation:annotation:1.9.1")
             implementation("androidx.collection:collection:1.5.0")
