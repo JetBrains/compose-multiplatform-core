@@ -145,7 +145,7 @@ class ForkDependenciesTasksTest {
 
         val result = gradleAndFail(root, "$PROJECT_PATH:jbVerifyForkDependencies")
 
-        assertThat(result.output).contains("Problematic fork files:")
+        assertThat(result.output).contains("Fork dependencies are out of date.")
         assertThat(result.output).contains("$PROJECT_PATH:jbUpdateForkDependencies")
     }
 
@@ -239,7 +239,7 @@ class ForkDependenciesTasksTest {
 
         val result = gradleAndFail(root, "$PROJECT_PATH:jbVerifyForkDependencies")
 
-        assertThat(result.output).contains("Problematic fork files:")
+        assertThat(result.output).contains("Fork dependencies are out of date.")
     }
 
     @Test
@@ -271,7 +271,7 @@ class ForkDependenciesTasksTest {
 
         val result = gradleAndFail(root, "$PROJECT_PATH:jbVerifyForkDependencies")
 
-        assertThat(result.output).contains("Problematic fork files:")
+        assertThat(result.output).contains("Fork dependencies are out of date.")
     }
 
     @Test
@@ -300,7 +300,7 @@ class ForkDependenciesTasksTest {
 
         val result = gradleAndFail(root, "$PROJECT_PATH:jbVerifyForkDependencies")
 
-        assertThat(result.output).contains("Problematic fork files:")
+        assertThat(result.output).contains("Fork dependencies are out of date.")
     }
 
     @Test
@@ -354,7 +354,7 @@ class ForkDependenciesTasksTest {
 
         val result = gradleAndFail(root, "$PROJECT_PATH:jbVerifyForkDependencies")
 
-        assertThat(result.output).contains("Problematic fork files:")
+        assertThat(result.output).contains("Fork dependencies are out of date.")
     }
 
     @Test
@@ -408,7 +408,7 @@ class ForkDependenciesTasksTest {
 
         val result = gradleAndFail(root, "$PROJECT_PATH:jbVerifyForkDependencies")
 
-        assertThat(result.output).contains("Problematic fork files:")
+        assertThat(result.output).contains("Fork dependencies are out of date.")
     }
 
     @Test
@@ -470,7 +470,7 @@ class ForkDependenciesTasksTest {
 
         val result = gradleAndFail(root, "$PROJECT_PATH:jbVerifyForkDependencies")
 
-        assertThat(result.output).contains("Problematic fork files:")
+        assertThat(result.output).contains("Fork dependencies are out of date.")
     }
 
     @Test
@@ -501,7 +501,7 @@ class ForkDependenciesTasksTest {
 
         val result = gradleAndFail(root, "$PROJECT_PATH:jbVerifyForkDependencies")
 
-        assertThat(result.output).contains("Problematic fork files:")
+        assertThat(result.output).contains("Fork dependencies are out of date.")
     }
 
     @Test
