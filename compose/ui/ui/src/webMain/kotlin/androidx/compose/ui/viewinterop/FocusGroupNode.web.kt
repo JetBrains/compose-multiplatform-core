@@ -70,8 +70,9 @@ private object FocusTargetInteropElement : ModifierNodeElement<FocusTargetNode>(
 
 private class FocusTargetPropertiesNode : Modifier.Node(), FocusPropertiesModifierNode {
     override fun applyFocusProperties(focusProperties: FocusProperties) {
-        val hasFocusable = getFirstFocusable(getEmbeddedHtmlContainer()) != null
-        focusProperties.canFocus = node.isAttached && hasFocusable
+        focusProperties.canFocus = node.isAttached
+            // find at least one focusable element inside the interop container
+            && getFirstFocusable(getEmbeddedHtmlContainer()) != null
     }
 }
 
