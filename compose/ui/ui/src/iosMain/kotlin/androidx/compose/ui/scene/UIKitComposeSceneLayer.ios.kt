@@ -27,9 +27,9 @@ import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.pointer.PointerButton
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.navigationevent.UIKitNavigationEventInput
+import androidx.compose.ui.platform.FrameChoreographer
 import androidx.compose.ui.platform.PlatformArchitectureComponentsOwner
 import androidx.compose.ui.platform.PlatformContext
-import androidx.compose.ui.platform.FrameChoreographer
 import androidx.compose.ui.uikit.ComposeContainerConfiguration
 import androidx.compose.ui.uikit.InterfaceOrientation
 import androidx.compose.ui.uikit.LocalUIViewController

@@ -25,10 +25,10 @@ import androidx.compose.ui.LocalSystemTheme
 import androidx.compose.ui.graphics.asComposeCanvas
 import androidx.compose.ui.navigationevent.UIKitNavigationEventInput
 import androidx.compose.ui.platform.DefaultArchitectureComponentsOwner
+import androidx.compose.ui.platform.FrameChoreographer
 import androidx.compose.ui.platform.MotionDurationScaleImpl
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.PlatformWindowContext
-import androidx.compose.ui.platform.FrameChoreographer
 import androidx.compose.ui.platform.registerSkikoComposeImplementation
 import androidx.compose.ui.uikit.ComposeContainerConfiguration
 import androidx.compose.ui.uikit.InterfaceOrientation
@@ -555,7 +555,7 @@ private fun UIUserInterfaceLayoutDirection.asLayoutDirection(): LayoutDirection 
 
 /**
  * Prevent cases where invalidate layout may be called during the rendering process,
- * which lead to another
+ * which lead to another frame rendering during the same frame.
  */
 internal class LayoutInvalidationHandler(
     coroutineContext: CoroutineContext,
@@ -577,6 +577,7 @@ internal class LayoutInvalidationHandler(
             return
         }
         doInvalidateLayout()
+        hasInvalidations = false
     }
 
     fun postponeLayoutInvalidationCalls(block: () -> Unit) {

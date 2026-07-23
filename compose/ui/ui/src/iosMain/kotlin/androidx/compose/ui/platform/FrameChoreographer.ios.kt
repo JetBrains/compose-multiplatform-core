@@ -18,10 +18,12 @@ package androidx.compose.ui.platform
 
 import androidx.annotation.VisibleForTesting
 import androidx.compose.runtime.TestOnly
+import androidx.compose.ui.node.WeakReference
 import androidx.compose.ui.uikit.toNanoSeconds
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.window.DisplayLinkFrameRate
 import androidx.compose.ui.window.MetalOutOfFrameExecutor
+import androidx.compose.ui.window.SceneActiveStateListener
 import kotlin.coroutines.CoroutineContext
 import kotlinx.cinterop.BetaInteropApi
 import kotlinx.cinterop.COpaquePointer
@@ -128,6 +130,23 @@ internal class FrameChoreographer private constructor(
         it.preferredFramesPerSecond = maximumFramesPerSecond
     }
 
+    private val sceneRef = WeakReference(scene)
+    private val activeStateListener = SceneActiveStateListener(
+        getScene = { sceneRef.get() },
+        onSceneActiveStateChanged = { active -> isSceneActive = active }
+    )
+
+    private var isSceneActive: Boolean = activeStateListener.isSceneActive
+        set(value) {
+            if (field == value) return
+            field = value
+            if (value) {
+                setNeedsRedraw()
+            } else {
+                displayLink.paused = true
+            }
+        }
+
     val outOfFrameExecutor = MetalOutOfFrameExecutor()
 
     private val listeners = mutableListOf<Listener>()
@@ -186,10 +205,12 @@ internal class FrameChoreographer private constructor(
         }
     }
 
-    private var advancedFramesCount = 2
+    private var advancedFramesCount = FramesToAdvanceAfterInvalidation
     fun setNeedsRedraw() {
         advancedFramesCount = FramesToAdvanceAfterInvalidation
-        displayLink.paused = false
+        if (isSceneActive) {
+            displayLink.paused = false
+        }
     }
 
     val targetTimestamp get() = displayLink.targetTimestamp
