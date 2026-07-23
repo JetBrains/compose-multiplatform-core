@@ -26,11 +26,15 @@ kotlin {
 
     sourceSets {
         jvmMain {
+            implementation(libs.skikoCurrentOs)
+            implementation(project(":compose:material3:material3"))
+            implementation(project(":compose:desktop:desktop"))
+        
 
         }
 
         jvmMain.dependencies {
-            implementation(libs.skikoAwtRuntime)
+            implementation(libs.skikoCurrentOs)
             implementation(project(":compose:material3:material3"))
             implementation(project(":compose:desktop:desktop"))
         }
