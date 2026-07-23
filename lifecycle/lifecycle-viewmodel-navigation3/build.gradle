@@ -48,6 +48,7 @@ androidXMultiplatform {
 
     sourceSets {
         commonMain.dependencies {
+            // jbVerifyForkDependencies: suppress
             api(project(":lifecycle:lifecycle-viewmodel"))
             api(project(":lifecycle:lifecycle-viewmodel-compose"))
             api(project(":lifecycle:lifecycle-viewmodel-savedstate"))
