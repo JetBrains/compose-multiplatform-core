@@ -138,7 +138,7 @@ private fun ComplexInteropWidget() {
     HtmlElementView(
         factory = {
             (document.createElement("div") as HTMLDivElement).apply {
-                setAttribute("tabindex", "-1")
+                // setAttribute("tabindex", "0")
                 setAttribute("style", "display:flex; flex-direction:column; gap:8px; border:1px solid #ccc; padding:4px;")
 
                 appendChild(document.createElement("span")).apply {

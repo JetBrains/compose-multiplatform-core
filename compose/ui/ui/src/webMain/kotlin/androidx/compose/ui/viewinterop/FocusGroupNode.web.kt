@@ -35,6 +35,7 @@ import androidx.compose.ui.node.visitLocalDescendants
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalInputModeManager
 import androidx.compose.ui.window.LocalComposeWindow
+import kotlin.js.js
 import kotlinx.browser.window
 import org.w3c.dom.AddEventListenerOptions
 import org.w3c.dom.HTMLElement
@@ -69,15 +70,25 @@ private object FocusTargetInteropElement : ModifierNodeElement<FocusTargetNode>(
 
 private class FocusTargetPropertiesNode : Modifier.Node(), FocusPropertiesModifierNode {
     override fun applyFocusProperties(focusProperties: FocusProperties) {
-        focusProperties.canFocus = node.isAttached
+        val hasFocusable = getFirstFocusable(getEmbeddedHtmlContainer()) != null
+        focusProperties.canFocus = node.isAttached && hasFocusable
     }
 }
 
 private class FocusGroupPropertiesNode :
     Modifier.Node(), FocusPropertiesModifierNode, CompositionLocalConsumerModifierNode {
 
+    private var lastTabKeyDown: KeyboardEvent? = null
+    private var htmlElement: HTMLElement? = null
+
     private val onEnter: FocusEnterExitScope.() -> Unit = {
-        htmlElement?.focus()
+        val focusTarget = when (requestedFocusDirection) {
+            FocusDirection.Previous,
+            FocusDirection.Up,
+            FocusDirection.Left -> getLastFocusable(getEmbeddedHtmlContainer())
+            else -> getFirstFocusable(getEmbeddedHtmlContainer())
+        }
+        focusTarget?.focus()
     }
 
     private val onExit: FocusEnterExitScope.() -> Unit = {
@@ -89,9 +100,6 @@ private class FocusGroupPropertiesNode :
         focusProperties.onEnter = onEnter
         focusProperties.onExit = onExit
     }
-
-    private var lastTabKeyDown: KeyboardEvent? = null
-    private var htmlElement: HTMLElement? = null
 
     private val tabKeyDownListener = { event: Event ->
         lastTabKeyDown = (event as? KeyboardEvent)?.takeIf {
@@ -159,7 +167,7 @@ private class FocusGroupPropertiesNode :
 
     override fun onAttach() {
         super.onAttach()
-        htmlElement = getEmbeddedHtmlElement()
+        htmlElement = getEmbeddedHtmlContainer()
         // capture=true to listen to focus/blur events on the children of the interop container
         htmlElement?.addEventListener("focus", onFocusEvent, AddEventListenerOptions(capture = true))
         htmlElement?.addEventListener("blur", onBlurEvent, AddEventListenerOptions(capture = true))
@@ -169,6 +177,7 @@ private class FocusGroupPropertiesNode :
         htmlElement?.removeEventListener("focus", onFocusEvent, AddEventListenerOptions(capture = true))
         htmlElement?.removeEventListener("blur", onBlurEvent, AddEventListenerOptions(capture = true))
         super.onDetach()
+        htmlElement = null
     }
 
     private fun getFocusTargetOfEmbeddedViewWrapper(): FocusTargetNode {
@@ -195,8 +204,99 @@ private object FocusTargetPropertiesElement : ModifierNodeElement<FocusTargetPro
     override fun equals(other: Any?) = other === this
 }
 
-private fun Modifier.Node.getEmbeddedHtmlElement(): HTMLElement {
-    return checkNotNull(node.requireLayoutNode().getInteropView()) {
-        "Could not fetch interop view"
-    } as HTMLElement
+private fun Modifier.Node.getEmbeddedHtmlContainer(): HTMLElement {
+    val interopView = node.requireLayoutNode().getInteropView() as? HTMLElement
+    checkNotNull(interopView) {"Could not fetch interop view" }
+    val interopContainer = interopView.parentElement as? HTMLElement
+    checkNotNull(interopContainer) {"Could not fetch interop container" }
+    return interopContainer
 }
+
+/**
+ * Gets the first focusable element inside [container].
+ * Uses TreeWalker for early-exit forward traversal.
+ */
+// language=js
+private fun getFirstFocusable(container: HTMLElement): HTMLElement? = js(
+    """
+    (() => {
+        if (!container) return null;
+
+        const selector = 'button:not([disabled]), [href], input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"]), [contenteditable]:not([contenteditable="false"]), summary, iframe, audio[controls], video[controls]';
+        
+        const isVisible = (node) => {
+            // 1. If checkVisibility exists and node is connected to DOM
+            if (typeof node.checkVisibility === 'function' && node.isConnected) {
+                return node.checkVisibility({ visibilityProperty: true, opacityProperty: true });
+            }
+            // 2. Fallback for detached nodes or browsers without checkVisibility
+            const style = window.getComputedStyle(node);
+            return style.display !== 'none' && style.visibility !== 'hidden' && style.opacity !== '0';
+        };
+
+        const walker = document.createTreeWalker(
+            container,
+            NodeFilter.SHOW_ELEMENT,
+            {
+                acceptNode(node) {
+                    if (!node.matches(selector)) return NodeFilter.FILTER_SKIP;
+                    if (node.closest('[inert]')) return NodeFilter.FILTER_SKIP;
+                    return isVisible(node) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP;
+                }
+            }
+        );
+
+        return walker.nextNode();
+    })()
+    """
+)
+
+/**
+ * Gets the last focusable element inside [container].
+ * Uses reverse depth-first traversal for instant early-exit from the end.
+ */
+// language=js
+private fun getLastFocusable(container: HTMLElement): HTMLElement? = js(
+    """
+    (() => {
+        if (!container) return null;
+
+        // 1. Jump directly to the deepest last leaf element
+        let lastLeaf = container;
+        while (lastLeaf.lastElementChild) {
+            lastLeaf = lastLeaf.lastElementChild;
+        }
+
+        // If the container has no child elements, return null
+        if (lastLeaf === container) return null;
+        
+        const selector = 'button:not([disabled]), [href], input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"]), [contenteditable]:not([contenteditable="false"]), summary, iframe, audio[controls], video[controls]';
+        
+        const isVisible = (node) => {
+            if (typeof node.checkVisibility === 'function' && node.isConnected) {
+                return node.checkVisibility({ visibilityProperty: true, opacityProperty: true });
+            }
+            const style = window.getComputedStyle(node);
+            return style.display !== 'none' && style.visibility !== 'hidden' && style.opacity !== '0';
+        };
+
+        const filter = {
+            acceptNode(node) {
+                if (!node.matches(selector)) return NodeFilter.FILTER_SKIP;
+                if (node.closest('[inert]')) return NodeFilter.FILTER_SKIP;
+                return isVisible(node) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP;
+            }
+        };
+
+        // 2. If the last leaf itself is focusable, return it immediately
+        if (filter.acceptNode(lastLeaf) === NodeFilter.FILTER_ACCEPT) {
+            return lastLeaf;
+        }
+
+        // 3. Otherwise, position TreeWalker at the leaf and walk BACKWARD natively!
+        const walker = document.createTreeWalker(container, NodeFilter.SHOW_ELEMENT, filter);
+        walker.currentNode = lastLeaf;
+        return walker.previousNode();
+    })()
+    """
+)
