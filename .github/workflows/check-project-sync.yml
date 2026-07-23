@@ -2,9 +2,21 @@ name: IDEA Sync
 on:
   workflow_dispatch:
   pull_request:
+    paths: &gradle-paths
+      - '**/*.gradle'
+      - '**/*.gradle.kts'
+      - '**/*.toml'
+      - '**/gradle.properties'
+      - 'gradle/**'
+      - 'buildSrc/**'
+      - 'buildSrc-fork/**'
+      - 'gradlew'
+      - 'gradlew.bat'
+      - '.github/workflows/check-project-sync.yml'
   push:
     branches:
       - jb-main
+    paths: *gradle-paths
 
 jobs:
   sync-project:
