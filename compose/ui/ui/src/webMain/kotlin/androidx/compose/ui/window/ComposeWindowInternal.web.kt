@@ -1119,7 +1119,7 @@ private fun Element.isFocused(): Boolean {
     return activeElement == this
 }
 
-internal external interface ShadowRootExt {
+private external interface ShadowRootExt {
     val activeElement: Element?
 }
 
