@@ -149,6 +149,33 @@ class ForkDependenciesTasksTest {
     }
 
     @Test
+    fun `allows suppressing fork dependency verification for a source set`() {
+        val root = createProject(
+            original = """
+                androidXMultiplatform {
+                    sourceSets {
+                        commonMain.dependencies {
+                            // jbVerifyForkDependencies: suppress
+                            api("androidx.lifecycle:lifecycle-common:2.10.0")
+                        }
+                    }
+                }
+            """,
+            fork = """
+                androidXForkMultiplatform {
+                    sourceSets {
+                        commonMain.dependencies {
+                            api("androidx.lifecycle:lifecycle-common:2.9.0")
+                        }
+                    }
+                }
+            """,
+        )
+
+        gradle(root, "$PROJECT_PATH:jbVerifyForkDependencies")
+    }
+
+    @Test
     fun `fail if wrong type`() {
         val root = createProject(
             original = """
