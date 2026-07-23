@@ -55,7 +55,7 @@ internal abstract class VerifyForkDependenciesTask : DefaultTask() {
 
     @TaskAction
     fun verify() {
-        if (problematicSourceSetNames(buildFile.readText(), forkFile.readText()).isNotEmpty()) {
+        if (problematicDependencies(buildFile.readText(), forkFile.readText()).isNotEmpty()) {
             throw GradleException(
                 buildString {
                     appendLine("Problematic fork files:")
@@ -81,10 +81,10 @@ internal abstract class UpdateForkDependenciesTask : DefaultTask() {
 
     @TaskAction
     fun update() {
-        val buildText = buildFile.readText()
-        val sourceSetNames = problematicSourceSetNames(buildText, forkFile.readText())
-        if (sourceSetNames.isNotEmpty()) {
-            buildFile.writeText(buildText.withForkDependencySuppressions(sourceSetNames))
+        val forkText = forkFile.readText()
+        val dependencies = problematicDependencies(buildFile.readText(), forkText)
+        if (dependencies.isNotEmpty()) {
+            forkFile.writeText(forkText.withUpdatedForkDependencies(dependencies))
         }
     }
 }
@@ -99,32 +99,47 @@ internal fun Project.configureForkDependenciesTasks() {
     }
 }
 
-private fun problematicSourceSetNames(buildScript: String, forkScript: String): Set<String> {
+private fun problematicDependencies(
+    buildScript: String,
+    forkScript: String,
+): Map<String, List<Dependency>> {
     val originalDependencies = declaredDependencies(buildScript)
     val forkDependencies = declaredDependencies(forkScript)
     return originalDependencies.mapNotNull { (sourceSetName, originalSourceSetDependencies) ->
         val forkSourceSetDependencies = forkDependencies[sourceSetName] ?: return@mapNotNull null
-        sourceSetName.takeUnless { originalSourceSetDependencies.isSatisfiedByFork(forkSourceSetDependencies) }
-    }.toSet()
+        (sourceSetName to originalSourceSetDependencies)
+            .takeUnless { originalSourceSetDependencies.isSatisfiedByFork(forkSourceSetDependencies) }
+    }.toMap()
 }
 
-private fun String.withForkDependencySuppressions(sourceSetNames: Set<String>): String {
+private fun String.withUpdatedForkDependencies(dependencies: Map<String, List<Dependency>>): String {
     val sourceSetsBlock = extractBlock(this, "sourceSets {") ?: return this
     val offset = indexOf(sourceSetsBlock)
-    val suppressions = MAIN_SOURCE_SET_REFERENCE.findAll(sourceSetsBlock)
-        .filter { it.groupValues[1] in sourceSetNames }
-        .map { match ->
-            val precedingLine = sourceSetsBlock.substring(0, match.range.first).trimEnd().substringAfterLast('\n')
-            match.takeUnless { precedingLine.trim() == "// $FORK_DEPENDENCIES_SUPPRESSION" }
-        }
-        .filterNotNull()
-        .map { match ->
-            val indentation = match.value.takeWhile(Char::isWhitespace)
-            offset + match.range.first to "$indentation// $FORK_DEPENDENCIES_SUPPRESSION\n"
+    val replacements = MAIN_SOURCE_SET_REFERENCE.findAll(sourceSetsBlock)
+        .mapNotNull { match ->
+            val declarations = dependencies[match.groupValues[1]] ?: return@mapNotNull null
+            val sourceSetBlock = extractBlock(sourceSetsBlock, match.value).orEmpty()
+            val dependenciesBlock = if (".dependencies" in match.value) {
+                sourceSetBlock
+            } else {
+                extractBlock(sourceSetBlock, "dependencies {").orEmpty()
+            }
+            val blockOffset = sourceSetsBlock.indexOf(dependenciesBlock, match.range.last + 1)
+            val contentStart = offset + blockOffset
+            val contentEnd = contentStart + dependenciesBlock.length
+            val indentation = dependenciesBlock.lineSequence()
+                .firstOrNull { it.isNotBlank() }
+                ?.takeWhile(Char::isWhitespace)
+                ?: ""
+            contentStart to contentEnd to declarations.joinToString(
+                separator = "\n",
+                prefix = "\n$indentation",
+                postfix = "\n${dependenciesBlock.substringAfterLast('\n')}",
+            )
         }
         .toList()
-    return suppressions.asReversed().fold(this) { script, (index, suppression) ->
-        script.substring(0, index) + suppression + script.substring(index)
+    return replacements.asReversed().fold(this) { script, (range, declarations) ->
+        script.substring(0, range.first) + declarations + script.substring(range.second)
     }
 }
 

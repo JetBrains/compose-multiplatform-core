@@ -150,7 +150,7 @@ class ForkDependenciesTasksTest {
     }
 
     @Test
-    fun `updates the build file with suppressions for mismatched source sets`() {
+    fun `updates fork dependencies for mismatched source sets`() {
         val root = createProject(
             original = """
                 androidXMultiplatform {
@@ -175,8 +175,8 @@ class ForkDependenciesTasksTest {
         gradle(root, "$PROJECT_PATH:jbUpdateForkDependencies")
         gradle(root, "$PROJECT_PATH:jbVerifyForkDependencies")
 
-        assertThat(projectDir(root).resolve("build.gradle").readText())
-            .contains("// jbVerifyForkDependencies: suppress")
+        assertThat(projectDir(root).resolve("build-fork.gradle").readText())
+            .contains("api(\"androidx.lifecycle:lifecycle-common:2.10.0\")")
     }
 
     @Test
@@ -203,7 +203,11 @@ class ForkDependenciesTasksTest {
             """,
         )
 
+        gradle(root, "$PROJECT_PATH:jbUpdateForkDependencies")
         gradle(root, "$PROJECT_PATH:jbVerifyForkDependencies")
+
+        assertThat(projectDir(root).resolve("build-fork.gradle").readText())
+            .contains("api(\"androidx.lifecycle:lifecycle-common:2.9.0\")")
     }
 
     @Test
