@@ -640,7 +640,7 @@ class ForkDependenciesTasksTest {
     }
 
     @Test
-    fun `updates wrong dependency without changing fork configuration`() {
+    fun `updates wrong dependency to fork artifact version`() {
         val root = createProject(
             original = """
                 androidXMultiplatform {
@@ -669,7 +669,7 @@ class ForkDependenciesTasksTest {
                 androidXForkMultiplatform {
                     sourceSets {
                         commonMain.dependencies {
-                            implementation("org.jetbrains.compose.animation:animation:1.10.0")
+                            api("org.jetbrains.compose.animation:animation:1.10.0")
                         }
                     }
                 }
