@@ -131,7 +131,7 @@ private fun String.withUpdatedForkDependencies(dependencies: Map<String, List<De
                 ?.takeWhile(Char::isWhitespace)
                 ?: ""
             contentStart to contentEnd to declarations.joinToString(
-                separator = "\n",
+                separator = "\n$indentation",
                 prefix = "\n$indentation",
                 postfix = "\n${dependenciesBlock.substringAfterLast('\n')}",
             )

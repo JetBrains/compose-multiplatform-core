@@ -239,11 +239,18 @@ class ForkDependenciesTasksTest {
 
         gradle(root, "$PROJECT_PATH:jbUpdateForkDependencies")
 
-        val updatedFork = projectDir(root).resolve("build-fork.gradle").readText()
-        assertThat(updatedFork)
-            .contains("implementation(\"org.jetbrains.lifecycle:lifecycle-common:2.11.0\")")
-        assertThat(updatedFork)
-            .contains("implementation(\"androidx.lifecycle:lifecycle-runtime:2.10.0\")")
+        assertThat(projectDir(root).resolve("build-fork.gradle").readText()).isEqualTo(
+            """
+                androidXForkMultiplatform {
+                    sourceSets {
+                        commonMain.dependencies {
+                            implementation("org.jetbrains.lifecycle:lifecycle-common:2.11.0")
+                            implementation("androidx.lifecycle:lifecycle-runtime:2.10.0")
+                        }
+                    }
+                }
+            """.trimIndent()
+        )
     }
 
     @Test
