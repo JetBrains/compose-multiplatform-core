@@ -37,10 +37,10 @@ import platform.UIKit.UIView
 import platform.UIKit.UIViewAnimationOptionCurveEaseInOut
 import platform.UIKit.UIViewAnimationOptions
 
-internal class ComposeSceneKeyboardOffsetManager(
+internal class KeyboardInsetsManager(
     private val view: UIView,
     private val frameChoreographer: FrameChoreographer,
-    private val keyboardOverlapHeightChanged: (Dp) -> Unit
+    private val onKeyboardOverlapHeightChanged: (Dp) -> Unit
 ) : KeyboardVisibilityObserver, FrameChoreographer.Listener {
     private var isDisposed: Boolean = false
     private var isStarted = false
@@ -82,7 +82,7 @@ internal class ComposeSceneKeyboardOffsetManager(
     }
 
     fun dispose() {
-        check(!isDisposed) { "ComposeSceneKeyboardOffsetManager is already disposed" }
+        check(!isDisposed) { "KeyboardInsetsManager is already disposed" }
         isDisposed = true
         stop()
         activitiesHandler.dispose()
@@ -107,7 +107,7 @@ internal class ComposeSceneKeyboardOffsetManager(
 
     override fun onDisplayLinkTick() {
         activeAnimation?.let { animation ->
-            keyboardOverlapHeightChanged(animation.keyboardOverlapHeight())
+            onKeyboardOverlapHeightChanged(animation.keyboardOverlapHeight())
         }
     }
 
@@ -192,7 +192,7 @@ internal class ComposeSceneKeyboardOffsetManager(
         cancelActiveAnimation()
 
         if (previousKeyboardHeight == keyboardHeight) {
-            keyboardOverlapHeightChanged(max(0.0, keyboardHeight - viewBottomIndent).dp)
+            onKeyboardOverlapHeightChanged(max(0.0, keyboardHeight - viewBottomIndent).dp)
             return
         }
 
@@ -240,7 +240,7 @@ internal class ComposeSceneKeyboardOffsetManager(
         }
 
         val finalOverlapHeight = animation.keyboardOverlapHeight(progress = 1.0)
-        keyboardOverlapHeightChanged(finalOverlapHeight)
+        onKeyboardOverlapHeightChanged(finalOverlapHeight)
         activeAnimation = null
         activitiesHandler.onActivitiesEnded()
         animation.view.removeFromSuperview()

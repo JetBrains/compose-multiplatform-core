@@ -93,7 +93,7 @@ import androidx.compose.ui.viewinterop.TrackInteropPlacementContainer
 import androidx.compose.ui.viewinterop.UIKitInteropContainer
 import androidx.compose.ui.viewinterop.UIKitInteropTransaction
 import androidx.compose.ui.window.BackgroundInputView
-import androidx.compose.ui.window.ComposeSceneKeyboardOffsetManager
+import androidx.compose.ui.window.KeyboardInsetsManager
 import androidx.compose.ui.window.FocusedViewsList
 import androidx.compose.ui.window.OverlayInputView
 import androidx.compose.ui.window.PlatformPrefetchSchedulerImpl
@@ -408,11 +408,11 @@ internal class ComposeSceneMediator(
             }
         }
 
-    private val keyboardManager: ComposeSceneKeyboardOffsetManager by lazy {
-        ComposeSceneKeyboardOffsetManager(
+    private val keyboardManager: KeyboardInsetsManager by lazy {
+        KeyboardInsetsManager(
             view = _overlayView,
             frameChoreographer = frameChoreographer,
-            keyboardOverlapHeightChanged = { height ->
+            onKeyboardOverlapHeightChanged = { height ->
                 val heightPx = with(screenDensity) { height.roundToPx() }
                 if (windowInsetsManager.keyboardOverlapHeight.value != heightPx) {
                     animateKeyboardOffsetChanges = false
