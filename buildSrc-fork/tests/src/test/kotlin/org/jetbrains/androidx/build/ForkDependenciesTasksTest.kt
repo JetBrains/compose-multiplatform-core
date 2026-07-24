@@ -403,7 +403,7 @@ class ForkDependenciesTasksTest {
     }
 
     @Test
-    fun `don't fail if version is greater`() {
+    fun `don't fail if minor version is greater`() {
         val root = createProject(
             original = """
                 androidXMultiplatform {

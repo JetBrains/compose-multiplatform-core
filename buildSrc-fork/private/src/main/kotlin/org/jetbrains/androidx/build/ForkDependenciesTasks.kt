@@ -234,7 +234,8 @@ private fun String.isCompatibleWith(originalVersion: String): Boolean {
 
     val forkVersion = Version.parseOrNull(this) ?: return false
     val original = Version.parseOrNull(originalVersion) ?: return false
-    return forkVersion >= original
+    return forkVersion.major > original.major ||
+        forkVersion.major == original.major && forkVersion.minor >= original.minor
 }
 
 private fun List<Dependency>.isSatisfiedByFork(

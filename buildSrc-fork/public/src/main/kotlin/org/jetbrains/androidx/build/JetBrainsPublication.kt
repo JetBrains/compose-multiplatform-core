@@ -174,7 +174,8 @@ object JetBrainsPublication {
     fun isEquivalentForkGroupFor(originalGroup: String, forkGroup: String): Boolean =
         forkGroup == originalGroup ||
             originalGroup.startsWith(ANDROIDX_GROUP_PREFIX) &&
-                forkGroup == "org.jetbrains.${originalGroup.removePrefix(ANDROIDX_GROUP_PREFIX)}"
+                (forkGroup == "org.jetbrains.${originalGroup.removePrefix(ANDROIDX_GROUP_PREFIX)}" ||
+                    forkGroup == "org.jetbrains.androidx.${originalGroup.removePrefix(ANDROIDX_GROUP_PREFIX)}")
 
     val projectPathToComponent: Map<String, ComposeComponent> = libraryToComponents.values
         .flatten().associateBy { it.path }
