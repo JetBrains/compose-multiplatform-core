@@ -15,10 +15,9 @@
  */
 
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
 
@@ -51,6 +50,11 @@ androidXMultiplatform {
             api(libs.kotlinTest)
         }
 
+        create("nonJsCommonMain").dependsOn(commonMain)
+        jvmMain.dependsOn(nonJsCommonMain)
+        nativeMain.dependsOn(nonJsCommonMain)
+        wasmJsMain.dependsOn(nonJsCommonMain)
+
         jvmMain.dependencies {
             implementation(libs.guavaAndroid)
             implementation(libs.junit)
@@ -61,7 +65,6 @@ androidXMultiplatform {
         }
 
         webTest.dependencies {
-            implementation(libs.kotlinTest)
             implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")
             implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.9.0")
         }

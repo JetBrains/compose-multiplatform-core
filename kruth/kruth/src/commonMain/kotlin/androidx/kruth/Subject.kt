@@ -20,7 +20,6 @@ import androidx.kruth.Fact.Companion.fact
 import androidx.kruth.Fact.Companion.simpleFact
 import androidx.kruth.OldAndNewValuesAreSimilar.DIFFERENT
 import androidx.kruth.OldAndNewValuesAreSimilar.SIMILAR
-import kotlin.reflect.KClass
 import kotlin.reflect.typeOf
 
 // As opposed to Truth, which limits visibility on `actual` and the generic type, we purposely make
@@ -353,7 +352,7 @@ internal constructor(
     private fun Any?.toStringForAssert(): String =
         when {
             this == null -> toString()
-            isIntegralBoxedPrimitive() -> "${this::class.canonicalName}<$this>"
+            isIntegralBoxedPrimitive() -> "${this::class.qName}<$this>"
             else -> toString()
         }
 
@@ -503,5 +502,3 @@ internal fun lenientFormat(template: String, args: Array<out Any?>): String {
         else -> "$formattedString [${argsToLenientStrings.subList(i, argsToLenientStrings.size)}]"
     }
 }
-
-internal expect val <T : Any> KClass<T>.canonicalName: String?
