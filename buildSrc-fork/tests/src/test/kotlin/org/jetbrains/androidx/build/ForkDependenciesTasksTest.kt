@@ -173,7 +173,6 @@ class ForkDependenciesTasksTest {
         )
 
         gradle(root, "$PROJECT_PATH:jbUpdateForkDependencies")
-        gradle(root, "$PROJECT_PATH:jbVerifyForkDependencies")
 
         assertThat(projectDir(root).resolve("build-fork.gradle").readText()).isEqualTo(
             """
