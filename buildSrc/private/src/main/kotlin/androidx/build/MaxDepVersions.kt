@@ -33,24 +33,10 @@ internal fun Project.configureMaxDepVersions(extension: AndroidXExtension) {
                 if (requested is ModuleComponentSelector) {
                     val module = requested.group + ":" + requested.module
                     if (projectModules.containsKey(module)) {
-                        val targetProject = project(projectModules[module]!!)
-                        if (shouldSubstituteDependency(requested.version, targetProject.version)) {
-                            dep.useTarget(targetProject)
-                        }
+                        dep.useTarget(project(projectModules[module]!!))
                     }
                 }
             }
         }
     }
-}
-
-/**
- * Returns whether a dependency should be replaced with the local project. Build metadata is
- * intentionally ignored by [Version.compareTo], so a fork-specific version such as
- * `1.2.3+fork` remains compatible with the original `1.2.3` dependency.
- */
-internal fun shouldSubstituteDependency(requestedVersion: String, projectVersion: Any): Boolean {
-    val requested = Version.parseOrNull(requestedVersion)
-    val target = Version.parseOrNull(projectVersion.toString())
-    return requested == null || target == null || requested.compareTo(target) != 0
 }
