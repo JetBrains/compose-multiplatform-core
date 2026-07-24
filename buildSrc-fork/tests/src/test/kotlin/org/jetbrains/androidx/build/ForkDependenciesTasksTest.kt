@@ -188,6 +188,46 @@ class ForkDependenciesTasksTest {
     }
 
     @Test
+    fun `updates inserted dependency without replacing compatible fork dependency`() {
+        val root = createProject(
+            original = """
+                androidXMultiplatform {
+                    sourceSets {
+                        commonMain.dependencies {
+                            api("androidx.annotation:annotation:1.9.1")
+                            api("androidx.lifecycle:lifecycle-common:2.11.0-beta01")
+                        }
+                    }
+                }
+            """,
+            fork = """
+                androidXForkMultiplatform {
+                    sourceSets {
+                        commonMain.dependencies {
+                            api("org.jetbrains.androidx.lifecycle:lifecycle-common:2.11.0-beta01")
+                        }
+                    }
+                }
+            """,
+        )
+
+        gradle(root, "$PROJECT_PATH:jbUpdateForkDependencies")
+
+        assertThat(projectDir(root).resolve("build-fork.gradle").readText()).isEqualTo(
+            """
+                androidXForkMultiplatform {
+                    sourceSets {
+                        commonMain.dependencies {
+                            api("androidx.annotation:annotation:1.9.1")
+                            api("org.jetbrains.androidx.lifecycle:lifecycle-common:2.11.0-beta01")
+                        }
+                    }
+                }
+            """.trimIndent()
+        )
+    }
+
+    @Test
     fun `updates fork dependencies without replacing compatible forked groups`() {
         val root = createProject(
             original = """

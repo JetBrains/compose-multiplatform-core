@@ -46,13 +46,13 @@ androidXMultiplatform {
 
     sourceSets {
         commonMain.dependencies {
-            api(project(":navigation:navigation-runtime"))
-            api(project(":navigation:navigation-common"))
-            api("org.jetbrains.compose.animation:animation:1.10.0")
+            api(project(":navigation:navigation-runtime")
+            api(project(":navigation:navigation-common")
+            implementation("androidx.annotation:annotation:1.8.0")
             api("org.jetbrains.compose.runtime:runtime:1.10.0")
-            api("org.jetbrains.compose.runtime:runtime-saveable:1.10.0")
-            api("org.jetbrains.compose.ui:ui:1.10.0")
-            api("org.jetbrains.compose.animation:animation:1.10.0")
+            api("androidx.compose.ui:ui:1.7.2")
+            api("androidx.compose.animation:animation:1.7.2")
+            api("androidx.compose.runtime:runtime-saveable:1.7.2")
             implementation("org.jetbrains.compose.animation:animation-core:1.10.0")
             implementation("org.jetbrains.compose.foundation:foundation-layout:1.10.0")
             implementation("androidx.collection:collection:1.5.0")
