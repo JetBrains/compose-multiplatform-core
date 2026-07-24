@@ -351,6 +351,44 @@ class ForkDependenciesTasksTest {
     }
 
     @Test
+    fun `updates incompatible fork dependency to fork version`() {
+        val root = createProject(
+            original = """
+                androidXMultiplatform {
+                    sourceSets {
+                        commonMain.dependencies {
+                            api("androidx.savedstate:savedstate:1.5.2")
+                        }
+                    }
+                }
+            """,
+            fork = """
+                androidXForkMultiplatform {
+                    sourceSets {
+                        commonMain.dependencies {
+                            api("org.jetbrains.androidx.savedstate:savedstate:1.4.3")
+                        }
+                    }
+                }
+            """,
+        )
+
+        gradle(root, "$PROJECT_PATH:jbUpdateForkDependencies")
+
+        assertThat(projectDir(root).resolve("build-fork.gradle").readText()).isEqualTo(
+            """
+                androidXForkMultiplatform {
+                    sourceSets {
+                        commonMain.dependencies {
+                            api("org.jetbrains.androidx.savedstate:savedstate:1.5.0")
+                        }
+                    }
+                }
+            """.trimIndent()
+        )
+    }
+
+    @Test
     fun `allows suppressing fork dependency verification for a source set`() {
         val root = createProject(
             original = """
