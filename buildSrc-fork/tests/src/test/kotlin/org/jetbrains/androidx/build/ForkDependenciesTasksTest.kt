@@ -538,6 +538,32 @@ class ForkDependenciesTasksTest {
     }
 
     @Test
+    fun `fails if version is lower`() {
+        val root = createProject(
+            original = """
+                androidXMultiplatform {
+                    sourceSets {
+                        commonMain.dependencies {
+                            api("androidx.lifecycle:lifecycle-common:2.10.0")
+                        }
+                    }
+                }
+            """,
+            fork = """
+                androidXMultiplatform {
+                    sourceSets {
+                        commonMain.dependencies {
+                            api("androidx.lifecycle:lifecycle-common:2.9.0")
+                        }
+                    }
+                }
+            """,
+        )
+
+        verifyThenUpdate(root)
+    }
+
+    @Test
     fun `don't fail if fork uses project`() {
         val root = createProject(
             original = """
@@ -656,6 +682,66 @@ class ForkDependenciesTasksTest {
                     sourceSets {
                         commonMain.dependencies {
                             api("androidx.lifecycle:lifecycle-common:2.10.0")
+                        }
+                    }
+                }
+            """,
+        )
+
+        verifyThenUpdate(root)
+    }
+
+    @Test
+    fun `does not fail for compatible fork group`() {
+        val root = createProject(
+            original = """
+                androidXMultiplatform {
+                    sourceSets {
+                        commonMain.dependencies {
+                            implementation("androidx.lifecycle:lifecycle-common:2.10.0")
+                            implementation("com.example:tool:1.5.0")
+                            implementation("com.example:extra:1.0.0")
+                        }
+                    }
+                }
+            """,
+            fork = """
+                androidXMultiplatform {
+                    sourceSets {
+                        commonMain.dependencies {
+                            implementation("org.jetbrains.lifecycle:lifecycle-common:2.10.3")
+                            implementation("com.example:tool:1.5.0")
+                            implementation("com.example:extra:1.0.0")
+                        }
+                    }
+                }
+            """,
+        )
+
+        verifyThenUpdate(root, isOutOfDate = false)
+    }
+
+    @Test
+    fun `fails for lower version in fork group`() {
+        val root = createProject(
+            original = """
+                androidXMultiplatform {
+                    sourceSets {
+                        commonMain.dependencies {
+                            implementation("androidx.lifecycle:lifecycle-common:2.10.0")
+                            implementation("com.example:tool:1.5.0")
+                            implementation("com.example:extra:1.0.0")
+                        }
+                    }
+                }
+            """,
+            fork = """
+                androidXMultiplatform {
+                    sourceSets {
+                        commonMain.dependencies {
+                            implementation("org.jetbrains.lifecycle:lifecycle-common:2.9.3")
+                            implementation("com.example:tool:1.5.0")
+                            implementation("com.example:extra:1.0.0")
                         }
                     }
                 }
