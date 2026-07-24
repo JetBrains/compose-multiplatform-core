@@ -52,13 +52,14 @@ androidXMultiplatform {
     sourceSets {
         commonMain {
             dependencies {
-                // Keep direct references to fork versions to correctly resolve
-                // new redirections to Google's artifacts.
-                api(project(":lifecycle:lifecycle-common"))
-                api(project(":lifecycle:lifecycle-viewmodel"))
-                api(project(":lifecycle:lifecycle-viewmodel-savedstate"))
-                api("org.jetbrains.compose.runtime:runtime:1.11.0")
-                api("org.jetbrains.compose.runtime:runtime-saveable:1.11.0")
+                api(project(":lifecycle:lifecycle-common")
+                api(project(":lifecycle:lifecycle-viewmodel")
+                api(project(":lifecycle:lifecycle-viewmodel-savedstate")
+                api("androidx.annotation:annotation:1.9.1")
+                api("androidx.compose.runtime:runtime:1.11.0")
+                api("androidx.compose.runtime:runtime-saveable:1.11.0")
+                api(libs.kotlinSerializationCore)
+                implementation(project(":lifecycle:lifecycle-runtime-compose")
             }
         }
     }
