@@ -523,6 +523,44 @@ class ForkDependenciesTasksTest {
     }
 
     @Test
+    fun `updates artifact dependency to project dependency`() {
+        val root = createProject(
+            original = """
+                androidXMultiplatform {
+                    sourceSets {
+                        commonMain.dependencies {
+                            api(project(":compose:material3:adaptive:adaptive"))
+                        }
+                    }
+                }
+            """,
+            fork = """
+                androidXForkMultiplatform {
+                    sourceSets {
+                        commonMain.dependencies {
+                            api("androidx.collection:collection:1.5.0")
+                        }
+                    }
+                }
+            """,
+        )
+
+        gradle(root, "$PROJECT_PATH:jbUpdateForkDependencies")
+
+        assertThat(projectDir(root).resolve("build-fork.gradle").readText()).isEqualTo(
+            """
+                androidXForkMultiplatform {
+                    sourceSets {
+                        commonMain.dependencies {
+                            api(project(":compose:material3:adaptive:adaptive"))
+                        }
+                    }
+                }
+            """.trimIndent()
+        )
+    }
+
+    @Test
     fun `fail if fork uses artifact instead of project`() {
         val root = createProject(
             original = """
