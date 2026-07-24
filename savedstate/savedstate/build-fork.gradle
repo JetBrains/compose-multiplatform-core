@@ -39,11 +39,9 @@ androidXMultiplatform {
     sourceSets {
         commonMain {
             dependencies {
-                api("androidx.annotation:annotation:1.9.1")
-                implementation("androidx.lifecycle:lifecycle-common:2.9.2")
-                implementation("androidx.collection:collection:1.5.0")
-                api(libs.kotlinCoroutinesCore)
-                api(libs.kotlinSerializationCore)
+                // Keep direct references to fork versions to correctly resolve
+                // new redirections to Google's artifacts.
+                implementation("org.jetbrains.androidx.lifecycle:lifecycle-common:2.9.6")
             }
         }
     }

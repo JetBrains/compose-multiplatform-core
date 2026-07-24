@@ -54,8 +54,8 @@ androidXMultiplatform {
         def navigationEventVersion = project.redirectVersions.get('androidx.navigationevent')
 
         commonMain.dependencies {
-            api(project(":navigation3:navigation3-runtime")
-            api("androidx.navigationevent:navigationevent-compose:1.1.1")
+            api("androidx.navigation3:navigation3-runtime:$navigation3Version")
+            api("org.jetbrains.androidx.navigationevent:navigationevent-compose:1.1.0")
             api("org.jetbrains.compose.animation:animation:1.10.0")
             api("org.jetbrains.compose.runtime:runtime:1.10.0")
             api("org.jetbrains.compose.runtime:runtime-saveable:1.10.0")

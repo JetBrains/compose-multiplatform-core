@@ -74,15 +74,18 @@ androidXMultiplatform {
             implementation(libs.kotlinCoroutinesCore)
             api("androidx.annotation:annotation:1.9.1")
             implementation("androidx.collection:collection:1.5.0")
-            implementation(project(":compose:runtime:runtime")
-            api(project(":compose:runtime:runtime-retain")
-            api(project(":compose:runtime:runtime-saveable")
-            api(project(":compose:ui:ui-geometry")
-            api(project(":compose:ui:ui-graphics")
-            api(project(":compose:ui:ui-text")
-            api(project(":compose:ui:ui-unit")
-            api(project(":compose:ui:ui-util")
-            api("androidx.lifecycle:lifecycle-runtime-compose:2.8.7")
+            // when updating the runtime version please also update the runtime-saveable version
+            implementation(project(":compose:runtime:runtime"))
+            api("androidx.compose.runtime:runtime-retain:$composeVersion")
+            api(project(":compose:runtime:runtime-saveable"))
+
+            api(project(":compose:ui:ui-geometry"))
+            api(project(":compose:ui:ui-graphics"))
+            api(project(":compose:ui:ui-text"))
+            api(project(":compose:ui:ui-unit"))
+            api(project(":compose:ui:ui-util"))
+
+            api("org.jetbrains.androidx.lifecycle:lifecycle-runtime-compose:2.9.6")
             api("androidx.savedstate:savedstate-compose:1.4.0")
         }
 
@@ -95,14 +98,17 @@ androidXMultiplatform {
         }
 
         jvmAndAndroidMain.dependencies {
-api(libs.jspecify)
         }
 
         androidMain.dependencies {
             api("androidx.annotation:annotation-experimental:1.4.1")
-            compileOnly(project(":compose:ui:ui-android-stubs")
+            // This has stub APIs for access to legacy Android APIs, so we don't want
+            // any dependency on this module.
+            compileOnly(project(":compose:ui:ui-android-stubs"))
             implementation("androidx.autofill:autofill:1.0.0")
             implementation(libs.kotlinCoroutinesAndroid)
+            api(libs.jspecify)
+
             implementation("androidx.activity:activity-ktx:1.7.0")
             implementation("androidx.core:core:1.16.0")
             implementation("androidx.collection:collection:1.4.2")
@@ -112,8 +118,19 @@ api(libs.jspecify)
             implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.9.2")
             implementation("androidx.emoji2:emoji2:1.2.0")
             implementation("androidx.window:window:1.5.0")
+
             implementation("androidx.profileinstaller:profileinstaller:1.4.0")
+
+            // `compose-ui` has a transitive dependency on `lifecycle-livedata-core`, and
+            // converting `lifecycle-runtime-compose` to KMP triggered a Gradle bug. Adding
+            // the `livedata` dependency directly works around the issue.
+            // See https://github.com/gradle/gradle/issues/14220 for details.
             compileOnly("androidx.lifecycle:lifecycle-livedata-core:2.8.7")
+
+            // `compose-ui` has a transitive dependency on `lifecycle-viewmodel-savedstate`, and
+            // converting `lifecycle-runtime-compose` to KMP triggered a Gradle bug. Adding
+            // the `lifecycle-viewmodel-savedstate` dependency directly works around the issue.
+            // See https://github.com/gradle/gradle/issues/14220 for details.
             compileOnly("androidx.lifecycle:lifecycle-viewmodel-savedstate:2.9.2")
         }
 

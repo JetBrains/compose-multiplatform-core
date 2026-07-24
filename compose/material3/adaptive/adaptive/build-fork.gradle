@@ -52,7 +52,7 @@ androidXMultiplatform {
         commonMain.dependencies {
             implementation("org.jetbrains.compose.foundation:foundation:1.10.0")
             implementation("org.jetbrains.compose.ui:ui:1.10.0")
-            api("androidx.window:window-core:1.5.0")
+            api("org.jetbrains.androidx.window:window-core:1.5.0")
         }
 
         androidMain.dependencies {
