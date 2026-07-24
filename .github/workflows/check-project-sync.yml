@@ -1,0 +1,53 @@
+name: IDEA Sync
+on:
+  workflow_dispatch:
+  pull_request:
+    paths: &gradle-paths
+      - '**/*.gradle'
+      - '**/*.gradle.kts'
+      - '**/*.toml'
+      - '**/gradle.properties'
+      - 'gradle/**'
+      - 'buildSrc/**'
+      - 'buildSrc-fork/**'
+      - 'gradlew'
+      - 'gradlew.bat'
+      - '.github/workflows/check-project-sync.yml'
+  push:
+    branches:
+      - jb-main
+    paths: *gradle-paths
+
+jobs:
+  sync-project:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            name: Linux
+          - os: macos-26-xlarge
+            name: macOS
+          - os: windows-latest
+            name: Windows
+    name: ${{ matrix.name }}
+    steps:
+      - name: Enable Long Paths
+        if: runner.os == 'Windows'
+        run: git config --system core.longpaths true
+
+      - name: Checkout Repository
+        uses: actions/checkout@v5
+
+      - name: Setup Prerequisites
+        uses: ./.github/actions/setup-prerequisites
+
+      - name: Setup Xcode
+        if: runner.os == 'macOS'
+        uses: ./.github/actions/setup-xcode
+
+      - name: Sync Project
+        shell: bash
+        run: |
+          ./gradlew prepareKotlinIdeaImport --no-daemon --stacktrace
