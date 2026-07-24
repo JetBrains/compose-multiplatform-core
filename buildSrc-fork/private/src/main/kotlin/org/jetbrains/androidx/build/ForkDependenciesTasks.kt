@@ -248,8 +248,8 @@ private fun Dependency.isVersionAtLeast(original: ParsedDependency.Artifact): Bo
     val candidate = parseDependency(declaration) as? ParsedDependency.Artifact ?: return false
     if (candidate.type != original.type) return false
     val candidateVersion = Version.parseOrNull(candidate.version) ?: return false
-    val originalForkVersion = Version.parseOrNull(original.forkVersion()) ?: return false
-    return candidateVersion >= originalForkVersion
+    val originalVersion = Version.parseOrNull(original.version) ?: return false
+    return candidateVersion >= originalVersion
 }
 
 private fun ParsedDependency.Artifact.asForkDependency(): Dependency {

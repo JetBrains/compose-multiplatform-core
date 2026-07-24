@@ -386,6 +386,44 @@ class ForkDependenciesTasksTest {
     }
 
     @Test
+    fun `retains matching fork patch version`() {
+        val root = createProject(
+            original = """
+                androidXMultiplatform {
+                    sourceSets {
+                        commonMain.dependencies {
+                            api("androidx.compose.runtime:runtime:1.9.3")
+                        }
+                    }
+                }
+            """,
+            fork = """
+                androidXForkMultiplatform {
+                    sourceSets {
+                        commonMain.dependencies {
+                            api("org.jetbrains.compose.runtime:runtime:1.9.3")
+                        }
+                    }
+                }
+            """,
+        )
+
+        verifyThenUpdate(root, isOutOfDate = false)
+
+        assertThat(projectDir(root).resolve("build-fork.gradle").readText()).isEqualTo(
+            """
+                androidXForkMultiplatform {
+                    sourceSets {
+                        commonMain.dependencies {
+                            api("org.jetbrains.compose.runtime:runtime:1.9.3")
+                        }
+                    }
+                }
+            """.trimIndent()
+        )
+    }
+
+    @Test
     fun `allows suppressing fork dependency verification for a source set`() {
         val root = createProject(
             original = """

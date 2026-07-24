@@ -174,7 +174,7 @@ object JetBrainsPublication {
     fun toAndroidXGroup(forkGroup: String): String? = when {
         isAndroidXGroup(forkGroup) -> forkGroup
         forkGroup.startsWith(JETBRAINS_COMPOSE_GROUP_PREFIX) ->
-            ANDROIDX_GROUP_PREFIX + forkGroup.removePrefix(JETBRAINS_COMPOSE_GROUP_PREFIX)
+            "androidx.compose." + forkGroup.removePrefix(JETBRAINS_COMPOSE_GROUP_PREFIX)
         forkGroup.startsWith(JETBRAINS_FORK_GROUP_PREFIX) ->
             ANDROIDX_GROUP_PREFIX + forkGroup.removePrefix(JETBRAINS_FORK_GROUP_PREFIX)
         forkGroup.startsWith("org.jetbrains.") ->
