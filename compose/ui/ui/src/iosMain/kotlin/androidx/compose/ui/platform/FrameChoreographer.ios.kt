@@ -66,6 +66,7 @@ internal class FrameChoreographer private constructor(
 
         @TestOnly
         fun configureForScene(scene: UIWindowScene, coroutineContext: CoroutineContext) {
+            scene.frameChoreographer?.dispose()
             scene.frameChoreographer = FrameChoreographer(scene, coroutineContext)
         }
 
@@ -86,7 +87,7 @@ internal class FrameChoreographer private constructor(
          * The next runloop is performed after all draw calls are processed and before the next
          * runloop starts, so this is the moment out-of-frame work should run.
          */
-        fun onOutOfFrame(lastFrameTimestamp: NSTimeInterval, targetTimestamp: NSTimeInterval)
+        fun onOutOfFrame(lastFrameTimestamp: NSTimeInterval, targetTimestamp: NSTimeInterval) = Unit
     }
 
     /**
@@ -151,6 +152,15 @@ internal class FrameChoreographer private constructor(
 
     private val listeners = mutableListOf<Listener>()
     private val listenersCopy = mutableListOf<Listener>()
+
+    @TestOnly
+    fun dispose() {
+        displayLink.invalidate()
+        foregroundStateListener.dispose()
+        listeners.clear()
+        listenersCopy.clear()
+        frameRecomposer.close()
+    }
 
     fun addListener(listener: Listener) {
         listeners.add(listener)

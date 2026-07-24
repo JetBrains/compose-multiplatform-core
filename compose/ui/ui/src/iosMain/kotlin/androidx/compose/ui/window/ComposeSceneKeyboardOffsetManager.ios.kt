@@ -16,31 +16,44 @@
 
 package androidx.compose.ui.window
 
+import androidx.compose.ui.platform.FrameChoreographer
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.util.fastForEach
 import kotlin.math.max
 import kotlinx.cinterop.CValue
-import kotlinx.cinterop.readValue
 import kotlinx.cinterop.useContents
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import platform.CoreGraphics.CGPointMake
 import platform.CoreGraphics.CGRect
 import platform.CoreGraphics.CGRectGetMinY
 import platform.CoreGraphics.CGRectIsEmpty
 import platform.CoreGraphics.CGRectMake
-import platform.CoreGraphics.CGRectZero
+import platform.UIKit.UIScreen
 import platform.UIKit.UIView
 import platform.UIKit.UIViewAnimationOptionCurveEaseInOut
 import platform.UIKit.UIViewAnimationOptions
 
 internal class ComposeSceneKeyboardOffsetManager(
     private val view: UIView,
+    private val frameChoreographer: FrameChoreographer,
     private val keyboardOverlapHeightChanged: (Dp) -> Unit
-) : KeyboardVisibilityObserver {
+) : KeyboardVisibilityObserver, FrameChoreographer.Listener {
     private var isDisposed: Boolean = false
+    private var isStarted = false
+    private val activitiesHandler = frameChoreographer.createActivitiesHandler()
+    private val coroutineScope = CoroutineScope(frameChoreographer.coroutineContext)
+    private var awaitingKeyboardFrameJob: Job? = null
 
     fun start() {
+        if (isStarted) return
+        isStarted = true
+
+        KeyboardVisibilityListener.initialize()
         KeyboardVisibilityListener.addObserver(this)
+        frameChoreographer.addListener(this)
 
         adjustViewBounds(
             KeyboardVisibilityListener.keyboardFrame,
@@ -51,33 +64,73 @@ internal class ComposeSceneKeyboardOffsetManager(
     }
 
     fun stop() {
+        if (!isStarted) return
+        isStarted = false
+        clearAwaitingKeyboardFrame()
         KeyboardVisibilityListener.removeObserver(this)
+        frameChoreographer.removeListener(this)
+        cancelActiveAnimation()
     }
 
     fun dispose() {
         check(!isDisposed) { "ComposeSceneKeyboardOffsetManager is already disposed" }
         isDisposed = true
         stop()
+        activitiesHandler.dispose()
     }
 
-    private val animationViews = mutableListOf<UIView>()
+    private class KeyboardAnimation(
+        val view: UIView,
+        val previousKeyboardHeight: Double,
+        val keyboardHeight: Double,
+        val viewBottomIndent: Double,
+    )
 
-    private var keyboardAnimationListener: DisplayLinkListener? = null
+    private var activeAnimation: KeyboardAnimation? = null
 
-    val isAnimating get() = keyboardAnimationListener != null
+    val hasPendingWork get() = activeAnimation != null || awaitingKeyboardFrameJob != null
+
+    fun awaitKeyboardFrameIfNeeded() {
+        clearAwaitingKeyboardFrame()
+        val isAwaitingKeyboardFrame = keyboardHeight(KeyboardVisibilityListener.keyboardFrame) == 0.0
+        if (isAwaitingKeyboardFrame) {
+            awaitingKeyboardFrameJob = coroutineScope.launch {
+                delay(KEYBOARD_FRAME_AWAIT_TIMEOUT_MILLIS)
+                if (awaitingKeyboardFrameJob === coroutineContext[Job]) {
+                    awaitingKeyboardFrameJob = null
+                }
+            }
+        }
+    }
+
+    fun cancelAwaitingKeyboardFrame() {
+        clearAwaitingKeyboardFrame()
+    }
+
+    private fun clearAwaitingKeyboardFrame() {
+        awaitingKeyboardFrameJob?.cancel()
+        awaitingKeyboardFrameJob = null
+    }
+
+    override fun onDisplayLinkTick() {
+        activeAnimation?.let { animation ->
+            keyboardOverlapHeightChanged(animation.keyboardOverlapHeight())
+        }
+    }
 
     override fun keyboardWillShow(
         targetFrame: CValue<CGRect>,
         duration: Double,
         animationOptions: UIViewAnimationOptions
-    ) {
-    }
+    ) = Unit
 
     override fun keyboardWillChangeFrame(
         targetFrame: CValue<CGRect>,
         duration: Double,
         animationOptions: UIViewAnimationOptions
     ) {
+        cancelAwaitingKeyboardFrame()
+
         adjustViewBounds(
             currentFrame = KeyboardVisibilityListener.keyboardFrame,
             targetFrame = targetFrame,
@@ -91,6 +144,7 @@ internal class ComposeSceneKeyboardOffsetManager(
         duration: Double,
         animationOptions: UIViewAnimationOptions
     ) {
+        cancelAwaitingKeyboardFrame()
     }
 
     private fun adjustViewBounds(
@@ -101,13 +155,8 @@ internal class ComposeSceneKeyboardOffsetManager(
     ) {
         val screen = view.window?.screen ?: return
 
-        fun keyboardHeight(frame: CValue<CGRect>): Double {
-            return if (CGRectIsEmpty(frame)) {
-                0.0
-            } else {
-                max(0.0, screen.bounds.useContents { size.height } - CGRectGetMinY(frame))
-            }
-        }
+        val targetKeyboardHeight = keyboardHeight(targetFrame, screen)
+        val currentKeyboardHeight = keyboardHeight(currentFrame, screen)
 
         val viewBottomIndent = run {
             val screenHeight = screen.bounds.useContents { size.height }
@@ -119,12 +168,25 @@ internal class ComposeSceneKeyboardOffsetManager(
         }
 
         animateKeyboard(
-            previousKeyboardHeight = keyboardHeight(currentFrame),
-            keyboardHeight = keyboardHeight(targetFrame),
+            previousKeyboardHeight = currentKeyboardHeight,
+            keyboardHeight = targetKeyboardHeight,
             viewBottomIndent = viewBottomIndent,
             duration = duration,
             animationOptions = animationOptions
         )
+    }
+
+    private fun keyboardHeight(frame: CValue<CGRect>): Double {
+        val screen = view.window?.screen ?: return 0.0
+        return keyboardHeight(frame, screen)
+    }
+
+    private fun keyboardHeight(frame: CValue<CGRect>, screen: UIScreen): Double {
+        return if (CGRectIsEmpty(frame)) {
+            0.0
+        } else {
+            max(0.0, screen.bounds.useContents { size.height } - CGRectGetMinY(frame))
+        }
     }
 
     private fun animateKeyboard(
@@ -134,44 +196,25 @@ internal class ComposeSceneKeyboardOffsetManager(
         duration: Double,
         animationOptions: UIViewAnimationOptions
     ) {
-        UIView.performWithoutAnimation {
-            animationViews.fastForEach {
-                it.layer.removeAllAnimations()
-                it.setFrame(CGRectZero.readValue())
-                it.removeFromSuperview()
-            }
-        }
-        keyboardAnimationListener?.invalidate()
-
-        fun updateAnimationValues(progress: Double) {
-            val currentHeight = previousKeyboardHeight +
-                (keyboardHeight - previousKeyboardHeight) * progress
-            keyboardOverlapHeightChanged(max(0.0, currentHeight - viewBottomIndent).dp)
-        }
+        cancelActiveAnimation()
 
         if (previousKeyboardHeight == keyboardHeight) {
-            updateAnimationValues(1.0)
+            keyboardOverlapHeightChanged(max(0.0, keyboardHeight - viewBottomIndent).dp)
             return
         }
 
         val animationView = UIView()
         view.addSubview(animationView)
-        animationViews.add(animationView)
+        val animation = KeyboardAnimation(
+            view = animationView,
+            previousKeyboardHeight = previousKeyboardHeight,
+            keyboardHeight = keyboardHeight,
+            viewBottomIndent = viewBottomIndent,
+        )
+        activeAnimation = animation
+        activitiesHandler.onActivitiesStarted()
 
-        // Animate view from 0 to [animationTargetSize] and normalize to animation progress with
-        // range of [0..1] to follow UIKit animation curve values.
-        val animationTargetSize = 1000.0
-        val animationTargetFrame = CGRectMake(0.0, 0.0, 0.0, animationTargetSize)
-
-        fun getCurrentAnimationProgress(): Double {
-            val layer = animationView.layer.presentationLayer() ?: return 0.0
-            return layer.frame.useContents { size.height / animationTargetSize }
-        }
-
-        val keyboardDisplayLink = DisplayLinkListener {
-            updateAnimationValues(getCurrentAnimationProgress())
-        }
-        keyboardAnimationListener = keyboardDisplayLink
+        val animationTargetFrame = CGRectMake(0.0, 0.0, 0.0, ANIMATION_TARGET_SIZE)
 
         UIView.animateWithDuration(
             duration = duration,
@@ -180,17 +223,48 @@ internal class ComposeSceneKeyboardOffsetManager(
             animations = {
                 animationView.setFrame(animationTargetFrame)
             },
-            completion = { isFinished ->
-                keyboardDisplayLink.invalidate()
-                animationView.removeFromSuperview()
-                if (keyboardAnimationListener == keyboardDisplayLink) {
-                    keyboardAnimationListener = null
-                }
-                if (isFinished) {
-                    updateAnimationValues(1.0)
-                }
+            completion = { _ ->
+                finishAnimation(animation)
             }
         )
-        keyboardDisplayLink.start()
+    }
+
+    private fun KeyboardAnimation.progress(): Double {
+        val layer = view.layer.presentationLayer() ?: return 0.0
+        return layer.frame.useContents { size.height / ANIMATION_TARGET_SIZE }
+    }
+
+    private fun KeyboardAnimation.keyboardOverlapHeight(progress: Double = progress()): Dp {
+        val currentHeight = previousKeyboardHeight +
+            (keyboardHeight - previousKeyboardHeight) * progress
+        return max(0.0, currentHeight - viewBottomIndent).dp
+    }
+
+    private fun finishAnimation(animation: KeyboardAnimation) {
+        if (activeAnimation !== animation) {
+            animation.view.removeFromSuperview()
+            return
+        }
+
+        val finalOverlapHeight = animation.keyboardOverlapHeight(progress = 1.0)
+        keyboardOverlapHeightChanged(finalOverlapHeight)
+        activeAnimation = null
+        activitiesHandler.onActivitiesEnded()
+        animation.view.removeFromSuperview()
+    }
+
+    private fun cancelActiveAnimation() {
+        val animation = activeAnimation ?: return
+        activeAnimation = null
+        activitiesHandler.onActivitiesEnded()
+        UIView.performWithoutAnimation {
+            animation.view.layer.removeAllAnimations()
+            animation.view.removeFromSuperview()
+        }
+    }
+
+    private companion object {
+        const val ANIMATION_TARGET_SIZE = 1000.0
+        const val KEYBOARD_FRAME_AWAIT_TIMEOUT_MILLIS = 500L
     }
 }

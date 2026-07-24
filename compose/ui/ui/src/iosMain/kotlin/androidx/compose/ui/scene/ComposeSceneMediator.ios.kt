@@ -95,7 +95,6 @@ import androidx.compose.ui.viewinterop.UIKitInteropTransaction
 import androidx.compose.ui.window.BackgroundInputView
 import androidx.compose.ui.window.ComposeSceneKeyboardOffsetManager
 import androidx.compose.ui.window.FocusedViewsList
-import androidx.compose.ui.window.KeyboardVisibilityListener
 import androidx.compose.ui.window.OverlayInputView
 import androidx.compose.ui.window.PlatformPrefetchSchedulerImpl
 import androidx.compose.ui.window.TouchesEventKind
@@ -203,7 +202,7 @@ internal class ComposeSceneMediator(
 
     private var onKeyEvent: (KeyEvent) -> Boolean = { false }
     private var animateKeyboardOffsetChanges by mutableStateOf(false)
-    private var platformScreenReader = object : PlatformScreenReader {
+    private val platformScreenReader = object : PlatformScreenReader {
         override var isActive by mutableStateOf(false)
     }
     private val activitiesHandler = frameChoreographer.createActivitiesHandler()
@@ -318,7 +317,7 @@ internal class ComposeSceneMediator(
      * Primary view to handle user input.
      * Also, it is used as a root container view for accessibility and text input.
      */
-    private val _overlayView = OverlayInputView(
+    private val _overlayView: OverlayInputView = OverlayInputView(
         hitTestInteropView = ::hitTestInteropView,
         isPointInsideInteractionBounds = ::isPointInsideInteractionBounds,
         onTouchesEvent = ::onTouchesEvent,
@@ -332,7 +331,8 @@ internal class ComposeSceneMediator(
             CoroutineScope(coroutineContext).launch {
                 finishUnattachedKeysPresses()
             }
-        }
+        },
+        onMovedToWindow = { keyboardManager.start() }
     )
 
     val overlayView: UIView get() = _overlayView
@@ -408,9 +408,10 @@ internal class ComposeSceneMediator(
             }
         }
 
-    private val keyboardManager by lazy {
+    private val keyboardManager: ComposeSceneKeyboardOffsetManager by lazy {
         ComposeSceneKeyboardOffsetManager(
             view = _overlayView,
+            frameChoreographer = frameChoreographer,
             keyboardOverlapHeightChanged = { height ->
                 val heightPx = with(screenDensity) { height.roundToPx() }
                 if (windowInsetsManager.keyboardOverlapHeight.value != heightPx) {
@@ -431,12 +432,20 @@ internal class ComposeSceneMediator(
             view = _overlayView,
             viewConfiguration = viewConfiguration,
             focusedViewsList = focusedViewsList,
-            onInputStarted = { animateKeyboardOffsetChanges = true },
+            listener = object : UIKitTextInputService.Listener {
+                override fun onInputWillStart() {
+                    keyboardManager.awaitKeyboardFrameIfNeeded()
+                }
+                override fun onInputDidStart() {
+                    animateKeyboardOffsetChanges = true
+                }
+                override fun onInputDidStop() {
+                    keyboardManager.cancelAwaitingKeyboardFrame()
+                }
+            },
             focusManager = { scene.focusManager },
             coroutineContext = coroutineContext,
-        ).also {
-            KeyboardVisibilityListener.initialize()
-        }
+        )
     }
 
     private val textInputServiceAdapter by lazy {
@@ -449,7 +458,7 @@ internal class ComposeSceneMediator(
     val hasInvalidations: Boolean get() {
         return scene.hasInvalidations() ||
             frameChoreographer.frameRecomposer.hasPendingWork() ||
-            keyboardManager.isAnimating ||
+            keyboardManager.hasPendingWork ||
             isLayoutTransitionAnimating ||
             semanticsOwnerListener.hasInvalidations ||
             textInputService.hasInvalidations
