@@ -179,7 +179,7 @@ class ForkDependenciesTasksTest {
                 androidXForkMultiplatform {
                     sourceSets {
                         commonMain.dependencies {
-                            api("androidx.lifecycle:lifecycle-common:2.10.0")
+                            api("org.jetbrains.androidx.lifecycle:lifecycle-common:2.10.0")
                         }
                     }
                 }
@@ -342,7 +342,7 @@ class ForkDependenciesTasksTest {
                     sourceSets {
                         commonMain.dependencies {
                             implementation("org.jetbrains.lifecycle:lifecycle-common:2.11.0")
-                            implementation("androidx.lifecycle:lifecycle-runtime:2.10.0")
+                            implementation("org.jetbrains.androidx.lifecycle:lifecycle-runtime:2.10.0")
                         }
                     }
                 }

@@ -29,8 +29,10 @@ import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
 import org.gradle.work.DisableCachingByDefault
-import org.jetbrains.androidx.build.JetBrainsPublication.isEquivalentForkGroupFor
 import org.jetbrains.androidx.build.JetBrainsPublication.projectPathForCoordinates
+import org.jetbrains.androidx.build.JetBrainsPublication.shouldPublish
+import org.jetbrains.androidx.build.JetBrainsPublication.toAndroidXGroup
+import org.jetbrains.androidx.build.JetBrainsPublication.toForkGroup
 
 @CacheableTask
 internal abstract class VerifyForkDependenciesTask : DefaultTask() {
@@ -106,8 +108,9 @@ private fun problematicDependencies(
     val forkDependencies = declaredDependencies(forkScript)
     return originalDependencies.mapNotNull { (sourceSetName, originalSourceSetDependencies) ->
         val forkSourceSetDependencies = forkDependencies[sourceSetName] ?: return@mapNotNull null
-        (sourceSetName to originalSourceSetDependencies.updatedForFork(forkSourceSetDependencies))
-            .takeUnless { originalSourceSetDependencies.isSatisfiedByFork(forkSourceSetDependencies) }
+        val expectedDependencies = originalSourceSetDependencies.updatedForFork(forkSourceSetDependencies)
+        (sourceSetName to expectedDependencies)
+            .takeUnless { expectedDependencies == forkSourceSetDependencies }
     }.toMap()
 }
 
@@ -165,9 +168,9 @@ private fun Project.scriptFile(name: String): File =
         ?: layout.projectDirectory.file("$name.gradle").asFile
 
 private fun parseDependencies(block: String): List<Dependency> =
-    DEPENDENCY_LINE.findAll(block).map { match ->
-        Dependency.Declaration(match.value.trim())
-    }.toList()
+    block.lineSequence().mapNotNull { line ->
+        line.trim().takeIf { declaration -> dependencyCall(declaration) != null }
+    }.map(Dependency::Declaration).toList()
 
 private fun extractBlock(text: String, marker: String): String? {
     val start = text.indexOf(marker)
@@ -187,16 +190,14 @@ private fun extractBlock(text: String, marker: String): String? {
 }
 
 private val MAIN_SOURCE_SET_REFERENCE = Regex("""(?:val\s+)?(\w+Main)(?:\.dependencies|\s+by\s+\w+)?\s*\{""")
-private val DEPENDENCY_LINE = Regex("""(\w+)\s*\(\s*(.+?)\s*\)""")
 private const val FORK_DEPENDENCIES_SUPPRESSION = "jbVerifyForkDependencies: suppress"
 
 private fun parseDependency(declaration: String): ParsedDependency? {
-    val match = DEPENDENCY_LINE.matchEntire(declaration) ?: return null
-    val type = match.groupValues[1]
-    val text = match.groupValues[2]
+    val (type, text) = dependencyCall(declaration) ?: return null
     val trimmed = text.trim()
     if (trimmed.startsWith("project(")) {
-        val path = trimmed.substringAfter("project(").substringBeforeLast(")").trim().trim('"', '\'')
+        val (_, projectPath) = dependencyCall(trimmed) ?: return null
+        val path = projectPath.trim().trim('"', '\'')
         return ParsedDependency.Project(type, path)
     }
 
@@ -211,46 +212,90 @@ private fun parseDependency(declaration: String): ParsedDependency? {
     )
 }
 
-private fun Dependency.isSatisfiedByFork(forkDependency: Dependency): Boolean {
-    if (this == forkDependency) return true
+private fun List<Dependency>.updatedForFork(
+    forkDependencies: List<Dependency>,
+): List<Dependency> {
+    val forkArtifacts = forkDependencies.mapNotNull { dependency ->
+        (parseDependency(dependency.declaration) as? ParsedDependency.Artifact)
+            ?.key()
+            ?.let { it to dependency }
+    }.toMap()
+    val forkProjects = forkDependencies.mapNotNull { dependency ->
+        (parseDependency(dependency.declaration) as? ParsedDependency.Project)
+            ?.let { it.path to dependency }
+    }.toMap()
 
-    val original = parseDependency(declaration) ?: return false
-    val fork = parseDependency(forkDependency.declaration) ?: return false
-    return original.type == fork.type && when (original) {
-        is ParsedDependency.Artifact -> when (fork) {
-            is ParsedDependency.Artifact ->
-                original.module == fork.module &&
-                    isEquivalentForkGroupFor(original.group, fork.group) &&
-                    fork.version.isCompatibleWith(original.version)
-            is ParsedDependency.Project ->
-                projectPathForCoordinates(original.group, original.module) == fork.path
+    return map { originalDependency ->
+        val original = parseDependency(originalDependency.declaration) ?: return@map originalDependency
+        when (original) {
+            is ParsedDependency.Project -> forkProjects[original.path] ?: originalDependency
+            is ParsedDependency.Artifact -> {
+                val projectPath = projectPathForCoordinates(original.group, original.module)
+                forkProjects[projectPath]
+                    ?: forkArtifacts[original.key()]?.takeIf { candidate ->
+                        candidate.isVersionAtLeast(original)
+                    }
+                    ?: original.asForkDependency()
+            }
         }
-        is ParsedDependency.Project -> fork is ParsedDependency.Project && original.path == fork.path
     }
 }
 
-private fun String.isCompatibleWith(originalVersion: String): Boolean {
-    if (this == originalVersion) return true
+private fun ParsedDependency.Artifact.key(): ArtifactKey? =
+    toAndroidXGroup(group)?.let { ArtifactKey(it, module) }
 
-    val forkVersion = Version.parseOrNull(this) ?: return false
-    val original = Version.parseOrNull(originalVersion) ?: return false
-    return forkVersion.major > original.major ||
-        forkVersion.major == original.major && forkVersion.minor >= original.minor
+private fun Dependency.isVersionAtLeast(original: ParsedDependency.Artifact): Boolean {
+    val candidate = parseDependency(declaration) as? ParsedDependency.Artifact ?: return false
+    if (candidate.type != original.type) return false
+    val candidateVersion = Version.parseOrNull(candidate.version) ?: return false
+    val originalForkVersion = Version.parseOrNull(original.forkVersion()) ?: return false
+    return candidateVersion >= originalForkVersion
 }
 
-private fun List<Dependency>.isSatisfiedByFork(
-    forkDependencies: List<Dependency>,
-): Boolean = size == forkDependencies.size && zip(forkDependencies).all { (originalDependency, forkDependency) ->
-    originalDependency.isSatisfiedByFork(forkDependency)
+private fun ParsedDependency.Artifact.asForkDependency(): Dependency {
+    val forkGroup = projectPathForCoordinates(group, module)
+        ?.takeIf(JetBrainsPublication::shouldPublish)
+        ?.let { toForkGroup(group) ?: JetBrainsPublication.mavenGroupFor(it) }
+        ?: group
+    val version = if (forkGroup != group) forkVersion() else version
+    return Dependency.Declaration("$type(\"$forkGroup:$module:$version\")")
 }
 
-private fun List<Dependency>.updatedForFork(
-    forkDependencies: List<Dependency>,
-): List<Dependency> = mapIndexed { index, originalDependency ->
-    forkDependencies.getOrNull(index)
-        ?.takeIf { originalDependency.isSatisfiedByFork(it) }
-        ?: originalDependency
+private fun ParsedDependency.Artifact.forkVersion(): String =
+    Version.parseOrNull(version)?.copy(patch = 0)?.toString() ?: version
+
+private fun dependencyCall(declaration: String): Pair<String, String>? {
+    val trimmed = declaration.trim()
+    val openParenthesis = trimmed.indexOf('(')
+    if (openParenthesis <= 0 || !trimmed.substring(0, openParenthesis).trim().matches(Regex("\\w+"))) {
+        return null
+    }
+
+    var depth = 0
+    var quote: Char? = null
+    for (index in openParenthesis until trimmed.length) {
+        val char = trimmed[index]
+        if (quote != null) {
+            if (char == quote && trimmed.getOrNull(index - 1) != '\\') quote = null
+            continue
+        }
+        if (char == '\'' || char == '"') {
+            quote = char
+        } else if (char == '(') {
+            depth++
+        } else if (char == ')') {
+            depth--
+            if (depth == 0) {
+                if (trimmed.substring(index + 1).isNotBlank()) return null
+                return trimmed.substring(0, openParenthesis).trim() to
+                    trimmed.substring(openParenthesis + 1, index)
+            }
+        }
+    }
+    return null
 }
+
+private data class ArtifactKey(val group: String, val module: String)
 
 private sealed interface Dependency {
     val declaration: String

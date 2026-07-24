@@ -171,11 +171,27 @@ object JetBrainsPublication {
     fun isJetBrainsForkGroup(group: String): Boolean =
         group.startsWith(JETBRAINS_FORK_GROUP_PREFIX) || group.startsWith(JETBRAINS_COMPOSE_GROUP_PREFIX)
 
+    fun toAndroidXGroup(forkGroup: String): String? = when {
+        isAndroidXGroup(forkGroup) -> forkGroup
+        forkGroup.startsWith(JETBRAINS_COMPOSE_GROUP_PREFIX) ->
+            ANDROIDX_GROUP_PREFIX + forkGroup.removePrefix(JETBRAINS_COMPOSE_GROUP_PREFIX)
+        forkGroup.startsWith(JETBRAINS_FORK_GROUP_PREFIX) ->
+            ANDROIDX_GROUP_PREFIX + forkGroup.removePrefix(JETBRAINS_FORK_GROUP_PREFIX)
+        forkGroup.startsWith("org.jetbrains.") ->
+            ANDROIDX_GROUP_PREFIX + forkGroup.removePrefix("org.jetbrains.")
+        else -> null
+    }
+
+    fun toForkGroup(androidXGroup: String): String? = when {
+        androidXGroup.startsWith("androidx.compose.") ->
+            JETBRAINS_COMPOSE_GROUP_PREFIX + androidXGroup.removePrefix("androidx.compose.")
+        isAndroidXGroup(androidXGroup) ->
+            JETBRAINS_FORK_GROUP_PREFIX + androidXGroup.removePrefix(ANDROIDX_GROUP_PREFIX)
+        else -> null
+    }
+
     fun isEquivalentForkGroupFor(originalGroup: String, forkGroup: String): Boolean =
-        forkGroup == originalGroup ||
-            originalGroup.startsWith(ANDROIDX_GROUP_PREFIX) &&
-                (forkGroup == "org.jetbrains.${originalGroup.removePrefix(ANDROIDX_GROUP_PREFIX)}" ||
-                    forkGroup == "org.jetbrains.androidx.${originalGroup.removePrefix(ANDROIDX_GROUP_PREFIX)}")
+        toAndroidXGroup(forkGroup) == originalGroup
 
     val projectPathToComponent: Map<String, ComposeComponent> = libraryToComponents.values
         .flatten().associateBy { it.path }
