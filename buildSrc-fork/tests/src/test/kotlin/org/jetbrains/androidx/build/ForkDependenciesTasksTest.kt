@@ -194,7 +194,7 @@ class ForkDependenciesTasksTest {
                 androidXMultiplatform {
                     sourceSets {
                         commonMain.dependencies {
-                            implementation("androidx.lifecycle:lifecycle-common:2.10.0")
+                            implementation("androidx.navigationevent:navigationevent-compose:1.1.1")
                             implementation("com.example:tool:2.0.0")
                         }
                     }
@@ -204,7 +204,7 @@ class ForkDependenciesTasksTest {
                 androidXForkMultiplatform {
                     sourceSets {
                         commonMain.dependencies {
-                            implementation("org.jetbrains.lifecycle:lifecycle-common:2.10.3")
+                            implementation("org.jetbrains.androidx.navigationevent:navigationevent-compose:1.1.0")
                             implementation("com.example:tool:1.0.0")
                         }
                     }
@@ -219,7 +219,7 @@ class ForkDependenciesTasksTest {
                 androidXForkMultiplatform {
                     sourceSets {
                         commonMain.dependencies {
-                            implementation("org.jetbrains.lifecycle:lifecycle-common:2.10.3")
+                            implementation("org.jetbrains.androidx.navigationevent:navigationevent-compose:1.1.0")
                             implementation("com.example:tool:2.0.0")
                         }
                     }
