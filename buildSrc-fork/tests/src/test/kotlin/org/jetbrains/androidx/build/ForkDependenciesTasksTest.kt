@@ -228,6 +228,47 @@ class ForkDependenciesTasksTest {
     }
 
     @Test
+    fun `updates dependencies with indentation in jvm and android source set`() {
+        val root = createProject(
+            original = """
+                androidXMultiplatform {
+                    sourceSets {
+                        jvmAndAndroidMain.dependencies {
+                            api(libs.jspecify)
+                            implementation("com.example:tool:2.0.0")
+                        }
+                    }
+                }
+            """,
+            fork = """
+                androidXForkMultiplatform {
+                    sourceSets {
+                        jvmAndAndroidMain.dependencies {
+                            api("androidx.annotation:annotation:1.8.0")
+                            implementation("com.example:tool:1.0.0")
+                        }
+                    }
+                }
+            """,
+        )
+
+        gradle(root, "$PROJECT_PATH:jbUpdateForkDependencies")
+
+        assertThat(projectDir(root).resolve("build-fork.gradle").readText()).isEqualTo(
+            """
+                androidXForkMultiplatform {
+                    sourceSets {
+                        jvmAndAndroidMain.dependencies {
+                            api(libs.jspecify)
+                            implementation("com.example:tool:2.0.0")
+                        }
+                    }
+                }
+            """.trimIndent()
+        )
+    }
+
+    @Test
     fun `updates fork dependencies without replacing compatible forked groups`() {
         val root = createProject(
             original = """
