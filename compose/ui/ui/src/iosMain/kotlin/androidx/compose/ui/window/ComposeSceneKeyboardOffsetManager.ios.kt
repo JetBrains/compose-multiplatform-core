@@ -20,6 +20,7 @@ import androidx.compose.ui.platform.FrameChoreographer
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import kotlin.math.max
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.cinterop.CValue
 import kotlinx.cinterop.useContents
 import kotlinx.coroutines.CoroutineScope
@@ -46,6 +47,14 @@ internal class ComposeSceneKeyboardOffsetManager(
     private val activitiesHandler = frameChoreographer.createActivitiesHandler()
     private val coroutineScope = CoroutineScope(frameChoreographer.coroutineContext)
     private var awaitingKeyboardFrameJob: Job? = null
+    private var activeAnimation: KeyboardAnimation? = null
+    val hasPendingWork get() = activeAnimation != null || awaitingKeyboardFrameJob != null
+    private data class KeyboardAnimation(
+        val view: UIView,
+        val previousKeyboardHeight: Double,
+        val keyboardHeight: Double,
+        val viewBottomIndent: Double,
+    )
 
     fun start() {
         if (isStarted) return
@@ -66,7 +75,7 @@ internal class ComposeSceneKeyboardOffsetManager(
     fun stop() {
         if (!isStarted) return
         isStarted = false
-        clearAwaitingKeyboardFrame()
+        cancelAwaitingKeyboardFrame()
         KeyboardVisibilityListener.removeObserver(this)
         frameChoreographer.removeListener(this)
         cancelActiveAnimation()
@@ -79,21 +88,9 @@ internal class ComposeSceneKeyboardOffsetManager(
         activitiesHandler.dispose()
     }
 
-    private class KeyboardAnimation(
-        val view: UIView,
-        val previousKeyboardHeight: Double,
-        val keyboardHeight: Double,
-        val viewBottomIndent: Double,
-    )
-
-    private var activeAnimation: KeyboardAnimation? = null
-
-    val hasPendingWork get() = activeAnimation != null || awaitingKeyboardFrameJob != null
-
     fun awaitKeyboardFrameIfNeeded() {
-        clearAwaitingKeyboardFrame()
-        val isAwaitingKeyboardFrame = keyboardHeight(KeyboardVisibilityListener.keyboardFrame) == 0.0
-        if (isAwaitingKeyboardFrame) {
+        cancelAwaitingKeyboardFrame()
+        if (keyboardHeight(KeyboardVisibilityListener.keyboardFrame) == 0.0) {
             awaitingKeyboardFrameJob = coroutineScope.launch {
                 delay(KEYBOARD_FRAME_AWAIT_TIMEOUT_MILLIS)
                 if (awaitingKeyboardFrameJob === coroutineContext[Job]) {
@@ -104,10 +101,6 @@ internal class ComposeSceneKeyboardOffsetManager(
     }
 
     fun cancelAwaitingKeyboardFrame() {
-        clearAwaitingKeyboardFrame()
-    }
-
-    private fun clearAwaitingKeyboardFrame() {
         awaitingKeyboardFrameJob?.cancel()
         awaitingKeyboardFrameJob = null
     }
@@ -265,6 +258,6 @@ internal class ComposeSceneKeyboardOffsetManager(
 
     private companion object {
         const val ANIMATION_TARGET_SIZE = 1000.0
-        const val KEYBOARD_FRAME_AWAIT_TIMEOUT_MILLIS = 500L
+        val KEYBOARD_FRAME_AWAIT_TIMEOUT_MILLIS = 500.milliseconds
     }
 }
