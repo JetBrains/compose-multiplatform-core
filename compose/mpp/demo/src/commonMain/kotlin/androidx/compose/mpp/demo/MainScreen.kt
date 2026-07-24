@@ -47,6 +47,7 @@ val MainScreen = Screen.Selection(
     Screen.Example("LottieAnimation") { LottieAnimation() },
     Screen.Fullscreen("ApplicationLayouts") { ApplicationLayouts(it) },
     Screen.Example("InteropOrder") { InteropOrder() },
+    Screen.Example("RawScrollEvents") { RawScrollEvents() },
     AndroidTextFieldSamples,
     Screen.Example("Android TextBrushDemo") { TextBrushDemo() },
     AndroidAccessibilityDemos
