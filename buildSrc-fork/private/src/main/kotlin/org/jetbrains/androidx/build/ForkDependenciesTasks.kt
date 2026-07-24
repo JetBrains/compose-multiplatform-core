@@ -85,7 +85,7 @@ internal abstract class UpdateForkDependenciesTask : DefaultTask() {
         val forkText = forkFile.readText()
         val dependencies = problematicDependencies(buildFile.readText(), forkText)
         if (dependencies.isNotEmpty()) {
-            forkFile.writeText(forkText.withUpdatedForkDependencies(dependencies))
+            forkFile.writeText(forkText.withUpdatedForkDependencies(buildFile.readText(), dependencies))
         }
     }
 }
@@ -114,12 +114,17 @@ private fun problematicDependencies(
     }.toMap()
 }
 
-private fun String.withUpdatedForkDependencies(dependencies: Map<String, List<Dependency>>): String {
+private fun String.withUpdatedForkDependencies(
+    originalBuildScript: String,
+    dependencies: Map<String, List<Dependency>>,
+): String {
     val sourceSetsBlock = extractBlock(this, "sourceSets {") ?: return this
+    val originalDependencyBlocks = sourceSetDependencyBlocks(originalBuildScript)
     val offset = indexOf(sourceSetsBlock)
     val replacements = MAIN_SOURCE_SET_REFERENCE.findAll(sourceSetsBlock)
         .mapNotNull { match ->
             val declarations = dependencies[match.groupValues[1]] ?: return@mapNotNull null
+            val originalBlock = originalDependencyBlocks[match.groupValues[1]] ?: return@mapNotNull null
             val sourceSetBlock = extractBlock(sourceSetsBlock, match.value).orEmpty()
             val dependenciesBlock = if (".dependencies" in match.value) {
                 sourceSetBlock
@@ -129,15 +134,9 @@ private fun String.withUpdatedForkDependencies(dependencies: Map<String, List<De
             val blockOffset = sourceSetsBlock.indexOf(dependenciesBlock, match.range.last + 1)
             val contentStart = offset + blockOffset
             val contentEnd = contentStart + dependenciesBlock.length
-            val indentation = dependenciesBlock.lineSequence()
-                .firstOrNull { it.isNotBlank() }
-                ?.takeWhile(Char::isWhitespace)
-                ?: ""
-            contentStart to contentEnd to declarations.joinToString(
-                separator = "\n$indentation",
-                prefix = "\n$indentation",
-                postfix = "\n${dependenciesBlock.substringAfterLast('\n')}",
-            )
+            val originalDeclarations = parseDependencies(originalBlock)
+            contentStart to contentEnd to
+                originalBlock.withUpdatedDeclarations(originalDeclarations, declarations)
         }
         .toList()
     return replacements.asReversed().fold(this) { script, (range, declarations) ->
@@ -146,6 +145,10 @@ private fun String.withUpdatedForkDependencies(dependencies: Map<String, List<De
 }
 
 private fun declaredDependencies(script: String): Map<String, List<Dependency>> {
+    return sourceSetDependencyBlocks(script).mapValues { (_, block) -> parseDependencies(block) }
+}
+
+private fun sourceSetDependencyBlocks(script: String): Map<String, String> {
     val sourceSetsBlock = extractBlock(script, "sourceSets {") ?: return emptyMap()
     return MAIN_SOURCE_SET_REFERENCE.findAll(sourceSetsBlock).mapNotNull { match ->
         val precedingLine = sourceSetsBlock.substring(0, match.range.first).trimEnd().substringAfterLast('\n')
@@ -159,7 +162,7 @@ private fun declaredDependencies(script: String): Map<String, List<Dependency>> 
         } else {
             extractBlock(sourceSetBlock, "dependencies {").orEmpty()
         }
-        sourceSetName to parseDependencies(dependenciesBlock)
+        sourceSetName to dependenciesBlock
     }.toMap()
 }
 
@@ -169,8 +172,26 @@ private fun Project.scriptFile(name: String): File =
 
 private fun parseDependencies(block: String): List<Dependency> =
     block.lineSequence().mapNotNull { line ->
-        line.trim().takeIf { declaration -> dependencyCall(declaration) != null }
+        dependencyDeclaration(line.trim())
     }.map(Dependency::Declaration).toList()
+
+private fun String.withUpdatedDeclarations(
+    originalDeclarations: List<Dependency>,
+    updatedDeclarations: List<Dependency>,
+): String {
+    var searchStart = 0
+    return originalDeclarations.zip(updatedDeclarations).fold(this) { text, (original, updated) ->
+        val declarationStart = text.indexOf(original.declaration, searchStart)
+        if (declarationStart < 0 || original == updated) {
+            searchStart = declarationStart.coerceAtLeast(searchStart) + original.declaration.length
+            text
+        } else {
+            searchStart = declarationStart + updated.declaration.length
+            text.substring(0, declarationStart) + updated.declaration +
+                text.substring(declarationStart + original.declaration.length)
+        }
+    }
+}
 
 private fun extractBlock(text: String, marker: String): String? {
     val start = text.indexOf(marker)
@@ -265,6 +286,18 @@ private fun ParsedDependency.Artifact.forkVersion(): String =
     Version.parseOrNull(version)?.copy(patch = 0)?.toString() ?: version
 
 private fun dependencyCall(declaration: String): Pair<String, String>? {
+    val trimmed = dependencyDeclaration(declaration) ?: return null
+    val openParenthesis = trimmed.indexOf('(')
+    if (openParenthesis <= 0 || !trimmed.substring(0, openParenthesis).trim().matches(Regex("\\w+"))) {
+        return null
+    }
+
+    val closeParenthesis = trimmed.lastIndexOf(')')
+    return trimmed.substring(0, openParenthesis).trim() to
+        trimmed.substring(openParenthesis + 1, closeParenthesis)
+}
+
+private fun dependencyDeclaration(declaration: String): String? {
     val trimmed = declaration.trim()
     val openParenthesis = trimmed.indexOf('(')
     if (openParenthesis <= 0 || !trimmed.substring(0, openParenthesis).trim().matches(Regex("\\w+"))) {
@@ -286,9 +319,9 @@ private fun dependencyCall(declaration: String): Pair<String, String>? {
         } else if (char == ')') {
             depth--
             if (depth == 0) {
-                if (trimmed.substring(index + 1).isNotBlank()) return null
-                return trimmed.substring(0, openParenthesis).trim() to
-                    trimmed.substring(openParenthesis + 1, index)
+                val trailing = trimmed.substring(index + 1).trimStart()
+                if (trailing.isNotEmpty() && !trailing.startsWith("//")) return null
+                return trimmed.substring(0, index + 1)
             }
         }
     }

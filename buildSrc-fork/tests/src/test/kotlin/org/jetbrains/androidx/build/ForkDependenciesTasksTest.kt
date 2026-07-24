@@ -424,6 +424,51 @@ class ForkDependenciesTasksTest {
     }
 
     @Test
+    fun `preserves original source set formatting and comments`() {
+        val root = createProject(
+            original = """
+                androidXMultiplatform {
+                    sourceSets {
+                        commonMain.dependencies {
+                            // Keep this explanation when updating fork dependencies.
+                            api("androidx.compose.runtime:runtime:1.9.3") // Runtime dependency
+
+                            implementation("com.example:tool:2.0.0")
+                        }
+                    }
+                }
+            """,
+            fork = """
+                androidXForkMultiplatform {
+                    sourceSets {
+                        commonMain.dependencies {
+                            api("org.jetbrains.compose.runtime:runtime:1.9.3")
+                            implementation("com.example:tool:1.0.0")
+                        }
+                    }
+                }
+            """,
+        )
+
+        verifyThenUpdate(root)
+
+        assertThat(projectDir(root).resolve("build-fork.gradle").readText()).isEqualTo(
+            """
+                androidXForkMultiplatform {
+                    sourceSets {
+                        commonMain.dependencies {
+                            // Keep this explanation when updating fork dependencies.
+                            api("org.jetbrains.compose.runtime:runtime:1.9.3") // Runtime dependency
+
+                            implementation("com.example:tool:2.0.0")
+                        }
+                    }
+                }
+            """.trimIndent()
+        )
+    }
+
+    @Test
     fun `allows suppressing fork dependency verification for a source set`() {
         val root = createProject(
             original = """
