@@ -175,8 +175,17 @@ class ForkDependenciesTasksTest {
         gradle(root, "$PROJECT_PATH:jbUpdateForkDependencies")
         gradle(root, "$PROJECT_PATH:jbVerifyForkDependencies")
 
-        assertThat(projectDir(root).resolve("build-fork.gradle").readText())
-            .contains("api(\"androidx.lifecycle:lifecycle-common:2.10.0\")")
+        assertThat(projectDir(root).resolve("build-fork.gradle").readText()).isEqualTo(
+            """
+                androidXForkMultiplatform {
+                    sourceSets {
+                        commonMain.dependencies {
+                            api("androidx.lifecycle:lifecycle-common:2.10.0")
+                        }
+                    }
+                }
+            """.trimIndent()
+        )
     }
 
     @Test
@@ -206,10 +215,18 @@ class ForkDependenciesTasksTest {
 
         gradle(root, "$PROJECT_PATH:jbUpdateForkDependencies")
 
-        val updatedFork = projectDir(root).resolve("build-fork.gradle").readText()
-        assertThat(updatedFork)
-            .contains("implementation(\"org.jetbrains.lifecycle:lifecycle-common:2.10.3\")")
-        assertThat(updatedFork).contains("implementation(\"com.example:tool:2.0.0\")")
+        assertThat(projectDir(root).resolve("build-fork.gradle").readText()).isEqualTo(
+            """
+                androidXForkMultiplatform {
+                    sourceSets {
+                        commonMain.dependencies {
+                            implementation("org.jetbrains.lifecycle:lifecycle-common:2.10.3")
+                            implementation("com.example:tool:2.0.0")
+                        }
+                    }
+                }
+            """.trimIndent()
+        )
     }
 
     @Test
@@ -280,8 +297,17 @@ class ForkDependenciesTasksTest {
         gradle(root, "$PROJECT_PATH:jbUpdateForkDependencies")
         gradle(root, "$PROJECT_PATH:jbVerifyForkDependencies")
 
-        assertThat(projectDir(root).resolve("build-fork.gradle").readText())
-            .contains("api(\"androidx.lifecycle:lifecycle-common:2.9.0\")")
+        assertThat(projectDir(root).resolve("build-fork.gradle").readText()).isEqualTo(
+            """
+                androidXForkMultiplatform {
+                    sourceSets {
+                        commonMain.dependencies {
+                            api("androidx.lifecycle:lifecycle-common:2.9.0")
+                        }
+                    }
+                }
+            """.trimIndent()
+        )
     }
 
     @Test
