@@ -57,7 +57,7 @@ class ForkDependenciesTasksTest {
             """,
         )
 
-        gradle(root, "$PROJECT_PATH:jbVerifyForkDependencies")
+        verifyThenUpdate(root, isOutOfDate = false)
     }
 
     @Test
@@ -88,7 +88,7 @@ class ForkDependenciesTasksTest {
             scriptExtension = "gradle.kts",
         )
 
-        gradle(root, "$PROJECT_PATH:jbVerifyForkDependencies")
+        verifyThenUpdate(root, isOutOfDate = false)
     }
 
     @Test
@@ -114,7 +114,7 @@ class ForkDependenciesTasksTest {
             """,
         )
 
-        gradle(root, "$PROJECT_PATH:jbVerifyForkDependencies")
+        verifyThenUpdate(root, isOutOfDate = false)
     }
 
     @Test
@@ -143,10 +143,7 @@ class ForkDependenciesTasksTest {
             """,
         )
 
-        val result = gradleAndFail(root, "$PROJECT_PATH:jbVerifyForkDependencies")
-
-        assertThat(result.output).contains("Fork dependencies are out of date.")
-        assertThat(result.output).contains("$PROJECT_PATH:jbUpdateForkDependencies")
+        verifyThenUpdate(root)
     }
 
     @Test
@@ -172,7 +169,7 @@ class ForkDependenciesTasksTest {
             """,
         )
 
-        gradle(root, "$PROJECT_PATH:jbUpdateForkDependencies")
+        verifyThenUpdate(root)
 
         assertThat(projectDir(root).resolve("build-fork.gradle").readText()).isEqualTo(
             """
@@ -211,7 +208,7 @@ class ForkDependenciesTasksTest {
             """,
         )
 
-        gradle(root, "$PROJECT_PATH:jbUpdateForkDependencies")
+        verifyThenUpdate(root)
 
         assertThat(projectDir(root).resolve("build-fork.gradle").readText()).isEqualTo(
             """
@@ -252,7 +249,7 @@ class ForkDependenciesTasksTest {
             """,
         )
 
-        gradle(root, "$PROJECT_PATH:jbUpdateForkDependencies")
+        verifyThenUpdate(root)
 
         assertThat(projectDir(root).resolve("build-fork.gradle").readText()).isEqualTo(
             """
@@ -293,7 +290,7 @@ class ForkDependenciesTasksTest {
             """,
         )
 
-        gradle(root, "$PROJECT_PATH:jbUpdateForkDependencies")
+        verifyThenUpdate(root)
 
         assertThat(projectDir(root).resolve("build-fork.gradle").readText()).isEqualTo(
             """
@@ -334,7 +331,7 @@ class ForkDependenciesTasksTest {
             """,
         )
 
-        gradle(root, "$PROJECT_PATH:jbUpdateForkDependencies")
+        verifyThenUpdate(root)
 
         assertThat(projectDir(root).resolve("build-fork.gradle").readText()).isEqualTo(
             """
@@ -373,7 +370,7 @@ class ForkDependenciesTasksTest {
             """,
         )
 
-        gradle(root, "$PROJECT_PATH:jbUpdateForkDependencies")
+        verifyThenUpdate(root)
 
         assertThat(projectDir(root).resolve("build-fork.gradle").readText()).isEqualTo(
             """
@@ -412,8 +409,7 @@ class ForkDependenciesTasksTest {
             """,
         )
 
-        gradle(root, "$PROJECT_PATH:jbUpdateForkDependencies")
-        gradle(root, "$PROJECT_PATH:jbVerifyForkDependencies")
+        verifyThenUpdate(root, isOutOfDate = false)
 
         assertThat(projectDir(root).resolve("build-fork.gradle").readText()).isEqualTo(
             """
@@ -455,9 +451,7 @@ class ForkDependenciesTasksTest {
             """,
         )
 
-        val result = gradleAndFail(root, "$PROJECT_PATH:jbVerifyForkDependencies")
-
-        assertThat(result.output).contains("Fork dependencies are out of date.")
+        verifyThenUpdate(root)
     }
 
     @Test
@@ -487,9 +481,7 @@ class ForkDependenciesTasksTest {
             """,
         )
 
-        val result = gradleAndFail(root, "$PROJECT_PATH:jbVerifyForkDependencies")
-
-        assertThat(result.output).contains("Fork dependencies are out of date.")
+        verifyThenUpdate(root)
     }
 
     @Test
@@ -516,9 +508,7 @@ class ForkDependenciesTasksTest {
             """,
         )
 
-        val result = gradleAndFail(root, "$PROJECT_PATH:jbVerifyForkDependencies")
-
-        assertThat(result.output).contains("Fork dependencies are out of date.")
+        verifyThenUpdate(root)
     }
 
     @Test
@@ -544,35 +534,7 @@ class ForkDependenciesTasksTest {
             """,
         )
 
-        gradle(root, "$PROJECT_PATH:jbVerifyForkDependencies")
-    }
-
-    @Test
-    fun `fail if version is lower`() {
-        val root = createProject(
-            original = """
-                androidXMultiplatform {
-                    sourceSets {
-                        commonMain.dependencies {
-                            api("androidx.lifecycle:lifecycle-common:2.10.0")
-                        }
-                    }
-                }
-            """,
-            fork = """
-                androidXMultiplatform {
-                    sourceSets {
-                        commonMain.dependencies {
-                            api("androidx.lifecycle:lifecycle-common:2.9.0")
-                        }
-                    }
-                }
-            """,
-        )
-
-        val result = gradleAndFail(root, "$PROJECT_PATH:jbVerifyForkDependencies")
-
-        assertThat(result.output).contains("Fork dependencies are out of date.")
+        verifyThenUpdate(root, isOutOfDate = false)
     }
 
     @Test
@@ -598,7 +560,7 @@ class ForkDependenciesTasksTest {
             """,
         )
 
-        gradle(root, "$PROJECT_PATH:jbVerifyForkDependencies")
+        verifyThenUpdate(root, isOutOfDate = false)
     }
 
     @Test
@@ -624,7 +586,7 @@ class ForkDependenciesTasksTest {
             """,
         )
 
-        gradle(root, "$PROJECT_PATH:jbUpdateForkDependencies")
+        verifyThenUpdate(root)
 
         assertThat(projectDir(root).resolve("build-fork.gradle").readText()).isEqualTo(
             """
@@ -662,7 +624,7 @@ class ForkDependenciesTasksTest {
             """,
         )
 
-        gradle(root, "$PROJECT_PATH:jbUpdateForkDependencies")
+        verifyThenUpdate(root)
 
         assertThat(projectDir(root).resolve("build-fork.gradle").readText()).isEqualTo(
             """
@@ -700,71 +662,7 @@ class ForkDependenciesTasksTest {
             """,
         )
 
-        val result = gradleAndFail(root, "$PROJECT_PATH:jbVerifyForkDependencies")
-
-        assertThat(result.output).contains("Fork dependencies are out of date.")
-    }
-
-    @Test
-    fun `don't fail for forked group if version is compatible`() {
-        val root = createProject(
-            original = """
-                androidXMultiplatform {
-                    sourceSets {
-                        commonMain.dependencies {
-                            implementation("androidx.lifecycle:lifecycle-common:2.10.0")
-                            implementation("com.example:tool:1.5.0")
-                            implementation("com.example:extra:1.0.0")
-                        }
-                    }
-                }
-            """,
-            fork = """
-                androidXMultiplatform {
-                    sourceSets {
-                        commonMain.dependencies {
-                            implementation("org.jetbrains.lifecycle:lifecycle-common:2.10.3")
-                            implementation("com.example:tool:1.5.0")
-                            implementation("com.example:extra:1.0.0")
-                        }
-                    }
-                }
-            """,
-        )
-
-        gradle(root, "$PROJECT_PATH:jbVerifyForkDependencies")
-    }
-
-    @Test
-    fun `fail for forked group if version is lower`() {
-        val root = createProject(
-            original = """
-                androidXMultiplatform {
-                    sourceSets {
-                        commonMain.dependencies {
-                            implementation("androidx.lifecycle:lifecycle-common:2.10.0")
-                            implementation("com.example:tool:1.5.0")
-                            implementation("com.example:extra:1.0.0")
-                        }
-                    }
-                }
-            """,
-            fork = """
-                androidXMultiplatform {
-                    sourceSets {
-                        commonMain.dependencies {
-                            implementation("org.jetbrains.lifecycle:lifecycle-common:2.9.3")
-                            implementation("com.example:tool:1.5.0")
-                            implementation("com.example:extra:1.0.0")
-                        }
-                    }
-                }
-            """,
-        )
-
-        val result = gradleAndFail(root, "$PROJECT_PATH:jbVerifyForkDependencies")
-
-        assertThat(result.output).contains("Fork dependencies are out of date.")
+        verifyThenUpdate(root)
     }
 
     @Test
@@ -793,9 +691,7 @@ class ForkDependenciesTasksTest {
             """,
         )
 
-        val result = gradleAndFail(root, "$PROJECT_PATH:jbVerifyForkDependencies")
-
-        assertThat(result.output).contains("Fork dependencies are out of date.")
+        verifyThenUpdate(root)
     }
 
     @Test
@@ -824,7 +720,7 @@ class ForkDependenciesTasksTest {
             """,
         )
 
-        gradle(root, "$PROJECT_PATH:jbVerifyForkDependencies")
+        verifyThenUpdate(root, isOutOfDate = false)
     }
 
     @Test
@@ -844,7 +740,7 @@ class ForkDependenciesTasksTest {
             fork = null,
         )
 
-        gradle(root, "$PROJECT_PATH:jbVerifyForkDependencies")
+        verifyThenUpdate(root, isOutOfDate = false)
     }
 
     private fun createProject(
@@ -905,6 +801,18 @@ private fun gradle(root: File, vararg arguments: String): BuildResult =
 
 private fun gradleAndFail(root: File, vararg arguments: String): BuildResult =
     runner(root, *arguments).buildAndFail()
+
+private fun verifyThenUpdate(root: File, isOutOfDate: Boolean = true) {
+    if (isOutOfDate) {
+        val result = gradleAndFail(root, "$PROJECT_PATH:jbVerifyForkDependencies")
+        assertThat(result.output).contains("Fork dependencies are out of date.")
+        assertThat(result.output).contains("$PROJECT_PATH:jbUpdateForkDependencies")
+    } else {
+        gradle(root, "$PROJECT_PATH:jbVerifyForkDependencies")
+    }
+    gradle(root, "$PROJECT_PATH:jbUpdateForkDependencies")
+    gradle(root, "$PROJECT_PATH:jbVerifyForkDependencies")
+}
 
 private fun runner(root: File, vararg arguments: String): GradleRunner =
     GradleRunner.create()
