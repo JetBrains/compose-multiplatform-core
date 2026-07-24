@@ -261,8 +261,18 @@ class WheelEventTests : OnCanvasTests {
 
         getCanvas().dispatchEvent(WheelEvent("wheel", WheelEventInit(deltaX = 5.0, deltaY = 7.0)))
 
-        assertEquals(5f, totalScrollDelta.x, "deltaX was expected to be delivered")
-        assertEquals(7f, totalScrollDelta.y, "deltaY was expected to be delivered")
+        assertEquals(
+            5.0 / WebWheelDeltaPerNotch,
+            totalScrollDelta.x.toDouble(),
+            absoluteTolerance = 1e-5,
+            message = "deltaX was expected to be delivered"
+        )
+        assertEquals(
+            7.0 / WebWheelDeltaPerNotch,
+            totalScrollDelta.y.toDouble(),
+            absoluteTolerance = 1e-5,
+            message = "deltaY was expected to be delivered"
+        )
     }
 
     @Test

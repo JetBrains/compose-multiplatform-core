@@ -27,6 +27,7 @@ import androidx.compose.runtime.InternalComposeApi
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.ProvidableCompositionLocal
 import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.LocalSystemTheme
 import androidx.compose.ui.draganddrop.WebDragAndDropManager
 import androidx.compose.ui.events.EventTargetListener
@@ -901,6 +902,18 @@ internal class ComposeWindow(
             verticalScroll = event.deltaY
         }
 
+        val notchDivisor = if (event.deltaMode == WheelEvent.DOM_DELTA_PIXEL) {
+            WebWheelDeltaPerNotch
+        } else {
+            1.0
+        }
+
+        val scrollDelta = Offset(
+            x = (horizontalScroll / notchDivisor).toFloat(),
+            y = (verticalScroll / notchDivisor).toFloat()
+        )
+        println("XXX:: scrollDelta: $scrollDelta")
+
         // wheels event own buttons property is unreliable in Safari and Firefox
         // see CMP-9900 [web] Wheel event resolves buttons state incorrectly in Safari and Firefox
         val buttons = if(actualActivePointerButtons != PointerButtons()) actualActivePointerButtons else event.composeButtons
@@ -908,10 +921,7 @@ internal class ComposeWindow(
         val result = scene.sendPointerEvent(
             eventType = PointerEventType.Scroll,
             position = event.offset,
-            scrollDelta = Offset(
-                x = horizontalScroll.toFloat(),
-                y = verticalScroll.toFloat()
-            ),
+            scrollDelta = scrollDelta,
             buttons = buttons,
             keyboardModifiers = PointerKeyboardModifiers(
                 isCtrlPressed = event.ctrlKey,
@@ -956,6 +966,15 @@ internal class ComposeWindow(
         }
     }
 }
+
+/**
+ * The number of raw pixel-mode wheel-delta units the browser reports per mouse-wheel notch.
+ * Pixel-mode [WheelEvent] deltas are divided by this so
+ * that [androidx.compose.ui.input.pointer.PointerInputEventData] is reported
+ * on the same ~1-per-notch scale as other targets.
+ */
+@InternalComposeUiApi
+const val WebWheelDeltaPerNotch = 10.0
 
 //https://developer.mozilla.org/en-US/docs/Web/API/Document/visibilityState
 internal fun documentIsVisible(): Boolean = js("document.visibilityState === 'visible'")

@@ -15,12 +15,13 @@
  */
 
 @file:Suppress("DEPRECATION")
-@file:OptIn(ExperimentalWasmJsInterop::class)
+@file:OptIn(ExperimentalWasmJsInterop::class, InternalComposeUiApi::class)
 
 package androidx.compose.foundation.gestures
 
 import androidx.annotation.VisibleForTesting
 import androidx.compose.foundation.InternalFoundationApi
+import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.dom.domEventOrNull
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.PointerEvent
@@ -29,6 +30,7 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastFold
+import androidx.compose.ui.window.WebWheelDeltaPerNotch
 import kotlin.js.ExperimentalWasmJsInterop
 import kotlin.js.js
 import kotlin.js.toDouble
@@ -51,11 +53,14 @@ private object JsConfig : ScrollConfig {
                     y = event.totalScrollDelta.y * bounds.height,
                 ) * -1f
 
-            WheelEvent.DOM_DELTA_PIXEL -> event.totalScrollDelta * -1.dp.toPx()
+            // Pixel-mode scrollDelta was normalized to a ~1-per-notch scale in onWheelEvent
+            // (ComposeWindowInternal.web.kt) so it matches other targets; scale it back to raw
+            // device pixels here so the actual scrolled distance is unchanged.
+            WheelEvent.DOM_DELTA_PIXEL -> event.totalScrollDelta * -WebWheelDeltaPerNotch.dp.toPx()
 
             else -> {
                 println("Unknown delta mode: $deltaMode")
-                event.totalScrollDelta * -1.dp.toPx()
+                event.totalScrollDelta * -WebWheelDeltaPerNotch.dp.toPx()
             }
         }
     }
