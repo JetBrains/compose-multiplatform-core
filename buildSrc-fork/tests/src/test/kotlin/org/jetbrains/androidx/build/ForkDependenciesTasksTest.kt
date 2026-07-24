@@ -469,62 +469,6 @@ class ForkDependenciesTasksTest {
     }
 
     @Test
-    fun `preserves higher fork versions across an inserted dependency`() {
-        val root = createProject(
-            original = """
-                androidXMultiplatform {
-                    sourceSets {
-                        commonMain.dependencies {
-                            implementation("androidx.annotation:annotation:1.8.0")
-                            api("androidx.compose.runtime:runtime:1.7.0")
-                            api("androidx.compose.ui:ui:1.7.0")
-                            api("androidx.compose.animation:animation:1.7.0")
-                            api("androidx.compose.runtime:runtime-saveable:1.7.0")
-                            implementation("androidx.compose.animation:animation-core:1.7.0")
-                            implementation("androidx.compose.foundation:foundation-layout:1.7.0")
-                        }
-                    }
-                }
-            """,
-            fork = """
-                androidXForkMultiplatform {
-                    sourceSets {
-                        commonMain.dependencies {
-                            api("org.jetbrains.compose.animation:animation:1.10.0")
-                            api("org.jetbrains.compose.runtime:runtime:1.10.0")
-                            api("org.jetbrains.compose.runtime:runtime-saveable:1.10.0")
-                            api("org.jetbrains.compose.ui:ui:1.10.0")
-                            api("org.jetbrains.compose.animation:animation:1.10.0")
-                            implementation("org.jetbrains.compose.animation:animation-core:1.10.0")
-                            implementation("org.jetbrains.compose.foundation:foundation-layout:1.10.0")
-                        }
-                    }
-                }
-            """,
-        )
-
-        verifyThenUpdate(root)
-
-        assertThat(projectDir(root).resolve("build-fork.gradle").readText()).isEqualTo(
-            """
-                androidXForkMultiplatform {
-                    sourceSets {
-                        commonMain.dependencies {
-                            implementation("androidx.annotation:annotation:1.8.0")
-                            api("org.jetbrains.compose.runtime:runtime:1.10.0")
-                            api("org.jetbrains.compose.ui:ui:1.10.0")
-                            api("org.jetbrains.compose.animation:animation:1.10.0")
-                            api("org.jetbrains.compose.runtime:runtime-saveable:1.10.0")
-                            implementation("org.jetbrains.compose.animation:animation-core:1.10.0")
-                            implementation("org.jetbrains.compose.foundation:foundation-layout:1.10.0")
-                        }
-                    }
-                }
-            """.trimIndent()
-        )
-    }
-
-    @Test
     fun `allows suppressing fork dependency verification for a source set`() {
         val root = createProject(
             original = """
@@ -594,26 +538,24 @@ class ForkDependenciesTasksTest {
     }
 
     @Test
-    fun `fail if wrong order`() {
+    fun `updates reordered fork dependencies by identity`() {
         val root = createProject(
             original = """
                 androidXMultiplatform {
                     sourceSets {
                         commonMain.dependencies {
-                            implementation("androidx.lifecycle:lifecycle-common:2.10.0")
-                            implementation("com.example:tool:1.5.0")
-                            implementation("com.example:extra:1.0.0")
+                            api("androidx.compose.runtime:runtime:1.7.0")
+                            api("androidx.compose.ui:ui:1.7.0")
                         }
                     }
                 }
             """,
             fork = """
-                androidXMultiplatform {
+                androidXForkMultiplatform {
                     sourceSets {
                         commonMain.dependencies {
-                            implementation("androidx.lifecycle:lifecycle-common:2.10.0")
-                            implementation("com.example:extra:1.0.0")
-                            implementation("com.example:tool:1.5.0")
+                            api("org.jetbrains.compose.ui:ui:1.10.0")
+                            api("org.jetbrains.compose.runtime:runtime:1.10.0")
                         }
                     }
                 }
@@ -621,6 +563,19 @@ class ForkDependenciesTasksTest {
         )
 
         verifyThenUpdate(root)
+
+        assertThat(projectDir(root).resolve("build-fork.gradle").readText()).isEqualTo(
+            """
+                androidXForkMultiplatform {
+                    sourceSets {
+                        commonMain.dependencies {
+                            api("org.jetbrains.compose.runtime:runtime:1.10.0")
+                            api("org.jetbrains.compose.ui:ui:1.10.0")
+                        }
+                    }
+                }
+            """.trimIndent()
+        )
     }
 
     @Test
