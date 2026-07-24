@@ -25,7 +25,7 @@ fun Project.configurePublicResourcesStub(libraryVariant: LibraryVariant) {
     val copyPublicResourcesDirTask =
         tasks.register("generatePublicResourcesStub", CopyPublicResourcesDirTask::class.java) { task
             ->
-            task.buildSrcResDir.set(File(getSupportRootFolder(), "buildSrc-fork/res"))
+            task.buildSrcResDir.set(File(getSupportRootFolder(), "buildSrc/res"))
         }
     libraryVariant.sources.res?.addGeneratedSourceDirectory(
         copyPublicResourcesDirTask,

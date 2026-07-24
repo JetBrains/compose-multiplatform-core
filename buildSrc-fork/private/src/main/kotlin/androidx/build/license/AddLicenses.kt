@@ -97,7 +97,7 @@ internal fun Project.addLicensesToPublishedArtifacts(license: License) {
 
 private val Project.licenseUrlToLicenseFile: Map<String, File>
     get() {
-        val allowedLicensesFolder = File(getSupportRootFolder(), "buildSrc-fork/allowedLicenses")
+        val allowedLicensesFolder = File(getSupportRootFolder(), "buildSrc/allowedLicenses")
         return mapOf(
             "http://www.apache.org/licenses/LICENSE-2.0.txt" to
                 File("$allowedLicensesFolder/Apache-2.0/LICENSE.txt"),

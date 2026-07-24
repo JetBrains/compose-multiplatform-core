@@ -74,4 +74,4 @@ internal const val ANDROIDX_CORPUS =
     "android.googlesource.com/platform/frameworks/support//androidx-main"
 
 internal fun Project.getVnamesJson(): File =
-    File(project.getSupportRootFolder(), "buildSrc-fork/vnames.json")
+    File(project.getSupportRootFolder(), "buildSrc/vnames.json")

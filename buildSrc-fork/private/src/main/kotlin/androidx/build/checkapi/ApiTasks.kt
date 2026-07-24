@@ -133,7 +133,7 @@ fun Project.configureProjectForApiTasks(config: ApiTaskConfig, extension: Androi
             ResourceTasks.setupProject(
                 project,
                 config.variant.artifacts.get(SingleArtifact.PUBLIC_ANDROID_RESOURCES_LIST).orElse {
-                    File(project.getSupportRootFolder(), "buildSrc-fork/blank-res-api/public.txt")
+                    File(project.getSupportRootFolder(), "buildSrc/blank-res-api/public.txt")
                 },
                 builtApiLocation,
                 outputApiLocations,
