@@ -48,6 +48,7 @@ object JetBrainsPublication {
                 supportedPlatforms = ComposePlatforms.SKIKO_SUPPORT,
             ),
             ComposeComponent(":compose:ui:ui-graphics"),
+            ComposeComponent(":compose:ui:ui-skiko"),
             ComposeComponent(":compose:ui:ui-test"),
             ComposeComponent(
                 ":compose:ui:ui-test-junit4",
@@ -201,8 +202,8 @@ class JetBrainsVersions(val libraryToVersion: Map<String, String>) : Serializabl
         }
     }
 
-    fun versionOf(libraryName: String): String {
-        return libraryToVersion[libraryName] ?: "9999.0.0-SNAPSHOT"
+    fun versionOf(libraryName: String?): String {
+        return libraryName?.let(libraryToVersion::get) ?: "9999.0.0-SNAPSHOT"
     }
 }
 

@@ -1,0 +1,310 @@
+/*
+ * Copyright 2023 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+import androidx.build.KotlinTarget
+import org.jetbrains.androidx.build.XcodeBuildLock
+
+plugins {
+    id("AndroidXPlugin")
+    id("kotlin-multiplatform")
+    id("JetBrainsAndroidXPlugin")
+}
+
+kotlin {
+    applyDefaultHierarchyTemplate()
+
+    iosArm64("iosArm64") {
+        configure(it, true, "arm64", null /*"iosArm64Test"*/)
+    }
+    iosSimulatorArm64("iosSimulatorArm64") {
+        configure(it, false, "arm64", "iosSimulatorArm64Test")
+    }
+
+    sourceSets {
+        configureEach {
+            languageSettings.languageVersion = KotlinTarget.DEFAULT.apiVersion.version
+        }
+    }
+}
+
+private def xcodeArchiveArgs(libraryName, buildDir, sdkName, destination, architecture, extraBuildSettings = []) {
+    return [
+            "archive",
+            "-scheme", libraryName,
+            "-archivePath", buildDir,
+            "-sdk", sdkName,
+            "-destination", destination,
+            "SKIP_INSTALL=NO",
+            "BUILD_LIBRARY_FOR_DISTRIBUTION=YES",
+    ] + extraBuildSettings + [
+            "VALID_ARCHS=${architecture}",
+            "MACH_O_TYPE=staticlib"
+    ]
+}
+
+private def archivedStaticLibraryPath(buildDir, libraryName) {
+    return new File(buildDir, "/Products/usr/local/lib/lib${libraryName}.a")
+}
+
+private def isMacHost() {
+    return System.getProperty("os.name") == "Mac OS X"
+}
+
+private def configure(target, isDevice, architecture, testTarget) {
+    if (!isMacHost()) return
+    def objcDir = new File(project.projectDir, "src/iosMain/objc")
+    def xcodeProjectDir = new File(objcDir, "CMPUIKitUtils")
+    def sdkName = isDevice ? "iphoneos" : "iphonesimulator"
+    def destination = isDevice ? "generic/platform=iOS" : "generic/platform=iOS Simulator"
+
+    configureObjcUtils(target, xcodeProjectDir, sdkName, destination, architecture, isDevice, testTarget)
+    configureSwiftUtils(target, xcodeProjectDir, sdkName, destination, architecture)
+}
+
+private def configureObjcUtils(target, xcodeProjectDir, sdkName, destination, architecture, isDevice, testTarget) {
+    def libraryName = "CMPUIKitObjcUtils"
+    def testSchemeName = "CMPUIKitUtilsTests"
+    def buildDir = new File(project.buildDir, "objc/${libraryName}-${sdkName}.xcarchive")
+    def libraryPath = archivedStaticLibraryPath(buildDir, libraryName)
+    def headersPath = new File(xcodeProjectDir, libraryName)
+
+    def systemFrameworks = ["UIKit", libraryName]
+    def linkerFlags = ["-ObjC"] + systemFrameworks.collectMany {
+        ["-framework", it]
+    }
+    def compilerArgs = [
+            "-include-binary", libraryPath.toString(),
+    ] + linkerFlags.collectMany {
+        ["-linker-option", it]
+    }
+
+    if (!isDevice && testTarget != null) {
+        def getTargetDeviceTaskName = "${target.name}GetTargetDevice"
+        def testFrameworkTaskName = "${target.name}FrameworkTest"
+
+        def getTargetDeviceTask = project.tasks.register(getTargetDeviceTaskName, Exec) {
+            ext.device = ""
+            commandLine "xcrun", "simctl", "list", "devices"
+            standardOutput = new ByteArrayOutputStream()
+            doLast {
+                def output = standardOutput.toString()
+                def match = output.find("iPhone 1[567][ \\w\\d]* \\(")
+                def targetDevice = match.dropRight(2)
+                device = targetDevice
+            }
+        }
+
+        def testFrameworkTask = project.tasks.register(testFrameworkTaskName) {
+            dependsOn getTargetDeviceTask
+            doLast {
+                usesService(XcodeBuildLock.instance(project))
+                project.exec {
+                    workingDir xcodeProjectDir
+                    commandLine "xcodebuild",
+                            "test",
+                            "-scheme", testSchemeName,
+                            "-destination", "platform=iOS Simulator,name=${tasks[getTargetDeviceTaskName].device}",
+                            "-sdk", sdkName,
+                            "VALID_ARCHS=${architecture}"
+                }
+            }
+        }
+
+        tasks.findByName(testTarget)?.dependsOn(testFrameworkTask)
+    }
+
+    target.compilations.main {
+        def libTaskName = "${compileTaskProvider.name}ObjCLib"
+        def libTask = project.tasks.register(libTaskName, Exec) {
+            usesService(XcodeBuildLock.instance(project))
+            inputs.dir(xcodeProjectDir)
+                    .withPropertyName("${libraryName}-${sdkName}")
+                    .withPathSensitivity(PathSensitivity.RELATIVE)
+
+            outputs.cacheIf { true }
+            outputs.dir(buildDir)
+                    .withPropertyName("${libraryName}-${sdkName}-archive")
+
+            workingDir(xcodeProjectDir)
+            commandLine("xcodebuild")
+            args(xcodeArchiveArgs(libraryName, buildDir, sdkName, destination, architecture))
+        }
+
+        tasks[compileTaskProvider.name].dependsOn(libTask)
+
+        // Generate ObjC bindings from the checked-in headers and package the static archive into the klib.
+        cinterops {
+            objcUtils {
+                def cinteropTask = tasks[interopProcessingTaskName]
+
+                headersPath.eachFileRecurse {
+                    if (it.name.endsWith('.h')) {
+                        extraOpts("-header", it.name)
+                        cinteropTask.inputs.file(it)
+                    }
+                }
+                compilerOpts("-I${headersPath}")
+            }
+        }
+    }
+
+    target.binaries.all {
+        freeCompilerArgs += compilerArgs
+    }
+    target.compilations.all {
+        kotlinOptions {
+            freeCompilerArgs += compilerArgs
+        }
+    }
+}
+
+private def configureSwiftUtils(target, xcodeProjectDir, sdkName, destination, architecture) {
+    def libraryName = "CMPUIKitSwiftUtils"
+    def librarySourcesDir = new File(xcodeProjectDir, libraryName)
+    def buildDir = new File(project.buildDir, "objc/${libraryName}-${sdkName}.xcarchive")
+    def libraryPath = archivedStaticLibraryPath(buildDir, libraryName)
+    def headersPath = new File(buildDir, "/Products/usr/local/include/${libraryName}")
+    def generatedHeaderPath = new File(headersPath, "${libraryName}-Swift.h")
+    def sourceDefPath = new File(project.projectDir, "src/nativeInterop/cinterop/swiftUtils.def")
+    def generatedDefPath = new File(project.buildDir, "generated/nativeInterop/cinterop/${libraryName}-${sdkName}/swiftUtils.def")
+    def swiftcPathProvider = providers.exec {
+        commandLine("xcrun", "--find", "swiftc")
+    }.standardOutput.asText.map {
+        it.trim()
+    }
+    def compilerArgs = [
+            "-include-binary", libraryPath.toString(),
+    ]
+    def swiftBuildSettings = [
+            "DEFINES_MODULE=YES",
+            "SWIFT_INSTALL_OBJC_HEADER=YES",
+            "SWIFT_OBJC_INTERFACE_HEADER_NAME=${libraryName}-Swift.h",
+    ]
+
+    target.compilations.main {
+        def libTaskName = "${compileTaskProvider.name}UIKitSwiftUtilsLib"
+
+        // Archive the Swift target first. The archive installs both the static library and the generated -Swift.h header.
+        def libTask = project.tasks.register(libTaskName, Exec) {
+            usesService(XcodeBuildLock.instance(project))
+            inputs.dir(librarySourcesDir)
+                    .withPropertyName("${libraryName}-${sdkName}")
+                    .withPathSensitivity(PathSensitivity.RELATIVE)
+            inputs.file(new File(xcodeProjectDir, "CMPUIKitUtils.xcodeproj/project.pbxproj"))
+                    .withPropertyName("${libraryName}-${sdkName}-project")
+                    .withPathSensitivity(PathSensitivity.RELATIVE)
+
+            outputs.cacheIf { true }
+            outputs.dir(buildDir)
+                    .withPropertyName("${libraryName}-${sdkName}-archive")
+
+            workingDir(xcodeProjectDir)
+            commandLine("xcodebuild")
+            args(xcodeArchiveArgs(
+                    libraryName,
+                    buildDir,
+                    sdkName,
+                    destination,
+                    architecture,
+                    swiftBuildSettings
+            ))
+        }
+
+        def defTaskName = "${compileTaskProvider.name}UIKitSwiftUtilsDef"
+
+        // cinterop persists linkerOpts only when they come from a .def file. Generate one because
+        // Swift compatibility libraries live under the selected Xcode toolchain path.
+        def defTask = project.tasks.register(defTaskName) {
+            inputs.file(sourceDefPath)
+                    .withPropertyName("${libraryName}-${sdkName}-source-def")
+                    .withPathSensitivity(PathSensitivity.RELATIVE)
+            inputs.property("sdkName", sdkName)
+            inputs.property("swiftcPath", swiftcPathProvider)
+            outputs.file(generatedDefPath)
+                    .withPropertyName("${libraryName}-${sdkName}-def")
+            outputs.upToDateWhen { false }
+
+            doLast {
+                // Resolve the selected Xcode toolchain only when this iOS task runs.
+                def swiftcPath = swiftcPathProvider.get()
+                def swiftToolchainDir = new File(swiftcPath).parentFile.parentFile.parentFile
+                def swiftToolchainLibPath = new File(swiftToolchainDir, "usr/lib/swift/${sdkName}")
+                def swiftLinkerOpts = [
+                        "-ObjC",
+
+                        "-L${swiftToolchainLibPath}",
+
+                        "-rpath",
+                        "/usr/lib/swift",
+
+                        "-framework",
+                        "Foundation",
+
+                        "-lc++",
+
+                        "-lswiftCore",
+                        "-lswiftFoundation",
+                        "-lswiftCoreFoundation",
+                        "-lswiftDispatch",
+                        "-lswiftObjectiveC",
+                        "-lswiftXPC",
+                        "-lswift_Builtin_float",
+                        "-lswift_Concurrency",
+
+                        "-lswiftCompatibility51",
+                        "-lswiftCompatibility56",
+                        "-lswiftCompatibilityConcurrency",
+                        "-lswiftCompatibilityPacks",
+                ]
+
+                generatedDefPath.parentFile.mkdirs()
+                generatedDefPath.text = "${sourceDefPath.text.trim()}\nlinkerOpts = ${swiftLinkerOpts.join(" ")}\n"
+            }
+        }
+
+        tasks[compileTaskProvider.name].dependsOn(libTask)
+
+        // Generate Kotlin bindings from the installed Swift ObjC header and use the generated .def
+        // so downstream Kotlin/Native binaries receive the Swift linker options transitively.
+        cinterops {
+            swiftUtils {
+                def cinteropTask = tasks[interopProcessingTaskName]
+                cinteropTask.dependsOn(libTask)
+                cinteropTask.dependsOn(defTask)
+                cinteropTask.inputs.file(generatedHeaderPath)
+                extraOpts("-header", generatedHeaderPath.name)
+                compilerOpts("-I${headersPath}")
+                defFile(generatedDefPath)
+            }
+        }
+    }
+
+    target.binaries.all {
+        freeCompilerArgs += compilerArgs
+    }
+    target.compilations.all {
+        kotlinOptions {
+            freeCompilerArgs += compilerArgs
+        }
+    }
+}
+
+androidx {
+    name = "Compose UIKit"
+    inceptionYear = "2023"
+    description = "Internal iOS UIKit utilities including Objective-C library."
+    legacyDisableKotlinStrictApiMode = true
+}

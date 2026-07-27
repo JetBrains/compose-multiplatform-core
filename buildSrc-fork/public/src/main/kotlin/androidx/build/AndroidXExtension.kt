@@ -54,10 +54,7 @@ abstract class AndroidXExtension(
     val deviceTests = DeviceTests.register(project.extensions)
 
     init {
-        // Always set a known default based on project path. see: b/302183954
-        setDefaultGroupFromProjectPath()
         mavenGroup = chooseLibraryGroup()
-        chooseProjectVersion()
     }
 
     @get:Inject abstract val buildFeatures: BuildFeatures

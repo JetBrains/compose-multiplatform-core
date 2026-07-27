@@ -98,7 +98,7 @@ abstract class ListAffectedProjectsTask : DefaultTask() {
             changedFilesList
                 .mapNotNull { changedFile ->
                     when {
-                        changedFile.startsWith("buildSrc/") -> ":buildSrc-tests"
+                        changedFile.startsWith("buildSrc-fork/") -> ":buildSrc-tests"
                         "/src/" in changedFile -> {
                             val candidate = changedFile.substringBefore("/src/")
                             projectByFilePath[candidate]

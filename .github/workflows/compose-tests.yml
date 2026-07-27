@@ -1,10 +1,11 @@
-name: Compose Tests
+name: Tests
 on:
   workflow_dispatch:
   pull_request:
   push:
     branches:
       - jb-main
+      - integration
 
 env:
   # TODO: https://youtrack.jetbrains.com/issue/CMP-9497/Investgate-CfW-tests-flakiness-with-enabled-gradle-configuration-cache-on-CI
@@ -18,7 +19,7 @@ env:
 jobs:
   compose-desktop-tests:
     runs-on: ubuntu-24.04
-    name: Compose Desktop Tests
+    name: Desktop
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v5
@@ -31,7 +32,7 @@ jobs:
           sudo Xvfb :1 -screen 0 1920x1080x24 -extension RANDR +extension GLX &
           echo "DISPLAY=:1.0" >> $GITHUB_ENV
 
-      - name: Run Desktop Tests
+      - name: Run Desktop
         run: |
           ./gradlew testDesktop \
             --no-daemon --stacktrace
@@ -53,7 +54,7 @@ jobs:
 
   compose-ios-tests:
     runs-on: macos-26-xlarge
-    name: Compose iOS Tests
+    name: iOS
     env:
       GRADLE_OPTS: -Xmx12g -Dorg.gradle.daemon=false
     steps:
@@ -66,7 +67,7 @@ jobs:
       - name: Setup Xcode
         uses: ./.github/actions/setup-xcode
 
-      - name: Run iOS Tests
+      - name: Run iOS
         timeout-minutes: 15
         run: |
           ./gradlew testIos \
@@ -80,7 +81,7 @@ jobs:
 
   compose-ios-utils-tests:
     runs-on: macos-26-xlarge
-    name: Compose iOS Utils Tests
+    name: iOS Utils
     env:
       GRADLE_OPTS: -Xmx12g -Dorg.gradle.daemon=false
     steps:
@@ -93,7 +94,7 @@ jobs:
       - name: Setup Xcode
         uses: ./.github/actions/setup-xcode
 
-      - name: Run iOS Utils Tests
+      - name: Run iOS Utils
         timeout-minutes: 15
         shell: bash
         working-directory: compose/ui/ui-uikit/src/iosMain/objc/CMPUIKitUtils
@@ -145,7 +146,7 @@ jobs:
           - runtime: 'ios26'
             device_type: 'tablet'
             device: 'iPad Pro 11-inch (M5)'
-    name: Compose iOS Instrumented Tests ${{ matrix.runtime_name }} / ${{ matrix.device }}
+    name: iOS Instrumented ${{ matrix.runtime_name }} / ${{ matrix.device }}
     env:
       GRADLE_OPTS: -Xmx12g -Dorg.gradle.daemon=false
     steps:
@@ -161,10 +162,13 @@ jobs:
           simulator-device: ${{ matrix.device }}
           simulator-os: ${{ matrix.simulator_os }}
 
-      - name: Run iOS Instrumented Tests
+      - name: Run iOS Instrumented
         timeout-minutes: 30
         shell: bash
         working-directory: compose/ui/ui/src/uikitInstrumentedTest/launcher
+        env:
+          # Keep xcodebuild's stdout unbuffered so its log lines stay in order.
+          NSUnbufferedIO: "YES"
         run: |
           xcodebuild test \
             -resultBundlePath TestResults.xcresult \
@@ -187,7 +191,7 @@ jobs:
 
   compose-web-chrome-tests:
     runs-on: ubuntu-24.04
-    name: Compose Web Chrome Tests
+    name: Web Chrome
     strategy:
       fail-fast: false
       matrix:
@@ -243,7 +247,7 @@ jobs:
         run: |
           ps -eo pid,ppid,cmd,%mem,%cpu --sort=-%mem | head -n 15
 
-      - name: Run Web Chrome Tests
+      - name: Run Web Chrome
         run: |
           set -euo pipefail
           (while true; do
@@ -279,7 +283,7 @@ jobs:
 
   compose-web-firefox-tests:
     runs-on: ubuntu-24.04
-    name: Compose Web Firefox Tests
+    name: Web Firefox
     strategy:
       fail-fast: false
       matrix:
@@ -338,7 +342,7 @@ jobs:
         run: |
           ps -eo pid,ppid,cmd,%mem,%cpu --sort=-%mem | head -n 15
 
-      - name: Run Web Firefox Tests
+      - name: Run Web Firefox
         run: |
           set -euo pipefail
           (while true; do
