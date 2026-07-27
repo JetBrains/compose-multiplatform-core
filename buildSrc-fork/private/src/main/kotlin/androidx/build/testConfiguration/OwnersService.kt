@@ -61,7 +61,7 @@ internal fun Project.registerOwnersServiceTasks() {
         task.destinationDirectory.set(getDistributionDirectory())
         task.from(layout.projectDirectory)
         task.include("**/OWNERS")
-        task.exclude("buildSrc/.gradle/**")
+        task.exclude("buildSrc-fork/.gradle/**")
         task.exclude(".gradle/**")
         task.exclude("build/reports/**")
         task.exclude("kotlin-js-store/**")
