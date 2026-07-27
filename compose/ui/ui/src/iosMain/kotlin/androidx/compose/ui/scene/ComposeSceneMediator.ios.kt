@@ -332,7 +332,14 @@ internal class ComposeSceneMediator(
                 finishUnattachedKeysPresses()
             }
         },
-        onHasWindowChanged = { if (it) keyboardManager.start() else keyboardManager.stop() }
+        onHasWindowChanged = {
+            if (it) {
+                keyboardManager.start()
+                focusOverlayViewIfNeeded()
+            } else {
+                keyboardManager.stop()
+            }
+        }
     )
 
     val overlayView: UIView get() = _overlayView
@@ -342,7 +349,6 @@ internal class ComposeSceneMediator(
      * The view handles user touches that occur only over the interop views located on it.
      */
     private val _backgroundView = BackgroundInputView(
-        onMovedToWindow = ::focusOverlayViewIfNeeded,
         onLayoutSubviews = ::updateLayout,
         hitTestInteropView = ::hitTestInteropView,
         isPointInsideInteractionBounds = ::isPointInsideInteractionBounds,
