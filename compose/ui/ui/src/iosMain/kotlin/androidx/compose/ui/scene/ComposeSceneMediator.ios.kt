@@ -37,13 +37,20 @@ import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.PointerKeyboardModifiers
+import androidx.compose.ui.input.key.internal
 import androidx.compose.ui.input.key.toComposeEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.HistoricalChange
 import androidx.compose.ui.input.pointer.PointerButton
 import androidx.compose.ui.input.pointer.PointerButtons
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.PointerId
+import androidx.compose.ui.input.pointer.PointerKeyboardModifiers
 import androidx.compose.ui.input.pointer.PointerType
+import androidx.compose.ui.input.pointer.isAltPressed
+import androidx.compose.ui.input.pointer.isCtrlPressed
+import androidx.compose.ui.input.pointer.isMetaPressed
+import androidx.compose.ui.input.pointer.isShiftPressed
 import androidx.compose.ui.layout.OffsetToFocusedRect
 import androidx.compose.ui.navigationevent.UIKitNavigationEventInput
 import androidx.compose.ui.platform.AccessibilityMediator
@@ -52,7 +59,6 @@ import androidx.compose.ui.platform.DefaultInputModeManager
 import androidx.compose.ui.platform.FrameRecomposer
 import androidx.compose.ui.platform.PlatformArchitectureComponentsOwner
 import androidx.compose.ui.platform.PlatformContext
-import androidx.compose.ui.platform.PlatformOutOfFrameExecutor
 import androidx.compose.ui.platform.PlatformScreenReader
 import androidx.compose.ui.platform.PlatformTextInputMethodRequest
 import androidx.compose.ui.platform.PlatformWindowContext
@@ -68,13 +74,6 @@ import androidx.compose.ui.uikit.LocalUIView
 import androidx.compose.ui.uikit.OnFocusBehavior
 import androidx.compose.ui.uikit.density
 import androidx.compose.ui.uikit.toNanoSeconds
-import androidx.compose.ui.input.key.internal
-import androidx.compose.ui.input.key.type
-import androidx.compose.ui.input.pointer.PointerKeyboardModifiers
-import androidx.compose.ui.input.pointer.isAltPressed
-import androidx.compose.ui.input.pointer.isCtrlPressed
-import androidx.compose.ui.input.pointer.isMetaPressed
-import androidx.compose.ui.input.pointer.isShiftPressed
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.IntRect
@@ -312,7 +311,7 @@ internal class ComposeSceneMediator(
         onCancelScroll = ::onCancelScroll,
         onHoverEvent = ::onHoverEvent,
         onKeyboardPresses = ::onKeyboardPresses,
-        ignoreTouchChanges = navigationEventInput::isBackGestureActive,
+        isHigherPriorityGestureTrackingTouches = navigationEventInput::isBackGestureTrackingTouches,
         onRemoveSubview = {
             CoroutineScope(coroutineContext).launch {
                 finishUnattachedKeysPresses()
@@ -333,7 +332,7 @@ internal class ComposeSceneMediator(
         isPointInsideInteractionBounds = ::isPointInsideInteractionBounds,
         onTouchesEvent = ::onTouchesEvent,
         onCancelAllTouches = ::onCancelAllTouches,
-        ignoreTouchChanges = navigationEventInput::isBackGestureActive
+        isHigherPriorityGestureTrackingTouches = navigationEventInput::isBackGestureTrackingTouches
     )
 
     val backgroundView: UIView get() = _backgroundView
@@ -409,7 +408,9 @@ internal class ComposeSceneMediator(
     private val textInputService: UIKitTextInputService by lazy {
         UIKitTextInputService(
             updateView = {
-                frameRecomposer.performFrame(lastRenderTime)
+                withFrameGuard {
+                    frameRecomposer.performFrame(lastRenderTime)
+                }
                 scene.measureAndLayout()
                 CATransaction.flush()
             },
@@ -640,8 +641,24 @@ internal class ComposeSceneMediator(
     private var lastRenderTime = CACurrentMediaTime().toNanoSeconds()
     fun render(canvas: Canvas, nanoTime: Long) {
         lastRenderTime = nanoTime
-        with(sceneRenderingScope) {
-            scene.render(frameRecomposer, canvas, nanoTime)
+        withFrameGuard {
+            with(sceneRenderingScope) {
+                scene.render(frameRecomposer, canvas, nanoTime)
+            }
+        }
+    }
+
+    private var isPerformingFrame = false
+    private inline fun withFrameGuard(crossinline block: () -> Unit) {
+        if (isPerformingFrame) {
+            // Fixes issue with reentrant redraws from native text-input edits mid-frame
+            return
+        }
+        isPerformingFrame = true
+        try {
+            block()
+        } finally {
+            isPerformingFrame = false
         }
     }
 

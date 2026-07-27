@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Android Open Source Project
+ * Copyright 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,25 +14,16 @@
  * limitations under the License.
  */
 
-package androidx.compose.desktop
+#import "CMPContainerView.h"
 
-internal class TestThread(private val _run: () -> Unit) : Thread() {
-    private var exception: Exception? = null
+@implementation CMPContainerView
 
-    override fun run() {
-        try {
-            _run()
-        } catch (e: InterruptedException) {
-            // ignore
-        } catch (e: Exception) {
-            exception = e
-        }
-    }
+- (void)didMoveToWindow {
+    [super didMoveToWindow];
 
-    fun joinAndThrow() {
-        join()
-        if (exception != null) {
-            throw exception!!
-        }
+    if (self.onDidMoveToWindowBlock != nil) {
+        self.onDidMoveToWindowBlock();
     }
 }
+
+@end

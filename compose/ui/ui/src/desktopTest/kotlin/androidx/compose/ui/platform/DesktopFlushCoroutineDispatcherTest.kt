@@ -14,9 +14,8 @@
  * limitations under the License.
  */
 
-package androidx.compose.platform
+package androidx.compose.ui.platform
 
-import androidx.compose.ui.platform.FlushCoroutineDispatcher
 import java.util.concurrent.Exchanger
 import java.util.concurrent.Executors
 import kotlin.random.Random
@@ -33,7 +32,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.yield
 
-class FlushCoroutineDispatcherTest {
+class DesktopFlushCoroutineDispatcherTest {
     // we can't write this test in skikoTest because we can't wait blocking on JS target.
     @Test
     fun flushing_in_another_thread() = runBlocking {

@@ -96,9 +96,12 @@ internal class UIKitComposeSceneLayer(
 
     private val navigationEventInput = UIKitNavigationEventInput(
         density = interactionView.density,
+        initialLayoutDirection = initialLayoutDirection,
         getTopLeftOffsetInWindow = { boundsInWindow.topLeft },
         endEdgePanGestureBehavior = configuration.endEdgePanGestureBehavior
-    ).also { navigationEventDispatcher.addInput(it) }
+    ).also {
+        navigationEventDispatcher.addInput(it)
+    }
 
     private val mediator = ComposeSceneMediator(
         onFocusBehavior = configuration.onFocusBehavior,
@@ -142,7 +145,12 @@ internal class UIKitComposeSceneLayer(
             // density of the layer cannot be customized
         }
 
-    override var layoutDirection by mediator::layoutDirection
+    override var layoutDirection: LayoutDirection
+        get() = mediator.layoutDirection
+        set(value) {
+            mediator.layoutDirection = value
+            navigationEventInput.layoutDirection = value
+        }
 
     override var boundsInWindow: IntRect by mediator::interactionBounds
 

@@ -44,6 +44,7 @@ import org.jetbrains.skiko.MainUIDispatcher
 import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.Timeout
 
 @OptIn(
     ExperimentalTime::class,
@@ -52,6 +53,9 @@ import org.junit.Test
 class ImageComposeSceneTest {
     @get:Rule
     val screenshotRule = DesktopScreenshotTestRule("compose/ui/ui-desktop")
+
+    @get:Rule // A timeout inside @Test annotation does not always work
+    val timeout: Timeout = Timeout.seconds(60)
 
     @Ignore("enable when we make a fork of golden repo")
     @Test
