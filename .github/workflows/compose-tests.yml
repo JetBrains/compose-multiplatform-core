@@ -165,6 +165,9 @@ jobs:
         timeout-minutes: 30
         shell: bash
         working-directory: compose/ui/ui/src/uikitInstrumentedTest/launcher
+        env:
+          # Keep xcodebuild's stdout unbuffered so its log lines stay in order.
+          NSUnbufferedIO: "YES"
         run: |
           xcodebuild test \
             -resultBundlePath TestResults.xcresult \
