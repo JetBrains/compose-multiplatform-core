@@ -93,6 +93,7 @@ import androidx.compose.ui.unit.bounds
 import androidx.compose.ui.unit.round
 import androidx.compose.ui.unit.toMaxConstraints
 import androidx.compose.ui.unit.toRect
+import androidx.compose.ui.useSnapshotCache
 import androidx.compose.ui.util.fastAll
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.trace
@@ -132,7 +133,10 @@ internal class RootNodeOwner(
 
     private val rootSemanticsNode = EmptySemanticsModifier()
     private val snapshotObserver = OwnerSnapshotObserver(onChangedExecutor)
-    private val graphicsContext = SkiaGraphicsContext(platformContext.measureDrawLayerBounds)
+    private val graphicsContext = SkiaGraphicsContext(
+        measureDrawBounds = platformContext.measureDrawLayerBounds,
+        snapshotCache = ComposeUiFlags.useSnapshotCache,
+    )
     private val coroutineScope =
         CoroutineScope(coroutineContext + Job(parent = coroutineContext[Job]))
 
