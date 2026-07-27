@@ -332,8 +332,8 @@ internal class ComposeSceneMediator(
                 finishUnattachedKeysPresses()
             }
         },
-        onHasWindowChanged = {
-            if (it) {
+        onHasWindowChanged = { hasWindow ->
+            if (hasWindow) {
                 keyboardManager.start()
                 focusOverlayViewIfNeeded()
             } else {
