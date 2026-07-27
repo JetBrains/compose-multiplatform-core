@@ -169,10 +169,10 @@ internal class AndroidParagraph(
      */
     private val applyLineHeightOptimization: Boolean
         get() =
-            !paragraphIntrinsics.softWrap &&
+            AndroidComposeUiTextFlags.isSingleLineLineHeightOptimizationEnabled &&
+                !paragraphIntrinsics.softWrap &&
                 !paragraphIntrinsics.mayHaveNewLine &&
-                paragraphIntrinsics.style.baselineShift == null &&
-                AndroidComposeUiTextFlags.isSingleLineLineHeightOptimizationEnabled
+                paragraphIntrinsics.style.baselineShift == null
 
     /**
      * The downward canvas translation shift applied to the paragraph when rendering. When the
