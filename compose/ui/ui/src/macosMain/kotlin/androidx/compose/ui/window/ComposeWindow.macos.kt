@@ -19,8 +19,9 @@
 package androidx.compose.ui.window
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.InternalComposeApi
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.asComposeCanvas
+import androidx.compose.ui.graphics.SkiaCanvasHolder
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.key.toComposeEvent
 import androidx.compose.ui.input.pointer.MacosCursor
@@ -136,6 +137,10 @@ private class ComposeWindow(
         invalidateLayout = sceneRenderingScope::onSceneInvalidation,
         invalidateDraw = sceneRenderingScope::onSceneInvalidation,
     )
+
+    @OptIn(InternalComposeApi::class)
+    private val canvasHolder = SkiaCanvasHolder()
+    @OptIn(InternalComposeApi::class)
     private val renderDelegate = object : SkikoRenderDelegate {
         override fun onRender(canvas: Canvas, width: Int, height: Int, nanoTime: Long) {
             val sizeInPx = IntSize(width, height)
@@ -143,7 +148,10 @@ private class ComposeWindow(
             _windowInfo.containerDpSize = sizeInPx.toSize().toDpSize(scene.density)
             scene.size = sizeInPx // TODO: Move it out from onRender to avoid extra invalidation
             with(sceneRenderingScope) {
-                scene.render(frameRecomposer, canvas.asComposeCanvas(), nanoTime)
+                @Suppress("INVISIBLE_REFERENCE")
+                canvasHolder.drawInto(canvas) {
+                    scene.render(frameRecomposer, this@drawInto, nanoTime)
+                }
             }
         }
     }

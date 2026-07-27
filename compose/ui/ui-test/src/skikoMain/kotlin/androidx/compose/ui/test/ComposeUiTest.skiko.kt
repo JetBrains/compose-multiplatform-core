@@ -17,13 +17,14 @@
 package androidx.compose.ui.test
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.InternalComposeApi
 import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.draganddrop.DragAndDropTransferData
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.asComposeCanvas
+import androidx.compose.ui.graphics.SkiaCanvasHolder
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.toComposeImageBitmap
 import androidx.compose.ui.node.RootForTest
@@ -227,6 +228,9 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
     )
 
     private val surface = Surface.makeRasterN32Premul(width, height)
+
+    @OptIn(InternalComposeApi::class)
+    private val canvasHolder : SkiaCanvasHolder = SkiaCanvasHolder(surface.canvas)
     private val size = IntSize(width, height)
 
     @InternalComposeUiApi
@@ -325,11 +329,13 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
      * so a capture reflects the latest state. Draw is decoupled from idle, so producing
      * an up-to-date image is the capture's responsibility rather than the idle loop's.
      */
+    @OptIn(InternalComposeApi::class)
     private fun redraw() = runOnUiThread {
         scene.measureAndLayout()
         with(surface.canvas) {
             clear(Color.TRANSPARENT)
-            scene.draw(asComposeCanvas())
+            @Suppress("INVISIBLE_REFERENCE")
+            canvasHolder.drawInto(this) { scene.draw(this) }
         }
     }
 

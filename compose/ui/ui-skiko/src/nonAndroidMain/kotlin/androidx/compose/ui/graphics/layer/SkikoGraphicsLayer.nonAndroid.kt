@@ -16,6 +16,7 @@
 
 package androidx.compose.ui.graphics.layer
 
+import androidx.compose.runtime.InternalComposeApi
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.isUnspecified
@@ -26,8 +27,7 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.RenderEffect
-import androidx.compose.ui.graphics.SkiaBackedCanvas
-import androidx.compose.ui.graphics.asComposeCanvas
+import androidx.compose.ui.graphics.SkiaCanvasHolder
 import androidx.compose.ui.graphics.asSkiaColorFilter
 import androidx.compose.ui.graphics.drawscope.CanvasDrawScope
 import androidx.compose.ui.graphics.drawscope.DrawScope
@@ -67,6 +67,9 @@ internal class SkikoGraphicsLayer(
 
     private var cachedOutline: Outline? = null
     private var cachedClip: Boolean = false
+
+    @OptIn(InternalComposeApi::class)
+    private val canvasHolder : SkiaCanvasHolder = SkiaCanvasHolder()
 
     override var compositingStrategy: CompositingStrategy = CompositingStrategy.Auto
         set(value) {
@@ -236,6 +239,7 @@ internal class SkikoGraphicsLayer(
             path
         }.materializeSkiaPath()
 
+    @OptIn(InternalComposeApi::class)
     override fun record(
         density: Density,
         layoutDirection: LayoutDirection,
@@ -245,21 +249,23 @@ internal class SkikoGraphicsLayer(
         val renderNode = renderNode ?: return
         val recordingCanvas = renderNode.beginRecording()
         try {
-            val composeCanvas = recordingCanvas.asComposeCanvas() as SkiaBackedCanvas
-            if (outsetLeft > 0 || outsetTop > 0) {
-                composeCanvas.save()
-                composeCanvas.translate(outsetLeft.toFloat(), outsetTop.toFloat())
-            }
-            pictureDrawScope.draw(
-                density = density,
-                layoutDirection = layoutDirection,
-                canvas = composeCanvas,
-                size = layer.size.toSize(),
-                graphicsLayer = layer,
-                block = block,
-            )
-            if (outsetLeft > 0 || outsetTop > 0) {
-                composeCanvas.restore()
+            @Suppress("INVISIBLE_REFERENCE")
+            canvasHolder.drawInto(recordingCanvas) {
+                if (outsetLeft > 0 || outsetTop > 0) {
+                    save()
+                    translate(outsetLeft.toFloat(), outsetTop.toFloat())
+                }
+                pictureDrawScope.draw(
+                    density = density,
+                    layoutDirection = layoutDirection,
+                    canvas = this,
+                    size = layer.size.toSize(),
+                    graphicsLayer = layer,
+                    block = block,
+                )
+                if (outsetLeft > 0 || outsetTop > 0) {
+                    restore()
+                }
             }
         } finally {
             renderNode.endRecording()
