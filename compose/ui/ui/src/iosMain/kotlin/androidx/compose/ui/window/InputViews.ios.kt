@@ -558,7 +558,7 @@ internal class OverlayInputView(
     private var onKeyboardPresses: (Set<*>) -> Unit,
     isHigherPriorityGestureTrackingTouches: () -> Boolean,
     private var onRemoveSubview: () -> Unit,
-    private var onMovedToWindow: () -> Unit,
+    private var onHasWindowChanged: (Boolean) -> Unit,
 ) : CMPScrollView(CGRectZero.readValue()) {
     /**
      * Gesture recognizer responsible for processing touches
@@ -629,9 +629,7 @@ internal class OverlayInputView(
     override fun didMoveToWindow() {
         super.didMoveToWindow()
 
-        if (window != null) {
-            onMovedToWindow()
-        }
+        onWindowChanged(window != null)
     }
 
     override fun canBecomeFirstResponder() = true
@@ -780,7 +778,7 @@ internal class OverlayInputView(
         onTouchesEvent = { _, _, _ -> PointerEventResult() }
         onCancelAllTouches = {}
         onRemoveSubview = {}
-        onMovedToWindow = {}
+        onWindowChanged = {}
         trackedTouchesOutside.clear()
     }
 }

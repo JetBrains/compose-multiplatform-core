@@ -332,7 +332,7 @@ internal class ComposeSceneMediator(
                 finishUnattachedKeysPresses()
             }
         },
-        onMovedToWindow = { keyboardManager.start() }
+        onHasWindowChanged = { if (it) keyboardManager.start() else keyboardManager.stop() }
     )
 
     val overlayView: UIView get() = _overlayView
