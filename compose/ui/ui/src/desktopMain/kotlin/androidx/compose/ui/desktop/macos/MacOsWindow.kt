@@ -463,7 +463,7 @@ class MacOsWindow internal constructor(
         layoutDirection = layoutDirection,
         size = contentSizeInPx(),
         coroutineContext = session.coroutineScope.coroutineContext +
-            MacOsKdtMainDispatcher.INSTANCE.immediate,
+            MacOsKdtMainDispatcher.INSTANCE,
         platformContext = this@MacOsWindow.platformContext,
         dataSourceContext = session.dataSourceContext,
         invalidate = { isFrameRequested = true },

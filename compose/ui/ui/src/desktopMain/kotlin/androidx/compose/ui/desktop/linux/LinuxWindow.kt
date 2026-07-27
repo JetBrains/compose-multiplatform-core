@@ -399,7 +399,7 @@ class LinuxWindow internal constructor(
         layoutDirection = layoutDirection,
         size = contentSizeInPx(),
         coroutineContext = session.coroutineScope.coroutineContext +
-            LinuxKdtMainDispatcher.INSTANCE.immediate,
+            LinuxKdtMainDispatcher.INSTANCE,
         platformContext = platformContext,
         dataSourceContext = session.dataSourceContext,
         invalidate = { isFrameRequested = true },

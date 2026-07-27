@@ -355,7 +355,7 @@ class GtkWindow internal constructor(
         layoutDirection = layoutDirection,
         size = contentSizeInPx(),
         coroutineContext = session.coroutineScope.coroutineContext +
-            GtkKdtMainDispatcher.INSTANCE.immediate,
+            GtkKdtMainDispatcher.INSTANCE,
         platformContext = platformContext,
         dataSourceContext = session.dataSourceContext,
         invalidate = { isFrameRequested = true },
