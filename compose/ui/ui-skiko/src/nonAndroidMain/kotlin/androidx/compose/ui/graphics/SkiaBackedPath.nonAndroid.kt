@@ -369,7 +369,6 @@ internal class SkiaBackedPath(
     }
 
     override fun transform(matrix: Matrix) = mutatePath {
-        transform(identityMatrix33().apply { setFrom(matrix) })
         if (mMatrix == null) mMatrix = identityMatrix33()
         mMatrix!!.setFrom(matrix)
         transform(mMatrix!!)
