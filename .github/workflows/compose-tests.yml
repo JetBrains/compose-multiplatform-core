@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - jb-main
+      - integration
 
 env:
   # TODO: https://youtrack.jetbrains.com/issue/CMP-9497/Investgate-CfW-tests-flakiness-with-enabled-gradle-configuration-cache-on-CI

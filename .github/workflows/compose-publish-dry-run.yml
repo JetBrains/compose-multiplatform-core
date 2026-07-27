@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - jb-main
+      - integration
 
 jobs:
   compose-native-publish:
