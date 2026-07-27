@@ -88,6 +88,12 @@ internal class KeyboardInsetsManager(
         activitiesHandler.dispose()
     }
 
+    /**
+     * Wait for the first keyboard frame reported after input startup.
+     * Without this, test's `waitForIdle` can return before the keyboard frame starts changing.
+     * The wait is bounded because hardware keyboards and zero-sized custom input views never
+     * report a visible keyboard frame, and the wait would be indefinite.
+     */
     fun awaitKeyboardFrameIfNeeded() {
         cancelAwaitingKeyboardFrame()
         if (keyboardHeight(KeyboardVisibilityListener.keyboardFrame) == 0.0) {
