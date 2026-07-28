@@ -18,6 +18,7 @@
 
 package androidx.compose.ui.text.platform
 
+import androidx.compose.runtime.State
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.BlendMode
@@ -380,7 +381,8 @@ internal class ParagraphBuilder(
     val density: Density,
     val textDirection: ResolvedTextDirection,
     var drawStyle: DrawStyle? = null,
-    var blendMode: BlendMode = DrawScope.DefaultBlendMode
+    var blendMode: BlendMode = DrawScope.DefaultBlendMode,
+    val onFontResolved: ((State<Any>) -> Unit)? = null,
 ) {
     private var defaultStyle = ComputedStyle.Immutable()
     private lateinit var initialStyle: SpanStyle
@@ -451,7 +453,9 @@ internal class ParagraphBuilder(
                         op.style.fontWeight ?: FontWeight.Normal,
                         op.style.fontStyle ?: FontStyle.Normal,
                         op.style.fontSynthesis ?: FontSynthesis.All
-                    )
+                    ).let { resolveResult ->
+                        onFontResolved?.invoke(resolveResult)
+                    }
 
                     // It's always mutable at this point, so we can safely cast
                     val style = (op.style as ComputedStyle.Mutable).toImmutable()
