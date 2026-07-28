@@ -163,10 +163,6 @@ Run jvm desktop samples:
 ./gradlew :compose:desktop:desktop:desktop-samples:runLayout
 ```
 
-```bash
-./gradlew :compose:desktop:desktop:desktop-samples-material3:runScaffold
-```
-
 Run wasm sample:
 
 ```bash

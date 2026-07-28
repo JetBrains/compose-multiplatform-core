@@ -53,14 +53,10 @@ getGradle().beforeProject { project ->
     def checkoutRoot = new File("${buildscript.sourceFile.parent}")
     init.chooseBuildDirectory(checkoutRoot, rootProject.name, project)
 
-    /*
-    Could not set unknown property 'kotlin.project.persistent.dir' for project ':buildSrc' of type org.gradle.api.Project.
-
     // https://youtrack.jetbrains.com/issue/KT-58223
-    def kotlinDir = new File(System.env.OUT_DIR ?: checkoutRoot, ".kotlin")
+    def kotlinDir = new File("${checkoutRoot}/out", ".kotlin")
     project.setProperty("kotlin.project.persistent.dir", kotlinDir.absolutePath)
     project.setProperty("kotlin.user.home", kotlinDir.absolutePath)
-    */
 }
 
 apply(plugin: "com.gradle.develocity")
@@ -362,7 +358,6 @@ includeProject(":compose:animation:animation-graphics:animation-graphics-samples
 includeProject(":compose:desktop")
 includeProject(":compose:desktop:desktop")
 includeProject(":compose:desktop:desktop:desktop-samples", "compose/desktop/desktop/samples")
-includeProject(":compose:desktop:desktop:desktop-samples-material3", "compose/desktop/desktop/samples-material3")
 includeProject(":compose:mpp")
 includeProject(":compose:mpp:demo")
 includeProject(":compose:mpp:demo-swiftui")
@@ -428,6 +423,7 @@ includeProject(":compose:ui:ui-geometry")
 includeProject(":compose:ui:ui-graphics")
 includeProject(":compose:ui:ui-graphics-lint")
 includeProject(":compose:ui:ui-graphics:ui-graphics-samples", "compose/ui/ui-graphics/samples")
+includeProject(":compose:ui:ui-skiko")
 includeProject(":compose:ui:ui-lint")
 includeProject(":compose:ui:ui-test")
 includeProject(":compose:ui:ui-test:ui-test-samples", "compose/ui/ui-test/samples")

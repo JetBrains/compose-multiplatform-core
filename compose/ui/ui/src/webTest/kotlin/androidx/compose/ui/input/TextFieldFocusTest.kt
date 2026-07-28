@@ -29,10 +29,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.OnCanvasTests
 import androidx.compose.ui.background
 import androidx.compose.ui.events.keyEvent
+import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.FocusState
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.isClearFocusOnMouseDownEnabled
@@ -52,19 +54,19 @@ import org.w3c.dom.pointerevents.PointerEventInit
 
 class TextFieldFocusTest : OnCanvasTests {
 
+    private suspend fun waitForSingleLineHtmlInput(): HTMLSpanElement {
+        while (true) {
+            val element = getShadowRoot().querySelector("span.compose-backing-field")
+            if (element is HTMLSpanElement) {
+                return element
+            }
+            yield()
+        }
+    }
+
     @Test
     fun canMoveFocusForwardAndBackUsingTab() = runApplicationTest {
         val focusRequester = FocusRequester()
-
-        suspend fun waitForSingleLineHtmlInput(): HTMLSpanElement {
-            while (true) {
-                val element = getShadowRoot().querySelector("span.compose-backing-field")
-                if (element is HTMLSpanElement) {
-                    return element
-                }
-                yield()
-            }
-        }
 
         var firstTextFieldFocusState: FocusState? = null
         var secondTextFieldFocusState: FocusState? = null
@@ -195,6 +197,7 @@ class TextFieldFocusTest : OnCanvasTests {
 
     @Test
     fun mouseClickOutsideDoesntClearsFocusWhenDisabled() = runApplicationTest {
+        ComposeUiFlags.isClearFocusOnMouseDownEnabled = true // opposite of local config
         val focusRequester = FocusRequester()
         var focusState: FocusState? = null
 
@@ -226,5 +229,73 @@ class TextFieldFocusTest : OnCanvasTests {
         assertTrue(focusState!!.isFocused, "Expected to keep focus despite clicking outside")
     }
 
+    @Test
+    fun mouseClickOutsideClearsFocusWhenEnabled() = runApplicationTest {
+        ComposeUiFlags.isClearFocusOnMouseDownEnabled = false // opposite of local config
+        val focusRequester = FocusRequester()
+        var focusState: FocusState? = null
 
+        createComposeWindow(
+            configure = {
+                isClearFocusOnMouseDownEnabled = true
+            }
+        ) {
+            Column(Modifier.size(300.dp, 400.dp)) {
+                Box(Modifier.testTag("box").size(100.dp).background(Color.Gray))
+                BasicTextField(
+                    state = rememberTextFieldState(),
+                    modifier = Modifier
+                        .testTag("textField")
+                        .focusRequester(focusRequester)
+                        .onFocusChanged {
+                            focusState = it
+                        }
+                )
+                LaunchedEffect(Unit) {
+                    focusRequester.requestFocus()
+                }
+            }
+        }
+        assertTrue(focusState!!.isFocused, "Expected to be focused after requestFocus")
+
+        dispatchEvents(mouseDownPointerEvent(50, 50))
+        awaitIdle()
+        assertFalse(focusState!!.isFocused, "Expected to lose focus after clicking outside")
+    }
+
+    @Test
+    fun canvasRetainsFocusAfterTextFieldStopsInput() = runApplicationTest {
+        val focusRequester = FocusRequester()
+        var focusManager: FocusManager? = null
+
+        createComposeWindow {
+            Column {
+                focusManager = LocalFocusManager.current
+                BasicTextField(
+                    state = rememberTextFieldState("test"),
+                    modifier = Modifier.focusRequester(focusRequester),
+                    lineLimits = TextFieldLineLimits.SingleLine
+                )
+            }
+        }
+
+        val shadowRoot = getShadowRoot()
+
+        getCanvas().focus()
+        assertEquals(getCanvas(), shadowRoot.activeElement, "Canvas should be focused after explicit focus() call")
+
+        focusRequester.requestFocus()
+        awaitIdle()
+
+        // Wait for the backing HTML input to appear and be focused
+        val htmlInput = waitForSingleLineHtmlInput()
+        assertEquals(htmlInput, shadowRoot.activeElement, "Backing input should have DOM focus")
+
+        // Clear focus — this triggers stopInput() which removes the backing input
+        focusManager!!.clearFocus()
+        awaitIdle()
+
+        assertFalse(htmlInput.isConnected, "Backing input should be removed")
+        assertEquals(getCanvas(), shadowRoot.activeElement, "Canvas should retain focus after the html input is removed")
+    }
 }

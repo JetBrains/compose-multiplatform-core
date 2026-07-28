@@ -20,6 +20,7 @@ import androidx.compose.ui.navigationevent.UIKitNavigationEventInput
 import androidx.compose.ui.platform.DefaultArchitectureComponentsOwner
 import androidx.compose.ui.platform.MediaEnvironment
 import androidx.compose.ui.platform.PlatformWindowContext
+import androidx.compose.ui.platform.registerSkikoComposeImplementation
 import androidx.compose.ui.scene.ComposeSceneContext
 import androidx.compose.ui.scene.ComposeSceneMediator
 import androidx.compose.ui.scene.PlatformLayersComposeScene
@@ -114,6 +115,7 @@ class ComposeSceneMediatorTest {
             ),
             mediaEnvironment = mediaEnvironment,
             composeSceneFactory = { invalidate, platformContext, frameRecomposer ->
+                registerSkikoComposeImplementation()
                 PlatformLayersComposeScene(
                     frameRecomposer = frameRecomposer,
                     density = Density(1f),

@@ -27,6 +27,7 @@ import androidx.compose.ui.platform.MediaEnvironment
 import androidx.compose.ui.platform.MotionDurationScaleImpl
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.PlatformWindowContext
+import androidx.compose.ui.platform.registerSkikoComposeImplementation
 import androidx.compose.ui.uikit.ComposeContainerConfiguration
 import androidx.compose.ui.uikit.LocalUIViewController
 import androidx.compose.ui.uikit.PlistSanityCheck
@@ -72,6 +73,11 @@ internal class ComposeContainer(
     private val coroutineContext: CoroutineContext,
     private val lifecycleDelegate: ComposeContainerLifecycleDelegate
 ) {
+    // Register before any property initializer / scene setup below touches the Skiko backend, so
+    // every iOS entry point (ComposeHostingView, ComposeHostingViewController) is covered.
+    init {
+        registerSkikoComposeImplementation()
+    }
 
     val view = ComposeContainerView(
         transparentForTouches = false,

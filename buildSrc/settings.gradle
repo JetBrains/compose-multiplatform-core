@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-def isRunFromGradlewStudio = System.getenv().get("EXPECTED_AGP_VERSION")
-if (!isRunFromGradlewStudio) {
+def isForkModeEnabled = System.getenv().get("PROJECT_MODE") != "AOSP"
+if (isForkModeEnabled) {
     apply from: "settings-fork.gradle"
     return
 }

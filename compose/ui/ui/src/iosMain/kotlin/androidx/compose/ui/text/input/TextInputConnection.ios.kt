@@ -124,6 +124,16 @@ internal abstract class TextInputConnection(
     protected abstract fun stateWillChange(textChanged: Boolean, selectionChanged: Boolean)
     protected abstract fun stateDidChange(textChanged: Boolean, selectionChanged: Boolean)
 
+    /**
+     * Refreshes [currentTextFieldValue] from the latest request snapshot. The snapshot flow can lag
+     * behind, so call this where the most up-to-date state matters — e.g. when building the context
+     * menu contents.
+     */
+    protected fun syncTextFieldValueFromRequestSnapshot() {
+        if (postponeSelectionUpdate) return
+        currentTextFieldValue = currentRequest?.stateSnapshot() ?: return
+    }
+
     abstract fun onViewGeometryUpdated()
 
     fun onPreviewKeyEvent(event: KeyEvent): Boolean {
@@ -289,11 +299,34 @@ internal abstract class TextInputConnection(
 
     override fun updateFloatingCursor(offset: DpOffset) {
         val translation = floatingCursorTranslation ?: return
-        val offsetPx = offset.toOffset(view.density)
-        val pos = textLayoutResult?.getOffsetForPosition(offsetPx + translation) ?: return
+        val layout = textLayoutResult ?: return
+
+        val fingerPx = offset.toOffset(view.density)
+        val virtualCursorPx = fingerPx + translation
+        val cursorOffset = layout.getOffsetForPosition(virtualCursorPx)
+
+        // Re-anchor translation to the text edge, not the touch position — otherwise a fast
+        // swipe past the text makes the user drag that whole distance back (and cursor looks frozen)
+        val line = layout.getLineForOffset(cursorOffset)
+        val lineLeft = layout.getLineLeft(line)
+        val lineRight = layout.getLineRight(line)
+        val textTop = layout.getLineTop(0)
+        val textBottom = layout.getLineBottom(layout.lineCount - 1)
+
+        val boundedX = virtualCursorPx.x.coerceIn(lineLeft, lineRight)
+        val boundedY = virtualCursorPx.y.coerceIn(textTop, textBottom)
+        val outOfBoundsX = virtualCursorPx.x != boundedX
+        val outOfBoundsY = virtualCursorPx.y != boundedY
+
+        if (outOfBoundsX || outOfBoundsY) {
+            floatingCursorTranslation = Offset(
+                x = if (outOfBoundsX) boundedX - fingerPx.x else translation.x,
+                y = if (outOfBoundsY) boundedY - fingerPx.y else translation.y,
+            )
+        }
 
         edit(requireUpdateView = false) {
-            setSelection(pos, pos)
+            setSelection(cursorOffset, cursorOffset)
         }
     }
 

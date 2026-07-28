@@ -67,6 +67,7 @@ internal actual suspend fun TextFieldSelectionState.detectTextFieldTapGestures(
 ) {
     pointerInputScope.detectTapAndPress(
         onTap = { offset ->
+            val wasFocused = isWindowAndTextFieldFocused
             requestFocus()
 
             if (enabled && isWindowAndTextFieldFocused) {
@@ -86,7 +87,7 @@ internal actual suspend fun TextFieldSelectionState.detectTextFieldTapGestures(
                 )
 
                 // TODO: It should be toggleable
-                if (!cursorMoved) {
+                if (!cursorMoved && wasFocused) {
                     updateTextToolbarState(Cursor)
                 }
             }
@@ -132,14 +133,13 @@ private fun TextFieldSelectionState.placeCursorAtDesiredOffset(offset: Offset): 
     if (proposedIndex == -1) return false
 
     // Second step: adjust proposed cursor position as iOS does
-    val previousIndex = layoutResult.getOffsetForPosition(handleDragPosition)
     val currentText = textFieldState.untransformedText.text as String
     val index = if (textFieldState.untransformedText != textFieldState.visualText) {
         // BTF1 on iOS doesn't apply custom cursor positioning in case of any transformation,
         // so BTF2 should handle cursor positioning the same
         proposedIndex
     } else {
-        determineCursorDesiredOffset(proposedIndex, previousIndex, layoutResult, currentText)
+        determineCursorDesiredOffset(proposedIndex, layoutResult, currentText)
     }
 
     // Third step: if a transformation is applied, determine if the proposed cursor position

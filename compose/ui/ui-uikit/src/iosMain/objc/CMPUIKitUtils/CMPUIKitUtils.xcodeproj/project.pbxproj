@@ -7,20 +7,22 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		55F0AA132F70000100ABC123 /* CMPFrameRateRange.m in Sources */ = {isa = PBXBuildFile; fileRef = 55F0AA122F70000100ABC123 /* CMPFrameRateRange.m */; };
 		99009B7A2F322B4700518C1F /* CMPMetalLayer.m in Sources */ = {isa = PBXBuildFile; fileRef = 99009B792F322B4700518C1F /* CMPMetalLayer.m */; };
 		99009B7B2F322B4700518C1F /* CMPMetalLayer.m in Sources */ = {isa = PBXBuildFile; fileRef = 99009B792F322B4700518C1F /* CMPMetalLayer.m */; };
 		991A97F72E1FB99300B47130 /* CMPScrollView.m in Sources */ = {isa = PBXBuildFile; fileRef = 991A97F62E1FB99300B47130 /* CMPScrollView.m */; };
 		99293FF52F2B8A81001EC2A1 /* CMPDrawable.m in Sources */ = {isa = PBXBuildFile; fileRef = 99293FF32F2B8A81001EC2A1 /* CMPDrawable.m */; };
 		99293FF82F2B8A81001EC2A1 /* CMPDrawable.m in Sources */ = {isa = PBXBuildFile; fileRef = 99293FF32F2B8A81001EC2A1 /* CMPDrawable.m */; };
 		992EDDFB2E55EC8400FB44C5 /* CMPKeyValueObserver.m in Sources */ = {isa = PBXBuildFile; fileRef = 992EDDFA2E55EC8400FB44C5 /* CMPKeyValueObserver.m */; };
-		AABB11112F5A0000000000A3 /* CMPUIWindowSceneExtensions.m in Sources */ = {isa = PBXBuildFile; fileRef = AABB11112F5A0000000000A2 /* CMPUIWindowSceneExtensions.m */; };
+		9967254830010FBC0013BF47 /* CMPContainerView.m in Sources */ = {isa = PBXBuildFile; fileRef = 9967254730010FBC0013BF47 /* CMPContainerView.m */; };
+		9967254930010FBC0013BF47 /* CMPContainerView.m in Sources */ = {isa = PBXBuildFile; fileRef = 9967254730010FBC0013BF47 /* CMPContainerView.m */; };
+		9967254A30010FBC0013BF47 /* CMPContainerView.m in Sources */ = {isa = PBXBuildFile; fileRef = 9967254730010FBC0013BF47 /* CMPContainerView.m */; };
+		9967259F3006775B0013BF47 /* CMPFrameRateRange.m in Sources */ = {isa = PBXBuildFile; fileRef = 9967259E3006775B0013BF47 /* CMPFrameRateRange.m */; };
 		9968C35B2D76FE16005E8DE4 /* CMPPanGestureRecognizer.m in Sources */ = {isa = PBXBuildFile; fileRef = 9968C35A2D76FE16005E8DE4 /* CMPPanGestureRecognizer.m */; };
 		9968C3612D7746BD005E8DE4 /* CMPHoverGestureRecognizer.m in Sources */ = {isa = PBXBuildFile; fileRef = 9968C3602D7746BD005E8DE4 /* CMPHoverGestureRecognizer.m */; };
 		9968C38B2D7892DF005E8DE4 /* CMPScreenEdgePanGestureRecognizer.m in Sources */ = {isa = PBXBuildFile; fileRef = 9968C38A2D7892DF005E8DE4 /* CMPScreenEdgePanGestureRecognizer.m */; };
 		997DFCDE2B18D135000B56B5 /* CMPViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 997DFCDD2B18D135000B56B5 /* CMPViewController.m */; };
 		997DFCE62B18D99E000B56B5 /* CMPViewControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 997DFCE52B18D99E000B56B5 /* CMPViewControllerTests.swift */; };
-		997DFCE72B18D99E000B56B5 /* libCMPUIKitUtils.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 996EFEEA2B02CE5D0000FE0F /* libCMPUIKitUtils.a */; };
+		997DFCE72B18D99E000B56B5 /* libCMPUIKitObjcUtils.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 996EFEEA2B02CE5D0000FE0F /* libCMPUIKitObjcUtils.a */; };
 		997DFCEE2B18DB7B000B56B5 /* CMPViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 997DFCDD2B18D135000B56B5 /* CMPViewController.m */; };
 		997DFCF32B18DE59000B56B5 /* MockAppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 997DFCF22B18DE59000B56B5 /* MockAppDelegate.swift */; };
 		997DFCF52B18E276000B56B5 /* XCTestCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 997DFCF42B18E276000B56B5 /* XCTestCase.swift */; };
@@ -33,6 +35,8 @@
 		99D97A882BF73A9B0035552B /* CMPEditMenuView.m in Sources */ = {isa = PBXBuildFile; fileRef = 99D97A872BF73A9B0035552B /* CMPEditMenuView.m */; };
 		99DCAB0E2BD00F5C002E6AC7 /* CMPTextLoupeSession.m in Sources */ = {isa = PBXBuildFile; fileRef = 99DCAB0D2BD00F5C002E6AC7 /* CMPTextLoupeSession.m */; };
 		A01609822EB42A3300FB9790 /* CMPLayoutRegion.m in Sources */ = {isa = PBXBuildFile; fileRef = A01609812EB42A3300FB9790 /* CMPLayoutRegion.m */; };
+		A0CEE0303006417800F0D942 /* CMPUIKitSwiftUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0CEE02E3006417800F0D942 /* CMPUIKitSwiftUtils.swift */; };
+		AABB11112F5A0000000000A3 /* CMPUIWindowSceneExtensions.m in Sources */ = {isa = PBXBuildFile; fileRef = AABB11112F5A0000000000A2 /* CMPUIWindowSceneExtensions.m */; };
 		C4C07E892F57037300A9DC94 /* CMPTextInputView.m in Sources */ = {isa = PBXBuildFile; fileRef = C4C07E882F57037300A9DC94 /* CMPTextInputView.m */; };
 		C4C07E8A2F57037300A9DC94 /* CMPEditMenuCustomAction.m in Sources */ = {isa = PBXBuildFile; fileRef = C4C07E842F57037300A9DC94 /* CMPEditMenuCustomAction.m */; };
 		C4C07E8B2F57037300A9DC94 /* CMPTextInputStringTokenizer.m in Sources */ = {isa = PBXBuildFile; fileRef = C4C07E862F57037300A9DC94 /* CMPTextInputStringTokenizer.m */; };
@@ -56,7 +60,7 @@
 			containerPortal = 9975AAC12AEABB5600AF155F /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = 996EFEE92B02CE5D0000FE0F;
-			remoteInfo = CMPUIKitUtils;
+			remoteInfo = CMPUIKitObjcUtils;
 		};
 		997DFD082B18E5DC000B56B5 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -77,11 +81,18 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		A0CEE0253006417400F0D942 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "include/$(PRODUCT_NAME)";
+			dstSubfolderSpec = 16;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		55F0AA112F70000100ABC123 /* CMPFrameRateRange.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CMPFrameRateRange.h; sourceTree = "<group>"; };
-		55F0AA122F70000100ABC123 /* CMPFrameRateRange.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = CMPFrameRateRange.m; sourceTree = "<group>"; };
 		99009B782F322B4700518C1F /* CMPMetalLayer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CMPMetalLayer.h; sourceTree = "<group>"; };
 		99009B792F322B4700518C1F /* CMPMetalLayer.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = CMPMetalLayer.m; sourceTree = "<group>"; };
 		991A97F52E1FB99300B47130 /* CMPScrollView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CMPScrollView.h; sourceTree = "<group>"; };
@@ -90,16 +101,18 @@
 		99293FF32F2B8A81001EC2A1 /* CMPDrawable.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = CMPDrawable.m; sourceTree = "<group>"; };
 		992EDDF92E55EC8400FB44C5 /* CMPKeyValueObserver.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CMPKeyValueObserver.h; sourceTree = "<group>"; };
 		992EDDFA2E55EC8400FB44C5 /* CMPKeyValueObserver.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = CMPKeyValueObserver.m; sourceTree = "<group>"; };
+		9967254630010FBC0013BF47 /* CMPContainerView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CMPContainerView.h; sourceTree = "<group>"; };
+		9967254730010FBC0013BF47 /* CMPContainerView.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = CMPContainerView.m; sourceTree = "<group>"; };
+		9967259D3006775B0013BF47 /* CMPFrameRateRange.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CMPFrameRateRange.h; sourceTree = "<group>"; };
+		9967259E3006775B0013BF47 /* CMPFrameRateRange.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = CMPFrameRateRange.m; sourceTree = "<group>"; };
 		9968C3592D76FE16005E8DE4 /* CMPPanGestureRecognizer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CMPPanGestureRecognizer.h; sourceTree = "<group>"; };
 		9968C35A2D76FE16005E8DE4 /* CMPPanGestureRecognizer.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = CMPPanGestureRecognizer.m; sourceTree = "<group>"; };
 		9968C35F2D7746BD005E8DE4 /* CMPHoverGestureRecognizer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CMPHoverGestureRecognizer.h; sourceTree = "<group>"; };
 		9968C3602D7746BD005E8DE4 /* CMPHoverGestureRecognizer.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = CMPHoverGestureRecognizer.m; sourceTree = "<group>"; };
 		9968C3892D7892DF005E8DE4 /* CMPScreenEdgePanGestureRecognizer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CMPScreenEdgePanGestureRecognizer.h; sourceTree = "<group>"; };
 		9968C38A2D7892DF005E8DE4 /* CMPScreenEdgePanGestureRecognizer.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = CMPScreenEdgePanGestureRecognizer.m; sourceTree = "<group>"; };
-		996EFEEA2B02CE5D0000FE0F /* libCMPUIKitUtils.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libCMPUIKitUtils.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		996EFEF52B02CE8A0000FE0F /* CMPUIKitUtils.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CMPUIKitUtils.h; sourceTree = "<group>"; };
-		AABB11112F5A0000000000A1 /* CMPUIWindowSceneExtensions.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CMPUIWindowSceneExtensions.h; sourceTree = "<group>"; };
-		AABB11112F5A0000000000A2 /* CMPUIWindowSceneExtensions.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = CMPUIWindowSceneExtensions.m; sourceTree = "<group>"; };
+		996EFEEA2B02CE5D0000FE0F /* libCMPUIKitObjcUtils.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libCMPUIKitObjcUtils.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		996EFEF52B02CE8A0000FE0F /* CMPUIKitObjcUtils.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CMPUIKitObjcUtils.h; sourceTree = "<group>"; };
 		997DFCDC2B18D135000B56B5 /* CMPViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CMPViewController.h; sourceTree = "<group>"; };
 		997DFCDD2B18D135000B56B5 /* CMPViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = CMPViewController.m; sourceTree = "<group>"; };
 		997DFCE32B18D99E000B56B5 /* CMPUIKitUtilsTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CMPUIKitUtilsTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -121,7 +134,11 @@
 		99DCAB0C2BD00F5C002E6AC7 /* CMPTextLoupeSession.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CMPTextLoupeSession.h; sourceTree = "<group>"; };
 		99DCAB0D2BD00F5C002E6AC7 /* CMPTextLoupeSession.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = CMPTextLoupeSession.m; sourceTree = "<group>"; };
 		A01609812EB42A3300FB9790 /* CMPLayoutRegion.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = CMPLayoutRegion.m; sourceTree = "<group>"; };
+		A0CEE0273006417400F0D942 /* libCMPUIKitSwiftUtils.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libCMPUIKitSwiftUtils.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		A0CEE02E3006417800F0D942 /* CMPUIKitSwiftUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CMPUIKitSwiftUtils.swift; sourceTree = "<group>"; };
 		A0E69B242EB4227A0049B20F /* CMPLayoutRegion.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CMPLayoutRegion.h; sourceTree = "<group>"; };
+		AABB11112F5A0000000000A1 /* CMPUIWindowSceneExtensions.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CMPUIWindowSceneExtensions.h; sourceTree = "<group>"; };
+		AABB11112F5A0000000000A2 /* CMPUIWindowSceneExtensions.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = CMPUIWindowSceneExtensions.m; sourceTree = "<group>"; };
 		C4C07E832F57037300A9DC94 /* CMPEditMenuCustomAction.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CMPEditMenuCustomAction.h; sourceTree = "<group>"; };
 		C4C07E842F57037300A9DC94 /* CMPEditMenuCustomAction.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = CMPEditMenuCustomAction.m; sourceTree = "<group>"; };
 		C4C07E852F57037300A9DC94 /* CMPTextInputStringTokenizer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CMPTextInputStringTokenizer.h; sourceTree = "<group>"; };
@@ -160,7 +177,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				997DFCE72B18D99E000B56B5 /* libCMPUIKitUtils.a in Frameworks */,
+				997DFCE72B18D99E000B56B5 /* libCMPUIKitObjcUtils.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -171,32 +188,37 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		A0CEE0243006417400F0D942 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		996EFEEB2B02CE5D0000FE0F /* CMPUIKitUtils */ = {
+		996EFEEB2B02CE5D0000FE0F /* CMPUIKitObjcUtils */ = {
 			isa = PBXGroup;
 			children = (
-				C4C07E832F57037300A9DC94 /* CMPEditMenuCustomAction.h */,
-				C4C07E842F57037300A9DC94 /* CMPEditMenuCustomAction.m */,
-				55F0AA112F70000100ABC123 /* CMPFrameRateRange.h */,
-				55F0AA122F70000100ABC123 /* CMPFrameRateRange.m */,
-				C4C07E852F57037300A9DC94 /* CMPTextInputStringTokenizer.h */,
-				C4C07E862F57037300A9DC94 /* CMPTextInputStringTokenizer.m */,
-				C4C07E872F57037300A9DC94 /* CMPTextInputView.h */,
-				C4C07E882F57037300A9DC94 /* CMPTextInputView.m */,
 				EA70A7E62B27106100300068 /* CMPAccessibilityElement.h */,
 				EA70A7E82B27106100300068 /* CMPAccessibilityElement.m */,
 				99CC4B282ECE04AC007C5C44 /* CMPComposeContainerLifecycleDelegate.h */,
 				99CC4B2B2ECE07EA007C5C44 /* CMPComposeContainerLifecycleState.h */,
+				9967254630010FBC0013BF47 /* CMPContainerView.h */,
+				9967254730010FBC0013BF47 /* CMPContainerView.m */,
 				EADD028E2C9846D9003F66E8 /* CMPDragInteractionProxy.h */,
 				EADD028F2C9846D9003F66E8 /* CMPDragInteractionProxy.m */,
 				99293FF22F2B8A81001EC2A1 /* CMPDrawable.h */,
 				99293FF32F2B8A81001EC2A1 /* CMPDrawable.m */,
 				EADD02912C98484F003F66E8 /* CMPDropInteractionProxy.h */,
 				EADD02922C98484F003F66E8 /* CMPDropInteractionProxy.m */,
+				C4C07E832F57037300A9DC94 /* CMPEditMenuCustomAction.h */,
+				C4C07E842F57037300A9DC94 /* CMPEditMenuCustomAction.m */,
 				99D97A862BF73A9B0035552B /* CMPEditMenuView.h */,
 				99D97A872BF73A9B0035552B /* CMPEditMenuView.m */,
+				9967259D3006775B0013BF47 /* CMPFrameRateRange.h */,
+				9967259E3006775B0013BF47 /* CMPFrameRateRange.m */,
 				EA4B52942C2EDEF200FBB55C /* CMPGestureRecognizer.h */,
 				EA4B52952C2EDEF200FBB55C /* CMPGestureRecognizer.m */,
 				9968C35F2D7746BD005E8DE4 /* CMPHoverGestureRecognizer.h */,
@@ -205,6 +227,8 @@
 				EABD912A2BC02B5F00455279 /* CMPInteropWrappingView.m */,
 				992EDDF92E55EC8400FB44C5 /* CMPKeyValueObserver.h */,
 				992EDDFA2E55EC8400FB44C5 /* CMPKeyValueObserver.m */,
+				A0E69B242EB4227A0049B20F /* CMPLayoutRegion.h */,
+				A01609812EB42A3300FB9790 /* CMPLayoutRegion.m */,
 				EA70A7E72B27106100300068 /* CMPMacros.h */,
 				EAB33E162C12E746002CFF44 /* CMPMetalDrawablesHandler.h */,
 				EAB33E172C12E746002CFF44 /* CMPMetalDrawablesHandler.m */,
@@ -220,28 +244,31 @@
 				9968C38A2D7892DF005E8DE4 /* CMPScreenEdgePanGestureRecognizer.m */,
 				991A97F52E1FB99300B47130 /* CMPScrollView.h */,
 				991A97F62E1FB99300B47130 /* CMPScrollView.m */,
+				C4C07E852F57037300A9DC94 /* CMPTextInputStringTokenizer.h */,
+				C4C07E862F57037300A9DC94 /* CMPTextInputStringTokenizer.m */,
+				C4C07E872F57037300A9DC94 /* CMPTextInputView.h */,
+				C4C07E882F57037300A9DC94 /* CMPTextInputView.m */,
 				99DCAB0C2BD00F5C002E6AC7 /* CMPTextLoupeSession.h */,
 				99DCAB0D2BD00F5C002E6AC7 /* CMPTextLoupeSession.m */,
-				996EFEF52B02CE8A0000FE0F /* CMPUIKitUtils.h */,
+				996EFEF52B02CE8A0000FE0F /* CMPUIKitObjcUtils.h */,
 				AABB11112F5A0000000000A1 /* CMPUIWindowSceneExtensions.h */,
 				AABB11112F5A0000000000A2 /* CMPUIWindowSceneExtensions.m */,
 				99CC4B2C2ECE0838007C5C44 /* CMPView.h */,
 				99CC4B2D2ECE0838007C5C44 /* CMPView.m */,
 				997DFCDC2B18D135000B56B5 /* CMPViewController.h */,
 				997DFCDD2B18D135000B56B5 /* CMPViewController.m */,
-				A0E69B242EB4227A0049B20F /* CMPLayoutRegion.h */,
-				A01609812EB42A3300FB9790 /* CMPLayoutRegion.m */,
 			);
-			path = CMPUIKitUtils;
+			path = CMPUIKitObjcUtils;
 			sourceTree = "<group>";
 		};
 		9975AAC02AEABB5600AF155F = {
 			isa = PBXGroup;
 			children = (
 				99BE84D22C3467B100E43826 /* CMPUIKitUtilsTestApp.xctestplan */,
-				996EFEEB2B02CE5D0000FE0F /* CMPUIKitUtils */,
+				996EFEEB2B02CE5D0000FE0F /* CMPUIKitObjcUtils */,
 				997DFCE42B18D99E000B56B5 /* CMPUIKitUtilsTests */,
 				997DFCFB2B18E5D3000B56B5 /* CMPUIKitUtilsTestApp */,
+				A0CEE02F3006417800F0D942 /* CMPUIKitSwiftUtils */,
 				9975AACB2AEABB5600AF155F /* Products */,
 			);
 			sourceTree = "<group>";
@@ -249,9 +276,10 @@
 		9975AACB2AEABB5600AF155F /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				996EFEEA2B02CE5D0000FE0F /* libCMPUIKitUtils.a */,
+				996EFEEA2B02CE5D0000FE0F /* libCMPUIKitObjcUtils.a */,
 				997DFCE32B18D99E000B56B5 /* CMPUIKitUtilsTests.xctest */,
 				997DFCFA2B18E5D3000B56B5 /* CMPUIKitUtilsTestApp.app */,
+				A0CEE0273006417400F0D942 /* libCMPUIKitSwiftUtils.a */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -286,12 +314,20 @@
 			path = CMPUIKitUtilsTestApp;
 			sourceTree = "<group>";
 		};
+		A0CEE02F3006417800F0D942 /* CMPUIKitSwiftUtils */ = {
+			isa = PBXGroup;
+			children = (
+				A0CEE02E3006417800F0D942 /* CMPUIKitSwiftUtils.swift */,
+			);
+			path = CMPUIKitSwiftUtils;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		996EFEE92B02CE5D0000FE0F /* CMPUIKitUtils */ = {
+		996EFEE92B02CE5D0000FE0F /* CMPUIKitObjcUtils */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 996EFEF22B02CE5D0000FE0F /* Build configuration list for PBXNativeTarget "CMPUIKitUtils" */;
+			buildConfigurationList = 996EFEF22B02CE5D0000FE0F /* Build configuration list for PBXNativeTarget "CMPUIKitObjcUtils" */;
 			buildPhases = (
 				996EFEE62B02CE5D0000FE0F /* Sources */,
 				996EFEE72B02CE5D0000FE0F /* Frameworks */,
@@ -301,9 +337,9 @@
 			);
 			dependencies = (
 			);
-			name = CMPUIKitUtils;
-			productName = CMPUIKitStatic;
-			productReference = 996EFEEA2B02CE5D0000FE0F /* libCMPUIKitUtils.a */;
+			name = CMPUIKitObjcUtils;
+			productName = CMPUIKitObjcUtils;
+			productReference = 996EFEEA2B02CE5D0000FE0F /* libCMPUIKitObjcUtils.a */;
 			productType = "com.apple.product-type.library.static";
 		};
 		997DFCE22B18D99E000B56B5 /* CMPUIKitUtilsTests */ = {
@@ -342,6 +378,26 @@
 			productReference = 997DFCFA2B18E5D3000B56B5 /* CMPUIKitUtilsTestApp.app */;
 			productType = "com.apple.product-type.application";
 		};
+		A0CEE0263006417400F0D942 /* CMPUIKitSwiftUtils */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A0CEE02D3006417400F0D942 /* Build configuration list for PBXNativeTarget "CMPUIKitSwiftUtils" */;
+			buildPhases = (
+				A0CEE0233006417400F0D942 /* Sources */,
+				A0CEE03130064B0000F0D942 /* Copy Swift ObjC Header */,
+				A0CEE0243006417400F0D942 /* Frameworks */,
+				A0CEE0253006417400F0D942 /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = CMPUIKitSwiftUtils;
+			packageProductDependencies = (
+			);
+			productName = CMPUIKitSwiftUtils;
+			productReference = A0CEE0273006417400F0D942 /* libCMPUIKitSwiftUtils.a */;
+			productType = "com.apple.product-type.library.static";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -349,7 +405,7 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
-				LastSwiftUpdateCheck = 1500;
+				LastSwiftUpdateCheck = 2650;
 				LastUpgradeCheck = 1520;
 				TargetAttributes = {
 					996EFEE92B02CE5D0000FE0F = {
@@ -362,6 +418,9 @@
 					997DFCF92B18E5D3000B56B5 = {
 						CreatedOnToolsVersion = 15.0;
 						LastSwiftMigration = 1500;
+					};
+					A0CEE0263006417400F0D942 = {
+						CreatedOnToolsVersion = 26.5;
 					};
 				};
 			};
@@ -378,12 +437,38 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				996EFEE92B02CE5D0000FE0F /* CMPUIKitUtils */,
+				996EFEE92B02CE5D0000FE0F /* CMPUIKitObjcUtils */,
 				997DFCE22B18D99E000B56B5 /* CMPUIKitUtilsTests */,
 				997DFCF92B18E5D3000B56B5 /* CMPUIKitUtilsTestApp */,
+				A0CEE0263006417400F0D942 /* CMPUIKitSwiftUtils */,
 			);
 		};
 /* End PBXProject section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		A0CEE03130064B0000F0D942 /* Copy Swift ObjC Header */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"$(DERIVED_SOURCES_DIR)/$(PRODUCT_MODULE_NAME)-Swift.h",
+			);
+			name = "Copy Swift ObjC Header";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(BUILT_PRODUCTS_DIR)/include/$(PRODUCT_MODULE_NAME)/$(PRODUCT_MODULE_NAME)-Swift.h",
+				"$(DSTROOT)$(PUBLIC_HEADERS_FOLDER_PATH)/$(PRODUCT_MODULE_NAME)/$(PRODUCT_MODULE_NAME)-Swift.h",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "set -euo pipefail\nHEADER_NAME=\"${PRODUCT_MODULE_NAME}-Swift.h\"\nSOURCE_HEADER=\"${DERIVED_SOURCES_DIR}/${HEADER_NAME}\"\nif [ ! -f \"${SOURCE_HEADER}\" ]; then\n  echo \"error: ${HEADER_NAME} was not generated at ${SOURCE_HEADER}\" >&2\n  exit 1\nfi\ncopy_header() {\n  mkdir -p \"$1\"\n  cp \"${SOURCE_HEADER}\" \"$1/${HEADER_NAME}\"\n}\ncopy_header \"${BUILT_PRODUCTS_DIR}/include/${PRODUCT_MODULE_NAME}\"\nif [ \"${ACTION:-}\" = \"install\" ] && [ -n \"${DSTROOT:-}\" ]; then\n  copy_header \"${DSTROOT}${PUBLIC_HEADERS_FOLDER_PATH}/${PRODUCT_MODULE_NAME}\"\nfi\n";
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXResourcesBuildPhase section */
 		997DFCE12B18D99E000B56B5 /* Resources */ = {
@@ -407,7 +492,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				55F0AA132F70000100ABC123 /* CMPFrameRateRange.m in Sources */,
+				9967259F3006775B0013BF47 /* CMPFrameRateRange.m in Sources */,
 				997DFCDE2B18D135000B56B5 /* CMPViewController.m in Sources */,
 				9968C38B2D7892DF005E8DE4 /* CMPScreenEdgePanGestureRecognizer.m in Sources */,
 				EAB33E182C12E746002CFF44 /* CMPMetalDrawablesHandler.m in Sources */,
@@ -426,6 +511,7 @@
 				EA82F4F92B86144E00465418 /* CMPOSLogger.m in Sources */,
 				A01609822EB42A3300FB9790 /* CMPLayoutRegion.m in Sources */,
 				9968C3612D7746BD005E8DE4 /* CMPHoverGestureRecognizer.m in Sources */,
+				9967254830010FBC0013BF47 /* CMPContainerView.m in Sources */,
 				EA4B52962C2EDEF200FBB55C /* CMPGestureRecognizer.m in Sources */,
 				EA70A7EB2B27106100300068 /* CMPAccessibilityElement.m in Sources */,
 				99DCAB0E2BD00F5C002E6AC7 /* CMPTextLoupeSession.m in Sources */,
@@ -442,6 +528,7 @@
 				99A83D5A2F2CC4FB00BB5698 /* CMPMetalLayerTests.swift in Sources */,
 				99CC4B2F2ECE0838007C5C44 /* CMPView.m in Sources */,
 				99CC4B322ECE16C8007C5C44 /* CMPViewTests.swift in Sources */,
+				9967254930010FBC0013BF47 /* CMPContainerView.m in Sources */,
 				997DFCF52B18E276000B56B5 /* XCTestCase.swift in Sources */,
 				997DFCE62B18D99E000B56B5 /* CMPViewControllerTests.swift in Sources */,
 				997DFCEE2B18DB7B000B56B5 /* CMPViewController.m in Sources */,
@@ -456,6 +543,7 @@
 				EAC703E32B8C826E001ECDA6 /* CMPAccessibilityElement.m in Sources */,
 				EAC703E42B8C826E001ECDA6 /* CMPViewController.m in Sources */,
 				EAC703E52B8C826E001ECDA6 /* CMPOSLogger.m in Sources */,
+				9967254A30010FBC0013BF47 /* CMPContainerView.m in Sources */,
 				997DFCFD2B18E5D3000B56B5 /* CMPUIKitUtilsTestApp.swift in Sources */,
 				EAC703E62B8C826E001ECDA6 /* CMPOSLoggerInterval.m in Sources */,
 				99009B7A2F322B4700518C1F /* CMPMetalLayer.m in Sources */,
@@ -464,12 +552,20 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		A0CEE0233006417400F0D942 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A0CEE0303006417800F0D942 /* CMPUIKitSwiftUtils.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
 		997DFCE92B18D99E000B56B5 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 996EFEE92B02CE5D0000FE0F /* CMPUIKitUtils */;
+			target = 996EFEE92B02CE5D0000FE0F /* CMPUIKitObjcUtils */;
 			targetProxy = 997DFCE82B18D99E000B56B5 /* PBXContainerItemProxy */;
 		};
 		997DFD092B18E5DC000B56B5 /* PBXTargetDependency */ = {
@@ -487,6 +583,7 @@
 				BUILD_LIBRARY_FOR_DISTRIBUTION = YES;
 				CODE_SIGN_STYLE = Automatic;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				IPHONEOS_DEPLOYMENT_TARGET = 14.0;
 				OTHER_LDFLAGS = "-ObjC";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -501,6 +598,7 @@
 				ALLOW_TARGET_PLATFORM_SPECIALIZATION = NO;
 				BUILD_LIBRARY_FOR_DISTRIBUTION = YES;
 				CODE_SIGN_STYLE = Automatic;
+				IPHONEOS_DEPLOYMENT_TARGET = 14.0;
 				OTHER_LDFLAGS = "-ObjC";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -640,7 +738,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				HEADER_SEARCH_PATHS = (
 					"$(inderited)",
-					"CMPUIKitUtils/**",
+					"CMPUIKitObjcUtils/**",
 				);
 				IPHONEOS_DEPLOYMENT_TARGET = 14.0;
 				MARKETING_VERSION = 1.0;
@@ -664,7 +762,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				HEADER_SEARCH_PATHS = (
 					"$(inderited)",
-					"CMPUIKitUtils/**",
+					"CMPUIKitObjcUtils/**",
 				);
 				IPHONEOS_DEPLOYMENT_TARGET = 14.0;
 				MARKETING_VERSION = 1.0;
@@ -744,10 +842,52 @@
 			};
 			name = Release;
 		};
+		A0CEE02B3006417400F0D942 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUILD_LIBRARY_FOR_DISTRIBUTION = YES;
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_STYLE = Automatic;
+				DEFINES_MODULE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 14.0;
+				OTHER_LDFLAGS = "-ObjC";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = NO;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_INSTALL_OBJC_HEADER = YES;
+				SWIFT_OBJC_INTERFACE_HEADER_NAME = "CMPUIKitSwiftUtils-Swift.h";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		A0CEE02C3006417400F0D942 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUILD_LIBRARY_FOR_DISTRIBUTION = YES;
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_STYLE = Automatic;
+				DEFINES_MODULE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 14.0;
+				OTHER_LDFLAGS = "-ObjC";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_INSTALL_OBJC_HEADER = YES;
+				SWIFT_OBJC_INTERFACE_HEADER_NAME = "CMPUIKitSwiftUtils-Swift.h";
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		996EFEF22B02CE5D0000FE0F /* Build configuration list for PBXNativeTarget "CMPUIKitUtils" */ = {
+		996EFEF22B02CE5D0000FE0F /* Build configuration list for PBXNativeTarget "CMPUIKitObjcUtils" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				996EFEF02B02CE5D0000FE0F /* Debug */,
@@ -779,6 +919,15 @@
 			buildConfigurations = (
 				997DFD062B18E5D4000B56B5 /* Debug */,
 				997DFD072B18E5D4000B56B5 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A0CEE02D3006417400F0D942 /* Build configuration list for PBXNativeTarget "CMPUIKitSwiftUtils" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A0CEE02B3006417400F0D942 /* Debug */,
+				A0CEE02C3006417400F0D942 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
