@@ -42,6 +42,7 @@ public final class androidx/compose/material3/adaptive/layout/AnimatedPaneOverri
 	public final fun getExitTransition ()Landroidx/compose/animation/ExitTransition;
 	public final fun getModifier ()Landroidx/compose/ui/Modifier;
 	public final fun getScope ()Landroidx/compose/material3/adaptive/layout/ExtendedPaneScaffoldPaneScope;
+	public final fun getShape ()Landroidx/compose/ui/graphics/Shape;
 }
 
 public abstract interface class androidx/compose/material3/adaptive/layout/AnimatedPaneScope : androidx/compose/animation/AnimatedVisibilityScope {
@@ -271,7 +272,8 @@ public final class androidx/compose/material3/adaptive/layout/PaneExpansionState
 
 public final class androidx/compose/material3/adaptive/layout/PaneKt {
 	public static final synthetic fun AnimatedPane (Landroidx/compose/material3/adaptive/layout/ExtendedPaneScaffoldPaneScope;Landroidx/compose/ui/Modifier;Landroidx/compose/animation/EnterTransition;Landroidx/compose/animation/ExitTransition;Landroidx/compose/animation/core/FiniteAnimationSpec;Lkotlin/jvm/functions/Function3;Landroidx/compose/runtime/Composer;II)V
-	public static final fun AnimatedPane (Landroidx/compose/material3/adaptive/layout/ExtendedPaneScaffoldPaneScope;Landroidx/compose/ui/Modifier;Landroidx/compose/animation/EnterTransition;Landroidx/compose/animation/ExitTransition;Landroidx/compose/animation/core/FiniteAnimationSpec;Lkotlin/jvm/functions/Function3;Lkotlin/jvm/functions/Function3;Landroidx/compose/runtime/Composer;II)V
+	public static final fun AnimatedPane (Landroidx/compose/material3/adaptive/layout/ExtendedPaneScaffoldPaneScope;Landroidx/compose/ui/Modifier;Landroidx/compose/animation/EnterTransition;Landroidx/compose/animation/ExitTransition;Landroidx/compose/animation/core/FiniteAnimationSpec;Lkotlin/jvm/functions/Function3;Landroidx/compose/ui/graphics/Shape;Lkotlin/jvm/functions/Function3;Landroidx/compose/runtime/Composer;II)V
+	public static final synthetic fun AnimatedPane (Landroidx/compose/material3/adaptive/layout/ExtendedPaneScaffoldPaneScope;Landroidx/compose/ui/Modifier;Landroidx/compose/animation/EnterTransition;Landroidx/compose/animation/ExitTransition;Landroidx/compose/animation/core/FiniteAnimationSpec;Lkotlin/jvm/functions/Function3;Lkotlin/jvm/functions/Function3;Landroidx/compose/runtime/Composer;II)V
 	public static final fun getLocalAnimatedPaneOverride ()Landroidx/compose/runtime/ProvidableCompositionLocal;
 }
 
