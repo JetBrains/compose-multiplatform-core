@@ -291,6 +291,12 @@ private fun List<Color>.toSkiaGradient(
     ),
 )
 
+/**
+ * This overload avoids iterator allocation in comparison with its stdlib counterpart
+ */
+@Suppress("NOTHING_TO_INLINE")
+internal inline fun List<Float>.toFloatArray(): FloatArray = FloatArray(size) { i -> this[i] }
+
 private fun List<Color>.toColor4fArray(): Array<Color4f> =
     Array(size) { i ->
         val color = this[i]

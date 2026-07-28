@@ -16,6 +16,7 @@
 
 package androidx.compose.ui.graphics.layer
 
+import androidx.compose.runtime.InternalComposeApi
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.isUnspecified
@@ -26,8 +27,7 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.RenderEffect
-import androidx.compose.ui.graphics.SkiaBackedCanvas
-import androidx.compose.ui.graphics.asComposeCanvas
+import androidx.compose.ui.graphics.SkiaCanvasHolder
 import androidx.compose.ui.graphics.asSkiaColorFilter
 import androidx.compose.ui.graphics.drawscope.CanvasDrawScope
 import androidx.compose.ui.graphics.drawscope.DrawScope
@@ -67,6 +67,12 @@ internal class SkikoGraphicsLayer(
 
     private var cachedOutline: Outline? = null
     private var cachedClip: Boolean = false
+
+    // Temporary value holders to reuse an object (not part of a state):
+    private var radii: FloatArray? = null
+
+    @OptIn(InternalComposeApi::class)
+    private val canvasHolder : SkiaCanvasHolder = SkiaCanvasHolder()
 
     override var compositingStrategy: CompositingStrategy = CompositingStrategy.Auto
         set(value) {
@@ -204,23 +210,30 @@ internal class SkikoGraphicsLayer(
                     outline.rect.bottom + dy,
                     antiAlias = true
                 )
-                is Outline.Rounded -> renderNode.setClipRRect(
-                    outline.roundRect.left + dx,
-                    outline.roundRect.top + dy,
-                    outline.roundRect.right + dx,
-                    outline.roundRect.bottom + dy,
-                    floatArrayOf(
-                        outline.roundRect.topLeftCornerRadius.x,
-                        outline.roundRect.topLeftCornerRadius.y,
-                        outline.roundRect.topRightCornerRadius.x,
-                        outline.roundRect.topRightCornerRadius.y,
-                        outline.roundRect.bottomRightCornerRadius.x,
-                        outline.roundRect.bottomRightCornerRadius.y,
-                        outline.roundRect.bottomLeftCornerRadius.x,
-                        outline.roundRect.bottomLeftCornerRadius.y
-                    ),
-                    antiAlias = true
-                )
+                is Outline.Rounded -> {
+                    if (radii == null) radii = FloatArray(8)
+                    with(radii!!) {
+                        this[0] = outline.roundRect.topLeftCornerRadius.x
+                        this[1] = outline.roundRect.topLeftCornerRadius.y
+
+                        this[2] = outline.roundRect.topRightCornerRadius.x
+                        this[3] = outline.roundRect.topRightCornerRadius.y
+
+                        this[4] = outline.roundRect.bottomRightCornerRadius.x
+                        this[5] = outline.roundRect.bottomRightCornerRadius.y
+
+                        this[6] = outline.roundRect.bottomLeftCornerRadius.x
+                        this[7] = outline.roundRect.bottomLeftCornerRadius.y
+                    }
+                    renderNode.setClipRRect(
+                        outline.roundRect.left,
+                        outline.roundRect.top,
+                        outline.roundRect.right,
+                        outline.roundRect.bottom,
+                        radii!!,
+                        antiAlias = true
+                    )
+                }
                 is Outline.Generic -> renderNode.setClipPath(
                     updatePathOutline(outline.path),
                     antiAlias = true
@@ -236,6 +249,7 @@ internal class SkikoGraphicsLayer(
             path
         }.materializeSkiaPath()
 
+    @OptIn(InternalComposeApi::class)
     override fun record(
         density: Density,
         layoutDirection: LayoutDirection,
@@ -245,21 +259,23 @@ internal class SkikoGraphicsLayer(
         val renderNode = renderNode ?: return
         val recordingCanvas = renderNode.beginRecording()
         try {
-            val composeCanvas = recordingCanvas.asComposeCanvas() as SkiaBackedCanvas
-            if (outsetLeft > 0 || outsetTop > 0) {
-                composeCanvas.save()
-                composeCanvas.translate(outsetLeft.toFloat(), outsetTop.toFloat())
-            }
-            pictureDrawScope.draw(
-                density = density,
-                layoutDirection = layoutDirection,
-                canvas = composeCanvas,
-                size = layer.size.toSize(),
-                graphicsLayer = layer,
-                block = block,
-            )
-            if (outsetLeft > 0 || outsetTop > 0) {
-                composeCanvas.restore()
+            @Suppress("INVISIBLE_REFERENCE")
+            canvasHolder.drawInto(recordingCanvas) {
+                if (outsetLeft > 0 || outsetTop > 0) {
+                    save()
+                    translate(outsetLeft.toFloat(), outsetTop.toFloat())
+                }
+                pictureDrawScope.draw(
+                    density = density,
+                    layoutDirection = layoutDirection,
+                    canvas = this,
+                    size = layer.size.toSize(),
+                    graphicsLayer = layer,
+                    block = block,
+                )
+                if (outsetLeft > 0 || outsetTop > 0) {
+                    restore()
+                }
             }
         } finally {
             renderNode.endRecording()

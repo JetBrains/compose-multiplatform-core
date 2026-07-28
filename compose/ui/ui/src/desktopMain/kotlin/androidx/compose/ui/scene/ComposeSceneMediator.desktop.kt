@@ -18,6 +18,7 @@ package androidx.compose.ui.scene
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalContext
+import androidx.compose.runtime.InternalComposeApi
 import androidx.compose.runtime.mutableStateSetOf
 import androidx.compose.ui.ComposeFeatureFlags
 import androidx.compose.ui.ComposeUiFlags
@@ -32,7 +33,8 @@ import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.graphics.asComposeCanvas
+import androidx.compose.ui.graphics.Canvas
+import androidx.compose.ui.graphics.SkiaCanvasHolder
 import androidx.compose.ui.graphics.toAwtImage
 import androidx.compose.ui.graphics.toComposeImageBitmap
 import androidx.compose.ui.input.InputModeManager
@@ -193,6 +195,8 @@ internal class ComposeSceneMediator(
     val renderApi by skiaLayerComponent::renderApi
     val semanticsOwners: Collection<SemanticsOwner> by semanticsOwnerManager::semanticsOwners
 
+    @OptIn(InternalComposeApi::class)
+    private val canvasHolder: SkiaCanvasHolder = SkiaCanvasHolder()
     /**
      * @see ComposeFeatureFlags.useInteropBlending
      */
@@ -739,13 +743,14 @@ internal class ComposeSceneMediator(
         interopContainer.postponingExecutingScheduledUpdates {
             canvas.withSceneOffset {
                 with(sceneRenderingScope) {
-                    scene.render(frameRecomposer, asComposeCanvas(), nanoTime)
+                    scene.render(frameRecomposer, this@withSceneOffset, nanoTime)
                 }
             }
         }
     }
 
-    private inline fun SkCanvas.withSceneOffset(crossinline block: SkCanvas.() -> Unit) {
+    @OptIn(InternalComposeApi::class)
+    private inline fun SkCanvas.withSceneOffset(crossinline block: Canvas.() -> Unit) {
         // Offset of scene relative to [container]
         val sceneBoundsOffset = sceneBoundsInPx?.topLeft ?: Offset.Zero
         // Offset of canvas relative to [container]
@@ -756,7 +761,10 @@ internal class ComposeSceneMediator(
         val sceneOffset = sceneBoundsOffset - contentOffset
         save()
         translate(sceneOffset.x, sceneOffset.y)
-        block()
+        @Suppress("INVISIBLE_REFERENCE")
+        canvasHolder.drawInto(this){
+            block(this@drawInto)
+        }
         restore()
     }
 
@@ -960,7 +968,7 @@ internal class ComposeSceneMediator(
         target.drawScene(offsetX, offsetY, size, contentComponent.density) {
             fillBackground(contentComponent.background)
             if (!shouldPlaceInteropAbove) drawInterop(interopContainer.root)
-            drawCompose { canvas -> canvas.withSceneOffset { scene.draw(asComposeCanvas()) } }
+            drawCompose { canvas -> canvas.withSceneOffset { scene.draw(this) } }
             if (shouldPlaceInteropAbove) drawInterop(interopContainer.root)
         }
     }

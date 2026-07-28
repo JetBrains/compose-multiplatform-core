@@ -18,10 +18,11 @@ package androidx.compose.ui.scene
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.InternalComposeApi
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.LocalSystemTheme
-import androidx.compose.ui.graphics.asComposeCanvas
+import androidx.compose.ui.graphics.SkiaCanvasHolder
 import androidx.compose.ui.navigationevent.UIKitNavigationEventInput
 import androidx.compose.ui.platform.DefaultArchitectureComponentsOwner
 import androidx.compose.ui.platform.FrameRecomposer
@@ -139,6 +140,9 @@ internal class ComposeContainer(
 
     private val focusedViewsList = FocusedViewsList()
 
+    @OptIn(InternalComposeApi::class)
+    private val canvasHolder = SkiaCanvasHolder()
+
     val currentLifecycleState: Lifecycle.State get() =
         architectureComponentsOwner.lifecycle.currentState
 
@@ -218,6 +222,7 @@ internal class ComposeContainer(
         systemThemeState.value = style.asComposeSystemTheme()
     }
 
+    @OptIn(InternalComposeApi::class)
     fun initializeComposeScene() {
         sceneJob = Job()
         val sceneCoroutineContext = coroutineContext + motionDurationScale + sceneJob
@@ -230,7 +235,10 @@ internal class ComposeContainer(
             },
             useSeparateRenderThreadWhenPossible = configuration.parallelRendering,
             render = { canvas, nanoTime ->
-                mediator?.render(canvas.asComposeCanvas(), nanoTime)
+                @Suppress("INVISIBLE_REFERENCE")
+                canvasHolder.drawInto(canvas) {
+                    mediator?.render(this@drawInto, nanoTime)
+                }
             }
         )
         metalView.canBeOpaque = configuration.opaque

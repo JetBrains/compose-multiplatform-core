@@ -16,8 +16,9 @@
 
 package androidx.compose.ui.scene
 
+import androidx.compose.runtime.InternalComposeApi
 import androidx.compose.runtime.withFrameNanos
-import androidx.compose.ui.graphics.asComposeCanvas
+import androidx.compose.ui.graphics.SkiaCanvasHolder
 import androidx.compose.ui.platform.PlatformWindowContext
 import androidx.compose.ui.uikit.addLayoutConstraintsToMatch
 import androidx.compose.ui.uikit.embedSubview
@@ -86,6 +87,9 @@ internal class ComposeLayersViewController(
             onDidMoveToWindow = { endAppearanceTransition() }
         )
     }
+
+    @OptIn(InternalComposeApi::class)
+    private val canvasHolder = SkiaCanvasHolder()
 
     init {
         coroutineContext.job.invokeOnCompletion {
@@ -306,14 +310,16 @@ internal class ComposeLayersViewController(
         )
     }
 
+    @OptIn(InternalComposeApi::class)
     private fun render(canvas: Canvas, nanoTime: Long) {
-        val composeCanvas = canvas.asComposeCanvas()
-
-        // Some layers may be removed during rendering, because recomposition will happen in the
-        // process, so we need to make a temporary copy of the list
-        layersCache.withCopy { layers ->
-            layers.fastForEach {
-                it.render(composeCanvas, nanoTime)
+        @Suppress("INVISIBLE_REFERENCE")
+        canvasHolder.drawInto(canvas) {
+            // Some layers may be removed during rendering, because recomposition will happen in the
+            // process, so we need to make a temporary copy of the list
+            layersCache.withCopy { layers ->
+                layers.fastForEach {
+                    it.render(this@drawInto, nanoTime)
+                }
             }
         }
     }

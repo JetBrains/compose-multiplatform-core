@@ -25,6 +25,7 @@ import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.RoundRect
 import kotlin.jvm.JvmMultifileClass
 import kotlin.jvm.JvmName
+import org.jetbrains.skia.Matrix33 as SkMatrix3
 import org.jetbrains.skia.Path as SkPath
 import org.jetbrains.skia.PathDirection
 import org.jetbrains.skia.PathBuilder
@@ -92,6 +93,11 @@ internal class SkiaBackedPath(
      * Indicates if [internalSkiaPath] is externally observable.
      */
     internal var isSkiaPathObserved = false
+
+    // Temporary value holders to reuse an object (not part of a state):
+    private var radii: FloatArray? = null
+
+    private var mMatrix: SkMatrix3? = null
 
     private inline fun mutatePath(block: PathBuilder.() -> Unit) {
         synchronizeBuilderIfNeeded()
@@ -301,42 +307,29 @@ internal class SkiaBackedPath(
         replaceWith = ReplaceWith("addRoundRect(roundRect)"),
         level = DeprecationLevel.HIDDEN
     )
-    override fun addRoundRect(roundRect: RoundRect) = mutatePath {
-        addRRect(
-            roundRect.left,
-            roundRect.top,
-            roundRect.right,
-            roundRect.bottom,
-            floatArrayOf(
-                roundRect.topLeftCornerRadius.x,
-                roundRect.topLeftCornerRadius.y,
-                roundRect.topRightCornerRadius.x,
-                roundRect.topRightCornerRadius.y,
-                roundRect.bottomRightCornerRadius.x,
-                roundRect.bottomRightCornerRadius.y,
-                roundRect.bottomLeftCornerRadius.x,
-                roundRect.bottomLeftCornerRadius.y
-            ),
-            PathDirection.COUNTER_CLOCKWISE
-        )
-    }
+    override fun addRoundRect(roundRect: RoundRect) = addRoundRect(roundRect)
 
     override fun addRoundRect(roundRect: RoundRect, direction: Path.Direction) = mutatePath {
+        if (radii == null) radii = FloatArray(8)
+        with(radii!!) {
+            this[0] = roundRect.topLeftCornerRadius.x
+            this[1] = roundRect.topLeftCornerRadius.y
+
+            this[2] = roundRect.topRightCornerRadius.x
+            this[3] = roundRect.topRightCornerRadius.y
+
+            this[4] = roundRect.bottomRightCornerRadius.x
+            this[5] = roundRect.bottomRightCornerRadius.y
+
+            this[6] = roundRect.bottomLeftCornerRadius.x
+            this[7] = roundRect.bottomLeftCornerRadius.y
+        }
         addRRect(
             roundRect.left,
             roundRect.top,
             roundRect.right,
             roundRect.bottom,
-            floatArrayOf(
-                roundRect.topLeftCornerRadius.x,
-                roundRect.topLeftCornerRadius.y,
-                roundRect.topRightCornerRadius.x,
-                roundRect.topRightCornerRadius.y,
-                roundRect.bottomRightCornerRadius.x,
-                roundRect.bottomRightCornerRadius.y,
-                roundRect.bottomLeftCornerRadius.x,
-                roundRect.bottomLeftCornerRadius.y
-            ),
+            radii!!,
             direction.toSkiaPathDirection()
         )
     }
@@ -376,7 +369,9 @@ internal class SkiaBackedPath(
     }
 
     override fun transform(matrix: Matrix) = mutatePath {
-        transform(identityMatrix33().apply { setFrom(matrix) })
+        if (mMatrix == null) mMatrix = identityMatrix33()
+        mMatrix!!.setFrom(matrix)
+        transform(mMatrix!!)
     }
 
     override fun getBounds(): Rect {
