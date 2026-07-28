@@ -170,7 +170,7 @@ private class SkiaBackedTypeface(
 /**
  * Returns a Compose [Typeface] from Skia [SkTypeface].
  *
- * @param typeface Android Typeface instance
+ * @param typeface Skia Typeface instance
  */
 fun Typeface(typeface: SkTypeface, alias: String? = null): Typeface {
     return SkiaBackedTypeface(alias, typeface)
@@ -229,6 +229,29 @@ internal class FontCache {
         }
         ensureRegistered(typeface, font.cacheKey)
         return FontLoadResult(typeface, listOf(font.cacheKey))
+    }
+
+    /** Cache lookup only — does not register with [FontCollection]. */
+    internal fun get(key: String): SkTypeface? = typefacesCache.get(key)
+
+    /**
+     * Cache put-if-absent only — does not register with [FontCollection].
+     *
+     * Used for unvaried [androidx.compose.ui.text.font.SkikoFont] faces shared across
+     * weight/style/variation clones (`baseCacheKey`).
+     */
+    internal fun put(key: String, typeface: SkTypeface): SkTypeface =
+        typefacesCache.getOrPut(key) { typeface }
+
+    /**
+     * Caches [typeface] under [key] and registers it with [FontCollection] as a paragraph alias.
+     *
+     * If [key] is already cached, the existing typeface is reused and [typeface] is ignored.
+     */
+    internal fun register(typeface: SkTypeface, key: String): FontLoadResult {
+        val cached = put(key, typeface)
+        ensureRegistered(cached, key)
+        return FontLoadResult(cached, listOf(key))
     }
 
     internal fun loadPlatformTypes(
