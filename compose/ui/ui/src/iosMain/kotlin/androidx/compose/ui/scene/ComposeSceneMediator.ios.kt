@@ -83,8 +83,10 @@ import androidx.compose.ui.input.pointer.isMetaPressed
 import androidx.compose.ui.input.pointer.isShiftPressed
 import androidx.compose.ui.platform.Clipboard
 import androidx.compose.ui.platform.ClipboardManager
+import androidx.compose.ui.platform.UriHandler
 import androidx.compose.ui.platform.createPlatformClipboard
 import androidx.compose.ui.platform.createPlatformClipboardManager
+import androidx.compose.ui.platform.createPlatformUriHandler
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.IntRect
@@ -877,6 +879,10 @@ internal class ComposeSceneMediator(
         }
         override val clipboardManager: ClipboardManager by lazy(LazyThreadSafetyMode.NONE) {
             createPlatformClipboardManager()
+        }
+
+        override val uriHandler: UriHandler by lazy(LazyThreadSafetyMode.NONE) {
+            createPlatformUriHandler()
         }
 
         override fun convertLocalToWindowPosition(localPosition: Offset): Offset =

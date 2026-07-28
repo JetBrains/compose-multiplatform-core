@@ -238,6 +238,8 @@ interface PlatformContext {
     val autofillManager: AutofillManager?
         get() = null
 
+    val uriHandler : UriHandler
+
     interface RootForTestListener {
         fun onRootForTestCreated(root: PlatformRootForTest)
         fun onRootForTestDisposed(root: PlatformRootForTest)
@@ -293,6 +295,9 @@ interface PlatformContext {
         }
         override val clipboardManager: ClipboardManager by lazy(LazyThreadSafetyMode.NONE) {
             createPlatformClipboardManager()
+        }
+        override val uriHandler: UriHandler by lazy(LazyThreadSafetyMode.NONE) {
+            createPlatformUriHandler()
         }
     }
 
