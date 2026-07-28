@@ -912,7 +912,6 @@ internal class ComposeWindow(
             x = (horizontalScroll / notchDivisor).toFloat(),
             y = (verticalScroll / notchDivisor).toFloat()
         )
-        println("XXX:: scrollDelta: $scrollDelta")
 
         // wheels event own buttons property is unreliable in Safari and Firefox
         // see CMP-9900 [web] Wheel event resolves buttons state incorrectly in Safari and Firefox
