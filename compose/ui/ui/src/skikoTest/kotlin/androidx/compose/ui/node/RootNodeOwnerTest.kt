@@ -16,6 +16,7 @@
 
 package androidx.compose.ui.node
 
+import androidx.compose.ui.SkikoComposeTestBase
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
@@ -45,7 +46,7 @@ import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 
-class RootNodeOwnerTest {
+class RootNodeOwnerTest : SkikoComposeTestBase() {
 
     @Test
     fun textTextInputSession() = runTest {

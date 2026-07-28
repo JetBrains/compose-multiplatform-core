@@ -15,13 +15,15 @@
  */
 package androidx.compose.ui.text.platform
 
+import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontVariation
 
 actual sealed class PlatformFont : Font {
     actual abstract val identity: String
     actual abstract val variationSettings: FontVariation.Settings
-    internal actual val cacheKey: String
+    @InternalComposeUiApi
+    actual val cacheKey: String
         // Unlike k/jvm and k/native, `this::class.qualifiedName` API is not available in k/js.
         // https://youtrack.jetbrains.com/issue/KT-34534
         // `class.qualifiedName` is supported in k/wasm since 2.3.0 - https://youtrack.jetbrains.com/issue/KT-69621
