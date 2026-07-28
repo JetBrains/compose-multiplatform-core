@@ -52,6 +52,12 @@ internal abstract class WebTextInputService :
         }
 
     /**
+     * Active [PlatformTextInputMethodRequest] provides the geometry of the text input,
+     * which we use for hit-testing for better handling of touch events.
+     */
+    private var activeTextInputMethodRequest: PlatformTextInputMethodRequest? = null
+
+    /**
      * It's used for the initial positioning of the backing HTML input.
      * It's rather a workaround for the problem that startInput doesn't know the correct position yet.
      * To solve it properly, we need to change the common code.
@@ -69,6 +75,7 @@ internal abstract class WebTextInputService :
         request: PlatformTextInputMethodRequest,
         onEditCommand: (List<EditCommand>) -> Unit,
     ) {
+        activeTextInputMethodRequest = request
         backingDomInput = BackingDomInput(
             imeOptions = request.imeOptions,
             composeCommunicator = object : ComposeCommandCommunicator {
@@ -111,6 +118,7 @@ internal abstract class WebTextInputService :
     override fun stopInput() {
         backingDomInput?.dispose()
         backingDomInput = null
+        activeTextInputMethodRequest = null
     }
 
     override fun showSoftwareKeyboard() {
@@ -128,5 +136,10 @@ internal abstract class WebTextInputService :
     override fun notifyFocusedRect(rect: Rect) {
         val newRect = getNewGeometryForBackingInput(rect)
         backingDomInput?.updateHtmlInputBox(newRect.left.value, newRect.top.value, newRect.width.value, newRect.height.value)
+    }
+
+    fun hitTest(offset: Offset): Boolean {
+        if (offset == Offset.Unspecified) return false
+        return activeTextInputMethodRequest?.textClippingRectInRoot()?.contains(offset) ?: false
     }
 }
