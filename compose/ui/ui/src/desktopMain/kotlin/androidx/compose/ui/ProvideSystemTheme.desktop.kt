@@ -17,24 +17,75 @@
 package androidx.compose.ui
 
 
+import androidx.annotation.VisibleForTesting
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.ui.platform.DesktopMediaEnvironment
+import androidx.compose.runtime.mutableStateOf
+import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+
+private var subscriberCount = 0
+private var pollingJob: Job? = null
+private val subscribeLock = Any()
+private var currentSystemTheme = mutableStateOf(org.jetbrains.skiko.currentSystemTheme)
+
+@OptIn(DelicateCoroutinesApi::class)
+private fun onSubscriberAdded() {
+    synchronized(subscribeLock) {
+        if (subscriberCount == 0) {
+            pollingJob = GlobalScope.launch {
+                withContext(Dispatchers.IO) {
+                    pollCurrentSystemTheme()
+                }
+            }
+        }
+        subscriberCount += 1
+    }
+}
+
+private fun onSubscriberRemoved() {
+    synchronized(subscribeLock) {
+        subscriberCount -= 1
+        if (subscriberCount == 0) {
+            pollingJob?.cancel()
+            pollingJob = null
+        }
+    }
+}
+
+private suspend fun pollCurrentSystemTheme() {
+    while (true) {
+        currentSystemTheme.value = org.jetbrains.skiko.currentSystemTheme
+        delay(1.seconds)
+    }
+}
 
 @Composable
-internal fun ProvideSystemTheme(mediaEnvironment: DesktopMediaEnvironment, content: @Composable () -> Unit) {
+internal fun ProvideSystemTheme(content: @Composable () -> Unit) {
     CompositionLocalProvider(
-        LocalSystemTheme provides mediaEnvironment.systemTheme ,
+        LocalSystemTheme provides currentSystemTheme.value,
         content = content
     )
 
     if (DesktopComposeUiFlags.pollSystemTheme) {
         DisposableEffect(Unit) {
-            mediaEnvironment.onSystemThemeSubscriberAdded()
+            onSubscriberAdded()
             onDispose {
-                mediaEnvironment.onSystemThemeSubscriberRemoved()
+                onSubscriberRemoved()
             }
         }
     }
 }
+
+@VisibleForTesting
+internal fun systemThemeSubscriberCount() = subscriberCount
+
+@VisibleForTesting
+internal fun systemThemePollingJob() = pollingJob

@@ -22,6 +22,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.ComposeUiFlags
 import androidx.compose.ui.ProvideSystemTheme
 import androidx.compose.ui.pollSystemTheme
+import androidx.compose.ui.systemThemePollingJob
+import androidx.compose.ui.systemThemeSubscriberCount
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.v2.runComposeUiTest
 import kotlin.test.Test
@@ -36,37 +38,36 @@ class SystemThemeTest {
         val prevValue = ComposeUiFlags.pollSystemTheme
         ComposeUiFlags.pollSystemTheme = true
         try {
-            val desktopMediaEnvironment = DesktopMediaEnvironment(WindowInfoImpl())
             runComposeUiTest {
                 var provideSystemTheme1 by mutableStateOf(false)
                 var provideSystemTheme2 by mutableStateOf(false)
                 setContent {
                     if (provideSystemTheme1) {
-                        ProvideSystemTheme(desktopMediaEnvironment) { }
+                        ProvideSystemTheme { }
                     }
                     if (provideSystemTheme2) {
-                        ProvideSystemTheme(desktopMediaEnvironment) { }
+                        ProvideSystemTheme { }
                     }
                 }
 
-                assertEquals(0, desktopMediaEnvironment.systemThemeSubscriberCount())
-                assertNull(desktopMediaEnvironment.systemThemePollingJob())
+                assertEquals(0, systemThemeSubscriberCount())
+                assertNull(systemThemePollingJob())
 
                 provideSystemTheme1 = true
                 waitForIdle()
-                assertEquals(1, desktopMediaEnvironment.systemThemeSubscriberCount())
-                assertNotNull(desktopMediaEnvironment.systemThemePollingJob())
+                assertEquals(1, systemThemeSubscriberCount())
+                assertNotNull(systemThemePollingJob())
 
                 provideSystemTheme2 = true
                 waitForIdle()
-                assertEquals(2, desktopMediaEnvironment.systemThemeSubscriberCount())
-                assertNotNull(desktopMediaEnvironment.systemThemePollingJob())
+                assertEquals(2, systemThemeSubscriberCount())
+                assertNotNull(systemThemePollingJob())
 
                 provideSystemTheme1 = false
                 provideSystemTheme2 = false
                 waitForIdle()
-                assertEquals(0, desktopMediaEnvironment.systemThemeSubscriberCount())
-                assertNull(desktopMediaEnvironment.systemThemePollingJob())
+                assertEquals(0, systemThemeSubscriberCount())
+                assertNull(systemThemePollingJob())
             }
         } finally {
             ComposeUiFlags.pollSystemTheme = prevValue

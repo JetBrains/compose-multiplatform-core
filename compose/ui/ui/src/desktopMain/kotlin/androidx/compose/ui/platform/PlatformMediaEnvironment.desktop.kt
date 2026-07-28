@@ -18,71 +18,16 @@
 
 package androidx.compose.ui.platform
 
-import androidx.annotation.VisibleForTesting
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.ExperimentalMediaQueryApi
 import androidx.compose.ui.UiMediaScope
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.window.GlobalDensity
-import kotlin.time.Duration.Companion.seconds
-import kotlinx.coroutines.DelicateCoroutinesApi
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import org.jetbrains.skiko.SystemTheme
 
 internal class DesktopMediaEnvironment(val windowInfo: WindowInfo) : PlatformMediaEnvironment {
-
-
-
-    private var systemThemeSubscriberCount = 0
-    private var pollingSystemThemeJob: Job? = null
-    private val systemThemeSubscribeLock = Any()
-    private var currentSystemTheme = mutableStateOf(org.jetbrains.skiko.currentSystemTheme)
-
-    @OptIn(DelicateCoroutinesApi::class)
-    internal fun onSystemThemeSubscriberAdded() {
-        synchronized(systemThemeSubscribeLock) {
-            if (systemThemeSubscriberCount == 0) {
-                pollingSystemThemeJob = GlobalScope.launch {
-                    withContext(Dispatchers.IO) {
-                        pollCurrentSystemTheme()
-                    }
-                }
-            }
-            systemThemeSubscriberCount += 1
-        }
-    }
-
-    internal fun onSystemThemeSubscriberRemoved() {
-        synchronized(systemThemeSubscribeLock) {
-            systemThemeSubscriberCount -= 1
-            if (systemThemeSubscriberCount == 0) {
-                pollingSystemThemeJob?.cancel()
-                pollingSystemThemeJob = null
-            }
-        }
-    }
-
-    private suspend fun pollCurrentSystemTheme() {
-        while (true) {
-            currentSystemTheme.value = org.jetbrains.skiko.currentSystemTheme
-            delay(1.seconds)
-        }
-    }
-
-    @VisibleForTesting
-    internal fun systemThemeSubscriberCount() = systemThemeSubscriberCount
-
-    @VisibleForTesting
-    internal fun systemThemePollingJob() = pollingSystemThemeJob
-
     override val systemTheme: SystemTheme
-        get() = currentSystemTheme.value
+        get() = SystemTheme.UNKNOWN
 
     override val systemDensity: Density
         get() = GlobalDensity
@@ -112,6 +57,6 @@ internal class DesktopMediaEnvironment(val windowInfo: WindowInfo) : PlatformMed
         get() = UiMediaScope.ViewingDistance.Near
 
     fun dispose() {
-        pollingSystemThemeJob?.cancel()
+        // No-op for now, but can be used to clean up resources if needed in the future.
     }
 }

@@ -684,7 +684,7 @@ internal class ComposeSceneMediator(
         runOnceComponentAttached {
             catchExceptions {
                 scene.setContent {
-                    ProvideSystemTheme(desktopMediaEnvironment) {
+                    ProvideSystemTheme {
                         interopContainer {
                             content()
                         }
