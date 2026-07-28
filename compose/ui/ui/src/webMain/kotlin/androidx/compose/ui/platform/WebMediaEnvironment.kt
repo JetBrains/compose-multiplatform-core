@@ -42,7 +42,7 @@ import org.w3c.dom.mediacapture.VIDEOINPUT
 internal class WebMediaEnvironment(
     val windowInfo: WindowInfo,
     val onDensityChanged: (Density) -> Unit
-) : PlatformMediaEnvironment {
+) : UiMediaScope {
 
     private var isDisposed = false
 
@@ -190,9 +190,9 @@ internal class WebMediaEnvironment(
     }
     //</editor-fold>
 
-    override val systemTheme: SystemTheme
+    val systemTheme: SystemTheme
         get() = _currentSystemTheme
-    override val systemDensity: Density
+    val systemDensity: Density
         get() = _systemDensity
 
     override val windowPosture: UiMediaScope.Posture

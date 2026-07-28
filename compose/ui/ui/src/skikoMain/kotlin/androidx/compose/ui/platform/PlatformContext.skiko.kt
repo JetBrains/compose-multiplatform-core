@@ -50,7 +50,6 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.ImeOptions
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.intl.LocaleList
-import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
@@ -58,7 +57,6 @@ import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.enableSavedStateHandles
 import kotlin.reflect.KProperty
 import kotlinx.coroutines.awaitCancellation
-import org.jetbrains.skiko.SystemTheme
 
 /**
  * Platform context that provides platform-specific bindings.
@@ -225,7 +223,7 @@ interface PlatformContext {
      */
     val prefetchScheduler: PlatformPrefetchScheduler get() = NoOpPlatformPrefetchScheduler
 
-    val mediaEnvironment : PlatformMediaEnvironment get() = NoOpMediaEnvironment
+    val mediaEnvironment : UiMediaScope get() = NoOpMediaEnvironment
 
     interface RootForTestListener {
         fun onRootForTestCreated(root: PlatformRootForTest)
@@ -405,12 +403,7 @@ private object NoOpHapticFeedback : HapticFeedback {
     }
 }
 
-private object NoOpMediaEnvironment : PlatformMediaEnvironment {
-    override val systemTheme: SystemTheme
-        get() = SystemTheme.UNKNOWN
-    override val systemDensity: Density
-        get() = Density(1f)
-
+private object NoOpMediaEnvironment : UiMediaScope {
     override val windowPosture: UiMediaScope.Posture
         get() = UiMediaScope.Posture.Flat
     override val windowWidth: Dp

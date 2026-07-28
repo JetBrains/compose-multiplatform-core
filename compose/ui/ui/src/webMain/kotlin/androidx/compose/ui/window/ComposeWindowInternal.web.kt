@@ -892,7 +892,7 @@ internal class ComposeWindow(
         }
     }
 
-    private val MouseEvent.offset
+    private val MouseEvent.offset : Offset
         get() {
             val density = webMediaEnvironment.systemDensity
             return Offset(

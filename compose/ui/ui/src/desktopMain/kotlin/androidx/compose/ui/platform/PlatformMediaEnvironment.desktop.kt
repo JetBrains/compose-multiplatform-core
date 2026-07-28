@@ -20,17 +20,9 @@ package androidx.compose.ui.platform
 
 import androidx.compose.ui.ExperimentalMediaQueryApi
 import androidx.compose.ui.UiMediaScope
-import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.window.GlobalDensity
-import org.jetbrains.skiko.SystemTheme
 
-internal class DesktopMediaEnvironment(val windowInfo: WindowInfo) : PlatformMediaEnvironment {
-    override val systemTheme: SystemTheme
-        get() = SystemTheme.UNKNOWN
-
-    override val systemDensity: Density
-        get() = GlobalDensity
+internal class DesktopMediaEnvironment(val windowInfo: WindowInfo) : UiMediaScope {
 
     override val windowPosture: UiMediaScope.Posture
         get() = UiMediaScope.Posture.Flat

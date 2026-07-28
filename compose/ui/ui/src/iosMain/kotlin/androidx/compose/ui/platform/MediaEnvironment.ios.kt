@@ -55,7 +55,7 @@ import platform.UIKit.UIViewAnimationOptions
 import platform.UIKit.UIWindow
 import platform.UIKit.UIWindowScene
 
-internal class MediaEnvironment(val windowInfo: WindowInfo) : PlatformMediaEnvironment, KeyboardVisibilityObserver {
+internal class MediaEnvironment(val windowInfo: WindowInfo) : UiMediaScope, KeyboardVisibilityObserver {
 
     private var window: UIWindow? = null
     /*
@@ -123,9 +123,9 @@ internal class MediaEnvironment(val windowInfo: WindowInfo) : PlatformMediaEnvir
 
     }
 
-    override val systemTheme: SystemTheme
+    val systemTheme: SystemTheme
         get() = systemThemeState.value
-    override val systemDensity: Density
+    val systemDensity: Density
         get() = systemDensityState.value
 
     fun startObserving() {

@@ -21,7 +21,9 @@ import androidx.compose.runtime.CompositionLocalContext
 import androidx.compose.runtime.mutableStateSetOf
 import androidx.compose.ui.ComposeFeatureFlags
 import androidx.compose.ui.ComposeUiFlags
+import androidx.compose.ui.ExperimentalMediaQueryApi
 import androidx.compose.ui.ProvideSystemTheme
+import androidx.compose.ui.UiMediaScope
 import androidx.compose.ui.awt.AwtEventListener
 import androidx.compose.ui.awt.AwtEventListeners
 import androidx.compose.ui.awt.DebouncingEdtExecutor
@@ -59,7 +61,6 @@ import androidx.compose.ui.platform.PlatformArchitectureComponentsOwner
 import androidx.compose.ui.platform.PlatformComponent
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.PlatformDragAndDropManager
-import androidx.compose.ui.platform.PlatformMediaEnvironment
 import androidx.compose.ui.platform.PlatformTextInputMethodRequest
 import androidx.compose.ui.platform.PlatformWindowContext
 import androidx.compose.ui.platform.ViewConfiguration
@@ -838,7 +839,8 @@ internal class ComposeSceneMediator(
 
     private inner class DesktopPlatformContext : PlatformContext {
         override val windowInfo: WindowInfo get() = windowContext.windowInfo
-        override val mediaEnvironment: PlatformMediaEnvironment get() = desktopMediaEnvironment
+        @OptIn(ExperimentalMediaQueryApi::class)
+        override val mediaEnvironment: UiMediaScope get() = desktopMediaEnvironment
         override val architectureComponentsOwner get() = this@ComposeSceneMediator.architectureComponentsOwner
         override val isWindowTransparent: Boolean get() = windowContext.isWindowTransparent
 

@@ -61,7 +61,6 @@ import androidx.compose.ui.platform.FrameRecomposer
 import androidx.compose.ui.platform.MediaEnvironment
 import androidx.compose.ui.platform.PlatformArchitectureComponentsOwner
 import androidx.compose.ui.platform.PlatformContext
-import androidx.compose.ui.platform.PlatformMediaEnvironment
 import androidx.compose.ui.platform.PlatformScreenReader
 import androidx.compose.ui.platform.PlatformTextInputMethodRequest
 import androidx.compose.ui.platform.PlatformWindowContext
@@ -871,7 +870,8 @@ internal class ComposeSceneMediator(
 
     private inner class PlatformContextImpl : PlatformContext {
         override val windowInfo: WindowInfo get() = windowContext.windowInfo
-        override val mediaEnvironment: PlatformMediaEnvironment get() = this@ComposeSceneMediator.mediaEnvironment
+        @OptIn(ExperimentalMediaQueryApi::class)
+        override val mediaEnvironment: UiMediaScope get() = this@ComposeSceneMediator.mediaEnvironment
         override val architectureComponentsOwner get() = this@ComposeSceneMediator.architectureComponentsOwner
         override val screenReader: PlatformScreenReader get() = platformScreenReader
 
