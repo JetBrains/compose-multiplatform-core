@@ -43,7 +43,7 @@ internal sealed interface MetalRedrawer {
 internal class LegacyMetalRedrawer(
     private val metalLayer: CAMetalLayer,
     private var retrieveInteropTransaction: () -> UIKitInteropTransaction,
-    private var render: (Canvas) -> Unit,
+    private var draw: (Canvas) -> Unit,
 ): MetalRedrawer {
     /**
      * A wrapper around CAMetalLayer that allows to perform operations on its drawables without
@@ -125,7 +125,7 @@ internal class LegacyMetalRedrawer(
             }
         }
 
-        render = { _ -> }
+        draw = { _ -> }
 
         releaseCachedCommandQueue(queue)
 
@@ -165,7 +165,7 @@ internal class LegacyMetalRedrawer(
                         width.toFloat(),
                         height.toFloat()
                     ).also { canvas ->
-                        render(canvas)
+                        draw(canvas)
                     }
 
                     pictureRecorder.finishRecordingAsPicture()

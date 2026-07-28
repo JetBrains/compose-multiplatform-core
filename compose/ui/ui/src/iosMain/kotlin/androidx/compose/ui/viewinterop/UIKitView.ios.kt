@@ -65,7 +65,7 @@ fun <T : UIView> UIKitView(
                     interopContainer,
                     properties,
                     compositeKeyHash,
-                    compositionContext
+                    compositionContext,
                 )
             },
             modifier = modifier,

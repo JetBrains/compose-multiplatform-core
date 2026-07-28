@@ -191,7 +191,7 @@ internal class ComposeContainer(
     private fun onLayoutSubviews() {
         windowContext.updateWindowContainerSize()
 
-        mediator?.doMeasureAndLayout()
+        mediator?.measureAndLayout()
     }
 
     private fun onTraitCollectionDidChange() {
@@ -260,7 +260,7 @@ internal class ComposeContainer(
             useSeparateRenderThreadWhenPossible = configuration.parallelRendering,
             render = { canvas ->
                 layoutInvalidationHandler.postponeLayoutInvalidationCalls {
-                    mediator?.render(canvas.asComposeCanvas())
+                    mediator?.draw(canvas.asComposeCanvas())
                 }
             }
         )
@@ -583,8 +583,11 @@ internal class LayoutInvalidationHandler(
     fun postponeLayoutInvalidationCalls(block: () -> Unit) {
         assert(!invalidationPostponed)
         invalidationPostponed = true
-        block()
-        invalidationPostponed = false
+        try {
+            block()
+        } finally {
+            invalidationPostponed = false
+        }
         if (hasInvalidations) {
             scope.launch {
                 invalidateLayoutIfNeeded()

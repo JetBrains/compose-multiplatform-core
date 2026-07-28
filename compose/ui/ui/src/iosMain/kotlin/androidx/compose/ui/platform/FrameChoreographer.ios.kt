@@ -151,23 +151,28 @@ internal class FrameChoreographer private constructor(
     val outOfFrameExecutor = MetalOutOfFrameExecutor()
 
     private val listeners = mutableListOf<Listener>()
-    private val listenersCopy = mutableListOf<Listener>()
+    private val pendingListenersToAdd = mutableListOf<Listener>()
+    private val pendingListenersToRemove = mutableListOf<Listener>()
 
     @TestOnly
     fun dispose() {
         displayLink.invalidate()
         foregroundStateListener.dispose()
-        listeners.clear()
-        listenersCopy.clear()
         frameRecomposer.close()
+
+        listeners.clear()
+        pendingListenersToAdd.clear()
+        pendingListenersToRemove.clear()
     }
 
     fun addListener(listener: Listener) {
-        listeners.add(listener)
+        pendingListenersToAdd.add(listener)
+        pendingListenersToRemove.remove(listener)
     }
 
     fun removeListener(listener: Listener) {
-        listeners.remove(listener)
+        pendingListenersToRemove.add(listener)
+        pendingListenersToAdd.remove(listener)
     }
 
     fun voteFrameRate(frameRate: Float, frameRateCategory: Float) {
@@ -178,8 +183,11 @@ internal class FrameChoreographer private constructor(
     fun performFrameIfNeeded() {
         if (isPerformingFrame) return
         isPerformingFrame = true
-        frameRecomposer.performFrame(targetTimestamp.toNanoSeconds())
-        isPerformingFrame = false
+        try {
+            frameRecomposer.performFrame(displayLink.targetTimestamp.toNanoSeconds())
+        } finally {
+            isPerformingFrame = false
+        }
     }
 
     private var ongoingActivitiesCount: Int = 0
@@ -225,11 +233,10 @@ internal class FrameChoreographer private constructor(
         }
     }
 
-    val targetTimestamp get() = displayLink.targetTimestamp
-
     @VisibleForTesting
     val preferredFramesPerSecond: NSInteger get() = displayLink.preferredFramesPerSecond
 
+    @VisibleForTesting
     val currentTargetFrameDuration: NSTimeInterval
         get() = displayLink.targetTimestamp - displayLink.timestamp
 
@@ -240,14 +247,14 @@ internal class FrameChoreographer private constructor(
         // Drain out-of-frame work scheduled between frames before producing this frame.
         outOfFrameExecutor.onFrameStart()
 
-        val listenersSnapshot = if (listenersCopy.isEmpty()) listenersCopy else mutableListOf()
-        listenersSnapshot.addAll(listeners)
+        applyPendingListeners()
         dispatch_async(dispatch_get_main_queue()) {
             outOfFrameExecutor.onFrameEnd()
-            listenersSnapshot.fastForEach { it.onOutOfFrame(lastFrameTimestamp, targetTimestamp) }
-            listenersSnapshot.clear()
+
+            applyPendingListenersToRemove()
+            listeners.fastForEach { it.onOutOfFrame(lastFrameTimestamp, targetTimestamp) }
         }
-        listenersSnapshot.fastForEach { it.onDisplayLinkTick() }
+        listeners.fastForEach { it.onDisplayLinkTick() }
 
         advancedFramesCount--
 
@@ -258,13 +265,28 @@ internal class FrameChoreographer private constructor(
             displayLink.paused = true
         }
     }
+
+    private fun applyPendingListeners() {
+        if (pendingListenersToAdd.isNotEmpty()) {
+            listeners.addAll(pendingListenersToAdd)
+            pendingListenersToAdd.clear()
+        }
+        applyPendingListenersToRemove()
+    }
+
+    private fun applyPendingListenersToRemove() {
+        if (pendingListenersToRemove.isNotEmpty()) {
+            listeners.removeAll(pendingListenersToRemove)
+            pendingListenersToRemove.clear()
+        }
+    }
 }
 
 @OptIn(ExperimentalForeignApi::class)
 private val frameChoreographerAssociationKey: COpaquePointer = nativeHeap.alloc<IntVar>().ptr
 
 @OptIn(ExperimentalForeignApi::class)
-internal var UIWindowScene.frameChoreographer: FrameChoreographer?
+private var UIWindowScene.frameChoreographer: FrameChoreographer?
     get() = objc_getAssociatedObject(this, frameChoreographerAssociationKey) as? FrameChoreographer
     set(value) {
         objc_setAssociatedObject(this, frameChoreographerAssociationKey, value, OBJC_ASSOCIATION_RETAIN)

@@ -211,7 +211,7 @@ internal class ComposeSceneMediator(
 
     private val isActive get() = coroutineContext.isActive
 
-    private var isPrefetchVoteActive: Boolean = false // TODO: Move inside the PlatformPrefetchSchedulerImpl
+    private var isPrefetchVoteActive: Boolean = false // TODO CMP-10587: Move inside the PlatformPrefetchSchedulerImpl
     private val prefetchScheduler = PlatformPrefetchSchedulerImpl(
         onHasWorkScheduled = { hasWork ->
             if (hasWork != isPrefetchVoteActive) {
@@ -672,11 +672,11 @@ internal class ComposeSceneMediator(
         }
     }
 
-    fun doMeasureAndLayout() {
+    fun measureAndLayout() {
         scene.measureAndLayout()
     }
 
-    fun render(canvas: Canvas) {
+    fun draw(canvas: Canvas) {
         didDrawSinceDisplayLink = true
         scene.draw(canvas)
     }

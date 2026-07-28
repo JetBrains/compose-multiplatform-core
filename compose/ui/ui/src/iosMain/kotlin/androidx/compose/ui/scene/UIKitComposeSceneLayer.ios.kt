@@ -168,9 +168,9 @@ internal class UIKitComposeSceneLayer(
         navigationEventInput.onDidMoveToWindow(window, interactionView)
     }
 
-    fun doMeasureAndLayout() = mediator.doMeasureAndLayout()
+    fun doMeasureAndLayout() = mediator.measureAndLayout()
 
-    fun render(canvas: Canvas) {
+    fun draw(canvas: Canvas) {
         if (scrimColor != null) {
             val density = layersViewController.metalView.view.density
             val rect = layersViewController.metalView.view.bounds.toDpRect().toRect(density)
@@ -178,7 +178,7 @@ internal class UIKitComposeSceneLayer(
             canvas.drawRect(rect, scrimPaint)
         }
 
-        mediator.render(canvas)
+        mediator.draw(canvas)
     }
 
     fun retrieveInteropTransaction() = mediator.retrieveInteropTransaction()

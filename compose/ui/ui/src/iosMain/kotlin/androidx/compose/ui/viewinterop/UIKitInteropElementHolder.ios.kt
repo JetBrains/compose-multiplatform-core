@@ -86,7 +86,7 @@ internal abstract class UIKitInteropElementHolder<T : InteropView>(
             }
         }
 
-    var compositionContext by group::attachedCompositionContext
+    var groupCompositionContext by group::attachedCompositionContext
 
     init {
         layout.attachUserComponent()

@@ -79,7 +79,7 @@ fun <T : UIViewController> UIKitViewController(
 
                 val holder = interopContainer.holderOfView(it) as? UIKitInteropViewHolder<*>
                 holder?.properties = properties
-                holder?.compositionContext = compositionContext
+                holder?.groupCompositionContext = compositionContext
             }
         )
     }

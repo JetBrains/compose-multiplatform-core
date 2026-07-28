@@ -325,7 +325,7 @@ internal class ComposeLayersViewController(
             // process, so we need to make a temporary copy of the list
             layersCache.withCopy { layers ->
                 layers.fastForEach {
-                    it.render(composeCanvas)
+                    it.draw(composeCanvas)
                 }
             }
         }
