@@ -174,13 +174,6 @@ internal abstract class BaseComposeScene(
         hasForcedDraw = false
 
         postponeInvalidation("BaseComposeScene:draw") {
-            // FIXME CMP-10291: Remove applying the global snapshot here.
-            //  Android never applies the snapshot *between* the layout and draw phases
-            //  (applies happen once per frame on the main looper, not between phases).
-            //  This between-phase apply is a temporary workaround kept only to preserve current
-            //  behavior for OffsetToFocusedRect (iOS FocusableAboveKeyboard).
-            Snapshot.sendApplyNotifications()
-
             // AndroidComposeView.dispatchDraw() begins with measureAndLayout() so layout changes
             // discovered after the host layout traversal are still settled before drawing. Keep
             // that trailing layout pass here even though measureAndLayout() is also a public phase.
