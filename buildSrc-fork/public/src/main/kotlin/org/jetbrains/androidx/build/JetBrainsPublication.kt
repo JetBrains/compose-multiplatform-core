@@ -79,7 +79,6 @@ object JetBrainsPublication {
                     "Jvmmacos-arm64",
                     "Jvmwindows-x64",
                     "Jvmwindows-arm64",
-                    "Jvmall",
                 )
             ),
         ),
