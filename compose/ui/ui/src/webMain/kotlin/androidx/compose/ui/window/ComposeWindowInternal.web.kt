@@ -475,7 +475,7 @@ internal class ComposeWindow(
         val webTextInputService = platformContext.textInputService as WebTextInputService
 
         addTypedEvent<TouchEvent>("touchstart", passive = false) { evt ->
-            // prevetDefault the touchstart if the corresponding pointerdown hits the active text input.
+            // preventDefault the touchstart if the corresponding pointerdown hits the active text input.
             // Pros: a long press (touchstart + ~500ms delay after it) triggers focus changes in iOS Safari,
             // and this is the only chance (the only event we have) to prevent that behavior,
             // since we want the focus to remain in the active text input.
