@@ -181,7 +181,9 @@ private class OffsetToFocusedRectNode(
         val animationInputsChanged =
             this.insets != insets || this.animationDuration != animationDuration
         val needsRemeasure =
-            animationInputsChanged || this.getFocusedRect !== getFocusedRect || this.size != size
+            animationInputsChanged ||
+                this.getFocusedRect !== getFocusedRect ||
+                this.size != size
 
         this.insets = insets
         this.getFocusedRect = getFocusedRect
@@ -231,15 +233,11 @@ private class OffsetToFocusedRectNode(
         animationJob?.cancel()
         startOffset = currentOffset
 
-        if (!animationDuration.isPositive()) {
+        if (!animationDuration.isPositive() || startOffset == targetOffset()) {
             offsetProgress = 1f
-            invalidateMeasurement()
-            return
-        }
-
-        if (startOffset == targetOffset()) {
-            offsetProgress = 1f
-            animationCompletion()
+            if (animationDuration.isPositive()) {
+                animationCompletion()
+            }
             invalidateMeasurement()
             return
         }
