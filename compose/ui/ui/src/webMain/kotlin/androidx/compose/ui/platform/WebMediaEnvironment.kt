@@ -21,18 +21,16 @@ package androidx.compose.ui.platform
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.ExperimentalMediaQueryApi
 import androidx.compose.ui.UiMediaScope
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.util.fastForEach
+import androidx.compose.ui.window.MediaQueryListener
+import androidx.compose.ui.window.MediaQueryStatus
 import kotlin.js.Promise
 import kotlinx.browser.window
 import org.jetbrains.skiko.SystemTheme
-import org.w3c.dom.AddEventListenerOptions
-import org.w3c.dom.MediaQueryList
-import org.w3c.dom.MediaQueryListEvent
 import org.w3c.dom.events.Event
 import org.w3c.dom.mediacapture.AUDIOINPUT
 import org.w3c.dom.mediacapture.MediaDeviceInfo
@@ -50,68 +48,52 @@ internal class WebMediaEnvironment(
     private val isMediaDevicesEnumerateSupported: Boolean =
         isSecureContext && isMediaDevicesEnumerateSupported()
 
-    private val isMediaQuerySupported: Boolean = isMatchMediaSupported()
-
     //<editor-fold desc="System Theme Media Query">
-    private val themeMediaQuery: MediaQueryList by lazy(LazyThreadSafetyMode.NONE) {
-        window.matchMedia("(prefers-color-scheme: dark)")
-    }
 
-    private val themeListenerCallback: (Event) -> Unit = { event ->
-        _currentSystemTheme = if ((event as MediaQueryListEvent).matches)
-            SystemTheme.DARK else SystemTheme.LIGHT
+    private val themeMediaQueryListener: MediaQueryListener = object : MediaQueryListener("(prefers-color-scheme: dark)") {
+        override fun onChange(matches: Boolean) {
+            _currentSystemTheme = if (matches) SystemTheme.DARK else SystemTheme.LIGHT
+        }
     }
 
     private var _currentSystemTheme by mutableStateOf(
-        when {
-            !isMediaQuerySupported -> SystemTheme.UNKNOWN
-            themeMediaQuery.matches -> SystemTheme.DARK
-            else -> SystemTheme.LIGHT
+        when(themeMediaQueryListener.matches()) {
+            MediaQueryStatus.MATCH -> SystemTheme.DARK
+            MediaQueryStatus.NO_MATCH -> SystemTheme.LIGHT
+            MediaQueryStatus.UNSUPPORTED -> SystemTheme.UNKNOWN
         }
     )
 
     //</editor-fold>
     //<editor-fold desc="Resolution Media Query">
+    private var resolutionMediaQueryListener: MediaQueryListener? = null
     private fun initializeResolutionMediaQuery() {
         if (isDisposed) return
         val contentScale = window.devicePixelRatio
-        currentResolutionMediaQuery = window.matchMedia("(resolution: ${contentScale}dppx)")
-        try {
-            currentResolutionMediaQuery?.addEventListener(
-                "change",
-                resolutionListenerCallback,
-                resolutionListenerOptions
-            )
-        } catch (t: Throwable) {
-            currentResolutionMediaQuery?.addListener(resolutionListenerCallback)
-        }
-    }
-
-    private var currentResolutionMediaQuery: MediaQueryList? = null
-    private val resolutionListenerOptions = AddEventListenerOptions(capture = true, once = true)
-    private val resolutionListenerCallback: (Event) -> Unit = { evt ->
-        if (!isDisposed) {
-            evt as MediaQueryListEvent
-            if (!evt.matches) {
-                val density = Density(window.devicePixelRatio.toFloat())
-                onDensityChanged(density)
-                _systemDensity = density
+        resolutionMediaQueryListener?.dispose()
+        resolutionMediaQueryListener = object : MediaQueryListener("(resolution: ${contentScale}dppx)") {
+            override fun onChange(matches: Boolean) {
+                if (!isDisposed) {
+                    if (!matches) {
+                        val density = Density(window.devicePixelRatio.toFloat())
+                        onDensityChanged(density)
+                        _systemDensity = density
+                    }
+                    initializeResolutionMediaQuery()
+                }
             }
-            initializeResolutionMediaQuery()
         }
     }
 
     //</editor-fold>
     //<editor-fold desc="Orientation Media Query">
-    private val orientationMediaQuery: MediaQueryList by lazy(LazyThreadSafetyMode.NONE) {
-        window.matchMedia("(orientation: portrait)")
+    private val orientationMediaQueryListener: MediaQueryListener = object : MediaQueryListener("(orientation: portrait)") {
+        override fun onChange(matches: Boolean) {
+            isOrientationPortrait = matches
+        }
     }
 
-    private val orientationListenerCallback: (Event) -> Unit = { event ->
-        isOrientationPortrait = (event as MediaQueryListEvent).matches
-    }
-
-    private var isOrientationPortrait by mutableStateOf(orientationMediaQuery.matches)
+    private var isOrientationPortrait by mutableStateOf(orientationMediaQueryListener.matches() == MediaQueryStatus.MATCH)
 
     //</editor-fold>
     //<editor-fold desc="Device Posture Media Query">
@@ -219,20 +201,7 @@ internal class WebMediaEnvironment(
 
 
     init {
-        if (isMediaQuerySupported) {
-            try {
-                themeMediaQuery.addEventListener("change", themeListenerCallback)
-            } catch (t: Throwable) {
-                themeMediaQuery.addListener(themeListenerCallback)
-            }
-            initializeResolutionMediaQuery()
-
-            try {
-                orientationMediaQuery.addEventListener("change", orientationListenerCallback)
-            } catch (t: Throwable) {
-                orientationMediaQuery.addListener(orientationListenerCallback)
-            }
-        }
+        initializeResolutionMediaQuery()
         if (isMediaDevicesEnumerateSupported) {
             initializeMediaDevicesInfo()
             if (isMediaDevicesChangeEventSupported()) {
@@ -268,32 +237,9 @@ internal class WebMediaEnvironment(
     }
 
     fun dispose() {
-        if (isMediaQuerySupported) {
-            try {
-                themeMediaQuery.removeEventListener("change", themeListenerCallback)
-            } catch (t: Throwable) {
-                themeMediaQuery.removeListener(themeListenerCallback)
-            }
-
-            if (currentResolutionMediaQuery != null) {
-                try {
-                    currentResolutionMediaQuery?.removeEventListener(
-                        "change",
-                        resolutionListenerCallback,
-                        resolutionListenerOptions
-                    )
-                } catch (t: Throwable) {
-                    currentResolutionMediaQuery?.removeListener(resolutionListenerCallback)
-                }
-                currentResolutionMediaQuery = null
-            }
-
-            try {
-                orientationMediaQuery.removeEventListener("change", orientationListenerCallback)
-            } catch (t: Throwable) {
-                orientationMediaQuery.removeListener(orientationListenerCallback)
-            }
-        }
+        themeMediaQueryListener.dispose()
+        resolutionMediaQueryListener?.dispose()
+        orientationMediaQueryListener.dispose()
 
         if (isMediaDevicesEnumerateSupported && isMediaDevicesChangeEventSupported()) {
             window.navigator.mediaDevices.ondevicechange = null
@@ -305,12 +251,6 @@ internal class WebMediaEnvironment(
     }
 }
 
-// supported by all browsers since 2015
-// https://developer.mozilla.org/en-US/docs/Web/API/Window/matchMedia
-// Changed from `@JsFun` annotation because in 2.2.20 it's marked as not available on LV = 2.0
-// TODO: Cannot add opt-in with LV = 2.0 due to https://youtrack.jetbrains.com/issue/KT-79716
-//language=Js
-private fun isMatchMediaSupported(): Boolean = js("window.matchMedia != undefined")
 
 //language=Js
 private fun isMediaDevicesEnumerateSupported(): Boolean =
