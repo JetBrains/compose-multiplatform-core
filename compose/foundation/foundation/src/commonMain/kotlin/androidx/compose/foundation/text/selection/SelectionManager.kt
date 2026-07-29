@@ -42,8 +42,8 @@ import androidx.compose.foundation.text.contextmenu.modifier.ToolbarRequesterImp
 import androidx.compose.foundation.text.contextmenu.modifier.showTextContextMenuOnSecondaryClick
 import androidx.compose.foundation.text.contextmenu.modifier.textContextMenuToolbarHandler
 import androidx.compose.foundation.text.contextmenu.modifier.translateRootToDestination
+import androidx.compose.foundation.text.getOffsetOfCharacterAt
 import androidx.compose.foundation.text.input.internal.coerceIn
-import androidx.compose.foundation.text.isPositionInsideSelection
 import androidx.compose.foundation.text.selection.Selection.AnchorInfo
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.State
@@ -74,12 +74,14 @@ import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.platform.TextToolbar
 import androidx.compose.ui.platform.TextToolbarStatus
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.ResolvedTextDirection
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.util.fastAll
 import androidx.compose.ui.util.fastAny
+import androidx.compose.ui.util.fastFirstOrNull
 import androidx.compose.ui.util.fastFold
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastForEachIndexed
@@ -149,6 +151,16 @@ import kotlinx.coroutines.launch
 
     /** Return true if the corresponding SelectionContainer has a child that is focused. */
     var hasFocus: Boolean by mutableStateOf(false)
+
+    /**
+     * Url of the [LinkAnnotation.Url] that the last secondary click selected, or null when that
+     * click did not select one. It is what the context menu offers to copy alongside the selected
+     * text; neither the plain copy action nor the copy key event is affected.
+     *
+     * @see selectLinkAtPositionIfAny
+     */
+    internal var contextMenuLinkUrl: String? by mutableStateOf(null)
+        private set
 
     /** Return true if dragging gesture is currently in process. */
     private val isDraggingInProgress
@@ -827,6 +839,15 @@ import kotlinx.coroutines.launch
             ?.let { textToCopy -> onCopyHandler?.invoke(textToCopy) }
     }
 
+    /** Copies the url of the link the context menu was opened on, if there was one. */
+    internal fun copyContextMenuLinkUrl() {
+        contextMenuLinkUrl?.let { url -> onCopyHandler?.invoke(AnnotatedString(url)) }
+    }
+
+    /** Whether [copyContextMenuLinkUrl] has a url to copy. */
+    internal fun canCopyContextMenuLinkUrl(): Boolean =
+        onCopyHandler != null && contextMenuLinkUrl != null
+
     /**
      * Whether toolbar should be shown right now. Examples: Show toolbar after user finishes
      * selection. Hide it during selection. Hide it when no selection exists.
@@ -989,6 +1010,7 @@ import kotlinx.coroutines.launch
     fun onRelease() {
         selectionRegistrar.subselections = emptyLongObjectMap()
         clearScrolledOutTextCache()
+        contextMenuLinkUrl = null
         showToolbar = false
         if (selection != null) {
             onSelectionChange(null)
@@ -1365,6 +1387,8 @@ import kotlinx.coroutines.launch
     }
 
     private fun selectionChanged(selectionLayout: SelectionLayout, newSelection: Selection) {
+        // Any selection that isn't the link we right-clicked on invalidates the copy-the-url intent.
+        contextMenuLinkUrl = null
         if (shouldPerformHaptics()) {
             hapticFeedBack?.performHapticFeedback(HapticFeedbackType.TextHandleMove)
         }
@@ -1379,34 +1403,138 @@ import kotlinx.coroutines.launch
     /**
      * Implements the macOS select-word-on-right-click behavior.
      *
-     * If the current selection does not already include [position], select the word at [position].
+     * If [position] is over a character that the current selection does not already include,
+     * selects the word at [position]. Leaves the selection alone when [position] is not over any
+     * text.
+     *
+     * @param position the position of the secondary click, in the selection container coordinates.
      */
     fun selectWordAtPositionIfNotAlreadySelected(position: Offset) {
-        val containerCoordinates = containerLayoutCoordinates ?: return
-        if (!containerCoordinates.isAttached) return
+        val hit = characterAt(position) ?: return
+        val selectionRange =
+            selectionRegistrar.subselections[hit.selectable.selectableId]?.toTextRange()
+        if (selectionRange?.contains(hit.offset) == true) return
+        startSelection(
+            position = position,
+            isStartHandle = true,
+            adjustment = SelectionAdjustment.Word,
+        )
+    }
 
-        val isClickedPositionInsideSelection =
-            selectionRegistrar.selectables.fastAny { selectable ->
-                val selection =
-                    selectionRegistrar.subselections[selectable.selectableId]
-                        ?: return@fastAny false
-                val selectableLayoutCoords =
-                    selectable.getLayoutCoordinates() ?: return@fastAny false
-                val positionInSelectable =
-                    selectableLayoutCoords.localPositionOf(containerCoordinates, position)
-                val textLayoutResult = selectable.textLayoutResult() ?: return@fastAny false
-                textLayoutResult.isPositionInsideSelection(
-                    position = positionInSelectable,
-                    selectionRange = selection.toTextRange(),
-                )
-            }
-        if (!isClickedPositionInsideSelection) {
-            startSelection(
-                position = position,
-                isStartHandle = true,
-                adjustment = SelectionAdjustment.Word,
-            )
+    /**
+     * If [position] is over a [LinkAnnotation.Url] that the current selection does not already
+     * cover, selects the whole text of that link and offers its url through [contextMenuLinkUrl].
+     * Leaves a wider selection around [position] alone.
+     *
+     * @param position the position of the secondary click, in the selection container coordinates.
+     * @return whether a link was selected at [position].
+     */
+    fun selectLinkAtPositionIfAny(position: Offset): Boolean {
+        val link = findUrlLinkAt(position)
+        // Also clears the url of a link a previous click selected, when this one selected none.
+        contextMenuLinkUrl = link?.url
+        if (link == null) return false
+        selectRange(link.selectable, link.range)
+        return true
+    }
+
+    /** A [LinkAnnotation.Url] found under a position, together with the text it spans. */
+    private class UrlLink(val selectable: Selectable, val range: TextRange, val url: String)
+
+    private fun findUrlLinkAt(position: Offset): UrlLink? {
+        val hit = characterAt(position) ?: return null
+        val clickedAtPreviousSelection =
+            selectionRegistrar.subselections[hit.selectable.selectableId]
+                ?.toTextRange()
+                ?.contains(hit.offset) == true
+
+        // getLinkAnnotations intersects the given range, so [offset, offset + 1) asks for the
+        // links covering the character at offset.
+        val range =
+            hit.selectable
+                .getText()
+                .getLinkAnnotations(hit.offset, hit.offset + 1)
+                .fastFirstOrNull { it.item is LinkAnnotation.Url } ?: return null
+        val textRange = TextRange(range.start, range.end)
+
+        // Autoselecting the link must not shrink a selection that already covers the click. The
+        // exception is a selection spanning exactly the link and nothing else: reselecting it is a
+        // no-op, and it is the case the "Copy Link" menu item is there for.
+        if (clickedAtPreviousSelection && !isWholeSelection(hit.selectable, textRange)) return null
+
+        return UrlLink(
+            selectable = hit.selectable,
+            range = textRange,
+            url = (range.item as LinkAnnotation.Url).url,
+        )
+    }
+
+    /**
+     * Whether the whole selection is [range] of [selectable]. Comparing the subselection of
+     * [selectable] alone would not do: it can span exactly [range] while the selection continues
+     * into other selectables.
+     */
+    private fun isWholeSelection(selectable: Selectable, range: TextRange): Boolean {
+        val currentSelection = selection ?: return false
+        val start = currentSelection.start
+        val end = currentSelection.end
+        return start.selectableId == selectable.selectableId &&
+            end.selectableId == selectable.selectableId &&
+            minOf(start.offset, end.offset) == range.min &&
+            maxOf(start.offset, end.offset) == range.max
+    }
+
+    /** A character of a [Selectable] found under a position. */
+    private class CharacterHit(val selectable: Selectable, val offset: Int)
+
+    /**
+     * Returns the character under [position], or null when [position] is not over any text: the
+     * layout box of a text is usually wider and taller than the glyphs it paints.
+     *
+     * @param position a position in the selection container coordinates.
+     */
+    private fun characterAt(position: Offset): CharacterHit? {
+        val containerCoordinates = containerLayoutCoordinates ?: return null
+        if (!containerCoordinates.isAttached) return null
+
+        selectionRegistrar.selectables.fastForEach { selectable ->
+            val selectableLayoutCoords = selectable.getLayoutCoordinates() ?: return@fastForEach
+            val textLayoutResult = selectable.textLayoutResult() ?: return@fastForEach
+            val positionInSelectable =
+                selectableLayoutCoords.localPositionOf(containerCoordinates, position)
+            val offset =
+                textLayoutResult.getOffsetOfCharacterAt(positionInSelectable) ?: return@fastForEach
+            return CharacterHit(selectable = selectable, offset = offset)
         }
+        return null
+    }
+
+    /** Makes [range] of [selectable] the whole selection. */
+    private fun selectRange(selectable: Selectable, range: TextRange) {
+        val textLayoutResult = selectable.textLayoutResult() ?: return
+        val newSelection =
+            Selection(
+                start =
+                    AnchorInfo(
+                        direction = textLayoutResult.getBidiRunDirection(range.start),
+                        offset = range.start,
+                        selectableId = selectable.selectableId,
+                    ),
+                end =
+                    AnchorInfo(
+                        direction =
+                            textLayoutResult.getBidiRunDirection(maxOf(range.end - 1, 0)),
+                        offset = range.end,
+                        selectableId = selectable.selectableId,
+                    ),
+                handlesCrossed = false,
+            )
+
+        previousSelectionLayout = null
+        clearScrolledOutTextCache()
+        selectionRegistrar.subselections =
+            mutableLongObjectMapOf(selectable.selectableId, newSelection)
+        onSelectionChange(newSelection)
     }
 }
 

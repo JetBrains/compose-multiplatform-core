@@ -108,6 +108,26 @@ internal fun TextLayoutResult.isPositionInsideSelection(
 }
 
 /**
+ * Returns the index of the character whose bounding box contains the given pixel [position], or null
+ * when [position] is not over any character, e.g. past the end of a line.
+ */
+internal fun TextLayoutResult.getOffsetOfCharacterAt(position: Offset): Int? {
+    val length = layoutInput.text.length
+    if (length == 0) return null
+
+    // getOffsetForPosition returns the index at which the cursor should be placed when the
+    // given position is clicked. This means that when position is to the right of the center of
+    // a glyph it will return the index of the next glyph. So we test both the index it returns
+    // and the previous index.
+    val offset = getOffsetForPosition(position)
+    return when {
+        offset < length && getBoundingBox(offset).contains(position) -> offset
+        offset > 0 && getBoundingBox(offset - 1).contains(position) -> offset - 1
+        else -> null
+    }
+}
+
+/**
  * Returns the text line height for the given offset. It also returns the last visible line height
  * if the given offset is followed after the last visible character. If the text is empty, or if the
  * requested line is out of the visible range, then returns zero.

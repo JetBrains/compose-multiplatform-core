@@ -116,9 +116,12 @@ internal class SelectionController(
 
         // Don't notify on null. We don't want every new Text that enters composition to
         // notify a selectable change. It was already handled when it was created.
+        // Only the characters are compared, not the annotations: a selection is expressed in
+        // character offsets, so restyling alone must not drop it. Links restyle themselves on
+        // hover, focus and press, which would otherwise clear the selection under the pointer.
         if (
             prevTextLayoutResult != null &&
-                prevTextLayoutResult.layoutInput.text != textLayoutResult.layoutInput.text
+                prevTextLayoutResult.layoutInput.text.text != textLayoutResult.layoutInput.text.text
         ) {
             // Text content changed, notify selection to update itself.
             selectionRegistrar.notifySelectableChange(selectableId)

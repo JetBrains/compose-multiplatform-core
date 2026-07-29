@@ -155,6 +155,8 @@ private val TextFieldSelectionManager.textManager: TextManager get() = object : 
             }
         )
 
+    override val copyLinkUrl = null
+
     override val paste: TextContextMenu.Action get() =
         TextContextMenu.Action(
             enabled = editable && clipboard?.nativeClipboardHasText() == true,
@@ -176,6 +178,8 @@ private val TextFieldSelectionManager.textManager: TextManager get() = object : 
     override fun selectWordAtPositionIfNotAlreadySelected(offset: Offset) {
         this@textManager.selectWordAtPositionIfNotAlreadySelected(offset)
     }
+
+    override fun selectLinkAtPositionIfAny(offset: Offset): Boolean = false
 }
 
 private fun TextFieldSelectionState.textManager(coroutineScope: CoroutineScope): TextManager {
@@ -205,6 +209,8 @@ private fun TextFieldSelectionState.textManager(coroutineScope: CoroutineScope):
                 enabled = canShowCopyMenuItem(),
                 execute = ::copyImpl
             )
+
+        override val copyLinkUrl = null
 
         override val paste: TextContextMenu.Action get() =
             TextContextMenu.Action(
@@ -238,6 +244,8 @@ private fun TextFieldSelectionState.textManager(coroutineScope: CoroutineScope):
                 textFieldState.selectCharsIn(selection)
             }
         }
+
+        override fun selectLinkAtPositionIfAny(offset: Offset): Boolean = false
     }
 }
 
@@ -250,11 +258,17 @@ private val SelectionManager.textManager: TextManager get() = object : TextManag
             enabled = isNonEmptySelection(),
             execute = { copy()}
         )
+    override val copyLinkUrl get() =
+        if (canCopyContextMenuLinkUrl()) {
+            TextContextMenu.Action(enabled = true, execute = { copyContextMenuLinkUrl() })
+        } else null
     override val paste = null
     override val selectAll = null
     override fun selectWordAtPositionIfNotAlreadySelected(offset: Offset) {
         this@textManager.selectWordAtPositionIfNotAlreadySelected(offset)
     }
+    override fun selectLinkAtPositionIfAny(offset: Offset): Boolean =
+        this@textManager.selectLinkAtPositionIfAny(offset)
 }
 
 /**
@@ -304,6 +318,12 @@ interface TextContextMenu {
         val copy: Action?
 
         /**
+         * Action for copying the url of the link the context menu was opened on. Null if
+         * [selectLinkAtPositionIfAny] did not select a link for this menu.
+         */
+        val copyLinkUrl: Action?
+
+        /**
          * Action for pasting text from the clipboard. Null if there is no text in the clipboard.
          */
         val paste: Action?
@@ -318,6 +338,13 @@ interface TextContextMenu {
          * that position.
          */
         fun selectWordAtPositionIfNotAlreadySelected(offset: Offset)
+
+        /**
+         * If there is a link at the given [offset] that the current selection does not already
+         * cover, selects the whole text of that link and offers its url through [copyLinkUrl].
+         * Leaves a wider selection around [offset] alone. Returns whether a link was selected.
+         */
+        fun selectLinkAtPositionIfAny(offset: Offset): Boolean
     }
 
     @ExperimentalFoundationApi
@@ -355,6 +382,7 @@ private class BasicTextContextMenu(
             listOf(
                 localization.cut to textManager.cut,
                 localization.copy to textManager.copy,
+                localization.copyLink to textManager.copyLinkUrl,
                 localization.paste to textManager.paste,
                 localization.selectAll to textManager.selectAll,
             ).mapNotNull { (localization, action) ->
@@ -429,7 +457,9 @@ fun TextContextMenuArea(
         modifier = Modifier.contextMenuOpenDetector(
             key = Pair(textManager, state)
         ) { pointerPosition ->
-            if (DesktopPlatform.Current == DesktopPlatform.MacOS) {
+            if (!textManager.selectLinkAtPositionIfAny(pointerPosition) &&
+                DesktopPlatform.Current == DesktopPlatform.MacOS
+            ) {
                 textManager.selectWordAtPositionIfNotAlreadySelected(pointerPosition)
             }
             state.status = ContextMenuState.Status.Open(Rect(pointerPosition, 0f))
