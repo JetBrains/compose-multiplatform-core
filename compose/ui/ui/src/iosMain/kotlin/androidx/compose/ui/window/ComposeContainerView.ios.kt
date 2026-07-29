@@ -54,7 +54,7 @@ internal class ComposeContainerView(
     private var onDidMoveToWindow: (UIWindow?) -> Unit = {}
     private var onWillMoveToWindow: (UIWindow?) -> Unit = {}
     private var onLayoutSubviews: () -> Unit = {}
-    private var onTraitCollectionDidChange: (UITraitCollection?) -> Unit = {}
+    private var onTraitCollectionDidChange: () -> Unit = {}
     private var foregroundStateListener: SceneForegroundStateListener? = null
 
     val redrawer: MetalRedrawer? get() = metalView?.redrawer
@@ -67,7 +67,7 @@ internal class ComposeContainerView(
         super.traitCollectionDidChange(previousTraitCollection)
 
         updateBackgroundColor()
-        onTraitCollectionDidChange(previousTraitCollection)
+        onTraitCollectionDidChange()
     }
 
     private fun updateBackgroundColor() {
@@ -87,14 +87,14 @@ internal class ComposeContainerView(
         onWillMoveToWindow: (UIWindow?) -> Unit = {},
         onDidMoveToWindow: (UIWindow?) -> Unit = {},
         onLayoutSubviews: () -> Unit = {},
-        onTraitCollectionDidChange: (UITraitCollection?) -> Unit = {},
+        onTraitCollectionDidChange: () -> Unit = {},
     ) {
         this.metalView?.dispose()
         this.metalView?.view?.removeFromSuperview()
         this.metalView = metalView
 
-        this.onDidMoveToWindow = onDidMoveToWindow
         this.onWillMoveToWindow = onWillMoveToWindow
+        this.onDidMoveToWindow = onDidMoveToWindow
         this.onLayoutSubviews = onLayoutSubviews
         this.onTraitCollectionDidChange = onTraitCollectionDidChange
 
@@ -105,7 +105,7 @@ internal class ComposeContainerView(
         window?.let(onWillMoveToWindow)
         window?.let(onDidMoveToWindow)
 
-        onTraitCollectionDidChange(traitCollection)
+        onTraitCollectionDidChange()
 
         if (metalView == null) {
             foregroundStateListener?.dispose()
@@ -114,7 +114,9 @@ internal class ComposeContainerView(
             foregroundStateListener = SceneForegroundStateListener(getScene = {
                 window?.windowScene
             }) { isSceneInForeground ->
-                metalView.redrawer.isActive = isSceneInForeground
+                if (!isSceneInForeground) {
+                    metalView.redrawer.awaitRenderingCompletion()
+                }
             }
         }
         updateRedrawerState()
@@ -152,16 +154,12 @@ internal class ComposeContainerView(
     }
 
     override fun drawRect(rect: CValue<CGRect>) {
-        if (needsSynchronousDraw) {
-            metalView?.redrawer?.draw(waitUntilCompletion = true)
-
-            needsSynchronousDraw = false
-        }
+        metalView?.redrawer?.render(waitUntilCompletion = needsSynchronousDraw)
+        needsSynchronousDraw = false
 
         if (needsDisablePresentWithTransactionOnNextDraw) {
             needsDisablePresentWithTransactionOnNextDraw = false
             metalView?.redrawer?.isForcedToPresentWithTransactionEveryFrame = false
-            metalView?.redrawer?.ongoingInteractionEventsCount--
         }
     }
 
@@ -172,7 +170,9 @@ internal class ComposeContainerView(
     }
 
     private fun updateRedrawerState() {
-        metalView?.redrawer?.isActive = foregroundStateListener?.isSceneInForeground ?: false
+        if (foregroundStateListener?.isSceneInForeground == false) {
+            metalView?.redrawer?.awaitRenderingCompletion()
+        }
     }
 
     /**
@@ -250,7 +250,6 @@ internal class ComposeContainerView(
         isAnimating = true
         updateLayout()
         metalView.redrawer.isForcedToPresentWithTransactionEveryFrame = true
-        metalView.redrawer.ongoingInteractionEventsCount++
         scope.launch {
             try {
                 animations()
