@@ -231,11 +231,15 @@ private class OffsetToFocusedRectNode(
         animationJob?.cancel()
         startOffset = currentOffset
 
-        if (!animationDuration.isPositive() || startOffset == targetOffset()) {
+        if (!animationDuration.isPositive()) {
             offsetProgress = 1f
-            if (animationDuration.isPositive()) {
-                animationCompletion()
-            }
+            invalidateMeasurement()
+            return
+        }
+
+        if (startOffset == targetOffset()) {
+            offsetProgress = 1f
+            animationCompletion()
             invalidateMeasurement()
             return
         }
