@@ -22,7 +22,7 @@ import androidx.compose.ui.node.WeakReference
 import androidx.compose.ui.uikit.toNanoSeconds
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.window.DisplayLinkFrameRate
-import androidx.compose.ui.window.MetalOutOfFrameExecutor
+import androidx.compose.ui.window.OutOfFrameExecutor
 import androidx.compose.ui.window.SceneForegroundStateListener
 import kotlin.coroutines.CoroutineContext
 import kotlin.math.min
@@ -148,7 +148,7 @@ internal class FrameChoreographer private constructor(
             }
         }
 
-    val outOfFrameExecutor = MetalOutOfFrameExecutor()
+    val outOfFrameExecutor = OutOfFrameExecutor()
 
     /**
      * The [listeners] list must not be changed when providing notifications. Also, [onDisplayLinkTick]
@@ -166,6 +166,7 @@ internal class FrameChoreographer private constructor(
         displayLink.invalidate()
         foregroundStateListener.dispose()
         frameRecomposer.close()
+        outOfFrameExecutor.dispose()
 
         listeners.clear()
         pendingListenersToAdd.clear()
