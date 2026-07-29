@@ -17,6 +17,7 @@
 package androidx.compose.ui.viewinterop
 
 import androidx.compose.runtime.CompositeKeyHashCode
+import androidx.compose.runtime.CompositionContext
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.BlendMode
@@ -25,16 +26,13 @@ import androidx.compose.ui.input.pointer.PointerEvent
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.MeasurePolicy
 import androidx.compose.ui.layout.findRootCoordinates
+import androidx.compose.ui.scene.attachedCompositionContext
 import androidx.compose.ui.uikit.density
 import androidx.compose.ui.unit.IntRect
-import androidx.compose.ui.unit.toCGRect
 import androidx.compose.ui.unit.roundToIntRect
+import androidx.compose.ui.unit.toCGRect
 import androidx.compose.ui.unit.toDpRect
 import androidx.compose.ui.unit.toRect
-import kotlinx.cinterop.CValue
-import platform.CoreGraphics.CGRect
-import platform.CoreGraphics.CGRectIntersection
-import platform.CoreGraphics.CGRectIsEmpty
 import platform.UIKit.UIView
 import platform.UIKit.accessibilityFrame
 
@@ -56,11 +54,13 @@ internal abstract class UIKitInteropElementHolder<T : InteropView>(
         interopContainer: InteropContainer,
         properties: UIKitInteropProperties,
         compositeKeyHashCode: CompositeKeyHashCode,
+        compositionContext: CompositionContext,
     ) : this(
         factory = factory,
         interopContainer = interopContainer,
         interopWrappingView = InteropWrappingView(
-            interactionMode = null
+            interactionMode = properties.interactionMode,
+            compositionContext = compositionContext
         ),
         properties = properties,
         compositeKeyHashCode = compositeKeyHashCode
@@ -85,6 +85,8 @@ internal abstract class UIKitInteropElementHolder<T : InteropView>(
                 onPropertiesChanged()
             }
         }
+
+    var groupCompositionContext by group::attachedCompositionContext
 
     init {
         layout.attachUserComponent()
@@ -176,14 +178,6 @@ internal abstract class UIKitInteropElementHolder<T : InteropView>(
     override fun changeInteropViewIndex(root: InteropViewGroup, index: Int) {
         root.insertSubview(view = group, atIndex = index.toLong())
     }
-
-    /**
-     * Check that [group] doesn't entirely clip a child view with a [cgRect]
-     */
-    private fun isVisible(cgRect: CValue<CGRect>): Boolean =
-        CGRectIsEmpty(
-            CGRectIntersection(cgRect, group.bounds)
-        ).not()
 
     private fun Modifier.clearBackgroundIfNeeded(): Modifier =
         if (placedAsOverlay) {

@@ -28,6 +28,7 @@ import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.navigationevent.UIKitNavigationEventInput
 import androidx.compose.ui.platform.FrameRecomposer
 import androidx.compose.ui.platform.MediaEnvironment
+import androidx.compose.ui.platform.FrameChoreographer
 import androidx.compose.ui.platform.PlatformArchitectureComponentsOwner
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.uikit.ComposeContainerConfiguration
@@ -48,12 +49,9 @@ import platform.UIKit.UIView
 import platform.UIKit.UIWindow
 
 internal class UIKitComposeSceneLayer(
+    private val frameChoreographer: FrameChoreographer,
     private val onClosed: (UIKitComposeSceneLayer) -> Unit,
     private val createComposeSceneContext: (PlatformContext) -> ComposeSceneContext,
-
-    // FIXME: Remove it. All locals should be available from the composition context
-    private val hostCompositionLocals: @Composable (@Composable () -> Unit) -> Unit,
-
     private val layersViewController: ComposeLayersViewController,
     private val initialLayoutDirection: LayoutDirection,
     private val onFocusConditionsChanged: () -> Unit,
@@ -63,6 +61,8 @@ internal class UIKitComposeSceneLayer(
     parentCoroutineContext: CoroutineContext,
     private val ownerProvider: PlatformArchitectureComponentsOwner,
     private val mediaEnvironment: MediaEnvironment,
+    private var invalidateLayout: () -> Unit,
+    private var invalidateDraw: () -> Unit,
 ) : ComposeSceneLayer {
     private val layerJob = Job()
     private val layerCoroutineContext = parentCoroutineContext + layerJob
@@ -103,13 +103,13 @@ internal class UIKitComposeSceneLayer(
     }
 
     private val mediator = ComposeSceneMediator(
+        frameChoreographer = frameChoreographer,
         onFocusBehavior = configuration.onFocusBehavior,
         isClearFocusOnMouseDownEnabled = configuration.isClearFocusOnMouseDownEnabled,
         focusedViewsList = focusedViewsList,
         windowContext = layersViewController.windowContext,
         architectureComponentsOwner = ownerProvider,
         coroutineContext = layerCoroutineContext,
-        redrawer = layersViewController.metalView.redrawer,
         composeSceneFactory = ::createComposeScene,
         navigationEventInput = navigationEventInput,
         mediaEnvironment = mediaEnvironment
@@ -118,20 +118,14 @@ internal class UIKitComposeSceneLayer(
         it.isInterceptingOutsideEvents = consumePointerInputOutside
     }
 
-    private fun createComposeScene(
-        invalidate: () -> Unit,
-        platformContext: PlatformContext,
-        frameRecomposer: FrameRecomposer
-    ): ComposeScene =
+    private fun createComposeScene(platformContext: PlatformContext): ComposeScene =
         PlatformLayersComposeScene(
-            frameRecomposer = frameRecomposer,
+            frameRecomposer = frameChoreographer.frameRecomposer,
             density = mediator.screenDensity,
             layoutDirection = initialLayoutDirection,
             composeSceneContext = createComposeSceneContext(platformContext),
-            // TODO: Split these into UIKit layout vs display invalidation instead of using the
-            //  same invalidation callback for both phases.
-            invalidateLayout = invalidate,
-            invalidateDraw = invalidate,
+            invalidateLayout = invalidateLayout,
+            invalidateDraw = invalidateDraw,
         )
 
     val hasInvalidations by mediator::hasInvalidations
@@ -174,7 +168,9 @@ internal class UIKitComposeSceneLayer(
         navigationEventInput.onDidMoveToWindow(window, interactionView)
     }
 
-    fun render(canvas: Canvas, nanoTime: Long) {
+    fun doMeasureAndLayout() = mediator.measureAndLayout()
+
+    fun draw(canvas: Canvas) {
         if (scrimColor != null) {
             val density = layersViewController.metalView.view.density
             val rect = layersViewController.metalView.view.bounds.toDpRect().toRect(density)
@@ -182,7 +178,7 @@ internal class UIKitComposeSceneLayer(
             canvas.drawRect(rect, scrimPaint)
         }
 
-        mediator.render(canvas, nanoTime)
+        mediator.draw(canvas)
     }
 
     fun retrieveInteropTransaction() = mediator.retrieveInteropTransaction()
@@ -205,6 +201,8 @@ internal class UIKitComposeSceneLayer(
         interactionView.removeFromSuperview()
         interactionView.dispose()
         layerJob.cancel()
+        invalidateLayout = {}
+        invalidateDraw = {}
     }
 
     @Composable
@@ -219,11 +217,8 @@ internal class UIKitComposeSceneLayer(
         parentCompositionContext: CompositionContext,
         content: @Composable () -> Unit,
     ) {
-        // TODO: pass [parentCompositionContext] once a shared [Recomposer] exists.
-        mediator.setContent {
-            hostCompositionLocals {
-                ProvideComposeSceneLayerCompositionLocals(content)
-            }
+        mediator.setContent(parentCompositionContext) {
+            ProvideComposeSceneLayerCompositionLocals(content)
         }
     }
 

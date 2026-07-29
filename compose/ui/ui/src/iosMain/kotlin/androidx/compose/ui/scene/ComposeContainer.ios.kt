@@ -17,6 +17,7 @@
 package androidx.compose.ui.scene
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionContext
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.LocalSystemTheme
 import androidx.compose.ui.graphics.asComposeCanvas
@@ -24,6 +25,7 @@ import androidx.compose.ui.navigationevent.UIKitNavigationEventInput
 import androidx.compose.ui.platform.DefaultArchitectureComponentsOwner
 import androidx.compose.ui.platform.FrameRecomposer
 import androidx.compose.ui.platform.MediaEnvironment
+import androidx.compose.ui.platform.FrameChoreographer
 import androidx.compose.ui.platform.MotionDurationScaleImpl
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.PlatformWindowContext
@@ -50,12 +52,26 @@ import androidx.lifecycle.enableSavedStateHandles
 import androidx.savedstate.SavedState
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
+import kotlinx.cinterop.COpaquePointer
+import kotlinx.cinterop.CPointed
+import kotlinx.cinterop.CPointer
+import kotlinx.cinterop.ExperimentalForeignApi
+import kotlinx.cinterop.IntVar
+import kotlinx.cinterop.alloc
+import kotlinx.cinterop.nativeHeap
+import kotlinx.cinterop.ptr
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.job
+import kotlinx.coroutines.launch
+import org.jetbrains.skiko.SystemTheme
+import platform.Foundation.NSKeyValueObservingOptionNew
+import platform.Foundation.addObserver
+import platform.Foundation.removeObserver
 import platform.UIKit.UIAccessibilityIsReduceMotionEnabled
 import platform.UIKit.UIApplication
 import platform.UIKit.UIResponder
-import platform.UIKit.UITraitCollection
 import platform.UIKit.UIUserInterfaceLayoutDirection
 import platform.UIKit.UIUserInterfaceLayoutDirection.UIUserInterfaceLayoutDirectionLeftToRight
 import platform.UIKit.UIUserInterfaceLayoutDirection.UIUserInterfaceLayoutDirectionRightToLeft
@@ -63,6 +79,9 @@ import platform.UIKit.UIUserInterfaceStyle
 import platform.UIKit.UIViewController
 import platform.UIKit.UIWindow
 import platform.UIKit.UIWindowScene
+import platform.objc.OBJC_ASSOCIATION_RETAIN
+import platform.objc.objc_getAssociatedObject
+import platform.objc.objc_setAssociatedObject
 
 /**
  * The class represents a common part of Compose integration for all iOS containers.
@@ -70,7 +89,6 @@ import platform.UIKit.UIWindowScene
 internal class ComposeContainer(
     private val configuration: ComposeContainerConfiguration,
     private val content: @Composable () -> Unit,
-    private val coroutineContext: CoroutineContext,
     private val lifecycleDelegate: ComposeContainerLifecycleDelegate
 ) {
     // Register before any property initializer / scene setup below touches the Skiko backend, so
@@ -83,6 +101,9 @@ internal class ComposeContainer(
         transparentForTouches = false,
         useOpaqueConfiguration = configuration.opaque,
     )
+
+    private val frameChoreographer: FrameChoreographer?
+        get() = view.window?.windowScene?.let { FrameChoreographer.choreographerForScene(it) }
 
     private var mediator: ComposeSceneMediator? = null
     private val windowContext = PlatformWindowContext()
@@ -115,6 +136,7 @@ internal class ComposeContainer(
         getTopLeftOffsetInWindow = { IntOffset.Zero }, //full screen
         endEdgePanGestureBehavior = configuration.endEdgePanGestureBehavior
     )
+    private var layoutInvalidationHandler: LayoutInvalidationHandler? = null
     val hasInteropViews: Boolean get() = mediator?.hasInteropViews ?: false
 
 
@@ -135,7 +157,8 @@ internal class ComposeContainer(
     fun nestedCoroutineScope(
         addedContext: CoroutineContext = EmptyCoroutineContext
     ): CoroutineScope {
-        return CoroutineScope(coroutineContext + addedContext + Job(parent = sceneJob))
+        val activeContext = mediator?.coroutineContext ?: Dispatchers.Main
+        return CoroutineScope(activeContext + addedContext + Job(parent = sceneJob))
     }
 
     fun prepareAndGetSizeTransitionAnimation(withProgress: suspend ((Float) -> Unit) -> Unit): suspend () -> Unit {
@@ -149,9 +172,11 @@ internal class ComposeContainer(
 
     private fun onLayoutSubviews() {
         windowContext.updateWindowContainerSize()
+
+        mediator?.measureAndLayout()
     }
 
-    private fun onTraitCollectionDidChange(previousTraitCollection: UITraitCollection?) {
+    private fun onTraitCollectionDidChange() {
         layoutDirection = view.effectiveUserInterfaceLayoutDirection.asLayoutDirection()
     }
 
@@ -174,6 +199,9 @@ internal class ComposeContainer(
         // Because the container view can change during the modal transition animation,
         // the gesture handlers and layers view are added back when the animation ends.
         navigationEventInput.onDidMoveToWindow(view.window, view)
+
+        layoutInvalidationHandler?.invalidateLayoutIfNeeded()
+        view.setNeedsDisplay()
     }
 
     fun sceneWillDisappear() {
@@ -186,7 +214,15 @@ internal class ComposeContainer(
 
     fun initializeComposeScene() {
         sceneJob = Job()
-        val sceneCoroutineContext = coroutineContext + motionDurationScale + sceneJob
+        val frameChoreographer = frameChoreographer ?: error("No window scene found")
+        val containerCoroutineContext = frameChoreographer.coroutineContext + motionDurationScale + sceneJob
+
+        val layoutInvalidationHandler = LayoutInvalidationHandler(containerCoroutineContext) {
+            view.setNeedsLayout()
+            view.invalidateIntrinsicContentSize()
+        }
+        this.layoutInvalidationHandler = layoutInvalidationHandler
+
         val metalView = MetalView(
             retrieveInteropTransaction = {
                 mediator?.retrieveInteropTransaction() ?: object : UIKitInteropTransaction {
@@ -195,14 +231,16 @@ internal class ComposeContainer(
                 }
             },
             useSeparateRenderThreadWhenPossible = configuration.parallelRendering,
-            render = { canvas, nanoTime ->
-                mediator?.render(canvas.asComposeCanvas(), nanoTime)
+            draw = { canvas ->
+                layoutInvalidationHandler.postponeLayoutInvalidationCalls {
+                    mediator?.draw(canvas.asComposeCanvas())
+                }
             }
         )
         metalView.canBeOpaque = configuration.opaque
         val holder = ComposeLayersHolder(
             useSeparateRenderThreadWhenPossible = configuration.parallelRendering,
-            coroutineContext = sceneCoroutineContext,
+            coroutineContext = containerCoroutineContext,
             view = view
         ).also {
             layersHolder = it
@@ -216,15 +254,31 @@ internal class ComposeContainer(
         lifecycleDelegate.onLifecycleStateUpdated = architectureComponentsOwner::setLifecycleState
 
         mediator = ComposeSceneMediator(
+            frameChoreographer = frameChoreographer,
             onFocusBehavior = configuration.onFocusBehavior,
             isClearFocusOnMouseDownEnabled = configuration.isClearFocusOnMouseDownEnabled,
             focusedViewsList = focusedViewsList,
             windowContext = windowContext,
             architectureComponentsOwner = architectureComponentsOwner,
-            coroutineContext = sceneCoroutineContext,
-            redrawer = metalView.redrawer,
-            composeSceneFactory = { invalidate, context, frameRecomposer ->
-                createComposeScene(invalidate, context, holder, frameRecomposer)
+            coroutineContext = containerCoroutineContext,
+            composeSceneFactory = { context ->
+                PlatformLayersComposeScene(
+                    frameRecomposer = frameChoreographer.frameRecomposer,
+                    density = view.density,
+                    layoutDirection = layoutDirection,
+                    composeSceneContext = createComposeSceneContext(
+                        frameChoreographer = frameChoreographer,
+                        platformContext = context,
+                        layersHolder = holder,
+                        containerCoroutineContext = containerCoroutineContext
+                    ),
+                    invalidateLayout = {
+                        layoutInvalidationHandler.invalidateLayoutIfNeeded()
+                    },
+                    invalidateDraw = {
+                        view.setNeedsDisplay()
+                    },
+                )
             },
             navigationEventInput = navigationEventInput,
             mediaEnvironment = mediaEnvironment,
@@ -238,7 +292,7 @@ internal class ComposeContainer(
             )
             view.embedSubview(mediator.overlayView)
 
-            mediator.setContent {
+            mediator.setContent(parentCompositionContext = view.findParentCompositionContext()) {
                 ProvideContainerCompositionLocals(content)
             }
         }
@@ -282,9 +336,10 @@ internal class ComposeContainer(
     }
 
     private fun createComposeSceneContext(
+        frameChoreographer: FrameChoreographer,
         platformContext: PlatformContext,
         layersHolder: ComposeLayersHolder,
-        frameRecomposer: FrameRecomposer,
+        containerCoroutineContext: CoroutineContext,
     ): ComposeSceneContext {
         return object : ComposeSceneContext {
             override val platformContext: PlatformContext = platformContext
@@ -296,25 +351,30 @@ internal class ComposeContainer(
                 consumePointerInputOutside: Boolean,
             ): ComposeSceneLayer {
                 val layer = UIKitComposeSceneLayer(
+                    frameChoreographer = frameChoreographer,
                     onClosed = {
                         layersHolder.getLayersViewController().detach(it)
                         onFocusConditionsChanged()
                     },
                     createComposeSceneContext = {
-                        createComposeSceneContext(it, layersHolder, frameRecomposer)
+                        createComposeSceneContext(
+                            frameChoreographer = frameChoreographer,
+                            platformContext = it,
+                            layersHolder = layersHolder,
+                            containerCoroutineContext = containerCoroutineContext
+                        )
                     },
-                    hostCompositionLocals = { ProvideContainerCompositionLocals(it) },
                     layersViewController = layersHolder.getLayersViewController(),
                     initialLayoutDirection = layoutDirection,
                     configuration = configuration,
                     onFocusConditionsChanged = ::onFocusConditionsChanged,
                     focusedViewsList = if (focusable) focusedViewsList.childFocusedViewsList() else null,
                     consumePointerInputOutside = consumePointerInputOutside,
-                    // FIXME: Do not use [compositionContext.effectCoroutineContext] for
-                    //  [FrameRecomposer] creation.
-                    parentCoroutineContext = frameRecomposer.compositionContext.effectCoroutineContext,
+                    parentCoroutineContext = containerCoroutineContext,
                     ownerProvider = architectureComponentsOwner,
                     mediaEnvironment = mediaEnvironment
+                    invalidateLayout = { layersHolder.getLayersViewController().invalidateLayout() },
+                    invalidateDraw = { layersHolder.getLayersViewController().invalidateDraw() },
                 )
 
                 layersHolder.getLayersViewController().attach(layer)
@@ -324,26 +384,6 @@ internal class ComposeContainer(
             }
         }
     }
-
-    private fun createComposeScene(
-        invalidate: () -> Unit,
-        platformContext: PlatformContext,
-        layersHolder: ComposeLayersHolder,
-        frameRecomposer: FrameRecomposer,
-    ): ComposeScene = PlatformLayersComposeScene(
-        frameRecomposer = frameRecomposer,
-        density = view.density,
-        layoutDirection = layoutDirection,
-        composeSceneContext = createComposeSceneContext(
-            platformContext = platformContext,
-            layersHolder = layersHolder,
-            frameRecomposer = frameRecomposer,
-        ),
-        // TODO: Split these into UIKit layout vs display invalidation. `invalidateLayout`
-        // should call into layout scheduling, while `invalidateDraw` should schedule display.
-        invalidateLayout = invalidate,
-        invalidateDraw = invalidate,
-    )
 
     /**
      * Enables or disables accessibility for each layer, as well as the root mediator, taking into
@@ -429,4 +469,70 @@ private fun UIUserInterfaceLayoutDirection.asLayoutDirection(): LayoutDirection 
         println("ComposeContainer: unexpected UIUserInterfaceLayoutDirection=$this, falling back to Ltr")
         LayoutDirection.Ltr
     }
+}
+
+/**
+ * Prevent cases where invalidate layout may be called during the rendering process,
+ * which lead to another frame rendering during the same frame.
+ */
+internal class LayoutInvalidationHandler(
+    coroutineContext: CoroutineContext,
+    private var doInvalidateLayout: () -> Unit
+) {
+    private var invalidationPostponed = false
+    private var hasInvalidations = false
+    private val scope = CoroutineScope(coroutineContext)
+
+    init {
+        coroutineContext.job.invokeOnCompletion {
+            doInvalidateLayout = {}
+        }
+    }
+
+    fun invalidateLayoutIfNeeded() {
+        if (invalidationPostponed) {
+            hasInvalidations = true
+            return
+        }
+        doInvalidateLayout()
+        hasInvalidations = false
+    }
+
+    fun postponeLayoutInvalidationCalls(block: () -> Unit) {
+        assert(!invalidationPostponed)
+        invalidationPostponed = true
+        try {
+            block()
+        } finally {
+            invalidationPostponed = false
+        }
+        if (hasInvalidations) {
+            scope.launch {
+                invalidateLayoutIfNeeded()
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalForeignApi::class)
+private val compositionContextAssociationKey: COpaquePointer = nativeHeap.alloc<IntVar>().ptr
+
+@OptIn(ExperimentalForeignApi::class)
+internal var UIResponder.attachedCompositionContext: CompositionContext?
+    get() = objc_getAssociatedObject(this, compositionContextAssociationKey) as? CompositionContext
+    set(value) {
+        objc_setAssociatedObject(this, compositionContextAssociationKey, value, OBJC_ASSOCIATION_RETAIN)
+    }
+
+internal fun UIResponder.findParentCompositionContext(): CompositionContext {
+    if (this is UIWindow) {
+        return FrameChoreographer.choreographerForScene(
+            scene = windowScene ?: error("Window scene is null")
+        ).frameRecomposer.compositionContext
+    }
+    this.attachedCompositionContext?.let {
+        return it
+    }
+    return nextResponder?.findParentCompositionContext()
+        ?: error("Unable to find parent composition context")
 }
