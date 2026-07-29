@@ -21,6 +21,8 @@ import androidx.compose.runtime.staticCompositionLocalOf
 
 interface PlatformLocalization {
     val copy: String
+    val copyLink: String
+        get() = "Copy Link"
     val cut: String
     val paste: String
     val selectAll: String
