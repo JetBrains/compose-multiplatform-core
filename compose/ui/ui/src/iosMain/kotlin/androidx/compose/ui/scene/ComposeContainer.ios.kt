@@ -372,7 +372,7 @@ internal class ComposeContainer(
                     consumePointerInputOutside = consumePointerInputOutside,
                     parentCoroutineContext = containerCoroutineContext,
                     ownerProvider = architectureComponentsOwner,
-                    mediaEnvironment = mediaEnvironment
+                    mediaEnvironment = mediaEnvironment,
                     invalidateLayout = { layersHolder.getLayersViewController().invalidateLayout() },
                     invalidateDraw = { layersHolder.getLayersViewController().invalidateDraw() },
                 )
