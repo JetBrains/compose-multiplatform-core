@@ -197,6 +197,7 @@ class TextFieldFocusTest : OnCanvasTests {
 
     @Test
     fun mouseClickOutsideDoesntClearsFocusWhenDisabled() = runApplicationTest {
+        ComposeUiFlags.isClearFocusOnMouseDownEnabled = true // opposite of local config
         val focusRequester = FocusRequester()
         var focusState: FocusState? = null
 
@@ -226,6 +227,40 @@ class TextFieldFocusTest : OnCanvasTests {
         dispatchEvents(mouseDownPointerEvent(50, 50))
         awaitIdle()
         assertTrue(focusState!!.isFocused, "Expected to keep focus despite clicking outside")
+    }
+
+    @Test
+    fun mouseClickOutsideClearsFocusWhenEnabled() = runApplicationTest {
+        ComposeUiFlags.isClearFocusOnMouseDownEnabled = false // opposite of local config
+        val focusRequester = FocusRequester()
+        var focusState: FocusState? = null
+
+        createComposeWindow(
+            configure = {
+                isClearFocusOnMouseDownEnabled = true
+            }
+        ) {
+            Column(Modifier.size(300.dp, 400.dp)) {
+                Box(Modifier.testTag("box").size(100.dp).background(Color.Gray))
+                BasicTextField(
+                    state = rememberTextFieldState(),
+                    modifier = Modifier
+                        .testTag("textField")
+                        .focusRequester(focusRequester)
+                        .onFocusChanged {
+                            focusState = it
+                        }
+                )
+                LaunchedEffect(Unit) {
+                    focusRequester.requestFocus()
+                }
+            }
+        }
+        assertTrue(focusState!!.isFocused, "Expected to be focused after requestFocus")
+
+        dispatchEvents(mouseDownPointerEvent(50, 50))
+        awaitIdle()
+        assertFalse(focusState!!.isFocused, "Expected to lose focus after clicking outside")
     }
 
     @Test

@@ -558,6 +558,7 @@ internal class OverlayInputView(
     private var onKeyboardPresses: (Set<*>) -> Unit,
     isHigherPriorityGestureTrackingTouches: () -> Boolean,
     private var onRemoveSubview: () -> Unit,
+    private var onHasWindowChanged: (Boolean) -> Unit,
 ) : CMPScrollView(CGRectZero.readValue()) {
     /**
      * Gesture recognizer responsible for processing touches
@@ -623,6 +624,12 @@ internal class OverlayInputView(
         // Employ safe calls to prevent access to `this` reference that has already been invalidated.
         @Suppress("UNNECESSARY_SAFE_CALL")
         this?.onRemoveSubview?.invoke()
+    }
+
+    override fun didMoveToWindow() {
+        super.didMoveToWindow()
+
+        onHasWindowChanged(window != null)
     }
 
     override fun canBecomeFirstResponder() = true
@@ -771,6 +778,7 @@ internal class OverlayInputView(
         onTouchesEvent = { _, _, _ -> PointerEventResult() }
         onCancelAllTouches = {}
         onRemoveSubview = {}
+        onHasWindowChanged = {}
         trackedTouchesOutside.clear()
     }
 }
@@ -781,7 +789,6 @@ internal class OverlayInputView(
  * All other user input events should be handled by the [OverlayInputView] or with its help.
  */
 internal class BackgroundInputView(
-    private var onMovedToWindow: () -> Unit,
     private var onLayoutSubviews: () -> Unit,
     private var hitTestInteropView: (point: CValue<CGPoint>) -> UIView?,
     private var isPointInsideInteractionBounds: (CValue<CGPoint>) -> Boolean,
@@ -819,9 +826,6 @@ internal class BackgroundInputView(
     override fun didMoveToWindow() {
         super.didMoveToWindow()
 
-        window?.let {
-            onMovedToWindow()
-        }
         setNeedsLayout()
     }
 
@@ -859,7 +863,6 @@ internal class BackgroundInputView(
         removeGestureRecognizer(touchesGestureRecognizer)
         touchesGestureRecognizer.dispose()
 
-        onMovedToWindow = {}
         hitTestInteropView = { null }
         isPointInsideInteractionBounds = { false }
         onLayoutSubviews = {}

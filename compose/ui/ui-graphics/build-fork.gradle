@@ -93,38 +93,50 @@ androidXMultiplatform {
             implementation(project(":compose:test-utils"))
         }
 
-        // TODO: Align naming: nonAndroidMain
-        skikoMain {
+        nonAndroidMain {
             dependsOn(commonMain)
+            dependencies {
+                // No skiko here: nonAndroidMain is skia-free. Skia lives in skikoMain (below).
+                implementation(libs.atomicFu)
+            }
+        }
+
+        nonAndroidTest {
+            dependsOn(commonTest)
+            dependencies {
+                implementation(project(":compose:ui:ui-test"))
+                implementation(project(":compose:ui:ui-skiko"))
+                implementation(project(":kruth:kruth"))
+            }
+        }
+
+        // Skia-bearing compatibility layer between the skia-free nonAndroidMain and the platform
+        // leaves. Holds public skia-typed API structurally pinned to ui-graphics (deprecated
+        // skia-returning members + Native* typealiases).
+        // commonMain -> nonAndroidMain -> skikoMain -> (desktop/native/web).
+        skikoMain {
+            dependsOn(nonAndroidMain)
             dependencies {
                 api(libs.skiko)
             }
         }
 
-        skikoTest {
-            dependsOn(commonTest)
-            dependencies {
-                implementation(project(":compose:ui:ui-test"))
-                implementation(project(":kruth:kruth"))
-            }
-        }
-
-        skikoExcludingWebMain {
+        nonAndroidExcludingWebMain {
             dependsOn(skikoMain)
         }
 
-        skikoExcludingWebTest {
-            dependsOn(skikoTest)
+        nonAndroidExcludingWebTest {
+            dependsOn(nonAndroidTest)
         }
 
         desktopMain {
             dependsOn(skikoMain)
-            dependsOn(skikoExcludingWebMain)
+            dependsOn(nonAndroidExcludingWebMain)
         }
 
         desktopTest {
-            dependsOn(skikoTest)
-            dependsOn(skikoExcludingWebTest)
+            dependsOn(nonAndroidTest)
+            dependsOn(nonAndroidExcludingWebTest)
             resources.srcDirs += "src/desktopTest/res"
             dependencies {
                 implementation(libs.junit)
@@ -143,17 +155,17 @@ androidXMultiplatform {
         }
 
         nonJvmTest {
-            dependsOn(skikoTest)
+            dependsOn(nonAndroidTest)
         }
 
         nativeMain {
             dependsOn(nonJvmMain)
-            dependsOn(skikoExcludingWebMain)
+            dependsOn(nonAndroidExcludingWebMain)
         }
 
         nativeTest {
             dependsOn(nonJvmTest)
-            dependsOn(skikoExcludingWebTest)
+            dependsOn(nonAndroidExcludingWebTest)
         }
 
         wasmJsMain {

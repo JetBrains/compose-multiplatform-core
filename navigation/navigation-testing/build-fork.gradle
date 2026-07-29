@@ -23,96 +23,28 @@
 
 import androidx.build.PlatformIdentifier
 import androidx.build.SoftwareType
-import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 
 plugins {
     id("AndroidXPlugin")
     id("JetBrainsAndroidXPlugin")
-    alias(libs.plugins.kotlinSerialization)
 }
 
 androidXMultiplatform {
-    androidLibrary {
-        namespace = "androidx.navigation.testing"
-        experimentalProperties["android.experimental.kmp.enableAndroidResources"] = true
+    redirect("androidx.navigation") {
+        androidLibrary {
+            namespace = "org.jetbrains.androidx.navigation.testing"
+        }
+        desktop()
+        linux()
+        mac()
+        watchos()
+        tvos()
+        ios()
+        js()
+        wasmJs()
     }
-    desktop()
-    linux()
-    mac()
-    watchos()
-    tvos()
-    ios()
-    js()
-    wasmJs()
 
     defaultPlatform(PlatformIdentifier.ANDROID)
-
-    sourceSets {
-        configureEach {
-            languageSettings.optIn("kotlin.contracts.ExperimentalContracts")
-        }
-
-        commonMain.dependencies {
-            api(project(":navigation:navigation-runtime"))
-            api("androidx.lifecycle:lifecycle-runtime-testing:2.10.0")
-
-            implementation(libs.kotlinCoroutinesCore)
-            implementation(libs.kotlinSerializationCore)
-            implementation(project(":navigation:navigation-common"))
-            implementation("androidx.lifecycle:lifecycle-common:2.10.0")
-            implementation("androidx.lifecycle:lifecycle-viewmodel:2.10.0")
-            implementation("androidx.lifecycle:lifecycle-viewmodel-savedstate:2.10.0")
-        }
-
-        commonTest.dependencies {
-            implementation(libs.kotlinTest)
-            implementation(libs.kotlinCoroutinesTest)
-            implementation(project(":kruth:kruth"))
-        }
-
-        jvmAndAndroidTest.dependencies {
-            runtimeOnly(libs.kotlinTestJunit)
-            implementation(libs.junit)
-        }
-
-        androidMain.dependencies {
-            api("androidx.lifecycle:lifecycle-runtime:2.10.0")
-            api("androidx.lifecycle:lifecycle-viewmodel:2.10.0")
-            api("androidx.savedstate:savedstate-ktx:1.4.0")
-            implementation("androidx.core:core-ktx:1.1.0")
-            implementation("androidx.profileinstaller:profileinstaller:1.4.0")
-        }
-
-        androidHostTest.dependencies {
-            runtimeOnly(libs.testCore)
-            runtimeOnly(libs.kotlinTestJunit)
-            implementation(libs.junit)
-            implementation(libs.testRunner)
-        }
-
-        androidDeviceTest.dependencies {
-            implementation(project(":internal-testutils-navigation"))
-            implementation("androidx.lifecycle:lifecycle-runtime:2.6.2")
-            implementation(libs.testExtJunit)
-            implementation(libs.testExtTruth)
-            implementation(libs.testRules)
-
-            runtimeOnly(libs.testCore)
-            runtimeOnly(libs.kotlinTestJunit)
-            implementation(libs.junit)
-            implementation(libs.testRunner)
-        }
-
-        create("nonAndroidMain").dependsOn(commonMain)
-        desktopMain.dependsOn(nonAndroidMain)
-        nativeMain.dependsOn(nonAndroidMain)
-        webMain.dependsOn(nonAndroidMain)
-
-        create("nonAndroidTest").dependsOn(commonTest)
-        desktopTest.dependsOn(nonAndroidTest)
-        nativeTest.dependsOn(nonAndroidTest)
-        webTest.dependsOn(nonAndroidTest)
-    }
 }
 
 androidx {

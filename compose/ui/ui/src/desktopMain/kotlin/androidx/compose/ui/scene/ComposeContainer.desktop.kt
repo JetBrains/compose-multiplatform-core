@@ -27,6 +27,7 @@ import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.platform.DefaultArchitectureComponentsOwner
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.PlatformWindowContext
+import androidx.compose.ui.platform.registerSkikoComposeImplementation
 import androidx.compose.ui.scene.skia.SkiaLayerComponent
 import androidx.compose.ui.skiko.OverlayRenderDecorator
 import androidx.compose.ui.unit.Constraints
@@ -103,6 +104,12 @@ internal class ComposeContainer(
     coroutineContext: CoroutineContext = EmptyCoroutineContext,
 ) : WindowFocusListener,
     WindowListener {
+    // Register before any property initializer below (e.g. [mediator]) touches the Skiko backend,
+    // so every desktop entry point (windows, panels, dialogs) is covered.
+    init {
+        registerSkikoComposeImplementation()
+    }
+
     val windowContext = PlatformWindowContext()
     var window: Window? = null
         private set

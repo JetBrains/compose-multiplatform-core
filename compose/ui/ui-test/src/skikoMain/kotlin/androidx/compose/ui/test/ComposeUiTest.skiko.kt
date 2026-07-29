@@ -36,6 +36,7 @@ import androidx.compose.ui.platform.PlatformDragAndDropSource
 import androidx.compose.ui.platform.PlatformTextInputMethodRequest
 import androidx.compose.ui.platform.PlatformWindowInsets
 import androidx.compose.ui.platform.WindowInfo
+import androidx.compose.ui.platform.registerSkikoComposeImplementation
 import androidx.compose.ui.scene.CanvasLayersComposeScene
 import androidx.compose.ui.scene.ComposeScene
 import androidx.compose.ui.semantics.SemanticsNode
@@ -282,6 +283,7 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
     }
 
     private inline fun <R> withScene(block: () -> R): R {
+        registerSkikoComposeImplementation()
         runOnUiThread(::createScene)
         try {
             return block()
@@ -290,6 +292,10 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
             // After the scene is closed, run all left foreground TestDispatchEvent.
             // They might've been added outside the runTest call, using the provided coroutineDispatcher:
             compositionCoroutineDispatcher.scheduler.advanceUntilIdle()
+            // TODO: re-enable once tests that register the backend asynchronously (e.g. AWT
+            //  ComposePanel/ComposeWindow via ComposeContainer on the EDT) no longer rely on the
+            //  registration persisting across tests.
+            // clearSkikoComposeImplementation()
             uncaughtExceptionHandler.throwUncaught()
         }
     }

@@ -198,9 +198,7 @@ androidXMultiplatform {
         skikoMain {
             dependsOn(commonMain)
             dependencies {
-                api(project(":compose:ui:ui-graphics"))
-                api(project(":compose:ui:ui-text"))
-                api(libs.skiko)
+                api(project(":compose:ui:ui-skiko"))
                 implementation(libs.atomicFu)
 
                 implementation("org.jetbrains.androidx.navigationevent:navigationevent-compose:1.1.0")

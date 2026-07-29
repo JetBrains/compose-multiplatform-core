@@ -124,6 +124,16 @@ internal abstract class TextInputConnection(
     protected abstract fun stateWillChange(textChanged: Boolean, selectionChanged: Boolean)
     protected abstract fun stateDidChange(textChanged: Boolean, selectionChanged: Boolean)
 
+    /**
+     * Refreshes [currentTextFieldValue] from the latest request snapshot. The snapshot flow can lag
+     * behind, so call this where the most up-to-date state matters — e.g. when building the context
+     * menu contents.
+     */
+    protected fun syncTextFieldValueFromRequestSnapshot() {
+        if (postponeSelectionUpdate) return
+        currentTextFieldValue = currentRequest?.stateSnapshot() ?: return
+    }
+
     abstract fun onViewGeometryUpdated()
 
     fun onPreviewKeyEvent(event: KeyEvent): Boolean {

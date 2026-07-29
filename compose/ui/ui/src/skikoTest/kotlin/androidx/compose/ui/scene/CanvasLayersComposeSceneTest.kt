@@ -19,6 +19,7 @@ package androidx.compose.ui.scene
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.SkikoComposeTestBase
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.asComposeCanvas
 import androidx.compose.ui.input.pointer.PointerEventType
@@ -35,7 +36,7 @@ import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.jetbrains.skia.Surface
 
-class CanvasLayersComposeSceneTest {
+class CanvasLayersComposeSceneTest : SkikoComposeTestBase() {
 
     @Test
     fun sceneSizeChangeTriggersInvalidation() = runTest(StandardTestDispatcher()) {

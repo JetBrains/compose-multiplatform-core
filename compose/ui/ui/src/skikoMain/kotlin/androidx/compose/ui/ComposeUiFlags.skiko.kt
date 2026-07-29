@@ -30,6 +30,10 @@ internal object SkikoComposeUiFlags {
     @Suppress("MutableBareField")
     @JvmField
     var areWindowInsetsRulersEnabled: Boolean = true
+
+    @Suppress("MutableBareField")
+    @JvmField
+    var useSnapshotCache: Boolean = true
 }
 
 /**
@@ -64,3 +68,15 @@ var ComposeUiFlags.isDialogAnimationEnabled by SkikoComposeUiFlags::isDialogAnim
  */
 @ExperimentalComposeUiApi
 var ComposeUiFlags.areWindowInsetsRulersEnabled by SkikoComposeUiFlags::areWindowInsetsRulersEnabled
+
+/**
+ * Whether [androidx.compose.ui.graphics.layer.GraphicsLayer] record their content into an
+ * immutable `SkPicture` in addition to an existing storing mechanism.
+ * It trades memory for recording time but pays off in performance for subtrees where the content
+ * does not change every frame. Enabled by default.
+ *
+ * Note that it's a temporary flag, it will be removed in the future.
+ * Please report cases that require it.
+ */
+@ExperimentalComposeUiApi
+var ComposeUiFlags.useSnapshotCache by SkikoComposeUiFlags::useSnapshotCache
