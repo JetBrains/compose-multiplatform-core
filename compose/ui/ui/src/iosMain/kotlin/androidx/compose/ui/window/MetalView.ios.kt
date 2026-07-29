@@ -49,11 +49,11 @@ internal sealed interface MetalViewHolder {
 internal fun MetalView(
     retrieveInteropTransaction: () -> UIKitInteropTransaction,
     useSeparateRenderThreadWhenPossible: Boolean,
-    render: (Canvas) -> Unit,
+    draw: (Canvas) -> Unit,
 ): MetalViewHolder = if (useSeparateRenderThreadWhenPossible) {
-    SurfaceMetalView(retrieveInteropTransaction, render).holder
+    SurfaceMetalView(retrieveInteropTransaction, draw).holder
 } else {
-    LegacyMetalView(retrieveInteropTransaction, render).holder
+    LegacyMetalView(retrieveInteropTransaction, draw).holder
 }
 
 // https://youtrack.jetbrains.com/issue/CMP-9722
@@ -61,7 +61,7 @@ internal fun MetalView(
 // All changes made here must also be implemented in the `SurfaceMetalView`.
 private class LegacyMetalView(
     retrieveInteropTransaction: () -> UIKitInteropTransaction,
-    render: (Canvas) -> Unit,
+    draw: (Canvas) -> Unit,
 ) : UIView(frame = CGRectZero.readValue()) {
     companion object : UIViewMeta() {
         @BetaInteropApi
@@ -82,7 +82,7 @@ private class LegacyMetalView(
         retrieveInteropTransaction
     ) { canvas ->
         canvas.clear(canvasBackground)
-        render(canvas)
+        draw(canvas)
     }
 
     var canBeOpaque: Boolean

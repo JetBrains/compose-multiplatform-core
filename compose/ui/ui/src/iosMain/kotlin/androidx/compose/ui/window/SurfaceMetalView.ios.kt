@@ -44,7 +44,7 @@ import platform.UIKit.UIViewMeta
 // All changes made here must also be implemented in the `LegacyMetalView`.
 internal class SurfaceMetalView(
     retrieveInteropTransaction: () -> UIKitInteropTransaction,
-    render: (Canvas) -> Unit,
+    draw: (Canvas) -> Unit,
 ) : UIView(frame = CGRectZero.readValue()) {
     companion object : UIViewMeta() {
         @OptIn(BetaInteropApi::class)
@@ -61,7 +61,7 @@ internal class SurfaceMetalView(
         retrieveInteropTransaction,
     ) { canvas ->
         canvas.clear(canvasBackground)
-        render(canvas)
+        draw(canvas)
     }
 
     var canBeOpaque: Boolean

@@ -65,7 +65,7 @@ import platform.posix.QOS_CLASS_USER_INTERACTIVE
 internal class SurfaceMetalRedrawer(
     private val metalLayer: CMPMetalLayer,
     private var retrieveInteropTransaction: () -> UIKitInteropTransaction,
-    private var render: (Canvas) -> Unit,
+    private var draw: (Canvas) -> Unit,
 ): MetalRedrawer {
     private val device = metalLayer.device as? MTLDeviceProtocol
         ?: throw IllegalStateException("MetalRedrawer requires MTLDevice")
@@ -158,7 +158,7 @@ internal class SurfaceMetalRedrawer(
             }
         }
 
-        render = { _ -> }
+        draw = { _ -> }
 
         releaseCachedCommandQueue(queue)
 
@@ -193,7 +193,7 @@ internal class SurfaceMetalRedrawer(
      * presented on the screen. If false, the method will just dispatch GPU workload and return.
      */
     @OptIn(BetaInteropApi::class)
-    override fun draw(waitUntilCompletion: Boolean) =
+    override fun render(waitUntilCompletion: Boolean) =
         trace("SurfaceMetalRedrawer:draw") {
             check(NSThread.isMainThread) { "MetalRedrawer.draw() must be called on main thread" }
             check(!isDrawRecursiveCall) {
@@ -219,7 +219,7 @@ internal class SurfaceMetalRedrawer(
                         right = width.toFloat(),
                         bottom = height.toFloat()
                     ).also { canvas ->
-                        render(canvas)
+                        draw(canvas)
                     }
 
                     pictureRecorder.finishRecordingAsPicture()

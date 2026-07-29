@@ -154,7 +154,7 @@ internal class ComposeContainerView(
     }
 
     override fun drawRect(rect: CValue<CGRect>) {
-        metalView?.redrawer?.draw(waitUntilCompletion = needsSynchronousDraw)
+        metalView?.redrawer?.render(waitUntilCompletion = needsSynchronousDraw)
         needsSynchronousDraw = false
 
         if (needsDisablePresentWithTransactionOnNextDraw) {

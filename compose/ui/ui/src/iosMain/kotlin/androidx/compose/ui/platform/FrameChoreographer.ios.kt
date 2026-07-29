@@ -115,7 +115,7 @@ internal class FrameChoreographer private constructor(
 
     val frameRecomposer = FrameRecomposer(
         coroutineContext = coroutineContext,
-        invalidate = ::setNeedsRedraw
+        invalidate = ::requestFrame
     )
 
     private val displayLink = CADisplayLink.displayLinkWithTarget(
@@ -142,7 +142,7 @@ internal class FrameChoreographer private constructor(
             if (field == value) return
             field = value
             if (value) {
-                setNeedsRedraw()
+                requestFrame()
             } else {
                 displayLink.paused = true
             }
@@ -150,6 +150,13 @@ internal class FrameChoreographer private constructor(
 
     val outOfFrameExecutor = MetalOutOfFrameExecutor()
 
+    /**
+     * The [listeners] list must not be changed when providing notifications. Also, [onDisplayLinkTick]
+     * callback must be called first for every listener no matter at what time it is added.
+     *
+     * To satisfy the aforementioned conditions and reduce extra runtime memory allocations,
+     * use extra lists to hold pending adds / removals.
+     */
     private val listeners = mutableListOf<Listener>()
     private val pendingListenersToAdd = mutableListOf<Listener>()
     private val pendingListenersToRemove = mutableListOf<Listener>()
@@ -194,7 +201,7 @@ internal class FrameChoreographer private constructor(
         set(value) {
             assert(value >= 0)
             field = value
-            setNeedsRedraw()
+            requestFrame()
         }
 
     fun createActivitiesHandler(): ActivitiesHandler {
@@ -226,7 +233,7 @@ internal class FrameChoreographer private constructor(
     }
 
     private var advancedFramesCount = FramesToAdvanceAfterInvalidation
-    fun setNeedsRedraw() {
+    fun requestFrame() {
         advancedFramesCount = FramesToAdvanceAfterInvalidation
         if (isSceneInForeground) {
             displayLink.paused = false

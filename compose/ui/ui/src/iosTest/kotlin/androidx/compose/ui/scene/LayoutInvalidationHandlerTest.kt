@@ -21,13 +21,13 @@ import kotlin.test.assertEquals
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.job
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.yield
 
 class LayoutInvalidationHandlerTest {
 
     @Test
-    fun invalidationOutsidePostponeInvokesImmediately() = runBlocking {
+    fun invalidationOutsidePostponeInvokesImmediately() = runTest {
         var count = 0
         val handler = LayoutInvalidationHandler(coroutineContext) { count++ }
 
@@ -39,7 +39,7 @@ class LayoutInvalidationHandlerTest {
     }
 
     @Test
-    fun invalidationDuringPostponeIsDeferredThenFlushed() = runBlocking {
+    fun invalidationDuringPostponeIsDeferredThenFlushed() = runTest {
         var count = 0
         val handler = LayoutInvalidationHandler(coroutineContext) { count++ }
 
@@ -54,7 +54,7 @@ class LayoutInvalidationHandlerTest {
     }
 
     @Test
-    fun multipleDeferredInvalidationsCollapseIntoOne() = runBlocking {
+    fun multipleDeferredInvalidationsCollapseIntoOne() = runTest {
         var count = 0
         val handler = LayoutInvalidationHandler(coroutineContext) { count++ }
 
@@ -67,7 +67,7 @@ class LayoutInvalidationHandlerTest {
     }
 
     @Test
-    fun repeatedPostponeDoesNotFlushWhenNothingWasInvalidated() = runBlocking {
+    fun repeatedPostponeDoesNotFlushWhenNothingWasInvalidated() = runTest {
         var count = 0
         val handler = LayoutInvalidationHandler(coroutineContext) { count++ }
 
@@ -89,7 +89,7 @@ class LayoutInvalidationHandlerTest {
     }
 
     @Test
-    fun invalidationAfterDisposalIsIgnored() = runBlocking {
+    fun invalidationAfterDisposalIsIgnored() = runTest {
         var count = 0
         val job = Job(coroutineContext.job)
         val handler = LayoutInvalidationHandler(coroutineContext + job) { count++ }
@@ -105,7 +105,7 @@ class LayoutInvalidationHandlerTest {
     }
 
     /**
-     * Lets any coroutines scheduled via `scope.launch` on the [runBlocking] event loop run to
+     * Lets any coroutines scheduled via `scope.launch` on the [runTest] test dispatcher run to
      * completion before assertions are made.
      */
     private suspend fun flushPendingLaunches() {

@@ -62,7 +62,7 @@ internal class ComposeLayersViewController(
     val metalView: MetalViewHolder = MetalView(
         retrieveInteropTransaction = ::retrieveAndMergeInteropTransactions,
         useSeparateRenderThreadWhenPossible = useSeparateRenderThreadWhenPossible,
-        render = ::render
+        draw = ::draw
     ).apply {
         canBeOpaque = false
     }
@@ -317,7 +317,7 @@ internal class ComposeLayersViewController(
         )
     }
 
-    private fun render(canvas: Canvas) {
+    private fun draw(canvas: Canvas) {
         layoutInvalidationHandler.postponeLayoutInvalidationCalls {
             val composeCanvas = canvas.asComposeCanvas()
 

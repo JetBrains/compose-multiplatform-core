@@ -68,7 +68,7 @@ fun <T : UIViewController> UIKitViewController(
                     parentViewController,
                     properties,
                     compositeKeyHash,
-                    compositionContext
+                    compositionContext,
                 )
             },
             modifier = modifier,

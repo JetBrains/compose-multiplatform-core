@@ -258,7 +258,7 @@ internal class ComposeContainer(
                 }
             },
             useSeparateRenderThreadWhenPossible = configuration.parallelRendering,
-            render = { canvas ->
+            draw = { canvas ->
                 layoutInvalidationHandler.postponeLayoutInvalidationCalls {
                     mediator?.draw(canvas.asComposeCanvas())
                 }

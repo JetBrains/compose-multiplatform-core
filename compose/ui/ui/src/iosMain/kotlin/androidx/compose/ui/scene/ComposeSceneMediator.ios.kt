@@ -365,7 +365,7 @@ internal class ComposeSceneMediator(
     private val interopContainer = UIKitInteropContainer(
         overlayContainer = _overlayView,
         backgroundContainer = _backgroundView,
-        requestRedraw = frameChoreographer::setNeedsRedraw
+        requestRedraw = frameChoreographer::requestFrame
     )
 
     private val dragAndDropManager = UIKitDragAndDropManager(

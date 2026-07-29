@@ -31,7 +31,7 @@ import platform.Metal.MTLCommandQueueProtocol
 import platform.Metal.MTLDeviceProtocol
 
 internal sealed interface MetalRedrawer {
-    fun draw(waitUntilCompletion: Boolean)
+    fun render(waitUntilCompletion: Boolean)
     var isForcedToPresentWithTransactionEveryFrame: Boolean
     fun awaitRenderingCompletion()
     fun dispose()
@@ -140,7 +140,7 @@ internal class LegacyMetalRedrawer(
      * presented on the screen. If false, the method will just dispatch GPU workload and return.
      */
     @OptIn(BetaInteropApi::class)
-    override fun draw(waitUntilCompletion: Boolean) = trace("MetalRedrawer:draw") {
+    override fun render(waitUntilCompletion: Boolean) = trace("MetalRedrawer:draw") {
         check(NSThread.isMainThread)
         check(!isDrawRecursiveCall) {
             "Attempt to call MetalRedrawer.draw() recursively which may lead to the PictureRecorder corruption."
