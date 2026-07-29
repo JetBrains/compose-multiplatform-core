@@ -49,6 +49,7 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.test.UIKitInstrumentedTest
 import androidx.compose.ui.test.findNodeWithTag
 import androidx.compose.ui.test.runUIKitInstrumentedTest
 import androidx.compose.ui.test.utils.dpRectInWindow
@@ -58,10 +59,10 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.DpSize
-import androidx.compose.ui.unit.toDpRect
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.height
 import androidx.compose.ui.unit.min
+import androidx.compose.ui.unit.toDpRect
 import androidx.compose.ui.viewinterop.UIKitView
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -78,7 +79,17 @@ import platform.CoreGraphics.CGRect
 import platform.UIKit.UIView
 import platform.UIKit.UIViewAnimationOptions
 
-internal class KeyboardInsetsTest {
+internal class KeyboardInsetsInHostingViewTest : KeyboardInsetsTest(
+    runUIKitInstrumentedTest = { runUIKitInstrumentedTest(useHostingView = true, it) }
+)
+
+internal class KeyboardInsetsInHostingViewControllerTest : KeyboardInsetsTest(
+    runUIKitInstrumentedTest = { runUIKitInstrumentedTest(useHostingView = false, it) }
+)
+
+internal abstract class KeyboardInsetsTest(
+    private val runUIKitInstrumentedTest: (UIKitInstrumentedTest.() -> Unit) -> Unit
+) {
     @Test
     fun testImePaddingInsetsAnimationFrames_FocusAboveKeyboard() = runUIKitInstrumentedTest {
         val contentFrames = mutableListOf<DpRect>()
@@ -101,6 +112,7 @@ internal class KeyboardInsetsTest {
                     }
                     .drawWithContent {
                         contentFrames.add(lastContentFrame)
+                        drawContent()
                     }
             ) {
                 TextField(
