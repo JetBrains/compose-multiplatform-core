@@ -244,13 +244,13 @@ private fun isWebGL2Supported(): Boolean =
 private fun createHtmlFocusDecoy(canvas: HTMLCanvasElement): HTMLDivElement =
     (document.createElement("div") as HTMLDivElement).apply {
         tabIndex = 0
+        setAttribute("aria-hidden", "true") // Usually it's an antipattern for a focusable element, but it's okay for a decoy element.
         style.apply {
-            position = "absolute"
-            top = "-9999px"
-            left = "-9999px"
-            width = "1px"
-            height = "1px"
-            clip = "rect(0 0 0 0)"
+            position = "absolute" // to remove the decoy completely out of the document layout tree
+            width = "0"
+            height = "0"
+            outline = "none"
+            setProperty("pointer-events", "none")
         }
         addEventListener("focus") {
             canvas.focus()
