@@ -219,7 +219,6 @@ internal class InputStateTracker(
 
             is Event.KeyDown -> {
                 lastNativeEventUptimeMillis = now()
-                keyboardModifiers = event.modifiers.toPointerKeyboardModifiers()
                 val handled = sendKeyEvent(
                     KeyEvent(
                         key = event.key.toKey(),

@@ -71,7 +71,7 @@ sealed interface WindowDecoration {
      * If it is resizable, the given thickness will be used for the edge resizers.
      */
     @Immutable
-    class CustomTitleBar(val height: Dp) : WindowDecoration {
+    class CustomTitleBar(val height: Dp, val roundedWindowCorners: Boolean = false) : WindowDecoration {
         override val isDecorated: Boolean = true
         override val leftTitleBarElements: List<TitleBarElement> =
             WindowDecorationDefaults.LeftTitleBarElements
@@ -80,11 +80,11 @@ sealed interface WindowDecoration {
 
         override fun equals(other: Any?): Boolean {
             if (other !is CustomTitleBar) return false
-            return other.height == height
+            return other.height == height && other.roundedWindowCorners == roundedWindowCorners
         }
 
         override fun hashCode(): Int {
-            return height.hashCode()
+            return height.hashCode() * 31 + roundedWindowCorners.hashCode()
         }
     }
 
