@@ -230,7 +230,8 @@ internal fun getFocusableHtmlElement(container: HTMLElement, last: Boolean = fal
 (() => {
     if (!container) return null;
 
-    let skipClosestInertCheck = false; // its value is updated depending on the traversal direction
+    // A flag to avoid redundant closest(inert) checks during upwards traversal when no inert nested elements are present
+    const skipClosestInertCheck = last && !container.querySelector('[inert]');
 
     const selector = ':is(button, select, textarea, input:not([type="hidden"])):not([disabled]), [href], [tabindex]:not([tabindex="-1"]), [contenteditable]:not([contenteditable="false"]), summary, iframe, :is(audio, video)[controls]';
     const filter = {
@@ -242,17 +243,9 @@ internal fun getFocusableHtmlElement(container: HTMLElement, last: Boolean = fal
     };
 
     if (!last) {
-        // Forward traversal:
-        // with forward traversal, we check the nested containers for inert,
-        // checking for closest(inert) is redundant.
-        skipClosestInertCheck = true;
         const walker = document.createTreeWalker(container, NodeFilter.SHOW_ELEMENT, filter);
         return walker.nextNode();
     }
-    
-    const hasAnyInert = container.querySelector('[inert]') !== null;
-    // Avoid redundant closest(inert) check when no inert nested elements are present
-    skipClosestInertCheck = !hasAnyInert;
 
     // Reverse traversal — jump to the deepest last leaf, then walk backward
     let lastLeaf = container;
