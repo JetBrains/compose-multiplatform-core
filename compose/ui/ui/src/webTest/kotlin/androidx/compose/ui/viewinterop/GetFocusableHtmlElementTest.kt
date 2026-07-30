@@ -99,4 +99,20 @@ class GetFocusableHtmlElementTest {
         // The last focusable is the button
         assertEquals("btn", getFocusableHtmlElement(container, last = true)?.id, "last focusable")
     }
+
+    @Test
+    fun rejectsInertContainers() {
+        val container = createContainer("""
+            <div>
+                <div inert><button id='a'>A</button></div>
+                <button id='b'>B</button>
+                <button id='c'>C</button>
+                <div inert><button id='d'>D</button></div>
+            </div>
+        """.trimIndent())
+        // button 'a' is inside an inert container and should be rejected
+        assertEquals("b", getFocusableHtmlElement(container)?.id, "button 'b' is the first focusable")
+        // button 'd' is inside an inert container and should be rejected
+        assertEquals("c", getFocusableHtmlElement(container, last = true)?.id, "button 'c' is the last focusable")
+    }
 }

@@ -230,20 +230,29 @@ internal fun getFocusableHtmlElement(container: HTMLElement, last: Boolean = fal
 (() => {
     if (!container) return null;
 
+    let skipClosestInertCheck = false; // its value is updated depending on the traversal direction
+
     const selector = ':is(button, select, textarea, input:not([type="hidden"])):not([disabled]), [href], [tabindex]:not([tabindex="-1"]), [contenteditable]:not([contenteditable="false"]), summary, iframe, :is(audio, video)[controls]';
     const filter = {
         acceptNode(node) {
-            return (node.matches(selector) && !node.closest('[inert]'))
-                ? NodeFilter.FILTER_ACCEPT
-                : NodeFilter.FILTER_SKIP;
+            if (node.inert) return NodeFilter.FILTER_REJECT; // completely skip an inert subtree
+            if (node.matches(selector) && (skipClosestInertCheck || !node.closest('[inert]'))) return NodeFilter.FILTER_ACCEPT;
+            return NodeFilter.FILTER_SKIP;
         }
     };
 
     if (!last) {
-        // Forward traversal — TreeWalker naturally visits in document order
+        // Forward traversal:
+        // with forward traversal, we check the nested containers for inert,
+        // checking for closest(inert) is redundant.
+        skipClosestInertCheck = true;
         const walker = document.createTreeWalker(container, NodeFilter.SHOW_ELEMENT, filter);
         return walker.nextNode();
     }
+    
+    const hasAnyInert = container.querySelector('[inert]') !== null;
+    // Avoid redundant closest(inert) check when no inert nested elements are present
+    skipClosestInertCheck = !hasAnyInert;
 
     // Reverse traversal — jump to the deepest last leaf, then walk backward
     let lastLeaf = container;
