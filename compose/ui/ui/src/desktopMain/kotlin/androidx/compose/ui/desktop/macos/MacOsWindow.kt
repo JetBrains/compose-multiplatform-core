@@ -299,7 +299,8 @@ class MacOsWindow internal constructor(
             val titlebarConfiguration = when (decoration) {
                 WindowDecoration.Decorated -> TitlebarConfiguration.Regular
                 is WindowDecoration.CustomTitleBar ->
-                    TitlebarConfiguration.Custom(decoration.height.value.toDouble())
+                    TitlebarConfiguration.Custom(decoration.height.value.toDouble(),
+                        largeCornerRadius = decoration.roundedWindowCorners)
                 is WindowDecoration.Undecorated ->
                     throw UnsupportedOperationException(
                         "Undecorated windows are not supported on macOS",
