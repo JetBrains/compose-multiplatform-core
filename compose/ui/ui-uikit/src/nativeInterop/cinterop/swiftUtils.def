@@ -1,10 +1,21 @@
 #
-# The Gradle build copies these stable cinterop settings to a generated .def
-# file and appends target-specific Swift linker options resolved from the
-# selected Xcode toolchain. See configureUIKitSwiftUtils in build.gradle.
+# Copyright 2026 The Android Open Source Project
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 #
 
 package = androidx.compose.ui.uikit.utils
 language = Objective-C
 compilerOpts = -D_Float16=short
 headerFilter = CMP*
+linkerOpts = -ObjC -rpath /usr/lib/swift -framework Foundation -lc++ -lswiftCore -lswiftFoundation -lswiftCoreFoundation -lswiftDispatch -lswiftObjectiveC -lswiftXPC -lswift_Builtin_float -lswift_Concurrency -lswiftCompatibility51 -lswiftCompatibility56 -lswiftCompatibilityConcurrency -lswiftCompatibilityPacks
