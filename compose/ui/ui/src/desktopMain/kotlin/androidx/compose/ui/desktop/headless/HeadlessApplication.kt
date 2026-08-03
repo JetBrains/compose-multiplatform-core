@@ -171,6 +171,17 @@ object HeadlessApplication : Application {
 
     val hapticFeedback: HapticFeedback = NoopHapticFeedback()
 
+    /**
+     * Launches [stopAndJoin] on the UI dispatcher, i.e. the event-loop thread itself.
+     *
+     * Known degeneracy (documented, not fixed here — no behavior change): because shutdown then
+     * runs ON the loop thread, the idle drain in [awaitEventLoopToBecomeIdle] counts the
+     * still-running shutdown task in the event loop's pendingTasksCount, so the count never reaches
+     * zero. The drain therefore always times out (~[HEADLESS_EVENT_LOOP_IDLE_TIMEOUT_MILLIS]ms) and
+     * logs one spurious "dropping N queued tasks" warning before shutdown proceeds safely. An
+     * `isCurrentThread()` special-case that skips the barrier when already on the loop thread is a
+     * recorded WS2 follow-up.
+     */
     @OptIn(DelicateCoroutinesApi::class)
     override fun quit() {
         GlobalScope.launch(ComposeUIDispatcher.immediate) {
@@ -218,12 +229,11 @@ object HeadlessApplication : Application {
         session: ApplicationSession,
         onCloseRequest: (WindowCloseRequestReason) -> Unit,
     ): HeadlessWindow? = windows[id]?.apply {
-        // The window's ComposeScene was already built (in its constructor) from the *original*
-        // session's coroutineContext/dataSourceContext; reassigning `session` here cannot change
-        // that scene's context after the fact, so this deliberately keeps the original scene
-        // context and only rebinds the outward-facing session reference and the close-request
-        // handler (Noria's `scene`-reassignment model, HeadlessApplication.kt:229-238, has the
-        // same property: it doesn't retroactively change an already-constructed Scene either).
+        // The window's ComposeScene was built (in its constructor) from the original session's
+        // coroutineContext and dataSourceContext, and both are fixed for the scene's lifetime.
+        // Reassigning here does NOT retroactively rebind the scene's context: it only updates the
+        // stored `session` field and reroutes future close requests through the new
+        // `onCloseRequest` (see HeadlessWindow.requestClose).
         this.session = session
         this.onCloseRequest = onCloseRequest
     }
