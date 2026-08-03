@@ -25,10 +25,8 @@ import org.junit.experimental.categories.Category
 
 /**
  * stopAndJoin() poisons HeadlessApplication for the whole JVM (Noria contract), so this class
- * must NOT be mixed with other headless tests in one JVM. The desktopHeadlessTest task forks per
- * test CLASS via maxParallelForks/forkEvery — verify `forkEvery = 1` is set for this task in
- * compose/ui/ui/build.gradle (add `forkEvery = 1` to the desktopHeadlessTest registration if
- * missing) so every headless test class gets a fresh JVM.
+ * must NOT be mixed with other headless tests in one JVM. The desktopHeadlessTest task in
+ * compose/ui/ui/build.gradle runs `forkEvery = 1`, so this class gets its own fresh JVM.
  */
 @Category(HeadlessTest::class)
 class HeadlessShutdownContractTest {
