@@ -64,6 +64,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.WindowDecoration
 import androidx.compose.ui.window.WindowPlacement
+import kotlin.concurrent.Volatile
 import kotlin.concurrent.atomics.AtomicLong
 import kotlin.concurrent.atomics.ExperimentalAtomicApi
 import kotlin.concurrent.atomics.incrementAndFetch
@@ -96,6 +97,10 @@ class HeadlessWindow internal constructor(
 
     override val id: LightweightWindowId = LightweightWindowId(nextWindowId.incrementAndFetch())
 
+    // Read by the loop-side content catch-up task (scheduleContentCatchUpFrameIfIsolated) while
+    // resetState() can dispose windows on the calling thread; @Volatile closes the staleness window
+    // so the catch-up task never renders into an already-disposed scene.
+    @Volatile
     private var isDisposed = false
 
     private var isFrameRequestedState = mutableStateOf(false)
