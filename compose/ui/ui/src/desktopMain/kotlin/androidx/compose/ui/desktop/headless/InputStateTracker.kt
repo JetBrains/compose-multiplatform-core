@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
-package androidx.compose.ui.kdt.headless
+@file:OptIn(kotlin.time.ExperimentalTime::class)
+
+package androidx.compose.ui.desktop.headless
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.InputMode
 import androidx.compose.ui.input.InputModeManager
@@ -29,9 +30,6 @@ import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.pointer.PointerButton
 import androidx.compose.ui.input.pointer.PointerButtons
 import androidx.compose.ui.input.pointer.PointerEventType
-import androidx.compose.ui.input.pointer.PointerId
-import androidx.compose.ui.input.pointer.PointerInputEvent
-import androidx.compose.ui.input.pointer.PointerInputEventData
 import androidx.compose.ui.input.pointer.PointerKeyboardModifiers
 import androidx.compose.ui.input.pointer.PointerType
 import androidx.compose.ui.input.pointer.areAnyPressed
@@ -46,18 +44,45 @@ import androidx.compose.ui.input.pointer.isSecondary
 import androidx.compose.ui.input.pointer.isSecondaryPressed
 import androidx.compose.ui.input.pointer.isTertiary
 import androidx.compose.ui.input.pointer.isTertiaryPressed
-import androidx.compose.ui.node.InternalCoreApi
+import androidx.compose.ui.scene.PointerEventResult
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.DpOffset
+import androidx.compose.ui.unit.toOffset
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.seconds
-import noria.ui.input.pointer.ProcessResult
 
-@ExperimentalComposeUiApi
-@InternalCoreApi
+/**
+ * Callback signature mirroring [androidx.compose.ui.scene.ComposeScene.sendPointerEvent].
+ *
+ * A headless-package copy of the same `fun interface` each platform defines (see
+ * `desktop/macos/InputStateTracker.kt`); its parameter list and [PointerEventResult] return type
+ * match `ComposeScene.sendPointerEvent` exactly.
+ */
+internal fun interface SendPointerEvent {
+    fun invoke(
+        eventType: PointerEventType,
+        position: Offset,
+        scrollDelta: Offset,
+        timeMillis: Long,
+        type: PointerType,
+        buttons: PointerButtons?,
+        keyboardModifiers: PointerKeyboardModifiers?,
+        nativeEvent: Any?,
+        button: PointerButton?,
+    ): PointerEventResult
+}
+
+/**
+ * Headless equivalent of the per-platform input trackers: it turns the injected headless [Event]s
+ * into the pointer/key events a [androidx.compose.ui.scene.ComposeScene] expects, while keeping the
+ * cursor position, pressed buttons and keyboard modifiers that must be replayed for hit-testing.
+ *
+ * Ported from the Fleet/Noria `headless/InputStateTracker.kt`, with the `PointerInputEvent` sink
+ * replaced by the [SendPointerEvent] shape used by the other desktop platforms.
+ */
 internal class InputStateTracker(
     private val inputModeManager: InputModeManager,
-    private val sendPointerInputEvent: (PointerInputEvent) -> ProcessResult,
+    private val sendPointerEvent: SendPointerEvent,
     private val sendKeyEvent: (KeyEvent) -> Boolean,
 ) {
     /**
@@ -68,64 +93,75 @@ internal class InputStateTracker(
     private var pointerPosition: Offset? = null
     private var lastNativeEventUptimeMillis: Long? = null
     private var pointerButtons = PointerButtons()
+    private var syntheticPointerEventAfterRelayoutGeneration: Long = 0
+    private var pendingSyntheticPointerEventType: PointerEventType? = null
     internal var keyboardModifiers by mutableStateOf(PointerKeyboardModifiers())
 
-    fun updateStateAndSendEvents(windowEvent: WindowEvent, density: Density) {
-        when (windowEvent) {
+    fun updateStateAndSendEvents(event: Event, density: Density) {
+        syntheticPointerEventAfterRelayoutGeneration++
+        when (event) {
             is Event.MouseDown -> {
-                val uptime = windowEvent.timestamp.seconds.inWholeMilliseconds
+                val uptime = event.timestamp.seconds.inWholeMilliseconds
                 lastNativeEventUptimeMillis = uptime
                 if (inputModeManager.inputMode != InputMode.Touch) {
                     inputModeManager.requestInputMode(InputMode.Touch)
                 }
                 density.run {
                     updatePointerPosition(
-                        windowEvent.locationInWindow,
+                        event.locationInWindow,
                         PointerEventType.Move,
                         uptime,
-                        windowEvent,
+                        event,
                     )
                 }
-                pointerButtons += windowEvent.button
-                val processResult = sendPointerInputEvent(
-                    windowEvent.toPointerInputEvent(
-                        pointerButtons,
-                        keyboardModifiers,
-                        density,
-                    ),
+                pointerButtons += event.button
+                val processResult = sendPointerEvent.invoke(
+                    eventType = PointerEventType.Press,
+                    position = event.locationInWindow.toOffset(density),
+                    scrollDelta = Offset.Zero,
+                    timeMillis = uptime,
+                    type = PointerType.Mouse,
+                    buttons = pointerButtons,
+                    keyboardModifiers = keyboardModifiers,
+                    nativeEvent = event,
+                    button = event.button,
                 )
-                if (!processResult.anyPressOrReleaseConsumed) {
-                    sendKeyEvent(windowEvent.toKeyEvent(keyboardModifiers))
+                if (!processResult.anyChangeConsumed) {
+                    sendKeyEvent(event.toKeyEvent(keyboardModifiers))
                 }
             }
             is Event.MouseUp -> {
-                val uptime = windowEvent.timestamp.seconds.inWholeMilliseconds
+                val uptime = event.timestamp.seconds.inWholeMilliseconds
                 lastNativeEventUptimeMillis = uptime
                 if (inputModeManager.inputMode != InputMode.Touch) {
                     inputModeManager.requestInputMode(InputMode.Touch)
                 }
                 density.run {
                     updatePointerPosition(
-                        windowEvent.locationInWindow,
+                        event.locationInWindow,
                         PointerEventType.Move,
                         uptime,
-                        windowEvent,
+                        event,
                     )
                 }
-                pointerButtons -= windowEvent.button
-                val processResult = sendPointerInputEvent(
-                    windowEvent.toPointerInputEvent(
-                        pointerButtons,
-                        keyboardModifiers,
-                        density,
-                    ),
+                pointerButtons -= event.button
+                val processResult = sendPointerEvent.invoke(
+                    eventType = PointerEventType.Release,
+                    position = event.locationInWindow.toOffset(density),
+                    scrollDelta = Offset.Zero,
+                    timeMillis = uptime,
+                    type = PointerType.Mouse,
+                    buttons = pointerButtons,
+                    keyboardModifiers = keyboardModifiers,
+                    nativeEvent = event,
+                    button = event.button,
                 )
-                if (!processResult.anyPressOrReleaseConsumed) {
-                    sendKeyEvent(windowEvent.toKeyEvent(keyboardModifiers))
+                if (!processResult.anyChangeConsumed) {
+                    sendKeyEvent(event.toKeyEvent(keyboardModifiers))
                 }
             }
             is Event.MouseMoved -> {
-                val uptime = windowEvent.timestamp.seconds.inWholeMilliseconds
+                val uptime = event.timestamp.seconds.inWholeMilliseconds
                 lastNativeEventUptimeMillis = uptime
                 if (inputModeManager.inputMode != InputMode.Touch) {
                     inputModeManager.requestInputMode(InputMode.Touch)
@@ -133,15 +169,15 @@ internal class InputStateTracker(
                 pointerButtons = PointerButtons()
                 density.run {
                     updatePointerPosition(
-                        windowEvent.locationInWindow,
+                        event.locationInWindow,
                         PointerEventType.Move,
                         uptime,
-                        windowEvent,
+                        event,
                     )
                 }
             }
             is Event.MouseEntered -> {
-                val uptime = windowEvent.timestamp.seconds.inWholeMilliseconds
+                val uptime = event.timestamp.seconds.inWholeMilliseconds
                 lastNativeEventUptimeMillis = uptime
                 if (inputModeManager.inputMode != InputMode.Touch) {
                     inputModeManager.requestInputMode(InputMode.Touch)
@@ -149,15 +185,15 @@ internal class InputStateTracker(
                 pointerInWindow = true
                 density.run {
                     updatePointerPosition(
-                        windowEvent.locationInWindow,
+                        event.locationInWindow,
                         PointerEventType.Enter,
                         uptime,
-                        windowEvent,
+                        event,
                     )
                 }
             }
             is Event.MouseExited -> {
-                val uptime = windowEvent.timestamp.seconds.inWholeMilliseconds
+                val uptime = event.timestamp.seconds.inWholeMilliseconds
                 lastNativeEventUptimeMillis = uptime
                 if (inputModeManager.inputMode != InputMode.Touch) {
                     inputModeManager.requestInputMode(InputMode.Touch)
@@ -165,20 +201,20 @@ internal class InputStateTracker(
                 pointerInWindow = false
                 density.run {
                     updatePointerPosition(
-                        windowEvent.locationInWindow,
+                        event.locationInWindow,
                         PointerEventType.Exit,
                         uptime,
-                        windowEvent,
+                        event,
                     )
                 }
             }
             is Event.KeyDown -> {
-                updateModifierState(windowEvent)
-                sendKeyEvent(windowEvent.toKeyEvent(keyboardModifiers))
+                updateModifierState(event)
+                sendKeyEvent(event.toKeyEvent(keyboardModifiers))
             }
             is Event.KeyUp -> {
-                updateModifierState(windowEvent)
-                sendKeyEvent(windowEvent.toKeyEvent(keyboardModifiers))
+                updateModifierState(event)
+                sendKeyEvent(event.toKeyEvent(keyboardModifiers))
             }
         }
     }
@@ -188,151 +224,93 @@ internal class InputStateTracker(
         pointerEventType: PointerEventType,
         uptime: Long,
         nativeEvent: WindowEvent,
-    ): ProcessResult {
+    ): PointerEventResult {
         val previousPointerPosition = pointerPosition
-        pointerPosition = locationInWindow.toOffset()
+        pointerPosition = locationInWindow.toOffset(this)
         return if (previousPointerPosition != pointerPosition) {
-            sendPointerInputEvent(
-                mousePointerInputEvent(
-                    type = pointerEventType,
-                    uptime = uptime,
-                    position = pointerPosition!!,
-                    buttons = pointerButtons,
-                    scrollDelta = Offset.Zero,
-                    keyboardModifiers = keyboardModifiers,
-                    button = null,
-                    nativeEvent = nativeEvent,
-                ),
+            sendPointerEvent.invoke(
+                eventType = pointerEventType,
+                position = pointerPosition!!,
+                scrollDelta = Offset.Zero,
+                timeMillis = uptime,
+                type = PointerType.Mouse,
+                buttons = pointerButtons,
+                keyboardModifiers = keyboardModifiers,
+                nativeEvent = nativeEvent,
+                button = null,
             )
         } else {
-            ProcessResult(0)
+            PointerEventResult(anyChangeConsumed = false)
         }
     }
 
-    private fun updateModifierState(windowEvent: WindowEvent) {
-        when (windowEvent) {
+    private fun updateModifierState(event: WindowEvent) {
+        when (event) {
             is Event.KeyDown -> {
-                keyboardModifiers = keyboardModifiers.update(windowEvent.key, KeyEventType.KeyDown)
+                keyboardModifiers = keyboardModifiers.update(event.key, KeyEventType.KeyDown)
             }
             is Event.KeyUp -> {
-                keyboardModifiers = keyboardModifiers.update(windowEvent.key, KeyEventType.KeyUp)
+                keyboardModifiers = keyboardModifiers.update(event.key, KeyEventType.KeyUp)
             }
             else -> {} // do nothing
         }
     }
 
-    fun sendPointerInputEventWithCurrentStateIfNecessary(
+    /**
+     * We intentionally keep this local-only so Wayland and similar environments don't have to
+     * provide screen-space pointer coordinates. That still lets us refresh hit tests after content
+     * relayouts inside the same window.
+     *
+     * Returns the generation token for the pending refresh, or `null` when no refresh is needed.
+     * Every real event (and every [prepareSyntheticPointerEventAfterRelayoutIfNecessary] call)
+     * bumps the generation, so a token becomes stale as soon as anything else happens.
+     */
+    fun prepareSyntheticPointerEventAfterRelayoutIfNecessary(): Long? {
+        val type = when {
+            pointerPosition == null -> return null
+            pointerButtons.areAnyPressed -> PointerEventType.Move
+            !pointerInWindow -> return null
+            inputModeManager.inputMode == InputMode.Touch -> PointerEventType.Move
+            else -> PointerEventType.Exit
+        }
+        val generation = syntheticPointerEventAfterRelayoutGeneration + 1
+        syntheticPointerEventAfterRelayoutGeneration = generation
+        pendingSyntheticPointerEventType = type
+        return generation
+    }
+
+    fun sendSyntheticPointerEventAfterRelayoutIfCurrent(generation: Long) {
+        if (generation != syntheticPointerEventAfterRelayoutGeneration) {
+            return
+        }
+        val type = pendingSyntheticPointerEventType ?: return
+        sendPointerInputEventWithCurrentStateIfNecessary(type)
+    }
+
+    private fun sendPointerInputEventWithCurrentStateIfNecessary(
         type: PointerEventType,
         uptime: Long = lastNativeEventUptimeMillis ?: Clock.System.now().toEpochMilliseconds(),
         scrollDelta: Offset = Offset.Zero,
         nativeEvent: Any? = null,
         button: PointerButton? = null,
-    ): ProcessResult {
+    ): PointerEventResult {
         return if (!pointerInWindow || pointerPosition == null) {
-            ProcessResult(0)
+            PointerEventResult(anyChangeConsumed = false)
         } else {
-            sendPointerInputEvent(
-                pointerInputEventWithCurrentState(
-                    type,
-                    uptime,
-                    scrollDelta,
-                    nativeEvent,
-                    button,
-                ),
+            sendPointerEvent.invoke(
+                eventType = type,
+                position = pointerPosition!!,
+                scrollDelta = if (type == PointerEventType.Scroll) scrollDelta else Offset.Zero,
+                timeMillis = uptime,
+                type = PointerType.Mouse,
+                buttons = pointerButtons,
+                keyboardModifiers = keyboardModifiers,
+                nativeEvent = nativeEvent,
+                button = button,
             )
         }
     }
-
-    private fun pointerInputEventWithCurrentState(
-        type: PointerEventType,
-        uptime: Long,
-        scrollDelta: Offset,
-        nativeEvent: Any?,
-        button: PointerButton?,
-    ): PointerInputEvent {
-        return mousePointerInputEvent(
-            type = type,
-            uptime = uptime,
-            position = pointerPosition!!,
-            scrollDelta = if (type == PointerEventType.Scroll) scrollDelta else Offset.Zero,
-            buttons = pointerButtons,
-            keyboardModifiers = keyboardModifiers,
-            nativeEvent = nativeEvent,
-            button = button,
-        )
-    }
 }
-
-@OptIn(InternalCoreApi::class)
-private fun Event.MouseDown.toPointerInputEvent(
-    buttons: PointerButtons,
-    keyboardModifiers: PointerKeyboardModifiers,
-    density: Density,
-): PointerInputEvent {
-    return mousePointerInputEvent(
-        type = PointerEventType.Press,
-        uptime = timestamp.seconds.inWholeMilliseconds,
-        position = density.run { locationInWindow.toOffset() },
-        buttons = buttons,
-        scrollDelta = Offset.Zero,
-        keyboardModifiers = keyboardModifiers,
-        button = button,
-        nativeEvent = this,
-    )
-}
-
-@OptIn(InternalCoreApi::class)
-private fun Event.MouseUp.toPointerInputEvent(
-    buttons: PointerButtons,
-    keyboardModifiers: PointerKeyboardModifiers,
-    density: Density,
-): PointerInputEvent {
-    return mousePointerInputEvent(
-        type = PointerEventType.Release,
-        uptime = timestamp.seconds.inWholeMilliseconds,
-        position = density.run { locationInWindow.toOffset() },
-        buttons = buttons,
-        scrollDelta = Offset.Zero,
-        keyboardModifiers = keyboardModifiers,
-        button = button,
-        nativeEvent = this,
-    )
-}
-
-@OptIn(InternalCoreApi::class, ExperimentalComposeUiApi::class)
-private fun mousePointerInputEvent(
-    type: PointerEventType,
-    uptime: Long,
-    position: Offset,
-    buttons: PointerButtons,
-    scrollDelta: Offset,
-    keyboardModifiers: PointerKeyboardModifiers,
-    button: PointerButton?,
-    nativeEvent: Any?,
-): PointerInputEvent {
-    return PointerInputEvent(
-        eventType = type,
-        uptime = uptime,
-        pointers = listOf(
-            PointerInputEventData(
-                id = DefaultPointerId,
-                uptime = uptime,
-                positionOnScreen = Offset.Unspecified,
-                position = position,
-                down = buttons.areAnyPressed,
-                pressure = 1f,
-                type = PointerType.Mouse,
-                scrollDelta = scrollDelta,
-            ),
-        ),
-        buttons = buttons,
-        keyboardModifiers = keyboardModifiers,
-        nativeEvent = nativeEvent,
-        button = button,
-    )
-}
-
-private val DefaultPointerId = PointerId(0)
 
 private operator fun PointerButtons.plus(other: PointerButton): PointerButtons = copy(
     isPrimaryPressed = isPrimaryPressed || other.isPrimary,

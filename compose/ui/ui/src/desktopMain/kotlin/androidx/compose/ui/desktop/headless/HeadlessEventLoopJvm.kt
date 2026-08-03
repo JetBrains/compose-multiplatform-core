@@ -23,12 +23,13 @@ internal class HeadlessEventLoopJvm : HeadlessEventLoop {
             when (val item = queue.take()) {
                 CloseToken -> return@thread
                 else -> {
-                    pendingTasks.decrementAndGet()
                     try {
                         @Suppress("UNCHECKED_CAST")
                         (item as () -> Unit).invoke()
                     } catch (e: Throwable) {
                         logger.error(e, "Failed to run headless event loop task")
+                    } finally {
+                        pendingTasks.decrementAndGet()
                     }
                 }
             }
@@ -82,4 +83,21 @@ internal class HeadlessEventLoopJvm : HeadlessEventLoop {
     }
 }
 
-actual fun createHeadlessEventLoop(): HeadlessEventLoop = HeadlessEventLoopJvm()
+actual fun createHeadlessEventLoop(libraryFolderPath: String): HeadlessEventLoop {
+    // Skia/skiko in a headless test JVM can load its natives from this path; FleetTest passes the
+    // shared skiko folder here (same contract as Noria's HeadlessEventLoopJvm). Only point skiko at
+    // the folder when it actually contains the native: once `skiko.library.path` is set, skiko loads
+    // solely from there and will NOT fall back to the native bundled in its runtime jar. Callers that
+    // pass a folder without skiko natives (e.g. java.io.tmpdir in-repo tests) then rely on that jar.
+    if (folderContainsSkikoNative(libraryFolderPath)) {
+        System.setProperty("skiko.library.path", libraryFolderPath)
+    }
+    return HeadlessEventLoopJvm()
+}
+
+private fun folderContainsSkikoNative(libraryFolderPath: String): Boolean =
+    java.io.File(libraryFolderPath).listFiles()?.any { file ->
+        val name = file.name
+        name.contains("skiko", ignoreCase = true) &&
+            (name.endsWith(".dylib") || name.endsWith(".so") || name.endsWith(".dll"))
+    } == true
