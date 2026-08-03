@@ -63,12 +63,12 @@ internal fun Event.MouseUp.toKeyEvent(keyboardModifiers: PointerKeyboardModifier
     )
 }
 
-private fun PointerButton.toKey(): Key = when (this) {
+internal fun PointerButton.toKey(): Key = when (this) {
     PointerButton.Primary -> Key.Button1
     PointerButton.Secondary -> Key.Button2
     PointerButton.Tertiary -> Key.Button3
-    PointerButton.Forward -> Key.Button4
-    PointerButton.Back -> Key.Button5
+    PointerButton.Back -> Key.Button4
+    PointerButton.Forward -> Key.Button5
     else -> Key.Unknown
 }
 

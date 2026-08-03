@@ -651,7 +651,10 @@ actual value class Key(val keyCode: Long) {
         actual val ProfileSwitch = Key(-1000000183)
 
         // Vendored international-layout symbols (extraction dossier §forked-key-constants);
-        // synthetic negative keycodes continuing this file's existing block past -1000000208.
+        // synthetic negative keycodes continuing past the global-minimum floor across all
+        // targets (macOS/iOS/web end their own blocks at -1000000208); this file's own block
+        // ends earlier, at -1000000183, so these values reuse the same -1000000209..-1000000309
+        // range for cross-target consistency.
         actual val AAcute = Key(-1000000209L)
         actual val ABreve = Key(-1000000210L)
         actual val ACircumflex = Key(-1000000211L)

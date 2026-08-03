@@ -8,6 +8,7 @@ import androidx.compose.ui.desktop.LightweightWindowId
 import androidx.compose.ui.platform.ClipEntry
 import androidx.compose.ui.platform.Clipboard
 import java.nio.file.Path
+import kotlinx.coroutines.withContext
 import org.jetbrains.desktop.macos.Pasteboard
 import org.jetbrains.desktop.macos.PasteboardType
 
@@ -22,8 +23,10 @@ object MacOsClipboard : Clipboard {
         clipEntry ?: return
         val entry = clipEntry.nativeClipEntry
         require(entry is ClipboardItemsEntry)
-        Pasteboard.clear()
-        Pasteboard.writeObjects(entry.items.toPasteboardItems())
+        withContext(MacOsKdtMainDispatcher.INSTANCE.immediate) {
+            Pasteboard.clear()
+            Pasteboard.writeObjects(entry.items.toPasteboardItems())
+        }
     }
 
     override val nativeClipboard: Any
@@ -78,7 +81,9 @@ internal fun List<ClipboardItem>.toPasteboardItems(): List<Pasteboard.Item> {
 
 class MacOsClipboardEntry(private val pasteboardType: PasteboardType) : ClipboardEntry {
     override suspend fun <T : Any> getForFormat(format: ClipboardFormat<T>): List<T> {
-        return getForFormatSync(format)
+        return withContext(MacOsKdtMainDispatcher.INSTANCE.immediate) {
+            getForFormatSync(format)
+        }
     }
 
     override fun <T : Any> getForFormatSync(format: ClipboardFormat<T>): List<T> {
