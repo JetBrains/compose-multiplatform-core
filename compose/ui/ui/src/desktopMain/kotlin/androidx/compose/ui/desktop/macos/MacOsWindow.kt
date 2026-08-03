@@ -51,7 +51,9 @@ import androidx.compose.ui.desktop.LightweightWindowId
 import androidx.compose.ui.desktop.PositionAwareWindow
 import androidx.compose.ui.desktop.ApplicationSession
 import androidx.compose.ui.desktop.Window
+import androidx.compose.ui.desktop.LocalWindow
 import androidx.compose.ui.desktop.WindowCloseRequestReason
+import androidx.compose.ui.desktop.WindowData
 import androidx.compose.ui.desktop.WindowScope
 import androidx.compose.ui.node.InternalCoreApi
 import androidx.compose.ui.platform.DefaultTextToolbar
@@ -86,8 +88,6 @@ import kotlin.math.ceil
 import kotlin.time.TimeSource
 import kotlinx.io.files.Path
 import noria.CallbackInterceptor
-import noria.ui.core.LocalWindow
-import noria.ui.core.WindowData
 import org.jetbrains.annotations.ApiStatus
 import org.jetbrains.desktop.macos.AppMenuManager
 import org.jetbrains.desktop.macos.Appearance

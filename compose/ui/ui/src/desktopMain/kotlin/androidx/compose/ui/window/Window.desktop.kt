@@ -27,13 +27,13 @@ import androidx.compose.ui.LocalSystemTheme
 import androidx.compose.ui.SystemTheme
 import androidx.compose.ui.awt.ComposeWindow
 import androidx.compose.ui.awt.SwingWindow
+import androidx.compose.ui.desktop.WindowData
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.util.setPositionSafely
 import androidx.compose.ui.util.setSizeSafely
 import javax.swing.JMenuBar
-import noria.ui.core.WindowData
 
 // TODO(demin): support focus management
 /**
