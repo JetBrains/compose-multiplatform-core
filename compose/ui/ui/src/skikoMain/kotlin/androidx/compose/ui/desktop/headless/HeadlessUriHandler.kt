@@ -18,8 +18,17 @@ package androidx.compose.ui.desktop.headless
 
 import androidx.compose.ui.platform.UriHandler
 
+/**
+ * Records the last URL a headless run tried to open, for tests that drive login/OAuth flows
+ * without a real browser (Fleet's BrowserUtils polls this; UIMode.REAL_WITH_FAKE_BROWSER installs
+ * [HeadlessUriHandler] even with real windowing backends).
+ */
+object FakeBrowser {
+    var lastOpenedUrl: String? = null
+}
+
 class HeadlessUriHandler : UriHandler {
     override fun openUri(uri: String) {
-        // No-op in headless mode.
+        FakeBrowser.lastOpenedUrl = uri
     }
 }

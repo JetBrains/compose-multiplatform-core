@@ -27,19 +27,29 @@ import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.MainCoroutineDispatcher
 
+/**
+ * Test/headless override for [ComposeUIDispatcher]. When non-null, it takes precedence over the
+ * per-platform KDT main dispatcher below. Set by [androidx.compose.ui.desktop.headless.HeadlessApplication]
+ * while it is active (its event-loop thread becomes the Compose UI thread) and cleared on
+ * resetForReuse/stopAndJoin. `Dispatchers.Main` follows automatically: the kdt-dispatcher module's
+ * MainDispatcherFactory resolves through this getter on every dispatch.
+ */
+@Volatile internal var ComposeUIDispatcherOverride: MainCoroutineDispatcher? = null
+
 actual val ComposeUIDispatcher: MainCoroutineDispatcher
     get() =
-        when (DesktopPlatform.Current) {
-            DesktopPlatform.MacOS -> MacOsKdtMainDispatcher.INSTANCE
-            DesktopPlatform.Linux ->
-                when (currentLinuxWindowSystem()) {
-                    LinuxWindowSystem.Wayland -> LinuxKdtMainDispatcher.INSTANCE
-                    LinuxWindowSystem.Gtk -> GtkKdtMainDispatcher.INSTANCE
-                }
-            DesktopPlatform.Windows -> TODO()
-            DesktopPlatform.Unknown ->
-                error("Unsupported desktop platform: ${DesktopPlatform.Current}")
-        }
+        ComposeUIDispatcherOverride
+            ?: when (DesktopPlatform.Current) {
+                DesktopPlatform.MacOS -> MacOsKdtMainDispatcher.INSTANCE
+                DesktopPlatform.Linux ->
+                    when (currentLinuxWindowSystem()) {
+                        LinuxWindowSystem.Wayland -> LinuxKdtMainDispatcher.INSTANCE
+                        LinuxWindowSystem.Gtk -> GtkKdtMainDispatcher.INSTANCE
+                    }
+                DesktopPlatform.Windows -> TODO()
+                DesktopPlatform.Unknown ->
+                    error("Unsupported desktop platform: ${DesktopPlatform.Current}")
+            }
 
 /**
  * The dispatcher Compose's internal scheduling posts to: the global snapshot manager's
