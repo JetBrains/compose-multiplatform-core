@@ -1747,6 +1747,414 @@ public actual value class Key(public val keyCode: Long) {
         /** Numeric keypad Delete key. Unsupported on Android. */
         public actual val NumPadDelete: Key
             get() = Key(-1000000010)
+
+        // Vendored international-layout symbols (extraction dossier §forked-key-constants);
+        // synthetic negative keycodes continuing this file's existing block past -1000000010.
+        // Unsupported on Android (no native keycode); values match the other four actuals'
+        // -1000000209..-1000000309 block for cross-target consistency.
+        /** 'á' key (international layouts). */
+        public actual val AAcute: Key
+            get() = Key(-1000000209L)
+
+        /** 'ă' key (international layouts). */
+        public actual val ABreve: Key
+            get() = Key(-1000000210L)
+
+        /** 'â' key (international layouts). */
+        public actual val ACircumflex: Key
+            get() = Key(-1000000211L)
+
+        /** 'æ' key (international layouts). */
+        public actual val Ae: Key
+            get() = Key(-1000000212L)
+
+        /** 'à' key (international layouts). */
+        public actual val AGrave: Key
+            get() = Key(-1000000213L)
+
+        /** 'ą' key (international layouts). */
+        public actual val AOgonek: Key
+            get() = Key(-1000000214L)
+
+        /** 'å' key (international layouts). */
+        public actual val ARing: Key
+            get() = Key(-1000000215L)
+
+        /** 'ä' key (international layouts). */
+        public actual val AUmlaut: Key
+            get() = Key(-1000000216L)
+
+        /** 'ć' key (international layouts). */
+        public actual val CAcute: Key
+            get() = Key(-1000000217L)
+
+        /** 'č' key (international layouts). */
+        public actual val CCaron: Key
+            get() = Key(-1000000218L)
+
+        /** 'ç' key (international layouts). */
+        public actual val CCedilla: Key
+            get() = Key(-1000000219L)
+
+        /** 'đ' key (international layouts). */
+        public actual val DStroke: Key
+            get() = Key(-1000000220L)
+
+        /** 'é' key (international layouts). */
+        public actual val EAcute: Key
+            get() = Key(-1000000221L)
+
+        /** 'ě' key (international layouts). */
+        public actual val ECaron: Key
+            get() = Key(-1000000222L)
+
+        /** 'ê' key (international layouts). */
+        public actual val ECircumflex: Key
+            get() = Key(-1000000223L)
+
+        /** 'ë' key (international layouts). */
+        public actual val EDiaeresis: Key
+            get() = Key(-1000000224L)
+
+        /** 'ė' key (international layouts). */
+        public actual val EDot: Key
+            get() = Key(-1000000225L)
+
+        /** 'è' key (international layouts). */
+        public actual val EGrave: Key
+            get() = Key(-1000000226L)
+
+        /** 'ŋ' key (international layouts). */
+        public actual val Eng: Key
+            get() = Key(-1000000227L)
+
+        /** 'ę' key (international layouts). */
+        public actual val EOgonek: Key
+            get() = Key(-1000000228L)
+
+        /** 'ð' key (international layouts). */
+        public actual val Eth: Key
+            get() = Key(-1000000229L)
+
+        /** 'ğ' key (international layouts). */
+        public actual val GBreve: Key
+            get() = Key(-1000000230L)
+
+        /** 'ġ' key (international layouts). */
+        public actual val GDot: Key
+            get() = Key(-1000000231L)
+
+        /** 'ħ' key (international layouts). */
+        public actual val HStroke: Key
+            get() = Key(-1000000232L)
+
+        /** 'í' key (international layouts). */
+        public actual val IAcute: Key
+            get() = Key(-1000000233L)
+
+        /** 'î' key (international layouts). */
+        public actual val ICircumflex: Key
+            get() = Key(-1000000234L)
+
+        /** 'ı' key (international layouts). */
+        public actual val IDotless: Key
+            get() = Key(-1000000235L)
+
+        /** 'ì' key (international layouts). */
+        public actual val IGrave: Key
+            get() = Key(-1000000236L)
+
+        /** 'į' key (international layouts). */
+        public actual val IOgonek: Key
+            get() = Key(-1000000237L)
+
+        /** 'ľ' key (international layouts). */
+        public actual val LCaron: Key
+            get() = Key(-1000000238L)
+
+        /** 'ł' key (international layouts). */
+        public actual val LStroke: Key
+            get() = Key(-1000000239L)
+
+        /** 'ň' key (international layouts). */
+        public actual val NCaron: Key
+            get() = Key(-1000000240L)
+
+        /** 'ñ' key (international layouts). */
+        public actual val NTilde: Key
+            get() = Key(-1000000241L)
+
+        /** 'ó' key (international layouts). */
+        public actual val OAcute: Key
+            get() = Key(-1000000242L)
+
+        /** 'ô' key (international layouts). */
+        public actual val OCircumflex: Key
+            get() = Key(-1000000243L)
+
+        /** 'ő' key (international layouts). */
+        public actual val ODoubleAcute: Key
+            get() = Key(-1000000244L)
+
+        /** 'ò' key (international layouts). */
+        public actual val OGrave: Key
+            get() = Key(-1000000245L)
+
+        /** 'ơ' key (international layouts). */
+        public actual val OHorn: Key
+            get() = Key(-1000000246L)
+
+        /** 'ö' key (international layouts). */
+        public actual val OUmlaut: Key
+            get() = Key(-1000000247L)
+
+        /** 'ø' key (international layouts). */
+        public actual val OStroke: Key
+            get() = Key(-1000000248L)
+
+        /** 'õ' key (international layouts). */
+        public actual val OTilde: Key
+            get() = Key(-1000000249L)
+
+        /** 'ř' key (international layouts). */
+        public actual val RCaron: Key
+            get() = Key(-1000000250L)
+
+        /** 'š' key (international layouts). */
+        public actual val SCaron: Key
+            get() = Key(-1000000251L)
+
+        /** 'ş' key (international layouts). */
+        public actual val SCedilla: Key
+            get() = Key(-1000000252L)
+
+        /** 'ə' key (international layouts). */
+        public actual val Schwa: Key
+            get() = Key(-1000000253L)
+
+        /** 'ș' key (international layouts). */
+        public actual val SComma: Key
+            get() = Key(-1000000254L)
+
+        /** 'ß' key (international layouts). */
+        public actual val SharpS: Key
+            get() = Key(-1000000255L)
+
+        /** 'ť' key (international layouts). */
+        public actual val TCaron: Key
+            get() = Key(-1000000256L)
+
+        /** 'ț' key (international layouts). */
+        public actual val TComma: Key
+            get() = Key(-1000000257L)
+
+        /** 'þ' key (international layouts). */
+        public actual val Thorn: Key
+            get() = Key(-1000000258L)
+
+        /** 'ŧ' key (international layouts). */
+        public actual val TStroke: Key
+            get() = Key(-1000000259L)
+
+        /** 'ú' key (international layouts). */
+        public actual val UAcute: Key
+            get() = Key(-1000000260L)
+
+        /** 'û' key (international layouts). */
+        public actual val UCircumflex: Key
+            get() = Key(-1000000261L)
+
+        /** 'ű' key (international layouts). */
+        public actual val UDoubleAcute: Key
+            get() = Key(-1000000262L)
+
+        /** 'ù' key (international layouts). */
+        public actual val UGrave: Key
+            get() = Key(-1000000263L)
+
+        /** 'ư' key (international layouts). */
+        public actual val UHorn: Key
+            get() = Key(-1000000264L)
+
+        /** 'ū' key (international layouts). */
+        public actual val UMacron: Key
+            get() = Key(-1000000265L)
+
+        /** 'ų' key (international layouts). */
+        public actual val UOgonek: Key
+            get() = Key(-1000000266L)
+
+        /** 'ů' key (international layouts). */
+        public actual val URing: Key
+            get() = Key(-1000000267L)
+
+        /** 'ü' key (international layouts). */
+        public actual val UUmlaut: Key
+            get() = Key(-1000000268L)
+
+        /** 'ý' key (international layouts). */
+        public actual val YAcute: Key
+            get() = Key(-1000000269L)
+
+        /** 'ž' key (international layouts). */
+        public actual val ZCaron: Key
+            get() = Key(-1000000270L)
+
+        /** 'ż' key (international layouts). */
+        public actual val ZDot: Key
+            get() = Key(-1000000271L)
+
+        /** '´' key (international layouts). */
+        public actual val AcuteAccent: Key
+            get() = Key(-1000000272L)
+
+        /** '&' key (international layouts). */
+        public actual val Ampersand: Key
+            get() = Key(-1000000273L)
+
+        /** '*' key (international layouts). */
+        public actual val Asterisk: Key
+            get() = Key(-1000000274L)
+
+        /** '˘' key (international layouts). */
+        public actual val Breve: Key
+            get() = Key(-1000000275L)
+
+        /** 'ˇ' key (international layouts). */
+        public actual val Caron: Key
+            get() = Key(-1000000276L)
+
+        /** '¸' key (international layouts). */
+        public actual val Cedilla: Key
+            get() = Key(-1000000277L)
+
+        /** '^' key (international layouts). */
+        public actual val CircumflexAccent: Key
+            get() = Key(-1000000278L)
+
+        /** ':' key (international layouts). */
+        public actual val Colon: Key
+            get() = Key(-1000000279L)
+
+        /** '¨' key (international layouts). */
+        public actual val Diaeresis: Key
+            get() = Key(-1000000280L)
+
+        /** '$' key (international layouts). */
+        public actual val DollarSign: Key
+            get() = Key(-1000000281L)
+
+        /** '₫' key (international layouts). */
+        public actual val DongSign: Key
+            get() = Key(-1000000282L)
+
+        /** '˙' key (international layouts). */
+        public actual val DotAbove: Key
+            get() = Key(-1000000283L)
+
+        /** ' ̣' key (international layouts). */
+        public actual val DotBelow: Key
+            get() = Key(-1000000284L)
+
+        /** '˝' key (international layouts). */
+        public actual val DoubleAcuteAccent: Key
+            get() = Key(-1000000285L)
+
+        /** '!' key (international layouts). */
+        public actual val ExclamationMark: Key
+            get() = Key(-1000000286L)
+
+        /** '>' key (international layouts). */
+        public actual val GreaterSign: Key
+            get() = Key(-1000000287L)
+
+        /** ' ̉' key (international layouts). */
+        public actual val HookAbove: Key
+            get() = Key(-1000000288L)
+
+        /** '¡' key (international layouts). */
+        public actual val InvertedExclamationMark: Key
+            get() = Key(-1000000289L)
+
+        /** '¿' key (international layouts). */
+        public actual val InvertedQuestionMark: Key
+            get() = Key(-1000000290L)
+
+        /** '{' key (international layouts). */
+        public actual val LeftBrace: Key
+            get() = Key(-1000000291L)
+
+        /** '(' key (international layouts). */
+        public actual val LeftParenthesis: Key
+            get() = Key(-1000000292L)
+
+        /** '<' key (international layouts). */
+        public actual val LessSign: Key
+            get() = Key(-1000000293L)
+
+        /** '„' key (international layouts). */
+        public actual val LowQuotationMark: Key
+            get() = Key(-1000000294L)
+
+        /** '¯' key (international layouts). */
+        public actual val Macron: Key
+            get() = Key(-1000000295L)
+
+        /** 'º' key (international layouts). */
+        public actual val MasculineOrdinalIndicator: Key
+            get() = Key(-1000000296L)
+
+        /** '#' key (international layouts). */
+        public actual val NumberSign: Key
+            get() = Key(-1000000297L)
+
+        /** '˛' key (international layouts). */
+        public actual val Ogonek: Key
+            get() = Key(-1000000298L)
+
+        /** '£' key (international layouts). */
+        public actual val PoundSign: Key
+            get() = Key(-1000000299L)
+
+        /** '"' key (international layouts). */
+        public actual val QuotationMark: Key
+            get() = Key(-1000000300L)
+
+        /** ' ֿ' key (international layouts). */
+        public actual val Rafe: Key
+            get() = Key(-1000000301L)
+
+        /** '}' key (international layouts). */
+        public actual val RightBrace: Key
+            get() = Key(-1000000302L)
+
+        /** ')' key (international layouts). */
+        public actual val RightParenthesis: Key
+            get() = Key(-1000000303L)
+
+        /** '˚' key (international layouts). */
+        public actual val RingAbove: Key
+            get() = Key(-1000000304L)
+
+        /** '§' key (international layouts). */
+        public actual val SectionSign: Key
+            get() = Key(-1000000305L)
+
+        /** '²' key (international layouts). */
+        public actual val SuperscriptTwo: Key
+            get() = Key(-1000000306L)
+
+        /** '~' key (international layouts). */
+        public actual val Tilde: Key
+            get() = Key(-1000000307L)
+
+        /** '_' key (international layouts). */
+        public actual val Underscore: Key
+            get() = Key(-1000000308L)
+
+        /** '|' key (international layouts). */
+        public actual val VerticalLine: Key
+            get() = Key(-1000000309L)
     }
 
     public actual override fun toString(): String = "Key code: $keyCode"

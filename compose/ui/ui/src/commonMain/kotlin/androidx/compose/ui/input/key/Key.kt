@@ -1439,6 +1439,314 @@ public expect value class Key(public val keyCode: Long) {
          * be consumed by system to set account globally.
          */
         public val ProfileSwitch: Key
+
+        // The following 101 constants are vendored from the Noria fork's international-layout
+        // symbol table (extraction dossier §forked-key-constants); they back
+        // keyFromInternationalSymbols on desktop-family targets. Values are this fork's own
+        // synthetic negative-keycode block, NOT Noria's literal renumbered codes (those collide
+        // with this fork's AWT-based keycodes on desktop/android).
+        /** 'á' key (international layouts). */
+        public val AAcute: Key
+
+        /** 'ă' key (international layouts). */
+        public val ABreve: Key
+
+        /** 'â' key (international layouts). */
+        public val ACircumflex: Key
+
+        /** 'æ' key (international layouts). */
+        public val Ae: Key
+
+        /** 'à' key (international layouts). */
+        public val AGrave: Key
+
+        /** 'ą' key (international layouts). */
+        public val AOgonek: Key
+
+        /** 'å' key (international layouts). */
+        public val ARing: Key
+
+        /** 'ä' key (international layouts). */
+        public val AUmlaut: Key
+
+        /** 'ć' key (international layouts). */
+        public val CAcute: Key
+
+        /** 'č' key (international layouts). */
+        public val CCaron: Key
+
+        /** 'ç' key (international layouts). */
+        public val CCedilla: Key
+
+        /** 'đ' key (international layouts). */
+        public val DStroke: Key
+
+        /** 'é' key (international layouts). */
+        public val EAcute: Key
+
+        /** 'ě' key (international layouts). */
+        public val ECaron: Key
+
+        /** 'ê' key (international layouts). */
+        public val ECircumflex: Key
+
+        /** 'ë' key (international layouts). */
+        public val EDiaeresis: Key
+
+        /** 'ė' key (international layouts). */
+        public val EDot: Key
+
+        /** 'è' key (international layouts). */
+        public val EGrave: Key
+
+        /** 'ŋ' key (international layouts). */
+        public val Eng: Key
+
+        /** 'ę' key (international layouts). */
+        public val EOgonek: Key
+
+        /** 'ð' key (international layouts). */
+        public val Eth: Key
+
+        /** 'ğ' key (international layouts). */
+        public val GBreve: Key
+
+        /** 'ġ' key (international layouts). */
+        public val GDot: Key
+
+        /** 'ħ' key (international layouts). */
+        public val HStroke: Key
+
+        /** 'í' key (international layouts). */
+        public val IAcute: Key
+
+        /** 'î' key (international layouts). */
+        public val ICircumflex: Key
+
+        /** 'ı' key (international layouts). */
+        public val IDotless: Key
+
+        /** 'ì' key (international layouts). */
+        public val IGrave: Key
+
+        /** 'į' key (international layouts). */
+        public val IOgonek: Key
+
+        /** 'ľ' key (international layouts). */
+        public val LCaron: Key
+
+        /** 'ł' key (international layouts). */
+        public val LStroke: Key
+
+        /** 'ň' key (international layouts). */
+        public val NCaron: Key
+
+        /** 'ñ' key (international layouts). */
+        public val NTilde: Key
+
+        /** 'ó' key (international layouts). */
+        public val OAcute: Key
+
+        /** 'ô' key (international layouts). */
+        public val OCircumflex: Key
+
+        /** 'ő' key (international layouts). */
+        public val ODoubleAcute: Key
+
+        /** 'ò' key (international layouts). */
+        public val OGrave: Key
+
+        /** 'ơ' key (international layouts). */
+        public val OHorn: Key
+
+        /** 'ö' key (international layouts). */
+        public val OUmlaut: Key
+
+        /** 'ø' key (international layouts). */
+        public val OStroke: Key
+
+        /** 'õ' key (international layouts). */
+        public val OTilde: Key
+
+        /** 'ř' key (international layouts). */
+        public val RCaron: Key
+
+        /** 'š' key (international layouts). */
+        public val SCaron: Key
+
+        /** 'ş' key (international layouts). */
+        public val SCedilla: Key
+
+        /** 'ə' key (international layouts). */
+        public val Schwa: Key
+
+        /** 'ș' key (international layouts). */
+        public val SComma: Key
+
+        /** 'ß' key (international layouts). */
+        public val SharpS: Key
+
+        /** 'ť' key (international layouts). */
+        public val TCaron: Key
+
+        /** 'ț' key (international layouts). */
+        public val TComma: Key
+
+        /** 'þ' key (international layouts). */
+        public val Thorn: Key
+
+        /** 'ŧ' key (international layouts). */
+        public val TStroke: Key
+
+        /** 'ú' key (international layouts). */
+        public val UAcute: Key
+
+        /** 'û' key (international layouts). */
+        public val UCircumflex: Key
+
+        /** 'ű' key (international layouts). */
+        public val UDoubleAcute: Key
+
+        /** 'ù' key (international layouts). */
+        public val UGrave: Key
+
+        /** 'ư' key (international layouts). */
+        public val UHorn: Key
+
+        /** 'ū' key (international layouts). */
+        public val UMacron: Key
+
+        /** 'ų' key (international layouts). */
+        public val UOgonek: Key
+
+        /** 'ů' key (international layouts). */
+        public val URing: Key
+
+        /** 'ü' key (international layouts). */
+        public val UUmlaut: Key
+
+        /** 'ý' key (international layouts). */
+        public val YAcute: Key
+
+        /** 'ž' key (international layouts). */
+        public val ZCaron: Key
+
+        /** 'ż' key (international layouts). */
+        public val ZDot: Key
+
+        /** '´' key (international layouts). */
+        public val AcuteAccent: Key
+
+        /** '&' key (international layouts). */
+        public val Ampersand: Key
+
+        /** '*' key (international layouts). */
+        public val Asterisk: Key
+
+        /** '˘' key (international layouts). */
+        public val Breve: Key
+
+        /** 'ˇ' key (international layouts). */
+        public val Caron: Key
+
+        /** '¸' key (international layouts). */
+        public val Cedilla: Key
+
+        /** '^' key (international layouts). */
+        public val CircumflexAccent: Key
+
+        /** ':' key (international layouts). */
+        public val Colon: Key
+
+        /** '¨' key (international layouts). */
+        public val Diaeresis: Key
+
+        /** '$' key (international layouts). */
+        public val DollarSign: Key
+
+        /** '₫' key (international layouts). */
+        public val DongSign: Key
+
+        /** '˙' key (international layouts). */
+        public val DotAbove: Key
+
+        /** ' ̣' key (international layouts). */
+        public val DotBelow: Key
+
+        /** '˝' key (international layouts). */
+        public val DoubleAcuteAccent: Key
+
+        /** '!' key (international layouts). */
+        public val ExclamationMark: Key
+
+        /** '>' key (international layouts). */
+        public val GreaterSign: Key
+
+        /** ' ̉' key (international layouts). */
+        public val HookAbove: Key
+
+        /** '¡' key (international layouts). */
+        public val InvertedExclamationMark: Key
+
+        /** '¿' key (international layouts). */
+        public val InvertedQuestionMark: Key
+
+        /** '{' key (international layouts). */
+        public val LeftBrace: Key
+
+        /** '(' key (international layouts). */
+        public val LeftParenthesis: Key
+
+        /** '<' key (international layouts). */
+        public val LessSign: Key
+
+        /** '„' key (international layouts). */
+        public val LowQuotationMark: Key
+
+        /** '¯' key (international layouts). */
+        public val Macron: Key
+
+        /** 'º' key (international layouts). */
+        public val MasculineOrdinalIndicator: Key
+
+        /** '#' key (international layouts). */
+        public val NumberSign: Key
+
+        /** '˛' key (international layouts). */
+        public val Ogonek: Key
+
+        /** '£' key (international layouts). */
+        public val PoundSign: Key
+
+        /** '"' key (international layouts). */
+        public val QuotationMark: Key
+
+        /** ' ֿ' key (international layouts). */
+        public val Rafe: Key
+
+        /** '}' key (international layouts). */
+        public val RightBrace: Key
+
+        /** ')' key (international layouts). */
+        public val RightParenthesis: Key
+
+        /** '˚' key (international layouts). */
+        public val RingAbove: Key
+
+        /** '§' key (international layouts). */
+        public val SectionSign: Key
+
+        /** '²' key (international layouts). */
+        public val SuperscriptTwo: Key
+
+        /** '~' key (international layouts). */
+        public val Tilde: Key
+
+        /** '_' key (international layouts). */
+        public val Underscore: Key
+
+        /** '|' key (international layouts). */
+        public val VerticalLine: Key
     }
 
     public override fun toString(): String

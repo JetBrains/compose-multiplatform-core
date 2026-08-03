@@ -875,6 +875,211 @@ actual value class Key(val keyCode: Long) {
             get() = Key(-1000000206)
         actual val NumPadDelete: Key
             get() = Key(-1000000208)
+
+        // Vendored international-layout symbols (extraction dossier §forked-key-constants);
+        // synthetic negative keycodes continuing this file's existing block past -1000000208.
+        actual val AAcute: Key
+            get() = Key(-1000000209L)
+        actual val ABreve: Key
+            get() = Key(-1000000210L)
+        actual val ACircumflex: Key
+            get() = Key(-1000000211L)
+        actual val Ae: Key
+            get() = Key(-1000000212L)
+        actual val AGrave: Key
+            get() = Key(-1000000213L)
+        actual val AOgonek: Key
+            get() = Key(-1000000214L)
+        actual val ARing: Key
+            get() = Key(-1000000215L)
+        actual val AUmlaut: Key
+            get() = Key(-1000000216L)
+        actual val CAcute: Key
+            get() = Key(-1000000217L)
+        actual val CCaron: Key
+            get() = Key(-1000000218L)
+        actual val CCedilla: Key
+            get() = Key(-1000000219L)
+        actual val DStroke: Key
+            get() = Key(-1000000220L)
+        actual val EAcute: Key
+            get() = Key(-1000000221L)
+        actual val ECaron: Key
+            get() = Key(-1000000222L)
+        actual val ECircumflex: Key
+            get() = Key(-1000000223L)
+        actual val EDiaeresis: Key
+            get() = Key(-1000000224L)
+        actual val EDot: Key
+            get() = Key(-1000000225L)
+        actual val EGrave: Key
+            get() = Key(-1000000226L)
+        actual val Eng: Key
+            get() = Key(-1000000227L)
+        actual val EOgonek: Key
+            get() = Key(-1000000228L)
+        actual val Eth: Key
+            get() = Key(-1000000229L)
+        actual val GBreve: Key
+            get() = Key(-1000000230L)
+        actual val GDot: Key
+            get() = Key(-1000000231L)
+        actual val HStroke: Key
+            get() = Key(-1000000232L)
+        actual val IAcute: Key
+            get() = Key(-1000000233L)
+        actual val ICircumflex: Key
+            get() = Key(-1000000234L)
+        actual val IDotless: Key
+            get() = Key(-1000000235L)
+        actual val IGrave: Key
+            get() = Key(-1000000236L)
+        actual val IOgonek: Key
+            get() = Key(-1000000237L)
+        actual val LCaron: Key
+            get() = Key(-1000000238L)
+        actual val LStroke: Key
+            get() = Key(-1000000239L)
+        actual val NCaron: Key
+            get() = Key(-1000000240L)
+        actual val NTilde: Key
+            get() = Key(-1000000241L)
+        actual val OAcute: Key
+            get() = Key(-1000000242L)
+        actual val OCircumflex: Key
+            get() = Key(-1000000243L)
+        actual val ODoubleAcute: Key
+            get() = Key(-1000000244L)
+        actual val OGrave: Key
+            get() = Key(-1000000245L)
+        actual val OHorn: Key
+            get() = Key(-1000000246L)
+        actual val OUmlaut: Key
+            get() = Key(-1000000247L)
+        actual val OStroke: Key
+            get() = Key(-1000000248L)
+        actual val OTilde: Key
+            get() = Key(-1000000249L)
+        actual val RCaron: Key
+            get() = Key(-1000000250L)
+        actual val SCaron: Key
+            get() = Key(-1000000251L)
+        actual val SCedilla: Key
+            get() = Key(-1000000252L)
+        actual val Schwa: Key
+            get() = Key(-1000000253L)
+        actual val SComma: Key
+            get() = Key(-1000000254L)
+        actual val SharpS: Key
+            get() = Key(-1000000255L)
+        actual val TCaron: Key
+            get() = Key(-1000000256L)
+        actual val TComma: Key
+            get() = Key(-1000000257L)
+        actual val Thorn: Key
+            get() = Key(-1000000258L)
+        actual val TStroke: Key
+            get() = Key(-1000000259L)
+        actual val UAcute: Key
+            get() = Key(-1000000260L)
+        actual val UCircumflex: Key
+            get() = Key(-1000000261L)
+        actual val UDoubleAcute: Key
+            get() = Key(-1000000262L)
+        actual val UGrave: Key
+            get() = Key(-1000000263L)
+        actual val UHorn: Key
+            get() = Key(-1000000264L)
+        actual val UMacron: Key
+            get() = Key(-1000000265L)
+        actual val UOgonek: Key
+            get() = Key(-1000000266L)
+        actual val URing: Key
+            get() = Key(-1000000267L)
+        actual val UUmlaut: Key
+            get() = Key(-1000000268L)
+        actual val YAcute: Key
+            get() = Key(-1000000269L)
+        actual val ZCaron: Key
+            get() = Key(-1000000270L)
+        actual val ZDot: Key
+            get() = Key(-1000000271L)
+        actual val AcuteAccent: Key
+            get() = Key(-1000000272L)
+        actual val Ampersand: Key
+            get() = Key(-1000000273L)
+        actual val Asterisk: Key
+            get() = Key(-1000000274L)
+        actual val Breve: Key
+            get() = Key(-1000000275L)
+        actual val Caron: Key
+            get() = Key(-1000000276L)
+        actual val Cedilla: Key
+            get() = Key(-1000000277L)
+        actual val CircumflexAccent: Key
+            get() = Key(-1000000278L)
+        actual val Colon: Key
+            get() = Key(-1000000279L)
+        actual val Diaeresis: Key
+            get() = Key(-1000000280L)
+        actual val DollarSign: Key
+            get() = Key(-1000000281L)
+        actual val DongSign: Key
+            get() = Key(-1000000282L)
+        actual val DotAbove: Key
+            get() = Key(-1000000283L)
+        actual val DotBelow: Key
+            get() = Key(-1000000284L)
+        actual val DoubleAcuteAccent: Key
+            get() = Key(-1000000285L)
+        actual val ExclamationMark: Key
+            get() = Key(-1000000286L)
+        actual val GreaterSign: Key
+            get() = Key(-1000000287L)
+        actual val HookAbove: Key
+            get() = Key(-1000000288L)
+        actual val InvertedExclamationMark: Key
+            get() = Key(-1000000289L)
+        actual val InvertedQuestionMark: Key
+            get() = Key(-1000000290L)
+        actual val LeftBrace: Key
+            get() = Key(-1000000291L)
+        actual val LeftParenthesis: Key
+            get() = Key(-1000000292L)
+        actual val LessSign: Key
+            get() = Key(-1000000293L)
+        actual val LowQuotationMark: Key
+            get() = Key(-1000000294L)
+        actual val Macron: Key
+            get() = Key(-1000000295L)
+        actual val MasculineOrdinalIndicator: Key
+            get() = Key(-1000000296L)
+        actual val NumberSign: Key
+            get() = Key(-1000000297L)
+        actual val Ogonek: Key
+            get() = Key(-1000000298L)
+        actual val PoundSign: Key
+            get() = Key(-1000000299L)
+        actual val QuotationMark: Key
+            get() = Key(-1000000300L)
+        actual val Rafe: Key
+            get() = Key(-1000000301L)
+        actual val RightBrace: Key
+            get() = Key(-1000000302L)
+        actual val RightParenthesis: Key
+            get() = Key(-1000000303L)
+        actual val RingAbove: Key
+            get() = Key(-1000000304L)
+        actual val SectionSign: Key
+            get() = Key(-1000000305L)
+        actual val SuperscriptTwo: Key
+            get() = Key(-1000000306L)
+        actual val Tilde: Key
+            get() = Key(-1000000307L)
+        actual val Underscore: Key
+            get() = Key(-1000000308L)
+        actual val VerticalLine: Key
+            get() = Key(-1000000309L)
     }
 
     actual override fun toString() = "Key keyCode: $keyCode"
