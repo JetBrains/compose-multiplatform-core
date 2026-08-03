@@ -306,6 +306,53 @@ class DeliveryDomainTests {
         }
     }
 
+    // Vector 11: a raw (snapshot-less, foreign-thread) global write that a domain slice's
+    // apply happens to FLUSH is not that domain's commit: its pin cannot see the value, so
+    // immediate committer dispatch would consume the token against a stale view with no
+    // pending push (and no wake) left to correct it - the scope would go permanently stale.
+    // The flushed raw write must land in the OWNER domain's pending union (push + wake),
+    // exactly as in every other open domain, while the slice's OWN batch keeps its
+    // committer-immediate dispatch (the same-frame contract).
+    @Test
+    fun aRawGlobalWriteFlushedByASliceApplyIsPendingForTheOwnerDomain() {
+        val raw = mutableStateOf(0)
+        val own = mutableStateOf(0)
+        val a = isolatingHolder() // the owner: its slice's apply flushes the raw write
+        val b = isolatingHolder() // a sibling: must receive the same pending push
+        val seenByA = mutableListOf<Set<Any>>()
+        val seenByB = mutableListOf<Set<Any>>()
+        var wokenA = 0
+        a.onPendingDelivery = { wokenA++ }
+        val ha = a.registerApplyObserver { changed, _ -> seenByA.add(changed) }
+        val hb = b.registerApplyObserver { changed, _ -> seenByB.add(changed) }
+        try {
+            // Raw write: no snapshot on the writing thread, so it sits PENDING on the global
+            // snapshot (nothing advances it here) until A's slice apply flushes it below.
+            thread { raw.value = 1 }.join()
+            assertTrue(seenByA.none { raw in it })
+            // The owner's slice publishes; its apply captures the global's pending raw writes.
+            (a.current as DataSourceContext.Snapshot).withTransaction { own.value = 1 }
+            // The slice's own batch is the committer's: immediate.
+            assertEquals(1, seenByA.count { own in it })
+            // The flushed raw write is NOT: pending union + wake for the owner too.
+            assertTrue(seenByA.none { raw in it }, "raw write must not dispatch as A's own commit")
+            assertTrue(a.hasPendingDelivery, "raw write must be pushed to the OWNER's union")
+            assertTrue(wokenA >= 1, "the owner's rotation wake must fire")
+            assertTrue(seenByB.none { raw in it }) // sibling: pending as always
+            assertTrue(b.hasPendingDelivery)
+            a.rotate()
+            assertEquals(1, seenByA.count { raw in it }) // delivered at A's own rotation...
+            (a.current as DataSourceContext.Snapshot).withTransaction {
+                assertEquals(1, raw.value) // ...against a view that contains it
+            }
+        } finally {
+            ha.dispose()
+            hb.dispose()
+            a.close()
+            b.close()
+        }
+    }
+
     // The scene-less domain must drain its context as part of its own rotation, and its
     // rotation must be reachable from the context's wake.
     @Test

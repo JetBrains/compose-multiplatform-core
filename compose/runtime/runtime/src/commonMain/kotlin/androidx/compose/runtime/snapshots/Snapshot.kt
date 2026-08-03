@@ -2173,14 +2173,26 @@ internal constructor(
         if (result != SnapshotApplyResult.Success) return result
 
         // Stock dispatch order, outside the lock: the global's pending raw writes first,
-        // then this child's own batch. These dispatch IMMEDIATELY - the owning cycle's
+        // then this child's own batch. The batch dispatches IMMEDIATELY - the owning cycle's
         // same-frame machinery (animation pump -> recompose pass) depends on it. this.root
         // is the owning ApplyThroughSnapshot, so deliverInvalidations resolves it as the
-        // committer: immediate own + global, pending union for every other open domain.
+        // batch's committer: immediate own + global, pending union for every other open domain.
         val globalModifiedSet =
             globalModified?.let { if (it.isNotEmpty()) it.wrapIntoSet() else null }
         val batchSet = if (batch != null && batch.isNotEmpty()) batch.wrapIntoSet() else null
-        if (globalModifiedSet != null) deliverInvalidations(globalModifiedSet, this)
+        // The captured raw writes are attributed to the GLOBAL stream, not to this child: they
+        // are foreign writes (raw, snapshot-less threads) that this apply merely flushed, and
+        // they were never folded into the owning context, so its pin does NOT contain them.
+        // Attributing them to `this` would resolve the owning domain as their committer and
+        // deliver them immediately against that stale pin - the token is consumed by a
+        // recompose that still reads the old value, no pending push (and hence no rotation
+        // wake) is ever made for the owning domain, and the scope goes PERMANENTLY stale
+        // (the exact `delivered !⊆ visible` pathology SnapshotHolder.rotate documents). With
+        // global attribution every open domain, the owner included, receives them in its
+        // pending union and hears at its own next rotation - the same path a
+        // GlobalSnapshotManager advance takes for raw writes.
+        if (globalModifiedSet != null)
+            deliverInvalidations(globalModifiedSet, globalAttributionSnapshot())
         if (batchSet != null) deliverInvalidations(batchSet, this)
 
         sync {
