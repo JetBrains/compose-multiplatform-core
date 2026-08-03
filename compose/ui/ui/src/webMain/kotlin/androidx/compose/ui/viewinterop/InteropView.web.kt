@@ -124,7 +124,7 @@ internal fun <T : HTMLElement> InternalHtmlElementView(
                 compositeKeyHash
             )
         },
-        modifier,
+        modifier.focusInteropModifier(),
         onReset,
         onRelease,
         update = {
