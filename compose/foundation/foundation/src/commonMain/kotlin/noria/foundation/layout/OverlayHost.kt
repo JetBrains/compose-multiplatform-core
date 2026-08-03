@@ -28,6 +28,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
@@ -36,6 +37,7 @@ import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.ParentDataModifier
 import androidx.compose.ui.layout.SubcomposeLayout
 import androidx.compose.ui.layout.onPlaced
+import androidx.compose.ui.node.DelegatableNode
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntRect
 import kotlin.math.roundToInt
@@ -92,6 +94,9 @@ fun OverlayHost(
                                         this then AlignByAnchorVerticalModifier(anchor, side)
                                 }
                             }
+                            // Resolved against the anchor's composition, because the
+                            // subcomposition's parent is the anchor's CompositionContext.
+                            val linkStrategy = LocalOverlayLinkStrategy.current
                             Layout(
                                 { overlay.content(overlayScope) },
                                 Modifier.sizeIn(
@@ -99,7 +104,7 @@ fun OverlayHost(
                                     overlayHostState.coordinates!!.size.height.toDp(),
                                     overlayHostState.coordinates!!.size.width.toDp(),
                                     overlayHostState.coordinates!!.size.height.toDp(),
-                                ),
+                                ) then linkStrategy.contentModifier(overlay.handle),
                                 remember(overlay) { OverlayBoxMeasurePolicy(overlay) }
                             )
                         }
@@ -138,7 +143,59 @@ internal class OverlayState(
     var compositionContext by mutableStateOf(compositionContext)
     var content by mutableStateOf(content)
     var anchorBounds by mutableStateOf<IntRect?>(null)
+    val handle = OverlayHandle()
 }
+
+/**
+ * The two live modifier-node endpoints of a single [Modifier.overlay] call site.
+ *
+ * An overlay's content is composed with the anchor's [CompositionContext], but its layout node is
+ * placed under the [OverlayHost]. Composition locals therefore come from the anchor while
+ * modifier-node traversal, focus and key dispatch all follow the host. Embedders that need
+ * anchor-based ("logical") parentage for those subsystems can reconstruct it from these two nodes;
+ * see [OverlayLinkStrategy].
+ *
+ * Both properties are plain vars rather than snapshot state: they are meant to be read from
+ * modifier-node traversal, not from composition.
+ */
+class OverlayHandle internal constructor() {
+    /** The node installed at the end of the anchor's modifier chain, while it is attached. */
+    var anchorNode: DelegatableNode? = null
+
+    /**
+     * The node installed at the root of the overlay's hosted content, while it is attached — the
+     * seam where the content was re-parented away from [anchorNode], and the point at which an
+     * upward traversal should switch back to the anchor.
+     */
+    var contentNode: DelegatableNode? = null
+}
+
+/**
+ * Lets an embedder splice modifiers into both ends of every overlay, so that the logical
+ * anchor-to-overlay link can be reconstructed across the [OverlayHost] seam.
+ *
+ * Both hooks receive the same [OverlayHandle] instance for a given [Modifier.overlay] call site,
+ * which is how the two ends find each other.
+ */
+interface OverlayLinkStrategy {
+    /**
+     * Applied to the anchor, after [Modifier.overlay]'s own nodes. Note that modifiers a call site
+     * applies *after* `.overlay(...)` are not logical ancestors of the overlay content.
+     */
+    fun anchorModifier(handle: OverlayHandle): Modifier = Modifier
+
+    /**
+     * Applied at the root of the overlay's hosted content, inside the host's subcomposition —
+     * the seam between the host's branch and the overlay. Whatever this installs becomes
+     * [OverlayHandle.contentNode].
+     */
+    fun contentModifier(handle: OverlayHandle): Modifier = Modifier
+}
+
+private object NoOverlayLinkStrategy : OverlayLinkStrategy
+
+val LocalOverlayLinkStrategy: ProvidableCompositionLocal<OverlayLinkStrategy> =
+    staticCompositionLocalOf { NoOverlayLinkStrategy }
 
 private object MatchParentSize : ParentDataModifier {
     override fun Density.modifyParentData(parentData: Any?): Any = OverlayChildData.MatchParentSize

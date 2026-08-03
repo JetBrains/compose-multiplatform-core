@@ -37,6 +37,7 @@ fun Modifier.overlay(
     return composed {
         val overlayHostState = key.current
         val compositionContext = rememberCompositionContext()
+        val linkStrategy = LocalOverlayLinkStrategy.current
         val overlay = remember { OverlayState(compositionContext, overlay) }.apply {
             this.compositionContext = compositionContext
             this.content = overlay
@@ -56,7 +57,7 @@ fun Modifier.overlay(
                         false
                 ).roundToIntRect()
             }
-        }
+        } then linkStrategy.anchorModifier(overlay.handle)
     }
 }
 
