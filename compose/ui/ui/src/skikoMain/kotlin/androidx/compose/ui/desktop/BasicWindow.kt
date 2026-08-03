@@ -14,13 +14,14 @@
  * limitations under the License.
  */
 
-package noria.ui.core
+package androidx.compose.ui.desktop
 
 import androidx.compose.runtime.ProvidableCompositionLocal
 import androidx.compose.runtime.staticCompositionLocalOf
-import androidx.compose.ui.desktop.LightweightWindowId
-import androidx.compose.ui.desktop.Window
 
+// TODO these used to live in `noria.ui.core`, which is now owned entirely by Fleet's
+//  `fleet.compose.noria` module. Fleet still spells them `noria.ui.core.WindowData` /
+//  `noria.ui.core.LocalWindow` and aliases them there; drop the aliases once the noria façade goes.
 data class WindowData(val windowId: LightweightWindowId)
 
 val LocalWindow: ProvidableCompositionLocal<Window> = staticCompositionLocalOf {

@@ -23,6 +23,7 @@ import androidx.compose.ui.desktop.LightweightWindowId
 import androidx.compose.ui.desktop.ApplicationSession
 import androidx.compose.ui.desktop.Window
 import androidx.compose.ui.desktop.WindowCloseRequestReason
+import androidx.compose.ui.desktop.WindowData
 import androidx.compose.ui.desktop.WindowResizeHandle
 import androidx.compose.ui.desktop.WindowScope
 import androidx.compose.ui.desktop.draganddrop.DragAndDropImage
@@ -85,7 +86,6 @@ import kotlinx.coroutines.CancellableContinuation
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.io.files.Path
 import noria.CallbackInterceptor
-import noria.ui.core.WindowData
 import org.jetbrains.desktop.linux.DataSource
 import org.jetbrains.desktop.linux.DesktopTitlebarAction
 import org.jetbrains.desktop.linux.DragAndDropAction
