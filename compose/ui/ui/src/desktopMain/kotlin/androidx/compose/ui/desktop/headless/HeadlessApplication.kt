@@ -71,8 +71,9 @@ import kotlinx.coroutines.withTimeoutOrNull
  * the clipboard is in-memory, and [HeadlessUriHandler] records opened URLs into [FakeBrowser].
  *
  * Lifecycle protocol (ported from Noria's headless backend):
- * - [initialize] installs the event loop and dispatcher override and activates the application;
- *   it may be called again after [resetForReuse] and then REUSES the same event loop.
+ * - [initialize] activates the application FIRST (so a rejected activation cannot clobber a live
+ *   backend's dispatchers), then installs the event loop and dispatcher override; it may be called
+ *   again after [resetForReuse] and then REUSES the same event loop.
  * - [resetForReuse] drains the event loop, uninstalls the dispatcher override and deactivates the
  *   application, but keeps the event loop alive for the next [initialize].
  * - [stopAndJoin] additionally closes the event loop and poisons the object permanently
@@ -96,11 +97,17 @@ object HeadlessApplication : Application {
             check(!shutdown) {
                 "HeadlessApplication has already been shut down and cannot be reinitialized in the same process"
             }
+            // Validate/activate BEFORE touching any dispatcher globals. activateApplication rejects
+            // (throws IllegalStateException) when another backend already owns this JVM, and it has
+            // no side effect that installEventLoop/configure depend on, so running it first means a
+            // rejected activation leaves ComposeUIDispatcherOverride/ComposeSchedulingDispatcher (and
+            // the live backend that owns them) untouched. Idempotent on reuse: activateApplication
+            // accepts re-activating the same, already-active instance.
+            activateApplication(this)
             if (!initialized) {
                 installEventLoop(libraryFolderPath)
             }
             configure(devicePixelRatio, uriHandler)
-            activateApplication(this)
             this
         }
 
