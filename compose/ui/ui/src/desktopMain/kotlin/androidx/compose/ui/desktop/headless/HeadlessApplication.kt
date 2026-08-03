@@ -14,15 +14,28 @@
  * limitations under the License.
  */
 
-@file:OptIn(ExperimentalTime::class)
+package androidx.compose.ui.desktop.headless
 
-package androidx.compose.ui.kdt.headless
-
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.ComposeSchedulingDispatcher
+import androidx.compose.ui.ComposeUIDispatcher
+import androidx.compose.ui.ComposeUIDispatcherOverride
 import androidx.compose.ui.SystemTheme
+import androidx.compose.ui.desktop.Application
+import androidx.compose.ui.desktop.ApplicationSession
+import androidx.compose.ui.desktop.LightweightWindowId
+import androidx.compose.ui.desktop.Screen
+import androidx.compose.ui.desktop.Window
+import androidx.compose.ui.desktop.WindowCloseRequestReason
+import androidx.compose.ui.desktop.activateApplication
+import androidx.compose.ui.desktop.currentApplication
+import androidx.compose.ui.desktop.deactivateApplication
+import androidx.compose.ui.desktop.logging.logger
+import androidx.compose.ui.desktop.removeApplication
 import androidx.compose.ui.hapticfeedback.HapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.InputMode
@@ -32,37 +45,41 @@ import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.pointer.PointerButton
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.PointerIconService
-import androidx.compose.ui.kdt.Application
-import androidx.compose.ui.kdt.KdtMainDispatcherFactory
-import androidx.compose.ui.kdt.LightweightWindowId
-import androidx.compose.ui.kdt.Scene
-import androidx.compose.ui.kdt.Screen
-import androidx.compose.ui.kdt.Window
-import androidx.compose.ui.kdt.activateApplication
-import androidx.compose.ui.kdt.deactivateApplication
-import androidx.compose.ui.kdt.logging.logger
-import androidx.compose.ui.kdt.removeApplication
 import androidx.compose.ui.platform.ClipEntry
+import androidx.compose.ui.platform.LocalClipboard
+import androidx.compose.ui.platform.LocalFontFamilyResolver
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalInputModeManager
+import androidx.compose.ui.platform.LocalPointerIconService
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.UriHandler
-import androidx.compose.ui.platform.makeSynchronizedObject
-import androidx.compose.ui.platform.synchronized
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.createFontFamilyResolver
 import androidx.compose.ui.unit.DpOffset
-import kotlin.time.Clock
 import kotlin.time.Duration.Companion.milliseconds
-import kotlin.time.ExperimentalTime
-import kotlin.time.TimeSource
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeoutOrNull
 
-@ExperimentalTime
+/**
+ * A windowless [Application] backend for tests: an in-process event-loop thread stands in for the
+ * platform main thread ([ComposeUIDispatcher] resolves to it via [ComposeUIDispatcherOverride]),
+ * the clipboard is in-memory, and [HeadlessUriHandler] records opened URLs into [FakeBrowser].
+ *
+ * Lifecycle protocol (ported from Noria's headless backend):
+ * - [initialize] installs the event loop and dispatcher override and activates the application;
+ *   it may be called again after [resetForReuse] and then REUSES the same event loop.
+ * - [resetForReuse] drains the event loop, uninstalls the dispatcher override and deactivates the
+ *   application, but keeps the event loop alive for the next [initialize].
+ * - [stopAndJoin] additionally closes the event loop and poisons the object permanently
+ *   ([initialize] refuses to run after it).
+ */
 object HeadlessApplication : Application {
-    private val lock = makeSynchronizedObject()
+    private val lock = Any()
     private var shutdown = false
     private var initialized = false
     private var lastClosedEventLoopPendingTasksCount = 0
@@ -71,6 +88,7 @@ object HeadlessApplication : Application {
     private var uriHandler: UriHandler = HeadlessUriHandler()
 
     fun initialize(
+        libraryFolderPath: String,
         devicePixelRatio: Double = 1.0,
         uriHandler: UriHandler = HeadlessUriHandler(),
     ): HeadlessApplication =
@@ -79,7 +97,7 @@ object HeadlessApplication : Application {
                 "HeadlessApplication has already been shut down and cannot be reinitialized in the same process"
             }
             if (!initialized) {
-                installEventLoop()
+                installEventLoop(libraryFolderPath)
             }
             configure(devicePixelRatio, uriHandler)
             activateApplication(this)
@@ -88,7 +106,8 @@ object HeadlessApplication : Application {
 
     val current: HeadlessApplication
         get() {
-            check(initialized && !shutdown) {
+            val application = runCatching { currentApplication() }.getOrNull()
+            check(initialized && !shutdown && application === this) {
                 "HeadlessApplication has not been initialized; last closed event loop had $lastClosedEventLoopPendingTasksCount pending tasks"
             }
             return this
@@ -96,7 +115,7 @@ object HeadlessApplication : Application {
 
     private var eventLoopOrNull: HeadlessEventLoop? = null
 
-    private val eventLoop: HeadlessEventLoop
+    internal val eventLoop: HeadlessEventLoop
         get() = checkNotNull(eventLoopOrNull) { "HeadlessApplication has not been initialized" }
 
     private fun configure(
@@ -118,7 +137,12 @@ object HeadlessApplication : Application {
         uriHandler.openUri(uri)
     }
 
-    override val windows = mutableStateMapOf<LightweightWindowId, HeadlessWindow>()
+    override var windows: Map<LightweightWindowId, HeadlessWindow> by mutableStateOf(emptyMap())
+        internal set
+
+    internal fun removeWindow(id: LightweightWindowId) {
+        windows = windows - id
+    }
 
     override var screens: Map<Int, Screen> by mutableStateOf(
         mapOf(0 to HeadlessScreen(devicePixelRatio = devicePixelRatio.toFloat())),
@@ -135,20 +159,27 @@ object HeadlessApplication : Application {
 
     private val quitHandlers = mutableMapOf<String, () -> Boolean>()
 
-    val fontFamilyResolver: FontFamily.Resolver by lazy { createFontFamilyResolver() }
+    val fontFamilyResolver: Lazy<FontFamily.Resolver> = lazy { createFontFamilyResolver() }
 
-    private val pointerIconService: HeadlessPointerIconService = HeadlessPointerIconService
-    internal val inputModeManager: InputModeManager = InputModeManagerImpl(InputMode.Touch) {
-        pointerIconService.setHiddenUntilPointerMoves(it == InputMode.Keyboard)
+    // PointerIconService is an internal interface in this fork, so the property cannot be public;
+    // desktopTest sees internals of desktopMain (friend compilation), which is all tests need.
+    internal val pointerIconService: PointerIconService = HeadlessPointerIconService
+    val inputModeManager: InputModeManager = InputModeManagerImpl(InputMode.Touch) {
+        HeadlessPointerIconService.setHiddenUntilPointerMoves(it == InputMode.Keyboard)
         true
     }
 
     val hapticFeedback: HapticFeedback = NoopHapticFeedback()
 
+    @OptIn(DelicateCoroutinesApi::class)
     override fun quit() {
-        GlobalScope.launch(Dispatchers.Main.immediate) {
+        GlobalScope.launch(ComposeUIDispatcher.immediate) {
             stopAndJoin()
         }
+    }
+
+    override fun close() {
+        runBlocking { stopAndJoin() }
     }
 
     override fun putQuitHandler(id: String, quitHandler: () -> Boolean) {
@@ -163,36 +194,20 @@ object HeadlessApplication : Application {
         // TODO [pavel.sergeev] is the application immediately ready?
     }
 
-    fun createWindow(coroutineScope: CoroutineScope): HeadlessWindow {
-        return createHeadlessWindow(coroutineScope, null) {}
-    }
-
+    // Covariant return type so tests (and Task 8) can reach HeadlessWindow-only members.
     override fun createWindow(
-        scene: Scene<*>,
-        onCloseRequest: () -> Unit,
-    ): Window {
-        return createHeadlessWindow(scene.coroutineScope, scene, onCloseRequest)
-    }
+        session: ApplicationSession,
+        onCloseRequest: (WindowCloseRequestReason) -> Unit,
+    ): HeadlessWindow = HeadlessWindow(
+        application = this,
+        devicePixelRatio = devicePixelRatio.toFloat(),
+        session = session,
+        onCloseRequest = onCloseRequest,
+    )
 
-    private fun createHeadlessWindow(
-        scope: CoroutineScope,
-        scene: Scene<*>?,
-        onCloseRequest: () -> Unit,
-    ): HeadlessWindow {
-        val window = HeadlessWindow(
-            application = this,
-            devicePixelRatio = devicePixelRatio.toFloat(),
-            focusRestorationCoroutineScope = scope,
-            scene = scene,
-            onCloseRequest = onCloseRequest,
-        )
-        windows[window.id] = window
-        return window
-    }
-
-    internal fun removeWindow(id: LightweightWindowId) {
-        windows.remove(id)
-    }
+    /** TestWindow entry point: wraps [coroutineScope] in a fresh [ApplicationSession]. */
+    fun createWindow(coroutineScope: CoroutineScope): HeadlessWindow =
+        createWindow(ApplicationSession(coroutineScope)) { }
 
     override fun prepareNativeWindowResourcesForReuse(id: LightweightWindowId) {
         // No-op for headless
@@ -200,13 +215,17 @@ object HeadlessApplication : Application {
 
     override fun reuseWindow(
         id: LightweightWindowId,
-        scene: Scene<*>,
-        onCloseRequest: () -> Unit,
-    ): Window? {
-        return windows[id]?.apply {
-            this.scene = scene
-            this.onCloseRequest = onCloseRequest
-        }
+        session: ApplicationSession,
+        onCloseRequest: (WindowCloseRequestReason) -> Unit,
+    ): HeadlessWindow? = windows[id]?.apply {
+        // The window's ComposeScene was already built (in its constructor) from the *original*
+        // session's coroutineContext/dataSourceContext; reassigning `session` here cannot change
+        // that scene's context after the fact, so this deliberately keeps the original scene
+        // context and only rebinds the outward-facing session reference and the close-request
+        // handler (Noria's `scene`-reassignment model, HeadlessApplication.kt:229-238, has the
+        // same property: it doesn't retroactively change an already-constructed Scene either).
+        this.session = session
+        this.onCloseRequest = onCloseRequest
     }
 
     override fun disposeReusableNativeWindowResources(id: LightweightWindowId) {
@@ -223,6 +242,20 @@ object HeadlessApplication : Application {
 
     override val nativeApplication: Any
         get() = Unit
+
+    @Composable
+    override fun withCompositionLocal(content: @Composable () -> Unit) {
+        CompositionLocalProvider(
+            LocalUriHandler provides this@HeadlessApplication,
+            LocalClipboard provides this@HeadlessApplication,
+            LocalFontFamilyResolver provides fontFamilyResolver.value,
+            LocalHapticFeedback provides hapticFeedback,
+            LocalPointerIconService provides pointerIconService,
+            LocalInputModeManager provides inputModeManager,
+        ) {
+            content()
+        }
+    }
 
     override suspend fun stopAndJoin() {
         try {
@@ -242,6 +275,7 @@ object HeadlessApplication : Application {
             resetState()
         } finally {
             warnIfEventLoopDidNotBecomeIdle(awaitEventLoopToBecomeIdle())
+            deactivateEventLoop()
             deactivateApplication(this)
         }
     }
@@ -252,33 +286,21 @@ object HeadlessApplication : Application {
 
     override fun getClipEntrySync(): ClipEntry? = clipboardContent
 
-    override suspend fun setClipEntry(clipEntry: ClipEntry) {
+    override suspend fun setClipEntry(clipEntry: ClipEntry?) {
+        clipEntry ?: return
         clipboardContent = clipEntry
     }
 
     override val nativeClipboard: Any = Unit
 
-    private var reconcileInProgress = false
-    internal fun withoutReentrancy(block: () -> Unit) {
-        if (!reconcileInProgress) {
-            reconcileInProgress = true
-            try {
-                block()
-            } finally {
-                reconcileInProgress = false
-            }
-        }
-    }
-
     private suspend fun resetState() {
         quitHandlers.clear()
+        // Sessions are caller-owned (`runSession` structured concurrency) — no render-loop
+        // registry to stop here; dispose whatever windows remain.
         windows.values.toList().forEach { it.dispose() }
-//        while (renderLoops.isNotEmpty()) {
-//            renderLoops.first().stopAndJoin()
-//        }
         clipboardContent = null
         isActive = true
-        reconcileInProgress = false
+        // Font paragraph-cache reset: no compose-side hook yet; see spec §7 follow-up (a913dc9ea28ac).
     }
 
     private suspend fun awaitEventLoopToBecomeIdle(): Int {
@@ -301,17 +323,29 @@ object HeadlessApplication : Application {
     private fun warnIfEventLoopDidNotBecomeIdle(pendingTasksAfterTimeout: Int) {
         if (pendingTasksAfterTimeout > 0) {
             logger.warn(
-                "Timed out after ${HEADLESS_EVENT_LOOP_IDLE_TIMEOUT_MILLIS}ms waiting for the headless event loop to become idle; dropping $pendingTasksAfterTimeout queued tasks during shutdown"
+                "Timed out after ${HEADLESS_EVENT_LOOP_IDLE_TIMEOUT_MILLIS}ms waiting for the headless event loop to become idle; dropping $pendingTasksAfterTimeout queued tasks during shutdown",
             )
         }
     }
 
-    private fun installEventLoop() {
-        val currentEventLoop = createHeadlessEventLoop()
-        eventLoopOrNull = currentEventLoop
-        KdtMainDispatcherFactory.overridingMainDispatcher = HeadlessMainDispatcher(currentEventLoop)
+    private fun installEventLoop(libraryFolderPath: String) {
+        val currentEventLoop = eventLoopOrNull
+            ?: createHeadlessEventLoop(libraryFolderPath).also { eventLoopOrNull = it }
+        ComposeUIDispatcherOverride = HeadlessMainDispatcher(currentEventLoop)
+        ComposeSchedulingDispatcher = ComposeUIDispatcherOverride
         initialized = true
         lastClosedEventLoopPendingTasksCount = 0
+    }
+
+    private fun deactivateEventLoop() {
+        synchronized(lock) {
+            if (eventLoopOrNull == null) {
+                return@synchronized
+            }
+            ComposeUIDispatcherOverride = null
+            ComposeSchedulingDispatcher = null
+            initialized = false
+        }
     }
 
     private fun recycleEventLoop(): HeadlessEventLoop? =
@@ -319,10 +353,13 @@ object HeadlessApplication : Application {
             val currentEventLoop = eventLoopOrNull ?: return@synchronized null
             lastClosedEventLoopPendingTasksCount = currentEventLoop.pendingTasksCount
             eventLoopOrNull = null
-            KdtMainDispatcherFactory.overridingMainDispatcher = null
+            ComposeUIDispatcherOverride = null
+            ComposeSchedulingDispatcher = null
             initialized = false
             currentEventLoop
         }
+
+    // ----- Event-injection API: tests drive windows without a real platform event source -----
 
     fun sendKeyDown(
         key: Key,
@@ -344,7 +381,7 @@ object HeadlessApplication : Application {
         windowId: LightweightWindowId,
         button: PointerButton,
         location: DpOffset,
-        timestamp: Double = Clock.System.now().toEpochMilliseconds() / 1000.0,
+        timestamp: Double = nowEpochSeconds(),
     ) {
         sendWindowEvent(Event.MouseDown(windowId, button, location, timestamp))
     }
@@ -353,7 +390,7 @@ object HeadlessApplication : Application {
         windowId: LightweightWindowId,
         button: PointerButton,
         location: DpOffset,
-        timestamp: Double = Clock.System.now().toEpochMilliseconds() / 1000.0,
+        timestamp: Double = nowEpochSeconds(),
     ) {
         sendWindowEvent(Event.MouseUp(windowId, button, location, timestamp))
     }
@@ -361,7 +398,7 @@ object HeadlessApplication : Application {
     fun sendMouseMove(
         windowId: LightweightWindowId,
         location: DpOffset,
-        timestamp: Double = Clock.System.now().toEpochMilliseconds() / 1000.0,
+        timestamp: Double = nowEpochSeconds(),
     ) {
         sendWindowEvent(Event.MouseMoved(windowId, location, timestamp))
     }
@@ -369,7 +406,7 @@ object HeadlessApplication : Application {
     fun sendMouseEnter(
         windowId: LightweightWindowId,
         location: DpOffset,
-        timestamp: Double = Clock.System.now().toEpochMilliseconds() / 1000.0,
+        timestamp: Double = nowEpochSeconds(),
     ) {
         sendWindowEvent(Event.MouseEntered(windowId, location, timestamp))
     }
@@ -377,24 +414,22 @@ object HeadlessApplication : Application {
     fun sendMouseExit(
         windowId: LightweightWindowId,
         location: DpOffset,
-        timestamp: Double = Clock.System.now().toEpochMilliseconds() / 1000.0,
+        timestamp: Double = nowEpochSeconds(),
     ) {
         sendWindowEvent(Event.MouseExited(windowId, location, timestamp))
     }
 
-    private fun sendWindowEvent(
-        windowEvent: WindowEvent
-    ) {
+    private fun sendWindowEvent(windowEvent: WindowEvent) {
         val window = windows[windowEvent.windowId] ?: return
         window.handleEvent(windowEvent)
     }
 }
 
-private val initialTimestamp = TimeSource.Monotonic.markNow()
 private const val HEADLESS_EVENT_LOOP_IDLE_TIMEOUT_MILLIS = 1_000L
-private val logger = logger<HeadlessApplication>()
+private val logger by lazy { logger<HeadlessApplication>() }
+private fun nowEpochSeconds(): Double = System.currentTimeMillis() / 1000.0
 
-private object HeadlessPointerIconService : PointerIconService {
+internal object HeadlessPointerIconService : PointerIconService {
     override fun getIcon(): PointerIcon = PointerIcon.Default
     override fun setIcon(value: PointerIcon?) {}
     override fun getStylusHoverIcon(): PointerIcon? = null
@@ -402,10 +437,6 @@ private object HeadlessPointerIconService : PointerIconService {
     fun setHiddenUntilPointerMoves(hidden: Boolean) {}
     fun pushHide() {}
     fun popHide() {}
-}
-
-object FakeBrowser {
-    var lastOpenedUrl: String? = null
 }
 
 private class NoopHapticFeedback : HapticFeedback {

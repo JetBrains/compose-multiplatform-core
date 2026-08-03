@@ -2,7 +2,7 @@ package androidx.compose.ui.desktop.headless
 
 
 
-expect fun createHeadlessEventLoop(): HeadlessEventLoop
+expect fun createHeadlessEventLoop(libraryFolderPath: String): HeadlessEventLoop
 
 interface HeadlessEventLoop : AutoCloseable {
     fun dispatch(block: () -> Unit)

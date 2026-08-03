@@ -16,5 +16,23 @@
 
 package androidx.compose.ui.desktop.headless
 
-actual fun createHeadlessEventLoop(libraryFolderPath: String): HeadlessEventLoop =
-    error("Headless event loops are not supported on iOS.")
+import androidx.compose.ui.HeadlessTest
+import kotlin.test.assertEquals
+import kotlin.test.assertNull
+import org.junit.Test
+import org.junit.experimental.categories.Category
+
+@Category(HeadlessTest::class)
+class HeadlessUriHandlerTest {
+    @Test
+    fun openUriIsObservableThroughFakeBrowser() {
+        FakeBrowser.lastOpenedUrl = null
+        try {
+            HeadlessUriHandler().openUri("https://example.com/login")
+            assertEquals("https://example.com/login", FakeBrowser.lastOpenedUrl)
+        } finally {
+            FakeBrowser.lastOpenedUrl = null
+        }
+        assertNull(FakeBrowser.lastOpenedUrl)
+    }
+}
