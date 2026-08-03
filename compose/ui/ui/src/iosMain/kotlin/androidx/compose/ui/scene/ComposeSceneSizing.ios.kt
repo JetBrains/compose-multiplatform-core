@@ -16,12 +16,15 @@
 
 package androidx.compose.ui.scene
 
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.uikit.density
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.toCGSize
+import androidx.compose.ui.unit.toDpSize
 import androidx.compose.ui.unit.toIntSize
 import androidx.compose.ui.window.ComposeContainerView
 import kotlinx.cinterop.CValue
@@ -54,11 +57,12 @@ internal class ComposeSceneSizing(
         }
 
         val measuredSize = if (hasNonZeroSceneExtent) {
-            measureSceneSize(constraints)
+            measureSceneSize(constraints)?.toDpSize(view.density)?.toCGSize()
         } else {
             null
         }
-        return (measuredSize?.toCGSize(view.density) ?: fallbackSizeThatFits(size)).also {
+
+        return (measuredSize ?: fallbackSizeThatFits(size)).also {
             lastSizeThatFitsResult = it
         }
     }
@@ -93,9 +97,7 @@ internal class ComposeSceneSizing(
             size.useContents { height }
         }
 
-        return with(view.density) {
-            DpSize(width.dp, height.dp).toSize().toIntSize().toCGSize(this)
-        }
+        return Size(width = width.toFloat(), height = height.toFloat()).toDpSize(view.density).toCGSize()
     }
 }
 
@@ -104,8 +106,4 @@ private fun CGFloat.toConstraintValue(density: Density): Int {
     val px = with(density) { dp.roundToPx() }
     if (px >= 0 || px == Constraints.Infinity) return px
     throw IllegalArgumentException("Invalid constraint size: $this")
-}
-
-private fun IntSize.toCGSize(density: Density) = with(density) {
-    CGSizeMake(width.toDp().value.toDouble(), height.toDp().value.toDouble())
 }
