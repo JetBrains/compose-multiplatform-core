@@ -20,6 +20,8 @@ package androidx.compose.foundation.internal
 
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.InternalComposeUiApi
+import androidx.compose.ui.desktop.ClipboardEntry
+import androidx.compose.ui.desktop.ClipboardFormat
 import androidx.compose.ui.platform.ClipEntry
 import androidx.compose.ui.platform.Clipboard
 import androidx.compose.ui.text.AnnotatedString
@@ -35,9 +37,14 @@ internal actual suspend fun ClipEntry.readText(): String? {
     if (!this.hasText()) return null
     if (this.fallbackPlainText != null) return this.fallbackPlainText
 
-    if (this.clipboardItems.length == 0) return null
-    val blob = clipboardItems[0]!!.getType(MIME_TYPE_PLAIN_TEXT_JS).await<Blob>()
-    return getTextFromBlob(blob).await<JsString>().toString()
+    val items = this.clipboardItems
+    if (items != null) {
+        if (items.length == 0) return null
+        val blob = items[0]!!.getType(MIME_TYPE_PLAIN_TEXT_JS).await<Blob>()
+        return getTextFromBlob(blob).await<JsString>().toString()
+    }
+    return (this.nativeClipEntry as? ClipboardEntry)
+        ?.getFirstOrNullForFormat(ClipboardFormat.Utf8PlainText)
 }
 
 internal actual suspend fun ClipEntry.readAnnotatedString(): AnnotatedString? {
@@ -54,8 +61,13 @@ internal actual fun AnnotatedString?.toClipEntry(): ClipEntry? {
 internal actual fun ClipEntry?.hasText(): Boolean {
     if (this == null) return false
     if (this.fallbackPlainText != null) return true
-    if (this.clipboardItems.length == 0) return false
-    return doesJsArrayContainValue(this.clipboardItems.get(0)!!.types, MIME_TYPE_PLAIN_TEXT_JS)
+    val items = this.clipboardItems
+    if (items != null) {
+        if (items.length == 0) return false
+        return doesJsArrayContainValue(items.get(0)!!.types, MIME_TYPE_PLAIN_TEXT_JS)
+    }
+    return (this.nativeClipEntry as? ClipboardEntry)
+        ?.getFirstOrNullForFormatSync(ClipboardFormat.Utf8PlainText) != null
 }
 
 internal actual fun Clipboard.isReadSupported(): Boolean =

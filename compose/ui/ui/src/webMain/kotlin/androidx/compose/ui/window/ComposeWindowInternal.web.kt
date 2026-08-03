@@ -1127,14 +1127,14 @@ private fun releasePointerCapture(target: EventTarget, pointerId: Int) {
     js("try { target.releasePointerCapture(pointerId) } catch (e) {}")
 }
 
-private fun setPointerCapture(target: EventTarget, pointerId: Int) {
+internal fun setPointerCapture(target: EventTarget, pointerId: Int) {
     js("try { target.setPointerCapture(pointerId) } catch (e) {}")
 }
 
-private fun getCoalescedEvents(pointerEvent: PointerEvent): JsArray<PointerEvent> =
+internal fun getCoalescedEvents(pointerEvent: PointerEvent): JsArray<PointerEvent> =
     js("pointerEvent.getCoalescedEvents ? pointerEvent.getCoalescedEvents() : []")
 
-private fun PointerEvent.toScenePointerEvent(
+internal fun PointerEvent.toScenePointerEvent(
     containerOffset: Offset,
     density: Density,
     pointerType: PointerType = PointerType.Touch
@@ -1217,7 +1217,7 @@ private fun clientYOf(event: PointerEvent): Double = js("event.clientY")
 
 // strings checks are faster on a JS side
 // language=js
-private fun isTouchEvent(event: PointerEvent): Boolean = js("event.pointerType === 'touch'")
+internal fun isTouchEvent(event: PointerEvent): Boolean = js("event.pointerType === 'touch'")
 
 // strings checks are faster on a JS side
 // language=js
@@ -1244,7 +1244,7 @@ private fun getPointerEventCode(event: PointerEvent): Int = js(
     }"""
 )
 
-private fun PointerEvent.getPointerEventType(): PointerEventType =
+internal fun PointerEvent.getPointerEventType(): PointerEventType =
     when (getPointerEventCode(this)) {
         PointerEventType.Press.value -> PointerEventType.Press
         PointerEventType.Release.value -> PointerEventType.Release
