@@ -1449,6 +1449,313 @@ actual value class Key(val keyCode: Long) {
 
         /** Numeric keypad Delete key. Unsupported on Android. */
         actual val NumPadDelete = Key(-1000000010)
+
+        // Vendored international-layout symbols (extraction dossier §forked-key-constants);
+        // synthetic negative keycodes continuing this file's existing block past -1000000010.
+        // Unsupported on Android (no native keycode); values match the other four actuals'
+        // -1000000209..-1000000309 block for cross-target consistency.
+        /** 'á' key (international layouts). */
+        actual val AAcute = Key(-1000000209L)
+
+        /** 'ă' key (international layouts). */
+        actual val ABreve = Key(-1000000210L)
+
+        /** 'â' key (international layouts). */
+        actual val ACircumflex = Key(-1000000211L)
+
+        /** 'æ' key (international layouts). */
+        actual val Ae = Key(-1000000212L)
+
+        /** 'à' key (international layouts). */
+        actual val AGrave = Key(-1000000213L)
+
+        /** 'ą' key (international layouts). */
+        actual val AOgonek = Key(-1000000214L)
+
+        /** 'å' key (international layouts). */
+        actual val ARing = Key(-1000000215L)
+
+        /** 'ä' key (international layouts). */
+        actual val AUmlaut = Key(-1000000216L)
+
+        /** 'ć' key (international layouts). */
+        actual val CAcute = Key(-1000000217L)
+
+        /** 'č' key (international layouts). */
+        actual val CCaron = Key(-1000000218L)
+
+        /** 'ç' key (international layouts). */
+        actual val CCedilla = Key(-1000000219L)
+
+        /** 'đ' key (international layouts). */
+        actual val DStroke = Key(-1000000220L)
+
+        /** 'é' key (international layouts). */
+        actual val EAcute = Key(-1000000221L)
+
+        /** 'ě' key (international layouts). */
+        actual val ECaron = Key(-1000000222L)
+
+        /** 'ê' key (international layouts). */
+        actual val ECircumflex = Key(-1000000223L)
+
+        /** 'ë' key (international layouts). */
+        actual val EDiaeresis = Key(-1000000224L)
+
+        /** 'ė' key (international layouts). */
+        actual val EDot = Key(-1000000225L)
+
+        /** 'è' key (international layouts). */
+        actual val EGrave = Key(-1000000226L)
+
+        /** 'ŋ' key (international layouts). */
+        actual val Eng = Key(-1000000227L)
+
+        /** 'ę' key (international layouts). */
+        actual val EOgonek = Key(-1000000228L)
+
+        /** 'ð' key (international layouts). */
+        actual val Eth = Key(-1000000229L)
+
+        /** 'ğ' key (international layouts). */
+        actual val GBreve = Key(-1000000230L)
+
+        /** 'ġ' key (international layouts). */
+        actual val GDot = Key(-1000000231L)
+
+        /** 'ħ' key (international layouts). */
+        actual val HStroke = Key(-1000000232L)
+
+        /** 'í' key (international layouts). */
+        actual val IAcute = Key(-1000000233L)
+
+        /** 'î' key (international layouts). */
+        actual val ICircumflex = Key(-1000000234L)
+
+        /** 'ı' key (international layouts). */
+        actual val IDotless = Key(-1000000235L)
+
+        /** 'ì' key (international layouts). */
+        actual val IGrave = Key(-1000000236L)
+
+        /** 'į' key (international layouts). */
+        actual val IOgonek = Key(-1000000237L)
+
+        /** 'ľ' key (international layouts). */
+        actual val LCaron = Key(-1000000238L)
+
+        /** 'ł' key (international layouts). */
+        actual val LStroke = Key(-1000000239L)
+
+        /** 'ň' key (international layouts). */
+        actual val NCaron = Key(-1000000240L)
+
+        /** 'ñ' key (international layouts). */
+        actual val NTilde = Key(-1000000241L)
+
+        /** 'ó' key (international layouts). */
+        actual val OAcute = Key(-1000000242L)
+
+        /** 'ô' key (international layouts). */
+        actual val OCircumflex = Key(-1000000243L)
+
+        /** 'ő' key (international layouts). */
+        actual val ODoubleAcute = Key(-1000000244L)
+
+        /** 'ò' key (international layouts). */
+        actual val OGrave = Key(-1000000245L)
+
+        /** 'ơ' key (international layouts). */
+        actual val OHorn = Key(-1000000246L)
+
+        /** 'ö' key (international layouts). */
+        actual val OUmlaut = Key(-1000000247L)
+
+        /** 'ø' key (international layouts). */
+        actual val OStroke = Key(-1000000248L)
+
+        /** 'õ' key (international layouts). */
+        actual val OTilde = Key(-1000000249L)
+
+        /** 'ř' key (international layouts). */
+        actual val RCaron = Key(-1000000250L)
+
+        /** 'š' key (international layouts). */
+        actual val SCaron = Key(-1000000251L)
+
+        /** 'ş' key (international layouts). */
+        actual val SCedilla = Key(-1000000252L)
+
+        /** 'ə' key (international layouts). */
+        actual val Schwa = Key(-1000000253L)
+
+        /** 'ș' key (international layouts). */
+        actual val SComma = Key(-1000000254L)
+
+        /** 'ß' key (international layouts). */
+        actual val SharpS = Key(-1000000255L)
+
+        /** 'ť' key (international layouts). */
+        actual val TCaron = Key(-1000000256L)
+
+        /** 'ț' key (international layouts). */
+        actual val TComma = Key(-1000000257L)
+
+        /** 'þ' key (international layouts). */
+        actual val Thorn = Key(-1000000258L)
+
+        /** 'ŧ' key (international layouts). */
+        actual val TStroke = Key(-1000000259L)
+
+        /** 'ú' key (international layouts). */
+        actual val UAcute = Key(-1000000260L)
+
+        /** 'û' key (international layouts). */
+        actual val UCircumflex = Key(-1000000261L)
+
+        /** 'ű' key (international layouts). */
+        actual val UDoubleAcute = Key(-1000000262L)
+
+        /** 'ù' key (international layouts). */
+        actual val UGrave = Key(-1000000263L)
+
+        /** 'ư' key (international layouts). */
+        actual val UHorn = Key(-1000000264L)
+
+        /** 'ū' key (international layouts). */
+        actual val UMacron = Key(-1000000265L)
+
+        /** 'ų' key (international layouts). */
+        actual val UOgonek = Key(-1000000266L)
+
+        /** 'ů' key (international layouts). */
+        actual val URing = Key(-1000000267L)
+
+        /** 'ü' key (international layouts). */
+        actual val UUmlaut = Key(-1000000268L)
+
+        /** 'ý' key (international layouts). */
+        actual val YAcute = Key(-1000000269L)
+
+        /** 'ž' key (international layouts). */
+        actual val ZCaron = Key(-1000000270L)
+
+        /** 'ż' key (international layouts). */
+        actual val ZDot = Key(-1000000271L)
+
+        /** '´' key (international layouts). */
+        actual val AcuteAccent = Key(-1000000272L)
+
+        /** '&' key (international layouts). */
+        actual val Ampersand = Key(-1000000273L)
+
+        /** '*' key (international layouts). */
+        actual val Asterisk = Key(-1000000274L)
+
+        /** '˘' key (international layouts). */
+        actual val Breve = Key(-1000000275L)
+
+        /** 'ˇ' key (international layouts). */
+        actual val Caron = Key(-1000000276L)
+
+        /** '¸' key (international layouts). */
+        actual val Cedilla = Key(-1000000277L)
+
+        /** '^' key (international layouts). */
+        actual val CircumflexAccent = Key(-1000000278L)
+
+        /** ':' key (international layouts). */
+        actual val Colon = Key(-1000000279L)
+
+        /** '¨' key (international layouts). */
+        actual val Diaeresis = Key(-1000000280L)
+
+        /** '$' key (international layouts). */
+        actual val DollarSign = Key(-1000000281L)
+
+        /** '₫' key (international layouts). */
+        actual val DongSign = Key(-1000000282L)
+
+        /** '˙' key (international layouts). */
+        actual val DotAbove = Key(-1000000283L)
+
+        /** ' ̣' key (international layouts). */
+        actual val DotBelow = Key(-1000000284L)
+
+        /** '˝' key (international layouts). */
+        actual val DoubleAcuteAccent = Key(-1000000285L)
+
+        /** '!' key (international layouts). */
+        actual val ExclamationMark = Key(-1000000286L)
+
+        /** '>' key (international layouts). */
+        actual val GreaterSign = Key(-1000000287L)
+
+        /** ' ̉' key (international layouts). */
+        actual val HookAbove = Key(-1000000288L)
+
+        /** '¡' key (international layouts). */
+        actual val InvertedExclamationMark = Key(-1000000289L)
+
+        /** '¿' key (international layouts). */
+        actual val InvertedQuestionMark = Key(-1000000290L)
+
+        /** '{' key (international layouts). */
+        actual val LeftBrace = Key(-1000000291L)
+
+        /** '(' key (international layouts). */
+        actual val LeftParenthesis = Key(-1000000292L)
+
+        /** '<' key (international layouts). */
+        actual val LessSign = Key(-1000000293L)
+
+        /** '„' key (international layouts). */
+        actual val LowQuotationMark = Key(-1000000294L)
+
+        /** '¯' key (international layouts). */
+        actual val Macron = Key(-1000000295L)
+
+        /** 'º' key (international layouts). */
+        actual val MasculineOrdinalIndicator = Key(-1000000296L)
+
+        /** '#' key (international layouts). */
+        actual val NumberSign = Key(-1000000297L)
+
+        /** '˛' key (international layouts). */
+        actual val Ogonek = Key(-1000000298L)
+
+        /** '£' key (international layouts). */
+        actual val PoundSign = Key(-1000000299L)
+
+        /** '"' key (international layouts). */
+        actual val QuotationMark = Key(-1000000300L)
+
+        /** ' ֿ' key (international layouts). */
+        actual val Rafe = Key(-1000000301L)
+
+        /** '}' key (international layouts). */
+        actual val RightBrace = Key(-1000000302L)
+
+        /** ')' key (international layouts). */
+        actual val RightParenthesis = Key(-1000000303L)
+
+        /** '˚' key (international layouts). */
+        actual val RingAbove = Key(-1000000304L)
+
+        /** '§' key (international layouts). */
+        actual val SectionSign = Key(-1000000305L)
+
+        /** '²' key (international layouts). */
+        actual val SuperscriptTwo = Key(-1000000306L)
+
+        /** '~' key (international layouts). */
+        actual val Tilde = Key(-1000000307L)
+
+        /** '_' key (international layouts). */
+        actual val Underscore = Key(-1000000308L)
+
+        /** '|' key (international layouts). */
+        actual val VerticalLine = Key(-1000000309L)
     }
 
     actual override fun toString(): String = "Key code: $keyCode"
