@@ -35,12 +35,14 @@ def prebuiltsRoot = new File(
 def rootProjectRepositories
 
 apply from: "buildSrc-fork/settingsScripts/out-setup.groovy"
+apply from: "buildSrc-fork/androidxSnapshotRepos.gradle"
 
 getGradle().beforeProject { project ->
     // Migrate to dependencyResolutionManagement.repositories when
     // https://github.com/gradle/gradle/issues/17295 is fixed
     if (project.path == ":") {
         repos.addMavenRepositories(project.repositories)
+        androidxSnapshots.addRepositories(project.repositories, supportRootFolder)
         rootProjectRepositories = project.repositories
     } else {
         // Performance optimization because it is more efficient to reuse
@@ -48,6 +50,7 @@ getGradle().beforeProject { project ->
         // on each project
         project.repositories.addAll(rootProjectRepositories)
     }
+    androidxSnapshots.disableChangingModuleCache(project)
     project.ext.supportRootFolder = supportRootFolder
     project.ext.prebuiltsRoot = prebuiltsRoot
     def checkoutRoot = new File("${buildscript.sourceFile.parent}")
