@@ -43,7 +43,6 @@ import androidx.compose.ui.window.WindowDecoration
 import androidx.compose.ui.window.WindowPlacement
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.io.files.Path
-import noria.ui.core.WindowData
 
 interface WindowScope {
     val application: Application
