@@ -22,6 +22,7 @@ object KLoggers {
       ConsoleKLoggerFactory
 
   fun logger(owner: KClass<*>): KLogger = loggerFactory.logger(owner)
+  internal fun logger(name: String): KLogger = loggerFactory.logger(name)
 }
 
 inline fun <reified T> logger(): KLogger = KLoggers.logger(T::class)

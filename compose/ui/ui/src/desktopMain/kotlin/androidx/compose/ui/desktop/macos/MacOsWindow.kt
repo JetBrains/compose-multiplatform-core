@@ -14,9 +14,7 @@
  * limitations under the License.
  */
 
-@file:OptIn(ExperimentalComposeUiApi::class, InternalComposeUiApi::class,
-    ExperimentalAtomicApi::class
-)
+@file:OptIn(ExperimentalComposeUiApi::class, InternalComposeUiApi::class)
 
 package androidx.compose.ui.desktop.macos
 
@@ -27,6 +25,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.mutableStateSetOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.InternalComposeUiApi
@@ -82,10 +81,8 @@ import androidx.compose.ui.desktop.logging.logger
 import androidx.compose.ui.scene.CanvasLayersComposeScene
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.enableSavedStateHandles
-import kotlin.concurrent.atomics.AtomicReference
-import kotlin.concurrent.atomics.ExperimentalAtomicApi
 import kotlin.math.ceil
-import kotlin.time.TimeSource
+import kotlinx.coroutines.launch
 import kotlinx.io.files.Path
 import noria.CallbackInterceptor
 import noria.ui.core.LocalWindow
@@ -139,13 +136,30 @@ class MacOsWindow internal constructor(
 
     private val pictureRecorder = PictureRecorder()
     private var displayLink: DisplayLink? = null
-    private val displayLinkFrameStartTimeMark: AtomicReference<TimeMarkWrapper?> =
-        AtomicReference(null)
+    private val displayLinkFramePump = DisplayLinkFramePump<PresentablePicture>(
+        isDisposed = { isDisposed },
+        isFrameRequested = { isFrameRequested },
+        setFrameRequested = { isFrameRequested = it },
+        dispatchOnMain = { block ->
+            GrandCentralDispatch.dispatchOnMain(highPriority = true, f = block)
+        },
+        preparePicture = ::preparePicture,
+        presentAsync = { presentablePicture, onComplete ->
+            viewContext.presentAsync(
+                presentablePicture, waitForCATransaction = false,
+                onComplete = onComplete,
+            )
+        },
+        logError = { throwable, message -> logger.error(throwable) { message } },
+    )
+
+    private var titleField by mutableStateOf(nativeWindow.title)
 
     // todo[unterhofer] Make reactive
     override var title: String
-        get() = nativeWindow.title
+        get() = titleField
         set(value) {
+            titleField = value
             if (!isDisposed) {
                 nativeWindow.title = value
             }
@@ -483,7 +497,10 @@ class MacOsWindow internal constructor(
         override fun onLayoutChange(semanticsOwner: SemanticsOwner, semanticsNodeId: Int) = Unit
     }
 
-    private val composeScene: ComposeScene = CanvasLayersComposeScene(
+    // internal (not private): MacOsApplication's DragAndDropHandler source callbacks need to open
+    // a frame transaction on this window's scene around AIR-6419-sensitive user-callback dispatch
+    // (see onDragSourceSessionEndedAt in MacOsApplication.kt).
+    internal val composeScene: ComposeScene = CanvasLayersComposeScene(
         density = density,
         layoutDirection = layoutDirection,
         size = contentSizeInPx(),
@@ -701,7 +718,7 @@ class MacOsWindow internal constructor(
             application.windows -= id
             composeScene.close()
             architectureComponentsOwner.setLifecycleState(Lifecycle.State.DESTROYED)
-            if (id !in application.reusableNativeWindowResources) {
+            if (!application.reusableNativeWindowResources.peekContains(id)) {
                 nativeWindow.close()
                 nativeWindowId.destroyLightweightWindowId()
                 application.desktopGpuContext.destroyMetalViewContext(viewContext)
@@ -753,67 +770,28 @@ class MacOsWindow internal constructor(
         return PresentablePicture(pictureRecorder.finishRecordingAsPicture(), size)
     }
 
-    private class TimeMarkWrapper(val timeMark: TimeSource.Monotonic.ValueTimeMark)
-
     private fun setupDisplayLink() {
         if (!nativeWindow.isVisible) {
             return
         }
         displayLink?.close()
         displayLink = null
-        displayLink = DisplayLink.create(nativeWindow.screenId()) {
-            val frameStartTimeMarkWrapper = TimeMarkWrapper(TimeSource.Monotonic.markNow())
-            if (
-                !isDisposed &&
-                isFrameRequested &&
-                displayLinkFrameStartTimeMark.compareAndSet(null, frameStartTimeMarkWrapper)
-            ) {
-                GrandCentralDispatch.dispatchOnMain(highPriority = true) {
-                    isFrameRequested = false
-                    try {
-                        preparePicture()?.let { presentablePicture ->
-                            try {
-                                viewContext.presentAsync(
-                                    presentablePicture, waitForCATransaction = false,
-                                    onComplete = {
-                                        presentablePicture.close()
-                                        val elapsedTime = displayLinkFrameStartTimeMark
-                                            .exchange(null)!!
-                                            .timeMark
-                                            .elapsedNow()
-                                        if (elapsedTime.inWholeMilliseconds > 10) {
-                                            logger.debug("Long frame: ${elapsedTime}")
-                                        }
-                                    },
-                                )
-                            } catch (throwable: Throwable) {
-                                logger.error(throwable) { "Could not schedule frame presentation" }
-                                isFrameRequested = true
-                                displayLinkFrameStartTimeMark.compareAndSet(
-                                    frameStartTimeMarkWrapper,
-                                    null,
-                                )
-                                presentablePicture.close()
-                            }
-                        } ?: run {
-                            isFrameRequested = true
-                            displayLinkFrameStartTimeMark.compareAndSet(
-                                frameStartTimeMarkWrapper,
-                                null,
-                            )
-                        }
-                    } catch (throwable: Throwable) {
-                        logger.error(throwable) { "Could not prepare frame" }
-                        isFrameRequested = true
-                        displayLinkFrameStartTimeMark.compareAndSet(
-                            frameStartTimeMarkWrapper,
-                            null,
-                        )
-                    }
-                }
+        val link = DisplayLink.create(nativeWindow.screenId()) {
+            displayLinkFramePump.onDisplayLinkTick()
+        } ?: run {
+            // DisplayLink.create returns null when no active display is available (machine
+            // asleep, all screens disconnected); the failure is already logged natively. The
+            // WindowChangedOcclusionState(visible, displayLink == null) handler is the retry
+            // path, so leave the field null and make the starved recreate visible in the log.
+            logger.warn {
+                "Could not create a display link for screen ${nativeWindow.screenId()}; " +
+                    "repainting is stalled until the window becomes visible again or its " +
+                    "screen changes"
             }
+            return
         }
-        displayLink!!.setRunning(true)
+        displayLink = link
+        link.setRunning(true)
     }
 
     private fun repaintSynchronously() {
@@ -943,11 +921,24 @@ class MacOsWindow internal constructor(
                         result
                     }
                     is Event.KeyDown -> {
-                        // 🚧Hacky code here:
-                        // We send handled event to the Application menu to blink the action item
-                        // It wouldn't lead to second action execution, because in the current menu
-                        // implementation we do actual work only when the item was activated via
-                        // the menu and not via shortcut
+                        // KeyDown ordering invariant (AIR-6419):
+                        //  1. IME gets first refusal: macOsTextInputSessionOwner.offerEventBefore-
+                        //     SendingToApplication runs first, inside inputStateTracker's
+                        //     sendKeyEvent (above, via updateStateAndSendEvents).
+                        //  2. Compose dispatch happens inside a frame transaction: still inside
+                        //     that same sendKeyEvent, composeScene.withFrameTransaction wraps
+                        //     onPreviewKeyEvent / composeScene.sendKeyEvent / onKeyEvent.
+                        //  3. We UNCONDITIONALLY call offerCurrentEvent() below, regardless of the
+                        //     Compose result. This is menu-blink only (visual highlight of the
+                        //     matching menu item) — it can never cause a second execution of the
+                        //     action, because Fleet's menu callbacks ignore Trigger.KEYSTROKE and
+                        //     only run on menu/mouse activation (Trigger.MENU).
+                        //  4. The COMPOSE result (`result`, computed above — not anything
+                        //     offerCurrentEvent returns) is what we hand back to native: Stop
+                        //     claims the key as handled by performKeyEquivalent; Continue lets
+                        //     AppKit's own menu-equivalent scan run natively. This is what keeps
+                        //     system shortcuts (Cmd+H, Cmd+Q, ...) reaching the native path even
+                        //     though every KeyDown is routed through Compose first.
                         AppMenuManager.offerCurrentEvent()
                         result
                     }
@@ -988,6 +979,7 @@ class MacOsWindow internal constructor(
     private var contentState = mutableStateOf<(@Composable WindowScope.() -> Unit)?>(null)
     private var sceneContentInstalled = false
 
+    @OptIn(InternalCoreApi::class)
     private fun installSceneContentIfNeeded() {
         if (sceneContentInstalled) return
         sceneContentInstalled = true
@@ -1002,6 +994,15 @@ class MacOsWindow internal constructor(
                 LocalTextInputSessionOwner provides macOsTextInputSessionOwner,
             ) {
                 contentState.value?.invoke(windowScope)
+            }
+
+            // Refresh hit testing under a stationary pointer after relayout. Queued via the scene's
+            // (non-immediate) dispatcher so new SuspendingPointerInputFilters are already subscribed;
+            // the tracker's generation check cancels stale refreshes as soon as a real event arrives.
+            rememberCoroutineScope().launch {
+                inputStateTracker
+                    .prepareSyntheticPointerEventAfterRelayoutIfNecessary()
+                    ?.let(inputStateTracker::sendSyntheticPointerEventAfterRelayoutIfCurrent)
             }
         }
     }

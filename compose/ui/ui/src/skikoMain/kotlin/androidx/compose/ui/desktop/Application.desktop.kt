@@ -210,7 +210,7 @@ suspend fun Application.runSession(
     vararg locals: ProvidedValue<*>,
     content: @Composable () -> Unit,
 ) {
-    withContext(ComposeUIDispatcher + frameClock) {
+    withContext(ComposeUIDispatcher + frameClock + noWindowAnimationCoroutineContext { windows.isNotEmpty() }) {
         val session = ApplicationSession(
             coroutineScope = this,
             dataSourceContext = dataSourceContext,

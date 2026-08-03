@@ -280,113 +280,113 @@ private fun keyFromAsciiSymbols(text: String, modifiers: KeyModifiersSet): Key? 
 /**
  * Those symbols might be on the base layer for non-US keyboard layout.
  */
-private fun keyFromInternationalSymbols(text: String): Key? {
+internal fun keyFromInternationalSymbols(text: String): Key? {
     return when (text) {
-//        "á" -> Key.AAcute
-//        "ă" -> Key.ABreve
-//        "â" -> Key.ACircumflex
-//        "æ" -> Key.Ae
-//        "à" -> Key.AGrave
-//        "ą" -> Key.AOgonek
-//        "å" -> Key.ARing
-//        "ä" -> Key.AUmlaut
-//        "ć" -> Key.CAcute
-//        "č" -> Key.CCaron
-//        "ç" -> Key.CCedilla
-//        "đ" -> Key.DStroke
-//        "é" -> Key.EAcute
-//        "ě" -> Key.ECaron
-//        "ê" -> Key.ECircumflex
-//        "ë" -> Key.EDiaeresis
-//        "ė" -> Key.EDot
-//        "è" -> Key.EGrave
-//        "ŋ" -> Key.Eng
-//        "ę" -> Key.EOgonek
-//        "ð" -> Key.Eth
-//        "ğ" -> Key.GBreve
-//        "ġ" -> Key.GDot
-//        "ħ" -> Key.HStroke
-//        "í" -> Key.IAcute
-//        "î" -> Key.ICircumflex
-//        "ı" -> Key.IDotless
-//        "ì" -> Key.IGrave
-//        "į" -> Key.IOgonek
-//        "ľ" -> Key.LCaron
-//        "ł" -> Key.LStroke
-//        "ň" -> Key.NCaron
-//        "ñ" -> Key.NTilde
-//        "ó" -> Key.OAcute
-//        "ô" -> Key.OCircumflex
-//        "ő" -> Key.ODoubleAcute
-//        "ò" -> Key.OGrave
-//        "ơ" -> Key.OHorn
-//        "ö" -> Key.OUmlaut
-//        "ø" -> Key.OStroke
-//        "õ" -> Key.OTilde
-//        "ř" -> Key.RCaron
-//        "š" -> Key.SCaron
-//        "ş" -> Key.SCedilla
-//        "ə" -> Key.Schwa
-//        "ș" -> Key.SComma
-//        "ß" -> Key.SharpS
-//        "ť" -> Key.TCaron
-//        "ț" -> Key.TComma
-//        "þ" -> Key.Thorn
-//        "ŧ" -> Key.TStroke
-//        "ú" -> Key.UAcute
-//        "û" -> Key.UCircumflex
-//        "ű" -> Key.UDoubleAcute
-//        "ù" -> Key.UGrave
-//        "ư" -> Key.UHorn
-//        "ū" -> Key.UMacron
-//        "ų" -> Key.UOgonek
-//        "ů" -> Key.URing
-//        "ü" -> Key.UUmlaut
-//        "ý" -> Key.YAcute
-//        "ž" -> Key.ZCaron
-//        "ż" -> Key.ZDot
-//
-//        "\u00B4" -> Key.AcuteAccent // ´
-//        "&" -> Key.Ampersand
-//        "*" -> Key.Asterisk
+        "á" -> Key.AAcute
+        "ă" -> Key.ABreve
+        "â" -> Key.ACircumflex
+        "æ" -> Key.Ae
+        "à" -> Key.AGrave
+        "ą" -> Key.AOgonek
+        "å" -> Key.ARing
+        "ä" -> Key.AUmlaut
+        "ć" -> Key.CAcute
+        "č" -> Key.CCaron
+        "ç" -> Key.CCedilla
+        "đ" -> Key.DStroke
+        "é" -> Key.EAcute
+        "ě" -> Key.ECaron
+        "ê" -> Key.ECircumflex
+        "ë" -> Key.EDiaeresis
+        "ė" -> Key.EDot
+        "è" -> Key.EGrave
+        "ŋ" -> Key.Eng
+        "ę" -> Key.EOgonek
+        "ð" -> Key.Eth
+        "ğ" -> Key.GBreve
+        "ġ" -> Key.GDot
+        "ħ" -> Key.HStroke
+        "í" -> Key.IAcute
+        "î" -> Key.ICircumflex
+        "ı" -> Key.IDotless
+        "ì" -> Key.IGrave
+        "į" -> Key.IOgonek
+        "ľ" -> Key.LCaron
+        "ł" -> Key.LStroke
+        "ň" -> Key.NCaron
+        "ñ" -> Key.NTilde
+        "ó" -> Key.OAcute
+        "ô" -> Key.OCircumflex
+        "ő" -> Key.ODoubleAcute
+        "ò" -> Key.OGrave
+        "ơ" -> Key.OHorn
+        "ö" -> Key.OUmlaut
+        "ø" -> Key.OStroke
+        "õ" -> Key.OTilde
+        "ř" -> Key.RCaron
+        "š" -> Key.SCaron
+        "ş" -> Key.SCedilla
+        "ə" -> Key.Schwa
+        "ș" -> Key.SComma
+        "ß" -> Key.SharpS
+        "ť" -> Key.TCaron
+        "ț" -> Key.TComma
+        "þ" -> Key.Thorn
+        "ŧ" -> Key.TStroke
+        "ú" -> Key.UAcute
+        "û" -> Key.UCircumflex
+        "ű" -> Key.UDoubleAcute
+        "ù" -> Key.UGrave
+        "ư" -> Key.UHorn
+        "ū" -> Key.UMacron
+        "ų" -> Key.UOgonek
+        "ů" -> Key.URing
+        "ü" -> Key.UUmlaut
+        "ý" -> Key.YAcute
+        "ž" -> Key.ZCaron
+        "ż" -> Key.ZDot
+
+        "\u00B4" -> Key.AcuteAccent // ´
+        "&" -> Key.Ampersand
+        "*" -> Key.Asterisk
         "@" -> Key.At
-//        "\u02D8" -> Key.Breve // ˘
-//        "\u02C7" -> Key.Caron // ˇ
-//        "\u00B8" -> Key.Cedilla // ¸
-//        "^" -> Key.CircumflexAccent
-//        ":" -> Key.Colon
-//        "\u00A8" -> Key.Diaeresis // ¨
-//        "$" -> Key.DollarSign
-//        "\u20AB" -> Key.DongSign // ₫
-//        "\u02D9" -> Key.DotAbove // ˙
-//        // MacOS prepends some symbols with Space
-//        "\u0020\u0323" -> Key.DotBelow //  ̣
-//        "\u02DD" -> Key.DoubleAcuteAccent // ˝
-//        "!" -> Key.ExclamationMark
-//        ">" -> Key.GreaterSign
-//        "\u0020\u0309" -> Key.HookAbove // ̉
-//        "\u00A1" -> Key.InvertedExclamationMark // ¡
-//        "\u00BF" -> Key.InvertedQuestionMark // ¿
-//        "{" -> Key.LeftBrace
-//        "(" -> Key.LeftParenthesis
-//        "<" -> Key.LessSign
-//        "\u201E" -> Key.LowQuotationMark // „
-//        "\u00AF" -> Key.Macron // ¯
-//        "\u00BA" -> Key.MasculineOrdinalIndicator // º
-//        "#" -> Key.NumberSign
-//        "\u02DB" -> Key.Ogonek // ˛
-//        "+" -> Key.Plus
-//        "\u00A3" -> Key.PoundSign // £
-//        "\"" -> Key.QuotationMark
-//        "\u0020\u05BF" -> Key.Rafe // ֿ
-//        "}" -> Key.RightBrace
-//        ")" -> Key.RightParenthesis
-//        "\u02DA" -> Key.RingAbove // ˚
-//        "\u00A7" -> Key.SectionSign // §
-//        "\u00B2" -> Key.SuperscriptTwo // ²
-//        "~" -> Key.Tilde
-//        "_" -> Key.Underscore
-//        "|" -> Key.VerticalLine
+        "\u02D8" -> Key.Breve // ˘
+        "\u02C7" -> Key.Caron // ˇ
+        "\u00B8" -> Key.Cedilla // ¸
+        "^" -> Key.CircumflexAccent
+        ":" -> Key.Colon
+        "\u00A8" -> Key.Diaeresis // ¨
+        "$" -> Key.DollarSign
+        "\u20AB" -> Key.DongSign // ₫
+        "\u02D9" -> Key.DotAbove // ˙
+        // MacOS prepends some symbols with Space
+        "\u0020\u0323" -> Key.DotBelow //  ̣
+        "\u02DD" -> Key.DoubleAcuteAccent // ˝
+        "!" -> Key.ExclamationMark
+        ">" -> Key.GreaterSign
+        "\u0020\u0309" -> Key.HookAbove // ̉
+        "\u00A1" -> Key.InvertedExclamationMark // ¡
+        "\u00BF" -> Key.InvertedQuestionMark // ¿
+        "{" -> Key.LeftBrace
+        "(" -> Key.LeftParenthesis
+        "<" -> Key.LessSign
+        "\u201E" -> Key.LowQuotationMark // „
+        "\u00AF" -> Key.Macron // ¯
+        "\u00BA" -> Key.MasculineOrdinalIndicator // º
+        "#" -> Key.NumberSign
+        "\u02DB" -> Key.Ogonek // ˛
+        "+" -> Key.Plus
+        "\u00A3" -> Key.PoundSign // £
+        "\"" -> Key.QuotationMark
+        "\u0020\u05BF" -> Key.Rafe // ֿ
+        "}" -> Key.RightBrace
+        ")" -> Key.RightParenthesis
+        "\u02DA" -> Key.RingAbove // ˚
+        "\u00A7" -> Key.SectionSign // §
+        "\u00B2" -> Key.SuperscriptTwo // ²
+        "~" -> Key.Tilde
+        "_" -> Key.Underscore
+        "|" -> Key.VerticalLine
         else -> null
     }
 }
@@ -426,29 +426,42 @@ internal fun Event.MouseUp.toKeyEvent(keyboardModifiers: PointerKeyboardModifier
     )
 }
 
-private fun MouseButton.toKey(): Key = when (this) {
-    MouseButton.LEFT -> Key.Button1
-    MouseButton.RIGHT -> Key.Button2
-    MouseButton.MIDDLE -> Key.Button3
-    else -> when (value) {
-        1 -> Key.Button1
-        2 -> Key.Button2
-        3 -> Key.Button3
-        4 -> Key.Button4
-        5 -> Key.Button5
-        6 -> Key.Button6
-        7 -> Key.Button7
-        8 -> Key.Button8
-        9 -> Key.Button9
-        10 -> Key.Button10
-        11 -> Key.Button11
-        12 -> Key.Button12
-        13 -> Key.Button13
-        14 -> Key.Button14
-        15 -> Key.Button15
-        16 -> Key.Button16
-        else -> Key.Unknown
-    }
+internal fun Event.Swipe.toKeyEvent(
+    mouseButton: MouseButton,
+    type: KeyEventType,
+    keyboardModifiers: PointerKeyboardModifiers,
+): KeyEvent {
+    return KeyEvent(
+        key = mouseButton.toKey(),
+        type = type,
+        codePoint = 0,
+        isCtrlPressed = keyboardModifiers.isCtrlPressed,
+        isMetaPressed = keyboardModifiers.isMetaPressed,
+        isAltPressed = keyboardModifiers.isAltPressed,
+        isShiftPressed = keyboardModifiers.isShiftPressed,
+        nativeEvent = this,
+    )
+}
+
+// AIR-6023: KDT MouseButton.value is 0-based, so 0 -> Button1
+internal fun MouseButton.toKey(): Key = when (value) {
+    0 -> Key.Button1
+    1 -> Key.Button2
+    2 -> Key.Button3
+    3 -> Key.Button4
+    4 -> Key.Button5
+    5 -> Key.Button6
+    6 -> Key.Button7
+    7 -> Key.Button8
+    8 -> Key.Button9
+    9 -> Key.Button10
+    10 -> Key.Button11
+    11 -> Key.Button12
+    12 -> Key.Button13
+    13 -> Key.Button14
+    14 -> Key.Button15
+    15 -> Key.Button16
+    else -> Key.Unknown
 }
 
 internal val Key.isModifier: Boolean

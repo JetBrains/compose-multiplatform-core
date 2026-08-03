@@ -36,11 +36,14 @@ import androidx.compose.ui.input.InputModeManager
 import androidx.compose.ui.input.InputModeManagerImpl
 import androidx.compose.ui.desktop.Application
 import androidx.compose.ui.desktop.IconDecoratedApplication
+import androidx.compose.ui.desktop.KdtLoggerAppender
 import androidx.compose.ui.desktop.LightweightWindowId
+import androidx.compose.ui.desktop.ParkedWindowResources
 import androidx.compose.ui.desktop.ApplicationSession
 import androidx.compose.ui.desktop.Window
 import androidx.compose.ui.desktop.WindowCloseRequestReason
 import androidx.compose.ui.desktop.deactivateApplication
+import androidx.compose.ui.desktop.logging.KLoggers
 import androidx.compose.ui.desktop.logging.logger
 import androidx.compose.ui.desktop.removeApplication
 import androidx.compose.ui.platform.Clipboard
@@ -52,6 +55,7 @@ import androidx.compose.ui.platform.LocalInputModeManager
 import androidx.compose.ui.platform.LocalPointerIconService
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.UriHandler
+import androidx.compose.ui.scene.withFrameTransaction
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.createFontFamilyResolver
 import java.nio.file.Path
@@ -153,7 +157,13 @@ object MacOsApplication : Application,
         val logFilePath = logFolderPath.resolve("MacOsApplication").resolve("MacOsApplication.log")
         // Native logger init fails if the parent directory doesn't exist yet, so make sure it's there.
         java.nio.file.Files.createDirectories(logFilePath.parent)
-        KotlinDesktopToolkit.init(libraryFolderPath, logFilePath)
+        KotlinDesktopToolkit.init(
+            libraryFolderPath,
+            logFilePath,
+            appenderInterface = KdtLoggerAppender(
+                KLoggers.logger("androidx.compose.ui.desktop.macos.KdtLogger"),
+            ),
+        )
         didFinishLaunchingCompletableJob = Job()
         eventLoopThread = startEventLoopThread()
     }
@@ -168,11 +178,21 @@ object MacOsApplication : Application,
     override var windows: SnapshotStateMap<LightweightWindowId, MacOsWindow> = mutableStateMapOf()
         internal set
 
+    internal data class ReusableNativeWindowResources(
+        val nativeWindowId: WindowId,
+        val nativeWindow: org.jetbrains.desktop.macos.Window,
+        val viewContext: MetalViewContext,
+    )
+
     internal val reusableNativeWindowResources =
-        mutableMapOf<LightweightWindowId, Pair<org.jetbrains.desktop.macos.Window, MetalViewContext>>()
+        ParkedWindowResources<ReusableNativeWindowResources>(warn = { logger.warn { it } })
 
     private fun hasEffectiveWindows(): Boolean =
-        windows.isNotEmpty() || reusableNativeWindowResources.isNotEmpty()
+        windows.isNotEmpty() || !reusableNativeWindowResources.isEmpty
+
+    internal fun debugWindowStateSummary(): String =
+        "windows=${windows.keys}, reusable=${reusableNativeWindowResources.keys}, " +
+            "structuredQuitInProgress=$structuredQuitInProgress"
 
 
     // todo[unterhofer] Back with the native keyWindow and the corresponding event
@@ -207,10 +227,10 @@ object MacOsApplication : Application,
                         return@setQuitHandler false
                     }
 
-                    if (reusableNativeWindowResources.isNotEmpty()) {
+                    if (!reusableNativeWindowResources.isEmpty) {
                         structuredQuitInProgress = true
                         logger.info {
-                            "Quit approved; waiting for ${reusableNativeWindowResources.size} reusable window resource(s) to drain"
+                            "Quit approved; waiting for ${reusableNativeWindowResources.keys.size} reusable window resource(s) to drain"
                         }
                         return@setQuitHandler false
                     }
@@ -224,6 +244,13 @@ object MacOsApplication : Application,
                     }
                 }
 
+                // AIR-6419: these callbacks arrive from AppKit re-entrantly on the main thread,
+                // outside of any prepared reconcile section. The target-side callbacks below are
+                // WRAPPED-BY-MANAGER-INTERCEPTOR: they only resolve a window and delegate into
+                // MacOsDragAndDropManager, whose every state-touching body already runs under the
+                // window's CallbackInterceptor (== window.composeScene.withFrameTransaction, wired
+                // in MacOsWindow's init block) — see MacOsDragAndDropManager.onDragEntered/
+                // onDragUpdated/onDragExited/onDragPerformed. No additional wrap is needed here.
                 DragAndDropHandler.init(
                     object : DragTargetCallbacks {
                         override fun onDragEntered(info: DragInfo): DragOperation {
@@ -257,6 +284,9 @@ object MacOsApplication : Application,
                         }
                     },
                     object : DragSourceCallbacks {
+                        // UNWRAPPED-PLAIN-READ, deliberately: activeDragAndDropTransferData is a
+                        // plain (non-snapshot) var, and .supportedActions is a plain field read —
+                        // no Compose/Noria state is entered, so no frame transaction is needed here.
                         override fun onDragSourceOperationMask(
                             sourceWindowId: WindowId,
                             sequenceNumber: Long,
@@ -271,6 +301,12 @@ object MacOsApplication : Application,
                                 .fold(DragOperationsSet.NONE) { acc, set -> acc + set }
                         }
 
+                        // Was UNWRAPPED-BUT-TOUCHES-COMPOSE-STATE: onTransferCompleted is a
+                        // user-supplied callback (arbitrary Compose/Noria state mutation is
+                        // possible), invoked here re-entrantly from AppKit outside any prepared
+                        // reconcile section. Wrap only that invocation in the window's frame
+                        // transaction (AIR-6419); the trailing null-out is a plain field write and
+                        // stays outside the wrap, same as the target-side callbacks above.
                         override fun onDragSourceSessionEndedAt(
                             sourceWindowId: WindowId,
                             sequenceNumber: Long,
@@ -278,9 +314,11 @@ object MacOsApplication : Application,
                             dragOperation: DragOperation,
                         ) {
                             val window = windows[sourceWindowId.toLightweightWindowId()]
-                            window?.activeDragAndDropTransferData?.onTransferCompleted?.invoke(
-                                dragOperation.toDragAndDropTransferAction(),
-                            )
+                            window?.composeScene?.withFrameTransaction {
+                                window.activeDragAndDropTransferData?.onTransferCompleted?.invoke(
+                                    dragOperation.toDragAndDropTransferAction(),
+                                )
+                            }
                             window?.activeDragAndDropTransferData = null
                         }
                     },
@@ -446,9 +484,21 @@ object MacOsApplication : Application,
     }
 
     override fun prepareNativeWindowResourcesForReuse(id: LightweightWindowId) {
-        windows[id]?.let { window ->
-            reusableNativeWindowResources[id] = window.nativeWindow to window.viewContext
+        val window = windows[id]
+        if (window == null) {
+            logger.warn {
+                "prepareNativeWindowResourcesForReuse: no active window found for id=$id; ${debugWindowStateSummary()}"
+            }
+            return
         }
+        reusableNativeWindowResources.park(
+            id,
+            ReusableNativeWindowResources(
+                nativeWindowId = window.nativeWindowId,
+                nativeWindow = window.nativeWindow,
+                viewContext = window.viewContext,
+            ),
+        )
     }
 
     override fun reuseWindow(
@@ -456,19 +506,33 @@ object MacOsApplication : Application,
         session: ApplicationSession,
         onCloseRequest: (WindowCloseRequestReason) -> Unit,
     ): Window? {
-        return reusableNativeWindowResources[id]?.let { (nativeWindow, viewContext) ->
-            logger.debug { "Reusing window $id" }
-            windows[id]?.dispose()
-            reusableNativeWindowResources.remove(id)
-            MacOsWindow(this, session, nativeWindow, viewContext, onCloseRequest)
+        // Ordering is load-bearing: check presence, THEN dispose the old MacOsWindow (whose
+        // dispose() sees the parked entry via peekContains and skips closing the native window),
+        // THEN remove the parked entry, THEN construct the new MacOsWindow over it.
+        if (!reusableNativeWindowResources.peekContains(id)) {
+            logger.warn {
+                "reuseWindow: no reusable native resources found for id=$id session=${session.hashCode()}; " +
+                    debugWindowStateSummary()
+            }
+            return null
         }
+        logger.debug { "Reusing window $id" }
+        windows[id]?.dispose()
+        val reusableResources = reusableNativeWindowResources.take(id) ?: return null
+        return MacOsWindow(
+            this,
+            session,
+            reusableResources.nativeWindow,
+            reusableResources.viewContext,
+            onCloseRequest,
+        )
     }
 
     override fun disposeReusableNativeWindowResources(id: LightweightWindowId) {
-        reusableNativeWindowResources.remove(id)?.let { (nativeWindow, viewContext) ->
-            nativeWindow.close()
-            nativeWindow.windowId().destroyLightweightWindowId()
-            desktopGpuContext.destroyMetalViewContext(viewContext)
+        reusableNativeWindowResources.disposeWith(id) { resources ->
+            resources.nativeWindow.close()
+            resources.nativeWindowId.destroyLightweightWindowId()
+            desktopGpuContext.destroyMetalViewContext(resources.viewContext)
         }
         if (structuredQuitInProgress && !hasEffectiveWindows()) {
             GrandCentralDispatch.dispatchOnMain(highPriority = false) {
@@ -490,12 +554,11 @@ object MacOsApplication : Application,
     private suspend fun resetState() {
         withContext(MacOsKdtMainDispatcher.INSTANCE.immediate) {
             windows.values.toList().forEach { it.dispose() }
-            reusableNativeWindowResources.values.forEach { (nativeWindow, viewContext) ->
-                nativeWindow.close()
-                nativeWindow.windowId().destroyLightweightWindowId()
-                desktopGpuContext.destroyMetalViewContext(viewContext)
+            reusableNativeWindowResources.drainWith { resources ->
+                resources.nativeWindow.close()
+                resources.nativeWindowId.destroyLightweightWindowId()
+                desktopGpuContext.destroyMetalViewContext(resources.viewContext)
             }
-            reusableNativeWindowResources.clear()
             quitHandlers.clear()
         }
     }
