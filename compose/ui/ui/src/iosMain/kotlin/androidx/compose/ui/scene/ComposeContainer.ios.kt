@@ -148,7 +148,6 @@ internal class ComposeContainer(
         getTopLeftOffsetInWindow = { IntOffset.Zero }, //full screen
         endEdgePanGestureBehavior = configuration.endEdgePanGestureBehavior
     )
-
     private var layoutInvalidationHandler: LayoutInvalidationHandler? = null
     private val fontScaleProvider = FontScaleProvider(
         view = view,
@@ -257,19 +256,15 @@ internal class ComposeContainer(
         systemThemeState.value = style.asComposeSystemTheme()
     }
 
-    private fun invalidateLayout() {
-        view.setNeedsLayout()
-        view.invalidateIntrinsicContentSize()
-    }
-
     fun initializeComposeScene() {
         sceneJob = Job()
         val frameChoreographer = frameChoreographer ?: error("No window scene found")
         val containerCoroutineContext = frameChoreographer.coroutineContext + motionDurationScale + sceneJob
 
-        val layoutInvalidationHandler = LayoutInvalidationHandler(
-            containerCoroutineContext, ::invalidateLayout
-        )
+        val layoutInvalidationHandler = LayoutInvalidationHandler(containerCoroutineContext) {
+            view.setNeedsLayout()
+            view.invalidateIntrinsicContentSize()
+        }
         this.layoutInvalidationHandler = layoutInvalidationHandler
 
         val metalView = MetalView(
