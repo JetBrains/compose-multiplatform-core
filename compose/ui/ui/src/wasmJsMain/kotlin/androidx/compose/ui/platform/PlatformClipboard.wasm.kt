@@ -20,6 +20,11 @@ package androidx.compose.ui.platform
 
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.InternalComposeUiApi
+import androidx.compose.ui.desktop.ClipboardFormat
+import androidx.compose.ui.desktop.ClipboardItemsEntry
+import androidx.compose.ui.desktop.clipboardEntry
+import androidx.compose.ui.desktop.wasm.WasmJsClipboardEntry
+import androidx.compose.ui.desktop.wasm.toJsClipboardItems
 import androidx.compose.ui.text.AnnotatedString
 import kotlin.getValue
 import kotlin.js.Promise
@@ -88,16 +93,15 @@ private class WasmPlatformClipboard : Clipboard {
             println("Failed to read from Clipboard: $it")
             emptyClipboardItems
         }.await<JsArray<ClipboardItem>>()
-        return ClipEntry(items)
+        return ClipEntry(WasmJsClipboardEntry(items)).apply { clipboardItems = items }
     }
 
     override suspend fun setClipEntry(clipEntry: ClipEntry?) {
         when {
-            isFullClipboardApiSupported -> if (clipEntry == null) {
-                // clear the clipboard
-                nativeClipboard.write(emptyClipboardItems()).await<Any?>()
-            } else {
-                nativeClipboard.write(clipEntry.clipboardItems).await<Any?>()
+            isFullClipboardApiSupported -> {
+                // Writing the empty text is the closest thing to clearing the clipboard.
+                val items = clipEntry?.let { resolveJsClipboardItems(it) }
+                nativeClipboard.write(items ?: emptyClipboardItems()).await<Any?>()
             }
             isFallbackWriteTextApiAvailable -> {
                 val text = clipEntry?.fallbackPlainText ?: ""
@@ -109,6 +113,10 @@ private class WasmPlatformClipboard : Clipboard {
 
     override val nativeClipboard: NativeClipboard
         get() = browserClipboard
+
+    private fun resolveJsClipboardItems(clipEntry: ClipEntry): JsArray<ClipboardItem>? =
+        clipEntry.clipboardItems
+            ?: (clipEntry.nativeClipEntry as? ClipboardItemsEntry)?.toJsClipboardItems()
 }
 
 @Suppress("DEPRECATION")
@@ -116,11 +124,17 @@ internal actual fun createPlatformClipboardManager(): ClipboardManager = WasmPla
 
 internal actual fun createPlatformClipboard(): Clipboard = WasmPlatformClipboard()
 
+/**
+ * Aligned with the fleet desktop actual: carries an arbitrary payload — for product code a
+ * [androidx.compose.ui.desktop.ClipboardEntry] — instead of upstream's raw W3C clipboard items.
+ * When the payload was produced from (or already converted to) native items, they travel along in
+ * [clipboardItems] so a write does not have to re-convert.
+ */
 actual class ClipEntry
 @ExperimentalComposeUiApi
 constructor(
     @property:ExperimentalComposeUiApi
-    val clipboardItems: JsArray<ClipboardItem>
+    val nativeClipEntry: Any
 ) {
 
     // TODO: https://youtrack.jetbrains.com/issue/CMP-1260
@@ -130,18 +144,22 @@ constructor(
     @InternalComposeUiApi
     var fallbackPlainText: String? = null
 
+    @property:ExperimentalComposeUiApi
+    var clipboardItems: JsArray<ClipboardItem>? = null
+        internal set
+
     companion object {
         fun withPlainText(text: String): ClipEntry {
+            val entry = ClipEntry(clipboardEntry(androidx.compose.ui.desktop.ClipboardItem(text, ClipboardFormat.Utf8PlainText)))
             return when {
-                isFullClipboardApiSupported -> ClipEntry(
-                    if (isSecureContext) {
+                isFullClipboardApiSupported -> entry.apply {
+                    clipboardItems = if (isSecureContext) {
                         createClipboardItemWithPlainText(text)
                     } else {
                         emptyClipboardItems()
                     }
-                )
-                else -> ClipEntry(invalidClipboardItems())
-                    .apply { fallbackPlainText = text }
+                }
+                else -> entry.apply { fallbackPlainText = text }
             }
         }
     }
