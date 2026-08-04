@@ -18,8 +18,10 @@ package noria
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocal
+import androidx.compose.runtime.ProvidableCompositionLocal
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.key
+import androidx.compose.runtime.staticCompositionLocalOf
 import noria.impl.*
 import androidx.compose.runtime.remember
 
@@ -152,3 +154,22 @@ fun onReconcileCompleted(block: () -> Unit) {
     // TODO
     block()
 }
+
+/**
+ * Compatibility shim for Noria's `noria.LocalNoriaThrowExceptions`.
+ *
+ * In Noria this selected between two runtime behaviours when a composable or a lambda threw:
+ * `true` rethrew, `false` recovered — returning a `Result.failure` or logging the throwable and
+ * continuing. Noria defaulted it to `false`, so production recovered gracefully and tests opted
+ * into failing fast.
+ *
+ * **Compose has no equivalent recovery path.** An exception raised during composition propagates
+ * and takes the composition down, so this stack always behaves as `true`. Nothing here reads this
+ * value; it exists so that call sites which provide it keep compiling, and it defaults to `true`
+ * to describe what actually happens rather than mirroring Noria's `false`.
+ *
+ * Providing `false` therefore **cannot be honoured** — composition will still fail fast. Code that
+ * genuinely depends on recover-and-continue semantics has to be restructured rather than ported.
+ */
+val LocalNoriaThrowExceptions: ProvidableCompositionLocal<Boolean> =
+    staticCompositionLocalOf { true }
