@@ -150,18 +150,8 @@ private fun keyFromSpecialKey(specialKey: SpecialKey): Key? {
         SpecialKey.F10FunctionKey -> Key.F10
         SpecialKey.F11FunctionKey -> Key.F11
         SpecialKey.F12FunctionKey -> Key.F12
-//        SpecialKey.F13FunctionKey -> Key.F13
-//        SpecialKey.F14FunctionKey -> Key.F14
-//        SpecialKey.F15FunctionKey -> Key.F15
-//        SpecialKey.F16FunctionKey -> Key.F16
-//        SpecialKey.F17FunctionKey -> Key.F17
-//        SpecialKey.F18FunctionKey -> Key.F18
-//        SpecialKey.F19FunctionKey -> Key.F19
-//        SpecialKey.F20FunctionKey -> Key.F20
-//        SpecialKey.F21FunctionKey -> Key.F21
-//        SpecialKey.F22FunctionKey -> Key.F22
-//        SpecialKey.F23FunctionKey -> Key.F23
-//        SpecialKey.F24FunctionKey -> Key.F24
+        // F13-F24 collapse to Key.Unknown fork-wide (no androidx Key.F13-F24 constants exist);
+        // KDT exposes them on macOS/win32 but linux/gtk KeySym.F13-F24 also map to Unknown.
 
         SpecialKey.InsertFunctionKey -> Key.Insert
         SpecialKey.DeleteFunctionKey -> Key.Delete
