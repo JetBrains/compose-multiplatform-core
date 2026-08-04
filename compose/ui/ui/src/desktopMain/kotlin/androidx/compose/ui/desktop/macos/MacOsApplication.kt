@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-@file:OptIn(ExperimentalComposeUiApi::class)
+@file:OptIn(ExperimentalComposeUiApi::class, ExperimentalAtomicApi::class)
 
 package androidx.compose.ui.desktop.macos
 
@@ -62,6 +62,8 @@ import java.nio.file.Path
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.concurrent.thread
 import kotlin.time.TimeSource
+import kotlin.concurrent.atomics.AtomicBoolean
+import kotlin.concurrent.atomics.ExperimentalAtomicApi
 import kotlinx.coroutines.CompletableJob
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.runBlocking
@@ -69,6 +71,7 @@ import kotlinx.coroutines.withContext
 import org.jetbrains.desktop.macos.AppMenuManager
 import org.jetbrains.desktop.macos.AppMenuStructure
 import org.jetbrains.desktop.macos.Appearance
+import org.jetbrains.desktop.macos.LogLevel
 import org.jetbrains.desktop.macos.DragAndDropHandler
 import org.jetbrains.desktop.macos.DragInfo
 import org.jetbrains.desktop.macos.DragOperation
@@ -96,6 +99,7 @@ object MacOsApplication : Application,
     private var structuredQuitInProgress = false
     internal var terminationInProgress = false
         private set
+    private val eventLoopStopped = AtomicBoolean(false)
 
     private var openUrls: (List<String>) -> Unit = {}
     private var uriHandler: UriHandler = MacOsUriHandler()
@@ -158,8 +162,10 @@ object MacOsApplication : Application,
         // Native logger init fails if the parent directory doesn't exist yet, so make sure it's there.
         java.nio.file.Files.createDirectories(logFilePath.parent)
         KotlinDesktopToolkit.init(
-            libraryFolderPath,
-            logFilePath,
+            libraryFolderPath = libraryFolderPath,
+            logFilePath = logFilePath,
+            consoleLogLevel = LogLevel.Info,
+            fileLogLevel = LogLevel.Debug,
             appenderInterface = KdtLoggerAppender(
                 KLoggers.logger("androidx.compose.ui.desktop.macos.KdtLogger"),
             ),
@@ -455,8 +461,12 @@ object MacOsApplication : Application,
         try {
             resetState()
         } finally {
-            withContext(MacOsKdtMainDispatcher.INSTANCE.immediate) {
-                nativeApplication.stopEventLoop()
+            // Reachable from several paths (structured quit, JVM shutdown hook); stop the
+            // native event loop exactly once, matching the other backends.
+            if (eventLoopStopped.compareAndSet(expectedValue = false, newValue = true)) {
+                withContext(MacOsKdtMainDispatcher.INSTANCE.immediate) {
+                    nativeApplication.stopEventLoop()
+                }
             }
             eventLoopThread?.join()
             removeApplication(this)

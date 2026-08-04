@@ -1,4 +1,4 @@
-@file:OptIn(ExperimentalComposeUiApi::class)
+@file:OptIn(ExperimentalComposeUiApi::class, ExperimentalAtomicApi::class)
 @file:Suppress("DuplicatedCode")
 
 package androidx.compose.ui.desktop.gtk
@@ -45,6 +45,8 @@ import java.nio.file.Path
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicLong
 import kotlin.concurrent.thread
+import kotlin.concurrent.atomics.AtomicBoolean
+import kotlin.concurrent.atomics.ExperimentalAtomicApi
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CompletableJob
 import kotlinx.coroutines.Job
@@ -74,6 +76,7 @@ object GtkApplication : Application {
     private var initialized = false
     private var structuredQuitInProgress = false
     private var terminationInProgress = false
+    private val eventLoopStopped = AtomicBoolean(false)
 
     private lateinit var nativeApplicationImpl: org.jetbrains.desktop.gtk.Application
     private lateinit var clipboardImpl: GtkClipboard
@@ -500,7 +503,11 @@ object GtkApplication : Application {
         try {
             resetState()
         } finally {
-            nativeApplication.stopEventLoop()
+            // Reachable from several paths (structured quit, JVM shutdown hook); stop the
+            // native event loop exactly once, matching the other backends.
+            if (eventLoopStopped.compareAndSet(expectedValue = false, newValue = true)) {
+                nativeApplication.stopEventLoop()
+            }
             runtimeThread?.join()
             removeApplication(this)
             shutdown = true
