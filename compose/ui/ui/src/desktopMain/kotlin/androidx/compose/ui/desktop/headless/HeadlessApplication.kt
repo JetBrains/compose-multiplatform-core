@@ -238,19 +238,27 @@ object HeadlessApplication : Application {
      * A single dispatch barrier is not enough — it clears one FIFO level, and work the frame queues
      * lands behind it — so this drains repeatedly until the queue is empty.
      *
-     * Throws if the loop does not settle in time, rather than returning quietly the way shutdown
-     * does: a caller that is about to assert needs to know it is asserting against a settled frame.
+     * Throws if the loop does not settle within [timeoutMillis], rather than returning quietly the
+     * way shutdown does: a caller that is about to assert needs to know it is asserting against a
+     * settled frame.
+     *
+     * [timeoutMillis] is a deadlock guard, not a performance assertion, so it is far longer than the
+     * budget shutdown uses. It bounds *wall clock* while the frame's queued tail drains, and a slow
+     * machine or a heavy tree makes that tail long — a tight budget here would surface as a
+     * load-sensitive failure in every caller that steps frames, which is the opposite of the
+     * determinism this exists to provide. Pass a shorter value only when a test is deliberately
+     * asserting that the loop does *not* settle.
      */
-    suspend fun awaitIdle() {
+    suspend fun awaitIdle(timeoutMillis: Long = HEADLESS_IDLE_WAIT_TIMEOUT_MILLIS) {
         // pendingTasksCount includes the task currently running, so from the loop thread itself the
         // count can never reach zero and this would only ever time out.
         check(eventLoopOrNull?.isCurrentThread() != true) {
             "awaitIdle() must not be called from the event-loop thread"
         }
-        val pending = awaitEventLoopToBecomeIdle()
+        val pending = awaitEventLoopToBecomeIdle(timeoutMillis)
         check(pending == 0) {
-            "Headless event loop did not become idle within " +
-                "${HEADLESS_EVENT_LOOP_IDLE_TIMEOUT_MILLIS}ms; $pending tasks still queued"
+            "Headless event loop did not become idle within ${timeoutMillis}ms; " +
+                "$pending tasks still queued"
         }
     }
 
@@ -347,10 +355,12 @@ object HeadlessApplication : Application {
         // Font paragraph-cache reset: no compose-side hook yet; see spec §7 follow-up (a913dc9ea28ac).
     }
 
-    private suspend fun awaitEventLoopToBecomeIdle(): Int {
+    private suspend fun awaitEventLoopToBecomeIdle(
+        timeoutMillis: Long = HEADLESS_EVENT_LOOP_IDLE_TIMEOUT_MILLIS,
+    ): Int {
         val currentEventLoop = synchronized(lock) { eventLoopOrNull } ?: return 0
         val becameIdle =
-            withTimeoutOrNull(HEADLESS_EVENT_LOOP_IDLE_TIMEOUT_MILLIS.milliseconds) {
+            withTimeoutOrNull(timeoutMillis.milliseconds) {
                 while (currentEventLoop.pendingTasksCount > 0) {
                     val idleBarrier = CompletableDeferred<Unit>()
                     currentEventLoop.dispatch {
@@ -469,7 +479,14 @@ object HeadlessApplication : Application {
     }
 }
 
+// Shutdown's budget: it is on the way out and warns rather than failing, so waiting long buys
+// nothing.
 private const val HEADLESS_EVENT_LOOP_IDLE_TIMEOUT_MILLIS = 1_000L
+
+// [HeadlessApplication.awaitIdle]'s default: a deadlock guard for callers that are about to assert.
+// It has to outlast the slowest legitimate frame tail on the slowest machine, because exceeding it
+// fails the caller's test.
+private const val HEADLESS_IDLE_WAIT_TIMEOUT_MILLIS = 30_000L
 private val logger by lazy { logger<HeadlessApplication>() }
 private fun nowEpochSeconds(): Double = System.currentTimeMillis() / 1000.0
 
