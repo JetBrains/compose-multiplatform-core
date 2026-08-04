@@ -29,6 +29,7 @@ import androidx.compose.ui.desktop.WindowCloseRequestReason
 import androidx.compose.ui.desktop.codepointFromOffset
 import androidx.compose.ui.desktop.deactivateApplication
 import androidx.compose.ui.desktop.getDataForLinuxMimeType
+import androidx.compose.ui.desktop.logging.KLoggers
 import androidx.compose.ui.desktop.logging.logger
 import androidx.compose.ui.desktop.removeApplication
 import androidx.compose.ui.platform.ClipEntry
@@ -149,6 +150,9 @@ object LinuxApplication : Application {
             logFilePath = logFilePath,
             consoleLogLevel = LogLevel.Info,
             fileLogLevel = LogLevel.Debug,
+            appenderInterface = KdtLoggerAppender(
+                KLoggers.logger("androidx.compose.ui.desktop.linux.KdtLogger"),
+            ),
         )
         val nativeApplication = org.jetbrains.desktop.linux.Application()
         nativeApplicationOrNull = nativeApplication
@@ -225,6 +229,7 @@ object LinuxApplication : Application {
     private val pendingActivationRequests = ConcurrentHashMap<RequestId, LightweightWindowId>()
     private val nextWindowId = AtomicLong(1L)
     private var keyboardFocusWindowId: LightweightWindowId? = null
+    private var mouseFocusWindowId: LightweightWindowId? = null
 
     // Wayland text input is seat-wide: only one window at a time receives IME events, tracked here.
     // The last context per window is cached so the seat can be re-enabled when focus returns.
@@ -419,11 +424,19 @@ object LinuxApplication : Application {
 
                 is Event.KeyDown,
                 is Event.KeyUp,
-                is Event.ModifiersChanged,
                     -> {
                     keyboardFocusWindowId?.let { windowId ->
                         windows[windowId]?.handleEvent(event)
                     } ?: EventHandlerResult.Continue
+                }
+
+                is Event.ModifiersChanged -> {
+                    // The window under the pointer and the keyboard-focus window can differ on
+                    // Wayland, and both consume modifier state (hover cursors vs shortcuts) —
+                    // route to both; the tracker's update is idempotent when they coincide.
+                    windows[mouseFocusWindowId]?.handleEvent(event)
+                    windows[keyboardFocusWindowId]?.handleEvent(event)
+                    EventHandlerResult.Stop
                 }
 
                 is Event.TextInput -> {
@@ -508,6 +521,20 @@ object LinuxApplication : Application {
                     }
                 }
 
+                is Event.MouseEntered -> {
+                    val windowId = event.windowId.toLightweightWindowId()
+                    mouseFocusWindowId = windowId
+                    windows[windowId]?.handleEvent(event) ?: EventHandlerResult.Continue
+                }
+
+                is Event.MouseExited -> {
+                    val windowId = event.windowId.toLightweightWindowId()
+                    if (mouseFocusWindowId == windowId) {
+                        mouseFocusWindowId = null
+                    }
+                    windows[windowId]?.handleEvent(event) ?: EventHandlerResult.Continue
+                }
+
                 is Event.WindowCloseRequest,
                 is Event.WindowConfigure,
                 is Event.WindowDraw,
@@ -515,8 +542,6 @@ object LinuxApplication : Application {
                 is Event.WindowScreenChange,
                 is Event.MouseUp,
                 is Event.MouseMoved,
-                is Event.MouseEntered,
-                is Event.MouseExited,
                 is Event.ScrollWheel,
                 is Event.DropPerformed,
                 is Event.DragAndDropLeave,
@@ -657,20 +682,40 @@ object LinuxApplication : Application {
         session: ApplicationSession,
         onCloseRequest: (WindowCloseRequestReason) -> Unit,
     ): Window {
-        val window = LinuxWindow(this, session, onCloseRequest)
-        windows[window.id] = window
-        return window
+        // The window registers itself in `windows` at the end of its own construction, after its
+        // input tracker and scene exist — registering here as well would race event delivery
+        // against a partially-initialized window.
+        return LinuxWindow.create(this, session, onCloseRequest)
     }
 
-    override fun prepareNativeWindowResourcesForReuse(id: LightweightWindowId) {}
+    override fun prepareNativeWindowResourcesForReuse(id: LightweightWindowId) {
+        windows[id]?.isMarkedForReuse = true
+    }
 
     override fun reuseWindow(
         id: LightweightWindowId,
         session: ApplicationSession,
         onCloseRequest: (WindowCloseRequestReason) -> Unit,
-    ): Window? = null
+    ): Window? {
+        val oldWindow = windows[id] ?: return null
+        // Removed first so the old window stops receiving events while the sibling is under
+        // construction — both wrap the same native window, and only one may be routed to.
+        windows -= id
+        val newWindow = oldWindow.reuse(session, onCloseRequest)
+        // The sibling already re-registered itself at the end of its construction
+        // (registration-last init); this keeps the swap explicit at the call site.
+        windows[id] = newWindow
+        return newWindow
+    }
 
-    override fun disposeReusableNativeWindowResources(id: LightweightWindowId) {}
+    override fun disposeReusableNativeWindowResources(id: LightweightWindowId) {
+        windows[id]?.let {
+            if (it.isMarkedForReuse) {
+                it.isMarkedForReuse = false
+                it.dispose()
+            }
+        }
+    }
 
     private fun requestStructuredQuit() {
         if (terminationInProgress || structuredQuitInProgress) return

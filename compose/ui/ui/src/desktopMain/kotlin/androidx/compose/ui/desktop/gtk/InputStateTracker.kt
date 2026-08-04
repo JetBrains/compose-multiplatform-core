@@ -58,12 +58,20 @@ internal class InputStateTracker(
     private var pointerPosition: Offset? = null
     private var lastNativeEventUptimeMillis: Long? = null
     private var pointerButtons = PointerButtons()
+    private var syntheticPointerEventAfterRelayoutGeneration: Long = 0
     internal var keyboardModifiers by mutableStateOf(PointerKeyboardModifiers())
+
+    /** Test seam: KDT gtk Event constructors are internal, so tests drive state directly. */
+    internal fun overridePointerStateForTest(pointerInWindow: Boolean, pointerPosition: Offset? = this.pointerPosition) {
+        this.pointerInWindow = pointerInWindow
+        this.pointerPosition = pointerPosition
+    }
 
     fun updateStateAndSendEvents(
         event: Event,
         density: Density,
     ): org.jetbrains.desktop.gtk.EventHandlerResult {
+        syntheticPointerEventAfterRelayoutGeneration++
         return when (event) {
             is Event.MouseDown -> {
                 val uptime = event.timestamp.toDuration().inWholeMilliseconds
@@ -186,6 +194,10 @@ internal class InputStateTracker(
                     nativeEvent = event,
                 )
                 pointerInWindow = false
+                // Native grabs (interactive resize, DnD) eat the matching MouseUp; GTK sends Exit
+                // when the grab starts, so clearing here keeps buttons from wedging pressed
+                // (AIR-5571). The Exit above is deliberately sent with the pre-clear state.
+                pointerButtons = PointerButtons()
                 if (result.anyChangeConsumed) {
                     org.jetbrains.desktop.gtk.EventHandlerResult.Stop
                 } else {
@@ -203,9 +215,11 @@ internal class InputStateTracker(
                 val result = sendPointerInputEventWithCurrentStateIfNecessary(
                     PointerEventType.Scroll,
                     uptime = uptime,
-                    scrollDelta = DpOffset(
-                        (event.scrollingDeltaX * 20).dp,
-                        (event.scrollingDeltaY * 20).dp,
+                    scrollDelta = computeGtkScrollDelta(
+                        scrollingDeltaX = event.scrollingDeltaX,
+                        scrollingDeltaY = event.scrollingDeltaY,
+                        isSmoothScroll = event.isSmoothScroll,
+                        shiftPressed = keyboardModifiers.isShiftPressed,
                     ).toPxOffset(density),
                     nativeEvent = event,
                 )
@@ -268,24 +282,42 @@ internal class InputStateTracker(
                 org.jetbrains.desktop.gtk.EventHandlerResult.Continue
             }
 
-            is Event.WindowKeyboardEnter -> {
-                keyboardModifiers = PointerKeyboardModifiers()
-                pointerButtons = PointerButtons()
-                org.jetbrains.desktop.gtk.EventHandlerResult.Continue
-            }
-
-            is Event.WindowKeyboardLeave -> {
-                keyboardModifiers = PointerKeyboardModifiers()
-                pointerButtons = PointerButtons()
-                org.jetbrains.desktop.gtk.EventHandlerResult.Continue
-            }
+            // WindowKeyboardEnter/Leave deliberately do NOT touch modifier or button state here:
+            // resetting on focus churn dropped held modifiers mid-shortcut across windows
+            // (cc557a8bf5daa). Focus bookkeeping lives at the window level.
 
             else -> org.jetbrains.desktop.gtk.EventHandlerResult.Continue
         }
     }
 
-    fun clearPointerButtons() {
-        pointerButtons = PointerButtons()
+    /**
+     * See the linux tracker's counterpart: local-only refresh of hit testing under a stationary
+     * pointer after relayout; any real input event between prepare and send voids the request via
+     * the generation check.
+     */
+    fun prepareSyntheticPointerEventAfterRelayoutIfNecessary(): PendingSyntheticPointerEventAfterRelayout? {
+        val type = when {
+            pointerPosition == null -> return null
+            pointerButtons.areAnyPressed -> PointerEventType.Move
+            !pointerInWindow -> return null
+            inputModeManager.inputMode == InputMode.Touch -> PointerEventType.Move
+            else -> PointerEventType.Exit
+        }
+        val generation = syntheticPointerEventAfterRelayoutGeneration + 1
+        syntheticPointerEventAfterRelayoutGeneration = generation
+        return PendingSyntheticPointerEventAfterRelayout(
+            generation = generation,
+            type = type,
+        )
+    }
+
+    fun sendSyntheticPointerEventAfterRelayoutIfCurrent(
+        request: PendingSyntheticPointerEventAfterRelayout,
+    ): PointerEventResult {
+        if (request.generation != syntheticPointerEventAfterRelayoutGeneration) {
+            return PointerEventResult()
+        }
+        return sendPointerInputEventWithCurrentStateIfNecessary(request.type)
     }
 
     private fun Density.updatePointerPosition(
@@ -439,3 +471,37 @@ private operator fun PointerButtons.minus(other: PointerButton): PointerButtons 
     isBackPressed = isBackPressed && !other.isBack,
     isForwardPressed = isForwardPressed && !other.isForward,
 )
+
+internal data class PendingSyntheticPointerEventAfterRelayout(
+    val generation: Long,
+    val type: PointerEventType,
+)
+
+/**
+ * Scroll delta per Noria (AIR-5233 + AIR-5621): discrete wheel detents scroll 100.dp per notch,
+ * smooth/touchpad deltas scale by 15.dp, and Shift swaps the axes so a vertical wheel scrolls
+ * horizontally.
+ */
+internal fun computeGtkScrollDelta(
+    scrollingDeltaX: Float,
+    scrollingDeltaY: Float,
+    isSmoothScroll: Boolean,
+    shiftPressed: Boolean,
+): DpOffset {
+    val rawDelta = if (isSmoothScroll) {
+        DpOffset(
+            (scrollingDeltaX * 15).dp,
+            (scrollingDeltaY * 15).dp,
+        )
+    } else {
+        DpOffset(
+            (scrollingDeltaX * 100).dp,
+            (scrollingDeltaY * 100).dp,
+        )
+    }
+    return if (shiftPressed) {
+        DpOffset(rawDelta.y, rawDelta.x)
+    } else {
+        rawDelta
+    }
+}

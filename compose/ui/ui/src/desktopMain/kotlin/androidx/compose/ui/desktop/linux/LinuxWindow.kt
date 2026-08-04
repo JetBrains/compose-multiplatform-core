@@ -9,6 +9,8 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.mutableStateSetOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.InternalComposeUiApi
@@ -53,7 +55,10 @@ import androidx.compose.ui.node.InternalCoreApi
 import androidx.compose.ui.platform.DefaultArchitectureComponentsOwner
 import androidx.compose.ui.platform.DefaultTextToolbar
 import androidx.compose.ui.platform.InterceptPlatformTextInput
+import androidx.compose.ui.platform.LocalInputModeManager
+import androidx.compose.ui.platform.LocalPointerIconService
 import androidx.compose.ui.platform.LocalTextInputContext
+import androidx.compose.ui.platform.LocalTextToolbar
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.PlatformDragAndDropManager
 import androidx.compose.ui.platform.PlatformTextInputMethodRequest
@@ -84,13 +89,15 @@ import java.util.concurrent.ConcurrentHashMap
 import kotlin.coroutines.resume
 import kotlin.math.roundToInt
 import kotlinx.coroutines.CancellableContinuation
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.io.files.Path
 import noria.CallbackInterceptor
+import noria.ui.core.LocalWindow
 import noria.ui.core.TestDataMode
 import noria.ui.core.UIRoot
 import noria.ui.core.WindowData
-import org.jetbrains.desktop.linux.DataSource
 import org.jetbrains.desktop.linux.DesktopTitlebarAction
 import org.jetbrains.desktop.linux.DragAndDropAction
 import org.jetbrains.desktop.linux.DragAndDropQueryData
@@ -98,6 +105,7 @@ import org.jetbrains.desktop.linux.DragAndDropQueryResponse
 import org.jetbrains.desktop.linux.DragIconParams
 import org.jetbrains.desktop.linux.Event
 import org.jetbrains.desktop.linux.EventHandlerResult
+import org.jetbrains.desktop.linux.FileDialog
 import org.jetbrains.desktop.linux.LogicalSize
 import org.jetbrains.desktop.linux.RenderingMode
 import org.jetbrains.desktop.linux.RequestId
@@ -119,29 +127,19 @@ import org.jetbrains.skia.SurfaceColorFormat
 import org.jetbrains.skia.SurfaceOrigin
 import org.jetbrains.skia.makeGLWithInterface
 
-class LinuxWindow internal constructor(
+class LinuxWindow private constructor(
     private val application: LinuxApplication,
     internal val session: ApplicationSession,
     private val onCloseRequest: (WindowCloseRequestReason) -> Unit,
+    private val linuxTextInputSessionOwner: LinuxTextInputSessionOwner,
+    override val nativeWindow: org.jetbrains.desktop.linux.Window,
+    override val id: LightweightWindowId,
 ) : InteractiveMoveInitiator, InteractiveResizeInitiator {
-    private val nativeWindowId = application.allocateNativeWindowId()
-
-    override val nativeWindow: org.jetbrains.desktop.linux.Window =
-        application.nativeApplication.createWindow(
-            WindowParams(
-                windowId = nativeWindowId,
-                appId = application.identifier,
-                title = "",
-                size = LogicalSize(800, 600),
-                preferClientSideDecoration = true,
-                renderingMode = RenderingMode.Auto,
-            ),
-        )
-
-    override val id: LightweightWindowId = LightweightWindowId(nativeWindow.windowId)
-
     @Volatile
     private var isDisposed = false
+
+    @Volatile
+    internal var isMarkedForReuse = false
 
     @Volatile
     internal var isFrameRequested = false
@@ -153,8 +151,54 @@ class LinuxWindow internal constructor(
     private var overriddenSystemTheme by mutableStateOf<SystemTheme?>(null)
     private var windowCapabilities by mutableStateOf<WindowCapabilities?>(null)
 
-    private var incomingDragMimeTypes: List<String> = emptyList()
-    private val incomingDragMimeData = linkedMapOf<String, ByteArray>()
+    /**
+     * Mark-in-place reuse (Noria's Wayland model): builds a sibling window around the SAME
+     * native window and the SAME id — the native id is monotonic and must never be re-fed to
+     * a [WindowParams] (KDT errors on duplicate ids), so the native window has to survive.
+     * The shared [linuxTextInputSessionOwner] keeps seat-level IME continuity across the swap.
+     */
+    internal fun reuse(
+        session: ApplicationSession,
+        onCloseRequest: (WindowCloseRequestReason) -> Unit,
+    ): LinuxWindow {
+        val newWindow = LinuxWindow(
+            application,
+            session,
+            onCloseRequest,
+            linuxTextInputSessionOwner,
+            nativeWindow,
+            id,
+        )
+
+        newWindow.size = size
+        newWindow.contentSize = contentSize
+        newWindow.isFocused = isFocused
+        newWindow.placement = placement
+        newWindow.windowCapabilities = windowCapabilities
+        newWindow.decoration = decoration
+        newWindow.density = density
+        newWindow.screen = screen
+        // The compositor won't re-send WindowConfigure for the surviving native window, so the
+        // sibling's first frame must be armed here or the AIR-5322 draw gate would hold it
+        // until some unrelated invalidation.
+        newWindow.isFrameRequested = true
+
+        // The surviving native window never emits a WindowClosed for this dying instance, so
+        // onClosed() (which normally drains fileDialogResponses) will not run for it. Cancel any
+        // in-flight dialog continuations here or they would hang forever — their eventual
+        // FileChooserResponse lands on the sibling's fresh, empty map (AIR-6085 WS3 task-9).
+        fileDialogResponses.values.forEach { it.cancel() }
+        fileDialogResponses.clear()
+
+        // Unlike Noria, this fork's window owns its ComposeScene, so the old Kotlin side dies
+        // at swap time (dispose() is a no-op while marked; see there). Only the native window
+        // lives on, inside the sibling that just registered itself in application.windows.
+        isDisposed = true
+        composeScene.close()
+        architectureComponentsOwner.setLifecycleState(Lifecycle.State.DESTROYED)
+
+        return newWindow
+    }
 
     override var title: String
         get() = titleField
@@ -373,16 +417,6 @@ class LinuxWindow internal constructor(
         setLifecycleState(Lifecycle.State.RESUMED)
     }
 
-    private val linuxTextInputSessionOwner = LinuxTextInputSessionOwner(
-        startInputMethod = { context, surroundingText ->
-            application.startTextInput(id, context, surroundingText)
-        },
-        stopInputMethod = { application.stopTextInput(id) },
-        onDataChanged = { context, surroundingText ->
-            application.updateTextInput(id, context, surroundingText)
-        },
-    )
-
     private val semanticsOwners = mutableStateSetOf<SemanticsOwner>()
 
     private val uiRoot = UIRoot { semanticsOwners }
@@ -429,10 +463,23 @@ class LinuxWindow internal constructor(
         invalidate = { isFrameRequested = true },
     )
 
-    init {
-        application.windows[id] = this
-    }
+    // The registration init block lives at the BOTTOM of the class; see there.
 
+    // WARNING — blocking bridge over an event-driven native API.
+    //
+    // KDT's Wayland file chooser is asynchronous: showOpenFileDialog/showSaveFileDialog only
+    // ISSUE a request and the selection arrives later as an Event.FileChooserResponse dispatched
+    // on the KDT event loop (see handleEvent). The [Window] interface, however, is blocking
+    // (: Path?) because it was shaped for macOS, whose native panel runs its own nested modal
+    // loop. To honor that contract these methods runBlocking on the real suspend core.
+    //
+    // Consequently they MUST NOT be called on the KDT event-loop thread: blocking it stops the
+    // loop that would deliver FileChooserResponse, so the wait can never complete — a guaranteed
+    // deadlock. Note that Dispatchers.Main dispatches ONTO this loop, and Fleet's FileChooser
+    // invokes these via withContext(Dispatchers.Main); off-loop callers (or a future suspend
+    // Window signature) are required. Prefer the suspend core [openFileDialog]/[saveFileDialog]
+    // directly. See AIR-6085 WS3 task-9 report (blocking-vs-suspend decision, needs maintainer
+    // confirmation).
     override fun showOpenSingleDialog(
         title: String,
         prompt: String,
@@ -446,9 +493,14 @@ class LinuxWindow internal constructor(
         canChooseFiles: Boolean,
         canChooseDirectories: Boolean,
         resolvesAliases: Boolean,
-    ): Path? {
-        // TODO
-        return null
+    ): Path? = runBlocking {
+        openFileDialog(
+            mapCommonDialogParams(title, prompt, message, directoryPath),
+            FileDialog.OpenDialogParams(
+                selectDirectories = canChooseDirectories && !canChooseFiles,
+                allowsMultipleSelections = false,
+            ),
+        )?.firstOrNull()
     }
 
     override fun showOpenMultipleDialog(
@@ -464,9 +516,14 @@ class LinuxWindow internal constructor(
         canChooseFiles: Boolean,
         canChooseDirectories: Boolean,
         resolvesAliases: Boolean,
-    ): List<Path> {
-        // TODO
-        return emptyList()
+    ): List<Path> = runBlocking {
+        openFileDialog(
+            mapCommonDialogParams(title, prompt, message, directoryPath),
+            FileDialog.OpenDialogParams(
+                selectDirectories = canChooseDirectories && !canChooseFiles,
+                allowsMultipleSelections = true,
+            ),
+        ) ?: emptyList()
     }
 
     override fun showSaveDialog(
@@ -480,9 +537,61 @@ class LinuxWindow internal constructor(
         canSelectHiddenExtensions: Boolean,
         showsHiddenFiles: Boolean,
         isExtensionHidden: Boolean,
-    ): Path? {
-        // TODO
-        return null
+    ): Path? = runBlocking {
+        saveFileDialog(
+            mapCommonDialogParams(title, prompt, message, directoryPath),
+            FileDialog.SaveDialogParams(nameFieldStringValue = nameFieldStringValue),
+        )?.firstOrNull()
+    }
+
+    /**
+     * Suspending core of the open-file dialogs. Issues the native request on the KDT event loop,
+     * registers the continuation under its [RequestId] (see the Event.FileChooserResponse arm in
+     * handleEvent, which URL-decodes and resumes), and suspends until the response arrives.
+     *
+     * Returns `null` only when the native side rejected the request (null [RequestId]); an empty
+     * list means the user cancelled. Safe to call from any thread EXCEPT the event-loop thread.
+     */
+    internal suspend fun openFileDialog(
+        commonParams: FileDialog.CommonDialogParams,
+        openParams: FileDialog.OpenDialogParams,
+    ): List<Path>? = suspendCancellableCoroutine { continuation ->
+        application.onEventLoopAsync {
+            if (isDisposed) {
+                continuation.resume(null)
+                return@onEventLoopAsync
+            }
+            val requestId = nativeWindow.showOpenFileDialog(commonParams, openParams)
+            if (requestId == null) {
+                continuation.resume(null)
+            } else {
+                fileDialogResponses[requestId] = continuation
+                continuation.invokeOnCancellation { fileDialogResponses.remove(requestId) }
+            }
+        }
+    }
+
+    /**
+     * Suspending core of the save-file dialog. See [openFileDialog] for the request/response and
+     * threading contract; the returned list holds at most one path.
+     */
+    internal suspend fun saveFileDialog(
+        commonParams: FileDialog.CommonDialogParams,
+        saveParams: FileDialog.SaveDialogParams,
+    ): List<Path>? = suspendCancellableCoroutine { continuation ->
+        application.onEventLoopAsync {
+            if (isDisposed) {
+                continuation.resume(null)
+                return@onEventLoopAsync
+            }
+            val requestId = nativeWindow.showSaveFileDialog(commonParams, saveParams)
+            if (requestId == null) {
+                continuation.resume(null)
+            } else {
+                fileDialogResponses[requestId] = continuation
+                continuation.invokeOnCancellation { fileDialogResponses.remove(requestId) }
+            }
+        }
     }
 
     override fun captureScreenshot(): ImageBitmap {
@@ -496,13 +605,20 @@ class LinuxWindow internal constructor(
     }
 
     override fun dispose() {
-        if (!isDisposed) {
-            isDisposed = true
-            application.windows.remove(id)
-            composeScene.close()
-            architectureComponentsOwner.setLifecycleState(Lifecycle.State.DESTROYED)
-            onNativeWindowAsync { close() }
-        }
+        // A window marked for reuse must stay fully live: still registered in
+        // application.windows (reuseWindow() looks it up there, and structured quit must
+        // still reach it), scene still open, native window untouched — the sibling adopts
+        // it. Its Kotlin side is torn down by reuse() at swap time, or by
+        // disposeReusableNativeWindowResources() (unmark + dispose) if never reclaimed.
+        if (isDisposed || isMarkedForReuse) return
+        isDisposed = true
+        application.windows.remove(id)
+        composeScene.close()
+        architectureComponentsOwner.setLifecycleState(Lifecycle.State.DESTROYED)
+        // Posted directly rather than via onNativeWindowAsync: that helper drops work once
+        // isDisposed is set (just latched above), and this close is what eventually yields
+        // the native WindowClosed that releases the (monotonic, never recycled) native id.
+        application.onEventLoopAsync { nativeWindow.close() }
     }
 
     internal fun onClosed() {
@@ -520,24 +636,6 @@ class LinuxWindow internal constructor(
 
     internal fun queryDragAndDropTarget(query: DragAndDropQueryData): DragAndDropQueryResponse {
         return dragAndDropManager.onQuery(query)
-    }
-
-    internal fun onDataTransferAvailable(event: Event.DataTransferAvailable): Boolean {
-        if (event.dataSource != DataSource.DragAndDrop) {
-            return false
-        }
-        incomingDragMimeTypes = event.mimeTypes
-        incomingDragMimeData.clear()
-        return true
-    }
-
-    internal fun onDataTransfer(event: Event.DataTransfer): Boolean {
-        if (incomingDragMimeTypes.isEmpty()) {
-            return false
-        }
-        val content = event.content ?: return false
-        incomingDragMimeData[content.mimeType] = content.data
-        return true
     }
 
     internal fun handleEvent(event: Event): EventHandlerResult {
@@ -596,7 +694,10 @@ class LinuxWindow internal constructor(
                 -> inputStateTracker.updateStateAndSendEvents(event, density)
 
             is Event.WindowDraw -> {
-                if (isDisposed) {
+                // AIR-5322: WindowDraw arrives every compositor frame on Wayland, so render
+                // only when something invalidated. The native side re-arms the frame callback
+                // unconditionally after each draw, so skipping cannot stall the loop.
+                if (isDisposed || !isFrameRequested) {
                     return EventHandlerResult.Continue
                 }
                 isFrameRequested = false
@@ -612,22 +713,20 @@ class LinuxWindow internal constructor(
             }
 
             is Event.FileChooserResponse -> {
-                fileDialogResponses.remove(event.requestId)?.resume(event.files.map(::Path))
+                // KDT delivers URL-encoded file:// paths; decode them before resuming. An empty
+                // list means the user cancelled — the open/save wrappers interpret that.
+                fileDialogResponses.remove(event.requestId)
+                    ?.resume(event.files.map(::decodeFileChooserPath))
                 EventHandlerResult.Stop
             }
 
             is Event.DropPerformed -> {
-                event.content?.let { incomingDragMimeData[it.mimeType] = it.data }
                 dragAndDropManager.onDrop(event)
-                incomingDragMimeTypes = emptyList()
-                incomingDragMimeData.clear()
                 EventHandlerResult.Stop
             }
 
             is Event.DragAndDropLeave -> {
                 dragAndDropManager.onLeave()
-                incomingDragMimeTypes = emptyList()
-                incomingDragMimeData.clear()
                 EventHandlerResult.Stop
             }
 
@@ -721,12 +820,9 @@ class LinuxWindow internal constructor(
             dragIconPngBytes = dragImageBytes,
         )
         onNativeWindowAsync {
-            // Native DnD takes over the pointer here, so the press that started the
-            // drag will never get a matching release in this window. Clear the
-            // pressed buttons so the follow-up exit event reports `down = false` - otherwise
-            // the original press hit path keeps receiving pointer events
-            inputStateTracker.clearPointerButtons()
-
+            // Native DnD takes over the pointer; the compositor sends MouseExited when the grab
+            // starts and the tracker clears the pressed buttons there (AIR-5571) — clearing here
+            // as well broke interactive resize on KDE Wayland.
             startDragAndDrop(
                 StartDragAndDropParams(
                     mimeTypes = mimeTypes,
@@ -817,9 +913,22 @@ class LinuxWindow internal constructor(
         composeScene.setContent {
             CompositionLocalProvider(
                 LocalSystemTheme provides systemTheme,
+                LocalTextToolbar provides remember { DefaultTextToolbar() },
+                LocalWindow provides this,
                 LocalTextInputSessionOwner provides linuxTextInputSessionOwner,
+                LocalPointerIconService provides pointerIconService,
+                LocalInputModeManager provides inputModeManager,
             ) {
                 contentState?.invoke(windowScope)
+            }
+
+            // Refresh hit testing under a stationary pointer after relayout. Queued via the scene's
+            // (non-immediate) dispatcher so new SuspendingPointerInputFilters are already subscribed;
+            // the tracker's generation check cancels stale refreshes as soon as a real event arrives.
+            rememberCoroutineScope().launch {
+                inputStateTracker
+                    .prepareSyntheticPointerEventAfterRelayoutIfNecessary()
+                    ?.let(inputStateTracker::sendSyntheticPointerEventAfterRelayoutIfCurrent)
             }
         }
     }
@@ -879,7 +988,53 @@ class LinuxWindow internal constructor(
     private var contentState by mutableStateOf<(@Composable WindowScope.() -> Unit)?>(null)
     private var sceneContentInstalled = false
 
+    init {
+        // Registered here, at the bottom of the class, so that inputStateTracker and the scene
+        // are guaranteed to be initialized before any event dispatched by the application event
+        // loop can reach handleEvent (see MacOsWindow's identical ordering).
+        application.windows[id] = this
+    }
+
     companion object {
+        internal fun create(
+            application: LinuxApplication,
+            session: ApplicationSession,
+            onCloseRequest: (WindowCloseRequestReason) -> Unit,
+        ): LinuxWindow {
+            // The native id is allocated monotonically and must NEVER be re-fed into a new
+            // WindowParams — KDT's native side errors on duplicate ids, and closed ids drain
+            // only on later event-loop iterations (see the monotonic-id note in
+            // LinuxApplication.resetState). Reuse therefore keeps the native window alive
+            // (LinuxWindow.reuse) instead of ever recycling an id here.
+            val nativeWindow = application.nativeApplication.createWindow(
+                WindowParams(
+                    windowId = application.allocateNativeWindowId(),
+                    appId = application.identifier,
+                    title = "",
+                    size = LogicalSize(800, 600),
+                    preferClientSideDecoration = true,
+                    renderingMode = RenderingMode.Auto,
+                ),
+            )
+            val id = LightweightWindowId(nativeWindow.windowId)
+            return LinuxWindow(
+                application = application,
+                session = session,
+                onCloseRequest = onCloseRequest,
+                linuxTextInputSessionOwner = LinuxTextInputSessionOwner(
+                    startInputMethod = { context, surroundingText ->
+                        application.startTextInput(id, context, surroundingText)
+                    },
+                    stopInputMethod = { application.stopTextInput(id) },
+                    onDataChanged = { context, surroundingText ->
+                        application.updateTextInput(id, context, surroundingText)
+                    },
+                ),
+                nativeWindow = nativeWindow,
+                id = id,
+            )
+        }
+
         internal fun drawDragIcon(
             event: Event.DragIconDraw,
             dragIconPngBytes: ByteArray?,
@@ -968,3 +1123,56 @@ private fun WindowDecoration.TitleBarElement.isAvailableIn(capabilities: WindowC
         WindowDecoration.TitleBarElement.MaximizeButton -> capabilities?.maximize ?: true
         else -> true
     }
+
+/**
+ * Maps the fork's cross-platform (macOS-shaped) dialog parameters onto KDT's Wayland
+ * [FileDialog.CommonDialogParams].
+ *
+ * KDT's Linux/GTK dialog surface only exposes `modal`, `title`, `acceptLabel` and `currentFolder`,
+ * so the macOS-only parameters — `message`, `canCreateDirectories`, the hidden-file/extension flags
+ * and `resolvesAliases` — have no counterpart and are intentionally DROPPED. `message` is accepted
+ * here only to keep the mapping signature aligned with the [Window] dialog methods.
+ */
+internal fun mapCommonDialogParams(
+    title: String,
+    prompt: String,
+    message: String?,
+    directoryPath: Path?,
+): FileDialog.CommonDialogParams =
+    FileDialog.CommonDialogParams(
+        modal = true,
+        title = title,
+        acceptLabel = prompt.takeIf { it.isNotBlank() },
+        currentFolder = directoryPath?.toString(),
+    )
+
+/**
+ * Decodes a single path as returned in [org.jetbrains.desktop.linux.Event.FileChooserResponse.files]
+ * (and its GTK twin) into a [Path]. KDT hands back percent-encoded `file://` URIs; this strips the
+ * `file://` scheme prefix and percent-decodes the remainder (UTF-8). `+` is left untouched — unlike
+ * form decoding, it is a literal character in a URI path.
+ *
+ * Shared by both the Linux and GTK backends (the response payload is package-agnostic `List<String>`).
+ */
+internal fun decodeFileChooserPath(encoded: String): Path =
+    Path(percentDecodeUtf8(encoded.removePrefix("file://")))
+
+private fun percentDecodeUtf8(value: String): String {
+    if ('%' !in value) return value
+    val out = java.io.ByteArrayOutputStream(value.length)
+    var i = 0
+    while (i < value.length) {
+        val c = value[i]
+        if (c == '%' && i + 2 < value.length) {
+            val code = value.substring(i + 1, i + 3).toIntOrNull(16)
+            if (code != null) {
+                out.write(code)
+                i += 3
+                continue
+            }
+        }
+        out.write(c.toString().toByteArray(Charsets.UTF_8))
+        i++
+    }
+    return String(out.toByteArray(), Charsets.UTF_8)
+}

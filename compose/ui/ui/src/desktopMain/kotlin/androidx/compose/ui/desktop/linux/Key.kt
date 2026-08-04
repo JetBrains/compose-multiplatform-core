@@ -144,29 +144,37 @@ internal fun KeySym.toKey(): Key = when (value) {
     KeySym.apostrophe,
     KeySym.quoteright,
         -> Key.Apostrophe
+    KeySym.quotedbl -> Key.QuotationMark
     KeySym.backslash -> Key.Backslash
+    KeySym.bar -> Key.VerticalLine
     KeySym.comma -> Key.Comma
+    KeySym.less -> Key.LessSign
     KeySym.equal -> Key.Equals
     KeySym.plus -> Key.Plus
     KeySym.grave,
     KeySym.quoteleft,
     0x7eU, // asciitilde - produced by Shift+BackQuote on US keyboard, not in KeySym companion
         -> Key.Grave
+    KeySym.asciicircum -> Key.CircumflexAccent
     KeySym.bracketleft -> Key.LeftBracket
+    KeySym.braceleft -> Key.LeftBrace
     KeySym.minus -> Key.Minus
+    KeySym.underscore -> Key.Underscore
     KeySym.period -> Key.Period
+    KeySym.greater -> Key.GreaterSign
     KeySym.bracketright -> Key.RightBracket
+    KeySym.braceright -> Key.RightBrace
     KeySym.semicolon -> Key.Semicolon
+    KeySym.colon -> Key.Colon
     KeySym.slash -> Key.Slash
     KeySym.at -> Key.At
-    // Symbols not present in the current Compose `Key` set are intentionally unmapped.
-    // Re-add them once the corresponding keys land:
-    //   quotedbl -> QuotationMark, bar -> VerticalLine, less -> LessSign,
-    //   asciicircum -> CircumflexAccent, braceleft -> LeftBrace, underscore -> Underscore,
-    //   greater -> GreaterSign, braceright -> RightBrace, colon -> Colon,
-    //   ampersand -> Ampersand, asterisk -> Asterisk, numbersign -> NumberSign,
-    //   dollar -> DollarSign, exclam -> ExclamationMark,
-    //   parenleft -> LeftParenthesis, parenright -> RightParenthesis
+    KeySym.ampersand -> Key.Ampersand
+    KeySym.asterisk -> Key.Asterisk
+    KeySym.numbersign -> Key.NumberSign
+    KeySym.dollar -> Key.DollarSign
+    KeySym.exclam -> Key.ExclamationMark
+    KeySym.parenleft -> Key.LeftParenthesis
+    KeySym.parenright -> Key.RightParenthesis
 
     KeySym.KP_0 -> Key.NumPad0
     KeySym.KP_1 -> Key.NumPad1
