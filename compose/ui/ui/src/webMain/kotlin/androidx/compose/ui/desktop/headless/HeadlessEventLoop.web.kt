@@ -22,7 +22,9 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 
-actual fun createHeadlessEventLoop(): HeadlessEventLoop = WebHeadlessEventLoop()
+// libraryFolderPath is unused in the browser (no native skiko library to locate); the
+// parameter exists to match the expect shared with the JVM/iOS actuals.
+actual fun createHeadlessEventLoop(libraryFolderPath: String): HeadlessEventLoop = WebHeadlessEventLoop()
 
 private class WebHeadlessEventLoop : HeadlessEventLoop {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)

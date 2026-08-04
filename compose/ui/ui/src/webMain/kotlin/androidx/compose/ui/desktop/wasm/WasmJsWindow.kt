@@ -535,7 +535,7 @@ class WasmJsWindow internal constructor(
         }
     }
 
-    override fun showOpenSingleDialog(
+    override suspend fun showOpenSingleDialog(
         title: String,
         prompt: String,
         message: String?,
@@ -550,7 +550,7 @@ class WasmJsWindow internal constructor(
         resolvesAliases: Boolean,
     ): Path? = null
 
-    override fun showOpenMultipleDialog(
+    override suspend fun showOpenMultipleDialog(
         title: String,
         prompt: String,
         message: String?,
@@ -565,7 +565,7 @@ class WasmJsWindow internal constructor(
         resolvesAliases: Boolean,
     ): List<Path> = emptyList()
 
-    override fun showSaveDialog(
+    override suspend fun showSaveDialog(
         title: String,
         prompt: String,
         message: String?,
