@@ -24,6 +24,7 @@ import androidx.compose.ui.desktop.ApplicationSession
 import androidx.compose.ui.desktop.WindowCloseRequestReason
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toPixelMap
+import androidx.compose.ui.scene.ComposeSceneFeatureFlags
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
@@ -67,6 +68,33 @@ class HeadlessWindowTest {
         window.dispose()
         assertFalse(app.windows.containsKey(window.id))
         window.dispose() // idempotent
+    }
+
+    /**
+     * With frame isolation on, the scene pins a snapshot when its frame domain activates during
+     * construction. Any of the window's own snapshot state declared after the scene would be
+     * invisible in that snapshot, and the first `setContent` — which reads it — would throw. No
+     * priming render here on purpose: `setContent` must be legal on a freshly created window.
+     */
+    @Test
+    fun setContentWorksOnAFreshWindowWhenFrameIsolationIsEnabled() = runBlocking {
+        val previous = ComposeSceneFeatureFlags.isFrameIsolationEnabled
+        ComposeSceneFeatureFlags.isFrameIsolationEnabled = true
+        try {
+            val window = app.createWindow(ApplicationSession(scope)) { }
+            window.setContent(onPreviewKeyEvent = { false }, onKeyEvent = { false }) {
+                androidx.compose.foundation.layout.Box(Modifier.fillMaxSize().background(Color.Red))
+            }
+            // With isolation on, setContent schedules one catch-up frame on the event loop rather
+            // than composing synchronously, so the content arrives with that frame, not with a
+            // hand-driven render.
+            app.awaitIdle()
+            val pixels = window.captureScreenshot().toPixelMap()
+            assertEquals(Color.Red, pixels[pixels.width / 2, pixels.height / 2])
+            window.dispose()
+        } finally {
+            ComposeSceneFeatureFlags.isFrameIsolationEnabled = previous
+        }
     }
 
     @Test
