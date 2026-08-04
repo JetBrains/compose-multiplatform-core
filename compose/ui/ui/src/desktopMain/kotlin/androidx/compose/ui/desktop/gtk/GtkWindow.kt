@@ -9,6 +9,8 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.mutableStateSetOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.InternalComposeUiApi
@@ -26,6 +28,7 @@ import androidx.compose.ui.desktop.Window
 import androidx.compose.ui.desktop.WindowCloseRequestReason
 import androidx.compose.ui.desktop.WindowScope
 import androidx.compose.ui.desktop.draganddrop.DragAndDropImage
+import androidx.compose.ui.desktop.linux.decodeFileChooserPath
 import androidx.compose.ui.desktop.linuxMimeTypes
 import androidx.compose.ui.draganddrop.DragAndDropTransferAction
 import androidx.compose.ui.draganddrop.DragAndDropTransferData
@@ -52,7 +55,10 @@ import androidx.compose.ui.node.InternalCoreApi
 import androidx.compose.ui.platform.DefaultArchitectureComponentsOwner
 import androidx.compose.ui.platform.DefaultTextToolbar
 import androidx.compose.ui.platform.InterceptPlatformTextInput
+import androidx.compose.ui.platform.LocalInputModeManager
+import androidx.compose.ui.platform.LocalPointerIconService
 import androidx.compose.ui.platform.LocalTextInputContext
+import androidx.compose.ui.platform.LocalTextToolbar
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.PlatformDragAndDropManager
 import androidx.compose.ui.platform.PlatformTextInputMethodRequest
@@ -84,19 +90,22 @@ import kotlin.invoke
 import kotlin.math.roundToInt
 import kotlinx.coroutines.CancellableContinuation
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.io.files.Path
 import noria.CallbackInterceptor
+import noria.ui.core.LocalWindow
 import noria.ui.core.TestDataMode
 import noria.ui.core.UIRoot
 import noria.ui.core.WindowData
-import org.jetbrains.desktop.gtk.DataSource
 import org.jetbrains.desktop.gtk.DragAndDropAction
 import org.jetbrains.desktop.gtk.DragAndDropQueryData
 import org.jetbrains.desktop.gtk.DragAndDropQueryResponse
 import org.jetbrains.desktop.gtk.DragIconParams
 import org.jetbrains.desktop.gtk.Event
 import org.jetbrains.desktop.gtk.EventHandlerResult
+import org.jetbrains.desktop.gtk.FileDialog
 import org.jetbrains.desktop.gtk.LogicalRect
 import org.jetbrains.desktop.gtk.LogicalSize
 import org.jetbrains.desktop.gtk.RenderingMode
@@ -117,33 +126,20 @@ import org.jetbrains.skia.SurfaceColorFormat
 import org.jetbrains.skia.SurfaceOrigin
 import org.jetbrains.skia.makeGLWithInterface
 
-class GtkWindow internal constructor(
+class GtkWindow private constructor(
     private val application: GtkApplication,
     internal val session: ApplicationSession,
     private val onCloseRequest: (WindowCloseRequestReason) -> Unit,
+    private val gtkTextInputSessionOwner: GtkTextInputSessionOwner,
+    override val nativeWindow: org.jetbrains.desktop.gtk.Window,
 ) : InteractiveMoveInitiator {
-    private val nativeWindowId = application.allocateNativeWindowId()
-
-    override val nativeWindow: org.jetbrains.desktop.gtk.Window =
-        application.onEventLoopSync {
-            createWindow(
-                WindowParams(
-                    windowId = nativeWindowId,
-                    title = "",
-                    size = LogicalSize(800, 600),
-                    minSize = null,
-                    decorationMode = WindowDecorationMode.CustomTitlebar(
-                        DefaultCustomTitleBarHeightForAir.value.toInt(),
-                    ),
-                    renderingMode = RenderingMode.Auto,
-                ),
-            )
-        }
-
     override val id: LightweightWindowId = LightweightWindowId(nativeWindow.windowId)
 
     @Volatile
     private var isDisposed = false
+
+    @Volatile
+    internal var isMarkedForReuse = false
 
     private val nativeClosed = CompletableDeferred<Unit>()
 
@@ -156,11 +152,59 @@ class GtkWindow internal constructor(
     private var titleField by mutableStateOf("")
     private var overriddenSystemTheme by mutableStateOf<SystemTheme?>(null)
 
-    private var incomingDragMimeTypes: List<String> = emptyList()
-    private val incomingDragMimeData = linkedMapOf<String, ByteArray>()
+    // The registration init block lives at the BOTTOM of the class; see there.
 
-    init {
-        application.windows[id] = this
+    /**
+     * Mark-in-place reuse (Noria's GTK model): builds a sibling window around the SAME native
+     * window and the SAME id — the native id is monotonic and must never be re-fed into a
+     * [WindowParams] (KDT errors on duplicate ids, and GTK only drops a closed id from its native
+     * window map on a later `on_destroy`, so recreating a recycled id before that is a native
+     * error), so the native window has to survive. The shared [gtkTextInputSessionOwner] targets
+     * the surviving native window (not a window instance), keeping IME continuity across the swap.
+     */
+    internal fun reuse(
+        session: ApplicationSession,
+        onCloseRequest: (WindowCloseRequestReason) -> Unit,
+    ): GtkWindow {
+        val newWindow = GtkWindow(
+            application,
+            session,
+            onCloseRequest,
+            gtkTextInputSessionOwner,
+            nativeWindow,
+        )
+
+        // GTK's own seed list (differs from Wayland's). Noria seeds separate hasActiveAppearance
+        // and hasKeyboardFocus fields here; this fork collapses both into a single isFocused
+        // (see the field), so the one assignment stands in for both Noria fields.
+        newWindow.size = size
+        newWindow.contentSize = contentSize
+        newWindow.isFocused = isFocused
+        newWindow.placement = placement
+        newWindow.customTitleBarInsets = customTitleBarInsets
+        newWindow.decoration = decoration
+        newWindow.density = density
+        newWindow.screen = screen
+        // GTK asks for the next frame via the frame-tick -> requestRedraw path, which only fires
+        // while isFrameRequested is set. The surviving native window won't get a fresh
+        // WindowConfigure to re-arm the flag, so arm the sibling's first frame here.
+        newWindow.isFrameRequested = true
+
+        // The surviving native window emits no WindowClosed for this dying instance, so the
+        // WindowClosed/dispose drain of fileDialogResponses never runs for it. Cancel any in-flight
+        // dialog continuations here or they would hang forever — their eventual FileChooserResponse
+        // lands on the sibling's fresh, empty map (AIR-6085 WS3 task-9).
+        fileDialogResponses.values.forEach { it.cancel() }
+        fileDialogResponses.clear()
+
+        // Unlike Noria, this fork's window owns its ComposeScene, so the old Kotlin side dies at
+        // swap time (dispose() is a full no-op while marked; see there). Only the native window
+        // lives on, inside the sibling that just registered itself in application.windows.
+        isDisposed = true
+        composeScene.close()
+        architectureComponentsOwner.setLifecycleState(Lifecycle.State.DESTROYED)
+
+        return newWindow
     }
 
     override var title: String
@@ -333,12 +377,6 @@ class GtkWindow internal constructor(
         setLifecycleState(Lifecycle.State.RESUMED)
     }
 
-    private val gtkTextInputSessionOwner = GtkTextInputSessionOwner(
-        startInputMethod = { context -> onNativeWindowAsync { textInputEnable(context) } },
-        stopInputMethod = { onNativeWindowAsync { textInputDisable() } },
-        onDataChanged = { context -> onNativeWindowAsync { textInputUpdate(context) } },
-    )
-
     private val semanticsOwners = mutableStateSetOf<SemanticsOwner>()
 
     private val uiRoot = UIRoot { semanticsOwners }
@@ -385,6 +423,20 @@ class GtkWindow internal constructor(
         invalidate = { isFrameRequested = true },
     )
 
+    // WARNING — blocking bridge over an event-driven native API.
+    //
+    // KDT's GTK file chooser is asynchronous: showOpenFileDialog/showSaveFileDialog only ISSUE a
+    // request and the selection arrives later as an Event.FileChooserResponse dispatched on the KDT
+    // event loop (see handleEvent). The [Window] interface, however, is blocking (: Path?) because
+    // it was shaped for macOS, whose native panel runs its own nested modal loop. To honor that
+    // contract these methods runBlocking on the real suspend core.
+    //
+    // Consequently they MUST NOT be called on the KDT event-loop thread: blocking it stops the loop
+    // that would deliver FileChooserResponse, so the wait can never complete — a guaranteed
+    // deadlock. Note that Dispatchers.Main dispatches ONTO this loop, and Fleet's FileChooser
+    // invokes these via withContext(Dispatchers.Main); off-loop callers (or a future suspend Window
+    // signature) are required. Prefer the suspend core [openFileDialog]/[saveFileDialog] directly.
+    // See AIR-6085 WS3 task-9 report (blocking-vs-suspend decision, needs maintainer confirmation).
     override fun showOpenSingleDialog(
         title: String,
         prompt: String,
@@ -398,9 +450,14 @@ class GtkWindow internal constructor(
         canChooseFiles: Boolean,
         canChooseDirectories: Boolean,
         resolvesAliases: Boolean,
-    ): Path? {
-        // TODO
-        return null
+    ): Path? = runBlocking {
+        openFileDialog(
+            mapCommonDialogParams(title, prompt, message, directoryPath),
+            FileDialog.OpenDialogParams(
+                selectDirectories = canChooseDirectories && !canChooseFiles,
+                allowsMultipleSelections = false,
+            ),
+        )?.firstOrNull()
     }
 
     override fun showOpenMultipleDialog(
@@ -416,9 +473,14 @@ class GtkWindow internal constructor(
         canChooseFiles: Boolean,
         canChooseDirectories: Boolean,
         resolvesAliases: Boolean,
-    ): List<Path> {
-        // TODO
-        return emptyList()
+    ): List<Path> = runBlocking {
+        openFileDialog(
+            mapCommonDialogParams(title, prompt, message, directoryPath),
+            FileDialog.OpenDialogParams(
+                selectDirectories = canChooseDirectories && !canChooseFiles,
+                allowsMultipleSelections = true,
+            ),
+        ) ?: emptyList()
     }
 
     override fun showSaveDialog(
@@ -432,9 +494,61 @@ class GtkWindow internal constructor(
         canSelectHiddenExtensions: Boolean,
         showsHiddenFiles: Boolean,
         isExtensionHidden: Boolean,
-    ): Path? {
-        // TODO
-        return null
+    ): Path? = runBlocking {
+        saveFileDialog(
+            mapCommonDialogParams(title, prompt, message, directoryPath),
+            FileDialog.SaveDialogParams(nameFieldStringValue = nameFieldStringValue),
+        )?.firstOrNull()
+    }
+
+    /**
+     * Suspending core of the open-file dialogs. Issues the native request on the KDT event loop,
+     * registers the continuation under its [RequestId] (see the Event.FileChooserResponse arm in
+     * handleEvent, which URL-decodes and resumes), and suspends until the response arrives.
+     *
+     * Returns `null` only when the native side rejected the request (null [RequestId]); an empty
+     * list means the user cancelled. Safe to call from any thread EXCEPT the event-loop thread.
+     */
+    internal suspend fun openFileDialog(
+        commonParams: FileDialog.CommonDialogParams,
+        openParams: FileDialog.OpenDialogParams,
+    ): List<Path>? = suspendCancellableCoroutine { continuation ->
+        application.onEventLoopAsync {
+            if (isDisposed) {
+                continuation.resume(null)
+                return@onEventLoopAsync
+            }
+            val requestId = nativeWindow.showOpenFileDialog(commonParams, openParams)
+            if (requestId == null) {
+                continuation.resume(null)
+            } else {
+                fileDialogResponses[requestId] = continuation
+                continuation.invokeOnCancellation { fileDialogResponses.remove(requestId) }
+            }
+        }
+    }
+
+    /**
+     * Suspending core of the save-file dialog. See [openFileDialog] for the request/response and
+     * threading contract; the returned list holds at most one path.
+     */
+    internal suspend fun saveFileDialog(
+        commonParams: FileDialog.CommonDialogParams,
+        saveParams: FileDialog.SaveDialogParams,
+    ): List<Path>? = suspendCancellableCoroutine { continuation ->
+        application.onEventLoopAsync {
+            if (isDisposed) {
+                continuation.resume(null)
+                return@onEventLoopAsync
+            }
+            val requestId = nativeWindow.showSaveFileDialog(commonParams, saveParams)
+            if (requestId == null) {
+                continuation.resume(null)
+            } else {
+                fileDialogResponses[requestId] = continuation
+                continuation.invokeOnCancellation { fileDialogResponses.remove(requestId) }
+            }
+        }
     }
 
     override fun captureScreenshot(): ImageBitmap {
@@ -448,16 +562,22 @@ class GtkWindow internal constructor(
     }
 
     override fun dispose() {
-        if (!isDisposed) {
-            isDisposed = true
-            isFocused = false
-            fileDialogResponses.values.forEach { it.cancel() }
-            fileDialogResponses.clear()
-            composeScene.close()
-            architectureComponentsOwner.setLifecycleState(Lifecycle.State.DESTROYED)
-            application.onEventLoopAsync {
-                nativeWindow.close()
-            }
+        // A window marked for reuse must stay fully live: still registered in application.windows
+        // (reuseWindow() looks it up there, and structured quit must still reach it), scene still
+        // open, native window untouched — the sibling adopts it. Its Kotlin side is torn down by
+        // reuse() at swap time, or by disposeReusableNativeWindowResources() (unmark + dispose) if
+        // never reclaimed. This is a full no-op while marked (not just the native-close skip Noria
+        // can afford) because, unlike Noria, this fork's dispose also closes the ComposeScene —
+        // skipping only the close would leave a throwing husk that reuseWindow would still find.
+        if (isDisposed || isMarkedForReuse) return
+        isDisposed = true
+        isFocused = false
+        fileDialogResponses.values.forEach { it.cancel() }
+        fileDialogResponses.clear()
+        composeScene.close()
+        architectureComponentsOwner.setLifecycleState(Lifecycle.State.DESTROYED)
+        application.onEventLoopAsync {
+            nativeWindow.close()
         }
     }
 
@@ -486,24 +606,6 @@ class GtkWindow internal constructor(
 
     internal fun queryDragAndDropTarget(query: DragAndDropQueryData): DragAndDropQueryResponse {
         return dragAndDropManager.onQuery(query)
-    }
-
-    internal fun onDataTransferAvailable(event: Event.DataTransferAvailable): Boolean {
-        if (event.dataSource != DataSource.DragAndDrop) {
-            return false
-        }
-        incomingDragMimeTypes = event.mimeTypes
-        incomingDragMimeData.clear()
-        return true
-    }
-
-    internal fun onDataTransfer(event: Event.DataTransfer): Boolean {
-        if (incomingDragMimeTypes.isEmpty()) {
-            return false
-        }
-        val content = event.content ?: return false
-        incomingDragMimeData[content.mimeType] = content.data
-        return true
     }
 
     internal fun handleEvent(event: Event): EventHandlerResult {
@@ -618,22 +720,20 @@ class GtkWindow internal constructor(
             }
 
             is Event.FileChooserResponse -> {
-                fileDialogResponses.remove(event.requestId)?.resume(event.files.map(::Path))
+                // KDT delivers URL-encoded file:// paths; decode them before resuming. An empty
+                // list means the user cancelled — the open/save wrappers interpret that.
+                fileDialogResponses.remove(event.requestId)
+                    ?.resume(event.files.map(::decodeFileChooserPath))
                 EventHandlerResult.Stop
             }
 
             is Event.DropPerformed -> {
-                event.content?.let { incomingDragMimeData[it.mimeType] = it.data }
                 dragAndDropManager.onDrop(event)
-                incomingDragMimeTypes = emptyList()
-                incomingDragMimeData.clear()
                 EventHandlerResult.Stop
             }
 
             is Event.DragAndDropLeave -> {
                 dragAndDropManager.onLeave()
-                incomingDragMimeTypes = emptyList()
-                incomingDragMimeData.clear()
                 EventHandlerResult.Stop
             }
 
@@ -722,12 +822,9 @@ class GtkWindow internal constructor(
         )
 
         onNativeWindowAsync {
-            // Native DnD takes over the pointer here, so the press that started the
-            // drag will never get a matching release in this window. Clear the
-            // pressed buttons so the follow-up exit event reports `down = false` - otherwise
-            // the original press hit path keeps receiving pointer events
-            inputStateTracker.clearPointerButtons()
-
+            // Native DnD takes over the pointer; GTK sends MouseExited when the grab starts and
+            // the tracker clears the pressed buttons there (AIR-5571) — clearing here as well
+            // broke interactive resize on KDE.
             startDragAndDrop(
                 StartDragAndDropParams(
                     mimeTypes = mimeTypes,
@@ -799,9 +896,22 @@ class GtkWindow internal constructor(
         composeScene.setContent {
             CompositionLocalProvider(
                 LocalSystemTheme provides systemTheme,
+                LocalTextToolbar provides remember { DefaultTextToolbar() },
+                LocalWindow provides this,
                 LocalTextInputSessionOwner provides gtkTextInputSessionOwner,
+                LocalPointerIconService provides pointerIconService,
+                LocalInputModeManager provides inputModeManager,
             ) {
                 contentState?.invoke(windowScope)
+            }
+
+            // Refresh hit testing under a stationary pointer after relayout. Queued via the scene's
+            // (non-immediate) dispatcher so new SuspendingPointerInputFilters are already subscribed;
+            // the tracker's generation check cancels stale refreshes as soon as a real event arrives.
+            rememberCoroutineScope().launch {
+                inputStateTracker
+                    .prepareSyntheticPointerEventAfterRelayoutIfNecessary()
+                    ?.let(inputStateTracker::sendSyntheticPointerEventAfterRelayoutIfCurrent)
             }
         }
     }
@@ -830,7 +940,62 @@ class GtkWindow internal constructor(
     private var contentState by mutableStateOf<(@Composable WindowScope.() -> Unit)?>(null)
     private var sceneContentInstalled = false
 
+    init {
+        // Registered here, at the bottom of the class, so that inputStateTracker and the scene
+        // are guaranteed to be initialized before any event dispatched by the application event
+        // loop can reach handleEvent (see MacOsWindow's identical ordering).
+        application.windows[id] = this
+    }
+
     companion object {
+        internal fun create(
+            application: GtkApplication,
+            session: ApplicationSession,
+            onCloseRequest: (WindowCloseRequestReason) -> Unit,
+        ): GtkWindow {
+            // The native id is allocated monotonically and must NEVER be re-fed into a new
+            // WindowParams — KDT's native side errors on duplicate ids, and GTK destroys windows
+            // asynchronously (the native map entry is dropped only in a later on_destroy), so a
+            // recycled id could collide with a still-live native entry. Reuse therefore keeps the
+            // native window alive (GtkWindow.reuse) instead of ever recycling an id here.
+            val nativeWindowId = application.allocateNativeWindowId()
+            val nativeWindow = application.onEventLoopSync {
+                createWindow(
+                    WindowParams(
+                        windowId = nativeWindowId,
+                        title = "",
+                        size = LogicalSize(800, 600),
+                        minSize = null,
+                        decorationMode = WindowDecorationMode.CustomTitlebar(
+                            DefaultCustomTitleBarHeightForAir.value.toInt(),
+                        ),
+                        renderingMode = RenderingMode.Auto,
+                    ),
+                )
+            }
+            // The IME session owner binds its callbacks to the surviving native window (not a
+            // window instance) so it can be threaded through reuse() and keep IME state across the
+            // swap. GTK text input is window-level, so it posts straight to this native window.
+            val gtkTextInputSessionOwner = GtkTextInputSessionOwner(
+                startInputMethod = { context ->
+                    application.onEventLoopAsync { nativeWindow.textInputEnable(context) }
+                },
+                stopInputMethod = {
+                    application.onEventLoopAsync { nativeWindow.textInputDisable() }
+                },
+                onDataChanged = { context ->
+                    application.onEventLoopAsync { nativeWindow.textInputUpdate(context) }
+                },
+            )
+            return GtkWindow(
+                application,
+                session,
+                onCloseRequest,
+                gtkTextInputSessionOwner,
+                nativeWindow,
+            )
+        }
+
         internal fun drawDragIcon(
             event: Event.DragIconDraw,
             dragIconPngBytes: ByteArray?,
@@ -877,4 +1042,28 @@ class GtkWindow internal constructor(
         }
     }
 }
+
+/**
+ * Maps the fork's cross-platform (macOS-shaped) dialog parameters onto KDT's GTK
+ * [FileDialog.CommonDialogParams].
+ *
+ * KDT's Linux/GTK dialog surface only exposes `modal`, `title`, `acceptLabel` and `currentFolder`,
+ * so the macOS-only parameters — `message`, `canCreateDirectories`, the hidden-file/extension flags
+ * and `resolvesAliases` — have no counterpart and are intentionally DROPPED. `message` is accepted
+ * here only to keep the mapping signature aligned with the [Window] dialog methods. This is the GTK
+ * twin of the Wayland `mapCommonDialogParams`; the logic is identical, only the package's
+ * [FileDialog] type differs (path decoding is shared via [decodeFileChooserPath]).
+ */
+internal fun mapCommonDialogParams(
+    title: String,
+    prompt: String,
+    message: String?,
+    directoryPath: Path?,
+): FileDialog.CommonDialogParams =
+    FileDialog.CommonDialogParams(
+        modal = true,
+        title = title,
+        acceptLabel = prompt.takeIf { it.isNotBlank() },
+        currentFolder = directoryPath?.toString(),
+    )
 

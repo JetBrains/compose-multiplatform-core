@@ -92,10 +92,13 @@ internal class GtkDragAndDropManager(
             nativeEvent = LinuxDragAndDropClipboardEntry(mimeTypes, event.content?.data),
             positionInRootImpl = lastPositionInRoot,
         )
-        val consumed = node.onDrop(dragEvent)
-        node.onEnded(dragEvent)
-        previousAction = null
-        started = false
+        val consumed = callbackInterceptor.execute {
+            val result = node.onDrop(dragEvent)
+            node.onEnded(dragEvent)
+            previousAction = null
+            started = false
+            result
+        }
         return consumed
     }
 
@@ -108,10 +111,12 @@ internal class GtkDragAndDropManager(
             nativeEvent = LinuxDragAndDropClipboardEntry(emptyList(), null),
             positionInRootImpl = Offset.Zero
         )
-        node.onExited(event)
-        node.onEnded(event)
-        previousAction = null
-        started = false
+        callbackInterceptor.execute {
+            node.onExited(event)
+            node.onEnded(event)
+            previousAction = null
+            started = false
+        }
     }
 
     private fun DragAndDropQueryData.toDragAndDropEvent(nativeEvent: LinuxDragAndDropClipboardEntry): DragAndDropEvent {

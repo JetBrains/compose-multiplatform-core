@@ -26,6 +26,7 @@ import androidx.compose.ui.desktop.Window
 import androidx.compose.ui.desktop.WindowCloseRequestReason
 import androidx.compose.ui.desktop.deactivateApplication
 import androidx.compose.ui.desktop.getDataForLinuxMimeType
+import androidx.compose.ui.desktop.logging.KLoggers
 import androidx.compose.ui.desktop.logging.logger
 import androidx.compose.ui.desktop.removeApplication
 import androidx.compose.ui.platform.ClipEntry
@@ -33,8 +34,6 @@ import androidx.compose.ui.platform.DefaultHapticFeedback
 import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalFontFamilyResolver
 import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.platform.LocalInputModeManager
-import androidx.compose.ui.platform.LocalPointerIconService
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.UriHandler
 import androidx.compose.ui.text.font.FontFamily
@@ -324,12 +323,20 @@ object GtkApplication : Application {
 
                 is Event.KeyDown,
                 is Event.KeyUp,
-                is Event.ModifiersChanged,
                 is Event.TextInput,
                     -> {
                     keyboardFocusWindowId?.let { windowId ->
                         windows[windowId]?.handleEvent(event)
                     } ?: EventHandlerResult.Continue
+                }
+
+                is Event.ModifiersChanged -> {
+                    // GTK reports modifiers per seat, not per window: broadcast so windows that
+                    // are hovered-but-unfocused track the same state (cc557a8bf5daa).
+                    for (window in windows.values) {
+                        window.handleEvent(event)
+                    }
+                    EventHandlerResult.Stop
                 }
 
                 is Event.WindowKeyboardEnter -> {
@@ -512,20 +519,40 @@ object GtkApplication : Application {
         session: ApplicationSession,
         onCloseRequest: (WindowCloseRequestReason) -> Unit,
     ): Window {
-        val window = GtkWindow(this, session, onCloseRequest)
-        windows[window.id] = window
-        return window
+        // The window registers itself in `windows` at the end of its own construction, after its
+        // input tracker and scene exist — registering here as well would race event delivery
+        // against a partially-initialized window.
+        return GtkWindow.create(this, session, onCloseRequest)
     }
 
-    override fun prepareNativeWindowResourcesForReuse(id: LightweightWindowId) {}
+    override fun prepareNativeWindowResourcesForReuse(id: LightweightWindowId) {
+        windows[id]?.isMarkedForReuse = true
+    }
 
     override fun reuseWindow(
         id: LightweightWindowId,
         session: ApplicationSession,
         onCloseRequest: (WindowCloseRequestReason) -> Unit,
-    ): Window? = null
+    ): Window? {
+        val oldWindow = windows[id] ?: return null
+        // Removed first so the old window stops receiving events while the sibling is under
+        // construction — both wrap the same native window, and only one may be routed to.
+        windows -= id
+        val newWindow = oldWindow.reuse(session, onCloseRequest)
+        // The sibling already re-registered itself at the end of its construction
+        // (registration-last init); this keeps the swap explicit at the call site.
+        windows[id] = newWindow
+        return newWindow
+    }
 
-    override fun disposeReusableNativeWindowResources(id: LightweightWindowId) {}
+    override fun disposeReusableNativeWindowResources(id: LightweightWindowId) {
+        windows[id]?.let {
+            if (it.isMarkedForReuse) {
+                it.isMarkedForReuse = false
+                it.dispose()
+            }
+        }
+    }
 
     private fun requestStructuredQuit() {
         if (terminationInProgress || structuredQuitInProgress) return
@@ -623,6 +650,9 @@ object GtkApplication : Application {
             logFilePath = logFilePath,
             consoleLogLevel = LogLevel.Info,
             fileLogLevel = LogLevel.Debug,
+            appenderInterface = KdtLoggerAppender(
+                KLoggers.logger("androidx.compose.ui.desktop.gtk.KdtLogger"),
+            ),
         )
     }
 
