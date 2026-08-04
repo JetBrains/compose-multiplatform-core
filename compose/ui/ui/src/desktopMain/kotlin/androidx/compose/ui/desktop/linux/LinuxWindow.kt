@@ -541,6 +541,9 @@ class LinuxWindow private constructor(
         openParams: FileDialog.OpenDialogParams,
     ): List<Path>? = suspendCancellableCoroutine { continuation ->
         application.onEventLoopAsync {
+            // The caller may have been cancelled between suspending and this block running;
+            // don't open a native chooser nobody is listening to.
+            if (!continuation.isActive) return@onEventLoopAsync
             if (isDisposed) {
                 continuation.resume(null)
                 return@onEventLoopAsync
@@ -564,6 +567,9 @@ class LinuxWindow private constructor(
         saveParams: FileDialog.SaveDialogParams,
     ): List<Path>? = suspendCancellableCoroutine { continuation ->
         application.onEventLoopAsync {
+            // The caller may have been cancelled between suspending and this block running;
+            // don't open a native chooser nobody is listening to.
+            if (!continuation.isActive) return@onEventLoopAsync
             if (isDisposed) {
                 continuation.resume(null)
                 return@onEventLoopAsync
@@ -599,6 +605,12 @@ class LinuxWindow private constructor(
         application.windows.remove(id)
         composeScene.close()
         architectureComponentsOwner.setLifecycleState(Lifecycle.State.DESTROYED)
+        // dispose() removes this window from application.windows BEFORE the native WindowClosed
+        // arrives, so the onClosed() drain below is unreachable on this path — in-flight file
+        // dialog callers must be released here or they hang forever. (GtkWindow's WindowClosed
+        // dedup covers the same case on GTK.)
+        fileDialogResponses.values.forEach { it.cancel() }
+        fileDialogResponses.clear()
         // Posted directly rather than via onNativeWindowAsync: that helper drops work once
         // isDisposed is set (just latched above), and this close is what eventually yields
         // the native WindowClosed that releases the (monotonic, never recycled) native id.
@@ -1154,6 +1166,12 @@ private fun percentDecodeUtf8(value: String): String {
                 i += 3
                 continue
             }
+        }
+        // A surrogate half encoded on its own yields replacement bytes — keep pairs together.
+        if (Character.isHighSurrogate(c) && i + 1 < value.length && Character.isLowSurrogate(value[i + 1])) {
+            out.write(value.substring(i, i + 2).toByteArray(Charsets.UTF_8))
+            i += 2
+            continue
         }
         out.write(c.toString().toByteArray(Charsets.UTF_8))
         i++
