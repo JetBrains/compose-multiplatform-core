@@ -47,7 +47,7 @@ private constructor(
         proto: PassiveGoalProto
     ) : this(
         DataTypeCondition.deltaFromProto(proto.condition),
-        TriggerFrequency.fromProto(proto.triggerFrequency)
+        TriggerFrequency.fromProto(proto.triggerFrequency),
     )
 
     internal val proto: PassiveGoalProto =
@@ -76,10 +76,7 @@ private constructor(
 
     /** The frequency at which passive goals should be triggered. */
     @Retention(AnnotationRetention.SOURCE)
-    @IntDef(
-        TriggerFrequency.ONCE,
-        TriggerFrequency.REPEATED,
-    )
+    @IntDef(TriggerFrequency.ONCE, TriggerFrequency.REPEATED)
     internal annotation class TriggerFrequency {
 
         companion object {
@@ -95,7 +92,6 @@ private constructor(
              */
             const val REPEATED: Int = 2
 
-            @RestrictTo(RestrictTo.Scope.LIBRARY)
             internal fun @receiver:TriggerFrequency Int.toProto():
                 PassiveGoalProto.TriggerFrequency =
                 PassiveGoalProto.TriggerFrequency.forNumber(this)

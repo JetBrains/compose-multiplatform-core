@@ -31,6 +31,7 @@ import androidx.camera.video.Quality
 import androidx.camera.video.Quality.ConstantQuality
 import androidx.camera.video.Quality.FHD
 import androidx.camera.video.Quality.HD
+import androidx.camera.video.Quality.QHD
 import androidx.camera.video.Quality.QUALITY_SOURCE_REGULAR
 import androidx.camera.video.Quality.SD
 import androidx.camera.video.Quality.UHD
@@ -49,7 +50,7 @@ import androidx.camera.video.internal.encoder.VideoEncoderInfo
 public class DefaultEncoderProfilesProvider(
     private val cameraInfo: CameraInfoInternal,
     private val targetQualities: List<Quality>,
-    private val videoEncoderInfoFinder: VideoEncoderInfo.Finder
+    private val videoEncoderInfoFinder: VideoEncoderInfo.Finder,
 ) : EncoderProfilesProvider {
 
     private val supportedSizes by lazy {
@@ -75,7 +76,7 @@ public class DefaultEncoderProfilesProvider(
 
         return createDefaultEncoderProfiles(
             videoProfile = videoProfile,
-            audioProfile = createDefaultAudioProfile()
+            audioProfile = createDefaultAudioProfile(),
         )
     }
 
@@ -89,7 +90,7 @@ public class DefaultEncoderProfilesProvider(
                 resolveVideoProfile(
                     width = size.width,
                     height = size.height,
-                    bitrate = qualityObj.getTypicalBitrate()
+                    bitrate = qualityObj.getTypicalBitrate(),
                 )
 
             if (videoProfile != null) {
@@ -129,13 +130,13 @@ public class DefaultEncoderProfilesProvider(
         defaultDurationSeconds: Int = DEFAULT_DURATION_SECONDS,
         recommendedFileFormat: Int = DEFAULT_OUTPUT_FORMAT,
         videoProfile: VideoProfileProxy,
-        audioProfile: AudioProfileProxy
+        audioProfile: AudioProfileProxy,
     ): EncoderProfilesProxy {
         return EncoderProfilesProxy.ImmutableEncoderProfilesProxy.create(
             defaultDurationSeconds,
             recommendedFileFormat,
             listOf(audioProfile),
-            listOf(videoProfile)
+            listOf(videoProfile),
         )
     }
 
@@ -155,7 +156,7 @@ public class DefaultEncoderProfilesProvider(
         profile: Int = DEFAULT_VIDEO_PROFILE,
         bitDepth: Int = DEFAULT_VIDEO_BIT_DEPTH,
         chromaSubsampling: Int = DEFAULT_VIDEO_CHROMA_SUBSAMPLING,
-        hdrFormat: Int = DEFAULT_VIDEO_HDR_FORMAT
+        hdrFormat: Int = DEFAULT_VIDEO_HDR_FORMAT,
     ): VideoProfileProxy {
         return VideoProfileProxy.create(
             codec,
@@ -167,7 +168,7 @@ public class DefaultEncoderProfilesProvider(
             profile,
             bitDepth,
             chromaSubsampling,
-            hdrFormat
+            hdrFormat,
         )
     }
 
@@ -183,7 +184,7 @@ public class DefaultEncoderProfilesProvider(
         bitRate: Int = DEFAULT_AUDIO_BITRATE,
         sampleRate: Int = DEFAULT_AUDIO_SAMPLE_RATE,
         channels: Int = DEFAULT_AUDIO_CHANNELS,
-        profile: Int = DEFAULT_AUDIO_PROFILE
+        profile: Int = DEFAULT_AUDIO_PROFILE,
     ): AudioProfileProxy {
         return AudioProfileProxy.create(codec, mimeType, bitRate, sampleRate, channels, profile)
     }
@@ -197,6 +198,7 @@ public class DefaultEncoderProfilesProvider(
     private fun Quality.getTypicalBitrate(): Int =
         when (this) {
             UHD -> DEFAULT_VIDEO_BITRATE_UHD
+            QHD -> DEFAULT_VIDEO_BITRATE_QHD
             FHD -> DEFAULT_VIDEO_BITRATE_FHD
             HD -> DEFAULT_VIDEO_BITRATE_HD
             SD -> DEFAULT_VIDEO_BITRATE_SD
@@ -221,7 +223,9 @@ public class DefaultEncoderProfilesProvider(
         internal const val DEFAULT_VIDEO_HDR_FORMAT = EncoderProfiles.VideoProfile.HDR_NONE
 
         internal const val DEFAULT_VIDEO_BITRATE_UHD =
-            40_000_000 // 40 Mbps, scaled by FHD. See VideoConfigUtil.scaleAndClampBitrate()
+            40_000_000 // 40 Mbps, scaled by FHD. See VideoConfigUtil.scaleBitrate()
+        internal const val DEFAULT_VIDEO_BITRATE_QHD =
+            18_000_000 // 18 Mbps, scaled by FHD. See VideoConfigUtil.scaleBitrate()
         internal const val DEFAULT_VIDEO_BITRATE_FHD = 10_000_000 // 10 Mbps
         internal const val DEFAULT_VIDEO_BITRATE_HD = 4_000_000 // 4 Mbps
         internal const val DEFAULT_VIDEO_BITRATE_SD = 2_000_000 // 2 Mbps

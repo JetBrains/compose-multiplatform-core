@@ -73,7 +73,7 @@ import org.junit.Test
 import org.junit.rules.RuleChain
 import org.junit.rules.TestRule
 
-@SdkSuppress(minSdkVersion = 29)
+@SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 @OptIn(ExperimentalCoroutinesApi::class)
 @MediumTest
 class GlanceAppWidgetReceiverScreenshotTest {
@@ -98,7 +98,7 @@ class GlanceAppWidgetReceiverScreenshotTest {
                         textDecoration = TextDecoration.Underline,
                         fontWeight = FontWeight.Medium,
                         fontStyle = FontStyle.Italic,
-                    )
+                    ),
             )
         }
 
@@ -271,9 +271,9 @@ class GlanceAppWidgetReceiverScreenshotTest {
                         colors =
                             ButtonDefaults.buttonColors(
                                 backgroundColor = ColorProvider(Color.Transparent),
-                                contentColor = ColorProvider(Color.DarkGray)
+                                contentColor = ColorProvider(Color.DarkGray),
                             ),
-                        style = TextStyle(textAlign = TextAlign.Start)
+                        style = TextStyle(textAlign = TextAlign.Start),
                     )
                     Button(
                         "End",
@@ -282,9 +282,9 @@ class GlanceAppWidgetReceiverScreenshotTest {
                         colors =
                             ButtonDefaults.buttonColors(
                                 backgroundColor = ColorProvider(Color.Transparent),
-                                contentColor = ColorProvider(Color.DarkGray)
+                                contentColor = ColorProvider(Color.DarkGray),
                             ),
-                        style = TextStyle(textAlign = TextAlign.End)
+                        style = TextStyle(textAlign = TextAlign.End),
                     )
                 }
                 Row(modifier = GlanceModifier.defaultWeight().fillMaxWidth()) {
@@ -293,14 +293,14 @@ class GlanceAppWidgetReceiverScreenshotTest {
                         onCheckedChange = null,
                         text = "Start",
                         modifier = GlanceModifier.defaultWeight().fillMaxHeight(),
-                        style = TextStyle(textAlign = TextAlign.Start)
+                        style = TextStyle(textAlign = TextAlign.Start),
                     )
                     CheckBox(
                         checked = true,
                         onCheckedChange = null,
                         text = "End",
                         modifier = GlanceModifier.defaultWeight().fillMaxHeight(),
-                        style = TextStyle(textAlign = TextAlign.End)
+                        style = TextStyle(textAlign = TextAlign.End),
                     )
                 }
                 Row(modifier = GlanceModifier.defaultWeight().fillMaxWidth()) {
@@ -309,14 +309,14 @@ class GlanceAppWidgetReceiverScreenshotTest {
                         onCheckedChange = null,
                         text = "Start",
                         modifier = GlanceModifier.defaultWeight().fillMaxHeight(),
-                        style = TextStyle(textAlign = TextAlign.Start)
+                        style = TextStyle(textAlign = TextAlign.Start),
                     )
                     Switch(
                         checked = true,
                         onCheckedChange = null,
                         text = "End",
                         modifier = GlanceModifier.defaultWeight().fillMaxHeight(),
-                        style = TextStyle(textAlign = TextAlign.End)
+                        style = TextStyle(textAlign = TextAlign.End),
                     )
                 }
                 Row(modifier = GlanceModifier.defaultWeight().fillMaxWidth()) {
@@ -325,14 +325,14 @@ class GlanceAppWidgetReceiverScreenshotTest {
                         onClick = null,
                         text = "Start",
                         modifier = GlanceModifier.defaultWeight().fillMaxHeight(),
-                        style = TextStyle(textAlign = TextAlign.Start)
+                        style = TextStyle(textAlign = TextAlign.Start),
                     )
                     RadioButton(
                         checked = true,
                         onClick = null,
                         text = "End",
                         modifier = GlanceModifier.defaultWeight().fillMaxHeight(),
-                        style = TextStyle(textAlign = TextAlign.End)
+                        style = TextStyle(textAlign = TextAlign.End),
                     )
                 }
             }
@@ -353,11 +353,11 @@ class GlanceAppWidgetReceiverScreenshotTest {
             ) {
                 Text(
                     "Upper half",
-                    modifier = GlanceModifier.defaultWeight().fillMaxWidth().background(Color.Green)
+                    modifier = GlanceModifier.defaultWeight().fillMaxWidth().background(Color.Green),
                 )
                 Text(
                     "Lower right half",
-                    modifier = GlanceModifier.defaultWeight().width(50.dp).background(Color.Cyan)
+                    modifier = GlanceModifier.defaultWeight().width(50.dp).background(Color.Cyan),
                 )
             }
         }
@@ -376,11 +376,11 @@ class GlanceAppWidgetReceiverScreenshotTest {
             ) {
                 Text(
                     "Upper half",
-                    modifier = GlanceModifier.defaultWeight().fillMaxWidth().background(Color.Green)
+                    modifier = GlanceModifier.defaultWeight().fillMaxWidth().background(Color.Green),
                 )
                 Text(
                     "Lower right half",
-                    modifier = GlanceModifier.defaultWeight().width(50.dp).background(Color.Cyan)
+                    modifier = GlanceModifier.defaultWeight().width(50.dp).background(Color.Cyan),
                 )
             }
         }
@@ -412,14 +412,14 @@ class GlanceAppWidgetReceiverScreenshotTest {
         TestGlanceAppWidget.uiDefinition = {
             Box(
                 modifier = GlanceModifier.fillMaxSize().background(Color.Green).padding(8.dp),
-                contentAlignment = Alignment.Center
+                contentAlignment = Alignment.Center,
             ) {
                 Text(
                     "Some useful text",
                     modifier =
                         GlanceModifier.fillMaxWidth()
                             .height(220.dp)
-                            .background(ImageProvider(R.drawable.filled_oval))
+                            .background(ImageProvider(R.drawable.filled_oval)),
                 )
             }
         }
@@ -434,7 +434,7 @@ class GlanceAppWidgetReceiverScreenshotTest {
         TestGlanceAppWidget.uiDefinition = {
             Box(
                 modifier = GlanceModifier.fillMaxSize().background(Color.Green).padding(8.dp),
-                contentAlignment = Alignment.Center
+                contentAlignment = Alignment.Center,
             ) {
                 Text(
                     text = "Some useful text",
@@ -444,8 +444,8 @@ class GlanceAppWidgetReceiverScreenshotTest {
                             .background(
                                 ImageProvider(R.drawable.filled_oval),
                                 colorFilter = ColorFilter.tint(GlanceTheme.colors.secondary),
-                                alpha = 0.5f
-                            )
+                                alpha = 0.5f,
+                            ),
                 )
             }
         }
@@ -460,7 +460,7 @@ class GlanceAppWidgetReceiverScreenshotTest {
         TestGlanceAppWidget.uiDefinition = {
             Box(
                 modifier = GlanceModifier.fillMaxSize().background(Color.Green).padding(8.dp),
-                contentAlignment = Alignment.Center
+                contentAlignment = Alignment.Center,
             ) {
                 Text(
                     "Some useful text",
@@ -469,8 +469,8 @@ class GlanceAppWidgetReceiverScreenshotTest {
                             .height(220.dp)
                             .background(
                                 ImageProvider(R.drawable.filled_oval),
-                                contentScale = ContentScale.Fit
-                            )
+                                contentScale = ContentScale.Fit,
+                            ),
                 )
             }
         }
@@ -487,14 +487,14 @@ class GlanceAppWidgetReceiverScreenshotTest {
             val bitmap = context.resources.getDrawable(R.drawable.compose, null) as BitmapDrawable
             Box(
                 modifier = GlanceModifier.fillMaxSize().background(Color.Green).padding(8.dp),
-                contentAlignment = Alignment.Center
+                contentAlignment = Alignment.Center,
             ) {
                 Text(
                     "Some useful text",
                     modifier =
                         GlanceModifier.fillMaxWidth()
                             .height(220.dp)
-                            .background(ImageProvider(bitmap.bitmap!!))
+                            .background(ImageProvider(bitmap.bitmap!!)),
                 )
             }
         }
@@ -594,7 +594,7 @@ class GlanceAppWidgetReceiverScreenshotTest {
         TestGlanceAppWidget.uiDefinition = {
             LazyColumnAlignmentTest(
                 count = count,
-                horizontalAlignment = Alignment.CenterHorizontally
+                horizontalAlignment = Alignment.CenterHorizontally,
             )
         }
 
@@ -663,6 +663,20 @@ class GlanceAppWidgetReceiverScreenshotTest {
         mScreenshotRule.checkScreenshot(mHostRule.mHostView, "buttonTests_buttonDefaultColors")
     }
 
+    @Test
+    fun buttonTests_filledButtonNoText_iconIsCentered() {
+        // TODO: until b/479573471 is fixed, icons will be off center. When bug is fixed, goldens
+        //  will need to be regenerated
+        TestGlanceAppWidget.uiDefinition = {
+            ButtonComponentsScreenshotTests.FilledButtonNoTextTest()
+        }
+        mHostRule.startHost()
+        mScreenshotRule.checkScreenshot(
+            mHostRule.mHostView,
+            "buttonTests_filledButtonNoText_iconIsCentered",
+        )
+    }
+
     /**
      * Button should ignore [androidx.glance.BackgroundModifier]. It does not support background
      * images, and background color should be set via [androidx.glance.ButtonColors].
@@ -677,9 +691,7 @@ class GlanceAppWidgetReceiverScreenshotTest {
                     text = "Button w/incorrect bg modifier: image",
                     onClick = {},
                     modifier =
-                        GlanceModifier.background(
-                            imageProvider = ImageProvider(R.drawable.compose),
-                        ),
+                        GlanceModifier.background(imageProvider = ImageProvider(R.drawable.compose)),
                 )
                 Spacer(GlanceModifier.size(4.dp))
 
@@ -689,9 +701,7 @@ class GlanceAppWidgetReceiverScreenshotTest {
                     onClick = {},
                     modifier =
                         GlanceModifier.background(Color.Cyan)
-                            .background(
-                                imageProvider = ImageProvider(R.drawable.compose),
-                            ),
+                            .background(imageProvider = ImageProvider(R.drawable.compose)),
                 )
                 Spacer(GlanceModifier.size(4.dp))
 
@@ -703,17 +713,14 @@ class GlanceAppWidgetReceiverScreenshotTest {
                 )
                 Spacer(GlanceModifier.size(4.dp))
 
-                Button(
-                    text = "Button with no modifier",
-                    onClick = {},
-                )
+                Button(text = "Button with no modifier", onClick = {})
                 Spacer(GlanceModifier.size(4.dp))
                 Button(
                     text = "Button with proper color",
                     colors =
                         ButtonDefaults.buttonColors(
                             backgroundColor = ColorProvider(Color.Cyan),
-                            contentColor = ColorProvider(Color.Magenta)
+                            contentColor = ColorProvider(Color.Magenta),
                         ),
                     onClick = {},
                 )
@@ -724,7 +731,7 @@ class GlanceAppWidgetReceiverScreenshotTest {
         mHostRule.startHost()
         mScreenshotRule.checkScreenshot(
             mHostRule.mHostView,
-            "buttonTests_buttonIgnoresBgImageModifier"
+            "buttonTests_buttonIgnoresBgImageModifier",
         )
     }
 
@@ -734,7 +741,7 @@ class GlanceAppWidgetReceiverScreenshotTest {
         mHostRule.startHost()
         mScreenshotRule.checkScreenshot(
             mHostRule.mHostView,
-            "topbarTests_createBarWithIconTextTwoActions"
+            "topbarTests_createBarWithIconTextTwoActions",
         )
     }
 
@@ -745,7 +752,7 @@ class GlanceAppWidgetReceiverScreenshotTest {
         mHostRule.startHost()
         mScreenshotRule.checkScreenshot(
             mHostRule.mHostView,
-            "topbarTests_createBarWithIconTextTwoActions_rtl"
+            "topbarTests_createBarWithIconTextTwoActions_rtl",
         )
     }
 
@@ -761,7 +768,7 @@ class GlanceAppWidgetReceiverScreenshotTest {
                     contentDescription = null,
                     backgroundColor = null,
                     contentColor = fg,
-                    onClick = {}
+                    onClick = {},
                 )
             }
 
@@ -776,7 +783,7 @@ class GlanceAppWidgetReceiverScreenshotTest {
                     actionButton()
                     Spacer(GlanceModifier.size(8.dp))
                     actionButton()
-                }
+                },
             )
         }
     }
@@ -794,7 +801,7 @@ class GlanceAppWidgetReceiverScreenshotTest {
         mHostRule.startHost()
         mScreenshotRule.checkScreenshot(
             mHostRule.mHostView,
-            "scaffoldTests_scaffoldWithPaddingOverride"
+            "scaffoldTests_scaffoldWithPaddingOverride",
         )
     }
 }
@@ -810,7 +817,7 @@ private object ScaffoldTestUi {
             titleBar = { ScaffoldTitleBar() },
             modifier = GlanceModifier,
             backgroundColor = widgetBg,
-            content = { ScaffoldContent() }
+            content = { ScaffoldContent() },
         )
     }
 
@@ -821,7 +828,7 @@ private object ScaffoldTestUi {
             modifier = GlanceModifier,
             backgroundColor = widgetBg,
             horizontalPadding = 32.dp,
-            content = { ScaffoldContent() }
+            content = { ScaffoldContent() },
         )
     }
 
@@ -832,7 +839,7 @@ private object ScaffoldTestUi {
             startIcon = ImageProvider(R.drawable.filled_oval),
             title = "Lead icon; title; no btns",
             textColor = fg,
-            iconColor = fg
+            iconColor = fg,
         )
     }
 
@@ -840,7 +847,7 @@ private object ScaffoldTestUi {
     private fun ScaffoldContent() {
         Text(
             text = "text, fill-max-size\nbg cyan, fg magenta",
-            modifier = GlanceModifier.fillMaxSize()
+            modifier = GlanceModifier.fillMaxSize(),
         )
     }
 }
@@ -852,14 +859,14 @@ private fun LazyColumnAlignmentTest(count: Int, horizontalAlignment: Alignment.H
 
     LazyColumn(
         modifier = GlanceModifier.fillMaxSize().background(columnColors[0], columnColors[1]),
-        horizontalAlignment = horizontalAlignment
+        horizontalAlignment = horizontalAlignment,
     ) {
         items(count) { index ->
             Text(
                 text = "item $index",
                 modifier =
                     GlanceModifier.padding(horizontal = 16.dp, vertical = 8.dp)
-                        .background(textBgColors[0], textBgColors[1])
+                        .background(textBgColors[0], textBgColors[1]),
             )
         }
     }
@@ -871,27 +878,27 @@ private fun TextAlignmentTest() {
         Text(
             "Center",
             style = TextStyle(textAlign = TextAlign.Center),
-            modifier = GlanceModifier.fillMaxWidth()
+            modifier = GlanceModifier.fillMaxWidth(),
         )
         Text(
             "Left",
             style = TextStyle(textAlign = TextAlign.Left),
-            modifier = GlanceModifier.fillMaxWidth()
+            modifier = GlanceModifier.fillMaxWidth(),
         )
         Text(
             "Right",
             style = TextStyle(textAlign = TextAlign.Right),
-            modifier = GlanceModifier.fillMaxWidth()
+            modifier = GlanceModifier.fillMaxWidth(),
         )
         Text(
             "Start",
             style = TextStyle(textAlign = TextAlign.Start),
-            modifier = GlanceModifier.fillMaxWidth()
+            modifier = GlanceModifier.fillMaxWidth(),
         )
         Text(
             "End",
             style = TextStyle(textAlign = TextAlign.End),
-            modifier = GlanceModifier.fillMaxWidth()
+            modifier = GlanceModifier.fillMaxWidth(),
         )
     }
 }
@@ -902,17 +909,17 @@ private fun RowTest() {
         Text(
             "Start",
             style = TextStyle(textAlign = TextAlign.Start),
-            modifier = GlanceModifier.defaultWeight()
+            modifier = GlanceModifier.defaultWeight(),
         )
         Text(
             "Center",
             style = TextStyle(textAlign = TextAlign.Center),
-            modifier = GlanceModifier.defaultWeight()
+            modifier = GlanceModifier.defaultWeight(),
         )
         Text(
             "End",
             style = TextStyle(textAlign = TextAlign.End),
-            modifier = GlanceModifier.defaultWeight()
+            modifier = GlanceModifier.defaultWeight(),
         )
     }
 }
@@ -922,16 +929,16 @@ private fun BackgroundTest() {
     Column(modifier = GlanceModifier.background(R.color.background_color)) {
         Text(
             "100x50 and cyan",
-            modifier = GlanceModifier.width(100.dp).height(50.dp).background(Color.Cyan)
+            modifier = GlanceModifier.width(100.dp).height(50.dp).background(Color.Cyan),
         )
         Text(
             "Transparent background",
-            modifier = GlanceModifier.height(50.dp).background(Color.Transparent)
+            modifier = GlanceModifier.height(50.dp).background(Color.Transparent),
         )
         Text(
             "wrapx30 and red (light), yellow (dark)",
             modifier =
-                GlanceModifier.height(30.dp).background(day = Color.Red, night = Color.Yellow)
+                GlanceModifier.height(30.dp).background(day = Color.Red, night = Color.Yellow),
         )
         Text("Below this should be 4 color boxes")
         Row(modifier = GlanceModifier.padding(8.dp)) {
@@ -956,11 +963,11 @@ private fun TextColorTest() {
         Text("Cyan", style = TextStyle(color = ColorProvider(Color.Cyan)))
         Text(
             "Red (light) or yellow (dark)",
-            style = TextStyle(color = ColorProvider(day = Color.Red, night = Color.Yellow))
+            style = TextStyle(color = ColorProvider(day = Color.Red, night = Color.Yellow)),
         )
         Text(
             "Resource (inverse of background color)",
-            style = TextStyle(color = ColorProvider(R.color.text_color))
+            style = TextStyle(color = ColorProvider(R.color.text_color)),
         )
     }
 }
@@ -983,9 +990,9 @@ private fun RoundedButtonScreenshotTest() {
                     backgroundColor =
                         ColorProvider(day = buttonBgColors[0], night = buttonBgColors[1]),
                     contentColor =
-                        ColorProvider(day = buttonTextColors[0], night = buttonTextColors[1])
+                        ColorProvider(day = buttonTextColors[0], night = buttonTextColors[1]),
                 ),
-            style = TextStyle(textAlign = TextAlign.Start)
+            style = TextStyle(textAlign = TextAlign.Start),
         )
         Spacer(modifier = GlanceModifier.height(5.dp).fillMaxWidth())
         Button(
@@ -997,9 +1004,9 @@ private fun RoundedButtonScreenshotTest() {
                     backgroundColor =
                         ColorProvider(day = buttonBgColors[0], night = buttonBgColors[1]),
                     contentColor =
-                        ColorProvider(day = buttonTextColors[0], night = buttonTextColors[1])
+                        ColorProvider(day = buttonTextColors[0], night = buttonTextColors[1]),
                 ),
-            style = TextStyle(textAlign = TextAlign.Center)
+            style = TextStyle(textAlign = TextAlign.Center),
         )
         Spacer(modifier = GlanceModifier.height(5.dp).fillMaxWidth())
         Button(
@@ -1010,9 +1017,9 @@ private fun RoundedButtonScreenshotTest() {
                     backgroundColor =
                         ColorProvider(day = buttonBgColors[0], night = buttonBgColors[1]),
                     contentColor =
-                        ColorProvider(day = buttonTextColors[0], night = buttonTextColors[1])
+                        ColorProvider(day = buttonTextColors[0], night = buttonTextColors[1]),
                 ),
-            style = TextStyle(textAlign = TextAlign.End)
+            style = TextStyle(textAlign = TextAlign.End),
         )
     }
 }
@@ -1035,8 +1042,8 @@ private fun CheckBoxScreenshotTest() {
             colors =
                 CheckboxDefaults.colors(
                     checkedColor = ColorProvider(day = Color.Magenta, night = Color.Yellow),
-                    uncheckedColor = ColorProvider(day = Color.Black, night = Color.Gray)
-                )
+                    uncheckedColor = ColorProvider(day = Color.Black, night = Color.Gray),
+                ),
         )
 
         CheckBox(
@@ -1050,7 +1057,7 @@ private fun CheckBoxScreenshotTest() {
                     fontWeight = FontWeight.Medium,
                     fontStyle = FontStyle.Italic,
                 ),
-            colors = CheckboxDefaults.colors(checkedColor = Color.Red, uncheckedColor = Color.Green)
+            colors = CheckboxDefaults.colors(checkedColor = Color.Red, uncheckedColor = Color.Green),
         )
     }
 }
@@ -1073,8 +1080,8 @@ private fun SwitchTest() {
                     checkedThumbColor = ColorProvider(day = Color.Blue, night = Color.Red),
                     uncheckedThumbColor = ColorProvider(Color.Magenta),
                     checkedTrackColor = ColorProvider(day = Color.Green, night = Color.Yellow),
-                    uncheckedTrackColor = ColorProvider(Color.Magenta)
-                )
+                    uncheckedTrackColor = ColorProvider(Color.Magenta),
+                ),
         )
 
         Switch(
@@ -1093,8 +1100,8 @@ private fun SwitchTest() {
                     checkedThumbColor = ColorProvider(Color.Blue),
                     uncheckedThumbColor = ColorProvider(day = Color.Magenta, night = Color.Cyan),
                     checkedTrackColor = ColorProvider(Color.Blue),
-                    uncheckedTrackColor = ColorProvider(day = Color.Cyan, night = Color.Magenta)
-                )
+                    uncheckedTrackColor = ColorProvider(day = Color.Cyan, night = Color.Magenta),
+                ),
         )
     }
 }
@@ -1117,8 +1124,8 @@ private fun RadioButtonScreenshotTest() {
             colors =
                 RadioButtonDefaults.colors(
                     checkedColor = ColorProvider(day = Color.Magenta, night = Color.Yellow),
-                    uncheckedColor = ColorProvider(day = Color.Yellow, night = Color.Magenta)
-                )
+                    uncheckedColor = ColorProvider(day = Color.Yellow, night = Color.Magenta),
+                ),
         )
 
         RadioButton(
@@ -1133,7 +1140,7 @@ private fun RadioButtonScreenshotTest() {
                     fontStyle = FontStyle.Italic,
                 ),
             colors =
-                RadioButtonDefaults.colors(checkedColor = Color.Red, uncheckedColor = Color.Green)
+                RadioButtonDefaults.colors(checkedColor = Color.Red, uncheckedColor = Color.Green),
         )
     }
 }
@@ -1152,14 +1159,14 @@ private fun LinearProgressIndicatorColorsTest() {
         LinearProgressIndicator(
             progress = 0.5f,
             color = GlanceTheme.colors.onTertiary,
-            backgroundColor = GlanceTheme.colors.tertiary
+            backgroundColor = GlanceTheme.colors.tertiary,
         )
         Spacer(modifier = GlanceModifier.height(8.dp))
         Text("Fixed colors")
         LinearProgressIndicator(
             progress = 0.5f,
             color = ColorProvider(Color.Green),
-            backgroundColor = ColorProvider(Color.Gray)
+            backgroundColor = ColorProvider(Color.Gray),
         )
     }
 }
@@ -1186,7 +1193,7 @@ private object ButtonComponentsScreenshotTests {
     private fun Background(content: @Composable () -> Unit) {
         Box(
             modifier = GlanceModifier.wrapContentSize().padding(16.dp).background(Color.Magenta),
-            content = content
+            content = content,
         )
     }
 
@@ -1198,14 +1205,14 @@ private object ButtonComponentsScreenshotTests {
                     text = "Filled button\nbg 0x00, fg 0xff",
                     onClick = onClick,
                     icon = null,
-                    colors = colors()
+                    colors = colors(),
                 )
                 Space()
                 FilledButton(
                     text = "Filled btn + icon\nbg 0x00, fg 0xff",
                     onClick = onClick,
                     icon = icon,
-                    colors = colors()
+                    colors = colors(),
                 )
             }
         }
@@ -1219,14 +1226,14 @@ private object ButtonComponentsScreenshotTests {
                     text = "Outline Button\nfg 0xff",
                     onClick = onClick,
                     icon = null,
-                    contentColor = buttonFg
+                    contentColor = buttonFg,
                 )
                 Space()
                 OutlineButton(
                     text = "Outline btn + icon\nfg 0xff",
                     onClick = onClick,
                     icon = icon,
-                    contentColor = buttonFg
+                    contentColor = buttonFg,
                 )
             }
         }
@@ -1241,7 +1248,7 @@ private object ButtonComponentsScreenshotTests {
                 contentDescription = null,
                 onClick = onClick,
                 backgroundColor = buttonBg,
-                contentColor = buttonFg
+                contentColor = buttonFg,
             )
         }
     }
@@ -1256,7 +1263,7 @@ private object ButtonComponentsScreenshotTests {
                     contentDescription = null,
                     onClick = onClick,
                     backgroundColor = buttonBg,
-                    contentColor = buttonFg
+                    contentColor = buttonFg,
                 )
                 Space()
                 // Icon only, no background
@@ -1265,7 +1272,7 @@ private object ButtonComponentsScreenshotTests {
                     contentDescription = null,
                     onClick = onClick,
                     backgroundColor = null,
-                    contentColor = buttonFg
+                    contentColor = buttonFg,
                 )
             }
         }
@@ -1315,6 +1322,31 @@ private object ButtonComponentsScreenshotTests {
                 Space()
                 CircleIconButton(imageProvider = icon, contentDescription = null, onClick = onClick)
             }
+        }
+    }
+
+    @Composable
+    fun FilledButtonNoTextTest() {
+        Row(
+            GlanceModifier.fillMaxWidth()
+                .padding(8.dp)
+                .background(GlanceTheme.colors.surfaceVariant)
+        ) {
+            OutlineButton(
+                text = "",
+                icon = ImageProvider(R.drawable.filled_oval),
+                contentColor = GlanceTheme.colors.onSurface,
+                onClick = {},
+                modifier = GlanceModifier.defaultWeight().height(48.dp),
+            )
+            Spacer(GlanceModifier.width(8.dp))
+            OutlineButton(
+                text = "",
+                icon = ImageProvider(R.drawable.filled_oval),
+                contentColor = GlanceTheme.colors.onSurface,
+                onClick = {},
+                modifier = GlanceModifier.defaultWeight().height(48.dp),
+            )
         }
     }
 }

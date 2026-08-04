@@ -138,7 +138,7 @@ open class SplitDeviceStateActivityBase :
                 ArrayAdapter(
                     this,
                     android.R.layout.simple_spinner_dropdown_item,
-                    DemoActivityEmbeddingController.ANIMATION_BACKGROUND_TEXTS
+                    DemoActivityEmbeddingController.ANIMATION_BACKGROUND_TEXTS,
                 )
             animationBackgroundDropdown.onItemSelectedListener = this
         }
@@ -154,7 +154,7 @@ open class SplitDeviceStateActivityBase :
                 ArrayAdapter(
                     this,
                     android.R.layout.simple_spinner_dropdown_item,
-                    DemoActivityEmbeddingController.ANIMATION_SPEC_TEXTS
+                    DemoActivityEmbeddingController.ANIMATION_SPEC_TEXTS,
                 )
             openAnimationDropdown.onItemSelectedListener = this
 
@@ -166,7 +166,7 @@ open class SplitDeviceStateActivityBase :
                 ArrayAdapter(
                     this,
                     android.R.layout.simple_spinner_dropdown_item,
-                    DemoActivityEmbeddingController.ANIMATION_SPEC_TEXTS
+                    DemoActivityEmbeddingController.ANIMATION_SPEC_TEXTS,
                 )
             closeAnimationDropdown.onItemSelectedListener = this
 
@@ -178,7 +178,7 @@ open class SplitDeviceStateActivityBase :
                 ArrayAdapter(
                     this,
                     android.R.layout.simple_spinner_dropdown_item,
-                    DemoActivityEmbeddingController.ANIMATION_SPEC_TEXTS
+                    DemoActivityEmbeddingController.ANIMATION_SPEC_TEXTS,
                 )
             changeAnimationDropdown.onItemSelectedListener = this
         }

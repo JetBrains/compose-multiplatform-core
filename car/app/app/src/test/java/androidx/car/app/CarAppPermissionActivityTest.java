@@ -49,6 +49,7 @@ import java.util.List;
 
 /** Tests for {@link CarAppPermissionActivity}. */
 @RunWith(RobolectricTestRunner.class)
+@Config(sdk = {Config.TARGET_SDK})
 @DoNotInstrument
 public class CarAppPermissionActivityTest {
     @Rule
@@ -71,7 +72,7 @@ public class CarAppPermissionActivityTest {
     }
 
     @Test
-    @Config(sdk = 23) // Note that while the app module minSDK is 21, the minSDK for hosts is 23
+    @Config(sdk = 24)
     public void onCreate_requestPermissionAction_requestsPermissions() {
         setupActivity(CarContext.REQUEST_PERMISSIONS_ACTION);
 
@@ -103,6 +104,11 @@ public class CarAppPermissionActivityTest {
                         mMockListener.onRequestPermissionsResult(
                                 Arrays.asList(approvedPermissions),
                                 Arrays.asList(rejectedPermissions));
+                    }
+
+                    @Override
+                    public int getInterfaceVersion() {
+                        return super.VERSION;
                     }
                 }.asBinder());
 

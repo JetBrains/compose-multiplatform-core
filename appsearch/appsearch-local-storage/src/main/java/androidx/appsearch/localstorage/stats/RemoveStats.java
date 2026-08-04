@@ -19,6 +19,7 @@ package androidx.appsearch.localstorage.stats;
 import androidx.annotation.IntDef;
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.annotation.CanIgnoreReturnValue;
+import androidx.appsearch.annotation.HideInPlatform;
 import androidx.appsearch.app.AppSearchResult;
 import androidx.appsearch.app.RemoveByDocumentIdRequest;
 import androidx.appsearch.app.SearchSpec;
@@ -34,9 +35,8 @@ import java.lang.annotation.RetentionPolicy;
  * Class holds detailed stats for
  * {@link androidx.appsearch.app.AppSearchSession#removeAsync(RemoveByDocumentIdRequest)} and
  * {@link androidx.appsearch.app.AppSearchSession#removeAsync(String, SearchSpec)}
- *
- * @exportToFramework:hide
  */
+@HideInPlatform
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public final class RemoveStats extends BaseStats {
     /** Types of stats available for remove API. */
@@ -44,11 +44,11 @@ public final class RemoveStats extends BaseStats {
             // It needs to be sync with DeleteType.Code in
             // external/icing/proto/icing/proto/logging.proto#DeleteStatsProto
             UNKNOWN,
-            SINGLE,
+            SINGLE,  // Remove a single id
             QUERY,
             NAMESPACE,
             SCHEMA_TYPE,
-
+            BATCHED_IDS,
     })
     @Retention(RetentionPolicy.SOURCE)
     public @interface DeleteType {
@@ -64,6 +64,8 @@ public final class RemoveStats extends BaseStats {
     public static final int NAMESPACE = 3;
     /** Delete by schema type. */
     public static final int SCHEMA_TYPE = 4;
+    /** Delete ids in a single namespace in a batch. */
+    public static final int BATCHED_IDS = 5;
 
     private final @NonNull String mPackageName;
     private final @NonNull String mDatabase;
@@ -84,7 +86,6 @@ public final class RemoveStats extends BaseStats {
     private final int mNumSchemaTypesFiltered;
     private final int mParseQueryLatencyMillis;
     private final int mDocumentRemovalLatencyMillis;
-
 
     RemoveStats(@NonNull Builder builder) {
         super(builder);
@@ -171,6 +172,42 @@ public final class RemoveStats extends BaseStats {
     /** Returns the time used to delete each document */
     public int getDocumentRemovalLatencyMillis() {
         return mDocumentRemovalLatencyMillis;
+    }
+
+    @NonNull
+    @Override
+    public String toString() {
+        return String.format(
+                "RemoveStats {\n"
+                        + "  packageName=%s,\n"
+                        + "  database=%s,\n"
+                        + "  statusCode=%d,\n"
+                        + "  totalLatencyMillis=%d,\n"
+                        + "  nativeLatencyMillis=%d,\n"
+                        + "  nativeDeleteType=%d,\n"
+                        + "  nativeNumDocumentsDeleted=%d,\n"
+                        + "  queryLength=%d,\n"
+                        + "  numTerms=%d,\n"
+                        + "  numNamespacesFiltered=%d,\n"
+                        + "  numSchemaTypesFiltered=%d,\n"
+                        + "  parseQueryLatencyMillis=%d,\n"
+                        + "  documentRemovalLatencyMillis=%d,\n"
+                        // Include BaseStats fields
+                        + super.toString()
+                        + "}",
+                mPackageName,
+                mDatabase,
+                mStatusCode,
+                mTotalLatencyMillis,
+                mNativeLatencyMillis,
+                mNativeDeleteType,
+                mNativeNumDocumentsDeleted,
+                mQueryLength,
+                mNumTerms,
+                mNumNamespacesFiltered,
+                mNumSchemaTypesFiltered,
+                mParseQueryLatencyMillis,
+                mDocumentRemovalLatencyMillis);
     }
 
     /** Builder for {@link RemoveStats}. */

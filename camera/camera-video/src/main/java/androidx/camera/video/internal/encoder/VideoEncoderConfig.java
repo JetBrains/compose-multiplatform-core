@@ -89,9 +89,12 @@ public abstract class VideoEncoderConfig implements EncoderConfig {
         format.setInteger(MediaFormat.KEY_COLOR_FORMAT, getColorFormat());
         format.setInteger(MediaFormat.KEY_BIT_RATE, getBitrate());
         format.setInteger(MediaFormat.KEY_FRAME_RATE, getEncodeFrameRate());
-        if (getEncodeFrameRate() != getCaptureFrameRate()) {
-            // MediaCodec will adjust the frame timestamp when KEY_CAPTURE_RATE is different from
-            // KEY_FRAME_RATE.
+        if (isSlowMotion()) {
+            // Timestamps for slow-motion recording are automatically adjusted by the
+            // GraphicBufferSource from API 30 onward (specifically when configuring
+            // codec with different KEY_CAPTURE_RATE and KEY_FRAME_RATE). For devices
+            // on earlier API levels, we manually adjust the timestamp.
+            // See ACodec.cpp/CCodec.cpp/GraphicBufferSource.cpp for details.
             format.setInteger(MediaFormat.KEY_CAPTURE_RATE, getCaptureFrameRate());
             format.setInteger(MediaFormat.KEY_OPERATING_RATE, getCaptureFrameRate());
             format.setInteger(MediaFormat.KEY_PRIORITY, 0); // Smaller value, higher priority.
@@ -111,6 +114,11 @@ public abstract class VideoEncoderConfig implements EncoderConfig {
             format.setInteger(MediaFormat.KEY_COLOR_RANGE, dataSpace.getRange());
         }
         return format;
+    }
+
+    /** Returns whether the encoder config is for slow-motion recording. */
+    public boolean isSlowMotion() {
+        return getCaptureFrameRate() > getEncodeFrameRate();
     }
 
     /** The builder of the config. */

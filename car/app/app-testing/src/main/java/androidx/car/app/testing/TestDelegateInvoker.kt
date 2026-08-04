@@ -31,22 +31,18 @@
  */
 package androidx.car.app.testing
 
-import android.annotation.SuppressLint
 import androidx.car.app.OnDoneCallback
-import androidx.car.app.annotations.ExperimentalCarApi
 import androidx.car.app.serialization.Bundleable
 import androidx.car.app.serialization.ListDelegate
 
 /** Provides a simplified interface for invoking AIDL/delegate APIs in tests */
-@SuppressLint("NullAnnotationGroup")
-@ExperimentalCarApi
 public object TestDelegateInvoker {
     public fun <T> ListDelegate<T>.requestAllItemsForTest(): List<T> =
         requestItemRangeForTest(0, size - 1)
 
     public fun <T> ListDelegate<T>.requestItemRangeForTest(
         startIndex: Int,
-        endIndex: Int
+        endIndex: Int,
     ): List<T> = runForResult {
         this@requestItemRangeForTest.requestItemRange(startIndex, endIndex, it)
     }
@@ -87,7 +83,8 @@ public object TestDelegateInvoker {
         fun getResponseOrCrash(): TResponse {
             check(hasResponse) { "Callback was never invoked." }
 
-            @Suppress("UNCHECKED_CAST") return response?.get() as TResponse
+            @Suppress("UNCHECKED_CAST")
+            return response?.get() as TResponse
         }
     }
 }

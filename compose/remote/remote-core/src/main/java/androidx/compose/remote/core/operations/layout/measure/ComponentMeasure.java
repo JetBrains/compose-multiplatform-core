@@ -1,0 +1,258 @@
+/*
+ * Copyright (C) 2024 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package androidx.compose.remote.core.operations.layout.measure;
+
+import androidx.annotation.RestrictTo;
+import androidx.compose.remote.core.operations.layout.Component;
+
+import org.jspecify.annotations.NonNull;
+
+/** Encapsulate the result of a measure pass for a component */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public class ComponentMeasure {
+    int mId = -1;
+
+    /**
+     * Monotonically increasing layout pass generation tag set by {@link FlatMeasurePass}.
+     * Used to verify whether this component's measurement data is fresh for the current
+     * layout pass without requiring re-computation or element comparisons.
+     */
+    public int mGeneration = 0;
+
+    /**
+     * The 0-based layout index assigned to the corresponding component in the document's layout
+     * tree (0..N-1).
+     * Maps directly to array slots in {@link FlatMeasurePass}'s flat array for O(1) array access.
+     */
+    public int mInternalLayoutIndex = -1;
+    float mX;
+    float mY;
+    float mW;
+    float mH;
+    int mVisibility = Component.Visibility.VISIBLE;
+
+    private boolean mAllowsAnimation = true;
+
+    private float mMinWidth = -1f;
+    private float mMaxWidth = -1f;
+    private float mMinHeight = -1f;
+    private float mMaxHeight = -1f;
+    private boolean mHasCache = false;
+
+    /** Cache constraints for this component. */
+    public void setCachedConstraints(
+            float minWidth, float maxWidth, float minHeight, float maxHeight) {
+        mMinWidth = minWidth;
+        mMaxWidth = maxWidth;
+        mMinHeight = minHeight;
+        mMaxHeight = maxHeight;
+        mHasCache = true;
+    }
+
+    /** Clear the cached constraints for this component. */
+    public void clearCache() {
+        mHasCache = false;
+    }
+
+    /** Check if component has cached constraints matching specified parameters. */
+    public boolean hasCachedConstraints(
+            float minWidth, float maxWidth, float minHeight, float maxHeight) {
+        if (!mHasCache) {
+            return false;
+        }
+
+        // 1. Exact match
+        if (mMinWidth == minWidth && mMaxWidth == maxWidth
+                && mMinHeight == minHeight && mMaxHeight == maxHeight) {
+            return true;
+        }
+
+        // 2. Compatible vertical layout positioning pass: width constraints are identical,
+        // and height is now fixed to our previously computed height (mH).
+        if (mMinWidth == minWidth && mMaxWidth == maxWidth
+                && minHeight == mH && maxHeight == mH) {
+            return true;
+        }
+
+        // 3. Compatible horizontal layout positioning pass: height constraints are identical,
+        // and width is now fixed to our previously computed width (mW).
+        if (mMinHeight == minHeight && mMaxHeight == maxHeight
+                && minWidth == mW && maxWidth == mW) {
+            return true;
+        }
+
+        return false;
+    }
+
+    public void setX(float value) {
+        mX = value;
+    }
+
+    public void setY(float value) {
+        mY = value;
+    }
+
+    public void setW(float value) {
+        mW = value;
+    }
+
+    public void setH(float value) {
+        mH = value;
+    }
+
+    public float getX() {
+        return mX;
+    }
+
+    public float getY() {
+        return mY;
+    }
+
+    public float getW() {
+        return mW;
+    }
+
+    public float getH() {
+        return mH;
+    }
+
+    public int getVisibility() {
+        return mVisibility;
+    }
+
+    public void setVisibility(int visibility) {
+        mVisibility = visibility;
+    }
+
+    public void setAllowsAnimation(boolean allowsAnimation) {
+        mAllowsAnimation = allowsAnimation;
+    }
+
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public static int sAllocationCount = 0;
+
+    public ComponentMeasure(int id, float x, float y, float w, float h, int visibility) {
+        sAllocationCount++;
+        this.mId = id;
+        this.mX = x;
+        this.mY = y;
+        this.mW = w;
+        this.mH = h;
+        this.mVisibility = visibility;
+    }
+
+    /**
+     * Reset the values of the ComponentMeasure, allowing us to reuse the object.
+     */
+    public void reset(int id, float x, float y, float w, float h, int visibility) {
+        this.mId = id;
+        this.mX = x;
+        this.mY = y;
+        this.mW = w;
+        this.mH = h;
+        this.mVisibility = visibility;
+        this.mAllowsAnimation = true;
+        this.mHasCache = false;
+        this.mGeneration = 0;
+        this.mInternalLayoutIndex = -1;
+        clearVisibilityOverride();
+    }
+
+    public ComponentMeasure(int id, float x, float y, float w, float h) {
+        this(id, x, y, w, h, Component.Visibility.VISIBLE);
+    }
+
+    public ComponentMeasure(@NonNull Component component) {
+        this(
+                component.getComponentId(),
+                component.getX(),
+                component.getY(),
+                component.getWidth(),
+                component.getHeight(),
+                component.mVisibility);
+        this.mInternalLayoutIndex = component.mInternalLayoutIndex;
+    }
+
+    /**
+     * Initialize this ComponentMeasure from another ComponentMeasure instance.
+     *
+     * @param m the ComponentMeasure to copy from
+     */
+    public void copyFrom(@NonNull ComponentMeasure m) {
+        mX = m.mX;
+        mY = m.mY;
+        mW = m.mW;
+        mH = m.mH;
+        mVisibility = m.mVisibility;
+        mGeneration = m.mGeneration;
+    }
+
+    /**
+     * Returns true if the ComponentMeasure passed is identical to us
+     *
+     * @param m the ComponentMeasure to check
+     * @return true if the passed ComponentMeasure is identical to ourself
+     */
+    public boolean same(@NonNull ComponentMeasure m) {
+        return mX == m.mX && mY == m.mY && mW == m.mW && mH == m.mH && mVisibility == m.mVisibility;
+    }
+
+    /**
+     * Returns true if the component will be gone
+     *
+     * @return true if gone
+     */
+    public boolean isGone() {
+        return Component.Visibility.isGone(mVisibility);
+    }
+
+    /**
+     * Returns true if the component will be visible
+     *
+     * @return true if visible
+     */
+    public boolean isVisible() {
+        return Component.Visibility.isVisible(mVisibility);
+    }
+
+    /**
+     * Returns true if the component will be invisible
+     *
+     * @return true if invisible
+     */
+    public boolean isInvisible() {
+        return Component.Visibility.isInvisible(mVisibility);
+    }
+
+    /** Clear any override on the visibility */
+    public void clearVisibilityOverride() {
+        mVisibility = Component.Visibility.clearOverride(mVisibility);
+    }
+
+    /** Add a visibility override */
+    public void addVisibilityOverride(int value) {
+        mVisibility = Component.Visibility.clearOverride(mVisibility);
+        mVisibility = Component.Visibility.add(mVisibility, value);
+    }
+
+    /**
+     * If true, measures applied to a component will result into an animation, if false the measure
+     * will be applied immediately
+     */
+    public boolean getAllowsAnimation() {
+        return mAllowsAnimation;
+    }
+}

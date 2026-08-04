@@ -80,7 +80,7 @@ import kotlin.math.max
  * @param properties Typically platform specific properties to further configure the dialog.
  */
 @Composable
-expect fun AlertDialog(
+public expect fun AlertDialog(
     onDismissRequest: () -> Unit,
     confirmButton: @Composable () -> Unit,
     modifier: Modifier = Modifier,
@@ -90,7 +90,7 @@ expect fun AlertDialog(
     shape: Shape = MaterialTheme.shapes.medium,
     backgroundColor: Color = MaterialTheme.colors.surface,
     contentColor: Color = contentColorFor(backgroundColor),
-    properties: DialogProperties = DialogProperties()
+    properties: DialogProperties = DialogProperties(),
 )
 
 /**
@@ -119,7 +119,7 @@ expect fun AlertDialog(
  * @param properties Typically platform specific properties to further configure the dialog.
  */
 @Composable
-expect fun AlertDialog(
+public expect fun AlertDialog(
     onDismissRequest: () -> Unit,
     buttons: @Composable () -> Unit,
     modifier: Modifier = Modifier,
@@ -128,7 +128,7 @@ expect fun AlertDialog(
     shape: Shape = MaterialTheme.shapes.medium,
     backgroundColor: Color = MaterialTheme.colors.surface,
     contentColor: Color = contentColorFor(backgroundColor),
-    properties: DialogProperties = DialogProperties()
+    properties: DialogProperties = DialogProperties(),
 )
 
 @Suppress("NOTHING_TO_INLINE")
@@ -143,7 +143,7 @@ internal inline fun AlertDialogImpl(
     shape: Shape,
     backgroundColor: Color,
     contentColor: Color,
-    properties: DialogProperties
+    properties: DialogProperties,
 ): Unit =
     AlertDialog(
         onDismissRequest = onDismissRequest,
@@ -162,7 +162,7 @@ internal inline fun AlertDialogImpl(
         shape = shape,
         backgroundColor = backgroundColor,
         contentColor = contentColor,
-        properties = properties
+        properties = properties,
     )
 
 @Suppress("NOTHING_TO_INLINE")
@@ -176,7 +176,7 @@ internal inline fun AlertDialogImpl(
     shape: Shape,
     backgroundColor: Color,
     contentColor: Color,
-    properties: DialogProperties
+    properties: DialogProperties,
 ): Unit =
     Dialog(onDismissRequest = onDismissRequest, properties = properties) {
         AlertDialogContent(
@@ -186,7 +186,7 @@ internal inline fun AlertDialogImpl(
             text = text,
             shape = shape,
             backgroundColor = backgroundColor,
-            contentColor = contentColor
+            contentColor = contentColor,
         )
     }
 
@@ -204,7 +204,7 @@ internal fun AlertDialogContent(
         modifier = modifier,
         shape = shape,
         color = backgroundColor,
-        contentColor = contentColor
+        contentColor = contentColor,
     ) {
         Column {
             AlertDialogBaselineLayout(
@@ -227,7 +227,7 @@ internal fun AlertDialogContent(
                                 ProvideTextStyle(textStyle, text)
                             }
                         }
-                    }
+                    },
             )
             buttons()
         }
@@ -244,7 +244,7 @@ internal fun AlertDialogContent(
 @Composable
 internal fun ColumnScope.AlertDialogBaselineLayout(
     title: @Composable (() -> Unit)?,
-    text: @Composable (() -> Unit)?
+    text: @Composable (() -> Unit)?,
 ) {
     Layout(
         {
@@ -255,7 +255,7 @@ internal fun ColumnScope.AlertDialogBaselineLayout(
                 Box(TextPadding.layoutId("text").align(Alignment.Start)) { text() }
             }
         },
-        Modifier.weight(1f, false)
+        Modifier.weight(1f, false),
     ) { measurables, constraints ->
         // Measure with loose constraints for height as we don't want the text to take up more
         // space than it needs
@@ -346,7 +346,7 @@ internal fun ColumnScope.AlertDialogBaselineLayout(
 internal fun AlertDialogFlowRow(
     mainAxisSpacing: Dp,
     crossAxisSpacing: Dp,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     Layout(content) { measurables, constraints ->
         val sequences = mutableListOf<List<Placeable>>()
@@ -441,9 +441,12 @@ internal fun AlertDialogFlowRow(
 private val TitlePadding = Modifier.padding(start = 24.dp, end = 24.dp)
 private val TextPadding = Modifier.padding(start = 24.dp, end = 24.dp, bottom = 28.dp)
 // Baseline distance from the first line of the title to the top of the dialog
-private val TitleBaselineDistanceFromTop = 40.sp
+private val TitleBaselineDistanceFromTop
+    get() = 40.sp
 // Baseline distance from the first line of the text to the last line of the title
-private val TextBaselineDistanceFromTitle = 36.sp
+private val TextBaselineDistanceFromTitle
+    get() = 36.sp
 // For dialogs with no title, baseline distance from the first line of the text to the top of the
 // dialog
-private val TextBaselineDistanceFromTop = 38.sp
+private val TextBaselineDistanceFromTop
+    get() = 38.sp

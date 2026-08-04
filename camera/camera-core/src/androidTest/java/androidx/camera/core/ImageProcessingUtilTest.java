@@ -51,7 +51,6 @@ import androidx.camera.testing.impl.fakes.FakeImageProxy;
 import androidx.core.math.MathUtils;
 import androidx.core.util.Preconditions;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
-import androidx.test.filters.SdkSuppress;
 import androidx.test.filters.SmallTest;
 
 import org.jspecify.annotations.NonNull;
@@ -70,7 +69,6 @@ import java.nio.IntBuffer;
  */
 @SmallTest
 @RunWith(AndroidJUnit4.class)
-@SdkSuppress(minSdkVersion = 21)
 public class ImageProcessingUtilTest {
 
     private static final int WIDTH = 8;
@@ -175,7 +173,7 @@ public class ImageProcessingUtilTest {
         assertThat(imageProxy).isNotNull();
         ByteBuffer byteBuffer = imageProxy.getPlanes()[0].getBuffer();
         byteBuffer.rewind();
-        byte[] outputBytes = new byte[byteBuffer.capacity()];
+        byte[] outputBytes = new byte[byteBuffer.remaining()];
         byteBuffer.get(outputBytes);
 
         // Assert: the color and the dimension of the restored image.
@@ -198,7 +196,7 @@ public class ImageProcessingUtilTest {
         assertThat(imageProxy).isNotNull();
         ByteBuffer byteBuffer = imageProxy.getPlanes()[0].getBuffer();
         byteBuffer.rewind();
-        byte[] outputBytes = new byte[byteBuffer.capacity()];
+        byte[] outputBytes = new byte[byteBuffer.remaining()];
         byteBuffer.get(outputBytes);
 
         // Assert: the color and the dimension of the restored image.
@@ -221,7 +219,7 @@ public class ImageProcessingUtilTest {
         assertThat(imageProxy).isNotNull();
         ByteBuffer byteBuffer = imageProxy.getPlanes()[0].getBuffer();
         byteBuffer.rewind();
-        byte[] outputBytes = new byte[byteBuffer.capacity()];
+        byte[] outputBytes = new byte[byteBuffer.remaining()];
         byteBuffer.get(outputBytes);
 
         // Assert: the format is JPEG and can decode,  the size is correct, the rotation in Exif
@@ -359,25 +357,45 @@ public class ImageProcessingUtilTest {
         rgbImageProxy.close();
     }
 
-    @SdkSuppress(minSdkVersion = 23)
     @Test
     public void rotateYUV_imageRotated_0() {
         rotateYUV_imageRotated(OUTPUT_IMAGE_FORMAT_YUV_420_888, 0, true);
     }
 
-    @SdkSuppress(minSdkVersion = 23)
+    @Test
+    public void rotateYUV_imageRotated_0_returnsNull() {
+        // Arrange.
+        int width = 64;
+        int height = 32;
+        closeTestResources();
+        createTestResources(width, height, 0);
+
+        // Act.
+        ImageProxy yuvImageProxy = rotateYUV(
+                mYUVImageProxy,
+                mRotatedYUVImageReaderProxy,
+                ImageWriter.newInstance(
+                        mRotatedYUVImageReaderProxy.getSurface(),
+                        mRotatedYUVImageReaderProxy.getMaxImages()),
+                mYRotatedBuffer,
+                mURotatedBuffer,
+                mVRotatedBuffer,
+                /*rotation=*/0);
+
+        // Assert.
+        assertThat(yuvImageProxy).isNull();
+    }
+
     @Test
     public void rotateYUV_imageRotated_90() {
         rotateYUV_imageRotated(OUTPUT_IMAGE_FORMAT_YUV_420_888, 90, false);
     }
 
-    @SdkSuppress(minSdkVersion = 23)
     @Test
     public void rotateYUV_imageRotated_180() {
         rotateYUV_imageRotated(OUTPUT_IMAGE_FORMAT_YUV_420_888, 180, false);
     }
 
-    @SdkSuppress(minSdkVersion = 23)
     @Test
     public void rotateYUV_imageRotated_270() {
         rotateYUV_imageRotated(OUTPUT_IMAGE_FORMAT_YUV_420_888, 270, false);
@@ -569,7 +587,7 @@ public class ImageProcessingUtilTest {
         // Ignore row stride here, we don't need to be efficient, so we'll fill the padding also.
         buffer.rewind();
         while (buffer.hasRemaining()) {
-            int nextPosition = Math.min(buffer.capacity(), buffer.position() + pixelStride);
+            int nextPosition = Math.min(buffer.limit(), buffer.position() + pixelStride);
             buffer.put(value);
             buffer.position(nextPosition);
         }

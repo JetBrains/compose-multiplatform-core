@@ -16,11 +16,13 @@
 
 package androidx.credentials.playservices.controllers
 
+import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.os.Parcel
 import android.os.ResultReceiver
+import androidx.credentials.CredentialManagerCallback
 import androidx.credentials.exceptions.CreateCredentialCancellationException
 import androidx.credentials.exceptions.CreateCredentialException
 import androidx.credentials.exceptions.CreateCredentialInterruptedException
@@ -33,7 +35,7 @@ import androidx.credentials.exceptions.NoCredentialException
 import com.google.android.gms.common.api.CommonStatusCodes
 
 /** Holds all non type specific details shared by the controllers. */
-internal open class CredentialProviderBaseController(private val context: Context) {
+internal open class CredentialProviderBaseController(context: Context) {
     companion object {
 
         // Common retryable status codes from the play modules found
@@ -41,7 +43,7 @@ internal open class CredentialProviderBaseController(private val context: Contex
         val retryables: Set<Int> =
             setOf(
                 CommonStatusCodes.NETWORK_ERROR,
-                CommonStatusCodes.CONNECTION_SUSPENDED_DURING_CALL
+                CommonStatusCodes.CONNECTION_SUSPENDED_DURING_CALL,
             )
 
         // Generic controller request code used by all controllers
@@ -80,11 +82,19 @@ internal open class CredentialProviderBaseController(private val context: Contex
         // Key for the result intent to send back to the controller
         const val RESULT_DATA_TAG = "RESULT_DATA"
 
-        // Key for the actual parcelable type sent to the hidden activity
-        const val EXTRA_GET_CREDENTIAL_INTENT = "EXTRA_GET_CREDENTIAL_INTENT"
+        // Key for the actual parcelable type sent to the hidden activity, regardless of API flow.
+        const val EXTRA_FLOW_PENDING_INTENT = "EXTRA_FLOW_PENDING_INTENT"
+
+        const val EXTRA_DIGITAL_CREDENTIAL_INTENT = "EXTRA_DIGITAL_CREDENTIAL_INTENT"
+
+        // Key for the error name to be used in the activity error reporting.
+        const val EXTRA_ERROR_NAME = "EXTRA_ERROR_NAME"
 
         // Key for the failure boolean sent back from hidden activity to controller
         const val FAILURE_RESPONSE_TAG = "FAILURE_RESPONSE"
+
+        // Key for the dummy boolean sent back from hidden activity to controller
+        const val DUMMY_RESPONSE_TAG = "DUMMY_RESPONSE"
 
         // Key for the exception type sent back from hidden activity to controllers if error
         const val EXCEPTION_TYPE_TAG = "EXCEPTION_TYPE"
@@ -101,7 +111,7 @@ internal open class CredentialProviderBaseController(private val context: Contex
         /** Shuttles back exceptions only related to the hidden activity that can't be parceled */
         internal fun getCredentialExceptionTypeToException(
             typeName: String?,
-            msg: String?
+            msg: String?,
         ): GetCredentialException {
             return when (typeName) {
                 GET_CANCELED -> {
@@ -135,9 +145,15 @@ internal open class CredentialProviderBaseController(private val context: Contex
             this.send(resultCode, bundle)
         }
 
+        internal fun ResultReceiver.reportDummyResult() {
+            val bundle = Bundle()
+            bundle.putBoolean(DUMMY_RESPONSE_TAG, false)
+            this.send(Activity.RESULT_OK, bundle)
+        }
+
         internal fun createCredentialExceptionTypeToException(
             typeName: String?,
-            msg: String?
+            msg: String?,
         ): CreateCredentialException {
             return when (typeName) {
                 CREATE_CANCELED -> {
@@ -151,6 +167,13 @@ internal open class CredentialProviderBaseController(private val context: Contex
                 }
             }
         }
+
+        internal fun <R : Any, E : Any> emptyCallback(): CredentialManagerCallback<R, E> =
+            object : CredentialManagerCallback<R, E> {
+                override fun onResult(result: R) {}
+
+                override fun onError(e: E) {}
+            }
     }
 
     fun <T : ResultReceiver?> toIpcFriendlyResultReceiver(resultReceiver: T): ResultReceiver? {
@@ -165,7 +188,7 @@ internal open class CredentialProviderBaseController(private val context: Contex
     fun generateHiddenActivityIntent(
         resultReceiver: ResultReceiver,
         hiddenIntent: Intent,
-        typeTag: String
+        typeTag: String,
     ) {
         hiddenIntent.putExtra(TYPE_TAG, typeTag)
         hiddenIntent.putExtra(ACTIVITY_REQUEST_CODE_TAG, CONTROLLER_REQUEST_CODE)

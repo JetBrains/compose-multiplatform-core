@@ -17,7 +17,7 @@
 package androidx.compose.ui.samples
 
 import androidx.annotation.Sampled
-import androidx.compose.material.Text
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onSizeChanged
@@ -29,6 +29,6 @@ fun OnSizeChangedSample(name: String) {
     // to use the size of one component to affect the size of another component.
     Text(
         "Hello $name",
-        Modifier.onSizeChanged { size -> println("The size of the Text in pixels is $size") }
+        Modifier.onSizeChanged { size -> println("The size of the Text in pixels is $size") },
     )
 }

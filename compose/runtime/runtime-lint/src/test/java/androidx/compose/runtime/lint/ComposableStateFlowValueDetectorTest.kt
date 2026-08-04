@@ -93,7 +93,7 @@ class ComposableStateFlowValueDetectorTest : LintDetectorTest() {
         1b6OGCwep7HVl+pEG92L1F4cJ0zUSWzYS4ES718uXOAf8FFh9IKRQBXOfeXg
         5V1u4BXnj3zjCbOmunBaeNrCdAszCLjEbAs1zHVBBvN41oVnsGDw3KBusGjg
         G1R+AgX9oFiBAgAA
-        """
+        """,
         )
 
     @Test
@@ -163,7 +163,7 @@ class ComposableStateFlowValueDetectorTest : LintDetectorTest() {
                     )
                     .indented(),
                 Stubs.Composable,
-                stateFlowStub
+                stateFlowStub,
             )
             .skipTestModes(TestMode.TYPE_ALIAS)
             .run()
@@ -368,7 +368,7 @@ Fix for src/androidx/compose/runtime/foo/TestFlow.kt line 55: Replace with colle
                     )
                     .indented(),
                 Stubs.Composable,
-                stateFlowStub
+                stateFlowStub,
             )
             .run()
             .expectClean()

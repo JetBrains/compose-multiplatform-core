@@ -29,13 +29,13 @@ import androidx.compose.ui.inspection.util.ThreadUtils
 import layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.ParameterGroup
 
 /** Convert parameters and semantics from [InspectorNode] into a [ParameterGroup]. */
-fun InspectorNode.convertToParameterGroup(
+internal fun InspectorNode.convertToParameterGroup(
     semanticsNode: InspectorNode,
     layoutInspectorTree: LayoutInspectorTree,
     rootId: Long,
     maxRecursions: Int,
     maxInitialIterableSize: Int,
-    stringTable: StringTable
+    stringTable: StringTable,
 ): ParameterGroup =
     ParameterGroup.newBuilder()
         .apply {
@@ -46,7 +46,7 @@ fun InspectorNode.convertToParameterGroup(
                         Normal,
                         rootId,
                         maxRecursions,
-                        maxInitialIterableSize
+                        maxInitialIterableSize,
                     )
                     .convertAll(stringTable)
             )
@@ -57,7 +57,7 @@ fun InspectorNode.convertToParameterGroup(
                         MergedSemantics,
                         rootId,
                         maxRecursions,
-                        maxInitialIterableSize
+                        maxInitialIterableSize,
                     )
                     .convertAll(stringTable)
             )
@@ -68,7 +68,7 @@ fun InspectorNode.convertToParameterGroup(
                         UnmergedSemantics,
                         rootId,
                         maxRecursions,
-                        maxInitialIterableSize
+                        maxInitialIterableSize,
                     )
                     .convertAll(stringTable)
             )
@@ -81,12 +81,12 @@ fun InspectorNode.convertToParameterGroup(
  * This method can take a long time, especially the first time, and should be called off the main
  * thread.
  */
-fun InspectorNode.convertParameters(
+internal fun InspectorNode.convertParameters(
     layoutInspectorTree: LayoutInspectorTree,
     kind: ParameterKind,
     rootId: Long,
     maxRecursions: Int,
-    maxInitialIterableSize: Int
+    maxInitialIterableSize: Int,
 ): List<NodeParameter> {
     ThreadUtils.assertOffMainThread()
     return layoutInspectorTree.convertParameters(
@@ -94,7 +94,7 @@ fun InspectorNode.convertParameters(
         this,
         kind,
         maxRecursions,
-        maxInitialIterableSize
+        maxInitialIterableSize,
     )
 }
 

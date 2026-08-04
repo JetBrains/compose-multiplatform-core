@@ -16,7 +16,7 @@
 
 package androidx.compose.runtime.collection
 
-import androidx.compose.runtime.BitVector
+import androidx.compose.runtime.composer.gapbuffer.BitVector
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -70,7 +70,7 @@ class BitVectorTests {
                 // Larger ranges that cross word boundaries
                 60 to 80,
                 120 to 140,
-                60 to 140
+                60 to 140,
             )
 
         for (range in ranges) {

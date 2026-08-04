@@ -16,7 +16,6 @@
 
 package androidx.tv.material3
 
-import android.os.Build
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
@@ -33,7 +32,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.hasClickAction
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onChild
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performMouseInput
@@ -50,7 +49,7 @@ import org.junit.runner.RunWith
 
 @MediumTest
 @RunWith(AndroidJUnit4::class)
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+@SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 @OptIn(ExperimentalTvMaterial3Api::class)
 class IconButtonScreenshotTest {
 
@@ -202,7 +201,7 @@ class IconButtonScreenshotTest {
                 Box(Modifier.size(50.dp).testTag(wrapperTestTag)) {
                     IconButton(
                         onClick = { /* doSomething() */ },
-                        modifier = Modifier.align(Alignment.Center).focusRequester(focusRequester)
+                        modifier = Modifier.align(Alignment.Center).focusRequester(focusRequester),
                     ) {
                         Icon(Icons.Filled.Favorite, contentDescription = "Localized description")
                     }
@@ -225,7 +224,7 @@ class IconButtonScreenshotTest {
                 Box(Modifier.size(50.dp).testTag(wrapperTestTag)) {
                     IconButton(
                         onClick = { /* doSomething() */ },
-                        modifier = Modifier.align(Alignment.Center).focusRequester(focusRequester)
+                        modifier = Modifier.align(Alignment.Center).focusRequester(focusRequester),
                     ) {
                         Icon(Icons.Filled.Favorite, contentDescription = "Localized description")
                     }
@@ -261,7 +260,7 @@ class IconButtonScreenshotTest {
                     OutlinedIconButton(onClick = { /* doSomething() */ }) {
                         Icon(
                             Icons.Outlined.FavoriteBorder,
-                            contentDescription = "Localized description"
+                            contentDescription = "Localized description",
                         )
                     }
                 }
@@ -278,7 +277,7 @@ class IconButtonScreenshotTest {
                     OutlinedIconButton(onClick = { /* doSomething() */ }) {
                         Icon(
                             Icons.Outlined.FavoriteBorder,
-                            contentDescription = "Localized description"
+                            contentDescription = "Localized description",
                         )
                     }
                 }
@@ -295,7 +294,7 @@ class IconButtonScreenshotTest {
                     OutlinedIconButton(onClick = { /* doSomething() */ }, enabled = false) {
                         Icon(
                             Icons.Outlined.FavoriteBorder,
-                            contentDescription = "Localized description"
+                            contentDescription = "Localized description",
                         )
                     }
                 }
@@ -312,7 +311,7 @@ class IconButtonScreenshotTest {
                     OutlinedIconButton(onClick = { /* doSomething() */ }, enabled = false) {
                         Icon(
                             Icons.Outlined.FavoriteBorder,
-                            contentDescription = "Localized description"
+                            contentDescription = "Localized description",
                         )
                     }
                 }

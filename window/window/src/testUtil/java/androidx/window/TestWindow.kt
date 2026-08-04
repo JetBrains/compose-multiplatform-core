@@ -127,7 +127,7 @@ constructor(context: Context?, private val decorView: View = mock(View::class.ja
 
     override fun setTitle(charSequence: CharSequence) {}
 
-    @Suppress("OVERRIDE_DEPRECATION") // b/407501611
+    @Deprecated("Deprecated in base class but added for compatibility")
     override fun setTitleColor(i: Int) {}
 
     override fun openPanel(i: Int, keyEvent: KeyEvent) {}

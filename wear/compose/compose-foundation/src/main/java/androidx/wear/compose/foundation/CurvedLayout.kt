@@ -99,7 +99,7 @@ public fun CurvedLayout(
     // TODO: reimplement as modifiers
     radialAlignment: CurvedAlignment.Radial? = null,
     angularDirection: CurvedDirection.Angular = CurvedDirection.Angular.Normal,
-    contentBuilder: CurvedScope.() -> Unit
+    contentBuilder: CurvedScope.() -> Unit,
 ) {
     // Note that all angles in the function are in radians, and the anchor parameter is in degrees
 
@@ -116,7 +116,7 @@ public fun CurvedLayout(
                 with(curvedRowChild) { draw() }
                 drawContent()
             },
-        content = { curvedRowChild.SubComposition(CurvedSemanticProperties()) }
+        content = { curvedRowChild.SubComposition(CurvedSemanticProperties()) },
     ) { measurables, constraints ->
         require(constraints.hasBoundedHeight || constraints.hasBoundedWidth) {
             "either height or width should be bounded"
@@ -131,13 +131,17 @@ public fun CurvedLayout(
 
         // Give the curved row scope the information needed to measure and map measurables
         // to children.
-        with(CurvedMeasureScope(subDensity = this, curvedLayoutDirection, radius)) {
-            with(curvedRowChild) {
-                val iterator = measurables.iterator()
-                initializeMeasure(iterator)
-                require(!iterator.hasNext()) { "unused measurable" }
+        val placementBlock =
+            with(
+                CurvedMeasureScope(subDensity = this, curvedLayoutDirection, radius, isLookingAhead)
+            ) {
+                with(curvedRowChild) {
+                    val iterator = measurables.iterator()
+                    initializeMeasure(iterator).also {
+                        require(!iterator.hasNext()) { "unused measurable" }
+                    }
+                }
             }
-        }
 
         curvedRowChild.estimateThickness(radius)
 
@@ -149,7 +153,7 @@ public fun CurvedLayout(
         val totalSweep = curvedRowChild.sweepRadians
 
         // Apply anchor & anchorType
-        var layoutAngleStart =
+        val layoutAngleStart =
             anchor.toRadians() -
                 (if (curvedLayoutDirection.clockwise()) anchorType.ratio
                 else 1f - anchorType.ratio) * totalSweep
@@ -157,7 +161,7 @@ public fun CurvedLayout(
         curvedRowChild.angularPosition(layoutAngleStart, totalSweep, Offset(radius, radius))
 
         // Place the composable children
-        layout(diameter, diameter) { with(curvedRowChild) { placeIfNeeded() } }
+        layout(diameter, diameter, placementBlock = placementBlock)
     }
 }
 
@@ -166,7 +170,7 @@ public fun CurvedLayout(
 internal class CurvedLayoutDirection(
     internal val radial: CurvedDirection.Radial,
     internal val angular: CurvedDirection.Angular,
-    internal val layoutDirection: LayoutDirection
+    internal val layoutDirection: LayoutDirection,
 ) {
     // Check if the angular direction is clockwise, taking layoutDirection into account
     fun clockwise(): Boolean = angular.resolveClockwise(layoutDirection)
@@ -179,7 +183,7 @@ internal class CurvedLayoutDirection(
 
     fun copy(
         overrideRadial: CurvedDirection.Radial? = null,
-        overrideAngular: CurvedDirection.Angular? = null
+        overrideAngular: CurvedDirection.Angular? = null,
     ) = CurvedLayoutDirection(overrideRadial ?: radial, overrideAngular ?: angular, layoutDirection)
 
     override fun equals(other: Any?): Boolean {
@@ -228,7 +232,7 @@ internal constructor(
     val thickness: Float,
     val centerOffset: Offset,
     val measureRadius: Float, // TODO: remove this from here or generalize
-    val startAngleRadians: Float
+    val startAngleRadians: Float,
 ) {
     val innerRadius = outerRadius - thickness
 
@@ -245,8 +249,12 @@ internal constructor(
         centerOffset +
             offsetFromDistanceAndAngle(
                 distance = outerRadius - thickness * (1f - radialRatio),
-                angle = startAngleRadians + angleRatio * sweepRadians
+                angle = startAngleRadians + angleRatio * sweepRadians,
             )
+
+    override fun toString(): String {
+        return "CurvedLayoutInfo(centerOffset=$centerOffset, sweepRadians=$sweepRadians, outerRadius=$outerRadius, thickness=$thickness, measureRadius=$measureRadius, startAngleRadians=$startAngleRadians, innerRadius=$innerRadius)"
+    }
 }
 
 // Partially computed CurvedLayoutInfo
@@ -262,18 +270,19 @@ internal class PartialLayoutInfo(
 internal class CurvedMeasureScope(
     val subDensity: Density,
     val curvedLayoutDirection: CurvedLayoutDirection,
-    val radius: Float
+    val radius: Float,
+    val isLookingAhead: Boolean,
 ) : Density by subDensity
 
 internal class CurvedSemanticProperties(
     val contentDescription: String? = null,
     val traversalIndex: Float = Float.NaN,
-    val isClearingSemantics: Boolean = false
+    val isClearingSemantics: Boolean = false,
 ) {
     fun copy(
         contentDescription: String? = this.contentDescription,
         traversalIndex: Float = this.traversalIndex,
-        isClearingSemantics: Boolean = this.isClearingSemantics
+        isClearingSemantics: Boolean = this.isClearingSemantics,
     ) = CurvedSemanticProperties(contentDescription, traversalIndex, isClearingSemantics)
 
     fun merge(other: CurvedSemanticProperties): CurvedSemanticProperties =
@@ -284,7 +293,7 @@ internal class CurvedSemanticProperties(
             copy(
                 contentDescription ?: other.contentDescription,
                 if (traversalIndex.fastIsFinite()) traversalIndex else other.traversalIndex,
-                isClearingSemantics or other.isClearingSemantics
+                isClearingSemantics or other.isClearingSemantics,
             )
         }
 
@@ -312,7 +321,7 @@ internal class CurvedSemanticProperties(
  * 1. During composition [CurvedChild#ComposeIfNeeded] is called.
  * 2. During measurement [CurvedChild#initializeMeasure], [CurvedChild#estimateThickness],
  * [CurvedChild#radialPosition] & [CurvedChild#angularPosition] will be called, in order.
- * 3. During placement [CurvedChild#placeIfNeeded] is called.
+ * 3. During placement, the placementBlock returned from [CurvedChild#initializeMeasure] is called.
  * 4. During drawing [CurvedChild#draw] is called.
  * </pre>
  * See those functions for specifics.
@@ -353,8 +362,11 @@ internal abstract class CurvedChild() {
      *
      * @param measurables: The measurables on the CurvedLayout, used to map to the compose-ui nodes
      *   we generated in [SubComposition] as we walk the tree.
+     * @return the placement block that needs to be executed during placement.
      */
-    open fun CurvedMeasureScope.initializeMeasure(measurables: Iterator<Measurable>) {}
+    open fun CurvedMeasureScope.initializeMeasure(
+        measurables: Iterator<Measurable>
+    ): (Placeable.PlacementScope).() -> Unit = {}
 
     /**
      * Compute the parent data required to give to the parent layout to properly size and position
@@ -383,7 +395,7 @@ internal abstract class CurvedChild() {
      */
     abstract fun doRadialPosition(
         parentOuterRadius: Float,
-        parentThickness: Float
+        parentThickness: Float,
     ): PartialLayoutInfo
 
     fun radialPosition(parentOuterRadius: Float, parentThickness: Float): PartialLayoutInfo =
@@ -401,7 +413,7 @@ internal abstract class CurvedChild() {
     fun angularPosition(
         parentStartAngleRadians: Float,
         parentSweepRadians: Float,
-        centerOffset: Offset
+        centerOffset: Offset,
     ): Float {
         val angularPosition =
             doAngularPosition(parentStartAngleRadians, parentSweepRadians, centerOffset)
@@ -412,7 +424,7 @@ internal abstract class CurvedChild() {
                 partialLayoutInfo.thickness,
                 centerOffset,
                 partialLayoutInfo.measureRadius,
-                angularPosition
+                angularPosition,
             )
         return angularPosition
     }
@@ -420,11 +432,8 @@ internal abstract class CurvedChild() {
     open fun doAngularPosition(
         parentStartAngleRadians: Float,
         parentSweepRadians: Float,
-        centerOffset: Offset
+        centerOffset: Offset,
     ): Float = parentStartAngleRadians
-
-    /** If this component generated a child composable, this is the opportunity to place it. */
-    open fun (Placeable.PlacementScope).placeIfNeeded() {}
 
     /** A chance for this component to draw itself. */
     open fun DrawScope.draw() {}
@@ -434,6 +443,7 @@ internal fun Float.toRadians() = this * PI.toFloat() / 180f
 
 internal fun Float.toDegrees() = this * 180f / PI.toFloat()
 
+@Suppress("ListIterator")
 internal fun <T> Iterable<T>.sumOf(selector: (T) -> Float): Float = map(selector).sum()
 
 internal fun offsetFromDistanceAndAngle(distance: Float, angle: Float) =

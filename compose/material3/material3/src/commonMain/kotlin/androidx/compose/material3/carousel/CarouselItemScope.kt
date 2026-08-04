@@ -19,7 +19,6 @@ package androidx.compose.material3.carousel
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
 import androidx.compose.foundation.shape.GenericShape
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -31,8 +30,7 @@ import androidx.compose.ui.graphics.addOutline
 import androidx.compose.ui.platform.LocalDensity
 
 /** Receiver scope for [Carousel] item content. */
-@ExperimentalMaterial3Api
-sealed interface CarouselItemScope {
+public sealed interface CarouselItemScope {
     /**
      * Information regarding the carousel item, such as its minimum and maximum size.
      *
@@ -40,7 +38,7 @@ sealed interface CarouselItemScope {
      * it will be recomposed on every change causing potential performance issues. Avoid using it in
      * the composition.
      */
-    val carouselItemDrawInfo: CarouselItemDrawInfo
+    public val carouselItemDrawInfo: CarouselItemDrawInfo
 
     /**
      * Clips the composable to the given [shape], taking into account the item's size in the cross
@@ -48,7 +46,7 @@ sealed interface CarouselItemScope {
      *
      * @param shape the shape to be applied to the composable
      */
-    @Composable fun Modifier.maskClip(shape: Shape): Modifier
+    @Composable public fun Modifier.maskClip(shape: Shape): Modifier
 
     /**
      * Draw a border on the composable using the given [shape], taking into account the item's size
@@ -57,7 +55,7 @@ sealed interface CarouselItemScope {
      * @param border the border to be drawn around the composable
      * @param shape the shape of the border
      */
-    @Composable fun Modifier.maskBorder(border: BorderStroke, shape: Shape): Modifier
+    @Composable public fun Modifier.maskBorder(border: BorderStroke, shape: Shape): Modifier
 
     /**
      * Converts and remembers [shape] into a [GenericShape] that uses the intersection of the
@@ -69,10 +67,9 @@ sealed interface CarouselItemScope {
      * @param shape The shape that will be converted and remembered and react to changes in the
      *   item's mask.
      */
-    @Composable fun rememberMaskShape(shape: Shape): GenericShape
+    @Composable public fun rememberMaskShape(shape: Shape): GenericShape
 }
 
-@ExperimentalMaterial3Api
 internal class CarouselItemScopeImpl(private val itemInfo: CarouselItemDrawInfo) :
     CarouselItemScope {
     override val carouselItemDrawInfo: CarouselItemDrawInfo

@@ -305,13 +305,13 @@ class ExampleWindowInitializer : Initializer<RuleController> {
                         EmbeddingBounds(
                             EmbeddingBounds.Alignment.ALIGN_BOTTOM,
                             width = EmbeddingBounds.Dimension.DIMENSION_EXPANDED,
-                            height = EmbeddingBounds.Dimension.ratio(0.4f)
+                            height = EmbeddingBounds.Dimension.ratio(0.4f),
                         )
                     } else {
                         EmbeddingBounds(
                             EmbeddingBounds.Alignment.ALIGN_RIGHT,
                             width = EmbeddingBounds.Dimension.ratio(0.5f),
-                            height = EmbeddingBounds.Dimension.ratio(0.8f)
+                            height = EmbeddingBounds.Dimension.ratio(0.8f),
                         )
                     }
                 )

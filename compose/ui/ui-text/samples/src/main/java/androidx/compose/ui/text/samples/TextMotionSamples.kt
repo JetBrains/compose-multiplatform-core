@@ -22,8 +22,8 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
-import androidx.compose.material.LocalTextStyle
-import androidx.compose.material.Text
+import androidx.compose.material3.LocalTextStyle
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -43,7 +43,7 @@ fun TextMotionSample() {
         infiniteTransition.animateFloat(
             initialValue = 1f,
             targetValue = 8f,
-            animationSpec = infiniteRepeatable(tween(1000), RepeatMode.Reverse)
+            animationSpec = infiniteRepeatable(tween(1000), RepeatMode.Reverse),
         )
 
     Text(
@@ -56,6 +56,6 @@ fun TextMotionSample() {
             },
         // Text composable does not take TextMotion as a parameter.
         // Provide it via style argument but make sure that we are copying from current theme
-        style = LocalTextStyle.current.copy(textMotion = TextMotion.Animated)
+        style = LocalTextStyle.current.copy(textMotion = TextMotion.Animated),
     )
 }

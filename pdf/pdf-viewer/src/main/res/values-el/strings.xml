@@ -17,6 +17,8 @@
 
 <resources xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+    <string name="label_copy_link" msgid="869104793055534158">"Αντιγραφή συνδέσμου"</string>
+    <string name="label_jump_to" msgid="462543500326296329">"Μετάβαση σε"</string>
     <string name="title_dialog_password" msgid="2018068413709926925">"Αυτό το αρχείο είναι προστατευμένο"</string>
     <string name="label_password_first" msgid="4456258714097111908">"Κωδικός πρόσβασης"</string>
     <string name="label_password_incorrect" msgid="5291118378657145978">"Λάθος κωδικός πρόσβασης. Δοκιμάστε ξανά."</string>
@@ -28,7 +30,13 @@
     <string name="label_page_single" msgid="456123685879261101">"<xliff:g id="PAGE">%1$d</xliff:g> / <xliff:g id="TOTAL">%2$d</xliff:g>"</string>
     <string name="desc_page_single" msgid="8459583146661044094">"σελίδα <xliff:g id="PAGE">%1$d</xliff:g> από <xliff:g id="TOTAL">%2$d</xliff:g>"</string>
     <string name="desc_zoom" msgid="7318480946145947242">"εστίαση <xliff:g id="FIRST">%1$d</xliff:g> τοις εκατό"</string>
+    <string name="desc_pdf_view" msgid="4353979540148077296">"Προβολή PDF"</string>
+    <string name="desc_goto" msgid="1333698934111921601">"Μετάβαση σε"</string>
     <string name="desc_goto_link" msgid="2461368384824849714">"Μετάβαση στη σελίδα <xliff:g id="PAGE_NUMBER">%1$d</xliff:g>"</string>
+    <string name="desc_copy" msgid="385275789223074637">"Αντιγράφει το επιλεγμένο περιεχόμενο στο πρόχειρό σας"</string>
+    <string name="desc_copy_link" msgid="4764327179483836535">"Αντιγράφει τον σύνδεσμο στο πρόχειρό σας"</string>
+    <string name="desc_jump_to" msgid="9085362382536609454">"Μεταβαίνει στην ενότητα ή τη σελίδα του PDF"</string>
+    <string name="desc_select_all" msgid="428248654717550270">"Επιλέγει όλο το κείμενο στο PDF"</string>
     <string name="desc_page" msgid="6702471448987833953">"Σελίδα <xliff:g id="PAGE">%1$d</xliff:g>"</string>
     <string name="desc_empty_page" msgid="5041794048330057239">"Κενή σελίδα"</string>
     <string name="desc_page_with_text" msgid="2564017005407577604">"Σελίδα <xliff:g id="PAGE_NUMBER">%1$d</xliff:g>: <xliff:g id="PAGE_TEXT">%2$s</xliff:g>"</string>
@@ -60,7 +68,89 @@
     <string name="page_broken" msgid="2968770793669433462">"Δεν ήταν δυνατή η φόρτωση του εγγράφου PDF από τη σελίδα"</string>
     <string name="needs_more_data" msgid="3520133467908240802">"Μη επαρκή δεδομένα για την επεξεργασία του εγγράφου PDF"</string>
     <string name="error_cannot_open_pdf" msgid="2361919778558145071">"Δεν είναι δυνατό το άνοιγμα του αρχείου PDF"</string>
+    <string name="error_cannot_open_password_protected_pdf" msgid="3400883576932438749">"Δεν υποστηρίζονται PDF που προστατεύονται με κωδικό πρόσβασης."</string>
     <string name="cannot_edit_pdf" msgid="7677598370087228978">"Δεν είναι δυνατή η επεξεργασία αυτού του PDF"</string>
     <string name="clipboard_label" msgid="8943155331324944981">"Το περιεχόμενο αντιγράφηκε από το PDF"</string>
-    <string name="fast_scroller_thumb" msgid="6712048991132846541">"Μπάρα κύλισης"</string>
+    <string name="fast_scroller_thumb" msgid="1491143649111222713">"Μπάρα κύλισης"</string>
+    <string name="confirm_selection" msgid="7020926320719465164">"Επιβεβαίωση"</string>
+    <string name="form_widget" msgid="5841730047544552656">"Γραφικό στοιχείο φόρμας"</string>
+    <string name="form_type" msgid="1302137779809645840">"Τύπος: <xliff:g id="WIDGET_TYPE_NAME">%1$s</xliff:g>."</string>
+    <string name="form_title" msgid="2718582322716402117">"Τίτλος: <xliff:g id="WIDGET_ACCESSIBILITY_TITLE">%1$s</xliff:g>."</string>
+    <string name="form_value" msgid="960532222685914495">"Τιμή: <xliff:g id="WIDGET_VALUE">%1$s</xliff:g>."</string>
+    <string name="form_current_value" msgid="3883820498421821863">"Τρέχουσα τιμή: <xliff:g id="WIDGET_VALUE">%1$s</xliff:g>."</string>
+    <string name="form_read_only" msgid="4928929192592391646">"Το γραφικό στοιχείο είναι μόνο για ανάγνωση και δεν μπορεί να αλλάξει."</string>
+    <string name="form_multiselect_type" msgid="6137116306327174299">"Τύπος: Πολλαπλή επιλογή <xliff:g id="WIDGET_TYPE_NAME">%1$s</xliff:g>."</string>
+    <string name="form_click_toggle_instruction" msgid="7171111300244445911">"Κάνοντας κλικ θα γίνει εναλλαγή της τιμής."</string>
+    <string name="form_click_opens_choices_menu_instruction" msgid="5648228168212004143">"Κάνοντας κλικ θα ανοίξει το μενού ορισμού επιλογής."</string>
+    <string name="form_click_enters_text_edit_mode_instruction" msgid="2305283577544618880">"Κάνοντας κλικ θα μεταβείτε στη λειτουργία επεξεργασίας κειμένου."</string>
+    <string name="combobox_custom_option" msgid="8730230629127076731">"Προσαρμοσμένο"</string>
+    <string name="form_unknown" msgid="6371515914365431330">"Άγνωστο"</string>
+    <string name="form_widget_type_push_button" msgid="7978535904272874920">"Κουμπί πίεσης"</string>
+    <string name="form_widget_type_checkbox" msgid="2905625606101301245">"Πλαίσιο ελέγχου"</string>
+    <string name="form_widget_type_radio_button" msgid="4798553968129281550">"Κουμπί επιλογής"</string>
+    <string name="form_widget_type_combo_box" msgid="3912742706795495520">"Σύνθετο πλαίσιο"</string>
+    <string name="form_widget_type_list_box" msgid="431828611710070971">"Πλαίσιο λίστας"</string>
+    <string name="form_widget_type_text_field" msgid="4443782242324937941">"Πεδίο κειμένου"</string>
+    <string name="form_widget_type_signature" msgid="3811511096215331673">"Υπογραφή"</string>
+    <string name="discard_changes_dialog_title" msgid="8471151263363129054">"Απόρριψη των αλλαγών;"</string>
+    <string name="discard_changes_dialog_message" msgid="6052519273995024254">"Οι αλλαγές σας δεν αποθηκεύτηκαν."</string>
+    <string name="keep_editing_button" msgid="7573006208701305988">"Συνέχεια επεξεργασίας"</string>
+    <string name="discard_button" msgid="345675813790884187">"Απόρριψη"</string>
+    <string name="annotation_pen_button_content_desc" msgid="3429267369324256891">"Πένα"</string>
+    <string name="annotation_highlighter_button_content_desc" msgid="4145607409953592495">"Μαρκαδόρος υπογράμμισης"</string>
+    <string name="annotation_eraser_button_content_desc" msgid="7095965950282529732">"Γόμα"</string>
+    <string name="annotation_color_palette_button_content_desc" msgid="3857939523964276535">"Παλέτα χρωμάτων"</string>
+    <string name="annotation_undo_button_content_desc" msgid="8677860607653139057">"Αναίρεση"</string>
+    <string name="annotation_redo_button_content_desc" msgid="6173017390316607430">"Επανάληψη"</string>
+    <string name="annotation_toggle_annotation_button_content_desc" msgid="7576992521535921829">"Εναλλαγή σχολίου"</string>
+    <string name="pdf_pen_color_palette_item_black" msgid="2349482864795708538">"Μαύρο"</string>
+    <string name="pdf_pen_color_palette_item_dark_blue" msgid="8227114459819696973">"Σκούρο μπλε"</string>
+    <string name="pdf_pen_color_palette_item_red" msgid="6367852274869305090">"Κόκκινο"</string>
+    <string name="pdf_pen_color_palette_item_green" msgid="4048949964965941329">"Πράσινο"</string>
+    <string name="pdf_pen_color_palette_item_gold" msgid="3591366007431445814">"Χρυσό"</string>
+    <string name="pdf_pen_color_palette_item_olive_green" msgid="1872421165852966098">"Πράσινο της ελιάς"</string>
+    <string name="pdf_pen_color_palette_item_brown" msgid="9133647461570342884">"Καφέ"</string>
+    <string name="pdf_pen_color_palette_item_gray" msgid="758196389357724982">"Γκρι"</string>
+    <string name="pdf_pen_color_palette_item_blue" msgid="6624561290795093542">"Μπλε"</string>
+    <string name="pdf_pen_color_palette_item_coral_red" msgid="3472790346783163237">"Κόκκινο κοραλί"</string>
+    <string name="pdf_pen_color_palette_item_lime_green" msgid="2925975266430165024">"Λαχανί"</string>
+    <string name="pdf_pen_color_palette_item_yellow" msgid="3408908880225489347">"Κίτρινο"</string>
+    <string name="pdf_pen_color_palette_item_pale_lime" msgid="6222272594988730012">"Απαλό λαχανί"</string>
+    <string name="pdf_pen_color_palette_item_tan" msgid="4446741184644224946">"Ώχρα"</string>
+    <string name="pdf_pen_color_palette_item_light_gray" msgid="71510397000580323">"Ανοιχτό γκρι"</string>
+    <string name="pdf_pen_color_palette_item_purple" msgid="7007410838826542299">"Μοβ"</string>
+    <string name="pdf_pen_color_palette_item_pink" msgid="5726500338191639795">"Ροζ"</string>
+    <string name="pdf_pen_color_palette_item_mint_green" msgid="3385312517845353964">"Ανοιχτό πράσινο"</string>
+    <string name="pdf_pen_color_palette_item_orange" msgid="4364496006674819380">"Πορτοκαλί"</string>
+    <string name="pdf_pen_color_palette_item_steel_blue" msgid="3391398601008659651">"Μπλε χάλυβα"</string>
+    <string name="pdf_pen_color_palette_item_deep_red" msgid="1624337798517256053">"Βαθύ κόκκινο"</string>
+    <string name="pdf_pen_color_palette_item_white" msgid="8520258422897015917">"Λευκό"</string>
+    <string name="pdf_pen_color_palette_item_lavender" msgid="2201920941939797490">"Ανοιχτό μοβ"</string>
+    <string name="pdf_pen_color_palette_item_pale_pink" msgid="6793633656166022181">"Απαλό ροζ"</string>
+    <string name="pdf_pen_color_palette_item_pale_green" msgid="7640276023460122441">"Απαλό πράσινο"</string>
+    <string name="pdf_pen_color_palette_item_peach" msgid="4574864310357012821">"Απαλό πορτοκαλί"</string>
+    <string name="pdf_pen_color_palette_item_light_blue" msgid="1221502826981830146">"Ανοιχτό μπλε"</string>
+    <string name="pdf_pen_color_palette_item_salmon" msgid="5729612885142439660">"Σομόν"</string>
+    <string name="pdf_highlighter_color_palette_item_dark_gray" msgid="129747852317213657">"Σκούρο γκρι"</string>
+    <string name="pdf_highlighter_color_palette_item_white" msgid="2772905536293009655">"Λευκό"</string>
+    <string name="pdf_highlighter_color_palette_item_coral_red" msgid="449068479718102588">"Κόκκινο κοραλί"</string>
+    <string name="pdf_highlighter_color_palette_item_lime_green" msgid="702328612689542595">"Λαχανί"</string>
+    <string name="pdf_highlighter_color_palette_item_periwinkle_blue" msgid="5855323132087647114">"Βιολετί"</string>
+    <string name="pdf_highlighter_color_palette_item_orange" msgid="9039462823926560002">"Πορτοκαλί"</string>
+    <string name="pdf_highlighter_color_palette_item_yellow" msgid="8722349618048494139">"Κίτρινο"</string>
+    <string name="pdf_highlighter_color_palette_item_pale_pink" msgid="5090029667187265117">"Απαλό ροζ"</string>
+    <string name="pdf_highlighter_color_palette_item_light_blue" msgid="7650371560127252297">"Ανοιχτό μπλε"</string>
+    <string name="pdf_highlighter_color_palette_item_pale_green" msgid="6661538285172874930">"Απαλό πράσινο"</string>
+    <string name="pdf_highlighter_color_palette_item_bright_yellow" msgid="8165260767569639713">"Φωτεινό κίτρινο"</string>
+    <string name="pdf_highlighter_color_palette_item_peach" msgid="677800720719433260">"Απαλό πορτοκαλί"</string>
+    <string name="pdf_highlighter_color_palette_item_dusty_rose" msgid="6204969508698655017">"Ματ ροζ"</string>
+    <string name="pdf_highlighter_color_palette_item_olive_green" msgid="5477535957920899892">"Πράσινο της ελιάς"</string>
+    <string name="pdf_highlighter_color_palette_item_medium_purple" msgid="7817217551335552373">"Μεσαίο μοβ"</string>
+    <string name="pdf_highlighter_color_palette_item_medium_green" msgid="197052696316136021">"Μεσαίο πράσινο"</string>
+    <string name="pdf_highlighter_color_palette_item_rose_pink" msgid="1021474840088432691">"Σάπιο μήλο"</string>
+    <string name="pdf_highlighter_color_palette_item_steel_blue" msgid="652842313614405631">"Μπλε χάλυβα"</string>
+    <string name="pdf_highlighter_color_palette_item_lilac" msgid="8359141260355077279">"Λιλά"</string>
+    <string name="pdf_highlighter_color_palette_item_sage_green" msgid="3055450785882188986">"Πράσινο του φασκόμηλου"</string>
+    <string name="pdf_highlighter_color_palette_item_beige" msgid="465951735046038490">"Μπεζ"</string>
+    <string name="pdf_brush_slider_content_description" msgid="7693112422816705779">"Πάχος γραμμής"</string>
 </resources>

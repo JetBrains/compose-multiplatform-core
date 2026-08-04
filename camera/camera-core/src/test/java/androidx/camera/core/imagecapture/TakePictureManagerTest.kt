@@ -18,7 +18,6 @@ package androidx.camera.core.imagecapture
 
 import android.graphics.ImageFormat
 import android.hardware.camera2.CameraCharacteristics
-import android.os.Build
 import android.os.Looper.getMainLooper
 import android.util.Size
 import androidx.camera.core.ImageCapture
@@ -47,7 +46,7 @@ import org.robolectric.shadows.ShadowBuild
 /** Unit tests for [TakePictureManager]. */
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
+@Config(sdk = [Config.ALL_SDKS])
 class TakePictureManagerTest {
 
     private val imagePipeline = FakeImagePipeline()
@@ -59,8 +58,14 @@ class TakePictureManagerTest {
 
     @After
     fun tearDown() {
+        // Force-fail all pending and in-flight requests
+        takePictureManager.abortRequests()
+
         imagePipeline.close()
         imageCaptureControl.clear()
+
+        // Process any pending looper updates to prevent leaks
+        shadowOf(getMainLooper()).idle()
     }
 
     @Test
@@ -276,7 +281,7 @@ class TakePictureManagerTest {
         val response2 =
             listOf(
                 CaptureConfig.defaultEmptyCaptureConfig(),
-                CaptureConfig.defaultEmptyCaptureConfig()
+                CaptureConfig.defaultEmptyCaptureConfig(),
             )
         imagePipeline.captureConfigMap[request1] = response1
         imagePipeline.captureConfigMap[request2] = response2
@@ -433,7 +438,7 @@ class TakePictureManagerTest {
             ImagePipeline(
                 Utils.createEmptyImageCaptureConfig(),
                 Size(640, 480),
-                cameraCharacteristics
+                cameraCharacteristics,
             )
         val request1 = FakeTakePictureRequest(FakeTakePictureRequest.Type.IN_MEMORY)
         val request2 = FakeTakePictureRequest(FakeTakePictureRequest.Type.IN_MEMORY)
@@ -449,6 +454,9 @@ class TakePictureManagerTest {
 
         // Assert. new request can be issued after the capture failure of the first request
         takePictureManager.offerRequest(request2)
+
+        // Drain the failure callback of request2 to prevent cross-test leaks
+        shadowOf(getMainLooper()).idle()
     }
 
     @Test
@@ -459,7 +467,7 @@ class TakePictureManagerTest {
             ImagePipeline(
                 Utils.createEmptyImageCaptureConfig(),
                 Size(640, 480),
-                cameraCharacteristics
+                cameraCharacteristics,
             )
         val request1 = FakeTakePictureRequest(FakeTakePictureRequest.Type.IN_MEMORY)
         val request2 = FakeTakePictureRequest(FakeTakePictureRequest.Type.IN_MEMORY)
@@ -471,6 +479,9 @@ class TakePictureManagerTest {
 
         // Assert. new request can be issued after the capture failure of the first request
         takePictureManager.offerRequest(request2)
+
+        // Drain the failure callback of request2 to prevent cross-test leaks
+        shadowOf(getMainLooper()).idle()
     }
 
     @Test
@@ -480,7 +491,7 @@ class TakePictureManagerTest {
             ImagePipeline(
                 Utils.createEmptyImageCaptureConfig(),
                 Size(640, 480),
-                cameraCharacteristics
+                cameraCharacteristics,
             )
 
         // Create a request and offer it to the manager.
@@ -519,7 +530,7 @@ class TakePictureManagerTest {
             ImagePipeline(
                 Utils.createEmptyImageCaptureConfig(),
                 Size(640, 480),
-                cameraCharacteristics
+                cameraCharacteristics,
             )
 
         // Create a request and offer it to the manager.

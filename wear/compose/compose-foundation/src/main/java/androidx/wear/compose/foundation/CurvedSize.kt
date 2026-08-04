@@ -19,6 +19,7 @@ package androidx.wear.compose.foundation
 import androidx.annotation.FloatRange
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.layout.Measurable
+import androidx.compose.ui.layout.Placeable
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
@@ -42,7 +43,7 @@ public fun CurvedModifier.sizeIn(
             minSweepDegrees = minSweepDegrees,
             maxSweepDegrees = maxSweepDegrees,
             minThickness = minThickness,
-            maxThickness = maxThickness
+            maxThickness = maxThickness,
         )
     }
 
@@ -55,13 +56,13 @@ public fun CurvedModifier.sizeIn(
  */
 public fun CurvedModifier.size(
     @FloatRange(from = 0.0, to = 360.0) sweepDegrees: Float,
-    thickness: Dp
+    thickness: Dp,
 ): CurvedModifier =
     sizeIn(
         minSweepDegrees = sweepDegrees,
         maxSweepDegrees = sweepDegrees,
         minThickness = thickness,
-        maxThickness = thickness
+        maxThickness = thickness,
     )
 
 /**
@@ -78,7 +79,7 @@ public fun CurvedModifier.angularSizeDp(angularWidth: Dp): CurvedModifier =
             minAngularWidth = angularWidth,
             maxAngularWidth = angularWidth,
             minThickness = 0.dp,
-            maxThickness = Dp.Infinity
+            maxThickness = Dp.Infinity,
         )
     }
 
@@ -105,8 +106,10 @@ internal class SweepSizeWrapper(
     minThickness: Dp,
     maxThickness: Dp,
 ) : BaseSizeWrapper(child, minThickness, maxThickness) {
-    override fun CurvedMeasureScope.initializeMeasure(measurables: Iterator<Measurable>) {
-        baseInitializeMeasure(measurables)
+    override fun CurvedMeasureScope.initializeMeasure(
+        measurables: Iterator<Measurable>
+    ): (Placeable.PlacementScope).() -> Unit {
+        return baseInitializeMeasure(measurables)
     }
 
     override fun calculateSweepRadians(sweepRadians: Float, measureRadius: Float): Float =
@@ -118,17 +121,19 @@ internal class AngularWidthSizeWrapper(
     val minAngularWidth: Dp,
     val maxAngularWidth: Dp,
     minThickness: Dp,
-    maxThickness: Dp
+    maxThickness: Dp,
 ) : BaseSizeWrapper(child, minThickness, maxThickness) {
 
     private var minAngularWidthPx = 0f
     private var maxAngularWidthPx = 0f
 
-    override fun CurvedMeasureScope.initializeMeasure(measurables: Iterator<Measurable>) {
+    override fun CurvedMeasureScope.initializeMeasure(
+        measurables: Iterator<Measurable>
+    ): (Placeable.PlacementScope).() -> Unit {
         minAngularWidthPx = minAngularWidth.toPx()
         maxAngularWidthPx = maxAngularWidth.toPx()
 
-        baseInitializeMeasure(measurables)
+        return baseInitializeMeasure(measurables)
     }
 
     override fun calculateSweepRadians(sweepRadians: Float, measureRadius: Float) =
@@ -143,10 +148,12 @@ internal abstract class BaseSizeWrapper(
     private var minThicknessPx = 0f
     private var maxThicknessPx = 0f
 
-    protected fun CurvedMeasureScope.baseInitializeMeasure(measurables: Iterator<Measurable>) {
+    protected fun CurvedMeasureScope.baseInitializeMeasure(
+        measurables: Iterator<Measurable>
+    ): (Placeable.PlacementScope).() -> Unit {
         minThicknessPx = minThickness.toPx()
         maxThicknessPx = maxThickness.toPx()
-        with(wrapped) {
+        return with(wrapped) {
             // Call initializeMeasure on wrapper (while still having the MeasureScope scope)
             initializeMeasure(measurables)
         }
@@ -160,19 +167,19 @@ internal abstract class BaseSizeWrapper(
     override fun doAngularPosition(
         parentStartAngleRadians: Float,
         parentSweepRadians: Float,
-        centerOffset: Offset
+        centerOffset: Offset,
     ): Float {
         wrapped.angularPosition(
             parentStartAngleRadians,
             parentSweepRadians = calculateSweepRadians(parentSweepRadians, measureRadius),
-            centerOffset
+            centerOffset,
         )
         return parentStartAngleRadians
     }
 
     override fun doRadialPosition(
         parentOuterRadius: Float,
-        parentThickness: Float
+        parentThickness: Float,
     ): PartialLayoutInfo {
         val partialLayoutInfo = wrapped.radialPosition(parentOuterRadius, estimatedThickness)
         return PartialLayoutInfo(
@@ -180,7 +187,7 @@ internal abstract class BaseSizeWrapper(
             parentOuterRadius,
             thickness = estimatedThickness,
             measureRadius =
-                partialLayoutInfo.measureRadius + partialLayoutInfo.outerRadius - parentOuterRadius
+                partialLayoutInfo.measureRadius + partialLayoutInfo.outerRadius - parentOuterRadius,
         )
     }
 }

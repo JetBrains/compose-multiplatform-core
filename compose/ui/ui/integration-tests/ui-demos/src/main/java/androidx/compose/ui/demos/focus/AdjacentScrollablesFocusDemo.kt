@@ -43,10 +43,10 @@ fun AdjacentScrollablesFocusDemo() {
     Column {
         Text(
             """
-        Use the dpad or arrow keys to move focus.
-        Every 3rd item in the list is focusable.
-        Notice how focus moves through all the items in List 1 before moving to List 2.
-        """
+            Use the dpad or arrow keys to move focus.
+            Every 3rd item in the list is focusable.
+            Notice how focus moves through all the items in List 1 before moving to List 2.
+            """
                 .trimIndent()
         )
         ScrollableList("List 1")
@@ -84,7 +84,7 @@ private fun FocusableBox(text: String, modifier: Modifier = Modifier) {
                 .border(2.dp, Color.Black)
                 .onFocusChanged { color = if (it.isFocused) Color.Red else Color.White }
                 .background(color)
-                .focusable()
+                .focusable(),
     )
 }
 
@@ -94,6 +94,6 @@ private fun NonFocusableBox(text: String, modifier: Modifier = Modifier) {
         text = text,
         fontSize = 50.sp,
         textAlign = TextAlign.Center,
-        modifier = modifier.size(100.dp).border(2.dp, Color.Black).background(Color.White)
+        modifier = modifier.size(100.dp).border(2.dp, Color.Black).background(Color.White),
     )
 }

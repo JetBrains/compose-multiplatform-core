@@ -32,6 +32,7 @@ import org.junit.runner.RunWith
 
 /** Tests for [WearSdkComplicationRequestListenerTest]. */
 @RunWith(ComplicationsTestRunner::class)
+@org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.TARGET_SDK])
 @SdkSuppress(minSdkVersion = 36, codeName = "Baklava")
 class WearSdkComplicationRequestListenerTest {
     @Test
@@ -93,7 +94,7 @@ class WearSdkComplicationRequestListenerTest {
                 ComplicationDataTimeline(
                     ShortTextComplicationData.Builder(plainText("text"), plainText("description"))
                         .build(),
-                    listOf()
+                    listOf(),
                 )
             )
         }
@@ -106,15 +107,15 @@ class WearSdkComplicationRequestListenerTest {
                 ComplicationDataTimeline(
                     LongTextComplicationData.Builder(
                             plainText("longText"),
-                            plainText("description")
+                            plainText("description"),
                         )
                         .build(),
                     listOf(
                         TimelineEntry(
                             TimeInterval(Instant.MIN, Instant.MAX),
-                            NotConfiguredComplicationData()
+                            NotConfiguredComplicationData(),
                         )
-                    )
+                    ),
                 )
             )
         }
@@ -127,15 +128,15 @@ class WearSdkComplicationRequestListenerTest {
                 ComplicationDataTimeline(
                     LongTextComplicationData.Builder(
                             plainText("longText"),
-                            plainText("description")
+                            plainText("description"),
                         )
                         .build(),
                     listOf(
                         TimelineEntry(
                             TimeInterval(Instant.MIN, Instant.MAX),
-                            EmptyComplicationData()
+                            EmptyComplicationData(),
                         )
-                    )
+                    ),
                 )
             )
         }
@@ -148,7 +149,7 @@ class WearSdkComplicationRequestListenerTest {
                 ComplicationDataTimeline(
                     LongTextComplicationData.Builder(
                             plainText("longText"),
-                            plainText("description")
+                            plainText("description"),
                         )
                         .build(),
                     listOf(
@@ -156,11 +157,11 @@ class WearSdkComplicationRequestListenerTest {
                             TimeInterval(Instant.MIN, Instant.MAX),
                             ShortTextComplicationData.Builder(
                                     plainText("text"),
-                                    plainText("description")
+                                    plainText("description"),
                                 )
-                                .build()
+                                .build(),
                         )
-                    )
+                    ),
                 )
             )
         }
@@ -173,7 +174,7 @@ class WearSdkComplicationRequestListenerTest {
                 ComplicationDataTimeline(
                     LongTextComplicationData.Builder(
                             plainText("longText"),
-                            plainText("description")
+                            plainText("description"),
                         )
                         .build(),
                     listOf(
@@ -181,11 +182,11 @@ class WearSdkComplicationRequestListenerTest {
                             TimeInterval(Instant.MIN, Instant.MAX),
                             LongTextComplicationData.Builder(
                                     plainText("text"),
-                                    plainText("description")
+                                    plainText("description"),
                                 )
-                                .build()
+                                .build(),
                         )
-                    )
+                    ),
                 )
             )
         }
@@ -195,7 +196,7 @@ class WearSdkComplicationRequestListenerTest {
 
     private fun <T : Throwable> assertListenerThrows(
         expectedThrowable: Class<T>,
-        block: (WearSdkComplicationRequestListener) -> Unit
+        block: (WearSdkComplicationRequestListener) -> Unit,
     ) {
         Assert.assertThrows(expectedThrowable) {
             runBlocking {
@@ -204,7 +205,7 @@ class WearSdkComplicationRequestListenerTest {
                         WearSdkComplicationRequestListener(
                             1,
                             ComplicationType.LONG_TEXT.toWireComplicationType(),
-                            continuation
+                            continuation,
                         )
                     )
                 }

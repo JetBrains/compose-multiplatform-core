@@ -20,11 +20,9 @@ import static androidx.camera.core.ImageCapture.FLASH_MODE_OFF;
 import static androidx.camera.testing.imagecapture.CaptureResult.CAPTURE_STATUS_CANCELLED;
 import static androidx.camera.testing.imagecapture.CaptureResult.CAPTURE_STATUS_FAILED;
 import static androidx.camera.testing.imagecapture.CaptureResult.CAPTURE_STATUS_SUCCESSFUL;
-import static androidx.camera.testing.impl.fakes.FakeCameraDeviceSurfaceManager.MAX_OUTPUT_SIZE;
 
 import static java.util.Objects.requireNonNull;
 
-import android.graphics.Rect;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Process;
@@ -38,6 +36,7 @@ import androidx.camera.core.FocusMeteringResult;
 import androidx.camera.core.ImageCapture;
 import androidx.camera.core.ImageCapture.ScreenFlash;
 import androidx.camera.core.ImageCaptureException;
+import androidx.camera.core.InteropConfigurator;
 import androidx.camera.core.Logger;
 import androidx.camera.core.imagecapture.CameraCapturePipeline;
 import androidx.camera.core.impl.CameraCaptureCallback;
@@ -52,7 +51,6 @@ import androidx.camera.core.impl.utils.executor.CameraXExecutors;
 import androidx.camera.core.impl.utils.futures.Futures;
 import androidx.camera.testing.imagecapture.CaptureResult;
 import androidx.camera.testing.impl.FakeCameraCapturePipeline;
-import androidx.camera.testing.impl.fakes.FakeCameraDeviceSurfaceManager;
 import androidx.concurrent.futures.CallbackToFutureAdapter;
 import androidx.core.os.HandlerCompat;
 import androidx.core.util.Pair;
@@ -76,6 +74,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * notifying submitted requests using the associated {@link CameraCaptureCallback} instances or
  * {@link ControlUpdateCallback}.
  */
+@SuppressWarnings("HiddenSuperclass")
 public final class FakeCameraControl implements CameraControlInternal {
     private static final String TAG = "FakeCameraControl";
     static final long AUTO_FOCUS_TIMEOUT_DURATION = 5000;
@@ -106,6 +105,7 @@ public final class FakeCameraControl implements CameraControlInternal {
     private final SessionConfig.Builder mSessionConfigBuilder = new SessionConfig.Builder();
     @ImageCapture.FlashMode
     private int mFlashMode = FLASH_MODE_OFF;
+    private int mSetFlashModeCallCount = 0;
     private Pair<Executor, OnNewCaptureRequestListener> mOnNewCaptureRequestListener;
     private MutableOptionsBundle mInteropConfig = MutableOptionsBundle.create();
 
@@ -319,7 +319,16 @@ public final class FakeCameraControl implements CameraControlInternal {
     @Override
     public void setFlashMode(@ImageCapture.FlashMode int flashMode) {
         mFlashMode = flashMode;
+        mSetFlashModeCallCount++;
         Logger.d(TAG, "setFlashMode(" + mFlashMode + ")");
+    }
+
+    /**
+     * Gets the number of times {@link #setFlashMode(int)} was called.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public int getSetFlashModeCallCount() {
+        return mSetFlashModeCallCount;
     }
 
     @Override
@@ -447,15 +456,6 @@ public final class FakeCameraControl implements CameraControlInternal {
     @Override
     public @NonNull SessionConfig getSessionConfig() {
         return mSessionConfigBuilder.build();
-    }
-
-    /**
-     * Returns a {@link Rect} corresponding to
-     * {@link FakeCameraDeviceSurfaceManager#MAX_OUTPUT_SIZE}.
-     */
-    @Override
-    public @NonNull Rect getSensorRect() {
-        return new Rect(0, 0, MAX_OUTPUT_SIZE.getWidth(), MAX_OUTPUT_SIZE.getHeight());
     }
 
     /**
@@ -618,6 +618,14 @@ public final class FakeCameraControl implements CameraControlInternal {
     @Override
     public @NonNull Config getInteropConfig() {
         return MutableOptionsBundle.from(mInteropConfig);
+    }
+
+    @Override
+    public @NonNull ListenableFuture<Void> applyInteropAsync(
+            @NonNull InteropConfigurator<? super CameraControl> configurator) {
+        configurator.configure(this);
+        mControlUpdateCallback.onCameraControlUpdateSessionConfig();
+        return Futures.immediateFuture(null);
     }
 
     /**

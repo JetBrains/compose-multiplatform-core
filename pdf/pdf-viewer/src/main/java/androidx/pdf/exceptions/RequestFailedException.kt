@@ -37,7 +37,7 @@ public class RequestFailedException(
     public val requestMetadata: RequestMetadata,
     public val throwable: Throwable,
     public val showError: Boolean = true,
-    public val isFirstPageRendered: Boolean? = null
+    public val isFirstPageRendered: Boolean? = null,
 ) : RuntimeException() {
 
     override fun toString(): String =

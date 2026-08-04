@@ -19,9 +19,14 @@ package androidx.credentials.registry.provider.digitalcredentials
 import androidx.credentials.DigitalCredential.Companion.TYPE_DIGITAL_CREDENTIAL
 import androidx.credentials.ExperimentalDigitalCredentialApi
 import androidx.credentials.registry.provider.RegisterCredentialsRequest
+import androidx.credentials.registry.provider.RegistryManager
+import androidx.credentials.registry.provider.UiDelegationFulfillmentService
 
 /**
  * A request to register digital credentials with Credential Manager.
+ *
+ * The ([type], [id]) properties together act as a primary key for this registry record stored with
+ * the Registry Manager. You later can use them to perform overwrite or deletion.
  *
  * @param id the unique id that identifies this registry, such that it won't be overwritten by other
  *   different registries of the same `type`; in other words, registering the registry with the same
@@ -30,19 +35,36 @@ import androidx.credentials.registry.provider.RegisterCredentialsRequest
  * @param matcher the matcher wasm binary in bytes; the matcher will be interpreted and run in a
  *   safe and privacy-preserving sandbox upon an incoming request and it should output the qualified
  *   credentials given the [credentials] and the request
+ * @param intentAction the intent action that will be used to launch your fulfillment activity when
+ *   one of your credentials was chosen by the user, default to
+ *   [RegistryManager.ACTION_GET_CREDENTIAL] when unspecified; when Credential Manager launches your
+ *   fulfillment activity, it will build an intent with the given `intentAction` targeting your
+ *   package, so this is useful when you need to define different fulfillment activities for
+ *   different registries
+ * @param serviceAction the intent action that will be used to bind to your background fulfillment
+ *   service (silent / FULL delegation), defaults to
+ *   [RegistryManager.ACTION_GET_CREDENTIAL_SERVICE]. If you configure your credentials with a
+ *   delegation type other than NONE, you MUST implement and provide a background
+ *   [UiDelegationFulfillmentService] that handles this action to fulfill requests silently.
  * @constructor
  */
 @OptIn(ExperimentalDigitalCredentialApi::class)
-public abstract class DigitalCredentialRegistry(
+public abstract class DigitalCredentialRegistry
+@JvmOverloads
+constructor(
     id: String,
     credentials: ByteArray,
     matcher: ByteArray,
+    intentAction: String = RegistryManager.ACTION_GET_CREDENTIAL,
+    serviceAction: String = RegistryManager.ACTION_GET_CREDENTIAL_SERVICE,
 ) :
     RegisterCredentialsRequest(
         type = TYPE_DIGITAL_CREDENTIAL,
         id = id,
         credentials = credentials,
         matcher = matcher,
+        intentAction = intentAction,
+        serviceAction = serviceAction,
     ) {
     public companion object {
         /**

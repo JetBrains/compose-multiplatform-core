@@ -16,8 +16,6 @@
 
 package androidx.compose.material3.samples
 
-import android.app.Activity
-import android.content.pm.ActivityInfo
 import androidx.annotation.Sampled
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -36,28 +34,34 @@ import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.StarBorder
 import androidx.compose.material3.Button
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ModalWideNavigationRail
 import androidx.compose.material3.NavigationRail
 import androidx.compose.material3.NavigationRailItem
+import androidx.compose.material3.PlainTooltip
 import androidx.compose.material3.Text
+import androidx.compose.material3.TooltipAnchorPosition
+import androidx.compose.material3.TooltipBox
+import androidx.compose.material3.TooltipDefaults
 import androidx.compose.material3.WideNavigationRail
 import androidx.compose.material3.WideNavigationRailItem
 import androidx.compose.material3.WideNavigationRailValue
+import androidx.compose.material3.rememberTooltipState
 import androidx.compose.material3.rememberWideNavigationRailState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.paneTitle
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextAlign
@@ -65,50 +69,77 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Preview
 @Sampled
 @Composable
 fun WideNavigationRailResponsiveSample() {
-    var selectedItem by remember { mutableIntStateOf(0) }
+    var selectedItem by rememberSaveable { mutableIntStateOf(0) }
     val items = listOf("Home", "Search", "Settings")
     val selectedIcons = listOf(Icons.Filled.Home, Icons.Filled.Favorite, Icons.Filled.Star)
     val unselectedIcons =
         listOf(Icons.Outlined.Home, Icons.Outlined.FavoriteBorder, Icons.Outlined.StarBorder)
     val state = rememberWideNavigationRailState()
     val scope = rememberCoroutineScope()
+    val headerDescription =
+        if (state.targetValue == WideNavigationRailValue.Expanded) {
+            "Collapse rail"
+        } else {
+            "Expand rail"
+        }
 
     Row(Modifier.fillMaxWidth()) {
         WideNavigationRail(
             state = state,
             header = {
-                IconButton(
-                    modifier =
-                        Modifier.padding(start = 24.dp).semantics {
-                            // The button must announce the expanded or collapsed state of the rail
-                            // for accessibility.
-                            stateDescription =
-                                if (state.currentValue == WideNavigationRailValue.Expanded) {
-                                    "Expanded"
-                                } else {
-                                    "Collapsed"
-                                }
+                // Header icon button should have a tooltip.
+                @OptIn(ExperimentalMaterial3Api::class)
+                TooltipBox(
+                    positionProvider =
+                        TooltipDefaults.rememberTooltipPositionProvider(
+                            TooltipAnchorPosition.Above
+                        ),
+                    tooltip = {
+                        PlainTooltip(
+                            Modifier.semantics {
+                                // TODO(b/496338253): Remove this modifier once bug where tooltip
+                                //  text is not announced by a11y screen readers is resolved.
+                                liveRegion = LiveRegionMode.Assertive
+                                paneTitle = headerDescription
+                            }
+                        ) {
+                            Text(headerDescription)
+                        }
+                    },
+                    state = rememberTooltipState(),
+                ) {
+                    IconButton(
+                        modifier =
+                            Modifier.padding(start = 24.dp).semantics {
+                                // The button must announce the expanded or collapsed state of the
+                                // rail for accessibility.
+                                stateDescription =
+                                    if (state.currentValue == WideNavigationRailValue.Expanded) {
+                                        "Expanded"
+                                    } else {
+                                        "Collapsed"
+                                    }
+                            },
+                        onClick = {
+                            scope.launch {
+                                if (state.targetValue == WideNavigationRailValue.Expanded)
+                                    state.collapse()
+                                else state.expand()
+                            }
                         },
-                    onClick = {
-                        scope.launch {
-                            if (state.targetValue == WideNavigationRailValue.Expanded)
-                                state.collapse()
-                            else state.expand()
+                    ) {
+                        if (state.targetValue == WideNavigationRailValue.Expanded) {
+                            Icon(Icons.AutoMirrored.Filled.MenuOpen, headerDescription)
+                        } else {
+                            Icon(Icons.Filled.Menu, headerDescription)
                         }
                     }
-                ) {
-                    if (state.targetValue == WideNavigationRailValue.Expanded) {
-                        Icon(Icons.AutoMirrored.Filled.MenuOpen, "Collapse rail")
-                    } else {
-                        Icon(Icons.Filled.Menu, "Expand rail")
-                    }
                 }
-            }
+            },
         ) {
             items.forEachIndexed { index, item ->
                 WideNavigationRailItem(
@@ -124,7 +155,7 @@ fun WideNavigationRailResponsiveSample() {
                     },
                     label = { Text(item) },
                     selected = selectedItem == index,
-                    onClick = { selectedItem = index }
+                    onClick = { selectedItem = index },
                 )
             }
         }
@@ -141,37 +172,31 @@ fun WideNavigationRailResponsiveSample() {
             Text(
                 modifier = Modifier.padding(16.dp),
                 text =
-                    "Note: The orientation of this demo has been locked to portrait mode, because" +
-                        " landscape mode may result in a compact height in certain devices. For" +
-                        " any compact screen dimensions, use a Navigation Bar instead."
+                    "Note: This demo is best shown in portrait mode, as landscape mode" +
+                        " may result in a compact height in certain devices. For any" +
+                        " compact screen dimensions, use a Navigation Bar instead.",
             )
-        }
-    }
-
-    // Lock the orientation for this demo as the navigation rail may look cut off in landscape in
-    // smaller screens.
-    val context = LocalContext.current
-    DisposableEffect(context) {
-        (context as? Activity)?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-        onDispose {
-            (context as? Activity)?.requestedOrientation =
-                ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
         }
     }
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Preview
 @Sampled
 @Composable
 fun ModalWideNavigationRailSample() {
-    var selectedItem by remember { mutableIntStateOf(0) }
+    var selectedItem by rememberSaveable { mutableIntStateOf(0) }
     val items = listOf("Home", "Search", "Settings")
     val selectedIcons = listOf(Icons.Filled.Home, Icons.Filled.Favorite, Icons.Filled.Star)
     val unselectedIcons =
         listOf(Icons.Outlined.Home, Icons.Outlined.FavoriteBorder, Icons.Outlined.StarBorder)
     val state = rememberWideNavigationRailState()
     val scope = rememberCoroutineScope()
+    val headerDescription =
+        if (state.targetValue == WideNavigationRailValue.Expanded) {
+            "Collapse rail"
+        } else {
+            "Expand rail"
+        }
 
     Row(Modifier.fillMaxWidth()) {
         ModalWideNavigationRail(
@@ -180,33 +205,55 @@ fun ModalWideNavigationRailSample() {
             // order to achieve the best alignment.
             expandedHeaderTopPadding = 64.dp,
             header = {
-                IconButton(
-                    modifier =
-                        Modifier.padding(start = 24.dp).semantics {
-                            // The button must announce the expanded or collapsed state of the rail
-                            // for accessibility.
-                            stateDescription =
-                                if (state.currentValue == WideNavigationRailValue.Expanded) {
-                                    "Expanded"
-                                } else {
-                                    "Collapsed"
-                                }
+                // Header icon button should have a tooltip.
+                @OptIn(ExperimentalMaterial3Api::class)
+                TooltipBox(
+                    positionProvider =
+                        TooltipDefaults.rememberTooltipPositionProvider(
+                            TooltipAnchorPosition.Above
+                        ),
+                    tooltip = {
+                        PlainTooltip(
+                            Modifier.semantics {
+                                // TODO(b/496338253): Remove this modifier once bug where tooltip
+                                //  text is not announced by a11y screen readers is resolved.
+                                liveRegion = LiveRegionMode.Assertive
+                                paneTitle = headerDescription
+                            }
+                        ) {
+                            Text(headerDescription)
+                        }
+                    },
+                    state = rememberTooltipState(),
+                ) {
+                    IconButton(
+                        modifier =
+                            Modifier.padding(start = 24.dp).semantics {
+                                // The button must announce the expanded or collapsed state of the
+                                // rail for accessibility.
+                                stateDescription =
+                                    if (state.currentValue == WideNavigationRailValue.Expanded) {
+                                        "Expanded"
+                                    } else {
+                                        "Collapsed"
+                                    }
+                            },
+                        onClick = {
+                            scope.launch {
+                                if (state.targetValue == WideNavigationRailValue.Expanded)
+                                    state.collapse()
+                                else state.expand()
+                            }
                         },
-                    onClick = {
-                        scope.launch {
-                            if (state.targetValue == WideNavigationRailValue.Expanded)
-                                state.collapse()
-                            else state.expand()
+                    ) {
+                        if (state.targetValue == WideNavigationRailValue.Expanded) {
+                            Icon(Icons.AutoMirrored.Filled.MenuOpen, headerDescription)
+                        } else {
+                            Icon(Icons.Filled.Menu, headerDescription)
                         }
                     }
-                ) {
-                    if (state.targetValue == WideNavigationRailValue.Expanded) {
-                        Icon(Icons.AutoMirrored.Filled.MenuOpen, "Collapse rail")
-                    } else {
-                        Icon(Icons.Filled.Menu, "Expand rail")
-                    }
                 }
-            }
+            },
         ) {
             items.forEachIndexed { index, item ->
                 WideNavigationRailItem(
@@ -215,12 +262,12 @@ fun ModalWideNavigationRailSample() {
                         Icon(
                             if (selectedItem == index) selectedIcons[index]
                             else unselectedIcons[index],
-                            contentDescription = item
+                            contentDescription = item,
                         )
                     },
                     label = { Text(item) },
                     selected = selectedItem == index,
-                    onClick = { selectedItem = index }
+                    onClick = { selectedItem = index },
                 )
             }
         }
@@ -236,31 +283,19 @@ fun ModalWideNavigationRailSample() {
             Text(
                 modifier = Modifier.padding(16.dp),
                 text =
-                    "Note: The orientation of this demo has been locked to portrait mode, because" +
-                        " landscape mode may result in a compact height in certain devices. For" +
-                        " any compact screen dimensions, use a Navigation Bar instead."
+                    "Note: This demo is best shown in portrait mode, as landscape mode" +
+                        " may result in a compact height in certain devices. For any" +
+                        " compact screen dimensions, use a Navigation Bar instead.",
             )
-        }
-
-        // Lock the orientation for this demo as the navigation rail may look cut off in landscape
-        // in smaller screens.
-        val context = LocalContext.current
-        DisposableEffect(context) {
-            (context as? Activity)?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-            onDispose {
-                (context as? Activity)?.requestedOrientation =
-                    ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
-            }
         }
     }
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Preview
 @Sampled
 @Composable
 fun DismissibleModalWideNavigationRailSample() {
-    var selectedItem by remember { mutableIntStateOf(0) }
+    var selectedItem by rememberSaveable { mutableIntStateOf(0) }
     val items = listOf("Home", "Search", "Settings")
     val selectedIcons = listOf(Icons.Filled.Home, Icons.Filled.Favorite, Icons.Filled.Star)
     val unselectedIcons =
@@ -277,7 +312,7 @@ fun DismissibleModalWideNavigationRailSample() {
                         Icon(
                             if (selectedItem == index) selectedIcons[index]
                             else unselectedIcons[index],
-                            contentDescription = null
+                            contentDescription = null,
                         )
                     },
                     label = { Text(item) },
@@ -285,7 +320,7 @@ fun DismissibleModalWideNavigationRailSample() {
                     onClick = {
                         selectedItem = index
                         scope.launch { state.collapse() }
-                    }
+                    },
                 )
             }
         }
@@ -299,12 +334,11 @@ fun DismissibleModalWideNavigationRailSample() {
     }
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Preview
 @Sampled
 @Composable
 fun WideNavigationRailCollapsedSample() {
-    var selectedItem by remember { mutableIntStateOf(0) }
+    var selectedItem by rememberSaveable { mutableIntStateOf(0) }
     val items = listOf("Home", "Search", "Settings")
     val selectedIcons = listOf(Icons.Filled.Home, Icons.Filled.Favorite, Icons.Filled.Star)
     val unselectedIcons =
@@ -312,26 +346,26 @@ fun WideNavigationRailCollapsedSample() {
     WideNavigationRail {
         items.forEachIndexed { index, item ->
             WideNavigationRailItem(
+                railExpanded = false,
                 icon = {
                     Icon(
                         if (selectedItem == index) selectedIcons[index] else unselectedIcons[index],
-                        contentDescription = null
+                        contentDescription = null,
                     )
                 },
                 label = { Text(item) },
                 selected = selectedItem == index,
-                onClick = { selectedItem = index }
+                onClick = { selectedItem = index },
             )
         }
     }
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Preview
 @Sampled
 @Composable
 fun WideNavigationRailExpandedSample() {
-    var selectedItem by remember { mutableIntStateOf(0) }
+    var selectedItem by rememberSaveable { mutableIntStateOf(0) }
     val items = listOf("Home", "Search", "Settings")
     val selectedIcons = listOf(Icons.Filled.Home, Icons.Filled.Favorite, Icons.Filled.Star)
     val unselectedIcons =
@@ -345,64 +379,91 @@ fun WideNavigationRailExpandedSample() {
                 icon = {
                     Icon(
                         if (selectedItem == index) selectedIcons[index] else unselectedIcons[index],
-                        contentDescription = null
+                        contentDescription = null,
                     )
                 },
                 label = { Text(item) },
                 selected = selectedItem == index,
-                onClick = { selectedItem = index }
+                onClick = { selectedItem = index },
             )
         }
     }
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Preview
 @Composable
 fun WideNavigationRailArrangementsSample() {
-    var selectedItem by remember { mutableIntStateOf(0) }
+    var selectedItem by rememberSaveable { mutableIntStateOf(0) }
     val items = listOf("Home", "Search", "Settings")
     val selectedIcons = listOf(Icons.Filled.Home, Icons.Filled.Favorite, Icons.Filled.Star)
     val unselectedIcons =
         listOf(Icons.Outlined.Home, Icons.Outlined.FavoriteBorder, Icons.Outlined.StarBorder)
     val state = rememberWideNavigationRailState()
     val scope = rememberCoroutineScope()
-    var arrangement: Arrangement.Vertical by remember { mutableStateOf(Arrangement.Center) }
+    var isArrangementCenter by rememberSaveable { mutableStateOf(true) }
+    val headerDescription =
+        if (state.targetValue == WideNavigationRailValue.Expanded) {
+            "Collapse rail"
+        } else {
+            "Expand rail"
+        }
 
     Row(Modifier.fillMaxWidth()) {
         WideNavigationRail(
             state = state,
-            arrangement = arrangement,
+            arrangement = if (isArrangementCenter) Arrangement.Center else Arrangement.Bottom,
             header = {
-                IconButton(
-                    modifier =
-                        Modifier.padding(start = 24.dp).semantics {
-                            // The button must announce the expanded or collapsed state of the rail
-                            // for accessibility.
-                            stateDescription =
-                                if (state.currentValue == WideNavigationRailValue.Expanded) {
-                                    "Expanded"
-                                } else {
-                                    "Collapsed"
-                                }
-                        },
-                    onClick = {
-                        scope.launch {
-                            if (state.targetValue == WideNavigationRailValue.Expanded) {
-                                state.collapse()
-                            } else {
-                                state.expand()
+                // Header icon button should have a tooltip.
+                @OptIn(ExperimentalMaterial3Api::class)
+                TooltipBox(
+                    positionProvider =
+                        TooltipDefaults.rememberTooltipPositionProvider(
+                            TooltipAnchorPosition.Above
+                        ),
+                    tooltip = {
+                        PlainTooltip(
+                            Modifier.semantics {
+                                // TODO(b/496338253): Remove this modifier once bug where tooltip
+                                //  text is not announced by a11y screen readers is resolved.
+                                liveRegion = LiveRegionMode.Assertive
+                                paneTitle = headerDescription
                             }
+                        ) {
+                            Text(headerDescription)
+                        }
+                    },
+                    state = rememberTooltipState(),
+                ) {
+                    IconButton(
+                        modifier =
+                            Modifier.padding(start = 24.dp).semantics {
+                                // The button must announce the expanded or collapsed state of the
+                                // rail for accessibility.
+                                stateDescription =
+                                    if (state.currentValue == WideNavigationRailValue.Expanded) {
+                                        "Expanded"
+                                    } else {
+                                        "Collapsed"
+                                    }
+                            },
+                        onClick = {
+                            scope.launch {
+                                if (state.targetValue == WideNavigationRailValue.Expanded) {
+                                    state.collapse()
+                                } else {
+                                    state.expand()
+                                }
+                            }
+                        },
+                    ) {
+                        if (state.targetValue == WideNavigationRailValue.Expanded) {
+                            Icon(Icons.AutoMirrored.Filled.MenuOpen, headerDescription)
+                        } else {
+                            Icon(Icons.Filled.Menu, headerDescription)
                         }
                     }
-                ) {
-                    if (state.targetValue == WideNavigationRailValue.Expanded) {
-                        Icon(Icons.AutoMirrored.Filled.MenuOpen, "Collapse rail")
-                    } else {
-                        Icon(Icons.Filled.Menu, "Expand rail")
-                    }
                 }
-            }
+            },
         ) {
             items.forEachIndexed { index, item ->
                 WideNavigationRailItem(
@@ -411,51 +472,32 @@ fun WideNavigationRailArrangementsSample() {
                         Icon(
                             if (selectedItem == index) selectedIcons[index]
                             else unselectedIcons[index],
-                            contentDescription = null
+                            contentDescription = null,
                         )
                     },
                     label = { Text(item) },
                     selected = selectedItem == index,
-                    onClick = { selectedItem = index }
+                    onClick = { selectedItem = index },
                 )
             }
         }
 
-        val isArrangementCenter = arrangement == Arrangement.Center
         val changeToString = if (isArrangementCenter) "Bottom" else "Center"
         Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
             Text(modifier = Modifier.padding(16.dp), text = "Change arrangement to:")
             Button(
                 modifier = Modifier.padding(4.dp),
-                onClick = {
-                    if (isArrangementCenter) {
-                        arrangement = Arrangement.Bottom
-                    } else {
-                        arrangement = Arrangement.Center
-                    }
-                }
+                onClick = { isArrangementCenter = !isArrangementCenter },
             ) {
                 Text(changeToString)
             }
             Text(
                 modifier = Modifier.padding(16.dp),
                 text =
-                    "Note: The orientation of this Navigation Rail demo has been locked to" +
-                        " portrait mode, because landscape mode may result in a compact height in" +
-                        " certain devices. For any compact screen dimensions, use a Navigation" +
-                        "Bar instead."
+                    "Note: This demo is best shown in portrait mode, as landscape mode" +
+                        " may result in a compact height in certain devices. For any" +
+                        " compact screen dimensions, use a Navigation Bar instead.",
             )
-        }
-    }
-
-    // Lock the orientation for this demo as the navigation rail may look cut off in landscape in
-    // smaller screens.
-    val context = LocalContext.current
-    DisposableEffect(context) {
-        (context as? Activity)?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-        onDispose {
-            (context as? Activity)?.requestedOrientation =
-                ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
         }
     }
 }
@@ -464,7 +506,7 @@ fun WideNavigationRailArrangementsSample() {
 @Sampled
 @Composable
 fun NavigationRailSample() {
-    var selectedItem by remember { mutableIntStateOf(0) }
+    var selectedItem by rememberSaveable { mutableIntStateOf(0) }
     val items = listOf("Home", "Search", "Settings")
     val selectedIcons = listOf(Icons.Filled.Home, Icons.Filled.Favorite, Icons.Filled.Star)
     val unselectedIcons =
@@ -475,37 +517,12 @@ fun NavigationRailSample() {
                 icon = {
                     Icon(
                         if (selectedItem == index) selectedIcons[index] else unselectedIcons[index],
-                        contentDescription = item
-                    )
-                },
-                label = { Text(item) },
-                selected = selectedItem == index,
-                onClick = { selectedItem = index }
-            )
-        }
-    }
-}
-
-@Composable
-fun NavigationRailWithOnlySelectedLabelsSample() {
-    var selectedItem by remember { mutableIntStateOf(0) }
-    val items = listOf("Home", "Search", "Settings")
-    val selectedIcons = listOf(Icons.Filled.Home, Icons.Filled.Favorite, Icons.Filled.Star)
-    val unselectedIcons =
-        listOf(Icons.Outlined.Home, Icons.Outlined.FavoriteBorder, Icons.Outlined.StarBorder)
-    NavigationRail {
-        items.forEachIndexed { index, item ->
-            NavigationRailItem(
-                icon = {
-                    Icon(
-                        if (selectedItem == index) selectedIcons[index] else unselectedIcons[index],
-                        contentDescription = item
+                        contentDescription = item,
                     )
                 },
                 label = { Text(item) },
                 selected = selectedItem == index,
                 onClick = { selectedItem = index },
-                alwaysShowLabel = false
             )
         }
     }
@@ -513,7 +530,7 @@ fun NavigationRailWithOnlySelectedLabelsSample() {
 
 @Composable
 fun NavigationRailBottomAlignSample() {
-    var selectedItem by remember { mutableIntStateOf(0) }
+    var selectedItem by rememberSaveable { mutableIntStateOf(0) }
     val items = listOf("Home", "Search", "Settings")
     val selectedIcons = listOf(Icons.Filled.Home, Icons.Filled.Favorite, Icons.Filled.Star)
     val unselectedIcons =
@@ -527,13 +544,12 @@ fun NavigationRailBottomAlignSample() {
                 icon = {
                     Icon(
                         if (selectedItem == index) selectedIcons[index] else unselectedIcons[index],
-                        contentDescription = item
+                        contentDescription = item,
                     )
                 },
                 label = { Text(item) },
                 selected = selectedItem == index,
                 onClick = { selectedItem = index },
-                alwaysShowLabel = false
             )
         }
     }

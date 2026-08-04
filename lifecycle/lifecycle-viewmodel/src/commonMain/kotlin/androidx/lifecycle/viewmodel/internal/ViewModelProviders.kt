@@ -16,10 +16,8 @@
 
 package androidx.lifecycle.viewmodel.internal
 
-import androidx.lifecycle.HasDefaultViewModelProviderFactory
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.viewmodel.CreationExtras
 import androidx.lifecycle.viewmodel.InitializerViewModelFactory
 import androidx.lifecycle.viewmodel.ViewModelInitializer
@@ -54,26 +52,12 @@ internal object ViewModelProviders {
         )
 
     internal fun createInitializerFactory(
-        initializers: Collection<ViewModelInitializer<*>>,
+        initializers: Collection<ViewModelInitializer<*>>
     ): ViewModelProvider.Factory = InitializerViewModelFactory(*initializers.toTypedArray())
 
     internal fun createInitializerFactory(
-        vararg initializers: ViewModelInitializer<*>,
+        vararg initializers: ViewModelInitializer<*>
     ): ViewModelProvider.Factory = InitializerViewModelFactory(*initializers)
-
-    internal fun getDefaultFactory(owner: ViewModelStoreOwner): ViewModelProvider.Factory =
-        if (owner is HasDefaultViewModelProviderFactory) {
-            owner.defaultViewModelProviderFactory
-        } else {
-            DefaultViewModelProviderFactory
-        }
-
-    internal fun getDefaultCreationExtras(owner: ViewModelStoreOwner): CreationExtras =
-        if (owner is HasDefaultViewModelProviderFactory) {
-            owner.defaultViewModelCreationExtras
-        } else {
-            CreationExtras.Empty
-        }
 
     internal fun <VM : ViewModel> createViewModelFromInitializers(
         modelClass: KClass<VM>,
@@ -88,9 +72,3 @@ internal object ViewModelProviders {
         }
     }
 }
-
-/**
- * Multiplatform replacement for [KClass.qualifiedName] reflection API. It's required because it's
- * not supported for all platforms.
- */
-internal expect val <T : Any> KClass<T>.canonicalName: String?

@@ -16,7 +16,10 @@
 
 package androidx.camera.core.impl;
 
+import static java.util.Objects.requireNonNull;
+
 import android.util.Range;
+import android.util.Size;
 
 import androidx.camera.core.ExtendableBuilder;
 import androidx.camera.core.ImageCapture;
@@ -30,7 +33,7 @@ import androidx.camera.core.internal.TargetConfig;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
-import java.util.Objects;
+import java.util.Map;
 
 /**
  * Configuration containing options for use cases.
@@ -80,16 +83,28 @@ public interface UseCaseConfig<T extends UseCase> extends TargetConfig<T>, Image
             Option.create("camerax.core.useCase.surfaceOccupancyPriority", int.class);
 
     /**
+     * Option: camerax.core.useCase.sessionType
+     */
+    Option<Integer> OPTION_SESSION_TYPE =
+            Config.Option.create("camerax.core.useCase.sessionType", int.class);
+
+    /**
      * Option: camerax.core.useCase.targetFrameRate
      */
     Option<Range<Integer>> OPTION_TARGET_FRAME_RATE =
             Config.Option.create("camerax.core.useCase.targetFrameRate", Range.class);
 
     /**
-     * Option: camerax.core.useCase.targetHighSpeedFrameRate
+     * Option: camerax.core.useCase.isStrictFrameRateRequired
      */
-    Option<Range<Integer>> OPTION_TARGET_HIGH_SPEED_FRAME_RATE =
-            Config.Option.create("camerax.core.useCase.targetHighSpeedFrameRate", Range.class);
+    Option<Boolean> OPTION_IS_STRICT_FRAME_RATE_REQUIRED =
+            Config.Option.create("camerax.core.useCase.isStrictFrameRateRequired", Boolean.class);
+
+    /**
+     * Option: camerax.core.useCase.resolutionToMaxFrameRate
+     */
+    Option<Map<Size, Integer>> OPTION_RESOLUTION_TO_MAX_FRAME_RATES =
+            Option.create("camerax.core.useCase.resolutionToMaxFrameRate", Map.class);
 
     /**
      * Option: camerax.core.useCase.zslDisabled
@@ -121,9 +136,21 @@ public interface UseCaseConfig<T extends UseCase> extends TargetConfig<T>, Image
     Option<Integer> OPTION_VIDEO_STABILIZATION_MODE =
             Option.create("camerax.core.useCase.videoStabilizationMode", int.class);
 
+    /**
+     * Option: camerax.core.useCase.isVideoQualitySelectorDefault
+     */
+    Option<Boolean> OPTION_IS_VIDEO_QUALITY_SELECTOR_DEFAULT = Option.create(
+            "camerax.core.useCase.isVideoQualitySelectorDefault", Boolean.class);
+
     Option<TakePictureManager.Provider> OPTION_TAKE_PICTURE_MANAGER_PROVIDER =
             Option.create("camerax.core.useCase.takePictureManagerProvider",
                     TakePictureManager.Provider.class);
+
+    /**
+     * Option: camerax.core.useCase.streamUseCase
+     */
+    Option<StreamUseCase> OPTION_STREAM_USE_CASE =
+            Option.create("camerax.core.useCase.streamUseCase", StreamUseCase.class);
 
     // *********************************************************************************************
 
@@ -271,6 +298,34 @@ public interface UseCaseConfig<T extends UseCase> extends TargetConfig<T>, Image
     }
 
     /**
+     * Retrieves the session type
+     *
+     * @param valueIfMissing The value to return if this configuration option has not been set.
+     * @return the stored value or <code>valueIfMissing</code> if the value does not exist in
+     * this configuration
+     */
+    default int getSessionType(int valueIfMissing) {
+        return retrieveOption(OPTION_SESSION_TYPE, valueIfMissing);
+    }
+
+    /**
+     * Retrieves the session type
+     *
+     * @return The stored value, if it exists in this configuration.
+     * @throws IllegalArgumentException if the option does not exist in this configuration.
+     */
+    default int getSessionType() {
+        return retrieveOption(OPTION_SESSION_TYPE);
+    }
+
+    /**
+     * Returns whether a target frame rate was set on this config
+     */
+    default boolean hasTargetFrameRate() {
+        return containsOption(OPTION_TARGET_FRAME_RATE);
+    }
+
+    /**
      * Retrieves target frame rate
      *
      * @param valueIfMissing The value to return if this configuration option has not been set.
@@ -292,25 +347,35 @@ public interface UseCaseConfig<T extends UseCase> extends TargetConfig<T>, Image
     }
 
     /**
-     * Retrieves target high speed frame rate
+     * Retrieves whether a strict {@link #getTargetFrameRate() target frame rate} is required.
      *
-     * @param valueIfMissing The value to return if this configuration option has not been set.
-     * @return the stored value or <code>valueIfMissing</code> if the value does not exist in
-     * this configuration
+     * <p>If this option is {@code true}, the system must attempt to precisely match the
+     * {@link #getTargetFrameRate() target frame rate} when determining the final frame rate.
+     * If {@code false}, the system will find a suitable frame rate, which may differ from the
+     * target.
+     *
+     * @return {@code true} if the target frame rate must be strictly met; {@code false} otherwise.
      */
-    default @Nullable Range<Integer> getTargetHighSpeedFrameRate(
-            @Nullable Range<Integer> valueIfMissing) {
-        return retrieveOption(OPTION_TARGET_HIGH_SPEED_FRAME_RATE, valueIfMissing);
+    default boolean isStrictFrameRateRequired() {
+        return requireNonNull(retrieveOption(OPTION_IS_STRICT_FRAME_RATE_REQUIRED, false));
     }
 
     /**
-     * Retrieves the target high speed frame rate
+     * Retrieves a custom maximum frame rate for a specific resolution.
      *
-     * @return The stored value, if it exists in this configuration.
-     * @throws IllegalArgumentException if the option does not exist in this configuration.
+     * <p>This method queries a map of resolution-to-max-frame-rate mappings to find a custom
+     * maximum frame rate for the given {@link Size}. If a custom rate is found for the specified
+     * size, it is returned. Otherwise, it defaults to {@link FrameRates#FRAME_RATE_UNLIMITED}.
+     *
+     * @param size The {@link Size} for which to retrieve the custom maximum frame rate.
+     * @return The custom maximum frame rate for the specified size, or
+     * {@link FrameRates#FRAME_RATE_UNLIMITED} if no custom rate is set.
      */
-    default @NonNull Range<Integer> getTargetHighSpeedFrameRate() {
-        return retrieveOption(OPTION_TARGET_HIGH_SPEED_FRAME_RATE);
+    default int getCustomMaxFrameRate(@NonNull Size size) {
+        Map<Size, Integer> customMaxFrameRates = retrieveOption(
+                OPTION_RESOLUTION_TO_MAX_FRAME_RATES, null);
+        return customMaxFrameRates != null && customMaxFrameRates.containsKey(size)
+                ? requireNonNull(customMaxFrameRates.get(size)) : FrameRates.FRAME_RATE_UNLIMITED;
     }
 
     /**
@@ -363,7 +428,7 @@ public interface UseCaseConfig<T extends UseCase> extends TargetConfig<T>, Image
      * @return The {@link TakePictureManager} implementation for {@link ImageCapture} use case.
      */
     default TakePictureManager.@NonNull Provider getTakePictureManagerProvider() {
-        return Objects.requireNonNull(retrieveOption(OPTION_TAKE_PICTURE_MANAGER_PROVIDER,
+        return requireNonNull(retrieveOption(OPTION_TAKE_PICTURE_MANAGER_PROVIDER,
                 new TakePictureManager.Provider() {
                     @Override
                     public @NonNull TakePictureManager newInstance(
@@ -371,6 +436,14 @@ public interface UseCaseConfig<T extends UseCase> extends TargetConfig<T>, Image
                         return new TakePictureManagerImpl(imageCaptureControl);
                     }
                 }));
+    }
+
+    /**
+     * @return The stream use case of this UseCaseConfig.
+     */
+    @NonNull
+    default StreamUseCase getStreamUseCase() {
+        return requireNonNull(retrieveOption(OPTION_STREAM_USE_CASE, StreamUseCase.DEFAULT));
     }
 
     /**
@@ -469,6 +542,13 @@ public interface UseCaseConfig<T extends UseCase> extends TargetConfig<T>, Image
          * @param captureType The capture type for this use case.
          */
         @NonNull B setCaptureType(UseCaseConfigFactory.@NonNull CaptureType captureType);
+
+        /**
+         * Sets the stream use case for this configuration.
+         *
+         * @param streamUseCase The stream use case for this use case.
+         */
+        @NonNull B setStreamUseCase(@NonNull StreamUseCase streamUseCase);
 
         /**
          * Retrieves the configuration used by this builder.

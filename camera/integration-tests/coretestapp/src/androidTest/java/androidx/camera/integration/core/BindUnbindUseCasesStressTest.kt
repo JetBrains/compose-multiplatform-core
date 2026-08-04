@@ -22,7 +22,6 @@ import android.os.Handler
 import android.os.HandlerThread
 import android.util.Log
 import android.util.Size
-import androidx.camera.camera2.pipe.integration.CameraPipeConfig
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.CameraXConfig
@@ -40,7 +39,6 @@ import androidx.camera.integration.core.util.StressTestUtil.VERIFICATION_TARGET_
 import androidx.camera.integration.core.util.StressTestUtil.VERIFICATION_TARGET_VIDEO_CAPTURE
 import androidx.camera.integration.core.util.StressTestUtil.createCameraSelectorById
 import androidx.camera.lifecycle.ProcessCameraProvider
-import androidx.camera.testing.impl.CameraPipeConfigTestRule
 import androidx.camera.testing.impl.CameraUtil
 import androidx.camera.testing.impl.GLUtil
 import androidx.camera.testing.impl.LabTestRule
@@ -56,7 +54,6 @@ import androidx.camera.video.VideoRecordEvent
 import androidx.core.util.Consumer
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.LargeTest
-import androidx.test.filters.SdkSuppress
 import androidx.testutils.RepeatRule
 import com.google.common.truth.Truth
 import com.google.common.truth.Truth.assertThat
@@ -83,18 +80,11 @@ private var texId = INVALID_TEX_ID
 
 @LargeTest
 @RunWith(Parameterized::class)
-@SdkSuppress(minSdkVersion = 21)
 class BindUnbindUseCasesStressTest(
     val implName: String,
     val cameraConfig: CameraXConfig,
-    val cameraId: String
+    val cameraId: String,
 ) {
-    @get:Rule
-    val cameraPipeConfigTestRule =
-        CameraPipeConfigTestRule(
-            active = implName == CameraPipeConfig::class.simpleName,
-        )
-
     @get:Rule
     val useCamera =
         CameraUtil.grantCameraPermissionAndPreTestAndPostTest(
@@ -191,7 +181,7 @@ class BindUnbindUseCasesStressTest(
         bindUseCases_checkOutput_thenUnbindAll_repeatedly(
             preview,
             imageCapture,
-            verificationTarget = VERIFICATION_TARGET_PREVIEW
+            verificationTarget = VERIFICATION_TARGET_PREVIEW,
         )
     }
 
@@ -203,7 +193,7 @@ class BindUnbindUseCasesStressTest(
             bindUseCases_checkOutput_thenUnbindAll_repeatedly(
                 preview,
                 imageCapture,
-                verificationTarget = VERIFICATION_TARGET_IMAGE_CAPTURE
+                verificationTarget = VERIFICATION_TARGET_IMAGE_CAPTURE,
             )
         }
 
@@ -218,7 +208,7 @@ class BindUnbindUseCasesStressTest(
                 preview,
                 imageCapture,
                 imageAnalysis = imageAnalysis,
-                verificationTarget = VERIFICATION_TARGET_PREVIEW
+                verificationTarget = VERIFICATION_TARGET_PREVIEW,
             )
         }
 
@@ -233,7 +223,7 @@ class BindUnbindUseCasesStressTest(
             preview,
             imageCapture,
             imageAnalysis = imageAnalysis,
-            verificationTarget = VERIFICATION_TARGET_IMAGE_CAPTURE
+            verificationTarget = VERIFICATION_TARGET_IMAGE_CAPTURE,
         )
     }
 
@@ -248,7 +238,7 @@ class BindUnbindUseCasesStressTest(
             preview,
             imageCapture,
             imageAnalysis = imageAnalysis,
-            verificationTarget = VERIFICATION_TARGET_IMAGE_ANALYSIS
+            verificationTarget = VERIFICATION_TARGET_IMAGE_ANALYSIS,
         )
     }
 
@@ -260,7 +250,7 @@ class BindUnbindUseCasesStressTest(
         bindUseCases_checkOutput_thenUnbindAll_repeatedly(
             preview,
             videoCapture = videoCapture,
-            verificationTarget = VERIFICATION_TARGET_PREVIEW
+            verificationTarget = VERIFICATION_TARGET_PREVIEW,
         )
     }
 
@@ -273,7 +263,7 @@ class BindUnbindUseCasesStressTest(
             bindUseCases_checkOutput_thenUnbindAll_repeatedly(
                 preview,
                 videoCapture = videoCapture,
-                verificationTarget = VERIFICATION_TARGET_VIDEO_CAPTURE
+                verificationTarget = VERIFICATION_TARGET_VIDEO_CAPTURE,
             )
         }
 
@@ -288,7 +278,7 @@ class BindUnbindUseCasesStressTest(
                 preview,
                 imageCapture,
                 videoCapture,
-                verificationTarget = VERIFICATION_TARGET_PREVIEW
+                verificationTarget = VERIFICATION_TARGET_PREVIEW,
             )
         }
 
@@ -303,7 +293,7 @@ class BindUnbindUseCasesStressTest(
                 preview,
                 imageCapture,
                 videoCapture,
-                verificationTarget = VERIFICATION_TARGET_VIDEO_CAPTURE
+                verificationTarget = VERIFICATION_TARGET_VIDEO_CAPTURE,
             )
         }
 
@@ -318,7 +308,7 @@ class BindUnbindUseCasesStressTest(
                 preview,
                 imageCapture,
                 videoCapture,
-                verificationTarget = VERIFICATION_TARGET_IMAGE_CAPTURE
+                verificationTarget = VERIFICATION_TARGET_IMAGE_CAPTURE,
             )
         }
 
@@ -334,7 +324,7 @@ class BindUnbindUseCasesStressTest(
                 preview,
                 videoCapture = videoCapture,
                 imageAnalysis = imageAnalysis,
-                verificationTarget = VERIFICATION_TARGET_PREVIEW
+                verificationTarget = VERIFICATION_TARGET_PREVIEW,
             )
         }
 
@@ -350,7 +340,7 @@ class BindUnbindUseCasesStressTest(
             preview,
             videoCapture = videoCapture,
             imageAnalysis = imageAnalysis,
-            verificationTarget = VERIFICATION_TARGET_VIDEO_CAPTURE
+            verificationTarget = VERIFICATION_TARGET_VIDEO_CAPTURE,
         )
     }
 
@@ -366,7 +356,7 @@ class BindUnbindUseCasesStressTest(
             preview,
             videoCapture = videoCapture,
             imageAnalysis = imageAnalysis,
-            verificationTarget = VERIFICATION_TARGET_IMAGE_ANALYSIS
+            verificationTarget = VERIFICATION_TARGET_IMAGE_ANALYSIS,
         )
     }
 
@@ -383,7 +373,7 @@ class BindUnbindUseCasesStressTest(
         videoCapture: VideoCapture<Recorder>? = null,
         imageAnalysis: ImageAnalysis? = null,
         verificationTarget: Int,
-        repeatCount: Int = STRESS_TEST_OPERATION_REPEAT_COUNT
+        repeatCount: Int = STRESS_TEST_OPERATION_REPEAT_COUNT,
     ): Unit = runBlocking {
         for (i in 1..repeatCount) {
             // Arrange.
@@ -409,7 +399,7 @@ class BindUnbindUseCasesStressTest(
                     lifecycleOwner,
                     cameraIdCameraSelector,
                     *listOfNotNull(preview, imageCapture, newVideoCapture, imageAnalysis)
-                        .toTypedArray()
+                        .toTypedArray(),
                 )
             }
 
@@ -423,13 +413,17 @@ class BindUnbindUseCasesStressTest(
             if (verificationTarget.and(VERIFICATION_TARGET_IMAGE_CAPTURE) != 0) {
                 imageCapture!!.let {
                     val imageCaptureCaptureSuccessMonitor = ImageCaptureCaptureSuccessMonitor()
+                    val executor = Executors.newSingleThreadExecutor()
+                    try {
+                        it.takePicture(
+                            executor,
+                            imageCaptureCaptureSuccessMonitor.createCaptureCallback(),
+                        )
 
-                    it.takePicture(
-                        Executors.newSingleThreadExecutor(),
-                        imageCaptureCaptureSuccessMonitor.createCaptureCallback()
-                    )
-
-                    imageCaptureCaptureSuccessMonitor.awaitCaptureSuccessAndAssert()
+                        imageCaptureCaptureSuccessMonitor.awaitCaptureSuccessAndAssert()
+                    } finally {
+                        executor.shutdown()
+                    }
                 }
             }
 
@@ -450,11 +444,14 @@ class BindUnbindUseCasesStressTest(
             if (verificationTarget.and(VERIFICATION_TARGET_IMAGE_ANALYSIS) != 0) {
                 imageAnalysis!!.let {
                     val analyzerFrameAvailableMonitor = ImageAnalysisImageAvailableMonitor()
-                    it.setAnalyzer(
-                        Executors.newSingleThreadExecutor(),
-                        analyzerFrameAvailableMonitor.createAnalyzer()
-                    )
-                    analyzerFrameAvailableMonitor.awaitAvailableFramesAndAssert()
+                    val executor = Executors.newSingleThreadExecutor()
+                    try {
+                        it.setAnalyzer(executor, analyzerFrameAvailableMonitor.createAnalyzer())
+                        analyzerFrameAvailableMonitor.awaitAvailableFramesAndAssert()
+                    } finally {
+                        it.clearAnalyzer()
+                        executor.shutdown()
+                    }
                 }
             }
 
@@ -471,7 +468,7 @@ class BindUnbindUseCasesStressTest(
             bindUseCases_unbindAll_repeatedly_thenCheckOutput(
                 preview,
                 imageCapture,
-                verificationTarget = VERIFICATION_TARGET_PREVIEW
+                verificationTarget = VERIFICATION_TARGET_PREVIEW,
             )
         }
 
@@ -483,7 +480,7 @@ class BindUnbindUseCasesStressTest(
             bindUseCases_unbindAll_repeatedly_thenCheckOutput(
                 preview,
                 imageCapture,
-                verificationTarget = VERIFICATION_TARGET_IMAGE_CAPTURE
+                verificationTarget = VERIFICATION_TARGET_IMAGE_CAPTURE,
             )
         }
 
@@ -498,7 +495,7 @@ class BindUnbindUseCasesStressTest(
             preview,
             imageCapture,
             imageAnalysis = imageAnalysis,
-            verificationTarget = VERIFICATION_TARGET_PREVIEW
+            verificationTarget = VERIFICATION_TARGET_PREVIEW,
         )
     }
 
@@ -513,7 +510,7 @@ class BindUnbindUseCasesStressTest(
             preview,
             imageCapture,
             imageAnalysis = imageAnalysis,
-            verificationTarget = VERIFICATION_TARGET_IMAGE_CAPTURE
+            verificationTarget = VERIFICATION_TARGET_IMAGE_CAPTURE,
         )
     }
 
@@ -528,7 +525,7 @@ class BindUnbindUseCasesStressTest(
             preview,
             imageCapture,
             imageAnalysis = imageAnalysis,
-            verificationTarget = VERIFICATION_TARGET_IMAGE_ANALYSIS
+            verificationTarget = VERIFICATION_TARGET_IMAGE_ANALYSIS,
         )
     }
 
@@ -541,7 +538,7 @@ class BindUnbindUseCasesStressTest(
             bindUseCases_unbindAll_repeatedly_thenCheckOutput(
                 preview,
                 videoCapture = videoCapture,
-                verificationTarget = VERIFICATION_TARGET_PREVIEW
+                verificationTarget = VERIFICATION_TARGET_PREVIEW,
             )
         }
 
@@ -554,7 +551,7 @@ class BindUnbindUseCasesStressTest(
             bindUseCases_unbindAll_repeatedly_thenCheckOutput(
                 preview,
                 videoCapture = videoCapture,
-                verificationTarget = VERIFICATION_TARGET_VIDEO_CAPTURE
+                verificationTarget = VERIFICATION_TARGET_VIDEO_CAPTURE,
             )
         }
 
@@ -569,7 +566,7 @@ class BindUnbindUseCasesStressTest(
                 preview,
                 imageCapture,
                 videoCapture,
-                verificationTarget = VERIFICATION_TARGET_PREVIEW
+                verificationTarget = VERIFICATION_TARGET_PREVIEW,
             )
         }
 
@@ -584,7 +581,7 @@ class BindUnbindUseCasesStressTest(
             preview,
             imageCapture,
             videoCapture,
-            verificationTarget = VERIFICATION_TARGET_VIDEO_CAPTURE
+            verificationTarget = VERIFICATION_TARGET_VIDEO_CAPTURE,
         )
     }
 
@@ -599,7 +596,7 @@ class BindUnbindUseCasesStressTest(
             preview,
             imageCapture,
             videoCapture,
-            verificationTarget = VERIFICATION_TARGET_IMAGE_CAPTURE
+            verificationTarget = VERIFICATION_TARGET_IMAGE_CAPTURE,
         )
     }
 
@@ -615,7 +612,7 @@ class BindUnbindUseCasesStressTest(
             preview,
             videoCapture = videoCapture,
             imageAnalysis = imageAnalysis,
-            verificationTarget = VERIFICATION_TARGET_PREVIEW
+            verificationTarget = VERIFICATION_TARGET_PREVIEW,
         )
     }
 
@@ -631,7 +628,7 @@ class BindUnbindUseCasesStressTest(
             preview,
             videoCapture = videoCapture,
             imageAnalysis = imageAnalysis,
-            verificationTarget = VERIFICATION_TARGET_VIDEO_CAPTURE
+            verificationTarget = VERIFICATION_TARGET_VIDEO_CAPTURE,
         )
     }
 
@@ -647,7 +644,7 @@ class BindUnbindUseCasesStressTest(
             preview,
             videoCapture = videoCapture,
             imageAnalysis = imageAnalysis,
-            verificationTarget = VERIFICATION_TARGET_IMAGE_ANALYSIS
+            verificationTarget = VERIFICATION_TARGET_IMAGE_ANALYSIS,
         )
     }
 
@@ -669,7 +666,7 @@ class BindUnbindUseCasesStressTest(
         videoCapture: VideoCapture<Recorder>? = null,
         imageAnalysis: ImageAnalysis? = null,
         verificationTarget: Int,
-        repeatCount: Int = STRESS_TEST_OPERATION_REPEAT_COUNT
+        repeatCount: Int = STRESS_TEST_OPERATION_REPEAT_COUNT,
     ): Unit = runBlocking {
         lateinit var previewFrameAvailableMonitor: PreviewFrameAvailableMonitor
         var newVideoCapture: VideoCapture<Recorder>? = null
@@ -697,7 +694,7 @@ class BindUnbindUseCasesStressTest(
                     lifecycleOwner,
                     cameraIdCameraSelector,
                     *listOfNotNull(preview, imageCapture, newVideoCapture, imageAnalysis)
-                        .toTypedArray()
+                        .toTypedArray(),
                 )
 
                 // Clean it up: do not unbind at the last time
@@ -717,13 +714,17 @@ class BindUnbindUseCasesStressTest(
         if (verificationTarget.and(VERIFICATION_TARGET_IMAGE_CAPTURE) != 0) {
             imageCapture!!.let {
                 val imageCaptureCaptureSuccessMonitor = ImageCaptureCaptureSuccessMonitor()
+                val executor = Executors.newSingleThreadExecutor()
+                try {
+                    it.takePicture(
+                        executor,
+                        imageCaptureCaptureSuccessMonitor.createCaptureCallback(),
+                    )
 
-                it.takePicture(
-                    Executors.newSingleThreadExecutor(),
-                    imageCaptureCaptureSuccessMonitor.createCaptureCallback()
-                )
-
-                imageCaptureCaptureSuccessMonitor.awaitCaptureSuccessAndAssert()
+                    imageCaptureCaptureSuccessMonitor.awaitCaptureSuccessAndAssert()
+                } finally {
+                    executor.shutdown()
+                }
             }
         }
 
@@ -744,11 +745,14 @@ class BindUnbindUseCasesStressTest(
         if (verificationTarget.and(VERIFICATION_TARGET_IMAGE_ANALYSIS) != 0) {
             imageAnalysis!!.let {
                 val analyzerFrameAvailableMonitor = ImageAnalysisImageAvailableMonitor()
-                it.setAnalyzer(
-                    Executors.newSingleThreadExecutor(),
-                    analyzerFrameAvailableMonitor.createAnalyzer()
-                )
-                analyzerFrameAvailableMonitor.awaitAvailableFramesAndAssert()
+                val executor = Executors.newSingleThreadExecutor()
+                try {
+                    it.setAnalyzer(executor, analyzerFrameAvailableMonitor.createAnalyzer())
+                    analyzerFrameAvailableMonitor.awaitAvailableFramesAndAssert()
+                } finally {
+                    it.clearAnalyzer()
+                    executor.shutdown()
+                }
             }
         }
     }
@@ -825,7 +829,7 @@ class BindUnbindUseCasesStressTest(
             object : SurfaceTextureProvider.SurfaceTextureCallback {
                 override fun onSurfaceTextureReady(
                     surfaceTexture: SurfaceTexture,
-                    resolution: Size
+                    resolution: Size,
                 ) {
                     if (texId == INVALID_TEX_ID) {
                         texId = GLUtil.getTexIdFromGLContext()
@@ -833,7 +837,7 @@ class BindUnbindUseCasesStressTest(
                     surfaceTexture.attachToGLContext(texId)
                     surfaceTexture.setOnFrameAvailableListener(
                         onFrameAvailableListener,
-                        frameAvailableHandler
+                        frameAvailableHandler,
                     )
 
                     surfaceTextureLatch.countDown()

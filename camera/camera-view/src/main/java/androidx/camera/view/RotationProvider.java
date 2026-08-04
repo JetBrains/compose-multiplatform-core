@@ -16,10 +16,8 @@
 
 package androidx.camera.view;
 
-import android.app.Activity;
 import android.content.Context;
 import android.hardware.SensorManager;
-import android.view.OrientationEventListener;
 import android.view.Surface;
 
 import androidx.annotation.CheckResult;
@@ -30,21 +28,18 @@ import androidx.camera.core.impl.ImageOutputConfig;
 
 import org.jspecify.annotations.NonNull;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executor;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Provider for receiving rotation updates from the {@link SensorManager} when the rotation of
  * the device has changed.
  *
  * <p> This class monitors motion sensor and notifies the listener about physical orientation
- * changes in the format of {@link Surface} rotation. It's useful when the {@link Activity} is in
- * a fixed portrait or landscape orientation, while the app still wants to set the
- * {@link UseCase} target rotation based on the device's physical rotation.
+ * changes in the format of {@link Surface} rotation. It's useful when the
+ * {@link android.app.Activity} is in a fixed portrait or landscape orientation, while the app still
+ * wants to set the {@link UseCase} target rotation based on the device's physical rotation.
  *
  * <pre><code>
  * // Create a provider.
@@ -56,59 +51,30 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * });
  *
  * // Remove when no longer needed.
- * mRotationProvider.clearListener();
+ * mRotationProvider.removeListener(listener);
  * </code></pre>
  */
 public final class RotationProvider {
 
-    final Object mLock = new Object();
+    private final Object mLock = new Object();
+
+    private final androidx.camera.core.RotationProvider mRotationProviderCore;
 
     @GuardedBy("mLock")
-    @VisibleForTesting
-    final @NonNull OrientationEventListener mOrientationListener;
-
-    // Synthetic access
-    @SuppressWarnings("WeakerAccess")
-    @GuardedBy("mLock")
-    final @NonNull Map<Listener, ListenerWrapper> mListeners = new HashMap<>();
-
-    // Set this value to true to test adding listener in unit tests.
-    @VisibleForTesting
-    boolean mIgnoreCanDetectForTest = false;
+    private final Map<Listener, androidx.camera.core.RotationProvider.Listener> mListeners =
+            new HashMap<>();
 
     /**
      * Creates a new RotationProvider.
      */
     public RotationProvider(@NonNull Context context) {
-        mOrientationListener = new OrientationEventListener(context) {
-            private static final int INVALID_SURFACE_ROTATION = -1;
+        this(context, false);
+    }
 
-            private int mRotation = INVALID_SURFACE_ROTATION;
-
-            @Override
-            public void onOrientationChanged(int orientation) {
-                if (orientation == OrientationEventListener.ORIENTATION_UNKNOWN) {
-                    // Short-circuit if orientation is unknown. Unknown rotation
-                    // can't be handled so it shouldn't be sent.
-                    return;
-                }
-
-                int newRotation = orientationToSurfaceRotation(orientation);
-                if (mRotation != newRotation) {
-                    mRotation = newRotation;
-                    List<ListenerWrapper> listeners;
-                    // Take a snapshot for thread safety.
-                    synchronized (mLock) {
-                        listeners = new ArrayList<>(mListeners.values());
-                    }
-                    if (!listeners.isEmpty()) {
-                        for (ListenerWrapper listenerWrapper : listeners) {
-                            listenerWrapper.onRotationChanged(newRotation);
-                        }
-                    }
-                }
-            }
-        };
+    @VisibleForTesting
+    RotationProvider(@NonNull Context context, boolean ignoreCanDetectForTest) {
+        mRotationProviderCore = new androidx.camera.core.RotationProvider(context,
+                ignoreCanDetectForTest);
     }
 
     /**
@@ -117,19 +83,27 @@ public final class RotationProvider {
      * @param executor The executor in which the {@link {@link Listener#onRotationChanged(int)}
      *                 will be run.
      * @param listener The listener to be receive rotation updates.
-     * @return false if the device cannot detection rotation changes. In that case, the listener
+     * @return false if the device cannot detect rotation changes. In that case, the listener
      * will not be set.
      */
     @CheckResult
     public boolean addListener(@NonNull Executor executor, @NonNull Listener listener) {
         synchronized (mLock) {
-            if (!mOrientationListener.canDetectOrientation() && !mIgnoreCanDetectForTest) {
-                return false;
+            // Remove existing listener to prevent leaks and to allow executor updates.
+            androidx.camera.core.RotationProvider.Listener oldCoreListener =
+                    mListeners.remove(listener);
+            if (oldCoreListener != null) {
+                mRotationProviderCore.removeListener(oldCoreListener);
             }
-            mListeners.put(listener, new ListenerWrapper(listener, executor));
-            mOrientationListener.enable();
+
+            androidx.camera.core.RotationProvider.Listener coreListener =
+                    listener::onRotationChanged;
+            if (mRotationProviderCore.addListener(executor, coreListener)) {
+                mListeners.put(listener, coreListener);
+                return true;
+            }
         }
-        return true;
+        return false;
     }
 
     /**
@@ -139,15 +113,20 @@ public final class RotationProvider {
      */
     public void removeListener(@NonNull Listener listener) {
         synchronized (mLock) {
-            ListenerWrapper listenerWrapper = mListeners.get(listener);
-            if (listenerWrapper != null) {
-                listenerWrapper.disable();
-                mListeners.remove(listener);
-            }
-            if (mListeners.isEmpty()) {
-                mOrientationListener.disable();
+            androidx.camera.core.RotationProvider.Listener coreListener =
+                    mListeners.remove(listener);
+            if (coreListener != null) {
+                mRotationProviderCore.removeListener(coreListener);
             }
         }
+    }
+
+    /**
+     * Updates the orientation for testing purposes.
+     */
+    @VisibleForTesting
+    void updateOrientationForTesting(int orientation) {
+        mRotationProviderCore.updateOrientationForTesting(orientation);
     }
 
     /**
@@ -163,37 +142,6 @@ public final class RotationProvider {
             return Surface.ROTATION_180;
         } else {
             return Surface.ROTATION_270;
-        }
-    }
-
-    /**
-     * Wrapper of {@link Listener} with the executor and a tombstone flag.
-     */
-    private static class ListenerWrapper {
-        private final Listener mListener;
-        private final Executor mExecutor;
-        private final AtomicBoolean mEnabled;
-
-        ListenerWrapper(Listener listener, Executor executor) {
-            mListener = listener;
-            mExecutor = executor;
-            mEnabled = new AtomicBoolean(true);
-        }
-
-        void onRotationChanged(@ImageOutputConfig.RotationValue int rotation) {
-            mExecutor.execute(() -> {
-                if (mEnabled.get()) {
-                    mListener.onRotationChanged(rotation);
-                }
-            });
-        }
-
-        /**
-         * Once disabled, the app will not receive callback even if it has already been posted on
-         * the callback thread.
-         */
-        void disable() {
-            mEnabled.set(false);
         }
     }
 

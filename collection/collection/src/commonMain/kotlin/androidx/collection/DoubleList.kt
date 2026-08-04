@@ -13,7 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@file:Suppress("NOTHING_TO_INLINE", "RedundantVisibilityModifier")
+// Facade class name cannot be updated, the Kt name has been released
+@file:Suppress("NOTHING_TO_INLINE", "RedundantVisibilityModifier", "FacadeClassJvmName")
 @file:OptIn(ExperimentalContracts::class)
 
 package androidx.collection
@@ -191,7 +192,7 @@ public sealed class DoubleList(initialCapacity: Int) {
      */
     public inline fun <R> foldIndexed(
         initial: R,
-        operation: (index: Int, acc: R, element: Double) -> R
+        operation: (index: Int, acc: R, element: Double) -> R,
     ): R {
         contract { callsInPlace(operation) }
         var acc = initial
@@ -221,7 +222,7 @@ public sealed class DoubleList(initialCapacity: Int) {
      */
     public inline fun <R> foldRightIndexed(
         initial: R,
-        operation: (index: Int, element: Double, acc: R) -> R
+        operation: (index: Int, element: Double, acc: R) -> R,
     ): R {
         contract { callsInPlace(operation) }
         var acc = initial
@@ -317,7 +318,7 @@ public sealed class DoubleList(initialCapacity: Int) {
      */
     public inline fun elementAtOrElse(
         @IntRange(from = 0) index: Int,
-        defaultValue: (index: Int) -> Double
+        defaultValue: (index: Int) -> Double,
     ): Double {
         if (index !in 0 until _size) {
             return defaultValue(index)
@@ -410,29 +411,38 @@ public sealed class DoubleList(initialCapacity: Int) {
     }
 
     /**
-     * Searches this list the specified element in the range defined by [fromIndex] and [toIndex].
-     * The list is expected to be sorted into ascending order according to the natural ordering of
-     * its elements, otherwise the result is undefined.
+     * Searches this list for the specified [element] in the range defined by [fromIndex] and
+     * [toIndex]. The list is expected to be sorted into ascending order according to the natural
+     * ordering of its elements, otherwise the result is undefined.
      *
-     * [fromIndex] must be >= 0 and < [toIndex], and [toIndex] must be <= [size], otherwise an an
+     * Unlike [binarySearch] taking a [Double] element, this overload accepts an [Int] directly for
+     * convenience and performs exact comparisons without tolerance checks.
+     *
+     * [fromIndex] must be >= 0 and < [toIndex], and [toIndex] must be <= [size], otherwise an
      * [IndexOutOfBoundsException] will be thrown.
      *
-     * @return the index of the element if it is contained in the list within the specified range.
+     * @return the index of the element if it is contained in the list within the specified range,
      *   otherwise, the inverted insertion point `(-insertionPoint - 1)`. The insertion point is
      *   defined as the index at which the element should be inserted, so that the list remains
      *   sorted.
      */
     @JvmOverloads
-    public fun binarySearch(element: Int, fromIndex: Int = 0, toIndex: Int = size): Int {
-        if (fromIndex < 0 || fromIndex >= toIndex || toIndex > _size) {
-            throwIndexOutOfBoundsException("")
+    public fun binarySearch(
+        element: Int,
+        @androidx.annotation.IntRange(from = 0) fromIndex: Int = 0,
+        @androidx.annotation.IntRange(from = 0) toIndex: Int = _size,
+    ): Int {
+        if (fromIndex < 0 || fromIndex > toIndex || toIndex > _size) {
+            throw IndexOutOfBoundsException(
+                "fromIndex ($fromIndex) and toIndex ($toIndex) must be in range 0..$_size"
+            )
         }
 
         var low = fromIndex
         var high = toIndex - 1
 
         while (low <= high) {
-            val mid = low + high ushr 1
+            val mid = (low + high) ushr 1
             val midVal = content[mid]
             if (midVal < element) {
                 low = mid + 1
@@ -444,6 +454,83 @@ public sealed class DoubleList(initialCapacity: Int) {
         }
 
         return -(low + 1) // key not found.
+    }
+
+    /**
+     * Searches this list for the specified [element] in the range defined by [fromIndex] and
+     * [toIndex] within the given [tolerance]. The list is expected to be sorted into ascending
+     * order according to the natural ordering of its elements, otherwise the result is undefined.
+     *
+     * [fromIndex] must be >= 0 and < [toIndex], and [toIndex] must be <= [size], otherwise an
+     * [IndexOutOfBoundsException] will be thrown.
+     *
+     * @return the index of the element if it is contained in the list within the specified range
+     *   and tolerance, otherwise, the inverted insertion point `(-insertionPoint - 1)`. The
+     *   insertion point is defined as the index at which the element should be inserted, so that
+     *   the list remains sorted.
+     */
+    @JvmOverloads
+    public fun binarySearch(
+        element: Double,
+        tolerance: Double = 0.0,
+        @androidx.annotation.IntRange(from = 0) fromIndex: Int = 0,
+        @androidx.annotation.IntRange(from = 0) toIndex: Int = _size,
+    ): Int {
+        if (fromIndex < 0 || fromIndex > toIndex || toIndex > _size) {
+            throw IndexOutOfBoundsException(
+                "fromIndex ($fromIndex) and toIndex ($toIndex) must be in range 0..$_size"
+            )
+        }
+
+        var low = fromIndex
+        var high = toIndex - 1
+
+        while (low <= high) {
+            val mid = (low + high) ushr 1
+            val midVal = content[mid]
+            if (kotlin.math.abs(midVal - element) <= tolerance) {
+                return mid // key found within tolerance
+            } else if (midVal < element) {
+                low = mid + 1
+            } else {
+                high = mid - 1
+            }
+        }
+
+        return -(low + 1) // key not found within tolerance.
+    }
+
+    /**
+     * Searches this [DoubleList] or its range for an element for which the given [comparison]
+     * function returns zero using binary search algorithm.
+     */
+    public inline fun binarySearch(
+        @androidx.annotation.IntRange(from = 0) fromIndex: Int = 0,
+        @androidx.annotation.IntRange(from = 0) toIndex: Int = _size,
+        comparison: (element: Double) -> Int,
+    ): Int {
+        if (fromIndex < 0 || fromIndex > toIndex || toIndex > _size) {
+            throw IndexOutOfBoundsException(
+                "fromIndex ($fromIndex) and toIndex ($toIndex) must be in range 0..$_size"
+            )
+        }
+        var low = fromIndex
+        var high = toIndex - 1
+
+        while (low <= high) {
+            val mid = (low + high) ushr 1
+            val midVal = content[mid]
+            val cmp = comparison(midVal)
+
+            if (cmp < 0) {
+                low = mid + 1
+            } else if (cmp > 0) {
+                high = mid - 1
+            } else {
+                return mid
+            }
+        }
+        return -(low + 1)
     }
 
     /**
@@ -463,15 +550,17 @@ public sealed class DoubleList(initialCapacity: Int) {
         truncated: CharSequence = "...",
     ): String = buildString {
         append(prefix)
-        this@DoubleList.forEachIndexed { index, element ->
-            if (index == limit) {
-                append(truncated)
-                return@buildString
+        run {
+            this@DoubleList.forEachIndexed { index, element ->
+                if (index != 0) {
+                    append(separator)
+                }
+                if (index == limit) {
+                    append(truncated)
+                    return@run
+                }
+                append(element)
             }
-            if (index != 0) {
-                append(separator)
-            }
-            append(element)
         }
         append(postfix)
     }
@@ -491,18 +580,20 @@ public sealed class DoubleList(initialCapacity: Int) {
         postfix: CharSequence = "", // I know this should be suffix, but this is kotlin's name
         limit: Int = -1,
         truncated: CharSequence = "...",
-        crossinline transform: (Double) -> CharSequence
+        crossinline transform: (Double) -> CharSequence,
     ): String = buildString {
         append(prefix)
-        this@DoubleList.forEachIndexed { index, element ->
-            if (index == limit) {
-                append(truncated)
-                return@buildString
+        run {
+            this@DoubleList.forEachIndexed { index, element ->
+                if (index != 0) {
+                    append(separator)
+                }
+                if (index == limit) {
+                    append(truncated)
+                    return@run
+                }
+                append(transform(element))
             }
-            if (index != 0) {
-                append(separator)
-            }
-            append(transform(element))
         }
         append(postfix)
     }
@@ -586,7 +677,7 @@ public class MutableDoubleList(initialCapacity: Int = 16) : DoubleList(initialCa
                 destination = content,
                 destinationOffset = index + 1,
                 startIndex = index,
-                endIndex = _size
+                endIndex = _size,
             )
         }
         content[index] = element
@@ -612,7 +703,7 @@ public class MutableDoubleList(initialCapacity: Int = 16) : DoubleList(initialCa
                 destination = content,
                 destinationOffset = index + elements.size,
                 startIndex = index,
-                endIndex = _size
+                endIndex = _size,
             )
         }
         elements.copyInto(content, index)
@@ -639,14 +730,14 @@ public class MutableDoubleList(initialCapacity: Int = 16) : DoubleList(initialCa
                 destination = content,
                 destinationOffset = index + elements._size,
                 startIndex = index,
-                endIndex = _size
+                endIndex = _size,
             )
         }
         elements.content.copyInto(
             destination = content,
             destinationOffset = index,
             startIndex = 0,
-            endIndex = elements._size
+            endIndex = elements._size,
         )
         _size += elements._size
         return true
@@ -693,6 +784,7 @@ public class MutableDoubleList(initialCapacity: Int = 16) : DoubleList(initialCa
      *
      * @see ensureCapacity
      */
+    @JvmOverloads
     public fun trim(minCapacity: Int = _size) {
         val minSize = maxOf(minCapacity, _size)
         if (capacity > minSize) {
@@ -787,7 +879,7 @@ public class MutableDoubleList(initialCapacity: Int = 16) : DoubleList(initialCa
                 destination = content,
                 destinationOffset = index,
                 startIndex = index + 1,
-                endIndex = _size
+                endIndex = _size,
             )
         }
         _size--
@@ -813,7 +905,7 @@ public class MutableDoubleList(initialCapacity: Int = 16) : DoubleList(initialCa
                     destination = content,
                     destinationOffset = start,
                     startIndex = end,
-                    endIndex = _size
+                    endIndex = _size,
                 )
             }
             _size -= (end - start)
@@ -936,7 +1028,7 @@ public fun mutableDoubleListOf(element1: Double, element2: Double): MutableDoubl
 public fun mutableDoubleListOf(
     element1: Double,
     element2: Double,
-    element3: Double
+    element3: Double,
 ): MutableDoubleList {
     val list = MutableDoubleList(3)
     list += element1
@@ -957,9 +1049,7 @@ public inline fun mutableDoubleListOf(vararg elements: Double): MutableDoubleLis
  *
  * @param builderAction Lambda in which the [MutableDoubleList] can be populated.
  */
-public inline fun buildDoubleList(
-    builderAction: MutableDoubleList.() -> Unit,
-): DoubleList {
+public inline fun buildDoubleList(builderAction: MutableDoubleList.() -> Unit): DoubleList {
     contract { callsInPlace(builderAction, InvocationKind.EXACTLY_ONCE) }
     return MutableDoubleList().apply(builderAction)
 }

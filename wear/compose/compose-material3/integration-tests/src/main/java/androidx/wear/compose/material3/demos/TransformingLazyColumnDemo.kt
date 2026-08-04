@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,172 +16,107 @@
 
 package androidx.wear.compose.material3.demos
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.interaction.MutableInteractionSource
+import android.annotation.SuppressLint
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.sizeIn
-import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.layout.LocalPinnableContainer
+import androidx.compose.ui.layout.PinnableContainer
+import androidx.compose.ui.layout.SubcomposeLayout
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
+import androidx.wear.compose.foundation.LocalReduceMotion
 import androidx.wear.compose.foundation.lazy.TransformingLazyColumn
+import androidx.wear.compose.foundation.lazy.TransformingLazyColumnItemScope
 import androidx.wear.compose.foundation.lazy.items
+import androidx.wear.compose.foundation.lazy.itemsIndexed
 import androidx.wear.compose.foundation.lazy.rememberTransformingLazyColumnState
-import androidx.wear.compose.material3.AppCard
+import androidx.wear.compose.material3.AppScaffold
 import androidx.wear.compose.material3.Button
 import androidx.wear.compose.material3.ButtonDefaults
-import androidx.wear.compose.material3.ButtonGroup
+import androidx.wear.compose.material3.Card
+import androidx.wear.compose.material3.CardDefaults
+import androidx.wear.compose.material3.CompactButton
+import androidx.wear.compose.material3.EdgeButton
 import androidx.wear.compose.material3.ListHeader
 import androidx.wear.compose.material3.MaterialTheme
+import androidx.wear.compose.material3.ScreenScaffold
 import androidx.wear.compose.material3.SurfaceTransformation
 import androidx.wear.compose.material3.Text
 import androidx.wear.compose.material3.TitleCard
+import androidx.wear.compose.material3.lazy.TransformationSpec
 import androidx.wear.compose.material3.lazy.rememberTransformationSpec
 import androidx.wear.compose.material3.lazy.transformedHeight
-import androidx.wear.compose.material3.samples.AppCardSample
-import androidx.wear.compose.material3.samples.AppCardWithIconSample
-import androidx.wear.compose.material3.samples.AppCardWithImageSample
-import androidx.wear.compose.material3.samples.ButtonExtraLargeIconSample
-import androidx.wear.compose.material3.samples.ButtonLargeIconSample
-import androidx.wear.compose.material3.samples.ButtonSample
-import androidx.wear.compose.material3.samples.CardSample
-import androidx.wear.compose.material3.samples.ChildButtonSample
-import androidx.wear.compose.material3.samples.CompactButtonSample
-import androidx.wear.compose.material3.samples.FilledTonalButtonSample
-import androidx.wear.compose.material3.samples.FilledTonalCompactButtonSample
-import androidx.wear.compose.material3.samples.FilledVariantButtonSample
-import androidx.wear.compose.material3.samples.ImageCardSample
-import androidx.wear.compose.material3.samples.OutlinedAppCardSample
-import androidx.wear.compose.material3.samples.OutlinedButtonSample
-import androidx.wear.compose.material3.samples.OutlinedCardSample
-import androidx.wear.compose.material3.samples.OutlinedCompactButtonSample
-import androidx.wear.compose.material3.samples.OutlinedTitleCardSample
-import androidx.wear.compose.material3.samples.R
-import androidx.wear.compose.material3.samples.SimpleButtonSample
-import androidx.wear.compose.material3.samples.SimpleChildButtonSample
-import androidx.wear.compose.material3.samples.SimpleFilledTonalButtonSample
-import androidx.wear.compose.material3.samples.SimpleFilledVariantButtonSample
-import androidx.wear.compose.material3.samples.SimpleOutlinedButtonSample
-import androidx.wear.compose.material3.samples.TitleCardSample
-import androidx.wear.compose.material3.samples.TitleCardWithMultipleImagesSample
-import androidx.wear.compose.material3.samples.TitleCardWithSubtitleAndTimeSample
 
 @Composable
-fun TransformingLazyColumnNotificationsDemo() {
-    MaterialTheme {
-        Box(modifier = Modifier.aspectRatio(1f).background(Color.Black)) {
-            val transformationSpec = rememberTransformationSpec()
-            TransformingLazyColumn(
-                modifier = Modifier.padding(horizontal = 10.dp),
-            ) {
-                item { ListHeader { Text("Notifications") } }
-                items(notificationList) { notification ->
-                    TitleCard(
-                        modifier = Modifier.transformedHeight(this, transformationSpec),
-                        transformation = SurfaceTransformation(transformationSpec),
-                        onClick = { /* Do something */ },
-                        title = {
-                            Text(
-                                notification.title,
-                                fontWeight = FontWeight.Bold,
-                                style = MaterialTheme.typography.labelLarge,
-                            )
-                        }
-                    ) {
-                        Text(notification.body)
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun TransformingLazyColumnButtons() {
+fun TransformingLazyColumnNotificationsDemo(
+    modifier: Modifier = Modifier,
+    notifications: List<NotificationItem> = NotificationItem.all,
+    containerCompositingStrategy: CompositingStrategy = CompositingStrategy.ModulateAlpha,
+) {
     val state = rememberTransformingLazyColumnState()
     val transformationSpec = rememberTransformationSpec()
-    TransformingLazyColumn(
-        state = state,
-        contentPadding = PaddingValues(start = 20.dp, end = 20.dp, bottom = 50.dp),
-        modifier = Modifier.background(MaterialTheme.colorScheme.background),
-    ) {
-        item(contentType = "header") {
-            // No modifier is applied - no Material 3 Motion transformations.
-            ListHeader { Text("Buttons", style = MaterialTheme.typography.labelLarge) }
-        }
-
-        item { SimpleButtonSample(modifier = Modifier.fillMaxWidth()) }
-        item { ButtonSample() }
-        item { ButtonLargeIconSample() }
-        item { ButtonExtraLargeIconSample() }
-        item { SimpleFilledTonalButtonSample() }
-        item { FilledTonalButtonSample() }
-        item { SimpleFilledVariantButtonSample() }
-        item { FilledVariantButtonSample() }
-        item { SimpleOutlinedButtonSample() }
-        item { OutlinedButtonSample() }
-        item { SimpleChildButtonSample() }
-        item { ChildButtonSample() }
-        item { CompactButtonSample(modifier = Modifier.fillMaxWidth()) }
-        item { FilledTonalCompactButtonSample(modifier = Modifier.fillMaxWidth()) }
-        item { OutlinedCompactButtonSample(modifier = Modifier.fillMaxWidth()) }
-        item { ButtonBackgroundImage(painterResource(R.drawable.backgroundimage), enabled = true) }
-        item { ButtonBackgroundImage(painterResource(R.drawable.backgroundimage), enabled = false) }
-        item { ListHeader { Text("Complex Buttons") } }
-        item {
-            Row(
-                Modifier.transformedHeight(this, transformationSpec).graphicsLayer {
-                    with(transformationSpec) { applyContainerTransformation(scrollProgress) }
-                }
+    AppScaffold {
+        ScreenScaffold(state) { contentPadding ->
+            TransformingLazyColumn(
+                state = state,
+                modifier = modifier,
+                contentPadding = contentPadding,
             ) {
-                TransformExclusion {
-                    SimpleButtonSample(Modifier.weight(1f))
-                    Spacer(Modifier.width(4.dp))
-                    SimpleButtonSample(Modifier.weight(1f))
+                item {
+                    ListHeader(
+                        transformation = SurfaceTransformation(transformationSpec),
+                        modifier =
+                            Modifier.transformedHeight(this, transformationSpec).animateItem(),
+                    ) {
+                        Text("Notifications")
+                    }
                 }
-            }
-        }
-        item {
-            TransformExclusion {
-                val interactionSource1 = remember { MutableInteractionSource() }
-                val interactionSource2 = remember { MutableInteractionSource() }
-                ButtonGroup(
-                    Modifier.transformedHeight(this, transformationSpec).graphicsLayer {
-                        with(transformationSpec) { applyContainerTransformation(scrollProgress) }
-                    }
-                ) {
-                    Button(
-                        onClick = {},
-                        Modifier.animateWidth(interactionSource1),
-                        interactionSource = interactionSource1
+                items(notifications) { notification ->
+                    Box(
+                        modifier =
+                            Modifier.transformedHeight(scope = this@items, transformationSpec)
+                                .animateItem()
+                                .graphicsLayer {
+                                    with(transformationSpec) {
+                                        applyContainerTransformation(scrollProgress)
+                                    }
+                                    compositingStrategy = containerCompositingStrategy
+                                    clip = false
+                                }
                     ) {
-                        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            Text("L")
-                        }
-                    }
-                    Button(
-                        onClick = {},
-                        Modifier.animateWidth(interactionSource2),
-                        interactionSource = interactionSource2
-                    ) {
-                        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            Text("R")
-                        }
+                        TitleCard(
+                            onClick = {},
+                            title = {
+                                Text(
+                                    notification.title,
+                                    fontWeight = FontWeight.Bold,
+                                    style = MaterialTheme.typography.labelLarge,
+                                    maxLines = 1,
+                                )
+                            },
+                            subtitle = { Text(notification.body) },
+                            modifier =
+                                Modifier.graphicsLayer {
+                                    with(this@items) {
+                                        with(transformationSpec) {
+                                            applyContentTransformation(scrollProgress)
+                                        }
+                                    }
+                                },
+                        )
                     }
                 }
             }
@@ -190,124 +125,428 @@ fun TransformingLazyColumnButtons() {
 }
 
 @Composable
-fun TransformingLazyColumnCards() {
+fun TransformingLazyColumnMorphingNotificationsDemo(
+    modifier: Modifier = Modifier,
+    notifications: List<NotificationItem> = NotificationItem.all,
+) {
     val state = rememberTransformingLazyColumnState()
-    TransformingLazyColumn(
-        state = state,
-        contentPadding = PaddingValues(start = 20.dp, end = 20.dp, bottom = 50.dp),
-        modifier = Modifier.background(MaterialTheme.colorScheme.background),
-    ) {
-        item { ListHeader { Text("Card") } }
-        item { CardSample() }
-        item { CardWithNestedImageDemo() }
-        item { CardWithMultipleImagesDemo() }
-        item { OutlinedCardSample() }
-        item { VerticallyCenteredBaseCard() }
-        item { CardWithButtons() }
-
-        item { ListHeader { Text("App card") } }
-        item { AppCardSample() }
-        item { AppCardWithIconSample() }
-        item { AppCardWithImageSample() }
-        item { AppCardWithMultipleImagesDemo() }
-        item { OutlinedAppCardSample() }
-
-        item { ListHeader { Text("Title card") } }
-        item { TitleCardSample() }
-        item { TitleCardWithSubtitleDemo() }
-        item { TitleCardWithSubtitleAndTimeSample() }
-        item { TitleCardWithContentSubtitleAndTimeDemo() }
-        item { TitleCardWithImageDemo() }
-        item { TitleCardWithMultipleImagesSample() }
-        item { OutlinedTitleCardSample() }
-        item { OutlinedTitleCardWithSubtitleDemo() }
-        item { OutlinedTitleCardWithSubtitleAndTimeDemo() }
-
-        item { ListHeader { Text("Image card") } }
-        item { ImageCardSample() }
+    val transformationSpec = rememberTransformationSpec()
+    val cardPadding =
+        with(LocalDensity.current) {
+            CardDefaults.ContentPadding.calculateTopPadding().roundToPx() +
+                CardDefaults.ContentPadding.calculateBottomPadding().roundToPx()
+        }
+    AppScaffold {
+        ScreenScaffold(state) { contentPadding ->
+            // Since all titles for notifications are of the same height, we are measuring the Text
+            // and reusing the same morphing transformation spec for all notifications.
+            MeasuredHeader { headerHeight ->
+                val morphingTransformationSpec =
+                    rememberMorphingTransformationSpec(
+                        transformationSpec,
+                        minMorphingHeight = headerHeight + cardPadding,
+                    )
+                TransformingLazyColumn(
+                    state = state,
+                    contentPadding = contentPadding,
+                    modifier = modifier,
+                ) {
+                    item { NotificationsHeader(transformationSpec) }
+                    items(notifications) { notification ->
+                        NotificationCard(notification = notification, morphingTransformationSpec)
+                    }
+                }
+            }
+        }
     }
 }
 
 @Composable
-private fun CardWithButtons() {
-    AppCard(
-        onClick = { /* Do something */ },
-        appName = { Text("App name") },
-        title = { Text("Card with buttons") },
-        time = { Text("now") },
-    ) {
-        Button(onClick = { /* Do something */ }) { Text("Button 1") }
-        Spacer(Modifier.height(4.dp))
-        Button(onClick = { /* Do something */ }) { Text("Button 2") }
+fun MeasuredHeader(content: @Composable (height: Int) -> Unit) {
+    SubcomposeLayout { constraints ->
+        val headerPlaceables =
+            subcompose("Header slot") { NotificationCardTitle("Notification prototype") }
+                .map { it.measure(constraints) }
+
+        val headerHeight =
+            headerPlaceables.fold(0) { currentMax, placeable ->
+                maxOf(currentMax, placeable.height)
+            }
+
+        layout(constraints.maxWidth, constraints.maxHeight) {
+            subcompose("List slot") { content(headerHeight) }
+                .forEach { it.measure(constraints).placeRelative(0, 0) }
+        }
     }
 }
 
 @Composable
-private fun ButtonBackgroundImage(painter: Painter, enabled: Boolean) =
-    Button(
-        modifier = Modifier.sizeIn(maxHeight = ButtonDefaults.Height).fillMaxWidth(),
-        containerPainter = ButtonDefaults.containerPainter(painter),
-        onClick = { /* Do something */ },
-        label = { Text("Image Background", maxLines = 1) },
-        enabled = enabled,
+internal fun NotificationCardTitle(text: String) =
+    Text(
+        text,
+        fontWeight = FontWeight.Bold,
+        style = MaterialTheme.typography.labelLarge,
+        maxLines = 1,
     )
 
-private data class NotificationItem(val title: String, val body: String)
-
-private val notificationList =
-    listOf(
-        NotificationItem(
-            "☕ Coffee Break?",
-            "Step away from the screen and grab a pick-me-up. Step away from the screen and grab a pick-me-up."
-        ),
-        NotificationItem("🌟 You're Awesome!", "Just a little reminder in case you forgot 😊"),
-        NotificationItem("👀 Did you know?", "Check out [app name]'s latest feature update."),
-        NotificationItem("📅 Appointment Time", "Your meeting with [name] is in 15 minutes."),
-        NotificationItem("📦 Package On the Way", "Your order is expected to arrive today!"),
-        NotificationItem("🤔 Trivia Time!", "Test your knowledge with a quick quiz on [app name]."),
-        NotificationItem(
-            "🌤️ Weather Update",
-            "Don't forget your umbrella - rain is likely this afternoon."
-        ),
-        NotificationItem("🤝 Connect with [name]", "They sent you a message on [social platform]."),
-        NotificationItem("🧘‍♀️ Time to Breathe", "Take a 5-minute mindfulness break."),
-        NotificationItem("🌟 Goal Achieved!", "You completed your daily step goal. Way to go!"),
-        NotificationItem("💡 New Idea!", "Got a spare moment? Jot down a quick note."),
-        NotificationItem("👀 Photo Memories", "Rediscover photos from this day last year."),
-        NotificationItem("🚗 Parking Reminder", "Your parking meter expires in 1 hour."),
-        NotificationItem("🎧 Playlist Time", "Your daily mix on [music app] is ready."),
-        NotificationItem(
-            "🎬 Movie Night?",
-            "New releases are out on your favorite streaming service. New releases are out on your favorite streaming service."
-        ),
-        NotificationItem("📚 Reading Time", "Pick up where you left off in your current book."),
-        NotificationItem("🤔 Something to Ponder", "Here's a thought-provoking quote for today..."),
-        NotificationItem("⏰ Time for [task]", "Remember to [brief description]."),
-        NotificationItem("💧 Stay Hydrated!", "Have you had a glass of water recently?"),
-        NotificationItem("👀 Game Update Available", "Your favorite game has new content!"),
-        NotificationItem("🌎 Learn Something New", "Fact of the day: [Insert a fun fact]."),
-        NotificationItem(
-            "☀️ Step Outside",
-            "Get some fresh air and sunshine for a quick energy boost"
-        ),
-        NotificationItem("🎉 It's [friend's name]'s Birthday!", "Don't forget to send a message."),
-        NotificationItem("✈️ Travel Inspiration", "Where's your dream travel destination?"),
-        NotificationItem("😋 Recipe Time", "Find a new recipe to try on [recipe website]."),
-        NotificationItem("👀 Explore!", "[App name] has a hidden feature - can you find it?"),
-        NotificationItem("💰 Savings Update", "You're [percent] closer to your savings goal!"),
-        NotificationItem("🌟 Daily Challenge", "Try today's mini-challenge on [app name]."),
-        NotificationItem("💤 Bedtime Approaching", "Start winding down for a good night's sleep."),
-        NotificationItem("🤝 Team Update", "[Team member] posted on your project board."),
-        NotificationItem("🌿 Plant Care", "Time to water your [plant type]."),
-        NotificationItem("🎮 Game Break?", "Take a 10-minute break with your favorite game."),
-        NotificationItem("🗣️  Your Voice Matters", "New poll available on [topic/app]."),
-        NotificationItem("🎨 Get Creative", "Doodle, draw, or paint for a few minutes."),
-        NotificationItem("❓Ask a Question", "What's something that's been on your mind?"),
-        NotificationItem("🔍 Search Time", "Research a topic that interests you."),
-        NotificationItem(
-            "🤝 Help Someone Out",
-            "Is there a small way you can assist someone today?"
-        ),
-        NotificationItem("🐾 Pet Appreciation", "Give your furry friend some extra love."),
-        NotificationItem("📝 Journal Time", "Take 5 minutes to jot down your thoughts.")
+@Composable
+internal fun TransformingLazyColumnItemScope.NotificationCard(
+    notification: NotificationItem,
+    transformationSpec: TransformationSpec,
+) =
+    TitleCard(
+        onClick = {},
+        title = { NotificationCardTitle(notification.title) },
+        subtitle = { Text(notification.body) },
+        transformation = SurfaceTransformation(transformationSpec),
+        modifier = Modifier.transformedHeight(this, transformationSpec).animateItem(),
     )
+
+@Composable
+internal fun TransformingLazyColumnItemScope.NotificationsHeader(
+    transformationSpec: TransformationSpec
+) =
+    ListHeader(
+        transformation = SurfaceTransformation(transformationSpec),
+        modifier = Modifier.transformedHeight(this, transformationSpec).animateItem(),
+    ) {
+        Text("Notifications")
+    }
+
+data class NotificationItem(val title: String, val body: String) {
+    companion object {
+        val all =
+            listOf(
+                NotificationItem(
+                    "☕ Coffee Break?",
+                    "Step away from the screen and grab a pick-me-up. Step away from the screen and grab a pick-me-up.",
+                ),
+                NotificationItem(
+                    "🌟 You're Awesome!",
+                    "Just a little reminder in case you forgot 😊",
+                ),
+                NotificationItem(
+                    "👀 Did you know?",
+                    "Check out [app name]'s latest feature update.",
+                ),
+                NotificationItem(
+                    "📅 Appointment Time",
+                    "Your meeting with [name] is in 15 minutes.",
+                ),
+                NotificationItem(
+                    "📦 Package On the Way",
+                    "Your order is expected to arrive today!",
+                ),
+                NotificationItem(
+                    "🤔 Trivia Time!",
+                    "Test your knowledge with a quick quiz on [app name].",
+                ),
+                NotificationItem(
+                    "🌤️ Weather Update",
+                    "Don't forget your umbrella - rain is likely this afternoon.",
+                ),
+                NotificationItem(
+                    "🤝 Connect with [name]",
+                    "They sent you a message on [social platform].",
+                ),
+                NotificationItem("🧘‍♀️ Time to Breathe", "Take a 5-minute mindfulness break."),
+                NotificationItem(
+                    "🌟 Goal Achieved!",
+                    "You completed your daily step goal. Way to go!",
+                ),
+                NotificationItem("💡 New Idea!", "Got a spare moment? Jot down a quick note."),
+                NotificationItem("👀 Photo Memories", "Rediscover photos from this day last year."),
+                NotificationItem("🚗 Parking Reminder", "Your parking meter expires in 1 hour."),
+                NotificationItem("🎧 Playlist Time", "Your daily mix on [music app] is ready."),
+                NotificationItem(
+                    "🎬 Movie Night?",
+                    "New releases are out on your favorite streaming service. New releases are out on your favorite streaming service.",
+                ),
+                NotificationItem(
+                    "📚 Reading Time",
+                    "Pick up where you left off in your current book.",
+                ),
+                NotificationItem(
+                    "🤔 Something to Ponder",
+                    "Here's a thought-provoking quote for today...",
+                ),
+                NotificationItem("⏰ Time for [task]", "Remember to [brief description]."),
+                NotificationItem("💧 Stay Hydrated!", "Have you had a glass of water recently?"),
+                NotificationItem("👀 Game Update Available", "Your favorite game has new content!"),
+                NotificationItem("🌎 Learn Something New", "Fact of the day: [Insert a fun fact]."),
+                NotificationItem(
+                    "☀️ Step Outside",
+                    "Get some fresh air and sunshine for a quick energy boost",
+                ),
+                NotificationItem(
+                    "🎉 It's [friend's name]'s Birthday!",
+                    "Don't forget to send a message.",
+                ),
+                NotificationItem("✈️ Travel Inspiration", "Where's your dream travel destination?"),
+                NotificationItem("😋 Recipe Time", "Find a new recipe to try on [recipe website]."),
+                NotificationItem(
+                    "👀 Explore!",
+                    "[App name] has a hidden feature - can you find it?",
+                ),
+                NotificationItem(
+                    "💰 Savings Update",
+                    "You're [percent] closer to your savings goal!",
+                ),
+                NotificationItem("🌟 Daily Challenge", "Try today's mini-challenge on [app name]."),
+                NotificationItem(
+                    "💤 Bedtime Approaching",
+                    "Start winding down for a good night's sleep.",
+                ),
+                NotificationItem("🤝 Team Update", "[Team member] posted on your project board."),
+                NotificationItem("🌿 Plant Care", "Time to water your [plant type]."),
+                NotificationItem(
+                    "🎮 Game Break?",
+                    "Take a 10-minute break with your favorite game.",
+                ),
+                NotificationItem("🗣️  Your Voice Matters", "New poll available on [topic/app]."),
+                NotificationItem("🎨 Get Creative", "Doodle, draw, or paint for a few minutes."),
+                NotificationItem("❓Ask a Question", "What's something that's been on your mind?"),
+                NotificationItem("🔍 Search Time", "Research a topic that interests you."),
+                NotificationItem(
+                    "🤝 Help Someone Out",
+                    "Is there a small way you can assist someone today?",
+                ),
+                NotificationItem("🐾 Pet Appreciation", "Give your furry friend some extra love."),
+                NotificationItem("📝 Journal Time", "Take 5 minutes to jot down your thoughts."),
+            )
+    }
+}
+
+@Composable
+internal fun TransformingLazyColumnReducedMotionSample() {
+    // This simulates how TransformingLazyColumn looks like when reduce motion is enabled.
+    CompositionLocalProvider(LocalReduceMotion provides true) {
+        val transformationSpec = rememberTransformationSpec()
+        val state = rememberTransformingLazyColumnState()
+        AppScaffold {
+            ScreenScaffold(state) { contentPadding ->
+                TransformingLazyColumn(state = state, contentPadding = contentPadding) {
+                    items(count = 10) {
+                        Button(
+                            onClick = {},
+                            modifier =
+                                Modifier.minimumVerticalContentPadding(
+                                        ButtonDefaults.minimumVerticalListContentPadding
+                                    )
+                                    .fillMaxWidth()
+                                    .transformedHeight(this, transformationSpec)
+                                    .animateItem(),
+                            transformation = SurfaceTransformation(transformationSpec),
+                        ) {
+                            Text("Item $it")
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@SuppressLint("PrimitiveInCollection")
+@Composable
+fun TransformingLazyColumnAnimationSample() {
+    val transformationSpec = rememberTransformationSpec()
+    val state = rememberTransformingLazyColumnState()
+    var elements by remember { mutableStateOf(listOf(0, 1, 2, 3, 4, 5, 6, 7, 8, 9)) }
+    var nextElement by remember { mutableIntStateOf(10) }
+
+    fun addCardAfter(index: Int) {
+        elements =
+            elements.subList(0, index + 1) +
+                listOf(nextElement++) +
+                elements.subList(index + 1, elements.count())
+    }
+
+    fun removeCardAt(index: Int) {
+        elements = elements.subList(0, index) + elements.subList(index + 1, elements.count())
+    }
+
+    fun moveCardToStart(index: Int) {
+        elements =
+            elements.subList(index, index + 1) +
+                elements.subList(0, index) +
+                elements.subList(index + 1, elements.count())
+    }
+
+    fun moveCardToEnd(index: Int) {
+        elements =
+            elements.subList(0, index) +
+                elements.subList(index + 1, elements.count()) +
+                elements.subList(index, index + 1)
+    }
+
+    AppScaffold {
+        ScreenScaffold(
+            state,
+            edgeButton = {
+                EdgeButton(onClick = { elements = elements.shuffled() }) { Text("Shuffle") }
+            },
+        ) { contentPadding ->
+            TransformingLazyColumn(state = state, contentPadding = contentPadding) {
+                itemsIndexed(elements, key = { _, key -> key }) { index, cardKey ->
+                    var isPinned by remember { mutableStateOf(false) }
+                    var pinHandle by remember {
+                        mutableStateOf<PinnableContainer.PinnedHandle?>(null)
+                    }
+                    val pinnableContainer = LocalPinnableContainer.current
+                    Card(
+                        onClick = {
+                            if (isPinned) {
+                                pinHandle?.release()
+                                pinHandle = null
+                                isPinned = false
+                            } else {
+                                pinHandle = pinnableContainer?.pin()
+                                isPinned = true
+                            }
+                        },
+                        modifier =
+                            Modifier.minimumVerticalContentPadding(
+                                    CardDefaults.minimumVerticalListContentPadding
+                                )
+                                .transformedHeight(this, transformationSpec)
+                                .animateItem(),
+                        transformation = SurfaceTransformation(transformationSpec),
+                    ) {
+                        Text("Card $cardKey" + if (isPinned) " - Pinned" else "")
+                        Row {
+                            CompactButton(onClick = { moveCardToEnd(index) }) { Text(ArrowDown) }
+                            CompactButton(onClick = { moveCardToStart(index) }) { Text(ArrowUp) }
+                            Spacer(modifier = Modifier.weight(1f))
+                            CompactButton(
+                                onClick = { removeCardAt(index) },
+                                enabled = elements.count() > 1,
+                            ) {
+                                Text("-")
+                            }
+                            CompactButton(onClick = { addCardAfter(index) }) { Text("+") }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@SuppressLint("PrimitiveInCollection")
+@Composable
+fun TransformingLazyColumnReverseLayoutSample() {
+    var reverseLayout by remember { mutableStateOf(true) }
+    val transformationSpec = rememberTransformationSpec()
+    val state = rememberTransformingLazyColumnState()
+    var elements by remember { mutableStateOf(listOf(0, 1, 2, 3, 4, 5, 6, 7, 8, 9)) }
+    var nextElement by remember { mutableIntStateOf(10) }
+
+    fun addCardAfter(index: Int) {
+        elements =
+            elements.subList(0, index + 1) +
+                listOf(nextElement++) +
+                elements.subList(index + 1, elements.count())
+    }
+
+    fun removeCardAt(index: Int) {
+        elements = elements.subList(0, index) + elements.subList(index + 1, elements.count())
+    }
+
+    fun moveCardToStart(index: Int) {
+        elements =
+            elements.subList(index, index + 1) +
+                elements.subList(0, index) +
+                elements.subList(index + 1, elements.count())
+    }
+
+    fun moveCardToEnd(index: Int) {
+        elements =
+            elements.subList(0, index) +
+                elements.subList(index + 1, elements.count()) +
+                elements.subList(index, index + 1)
+    }
+
+    AppScaffold {
+        ScreenScaffold(
+            state,
+            edgeButton = {
+                EdgeButton(onClick = { reverseLayout = !reverseLayout }) { Text("Reverse") }
+            },
+        ) { contentPadding ->
+            TransformingLazyColumn(
+                state = state,
+                contentPadding = contentPadding,
+                reverseLayout = reverseLayout,
+            ) {
+                itemsIndexed(elements, key = { _, key -> key }) { index, cardKey ->
+                    Card(
+                        onClick = {},
+                        modifier =
+                            Modifier.minimumVerticalContentPadding(
+                                    CardDefaults.minimumVerticalListContentPadding
+                                )
+                                .transformedHeight(this, transformationSpec)
+                                .animateItem(),
+                        transformation = SurfaceTransformation(transformationSpec),
+                    ) {
+                        Text("Card $cardKey")
+                        Row {
+                            CompactButton(onClick = { moveCardToEnd(index) }) {
+                                Text(if (reverseLayout) ArrowUp else ArrowDown)
+                            }
+                            CompactButton(onClick = { moveCardToStart(index) }) {
+                                Text(if (reverseLayout) ArrowDown else ArrowUp)
+                            }
+                            Spacer(modifier = Modifier.weight(1f))
+                            CompactButton(
+                                onClick = { removeCardAt(index) },
+                                enabled = elements.count() > 1,
+                            ) {
+                                Text("-")
+                            }
+                            CompactButton(onClick = { addCardAfter(index) }) { Text("+") }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun TransformingLazyColumnExpandableCardSample() {
+    val state = rememberTransformingLazyColumnState()
+    val transformationSpec = rememberTransformationSpec()
+    var expandedIndex by remember { mutableIntStateOf(-1) }
+    AppScaffold {
+        ScreenScaffold(state) { contentPadding ->
+            TransformingLazyColumn(state = state, contentPadding = contentPadding) {
+                items(count = 50) { cardIndex ->
+                    TitleCard(
+                        onClick = {
+                            expandedIndex = if (expandedIndex == cardIndex) -1 else cardIndex
+                        },
+                        modifier =
+                            Modifier.minimumVerticalContentPadding(
+                                    CardDefaults.minimumVerticalListContentPadding
+                                )
+                                .fillMaxWidth()
+                                .transformedHeight(this, transformationSpec),
+                        transformation = SurfaceTransformation(transformationSpec),
+                        title = { Text("Card $cardIndex") },
+                        subtitle = {
+                            AnimatedVisibility(expandedIndex == cardIndex) {
+                                Text("Expanded content is available here")
+                            }
+                        },
+                        content = { Text("Tap on Card to expand") },
+                    )
+                }
+            }
+        }
+    }
+}
+
+private const val ArrowUp = "\u2191"
+private const val ArrowDown = "\u2193"

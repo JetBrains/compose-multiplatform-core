@@ -22,15 +22,15 @@ import androidx.compose.runtime.Immutable
  * Effect applied to the geometry of a drawing primitive. For example, this can be used to draw
  * shapes as a dashed or shaped pattern, or apply a treatment around line segment intersections.
  */
-interface PathEffect {
-    companion object {
+public interface PathEffect {
+    public companion object {
 
         /**
          * Replaces sharp angles between line segments into rounded angles of the specified radius
          *
          * @param radius Rounded corner radius to apply for each angle of the drawn shape
          */
-        fun cornerPathEffect(radius: Float): PathEffect = actualCornerPathEffect(radius)
+        public fun cornerPathEffect(radius: Float): PathEffect = actualCornerPathEffect(radius)
 
         /**
          * Draws a shape as a series of dashes with the given intervals and offset into the
@@ -49,14 +49,14 @@ interface PathEffect {
          * @param intervals Array of "on" and "off" distances for the dashed line segments
          * @param phase Pixel offset into the intervals array
          */
-        fun dashPathEffect(intervals: FloatArray, phase: Float = 0f): PathEffect =
+        public fun dashPathEffect(intervals: FloatArray, phase: Float = 0f): PathEffect =
             actualDashPathEffect(intervals, phase)
 
         /**
          * Create a PathEffect that applies the inner effect to the path, and then applies the outer
          * effect to the result of the inner effect. (e.g. outer(inner(path)).
          */
-        fun chainPathEffect(outer: PathEffect, inner: PathEffect): PathEffect =
+        public fun chainPathEffect(outer: PathEffect, inner: PathEffect): PathEffect =
             actualChainPathEffect(outer, inner)
 
         /**
@@ -69,11 +69,11 @@ interface PathEffect {
          * @param phase Amount to offset before the first shape is stamped
          * @param style How to transform the shape at each position as it is stamped
          */
-        fun stampedPathEffect(
+        public fun stampedPathEffect(
             shape: Path,
             advance: Float,
             phase: Float,
-            style: StampedPathEffectStyle
+            style: StampedPathEffectStyle,
         ): PathEffect = actualStampedPathEffect(shape, advance, phase, style)
     }
 }
@@ -88,7 +88,7 @@ internal expect fun actualStampedPathEffect(
     shape: Path,
     advance: Float,
     phase: Float,
-    style: StampedPathEffectStyle
+    style: StampedPathEffectStyle,
 ): PathEffect
 
 /**
@@ -98,10 +98,10 @@ internal expect fun actualStampedPathEffect(
  */
 @Immutable
 @kotlin.jvm.JvmInline
-value class StampedPathEffectStyle
+public value class StampedPathEffectStyle
 internal constructor(@Suppress("unused") private val value: Int) {
 
-    companion object {
+    public companion object {
         /**
          * Translate the path shape into the specified location aligning the top left of the path
          * with the drawn geometry. This does not modify the path itself.
@@ -110,7 +110,8 @@ internal constructor(@Suppress("unused") private val value: Int) {
          * repeatedly with the top left corner of each stamped square along the curvature of the
          * circle.
          */
-        val Translate = StampedPathEffectStyle(0)
+        public val Translate: StampedPathEffectStyle
+            get() = StampedPathEffectStyle(0)
 
         /**
          * Rotates the path shape its center along the curvature of the drawn geometry. This does
@@ -120,7 +121,8 @@ internal constructor(@Suppress("unused") private val value: Int) {
          * repeatedly with the center of each stamped square along the curvature of the circle as
          * well as each square being rotated along the circumference.
          */
-        val Rotate = StampedPathEffectStyle(1)
+        public val Rotate: StampedPathEffectStyle
+            get() = StampedPathEffectStyle(1)
 
         /**
          * Modifies the points within the path such that they fit within the drawn geometry. This
@@ -130,10 +132,11 @@ internal constructor(@Suppress("unused") private val value: Int) {
          * of the square paths to be curves such that each stamped square is rendered as an arc
          * around the curvature of the circle.
          */
-        val Morph = StampedPathEffectStyle(2)
+        public val Morph: StampedPathEffectStyle
+            get() = StampedPathEffectStyle(2)
     }
 
-    override fun toString() =
+    override fun toString(): String =
         when (this) {
             Translate -> "Translate"
             Rotate -> "Rotate"

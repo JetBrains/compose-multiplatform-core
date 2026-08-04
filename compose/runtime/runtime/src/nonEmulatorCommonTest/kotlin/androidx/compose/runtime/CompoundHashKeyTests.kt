@@ -214,7 +214,7 @@ private class EnumTestClass {
 
     enum class Config {
         A,
-        B
+        B,
     }
 }
 
@@ -228,7 +228,7 @@ private fun newMarker() = marker++
 
 private data class TraceResult(
     val trace: List<CompositeKeyHashCode>,
-    val markers: MutableIntObjectMap<CompositeKeyHashCode>
+    val markers: MutableIntObjectMap<CompositeKeyHashCode>,
 )
 
 private fun CompositionTestScope.composeTrace(content: @Composable () -> Unit): TraceResult {
@@ -266,7 +266,7 @@ private fun CompositionTestScope.expectUniqueHashCodes(content: @Composable () -
 
 private fun CompositionTestScope.expectHashCodes(
     duplicateCount: Int,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ): IntObjectMap<CompositeKeyHashCode> {
     val (hashCodes, markers) = composeTrace(content)
     val uniqueCodes = hashCodes.distinct()
@@ -279,7 +279,7 @@ private fun CompositionTestScope.expectHashCodes(
         else
             "Expected $duplicateCount keys but found but found ${
             hashCodes.size - uniqueCodes.size
-        }"
+        }",
     )
     val (recomposeTrace, recomposeMarkers) = retrace()
     assertEquals(hashCodes.size, recomposeTrace.size)
@@ -296,8 +296,8 @@ private fun IntObjectMap<CompositeKeyHashCode>.mergedWith(
     other: IntObjectMap<CompositeKeyHashCode>,
     inconsistent:
         (
-            key: Int, existingValue: CompositeKeyHashCode, mergedValue: CompositeKeyHashCode
-        ) -> CompositeKeyHashCode
+            key: Int, existingValue: CompositeKeyHashCode, mergedValue: CompositeKeyHashCode,
+        ) -> CompositeKeyHashCode,
 ): IntObjectMap<CompositeKeyHashCode> {
     val result = MutableIntObjectMap<CompositeKeyHashCode>()
     forEach { key, value ->

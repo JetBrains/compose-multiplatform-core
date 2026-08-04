@@ -50,7 +50,7 @@ internal actual fun formatWithSkeleton(
     utcTimeMillis: Long,
     skeleton: String,
     locale: CalendarLocale,
-    cache: MutableMap<String, Any>
+    cache: MutableMap<String, Any>,
 ): String {
     // Use ICU to format the time on API 24+.
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
@@ -72,7 +72,11 @@ internal actual fun formatWithSkeleton(
     val pattern =
         cache
             .getOrPut(key = "S:$skeleton${locale.toLanguageTag()}") {
-                android.text.format.DateFormat.getBestDateTimePattern(locale, skeleton)
+                android.text.format.DateFormat.getBestDateTimePattern(
+                    locale,
+                    // Replace 'Y' with 'y' for API levels below Android N (API 24)
+                    skeleton.replace("Y", "y"),
+                )
             }
             .toString()
 

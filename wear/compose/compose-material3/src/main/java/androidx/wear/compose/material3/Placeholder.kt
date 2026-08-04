@@ -22,6 +22,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.Stable
+import androidx.compose.runtime.annotation.RememberInComposition
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -76,9 +77,17 @@ import kotlin.math.pow
  *
  * @sample androidx.wear.compose.material3.samples.ButtonWithIconAndLabelAndPlaceholders
  *
+ * <video
+ * src=https://developer.android.com/wear/images/design/WearComposeM3_ButtonWithIconAndLabelAndPlaceholders_CompositeImage.mp4
+ * autoplay loop muted playsinline style=border-radius:2.4%/6.8%;overflow:hidden; />
+ *
  * If there is some cached data for this field, it may be better to show that while loading, see
  *
  * @sample androidx.wear.compose.material3.samples.ButtonWithIconAndLabelCachedData
+ *
+ * <video
+ * src=https://developer.android.com/wear/images/design/WearComposeM3_ButtonWithIconAndLabelCachedData_CompositeImage.mp4
+ * autoplay loop muted playsinline style=border-radius:2.4%/6.8%;overflow:hidden; />
  *
  * Note that the component should still be sized close to the target, so the final reveal of the
  * content is less disruptive.
@@ -91,7 +100,7 @@ import kotlin.math.pow
 public fun Modifier.placeholder(
     placeholderState: PlaceholderState,
     shape: Shape = PlaceholderDefaults.shape,
-    color: Color = PlaceholderDefaults.color
+    color: Color = PlaceholderDefaults.color,
 ): Modifier {
     DisposableEffect(Unit) {
         placeholderState.register()
@@ -148,9 +157,18 @@ public fun Modifier.placeholder(
  *
  * @sample androidx.wear.compose.material3.samples.ButtonWithIconAndLabelAndPlaceholders
  *
+ * <video
+ * src=https://developer.android.com/wear/images/design/WearComposeM3_ButtonWithIconAndLabelAndPlaceholders_CompositeImage.mp4
+ * autoplay loop muted playsinline style=border-radius:2.4%/6.8%;overflow:hidden; />
+ *
  * Example of a simple text placeholder:
  *
  * @sample androidx.wear.compose.material3.samples.TextPlaceholder
+ *
+ * <video
+ * src=https://developer.android.com/wear/images/design/WearComposeM3_TextPlaceholder_CompositeImage.mp4
+ * autoplay loop muted playsinline style=border-radius:2.4%/6.8%;overflow:hidden; />
+ *
  * @param placeholderState the current placeholder state that determine whether the placeholder
  *   shimmer should be shown.
  * @param shape the shape of the component.
@@ -160,7 +178,7 @@ public fun Modifier.placeholder(
 public fun Modifier.placeholderShimmer(
     placeholderState: PlaceholderState,
     shape: Shape = PlaceholderDefaults.shape,
-    color: Color = PlaceholderDefaults.shimmerColor
+    color: Color = PlaceholderDefaults.shimmerColor,
 ): Modifier =
     this.then(
         if (LocalReduceMotion.current) {
@@ -176,7 +194,7 @@ public fun Modifier.placeholderShimmer(
                         properties["placeholderState"] = placeholderState
                         properties["shape"] = shape
                         properties["color"] = color
-                    }
+                    },
             )
         }
     )
@@ -259,6 +277,10 @@ public object PlaceholderDefaults {
  *
  * @sample androidx.wear.compose.material3.samples.TextPlaceholder
  *
+ * <video
+ * src=https://developer.android.com/wear/images/design/WearComposeM3_TextPlaceholder_CompositeImage.mp4
+ * autoplay loop muted playsinline style=border-radius:2.4%/6.8%;overflow:hidden; />
+ *
  * Once all of the components content is loaded the shimmer will stop and a wipe off animation will
  * remove the placeholders.
  *
@@ -266,7 +288,8 @@ public object PlaceholderDefaults {
  *   updating the state using [PlaceholderState.isVisible]
  */
 @Stable
-public class PlaceholderState(isVisible: Boolean) {
+public class PlaceholderState @RememberInComposition constructor(isVisible: Boolean) {
+
     /**
      * Whether the placeholder should be visible. Note that if there is an animation running, this
      * is the target state for the animation.
@@ -367,7 +390,7 @@ private class PlaceholderShimmerElement(
     private val placeholderState: PlaceholderState,
     private val color: Color,
     private val shape: Shape,
-    private val inspectorInfo: InspectorInfo.() -> Unit
+    private val inspectorInfo: InspectorInfo.() -> Unit,
 ) : ModifierNodeElement<PlaceholderShimmerModifierNode>() {
 
     override fun create(): PlaceholderShimmerModifierNode {
@@ -375,7 +398,7 @@ private class PlaceholderShimmerElement(
     }
 
     override fun update(node: PlaceholderShimmerModifierNode) {
-        node.placeholderState = placeholderState
+        node.updatePlaceholderState(placeholderState)
         node.color = color
         node.shape = shape
     }
@@ -409,7 +432,7 @@ private class PlaceholderShimmerElement(
 private class PlaceholderShimmerModifierNode(
     var placeholderState: PlaceholderState,
     var color: Color,
-    var shape: Shape
+    var shape: Shape,
 ) :
     DrawModifierNode,
     Modifier.Node(),
@@ -424,6 +447,12 @@ private class PlaceholderShimmerModifierNode(
     private var lastLayoutDirection: LayoutDirection? = null
     private var lastOutline: Outline? = null
     private var lastShape: Shape? = null
+
+    fun updatePlaceholderState(placeholderState: PlaceholderState) {
+        onDetach()
+        this.placeholderState = placeholderState
+        onAttach()
+    }
 
     override fun onAttach() {
         placeholderState.register()
@@ -473,7 +502,7 @@ private class PlaceholderShimmerModifierNode(
                 lerp(
                     -maxScreenDimension * 0.5f,
                     maxScreenDimension * 1.5f,
-                    placeholderShimmerProgression
+                    placeholderShimmerProgression,
                 )
             val shimmerOffset = Offset(screenShimmerProgression, screenShimmerProgression) - offset
             val xOffset = Offset(halfGradientWidth, halfGradientWidth)
@@ -486,7 +515,7 @@ private class PlaceholderShimmerModifierNode(
                             0.65f to color.copy(alpha = placeholderShimmerAlpha),
                             0.9f to color.copy(alpha = 0f),
                         )
-                        .toTypedArray()
+                        .toTypedArray(),
             )
         } else {
             null
@@ -579,6 +608,9 @@ internal class PlaceholderAnimationHelper() {
 
     /** Unregister as a user. Animations will not run if there are no users. */
     fun unregister() {
+        require(registeredUsers >= 1) {
+            "Calls to unregister() can't be more than calls to register()"
+        }
         AnimationCoordinator.unregister()
         registeredUsers--
     }

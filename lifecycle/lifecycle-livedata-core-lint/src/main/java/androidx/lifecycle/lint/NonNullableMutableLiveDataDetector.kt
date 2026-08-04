@@ -84,9 +84,9 @@ class NonNullableMutableLiveDataDetector : Detector(), UastScanner {
                 implementation =
                     Implementation(
                         NonNullableMutableLiveDataDetector::class.java,
-                        Scope.JAVA_FILE_SCOPE
+                        Scope.JAVA_FILE_SCOPE,
                     ),
-                androidSpecific = true
+                androidSpecific = true,
             )
     }
 
@@ -150,14 +150,14 @@ class NonNullableMutableLiveDataDetector : Detector(), UastScanner {
                 }
                 if (isGeneric) return
 
+                if (!isKotlin(node.lang) || !methods.contains(node.methodName)) return
+                val resolved = node.resolve() ?: return
                 if (
-                    !isKotlin(node.lang) ||
-                        !methods.contains(node.methodName) ||
-                        !context.evaluator.isMemberInSubClassOf(
-                            node.resolve()!!,
-                            "androidx.lifecycle.LiveData",
-                            false
-                        )
+                    !context.evaluator.isMemberInSubClassOf(
+                        resolved,
+                        "androidx.lifecycle.LiveData",
+                        false,
+                    )
                 )
                     return
 
@@ -211,17 +211,18 @@ class NonNullableMutableLiveDataDetector : Detector(), UastScanner {
         if (classType == null) {
             return null
         }
-        val cls = classType.resolve().getUastParentOfType<UClass>()
-        if (cls != null && !isKotlin(cls.lang)) {
+        val resolved = classType.resolve() ?: return null
+        val cls = resolved.getUastParentOfType<UClass>() ?: return null
+        if (!isKotlin(cls.lang)) {
             // If the type argument refers to a Java type,
             // we won't get KtTypeReference anyway, so bail out early.
             return null
         }
-        val parentPsiType = cls?.superClassType as PsiClassType
+        val parentPsiType = cls.superClassType as? PsiClassType ?: return null
         if (parentPsiType.hasParameters()) {
-            val parentTypeReference = cls.uastSuperTypes[0]
-            val superType = (parentTypeReference.sourcePsi as KtTypeReference).typeElement
-            return superType!!.typeArgumentsAsTypes[0]
+            val parentTypeReference = cls.uastSuperTypes.firstOrNull() ?: return null
+            val superType = (parentTypeReference.sourcePsi as? KtTypeReference)?.typeElement
+            return superType?.typeArgumentsAsTypes?.firstOrNull()
         }
         return getTypeArg(parentPsiType)
     }
@@ -229,7 +230,7 @@ class NonNullableMutableLiveDataDetector : Detector(), UastScanner {
     fun checkNullability(
         liveDataType: KtTypeReference,
         context: JavaContext,
-        node: UCallExpression
+        node: UCallExpression,
     ) {
         // ignore generic types
         if (node.isGenericTypeDefinition()) return
@@ -255,7 +256,7 @@ class NonNullableMutableLiveDataDetector : Detector(), UastScanner {
                     context,
                     argument,
                     "Cannot set non-nullable LiveData value to `null`",
-                    fixes
+                    fixes,
                 )
             } else if (argument.isNullable(context)) {
                 fixes.add(
@@ -290,7 +291,7 @@ class NonNullableMutableLiveDataDetector : Detector(), UastScanner {
         context: JavaContext,
         element: UElement,
         message: String,
-        fixes: List<LintFix>
+        fixes: List<LintFix>,
     ) {
         if (fixes.isEmpty()) {
             context.report(ISSUE, context.getLocation(element), message)
@@ -299,7 +300,7 @@ class NonNullableMutableLiveDataDetector : Detector(), UastScanner {
                 ISSUE,
                 context.getLocation(element),
                 message,
-                fix().alternatives(*fixes.toTypedArray())
+                fix().alternatives(*fixes.toTypedArray()),
             )
         }
     }

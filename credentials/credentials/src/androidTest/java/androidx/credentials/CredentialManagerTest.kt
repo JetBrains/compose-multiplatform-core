@@ -93,7 +93,7 @@ class CredentialManagerTest {
                         assertThrows<NoCredentialException> {
                             credentialManager.getCredential(
                                 this@withActivity,
-                                prepareGetCredentialResponse.pendingGetCredentialHandle!!
+                                prepareGetCredentialResponse.pendingGetCredentialHandle!!,
                             )
                         }
                     }
@@ -124,7 +124,7 @@ class CredentialManagerTest {
                         loadedResult.set(e)
                         latch.countDown()
                     }
-                }
+                },
             )
         }
 
@@ -156,7 +156,7 @@ class CredentialManagerTest {
                 }
 
                 override fun onResult(result: Void?) {}
-            }
+            },
         )
 
         latch.await(100L, TimeUnit.MILLISECONDS)

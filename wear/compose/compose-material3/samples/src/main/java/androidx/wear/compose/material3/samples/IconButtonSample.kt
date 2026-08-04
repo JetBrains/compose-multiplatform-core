@@ -25,6 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.wear.compose.material3.FilledIconButton
 import androidx.wear.compose.material3.FilledTonalIconButton
 import androidx.wear.compose.material3.Icon
@@ -55,7 +56,7 @@ fun FilledIconButtonSample() {
 fun FilledVariantIconButtonSample() {
     FilledIconButton(
         onClick = { /* Do something */ },
-        colors = IconButtonDefaults.filledVariantIconButtonColors()
+        colors = IconButtonDefaults.filledVariantIconButtonColors(),
     ) {
         Icon(imageVector = Icons.Filled.Favorite, contentDescription = "Favorite icon")
     }
@@ -83,7 +84,7 @@ fun IconButtonWithOnLongClickSample(onLongClick: () -> Unit) {
     IconButton(
         onClick = { /* Do something for onClick*/ },
         onLongClick = onLongClick,
-        onLongClickLabel = "Long click"
+        onLongClickLabel = "Long click",
     ) {
         Icon(imageVector = Icons.Filled.Favorite, contentDescription = "Favorite icon")
     }
@@ -97,7 +98,7 @@ fun IconButtonWithCornerAnimationSample(
     FilledIconButton(
         onClick = { /* Do something */ },
         shapes = IconButtonDefaults.animatedShapes(),
-        colors = colors
+        colors = colors,
     ) {
         Icon(imageVector = Icons.Filled.Favorite, contentDescription = "Favorite icon")
     }
@@ -106,21 +107,17 @@ fun IconButtonWithCornerAnimationSample(
 @Composable
 @Sampled
 fun IconButtonWithImageSample(
-    painter: Painter,
-    enabled: Boolean,
-    shapes: IconButtonShapes = IconButtonDefaults.shapes()
+    painter: Painter = painterResource(R.drawable.card_content_image),
+    enabled: Boolean = true,
+    shapes: IconButtonShapes = IconButtonDefaults.shapes(),
 ) {
-    IconButton(
-        onClick = { /* Do something */ },
-        shapes = shapes,
-        enabled = enabled,
-    ) {
+    IconButton(onClick = { /* Do something */ }, shapes = shapes, enabled = enabled) {
         Image(
             painter = painter,
             contentDescription = null,
             contentScale = ContentScale.Crop,
             modifier =
-                if (enabled) Modifier else Modifier.alpha(IconButtonDefaults.DisabledImageOpacity)
+                if (enabled) Modifier else Modifier.alpha(IconButtonDefaults.DisabledImageOpacity),
         )
     }
 }

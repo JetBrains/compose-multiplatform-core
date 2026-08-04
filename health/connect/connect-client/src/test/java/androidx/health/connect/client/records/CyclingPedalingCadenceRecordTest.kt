@@ -36,7 +36,7 @@ class CyclingPedalingCadenceRecordTest {
                     endTime = Instant.ofEpochMilli(1236L),
                     endZoneOffset = null,
                     metadata = Metadata.manualEntry(),
-                    samples = listOf()
+                    samples = listOf(),
                 )
             )
             .isEqualTo(
@@ -46,7 +46,7 @@ class CyclingPedalingCadenceRecordTest {
                     endTime = Instant.ofEpochMilli(1236L),
                     endZoneOffset = null,
                     metadata = Metadata.manualEntry(),
-                    samples = listOf()
+                    samples = listOf(),
                 )
             )
     }
@@ -60,7 +60,7 @@ class CyclingPedalingCadenceRecordTest {
                     endTime = Instant.ofEpochMilli(1234L),
                     endZoneOffset = null,
                     metadata = Metadata.manualEntry(),
-                    samples = listOf()
+                    samples = listOf(),
                 )
             )
             .isEqualTo(
@@ -70,7 +70,7 @@ class CyclingPedalingCadenceRecordTest {
                     endTime = Instant.ofEpochMilli(1234L),
                     endZoneOffset = null,
                     metadata = Metadata.manualEntry(),
-                    samples = listOf()
+                    samples = listOf(),
                 )
             )
     }
@@ -84,7 +84,7 @@ class CyclingPedalingCadenceRecordTest {
                 endTime = Instant.ofEpochMilli(1234L),
                 endZoneOffset = null,
                 metadata = Metadata.manualEntry(),
-                samples = listOf()
+                samples = listOf(),
             )
         }
     }
@@ -102,9 +102,9 @@ class CyclingPedalingCadenceRecordTest {
                             listOf(
                                 CyclingPedalingCadenceRecord.Sample(
                                     Instant.ofEpochMilli(1234L),
-                                    80.0
+                                    80.0,
                                 )
-                            )
+                            ),
                     )
                     .toString()
             )

@@ -33,7 +33,7 @@ import androidx.compose.ui.unit.LayoutDirection
  *
  * A `Placeable` should never be stored between measure calls.
  */
-abstract class Placeable : Measured {
+public abstract class Placeable : Measured {
     /**
      * The width, in pixels, of the measured layout, as seen by the parent. This will usually
      * coincide with the measured width of the layout (aka the `width` value passed into
@@ -42,7 +42,7 @@ abstract class Placeable : Measured {
      * constraints - to access the actual width that the layout measured itself to, use
      * [measuredWidth].
      */
-    var width: Int = 0
+    public var width: Int = 0
         private set
 
     /**
@@ -53,15 +53,15 @@ abstract class Placeable : Measured {
      * constraints - to access the actual height that the layout measured itself to, use
      * [measuredHeight].
      */
-    var height: Int = 0
+    public var height: Int = 0
         private set
 
     /** The measured width of the layout. This might not respect the measurement constraints. */
-    override val measuredWidth: Int
+    public override val measuredWidth: Int
         get() = measuredSize.width
 
     /** The measured height of the layout. This might not respect the measurement constraints. */
-    override val measuredHeight: Int
+    public override val measuredHeight: Int
         get() = measuredSize.height
 
     /** The measured size of this Placeable. This might not respect [measurementConstraints]. */
@@ -77,12 +77,12 @@ abstract class Placeable : Measured {
         width =
             measuredSize.width.coerceIn(
                 measurementConstraints.minWidth,
-                measurementConstraints.maxWidth
+                measurementConstraints.maxWidth,
             )
         height =
             measuredSize.height.coerceIn(
                 measurementConstraints.minHeight,
-                measurementConstraints.maxHeight
+                measurementConstraints.maxHeight,
             )
         apparentToRealOffset =
             IntOffset((width - measuredSize.width) / 2, (height - measuredSize.height) / 2)
@@ -103,7 +103,7 @@ abstract class Placeable : Measured {
     protected abstract fun placeAt(
         position: IntOffset,
         zIndex: Float,
-        layerBlock: (GraphicsLayerScope.() -> Unit)?
+        layerBlock: (GraphicsLayerScope.() -> Unit)?,
     )
 
     /**
@@ -151,11 +151,11 @@ abstract class Placeable : Measured {
      */
     // TODO(b/150276678): using the PlacementScope to place outside the layout pass is not working.
     @PlacementScopeMarker
-    abstract class PlacementScope : Density {
-        override val density: Float
+    public abstract class PlacementScope : Density {
+        public override val density: Float
             get() = 1f
 
-        override val fontScale: Float
+        public override val fontScale: Float
             get() = 1f
 
         /**
@@ -186,7 +186,7 @@ abstract class Placeable : Measured {
          *
          * @sample androidx.compose.ui.samples.PlacementScopeCoordinatesSample
          */
-        open val coordinates: LayoutCoordinates?
+        public open val coordinates: LayoutCoordinates?
             get() = null
 
         /**
@@ -196,7 +196,7 @@ abstract class Placeable : Measured {
          *
          * @sample androidx.compose.ui.samples.RulerConsumerUsage
          */
-        open fun Ruler.current(defaultValue: Float): Float = defaultValue
+        public open fun Ruler.current(defaultValue: Float): Float = defaultValue
 
         /**
          * Place a [Placeable] at [position] in its parent's coordinate system. If the layout
@@ -211,7 +211,7 @@ abstract class Placeable : Measured {
          *   [zIndex] will be drawn on top of all the children with smaller [zIndex]. When children
          *   have the same [zIndex] the order in which the items were placed is used.
          */
-        fun Placeable.placeRelative(position: IntOffset, zIndex: Float = 0f) =
+        public fun Placeable.placeRelative(position: IntOffset, zIndex: Float = 0f): Unit =
             placeAutoMirrored(position, zIndex, null)
 
         /**
@@ -228,7 +228,7 @@ abstract class Placeable : Measured {
          *   [zIndex] will be drawn on top of all the children with smaller [zIndex]. When children
          *   have the same [zIndex] the order in which the items were placed is used.
          */
-        fun Placeable.placeRelative(x: Int, y: Int, zIndex: Float = 0f) =
+        public fun Placeable.placeRelative(x: Int, y: Int, zIndex: Float = 0f): Unit =
             placeAutoMirrored(IntOffset(x, y), zIndex, null)
 
         /**
@@ -242,7 +242,7 @@ abstract class Placeable : Measured {
          *   [zIndex] will be drawn on top of all the children with smaller [zIndex]. When children
          *   have the same [zIndex] the order in which the items were placed is used.
          */
-        fun Placeable.place(x: Int, y: Int, zIndex: Float = 0f) =
+        public fun Placeable.place(x: Int, y: Int, zIndex: Float = 0f): Unit =
             placeApparentToRealOffset(IntOffset(x, y), zIndex, null)
 
         /**
@@ -255,7 +255,7 @@ abstract class Placeable : Measured {
          *   [zIndex] will be drawn on top of all the children with smaller [zIndex]. When children
          *   have the same [zIndex] the order in which the items were placed is used.
          */
-        fun Placeable.place(position: IntOffset, zIndex: Float = 0f) =
+        public fun Placeable.place(position: IntOffset, zIndex: Float = 0f): Unit =
             placeApparentToRealOffset(position, zIndex, null)
 
         /**
@@ -274,11 +274,11 @@ abstract class Placeable : Measured {
          *   via this block. If the [Placeable] will be placed with a new [position] next time only
          *   the graphic layer will be moved without requiring to redrawn the [Placeable] content.
          */
-        fun Placeable.placeRelativeWithLayer(
+        public fun Placeable.placeRelativeWithLayer(
             position: IntOffset,
             zIndex: Float = 0f,
-            layerBlock: GraphicsLayerScope.() -> Unit = DefaultLayerBlock
-        ) = placeAutoMirrored(position, zIndex, layerBlock)
+            layerBlock: GraphicsLayerScope.() -> Unit = DefaultLayerBlock,
+        ): Unit = placeAutoMirrored(position, zIndex, layerBlock)
 
         /**
          * Place a [Placeable] at [x], [y] in its parent's coordinate system with an introduced
@@ -297,12 +297,12 @@ abstract class Placeable : Measured {
          *   via this block. If the [Placeable] will be placed with a new [x] or [y] next time only
          *   the graphic layer will be moved without requiring to redrawn the [Placeable] content.
          */
-        fun Placeable.placeRelativeWithLayer(
+        public fun Placeable.placeRelativeWithLayer(
             x: Int,
             y: Int,
             zIndex: Float = 0f,
-            layerBlock: GraphicsLayerScope.() -> Unit = DefaultLayerBlock
-        ) = placeAutoMirrored(IntOffset(x, y), zIndex, layerBlock)
+            layerBlock: GraphicsLayerScope.() -> Unit = DefaultLayerBlock,
+        ): Unit = placeAutoMirrored(IntOffset(x, y), zIndex, layerBlock)
 
         /**
          * Place a [Placeable] at [x], [y] in its parent's coordinate system with an introduced
@@ -318,12 +318,12 @@ abstract class Placeable : Measured {
          *   via this block. If the [Placeable] will be placed with a new [x] or [y] next time only
          *   the graphic layer will be moved without requiring to redrawn the [Placeable] content.
          */
-        fun Placeable.placeWithLayer(
+        public fun Placeable.placeWithLayer(
             x: Int,
             y: Int,
             zIndex: Float = 0f,
-            layerBlock: GraphicsLayerScope.() -> Unit = DefaultLayerBlock
-        ) = placeApparentToRealOffset(IntOffset(x, y), zIndex, layerBlock)
+            layerBlock: GraphicsLayerScope.() -> Unit = DefaultLayerBlock,
+        ): Unit = placeApparentToRealOffset(IntOffset(x, y), zIndex, layerBlock)
 
         /**
          * Place a [Placeable] at [position] in its parent's coordinate system with an introduced
@@ -338,11 +338,11 @@ abstract class Placeable : Measured {
          *   via this block. If the [Placeable] will be placed with a new [position] next time only
          *   the graphic layer will be moved without requiring to redrawn the [Placeable] content.
          */
-        fun Placeable.placeWithLayer(
+        public fun Placeable.placeWithLayer(
             position: IntOffset,
             zIndex: Float = 0f,
-            layerBlock: GraphicsLayerScope.() -> Unit = DefaultLayerBlock
-        ) = placeApparentToRealOffset(position, zIndex, layerBlock)
+            layerBlock: GraphicsLayerScope.() -> Unit = DefaultLayerBlock,
+        ): Unit = placeApparentToRealOffset(position, zIndex, layerBlock)
 
         /**
          * Place a [Placeable] at [x], [y] in its parent's coordinate system with an introduced
@@ -358,12 +358,12 @@ abstract class Placeable : Measured {
          *   placed with a new [x] or [y] next time only the graphic layer will be moved without
          *   requiring to redrawn the [Placeable] content.
          */
-        fun Placeable.placeWithLayer(
+        public fun Placeable.placeWithLayer(
             x: Int,
             y: Int,
             layer: GraphicsLayer,
             zIndex: Float = 0f,
-        ) = placeApparentToRealOffset(IntOffset(x, y), zIndex, layer)
+        ): Unit = placeApparentToRealOffset(IntOffset(x, y), zIndex, layer)
 
         /**
          * Place a [Placeable] at [position] in its parent's coordinate system with an introduced
@@ -378,11 +378,11 @@ abstract class Placeable : Measured {
          *   placed with a new [position] next time only the graphic layer will be moved without
          *   requiring to redrawn the [Placeable] content.
          */
-        fun Placeable.placeWithLayer(
+        public fun Placeable.placeWithLayer(
             position: IntOffset,
             layer: GraphicsLayer,
             zIndex: Float = 0f,
-        ) = placeApparentToRealOffset(position, zIndex, layer)
+        ): Unit = placeApparentToRealOffset(position, zIndex, layer)
 
         /**
          * Place a [Placeable] at [x], [y] in its parent's coordinate system with an introduced
@@ -401,12 +401,12 @@ abstract class Placeable : Measured {
          *   placed with a new [x] or [y] next time only the graphic layer will be moved without
          *   requiring to redrawn the [Placeable] content.
          */
-        fun Placeable.placeRelativeWithLayer(
+        public fun Placeable.placeRelativeWithLayer(
             x: Int,
             y: Int,
             layer: GraphicsLayer,
-            zIndex: Float = 0f
-        ) = placeAutoMirrored(IntOffset(x, y), zIndex, layer)
+            zIndex: Float = 0f,
+        ): Unit = placeAutoMirrored(IntOffset(x, y), zIndex, layer)
 
         /**
          * Place a [Placeable] at [position] in its parent's coordinate system with an introduced
@@ -424,17 +424,17 @@ abstract class Placeable : Measured {
          *   placed with a new [position] next time only the graphic layer will be moved without
          *   requiring to redrawn the [Placeable] content.
          */
-        fun Placeable.placeRelativeWithLayer(
+        public fun Placeable.placeRelativeWithLayer(
             position: IntOffset,
             layer: GraphicsLayer,
-            zIndex: Float = 0f
-        ) = placeAutoMirrored(position, zIndex, layer)
+            zIndex: Float = 0f,
+        ): Unit = placeAutoMirrored(position, zIndex, layer)
 
         @Suppress("NOTHING_TO_INLINE")
         internal inline fun Placeable.placeAutoMirrored(
             position: IntOffset,
             zIndex: Float,
-            noinline layerBlock: (GraphicsLayerScope.() -> Unit)?
+            noinline layerBlock: (GraphicsLayerScope.() -> Unit)?,
         ) {
             if (parentLayoutDirection == LayoutDirection.Ltr || parentWidth == 0) {
                 placeApparentToRealOffset(position, zIndex, layerBlock)
@@ -442,7 +442,7 @@ abstract class Placeable : Measured {
                 placeApparentToRealOffset(
                     IntOffset((parentWidth - width - position.x), position.y),
                     zIndex,
-                    layerBlock
+                    layerBlock,
                 )
             }
         }
@@ -451,7 +451,7 @@ abstract class Placeable : Measured {
         internal inline fun Placeable.placeAutoMirrored(
             position: IntOffset,
             zIndex: Float,
-            layer: GraphicsLayer
+            layer: GraphicsLayer,
         ) {
             if (parentLayoutDirection == LayoutDirection.Ltr || parentWidth == 0) {
                 placeApparentToRealOffset(position, zIndex, layer)
@@ -459,7 +459,7 @@ abstract class Placeable : Measured {
                 placeApparentToRealOffset(
                     IntOffset((parentWidth - width - position.x), position.y),
                     zIndex,
-                    layer
+                    layer,
                 )
             }
         }
@@ -478,7 +478,7 @@ abstract class Placeable : Measured {
         internal inline fun Placeable.placeApparentToRealOffset(
             position: IntOffset,
             zIndex: Float,
-            layer: GraphicsLayer
+            layer: GraphicsLayer,
         ) {
             handleMotionFrameOfReferencePlacement()
             placeAt(position + apparentToRealOffset, zIndex, layer)
@@ -502,7 +502,7 @@ abstract class Placeable : Measured {
          * animation when intended. The typical case are layouts that change frequently due to a
          * provided value, like [scroll][androidx.compose.foundation.verticalScroll].
          */
-        fun withMotionFrameOfReferencePlacement(block: PlacementScope.() -> Unit) {
+        public fun withMotionFrameOfReferencePlacement(block: PlacementScope.() -> Unit) {
             motionFrameOfReferencePlacement = true
             block()
             motionFrameOfReferencePlacement = false
@@ -528,7 +528,8 @@ abstract class Placeable : Measured {
 /** Block on [GraphicsLayerScope] which applies the default layer parameters. */
 private val DefaultLayerBlock: GraphicsLayerScope.() -> Unit = {}
 
-private val DefaultConstraints = Constraints()
+private val DefaultConstraints
+    get() = Constraints()
 
 internal fun PlacementScope(
     lookaheadCapablePlaceable: LookaheadCapablePlaceable

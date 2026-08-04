@@ -28,6 +28,7 @@ import androidx.paging.PageEvent.Insert.Companion.Refresh
 import androidx.paging.PagingConfig.Companion.MAX_SIZE_UNBOUNDED
 import androidx.paging.PagingSource.LoadResult.Page
 import androidx.paging.PagingSource.LoadResult.Page.Companion.COUNT_UNDEFINED
+import kotlin.math.abs
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.consumeAsFlow
@@ -42,8 +43,22 @@ import kotlinx.coroutines.sync.withLock
  */
 internal class PageFetcherSnapshotState<Key : Any, Value : Any>
 private constructor(private val config: PagingConfig) {
+    /** Raw loaded data (pre-transform) */
     private val _pages = mutableListOf<Page<Key, Value>>()
+
     internal val pages: List<Page<Key, Value>> = _pages
+
+    private val pageKeys = mutableMapOf<Int, Key?>()
+
+    /**
+     * Index of refresh page relative to the current first page.
+     *
+     * Prepended pages example:
+     * - [prependPage1, prependPage2, refreshPage] --> initialPageIndex = 2
+     *
+     * Dropped pages example with first two pages dropped:
+     * - refreshPage, appendedPage1, [appendedPage2, appendedPage3] --> initialPageIndex = -2
+     */
     internal var initialPageIndex = 0
         private set
 
@@ -133,6 +148,24 @@ private constructor(private val config: PagingConfig) {
     }
 
     /**
+     * Returns the key that was used to load the given page.
+     *
+     * The returned key is nullable because null keys are valid (usually on initial refresh).
+     *
+     * @throws IllegalArgumentException if the given page does not have a cached key.
+     */
+    fun getLoadKey(page: Page<Key, Value>): Key? {
+        val key = page.hashCode()
+        if (!pageKeys.contains(key)) {
+            throw IllegalArgumentException(
+                "Load key not found for Page $page. This likely indicates" +
+                    " an error in the library. Please file a bug in the Buganizer."
+            )
+        }
+        return pageKeys[key]
+    }
+
+    /**
      * Convert a loaded [Page] into a [PageEvent] for [PageFetcherSnapshot.pageEventCh].
      *
      * Note: This method should be called after state updated by [insert]
@@ -176,15 +209,25 @@ private constructor(private val config: PagingConfig) {
         }
     }
 
-    /** @return true if insert was applied, false otherwise. */
+    /**
+     * Inserts loaded pages into [_pages] and updates placeholders counts.
+     *
+     * Caches the [loadKey] that was used to load the inserted [page] so that future loads/refreshes
+     * that are anchored to a specific page can quickly retrieve and reuse the same load key. This
+     * means that every loaded page should be inserted along with its loadKey. Only test usages can
+     * avoid passing in a valid one.
+     *
+     * @return true if insert was applied, false otherwise.
+     */
     @CheckResult
-    fun insert(loadId: Int, loadType: LoadType, page: Page<Key, Value>): Boolean {
+    fun insert(loadId: Int, loadType: LoadType, page: Page<Key, Value>, loadKey: Key?): Boolean {
         when (loadType) {
             REFRESH -> {
                 check(pages.isEmpty()) { "cannot receive multiple init calls" }
                 check(loadId == 0) { "init loadId must be the initial value, 0" }
 
                 _pages.add(page)
+                pageKeys[page.hashCode()] = loadKey
                 initialPageIndex = 0
                 placeholdersAfter = page.itemsAfter
                 placeholdersBefore = page.itemsBefore
@@ -196,6 +239,7 @@ private constructor(private val config: PagingConfig) {
                 if (loadId != prependGenerationId) return false
 
                 _pages.add(0, page)
+                pageKeys[page.hashCode()] = loadKey
                 initialPageIndex++
                 placeholdersBefore =
                     if (page.itemsBefore == COUNT_UNDEFINED) {
@@ -214,6 +258,7 @@ private constructor(private val config: PagingConfig) {
                 if (loadId != appendGenerationId) return false
 
                 _pages.add(page)
+                pageKeys[page.hashCode()] = loadKey
                 placeholdersAfter =
                     if (page.itemsAfter == COUNT_UNDEFINED) {
                         (placeholdersAfter - page.data.size).coerceAtLeast(0)
@@ -240,7 +285,10 @@ private constructor(private val config: PagingConfig) {
 
         when (event.loadType) {
             PREPEND -> {
-                repeat(event.pageCount) { _pages.removeAt(0) }
+                repeat(event.pageCount) {
+                    val removed = _pages.removeAt(0)
+                    pageKeys.remove(removed.hashCode())
+                }
                 initialPageIndex -= event.pageCount
 
                 placeholdersBefore = event.placeholdersRemaining
@@ -249,7 +297,10 @@ private constructor(private val config: PagingConfig) {
                 prependGenerationIdCh.trySend(prependGenerationId)
             }
             APPEND -> {
-                repeat(event.pageCount) { _pages.removeAt(pages.size - 1) }
+                repeat(event.pageCount) {
+                    val removed = _pages.removeAt(pages.size - 1)
+                    pageKeys.remove(removed.hashCode())
+                }
 
                 placeholdersAfter = event.placeholdersRemaining
 
@@ -327,7 +378,7 @@ private constructor(private val config: PagingConfig) {
                             !config.enablePlaceholders -> 0
                             loadType == PREPEND -> placeholdersBefore + itemsToDrop
                             else -> placeholdersAfter + itemsToDrop
-                        }
+                        },
                 )
         }
     }
@@ -353,6 +404,9 @@ private constructor(private val config: PagingConfig) {
                     // incrementally
                     // build anchorPosition and adjust the value we use for placeholdersBefore
                     // accordingly.
+                    // This loop does not include items from the actual page that the hint was based
+                    // on, so
+                    // they need to be added in the following step.
                     for (pageOffset in fetcherPageOffsetFirst until hint.pageOffset) {
                         // Aside from incrementing anchorPosition normally using the loaded page's
                         // size, there are 4 race-cases to consider:
@@ -389,7 +443,29 @@ private constructor(private val config: PagingConfig) {
                     // hint.indexInPage, which accounts for placeholders and may not be within the
                     // bounds
                     // of page.data.indices.
-                    anchorPosition += hint.indexInPage
+                    anchorPosition +=
+                        // Accessing placeholders. `indexInPage` may include separators, but
+                        // they need to be excluded from
+                        // anchorPosition so we cannot rely on `indexInPage` and should use
+                        // `presentedItemsX` instead.
+                        // This will work for non-transformed data as well as data with
+                        // separators.
+                        if (hint.presentedItemsAfter < 0) {
+                            // adding last page's loaded data size + number of
+                            // placeholders accessed.
+                            pages[hint.pageOffset + initialPageIndex].data.size - 1 +
+                                abs(hint.presentedItemsAfter)
+                        } else if (hint.presentedItemsBefore < 0) {
+                            // essentially deducting accessed placeholders from placeholdersBefore
+                            hint.presentedItemsBefore
+                        } else {
+                            // Access within bounds of loaded data. `indexInPage` may include
+                            // separators, but
+                            // this layer does not if any or how many separators were injected, so
+                            // using indexInPage is
+                            // a best-effort here
+                            hint.indexInPage
+                        }
 
                     // In the special case where viewportHint references a missing PREPEND page, we
                     // need
@@ -404,7 +480,7 @@ private constructor(private val config: PagingConfig) {
                     return@let anchorPosition
                 },
             config = config,
-            leadingPlaceholderCount = placeholdersBefore
+            leadingPlaceholderCount = placeholdersBefore,
         )
 
     /**

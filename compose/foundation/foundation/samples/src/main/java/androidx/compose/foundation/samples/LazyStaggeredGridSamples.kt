@@ -29,6 +29,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.lazy.layout.LazyLayoutCacheWindow
 import androidx.compose.foundation.lazy.layout.LazyLayoutScrollScope
 import androidx.compose.foundation.lazy.staggeredgrid.LazyHorizontalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.LazyLayoutScrollScope
@@ -41,8 +42,8 @@ import androidx.compose.foundation.lazy.staggeredgrid.itemsIndexed
 import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.Button
-import androidx.compose.material.Text
+import androidx.compose.material3.Button
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -81,23 +82,36 @@ fun LazyVerticalStaggeredGridSpanSample() {
     LazyVerticalStaggeredGrid(
         columns = StaggeredGridCells.Fixed(3),
         horizontalArrangement = Arrangement.spacedBy(16.dp),
-        verticalItemSpacing = 16.dp
+        verticalItemSpacing = 16.dp,
     ) {
         sections.forEachIndexed { index, items ->
             item(span = StaggeredGridItemSpan.FullLine) {
                 Text(
                     "This is section $index",
-                    Modifier.border(1.dp, Color.Gray).height(80.dp).wrapContentSize()
+                    Modifier.border(1.dp, Color.Gray).height(80.dp).wrapContentSize(),
                 )
             }
             items(
                 items,
                 // not required as it is the default
-                span = { StaggeredGridItemSpan.SingleLane }
+                span = { StaggeredGridItemSpan.SingleLane },
             ) {
                 Text("Item $it", Modifier.border(1.dp, Color.Blue).height(80.dp).wrapContentSize())
             }
         }
+    }
+}
+
+@Sampled
+@Composable
+fun LazyStaggeredGridCacheWindowSample() {
+    val itemsList = (0..100).toList()
+
+    LazyVerticalStaggeredGrid(
+        columns = StaggeredGridCells.Fixed(3),
+        cacheWindow = LazyLayoutCacheWindow(aheadFraction = 0.5f, behindFraction = 0.2f),
+    ) {
+        items(itemsList) { item -> Text("Item $item") }
     }
 }
 
@@ -127,19 +141,19 @@ fun LazyHorizontalStaggeredGridSpanSample() {
     LazyHorizontalStaggeredGrid(
         rows = StaggeredGridCells.Fixed(3),
         verticalArrangement = Arrangement.spacedBy(16.dp),
-        horizontalItemSpacing = 16.dp
+        horizontalItemSpacing = 16.dp,
     ) {
         sections.forEachIndexed { index, items ->
             item(span = StaggeredGridItemSpan.FullLine) {
                 Text(
                     "This is section $index",
-                    Modifier.border(1.dp, Color.Gray).padding(16.dp).wrapContentSize()
+                    Modifier.border(1.dp, Color.Gray).padding(16.dp).wrapContentSize(),
                 )
             }
             items(
                 items,
                 // not required as it is the default
-                span = { StaggeredGridItemSpan.SingleLane }
+                span = { StaggeredGridItemSpan.SingleLane },
             ) {
                 Text("Item $it", Modifier.border(1.dp, Color.Blue).width(80.dp).wrapContentSize())
             }
@@ -183,7 +197,7 @@ fun LazyStaggeredGridCustomScrollUsingLazyLayoutScrollScopeSample() {
                         androidx.compose.animation.core.animate(
                             0f,
                             distance,
-                            animationSpec = tween(5_000)
+                            animationSpec = tween(5_000),
                         ) { currentValue, _ ->
                             previousValue += scrollBy(currentValue - previousValue)
                         }
@@ -196,7 +210,7 @@ fun LazyStaggeredGridCustomScrollUsingLazyLayoutScrollScopeSample() {
         LazyHorizontalStaggeredGrid(
             state = state,
             rows = StaggeredGridCells.Fixed(3),
-            modifier = Modifier.height(600.dp).fillMaxWidth()
+            modifier = Modifier.height(600.dp).fillMaxWidth(),
         ) {
             items(itemsList) {
                 Box(Modifier.padding(2.dp).background(Color.Red).size(45.dp)) {

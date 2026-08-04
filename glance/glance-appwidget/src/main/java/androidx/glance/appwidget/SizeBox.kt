@@ -76,7 +76,7 @@ internal fun SizeBox(size: DpSize, sizeMode: SizeMode, content: @Composable () -
                 this.set(size) { this.size = it }
                 this.set(sizeMode) { this.sizeMode = it }
             },
-            content = content
+            content = content,
         )
     }
 }
@@ -108,7 +108,6 @@ internal fun ForEachSize(sizeMode: SizeMode, minSize: DpSize, content: @Composab
                         .map { findBestSize(it, sizeMode.sizes) ?: smallestSize }
                         .ifEmpty { listOf(smallestSize, smallestSize) }
                 }
-            else -> error("Unknown sizeMode: $sizeMode")
         }
     sizes.distinct().map { size -> SizeBox(size, sizeMode, content) }
 }

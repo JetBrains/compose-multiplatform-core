@@ -16,12 +16,19 @@
 
 package androidx.compose.ui.autofill
 
+import android.credentials.GetCredentialException
+import android.credentials.GetCredentialRequest
+import android.credentials.GetCredentialResponse
+import android.os.OutcomeReceiver
 import android.view.View
 import android.view.ViewStructure
 import android.view.autofill.AutofillId
 import android.view.autofill.AutofillManager
 import android.view.autofill.AutofillValue
 import androidx.annotation.RequiresApi
+
+/** The max length of the text passed to AutoFillValue to prevent sending too much data. */
+internal const val MAX_AUTOFILL_TEXT_LENGTH = 5000
 
 /**
  * This class is here to ensure that the classes that use this API will get verified and can be AOT
@@ -46,7 +53,7 @@ internal object AutofillApi27Helper {
         view: View,
         autofillManager: AutofillManager,
         semanticsId: Int,
-        isVisible: Boolean
+        isVisible: Boolean,
     ) {
         autofillManager.notifyViewVisibilityChanged(view, semanticsId, isVisible)
     }
@@ -71,7 +78,7 @@ internal object AutofillApi26Helper {
         id: Int,
         packageName: String?,
         typeName: String?,
-        entryName: String?
+        entryName: String?,
     ) = structure.setId(id, packageName, typeName, entryName)
 
     @RequiresApi(26)
@@ -82,7 +89,7 @@ internal object AutofillApi26Helper {
         scrollX: Int,
         scrollY: Int,
         width: Int,
-        height: Int
+        height: Int,
     ) = structure.setDimens(left, top, scrollX, scrollY, width, height)
 
     @RequiresApi(26) fun getAutofillId(structure: ViewStructure) = structure.autofillId
@@ -179,6 +186,46 @@ internal object AutofillApi26Helper {
 
     @RequiresApi(26)
     fun getAutofillTextValue(value: String): AutofillValue {
-        return AutofillValue.forText(value)
+        return AutofillValue.forText(trimToSafeLength(value))
     }
+
+    @RequiresApi(26)
+    fun getAutofillToggleValue(value: Boolean): AutofillValue {
+        return AutofillValue.forToggle(value)
+    }
+}
+
+/**
+ * This class is here to ensure that the classes that use this API will get verified and can be AOT
+ * compiled. It is expected that this class will soft-fail verification, but the classes which use
+ * this method will pass.
+ */
+@RequiresApi(35)
+internal object AutofillApi35Helper {
+    @RequiresApi(35)
+    fun setPendingCredentialRequest(
+        structure: ViewStructure,
+        request: GetCredentialRequest,
+        callback: OutcomeReceiver<GetCredentialResponse, GetCredentialException>,
+    ) {
+        structure.setPendingCredentialRequest(request, callback)
+    }
+
+    @RequiresApi(35)
+    fun clearCredentialManagerRequest(structure: ViewStructure) {
+        structure.clearCredentialManagerRequest()
+    }
+}
+
+/** Trim the text to a safe length to prevent sending too much data, which will cause crash . */
+internal fun trimToSafeLength(text: CharSequence): CharSequence {
+    val size = MAX_AUTOFILL_TEXT_LENGTH
+    if (text.length <= size) {
+        return text
+    }
+    // Don't break a surrogate pair when trimming the text.
+    if (Character.isHighSurrogate(text[size - 1]) && Character.isLowSurrogate(text[size])) {
+        return text.take(size - 1)
+    }
+    return text.take(size)
 }

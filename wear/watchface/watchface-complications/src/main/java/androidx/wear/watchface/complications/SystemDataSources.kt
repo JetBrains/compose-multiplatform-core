@@ -237,7 +237,7 @@ public class SystemDataSources private constructor() {
         DATA_SOURCE_DAY_OF_WEEK,
         DATA_SOURCE_FAVORITE_CONTACT,
         DATA_SOURCE_DAY_AND_DATE,
-        DATA_SOURCE_HEART_RATE
+        DATA_SOURCE_HEART_RATE,
     )
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     @Retention(AnnotationRetention.SOURCE)

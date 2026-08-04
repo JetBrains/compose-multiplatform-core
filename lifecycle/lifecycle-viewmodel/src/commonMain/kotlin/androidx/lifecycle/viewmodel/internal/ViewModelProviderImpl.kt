@@ -14,14 +14,13 @@
  * limitations under the License.
  */
 
-package androidx.lifecycle.viewmodel
+package androidx.lifecycle.viewmodel.internal
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStore
-import androidx.lifecycle.viewmodel.internal.SynchronizedObject
-import androidx.lifecycle.viewmodel.internal.ViewModelProviders
-import androidx.lifecycle.viewmodel.internal.synchronized
+import androidx.lifecycle.viewmodel.CreationExtras
+import androidx.lifecycle.viewmodel.MutableCreationExtras
 import kotlin.reflect.KClass
 
 /**
@@ -48,9 +47,6 @@ internal class ViewModelProviderImpl(
         return synchronized(lock) {
             val viewModel = store[key]
             if (modelClass.isInstance(viewModel)) {
-                if (factory is ViewModelProvider.OnRequeryFactory) {
-                    factory.onRequery(viewModel!!)
-                }
                 return@synchronized viewModel as T
             }
 
@@ -72,8 +68,8 @@ internal class ViewModelProviderImpl(
  * Android-specific implementation that first attempts all `ViewModelProvider.Factory.create` method
  * overloads before allowing the exception to propagate.
  *
- * @see <a href="https://b.corp.google.com/issues/230454566">b/230454566</a>
- * @see <a href="https://b.corp.google.com/issues/341792251">b/341792251</a>
+ * @see <a href="https://issuetracker.google.com/issues/230454566">b/230454566</a>
+ * @see <a href="https://issuetracker.google.com/issues/341792251">b/341792251</a>
  * @see <a href="https://github.com/square/leakcanary/issues/2314">leakcanary/issues/2314</a>
  * @see <a href="https://github.com/square/leakcanary/issues/2677">leakcanary/issues/2677</a>
  */

@@ -57,16 +57,25 @@ import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.clearInvocations
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.times
+import org.mockito.kotlin.verify
 
 @RunWith(AndroidJUnit4::class)
 class WorkUpdateTest {
     val workerFactory = TrackingWorkerFactory()
+    val schedulingEventListener: ScheduleEventListener = mock()
+    val executionEventListener: ExecutionEventListener = mock()
     val testClock = TestOverrideClock()
     val configuration =
         Configuration.Builder()
             .setClock(testClock)
             .setWorkerFactory(workerFactory)
             .setTaskExecutor(Executors.newSingleThreadExecutor())
+            .setScheduleEventListener(schedulingEventListener)
+            .setExecutionEventListener(executionEventListener)
             .build()
     val env = TestEnv(configuration)
     val taskExecutor = env.taskExecutor
@@ -75,7 +84,7 @@ class WorkUpdateTest {
         Trackers(
             context = env.context,
             taskExecutor = env.taskExecutor,
-            batteryChargingTracker = fakeChargingTracker
+            batteryChargingTracker = fakeChargingTracker,
         )
     val greedyScheduler = GreedyScheduler(env, trackers)
     val workManager = WorkManager(env, listOf(greedyScheduler), trackers)
@@ -117,6 +126,12 @@ class WorkUpdateTest {
         assertThat(workManager.updateWork(updatedRequest).await()).isEqualTo(APPLIED_FOR_NEXT_RUN)
         worker.result.complete(Result.success())
         workManager.awaitSuccess(oneTimeWorkRequest.id)
+        // Verify that execution lifecycle hooks (onFinished) receive a WorkInfo snapshot preserving
+        // the generation that initiated the execution (0), even though the DB generation is now 1.
+        val captor = argumentCaptor<WorkInfo>()
+        verify(executionEventListener)
+            .onFinished(argumentCaptor<Result>().capture(), captor.capture())
+        assertThat(captor.firstValue.generation).isEqualTo(0)
     }
 
     @Test
@@ -303,8 +318,8 @@ class WorkUpdateTest {
                 .setConstraints(Constraints(requiresCharging = true))
                 .build()
         val step2 = OneTimeWorkRequest.Builder(TestWorker::class).build()
-        workManager.enqueueUniqueWork("name", ExistingWorkPolicy.APPEND, step1)
-        workManager.enqueueUniqueWork("name", ExistingWorkPolicy.APPEND, step2)
+        workManager.enqueueUniqueWork("name", ExistingWorkPolicy.APPEND, step1).await()
+        workManager.enqueueUniqueWork("name", ExistingWorkPolicy.APPEND, step2).await()
         val updatedStep2 =
             OneTimeWorkRequest.Builder(TestWorker::class).setId(step2.id).addTag("updated").build()
         assertThat(workManager.updateWork(updatedStep2).await()).isEqualTo(APPLIED_IMMEDIATELY)
@@ -322,8 +337,8 @@ class WorkUpdateTest {
                 .setConstraints(Constraints(requiresCharging = true))
                 .build()
         val step2 = OneTimeWorkRequest.Builder(TestWorker::class).build()
-        workManager.enqueueUniqueWork("name", ExistingWorkPolicy.APPEND, step1)
-        workManager.enqueueUniqueWork("name", ExistingWorkPolicy.APPEND, step2)
+        workManager.enqueueUniqueWork("name", ExistingWorkPolicy.APPEND, step1).await()
+        workManager.enqueueUniqueWork("name", ExistingWorkPolicy.APPEND, step2).await()
         val workInfo = workManager.getWorkInfoById(step2.id).await()!!
         assertThat(workInfo.state).isEqualTo(State.BLOCKED)
         val updatedStep1 = OneTimeWorkRequest.Builder(TestWorker::class).setId(step1.id).build()
@@ -484,7 +499,7 @@ class WorkUpdateTest {
 
     @Test
     @MediumTest
-    @SdkSuppress(minSdkVersion = 23, maxSdkVersion = 25)
+    @SdkSuppress(maxSdkVersion = 25)
     fun testUpdatePeriodicWorker_preservesConstraintTrackingWorker() = runTest {
         val originRequest =
             OneTimeWorkRequest.Builder(TestWorker::class).setInitialDelay(10, HOURS).build()
@@ -606,6 +621,29 @@ class WorkUpdateTest {
         val workSpec = env.db.workSpecDao().getWorkSpec(request.stringId)!!
         // attemptCount is still kept, just not used in the schedule time calculation.
         assertThat(workSpec.runAttemptCount).isEqualTo(1)
+    }
+
+    @Test
+    @MediumTest
+    fun updateWork_emitsUpdateEvent() = runTest {
+        val oneTimeWorkRequest =
+            OneTimeWorkRequest.Builder(WorkerWithParam::class).setInitialDelay(10, DAYS).build()
+        workManager.enqueue(oneTimeWorkRequest).result.await()
+        clearInvocations(schedulingEventListener)
+
+        val updatedWorkRequest =
+            OneTimeWorkRequest.Builder(WorkerWithParam::class).setId(oneTimeWorkRequest.id).build()
+        workManager.updateWork(updatedWorkRequest).await()
+
+        val workSnapshotCaptor = argumentCaptor<WorkInfo>()
+        verify(schedulingEventListener, times(1))
+            .onUpdated(workSnapshotCaptor.capture(), workSnapshotCaptor.capture())
+        val oldWork = workSnapshotCaptor.allValues.get(0)
+        val newWork = workSnapshotCaptor.allValues.get(1)
+        assertThat(oldWork.id).isEqualTo(oneTimeWorkRequest.id)
+        assertThat(oldWork.generation).isEqualTo(0)
+        assertThat(newWork.id).isEqualTo(oneTimeWorkRequest.id)
+        assertThat(newWork.generation).isEqualTo(1)
     }
 
     @Test

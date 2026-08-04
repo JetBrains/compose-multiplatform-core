@@ -14,6 +14,21 @@ package androidx.autofill {
     field public static final String AUTOFILL_HINT_CREDIT_CARD_EXPIRATION_YEAR = "creditCardExpirationYear";
     field public static final String AUTOFILL_HINT_CREDIT_CARD_NUMBER = "creditCardNumber";
     field public static final String AUTOFILL_HINT_CREDIT_CARD_SECURITY_CODE = "creditCardSecurityCode";
+    field public static final String AUTOFILL_HINT_DRIVER_LICENSE_EXPIRATION_DATE = "driverLicenseExpirationDate";
+    field public static final String AUTOFILL_HINT_DRIVER_LICENSE_EXPIRATION_DAY = "driverLicenseExpirationDay";
+    field public static final String AUTOFILL_HINT_DRIVER_LICENSE_EXPIRATION_MONTH = "driverLicenseExpirationMonth";
+    field public static final String AUTOFILL_HINT_DRIVER_LICENSE_EXPIRATION_YEAR = "driverLicenseExpirationYear";
+    field public static final String AUTOFILL_HINT_DRIVER_LICENSE_HOLDER_NAME = "driverLicenseHolderName";
+    field public static final String AUTOFILL_HINT_DRIVER_LICENSE_HOLDER_NAME_FAMILY = "driverLicenseHolderNameFamily";
+    field public static final String AUTOFILL_HINT_DRIVER_LICENSE_HOLDER_NAME_GIVEN = "driverLicenseHolderNameGiven";
+    field public static final String AUTOFILL_HINT_DRIVER_LICENSE_HOLDER_NAME_MIDDLE = "driverLicenseHolderNameMiddle";
+    field public static final String AUTOFILL_HINT_DRIVER_LICENSE_ISSUE_COUNTRY_CODE = "driverLicenseIssueCountryCode";
+    field public static final String AUTOFILL_HINT_DRIVER_LICENSE_ISSUE_DATE = "driverLicenseIssueDate";
+    field public static final String AUTOFILL_HINT_DRIVER_LICENSE_ISSUE_DAY = "driverLicenseIssueDay";
+    field public static final String AUTOFILL_HINT_DRIVER_LICENSE_ISSUE_MONTH = "driverLicenseIssueMonth";
+    field public static final String AUTOFILL_HINT_DRIVER_LICENSE_ISSUE_REGION_NAME = "driverLicenseIssueRegionName";
+    field public static final String AUTOFILL_HINT_DRIVER_LICENSE_ISSUE_YEAR = "driverLicenseIssueYear";
+    field public static final String AUTOFILL_HINT_DRIVER_LICENSE_NUMBER = "driverLicenseNumber";
     field public static final String AUTOFILL_HINT_EMAIL_ADDRESS = "emailAddress";
     field public static final String AUTOFILL_HINT_EMAIL_OTP = "emailOTPCode";
     field public static final String AUTOFILL_HINT_FLIGHT_CONFIRMATION_CODE = "flightConfirmationCode";
@@ -26,6 +41,20 @@ package androidx.autofill {
     field public static final String AUTOFILL_HINT_NEW_PASSWORD = "newPassword";
     field public static final String AUTOFILL_HINT_NEW_USERNAME = "newUsername";
     field public static final String AUTOFILL_HINT_NOT_APPLICABLE = "notApplicable";
+    field public static final String AUTOFILL_HINT_PASSPORT_EXPIRATION_DATE = "passportExpirationDate";
+    field public static final String AUTOFILL_HINT_PASSPORT_EXPIRATION_DAY = "passportExpirationDay";
+    field public static final String AUTOFILL_HINT_PASSPORT_EXPIRATION_MONTH = "passportExpirationMonth";
+    field public static final String AUTOFILL_HINT_PASSPORT_EXPIRATION_YEAR = "passportExpirationYear";
+    field public static final String AUTOFILL_HINT_PASSPORT_HOLDER_NAME = "passportHolderName";
+    field public static final String AUTOFILL_HINT_PASSPORT_HOLDER_NAME_FAMILY = "passportHolderNameFamily";
+    field public static final String AUTOFILL_HINT_PASSPORT_HOLDER_NAME_GIVEN = "passportHolderNameGiven";
+    field public static final String AUTOFILL_HINT_PASSPORT_HOLDER_NAME_MIDDLE = "passportHolderNameMiddle";
+    field public static final String AUTOFILL_HINT_PASSPORT_ISSUE_COUNTRY_CODE = "passportIssueCountryCode";
+    field public static final String AUTOFILL_HINT_PASSPORT_ISSUE_DATE = "passportIssueDate";
+    field public static final String AUTOFILL_HINT_PASSPORT_ISSUE_DAY = "passportIssueDay";
+    field public static final String AUTOFILL_HINT_PASSPORT_ISSUE_MONTH = "passportIssueMonth";
+    field public static final String AUTOFILL_HINT_PASSPORT_ISSUE_YEAR = "passportIssueYear";
+    field public static final String AUTOFILL_HINT_PASSPORT_NUMBER = "passportNumber";
     field public static final String AUTOFILL_HINT_PASSWORD = "password";
     field public static final String AUTOFILL_HINT_PERSON_NAME = "personName";
     field public static final String AUTOFILL_HINT_PERSON_NAME_FAMILY = "personFamilyName";
@@ -173,11 +202,14 @@ package androidx.autofill.inline.v1 {
     method public androidx.autofill.inline.common.ViewStyle? getChipStyle();
     method public androidx.autofill.inline.common.ImageViewStyle? getEndIconStyle();
     method public int getLayoutDirection();
+    method public int getLayoutTruncationPreference();
     method public androidx.autofill.inline.common.ImageViewStyle? getSingleIconChipIconStyle();
     method public androidx.autofill.inline.common.ViewStyle? getSingleIconChipStyle();
     method public androidx.autofill.inline.common.ImageViewStyle? getStartIconStyle();
     method public androidx.autofill.inline.common.TextViewStyle? getSubtitleStyle();
     method public androidx.autofill.inline.common.TextViewStyle? getTitleStyle();
+    field public static final int LAYOUT_TRUNCATION_PREFERENCE_BALANCING_TITLE_SUBTITLE = 1; // 0x1
+    field public static final int LAYOUT_TRUNCATION_PREFERENCE_PRIORITIZE_TITLE = 0; // 0x0
   }
 
   public static final class InlineSuggestionUi.Style.Builder {
@@ -185,6 +217,7 @@ package androidx.autofill.inline.v1 {
     method public androidx.autofill.inline.v1.InlineSuggestionUi.Style.Builder setChipStyle(androidx.autofill.inline.common.ViewStyle);
     method public androidx.autofill.inline.v1.InlineSuggestionUi.Style.Builder setEndIconStyle(androidx.autofill.inline.common.ImageViewStyle);
     method public androidx.autofill.inline.v1.InlineSuggestionUi.Style.Builder setLayoutDirection(int);
+    method public androidx.autofill.inline.v1.InlineSuggestionUi.Style.Builder setLayoutTruncationPreference(int);
     method public androidx.autofill.inline.v1.InlineSuggestionUi.Style.Builder setSingleIconChipIconStyle(androidx.autofill.inline.common.ImageViewStyle);
     method public androidx.autofill.inline.v1.InlineSuggestionUi.Style.Builder setSingleIconChipStyle(androidx.autofill.inline.common.ViewStyle);
     method public androidx.autofill.inline.v1.InlineSuggestionUi.Style.Builder setStartIconStyle(androidx.autofill.inline.common.ImageViewStyle);

@@ -15,65 +15,66 @@
  */
 
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
 
+
+import androidx.build.PlatformIdentifier
 import androidx.build.SoftwareType
+import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 
 plugins {
     id("AndroidXPlugin")
-    id("com.android.library")
     id("AndroidXComposePlugin")
 }
 
 androidXMultiplatform {
-    androidTarget()
+    mac()
+    linux()
+    ios()
+    watchos()
+    tvos()
+    js()
+    wasmJs()
+    mingwX64()
+    desktop()
+    androidLibrary {
+        compileSdk { version = release(35) }
+        namespace = "androidx.paging.compose"
+    }
+
+    defaultPlatform(PlatformIdentifier.ANDROID)
 
     sourceSets {
-        commonMain {
-            dependencies {
-                implementation(libs.kotlinStdlib)
-                api("androidx.compose.foundation:foundation:1.5.0")
-                api(project(":paging:paging-common"))
-                api("androidx.compose.runtime:runtime:1.5.0")
-            }
+        commonMain.dependencies {
+            api(project(":paging:paging-common"))
+            api("androidx.compose.runtime:runtime:1.9.0")
         }
 
-        jvmMain {
-            dependsOn(commonMain)
+        commonTest.dependencies {
+            implementation(project(":internal-testutils-paging"))
         }
 
-        androidMain {
-            dependsOn(jvmMain)
+        androidMain.dependencies {
+            implementation("androidx.compose.ui:ui:1.10.0")
         }
 
-        commonTest {
-            dependencies {
-                implementation(project(":compose:ui:ui-tooling"))
-                implementation(project(":compose:test-utils"))
-                implementation(project(":internal-testutils-paging"))
-            }
+        androidDeviceTest.dependencies {
+            implementation(project(":compose:ui:ui-tooling"))
+            implementation(project(":compose:test-utils"))
+            implementation(project(":compose:ui:ui-test-junit4"))
+            implementation(project(":compose:foundation:foundation"))
+            implementation(libs.testRunner)
+            implementation(libs.junit)
+            implementation(libs.truth)
         }
 
-        jvmTest {
-            dependsOn(commonTest)
-            dependencies {
-                implementation(project(":compose:ui:ui-test-junit4"))
-            }
-        }
-
-        androidInstrumentedTest {
-            dependsOn(jvmTest)
-            dependencies {
-                implementation(libs.testRunner)
-                implementation(libs.junit)
-                implementation(libs.truth)
-            }
-        }
+        create("nonAndroidMain").dependsOn(commonMain)
+        desktopMain.dependsOn(nonAndroidMain)
+        nonJvmMain.dependsOn(nonAndroidMain)
     }
 }
 
@@ -86,9 +87,3 @@ androidx {
     samples(project(":paging:paging-compose:paging-compose-samples"))
 }
 
-android {
-    compileSdk = 35
-    namespace = "androidx.paging.compose"
-    // TODO(b/313699418): need to update compose.runtime version to 1.6.0+
-    experimentalProperties["android.lint.useK2Uast"] = false
-}

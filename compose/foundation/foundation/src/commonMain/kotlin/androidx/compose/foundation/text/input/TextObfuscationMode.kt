@@ -24,32 +24,51 @@ import kotlin.jvm.JvmInline
  * Text obscuring refers to replacing the original text content with a mask via various methods. It
  * is most common in password fields.
  *
- * The default behavior for typing input on Desktop has always been to keep it completely hidden.
- * However, on mobile devices, the default behavior is to briefly reveal the last typed character
- * for a short period or until another character is typed. This helps the user to follow the text
- * input while also protecting their privacy by not revealing too much information to others.
+ * Users are generally accustomed to different default experiences for secure text input on various
+ * platforms. On desktop, the convention is to keep the input entirely hidden. Conversely, mobile
+ * platforms typically offer a brief reveal of the last typed character. This reveal lasts for a
+ * short duration or until another character is entered, aiding users in tracking their input while
+ * maintaining privacy by not exposing too much information.
  */
 @JvmInline
-value class TextObfuscationMode internal constructor(val value: Int) {
-    companion object {
+public value class TextObfuscationMode internal constructor(public val value: Int) {
+    public companion object {
         /**
          * Do not obscure any content, making all the content visible.
          *
-         * It can be useful when you want to briefly reveal the content by clicking a reveal button.
+         * It can be useful when you want to briefly reveal the content by toggling a reveal icon.
          */
-        val Visible = TextObfuscationMode(0)
+        public val Visible: TextObfuscationMode
+            get() = TextObfuscationMode(0)
 
         /**
-         * Default behavior on mobile devices. Reveals the last typed character for a short amount
-         * of time.
+         * Reveals the last typed character for a short amount of time.
          *
-         * Note; on Android this feature also depends on a system setting called
-         * `Settings.System.TEXT_SHOW_PASSWORD`. If the system setting is disabled, this option
-         * behaves exactly as [Hidden].
+         * Forces reveal behavior regardless of platform settings. For platform-dependent behavior,
+         * e.g. Androids "Show Passwords" setting, use [System].
          */
-        val RevealLastTyped = TextObfuscationMode(1)
+        public val RevealLastTyped: TextObfuscationMode
+            get() = TextObfuscationMode(1)
 
-        /** Default behavior on desktop platforms. All characters are hidden. */
-        val Hidden = TextObfuscationMode(2)
+        /** All characters are hidden. */
+        public val Hidden: TextObfuscationMode
+            get() = TextObfuscationMode(2)
+
+        /**
+         * Gives the choice to the platform to hide or show characters.
+         *
+         * On most platforms, the behavior depends on that platform's conventions (typically
+         * defaulting to [Hidden]).
+         *
+         * Android Specific: If the system setting is set to "Show" this setting mimics
+         * [RevealLastTyped], otherwise it mimics [Hidden]. Additionally, there are differences,
+         * depending on the SDK version:
+         * - SDK 37 and later: Respects granular platform settings that can differentiate between
+         *   touch input and physical keyboard input.
+         * - Below SDK 37: Respects the system-wide "Show passwords" toggle
+         *   (`Settings.System.TEXT_SHOW_PASSWORD`) for all input types.
+         */
+        public val System: TextObfuscationMode
+            get() = TextObfuscationMode(3)
     }
 }

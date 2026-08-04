@@ -68,7 +68,7 @@ public interface VectorizedAnimationSpec<V : AnimationVector> {
         playTimeNanos: Long,
         initialValue: V,
         targetValue: V,
-        initialVelocity: V
+        initialVelocity: V,
     ): V
 
     /**
@@ -84,7 +84,7 @@ public interface VectorizedAnimationSpec<V : AnimationVector> {
         playTimeNanos: Long,
         initialValue: V,
         targetValue: V,
-        initialVelocity: V
+        initialVelocity: V,
     ): V
 
     /**
@@ -115,7 +115,7 @@ public interface VectorizedAnimationSpec<V : AnimationVector> {
             getDurationNanos(initialValue, targetValue, initialVelocity),
             initialValue,
             targetValue,
-            initialVelocity
+            initialVelocity,
         )
 }
 
@@ -132,7 +132,7 @@ public interface VectorizedAnimationSpec<V : AnimationVector> {
 internal fun <V : AnimationVector> VectorizedAnimationSpec<V>.getDurationMillis(
     initialValue: V,
     targetValue: V,
-    initialVelocity: V
+    initialVelocity: V,
 ): Long = getDurationNanos(initialValue, targetValue, initialVelocity) / MillisToNanos
 
 /**
@@ -149,7 +149,7 @@ internal fun <V : AnimationVector> VectorizedAnimationSpec<V>.getValueFromMillis
     playTimeMillis: Long,
     start: V,
     end: V,
-    startVelocity: V
+    startVelocity: V,
 ): V = getValueFromNanos(playTimeMillis * MillisToNanos, start, end, startVelocity)
 
 /**
@@ -225,7 +225,7 @@ internal constructor(
     private val defaultEasing: Easing,
     // The [ArcMode] used from time `0` until the first keyframe. So, it applies
     // for the entire duration if [keyframes] is empty.
-    private val initialArcMode: ArcMode
+    private val initialArcMode: ArcMode,
 ) : VectorizedDurationBasedAnimationSpec<V> {
     /**
      * @param keyframes a map from time to a value/easing function pair. The value in each entry
@@ -238,7 +238,7 @@ internal constructor(
     public constructor(
         keyframes: Map<Int, Pair<V, Easing>>,
         durationMillis: Int,
-        delayMillis: Int = 0
+        delayMillis: Int = 0,
     ) : this(
         timestamps =
             kotlin.run {
@@ -261,7 +261,7 @@ internal constructor(
                         VectorizedKeyframeSpecElementInfo(
                             vectorValue = valueEasing.first,
                             easing = valueEasing.second,
-                            arcMode = ArcMode.ArcLinear
+                            arcMode = ArcMode.ArcLinear,
                         )
                 }
 
@@ -270,7 +270,7 @@ internal constructor(
         durationMillis = durationMillis,
         delayMillis = delayMillis,
         defaultEasing = LinearEasing,
-        initialArcMode = ArcMode.ArcLinear
+        initialArcMode = ArcMode.ArcLinear,
     )
 
     /**
@@ -359,7 +359,7 @@ internal constructor(
         playTimeNanos: Long,
         initialValue: V,
         targetValue: V,
-        initialVelocity: V
+        initialVelocity: V,
     ): V {
         val playTimeMillis = playTimeNanos / MillisToNanos
         val clampedPlayTime = clampPlayTime(playTimeMillis).toInt()
@@ -424,7 +424,7 @@ internal constructor(
         playTimeNanos: Long,
         initialValue: V,
         targetValue: V,
-        initialVelocity: V
+        initialVelocity: V,
     ): V {
         val playTimeMillis = playTimeNanos / MillisToNanos
         val clampedPlayTime = clampPlayTime(playTimeMillis)
@@ -502,7 +502,7 @@ internal constructor(
 internal data class VectorizedKeyframeSpecElementInfo<V : AnimationVector>(
     val vectorValue: V,
     val easing: Easing,
-    val arcMode: ArcMode
+    val arcMode: ArcMode,
 )
 
 /**
@@ -521,20 +521,23 @@ public value class ArcMode internal constructor(internal val value: Int) {
          * Interpolates using a quarter of an Ellipse where the curve is "above" the center of the
          * Ellipse.
          */
-        public val ArcAbove: ArcMode = ArcMode(ArcSplineArcAbove)
+        public val ArcAbove: ArcMode
+            get() = ArcMode(ArcSplineArcAbove)
 
         /**
          * Interpolates using a quarter of an Ellipse where the curve is "below" the center of the
          * Ellipse.
          */
-        public val ArcBelow: ArcMode = ArcMode(ArcSplineArcBelow)
+        public val ArcBelow: ArcMode
+            get() = ArcMode(ArcSplineArcBelow)
 
         /**
          * An [ArcMode] that forces linear interpolation.
          *
          * You'll likely only use this mode within a keyframe.
          */
-        public val ArcLinear: ArcMode = ArcMode(ArcSplineArcStartLinear)
+        public val ArcLinear: ArcMode
+            get() = ArcMode(ArcSplineArcStartLinear)
     }
 }
 
@@ -551,7 +554,7 @@ public class VectorizedSnapSpec<V : AnimationVector>(override val delayMillis: I
         playTimeNanos: Long,
         initialValue: V,
         targetValue: V,
-        initialVelocity: V
+        initialVelocity: V,
     ): V {
         return if (playTimeNanos < delayMillis * MillisToNanos) {
             initialValue
@@ -564,7 +567,7 @@ public class VectorizedSnapSpec<V : AnimationVector>(override val delayMillis: I
         playTimeNanos: Long,
         initialValue: V,
         targetValue: V,
-        initialVelocity: V
+        initialVelocity: V,
     ): V {
         return initialVelocity
     }
@@ -589,17 +592,17 @@ public class VectorizedSnapSpec<V : AnimationVector>(override val delayMillis: I
 public class VectorizedInfiniteRepeatableSpec<V : AnimationVector>(
     private val animation: VectorizedDurationBasedAnimationSpec<V>,
     private val repeatMode: RepeatMode = RepeatMode.Restart,
-    initialStartOffset: StartOffset = StartOffset(0)
+    initialStartOffset: StartOffset = StartOffset(0),
 ) : VectorizedAnimationSpec<V> {
     @Deprecated(
         level = DeprecationLevel.HIDDEN,
         message =
             "This method has been deprecated in favor of the constructor that" +
-                " accepts start offset."
+                " accepts start offset.",
     )
     public constructor(
         animation: VectorizedDurationBasedAnimationSpec<V>,
-        repeatMode: RepeatMode = RepeatMode.Restart
+        repeatMode: RepeatMode = RepeatMode.Restart,
     ) : this(animation, repeatMode, StartOffset(0))
 
     override val isInfinite: Boolean
@@ -629,7 +632,7 @@ public class VectorizedInfiniteRepeatableSpec<V : AnimationVector>(
         playTimeNanos: Long,
         start: V,
         startVelocity: V,
-        end: V
+        end: V,
     ): V =
         if (playTimeNanos + initialOffsetNanos > durationNanos) {
             // Start velocity of the 2nd and subsequent iteration will be the velocity at the end
@@ -638,7 +641,7 @@ public class VectorizedInfiniteRepeatableSpec<V : AnimationVector>(
                 playTimeNanos = durationNanos - initialOffsetNanos,
                 initialValue = start,
                 targetValue = end,
-                initialVelocity = startVelocity
+                initialVelocity = startVelocity,
             )
         } else {
             startVelocity
@@ -648,13 +651,13 @@ public class VectorizedInfiniteRepeatableSpec<V : AnimationVector>(
         playTimeNanos: Long,
         initialValue: V,
         targetValue: V,
-        initialVelocity: V
+        initialVelocity: V,
     ): V {
         return animation.getValueFromNanos(
             repetitionPlayTimeNanos(playTimeNanos),
             initialValue,
             targetValue,
-            repetitionStartVelocity(playTimeNanos, initialValue, initialVelocity, targetValue)
+            repetitionStartVelocity(playTimeNanos, initialValue, initialVelocity, targetValue),
         )
     }
 
@@ -662,13 +665,13 @@ public class VectorizedInfiniteRepeatableSpec<V : AnimationVector>(
         playTimeNanos: Long,
         initialValue: V,
         targetValue: V,
-        initialVelocity: V
+        initialVelocity: V,
     ): V {
         return animation.getVelocityFromNanos(
             repetitionPlayTimeNanos(playTimeNanos),
             initialValue,
             targetValue,
-            repetitionStartVelocity(playTimeNanos, initialValue, initialVelocity, targetValue)
+            repetitionStartVelocity(playTimeNanos, initialValue, initialVelocity, targetValue),
         )
     }
 
@@ -700,18 +703,18 @@ public class VectorizedRepeatableSpec<V : AnimationVector>(
     private val iterations: Int,
     private val animation: VectorizedDurationBasedAnimationSpec<V>,
     private val repeatMode: RepeatMode = RepeatMode.Restart,
-    initialStartOffset: StartOffset = StartOffset(0)
+    initialStartOffset: StartOffset = StartOffset(0),
 ) : VectorizedFiniteAnimationSpec<V> {
     @Deprecated(
         level = DeprecationLevel.HIDDEN,
         message =
             "This method has been deprecated in favor of the constructor that accepts" +
-                " start offset."
+                " start offset.",
     )
     public constructor(
         iterations: Int,
         animation: VectorizedDurationBasedAnimationSpec<V>,
-        repeatMode: RepeatMode = RepeatMode.Restart
+        repeatMode: RepeatMode = RepeatMode.Restart,
     ) : this(iterations, animation, repeatMode, StartOffset(0))
 
     init {
@@ -745,7 +748,7 @@ public class VectorizedRepeatableSpec<V : AnimationVector>(
         playTimeNanos: Long,
         start: V,
         startVelocity: V,
-        end: V
+        end: V,
     ): V =
         if (playTimeNanos + initialOffsetNanos > durationNanos) {
             // Start velocity of the 2nd and subsequent iteration will be the velocity at the end
@@ -757,13 +760,13 @@ public class VectorizedRepeatableSpec<V : AnimationVector>(
         playTimeNanos: Long,
         initialValue: V,
         targetValue: V,
-        initialVelocity: V
+        initialVelocity: V,
     ): V {
         return animation.getValueFromNanos(
             repetitionPlayTimeNanos(playTimeNanos),
             initialValue,
             targetValue,
-            repetitionStartVelocity(playTimeNanos, initialValue, initialVelocity, targetValue)
+            repetitionStartVelocity(playTimeNanos, initialValue, initialVelocity, targetValue),
         )
     }
 
@@ -771,13 +774,13 @@ public class VectorizedRepeatableSpec<V : AnimationVector>(
         playTimeNanos: Long,
         initialValue: V,
         targetValue: V,
-        initialVelocity: V
+        initialVelocity: V,
     ): V {
         return animation.getVelocityFromNanos(
             repetitionPlayTimeNanos(playTimeNanos),
             initialValue,
             targetValue,
-            repetitionStartVelocity(playTimeNanos, initialValue, initialVelocity, targetValue)
+            repetitionStartVelocity(playTimeNanos, initialValue, initialVelocity, targetValue),
         )
     }
 
@@ -851,7 +854,7 @@ public class VectorizedSpringSpec<V : AnimationVector>
 private constructor(
     public val dampingRatio: Float,
     public val stiffness: Float,
-    anims: Animations
+    anims: Animations,
 ) : VectorizedFiniteAnimationSpec<V> by VectorizedFloatAnimationSpec(anims) {
 
     /**
@@ -867,19 +870,33 @@ private constructor(
     public constructor(
         dampingRatio: Float = Spring.DampingRatioNoBouncy,
         stiffness: Float = Spring.StiffnessMedium,
-        visibilityThreshold: V? = null
+        visibilityThreshold: V? = null,
     ) : this(
         dampingRatio,
         stiffness,
-        createSpringAnimations(visibilityThreshold, dampingRatio, stiffness)
+        createSpringAnimations(visibilityThreshold, dampingRatio, stiffness),
     )
+}
+
+// Cache default spring parameters to reduce allocations for the default case.
+private object DefaultSpringAnimations : Animations {
+    private val anim = FloatSpringSpec(Spring.DampingRatioNoBouncy, Spring.StiffnessMedium)
+
+    override fun get(index: Int): FloatSpringSpec = anim
 }
 
 private fun <V : AnimationVector> createSpringAnimations(
     visibilityThreshold: V?,
     dampingRatio: Float,
-    stiffness: Float
+    stiffness: Float,
 ): Animations {
+    if (
+        visibilityThreshold == null &&
+            dampingRatio == Spring.DampingRatioNoBouncy &&
+            stiffness == Spring.StiffnessMedium
+    ) {
+        return DefaultSpringAnimations
+    }
     return if (visibilityThreshold != null) {
         object : Animations {
             private val anims =
@@ -912,7 +929,7 @@ private fun <V : AnimationVector> createSpringAnimations(
 public class VectorizedTweenSpec<V : AnimationVector>(
     override val durationMillis: Int = DefaultDurationMillis,
     override val delayMillis: Int = 0,
-    public val easing: Easing = FastOutSlowInEasing
+    public val easing: Easing = FastOutSlowInEasing,
 ) : VectorizedDurationBasedAnimationSpec<V> {
 
     private val anim =
@@ -922,7 +939,7 @@ public class VectorizedTweenSpec<V : AnimationVector>(
         playTimeNanos: Long,
         initialValue: V,
         targetValue: V,
-        initialVelocity: V
+        initialVelocity: V,
     ): V {
         return anim.getValueFromNanos(playTimeNanos, initialValue, targetValue, initialVelocity)
     }
@@ -931,7 +948,7 @@ public class VectorizedTweenSpec<V : AnimationVector>(
         playTimeNanos: Long,
         initialValue: V,
         targetValue: V,
-        initialVelocity: V
+        initialVelocity: V,
     ): V {
         return anim.getVelocityFromNanos(playTimeNanos, initialValue, targetValue, initialVelocity)
     }
@@ -968,7 +985,7 @@ internal constructor(private val anims: Animations) : VectorizedFiniteAnimationS
         playTimeNanos: Long,
         initialValue: V,
         targetValue: V,
-        initialVelocity: V
+        initialVelocity: V,
     ): V {
         if (!::valueVector.isInitialized) {
             valueVector = initialValue.newInstance()
@@ -979,7 +996,7 @@ internal constructor(private val anims: Animations) : VectorizedFiniteAnimationS
                     playTimeNanos,
                     initialValue[i],
                     targetValue[i],
-                    initialVelocity[i]
+                    initialVelocity[i],
                 )
         }
         return valueVector
@@ -989,7 +1006,7 @@ internal constructor(private val anims: Animations) : VectorizedFiniteAnimationS
         playTimeNanos: Long,
         initialValue: V,
         targetValue: V,
-        initialVelocity: V
+        initialVelocity: V,
     ): V {
         if (!::velocityVector.isInitialized) {
             velocityVector = initialVelocity.newInstance()
@@ -1000,7 +1017,7 @@ internal constructor(private val anims: Animations) : VectorizedFiniteAnimationS
                     playTimeNanos,
                     initialValue[i],
                     targetValue[i],
-                    initialVelocity[i]
+                    initialVelocity[i],
                 )
         }
         return velocityVector
@@ -1024,7 +1041,7 @@ internal constructor(private val anims: Animations) : VectorizedFiniteAnimationS
             maxDuration =
                 maxOf(
                     maxDuration,
-                    anims[i].getDurationNanos(initialValue[i], targetValue[i], initialVelocity[i])
+                    anims[i].getDurationNanos(initialValue[i], targetValue[i], initialVelocity[i]),
                 )
         }
         return maxDuration

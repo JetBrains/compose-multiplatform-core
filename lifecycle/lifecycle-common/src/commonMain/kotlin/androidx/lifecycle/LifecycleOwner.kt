@@ -13,33 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+@file:Suppress("FacadeClassJvmName") // Cannot be updated, the Kt name has been released
+
 package androidx.lifecycle
 
 import kotlinx.coroutines.CoroutineScope
 
 /**
- * A class that has an Android lifecycle. These events can be used by custom components to handle
- * lifecycle changes without implementing any code inside the Activity or the Fragment.
+ * A class that exposes a [Lifecycle].
+ *
+ * Allows custom components to observe and react to lifecycle changes without tight coupling to the
+ * owner's implementation.
  *
  * @see Lifecycle
- * @see ViewTreeLifecycleOwner
  */
 public interface LifecycleOwner {
-    /**
-     * Returns the Lifecycle of the provider.
-     *
-     * @return The lifecycle of the provider.
-     */
+    /** The [Lifecycle] of this owner. */
     public val lifecycle: Lifecycle
 }
 
 /**
  * [CoroutineScope] tied to this [LifecycleOwner]'s [Lifecycle].
  *
- * This scope will be cancelled when the [Lifecycle] is destroyed.
- *
- * This scope is bound to
- * [Dispatchers.Main.immediate][kotlinx.coroutines.MainCoroutineDispatcher.immediate].
+ * Canceled when the [Lifecycle] is destroyed. Bound to `Dispatchers.Main.immediate`.
  */
 public val LifecycleOwner.lifecycleScope: LifecycleCoroutineScope
     get() = lifecycle.coroutineScope

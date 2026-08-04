@@ -20,7 +20,6 @@ import android.os.SystemClock
 import androidx.benchmark.macro.MacrobenchmarkScope
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.wear.compose.material3.Picker
 import androidx.wear.compose.material3.Text
 import androidx.wear.compose.material3.rememberPickerState
@@ -31,11 +30,7 @@ object PickerBenchmark : MacrobenchmarkScreen {
     override val content: @Composable (BoxScope.() -> Unit)
         get() = {
             val state = rememberPickerState(items.size)
-            val contentDescription = remember(state) { { "${state.selectedOptionIndex + 1}" } }
-            Picker(
-                state = state,
-                contentDescription = contentDescription,
-            ) {
+            Picker(state = state, contentDescription = { "${state.selectedOptionIndex + 1}" }) {
                 Text(items[it])
             }
         }
@@ -49,7 +44,7 @@ object PickerBenchmark : MacrobenchmarkScreen {
                     device.displayHeight / 2,
                     device.displayWidth / 2,
                     endY,
-                    10
+                    10,
                 )
                 device.waitForIdle()
                 SystemClock.sleep(500)

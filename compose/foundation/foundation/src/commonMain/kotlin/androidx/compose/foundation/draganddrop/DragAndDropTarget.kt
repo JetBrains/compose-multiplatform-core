@@ -38,25 +38,18 @@ import androidx.compose.ui.platform.InspectorInfo
  * All drag and drop target modifiers in the hierarchy will be given an opportunity to participate
  * in a given drag and drop session via [shouldStartDragAndDrop].
  */
-fun Modifier.dragAndDropTarget(
+public fun Modifier.dragAndDropTarget(
     shouldStartDragAndDrop: (startEvent: DragAndDropEvent) -> Boolean,
     target: DragAndDropTarget,
 ): Modifier =
-    this then
-        DropTargetElement(
-            target = target,
-            shouldStartDragAndDrop = shouldStartDragAndDrop,
-        )
+    this then DropTargetElement(target = target, shouldStartDragAndDrop = shouldStartDragAndDrop)
 
 private class DropTargetElement(
     val shouldStartDragAndDrop: (event: DragAndDropEvent) -> Boolean,
     val target: DragAndDropTarget,
 ) : ModifierNodeElement<DragAndDropTargetNode>() {
     override fun create() =
-        DragAndDropTargetNode(
-            target = target,
-            shouldStartDragAndDrop = shouldStartDragAndDrop,
-        )
+        DragAndDropTargetNode(target = target, shouldStartDragAndDrop = shouldStartDragAndDrop)
 
     override fun update(node: DragAndDropTargetNode) =
         node.update(target = target, shouldStartDragAndDrop = shouldStartDragAndDrop)
@@ -84,7 +77,7 @@ private class DropTargetElement(
 
 private class DragAndDropTargetNode(
     private var shouldStartDragAndDrop: (event: DragAndDropEvent) -> Boolean,
-    private var target: DragAndDropTarget
+    private var target: DragAndDropTarget,
 ) : DelegatingNode() {
 
     private var dragAndDropNode: DragAndDropTargetModifierNode? = null
@@ -95,7 +88,7 @@ private class DragAndDropTargetNode(
 
     fun update(
         shouldStartDragAndDrop: (event: DragAndDropEvent) -> Boolean,
-        target: DragAndDropTarget
+        target: DragAndDropTarget,
     ) {
         this.shouldStartDragAndDrop = shouldStartDragAndDrop
         if (target != this.target) {
@@ -117,7 +110,7 @@ private class DragAndDropTargetNode(
                     // change over
                     // time, and updates to shouldStartDragAndDrop are not destructive.
                     shouldStartDragAndDrop = { this.shouldStartDragAndDrop(it) },
-                    target = this.target
+                    target = this.target,
                 )
             )
     }

@@ -35,7 +35,7 @@ import kotlinx.atomicfu.atomic
  */
 public class FakeCaptureSequenceProcessor(
     private val cameraId: CameraId = FakeCameraIds.default,
-    private val defaultTemplate: RequestTemplate = RequestTemplate(1)
+    private val defaultTemplate: RequestTemplate = RequestTemplate(1),
 ) : CaptureSequenceProcessor<Request, FakeCaptureSequence> {
     private val debugId = debugIds.incrementAndGet()
     private val lock = Any()
@@ -107,7 +107,7 @@ public class FakeCaptureSequenceProcessor(
         graphParameters: Map<*, Any?>,
         requiredParameters: Map<*, Any?>,
         sequenceListener: CaptureSequenceListener,
-        listeners: List<Request.Listener>
+        listeners: List<Request.Listener>,
     ): FakeCaptureSequence? {
         throwTestExceptionIf(throwOnBuild)
 
@@ -122,7 +122,7 @@ public class FakeCaptureSequenceProcessor(
                 requiredParameters,
                 graphParameters,
                 listeners,
-                sequenceListener
+                sequenceListener,
             )
         synchronized(lock) {
             if (rejectBuild || shutdown || captureSequence == null) {
@@ -232,6 +232,9 @@ public class FakeCaptureSequenceProcessor(
 
         public val Event.graphParameters: Map<*, Any?>
             get() = checkNotNull(captureSequence).graphParameters
+
+        public val Event.listeners: List<Request.Listener>
+            get() = checkNotNull(captureSequence).listeners
 
         public val Event.isRepeating: Boolean
             get() =

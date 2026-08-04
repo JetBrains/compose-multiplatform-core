@@ -36,6 +36,7 @@ import androidx.car.app.model.AlertCallback;
 import androidx.car.app.model.CarColor;
 import androidx.car.app.model.CarIcon;
 import androidx.car.app.model.CarIconSpan;
+import androidx.car.app.model.CarIconStyle;
 import androidx.car.app.model.CarText;
 import androidx.car.app.model.DateTimeWithZone;
 import androidx.car.app.model.Distance;
@@ -193,7 +194,12 @@ public class RoutingDemoModelFactory {
                 .setRemainingTimeColor(CarColor.YELLOW)
                 .setRemainingDistanceColor(CarColor.RED)
                 .setTripText(createCarText(R.string.travel_est_trip_text))
-                .setTripIcon(createCarIcon(R.drawable.ic_face_24px))
+                .setTripIcon(
+                        new CarIcon.Builder(
+                                        IconCompat.createWithResource(
+                                                mCarContext, R.drawable.ic_face_24px))
+                                .setStyle(new CarIconStyle.Builder().setTint(CarColor.BLUE).build())
+                                .build())
                 .build();
     }
 

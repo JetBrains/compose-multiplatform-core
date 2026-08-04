@@ -28,5 +28,5 @@ class ScrollIndicatorBenchmarkTest(compilationMode: CompilationMode) :
     BenchmarkTestBase(
         compilationMode = compilationMode,
         macrobenchmarkScreen = ScrollIndicatorBenchmark,
-        actionSuffix = "SCROLL_INDICATOR_ACTIVITY"
+        actionSuffix = "SCROLL_INDICATOR_ACTIVITY",
     )

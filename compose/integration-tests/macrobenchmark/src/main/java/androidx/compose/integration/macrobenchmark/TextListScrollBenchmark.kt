@@ -90,7 +90,7 @@ class TextListScrollBenchmark(private val styled: Boolean, private val prefetch:
                 intent.putExtra(BenchmarkConfig.WordLength, 8)
                 tryFreeTextLayoutCache()
                 startActivityAndWait(intent)
-            }
+            },
         ) {
             val content = device.findObject(By.res("android", "content"))
             content.setGestureMargin(device.displayWidth / 5)

@@ -20,30 +20,30 @@ package androidx.lifecycle
 import android.app.Application
 import androidx.annotation.MainThread
 import androidx.annotation.RestrictTo
+import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.APPLICATION_KEY
 import androidx.lifecycle.viewmodel.CreationExtras
 import androidx.lifecycle.viewmodel.CreationExtras.Key
 import androidx.lifecycle.viewmodel.InitializerViewModelFactory
 import androidx.lifecycle.viewmodel.ViewModelInitializer
-import androidx.lifecycle.viewmodel.ViewModelProviderImpl
 import androidx.lifecycle.viewmodel.internal.JvmViewModelProviders
+import androidx.lifecycle.viewmodel.internal.ViewModelProviderImpl
 import androidx.lifecycle.viewmodel.internal.ViewModelProviders
 import java.lang.reflect.InvocationTargetException
 import kotlin.reflect.KClass
 
+@Suppress("KmpModifierMismatch") // expect is not open
 public actual open class ViewModelProvider
-private constructor(
-    private val impl: ViewModelProviderImpl,
-) {
+private constructor(private val impl: ViewModelProviderImpl) {
 
     /**
      * Creates a [ViewModelProvider]. This provider generates [ViewModel] instances using the
      * specified [Factory] and stores them within the [ViewModelStore] of the provided
      * [ViewModelStoreOwner].
      *
-     * @param store `ViewModelStore` where ViewModels will be stored.
-     * @param factory The [Factory] responsible for creating new [ViewModel] instances.
-     * @param defaultCreationExtras Additional data to be passed to the [Factory] during [ViewModel]
-     *   creation.
+     * @param store [ViewModelStore] where [ViewModel]s will be stored
+     * @param factory [Factory] responsible for creating new [ViewModel] instances
+     * @param defaultCreationExtras additional data to be passed to the [Factory] during [ViewModel]
+     *   creation
      */
     @JvmOverloads
     public constructor(
@@ -62,11 +62,11 @@ private constructor(
      * be used.
      */
     public constructor(
-        owner: ViewModelStoreOwner,
+        owner: ViewModelStoreOwner
     ) : this(
         store = owner.viewModelStore,
-        factory = ViewModelProviders.getDefaultFactory(owner),
-        defaultCreationExtras = ViewModelProviders.getDefaultCreationExtras(owner)
+        factory = owner.defaultViewModelProviderFactory,
+        defaultCreationExtras = owner.defaultViewModelCreationExtras,
     )
 
     /**
@@ -74,9 +74,9 @@ private constructor(
      * specified [Factory] and stores them within the [ViewModelStore] of the provided
      * [ViewModelStoreOwner].
      *
-     * @param owner The [ViewModelStoreOwner] that will manage the lifecycle of the created
-     *   [ViewModel] instances.
-     * @param factory The [Factory] responsible for creating new [ViewModel] instances.
+     * @param owner [ViewModelStoreOwner] that will manage the lifecycle of the created [ViewModel]
+     *   instances
+     * @param factory [Factory] responsible for creating new [ViewModel] instances
      */
     public constructor(
         owner: ViewModelStoreOwner,
@@ -84,7 +84,7 @@ private constructor(
     ) : this(
         store = owner.viewModelStore,
         factory = factory,
-        defaultCreationExtras = ViewModelProviders.getDefaultCreationExtras(owner)
+        defaultCreationExtras = owner.defaultViewModelCreationExtras,
     )
 
     @MainThread
@@ -92,16 +92,16 @@ private constructor(
         impl.getViewModel(modelClass)
 
     /**
-     * Returns an existing ViewModel or creates a new one in the scope (usually, a fragment or an
-     * activity), associated with this `ViewModelProvider`.
+     * Returns an existing [ViewModel] or creates a new one in the scope (usually, a `Fragment` or
+     * an `Activity`) associated with this [ViewModelProvider].
      *
-     * The created ViewModel is associated with the given scope and will be retained as long as the
-     * scope is alive (e.g. if it is an activity, until it is finished or process is killed).
+     * The created [ViewModel] is associated with the given scope and will be retained as long as
+     * the scope is alive (e.g., if it is an `Activity`, until it is finished or the process is
+     * killed).
      *
-     * @param modelClass The class of the ViewModel to create an instance of it if it is not
-     *   present.
-     * @return A ViewModel that is an instance of the given type `T`.
-     * @throws IllegalArgumentException if the given [modelClass] is local or anonymous class.
+     * @param modelClass [Class] of the [ViewModel] to retrieve or create
+     * @return [ViewModel] instance of type [T]
+     * @throws IllegalArgumentException if the given [modelClass] is a local or anonymous class
      */
     public open operator fun <T : ViewModel> get(modelClass: Class<T>): T = get(modelClass.kotlin)
 
@@ -110,16 +110,16 @@ private constructor(
         impl.getViewModel(modelClass, key)
 
     /**
-     * Returns an existing ViewModel or creates a new one in the scope (usually, a fragment or an
-     * activity), associated with this `ViewModelProvider`.
+     * Returns an existing [ViewModel] or creates a new one in the scope (usually, a `Fragment` or
+     * an `Activity`) associated with this [ViewModelProvider].
      *
-     * The created ViewModel is associated with the given scope and will be retained as long as the
-     * scope is alive (e.g. if it is an activity, until it is finished or process is killed).
+     * The created [ViewModel] is associated with the given scope and will be retained as long as
+     * the scope is alive (e.g., if it is an `Activity`, until it is finished or the process is
+     * killed).
      *
-     * @param key The key to use to identify the ViewModel.
-     * @param modelClass The class of the ViewModel to create an instance of it if it is not
-     *   present.
-     * @return A ViewModel that is an instance of the given type `T`.
+     * @param key identifier of the [ViewModel]
+     * @param modelClass [Class] of the [ViewModel] to retrieve or create
+     * @return [ViewModel] instance of type [T]
      */
     public open operator fun <T : ViewModel> get(key: String, modelClass: Class<T>): T =
         impl.getViewModel(modelClass.kotlin, key)
@@ -127,38 +127,35 @@ private constructor(
     public actual interface Factory {
 
         /**
-         * Creates a new instance of the given `Class`.
+         * Creates a new instance of the given [Class].
          *
-         * Default implementation throws [UnsupportedOperationException]. ˆ
+         * Default implementation throws [UnsupportedOperationException].
          *
-         * @param modelClass a `Class` whose instance is requested
-         * @return a newly created ViewModel
+         * @param modelClass [Class] of the [ViewModel] to create
+         * @return new [ViewModel] instance of type [T]
          */
         public fun <T : ViewModel> create(modelClass: Class<T>): T =
             ViewModelProviders.unsupportedCreateViewModel()
 
         /**
-         * Creates a new instance of the given `Class`.
+         * Creates a new instance of the given [Class].
          *
-         * @param modelClass a `Class` whose instance is requested
-         * @param extras an additional information for this creation request
-         * @return a newly created ViewModel
+         * @param modelClass [Class] of the [ViewModel] to create
+         * @param extras [CreationExtras] passed to the [Factory] to create the [ViewModel]
+         * @return new [ViewModel] instance of type [T]
          */
         public fun <T : ViewModel> create(modelClass: Class<T>, extras: CreationExtras): T =
             create(modelClass)
 
-        public actual fun <T : ViewModel> create(
-            modelClass: KClass<T>,
-            extras: CreationExtras,
-        ): T = create(modelClass.java, extras)
+        public actual fun <T : ViewModel> create(modelClass: KClass<T>, extras: CreationExtras): T =
+            create(modelClass.java, extras)
 
         public companion object {
             /**
-             * Creates an [InitializerViewModelFactory] using the given initializers.
+             * Creates an [InitializerViewModelFactory] using the given [initializers].
              *
-             * @param initializers the class initializer pairs used for the factory to create simple
-             *   view models
-             * @see [InitializerViewModelFactory]
+             * @param initializers class initializer pairs used to create simple ViewModels
+             * @see InitializerViewModelFactory
              */
             @JvmStatic
             public fun from(vararg initializers: ViewModelInitializer<*>): Factory =
@@ -166,15 +163,11 @@ private constructor(
         }
     }
 
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public actual open class OnRequeryFactory {
-        public actual open fun onRequery(viewModel: ViewModel) {}
-    }
-
-    /** Simple factory, which calls empty constructor on the give class. */
+    /** Factory that creates [ViewModel] instances by calling their no-argument constructor. */
+    @Suppress("KmpSignatureClash") // also defined in desktop
     public open class NewInstanceFactory
     /**
-     * Construct a new [NewInstanceFactory] instance.
+     * Constructs a new [NewInstanceFactory].
      *
      * Use [NewInstanceFactory.instance] to get a default instance of [NewInstanceFactory].
      */
@@ -194,13 +187,14 @@ private constructor(
             extras: CreationExtras,
         ): T = create(modelClass.java, extras)
 
+        @Suppress("KmpSignatureClash") // also defined in desktop
         public companion object {
             private var _instance: NewInstanceFactory? = null
 
             /**
-             * Retrieve a singleton instance of NewInstanceFactory.
+             * Returns a singleton instance of [NewInstanceFactory].
              *
-             * @return A valid [NewInstanceFactory]
+             * @return a singleton instance of [NewInstanceFactory]
              */
             @JvmStatic
             public val instance: NewInstanceFactory
@@ -229,10 +223,9 @@ private constructor(
     }
 
     /**
-     * [Factory] which may create [AndroidViewModel] and [ViewModel], which have an empty
-     * constructor.
+     * Factory that creates [AndroidViewModel] and [ViewModel] instances.
      *
-     * @param application an application to pass in [AndroidViewModel]
+     * @param application application instance to pass to [AndroidViewModel] constructors
      */
     public open class AndroidViewModelFactory
     private constructor(
@@ -243,18 +236,19 @@ private constructor(
     ) : NewInstanceFactory() {
 
         /**
-         * Constructs this factory. When a factory is constructed this way, a component for which
-         * [ViewModel] is created must provide an [Application] by [APPLICATION_KEY] in
-         * [CreationExtras], otherwise [IllegalArgumentException] will be thrown from [create]
-         * method.
+         * Constructs a new [AndroidViewModelFactory].
+         *
+         * When constructed this way, the caller must provide an [Application] via the
+         * [APPLICATION_KEY] in [CreationExtras] to create an [AndroidViewModel]. Otherwise,
+         * [create] throws an [IllegalArgumentException].
          */
         @Suppress("SingletonConstructor")
         public constructor() : this(application = null, unused = 0)
 
         /**
-         * Constructs this factory.
+         * Constructs a new [AndroidViewModelFactory].
          *
-         * @param application an application to pass in [AndroidViewModel]
+         * @param application application instance to pass to [AndroidViewModel] constructors
          */
         @Suppress("SingletonConstructor")
         public constructor(application: Application) : this(application, unused = 0)
@@ -313,10 +307,10 @@ private constructor(
             private var _instance: AndroidViewModelFactory? = null
 
             /**
-             * Retrieve a singleton instance of AndroidViewModelFactory.
+             * Returns a singleton instance of [AndroidViewModelFactory].
              *
-             * @param application an application to pass in [AndroidViewModel]
-             * @return A valid [AndroidViewModelFactory]
+             * @param application application instance to pass to [AndroidViewModel] constructors
+             * @return a singleton instance of [AndroidViewModelFactory]
              */
             @JvmStatic
             public fun getInstance(application: Application): AndroidViewModelFactory {
@@ -327,7 +321,8 @@ private constructor(
             }
 
             /**
-             * A [CreationExtras.Key] to query an application in which ViewModel is being created.
+             * A [CreationExtras.Key] to query the [Application] instance when creating a
+             * [ViewModel].
              */
             @JvmField public val APPLICATION_KEY: Key<Application> = CreationExtras.Companion.Key()
         }
@@ -347,7 +342,7 @@ private constructor(
         public actual fun create(
             store: ViewModelStore,
             factory: Factory,
-            extras: CreationExtras
+            extras: CreationExtras,
         ): ViewModelProvider = ViewModelProvider(store, factory, extras)
 
         @JvmField public actual val VIEW_MODEL_KEY: Key<String> = CreationExtras.Companion.Key()

@@ -16,6 +16,7 @@
 
 package androidx.compose.foundation.text.input.internal
 
+import android.content.ClipDescription
 import androidx.compose.foundation.content.MediaType
 import androidx.compose.ui.draganddrop.DragAndDropEvent
 import androidx.compose.ui.draganddrop.DragAndDropTarget
@@ -43,9 +44,10 @@ internal actual fun textFieldDragAndDropNode(
             // If there's a receiveContent modifier wrapping around this TextField, initially all
             // dragging items should be accepted for drop. This is expected to be met by the caller
             // of [textFieldDragAndDropNode] function.
-            val clipDescription = dragAndDropEvent.toAndroidDragEvent().clipDescription
+            val clipDescription: ClipDescription? =
+                dragAndDropEvent.toAndroidDragEvent().clipDescription
             hintMediaTypes().any {
-                it == MediaType.All || clipDescription.hasMimeType(it.representation)
+                it == MediaType.All || clipDescription?.hasMimeType(it.representation) == true
             }
         },
         target =
@@ -54,7 +56,7 @@ internal actual fun textFieldDragAndDropNode(
                     dragAndDropRequestPermission(event)
                     return onDrop.invoke(
                         event.toAndroidDragEvent().clipData.toClipEntry(),
-                        event.toAndroidDragEvent().clipDescription.toClipMetadata()
+                        event.toAndroidDragEvent().clipDescription.toClipMetadata(),
                     )
                 }
 
@@ -70,6 +72,6 @@ internal actual fun textFieldDragAndDropNode(
                 override fun onChanged(event: DragAndDropEvent) = onChanged?.invoke(event) ?: Unit
 
                 override fun onEnded(event: DragAndDropEvent) = onEnded?.invoke(event) ?: Unit
-            }
+            },
     )
 }

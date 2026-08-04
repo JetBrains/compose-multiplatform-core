@@ -33,7 +33,10 @@ public interface CameraDevices {
      * availability changes, e.g., an external camera is plugged or unplugged. The flow should also
      * replay the most recent value for each new subscriber.
      */
-    public fun cameraIdsFlow(cameraBackendId: CameraBackendId? = null): Flow<List<CameraId>>
+    public fun cameraIdsFlow(cameraBackendId: CameraBackendId?): Flow<List<CameraId>>
+
+    /** @see [cameraIdsFlow] */
+    public fun cameraIdsFlow(): Flow<List<CameraId>> = cameraIdsFlow(null)
 
     /**
      * Read the list of currently openable [CameraId]s from the provided CameraBackend, suspending
@@ -47,7 +50,10 @@ public interface CameraDevices {
      * thread if needed. By default this will load the list of openable [CameraId]s from the default
      * backend.
      */
-    public fun awaitCameraIds(cameraBackendId: CameraBackendId? = null): List<CameraId>?
+    public fun awaitCameraIds(cameraBackendId: CameraBackendId?): List<CameraId>?
+
+    /** @see [awaitCameraIds] */
+    public fun awaitCameraIds(): List<CameraId>? = awaitCameraIds(null)
 
     /**
      * Read the set of [CameraId] sets that can be operated concurrently from the provided
@@ -63,9 +69,10 @@ public interface CameraDevices {
      * CameraBackend, blocking the thread if needed. By default this will load the set of [CameraId]
      * sets from the default backend.
      */
-    public fun awaitConcurrentCameraIds(
-        cameraBackendId: CameraBackendId? = null
-    ): Set<Set<CameraId>>?
+    public fun awaitConcurrentCameraIds(cameraBackendId: CameraBackendId?): Set<Set<CameraId>>?
+
+    /** @see [awaitConcurrentCameraIds] */
+    public fun awaitConcurrentCameraIds(): Set<Set<CameraId>>? = awaitConcurrentCameraIds(null)
 
     /**
      * Read metadata for a specific camera id, suspending if needed. By default, this method will
@@ -73,7 +80,7 @@ public interface CameraDevices {
      */
     public suspend fun getCameraMetadata(
         cameraId: CameraId,
-        cameraBackendId: CameraBackendId? = null
+        cameraBackendId: CameraBackendId? = null,
     ): CameraMetadata?
 
     /**
@@ -82,17 +89,27 @@ public interface CameraDevices {
      */
     public fun awaitCameraMetadata(
         cameraId: CameraId,
-        cameraBackendId: CameraBackendId? = null
+        cameraBackendId: CameraBackendId?,
     ): CameraMetadata?
+
+    /** @see [awaitCameraMetadata] */
+    public fun awaitCameraMetadata(cameraId: CameraId): CameraMetadata? =
+        awaitCameraMetadata(cameraId, null)
 
     /**
      * Opens the camera device indicated by the cameraId, so that any subsequent open calls will
      * potentially have a better latency.
      */
-    public fun prewarm(cameraId: CameraId, cameraBackendId: CameraBackendId? = null)
+    public fun prewarm(cameraId: CameraId, cameraBackendId: CameraBackendId?)
+
+    /** @see [prewarm] */
+    public fun prewarm(cameraId: CameraId): Unit = prewarm(cameraId, null)
 
     /** Non blocking operation that disconnects the underlying active Camera. */
-    public fun disconnect(cameraId: CameraId, cameraBackendId: CameraBackendId? = null)
+    public fun disconnect(cameraId: CameraId, cameraBackendId: CameraBackendId?)
+
+    /** @see [disconnect] */
+    public fun disconnect(cameraId: CameraId): Unit = disconnect(cameraId, null)
 
     /**
      * Disconnects the underlying active Camera. Once fully closed, the returned [Deferred] should
@@ -100,18 +117,27 @@ public interface CameraDevices {
      */
     public fun disconnectAsync(
         cameraId: CameraId,
-        cameraBackendId: CameraBackendId? = null
+        cameraBackendId: CameraBackendId?,
     ): Deferred<Unit>
 
+    /** @see [disconnectAsync] */
+    public fun disconnectAsync(cameraId: CameraId): Deferred<Unit> = disconnectAsync(cameraId, null)
+
     /** Non blocking operation that disconnects all active Cameras. */
-    public fun disconnectAll(cameraBackendId: CameraBackendId? = null)
+    public fun disconnectAll(cameraBackendId: CameraBackendId?)
+
+    /** @see [disconnectAll] */
+    public fun disconnectAll(): Unit = disconnectAll(null)
 
     /**
      * Non blocking operation that disconnects all active Cameras. Once all connections are fully
      * closed, the returned [Deferred] should be completed. It is synchronous with the other
      * operations within this class.
      */
-    public fun disconnectAllAsync(cameraBackendId: CameraBackendId? = null): Deferred<Unit>
+    public fun disconnectAllAsync(cameraBackendId: CameraBackendId?): Deferred<Unit>
+
+    /** @see [disconnectAllAsync] */
+    public fun disconnectAllAsync(): Deferred<Unit> = disconnectAllAsync(null)
 
     /**
      * Iterate and return a list of CameraId's on the device that are capable of being opened. Some
@@ -121,7 +147,7 @@ public interface CameraDevices {
     @Deprecated(
         message = "findAll() is not able to specify a specific CameraBackendId to query.",
         replaceWith = ReplaceWith("awaitCameraIds"),
-        level = DeprecationLevel.WARNING
+        level = DeprecationLevel.WARNING,
     )
     public fun findAll(): List<CameraId>
 
@@ -132,7 +158,7 @@ public interface CameraDevices {
     @Deprecated(
         message = "ids() is not able to specify a specific CameraBackendId to query.",
         replaceWith = ReplaceWith("getCameraIds"),
-        level = DeprecationLevel.WARNING
+        level = DeprecationLevel.WARNING,
     )
     public suspend fun ids(): List<CameraId>
 
@@ -144,7 +170,7 @@ public interface CameraDevices {
     @Deprecated(
         message = "getMetadata() is not able to specify a specific CameraBackendId to query.",
         replaceWith = ReplaceWith("getCameraMetadata"),
-        level = DeprecationLevel.WARNING
+        level = DeprecationLevel.WARNING,
     )
     public suspend fun getMetadata(camera: CameraId): CameraMetadata
 
@@ -155,7 +181,7 @@ public interface CameraDevices {
     @Deprecated(
         message = "awaitMetadata() is not able to specify a specific CameraBackendId to query.",
         replaceWith = ReplaceWith("awaitCameraMetadata"),
-        level = DeprecationLevel.WARNING
+        level = DeprecationLevel.WARNING,
     )
     public fun awaitMetadata(camera: CameraId): CameraMetadata
 }
@@ -192,7 +218,7 @@ public value class CameraId(public val value: String) {
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public fun CameraDevices.find(
     cameraBackendId: CameraBackendId? = null,
-    includePhysicalCameraMetadata: Boolean = false
+    includePhysicalCameraMetadata: Boolean = false,
 ): Flow<CameraMetadata> = flow {
     val cameraIds = this@find.getCameraIds() ?: return@flow
 

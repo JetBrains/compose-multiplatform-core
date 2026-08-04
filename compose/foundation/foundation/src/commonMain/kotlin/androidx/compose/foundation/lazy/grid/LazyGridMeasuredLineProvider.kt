@@ -26,7 +26,7 @@ internal abstract class LazyGridMeasuredLineProvider(
     private val gridItemsCount: Int,
     private val spaceBetweenLines: Int,
     private val measuredItemProvider: LazyGridMeasuredItemProvider,
-    private val spanLayoutProvider: LazyGridSpanLayoutProvider
+    private val spanLayoutProvider: LazyGridSpanLayoutProvider,
 ) {
     // The constraints for cross axis size. The main axis is not restricted.
     internal fun childConstraints(startSlot: Int, span: Int): Constraints {
@@ -78,7 +78,7 @@ internal abstract class LazyGridMeasuredLineProvider(
                         constraints = constraints,
                         lane = startSlot,
                         span = span,
-                        mainAxisSpacing = mainAxisSpacing
+                        mainAxisSpacing = mainAxisSpacing,
                     )
                     .also { startSlot += span }
             }
@@ -103,6 +103,6 @@ internal abstract class LazyGridMeasuredLineProvider(
         index: Int,
         items: Array<LazyGridMeasuredItem>,
         spans: List<GridItemSpan>,
-        mainAxisSpacing: Int
+        mainAxisSpacing: Int,
     ): LazyGridMeasuredLine
 }

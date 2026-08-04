@@ -23,9 +23,7 @@ import kotlin.math.roundToInt
 
 /** Class to compute scroll for [FastScroller] */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public class FastScrollCalculator(
-    private val context: Context,
-) {
+public class FastScrollCalculator(private val context: Context) {
     internal val scrollerTopMarginPx = context.getDimensions(R.dimen.scroller_top_margin).toInt()
     internal val scrollerBottomMarginPx =
         context.getDimensions(R.dimen.scroller_bottom_margin).toInt()
@@ -64,7 +62,7 @@ public class FastScrollCalculator(
         scrollY: Int,
         viewHeight: Int,
         thumbHeightPx: Int,
-        estimatedFullHeight: Float
+        estimatedFullHeight: Float,
     ): Int {
         val scrollbarLength = getScrollbarLength(viewHeight, thumbHeightPx)
 
@@ -97,7 +95,7 @@ public class FastScrollCalculator(
         fastScrollY: Int,
         viewHeight: Int,
         thumbHeightPx: Int,
-        estimatedFullHeight: Float
+        estimatedFullHeight: Float,
     ): Int {
         val scrollbarLength = getScrollbarLength(viewHeight, thumbHeightPx)
 
@@ -123,4 +121,24 @@ public class FastScrollCalculator(
      */
     private fun getScrollbarLength(viewHeight: Int, thumbHeightPx: Int): Int =
         viewHeight - (scrollerTopMarginPx + scrollerBottomMarginPx + thumbHeightPx)
+
+    /**
+     * Checks if fast scrolling is possible.
+     *
+     * @param viewHeight The height of the view in pixels.
+     * @param thumbHeightPx The height of the fast scroll thumb in pixels.
+     * @param estimatedFullHeight The estimated total height of the document in pixels.
+     * @return `true` if [viewHeight] is sufficient to accommodate the fast scroll thumb and
+     *   [estimatedFullHeight] exceeds the [viewHeight]; `false` otherwise.
+     */
+    public fun canFastScroll(
+        viewHeight: Int,
+        thumbHeightPx: Int,
+        estimatedFullHeight: Float,
+    ): Boolean {
+        val scrollbarLength = getScrollbarLength(viewHeight, thumbHeightPx)
+        val scrollableHeight = estimatedFullHeight - viewHeight
+
+        return scrollbarLength > 0 && scrollableHeight > 0
+    }
 }

@@ -25,7 +25,6 @@ import androidx.benchmark.traceprocessor.PerfettoTrace
 import androidx.benchmark.traceprocessor.record
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
-import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
@@ -33,14 +32,18 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.test.fail
 import org.junit.Assume.assumeTrue
+import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 
 @OptIn(ExperimentalPerfettoCaptureApi::class)
 @LargeTest
 @RunWith(AndroidJUnit4::class)
-@SdkSuppress(minSdkVersion = 23)
 class PerfettoTraceTest {
+    @Before
+    fun checkDeviceSupport() {
+        assumeTrue(DeviceInfo.expectedToSupportTracingInTests)
+    }
 
     @Test
     fun record_basic() {
@@ -48,14 +51,14 @@ class PerfettoTraceTest {
         var perfettoTrace: PerfettoTrace? = null
         PerfettoTrace.record(
             fileLabel = "testTrace",
-            traceCallback = { trace -> perfettoTrace = trace }
+            traceCallback = { trace -> perfettoTrace = trace },
         ) {
             // noop
         }
         assertNotNull(perfettoTrace)
         assertTrue(
             perfettoTrace!!.path.matches(Regex(".*/testTrace_[0-9-]+.perfetto-trace")),
-            "$perfettoTrace didn't match!"
+            "$perfettoTrace didn't match!",
         )
     }
 
@@ -65,14 +68,14 @@ class PerfettoTraceTest {
         PerfettoTrace.record(
             fileLabel = label,
             config = config,
-            traceCallback = { trace -> perfettoTrace = trace }
+            traceCallback = { trace -> perfettoTrace = trace },
         ) {
             // noop
         }
         assertNotNull(perfettoTrace)
         assertTrue(
             perfettoTrace!!.path.matches(Regex(".*/${label}_[0-9-]+.perfetto-trace")),
-            "$perfettoTrace didn't match!"
+            "$perfettoTrace didn't match!",
         )
     }
 
@@ -83,7 +86,7 @@ class PerfettoTraceTest {
                 PerfettoTrace.record(
                     fileLabel = "failTrace",
                     config = config,
-                    traceCallback = { trace -> perfettoTrace = trace }
+                    traceCallback = { trace -> perfettoTrace = trace },
                 ) {
                     // noop
                 }
@@ -102,34 +105,34 @@ class PerfettoTraceTest {
         verifyRecordSuccess(
             PerfettoConfig.Text(
                 """
-        # basic config generated from https://ui.perfetto.dev/#!/record
-        buffers: {
-            size_kb: 63488
-            fill_policy: RING_BUFFER
-        }
-        buffers: {
-            size_kb: 2048
-            fill_policy: RING_BUFFER
-        }
-        data_sources: {
-            config {
-                name: "linux.ftrace"
-                ftrace_config {
-                    ftrace_events: "ftrace/print"
-                    atrace_categories: "am"
-                    atrace_categories: "dalvik"
-                    atrace_categories: "gfx"
-                    atrace_categories: "view"
-                    atrace_categories: "wm"
+                # basic config generated from https://ui.perfetto.dev/#!/record
+                buffers: {
+                    size_kb: 63488
+                    fill_policy: RING_BUFFER
                 }
-            }
-        }
-        duration_ms: 10000
-        flush_period_ms: 30000
-        incremental_state_config {
-            clear_period_ms: 5000
-        }
-    """
+                buffers: {
+                    size_kb: 2048
+                    fill_policy: RING_BUFFER
+                }
+                data_sources: {
+                    config {
+                        name: "linux.ftrace"
+                        ftrace_config {
+                            ftrace_events: "ftrace/print"
+                            atrace_categories: "am"
+                            atrace_categories: "dalvik"
+                            atrace_categories: "gfx"
+                            atrace_categories: "view"
+                            atrace_categories: "wm"
+                        }
+                    }
+                }
+                duration_ms: 10000
+                flush_period_ms: 30000
+                incremental_state_config {
+                    clear_period_ms: 5000
+                }
+                """
                     .trimIndent()
             )
         )
@@ -145,7 +148,7 @@ class PerfettoTraceTest {
                                     .targetContext
                                     .packageName
                             ),
-                        stackSamplingConfig = null
+                        stackSamplingConfig = null,
                     )
                     .validateAndEncode()
             )
@@ -157,13 +160,13 @@ class PerfettoTraceTest {
         var perfettoTrace: PerfettoTrace? = null
         PerfettoTrace.record(
             fileLabel = "outer",
-            traceCallback = { trace -> perfettoTrace = trace }
+            traceCallback = { trace -> perfettoTrace = trace },
         ) {
             // tracing while tracing should fail
             assertFailsWith<IllegalStateException> {
                 PerfettoTrace.record(
                     fileLabel = "inner",
-                    traceCallback = { _ -> fail("inner trace should not complete / record") }
+                    traceCallback = { _ -> fail("inner trace should not complete / record") },
                 ) {
                     // noop
                 }

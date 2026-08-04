@@ -50,7 +50,7 @@ import java.util.Optional;
 @RunWith(RobolectricTestRunner.class)
 @DoNotInstrument
 @Config(
-        sdk = {Build.VERSION_CODES.LOLLIPOP, Build.VERSION_CODES.P},
+        sdk = {24, Build.VERSION_CODES.P},
         // sets the display size for the tests (http://robolectric.org/device-configuration/)
         qualifiers = "w2048dp-h4096dp"
 )
@@ -112,6 +112,20 @@ public final class DisplayCompatTest {
                 findNativeMode(DisplayCompat.getSupportedModes(mContext, mDefaultDisplay)).get();
         assertThat(nativeMode.getPhysicalWidth()).isEqualTo(mode.getPhysicalWidth());
         assertThat(nativeMode.getPhysicalHeight()).isEqualTo(mode.getPhysicalHeight());
+    }
+
+    @Test
+    public void defaultDisplay_getShape() {
+        DisplayShapeCompat dsc = DisplayCompat.getShape(mContext, mDefaultDisplay);
+        DisplayShapeCompat expected;
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) {
+            expected = DisplayShapeCompat.create(DISPLAY_WIDTH_VENDOR, DISPLAY_HEIGHT_VENDOR,
+                    false, 0, 0, 0, 0);
+        } else {
+            expected = DisplayShapeCompat.create(DISPLAY_WIDTH_VENDOR_P, DISPLAY_HEIGHT_VENDOR_P,
+                    false, 0, 0, 0, 0);
+        }
+        assertThat(dsc).isEqualTo(expected);
     }
 
     @Test

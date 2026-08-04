@@ -19,7 +19,7 @@ package androidx.compose.foundation.samples
 import androidx.annotation.Sampled
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.selection.triStateToggleable
-import androidx.compose.material.Text
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -35,7 +35,7 @@ fun ToggleableSample() {
     // content that you want to make toggleable
     Text(
         modifier = Modifier.toggleable(value = checked, onValueChange = { checked = it }),
-        text = checked.toString()
+        text = checked.toString(),
     )
 }
 
@@ -52,8 +52,8 @@ fun TriStateToggleableSample() {
                     checked =
                         if (checked == ToggleableState.On) ToggleableState.Off
                         else ToggleableState.On
-                }
+                },
             ),
-        text = checked.toString()
+        text = checked.toString(),
     )
 }

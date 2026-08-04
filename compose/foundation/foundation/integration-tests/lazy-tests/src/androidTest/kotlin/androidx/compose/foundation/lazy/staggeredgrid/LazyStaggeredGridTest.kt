@@ -13,12 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-@file:Suppress("INVISIBLE_MEMBER", "INVISIBLE_REFERENCE") // b/407927787
-
 package androidx.compose.foundation.lazy.staggeredgrid
 
 import androidx.compose.foundation.AutoTestFrameClock
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.scrollBy
@@ -26,12 +24,14 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.list.assertIsNotPlaced
 import androidx.compose.foundation.lazy.list.assertIsPlaced
 import androidx.compose.foundation.lazy.list.setContentWithTestViewConfiguration
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -42,6 +42,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.LookaheadScope
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
@@ -54,6 +55,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeDown
 import androidx.compose.ui.test.swipeRight
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.DpSize
@@ -63,6 +65,7 @@ import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import org.junit.After
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -73,7 +76,7 @@ import org.junit.runners.Parameterized
 @RunWith(Parameterized::class)
 class LazyStaggeredGridTest(
     private val orientation: Orientation,
-    private val useLookahead: Boolean
+    private val useLookahead: Boolean,
 ) : BaseLazyStaggeredGridWithOrientation(orientation) {
     private val LazyStaggeredGridTag = "LazyStaggeredGridTag"
 
@@ -87,7 +90,7 @@ class LazyStaggeredGridTest(
             arrayOf(
                 arrayOf(Orientation.Vertical, true),
                 arrayOf(Orientation.Vertical, false),
-                arrayOf(Orientation.Horizontal, false)
+                arrayOf(Orientation.Horizontal, false),
             )
     }
 
@@ -113,10 +116,10 @@ class LazyStaggeredGridTest(
             }
             assertTrue(
                 "Visible items MUST BE sorted: ${state.layoutInfo.visibleItemsInfo}",
-                isSorted
+                isSorted,
             )
 
-            assertThat(state.layoutInfo.orientation == orientation)
+            assertThat(state.layoutInfo.orientation).isEqualTo(orientation)
         }
     }
 
@@ -137,7 +140,7 @@ class LazyStaggeredGridTest(
 
     private fun ComposeContentTestRule.setContentWithTestViewConfiguration(
         useLookahead: Boolean,
-        content: @Composable () -> Unit
+        content: @Composable () -> Unit,
     ) {
         setContentWithTestViewConfiguration { ConfigurableLookaheadScope(useLookahead, content) }
     }
@@ -150,7 +153,7 @@ class LazyStaggeredGridTest(
             LazyStaggeredGrid(
                 lanes = 3,
                 state = state,
-                modifier = Modifier.testTag(LazyStaggeredGridTag)
+                modifier = Modifier.testTag(LazyStaggeredGridTag),
             ) {}
         }
 
@@ -167,10 +170,7 @@ class LazyStaggeredGridTest(
         rule.setContentWithConfigurableLookahead {
             state = rememberLazyStaggeredGridState()
 
-            LazyStaggeredGrid(
-                lanes = 3,
-                state = state,
-            ) {
+            LazyStaggeredGrid(lanes = 3, state = state) {
                 item { Spacer(Modifier.size(itemSizeDp).testTag(itemTestTag)) }
             }
         }
@@ -184,10 +184,7 @@ class LazyStaggeredGridTest(
     @Test
     fun distributesSingleLine() {
         rule.setContentWithConfigurableLookahead {
-            LazyStaggeredGrid(
-                lanes = 3,
-                modifier = Modifier.crossAxisSize(itemSizeDp * 3),
-            ) {
+            LazyStaggeredGrid(lanes = 3, modifier = Modifier.crossAxisSize(itemSizeDp * 3)) {
                 items(3) { Spacer(Modifier.size(itemSizeDp).testTag("$it")) }
             }
         }
@@ -214,10 +211,7 @@ class LazyStaggeredGridTest(
     @Test
     fun distributesTwoLines() {
         rule.setContentWithConfigurableLookahead {
-            LazyStaggeredGrid(
-                lanes = 3,
-                modifier = Modifier.crossAxisSize(itemSizeDp * 3),
-            ) {
+            LazyStaggeredGrid(lanes = 3, modifier = Modifier.crossAxisSize(itemSizeDp * 3)) {
                 items(6) {
                     Spacer(
                         Modifier.axisSize(crossAxis = itemSizeDp, mainAxis = itemSizeDp * (it + 1))
@@ -275,6 +269,7 @@ class LazyStaggeredGridTest(
     fun moreItemsDisplayedOnScroll() {
         rule.setContentWithConfigurableLookahead {
             state = rememberLazyStaggeredGridState()
+            state.prefetchingEnabled = false
             LazyStaggeredGrid(
                 lanes = 3,
                 state = state,
@@ -455,7 +450,7 @@ class LazyStaggeredGridTest(
                     Spacer(
                         Modifier.axisSize(
                                 crossAxis = itemSizeDp,
-                                mainAxis = if (expanded) itemSizeDp * 2 else itemSizeDp
+                                mainAxis = if (expanded) itemSizeDp * 2 else itemSizeDp,
                             )
                             .testTag("0")
                     )
@@ -517,7 +512,7 @@ class LazyStaggeredGridTest(
                     Spacer(
                         Modifier.axisSize(
                                 crossAxis = itemSizeDp,
-                                mainAxis = if (expanded) itemSizeDp * 2 else itemSizeDp
+                                mainAxis = if (expanded) itemSizeDp * 2 else itemSizeDp,
                             )
                             .testTag("0")
                     )
@@ -595,7 +590,7 @@ class LazyStaggeredGridTest(
             state =
                 rememberLazyStaggeredGridState(
                     initialFirstVisibleItemIndex = 3,
-                    initialFirstVisibleItemScrollOffset = itemSizePx / 2
+                    initialFirstVisibleItemScrollOffset = itemSizePx / 2,
                 )
             LazyStaggeredGrid(
                 lanes = 2,
@@ -637,10 +632,7 @@ class LazyStaggeredGridTest(
     fun itemsAreCorrectedWithAlignedOffsets() {
         var expanded by mutableStateOf(false)
         rule.setContentWithConfigurableLookahead {
-            state =
-                rememberLazyStaggeredGridState(
-                    initialFirstVisibleItemIndex = 0,
-                )
+            state = rememberLazyStaggeredGridState(initialFirstVisibleItemIndex = 0)
             LazyStaggeredGrid(
                 lanes = 2,
                 state = state,
@@ -681,10 +673,7 @@ class LazyStaggeredGridTest(
     fun itemsAreCorrectedWhenItemIncreased() {
         var expanded by mutableStateOf(false)
         rule.setContentWithConfigurableLookahead {
-            state =
-                rememberLazyStaggeredGridState(
-                    initialFirstVisibleItemIndex = 0,
-                )
+            state = rememberLazyStaggeredGridState(initialFirstVisibleItemIndex = 0)
             LazyStaggeredGrid(
                 lanes = 2,
                 state = state,
@@ -854,7 +843,7 @@ class LazyStaggeredGridTest(
             state =
                 rememberLazyStaggeredGridState(
                     initialFirstVisibleItemIndex = 10,
-                    initialFirstVisibleItemScrollOffset = 0
+                    initialFirstVisibleItemScrollOffset = 0,
                 )
             LazyStaggeredGrid(
                 lanes = 2,
@@ -868,7 +857,7 @@ class LazyStaggeredGridTest(
                     Box(
                         Modifier.axisSize(
                                 crossAxis = itemSizeDp,
-                                mainAxis = itemSizeDp * (it % 3 + 1)
+                                mainAxis = itemSizeDp * (it % 3 + 1),
                             )
                             .testTag("$it")
                             .border(1.dp, Color.Black)
@@ -894,7 +883,7 @@ class LazyStaggeredGridTest(
             state =
                 rememberLazyStaggeredGridState(
                     initialFirstVisibleItemIndex = Int.MAX_VALUE / 2,
-                    initialFirstVisibleItemScrollOffset = 0
+                    initialFirstVisibleItemScrollOffset = 0,
                 )
             LazyStaggeredGrid(
                 lanes = 2,
@@ -945,7 +934,7 @@ class LazyStaggeredGridTest(
                 LazyStaggeredGrid(
                     lanes = 3,
                     state = state!!,
-                    modifier = Modifier.mainAxisSize(itemSizeDp * 10).testTag(LazyStaggeredGridTag)
+                    modifier = Modifier.mainAxisSize(itemSizeDp * 10).testTag(LazyStaggeredGridTag),
                 ) {
                     items(1000) { Spacer(Modifier.mainAxisSize(itemSizeDp).testTag("$it")) }
                 }
@@ -975,7 +964,7 @@ class LazyStaggeredGridTest(
                 LazyStaggeredGrid(
                     lanes = 3,
                     state = state,
-                    modifier = Modifier.mainAxisSize(itemSizeDp * 10).testTag(LazyStaggeredGridTag)
+                    modifier = Modifier.mainAxisSize(itemSizeDp * 10).testTag(LazyStaggeredGridTag),
                 ) {
                     recomposeCounter.value // read state to force recomposition
 
@@ -1018,7 +1007,7 @@ class LazyStaggeredGridTest(
                 modifier =
                     Modifier.mainAxisSize(mainAxis)
                         .crossAxisSize(crossAxis)
-                        .testTag(LazyStaggeredGridTag)
+                        .testTag(LazyStaggeredGridTag),
             ) {
                 item { Spacer(Modifier.mainAxisSize(itemSizeDp).testTag("0")) }
             }
@@ -1058,7 +1047,7 @@ class LazyStaggeredGridTest(
                 modifier =
                     Modifier.mainAxisSize(mainAxis)
                         .crossAxisSize(crossAxis)
-                        .testTag(LazyStaggeredGridTag)
+                        .testTag(LazyStaggeredGridTag),
             ) {
                 items(2) { Spacer(Modifier.mainAxisSize(itemSizeDp).testTag("$it")) }
             }
@@ -1098,7 +1087,7 @@ class LazyStaggeredGridTest(
                     Modifier.mainAxisSize(itemSizeDp * 10).composed {
                         recomposed++
                         Modifier
-                    }
+                    },
             ) {
                 items(1000) { Spacer(Modifier.mainAxisSize(itemSizeDp).testTag("$it")) }
             }
@@ -1120,7 +1109,7 @@ class LazyStaggeredGridTest(
             LazyStaggeredGrid(
                 lanes = 3,
                 state = state,
-                modifier = Modifier.mainAxisSize(itemSizeDp * 10).composed { Modifier }
+                modifier = Modifier.mainAxisSize(itemSizeDp * 10).composed { Modifier },
             ) {
                 items(1000) { Spacer(Modifier.mainAxisSize(itemSizeDp).testTag("$it")) }
             }
@@ -1140,7 +1129,7 @@ class LazyStaggeredGridTest(
             LazyStaggeredGrid(
                 1,
                 Modifier.testTag(LazyStaggeredGridTag).mainAxisSize(itemSize),
-                state
+                state,
             ) {
                 items(3) { index -> Box(Modifier.size(itemSize).testTag("$index")) }
             }
@@ -1163,7 +1152,7 @@ class LazyStaggeredGridTest(
                 Modifier.testTag(LazyStaggeredGridTag)
                     .crossAxisSize(itemSizeDp * 3)
                     .mainAxisSize(itemSizeDp * 10),
-                state
+                state,
             ) {
                 item(span = StaggeredGridItemSpan.FullLine) {
                     Box(Modifier.testTag("0").mainAxisSize(itemSizeDp))
@@ -1188,7 +1177,7 @@ class LazyStaggeredGridTest(
                 Modifier.testTag(LazyStaggeredGridTag)
                     .crossAxisSize(itemSizeDp * 3)
                     .mainAxisSize(itemSizeDp * 10),
-                state
+                state,
             ) {
                 items(2) { Box(Modifier.testTag("$it").mainAxisSize(itemSizeDp)) }
 
@@ -1226,7 +1215,7 @@ class LazyStaggeredGridTest(
                 Modifier.testTag(LazyStaggeredGridTag)
                     .crossAxisSize(itemSizeDp * 3)
                     .mainAxisSize(itemSizeDp * 10),
-                state
+                state,
             ) {
                 items(3) {
                     Box(Modifier.testTag("$it").mainAxisSize(itemSizeDp + itemSizeDp * it / 2))
@@ -1272,7 +1261,7 @@ class LazyStaggeredGridTest(
                 Modifier.testTag(LazyStaggeredGridTag)
                     .crossAxisSize(itemSizeDp * 3)
                     .mainAxisSize(itemSizeDp * 2),
-                state
+                state,
             ) {
                 items(3) {
                     Box(Modifier.testTag("$it").mainAxisSize(itemSizeDp + itemSizeDp * it / 2))
@@ -1327,7 +1316,7 @@ class LazyStaggeredGridTest(
                 Modifier.testTag(LazyStaggeredGridTag)
                     .crossAxisSize(itemSizeDp * 3)
                     .mainAxisSize(itemSizeDp * 2),
-                state
+                state,
             ) {
                 repeat(10) { repeatIndex ->
                     items(3) {
@@ -1385,7 +1374,7 @@ class LazyStaggeredGridTest(
                 Modifier.testTag(LazyStaggeredGridTag)
                     .crossAxisSize(itemSizeDp * 3)
                     .mainAxisSize(itemSizeDp * 2),
-                state
+                state,
             ) {
                 repeat(10) { repeatIndex ->
                     items(3) {
@@ -1446,7 +1435,7 @@ class LazyStaggeredGridTest(
                 Modifier.testTag(LazyStaggeredGridTag)
                     .crossAxisSize(itemSizeDp * 3)
                     .mainAxisSize(itemSizeDp * 2),
-                state
+                state,
             ) {
                 items(10, span = { StaggeredGridItemSpan.FullLine }) {
                     Box(Modifier.testTag("$it").mainAxisSize(itemSizeDp))
@@ -1535,7 +1524,7 @@ class LazyStaggeredGridTest(
             .onNodeWithTag("1")
             .assertAxisBounds(
                 DpOffset(itemSizeDp, itemSizeDp),
-                DpSize(itemSizeDp, itemSizeDp * 1.5f)
+                DpSize(itemSizeDp, itemSizeDp * 1.5f),
             )
 
         rule
@@ -1546,14 +1535,14 @@ class LazyStaggeredGridTest(
             .onNodeWithTag("3")
             .assertAxisBounds(
                 DpOffset(itemSizeDp * 2f, itemSizeDp * 2f),
-                DpSize(itemSizeDp, itemSizeDp * 2)
+                DpSize(itemSizeDp, itemSizeDp * 2),
             )
 
         rule
             .onNodeWithTag("4")
             .assertAxisBounds(
                 DpOffset(itemSizeDp, itemSizeDp * 2.5f),
-                DpSize(itemSizeDp, itemSizeDp * 1.5f)
+                DpSize(itemSizeDp, itemSizeDp * 1.5f),
             )
 
         rule
@@ -1614,14 +1603,14 @@ class LazyStaggeredGridTest(
             .onNodeWithTag("3")
             .assertAxisBounds(
                 DpOffset(itemSizeDp * 2f, itemSizeDp),
-                DpSize(itemSizeDp, itemSizeDp * 2)
+                DpSize(itemSizeDp, itemSizeDp * 2),
             )
 
         rule
             .onNodeWithTag("4")
             .assertAxisBounds(
                 DpOffset(itemSizeDp, itemSizeDp * 1.5f),
-                DpSize(itemSizeDp, itemSizeDp * 1.5f)
+                DpSize(itemSizeDp, itemSizeDp * 1.5f),
             )
 
         rule
@@ -1664,7 +1653,7 @@ class LazyStaggeredGridTest(
             LazyStaggeredGrid(
                 cells = StaggeredGridCells.FixedSize(itemSizeDp * 2),
                 modifier = Modifier.axisSize(crossAxis = itemSizeDp * 5, mainAxis = itemSizeDp * 5),
-                state = state
+                state = state,
             ) {
                 items(10) { index -> Box(Modifier.size(itemSizeDp).testTag(index.toString())) }
             }
@@ -1687,7 +1676,7 @@ class LazyStaggeredGridTest(
             LazyStaggeredGrid(
                 lanes = 2,
                 modifier = Modifier.axisSize(crossAxis = itemSizeDp * 2, mainAxis = itemSizeDp * 5),
-                state = state
+                state = state,
             ) {
                 item(span = StaggeredGridItemSpan.FullLine) {
                     Box(Modifier.size(itemSizeDp * 2))
@@ -1766,7 +1755,7 @@ class LazyStaggeredGridTest(
                     span = {
                         if (it == 10) StaggeredGridItemSpan.FullLine
                         else StaggeredGridItemSpan.SingleLane
-                    }
+                    },
                 ) {
                     Spacer(modifier = Modifier.mainAxisSize(itemSizeDp).testTag(it.toString()))
                 }
@@ -1797,7 +1786,7 @@ class LazyStaggeredGridTest(
             LazyStaggeredGrid(
                 lanes = 2,
                 state = state,
-                modifier = Modifier.mainAxisSize(itemSizeDp * 1.5f).crossAxisSize(itemSizeDp * 2)
+                modifier = Modifier.mainAxisSize(itemSizeDp * 1.5f).crossAxisSize(itemSizeDp * 2),
             ) {
                 items(100) {
                     Spacer(Modifier.mainAxisSize(itemSizeDp))
@@ -1832,7 +1821,7 @@ class LazyStaggeredGridTest(
             LazyStaggeredGrid(
                 lanes = 2,
                 state = state,
-                modifier = Modifier.mainAxisSize(itemSizeDp * 1.5f).crossAxisSize(itemSizeDp * 2)
+                modifier = Modifier.mainAxisSize(itemSizeDp * 1.5f).crossAxisSize(itemSizeDp * 2),
             ) {
                 items(100) {
                     Spacer(Modifier.mainAxisSize(itemSizeDp))
@@ -1867,7 +1856,7 @@ class LazyStaggeredGridTest(
             LazyStaggeredGrid(
                 lanes = 2,
                 state = state,
-                modifier = Modifier.mainAxisSize(itemSizeDp * 2).crossAxisSize(itemSizeDp * 2)
+                modifier = Modifier.mainAxisSize(itemSizeDp * 2).crossAxisSize(itemSizeDp * 2),
             ) {
                 repeat(10) { index ->
                     items(2) { Spacer(Modifier.testTag("${index * 10 + it}")) }
@@ -1964,7 +1953,7 @@ class LazyStaggeredGridTest(
                     modifier = Modifier.mainAxisSize(itemSizeDp * 5),
                     state = state,
                     lanes = 2,
-                    crossAxisArrangement = Arrangement.spacedBy(itemSizeDp * 2)
+                    crossAxisArrangement = Arrangement.spacedBy(itemSizeDp * 2),
                 ) {
                     items(20) { Spacer(Modifier.mainAxisSize(itemSizeDp).testTag("$it")) }
                 }
@@ -1989,7 +1978,7 @@ class LazyStaggeredGridTest(
             LazyStaggeredGrid(
                 lanes = 2,
                 state = state,
-                modifier = Modifier.mainAxisSize(itemSizeDp).crossAxisSize(itemSizeDp * 2)
+                modifier = Modifier.mainAxisSize(itemSizeDp).crossAxisSize(itemSizeDp * 2),
             ) {
                 item { Spacer(Modifier.mainAxisSize(itemSizeDp * 3).testTag("0")) }
 
@@ -2075,7 +2064,7 @@ class LazyStaggeredGridTest(
                     Modifier.mainAxisSize(itemSizeDp * 1.5f)
                         .crossAxisSize(itemSizeDp * 2)
                         .testTag("grid"),
-                overscrollEffect = overscroll
+                overscrollEffect = overscroll,
             ) {
                 items(100) { Spacer(Modifier.mainAxisSize(itemSizeDp)) }
             }
@@ -2098,6 +2087,232 @@ class LazyStaggeredGridTest(
                 assertThat(overscroll.scrollOverscrollDelta.x).isGreaterThan(0)
                 assertThat(overscroll.flingOverscrollVelocity.x).isGreaterThan(0)
             }
+        }
+    }
+
+    @Test
+    fun mainSize_minusOne() {
+        // Forces the main axis size to be calculated to exactly -1
+        val mainAxisSize = with(rule.density) { (itemSizePx * 2f - 1f).toDp() }
+        rule.setContentWithConfigurableLookahead {
+            LazyStaggeredGrid(
+                lanes = 2,
+                modifier =
+                    Modifier.mainAxisSize(mainAxisSize)
+                        .crossAxisSize(itemSizeDp * 2)
+                        .testTag(LazyStaggeredGridTag),
+                contentPadding = PaddingValues(beforeContent = itemSizeDp),
+            ) {
+                items(2) { index -> Spacer(Modifier.mainAxisSize(itemSizeDp)) }
+            }
+        }
+
+        rule.onNodeWithTag(LazyStaggeredGridTag).assertIsDisplayed()
+    }
+
+    @Test
+    fun fullSpanItem_correctOrderWhenUpdated() {
+        lateinit var state: LazyStaggeredGridState
+
+        // ┌───┬───────┐
+        // │ 0 │       │
+        // ├───┴───────┤
+        // │   full    │
+        // └───────────┘
+
+        var itemCount by mutableStateOf(1)
+        rule.setContentWithConfigurableLookahead {
+            state = rememberLazyStaggeredGridState().apply { prefetchingEnabled = false }
+            LazyStaggeredGrid(
+                lanes = 3,
+                state = state,
+                modifier = Modifier.mainAxisSize(itemSizeDp * 2).crossAxisSize(itemSizeDp * 3),
+            ) {
+                items(itemCount) { Spacer(Modifier.mainAxisSize(itemSizeDp).testTag("$it")) }
+
+                item(span = StaggeredGridItemSpan.FullLine) {
+                    Spacer(Modifier.mainAxisSize(itemSizeDp))
+                }
+            }
+        }
+
+        // ┌───┬───┬───┐
+        // │ 0 │ 1 │   │
+        // ├───┴───┴───┤
+        // │   full    │
+        // └───────────┘
+
+        itemCount++
+        rule.onNodeWithTag("0").assertCrossAxisStartPositionInRootIsEqualTo(0.dp)
+        rule.onNodeWithTag("1").assertCrossAxisStartPositionInRootIsEqualTo(itemSizeDp)
+
+        // ┌───┬───┬───┐
+        // │ 0 │ 1 │ 2 │
+        // ├───┴───┴───┤
+        // │   full    │
+        // └───────────┘
+        itemCount++
+        rule.onNodeWithTag("0").assertCrossAxisStartPositionInRootIsEqualTo(0.dp)
+        rule.onNodeWithTag("1").assertCrossAxisStartPositionInRootIsEqualTo(itemSizeDp)
+        rule.onNodeWithTag("2").assertCrossAxisStartPositionInRootIsEqualTo(itemSizeDp * 2)
+    }
+
+    @Test
+    fun fullSpanItem_scrollPast_withGaps_atStart() {
+        lateinit var state: LazyStaggeredGridState
+
+        // ┌───┬───┐ <- scroll offset
+        // │ 0 │   │
+        // ├───┴───┤
+        // │   1   │
+        // ├───┬───┤ <- end of screen
+        // │ 2 │ 3 │
+        // ├───┼───┤
+        // │ 4 │ 5 │
+        // └───┴───┘
+
+        rule.setContentWithConfigurableLookahead {
+            state = rememberLazyStaggeredGridState().apply { prefetchingEnabled = false }
+            LazyStaggeredGrid(
+                lanes = 2,
+                state = state,
+                modifier = Modifier.mainAxisSize(itemSizeDp * 2).crossAxisSize(itemSizeDp * 2),
+            ) {
+                item { Spacer(Modifier.mainAxisSize(itemSizeDp).testTag("0")) }
+
+                item(span = StaggeredGridItemSpan.FullLine) {
+                    Spacer(Modifier.mainAxisSize(itemSizeDp).testTag("1"))
+                }
+
+                items(4) { Spacer(Modifier.mainAxisSize(itemSizeDp).testTag("${it + 2}")) }
+            }
+        }
+
+        // ┌───┬───┐
+        // │ 0 │   │
+        // ├───┴───┤ <- scroll offset
+        // │   1   │
+        // ├───┬───┤
+        // │ 2 │ 3 │
+        // ├───┼───┤ <- end of screen
+        // │ 4 │ 5 │
+        // └───┴───┘
+
+        state.scrollBy(itemSizeDp)
+        rule.onNodeWithTag("1").assertMainAxisStartPositionInRootIsEqualTo(0.dp)
+
+        // ┌───┬───┐
+        // │ 0 │   │
+        // ├───┴───┤
+        // │   1   │
+        // ├───┬───┤ <- scroll offset
+        // │ 2 │ 3 │
+        // ├───┼───┤
+        // │ 4 │ 5 │
+        // └───┴───┘ <- end of screen
+
+        state.scrollBy(itemSizeDp)
+        rule.onNodeWithTag("2").assertMainAxisStartPositionInRootIsEqualTo(0.dp)
+        rule.onNodeWithTag("3").assertMainAxisStartPositionInRootIsEqualTo(0.dp)
+
+        // ┌───┬───┐
+        // │ 0 │   │
+        // ├───┴───┤ <- scroll offset
+        // │   1   │
+        // ├───┬───┤
+        // │ 2 │ 3 │
+        // ├───┼───┤ <- end of screen
+        // │ 4 │ 5 │
+        // └───┴───┘
+
+        state.scrollBy(-itemSizeDp)
+        rule.onNodeWithTag("1").assertMainAxisStartPositionInRootIsEqualTo(0.dp)
+        rule.onNodeWithTag("2").assertMainAxisStartPositionInRootIsEqualTo(itemSizeDp)
+        rule.onNodeWithTag("3").assertMainAxisStartPositionInRootIsEqualTo(itemSizeDp)
+
+        // ┌───┬───┐ <- scroll offset
+        // │ 0 │   │
+        // ├───┴───┤
+        // │   1   │
+        // ├───┬───┤ <- end of screen
+        // │ 2 │ 3 │
+        // ├───┼───┤
+        // │ 4 │ 5 │
+        // └───┴───┘
+        state.scrollBy(-itemSizeDp)
+        rule.onNodeWithTag("0").assertMainAxisStartPositionInRootIsEqualTo(0.dp)
+        rule.onNodeWithTag("1").assertMainAxisStartPositionInRootIsEqualTo(itemSizeDp)
+    }
+
+    @Test
+    fun triggerBackScrollAndVerifyNoScrollDeltaBetweenTwoPasses() {
+        state = LazyStaggeredGridState()
+        rule.setContent {
+            val list = (0..20).toList()
+            LookaheadScope {
+                CompositionLocalProvider(LocalDensity provides Density(1f)) {
+                    LazyStaggeredGrid(
+                        lanes = 1,
+                        state = state,
+                        modifier = Modifier.mainAxisSize(500.dp),
+                    ) {
+                        items(list) {
+                            val color = if (it % 2 == 0) Color.Red else Color.Blue
+                            Box(
+                                modifier =
+                                    Modifier.padding(vertical = 6.dp)
+                                        .mainAxisSize(100.dp)
+                                        .crossAxisSize(100.dp)
+                                        .background(color = color)
+                            )
+                        }
+                    }
+                }
+            }
+        }
+        rule.waitForIdle()
+        rule.mainClock.autoAdvance = false
+        state.scrollTo(20)
+        repeat(5) {
+            rule.mainClock.advanceTimeByFrame()
+            assertEquals(0f, state.scrollDeltaBetweenPasses)
+            rule.waitForIdle()
+        }
+    }
+
+    @Test
+    fun triggerBackScrollAndVerifyNoScrollDeltaBetweenTwoPassesMultiLane() {
+        state = LazyStaggeredGridState()
+        rule.setContent {
+            val list = (0..20).toList()
+            LookaheadScope {
+                CompositionLocalProvider(LocalDensity provides Density(1f)) {
+                    LazyStaggeredGrid(
+                        lanes = 2,
+                        state = state,
+                        modifier = Modifier.mainAxisSize(500.dp),
+                    ) {
+                        items(list) {
+                            val color = if (it % 2 == 0) Color.Red else Color.Blue
+                            Box(
+                                modifier =
+                                    Modifier.padding(vertical = 6.dp)
+                                        .mainAxisSize(100.dp)
+                                        .crossAxisSize(100.dp)
+                                        .background(color = color)
+                            )
+                        }
+                    }
+                }
+            }
+        }
+        rule.waitForIdle()
+        rule.mainClock.autoAdvance = false
+        state.scrollTo(20)
+        repeat(5) {
+            rule.mainClock.advanceTimeByFrame()
+            assertEquals(0f, state.scrollDeltaBetweenPasses)
+            rule.waitForIdle()
         }
     }
 }

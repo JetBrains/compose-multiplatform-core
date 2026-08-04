@@ -24,6 +24,7 @@ import androidx.pdf.R
 import androidx.pdf.view.FakePdfDocument
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.filters.SdkSuppress
 import androidx.test.filters.SmallTest
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -36,6 +37,7 @@ import org.mockito.kotlin.verify
 
 @SmallTest
 @RunWith(AndroidJUnit4::class)
+@SdkSuppress(minSdkVersion = 26)
 class FastScrollGestureDetectorTest {
     private lateinit var gestureDetector: FastScrollGestureDetector
 
@@ -43,16 +45,19 @@ class FastScrollGestureDetectorTest {
     private val pdfDocument: PdfDocument = FakePdfDocument.newInstance()
     private val thumbDrawable =
         ContextCompat.getDrawable(context, R.drawable.fastscroll_background)!!
-    private val trackDrawable = ContextCompat.getDrawable(context, R.drawable.drag_indicator)!!
     private val pageIndicatorBackgroundDrawable =
         ContextCompat.getDrawable(context, R.drawable.page_indicator_background)!!
+    private val fastScrollVerticalThumbMarginEnd = 0
+    private val fastScrollPageIndicatorMarginEnd =
+        context.getDimensions(R.dimen.page_indicator_right_margin).toInt()
     private val fastScrollDrawer =
         FastScrollDrawer(
             context,
             pdfDocument,
             thumbDrawable,
-            trackDrawable,
-            pageIndicatorBackgroundDrawable
+            pageIndicatorBackgroundDrawable,
+            fastScrollVerticalThumbMarginEnd,
+            fastScrollPageIndicatorMarginEnd,
         )
     private val fastScrollCalculator = FastScrollCalculator(context)
     private val fastScroller = FastScroller(fastScrollDrawer, fastScrollCalculator)
@@ -76,7 +81,7 @@ class FastScrollGestureDetectorTest {
             gestureDetector.handleEvent(
                 MotionEvent.obtain(0L, 0L, MotionEvent.ACTION_MOVE, 10f, 10f, 0),
                 parent = null,
-                viewWidth
+                viewWidth,
             )
         )
         verify(gestureHandler, never()).onFastScrollDetected(10f)

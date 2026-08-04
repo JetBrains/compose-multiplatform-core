@@ -25,8 +25,9 @@ import androidx.compose.ui.platform.AndroidViewConfigurationApi34.getScaledHandw
  * A [ViewConfiguration] with Android's default configurations. Derived from
  * [android.view.ViewConfiguration]
  */
-class AndroidViewConfiguration(private val viewConfiguration: android.view.ViewConfiguration) :
-    ViewConfiguration {
+public class AndroidViewConfiguration(
+    private val viewConfiguration: android.view.ViewConfiguration
+) : ViewConfiguration {
     override val longPressTimeoutMillis: Long
         get() = android.view.ViewConfiguration.getLongPressTimeout().toLong()
 
@@ -49,6 +50,9 @@ class AndroidViewConfiguration(private val viewConfiguration: android.view.ViewC
 
     override val maximumFlingVelocity: Float
         get() = viewConfiguration.scaledMaximumFlingVelocity.toFloat()
+
+    override val minimumFlingVelocity: Float
+        get() = viewConfiguration.scaledMinimumFlingVelocity.toFloat()
 
     override val handwritingGestureLineMargin: Float
         get() =

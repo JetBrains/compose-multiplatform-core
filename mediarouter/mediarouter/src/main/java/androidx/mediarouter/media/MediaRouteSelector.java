@@ -18,8 +18,8 @@ package androidx.mediarouter.media;
 import android.content.IntentFilter;
 import android.os.Bundle;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -65,8 +65,7 @@ public final class MediaRouteSelector {
      *
      * @return The list of categories.
      */
-    @NonNull
-    public List<String> getControlCategories() {
+    public @NonNull List<String> getControlCategories() {
         ensureControlCategories();
         return new ArrayList<>(mControlCategories);
     }
@@ -157,10 +156,7 @@ public final class MediaRouteSelector {
      */
     public boolean isValid() {
         ensureControlCategories();
-        if (mControlCategories.contains(null)) {
-            return false;
-        }
-        return true;
+        return !mControlCategories.contains(null);
     }
 
     @Override
@@ -180,9 +176,8 @@ public final class MediaRouteSelector {
         return mControlCategories.hashCode();
     }
 
-    @NonNull
     @Override
-    public String toString() {
+    public @NonNull String toString() {
         return "MediaRouteSelector{ "
                 + "controlCategories="
                 + Arrays.toString(getControlCategories().toArray())
@@ -194,8 +189,7 @@ public final class MediaRouteSelector {
      *
      * @return The contents of the object represented as a bundle.
      */
-    @NonNull
-    public Bundle asBundle() {
+    public @NonNull Bundle asBundle() {
         return mBundle;
     }
 
@@ -205,8 +199,7 @@ public final class MediaRouteSelector {
      * @param bundle The bundle, or null if none.
      * @return The new instance, or null if the bundle was null.
      */
-    @Nullable
-    public static MediaRouteSelector fromBundle(@Nullable Bundle bundle) {
+    public static @Nullable MediaRouteSelector fromBundle(@Nullable Bundle bundle) {
         return bundle != null ? new MediaRouteSelector(bundle, null) : null;
     }
 
@@ -233,7 +226,7 @@ public final class MediaRouteSelector {
 
             selector.ensureControlCategories();
             if (!selector.mControlCategories.isEmpty()) {
-                mControlCategories = new ArrayList<String>(selector.mControlCategories);
+                mControlCategories = new ArrayList<>(selector.mControlCategories);
             }
         }
 
@@ -244,14 +237,13 @@ public final class MediaRouteSelector {
          * {@link MediaControlIntent#CATEGORY_LIVE_AUDIO}.
          * @return The builder instance for chaining.
          */
-        @NonNull
-        public Builder addControlCategory(@NonNull String category) {
+        public @NonNull Builder addControlCategory(@NonNull String category) {
             if (category == null) {
                 throw new IllegalArgumentException("category must not be null");
             }
 
             if (mControlCategories == null) {
-                mControlCategories = new ArrayList<String>();
+                mControlCategories = new ArrayList<>();
             }
             if (!mControlCategories.contains(category)) {
                 mControlCategories.add(category);
@@ -266,8 +258,7 @@ public final class MediaRouteSelector {
          * such as {@link MediaControlIntent#CATEGORY_LIVE_AUDIO}.
          * @return The builder instance for chaining.
          */
-        @NonNull
-        public Builder addControlCategories(@NonNull Collection<String> categories) {
+        public @NonNull Builder addControlCategories(@NonNull Collection<String> categories) {
             if (categories == null) {
                 throw new IllegalArgumentException("categories must not be null");
             }
@@ -286,8 +277,7 @@ public final class MediaRouteSelector {
          * @param selector The media route selector whose contents are to be added.
          * @return The builder instance for chaining.
          */
-        @NonNull
-        public Builder addSelector(@NonNull MediaRouteSelector selector) {
+        public @NonNull Builder addSelector(@NonNull MediaRouteSelector selector) {
             if (selector == null) {
                 throw new IllegalArgumentException("selector must not be null");
             }
@@ -299,8 +289,7 @@ public final class MediaRouteSelector {
         /**
          * Builds the {@link MediaRouteSelector media route selector}.
          */
-        @NonNull
-        public MediaRouteSelector build() {
+        public @NonNull MediaRouteSelector build() {
             if (mControlCategories == null) {
                 return EMPTY;
             }

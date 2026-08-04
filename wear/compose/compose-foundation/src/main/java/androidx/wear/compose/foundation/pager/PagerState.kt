@@ -27,6 +27,8 @@ import androidx.compose.foundation.interaction.InteractionSource
 import androidx.compose.foundation.pager.PagerLayoutInfo as ComposePagerLayoutInfo
 import androidx.compose.foundation.pager.PagerState as ComposePagerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.annotation.FrequentlyChangingValue
+import androidx.compose.runtime.annotation.RememberInComposition
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.listSaver
@@ -45,7 +47,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 public fun rememberPagerState(
     @IntRange(from = 0) initialPage: Int = 0,
     @FloatRange(from = -0.5, to = 0.5) initialPageOffsetFraction: Float = 0f,
-    @IntRange(from = 1) pageCount: () -> Int
+    @IntRange(from = 1) pageCount: () -> Int,
 ): PagerState {
     return rememberSaveable(saver = PagerState.Saver) {
             PagerState(initialPage, initialPageOffsetFraction, pageCount)
@@ -61,10 +63,12 @@ public fun rememberPagerState(
  *   be between -0.5 and 0.5, where 0 indicates the start of the initial page.
  * @param pageCount The number of pages in this Pager.
  */
-public class PagerState(
+public class PagerState
+@RememberInComposition
+constructor(
     @IntRange(from = 0) currentPage: Int = 0,
     @FloatRange(from = -0.5, to = 0.5) currentPageOffsetFraction: Float = 0f,
-    @IntRange(from = 1) pageCount: () -> Int
+    @IntRange(from = 1) pageCount: () -> Int,
 ) : ScrollableState {
     internal var pagerState = PagerStateImpl(currentPage, currentPageOffsetFraction, pageCount)
 
@@ -77,7 +81,7 @@ public class PagerState(
      * indicates the start of the current page
      */
     public val currentPageOffsetFraction: Float
-        get() = pagerState.currentPageOffsetFraction
+        @FrequentlyChangingValue get() = pagerState.currentPageOffsetFraction
 
     /** The total number of pages present in this pager. */
     public val pageCount: Int
@@ -111,7 +115,7 @@ public class PagerState(
      * based on this value consider using "snapshotFlow".
      */
     public val layoutInfo: PagerLayoutInfo
-        get() = PagerLayoutInfoImpl(pagerState.layoutInfo)
+        @FrequentlyChangingValue get() = PagerLayoutInfoImpl(pagerState.layoutInfo)
 
     override val isScrollInProgress: Boolean
         get() = pagerState.isScrollInProgress
@@ -122,7 +126,7 @@ public class PagerState(
 
     override suspend fun scroll(
         scrollPriority: MutatePriority,
-        block: suspend ScrollScope.() -> Unit
+        block: suspend ScrollScope.() -> Unit,
     ) {
         pagerState.scroll(scrollPriority, block)
     }
@@ -136,7 +140,7 @@ public class PagerState(
      */
     public suspend fun scrollToPage(
         page: Int,
-        @FloatRange(from = -0.5, to = 0.5) pageOffsetFraction: Float = 0f
+        @FloatRange(from = -0.5, to = 0.5) pageOffsetFraction: Float = 0f,
     ): Unit = pagerState.scrollToPage(page, pageOffsetFraction)
 
     /**
@@ -153,7 +157,7 @@ public class PagerState(
     public suspend fun animateScrollToPage(
         page: Int,
         @FloatRange(from = -0.5, to = 0.5) pageOffsetFraction: Float = 0f,
-        animationSpec: AnimationSpec<Float> = spring()
+        animationSpec: AnimationSpec<Float> = spring(),
     ) {
         pagerState.animateScrollToPage(page, pageOffsetFraction, animationSpec)
     }
@@ -183,7 +187,7 @@ public class PagerState(
                         currentPageOffsetFraction = it[1] as Float,
                         pageCount = { it[2] as Int },
                     )
-                }
+                },
             )
     }
 }
@@ -191,7 +195,7 @@ public class PagerState(
 internal class PagerStateImpl(
     currentPage: Int,
     currentPageOffsetFraction: Float,
-    updatedPageCount: () -> Int
+    updatedPageCount: () -> Int,
 ) : ComposePagerState(currentPage, currentPageOffsetFraction) {
     var pageCountState = mutableStateOf(updatedPageCount)
     override val pageCount: Int
@@ -205,16 +209,16 @@ internal class PagerStateImpl(
                     listOf(
                         it.currentPage,
                         (it.currentPageOffsetFraction).coerceIn(MinPageOffset, MaxPageOffset),
-                        it.pageCount
+                        it.pageCount,
                     )
                 },
                 restore = {
                     PagerStateImpl(
                         currentPage = it[0] as Int,
                         currentPageOffsetFraction = it[1] as Float,
-                        updatedPageCount = { it[2] as Int }
+                        updatedPageCount = { it[2] as Int },
                     )
-                }
+                },
             )
     }
 }

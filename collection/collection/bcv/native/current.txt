@@ -1,5 +1,5 @@
 // Klib ABI Dump
-// Targets: [iosArm64, iosSimulatorArm64, iosX64, linuxArm64, linuxX64, macosArm64, macosX64, mingwX64, tvosArm64, tvosSimulatorArm64, tvosX64, watchosArm32, watchosArm64, watchosDeviceArm64, watchosSimulatorArm64, watchosX64]
+// Targets: [iosArm64, iosSimulatorArm64, linuxArm64, linuxX64, macosArm64, mingwX64, tvosArm64, tvosSimulatorArm64, watchosArm32, watchosArm64, watchosDeviceArm64, watchosSimulatorArm64]
 // Rendering settings:
 // - Signature version: 2
 // - Show manifest properties: true
@@ -164,6 +164,7 @@ final class <#A: kotlin/Any?> androidx.collection/MutableFloatObjectMap : androi
     constructor <init>(kotlin/Int = ...) // androidx.collection/MutableFloatObjectMap.<init>|<init>(kotlin.Int){}[0]
 
     final fun clear() // androidx.collection/MutableFloatObjectMap.clear|clear(){}[0]
+    final fun findInsertIndex(kotlin/Float): kotlin/Int // androidx.collection/MutableFloatObjectMap.findInsertIndex|findInsertIndex(kotlin.Float){}[0]
     final fun put(kotlin/Float, #A): #A? // androidx.collection/MutableFloatObjectMap.put|put(kotlin.Float;1:0){}[0]
     final fun putAll(androidx.collection/FloatObjectMap<#A>) // androidx.collection/MutableFloatObjectMap.putAll|putAll(androidx.collection.FloatObjectMap<1:0>){}[0]
     final fun remove(kotlin/Float): #A? // androidx.collection/MutableFloatObjectMap.remove|remove(kotlin.Float){}[0]
@@ -184,6 +185,7 @@ final class <#A: kotlin/Any?> androidx.collection/MutableIntObjectMap : androidx
     constructor <init>(kotlin/Int = ...) // androidx.collection/MutableIntObjectMap.<init>|<init>(kotlin.Int){}[0]
 
     final fun clear() // androidx.collection/MutableIntObjectMap.clear|clear(){}[0]
+    final fun findInsertIndex(kotlin/Int): kotlin/Int // androidx.collection/MutableIntObjectMap.findInsertIndex|findInsertIndex(kotlin.Int){}[0]
     final fun put(kotlin/Int, #A): #A? // androidx.collection/MutableIntObjectMap.put|put(kotlin.Int;1:0){}[0]
     final fun putAll(androidx.collection/IntObjectMap<#A>) // androidx.collection/MutableIntObjectMap.putAll|putAll(androidx.collection.IntObjectMap<1:0>){}[0]
     final fun remove(kotlin/Int): #A? // androidx.collection/MutableIntObjectMap.remove|remove(kotlin.Int){}[0]
@@ -204,6 +206,7 @@ final class <#A: kotlin/Any?> androidx.collection/MutableLongObjectMap : android
     constructor <init>(kotlin/Int = ...) // androidx.collection/MutableLongObjectMap.<init>|<init>(kotlin.Int){}[0]
 
     final fun clear() // androidx.collection/MutableLongObjectMap.clear|clear(){}[0]
+    final fun findInsertIndex(kotlin/Long): kotlin/Int // androidx.collection/MutableLongObjectMap.findInsertIndex|findInsertIndex(kotlin.Long){}[0]
     final fun put(kotlin/Long, #A): #A? // androidx.collection/MutableLongObjectMap.put|put(kotlin.Long;1:0){}[0]
     final fun putAll(androidx.collection/LongObjectMap<#A>) // androidx.collection/MutableLongObjectMap.putAll|putAll(androidx.collection.LongObjectMap<1:0>){}[0]
     final fun remove(kotlin/Long): #A? // androidx.collection/MutableLongObjectMap.remove|remove(kotlin.Long){}[0]
@@ -224,6 +227,7 @@ final class <#A: kotlin/Any?> androidx.collection/MutableObjectFloatMap : androi
     constructor <init>(kotlin/Int = ...) // androidx.collection/MutableObjectFloatMap.<init>|<init>(kotlin.Int){}[0]
 
     final fun clear() // androidx.collection/MutableObjectFloatMap.clear|clear(){}[0]
+    final fun findInsertIndex(#A): kotlin/Int // androidx.collection/MutableObjectFloatMap.findInsertIndex|findInsertIndex(1:0){}[0]
     final fun put(#A, kotlin/Float) // androidx.collection/MutableObjectFloatMap.put|put(1:0;kotlin.Float){}[0]
     final fun put(#A, kotlin/Float, kotlin/Float): kotlin/Float // androidx.collection/MutableObjectFloatMap.put|put(1:0;kotlin.Float;kotlin.Float){}[0]
     final fun putAll(androidx.collection/ObjectFloatMap<#A>) // androidx.collection/MutableObjectFloatMap.putAll|putAll(androidx.collection.ObjectFloatMap<1:0>){}[0]
@@ -246,6 +250,7 @@ final class <#A: kotlin/Any?> androidx.collection/MutableObjectIntMap : androidx
     constructor <init>(kotlin/Int = ...) // androidx.collection/MutableObjectIntMap.<init>|<init>(kotlin.Int){}[0]
 
     final fun clear() // androidx.collection/MutableObjectIntMap.clear|clear(){}[0]
+    final fun findInsertIndex(#A): kotlin/Int // androidx.collection/MutableObjectIntMap.findInsertIndex|findInsertIndex(1:0){}[0]
     final fun put(#A, kotlin/Int) // androidx.collection/MutableObjectIntMap.put|put(1:0;kotlin.Int){}[0]
     final fun put(#A, kotlin/Int, kotlin/Int): kotlin/Int // androidx.collection/MutableObjectIntMap.put|put(1:0;kotlin.Int;kotlin.Int){}[0]
     final fun putAll(androidx.collection/ObjectIntMap<#A>) // androidx.collection/MutableObjectIntMap.putAll|putAll(androidx.collection.ObjectIntMap<1:0>){}[0]
@@ -312,17 +317,22 @@ final class <#A: kotlin/Any?> androidx.collection/MutableObjectList : androidx.c
     final fun retainAll(kotlin.sequences/Sequence<#A>): kotlin/Boolean // androidx.collection/MutableObjectList.retainAll|retainAll(kotlin.sequences.Sequence<1:0>){}[0]
     final fun retainAll(kotlin/Array<#A>): kotlin/Boolean // androidx.collection/MutableObjectList.retainAll|retainAll(kotlin.Array<1:0>){}[0]
     final fun set(kotlin/Int, #A): #A // androidx.collection/MutableObjectList.set|set(kotlin.Int;1:0){}[0]
+    final fun sortWith(kotlin/Comparator<in #A>) // androidx.collection/MutableObjectList.sortWith|sortWith(kotlin.Comparator<in|1:0>){}[0]
     final fun trim(kotlin/Int = ...) // androidx.collection/MutableObjectList.trim|trim(kotlin.Int){}[0]
+    final inline fun <#A1: kotlin/Comparable<#A1>> sortBy(crossinline kotlin/Function1<#A, #A1?>) // androidx.collection/MutableObjectList.sortBy|sortBy(kotlin.Function1<1:0,0:0?>){0§<kotlin.Comparable<0:0>>}[0]
+    final inline fun <#A1: kotlin/Comparable<#A1>> sortByDescending(crossinline kotlin/Function1<#A, #A1?>) // androidx.collection/MutableObjectList.sortByDescending|sortByDescending(kotlin.Function1<1:0,0:0?>){0§<kotlin.Comparable<0:0>>}[0]
     final inline fun ensureCapacity(kotlin/Int) // androidx.collection/MutableObjectList.ensureCapacity|ensureCapacity(kotlin.Int){}[0]
     final inline fun minusAssign(#A) // androidx.collection/MutableObjectList.minusAssign|minusAssign(1:0){}[0]
     final inline fun plusAssign(#A) // androidx.collection/MutableObjectList.plusAssign|plusAssign(1:0){}[0]
     final inline fun removeIf(kotlin/Function1<#A, kotlin/Boolean>) // androidx.collection/MutableObjectList.removeIf|removeIf(kotlin.Function1<1:0,kotlin.Boolean>){}[0]
+    final inline fun sortWith(crossinline kotlin/Function2<#A, #A, kotlin/Int>) // androidx.collection/MutableObjectList.sortWith|sortWith(kotlin.Function2<1:0,1:0,kotlin.Int>){}[0]
 }
 
 final class <#A: kotlin/Any?> androidx.collection/MutableObjectLongMap : androidx.collection/ObjectLongMap<#A> { // androidx.collection/MutableObjectLongMap|null[0]
     constructor <init>(kotlin/Int = ...) // androidx.collection/MutableObjectLongMap.<init>|<init>(kotlin.Int){}[0]
 
     final fun clear() // androidx.collection/MutableObjectLongMap.clear|clear(){}[0]
+    final fun findInsertIndex(#A): kotlin/Int // androidx.collection/MutableObjectLongMap.findInsertIndex|findInsertIndex(1:0){}[0]
     final fun put(#A, kotlin/Long) // androidx.collection/MutableObjectLongMap.put|put(1:0;kotlin.Long){}[0]
     final fun put(#A, kotlin/Long, kotlin/Long): kotlin/Long // androidx.collection/MutableObjectLongMap.put|put(1:0;kotlin.Long;kotlin.Long){}[0]
     final fun putAll(androidx.collection/ObjectLongMap<#A>) // androidx.collection/MutableObjectLongMap.putAll|putAll(androidx.collection.ObjectLongMap<1:0>){}[0]
@@ -421,9 +431,9 @@ final class <#A: kotlin/Any?> androidx.collection/MutableScatterSet : androidx.c
     final fun retainAll(androidx.collection/OrderedScatterSet<#A>): kotlin/Boolean // androidx.collection/MutableScatterSet.retainAll|retainAll(androidx.collection.OrderedScatterSet<1:0>){}[0]
     final fun retainAll(androidx.collection/ScatterSet<#A>): kotlin/Boolean // androidx.collection/MutableScatterSet.retainAll|retainAll(androidx.collection.ScatterSet<1:0>){}[0]
     final fun retainAll(kotlin.collections/Collection<#A>): kotlin/Boolean // androidx.collection/MutableScatterSet.retainAll|retainAll(kotlin.collections.Collection<1:0>){}[0]
-    final fun retainAll(kotlin/Function1<#A, kotlin/Boolean>): kotlin/Boolean // androidx.collection/MutableScatterSet.retainAll|retainAll(kotlin.Function1<1:0,kotlin.Boolean>){}[0]
     final fun trim(): kotlin/Int // androidx.collection/MutableScatterSet.trim|trim(){}[0]
     final inline fun removeIf(kotlin/Function1<#A, kotlin/Boolean>) // androidx.collection/MutableScatterSet.removeIf|removeIf(kotlin.Function1<1:0,kotlin.Boolean>){}[0]
+    final inline fun retainAll(kotlin/Function1<#A, kotlin/Boolean>): kotlin/Boolean // androidx.collection/MutableScatterSet.retainAll|retainAll(kotlin.Function1<1:0,kotlin.Boolean>){}[0]
 }
 
 final class androidx.collection/CircularIntArray { // androidx.collection/CircularIntArray|null[0]
@@ -498,6 +508,7 @@ final class androidx.collection/MutableFloatFloatMap : androidx.collection/Float
     constructor <init>(kotlin/Int = ...) // androidx.collection/MutableFloatFloatMap.<init>|<init>(kotlin.Int){}[0]
 
     final fun clear() // androidx.collection/MutableFloatFloatMap.clear|clear(){}[0]
+    final fun findInsertIndex(kotlin/Float): kotlin/Int // androidx.collection/MutableFloatFloatMap.findInsertIndex|findInsertIndex(kotlin.Float){}[0]
     final fun put(kotlin/Float, kotlin/Float) // androidx.collection/MutableFloatFloatMap.put|put(kotlin.Float;kotlin.Float){}[0]
     final fun put(kotlin/Float, kotlin/Float, kotlin/Float): kotlin/Float // androidx.collection/MutableFloatFloatMap.put|put(kotlin.Float;kotlin.Float;kotlin.Float){}[0]
     final fun putAll(androidx.collection/FloatFloatMap) // androidx.collection/MutableFloatFloatMap.putAll|putAll(androidx.collection.FloatFloatMap){}[0]
@@ -519,6 +530,7 @@ final class androidx.collection/MutableFloatIntMap : androidx.collection/FloatIn
     constructor <init>(kotlin/Int = ...) // androidx.collection/MutableFloatIntMap.<init>|<init>(kotlin.Int){}[0]
 
     final fun clear() // androidx.collection/MutableFloatIntMap.clear|clear(){}[0]
+    final fun findInsertIndex(kotlin/Float): kotlin/Int // androidx.collection/MutableFloatIntMap.findInsertIndex|findInsertIndex(kotlin.Float){}[0]
     final fun put(kotlin/Float, kotlin/Int) // androidx.collection/MutableFloatIntMap.put|put(kotlin.Float;kotlin.Int){}[0]
     final fun put(kotlin/Float, kotlin/Int, kotlin/Int): kotlin/Int // androidx.collection/MutableFloatIntMap.put|put(kotlin.Float;kotlin.Int;kotlin.Int){}[0]
     final fun putAll(androidx.collection/FloatIntMap) // androidx.collection/MutableFloatIntMap.putAll|putAll(androidx.collection.FloatIntMap){}[0]
@@ -573,6 +585,7 @@ final class androidx.collection/MutableFloatLongMap : androidx.collection/FloatL
     constructor <init>(kotlin/Int = ...) // androidx.collection/MutableFloatLongMap.<init>|<init>(kotlin.Int){}[0]
 
     final fun clear() // androidx.collection/MutableFloatLongMap.clear|clear(){}[0]
+    final fun findInsertIndex(kotlin/Float): kotlin/Int // androidx.collection/MutableFloatLongMap.findInsertIndex|findInsertIndex(kotlin.Float){}[0]
     final fun put(kotlin/Float, kotlin/Long) // androidx.collection/MutableFloatLongMap.put|put(kotlin.Float;kotlin.Long){}[0]
     final fun put(kotlin/Float, kotlin/Long, kotlin/Long): kotlin/Long // androidx.collection/MutableFloatLongMap.put|put(kotlin.Float;kotlin.Long;kotlin.Long){}[0]
     final fun putAll(androidx.collection/FloatLongMap) // androidx.collection/MutableFloatLongMap.putAll|putAll(androidx.collection.FloatLongMap){}[0]
@@ -613,6 +626,7 @@ final class androidx.collection/MutableIntFloatMap : androidx.collection/IntFloa
     constructor <init>(kotlin/Int = ...) // androidx.collection/MutableIntFloatMap.<init>|<init>(kotlin.Int){}[0]
 
     final fun clear() // androidx.collection/MutableIntFloatMap.clear|clear(){}[0]
+    final fun findInsertIndex(kotlin/Int): kotlin/Int // androidx.collection/MutableIntFloatMap.findInsertIndex|findInsertIndex(kotlin.Int){}[0]
     final fun put(kotlin/Int, kotlin/Float) // androidx.collection/MutableIntFloatMap.put|put(kotlin.Int;kotlin.Float){}[0]
     final fun put(kotlin/Int, kotlin/Float, kotlin/Float): kotlin/Float // androidx.collection/MutableIntFloatMap.put|put(kotlin.Int;kotlin.Float;kotlin.Float){}[0]
     final fun putAll(androidx.collection/IntFloatMap) // androidx.collection/MutableIntFloatMap.putAll|putAll(androidx.collection.IntFloatMap){}[0]
@@ -634,6 +648,7 @@ final class androidx.collection/MutableIntIntMap : androidx.collection/IntIntMap
     constructor <init>(kotlin/Int = ...) // androidx.collection/MutableIntIntMap.<init>|<init>(kotlin.Int){}[0]
 
     final fun clear() // androidx.collection/MutableIntIntMap.clear|clear(){}[0]
+    final fun findInsertIndex(kotlin/Int): kotlin/Int // androidx.collection/MutableIntIntMap.findInsertIndex|findInsertIndex(kotlin.Int){}[0]
     final fun put(kotlin/Int, kotlin/Int) // androidx.collection/MutableIntIntMap.put|put(kotlin.Int;kotlin.Int){}[0]
     final fun put(kotlin/Int, kotlin/Int, kotlin/Int): kotlin/Int // androidx.collection/MutableIntIntMap.put|put(kotlin.Int;kotlin.Int;kotlin.Int){}[0]
     final fun putAll(androidx.collection/IntIntMap) // androidx.collection/MutableIntIntMap.putAll|putAll(androidx.collection.IntIntMap){}[0]
@@ -688,6 +703,7 @@ final class androidx.collection/MutableIntLongMap : androidx.collection/IntLongM
     constructor <init>(kotlin/Int = ...) // androidx.collection/MutableIntLongMap.<init>|<init>(kotlin.Int){}[0]
 
     final fun clear() // androidx.collection/MutableIntLongMap.clear|clear(){}[0]
+    final fun findInsertIndex(kotlin/Int): kotlin/Int // androidx.collection/MutableIntLongMap.findInsertIndex|findInsertIndex(kotlin.Int){}[0]
     final fun put(kotlin/Int, kotlin/Long) // androidx.collection/MutableIntLongMap.put|put(kotlin.Int;kotlin.Long){}[0]
     final fun put(kotlin/Int, kotlin/Long, kotlin/Long): kotlin/Long // androidx.collection/MutableIntLongMap.put|put(kotlin.Int;kotlin.Long;kotlin.Long){}[0]
     final fun putAll(androidx.collection/IntLongMap) // androidx.collection/MutableIntLongMap.putAll|putAll(androidx.collection.IntLongMap){}[0]
@@ -728,6 +744,7 @@ final class androidx.collection/MutableLongFloatMap : androidx.collection/LongFl
     constructor <init>(kotlin/Int = ...) // androidx.collection/MutableLongFloatMap.<init>|<init>(kotlin.Int){}[0]
 
     final fun clear() // androidx.collection/MutableLongFloatMap.clear|clear(){}[0]
+    final fun findInsertIndex(kotlin/Long): kotlin/Int // androidx.collection/MutableLongFloatMap.findInsertIndex|findInsertIndex(kotlin.Long){}[0]
     final fun put(kotlin/Long, kotlin/Float) // androidx.collection/MutableLongFloatMap.put|put(kotlin.Long;kotlin.Float){}[0]
     final fun put(kotlin/Long, kotlin/Float, kotlin/Float): kotlin/Float // androidx.collection/MutableLongFloatMap.put|put(kotlin.Long;kotlin.Float;kotlin.Float){}[0]
     final fun putAll(androidx.collection/LongFloatMap) // androidx.collection/MutableLongFloatMap.putAll|putAll(androidx.collection.LongFloatMap){}[0]
@@ -749,6 +766,7 @@ final class androidx.collection/MutableLongIntMap : androidx.collection/LongIntM
     constructor <init>(kotlin/Int = ...) // androidx.collection/MutableLongIntMap.<init>|<init>(kotlin.Int){}[0]
 
     final fun clear() // androidx.collection/MutableLongIntMap.clear|clear(){}[0]
+    final fun findInsertIndex(kotlin/Long): kotlin/Int // androidx.collection/MutableLongIntMap.findInsertIndex|findInsertIndex(kotlin.Long){}[0]
     final fun put(kotlin/Long, kotlin/Int) // androidx.collection/MutableLongIntMap.put|put(kotlin.Long;kotlin.Int){}[0]
     final fun put(kotlin/Long, kotlin/Int, kotlin/Int): kotlin/Int // androidx.collection/MutableLongIntMap.put|put(kotlin.Long;kotlin.Int;kotlin.Int){}[0]
     final fun putAll(androidx.collection/LongIntMap) // androidx.collection/MutableLongIntMap.putAll|putAll(androidx.collection.LongIntMap){}[0]
@@ -803,6 +821,7 @@ final class androidx.collection/MutableLongLongMap : androidx.collection/LongLon
     constructor <init>(kotlin/Int = ...) // androidx.collection/MutableLongLongMap.<init>|<init>(kotlin.Int){}[0]
 
     final fun clear() // androidx.collection/MutableLongLongMap.clear|clear(){}[0]
+    final fun findInsertIndex(kotlin/Long): kotlin/Int // androidx.collection/MutableLongLongMap.findInsertIndex|findInsertIndex(kotlin.Long){}[0]
     final fun put(kotlin/Long, kotlin/Long) // androidx.collection/MutableLongLongMap.put|put(kotlin.Long;kotlin.Long){}[0]
     final fun put(kotlin/Long, kotlin/Long, kotlin/Long): kotlin/Long // androidx.collection/MutableLongLongMap.put|put(kotlin.Long;kotlin.Long;kotlin.Long){}[0]
     final fun putAll(androidx.collection/LongLongMap) // androidx.collection/MutableLongLongMap.putAll|putAll(androidx.collection.LongLongMap){}[0]
@@ -1246,6 +1265,7 @@ sealed class <#A: kotlin/Any?> androidx.collection/ObjectList { // androidx.coll
 
     abstract fun asList(): kotlin.collections/List<#A> // androidx.collection/ObjectList.asList|asList(){}[0]
     final fun any(): kotlin/Boolean // androidx.collection/ObjectList.any|any(){}[0]
+    final fun binarySearch(#A, kotlin/Comparator<in #A>, kotlin/Int = ..., kotlin/Int = ...): kotlin/Int // androidx.collection/ObjectList.binarySearch|binarySearch(1:0;kotlin.Comparator<in|1:0>;kotlin.Int;kotlin.Int){}[0]
     final fun contains(#A): kotlin/Boolean // androidx.collection/ObjectList.contains|contains(1:0){}[0]
     final fun containsAll(androidx.collection/ObjectList<#A>): kotlin/Boolean // androidx.collection/ObjectList.containsAll|containsAll(androidx.collection.ObjectList<1:0>){}[0]
     final fun containsAll(kotlin.collections/Iterable<#A>): kotlin/Boolean // androidx.collection/ObjectList.containsAll|containsAll(kotlin.collections.Iterable<1:0>){}[0]
@@ -1266,7 +1286,9 @@ sealed class <#A: kotlin/Any?> androidx.collection/ObjectList { // androidx.coll
     final inline fun <#A1: kotlin/Any?> foldIndexed(#A1, kotlin/Function3<kotlin/Int, #A1, #A, #A1>): #A1 // androidx.collection/ObjectList.foldIndexed|foldIndexed(0:0;kotlin.Function3<kotlin.Int,0:0,1:0,0:0>){0§<kotlin.Any?>}[0]
     final inline fun <#A1: kotlin/Any?> foldRight(#A1, kotlin/Function2<#A, #A1, #A1>): #A1 // androidx.collection/ObjectList.foldRight|foldRight(0:0;kotlin.Function2<1:0,0:0,0:0>){0§<kotlin.Any?>}[0]
     final inline fun <#A1: kotlin/Any?> foldRightIndexed(#A1, kotlin/Function3<kotlin/Int, #A, #A1, #A1>): #A1 // androidx.collection/ObjectList.foldRightIndexed|foldRightIndexed(0:0;kotlin.Function3<kotlin.Int,1:0,0:0,0:0>){0§<kotlin.Any?>}[0]
+    final inline fun <#A1: kotlin/Comparable<#A1>> binarySearchBy(#A1?, kotlin/Int = ..., kotlin/Int = ..., crossinline kotlin/Function1<#A, #A1?>): kotlin/Int // androidx.collection/ObjectList.binarySearchBy|binarySearchBy(0:0?;kotlin.Int;kotlin.Int;kotlin.Function1<1:0,0:0?>){0§<kotlin.Comparable<0:0>>}[0]
     final inline fun any(kotlin/Function1<#A, kotlin/Boolean>): kotlin/Boolean // androidx.collection/ObjectList.any|any(kotlin.Function1<1:0,kotlin.Boolean>){}[0]
+    final inline fun binarySearch(kotlin/Int = ..., kotlin/Int = ..., kotlin/Function1<#A, kotlin/Int>): kotlin/Int // androidx.collection/ObjectList.binarySearch|binarySearch(kotlin.Int;kotlin.Int;kotlin.Function1<1:0,kotlin.Int>){}[0]
     final inline fun count(kotlin/Function1<#A, kotlin/Boolean>): kotlin/Int // androidx.collection/ObjectList.count|count(kotlin.Function1<1:0,kotlin.Boolean>){}[0]
     final inline fun elementAtOrElse(kotlin/Int, kotlin/Function1<kotlin/Int, #A>): #A // androidx.collection/ObjectList.elementAtOrElse|elementAtOrElse(kotlin.Int;kotlin.Function1<kotlin.Int,1:0>){}[0]
     final inline fun first(kotlin/Function1<#A, kotlin/Boolean>): #A // androidx.collection/ObjectList.first|first(kotlin.Function1<1:0,kotlin.Boolean>){}[0]
@@ -1427,6 +1449,7 @@ sealed class androidx.collection/DoubleList { // androidx.collection/DoubleList|
         final fun <get-content>(): kotlin/DoubleArray // androidx.collection/DoubleList.content.<get-content>|<get-content>(){}[0]
         final fun <set-content>(kotlin/DoubleArray) // androidx.collection/DoubleList.content.<set-content>|<set-content>(kotlin.DoubleArray){}[0]
 
+    final fun binarySearch(kotlin/Double, kotlin/Double = ..., kotlin/Int = ..., kotlin/Int = ...): kotlin/Int // androidx.collection/DoubleList.binarySearch|binarySearch(kotlin.Double;kotlin.Double;kotlin.Int;kotlin.Int){}[0]
     final fun binarySearch(kotlin/Int, kotlin/Int = ..., kotlin/Int = ...): kotlin/Int // androidx.collection/DoubleList.binarySearch|binarySearch(kotlin.Int;kotlin.Int;kotlin.Int){}[0]
     final fun contains(kotlin/Double): kotlin/Boolean // androidx.collection/DoubleList.contains|contains(kotlin.Double){}[0]
     final fun containsAll(androidx.collection/DoubleList): kotlin/Boolean // androidx.collection/DoubleList.containsAll|containsAll(androidx.collection.DoubleList){}[0]
@@ -1443,6 +1466,7 @@ sealed class androidx.collection/DoubleList { // androidx.collection/DoubleList|
     final inline fun <#A1: kotlin/Any?> foldRightIndexed(#A1, kotlin/Function3<kotlin/Int, kotlin/Double, #A1, #A1>): #A1 // androidx.collection/DoubleList.foldRightIndexed|foldRightIndexed(0:0;kotlin.Function3<kotlin.Int,kotlin.Double,0:0,0:0>){0§<kotlin.Any?>}[0]
     final inline fun any(): kotlin/Boolean // androidx.collection/DoubleList.any|any(){}[0]
     final inline fun any(kotlin/Function1<kotlin/Double, kotlin/Boolean>): kotlin/Boolean // androidx.collection/DoubleList.any|any(kotlin.Function1<kotlin.Double,kotlin.Boolean>){}[0]
+    final inline fun binarySearch(kotlin/Int = ..., kotlin/Int = ..., kotlin/Function1<kotlin/Double, kotlin/Int>): kotlin/Int // androidx.collection/DoubleList.binarySearch|binarySearch(kotlin.Int;kotlin.Int;kotlin.Function1<kotlin.Double,kotlin.Int>){}[0]
     final inline fun count(): kotlin/Int // androidx.collection/DoubleList.count|count(){}[0]
     final inline fun count(kotlin/Function1<kotlin/Double, kotlin/Boolean>): kotlin/Int // androidx.collection/DoubleList.count|count(kotlin.Function1<kotlin.Double,kotlin.Boolean>){}[0]
     final inline fun elementAtOrElse(kotlin/Int, kotlin/Function1<kotlin/Int, kotlin/Double>): kotlin/Double // androidx.collection/DoubleList.elementAtOrElse|elementAtOrElse(kotlin.Int;kotlin.Function1<kotlin.Int,kotlin.Double>){}[0]
@@ -1563,6 +1587,7 @@ sealed class androidx.collection/FloatList { // androidx.collection/FloatList|nu
         final fun <get-content>(): kotlin/FloatArray // androidx.collection/FloatList.content.<get-content>|<get-content>(){}[0]
         final fun <set-content>(kotlin/FloatArray) // androidx.collection/FloatList.content.<set-content>|<set-content>(kotlin.FloatArray){}[0]
 
+    final fun binarySearch(kotlin/Float, kotlin/Float = ..., kotlin/Int = ..., kotlin/Int = ...): kotlin/Int // androidx.collection/FloatList.binarySearch|binarySearch(kotlin.Float;kotlin.Float;kotlin.Int;kotlin.Int){}[0]
     final fun binarySearch(kotlin/Int, kotlin/Int = ..., kotlin/Int = ...): kotlin/Int // androidx.collection/FloatList.binarySearch|binarySearch(kotlin.Int;kotlin.Int;kotlin.Int){}[0]
     final fun contains(kotlin/Float): kotlin/Boolean // androidx.collection/FloatList.contains|contains(kotlin.Float){}[0]
     final fun containsAll(androidx.collection/FloatList): kotlin/Boolean // androidx.collection/FloatList.containsAll|containsAll(androidx.collection.FloatList){}[0]
@@ -1579,6 +1604,7 @@ sealed class androidx.collection/FloatList { // androidx.collection/FloatList|nu
     final inline fun <#A1: kotlin/Any?> foldRightIndexed(#A1, kotlin/Function3<kotlin/Int, kotlin/Float, #A1, #A1>): #A1 // androidx.collection/FloatList.foldRightIndexed|foldRightIndexed(0:0;kotlin.Function3<kotlin.Int,kotlin.Float,0:0,0:0>){0§<kotlin.Any?>}[0]
     final inline fun any(): kotlin/Boolean // androidx.collection/FloatList.any|any(){}[0]
     final inline fun any(kotlin/Function1<kotlin/Float, kotlin/Boolean>): kotlin/Boolean // androidx.collection/FloatList.any|any(kotlin.Function1<kotlin.Float,kotlin.Boolean>){}[0]
+    final inline fun binarySearch(kotlin/Int = ..., kotlin/Int = ..., kotlin/Function1<kotlin/Float, kotlin/Int>): kotlin/Int // androidx.collection/FloatList.binarySearch|binarySearch(kotlin.Int;kotlin.Int;kotlin.Function1<kotlin.Float,kotlin.Int>){}[0]
     final inline fun count(): kotlin/Int // androidx.collection/FloatList.count|count(){}[0]
     final inline fun count(kotlin/Function1<kotlin/Float, kotlin/Boolean>): kotlin/Int // androidx.collection/FloatList.count|count(kotlin.Function1<kotlin.Float,kotlin.Boolean>){}[0]
     final inline fun elementAtOrElse(kotlin/Int, kotlin/Function1<kotlin/Int, kotlin/Float>): kotlin/Float // androidx.collection/FloatList.elementAtOrElse|elementAtOrElse(kotlin.Int;kotlin.Function1<kotlin.Int,kotlin.Float>){}[0]
@@ -1790,6 +1816,7 @@ sealed class androidx.collection/IntList { // androidx.collection/IntList|null[0
     final inline fun <#A1: kotlin/Any?> foldRightIndexed(#A1, kotlin/Function3<kotlin/Int, kotlin/Int, #A1, #A1>): #A1 // androidx.collection/IntList.foldRightIndexed|foldRightIndexed(0:0;kotlin.Function3<kotlin.Int,kotlin.Int,0:0,0:0>){0§<kotlin.Any?>}[0]
     final inline fun any(): kotlin/Boolean // androidx.collection/IntList.any|any(){}[0]
     final inline fun any(kotlin/Function1<kotlin/Int, kotlin/Boolean>): kotlin/Boolean // androidx.collection/IntList.any|any(kotlin.Function1<kotlin.Int,kotlin.Boolean>){}[0]
+    final inline fun binarySearch(kotlin/Int = ..., kotlin/Int = ..., kotlin/Function1<kotlin/Int, kotlin/Int>): kotlin/Int // androidx.collection/IntList.binarySearch|binarySearch(kotlin.Int;kotlin.Int;kotlin.Function1<kotlin.Int,kotlin.Int>){}[0]
     final inline fun count(): kotlin/Int // androidx.collection/IntList.count|count(){}[0]
     final inline fun count(kotlin/Function1<kotlin/Int, kotlin/Boolean>): kotlin/Int // androidx.collection/IntList.count|count(kotlin.Function1<kotlin.Int,kotlin.Boolean>){}[0]
     final inline fun elementAtOrElse(kotlin/Int, kotlin/Function1<kotlin/Int, kotlin/Int>): kotlin/Int // androidx.collection/IntList.elementAtOrElse|elementAtOrElse(kotlin.Int;kotlin.Function1<kotlin.Int,kotlin.Int>){}[0]
@@ -1986,6 +2013,7 @@ sealed class androidx.collection/LongList { // androidx.collection/LongList|null
         final fun <set-content>(kotlin/LongArray) // androidx.collection/LongList.content.<set-content>|<set-content>(kotlin.LongArray){}[0]
 
     final fun binarySearch(kotlin/Int, kotlin/Int = ..., kotlin/Int = ...): kotlin/Int // androidx.collection/LongList.binarySearch|binarySearch(kotlin.Int;kotlin.Int;kotlin.Int){}[0]
+    final fun binarySearch(kotlin/Long, kotlin/Int = ..., kotlin/Int = ...): kotlin/Int // androidx.collection/LongList.binarySearch|binarySearch(kotlin.Long;kotlin.Int;kotlin.Int){}[0]
     final fun contains(kotlin/Long): kotlin/Boolean // androidx.collection/LongList.contains|contains(kotlin.Long){}[0]
     final fun containsAll(androidx.collection/LongList): kotlin/Boolean // androidx.collection/LongList.containsAll|containsAll(androidx.collection.LongList){}[0]
     final fun elementAt(kotlin/Int): kotlin/Long // androidx.collection/LongList.elementAt|elementAt(kotlin.Int){}[0]
@@ -2001,6 +2029,7 @@ sealed class androidx.collection/LongList { // androidx.collection/LongList|null
     final inline fun <#A1: kotlin/Any?> foldRightIndexed(#A1, kotlin/Function3<kotlin/Int, kotlin/Long, #A1, #A1>): #A1 // androidx.collection/LongList.foldRightIndexed|foldRightIndexed(0:0;kotlin.Function3<kotlin.Int,kotlin.Long,0:0,0:0>){0§<kotlin.Any?>}[0]
     final inline fun any(): kotlin/Boolean // androidx.collection/LongList.any|any(){}[0]
     final inline fun any(kotlin/Function1<kotlin/Long, kotlin/Boolean>): kotlin/Boolean // androidx.collection/LongList.any|any(kotlin.Function1<kotlin.Long,kotlin.Boolean>){}[0]
+    final inline fun binarySearch(kotlin/Int = ..., kotlin/Int = ..., kotlin/Function1<kotlin/Long, kotlin/Int>): kotlin/Int // androidx.collection/LongList.binarySearch|binarySearch(kotlin.Int;kotlin.Int;kotlin.Function1<kotlin.Long,kotlin.Int>){}[0]
     final inline fun count(): kotlin/Int // androidx.collection/LongList.count|count(){}[0]
     final inline fun count(kotlin/Function1<kotlin/Long, kotlin/Boolean>): kotlin/Int // androidx.collection/LongList.count|count(kotlin.Function1<kotlin.Long,kotlin.Boolean>){}[0]
     final inline fun elementAtOrElse(kotlin/Int, kotlin/Function1<kotlin/Int, kotlin/Long>): kotlin/Long // androidx.collection/LongList.elementAtOrElse|elementAtOrElse(kotlin.Int;kotlin.Function1<kotlin.Int,kotlin.Long>){}[0]
@@ -2117,6 +2146,10 @@ final val androidx.collection/size // androidx.collection/size|@androidx.collect
 final val androidx.collection/size // androidx.collection/size|@androidx.collection.SparseArrayCompat<0:0>{0§<kotlin.Any?>}size[0]
     final inline fun <#A1: kotlin/Any?> (androidx.collection/SparseArrayCompat<#A1>).<get-size>(): kotlin/Int // androidx.collection/size.<get-size>|<get-size>@androidx.collection.SparseArrayCompat<0:0>(){0§<kotlin.Any?>}[0]
 
+final fun <#A: kotlin/Any?, #B: kotlin/Any?> (androidx.collection/ScatterMap<#A, #B>).androidx.collection/toMutableScatterMap(): androidx.collection/MutableScatterMap<#A, #B> // androidx.collection/toMutableScatterMap|toMutableScatterMap@androidx.collection.ScatterMap<0:0,0:1>(){0§<kotlin.Any?>;1§<kotlin.Any?>}[0]
+final fun <#A: kotlin/Any?, #B: kotlin/Any?> (androidx.collection/ScatterMap<#A, #B>).androidx.collection/toScatterMap(): androidx.collection/ScatterMap<#A, #B> // androidx.collection/toScatterMap|toScatterMap@androidx.collection.ScatterMap<0:0,0:1>(){0§<kotlin.Any?>;1§<kotlin.Any?>}[0]
+final fun <#A: kotlin/Any?, #B: kotlin/Any?> (kotlin.collections/Map<#A, #B>).androidx.collection/toMutableScatterMap(): androidx.collection/MutableScatterMap<#A, #B> // androidx.collection/toMutableScatterMap|toMutableScatterMap@kotlin.collections.Map<0:0,0:1>(){0§<kotlin.Any?>;1§<kotlin.Any?>}[0]
+final fun <#A: kotlin/Any?, #B: kotlin/Any?> (kotlin.collections/Map<#A, #B>).androidx.collection/toScatterMap(): androidx.collection/ScatterMap<#A, #B> // androidx.collection/toScatterMap|toScatterMap@kotlin.collections.Map<0:0,0:1>(){0§<kotlin.Any?>;1§<kotlin.Any?>}[0]
 final fun <#A: kotlin/Any?, #B: kotlin/Any?> androidx.collection/emptyScatterMap(): androidx.collection/ScatterMap<#A, #B> // androidx.collection/emptyScatterMap|emptyScatterMap(){0§<kotlin.Any?>;1§<kotlin.Any?>}[0]
 final fun <#A: kotlin/Any?, #B: kotlin/Any?> androidx.collection/mutableScatterMapOf(): androidx.collection/MutableScatterMap<#A, #B> // androidx.collection/mutableScatterMapOf|mutableScatterMapOf(){0§<kotlin.Any?>;1§<kotlin.Any?>}[0]
 final fun <#A: kotlin/Any?, #B: kotlin/Any?> androidx.collection/mutableScatterMapOf(kotlin/Array<out kotlin/Pair<#A, #B>>...): androidx.collection/MutableScatterMap<#A, #B> // androidx.collection/mutableScatterMapOf|mutableScatterMapOf(kotlin.Array<out|kotlin.Pair<0:0,0:1>>...){0§<kotlin.Any?>;1§<kotlin.Any?>}[0]
@@ -2124,10 +2157,18 @@ final fun <#A: kotlin/Any?> (androidx.collection/LongSparseArray<#A>).androidx.c
 final fun <#A: kotlin/Any?> (androidx.collection/LongSparseArray<#A>).androidx.collection/plus(androidx.collection/LongSparseArray<#A>): androidx.collection/LongSparseArray<#A> // androidx.collection/plus|plus@androidx.collection.LongSparseArray<0:0>(androidx.collection.LongSparseArray<0:0>){0§<kotlin.Any?>}[0]
 final fun <#A: kotlin/Any?> (androidx.collection/LongSparseArray<#A>).androidx.collection/remove(kotlin/Long, #A): kotlin/Boolean // androidx.collection/remove|remove@androidx.collection.LongSparseArray<0:0>(kotlin.Long;0:0){0§<kotlin.Any?>}[0]
 final fun <#A: kotlin/Any?> (androidx.collection/LongSparseArray<#A>).androidx.collection/valueIterator(): kotlin.collections/Iterator<#A> // androidx.collection/valueIterator|valueIterator@androidx.collection.LongSparseArray<0:0>(){0§<kotlin.Any?>}[0]
+final fun <#A: kotlin/Any?> (androidx.collection/OrderedScatterSet<#A>).androidx.collection/toMutableOrderedScatterSet(): androidx.collection/MutableOrderedScatterSet<#A> // androidx.collection/toMutableOrderedScatterSet|toMutableOrderedScatterSet@androidx.collection.OrderedScatterSet<0:0>(){0§<kotlin.Any?>}[0]
+final fun <#A: kotlin/Any?> (androidx.collection/OrderedScatterSet<#A>).androidx.collection/toOrderedScatterSet(): androidx.collection/OrderedScatterSet<#A> // androidx.collection/toOrderedScatterSet|toOrderedScatterSet@androidx.collection.OrderedScatterSet<0:0>(){0§<kotlin.Any?>}[0]
+final fun <#A: kotlin/Any?> (androidx.collection/ScatterSet<#A>).androidx.collection/toMutableScatterSet(): androidx.collection/MutableScatterSet<#A> // androidx.collection/toMutableScatterSet|toMutableScatterSet@androidx.collection.ScatterSet<0:0>(){0§<kotlin.Any?>}[0]
+final fun <#A: kotlin/Any?> (androidx.collection/ScatterSet<#A>).androidx.collection/toScatterSet(): androidx.collection/ScatterSet<#A> // androidx.collection/toScatterSet|toScatterSet@androidx.collection.ScatterSet<0:0>(){0§<kotlin.Any?>}[0]
 final fun <#A: kotlin/Any?> (androidx.collection/SparseArrayCompat<#A>).androidx.collection/keyIterator(): kotlin.collections/IntIterator // androidx.collection/keyIterator|keyIterator@androidx.collection.SparseArrayCompat<0:0>(){0§<kotlin.Any?>}[0]
 final fun <#A: kotlin/Any?> (androidx.collection/SparseArrayCompat<#A>).androidx.collection/plus(androidx.collection/SparseArrayCompat<#A>): androidx.collection/SparseArrayCompat<#A> // androidx.collection/plus|plus@androidx.collection.SparseArrayCompat<0:0>(androidx.collection.SparseArrayCompat<0:0>){0§<kotlin.Any?>}[0]
 final fun <#A: kotlin/Any?> (androidx.collection/SparseArrayCompat<#A>).androidx.collection/remove(kotlin/Int, #A): kotlin/Boolean // androidx.collection/remove|remove@androidx.collection.SparseArrayCompat<0:0>(kotlin.Int;0:0){0§<kotlin.Any?>}[0]
 final fun <#A: kotlin/Any?> (androidx.collection/SparseArrayCompat<#A>).androidx.collection/valueIterator(): kotlin.collections/Iterator<#A> // androidx.collection/valueIterator|valueIterator@androidx.collection.SparseArrayCompat<0:0>(){0§<kotlin.Any?>}[0]
+final fun <#A: kotlin/Any?> (kotlin.collections/Collection<#A>).androidx.collection/toMutableOrderedScatterSet(): androidx.collection/MutableOrderedScatterSet<#A> // androidx.collection/toMutableOrderedScatterSet|toMutableOrderedScatterSet@kotlin.collections.Collection<0:0>(){0§<kotlin.Any?>}[0]
+final fun <#A: kotlin/Any?> (kotlin.collections/Collection<#A>).androidx.collection/toMutableScatterSet(): androidx.collection/MutableScatterSet<#A> // androidx.collection/toMutableScatterSet|toMutableScatterSet@kotlin.collections.Collection<0:0>(){0§<kotlin.Any?>}[0]
+final fun <#A: kotlin/Any?> (kotlin.collections/Collection<#A>).androidx.collection/toOrderedScatterSet(): androidx.collection/OrderedScatterSet<#A> // androidx.collection/toOrderedScatterSet|toOrderedScatterSet@kotlin.collections.Collection<0:0>(){0§<kotlin.Any?>}[0]
+final fun <#A: kotlin/Any?> (kotlin.collections/Collection<#A>).androidx.collection/toScatterSet(): androidx.collection/ScatterSet<#A> // androidx.collection/toScatterSet|toScatterSet@kotlin.collections.Collection<0:0>(){0§<kotlin.Any?>}[0]
 final fun <#A: kotlin/Any?> androidx.collection/arraySetOf(kotlin/Array<out #A>...): androidx.collection/ArraySet<#A> // androidx.collection/arraySetOf|arraySetOf(kotlin.Array<out|0:0>...){0§<kotlin.Any?>}[0]
 final fun <#A: kotlin/Any?> androidx.collection/emptyFloatObjectMap(): androidx.collection/FloatObjectMap<#A> // androidx.collection/emptyFloatObjectMap|emptyFloatObjectMap(){0§<kotlin.Any?>}[0]
 final fun <#A: kotlin/Any?> androidx.collection/emptyIntObjectMap(): androidx.collection/IntObjectMap<#A> // androidx.collection/emptyIntObjectMap|emptyIntObjectMap(){0§<kotlin.Any?>}[0]
@@ -2238,6 +2279,7 @@ final fun <#A: kotlin/Any?> androidx.collection/scatterSetOf(#A, #A): androidx.c
 final fun <#A: kotlin/Any?> androidx.collection/scatterSetOf(#A, #A, #A): androidx.collection/ScatterSet<#A> // androidx.collection/scatterSetOf|scatterSetOf(0:0;0:0;0:0){0§<kotlin.Any?>}[0]
 final fun <#A: kotlin/Any?> androidx.collection/scatterSetOf(): androidx.collection/ScatterSet<#A> // androidx.collection/scatterSetOf|scatterSetOf(){0§<kotlin.Any?>}[0]
 final fun <#A: kotlin/Any?> androidx.collection/scatterSetOf(kotlin/Array<out #A>...): androidx.collection/ScatterSet<#A> // androidx.collection/scatterSetOf|scatterSetOf(kotlin.Array<out|0:0>...){0§<kotlin.Any?>}[0]
+final fun <#A: kotlin/Comparable<#A>> (androidx.collection/ObjectList<#A>).androidx.collection/binarySearch(#A, kotlin/Int = ..., kotlin/Int = ...): kotlin/Int // androidx.collection/binarySearch|binarySearch@androidx.collection.ObjectList<0:0>(0:0;kotlin.Int;kotlin.Int){0§<kotlin.Comparable<0:0>>}[0]
 final fun androidx.collection.internal/throwNoSuchElementExceptionForInline(kotlin/String): kotlin/Nothing // androidx.collection.internal/throwNoSuchElementExceptionForInline|throwNoSuchElementExceptionForInline(kotlin.String){}[0]
 final fun androidx.collection/doubleListOf(): androidx.collection/DoubleList // androidx.collection/doubleListOf|doubleListOf(){}[0]
 final fun androidx.collection/doubleListOf(kotlin/Double): androidx.collection/DoubleList // androidx.collection/doubleListOf|doubleListOf(kotlin.Double){}[0]
@@ -2456,6 +2498,8 @@ final inline fun <#A: kotlin/Any?> androidx.collection/buildObjectLongMap(kotlin
 final inline fun <#A: kotlin/Any?> androidx.collection/buildObjectLongMap(kotlin/Int, kotlin/Function1<androidx.collection/MutableObjectLongMap<#A>, kotlin/Unit>): androidx.collection/ObjectLongMap<#A> // androidx.collection/buildObjectLongMap|buildObjectLongMap(kotlin.Int;kotlin.Function1<androidx.collection.MutableObjectLongMap<0:0>,kotlin.Unit>){0§<kotlin.Any?>}[0]
 final inline fun <#A: kotlin/Any?> androidx.collection/mutableObjectListOf(): androidx.collection/MutableObjectList<#A> // androidx.collection/mutableObjectListOf|mutableObjectListOf(){0§<kotlin.Any?>}[0]
 final inline fun <#A: kotlin/Any?> androidx.collection/mutableObjectListOf(kotlin/Array<out #A>...): androidx.collection/MutableObjectList<#A> // androidx.collection/mutableObjectListOf|mutableObjectListOf(kotlin.Array<out|0:0>...){0§<kotlin.Any?>}[0]
+final inline fun <#A: kotlin/Comparable<#A>> (androidx.collection/MutableObjectList<#A>).androidx.collection/sort() // androidx.collection/sort|sort@androidx.collection.MutableObjectList<0:0>(){0§<kotlin.Comparable<0:0>>}[0]
+final inline fun <#A: kotlin/Comparable<#A>> (androidx.collection/MutableObjectList<#A>).androidx.collection/sortDescending() // androidx.collection/sortDescending|sortDescending@androidx.collection.MutableObjectList<0:0>(){0§<kotlin.Comparable<0:0>>}[0]
 final inline fun androidx.collection.internal/floatFromBits(kotlin/Int): kotlin/Float // androidx.collection.internal/floatFromBits|floatFromBits(kotlin.Int){}[0]
 final inline fun androidx.collection/buildDoubleList(kotlin/Function1<androidx.collection/MutableDoubleList, kotlin/Unit>): androidx.collection/DoubleList // androidx.collection/buildDoubleList|buildDoubleList(kotlin.Function1<androidx.collection.MutableDoubleList,kotlin.Unit>){}[0]
 final inline fun androidx.collection/buildDoubleList(kotlin/Int, kotlin/Function1<androidx.collection/MutableDoubleList, kotlin/Unit>): androidx.collection/DoubleList // androidx.collection/buildDoubleList|buildDoubleList(kotlin.Int;kotlin.Function1<androidx.collection.MutableDoubleList,kotlin.Unit>){}[0]

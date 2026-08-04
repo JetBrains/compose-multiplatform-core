@@ -28,25 +28,25 @@ class ReplaceWithDetectorFieldTest {
         val input =
             arrayOf(
                 javaSample("replacewith.ReplaceWithUsageJava"),
-                javaSample("replacewith.StaticFieldExplicitClass")
+                javaSample("replacewith.StaticFieldExplicitClass"),
             )
 
         val expected =
             """
-src/replacewith/StaticFieldExplicitClass.java:25: Hint: Replacement available [ReplaceWith]
-        System.out.println(ReplaceWithUsageJava.AUTOFILL_HINT_NAME);
-                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-0 errors, 0 warnings, 1 hint
-        """
+            src/replacewith/StaticFieldExplicitClass.java:25: Hint: Replacement available [ReplaceWith]
+                    System.out.println(ReplaceWithUsageJava.AUTOFILL_HINT_NAME);
+                                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            0 errors, 0 warnings, 1 hint
+            """
                 .trimIndent()
 
         val expectedFixDiffs =
             """
-Fix for src/replacewith/StaticFieldExplicitClass.java line 25: Replace with `View.AUTOFILL_HINT_NAME`:
-@@ -25 +25
--         System.out.println(ReplaceWithUsageJava.AUTOFILL_HINT_NAME);
-+         System.out.println(View.AUTOFILL_HINT_NAME);
-        """
+            Fix for src/replacewith/StaticFieldExplicitClass.java line 25: Replace with `View.AUTOFILL_HINT_NAME`:
+            @@ -25 +25
+            -         System.out.println(ReplaceWithUsageJava.AUTOFILL_HINT_NAME);
+            +         System.out.println(View.AUTOFILL_HINT_NAME);
+            """
                 .trimIndent()
 
         check(*input).expect(expected).expectFixDiffs(expectedFixDiffs)
@@ -57,25 +57,25 @@ Fix for src/replacewith/StaticFieldExplicitClass.java line 25: Replace with `Vie
         val input =
             arrayOf(
                 javaSample("replacewith.ReplaceWithUsageJava"),
-                javaSample("replacewith.StaticFieldImplicitClass")
+                javaSample("replacewith.StaticFieldImplicitClass"),
             )
 
         val expected =
             """
-src/replacewith/StaticFieldImplicitClass.java:27: Hint: Replacement available [ReplaceWith]
-        System.out.println(AUTOFILL_HINT_NAME);
-                           ~~~~~~~~~~~~~~~~~~
-0 errors, 0 warnings, 1 hint
-        """
+            src/replacewith/StaticFieldImplicitClass.java:27: Hint: Replacement available [ReplaceWith]
+                    System.out.println(AUTOFILL_HINT_NAME);
+                                       ~~~~~~~~~~~~~~~~~~
+            0 errors, 0 warnings, 1 hint
+            """
                 .trimIndent()
 
         val expectedFixDiffs =
             """
-Fix for src/replacewith/StaticFieldImplicitClass.java line 27: Replace with `View.AUTOFILL_HINT_NAME`:
-@@ -27 +27
--         System.out.println(AUTOFILL_HINT_NAME);
-+         System.out.println(View.AUTOFILL_HINT_NAME);
-        """
+            Fix for src/replacewith/StaticFieldImplicitClass.java line 27: Replace with `View.AUTOFILL_HINT_NAME`:
+            @@ -27 +27
+            -         System.out.println(AUTOFILL_HINT_NAME);
+            +         System.out.println(View.AUTOFILL_HINT_NAME);
+            """
                 .trimIndent()
 
         check(*input).expect(expected).expectFixDiffs(expectedFixDiffs)

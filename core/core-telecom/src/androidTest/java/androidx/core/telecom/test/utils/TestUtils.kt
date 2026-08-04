@@ -34,9 +34,7 @@ import androidx.core.telecom.CallAttributesCompat
 import androidx.core.telecom.extensions.Participant
 import androidx.core.telecom.extensions.ParticipantParcelable
 import androidx.core.telecom.extensions.toParticipant
-import androidx.core.telecom.internal.utils.BuildVersionAdapter
 import androidx.core.telecom.test.ITestAppControlCallback
-import androidx.core.telecom.util.ExperimentalAppActions
 import androidx.test.platform.app.InstrumentationRegistry
 import java.io.FileInputStream
 import java.util.UUID
@@ -94,7 +92,7 @@ object TestUtils {
             TEST_ADDRESS,
             CallAttributesCompat.DIRECTION_OUTGOING,
             CallAttributesCompat.CALL_TYPE_AUDIO_CALL,
-            ALL_CALL_CAPABILITIES
+            ALL_CALL_CAPABILITIES,
         )
 
     val OUTGOING_NO_HOLD_CAP_CALL_ATTRIBUTES =
@@ -103,7 +101,7 @@ object TestUtils {
             TEST_ADDRESS,
             CallAttributesCompat.DIRECTION_OUTGOING,
             CallAttributesCompat.CALL_TYPE_AUDIO_CALL,
-            CallAttributesCompat.SUPPORTS_STREAM
+            CallAttributesCompat.SUPPORTS_STREAM,
         )
 
     // Define all possible properties for CallAttributes
@@ -112,50 +110,8 @@ object TestUtils {
             INCOMING_NAME,
             TEST_ADDRESS,
             CallAttributesCompat.DIRECTION_INCOMING,
-            ALL_CALL_CAPABILITIES
+            ALL_CALL_CAPABILITIES,
         )
-
-    /**
-     * This build version should be set when the **V2 transactional APIs** are desired as the
-     * underlying call management.
-     */
-    internal val mV2Build =
-        object : BuildVersionAdapter {
-            override fun hasPlatformV2Apis(): Boolean {
-                return true
-            }
-
-            override fun hasInvalidBuildVersion(): Boolean {
-                return false
-            }
-        }
-
-    /**
-     * This build version should be set when the **ConnectionService and Connection APIs** are
-     * desired as the underlying call management.
-     */
-    internal val mBackwardsCompatBuild =
-        object : BuildVersionAdapter {
-            override fun hasPlatformV2Apis(): Boolean {
-                return false
-            }
-
-            override fun hasInvalidBuildVersion(): Boolean {
-                return false
-            }
-        }
-
-    /** This build version should be set when edge case testing on invalid builds */
-    internal val mInvalidBuild =
-        object : BuildVersionAdapter {
-            override fun hasPlatformV2Apis(): Boolean {
-                return false
-            }
-
-            override fun hasInvalidBuildVersion(): Boolean {
-                return true
-            }
-        }
 
     val mOnSetActiveLambda: suspend () -> Unit = {
         Log.i(LOG_TAG, "onSetActive: completing")
@@ -246,7 +202,7 @@ object TestUtils {
     fun setDefaultDialer(packageName: String) {
         Log.i(
             LOG_TAG,
-            "setDefaultDialer=[${runShellCommand((COMMAND_SET_DEFAULT_DIALER + packageName))}]"
+            "setDefaultDialer=[${runShellCommand((COMMAND_SET_DEFAULT_DIALER + packageName))}]",
         )
     }
 
@@ -274,7 +230,7 @@ object TestUtils {
                     (COMMAND_ENABLE_PHONE_ACCOUNT +
                         pn + "/" + cn + " " + phoneAccountHandle.id + " " + userHandleId)
                 )
-            }]"
+            }]",
         )
     }
 
@@ -303,19 +259,19 @@ object TestUtils {
      */
     internal suspend fun waitOnInCallServiceToReachXCalls(
         service: TestInCallService,
-        targetCallCount: Int
+        targetCallCount: Int,
     ): Call? {
         var targetCall: Call? = null
         Log.i(
             LOG_TAG,
             "waitOnInCallServiceToReachXCalls: target count=$targetCallCount, " +
-                "starting call check"
+                "starting call check",
         )
         if (targetCallCount > 0) {
             waitForCondition(
                 WAIT_ON_IN_CALL_SERVICE_CALL_COUNT_TIMEOUT,
                 "Expected call count to be <$targetCallCount>" +
-                    " but the Actual call count was <${service.getCallCount()}>"
+                    " but the Actual call count was <${service.getCallCount()}>",
             ) {
                 service.getCallCount() >= targetCallCount
             }
@@ -325,7 +281,7 @@ object TestUtils {
             waitForCondition(
                 WAIT_ON_IN_CALL_SERVICE_CALL_COUNT_TIMEOUT,
                 "Expected call count to be <$targetCallCount>" +
-                    " but the Actual call count was <${service.getCallCount()}>"
+                    " but the Actual call count was <${service.getCallCount()}>",
             ) {
                 service.getCallCount() <= 0
             }
@@ -339,7 +295,7 @@ object TestUtils {
         waitForCondition(
             WAIT_ON_CALL_STATE_TIMEOUT,
             "Expected call state to be <$targetState>" +
-                " but the Actual call state was <${call.state}>"
+                " but the Actual call state was <${call.state}>",
         ) {
             call.state == targetState
         }
@@ -348,7 +304,7 @@ object TestUtils {
     private suspend fun waitForCondition(
         timeout: Long,
         failureMessage: String,
-        expectedCondition: () -> Boolean
+        expectedCondition: () -> Boolean,
     ) {
         try {
             withTimeout(timeout) {
@@ -374,7 +330,6 @@ object TestUtils {
     }
 
     /** Generate a List of [Participant]s, where each ID corresponds to a range of 1 to [num] */
-    @ExperimentalAppActions
     fun generateParticipants(num: Int): List<Participant> {
         val participants = ArrayList<Participant>()
         for (i in 1..num) {
@@ -383,17 +338,14 @@ object TestUtils {
         return participants
     }
 
-    @ExperimentalAppActions
     fun getDefaultParticipant(): Participant {
         return Participant("123", "Gemini")
     }
 
-    @ExperimentalAppActions
     fun getDefaultParticipantParcelable(): ParticipantParcelable {
         return getDefaultParticipant().toParticipantParcelable()
     }
 
-    @ExperimentalAppActions
     fun printParticipants(participants: Collection<Participant>, tag: String) {
         Log.i(LOG_TAG, tag + ": printParticipants: set size=${participants.size}")
         for (v in participants) {
@@ -402,7 +354,6 @@ object TestUtils {
     }
 }
 
-@ExperimentalAppActions
 class TestCallCallbackListener(private val scope: CoroutineScope) : ITestAppControlCallback.Stub() {
     private val raisedHandFlow: MutableSharedFlow<Pair<String, Boolean>> =
         MutableSharedFlow(replay = 1)

@@ -42,6 +42,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
@@ -60,7 +61,6 @@ import androidx.wear.compose.materialcore.currentTimeMillis
 import androidx.wear.compose.materialcore.is24HourFormat
 import androidx.wear.compose.materialcore.isRoundDevice
 import java.util.Calendar
-import java.util.Locale
 
 /**
  * Layout to show the current time and a label at the top of the screen. If device has a round
@@ -137,17 +137,13 @@ public fun TimeText(
         Row(
             modifier = modifier.fillMaxSize().padding(contentPadding),
             verticalAlignment = Alignment.Top,
-            horizontalArrangement = Arrangement.Center
+            horizontalArrangement = Arrangement.Center,
         ) {
             startLinearContent?.let {
                 it.invoke()
                 textLinearSeparator()
             }
-            Text(
-                text = timeText,
-                maxLines = 1,
-                style = timeTextStyle,
-            )
+            Text(text = timeText, maxLines = 1, style = timeTextStyle)
             endLinearContent?.let {
                 textLinearSeparator()
                 it.invoke()
@@ -177,7 +173,7 @@ public object TimeTextDefaults {
     @Composable
     public fun timeFormat(): String {
         val format = if (is24HourFormat()) TimeFormat24Hours else TimeFormat12Hours
-        return DateFormat.getBestDateTimePattern(Locale.getDefault(), format)
+        return DateFormat.getBestDateTimePattern(Locale.current.platformLocale, format)
             .replace("a", "")
             .trim()
     }
@@ -211,7 +207,7 @@ public object TimeTextDefaults {
     public fun TextSeparator(
         modifier: Modifier = Modifier,
         textStyle: TextStyle = timeTextStyle(),
-        contentPadding: PaddingValues = PaddingValues(horizontal = 4.dp)
+        contentPadding: PaddingValues = PaddingValues(horizontal = 4.dp),
     ) {
         Text(text = "·", style = textStyle, modifier = modifier.padding(contentPadding))
     }
@@ -225,12 +221,12 @@ public object TimeTextDefaults {
      */
     public fun CurvedScope.CurvedTextSeparator(
         curvedTextStyle: CurvedTextStyle? = null,
-        contentArcPadding: ArcPaddingValues = ArcPaddingValues(angular = 4.dp)
+        contentArcPadding: ArcPaddingValues = ArcPaddingValues(angular = 4.dp),
     ) {
         curvedText(
             text = "·",
             style = curvedTextStyle,
-            modifier = CurvedModifier.padding(contentArcPadding)
+            modifier = CurvedModifier.padding(contentArcPadding),
         )
     }
 
@@ -274,12 +270,12 @@ private fun PaddingValues.toArcPadding() =
 
         override fun calculateAfterPadding(
             layoutDirection: LayoutDirection,
-            angularDirection: CurvedDirection.Angular
+            angularDirection: CurvedDirection.Angular,
         ) = calculateRightPadding(layoutDirection)
 
         override fun calculateBeforePadding(
             layoutDirection: LayoutDirection,
-            angularDirection: CurvedDirection.Angular
+            angularDirection: CurvedDirection.Angular,
         ) = calculateLeftPadding(layoutDirection)
     }
 
@@ -306,7 +302,7 @@ internal fun currentTime(time: () -> Long, timeFormat: String): State<String> {
         val receiver =
             TimeBroadcastReceiver(
                 onTimeChanged = { currentTime = updatedTimeLambda() },
-                onTimeZoneChanged = { calendar = Calendar.getInstance() }
+                onTimeZoneChanged = { calendar = Calendar.getInstance() },
             )
         receiver.register(context)
         onDispose { receiver.unregister(context) }
@@ -317,7 +313,7 @@ internal fun currentTime(time: () -> Long, timeFormat: String): State<String> {
 /** A [BroadcastReceiver] to receive time tick, time change, and time zone change events. */
 private class TimeBroadcastReceiver(
     val onTimeChanged: () -> Unit,
-    val onTimeZoneChanged: () -> Unit
+    val onTimeZoneChanged: () -> Unit,
 ) : BroadcastReceiver() {
     private var registered = false
 

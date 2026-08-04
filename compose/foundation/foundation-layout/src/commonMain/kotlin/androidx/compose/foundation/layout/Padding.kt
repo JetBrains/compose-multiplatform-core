@@ -30,6 +30,7 @@ import androidx.compose.ui.platform.InspectorInfo
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.coerceAtLeast
 import androidx.compose.ui.unit.constrainHeight
 import androidx.compose.ui.unit.constrainWidth
 import androidx.compose.ui.unit.dp
@@ -50,7 +51,12 @@ import androidx.compose.ui.unit.offset
  * @sample androidx.compose.foundation.layout.samples.PaddingModifier
  */
 @Stable
-fun Modifier.padding(start: Dp = 0.dp, top: Dp = 0.dp, end: Dp = 0.dp, bottom: Dp = 0.dp) =
+public fun Modifier.padding(
+    start: Dp = 0.dp,
+    top: Dp = 0.dp,
+    end: Dp = 0.dp,
+    bottom: Dp = 0.dp,
+): Modifier =
     this then
         PaddingElement(
             start = start,
@@ -64,7 +70,7 @@ fun Modifier.padding(start: Dp = 0.dp, top: Dp = 0.dp, end: Dp = 0.dp, bottom: D
                 properties["top"] = top
                 properties["end"] = end
                 properties["bottom"] = bottom
-            }
+            },
         )
 
 /**
@@ -80,7 +86,7 @@ fun Modifier.padding(start: Dp = 0.dp, top: Dp = 0.dp, end: Dp = 0.dp, bottom: D
  * @sample androidx.compose.foundation.layout.samples.SymmetricPaddingModifier
  */
 @Stable
-fun Modifier.padding(horizontal: Dp = 0.dp, vertical: Dp = 0.dp) =
+public fun Modifier.padding(horizontal: Dp = 0.dp, vertical: Dp = 0.dp): Modifier =
     this then
         PaddingElement(
             start = horizontal,
@@ -92,7 +98,7 @@ fun Modifier.padding(horizontal: Dp = 0.dp, vertical: Dp = 0.dp) =
                 name = "padding"
                 properties["horizontal"] = horizontal
                 properties["vertical"] = vertical
-            }
+            },
         )
 
 /**
@@ -108,7 +114,7 @@ fun Modifier.padding(horizontal: Dp = 0.dp, vertical: Dp = 0.dp) =
  * @sample androidx.compose.foundation.layout.samples.PaddingAllModifier
  */
 @Stable
-fun Modifier.padding(all: Dp) =
+public fun Modifier.padding(all: Dp): Modifier =
     this then
         PaddingElement(
             start = all,
@@ -119,7 +125,7 @@ fun Modifier.padding(all: Dp) =
             inspectorInfo = {
                 name = "padding"
                 value = all
-            }
+            },
         )
 
 /**
@@ -135,14 +141,14 @@ fun Modifier.padding(all: Dp) =
  * @sample androidx.compose.foundation.layout.samples.PaddingValuesModifier
  */
 @Stable
-fun Modifier.padding(paddingValues: PaddingValues) =
+public fun Modifier.padding(paddingValues: PaddingValues): Modifier =
     this then
         PaddingValuesElement(
             paddingValues = paddingValues,
             inspectorInfo = {
                 name = "padding"
                 properties["paddingValues"] = paddingValues
-            }
+            },
         )
 
 /**
@@ -159,7 +165,12 @@ fun Modifier.padding(paddingValues: PaddingValues) =
  * @sample androidx.compose.foundation.layout.samples.AbsolutePaddingModifier
  */
 @Stable
-fun Modifier.absolutePadding(left: Dp = 0.dp, top: Dp = 0.dp, right: Dp = 0.dp, bottom: Dp = 0.dp) =
+public fun Modifier.absolutePadding(
+    left: Dp = 0.dp,
+    top: Dp = 0.dp,
+    right: Dp = 0.dp,
+    bottom: Dp = 0.dp,
+): Modifier =
     this then
         (PaddingElement(
             start = left,
@@ -173,7 +184,7 @@ fun Modifier.absolutePadding(left: Dp = 0.dp, top: Dp = 0.dp, right: Dp = 0.dp, 
                 properties["top"] = top
                 properties["right"] = right
                 properties["bottom"] = bottom
-            }
+            },
         ))
 
 /**
@@ -181,26 +192,26 @@ fun Modifier.absolutePadding(left: Dp = 0.dp, top: Dp = 0.dp, right: Dp = 0.dp, 
  * and [Absolute] for convenient ways to build [PaddingValues].
  */
 @Stable
-interface PaddingValues {
+public interface PaddingValues {
     /** The padding to be applied along the left edge inside a box. */
-    fun calculateLeftPadding(layoutDirection: LayoutDirection): Dp
+    public fun calculateLeftPadding(layoutDirection: LayoutDirection): Dp
 
     /** The padding to be applied along the top edge inside a box. */
-    fun calculateTopPadding(): Dp
+    public fun calculateTopPadding(): Dp
 
     /** The padding to be applied along the right edge inside a box. */
-    fun calculateRightPadding(layoutDirection: LayoutDirection): Dp
+    public fun calculateRightPadding(layoutDirection: LayoutDirection): Dp
 
     /** The padding to be applied along the bottom edge inside a box. */
-    fun calculateBottomPadding(): Dp
+    public fun calculateBottomPadding(): Dp
 
     /** Describes an absolute (RTL unaware) padding to be applied along the edges inside a box. */
     @Immutable
-    class Absolute(
+    public class Absolute(
         @Stable private val left: Dp = 0.dp,
         @Stable private val top: Dp = 0.dp,
         @Stable private val right: Dp = 0.dp,
-        @Stable private val bottom: Dp = 0.dp
+        @Stable private val bottom: Dp = 0.dp,
     ) : PaddingValues {
 
         init {
@@ -214,13 +225,13 @@ interface PaddingValues {
             }
         }
 
-        override fun calculateLeftPadding(layoutDirection: LayoutDirection) = left
+        override fun calculateLeftPadding(layoutDirection: LayoutDirection): Dp = left
 
-        override fun calculateTopPadding() = top
+        override fun calculateTopPadding(): Dp = top
 
-        override fun calculateRightPadding(layoutDirection: LayoutDirection) = right
+        override fun calculateRightPadding(layoutDirection: LayoutDirection): Dp = right
 
-        override fun calculateBottomPadding() = bottom
+        override fun calculateBottomPadding(): Dp = bottom
 
         override fun equals(other: Any?): Boolean {
             if (other !is Absolute) return false
@@ -230,26 +241,68 @@ interface PaddingValues {
                 bottom == other.bottom
         }
 
-        override fun hashCode() =
+        override fun hashCode(): Int =
             ((left.hashCode() * 31 + top.hashCode()) * 31 + right.hashCode()) * 31 +
                 bottom.hashCode()
 
-        override fun toString() =
+        override fun toString(): String =
             "PaddingValues.Absolute(left=$left, top=$top, right=$right, bottom=$bottom)"
     }
 
-    companion object {
+    public companion object {
         /** PaddingValues with all values `0.dp`. */
-        @Stable @get:Stable val Zero: PaddingValues = Absolute()
+        @Stable @get:Stable public val Zero: PaddingValues = Absolute()
     }
 }
+
+/** Adds two [PaddingValues] together. */
+@Stable
+public operator fun PaddingValues.plus(other: PaddingValues): PaddingValues =
+    object : PaddingValues {
+        override fun calculateLeftPadding(layoutDirection: LayoutDirection): Dp =
+            this@plus.calculateLeftPadding(layoutDirection) +
+                other.calculateLeftPadding(layoutDirection)
+
+        override fun calculateTopPadding(): Dp =
+            this@plus.calculateTopPadding() + other.calculateTopPadding()
+
+        override fun calculateRightPadding(layoutDirection: LayoutDirection): Dp =
+            this@plus.calculateRightPadding(layoutDirection) +
+                other.calculateRightPadding(layoutDirection)
+
+        override fun calculateBottomPadding(): Dp =
+            this@plus.calculateBottomPadding() + other.calculateBottomPadding()
+    }
+
+/** Subtracts a [PaddingValues] from another one and ensures that the result is non-negative. */
+@Stable
+public operator fun PaddingValues.minus(other: PaddingValues): PaddingValues =
+    object : PaddingValues {
+        override fun calculateLeftPadding(layoutDirection: LayoutDirection): Dp =
+            (this@minus.calculateLeftPadding(layoutDirection) -
+                    other.calculateLeftPadding(layoutDirection))
+                .coerceAtLeast(0.dp)
+
+        override fun calculateTopPadding(): Dp =
+            (this@minus.calculateTopPadding() - other.calculateTopPadding()).coerceAtLeast(0.dp)
+
+        override fun calculateRightPadding(layoutDirection: LayoutDirection): Dp =
+            (this@minus.calculateRightPadding(layoutDirection) -
+                    other.calculateRightPadding(layoutDirection))
+                .coerceAtLeast(0.dp)
+
+        override fun calculateBottomPadding(): Dp =
+            (this@minus.calculateBottomPadding() - other.calculateBottomPadding()).coerceAtLeast(
+                0.dp
+            )
+    }
 
 /**
  * The padding to be applied along the start edge inside a box: along the left edge if the layout
  * direction is LTR, or along the right edge for RTL.
  */
 @Stable
-fun PaddingValues.calculateStartPadding(layoutDirection: LayoutDirection) =
+public fun PaddingValues.calculateStartPadding(layoutDirection: LayoutDirection): Dp =
     if (layoutDirection == LayoutDirection.Ltr) {
         calculateLeftPadding(layoutDirection)
     } else {
@@ -261,7 +314,7 @@ fun PaddingValues.calculateStartPadding(layoutDirection: LayoutDirection) =
  * direction is LTR, or along the left edge for RTL.
  */
 @Stable
-fun PaddingValues.calculateEndPadding(layoutDirection: LayoutDirection) =
+public fun PaddingValues.calculateEndPadding(layoutDirection: LayoutDirection): Dp =
     if (layoutDirection == LayoutDirection.Ltr) {
         calculateRightPadding(layoutDirection)
     } else {
@@ -269,14 +322,14 @@ fun PaddingValues.calculateEndPadding(layoutDirection: LayoutDirection) =
     }
 
 /** Creates a padding of [all] dp along all 4 edges. */
-@Stable fun PaddingValues(all: Dp): PaddingValues = PaddingValuesImpl(all, all, all, all)
+@Stable public fun PaddingValues(all: Dp): PaddingValues = PaddingValuesImpl(all, all, all, all)
 
 /**
  * Creates a padding of [horizontal] dp along the left and right edges, and of [vertical] dp along
  * the top and bottom edges.
  */
 @Stable
-fun PaddingValues(horizontal: Dp = 0.dp, vertical: Dp = 0.dp): PaddingValues =
+public fun PaddingValues(horizontal: Dp = 0.dp, vertical: Dp = 0.dp): PaddingValues =
     PaddingValuesImpl(horizontal, vertical, horizontal, vertical)
 
 /**
@@ -285,11 +338,11 @@ fun PaddingValues(horizontal: Dp = 0.dp, vertical: Dp = 0.dp): PaddingValues =
  * [start] will correspond to the right edge and [end] to the left.
  */
 @Stable
-fun PaddingValues(
+public fun PaddingValues(
     start: Dp = 0.dp,
     top: Dp = 0.dp,
     end: Dp = 0.dp,
-    bottom: Dp = 0.dp
+    bottom: Dp = 0.dp,
 ): PaddingValues = PaddingValuesImpl(start, top, end, bottom)
 
 @Immutable
@@ -297,7 +350,7 @@ internal class PaddingValuesImpl(
     @Stable val start: Dp = 0.dp,
     @Stable val top: Dp = 0.dp,
     @Stable val end: Dp = 0.dp,
-    @Stable val bottom: Dp = 0.dp
+    @Stable val bottom: Dp = 0.dp,
 ) : PaddingValues {
 
     init {
@@ -338,7 +391,7 @@ private class PaddingElement(
     var end: Dp = 0.dp,
     var bottom: Dp = 0.dp,
     var rtlAware: Boolean,
-    val inspectorInfo: InspectorInfo.() -> Unit
+    val inspectorInfo: InspectorInfo.() -> Unit,
 ) : ModifierNodeElement<PaddingNode>() {
 
     init {
@@ -392,12 +445,12 @@ private class PaddingNode(
     var top: Dp = 0.dp,
     var end: Dp = 0.dp,
     var bottom: Dp = 0.dp,
-    var rtlAware: Boolean
+    var rtlAware: Boolean,
 ) : LayoutModifierNode, Modifier.Node() {
 
     override fun MeasureScope.measure(
         measurable: Measurable,
-        constraints: Constraints
+        constraints: Constraints,
     ): MeasureResult {
 
         val horizontal = start.roundToPx() + end.roundToPx()
@@ -419,7 +472,7 @@ private class PaddingNode(
 
 private class PaddingValuesElement(
     val paddingValues: PaddingValues,
-    val inspectorInfo: InspectorInfo.() -> Unit
+    val inspectorInfo: InspectorInfo.() -> Unit,
 ) : ModifierNodeElement<PaddingValuesModifier>() {
     override fun create(): PaddingValuesModifier {
         return PaddingValuesModifier(paddingValues)
@@ -445,7 +498,7 @@ private class PaddingValuesModifier(var paddingValues: PaddingValues) :
     LayoutModifierNode, Modifier.Node() {
     override fun MeasureScope.measure(
         measurable: Measurable,
-        constraints: Constraints
+        constraints: Constraints,
     ): MeasureResult {
         val leftPadding = paddingValues.calculateLeftPadding(layoutDirection)
         val topPadding = paddingValues.calculateTopPadding()

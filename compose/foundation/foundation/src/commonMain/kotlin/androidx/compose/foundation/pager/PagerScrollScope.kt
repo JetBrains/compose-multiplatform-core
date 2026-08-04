@@ -32,7 +32,10 @@ import kotlin.math.roundToInt
  *   [VerticalPager].
  * @sample androidx.compose.foundation.samples.PagerCustomScrollUsingLazyLayoutScrollScopeSample
  */
-fun LazyLayoutScrollScope(state: PagerState, scrollScope: ScrollScope): LazyLayoutScrollScope {
+public fun LazyLayoutScrollScope(
+    state: PagerState,
+    scrollScope: ScrollScope,
+): LazyLayoutScrollScope {
     return object : LazyLayoutScrollScope, ScrollScope by scrollScope {
 
         override val firstVisibleItemIndex: Int
@@ -48,7 +51,13 @@ fun LazyLayoutScrollScope(state: PagerState, scrollScope: ScrollScope): LazyLayo
             get() = state.pageCount
 
         override fun snapToItem(index: Int, offset: Int) {
-            val offsetFraction = offset / state.pageSizeWithSpacing.toFloat()
+            val pageSizeWithSpacing = state.pageSizeWithSpacing.toFloat()
+            val offsetFraction =
+                if (pageSizeWithSpacing == 0f) {
+                    0f
+                } else {
+                    offset / pageSizeWithSpacing
+                }
             state.snapToItem(index, offsetFraction, forceRemeasure = true)
         }
 
@@ -61,7 +70,7 @@ fun LazyLayoutScrollScope(state: PagerState, scrollScope: ScrollScope): LazyLayo
             val currentScrollWithDisplacementApplied =
                 (state.currentAbsoluteScrollOffset() + displacement).coerceIn(
                     state.minScrollOffset,
-                    state.maxScrollOffset
+                    state.maxScrollOffset,
                 )
 
             // this will return a displacement that doesn't exceed the max scroll offsets

@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-@file:Suppress("UnstableApiUsage")
-
 package androidx.compose.runtime.lint
 
 import androidx.compose.lint.test.Stubs
@@ -32,10 +30,8 @@ import org.junit.runners.Parameterized
 @Suppress("UNUSED_PARAMETER")
 @RunWith(Parameterized::class)
 /** Test for [RememberInCompositionDetector]. */
-class RememberInCompositionDetectorTest(
-    private val definitionsStub: TestFile,
-    testType: String,
-) : LintDetectorTest() {
+class RememberInCompositionDetectorTest(private val definitionsStub: TestFile, testType: String) :
+    LintDetectorTest() {
     override fun getDetector(): Detector = RememberInCompositionDetector()
 
     override fun getIssues(): MutableList<Issue> =
@@ -80,7 +76,7 @@ class RememberInCompositionDetectorTest(
         r2RNZT+4kdvzxPzhojK1gjsktaTGIHv/Fst4SftnZGgBWYrf7SIlkENewT0F
         97FM/hWBAlbxgGhr0+NDPMJjZXahCTxBUUEeJaSxTiIGNgw8NbCJZ7Rjy8A2
         drpgEXbxnFIi7EV48QtSR8AWxQMAAA==
-        """
+        """,
             )
 
         private val Definitions =
@@ -236,7 +232,7 @@ class RememberInCompositionDetectorTest(
             RprAv5XZpMcvRWKmOzc/jm2hRDfhfybKMSlgFwVBbWMHBzDswisUhAvcxo7h
             c/Pckrnhd2DFWI5RjrGCimGsxgiw1gFRqGK9Yz4ZGwqbClsLLCk4Cq6C9w3B
             DBSI7QEAAA==
-            """
+            """,
             )
 
         @JvmStatic
@@ -244,7 +240,7 @@ class RememberInCompositionDetectorTest(
         fun initParameters() =
             listOf(
                 arrayOf(Definitions.kotlin, "sourceDefinitions"),
-                arrayOf(Definitions.bytecode, "bytecodeDefinitions")
+                arrayOf(Definitions.bytecode, "bytecodeDefinitions"),
             )
     }
 
@@ -358,7 +354,7 @@ class RememberInCompositionDetectorTest(
                 Stubs.Composable,
                 RememberInCompositionStub,
                 definitionsStub,
-                Stubs.Remember
+                Stubs.Remember,
             )
             .run()
             .expect(
@@ -528,6 +524,199 @@ src/androidx/compose/runtime/foo/{.kt:98: Error: Calling a @RememberInCompositio
     }
 
     @Test
+    fun notRemembered_inlineFunctions() {
+        lint()
+            .files(
+                kotlin(
+                    """
+                package androidx.compose.runtime.foo
+
+                import androidx.compose.runtime.*
+
+                inline fun <T> runBlock(block: () -> T) {}
+                inline fun <T> runBlockCrossinline(crossinline block: () -> T) {}
+                inline fun <T> runBlockNoinline(noinline block: () -> T) {}
+                @Composable fun <T> runBlockComposable(block : () -> T) {}
+                fun <T> runBlockNotInline(block: () -> T) {}
+
+                @Composable
+                fun Test(bar: Bar) {
+                    val foo = true.let { Foo() }
+                    val foo2 = listOf(1).map { Foo() }
+                    val foo3 = runBlock { Foo() }
+                    val foo4 = runBlockCrossinline { Foo() }
+                    val foo5 = runBlockNoinline { Foo() }
+                    val foo6 = runBlockComposable { Foo() }
+                    val foo7 = runBlockNotInline { Foo() }
+                }
+
+                val lambda = @Composable { bar: Bar ->
+                    val foo = true.let { Foo() }
+                    val foo2 = listOf(1).map { Foo() }
+                    val foo3 = runBlock { Foo() }
+                    val foo4 = runBlockCrossinline { Foo() }
+                    val foo5 = runBlockNoinline { Foo() }
+                    val foo6 = runBlockComposable { Foo() }
+                    val foo7 = runBlockNotInline { Foo() }
+                }
+
+                val lambda2: @Composable (bar: Bar) -> Unit = { bar ->
+                    val foo = true.let { Foo() }
+                    val foo2 = listOf(1).map { Foo() }
+                    val foo3 = runBlock { Foo() }
+                    val foo4 = runBlockCrossinline { Foo() }
+                    val foo5 = runBlockNoinline { Foo() }
+                    val foo6 = runBlockComposable { Foo() }
+                    val foo7 = runBlockNotInline { Foo() }
+                }
+
+                @Composable
+                fun LambdaParameter(content: @Composable () -> Unit) {}
+
+                @Composable
+                fun Test2(bar: Bar) {
+                    LambdaParameter(content = {
+                        val foo = true.let { Foo() }
+                        val foo2 = listOf(1).map { Foo() }
+                        val foo3 = runBlock { Foo() }
+                        val foo4 = runBlockCrossinline { Foo() }
+                        val foo5 = runBlockNoinline { Foo() }
+                        val foo6 = runBlockComposable { Foo() }
+                        val foo7 = runBlockNotInline { Foo() }
+                    })
+                    LambdaParameter {
+                        val foo = true.let { Foo() }
+                        val foo2 = listOf(1).map { Foo() }
+                        val foo3 = runBlock { Foo() }
+                        val foo4 = runBlockCrossinline { Foo() }
+                        val foo5 = runBlockNoinline { Foo() }
+                        val foo6 = runBlockComposable { Foo() }
+                        val foo7 = runBlockNotInline { Foo() }
+                    }
+                }
+
+                fun test3(bar: Bar) {
+                    val localLambda1 = @Composable {
+                        val foo = true.let { Foo() }
+                        val foo2 = listOf(1).map { Foo() }
+                        val foo3 = runBlock { Foo() }
+                        val foo4 = runBlockCrossinline { Foo() }
+                        val foo5 = runBlockNoinline { Foo() }
+                        val foo6 = runBlockComposable { Foo() }
+                        val foo7 = runBlockNotInline { Foo() }
+                    }
+
+                    val localLambda2: @Composable () -> Unit = {
+                        val foo = true.let { Foo() }
+                        val foo2 = listOf(1).map { Foo() }
+                        val foo3 = runBlock { Foo() }
+                        val foo4 = runBlockCrossinline { Foo() }
+                        val foo5 = runBlockNoinline { Foo() }
+                        val foo6 = runBlockComposable { Foo() }
+                        val foo7 = runBlockNotInline { Foo() }
+                    }
+                }
+
+                @Composable
+                fun Test4(bar: Bar) {
+                    val localObject = object {
+                        val foo = true.let { Foo() }
+                        val foo2 = listOf(1).map { Foo() }
+                        val foo3 = runBlock { Foo() }
+                        val foo4 = runBlockCrossinline { Foo() }
+                        val foo5 = runBlockNoinline { Foo() }
+                        val foo6 = runBlockComposable { Foo() }
+                        val foo7 = runBlockNotInline { Foo() }
+                    }
+                }
+            """
+                ),
+                Stubs.Composable,
+                RememberInCompositionStub,
+                definitionsStub,
+                Stubs.Remember,
+            )
+            .run()
+            .expect(
+                """
+src/androidx/compose/runtime/foo/{.kt:14: Error: Calling a @RememberInComposition annotated declaration inside composition without using remember [RememberInComposition]
+                    val foo = true.let { Foo() }
+                                         ~~~
+src/androidx/compose/runtime/foo/{.kt:15: Error: Calling a @RememberInComposition annotated declaration inside composition without using remember [RememberInComposition]
+                    val foo2 = listOf(1).map { Foo() }
+                                               ~~~
+src/androidx/compose/runtime/foo/{.kt:16: Error: Calling a @RememberInComposition annotated declaration inside composition without using remember [RememberInComposition]
+                    val foo3 = runBlock { Foo() }
+                                          ~~~
+src/androidx/compose/runtime/foo/{.kt:24: Error: Calling a @RememberInComposition annotated declaration inside composition without using remember [RememberInComposition]
+                    val foo = true.let { Foo() }
+                                         ~~~
+src/androidx/compose/runtime/foo/{.kt:25: Error: Calling a @RememberInComposition annotated declaration inside composition without using remember [RememberInComposition]
+                    val foo2 = listOf(1).map { Foo() }
+                                               ~~~
+src/androidx/compose/runtime/foo/{.kt:26: Error: Calling a @RememberInComposition annotated declaration inside composition without using remember [RememberInComposition]
+                    val foo3 = runBlock { Foo() }
+                                          ~~~
+src/androidx/compose/runtime/foo/{.kt:34: Error: Calling a @RememberInComposition annotated declaration inside composition without using remember [RememberInComposition]
+                    val foo = true.let { Foo() }
+                                         ~~~
+src/androidx/compose/runtime/foo/{.kt:35: Error: Calling a @RememberInComposition annotated declaration inside composition without using remember [RememberInComposition]
+                    val foo2 = listOf(1).map { Foo() }
+                                               ~~~
+src/androidx/compose/runtime/foo/{.kt:36: Error: Calling a @RememberInComposition annotated declaration inside composition without using remember [RememberInComposition]
+                    val foo3 = runBlock { Foo() }
+                                          ~~~
+src/androidx/compose/runtime/foo/{.kt:49: Error: Calling a @RememberInComposition annotated declaration inside composition without using remember [RememberInComposition]
+                        val foo = true.let { Foo() }
+                                             ~~~
+src/androidx/compose/runtime/foo/{.kt:50: Error: Calling a @RememberInComposition annotated declaration inside composition without using remember [RememberInComposition]
+                        val foo2 = listOf(1).map { Foo() }
+                                                   ~~~
+src/androidx/compose/runtime/foo/{.kt:51: Error: Calling a @RememberInComposition annotated declaration inside composition without using remember [RememberInComposition]
+                        val foo3 = runBlock { Foo() }
+                                              ~~~
+src/androidx/compose/runtime/foo/{.kt:58: Error: Calling a @RememberInComposition annotated declaration inside composition without using remember [RememberInComposition]
+                        val foo = true.let { Foo() }
+                                             ~~~
+src/androidx/compose/runtime/foo/{.kt:59: Error: Calling a @RememberInComposition annotated declaration inside composition without using remember [RememberInComposition]
+                        val foo2 = listOf(1).map { Foo() }
+                                                   ~~~
+src/androidx/compose/runtime/foo/{.kt:60: Error: Calling a @RememberInComposition annotated declaration inside composition without using remember [RememberInComposition]
+                        val foo3 = runBlock { Foo() }
+                                              ~~~
+src/androidx/compose/runtime/foo/{.kt:70: Error: Calling a @RememberInComposition annotated declaration inside composition without using remember [RememberInComposition]
+                        val foo = true.let { Foo() }
+                                             ~~~
+src/androidx/compose/runtime/foo/{.kt:71: Error: Calling a @RememberInComposition annotated declaration inside composition without using remember [RememberInComposition]
+                        val foo2 = listOf(1).map { Foo() }
+                                                   ~~~
+src/androidx/compose/runtime/foo/{.kt:72: Error: Calling a @RememberInComposition annotated declaration inside composition without using remember [RememberInComposition]
+                        val foo3 = runBlock { Foo() }
+                                              ~~~
+src/androidx/compose/runtime/foo/{.kt:80: Error: Calling a @RememberInComposition annotated declaration inside composition without using remember [RememberInComposition]
+                        val foo = true.let { Foo() }
+                                             ~~~
+src/androidx/compose/runtime/foo/{.kt:81: Error: Calling a @RememberInComposition annotated declaration inside composition without using remember [RememberInComposition]
+                        val foo2 = listOf(1).map { Foo() }
+                                                   ~~~
+src/androidx/compose/runtime/foo/{.kt:82: Error: Calling a @RememberInComposition annotated declaration inside composition without using remember [RememberInComposition]
+                        val foo3 = runBlock { Foo() }
+                                              ~~~
+src/androidx/compose/runtime/foo/{.kt:93: Error: Calling a @RememberInComposition annotated declaration inside composition without using remember [RememberInComposition]
+                        val foo = true.let { Foo() }
+                                             ~~~
+src/androidx/compose/runtime/foo/{.kt:94: Error: Calling a @RememberInComposition annotated declaration inside composition without using remember [RememberInComposition]
+                        val foo2 = listOf(1).map { Foo() }
+                                                   ~~~
+src/androidx/compose/runtime/foo/{.kt:95: Error: Calling a @RememberInComposition annotated declaration inside composition without using remember [RememberInComposition]
+                        val foo3 = runBlock { Foo() }
+                                              ~~~
+24 errors
+"""
+            )
+    }
+
+    @Test
     fun notRemembered_getterInheritanceHierarchy() {
         lint()
             .files(
@@ -552,7 +741,7 @@ src/androidx/compose/runtime/foo/{.kt:98: Error: Calling a @RememberInCompositio
                 Stubs.Composable,
                 RememberInCompositionStub,
                 definitionsStub,
-                Stubs.Remember
+                Stubs.Remember,
             )
             .run()
             .expect(
@@ -751,7 +940,7 @@ src/androidx/compose/runtime/foo/test.kt:14: Error: Calling a @RememberInComposi
                 Stubs.Composable,
                 RememberInCompositionStub,
                 definitionsStub,
-                Stubs.Remember
+                Stubs.Remember,
             )
             .run()
             .expectClean()
@@ -863,7 +1052,7 @@ src/androidx/compose/runtime/foo/test.kt:14: Error: Calling a @RememberInComposi
                 Stubs.Composable,
                 RememberInCompositionStub,
                 definitionsStub,
-                Stubs.Remember
+                Stubs.Remember,
             )
             .run()
             .expectClean()

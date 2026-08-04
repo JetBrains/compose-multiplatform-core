@@ -45,6 +45,7 @@ import org.jetbrains.kotlin.analysis.api.symbols.KaReceiverParameterSymbol
 import org.jetbrains.kotlin.idea.references.mainReference
 import org.jetbrains.kotlin.psi.KtCallExpression
 import org.jetbrains.kotlin.psi.KtCallableDeclaration
+import org.jetbrains.kotlin.psi.KtConstructor
 import org.jetbrains.kotlin.psi.KtDeclaration
 import org.jetbrains.kotlin.psi.KtDeclarationWithBody
 import org.jetbrains.kotlin.psi.KtFunction
@@ -90,6 +91,10 @@ class ModifierDeclarationDetector : Detector(), SourceCodeScanner {
 
                 val source = node.sourcePsi
 
+                // If this node is constructor or synthetic member whose source PSI is constructor,
+                // e.g., data class copy (https://youtrack.jetbrains.com/issue/KT-72722), ignore it.
+                if (source is KtConstructor<*>) return
+
                 // If this node is a property that is a constructor parameter, ignore it.
                 if (source is KtParameter) return
 
@@ -126,8 +131,8 @@ class ModifierDeclarationDetector : Detector(), SourceCodeScanner {
                 Severity.WARNING,
                 Implementation(
                     ModifierDeclarationDetector::class.java,
-                    EnumSet.of(Scope.JAVA_FILE, Scope.TEST_SOURCES)
-                )
+                    EnumSet.of(Scope.JAVA_FILE, Scope.TEST_SOURCES),
+                ),
             )
 
         val ModifierFactoryExtensionFunction =
@@ -141,8 +146,8 @@ class ModifierDeclarationDetector : Detector(), SourceCodeScanner {
                 Severity.WARNING,
                 Implementation(
                     ModifierDeclarationDetector::class.java,
-                    EnumSet.of(Scope.JAVA_FILE, Scope.TEST_SOURCES)
-                )
+                    EnumSet.of(Scope.JAVA_FILE, Scope.TEST_SOURCES),
+                ),
             )
 
         val ModifierFactoryUnreferencedReceiver =
@@ -163,8 +168,8 @@ class ModifierDeclarationDetector : Detector(), SourceCodeScanner {
                 Severity.ERROR,
                 Implementation(
                     ModifierDeclarationDetector::class.java,
-                    EnumSet.of(Scope.JAVA_FILE, Scope.TEST_SOURCES)
-                )
+                    EnumSet.of(Scope.JAVA_FILE, Scope.TEST_SOURCES),
+                ),
             )
     }
 }
@@ -177,7 +182,7 @@ private fun UMethod.checkReceiver(context: JavaContext) {
             this,
             context.getNameLocation(this),
             "Modifier factory functions should be extensions on Modifier",
-            lintFix
+            lintFix,
         )
     }
 
@@ -324,7 +329,7 @@ private fun UMethod.ensureReceiverIsReferenced(context: JavaContext) {
             ModifierDeclarationDetector.ModifierFactoryUnreferencedReceiver,
             this,
             context.getNameLocation(this),
-            "Modifier factory functions must use the receiver Modifier instance"
+            "Modifier factory functions must use the receiver Modifier instance",
         )
     }
 }
@@ -337,7 +342,7 @@ private fun UMethod.checkReturnType(context: JavaContext, returnType: PsiType) {
             this,
             context.getNameLocation(this),
             "Modifier factory functions should have a return type of Modifier",
-            lintFix
+            lintFix,
         )
     }
 
@@ -399,13 +404,14 @@ private fun UMethod.checkReturnType(context: JavaContext, returnType: PsiType) {
         // Declaration without an explicit return type, such as `fun foo() = Bar`
         // or val foo get() = Bar
         // Replace the `=` with `: Modifier =`
+        val equalsToken = source.equalsToken ?: return
         report(
             LintFix.create()
                 .replace()
                 .name("Add explicit Modifier return type")
-                .range(context.getLocation(this))
-                .pattern("[ \\t\\n]+=")
-                .with(": ${Names.Ui.Modifier.shortName} =")
+                .range(context.getLocation(equalsToken))
+                .beginning()
+                .with(": ${Names.Ui.Modifier.shortName} ")
                 .autoFix()
                 .build()
         )

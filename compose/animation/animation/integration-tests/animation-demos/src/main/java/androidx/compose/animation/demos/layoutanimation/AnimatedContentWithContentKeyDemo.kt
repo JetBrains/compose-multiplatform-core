@@ -17,7 +17,6 @@
 package androidx.compose.animation.demos.layoutanimation
 
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.core.updateTransition
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -45,7 +44,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 @Preview
-@OptIn(ExperimentalAnimationApi::class)
 @Composable
 fun AnimatedContentWithContentKeyDemo() {
     val model: ScreenModel = remember { ScreenModel() }
@@ -55,7 +53,7 @@ fun AnimatedContentWithContentKeyDemo() {
         transition.AnimatedContent(
             Modifier.clickable { model.toggleTarget() },
             contentAlignment = Alignment.Center,
-            contentKey = { it.type }
+            contentKey = { it.type },
         ) {
             if (it.type == MyScreen.Type.Count) {
                 holder.SaveableStateProvider(it.type) {
@@ -63,7 +61,7 @@ fun AnimatedContentWithContentKeyDemo() {
                     Column(
                         Modifier.fillMaxSize(),
                         Arrangement.Center,
-                        Alignment.CenterHorizontally
+                        Alignment.CenterHorizontally,
                     ) {
                         Button(onClick = { count++ }) { Text("+1") }
                         Spacer(Modifier.size(20.dp))
@@ -76,7 +74,7 @@ fun AnimatedContentWithContentKeyDemo() {
         }
         Text(
             "Tap anywhere to change content.\n Current content: ${model.target.type}",
-            Modifier.align(Alignment.BottomCenter)
+            Modifier.align(Alignment.BottomCenter),
         )
     }
 }
@@ -84,7 +82,7 @@ fun AnimatedContentWithContentKeyDemo() {
 sealed class MyScreen {
     enum class Type {
         Count,
-        Blank
+        Blank,
     }
 
     abstract val type: Type

@@ -20,7 +20,7 @@ import android.hardware.camera2.CaptureFailure
 import androidx.camera.camera2.pipe.FrameNumber
 import androidx.camera.camera2.pipe.RequestFailure
 import androidx.camera.camera2.pipe.RequestMetadata
-import kotlin.reflect.KClass
+import java.lang.Class
 
 /**
  * This class implements the [RequestFailure] interface by passing the package-private
@@ -28,16 +28,16 @@ import kotlin.reflect.KClass
  */
 public class AndroidCaptureFailure(
     override val requestMetadata: RequestMetadata,
-    private val captureFailure: CaptureFailure
+    private val captureFailure: CaptureFailure,
 ) : RequestFailure {
     override val frameNumber: FrameNumber = FrameNumber(captureFailure.frameNumber)
     override val reason: Int = captureFailure.reason
     override val wasImageCaptured: Boolean = captureFailure.wasImageCaptured()
 
     @Suppress("UNCHECKED_CAST")
-    override fun <T : Any> unwrapAs(type: KClass<T>): T? =
+    override fun <T : Any> unwrapAs(type: Class<T>): T? =
         when (type) {
-            CaptureFailure::class -> captureFailure as T?
+            CaptureFailure::class.java -> captureFailure as T?
             else -> null
         }
 }

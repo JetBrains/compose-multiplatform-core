@@ -63,7 +63,7 @@ class ModifierNodeInspectablePropertiesDetector : Detector(), Detector.UastScann
                     "inspector will use the default implementation of this function, which " +
                     "will attempt to read ${declaration.name}'s properties reflectively. " +
                     "Override $InspectionFunName() if you'd like to customize this modifier's " +
-                    "presentation in the layout inspector."
+                    "presentation in the layout inspector.",
             )
         }
     }
@@ -111,8 +111,8 @@ class ModifierNodeInspectablePropertiesDetector : Detector(), Detector.UastScann
                 Severity.INFORMATIONAL,
                 Implementation(
                     ModifierNodeInspectablePropertiesDetector::class.java,
-                    Scope.JAVA_FILE_SCOPE
-                )
+                    Scope.JAVA_FILE_SCOPE,
+                ),
             )
     }
 }

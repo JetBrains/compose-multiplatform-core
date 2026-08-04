@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("FacadeClassJvmName") // Cannot be updated, the Kt name has been released
+
 package androidx.benchmark.traceprocessor
 
 import androidx.annotation.CheckResult
@@ -155,7 +157,7 @@ internal constructor(
             eventCallback: EventCallback,
             @Suppress("ListenerLast") tracer: Tracer,
             @Suppress("ListenerLast") timeoutMs: Long = DEFAULT_TIMEOUT_MS,
-            @Suppress("ListenerLast") block: TraceProcessor.() -> T
+            @Suppress("ListenerLast") block: TraceProcessor.() -> T,
         ): T =
             tracer.trace("TraceProcessor#runServer") {
                 startServer(serverLifecycleManager, eventCallback, tracer, timeoutMs).use {
@@ -208,7 +210,7 @@ internal constructor(
             val computeResult =
                 queryAndVerifyMetricResult(
                     listOf(metric),
-                    ComputeMetricArgs.ResultFormat.BINARY_PROTOBUF
+                    ComputeMetricArgs.ResultFormat.BINARY_PROTOBUF,
                 )
             return TraceMetrics.ADAPTER.decode(computeResult.metrics!!)
         }
@@ -265,7 +267,7 @@ internal constructor(
 
         private fun queryAndVerifyMetricResult(
             metrics: List<String>,
-            format: ComputeMetricArgs.ResultFormat
+            format: ComputeMetricArgs.ResultFormat,
         ): ComputeMetricResult {
             val nameString = metrics.joinToString()
             require(metrics.none { it.contains(" ") }) {
@@ -326,8 +328,8 @@ internal constructor(
 
         private fun QueryResult.Companion.decodeAndCheckError(
             query: String,
-            inputStream: InputStream
-        ) =
+            inputStream: InputStream,
+        ): QueryResult =
             ADAPTER.decode(inputStream).also {
                 check(it.error == null) {
                     throw IllegalStateException("Error with query: --$query--, error=${it.error}")
@@ -364,10 +366,7 @@ internal constructor(
          * Note that sliceNames may include wildcard matches, such as `foo%`
          */
         @RestrictTo(LIBRARY_GROUP) // Slice API not currently exposed, since it doesn't track table
-        public fun querySlices(
-            vararg sliceNames: String,
-            packageName: String?,
-        ): List<Slice> {
+        public fun querySlices(vararg sliceNames: String, packageName: String?): List<Slice> {
             require(traceProcessor.traceProcessorHttpServer.isRunning()) {
                 "Perfetto trace_shell_process is not running."
             }
@@ -381,17 +380,17 @@ internal constructor(
                         } else {
                             processNameLikePkg(packageName) + " AND ("
                         },
-                    postfix = ")"
+                    postfix = ")",
                 ) {
                     "slice_name LIKE \"$it\""
                 }
             val innerJoins =
                 if (packageName != null) {
                     """
-                INNER JOIN thread_track ON slice.track_id = thread_track.id
-                INNER JOIN thread USING(utid)
-                INNER JOIN process USING(upid)
-                """
+                    |                INNER JOIN thread_track ON slice.track_id = thread_track.id
+                    |                INNER JOIN thread USING(utid)
+                    |                INNER JOIN process USING(upid)
+                    """
                         .trimMargin()
                 } else {
                     ""
@@ -401,7 +400,7 @@ internal constructor(
                 """
                 INNER JOIN process_track ON slice.track_id = process_track.id
                 INNER JOIN process USING(upid)
-            """
+                """
                     .trimIndent()
 
             return query(
@@ -425,7 +424,7 @@ internal constructor(
                     Slice(
                         name = row.string("slice_name"),
                         ts = row.long("ts"),
-                        dur = row.long("dur")
+                        dur = row.long("dur"),
                     )
                 }
                 .filter { it.dur != -1L } // filter out non-terminating slices
@@ -440,16 +439,12 @@ internal constructor(
 
     private fun startServerImpl(): TraceProcessor =
         tracer.trace("TraceProcessor#startServer") {
-            println("startserver")
             traceProcessorHttpServer.startServer()
             return@trace this
         }
 
     private fun stopServer() =
-        tracer.trace("TraceProcessor#stopServer") {
-            println("stopserver")
-            traceProcessorHttpServer.stopServer()
-        }
+        tracer.trace("TraceProcessor#stopServer") { traceProcessorHttpServer.stopServer() }
 
     /**
      * Loads a trace in the current instance of the trace processor, clearing any previous loaded

@@ -15,10 +15,9 @@
  */
 
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
 import androidx.build.SoftwareType
@@ -26,7 +25,6 @@ import androidx.build.SoftwareType
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("org.jetbrains.kotlin.android")
 }
 
 dependencies {
@@ -39,6 +37,7 @@ dependencies {
     api(project(":camera:camera-lifecycle"))
     api(project(":camera:camera-video"))
     api("androidx.annotation:annotation:1.8.1")
+    api(project(":camera:camera-common-testing"))
 
     // ensuring implementation versions stay consistent with androidTestImplementation
     def testCoreVersion = "1.5.0"
@@ -48,17 +47,16 @@ dependencies {
     implementation("androidx.test:core:$testCoreVersion")
     implementation("androidx.test:rules:$testRulesVersion")
     implementation("androidx.test:runner:$testRunnerVersion")
-    implementation(project(":camera:camera-camera2-pipe-integration"))
+    implementation(project(":camera:camera-camera2"))
     implementation("androidx.appcompat:appcompat:1.1.0")
-    implementation("androidx.core:core:1.1.0")
+    implementation("androidx.core:core:1.16.0")
     implementation("androidx.concurrent:concurrent-futures:1.0.0")
-    implementation("androidx.test.espresso:espresso-core:3.5.0")
-    implementation("androidx.test.espresso:espresso-idling-resource:3.5.0")
+    implementation(libs.espressoCore)
+    implementation(libs.espressoIdlingResource)
     implementation(libs.atomicFu)
     implementation(libs.guavaListenableFuture)
     implementation(libs.junit)
     implementation(libs.truth)
-    implementation(libs.kotlinStdlib)
     implementation(libs.kotlinCoroutinesAndroid)
     implementation(libs.testUiautomator)
     implementation 'androidx.annotation:annotation-experimental:1.4.1'
@@ -66,19 +64,13 @@ dependencies {
     implementation 'androidx.lifecycle:lifecycle-runtime:2.1.0'
     implementation libs.testMonitor
 
-    testImplementation(libs.robolectric)
-    testImplementation 'org.robolectric:annotations:4.14'
-    testImplementation 'org.robolectric:shadowapi:4.14'
-    testImplementation 'org.robolectric:shadows-framework:4.14'
-
     androidTestImplementation(libs.testExtJunit)
-    androidTestImplementation(libs.kotlinStdlib)
     androidTestImplementation(libs.kotlinCoroutinesAndroid)
     androidTestImplementation("androidx.concurrent:concurrent-futures-ktx:1.1.0")
 }
 
 android {
-    compileSdk = 35
+    compileSdk { version = release(36) }
 
     defaultConfig {
         externalNativeBuild {
@@ -92,9 +84,6 @@ android {
     lint {
         enable.add("CameraXQuirksClassDetector")
     }
-
-    // Use Robolectric 4.+
-    testOptions.unitTests.includeAndroidResources = true
 
     externalNativeBuild {
         cmake {
@@ -112,4 +101,5 @@ androidx {
     description = "Testing components for the Jetpack Camera Library, a library providing a " +
             "consistent and reliable camera foundation that enables great camera driven " +"" +
             "experiences across all of Android."
+    enableRobolectric()
 }

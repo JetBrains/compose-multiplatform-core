@@ -27,7 +27,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.input.pointer.PointerInputChange
+import androidx.compose.ui.input.pointer.PointerType
 import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.platform.InspectorInfo
 import androidx.compose.ui.unit.Velocity
@@ -37,7 +37,7 @@ import kotlinx.coroutines.coroutineScope
  * State of Draggable2D. Allows for granular control of how deltas are consumed by the user as well
  * as to write custom drag methods using [drag] suspend function.
  */
-interface Draggable2DState {
+public interface Draggable2DState {
     /**
      * Call this function to take control of drag logic.
      *
@@ -51,9 +51,9 @@ interface Draggable2DState {
      * @param dragPriority of the drag operation
      * @param block to perform drag in
      */
-    suspend fun drag(
+    public suspend fun drag(
         dragPriority: MutatePriority = MutatePriority.Default,
-        block: suspend Drag2DScope.() -> Unit
+        block: suspend Drag2DScope.() -> Unit,
     )
 
     /**
@@ -70,13 +70,13 @@ interface Draggable2DState {
      *
      * @param delta amount of drag dispatched in the nested drag process
      */
-    fun dispatchRawDelta(delta: Offset)
+    public fun dispatchRawDelta(delta: Offset)
 }
 
 /** Scope used for suspending drag blocks */
-interface Drag2DScope {
+public interface Drag2DScope {
     /** Attempts to drag by [pixels] px. */
-    fun dragBy(pixels: Offset)
+    public fun dragBy(pixels: Offset)
 }
 
 /**
@@ -91,7 +91,8 @@ interface Drag2DScope {
  *
  * @param onDelta callback invoked when drag occurs. The callback receives the delta in pixels.
  */
-fun Draggable2DState(onDelta: (Offset) -> Unit): Draggable2DState = DefaultDraggable2DState(onDelta)
+public fun Draggable2DState(onDelta: (Offset) -> Unit): Draggable2DState =
+    DefaultDraggable2DState(onDelta)
 
 /**
  * Create and remember default implementation of [Draggable2DState] interface that allows to pass a
@@ -104,7 +105,7 @@ fun Draggable2DState(onDelta: (Offset) -> Unit): Draggable2DState = DefaultDragg
  * @param onDelta callback invoked when drag occurs. The callback receives the delta in pixels.
  */
 @Composable
-fun rememberDraggable2DState(onDelta: (Offset) -> Unit): Draggable2DState {
+public fun rememberDraggable2DState(onDelta: (Offset) -> Unit): Draggable2DState {
     val onDeltaState = rememberUpdatedState(onDelta)
     return remember { Draggable2DState { onDeltaState.value.invoke(it) } }
 }
@@ -136,14 +137,14 @@ fun rememberDraggable2DState(onDelta: (Offset) -> Unit): Draggable2DState {
  *   behave like bottom to top and left to right will behave like right to left.
  */
 @Stable
-fun Modifier.draggable2D(
+public fun Modifier.draggable2D(
     state: Draggable2DState,
     enabled: Boolean = true,
     interactionSource: MutableInteractionSource? = null,
     startDragImmediately: Boolean = false,
     onDragStarted: (startedPosition: Offset) -> Unit = NoOpOnDragStart,
     onDragStopped: (velocity: Velocity) -> Unit = NoOpOnDragStop,
-    reverseDirection: Boolean = false
+    reverseDirection: Boolean = false,
 ): Modifier =
     this then
         Draggable2DElement(
@@ -153,7 +154,7 @@ fun Modifier.draggable2D(
             startDragImmediately = startDragImmediately,
             onDragStarted = onDragStarted,
             onDragStopped = onDragStopped,
-            reverseDirection = reverseDirection
+            reverseDirection = reverseDirection,
         )
 
 internal class Draggable2DElement(
@@ -163,7 +164,7 @@ internal class Draggable2DElement(
     private val startDragImmediately: Boolean,
     private val onDragStarted: (startedPosition: Offset) -> Unit,
     private val onDragStopped: (velocity: Velocity) -> Unit,
-    private val reverseDirection: Boolean
+    private val reverseDirection: Boolean,
 ) : ModifierNodeElement<Draggable2DNode>() {
     override fun create(): Draggable2DNode =
         Draggable2DNode(
@@ -231,13 +232,13 @@ internal class Draggable2DElement(
     }
 
     companion object {
-        val CanDrag: (PointerInputChange) -> Boolean = { true }
+        val CanDrag: (PointerType) -> Boolean = { true }
     }
 }
 
 internal class Draggable2DNode(
     private var state: Draggable2DState,
-    canDrag: (PointerInputChange) -> Boolean,
+    canDrag: (PointerType) -> Boolean,
     enabled: Boolean,
     interactionSource: MutableInteractionSource?,
     private var startDragImmediately: Boolean,
@@ -249,7 +250,7 @@ internal class Draggable2DNode(
         canDrag = canDrag,
         enabled = enabled,
         interactionSource = interactionSource,
-        orientationLock = null
+        orientation = null,
     ) {
 
     override suspend fun drag(forEachDelta: suspend ((dragDelta: DragDelta) -> Unit) -> Unit) {
@@ -262,15 +263,15 @@ internal class Draggable2DNode(
         onDragStarted.invoke(startedPosition)
     }
 
-    override fun onDragStopped(velocity: Velocity) {
-        onDragStopped.invoke(velocity)
+    override fun onDragStopped(event: DragEvent.DragStopped) {
+        onDragStopped.invoke(event.velocity)
     }
 
     override fun startDragImmediately(): Boolean = startDragImmediately
 
     fun update(
         state: Draggable2DState,
-        canDrag: (PointerInputChange) -> Boolean,
+        canDrag: (PointerType) -> Boolean,
         enabled: Boolean,
         interactionSource: MutableInteractionSource?,
         startDragImmediately: Boolean,
@@ -297,8 +298,8 @@ internal class Draggable2DNode(
             canDrag = canDrag,
             enabled = enabled,
             interactionSource = interactionSource,
-            orientationLock = null,
-            shouldResetPointerInputHandling = resetPointerInputHandling
+            orientation = null,
+            shouldResetPointerInputHandling = resetPointerInputHandling,
         )
     }
 
@@ -316,7 +317,7 @@ private class DefaultDraggable2DState(val onDelta: (Offset) -> Unit) : Draggable
 
     override suspend fun drag(
         dragPriority: MutatePriority,
-        block: suspend Drag2DScope.() -> Unit
+        block: suspend Drag2DScope.() -> Unit,
     ): Unit = coroutineScope { drag2DMutex.mutateWith(drag2DScope, dragPriority, block) }
 
     override fun dispatchRawDelta(delta: Offset) {

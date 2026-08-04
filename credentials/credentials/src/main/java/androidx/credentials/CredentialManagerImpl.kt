@@ -20,7 +20,9 @@ import android.annotation.SuppressLint
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build
 import android.os.CancellationSignal
 import androidx.annotation.RequiresApi
 import androidx.credentials.exceptions.ClearCredentialException
@@ -30,7 +32,11 @@ import androidx.credentials.exceptions.CreateCredentialProviderConfigurationExce
 import androidx.credentials.exceptions.CreateCredentialUnsupportedException
 import androidx.credentials.exceptions.GetCredentialException
 import androidx.credentials.exceptions.GetCredentialProviderConfigurationException
+import androidx.credentials.exceptions.publickeycredential.SignalCredentialSecurityException
+import androidx.credentials.exceptions.publickeycredential.SignalCredentialStateException
+import androidx.credentials.exceptions.publickeycredential.SignalCredentialStateProviderConfigurationException
 import androidx.credentials.internal.FormFactorHelper
+import androidx.credentials.internal.MutableContextTracker
 import java.util.concurrent.Executor
 
 /**
@@ -89,6 +95,7 @@ import java.util.concurrent.Executor
 internal class CredentialManagerImpl internal constructor(private val context: Context) :
     CredentialManager {
     companion object {
+        private const val ORIGIN_PERMISSION = "android.permission.CREDENTIAL_MANAGER_SET_ORIGIN"
         /**
          * An intent action that shows a screen that let user enable a Credential Manager provider.
          */
@@ -104,8 +111,9 @@ internal class CredentialManagerImpl internal constructor(private val context: C
      * The execution potentially launches framework UI flows for a user to view available
      * credentials, consent to using one of them, etc.
      *
-     * @param context the context used to launch any UI needed; use an activity context to make sure
-     *   the UI will be launched within the same task stack
+     * @param context the context used to launch any UI needed; wrap the activity context with a
+     *   [android.content.MutableContextWrapper] to avoid memory leaks and ensure the UI will be
+     *   launched within the same task stack
      * @param request the request for getting the credential
      * @param cancellationSignal an optional signal that allows for cancelling this call
      * @param executor the callback will take place on this executor
@@ -118,10 +126,12 @@ internal class CredentialManagerImpl internal constructor(private val context: C
         executor: Executor,
         callback: CredentialManagerCallback<GetCredentialResponse, GetCredentialException>,
     ) {
+        val wrappedCallback =
+            MutableContextTracker.wrapCallback(context, cancellationSignal, callback)
         val provider: CredentialProvider? =
             CredentialProviderFactory(context).getBestAvailableProvider(request)
         if (provider == null) {
-            callback.onError(
+            wrappedCallback.onError(
                 GetCredentialProviderConfigurationException(
                     "getCredentialAsync no provider dependencies found - please ensure " +
                         "the desired provider dependencies are added"
@@ -129,7 +139,7 @@ internal class CredentialManagerImpl internal constructor(private val context: C
             )
             return
         }
-        provider.onGetCredential(context, request, cancellationSignal, executor, callback)
+        provider.onGetCredential(context, request, cancellationSignal, executor, wrappedCallback)
     }
 
     /**
@@ -146,8 +156,9 @@ internal class CredentialManagerImpl internal constructor(private val context: C
      * The execution can potentially launch UI flows to collect user consent to using a credential,
      * display a picker when multiple credentials exist, etc.
      *
-     * @param context the context used to launch any UI needed; use an activity context to make sure
-     *   the UI will be launched within the same task stack
+     * @param context the context used to launch any UI needed; wrap the activity context with a
+     *   [android.content.MutableContextWrapper] to avoid memory leaks and ensure the UI will be
+     *   launched within the same task stack
      * @param pendingGetCredentialHandle the handle representing the pending operation to resume
      * @param cancellationSignal an optional signal that allows for cancelling this call
      * @param executor the callback will take place on this executor
@@ -161,11 +172,13 @@ internal class CredentialManagerImpl internal constructor(private val context: C
         executor: Executor,
         callback: CredentialManagerCallback<GetCredentialResponse, GetCredentialException>,
     ) {
+        val wrappedCallback =
+            MutableContextTracker.wrapCallback(context, cancellationSignal, callback)
         val provider: CredentialProvider? =
             CredentialProviderFactory(context)
                 .getBestAvailableProvider(shouldFallbackToPreU = false)
         if (provider == null) {
-            callback.onError(
+            wrappedCallback.onError(
                 GetCredentialProviderConfigurationException("No Credential Manager provider found")
             )
             return
@@ -175,7 +188,7 @@ internal class CredentialManagerImpl internal constructor(private val context: C
             pendingGetCredentialHandle,
             cancellationSignal,
             executor,
-            callback
+            wrappedCallback,
         )
     }
 
@@ -223,8 +236,9 @@ internal class CredentialManagerImpl internal constructor(private val context: C
      * The execution potentially launches framework UI flows for a user to view their registration
      * options, grant consent, etc.
      *
-     * @param context the context used to launch any UI needed; use an activity context to make sure
-     *   the UI will be launched within the same task stack
+     * @param context the context used to launch any UI needed; wrap the activity context with a
+     *   [android.content.MutableContextWrapper] to avoid memory leaks and ensure the UI will be
+     *   launched within the same task stack
      * @param request the request for creating the credential
      * @param cancellationSignal an optional signal that allows for cancelling this call
      * @param executor the callback will take place on this executor
@@ -237,10 +251,12 @@ internal class CredentialManagerImpl internal constructor(private val context: C
         executor: Executor,
         callback: CredentialManagerCallback<CreateCredentialResponse, CreateCredentialException>,
     ) {
+        val wrappedCallback =
+            MutableContextTracker.wrapCallback(context, cancellationSignal, callback)
         val provider: CredentialProvider? =
             CredentialProviderFactory(this.context).getBestAvailableProvider(request)
         if (provider == null) {
-            callback.onError(
+            wrappedCallback.onError(
                 CreateCredentialProviderConfigurationException(
                     "createCredentialAsync no provider dependencies found - please ensure the " +
                         "desired provider dependencies are added"
@@ -251,7 +267,7 @@ internal class CredentialManagerImpl internal constructor(private val context: C
 
         // Check if this is a Wearable device, creation is not supported.
         if (FormFactorHelper.isWear(context)) {
-            callback.onError(
+            wrappedCallback.onError(
                 CreateCredentialUnsupportedException(
                     "createCredential is not supported on this device"
                 )
@@ -259,7 +275,7 @@ internal class CredentialManagerImpl internal constructor(private val context: C
             return
         }
 
-        provider.onCreateCredential(context, request, cancellationSignal, executor, callback)
+        provider.onCreateCredential(context, request, cancellationSignal, executor, wrappedCallback)
     }
 
     /**
@@ -302,6 +318,52 @@ internal class CredentialManagerImpl internal constructor(private val context: C
             return
         }
         provider.onClearCredential(request, cancellationSignal, executor, callback)
+    }
+
+    /**
+     * Signals a user's public key credential/credentials state to all credential providers.
+     *
+     * This API uses callbacks instead of Kotlin coroutines.
+     *
+     * The execution does not invoke any UI but simply informs credential providers about the state
+     * of a user's credential. Supported signal types are [SignalAllAcceptedCredentialIdsRequest],
+     * [SignalCurrentUserDetailsRequest], [SignalUnknownCredentialRequest].
+     *
+     * @param request the request for signaling the credential state
+     * @param executor the callback will take place on this executor
+     * @param callback the callback invoked when the request succeeds or fails
+     */
+    override fun signalCredentialStateAsync(
+        request: SignalCredentialStateRequest,
+        executor: Executor,
+        callback:
+            CredentialManagerCallback<SignalCredentialStateResponse, SignalCredentialStateException>,
+    ) {
+        if (request.origin != null && !isOriginAllowed(context)) {
+            callback.onError(
+                SignalCredentialSecurityException(
+                    "Must have android.permissions.CREDENTIAL_MANAGER_SET_ORIGIN " + "permission"
+                )
+            )
+            // Return to prevent continuing execution after a security check failure
+            return
+        }
+        val provider: CredentialProvider? =
+            CredentialProviderFactory(context).getBestAvailableProvider(request)
+        if (provider == null) {
+            callback.onError(
+                SignalCredentialStateProviderConfigurationException(
+                    "No Credential Manager provider found"
+                )
+            )
+            return
+        }
+        provider.onSignalCredentialState(request, executor, callback)
+    }
+
+    private fun isOriginAllowed(context: Context): Boolean {
+        return !(Build.VERSION.SDK_INT >= 34 &&
+            context.checkSelfPermission(ORIGIN_PERMISSION) != PackageManager.PERMISSION_GRANTED)
     }
 
     /**

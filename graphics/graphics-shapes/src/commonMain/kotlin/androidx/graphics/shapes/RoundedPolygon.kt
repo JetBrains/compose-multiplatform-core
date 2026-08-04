@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("FacadeClassJvmName") // Cannot be updated, the Kt name has been released
+
 package androidx.graphics.shapes
 
 import androidx.annotation.IntRange
@@ -89,23 +91,12 @@ class RoundedPolygon internal constructor(val features: List<Feature>, internal 
                     lastCubic.control1X,
                     lastCubic.control1Y,
                     firstCubic.anchor0X,
-                    firstCubic.anchor0Y
+                    firstCubic.anchor0Y,
                 )
             )
         } else {
             // Empty / 0-sized polygon.
-            add(
-                Cubic(
-                    centerX,
-                    centerY,
-                    centerX,
-                    centerY,
-                    centerX,
-                    centerY,
-                    centerX,
-                    centerY,
-                )
-            )
+            add(Cubic(centerX, centerY, centerX, centerY, centerX, centerY, centerX, centerY))
         }
     }
 
@@ -146,7 +137,7 @@ class RoundedPolygon internal constructor(val features: List<Feature>, internal 
                     add(features[i].transformed(f))
                 }
             },
-            center
+            center,
         )
     }
 
@@ -185,6 +176,7 @@ class RoundedPolygon internal constructor(val features: List<Feature>, internal 
      * @return The axis-aligned max bounding box for this object, where the rectangles left, top,
      *   right, and bottom values will be stored in entries 0, 1, 2, and 3, in that order.
      */
+    @Suppress("MissingJvmstatic")
     fun calculateMaxBounds(bounds: FloatArray = FloatArray(4)): FloatArray {
         require(bounds.size >= 4) { "Required bounds size of 4" }
         var maxDistSquared = 0f
@@ -217,7 +209,7 @@ class RoundedPolygon internal constructor(val features: List<Feature>, internal 
     @JvmOverloads
     fun calculateBounds(
         bounds: FloatArray = FloatArray(4),
-        approximate: Boolean = true
+        approximate: Boolean = true,
     ): FloatArray {
         require(bounds.size >= 4) { "Required bounds size of 4" }
         var minX = Float.MAX_VALUE
@@ -289,14 +281,14 @@ fun RoundedPolygon(
     centerX: Float = 0f,
     centerY: Float = 0f,
     rounding: CornerRounding = CornerRounding.Unrounded,
-    perVertexRounding: List<CornerRounding>? = null
+    perVertexRounding: List<CornerRounding>? = null,
 ) =
     RoundedPolygon(
         verticesFromNumVerts(numVertices, radius, centerX, centerY),
         rounding = rounding,
         perVertexRounding = perVertexRounding,
         centerX = centerX,
-        centerY = centerY
+        centerY = centerY,
     )
 
 /** Creates a copy of the given [RoundedPolygon] */
@@ -334,7 +326,7 @@ fun RoundedPolygon(
     rounding: CornerRounding = CornerRounding.Unrounded,
     perVertexRounding: List<CornerRounding>? = null,
     centerX: Float = Float.MIN_VALUE,
-    centerY: Float = Float.MIN_VALUE
+    centerY: Float = Float.MIN_VALUE,
 ): RoundedPolygon {
     if (vertices.size < 6) {
         throw IllegalArgumentException("Polygons must have at least 3 vertices")
@@ -360,7 +352,7 @@ fun RoundedPolygon(
                 Point(vertices[prevIndex], vertices[prevIndex + 1]),
                 Point(vertices[i * 2], vertices[i * 2 + 1]),
                 Point(vertices[nextIndex], vertices[nextIndex + 1]),
-                vtxRounding
+                vtxRounding,
             )
         )
     }
@@ -431,7 +423,7 @@ fun RoundedPolygon(
                         corners[i].last().anchor1X,
                         corners[i].last().anchor1Y,
                         corners[(i + 1) % n].first().anchor0X,
-                        corners[(i + 1) % n].first().anchor0Y
+                        corners[(i + 1) % n].first().anchor0Y,
                     )
                 )
             )
@@ -470,7 +462,7 @@ fun RoundedPolygon(
 fun RoundedPolygon(
     features: List<Feature>,
     centerX: Float = Float.NaN,
-    centerY: Float = Float.NaN
+    centerY: Float = Float.NaN,
 ): RoundedPolygon {
     require(features.size >= 2) { "Polygons must have at least 2 features" }
 
@@ -540,7 +532,7 @@ private class RoundedCorner(
     val p0: Point,
     val p1: Point,
     val p2: Point,
-    val rounding: CornerRounding? = null
+    val rounding: CornerRounding? = null,
 ) {
     val d1: Point
     val d2: Point
@@ -634,7 +626,7 @@ private class RoundedCorner(
                 circleIntersection0,
                 circleIntersection2,
                 center,
-                actualR
+                actualR,
             )
         val flanking2 =
             computeFlankingCurve(
@@ -645,7 +637,7 @@ private class RoundedCorner(
                     circleIntersection2,
                     circleIntersection0,
                     center,
-                    actualR
+                    actualR,
                 )
                 .reverse()
         return listOf(
@@ -656,9 +648,9 @@ private class RoundedCorner(
                 flanking0.anchor1X,
                 flanking0.anchor1Y,
                 flanking2.anchor0X,
-                flanking2.anchor0Y
+                flanking2.anchor0Y,
             ),
-            flanking2
+            flanking2,
         )
     }
 
@@ -705,7 +697,7 @@ private class RoundedCorner(
         circleSegmentIntersection: Point,
         otherCircleSegmentIntersection: Point,
         circleCenter: Point,
-        actualR: Float
+        actualR: Float,
     ): Cubic {
         // sideStart is the anchor, 'anchor' is actual control point
         val sideDirection = (sideStart - corner).getDirection()
@@ -717,7 +709,7 @@ private class RoundedCorner(
             interpolate(
                 circleSegmentIntersection,
                 (circleSegmentIntersection + otherCircleSegmentIntersection) / 2f,
-                actualSmoothingValues
+                actualSmoothingValues,
             )
         // The flanking curve ends on the circle
         val curveEnd =
@@ -755,7 +747,7 @@ private fun verticesFromNumVerts(
     numVertices: Int,
     radius: Float,
     centerX: Float,
-    centerY: Float
+    centerY: Float,
 ): FloatArray {
     val result = FloatArray(numVertices * 2)
     var arrayIndex = 0

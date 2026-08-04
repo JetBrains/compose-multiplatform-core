@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -64,9 +64,12 @@ import kotlin.math.roundToInt
  * @sample androidx.compose.material3.samples.MinimumInteractiveComponentSizeSample
  * @sample androidx.compose.material3.samples.MinimumInteractiveComponentSizeCheckboxRowSample
  * @see LocalMinimumInteractiveComponentSize
+ * @see MinimumInteractiveTopAlignmentLine
+ * @see MinimumInteractiveLeftAlignmentLine
  */
 @Stable
-fun Modifier.minimumInteractiveComponentSize(): Modifier = this then MinimumInteractiveModifier
+public fun Modifier.minimumInteractiveComponentSize(): Modifier =
+    this then MinimumInteractiveModifier
 
 internal object MinimumInteractiveModifier : ModifierNodeElement<MinimumInteractiveModifierNode>() {
 
@@ -97,7 +100,7 @@ internal class MinimumInteractiveModifierNode :
     @Suppress("PrimitiveInCollection")
     override fun MeasureScope.measure(
         measurable: Measurable,
-        constraints: Constraints
+        constraints: Constraints,
     ): MeasureResult {
         val size = currentValueOf(LocalMinimumInteractiveComponentSize).coerceAtLeast(0.dp)
         val placeable = measurable.measure(constraints)
@@ -125,7 +128,7 @@ internal class MinimumInteractiveModifierNode :
         return layout(
             width = width,
             height = height,
-            alignmentLines = alignmentLinesCache ?: emptyMap()
+            alignmentLines = alignmentLinesCache ?: emptyMap(),
         ) {
             val centerX = ((width - placeable.width) / 2f).roundToInt()
             val centerY = ((height - placeable.height) / 2f).roundToInt()
@@ -141,7 +144,6 @@ internal class MinimumInteractiveModifierNode :
      * calculates the necessary alignment offsets and adds them to the cache. If the minimum size is
      * not enforced or is smaller than the placeable's dimensions, it sets the alignment lines to 0.
      *
-     * @param enforcement A boolean indicating whether the minimum interactive size is enforced.
      * @param sizePx The minimum size in pixels that should be enforced.
      * @param placeable The [Placeable] object representing the measured component.
      */
@@ -163,8 +165,76 @@ internal class MinimumInteractiveModifierNode :
             ?: LinkedHashMap<AlignmentLine, Int>(2).also { alignmentLinesCache = it }
 }
 
-internal val MinimumInteractiveTopAlignmentLine = HorizontalAlignmentLine(::min)
-internal val MinimumInteractiveLeftAlignmentLine = VerticalAlignmentLine(::min)
+/**
+ * The horizontal [AlignmentLine] representing the top edge of the component's original visual
+ * bounds *before* any additional space is added by [Modifier.minimumInteractiveComponentSize] to
+ * meet minimum touch target requirements.
+ *
+ * When a component's height is less than the minimum interactive size (e.g.,
+ * [LocalMinimumInteractiveComponentSize]), [Modifier.minimumInteractiveComponentSize] expands the
+ * layout space. This alignment line provides the offset from the top edge of the *expanded* bounds
+ * to the top edge of the *original* component content (i.e., its visual bounds). This allows other
+ * layouts to align to the component's visual top, ignoring the extra touch-target spacing.
+ *
+ * The value of this alignment line is the amount of space added *above* the component's original
+ * top edge. Since [Modifier.minimumInteractiveComponentSize] centers the content, an equal amount
+ * of space is also added below the component.
+ *
+ * Visual representation:
+ * ```
+ * Expanded Layout (after Modifier.minimumInteractiveComponentSize() was applied)
+ * +------------------------+  ---
+ * |                        |   ^  Value of MinimumInteractiveTopAlignmentLine
+ * |                        |   v
+ * |----+--------------+----| --- MinimumInteractiveTopAlignmentLine
+ * |    |  Component   |    |
+ * |----+--------------+----|
+ * |                        |
+ * |                        |
+ * +------------------------+
+ * ```
+ *
+ * @see minimumInteractiveComponentSize
+ * @see MinimumInteractiveLeftAlignmentLine
+ */
+public val MinimumInteractiveTopAlignmentLine: HorizontalAlignmentLine =
+    HorizontalAlignmentLine(::min)
+
+/**
+ * The vertical [AlignmentLine] representing the left edge of the component's original visual bounds
+ * *before* any additional space is added by [Modifier.minimumInteractiveComponentSize] to meet
+ * minimum touch target requirements.
+ *
+ * When a component's width is less than the minimum interactive size (e.g.,
+ * [LocalMinimumInteractiveComponentSize]), [Modifier.minimumInteractiveComponentSize] expands the
+ * layout space. This alignment line provides the offset from the left edge of the *expanded* bounds
+ * to the left edge of the *original* component content (i.e., its visual bounds). This allows other
+ * layouts to align to the component's visual left, ignoring the extra touch-target spacing.
+ *
+ * The value of this alignment line is the amount of space added to the *left* of the component's
+ * original left edge. Since [Modifier.minimumInteractiveComponentSize] centers the content, an
+ * equal amount of space is also added to the right of the component.
+ *
+ * Visual representation:
+ * ```
+ * Expanded Layout (after Modifier.minimumInteractiveComponentSize() was applied)
+ * +--------------------------+
+ * |       |          |       |
+ * |       +----------+       |
+ * |       |Component |       |
+ * |       +----------+       |
+ * |       |          |       |
+ * +--------------------------+
+ * |  <->  |
+ * ^       ^
+ * |       MinimumInteractiveLeftAlignmentLine
+ * Value of MinimumInteractiveLeftAlignmentLine
+ * ```
+ *
+ * @see minimumInteractiveComponentSize
+ * @see MinimumInteractiveTopAlignmentLine
+ */
+public val MinimumInteractiveLeftAlignmentLine: VerticalAlignmentLine = VerticalAlignmentLine(::min)
 
 /**
  * CompositionLocal that configures whether Material components that have a visual size that is
@@ -174,15 +244,13 @@ internal val MinimumInteractiveLeftAlignmentLine = VerticalAlignmentLine(::min)
  * near to another component without any padding, there will not be enough space for an accessible
  * touch target.
  */
-@Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-@get:ExperimentalMaterial3Api
 @ExperimentalMaterial3Api
 @Deprecated(
     message = "Use LocalMinimumInteractiveComponentSize with 0.dp to turn off enforcement instead.",
     replaceWith = ReplaceWith("LocalMinimumInteractiveComponentSize"),
-    level = DeprecationLevel.WARNING
+    level = DeprecationLevel.WARNING,
 )
-val LocalMinimumInteractiveComponentEnforcement: ProvidableCompositionLocal<Boolean> =
+public val LocalMinimumInteractiveComponentEnforcement: ProvidableCompositionLocal<Boolean> =
     staticCompositionLocalOf {
         true
     }
@@ -195,7 +263,7 @@ val LocalMinimumInteractiveComponentEnforcement: ProvidableCompositionLocal<Bool
  * of a layout / near to another component without any padding, there will not be enough space for
  * an accessible touch target.
  */
-val LocalMinimumInteractiveComponentSize: ProvidableCompositionLocal<Dp> =
+public val LocalMinimumInteractiveComponentSize: ProvidableCompositionLocal<Dp> =
     staticCompositionLocalOf {
         48.dp
     }

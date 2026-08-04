@@ -15,10 +15,9 @@
  */
 
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
 import androidx.build.SoftwareType
@@ -41,7 +40,6 @@ dependencies {
     testImplementation(libs.testRunner)
     testImplementation(libs.testRules)
     testImplementation(libs.mockitoCore4)
-    testImplementation(libs.robolectric)
 
     androidTestImplementation(libs.junit)
     androidTestImplementation(libs.testExtJunit)
@@ -51,7 +49,6 @@ dependencies {
 }
 
 android {
-    testOptions.unitTests.includeAndroidResources = true
     namespace = "androidx.security.app.authenticator"
 }
 
@@ -61,4 +58,5 @@ androidx {
     mavenVersion = LibraryVersions.SECURITY_APP_AUTHENTICATOR
     inceptionYear = "2020"
     description = "Verify app packages for proper app to app authentication."
+    enableRobolectric()
 }

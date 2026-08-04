@@ -18,7 +18,6 @@
 
 package androidx.savedstate.serialization.serializers
 
-import android.annotation.SuppressLint
 import android.os.IBinder
 import android.os.Parcelable
 import android.util.Size
@@ -387,7 +386,8 @@ internal object SparseParcelableArraySerializer : KSerializer<SparseArray<Parcel
 public class SparseArraySerializer<T>(elementSerializer: KSerializer<T>) :
     KSerializer<SparseArray<T>> {
 
-    private val surrogateSerializer = SparseArraySurrogate.serializer(elementSerializer)
+    private val surrogateSerializer: KSerializer<SparseArraySurrogate<T>> =
+        SparseArraySurrogate.serializer(elementSerializer)
 
     // We can't use `SerialDescriptor("android.util.SparseArray", surrogateSerializer.descriptor)
     // as the `WrappedSerialDescriptor` returned doesn't have a proper `equals()` to trigger our
@@ -399,7 +399,7 @@ public class SparseArraySerializer<T>(elementSerializer: KSerializer<T>) :
         val surrogate =
             SparseArraySurrogate(
                 keys = List(value.size()) { index -> value.keyAt(index) },
-                values = List(value.size()) { index -> value.valueAt(index) }
+                values = List(value.size()) { index -> value.valueAt(index) },
             )
         encoder.encodeSerializableValue(surrogateSerializer, surrogate)
     }
@@ -414,7 +414,5 @@ public class SparseArraySerializer<T>(elementSerializer: KSerializer<T>) :
         }
     }
 
-    @SuppressLint("UnsafeOptInUsageError") // The class is private.
-    @Serializable
-    private class SparseArraySurrogate<T>(val keys: List<Int>, val values: List<T>)
+    @Serializable private class SparseArraySurrogate<T>(val keys: List<Int>, val values: List<T>)
 }

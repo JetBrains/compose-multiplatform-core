@@ -21,6 +21,7 @@ package androidx.compose.material.lint
 import androidx.compose.lint.test.Stubs
 import androidx.compose.lint.test.kotlinAndBytecodeStub
 import com.android.tools.lint.checks.infrastructure.LintDetectorTest
+import com.android.tools.lint.checks.infrastructure.TestMode
 import com.android.tools.lint.detector.api.Detector
 import com.android.tools.lint.detector.api.Issue
 import org.junit.Test
@@ -188,7 +189,7 @@ class ColorsDetectorTest : LintDetectorTest() {
         k3dUG7Pecvd1Ha9SFmi/SF7lJlCRw2AOQzlyZyRH0lzK4QW8OAFh4TLGJrDD
         whULVy3ELYxb/OOJOgsJy7EnLaQsyBZ2WkhbqLfQYKHXQsjCNQuV/wJPDAsN
         AgwAAA==
-        """
+        """,
         )
 
     @Test
@@ -256,7 +257,7 @@ class ColorsDetectorTest : LintDetectorTest() {
             """
                 ),
                 Stubs.Color,
-                ColorsStub.kotlin
+                ColorsStub.kotlin,
             )
             .run()
             .expect(
@@ -332,8 +333,9 @@ src/androidx/compose/material/foo/test.kt:55: Error: Conflicting 'on' color for 
             """
                 ),
                 Stubs.Color,
-                ColorsStub.kotlin
+                ColorsStub.kotlin,
             )
+            .skipTestModes(TestMode.JVM_OVERLOADS) // b/440099029
             .run()
             .expect(
                 """
@@ -382,8 +384,9 @@ src/androidx/compose/material/foo/test.kt:21: Error: Conflicting 'on' color for 
             """
                 ),
                 Stubs.Color,
-                ColorsStub.kotlin
+                ColorsStub.kotlin,
             )
+            .skipTestModes(TestMode.JVM_OVERLOADS) // b/440099029
             .run()
             .expect(
                 """
@@ -444,7 +447,7 @@ src/androidx/compose/material/foo/test.kt:22: Error: Conflicting 'on' color for 
             """
                 ),
                 Stubs.Color,
-                ColorsStub.kotlin
+                ColorsStub.kotlin,
             )
             .run()
             .expectClean()
@@ -518,7 +521,7 @@ src/androidx/compose/material/foo/test.kt:22: Error: Conflicting 'on' color for 
             """
                 ),
                 Stubs.Color,
-                ColorsStub.kotlin
+                ColorsStub.kotlin,
             )
             .run()
             .expectClean()
@@ -589,12 +592,50 @@ src/androidx/compose/material/foo/test.kt:22: Error: Conflicting 'on' color for 
             """
                 ),
                 Stubs.Color,
-                ColorsStub.bytecode
+                ColorsStub.bytecode,
             )
             .run()
-            // TODO: b/184856104 currently the constructor call to Colors cannot be resolved when
-            // it is available as bytecode, so we don't see any errors.
-            .expectClean()
+            .expect(
+                """
+src/androidx/compose/material/foo/test.kt:15: Error: Conflicting 'on' color for a given background [ConflictingOnColor]
+                    Color.White,
+                    ~~~~~~~~~~~
+src/androidx/compose/material/foo/test.kt:16: Error: Conflicting 'on' color for a given background [ConflictingOnColor]
+                    Color.White,
+                    ~~~~~~~~~~~
+src/androidx/compose/material/foo/test.kt:17: Error: Conflicting 'on' color for a given background [ConflictingOnColor]
+                    Color.White,
+                    ~~~~~~~~~~~
+src/androidx/compose/material/foo/test.kt:18: Error: Conflicting 'on' color for a given background [ConflictingOnColor]
+                    Color.White,
+                    ~~~~~~~~~~~
+src/androidx/compose/material/foo/test.kt:19: Error: Conflicting 'on' color for a given background [ConflictingOnColor]
+                    Color.Red,
+                    ~~~~~~~~~
+src/androidx/compose/material/foo/test.kt:31: Error: Conflicting 'on' color for a given background [ConflictingOnColor]
+                    Color.White,
+                    ~~~~~~~~~~~
+src/androidx/compose/material/foo/test.kt:32: Error: Conflicting 'on' color for a given background [ConflictingOnColor]
+                    Color.Blue,
+                    ~~~~~~~~~~
+src/androidx/compose/material/foo/test.kt:34: Error: Conflicting 'on' color for a given background [ConflictingOnColor]
+                    onSurface = Color.White,
+                                ~~~~~~~~~~~
+src/androidx/compose/material/foo/test.kt:51: Error: Conflicting 'on' color for a given background [ConflictingOnColor]
+                    Color.White,
+                    ~~~~~~~~~~~
+src/androidx/compose/material/foo/test.kt:52: Error: Conflicting 'on' color for a given background [ConflictingOnColor]
+                    yellow400,
+                    ~~~~~~~~~
+src/androidx/compose/material/foo/test.kt:53: Error: Conflicting 'on' color for a given background [ConflictingOnColor]
+                    Color.Blue,
+                    ~~~~~~~~~~
+src/androidx/compose/material/foo/test.kt:55: Error: Conflicting 'on' color for a given background [ConflictingOnColor]
+                    yellow500,
+                    ~~~~~~~~~
+12 errors
+                """
+            )
     }
 
     @Test
@@ -621,7 +662,7 @@ src/androidx/compose/material/foo/test.kt:22: Error: Conflicting 'on' color for 
             """
                 ),
                 Stubs.Color,
-                ColorsStub.bytecode
+                ColorsStub.bytecode,
             )
             .run()
             .expect(
@@ -661,7 +702,7 @@ src/androidx/compose/material/foo/test.kt:15: Error: Conflicting 'on' color for 
             """
                 ),
                 Stubs.Color,
-                ColorsStub.bytecode
+                ColorsStub.bytecode,
             )
             .run()
             .expect(
@@ -720,7 +761,7 @@ src/androidx/compose/material/foo/test.kt:15: Error: Conflicting 'on' color for 
             """
                 ),
                 Stubs.Color,
-                ColorsStub.bytecode
+                ColorsStub.bytecode,
             )
             .run()
             .expectClean()
@@ -794,7 +835,7 @@ src/androidx/compose/material/foo/test.kt:15: Error: Conflicting 'on' color for 
             """
                 ),
                 Stubs.Color,
-                ColorsStub.bytecode
+                ColorsStub.bytecode,
             )
             .run()
             .expectClean()

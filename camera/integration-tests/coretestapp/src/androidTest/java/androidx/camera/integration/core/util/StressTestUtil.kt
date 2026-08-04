@@ -19,7 +19,6 @@ package androidx.camera.integration.core.util
 import android.content.Context
 import android.content.Intent
 import androidx.camera.camera2.Camera2Config
-import androidx.camera.camera2.pipe.integration.CameraPipeConfig
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraFilter
 import androidx.camera.core.CameraInfo
@@ -66,7 +65,7 @@ object StressTestUtil {
     fun launchCameraXActivityAndWaitForPreviewReady(
         cameraId: String,
         useCaseCombination: Int,
-        forceEnableStreamSharing: Boolean = false
+        forceEnableStreamSharing: Boolean = false,
     ): ActivityScenario<CameraXActivity> {
         if (useCaseCombination.and(BIND_PREVIEW) == 0) {
             throw IllegalArgumentException("Preview must be included!")
@@ -86,6 +85,9 @@ object StressTestUtil {
 
         val activityScenario: ActivityScenario<CameraXActivity> = ActivityScenario.launch(intent)
 
+        // Wait for viewfinder to receive enough frames for its IdlingResource to idle.
+        activityScenario.waitForViewfinderIdle()
+
         activityScenario.onActivity {
             // Checks that the camera id is correct
             if ((it.camera!!.cameraInfo as CameraInfoInternal).cameraId != cameraId) {
@@ -96,10 +98,6 @@ object StressTestUtil {
             }
         }
 
-        // Ensure ActivityScenario is cleaned up properly
-        // Wait for viewfinder to receive enough frames for its IdlingResource to idle.
-        activityScenario.waitForViewfinderIdle()
-
         return activityScenario
     }
 
@@ -108,7 +106,7 @@ object StressTestUtil {
     fun assumeCameraSupportUseCaseCombination(
         camera: Camera,
         useCaseCombination: Int,
-        withStreamSharing: Boolean = true
+        withStreamSharing: Boolean = true,
     ) {
         val preview = Preview.Builder().build()
         val imageCapture =
@@ -133,7 +131,7 @@ object StressTestUtil {
         assumeTrue(
             camera.isUseCasesCombinationSupported(
                 withStreamSharing,
-                *listOfNotNull(preview, imageCapture, videoCapture, imageAnalysis).toTypedArray()
+                *listOfNotNull(preview, imageCapture, videoCapture, imageAnalysis).toTypedArray(),
             )
         )
     }
@@ -157,23 +155,11 @@ object StressTestUtil {
     @JvmStatic
     fun getAllCameraXConfigCameraIdCombinations() =
         mutableListOf<Array<Any?>>().apply {
-            val cameraxConfigs =
-                listOf(Camera2Config::class.simpleName, CameraPipeConfig::class.simpleName)
+            val cameraxConfigs = listOf(Camera2Config::class.simpleName)
 
             cameraxConfigs.forEach { configImplName ->
                 CameraUtil.getBackwardCompatibleCameraIdListOrThrow().forEach { cameraId ->
-                    add(
-                        arrayOf(
-                            configImplName,
-                            when (configImplName) {
-                                CameraPipeConfig::class.simpleName ->
-                                    CameraPipeConfig.defaultConfig()
-                                Camera2Config::class.simpleName -> Camera2Config.defaultConfig()
-                                else -> Camera2Config.defaultConfig()
-                            },
-                            cameraId
-                        )
-                    )
+                    add(arrayOf(configImplName, Camera2Config.defaultConfig(), cameraId))
                 }
             }
         }

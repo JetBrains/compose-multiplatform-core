@@ -91,19 +91,19 @@ import androidx.compose.ui.unit.dp
  * @param content The content to be displayed on this Surface
  */
 @Composable
-fun Surface(
+public fun Surface(
     modifier: Modifier = Modifier,
     shape: Shape = RectangleShape,
     color: Color = MaterialTheme.colors.surface,
     contentColor: Color = contentColorFor(color),
     border: BorderStroke? = null,
     elevation: Dp = 0.dp,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     val absoluteElevation = LocalAbsoluteElevation.current + elevation
     CompositionLocalProvider(
         LocalContentColor provides contentColor,
-        LocalAbsoluteElevation provides absoluteElevation
+        LocalAbsoluteElevation provides absoluteElevation,
     ) {
         Box(
             modifier =
@@ -114,17 +114,17 @@ fun Surface(
                             surfaceColorAtElevation(
                                 color = color,
                                 elevationOverlay = LocalElevationOverlay.current,
-                                absoluteElevation = absoluteElevation
+                                absoluteElevation = absoluteElevation,
                             ),
                         border = border,
-                        elevation = elevation
+                        elevation = elevation,
                     )
                     .semantics(mergeDescendants = false) {
                         @Suppress("DEPRECATION")
                         isContainer = true
                     }
                     .pointerInput(Unit) {},
-            propagateMinConstraints = true
+            propagateMinConstraints = true,
         ) {
             content()
         }
@@ -159,12 +159,14 @@ fun Surface(
  *    [color] is not part of the theme palette, [contentColor] will keep the same value set above
  *    this Surface.
  * 6) Click handling. This version of surface will react to the clicks, calling [onClick] lambda,
- *    updating the [interactionSource] when [PressInteraction] occurs, and showing ripple indication
- *    in response to press events. If you don't need click handling, consider using the Surface
- *    function that doesn't require [onClick] param.
+ *    updating the [interactionSource] when
+ *    [androidx.compose.foundation.interaction.PressInteraction] occurs, and showing ripple
+ *    indication in response to press events. If you don't need click handling, consider using the
+ *    Surface function that doesn't require [onClick] param.
  * 7) Semantics for clicks. Just like with [Modifier.clickable], clickable version of Surface will
  *    produce semantics to indicate that it is clicked. No semantic role is set by default, you may
- *    specify one by passing a desired [Role] with a [Modifier.semantics].
+ *    specify one by passing a desired [androidx.compose.ui.semantics.Role] with a
+ *    [Modifier.semantics].
  *
  * @sample androidx.compose.material.samples.ClickableSurfaceSample
  *
@@ -194,7 +196,7 @@ fun Surface(
  */
 @ExperimentalMaterialApi
 @Composable
-fun Surface(
+public fun Surface(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
@@ -204,12 +206,12 @@ fun Surface(
     border: BorderStroke? = null,
     elevation: Dp = 0.dp,
     interactionSource: MutableInteractionSource? = null,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     val absoluteElevation = LocalAbsoluteElevation.current + elevation
     CompositionLocalProvider(
         LocalContentColor provides contentColor,
-        LocalAbsoluteElevation provides absoluteElevation
+        LocalAbsoluteElevation provides absoluteElevation,
     ) {
         Box(
             modifier =
@@ -221,18 +223,18 @@ fun Surface(
                             surfaceColorAtElevation(
                                 color = color,
                                 elevationOverlay = LocalElevationOverlay.current,
-                                absoluteElevation = absoluteElevation
+                                absoluteElevation = absoluteElevation,
                             ),
                         border = border,
-                        elevation = elevation
+                        elevation = elevation,
                     )
                     .clickable(
                         interactionSource = interactionSource,
                         indication = ripple(),
                         enabled = enabled,
-                        onClick = onClick
+                        onClick = onClick,
                     ),
-            propagateMinConstraints = true
+            propagateMinConstraints = true,
         ) {
             content()
         }
@@ -267,12 +269,14 @@ fun Surface(
  *    [color] is not part of the theme palette, [contentColor] will keep the same value set above
  *    this Surface.
  * 6) Click handling. This version of surface will react to the clicks, calling [onClick] lambda,
- *    updating the [interactionSource] when [PressInteraction] occurs, and showing ripple indication
- *    in response to press events. If you don't need click handling, consider using the Surface
- *    function that doesn't require [onClick] param.
+ *    updating the [interactionSource] when
+ *    [androidx.compose.foundation.interaction.PressInteraction] occurs, and showing ripple
+ *    indication in response to press events. If you don't need click handling, consider using the
+ *    Surface function that doesn't require [onClick] param.
  * 7) Semantics for selection. Just like with [Modifier.selectable], selectable version of Surface
  *    will produce semantics to indicate that it is selected. No semantic role is set by default,
- *    you may specify one by passing a desired [Role] with a [Modifier.semantics].
+ *    you may specify one by passing a desired [androidx.compose.ui.semantics.Role] with a
+ *    [Modifier.semantics].
  *
  * @sample androidx.compose.material.samples.SelectableSurfaceSample
  *
@@ -303,7 +307,7 @@ fun Surface(
  */
 @ExperimentalMaterialApi
 @Composable
-fun Surface(
+public fun Surface(
     selected: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -314,12 +318,12 @@ fun Surface(
     border: BorderStroke? = null,
     elevation: Dp = 0.dp,
     interactionSource: MutableInteractionSource? = null,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     val absoluteElevation = LocalAbsoluteElevation.current + elevation
     CompositionLocalProvider(
         LocalContentColor provides contentColor,
-        LocalAbsoluteElevation provides absoluteElevation
+        LocalAbsoluteElevation provides absoluteElevation,
     ) {
         Box(
             modifier =
@@ -331,19 +335,19 @@ fun Surface(
                             surfaceColorAtElevation(
                                 color = color,
                                 elevationOverlay = LocalElevationOverlay.current,
-                                absoluteElevation = absoluteElevation
+                                absoluteElevation = absoluteElevation,
                             ),
                         border = border,
-                        elevation = elevation
+                        elevation = elevation,
                     )
                     .selectable(
                         selected = selected,
                         interactionSource = interactionSource,
                         indication = ripple(),
                         enabled = enabled,
-                        onClick = onClick
+                        onClick = onClick,
                     ),
-            propagateMinConstraints = true
+            propagateMinConstraints = true,
         ) {
             content()
         }
@@ -378,12 +382,14 @@ fun Surface(
  *    [color] is not part of the theme palette, [contentColor] will keep the same value set above
  *    this Surface.
  * 6) Click handling. This version of surface will react to the check toggles, calling
- *    [onCheckedChange] lambda, updating the [interactionSource] when [PressInteraction] occurs, and
- *    showing ripple indication in response to press events. If you don't need check handling,
- *    consider using a Surface function that doesn't require [onCheckedChange] param.
+ *    [onCheckedChange] lambda, updating the [interactionSource] when
+ *    [androidx.compose.foundation.interaction.PressInteraction] occurs, and showing ripple
+ *    indication in response to press events. If you don't need check handling, consider using a
+ *    Surface function that doesn't require [onCheckedChange] param.
  * 7) Semantics for toggle. Just like with [Modifier.toggleable], toggleable version of Surface will
  *    produce semantics to indicate that it is checked. No semantic role is set by default, you may
- *    specify one by passing a desired [Role] with a [Modifier.semantics].
+ *    specify one by passing a desired [androidx.compose.ui.semantics.Role] with a
+ *    [Modifier.semantics].
  *
  * @sample androidx.compose.material.samples.ToggleableSurfaceSample
  *
@@ -414,7 +420,7 @@ fun Surface(
  */
 @ExperimentalMaterialApi
 @Composable
-fun Surface(
+public fun Surface(
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
@@ -425,12 +431,12 @@ fun Surface(
     border: BorderStroke? = null,
     elevation: Dp = 0.dp,
     interactionSource: MutableInteractionSource? = null,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     val absoluteElevation = LocalAbsoluteElevation.current + elevation
     CompositionLocalProvider(
         LocalContentColor provides contentColor,
-        LocalAbsoluteElevation provides absoluteElevation
+        LocalAbsoluteElevation provides absoluteElevation,
     ) {
         Box(
             modifier =
@@ -442,19 +448,19 @@ fun Surface(
                             surfaceColorAtElevation(
                                 color = color,
                                 elevationOverlay = LocalElevationOverlay.current,
-                                absoluteElevation = absoluteElevation
+                                absoluteElevation = absoluteElevation,
                             ),
                         border = border,
-                        elevation = elevation
+                        elevation = elevation,
                     )
                     .toggleable(
                         value = checked,
                         interactionSource = interactionSource,
                         indication = ripple(),
                         enabled = enabled,
-                        onValueChange = onCheckedChange
+                        onValueChange = onCheckedChange,
                     ),
-            propagateMinConstraints = true
+            propagateMinConstraints = true,
         ) {
             content()
         }
@@ -465,7 +471,7 @@ private fun Modifier.surface(
     shape: Shape,
     backgroundColor: Color,
     border: BorderStroke?,
-    elevation: Dp
+    elevation: Dp,
 ) =
     this.shadow(elevation, shape, clip = false)
         .then(if (border != null) Modifier.border(border, shape) else Modifier)
@@ -476,7 +482,7 @@ private fun Modifier.surface(
 private fun surfaceColorAtElevation(
     color: Color,
     elevationOverlay: ElevationOverlay?,
-    absoluteElevation: Dp
+    absoluteElevation: Dp,
 ): Color {
     return if (color == MaterialTheme.colors.surface && elevationOverlay != null) {
         elevationOverlay.apply(color, absoluteElevation)

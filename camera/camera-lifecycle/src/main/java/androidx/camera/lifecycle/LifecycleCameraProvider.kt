@@ -16,20 +16,17 @@
 package androidx.camera.lifecycle
 
 import android.content.Context
-import android.content.pm.PackageManager
-import androidx.annotation.RestrictTo
-import androidx.annotation.RestrictTo.Scope
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraProvider
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.CameraXConfig
-import androidx.camera.core.CompositionSettings
 import androidx.camera.core.ConcurrentCamera
 import androidx.camera.core.ConcurrentCamera.SingleCameraConfig
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.Preview
+import androidx.camera.core.SessionConfig
 import androidx.camera.core.UseCase
 import androidx.camera.core.UseCaseGroup
 import androidx.camera.core.impl.utils.executor.CameraXExecutors
@@ -51,16 +48,26 @@ import com.google.common.util.concurrent.ListenableFuture
  *
  * @sample androidx.camera.lifecycle.samples.configureAndCreateInstances
  */
-// TODO: Remove the annotation when LifecycleCameraProvider is ready to be public.
-@RestrictTo(Scope.LIBRARY_GROUP)
+@ExperimentalCameraProviderConfiguration
 public interface LifecycleCameraProvider : CameraProvider {
     /**
-     * Returns `true` if the [UseCase] is bound to a lifecycle. Otherwise returns `false`.
+     * Returns `true` if this [UseCase] is bound to a lifecycle or included in a bound
+     * [SessionConfig], `false` otherwise.
      *
      * After binding a use case, use cases remain bound until the lifecycle reaches a
      * [Lifecycle.State.DESTROYED] state or if is unbound by calls to [unbind] or [unbindAll].
      */
     public fun isBound(useCase: UseCase): Boolean
+
+    /**
+     * Returns `true` if the exact same instance of [SessionConfig] is bound to a lifecycle, `false`
+     * otherwise.
+     *
+     * After binding a [SessionConfig], this [SessionConfig] remains bound until the lifecycle
+     * reaches a [Lifecycle.State.DESTROYED] state or if is unbound by calls to [unbind] or
+     * [unbindAll].
+     */
+    public fun isBound(sessionConfig: SessionConfig): Boolean
 
     /**
      * Unbinds all specified use cases from the lifecycle provider.
@@ -78,6 +85,25 @@ public interface LifecycleCameraProvider : CameraProvider {
      * @throws UnsupportedOperationException If called in concurrent mode.
      */
     public fun unbind(vararg useCases: UseCase?): Unit
+
+    /**
+     * Unbinds the specified [SessionConfig] instance from the lifecycle provider.
+     *
+     * This method will only unbind the session if the provided `sessionConfig` is the exact same
+     * instance that was previously used for binding.
+     *
+     * This [SessionConfig] contains the [UseCase]s to be detached from the camera. This will
+     * initiate a close of every open camera which has zero [UseCase] associated with it at the end
+     * of this call.
+     *
+     * After unbinding the [SessionConfig], another [SessionConfig] can be bound again and its
+     * [UseCase]s can be bound to another [Lifecycle].
+     *
+     * @param sessionConfig The sessionConfig that contains the collection of use cases to remove.
+     * @throws IllegalStateException If not called on main thread.
+     * @throws UnsupportedOperationException If called in concurrent mode.
+     */
+    public fun unbind(sessionConfig: SessionConfig): Unit
 
     /**
      * Unbinds all use cases from the lifecycle provider and removes them from CameraX.
@@ -117,9 +143,8 @@ public interface LifecycleCameraProvider : CameraProvider {
      * and the use case binding will not change. Attempting to bind the same use case to multiple
      * camera selectors is also an error and will not change the binding.
      *
-     * If different use cases are bound to different camera selectors that resolve to distinct
-     * cameras, but the same lifecycle, only one of the cameras will operate at a time. The
-     * non-operating camera will not become active until it is the only camera with use cases bound.
+     * Binding different use cases to the same lifecycle with different camera selectors that
+     * resolve to distinct cameras is an error, resulting in an exception.
      *
      * The [Camera] returned is determined by the given camera selector, plus other internal
      * requirements, possibly from use case configurations. The camera returned from bindToLifecycle
@@ -146,7 +171,7 @@ public interface LifecycleCameraProvider : CameraProvider {
     public fun bindToLifecycle(
         lifecycleOwner: LifecycleOwner,
         cameraSelector: CameraSelector,
-        vararg useCases: UseCase?
+        vararg useCases: UseCase?,
     ): Camera
 
     /**
@@ -164,61 +189,102 @@ public interface LifecycleCameraProvider : CameraProvider {
     public fun bindToLifecycle(
         lifecycleOwner: LifecycleOwner,
         cameraSelector: CameraSelector,
-        useCaseGroup: UseCaseGroup
+        useCaseGroup: UseCaseGroup,
+    ): Camera
+
+    /**
+     * Binds a [SessionConfig] to a [LifecycleOwner].
+     *
+     * A [SessionConfig] encapsulates the configuration required for a camera session. This
+     * includes:
+     * - A collection of [UseCase] instances defining the desired camera functionality.
+     * - Session parameters to be applied to the camera.
+     * - Common properties such as the field-of-view defined by [androidx.camera.core.ViewPort].
+     * - [androidx.camera.core.CameraEffect]s to be applied for image processing.
+     *
+     * The state of the lifecycle will determine when the cameras are open, started, stopped and
+     * closed. When started, the use cases contained in the given [SessionConfig] receive camera
+     * data and the parameters of [SessionConfig] are used for configuring the camera including
+     * common field of view, effects and the session parameters.
+     *
+     * Binding to a lifecycleOwner in state currently in [Lifecycle.State.STARTED] or greater will
+     * also initialize and start data capture. If the camera was already running this may cause a
+     * new initialization to occur temporarily stopping data from the camera before restarting it.
+     *
+     * Updates the [SessionConfig] for a given [LifecycleOwner] by invoking [bindToLifecycle] again
+     * with the new [SessionConfig]. There is no need to call [unbind] or [unbindAll]; the previous
+     * [SessionConfig] and its associated [UseCase]s will be implicitly unbound. This behavior also
+     * applies when rebinding to the same [LifecycleOwner] with a different [CameraSelector], such
+     * as when switching the camera's lens facing.
+     *
+     * **Important Restrictions:**
+     * - You cannot bind a [SessionConfig] to a [LifecycleOwner] that already has individual
+     *   [UseCase]s or a [UseCaseGroup] bound to it.
+     * - A [SessionConfig] bound to a [LifecycleOwner] cannot contain [UseCase]s that are already
+     *   bound to a different [LifecycleOwner].
+     *
+     * Violating these restrictions will result in an [IllegalStateException].
+     *
+     * The [Camera] returned is determined by the given camera selector, plus other internal
+     * requirements, possibly from use case configurations. The camera returned from bindToLifecycle
+     * may differ from the camera determined solely by a camera selector. If the camera selector
+     * can't resolve a valid camera under the requirements, an IllegalArgumentException will be
+     * thrown.
+     *
+     * @throws UnsupportedOperationException If the camera is configured in concurrent mode. For
+     *   example, if a list of [SingleCameraConfig]s was bound to the lifecycle already.
+     * @throws IllegalStateException if either of the following conditions is met:
+     * - A [UseCase] or [SessionConfig] is already bound to the same [LifecycleOwner].
+     * - A [UseCase] contained within the [SessionConfig] is already bound to a different
+     *   [LifecycleOwner].
+     *
+     * @sample androidx.camera.lifecycle.samples.bindSessionConfigToLifecycle
+     */
+    public fun bindToLifecycle(
+        lifecycleOwner: LifecycleOwner,
+        cameraSelector: CameraSelector,
+        sessionConfig: SessionConfig,
     ): Camera
 
     /**
      * Binds list of [SingleCameraConfig]s to [LifecycleOwner].
      *
-     * The concurrent camera is only supporting two cameras currently. If the input list of
-     * [SingleCameraConfig]s have less or more than two [SingleCameraConfig]s,
+     * This function only supports combinations that are available via
+     * [availableConcurrentCameraInfos]. If the input list of [SingleCameraConfig]s does not match
+     * any of the supported combinations returned by [availableConcurrentCameraInfos],
      * [IllegalArgumentException] will be thrown. If cameras are already used by other [UseCase]s,
      * [UnsupportedOperationException] will be thrown.
      *
-     * A logical camera is a grouping of two or more of those physical cameras. See
-     * [Multi-camera API](https://developer.android.com/media/camera/camera2/multi-camera)
-     *
-     * If we want to open concurrent logical cameras, which are one front camera and one back
-     * camera, the device needs to support [PackageManager.FEATURE_CAMERA_CONCURRENT]. To set up
-     * concurrent logical camera, call [availableConcurrentCameraInfos] to get the list of available
-     * combinations of concurrent cameras. Each sub-list contains the [CameraInfo]s for a
-     * combination of cameras that can be operated concurrently. Each logical camera can have its
-     * own [UseCase]s and [LifecycleOwner]. See
+     * To set up concurrent camera, call [availableConcurrentCameraInfos] to get the list of
+     * available combinations of concurrent cameras. Each sub-list contains the [CameraInfo]s for a
+     * combination of cameras that can be operated concurrently. Each camera can have its own
+     * [UseCase]s and [LifecycleOwner]. See
      * [CameraX lifecycles]({@docRoot}training/camerax/architecture#lifecycles)
      *
-     * If the concurrent logical cameras are binding the same preview and video capture use cases,
-     * the concurrent cameras video recording will be supported. The concurrent camera preview
-     * stream will be shared with video capture and record the concurrent cameras streams as a
-     * composited stream. The [CompositionSettings] can be used to configure the position of each
-     * camera stream and different layouts can be built. See [CompositionSettings] for more details.
-     *
-     * If we want to open concurrent physical cameras, which are two front cameras or two back
-     * cameras, the device needs to support physical cameras and the capability could be checked via
-     * [CameraInfo.isLogicalMultiCameraSupported]. Each physical cameras can have its own [UseCase]s
-     * but needs to have the same [LifecycleOwner], otherwise [IllegalArgumentException] will be
-     * thrown.
-     *
-     * If we want to open one physical camera, for example ultra wide, we just need to set physical
-     * camera id in [CameraSelector] and bind to lifecycle. All CameraX features will work normally
-     * when only a single physical camera is used.
-     *
-     * If we want to open multiple physical cameras, we need to have multiple [CameraSelector]s,
-     * each in one [SingleCameraConfig] and set physical camera id, then bind to lifecycle with the
-     * [SingleCameraConfig]s. Internally each physical camera id will be set on [UseCase], for
-     * example, [Preview] and call
-     * [android.hardware.camera2.params.OutputConfiguration.setPhysicalCameraId].
-     *
-     * Currently only two physical cameras for the same logical camera id are allowed and the device
-     * needs to support physical cameras by checking [CameraInfo.isLogicalMultiCameraSupported]. In
-     * addition, there is no guarantee or API to query whether the device supports multiple physical
-     * camera opening or not. Internally the library checks
-     * [android.hardware.camera2.CameraDevice.isSessionConfigurationSupported], if the device does
-     * not support the multiple physical camera configuration, [IllegalArgumentException] will be
-     * thrown.
+     * There are two modes:
+     * 1. Non-Composition mode: These [SingleCameraConfig]s have different preview and video capture
+     *    use cases and there is no [androidx.camera.core.CompositionSettings]. In this mode, these
+     *    previews and video captures can stream separately. CameraX doesn't perform any
+     *    composition. You can also bind an extra image capture along with the preview and the video
+     *    capture use cases.
+     * 2. Composition mode: If the concurrent cameras are binding the same instances of preview and
+     *    video capture use cases, the concurrent cameras video recording is supported. The
+     *    concurrent camera preview stream will be shared with video capture and record the
+     *    concurrent cameras streams as a composited stream. The
+     *    [androidx.camera.core.CompositionSettings] can be used to configure the position of each
+     *    camera stream and different layouts can be built. See
+     *    [androidx.camera.core.CompositionSettings] for more details. The composition settings can
+     *    also be updated dynamically by invoking
+     *    [androidx.camera.core.ConcurrentCamera.setCompositionSettings]. The composition mode only
+     *    supports preview and video capture. ImageCapture is currently not supported.
+     *    [androidx.camera.core.CameraEffect] can be applied on the composited stream. However, the
+     *    mirrorMode of VideoCapture will be ignored. This means the recorded video will have the
+     *    same mirrorMode as the preview.
      *
      * @param singleCameraConfigs Input list of [SingleCameraConfig]s.
      * @return Output [ConcurrentCamera] instance.
-     * @throws IllegalArgumentException If less or more than two camera configs are provided.
+     * @throws IllegalArgumentException If the camera configs do not match any supported concurrent
+     *   camera combination in [availableConcurrentCameraInfos].
      * @throws UnsupportedOperationException If device is not supporting concurrent camera or
      *   cameras are already used by other [UseCase]s.
      * @see ConcurrentCamera
@@ -266,7 +332,7 @@ public interface LifecycleCameraProvider : CameraProvider {
             return Futures.transform(
                 lifecycleCameraProvider.initAsync(context, cameraXConfig),
                 { lifecycleCameraProvider },
-                CameraXExecutors.directExecutor()
+                CameraXExecutors.directExecutor(),
             )
         }
     }

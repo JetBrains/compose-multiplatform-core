@@ -20,7 +20,6 @@ import android.annotation.SuppressLint
 import android.os.Build
 import android.os.ext.SdkExtensions
 import androidx.annotation.RequiresExtension
-import androidx.annotation.RestrictTo
 import androidx.privacysandbox.ads.adservices.common.ExperimentalFeatures
 import androidx.privacysandbox.ads.adservices.internal.AdServicesInfo
 
@@ -36,10 +35,13 @@ import androidx.privacysandbox.ads.adservices.internal.AdServicesInfo
  *   by [AdSelectionManager#getAdSelectionData} then the impression reporting request should only
  *   include the ad selection id.
  */
-class ReportImpressionRequest
-public constructor(val adSelectionId: Long, val adSelectionConfig: AdSelectionConfig) {
+public class ReportImpressionRequest
+public constructor(
+    public val adSelectionId: Long,
+    public val adSelectionConfig: AdSelectionConfig,
+) {
     @ExperimentalFeatures.Ext8OptIn
-    constructor(adSelectionId: Long) : this(adSelectionId, AdSelectionConfig.EMPTY)
+    public constructor(adSelectionId: Long) : this(adSelectionId, AdSelectionConfig.EMPTY)
 
     /** Checks whether two [ReportImpressionRequest] objects contain the same information. */
     override fun equals(other: Any?): Boolean {
@@ -63,7 +65,6 @@ public constructor(val adSelectionId: Long, val adSelectionConfig: AdSelectionCo
     }
 
     @SuppressLint("NewApi")
-    @RestrictTo(RestrictTo.Scope.LIBRARY)
     internal fun convertToAdServices(): android.adservices.adselection.ReportImpressionRequest {
         if (
             AdServicesInfo.adServicesVersion() >= 10 || AdServicesInfo.extServicesVersionS() >= 10
@@ -85,7 +86,7 @@ public constructor(val adSelectionId: Long, val adSelectionConfig: AdSelectionCo
                 else
                     android.adservices.adselection.ReportImpressionRequest(
                         request.adSelectionId,
-                        request.adSelectionConfig.convertToAdServices()
+                        request.adSelectionConfig.convertToAdServices(),
                     )
             }
         }
@@ -105,7 +106,7 @@ public constructor(val adSelectionId: Long, val adSelectionConfig: AdSelectionCo
                 }
                 return android.adservices.adselection.ReportImpressionRequest(
                     request.adSelectionId,
-                    request.adSelectionConfig.convertToAdServices()
+                    request.adSelectionConfig.convertToAdServices(),
                 )
             }
         }

@@ -70,6 +70,9 @@ import kotlin.math.roundToInt
  *
  * @sample androidx.wear.compose.material3.samples.StepperSample
  *
+ * ![StepperSample Composite
+ * Image](https://developer.android.com/wear/images/design/WearComposeM3_StepperSample_CompositeImage.png)
+ *
  * Example of a [Stepper] with range semantics:
  *
  * @sample androidx.wear.compose.material3.samples.StepperWithRangeSemanticsSample
@@ -77,6 +80,10 @@ import kotlin.math.roundToInt
  * Example of a [Stepper] with Custom icons and Button content:
  *
  * @sample androidx.wear.compose.material3.samples.StepperWithButtonSample
+ *
+ * ![StepperWithButtonSample Composite
+ * Image](https://developer.android.com/wear/images/design/WearComposeM3_StepperWithButtonSample_CompositeImage.png)
+ *
  * @param value Current value of the Stepper. If outside of [valueRange] provided, value will be
  *   coerced to this range.
  * @param onValueChange Lambda in which value should be updated.
@@ -104,7 +111,7 @@ public fun Stepper(
     enabled: Boolean = true,
     valueRange: ClosedFloatingPointRange<Float> = 0f..(steps + 1).toFloat(),
     colors: StepperColors = StepperDefaults.colors(),
-    content: @Composable BoxScope.() -> Unit
+    content: @Composable BoxScope.() -> Unit,
 ) {
     StepperImpl(
         value = value,
@@ -116,7 +123,7 @@ public fun Stepper(
         modifier = modifier,
         colors = colors,
         enabled = enabled,
-        content = provideScopeContent(colors.contentColor(enabled = enabled), content)
+        content = provideScopeContent(colors.contentColor(enabled = enabled), content),
     )
 }
 
@@ -132,6 +139,9 @@ public fun Stepper(
  * Example of a [Stepper] with integer values:
  *
  * @sample androidx.wear.compose.material3.samples.StepperWithIntegerSample
+ *
+ * ![StepperWithIntegerSample Composite
+ * Image](https://developer.android.com/wear/images/design/WearComposeM3_StepperWithIntegerSample_CompositeImage.png)
  *
  * A number of steps is calculated as the difference between max and min values of
  * [valueProgression] divided by [valueProgression].step - 1. For example, with a range of 100..120
@@ -169,7 +179,7 @@ public fun Stepper(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     colors: StepperColors = StepperDefaults.colors(),
-    content: @Composable BoxScope.() -> Unit
+    content: @Composable BoxScope.() -> Unit,
 ) {
     Stepper(
         value = value.toFloat(),
@@ -181,7 +191,7 @@ public fun Stepper(
         increaseIcon = increaseIcon,
         colors = colors,
         enabled = enabled,
-        content = content
+        content = content,
     )
 }
 
@@ -339,7 +349,7 @@ private fun StepperImpl(
     enabled: Boolean = true,
     valueRange: ClosedFloatingPointRange<Float>,
     colors: StepperColors,
-    content: @Composable BoxScope.() -> Unit
+    content: @Composable BoxScope.() -> Unit,
 ) {
     require(steps >= 0) { "Number of steps should be non-negative." }
     val currentStep =
@@ -363,7 +373,7 @@ private fun StepperImpl(
 
     Column(
         modifier = modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.spacedBy(VerticalSpacing)
+        verticalArrangement = Arrangement.spacedBy(VerticalSpacing),
     ) {
         val increaseButtonEnabled = enabled && (currentStep < steps + 1)
         val decreaseButtonEnabled = enabled && (currentStep > 0)
@@ -380,7 +390,7 @@ private fun StepperImpl(
         Box(
             modifier = Modifier.fillMaxWidth().weight(ContentWeight),
             contentAlignment = Alignment.Center,
-            content = content
+            content = content,
         )
 
         StepperButton(
@@ -403,7 +413,7 @@ private fun ColumnScope.StepperButton(
     colors: StepperColors,
     shape: Shape = StepperButtonShape,
     pressedShape: Shape = StepperButtonPressedShape,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val iconProviderValues = arrayOf(LocalContentColor provides colors.buttonIconColor(enabled))
@@ -414,32 +424,34 @@ private fun ColumnScope.StepperButton(
             pressedShape = pressedShape,
             onPressAnimationSpec = MaterialTheme.motionScheme.fastSpatialSpec<Float>().faster(200f),
             onReleaseAnimationSpec = MaterialTheme.motionScheme.slowSpatialSpec(),
-            interactionSource = interactionSource
+            interactionSource = interactionSource,
         )
 
     Box(
         modifier =
-            Modifier.align(Alignment.CenterHorizontally)
-                .weight(ButtonWeight)
-                .padding(paddingValues),
+            Modifier.align(Alignment.CenterHorizontally).weight(ButtonWeight).padding(paddingValues)
     ) {
-        Box(
-            modifier =
-                Modifier.align(contentAlignment)
-                    .semantics { role = Role.Button }
-                    .clip(finalShape)
-                    .repeatableClickable(
-                        enabled = enabled,
-                        onClick = onClick,
-                        interactionSource = finalInteractionSource,
-                        indication = null
-                    )
-                    .size(width = ButtonWidth, height = ButtonHeight)
-                    .background(color = colors.buttonContainerColor(enabled), shape = finalShape)
-                    .indication(interactionSource, ripple()),
-            contentAlignment = Alignment.Center
-        ) {
-            CompositionLocalProvider(values = iconProviderValues, content = content)
+        CompositionLocalProvider(values = iconProviderValues) {
+            Box(
+                modifier =
+                    Modifier.align(contentAlignment)
+                        .semantics { role = Role.Button }
+                        .clip(finalShape)
+                        .repeatableClickable(
+                            enabled = enabled,
+                            onClick = onClick,
+                            interactionSource = finalInteractionSource,
+                            indication = null,
+                        )
+                        .size(width = ButtonWidth, height = ButtonHeight)
+                        .background(
+                            color = colors.buttonContainerColor(enabled),
+                            shape = finalShape,
+                        )
+                        .indication(interactionSource, ripple()),
+                contentAlignment = Alignment.Center,
+                content = { content() },
+            )
         }
     }
 }

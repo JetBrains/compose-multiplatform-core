@@ -19,7 +19,6 @@ package androidx.benchmark
 import android.os.Build
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
-import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNotEquals
@@ -33,7 +32,6 @@ import org.junit.runner.RunWith
 
 @MediumTest
 @RunWith(AndroidJUnit4::class)
-@SdkSuppress(minSdkVersion = 21)
 class CpuEventCounterTest {
     @Before
     fun before() {
@@ -58,14 +56,14 @@ class CpuEventCounterTest {
     fun basic() =
         CpuEventCounter().use { counter ->
             val values = CpuEventCounter.Values()
-
-            counter.resetEvents(
+            val events =
                 listOf(
                     CpuEventCounter.Event.Instructions,
                     CpuEventCounter.Event.CpuCycles,
                     CpuEventCounter.Event.L1IReferences,
                 )
-            )
+
+            counter.resetEvents(events)
             counter.reset()
             counter.start()
             repeat(100) {
@@ -74,6 +72,8 @@ class CpuEventCounterTest {
             counter.stop()
 
             counter.read(values)
+            val validationError = counter.validateValues(values, events)
+            assertThat(validationError).isNull()
 
             // NOTE: these expected number of counters may not be safe, will adjust as
             // needed based on CI results
@@ -81,13 +81,13 @@ class CpuEventCounterTest {
                 assertTrue(
                     values.numberOfCounters >= 1,
                     "expect at least one counter enabled on emulator," +
-                        " saw ${values.numberOfCounters}"
+                        " saw ${values.numberOfCounters}",
                 )
             } else {
                 assertTrue(
                     values.numberOfCounters >= 3,
                     "expect at least three counters on physical device," +
-                        " saw ${values.numberOfCounters}"
+                        " saw ${values.numberOfCounters}",
                 )
             }
             assertNotEquals(0, values.timeEnabled)
@@ -110,14 +110,14 @@ class CpuEventCounterTest {
     fun instructions() =
         CpuEventCounter().use { counter ->
             val values = CpuEventCounter.Values()
-
-            counter.resetEvents(
+            val events =
                 listOf(
                     CpuEventCounter.Event.Instructions,
                     CpuEventCounter.Event.CpuCycles,
-                    CpuEventCounter.Event.L1IReferences
+                    CpuEventCounter.Event.L1IReferences,
                 )
-            )
+
+            counter.resetEvents(events)
 
             val instructions =
                 List(4) {
@@ -132,6 +132,7 @@ class CpuEventCounterTest {
                     }
                     counter.stop()
                     counter.read(values)
+                    assertThat(counter.validateValues(values, events)).isNull()
                     values.getValue(CpuEventCounter.Event.Instructions)
                 }
 
@@ -140,7 +141,7 @@ class CpuEventCounterTest {
             // note, we don't validate 1st, in case there's some amount of warmup happening
             assertTrue(
                 instructions[3] > instructions[2] && instructions[2] > instructions[1],
-                "expected increasing instruction counts (ignoring 1st): ${instructions.joinToString()}"
+                "expected increasing instruction counts (ignoring 1st): ${instructions.joinToString()}",
             )
         }
 
@@ -148,8 +149,7 @@ class CpuEventCounterTest {
     fun tooManyEvents(): Unit =
         CpuEventCounter().use { counter ->
             val values = CpuEventCounter.Values()
-
-            counter.resetEvents(
+            val events =
                 listOf(
                     CpuEventCounter.Event.Instructions,
                     CpuEventCounter.Event.CpuCycles,
@@ -158,7 +158,8 @@ class CpuEventCounterTest {
                     CpuEventCounter.Event.L1DReferences,
                     CpuEventCounter.Event.L1DMisses,
                 )
-            )
+
+            counter.resetEvents(events)
 
             counter.reset()
             counter.start()
@@ -170,8 +171,10 @@ class CpuEventCounterTest {
                 System.nanoTime()
             }
             counter.stop()
-            assertFailsWith<IllegalStateException> { counter.read(values) }
-                .also { assertThat(it.message!!).contains("Observed 0 for instructions/cpuCycles") }
+            counter.read(values)
+            val error = counter.validateValues(values, events)
+            assertThat(error).isNotNull()
+            assertThat(error!!.message).contains("Observed 0 for instructions/cpuCycles")
         }
 
     @Test
@@ -194,4 +197,56 @@ class CpuEventCounterTest {
             assertFailsWith<IllegalStateException> { counter.read(values) }
                 .also { ise -> assertTrue(ise.message!!.contains("read counters after close")) }
         }
+
+    @Test
+    fun validateValues_success() {
+        val values =
+            CpuEventCounter.Values().apply {
+                setValue(CpuEventCounter.Event.Instructions, 100L)
+                setValue(CpuEventCounter.Event.CpuCycles, 200L)
+            }
+        CpuEventCounter().use { counter ->
+            val error =
+                counter.validateValues(
+                    values,
+                    listOf(CpuEventCounter.Event.Instructions, CpuEventCounter.Event.CpuCycles),
+                )
+            assertThat(error).isNull()
+        }
+    }
+
+    @Test
+    fun validateValues_failure() {
+        val values =
+            CpuEventCounter.Values().apply {
+                setValue(CpuEventCounter.Event.Instructions, 0L)
+                setValue(CpuEventCounter.Event.CpuCycles, 0L)
+            }
+        CpuEventCounter().use { counter ->
+            val error =
+                counter.validateValues(
+                    values,
+                    listOf(CpuEventCounter.Event.Instructions, CpuEventCounter.Event.CpuCycles),
+                )
+            assertThat(error).isNotNull()
+            assertThat(error!!.message)
+                .contains(
+                    "Observed 0 for instructions/cpuCycles, capture appeared to fail, values=[instructions=0,cpuCycles=0]"
+                )
+        }
+    }
+
+    @Test
+    fun validateValues_noValidationFlags() {
+        val values =
+            CpuEventCounter.Values().apply { setValue(CpuEventCounter.Event.L1DReferences, 0L) }
+        CpuEventCounter().use { counter ->
+            val error = counter.validateValues(values, listOf(CpuEventCounter.Event.L1DReferences))
+            assertThat(error).isNull()
+        }
+    }
+
+    private fun CpuEventCounter.Values.setValue(event: CpuEventCounter.Event, value: Long) {
+        this.longArray[3 + (2 * event.id)] = value
+    }
 }

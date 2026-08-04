@@ -18,12 +18,12 @@ package androidx.pdf.view
 
 import android.graphics.Point
 import android.view.ViewGroup
-import android.widget.FrameLayout
 import androidx.test.core.app.ActivityScenario
 import androidx.test.espresso.Espresso
 import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
+import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.test.runTest
 import org.junit.After
@@ -61,6 +61,7 @@ class PdfViewRenderingTest {
     }
 
     @Test
+    @SdkSuppress(minSdkVersion = 26)
     fun testPageRendering_renderNewPagesOnScroll() = runTest {
         // Layout at 500x1000, and expect to render pages [0, 4] at 500x200
         val pdfDocument = FakePdfDocument(List(10) { Point(500, 200) })
@@ -120,15 +121,15 @@ class PdfViewRenderingTest {
 /** Create, measure, and layout a [PdfView] at the specified [width] and [height] */
 private fun setupPdfView(width: Int, height: Int, fakePdfDocument: FakePdfDocument?) {
     PdfViewTestActivity.onCreateCallback = { activity ->
-        val container = FrameLayout(activity)
-        container.addView(
-            PdfView(activity).apply {
-                pdfDocument = fakePdfDocument
-                id = PDF_VIEW_ID
-            },
-            ViewGroup.LayoutParams(width, height)
-        )
-        activity.setContentView(container)
+        with(activity) {
+            container.addView(
+                PdfView(activity).apply {
+                    pdfDocument = fakePdfDocument
+                    id = PDF_VIEW_ID
+                },
+                ViewGroup.LayoutParams(width, height),
+            )
+        }
     }
 }
 

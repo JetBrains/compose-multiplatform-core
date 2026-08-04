@@ -42,25 +42,22 @@ internal object DokkaInputModels {
         @get:InputFiles @PathSensitive(PathSensitivity.RELATIVE) val sourceRoots: FileCollection,
         @get:InputFiles @PathSensitive(PathSensitivity.RELATIVE) val samples: FileCollection,
         @get:InputFiles @PathSensitive(PathSensitivity.RELATIVE) val includes: FileCollection,
-        @get:Input val analysisPlatform: String,
+        @get:Input val analysisPlatform: DokkaAnalysisPlatform,
         @get:Input val documentedVisibilities: List<String> = listOf("PUBLIC", "PROTECTED"),
         @get:Input val noStdlibLink: Boolean,
         @get:Input val noJdkLink: Boolean,
         @get:Input val noAndroidSdkLink: Boolean,
         @Nested val dependentSourceSets: List<SourceSetId>,
         @Nested val externalDocumentationLinks: List<GlobalDocsLink>,
-        @Nested val sourceLinks: List<SrcLink>
+        @Nested val sourceLinks: List<SrcLink>,
     )
 
-    class SourceSetId(
-        @get:Input val sourceSetName: String,
-        @get:Input val scopeId: String,
-    )
+    class SourceSetId(@get:Input val sourceSetName: String, @get:Input val scopeId: String)
 
     class SrcLink(
         @get:InputDirectory @PathSensitive(PathSensitivity.RELATIVE) val localDirectory: File,
         @get:Input val remoteUrl: String,
-        @get:Input val remoteLineSuffix: String = ";l="
+        @get:Input val remoteLineSuffix: String = ";l=",
     )
 
     class GlobalDocsLink(@get:Input val url: String, @get:Input val packageListUrl: String?)

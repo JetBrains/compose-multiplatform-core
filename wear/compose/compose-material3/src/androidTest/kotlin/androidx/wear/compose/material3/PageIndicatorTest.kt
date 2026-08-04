@@ -17,9 +17,15 @@
 package androidx.wear.compose.material3
 
 import android.os.Build
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.testutils.assertContainsColor
 import androidx.compose.testutils.assertDoesNotContainColor
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.DeviceConfigurationOverride
@@ -27,11 +33,16 @@ import androidx.compose.ui.test.LayoutDirection
 import androidx.compose.ui.test.assertHeightIsEqualTo
 import androidx.compose.ui.test.assertWidthIsEqualTo
 import androidx.compose.ui.test.captureToImage
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.test.filters.SdkSuppress
+import androidx.wear.compose.foundation.pager.HorizontalPager
 import androidx.wear.compose.foundation.pager.PagerState
+import androidx.wear.compose.foundation.pager.rememberPagerState
+import kotlin.test.assertEquals
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 import org.junit.Rule
 import org.junit.Test
 
@@ -42,7 +53,7 @@ class PageIndicatorTest {
     @Test
     public fun horizontalPageIndicator_supports_testtag_circular() {
         rule.setContentWithTheme {
-            ScreenConfiguration(screenSizeDp = 150, isRound = true) {
+            ScreenConfiguration(desiredScreenSizeDp = 150, isRound = true) {
                 HorizontalPageIndicator(
                     modifier = Modifier.testTag(TEST_TAG),
                     pagerState = pagerState_start,
@@ -55,7 +66,7 @@ class PageIndicatorTest {
     @Test
     public fun verticalPageIndicator_supports_testtag_circular() {
         rule.setContentWithTheme {
-            ScreenConfiguration(screenSizeDp = 150, isRound = true) {
+            ScreenConfiguration(desiredScreenSizeDp = 150, isRound = true) {
                 VerticalPageIndicator(
                     modifier = Modifier.testTag(TEST_TAG),
                     pagerState = pagerState_start,
@@ -73,30 +84,29 @@ class PageIndicatorTest {
     @Test
     public fun horizontalPageIndicator_in_between_positions_circular() {
         rule.setContentWithTheme {
-            ScreenConfiguration(screenSizeDp = 150, isRound = true) {
+            ScreenConfiguration(desiredScreenSizeDp = 150, isRound = true) {
                 HorizontalPageIndicator(
                     modifier = Modifier.testTag(TEST_TAG),
                     pagerState = pagerState_middle,
                     selectedColor = selectedColor,
                     unselectedColor = unselectedColor,
-                    backgroundColor = backgroundColor
+                    backgroundColor = backgroundColor,
                 )
             }
         }
         rule.waitForIdle()
 
         // Selected color should occupy 2 dots with space in between, which
-        // approximately equals to 12%
+        // approximately equals to 11%
         rule
             .onNodeWithTag(TEST_TAG)
             .captureToImage()
-            .assertColorInPercentageRange(selectedColor, 11f..14f)
-        // Unselected dots should also be visible on the screen, and should take around 9%
-        // (4.4% per dot, 2 dots total)
+            .assertColorInPercentageRange(selectedColor, 9f..13f)
+        // Unselected dots should also be visible on the screen, and should take around 7.2%
         rule
             .onNodeWithTag(TEST_TAG)
             .captureToImage()
-            .assertColorInPercentageRange(unselectedColor, 7f..10f)
+            .assertColorInPercentageRange(unselectedColor, 6f..8f)
 
         // Check that background color exists
         rule.onNodeWithTag(TEST_TAG).captureToImage().assertContainsColor(backgroundColor)
@@ -110,31 +120,30 @@ class PageIndicatorTest {
     @Test
     public fun verticalPageIndicator_in_between_positions_circular() {
         rule.setContentWithTheme {
-            ScreenConfiguration(screenSizeDp = 150, isRound = true) {
+            ScreenConfiguration(desiredScreenSizeDp = 150, isRound = true) {
                 VerticalPageIndicator(
                     modifier = Modifier.testTag(TEST_TAG),
                     pagerState = pagerState_middle,
                     selectedColor = selectedColor,
                     unselectedColor = unselectedColor,
-                    backgroundColor = backgroundColor
+                    backgroundColor = backgroundColor,
                 )
             }
         }
         rule.waitForIdle()
 
         // Selected color should occupy 2 dots with space in between, which
-        // approximately equals to 12%
+        // approximately equals to 11%
         rule
             .onNodeWithTag(TEST_TAG)
             .captureToImage()
-            .assertColorInPercentageRange(selectedColor, 10f..14f)
+            .assertColorInPercentageRange(selectedColor, 9f..13f)
         // Unselected dots ( which doesn't participate in color merge)
-        // should also be visible on the screen, and should take around 8.8%
-        // (4.4% per dot, 2 dots in total)
+        // should also be visible on the screen, and should take around 7.2%
         rule
             .onNodeWithTag(TEST_TAG)
             .captureToImage()
-            .assertColorInPercentageRange(unselectedColor, 7.5f..9f)
+            .assertColorInPercentageRange(unselectedColor, 6f..8f)
 
         // Check that background color exists
         rule.onNodeWithTag(TEST_TAG).captureToImage().assertContainsColor(backgroundColor)
@@ -146,14 +155,14 @@ class PageIndicatorTest {
         val spacing = PageIndicatorSpacing
         val padding = PaddingDefaults.edgePadding
         rule.setContent {
-            ScreenConfiguration(screenSizeDp = 150, isRound = true) {
+            ScreenConfiguration(desiredScreenSizeDp = 150, isRound = true) {
                 HorizontalPageIndicator(
                     modifier = Modifier.testTag(TEST_TAG),
                     pagerState =
-                        PagerState(
-                            currentPage = 1,
-                            currentPageOffsetFraction = 0.0f,
-                            pageCount = { 9 }
+                        rememberPagerState(
+                            initialPage = 1,
+                            initialPageOffsetFraction = 0.0f,
+                            pageCount = { 9 },
                         ),
                 )
             }
@@ -173,14 +182,14 @@ class PageIndicatorTest {
         val padding = PaddingDefaults.edgePadding
 
         rule.setContent {
-            ScreenConfiguration(screenSizeDp = 150, isRound = true) {
+            ScreenConfiguration(desiredScreenSizeDp = 150, isRound = true) {
                 HorizontalPageIndicator(
                     modifier = Modifier.testTag(TEST_TAG),
                     pagerState =
-                        PagerState(
-                            currentPage = 1,
-                            currentPageOffsetFraction = 0.0f,
-                            pageCount = { pagesCount }
+                        rememberPagerState(
+                            initialPage = 1,
+                            initialPageOffsetFraction = 0.0f,
+                            pageCount = { pagesCount },
                         ),
                 )
             }
@@ -205,29 +214,30 @@ class PageIndicatorTest {
     @Test
     public fun horizontalPageIndicator_single_page_circular() {
         rule.setContentWithTheme {
-            ScreenConfiguration(screenSizeDp = 150, isRound = true) {
+            ScreenConfiguration(desiredScreenSizeDp = 150, isRound = true) {
                 HorizontalPageIndicator(
                     modifier = Modifier.testTag(TEST_TAG),
                     pagerState =
-                        PagerState(
-                            currentPage = 0,
-                            currentPageOffsetFraction = 0f,
-                            pageCount = { 1 }
+                        rememberPagerState(
+                            initialPage = 0,
+                            initialPageOffsetFraction = 0f,
+                            pageCount = { 1 },
                         ),
                     selectedColor = selectedColor,
                     unselectedColor = unselectedColor,
-                    backgroundColor = backgroundColor
+                    backgroundColor = backgroundColor,
                 )
             }
         }
         rule.waitForIdle()
 
-        // Selected color should occupy 1 dot, which
-        // approximately equals to 12%
+        // Selected color should occupy 1 dot, which approximately equals to 11.5% on Medium Phone
+        // emulator (2.625f density), 9.8% on Small Phone emulator (2.0f density) and 10.7% on
+        // Pixel 9 Pro XL (3.0f density).
         rule
             .onNodeWithTag(TEST_TAG)
             .captureToImage()
-            .assertColorInPercentageRange(selectedColor, 11f..13f)
+            .assertColorInPercentageRange(selectedColor, 9f..12f)
         // Unselected dots shouldn't be visible on the screen because we only have one page
         rule.onNodeWithTag(TEST_TAG).captureToImage().assertDoesNotContainColor(unselectedColor)
 
@@ -235,11 +245,59 @@ class PageIndicatorTest {
         rule.onNodeWithTag(TEST_TAG).captureToImage().assertContainsColor(backgroundColor)
     }
 
+    @Test
+    public fun horizontalPageIndicator_redraws_when_scrollToPage_is_called() {
+        lateinit var pagerState: PagerState
+        lateinit var scope: CoroutineScope
+        var redrawCount = 0
+        rule.setContentWithTheme {
+            pagerState = rememberPagerState(initialPage = 0) { 5 }
+            scope = rememberCoroutineScope()
+            HorizontalPagerScaffold(
+                pagerState = pagerState,
+                pageIndicator = {
+                    HorizontalPageIndicator(
+                        modifier =
+                            Modifier.drawWithContent {
+                                redrawCount++
+                                drawContent()
+                            },
+                        pagerState = pagerState,
+                    )
+                },
+            ) {
+                HorizontalPager(
+                    state = pagerState,
+                    flingBehavior =
+                        PagerScaffoldDefaults.snapWithSpringFlingBehavior(state = pagerState),
+                ) { page ->
+                    AnimatedPage(pageIndex = page, pagerState = pagerState) {
+                        Column(
+                            modifier = Modifier.fillMaxSize(),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center,
+                        ) {
+                            Text(text = "Page #$page", color = Color.White)
+                        }
+                    }
+                }
+            }
+        }
+        rule.waitForIdle()
+
+        val startCount = redrawCount
+        rule.runOnIdle { scope.launch { pagerState.scrollToPage(1) } }
+
+        rule.waitForIdle()
+
+        assertEquals(startCount + 1, redrawCount)
+    }
+
     private fun horizontalPageIndicator_position_is_selected_circular(
         layoutDirection: LayoutDirection
     ) {
         rule.setContentWithTheme {
-            ScreenConfiguration(screenSizeDp = 150, isRound = true) {
+            ScreenConfiguration(desiredScreenSizeDp = 150, isRound = true) {
                 DeviceConfigurationOverride(
                     DeviceConfigurationOverride.LayoutDirection(layoutDirection)
                 ) {
@@ -248,25 +306,23 @@ class PageIndicatorTest {
                         pagerState = pagerState_start,
                         selectedColor = selectedColor,
                         unselectedColor = unselectedColor,
-                        backgroundColor = backgroundColor
+                        backgroundColor = backgroundColor,
                     )
                 }
             }
         }
         rule.waitForIdle()
 
-        // A selected dot with specified color should be visible on the screen, which is apprx 4.4%
-        // (4.4% per dot, 1 dot in total)
+        // A selected dot with specified color should be visible on the screen, which is apprx 4.2%
         rule
             .onNodeWithTag(TEST_TAG)
             .captureToImage()
-            .assertColorInPercentageRange(selectedColor, 4f..5f)
-        // Unselected dots should also be visible on the screen, and should take around 13.2%
-        // (4.4% per dot, 3 dots total)
+            .assertColorInPercentageRange(selectedColor, 3.7f..4.7f)
+        // Unselected dots should also be visible on the screen, and should take around 10%
         rule
             .onNodeWithTag(TEST_TAG)
             .captureToImage()
-            .assertColorInPercentageRange(unselectedColor, 11f..16f)
+            .assertColorInPercentageRange(unselectedColor, 8f..12f)
 
         // Check that background color exists
         rule.onNodeWithTag(TEST_TAG).captureToImage().assertContainsColor(backgroundColor)
@@ -276,7 +332,7 @@ class PageIndicatorTest {
         layoutDirection: LayoutDirection
     ) {
         rule.setContentWithTheme {
-            ScreenConfiguration(screenSizeDp = 150, isRound = true) {
+            ScreenConfiguration(desiredScreenSizeDp = 150, isRound = true) {
                 DeviceConfigurationOverride(
                     DeviceConfigurationOverride.LayoutDirection(layoutDirection)
                 ) {
@@ -285,25 +341,23 @@ class PageIndicatorTest {
                         pagerState = pagerState_start,
                         selectedColor = selectedColor,
                         unselectedColor = unselectedColor,
-                        backgroundColor = backgroundColor
+                        backgroundColor = backgroundColor,
                     )
                 }
             }
         }
         rule.waitForIdle()
 
-        // A selected dot with specified color should be visible on the screen, which is apprx 4.4%
-        // (4.% per dot, 1 dot in total)
+        // A selected dot with specified color should be visible on the screen, which is apprx 3.9%
         rule
             .onNodeWithTag(TEST_TAG)
             .captureToImage()
-            .assertColorInPercentageRange(selectedColor, 3.5f..5.5f)
-        // Unselected dots should also be visible on the screen, and should take around 13%
-        // (4.4% per dot, 3 dots total)
+            .assertColorInPercentageRange(selectedColor, 3.5f..4.5f)
+        // Three unselected dots should also be visible on the screen, and should take around 10%
         rule
             .onNodeWithTag(TEST_TAG)
             .captureToImage()
-            .assertColorInPercentageRange(unselectedColor, 11f..14f)
+            .assertColorInPercentageRange(unselectedColor, 8f..12f)
 
         // Check that background color exists
         rule.onNodeWithTag(TEST_TAG).captureToImage().assertContainsColor(backgroundColor)
@@ -313,14 +367,14 @@ class PageIndicatorTest {
         PagerState(
             currentPage = SELECTED_PAGE_INDEX,
             currentPageOffsetFraction = 0.0f,
-            pageCount = { PAGE_COUNT }
+            pageCount = { PAGE_COUNT },
         )
 
     private val pagerState_middle =
         PagerState(
             currentPage = SELECTED_PAGE_INDEX,
             currentPageOffsetFraction = 0.5f,
-            pageCount = { PAGE_COUNT }
+            pageCount = { PAGE_COUNT },
         )
 
     companion object {

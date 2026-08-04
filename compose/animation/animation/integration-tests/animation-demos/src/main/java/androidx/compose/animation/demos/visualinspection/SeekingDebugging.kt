@@ -19,7 +19,6 @@ package androidx.compose.animation.demos.visualinspection
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.EnterExitState
 import androidx.compose.animation.ExitTransition
-import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.Transition
 import androidx.compose.animation.core.animateFloat
@@ -73,7 +72,7 @@ fun SeekingDemo() {
     var progress by remember { mutableFloatStateOf(0f) }
     Column(
         Modifier.fillMaxSize().padding(10.dp),
-        verticalArrangement = Arrangement.spacedBy(20.dp)
+        verticalArrangement = Arrangement.spacedBy(20.dp),
     ) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
             Row(Modifier.clickable { entering = true }.padding(10.dp)) {
@@ -98,27 +97,26 @@ fun SeekingDemo() {
                     transition.setPlaytimeAfterInitialAndTargetStateEstablished(
                         false,
                         true,
-                        (abs(it) * totalDuration).toLong()
+                        (abs(it) * totalDuration).toLong(),
                     )
                 } else {
                     transition.setPlaytimeAfterInitialAndTargetStateEstablished(
                         true,
                         false,
-                        (abs(it) * totalDuration).toLong()
+                        (abs(it) * totalDuration).toLong(),
                     )
                 }
             }
     }
 }
 
-@OptIn(ExperimentalAnimationApi::class)
 @Composable
 fun Transition<Boolean>.ComplexAV() {
     AnimatedVisibility(
         visible = { it },
         modifier = Modifier.fillMaxSize(),
         enter = fadeIn(),
-        exit = fadeOut()
+        exit = fadeOut(),
     ) {
         Box {
             Column(Modifier.fillMaxSize()) {
@@ -144,12 +142,12 @@ fun Transition<Boolean>.ComplexAV() {
                                 enter =
                                     slideInVertically(
                                         initialOffsetY = { it },
-                                        animationSpec = staggeredSpring
+                                        animationSpec = staggeredSpring,
                                     ),
                                 // No built-in exit transition will be applied. It'll be
                                 // faded out by parent AnimatedVisibility while scaling down
                                 // by the scale animation.
-                                exit = ExitTransition.None
+                                exit = ExitTransition.None,
                             )
                             .fillMaxWidth()
                             .padding(5.dp)
@@ -166,7 +164,7 @@ fun Transition<Boolean>.ComplexAV() {
             FloatingActionButton(
                 onClick = {},
                 modifier = Modifier.align(Alignment.BottomEnd).padding(20.dp),
-                backgroundColor = MaterialTheme.colors.primary
+                backgroundColor = MaterialTheme.colors.primary,
             ) {
                 Icon(Icons.Default.Favorite, contentDescription = null)
             }

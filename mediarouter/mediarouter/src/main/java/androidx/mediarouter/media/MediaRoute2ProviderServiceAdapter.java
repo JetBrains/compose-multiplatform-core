@@ -43,13 +43,11 @@ import android.os.Messenger;
 import android.os.RemoteException;
 import android.text.TextUtils;
 import android.util.Log;
-import android.util.SparseArray;
 
 import androidx.annotation.GuardedBy;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.collection.ArrayMap;
+import androidx.collection.ArraySet;
 import androidx.mediarouter.media.MediaRouteProvider.DynamicGroupRouteController;
 import androidx.mediarouter.media.MediaRouteProvider.DynamicGroupRouteController.DynamicRouteDescriptor;
 import androidx.mediarouter.media.MediaRouteProvider.RouteController;
@@ -57,17 +55,22 @@ import androidx.mediarouter.media.MediaRouteProvider.RouteControllerOptions;
 import androidx.mediarouter.media.MediaRouteProviderService.MediaRouteProviderServiceImplApi30;
 import androidx.mediarouter.media.MediaRouteProviderService.MediaRouteProviderServiceImplApi30.ClientRecord;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 @RequiresApi(api = Build.VERSION_CODES.R)
 class MediaRoute2ProviderServiceAdapter extends MediaRoute2ProviderService {
-    private static final String TAG = "MR2ProviderService";
+    private static final String TAG = "AxMR2ProvdrSrvcAdapter";
     static final boolean DEBUG = Log.isLoggable(TAG, Log.DEBUG);
 
     private final Object mLock = new Object();
@@ -76,8 +79,6 @@ class MediaRoute2ProviderServiceAdapter extends MediaRoute2ProviderService {
     // Maps session ID to SessionRecord.
     @GuardedBy("mLock")
     final Map<String, SessionRecord> mSessionRecords = new ArrayMap<>();
-    // Maps controller ID to Session ID.
-    final SparseArray<String> mSessionIdMap = new SparseArray<>();
 
     private volatile MediaRouteProviderDescriptor mProviderDescriptor;
 
@@ -134,10 +135,13 @@ class MediaRoute2ProviderServiceAdapter extends MediaRoute2ProviderService {
         }
 
         int sessionFlags = SessionRecord.SESSION_FLAG_MR2;
+        RouteControllerOptions routeControllerOptions =
+                new RouteControllerOptions.Builder()
+                        .setControlHints(sessionHints)
+                        .setClientPackageName(packageName)
+                        .build();
         DynamicGroupRouteController controller;
         if (mProviderDescriptor.supportsDynamicGroupRoute()) {
-            RouteControllerOptions routeControllerOptions =
-                    new RouteControllerOptions.Builder().setControlHints(sessionHints).build();
             controller =
                     provider.onCreateDynamicGroupRouteController(routeId, routeControllerOptions);
             sessionFlags |= SessionRecord.SESSION_FLAG_GROUP | SessionRecord.SESSION_FLAG_DYNAMIC;
@@ -147,7 +151,8 @@ class MediaRoute2ProviderServiceAdapter extends MediaRoute2ProviderService {
                 return;
             }
         } else {
-            RouteController routeController = provider.onCreateRouteController(routeId);
+            RouteController routeController =
+                    provider.onCreateRouteController(routeId, routeControllerOptions);
             if (routeController == null) {
                 Log.w(TAG, "onCreateSession: Couldn't create a controller");
                 notifyRequestFailed(requestId, REASON_REJECTED);
@@ -187,7 +192,7 @@ class MediaRoute2ProviderServiceAdapter extends MediaRoute2ProviderService {
                 // for a dynamic group will be created after the group route is created.
                 // (DynamicGroupRouteController#notifyDynamicRoutesChanged is called).
                 sessionRecord.updateMemberRouteControllers(
-                        routeId, /* oldSession= */ null, sessionInfo);
+                        routeId, /* oldSession= */ null, sessionInfo, routeControllerOptions);
             } else {
                 // The session has a non-group static route controller, whose proxy route
                 // controller has already been created. We just need to map the route id to said
@@ -204,6 +209,7 @@ class MediaRoute2ProviderServiceAdapter extends MediaRoute2ProviderService {
     public void onReleaseSession(long requestId, @NonNull String sessionId) {
         RoutingSessionInfo sessionInfo = getSessionInfo(sessionId);
         if (sessionInfo == null) {
+            Log.w(TAG, "onReleaseSession: Ignored with unrecognized sessionId = " + sessionId);
             return;
         }
 
@@ -291,7 +297,8 @@ class MediaRoute2ProviderServiceAdapter extends MediaRoute2ProviderService {
     @Override
     public void onDiscoveryPreferenceChanged(@NonNull RouteDiscoveryPreference preference) {
         mServiceImpl.setBaseDiscoveryRequest(
-                MediaRouter2Utils.toMediaRouteDiscoveryRequest(preference));
+                MediaRouter2Utils.toMediaRouteDiscoveryRequest(
+                        preference, preference.shouldPerformActiveScan()));
     }
 
     public void setProviderDescriptor(@Nullable MediaRouteProviderDescriptor descriptor) {
@@ -301,15 +308,48 @@ class MediaRoute2ProviderServiceAdapter extends MediaRoute2ProviderService {
 
         Map<String, MediaRouteDescriptor> descriptorMap = new ArrayMap<>();
         for (MediaRouteDescriptor desc : routeDescriptors) {
-            // If duplicate ids exist, the last one survives.
-            // Aligned with MediaRouter implementation.
             if (desc == null) {
                 continue;
             }
-            descriptorMap.put(desc.getId(), desc);
+            MediaRouteDescriptor existingDescriptor = descriptorMap.get(desc.getId());
+            if (existingDescriptor != null) {
+                checkAndLogOverlappingClientVersions(existingDescriptor, desc);
+            }
+            if (existingDescriptor == null
+                    || desc.getMaxClientVersion() >= existingDescriptor.getMaxClientVersion()) {
+                // If duplicate IDs exist, the new descriptor overrides the existing one if it
+                // supports a newer or equivalent client version.
+                descriptorMap.put(desc.getId(), desc);
+            }
         }
 
-        updateStaticSessions(descriptorMap);
+        List<SessionRecord> sessionRecords;
+        Set<String> availableRouteIds = descriptorMap.keySet();
+        synchronized (mLock) {
+            sessionRecords = new ArrayList<>(mSessionRecords.values());
+        }
+        for (SessionRecord sessionRecord : sessionRecords) {
+            RoutingSessionInfo sessionInfo = sessionRecord.mSessionInfo;
+            if ((sessionRecord.getFlags() & SessionRecord.SESSION_FLAG_DYNAMIC) == 0) {
+                DynamicGroupRouteControllerProxy controller =
+                        (DynamicGroupRouteControllerProxy) sessionRecord.getGroupController();
+                if (descriptorMap.containsKey(controller.getRouteId())) {
+                    sessionRecord.updateSessionInfo(
+                            descriptorMap.get(controller.getRouteId()),
+                            /* dynamicRouteDescriptors= */ null);
+                } else {
+                    Log.w(
+                            TAG,
+                            String.format(
+                                    Locale.ROOT,
+                                    "Session with id: '%s' has invalid route id: '%s'.",
+                                    sessionInfo != null ? sessionInfo.getId() : "null",
+                                    controller.getRouteId()));
+                }
+            } else if (sessionInfo != null) {
+                checkAndLogInvalidSessionState(availableRouteIds, sessionInfo);
+            }
+        }
 
         List<MediaRoute2Info> routes = new ArrayList<>();
         for (MediaRouteDescriptor desc : descriptorMap.values()) {
@@ -367,25 +407,6 @@ class MediaRoute2ProviderServiceAdapter extends MediaRoute2ProviderService {
         }
 
         sessionRecord.updateSessionInfo(groupRoute, descriptors);
-    }
-
-    void updateStaticSessions(Map<String, MediaRouteDescriptor> routeDescriptors) {
-        List<SessionRecord> staticSessions = new ArrayList<>();
-        synchronized (mLock) {
-            for (SessionRecord sessionRecord : mSessionRecords.values()) {
-                if ((sessionRecord.getFlags() & SessionRecord.SESSION_FLAG_DYNAMIC) == 0) {
-                    staticSessions.add(sessionRecord);
-                }
-            }
-        }
-        for (SessionRecord sessionRecord : staticSessions) {
-            DynamicGroupRouteControllerProxy controller =
-                    (DynamicGroupRouteControllerProxy) sessionRecord.getGroupController();
-            if (routeDescriptors.containsKey(controller.getRouteId())) {
-                sessionRecord.updateSessionInfo(routeDescriptors.get(controller.getRouteId()),
-                        /*dynamicRouteDescriptors=*/null);
-            }
-        }
     }
 
     //TODO: Remove this
@@ -476,66 +497,6 @@ class MediaRoute2ProviderServiceAdapter extends MediaRoute2ProviderService {
         controller.onUpdateVolume(delta);
     }
 
-    void notifyRouteControllerAdded(ClientRecord clientRecord,
-            RouteController routeController, int controllerId, String packageName, String routeId) {
-        MediaRouteDescriptor descriptor = getRouteDescriptor(routeId, "notifyRouteControllerAdded");
-        if (descriptor == null) {
-            return;
-        }
-
-        int sessionFlags = 0;
-        DynamicGroupRouteController controller;
-        if (routeController instanceof DynamicGroupRouteController) {
-            sessionFlags |= SessionRecord.SESSION_FLAG_DYNAMIC | SessionRecord.SESSION_FLAG_GROUP;
-            controller = (DynamicGroupRouteController) routeController;
-        } else {
-            if (!descriptor.getGroupMemberIds().isEmpty()) {
-                sessionFlags |= SessionRecord.SESSION_FLAG_GROUP;
-            }
-            controller = new DynamicGroupRouteControllerProxy(routeId, routeController);
-        }
-
-        SessionRecord sessionRecord = new SessionRecord(controller, REQUEST_ID_NONE,
-                sessionFlags, clientRecord);
-        //TODO: Reconsider the logic if dynamic grouping is enabled for clients < CLIENT_VERSION_4
-        sessionRecord.mRouteId = routeId;
-
-        String sessionId = assignSessionId(sessionRecord);
-        mSessionIdMap.put(controllerId, sessionId);
-
-        RoutingSessionInfo.Builder builder =
-                new RoutingSessionInfo.Builder(sessionId, packageName)
-                        .setName(descriptor.getName())
-                        .setVolumeHandling(descriptor.getVolumeHandling())
-                        .setVolume(descriptor.getVolume())
-                        .setVolumeMax(descriptor.getVolumeMax());
-
-        if (descriptor.getGroupMemberIds().isEmpty()) {
-            builder.addSelectedRoute(routeId);
-        } else {
-            for (String memberId : descriptor.getGroupMemberIds()) {
-                builder.addSelectedRoute(memberId);
-            }
-        }
-        sessionRecord.setSessionInfo(builder.build());
-    }
-
-    void notifyRouteControllerRemoved(int controllerId) {
-        String sessionId = mSessionIdMap.get(controllerId);
-        if (sessionId == null) {
-            return;
-        }
-        mSessionIdMap.remove(controllerId);
-
-        SessionRecord sessionRecord;
-        synchronized (mLock) {
-            sessionRecord = mSessionRecords.remove(sessionId);
-        }
-        if (sessionRecord != null) {
-            sessionRecord.release(/*shouldUnselect=*/false);
-        }
-    }
-
     private RouteController findControllerByRouteId(String routeId) {
         List<SessionRecord> sessionRecords;
         synchronized (mLock) {
@@ -556,6 +517,86 @@ class MediaRoute2ProviderServiceAdapter extends MediaRoute2ProviderService {
             return null;
         }
         return service.getMediaRouteProvider();
+    }
+
+    private static void checkAndLogOverlappingClientVersions(
+            MediaRouteDescriptor existingDescriptor, MediaRouteDescriptor newDescriptor) {
+        int greaterMinClientVersion =
+                Math.max(
+                        newDescriptor.getMinClientVersion(),
+                        existingDescriptor.getMinClientVersion());
+        int smallerMaxClientVersion =
+                Math.min(
+                        newDescriptor.getMaxClientVersion(),
+                        existingDescriptor.getMaxClientVersion());
+        boolean isClientVersionOverlapping = greaterMinClientVersion <= smallerMaxClientVersion;
+        if (isClientVersionOverlapping) {
+            String message =
+                    String.format(
+                            Locale.ROOT,
+                            "Found two route descriptors with matching id: '%s' and"
+                                    + " overlapping client versions: [%d, %d], [%d, %d]",
+                            existingDescriptor.getId(),
+                            existingDescriptor.getMinClientVersion(),
+                            existingDescriptor.getMaxClientVersion(),
+                            newDescriptor.getMinClientVersion(),
+                            newDescriptor.getMaxClientVersion());
+            Log.w(TAG, message);
+        }
+    }
+
+    /**
+     * Logs a warning for each route in {@code sessionInfo} that's not in the given set of available
+     * route ids.
+     *
+     * <p>This helps route providers detect invalid states where an active session lists routes that
+     * don't exist according to the latest {@link
+     * MediaRouteProvider#setDescriptor(MediaRouteProviderDescriptor)} call.
+     */
+    private static void checkAndLogInvalidSessionState(
+            Set<String> availableRouteIds, RoutingSessionInfo sessionInfo) {
+        String sessionId = sessionInfo.getId();
+        checkAndLogInvalidRouteIds(
+                sessionId, "selected", availableRouteIds, sessionInfo.getSelectedRoutes());
+        checkAndLogInvalidRouteIds(
+                sessionId, "selectable", availableRouteIds, sessionInfo.getSelectableRoutes());
+        checkAndLogInvalidRouteIds(
+                sessionId, "deselectable", availableRouteIds, sessionInfo.getDeselectableRoutes());
+        checkAndLogInvalidRouteIds(
+                sessionId, "transferable", availableRouteIds, sessionInfo.getTransferableRoutes());
+    }
+
+    private static void checkAndLogInvalidRouteIds(
+            String sessionId,
+            String routeSetName,
+            Set<String> availableRouteIds,
+            List<String> routeIdsToCheck) {
+        for (String routeId : routeIdsToCheck) {
+            if (!availableRouteIds.contains(routeId)) {
+                String message =
+                        String.format(
+                                Locale.ROOT,
+                                "Session with id: '%s' contains invalid %s route id:" + " '%s'.",
+                                sessionId,
+                                routeSetName,
+                                routeId);
+                Log.w(TAG, message);
+            }
+        }
+    }
+
+    /** Returns the ids of available routes in the given provider descriptor. */
+    private static Set<String> getAvailableRouteIds(
+            MediaRouteProviderDescriptor providerDescriptor) {
+        List<MediaRouteDescriptor> routes =
+                providerDescriptor != null
+                        ? providerDescriptor.getRoutes()
+                        : Collections.emptyList();
+        Set<String> availableRouteIds = new ArraySet<>();
+        for (MediaRouteDescriptor desc : routes) {
+            availableRouteIds.add(desc.getId());
+        }
+        return availableRouteIds;
     }
 
     private String assignSessionId(SessionRecord sessionRecord) {
@@ -777,8 +818,12 @@ class MediaRoute2ProviderServiceAdapter extends MediaRoute2ProviderService {
                 builder.clearDeselectableRoutes();
                 builder.clearTransferableRoutes();
 
+                Set<String> dynamicDescriptorsRouteIds = new ArraySet<>();
                 for (DynamicRouteDescriptor descriptor : dynamicRouteDescriptors) {
                     String routeId = descriptor.getRouteDescriptor().getId();
+                    if (!dynamicDescriptorsRouteIds.add(routeId)) {
+                        Log.w(TAG, "Found duplicate route ID in dynamic routes: " + routeId);
+                    }
                     if (descriptor.mSelectionState == DynamicRouteDescriptor.SELECTING
                             || descriptor.mSelectionState == DynamicRouteDescriptor.SELECTED) {
                         builder.addSelectedRoute(routeId);
@@ -808,8 +853,14 @@ class MediaRoute2ProviderServiceAdapter extends MediaRoute2ProviderService {
 
             if ((mFlags & (SESSION_FLAG_MR2 | SESSION_FLAG_DYNAMIC))
                     == (SESSION_FLAG_MR2 | SESSION_FLAG_DYNAMIC) && groupRoute != null) {
-                updateMemberRouteControllers(groupRoute.getId(), sessionInfo, mSessionInfo);
+                updateMemberRouteControllers(
+                        groupRoute.getId(),
+                        sessionInfo,
+                        mSessionInfo,
+                        RouteControllerOptions.EMPTY);
             }
+
+            checkAndLogInvalidSessionState(getAvailableRouteIds(mProviderDescriptor), mSessionInfo);
 
             if (!mIsCreated) {
                 notifySessionCreated();
@@ -823,7 +874,11 @@ class MediaRoute2ProviderServiceAdapter extends MediaRoute2ProviderService {
                 // Release member controllers
                 if ((mFlags & (SESSION_FLAG_MR2 | SESSION_FLAG_GROUP))
                         == (SESSION_FLAG_MR2 | SESSION_FLAG_GROUP)) {
-                    updateMemberRouteControllers(null, mSessionInfo, null);
+                    updateMemberRouteControllers(
+                            /* groupId= */ null,
+                            mSessionInfo,
+                            /* newSession= */ null,
+                            RouteControllerOptions.EMPTY);
                 }
 
                 if (shouldUnselect) {
@@ -846,8 +901,11 @@ class MediaRoute2ProviderServiceAdapter extends MediaRoute2ProviderService {
             }
         }
 
-        public void updateMemberRouteControllers(String groupId, RoutingSessionInfo oldSession,
-                RoutingSessionInfo newSession) {
+        public void updateMemberRouteControllers(
+                @Nullable String groupId,
+                @Nullable RoutingSessionInfo oldSession,
+                @Nullable RoutingSessionInfo newSession,
+                RouteControllerOptions routeControllerOptions) {
             List<String> oldRouteIds = (oldSession == null) ? Collections.emptyList() :
                     oldSession.getSelectedRoutes();
             List<String> newRouteIds = (newSession == null) ? Collections.emptyList() :
@@ -856,7 +914,8 @@ class MediaRoute2ProviderServiceAdapter extends MediaRoute2ProviderService {
             for (String routeId : newRouteIds) {
                 RouteController controller = findControllerByRouteId(routeId);
                 if (controller == null) {
-                    controller = getOrCreateRouteController(routeId, groupId);
+                    controller =
+                            getOrCreateRouteController(routeId, groupId, routeControllerOptions);
                     if (controller != null) {
                         controller.onSelect();
                     }
@@ -878,16 +937,21 @@ class MediaRoute2ProviderServiceAdapter extends MediaRoute2ProviderService {
             MediaRoute2ProviderServiceAdapter.this.notifySessionCreated(mRequestId, mSessionInfo);
         }
 
-        @Nullable
-        private RouteController getOrCreateRouteController(String routeId, String routeGroupId) {
+        private @Nullable RouteController getOrCreateRouteController(
+                String routeId,
+                String routeGroupId,
+                RouteControllerOptions routeControllerOptions) {
             RouteController controller = mRouteIdToControllerMap.get(routeId);
             if (controller != null) {
                 return controller;
             }
 
-            controller = routeGroupId == null
-                    ? getMediaRouteProvider().onCreateRouteController(routeId)
-                    : getMediaRouteProvider().onCreateRouteController(routeId, routeGroupId);
+            controller =
+                    routeGroupId == null
+                            ? getMediaRouteProvider()
+                                    .onCreateRouteController(routeId, routeControllerOptions)
+                            : getMediaRouteProvider()
+                                    .onCreateRouteController(routeId, routeGroupId);
             if (controller != null) {
                 mRouteIdToControllerMap.put(routeId, controller);
             }

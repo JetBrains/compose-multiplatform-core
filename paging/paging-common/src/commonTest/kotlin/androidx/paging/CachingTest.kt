@@ -20,6 +20,7 @@ import androidx.paging.ActiveFlowTracker.FlowType
 import androidx.paging.ActiveFlowTracker.FlowType.PAGED_DATA_FLOW
 import androidx.paging.ActiveFlowTracker.FlowType.PAGE_EVENT_FLOW
 import androidx.paging.internal.AtomicInt
+import androidx.paging.internal.IgnoreJsTarget
 import kotlin.test.Test
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -44,6 +45,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.yield
 
 @OptIn(ExperimentalCoroutinesApi::class)
+@IgnoreJsTarget // b/492171983: High volume of coroutines causing Karma ping timeouts.
 class CachingTest {
     private val tracker = ActiveFlowTrackerImpl()
 
@@ -205,7 +207,7 @@ class CachingTest {
                         generation = 0,
                         start = 0,
                         size = 6,
-                        modifier = null // before mapping
+                        modifier = null, // before mapping
                     )
                 )
 
@@ -218,7 +220,7 @@ class CachingTest {
                         generation = 0,
                         start = 0,
                         size = 9,
-                        modifier = null // before mapping
+                        modifier = null, // before mapping
                     )
                 )
             assertThat(tracker.pageDataFlowCount()).isEqualTo(1)
@@ -448,8 +450,8 @@ class CachingTest {
                         prefetchDistance = 1,
                         enablePlaceholders = false,
                         initialLoadSize = 3,
-                        maxSize = 1000
-                    )
+                        maxSize = 1000,
+                    ),
             )
             .flow
     }
@@ -468,7 +470,7 @@ class CachingTest {
         }
 
     private suspend fun Flow<PagingData<Item>>.collectItemsUntilSize(
-        expectedSize: Int,
+        expectedSize: Int
     ): List<Item> {
         return this.mapLatest { pagingData ->
                 val expectedVersion = pagingData.version
@@ -488,7 +490,7 @@ class CachingTest {
                         )
                         loadedPageCount += it.pages.size
                         if (items.size < expectedSize) {
-                            receiver.accessHint(
+                            receiver.processHint(
                                 ViewportHint.Access(
                                     pageOffset = loadedPageCount - 1,
                                     indexInPage = it.pages.last().data.size - 1,
@@ -497,7 +499,7 @@ class CachingTest {
                                     originalPageOffsetFirst =
                                         it.pages.first().originalPageOffsets.minOrNull()!!,
                                     originalPageOffsetLast =
-                                        it.pages.last().originalPageOffsets.maxOrNull()!!
+                                        it.pages.last().originalPageOffsets.maxOrNull()!!,
                                 )
                             )
                         } else {
@@ -590,10 +592,10 @@ class CachingTest {
                         version = version,
                         generation = generation,
                         start = position,
-                        size = size
+                        size = size,
                     ),
                 prevKey = if (position == 0) null else position,
-                nextKey = position + size
+                nextKey = position + size,
             )
         }
 
@@ -615,7 +617,7 @@ class CachingTest {
             generation: Int,
             start: Int,
             size: Int,
-            modifier: ((Item) -> Item)? = null
+            modifier: ((Item) -> Item)? = null,
         ): List<Item> {
             return (start until start + size).map { id ->
                 Item(pagingSourceId = version, generation = generation, value = id).let {
@@ -634,7 +636,7 @@ class CachingTest {
         val value: Int,
 
         /** Any additional data by transformations etc */
-        val metadata: String? = null
+        val metadata: String? = null,
     )
 
     private class ActiveFlowTrackerImpl : ActiveFlowTracker {

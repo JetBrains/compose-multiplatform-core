@@ -56,7 +56,7 @@ import androidx.health.connect.client.request.ReadMedicalResourcesRequest.Compan
 class ReadMedicalResourcesInitialRequest(
     @MedicalResourceType val medicalResourceType: Int,
     val medicalDataSourceIds: Set<String>,
-    pageSize: Int = DEFAULT_PAGE_SIZE
+    pageSize: Int = DEFAULT_PAGE_SIZE,
 ) : ReadMedicalResourcesRequest(pageSize) {
     @SuppressLint("NewApi") // already checked with a feature availability check
     override val platformReadMedicalResourcesRequest: PlatformReadMedicalResourcesRequest =
@@ -76,7 +76,7 @@ class ReadMedicalResourcesInitialRequest(
                 "medicalResourceType" to medicalResourceType,
                 "medicalDataSourceIds" to medicalDataSourceIds,
                 "pageSize" to pageSize,
-            )
+            ),
         )
 
     override fun equals(other: Any?): Boolean {

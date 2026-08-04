@@ -16,12 +16,11 @@
 
 package androidx.camera.core;
 
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
+import static com.google.common.truth.Truth.assertThat;
 
+import androidx.camera.testing.impl.fakes.FakeImageInfo;
+import androidx.camera.testing.impl.fakes.FakeImageProxy;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
-import androidx.test.filters.SdkSuppress;
 import androidx.test.filters.SmallTest;
 
 import org.junit.Before;
@@ -30,10 +29,9 @@ import org.junit.runner.RunWith;
 
 @SmallTest
 @RunWith(AndroidJUnit4.class)
-@SdkSuppress(minSdkVersion = 21)
 public final class SingleCloseImageProxyTest {
 
-    private final ImageProxy mImageProxy = mock(ImageProxy.class);
+    private final FakeImageProxy mImageProxy = new FakeImageProxy(new FakeImageInfo());
     private SingleCloseImageProxy mSingleCloseImageProxy;
 
     @Before
@@ -45,7 +43,7 @@ public final class SingleCloseImageProxyTest {
     public void wrappedImageIsClosedOnce_whenWrappingImageIsClosedOnce() {
         mSingleCloseImageProxy.close();
 
-        verify(mImageProxy, times(1)).close();
+        assertThat(mImageProxy.isClosed()).isTrue();
     }
 
     @Test
@@ -53,6 +51,6 @@ public final class SingleCloseImageProxyTest {
         mSingleCloseImageProxy.close();
         mSingleCloseImageProxy.close();
 
-        verify(mImageProxy, times(1)).close();
+        assertThat(mImageProxy.isClosed()).isTrue();
     }
 }

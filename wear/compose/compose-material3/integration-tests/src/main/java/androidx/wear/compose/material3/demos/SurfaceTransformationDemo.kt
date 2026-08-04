@@ -16,8 +16,12 @@
 
 package androidx.wear.compose.material3.demos
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentSize
@@ -37,8 +41,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.wear.compose.foundation.lazy.TransformingLazyColumn
+import androidx.wear.compose.foundation.lazy.rememberTransformingLazyColumnState
 import androidx.wear.compose.material3.AppCard
 import androidx.wear.compose.material3.Button
+import androidx.wear.compose.material3.ButtonGroup
 import androidx.wear.compose.material3.Card
 import androidx.wear.compose.material3.CardDefaults
 import androidx.wear.compose.material3.CheckboxButton
@@ -61,16 +67,43 @@ import androidx.wear.compose.material3.lazy.rememberTransformationSpec
 import androidx.wear.compose.material3.lazy.transformedHeight
 
 @Composable
+@Suppress("PrimitiveInCollection")
+fun BorderColors() {
+    val tlcState = rememberTransformingLazyColumnState()
+    val transformationSpec = rememberTransformationSpec()
+
+    val colors = listOf(Color.Red, Color.Green, Color.Blue)
+    TransformingLazyColumn(
+        state = tlcState,
+        contentPadding = PaddingValues(vertical = 50.dp, horizontal = 10.dp),
+        modifier = Modifier.fillMaxSize(),
+    ) {
+        items(20) { index ->
+            TitleCard(
+                onClick = { /* Handle click */ },
+                title = { Text("Title $index") },
+                subtitle = { Text("Secondary text $index") },
+                modifier = Modifier.fillMaxWidth().transformedHeight(this, transformationSpec),
+                transformation = SurfaceTransformation(transformationSpec),
+                border = BorderStroke(10.dp, colors[index % colors.size]),
+            ) {
+                Text("Content for item $index")
+            }
+        }
+    }
+}
+
+@Composable
 fun SurfaceTransformationDemo() {
     val transformationSpec = rememberTransformationSpec()
     TransformingLazyColumn(
         modifier = Modifier.background(Color.Black),
-        contentPadding = PaddingValues(vertical = 50.dp, horizontal = 10.dp)
+        contentPadding = PaddingValues(vertical = 50.dp, horizontal = 10.dp),
     ) {
         item {
             ListHeader(
                 transformation = SurfaceTransformation(transformationSpec),
-                modifier = Modifier.transformedHeight(this, transformationSpec)
+                modifier = Modifier.transformedHeight(this, transformationSpec),
             ) {
                 Text("Buttons")
             }
@@ -79,7 +112,7 @@ fun SurfaceTransformationDemo() {
             Button(
                 onClick = {},
                 transformation = SurfaceTransformation(transformationSpec),
-                modifier = Modifier.transformedHeight(this, transformationSpec)
+                modifier = Modifier.transformedHeight(this, transformationSpec),
             ) {
                 Text("Button")
             }
@@ -88,7 +121,7 @@ fun SurfaceTransformationDemo() {
             FilledTonalButton(
                 onClick = {},
                 transformation = SurfaceTransformation(transformationSpec),
-                modifier = Modifier.transformedHeight(this, transformationSpec)
+                modifier = Modifier.transformedHeight(this, transformationSpec),
             ) {
                 Text("Filled Tonal Button")
             }
@@ -97,7 +130,7 @@ fun SurfaceTransformationDemo() {
             OutlinedButton(
                 onClick = {},
                 transformation = SurfaceTransformation(transformationSpec),
-                modifier = Modifier.transformedHeight(this, transformationSpec)
+                modifier = Modifier.transformedHeight(this, transformationSpec),
             ) {
                 Text("Filled Tonal Button")
             }
@@ -109,11 +142,11 @@ fun SurfaceTransformationDemo() {
                     Text(
                         "Child Button",
                         textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
                     )
                 },
                 transformation = SurfaceTransformation(transformationSpec),
-                modifier = Modifier.transformedHeight(this, transformationSpec)
+                modifier = Modifier.transformedHeight(this, transformationSpec),
             )
         }
         item {
@@ -123,12 +156,35 @@ fun SurfaceTransformationDemo() {
                     Text(
                         "Compact Button",
                         textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
                     )
                 },
                 transformation = SurfaceTransformation(transformationSpec),
-                modifier = Modifier.transformedHeight(this, transformationSpec)
+                modifier = Modifier.transformedHeight(this, transformationSpec),
             )
+        }
+        item {
+            val interactionSource1 = remember { MutableInteractionSource() }
+            val interactionSource2 = remember { MutableInteractionSource() }
+            ButtonGroup(
+                Modifier.fillMaxWidth().transformedHeight(this, transformationSpec),
+                transformation = SurfaceTransformation(transformationSpec),
+            ) {
+                Button(
+                    onClick = {},
+                    modifier = Modifier.animateWidth(interactionSource1),
+                    interactionSource = interactionSource1,
+                ) {
+                    Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { Text("L") }
+                }
+                Button(
+                    onClick = {},
+                    modifier = Modifier.animateWidth(interactionSource2),
+                    interactionSource = interactionSource2,
+                ) {
+                    Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { Text("R") }
+                }
+            }
         }
         item {
             var checked by remember { mutableStateOf(true) }
@@ -142,7 +198,7 @@ fun SurfaceTransformationDemo() {
                 icon = { Icon(Icons.Filled.Favorite, contentDescription = "Favorite icon") },
                 enabled = true,
                 transformation = SurfaceTransformation(transformationSpec),
-                modifier = Modifier.transformedHeight(this, transformationSpec)
+                modifier = Modifier.transformedHeight(this, transformationSpec),
             )
         }
 
@@ -161,7 +217,7 @@ fun SurfaceTransformationDemo() {
                 containerClickLabel = "click",
                 enabled = true,
                 transformation = SurfaceTransformation(transformationSpec),
-                modifier = Modifier.transformedHeight(this, transformationSpec)
+                modifier = Modifier.transformedHeight(this, transformationSpec),
             )
         }
 
@@ -178,7 +234,7 @@ fun SurfaceTransformationDemo() {
                 icon = { Icon(Icons.Filled.Favorite, contentDescription = "Favorite icon") },
                 enabled = true,
                 transformation = SurfaceTransformation(transformationSpec),
-                modifier = Modifier.transformedHeight(this, transformationSpec)
+                modifier = Modifier.transformedHeight(this, transformationSpec),
             )
         }
 
@@ -196,7 +252,7 @@ fun SurfaceTransformationDemo() {
                 containerClickLabel = "click",
                 enabled = true,
                 transformation = SurfaceTransformation(transformationSpec),
-                modifier = Modifier.transformedHeight(this, transformationSpec)
+                modifier = Modifier.transformedHeight(this, transformationSpec),
             )
         }
 
@@ -212,7 +268,7 @@ fun SurfaceTransformationDemo() {
                 icon = { Icon(Icons.Filled.Favorite, contentDescription = "Favorite icon") },
                 enabled = true,
                 transformation = SurfaceTransformation(transformationSpec),
-                modifier = Modifier.transformedHeight(this, transformationSpec)
+                modifier = Modifier.transformedHeight(this, transformationSpec),
             )
         }
 
@@ -230,14 +286,14 @@ fun SurfaceTransformationDemo() {
                 },
                 enabled = true,
                 transformation = SurfaceTransformation(transformationSpec),
-                modifier = Modifier.transformedHeight(this, transformationSpec)
+                modifier = Modifier.transformedHeight(this, transformationSpec),
             )
         }
 
         item {
             ListHeader(
                 transformation = SurfaceTransformation(transformationSpec),
-                modifier = Modifier.transformedHeight(this, transformationSpec)
+                modifier = Modifier.transformedHeight(this, transformationSpec),
             ) {
                 Text("Cards")
             }
@@ -247,7 +303,7 @@ fun SurfaceTransformationDemo() {
             Card(
                 onClick = { /* Do something */ },
                 transformation = SurfaceTransformation(transformationSpec),
-                modifier = Modifier.transformedHeight(this, transformationSpec)
+                modifier = Modifier.transformedHeight(this, transformationSpec),
             ) {
                 Text("Card")
             }
@@ -264,13 +320,13 @@ fun SurfaceTransformationDemo() {
                         modifier =
                             Modifier.size(CardDefaults.AppImageSize)
                                 .wrapContentSize(align = Alignment.Center),
-                        tint = MaterialTheme.colorScheme.primary
+                        tint = MaterialTheme.colorScheme.primary,
                     )
                 },
                 title = { Text("Card title") },
                 time = { Text("Now") },
                 transformation = SurfaceTransformation(transformationSpec),
-                modifier = Modifier.transformedHeight(this, transformationSpec)
+                modifier = Modifier.transformedHeight(this, transformationSpec),
             ) {
                 Text("Card content")
             }
@@ -283,7 +339,7 @@ fun SurfaceTransformationDemo() {
                 title = { Text("Title card") },
                 subtitle = { Text("Subtitle") },
                 transformation = SurfaceTransformation(transformationSpec),
-                modifier = Modifier.transformedHeight(this, transformationSpec)
+                modifier = Modifier.transformedHeight(this, transformationSpec),
             )
         }
     }

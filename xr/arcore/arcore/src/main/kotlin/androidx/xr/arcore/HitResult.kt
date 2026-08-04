@@ -16,34 +16,32 @@
 
 package androidx.xr.arcore
 
-import androidx.annotation.RestrictTo
 import androidx.xr.runtime.math.Pose
 
 /**
- * Defines an intersection between a ray and estimated real-world geometry.
+ * Intersection between a ray and estimated real-world geometry.
  *
- * Can be obtained from [Interaction.hitTest].
+ * Can be obtained from [hitTest]. If the ray intersects a [Plane] that is being subsumed, the
+ * subsuming [Plane] will be returned.
  *
- * @property distance the distance from the camera to the hit location, in meters.
- * @property hitPose the [Pose] of the intersection between a ray and the [Trackable].
- * @property trackable the [Trackable] that was hit.
+ * @property distance the distance from the camera to the hit location, in meters
+ * @property hitPose the [Pose] of the intersection between a ray and the [Trackable] in the world
+ *   coordinate space
+ *
+ * If the hit [Trackable] is a [Plane], the hitPose will be parallel to the [Pose] of the [Plane].
+ *
+ * The hit [Trackable] may also be an instance of [Anchorable]. If so, an anchor representing the
+ * hit position can be created from the [Anchorable]
+ *
+ * @property trackable the [Trackable] that was hit
+ * @see Anchorable.createAnchor
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class HitResult
 internal constructor(
     public val distance: Float,
     public val hitPose: Pose,
     public val trackable: Trackable<Trackable.State>,
 ) {
-    /**
-     * Creates an [Anchor] that is attached to this trackable, using the given initial [hitPose] in
-     * the world coordinate space.
-     *
-     * @throws [IllegalStateException] if [PlaneTrackingMode] is set to Disabled.
-     */
-    public fun createAnchor(): AnchorCreateResult {
-        return trackable.createAnchor(hitPose)
-    }
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -62,4 +60,12 @@ internal constructor(
         result = 31 * result + trackable.hashCode()
         return result
     }
+
+    /**
+     * Returns a string representation of [HitResult] for debugging.
+     *
+     * Note: Not intended for production use.
+     */
+    override fun toString(): String =
+        "HitResult(distance=$distance, hitPose=$hitPose, trackable=$trackable)"
 }

@@ -101,7 +101,7 @@ fun NavigationSuiteScaffoldCustomConfigDemo() {
         ) {
             Modifier.animateFloatingActionButton(
                 visible = state.currentValue == NavigationSuiteScaffoldValue.Visible,
-                alignment = Alignment.BottomEnd
+                alignment = Alignment.BottomEnd,
             )
         } else {
             Modifier
@@ -121,7 +121,7 @@ fun NavigationSuiteScaffoldCustomConfigDemo() {
                     if (isWideNavRailCollapsedType) railExpanded
                     else navSuiteType == NavigationSuiteType.WideNavigationRailExpanded,
                 icon = { Icon(Icons.Filled.Add, "FAB") },
-                text = { Text("Add new") }
+                text = { Text("Add new") },
             )
         }
     val menuButton =
@@ -131,7 +131,7 @@ fun NavigationSuiteScaffoldCustomConfigDemo() {
                     Modifier.padding(start = 24.dp, bottom = 8.dp).semantics {
                         stateDescription = if (railExpanded) "Expanded" else "Collapsed"
                     },
-                onClick = { scope.launch { railState.toggle() } }
+                onClick = { scope.launch { railState.toggle() } },
             ) {
                 if (railExpanded) {
                     Icon(Icons.AutoMirrored.Filled.MenuOpen, "Collapse rail")
@@ -169,7 +169,7 @@ fun NavigationSuiteScaffoldCustomConfigDemo() {
                                         Icon(
                                             if (selectedItem == index) Icons.Filled.Favorite
                                             else Icons.Outlined.FavoriteBorder,
-                                            contentDescription = null
+                                            contentDescription = null,
                                         )
                                     },
                                     label = { Text(navItem) },
@@ -191,7 +191,7 @@ fun NavigationSuiteScaffoldCustomConfigDemo() {
                                         Icon(
                                             if (selectedItem == index) Icons.Filled.Favorite
                                             else Icons.Outlined.FavoriteBorder,
-                                            contentDescription = null
+                                            contentDescription = null,
                                         )
                                     },
                                     label = { Text(navItem) },
@@ -201,19 +201,19 @@ fun NavigationSuiteScaffoldCustomConfigDemo() {
                             }
                         }
                     }
-                }
+                },
             ) {
                 // Screen content.
                 Column(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                    horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Text(
                         modifier = Modifier.padding(16.dp),
                         text =
                             "Current NavigationSuiteType: $navSuiteType\n" +
                                 "Visibility: ${state.currentValue}",
-                        textAlign = TextAlign.Center
+                        textAlign = TextAlign.Center,
                     )
                     Button(onClick = { scope.launch { state.toggle() } }) {
                         Text("Hide/show navigation component")

@@ -100,7 +100,7 @@ internal fun Modifier.increaseSemanticsBounds(): Modifier {
  * @param strokeCap stroke cap to use for the ends of this progress indicator
  */
 @Composable
-fun LinearProgressIndicator(
+public fun LinearProgressIndicator(
     @FloatRange(from = 0.0, to = 1.0) progress: Float,
     modifier: Modifier = Modifier,
     color: Color = MaterialTheme.colors.primary,
@@ -137,7 +137,7 @@ fun LinearProgressIndicator(
  * @param strokeCap stroke cap to use for the ends of this progress indicator
  */
 @Composable
-fun LinearProgressIndicator(
+public fun LinearProgressIndicator(
     modifier: Modifier = Modifier,
     color: Color = MaterialTheme.colors.primary,
     backgroundColor: Color = color.copy(alpha = IndicatorBackgroundOpacity),
@@ -158,7 +158,7 @@ fun LinearProgressIndicator(
                         0f at FirstLineHeadDelay using FirstLineHeadEasing
                         1f at FirstLineHeadDuration + FirstLineHeadDelay
                     }
-            )
+            ),
         )
     val firstLineTail by
         infiniteTransition.animateFloat(
@@ -171,7 +171,7 @@ fun LinearProgressIndicator(
                         0f at FirstLineTailDelay using FirstLineTailEasing
                         1f at FirstLineTailDuration + FirstLineTailDelay
                     }
-            )
+            ),
         )
     val secondLineHead by
         infiniteTransition.animateFloat(
@@ -184,7 +184,7 @@ fun LinearProgressIndicator(
                         0f at SecondLineHeadDelay using SecondLineHeadEasing
                         1f at SecondLineHeadDuration + SecondLineHeadDelay
                     }
-            )
+            ),
         )
     val secondLineTail by
         infiniteTransition.animateFloat(
@@ -197,7 +197,7 @@ fun LinearProgressIndicator(
                         0f at SecondLineTailDelay using SecondLineTailEasing
                         1f at SecondLineTailDuration + SecondLineTailDelay
                     }
-            )
+            ),
         )
     Canvas(
         modifier
@@ -208,55 +208,31 @@ fun LinearProgressIndicator(
         val strokeWidth = size.height
         drawLinearIndicatorBackground(backgroundColor, strokeWidth, strokeCap)
         if (firstLineHead - firstLineTail > 0) {
-            drawLinearIndicator(
-                firstLineHead,
-                firstLineTail,
-                color,
-                strokeWidth,
-                strokeCap,
-            )
+            drawLinearIndicator(firstLineHead, firstLineTail, color, strokeWidth, strokeCap)
         }
         if ((secondLineHead - secondLineTail) > 0) {
-            drawLinearIndicator(
-                secondLineHead,
-                secondLineTail,
-                color,
-                strokeWidth,
-                strokeCap,
-            )
+            drawLinearIndicator(secondLineHead, secondLineTail, color, strokeWidth, strokeCap)
         }
     }
 }
 
 @Deprecated("Maintained for binary compatibility", level = DeprecationLevel.HIDDEN)
 @Composable
-fun LinearProgressIndicator(
+public fun LinearProgressIndicator(
     progress: Float,
     modifier: Modifier = Modifier,
     color: Color = MaterialTheme.colors.primary,
-    backgroundColor: Color = color.copy(alpha = IndicatorBackgroundOpacity)
-) =
-    LinearProgressIndicator(
-        progress,
-        modifier,
-        color,
-        backgroundColor,
-        strokeCap = StrokeCap.Butt,
-    )
+    backgroundColor: Color = color.copy(alpha = IndicatorBackgroundOpacity),
+): Unit =
+    LinearProgressIndicator(progress, modifier, color, backgroundColor, strokeCap = StrokeCap.Butt)
 
 @Deprecated("Maintained for binary compatibility", level = DeprecationLevel.HIDDEN)
 @Composable
-fun LinearProgressIndicator(
+public fun LinearProgressIndicator(
     modifier: Modifier = Modifier,
     color: Color = MaterialTheme.colors.primary,
-    backgroundColor: Color = color.copy(alpha = IndicatorBackgroundOpacity)
-) =
-    LinearProgressIndicator(
-        modifier,
-        color,
-        backgroundColor,
-        strokeCap = StrokeCap.Butt,
-    )
+    backgroundColor: Color = color.copy(alpha = IndicatorBackgroundOpacity),
+): Unit = LinearProgressIndicator(modifier, color, backgroundColor, strokeCap = StrokeCap.Butt)
 
 private fun DrawScope.drawLinearIndicator(
     startFraction: Float,
@@ -329,7 +305,7 @@ private fun DrawScope.drawLinearIndicatorBackground(
  * @param strokeCap stroke cap to use for the ends of this progress indicator
  */
 @Composable
-fun CircularProgressIndicator(
+public fun CircularProgressIndicator(
     @FloatRange(from = 0.0, to = 1.0) progress: Float,
     modifier: Modifier = Modifier,
     color: Color = MaterialTheme.colors.primary,
@@ -370,7 +346,7 @@ fun CircularProgressIndicator(
  * @param strokeCap stroke cap to use for the ends of this progress indicator
  */
 @Composable
-fun CircularProgressIndicator(
+public fun CircularProgressIndicator(
     modifier: Modifier = Modifier,
     color: Color = MaterialTheme.colors.primary,
     strokeWidth: Dp = ProgressIndicatorDefaults.StrokeWidth,
@@ -390,9 +366,9 @@ fun CircularProgressIndicator(
                 animation =
                     tween(
                         durationMillis = RotationDuration * RotationsPerCycle,
-                        easing = LinearEasing
+                        easing = LinearEasing,
                     )
-            )
+            ),
         )
     // How far forward (degrees) the base point should be from the start point
     val baseRotation by
@@ -401,7 +377,7 @@ fun CircularProgressIndicator(
             BaseRotationAngle,
             infiniteRepeatable(
                 animation = tween(durationMillis = RotationDuration, easing = LinearEasing)
-            )
+            ),
         )
     // How far forward (degrees) both the head and tail should be from the base point
     val endAngle by
@@ -415,7 +391,7 @@ fun CircularProgressIndicator(
                         0f at 0 using CircularEasing
                         JumpRotationAngle at HeadAndTailAnimationDuration
                     }
-            )
+            ),
         )
 
     val startAngle by
@@ -429,7 +405,7 @@ fun CircularProgressIndicator(
                         0f at HeadAndTailDelayDuration using CircularEasing
                         JumpRotationAngle at durationMillis
                     }
-            )
+            ),
         )
     Canvas(modifier.progressSemantics().size(CircularIndicatorDiameter)) {
         drawCircularIndicatorBackground(backgroundColor, stroke)
@@ -447,12 +423,12 @@ fun CircularProgressIndicator(
 
 @Deprecated("Maintained for binary compatibility", level = DeprecationLevel.HIDDEN)
 @Composable
-fun CircularProgressIndicator(
+public fun CircularProgressIndicator(
     progress: Float,
     modifier: Modifier = Modifier,
     color: Color = MaterialTheme.colors.primary,
-    strokeWidth: Dp = ProgressIndicatorDefaults.StrokeWidth
-) =
+    strokeWidth: Dp = ProgressIndicatorDefaults.StrokeWidth,
+): Unit =
     CircularProgressIndicator(
         progress,
         modifier,
@@ -464,11 +440,11 @@ fun CircularProgressIndicator(
 
 @Deprecated("Maintained for binary compatibility", level = DeprecationLevel.HIDDEN)
 @Composable
-fun CircularProgressIndicator(
+public fun CircularProgressIndicator(
     modifier: Modifier = Modifier,
     color: Color = MaterialTheme.colors.primary,
-    strokeWidth: Dp = ProgressIndicatorDefaults.StrokeWidth
-) =
+    strokeWidth: Dp = ProgressIndicatorDefaults.StrokeWidth,
+): Unit =
     CircularProgressIndicator(
         modifier,
         color,
@@ -481,7 +457,7 @@ private fun DrawScope.drawCircularIndicator(
     startAngle: Float,
     sweep: Float,
     color: Color,
-    stroke: Stroke
+    stroke: Stroke,
 ) {
     // To draw this circle we need a rect with edges that line up with the midpoint of the stroke.
     // To do this we need to remove half the stroke width from the total diameter for both sides.
@@ -494,7 +470,7 @@ private fun DrawScope.drawCircularIndicator(
         useCenter = false,
         topLeft = Offset(diameterOffset, diameterOffset),
         size = Size(arcDimen, arcDimen),
-        style = stroke
+        style = stroke,
     )
 }
 
@@ -504,7 +480,7 @@ private fun DrawScope.drawCircularIndicatorBackground(color: Color, stroke: Stro
 /**
  * Contains the default values used for [LinearProgressIndicator] and [CircularProgressIndicator].
  */
-object ProgressIndicatorDefaults {
+public object ProgressIndicatorDefaults {
     /**
      * Default stroke width for [CircularProgressIndicator], and default height for
      * [LinearProgressIndicator].
@@ -512,25 +488,25 @@ object ProgressIndicatorDefaults {
      * This can be customized with the `strokeWidth` parameter on [CircularProgressIndicator], and
      * by passing a layout modifier setting the height for [LinearProgressIndicator].
      */
-    val StrokeWidth = 4.dp
+    public val StrokeWidth: Dp = 4.dp
 
     /**
      * The default opacity applied to the indicator color to create the background color in a
      * [LinearProgressIndicator].
      */
-    const val IndicatorBackgroundOpacity = 0.24f
+    public const val IndicatorBackgroundOpacity: Float = 0.24f
 
     /**
      * The default [AnimationSpec] that should be used when animating between progress in a
      * determinate progress indicator.
      */
-    val ProgressAnimationSpec =
+    public val ProgressAnimationSpec: SpringSpec<Float> =
         SpringSpec(
             dampingRatio = Spring.DampingRatioNoBouncy,
             stiffness = Spring.StiffnessVeryLow,
             // The default threshold is 0.01, or 1% of the overall progress range, which is quite
             // large and noticeable.
-            visibilityThreshold = 1 / 1000f
+            visibilityThreshold = 1 / 1000f,
         )
 }
 
@@ -538,7 +514,7 @@ private fun DrawScope.drawDeterminateCircularIndicator(
     startAngle: Float,
     sweep: Float,
     color: Color,
-    stroke: Stroke
+    stroke: Stroke,
 ) = drawCircularIndicator(startAngle, sweep, color, stroke)
 
 private fun DrawScope.drawIndeterminateCircularIndicator(
@@ -546,7 +522,7 @@ private fun DrawScope.drawIndeterminateCircularIndicator(
     strokeWidth: Dp,
     sweep: Float,
     color: Color,
-    stroke: Stroke
+    stroke: Stroke,
 ) {
     val strokeCapOffset =
         if (stroke.cap == StrokeCap.Butt) {
@@ -572,12 +548,15 @@ private fun DrawScope.drawIndeterminateCircularIndicator(
 // LinearProgressIndicator Material specs
 // TODO: there are currently 3 fixed widths in Android, should this be flexible? Material says
 // the width should be 240dp here.
-private val LinearIndicatorHeight = ProgressIndicatorDefaults.StrokeWidth
-private val LinearIndicatorWidth = 240.dp
+private val LinearIndicatorHeight
+    get() = ProgressIndicatorDefaults.StrokeWidth
+private val LinearIndicatorWidth
+    get() = 240.dp
 
 // CircularProgressIndicator Material specs
 // Diameter of the indicator circle
-private val CircularIndicatorDiameter = 40.dp
+private val CircularIndicatorDiameter
+    get() = 40.dp
 
 // Indeterminate linear indicator transition specs
 // Total duration for one cycle

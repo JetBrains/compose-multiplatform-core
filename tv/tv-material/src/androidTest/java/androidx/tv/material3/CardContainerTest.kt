@@ -25,13 +25,12 @@ import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertTextEquals
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onChild
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performKeyInput
@@ -45,7 +44,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
-@OptIn(ExperimentalTestApi::class, ExperimentalTvMaterial3Api::class)
+@OptIn(ExperimentalTvMaterial3Api::class)
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 class CardContainerTest {
@@ -64,7 +63,7 @@ class CardContainerTest {
                         SampleImage()
                     }
                 },
-                title = { Text("${count.value}") }
+                title = { Text("${count.value}") },
             )
         }
 
@@ -96,7 +95,7 @@ class CardContainerTest {
                         SampleImage()
                     }
                 },
-                title = { Text("${count.value}") }
+                title = { Text("${count.value}") },
             )
         }
 
@@ -126,7 +125,7 @@ class CardContainerTest {
                         SampleImage()
                     }
                 },
-                title = { Text("${count.value}") }
+                title = { Text("${count.value}") },
             )
         }
 
@@ -157,7 +156,7 @@ class CardContainerTest {
                         SampleImage()
                     }
                 },
-                title = { Text("${count.value}") }
+                title = { Text("${count.value}") },
             )
         }
 

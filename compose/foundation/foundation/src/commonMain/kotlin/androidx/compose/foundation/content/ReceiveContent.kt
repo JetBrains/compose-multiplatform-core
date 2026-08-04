@@ -55,7 +55,7 @@ import androidx.compose.ui.platform.InspectorInfo
  */
 @Suppress("ExecutorRegistration")
 @ExperimentalFoundationApi
-fun Modifier.contentReceiver(receiveContentListener: ReceiveContentListener): Modifier =
+public fun Modifier.contentReceiver(receiveContentListener: ReceiveContentListener): Modifier =
     then(ReceiveContentElement(receiveContentListener = receiveContentListener))
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -93,7 +93,7 @@ internal class ReceiveContentNode(var receiveContentListener: ReceiveContentList
         delegate(
             ReceiveContentDragAndDropNode(
                 receiveContentConfiguration = receiveContentConfiguration,
-                dragAndDropRequestPermission = { dragAndDropRequestPermission(it) }
+                dragAndDropRequestPermission = { dragAndDropRequestPermission(it) },
             )
         )
     }

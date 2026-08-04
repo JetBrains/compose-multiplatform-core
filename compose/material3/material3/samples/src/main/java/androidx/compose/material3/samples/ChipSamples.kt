@@ -76,9 +76,9 @@ fun AssistChipSample() {
             Icon(
                 Icons.Filled.Settings,
                 contentDescription = "Localized description",
-                Modifier.size(AssistChipDefaults.IconSize)
+                Modifier.size(AssistChipDefaults.IconSize),
             )
-        }
+        },
     )
 }
 
@@ -93,9 +93,9 @@ fun ElevatedAssistChipSample() {
             Icon(
                 Icons.Filled.Settings,
                 contentDescription = "Localized description",
-                Modifier.size(AssistChipDefaults.IconSize)
+                Modifier.size(AssistChipDefaults.IconSize),
             )
-        }
+        },
     )
 }
 
@@ -114,12 +114,37 @@ fun FilterChipSample() {
                     Icon(
                         imageVector = Icons.Filled.Done,
                         contentDescription = "Localized Description",
-                        modifier = Modifier.size(FilterChipDefaults.IconSize)
+                        modifier = Modifier.size(FilterChipDefaults.IconSize),
                     )
                 }
             } else {
                 null
-            }
+            },
+    )
+}
+
+@Preview
+@Sampled
+@Composable
+fun FilterChipWithCornerMorphingSample() {
+    var selected by remember { mutableStateOf(false) }
+    FilterChip(
+        selected = selected,
+        onClick = { selected = !selected },
+        label = { Text("Filter chip") },
+        shapes = FilterChipDefaults.shapes(),
+        leadingIcon =
+            if (selected) {
+                {
+                    Icon(
+                        imageVector = Icons.Filled.Done,
+                        contentDescription = "Localized Description",
+                        modifier = Modifier.size(FilterChipDefaults.IconSize),
+                    )
+                }
+            } else {
+                null
+            },
     )
 }
 
@@ -138,12 +163,50 @@ fun ElevatedFilterChipSample() {
                     Icon(
                         imageVector = Icons.Filled.Done,
                         contentDescription = "Localized Description",
-                        modifier = Modifier.size(FilterChipDefaults.IconSize)
+                        modifier = Modifier.size(FilterChipDefaults.IconSize),
                     )
                 }
             } else {
                 null
-            }
+            },
+    )
+}
+
+@Preview
+@Sampled
+@Composable
+fun ElevatedFilterChipWithCornerMorphingSample() {
+    var selected by remember { mutableStateOf(false) }
+    ElevatedFilterChip(
+        selected = selected,
+        onClick = { selected = !selected },
+        label = { Text("Filter chip") },
+        shapes = FilterChipDefaults.shapes(),
+        leadingIcon =
+            if (selected) {
+                {
+                    Icon(
+                        imageVector = Icons.Filled.Done,
+                        contentDescription = "Localized Description",
+                        modifier = Modifier.size(FilterChipDefaults.IconSize),
+                    )
+                }
+            } else {
+                {
+                    Icon(
+                        imageVector = Icons.Filled.Home,
+                        contentDescription = "Localized description",
+                        modifier = Modifier.size(FilterChipDefaults.IconSize),
+                    )
+                }
+            },
+        trailingIcon = {
+            Icon(
+                imageVector = Icons.Filled.ArrowDropDown,
+                contentDescription = "Localized Description",
+                modifier = Modifier.size(FilterChipDefaults.IconSize),
+            )
+        },
     )
 }
 
@@ -162,7 +225,7 @@ fun FilterChipWithLeadingIconSample() {
                     Icon(
                         imageVector = Icons.Filled.Done,
                         contentDescription = "Localized Description",
-                        modifier = Modifier.size(FilterChipDefaults.IconSize)
+                        modifier = Modifier.size(FilterChipDefaults.IconSize),
                     )
                 }
             } else {
@@ -170,10 +233,66 @@ fun FilterChipWithLeadingIconSample() {
                     Icon(
                         imageVector = Icons.Filled.Home,
                         contentDescription = "Localized description",
-                        modifier = Modifier.size(FilterChipDefaults.IconSize)
+                        modifier = Modifier.size(FilterChipDefaults.IconSize),
                     )
                 }
-            }
+            },
+    )
+}
+
+@Preview
+@Sampled
+@Composable
+fun FilterChipWithTrailingIconSample() {
+    var selected by remember { mutableStateOf(false) }
+    FilterChip(
+        selected = selected,
+        onClick = { selected = !selected },
+        label = { Text("Filter chip") },
+        leadingIcon =
+            if (selected) {
+                {
+                    Icon(
+                        imageVector = Icons.Filled.Done,
+                        contentDescription = "Localized Description",
+                        modifier = Modifier.size(FilterChipDefaults.IconSize),
+                    )
+                }
+            } else {
+                null
+            },
+        trailingIcon = {
+            Icon(
+                imageVector = Icons.Filled.ArrowDropDown,
+                contentDescription = "Localized Description",
+                modifier = Modifier.size(FilterChipDefaults.IconSize),
+            )
+        },
+    )
+}
+
+@Preview
+@Sampled
+@Composable
+fun FilterChipWithCustomSpacingSample() {
+    var selected by remember { mutableStateOf(false) }
+    FilterChip(
+        selected = selected,
+        onClick = { selected = !selected },
+        label = { Text("Filter chip") },
+        leadingIcon =
+            if (selected) {
+                {
+                    Icon(
+                        imageVector = Icons.Filled.Done,
+                        contentDescription = "Localized Description",
+                        modifier = Modifier.size(FilterChipDefaults.IconSize),
+                    )
+                }
+            } else {
+                null
+            },
+        horizontalArrangement = FilterChipDefaults.horizontalArrangement(4.dp),
     )
 }
 
@@ -202,9 +321,29 @@ fun InputChipWithAvatarSample() {
             Icon(
                 Icons.Filled.Person,
                 contentDescription = "Localized description",
-                Modifier.size(InputChipDefaults.AvatarSize)
+                Modifier.size(InputChipDefaults.AvatarSize),
             )
-        }
+        },
+    )
+}
+
+@Preview
+@Sampled
+@Composable
+fun InputChipWithCornerMorphingSample() {
+    var selected by remember { mutableStateOf(false) }
+    InputChip(
+        selected = selected,
+        onClick = { selected = !selected },
+        label = { Text("Input Chip") },
+        shapes = InputChipDefaults.shapes(),
+        avatar = {
+            Icon(
+                Icons.Filled.Person,
+                contentDescription = "Localized description",
+                Modifier.size(InputChipDefaults.AvatarSize),
+            )
+        },
     )
 }
 
@@ -238,9 +377,9 @@ fun ChipGroupSingleLineSample() {
                     Icon(
                         imageVector = Icons.Filled.Tune,
                         contentDescription = "Localized Description",
-                        modifier = Modifier.size(FilterChipDefaults.IconSize)
+                        modifier = Modifier.size(FilterChipDefaults.IconSize),
                     )
-                }
+                },
             )
             /*
              * When chip lists exceed the available horizontal screen space, one option is to
@@ -255,7 +394,7 @@ fun ChipGroupSingleLineSample() {
                         onClick = {},
                         trailingIcon = {
                             Icon(Icons.AutoMirrored.Filled.ArrowRight, contentDescription = null)
-                        }
+                        },
                     )
                 }
             }
@@ -288,7 +427,7 @@ fun ChipGroupReflowSample() {
             "White",
             "Magenta",
             "Gray",
-            "Transparent"
+            "Transparent",
         )
     Column {
         FlowRow(
@@ -322,9 +461,9 @@ fun ChipGroupReflowSample() {
                     Icon(
                         imageVector = Icons.Filled.Tune,
                         contentDescription = "Localized Description",
-                        modifier = Modifier.size(FilterChipDefaults.IconSize)
+                        modifier = Modifier.size(FilterChipDefaults.IconSize),
                     )
-                }
+                },
             )
             Box(
                 Modifier.height(FilterChipDefaults.Height)
@@ -338,7 +477,7 @@ fun ChipGroupReflowSample() {
                         Modifier.padding(horizontal = 4.dp)
                             .align(alignment = Alignment.CenterVertically),
                     onClick = { /* do something*/ },
-                    label = { Text("$element $index") }
+                    label = { Text("$element $index") },
                 )
             }
         }

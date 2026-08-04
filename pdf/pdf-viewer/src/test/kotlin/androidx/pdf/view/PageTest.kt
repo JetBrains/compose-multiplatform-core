@@ -21,13 +21,28 @@ import android.graphics.Color
 import android.graphics.Point
 import android.graphics.Rect
 import android.graphics.RectF
+import android.os.RemoteException
+import androidx.pdf.Highlight
 import androidx.pdf.PdfDocument
+import androidx.pdf.PdfFeature
+import androidx.pdf.PdfRect
 import androidx.pdf.content.PdfPageTextContent
+import androidx.pdf.exceptions.RequestFailedException
+import androidx.pdf.models.FormWidgetInfo
+import androidx.pdf.util.PAGE_CONTENTS_REQUEST_NAME
+import androidx.pdf.util.PAGE_LINKS_REQUEST_NAME
 import com.google.common.truth.Truth.assertThat
+import kotlin.test.assertEquals
+import kotlin.test.assertTrue
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.runCurrent
+import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -41,15 +56,17 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.spy
 import org.mockito.kotlin.verify
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
+@Config(sdk = [Config.TARGET_SDK])
 class PageTest {
     private val testDispatcher = StandardTestDispatcher()
     private val testScope = TestScope(testDispatcher)
     private val pageContent =
         PdfDocument.PdfPageContent(
             listOf(PdfPageTextContent(listOf(RectF(10f, 10f, 50f, 20f)), "SampleText")),
-            emptyList() // No images in this test case
+            emptyList(), // No images in this test case
         )
 
     private val pdfDocument =
@@ -58,32 +75,60 @@ class PageTest {
                 { invocation ->
                     FakeBitmapSource(invocation.getArgument(0))
                 }
+            on { isFeatureSupported(PdfFeature.TEXT_EXTRACTION) } doReturn true
+            on { isFeatureSupported(PdfFeature.LINKS) } doReturn true
             onBlocking { getPageContent(pageNumber = 0) } doReturn pageContent
+            onBlocking { getFormWidgetInfos(any(), any()) } doReturn UPDATED_PAGE_WIDGET_INFOS
         }
 
     private val canvasSpy = spy(Canvas())
 
     private var invalidationCounter = 0
-    private val invalidationTracker: () -> Unit = { invalidationCounter++ }
+    private val invalidationTracker: (Int) -> Unit = { invalidationCounter++ }
 
     private var pageTextReadyCounter = 0
     private val onPageTextReady: ((Int) -> Unit) = { _ -> pageTextReadyCounter++ }
 
     private lateinit var page: Page
 
-    private val errorFlow = MutableSharedFlow<Throwable>()
+    private val errorFlow = MutableSharedFlow<Throwable>(replay = 1)
 
-    private fun createPage(isTouchExplorationEnabled: Boolean): Page {
+    private val pageUpdatedEvents = mutableListOf<PageBitmapState>()
+
+    private fun createPage(
+        pdfDocumentToUse: PdfDocument = pdfDocument,
+        scopeToUse: CoroutineScope = testScope,
+    ): Page {
         return Page(
-            0,
+            pageNum = 0,
             pageSize = PAGE_SIZE,
-            pdfDocument,
-            testScope,
-            MAX_BITMAP_SIZE,
-            isTouchExplorationEnabled = isTouchExplorationEnabled,
-            invalidationTracker,
-            onPageTextReady,
-            errorFlow
+            pdfDocument = pdfDocumentToUse,
+            backgroundScope = scopeToUse,
+            maxBitmapSizePx = MAX_BITMAP_SIZE,
+            onBitmapReady = { pageUpdatedEvents.add(PageBitmapState.PageBitmapReady(0)) },
+            onFormWidgetReady = invalidationTracker,
+            onPageTextReady = onPageTextReady,
+            errorFlow = errorFlow,
+            isAccessibilityEnabled = true,
+            formWidgetInfos =
+                listOf(
+                    FormWidgetInfo.createRadioButton(
+                        widgetIndex = 0,
+                        widgetRect = Rect(10, 10, 20, 20),
+                        textValue = "true",
+                        accessibilityLabel = "radio",
+                        isReadOnly = false,
+                    ),
+                    FormWidgetInfo.createRadioButton(
+                        widgetIndex = 0,
+                        widgetRect = Rect(10, 10, 20, 20),
+                        textValue = "false",
+                        accessibilityLabel = "radio",
+                        isReadOnly = false,
+                    ),
+                ),
+            pdfFormFillingConfig = PdfFormFillingConfig({ false }, Color.CYAN),
+            onBitmapCleared = { pageUpdatedEvents.add(PageBitmapState.PageBitmapCleared(0)) },
         )
     }
 
@@ -94,7 +139,25 @@ class PageTest {
         invalidationCounter = 0
         pageTextReadyCounter = 0
 
-        page = createPage(isTouchExplorationEnabled = true)
+        page = createPage()
+    }
+
+    @Test
+    fun pageBitmapState_PageBitmapCleared() {
+        assertThat(pageUpdatedEvents.size).isEqualTo(0)
+        page.setVisible(zoom = 1.5F, FULL_PAGE_RECT)
+        testDispatcher.scheduler.runCurrent()
+        assertThat(pageUpdatedEvents.size).isEqualTo(1)
+        val pageUpdatedState = pageUpdatedEvents.first()
+        assertThat(pageUpdatedState is PageBitmapState.PageBitmapReady).isTrue()
+        assertThat((pageUpdatedState as PageBitmapState.PageBitmapReady).pageNum).isEqualTo(0)
+
+        page.setInvisible()
+        testDispatcher.scheduler.runCurrent()
+        assertThat(pageUpdatedEvents.size).isEqualTo(2)
+        val pageClearedState = pageUpdatedEvents.last()
+        assertThat(pageClearedState is PageBitmapState.PageBitmapCleared).isTrue()
+        assertThat((pageClearedState as PageBitmapState.PageBitmapCleared).pageNum).isEqualTo(0)
     }
 
     @Test
@@ -102,7 +165,7 @@ class PageTest {
         // Notably we don't call testDispatcher.scheduler.runCurrent(), so we start, but do not
         // finish, fetching a Bitmap
         page.setVisible(zoom = 1.5F, FULL_PAGE_RECT)
-        val locationInView = Rect(-60, 125, -60 + PAGE_SIZE.x, 125 + PAGE_SIZE.y)
+        val locationInView = RectF(-60f, 125f, -60f + PAGE_SIZE.x, 125f + PAGE_SIZE.y)
 
         page.draw(canvasSpy, locationInView, listOf())
 
@@ -113,7 +176,7 @@ class PageTest {
     fun draw_withBitmap() {
         page.setVisible(zoom = 1.5F, FULL_PAGE_RECT)
         testDispatcher.scheduler.runCurrent()
-        val locationInView = Rect(50, -100, 50 + PAGE_SIZE.x, -100 + PAGE_SIZE.y)
+        val locationInView = RectF(50f, -100f, 50f + PAGE_SIZE.x, -100f + PAGE_SIZE.y)
 
         page.draw(canvasSpy, locationInView, listOf())
 
@@ -125,7 +188,7 @@ class PageTest {
                 },
                 isNull(),
                 eq(locationInView),
-                eq(BMP_PAINT)
+                eq(BMP_PAINT),
             )
     }
 
@@ -133,14 +196,14 @@ class PageTest {
     fun draw_withHighlight() {
         page.setVisible(zoom = 1.5F, FULL_PAGE_RECT)
         testDispatcher.scheduler.runCurrent()
-        val leftEdgeInView = 650
-        val topEdgeInView = -320
+        val leftEdgeInView = 650f
+        val topEdgeInView = -320f
         val locationInView =
-            Rect(
+            RectF(
                 leftEdgeInView,
                 topEdgeInView,
                 leftEdgeInView + PAGE_SIZE.x,
-                topEdgeInView + PAGE_SIZE.y
+                topEdgeInView + PAGE_SIZE.y,
             )
         val highlight = Highlight(PdfRect(pageNum = 0, RectF(10F, 0F, 30F, 20F)), Color.YELLOW)
 
@@ -150,8 +213,13 @@ class PageTest {
         // location in View
         val expectedHighlightLoc =
             RectF().apply {
-                set(highlight.area.pageRect)
-                offset(leftEdgeInView.toFloat(), topEdgeInView.toFloat())
+                set(
+                    highlight.area.left,
+                    highlight.area.top,
+                    highlight.area.right,
+                    highlight.area.bottom,
+                )
+                offset(leftEdgeInView, topEdgeInView)
             }
         verify(canvasSpy).drawRect(eq(expectedHighlightLoc), argThat { color == highlight.color })
 
@@ -161,7 +229,8 @@ class PageTest {
     }
 
     @Test
-    fun updateState_withTouchExplorationEnabled_fetchesPageText() {
+    fun updateState_withAccessibilityEnabled_fetchesPageText() {
+        page.isAccessibilityEnabled = true
         page.setVisible(zoom = 1.0f, FULL_PAGE_RECT)
         testDispatcher.scheduler.runCurrent()
         assertThat(page.pageText).isEqualTo("SampleText")
@@ -169,8 +238,8 @@ class PageTest {
     }
 
     @Test
-    fun setVisible_withTouchExplorationDisabled_doesNotFetchPageText() {
-        page = createPage(isTouchExplorationEnabled = false)
+    fun setVisible_withAccessibilityDisabled_doesNotFetchPageText() {
+        page.isAccessibilityEnabled = false
         page.setVisible(zoom = 1.0f, FULL_PAGE_RECT)
         testDispatcher.scheduler.runCurrent()
 
@@ -180,6 +249,7 @@ class PageTest {
 
     @Test
     fun updateState_doesNotFetchPageTextIfAlreadyFetched() {
+        page.isAccessibilityEnabled = true
         page.setVisible(zoom = 1.0f, FULL_PAGE_RECT)
         testDispatcher.scheduler.runCurrent()
         assertThat(page.pageText).isEqualTo("SampleText")
@@ -189,6 +259,60 @@ class PageTest {
         testDispatcher.scheduler.runCurrent()
         assertThat(page.pageText).isEqualTo("SampleText")
         assertThat(pageTextReadyCounter).isEqualTo(1)
+    }
+
+    @Test
+    fun enableAccessibility_failsFetchingText_onRemoteException() = runTest {
+        val remoteException =
+            RemoteException("android.os.RemoteException: Method getPageContents is unimplemented.")
+        val pdfDocument = createDocumentWithError(remoteException)
+        val page = createPage(pdfDocumentToUse = pdfDocument)
+
+        page.isAccessibilityEnabled = true
+        testDispatcher.scheduler.runCurrent()
+
+        val error = errorFlow.first() as RequestFailedException
+
+        assertTrue(error.showError)
+        assertEquals(PAGE_CONTENTS_REQUEST_NAME, error.requestMetadata.requestName)
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test(expected = IllegalStateException::class)
+    fun enableAccessibility_failsFetchingText_onGenericException() = runTest {
+        val pdfDocument = createDocumentWithError(IllegalStateException())
+        val page = createPage(pdfDocumentToUse = pdfDocument, scopeToUse = this)
+
+        page.isAccessibilityEnabled = true
+        runCurrent()
+    }
+
+    @Test
+    fun setVisible_failsFetchingLinks_onRemoteException() = runTest {
+        val remoteException =
+            RemoteException("android.os.RemoteException: Method getPageLinks is unimplemented.")
+        val pdfDocument = createDocumentWithError(remoteException)
+        val page = createPage(pdfDocumentToUse = pdfDocument)
+        page.isAccessibilityEnabled = false
+
+        page.setVisible(zoom = 1.0f, FULL_PAGE_RECT, stablePosition = true)
+        testDispatcher.scheduler.runCurrent()
+
+        val error = errorFlow.first() as RequestFailedException
+
+        assertTrue(error.showError)
+        assertEquals(PAGE_LINKS_REQUEST_NAME, error.requestMetadata.requestName)
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test(expected = RemoteException::class)
+    fun setVisible_failsFetchingLinks_onGenericException() = runTest {
+        val pdfDocument = createDocumentWithError(RemoteException())
+        val page = createPage(pdfDocumentToUse = pdfDocument, scopeToUse = this)
+        page.isAccessibilityEnabled = false
+
+        page.setVisible(zoom = 1.0f, FULL_PAGE_RECT, stablePosition = true)
+        runCurrent()
     }
 
     @Test
@@ -199,8 +323,49 @@ class PageTest {
         assertThat(page.pageText).isNull()
         assertThat(pageTextReadyCounter).isEqualTo(0)
     }
+
+    @Test
+    fun maybeUpdateFormWidgetInfos_updatesFormWidgetInfos() {
+        page.maybeUpdateFormWidgetInfos(
+            FormWidgetMetadataLoader(pdfDocument, PdfFormFillingState(10), mock())
+        )
+        testDispatcher.scheduler.runCurrent()
+        assertThat(page.formWidgetInfos).isNotNull()
+        assertThat(page.formWidgetInfos?.size).isEqualTo(2)
+        assertThat(page.formWidgetInfos).isEqualTo(UPDATED_PAGE_WIDGET_INFOS)
+    }
 }
 
 val PAGE_SIZE = Point(100, 150)
-val FULL_PAGE_RECT = Rect(0, 0, PAGE_SIZE.x, PAGE_SIZE.y)
+val FULL_PAGE_RECT = RectF(0f, 0f, PAGE_SIZE.x.toFloat(), PAGE_SIZE.y.toFloat())
 val MAX_BITMAP_SIZE = Point(500, 500)
+val UPDATED_PAGE_WIDGET_INFOS =
+    listOf(
+        FormWidgetInfo.createRadioButton(
+            widgetIndex = 0,
+            widgetRect = Rect(10, 10, 20, 20),
+            textValue = "false",
+            accessibilityLabel = "radio",
+            isReadOnly = false,
+        ),
+        FormWidgetInfo.createRadioButton(
+            widgetIndex = 0,
+            widgetRect = Rect(10, 10, 20, 20),
+            textValue = "true",
+            accessibilityLabel = "radio",
+            isReadOnly = false,
+        ),
+    )
+
+private fun createDocumentWithError(error: Throwable): PdfDocument {
+    return mock<PdfDocument> {
+        on { getPageBitmapSource(any()) } doAnswer
+            { invocation ->
+                FakeBitmapSource(invocation.getArgument(0))
+            }
+        on { isFeatureSupported(PdfFeature.TEXT_EXTRACTION) } doReturn true
+        on { isFeatureSupported(PdfFeature.LINKS) } doReturn true
+        onBlocking { getPageContent(any()) } doAnswer { throw error }
+        onBlocking { getPageLinks(any()) } doAnswer { throw error }
+    }
+}

@@ -36,20 +36,20 @@ import kotlin.math.sign
 internal suspend fun AwaitPointerEventScope.awaitHorizontalPointerSlopOrCancellation(
     pointerId: PointerId,
     pointerType: PointerType,
-    onPointerSlopReached: (change: PointerInputChange, overSlop: Float) -> Unit
+    onPointerSlopReached: (change: PointerInputChange, overSlop: Float) -> Unit,
 ) =
     awaitPointerSlopOrCancellation(
         pointerId = pointerId,
         pointerType = pointerType,
         onPointerSlopReached = onPointerSlopReached,
-        getDragDirectionValue = { it.x }
+        getDragDirectionValue = { it.x },
     )
 
 private suspend inline fun AwaitPointerEventScope.awaitPointerSlopOrCancellation(
     pointerId: PointerId,
     pointerType: PointerType,
     onPointerSlopReached: (PointerInputChange, Float) -> Unit,
-    getDragDirectionValue: (Offset) -> Float
+    getDragDirectionValue: (Offset) -> Float,
 ): PointerInputChange? {
     if (currentEvent.isPointerUp(pointerId)) {
         return null // The pointer has already been lifted, so the gesture is canceled
@@ -88,7 +88,7 @@ private suspend inline fun AwaitPointerEventScope.awaitPointerSlopOrCancellation
             } else {
                 onPointerSlopReached(
                     dragEvent,
-                    totalPositionChange - (sign(totalPositionChange) * touchSlop)
+                    totalPositionChange - (sign(totalPositionChange) * touchSlop),
                 )
                 if (dragEvent.isConsumed) {
                     return dragEvent
@@ -103,9 +103,12 @@ private suspend inline fun AwaitPointerEventScope.awaitPointerSlopOrCancellation
 private fun PointerEvent.isPointerUp(pointerId: PointerId): Boolean =
     changes.fastFirstOrNull { it.id == pointerId }?.pressed != true
 
-private val mouseSlop = 0.125.dp
-private val defaultTouchSlop = 18.dp // The default touch slop on Android devices
-private val mouseToTouchSlopRatio = mouseSlop / defaultTouchSlop
+private val mouseSlop
+    get() = 0.125.dp
+private val defaultTouchSlop // The default touch slop on Android devices
+    get() = 18.dp
+private val mouseToTouchSlopRatio
+    get() = mouseSlop / defaultTouchSlop
 
 internal fun ViewConfiguration.pointerSlop(pointerType: PointerType): Float {
     return when (pointerType) {

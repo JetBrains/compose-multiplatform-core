@@ -16,18 +16,24 @@
 
 package androidx.camera.core.impl;
 
+import android.graphics.Rect;
 import android.util.Range;
 import android.util.Size;
 
 import androidx.annotation.IntRange;
+import androidx.annotation.VisibleForTesting;
 import androidx.camera.core.CameraInfo;
 import androidx.camera.core.CameraSelector;
 import androidx.camera.core.CameraState;
+import androidx.camera.core.CameraUseCaseAdapterProvider;
 import androidx.camera.core.DynamicRange;
 import androidx.camera.core.ExperimentalZeroShutterLag;
 import androidx.camera.core.ExposureState;
 import androidx.camera.core.FocusMeteringAction;
+import androidx.camera.core.SessionConfig;
+import androidx.camera.core.UseCase;
 import androidx.camera.core.ZoomState;
+import androidx.core.util.Consumer;
 import androidx.lifecycle.LiveData;
 
 import org.jspecify.annotations.NonNull;
@@ -100,6 +106,16 @@ public class ForwardingCameraInfo implements CameraInfoInternal {
     }
 
     @Override
+    public boolean isNightModeIndicatorSupported() {
+        return mCameraInfoInternal.isNightModeIndicatorSupported();
+    }
+
+    @Override
+    public @NonNull LiveData<Integer> getNightModeIndicator() {
+        return mCameraInfoInternal.getNightModeIndicator();
+    }
+
+    @Override
     public @NonNull LiveData<ZoomState> getZoomState() {
         return mCameraInfoInternal.getZoomState();
     }
@@ -114,6 +130,19 @@ public class ForwardingCameraInfo implements CameraInfoInternal {
         return mCameraInfoInternal.getCameraState();
     }
 
+    @VisibleForTesting
+    @Override
+    public void addCameraStateListener(@NonNull Executor executor,
+            @NonNull Consumer<@NonNull CameraState> listener) {
+        mCameraInfoInternal.addCameraStateListener(executor, listener);
+    }
+
+    @VisibleForTesting
+    @Override
+    public void removeCameraStateListener(@NonNull Consumer<@NonNull CameraState> listener) {
+        mCameraInfoInternal.removeCameraStateListener(listener);
+    }
+
     @Override
     public @NonNull String getImplementationType() {
         return mCameraInfoInternal.getImplementationType();
@@ -122,6 +151,11 @@ public class ForwardingCameraInfo implements CameraInfoInternal {
     @Override
     public int getLensFacing() {
         return mCameraInfoInternal.getLensFacing();
+    }
+
+    @Override
+    public boolean isExternalCamera() {
+        return mCameraInfoInternal.isExternalCamera();
     }
 
     @Override
@@ -141,8 +175,20 @@ public class ForwardingCameraInfo implements CameraInfoInternal {
     }
 
     @Override
+    @ExperimentalZeroShutterLag
+    public boolean canSupportZsl(@NonNull List<Size> sizes) {
+        return mCameraInfoInternal.canSupportZsl(sizes);
+    }
+
+    @Override
     public @NonNull Set<Range<Integer>> getSupportedFrameRateRanges() {
         return mCameraInfoInternal.getSupportedFrameRateRanges();
+    }
+
+    @Override
+    public @NonNull Set<Range<Integer>> getSupportedFrameRateRanges(
+            @NonNull SessionConfig sessionConfig) {
+        return mCameraInfoInternal.getSupportedFrameRateRanges(sessionConfig);
     }
 
     @Override
@@ -169,6 +215,17 @@ public class ForwardingCameraInfo implements CameraInfoInternal {
     @Override
     public void removeSessionCaptureCallback(@NonNull CameraCaptureCallback callback) {
         mCameraInfoInternal.removeSessionCaptureCallback(callback);
+    }
+
+    @Override
+    public void addSessionLifecycleCallback(@NonNull Executor executor,
+            @NonNull CameraSessionLifecycleCallback callback) {
+        mCameraInfoInternal.addSessionLifecycleCallback(executor, callback);
+    }
+
+    @Override
+    public void removeSessionLifecycleCallback(@NonNull CameraSessionLifecycleCallback callback) {
+        mCameraInfoInternal.removeSessionLifecycleCallback(callback);
     }
 
     @Override
@@ -232,6 +289,11 @@ public class ForwardingCameraInfo implements CameraInfoInternal {
     }
 
     @Override
+    public @NonNull Rect getSensorRect() {
+        return mCameraInfoInternal.getSensorRect();
+    }
+
+    @Override
     public @NonNull Set<DynamicRange> querySupportedDynamicRanges(
             @NonNull Set<DynamicRange> candidateDynamicRanges) {
         return mCameraInfoInternal.querySupportedDynamicRanges(candidateDynamicRanges);
@@ -270,5 +332,22 @@ public class ForwardingCameraInfo implements CameraInfoInternal {
     @Override
     public @NonNull Set<CameraInfo> getPhysicalCameraInfos() {
         return mCameraInfoInternal.getPhysicalCameraInfos();
+    }
+    @Override
+    public boolean isUseCaseCombinationSupported(@NonNull List<@NonNull UseCase> useCases,
+            int cameraMode, boolean isFeatureComboInvocation, @NonNull CameraConfig cameraConfig) {
+        return mCameraInfoInternal.isUseCaseCombinationSupported(useCases, cameraMode,
+                isFeatureComboInvocation, cameraConfig);
+    }
+
+    @Override
+    public void setCameraUseCaseAdapterProvider(
+            @NonNull CameraUseCaseAdapterProvider cameraUseCaseAdapterProvider) {
+        mCameraInfoInternal.setCameraUseCaseAdapterProvider(cameraUseCaseAdapterProvider);
+    }
+
+    @Override
+    public @NonNull Set<Integer> getAvailableCapabilities() {
+        return mCameraInfoInternal.getAvailableCapabilities();
     }
 }

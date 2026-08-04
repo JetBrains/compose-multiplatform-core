@@ -16,6 +16,7 @@
 
 package androidx.xr.compose.spatial
 
+import android.view.View
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.geometry.Offset
@@ -24,9 +25,13 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
-import androidx.xr.compose.unit.Meter
-import androidx.xr.compose.unit.toMeter
+import androidx.xr.compose.platform.LocalSession
+import androidx.xr.compose.unit.pxToMeters
+import androidx.xr.compose.unit.toMeters
 import androidx.xr.runtime.math.Pose
+import androidx.xr.runtime.math.Vector3
+import androidx.xr.scenecore.PixelDensity
+import androidx.xr.scenecore.scene
 
 /** Calculate a [Pose] in 3D space based on the relative offset within the 2D space of a Panel. */
 @Composable
@@ -37,40 +42,100 @@ internal fun rememberCalculatePose(
     zDepth: Dp = 0.dp,
 ): Pose {
     val density = LocalDensity.current
+    val session = LocalSession.current ?: return Pose.Identity
     return remember(contentOffset, parentViewSize, contentSize, zDepth) {
-        calculatePose(contentOffset, parentViewSize, contentSize, density, zDepth)
+        calculatePose(
+            contentOffset,
+            parentViewSize,
+            contentSize,
+            density,
+            zDepth,
+            session.scene.virtualPixelDensity,
+        )
     }
 }
 
+/**
+ * Calculates the 3D pose of a composable within its parent layout.
+ *
+ * This function handles the conversion from Compose's 2D pixel-based coordinate system (Y-axis
+ * points down) to the Spatial Scene Graphs's meter-based coordinate system (Y-axis points up).
+ *
+ * @param contentOffset The top-left (x, y) position of the content in pixels.
+ * @param parentViewSize The width and height of the parent container in pixels.
+ * @param contentSize The width and height of the content itself in pixels.
+ * @param density The screen density, used for pixel-to-meter conversion.
+ * @param zDepth The optional depth of the content on the Z-axis.
+ * @return The calculated [Pose] for the 3D spatial scene graph.
+ */
 internal fun calculatePose(
     contentOffset: Offset,
     parentViewSize: IntSize,
     contentSize: IntSize,
     density: Density,
     zDepth: Dp = 0.dp,
+    pixelDensity: PixelDensity,
 ): Pose {
-    val meterPosition =
-        contentOffset.toMeterPosition(parentViewSize, contentSize, density) +
-            MeterPosition(z = zDepth.toMeter())
-    return Pose(translation = meterPosition.toVector3())
+    // Convert the 2D pixel offset to a 3D meter-based position, then add depth.
+    val translation =
+        contentOffset.toMeterPosition(parentViewSize, contentSize, pixelDensity) +
+            Vector3(z = zDepth.toMeters(density, pixelDensity))
+
+    return Pose(translation = translation)
 }
 
 /**
- * Resolves the coordinate systems between 2D app pixel space and 3D meter space. In 2d space, views
- * and composables are anchored at the top left corner; however, in 3D space they are anchored at
- * the center. This fixes that by adjusting for the space size and the content's size so they are
- * anchored in the top left corner in 3D space.
+ * Converts a 2D pixel offset to a 3D meter-based position, correctly anchoring the content.
  *
- * This conversion requires that [density] be specified.
+ * It translates coordinates from a top-left anchor (used in 2D UI) to a center anchor (used in the
+ * 3D scene) and inverts the Y-axis.
  */
 private fun Offset.toMeterPosition(
     parentViewSize: IntSize,
     contentSize: IntSize,
-    density: Density,
-) =
-    MeterPosition(
-        Meter.fromPixel(x.scale(contentSize.width, parentViewSize.width), density),
-        Meter.fromPixel(-y.scale(contentSize.height, parentViewSize.height), density),
-    )
+    pixelDensity: PixelDensity,
+): Vector3 {
+    // Find the center of the content in the parent's coordinate space (in pixels).
+    val centerXInPixels =
+        x.fromTopLeftToCenterAnchor(
+            contentDimension = contentSize.width,
+            parentDimension = parentViewSize.width,
+        )
+    val centerYInPixels =
+        y.fromTopLeftToCenterAnchor(
+            contentDimension = contentSize.height,
+            parentDimension = parentViewSize.height,
+        )
 
-private fun Float.scale(size: Int, space: Int) = this + (size - space) / 2.0f
+    // The Y-axis is negated to convert from Compose's 2D pixel-based coordinate system (Y-down)
+    // to the Spatial Scene Graphs's meter-based coordinate system (Y-up).
+    return Vector3(
+        x = centerXInPixels.pxToMeters(pixelDensity),
+        y = (-centerYInPixels).pxToMeters(pixelDensity),
+    )
+}
+
+internal val View.size
+    get() = IntSize(width, height)
+
+/**
+ * Translates a 2D coordinate from a top-left anchor system to a center-based anchor system.
+ *
+ * In Jetpack Compose, a composable's position (x, y) refers to its top-left corner. In the
+ * underlying Spatial Scene graph, an entity's position refers to its center. This function
+ * calculates the correct position for the entity's **center** so that its **top-left corner**
+ * aligns with the desired 2D coordinate.
+ *
+ * Let `coord` be the desired top-left coordinate of the content (this function's receiver). In the
+ * 3D system, the parent container is centered at origin `0`, so its edges are at
+ * `-parentDimension/2` and `+parentDimension/2`. The desired position of the content's center in
+ * the 2D system is `coord + contentDimension/2`. To convert this to the 3D system, we must shift it
+ * relative to the parent's center: `(coord + contentDimension/2) - (parentDimension/2)`. This
+ * simplifies to the formula used: `coord + (contentDimension - parentDimension) / 2`.
+ *
+ * @param contentDimension The size of the content (the child) along one axis.
+ * @param parentDimension The size of the available space (the parent) along the same axis.
+ * @return The adjusted coordinate for the content's center.
+ */
+private fun Float.fromTopLeftToCenterAnchor(contentDimension: Int, parentDimension: Int) =
+    this + (contentDimension - parentDimension) / 2.0f

@@ -79,7 +79,7 @@ import kotlinx.coroutines.launch
  */
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
-fun FloatingActionButton(
+public fun FloatingActionButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     interactionSource: MutableInteractionSource? = null,
@@ -87,7 +87,7 @@ fun FloatingActionButton(
     backgroundColor: Color = MaterialTheme.colors.secondary,
     contentColor: Color = contentColorFor(backgroundColor),
     elevation: FloatingActionButtonElevation = FloatingActionButtonDefaults.elevation(),
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     @Suppress("NAME_SHADOWING")
     val interactionSource = interactionSource ?: remember { MutableInteractionSource() }
@@ -98,13 +98,13 @@ fun FloatingActionButton(
         color = backgroundColor,
         contentColor = contentColor,
         elevation = elevation.elevation(interactionSource).value,
-        interactionSource = interactionSource
+        interactionSource = interactionSource,
     ) {
         CompositionLocalProvider(LocalContentAlpha provides contentColor.alpha) {
             ProvideTextStyle(MaterialTheme.typography.button) {
                 Box(
                     modifier = Modifier.defaultMinSize(minWidth = FabSize, minHeight = FabSize),
-                    contentAlignment = Alignment.Center
+                    contentAlignment = Alignment.Center,
                 ) {
                     content()
                 }
@@ -147,7 +147,7 @@ fun FloatingActionButton(
  *   different states. This controls the size of the shadow below the FAB.
  */
 @Composable
-fun ExtendedFloatingActionButton(
+public fun ExtendedFloatingActionButton(
     text: @Composable () -> Unit,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -156,7 +156,7 @@ fun ExtendedFloatingActionButton(
     shape: Shape = MaterialTheme.shapes.small.copy(CornerSize(percent = 50)),
     backgroundColor: Color = MaterialTheme.colors.secondary,
     contentColor: Color = contentColorFor(backgroundColor),
-    elevation: FloatingActionButtonElevation = FloatingActionButtonDefaults.elevation()
+    elevation: FloatingActionButtonElevation = FloatingActionButtonDefaults.elevation(),
 ) {
     FloatingActionButton(
         modifier = modifier.sizeIn(minWidth = ExtendedFabSize, minHeight = ExtendedFabSize),
@@ -165,12 +165,12 @@ fun ExtendedFloatingActionButton(
         shape = shape,
         backgroundColor = backgroundColor,
         contentColor = contentColor,
-        elevation = elevation
+        elevation = elevation,
     ) {
         val startPadding = if (icon == null) ExtendedFabTextPadding else ExtendedFabIconPadding
         Row(
             modifier = Modifier.padding(start = startPadding, end = ExtendedFabTextPadding),
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             if (icon != null) {
                 icon()
@@ -188,17 +188,17 @@ fun ExtendedFloatingActionButton(
  * [FloatingActionButton] and [ExtendedFloatingActionButton].
  */
 @Stable
-interface FloatingActionButtonElevation {
+public interface FloatingActionButtonElevation {
     /**
      * Represents the elevation used in a floating action button, depending on [interactionSource].
      *
      * @param interactionSource the [InteractionSource] for this floating action button
      */
-    @Composable fun elevation(interactionSource: InteractionSource): State<Dp>
+    @Composable public fun elevation(interactionSource: InteractionSource): State<Dp>
 }
 
 /** Contains the default values used by [FloatingActionButton] */
-object FloatingActionButtonDefaults {
+public object FloatingActionButtonDefaults {
     /**
      * Creates a [FloatingActionButtonElevation] that will animate between the provided values
      * according to the Material specification.
@@ -209,7 +209,7 @@ object FloatingActionButtonDefaults {
      */
     @Deprecated("Use another overload of elevation", level = DeprecationLevel.HIDDEN)
     @Composable
-    fun elevation(
+    public fun elevation(
         defaultElevation: Dp = 6.dp,
         pressedElevation: Dp = 12.dp,
     ): FloatingActionButtonElevation =
@@ -231,7 +231,7 @@ object FloatingActionButtonDefaults {
      * @param focusedElevation the elevation to use when the [FloatingActionButton] is focused.
      */
     @Composable
-    fun elevation(
+    public fun elevation(
         defaultElevation: Dp = 6.dp,
         pressedElevation: Dp = 12.dp,
         hoveredElevation: Dp = 8.dp,
@@ -242,7 +242,7 @@ object FloatingActionButtonDefaults {
                 defaultElevation = defaultElevation,
                 pressedElevation = pressedElevation,
                 hoveredElevation = hoveredElevation,
-                focusedElevation = focusedElevation
+                focusedElevation = focusedElevation,
             )
         }
     }
@@ -254,7 +254,7 @@ private class DefaultFloatingActionButtonElevation(
     private val defaultElevation: Dp,
     private val pressedElevation: Dp,
     private val hoveredElevation: Dp,
-    private val focusedElevation: Dp
+    private val focusedElevation: Dp,
 ) : FloatingActionButtonElevation {
     @Composable
     override fun elevation(interactionSource: InteractionSource): State<Dp> {
@@ -264,7 +264,7 @@ private class DefaultFloatingActionButtonElevation(
                     defaultElevation = defaultElevation,
                     pressedElevation = pressedElevation,
                     hoveredElevation = hoveredElevation,
-                    focusedElevation = focusedElevation
+                    focusedElevation = focusedElevation,
                 )
             }
 
@@ -273,7 +273,7 @@ private class DefaultFloatingActionButtonElevation(
                 defaultElevation = defaultElevation,
                 pressedElevation = pressedElevation,
                 hoveredElevation = hoveredElevation,
-                focusedElevation = focusedElevation
+                focusedElevation = focusedElevation,
             )
         }
 
@@ -334,7 +334,7 @@ private class FloatingActionButtonElevationAnimatable(
     private var defaultElevation: Dp,
     private var pressedElevation: Dp,
     private var hoveredElevation: Dp,
-    private var focusedElevation: Dp
+    private var focusedElevation: Dp,
 ) {
     private val animatable = Animatable(defaultElevation, Dp.VectorConverter)
 
@@ -354,7 +354,7 @@ private class FloatingActionButtonElevationAnimatable(
         defaultElevation: Dp,
         pressedElevation: Dp,
         hoveredElevation: Dp,
-        focusedElevation: Dp
+        focusedElevation: Dp,
     ) {
         this.defaultElevation = defaultElevation
         this.pressedElevation = pressedElevation
@@ -391,7 +391,11 @@ private class FloatingActionButtonElevationAnimatable(
     fun asState(): State<Dp> = animatable.asState()
 }
 
-private val FabSize = 56.dp
-private val ExtendedFabSize = 48.dp
-private val ExtendedFabIconPadding = 12.dp
-private val ExtendedFabTextPadding = 20.dp
+private val FabSize
+    get() = 56.dp
+private val ExtendedFabSize
+    get() = 48.dp
+private val ExtendedFabIconPadding
+    get() = 12.dp
+private val ExtendedFabTextPadding
+    get() = 20.dp

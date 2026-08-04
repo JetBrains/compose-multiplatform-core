@@ -86,7 +86,7 @@ internal constructor(
         ExerciseStateInfo(
             ExerciseState.fromProto(proto.state)
                 ?: throw IllegalArgumentException("Invalid ExerciseState: ${proto.state}"),
-            ExerciseEndReason.fromProto(proto.exerciseEndReason)
+            ExerciseEndReason.fromProto(proto.exerciseEndReason),
         ),
         if (proto.hasExerciseConfig()) ExerciseConfig(proto.exerciseConfig) else null,
         if (proto.hasActiveDurationCheckpoint()) {
@@ -129,7 +129,6 @@ internal constructor(
         public val activeDuration: Duration,
     ) {
 
-        @RestrictTo(Scope.LIBRARY)
         internal fun toProto(): DataProto.ExerciseUpdate.ActiveDurationCheckpoint =
             DataProto.ExerciseUpdate.ActiveDurationCheckpoint.newBuilder()
                 .setTimeEpochMs(time.toEpochMilli())
@@ -158,13 +157,12 @@ internal constructor(
         }
 
         internal companion object {
-            @RestrictTo(Scope.LIBRARY)
             internal fun fromProto(
                 proto: DataProto.ExerciseUpdate.ActiveDurationCheckpoint
             ): ActiveDurationCheckpoint? =
                 ActiveDurationCheckpoint(
                     Instant.ofEpochMilli(proto.timeEpochMs),
-                    Duration.ofMillis(proto.activeDurationMs)
+                    Duration.ofMillis(proto.activeDurationMs),
                 )
         }
     }
@@ -265,7 +263,7 @@ internal constructor(
 
     private fun getActiveDurationAtDataPoint(
         dataPoint: DataPoint<*>,
-        durationFromBoot: Duration
+        durationFromBoot: Duration,
     ): Duration {
         val dataPointList = latestMetrics.dataPoints[dataPoint.dataType]
         if (dataPointList?.indexOf(dataPoint) == -1) {

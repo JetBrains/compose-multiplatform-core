@@ -167,6 +167,7 @@ private constructor(
         }
         if (isConditional) {
             candidateQueryData.putBoolean(BUNDLE_KEY_CONDITIONAL_CREATE, true)
+            credentialData.putBoolean(BUNDLE_KEY_CONDITIONAL_CREATE, true)
         }
     }
 
@@ -219,7 +220,7 @@ private constructor(
         @JvmStatic
         internal fun toCandidateDataBundle(
             requestJson: String,
-            clientDataHash: ByteArray?
+            clientDataHash: ByteArray?,
         ): Bundle {
             val bundle = Bundle()
             bundle.putString(

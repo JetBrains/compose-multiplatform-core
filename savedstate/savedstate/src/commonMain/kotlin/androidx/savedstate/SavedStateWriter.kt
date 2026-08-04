@@ -33,60 +33,58 @@ import kotlin.jvm.JvmName
 @JvmInline
 public expect value class SavedStateWriter
 @PublishedApi
-internal constructor(
-    private val source: SavedState,
-) {
+internal constructor(private val source: SavedState) {
 
     /**
-     * Stores a boolean value associated with the specified key in the [SavedState].
+     * Stores a [Boolean] value associated with the specified key in the [SavedState].
      *
      * @param key The key to associate the value with.
-     * @param value The boolean value to store.
+     * @param value The [Boolean] value to store.
      */
     public fun putBoolean(key: String, value: Boolean)
 
     /**
-     * Stores a char value associated with the specified key in the [SavedState].
+     * Stores a [Char] value associated with the specified key in the [SavedState].
      *
      * @param key The key to associate the value with.
-     * @param value The char value to store.
+     * @param value The [Char] value to store.
      */
     public fun putChar(key: String, value: Char)
 
     /**
-     * Stores a char sequence value associated with the specified key in the [SavedState].
+     * Stores a [CharSequence] value associated with the specified key in the [SavedState].
      *
      * @param key The key to associate the value with.
-     * @param value The char sequence value to store.
+     * @param value The [CharSequence] value to store.
      */
     public fun putCharSequence(key: String, value: CharSequence)
 
     /**
-     * Stores a double value associated with the specified key in the [SavedState].
+     * Stores a [Double] value associated with the specified key in the [SavedState].
      *
      * @param key The key to associate the value with.
-     * @param value The double value to store.
+     * @param value The [Double] value to store.
      */
     public fun putDouble(key: String, value: Double)
 
     /**
-     * Stores a float value associated with the specified key in the [SavedState].
+     * Stores a [Float] value associated with the specified key in the [SavedState].
      *
      * @param key The key to associate the value with.
-     * @param value The float value to store.
+     * @param value The [Float] value to store.
      */
     public fun putFloat(key: String, value: Float)
 
     /**
-     * Stores an int value associated with the specified key in the [SavedState].
+     * Stores an [Int] value associated with the specified key in the [SavedState].
      *
      * @param key The key to associate the value with.
-     * @param value The int value to store.
+     * @param value The [Int] value to store.
      */
     public fun putInt(key: String, value: Int)
 
     /**
-     * Stores an int value associated with the specified key in the [SavedState].
+     * Stores a [Long] value associated with the specified key in the [SavedState].
      *
      * @param key The key to associate the value with.
      * @param value The [Long] value to store.
@@ -94,22 +92,22 @@ internal constructor(
     public fun putLong(key: String, value: Long)
 
     /**
-     * Stores a null reference associated with the specified key in the [SavedState].
+     * Stores a `null` reference associated with the specified key in the [SavedState].
      *
-     * @param key The key to associate the null reference.
+     * @param key The key to associate the `null` reference.
      */
     public fun putNull(key: String)
 
     /**
-     * Stores a string value associated with the specified key in the [SavedState].
+     * Stores a [String] value associated with the specified key in the [SavedState].
      *
      * @param key The key to associate the value with.
-     * @param value The string value to store.
+     * @param value The [String] value to store.
      */
     public fun putString(key: String, value: String)
 
     /**
-     * Stores a list of elements of [Int] associated with the specified key in the [SavedState].
+     * Stores a [List] of [Int] values associated with the specified key in the [SavedState].
      *
      * @param key The key to associate the value with.
      * @param value The list of elements to store.
@@ -117,7 +115,7 @@ internal constructor(
     public fun putIntList(key: String, value: List<Int>)
 
     /**
-     * Stores a list of elements of [CharSequence] associated with the specified key in the
+     * Stores a [List] of [CharSequence] values associated with the specified key in the
      * [SavedState].
      *
      * @param key The key to associate the value with.
@@ -126,8 +124,7 @@ internal constructor(
     public fun putCharSequenceList(key: String, value: List<CharSequence>)
 
     /**
-     * Stores a list of elements of [SavedState] associated with the specified key in the
-     * [SavedState].
+     * Stores a [List] of [SavedState] values associated with the specified key in the [SavedState].
      *
      * @param key The key to associate the value with.
      * @param value The list of elements to store.
@@ -135,7 +132,7 @@ internal constructor(
     public fun putSavedStateList(key: String, value: List<SavedState>)
 
     /**
-     * Stores a list of elements of [String] associated with the specified key in the [SavedState].
+     * Stores a [List] of [String] values associated with the specified key in the [SavedState].
      *
      * @param key The key to associate the value with.
      * @param value The list of elements to store.
@@ -143,8 +140,7 @@ internal constructor(
     public fun putStringList(key: String, value: List<String>)
 
     /**
-     * Stores an [Array] of elements of [Boolean] associated with the specified key in the
-     * [SavedState].
+     * Stores a [BooleanArray] associated with the specified key in the [SavedState].
      *
      * @param key The key to associate the value with.
      * @param value The array of elements to store.
@@ -152,8 +148,7 @@ internal constructor(
     public fun putBooleanArray(key: String, value: BooleanArray)
 
     /**
-     * Stores an [Array] of elements of [Boolean] associated with the specified key in the
-     * [SavedState].
+     * Stores a [CharArray] associated with the specified key in the [SavedState].
      *
      * @param key The key to associate the value with.
      * @param value The array of elements to store.
@@ -161,7 +156,7 @@ internal constructor(
     public fun putCharArray(key: String, value: CharArray)
 
     /**
-     * Stores an [Array] of elements of [CharSequence] associated with the specified key in the
+     * Stores an [Array] of [CharSequence] values associated with the specified key in the
      * [SavedState].
      *
      * @param key The key to associate the value with.
@@ -170,8 +165,7 @@ internal constructor(
     public fun putCharSequenceArray(key: String, value: Array<CharSequence>)
 
     /**
-     * Stores an [Array] of elements of [Double] associated with the specified key in the
-     * [SavedState].
+     * Stores a [DoubleArray] associated with the specified key in the [SavedState].
      *
      * @param key The key to associate the value with.
      * @param value The array of elements to store.
@@ -179,8 +173,7 @@ internal constructor(
     public fun putDoubleArray(key: String, value: DoubleArray)
 
     /**
-     * Stores an [Array] of elements of [Float] associated with the specified key in the
-     * [SavedState].
+     * Stores a [FloatArray] associated with the specified key in the [SavedState].
      *
      * @param key The key to associate the value with.
      * @param value The array of elements to store.
@@ -188,7 +181,7 @@ internal constructor(
     public fun putFloatArray(key: String, value: FloatArray)
 
     /**
-     * Stores an [Array] of elements of [Int] associated with the specified key in the [SavedState].
+     * Stores an [IntArray] associated with the specified key in the [SavedState].
      *
      * @param key The key to associate the value with.
      * @param value The array of elements to store.
@@ -196,8 +189,7 @@ internal constructor(
     public fun putIntArray(key: String, value: IntArray)
 
     /**
-     * Stores an [Array] of elements of [Long] associated with the specified key in the
-     * [SavedState].
+     * Stores a [LongArray] associated with the specified key in the [SavedState].
      *
      * @param key The key to associate the value with.
      * @param value The array of elements to store.
@@ -205,7 +197,7 @@ internal constructor(
     public fun putLongArray(key: String, value: LongArray)
 
     /**
-     * Stores an [Array] of elements of [SavedState] associated with the specified key in the
+     * Stores an [Array] of [SavedState] values associated with the specified key in the
      * [SavedState].
      *
      * @param key The key to associate the value with.
@@ -214,8 +206,7 @@ internal constructor(
     public fun putSavedStateArray(key: String, value: Array<SavedState>)
 
     /**
-     * Stores an [Array] of elements of [String] associated with the specified key in the
-     * [SavedState].
+     * Stores an [Array] of [String] values associated with the specified key in the [SavedState].
      *
      * @param key The key to associate the value with.
      * @param value The array of elements to store.
@@ -226,7 +217,7 @@ internal constructor(
      * Stores a [SavedState] object associated with the specified key in the [SavedState].
      *
      * @param key The key to associate the value with.
-     * @param value The [SavedState] object to store
+     * @param value The [SavedState] object to store.
      */
     public fun putSavedState(key: String, value: SavedState)
 

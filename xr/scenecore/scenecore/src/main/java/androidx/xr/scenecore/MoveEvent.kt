@@ -27,12 +27,13 @@ import androidx.xr.runtime.math.Ray
  * @param moveState State of the move action i.e. move started, ongoing or ended.
  * @param initialInputRay Ray for the user's input at initial update.
  * @param currentInputRay Ray for the user's input at the new update.
- * @param previousPose Pose before this event, relative to its parent.
+ * @param previousPose [Pose] before this event, relative to its parent.
  * @param currentPose Pose when this event is applied, relative to its parent.
  * @param previousScale Scale before this event.
  * @param currentScale Scale when this event is applied.
  */
-internal class MoveEvent(
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public class MoveEvent(
     @MoveState public val moveState: Int,
     public val initialInputRay: Ray,
     public val currentInputRay: Ray,
@@ -81,20 +82,20 @@ internal class MoveEvent(
     }
 
     @IntDef(value = [MOVE_STATE_START, MOVE_STATE_ONGOING, MOVE_STATE_END])
+    @Retention(AnnotationRetention.SOURCE)
     public annotation class MoveState
 }
 
-/** Listener for move actions. Callbacks are invoked as user interacts with the entity. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public interface MoveListener {
+/** Listener for move actions. Callbacks are invoked as user interacts with the [Entity]. */
+public interface EntityMoveListener {
     /**
-     * Called when the user starts moving the entity.
+     * Called when the user starts moving the Entity.
      *
-     * @param entity The entity being moved.
-     * @param initialInputRay Ray for the user's input at initial update.
-     * @param initialPose Initial Pose of the entity relative to its parent.
-     * @param initialScale Initial scale of the entity.
-     * @param initialParent Initial parent of the entity.
+     * @param entity The Entity being moved.
+     * @param initialInputRay [Ray] for the user's input at initial update.
+     * @param initialPose Initial [Pose] of the Entity relative to its parent.
+     * @param initialScale Initial scale of the Entity.
+     * @param initialParent Initial parent of the Entity.
      */
     public fun onMoveStart(
         entity: Entity,
@@ -105,12 +106,12 @@ public interface MoveListener {
     ) {}
 
     /**
-     * Called continuously while the user is moving the entity.
+     * Called continuously while the user is moving the Entity.
      *
-     * @param entity The entity being moved.
-     * @param currentInputRay Ray for the user's input at the new update.
-     * @param currentPose Pose of the entity during this event relative to its parent.
-     * @param currentScale Scale of the entity during this event.
+     * @param entity The Entity being moved.
+     * @param currentInputRay [Ray] for the user's input at the new update.
+     * @param currentPose Proposed [Pose] of the Entity during this event relative to its parent.
+     * @param currentScale Proposed scale of the Entity during this event relative to its parent.
      */
     public fun onMoveUpdate(
         entity: Entity,
@@ -120,16 +121,16 @@ public interface MoveListener {
     ) {}
 
     /**
-     * Called when the user has finished moving the entity.
+     * Called when the user has finished moving the Entity.
      *
-     * @param entity The entity being moved.
-     * @param finalInputRay Ray for the user's input at the final update.
-     * @param finalPose Pose of the entity during this event relative to its parent.
-     * @param finalScale Scale of the entity during this event.
-     * @param updatedParent If anchorPlacement is set, the entity may have a new parent when the
-     *   movement completes. This will be a new AnchorEntity, if it was anchored or re-anchored
-     *   during the movement, or the activity space, if it was unanchored. This will be null if
-     *   there was no updated parent on the entity.
+     * @param entity The Entity being moved.
+     * @param finalInputRay [Ray] for the user's input at the final update.
+     * @param finalPose [Pose] of the Entity during this event relative to its parent.
+     * @param finalScale Scale of the Entity during this event.
+     * @param updatedParent If anchorPlacement is set, the Entity may have a new parent when the
+     *   movement completes. This will be a new [AnchorSpace], if it was anchored or re-anchored
+     *   during the movement; or the [ActivitySpace], if it was unanchored. This will be null if
+     *   there was no updated parent on the Entity.
      */
     public fun onMoveEnd(
         entity: Entity,

@@ -27,6 +27,8 @@ import android.view.ScrollCaptureSession
 import android.view.View
 import androidx.annotation.RequiresApi
 import androidx.compose.runtime.withFrameNanos
+import androidx.compose.ui.AndroidComposeUiFlags.isAlwaysScrollDuringScrollCaptureEnabled
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.MotionDurationScale
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.toAndroidRect
@@ -80,14 +82,14 @@ internal class ComposeScrollCaptureCallback(
                     Log.d(
                         TAG,
                         "scrolling by delta $actualDelta " +
-                            "(reverseScrolling=$reverseScrolling, requested delta=$delta)"
+                            "(reverseScrolling=$reverseScrolling, requested delta=$delta)",
                     )
 
                 // This action may animate, ensure any calls to this RelativeScroll are done with a
                 // coroutine context that disables animations.
                 val consumed = scrollByOffset(Offset(0f, actualDelta))
                 if (reverseScrolling) -consumed.y else consumed.y
-            }
+            },
         )
 
     /** Only used when [DEBUG] is true. */
@@ -101,7 +103,7 @@ internal class ComposeScrollCaptureCallback(
     override fun onScrollCaptureStart(
         session: ScrollCaptureSession,
         signal: CancellationSignal,
-        onReady: Runnable
+        onReady: Runnable,
     ) {
         scrollTracker.reset()
         requestCount = 0
@@ -113,7 +115,7 @@ internal class ComposeScrollCaptureCallback(
         session: ScrollCaptureSession,
         signal: CancellationSignal,
         captureArea: AndroidRect,
-        onComplete: Consumer<AndroidRect>
+        onComplete: Consumer<AndroidRect>,
     ) {
         coroutineScope.launchWithCancellationSignal(signal) {
             val result = onScrollCaptureImageRequest(session, captureArea.toComposeIntRect())
@@ -121,6 +123,7 @@ internal class ComposeScrollCaptureCallback(
         }
     }
 
+    @OptIn(ExperimentalComposeUiApi::class)
     private suspend fun onScrollCaptureImageRequest(
         session: ScrollCaptureSession,
         captureArea: IntRect,
@@ -129,7 +132,7 @@ internal class ComposeScrollCaptureCallback(
         val targetMin = captureArea.top
         val targetMax = captureArea.bottom
         if (DEBUG) Log.d(TAG, "capture request for $targetMin..$targetMax")
-        scrollTracker.scrollRangeIntoView(targetMin, targetMax)
+        scrollTracker.scrollRangeToCenter(targetMin, targetMax)
 
         // Wait a frame to allow layout to respond to the scroll.
         withFrameNanos {}
@@ -156,13 +159,13 @@ internal class ComposeScrollCaptureCallback(
             canvas.save()
             canvas.translate(
                 -viewportClippedRect.left.toFloat(),
-                -viewportClippedRect.top.toFloat()
+                -viewportClippedRect.top.toFloat(),
             )
 
             // slide the viewPort over to make it window-relative
             canvas.translate(
                 -viewportBoundsInWindow.left.toFloat(),
-                -viewportBoundsInWindow.top.toFloat()
+                -viewportBoundsInWindow.top.toFloat(),
             )
             // draw the content from the root view (DecorView) including the window background
             composeView.rootView.draw(canvas)
@@ -195,7 +198,7 @@ internal class ComposeScrollCaptureCallback(
                     hue = Random.nextFloat() * 360f,
                     saturation = 0.75f,
                     lightness = 0.5f,
-                    alpha = 1f
+                    alpha = 1f,
                 )
                 .toArgb()
         )
@@ -226,7 +229,7 @@ internal class ComposeScrollCaptureCallback(
 
 private fun CoroutineScope.launchWithCancellationSignal(
     signal: CancellationSignal,
-    block: suspend CoroutineScope.() -> Unit
+    block: suspend CoroutineScope.() -> Unit,
 ): Job {
     val job = launch(block = block)
     job.invokeOnCompletion { cause ->
@@ -244,7 +247,7 @@ private fun CoroutineScope.launchWithCancellationSignal(
  */
 private class RelativeScroller(
     private val viewportSize: Int,
-    private val scrollBy: suspend (Float) -> Float
+    private val scrollBy: suspend (Float) -> Float,
 ) {
     var scrollAmount = 0f
         private set
@@ -253,25 +256,26 @@ private class RelativeScroller(
         scrollAmount = 0f
     }
 
-    /**
-     * Scrolls so that the range ([min], [max]) is in the viewport. The range must fit inside the
-     * viewport.
-     */
-    suspend fun scrollRangeIntoView(min: Int, max: Int) {
-        if (DEBUG) Log.d(TAG, "scrollRangeIntoView(min=$min, max=$max)")
+    /** Scroll the specified range into the center. */
+    @OptIn(ExperimentalComposeUiApi::class)
+    suspend fun scrollRangeToCenter(min: Int, max: Int) {
+        if (DEBUG) Log.d(TAG, "scrollRangeToCenter(min=$min, max=$max)")
         require(min <= max) { "Expected min=$min ≤ max=$max" }
         require(max - min <= viewportSize) {
             "Expected range (${max - min}) to be ≤ viewportSize=$viewportSize"
         }
 
-        if (min >= scrollAmount && max <= scrollAmount + viewportSize) {
-            // Already visible, no need to scroll.
-            if (DEBUG) Log.d(TAG, "requested range already in view, not scrolling")
-            return
+        if (!isAlwaysScrollDuringScrollCaptureEnabled) {
+            if (min >= scrollAmount && max <= scrollAmount + viewportSize) {
+                // Already visible, no need to scroll.
+                if (DEBUG) Log.d(TAG, "requested range already in view, not scrolling")
+                return
+            }
         }
 
-        // Scroll to the nearest edge.
-        val target = if (min < scrollAmount) min else max - viewportSize
+        // Target is requested center minus half the viewport size
+        val target = min + (max - min) / 2 - viewportSize / 2
+
         if (DEBUG) Log.d(TAG, "scrolling to $target")
         scrollTo(target.toFloat())
     }

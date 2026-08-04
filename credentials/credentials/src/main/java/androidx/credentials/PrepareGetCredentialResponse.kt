@@ -178,7 +178,7 @@ private constructor(
                 hasRemoteResultsDelegate,
                 hasAuthResultsDelegate,
                 hasCredentialResultsDelegate,
-                false
+                false,
             )
         }
     }
@@ -218,14 +218,17 @@ private constructor(
                 hasRemoteResultsDelegate,
                 hasAuthResultsDelegate,
                 hasCredentialResultsDelegate,
-                true
+                true,
             )
         }
     }
 }
 
+@Suppress("TypealiasDefinition")
 typealias HasCredentialResultsDelegate = (String) -> Boolean
 
+@Suppress("TypealiasDefinition")
 typealias HasAuthenticationResultsDelegate = () -> Boolean
 
+@Suppress("TypealiasDefinition")
 typealias HasRemoteResultsDelegate = () -> Boolean

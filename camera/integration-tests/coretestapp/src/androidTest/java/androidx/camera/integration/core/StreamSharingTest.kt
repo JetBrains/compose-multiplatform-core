@@ -20,7 +20,6 @@ import android.content.Context
 import android.graphics.SurfaceTexture
 import android.util.Size
 import androidx.camera.camera2.Camera2Config
-import androidx.camera.camera2.pipe.integration.CameraPipeConfig
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.CameraXConfig
@@ -34,7 +33,6 @@ import androidx.camera.core.internal.CameraUseCaseAdapter
 import androidx.camera.core.streamsharing.StreamSharing
 import androidx.camera.lifecycle.LifecycleCamera
 import androidx.camera.lifecycle.ProcessCameraProvider
-import androidx.camera.testing.impl.CameraPipeConfigTestRule
 import androidx.camera.testing.impl.CameraUtil
 import androidx.camera.testing.impl.CameraUtil.PreTestCameraIdList
 import androidx.camera.testing.impl.IgnoreVideoRecordingProblematicDeviceRule
@@ -68,12 +66,6 @@ import org.junit.runners.Parameterized
 @RunWith(Parameterized::class)
 class StreamSharingTest(private val implName: String, private val cameraConfig: CameraXConfig) {
     @get:Rule
-    val cameraPipeConfigTestRule =
-        CameraPipeConfigTestRule(
-            active = implName == CameraPipeConfig::class.simpleName,
-        )
-
-    @get:Rule
     val cameraRule =
         CameraUtil.grantCameraPermissionAndPreTestAndPostTest(PreTestCameraIdList(cameraConfig))
 
@@ -86,25 +78,21 @@ class StreamSharingTest(private val implName: String, private val cameraConfig: 
     companion object {
         private const val VIDEO_TIMEOUT_SEC = 10L
         private const val TAG = "StreamSharingTest"
-        private val DEFAULT_CAMERA_SELECTOR = CameraSelector.DEFAULT_BACK_CAMERA
 
         @JvmStatic
         @Parameterized.Parameters(name = "{0}")
-        fun data() =
-            listOf(
-                arrayOf(Camera2Config::class.simpleName, Camera2Config.defaultConfig()),
-                arrayOf(CameraPipeConfig::class.simpleName, CameraPipeConfig.defaultConfig())
-            )
+        fun data() = listOf(arrayOf(Camera2Config::class.simpleName, Camera2Config.defaultConfig()))
     }
 
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
     private val context: Context = ApplicationProvider.getApplicationContext()
     private lateinit var cameraProvider: ProcessCameraProvider
     private var surfaceFutureSemaphore: Semaphore = Semaphore(0)
+    private lateinit var defaultCameraSelector: CameraSelector
 
     @Before
     fun setUp() {
-        assumeTrue(CameraUtil.hasCameraWithLensFacing(DEFAULT_CAMERA_SELECTOR.lensFacing!!))
+        defaultCameraSelector = CameraUtil.assumeFirstAvailableCameraSelector()
         ProcessCameraProvider.configureInstance(cameraConfig)
         cameraProvider = ProcessCameraProvider.getInstance(context)[10, TimeUnit.SECONDS]
     }
@@ -133,8 +121,8 @@ class StreamSharingTest(private val implName: String, private val cameraConfig: 
         // Checks whether the back camera can support four UseCases combination
         val cameraUseCaseAdapter =
             checkStreamSharingSupportAndRetrieveCameraUseCaseAdapter(
-                DEFAULT_CAMERA_SELECTOR,
-                useCases
+                defaultCameraSelector,
+                useCases,
             )
         assumeTrue(cameraUseCaseAdapter != null)
 
@@ -155,7 +143,7 @@ class StreamSharingTest(private val implName: String, private val cameraConfig: 
             if (CameraUtil.hasCameraWithLensFacing(CameraSelector.LENS_FACING_FRONT)) {
                 checkStreamSharingSupportAndRetrieveCameraUseCaseAdapter(
                     CameraSelector.DEFAULT_FRONT_CAMERA,
-                    useCases
+                    useCases,
                 )
             } else {
                 null
@@ -182,7 +170,7 @@ class StreamSharingTest(private val implName: String, private val cameraConfig: 
 
     private fun checkStreamSharingSupportAndRetrieveCameraUseCaseAdapter(
         cameraSelector: CameraSelector,
-        useCases: Array<UseCase>
+        useCases: Array<UseCase>,
     ): CameraUseCaseAdapter? {
         lateinit var lifecycleOwner: FakeLifecycleOwner
         lateinit var camera: Camera
@@ -214,7 +202,7 @@ class StreamSharingTest(private val implName: String, private val cameraConfig: 
             object : SurfaceTextureCallback {
                 override fun onSurfaceTextureReady(
                     surfaceTexture: SurfaceTexture,
-                    resolution: Size
+                    resolution: Size,
                 ) {
                     // Note that the onSurfaceTextureReady will only be received once since
                     // surfaceTexture.updateTexImage() isn't invoked here. Therefore,
@@ -244,7 +232,7 @@ class StreamSharingTest(private val implName: String, private val cameraConfig: 
 
     private fun triggerErrorAndVerifyPreviewImageReceivedAndRecording(
         sessionConfig: SessionConfig,
-        videoCapture: VideoCapture<Recorder>
+        videoCapture: VideoCapture<Recorder>,
     ) {
         // This should be reset before onError is invoked to make sure that the semaphore can be
         // successfully released by the onSurfaceTextureReady + onFrameAvailable events
@@ -253,7 +241,7 @@ class StreamSharingTest(private val implName: String, private val cameraConfig: 
         instrumentation.runOnMainSync {
             sessionConfig.errorListener!!.onError(
                 sessionConfig,
-                SessionConfig.SessionError.SESSION_ERROR_UNKNOWN
+                SessionConfig.SessionError.SESSION_ERROR_UNKNOWN,
             )
         }
 

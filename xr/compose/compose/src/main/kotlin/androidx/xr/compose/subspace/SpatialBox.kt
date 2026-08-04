@@ -16,20 +16,19 @@
 
 package androidx.xr.compose.subspace
 
-import androidx.annotation.RestrictTo
 import androidx.compose.foundation.layout.LayoutScopeMarker
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.util.fastForEachIndexed
-import androidx.xr.compose.subspace.layout.Measurable
-import androidx.xr.compose.subspace.layout.MeasurePolicy
-import androidx.xr.compose.subspace.layout.MeasureResult
-import androidx.xr.compose.subspace.layout.MeasureScope
 import androidx.xr.compose.subspace.layout.ParentLayoutParamsAdjustable
 import androidx.xr.compose.subspace.layout.ParentLayoutParamsModifier
-import androidx.xr.compose.subspace.layout.Placeable
 import androidx.xr.compose.subspace.layout.SpatialAlignment
 import androidx.xr.compose.subspace.layout.SubspaceLayout
+import androidx.xr.compose.subspace.layout.SubspaceMeasurable
+import androidx.xr.compose.subspace.layout.SubspaceMeasurePolicy
+import androidx.xr.compose.subspace.layout.SubspaceMeasureResult
+import androidx.xr.compose.subspace.layout.SubspaceMeasureScope
 import androidx.xr.compose.subspace.layout.SubspaceModifier
+import androidx.xr.compose.subspace.layout.SubspacePlaceable
 import androidx.xr.compose.subspace.node.SubspaceModifierNodeElement
 import androidx.xr.compose.unit.IntVolumeSize
 import androidx.xr.compose.unit.VolumeConstraints
@@ -56,29 +55,84 @@ import kotlin.math.max
  */
 @Composable
 @SubspaceComposable
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public fun SpatialBox(
+public inline fun SpatialBox(
     modifier: SubspaceModifier = SubspaceModifier,
     alignment: SpatialAlignment = SpatialAlignment.Center,
     propagateMinConstraints: Boolean = false,
-    content: @Composable @SubspaceComposable SpatialBoxScope.() -> Unit,
+    crossinline content: @Composable @SubspaceComposable SpatialBoxScope.() -> Unit,
 ) {
+    val measurePolicy = cachedSpatialBoxMeasurePolicy(alignment, propagateMinConstraints)
     SubspaceLayout(
         modifier = modifier,
         content = { SpatialBoxScopeInstance.content() },
-        measurePolicy = SpatialBoxMeasurePolicy(alignment, propagateMinConstraints),
+        measurePolicy = measurePolicy,
     )
 }
 
-/** [MeasurePolicy] for [SpatialBox]. */
+@PublishedApi
+internal fun cachedSpatialBoxMeasurePolicy(
+    alignment: SpatialAlignment,
+    propagateMinConstraints: Boolean,
+): SubspaceMeasurePolicy =
+    if (propagateMinConstraints) {
+        when (alignment) {
+            SpatialAlignment.TopStart -> SpatialBoxMeasurePolicies.TopStartPropagate
+            SpatialAlignment.TopCenter -> SpatialBoxMeasurePolicies.TopCenterPropagate
+            SpatialAlignment.TopEnd -> SpatialBoxMeasurePolicies.TopEndPropagate
+            SpatialAlignment.CenterStart -> SpatialBoxMeasurePolicies.CenterStartPropagate
+            SpatialAlignment.Center -> SpatialBoxMeasurePolicies.CenterPropagate
+            SpatialAlignment.CenterEnd -> SpatialBoxMeasurePolicies.CenterEndPropagate
+            SpatialAlignment.BottomStart -> SpatialBoxMeasurePolicies.BottomStartPropagate
+            SpatialAlignment.BottomCenter -> SpatialBoxMeasurePolicies.BottomCenterPropagate
+            SpatialAlignment.BottomEnd -> SpatialBoxMeasurePolicies.BottomEndPropagate
+            else -> SpatialBoxMeasurePolicy(alignment, true)
+        }
+    } else {
+        when (alignment) {
+            SpatialAlignment.TopStart -> SpatialBoxMeasurePolicies.TopStart
+            SpatialAlignment.TopCenter -> SpatialBoxMeasurePolicies.TopCenter
+            SpatialAlignment.TopEnd -> SpatialBoxMeasurePolicies.TopEnd
+            SpatialAlignment.CenterStart -> SpatialBoxMeasurePolicies.CenterStart
+            SpatialAlignment.Center -> SpatialBoxMeasurePolicies.Center
+            SpatialAlignment.CenterEnd -> SpatialBoxMeasurePolicies.CenterEnd
+            SpatialAlignment.BottomStart -> SpatialBoxMeasurePolicies.BottomStart
+            SpatialAlignment.BottomCenter -> SpatialBoxMeasurePolicies.BottomCenter
+            SpatialAlignment.BottomEnd -> SpatialBoxMeasurePolicies.BottomEnd
+            else -> SpatialBoxMeasurePolicy(alignment, false)
+        }
+    }
+
+private object SpatialBoxMeasurePolicies {
+    val TopStart = SpatialBoxMeasurePolicy(SpatialAlignment.TopStart, false)
+    val TopCenter = SpatialBoxMeasurePolicy(SpatialAlignment.TopCenter, false)
+    val TopEnd = SpatialBoxMeasurePolicy(SpatialAlignment.TopEnd, false)
+    val CenterStart = SpatialBoxMeasurePolicy(SpatialAlignment.CenterStart, false)
+    val Center = SpatialBoxMeasurePolicy(SpatialAlignment.Center, false)
+    val CenterEnd = SpatialBoxMeasurePolicy(SpatialAlignment.CenterEnd, false)
+    val BottomStart = SpatialBoxMeasurePolicy(SpatialAlignment.BottomStart, false)
+    val BottomCenter = SpatialBoxMeasurePolicy(SpatialAlignment.BottomCenter, false)
+    val BottomEnd = SpatialBoxMeasurePolicy(SpatialAlignment.BottomEnd, false)
+
+    val TopStartPropagate = SpatialBoxMeasurePolicy(SpatialAlignment.TopStart, true)
+    val TopCenterPropagate = SpatialBoxMeasurePolicy(SpatialAlignment.TopCenter, true)
+    val TopEndPropagate = SpatialBoxMeasurePolicy(SpatialAlignment.TopEnd, true)
+    val CenterStartPropagate = SpatialBoxMeasurePolicy(SpatialAlignment.CenterStart, true)
+    val CenterPropagate = SpatialBoxMeasurePolicy(SpatialAlignment.Center, true)
+    val CenterEndPropagate = SpatialBoxMeasurePolicy(SpatialAlignment.CenterEnd, true)
+    val BottomStartPropagate = SpatialBoxMeasurePolicy(SpatialAlignment.BottomStart, true)
+    val BottomCenterPropagate = SpatialBoxMeasurePolicy(SpatialAlignment.BottomCenter, true)
+    val BottomEndPropagate = SpatialBoxMeasurePolicy(SpatialAlignment.BottomEnd, true)
+}
+
+/** [SubspaceMeasurePolicy] for [SpatialBox]. */
 internal class SpatialBoxMeasurePolicy(
     private val alignment: SpatialAlignment,
     private val propagateMinConstraints: Boolean,
-) : MeasurePolicy {
-    override fun MeasureScope.measure(
-        measurables: List<Measurable>,
+) : SubspaceMeasurePolicy {
+    override fun SubspaceMeasureScope.measure(
+        measurables: List<SubspaceMeasurable>,
         constraints: VolumeConstraints,
-    ): MeasureResult {
+    ): SubspaceMeasureResult {
         if (measurables.isEmpty()) {
             return layout(constraints.minWidth, constraints.minHeight, constraints.minDepth) {}
         }
@@ -90,36 +144,37 @@ internal class SpatialBoxMeasurePolicy(
                 constraints.copy(minWidth = 0, minHeight = 0, minDepth = 0)
             }
 
-        val placeables = arrayOfNulls<Placeable>(measurables.size)
+        val placeables = arrayOfNulls<SubspacePlaceable>(measurables.size)
         var boxWidth = constraints.minWidth
         var boxHeight = constraints.minHeight
         var boxDepth = constraints.minDepth
         measurables.fastForEachIndexed { index, measurable ->
             val placeable = measurable.measure(contentConstraints)
             placeables[index] = placeable
-            boxWidth = max(boxWidth, placeable.measuredWidth)
-            boxHeight = max(boxHeight, placeable.measuredHeight)
-            boxDepth = max(boxDepth, placeable.measuredDepth)
+            boxWidth = max(boxWidth, placeable.width)
+            boxHeight = max(boxHeight, placeable.height)
+            boxDepth = max(boxDepth, placeable.depth)
         }
 
         return layout(boxWidth, boxHeight, boxDepth) {
             val space = IntVolumeSize(boxWidth, boxHeight, boxDepth)
             placeables.forEachIndexed { index, placeable ->
-                placeable as Placeable
+                placeable as SubspacePlaceable
                 val measurable = measurables[index]
                 val childSpatialAlignment =
                     SpatialBoxParentData(alignment).also { measurable.adjustParams(it) }.alignment
-                placeable.place(Pose(childSpatialAlignment.position(placeable.size(), space)))
+                placeable.place(
+                    Pose(childSpatialAlignment.align(placeable.size(), space, layoutDirection))
+                )
             }
         }
     }
 
-    private fun Placeable.size() = IntVolumeSize(measuredWidth, measuredHeight, measuredDepth)
+    private fun SubspacePlaceable.size() = IntVolumeSize(width, height, depth)
 }
 
 /** Scope for the children of [SpatialBox]. */
 @LayoutScopeMarker
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public interface SpatialBoxScope {
     /**
      * Positions the content element at a specific [SpatialAlignment] within the [SpatialBox]. This
@@ -131,6 +186,7 @@ public interface SpatialBoxScope {
     public fun SubspaceModifier.align(alignment: SpatialAlignment): SubspaceModifier
 }
 
+@PublishedApi
 internal object SpatialBoxScopeInstance : SpatialBoxScope {
     override fun SubspaceModifier.align(alignment: SpatialAlignment): SubspaceModifier {
         return this then LayoutAlignElement(alignment = alignment)

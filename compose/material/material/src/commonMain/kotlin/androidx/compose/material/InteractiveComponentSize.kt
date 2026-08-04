@@ -52,7 +52,8 @@ import kotlin.math.roundToInt
  * Because layout constraints are affected by modifier order, for this modifier to take effect, it
  * must come before any size modifiers on the element that might limit its constraints.
  */
-fun Modifier.minimumInteractiveComponentSize(): Modifier = this then MinimumInteractiveModifier
+public fun Modifier.minimumInteractiveComponentSize(): Modifier =
+    this then MinimumInteractiveModifier
 
 internal object MinimumInteractiveModifier : ModifierNodeElement<MinimumInteractiveModifierNode>() {
 
@@ -80,7 +81,7 @@ internal class MinimumInteractiveModifierNode :
     @OptIn(ExperimentalMaterialApi::class)
     override fun MeasureScope.measure(
         measurable: Measurable,
-        constraints: Constraints
+        constraints: Constraints,
     ): MeasureResult {
         val enforcement = isAttached && currentValueOf(LocalMinimumInteractiveComponentEnforcement)
         val size = minimumInteractiveComponentSize
@@ -116,10 +117,8 @@ internal class MinimumInteractiveModifierNode :
  * near to another component without any padding, there will not be enough space for an accessible
  * touch target.
  */
-@Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-@get:ExperimentalMaterialApi
 @ExperimentalMaterialApi
-val LocalMinimumInteractiveComponentEnforcement: ProvidableCompositionLocal<Boolean> =
+public val LocalMinimumInteractiveComponentEnforcement: ProvidableCompositionLocal<Boolean> =
     staticCompositionLocalOf {
         true
     }
@@ -132,21 +131,19 @@ val LocalMinimumInteractiveComponentEnforcement: ProvidableCompositionLocal<Bool
  * near to another component without any padding, there will not be enough space for an accessible
  * touch target.
  */
-@Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-@get:ExperimentalMaterialApi
 @ExperimentalMaterialApi
 @Deprecated(
     message = "Use LocalMinimumInteractiveComponentEnforcement instead.",
     replaceWith = ReplaceWith("LocalMinimumInteractiveComponentEnforcement"),
-    level = DeprecationLevel.WARNING
+    level = DeprecationLevel.WARNING,
 )
-val LocalMinimumTouchTargetEnforcement: ProvidableCompositionLocal<Boolean> =
+public val LocalMinimumTouchTargetEnforcement: ProvidableCompositionLocal<Boolean> =
     LocalMinimumInteractiveComponentEnforcement
 
 private class MinimumInteractiveComponentSizeModifier(val size: DpSize) : LayoutModifier {
     override fun MeasureScope.measure(
         measurable: Measurable,
-        constraints: Constraints
+        constraints: Constraints,
     ): MeasureResult {
 
         val placeable = measurable.measure(constraints)
@@ -172,4 +169,5 @@ private class MinimumInteractiveComponentSizeModifier(val size: DpSize) : Layout
     }
 }
 
-private val minimumInteractiveComponentSize: DpSize = DpSize(48.dp, 48.dp)
+private val minimumInteractiveComponentSize: DpSize
+    get() = DpSize(48.dp, 48.dp)

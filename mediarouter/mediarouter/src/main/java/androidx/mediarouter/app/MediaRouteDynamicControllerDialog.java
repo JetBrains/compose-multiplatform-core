@@ -59,8 +59,6 @@ import android.widget.SeekBar;
 import android.widget.TextView;
 
 import androidx.annotation.CallSuper;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.appcompat.app.AppCompatDialog;
 import androidx.core.util.ObjectsCompat;
@@ -71,6 +69,9 @@ import androidx.mediarouter.media.MediaRouter;
 import androidx.palette.graphics.Palette;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
@@ -257,8 +258,7 @@ public class MediaRouteDynamicControllerDialog extends AppCompatDialog {
      *
      * @return The token for the session to use or null if none.
      */
-    @Nullable
-    public MediaSessionCompat.Token getMediaSession() {
+    public MediaSessionCompat.@Nullable Token getMediaSession() {
         return mMediaController == null ? null : mMediaController.getSessionToken();
     }
 
@@ -267,8 +267,7 @@ public class MediaRouteDynamicControllerDialog extends AppCompatDialog {
      *
      * @return The selector, never null.
      */
-    @NonNull
-    public MediaRouteSelector getRouteSelector() {
+    public @NonNull MediaRouteSelector getRouteSelector() {
         return mSelector;
     }
 
@@ -321,7 +320,7 @@ public class MediaRouteDynamicControllerDialog extends AppCompatDialog {
      * @param route The route to consider, never null.
      * @return True if the route should be included in the chooser dialog.
      */
-    public boolean onFilterRoute(@NonNull MediaRouter.RouteInfo route) {
+    public boolean onFilterRoute(MediaRouter.@NonNull RouteInfo route) {
         return !route.isDefaultOrBluetooth() && route.isEnabled()
                 && route.matchesSelector(mSelector) && !(mSelectedRoute == route);
     }
@@ -335,22 +334,14 @@ public class MediaRouteDynamicControllerDialog extends AppCompatDialog {
 
         mCloseButton = findViewById(R.id.mr_cast_close_button);
         mCloseButton.setColorFilter(COLOR_WHITE_ON_DARK_BACKGROUND);
-        mCloseButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                dismiss();
-            }
-        });
+        mCloseButton.setOnClickListener(v -> dismiss());
         mStopCastingButton = findViewById(R.id.mr_cast_stop_button);
         mStopCastingButton.setTextColor(COLOR_WHITE_ON_DARK_BACKGROUND);
-        mStopCastingButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (mSelectedRoute.isSelected()) {
-                    mRouter.unselect(MediaRouter.UNSELECT_REASON_STOPPED);
-                }
-                dismiss();
+        mStopCastingButton.setOnClickListener(v -> {
+            if (mSelectedRoute.isSelected()) {
+                mRouter.unselect(MediaRouter.UNSELECT_REASON_STOPPED);
             }
+            dismiss();
         });
 
         mAdapter = new RecyclerAdapter();
@@ -691,26 +682,23 @@ public class MediaRouteDynamicControllerDialog extends AppCompatDialog {
             boolean isMuted = (volume == MUTED_VOLUME);
 
             mMuteButton.setActivated(isMuted);
-            mMuteButton.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    if (mRouteForVolumeUpdatingByUser != null) {
-                        mHandler.removeMessages(MSG_UPDATE_ROUTE_VOLUME_BY_USER);
-                    }
-                    mRouteForVolumeUpdatingByUser = mRoute;
-
-                    boolean mute = !v.isActivated();
-                    int volume = mute ? MUTED_VOLUME : getUnmutedVolume();
-
-                    setMute(mute);
-                    mVolumeSlider.setProgress(volume);
-                    mRoute.requestSetVolume(volume);
-                    // Defer resetting mRouteForClickedMuteButton to allow the media route provider
-                    // a little time to settle into its new state and publish the final
-                    // volume update.
-                    mHandler.sendEmptyMessageDelayed(MSG_UPDATE_ROUTE_VOLUME_BY_USER,
-                            UPDATE_VOLUME_DELAY_MS);
+            mMuteButton.setOnClickListener(v -> {
+                if (mRouteForVolumeUpdatingByUser != null) {
+                    mHandler.removeMessages(MSG_UPDATE_ROUTE_VOLUME_BY_USER);
                 }
+                mRouteForVolumeUpdatingByUser = mRoute;
+
+                boolean mute = !v.isActivated();
+                int volume1 = mute ? MUTED_VOLUME : getUnmutedVolume();
+
+                setMute(mute);
+                mVolumeSlider.setProgress(volume1);
+                mRoute.requestSetVolume(volume1);
+                // Defer resetting mRouteForClickedMuteButton to allow the media route provider
+                // a little time to settle into its new state and publish the final
+                // volume update.
+                mHandler.sendEmptyMessageDelayed(MSG_UPDATE_ROUTE_VOLUME_BY_USER,
+                        UPDATE_VOLUME_DELAY_MS);
             });
 
             mVolumeSlider.setTag(mRoute);
@@ -908,7 +896,7 @@ public class MediaRouteDynamicControllerDialog extends AppCompatDialog {
         }
 
         /*
-         * Can't override RecyclerView.Adpater#notifyDataSetChanged because it's final method. So,
+         * Can't override RecyclerView.Adapter#notifyDataSetChanged because it's final method. So,
          * implement method with slightly different name.
          */
         void notifyAdapterDataSetChanged() {
@@ -922,8 +910,8 @@ public class MediaRouteDynamicControllerDialog extends AppCompatDialog {
         }
 
         @Override
-        @NonNull
-        public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        public RecyclerView.@NonNull ViewHolder onCreateViewHolder(
+                @NonNull ViewGroup parent, int viewType) {
             View view;
 
             switch (viewType) {
@@ -946,7 +934,7 @@ public class MediaRouteDynamicControllerDialog extends AppCompatDialog {
         }
 
         @Override
-        public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
+        public void onBindViewHolder(RecyclerView.@NonNull ViewHolder holder, int position) {
             int viewType = getItemViewType(position);
             Item item = getItem(position);
 
@@ -981,7 +969,7 @@ public class MediaRouteDynamicControllerDialog extends AppCompatDialog {
         }
 
         @Override
-        public void onViewRecycled(@NonNull RecyclerView.ViewHolder holder) {
+        public void onViewRecycled(RecyclerView.@NonNull ViewHolder holder) {
             super.onViewRecycled(holder);
             mVolumeSliderHolderMap.values().remove(holder);
         }
@@ -1206,7 +1194,7 @@ public class MediaRouteDynamicControllerDialog extends AppCompatDialog {
                 MediaRouter.RouteInfo route = (MediaRouter.RouteInfo) item.getData();
 
                 // This is required to sync volume and the name of the route
-                if (route == mSelectedRoute && route.getSelectedRoutesInGroup().size() > 0) {
+                if (route == mSelectedRoute && !route.getSelectedRoutesInGroup().isEmpty()) {
                     for (MediaRouter.RouteInfo memberRoute : route.getSelectedRoutesInGroup()) {
                         if (!mGroupableRoutes.contains(memberRoute)) {
                             route = memberRoute;
@@ -1286,10 +1274,7 @@ public class MediaRouteDynamicControllerDialog extends AppCompatDialog {
                 List<MediaRouter.RouteInfo> currentMemberRoutes =
                         mSelectedRoute.getSelectedRoutesInGroup();
                 // Disable individual route if the only member of dynamic group is that route.
-                if (currentMemberRoutes.size() == 1 && currentMemberRoutes.get(0) == route) {
-                    return false;
-                }
-                return true;
+                return currentMemberRoutes.size() != 1 || currentMemberRoutes.get(0) != route;
             }
 
             void bindGroupViewHolder(Item item) {
@@ -1300,13 +1285,10 @@ public class MediaRouteDynamicControllerDialog extends AppCompatDialog {
 
                 boolean enabled = isEnabled(route);
                 mItemView.setAlpha(enabled ? 1.0f : mDisabledAlpha);
-                mItemView.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View view) {
-                        mRouter.transferToRoute(mRoute);
-                        mImageView.setVisibility(View.INVISIBLE);
-                        mProgressBar.setVisibility(View.VISIBLE);
-                    }
+                mItemView.setOnClickListener(view -> {
+                    mRouter.transferToRoute(mRoute);
+                    mImageView.setVisibility(View.INVISIBLE);
+                    mProgressBar.setVisibility(View.VISIBLE);
                 });
                 mImageView.setImageDrawable(getIconDrawable(route));
                 mTextView.setText(route.getName());
@@ -1324,20 +1306,21 @@ public class MediaRouteDynamicControllerDialog extends AppCompatDialog {
         }
 
         @Override
-        public void onRouteAdded(@NonNull MediaRouter router, @NonNull MediaRouter.RouteInfo info) {
+        public void onRouteAdded(@NonNull MediaRouter router, MediaRouter.@NonNull RouteInfo info) {
             updateRoutesView();
         }
 
         @Override
         public void onRouteRemoved(@NonNull MediaRouter router,
-                @NonNull MediaRouter.RouteInfo info) {
+                MediaRouter.@NonNull RouteInfo info) {
             updateRoutesView();
         }
 
         @Override
         public void onRouteSelected(@NonNull MediaRouter router,
-                @NonNull MediaRouter.RouteInfo route) {
-            mSelectedRoute = route;
+                MediaRouter.@NonNull RouteInfo selectedRoute, int reason,
+                MediaRouter.@NonNull RouteInfo requestedRoute) {
+            mSelectedRoute = selectedRoute;
 
             mIsSelectingRoute = false;
             // Since updates of views are deferred when selecting the route,
@@ -1348,13 +1331,13 @@ public class MediaRouteDynamicControllerDialog extends AppCompatDialog {
 
         @Override
         public void onRouteUnselected(@NonNull MediaRouter router,
-                @NonNull MediaRouter.RouteInfo route) {
+                MediaRouter.@NonNull RouteInfo route, int reason) {
             updateRoutesView();
         }
 
         @Override
         public void onRouteChanged(@NonNull MediaRouter router,
-                @NonNull MediaRouter.RouteInfo route) {
+                MediaRouter.@NonNull RouteInfo route) {
             boolean shouldRefreshRoute = false;
             if (route == mSelectedRoute && route.getDynamicGroupController() != null) {
                 for (MediaRouter.RouteInfo memberRoute : route.getProvider().getRoutes()) {
@@ -1384,7 +1367,7 @@ public class MediaRouteDynamicControllerDialog extends AppCompatDialog {
 
         @Override
         public void onRouteVolumeChanged(
-                @NonNull MediaRouter router, @NonNull MediaRouter.RouteInfo route) {
+                @NonNull MediaRouter router, MediaRouter.@NonNull RouteInfo route) {
             int volume = route.getVolume();
             if (DEBUG) {
                 Log.d(TAG, "onRouteVolumeChanged(), route.getVolume:" + volume);

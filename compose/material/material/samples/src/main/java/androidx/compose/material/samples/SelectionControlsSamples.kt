@@ -25,11 +25,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
-import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material.Checkbox
 import androidx.compose.material.CheckboxDefaults
 import androidx.compose.material.MaterialTheme
@@ -79,7 +77,7 @@ fun TriStateCheckboxSample() {
         TriStateCheckbox(
             state = parentState,
             onClick = onParentClick,
-            colors = CheckboxDefaults.colors(checkedColor = MaterialTheme.colors.primary)
+            colors = CheckboxDefaults.colors(checkedColor = MaterialTheme.colors.primary),
         )
         Spacer(Modifier.size(25.dp))
         Column(Modifier.padding(10.dp, 0.dp, 0.dp, 0.dp)) {
@@ -100,7 +98,7 @@ fun FocusedCheckboxSample() {
         Checkbox(
             modifier = Modifier.wrapContentSize(Alignment.TopStart).focusRequester(focusRequester),
             checked = true,
-            onCheckedChange = {}
+            onCheckedChange = {},
         )
     }
 
@@ -124,21 +122,6 @@ fun CheckboxSample() {
 fun SwitchSample() {
     val checkedState = remember { mutableStateOf(true) }
     Switch(checked = checkedState.value, onCheckedChange = { checkedState.value = it })
-
-    var pineappleOnPizza by remember { mutableStateOf(true) }
-
-    Row(
-        Modifier.padding(16.dp)
-            .toggleable(
-                role = Role.Switch,
-                value = pineappleOnPizza,
-                onValueChange = { pineappleOnPizza = it },
-            )
-    ) {
-        Switch(checked = pineappleOnPizza, onCheckedChange = null)
-        Spacer(Modifier.width(8.dp))
-        Text("Pineapple on pizza?")
-    }
 }
 
 @Sampled
@@ -167,19 +150,19 @@ fun RadioGroupSample() {
                     .selectable(
                         selected = (text == selectedOption),
                         onClick = { onOptionSelected(text) },
-                        role = Role.RadioButton
+                        role = Role.RadioButton,
                     )
                     .padding(horizontal = 16.dp),
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 RadioButton(
                     selected = (text == selectedOption),
-                    onClick = null // null recommended for accessibility with screenreaders
+                    onClick = null, // null recommended for accessibility with screenreaders
                 )
                 Text(
                     text = text,
                     style = MaterialTheme.typography.body1.merge(),
-                    modifier = Modifier.padding(start = 16.dp)
+                    modifier = Modifier.padding(start = 16.dp),
                 )
             }
         }

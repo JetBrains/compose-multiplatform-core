@@ -19,6 +19,9 @@ package androidx.camera.camera2.pipe
 import android.hardware.camera2.CaptureResult
 import android.hardware.camera2.TotalCaptureResult
 import androidx.annotation.RestrictTo
+import androidx.annotation.VisibleForTesting
+import androidx.camera.camera2.pipe.graph.LatestFrameMetadataImpl
+import androidx.camera.common.UnsafeWrapper
 
 /**
  * A [FrameNumber] is the identifier that represents a specific exposure by the Camera. FrameNumbers
@@ -27,7 +30,9 @@ import androidx.annotation.RestrictTo
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @JvmInline
-public value class FrameNumber(public val value: Long)
+public value class FrameNumber(public val value: Long) {
+    override fun toString(): String = "Frame-$value"
+}
 
 /** [FrameInfo] is a wrapper around [TotalCaptureResult]. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
@@ -63,6 +68,73 @@ public interface FrameMetadata : Metadata, UnsafeWrapper {
 }
 
 /**
+ * Holds aggregated parameter values across [CaptureResult.Key] and [Metadata.Key] types.
+ *
+ * An instance of this class represents a "snapshot" of the most recent parameters produced by the
+ * camera, including partial results.
+ *
+ * Values for different keys may come from different frame numbers, representing a sliding-window
+ * view of the latest state of the camera.
+ */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public interface LatestFrameMetadata : Metadata {
+
+    /** Returns the list of [CaptureResult.Key]s currently present in these parameters. */
+    public val keys: List<CaptureResult.Key<*>>
+
+    /** Returns the list of [Metadata.Key]s currently present in these parameters. */
+    public val metadataKeys: List<Metadata.Key<*>>
+
+    public operator fun <T> get(key: CaptureResult.Key<T>): T?
+
+    public fun <T> getOrDefault(key: CaptureResult.Key<T>, default: T): T
+
+    /**
+     * Returns the [FrameNumber] from which the value for the given [CaptureResult.Key] was read, or
+     * null if the key is not present in the snapshot.
+     */
+    public fun getFrameNumber(key: CaptureResult.Key<*>): FrameNumber?
+
+    /**
+     * Returns the [FrameNumber] from which the value for the given [Metadata.Key] was read, or null
+     * if the key is not present in the snapshot.
+     */
+    public fun getFrameNumber(key: Metadata.Key<*>): FrameNumber?
+
+    public companion object {
+        /**
+         * Creates an instance of [LatestFrameMetadata] using the provided parameters and optional
+         * frame numbers.
+         */
+        @VisibleForTesting
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+        public operator fun invoke(
+            captureResultParameters: Map<CaptureResult.Key<*>, Any?>,
+            metadataParameters: Map<Metadata.Key<*>, Any?> = emptyMap(),
+            captureResultFrameNumbers: Map<CaptureResult.Key<*>, FrameNumber?> = emptyMap(),
+            metadataFrameNumbers: Map<Metadata.Key<*>, FrameNumber?> = emptyMap(),
+        ): LatestFrameMetadata {
+            val crKeys = captureResultParameters.keys.toTypedArray()
+            val crValues = Array(crKeys.size) { i -> captureResultParameters[crKeys[i]] }
+            val crFrameNumbers = Array(crKeys.size) { i -> captureResultFrameNumbers[crKeys[i]] }
+
+            val mdKeys = metadataParameters.keys.toTypedArray()
+            val mdValues = Array(mdKeys.size) { i -> metadataParameters[mdKeys[i]] }
+            val mdFrameNumbers = Array(mdKeys.size) { i -> metadataFrameNumbers[mdKeys[i]] }
+
+            return LatestFrameMetadataImpl(
+                crKeys,
+                crValues,
+                crFrameNumbers,
+                mdKeys,
+                mdValues,
+                mdFrameNumbers,
+            )
+        }
+    }
+}
+
+/**
  * This defines a metadata transform that will be applied to the data produced by
  * [Request.Listener.onTotalCaptureResult]. The returned map will override the values returned by
  * TotalCaptureResult. Setting the offset and window size will cause the
@@ -92,7 +164,7 @@ public data class MetadataTransform(
      * the returned values should be limited to values that will override the default values that
      * are set on the TotalCaptureResult for this frame.
      */
-    val transformFn: TransformFn = object : TransformFn {}
+    val transformFn: TransformFn = object : TransformFn {},
 ) {
     init {
         check(past >= 0)
@@ -104,7 +176,7 @@ public data class MetadataTransform(
         public fun computeOverridesFor(
             result: FrameInfo,
             camera: CameraId,
-            related: List<FrameInfo?>
+            related: List<FrameInfo?>,
         ): Map<*, Any?> = emptyMap<Any, Any?>()
     }
 }

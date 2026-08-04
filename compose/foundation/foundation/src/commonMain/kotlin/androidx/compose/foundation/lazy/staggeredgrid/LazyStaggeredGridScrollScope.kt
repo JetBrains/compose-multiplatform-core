@@ -31,9 +31,9 @@ import androidx.compose.ui.util.fastFirstOrNull
  *   [LazyHorizontalStaggeredGrid] and [LazyVerticalStaggeredGrid].
  * @sample androidx.compose.foundation.samples.LazyStaggeredGridCustomScrollUsingLazyLayoutScrollScopeSample
  */
-fun LazyLayoutScrollScope(
+public fun LazyLayoutScrollScope(
     state: LazyStaggeredGridState,
-    scrollScope: ScrollScope
+    scrollScope: ScrollScope,
 ): LazyLayoutScrollScope {
 
     return object : LazyLayoutScrollScope, ScrollScope by scrollScope {

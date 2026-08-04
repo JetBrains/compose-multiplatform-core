@@ -24,7 +24,7 @@ import org.junit.runners.JUnit4
 class WithTypeWithoutConfigureEachUsageDetectorTest :
     GradleLintDetectorTest(
         detector = WithTypeWithoutConfigureEachUsageDetector(),
-        issues = listOf(WithTypeWithoutConfigureEachUsageDetector.ISSUE)
+        issues = listOf(WithTypeWithoutConfigureEachUsageDetector.ISSUE),
     ) {
     @Test
     fun `Test withType Without ConfigureEach usage`() {
@@ -37,7 +37,7 @@ class WithTypeWithoutConfigureEachUsageDetectorTest :
                 fun configure(project: Project) {
                     project.tasks.withType(Example::class.java) {}
                 }
-            """
+                """
                     .trimIndent()
             )
 
@@ -66,7 +66,7 @@ class WithTypeWithoutConfigureEachUsageDetectorTest :
                 fun configure(project: Project) {
                     project.tasks.withType(Example::class.java).configureEach {}
                 }
-            """
+                """
                     .trimIndent()
             )
         check(input).expectClean()

@@ -35,16 +35,16 @@ import androidx.compose.ui.platform.PlatformTextInputSession
 @Deprecated("Use InterceptPlatformTextInput instead")
 @ExperimentalTestApi
 @Composable
-fun PlatformTextInputMethodTestOverride(
+public fun PlatformTextInputMethodTestOverride(
     sessionHandler: PlatformTextInputSession,
-    content: @Composable () -> Unit
-) {
+    content: @Composable () -> Unit,
+): Unit {
     InterceptPlatformTextInput(
         interceptor = { request, _ ->
             // Don't forward the request, block it, so that tests don't have to deal with the
             // actual IME sending commands.
             sessionHandler.startInputMethod(request)
         },
-        content = content
+        content = content,
     )
 }

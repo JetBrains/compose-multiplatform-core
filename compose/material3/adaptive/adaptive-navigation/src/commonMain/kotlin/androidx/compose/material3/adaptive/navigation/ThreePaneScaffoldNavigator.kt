@@ -18,7 +18,7 @@ package androidx.compose.material3.adaptive.navigation
 
 import androidx.annotation.FloatRange
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
-import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
+import androidx.compose.material3.adaptive.currentWindowAdaptiveInfoV2
 import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffold
 import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffoldDefaults
 import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffoldRole
@@ -68,24 +68,24 @@ import kotlin.collections.removeLast as removeLastKt
  */
 @ExperimentalMaterial3AdaptiveApi
 @Stable
-interface ThreePaneScaffoldNavigator<T> {
+public interface ThreePaneScaffoldNavigator<T> {
     /**
      * The current layout directives that the associated three pane scaffold needs to follow. It's
      * supposed to be automatically updated when the window configuration changes.
      */
-    val scaffoldDirective: PaneScaffoldDirective
+    public val scaffoldDirective: PaneScaffoldDirective
 
     /**
      * The current state of the associated three pane scaffold, used to query the transition between
      * layout states.
      */
-    val scaffoldState: ThreePaneScaffoldState
+    public val scaffoldState: ThreePaneScaffoldState
 
     /**
      * The current layout value of the associated three pane scaffold, which represents unique
      * layout states of the scaffold.
      */
-    val scaffoldValue: ThreePaneScaffoldValue
+    public val scaffoldValue: ThreePaneScaffoldValue
 
     /**
      * Returns the scaffold value associated with the previous destination, assuming there is a
@@ -94,7 +94,7 @@ interface ThreePaneScaffoldNavigator<T> {
      * @param backNavigationBehavior the behavior describing which backstack entries may be skipped
      *   during the back navigation. See [BackNavigationBehavior].
      */
-    fun peekPreviousScaffoldValue(
+    public fun peekPreviousScaffoldValue(
         backNavigationBehavior: BackNavigationBehavior =
             BackNavigationBehavior.PopUntilScaffoldValueChange
     ): ThreePaneScaffoldValue
@@ -105,7 +105,7 @@ interface ThreePaneScaffoldNavigator<T> {
      * Implementors of this interface should ensure this value is updated whenever a navigation
      * operation is performed.
      */
-    val currentDestination: ThreePaneScaffoldDestinationItem<T>?
+    public val currentDestination: ThreePaneScaffoldDestinationItem<T>?
 
     /**
      * Indicates if the navigator should be aware of pane destination history when deciding the
@@ -114,7 +114,7 @@ interface ThreePaneScaffoldNavigator<T> {
      *
      * @see calculateThreePaneScaffoldValue for more detailed explanation about history awareness.
      */
-    var isDestinationHistoryAware: Boolean
+    public var isDestinationHistoryAware: Boolean
 
     /**
      * Navigates to a new destination, possibly with an animation, and suspends until the animation
@@ -128,7 +128,7 @@ interface ThreePaneScaffoldNavigator<T> {
      * @param pane the new destination pane.
      * @param contentKey the optional key or id representing the content of the new destination.
      */
-    suspend fun navigateTo(pane: ThreePaneScaffoldRole, contentKey: T? = null)
+    public suspend fun navigateTo(pane: ThreePaneScaffoldRole, contentKey: T? = null)
 
     /**
      * Returns `true` if there is a previous destination to navigate back to.
@@ -139,7 +139,7 @@ interface ThreePaneScaffoldNavigator<T> {
      * @param backNavigationBehavior the behavior describing which backstack entries may be skipped
      *   during the back navigation. See [BackNavigationBehavior].
      */
-    fun canNavigateBack(
+    public fun canNavigateBack(
         backNavigationBehavior: BackNavigationBehavior =
             BackNavigationBehavior.PopUntilScaffoldValueChange
     ): Boolean
@@ -154,7 +154,7 @@ interface ThreePaneScaffoldNavigator<T> {
      * @param backNavigationBehavior the behavior describing which backstack entries may be skipped
      *   during the back navigation. See [BackNavigationBehavior].
      */
-    suspend fun navigateBack(
+    public suspend fun navigateBack(
         backNavigationBehavior: BackNavigationBehavior =
             BackNavigationBehavior.PopUntilScaffoldValueChange
     ): Boolean
@@ -170,7 +170,7 @@ interface ThreePaneScaffoldNavigator<T> {
      *   during the back navigation. See [BackNavigationBehavior].
      * @param fraction the progress fraction of the transition of backwards navigation.
      */
-    suspend fun seekBack(
+    public suspend fun seekBack(
         backNavigationBehavior: BackNavigationBehavior =
             BackNavigationBehavior.PopUntilScaffoldValueChange,
         @FloatRange(from = 0.0, to = 1.0) fraction: Float = 1.0f,
@@ -199,9 +199,9 @@ interface ThreePaneScaffoldNavigator<T> {
  */
 @ExperimentalMaterial3AdaptiveApi
 @Composable
-fun <T> rememberListDetailPaneScaffoldNavigator(
+public fun <T> rememberListDetailPaneScaffoldNavigator(
     scaffoldDirective: PaneScaffoldDirective =
-        calculatePaneScaffoldDirective(currentWindowAdaptiveInfo()),
+        calculatePaneScaffoldDirective(currentWindowAdaptiveInfoV2()),
     adaptStrategies: ThreePaneScaffoldAdaptStrategies =
         ListDetailPaneScaffoldDefaults.adaptStrategies(),
     isDestinationHistoryAware: Boolean = true,
@@ -212,7 +212,7 @@ fun <T> rememberListDetailPaneScaffoldNavigator(
         scaffoldDirective,
         adaptStrategies,
         isDestinationHistoryAware,
-        initialDestinationHistory
+        initialDestinationHistory,
     )
 
 /**
@@ -232,9 +232,10 @@ fun <T> rememberListDetailPaneScaffoldNavigator(
  */
 @ExperimentalMaterial3AdaptiveApi
 @Composable
-fun rememberListDetailPaneScaffoldNavigator(
+@Suppress("DEPRECATION") // TODO (conradchen): deprecate this and support V2 of it
+public fun rememberListDetailPaneScaffoldNavigator(
     scaffoldDirective: PaneScaffoldDirective =
-        calculatePaneScaffoldDirective(currentWindowAdaptiveInfo()),
+        calculatePaneScaffoldDirective(currentWindowAdaptiveInfoV2()),
     adaptStrategies: ThreePaneScaffoldAdaptStrategies =
         ListDetailPaneScaffoldDefaults.adaptStrategies(),
     isDestinationHistoryAware: Boolean = true,
@@ -267,9 +268,10 @@ fun rememberListDetailPaneScaffoldNavigator(
  */
 @ExperimentalMaterial3AdaptiveApi
 @Composable
-fun <T> rememberSupportingPaneScaffoldNavigator(
+@Suppress("DEPRECATION") // TODO (conradchen): deprecate this and support V2 of it
+public fun <T> rememberSupportingPaneScaffoldNavigator(
     scaffoldDirective: PaneScaffoldDirective =
-        calculatePaneScaffoldDirective(currentWindowAdaptiveInfo()),
+        calculatePaneScaffoldDirective(currentWindowAdaptiveInfoV2()),
     adaptStrategies: ThreePaneScaffoldAdaptStrategies =
         SupportingPaneScaffoldDefaults.adaptStrategies(),
     isDestinationHistoryAware: Boolean = true,
@@ -280,7 +282,7 @@ fun <T> rememberSupportingPaneScaffoldNavigator(
         scaffoldDirective,
         adaptStrategies,
         isDestinationHistoryAware,
-        initialDestinationHistory
+        initialDestinationHistory,
     )
 
 /**
@@ -300,9 +302,9 @@ fun <T> rememberSupportingPaneScaffoldNavigator(
  */
 @ExperimentalMaterial3AdaptiveApi
 @Composable
-fun rememberSupportingPaneScaffoldNavigator(
+public fun rememberSupportingPaneScaffoldNavigator(
     scaffoldDirective: PaneScaffoldDirective =
-        calculatePaneScaffoldDirective(currentWindowAdaptiveInfo()),
+        calculatePaneScaffoldDirective(currentWindowAdaptiveInfoV2()),
     adaptStrategies: ThreePaneScaffoldAdaptStrategies =
         SupportingPaneScaffoldDefaults.adaptStrategies(),
     isDestinationHistoryAware: Boolean = true,
@@ -319,21 +321,21 @@ internal fun <T> rememberThreePaneScaffoldNavigator(
     scaffoldDirective: PaneScaffoldDirective,
     adaptStrategies: ThreePaneScaffoldAdaptStrategies,
     isDestinationHistoryAware: Boolean,
-    initialDestinationHistory: List<ThreePaneScaffoldDestinationItem<T>>
+    initialDestinationHistory: List<ThreePaneScaffoldDestinationItem<T>>,
 ): ThreePaneScaffoldNavigator<T> =
     rememberSaveable(
             saver =
                 DefaultThreePaneScaffoldNavigator.saver(
                     scaffoldDirective,
                     adaptStrategies,
-                    isDestinationHistoryAware
+                    isDestinationHistoryAware,
                 )
         ) {
             DefaultThreePaneScaffoldNavigator(
                 initialDestinationHistory = initialDestinationHistory,
                 initialScaffoldDirective = scaffoldDirective,
                 initialAdaptStrategies = adaptStrategies,
-                initialIsDestinationHistoryAware = isDestinationHistoryAware
+                initialIsDestinationHistoryAware = isDestinationHistoryAware,
             )
         }
         .apply {
@@ -347,7 +349,7 @@ internal class DefaultThreePaneScaffoldNavigator<T>(
     initialDestinationHistory: List<ThreePaneScaffoldDestinationItem<T>>,
     initialScaffoldDirective: PaneScaffoldDirective,
     initialAdaptStrategies: ThreePaneScaffoldAdaptStrategies,
-    initialIsDestinationHistoryAware: Boolean
+    initialIsDestinationHistoryAware: Boolean,
 ) : ThreePaneScaffoldNavigator<T> {
 
     private val destinationHistory =
@@ -386,9 +388,7 @@ internal class DefaultThreePaneScaffoldNavigator<T>(
     override fun canNavigateBack(backNavigationBehavior: BackNavigationBehavior): Boolean =
         getPreviousDestinationIndex(backNavigationBehavior) >= 0
 
-    override suspend fun navigateBack(
-        backNavigationBehavior: BackNavigationBehavior,
-    ): Boolean {
+    override suspend fun navigateBack(backNavigationBehavior: BackNavigationBehavior): Boolean {
         val previousDestinationIndex = getPreviousDestinationIndex(backNavigationBehavior)
         if (previousDestinationIndex < 0) {
             destinationHistory.clear()
@@ -460,21 +460,21 @@ internal class DefaultThreePaneScaffoldNavigator<T>(
                 maxHorizontalPartitions = scaffoldDirective.maxHorizontalPartitions,
                 maxVerticalPartitions = scaffoldDirective.maxVerticalPartitions,
                 adaptStrategies = adaptStrategies,
-                currentDestination = null
+                currentDestination = null,
             )
         } else if (isDestinationHistoryAware) {
             calculateThreePaneScaffoldValue(
                 maxHorizontalPartitions = scaffoldDirective.maxHorizontalPartitions,
                 maxVerticalPartitions = scaffoldDirective.maxVerticalPartitions,
                 adaptStrategies = adaptStrategies,
-                destinationHistory = destinationHistory.subList(0, destinationIndex + 1)
+                destinationHistory = destinationHistory.subList(0, destinationIndex + 1),
             )
         } else {
             calculateThreePaneScaffoldValue(
                 maxHorizontalPartitions = scaffoldDirective.maxHorizontalPartitions,
                 maxVerticalPartitions = scaffoldDirective.maxVerticalPartitions,
                 adaptStrategies = adaptStrategies,
-                currentDestination = destinationHistory[destinationIndex]
+                currentDestination = destinationHistory[destinationIndex],
             )
         }
 
@@ -483,7 +483,7 @@ internal class DefaultThreePaneScaffoldNavigator<T>(
         fun <T> saver(
             initialScaffoldDirective: PaneScaffoldDirective,
             initialAdaptStrategies: ThreePaneScaffoldAdaptStrategies,
-            initialDestinationHistoryAware: Boolean
+            initialDestinationHistoryAware: Boolean,
         ): Saver<DefaultThreePaneScaffoldNavigator<T>, *> {
             val destinationItemSaver = destinationItemSaver<T>()
             return listSaver(
@@ -500,9 +500,9 @@ internal class DefaultThreePaneScaffoldNavigator<T>(
                             },
                         initialScaffoldDirective = initialScaffoldDirective,
                         initialAdaptStrategies = initialAdaptStrategies,
-                        initialIsDestinationHistoryAware = initialDestinationHistoryAware
+                        initialIsDestinationHistoryAware = initialDestinationHistoryAware,
                     )
-                }
+                },
             )
         }
     }
@@ -516,9 +516,9 @@ internal fun <T> destinationItemSaver(): Saver<ThreePaneScaffoldDestinationItem<
             @Suppress("UNCHECKED_CAST")
             (ThreePaneScaffoldDestinationItem(
                 pane = it[0] as ThreePaneScaffoldRole,
-                contentKey = it[1] as T?
+                contentKey = it[1] as T?,
             ))
-        }
+        },
     )
 
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)

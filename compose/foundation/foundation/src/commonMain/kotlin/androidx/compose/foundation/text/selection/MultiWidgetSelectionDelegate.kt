@@ -16,13 +16,17 @@
 
 package androidx.compose.foundation.text.selection
 
+import androidx.compose.foundation.ComposeFoundationFlags
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.platform.makeSynchronizedObject
 import androidx.compose.foundation.platform.synchronized
+import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.text.getLineHeight
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.isUnspecified
 import androidx.compose.ui.layout.LayoutCoordinates
+import androidx.compose.ui.layout.PinnableContainer
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextRange
@@ -31,7 +35,9 @@ import kotlin.math.max
 internal class MultiWidgetSelectionDelegate(
     override val selectableId: Long,
     private val coordinatesCallback: () -> LayoutCoordinates?,
-    private val layoutResultCallback: () -> TextLayoutResult?
+    private val layoutResultCallback: () -> TextLayoutResult?,
+    private val pinnableContainerCallback: () -> PinnableContainer? = { null },
+    override val bringIntoViewRequester: BringIntoViewRequester? = null,
 ) : Selectable {
     private val lock = makeSynchronizedObject(this)
 
@@ -39,6 +45,9 @@ internal class MultiWidgetSelectionDelegate(
 
     // previously calculated `lastVisibleOffset` for the `_previousTextLayoutResult`
     private var _previousLastVisibleOffset: Int = -1
+
+    override val pinnableContainer: PinnableContainer?
+        get() = pinnableContainerCallback()
 
     /**
      * TextLayoutResult is not expected to change repeatedly in a BasicText composable. At least
@@ -83,6 +92,33 @@ internal class MultiWidgetSelectionDelegate(
         val relativePosition =
             builder.containerCoordinates.localPositionOf(layoutCoordinates, Offset.Zero)
         val localPosition = builder.currentPosition - relativePosition
+
+        // `localPreviousHandlePosition` below is used by `appendSelectableInfo` to compute
+        // `SelectableInfo.rawPreviousHandleOffset`.
+        // Unfortunately, if the selectable has moved (relative to the container) since the
+        // "previous" SelectionLayout was created, it's not possible to compute
+        // `SelectableInfo.rawPreviousHandleOffset` correctly from just `previousHandlePosition`.
+        // `localPreviousHandlePosition` below will be incorrect in this case because it's computed
+        // by converting the previous position (in container coordinates) via the *current*
+        // selectable coordinates, but what is needed is a conversion via the *previous* selectable
+        // coordinates.
+        // Luckily, during a sequence of selection changes, we have access to the actual
+        // previous SelectionLayout (except for the first change, but there the selectable hasn't
+        // moved), so we can just take the `SelectableInfo.rawPreviousHandleOffset` from there and
+        // avoid the computation altogether.
+        val rawPreviousHandleOffset =
+            @OptIn(ExperimentalFoundationApi::class)
+            if (ComposeFoundationFlags.isSelectionAutoScrollEnabled) {
+                val selectableInfo = builder.previousLayout?.infoForSelectable(selectableId)
+                if (selectableInfo != null) {
+                    if (builder.isStartHandle) {
+                        selectableInfo.rawStartHandleOffset
+                    } else {
+                        selectableInfo.rawEndHandleOffset
+                    }
+                } else -1
+            } else -1
+
         val localPreviousHandlePosition =
             if (builder.previousHandlePosition.isUnspecified) {
                 Offset.Unspecified
@@ -93,6 +129,7 @@ internal class MultiWidgetSelectionDelegate(
         builder.appendSelectableInfo(
             textLayoutResult = textLayoutResult,
             localPosition = localPosition,
+            givenRawPreviousHandleOffset = rawPreviousHandleOffset,
             previousHandlePosition = localPreviousHandlePosition,
             selectableId = selectableId,
         )
@@ -108,15 +145,15 @@ internal class MultiWidgetSelectionDelegate(
                 Selection.AnchorInfo(
                     direction = textLayoutResult.getBidiRunDirection(start),
                     offset = start,
-                    selectableId = selectableId
+                    selectableId = selectableId,
                 ),
             end =
                 Selection.AnchorInfo(
                     direction = textLayoutResult.getBidiRunDirection(max(end - 1, 0)),
                     offset = end,
-                    selectableId = selectableId
+                    selectableId = selectableId,
                 ),
-            handlesCrossed = false
+            handlesCrossed = false,
         )
     }
 
@@ -138,7 +175,7 @@ internal class MultiWidgetSelectionDelegate(
             textLayoutResult = textLayoutResult,
             offset = coercedOffset,
             isStart = isStartHandle,
-            areHandlesCrossed = selection.handlesCrossed
+            areHandlesCrossed = selection.handlesCrossed,
         )
     }
 
@@ -194,7 +231,7 @@ internal class MultiWidgetSelectionDelegate(
         val line = textLayoutResult.getLineForOffset(offset.coerceIn(0, visibleTextLength - 1))
         return TextRange(
             start = textLayoutResult.getLineStart(line),
-            end = textLayoutResult.getLineEnd(line, visibleEnd = true)
+            end = textLayoutResult.getLineEnd(line, visibleEnd = true),
         )
     }
 
@@ -214,12 +251,15 @@ internal class MultiWidgetSelectionDelegate(
  * @param textLayoutResult the [TextLayoutResult] for the selectable
  * @param localPosition the position of the current handle if not being dragged or the drag position
  *   if it is
+ * @param givenRawPreviousHandleOffset the raw handle offset of the previous handle; -1 if and needs
+ *   to be recomputed from [previousHandlePosition]
  * @param previousHandlePosition the position of the previous handle
  * @param selectableId the selectableId for the selectable
  */
 internal fun SelectionLayoutBuilder.appendSelectableInfo(
     textLayoutResult: TextLayoutResult,
     localPosition: Offset,
+    givenRawPreviousHandleOffset: Int,
     previousHandlePosition: Offset,
     selectableId: Long,
 ) {
@@ -228,7 +268,7 @@ internal fun SelectionLayoutBuilder.appendSelectableInfo(
             0.0f,
             0.0f,
             textLayoutResult.size.width.toFloat(),
-            textLayoutResult.size.height.toFloat()
+            textLayoutResult.size.height.toFloat(),
         )
 
     val currentXDirection = getXDirection(localPosition, bounds)
@@ -257,8 +297,10 @@ internal fun SelectionLayoutBuilder.appendSelectableInfo(
         endYHandleDirection = currentYDirection
     }
 
-    if (!isSelected(resolve2dDirection(currentXDirection, currentYDirection), otherDirection)) {
-        return
+    if (!allowSelectionBetweenSelectables) {
+        if (!isSelected(resolve2dDirection(currentXDirection, currentYDirection), otherDirection)) {
+            return
+        }
     }
 
     val textLength = textLayoutResult.layoutInput.text.length
@@ -272,7 +314,7 @@ internal fun SelectionLayoutBuilder.appendSelectableInfo(
                 ?.getPreviousAdjustedOffset(
                     selectableIdOrderingComparator,
                     selectableId,
-                    textLength
+                    textLength,
                 ) ?: rawStartHandleOffset
     } else {
         rawEndHandleOffset = getOffsetForPosition(localPosition, textLayoutResult)
@@ -282,14 +324,15 @@ internal fun SelectionLayoutBuilder.appendSelectableInfo(
                 ?.getPreviousAdjustedOffset(
                     selectableIdOrderingComparator,
                     selectableId,
-                    textLength
+                    textLength,
                 ) ?: rawEndHandleOffset
     }
 
     val rawPreviousHandleOffset =
-        if (previousHandlePosition.isUnspecified) -1
-        else {
-            getOffsetForPosition(previousHandlePosition, textLayoutResult)
+        when {
+            givenRawPreviousHandleOffset != -1 -> givenRawPreviousHandleOffset
+            previousHandlePosition.isUnspecified -> -1
+            else -> getOffsetForPosition(previousHandlePosition, textLayoutResult)
         }
 
     appendInfo(
@@ -308,7 +351,7 @@ internal fun SelectionLayoutBuilder.appendSelectableInfo(
 private fun Selection.AnchorInfo.getPreviousAdjustedOffset(
     selectableIdOrderingComparator: Comparator<Long>,
     currentSelectableId: Long,
-    currentTextLength: Int
+    currentTextLength: Int,
 ): Int {
     val compareResult =
         selectableIdOrderingComparator.compare(this.selectableId, currentSelectableId)

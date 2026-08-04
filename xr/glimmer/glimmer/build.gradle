@@ -1,0 +1,74 @@
+/*
+ * Copyright (C) 2025 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/**
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
+ *
+ * Please use the task when creating a new project, rather than copying an existing project and
+ * modifying its settings.
+ */
+import androidx.build.SoftwareType
+
+plugins {
+    id("AndroidXPlugin")
+    id("AndroidXComposePlugin")
+    id("com.android.library")
+}
+
+dependencies {
+    api("androidx.compose.foundation:foundation:1.12.0-beta02")
+    api("androidx.compose.ui:ui:1.12.0-beta02")
+    api("androidx.compose.runtime:runtime:1.12.0-beta02")
+    api("androidx.annotation:annotation:1.9.1")
+
+    // Force tests to occur against Foundation ToT, even we pin Glimmer's main Foundation dependency
+    androidTestImplementation(project(":compose:foundation:foundation"))
+    androidTestImplementation(project(":compose:ui:ui"))
+    androidTestImplementation(project(":compose:runtime:runtime"))
+    androidTestImplementation(project(":compose:ui:ui-test"))
+    androidTestImplementation(project(":compose:ui:ui-test-junit4"))
+    androidTestImplementation(project(":compose:test-utils"))
+    androidTestImplementation(project(":test:screenshot:screenshot"))
+    androidTestImplementation(project(":xr:glimmer:glimmer:glimmer-samples"))
+    androidTestImplementation(project(":xr:glimmer:test-utils"))
+
+    androidTestImplementation("androidx.core:core:1.16.0")
+    androidTestImplementation(libs.espressoCore)
+    androidTestImplementation(libs.testRules)
+    androidTestImplementation(libs.testRunner)
+    androidTestImplementation(libs.junit)
+    androidTestImplementation(libs.truth)
+
+    testImplementation(libs.junit)
+    testImplementation(libs.truth)
+}
+
+android {
+    namespace = "androidx.xr.glimmer"
+    compileSdk { version = release(37) }
+    defaultConfig {
+        testInstrumentationRunner "androidx.xr.glimmer.GlimmerTestRunner"
+    }
+}
+
+androidx {
+    name = "Compose Glimmer"
+    type = SoftwareType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
+    inceptionYear = "2025"
+    description = "Jetpack Compose Glimmer, the UI library for augmented Android XR experiences"
+    addGoldenImageAssets()
+    samples(project(":xr:glimmer:glimmer:glimmer-samples"))
+}

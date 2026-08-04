@@ -54,7 +54,7 @@ import androidx.core.content.ContextCompat
 import kotlin.math.min
 
 /** A collection of some standard activity call contracts, as provided by android. */
-class ActivityResultContracts private constructor() {
+public class ActivityResultContracts private constructor() {
     /**
      * An [ActivityResultContract] that doesn't do any type conversion, taking raw [Intent] as an
      * input and [ActivityResult] as an output.
@@ -63,9 +63,9 @@ class ActivityResultContracts private constructor() {
      * avoid having to manage request codes when calling an activity API for which a type-safe
      * contract is not available.
      */
-    class StartActivityForResult : ActivityResultContract<Intent, ActivityResult>() {
+    public class StartActivityForResult : ActivityResultContract<Intent, ActivityResult>() {
 
-        companion object {
+        public companion object {
             /**
              * Key for the extra containing a [android.os.Bundle] generated from
              * [androidx.core.app.ActivityOptionsCompat.toBundle] or
@@ -74,7 +74,7 @@ class ActivityResultContracts private constructor() {
              * This will override any [androidx.core.app.ActivityOptionsCompat] passed to
              * [androidx.activity.result.ActivityResultLauncher.launch]
              */
-            const val EXTRA_ACTIVITY_OPTIONS_BUNDLE =
+            public const val EXTRA_ACTIVITY_OPTIONS_BUNDLE: String =
                 "androidx.activity.result.contract.extra.ACTIVITY_OPTIONS_BUNDLE"
         }
 
@@ -97,15 +97,15 @@ class ActivityResultContracts private constructor() {
      * of [ACTION_INTENT_SENDER_REQUEST] and an extra [EXTRA_SEND_INTENT_EXCEPTION] that contains
      * the thrown exception.
      */
-    class StartIntentSenderForResult :
+    public class StartIntentSenderForResult :
         ActivityResultContract<IntentSenderRequest, ActivityResult>() {
 
-        companion object {
+        public companion object {
             /**
              * An [Intent] action for making a request via the [Activity.startIntentSenderForResult]
              * API.
              */
-            const val ACTION_INTENT_SENDER_REQUEST =
+            public const val ACTION_INTENT_SENDER_REQUEST: String =
                 "androidx.activity.result.contract.action.INTENT_SENDER_REQUEST"
 
             /**
@@ -113,14 +113,14 @@ class ActivityResultContracts private constructor() {
              *
              * @see ACTION_INTENT_SENDER_REQUEST
              */
-            const val EXTRA_INTENT_SENDER_REQUEST =
+            public const val EXTRA_INTENT_SENDER_REQUEST: String =
                 "androidx.activity.result.contract.extra.INTENT_SENDER_REQUEST"
 
             /**
              * Key for the extra containing the [android.content.IntentSender.SendIntentException]
              * if the call to [Activity.startIntentSenderForResult] fails.
              */
-            const val EXTRA_SEND_INTENT_EXCEPTION =
+            public const val EXTRA_SEND_INTENT_EXCEPTION: String =
                 "androidx.activity.result.contract.extra.SEND_INTENT_EXCEPTION"
         }
 
@@ -133,10 +133,10 @@ class ActivityResultContracts private constructor() {
     }
 
     /** An [ActivityResultContract] to [request permissions][Activity.requestPermissions] */
-    class RequestMultiplePermissions :
+    public class RequestMultiplePermissions :
         ActivityResultContract<Array<String>, Map<String, @JvmSuppressWildcards Boolean>>() {
 
-        companion object {
+        public companion object {
             /**
              * An [Intent] action for making a permission request via a regular
              * [Activity.startActivityForResult] API.
@@ -150,7 +150,7 @@ class ActivityResultContracts private constructor() {
              * @see Activity.requestPermissions
              * @see Activity.onRequestPermissionsResult
              */
-            const val ACTION_REQUEST_PERMISSIONS =
+            public const val ACTION_REQUEST_PERMISSIONS: String =
                 "androidx.activity.result.contract.action.REQUEST_PERMISSIONS"
 
             /**
@@ -158,14 +158,15 @@ class ActivityResultContracts private constructor() {
              *
              * @see ACTION_REQUEST_PERMISSIONS
              */
-            const val EXTRA_PERMISSIONS = "androidx.activity.result.contract.extra.PERMISSIONS"
+            public const val EXTRA_PERMISSIONS: String =
+                "androidx.activity.result.contract.extra.PERMISSIONS"
 
             /**
              * Key for the extra containing whether permissions were granted.
              *
              * @see ACTION_REQUEST_PERMISSIONS
              */
-            const val EXTRA_PERMISSION_GRANT_RESULTS =
+            public const val EXTRA_PERMISSION_GRANT_RESULTS: String =
                 "androidx.activity.result.contract.extra.PERMISSION_GRANT_RESULTS"
 
             internal fun createIntent(input: Array<String>): Intent {
@@ -179,7 +180,7 @@ class ActivityResultContracts private constructor() {
 
         override fun getSynchronousResult(
             context: Context,
-            input: Array<String>
+            input: Array<String>,
         ): SynchronousResult<Map<String, Boolean>>? {
             if (input.isEmpty()) {
                 return SynchronousResult(emptyMap())
@@ -207,7 +208,7 @@ class ActivityResultContracts private constructor() {
     }
 
     /** An [ActivityResultContract] to [request a permission][Activity.requestPermissions] */
-    class RequestPermission : ActivityResultContract<String, Boolean>() {
+    public class RequestPermission : ActivityResultContract<String, Boolean>() {
         override fun createIntent(context: Context, input: String): Intent {
             return RequestMultiplePermissions.createIntent(arrayOf(input))
         }
@@ -223,7 +224,7 @@ class ActivityResultContracts private constructor() {
 
         override fun getSynchronousResult(
             context: Context,
-            input: String
+            input: String,
         ): SynchronousResult<Boolean>? {
             val granted =
                 ContextCompat.checkSelfPermission(context, input) ==
@@ -244,15 +245,17 @@ class ActivityResultContracts private constructor() {
      * This can be extended to override [createIntent] if you wish to pass additional extras to the
      * Intent created by `super.createIntent()`.
      */
-    open class TakePicturePreview : ActivityResultContract<Void?, Bitmap?>() {
+    public open class TakePicturePreview : ActivityResultContract<Void?, Bitmap?>() {
         @CallSuper
         override fun createIntent(context: Context, input: Void?): Intent {
             return Intent(MediaStore.ACTION_IMAGE_CAPTURE)
+                .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                .addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
         }
 
         final override fun getSynchronousResult(
             context: Context,
-            input: Void?
+            input: Void?,
         ): SynchronousResult<Bitmap?>? = null
 
         @Suppress("DEPRECATION")
@@ -270,15 +273,18 @@ class ActivityResultContracts private constructor() {
      * This can be extended to override [createIntent] if you wish to pass additional extras to the
      * Intent created by `super.createIntent()`.
      */
-    open class TakePicture : ActivityResultContract<Uri, Boolean>() {
+    public open class TakePicture : ActivityResultContract<Uri, Boolean>() {
         @CallSuper
         override fun createIntent(context: Context, input: Uri): Intent {
-            return Intent(MediaStore.ACTION_IMAGE_CAPTURE).putExtra(MediaStore.EXTRA_OUTPUT, input)
+            return Intent(MediaStore.ACTION_IMAGE_CAPTURE)
+                .putExtra(MediaStore.EXTRA_OUTPUT, input)
+                .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                .addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
         }
 
         final override fun getSynchronousResult(
             context: Context,
-            input: Uri
+            input: Uri,
         ): SynchronousResult<Boolean>? = null
 
         @Suppress("AutoBoxing")
@@ -300,15 +306,18 @@ class ActivityResultContracts private constructor() {
         """The thumbnail bitmap is rarely returned and is not a good signal to determine
       whether the video was actually successfully captured. Use {@link CaptureVideo} instead."""
     )
-    open class TakeVideo : ActivityResultContract<Uri, Bitmap?>() {
+    public open class TakeVideo : ActivityResultContract<Uri, Bitmap?>() {
         @CallSuper
         override fun createIntent(context: Context, input: Uri): Intent {
-            return Intent(MediaStore.ACTION_VIDEO_CAPTURE).putExtra(MediaStore.EXTRA_OUTPUT, input)
+            return Intent(MediaStore.ACTION_VIDEO_CAPTURE)
+                .putExtra(MediaStore.EXTRA_OUTPUT, input)
+                .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                .addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
         }
 
         final override fun getSynchronousResult(
             context: Context,
-            input: Uri
+            input: Uri,
         ): SynchronousResult<Bitmap?>? = null
 
         @Suppress("DEPRECATION")
@@ -326,15 +335,18 @@ class ActivityResultContracts private constructor() {
      * This can be extended to override [createIntent] if you wish to pass additional extras to the
      * Intent created by `super.createIntent()`.
      */
-    open class CaptureVideo : ActivityResultContract<Uri, Boolean>() {
+    public open class CaptureVideo : ActivityResultContract<Uri, Boolean>() {
         @CallSuper
         override fun createIntent(context: Context, input: Uri): Intent {
-            return Intent(MediaStore.ACTION_VIDEO_CAPTURE).putExtra(MediaStore.EXTRA_OUTPUT, input)
+            return Intent(MediaStore.ACTION_VIDEO_CAPTURE)
+                .putExtra(MediaStore.EXTRA_OUTPUT, input)
+                .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                .addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
         }
 
         final override fun getSynchronousResult(
             context: Context,
-            input: Uri
+            input: Uri,
         ): SynchronousResult<Boolean>? = null
 
         @Suppress("AutoBoxing")
@@ -350,7 +362,7 @@ class ActivityResultContracts private constructor() {
      *
      * @see ContactsContract
      */
-    class PickContact : ActivityResultContract<Void?, Uri?>() {
+    public class PickContact : ActivityResultContract<Void?, Uri?>() {
         override fun createIntent(context: Context, input: Void?): Intent {
             return Intent(Intent.ACTION_PICK).setType(ContactsContract.Contacts.CONTENT_TYPE)
         }
@@ -371,7 +383,7 @@ class ActivityResultContracts private constructor() {
      * This can be extended to override [createIntent] if you wish to pass additional extras to the
      * Intent created by `super.createIntent()`.
      */
-    open class GetContent : ActivityResultContract<String, Uri?>() {
+    public open class GetContent : ActivityResultContract<String, Uri?>() {
         @CallSuper
         override fun createIntent(context: Context, input: String): Intent {
             return Intent(Intent.ACTION_GET_CONTENT)
@@ -381,7 +393,7 @@ class ActivityResultContracts private constructor() {
 
         final override fun getSynchronousResult(
             context: Context,
-            input: String
+            input: String,
         ): SynchronousResult<Uri?>? = null
 
         final override fun parseResult(resultCode: Int, intent: Intent?): Uri? {
@@ -400,7 +412,7 @@ class ActivityResultContracts private constructor() {
      * This can be extended to override [createIntent] if you wish to pass additional extras to the
      * Intent created by `super.createIntent()`.
      */
-    open class GetMultipleContents :
+    public open class GetMultipleContents :
         ActivityResultContract<String, List<@JvmSuppressWildcards Uri>>() {
         @CallSuper
         override fun createIntent(context: Context, input: String): Intent {
@@ -412,7 +424,7 @@ class ActivityResultContracts private constructor() {
 
         final override fun getSynchronousResult(
             context: Context,
-            input: String
+            input: String,
         ): SynchronousResult<List<Uri>>? = null
 
         final override fun parseResult(resultCode: Int, intent: Intent?): List<Uri> {
@@ -453,7 +465,7 @@ class ActivityResultContracts private constructor() {
      *
      * @see DocumentsContract
      */
-    open class OpenDocument : ActivityResultContract<Array<String>, Uri?>() {
+    public open class OpenDocument : ActivityResultContract<Array<String>, Uri?>() {
         @CallSuper
         override fun createIntent(context: Context, input: Array<String>): Intent {
             return Intent(Intent.ACTION_OPEN_DOCUMENT)
@@ -463,7 +475,7 @@ class ActivityResultContracts private constructor() {
 
         final override fun getSynchronousResult(
             context: Context,
-            input: Array<String>
+            input: Array<String>,
         ): SynchronousResult<Uri?>? = null
 
         final override fun parseResult(resultCode: Int, intent: Intent?): Uri? {
@@ -482,7 +494,7 @@ class ActivityResultContracts private constructor() {
      *
      * @see DocumentsContract
      */
-    open class OpenMultipleDocuments :
+    public open class OpenMultipleDocuments :
         ActivityResultContract<Array<String>, List<@JvmSuppressWildcards Uri>>() {
         @CallSuper
         override fun createIntent(context: Context, input: Array<String>): Intent {
@@ -494,7 +506,7 @@ class ActivityResultContracts private constructor() {
 
         final override fun getSynchronousResult(
             context: Context,
-            input: Array<String>
+            input: Array<String>,
         ): SynchronousResult<List<Uri>>? = null
 
         final override fun parseResult(resultCode: Int, intent: Intent?): List<Uri> {
@@ -516,8 +528,7 @@ class ActivityResultContracts private constructor() {
      * @see DocumentsContract.buildDocumentUriUsingTree
      * @see DocumentsContract.buildChildDocumentsUriUsingTree
      */
-    @RequiresApi(21)
-    open class OpenDocumentTree : ActivityResultContract<Uri?, Uri?>() {
+    public open class OpenDocumentTree : ActivityResultContract<Uri?, Uri?>() {
         @CallSuper
         override fun createIntent(context: Context, input: Uri?): Intent {
             val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE)
@@ -529,7 +540,7 @@ class ActivityResultContracts private constructor() {
 
         final override fun getSynchronousResult(
             context: Context,
-            input: Uri?
+            input: Uri?,
         ): SynchronousResult<Uri?>? = null
 
         final override fun parseResult(resultCode: Int, intent: Intent?): Uri? {
@@ -546,7 +557,7 @@ class ActivityResultContracts private constructor() {
      * This can be extended to override [createIntent] if you wish to pass additional extras to the
      * Intent created by `super.createIntent()`.
      */
-    open class CreateDocument(private val mimeType: String) :
+    public open class CreateDocument(private val mimeType: String) :
         ActivityResultContract<String, Uri?>() {
 
         @Deprecated(
@@ -554,9 +565,9 @@ class ActivityResultContracts private constructor() {
                 "the automatic handling of file extensions. Instead, specify the mime type by " +
                 "using the constructor that takes an concrete mime type (e.g.., " +
                 "CreateDocument(\"image/png\")).",
-            ReplaceWith("CreateDocument(\"todo/todo\")")
+            ReplaceWith("CreateDocument(\"todo/todo\")"),
         )
-        constructor() : this("*/*")
+        public constructor() : this("*/*")
 
         @CallSuper
         override fun createIntent(context: Context, input: String): Intent {
@@ -567,7 +578,7 @@ class ActivityResultContracts private constructor() {
 
         final override fun getSynchronousResult(
             context: Context,
-            input: String
+            input: String,
         ): SynchronousResult<Uri?>? = null
 
         final override fun parseResult(resultCode: Int, intent: Intent?): Uri? {
@@ -600,8 +611,8 @@ class ActivityResultContracts private constructor() {
      * This can be extended to override [createIntent] if you wish to pass additional extras to the
      * Intent created by `super.createIntent()`.
      */
-    open class PickVisualMedia : ActivityResultContract<PickVisualMediaRequest, Uri?>() {
-        companion object {
+    public open class PickVisualMedia : ActivityResultContract<PickVisualMediaRequest, Uri?>() {
+        public companion object {
             /**
              * Check if the current device has support for the photo picker by checking the running
              * Android version or the SDK extension version.
@@ -614,10 +625,10 @@ class ActivityResultContracts private constructor() {
                 message =
                     "This method is deprecated in favor of isPhotoPickerAvailable(context) " +
                         "to support the picker provided by updatable system apps",
-                replaceWith = ReplaceWith("isPhotoPickerAvailable(context)")
+                replaceWith = ReplaceWith("isPhotoPickerAvailable(context)"),
             )
             @JvmStatic
-            fun isPhotoPickerAvailable(): Boolean {
+            public fun isPhotoPickerAvailable(): Boolean {
                 return isSystemPickerAvailable()
             }
 
@@ -633,8 +644,8 @@ class ActivityResultContracts private constructor() {
              * Note: this should not be used directly, instead relying on the selection logic done
              * by [createIntent] to create the correct Intent for the current device.
              */
-            @Suppress("ActionValue") /* Don't include SYSTEM_FALLBACK in the action */
-            const val ACTION_SYSTEM_FALLBACK_PICK_IMAGES =
+            @field:Suppress("ActionValue") /* Don't include SYSTEM_FALLBACK in the action */
+            public const val ACTION_SYSTEM_FALLBACK_PICK_IMAGES: String =
                 "androidx.activity.result.contract.action.PICK_IMAGES"
 
             internal const val GMS_ACTION_PICK_IMAGES =
@@ -652,8 +663,8 @@ class ActivityResultContracts private constructor() {
              * If this extra is present but equal to [Int.MAX_VALUE], then no limit should be
              * enforced.
              */
-            @Suppress("ActionValue") /* Don't include SYSTEM_FALLBACK in the extra */
-            const val EXTRA_SYSTEM_FALLBACK_PICK_IMAGES_MAX =
+            @field:Suppress("ActionValue") /* Don't include SYSTEM_FALLBACK in the extra */
+            public const val EXTRA_SYSTEM_FALLBACK_PICK_IMAGES_MAX: String =
                 "androidx.activity.result.contract.extra.PICK_IMAGES_MAX"
 
             /**
@@ -663,9 +674,9 @@ class ActivityResultContracts private constructor() {
              *
              * If this extra is not present, the default tab of the picker will be used.
              */
-            @Suppress("ActionValue")
+            @field:Suppress("ActionValue")
             /* Don't include SYSTEM_FALLBACK in the extra */
-            const val EXTRA_SYSTEM_FALLBACK_PICK_IMAGES_LAUNCH_TAB =
+            public const val EXTRA_SYSTEM_FALLBACK_PICK_IMAGES_LAUNCH_TAB: String =
                 "androidx.activity.result.contract.extra.PICK_IMAGES_LAUNCH_TAB"
 
             /**
@@ -673,9 +684,9 @@ class ActivityResultContracts private constructor() {
              * [ACTION_SYSTEM_FALLBACK_PICK_IMAGES] that indicates allowing the user to control the
              * order in which images are returned to the calling app.
              */
-            @Suppress("ActionValue")
+            @field:Suppress("ActionValue")
             /* Don't include SYSTEM_FALLBACK in the extra */
-            const val EXTRA_SYSTEM_FALLBACK_PICK_IMAGES_IN_ORDER =
+            public const val EXTRA_SYSTEM_FALLBACK_PICK_IMAGES_IN_ORDER: String =
                 "androidx.activity.result.contract.extra.PICK_IMAGES_IN_ORDER"
 
             /**
@@ -685,9 +696,9 @@ class ActivityResultContracts private constructor() {
              *
              * If this extra is not present, the default accent color of the picker will be used.
              */
-            @Suppress("ActionValue")
+            @field:Suppress("ActionValue")
             /* Don't include SYSTEM_FALLBACK in the extra */
-            const val EXTRA_SYSTEM_FALLBACK_PICK_IMAGES_ACCENT_COLOR =
+            public const val EXTRA_SYSTEM_FALLBACK_PICK_IMAGES_ACCENT_COLOR: String =
                 "androidx.activity.result.contract.extra.PICK_IMAGES_ACCENT_COLOR"
 
             /**
@@ -697,7 +708,7 @@ class ActivityResultContracts private constructor() {
              */
             @SuppressLint("NewApi")
             @JvmStatic
-            fun isPhotoPickerAvailable(context: Context): Boolean {
+            public fun isPhotoPickerAvailable(context: Context): Boolean {
                 return isSystemPickerAvailable() || isSystemFallbackPickerAvailable(context)
             }
 
@@ -732,7 +743,7 @@ class ActivityResultContracts private constructor() {
             internal fun getSystemFallbackPicker(context: Context): ResolveInfo? {
                 return context.packageManager.resolveActivity(
                     Intent(ACTION_SYSTEM_FALLBACK_PICK_IMAGES),
-                    PackageManager.MATCH_DEFAULT_ONLY or PackageManager.MATCH_SYSTEM_ONLY
+                    PackageManager.MATCH_DEFAULT_ONLY or PackageManager.MATCH_SYSTEM_ONLY,
                 )
             }
 
@@ -747,22 +758,22 @@ class ActivityResultContracts private constructor() {
         }
 
         /** Represents filter input type accepted by the photo picker. */
-        sealed interface VisualMediaType
+        public sealed interface VisualMediaType
 
         /** [VisualMediaType] object used to filter images only when using the photo picker. */
-        object ImageOnly : VisualMediaType
+        public object ImageOnly : VisualMediaType
 
         /** [VisualMediaType] object used to filter video only when using the photo picker. */
-        object VideoOnly : VisualMediaType
+        public object VideoOnly : VisualMediaType
 
         /** [VisualMediaType] object used to filter images and video when using the photo picker. */
-        object ImageAndVideo : VisualMediaType
+        public object ImageAndVideo : VisualMediaType
 
         /**
          * [VisualMediaType] class used to filter a single mime type only when using the photo
          * picker.
          */
-        class SingleMimeType(val mimeType: String) : VisualMediaType
+        public class SingleMimeType(public val mimeType: String) : VisualMediaType
 
         /**
          * Represents the media capabilities of an application.
@@ -774,9 +785,9 @@ class ActivityResultContracts private constructor() {
          *
          * @see PickVisualMediaRequest.Builder.setMediaCapabilitiesForTranscoding
          */
-        class MediaCapabilities internal constructor() {
+        public class MediaCapabilities internal constructor() {
 
-            companion object {
+            public companion object {
                 /** Defines the type of HDR (high dynamic range). */
                 @Retention(AnnotationRetention.SOURCE)
                 @IntDef(TYPE_HLG10, TYPE_HDR10, TYPE_HDR10_PLUS, TYPE_DOLBY_VISION)
@@ -784,21 +795,21 @@ class ActivityResultContracts private constructor() {
                 @Target(
                     AnnotationTarget.TYPE,
                     AnnotationTarget.PROPERTY,
-                    AnnotationTarget.VALUE_PARAMETER
+                    AnnotationTarget.VALUE_PARAMETER,
                 )
-                annotation class HdrType
+                public annotation class HdrType
 
                 /** HDR type for HLG10. */
-                const val TYPE_HLG10 = 0
+                public const val TYPE_HLG10: Int = 0
                 /** HDR type for HDR10. */
-                const val TYPE_HDR10 = 1
+                public const val TYPE_HDR10: Int = 1
                 /** HDR type for HDR10+. */
-                const val TYPE_HDR10_PLUS = 2
+                public const val TYPE_HDR10_PLUS: Int = 2
                 /** HDR type for Dolby-Vision. */
-                const val TYPE_DOLBY_VISION = 3
+                public const val TYPE_DOLBY_VISION: Int = 3
             }
 
-            var supportedHdrTypes: Set<@HdrType Int> = emptySet()
+            public var supportedHdrTypes: Set<@HdrType Int> = emptySet()
                 internal set
 
             @RequiresApi(Build.VERSION_CODES.TIRAMISU)
@@ -819,7 +830,7 @@ class ActivityResultContracts private constructor() {
             }
 
             /** A builder for constructing [MediaCapabilities] instances. */
-            class Builder {
+            public class Builder {
 
                 private var supportedHdrTypes: MutableSet<@HdrType Int> = mutableSetOf()
 
@@ -830,7 +841,7 @@ class ActivityResultContracts private constructor() {
                  * @return This Builder.
                  * @throws IllegalArgumentException if an invalid hdrType is provided.
                  */
-                fun addSupportedHdrType(hdrType: @HdrType Int): Builder {
+                public fun addSupportedHdrType(hdrType: @HdrType Int): Builder {
                     this.supportedHdrTypes.add(hdrType)
                     return this
                 }
@@ -840,7 +851,7 @@ class ActivityResultContracts private constructor() {
                  *
                  * @return the newly constructed MediaCapabilities.
                  */
-                fun build(): MediaCapabilities =
+                public fun build(): MediaCapabilities =
                     MediaCapabilities().apply {
                         this.supportedHdrTypes = this@Builder.supportedHdrTypes
                     }
@@ -848,20 +859,20 @@ class ActivityResultContracts private constructor() {
         }
 
         /** Represents filter input type accepted by the photo picker. */
-        abstract class DefaultTab private constructor() {
-            abstract val value: Int
+        public abstract class DefaultTab private constructor() {
+            public abstract val value: Int
 
             /**
              * [DefaultTab] object used to open the picker in Photos tab (also the default if no
              * value is provided).
              */
-            object PhotosTab : DefaultTab() {
-                override val value = MediaStore.PICK_IMAGES_TAB_IMAGES
+            public object PhotosTab : DefaultTab() {
+                override val value: Int = MediaStore.PICK_IMAGES_TAB_IMAGES
             }
 
             /** [DefaultTab] object used to open the picker in Albums tab. */
-            object AlbumsTab : DefaultTab() {
-                override val value = MediaStore.PICK_IMAGES_TAB_ALBUMS
+            public object AlbumsTab : DefaultTab() {
+                override val value: Int = MediaStore.PICK_IMAGES_TAB_ALBUMS
             }
         }
 
@@ -881,7 +892,7 @@ class ActivityResultContracts private constructor() {
                         input.mediaCapabilitiesForTranscoding?.let { capabilities ->
                             putExtra(
                                 MediaStore.EXTRA_MEDIA_CAPABILITIES,
-                                capabilities.toApplicationMediaCapabilities()
+                                capabilities.toApplicationMediaCapabilities(),
                             )
                         }
                     }
@@ -917,7 +928,7 @@ class ActivityResultContracts private constructor() {
         @Suppress("InvalidNullabilityOverride")
         final override fun getSynchronousResult(
             context: Context,
-            input: PickVisualMediaRequest
+            input: PickVisualMediaRequest,
         ): SynchronousResult<Uri?>? = null
 
         final override fun parseResult(resultCode: Int, intent: Intent?): Uri? {
@@ -963,7 +974,7 @@ class ActivityResultContracts private constructor() {
      * This can be extended to override [createIntent] if you wish to pass additional extras to the
      * Intent created by `super.createIntent()`.
      */
-    open class PickMultipleVisualMedia(private val maxItems: Int = getMaxItems()) :
+    public open class PickMultipleVisualMedia(private val maxItems: Int = getMaxItems()) :
         ActivityResultContract<PickVisualMediaRequest, List<@JvmSuppressWildcards Uri>>() {
 
         init {
@@ -998,7 +1009,7 @@ class ActivityResultContracts private constructor() {
                         input.mediaCapabilitiesForTranscoding?.let { capabilities ->
                             putExtra(
                                 MediaStore.EXTRA_MEDIA_CAPABILITIES,
-                                capabilities.toApplicationMediaCapabilities()
+                                capabilities.toApplicationMediaCapabilities(),
                             )
                         }
                     }
@@ -1041,7 +1052,7 @@ class ActivityResultContracts private constructor() {
         @Suppress("InvalidNullabilityOverride")
         final override fun getSynchronousResult(
             context: Context,
-            input: PickVisualMediaRequest
+            input: PickVisualMediaRequest,
         ): SynchronousResult<List<@JvmSuppressWildcards Uri>>? = null
 
         final override fun parseResult(resultCode: Int, intent: Intent?): List<Uri> {

@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("FacadeClassJvmName") // Cannot be updated, the Kt name has been released
+
 package androidx.wear.protolayout.layout
 
 import android.annotation.SuppressLint
@@ -48,7 +50,7 @@ import java.util.stream.Stream
  * @param text The text to render.
  * @param fontStyle The style of font to use (size, bold etc). If not specified, defaults to the
  *   platform's default body font.
- * @param modifier Modifiers to set to this element..
+ * @param modifier Modifiers to set to this element.
  * @param maxLines The maximum number of lines that can be represented by the [Text] element. If not
  *   defined, the [Text] element will be treated as a single-line element.
  * @param alignment Alignment of the text within its bounds. Note that a [Text] element will size
@@ -66,7 +68,7 @@ import java.util.stream.Stream
  */
 @SuppressLint("ProtoLayoutMinSchema")
 @Suppress("MissingJvmstatic") // Kotlin-friendly version of already available Java Apis
-fun basicText(
+public fun basicText(
     text: LayoutString,
     fontStyle: FontStyle? = null,
     modifier: LayoutModifier? = null,
@@ -74,7 +76,7 @@ fun basicText(
     @TextAlignment alignment: Int = TEXT_ALIGN_UNDEFINED,
     @TextOverflow overflow: Int = TEXT_OVERFLOW_UNDEFINED,
     @Dimension(SP) lineHeight: Float = Float.NaN,
-) =
+): Text =
     Text.Builder()
         .setText(text.prop)
         .apply {
@@ -126,7 +128,7 @@ fun basicText(
 @OptIn(ProtoLayoutExperimental::class)
 @SuppressLint("ProtoLayoutMinSchema")
 @Suppress("MissingJvmstatic") // Kotlin-friendly version of already available Java Apis
-fun fontStyle(
+public fun fontStyle(
     @Dimension(SP) size: Float = 0f,
     italic: Boolean = false,
     underline: Boolean = false,
@@ -135,7 +137,7 @@ fun fontStyle(
     letterSpacingEm: Float = Float.NaN,
     @RequiresSchemaVersion(major = 1, minor = 300) additionalSizesSp: List<Float> = emptyList(),
     @RequiresSchemaVersion(major = 1, minor = 400) settings: List<FontSetting> = emptyList(),
-    @RequiresSchemaVersion(major = 1, minor = 400) preferredFontFamilies: List<String> = emptyList()
+    @RequiresSchemaVersion(major = 1, minor = 400) preferredFontFamilies: List<String> = emptyList(),
 ): FontStyle =
     FontStyle.Builder()
         .apply {
@@ -157,14 +159,14 @@ fun fontStyle(
             if (preferredFontFamilies.isNotEmpty()) {
                 setPreferredFontFamilies(
                     preferredFontFamilies.first(),
-                    *preferredFontFamilies.subList(1, preferredFontFamilies.size).toTypedArray()
+                    *preferredFontFamilies.subList(1, preferredFontFamilies.size).toTypedArray(),
                 )
             }
             if (additionalSizesSp.isNotEmpty()) {
                 setSizes(
                     *Stream.concat(
                             if (size != 0f) Stream.of(size.toInt()) else Stream.empty(),
-                            additionalSizesSp.stream().map { it.toInt() }
+                            additionalSizesSp.stream().map { it.toInt() },
                         )
                         .collect(toList())
                         .toIntArray()

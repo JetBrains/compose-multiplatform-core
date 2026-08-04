@@ -25,7 +25,6 @@ import android.net.Uri
 import android.view.Surface
 import androidx.annotation.RequiresApi
 import androidx.camera.camera2.Camera2Config
-import androidx.camera.camera2.pipe.integration.CameraPipeConfig
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraSelector
@@ -36,7 +35,6 @@ import androidx.camera.core.DynamicRange.SDR
 import androidx.camera.core.Preview
 import androidx.camera.core.impl.utils.executor.CameraXExecutors
 import androidx.camera.lifecycle.ProcessCameraProvider
-import androidx.camera.testing.impl.CameraPipeConfigTestRule
 import androidx.camera.testing.impl.CameraUtil
 import androidx.camera.testing.impl.IgnoreVideoRecordingProblematicDeviceRule.Companion.skipVideoRecordingTestIfNotSupportedByEmulator
 import androidx.camera.testing.impl.LabTestRule
@@ -75,18 +73,12 @@ import org.junit.runners.Parameterized
 
 @LargeTest
 @RunWith(Parameterized::class)
-@SdkSuppress(minSdkVersion = 21)
 class DynamicRangeDeviceTest(
-    private val implName: String,
+    private val testName: String,
     private val cameraSelector: CameraSelector,
+    private val implName: String,
     private val cameraConfig: CameraXConfig,
 ) {
-
-    @get:Rule
-    val cameraPipeConfigTestRule =
-        CameraPipeConfigTestRule(
-            active = implName.contains(CameraPipeConfig::class.simpleName!!),
-        )
 
     @get:Rule
     val cameraRule =
@@ -118,34 +110,25 @@ class DynamicRangeDeviceTest(
                 DataSpace.TRANSFER_GAMMA2_6,
                 DataSpace.TRANSFER_GAMMA2_8,
                 DataSpace.TRANSFER_SMPTE_170M,
-                DataSpace.TRANSFER_SRGB
+                DataSpace.TRANSFER_SRGB,
             )
 
         @JvmStatic
         @Parameterized.Parameters(name = "{0}")
         fun data() =
-            listOf(
-                arrayOf(
-                    "back+" + Camera2Config::class.simpleName,
-                    CameraSelector.DEFAULT_BACK_CAMERA,
-                    Camera2Config.defaultConfig(),
-                ),
-                arrayOf(
-                    "front+" + Camera2Config::class.simpleName,
-                    CameraSelector.DEFAULT_FRONT_CAMERA,
-                    Camera2Config.defaultConfig(),
-                ),
-                arrayOf(
-                    "back+" + CameraPipeConfig::class.simpleName,
-                    CameraSelector.DEFAULT_BACK_CAMERA,
-                    CameraPipeConfig.defaultConfig(),
-                ),
-                arrayOf(
-                    "front+" + CameraPipeConfig::class.simpleName,
-                    CameraSelector.DEFAULT_FRONT_CAMERA,
-                    CameraPipeConfig.defaultConfig(),
-                ),
-            )
+            mutableListOf<Array<Any?>>().apply {
+                CameraUtil.getAvailableCameraSelectors().forEach { selector ->
+                    val lens = selector.lensFacing
+                    add(
+                        arrayOf(
+                            "config=${Camera2Config::class.simpleName} lensFacing={$lens}",
+                            selector,
+                            Camera2Config::class.simpleName,
+                            Camera2Config.defaultConfig(),
+                        )
+                    )
+                }
+            }
     }
 
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
@@ -202,7 +185,7 @@ class DynamicRangeDeviceTest(
         bindPreviewAndVerifyDynamicRangeAppliedToCamera(
             dynamicRange = null, // Should default to SDR
             possibleColorStandards = null, // Do not check ColorSpace for SDR; could be many.
-            possibleColorTransfers = POSSIBLE_COLOR_TRANSFERS_SDR
+            possibleColorTransfers = POSSIBLE_COLOR_TRANSFERS_SDR,
         )
     }
 
@@ -213,7 +196,7 @@ class DynamicRangeDeviceTest(
         bindPreviewAndVerifyDynamicRangeAppliedToCamera(
             dynamicRange = HLG_10_BIT,
             possibleColorStandards = setOf(DataSpace.STANDARD_BT2020),
-            possibleColorTransfers = setOf(DataSpace.TRANSFER_HLG)
+            possibleColorTransfers = setOf(DataSpace.TRANSFER_HLG),
         )
     }
 
@@ -227,7 +210,7 @@ class DynamicRangeDeviceTest(
                 setOf(
                     MediaFormat.COLOR_STANDARD_BT709,
                     MediaFormat.COLOR_STANDARD_BT601_PAL,
-                    MediaFormat.COLOR_STANDARD_BT601_NTSC
+                    MediaFormat.COLOR_STANDARD_BT601_NTSC,
                 ),
             possibleColorTransfers = setOf(MediaFormat.COLOR_TRANSFER_SDR_VIDEO),
         )
@@ -280,7 +263,7 @@ class DynamicRangeDeviceTest(
                     val surfaceTextureHolder =
                         SurfaceTextureProvider.createAutoDrainingSurfaceTextureAsync(
                                 surfaceRequest.resolution.width,
-                                surfaceRequest.resolution.height
+                                surfaceRequest.resolution.height,
                             ) { surfaceTexture ->
                                 dataSpace.set(surfaceTexture.dataSpace)
                                 latch.countDown()

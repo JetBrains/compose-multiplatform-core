@@ -30,8 +30,11 @@ import com.android.tools.lint.detector.api.LintFix
 import com.android.tools.lint.detector.api.Scope
 import com.android.tools.lint.detector.api.Severity
 import com.android.tools.lint.detector.api.SourceCodeScanner
+import com.intellij.psi.PsiNamedElement
 import java.util.EnumSet
 import java.util.Locale
+import org.jetbrains.kotlin.lexer.KtTokens
+import org.jetbrains.kotlin.psi.KtFunction
 import org.jetbrains.uast.UMethod
 
 /**
@@ -55,7 +58,15 @@ class ComposableNamingDetector : Detector(), SourceCodeScanner {
                 // special case where a generic return type and a Unit type parameter is used.
                 if (node.findSuperMethods().isNotEmpty()) return
 
-                val name = node.name
+                // Fallback structural check for Kotlin overrides when type resolution fails.
+                val sourcePsi = node.sourcePsi
+                if (sourcePsi is KtFunction && sourcePsi.hasModifier(KtTokens.OVERRIDE_KEYWORD)) {
+                    return
+                }
+
+                // NOTE: this is the inlined version of `UElement#nameFromSource`
+                // (available starting with Lint `31.10.0`)
+                val name = (node.sourcePsi as? PsiNamedElement)?.name ?: node.name
 
                 val capitalizedFunctionName = name.first().isUpperCase()
 
@@ -78,7 +89,7 @@ class ComposableNamingDetector : Detector(), SourceCodeScanner {
                                 .text(name)
                                 .with(capitalizedName)
                                 .autoFix()
-                                .build()
+                                .build(),
                         )
                     }
                 } else {
@@ -97,7 +108,7 @@ class ComposableNamingDetector : Detector(), SourceCodeScanner {
                                 .text(name)
                                 .with(lowercaseName)
                                 .autoFix()
-                                .build()
+                                .build(),
                         )
                     }
                 }
@@ -118,8 +129,8 @@ class ComposableNamingDetector : Detector(), SourceCodeScanner {
                 Severity.WARNING,
                 Implementation(
                     ComposableNamingDetector::class.java,
-                    EnumSet.of(Scope.JAVA_FILE, Scope.TEST_SOURCES)
-                )
+                    EnumSet.of(Scope.JAVA_FILE, Scope.TEST_SOURCES),
+                ),
             )
     }
 }

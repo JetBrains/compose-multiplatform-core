@@ -15,10 +15,9 @@
  */
 
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
 
@@ -38,93 +37,41 @@ androidXMultiplatform {
     ios()
     watchos()
     tvos()
+    js()
+    wasmJs()
+    mingwX64()
     androidLibrary {
         namespace = "androidx.paging.testing"
-        withAndroidTestOnDeviceBuilder {
-            it.compilationName = "instrumentedTest"
-            it.defaultSourceSetName = "androidInstrumentedTest"
-            it.sourceSetTreeName = "test"
-        }
     }
 
     defaultPlatform(PlatformIdentifier.ANDROID)
 
     sourceSets {
-        commonMain {
-            dependencies {
-                api(libs.kotlinStdlib)
-                implementation(project(":paging:paging-common"))
-            }
+        commonMain.dependencies {
+            implementation(project(":paging:paging-common"))
         }
 
-        commonJvmMain {
-            dependsOn(commonMain)
+        nonJvmMain.dependencies {
+            implementation(libs.atomicFu)
         }
 
-        jvmMain {
-            dependsOn(commonJvmMain)
+        commonTest.dependencies {
+            implementation(libs.kotlinTest)
+            implementation(libs.kotlinCoroutinesTest)
+            implementation(project(":internal-testutils-paging"))
+            implementation(project(":kruth:kruth"))
         }
 
-        androidMain {
-            dependsOn(commonJvmMain)
+        jvmAndAndroidTest.dependencies {
+            implementation(libs.junit)
         }
 
-        commonTest {
-            dependencies {
-                implementation(libs.kotlinTest)
-                implementation(libs.kotlinCoroutinesTest)
-                implementation(project(":internal-testutils-paging"))
-                implementation(project(":kruth:kruth"))
-            }
+        androidDeviceTest.dependencies {
+            implementation(libs.testRunner)
         }
 
-        commonJvmTest {
-            dependsOn(commonTest)
-            dependencies {
-                implementation(libs.junit)
-            }
-        }
-
-        jvmTest {
-            dependsOn(commonJvmTest)
-        }
-
-        androidInstrumentedTest {
-            dependsOn(commonJvmTest)
-            dependencies {
-                implementation(libs.testRunner)
-            }
-        }
-
-        nativeMain {
-            dependsOn(commonMain)
-            dependencies {
-                implementation(libs.atomicFu)
-            }
-        }
-        darwinMain {
-            dependsOn(nativeMain)
-        }
-        linuxMain {
-            dependsOn(nativeMain)
-        }
-
-        targets.configureEach { target ->
-            if (target.platformType == KotlinPlatformType.native) {
-                target.compilations["main"].defaultSourceSet {
-                    def konanTargetFamily = target.konanTarget.family
-                    if (konanTargetFamily == Family.OSX ||
-                            konanTargetFamily == Family.IOS ||
-                            konanTargetFamily == Family.WATCHOS ||
-                            konanTargetFamily == Family.TVOS) {
-                        dependsOn(darwinMain)
-                    } else if (konanTargetFamily == Family.LINUX) {
-                        dependsOn(linuxMain)
-                    } else {
-                        throw new GradleException("unknown native target ${target}")
-                    }
-                }
-            }
+        wasmJsTest.dependencies {
+            implementation(libs.kotlinXw3c)
         }
     }
 }

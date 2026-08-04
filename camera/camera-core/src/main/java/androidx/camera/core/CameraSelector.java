@@ -40,9 +40,11 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -60,7 +62,7 @@ public final class CameraSelector {
     /**
      * An external camera that has no fixed facing relative to the device's screen.
      *
-     * <p>The behavior of an external camera highly depends on the manufacturer. Currently it's
+     * <p>The behavior of an external camera highly depends on the manufacturer. Currently, it's
      * treated similar to a front facing camera with little verification. So it's considered
      * experimental and should be used with caution.
      */
@@ -89,12 +91,12 @@ public final class CameraSelector {
      * {@link CameraSelector}.
      *
      * <p>When filtering with {@link CameraFilter}, the output set must be contained in the input
-     * set, otherwise an IllegalArgumentException will be thrown.
+     * set, otherwise an {@link IllegalArgumentException} will be thrown.
      *
      * @param cameras The camera set being filtered.
      * @return The first camera filtered.
      * @throws IllegalArgumentException If there's no available camera after filtering or the
-     *                                  filtered cameras aren't contained in the input set.
+     * filtered cameras aren't contained in the input set.
      */
     @RestrictTo(Scope.LIBRARY_GROUP)
     public @NonNull CameraInternal select(@NonNull LinkedHashSet<CameraInternal> cameras) {
@@ -154,9 +156,9 @@ public final class CameraSelector {
      * @param cameraInfos The camera infos list being filtered.
      * @return The remaining list of camera infos.
      * @throws UnsupportedOperationException If the {@link CameraFilter}s assigned to the selector
-     *                                       try to modify the input camera infos list.
+     * try to modify the input camera infos list.
      * @throws IllegalArgumentException If the device cannot return the necessary information for
-     *                                  filtering, it will throw this exception.
+     * filtering, it will throw this exception.
      */
     public @NonNull List<CameraInfo> filter(@NonNull List<CameraInfo> cameraInfos) {
         List<CameraInfo> output = new ArrayList<>(cameraInfos);
@@ -171,7 +173,7 @@ public final class CameraSelector {
     /**
      * Filters the input cameras using the {@link CameraFilter} assigned to the selector.
      *
-     * <p>The cameras filtered must be contained in the input set. Otherwise it will throw an
+     * <p>The cameras filtered must be contained in the input set. Otherwise, it will throw an
      * exception.
      *
      * @param cameras The camera set being filtered.
@@ -200,7 +202,6 @@ public final class CameraSelector {
 
     /**
      * Gets the set of {@link CameraFilter} assigned to this camera selector.
-     *
      */
     @RestrictTo(Scope.LIBRARY_GROUP)
     public @NonNull LinkedHashSet<CameraFilter> getCameraFilterSet() {
@@ -212,9 +213,8 @@ public final class CameraSelector {
      * been set.
      *
      * @return The lens facing.
-     * @throws IllegalStateException if a single lens facing cannot be resolved, such as if
-     *                               multiple conflicting lens facing requirements exist in this
-     *                               camera selector.
+     * @throws IllegalStateException If a single lens facing cannot be resolved, such as if
+     * multiple conflicting lens facing requirements exist in this camera selector.
      */
     @RestrictTo(Scope.LIBRARY_GROUP)
     public @Nullable Integer getLensFacing() {
@@ -242,13 +242,60 @@ public final class CameraSelector {
      * Returns the physical camera id.
      *
      * <p>If physical camera id is not set via {@link Builder#setPhysicalCameraId(String)},
-     * it will return null.
+     * it will return {@code null}.
      *
-     * @return physical camera id.
+     * @return Physical camera id.
      * @see Builder#setPhysicalCameraId(String)
      */
     public @Nullable String getPhysicalCameraId() {
         return mPhysicalCameraId;
+    }
+
+    /**
+     * Creates a {@link CameraSelector} that specifically targets the camera(s)
+     * represented by the given {@link CameraIdentifier}s.
+     *
+     * <p>When multiple identifiers are provided, they are treated as a prioritized list.
+     * CameraX will attempt to select and bind the camera for the first identifier. If that
+     * camera is not available, it will attempt to use the second, and so on.
+     *
+     * @param cameraIdentifiers A varargs array of one or more non-null {@link CameraIdentifier}s.
+     * @return A non-null {@link CameraSelector} configured to select one of the specific cameras.
+     * @throws IllegalArgumentException if no identifiers are provided.
+     */
+    @NonNull
+    public static CameraSelector of(@NonNull CameraIdentifier @NonNull ... cameraIdentifiers) {
+        if (cameraIdentifiers == null || cameraIdentifiers.length == 0) {
+            throw new IllegalArgumentException("At least one CameraIdentifier must be provided.");
+        }
+
+        // The core of the implementation is to add a custom CameraFilter.
+        Builder builder = new Builder();
+
+        // This filter is responsible for matching and prioritizing the given identifiers.
+        builder.addCameraFilter(availableCameras -> {
+            List<CameraInfo> result = new ArrayList<>();
+            Set<CameraIdentifier> seenIdentifiers = new HashSet<>();
+
+            // 1. Iterate through the user-provided identifiers IN ORDER to respect priority.
+            for (CameraIdentifier priorityId : cameraIdentifiers) {
+                // 2. Iterate through all available cameras to find a match.
+                for (CameraInfo cameraInfo : availableCameras) {
+                    // 3. If a match is found...
+                    if (Objects.equals(cameraInfo.getCameraIdentifier(), priorityId)) {
+                        if (!seenIdentifiers.contains(priorityId)) {
+                            result.add(cameraInfo);
+                            seenIdentifiers.add(priorityId);
+                            break;
+                        }
+                    }
+                }
+            }
+            // The returned list is now filtered and sorted according to the input priority.
+            return result;
+        });
+
+        return builder.build();
     }
 
     /** Builder for a {@link CameraSelector}. */
@@ -277,8 +324,8 @@ public final class CameraSelector {
          * <p>If lens facing is already set, this will add extra requirement for lens facing
          * instead of replacing the previous setting.
          *
-         * @param lensFacing the lens facing for selecting cameras with.
-         * @return this builder.
+         * @param lensFacing The lens facing for selecting cameras with.
+         * @return This builder.
          */
         public @NonNull Builder requireLensFacing(@LensFacing int lensFacing) {
             Preconditions.checkState(lensFacing != LENS_FACING_UNKNOWN, "The specified lens "
@@ -292,11 +339,11 @@ public final class CameraSelector {
          * specific camera based on customized criteria like Camera2 characteristics.
          *
          * <p>Multiple filters can be added. All filters will be applied by the order they were
-         * added when the {@link CameraSelector} is used, and the first camera output from the
+         * added when the CameraSelector is used, and the first camera output from the
          * filters will be selected.
          *
-         * @param cameraFilter the {@link CameraFilter} for selecting cameras with.
-         * @return this builder.
+         * @param cameraFilter The {@link CameraFilter} for selecting cameras with.
+         * @return This builder.
          */
         public @NonNull Builder addCameraFilter(@NonNull CameraFilter cameraFilter) {
             mCameraFilterSet.add(cameraFilter);
@@ -322,9 +369,9 @@ public final class CameraSelector {
          * <p>A logical camera is a grouping of two or more of those physical cameras.
          * See <a href="https://developer.android.com/media/camera/camera2/multi-camera">Multi-camera API</a>
          *
-         * <p> If we want to open one physical camera, for example ultra wide, we just need to set
-         * physical camera id in {@link CameraSelector} and bind to lifecycle. All CameraX features
-         * will work normally when only a single physical camera is used.
+         * <p>If we want to open one physical camera, for example ultra wide, we just need to set
+         * physical camera id in CameraSelector and bind to lifecycle. All CameraX features will
+         * work normally when only a single physical camera is used.
          *
          * <p>If we want to open multiple physical cameras, we need to have multiple
          * {@link CameraSelector}s and set physical camera id on each, then bind to lifecycle with
@@ -341,7 +388,7 @@ public final class CameraSelector {
          * if the device does not support the multiple physical camera configuration,
          * {@link IllegalArgumentException} will be thrown when binding to lifecycle.
          *
-         * @param physicalCameraId physical camera id.
+         * @param physicalCameraId Physical camera id.
          * @return this builder.
          */
         public @NonNull Builder setPhysicalCameraId(@NonNull String physicalCameraId) {
@@ -357,7 +404,6 @@ public final class CameraSelector {
 
     /**
      * The direction the camera faces relative to device screen.
-     *
      */
     @Target({TYPE, TYPE_USE, FIELD, PARAMETER, LOCAL_VARIABLE})
     @OptIn(markerClass = ExperimentalLensFacing.class)

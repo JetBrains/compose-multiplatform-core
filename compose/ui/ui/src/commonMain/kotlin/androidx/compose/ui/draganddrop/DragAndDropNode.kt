@@ -47,9 +47,9 @@ import kotlin.jvm.JvmName
     message =
         "This interface is deprecated in favor to " +
             "DragAndDropSourceModifierNode and DragAndDropTargetModifierNode",
-    replaceWith = ReplaceWith("DragAndDropSourceModifierNode")
+    replaceWith = ReplaceWith("DragAndDropSourceModifierNode"),
 )
-interface DragAndDropModifierNode : DelegatableNode, DragAndDropTarget {
+public interface DragAndDropModifierNode : DelegatableNode, DragAndDropTarget {
     /**
      * Begins a drag and drop session for transferring data.
      *
@@ -60,7 +60,7 @@ interface DragAndDropModifierNode : DelegatableNode, DragAndDropTarget {
      *   drag and drop gesture.
      */
     @Deprecated("Use DragAndDropSourceModifierNode.requestDragAndDropTransfer instead")
-    fun drag(
+    public fun drag(
         transferData: DragAndDropTransferData,
         decorationSize: Size,
         drawDragDecoration: DrawScope.() -> Unit,
@@ -76,7 +76,7 @@ interface DragAndDropModifierNode : DelegatableNode, DragAndDropTarget {
      * All [DragAndDropModifierNode] instances in the hierarchy will be given an opportunity to
      * participate in a drag and drop session via this method.
      */
-    fun acceptDragAndDropTransfer(startEvent: DragAndDropEvent): Boolean
+    public fun acceptDragAndDropTransfer(startEvent: DragAndDropEvent): Boolean
 }
 
 /**
@@ -84,7 +84,7 @@ interface DragAndDropModifierNode : DelegatableNode, DragAndDropTarget {
  * cases, you will want to delegate to the [DragAndDropSourceModifierNode] returned by the eponymous
  * factory method.
  */
-sealed interface DragAndDropSourceModifierNode : LayoutAwareModifierNode {
+public sealed interface DragAndDropSourceModifierNode : LayoutAwareModifierNode {
     /**
      * Returns a boolean value indicating whether requesting drag and drop transfer is required.
      *
@@ -93,7 +93,7 @@ sealed interface DragAndDropSourceModifierNode : LayoutAwareModifierNode {
      *
      * @see requestDragAndDropTransfer
      */
-    val isRequestDragAndDropTransferRequired: Boolean
+    public val isRequestDragAndDropTransferRequired: Boolean
 
     /**
      * Requests a drag and drop transfer. [isRequestDragAndDropTransferRequired] can be used to
@@ -101,7 +101,7 @@ sealed interface DragAndDropSourceModifierNode : LayoutAwareModifierNode {
      *
      * @param offset the offset value representing position of the input pointer.
      */
-    fun requestDragAndDropTransfer(offset: Offset)
+    public fun requestDragAndDropTransfer(offset: Offset)
 }
 
 /**
@@ -112,7 +112,7 @@ sealed interface DragAndDropSourceModifierNode : LayoutAwareModifierNode {
  * This interface does not define any additional methods or properties. It simply serves as a marker
  * interface to identify nodes that can be used as drag and drop target modifiers.
  */
-sealed interface DragAndDropTargetModifierNode : LayoutAwareModifierNode
+public sealed interface DragAndDropTargetModifierNode : LayoutAwareModifierNode
 
 /**
  * Creates a [Modifier.Node] for starting platform drag and drop sessions with the intention of
@@ -120,11 +120,12 @@ sealed interface DragAndDropTargetModifierNode : LayoutAwareModifierNode
  */
 @Deprecated(
     message = "Use DragAndDropSourceModifierNode instead",
-    replaceWith = ReplaceWith("DragAndDropSourceModifierNode")
+    replaceWith = ReplaceWith("DragAndDropSourceModifierNode"),
 )
 @Suppress("DEPRECATION")
 @JsName("funDragAndDropModifierNode1")
-fun DragAndDropModifierNode(): DragAndDropModifierNode = DragAndDropNode(onStartTransfer = null)
+public fun DragAndDropModifierNode(): DragAndDropModifierNode =
+    DragAndDropNode(onStartTransfer = null)
 
 /**
  * Creates a [Modifier.Node] for receiving transfer data from platform drag and drop sessions. All
@@ -138,13 +139,13 @@ fun DragAndDropModifierNode(): DragAndDropModifierNode = DragAndDropNode(onStart
  */
 @Deprecated(
     message = "Use DragAndDropTargetModifierNode instead",
-    replaceWith = ReplaceWith("DragAndDropTargetModifierNode")
+    replaceWith = ReplaceWith("DragAndDropTargetModifierNode"),
 )
 @Suppress("DEPRECATION")
 @JsName("funDragAndDropModifierNode2")
-fun DragAndDropModifierNode(
+public fun DragAndDropModifierNode(
     shouldStartDragAndDrop: (event: DragAndDropEvent) -> Boolean,
-    target: DragAndDropTarget
+    target: DragAndDropTarget,
 ): DragAndDropModifierNode =
     DragAndDropNode(
         onDropTargetValidate = { event -> if (shouldStartDragAndDrop(event)) target else null }
@@ -157,8 +158,8 @@ fun DragAndDropModifierNode(
  * @param onStartTransfer the callback function that is invoked when drag and drop session starts.
  *   It takes an [Offset] parameter representing the start position of the drag.
  */
-fun DragAndDropSourceModifierNode(
-    onStartTransfer: DragAndDropStartTransferScope.(Offset) -> Unit,
+public fun DragAndDropSourceModifierNode(
+    onStartTransfer: DragAndDropStartTransferScope.(Offset) -> Unit
 ): DragAndDropSourceModifierNode = DragAndDropNode(onStartTransfer = onStartTransfer)
 
 /**
@@ -170,9 +171,9 @@ fun DragAndDropSourceModifierNode(
  *   it.
  * @param target allows for receiving events and transfer data from a given drag and drop session.
  */
-fun DragAndDropTargetModifierNode(
+public fun DragAndDropTargetModifierNode(
     shouldStartDragAndDrop: (event: DragAndDropEvent) -> Boolean,
-    target: DragAndDropTarget
+    target: DragAndDropTarget,
 ): DragAndDropTargetModifierNode =
     DragAndDropNode(
         onDropTargetValidate = { event -> if (shouldStartDragAndDrop(event)) target else null }
@@ -269,7 +270,7 @@ internal class DragAndDropNode(
      */
     fun DragAndDropStartTransferScope.startDragAndDropTransfer(
         offset: Offset,
-        isTransferStarted: () -> Boolean
+        isTransferStarted: () -> Boolean,
     ) {
         val nodeCoordinates = requireLayoutNode().coordinates
         traverseSelfAndDescendants { currentNode ->
@@ -308,7 +309,7 @@ internal class DragAndDropNode(
     override fun drag(
         transferData: DragAndDropTransferData,
         decorationSize: Size,
-        drawDragDecoration: DrawScope.() -> Unit
+        drawDragDecoration: DrawScope.() -> Unit,
     ) {
         checkPrecondition(onStartTransfer == null)
         onStartTransfer = {

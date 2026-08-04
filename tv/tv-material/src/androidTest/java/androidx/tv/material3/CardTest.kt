@@ -39,7 +39,6 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertHasClickAction
@@ -47,7 +46,7 @@ import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performKeyInput
 import androidx.compose.ui.test.pressKey
@@ -63,7 +62,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
-@OptIn(ExperimentalTestApi::class, ExperimentalTvMaterial3Api::class)
+@OptIn(ExperimentalTvMaterial3Api::class)
 @LargeTest
 @RunWith(AndroidJUnit4::class)
 class CardTest {
@@ -81,7 +80,7 @@ class CardTest {
                     modifier = Modifier.semantics(mergeDescendants = true) {}.testTag(CardTag),
                     shape = CardDefaults.shape(shape = shape),
                     colors = CardDefaults.colors(containerColor = cardColor),
-                    onClick = {}
+                    onClick = {},
                 ) {
                     Box(Modifier.size(50.dp, 50.dp))
                 }
@@ -96,7 +95,7 @@ class CardTest {
                 shape = shape,
                 shapeColor = cardColor,
                 backgroundColor = background,
-                antiAliasingGap = with(rule.density) { 1.dp.toPx() }
+                antiAliasingGap = with(rule.density) { 1.dp.toPx() },
             )
     }
 
@@ -104,10 +103,7 @@ class CardTest {
     fun card_semantics() {
         val count = mutableStateOf(0)
         rule.setContent {
-            Card(
-                modifier = Modifier.testTag(CardTag),
-                onClick = { count.value += 1 },
-            ) {
+            Card(modifier = Modifier.testTag(CardTag), onClick = { count.value += 1 }) {
                 Text("${count.value}")
                 Spacer(Modifier.size(30.dp))
             }
@@ -131,7 +127,7 @@ class CardTest {
             Card(
                 modifier = Modifier.testTag(CardTag),
                 onClick = {},
-                onLongClick = { count.value += 1 }
+                onLongClick = { count.value += 1 },
             ) {
                 Text("${count.value}")
                 Spacer(Modifier.size(30.dp))
@@ -154,10 +150,7 @@ class CardTest {
     fun card_clickAction() {
         val count = mutableStateOf(0f)
         rule.setContent {
-            Card(
-                modifier = Modifier.testTag(CardTag),
-                onClick = { count.value += 1 },
-            ) {
+            Card(modifier = Modifier.testTag(CardTag), onClick = { count.value += 1 }) {
                 Text("${count.value}")
                 Spacer(Modifier.size(30.dp))
             }
@@ -181,7 +174,7 @@ class CardTest {
             Card(
                 modifier = Modifier.testTag(CardTag),
                 onClick = {},
-                onLongClick = { count.value += 1 }
+                onLongClick = { count.value += 1 },
             ) {
                 Text("${count.value}")
                 Spacer(Modifier.size(30.dp))
@@ -209,7 +202,7 @@ class CardTest {
             Card(
                 onClick = {},
                 modifier = Modifier.testTag(CardTag),
-                interactionSource = interactionSource
+                interactionSource = interactionSource,
             ) {
                 Spacer(Modifier.size(30.dp))
             }
@@ -246,7 +239,7 @@ class CardTest {
                 modifier = Modifier.semantics(mergeDescendants = true) {}.testTag(ClassicCardTag),
                 image = { SampleImage() },
                 title = { Text("${count.value}") },
-                onClick = { count.value += 1 }
+                onClick = { count.value += 1 },
             )
         }
 
@@ -270,7 +263,7 @@ class CardTest {
                 image = { SampleImage() },
                 title = { Text("${count.value}") },
                 onClick = {},
-                onLongClick = { count.value += 1 }
+                onLongClick = { count.value += 1 },
             )
         }
 
@@ -294,7 +287,7 @@ class CardTest {
                 modifier = Modifier.semantics(mergeDescendants = true) {}.testTag(ClassicCardTag),
                 image = { SampleImage() },
                 title = { Text("${count.value}") },
-                onClick = { count.value += 1 }
+                onClick = { count.value += 1 },
             )
         }
 
@@ -320,7 +313,7 @@ class CardTest {
                 image = { SampleImage() },
                 title = { Text("${count.value}") },
                 onClick = {},
-                onLongClick = { count.value += 1 }
+                onLongClick = { count.value += 1 },
             )
         }
 
@@ -348,7 +341,7 @@ class CardTest {
                 image = { SampleImage() },
                 title = { Text(text = "Classic Card", modifier = Modifier.testTag(cardTitleTag)) },
                 onClick = {},
-                contentPadding = contentPadding
+                contentPadding = contentPadding,
             )
         }
 
@@ -361,25 +354,25 @@ class CardTest {
         // Check top padding
         (imageBounds.top - cardBounds.top).assertIsEqualTo(
             10.dp,
-            "padding between top of the image and top of the card."
+            "padding between top of the image and top of the card.",
         )
 
         // Check bottom padding
         (cardBounds.bottom - titleBounds.bottom).assertIsEqualTo(
             14.dp,
-            "padding between bottom of the text and bottom of the card."
+            "padding between bottom of the text and bottom of the card.",
         )
 
         // Check start padding
         (imageBounds.left - cardBounds.left).assertIsEqualTo(
             8.dp,
-            "padding between left of the image and left of the card."
+            "padding between left of the image and left of the card.",
         )
 
         // Check end padding
         (cardBounds.right - imageBounds.right).assertIsEqualTo(
             12.dp,
-            "padding between right of the text and right of the card."
+            "padding between right of the text and right of the card.",
         )
     }
 
@@ -391,7 +384,7 @@ class CardTest {
                 modifier = Modifier.semantics(mergeDescendants = true) {}.testTag(CompactCardTag),
                 image = { SampleImage() },
                 title = { Text("${count.value}") },
-                onClick = { count.value += 1 }
+                onClick = { count.value += 1 },
             )
         }
 
@@ -415,7 +408,7 @@ class CardTest {
                 image = { SampleImage() },
                 title = { Text("${count.value}") },
                 onClick = {},
-                onLongClick = { count.value += 1 }
+                onLongClick = { count.value += 1 },
             )
         }
 
@@ -439,7 +432,7 @@ class CardTest {
                 modifier = Modifier.semantics(mergeDescendants = true) {}.testTag(CompactCardTag),
                 image = { SampleImage() },
                 title = { Text("${count.value}") },
-                onClick = { count.value += 1 }
+                onClick = { count.value += 1 },
             )
         }
 
@@ -465,7 +458,7 @@ class CardTest {
                 image = { SampleImage() },
                 title = { Text("${count.value}") },
                 onClick = {},
-                onLongClick = { count.value += 1 }
+                onLongClick = { count.value += 1 },
             )
         }
 
@@ -491,7 +484,7 @@ class CardTest {
                     Modifier.semantics(mergeDescendants = true) {}.testTag(WideClassicCardTag),
                 image = { SampleImage() },
                 title = { Text("${count.value}") },
-                onClick = { count.value += 1 }
+                onClick = { count.value += 1 },
             )
         }
 
@@ -516,7 +509,7 @@ class CardTest {
                 image = { SampleImage() },
                 title = { Text("${count.value}") },
                 onClick = {},
-                onLongClick = { count.value += 1 }
+                onLongClick = { count.value += 1 },
             )
         }
 
@@ -541,7 +534,7 @@ class CardTest {
                     Modifier.semantics(mergeDescendants = true) {}.testTag(WideClassicCardTag),
                 image = { SampleImage() },
                 title = { Text("${count.value}") },
-                onClick = { count.value += 1 }
+                onClick = { count.value += 1 },
             )
         }
 
@@ -568,7 +561,7 @@ class CardTest {
                 image = { SampleImage() },
                 title = { Text("${count.value}") },
                 onClick = {},
-                onLongClick = { count.value += 1 }
+                onLongClick = { count.value += 1 },
             )
         }
 
@@ -598,7 +591,7 @@ class CardTest {
                     Text(text = "Wide Classic Card", modifier = Modifier.testTag(cardTitleTag))
                 },
                 onClick = {},
-                contentPadding = contentPadding
+                contentPadding = contentPadding,
             )
         }
 
@@ -611,25 +604,25 @@ class CardTest {
         // Check top padding
         (imageBounds.top - cardBounds.top).assertIsEqualTo(
             10.dp,
-            "padding between top of the image and top of the card."
+            "padding between top of the image and top of the card.",
         )
 
         // Check bottom padding
         (cardBounds.bottom - imageBounds.bottom).assertIsEqualTo(
             14.dp,
-            "padding between bottom of the text and bottom of the card."
+            "padding between bottom of the text and bottom of the card.",
         )
 
         // Check start padding
         (imageBounds.left - cardBounds.left).assertIsEqualTo(
             8.dp,
-            "padding between left of the image and left of the card."
+            "padding between left of the image and left of the card.",
         )
 
         // Check end padding
         (cardBounds.right - titleBounds.right).assertIsEqualTo(
             12.dp,
-            "padding between right of the text and right of the card."
+            "padding between right of the text and right of the card.",
         )
     }
 

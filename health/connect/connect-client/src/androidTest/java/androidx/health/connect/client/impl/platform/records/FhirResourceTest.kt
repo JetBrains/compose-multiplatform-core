@@ -38,7 +38,7 @@ class FhirResourceTest {
     fun setup() {
         Assume.assumeTrue(
             "FEATURE_PERSONAL_HEALTH_RECORD is not available on this device!",
-            isPersonalHealthRecordFeatureAvailableInPlatform()
+            isPersonalHealthRecordFeatureAvailableInPlatform(),
         )
     }
 
@@ -71,7 +71,7 @@ class FhirResourceTest {
                 PlatformFhirResourceBuilder(
                         PlatformFhirResource.FHIR_RESOURCE_TYPE_PATIENT,
                         "id1",
-                        "{}"
+                        "{}",
                     )
                     .build()
             )

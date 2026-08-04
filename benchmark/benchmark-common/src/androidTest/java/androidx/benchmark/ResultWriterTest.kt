@@ -41,7 +41,7 @@ class ResultWriterTest {
             MetricResult(
                 name = "frameTimeMs",
                 iterationData = sampledMetricIterationData,
-                data = sampledMetricIterationData.flatten()
+                data = sampledMetricIterationData.flatten(),
             )
         )
 
@@ -54,7 +54,7 @@ class ResultWriterTest {
             repeatIterations = 100000,
             thermalThrottleSleepSeconds = 90000000,
             warmupIterations = 8000,
-            profilerOutputs = null
+            profilerOutputs = null,
         )
     private val reportB =
         BenchmarkData.TestResult(
@@ -65,7 +65,7 @@ class ResultWriterTest {
             repeatIterations = 100000,
             thermalThrottleSleepSeconds = 90000000,
             warmupIterations = 8000,
-            profilerOutputs = null
+            profilerOutputs = null,
         )
 
     @Test
@@ -185,7 +185,7 @@ class ResultWriterTest {
             }
             """
                 .trimIndent(),
-            tempFile.readText()
+            tempFile.readText(),
         )
     }
 
@@ -205,16 +205,16 @@ class ResultWriterTest {
                             Profiler.ResultFile.ofPerfettoTrace(
                                 label = "Trace",
                                 absolutePath =
-                                    Outputs.outputDirectory.absolutePath + "/trace.perfetto-trace"
+                                    Outputs.outputDirectory.absolutePath + "/trace.perfetto-trace",
                             ),
                             Profiler.ResultFile.of(
                                 label = "Method Trace",
                                 type = BenchmarkData.TestResult.ProfilerOutput.Type.MethodTrace,
                                 outputRelativePath = "trace.trace",
-                                source = MethodTracing
-                            )
+                                source = MethodTracing,
+                            ),
                         )
-                        .map { BenchmarkData.TestResult.ProfilerOutput(it) }
+                        .map { BenchmarkData.TestResult.ProfilerOutput(it) },
             )
 
         val tempFile = tempFolder.newFile()
@@ -224,20 +224,20 @@ class ResultWriterTest {
         assertContains(
             reportText,
             """
-                |            "profilerOutputs": [
-                |                {
-                |                    "type": "PerfettoTrace",
-                |                    "label": "Trace",
-                |                    "filename": "trace.perfetto-trace"
-                |                },
-                |                {
-                |                    "type": "MethodTrace",
-                |                    "label": "Method Trace",
-                |                    "filename": "trace.trace"
-                |                }
-                |            ]
-                """
-                .trimMargin()
+            |            "profilerOutputs": [
+            |                {
+            |                    "type": "PerfettoTrace",
+            |                    "label": "Trace",
+            |                    "filename": "trace.perfetto-trace"
+            |                },
+            |                {
+            |                    "type": "MethodTrace",
+            |                    "label": "Method Trace",
+            |                    "filename": "trace.trace"
+            |                }
+            |            ]
+            """
+                .trimMargin(),
         )
     }
 
@@ -252,7 +252,7 @@ class ResultWriterTest {
                 repeatIterations = 100000,
                 thermalThrottleSleepSeconds = 90000000,
                 warmupIterations = 8000,
-                profilerOutputs = null
+                profilerOutputs = null,
             )
 
         val tempFile = tempFolder.newFile()
@@ -262,13 +262,13 @@ class ResultWriterTest {
         assertContains(
             reportText,
             """
-                |            "name": "MethodWithParams[number=2,primeNumber=true]",
-                |            "params": {
-                |                "number": "2",
-                |                "primeNumber": "true"
-                |            },
-                """
-                .trimMargin()
+            |            "name": "MethodWithParams[number=2,primeNumber=true]",
+            |            "params": {
+            |                "number": "2",
+            |                "primeNumber": "true"
+            |            },
+            """
+                .trimMargin(),
         )
     }
 
@@ -283,7 +283,7 @@ class ResultWriterTest {
                 repeatIterations = 100000,
                 thermalThrottleSleepSeconds = 90000000,
                 warmupIterations = 8000,
-                profilerOutputs = null
+                profilerOutputs = null,
             )
 
         val tempFile = tempFolder.newFile()

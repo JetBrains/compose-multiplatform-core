@@ -54,7 +54,7 @@ internal fun DynamicString.evaluate(injectedData: DynamicDataMap? = null): Strin
             { it.run() },
             AddToListCallback(result),
         ),
-        injectedData
+        injectedData,
     )
     return result.lastOrNull()
 }
@@ -69,12 +69,8 @@ internal fun DynamicString.evaluate(injectedData: DynamicDataMap? = null): Strin
 internal fun DynamicFloat.evaluate(injectedData: DynamicDataMap? = null): Float? {
     val result = mutableListOf<Float>()
     evaluate(
-        DynamicTypeBindingRequest.forDynamicFloat(
-            this,
-            { it.run() },
-            AddToListCallback(result),
-        ),
-        injectedData
+        DynamicTypeBindingRequest.forDynamicFloat(this, { it.run() }, AddToListCallback(result)),
+        injectedData,
     )
     return result.lastOrNull()
 }
@@ -89,12 +85,8 @@ internal fun DynamicFloat.evaluate(injectedData: DynamicDataMap? = null): Float?
 internal fun DynamicInt32.evaluate(injectedData: DynamicDataMap? = null): Int? {
     val result = mutableListOf<Int>()
     evaluate(
-        DynamicTypeBindingRequest.forDynamicInt32(
-            this,
-            { it.run() },
-            AddToListCallback(result),
-        ),
-        injectedData
+        DynamicTypeBindingRequest.forDynamicInt32(this, { it.run() }, AddToListCallback(result)),
+        injectedData,
     )
     return result.lastOrNull()
 }
@@ -108,12 +100,8 @@ internal fun DynamicInt32.evaluate(injectedData: DynamicDataMap? = null): Int? {
 internal fun DynamicBool.evaluate(injectedData: DynamicDataMap? = null): Boolean? {
     val result = mutableListOf<Boolean>()
     evaluate(
-        DynamicTypeBindingRequest.forDynamicBool(
-            this,
-            { it.run() },
-            AddToListCallback(result),
-        ),
-        injectedData
+        DynamicTypeBindingRequest.forDynamicBool(this, { it.run() }, AddToListCallback(result)),
+        injectedData,
     )
     return result.lastOrNull()
 }
@@ -127,12 +115,8 @@ internal fun DynamicBool.evaluate(injectedData: DynamicDataMap? = null): Boolean
 internal fun DynamicColor.evaluate(injectedData: DynamicDataMap? = null): Color? {
     val result = mutableListOf<Int>()
     evaluate(
-        DynamicTypeBindingRequest.forDynamicColor(
-            this,
-            { it.run() },
-            AddToListCallback(result),
-        ),
-        injectedData
+        DynamicTypeBindingRequest.forDynamicColor(this, { it.run() }, AddToListCallback(result)),
+        injectedData,
     )
     return result.lastOrNull()?.let { Color.valueOf(it) }
 }
@@ -146,12 +130,8 @@ internal fun DynamicColor.evaluate(injectedData: DynamicDataMap? = null): Color?
 internal fun DynamicDuration.evaluate(injectedData: DynamicDataMap? = null): Duration? {
     val result = mutableListOf<Duration>()
     evaluate(
-        DynamicTypeBindingRequest.forDynamicDuration(
-            this,
-            { it.run() },
-            AddToListCallback(result),
-        ),
-        injectedData
+        DynamicTypeBindingRequest.forDynamicDuration(this, { it.run() }, AddToListCallback(result)),
+        injectedData,
     )
     return result.lastOrNull()
 }
@@ -165,12 +145,8 @@ internal fun DynamicDuration.evaluate(injectedData: DynamicDataMap? = null): Dur
 internal fun DynamicInstant.evaluate(injectedData: DynamicDataMap? = null): Instant? {
     val result = mutableListOf<Instant>()
     evaluate(
-        DynamicTypeBindingRequest.forDynamicInstant(
-            this,
-            { it.run() },
-            AddToListCallback(result),
-        ),
-        injectedData
+        DynamicTypeBindingRequest.forDynamicInstant(this, { it.run() }, AddToListCallback(result)),
+        injectedData,
     )
     return result.lastOrNull()
 }

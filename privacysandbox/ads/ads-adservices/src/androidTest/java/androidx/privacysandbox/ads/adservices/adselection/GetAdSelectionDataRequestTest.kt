@@ -28,7 +28,7 @@ import org.junit.runner.RunWith
 @OptIn(
     ExperimentalFeatures.Ext10OptIn::class,
     ExperimentalFeatures.Ext12OptIn::class,
-    ExperimentalFeatures.Ext14OptIn::class
+    ExperimentalFeatures.Ext14OptIn::class,
 )
 @SmallTest
 @RunWith(AndroidJUnit4::class)
@@ -105,7 +105,7 @@ class GetAdSelectionDataRequestTest {
             GetAdSelectionDataRequest(
                 AdTechIdentifier("1234"),
                 Uri.parse("www.coordinator.com"),
-                sellerConfiguration
+                sellerConfiguration,
             )
 
         Truth.assertThat(getAdSelectionDataRequest == reportEventRequestUnequal).isFalse()

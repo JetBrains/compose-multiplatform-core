@@ -67,7 +67,7 @@ fun PullToRefreshDemo() {
                     IconButton(onClick = onRefresh) {
                         Icon(Icons.Filled.Refresh, "Trigger Refresh")
                     }
-                }
+                },
             )
         }
     ) {
@@ -79,7 +79,7 @@ fun PullToRefreshDemo() {
         ) {
             LazyColumn(Modifier.fillMaxSize()) {
                 if (!isRefreshing) {
-                    items(itemCount) { ListItem({ Text(text = "Item ${itemCount - it}") }) }
+                    items(itemCount) { ListItem { Text(text = "Item ${itemCount - it}") } }
                 }
             }
         }

@@ -1,7 +1,0 @@
-// Baseline format: 1.0
-ChangedStatic: androidx.room.OnConflictStrategy.Companion#getFAIL():
-    Method androidx.room.OnConflictStrategy.Companion.getFAIL has changed 'static' qualifier
-ChangedStatic: androidx.room.OnConflictStrategy.Companion#getROLLBACK():
-    Method androidx.room.OnConflictStrategy.Companion.getROLLBACK has changed 'static' qualifier
-ChangedStatic: androidx.room.RoomWarnings.Companion#getCURSOR_MISMATCH():
-    Method androidx.room.RoomWarnings.Companion.getCURSOR_MISMATCH has changed 'static' qualifier

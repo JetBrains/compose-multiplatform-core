@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 
-@file:Suppress("RedundantVisibilityModifier", "NOTHING_TO_INLINE")
+// Facade class name cannot be updated, the Kt name has been released
+@file:Suppress("RedundantVisibilityModifier", "NOTHING_TO_INLINE", "FacadeClassJvmName")
 @file:OptIn(ExperimentalContracts::class)
 
 package androidx.collection
@@ -56,12 +57,7 @@ public fun longIntMapOf(key1: Long, value1: Int): LongIntMap =
  * Returns a new [LongIntMap] with [key1], and [key2] associated with [value1], and [value2],
  * respectively.
  */
-public fun longIntMapOf(
-    key1: Long,
-    value1: Int,
-    key2: Long,
-    value2: Int,
-): LongIntMap =
+public fun longIntMapOf(key1: Long, value1: Int, key2: Long, value2: Int): LongIntMap =
     MutableLongIntMap().also { map ->
         map[key1] = value1
         map[key2] = value2
@@ -223,9 +219,7 @@ public fun mutableLongIntMapOf(
  *
  * @param builderAction Lambda in which the [MutableLongIntMap] can be populated.
  */
-public inline fun buildLongIntMap(
-    builderAction: MutableLongIntMap.() -> Unit,
-): LongIntMap {
+public inline fun buildLongIntMap(builderAction: MutableLongIntMap.() -> Unit): LongIntMap {
     contract { callsInPlace(builderAction, InvocationKind.EXACTLY_ONCE) }
     return MutableLongIntMap().apply(builderAction)
 }
@@ -455,19 +449,21 @@ public sealed class LongIntMap {
         truncated: CharSequence = "...",
     ): String = buildString {
         append(prefix)
-        var index = 0
-        this@LongIntMap.forEach { key, value ->
-            if (index == limit) {
-                append(truncated)
-                return@buildString
+        run {
+            var index = 0
+            this@LongIntMap.forEach { key, value ->
+                if (index != 0) {
+                    append(separator)
+                }
+                if (index == limit) {
+                    append(truncated)
+                    return@run
+                }
+                append(key)
+                append('=')
+                append(value)
+                index++
             }
-            if (index != 0) {
-                append(separator)
-            }
-            append(key)
-            append('=')
-            append(value)
-            index++
         }
         append(postfix)
     }
@@ -487,20 +483,22 @@ public sealed class LongIntMap {
         postfix: CharSequence = "", // I know this should be suffix, but this is kotlin's name
         limit: Int = -1,
         truncated: CharSequence = "...",
-        crossinline transform: (key: Long, value: Int) -> CharSequence
+        crossinline transform: (key: Long, value: Int) -> CharSequence,
     ): String = buildString {
         append(prefix)
-        var index = 0
-        this@LongIntMap.forEach { key, value ->
-            if (index == limit) {
-                append(truncated)
-                return@buildString
+        run {
+            var index = 0
+            this@LongIntMap.forEach { key, value ->
+                if (index != 0) {
+                    append(separator)
+                }
+                if (index == limit) {
+                    append(truncated)
+                    return@run
+                }
+                append(transform(key, value))
+                index++
             }
-            if (index != 0) {
-                append(separator)
-            }
-            append(transform(key, value))
-            index++
         }
         append(postfix)
     }
@@ -678,10 +676,12 @@ public class MutableLongIntMap(initialCapacity: Int = DefaultScatterCapacity) : 
      * with [key].
      */
     public inline fun getOrPut(key: Long, defaultValue: () -> Int): Int {
-        val index = findKeyIndex(key)
+        val index = findInsertIndex(key)
         return if (index < 0) {
             val defValue = defaultValue()
-            put(key, defValue)
+            val insertIndex = index.inv()
+            keys[insertIndex] = key
+            values[insertIndex] = defValue
             defValue
         } else {
             values[index]
@@ -695,8 +695,7 @@ public class MutableLongIntMap(initialCapacity: Int = DefaultScatterCapacity) : 
      * the underlying storage and cause allocations.
      */
     public operator fun set(key: Long, value: Int) {
-        var index = findInsertIndex(key)
-        if (index < 0) index = index.inv()
+        val index = findInsertIndex(key).let { index -> if (index < 0) index.inv() else index }
         keys[index] = key
         values[index] = value
     }
@@ -817,11 +816,12 @@ public class MutableLongIntMap(initialCapacity: Int = DefaultScatterCapacity) : 
 
     /**
      * Scans the hash table to find the index at which we can store a value for the give [key]. If
-     * the key already exists in the table, its index will be returned, otherwise the index of an
-     * empty slot will be returned. Calling this function may cause the internal storage to be
+     * the key already exists in the table, its index will be returned, otherwise the `index.inv()`
+     * of an empty slot will be returned. Calling this function may cause the internal storage to be
      * reallocated if the table is full.
      */
-    private fun findInsertIndex(key: Long): Int {
+    @PublishedApi
+    internal fun findInsertIndex(key: Long): Int {
         val hash = hash(key)
         val hash1 = h1(hash)
         val hash2 = h2(hash)

@@ -57,6 +57,8 @@ abstract class SdkResourceGenerator : DefaultTask() {
 
     @get:Input abstract val kspVersion: Property<String>
 
+    @get:Input abstract val ndkVersion: Property<String>
+
     @get:Input lateinit var repositoryUrls: List<String>
 
     @get:Input
@@ -70,6 +72,15 @@ abstract class SdkResourceGenerator : DefaultTask() {
             null
         } else {
             project.getPrebuiltsRoot().toRelativeString(project.projectDir)
+        }
+
+    @get:Input
+    @get:Optional
+    val gradlePrebuiltsRelativePath: String? =
+        if (ProjectLayoutType.isPlayground(project)) {
+            null
+        } else {
+            project.getGradlePrebuiltsPath().toRelativeString(project.projectDir)
         }
 
     private val projectDir: File = project.projectDir
@@ -99,8 +110,12 @@ abstract class SdkResourceGenerator : DefaultTask() {
             writer.write("minSdkVersion=${minSdkVersion.get()}\n")
             writer.write("kgpVersion=${kgpVersion.get()}\n")
             writer.write("kspVersion=${kspVersion.get()}\n")
+            writer.write("ndkVersion=${ndkVersion.get()}\n")
             if (prebuiltsRelativePath != null) {
                 writer.write("prebuiltsRelativePath=$prebuiltsRelativePath\n")
+            }
+            if (gradlePrebuiltsRelativePath != null) {
+                writer.write("gradlePrebuiltsRelativePath=$gradlePrebuiltsRelativePath\n")
             }
         }
     }
@@ -121,7 +136,7 @@ abstract class SdkResourceGenerator : DefaultTask() {
             project: Project,
             kspVersion: String = project.getVersionByName("ksp"),
             agpVersion: String = project.getVersionByName("androidGradlePlugin"),
-            kgpVersion: String = project.getVersionByName("kotlin")
+            kgpVersion: String = project.getVersionByName("kotlin"),
         ): TaskProvider<SdkResourceGenerator> {
             val generatedDirectory = project.layout.buildDirectory.dir("generated/resources")
             return project.tasks.register(TASK_NAME, SdkResourceGenerator::class.java) {
@@ -142,15 +157,16 @@ abstract class SdkResourceGenerator : DefaultTask() {
                 it.kspVersion.set(kspVersion)
                 it.agpDependency.set("com.android.tools.build:gradle:$agpVersion")
                 it.kgpVersion.set(kgpVersion)
+                it.ndkVersion.set(project.provider { project.defaultAndroidConfig.ndkVersion })
                 // Copy repositories used for the library project so that it can replicate the same
                 // maven structure in test.
                 it.repositoryUrls =
-                    project.repositories.filterIsInstance<MavenArtifactRepository>().map {
-                        if (it.url.scheme == "file") {
+                    project.repositories.filterIsInstance<MavenArtifactRepository>().map { repo ->
+                        if (repo.url.scheme == "file") {
                             // Make file paths relative to projectDir
-                            File(it.url.path).toRelativeString(project.projectDir)
+                            File(repo.url.path).toRelativeString(project.projectDir)
                         } else {
-                            it.url.toString()
+                            repo.url.toString()
                         }
                     }
             }

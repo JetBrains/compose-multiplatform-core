@@ -41,7 +41,7 @@ class MedicalResourceTest {
     fun setup() {
         Assume.assumeTrue(
             "FEATURE_PERSONAL_HEALTH_RECORD is not available on this device!",
-            isPersonalHealthRecordFeatureAvailableInPlatform()
+            isPersonalHealthRecordFeatureAvailableInPlatform(),
         )
     }
 
@@ -53,7 +53,7 @@ class MedicalResourceTest {
                 MEDICAL_RESOURCE_ID,
                 MEDICAL_DATA_SOURCE_ID_STRING,
                 FHIR_VERSION_4_0_1,
-                FHIR_RESOURCE_EMPTY
+                FHIR_RESOURCE_EMPTY,
             )
         val medicalResource2 =
             MedicalResource(
@@ -61,7 +61,7 @@ class MedicalResourceTest {
                 MEDICAL_RESOURCE_ID,
                 MEDICAL_DATA_SOURCE_ID_STRING,
                 FHIR_VERSION_4_0_1,
-                FHIR_RESOURCE_EMPTY
+                FHIR_RESOURCE_EMPTY,
             )
         val medicalResource3 =
             MedicalResource(
@@ -69,7 +69,7 @@ class MedicalResourceTest {
                 MEDICAL_RESOURCE_ID,
                 MEDICAL_DATA_SOURCE_ID_STRING,
                 FhirVersion.parseFhirVersion("4.3.0"),
-                FHIR_RESOURCE_EMPTY
+                FHIR_RESOURCE_EMPTY,
             )
 
         assertThat(medicalResource1).isEqualTo(medicalResource2)
@@ -84,7 +84,7 @@ class MedicalResourceTest {
                 MEDICAL_RESOURCE_ID,
                 MEDICAL_DATA_SOURCE_ID_STRING,
                 FHIR_VERSION_4_0_1,
-                FHIR_RESOURCE_EMPTY
+                FHIR_RESOURCE_EMPTY,
             )
 
         val toString = medicalResource.toString()
@@ -106,7 +106,7 @@ class MedicalResourceTest {
                 MEDICAL_RESOURCE_ID,
                 MEDICAL_DATA_SOURCE_ID_STRING,
                 FHIR_VERSION_4_0_1,
-                FHIR_RESOURCE_EMPTY
+                FHIR_RESOURCE_EMPTY,
             )
 
         val platform = sdk.platformMedicalResource
@@ -117,7 +117,7 @@ class MedicalResourceTest {
                         PlatformMedicalResource.MEDICAL_RESOURCE_TYPE_MEDICATIONS,
                         MEDICAL_DATA_SOURCE_ID_STRING,
                         FHIR_VERSION_4_0_1.platformFhirVersion,
-                        FHIR_RESOURCE_EMPTY.platformFhirResource
+                        FHIR_RESOURCE_EMPTY.platformFhirResource,
                     )
                     .build()
             )
@@ -131,7 +131,7 @@ class MedicalResourceTest {
             MedicalResourceId(
                 MEDICAL_DATA_SOURCE_ID_STRING,
                 FHIR_RESOURCE_TYPE_PATIENT,
-                "fhir_rs_id"
+                "fhir_rs_id",
             )
         }
         private val FHIR_VERSION_4_0_1 by lazy { FhirVersion.Companion.parseFhirVersion("4.0.1") }

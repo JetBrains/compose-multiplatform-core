@@ -17,10 +17,8 @@
 package androidx.camera.video
 
 import android.os.Build
-import android.util.Range
 import androidx.camera.testing.impl.AndroidUtil.isEmulator
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.test.filters.SdkSuppress
 import androidx.test.filters.SmallTest
 import com.google.common.truth.Truth.assertThat
 import org.junit.Assume.assumeFalse
@@ -29,7 +27,6 @@ import org.junit.runner.RunWith
 
 @SmallTest
 @RunWith(AndroidJUnit4::class)
-@SdkSuppress(minSdkVersion = 21)
 class MediaSpecTest {
 
     @Test
@@ -37,7 +34,7 @@ class MediaSpecTest {
         // Skip for b/264902324
         assumeFalse(
             "Emulator API 30 crashes running this test.",
-            Build.VERSION.SDK_INT == 30 && isEmulator()
+            Build.VERSION.SDK_INT == 30 && isEmulator(),
         )
         val mediaSpec = MediaSpec.builder().build()
 
@@ -45,7 +42,7 @@ class MediaSpecTest {
         val defaultVideoSpec = VideoSpec.builder().build()
         assertThat(mediaSpec.audioSpec).isEqualTo(defaultAudioSpec)
         assertThat(mediaSpec.videoSpec).isEqualTo(defaultVideoSpec)
-        assertThat(mediaSpec.outputFormat).isEqualTo(MediaSpec.OUTPUT_FORMAT_AUTO)
+        assertThat(mediaSpec.outputFormat).isEqualTo(MediaSpec.OUTPUT_FORMAT_UNSPECIFIED)
     }
 
     @Test
@@ -53,13 +50,13 @@ class MediaSpecTest {
         // Skip for b/264902324
         assumeFalse(
             "Emulator API 30 crashes running this test.",
-            Build.VERSION.SDK_INT == 30 && isEmulator()
+            Build.VERSION.SDK_INT == 30 && isEmulator(),
         )
-        val testFrameRate = Range(15, 30)
+        val testFrameRate = 30
         val mediaSpec =
-            MediaSpec.builder().configureVideo { it.setFrameRate(testFrameRate) }.build()
+            MediaSpec.builder().configureVideo { it.setEncodeFrameRate(testFrameRate) }.build()
 
-        assertThat(mediaSpec.videoSpec.frameRate).isEqualTo(testFrameRate)
+        assertThat(mediaSpec.videoSpec.encodeFrameRate).isEqualTo(testFrameRate)
     }
 
     @Test
@@ -67,7 +64,7 @@ class MediaSpecTest {
         // Skip for b/264902324
         assumeFalse(
             "Emulator API 30 crashes running this test.",
-            Build.VERSION.SDK_INT == 30 && isEmulator()
+            Build.VERSION.SDK_INT == 30 && isEmulator(),
         )
         val mediaSpec =
             MediaSpec.builder()
@@ -75,17 +72,5 @@ class MediaSpecTest {
                 .build()
 
         assertThat(mediaSpec.audioSpec.channelCount).isEqualTo(AudioSpec.CHANNEL_COUNT_STEREO)
-    }
-
-    @Test
-    fun settingAudioSpecToNO_AUDIO_hasCHANNEL_COUNT_NONE() {
-        // Skip for b/264902324
-        assumeFalse(
-            "Emulator API 30 crashes running this test.",
-            Build.VERSION.SDK_INT == 30 && isEmulator()
-        )
-        val mediaSpec = MediaSpec.builder().setAudioSpec(AudioSpec.NO_AUDIO).build()
-
-        assertThat(mediaSpec.audioSpec.channelCount).isEqualTo(AudioSpec.CHANNEL_COUNT_NONE)
     }
 }

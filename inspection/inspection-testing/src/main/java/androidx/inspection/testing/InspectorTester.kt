@@ -58,16 +58,14 @@ import kotlinx.coroutines.withContext
 suspend fun InspectorTester(
     inspectorId: String,
     environment: InspectorEnvironment? = null,
-    factoryOverride: InspectorFactory<*>? = null
+    factoryOverride: InspectorFactory<*>? = null,
 ): InspectorTester {
     val inspectorTesterJob = Job()
     val resolved =
         environment
             ?: DefaultTestInspectorEnvironment(
                 TestInspectorExecutors(inspectorTesterJob),
-                DefaultArtTooling(inspectorId).apply {
-                    inspectorTesterJob.invokeOnCompletion { unregisterHooks() }
-                }
+                DefaultArtTooling(inspectorId),
             )
     val dispatcher = resolved.executors().primary().asCoroutineDispatcher()
     return withContext(dispatcher) {
@@ -87,7 +85,7 @@ class InspectorTester
 internal constructor(
     private val scope: CoroutineScope,
     private val inspector: Inspector,
-    val channel: ReceiveChannel<ByteArray>
+    val channel: ReceiveChannel<ByteArray>,
 ) {
 
     suspend fun sendCommand(array: ByteArray): ByteArray {
@@ -147,7 +145,7 @@ internal class CommandCallbackImpl(private val cont: CancellableContinuation<Byt
  */
 class DefaultTestInspectorEnvironment(
     private val testInspectorExecutors: InspectorExecutors,
-    private val artTooling: ArtTooling = FakeArtTooling()
+    private val artTooling: ArtTooling = FakeArtTooling(),
 ) : InspectorEnvironment {
     override fun artTooling() = artTooling
 
@@ -158,7 +156,7 @@ class FakeArtTooling : ArtTooling {
     override fun registerEntryHook(
         originClass: Class<*>,
         originMethod: String,
-        entryHook: ArtTooling.EntryHook
+        entryHook: ArtTooling.EntryHook,
     ) {
         throw UnsupportedOperationException()
     }
@@ -170,7 +168,7 @@ class FakeArtTooling : ArtTooling {
     override fun <T : Any?> registerExitHook(
         originClass: Class<*>,
         originMethod: String,
-        exitHook: ArtTooling.ExitHook<T>
+        exitHook: ArtTooling.ExitHook<T>,
     ) {
         throw UnsupportedOperationException()
     }

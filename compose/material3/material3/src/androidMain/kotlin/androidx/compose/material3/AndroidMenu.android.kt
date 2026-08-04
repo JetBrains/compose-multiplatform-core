@@ -16,6 +16,7 @@
 
 package androidx.compose.material3
 
+import android.annotation.SuppressLint
 import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ScrollState
@@ -25,12 +26,10 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.internal.DropdownMenuPositionProvider
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
-import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpOffset
@@ -39,7 +38,7 @@ import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 
 @Composable
-actual fun DropdownMenu(
+public actual fun DropdownMenu(
     expanded: Boolean,
     onDismissRequest: () -> Unit,
     modifier: Modifier,
@@ -51,29 +50,31 @@ actual fun DropdownMenu(
     tonalElevation: Dp,
     shadowElevation: Dp,
     border: BorderStroke?,
-    content: @Composable ColumnScope.() -> Unit
+    content: @Composable ColumnScope.() -> Unit,
 ) {
     val expandedState = remember { MutableTransitionState(false) }
     expandedState.targetState = expanded
 
     if (expandedState.currentState || expandedState.targetState) {
-        val transformOriginState = remember { mutableStateOf(TransformOrigin.Center) }
         val density = LocalDensity.current
         val popupPositionProvider =
             remember(offset, density) {
-                DropdownMenuPositionProvider(offset, density) { parentBounds, menuBounds ->
-                    transformOriginState.value = calculateTransformOrigin(parentBounds, menuBounds)
-                }
+                DropdownMenuPositionProvider(
+                    offset,
+                    density,
+                    horizontalMargin = 0,
+                    dropdownMenuAnchorPosition = MenuAnchorPosition.Below,
+                )
             }
 
         Popup(
             onDismissRequest = onDismissRequest,
             popupPositionProvider = popupPositionProvider,
-            properties = properties
+            properties = properties,
         ) {
             DropdownMenuContent(
                 expandedState = expandedState,
-                transformOriginState = transformOriginState,
+                transformOrigin = { popupPositionProvider.transformOrigin },
                 scrollState = scrollState,
                 shape = shape,
                 containerColor = containerColor,
@@ -105,22 +106,23 @@ actual fun DropdownMenu(
                     "    shadowElevation = MenuDefaults.ShadowElevation,\n" +
                     "    border = null,\n" +
                     "    content = content,\n" +
-                    ")",
+                    ")"
         ),
     message =
         "Maintained for binary compatibility. Use overload with parameters for shape, " +
-            "color, elevation, and border."
+            "color, elevation, and border.",
 )
 @Composable
-fun DropdownMenu(
+@SuppressLint("ComposableNaming")
+public fun DropdownMenu(
     expanded: Boolean,
     onDismissRequest: () -> Unit,
     modifier: Modifier = Modifier,
     offset: DpOffset = DpOffset(0.dp, 0.dp),
     scrollState: ScrollState = rememberScrollState(),
     properties: PopupProperties = PopupProperties(focusable = true),
-    content: @Composable ColumnScope.() -> Unit
-) =
+    content: @Composable ColumnScope.() -> Unit,
+): Unit =
     DropdownMenu(
         expanded = expanded,
         onDismissRequest = onDismissRequest,
@@ -143,19 +145,20 @@ fun DropdownMenu(
             expression =
                 "DropdownMenu(expanded,onDismissRequest, modifier, offset, " +
                     "rememberScrollState(), properties, content)",
-            "androidx.compose.foundation.rememberScrollState"
+            "androidx.compose.foundation.rememberScrollState",
         ),
-    message = "Replaced by a DropdownMenu function with a ScrollState parameter"
+    message = "Replaced by a DropdownMenu function with a ScrollState parameter",
 )
 @Composable
-fun DropdownMenu(
+@SuppressLint("ComposableNaming")
+public fun DropdownMenu(
     expanded: Boolean,
     onDismissRequest: () -> Unit,
     modifier: Modifier = Modifier,
     offset: DpOffset = DpOffset(0.dp, 0.dp),
     properties: PopupProperties = PopupProperties(focusable = true),
-    content: @Composable ColumnScope.() -> Unit
-) =
+    content: @Composable ColumnScope.() -> Unit,
+): Unit =
     DropdownMenu(
         expanded = expanded,
         onDismissRequest = onDismissRequest,
@@ -163,11 +166,11 @@ fun DropdownMenu(
         offset = offset,
         scrollState = rememberScrollState(),
         properties = properties,
-        content = content
+        content = content,
     )
 
 @Composable
-actual fun DropdownMenuItem(
+public actual fun DropdownMenuItem(
     text: @Composable () -> Unit,
     onClick: () -> Unit,
     modifier: Modifier,
@@ -191,4 +194,17 @@ actual fun DropdownMenuItem(
     )
 }
 
-internal actual val DefaultMenuProperties = PopupProperties(focusable = true)
+@Composable
+internal actual fun DropdownMenuPopupImpl(
+    onDismissRequest: () -> Unit,
+    popupPositionProvider: DropdownMenuPopupPositionProvider,
+    properties: PopupProperties,
+    content: @Composable () -> Unit,
+) {
+    Popup(
+        onDismissRequest = onDismissRequest,
+        popupPositionProvider = popupPositionProvider,
+        properties = properties,
+        content = content,
+    )
+}

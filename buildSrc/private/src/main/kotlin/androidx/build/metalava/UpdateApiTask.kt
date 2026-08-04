@@ -58,10 +58,7 @@ abstract class UpdateApiTask : DefaultTask() {
     @OutputFiles
     fun getTaskOutputs(): List<File> {
         return outputApiLocations.get().flatMap { outputApiLocation ->
-            listOf(
-                outputApiLocation.publicApiFile,
-                outputApiLocation.restrictedApiFile,
-            )
+            listOf(outputApiLocation.publicApiFile, outputApiLocation.restrictedApiFile)
         }
     }
 
@@ -73,8 +70,38 @@ abstract class UpdateApiTask : DefaultTask() {
             copy(
                 source = inputApi.restrictedApiFile,
                 dest = outputApi.restrictedApiFile,
-                logger = logger
+                logger = logger,
             )
+
+            // Update multiplatform API files.
+            if (ApiLocation.containsApiFiles(inputApi.multiplatformApiDirectory)) {
+                if (!outputApi.multiplatformApiDirectory.exists()) {
+                    outputApi.multiplatformApiDirectory.mkdir()
+                }
+                // Copy each generated file over to the output location.
+                for (inputMultiplatformApiFile in inputApi.multiplatformApiDirectory.listFiles()) {
+                    copy(
+                        inputMultiplatformApiFile,
+                        File(outputApi.multiplatformApiDirectory, inputMultiplatformApiFile.name),
+                        logger = logger,
+                    )
+                }
+                // If there are files that exist in the output location which have not been created
+                // by this `generateApi` invocation (i.e. a source set was removed), delete the old
+                // API file since it is no longer valid.
+                for (outputMultiplatformApiFile in
+                    outputApi.multiplatformApiDirectory.listFiles()) {
+                    val inputMultiplatformApiFile =
+                        File(inputApi.multiplatformApiDirectory, outputMultiplatformApiFile.name)
+                    if (!inputMultiplatformApiFile.exists()) {
+                        copy(inputMultiplatformApiFile, outputMultiplatformApiFile, logger = logger)
+                    }
+                }
+            } else if (outputApi.multiplatformApiDirectory.exists()) {
+                // If there was not a multiplatform API directory created by this `generateApi`
+                // invocation, delete the old one if it exists.
+                outputApi.multiplatformApiDirectory.deleteRecursively()
+            }
         }
     }
 }

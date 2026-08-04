@@ -53,14 +53,14 @@ import androidx.compose.ui.unit.dp
  */
 @Composable
 @NonRestartableComposable
-fun Card(
+public fun Card(
     modifier: Modifier = Modifier,
     shape: Shape = MaterialTheme.shapes.medium,
     backgroundColor: Color = MaterialTheme.colors.surface,
     contentColor: Color = contentColorFor(backgroundColor),
     border: BorderStroke? = null,
     elevation: Dp = 1.dp,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     Surface(
         modifier = modifier,
@@ -69,7 +69,7 @@ fun Card(
         contentColor = contentColor,
         elevation = elevation,
         border = border,
-        content = content
+        content = content,
     )
 }
 
@@ -102,7 +102,7 @@ fun Card(
 @ExperimentalMaterialApi
 @Composable
 @NonRestartableComposable
-fun Card(
+public fun Card(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
@@ -112,7 +112,7 @@ fun Card(
     border: BorderStroke? = null,
     elevation: Dp = 1.dp,
     interactionSource: MutableInteractionSource? = null,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     Surface(
         onClick = onClick,
@@ -124,6 +124,6 @@ fun Card(
         border = border,
         elevation = elevation,
         interactionSource = interactionSource,
-        content = content
+        content = content,
     )
 }

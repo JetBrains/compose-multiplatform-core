@@ -23,21 +23,28 @@ import android.graphics.Paint.Style
 import android.graphics.Point
 import android.graphics.PorterDuff
 import android.graphics.PorterDuffXfermode
-import android.graphics.Rect
 import android.graphics.RectF
-import android.os.DeadObjectException
+import android.os.RemoteException
 import androidx.annotation.MainThread
 import androidx.annotation.RestrictTo
 import androidx.annotation.VisibleForTesting
+import androidx.pdf.Highlight
 import androidx.pdf.PdfDocument
+import androidx.pdf.PdfFeature
 import androidx.pdf.exceptions.RequestFailedException
 import androidx.pdf.exceptions.RequestMetadata
+import androidx.pdf.models.FormWidgetInfo
+import androidx.pdf.ocr.OcrContextRepository
+import androidx.pdf.ocr.getAllText
+import androidx.pdf.util.ExceptionUtils.isHandledRemoteException
 import androidx.pdf.util.PAGE_CONTENTS_REQUEST_NAME
 import androidx.pdf.util.PAGE_LINKS_REQUEST_NAME
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 
 /** A single PDF page that knows how to render and draw itself */
@@ -57,22 +64,37 @@ internal class Page(
      * threshold for tiled rendering
      */
     private val maxBitmapSizePx: Point,
-    /** Whether touch exploration is enabled */
-    private val isTouchExplorationEnabled: Boolean,
-    /** A function to call when the [PdfView] hosting this [Page] ought to invalidate itself */
-    private val onPageUpdate: () -> Unit,
+    /** A function to call when the bitmap of the page is ready (invoked with page number). */
+    private val onBitmapReady: (Int) -> Unit,
+    /** A function to call when form widgets are ready (invoked with page number). */
+    private val onFormWidgetReady: (Int) -> Unit,
     /** A function to call when page text is ready (invoked with page number). */
     private val onPageTextReady: ((Int) -> Unit),
     /** Error flow for propagating error occurred while processing to [PdfView]. */
-    private val errorFlow: MutableSharedFlow<Throwable>
+    private val errorFlow: MutableSharedFlow<Throwable>,
+    isAccessibilityEnabled: Boolean,
+    /** A list represent the [FormWidgetInfo] present on the page. */
+    formWidgetInfos: List<FormWidgetInfo>? = null,
+    private val pdfFormFillingConfig: PdfFormFillingConfig,
+    private val onBitmapCleared: (Int) -> Unit,
+    ocrContextRepository: OcrContextRepository? = null,
 ) {
     init {
         require(pageNum >= 0) { "Invalid negative page" }
     }
 
+    private var _ocrContextRepository: OcrContextRepository? = ocrContextRepository
+
+    internal fun setOcrContextRepository(value: OcrContextRepository?) {
+        _ocrContextRepository = value
+        if (value != null && isAccessibilityEnabled) {
+            fetchTextJob?.cancel()
+            maybeFetchText()
+        }
+    }
+
     /** Handles rendering bitmaps for this page using [PdfDocument] */
     private var bitmapFetcher: BitmapFetcher? = null
-
     // Pre-allocated values to avoid allocations at drawing time
     private val highlightPaint =
         Paint().apply {
@@ -83,15 +105,53 @@ internal class Page(
             isDither = true
         }
     private val highlightRect = RectF()
+    private val formWidgetHighlightRect = RectF()
     private val tileLocationRect = RectF()
 
-    private var fetchPageTextJob: Job? = null
+    private var fetchTextJob: Job? = null
+
     internal var pageText: String? = null
         private set
+
+    internal var ocrText: String? = null
+        private set
+
+    private val isTextReady: Boolean
+        get() {
+            val isPageTextReady =
+                !pdfDocument.isFeatureSupported(PdfFeature.TEXT_EXTRACTION) || pageText != null
+            val isOcrTextReady = _ocrContextRepository == null || ocrText != null
+            return isPageTextReady && isOcrTextReady
+        }
 
     private var fetchLinksJob: Job? = null
     internal var links: PdfDocument.PdfPageLinks? = null
         private set
+
+    private var fetchFormWidgetInfoJob: Job? = null
+
+    internal var isAccessibilityEnabled: Boolean = isAccessibilityEnabled
+        set(value) {
+            field = value
+            if (value) {
+                maybeFetchText()
+            }
+        }
+
+    internal var formWidgetInfos: List<FormWidgetInfo>? = formWidgetInfos
+        private set(value) {
+            field = value
+            formWidgetIndexToInfoMap = value?.associateBy { it.widgetIndex }
+        }
+
+    internal var formWidgetIndexToInfoMap: Map<Int, FormWidgetInfo>? =
+        formWidgetInfos?.associateBy { it.widgetIndex }
+        private set
+
+    //  Checks if the content of this page within the specified visible area is fully rendered.
+    internal fun isFullyRendered(zoom: Float, viewArea: RectF?): Boolean {
+        return bitmapFetcher?.isFullyRendered(zoom, viewArea) ?: false
+    }
 
     /**
      * Puts this page into a "visible" state, and / or updates various properties related to the
@@ -100,8 +160,14 @@ internal class Page(
      * @param zoom the current scale
      * @param viewArea the portion of the page that's visible, in content coordinates
      * @param stablePosition true if position is not actively changing, e.g. during a fling
+     * @param pauseBitmapFetch true if we should wait to fetch Bitmaps
      */
-    fun setVisible(zoom: Float, viewArea: Rect, stablePosition: Boolean = true) {
+    fun setVisible(
+        zoom: Float,
+        viewArea: RectF,
+        stablePosition: Boolean = true,
+        pauseBitmapFetch: Boolean = false,
+    ) {
         if (bitmapFetcher == null) {
             bitmapFetcher =
                 BitmapFetcher(
@@ -110,17 +176,27 @@ internal class Page(
                     pdfDocument,
                     backgroundScope,
                     maxBitmapSizePx,
-                    onPageUpdate,
-                    errorFlow
+                    onBitmapReady,
+                    errorFlow,
                 )
         }
-        bitmapFetcher?.maybeFetchNewBitmaps(zoom, viewArea)
+        if (!pauseBitmapFetch) {
+            bitmapFetcher?.maybeFetchNewBitmaps(zoom, viewArea)
+        }
         if (stablePosition) {
             maybeFetchLinks()
-            if (isTouchExplorationEnabled) {
-                maybeFetchPageText()
-            }
+            maybeFetchText()
         }
+    }
+
+    /**
+     * Invalidates and fetches new bitmaps for the [invalidatedArea] of the page.
+     *
+     * @param zoom the current scale
+     * @param invalidatedArea visible portion of the page which has been invalidated
+     */
+    fun maybeInvalidateAreas(zoom: Float, invalidatedArea: RectF) {
+        bitmapFetcher?.maybeFetchNewBitmaps(zoom, invalidatedArea, hasFormStateChanged = true)
     }
 
     /**
@@ -133,46 +209,79 @@ internal class Page(
 
     /** Puts this page into an "invisible" state, i.e. retaining only the minimum data required */
     fun setInvisible() {
+        if (bitmapFetcher != null) {
+            // Bitmaps are managed by BitmapFetcher; only signal clearing if it was active for this
+            // page.
+            onBitmapCleared(pageNum)
+        }
         bitmapFetcher?.close()
         bitmapFetcher = null
         pageText = null
-        fetchPageTextJob?.cancel()
-        fetchPageTextJob = null
+        ocrText = null
+        fetchTextJob?.cancel()
+        fetchTextJob = null
         links = null
         fetchLinksJob?.cancel()
         fetchLinksJob = null
     }
 
-    private fun maybeFetchPageText() {
-        if (fetchPageTextJob?.isActive == true || pageText != null) return
+    private fun maybeFetchText() {
+        if (!isAccessibilityEnabled || fetchTextJob?.isActive == true || isTextReady) return
 
-        fetchPageTextJob =
-            backgroundScope
-                .launch {
-                    ensureActive()
-                    try {
-                        pageText =
-                            pdfDocument.getPageContent(pageNum)?.textContents?.joinToString {
-                                it.text
-                            }
-                        onPageTextReady.invoke(pageNum)
-                    } catch (e: DeadObjectException) {
-                        val exception =
-                            RequestFailedException(
-                                requestMetadata =
-                                    RequestMetadata(
-                                        requestName = PAGE_CONTENTS_REQUEST_NAME,
-                                        pageRange = pageNum..pageNum
-                                    ),
-                                throwable = e
-                            )
-                        errorFlow.emit(exception)
-                    }
-                }
-                .also { it.invokeOnCompletion { fetchPageTextJob = null } }
+        fetchTextJob =
+            backgroundScope.launch {
+                joinAll(launch { maybeFetchPageText() }, launch { maybeFetchOcrText() })
+                onPageTextReady.invoke(pageNum)
+            }
     }
 
-    fun draw(canvas: Canvas, locationInView: Rect, highlights: List<Highlight>) {
+    private suspend fun maybeFetchPageText() {
+        if (!pdfDocument.isFeatureSupported(PdfFeature.TEXT_EXTRACTION) || pageText != null) return
+
+        try {
+            pageText = pdfDocument.getPageContent(pageNum)?.textContents?.joinToString { it.text }
+        } catch (e: RemoteException) {
+            if (!e.isHandledRemoteException) throw e
+
+            val exception =
+                RequestFailedException(
+                    requestMetadata =
+                        RequestMetadata(
+                            requestName = PAGE_CONTENTS_REQUEST_NAME,
+                            pageRange = pageNum..pageNum,
+                        ),
+                    throwable = e,
+                )
+            errorFlow.emit(exception)
+        }
+    }
+
+    private suspend fun maybeFetchOcrText() {
+        if (ocrText != null) return
+        val localOcrContextRepository = _ocrContextRepository ?: return
+
+        ocrText =
+            localOcrContextRepository
+                .getOcrContexts(pageNum)
+                .map { it.getAllText().text }
+                .joinToString(separator = "\n")
+    }
+
+    /** Updates the [formWidgetInfos] associated with the page. */
+    internal fun maybeUpdateFormWidgetInfos(formWidgetMetadataLoader: FormWidgetMetadataLoader) {
+        val previousJob = fetchFormWidgetInfoJob
+
+        fetchFormWidgetInfoJob =
+            backgroundScope.launch {
+                // Cancel the previous job, since we want to fetch the latest set of widgets
+                previousJob?.cancelAndJoin()
+                ensureActive()
+                formWidgetInfos = formWidgetMetadataLoader.loadFormWidgetInfos(pageNum)
+                onFormWidgetReady(pageNum)
+            }
+    }
+
+    fun draw(canvas: Canvas, locationInView: RectF, highlights: List<Highlight>) {
         val pageBitmaps = bitmapFetcher?.pageBitmaps
         if (pageBitmaps == null || pageBitmaps.needsWhiteBackground) {
             canvas.drawRect(locationInView, BLANK_PAINT)
@@ -185,14 +294,31 @@ internal class Page(
         for (highlight in highlights) {
             // Highlight locations are defined in content coordinates, compute their location
             // in View coordinates using locationInView
-            highlightRect.set(highlight.area.pageRect)
-            highlightRect.offset(locationInView.left.toFloat(), locationInView.top.toFloat())
+            highlightRect.set(
+                highlight.area.left,
+                highlight.area.top,
+                highlight.area.right,
+                highlight.area.bottom,
+            )
+            highlightRect.offset(locationInView.left, locationInView.top)
             highlightPaint.color = highlight.color
             canvas.drawRect(highlightRect, highlightPaint)
+        }
+
+        if (pdfFormFillingConfig.isFormFillingEnabled()) {
+            formWidgetInfos
+                ?.filter { !it.isReadOnly }
+                ?.forEach {
+                    formWidgetHighlightRect.set(it.widgetRect)
+                    formWidgetHighlightRect.offset(locationInView.left, locationInView.top)
+                    highlightPaint.color = pdfFormFillingConfig.formFieldsHighlightColor
+                    canvas.drawRect(formWidgetHighlightRect, highlightPaint)
+                }
         }
     }
 
     private fun maybeFetchLinks() {
+        if (!pdfDocument.isFeatureSupported(PdfFeature.LINKS)) return
         if (fetchLinksJob?.isActive == true || links != null) return
         fetchLinksJob =
             backgroundScope
@@ -200,15 +326,17 @@ internal class Page(
                     ensureActive()
                     try {
                         links = pdfDocument.getPageLinks(pageNum)
-                    } catch (e: DeadObjectException) {
+                    } catch (e: RemoteException) {
+                        if (!e.isHandledRemoteException) throw e
+
                         val exception =
                             RequestFailedException(
                                 requestMetadata =
                                     RequestMetadata(
                                         requestName = PAGE_LINKS_REQUEST_NAME,
-                                        pageRange = pageNum..pageNum
+                                        pageRange = pageNum..pageNum,
                                     ),
-                                throwable = e
+                                throwable = e,
                             )
                         errorFlow.emit(exception)
                     }
@@ -216,11 +344,11 @@ internal class Page(
                 .also { it.invokeOnCompletion { fetchLinksJob = null } }
     }
 
-    private fun draw(fullPageBitmap: FullPageBitmap, canvas: Canvas, locationInView: Rect) {
+    private fun draw(fullPageBitmap: FullPageBitmap, canvas: Canvas, locationInView: RectF) {
         canvas.drawBitmap(fullPageBitmap.bitmap, /* src= */ null, locationInView, BMP_PAINT)
     }
 
-    private fun draw(tileBoard: TileBoard, canvas: Canvas, locationInView: Rect) {
+    private fun draw(tileBoard: TileBoard, canvas: Canvas, locationInView: RectF) {
         tileBoard.fullPageBitmap?.let {
             canvas.drawBitmap(it, /* src= */ null, locationInView, BMP_PAINT)
         }
@@ -230,7 +358,7 @@ internal class Page(
                     bitmap, /* src */
                     null,
                     locationForTile(tile, tileBoard.bitmapScale, locationInView),
-                    BMP_PAINT
+                    BMP_PAINT,
                 )
             }
         }
@@ -239,7 +367,7 @@ internal class Page(
     private fun locationForTile(
         tile: TileBoard.Tile,
         renderedScale: Float,
-        locationInView: Rect
+        locationInView: RectF,
     ): RectF {
         val tileOffsetPx = tile.offsetPx
         // The tile describes its own location in pixels, i.e. scaled coordinates, however
@@ -252,7 +380,7 @@ internal class Page(
             left,
             top,
             left + exactSize.x / renderedScale,
-            top + exactSize.y / renderedScale
+            top + exactSize.y / renderedScale,
         )
         return tileLocationRect
     }

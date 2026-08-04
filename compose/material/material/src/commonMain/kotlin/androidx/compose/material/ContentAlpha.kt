@@ -18,6 +18,7 @@ package androidx.compose.material
 
 import androidx.annotation.FloatRange
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.ProvidableCompositionLocal
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.ui.graphics.luminance
 
@@ -26,41 +27,41 @@ import androidx.compose.ui.graphics.luminance
  *
  * See [LocalContentAlpha].
  */
-object ContentAlpha {
+public object ContentAlpha {
     /**
      * A high level of content alpha, used to represent high emphasis text such as input text in a
      * selected [TextField].
      */
-    val high: Float
+    public val high: Float
         @Composable
         get() =
             contentAlpha(
                 highContrastAlpha = HighContrastContentAlpha.high,
-                lowContrastAlpha = LowContrastContentAlpha.high
+                lowContrastAlpha = LowContrastContentAlpha.high,
             )
 
     /**
      * A medium level of content alpha, used to represent medium emphasis text such as placeholder
      * text in a [TextField].
      */
-    val medium: Float
+    public val medium: Float
         @Composable
         get() =
             contentAlpha(
                 highContrastAlpha = HighContrastContentAlpha.medium,
-                lowContrastAlpha = LowContrastContentAlpha.medium
+                lowContrastAlpha = LowContrastContentAlpha.medium,
             )
 
     /**
      * A low level of content alpha used to represent disabled components, such as text in a
      * disabled [Button].
      */
-    val disabled: Float
+    public val disabled: Float
         @Composable
         get() =
             contentAlpha(
                 highContrastAlpha = HighContrastContentAlpha.disabled,
-                lowContrastAlpha = LowContrastContentAlpha.disabled
+                lowContrastAlpha = LowContrastContentAlpha.disabled,
             )
 
     /**
@@ -74,7 +75,7 @@ object ContentAlpha {
     @Composable
     private fun contentAlpha(
         @FloatRange(from = 0.0, to = 1.0) highContrastAlpha: Float,
-        @FloatRange(from = 0.0, to = 1.0) lowContrastAlpha: Float
+        @FloatRange(from = 0.0, to = 1.0) lowContrastAlpha: Float,
     ): Float {
         val contentColor = LocalContentColor.current
         val lightTheme = MaterialTheme.colors.isLight
@@ -100,7 +101,7 @@ object ContentAlpha {
  *
  * @sample androidx.compose.material.samples.ContentAlphaSample
  */
-val LocalContentAlpha = compositionLocalOf { 1f }
+public val LocalContentAlpha: ProvidableCompositionLocal<Float> = compositionLocalOf { 1f }
 
 /**
  * Alpha levels for high luminance content in light theme, or low luminance content in dark theme.

@@ -59,20 +59,12 @@ fun Project.configureKtfmt() {
 
     // afterEvaluate because Gradle's default "check" task doesn't exist yet
     afterEvaluate {
-        // multiplatform projects with no enabled platforms do not actually apply the kotlin plugin
-        // and therefore do not have the check task. They are skipped unless a platform is enabled.
-        if (tasks.findByName("check") != null) {
-            addToCheckTask(ktCheckTask)
-            addToBuildOnServer(ktCheckTask)
-        }
+        addToCheckTask(ktCheckTask)
+        addToBuildOnServer(ktCheckTask)
     }
 }
 
-private val ExcludedDirectories =
-    listOf(
-        "test-data",
-        "external",
-    )
+private val ExcludedDirectories = listOf("test-data", "external")
 
 private val ExcludedDirectoryGlobs = ExcludedDirectories.map { "**/$it/**/*.kt" }
 private const val MainClass = "com.facebook.ktfmt.cli.Main"
@@ -84,10 +76,10 @@ private fun Project.getKtfmtConfiguration(): FileCollection {
     conf.attributes {
         it.attribute(
             TARGET_JVM_ENVIRONMENT_ATTRIBUTE,
-            project.objects.named(TargetJvmEnvironment.STANDARD_JVM)
+            project.objects.named(TargetJvmEnvironment.STANDARD_JVM),
         )
     }
-    return files(conf)
+    return conf.incoming.files
 }
 
 @CacheableTask
@@ -129,15 +121,19 @@ abstract class BaseKtfmtTask : DefaultTask() {
         if (getInputFiles().files.isEmpty()) return
         val outputStream = ByteArrayOutputStream()
         val errorStream = ByteArrayOutputStream()
-        execOperations.javaexec { javaExecSpec ->
-            javaExecSpec.standardOutput = outputStream
-            javaExecSpec.errorOutput = errorStream
-            javaExecSpec.mainClass.set(MainClass)
-            javaExecSpec.classpath = ktfmtClasspath
-            javaExecSpec.args = getArgsList(format = format)
-            javaExecSpec.jvmArgs("--add-opens=java.base/java.lang=ALL-UNNAMED")
-            overrideDirectory?.let { javaExecSpec.workingDir = it }
-        }
+        val result =
+            execOperations.javaexec { javaExecSpec ->
+                javaExecSpec.standardOutput = outputStream
+                javaExecSpec.errorOutput = errorStream
+                javaExecSpec.mainClass.set(MainClass)
+                javaExecSpec.classpath = ktfmtClasspath
+                javaExecSpec.args = getArgsList(format = format)
+                javaExecSpec.jvmArgs("--add-opens=java.base/java.lang=ALL-UNNAMED")
+                overrideDirectory?.let { javaExecSpec.workingDir = it }
+                // Ignore exit value to allow printing the process's error stream before asserting a
+                // successful exit value.
+                javaExecSpec.isIgnoreExitValue = true
+            }
 
         // https://github.com/facebook/ktfmt/blob/9830466327b72879808b0d6266d2cc69ef0197b2/core/src/main/java/com/facebook/ktfmt/cli/Main.kt#L168
         // Info messages are printed to error, filter these out to avoid stderr clutter.
@@ -156,6 +152,8 @@ abstract class BaseKtfmtTask : DefaultTask() {
         if (output.isNotEmpty()) {
             error(processOutput(output))
         }
+
+        result.assertNormalExitValue()
     }
 
     open fun processOutput(output: String): String =
@@ -228,7 +226,7 @@ abstract class KtfmtCheckFileTask : BaseKtfmtTask() {
         option = "file",
         description =
             "File to check. This option can be used multiple times: --file file1.kt " +
-                "--file file2.kt"
+                "--file file2.kt",
     )
     var files: List<String> = emptyList()
 
@@ -237,7 +235,7 @@ abstract class KtfmtCheckFileTask : BaseKtfmtTask() {
         option = "format",
         description =
             "Use --format to auto-correct style violations (if some errors cannot be " +
-                "fixed automatically they will be printed to stderr)"
+                "fixed automatically they will be printed to stderr)",
     )
     var format = false
 

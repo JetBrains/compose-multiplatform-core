@@ -41,6 +41,7 @@ import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.width
+import androidx.compose.material3.MaterialTheme.LocalMaterialTheme
 import androidx.compose.material3.internal.ProvideContentColorTextStyle
 import androidx.compose.material3.internal.animateElevation
 import androidx.compose.material3.tokens.ElevationTokens
@@ -71,9 +72,13 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.drawscope.inset
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.layer.drawLayer
+import androidx.compose.ui.layout.Measurable
+import androidx.compose.ui.layout.MeasureResult
+import androidx.compose.ui.layout.MeasureScope
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.node.CompositionLocalConsumerModifierNode
 import androidx.compose.ui.node.DelegatingNode
+import androidx.compose.ui.node.LayoutModifierNode
 import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.node.currentValueOf
 import androidx.compose.ui.platform.InspectorInfo
@@ -82,6 +87,7 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
@@ -89,7 +95,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toIntSize
 import androidx.compose.ui.unit.toOffset
 import androidx.compose.ui.util.lerp
-import kotlin.math.roundToInt
 import kotlinx.coroutines.launch
 
 /**
@@ -123,7 +128,7 @@ import kotlinx.coroutines.launch
  * @param content the content of this FAB, typically an [Icon]
  */
 @Composable
-fun FloatingActionButton(
+public fun FloatingActionButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     shape: Shape = FloatingActionButtonDefaults.shape,
@@ -132,7 +137,7 @@ fun FloatingActionButton(
     elevation: FloatingActionButtonElevation = FloatingActionButtonDefaults.elevation(),
     interactionSource: MutableInteractionSource? = null,
     content: @Composable () -> Unit,
-) =
+): Unit =
     FloatingActionButton(
         onClick,
         ExtendedFabPrimaryTokens.LabelTextFont.value,
@@ -144,7 +149,7 @@ fun FloatingActionButton(
         contentColor,
         elevation,
         interactionSource,
-        content
+        content,
     )
 
 @Composable
@@ -171,15 +176,11 @@ private fun FloatingActionButton(
         contentColor = contentColor,
         tonalElevation = elevation.tonalElevation(),
         shadowElevation = elevation.shadowElevation(interactionSource = interactionSource).value,
-        interactionSource = interactionSource
+        interactionSource = interactionSource,
     ) {
         ProvideContentColorTextStyle(contentColor = contentColor, textStyle = textStyle) {
             Box(
-                modifier =
-                    Modifier.defaultMinSize(
-                        minWidth = minWidth,
-                        minHeight = minHeight,
-                    ),
+                modifier = Modifier.defaultMinSize(minWidth = minWidth, minHeight = minHeight),
                 contentAlignment = Alignment.Center,
             ) {
                 content()
@@ -221,7 +222,7 @@ private fun FloatingActionButton(
  * @param content the content of this FAB, typically an [Icon]
  */
 @Composable
-fun SmallFloatingActionButton(
+public fun SmallFloatingActionButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     shape: Shape = FloatingActionButtonDefaults.smallShape,
@@ -276,9 +277,8 @@ fun SmallFloatingActionButton(
  *   happen internally.
  * @param content the content of this FAB, typically an [Icon]
  */
-@ExperimentalMaterial3ExpressiveApi
 @Composable
-fun MediumFloatingActionButton(
+public fun MediumFloatingActionButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     shape: Shape = FloatingActionButtonDefaults.mediumShape,
@@ -337,7 +337,7 @@ fun MediumFloatingActionButton(
  * @param content the content of this FAB, typically an [Icon]
  */
 @Composable
-fun LargeFloatingActionButton(
+public fun LargeFloatingActionButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     shape: Shape = FloatingActionButtonDefaults.largeShape,
@@ -392,9 +392,8 @@ fun LargeFloatingActionButton(
  *   happen internally.
  * @param content the content of this FAB, typically a [Text] label
  */
-@ExperimentalMaterial3ExpressiveApi
 @Composable
-fun SmallExtendedFloatingActionButton(
+public fun SmallExtendedFloatingActionButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     shape: Shape = FloatingActionButtonDefaults.smallExtendedFabShape,
@@ -420,7 +419,7 @@ fun SmallExtendedFloatingActionButton(
             modifier =
                 Modifier.padding(
                     start = SmallExtendedFabPaddingStart,
-                    end = SmallExtendedFabPaddingEnd
+                    end = SmallExtendedFabPaddingEnd,
                 ),
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically,
@@ -458,9 +457,8 @@ fun SmallExtendedFloatingActionButton(
  *   happen internally.
  * @param content the content of this FAB, typically a [Text] label
  */
-@ExperimentalMaterial3ExpressiveApi
 @Composable
-fun MediumExtendedFloatingActionButton(
+public fun MediumExtendedFloatingActionButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     shape: Shape = FloatingActionButtonDefaults.mediumExtendedFabShape,
@@ -486,7 +484,7 @@ fun MediumExtendedFloatingActionButton(
             modifier =
                 Modifier.padding(
                     start = MediumExtendedFabPaddingStart,
-                    end = MediumExtendedFabPaddingEnd
+                    end = MediumExtendedFabPaddingEnd,
                 ),
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically,
@@ -524,9 +522,8 @@ fun MediumExtendedFloatingActionButton(
  *   happen internally.
  * @param content the content of this FAB, typically a [Text] label
  */
-@ExperimentalMaterial3ExpressiveApi
 @Composable
-fun LargeExtendedFloatingActionButton(
+public fun LargeExtendedFloatingActionButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     shape: Shape = FloatingActionButtonDefaults.largeExtendedFabShape,
@@ -552,7 +549,7 @@ fun LargeExtendedFloatingActionButton(
             modifier =
                 Modifier.padding(
                     start = LargeExtendedFabPaddingStart,
-                    end = LargeExtendedFabPaddingEnd
+                    end = LargeExtendedFabPaddingEnd,
                 ),
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically,
@@ -593,7 +590,7 @@ fun LargeExtendedFloatingActionButton(
  * @param content the content of this FAB, typically a [Text] label
  */
 @Composable
-fun ExtendedFloatingActionButton(
+public fun ExtendedFloatingActionButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     shape: Shape = FloatingActionButtonDefaults.extendedFabShape,
@@ -658,9 +655,8 @@ fun ExtendedFloatingActionButton(
  *   preview the FAB in different states. Note that if `null` is provided, interactions will still
  *   happen internally.
  */
-@ExperimentalMaterial3ExpressiveApi
 @Composable
-fun SmallExtendedFloatingActionButton(
+public fun SmallExtendedFloatingActionButton(
     text: @Composable () -> Unit,
     icon: @Composable () -> Unit,
     onClick: () -> Unit,
@@ -671,7 +667,7 @@ fun SmallExtendedFloatingActionButton(
     contentColor: Color = contentColorFor(containerColor),
     elevation: FloatingActionButtonElevation = FloatingActionButtonDefaults.elevation(),
     interactionSource: MutableInteractionSource? = null,
-) =
+): Unit =
     ExtendedFloatingActionButton(
         text = text,
         icon = icon,
@@ -726,9 +722,8 @@ fun SmallExtendedFloatingActionButton(
  *   preview the FAB in different states. Note that if `null` is provided, interactions will still
  *   happen internally.
  */
-@ExperimentalMaterial3ExpressiveApi
 @Composable
-fun MediumExtendedFloatingActionButton(
+public fun MediumExtendedFloatingActionButton(
     text: @Composable () -> Unit,
     icon: @Composable () -> Unit,
     onClick: () -> Unit,
@@ -739,7 +734,7 @@ fun MediumExtendedFloatingActionButton(
     contentColor: Color = contentColorFor(containerColor),
     elevation: FloatingActionButtonElevation = FloatingActionButtonDefaults.elevation(),
     interactionSource: MutableInteractionSource? = null,
-) =
+): Unit =
     ExtendedFloatingActionButton(
         text = text,
         icon = icon,
@@ -794,9 +789,8 @@ fun MediumExtendedFloatingActionButton(
  *   preview the FAB in different states. Note that if `null` is provided, interactions will still
  *   happen internally.
  */
-@ExperimentalMaterial3ExpressiveApi
 @Composable
-fun LargeExtendedFloatingActionButton(
+public fun LargeExtendedFloatingActionButton(
     text: @Composable () -> Unit,
     icon: @Composable () -> Unit,
     onClick: () -> Unit,
@@ -807,7 +801,7 @@ fun LargeExtendedFloatingActionButton(
     contentColor: Color = contentColorFor(containerColor),
     elevation: FloatingActionButtonElevation = FloatingActionButtonDefaults.elevation(),
     interactionSource: MutableInteractionSource? = null,
-) =
+): Unit =
     ExtendedFloatingActionButton(
         text = text,
         icon = icon,
@@ -866,7 +860,7 @@ fun LargeExtendedFloatingActionButton(
  *   happen internally.
  */
 @Composable
-fun ExtendedFloatingActionButton(
+public fun ExtendedFloatingActionButton(
     text: @Composable () -> Unit,
     icon: @Composable () -> Unit,
     onClick: () -> Unit,
@@ -902,7 +896,7 @@ fun ExtendedFloatingActionButton(
                     )
                     .padding(start = startPadding, end = endPadding),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = if (expanded) Arrangement.Start else Arrangement.Center
+            horizontalArrangement = if (expanded) Arrangement.Start else Arrangement.Center,
         ) {
             icon()
             AnimatedVisibility(
@@ -992,64 +986,49 @@ private fun ExtendedFloatingActionButton(
 }
 
 /** Contains the default values used by [FloatingActionButton] */
-object FloatingActionButtonDefaults {
+public object FloatingActionButtonDefaults {
     internal val ShowHideTargetScale = 0.2f
 
     /** The recommended size of the icon inside a [MediumFloatingActionButton]. */
-    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-    @get:ExperimentalMaterial3ExpressiveApi
-    @ExperimentalMaterial3ExpressiveApi
-    val MediumIconSize = FabMediumTokens.IconSize
+    public val MediumIconSize: Dp = FabMediumTokens.IconSize
 
     /** The recommended size of the icon inside a [LargeFloatingActionButton]. */
-    val LargeIconSize = 36.dp // TODO: FabLargeTokens.IconSize is incorrect
+    public val LargeIconSize: Dp = 36.dp // TODO: FabLargeTokens.IconSize is incorrect
 
     /** Default shape for a floating action button. */
-    val shape: Shape
+    public val shape: Shape
         @Composable get() = FabBaselineTokens.ContainerShape.value
 
     /** Default shape for a small floating action button. */
-    val smallShape: Shape
+    public val smallShape: Shape
         @Composable get() = FabSmallTokens.ContainerShape.value
 
     /** Default shape for a medium floating action button. */
-    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-    @get:ExperimentalMaterial3ExpressiveApi
-    @ExperimentalMaterial3ExpressiveApi
-    val mediumShape: Shape
+    public val mediumShape: Shape
         @Composable get() = ShapeDefaults.LargeIncreased // TODO: update to use token
 
     /** Default shape for a large floating action button. */
-    val largeShape: Shape
+    public val largeShape: Shape
         @Composable get() = FabLargeTokens.ContainerShape.value
 
     /** Default shape for an extended floating action button. */
-    val extendedFabShape: Shape
+    public val extendedFabShape: Shape
         @Composable get() = ExtendedFabPrimaryTokens.ContainerShape.value
 
     /** Default shape for a small extended floating action button. */
-    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-    @get:ExperimentalMaterial3ExpressiveApi
-    @ExperimentalMaterial3ExpressiveApi
-    val smallExtendedFabShape: Shape
+    public val smallExtendedFabShape: Shape
         @Composable get() = ExtendedFabSmallTokens.ContainerShape.value
 
     /** Default shape for a medium extended floating action button. */
-    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-    @get:ExperimentalMaterial3ExpressiveApi
-    @ExperimentalMaterial3ExpressiveApi
-    val mediumExtendedFabShape: Shape
+    public val mediumExtendedFabShape: Shape
         @Composable get() = ShapeDefaults.LargeIncreased // TODO: update to use token
 
     /** Default shape for a large extended floating action button. */
-    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-    @get:ExperimentalMaterial3ExpressiveApi
-    @ExperimentalMaterial3ExpressiveApi
-    val largeExtendedFabShape: Shape
+    public val largeExtendedFabShape: Shape
         @Composable get() = ExtendedFabLargeTokens.ContainerShape.value
 
     /** Default container color for a floating action button. */
-    val containerColor: Color
+    public val containerColor: Color
         @Composable get() = FabPrimaryContainerTokens.ContainerColor.value
 
     /**
@@ -1064,7 +1043,7 @@ object FloatingActionButtonDefaults {
      * @param hoveredElevation the elevation used when the [FloatingActionButton] is hovered.
      */
     @Composable
-    fun elevation(
+    public fun elevation(
         defaultElevation: Dp = FabPrimaryContainerTokens.ContainerElevation,
         pressedElevation: Dp = FabPrimaryContainerTokens.PressedContainerElevation,
         focusedElevation: Dp = FabPrimaryContainerTokens.FocusedContainerElevation,
@@ -1088,7 +1067,7 @@ object FloatingActionButtonDefaults {
      * @param hoveredElevation the elevation used when the [FloatingActionButton] is hovered.
      */
     @Composable
-    fun loweredElevation(
+    public fun loweredElevation(
         defaultElevation: Dp = ElevationTokens.Level1,
         pressedElevation: Dp = ElevationTokens.Level1,
         focusedElevation: Dp = ElevationTokens.Level1,
@@ -1111,17 +1090,17 @@ object FloatingActionButtonDefaults {
      * @param focusedElevation the elevation used when the [FloatingActionButton] is focused.
      * @param hoveredElevation the elevation used when the [FloatingActionButton] is hovered.
      */
-    fun bottomAppBarFabElevation(
+    public fun bottomAppBarFabElevation(
         defaultElevation: Dp = 0.dp,
         pressedElevation: Dp = 0.dp,
         focusedElevation: Dp = 0.dp,
-        hoveredElevation: Dp = 0.dp
+        hoveredElevation: Dp = 0.dp,
     ): FloatingActionButtonElevation =
         FloatingActionButtonElevation(
             defaultElevation,
             pressedElevation,
             focusedElevation,
-            hoveredElevation
+            hoveredElevation,
         )
 }
 
@@ -1139,13 +1118,12 @@ object FloatingActionButtonDefaults {
  *   the Fast Effects spring spec from the [MotionScheme] will be used
  * @sample androidx.compose.material3.samples.AnimatedFloatingActionButtonSample
  */
-@ExperimentalMaterial3ExpressiveApi
-fun Modifier.animateFloatingActionButton(
+public fun Modifier.animateFloatingActionButton(
     visible: Boolean,
     alignment: Alignment,
     targetScale: Float = FloatingActionButtonDefaults.ShowHideTargetScale,
     scaleAnimationSpec: AnimationSpec<Float>? = null,
-    alphaAnimationSpec: AnimationSpec<Float>? = null
+    alphaAnimationSpec: AnimationSpec<Float>? = null,
 ): Modifier {
     return this.then(
         FabVisibleModifier(
@@ -1153,7 +1131,7 @@ fun Modifier.animateFloatingActionButton(
             alignment = alignment,
             targetScale = targetScale,
             scaleAnimationSpec = scaleAnimationSpec,
-            alphaAnimationSpec = alphaAnimationSpec
+            alphaAnimationSpec = alphaAnimationSpec,
         )
     )
 }
@@ -1163,7 +1141,7 @@ internal data class FabVisibleModifier(
     private val alignment: Alignment,
     private val targetScale: Float,
     private val scaleAnimationSpec: AnimationSpec<Float>? = null,
-    private val alphaAnimationSpec: AnimationSpec<Float>? = null
+    private val alphaAnimationSpec: AnimationSpec<Float>? = null,
 ) : ModifierNodeElement<FabVisibleNode>() {
 
     override fun create(): FabVisibleNode =
@@ -1196,7 +1174,7 @@ internal class FabVisibleNode(
     private var targetScale: Float,
     private var scaleAnimationSpec: AnimationSpec<Float>? = null,
     private var alphaAnimationSpec: AnimationSpec<Float>? = null,
-) : DelegatingNode(), CompositionLocalConsumerModifierNode {
+) : DelegatingNode(), LayoutModifierNode, CompositionLocalConsumerModifierNode {
 
     private val scaleAnimatable = Animatable(if (visible) 1f else 0f)
     private val alphaAnimatable = Animatable(if (visible) 1f else 0f)
@@ -1208,25 +1186,26 @@ internal class FabVisibleNode(
                 // Use a larger layer size to make sure the elevation shadow doesn't get clipped
                 // and offset via layer.topLeft and DrawScope.inset to preserve the visual
                 // position of the FAB.
-                val layerInsetSize = 16.dp.toPx()
+                val layerInsetInt = 16.dp.toPx().toInt()
+                val layerInsetFloat = layerInsetInt.toFloat()
                 val layerSize =
-                    Size(size.width + layerInsetSize * 2f, size.height + layerInsetSize * 2f)
+                    Size(size.width + layerInsetInt * 2f, size.height + layerInsetInt * 2f)
                         .toIntSize()
                 val nodeSize = size.toIntSize()
 
                 layer.apply {
-                    topLeft = IntOffset(-layerInsetSize.roundToInt(), -layerInsetSize.roundToInt())
+                    topLeft = IntOffset(-layerInsetInt, -layerInsetInt)
 
                     alpha = alphaAnimatable.value
 
                     // Scale towards the direction of the provided alignment
                     val alignOffset = alignment.align(IntSize(1, 1), nodeSize, layoutDirection)
-                    pivotOffset = alignOffset.toOffset() + Offset(layerInsetSize, layerInsetSize)
+                    pivotOffset = alignOffset.toOffset() + Offset(layerInsetFloat, layerInsetFloat)
                     scaleX = lerp(targetScale, 1f, scaleAnimatable.value)
                     scaleY = lerp(targetScale, 1f, scaleAnimatable.value)
 
                     record(size = layerSize) {
-                        inset(layerInsetSize, layerInsetSize) { this@record.drawContent() }
+                        inset(layerInsetFloat, layerInsetFloat) { this@record.drawContent() }
                     }
                 }
 
@@ -1235,13 +1214,12 @@ internal class FabVisibleNode(
         )
     }
 
-    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
     fun updateNode(
         visible: Boolean,
         alignment: Alignment,
         targetScale: Float,
         scaleAnimationSpec: AnimationSpec<Float>?,
-        alphaAnimationSpec: AnimationSpec<Float>?
+        alphaAnimationSpec: AnimationSpec<Float>?,
     ) {
         this.alignment = alignment
         this.targetScale = targetScale
@@ -1253,7 +1231,8 @@ internal class FabVisibleNode(
             scaleAnimatable.animateTo(
                 targetValue = if (visible) 1f else 0f,
                 animationSpec =
-                    scaleAnimationSpec ?: currentValueOf(LocalMotionScheme).fastSpatialSpec()
+                    scaleAnimationSpec
+                        ?: currentValueOf(LocalMaterialTheme).motionScheme.fastSpatialSpec<Float>(),
             )
         }
 
@@ -1262,9 +1241,21 @@ internal class FabVisibleNode(
             alphaAnimatable.animateTo(
                 targetValue = if (visible) 1f else 0f,
                 animationSpec =
-                    alphaAnimationSpec ?: currentValueOf(LocalMotionScheme).fastEffectsSpec()
+                    alphaAnimationSpec
+                        ?: currentValueOf(LocalMaterialTheme).motionScheme.fastEffectsSpec<Float>(),
             )
         }
+    }
+
+    override fun MeasureScope.measure(
+        measurable: Measurable,
+        constraints: Constraints,
+    ): MeasureResult {
+        if (alphaAnimatable.value == 0f) {
+            return layout(0, 0) {}
+        }
+        val placeable = measurable.measure(constraints)
+        return layout(placeable.width, placeable.height) { placeable.place(0, 0) }
     }
 }
 
@@ -1275,7 +1266,7 @@ internal class FabVisibleNode(
  * [FloatingActionButton] and [ExtendedFloatingActionButton].
  */
 @Stable
-open class FloatingActionButtonElevation
+public open class FloatingActionButtonElevation
 internal constructor(
     private val defaultElevation: Dp,
     private val pressedElevation: Dp,
@@ -1299,7 +1290,7 @@ internal constructor(
                     defaultElevation = defaultElevation,
                     pressedElevation = pressedElevation,
                     hoveredElevation = hoveredElevation,
-                    focusedElevation = focusedElevation
+                    focusedElevation = focusedElevation,
                 )
             }
 
@@ -1308,7 +1299,7 @@ internal constructor(
                 defaultElevation = defaultElevation,
                 pressedElevation = pressedElevation,
                 hoveredElevation = hoveredElevation,
-                focusedElevation = focusedElevation
+                focusedElevation = focusedElevation,
             )
         }
 
@@ -1369,7 +1360,7 @@ private class FloatingActionButtonElevationAnimatable(
     private var defaultElevation: Dp,
     private var pressedElevation: Dp,
     private var hoveredElevation: Dp,
-    private var focusedElevation: Dp
+    private var focusedElevation: Dp,
 ) {
     private val animatable = Animatable(defaultElevation, Dp.VectorConverter)
 
@@ -1389,7 +1380,7 @@ private class FloatingActionButtonElevationAnimatable(
         defaultElevation: Dp,
         pressedElevation: Dp,
         hoveredElevation: Dp,
-        focusedElevation: Dp
+        focusedElevation: Dp,
     ) {
         this.defaultElevation = defaultElevation
         this.pressedElevation = pressedElevation
@@ -1426,36 +1417,55 @@ private class FloatingActionButtonElevationAnimatable(
     fun asState(): State<Dp> = animatable.asState()
 }
 
-private val SmallExtendedFabMinimumWidth = ExtendedFabSmallTokens.ContainerHeight
-private val SmallExtendedFabMinimumHeight = ExtendedFabSmallTokens.ContainerHeight
-private val SmallExtendedFabPaddingStart = ExtendedFabSmallTokens.LeadingSpace
-private val SmallExtendedFabPaddingEnd = ExtendedFabSmallTokens.TrailingSpace
-private val SmallExtendedFabIconPadding = ExtendedFabSmallTokens.IconLabelSpace
+private val SmallExtendedFabMinimumWidth
+    get() = ExtendedFabSmallTokens.ContainerHeight
+private val SmallExtendedFabMinimumHeight
+    get() = ExtendedFabSmallTokens.ContainerHeight
+private val SmallExtendedFabPaddingStart
+    get() = ExtendedFabSmallTokens.LeadingSpace
+private val SmallExtendedFabPaddingEnd
+    get() = ExtendedFabSmallTokens.TrailingSpace
+private val SmallExtendedFabIconPadding
+    get() = ExtendedFabSmallTokens.IconLabelSpace
 private val SmallExtendedFabTextStyle = TypographyKeyTokens.TitleMedium
 
-private val MediumExtendedFabMinimumWidth = ExtendedFabMediumTokens.ContainerHeight
-private val MediumExtendedFabMinimumHeight = ExtendedFabMediumTokens.ContainerHeight
-private val MediumExtendedFabPaddingStart = ExtendedFabMediumTokens.LeadingSpace
-private val MediumExtendedFabPaddingEnd = ExtendedFabMediumTokens.TrailingSpace
+private val MediumExtendedFabMinimumWidth
+    get() = ExtendedFabMediumTokens.ContainerHeight
+private val MediumExtendedFabMinimumHeight
+    get() = ExtendedFabMediumTokens.ContainerHeight
+private val MediumExtendedFabPaddingStart
+    get() = ExtendedFabMediumTokens.LeadingSpace
+private val MediumExtendedFabPaddingEnd
+    get() = ExtendedFabMediumTokens.TrailingSpace
 // TODO: ExtendedFabMediumTokens.IconLabelSpace is incorrect
-private val MediumExtendedFabIconPadding = 12.dp
+private val MediumExtendedFabIconPadding
+    get() = 12.dp
 private val MediumExtendedFabTextStyle = TypographyKeyTokens.TitleLarge
 
-private val LargeExtendedFabMinimumWidth = ExtendedFabLargeTokens.ContainerHeight
-private val LargeExtendedFabMinimumHeight = ExtendedFabLargeTokens.ContainerHeight
-private val LargeExtendedFabPaddingStart = ExtendedFabLargeTokens.LeadingSpace
-private val LargeExtendedFabPaddingEnd = ExtendedFabLargeTokens.TrailingSpace
+private val LargeExtendedFabMinimumWidth
+    get() = ExtendedFabLargeTokens.ContainerHeight
+private val LargeExtendedFabMinimumHeight
+    get() = ExtendedFabLargeTokens.ContainerHeight
+private val LargeExtendedFabPaddingStart
+    get() = ExtendedFabLargeTokens.LeadingSpace
+private val LargeExtendedFabPaddingEnd
+    get() = ExtendedFabLargeTokens.TrailingSpace
 // TODO: ExtendedFabLargeTokens.IconLabelSpace is incorrect
-private val LargeExtendedFabIconPadding = 16.dp
+private val LargeExtendedFabIconPadding
+    get() = 16.dp
 private val LargeExtendedFabTextStyle = TypographyKeyTokens.HeadlineSmall
 
-private val ExtendedFabStartIconPadding = 16.dp
+private val ExtendedFabStartIconPadding
+    get() = 16.dp
 
-private val ExtendedFabEndIconPadding = 12.dp
+private val ExtendedFabEndIconPadding
+    get() = 12.dp
 
-private val ExtendedFabTextPadding = 20.dp
+private val ExtendedFabTextPadding
+    get() = 20.dp
 
-private val ExtendedFabMinimumWidth = 80.dp
+private val ExtendedFabMinimumWidth
+    get() = 80.dp
 
 @Composable
 private fun extendedFabCollapseAnimation() =
@@ -1472,7 +1482,7 @@ private fun extendedFabCollapseAnimation() =
 private fun extendedFabExpandAnimation() =
     fadeIn(
         // TODO Load the motionScheme tokens from the component tokens file
-        animationSpec = MotionSchemeKeyTokens.DefaultEffects.value(),
+        animationSpec = MotionSchemeKeyTokens.DefaultEffects.value()
     ) +
         expandHorizontally(
             animationSpec = MotionSchemeKeyTokens.FastSpatial.value(),

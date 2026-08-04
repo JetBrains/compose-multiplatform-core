@@ -62,7 +62,7 @@ class Morph(private val start: RoundedPolygon, private val end: RoundedPolygon) 
     @JvmOverloads
     fun calculateBounds(
         bounds: FloatArray = FloatArray(4),
-        approximate: Boolean = true
+        approximate: Boolean = true,
     ): FloatArray {
         start.calculateBounds(bounds, approximate)
         val minX = bounds[0]
@@ -89,6 +89,7 @@ class Morph(private val start: RoundedPolygon, private val end: RoundedPolygon) 
      * @return The axis-aligned max bounding box for this object, where the rectangles left, top,
      *   right, and bottom values will be stored in entries 0, 1, 2, and 3, in that order.
      */
+    @Suppress("MissingJvmstatic")
     fun calculateMaxBounds(bounds: FloatArray = FloatArray(4)): FloatArray {
         start.calculateMaxBounds(bounds)
         val minX = bounds[0]
@@ -129,7 +130,7 @@ class Morph(private val start: RoundedPolygon, private val end: RoundedPolygon) 
                             interpolate(
                                 _morphMatch[i].first.points[it],
                                 _morphMatch[i].second.points[it],
-                                progress
+                                progress,
                             )
                         }
                     )
@@ -147,7 +148,7 @@ class Morph(private val start: RoundedPolygon, private val end: RoundedPolygon) 
                         lastCubic.control1X,
                         lastCubic.control1Y,
                         firstCubic.anchor0X,
-                        firstCubic.anchor0Y
+                        firstCubic.anchor0Y,
                     )
                 )
         }
@@ -173,7 +174,7 @@ class Morph(private val start: RoundedPolygon, private val end: RoundedPolygon) 
     inline fun forEachCubic(
         progress: Float,
         mutableCubic: MutableCubic = MutableCubic(),
-        callback: (MutableCubic) -> Unit
+        callback: (MutableCubic) -> Unit,
     ) {
         for (i in morphMatch.indices) {
             mutableCubic.interpolate(morphMatch[i].first, morphMatch[i].second, progress)

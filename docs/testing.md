@@ -27,13 +27,13 @@ API level, (2) the latest stable API level, (3) API levels with major changes,
 pre-release API level.
 
 In practice, this is limited by device and emulator availability and
-reliability. As of January 2025, we run tests on the following API levels:
+reliability. As of May 2026, we run tests on the following API levels:
 
--   API level 21: the lowest API level supported by Firebase Test Lab (FTL)
+-   API level 23: the lowest API level supported by Firebase Test Lab (FTL)
 -   API level 26: the lowest supported ARM-based emulator FTL runner, which has
     much greater performance and stability
--   API levels 30, 33, 34, 35: the latest supported API levels, which represent
-    the majority of devices in the field
+-   API levels 28, 30, 33, 34, 35, 36: the latest supported API levels, which
+    represent the majority of devices in the field
 
 ## Adding tests {#adding}
 
@@ -86,10 +86,8 @@ to do the initial setup.
     Important step: Add golden asset directory to be linked to your test apk:
 
     ```
-    android {
-        sourceSets.androidTest.assets.srcDirs +=
-            // For androidx project (not in ui dir) use "/../../golden/project"
-            project.rootDir.absolutePath + "/../../golden/compose/material/material"
+    androidx {
+        addGoldenImageAssets()
     }
     ```
 
@@ -97,8 +95,8 @@ to do the initial setup.
     the test.
 
 2.  Create directory and variable: In the golden directory, create a new
-    directory for your module (the directory that you added to your gradle file,
-    which in case of material was “compose/material/material”).
+    directory for your module (based on module path `:compose:material:material`
+    -> `compose/material/material`).
 
     In your test module, create a variable pointing at your new directory:
 
@@ -108,7 +106,7 @@ to do the initial setup.
 
 #### Adding a screenshot test
 
-Here is an example of a minimal screenshot test for compose material.
+Here is an example of a minimal screenshot test for Compose material.
 
 ```
 @LargeTest
@@ -165,7 +163,13 @@ Step 2: Click on the “Update scuba goldens” below:
 ![alt_text](onboarding_images/image8.png "Update scuba button")
 
 Step 3: Select the tests for which you want to update the golden images. Confirm
-the images look correct and click on “Approve Changes”
+the images look correct and click on “Approve Changes”.
+
+Note: If Scuba isn't loading correctly, you likely need to sign into your Google
+Account. A sign-in prompt should appear in Chrome. If it doesn't, try opening
+Scuba in an incognito window or clear your browser's cookies and then try
+loading Scuba again.
+
 ![alt_text](onboarding_images/image9.png "Button to approve scuba changes")
 
 Step 4: In the Approve changes dialog box, enter the following details and click
@@ -183,8 +187,8 @@ new goldens. And re-run presubmit. Your tests should now pass!
 
 #### Running manually / debugging
 
-Screenshot tests can be run locally using pixel 2 api33 emulator. Start the
-emulator using [these](#emulator) steps.
+Screenshot tests can be run locally using medium phone API 35 emulator. Start
+the emulator using [these](#emulator) steps.
 
 Wait until the emulator is running and run the tests as you would on a regular
 device.
@@ -213,8 +217,8 @@ androidx.compose.material.test
 
 After you run a screenshot test and pull the results to a desired location,
 verify that the actual images are the correct ones and copy them to the golden
-screenshots directory (the one you use to create the AndroidXScreenshotTestRule
-with) using this script.
+screenshots directory (the one you use to create the
+`AndroidXScreenshotTestRule` with) using this script.
 
 ```
 androidx-main/frameworks/support/development/copy_screenshots_to_golden_repo.py \
@@ -235,33 +239,20 @@ dependencies.
 
 When changes are made that can't be associated with a module, are in the root of
 the checkout, or are within `buildSrc`, then all host tests and all device tests
-annotated with `@SmallTest` or `@MediumTest` will be run for all modules.
+will be run for all modules.
 
 Presubmit tests represent only a subset of the devices on which our tests run.
 The remaining devices are tested only in postsubmit. In postsubmit, all host and
 device tests are run for all modules.
 
+> Note: Presubmits and postsubmits also include tests that run with your
+> dependencies unpinned, even if you specify pinned dependencies.
+>
+> Specifically, device tests are built (but not run) via
+> `androidx_max_dep_versions`, and host tests are both built and run via
+> `androidx_host_tests_max_dep_versions`.
+
 ### Test annotations {#annotations}
-
-#### Test size and runners {#test-size}
-
-All device tests *should* be given a size annotation, which is one of:
-
-*   [`@SmallTest`](https://developer.android.com/reference/androidx/test/filters/SmallTest)
-*   [`@MediumTest`](https://developer.android.com/reference/androidx/test/filters/MediumTest)
-*   [`@LargeTest`](https://developer.android.com/reference/androidx/test/filters/LargeTest)
-
-If a device test is *not* annotated with its size, it will be run as if it were
-`@LargeTest` by default. Host tests do not need to be annotated with their size,
-as all host tests are run regardless of size.
-
-This annotation can occur at either the class level or individual test level.
-
-Annotation    | Max duration
-------------- | ------------
-`@SmallTest`  | 200ms
-`@MediumTest` | 1000ms
-`@LargeTest`  | 100000ms
 
 #### Disabling tests {#disabling-tests}
 
@@ -288,8 +279,7 @@ annotation also supports targeting a specific pre-release SDK with the
 
 You may also gate portions of test implementation code using `SDK_INT` or
 [`BuildCompat.isAtLeast`](https://developer.android.com/reference/androidx/core/os/BuildCompat)
-methods. s To restrict to only physical devices, use
-[`@RequiresDevice`](https://developer.android.com/reference/androidx/test/filters/RequiresDevice).
+methods.
 
 NOTE [Cuttlefish](https://source.android.com/setup/create/cuttlefish) is not
 affected by this annotation, only e.g. Studio emulators. If Cuttlefish is
@@ -372,6 +362,16 @@ NOTE The `Project Structure` dialog reachable via `File > Project Structure` is
 **not** the same as the `Project Structure` dialog that will allow you to
 specify the SDK source path. You must use the "Module Settings" action as
 directed above.
+
+### Flaky Tests
+
+If you are seeing flakiness on emulator runners (not Cuttlefish) then it is
+possible that tests are not cleaning up after themselves, causing
+misconfiguration between tests in the same module.
+
+Cuttlefish does not run tests with module isolation; it runs multiple test
+modules on the same instance, so pollution between modules is possible, making
+it harder to find the cause of the flakiness
 
 ### Accessing FTL outputs
 
@@ -469,7 +469,7 @@ If you want to run a specific unit test, you can do it using
 ./gradlew <project-name>:test --tests androidx.core.view.DisplayCompatTest
 
 # Run a test for a JVM library
-./gradlew <project-name>:testDebugUnitTest --tests
+./gradlew <project-name>:testReleaseUnitTest --tests
 androidx.core.view.DisplayCompatTest
 ```
 

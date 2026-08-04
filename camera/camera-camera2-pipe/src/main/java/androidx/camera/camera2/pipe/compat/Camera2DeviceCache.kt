@@ -16,30 +16,47 @@
 
 package androidx.camera.camera2.pipe.compat
 
+import android.content.Context
 import android.content.pm.PackageManager
 import android.hardware.camera2.CameraAccessException
+import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraManager
 import android.os.Build
 import androidx.annotation.GuardedBy
+import androidx.annotation.RequiresApi
 import androidx.camera.camera2.pipe.CameraId
+import androidx.camera.camera2.pipe.config.CameraPipeContext
+import androidx.camera.camera2.pipe.config.CameraPipeJob
 import androidx.camera.camera2.pipe.core.Debug
 import androidx.camera.camera2.pipe.core.Log
 import androidx.camera.camera2.pipe.core.Threads
+import androidx.camera.camera2.pipe.internal.CameraErrorListener
+import androidx.camera.camera2.pipe.internal.CameraPipeLifetime
+import androidx.camera.camera2.pipe.internal.CriticalCameraErrorListener
+import androidx.camera.featurecombinationquery.CameraDeviceSetupCompat
+import androidx.camera.featurecombinationquery.CameraDeviceSetupCompatFactory
 import javax.inject.Inject
 import javax.inject.Provider
 import javax.inject.Singleton
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.ProducerScope
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.channels.onFailure
 import kotlinx.coroutines.channels.trySendBlocking
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.shareIn
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 @Singleton
@@ -47,31 +64,122 @@ internal class Camera2DeviceCache
 @Inject
 constructor(
     private val cameraManager: Provider<CameraManager>,
+    private val metadataProvider: Camera2MetadataProvider,
     private val threads: Threads,
+    @CameraPipeContext private val context: Context,
     packageManager: PackageManager,
-) {
+    private val cameraErrorListener: CameraErrorListener,
+    private val cameraDeviceSetupCompatFactoryProvider: Provider<CameraDeviceSetupCompatFactory>,
+    cameraPipeLifetime: CameraPipeLifetime,
+    @CameraPipeJob cameraPipeJob: Job,
+) : CriticalCameraErrorListener {
     private val scope =
-        CoroutineScope(threads.lightweightDispatcher + CoroutineName("Camera2DeviceCache"))
+        CoroutineScope(
+            SupervisorJob(cameraPipeJob) +
+                threads.lightweightDispatcher +
+                CoroutineName("Camera2DeviceCache")
+        )
     private val lock = Any()
 
     @GuardedBy("lock") private var openableCameras: List<CameraId>? = null
 
     @GuardedBy("lock") private var concurrentCameras: Set<Set<CameraId>>? = null
 
+    @GuardedBy("lock")
+    private val cameraDeviceSetupCache =
+        mutableMapOf<CameraId, Deferred<CameraDeviceSetupCompat?>>()
+
+    @GuardedBy("lock")
+    private val camera2DeviceSetupWrapperCache =
+        mutableMapOf<CameraId, Deferred<Camera2DeviceSetupWrapper?>>()
+
     private val minimumCameraCount = estimateMinInternalCameraCount(packageManager)
 
     init {
         Log.debug { "Camera2DeviceCache: Expected minimum camera count = $minimumCameraCount" }
+
+        cameraPipeLifetime.addShutdownAction(CameraPipeLifetime.ShutdownType.SCOPE) {
+            scope.cancel()
+        }
     }
 
     val cameraIds: Flow<List<CameraId>> =
         createCameraIdListFlow()
             .distinctUntilChanged()
-            .shareIn(
-                scope,
-                SharingStarted.WhileSubscribed(),
-                replay = 1,
-            )
+            .shareIn(scope, SharingStarted.WhileSubscribed(), replay = 1)
+    private val cameraDeviceSetupCompatFactory by lazy {
+        cameraDeviceSetupCompatFactoryProvider.get()
+    }
+
+    /**
+     * Retrieves a cached or new [CameraDeviceSetupCompat], returning `null` on failure.
+     *
+     * Failed initialization attempts are removed from the cache to allow for retries, which may
+     * succeed if the failure was due to a transient state (e.g. CameraAccessException).
+     */
+    suspend fun getOrInitializeDeviceSetupCompat(cameraId: CameraId): CameraDeviceSetupCompat? {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.VANILLA_ICE_CREAM) return null
+        val deferred =
+            synchronized(lock) {
+                cameraDeviceSetupCache.getOrPut(cameraId) {
+                    scope.async(threads.backgroundDispatcher) {
+                        Log.debug { "Initializing CameraDeviceSetupCompat for $cameraId" }
+                        catchAndReportCameraExceptions(cameraId, cameraErrorListener) {
+                            cameraDeviceSetupCompatFactory.getCameraDeviceSetupCompat(
+                                cameraId.value
+                            )
+                        }
+                    }
+                }
+            }
+
+        val deferredResult = deferred.await()
+
+        if (deferredResult == null) {
+            Log.debug { "Removing null CameraDeviceSetupCompat from cache for $cameraId" }
+            synchronized(lock) { cameraDeviceSetupCache.remove(cameraId, deferred) }
+        }
+        return deferredResult
+    }
+
+    /**
+     * Retrieves a cached or new [Camera2DeviceSetupWrapper], returning `null` on failure.
+     *
+     * Failed initialization attempts are removed from the cache to allow for retries, which may
+     * succeed if the failure was due to a transient state (e.g. CameraAccessException).
+     */
+    @RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
+    suspend fun getOrInitializeDeviceSetupWrapper(cameraId: CameraId): Camera2DeviceSetupWrapper? {
+        val deferred =
+            synchronized(lock) {
+                camera2DeviceSetupWrapperCache.getOrPut(cameraId) {
+                    scope.async(threads.backgroundDispatcher) {
+                        val isSupported =
+                            catchAndReportCameraExceptions(cameraId, cameraErrorListener) {
+                                cameraManager.get().isCameraDeviceSetupSupported(cameraId.value)
+                            }
+
+                        if (isSupported != true) {
+                            return@async null
+                        }
+                        Log.debug { "Initializing CameraDeviceSetup for $cameraId" }
+                        catchAndReportCameraExceptions(cameraId, cameraErrorListener) {
+                                cameraManager.get().getCameraDeviceSetup(cameraId.value)
+                            }
+                            ?.let { cameraDeviceSetup ->
+                                Camera2DeviceSetup(cameraDeviceSetup, cameraId, cameraErrorListener)
+                            }
+                    }
+                }
+            }
+        val deferredResult = deferred.await()
+
+        if (deferredResult == null) {
+            Log.debug { "Removing null camera2DeviceSetupWrapper from cache for $cameraId" }
+            synchronized(lock) { camera2DeviceSetupWrapperCache.remove(cameraId, deferred) }
+        }
+        return deferredResult
+    }
 
     suspend fun getCameraIds(): List<CameraId> {
         val cachedCameras = synchronized(lock) { openableCameras }
@@ -102,6 +210,19 @@ constructor(
 
     private fun createCameraIdListFlow() =
         callbackFlow<List<CameraId>> {
+            val callback =
+                object : CameraManager.AvailabilityCallback() {
+                    override fun onCameraAvailable(cameraId: String) {
+                        onCameraAvailabilityChanged(cameraId, isAvailable = true)
+                    }
+
+                    override fun onCameraUnavailable(cameraId: String) {
+                        onCameraAvailabilityChanged(cameraId, isAvailable = false)
+                    }
+                }
+            val cameraManager = cameraManager.get()
+            cameraManager.registerAvailabilityCallback(callback, threads.camera2Handler)
+
             // Send the initial camera ID list first.
             val cachedCameras = synchronized(lock) { openableCameras }
             if (cachedCameras != null) {
@@ -117,25 +238,12 @@ constructor(
                 }
             }
 
-            val callback =
-                object : CameraManager.AvailabilityCallback() {
-                    override fun onCameraAvailable(cameraId: String) {
-                        onCameraAvailabilityChanged(cameraId, isAvailable = true)
-                    }
-
-                    override fun onCameraUnavailable(cameraId: String) {
-                        onCameraAvailabilityChanged(cameraId, isAvailable = false)
-                    }
-                }
-            val cameraManager = cameraManager.get()
-            cameraManager.registerAvailabilityCallback(callback, threads.camera2Handler)
-
             awaitClose { cameraManager.unregisterAvailabilityCallback(callback) }
         }
 
     private fun ProducerScope<List<CameraId>>.onCameraAvailabilityChanged(
         cameraId: String,
-        isAvailable: Boolean
+        isAvailable: Boolean,
     ) {
         val cachedCameraIds = synchronized(lock) { openableCameras }
         val cameraIdsRead =
@@ -161,7 +269,7 @@ constructor(
 
     private fun getUpdatedCameraIds(
         cachedCameraIds: List<CameraId>?,
-        cameraIdsRead: List<CameraId>?
+        cameraIdsRead: List<CameraId>?,
     ): List<CameraId>? {
         if (cameraIdsRead != null) {
             if (isValidCameraIds(cameraIdsRead)) {
@@ -177,7 +285,6 @@ constructor(
     }
 
     private fun ProducerScope<List<CameraId>>.sendCameraIdList(cameraIds: List<CameraId>) {
-        Log.debug { "Emitting camera ID list: $cameraIds" }
         trySendBlocking(cameraIds).onFailure {
             Log.error { "Failed to send camera ID list: $cameraIds!" }
         }
@@ -194,8 +301,23 @@ constructor(
             } catch (e: CameraAccessException) {
                 Log.warn(e) { "Failed to query CameraManager#getCameraIdList!" }
                 return null
+            } catch (e: ArrayIndexOutOfBoundsException) {
+                // getCameraIdList() can throw ArrayIndexOutOfBoundsException: b/443332525
+                Log.warn(e) {
+                    "Failed to query CameraManager#getCameraIdList!" +
+                        "Unexpected ArrayIndexOutOfBoundsException thrown by framework."
+                }
+                return null
+            } catch (e: NullPointerException) {
+                // getCameraIdList() can return null on problematic problems, which then ran afoul
+                // with kotlin intrinsics: b/450641047
+                Log.warn(e) {
+                    "Failed to query CameraManager#getCameraIdList!" +
+                        "Null was returned by framework."
+                }
+                return null
             }
-        val cameraIds = cameraIdArray.map { CameraId(it) }
+        val cameraIds = cameraIdArray.mapNotNull { CameraId(it) }
         if (isValidCameraIds(cameraIds)) {
             // Only update the cached camera IDs if the list is valid.
             synchronized(lock) { openableCameras = cameraIds }
@@ -267,7 +389,47 @@ constructor(
             .toSet()
     }
 
+    override fun onCriticalCameraError(cameraId: CameraId) {
+        // Pre-Android 17, opening and physically disconnecting an external camera would not induce
+        // a second onCameraUnavailable() call (during disconnection). However, since the external
+        // camera HAL would fire a camera error callback, we leverage that to refresh our list.
+        // See ag/37037453 for the CL that addresses the issue.
+        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.BAKLAVA) {
+            scope.launch {
+                if (isExternalCamera(cameraId)) {
+                    Log.info { "Critical camera error occurred on external $cameraId" }
+
+                    // Re-read the camera ID list on an interval.
+                    // When camera HAL reports a camera device error, it isn't guaranteed that the
+                    // camera device is truly gone, nor is it guaranteed that the camera
+                    // availability (the camera ID list) is updated right away. As such, here we
+                    // retry reading the camera ID list repeatedly on a timeout.
+                    var cameraIds = readCameraIds()
+                    for (i in 1..CRITICAL_CAMERA_ERROR_READ_CAMERA_ID_RETRY_COUNT) {
+                        if (cameraIds != null && !cameraIds.contains(cameraId)) {
+                            Log.info { "External $cameraId was removed" }
+                            break
+                        }
+                        delay(CRITICAL_CAMERA_ERROR_READ_CAMERA_ID_INTERVAL)
+                        cameraIds = readCameraIds()
+                    }
+                }
+            }
+        }
+    }
+
     fun shutdown() {
         scope.cancel()
+    }
+
+    private suspend fun isExternalCamera(cameraId: CameraId): Boolean {
+        val cameraMetadata = metadataProvider.getCameraMetadata(cameraId)
+        return cameraMetadata[CameraCharacteristics.LENS_FACING] ==
+            CameraCharacteristics.LENS_FACING_EXTERNAL
+    }
+
+    companion object {
+        val CRITICAL_CAMERA_ERROR_READ_CAMERA_ID_INTERVAL = 300.milliseconds
+        const val CRITICAL_CAMERA_ERROR_READ_CAMERA_ID_RETRY_COUNT = 3
     }
 }

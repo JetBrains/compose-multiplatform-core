@@ -35,8 +35,8 @@ object ImageUtil {
         }
         val planes = image.planes
         val buffer = planes[0].buffer
-        val data = ByteArray(buffer.capacity())
         buffer.rewind()
+        val data = ByteArray(buffer.remaining())
         buffer[data]
         return data
     }
@@ -49,7 +49,7 @@ object ImageUtil {
     @JvmStatic
     fun yuvImageToJpegByteArray(
         image: Image,
-        @IntRange(from = 1, to = 100) jpegQuality: Int
+        @IntRange(from = 1, to = 100) jpegQuality: Int,
     ): ByteArray {
         require(image.format == ImageFormat.YUV_420_888) {
             "Incorrect image format of the input image proxy: ${image.format}"
@@ -63,7 +63,7 @@ object ImageUtil {
         nv21: ByteArray,
         width: Int,
         height: Int,
-        @IntRange(from = 1, to = 100) jpegQuality: Int
+        @IntRange(from = 1, to = 100) jpegQuality: Int,
     ): ByteArray {
         val out = ByteArrayOutputStream()
         val yuv = YuvImage(nv21, ImageFormat.NV21, width, height, null)

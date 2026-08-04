@@ -185,7 +185,7 @@ public class CustomTabsCallback {
 
     /**
      * Called when the browser process finished warming up initiated by
-     * {@link CustomTabsClient#warmup()}.
+     * {@link CustomTabsClient#warmup(long)}.
      * @param extras Reserved for future use.
      */
     public void onWarmupCompleted(@NonNull Bundle extras) {}
@@ -250,7 +250,6 @@ public class CustomTabsCallback {
      *
      * @param extras Reserved for future use.
      */
-    @ExperimentalMinimizationCallback
     public void onMinimized(@NonNull Bundle extras) {}
 
     /**
@@ -259,7 +258,6 @@ public class CustomTabsCallback {
      *
      * @param extras Reserved for future use.
      */
-    @ExperimentalMinimizationCallback
     public void onUnminimized(@NonNull Bundle extras) {}
 
 

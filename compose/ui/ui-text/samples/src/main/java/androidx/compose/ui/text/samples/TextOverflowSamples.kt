@@ -23,7 +23,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.material.Text
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -40,7 +40,7 @@ fun TextOverflowClipSample() {
         text = "Hello ".repeat(2),
         modifier = Modifier.size(100.dp, 70.dp).background(Color.Cyan),
         fontSize = 35.sp,
-        overflow = TextOverflow.Clip
+        overflow = TextOverflow.Clip,
     )
 }
 
@@ -52,7 +52,7 @@ fun TextOverflowEllipsisSample() {
         modifier = Modifier.width(100.dp).background(Color.Cyan),
         fontSize = 35.sp,
         overflow = TextOverflow.Ellipsis,
-        maxLines = 1
+        maxLines = 1,
     )
 }
 
@@ -73,7 +73,7 @@ fun TextOverflowVisibleFixedSizeSample() {
                         }
                 },
             fontSize = 35.sp,
-            overflow = TextOverflow.Visible
+            overflow = TextOverflow.Visible,
         )
     }
 }
@@ -96,7 +96,7 @@ fun TextOverflowVisibleMinHeightSample() {
                         count.value = if (count.value == 1) 2 else 1
                     },
             fontSize = 35.sp,
-            overflow = TextOverflow.Visible
+            overflow = TextOverflow.Visible,
         )
     }
 }

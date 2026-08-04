@@ -21,25 +21,26 @@ import androidx.compose.runtime.Stable
 import androidx.compose.ui.util.lerp
 
 /**
- * Define a geometric transformation on text.
+ * Defines geometric transformations for text (such as scaling and skewing).
  *
- * @param scaleX The scale of the text on the horizontal direction. The default value is 1.0f, i.e
- *   no scaling.
- * @param skewX The shear of the text on the horizontal direction. A pixel at (x, y), where y is the
- *   distance above baseline, will be transformed to (x + y * skewX, y). The default value is 0.0f
- *   i.e. no skewing.
+ * @param scaleX horizontal scale factor (1.0f for no scaling).
+ * @param skewX horizontal shear/skew factor. A pixel at (x, y) transforms to (x + y * skewX, y).
+ *   Default is 0.0f (no skewing).
  */
 @Immutable
-class TextGeometricTransform(val scaleX: Float = 1.0f, val skewX: Float = 0f) {
-    companion object {
+public class TextGeometricTransform(public val scaleX: Float = 1.0f, public val skewX: Float = 0f) {
+    public companion object {
         @Stable internal val None = TextGeometricTransform(1.0f, 0.0f)
     }
 
-    fun copy(scaleX: Float = this.scaleX, skewX: Float = this.skewX): TextGeometricTransform {
+    public fun copy(
+        scaleX: Float = this.scaleX,
+        skewX: Float = this.skewX,
+    ): TextGeometricTransform {
         return TextGeometricTransform(scaleX, skewX)
     }
 
-    override fun equals(other: Any?): Boolean {
+    public override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is TextGeometricTransform) return false
         if (scaleX != other.scaleX) return false
@@ -47,24 +48,24 @@ class TextGeometricTransform(val scaleX: Float = 1.0f, val skewX: Float = 0f) {
         return true
     }
 
-    override fun hashCode(): Int {
+    public override fun hashCode(): Int {
         var result = scaleX.hashCode()
         result = 31 * result + skewX.hashCode()
         return result
     }
 
-    override fun toString(): String {
+    public override fun toString(): String {
         return "TextGeometricTransform(scaleX=$scaleX, skewX=$skewX)"
     }
 }
 
-fun lerp(
+public fun lerp(
     start: TextGeometricTransform,
     stop: TextGeometricTransform,
-    fraction: Float
+    fraction: Float,
 ): TextGeometricTransform {
     return TextGeometricTransform(
         lerp(start.scaleX, stop.scaleX, fraction),
-        lerp(start.skewX, stop.skewX, fraction)
+        lerp(start.skewX, stop.skewX, fraction),
     )
 }

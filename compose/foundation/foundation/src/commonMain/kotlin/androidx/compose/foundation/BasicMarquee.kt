@@ -58,7 +58,6 @@ import androidx.compose.ui.node.LayoutModifierNode
 import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.node.requireDensity
 import androidx.compose.ui.node.requireGraphicsContext
-import androidx.compose.ui.node.requireLayoutDirection
 import androidx.compose.ui.platform.InspectorInfo
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
@@ -71,7 +70,6 @@ import kotlin.jvm.JvmInline
 import kotlin.math.absoluteValue
 import kotlin.math.ceil
 import kotlin.math.roundToInt
-import kotlin.math.sign
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -80,26 +78,26 @@ import kotlinx.coroutines.withContext
 /**
  * Namespace for constants representing the default values for various [basicMarquee] parameters.
  */
-object MarqueeDefaults {
+public object MarqueeDefaults {
     /** Default value for the `iterations` parameter to [basicMarquee]. */
     // From
     // https://cs.android.com/android/platform/superproject/+/master:frameworks/base/core/java/android/widget/TextView.java;l=736;drc=6d97d6d7215fef247d1a90e05545cac3676f9212
-    @Suppress("MayBeConstant") val Iterations: Int = 3
+    @Suppress("MayBeConstant") public val Iterations: Int = 3
 
     /** Default value for the `repeatDelayMillis` parameter to [basicMarquee]. */
     // From
     // https://cs.android.com/android/platform/superproject/+/master:frameworks/base/core/java/android/widget/TextView.java;l=13979;drc=6d97d6d7215fef247d1a90e05545cac3676f9212
-    @Suppress("MayBeConstant") val RepeatDelayMillis: Int = 1_200
+    @Suppress("MayBeConstant") public val RepeatDelayMillis: Int = 1_200
 
     /** Default value for the `spacing` parameter to [basicMarquee]. */
     // From
     // https://cs.android.com/android/platform/superproject/+/master:frameworks/base/core/java/android/widget/TextView.java;l=14088;drc=6d97d6d7215fef247d1a90e05545cac3676f9212
-    val Spacing: MarqueeSpacing = MarqueeSpacing.fractionOfContainer(1f / 3f)
+    public val Spacing: MarqueeSpacing = MarqueeSpacing.fractionOfContainer(1f / 3f)
 
     /** Default value for the `velocity` parameter to [basicMarquee]. */
     // From
     // https://cs.android.com/android/platform/superproject/+/master:frameworks/base/core/java/android/widget/TextView.java;l=13980;drc=6d97d6d7215fef247d1a90e05545cac3676f9212
-    val Velocity: Dp = 30.dp
+    public val Velocity: Dp = 30.dp
 }
 
 /**
@@ -137,17 +135,18 @@ object MarqueeDefaults {
  *   [WhileFocused], otherwise the initial delay will be [repeatDelayMillis].
  * @param spacing A [MarqueeSpacing] that specifies how much space to leave at the end of the
  *   content before showing the beginning again.
- * @param velocity The speed of the animation in dps / second.
+ * @param velocity The speed of the animation in dps / second. A positive velocity means that the
+ *   marquee will animate in the direction of the current [LayoutDirection].
  */
 @Stable
-fun Modifier.basicMarquee(
+public fun Modifier.basicMarquee(
     iterations: Int = Iterations,
     animationMode: MarqueeAnimationMode = Immediately,
     // TODO(aosp/2339066) Consider taking an AnimationSpec instead of specific configuration params.
     repeatDelayMillis: Int = RepeatDelayMillis,
     initialDelayMillis: Int = if (animationMode == Immediately) repeatDelayMillis else 0,
     spacing: MarqueeSpacing = Spacing,
-    velocity: Dp = Velocity
+    velocity: Dp = Velocity,
 ): Modifier =
     this then
         MarqueeModifierElement(
@@ -216,14 +215,11 @@ private class MarqueeModifierNode(
     var spacing: MarqueeSpacing by mutableStateOf(spacing)
     var animationMode: MarqueeAnimationMode by mutableStateOf(animationMode)
 
+    /**
+     * The animation of the marquee content - this is always in the range
+     * [0, contentWidth + spacingWidth].
+     */
     private val offset = Animatable(0f)
-    private val direction
-        get() =
-            sign(velocity.value) *
-                when (requireLayoutDirection()) {
-                    LayoutDirection.Ltr -> 1
-                    LayoutDirection.Rtl -> -1
-                }
 
     private val spacingPx by derivedStateOf {
         with(spacing) { requireDensity().calculateSpacing(contentWidth, containerWidth) }
@@ -284,7 +280,7 @@ private class MarqueeModifierNode(
 
     override fun MeasureScope.measure(
         measurable: Measurable,
-        constraints: Constraints
+        constraints: Constraints,
     ): MeasureResult {
         val childConstraints = constraints.copy(maxWidth = Constraints.Infinity)
         val placeable = measurable.measure(childConstraints)
@@ -293,7 +289,7 @@ private class MarqueeModifierNode(
         return layout(containerWidth, placeable.height) {
             // Placing the marquee content in a layer means we don't invalidate the parent draw
             // scope on every animation frame.
-            placeable.placeWithLayer(x = (-offset.value * direction).roundToInt(), y = 0)
+            placeable.placeWithLayer(0, 0)
         }
     }
 
@@ -302,43 +298,53 @@ private class MarqueeModifierNode(
     /** Always returns zero since the marquee has no minimum width. */
     override fun IntrinsicMeasureScope.minIntrinsicWidth(
         measurable: IntrinsicMeasurable,
-        height: Int
+        height: Int,
     ): Int = 0
 
     override fun IntrinsicMeasureScope.maxIntrinsicWidth(
         measurable: IntrinsicMeasurable,
-        height: Int
+        height: Int,
     ): Int = measurable.maxIntrinsicWidth(height)
 
     /** Ignores width since marquee contents are always measured with infinite width. */
     override fun IntrinsicMeasureScope.minIntrinsicHeight(
         measurable: IntrinsicMeasurable,
-        width: Int
+        width: Int,
     ): Int = measurable.minIntrinsicHeight(Constraints.Infinity)
 
     /** Ignores width since marquee contents are always measured with infinite width. */
     override fun IntrinsicMeasureScope.maxIntrinsicHeight(
         measurable: IntrinsicMeasurable,
-        width: Int
+        width: Int,
     ): Int = measurable.maxIntrinsicHeight(Constraints.Infinity)
 
     override fun ContentDrawScope.draw() {
-        val clipOffset = offset.value * direction
-        val firstCopyVisible =
-            when (direction) {
-                1f -> offset.value < contentWidth
-                else -> offset.value < containerWidth
+        // Drawing and clipping strategy:
+        // In both layout directions and for all velocities, we draw the first copy of the content
+        // in [0, contentWidth], and the second copy in
+        // [contentWidth + spacingPx, contentWidth * 2 + spacingPx]
+        // We then calculate the clip window offset such that we move the correct direction, and
+        // have the correct starting point, based on the layout direction and velocity.
+        // Our resulting sliding window of
+        // [clipWindowOffset, clipWindowOffset + containerWidth] should always be contained within
+        // [0, contentWidth * 2 + spacingPx].
+        val clipWindowOffset =
+            if (velocity > 0.dp) {
+                when (layoutDirection) {
+                    LayoutDirection.Ltr -> offset.value
+                    LayoutDirection.Rtl ->
+                        -offset.value + contentWidth * 2 + spacingPx - containerWidth
+                }
+            } else {
+                when (layoutDirection) {
+                    LayoutDirection.Ltr -> -offset.value + contentWidth + spacingPx
+                    LayoutDirection.Rtl -> offset.value + contentWidth - containerWidth
+                }
             }
-        val secondCopyVisible =
-            when (direction) {
-                1f -> offset.value > (contentWidth + spacingPx) - containerWidth
-                else -> offset.value > spacingPx
-            }
-        val secondCopyOffset =
-            when (direction) {
-                1f -> contentWidth + spacingPx
-                else -> -contentWidth - spacingPx
-            }.toFloat()
+
+        val firstCopyVisible = clipWindowOffset < contentWidth
+        val secondCopyVisible = clipWindowOffset + containerWidth > contentWidth + spacingPx
+        val secondCopyOffset = (contentWidth + spacingPx).toFloat()
 
         val drawHeight = size.height
         marqueeLayer?.let { layer ->
@@ -346,24 +352,29 @@ private class MarqueeModifierNode(
                 this@draw.drawContent()
             }
         }
-        clipRect(left = clipOffset, right = clipOffset + containerWidth) {
-            val layer = marqueeLayer
-            // Unless there are circumstances where the Modifier's draw call can be invoked without
-            // an attach call, the else case here is optional. However we can be safe and make sure
-            // that we definitely draw even when the layer could not be initialized for any reason.
-            if (layer != null) {
-                if (firstCopyVisible) {
-                    drawLayer(layer)
-                }
-                if (secondCopyVisible) {
-                    translate(left = secondCopyOffset) { drawLayer(layer) }
-                }
-            } else {
-                if (firstCopyVisible) {
-                    this@draw.drawContent()
-                }
-                if (secondCopyVisible) {
-                    translate(left = secondCopyOffset) { this@draw.drawContent() }
+        clipRect(right = containerWidth.toFloat()) {
+            translate(left = -clipWindowOffset) {
+                val layer = marqueeLayer
+                // Unless there are circumstances where the Modifier's draw call can be invoked
+                // without
+                // an attach call, the else case here is optional. However we can be safe and make
+                // sure
+                // that we definitely draw even when the layer could not be initialized for any
+                // reason.
+                if (layer != null) {
+                    if (firstCopyVisible) {
+                        drawLayer(layer)
+                    }
+                    if (secondCopyVisible) {
+                        translate(left = secondCopyOffset) { drawLayer(layer) }
+                    }
+                } else {
+                    if (firstCopyVisible) {
+                        this@draw.drawContent()
+                    }
+                    if (secondCopyVisible) {
+                        translate(left = secondCopyOffset) { this@draw.drawContent() }
+                    }
                 }
             }
         }
@@ -410,7 +421,7 @@ private class MarqueeModifierNode(
                             initialDelayMillis,
                             delayMillis,
                             velocity,
-                            requireDensity()
+                            requireDensity(),
                         )
 
                     offset.snapTo(0f)
@@ -432,14 +443,14 @@ private fun createMarqueeAnimationSpec(
     initialDelayMillis: Int,
     delayMillis: Int,
     velocity: Dp,
-    density: Density
+    density: Density,
 ): AnimationSpec<Float> {
     val pxPerSec = with(density) { velocity.toPx() }
     val singleSpec =
         velocityBasedTween(
             velocity = pxPerSec.absoluteValue,
             targetValue = targetValue,
-            delayMillis = delayMillis
+            delayMillis = delayMillis,
         )
     // Need to cancel out the non-initial delay.
     val startOffset = StartOffset(-delayMillis + initialDelayMillis)
@@ -459,19 +470,19 @@ private fun createMarqueeAnimationSpec(
 private fun velocityBasedTween(
     velocity: Float,
     targetValue: Float,
-    delayMillis: Int
+    delayMillis: Int,
 ): TweenSpec<Float> {
     val pxPerMilli = velocity / 1000f
     return tween(
         durationMillis = ceil(targetValue / pxPerMilli).toInt(),
         easing = LinearEasing,
-        delayMillis = delayMillis
+        delayMillis = delayMillis,
     )
 }
 
 /** Specifies when the [basicMarquee] animation runs. */
 @JvmInline
-value class MarqueeAnimationMode private constructor(private val value: Int) {
+public value class MarqueeAnimationMode private constructor(private val value: Int) {
 
     override fun toString(): String =
         when (this) {
@@ -480,29 +491,33 @@ value class MarqueeAnimationMode private constructor(private val value: Int) {
             else -> error("invalid value: $value")
         }
 
-    companion object {
+    public companion object {
         /**
          * Starts animating immediately (accounting for any initial delay), irrespective of focus
          * state.
          */
-        val Immediately = MarqueeAnimationMode(0)
+        public val Immediately: MarqueeAnimationMode
+            get() = MarqueeAnimationMode(0)
 
         /**
          * Only animates while the marquee has focus or a node in the marquee's content has focus.
          */
-        val WhileFocused = MarqueeAnimationMode(1)
+        public val WhileFocused: MarqueeAnimationMode
+            get() = MarqueeAnimationMode(1)
     }
 }
 
 /** A [MarqueeSpacing] with a fixed size. */
-fun MarqueeSpacing(spacing: Dp): MarqueeSpacing = MarqueeSpacing { _, _ -> spacing.roundToPx() }
+public fun MarqueeSpacing(spacing: Dp): MarqueeSpacing = MarqueeSpacing { _, _ ->
+    spacing.roundToPx()
+}
 
 /**
  * Defines a [calculateSpacing] method that determines the space after the end of [basicMarquee]
  * content before drawing the content again.
  */
 @Stable
-fun interface MarqueeSpacing {
+public fun interface MarqueeSpacing {
     /**
      * Calculates the space after the end of [basicMarquee] content before drawing the content
      * again.
@@ -517,13 +532,14 @@ fun interface MarqueeSpacing {
      * @return The space in pixels between the end of the content and the beginning of the content
      *   when wrapping.
      */
-    fun Density.calculateSpacing(contentWidth: Int, containerWidth: Int): Int
+    public fun Density.calculateSpacing(contentWidth: Int, containerWidth: Int): Int
 
-    companion object {
+    public companion object {
         /** A [MarqueeSpacing] that is a fraction of the container's width. */
-        fun fractionOfContainer(fraction: Float): MarqueeSpacing = MarqueeSpacing { _, width ->
-            (fraction * width).roundToInt()
-        }
+        public fun fractionOfContainer(fraction: Float): MarqueeSpacing =
+            MarqueeSpacing { _, width ->
+                (fraction * width).roundToInt()
+            }
     }
 }
 

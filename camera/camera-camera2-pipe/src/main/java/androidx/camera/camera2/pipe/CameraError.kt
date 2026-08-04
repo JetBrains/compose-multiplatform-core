@@ -126,6 +126,12 @@ public value class CameraError private constructor(public val value: Int) {
          */
         public val ERROR_CAMERA_OPENER: CameraError = CameraError(12)
 
+        /**
+         * Camera open timed out, which happens when the camera open request is aborted by a latter
+         * request, canceled by shutdown, or the CameraManager.openCamera() call timed out.
+         */
+        public val ERROR_CAMERA_OPEN_TIMEOUT: CameraError = CameraError(13)
+
         internal fun from(throwable: Throwable) =
             when (throwable) {
                 is CameraAccessException -> from(throwable)
@@ -149,9 +155,8 @@ public value class CameraError private constructor(public val value: Int) {
                 CAMERA_IN_USE -> ERROR_CAMERA_IN_USE
                 MAX_CAMERAS_IN_USE -> ERROR_CAMERA_LIMIT_EXCEEDED
                 else -> {
-                    throw IllegalArgumentException(
-                        "Unexpected CameraAccessException reason:" + "${exception.reason}"
-                    )
+                    Log.warn { "Unexpected CameraAccessException: $exception" }
+                    ERROR_UNKNOWN_EXCEPTION
                 }
             }
 
@@ -211,6 +216,7 @@ public value class CameraError private constructor(public val value: Int) {
                 ERROR_DO_NOT_DISTURB_ENABLED -> "ERROR_DO_NOT_DISTURB_ENABLED"
                 ERROR_UNKNOWN_EXCEPTION -> "ERROR_UNKNOWN_EXCEPTION"
                 ERROR_CAMERA_OPENER -> "ERROR_CAMERA_OPENER"
+                ERROR_CAMERA_OPEN_TIMEOUT -> "ERROR_CAMERA_OPEN_TIMEOUT"
                 else -> "ERROR_UNKNOWN"
             } +
             ")"

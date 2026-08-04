@@ -83,8 +83,18 @@ public abstract class RemoteAuthService : Service() {
         @JvmStatic
         public fun sendResponseToCallback(
             response: OAuthResponse,
-            packageNameAndRequestId: Pair<String, Int>
+            packageNameAndRequestId: Pair<String, Int>,
         ) {
+            val expectedPackageName = packageNameAndRequestId.first
+            val responseUrl = response.responseUrl
+
+            if (responseUrl != null && responseUrl.lastPathSegment != expectedPackageName) {
+                throw SecurityException(
+                    "Response URL package segment '${responseUrl.lastPathSegment}' " +
+                        "does not match the registered receiver '$expectedPackageName'"
+                )
+            }
+
             try {
                 callbacksByPackageNameAndRequestID[packageNameAndRequestId]?.onResult(
                     buildBundleFromResponse(response, packageNameAndRequestId.first)
@@ -116,7 +126,7 @@ public abstract class RemoteAuthService : Service() {
      */
     protected fun onBind(
         @Suppress("UNUSED_PARAMETER") intent: Intent,
-        remoteAuthRequestHandler: RemoteAuthRequestHandler
+        remoteAuthRequestHandler: RemoteAuthRequestHandler,
     ): IBinder = RemoteAuthServiceBinder(this, remoteAuthRequestHandler)
 
     /** Implementation of [Service.onUnbind] */
@@ -140,7 +150,7 @@ public abstract class RemoteAuthService : Service() {
 
     internal inner class RemoteAuthServiceBinder(
         private val context: Context,
-        private val remoteAuthRequestHandler: RemoteAuthRequestHandler
+        private val remoteAuthRequestHandler: RemoteAuthRequestHandler,
     ) : IAuthenticationRequestService.Stub() {
 
         override fun getApiVersion(): Int = IAuthenticationRequestService.API_VERSION
@@ -149,7 +159,7 @@ public abstract class RemoteAuthService : Service() {
         @Suppress("DEPRECATION")
         override fun openUrl(
             request: Bundle,
-            authenticationRequestCallback: IAuthenticationRequestCallback
+            authenticationRequestCallback: IAuthenticationRequestCallback,
         ) {
             val packageName = request.getString(RemoteAuthClient.KEY_PACKAGE_NAME)
             if (remoteAuthRequestHandler.isAuthSupported()) {
@@ -157,14 +167,36 @@ public abstract class RemoteAuthService : Service() {
                     throw SecurityException("Failed to verify the Requester's package name")
                 }
 
+                val requestUrl: Uri =
+                    request.getParcelable(RemoteAuthClient.KEY_REQUEST_URL)
+                        ?: throw SecurityException("Missing requestUrl")
+
+                val redirectUriString =
+                    requestUrl.getQueryParameter("redirect_uri")
+                        ?: throw SecurityException("Missing redirect_uri in requestUrl")
+
+                val redirectUri = Uri.parse(redirectUriString)
+                if (redirectUri.lastPathSegment != packageName) {
+                    throw SecurityException(
+                        "redirect_uri package segment '${redirectUri.lastPathSegment}' " +
+                            "does not match verified caller package '$packageName'"
+                    )
+                }
+
+                try {
+                    OAuthRequest.checkValidity(requestUrl)
+                } catch (e: IllegalArgumentException) {
+                    throw SecurityException("Invalid OAuth request format: ${e.message}", e)
+                }
+
                 val packageNameAndRequestId = Pair(packageName!!, secureRandom.nextInt())
+
                 callbacksByPackageNameAndRequestID[packageNameAndRequestId] =
                     authenticationRequestCallback
 
-                val requestUrl: Uri? = request.getParcelable(RemoteAuthClient.KEY_REQUEST_URL)
                 remoteAuthRequestHandler.sendAuthRequest(
-                    OAuthRequest(packageName, requestUrl!!),
-                    packageNameAndRequestId
+                    OAuthRequest(packageName, requestUrl),
+                    packageNameAndRequestId,
                 )
             } else {
                 authenticationRequestCallback.onResult(
@@ -172,5 +204,7 @@ public abstract class RemoteAuthService : Service() {
                 )
             }
         }
+
+        override fun getInterfaceVersion(): Int = VERSION
     }
 }

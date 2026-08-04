@@ -16,24 +16,17 @@
 
 package androidx.appfunctions.compiler.processors
 
+import androidx.appfunctions.compiler.AppFunctionCompilerOptions
 import androidx.appfunctions.compiler.core.AnnotatedAppFunctionSerializableProxy.ResolvedAnnotatedSerializableProxies
 import androidx.appfunctions.compiler.core.AnnotatedAppFunctions
 import androidx.appfunctions.compiler.core.AppFunctionSymbolResolver
-import androidx.appfunctions.compiler.core.createElementWithTextNode
-import androidx.appfunctions.compiler.core.toXmlElement
-import androidx.appfunctions.metadata.AppFunctionComponentsMetadata
-import androidx.appfunctions.metadata.AppFunctionDataTypeMetadata
-import androidx.appfunctions.metadata.CompileTimeAppFunctionMetadata
+import androidx.appfunctions.compiler.core.AppFunctionXmlGenerator
+import androidx.appfunctions.compiler.core.metadata.CompileTimeAppFunctionMetadata
 import com.google.devtools.ksp.processing.CodeGenerator
-import com.google.devtools.ksp.processing.Dependencies
+import com.google.devtools.ksp.processing.KSPLogger
 import com.google.devtools.ksp.processing.Resolver
 import com.google.devtools.ksp.processing.SymbolProcessor
 import com.google.devtools.ksp.symbol.KSAnnotated
-import javax.xml.parsers.DocumentBuilderFactory
-import javax.xml.transform.OutputKeys
-import javax.xml.transform.TransformerFactory
-import javax.xml.transform.dom.DOMSource
-import javax.xml.transform.stream.StreamResult
 
 /**
  * Generates AppFunction's index xml file with all properties of [CompileTimeAppFunctionMetadata]
@@ -45,6 +38,8 @@ import javax.xml.transform.stream.StreamResult
  */
 class AppFunctionIndexXmlProcessor(
     private val codeGenerator: CodeGenerator,
+    private val options: AppFunctionCompilerOptions,
+    private val logger: KSPLogger,
 ) : SymbolProcessor {
 
     override fun process(resolver: Resolver): List<KSAnnotated> {
@@ -55,7 +50,8 @@ class AppFunctionIndexXmlProcessor(
             )
         generateIndexXml(
             appFunctionSymbolResolver.getAnnotatedAppFunctionsFromAllModules(),
-            resolvedAnnotatedSerializableProxies
+            resolvedAnnotatedSerializableProxies,
+            appFunctionSymbolResolver.getAppFunctionSerializablesDescriptionMap(),
         )
         return emptyList()
     }
@@ -69,96 +65,34 @@ class AppFunctionIndexXmlProcessor(
      */
     private fun generateIndexXml(
         appFunctionsByClass: List<AnnotatedAppFunctions>,
-        resolvedAnnotatedSerializableProxies: ResolvedAnnotatedSerializableProxies
+        resolvedAnnotatedSerializableProxies: ResolvedAnnotatedSerializableProxies,
+        appFunctionSerializablesDescriptionMap: Map<String, String>,
     ) {
-        if (appFunctionsByClass.isEmpty()) {
-            return
-        }
-        writeXmlFile(appFunctionsByClass, resolvedAnnotatedSerializableProxies)
+        writeXmlFile(
+            appFunctionsByClass,
+            resolvedAnnotatedSerializableProxies,
+            appFunctionSerializablesDescriptionMap,
+        )
     }
 
     private fun writeXmlFile(
         appFunctionsByClass: List<AnnotatedAppFunctions>,
-        resolvedAnnotatedSerializableProxies: ResolvedAnnotatedSerializableProxies
+        resolvedAnnotatedSerializableProxies: ResolvedAnnotatedSerializableProxies,
+        appFunctionSerializablesDescriptionMap: Map<String, String>,
     ) {
-        val appFunctionMetadataList =
-            appFunctionsByClass.flatMap {
-                it.createAppFunctionMetadataList(resolvedAnnotatedSerializableProxies)
-            }
-
-        val xmlDocumentBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder()
-        val xmlDocument = xmlDocumentBuilder.newDocument().apply { xmlStandalone = true }
-
-        val appFunctionsElement = xmlDocument.createElement(APP_FUNCTIONS_ELEMENTS_TAG)
-        xmlDocument.appendChild(appFunctionsElement)
-
-        val aggregatedDataTypes: MutableMap<String, AppFunctionDataTypeMetadata> = mutableMapOf()
-        for (appFunctionMetadata in appFunctionMetadataList) {
-            appFunctionMetadata.components.dataTypes.forEach { (objectKey, dataTypeMetadata) ->
-                aggregatedDataTypes.putIfAbsent(objectKey, dataTypeMetadata)
-            }
-            val sanitizedAppFunctionMetadata =
-                appFunctionMetadata.copy(components = AppFunctionComponentsMetadata())
-
-            val appFunctionElement =
-                sanitizedAppFunctionMetadata
-                    .toAppFunctionMetadataDocument()
-                    .toXmlElement(xmlDocument, APP_FUNCTION_ITEM_TAG)
-            appFunctionElement.appendChild(
-                xmlDocument.createElementWithTextNode(
-                    APP_FUNCTION_ID_TAG,
-                    sanitizedAppFunctionMetadata.id
-                )
-            )
-            appFunctionsElement.appendChild(appFunctionElement)
-        }
-
-        val componentElement =
-            AppFunctionComponentsMetadata(aggregatedDataTypes)
-                .toAppFunctionComponentsMetadataDocument()
-                .toXmlElement(doc = xmlDocument, COMPONENT_ITEM_TAG)
-        appFunctionsElement.appendChild(componentElement)
-
-        val transformer =
-            TransformerFactory.newInstance().newTransformer().apply {
-                setOutputProperty(OutputKeys.INDENT, "yes")
-                setOutputProperty(OutputKeys.ENCODING, "UTF-8")
-                setOutputProperty(OutputKeys.VERSION, "1.0")
-                setOutputProperty(OutputKeys.STANDALONE, "yes")
-            }
-
-        codeGenerator
-            .createNewFile(
-                Dependencies(
-                    aggregating = true,
-                    *appFunctionsByClass.flatMap { it.getSourceFiles() }.toTypedArray()
-                ),
-                XML_PACKAGE_NAME,
-                XML_FILE_NAME,
-                XML_EXTENSION
-            )
-            .use { stream -> transformer.transform(DOMSource(xmlDocument), StreamResult(stream)) }
-    }
-
-    private fun Any.isPrimitiveType(): Boolean {
-        return this is Byte ||
-            this is Short ||
-            this is Int ||
-            this is Long ||
-            this is Float ||
-            this is Double ||
-            this is Char ||
-            this is Boolean ||
-            this is String
+        val generator = AppFunctionXmlGenerator(codeGenerator, logger)
+        generator.generateXml(
+            appFunctionsByClass = appFunctionsByClass,
+            resolvedAnnotatedSerializableProxies = resolvedAnnotatedSerializableProxies,
+            appFunctionSerializablesDescriptionMap = appFunctionSerializablesDescriptionMap,
+            packageName = XML_PACKAGE_NAME,
+            fileName = XML_FILE_NAME,
+            outputLocation = options.appFunctionsXmlLocation,
+        )
     }
 
     private companion object {
         const val XML_PACKAGE_NAME = "assets"
         const val XML_FILE_NAME = "app_functions_v2"
-        const val XML_EXTENSION = "xml"
-        const val APP_FUNCTIONS_ELEMENTS_TAG = "appfunctions"
-        const val APP_FUNCTION_ITEM_TAG = "appfunction"
-        const val COMPONENT_ITEM_TAG = "AppFunctionComponentMetadataDocument"
-        const val APP_FUNCTION_ID_TAG = "functionId"
     }
 }

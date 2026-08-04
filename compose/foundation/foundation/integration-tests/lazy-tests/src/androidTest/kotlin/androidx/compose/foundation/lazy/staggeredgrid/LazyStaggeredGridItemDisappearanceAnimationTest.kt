@@ -40,7 +40,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assertHeightIsEqualTo
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.getBoundsInRoot
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntSize
@@ -148,7 +148,7 @@ class LazyStaggeredGridItemDisappearanceAnimationTest {
             LazyGrid(
                 containerSize = itemSizeDp * 3,
                 reverseLayout = true,
-                contentPadding = PaddingValues(bottom = itemSizeDp)
+                contentPadding = PaddingValues(bottom = itemSizeDp),
             ) {
                 items(list, key = { it.toArgb() }) { Item(it) }
             }
@@ -389,7 +389,7 @@ class LazyStaggeredGridItemDisappearanceAnimationTest {
     private fun assertPixels(
         mainAxisSize: Int,
         crossAxisSize: Int = this.crossAxisSize,
-        expectedColorProvider: (x: Int, y: Int) -> Color?
+        expectedColorProvider: (x: Int, y: Int) -> Color?,
     ) {
         rule.onNodeWithTag(ContainerTag).captureToImage().assertPixels(
             IntSize(crossAxisSize, mainAxisSize)
@@ -422,7 +422,7 @@ class LazyStaggeredGridItemDisappearanceAnimationTest {
         crossAxisSize: Dp = crossAxisSizeDp,
         reverseLayout: Boolean = false,
         contentPadding: PaddingValues = PaddingValues(0.dp),
-        content: LazyStaggeredGridScope.() -> Unit
+        content: LazyStaggeredGridScope.() -> Unit,
     ) {
         state = rememberLazyStaggeredGridState(startIndex)
 
@@ -448,7 +448,7 @@ class LazyStaggeredGridItemDisappearanceAnimationTest {
                     .testTag(ContainerTag),
             contentPadding = contentPadding,
             reverseLayout = reverseLayout,
-            content = content
+            content = content,
         )
     }
 
@@ -458,13 +458,13 @@ class LazyStaggeredGridItemDisappearanceAnimationTest {
         size: Dp = itemSizeDp,
         crossAxisSize: Dp = crossAxisSizeDp,
         disappearanceSpec: FiniteAnimationSpec<Float>? = AnimSpec,
-        appearanceSpec: FiniteAnimationSpec<Float>? = null
+        appearanceSpec: FiniteAnimationSpec<Float>? = null,
     ) {
         Box(
             Modifier.animateItem(
                     fadeInSpec = appearanceSpec,
                     placementSpec = null,
-                    fadeOutSpec = disappearanceSpec
+                    fadeOutSpec = disappearanceSpec,
                 )
                 .background(color)
                 .requiredHeight(size)

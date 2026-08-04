@@ -17,7 +17,6 @@
 package androidx.testutils
 
 import android.content.Intent
-import android.os.Build
 import androidx.benchmark.ExperimentalBenchmarkConfigApi
 import androidx.benchmark.ExperimentalConfig
 import androidx.benchmark.StartupInsightsConfig
@@ -25,6 +24,8 @@ import androidx.benchmark.macro.ArtMetric
 import androidx.benchmark.macro.BaselineProfileMode
 import androidx.benchmark.macro.CompilationMode
 import androidx.benchmark.macro.ExperimentalMetricApi
+import androidx.benchmark.macro.FrameTimingMetric
+import androidx.benchmark.macro.MacrobenchmarkScope
 import androidx.benchmark.macro.MemoryUsageMetric
 import androidx.benchmark.macro.Metric
 import androidx.benchmark.macro.StartupMode
@@ -33,45 +34,48 @@ import androidx.benchmark.macro.TraceSectionMetric
 import androidx.benchmark.macro.isSupportedWithVmSettings
 import androidx.benchmark.macro.junit4.MacrobenchmarkRule
 import androidx.benchmark.perfetto.ExperimentalPerfettoCaptureApi
+import androidx.test.uiautomator.SearchCondition
+import androidx.test.uiautomator.UiDevice
 
-/** Compilation modes to sweep over for jetpack internal macrobenchmarks */
+/**
+ * Compilation modes to sweep over for jetpack internal macrobenchmarks.
+ *
+ * Below API 24, only [CompilationMode.Full] is supported. On 24+, we want to benchmark startup
+ * using baseline profiles and using partial with warmup. Partial compilation is the most
+ * representative mode for our benchmarks. We want to benchmark with warmup as we can't rely on the
+ * baseline profile's effectiveness, resulting in unstable results. However, we still want to obtain
+ * measurements that capture the effectiveness of our baseline profiles, so we run with those too.
+ */
 val COMPILATION_MODES =
-    if (Build.VERSION.SDK_INT < 24) {
-        // other modes aren't supported
-        listOf(CompilationMode.Full())
-    } else {
-        listOf(
-            CompilationMode.None(),
-            CompilationMode.Interpreted,
-            CompilationMode.Partial(
-                baselineProfileMode = BaselineProfileMode.Disable,
-                warmupIterations = 3
-            ),
-            /* For simplicity we use `Partial()`, which will only install baseline profiles if
-             * available, which would not be useful for macrobenchmarks that don't include baseline
-             * profiles. However baseline profiles are expected to make their way into essentially every
-             * jetpack macrobenchmark over time.
-             */
-            CompilationMode.Partial(),
-            CompilationMode.Full()
-        )
-    }
+    listOf(
+        CompilationMode.Partial(
+            baselineProfileMode = BaselineProfileMode.Disable,
+            warmupIterations = 3,
+        ),
+        /* For simplicity we use `Partial()`, which will only install baseline profiles if
+         * available, which would not be useful for macrobenchmarks that don't include baseline
+         * profiles. However baseline profiles are expected to make their way into essentially every
+         * jetpack macrobenchmark over time.
+         */
+        CompilationMode.Partial(),
+    )
 
-val STARTUP_MODES =
-    listOf(StartupMode.HOT, StartupMode.WARM, StartupMode.COLD).filter {
-        // skip StartupMode.HOT on Angler, API 23 - it works locally with same build on Bullhead,
-        // but not in Jetpack CI (b/204572406)
-        !(Build.VERSION.SDK_INT == 23 && it == StartupMode.HOT && Build.DEVICE == "angler")
-    }
+/**
+ * Default selection of [StartupMode]s for CI.
+ *
+ * By default, we only care about WARM and COLD startup. HOT provides important metrics, but does
+ * not provide enough delta to WARM for us to run in CI.
+ */
+val STARTUP_MODES = listOf(StartupMode.WARM, StartupMode.COLD)
 
 /** Temporary, while transitioning to new metrics */
 @OptIn(ExperimentalMetricApi::class)
 fun getStartupMetrics() =
     listOfNotNull(
         StartupTimingMetric(),
-        if (Build.VERSION.SDK_INT >= 24) ArtMetric() else null,
+        ArtMetric(),
         TraceSectionMetric("StartupTracingInitializer", TraceSectionMetric.Mode.First),
-        MemoryUsageMetric(MemoryUsageMetric.Mode.Last)
+        MemoryUsageMetric(MemoryUsageMetric.Mode.Last),
     )
 
 @OptIn(ExperimentalBenchmarkConfigApi::class, ExperimentalPerfettoCaptureApi::class)
@@ -81,7 +85,8 @@ fun MacrobenchmarkRule.measureStartup(
     packageName: String,
     iterations: Int = 10,
     metrics: List<Metric> = getStartupMetrics(),
-    setupIntent: Intent.() -> Unit = {}
+    waitForContent: MacrobenchmarkScope.() -> Unit = {},
+    setupIntent: Intent.() -> Unit = {},
 ) {
     measureRepeated(
         packageName = packageName,
@@ -91,36 +96,40 @@ fun MacrobenchmarkRule.measureStartup(
         startupMode = startupMode,
         experimentalConfig =
             ExperimentalConfig(startupInsightsConfig = StartupInsightsConfig(true)),
-        setupBlock = { pressHome() }
+        setupBlock = { pressHome() },
     ) {
         val intent = Intent()
         intent.setPackage(packageName)
         setupIntent(intent)
         startActivityAndWait(intent)
+
+        waitForContent()
     }
 }
 
 /** Baseline Profile compilation mode is considered primary, and always worth measuring */
 private fun CompilationMode.isPrimary(): Boolean {
-    return if (Build.VERSION.SDK_INT < 24) {
-        true
-    } else {
-        this is CompilationMode.Partial &&
-            this.warmupIterations == 0 &&
-            (this.baselineProfileMode == BaselineProfileMode.UseIfAvailable ||
-                this.baselineProfileMode == BaselineProfileMode.Require)
-    }
+    return this is CompilationMode.Partial &&
+        this.warmupIterations == 0 &&
+        (this.baselineProfileMode == BaselineProfileMode.UseIfAvailable ||
+            this.baselineProfileMode == BaselineProfileMode.Require)
 }
 
+/**
+ * Default selection of [CompilationMode]s for Startup benchmarks in CI.
+ *
+ * Below API 24, only [CompilationMode.Full] is supported. On 24+, we want to benchmark startup
+ * using baseline profiles and using partial with warmup. Partial compilation is the most
+ * representative mode for our benchmarks. We want to benchmark with warmup as we can't rely on the
+ * baseline profile's effectiveness, resulting in unstable results. However, we still want to obtain
+ * measurements that capture the effectiveness of our baseline profiles, , so we run with those too.
+ */
 private val STARTUP_COMPILATION_MODES =
-    COMPILATION_MODES.filter {
-        // Skip full for startup specifically, as it's not representative
-        Build.VERSION.SDK_INT < 24 || it !is CompilationMode.Full
-    }
+    COMPILATION_MODES.filterIsInstance<CompilationMode.Partial>()
 
 fun createStartupCompilationParams(
     startupModes: List<StartupMode> = STARTUP_MODES,
-    compilationModes: List<CompilationMode> = STARTUP_COMPILATION_MODES
+    compilationModes: List<CompilationMode> = STARTUP_COMPILATION_MODES,
 ): List<Array<Any>> =
     mutableListOf<Array<Any>>().apply {
         // To save CI resources, avoid measuring startup combinations which have non-primary
@@ -159,3 +168,122 @@ fun createCompilationParams(
             }
         }
     }
+
+@OptIn(ExperimentalMetricApi::class)
+fun defaultComposeScrollingMetrics(): List<Metric> =
+    listOfNotNull(
+        FrameTimingMetric(),
+        TraceSectionMetric(
+            sectionName = "ContentCapture:changeChecker",
+            mode = TraceSectionMetric.Mode.Sum,
+        ),
+        TraceSectionMetric(
+            sectionName = "Compose:recompose",
+            label = "composition",
+            mode = TraceSectionMetric.Mode.Sum,
+        ),
+        TraceSectionMetric(
+            sectionNames =
+                listOf(
+                    "Compose:applyChanges",
+                    "Compose:recordChanges",
+                    "PausedComposition:applyChanges",
+                ),
+            label = "applyChanges",
+            mode = TraceSectionMetric.Mode.Sum,
+        ),
+        TraceSectionMetric(
+            sectionName = "Compose:onRemembered",
+            label = "onRemembered",
+            mode = TraceSectionMetric.Mode.Sum,
+        ),
+        TraceSectionMetric(
+            sectionName = "Compose:onForgotten",
+            label = "onForgotten",
+            mode = TraceSectionMetric.Mode.Sum,
+        ),
+        TraceSectionMetric(
+            sectionName = "compose:lazy:prefetch:compose",
+            label = "precompose",
+            mode = TraceSectionMetric.Mode.Sum,
+        ),
+        TraceSectionMetric(
+            sectionName = "compose:lazy:prefetch:measure",
+            label = "premeasure",
+            mode = TraceSectionMetric.Mode.Sum,
+        ),
+        TraceSectionMetric(
+            sectionName = "AndroidOwner:outOfFrameExecutor",
+            label = "outOfFrameExecutor",
+            mode = TraceSectionMetric.Mode.Sum,
+        ),
+        TraceSectionMetric(
+            sectionName = "Compose:insertMovableContent",
+            label = "movableContent",
+            mode = TraceSectionMetric.Mode.Sum,
+        ),
+        TraceSectionMetric(
+            sectionName = "Compose:applyObservers",
+            label = "applyObservers",
+            mode = TraceSectionMetric.Mode.Sum,
+        ),
+        TraceSectionMetric(
+            sectionNames = listOf("Compose:LaunchedEffect", "Compose:coroutineScope"),
+            label = "composeCoroutines",
+            mode = TraceSectionMetric.Mode.Sum,
+        ),
+        TraceSectionMetric(
+            sectionNames = listOf("Compose:lookaheadMeasure", "Compose:lookaheadRemeasure"),
+            label = "lookaheadMeasure",
+            mode = TraceSectionMetric.Mode.Sum,
+        ),
+        TraceSectionMetric(
+            sectionNames = listOf("Compose:measure", "Compose:remeasure"),
+            label = "composeMeasure",
+            mode = TraceSectionMetric.Mode.Sum,
+        ),
+        TraceSectionMetric(
+            sectionName = "Compose:lookaheadLayout",
+            label = "lookaheadLayout",
+            mode = TraceSectionMetric.Mode.Sum,
+        ),
+        TraceSectionMetric(
+            sectionName = "Compose:layout",
+            label = "composeLayout",
+            mode = TraceSectionMetric.Mode.Sum,
+        ),
+        TraceSectionMetric(
+            sectionName = "AndroidOwner:draw",
+            label = "composeDraw",
+            mode = TraceSectionMetric.Mode.Sum,
+        ),
+        MemoryUsageMetric(MemoryUsageMetric.Mode.Last),
+        MemoryUsageMetric(MemoryUsageMetric.Mode.Max),
+        // Measures the time to process accessibility updates. This covers sections in
+        // AndroidComposeViewAccessibilityDelegateCompat that create and update semantic nodes, or
+        // dispatch accessibility events. The relevant slices are prefixed with "Compose:semantics"
+        TraceSectionMetric(
+            sectionName = "Compose:semantics:%",
+            label = "composeSemantics",
+            mode = TraceSectionMetric.Mode.Sum,
+        ),
+    )
+
+/**
+ * Wait for the [condition] to become true for [timeoutMillis] ms or throw an exception and dump the
+ * window hierarchy if the condition is not met.
+ */
+fun UiDevice.waitOrThrow(
+    condition: SearchCondition<Boolean>,
+    timeoutMillis: Long,
+    dumpWindowHierarchyOnFailure: Boolean = true,
+    lazyMessage: () -> String = {
+        "Waited for $condition, was not fulfilled after $timeoutMillis ms."
+    },
+) {
+    val waitResult = wait(condition, timeoutMillis)
+    if (waitResult != true && dumpWindowHierarchyOnFailure) {
+        dumpWindowHierarchy(System.out)
+    }
+    require(waitResult == true, lazyMessage)
+}

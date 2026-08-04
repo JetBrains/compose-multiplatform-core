@@ -115,6 +115,7 @@ public final class CarIcon {
                     TYPE_ERROR,
                     TYPE_PAN,
                     TYPE_COMPOSE_MESSAGE,
+                    TYPE_MEDIA_PLAYBACK,
             })
     @Retention(RetentionPolicy.SOURCE)
     public @interface CarIconType {
@@ -168,6 +169,13 @@ public final class CarIcon {
     public static final int TYPE_COMPOSE_MESSAGE = 8;
 
     /**
+     * A media playback icon.
+     *
+     * @see #MEDIA_PLAYBACK
+     */
+    public static final int TYPE_MEDIA_PLAYBACK = 9;
+
+    /**
      * Represents the app's icon, as defined in the app's manifest by the {@code android:icon}
      * attribute of the {@code application} element.
      */
@@ -201,10 +209,25 @@ public final class CarIcon {
     public static final @NonNull CarIcon COMPOSE_MESSAGE =
             CarIcon.forStandardType(TYPE_COMPOSE_MESSAGE);
 
+    /**
+     * An icon that represents a playable media item.
+     * Note: This is specifically used for category MEDIA apps. Used in conjunction with
+     * {@link Action#MEDIA_PLAYBACK}
+     */
+    @RequiresCarApi(8)
+    public static final @NonNull CarIcon MEDIA_PLAYBACK =
+            CarIcon.forStandardType(TYPE_MEDIA_PLAYBACK);
+
     @CarIconType
     private final int mType;
     private final @Nullable IconCompat mIcon;
+
+    /**
+     * @deprecated use {@link CarIconStyle} to set a tint
+     */
+    @Deprecated
     private final @Nullable CarColor mTint;
+    private final @Nullable CarIconStyle mStyle;
 
     /**
      * Returns the {@link IconCompat} instance backing by this car icon or {@code null} if one
@@ -220,9 +243,33 @@ public final class CarIcon {
      * Returns the tint of the icon or {@code null} if not set.
      *
      * @see Builder#setTint(CarColor)
+     * @deprecated use {@link CarIconStyle#getTint} instead
      */
+    @Deprecated
     public @Nullable CarColor getTint() {
-        return mTint;
+        if (mStyle == null) {
+            return mTint;
+        }
+        return mStyle.getTint();
+    }
+
+    /**
+     * Returns the style of the icon or {@code null} if not set.
+     *
+     * @see Builder#setStyle(CarIconStyle)
+     */
+    public @Nullable CarIconStyle getStyle() {
+        // If style is present return it
+        if (mStyle != null) {
+            return mStyle;
+        }
+
+        // If style is null, but tint is provided, we return the style with according tint
+        if (mTint != null) {
+            return new CarIconStyle.Builder().setTint(mTint).build();
+        }
+
+        return null;
     }
 
     /**
@@ -234,13 +281,13 @@ public final class CarIcon {
     }
 
     @Override
-    public String toString() {
-        return "[type: " + typeToString(mType) + ", tint: " + mTint + "]";
+    public @NonNull String toString() {
+        return "[type: " + typeToString(mType) + ", tint: " + mTint + ", style: " + mStyle + "]";
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(mType, mTint, iconCompatHash());
+        return Objects.hash(mType, mTint, iconCompatHash(), mStyle);
     }
 
     @Override
@@ -255,7 +302,8 @@ public final class CarIcon {
 
         return mType == otherIcon.mType
                 && Objects.equals(mTint, otherIcon.mTint)
-                && iconCompatEquals(otherIcon.mIcon);
+                && iconCompatEquals(otherIcon.mIcon)
+                && Objects.equals(mStyle, otherIcon.mStyle);
     }
 
     private @Nullable Object iconCompatHash() {
@@ -302,11 +350,7 @@ public final class CarIcon {
     }
 
     private static CarIcon forStandardType(@CarIconType int type) {
-        return forStandardType(type, DEFAULT);
-    }
-
-    private static CarIcon forStandardType(@CarIconType int type, @Nullable CarColor tint) {
-        return new CarIcon(null, tint, type);
+        return new CarIcon(null, DEFAULT, type);
     }
 
     private static String typeToString(@CarIconType int type) {
@@ -323,6 +367,8 @@ public final class CarIcon {
                 return "PAN";
             case TYPE_COMPOSE_MESSAGE:
                 return "COMPOSE_MESSAGE";
+            case TYPE_MEDIA_PLAYBACK:
+                return "MEDIA_PLAYBACK";
             case TYPE_CUSTOM:
                 return "CUSTOM";
             default:
@@ -334,6 +380,23 @@ public final class CarIcon {
         mType = type;
         mIcon = icon;
         mTint = tint;
+        if (tint != null) {
+            mStyle = new CarIconStyle.Builder().setTint(tint).build();
+        } else {
+            mStyle = null;
+        }
+    }
+
+    CarIcon(Builder builder) {
+        mType = builder.mType;
+        mIcon = builder.mIcon;
+        mStyle = builder.mStyle;
+
+        if (mStyle != null) {
+            mTint = mStyle.getTint();
+        } else {
+            mTint = null;
+        }
     }
 
     /** Constructs an empty instance, used by serialization code. */
@@ -341,14 +404,16 @@ public final class CarIcon {
         mType = TYPE_CUSTOM;
         mIcon = null;
         mTint = null;
+        mStyle = null;
     }
 
     /** A builder of {@link CarIcon}. */
     public static final class Builder {
         private final @Nullable IconCompat mIcon;
-        private @Nullable CarColor mTint;
         @CarIconType
         private final int mType;
+
+        private @Nullable CarIconStyle mStyle;
 
         /**
          * Sets the tint of the icon to the given {@link CarColor}.
@@ -363,19 +428,46 @@ public final class CarIcon {
          * <p>Depending on contrast requirements, capabilities of the vehicle screens, or other
          * factors, the color may be ignored by the host or overridden by the vehicle system.
          *
-         * @throws NullPointerException if {@code tin} is {@code null}
+         * @throws NullPointerException if {@code tint} is {@code null}
          * @see CarColor
          * @see android.graphics.drawable.Drawable#setTintMode(Mode)
+         * @deprecated Tint has been moved to {@link CarIconStyle} class, use
+         * {@link CarIcon.Builder#setStyle} instead
          */
+        @Deprecated
         public @NonNull Builder setTint(@NonNull CarColor tint) {
             CarColorConstraints.UNCONSTRAINED.validateOrThrow(requireNonNull(tint));
-            mTint = tint;
+
+            // Set the style property
+            if (mStyle == null) {
+                mStyle = new CarIconStyle.Builder().setTint(tint).build();
+            } else {
+                mStyle = new CarIconStyle.Builder(mStyle).setTint(tint).build();
+            }
+
+            return this;
+        }
+
+        /**
+         * Sets the style of the icon to the given {@link CarIconStyle}.
+         *
+         * <p> If set for an icon in a container not supporting icon styling, it's builder will
+         * throw an exception.
+         *
+         * <p> The following containers are supporting {@link CarIconStyle}:
+         *
+         * <ul>
+         *   <li>{@link Row}
+         * </ul>
+         */
+        public @NonNull Builder setStyle(@NonNull CarIconStyle style) {
+            mStyle = style;
             return this;
         }
 
         /** Constructs the {@link CarIcon} defined by this builder. */
         public @NonNull CarIcon build() {
-            return new CarIcon(mIcon, mTint, mType);
+            return new CarIcon(this);
         }
 
         /**
@@ -405,7 +497,7 @@ public final class CarIcon {
             CarIconConstraints.UNCONSTRAINED.checkSupportedIcon(requireNonNull(icon));
             mType = TYPE_CUSTOM;
             mIcon = icon;
-            mTint = null;
+            mStyle = null;
         }
 
         /**
@@ -418,7 +510,11 @@ public final class CarIcon {
             requireNonNull(carIcon);
             mType = carIcon.getType();
             mIcon = carIcon.getIcon();
-            mTint = carIcon.getTint();
+            mStyle = carIcon.getStyle();
+
+            if (carIcon.getStyle() == null && carIcon.getTint() != null) {
+                mStyle = new CarIconStyle.Builder().setTint(carIcon.getTint()).build();
+            }
         }
     }
 }

@@ -16,18 +16,15 @@
 
 package androidx.xr.compose.subspace.layout
 
-import androidx.annotation.RestrictTo
 import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.unit.Density
 
 /** Base type for shapes that could be applied to spatial elements. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public abstract class SpatialShape internal constructor()
+public sealed interface SpatialShape
 
 /** A shape describing a rectangle with rounded corners in 3D space. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public class SpatialRoundedCornerShape(private val size: CornerSize) : SpatialShape() {
+public class SpatialRoundedCornerShape(private val size: CornerSize) : SpatialShape {
     /**
      * Computes corner radius to be no larger than 50 percent of the smallest side.
      *
@@ -39,4 +36,22 @@ public class SpatialRoundedCornerShape(private val size: CornerSize) : SpatialSh
             .coerceAtMost(maxWidth / 2f)
             .coerceAtMost(maxHeight / 2f)
     }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is SpatialRoundedCornerShape) return false
+        if (size != other.size) return false
+        return true
+    }
+
+    override fun hashCode(): Int {
+        return size.hashCode()
+    }
+
+    override fun toString(): String {
+        return "SpatialRoundedCornerShape(size=$size)"
+    }
 }
+
+/** Intended to always be internal to disallow an exhaustive usage of SpatialShape. */
+internal class EmptyShape : SpatialShape

@@ -1,0 +1,153 @@
+/*
+ * Copyright (C) 2017 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+// Cannot be updated, the Kt name has been released
+@file:Suppress("FacadeClassJvmName", "NOTHING_TO_INLINE", "EXTENSION_SHADOWED_BY_MEMBER")
+
+package androidx.core.util
+
+import android.util.SparseArray
+import kotlin.Pair
+
+/** Returns an empty [SparseArray]. */
+public fun <T> sparseArrayOf(): SparseArray<T> = SparseArray()
+
+/** Returns a new [SparseArray] filled with the specified [pairs]. */
+public fun <T> sparseArrayOf(vararg pairs: Pair<Int, T>): SparseArray<T> {
+    val array = SparseArray<T>(pairs.size)
+    for (pair in pairs) {
+        array.put(pair.first, pair.second)
+    }
+    return array
+}
+
+/** Returns the number of key/value pairs in the collection. */
+public inline val <T> SparseArray<T>.size: Int
+    get() = size()
+
+/** Returns true if the collection contains [key]. */
+@Suppress("EXTENSION_SHADOWED_BY_MEMBER") /* contains() added in R */
+public inline operator fun <T> SparseArray<T>.contains(key: Int): Boolean = indexOfKey(key) >= 0
+
+/** Allows the use of the index operator for storing values in the collection. */
+public inline operator fun <T> SparseArray<T>.set(key: Int, value: T): Unit = put(key, value)
+
+/** Creates a new collection by adding or replacing entries from [other]. */
+public operator fun <T> SparseArray<T>.plus(other: SparseArray<T>): SparseArray<T> {
+    val new = SparseArray<T>(size() + other.size())
+    new.putAll(this)
+    new.putAll(other)
+    return new
+}
+
+/** Returns true if the collection contains [key]. */
+public inline fun <T> SparseArray<T>.containsKey(key: Int): Boolean = indexOfKey(key) >= 0
+
+/** Returns true if the collection contains [value]. */
+public inline fun <T> SparseArray<T>.containsValue(value: T): Boolean = indexOfValue(value) >= 0
+
+/** Return the value corresponding to [key], or [defaultValue] when not present. */
+public inline fun <T> SparseArray<T>.getOrDefault(key: Int, defaultValue: T): T =
+    get(key) ?: defaultValue
+
+/** Return the value corresponding to [key], or from [defaultValue] when not present. */
+public inline fun <T> SparseArray<T>.getOrElse(key: Int, defaultValue: () -> T): T =
+    get(key) ?: defaultValue()
+
+/**
+ * Return the value corresponding to [key], or put the [defaultValue] into the collection when not
+ * present.
+ */
+public inline fun <T> SparseArray<T>.getOrPut(key: Int, defaultValue: () -> T): T {
+    val value = get(key)
+    return if (value == null) {
+        val answer = defaultValue()
+        put(key, answer)
+        answer
+    } else {
+        value
+    }
+}
+
+/** Return true when the collection contains no elements. */
+public inline fun <T> SparseArray<T>.isEmpty(): Boolean = size() == 0
+
+/** Return true when the collection contains elements. */
+public inline fun <T> SparseArray<T>.isNotEmpty(): Boolean = size() != 0
+
+/** Removes the entry for [key] only if it is mapped to [value]. */
+public fun <T> SparseArray<T>.remove(key: Int, value: T): Boolean {
+    val index = indexOfKey(key)
+    if (index >= 0 && value == valueAt(index)) {
+        removeAt(index)
+        return true
+    }
+    return false
+}
+
+/** Update this collection by adding or replacing entries from [other]. */
+public fun <T> SparseArray<T>.putAll(other: SparseArray<T>): Unit = other.forEach(::put)
+
+/** Performs the given [action] for each key/value entry. */
+public inline fun <T> SparseArray<T>.forEach(action: (key: Int, value: T) -> Unit) {
+    for (index in 0 until size()) {
+        action(keyAt(index), valueAt(index))
+    }
+}
+
+/** Returns `true` if at least one entry matches the given [predicate]. */
+public inline fun <T> SparseArray<T>.any(predicate: (key: Int, value: T) -> Boolean): Boolean {
+    for (index in 0 until size()) {
+        if (predicate(keyAt(index), valueAt(index))) return true
+    }
+    return false
+}
+
+/** Returns `true` if all entries match the given [predicate]. */
+public inline fun <T> SparseArray<T>.all(predicate: (key: Int, value: T) -> Boolean): Boolean {
+    for (index in 0 until size()) {
+        if (!predicate(keyAt(index), valueAt(index))) return false
+    }
+    return true
+}
+
+/** Returns `true` if no entries match the given [predicate]. */
+public inline fun <T> SparseArray<T>.none(predicate: (key: Int, value: T) -> Boolean): Boolean {
+    for (index in 0 until size()) {
+        if (predicate(keyAt(index), valueAt(index))) return false
+    }
+    return true
+}
+
+/** Return an iterator over the collection's keys. */
+public fun <T> SparseArray<T>.keyIterator(): IntIterator =
+    object : IntIterator() {
+        var index = 0
+
+        override fun hasNext() = index < size()
+
+        override fun nextInt() = keyAt(index++)
+    }
+
+/** Return an iterator over the collection's values. */
+public fun <T> SparseArray<T>.valueIterator(): Iterator<T> =
+    object : Iterator<T> {
+        var index = 0
+
+        override fun hasNext() = index < size()
+
+        override fun next() = valueAt(index++)
+    }

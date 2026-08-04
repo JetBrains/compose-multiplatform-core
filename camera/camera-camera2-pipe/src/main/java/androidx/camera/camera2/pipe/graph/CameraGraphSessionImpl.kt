@@ -21,6 +21,9 @@ import androidx.camera.camera2.pipe.AeMode
 import androidx.camera.camera2.pipe.AfMode
 import androidx.camera.camera2.pipe.AwbMode
 import androidx.camera.camera2.pipe.CameraGraph
+import androidx.camera.camera2.pipe.ControlMode
+import androidx.camera.camera2.pipe.Converge3ABehavior
+import androidx.camera.camera2.pipe.FlashMode
 import androidx.camera.camera2.pipe.FrameCapture
 import androidx.camera.camera2.pipe.FrameMetadata
 import androidx.camera.camera2.pipe.Lock3ABehavior
@@ -28,6 +31,7 @@ import androidx.camera.camera2.pipe.Request
 import androidx.camera.camera2.pipe.Result3A
 import androidx.camera.camera2.pipe.core.Token
 import androidx.camera.camera2.pipe.internal.CameraGraphParametersImpl
+import androidx.camera.camera2.pipe.internal.CameraGraphRequestListenersImpl
 import androidx.camera.camera2.pipe.internal.FrameCaptureQueue
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.Deferred
@@ -39,9 +43,15 @@ internal class CameraGraphSessionImpl(
     private val graphProcessor: GraphProcessor,
     private val controller3A: Controller3A,
     private val frameCaptureQueue: FrameCaptureQueue,
-    private val parameters: CameraGraphParametersImpl
+    private val parameters: CameraGraphParametersImpl,
+    private val listeners: CameraGraphRequestListenersImpl,
 ) : CameraGraph.Session {
     private val debugId = cameraGraphSessionIds.incrementAndGet()
+    override var repeatingRequest: Request?
+        get() = graphProcessor.repeatingRequest
+        set(request) {
+            graphProcessor.repeatingRequest = request
+        }
 
     override fun submit(request: Request) {
         check(!token.released) { "Cannot call submit on $this after close." }
@@ -82,10 +92,12 @@ internal class CameraGraphSessionImpl(
     }
 
     override fun close() {
-        val unappliedParameters = parameters.fetchUpdatedParameters()
-        if (unappliedParameters != null) {
-            graphProcessor.updateGraphParameters(unappliedParameters)
-        }
+        // Since we are already holding a session, it's good to flush any pending changes to
+        // parameters and listeners. This can potentially save any new session creation or code to
+        // that was meant to apply them in the first place.
+        parameters.flush()
+        listeners.flush()
+
         token.release()
     }
 
@@ -93,28 +105,34 @@ internal class CameraGraphSessionImpl(
         aeMode: AeMode?,
         afMode: AfMode?,
         awbMode: AwbMode?,
+        controlMode: ControlMode?,
+        flashMode: FlashMode?,
         aeRegions: List<MeteringRectangle>?,
         afRegions: List<MeteringRectangle>?,
-        awbRegions: List<MeteringRectangle>?
+        awbRegions: List<MeteringRectangle>?,
+        retainLocks: Boolean,
     ): Deferred<Result3A> {
         check(!token.released) { "Cannot call update3A on $this after close." }
         return controller3A.update3A(
             aeMode = aeMode,
             afMode = afMode,
             awbMode = awbMode,
+            controlMode = controlMode,
+            flashMode = flashMode,
             aeRegions = aeRegions,
             afRegions = afRegions,
-            awbRegions = awbRegions
+            awbRegions = awbRegions,
+            retainLocks = retainLocks,
         )
     }
 
-    override suspend fun submit3A(
+    override fun submit3A(
         aeMode: AeMode?,
         afMode: AfMode?,
         awbMode: AwbMode?,
         aeRegions: List<MeteringRectangle>?,
         afRegions: List<MeteringRectangle>?,
-        awbRegions: List<MeteringRectangle>?
+        awbRegions: List<MeteringRectangle>?,
     ): Deferred<Result3A> {
         check(!token.released) { "Cannot call submit3A on $this after close." }
         return controller3A.submit3A(aeMode, afMode, awbMode, aeRegions, afRegions, awbRegions)
@@ -132,6 +150,31 @@ internal class CameraGraphSessionImpl(
         return controller3A.setTorchOff(aeMode)
     }
 
+    override fun converge3A(
+        aeRegions: List<MeteringRectangle>?,
+        afRegions: List<MeteringRectangle>?,
+        awbRegions: List<MeteringRectangle>?,
+        aeBehavior: Converge3ABehavior?,
+        afBehavior: Converge3ABehavior?,
+        awbBehavior: Converge3ABehavior?,
+        convergedCondition: ((FrameMetadata) -> Boolean)?,
+        frameLimit: Int?,
+        timeLimitNs: Long?,
+    ): Deferred<Result3A> {
+        check(!token.released) { "Cannot call converge3A on $this after close." }
+        return controller3A.converge3A(
+            aeRegions,
+            afRegions,
+            awbRegions,
+            aeBehavior,
+            afBehavior,
+            awbBehavior,
+            convergedCondition,
+            frameLimit,
+            timeLimitNs,
+        )
+    }
+
     override suspend fun lock3A(
         aeMode: AeMode?,
         afMode: AfMode?,
@@ -147,25 +190,28 @@ internal class CameraGraphSessionImpl(
         lockedCondition: ((FrameMetadata) -> Boolean)?,
         frameLimit: Int,
         convergedTimeLimitNs: Long,
-        lockedTimeLimitNs: Long
+        lockedTimeLimitNs: Long,
     ): Deferred<Result3A> {
         check(!token.released) { "Cannot call lock3A on $this after close." }
         // TODO(sushilnath): check if the device or the current mode supports lock for each of
         // ae, af and awb respectively. If not supported return an exception or return early with
         // the right status code.
         return controller3A.lock3A(
-            aeRegions,
-            afRegions,
-            awbRegions,
-            aeLockBehavior,
-            afLockBehavior,
-            awbLockBehavior,
-            afTriggerStartAeMode,
-            convergedCondition,
-            lockedCondition,
-            frameLimit,
-            convergedTimeLimitNs,
-            lockedTimeLimitNs
+            aeMode = aeMode,
+            afMode = afMode,
+            awbMode = awbMode,
+            aeRegions = aeRegions,
+            afRegions = afRegions,
+            awbRegions = awbRegions,
+            aeLockBehavior = aeLockBehavior,
+            afLockBehavior = afLockBehavior,
+            awbLockBehavior = awbLockBehavior,
+            afTriggerStartAeMode = afTriggerStartAeMode,
+            convergedCondition = convergedCondition,
+            lockedCondition = lockedCondition,
+            frameLimit = frameLimit,
+            convergedTimeLimitNs = convergedTimeLimitNs,
+            lockedTimeLimitNs = lockedTimeLimitNs,
         )
     }
 
@@ -175,7 +221,7 @@ internal class CameraGraphSessionImpl(
         awb: Boolean?,
         unlockedCondition: ((FrameMetadata) -> Boolean)?,
         frameLimit: Int,
-        timeLimitNs: Long
+        timeLimitNs: Long,
     ): Deferred<Result3A> {
         check(!token.released) { "Cannot call unlock3A on $this after close." }
         return controller3A.unlock3A(ae, af, awb, unlockedCondition, frameLimit, timeLimitNs)
@@ -184,7 +230,7 @@ internal class CameraGraphSessionImpl(
     override suspend fun lock3AForCapture(
         lockedCondition: ((FrameMetadata) -> Boolean)?,
         frameLimit: Int,
-        timeLimitNs: Long
+        timeLimitNs: Long,
     ): Deferred<Result3A> {
         check(!token.released) { "Cannot call lock3AForCapture on $this after close." }
         return controller3A.lock3AForCapture(lockedCondition, frameLimit, timeLimitNs)
@@ -194,7 +240,7 @@ internal class CameraGraphSessionImpl(
         triggerAf: Boolean,
         waitForAwb: Boolean,
         frameLimit: Int,
-        timeLimitNs: Long
+        timeLimitNs: Long,
     ): Deferred<Result3A> {
         check(!token.released) { "Cannot call lock3AForCapture on $this after close." }
         return controller3A.lock3AForCapture(triggerAf, waitForAwb, frameLimit, timeLimitNs)

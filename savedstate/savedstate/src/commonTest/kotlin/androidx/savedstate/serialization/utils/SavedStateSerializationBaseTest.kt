@@ -18,11 +18,11 @@ package androidx.savedstate.serialization.utils
 
 import androidx.savedstate.RobolectricTest
 import androidx.savedstate.SavedState
-import androidx.savedstate.platformEncodeDecode
 import androidx.savedstate.read
 import androidx.savedstate.serialization.SavedStateConfiguration
 import androidx.savedstate.serialization.decodeFromSavedState
 import androidx.savedstate.serialization.encodeToSavedState
+import androidx.savedstate.serialization.platformEncodeDecode
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.PolymorphicSerializer
@@ -37,7 +37,7 @@ import kotlinx.serialization.modules.overwriteWith
  * in unit tests.
  */
 internal abstract class SavedStateSerializationBaseTest(
-    configuration: SavedStateConfiguration = SavedStateConfiguration.DEFAULT,
+    configuration: SavedStateConfiguration = SavedStateConfiguration.DEFAULT
 ) : RobolectricTest() {
 
     private val configuration =
@@ -48,6 +48,22 @@ internal abstract class SavedStateSerializationBaseTest(
             }
             serializersModule = modules.overwriteWith(configuration.serializersModule)
         }
+
+    protected fun doTestNullWithNullableStaticType(
+        configuration: SavedStateConfiguration? = this.configuration,
+        serializer: KSerializer<BooleanData?>? = null,
+        assertion: SavedStateAssertionScope<BooleanData?>.() -> Unit,
+    ) {
+        doTest(null, configuration, serializer, assertion)
+    }
+
+    protected fun doTestNonNullWithNullableStaticType(
+        configuration: SavedStateConfiguration? = this.configuration,
+        serializer: KSerializer<BooleanData?>? = null,
+        assertion: SavedStateAssertionScope<BooleanData?>.() -> Unit,
+    ) {
+        doTest(BooleanData(true), configuration, serializer, assertion)
+    }
 
     protected fun doTestNullData(
         configuration: SavedStateConfiguration? = this.configuration,
@@ -234,7 +250,7 @@ internal abstract class SavedStateSerializationBaseTest(
             BooleanArrayData(booleanArrayOf(true, false, true)),
             configuration,
             serializer,
-            assertion
+            assertion,
         )
     }
 
@@ -460,11 +476,7 @@ internal abstract class SavedStateSerializationBaseTest(
         serializer: KSerializer<PolymorphicNullMixedData>? = null,
         assertion: SavedStateAssertionScope<PolymorphicNullMixedData>.() -> Unit,
     ) {
-        val data =
-            PolymorphicNullMixedData(
-                base1 = null,
-                base2 = null,
-            )
+        val data = PolymorphicNullMixedData(base1 = null, base2 = null)
         doTest(data, configuration, serializer, assertion)
     }
 
@@ -492,7 +504,7 @@ internal abstract class SavedStateSerializationBaseTest(
      * @param configuration Optional `SavedStateConfig` for encoding configuration.
      * @param assertion A block to perform additional assertions on the test results.
      */
-    protected inline fun <reified T : Any> doTest(
+    protected inline fun <reified T> doTest(
         original: T,
         configuration: SavedStateConfiguration? = this.configuration,
         serializer: KSerializer<T>? = null,
@@ -517,7 +529,7 @@ internal abstract class SavedStateSerializationBaseTest(
      * Encodes an instance of `T` into a `SavedState` using optional serialization and
      * configuration.
      */
-    protected inline fun <reified T : Any> doEncodeToSavedState(
+    protected inline fun <reified T> doEncodeToSavedState(
         original: T,
         serializer: KSerializer<T>? = null,
         configuration: SavedStateConfiguration? = this.configuration,
@@ -532,7 +544,7 @@ internal abstract class SavedStateSerializationBaseTest(
     }
 
     /** Decodes a `SavedState` back into an instance of `T`. */
-    protected inline fun <reified T : Any> doDecodeFromSavedState(
+    protected inline fun <reified T> doDecodeFromSavedState(
         serialized: SavedState,
         strategy: DeserializationStrategy<T>? = null,
         configuration: SavedStateConfiguration? = this.configuration,

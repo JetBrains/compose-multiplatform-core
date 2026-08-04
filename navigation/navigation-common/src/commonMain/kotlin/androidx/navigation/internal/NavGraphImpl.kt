@@ -39,12 +39,11 @@ internal class NavGraphImpl(val graph: NavGraph) {
     internal var startDestId = 0
     internal var startDestIdName: String? = null
 
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     internal fun matchRouteComprehensive(
         route: String,
         searchChildren: Boolean,
         searchParent: Boolean,
-        lastVisited: NavDestination
+        lastVisited: NavDestination,
     ): DeepLinkMatch? {
         // First try to match with this graph's route
         val bestMatch = graph.matchRoute(route)
@@ -60,7 +59,7 @@ internal class NavGraphImpl(val graph: NavGraph) {
                                     route,
                                     searchChildren = true,
                                     searchParent = false,
-                                    lastVisited = graph
+                                    lastVisited = graph,
                                 )
                             else -> child.matchRoute(route)
                         }
@@ -79,13 +78,12 @@ internal class NavGraphImpl(val graph: NavGraph) {
         return listOfNotNull(bestMatch, bestChildMatch, bestParentMatch).maxOrNull()
     }
 
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     internal fun matchDeepLinkComprehensive(
         bestMatch: DeepLinkMatch?,
         navDeepLinkRequest: NavDeepLinkRequest,
         searchChildren: Boolean,
         searchParent: Boolean,
-        lastVisited: NavDestination
+        lastVisited: NavDestination,
     ): DeepLinkMatch? {
         // If searchChildren is true, search through all child destinations for a matching deeplink
         val bestChildMatch =
@@ -108,17 +106,16 @@ internal class NavGraphImpl(val graph: NavGraph) {
         return listOfNotNull(bestMatch, bestChildMatch, bestParentMatch).maxOrNull()
     }
 
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     internal fun matchDeepLink(
         superBestMatch: DeepLinkMatch?,
-        navDeepLinkRequest: NavDeepLinkRequest
+        navDeepLinkRequest: NavDeepLinkRequest,
     ): DeepLinkMatch? =
         matchDeepLinkComprehensive(
             superBestMatch,
             navDeepLinkRequest,
             searchChildren = true,
             searchParent = false,
-            lastVisited = graph
+            lastVisited = graph,
         )
 
     internal fun addDestination(node: NavDestination) {
@@ -215,7 +212,6 @@ internal class NavGraphImpl(val graph: NavGraph) {
     internal fun <T> findNode(route: T?): NavDestination? =
         route?.let { findNode(it::class.serializer().generateHashCode()) }
 
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     internal fun findNode(route: String, searchParents: Boolean): NavDestination? {
         val destination =
             nodes.valueIterator().asSequence().firstOrNull {

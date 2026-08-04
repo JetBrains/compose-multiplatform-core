@@ -19,7 +19,6 @@ package androidx.compose.ui.test.junit4
 import android.os.Bundle
 import android.os.Parcel
 import android.os.Parcelable
-import androidx.annotation.VisibleForTesting
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
@@ -41,7 +40,7 @@ import androidx.compose.runtime.setValue
  * [setContent] and useful for testing [androidx.compose.runtime.saveable.rememberSaveable]
  * integration. It is not testing the integration with any other life cycles or Activity callbacks.
  */
-class StateRestorationTester(private val composeTestRule: ComposeContentTestRule) {
+public class StateRestorationTester(private val composeTestRule: ComposeContentTestRule) {
 
     private var registry: RestorationRegistry? = null
 
@@ -51,7 +50,7 @@ class StateRestorationTester(private val composeTestRule: ComposeContentTestRule
      *
      * @see ComposeContentTestRule.setContent
      */
-    fun setContent(composable: @Composable () -> Unit) {
+    public fun setContent(composable: @Composable () -> Unit) {
         composeTestRule.setContent {
             InjectRestorationRegistry { registry ->
                 this.registry = registry
@@ -62,12 +61,13 @@ class StateRestorationTester(private val composeTestRule: ComposeContentTestRule
     }
 
     /**
-     * Saves all the state stored via [savedInstanceState] or [rememberSaveable], disposes current
-     * composition, and composes again the content passed to [setContent]. Allows to test how your
-     * component behaves when the state restoration is happening. Note that the state stored via
-     * regular state() or remember() will be lost.
+     * Saves all the state stored via [savedInstanceState] or
+     * [androidx.compose.runtime.saveable.rememberSaveable], disposes current composition, and
+     * composes again the content passed to [setContent]. Allows to test how your component behaves
+     * when the state restoration is happening. Note that the state stored via regular state() or
+     * remember() will be lost.
      */
-    fun emulateSavedInstanceStateRestore() {
+    public fun emulateSavedInstanceStateRestore() {
         val registry = checkNotNull(registry) { "setContent should be called first!" }
         composeTestRule.runOnIdle { registry.saveStateAndDisposeChildren() }
         composeTestRule.runOnIdle { registry.emitChildrenWithRestoredState() }
@@ -109,7 +109,7 @@ class StateRestorationTester(private val composeTestRule: ComposeContentTestRule
             currentRegistry =
                 SaveableStateRegistry(
                     restoredValues = savedMap,
-                    canBeSaved = { original.canBeSaved(it) }
+                    canBeSaved = { original.canBeSaved(it) },
                 )
             shouldEmitChildren = true
         }
@@ -125,25 +125,7 @@ class StateRestorationTester(private val composeTestRule: ComposeContentTestRule
     }
 }
 
-/**
- * Controls whether platform-specific encoding and decoding is applied during state saving.
- *
- * When `true`, the `platformEncodeDecode` function processes the state returned by
- * `currentRegistry.performSave()`, triggering Parcelization on Android. When `false`, Parcelization
- * is bypassed entirely.
- *
- * The default is `false` to prevent Compose tests from failing due to non-Parcelable instances.
- * Once those issues are resolved, this flag will be removed, and platform encoding will be enabled
- * by default.
- */
-@VisibleForTesting internal var IS_PLATFORM_ENCODING_AND_DECODING_ENABLED = false
-
-internal fun platformEncodeDecode(
-    savedState: Map<String, List<Any?>>,
-): Map<String, List<Any?>> {
-    // If platform encoding/decoding is disabled, return the state as-is.
-    if (!IS_PLATFORM_ENCODING_AND_DECODING_ENABLED) return savedState
-
+internal fun platformEncodeDecode(savedState: Map<String, List<Any?>>): Map<String, List<Any?>> {
     // Instrumentation tests can involve multiple class loaders, potentially leading to
     // `ClassNotFoundException` during state unmarshalling. This function addresses
     // this by constructing a `CompositeClassLoader` that combines the class loader

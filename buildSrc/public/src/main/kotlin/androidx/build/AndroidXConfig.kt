@@ -25,12 +25,17 @@ import org.gradle.api.file.FileCollection
 
 /** AndroidX configuration backed by Gradle properties. */
 abstract class AndroidConfigImpl(private val project: Project) : AndroidConfig {
-    override val buildToolsVersion: String = "35.0.0"
+    override val buildToolsVersion: String = "36.0.0"
 
     override val compileSdk: Int by lazy {
         val sdkString = project.extraPropertyOrNull(COMPILE_SDK)?.toString()
         check(sdkString != null) { "$COMPILE_SDK is unset" }
         sdkString.toInt()
+    }
+
+    override val minorApiLevel: Int? by lazy {
+        val minorString = project.extraPropertyOrNull(MINOR_API_LEVEL)?.toString()
+        minorString?.toInt()
     }
 
     override val latestStableCompileSdk: Int by lazy {
@@ -39,16 +44,36 @@ abstract class AndroidConfigImpl(private val project: Project) : AndroidConfig {
         sdkString.toInt()
     }
 
-    override val minSdk: Int = 21
+    override val latestCompileSdkExtension: Int? by lazy {
+        val extString = project.extraPropertyOrNull(LATEST_COMPILE_SDK_EXTENSION)?.toString()
+        extString?.toInt()
+    }
+
+    override val latestStableMinorApiLevel: Int? by lazy {
+        val minorString = project.extraPropertyOrNull(LATEST_STABLE_MINOR_API_LEVEL)?.toString()
+        minorString?.toInt()
+    }
+
+    override val minSdk: Int = 24
 
     override val targetSdk: Int by lazy {
         project.providers.gradleProperty(TARGET_SDK_VERSION).get().toInt()
     }
 
+    override val ndkVersion: String by lazy {
+        val versionString = project.extraPropertyOrNull(NDK_VERSION)?.toString()
+        check(versionString != null) { "$NDK_VERSION is unset" }
+        versionString
+    }
+
     companion object {
         private const val COMPILE_SDK = "androidx.compileSdk"
+        private const val MINOR_API_LEVEL = "androidx.minorApiLevel"
         private const val LATEST_STABLE_COMPILE_SDK = "androidx.latestStableCompileSdk"
+        private const val LATEST_COMPILE_SDK_EXTENSION = "androidx.latestCompileSdkExtension"
+        private const val LATEST_STABLE_MINOR_API_LEVEL = "androidx.latestStableMinorApiLevel"
         private const val TARGET_SDK_VERSION = "androidx.targetSdkVersion"
+        private const val NDK_VERSION = "androidx.ndkVersion"
 
         /**
          * Implementation detail. This should only be used by AndroidXGradleProperties for property
@@ -57,8 +82,12 @@ abstract class AndroidConfigImpl(private val project: Project) : AndroidConfig {
         val GRADLE_PROPERTIES =
             listOf(
                 COMPILE_SDK,
+                MINOR_API_LEVEL,
                 LATEST_STABLE_COMPILE_SDK,
+                LATEST_STABLE_MINOR_API_LEVEL,
+                LATEST_COMPILE_SDK_EXTENSION,
                 TARGET_SDK_VERSION,
+                NDK_VERSION,
             )
     }
 }
@@ -79,11 +108,35 @@ interface AndroidConfig {
     val compileSdk: Int
 
     /**
+     * The minor API level of the [compileSdk] that is available to use for AndroidX projects, or
+     * null if there isn't one.
+     *
+     * This may be specified in `gradle.properties` using `androidx.minorApiLevel`.
+     */
+    val minorApiLevel: Int?
+
+    /**
      * The latest stable compile SDK version that is available to use for AndroidX projects.
      *
      * This may be specified in `gradle.properties` using `androidx.latestStableCompileSdk`.
      */
     val latestStableCompileSdk: Int
+
+    /**
+     * The latest SDK extension of the [latestStableCompileSdk] that is available to use for
+     * AndroidX projects, or null if there isn't one.
+     *
+     * This may be specified in `gradle.properties` using `androidx.latestCompileSdkExtension`.
+     */
+    val latestCompileSdkExtension: Int?
+
+    /**
+     * The minor API level of the [latestStableCompileSdk] that is available to use for AndroidX
+     * projects, or null if there isn't one.
+     *
+     * This may be specified in `gradle.properties` using `androidx.latestStableMinorApiLevel`.
+     */
+    val latestStableMinorApiLevel: Int?
 
     /** Default minimum SDK version used for AndroidX projects. */
     val minSdk: Int
@@ -94,6 +147,9 @@ interface AndroidConfig {
      * This may be specified in `gradle.properties` using `androidx.targetSdkVersion`.
      */
     val targetSdk: Int
+
+    /** NDK version used for AndroidX projects. */
+    val ndkVersion: String
 }
 
 /** Default configuration values for Android Gradle Plugin. */
@@ -101,6 +157,10 @@ val Project.defaultAndroidConfig: AndroidConfig
     get() =
         extensions.findByType(AndroidConfigImpl::class.java)
             ?: extensions.create("androidx.build.AndroidConfigImpl", AndroidConfigImpl::class.java)
+
+fun Project.getGradlePrebuiltsPath(): File {
+    return File(rootProject.projectDir, "../../tools/external/gradle").canonicalFile
+}
 
 fun Project.getExternalProjectPath(): File {
     return File(rootProject.projectDir, "../../external").canonicalFile
@@ -115,8 +175,14 @@ fun Project.getPrebuiltsRoot(): File {
 }
 
 /** @return the project's Android SDK stub JAR as a File. */
-fun Project.getAndroidJar(sdkNum: Int = project.defaultAndroidConfig.compileSdk): FileCollection {
-    val compileSdk = "android-${sdkNum}"
+fun Project.getAndroidJar(
+    sdkNum: Int = project.defaultAndroidConfig.compileSdk,
+    extNum: Int? = null,
+    minorNum: Int? = project.defaultAndroidConfig.minorApiLevel,
+): FileCollection {
+    val extString = extNum?.let { "-ext$it" }.orEmpty()
+    val minorString = minorNum?.let { ".$it" }.orEmpty()
+    val compileSdk = "android-${sdkNum}$minorString$extString"
     return files(
         arrayOf(
             File(getSdkPath(), "platforms/$compileSdk/android.jar"),
@@ -125,7 +191,7 @@ fun Project.getAndroidJar(sdkNum: Int = project.defaultAndroidConfig.compileSdk)
             // Allow using optional android.test APIs
             File(getSdkPath(), "platforms/$compileSdk/optional/android.test.base.jar"),
             File(getSdkPath(), "platforms/$compileSdk/optional/android.test.mock.jar"),
-            File(getSdkPath(), "platforms/$compileSdk/optional/android.test.runner.jar")
+            File(getSdkPath(), "platforms/$compileSdk/optional/android.test.runner.jar"),
         )
     )
 }

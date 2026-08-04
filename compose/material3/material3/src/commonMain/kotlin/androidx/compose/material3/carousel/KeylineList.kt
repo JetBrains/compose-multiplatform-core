@@ -65,6 +65,24 @@ internal data class Keyline(
 internal class KeylineList internal constructor(keylines: List<Keyline>) :
     List<Keyline> by keylines {
 
+    val minSize: Float
+    val maxSize: Float
+
+    init {
+        var min = Float.MAX_VALUE
+        var max = 0f
+        keylines.fastForEach {
+            if (it.size < min) {
+                min = it.size
+            }
+            if (it.size > max) {
+                max = it.size
+            }
+        }
+        minSize = min
+        maxSize = max
+    }
+
     /**
      * Returns the index of the pivot keyline used to calculate all other keyline offsets and
      * unadjusted offsets.
@@ -138,6 +156,9 @@ internal class KeylineList internal constructor(keylines: List<Keyline>) :
                 ?: throw NoSuchElementException(
                     "All KeylineLists must have at least one focal keyline"
                 )
+
+    /** The total number of focal keylines. */
+    val focalCount = lastFocalIndex - firstFocalIndex + 1
 
     /**
      * Returns true if the first focal item's left/top is within the visible bounds of the container
@@ -245,14 +266,14 @@ internal fun keylineListOf(
     carouselMainAxisSize: Float,
     itemSpacing: Float,
     carouselAlignment: CarouselAlignment,
-    keylines: KeylineListScope.() -> Unit
+    keylines: KeylineListScope.() -> Unit,
 ): KeylineList {
     val keylineListScope = KeylineListScopeImpl()
     keylines.invoke(keylineListScope)
     return keylineListScope.createWithAlignment(
         carouselMainAxisSize,
         itemSpacing,
-        carouselAlignment
+        carouselAlignment,
     )
 }
 
@@ -265,7 +286,7 @@ internal fun keylineListOf(
     itemSpacing: Float,
     pivotIndex: Int,
     pivotOffset: Float,
-    keylines: KeylineListScope.() -> Unit
+    keylines: KeylineListScope.() -> Unit,
 ): KeylineList {
     val keylineListScope = KeylineListScopeImpl()
     keylines.invoke(keylineListScope)
@@ -273,7 +294,7 @@ internal fun keylineListOf(
         carouselMainAxisSize,
         itemSpacing,
         pivotIndex,
-        pivotOffset
+        pivotOffset,
     )
 }
 
@@ -308,7 +329,7 @@ private class KeylineListScopeImpl : KeylineListScope {
         // to the list. The last focal item index will be found when `create` is called by starting
         // from firstFocalIndex and incrementing the index until the next item's size does not
         // equal focalItemSize.
-        if (size > focalItemSize) {
+        if (!isAnchor && size > focalItemSize) {
             firstFocalIndex = tmpKeylines.lastIndex
             focalItemSize = size
         }
@@ -318,7 +339,7 @@ private class KeylineListScopeImpl : KeylineListScope {
         carouselMainAxisSize: Float,
         itemSpacing: Float,
         pivotIndex: Int,
-        pivotOffset: Float
+        pivotOffset: Float,
     ): KeylineList {
         val keylines =
             createKeylinesWithPivot(
@@ -329,7 +350,7 @@ private class KeylineListScopeImpl : KeylineListScope {
                 itemMainAxisSize = focalItemSize,
                 carouselMainAxisSize = carouselMainAxisSize,
                 itemSpacing,
-                tmpKeylines
+                tmpKeylines,
             )
         return KeylineList(keylines)
     }
@@ -337,7 +358,7 @@ private class KeylineListScopeImpl : KeylineListScope {
     fun createWithAlignment(
         carouselMainAxisSize: Float,
         itemSpacing: Float,
-        carouselAlignment: CarouselAlignment
+        carouselAlignment: CarouselAlignment,
     ): KeylineList {
         val lastFocalIndex = findLastFocalIndex()
         val focalItemCount = lastFocalIndex - firstFocalIndex
@@ -355,9 +376,15 @@ private class KeylineListScopeImpl : KeylineListScope {
                         } else {
                             itemSpacing / 2f
                         }
+                    // Count the number of item spaces between the center of the viewport and the
+                    // first focal item. We then need to use this count to get a total item spacing
+                    // number to subtract for an accurate pivot offset.
+                    val itemSpaceCounts = (focalItemCount / 2) * itemSpacing
+
                     (carouselMainAxisSize / 2) -
                         ((focalItemSize / 2) * focalItemCount) -
-                        itemSpacingSplit
+                        itemSpacingSplit -
+                        itemSpaceCounts
                 }
                 CarouselAlignment.End -> carouselMainAxisSize - (focalItemSize / 2)
                 // Else covers and defaults to CarouselAlignment.Start
@@ -373,7 +400,7 @@ private class KeylineListScopeImpl : KeylineListScope {
                 itemMainAxisSize = focalItemSize,
                 carouselMainAxisSize = carouselMainAxisSize,
                 itemSpacing,
-                tmpKeylines
+                tmpKeylines,
             )
         return KeylineList(keylines)
     }
@@ -422,7 +449,7 @@ private class KeylineListScopeImpl : KeylineListScope {
         itemMainAxisSize: Float,
         carouselMainAxisSize: Float,
         itemSpacing: Float,
-        tmpKeylines: List<TmpKeyline>
+        tmpKeylines: List<TmpKeyline>,
     ): List<Keyline> {
         val pivot = tmpKeylines[pivotIndex]
         val keylines = mutableListOf<Keyline>()
@@ -443,7 +470,7 @@ private class KeylineListScopeImpl : KeylineListScope {
                 isFocal = pivotIndex in firstFocalIndex..lastFocalIndex,
                 isAnchor = pivot.isAnchor,
                 isPivot = true,
-                cutoff = pivotCutoff
+                cutoff = pivotCutoff,
             )
         )
 
@@ -467,8 +494,8 @@ private class KeylineListScopeImpl : KeylineListScope {
                     isFocal = originalIndex in firstFocalIndex..lastFocalIndex,
                     isAnchor = tmp.isAnchor,
                     isPivot = false,
-                    cutoff = cutoff
-                )
+                    cutoff = cutoff,
+                ),
             )
 
             offset -= tmp.size + itemSpacing
@@ -498,7 +525,7 @@ private class KeylineListScopeImpl : KeylineListScope {
                     isFocal = originalIndex in firstFocalIndex..lastFocalIndex,
                     isAnchor = tmp.isAnchor,
                     isPivot = false,
-                    cutoff = cutoff
+                    cutoff = cutoff,
                 )
             )
 
@@ -548,7 +575,7 @@ internal fun lerp(start: Keyline, end: Keyline, fraction: Float): Keyline {
         isFocal = if (fraction < .5f) start.isFocal else end.isFocal,
         isAnchor = if (fraction < .5f) start.isAnchor else end.isAnchor,
         isPivot = if (fraction < .5f) start.isPivot else end.isPivot,
-        cutoff = androidx.compose.ui.util.lerp(start.cutoff, end.cutoff, fraction)
+        cutoff = androidx.compose.ui.util.lerp(start.cutoff, end.cutoff, fraction),
     )
 }
 

@@ -18,6 +18,7 @@ package androidx.camera.video.internal.encoder;
 
 import static androidx.camera.core.impl.SessionConfig.SESSION_TYPE_HIGH_SPEED;
 import static androidx.camera.core.impl.utils.executor.CameraXExecutors.mainThreadExecutor;
+import static androidx.camera.video.internal.DebugUtils.getCsdHex;
 import static androidx.camera.video.internal.encoder.EncoderImpl.InternalState.CONFIGURED;
 import static androidx.camera.video.internal.encoder.EncoderImpl.InternalState.ERROR;
 import static androidx.camera.video.internal.encoder.EncoderImpl.InternalState.PAUSED;
@@ -32,11 +33,11 @@ import static androidx.core.util.Preconditions.checkState;
 
 import static java.util.Objects.requireNonNull;
 
-import android.annotation.SuppressLint;
 import android.media.MediaCodec;
 import android.media.MediaCodec.BufferInfo;
 import android.media.MediaCodecInfo;
 import android.media.MediaFormat;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.SystemClock;
 import android.util.Range;
@@ -44,7 +45,6 @@ import android.util.Rational;
 import android.view.Surface;
 
 import androidx.annotation.GuardedBy;
-import androidx.annotation.RequiresApi;
 import androidx.annotation.VisibleForTesting;
 import androidx.arch.core.util.Function;
 import androidx.camera.core.Logger;
@@ -58,7 +58,7 @@ import androidx.camera.video.internal.compat.quirk.AudioEncoderIgnoresInputTimes
 import androidx.camera.video.internal.compat.quirk.CameraUseInconsistentTimebaseQuirk;
 import androidx.camera.video.internal.compat.quirk.CodecStuckOnFlushQuirk;
 import androidx.camera.video.internal.compat.quirk.DeviceQuirks;
-import androidx.camera.video.internal.compat.quirk.EncoderNotUsePersistentInputSurfaceQuirk;
+import androidx.camera.video.internal.compat.quirk.GLProcessingStuckOnCodecFlushQuirk;
 import androidx.camera.video.internal.compat.quirk.PrematureEndOfStreamVideoQuirk;
 import androidx.camera.video.internal.compat.quirk.PreviewFreezeAfterHighSpeedRecordingQuirk;
 import androidx.camera.video.internal.compat.quirk.SignalEosOutputBufferNotComeQuirk;
@@ -158,8 +158,6 @@ public class EncoderImpl implements Encoder {
     private static final Range<Long> NO_RANGE = Range.create(NO_LIMIT_LONG, NO_LIMIT_LONG);
     private static final long STOP_TIMEOUT_MS = 1000L;
     private static final long SIGNAL_EOS_TIMEOUT_MS = 1000L;
-    static final String PARAMETER_KEY_TIMELAPSE_ENABLED = "time-lapse-enable";
-    static final String PARAMETER_KEY_TIMELAPSE_FPS = "time-lapse-fps";
 
     @SuppressWarnings("WeakerAccess") // synthetic accessor
     final String mTag;
@@ -214,8 +212,6 @@ public class EncoderImpl implements Encoder {
     @SuppressWarnings("WeakerAccess") // synthetic accessor
     Range<Long> mStartStopTimeRangeUs = NO_RANGE;
     @SuppressWarnings("WeakerAccess") // synthetic accessor
-    long mTotalPausedDurationUs = 0L;
-    @SuppressWarnings("WeakerAccess") // synthetic accessor
     boolean mPendingCodecStop = false;
     // The data timestamp that an encoding stops at. If this timestamp is null, it means the
     // encoding hasn't receiving enough data to be stopped.
@@ -242,7 +238,6 @@ public class EncoderImpl implements Encoder {
             int sessionType)
             throws InvalidConfigException {
         Preconditions.checkNotNull(executor);
-        Preconditions.checkNotNull(encoderConfig);
 
         mMediaCodec = createCodec(encoderConfig);
         MediaCodecInfo mediaCodecInfo = mMediaCodec.getCodecInfo();
@@ -256,7 +251,10 @@ public class EncoderImpl implements Encoder {
             mTag = "AudioEncoder";
             mIsVideoEncoder = false;
             mEncoderInput = new ByteBufferInput();
-            mEncoderInfo = new AudioEncoderInfoImpl(mediaCodecInfo, encoderConfig.getMimeType());
+            AudioEncoderInfo audioEncoderInfo = new AudioEncoderInfoImpl(mediaCodecInfo,
+                    encoderConfig.getMimeType());
+            clampBitrateIfNotSupported(audioEncoderInfo, mMediaFormat);
+            mEncoderInfo = audioEncoderInfo;
             mCaptureToEncodeFrameRateRatio = new Rational(audioEncoderConfig.getCaptureSampleRate(),
                     audioEncoderConfig.getEncodeSampleRate());
         } else if (encoderConfig instanceof VideoEncoderConfig) {
@@ -266,7 +264,7 @@ public class EncoderImpl implements Encoder {
             mEncoderInput = new SurfaceInput();
             VideoEncoderInfo videoEncoderInfo = new VideoEncoderInfoImpl(mediaCodecInfo,
                     encoderConfig.getMimeType());
-            clampVideoBitrateIfNotSupported(videoEncoderInfo, mMediaFormat);
+            clampBitrateIfNotSupported(videoEncoderInfo, mMediaFormat);
             mEncoderInfo = videoEncoderInfo;
             mCaptureToEncodeFrameRateRatio = new Rational(videoEncoderConfig.getCaptureFrameRate(),
                     videoEncoderConfig.getEncodeFrameRate());
@@ -292,26 +290,29 @@ public class EncoderImpl implements Encoder {
                 }));
         mReleasedCompleter = Preconditions.checkNotNull(releaseFutureRef.get());
 
-        mCodecStopAsFlushWorkaroundEnabled = mIsVideoEncoder
-                && sessionType == SESSION_TYPE_HIGH_SPEED
-                && DeviceQuirks.get(PreviewFreezeAfterHighSpeedRecordingQuirk.class) != null;
+        mCodecStopAsFlushWorkaroundEnabled = shouldEnableCodecStopAsFlushWorkaround(sessionType);
 
         setState(CONFIGURED);
     }
 
     /**
-     * Clamps the video bitrate in MediaFormat if the video bitrate is not supported by the
-     * supplied VideoEncoderInfo.
+     * Clamps the bitrate in MediaFormat if the bitrate is not supported by the
+     * supplied EncoderInfo.
      *
-     * @param videoEncoderInfo VideoEncoderInfo object
-     * @param mediaFormat      MediaFormat object
+     * @param encoderInfo EncoderInfo object
+     * @param mediaFormat MediaFormat object
      */
-    private void clampVideoBitrateIfNotSupported(@NonNull VideoEncoderInfo videoEncoderInfo,
+    private void clampBitrateIfNotSupported(@NonNull EncoderInfo encoderInfo,
             @NonNull MediaFormat mediaFormat) {
-        checkState(mIsVideoEncoder);
         if (mediaFormat.containsKey(MediaFormat.KEY_BIT_RATE)) {
             int origBitrate = mediaFormat.getInteger(MediaFormat.KEY_BIT_RATE);
-            int newBitrate = videoEncoderInfo.getSupportedBitrateRange().clamp(origBitrate);
+            Range<Integer> supportedBitrateRange;
+            if (mIsVideoEncoder) {
+                supportedBitrateRange = ((VideoEncoderInfo) encoderInfo).getSupportedBitrateRange();
+            } else {
+                supportedBitrateRange = ((AudioEncoderInfo) encoderInfo).getBitrateRange();
+            }
+            int newBitrate = supportedBitrateRange.clamp(origBitrate);
             if (origBitrate != newBitrate) {
                 mediaFormat.setInteger(MediaFormat.KEY_BIT_RATE, newBitrate);
                 Logger.d(mTag, "updated bitrate from " + origBitrate + " to " + newBitrate);
@@ -322,7 +323,6 @@ public class EncoderImpl implements Encoder {
     @ExecutedBy("mEncoderExecutor")
     private void reset() {
         mStartStopTimeRangeUs = NO_RANGE;
-        mTotalPausedDurationUs = 0L;
         mActivePauseResumeTimeRanges.clear();
         mFreeInputBufferIndexQueue.clear();
 
@@ -332,6 +332,7 @@ public class EncoderImpl implements Encoder {
         }
         mAcquisitionQueue.clear();
 
+        Logger.d(mTag, "mMediaCodec.reset()");
         mMediaCodec.reset();
         mIsFlushedAfterEndOfStream = false;
         mSourceStoppedSignalled = false;
@@ -349,8 +350,10 @@ public class EncoderImpl implements Encoder {
             mMediaCodecCallback.stop();
         }
         mMediaCodecCallback = new MediaCodecCallback();
+        Logger.d(mTag, "mMediaCodec.setCallback()");
         mMediaCodec.setCallback(mMediaCodecCallback);
 
+        Logger.d(mTag, "mMediaCodec.configure()");
         mMediaCodec.configure(mMediaFormat, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
 
         if (mEncoderInput instanceof SurfaceInput) {
@@ -378,19 +381,13 @@ public class EncoderImpl implements Encoder {
         return configuredBitrate;
     }
 
-    /**
-     * Starts the encoder.
-     *
-     * <p>If the encoder is not started yet, it will first trigger
-     * {@link EncoderCallback#onEncodeStart}. Then continually invoke the
-     * {@link EncoderCallback#onEncodedData} callback until the encoder is paused, stopped or
-     * released. It can call {@link #pause} to pause the encoding after started. If the encoder is
-     * in paused state, then calling this method will resume the encoding.
-     */
     @SuppressWarnings("StatementWithEmptyBody") // to better organize the logic and comments
     @Override
-    public void start() {
-        final long startTriggerTimeUs = generatePresentationTimeUs();
+    public void start(long expectedStartTimeUs) {
+        final long startTriggerTimeUs =
+                expectedStartTimeUs != NO_TIMESTAMP
+                        ? expectedStartTimeUs
+                        : generatePresentationTimeUs();
         mEncoderExecutor.execute(() -> {
             switch (mState) {
                 case CONFIGURED:
@@ -405,6 +402,7 @@ public class EncoderImpl implements Encoder {
                             reset();
                         }
                         mStartStopTimeRangeUs = Range.create(startTriggerTimeUs, NO_LIMIT_LONG);
+                        Logger.d(mTag, "mMediaCodec.start()");
                         mMediaCodec.start();
                     } catch (MediaCodec.CodecException e) {
                         handleEncodeError(e);
@@ -476,18 +474,6 @@ public class EncoderImpl implements Encoder {
         });
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void stop() {
-        stop(NO_TIMESTAMP);
-    }
-
-
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void stop(long expectedStopTimeUs) {
         final long stopTriggerTimeUs = generatePresentationTimeUs();
@@ -580,6 +566,7 @@ public class EncoderImpl implements Encoder {
         } else if (mEncoderInput instanceof SurfaceInput) {
             try {
                 addSignalEosTimeoutIfNeeded();
+                Logger.d(mTag, "mMediaCodec.signalEndOfInputStream()");
                 mMediaCodec.signalEndOfInputStream();
                 mMediaCodecEosSignalled = true;
             } catch (MediaCodec.CodecException e) {
@@ -588,15 +575,12 @@ public class EncoderImpl implements Encoder {
         }
     }
 
-    /**
-     * Pauses the encoder.
-     *
-     * <p>{@code pause} only work between {@link #start} and {@link #stop}. Once the encoder is
-     * paused, it will drop the input data until {@link #start} is invoked again.
-     */
     @Override
-    public void pause() {
-        final long pauseTriggerTimeUs = generatePresentationTimeUs();
+    public void pause(long expectedPauseTimeUs) {
+        final long pauseTriggerTimeUs =
+                expectedPauseTimeUs != NO_TIMESTAMP
+                        ? expectedPauseTimeUs
+                        : generatePresentationTimeUs();
         mEncoderExecutor.execute(() -> {
             switch (mState) {
                 case CONFIGURED:
@@ -673,11 +657,13 @@ public class EncoderImpl implements Encoder {
      * persistent input surfaces.
      */
     public void signalSourceStopped() {
+        Logger.d(mTag, "signalSourceStopped");
         mEncoderExecutor.execute(() -> {
             mSourceStoppedSignalled = true;
             if (mIsFlushedAfterEndOfStream) {
                 // stop() should have been called before if workaround is enabled.
                 if (!mCodecStopAsFlushWorkaroundEnabled) {
+                    Logger.d(mTag, "mMediaCodec.stop()");
                     mMediaCodec.stop();
                 }
                 reset();
@@ -687,14 +673,17 @@ public class EncoderImpl implements Encoder {
 
     @ExecutedBy("mEncoderExecutor")
     private void releaseInternal() {
+        Logger.d(mTag, "releaseInternal");
         if (mIsFlushedAfterEndOfStream) {
             // stop() should have been called before if workaround is enabled.
             if (!mCodecStopAsFlushWorkaroundEnabled) {
+                Logger.d(mTag, "mMediaCodec.stop()");
                 mMediaCodec.stop();
             }
             mIsFlushedAfterEndOfStream = false;
         }
 
+        Logger.d(mTag, "mMediaCodec.release()");
         mMediaCodec.release();
 
         if (mEncoderInput instanceof SurfaceInput) {
@@ -759,6 +748,7 @@ public class EncoderImpl implements Encoder {
     void setMediaCodecPaused(boolean paused) {
         Bundle bundle = new Bundle();
         bundle.putInt(MediaCodec.PARAMETER_KEY_SUSPEND, paused ? 1 : 0);
+        Logger.d(mTag, "mMediaCodec.setParameters - setMediaCodecPaused: " + paused);
         mMediaCodec.setParameters(bundle);
     }
 
@@ -767,6 +757,7 @@ public class EncoderImpl implements Encoder {
     void requestKeyFrameToMediaCodec() {
         Bundle bundle = new Bundle();
         bundle.putInt(MediaCodec.PARAMETER_KEY_REQUEST_SYNC_FRAME, 0);
+        Logger.d(mTag, "mMediaCodec.setParameters - requestKeyFrameToMediaCodec");
         mMediaCodec.setParameters(bundle);
     }
 
@@ -786,6 +777,7 @@ public class EncoderImpl implements Encoder {
 
     @ExecutedBy("mEncoderExecutor")
     private void signalEndOfInputStream() {
+        Logger.d(mTag, "signalEndOfInputStream");
         Futures.addCallback(acquireInputBuffer(),
                 new FutureCallback<InputBuffer>() {
                     @Override
@@ -919,8 +911,10 @@ public class EncoderImpl implements Encoder {
                     // are not needed anyways. We will defer resetting the codec until just
                     // before starting the codec again.
                     if (mCodecStopAsFlushWorkaroundEnabled) {
+                        Logger.d(mTag, "mMediaCodec.stop()");
                         mMediaCodec.stop();
                     } else {
+                        Logger.d(mTag, "mMediaCodec.flush()");
                         mMediaCodec.flush();
                     }
                     mIsFlushedAfterEndOfStream = true;
@@ -930,6 +924,7 @@ public class EncoderImpl implements Encoder {
                     // Additionally, if we already received a signal that the source is stopped,
                     // then there shouldn't be new buffers being produced, and we don't need to
                     // flush.
+                    Logger.d(mTag, "mMediaCodec.stop()");
                     mMediaCodec.stop();
                 }
             }
@@ -965,31 +960,15 @@ public class EncoderImpl implements Encoder {
 
     @SuppressWarnings("WeakerAccess") // synthetic accessor
     @ExecutedBy("mEncoderExecutor")
-    void updateTotalPausedDuration(long bufferPresentationTimeUs) {
+    void dropClosedPauseRanges(long bufferPresentationTimeUs) {
         while (!mActivePauseResumeTimeRanges.isEmpty()) {
             Range<Long> pauseRange = mActivePauseResumeTimeRanges.getFirst();
             if (bufferPresentationTimeUs > pauseRange.getUpper()) {
-                // Later than current pause, remove this pause and update total paused duration.
                 mActivePauseResumeTimeRanges.removeFirst();
-                mTotalPausedDurationUs += (pauseRange.getUpper() - pauseRange.getLower());
-                Logger.d(mTag,
-                        "Total paused duration = " + DebugUtils.readableUs(mTotalPausedDurationUs));
             } else {
                 break;
             }
         }
-    }
-
-    @SuppressWarnings("WeakerAccess") // synthetic accessor
-    @ExecutedBy("mEncoderExecutor")
-    long getAdjustedTimeUs(@NonNull BufferInfo bufferInfo) {
-        long adjustedTimeUs;
-        if (mTotalPausedDurationUs > 0L) {
-            adjustedTimeUs = bufferInfo.presentationTimeUs - mTotalPausedDurationUs;
-        } else {
-            adjustedTimeUs = bufferInfo.presentationTimeUs;
-        }
-        return adjustedTimeUs;
     }
 
     @SuppressWarnings("WeakerAccess") // synthetic accessor
@@ -1096,12 +1075,20 @@ public class EncoderImpl implements Encoder {
         return DeviceQuirks.get(StopCodecAfterSurfaceRemovalCrashMediaServerQuirk.class) != null;
     }
 
+    private boolean shouldEnableCodecStopAsFlushWorkaround(int sessionType) {
+        return mIsVideoEncoder
+                && ((sessionType == SESSION_TYPE_HIGH_SPEED
+                && DeviceQuirks.get(PreviewFreezeAfterHighSpeedRecordingQuirk.class) != null)
+                || DeviceQuirks.get(GLProcessingStuckOnCodecFlushQuirk.class) != null);
+    }
+
     private long toPresentationTimeUsByCaptureEncodeRatio(long systemTimeUs) {
         // Multiplying systemTimeUs by the capture-to-encode frame rate ratio is safe from overflow.
         // Even with extreme slowdowns (e.g., 1920fps to 30fps, a 64x ratio), the resulting
         // microsecond timestamp remains significantly below Long.MAX_VALUE.
-        return isRationalOne(mCaptureToEncodeFrameRateRatio) ? systemTimeUs
-                : Math.round(systemTimeUs * mCaptureToEncodeFrameRateRatio.doubleValue());
+        return isSlowMotion()
+                ? Math.round(systemTimeUs * mCaptureToEncodeFrameRateRatio.doubleValue())
+                : systemTimeUs;
     }
 
     @NonNull
@@ -1120,7 +1107,11 @@ public class EncoderImpl implements Encoder {
         };
     }
 
-    private boolean isRationalOne(@Nullable Rational rational) {
+    private boolean isSlowMotion() {
+        return !isRationalOne(mCaptureToEncodeFrameRateRatio);
+    }
+
+    private static boolean isRationalOne(@Nullable Rational rational) {
         return rational != null && rational.getDenominator() == rational.getNumerator();
     }
 
@@ -1138,11 +1129,8 @@ public class EncoderImpl implements Encoder {
         private boolean mHasEndData = false;
         /** The last presentation time of BufferInfo without modified. */
         private long mLastPresentationTimeUs = 0L;
-        /**
-         * The last sent presentation time of BufferInfo. The value could be adjusted by total
-         * pause duration.
-         */
-        private long mLastSentAdjustedTimeUs = 0L;
+        /** The last sent presentation time of BufferInfo. */
+        private long mLastSentPresentationTimeUs = 0L;
         private boolean mIsOutputBufferInPauseState = false;
         private boolean mIsKeyFrameRequired = false;
         private boolean mStopped = false;
@@ -1214,6 +1202,18 @@ public class EncoderImpl implements Encoder {
                             executor = mEncoderCallbackExecutor;
                         }
 
+                        if (Build.VERSION.SDK_INT < 30 && mIsVideoEncoder && isSlowMotion()) {
+                            // Timestamps for slow-motion recording are automatically adjusted by
+                            // the GraphicBufferSource from API 30 onward (specifically when
+                            // configuring codec with different KEY_CAPTURE_RATE and
+                            // KEY_FRAME_RATE). For devices on earlier API levels, we manually
+                            // adjust the timestamp.
+                            // See ACodec.cpp/CCodec.cpp/GraphicBufferSource.cpp for details.
+                            bufferInfo.presentationTimeUs =
+                                    toPresentationTimeUsByCaptureEncodeRatio(
+                                            bufferInfo.presentationTimeUs);
+                        }
+
                         if (DEBUG) {
                             Logger.d(mTag, DebugUtils.readableBufferInfo(bufferInfo));
                         }
@@ -1241,11 +1241,10 @@ public class EncoderImpl implements Encoder {
                                                 + SystemClock.elapsedRealtime()
                                 );
                             }
-                            BufferInfo outBufferInfo = resolveOutputBufferInfo(bufferInfo);
-                            mLastSentAdjustedTimeUs = outBufferInfo.presentationTimeUs;
+                            mLastSentPresentationTimeUs = bufferInfo.presentationTimeUs;
                             try {
                                 EncodedDataImpl encodedData = new EncodedDataImpl(mediaCodec, index,
-                                        outBufferInfo);
+                                        bufferInfo);
                                 sendEncodedData(encodedData, encoderCallback, executor);
                             } catch (MediaCodec.CodecException e) {
                                 handleEncodeError(e);
@@ -1283,6 +1282,7 @@ public class EncoderImpl implements Encoder {
 
         @ExecutedBy("mEncoderExecutor")
         void reachEndData() {
+            Logger.d(mTag, "reachEndData");
             if (mHasEndData) {
                 return;
             }
@@ -1308,25 +1308,6 @@ public class EncoderImpl implements Encoder {
                     Logger.e(mTag, "Unable to post to the supplied executor.", e);
                 }
             });
-        }
-
-        @ExecutedBy("mEncoderExecutor")
-        private @NonNull BufferInfo resolveOutputBufferInfo(@NonNull BufferInfo bufferInfo) {
-            long adjustedTimeUs = getAdjustedTimeUs(bufferInfo);
-            if (bufferInfo.presentationTimeUs == adjustedTimeUs) {
-                return bufferInfo;
-            }
-
-            // If adjusted time <= last sent time, the buffer should have been detected and
-            // dropped in checkBufferInfo().
-            checkState(adjustedTimeUs > mLastSentAdjustedTimeUs);
-            if (DEBUG) {
-                Logger.d(mTag, "Adjust bufferInfo.presentationTimeUs to "
-                        + DebugUtils.readableUs(adjustedTimeUs));
-            }
-            BufferInfo newBufferInfo = new BufferInfo();
-            newBufferInfo.set(bufferInfo.offset, bufferInfo.size, adjustedTimeUs, bufferInfo.flags);
-            return newBufferInfo;
         }
 
         @ExecutedBy("mEncoderExecutor")
@@ -1420,9 +1401,11 @@ public class EncoderImpl implements Encoder {
                 return false;
             }
 
-            // We should check if the adjusted time is valid. see b/189114207.
-            if (getAdjustedTimeUs(bufferInfo) <= mLastSentAdjustedTimeUs) {
-                Logger.d(mTag, "Drop buffer by adjusted time is less than the last sent time.");
+            // We should check if the presentation time is valid. see b/189114207.
+            if (bufferInfo.presentationTimeUs <= mLastSentPresentationTimeUs) {
+                Logger.d(mTag,
+                        "Drop buffer because presentation time is less than or equal to the last "
+                                + "sent time.");
                 if (mIsVideoEncoder && isKeyFrame(bufferInfo)) {
                     mIsKeyFrameRequired = true;
                 }
@@ -1469,7 +1452,7 @@ public class EncoderImpl implements Encoder {
         @ExecutedBy("mEncoderExecutor")
         private boolean updatePauseRangeStateAndCheckIfBufferPaused(
                 @NonNull BufferInfo bufferInfo) {
-            updateTotalPausedDuration(bufferInfo.presentationTimeUs);
+            dropClosedPauseRanges(bufferInfo.presentationTimeUs);
             boolean isInPauseRange = isInPauseRange(bufferInfo.presentationTimeUs);
             if (!mIsOutputBufferInPauseState && isInPauseRange) {
                 Logger.d(mTag, "Switch to pause state");
@@ -1553,7 +1536,8 @@ public class EncoderImpl implements Encoder {
         @Override
         public void onOutputFormatChanged(@NonNull MediaCodec mediaCodec,
                 @NonNull MediaFormat mediaFormat) {
-            Logger.d(mTag, "onOutputFormatChanged = " + mediaFormat);
+            Logger.d(mTag, "onOutputFormatChanged: mediaFormat = " + mediaFormat
+                    + ", CSD data = " + getCsdHex(mediaFormat));
             mEncoderExecutor.execute(() -> {
                 if (mStopped) {
                     Logger.w(mTag, "Receives onOutputFormatChanged after codec is reset.");
@@ -1566,13 +1550,6 @@ public class EncoderImpl implements Encoder {
                     case PENDING_START:
                     case PENDING_START_PAUSED:
                     case PENDING_RELEASE:
-                        if (mIsVideoEncoder && !isRationalOne(mCaptureToEncodeFrameRateRatio)) {
-                            // MediaMuxer will write these values to the video metadata so Photos
-                            // can recognize that this is a slow-motion video.
-                            mediaFormat.setInteger(PARAMETER_KEY_TIMELAPSE_ENABLED, 1);
-                            mediaFormat.setInteger(PARAMETER_KEY_TIMELAPSE_FPS,
-                                    mMediaFormat.getInteger(MediaFormat.KEY_CAPTURE_RATE));
-                        }
                         EncoderCallback encoderCallback;
                         Executor executor;
                         synchronized (mLock) {
@@ -1612,89 +1589,28 @@ public class EncoderImpl implements Encoder {
         @GuardedBy("mLock")
         private Surface mSurface;
 
-        @GuardedBy("mLock")
-        private final Set<Surface> mObsoleteSurfaces = new HashSet<>();
-
-        @GuardedBy("mLock")
-        private OnSurfaceUpdateListener mSurfaceUpdateListener;
-
-        @GuardedBy("mLock")
-        private Executor mSurfaceUpdateExecutor;
-
-        /**
-         * Sets the surface update listener.
-         *
-         * @param executor the executor to invoke the listener
-         * @param listener the surface update listener
-         */
-        @Override
-        public void setOnSurfaceUpdateListener(@NonNull Executor executor,
-                @NonNull OnSurfaceUpdateListener listener) {
-            Surface surface;
-            synchronized (mLock) {
-                mSurfaceUpdateListener = Preconditions.checkNotNull(listener);
-                mSurfaceUpdateExecutor = Preconditions.checkNotNull(executor);
-                surface = mSurface;
-            }
-            if (surface != null) {
-                notifySurfaceUpdate(executor, listener, surface);
-            }
-        }
-
-        @SuppressLint("NewApi")
         void resetSurface() {
-            Surface surface;
-            Executor executor;
-            OnSurfaceUpdateListener listener;
-            EncoderNotUsePersistentInputSurfaceQuirk quirk = DeviceQuirks.get(
-                    EncoderNotUsePersistentInputSurfaceQuirk.class);
-            synchronized (mLock) {
-                if (quirk == null) {
-                    if (mSurface == null) {
-                        mSurface = Api23Impl.createPersistentInputSurface();
-                        surface = mSurface;
-                    } else {
-                        surface = null;
-                    }
-                    Api23Impl.setInputSurface(mMediaCodec, mSurface);
-                } else {
-                    if (mSurface != null) {
-                        mObsoleteSurfaces.add(mSurface);
-                    }
-                    mSurface = mMediaCodec.createInputSurface();
-                    surface = mSurface;
-                }
-                listener = mSurfaceUpdateListener;
-                executor = mSurfaceUpdateExecutor;
-            }
-            if (surface != null && listener != null && executor != null) {
-                notifySurfaceUpdate(executor, listener, surface);
-            }
+            mMediaCodec.setInputSurface(getSurface());
         }
 
         void releaseSurface() {
             Surface surface;
-            Set<Surface> obsoleteSurfaces;
             synchronized (mLock) {
                 surface = mSurface;
                 mSurface = null;
-                obsoleteSurfaces = new HashSet<>(mObsoleteSurfaces);
-                mObsoleteSurfaces.clear();
             }
             if (surface != null) {
                 surface.release();
             }
-            for (Surface obsoleteSurface : obsoleteSurfaces) {
-                obsoleteSurface.release();
-            }
         }
 
-        private void notifySurfaceUpdate(@NonNull Executor executor,
-                @NonNull OnSurfaceUpdateListener listener, @NonNull Surface surface) {
-            try {
-                executor.execute(() -> listener.onSurfaceUpdate(surface));
-            } catch (RejectedExecutionException e) {
-                Logger.e(mTag, "Unable to post to the supplied executor.", e);
+        @Override
+        public @NonNull Surface getSurface() {
+            synchronized (mLock) {
+                if (mSurface == null) {
+                    mSurface = MediaCodec.createPersistentInputSurface();
+                }
+                return mSurface;
             }
         }
     }
@@ -1801,24 +1717,6 @@ public class EncoderImpl implements Encoder {
                     Logger.e(mTag, "Unable to post to the supplied executor.", e);
                 }
             }
-        }
-    }
-
-    /**
-     * Nested class to avoid verification errors for methods introduced in Android 6.0 (API 23).
-     */
-    @RequiresApi(23)
-    private static class Api23Impl {
-
-        private Api23Impl() {
-        }
-
-        static @NonNull Surface createPersistentInputSurface() {
-            return MediaCodec.createPersistentInputSurface();
-        }
-
-        static void setInputSurface(@NonNull MediaCodec mediaCodec, @NonNull Surface surface) {
-            mediaCodec.setInputSurface(surface);
         }
     }
 }

@@ -24,18 +24,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusState
 import androidx.compose.ui.focus.FocusTargetModifierNode
 import androidx.compose.ui.focus.Focusability
-import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.LocalPinnableContainer
 import androidx.compose.ui.layout.PinnableContainer
 import androidx.compose.ui.node.CompositionLocalConsumerModifierNode
 import androidx.compose.ui.node.DelegatingNode
-import androidx.compose.ui.node.GlobalPositionAwareModifierNode
 import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.node.ObserverModifierNode
 import androidx.compose.ui.node.SemanticsModifierNode
-import androidx.compose.ui.node.TraversableNode
 import androidx.compose.ui.node.currentValueOf
-import androidx.compose.ui.node.findNearestAncestor
 import androidx.compose.ui.node.invalidateSemantics
 import androidx.compose.ui.node.observeReads
 import androidx.compose.ui.platform.InspectorInfo
@@ -43,6 +39,7 @@ import androidx.compose.ui.relocation.bringIntoView
 import androidx.compose.ui.semantics.SemanticsPropertyReceiver
 import androidx.compose.ui.semantics.focused
 import androidx.compose.ui.semantics.requestFocus
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
@@ -57,10 +54,10 @@ import kotlinx.coroutines.launch
  *   [FocusInteraction.Focus] when this element is being focused.
  */
 @Stable
-fun Modifier.focusable(
+public fun Modifier.focusable(
     enabled: Boolean = true,
     interactionSource: MutableInteractionSource? = null,
-) =
+): Modifier =
     this.then(
         if (enabled) {
             FocusableElement(interactionSource)
@@ -91,7 +88,7 @@ fun Modifier.focusable(
  * @sample androidx.compose.foundation.samples.FocusableFocusGroupSample
  */
 @Stable
-fun Modifier.focusGroup(): Modifier {
+public fun Modifier.focusGroup(): Modifier {
     return this.then(FocusGroupElement)
 }
 
@@ -143,46 +140,37 @@ private class FocusableElement(private val interactionSource: MutableInteraction
     }
 }
 
+/**
+ * The node that adds functionality on top of the underlying focus system.
+ *
+ * When making changes here, consider adding similar functionality to the FocusTargetInteropNode for
+ * View-Compose interop cases.
+ */
 internal class FocusableNode(
     private var interactionSource: MutableInteractionSource?,
     focusability: Focusability = Focusability.Always,
-    private val onFocusChange: ((Boolean) -> Unit)? = null
+    private val onFocusChange: ((Boolean) -> Unit)? = null,
 ) :
     DelegatingNode(),
     SemanticsModifierNode,
-    GlobalPositionAwareModifierNode,
     CompositionLocalConsumerModifierNode,
-    ObserverModifierNode,
-    TraversableNode {
+    ObserverModifierNode {
     override val shouldAutoInvalidate: Boolean = false
-
-    private companion object TraverseKey
-
-    override val traverseKey: Any
-        get() = TraverseKey
 
     private var focusedInteraction: FocusInteraction.Focus? = null
     private var pinnedHandle: PinnableContainer.PinnedHandle? = null
-    private var globalLayoutCoordinates: LayoutCoordinates? = null
 
     private val focusTargetNode =
         delegate(
             FocusTargetModifierNode(
                 focusability = focusability,
-                onFocusChange = ::onFocusStateChange
+                onFocusChange = ::onFocusStateChange,
             )
         )
 
-    private var requestFocus: (() -> Boolean)? = null
-
-    private val focusedBoundsObserver: FocusedBoundsObserverNode?
-        get() =
-            if (isAttached) {
-                findNearestAncestor(FocusedBoundsObserverNode.TraverseKey)
-                    as? FocusedBoundsObserverNode
-            } else {
-                null
-            }
+    fun requestFocus(): Boolean {
+        return focusTargetNode.requestFocus()
+    }
 
     // Focusables have a few different cases where they need to make sure they stay visible:
     //
@@ -202,6 +190,9 @@ internal class FocusableNode(
         }
     }
 
+    val focusState: FocusState
+        get() = focusTargetNode.focusState
+
     private fun onFocusStateChange(previousState: FocusState, currentState: FocusState) {
         if (!isAttached) return
         val isFocused = currentState.isFocused
@@ -211,14 +202,12 @@ internal class FocusableNode(
         if (isFocused == wasFocused) return
         onFocusChange?.invoke(isFocused)
         if (isFocused) {
-            coroutineScope.launch { bringIntoView() }
+            coroutineScope.launch(start = CoroutineStart.UNDISPATCHED) { bringIntoView() }
             val pinnableContainer = retrievePinnableContainer()
             pinnedHandle = pinnableContainer?.pin()
-            notifyObserverWhenAttached()
         } else {
             pinnedHandle?.release()
             pinnedHandle = null
-            focusedBoundsObserver?.onFocusBoundsChanged(null)
         }
         invalidateSemantics()
         emitInteraction(isFocused)
@@ -226,10 +215,7 @@ internal class FocusableNode(
 
     override fun SemanticsPropertyReceiver.applySemantics() {
         focused = focusTargetNode.focusState.isFocused
-        if (requestFocus == null) {
-            requestFocus = { focusTargetNode.requestFocus() }
-        }
-        requestFocus(action = requestFocus)
+        requestFocus(action = ::requestFocus)
     }
 
     override fun onReset() {
@@ -245,28 +231,10 @@ internal class FocusableNode(
         }
     }
 
-    // TODO: b/276790428 move this to be lazily delegated when we are focused, we don't need to
-    //  be notified of global position changes if we aren't focused.
-    override fun onGloballyPositioned(coordinates: LayoutCoordinates) {
-        globalLayoutCoordinates = coordinates
-        if (!focusTargetNode.focusState.isFocused) return
-        if (coordinates.isAttached) {
-            notifyObserverWhenAttached()
-        } else {
-            focusedBoundsObserver?.onFocusBoundsChanged(null)
-        }
-    }
-
     private fun retrievePinnableContainer(): PinnableContainer? {
         var container: PinnableContainer? = null
         observeReads { container = currentValueOf(LocalPinnableContainer) }
         return container
-    }
-
-    private fun notifyObserverWhenAttached() {
-        if (globalLayoutCoordinates != null && globalLayoutCoordinates!!.isAttached) {
-            focusedBoundsObserver?.onFocusBoundsChanged(globalLayoutCoordinates)
-        }
     }
 
     private fun emitInteraction(isFocused: Boolean) {

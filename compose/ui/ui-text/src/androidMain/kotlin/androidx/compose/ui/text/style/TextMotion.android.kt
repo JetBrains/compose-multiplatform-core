@@ -18,21 +18,29 @@ package androidx.compose.ui.text.style
 
 import androidx.compose.runtime.Immutable
 
-/** Implementation of possible TextMotion configurations on Android. */
+// TODO: b/350954962 the sample link is needed here as our KMP structure makes expect classes
+//  invisible to lint, so the lint check doesn't find the sample on the corresponding expect. Once
+//  this is resolved, the sample can be removed from here (since the actual isn't used to generate
+//  documentation)
+/**
+ * Implementation of possible TextMotion configurations on Android.
+ *
+ * @sample androidx.compose.ui.text.samples.TextMotionSample
+ */
 @Immutable
-actual class TextMotion
+public actual class TextMotion
 internal constructor(
     internal val linearity: Linearity,
-    internal val subpixelTextPositioning: Boolean
+    internal val subpixelTextPositioning: Boolean,
 ) {
-    actual companion object {
-        actual val Static: TextMotion = TextMotion(Linearity.FontHinting, false)
-        actual val Animated: TextMotion = TextMotion(Linearity.Linear, true)
+    public actual companion object {
+        public actual val Static: TextMotion = TextMotion(Linearity.FontHinting, false)
+        public actual val Animated: TextMotion = TextMotion(Linearity.Linear, true)
     }
 
     internal fun copy(
         linearity: Linearity = this.linearity,
-        subpixelTextPositioning: Boolean = this.subpixelTextPositioning
+        subpixelTextPositioning: Boolean = this.subpixelTextPositioning,
     ): TextMotion =
         TextMotion(linearity = linearity, subpixelTextPositioning = subpixelTextPositioning)
 
@@ -66,22 +74,25 @@ internal constructor(
      * may render the same output as [Linearity.Linear] on many OEM and API levels.
      */
     @JvmInline
-    internal value class Linearity private constructor(private val value: Int) {
+    internal value class Linearity internal constructor(internal val value: Int) {
         companion object {
             /**
              * Equal to applying [android.graphics.Paint.LINEAR_TEXT_FLAG] and turning hinting off.
              */
-            val Linear = Linearity(1)
+            val Linear
+                get() = Linearity(1)
 
             /**
              * Equal to removing [android.graphics.Paint.LINEAR_TEXT_FLAG] and turning hinting on.
              */
-            val FontHinting = Linearity(2)
+            val FontHinting
+                get() = Linearity(2)
 
             /**
              * Equal to removing [android.graphics.Paint.LINEAR_TEXT_FLAG] and turning hinting off.
              */
-            val None = Linearity(3)
+            val None
+                get() = Linearity(3)
         }
 
         override fun toString(): String =

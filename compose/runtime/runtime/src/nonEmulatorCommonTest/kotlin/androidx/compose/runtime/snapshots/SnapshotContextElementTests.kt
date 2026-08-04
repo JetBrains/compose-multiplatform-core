@@ -24,10 +24,17 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
+import kotlinx.test.IgnoreJsTarget
+import kotlinx.test.IgnoreNativeTarget
+import kotlinx.test.IgnoreWasmTarget
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class SnapshotContextElementTests {
+    // TODO: b/409725929
     @Test
+    @IgnoreJsTarget
+    @IgnoreWasmTarget
+    @IgnoreNativeTarget
     fun coroutineEntersExpectedSnapshot() =
         runTest(UnconfinedTestDispatcher()) {
             val snapshot = Snapshot.takeSnapshot()
@@ -41,11 +48,14 @@ class SnapshotContextElementTests {
         }
 
     @Test
-    fun snapshotRestoredAfterResume() {
-        val snapshotOne = Snapshot.takeSnapshot()
-        val snapshotTwo = Snapshot.takeSnapshot()
-        try {
-            runTest(UnconfinedTestDispatcher()) {
+    @IgnoreJsTarget
+    @IgnoreWasmTarget
+    @IgnoreNativeTarget
+    fun snapshotRestoredAfterResume() =
+        runTest(UnconfinedTestDispatcher()) {
+            val snapshotOne = Snapshot.takeSnapshot()
+            val snapshotTwo = Snapshot.takeSnapshot()
+            try {
                 val stopA = Job()
                 val jobA =
                     launch(snapshotOne.asContextElement()) {
@@ -59,10 +69,9 @@ class SnapshotContextElementTests {
                     jobA.join()
                     assertSame(snapshotTwo, Snapshot.current, "expected snapshotTwo, B")
                 }
+            } finally {
+                snapshotOne.dispose()
+                snapshotTwo.dispose()
             }
-        } finally {
-            snapshotOne.dispose()
-            snapshotTwo.dispose()
         }
-    }
 }

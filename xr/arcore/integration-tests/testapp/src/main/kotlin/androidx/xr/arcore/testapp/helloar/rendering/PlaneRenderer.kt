@@ -1,0 +1,185 @@
+/*
+ * Copyright 2024 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+@file:Suppress("BanConcurrentHashMap", "deprecation", "TYPEALIAS_EXPANSION_DEPRECATION")
+
+package androidx.xr.arcore.testapp.helloar.rendering
+
+import android.annotation.SuppressLint
+import androidx.lifecycle.DefaultLifecycleObserver
+import androidx.lifecycle.LifecycleOwner
+import androidx.xr.arcore.Plane
+import androidx.xr.arcore.PlaneLabel
+import androidx.xr.arcore.TrackingState
+import androidx.xr.runtime.Session
+import androidx.xr.runtime.math.FloatSize2d
+import androidx.xr.runtime.math.Pose
+import androidx.xr.runtime.math.Quaternion
+import androidx.xr.runtime.math.Vector3
+import androidx.xr.scenecore.GltfModel
+import androidx.xr.scenecore.GltfModelEntity
+import androidx.xr.scenecore.scene
+import java.nio.file.Paths
+import java.util.concurrent.ConcurrentHashMap
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+
+internal class PlaneRenderer(val session: Session) : DefaultLifecycleObserver {
+
+    private val _planesModelsMap = ConcurrentHashMap<PlaneLabel, GltfModel>()
+    private val _renderedPlanes: MutableStateFlow<List<PlaneModel>> =
+        MutableStateFlow(mutableListOf())
+    internal val renderedPlanes: StateFlow<Collection<PlaneModel>> = _renderedPlanes.asStateFlow()
+    private lateinit var renderScope: CoroutineScope
+
+    override fun onResume(owner: LifecycleOwner) {
+        renderScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+        renderScope.launch {
+            preloadModels()
+            Plane.subscribe(session).collect { updatePlaneModels(it) }
+        }
+    }
+
+    override fun onPause(owner: LifecycleOwner) {
+        renderScope.cancel()
+        clearPlaneModels()
+    }
+
+    private suspend fun preloadModels() {
+        if (_planesModelsMap.isNotEmpty()) return
+
+        val assetsToLoad =
+            SUPPORTED_OBJECT_MODELS.values.toMutableSet().apply { add(DEFAULT_OBJECT_MODEL) }
+
+        val assetToModel =
+            assetsToLoad.associateWith { assetName ->
+                GltfModel.create(session, Paths.get("models", assetName))
+            }
+
+        for ((category, assetName) in SUPPORTED_OBJECT_MODELS) {
+            _planesModelsMap[category] = assetToModel[assetName]!!
+        }
+    }
+
+    private suspend fun updatePlaneModels(planes: Collection<Plane>) {
+        val planesToRender = _renderedPlanes.value.toMutableList()
+        // Create renderers for new planes.
+        for (plane in planes) {
+            if (_renderedPlanes.value.none { it.id == plane.hashCode() }) {
+                addPlaneModel(plane, planesToRender)
+            }
+        }
+        // Stop rendering dropped planes.
+        for (renderedPlane in _renderedPlanes.value) {
+            if (planes.none { it.hashCode() == renderedPlane.id }) {
+                removePlaneModel(renderedPlane, planesToRender)
+            }
+        }
+        // Emit to notify collectors that collection has been updated.
+        _renderedPlanes.value = planesToRender
+    }
+
+    @Suppress("DEPRECATION")
+    private suspend fun addPlaneModel(plane: Plane, planesToRender: MutableList<PlaneModel>) {
+        val label = plane.state.value.label
+        val asset =
+            if (SUPPORTED_OBJECT_MODELS.containsKey(label)) {
+                SUPPORTED_OBJECT_MODELS[label]
+            } else {
+                DEFAULT_OBJECT_MODEL
+            }
+        val model =
+            _planesModelsMap.getOrPut(label) {
+                GltfModel.create(session, Paths.get("models", asset))
+            }
+        val modelEntity =
+            GltfModelEntity.create(session, model, parent = session.scene.activitySpace)
+
+        // The counter starts at max to trigger the resize on the first update loop since emulators
+        // only update their static planes once.
+        var counter = PANEL_RESIZE_UPDATE_COUNT
+        // Make the render job a child of the update job so it completes when the parent completes.
+        val renderJob =
+            renderScope.launch {
+                plane.state.collect { state ->
+                    if (state.trackingState == TrackingState.TRACKING) {
+                        if (state.label == PlaneLabel.UNKNOWN) {
+                            modelEntity.setEnabled(false)
+                        } else {
+                            modelEntity.setEnabled(true)
+                            modelEntity.setAlpha(.5f)
+                            modelEntity.setPose(
+                                session.scene.perceptionSpace
+                                    .transformPoseTo(state.centerPose, session.scene.activitySpace)
+                                    // Planes are X-Y while Panels are X-Z, so we need to rotate the
+                                    // X-axis by -90 degrees to align them.
+                                    .compose(PANEL_TO_PLANE_ROTATION)
+                            )
+
+                            counter++
+                            if (counter > PANEL_RESIZE_UPDATE_COUNT) {
+                                @SuppressLint("RestrictedApiAndroidX")
+                                modelEntity.setScale(scaledExtents(state.extents))
+                                counter = 0
+                            }
+                        }
+                    } else {
+                        modelEntity.setEnabled(false)
+                    }
+                }
+            }
+
+        planesToRender.add(
+            PlaneModel(plane.hashCode(), plane.type, plane.state, modelEntity, renderJob)
+        )
+    }
+
+    private fun removePlaneModel(planeModel: PlaneModel, planesToRender: MutableList<PlaneModel>) {
+        planeModel.renderJob?.cancel()
+        planeModel.modelEntity.parent = null
+        planesToRender.remove(planeModel)
+    }
+
+    private fun clearPlaneModels() {
+        for (planeModel in _renderedPlanes.value) {
+            planeModel.modelEntity.parent = null
+        }
+        _renderedPlanes.value = emptyList()
+    }
+
+    private fun scaledExtents(extents: FloatSize2d): Vector3 {
+        return Vector3(extents.width, extents.height, PlaneModel.MODEL_DEPTH)
+    }
+
+    private companion object {
+        private val PANEL_TO_PLANE_ROTATION =
+            Pose(Vector3(), Quaternion.fromEulerAngles(-90f, 0f, 0f))
+        private const val PANEL_RESIZE_UPDATE_COUNT = 50
+        private const val DEFAULT_OBJECT_MODEL = "BoundingBoxGreen.glb"
+        private val SUPPORTED_OBJECT_MODELS =
+            mapOf(
+                PlaneLabel.WALL to "BoundingBoxGreen.glb",
+                PlaneLabel.FLOOR to "BoundingBoxBlue.glb",
+                PlaneLabel.CEILING to "BoundingBoxYellow.glb",
+                PlaneLabel.TABLE to "BoundingBoxMagenta.glb",
+            )
+    }
+}

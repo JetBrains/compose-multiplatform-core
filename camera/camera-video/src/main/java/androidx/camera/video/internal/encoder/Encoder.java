@@ -60,7 +60,26 @@ public interface Encoder {
      * released. It can call {@link #pause} to pause the encoding after started. If the encoder is
      * in paused state, then calling this method will resume the encoding.
      */
-    void start();
+    default void start() {
+        start(NO_TIMESTAMP);
+    }
+
+    /**
+     * Starts the encoder with an expected start time.
+     *
+     * <p>If the encoder is not started yet, it will first trigger
+     * {@link EncoderCallback#onEncodeStart}. Then continually invoke the
+     * {@link EncoderCallback#onEncodedData} callback until the encoder is paused, stopped or
+     * released. It can call {@link #pause} to pause the encoding after started. If the encoder is
+     * in paused state, then calling this method will resume the encoding from the given start
+     * timestamp.
+     *
+     * <p>Use {@link #start()} to start the encoder without specifying expected start time and let
+     * the Encoder to decide.
+     *
+     * @param expectedStartTimeUs The desired start time.
+     */
+    void start(long expectedStartTimeUs);
 
     /**
      * Stops the encoder.
@@ -71,7 +90,9 @@ public interface Encoder {
      * {@link EncoderCallback#onEncodeStop()} is sent. {@link #start} can be called to start
      * another encoding session.
      */
-    void stop();
+    default void stop() {
+        stop(NO_TIMESTAMP);
+    }
 
     /**
      * Stops the encoder with an expected stop time.
@@ -95,7 +116,23 @@ public interface Encoder {
      * Once the encoder is paused, it will drop the input data until {@link #start} is invoked
      * again.
      */
-    void pause();
+    default void pause() {
+        pause(NO_TIMESTAMP);
+    }
+
+    /**
+     * Pauses the encoder with an expected pause time.
+     *
+     * <p>{@code pause} only work between {@link #start} and {@link #stop}.
+     * Once the encoder is paused at the expected pause time, it will drop the input data until
+     * {@link #start} is invoked again.
+     *
+     * <p>Use {@link #pause()} to pause the encoder without specifying expected pause time and let
+     * the Encoder to decide.
+     *
+     * @param expectedPauseTimeUs The desired pause time.
+     */
+    void pause(long expectedPauseTimeUs);
 
     /**
      * Releases the encoder.
@@ -103,10 +140,8 @@ public interface Encoder {
      * <p>Once the encoder is released, it cannot be used anymore. Any other method call after
      * the encoder is released will get {@link IllegalStateException}.
      *
-     * <p>If this encoder takes {@link SurfaceInput}, this method will release all the
-     * {@link Surface}s updated via {@link SurfaceInput#setOnSurfaceUpdateListener}. So this
-     * method should only be called when the frame producer is finished with the surface which
-     * may be the current surface or one of the obsolete surfaces.
+     * <p>If this encoder takes {@link SurfaceInput}, this method will release the {@link Surface}.
+     * So this method should only be called when the frame producer is finished with the surface.
      */
     void release();
 
@@ -139,30 +174,14 @@ public interface Encoder {
     /**
      * A SurfaceInput provides a {@link Surface} as the interface to receive video raw data.
      *
-     * <p>SurfaceInput is only available for video encoder. It has to set
-     * {@link #setOnSurfaceUpdateListener} to obtain the {@link Surface} update. A new surface
-     * instance may be updated after there is already an updated surface. For Encoder, it is safe
-     * and recommended to release the old surface by the surface receiver via
-     * {@link Surface#release()} since the old surface is no longer used by Encoder. For the
-     * latest surface, the receiver should rely on {@link Encoder#release()} to release it. After
-     * {@link Encoder#release()} is called, all updated surfaces will be released.
+     * <p>SurfaceInput is only available for video encoder. For the returned surface, the
+     * receiver should rely on {@link Encoder#release()} to release it.
      */
     interface SurfaceInput extends EncoderInput {
 
-        void setOnSurfaceUpdateListener(@NonNull Executor executor,
-                @NonNull OnSurfaceUpdateListener listener);
-
-        /**
-         * An interface for receiving the update event of the input {@link Surface} of the encoder.
-         */
-        interface OnSurfaceUpdateListener {
-            /**
-             * Notifies the surface is updated.
-             *
-             * @param surface the updated surface
-             */
-            void onSurfaceUpdate(@NonNull Surface surface);
-        }
+        /** Returns the surface. */
+        @NonNull
+        Surface getSurface();
     }
 
     /**

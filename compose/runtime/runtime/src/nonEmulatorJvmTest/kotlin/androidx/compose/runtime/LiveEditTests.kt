@@ -16,14 +16,18 @@
 
 package androidx.compose.runtime
 
+import androidx.collection.mutableIntSetOf
+import androidx.compose.runtime.mock.ComposerToUse
 import androidx.compose.runtime.mock.Text
 import androidx.compose.runtime.mock.View
 import androidx.compose.runtime.mock.ViewApplier
 import androidx.compose.runtime.mock.compositionTest
+import androidx.compose.runtime.snapshots.fastForEach
+import androidx.compose.runtime.tooling.Linear
+import kotlin.test.Test
 import org.junit.After
 import org.junit.Assert
 import org.junit.Before
-import org.junit.Test
 
 class LiveEditTests {
 
@@ -155,16 +159,17 @@ class LiveEditTests {
             expectError("throwInCompose", 2)
             // Composed once - failed once
             Expect("throw", compose = 2, onRememberd = 0, onForgotten = 0, onAbandoned = 2)
-            error("throwInCompose")
+            testError("throwInCompose")
         }
     }
 
     @Test
-    fun testThrowing_recomposition() {
+    fun testThrowing_recomposition_Gap() {
         var recomposeCount = 0
         liveEditTest(
             reloadCount = 2,
             collectSourceInformation = SourceInfo.None,
+            composerToUse = ComposerToUse.Gap,
         ) {
             RestartGroup {
                 MarkAsTarget()
@@ -176,7 +181,31 @@ class LiveEditTests {
 
                 recomposeCount++
                 if (recomposeCount == 2) {
-                    error("throwInCompose")
+                    testError("throwInCompose")
+                }
+            }
+        }
+    }
+
+    @Test
+    fun testThrowing_recomposition_Link() {
+        var recomposeCount = 0
+        liveEditTest(
+            reloadCount = 2,
+            collectSourceInformation = SourceInfo.None,
+            composerToUse = ComposerToUse.Link,
+        ) {
+            RestartGroup {
+                MarkAsTarget()
+
+                // only failed on 2nd recomposition
+                expectError("throwInCompose", 1)
+                // Composed 3 times, failed once
+                Expect("throw", compose = 3, onRememberd = 2, onForgotten = 1, onAbandoned = 1)
+
+                recomposeCount++
+                if (recomposeCount == 2) {
+                    testError("throwInCompose")
                 }
             }
         }
@@ -192,23 +221,20 @@ class LiveEditTests {
                 expectError("throwInEffect", 1)
 
                 // Composition happens as usual
-                Expect(
-                    "a",
-                    compose = 1,
-                    onRememberd = 1,
-                    onForgotten = 0,
-                    onAbandoned = 0,
-                )
+                Expect("a", compose = 1, onRememberd = 1, onForgotten = 0, onAbandoned = 0)
 
-                SideEffect { error("throwInEffect") }
+                SideEffect { testError("throwInEffect") }
             }
         }
     }
 
     @Test
-    fun testThrowing_recomposition_sideEffect() {
+    fun testThrowing_recomposition_sideEffect_Gap() {
         var recomposeCount = 0
-        liveEditTest(collectSourceInformation = SourceInfo.None) {
+        liveEditTest(
+            collectSourceInformation = SourceInfo.None,
+            composerToUse = ComposerToUse.Gap,
+        ) {
             RestartGroup {
                 MarkAsTarget()
 
@@ -216,19 +242,40 @@ class LiveEditTests {
                 expectError("throwInEffect", 1)
 
                 // Composition happens as usual
-                Expect(
-                    "a",
-                    compose = 2,
-                    onRememberd = 2,
-                    onForgotten = 1,
-                    onAbandoned = 0,
-                )
+                Expect("a", compose = 2, onRememberd = 2, onForgotten = 1, onAbandoned = 0)
 
                 recomposeCount++
 
                 SideEffect {
                     if (recomposeCount == 2) {
-                        error("throwInEffect")
+                        testError("throwInEffect")
+                    }
+                }
+            }
+        }
+    }
+
+    @Test
+    fun testThrowing_recomposition_sideEffect_Link() {
+        var recomposeCount = 0
+        liveEditTest(
+            collectSourceInformation = SourceInfo.None,
+            composerToUse = ComposerToUse.Link,
+        ) {
+            RestartGroup {
+                MarkAsTarget()
+
+                // The error is not recoverable, so reload doesn't fix the error
+                expectError("throwInEffect", 1)
+
+                // Composition happens as usual
+                Expect("a", compose = 2, onRememberd = 2, onForgotten = 1, onAbandoned = 0)
+
+                recomposeCount++
+
+                SideEffect {
+                    if (recomposeCount == 2) {
+                        testError("throwInEffect")
                     }
                 }
             }
@@ -245,18 +292,12 @@ class LiveEditTests {
                 expectError("throwOnRemember", 1)
 
                 // remembers as usual
-                Expect(
-                    "a",
-                    compose = 1,
-                    onRememberd = 1,
-                    onForgotten = 0,
-                    onAbandoned = 0,
-                )
+                Expect("a", compose = 1, onRememberd = 1, onForgotten = 0, onAbandoned = 0)
 
                 remember {
                     object : RememberObserver {
                         override fun onRemembered() {
-                            error("throwOnRemember")
+                            testError("throwOnRemember")
                         }
 
                         override fun onForgotten() {}
@@ -266,22 +307,17 @@ class LiveEditTests {
                 }
 
                 // The rest of remembers fail
-                Expect(
-                    "b",
-                    compose = 1,
-                    onRememberd = 0,
-                    onForgotten = 0,
-                    onAbandoned = 1,
-                )
+                Expect("b", compose = 1, onRememberd = 0, onForgotten = 0, onAbandoned = 1)
             }
         }
     }
 
     @Test
-    fun testThrowing_recomposition_remembered() {
+    fun testThrowing_recomposition_remembered_Gap() {
         var recomposeCount = 0
         liveEditTest(
             collectSourceInformation = SourceInfo.None,
+            composerToUse = ComposerToUse.Gap,
         ) {
             RestartGroup {
                 MarkAsTarget()
@@ -292,19 +328,13 @@ class LiveEditTests {
                 recomposeCount++
 
                 // remembers as usual
-                Expect(
-                    "a",
-                    compose = 2,
-                    onRememberd = 2,
-                    onForgotten = 1,
-                    onAbandoned = 0,
-                )
+                Expect("a", compose = 2, onRememberd = 2, onForgotten = 1, onAbandoned = 0)
 
                 remember {
                     object : RememberObserver {
                         override fun onRemembered() {
                             if (recomposeCount == 2) {
-                                error("throwOnRemember")
+                                testError("throwOnRemember")
                             }
                         }
 
@@ -328,12 +358,58 @@ class LiveEditTests {
     }
 
     @Test
-    fun testThrowing_invalidationsCarriedAfterCrash() {
+    fun testThrowing_recomposition_remembered_Link() {
+        var recomposeCount = 0
+        liveEditTest(
+            collectSourceInformation = SourceInfo.None,
+            composerToUse = ComposerToUse.Link,
+        ) {
+            RestartGroup {
+                MarkAsTarget()
+
+                // The error is not recoverable, so reload doesn't fix the error
+                expectError("throwOnRemember", 1)
+
+                recomposeCount++
+
+                // remembers as usual
+                Expect("a", compose = 2, onRememberd = 2, onForgotten = 1, onAbandoned = 0)
+
+                remember {
+                    object : RememberObserver {
+                        override fun onRemembered() {
+                            if (recomposeCount == 2) {
+                                testError("throwOnRemember")
+                            }
+                        }
+
+                        override fun onForgotten() {}
+
+                        override fun onAbandoned() {}
+                    }
+                }
+
+                // The rest of remembers fail
+                Expect(
+                    "b",
+                    compose = 2,
+                    onRememberd = 1,
+                    // todo: ensure forgotten is not dispatched for abandons?
+                    onForgotten = 1,
+                    onAbandoned = 1,
+                )
+            }
+        }
+    }
+
+    @Test
+    fun testThrowing_invalidationsCarriedAfterCrash_Gap() {
         var recomposeCount = 0
         val state = mutableStateOf(0)
         liveEditTest(
             reloadCount = 2,
             collectSourceInformation = SourceInfo.None,
+            composerToUse = ComposerToUse.Gap,
         ) {
             RestartGroup {
                 RestartGroup {
@@ -349,7 +425,45 @@ class LiveEditTests {
 
                     if (recomposeCount++ == 1) {
                         // crash after first reload
-                        error("throwInComposition")
+                        testError("throwInComposition")
+                    }
+                }
+            }
+
+            RestartGroup {
+                // read state
+                state.value
+
+                // composed initially + invalidated by crashed composition
+                Expect("state", compose = 2, onRememberd = 1, onForgotten = 0, onAbandoned = 0)
+            }
+        }
+    }
+
+    @Test
+    fun testThrowing_invalidationsCarriedAfterCrash_Link() {
+        var recomposeCount = 0
+        val state = mutableStateOf(0)
+        liveEditTest(
+            reloadCount = 2,
+            collectSourceInformation = SourceInfo.None,
+            composerToUse = ComposerToUse.Link,
+        ) {
+            RestartGroup {
+                RestartGroup {
+                    MarkAsTarget()
+
+                    // Only error the first time
+                    expectError("throwInComposition", 1)
+
+                    if (recomposeCount == 0) {
+                        // invalidate sibling group below in first composition
+                        state.value += 1
+                    }
+
+                    if (recomposeCount++ == 1) {
+                        // crash after first reload
+                        testError("throwInComposition")
                     }
                 }
             }
@@ -372,19 +486,21 @@ class LiveEditTests {
 
                 expectError("throwInMovableContent", 2)
 
-                val content = remember { movableContentOf { error("throwInMovableContent") } }
+                val content = remember { movableContentOf { testError("throwInMovableContent") } }
 
                 content()
             }
         }
     }
 
+    @OptIn(ExperimentalComposeApi::class)
     @Test
-    fun testThrowing_movableContent_recomposition() {
+    fun testThrowing_movableContent_recomposition_Gap() {
         var recomposeCount = 0
         liveEditTest(
             reloadCount = 2,
             collectSourceInformation = SourceInfo.None,
+            composerToUse = ComposerToUse.Gap,
         ) {
             RestartGroup {
                 MarkAsTarget()
@@ -398,11 +514,48 @@ class LiveEditTests {
                             compose = 3,
                             onRememberd = 2,
                             onForgotten = 1,
-                            onAbandoned = 1
+                            onAbandoned = 1,
                         )
 
                         if (recomposeCount == 1) {
-                            error("throwInMovableContent")
+                            testError("throwInMovableContent")
+                        }
+                    }
+                }
+
+                content()
+
+                recomposeCount++
+            }
+        }
+    }
+
+    @OptIn(ExperimentalComposeApi::class)
+    @Test
+    fun testThrowing_movableContent_recomposition_Link() {
+        var recomposeCount = 0
+        liveEditTest(
+            reloadCount = 2,
+            collectSourceInformation = SourceInfo.None,
+            composerToUse = ComposerToUse.Link,
+        ) {
+            RestartGroup {
+                MarkAsTarget()
+
+                expectError("throwInMovableContent", 1)
+
+                val content = remember {
+                    movableContentOf {
+                        Expect(
+                            "movable",
+                            compose = 3,
+                            onRememberd = 2,
+                            onForgotten = 1,
+                            onAbandoned = 1,
+                        )
+
+                        if (recomposeCount == 1) {
+                            testError("throwInMovableContent")
                         }
                     }
                 }
@@ -415,11 +568,12 @@ class LiveEditTests {
     }
 
     @Test
-    fun testThrowing_movableContent_throwAfterMove() {
+    fun testThrowing_movableContent_throwAfterMove_Gap() {
         var recomposeCount = 0
         liveEditTest(
             reloadCount = 2,
             collectSourceInformation = SourceInfo.None,
+            composerToUse = ComposerToUse.Gap,
         ) {
             expectError("throwInMovableContent", 1)
 
@@ -431,11 +585,11 @@ class LiveEditTests {
                         compose = 2,
                         onRememberd = 1,
                         onForgotten = 0,
-                        onAbandoned = 1
+                        onAbandoned = 1,
                     )
 
                     if (recomposeCount == 1) {
-                        error("throwInMovableContent")
+                        testError("throwInMovableContent")
                     }
                 }
             }
@@ -459,7 +613,52 @@ class LiveEditTests {
     }
 
     @Test
-    fun testThrowing_inSubcomposition() {
+    fun testThrowing_movableContent_throwAfterMove_Link() {
+        var recomposeCount = 0
+        liveEditTest(
+            reloadCount = 2,
+            collectSourceInformation = SourceInfo.None,
+            composerToUse = ComposerToUse.Link,
+        ) {
+            expectError("throwInMovableContent", 1)
+
+            val content = remember {
+                movableContentOf {
+                    recomposeCount++
+                    Expect(
+                        "movable",
+                        compose = 2,
+                        onRememberd = 1,
+                        onForgotten = 0,
+                        onAbandoned = 1,
+                    )
+
+                    if (recomposeCount == 1) {
+                        testError("throwInMovableContent")
+                    }
+                }
+            }
+
+            RestartGroup {
+                MarkAsTarget()
+
+                if (recomposeCount == 0) {
+                    content()
+                }
+            }
+
+            RestartGroup {
+                MarkAsTarget()
+
+                if (recomposeCount > 0) {
+                    content()
+                }
+            }
+        }
+    }
+
+    @Test
+    fun testThrowing_inSubcomposition_Gap() {
         /*
          * This test verifies that crashing one subcomposition does not affect future invalidation
          * of others.
@@ -480,11 +679,15 @@ class LiveEditTests {
                 MarkAsTarget()
                 remember { Any() }
                 if (recomposeCount == 2) {
-                    throw IllegalArgumentException("throwInSubcompose")
+                    testError("throwInSubcompose")
                 }
             }
 
-        liveEditTest(reloadCount = 2, collectSourceInformation = SourceInfo.None) {
+        liveEditTest(
+            reloadCount = 2,
+            collectSourceInformation = SourceInfo.None,
+            composerToUse = ComposerToUse.Gap,
+        ) {
             expectError("throwInSubcompose", 1)
 
             RestartGroup {
@@ -492,8 +695,101 @@ class LiveEditTests {
                 recomposeCount++
             }
 
-            Subcompose { content() }
-            Subcompose { crashyContent() }
+            subcompose { content() }
+            subcompose { crashyContent() }
+        }
+    }
+
+    @Test
+    fun testThrowing_inSubcomposition_Link() {
+        /*
+         * This test verifies that crashing one subcomposition does not affect future invalidation
+         * of others.
+         * We reload two times, invalidating main composition and each subcomposition scopes.
+         * Second subcomposition crashes on reload (recomposeCount == 2), resulting in unapplied
+         * changes. After we reload, we should successfully compose all compositions, as applied
+         * changes were cleared after recompose loop has exited prematurely.
+         */
+
+        var recomposeCount = 0
+        val content: @Composable LiveEditTestScope.() -> Unit =
+            @Composable {
+                MarkAsTarget()
+                remember { Any() }
+            }
+        val crashyContent: @Composable LiveEditTestScope.() -> Unit =
+            @Composable {
+                MarkAsTarget()
+                remember { Any() }
+                if (recomposeCount == 2) {
+                    testError("throwInSubcompose")
+                }
+            }
+
+        liveEditTest(
+            reloadCount = 2,
+            collectSourceInformation = SourceInfo.None,
+            composerToUse = ComposerToUse.Link,
+        ) {
+            expectError("throwInSubcompose", 1)
+
+            RestartGroup {
+                MarkAsTarget()
+                recomposeCount++
+            }
+
+            subcompose { content() }
+            subcompose { crashyContent() }
+        }
+    }
+
+    @Test
+    fun testThrowing_removeNode_Gap() {
+        var recomposeCount = 0
+        liveEditTest(
+            reloadCount = 2,
+            collectSourceInformation = SourceInfo.None,
+            composerToUse = ComposerToUse.Gap,
+        ) {
+            expectError("test error", 1)
+
+            Linear {
+                RestartGroup {
+                    MarkAsTarget()
+                    recomposeCount++
+
+                    if (recomposeCount == 2) {
+                        testError("test error")
+                    }
+
+                    Text("test")
+                }
+            }
+        }
+    }
+
+    @Test
+    fun testThrowing_removeNode_Link() {
+        var recomposeCount = 0
+        liveEditTest(
+            reloadCount = 2,
+            collectSourceInformation = SourceInfo.None,
+            composerToUse = ComposerToUse.Link,
+        ) {
+            expectError("test error", 1)
+
+            Linear {
+                RestartGroup {
+                    MarkAsTarget()
+                    recomposeCount++
+
+                    if (recomposeCount == 2) {
+                        testError("test error")
+                    }
+
+                    Text("test")
+                }
+            }
         }
     }
 }
@@ -501,37 +797,19 @@ class LiveEditTests {
 @Composable
 @NonRestartableComposable
 fun LiveEditTestScope.EnsureStatePreservedButRecomposed(ref: String) {
-    Expect(
-        ref,
-        compose = 2,
-        onRememberd = 1,
-        onForgotten = 0,
-        onAbandoned = 0,
-    )
+    Expect(ref, compose = 2, onRememberd = 1, onForgotten = 0, onAbandoned = 0)
 }
 
 @Composable
 @NonRestartableComposable
 fun LiveEditTestScope.EnsureStatePreservedAndNotRecomposed(ref: String) {
-    Expect(
-        ref,
-        compose = 1,
-        onRememberd = 1,
-        onForgotten = 0,
-        onAbandoned = 0,
-    )
+    Expect(ref, compose = 1, onRememberd = 1, onForgotten = 0, onAbandoned = 0)
 }
 
 @Composable
 @NonRestartableComposable
 fun LiveEditTestScope.EnsureStateLost(ref: String) {
-    Expect(
-        ref,
-        compose = 2,
-        onRememberd = 2,
-        onForgotten = 1,
-        onAbandoned = 0,
-    )
+    Expect(ref, compose = 2, onRememberd = 2, onForgotten = 1, onAbandoned = 0)
 }
 
 @Composable
@@ -569,35 +847,23 @@ fun LiveEditTestScope.Expect(
 fun LiveEditTestScope.Target(
     ref: String,
     restartable: Boolean = true,
-    content: @Composable () -> Unit = {}
+    content: @Composable () -> Unit = {},
 ) {
     if (restartable) currentRecomposeScope
     MarkAsTarget()
-    Expect(
-        ref,
-        compose = 2,
-        onRememberd = 2,
-        onForgotten = 1,
-        onAbandoned = 0,
-    )
+    Expect(ref, compose = 2, onRememberd = 2, onForgotten = 1, onAbandoned = 0)
     content()
 }
 
 @Composable
 fun LiveEditTestScope.InlineTarget(ref: String, content: @Composable () -> Unit = {}) {
     MarkAsTarget()
-    Expect(
-        ref,
-        compose = 2,
-        onRememberd = 2,
-        onForgotten = 1,
-        onAbandoned = 0,
-    )
+    Expect(ref, compose = 2, onRememberd = 2, onForgotten = 1, onAbandoned = 0)
     content()
 }
 
 @Composable
-fun LiveEditTestScope.Subcompose(content: @Composable () -> Unit): Composition {
+fun LiveEditTestScope.subcompose(content: @Composable () -> Unit): Composition {
     val context = rememberCompositionContext()
     return remember(context) {
         Composition(ViewApplier(View()), context).apply { setContent(content) }
@@ -607,7 +873,7 @@ fun LiveEditTestScope.Subcompose(content: @Composable () -> Unit): Composition {
 @Composable
 @ExplicitGroupsComposable
 fun LiveEditTestScope.MarkAsTarget() {
-    addTargetKey((currentComposer as ComposerImpl).parentKey())
+    addTargetKey((currentComposer as InternalComposer).parentKey())
 }
 
 enum class SourceInfo {
@@ -616,17 +882,22 @@ enum class SourceInfo {
     Both,
 }
 
+// This test only runs on (non-emulator) JVM tests. We can ignore the runTest return result
+// requirement. If moving this test into a source set that's shared with JS/WASM, remove this
+// suppression and fix the errors.
+@Suppress("KotlinRunTestResultUnused")
 @OptIn(InternalComposeApi::class)
 fun liveEditTest(
     reloadCount: Int = 1,
     collectSourceInformation: SourceInfo = SourceInfo.Both,
+    composerToUse: ComposerToUse = ComposerToUse.Both,
     fn: @Composable LiveEditTestScope.() -> Unit,
 ) {
     if (
         collectSourceInformation == SourceInfo.Both ||
             collectSourceInformation == SourceInfo.Collect
     ) {
-        compositionTest {
+        compositionTest(composerToUse) {
             with(LiveEditTestScope()) {
                 addCheck { (composition as? ControlledComposition)?.verifyConsistent() }
 
@@ -650,7 +921,7 @@ fun liveEditTest(
     if (
         collectSourceInformation == SourceInfo.Both || collectSourceInformation == SourceInfo.None
     ) {
-        compositionTest {
+        compositionTest(composerToUse) {
             with(LiveEditTestScope()) {
                 addCheck { (composition as? ControlledComposition)?.verifyConsistent() }
 
@@ -671,31 +942,31 @@ fun liveEditTest(
 private inline fun LiveEditTestScope.recordErrors(block: () -> Unit) {
     try {
         block()
-    } catch (e: ComposeRuntimeError) {
-        throw e
-    } catch (e: Exception) {
+    } catch (e: TestException) {
         addError(e)
     }
     getCurrentCompositionErrors().forEach { addError(it.first) }
 }
 
+fun testError(message: String) {
+    throw TestException(message)
+}
+
+class TestException(message: String) : RuntimeException(message)
+
 @Stable
 class LiveEditTestScope {
-    private val targetKeys = mutableSetOf<Int>()
+    private val targetKeys = mutableIntSetOf()
     private val checks = mutableListOf<() -> Unit>()
     private val errors = mutableSetOf<Throwable>()
     private val logs = mutableListOf<Pair<String, String>>()
 
     fun invalidateTargets() {
-        for (key in targetKeys) {
-            invalidateGroupsWithKey(key)
-        }
+        targetKeys.forEach { key -> invalidateGroupsWithKey(key) }
     }
 
     fun runChecks() {
-        for (check in checks) {
-            check()
-        }
+        checks.fastForEach { check -> check() }
     }
 
     fun addTargetKey(key: Int) {

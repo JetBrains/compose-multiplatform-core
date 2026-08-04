@@ -27,7 +27,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
@@ -45,27 +44,25 @@ import androidx.compose.ui.util.fastForEach
  * @param label An optional label to differentiate from other animations in Android Studio.
  * @param content A mapping from a given state to the content corresponding to that state.
  */
-@OptIn(ExperimentalAnimationApi::class)
 @Composable
 public fun <T> Crossfade(
     targetState: T,
     modifier: Modifier = Modifier,
     animationSpec: FiniteAnimationSpec<Float> = tween(),
     label: String = "Crossfade",
-    content: @Composable (T) -> Unit
+    content: @Composable (T) -> Unit,
 ) {
     val transition = updateTransition(targetState, label)
     transition.Crossfade(modifier, animationSpec, content = content)
 }
 
 @Deprecated("Crossfade API now has a new label parameter added.", level = DeprecationLevel.HIDDEN)
-@OptIn(ExperimentalAnimationApi::class)
 @Composable
 public fun <T> Crossfade(
     targetState: T,
     modifier: Modifier = Modifier,
     animationSpec: FiniteAnimationSpec<Float> = tween(),
-    content: @Composable (T) -> Unit
+    content: @Composable (T) -> Unit,
 ) {
     val transition = updateTransition(targetState)
     transition.Crossfade(modifier, animationSpec, content = content)
@@ -93,16 +90,16 @@ public fun <T> Crossfade(
  * @param contentKey A mapping from a given state to an object of [Any].
  * @param content A mapping from a given state to the content corresponding to that state.
  */
-@ExperimentalAnimationApi
 @Composable
 public fun <T> Transition<T>.Crossfade(
     modifier: Modifier = Modifier,
     animationSpec: FiniteAnimationSpec<Float> = tween(),
     contentKey: (targetState: T) -> Any? = { it },
-    content: @Composable (targetState: T) -> Unit
+    content: @Composable (targetState: T) -> Unit,
 ) {
-    val currentlyVisible = remember { mutableStateListOf<T>().apply { add(currentState) } }
+    val currentlyVisible = remember { mutableListOf(currentState) }
     val contentMap = remember { mutableScatterMapOf<T, @Composable () -> Unit>() }
+    val targetState = targetState
     if (currentState == targetState) {
         // If not animating, just display the current state
         if (currentlyVisible.size != 1 || currentlyVisible[0] != targetState) {

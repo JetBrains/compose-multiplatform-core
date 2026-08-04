@@ -35,7 +35,7 @@ import androidx.compose.ui.unit.Constraints
  */
 @Composable
 @NonRestartableComposable
-fun Spacer(modifier: Modifier) {
+public fun Spacer(modifier: Modifier) {
     Layout(measurePolicy = SpacerMeasurePolicy, modifier = modifier)
 }
 
@@ -43,7 +43,7 @@ private object SpacerMeasurePolicy : MeasurePolicy {
 
     override fun MeasureScope.measure(
         measurables: List<Measurable>,
-        constraints: Constraints
+        constraints: Constraints,
     ): MeasureResult {
         return with(constraints) {
             val width = if (hasFixedWidth) maxWidth else 0

@@ -23,7 +23,6 @@ import static android.text.TextUtils.isEmpty;
 import static androidx.work.ListenableFutureKt.executeAsync;
 import static androidx.work.impl.UnfinishedWorkListenerKt.maybeLaunchUnfinishedWorkListener;
 import static androidx.work.impl.WorkManagerImplExtKt.createWorkManager;
-import static androidx.work.impl.WorkManagerImplExtKt.createWorkManagerScope;
 import static androidx.work.impl.WorkerUpdater.enqueueUniquelyNamedPeriodic;
 import static androidx.work.impl.foreground.SystemForegroundDispatcher.createCancelWorkIntent;
 import static androidx.work.impl.model.RawWorkInfoDaoKt.getWorkInfoPojosFlow;
@@ -87,6 +86,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
+
 /**
  * A concrete implementation of {@link WorkManager}.
  */
@@ -94,8 +94,7 @@ import java.util.UUID;
 public class WorkManagerImpl extends WorkManager {
 
     private static final String TAG = Logger.tagWithPrefix("WorkManagerImpl");
-    public static final int MAX_PRE_JOB_SCHEDULER_API_LEVEL = 22;
-    public static final int MIN_JOB_SCHEDULER_API_LEVEL = 23;
+
     public static final int CONTENT_URI_TRIGGER_API_LEVEL = 24;
     public static final String REMOTE_WORK_MANAGER_CLIENT =
             "androidx.work.multiprocess.RemoteWorkManagerClient";
@@ -253,7 +252,7 @@ public class WorkManagerImpl extends WorkManager {
         mTrackers = trackers;
         mConfiguration = configuration;
         mSchedulers = schedulers;
-        mWorkManagerScope = createWorkManagerScope(mWorkTaskExecutor);
+        mWorkManagerScope = mWorkTaskExecutor.getCoroutineScope();
         mPreferenceUtils = new PreferenceUtils(mWorkDatabase);
         Schedulers.registerRescheduling(schedulers, mProcessor,
                 workTaskExecutor.getSerialTaskExecutor(), mWorkDatabase, configuration);
@@ -619,10 +618,7 @@ public class WorkManagerImpl extends WorkManager {
             // This gives us an easy way to clear persisted work state, and then reschedule work
             // that WorkManager is aware of. Ideally, we do something similar for other
             // persistent schedulers.
-            if (Build.VERSION.SDK_INT >= WorkManagerImpl.MIN_JOB_SCHEDULER_API_LEVEL) {
-                SystemJobScheduler.cancelAllInAllNamespaces(getApplicationContext());
-            }
-
+            SystemJobScheduler.cancelAllInAllNamespaces(getApplicationContext());
             // Reset scheduled state.
             getWorkDatabase().workSpecDao().resetScheduledState();
 
@@ -671,7 +667,7 @@ public class WorkManagerImpl extends WorkManager {
     }
 
     /**
-     * Cancels workmanager's scope and closes the database
+     * Cancels WorkManager Scope and closes the datastore.
      */
     public void closeDatabase() {
         WorkManagerImplExtKt.close(this);

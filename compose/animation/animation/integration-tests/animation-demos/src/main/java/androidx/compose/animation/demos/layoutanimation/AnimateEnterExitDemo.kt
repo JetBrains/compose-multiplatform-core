@@ -19,7 +19,6 @@ package androidx.compose.animation.demos.layoutanimation
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.EnterExitState
 import androidx.compose.animation.ExitTransition
-import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloat
@@ -68,7 +67,6 @@ import androidx.compose.ui.unit.dp
  * - Modifier.animateEnterExit
  */
 @Preview
-@OptIn(ExperimentalAnimationApi::class)
 @Composable
 fun AnimateEnterExitDemo() {
     Box {
@@ -86,7 +84,7 @@ fun AnimateEnterExitDemo() {
                 visibleState = mainContentVisible,
                 modifier = Modifier.fillMaxSize(),
                 enter = fadeIn(),
-                exit = fadeOut()
+                exit = fadeOut(),
             ) {
                 Box {
                     Column(Modifier.fillMaxSize()) {
@@ -115,12 +113,12 @@ fun AnimateEnterExitDemo() {
                                         enter =
                                             slideInVertically(
                                                 initialOffsetY = { it },
-                                                animationSpec = staggeredSpring
+                                                animationSpec = staggeredSpring,
                                             ),
                                         // No built-in exit transition will be applied. It'll be
                                         // faded out by parent AnimatedVisibility while scaling down
                                         // by the scale animation.
-                                        exit = ExitTransition.None
+                                        exit = ExitTransition.None,
                                     )
                                     .fillMaxWidth()
                                     .padding(5.dp)
@@ -137,7 +135,7 @@ fun AnimateEnterExitDemo() {
                     FloatingActionButton(
                         onClick = {},
                         modifier = Modifier.align(Alignment.BottomEnd).padding(20.dp),
-                        backgroundColor = MaterialTheme.colors.primary
+                        backgroundColor = MaterialTheme.colors.primary,
                     ) {
                         Icon(Icons.Default.Favorite, contentDescription = null)
                     }

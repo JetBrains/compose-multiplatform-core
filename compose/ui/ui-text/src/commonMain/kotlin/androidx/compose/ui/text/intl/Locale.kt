@@ -27,17 +27,14 @@ import androidx.compose.ui.text.TextStyle
  * operation— the number should be formatted according to the customs and conventions of the user's
  * native country, region, or culture.
  *
- * @param platformLocale Platform specific Locale object that provides the actual values for the
- *   members of this class.
  * @see TextStyle
  * @see SpanStyle
  */
 @Immutable
-class Locale internal constructor(val platformLocale: PlatformLocale) {
-    companion object {
+public expect class Locale {
+    public companion object {
         /** Returns a [Locale] object which represents current locale */
-        val current: Locale
-            get() = platformLocaleDelegate.current[0]
+        public val current: Locale
     }
 
     /**
@@ -46,36 +43,27 @@ class Locale internal constructor(val platformLocale: PlatformLocale) {
      * @param languageTag A [IETF BCP47](https://tools.ietf.org/html/bcp47) compliant language tag.
      * @return a locale object
      */
-    constructor(languageTag: String) : this(platformLocaleDelegate.parseLanguageTag(languageTag))
+    public constructor(languageTag: String)
 
     /** The ISO 639 compliant language code. */
-    val language: String
-        get() = platformLocale.language
+    public val language: String
 
     /** The ISO 15924 compliant 4-letter script code. */
-    val script: String
-        get() = platformLocale.script
+    public val script: String
 
     /** The ISO 3166 compliant region code. */
-    val region: String
-        get() = platformLocale.region
+    public val region: String
 
     /**
      * Returns a IETF BCP47 compliant language tag representation of this Locale.
      *
      * @return A IETF BCP47 compliant language tag.
      */
-    fun toLanguageTag(): String = platformLocale.getLanguageTag()
+    public fun toLanguageTag(): String
 
-    override fun equals(other: Any?): Boolean {
-        if (other == null) return false
-        if (other !is Locale) return false
-        if (this === other) return true
-        return toLanguageTag() == other.toLanguageTag()
-    }
+    public override fun equals(other: Any?): Boolean
 
-    // We don't use data class since we cannot offer copy function here.
-    override fun hashCode(): Int = toLanguageTag().hashCode()
+    public override fun hashCode(): Int
 
-    override fun toString(): String = toLanguageTag()
+    public override fun toString(): String
 }

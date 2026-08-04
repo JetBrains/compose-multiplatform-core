@@ -21,7 +21,7 @@ import androidx.annotation.Sampled
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.magnifier
-import androidx.compose.material.Text
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -54,7 +54,7 @@ fun MagnifierSample() {
                         onDrag = { _, delta -> magnifierCenter += delta },
                         // Hide the magnifier when the finger lifts.
                         onDragEnd = { magnifierCenter = Offset.Unspecified },
-                        onDragCancel = { magnifierCenter = Offset.Unspecified }
+                        onDragCancel = { magnifierCenter = Offset.Unspecified },
                     )
                 }
                 .drawBehind {

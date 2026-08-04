@@ -17,17 +17,14 @@
 package androidx.compose.foundation.text.selection
 
 import androidx.compose.foundation.PlatformMagnifierFactory
-import androidx.compose.foundation.contextmenu.ContextMenuScope
-import androidx.compose.foundation.contextmenu.ContextMenuState
 import androidx.compose.foundation.isPlatformMagnifierSupported
 import androidx.compose.foundation.magnifier
 import androidx.compose.foundation.text.KeyCommand
 import androidx.compose.foundation.text.TextContextMenuItems
 import androidx.compose.foundation.text.TextContextMenuItems.Copy
 import androidx.compose.foundation.text.TextContextMenuItems.SelectAll
-import androidx.compose.foundation.text.TextItem
 import androidx.compose.foundation.text.contextmenu.builder.TextContextMenuBuilderScope
-import androidx.compose.foundation.text.contextmenu.modifier.addTextContextMenuComponentsWithResources
+import androidx.compose.foundation.text.contextmenu.modifier.addTextContextMenuComponentsWithContext
 import androidx.compose.foundation.text.platformDefaultKeyMapping
 import androidx.compose.foundation.text.textItem
 import androidx.compose.runtime.getValue
@@ -66,51 +63,52 @@ internal actual fun Modifier.selectionMagnifier(manager: SelectionManager): Modi
                             }
                     },
                     useTextDefault = true,
-                    platformMagnifierFactory = PlatformMagnifierFactory.getForCurrentPlatform()
+                    platformMagnifierFactory = PlatformMagnifierFactory.getForCurrentPlatform(),
                 )
-            }
+            },
         )
     }
 }
 
-internal fun SelectionManager.contextMenuBuilder(
-    state: ContextMenuState,
-): ContextMenuScope.() -> Unit = {
-    fun selectionItem(label: TextContextMenuItems, enabled: Boolean, operation: () -> Unit) {
-        TextItem(state, label, enabled, operation)
-    }
-
-    listOf(
-        selectionItem(Copy, enabled = isNonEmptySelection()) { copy() },
-        selectionItem(SelectAll, enabled = !isEntireContainerSelected()) { selectAll() },
-    )
-}
-
 internal actual fun Modifier.addSelectionContainerTextContextMenuComponents(
-    selectionManager: SelectionManager,
-): Modifier = addTextContextMenuComponentsWithResources { resources ->
+    selectionManager: SelectionManager
+): Modifier = addTextContextMenuComponentsWithContext { context ->
     fun TextContextMenuBuilderScope.selectionContainerItem(
         item: TextContextMenuItems,
         enabled: Boolean,
         closePredicate: (() -> Boolean)? = null,
-        onClick: () -> Unit
+        onClick: () -> Unit,
     ) {
-        textItem(resources, item, enabled) {
+        textItem(context.resources, item, enabled) {
             onClick()
             if (closePredicate?.invoke() ?: true) close()
         }
     }
 
-    with(selectionManager) {
-        separator()
-        selectionContainerItem(Copy, enabled = isNonEmptySelection()) { copy() }
-        selectionContainerItem(
-            item = SelectAll,
-            enabled = !isEntireContainerSelected(),
-            closePredicate = { !showToolbar || !isInTouchMode },
-        ) {
-            selectAll()
+    val textAndSelection = selectionManager.getContextTextAndSelection()
+    addPlatformTextContextMenuItems(
+        context = context,
+        editable = false,
+        text = textAndSelection?.first,
+        selection = textAndSelection?.second,
+        platformSelectionBehaviors = selectionManager.platformSelectionBehaviors,
+    ) {
+        with(selectionManager) {
+            separator()
+            selectionContainerItem(Copy, enabled = isNonEmptySelection()) {
+                copy()
+                if (isInTouchMode) {
+                    onRelease()
+                }
+            }
+            selectionContainerItem(
+                item = SelectAll,
+                enabled = !isEntireContainerSelected(),
+                closePredicate = { !showToolbar || !isInTouchMode },
+            ) {
+                selectAll()
+            }
+            separator()
         }
-        separator()
     }
 }

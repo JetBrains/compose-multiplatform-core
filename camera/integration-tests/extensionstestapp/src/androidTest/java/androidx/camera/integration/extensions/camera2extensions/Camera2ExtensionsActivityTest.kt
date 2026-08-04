@@ -33,6 +33,8 @@ import androidx.camera.integration.extensions.utils.Camera2ExtensionsUtil.isCame
 import androidx.camera.integration.extensions.utils.CameraIdExtensionModePair
 import androidx.camera.testing.impl.CameraUtil
 import androidx.camera.testing.impl.CoreAppTestUtil
+import androidx.camera.testing.impl.ExtensionsUtil.assumePcsSupportedForImageCapture
+import androidx.camera.testing.impl.RequireForegroundRule
 import androidx.camera.testing.impl.StressTestRule
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
@@ -41,12 +43,8 @@ import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
-import androidx.test.uiautomator.UiDevice
 import androidx.testutils.withActivity
-import org.junit.After
-import org.junit.Assume
 import org.junit.Assume.assumeTrue
-import org.junit.Before
 import org.junit.ClassRule
 import org.junit.Rule
 import org.junit.Test
@@ -58,7 +56,12 @@ import org.junit.runners.Parameterized
 @RunWith(Parameterized::class)
 @SdkSuppress(minSdkVersion = 31)
 class Camera2ExtensionsActivityTest(private val config: CameraIdExtensionModePair) {
-    private val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
+    @get:Rule
+    val requireForegroundRule = RequireForegroundRule {
+        assumeTrue(CameraUtil.deviceHasCamera())
+        assumeTrue(CameraXExtensionsTestUtil.isTargetDeviceAvailableForExtensions())
+        assumeTrue(isCamera2ExtensionModeSupported(context, config.cameraId, config.extensionMode))
+    }
 
     @get:Rule
     val useCamera =
@@ -68,29 +71,6 @@ class Camera2ExtensionsActivityTest(private val config: CameraIdExtensionModePai
 
     @get:Rule
     val permissionRule = GrantPermissionRule.grant(Manifest.permission.WRITE_EXTERNAL_STORAGE)
-
-    @Before
-    fun setup() {
-        Assume.assumeTrue(CameraUtil.deviceHasCamera())
-        assumeTrue(CameraXExtensionsTestUtil.isTargetDeviceAvailableForExtensions())
-        assumeTrue(isCamera2ExtensionModeSupported(context, config.cameraId, config.extensionMode))
-        // Clears the device UI and check if there is no dialog or lock screen on the top of the
-        // window before start the test.
-        CoreAppTestUtil.prepareDeviceUI(InstrumentationRegistry.getInstrumentation())
-        // Uses the natural orientation throughout these tests to ensure the activity isn't
-        // recreated unexpectedly. This will also freeze the sensors until
-        // mDevice.unfreezeRotation() in the tearDown() method. Any simulated rotations will be
-        // explicitly initiated from within the test.
-        device.setOrientationNatural()
-    }
-
-    @After
-    fun tearDown() {
-        // Unfreezes rotation so the device can choose the orientation via its own policy. Be nice
-        // to other tests :)
-        device.unfreezeRotation()
-        device.pressHome()
-    }
 
     companion object {
         val context = ApplicationProvider.getApplicationContext<Context>()
@@ -115,6 +95,7 @@ class Camera2ExtensionsActivityTest(private val config: CameraIdExtensionModePai
 
     @Test
     fun canCaptureSingleImage() {
+        assumePcsSupportedForImageCapture(context)
         val activityScenario =
             launchCamera2ExtensionsActivityAndWaitForCaptureSessionConfigured(config)
         with(activityScenario) { // Launches activity
@@ -145,6 +126,7 @@ class Camera2ExtensionsActivityTest(private val config: CameraIdExtensionModePai
 
     @Test
     fun canCaptureImage_afterPauseResume() {
+        assumePcsSupportedForImageCapture(context)
         val activityScenario =
             launchCamera2ExtensionsActivityAndWaitForCaptureSessionConfigured(config)
         with(activityScenario) { // Launches activity
@@ -172,12 +154,13 @@ class Camera2ExtensionsActivityTest(private val config: CameraIdExtensionModePai
         CoreAppTestUtil.launchAutoClosedForegroundActivity(
             context,
             InstrumentationRegistry.getInstrumentation(),
-            countingIdlingResource
+            countingIdlingResource,
         )
     }
 
     @Test
     fun canCaptureMultipleImages() {
+        assumePcsSupportedForImageCapture(context)
         val activityScenario =
             launchCamera2ExtensionsActivityAndWaitForCaptureSessionConfigured(config)
         with(activityScenario) { // Launches activity

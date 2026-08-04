@@ -43,8 +43,7 @@ sealed class Demo(val title: String, val description: String? = null) {
  * @property activityClass the KClass (Foo::class) of the activity that will be launched when this
  *   demo is selected.
  */
-class ActivityDemo<T : ComponentActivity>(title: String, val activityClass: KClass<T>) :
-    Demo(title)
+class ActivityDemo<T : ComponentActivity>(title: String, val activityClass: KClass<T>) : Demo(title)
 
 /** A category of [Demo]s, that will display a list of [demos] when selected. */
 open class DemoCategory(title: String, val demos: List<Demo>) : Demo(title) {
@@ -66,7 +65,7 @@ class Material3DemoCategory(title: String, demos: List<Demo>) : DemoCategory(tit
 /** Parameters which are used by [Demo] screens. */
 class DemoParameters(
     val navigateBack: () -> Unit,
-    val swipeToDismissBoxState: SwipeToDismissBoxState
+    val swipeToDismissBoxState: SwipeToDismissBoxState,
 )
 
 /**
@@ -85,6 +84,6 @@ fun Centralize(modifier: Modifier = Modifier, content: @Composable ColumnScope.(
         modifier = modifier.fillMaxSize(),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
-        content = content
+        content = content,
     )
 }

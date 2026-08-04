@@ -26,13 +26,12 @@ import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ElevatedToggleButton
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.FilledTonalToggleButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedToggleButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.ToggleButton
 import androidx.compose.material3.ToggleButtonDefaults
-import androidx.compose.material3.ToggleButtonShapes
-import androidx.compose.material3.TonalToggleButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -41,7 +40,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Preview
 @Sampled
 @Composable
@@ -50,24 +48,6 @@ fun ToggleButtonSample() {
     ToggleButton(checked = checked, onCheckedChange = { checked = it }) { Text("Button") }
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
-@Preview
-@Sampled
-@Composable
-fun SquareToggleButtonSample() {
-    var checked by remember { mutableStateOf(false) }
-    val shapes =
-        ToggleButtonShapes(
-            shape = ToggleButtonDefaults.squareShape,
-            pressedShape = ToggleButtonDefaults.pressedShape,
-            checkedShape = ToggleButtonDefaults.roundShape
-        )
-    ToggleButton(checked = checked, onCheckedChange = { checked = it }, shapes = shapes) {
-        Text("Button")
-    }
-}
-
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Preview
 @Sampled
 @Composable
@@ -78,18 +58,16 @@ fun ElevatedToggleButtonSample() {
     }
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Preview
 @Sampled
 @Composable
-fun TonalToggleButtonSample() {
+fun FilledTonalToggleButtonSample() {
     var checked by remember { mutableStateOf(false) }
-    TonalToggleButton(checked = checked, onCheckedChange = { checked = it }) {
+    FilledTonalToggleButton(checked = checked, onCheckedChange = { checked = it }) {
         Text("Tonal Button")
     }
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Preview
 @Sampled
 @Composable
@@ -100,7 +78,6 @@ fun OutlinedToggleButtonSample() {
     }
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Preview
 @Sampled
 @Composable
@@ -110,7 +87,7 @@ fun ToggleButtonWithIconSample() {
         Icon(
             if (checked) Icons.Filled.Edit else Icons.Outlined.Edit,
             contentDescription = "Localized description",
-            modifier = Modifier.size(ButtonDefaults.IconSize)
+            modifier = Modifier.size(ButtonDefaults.IconSize),
         )
         Spacer(Modifier.size(ButtonDefaults.IconSpacing))
         Text("Edit")
@@ -129,12 +106,12 @@ fun XSmallToggleButtonWithIconSample() {
         onCheckedChange = { checked = it },
         modifier = Modifier.heightIn(size),
         shapes = ToggleButtonDefaults.shapesFor(size),
-        contentPadding = ButtonDefaults.contentPaddingFor(size)
+        contentPadding = ButtonDefaults.contentPaddingFor(size),
     ) {
         Icon(
             if (checked) Icons.Filled.Edit else Icons.Outlined.Edit,
             contentDescription = "Localized description",
-            modifier = Modifier.size(ButtonDefaults.iconSizeFor(size))
+            modifier = Modifier.size(ButtonDefaults.iconSizeFor(size)),
         )
         Spacer(Modifier.size(ButtonDefaults.iconSpacingFor(size)))
         Text("Label")
@@ -153,12 +130,12 @@ fun MediumToggleButtonWithIconSample() {
         onCheckedChange = { checked = it },
         modifier = Modifier.heightIn(size),
         shapes = ToggleButtonDefaults.shapesFor(size),
-        contentPadding = ButtonDefaults.contentPaddingFor(size)
+        contentPadding = ButtonDefaults.contentPaddingFor(size),
     ) {
         Icon(
             if (checked) Icons.Filled.Edit else Icons.Outlined.Edit,
             contentDescription = "Localized description",
-            modifier = Modifier.size(ButtonDefaults.iconSizeFor(size))
+            modifier = Modifier.size(ButtonDefaults.iconSizeFor(size)),
         )
         Spacer(Modifier.size(ButtonDefaults.iconSpacingFor(size)))
         Text("Label", style = ButtonDefaults.textStyleFor(size))
@@ -177,12 +154,12 @@ fun LargeToggleButtonWithIconSample() {
         onCheckedChange = { checked = it },
         modifier = Modifier.heightIn(size),
         shapes = ToggleButtonDefaults.shapesFor(size),
-        contentPadding = ButtonDefaults.contentPaddingFor(size)
+        contentPadding = ButtonDefaults.contentPaddingFor(size),
     ) {
         Icon(
             if (checked) Icons.Filled.Edit else Icons.Outlined.Edit,
             contentDescription = "Localized description",
-            modifier = Modifier.size(ButtonDefaults.iconSizeFor(size))
+            modifier = Modifier.size(ButtonDefaults.iconSizeFor(size)),
         )
         Spacer(Modifier.size(ButtonDefaults.iconSpacingFor(size)))
         Text("Label", style = ButtonDefaults.textStyleFor(size))
@@ -201,12 +178,12 @@ fun XLargeToggleButtonWithIconSample() {
         onCheckedChange = { checked = it },
         modifier = Modifier.heightIn(size),
         shapes = ToggleButtonDefaults.shapesFor(size),
-        contentPadding = ButtonDefaults.contentPaddingFor(size)
+        contentPadding = ButtonDefaults.contentPaddingFor(size),
     ) {
         Icon(
             if (checked) Icons.Filled.Edit else Icons.Outlined.Edit,
             contentDescription = "Localized description",
-            modifier = Modifier.size(ButtonDefaults.iconSizeFor(size))
+            modifier = Modifier.size(ButtonDefaults.iconSizeFor(size)),
         )
         Spacer(Modifier.size(ButtonDefaults.iconSpacingFor(size)))
         Text("Label", style = ButtonDefaults.textStyleFor(size))

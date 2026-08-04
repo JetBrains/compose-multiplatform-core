@@ -23,6 +23,7 @@ import androidx.compose.ui.graphics.Matrix
 import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.asAndroidPath
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.graphics.shapes.Cubic
@@ -30,6 +31,7 @@ import androidx.graphics.shapes.Feature
 import androidx.graphics.shapes.Morph
 import androidx.graphics.shapes.RoundedPolygon
 import androidx.graphics.shapes.TransformResult
+import androidx.graphics.shapes.toPath
 
 /**
  * Utility functions providing more idiomatic ways of transforming RoundedPolygons and transforming
@@ -70,10 +72,11 @@ fun RoundedPolygon.toPath(path: Path = Path()): Path {
  * @param path an optional [Path] object which, if supplied, will avoid the function having to
  *   create a new [Path] object
  */
-fun Morph.toPath(progress: Float, path: Path = Path()): Path {
-    pathFromCubics(path, asCubics(progress))
-    return path
-}
+fun Morph.toPath(progress: Float, path: Path = Path()) =
+    path.also {
+        // Mutate the internal Android's path.
+        toPath(progress, it.asAndroidPath())
+    }
 
 /**
  * Gets a [Path] representation for a [Feature] shape. This [Path] can be used to draw the feature.
@@ -107,7 +110,7 @@ private fun pathFromCubics(path: Path, cubics: List<Cubic>, closePath: Boolean =
             cubic.control1X,
             cubic.control1Y,
             cubic.anchor1X,
-            cubic.anchor1Y
+            cubic.anchor1Y,
         )
     }
     if (closePath) {
@@ -138,14 +141,14 @@ fun Morph.getBounds() = calculateBounds().let { Rect(it[0], it[1], it[2], it[3])
  */
 class RoundedPolygonShape(
     private val polygon: RoundedPolygon,
-    private var matrix: Matrix = Matrix()
+    private var matrix: Matrix = Matrix(),
 ) : Shape {
     private val path = Path()
 
     override fun createOutline(
         size: Size,
         layoutDirection: LayoutDirection,
-        density: Density
+        density: Density,
     ): Outline {
         path.rewind()
         polygon.toPath(path)
@@ -172,14 +175,14 @@ class RoundedPolygonShape(
 class MorphShape(
     private val morph: Morph,
     private val progress: Float,
-    private var matrix: Matrix = Matrix()
+    private var matrix: Matrix = Matrix(),
 ) : Shape {
     private val path = Path()
 
     override fun createOutline(
         size: Size,
         layoutDirection: LayoutDirection,
-        density: Density
+        density: Density,
     ): Outline {
         path.rewind()
         morph.toPath(progress, path)

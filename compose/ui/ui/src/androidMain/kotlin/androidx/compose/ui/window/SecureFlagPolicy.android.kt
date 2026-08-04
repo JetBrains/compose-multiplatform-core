@@ -19,7 +19,7 @@ package androidx.compose.ui.window
 import android.view.WindowManager
 
 /** Policy on setting [WindowManager.LayoutParams.FLAG_SECURE] on a window. */
-enum class SecureFlagPolicy {
+public enum class SecureFlagPolicy {
     /**
      * Inherit [WindowManager.LayoutParams.FLAG_SECURE] from the parent window and pass it on the
      * window that is using this policy.
@@ -35,7 +35,7 @@ enum class SecureFlagPolicy {
      * No [WindowManager.LayoutParams.FLAG_SECURE] will be set on the window that is using this
      * policy.
      */
-    SecureOff
+    SecureOff,
 }
 
 internal fun SecureFlagPolicy.shouldApplySecureFlag(isSecureFlagSetOnParent: Boolean): Boolean {

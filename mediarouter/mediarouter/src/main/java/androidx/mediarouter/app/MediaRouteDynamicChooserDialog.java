@@ -35,8 +35,6 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import androidx.annotation.CallSuper;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.appcompat.app.AppCompatDialog;
 import androidx.mediarouter.R;
@@ -44,6 +42,9 @@ import androidx.mediarouter.media.MediaRouteSelector;
 import androidx.mediarouter.media.MediaRouter;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -80,7 +81,7 @@ public class MediaRouteDynamicChooserDialog extends AppCompatDialog {
     private RecyclerView mRecyclerView;
     private boolean mAttachedToWindow;
     MediaRouter.RouteInfo mSelectingRoute;
-    private long mUpdateRoutesDelayMs;
+    private final long mUpdateRoutesDelayMs;
     private long mLastUpdateTime;
     @SuppressWarnings({"unchecked", "deprecation"})
     private final Handler mHandler = new Handler() {
@@ -115,8 +116,7 @@ public class MediaRouteDynamicChooserDialog extends AppCompatDialog {
      *
      * @return The selector, never null.
      */
-    @NonNull
-    public MediaRouteSelector getRouteSelector() {
+    public @NonNull MediaRouteSelector getRouteSelector() {
         return mSelector;
     }
 
@@ -169,7 +169,7 @@ public class MediaRouteDynamicChooserDialog extends AppCompatDialog {
      * @param route The route to consider, never null.
      * @return {@code true} if the route should be included in the device picker dialog.
      */
-    public boolean onFilterRoute(@NonNull MediaRouter.RouteInfo route) {
+    public boolean onFilterRoute(MediaRouter.@NonNull RouteInfo route) {
         return !route.isDefaultOrBluetooth() && route.isEnabled()
                 && route.matchesSelector(mSelector);
     }
@@ -183,12 +183,7 @@ public class MediaRouteDynamicChooserDialog extends AppCompatDialog {
 
         mRoutes = new ArrayList<>();
         mCloseButton = findViewById(R.id.mr_picker_close_button);
-        mCloseButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                dismiss();
-            }
-        });
+        mCloseButton.setOnClickListener(v -> dismiss());
 
         mAdapter = new RecyclerAdapter();
         mRecyclerView = findViewById(R.id.mr_picker_list);
@@ -261,25 +256,26 @@ public class MediaRouteDynamicChooserDialog extends AppCompatDialog {
         }
 
         @Override
-        public void onRouteAdded(@NonNull MediaRouter router, @NonNull MediaRouter.RouteInfo info) {
+        public void onRouteAdded(@NonNull MediaRouter router, MediaRouter.@NonNull RouteInfo info) {
             refreshRoutes();
         }
 
         @Override
         public void onRouteRemoved(@NonNull MediaRouter router,
-                @NonNull MediaRouter.RouteInfo info) {
+                MediaRouter.@NonNull RouteInfo info) {
             refreshRoutes();
         }
 
         @Override
         public void onRouteChanged(@NonNull MediaRouter router,
-                @NonNull MediaRouter.RouteInfo info) {
+                MediaRouter.@NonNull RouteInfo info) {
             refreshRoutes();
         }
 
         @Override
         public void onRouteSelected(@NonNull MediaRouter router,
-                @NonNull MediaRouter.RouteInfo route) {
+                MediaRouter.@NonNull RouteInfo selectedRoute, int reason,
+                MediaRouter.@NonNull RouteInfo requestedRoute) {
             dismiss();
         }
     }
@@ -331,8 +327,8 @@ public class MediaRouteDynamicChooserDialog extends AppCompatDialog {
         }
 
         @Override
-        @NonNull
-        public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        public RecyclerView.@NonNull ViewHolder onCreateViewHolder(
+                @NonNull ViewGroup parent, int viewType) {
             View view;
 
             switch (viewType) {
@@ -349,7 +345,7 @@ public class MediaRouteDynamicChooserDialog extends AppCompatDialog {
         }
 
         @Override
-        public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
+        public void onBindViewHolder(RecyclerView.@NonNull ViewHolder holder, int position) {
             int viewType = getItemViewType(position);
             Item item = getItem(position);
 
@@ -480,14 +476,11 @@ public class MediaRouteDynamicChooserDialog extends AppCompatDialog {
                 final MediaRouter.RouteInfo route = (MediaRouter.RouteInfo) item.getData();
                 mItemView.setVisibility(View.VISIBLE);
                 mProgressBar.setVisibility(View.INVISIBLE);
-                mItemView.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View view) {
-                        mSelectingRoute = route;
-                        route.select();
-                        mImageView.setVisibility(View.INVISIBLE);
-                        mProgressBar.setVisibility(View.VISIBLE);
-                    }
+                mItemView.setOnClickListener(view -> {
+                    mSelectingRoute = route;
+                    route.select();
+                    mImageView.setVisibility(View.INVISIBLE);
+                    mProgressBar.setVisibility(View.VISIBLE);
                 });
                 mTextView.setText(route.getName());
                 mImageView.setImageDrawable(getIconDrawable(route));

@@ -67,40 +67,71 @@ import kotlinx.coroutines.withTimeout
  *   component.
  * @param enableUserInput [Boolean] which determines if this BasicTooltipBox will handle long press
  *   and mouse hover to trigger the tooltip through the state provided.
+ * @param propagateMinConstraints Whether the incoming min constraints should be passed to content.
+ *   This is equivalent to [Box]'s parameter of the same name.
  * @param content the composable that the tooltip will anchor to.
  */
 @Composable
 @ExperimentalFoundationApi
-fun BasicTooltipBox(
+public fun BasicTooltipBox(
     positionProvider: PopupPositionProvider,
     tooltip: @Composable () -> Unit,
     state: BasicTooltipState,
     modifier: Modifier = Modifier,
     focusable: Boolean = true,
     enableUserInput: Boolean = true,
-    content: @Composable () -> Unit
+    propagateMinConstraints: Boolean = false,
+    content: @Composable () -> Unit,
 ) {
     val scope = rememberCoroutineScope()
-    Box {
+    WrappedAnchor(
+        enableUserInput = enableUserInput,
+        state = state,
+        propagateMinConstraints = propagateMinConstraints,
+        modifier = modifier,
+    ) {
         if (state.isVisible) {
             TooltipPopup(
                 positionProvider = positionProvider,
                 state = state,
                 scope = scope,
                 focusable = focusable,
-                content = tooltip
+                content = tooltip,
             )
         }
 
-        WrappedAnchor(
-            enableUserInput = enableUserInput,
-            state = state,
-            modifier = modifier,
-            content = content
-        )
+        content()
     }
 
     DisposableEffect(state) { onDispose { state.onDispose() } }
+}
+
+@Deprecated(
+    message =
+        "Maintained for binary compatibility. Use version with propagateMinConstraints instead.",
+    level = DeprecationLevel.HIDDEN,
+)
+@Composable
+@ExperimentalFoundationApi
+public fun BasicTooltipBox(
+    positionProvider: PopupPositionProvider,
+    tooltip: @Composable () -> Unit,
+    state: BasicTooltipState,
+    modifier: Modifier = Modifier,
+    focusable: Boolean = true,
+    enableUserInput: Boolean = true,
+    content: @Composable () -> Unit,
+) {
+    BasicTooltipBox(
+        positionProvider = positionProvider,
+        tooltip = tooltip,
+        state = state,
+        modifier = modifier,
+        focusable = focusable,
+        enableUserInput = enableUserInput,
+        propagateMinConstraints = false,
+        content = content,
+    )
 }
 
 @Composable
@@ -108,8 +139,9 @@ fun BasicTooltipBox(
 private fun WrappedAnchor(
     enableUserInput: Boolean,
     state: BasicTooltipState,
+    propagateMinConstraints: Boolean,
     modifier: Modifier = Modifier,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     val scope = rememberCoroutineScope()
     val longPressLabel = BasicTooltipStrings.label()
@@ -117,7 +149,8 @@ private fun WrappedAnchor(
         modifier =
             modifier
                 .handleGestures(enableUserInput, state)
-                .anchorSemantics(longPressLabel, enableUserInput, state, scope)
+                .anchorSemantics(longPressLabel, enableUserInput, state, scope),
+        propagateMinConstraints = propagateMinConstraints,
     ) {
         content()
     }
@@ -130,7 +163,7 @@ private fun TooltipPopup(
     state: BasicTooltipState,
     scope: CoroutineScope,
     focusable: Boolean,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     val tooltipDescription = BasicTooltipStrings.description()
     Popup(
@@ -140,7 +173,7 @@ private fun TooltipPopup(
                 scope.launch { state.dismiss() }
             }
         },
-        properties = PopupProperties(focusable = focusable)
+        properties = PopupProperties(focusable = focusable),
     ) {
         Box(
             modifier =
@@ -210,7 +243,7 @@ private fun Modifier.anchorSemantics(
     label: String,
     enabled: Boolean,
     state: BasicTooltipState,
-    scope: CoroutineScope
+    scope: CoroutineScope,
 ): Modifier =
     if (enabled) {
         this.semantics(mergeDescendants = true) {
@@ -219,7 +252,7 @@ private fun Modifier.anchorSemantics(
                 action = {
                     scope.launch { state.show() }
                     true
-                }
+                },
             )
         }
     } else this
@@ -238,16 +271,16 @@ private fun Modifier.anchorSemantics(
  */
 @Composable
 @ExperimentalFoundationApi
-fun rememberBasicTooltipState(
+public fun rememberBasicTooltipState(
     initialIsVisible: Boolean = false,
     isPersistent: Boolean = true,
-    mutatorMutex: MutatorMutex = BasicTooltipDefaults.GlobalMutatorMutex
+    mutatorMutex: MutatorMutex = BasicTooltipDefaults.GlobalMutatorMutex,
 ): BasicTooltipState =
     remember(isPersistent, mutatorMutex) {
         BasicTooltipStateImpl(
             initialIsVisible = initialIsVisible,
             isPersistent = isPersistent,
-            mutatorMutex = mutatorMutex
+            mutatorMutex = mutatorMutex,
         )
     }
 
@@ -265,15 +298,15 @@ fun rememberBasicTooltipState(
  */
 @Stable
 @ExperimentalFoundationApi
-fun BasicTooltipState(
+public fun BasicTooltipState(
     initialIsVisible: Boolean = false,
     isPersistent: Boolean = true,
-    mutatorMutex: MutatorMutex = BasicTooltipDefaults.GlobalMutatorMutex
+    mutatorMutex: MutatorMutex = BasicTooltipDefaults.GlobalMutatorMutex,
 ): BasicTooltipState =
     BasicTooltipStateImpl(
         initialIsVisible = initialIsVisible,
         isPersistent = isPersistent,
-        mutatorMutex = mutatorMutex
+        mutatorMutex = mutatorMutex,
     )
 
 @Stable
@@ -281,7 +314,7 @@ fun BasicTooltipState(
 private class BasicTooltipStateImpl(
     initialIsVisible: Boolean,
     override val isPersistent: Boolean,
-    private val mutatorMutex: MutatorMutex
+    private val mutatorMutex: MutatorMutex,
 ) : BasicTooltipState {
     override var isVisible by mutableStateOf(initialIsVisible)
 
@@ -338,9 +371,9 @@ private class BasicTooltipStateImpl(
  */
 @Stable
 @ExperimentalFoundationApi
-interface BasicTooltipState {
+public interface BasicTooltipState {
     /** [Boolean] that indicates if the tooltip is currently being shown or not. */
-    val isVisible: Boolean
+    public val isVisible: Boolean
 
     /**
      * [Boolean] that determines if the tooltip associated with this will be persistent or not. If
@@ -349,7 +382,7 @@ interface BasicTooltipState {
      * false, the tooltip will dismiss after a short duration. Ideally, this should be set to true
      * when there is actionable content being displayed within a tooltip.
      */
-    val isPersistent: Boolean
+    public val isPersistent: Boolean
 
     /**
      * Show the tooltip associated with the current [BasicTooltipState]. When this method is called
@@ -357,28 +390,28 @@ interface BasicTooltipState {
      *
      * @param mutatePriority [MutatePriority] to be used.
      */
-    suspend fun show(mutatePriority: MutatePriority = MutatePriority.Default)
+    public suspend fun show(mutatePriority: MutatePriority = MutatePriority.Default)
 
     /**
      * Dismiss the tooltip associated with this [BasicTooltipState] if it's currently being shown.
      */
-    fun dismiss()
+    public fun dismiss()
 
     /** Clean up when the this state leaves Composition. */
-    fun onDispose()
+    public fun onDispose()
 }
 
 /** BasicTooltip defaults that contain default values for tooltips created. */
 @ExperimentalFoundationApi
-object BasicTooltipDefaults {
+public object BasicTooltipDefaults {
     /** The global/default [MutatorMutex] used to sync Tooltips. */
-    val GlobalMutatorMutex: MutatorMutex = MutatorMutex()
+    public val GlobalMutatorMutex: MutatorMutex = MutatorMutex()
 
     /**
      * The default duration, in milliseconds, that non-persistent tooltips will show on the screen
      * before dismissing.
      */
-    const val TooltipDuration = 1500L
+    public const val TooltipDuration: Long = 1500L
 }
 
 @Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")

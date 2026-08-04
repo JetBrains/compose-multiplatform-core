@@ -363,10 +363,12 @@ public final class ActionBuilders {
      */
     public interface AndroidExtra {
         /** Get the protocol buffer representation of this object. */
+        @SuppressWarnings("HiddenAbstractMethodInInterface")
         @RestrictTo(Scope.LIBRARY_GROUP)
         ActionProto.@NonNull AndroidExtra toAndroidExtraProto();
 
         /** Get the fingerprint for this object or null if unknown. */
+        @SuppressWarnings("HiddenAbstractMethodInInterface")
         @RestrictTo(Scope.LIBRARY_GROUP)
         @Nullable Fingerprint getFingerprint();
 
@@ -479,8 +481,8 @@ public final class ActionBuilders {
 
             /** Adds an entry into the extras to be included in the intent. */
             @SuppressLint("MissingGetterMatchingBuilder")
-            public @NonNull Builder addKeyToExtraMapping(@NonNull String key,
-                    @NonNull AndroidExtra extra) {
+            public @NonNull Builder addKeyToExtraMapping(
+                    @NonNull String key, @NonNull AndroidExtra extra) {
                 mImpl.putKeyToExtra(key, extra.toAndroidExtraProto());
                 mFingerprint.recordPropertyUpdate(
                         key.hashCode(), checkNotNull(extra.getFingerprint()).aggregateValueAsInt());
@@ -634,10 +636,12 @@ public final class ActionBuilders {
     /** Interface defining an action that can be used by a layout element. */
     public interface Action {
         /** Get the protocol buffer representation of this object. */
+        @SuppressWarnings("HiddenAbstractMethodInInterface")
         @RestrictTo(Scope.LIBRARY_GROUP)
         ActionProto.@NonNull Action toActionProto();
 
         /** Get the fingerprint for this object or null if unknown. */
+        @SuppressWarnings("HiddenAbstractMethodInInterface")
         @RestrictTo(Scope.LIBRARY_GROUP)
         @Nullable Fingerprint getFingerprint();
 

@@ -43,12 +43,12 @@ class MetadataTestHelperTest {
                             manufacturer = "some company",
                             model = "best model",
                             type = Device.TYPE_WATCH,
-                        )
+                        ),
                 )
                 .populatedWithTestValues(
                     id = "id_to_be_overwritten",
                     dataOrigin = DataOrigin("package.to.be.overwritten"),
-                    lastModifiedTime = Instant.ofEpochMilli(654321)
+                    lastModifiedTime = Instant.ofEpochMilli(654321),
                 )
         val updatedMetadata =
             metadata.populatedWithTestValues(

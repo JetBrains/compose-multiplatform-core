@@ -18,6 +18,7 @@ package androidx.compose.foundation.shape
 
 import androidx.compose.foundation.internal.requirePrecondition
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Interpolatable
 import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.Density
@@ -32,17 +33,17 @@ import androidx.compose.ui.unit.LayoutDirection
  * @param bottomStart a size of the bottom start corner
  * @see RoundedCornerShape for an example of the usage.
  */
-abstract class CornerBasedShape(
-    val topStart: CornerSize,
-    val topEnd: CornerSize,
-    val bottomEnd: CornerSize,
-    val bottomStart: CornerSize
-) : Shape {
+public abstract class CornerBasedShape(
+    public val topStart: CornerSize,
+    public val topEnd: CornerSize,
+    public val bottomEnd: CornerSize,
+    public val bottomStart: CornerSize,
+) : Shape, Interpolatable {
 
-    final override fun createOutline(
+    public final override fun createOutline(
         size: Size,
         layoutDirection: LayoutDirection,
-        density: Density
+        density: Density,
     ): Outline {
         var topStart = topStart.toPx(size, density)
         var topEnd = topEnd.toPx(size, density)
@@ -71,7 +72,7 @@ abstract class CornerBasedShape(
             topEnd = topEnd,
             bottomEnd = bottomEnd,
             bottomStart = bottomStart,
-            layoutDirection = layoutDirection
+            layoutDirection = layoutDirection,
         )
     }
 
@@ -85,13 +86,13 @@ abstract class CornerBasedShape(
      * @param bottomStart the resolved size for the bottom start corner
      * @param layoutDirection the current layout direction.
      */
-    abstract fun createOutline(
+    public abstract fun createOutline(
         size: Size,
         topStart: Float,
         topEnd: Float,
         bottomEnd: Float,
         bottomStart: Float,
-        layoutDirection: LayoutDirection
+        layoutDirection: LayoutDirection,
     ): Outline
 
     /**
@@ -102,17 +103,20 @@ abstract class CornerBasedShape(
      * @param bottomEnd a size of the bottom end corner
      * @param bottomStart a size of the bottom start corner
      */
-    abstract fun copy(
+    public abstract fun copy(
         topStart: CornerSize = this.topStart,
         topEnd: CornerSize = this.topEnd,
         bottomEnd: CornerSize = this.bottomEnd,
-        bottomStart: CornerSize = this.bottomStart
+        bottomStart: CornerSize = this.bottomStart,
     ): CornerBasedShape
+
+    /** Default implementation. Returns null. Override this to get interpolatable benefits. */
+    public override fun lerp(other: Any?, t: Float): Any? = null
 
     /**
      * Creates a copy of this Shape with a new corner size.
      *
      * @param all a size to apply for all four corners
      */
-    fun copy(all: CornerSize): CornerBasedShape = copy(all, all, all, all)
+    public fun copy(all: CornerSize): CornerBasedShape = copy(all, all, all, all)
 }

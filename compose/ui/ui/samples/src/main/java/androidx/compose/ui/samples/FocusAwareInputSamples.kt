@@ -27,10 +27,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Switch
-import androidx.compose.material.Text
-import androidx.compose.material.darkColors
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Switch
+import androidx.compose.material3.Text
+import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -179,14 +179,10 @@ fun RotaryEventSample() {
                     true
                 }
                 .focusRequester(focusRequester)
-                .focusable(),
+                .focusable()
     ) {
         repeat(100) {
-            Text(
-                text = "item $it",
-                modifier = Modifier.align(CenterHorizontally),
-                color = White,
-            )
+            Text(text = "item $it", modifier = Modifier.align(CenterHorizontally), color = White)
         }
     }
 
@@ -196,7 +192,7 @@ fun RotaryEventSample() {
 @Sampled
 @Composable
 fun PreRotaryEventSample() {
-    MaterialTheme(colors = darkColors()) {
+    MaterialTheme(colorScheme = darkColorScheme()) {
         val rowScrollState = rememberScrollState()
         val columnScrollState = rememberScrollState()
         val coroutineScope = rememberCoroutineScope()
@@ -222,17 +218,14 @@ fun PreRotaryEventSample() {
         ) {
             Row(
                 modifier = Modifier.align(CenterHorizontally),
-                verticalAlignment = CenterVertically
+                verticalAlignment = CenterVertically,
             ) {
                 Text(
                     modifier = Modifier.width(70.dp),
                     text = if (interceptScroll) "Row" else "Column",
-                    style = TextStyle(color = White)
+                    style = TextStyle(color = White),
                 )
-                Switch(
-                    checked = interceptScroll,
-                    onCheckedChange = { interceptScroll = it },
-                )
+                Switch(checked = interceptScroll, onCheckedChange = { interceptScroll = it })
             }
             Row(modifier = Modifier.fillMaxWidth().horizontalScroll(rowScrollState)) {
                 repeat(100) {
@@ -254,7 +247,7 @@ fun PreRotaryEventSample() {
                             true
                         }
                         .focusRequester(focusRequester)
-                        .focusable(),
+                        .focusable()
             ) {
                 repeat(100) {
                     Text(

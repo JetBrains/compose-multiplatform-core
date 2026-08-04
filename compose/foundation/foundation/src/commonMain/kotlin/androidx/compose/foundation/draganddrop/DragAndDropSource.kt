@@ -81,12 +81,14 @@ internal expect object DragAndDropSourceDefaults {
  *   the [DragAndDropTransferData] to be transferred. If null is returned, the drag and drop
  *   transfer won't be started.
  */
-fun Modifier.dragAndDropSource(transferData: (Offset) -> DragAndDropTransferData?): Modifier =
+public fun Modifier.dragAndDropSource(
+    transferData: (Offset) -> DragAndDropTransferData?
+): Modifier =
     this then
         DragAndDropSourceWithDefaultShadowElement(
             // TODO: Expose this as public argument
             detectDragStart = DragAndDropSourceDefaults.DefaultStartDetector,
-            transferData = transferData
+            transferData = transferData,
         )
 
 /**
@@ -102,16 +104,16 @@ fun Modifier.dragAndDropSource(transferData: (Offset) -> DragAndDropTransferData
  *   the [DragAndDropTransferData] to be transferred. If null is returned, the drag and drop
  *   transfer won't be started.
  */
-fun Modifier.dragAndDropSource(
+public fun Modifier.dragAndDropSource(
     drawDragDecoration: DrawScope.() -> Unit,
-    transferData: (Offset) -> DragAndDropTransferData?
+    transferData: (Offset) -> DragAndDropTransferData?,
 ): Modifier =
     this then
         DragAndDropSourceElement(
             drawDragDecoration = drawDragDecoration,
             // TODO: Expose this as public argument
             detectDragStart = DragAndDropSourceDefaults.DefaultStartDetector,
-            transferData = transferData
+            transferData = transferData,
         )
 
 private class DragAndDropSourceElement(
@@ -120,13 +122,13 @@ private class DragAndDropSourceElement(
     /** @see Modifier.dragAndDropSource */
     val detectDragStart: DragAndDropStartDetector,
     /** @see Modifier.dragAndDropSource */
-    val transferData: (Offset) -> DragAndDropTransferData?
+    val transferData: (Offset) -> DragAndDropTransferData?,
 ) : ModifierNodeElement<DragAndDropSourceNode>() {
     override fun create() =
         DragAndDropSourceNode(
             drawDragDecoration = drawDragDecoration,
             detectDragStart = detectDragStart,
-            transferData = transferData
+            transferData = transferData,
         )
 
     override fun update(node: DragAndDropSourceNode) =
@@ -165,7 +167,7 @@ private class DragAndDropSourceElement(
 internal class DragAndDropSourceNode(
     var drawDragDecoration: DrawScope.() -> Unit,
     var detectDragStart: DragAndDropStartDetector,
-    var transferData: (Offset) -> DragAndDropTransferData?
+    var transferData: (Offset) -> DragAndDropTransferData?,
 ) : DelegatingNode(), LayoutAwareModifierNode {
 
     private var size: IntSize = IntSize.Zero
@@ -178,7 +180,7 @@ internal class DragAndDropSourceNode(
                     startDragAndDropTransfer(
                         transferData = transferData,
                         decorationSize = size.toSize(),
-                        drawDragDecoration = drawDragDecoration
+                        drawDragDecoration = drawDragDecoration,
                     )
                 }
             }
@@ -221,12 +223,12 @@ private class DragAndDropSourceWithDefaultShadowElement(
     /** @see Modifier.dragAndDropSource */
     var detectDragStart: DragAndDropStartDetector,
     /** @see Modifier.dragAndDropSource */
-    var transferData: (Offset) -> DragAndDropTransferData?
+    var transferData: (Offset) -> DragAndDropTransferData?,
 ) : ModifierNodeElement<DragSourceNodeWithDefaultPainter>() {
     override fun create() =
         DragSourceNodeWithDefaultPainter(
             detectDragStart = detectDragStart,
-            transferData = transferData
+            transferData = transferData,
         )
 
     override fun update(node: DragSourceNodeWithDefaultPainter) =
@@ -260,7 +262,7 @@ private class DragAndDropSourceWithDefaultShadowElement(
 
 private class DragSourceNodeWithDefaultPainter(
     detectDragStart: DragAndDropStartDetector,
-    transferData: (Offset) -> DragAndDropTransferData?
+    transferData: (Offset) -> DragAndDropTransferData?,
 ) : DelegatingNode() {
 
     private val cacheDrawScopeDragShadowCallback =
@@ -273,7 +275,7 @@ private class DragSourceNodeWithDefaultPainter(
             DragAndDropSourceNode(
                 drawDragDecoration = { cacheDrawScopeDragShadowCallback.drawDragShadow(this) },
                 detectDragStart = detectDragStart,
-                transferData = transferData
+                transferData = transferData,
             )
         )
 

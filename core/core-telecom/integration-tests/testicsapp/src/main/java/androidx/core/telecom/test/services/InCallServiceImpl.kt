@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:OptIn(androidx.core.telecom.util.ExperimentalAppActions::class)
+
 package androidx.core.telecom.test.services
 
 import android.content.Intent
@@ -32,7 +34,6 @@ import android.telecom.CallEndpoint
 import android.util.Log
 import androidx.core.telecom.InCallServiceCompat
 import androidx.core.telecom.test.Compatibility
-import androidx.core.telecom.util.ExperimentalAppActions
 import androidx.lifecycle.lifecycleScope
 import java.io.IOException
 import java.util.concurrent.atomic.AtomicInteger
@@ -72,7 +73,7 @@ class InCallServiceImpl : LocalIcsBinder, InCallServiceCompat() {
             ::requestBluetoothAudio,
             onRequestEndpointChange = { ep, e, or ->
                 Compatibility.requestCallEndpointChange(this@InCallServiceImpl, ep, e, or)
-            }
+            },
         )
     override val isMuted: StateFlow<Boolean> = mMuteStateResolver.muteState
     override val currentAudioEndpoint: StateFlow<CallAudioEndpoint?> =
@@ -134,7 +135,7 @@ class InCallServiceImpl : LocalIcsBinder, InCallServiceCompat() {
     inner class MyContentObserver(
         handler: Handler,
         private val mUri: Uri,
-        private val mCallIconDataEmitter: CallIconExtensionDataEmitter
+        private val mCallIconDataEmitter: CallIconExtensionDataEmitter,
     ) : ContentObserver(handler) {
 
         override fun onChange(selfChange: Boolean) {
@@ -150,7 +151,6 @@ class InCallServiceImpl : LocalIcsBinder, InCallServiceCompat() {
         }
     }
 
-    @OptIn(ExperimentalAppActions::class)
     override fun onCallAdded(call: Call?) {
         if (call == null) return
         var callJob: Job? = null
@@ -162,13 +162,13 @@ class InCallServiceImpl : LocalIcsBinder, InCallServiceCompat() {
                         addParticipantExtension(
                             onActiveParticipantChanged =
                                 participantsEmitter::onActiveParticipantChanged,
-                            onParticipantsUpdated = participantsEmitter::onParticipantsChanged
+                            onParticipantsUpdated = participantsEmitter::onParticipantsChanged,
                         )
 
                     val meetingSummaryEmitter = MeetingSummaryExtensionDataEmitter()
                     addMeetingSummaryExtension(
                         onCurrentSpeakerChanged = meetingSummaryEmitter::onCurrentSpeakerChanged,
-                        onParticipantCountChanged = meetingSummaryEmitter::onParticipantCountChanged
+                        onParticipantCountChanged = meetingSummaryEmitter::onParticipantCountChanged,
                     )
 
                     val kickParticipantDataEmitter = KickParticipantDataEmitter()
@@ -184,7 +184,9 @@ class InCallServiceImpl : LocalIcsBinder, InCallServiceCompat() {
                     val localCallSilenceExtension =
                         addLocalCallSilenceExtension(
                             onIsLocallySilencedUpdated =
-                                localCallSilenceDataEmitter::onVoipAppUpdate
+                                localCallSilenceDataEmitter::onVoipAppUpdateIsSilenced,
+                            onCanUserUpdateSilence =
+                                localCallSilenceDataEmitter::onVoipAppUpdateCanUserUpdateSilence,
                         )
 
                     val callIconDataEmitter = CallIconExtensionDataEmitter()
@@ -203,7 +205,7 @@ class InCallServiceImpl : LocalIcsBinder, InCallServiceCompat() {
                                 MyContentObserver(
                                     Handler(Looper.getMainLooper()),
                                     newUri,
-                                    callIconDataEmitter
+                                    callIconDataEmitter,
                                 )
                             // Register the new observer.
                             contentResolver.registerContentObserver(newUri, false, newObserver)
@@ -227,7 +229,7 @@ class InCallServiceImpl : LocalIcsBinder, InCallServiceCompat() {
                             participantsEmitter.collect(
                                 participantExtension.isSupported,
                                 raiseHandDataEmitter.collect(raiseHandAction),
-                                kickParticipantDataEmitter.collect(kickParticipantAction)
+                                kickParticipantDataEmitter.collect(kickParticipantAction),
                             )
 
                         val localCallSilenceData =
@@ -241,7 +243,7 @@ class InCallServiceImpl : LocalIcsBinder, InCallServiceCompat() {
                                 meetingSummaryData,
                                 participantData,
                                 localCallSilenceData,
-                                callIconData
+                                callIconData,
                             ) { cd, summary, partData, silenceData, iconData ->
                                 CallData(cd, summary, partData, silenceData, iconData)
                             }

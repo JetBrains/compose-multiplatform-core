@@ -25,9 +25,11 @@ import androidx.glance.EmittableWithChildren
 import androidx.glance.ExperimentalGlanceApi
 import androidx.glance.GlanceModifier
 import androidx.glance.GlanceNode
+import androidx.glance.GlanceTheme
 import androidx.glance.layout.Alignment
 import androidx.glance.layout.fillMaxWidth
 import androidx.glance.layout.wrapContentHeight
+import androidx.glance.unit.ColorProvider
 
 /**
  * A vertical scrolling list that only lays out the currently visible items. The [content] block
@@ -39,24 +41,54 @@ import androidx.glance.layout.wrapContentHeight
  *   [LazyListScope.item] to add a single item or [LazyListScope.items] to add a list of items. If
  *   the item has more than one top-level child, they will be automatically wrapped in a Box.
  */
-// TODO(b/198618359): interaction handling
 @Composable
-fun LazyColumn(
+public fun LazyColumn(
     modifier: GlanceModifier = GlanceModifier,
     horizontalAlignment: Alignment.Horizontal = Alignment.Start,
-    content: LazyListScope.() -> Unit
+    content: LazyListScope.() -> Unit,
+): Unit =
+    LazyColumn(
+        modifier = modifier,
+        horizontalAlignment = horizontalAlignment,
+        verticalScrollMode = VerticalScrollMode.Normal,
+        content = content,
+    )
+
+/**
+ * A vertical scrolling list that only lays out the currently visible items. The [content] block
+ * defines a DSL which allows you to emit different list items.
+ *
+ * @param modifier the modifier to apply to this layout
+ * @param horizontalAlignment the horizontal alignment applied to the items.
+ * @param verticalScrollMode how to handle scrolling. See [VerticalScrollMode]
+ * @param content a block which describes the content. Inside this block you can use methods like
+ *   [LazyListScope.item] to add a single item or [LazyListScope.items] to add a list of items. If
+ *   the item has more than one top-level child, they will be automatically wrapped in a Box.
+ */
+@JvmOverloads
+@Composable
+public fun LazyColumn(
+    verticalScrollMode: VerticalScrollMode,
+    modifier: GlanceModifier = GlanceModifier,
+    horizontalAlignment: Alignment.Horizontal = Alignment.Start,
+    content: LazyListScope.() -> Unit,
 ) {
+    val dotPrimary = GlanceTheme.colors.onSurface
+    val dotSecondary = GlanceTheme.colors.outline
     GlanceNode(
         factory = ::EmittableLazyColumn,
         update = {
             this.set(modifier) { this.modifier = it }
+            this.set(verticalScrollMode) { this.verticalScrollMode = it }
             this.set(horizontalAlignment) { this.horizontalAlignment = it }
+            this.set(dotPrimary) { this.paginationDotColorPrimary = it }
+            this.set(dotSecondary) { this.paginationDotColorSecondary = it }
         },
         content =
             applyListScope(
                 Alignment(horizontalAlignment, Alignment.Vertical.CenterVertically),
-                content
-            )
+                content,
+            ),
     )
 }
 
@@ -74,11 +106,28 @@ fun LazyColumn(
  */
 @ExperimentalGlanceApi
 @Composable
-fun LazyColumn(
+public fun LazyColumn(
     activityOptions: Bundle,
     modifier: GlanceModifier = GlanceModifier,
     horizontalAlignment: Alignment.Horizontal = Alignment.Start,
-    content: LazyListScope.() -> Unit
+    content: LazyListScope.() -> Unit,
+) {
+    LazyColumn(
+        activityOptions = activityOptions,
+        modifier = modifier,
+        horizontalAlignment = horizontalAlignment,
+        verticalScrollMode = VerticalScrollMode.Normal,
+        content = content,
+    )
+}
+
+@Composable
+private fun LazyColumn(
+    activityOptions: Bundle,
+    modifier: GlanceModifier,
+    horizontalAlignment: Alignment.Horizontal,
+    verticalScrollMode: VerticalScrollMode,
+    content: LazyListScope.() -> Unit,
 ) {
     GlanceNode(
         factory = ::EmittableLazyColumn,
@@ -86,18 +135,19 @@ fun LazyColumn(
             this.set(modifier) { this.modifier = it }
             this.set(horizontalAlignment) { this.horizontalAlignment = it }
             this.set(activityOptions) { this.activityOptions = it }
+            this.set(verticalScrollMode) { this.verticalScrollMode = it }
         },
         content =
             applyListScope(
                 Alignment(horizontalAlignment, Alignment.Vertical.CenterVertically),
-                content
-            )
+                content,
+            ),
     )
 }
 
 private fun applyListScope(
     alignment: Alignment,
-    content: LazyListScope.() -> Unit
+    content: LazyListScope.() -> Unit,
 ): @Composable () -> Unit {
     val itemList = mutableListOf<Pair<Long?, @Composable LazyItemScope.() -> Unit>>()
     val listScopeImpl =
@@ -118,7 +168,7 @@ private fun applyListScope(
             override fun items(
                 count: Int,
                 itemId: ((index: Int) -> Long),
-                itemContent: @Composable LazyItemScope.(index: Int) -> Unit
+                itemContent: @Composable LazyItemScope.(index: Int) -> Unit,
             ) {
                 repeat(count) { index -> item(itemId(index)) { itemContent(index) } }
             }
@@ -146,7 +196,7 @@ private fun LazyListItem(itemId: Long, alignment: Alignment, content: @Composabl
                 this.set(itemId) { this.itemId = it }
                 this.set(alignment) { this.alignment = it }
             },
-            content = content
+            content = content,
         )
     }
 }
@@ -157,15 +207,15 @@ private fun LazyListItem(itemId: Long, alignment: Alignment, content: @Composabl
  */
 internal const val ReservedItemIdRangeEnd = -0x4_000_000_000_000_000L
 
-@DslMarker annotation class LazyScopeMarker
+@DslMarker public annotation class LazyScopeMarker
 
 /** Receiver scope being used by the item content parameter of [LazyColumn]. */
-@LazyScopeMarker interface LazyItemScope
+@LazyScopeMarker public interface LazyItemScope
 
 @JvmDefaultWithCompatibility
 /** Receiver scope which is used by [LazyColumn]. */
 @LazyScopeMarker
-interface LazyListScope {
+public interface LazyListScope {
     /**
      * Adds a single item.
      *
@@ -175,7 +225,7 @@ interface LazyListScope {
      *   devices.
      * @param content the content of the item
      */
-    fun item(itemId: Long = UnspecifiedItemId, content: @Composable LazyItemScope.() -> Unit)
+    public fun item(itemId: Long = UnspecifiedItemId, content: @Composable LazyItemScope.() -> Unit)
 
     /**
      * Adds a [count] of items.
@@ -187,14 +237,14 @@ interface LazyListScope {
      *   higher devices.
      * @param itemContent the content displayed by a single item
      */
-    fun items(
+    public fun items(
         count: Int,
         itemId: ((index: Int) -> Long) = { UnspecifiedItemId },
-        itemContent: @Composable LazyItemScope.(index: Int) -> Unit
+        itemContent: @Composable LazyItemScope.(index: Int) -> Unit,
     )
 
-    companion object {
-        const val UnspecifiedItemId = Long.MIN_VALUE
+    public companion object {
+        public const val UnspecifiedItemId: Long = Long.MIN_VALUE
     }
 }
 
@@ -208,11 +258,11 @@ interface LazyListScope {
  *   devices.
  * @param itemContent the content displayed by a single item
  */
-inline fun <T> LazyListScope.items(
+public inline fun <T> LazyListScope.items(
     items: List<T>,
     crossinline itemId: ((item: T) -> Long) = { LazyListScope.UnspecifiedItemId },
-    crossinline itemContent: @Composable LazyItemScope.(item: T) -> Unit
-) = items(items.size, { index: Int -> itemId(items[index]) }) { itemContent(items[it]) }
+    crossinline itemContent: @Composable LazyItemScope.(item: T) -> Unit,
+): Unit = items(items.size, { index: Int -> itemId(items[index]) }) { itemContent(items[it]) }
 
 /**
  * Adds a list of items where the content of an item is aware of its index.
@@ -224,13 +274,14 @@ inline fun <T> LazyListScope.items(
  *   devices.
  * @param itemContent the content displayed by a single item
  */
-inline fun <T> LazyListScope.itemsIndexed(
+public inline fun <T> LazyListScope.itemsIndexed(
     items: List<T>,
     crossinline itemId: ((index: Int, item: T) -> Long) = { _, _ ->
         LazyListScope.UnspecifiedItemId
     },
-    crossinline itemContent: @Composable LazyItemScope.(index: Int, item: T) -> Unit
-) = items(items.size, { index: Int -> itemId(index, items[index]) }) { itemContent(it, items[it]) }
+    crossinline itemContent: @Composable LazyItemScope.(index: Int, item: T) -> Unit,
+): Unit =
+    items(items.size, { index: Int -> itemId(index, items[index]) }) { itemContent(it, items[it]) }
 
 /**
  * Adds an array of items.
@@ -242,11 +293,11 @@ inline fun <T> LazyListScope.itemsIndexed(
  *   item the item with the given itemId will be kept as the first visible one.
  * @param itemContent the content displayed by a single item
  */
-inline fun <T> LazyListScope.items(
+public inline fun <T> LazyListScope.items(
     items: Array<T>,
     noinline itemId: ((item: T) -> Long) = { LazyListScope.UnspecifiedItemId },
-    crossinline itemContent: @Composable LazyItemScope.(item: T) -> Unit
-) = items(items.size, { index: Int -> itemId(items[index]) }) { itemContent(items[it]) }
+    crossinline itemContent: @Composable LazyItemScope.(item: T) -> Unit,
+): Unit = items(items.size, { index: Int -> itemId(items[index]) }) { itemContent(items[it]) }
 
 /**
  * Adds a array of items where the content of an item is aware of its index.
@@ -258,20 +309,28 @@ inline fun <T> LazyListScope.items(
  *   item the item with the given itemId will be kept as the first visible one.
  * @param itemContent the content displayed by a single item
  */
-inline fun <T> LazyListScope.itemsIndexed(
+public inline fun <T> LazyListScope.itemsIndexed(
     items: Array<T>,
     noinline itemId: ((index: Int, item: T) -> Long) = { _, _ -> LazyListScope.UnspecifiedItemId },
-    crossinline itemContent: @Composable LazyItemScope.(index: Int, item: T) -> Unit
-) = items(items.size, { index: Int -> itemId(index, items[index]) }) { itemContent(it, items[it]) }
+    crossinline itemContent: @Composable LazyItemScope.(index: Int, item: T) -> Unit,
+): Unit =
+    items(items.size, { index: Int -> itemId(index, items[index]) }) { itemContent(it, items[it]) }
 
 internal abstract class EmittableLazyList : EmittableWithChildren(resetsDepthForChildren = true) {
     override var modifier: GlanceModifier = GlanceModifier
     var horizontalAlignment: Alignment.Horizontal = Alignment.Start
     var activityOptions: Bundle? = null
+    var verticalScrollMode: VerticalScrollMode = VerticalScrollMode.Normal
+    var paginationDotColorPrimary: ColorProvider? = null // for snap scrolling
+    var paginationDotColorSecondary: ColorProvider? = null // for snap scrolling
 
     override fun toString() =
         "EmittableLazyList(modifier=$modifier, horizontalAlignment=$horizontalAlignment, " +
-            "activityOptions=$activityOptions, children=[\n${childrenToString()}\n])"
+            "activityOptions=$activityOptions, verticalScrollMode=${verticalScrollMode}, children=[\n${childrenToString()}\n])"
+
+    override fun requiresRemoteCompose(): Boolean {
+        return verticalScrollMode != VerticalScrollMode.Normal || super.requiresRemoteCompose()
+    }
 }
 
 internal class EmittableLazyListItem : EmittableLazyItemWithChildren() {
@@ -296,8 +355,11 @@ internal class EmittableLazyColumn : EmittableLazyList() {
     override fun copy(): Emittable =
         EmittableLazyColumn().also {
             it.modifier = modifier
+            it.verticalScrollMode = verticalScrollMode
             it.horizontalAlignment = horizontalAlignment
             it.activityOptions = activityOptions
+            it.paginationDotColorPrimary = paginationDotColorPrimary
+            it.paginationDotColorSecondary = paginationDotColorSecondary
             it.children.addAll(children.map { it.copy() })
         }
 }

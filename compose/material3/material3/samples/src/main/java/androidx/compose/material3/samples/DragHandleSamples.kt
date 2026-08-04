@@ -55,7 +55,7 @@ fun VerticalDragHandleSample() {
         Surface(
             modifier = Modifier.width(with(density) { offsetX.toDp() }).fillMaxHeight(),
             color = MaterialTheme.colorScheme.surfaceContainerHighest,
-            shape = RoundedCornerShape(0.dp, 24.dp, 24.dp, 0.dp)
+            shape = RoundedCornerShape(0.dp, 24.dp, 24.dp, 0.dp),
         ) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.CenterEnd) {
                 VerticalDragHandle(
@@ -67,9 +67,9 @@ fun VerticalDragHandleSample() {
                                         offsetX =
                                             (offsetX + delta).coerceIn(
                                                 with(density) { 48.dp.toPx() },
-                                                screenSize.width.toFloat()
+                                                screenSize.width.toFloat(),
                                             )
-                                    }
+                                    },
                             )
                             .systemGestureExclusion() // To avoid colliding with the back gesture
                 )

@@ -26,12 +26,12 @@ import android.view.ViewParent
  * scroll scrubber. It determines if a touch event is within the bounds of the scrubber and notifies
  * a [FastScrollGestureHandler] when a fast scroll gesture (dragging the scrubber) is detected.
  *
- * @param fastScoller The [FastScroller] instance associated with this handler.
+ * @param fastScroller The [FastScroller] instance associated with this handler.
  * @param gestureHandler The [FastScrollGestureHandler] that will be notified of fast scroll events.
  */
 internal class FastScrollGestureDetector(
-    private val fastScoller: FastScroller,
-    private val gestureHandler: FastScrollGestureHandler
+    private val fastScroller: FastScroller,
+    private val gestureHandler: FastScrollGestureHandler,
 ) {
     internal var trackingFastScrollGesture: Boolean = false
 
@@ -44,12 +44,19 @@ internal class FastScrollGestureDetector(
      *
      * @param event The [MotionEvent] to handle.
      * @param viewWidth Width of the view in pixels.
+     * @param offsetY The vertical offset of the view in pixels.
      * @return True if the event was handled as a fast scroll gesture, false otherwise.
      */
-    fun handleEvent(event: MotionEvent, parent: ViewParent?, viewWidth: Int): Boolean {
+    fun handleEvent(
+        event: MotionEvent,
+        parent: ViewParent?,
+        viewWidth: Int,
+        offsetY: Int = 0,
+    ): Boolean {
         if (event.actionMasked == MotionEvent.ACTION_DOWN) {
-            if (isPointWithinVisibleBounds(event, viewWidth)) {
+            if (fastScroller.isPointOnThumb(event.x, event.y - offsetY, viewWidth)) {
                 trackingFastScrollGesture = true
+                gestureHandler.onFastScrollStart()
                 return true
             }
         }
@@ -60,6 +67,7 @@ internal class FastScrollGestureDetector(
             } else if (event.actionMasked == MotionEvent.ACTION_UP) {
                 parent?.requestDisallowInterceptTouchEvent(false)
                 trackingFastScrollGesture = false
+                gestureHandler.onFastScrollEnd()
             }
             return true
         }
@@ -67,26 +75,16 @@ internal class FastScrollGestureDetector(
         return false
     }
 
-    /**
-     * Checks if a touch event is within the visible bounds of the fast scroll scrubber.
-     *
-     * @param event The [MotionEvent] to check.
-     * @param viewWidth Width of the view in pixels
-     * @return True if the touch event is within the bounds of the scrubber, false otherwise.
-     */
-    private fun isPointWithinVisibleBounds(event: MotionEvent, viewWidth: Int): Boolean {
-        return event.x > (viewWidth - fastScoller.fastScrollDrawer.thumbWidthPx)
-        // Deliberately ignore (x < getWidth() - scrollbarMarginRight) to make it easier
-        // to grab it.
-        &&
-            event.y >= fastScoller.fastScrollY &&
-            event.y <= fastScoller.fastScrollY + fastScoller.fastScrollDrawer.thumbHeightPx
-    }
-
     /** An interface for receiving notifications about fast scroll gestures. */
     interface FastScrollGestureHandler {
+        /** Callback when the user starts interacting with the fast scroller */
+        fun onFastScrollStart() = Unit
+
+        /** Callback when the user stops interacting with the fast scroller */
+        fun onFastScrollEnd() = Unit
+
         /**
-         * Called when a fast scroll gesture is detected.
+         * Callback when the user drags the fast scroll handle to a new position
          *
          * @param eventY The vertical scroll position in pixels indicated by the fast scroll
          *   gesture.

@@ -25,7 +25,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.staticCompositionLocalOf
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.SessionMutex
@@ -42,10 +41,10 @@ import kotlinx.coroutines.flow.collectLatest
  *
  * @sample androidx.compose.ui.samples.platformTextInputModifierNodeSample
  */
-interface PlatformTextInputModifierNode : DelegatableNode
+public interface PlatformTextInputModifierNode : DelegatableNode
 
 /** Receiver type for [establishTextInputSession]. */
-expect interface PlatformTextInputSession {
+public expect interface PlatformTextInputSession {
     /**
      * Starts the text input session and suspends until it is closed.
      *
@@ -58,7 +57,7 @@ expect interface PlatformTextInputSession {
      * @param request The platform-specific [PlatformTextInputMethodRequest] that will be used to
      *   initiate the session.
      */
-    suspend fun startInputMethod(request: PlatformTextInputMethodRequest): Nothing
+    public suspend fun startInputMethod(request: PlatformTextInputMethodRequest): Nothing
 }
 
 /**
@@ -68,11 +67,10 @@ expect interface PlatformTextInputSession {
  * suspend functions with a [PlatformTextInputSession] receiver. If they need a [CoroutineScope]
  * they should call the [kotlinx.coroutines.coroutineScope] function.
  */
-interface PlatformTextInputSessionScope : PlatformTextInputSession, CoroutineScope
+public interface PlatformTextInputSessionScope : PlatformTextInputSession, CoroutineScope
 
 /** Single-function interface passed to [InterceptPlatformTextInput]. */
-@ExperimentalComposeUiApi
-fun interface PlatformTextInputInterceptor {
+public fun interface PlatformTextInputInterceptor {
 
     /**
      * Called when a function passed to
@@ -91,9 +89,9 @@ fun interface PlatformTextInputInterceptor {
      * previous call will be allowed to finish running any `finally` blocks before the new session
      * starts.
      */
-    suspend fun interceptStartInputMethod(
+    public suspend fun interceptStartInputMethod(
         request: PlatformTextInputMethodRequest,
-        nextHandler: PlatformTextInputSession
+        nextHandler: PlatformTextInputSession,
     ): Nothing
 }
 
@@ -127,7 +125,7 @@ fun interface PlatformTextInputInterceptor {
  *   call [PlatformTextInputSession.startInputMethod] to actually show and initiate the connection
  *   with the input method.
  */
-suspend fun PlatformTextInputModifierNode.establishTextInputSession(
+public suspend fun PlatformTextInputModifierNode.establishTextInputSession(
     block: suspend PlatformTextInputSessionScope.() -> Nothing
 ): Nothing {
     require(node.isAttached) { "establishTextInputSession called from an unattached node" }
@@ -148,11 +146,10 @@ suspend fun PlatformTextInputModifierNode.establishTextInputSession(
  * @sample androidx.compose.ui.samples.InterceptPlatformTextInputSample
  * @sample androidx.compose.ui.samples.disableSoftKeyboardSample
  */
-@ExperimentalComposeUiApi
 @Composable
-fun InterceptPlatformTextInput(
+public fun InterceptPlatformTextInput(
     interceptor: PlatformTextInputInterceptor,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     val parent = LocalChainedPlatformTextInputInterceptor.current
     // We don't need to worry about explicitly cancelling the input session if the parent changes:
@@ -168,7 +165,7 @@ fun InterceptPlatformTextInput(
 
     CompositionLocalProvider(
         LocalChainedPlatformTextInputInterceptor provides chainedInterceptor,
-        content = content
+        content = content,
     )
 }
 
@@ -178,7 +175,7 @@ private val LocalChainedPlatformTextInputInterceptor =
 /** Establishes a new text input session, optionally intercepted by [chainedInterceptor]. */
 private suspend fun Owner.interceptedTextInputSession(
     chainedInterceptor: ChainedPlatformTextInputInterceptor?,
-    session: suspend PlatformTextInputSessionScope.() -> Nothing
+    session: suspend PlatformTextInputSessionScope.() -> Nothing,
 ): Nothing {
     if (chainedInterceptor == null) {
         textInputSession(session)
@@ -191,11 +188,10 @@ private suspend fun Owner.interceptedTextInputSession(
  * A link in a chain of [PlatformTextInputInterceptor]s. Knows about its [parent] and dispatches
  * [textInputSession] calls up the chain.
  */
-@OptIn(ExperimentalComposeUiApi::class)
 @Stable
 private class ChainedPlatformTextInputInterceptor(
     initialInterceptor: PlatformTextInputInterceptor,
-    private val parent: ChainedPlatformTextInputInterceptor?
+    private val parent: ChainedPlatformTextInputInterceptor?,
 ) {
     private var interceptor by mutableStateOf(initialInterceptor)
 
@@ -214,7 +210,7 @@ private class ChainedPlatformTextInputInterceptor(
     @OptIn(InternalComposeUiApi::class)
     suspend fun textInputSession(
         owner: Owner,
-        session: suspend PlatformTextInputSessionScope.() -> Nothing
+        session: suspend PlatformTextInputSessionScope.() -> Nothing,
     ): Nothing {
         owner.interceptedTextInputSession(parent) {
             val parentSession = this
@@ -237,11 +233,11 @@ private class ChainedPlatformTextInputInterceptor(
                                     .collectLatest { interceptor ->
                                         interceptor.interceptStartInputMethod(
                                             request,
-                                            parentSession
+                                            parentSession,
                                         )
                                     }
                                 error("Interceptors flow should never terminate.")
-                            }
+                            },
                         )
                     }
                 }

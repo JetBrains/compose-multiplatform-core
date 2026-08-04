@@ -72,13 +72,13 @@ import kotlin.math.pow
 @ExperimentalMaterialApi
 // TODO(b/244423199): Consider whether the state parameter should be replaced with lambdas to
 //  enable people to use this indicator with custom pull-to-refresh components.
-fun PullRefreshIndicator(
+public fun PullRefreshIndicator(
     refreshing: Boolean,
     state: PullRefreshState,
     modifier: Modifier = Modifier,
     backgroundColor: Color = MaterialTheme.colors.surface,
     contentColor: Color = contentColorFor(backgroundColor),
-    scale: Boolean = false
+    scale: Boolean = false,
 ) {
     val showElevation by
         remember(refreshing, state) { derivedStateOf { refreshing || state.position > 0.5f } }
@@ -100,7 +100,7 @@ fun PullRefreshIndicator(
     ) {
         Crossfade(
             targetState = refreshing,
-            animationSpec = tween(durationMillis = CrossfadeDurationMs)
+            animationSpec = tween(durationMillis = CrossfadeDurationMs),
         ) { refreshing ->
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 val spinnerSize = (ArcRadius + StrokeWidth).times(2)
@@ -122,11 +122,7 @@ fun PullRefreshIndicator(
 /** Modifier.size MUST be specified. */
 @Composable
 @ExperimentalMaterialApi
-private fun CircularArrowIndicator(
-    state: PullRefreshState,
-    color: Color,
-    modifier: Modifier,
-) {
+private fun CircularArrowIndicator(state: PullRefreshState, color: Color, modifier: Modifier) {
     val path = remember { Path().apply { fillType = PathFillType.EvenOdd } }
 
     val targetAlpha by
@@ -146,7 +142,7 @@ private fun CircularArrowIndicator(
                     size.center.x - arcRadius,
                     size.center.y - arcRadius,
                     size.center.x + arcRadius,
-                    size.center.y + arcRadius
+                    size.center.y + arcRadius,
                 )
             drawArc(
                 color = color,
@@ -156,7 +152,7 @@ private fun CircularArrowIndicator(
                 useCenter = false,
                 topLeft = arcBounds.topLeft,
                 size = arcBounds.size,
-                style = Stroke(width = StrokeWidth.toPx(), cap = StrokeCap.Square)
+                style = Stroke(width = StrokeWidth.toPx(), cap = StrokeCap.Square),
             )
             drawArrow(path, arcBounds, color, alpha, values)
         }
@@ -168,7 +164,7 @@ private class ArrowValues(
     val rotation: Float,
     val startAngle: Float,
     val endAngle: Float,
-    val scale: Float
+    val scale: Float,
 )
 
 private fun ArrowValues(progress: Float): ArrowValues {
@@ -196,7 +192,7 @@ private fun DrawScope.drawArrow(
     bounds: Rect,
     color: Color,
     alpha: Float,
-    values: ArrowValues
+    values: ArrowValues,
 ) {
     arrow.reset()
     arrow.moveTo(0f, 0f) // Move to left corner
@@ -217,13 +213,19 @@ private fun DrawScope.drawArrow(
 private const val CrossfadeDurationMs = 100
 private const val MaxProgressArc = 0.8f
 
-private val IndicatorSize = 40.dp
+private val IndicatorSize
+    get() = 40.dp
 private val SpinnerShape = CircleShape
-private val ArcRadius = 7.5.dp
-private val StrokeWidth = 2.5.dp
-private val ArrowWidth = 10.dp
-private val ArrowHeight = 5.dp
-private val Elevation = 6.dp
+private val ArcRadius
+    get() = 7.5.dp
+private val StrokeWidth
+    get() = 2.5.dp
+private val ArrowWidth
+    get() = 10.dp
+private val ArrowHeight
+    get() = 5.dp
+private val Elevation
+    get() = 6.dp
 
 // Values taken from SwipeRefreshLayout
 private const val MinAlpha = 0.3f

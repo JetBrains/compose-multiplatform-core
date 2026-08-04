@@ -13,6 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+@file:Suppress("FacadeClassJvmName") // Cannot be updated, the Kt name has been released
+
 package androidx.lifecycle
 
 import androidx.annotation.MainThread
@@ -33,27 +36,28 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.launch
 
 /**
- * Defines an object that has an Android Lifecycle. [Fragment][androidx.fragment.app.Fragment] and
- * [FragmentActivity][androidx.fragment.app.FragmentActivity] classes implement [LifecycleOwner]
- * interface which has the [ getLifecycle][LifecycleOwner.getLifecycle] method to access the
- * Lifecycle. You can also implement [LifecycleOwner] in your own classes.
+ * Defines an object with a lifecycle state control flow.
  *
- * [Event.ON_CREATE], [Event.ON_START], [Event.ON_RESUME] events in this class are dispatched
- * **after** the [LifecycleOwner]'s related method returns. [Event.ON_PAUSE], [Event.ON_STOP],
- * [Event.ON_DESTROY] events in this class are dispatched **before** the [LifecycleOwner]'s related
- * method is called. For instance, [Event.ON_START] will be dispatched after
- * [onStart][android.app.Activity.onStart] returns, [Event.ON_STOP] will be dispatched before
- * [onStop][android.app.Activity.onStop] is called. This gives you certain guarantees on which state
- * the owner is in.
+ * Commonly implemented by UI container classes (such as Activities and Fragments on Android) or
+ * custom components to expose their lifecycle to other components.
  *
- * To observe lifecycle events call [.addObserver] passing an object that implements either
+ * [Event.ON_CREATE], [Event.ON_START], [Event.ON_RESUME] events are dispatched **after** the
+ * [LifecycleOwner]'s related method returns. [Event.ON_PAUSE], [Event.ON_STOP], [Event.ON_DESTROY]
+ * events are dispatched **before** the [LifecycleOwner]'s related method is called. This gives you
+ * certain guarantees on which state the owner is in.
+ *
+ * To observe lifecycle events, call [addObserver] passing an object that implements either
  * [DefaultLifecycleObserver] or [LifecycleEventObserver].
+ *
+ * @see State for the valid lifecycle states.
+ * @see Event for the transition events between states.
  */
 public abstract class Lifecycle {
     /**
-     * Lifecycle coroutines extensions stashes the CoroutineScope into this field.
+     * Caches the [CoroutineScope] associated with this [Lifecycle].
      *
-     * RestrictTo as it is used by lifecycle-common-ktx
+     * This field is used by [coroutineScope] to retrieve or initialize the coroutine scope in a
+     * thread-safe manner. It is for **internal use** by the lifecycle library group.
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
@@ -61,217 +65,340 @@ public abstract class Lifecycle {
     public var internalScopeRef: AtomicReference<Any?> = AtomicReference(null)
 
     /**
-     * Adds a LifecycleObserver that will be notified when the LifecycleOwner changes state.
+     * Adds a [LifecycleObserver] to receive [LifecycleOwner] state changes.
      *
-     * The given observer will be brought to the current state of the LifecycleOwner. For example,
-     * if the LifecycleOwner is in [State.STARTED] state, the given observer will receive
-     * [Event.ON_CREATE], [Event.ON_START] events.
+     * Brings the given [observer] up to the current [State] of the [LifecycleOwner]. For example,
+     * if the [LifecycleOwner] is in [State.STARTED], the [observer] receives [Event.ON_CREATE] and
+     * [Event.ON_START] [Event]s.
      *
      * @param observer The observer to notify.
      */
     @MainThread public abstract fun addObserver(observer: LifecycleObserver)
 
     /**
-     * Removes the given observer from the observers list.
+     * Removes the given [observer] from the list of registered observers.
      *
-     * If this method is called while a state change is being dispatched,
-     * * If the given observer has not yet received that event, it will not receive it.
-     * * If the given observer has more than 1 method that observes the currently dispatched event
-     *   and at least one of them received the event, all of them will receive the event and the
-     *   removal will happen afterwards.
+     * If called while a state change is being dispatched:
+     * - If the given [observer] has not yet received that event, it will not receive it.
+     * - If the given [observer] has more than one method that observes the currently dispatched
+     *   event, and at least one of them received the event, all of them receive it, and removal
+     *   occurs afterward.
      *
-     * @param observer The observer to be removed.
+     * @param observer The observer to remove.
      */
     @MainThread public abstract fun removeObserver(observer: LifecycleObserver)
 
-    /**
-     * Returns the current state of the Lifecycle.
-     *
-     * @return The current state of the Lifecycle.
-     */
+    /** The current [State] of the [Lifecycle]. */
     @get:MainThread public abstract val currentState: State
 
     /**
      * Returns a [StateFlow] where the [StateFlow.value] represents the current [State] of this
-     * Lifecycle.
-     *
-     * @return [StateFlow] where the [StateFlow.value] represents the current [State] of this
-     *   Lifecycle.
+     * [Lifecycle].
      */
-    public open val currentStateFlow: StateFlow<Lifecycle.State>
-        get() {
+    public open val currentStateFlow: StateFlow<State> by
+        lazy(LazyThreadSafetyMode.NONE) {
             val mutableStateFlow = MutableStateFlow(currentState)
-            LifecycleEventObserver { _, event -> mutableStateFlow.value = event.targetState }
-                .also { addObserver(it) }
-            return mutableStateFlow.asStateFlow()
+            // If currentStateFlow is never accessed, it is not created. Once created, a single
+            // observer is kept registered for the lifetime of this Lifecycle.
+            addObserver { _, event -> mutableStateFlow.value = event.targetState }
+            mutableStateFlow.asStateFlow()
         }
 
+    /**
+     * Represents a transition event triggered by a change in the [LifecycleOwner]'s state.
+     *
+     * Together with [State]s, these events form a directed graph defining the valid lifecycle flow
+     * of a component:
+     * ```
+     *               +-------------+
+     *               | INITIALIZED |
+     *               +-------------+
+     *                      |
+     *                      | ON_CREATE
+     *                      v
+     *                 +---------+
+     *                 | CREATED | ----------+
+     *                 +---------+           |
+     *                  |       ^            |
+     *         ON_START |       | ON_STOP    |
+     *                  v       |            | ON_DESTROY
+     *                 +---------+           |
+     *                 | STARTED |           |
+     *                 +---------+           |
+     *                  |       ^            |
+     *        ON_RESUME |       | ON_PAUSE   |
+     *                  v       |            v
+     *                 +---------+     +-----------+
+     *                 | RESUMED |     | DESTROYED |
+     *                 +---------+     +-----------+
+     * ```
+     *
+     * @see State for the states resulting from these transition events.
+     */
     public enum class Event {
-        /** Constant for onCreate event of the [LifecycleOwner]. */
+        /**
+         * Dispatched when the [LifecycleOwner] enters the created state.
+         *
+         * Called after the [LifecycleOwner]'s `onCreate` returns. Transitions the lifecycle to
+         * [State.CREATED].
+         */
         ON_CREATE,
 
-        /** Constant for onStart event of the [LifecycleOwner]. */
+        /**
+         * Dispatched when the [LifecycleOwner] enters the started state.
+         *
+         * Called after the [LifecycleOwner]'s `onStart` returns. Transitions the lifecycle to
+         * [State.STARTED].
+         */
         ON_START,
 
-        /** Constant for onResume event of the [LifecycleOwner]. */
+        /**
+         * Dispatched when the [LifecycleOwner] enters the resumed state.
+         *
+         * Called after the [LifecycleOwner]'s `onResume` returns. Transitions the lifecycle to
+         * [State.RESUMED].
+         */
         ON_RESUME,
 
-        /** Constant for onPause event of the [LifecycleOwner]. */
+        /**
+         * Dispatched when the [LifecycleOwner] is about to leave the resumed state.
+         *
+         * Called before the [LifecycleOwner]'s `onPause` is called. Transitions the lifecycle to
+         * [State.STARTED].
+         */
         ON_PAUSE,
 
-        /** Constant for onStop event of the [LifecycleOwner]. */
+        /**
+         * Dispatched when the [LifecycleOwner] is about to leave the started state.
+         *
+         * Called before the [LifecycleOwner]'s `onStop` is called. Transitions the lifecycle to
+         * [State.CREATED].
+         */
         ON_STOP,
 
-        /** Constant for onDestroy event of the [LifecycleOwner]. */
+        /**
+         * Dispatched when the [LifecycleOwner] is about to be destroyed.
+         *
+         * Called before the [LifecycleOwner]'s `onDestroy` is called. Transitions the lifecycle to
+         * [State.DESTROYED].
+         */
         ON_DESTROY,
 
-        /** An [Event] constant that can be used to match all events. */
+        /** A wildcard event constant that matches all [Event]s. */
         ON_ANY;
 
         /**
-         * Returns the new [Lifecycle.State] of a [Lifecycle] that just reported this
-         * [Lifecycle.Event].
+         * Returns the new [State] of a [Lifecycle] that just reported this [Event].
          *
-         * Throws [IllegalArgumentException] if called on [.ON_ANY], as it is a special value used
-         * by [OnLifecycleEvent] and not a real lifecycle event.
-         *
-         * @return the state that will result from this event
+         * | Reported [Event] | Resulting [State]                 |
+         * |------------------|-----------------------------------|
+         * | [ON_CREATE]      | [State.CREATED]                   |
+         * | [ON_STOP]        | [State.CREATED]                   |
+         * | [ON_START]       | [State.STARTED]                   |
+         * | [ON_PAUSE]       | [State.STARTED]                   |
+         * | [ON_RESUME]      | [State.RESUMED]                   |
+         * | [ON_DESTROY]     | [State.DESTROYED]                 |
+         * | [ON_ANY]         | throws [IllegalArgumentException] |
          */
         public val targetState: State
-            get() {
+            get() =
                 when (this) {
                     ON_CREATE,
-                    ON_STOP -> return State.CREATED
+                    ON_STOP -> State.CREATED
                     ON_START,
-                    ON_PAUSE -> return State.STARTED
-                    ON_RESUME -> return State.RESUMED
-                    ON_DESTROY -> return State.DESTROYED
-                    ON_ANY -> {}
+                    ON_PAUSE -> State.STARTED
+                    ON_RESUME -> State.RESUMED
+                    ON_DESTROY -> State.DESTROYED
+                    ON_ANY -> throw IllegalArgumentException("$this has no target state")
                 }
-                throw IllegalArgumentException("$this has no target state")
-            }
 
         public companion object {
             /**
-             * Returns the [Lifecycle.Event] that will be reported by a [Lifecycle] leaving the
-             * specified [Lifecycle.State] to a lower state, or `null` if there is no valid event
-             * that can move down from the given state.
+             * Returns the [Event] that transitions down from the specified [state] to a lower
+             * state, or `null` if no transition exists.
              *
-             * @param state the higher state that the returned event will transition down from
-             * @return the event moving down the lifecycle phases from state
+             * | Given [state]       | Returned [Event]   |
+             * |---------------------|--------------------|
+             * | [State.DESTROYED]   | `null`             |
+             * | [State.INITIALIZED] | `null`             |
+             * | [State.CREATED]     | [Event.ON_DESTROY] |
+             * | [State.STARTED]     | [Event.ON_STOP]    |
+             * | [State.RESUMED]     | [Event.ON_PAUSE]   |
              */
             @JvmStatic
-            public fun downFrom(state: State): Event? {
-                return when (state) {
+            public fun downFrom(state: State): Event? =
+                when (state) {
+                    State.DESTROYED -> null
+                    State.INITIALIZED -> null
                     State.CREATED -> ON_DESTROY
                     State.STARTED -> ON_STOP
                     State.RESUMED -> ON_PAUSE
-                    else -> null
                 }
-            }
 
             /**
-             * Returns the [Lifecycle.Event] that will be reported by a [Lifecycle] entering the
-             * specified [Lifecycle.State] from a higher state, or `null` if there is no valid event
-             * that can move down to the given state.
+             * Returns the [Event] that transitions down into the specified target [state], or
+             * `null` if no transition exists.
              *
-             * @param state the lower state that the returned event will transition down to
-             * @return the event moving down the lifecycle phases to state
+             * | Target [state]      | Returned [Event]   |
+             * |---------------------|--------------------|
+             * | [State.DESTROYED]   | [Event.ON_DESTROY] |
+             * | [State.INITIALIZED] | `null`             |
+             * | [State.CREATED]     | [Event.ON_STOP]    |
+             * | [State.STARTED]     | [Event.ON_PAUSE]   |
+             * | [State.RESUMED]     | `null`             |
              */
             @JvmStatic
-            public fun downTo(state: State): Event? {
-                return when (state) {
+            public fun downTo(state: State): Event? =
+                when (state) {
                     State.DESTROYED -> ON_DESTROY
+                    State.INITIALIZED -> null
                     State.CREATED -> ON_STOP
                     State.STARTED -> ON_PAUSE
-                    else -> null
+                    State.RESUMED -> null
                 }
-            }
 
             /**
-             * Returns the [Lifecycle.Event] that will be reported by a [Lifecycle] leaving the
-             * specified [Lifecycle.State] to a higher state, or `null` if there is no valid event
-             * that can move up from the given state.
+             * Returns the [Event] that transitions up from the specified [state] to a higher state,
+             * or `null` if no transition exists.
              *
-             * @param state the lower state that the returned event will transition up from
-             * @return the event moving up the lifecycle phases from state
+             * | Given [state]       | Returned [Event]  |
+             * |---------------------|-------------------|
+             * | [State.DESTROYED]   | `null`            |
+             * | [State.INITIALIZED] | [Event.ON_CREATE] |
+             * | [State.CREATED]     | [Event.ON_START]  |
+             * | [State.STARTED]     | [Event.ON_RESUME] |
+             * | [State.RESUMED]     | `null`            |
              */
             @JvmStatic
-            public fun upFrom(state: State): Event? {
-                return when (state) {
+            public fun upFrom(state: State): Event? =
+                when (state) {
+                    State.DESTROYED -> null
                     State.INITIALIZED -> ON_CREATE
                     State.CREATED -> ON_START
                     State.STARTED -> ON_RESUME
-                    else -> null
+                    State.RESUMED -> null
                 }
-            }
 
             /**
-             * Returns the [Lifecycle.Event] that will be reported by a [Lifecycle] entering the
-             * specified [Lifecycle.State] from a lower state, or `null` if there is no valid event
-             * that can move up to the given state.
+             * Returns the [Event] that transitions up into the specified target [state], or `null`
+             * if no transition exists.
              *
-             * @param state the higher state that the returned event will transition up to
-             * @return the event moving up the lifecycle phases to state
+             * | Target [state]      | Returned [Event]  |
+             * |---------------------|-------------------|
+             * | [State.DESTROYED]   | `null`            |
+             * | [State.INITIALIZED] | `null`            |
+             * | [State.CREATED]     | [Event.ON_CREATE] |
+             * | [State.STARTED]     | [Event.ON_START]  |
+             * | [State.RESUMED]     | [Event.ON_RESUME] |
              */
             @JvmStatic
-            public fun upTo(state: State): Event? {
-                return when (state) {
+            public fun upTo(state: State): Event? =
+                when (state) {
+                    State.DESTROYED -> null
+                    State.INITIALIZED -> null
                     State.CREATED -> ON_CREATE
                     State.STARTED -> ON_START
                     State.RESUMED -> ON_RESUME
-                    else -> null
                 }
-            }
         }
     }
 
     /**
-     * Lifecycle states. You can consider the states as the nodes in a graph and [Event]s as the
-     * edges between these nodes.
+     * Represents the current lifecycle state of a [LifecycleOwner].
+     *
+     * You can visualize these states as nodes in a graph where [Event]s represent the directed
+     * edges guiding transitions between them:
+     * ```
+     *               +-------------+
+     *               | INITIALIZED |
+     *               +-------------+
+     *                      |
+     *                      | ON_CREATE
+     *                      v
+     *                 +---------+
+     *                 | CREATED | ----------+
+     *                 +---------+           |
+     *                  |       ^            |
+     *         ON_START |       | ON_STOP    |
+     *                  v       |            | ON_DESTROY
+     *                 +---------+           |
+     *                 | STARTED |           |
+     *                 +---------+           |
+     *                  |       ^            |
+     *        ON_RESUME |       | ON_PAUSE   |
+     *                  v       |            v
+     *                 +---------+     +-----------+
+     *                 | RESUMED |     | DESTROYED |
+     *                 +---------+     +-----------+
+     * ```
+     *
+     * Transitions between these states occur strictly sequentially. When moving between
+     * non-adjacent states, the registry dispatches all intermediate [Event]s. For example,
+     * transitioning from [State.RESUMED] to [State.DESTROYED] will sequentially dispatch
+     * [Event.ON_PAUSE], [Event.ON_STOP], and [Event.ON_DESTROY].
+     *
+     * @see Event for the transition events between these states.
      */
     public enum class State {
         /**
-         * Destroyed state for a LifecycleOwner. After this event, this Lifecycle will not dispatch
-         * any more events. For instance, for an [android.app.Activity], this state is reached
-         * **right before** Activity's [onDestroy][android.app.Activity.onDestroy] call.
+         * Destroyed state for a [LifecycleOwner].
+         *
+         * **This is the terminal state.** Once reached, this [Lifecycle] will not dispatch any more
+         * events, and it cannot transition to any other state.
+         *
+         * For instance, for an Android Activity, this state is reached right before the activity's
+         * `onDestroy` is called.
          */
         DESTROYED,
 
         /**
-         * Initialized state for a LifecycleOwner. For an [android.app.Activity], this is the state
-         * when it is constructed but has not received [onCreate][android.app.Activity.onCreate]
-         * yet.
+         * Initialized state for a [LifecycleOwner].
+         *
+         * **This is the initial state.** Once the lifecycle transitions out of this state, it
+         * cannot transition back to it.
+         *
+         * For instance, for an Android Activity, this is the state when it is constructed but has
+         * not received `onCreate` yet.
          */
         INITIALIZED,
 
         /**
-         * Created state for a LifecycleOwner. For an [android.app.Activity], this state is reached
-         * in two cases:
-         * * after [onCreate][android.app.Activity.onCreate] call;
-         * * **right before** [onStop][android.app.Activity.onStop] call.
+         * Created state for a [LifecycleOwner].
+         *
+         * **This is a cyclic state.** The lifecycle can transition back and forth between
+         * [CREATED], [STARTED], and [RESUMED] states.
+         *
+         * For instance, for an Android Activity, this state is reached after the activity's
+         * `onCreate` returns, or right before `onStop` is called.
          */
         CREATED,
 
         /**
-         * Started state for a LifecycleOwner. For an [android.app.Activity], this state is reached
-         * in two cases:
-         * * after [onStart][android.app.Activity.onStart] call;
-         * * **right before** [onPause][android.app.Activity.onPause] call.
+         * Started state for a [LifecycleOwner].
+         *
+         * **This is a cyclic state.** The lifecycle can transition back and forth between
+         * [CREATED], [STARTED], and [RESUMED] states.
+         *
+         * For instance, for an Android Activity, this state is reached after the activity's
+         * `onStart` returns, or right before `onPause` is called.
          */
         STARTED,
 
         /**
-         * Resumed state for a LifecycleOwner. For an [android.app.Activity], this state is reached
-         * after [onResume][android.app.Activity.onResume] is called.
+         * Resumed state for a [LifecycleOwner].
+         *
+         * **This is a cyclic state.** The lifecycle can transition back and forth between
+         * [CREATED], [STARTED], and [RESUMED] states.
+         *
+         * For instance, for an Android Activity, this state is reached after the activity's
+         * `onResume` returns.
          */
         RESUMED;
 
         /**
-         * Compares if this State is greater or equal to the given `state`.
+         * Returns true if this state is greater than or equal to the given [state].
          *
-         * @param state State to compare with
-         * @return true if this State is greater or equal to the given `state`
+         * States are ordered as [DESTROYED] < [INITIALIZED] < [CREATED] < [STARTED] < [RESUMED].
          */
         public fun isAtLeast(state: State): Boolean {
             return compareTo(state) >= 0
@@ -281,10 +408,7 @@ public abstract class Lifecycle {
 
 /** An object reference that may be updated atomically. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public expect class AtomicReference<V>
-/** Creates a new [AtomicReference] with the given [initialValue]. */
-public constructor(initialValue: V) {
-
+public expect class AtomicReference<V>(initialValue: V) {
     /** Returns the current value. */
     public fun get(): V
 
@@ -295,10 +419,7 @@ public constructor(initialValue: V) {
 /**
  * [CoroutineScope] tied to this [Lifecycle].
  *
- * This scope will be cancelled when the [Lifecycle] is destroyed.
- *
- * This scope is bound to
- * [Dispatchers.Main.immediate][kotlinx.coroutines.MainCoroutineDispatcher.immediate]
+ * Canceled when the [Lifecycle] is destroyed. Bound to `Dispatchers.Main.immediate`.
  */
 public val Lifecycle.coroutineScope: LifecycleCoroutineScope
     get() {
@@ -317,10 +438,9 @@ public val Lifecycle.coroutineScope: LifecycleCoroutineScope
     }
 
 /**
- * [CoroutineScope] tied to a [Lifecycle] and
- * [Dispatchers.Main.immediate][kotlinx.coroutines.MainCoroutineDispatcher.immediate]
+ * [CoroutineScope] tied to a [Lifecycle] and `Dispatchers.Main.immediate`.
  *
- * This scope will be cancelled when the [Lifecycle] is destroyed.
+ * Canceled when the [Lifecycle] is destroyed.
  */
 public expect abstract class LifecycleCoroutineScope internal constructor() : CoroutineScope {
     internal abstract val lifecycle: Lifecycle
@@ -328,12 +448,12 @@ public expect abstract class LifecycleCoroutineScope internal constructor() : Co
 
 internal class LifecycleCoroutineScopeImpl(
     override val lifecycle: Lifecycle,
-    override val coroutineContext: CoroutineContext
+    override val coroutineContext: CoroutineContext,
 ) : LifecycleCoroutineScope(), LifecycleEventObserver {
     init {
-        // in case we are initialized on a non-main thread, make a best effort check before
+        // in case we are initialized on a non-main thread, make the best effort check before
         // we return the scope. This is not sync but if developer is launching on a non-main
-        // dispatcher, they cannot be 100% sure anyways.
+        // dispatcher, they cannot be 100% sure anyway.
         if (lifecycle.currentState == Lifecycle.State.DESTROYED) {
             coroutineContext.cancel()
         }
@@ -357,11 +477,11 @@ internal class LifecycleCoroutineScopeImpl(
     }
 }
 
-/** Creates a [Flow] of [Lifecycle.Event]s containing values dispatched by this [Lifecycle]. */
+/** Creates a [Flow] of [Lifecycle.Event]s dispatched by this [Lifecycle]. */
 public val Lifecycle.eventFlow: Flow<Lifecycle.Event>
     get() =
         callbackFlow {
-                val observer = LifecycleEventObserver { _, event ->
+                val observer = addObserver { _, event ->
                     trySend(event)
 
                     // Completes the producer if lifecycle is `DESTROYED`.
@@ -369,7 +489,29 @@ public val Lifecycle.eventFlow: Flow<Lifecycle.Event>
                         close()
                     }
                 }
-                addObserver(observer)
+
                 awaitClose { removeObserver(observer) }
             }
             .flowOn(Dispatchers.Main.immediate)
+
+/**
+ * Adds a [LifecycleObserver] to this [Lifecycle] using the provided [action].
+ *
+ * Invokes [action] whenever a [Lifecycle.Event] occurs.
+ *
+ * @param action The action invoked on each [Lifecycle.Event], providing the [LifecycleOwner] and
+ *   the specific [Lifecycle.Event].
+ * @return the added [LifecycleObserver] instance (can be used to later remove it).
+ */
+public inline fun Lifecycle.addObserver(
+    crossinline action: LifecycleObserver.(source: LifecycleOwner, event: Lifecycle.Event) -> Unit
+): LifecycleObserver {
+    val observer =
+        object : LifecycleEventObserver {
+            override fun onStateChanged(source: LifecycleOwner, event: Lifecycle.Event) {
+                action(this, source, event)
+            }
+        }
+    addObserver(observer)
+    return observer
+}

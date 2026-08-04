@@ -28,7 +28,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.material.Text
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -68,7 +68,7 @@ fun BasicFocusableMarqueeSample() {
             Modifier.clickable { focusRequester.requestFocus() }
                 .basicMarquee(animationMode = MarqueeAnimationMode.WhileFocused)
                 .focusRequester(focusRequester)
-                .focusable()
+                .focusable(),
         )
     }
 }
@@ -87,9 +87,9 @@ fun BasicMarqueeWithFadedEdgesSample() {
                 Brush.horizontalGradient(
                     colors = listOf(Color.Transparent, Color.Black),
                     startX = if (leftEdge) 0f else size.width,
-                    endX = if (leftEdge) edgeWidthPx else size.width - edgeWidthPx
+                    endX = if (leftEdge) edgeWidthPx else size.width - edgeWidthPx,
                 ),
-            blendMode = BlendMode.DstIn
+            blendMode = BlendMode.DstIn,
         )
     }
 
@@ -108,8 +108,8 @@ fun BasicMarqueeWithFadedEdgesSample() {
             .basicMarquee(
                 // Animate forever.
                 iterations = Int.MAX_VALUE,
-                spacing = MarqueeSpacing(0.dp)
+                spacing = MarqueeSpacing(0.dp),
             )
-            .padding(start = edgeWidth)
+            .padding(start = edgeWidth),
     )
 }

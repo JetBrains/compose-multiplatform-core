@@ -20,6 +20,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.text.InputType
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
@@ -116,27 +117,27 @@ class FormFillingActivity : ComponentActivity() {
                     BasicTextField(
                         value = person.title,
                         onValueChange = { person.title = it },
-                        textStyle = textStyle
+                        textStyle = textStyle,
                     )
                     BasicTextField(
                         value = person.firstName,
                         onValueChange = { person.firstName = it },
-                        textStyle = textStyle
+                        textStyle = textStyle,
                     )
                     BasicTextField(
                         value = person.middleName,
                         onValueChange = { person.middleName = it },
-                        textStyle = textStyle
+                        textStyle = textStyle,
                     )
                     BasicTextField(
                         value = person.lastName,
                         onValueChange = { person.lastName = it },
-                        textStyle = textStyle
+                        textStyle = textStyle,
                     )
                     BasicTextField(
                         value = person.age.toString(),
                         onValueChange = { person.age = it.toInt() },
-                        textStyle = textStyle
+                        textStyle = textStyle,
                     )
                 }
             }
@@ -186,6 +187,11 @@ class FormFillingActivity : ComponentActivity() {
         init {
             textSize = fontSize
             gravity = Gravity.CENTER_VERTICAL
+            // Match Compose BasicTextField in benchmark (unfocused during scroll)
+            isFocusable = false
+            isFocusableInTouchMode = false
+            // Disable spell checking (prevents TextServicesManager IPCs during scroll)
+            inputType = inputType or InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
         }
 
         fun replaceText(newText: String) {
@@ -204,7 +210,7 @@ class FormFillingActivity : ComponentActivity() {
     private class DemoAdapter(
         val data: List<FormData>,
         val rowHeightPx: Float,
-        textSize: TextUnit
+        textSize: TextUnit,
     ) : Adapter<DemoAdapter.DemoViewHolder>() {
 
         private class DemoViewHolder(
@@ -213,7 +219,7 @@ class FormFillingActivity : ComponentActivity() {
             val middleName: EditTextView,
             val lastName: EditTextView,
             val age: EditTextView,
-            itemRoot: View
+            itemRoot: View,
         ) : ViewHolder(itemRoot)
 
         val textSize = textSize.value
@@ -238,7 +244,7 @@ class FormFillingActivity : ComponentActivity() {
                     it.addView(middleName)
                     it.addView(lastName)
                     it.addView(age)
-                }
+                },
             )
         }
 
@@ -278,7 +284,7 @@ class FormFillingActivity : ComponentActivity() {
                     firstName = "John $it",
                     middleName = "Ace $it",
                     lastName = "Doe $it",
-                    age = it
+                    age = it,
                 )
             }
         }

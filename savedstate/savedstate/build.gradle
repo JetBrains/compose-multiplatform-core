@@ -1,166 +1,99 @@
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
 
 
 import androidx.build.SoftwareType
 import androidx.build.PlatformIdentifier
+import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
+import org.jetbrains.kotlin.konan.target.Family
 
 plugins {
     id("AndroidXPlugin")
-    id("com.android.library")
     alias(libs.plugins.kotlinSerialization)
 }
 
 androidXMultiplatform {
-    androidTarget()
+    androidLibrary {
+        namespace = "androidx.savedstate"
+        androidResources.enable = true
+    }
     desktop()
-    ios()
-    linux()
     mac()
+    linux()
+    ios()
+    watchos()
+    tvos()
+    mingwX64()
+    js()
+    wasmJs()
 
     defaultPlatform(PlatformIdentifier.ANDROID)
 
     sourceSets {
-        commonMain {
-            dependencies {
-                api(libs.kotlinStdlib)
-                api("androidx.annotation:annotation:1.9.1")
-                api(androidx.projectOrArtifact(":lifecycle:lifecycle-common"))
-                api(libs.kotlinCoroutinesCore)
-                api(libs.kotlinSerializationCore)
-            }
+        commonMain.dependencies {
+            api("androidx.annotation:annotation:1.9.1")
+            implementation("androidx.lifecycle:lifecycle-common:2.9.2")
+            implementation("androidx.collection:collection:1.5.0")
+            api(libs.kotlinCoroutinesCore)
+            api(libs.kotlinSerializationCore)
         }
 
-        commonTest {
-            dependencies {
-                implementation(project(":lifecycle:lifecycle-runtime"))
-                implementation(project(":kruth:kruth"))
-                implementation(libs.kotlinTest)
-                implementation(libs.kotlinTestCommon)
-                implementation(libs.kotlinTestAnnotationsCommon)
-                implementation(libs.kotlinCoroutinesTest)
-            }
+        commonTest.dependencies {
+            implementation("androidx.lifecycle:lifecycle-runtime:2.9.2")
+            implementation(project(":kruth:kruth"))
+            implementation(libs.kotlinTest)
+            implementation(libs.kotlinCoroutinesTest)
+            implementation(libs.kotlinSerializationJson)
         }
 
-        jvmMain {
-            dependsOn(commonMain)
+        androidMain.dependencies {
+            api("androidx.annotation:annotation:1.8.1")
+            implementation("androidx.core:core-ktx:1.13.1")
+            implementation("androidx.core:core-viewtree:1.0.0")
         }
 
-        jvmTest {
-            dependsOn(commonTest)
+        androidDeviceTest.dependencies {
+            implementation("androidx.lifecycle:lifecycle-runtime:2.9.2")
+            implementation(libs.testExtJunit)
+            implementation(libs.testCore)
+            implementation(libs.testRunner)
+            implementation(libs.testRules)
+            implementation(libs.truth)
         }
 
-        androidMain {
-            dependsOn(jvmMain)
-            dependencies {
-                api("androidx.annotation:annotation:1.8.1")
-                implementation("androidx.core:core-ktx:1.13.1")
-                implementation("androidx.core:core-viewtree:1.0.0")
-                api(libs.kotlinStdlib)
-            }
+        create("nonAndroidMain").dependsOn(commonMain)
+        create("nonAndroidTest").dependsOn(commonTest)
+
+        nonJvmMain.dependsOn(nonAndroidMain)
+        nonJvmTest.dependsOn(nonAndroidTest)
+
+        desktopMain.dependsOn(nonAndroidMain)
+        desktopTest.dependsOn(nonAndroidTest)
+
+        nativeMain.dependencies {
+            implementation(libs.atomicFu)
         }
 
-        androidUnitTest {
-            dependsOn(jvmTest)
-            dependencies {
-                implementation(libs.robolectric)
-            }
-        }
-
-        androidInstrumentedTest {
-            dependsOn(jvmTest)
-            dependencies {
-                implementation(project(":lifecycle:lifecycle-runtime"))
-                implementation(libs.testExtJunit)
-                implementation(libs.testCore)
-                implementation(libs.testRunner)
-                implementation(libs.testRules)
-                implementation(libs.truth)
-            }
-        }
-
-        nonAndroidMain {
-            dependsOn(commonMain)
-        }
-
-        nonAndroidTest {
-            dependsOn(commonTest)
-        }
-
-        desktopMain {
-            dependsOn(jvmMain)
-            dependsOn(nonAndroidMain)
-        }
-
-        desktopTest {
-            dependsOn(jvmTest)
-            dependsOn(nonAndroidTest)
-        }
-
-        nativeMain {
-            dependsOn(commonMain)
-            dependsOn(nonAndroidMain)
-        }
-
-        nativeTest {
-            dependsOn(commonTest)
-            dependsOn(nonAndroidTest)
-        }
-
-        darwinMain {
-            dependsOn(nativeMain)
-        }
-
-        darwinTest {
-            dependsOn(nativeTest)
-        }
-
-        linuxMain {
-            dependsOn(nativeMain)
-        }
-
-        linuxTest {
-            dependsOn(nativeTest)
-        }
-
-        targets.configureEach { target ->
-            if (target.platformType == org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType.native) {
-                target.compilations["main"].defaultSourceSet {
-                    def konanTargetFamily = target.konanTarget.family
-                    if (konanTargetFamily == org.jetbrains.kotlin.konan.target.Family.OSX || konanTargetFamily == org.jetbrains.kotlin.konan.target.Family.IOS) {
-                        dependsOn(darwinMain)
-                    } else if (konanTargetFamily == org.jetbrains.kotlin.konan.target.Family.LINUX) {
-                        dependsOn(linuxMain)
-                    } else {
-                        throw new GradleException("unknown native target ${target}")
-                    }
-                }
-                target.compilations["test"].defaultSourceSet {
-                    def konanTargetFamily = target.konanTarget.family
-                    if (konanTargetFamily == org.jetbrains.kotlin.konan.target.Family.OSX || konanTargetFamily == org.jetbrains.kotlin.konan.target.Family.IOS) {
-                        dependsOn(darwinTest)
-                    } else if (konanTargetFamily == org.jetbrains.kotlin.konan.target.Family.LINUX) {
-                        dependsOn(linuxTest)
-                    } else {
-                        throw new GradleException("unknown native target ${target}")
-                    }
-                }
-            }
+        webTest.dependencies {
+            implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")
+            implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.9.0")
         }
     }
 }
 
-android {
-    buildTypes.configureEach {
-        consumerProguardFiles("proguard-rules.pro")
+dependencies {
+    constraints {
+        // Prevents symbols duplication with old versions of JetBrains' fork.
+        // Starting with version 1.3.5, this module is published as empty artifact with dependency
+        // to this androidx module.
+        commonMainImplementation("org.jetbrains.androidx.savedstate:savedstate:1.3.5") {
+            because "prevents symbols duplication"
+        }
     }
-    namespace = "androidx.savedstate"
-    experimentalProperties["android.lint.useK2Uast"] = false // TODO(b/345531033)
 }
 
 androidx {
@@ -169,5 +102,5 @@ androidx {
     samples(project(":savedstate:savedstate-samples"))
     inceptionYear = "2018"
     description = "Android Lifecycle Saved State"
-    metalavaK2UastEnabled = false
+    enableRobolectric()
 }

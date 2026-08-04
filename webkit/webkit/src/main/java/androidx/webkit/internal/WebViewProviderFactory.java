@@ -16,11 +16,15 @@
 
 package androidx.webkit.internal;
 
+import android.content.Context;
 import android.webkit.TracingController;
 import android.webkit.WebView;
 
 import androidx.webkit.WebViewCompat;
+import androidx.webkit.WebViewOutcomeReceiver;
 import androidx.webkit.WebViewStartUpConfig;
+import androidx.webkit.WebViewStartUpResult;
+import androidx.webkit.WebViewStartupException;
 
 import org.chromium.support_lib_boundary.DropDataContentProviderBoundaryInterface;
 import org.chromium.support_lib_boundary.ProfileStoreBoundaryInterface;
@@ -28,70 +32,83 @@ import org.chromium.support_lib_boundary.ProxyControllerBoundaryInterface;
 import org.chromium.support_lib_boundary.ServiceWorkerControllerBoundaryInterface;
 import org.chromium.support_lib_boundary.StaticsBoundaryInterface;
 import org.chromium.support_lib_boundary.TracingControllerBoundaryInterface;
+import org.chromium.support_lib_boundary.WebViewBuilderBoundaryInterface;
 import org.chromium.support_lib_boundary.WebViewProviderBoundaryInterface;
 import org.chromium.support_lib_boundary.WebkitToCompatConverterBoundaryInterface;
 import org.jspecify.annotations.NonNull;
 
 /**
- * Interface representing {@link android.webkit.WebViewFactoryProvider}.
- * On device with a compatible WebView APK this interface is implemented by a class defined in the
- * WebView APK itself.
- * On devices without a compatible WebView APK this interface is implemented by a stub class
- * {@link androidx.webkit.internal.IncompatibleApkWebViewProviderFactory}.
+ * Interface representing {@code android.webkit.WebViewFactoryProvider}. On device with a compatible
+ * WebView APK this interface is implemented by a class defined in the WebView APK itself. On
+ * devices without a compatible WebView APK this interface is implemented by a stub class {@link
+ * androidx.webkit.internal.IncompatibleApkWebViewProviderFactory}.
  */
 @SuppressWarnings("JavadocReference") // WebViewFactoryProvider and WebViewProvider are hidden.
 public interface WebViewProviderFactory {
-    /**
-     * Create a support library version of {@link android.webkit.WebViewProvider}.
-     */
-    @NonNull WebViewProviderBoundaryInterface createWebView(@NonNull WebView webview);
+
+    /** Returns a builder that can configure and build a WebView instance. */
+    @NonNull
+    WebViewBuilderBoundaryInterface getWebViewBuilder();
+
+    /** Create a support library version of {@code android.webkit.WebViewProvider}. */
+    @NonNull
+    WebViewProviderBoundaryInterface createWebView(@NonNull WebView webview);
 
     /**
-     * Create the boundary interface for {@link WebkitToCompatConverter}
-     * which converts android.webkit classes into their corresponding support library classes.
+     * Create the boundary interface for {@link WebkitToCompatConverter} which converts
+     * android.webkit classes into their corresponding support library classes.
      */
-    @NonNull WebkitToCompatConverterBoundaryInterface getWebkitToCompatConverter();
+    @NonNull
+    WebkitToCompatConverterBoundaryInterface getWebkitToCompatConverter();
 
     /**
-     * Fetch the boundary interface representing
-     * {@link android.webkit.WebViewFactoryProvider#Statics}.
+     * Fetch the boundary interface representing {@code
+     * android.webkit.WebViewFactoryProvider#Statics}.
      */
-    @NonNull StaticsBoundaryInterface getStatics();
+    @NonNull
+    StaticsBoundaryInterface getStatics();
 
-    /**
-     * Fetch the features supported by the current WebView APK.
-     */
+    /** Fetch the features supported by the current WebView APK. */
     String @NonNull [] getWebViewFeatures();
 
-    /**
-     * Fetch the boundary interface representing {@link android.webkit.ServiceWorkerController}.
-     */
-    @NonNull ServiceWorkerControllerBoundaryInterface getServiceWorkerController();
+    /** Fetch the boundary interface representing {@link android.webkit.ServiceWorkerController}. */
+    @NonNull
+    ServiceWorkerControllerBoundaryInterface getServiceWorkerController();
+
+    /** Fetch the boundary interface representing {@link TracingController}. */
+    @NonNull
+    TracingControllerBoundaryInterface getTracingController();
+
+    /** Fetch the boundary interface representing {@code android.webkit.ProxyController}. */
+    @NonNull
+    ProxyControllerBoundaryInterface getProxyController();
+
+    /** Fetch the boundary interface representing image drag drop implementation. */
+    @NonNull
+    DropDataContentProviderBoundaryInterface getDropDataProvider();
+
+    /** Fetch the boundary interface representing profile store for Multi-Profile. */
+    @NonNull
+    ProfileStoreBoundaryInterface getProfileStore();
 
     /**
-     * Fetch the boundary interface representing {@link TracingController}.
+     * @deprecated Use the {@link androidx.webkit.OutcomeReceiverCompat} version instead.
+     * Fetch the boundary interface representing {@link
+     * WebViewCompat#startUpWebView(Context, WebViewStartUpConfig, WebViewCompat.WebViewStartUpCallback)}.
      */
-    @NonNull TracingControllerBoundaryInterface getTracingController();
-
-    /**
-     * Fetch the boundary interface representing {@link android.webkit.ProxyController}.
-     */
-    @NonNull ProxyControllerBoundaryInterface getProxyController();
-
-    /**
-     * Fetch the boundary interface representing image drag drop implementation.
-     */
-    @NonNull DropDataContentProviderBoundaryInterface getDropDataProvider();
-
-    /**
-     * Fetch the boundary interface representing profile store for Multi-Profile.
-     */
-    @NonNull ProfileStoreBoundaryInterface getProfileStore();
-
-    /**
-     * Fetch the boundary interface representing
-     * {@link WebViewCompat#startUpWebView(WebViewStartUpConfig, WebViewCompat.WebViewStartUpCallback)}.
-     */
-    void startUpWebView(@NonNull WebViewStartUpConfig config,
+    @SuppressWarnings("removal")
+    @WebViewCompat.ExperimentalAsyncStartUp
+    @Deprecated
+    void startUpWebView(
+            @NonNull WebViewStartUpConfig config,
             WebViewCompat.@NonNull WebViewStartUpCallback callback);
+
+    /**
+     * Fetch the boundary interface representing {@link
+     * WebViewCompat#startUpWebView(Context, WebViewStartUpConfig, WebViewOutcomeReceiver)}.
+     */
+    void startUpWebView(
+            @NonNull WebViewStartUpConfig config,
+            @NonNull WebViewOutcomeReceiver<WebViewStartUpResult,
+                    WebViewStartupException> callback);
 }

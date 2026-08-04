@@ -28,14 +28,29 @@ import android.util.Size
 import android.util.SparseArray
 import androidx.annotation.OpenForTesting
 import androidx.annotation.RequiresExtension
+import androidx.pdf.ExperimentalPdfApi
 import androidx.pdf.PdfDocument
+import androidx.pdf.PdfDocument.Companion.LINEARIZATION_STATUS_UNKNOWN
+import androidx.pdf.PdfFeature
+import androidx.pdf.RenderParams
+import androidx.pdf.annotation.content.ImagePdfObject
+import androidx.pdf.annotation.content.KeyedPdfAnnotation
+import androidx.pdf.annotation.content.KeyedPdfObject
+import androidx.pdf.annotation.content.PathPdfObject
+import androidx.pdf.annotation.content.PdfObject
 import androidx.pdf.content.PageMatchBounds
 import androidx.pdf.content.PageSelection
 import androidx.pdf.content.PdfPageGotoLinkContent
 import androidx.pdf.content.PdfPageLinkContent
 import androidx.pdf.content.PdfPageTextContent
 import androidx.pdf.content.SelectionBoundary
-import kotlin.random.Random
+import androidx.pdf.models.FormEditInfo
+import androidx.pdf.models.FormWidgetInfo
+import androidx.pdf.models.ListItem
+import java.util.concurrent.Executor
+import kotlin.collections.emptyList
+import kotlin.math.roundToInt
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
@@ -55,28 +70,36 @@ import kotlinx.coroutines.withTimeout
  *   corresponding [PdfDocument.BitmapSource]
  * - Using [bitmapRequests] to examine the type of bitmaps that have been requested for any page
  *
- * @param pages a list of [Point] defining the number of pages in the fake PDF and their dimensions
+ * @param pages a list of [Point] defining the number of pages in the fake PDF and their dimensions.
+ *   If a value is null, the document will throw CancellationException for getPageInfo call.
  * @param formType one of [PDF_FORM_TYPE_ACRO_FORM], [PDF_FORM_TYPE_XFA_FULL],
  *   [PDF_FORM_TYPE_XFA_FOREGROUND], or [PDF_FORM_TYPE_NONE] depending on the type of PDF form this
  *   fake PDF should represent
- * @param isLinearized true if this fake PDF is linearized
+ * @param linearizationStatus One of [LINEARIZATION_STATUS_LINEARIZED],
+ *   [LINEARIZATION_STATUS_NOT_LINEARIZED], or [LINEARIZATION_STATUS_UNKNOWN], indicating the
+ *   linearization state of the fake PDF.
  */
 @OpenForTesting
 internal open class FakePdfDocument(
     /** A list of (x, y) page dimensions in content coordinates */
-    private val pages: List<Point> = listOf(),
+    internal val pages: List<Point?> = listOf(Point(600, 800)),
     override val formType: Int = PDF_FORM_TYPE_NONE,
-    override val isLinearized: Boolean = false,
+    override val linearizationStatus: Int = LINEARIZATION_STATUS_UNKNOWN,
+    override val renderParams: RenderParams = RenderParams(RenderParams.RENDER_MODE_FOR_DISPLAY),
     private val searchResults: SparseArray<List<PageMatchBounds>> = SparseArray(),
     override val uri: Uri = Uri.parse("content://test.app/document.pdf"),
     private val pageLinks: Map<Int, PdfDocument.PdfPageLinks> = mapOf(),
-    private val textContents: List<PdfPageTextContent> = emptyList()
+    private val textContents: List<PdfPageTextContent> = emptyList(),
+    private val pageFormWidgetInfos: Map<Int, List<FormWidgetInfo>> = mapOf(),
+    private val annotationsPerPage: Map<Int, List<KeyedPdfAnnotation>> = mapOf(),
+    private val pageObjectsPerPage: Map<Int, List<KeyedPdfObject>> = mapOf(),
+    private val exceptionToThrow: Exception? = null,
 ) : PdfDocument {
     override val pageCount: Int = pages.size
 
     @get:Synchronized @set:Synchronized internal var layoutReach: Int = 0
 
-    private val bitmapRequestsLock = Object()
+    private val bitmapRequestsLock = Any()
     private val _bitmapRequests = mutableMapOf<Int, SizeParams>()
     internal val bitmapRequests
         get() = _bitmapRequests
@@ -85,12 +108,76 @@ internal open class FakePdfDocument(
         _bitmapRequests.clear()
     }
 
+    private val _formWidgetRequests = mutableSetOf<Int>()
+    internal val formWidgetRequests: Set<Int>
+        get() = _formWidgetRequests.toSet()
+
+    internal fun clearFormWidgetRequests() {
+        _formWidgetRequests.clear()
+    }
+
+    internal var editHistory: MutableList<FormEditInfo> = mutableListOf()
+
     override fun getPageBitmapSource(pageNumber: Int): PdfDocument.BitmapSource {
         return FakeBitmapSource(pageNumber)
     }
 
+    private fun logFormWidgetRequest(pageNum: Int) {
+        _formWidgetRequests.add(pageNum)
+    }
+
+    override suspend fun getFormWidgetInfos(pageNum: Int, types: Long): List<FormWidgetInfo> {
+        logFormWidgetRequest(pageNum)
+        if (types == PdfDocument.FORM_WIDGET_INCLUDE_ALL_TYPES)
+            return pageFormWidgetInfos[pageNum] ?: emptyList()
+
+        return pageFormWidgetInfos[pageNum]?.filter {
+            (1 shl it.widgetType).toLong() and types != 0L
+        } ?: emptyList()
+    }
+
+    @OptIn(ExperimentalPdfApi::class)
+    override suspend fun getTopPageObjectAtPosition(pageNum: Int, point: PointF): PdfObject? {
+        return null
+    }
+
+    override fun addOnPdfContentInvalidatedListener(
+        executor: Executor,
+        listener: PdfDocument.OnPdfContentInvalidatedListener,
+    ) {
+        return
+    }
+
+    override fun removeOnPdfContentInvalidatedListener(
+        listener: PdfDocument.OnPdfContentInvalidatedListener
+    ) {
+        return
+    }
+
+    override fun isFeatureSupported(feature: PdfFeature): Boolean {
+        return true
+    }
+
     override suspend fun getPageLinks(pageNumber: Int): PdfDocument.PdfPageLinks {
         return pageLinks[pageNumber] ?: PdfDocument.PdfPageLinks(emptyList(), emptyList())
+    }
+
+    override suspend fun getAnnotationsForPage(pageNum: Int): List<KeyedPdfAnnotation> {
+        if (exceptionToThrow != null) throw exceptionToThrow
+        return annotationsPerPage[pageNum] ?: emptyList()
+    }
+
+    @OptIn(ExperimentalPdfApi::class)
+    override suspend fun getPageObjects(pageNum: Int, types: Long): List<KeyedPdfObject> {
+        if (exceptionToThrow != null) throw exceptionToThrow
+        return pageObjectsPerPage[pageNum]?.mapNotNull { keyedObject ->
+            keyedObject.takeIf {
+                when (it.pdfObject) {
+                    is ImagePdfObject -> PdfDocument.INCLUDE_IMAGE_PAGE_OBJECT and types != 0L
+                    is PathPdfObject -> PdfDocument.INCLUDE_PATH_PAGE_OBJECT and types != 0L
+                }
+            }
+        } ?: emptyList()
     }
 
     @RequiresExtension(extension = Build.VERSION_CODES.S, version = 13)
@@ -99,7 +186,7 @@ internal open class FakePdfDocument(
         if (pageNumber in pages.indices && pageNumber < textContents.size) {
             return PdfDocument.PdfPageContent(
                 textContents = listOf(textContents[pageNumber]),
-                imageContents = emptyList()
+                imageContents = emptyList(),
             )
         }
 
@@ -111,25 +198,82 @@ internal open class FakePdfDocument(
     override suspend fun getSelectionBounds(
         pageNumber: Int,
         start: PointF,
-        stop: PointF
+        stop: PointF,
     ): PageSelection {
-        // TODO(b/376136631) provide a useful implementation when it's needed for testing
-        return PageSelection(0, SelectionBoundary(0), SelectionBoundary(0), listOf())
+        if (exceptionToThrow != null) throw exceptionToThrow
+        val selectionRect = RectF(start.x, start.y, stop.x, stop.y).apply { sort() }
+
+        val selectedTextContents =
+            textContents.getOrNull(pageNumber)?.let { content ->
+                // Filter text bounds that intersect with the selection
+                val intersectingBounds =
+                    content.bounds.mapNotNull { textRect ->
+                        RectF().takeIf { it.setIntersect(selectionRect, textRect) }
+                    }
+
+                if (intersectingBounds.isNotEmpty()) {
+                    listOf(PdfPageTextContent(intersectingBounds, content.text))
+                } else emptyList()
+            } ?: emptyList()
+
+        return PageSelection(
+            pageNumber,
+            SelectionBoundary(index = 0, point = Point(start.x.roundToInt(), start.y.roundToInt())),
+            SelectionBoundary(index = 0, point = Point(stop.x.roundToInt(), stop.y.roundToInt())),
+            selectedTextContents,
+        )
+    }
+
+    @RequiresExtension(extension = Build.VERSION_CODES.S, version = 13)
+    override suspend fun getSelectionBounds(
+        pageNumber: Int,
+        start: SelectionBoundary,
+        stop: SelectionBoundary,
+    ): PageSelection {
+        if (exceptionToThrow != null) throw exceptionToThrow
+        // If startPoint is present use that or else estimate 0 index element closest to (0,0).
+        val startPoint = start.point ?: Point(0, 0)
+        // If stopPoint is present use that or else estimate INT_MAX index as closet to (INF,INF).
+        val stopPoint = stop.point ?: Point(Int.MAX_VALUE, Int.MAX_VALUE)
+        val selectionRect =
+            RectF(
+                    startPoint.x.toFloat(),
+                    startPoint.y.toFloat(),
+                    stopPoint.x.toFloat(),
+                    stopPoint.y.toFloat(),
+                )
+                .apply { sort() }
+
+        val selectedTextContents =
+            textContents.getOrNull(pageNumber)?.let { content ->
+                // Filter text bounds that intersect with the selection
+                val intersectingBounds =
+                    content.bounds.mapNotNull { textRect ->
+                        RectF().takeIf { it.setIntersect(selectionRect, textRect) }
+                    }
+
+                if (intersectingBounds.isNotEmpty()) {
+                    listOf(PdfPageTextContent(intersectingBounds, content.text))
+                } else emptyList()
+            } ?: emptyList()
+
+        return PageSelection(pageNumber, start, stop, selectedTextContents)
     }
 
     override suspend fun getSelectAllSelectionBounds(pageNumber: Int): PageSelection? {
         return PageSelection(
-            0,
+            pageNumber,
             SelectionBoundary(0),
             SelectionBoundary(Int.MAX_VALUE),
-            listOf(textContents[pageNumber])
+            listOf(textContents[pageNumber]),
         )
     }
 
     override suspend fun searchDocument(
         query: String,
-        pageRange: IntRange
+        pageRange: IntRange,
     ): SparseArray<List<PageMatchBounds>> {
+        if (exceptionToThrow != null) throw exceptionToThrow
         return searchResults
     }
 
@@ -137,9 +281,32 @@ internal open class FakePdfDocument(
         return pageRange.map { getPageInfo(it) }
     }
 
+    override suspend fun getPageInfos(
+        pageRange: IntRange,
+        pageInfoFlags: Long,
+    ): List<PdfDocument.PageInfo> {
+        return listOf()
+    }
+
     override suspend fun getPageInfo(pageNumber: Int): PdfDocument.PageInfo {
+        return getPageInfo(pageNumber, PdfDocument.PAGE_INFO_EXCLUDE_FORM_WIDGETS)
+    }
+
+    override suspend fun getPageInfo(pageNumber: Int, pageInfoFlags: Long): PdfDocument.PageInfo {
+        if (exceptionToThrow != null) throw exceptionToThrow
         layoutReach = maxOf(pageNumber, layoutReach)
         val size = pages[pageNumber]
+        if (size == null) {
+            throw CancellationException()
+        }
+        if (pageInfoFlags and PdfDocument.PAGE_INFO_INCLUDE_FORM_WIDGET != 0L) {
+            return PdfDocument.PageInfo(
+                pageNum = pageNumber,
+                height = size.y,
+                width = size.x,
+                formWidgetInfos = getFormWidgetInfos(pageNumber),
+            )
+        }
         return PdfDocument.PageInfo(pageNumber, size.y, size.x)
     }
 
@@ -160,15 +327,13 @@ internal open class FakePdfDocument(
                 else scaledPageSizePx
             val bitmap = Bitmap.createBitmap(size.width, size.height, Bitmap.Config.ARGB_8888)
             bitmap.apply {
-                val colorRng = Random(System.currentTimeMillis())
-                eraseColor(
-                    Color.argb(
-                        255,
-                        colorRng.nextInt(256),
-                        colorRng.nextInt(256),
-                        colorRng.nextInt(256)
-                    )
-                )
+                // Use a deterministic, varied color based on the page number to ensure
+                // consistent and distinct screenshots.
+                val r = ((pageNumber + 1) * 50) % 255
+                val g = ((pageNumber + 1) * 90) % 255
+                val b = ((pageNumber + 1) * 30) % 255
+                val color = Color.rgb(r, g, b)
+                eraseColor(color)
             }
             return bitmap
         }
@@ -206,11 +371,12 @@ internal open class FakePdfDocument(
         fun newInstance(): FakePdfDocument =
             FakePdfDocument(
                 pages = List(10) { Point(100, 200) },
+                formType = PdfDocument.PDF_FORM_TYPE_ACRO_FORM,
                 textContents =
                     List(10) { index ->
                         PdfPageTextContent(
                             bounds = listOf(RectF(0f, 0f, 100f, 200f)),
-                            text = "Sample text for page ${index + 1}"
+                            text = "Sample text for page ${index + 1}",
                         )
                     },
                 pageLinks =
@@ -226,19 +392,45 @@ internal open class FakePdfDocument(
                                                     pageNumber = VALID_PAGE_NUMBER,
                                                     xCoordinate = 10f,
                                                     yCoordinate = 40f,
-                                                    zoom = 1f
-                                                )
+                                                    zoom = 1f,
+                                                ),
                                         )
                                     ),
                                 externalLinks =
                                     listOf(
                                         PdfPageLinkContent(
                                             bounds = listOf(RectF(25f, 60f, 75f, 80f)),
-                                            uri = Uri.parse(URI_WITH_VALID_SCHEME)
+                                            uri = Uri.parse(URI_WITH_VALID_SCHEME),
                                         )
                                     ),
                             )
-                    )
+                    ),
+                pageFormWidgetInfos =
+                    mapOf(
+                        0 to
+                            listOf(
+                                FormWidgetInfo.createRadioButton(
+                                    widgetIndex = 0,
+                                    widgetRect = Rect(50, 500, 100, 600),
+                                    textValue = "false",
+                                    accessibilityLabel = "Radio",
+                                    isReadOnly = false,
+                                )
+                            ),
+                        1 to
+                            listOf(
+                                FormWidgetInfo.createListBox(
+                                    widgetIndex = 0,
+                                    widgetRect = Rect(50, 400, 100, 550),
+                                    textValue = "Banana",
+                                    accessibilityLabel = "ListBox",
+                                    listItems =
+                                        listOf(ListItem("Apple", false), ListItem("Banana", false)),
+                                    isMultiSelect = true,
+                                    isReadOnly = true,
+                                )
+                            ),
+                    ),
             )
     }
 }
@@ -252,8 +444,6 @@ internal class FullBitmap(scaledPageSizePx: Size) : SizeParams(scaledPageSizePx)
 /** Represents a set of tile region [Bitmap] requested from [PdfDocument.BitmapSource] */
 internal class Tiles(scaledPageSizePx: Size) : SizeParams(scaledPageSizePx) {
     private val _tiles = mutableListOf<Rect>()
-    val tiles: List<Rect>
-        get() = _tiles
 
     fun withTile(region: Rect) = _tiles.add(region)
 }
@@ -299,6 +489,34 @@ internal suspend fun FakePdfDocument.waitForRender(untilPage: Int, timeoutMillis
     withContext(Dispatchers.Default.limitedParallelism(1)) {
         withTimeout(timeoutMillis) {
             while (!bitmapRequests.containsKeys(0..untilPage)) {
+                delay(100)
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalCoroutinesApi::class)
+internal suspend fun FakePdfDocument.waitForFormDataFetch(
+    untilPage: Int,
+    timeoutMillis: Long = 1000,
+) {
+    withContext(Dispatchers.Default.limitedParallelism(1)) {
+        withTimeout(timeoutMillis) {
+            while (!(0..untilPage).all { pageNum -> formWidgetRequests.contains(pageNum) }) {
+                delay(100)
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalCoroutinesApi::class)
+internal suspend fun FakePdfDocument.waitForApplyEdit(
+    expectedNumEdits: Int,
+    timeoutMillis: Long = 1000,
+) {
+    withContext(Dispatchers.Default.limitedParallelism(1)) {
+        withTimeout(timeoutMillis) {
+            while (editHistory.size < expectedNumEdits) {
                 delay(100)
             }
         }

@@ -48,6 +48,7 @@ import androidx.camera.core.MeteringPointFactory
 import androidx.camera.core.Preview
 import androidx.camera.core.impl.utils.executor.CameraXExecutors
 import androidx.camera.extensions.ExtensionMode
+import androidx.camera.extensions.ExtensionSessionConfig
 import androidx.camera.extensions.ExtensionsManager
 import androidx.camera.integration.extensions.INVALID_EXTENSION_MODE
 import androidx.camera.integration.extensions.INVALID_LENS_FACING
@@ -69,6 +70,7 @@ import androidx.camera.integration.extensions.utils.ExtensionModeUtil.getExtensi
 import androidx.camera.integration.extensions.utils.FileUtil
 import androidx.camera.integration.extensions.validation.CameraValidationResultActivity.Companion.getLensFacingStringFromInt
 import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.camera.testing.impl.util.EdgeToEdgeUtil
 import androidx.camera.view.PreviewView
 import androidx.concurrent.futures.await
 import androidx.core.content.ContextCompat
@@ -118,6 +120,17 @@ class ImageCaptureActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.image_capture_activity)
+
+        EdgeToEdgeUtil.enableEdgeToEdge(
+            activity = this,
+            viewIdsTopPaddingRequired =
+                listOf(
+                    R.id.flash_toggle,
+                    R.id.plus_ev_button,
+                    R.id.dec_ev_button,
+                    R.id.extension_toggle,
+                ),
+        )
 
         cameraId = intent?.getStringExtra(INTENT_EXTRA_KEY_CAMERA_ID)!!
         lensFacing = intent.getIntExtra(INTENT_EXTRA_KEY_LENS_FACING, INVALID_LENS_FACING)
@@ -169,29 +182,29 @@ class ImageCaptureActivity : AppCompatActivity() {
             return
         }
 
-        val extensionCameraSelector =
-            extensionsManager.getExtensionEnabledCameraSelector(cameraSelectorById, extensionMode)
-
         imageCapture = ImageCapture.Builder().setFlashMode(flashMode).build()
         val preview = Preview.Builder().build()
         preview.setSurfaceProvider(viewFinder.surfaceProvider)
 
         try {
             cameraProvider.unbindAll()
-            camera =
-                cameraProvider.bindToLifecycle(
-                    this,
-                    if (extensionEnabled) extensionCameraSelector else cameraSelectorById,
-                    imageCapture,
-                    preview
-                )
+            if (extensionEnabled) {
+                val extensionSessionConfig =
+                    ExtensionSessionConfig(extensionMode, extensionsManager, imageCapture, preview)
+
+                camera =
+                    cameraProvider.bindToLifecycle(this, cameraSelectorById, extensionSessionConfig)
+            } else {
+                camera =
+                    cameraProvider.bindToLifecycle(this, cameraSelectorById, imageCapture, preview)
+            }
 
             Log.d(TAG, "Extension mode is $extensionMode (enabled: $extensionEnabled)")
         } catch (e: IllegalArgumentException) {
             result.putExtra(INTENT_EXTRA_KEY_ERROR_CODE, ERROR_CODE_BIND_TO_LIFECYCLE_FAILED)
             Log.e(
                 TAG,
-                "Failed to bind use cases with ${getExtensionModeStringFromId(extensionMode)}"
+                "Failed to bind use cases with ${getExtensionModeStringFromId(extensionMode)}",
             )
             finish()
             return
@@ -239,13 +252,13 @@ class ImageCaptureActivity : AppCompatActivity() {
                         if (uri == null) {
                             result.putExtra(
                                 INTENT_EXTRA_KEY_ERROR_CODE,
-                                ERROR_CODE_SAVE_IMAGE_FAILED
+                                ERROR_CODE_SAVE_IMAGE_FAILED,
                             )
                         } else {
                             result.putExtra(INTENT_EXTRA_KEY_IMAGE_URI, uri)
                             result.putExtra(
                                 INTENT_EXTRA_KEY_IMAGE_ROTATION_DEGREES,
-                                image.imageInfo.rotationDegrees
+                                image.imageInfo.rotationDegrees,
                             )
                         }
                         finish()
@@ -255,7 +268,7 @@ class ImageCaptureActivity : AppCompatActivity() {
                         result.putExtra(INTENT_EXTRA_KEY_ERROR_CODE, ERROR_CODE_TAKE_PICTURE_FAILED)
                         finish()
                     }
-                }
+                },
             )
         }
     }
@@ -312,7 +325,7 @@ class ImageCaptureActivity : AppCompatActivity() {
             showEVToast(
                 String.format(
                     "EV: %.2f",
-                    range.upper * camera.cameraInfo.exposureState.exposureCompensationStep.toFloat()
+                    range.upper * camera.cameraInfo.exposureState.exposureCompensationStep.toFloat(),
                 )
             )
         }
@@ -330,7 +343,7 @@ class ImageCaptureActivity : AppCompatActivity() {
             showEVToast(
                 String.format(
                     "EV: %.2f",
-                    range.lower * camera.cameraInfo.exposureState.exposureCompensationStep.toFloat()
+                    range.lower * camera.cameraInfo.exposureState.exposureCompensationStep.toFloat(),
                 )
             )
         }
@@ -351,7 +364,7 @@ class ImageCaptureActivity : AppCompatActivity() {
                             viewFinder.getDisplay(),
                             camera.getCameraInfo(),
                             viewFinder.getWidth().toFloat(),
-                            viewFinder.getHeight().toFloat()
+                            viewFinder.getHeight().toFloat(),
                         )
                     val action = FocusMeteringAction.Builder(factory.createPoint(e.x, e.y)).build()
                     Futures.addCallback(
@@ -365,7 +378,7 @@ class ImageCaptureActivity : AppCompatActivity() {
                                 Log.e(TAG, "Focus and metering failed.", t)
                             }
                         },
-                        CameraXExecutors.mainThreadExecutor()
+                        CameraXExecutors.mainThreadExecutor(),
                     )
                     return true
                 }
@@ -397,7 +410,7 @@ class ImageCaptureActivity : AppCompatActivity() {
             MathUtils.clamp(
                 newZoom,
                 cameraInfo.zoomState.value!!.minZoomRatio,
-                cameraInfo.zoomState.value!!.maxZoomRatio
+                cameraInfo.zoomState.value!!.maxZoomRatio,
             )
         Log.d(TAG, "setZoomRatio ratio: $clampedNewZoom")
         val listenableFuture = cameraControl.setZoomRatio(clampedNewZoom)
@@ -412,7 +425,7 @@ class ImageCaptureActivity : AppCompatActivity() {
                     Log.d(TAG, "setZoomRatio failed, $t")
                 }
             },
-            ContextCompat.getMainExecutor(this)
+            ContextCompat.getMainExecutor(this),
         )
     }
 

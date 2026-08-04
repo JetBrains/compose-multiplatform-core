@@ -87,11 +87,11 @@ import kotlin.math.max
  */
 @ExperimentalMaterialApi
 @Composable
-fun ExposedDropdownMenuBox(
+public fun ExposedDropdownMenuBox(
     expanded: Boolean,
     onExpandedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
-    content: @Composable ExposedDropdownMenuBoxScope.() -> Unit
+    content: @Composable ExposedDropdownMenuBoxScope.() -> Unit,
 ) {
     val density = LocalDensity.current
     val windowBoundsCalculator = platformWindowBoundsCalculator()
@@ -124,14 +124,14 @@ fun ExposedDropdownMenuBox(
                 updateHeight(
                     windowBounds = windowBoundsCalculator.getVisibleWindowBounds(),
                     coordinates = coordinates.value,
-                    verticalMarginInPx = verticalMarginInPx
+                    verticalMarginInPx = verticalMarginInPx,
                 ) { newHeight ->
                     menuHeight = newHeight
                 }
             }
             .expandable(
                 onExpandedChange = { onExpandedChange(!expanded) },
-                menuLabel = getString(Strings.ExposedDropdownMenu)
+                menuLabel = getString(Strings.ExposedDropdownMenu),
             )
             .focusRequester(focusRequester)
     ) {
@@ -144,7 +144,7 @@ fun ExposedDropdownMenuBox(
         updateHeight(
             windowBounds = windowBoundsCalculator.getVisibleWindowBounds(),
             coordinates = coordinates.value,
-            verticalMarginInPx = verticalMarginInPx
+            verticalMarginInPx = verticalMarginInPx,
         ) { newHeight ->
             menuHeight = newHeight
         }
@@ -153,7 +153,7 @@ fun ExposedDropdownMenuBox(
 
 /** Scope for [ExposedDropdownMenuBox]. */
 @ExperimentalMaterialApi
-abstract class ExposedDropdownMenuBoxScope {
+public abstract class ExposedDropdownMenuBoxScope {
     /**
      * Modifier which should be applied to an [ExposedDropdownMenu] placed inside the scope. It's
      * responsible for setting the width of the [ExposedDropdownMenu], which will match the width of
@@ -164,7 +164,7 @@ abstract class ExposedDropdownMenuBoxScope {
      * @param matchTextFieldWidth Whether menu should match the width of the text field to which
      *   it's attached. If set to true the width will match the width of the text field.
      */
-    abstract fun Modifier.exposedDropdownSize(matchTextFieldWidth: Boolean = true): Modifier
+    public abstract fun Modifier.exposedDropdownSize(matchTextFieldWidth: Boolean = true): Modifier
 
     /**
      * Popup which contains content for Exposed Dropdown Menu. Should be used inside the content of
@@ -178,12 +178,12 @@ abstract class ExposedDropdownMenuBoxScope {
      * @param content The content of the [ExposedDropdownMenu]
      */
     @Composable
-    fun ExposedDropdownMenu(
+    public fun ExposedDropdownMenu(
         expanded: Boolean,
         onDismissRequest: () -> Unit,
         modifier: Modifier = Modifier,
         scrollState: ScrollState = rememberScrollState(),
-        content: @Composable ColumnScope.() -> Unit
+        content: @Composable ColumnScope.() -> Unit,
     ) {
         // TODO(b/202810604): use DropdownMenu when PopupProperties constructor is stable
         // return DropdownMenu(
@@ -207,14 +207,14 @@ abstract class ExposedDropdownMenuBoxScope {
 
             ExposedDropdownMenuPopup(
                 onDismissRequest = onDismissRequest,
-                popupPositionProvider = popupPositionProvider
+                popupPositionProvider = popupPositionProvider,
             ) {
                 DropdownMenuContent(
                     expandedStates = expandedStates,
                     transformOriginState = transformOriginState,
                     scrollState = scrollState,
                     modifier = modifier.exposedDropdownSize(),
-                    content = content
+                    content = content,
                 )
             }
         }
@@ -223,7 +223,7 @@ abstract class ExposedDropdownMenuBoxScope {
 
 /** Contains default values used by Exposed Dropdown Menu. */
 @ExperimentalMaterialApi
-object ExposedDropdownMenuDefaults {
+public object ExposedDropdownMenuDefaults {
     /**
      * Default trailing icon for Exposed Dropdown Menu.
      *
@@ -233,7 +233,7 @@ object ExposedDropdownMenuDefaults {
      */
     @ExperimentalMaterialApi
     @Composable
-    fun TrailingIcon(expanded: Boolean, onIconClick: () -> Unit = {}) {
+    public fun TrailingIcon(expanded: Boolean, onIconClick: () -> Unit = {}) {
         // Clear semantics here as otherwise icon will be a11y focusable but without an
         // action. When there's an API to check if Talkback is on, developer will be able to
         // expand the menu on icon click in a11y mode only esp. if using their own custom
@@ -242,7 +242,7 @@ object ExposedDropdownMenuDefaults {
             Icon(
                 Icons.Filled.ArrowDropDown,
                 "Trailing icon for exposed dropdown menu",
-                Modifier.rotate(if (expanded) 180f else 360f)
+                Modifier.rotate(if (expanded) 180f else 360f),
             )
         }
     }
@@ -289,7 +289,7 @@ object ExposedDropdownMenuDefaults {
      *   it's disabled.
      */
     @Composable
-    fun textFieldColors(
+    public fun textFieldColors(
         textColor: Color = LocalContentColor.current.copy(LocalContentAlpha.current),
         disabledTextColor: Color = textColor.copy(ContentAlpha.disabled),
         backgroundColor: Color =
@@ -318,7 +318,7 @@ object ExposedDropdownMenuDefaults {
         disabledLabelColor: Color = unfocusedLabelColor.copy(ContentAlpha.disabled),
         errorLabelColor: Color = MaterialTheme.colors.error,
         placeholderColor: Color = MaterialTheme.colors.onSurface.copy(ContentAlpha.medium),
-        disabledPlaceholderColor: Color = placeholderColor.copy(ContentAlpha.disabled)
+        disabledPlaceholderColor: Color = placeholderColor.copy(ContentAlpha.disabled),
     ): TextFieldColors =
         DefaultTextFieldForExposedDropdownMenusColors(
             textColor = textColor,
@@ -342,7 +342,7 @@ object ExposedDropdownMenuDefaults {
             disabledLabelColor = disabledLabelColor,
             errorLabelColor = errorLabelColor,
             placeholderColor = placeholderColor,
-            disabledPlaceholderColor = disabledPlaceholderColor
+            disabledPlaceholderColor = disabledPlaceholderColor,
         )
 
     /**
@@ -387,7 +387,7 @@ object ExposedDropdownMenuDefaults {
      *   it's disabled.
      */
     @Composable
-    fun outlinedTextFieldColors(
+    public fun outlinedTextFieldColors(
         textColor: Color = LocalContentColor.current.copy(LocalContentAlpha.current),
         disabledTextColor: Color = textColor.copy(ContentAlpha.disabled),
         backgroundColor: Color = Color.Transparent,
@@ -413,7 +413,7 @@ object ExposedDropdownMenuDefaults {
         disabledLabelColor: Color = unfocusedLabelColor.copy(ContentAlpha.disabled),
         errorLabelColor: Color = MaterialTheme.colors.error,
         placeholderColor: Color = MaterialTheme.colors.onSurface.copy(ContentAlpha.medium),
-        disabledPlaceholderColor: Color = placeholderColor.copy(ContentAlpha.disabled)
+        disabledPlaceholderColor: Color = placeholderColor.copy(ContentAlpha.disabled),
     ): TextFieldColors =
         DefaultTextFieldForExposedDropdownMenusColors(
             textColor = textColor,
@@ -437,7 +437,7 @@ object ExposedDropdownMenuDefaults {
             disabledLabelColor = disabledLabelColor,
             errorLabelColor = errorLabelColor,
             placeholderColor = placeholderColor,
-            disabledPlaceholderColor = disabledPlaceholderColor
+            disabledPlaceholderColor = disabledPlaceholderColor,
         )
 }
 
@@ -466,7 +466,7 @@ private fun updateHeight(
     windowBounds: IntRect,
     coordinates: LayoutCoordinates?,
     verticalMarginInPx: Int,
-    onHeightUpdate: (Int) -> Unit
+    onHeightUpdate: (Int) -> Unit,
 ) {
     coordinates ?: return
     val heightAbove = coordinates.boundsInWindow().top - windowBounds.top
@@ -497,7 +497,7 @@ private class DefaultTextFieldForExposedDropdownMenusColors(
     private val disabledLabelColor: Color,
     private val errorLabelColor: Color,
     private val placeholderColor: Color,
-    private val disabledPlaceholderColor: Color
+    private val disabledPlaceholderColor: Color,
 ) : TextFieldColors {
 
     @Suppress("OVERRIDE_DEPRECATION") // b/407490794
@@ -528,7 +528,7 @@ private class DefaultTextFieldForExposedDropdownMenusColors(
     override fun trailingIconColor(
         enabled: Boolean,
         isError: Boolean,
-        interactionSource: InteractionSource
+        interactionSource: InteractionSource,
     ): State<Color> {
         val focused by interactionSource.collectIsFocusedAsState()
 
@@ -546,7 +546,7 @@ private class DefaultTextFieldForExposedDropdownMenusColors(
     override fun indicatorColor(
         enabled: Boolean,
         isError: Boolean,
-        interactionSource: InteractionSource
+        interactionSource: InteractionSource,
     ): State<Color> {
         val focused by interactionSource.collectIsFocusedAsState()
 
@@ -578,7 +578,7 @@ private class DefaultTextFieldForExposedDropdownMenusColors(
     override fun labelColor(
         enabled: Boolean,
         error: Boolean,
-        interactionSource: InteractionSource
+        interactionSource: InteractionSource,
     ): State<Color> {
         val focused by interactionSource.collectIsFocusedAsState()
 

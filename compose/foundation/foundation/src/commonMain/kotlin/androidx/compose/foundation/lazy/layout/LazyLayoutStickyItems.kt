@@ -37,7 +37,7 @@ internal interface StickyItemsPlacement {
     fun getStickingIndices(
         firstVisibleItemIndex: Int,
         lastVisibleItemIndex: Int,
-        stickyItems: IntList
+        stickyItems: IntList,
     ): IntList
 
     /**
@@ -53,6 +53,7 @@ internal interface StickyItemsPlacement {
      * @param afterContentPadding Padding applied to the end of the layout
      * @param layoutWidth The containing layout's width
      * @param layoutHeight The containing layout's height
+     * @param isVertical If the container's orientation is vertical
      */
     fun calculateStickingItemOffset(
         visibleStickyItems: List<LazyLayoutMeasuredItem>,
@@ -62,7 +63,8 @@ internal interface StickyItemsPlacement {
         beforeContentPadding: Int,
         afterContentPadding: Int,
         layoutWidth: Int,
-        layoutHeight: Int
+        layoutHeight: Int,
+        isVertical: Boolean,
     ): Int
 
     companion object {
@@ -81,13 +83,15 @@ internal interface StickyItemsPlacement {
                     beforeContentPadding: Int,
                     afterContentPadding: Int,
                     layoutWidth: Int,
-                    layoutHeight: Int
+                    layoutHeight: Int,
+                    isVertical: Boolean,
                 ): Int {
 
                     // the next item offset
                     val nextStickyItemOffset =
-                        visibleStickyItems.fastFirstOrNull { it.index != itemIndex }?.mainAxisOffset
-                            ?: Int.MIN_VALUE
+                        visibleStickyItems
+                            .fastFirstOrNull { it.index != itemIndex }
+                            ?.mainAxisOffset(isVertical) ?: Int.MIN_VALUE
 
                     debugLog { "Next Item Offset=$nextStickyItemOffset" }
 
@@ -115,7 +119,7 @@ internal interface StickyItemsPlacement {
                 override fun getStickingIndices(
                     firstVisibleItemIndex: Int,
                     lastVisibleItemIndex: Int,
-                    stickyItems: IntList
+                    stickyItems: IntList,
                 ): IntList {
                     // no items present
                     if ((lastVisibleItemIndex - firstVisibleItemIndex) < 0 || stickyItems.isEmpty())
@@ -157,8 +161,8 @@ private inline fun debugLog(generateMsg: () -> String) {
     }
 }
 
-private val LazyLayoutMeasuredItem.mainAxisOffset
-    get() = getOffset(0).let { if (isVertical) it.y else it.x }
+private fun LazyLayoutMeasuredItem.mainAxisOffset(isVertical: Boolean) =
+    getOffset(0).let { if (isVertical) it.y else it.x }
 
 /**
  * This glue logic is not meant to become public. In here we will use [StickyItemsPlacement] to
@@ -167,22 +171,21 @@ private val LazyLayoutMeasuredItem.mainAxisOffset
  * of existing items.
  */
 internal fun <T : LazyLayoutMeasuredItem> StickyItemsPlacement?.applyStickyItems(
+    firstVisibleItemIndex: Int,
+    lastVisibleItemIndex: Int,
     positionedItems: MutableList<T>,
     stickyItems: IntList,
     beforeContentPadding: Int,
     afterContentPadding: Int,
     layoutWidth: Int,
     layoutHeight: Int,
-    getAndMeasure: (Int) -> T
+    isVertical: Boolean,
+    getAndMeasure: (Int) -> T,
 ): List<T> {
     return if (this != null && positionedItems.isNotEmpty() && stickyItems.isNotEmpty()) {
         // gather sticking items
         val stickingItems =
-            getStickingIndices(
-                positionedItems.first().index,
-                positionedItems.last().index,
-                stickyItems
-            )
+            getStickingIndices(firstVisibleItemIndex, lastVisibleItemIndex, stickyItems)
 
         val positionedStickingItems = mutableListOf<T>()
         val visibleStickyItems = positionedItems.fastFilter { stickyItems.contains(it.index) }
@@ -201,14 +204,15 @@ internal fun <T : LazyLayoutMeasuredItem> StickyItemsPlacement?.applyStickyItems
                 calculateStickingItemOffset(
                     visibleStickyItems,
                     stickingIndex,
-                    item.mainAxisSizeWithSpacings,
-                    if (itemIndex == -1) Int.MIN_VALUE else item.mainAxisOffset,
+                    item.mainAxisSizeWithSpacings(isVertical),
+                    if (itemIndex == -1) Int.MIN_VALUE else item.mainAxisOffset(isVertical),
                     beforeContentPadding,
                     afterContentPadding,
                     layoutWidth,
-                    layoutHeight
+                    layoutHeight,
+                    isVertical,
                 )
-            item.nonScrollableItem = true
+            item.makeNonScrollable()
             item.position(offset, 0, layoutWidth, layoutHeight)
             positionedStickingItems.add(item)
         }

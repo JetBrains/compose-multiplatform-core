@@ -20,11 +20,17 @@ import static androidx.camera.core.MirrorMode.MIRROR_MODE_OFF;
 import static androidx.camera.core.MirrorMode.MIRROR_MODE_ON;
 import static androidx.camera.core.MirrorMode.MIRROR_MODE_ON_FRONT_ONLY;
 import static androidx.camera.core.MirrorMode.MIRROR_MODE_UNSPECIFIED;
+import static androidx.camera.core.impl.ImageInputConfig.OPTION_INPUT_DYNAMIC_RANGE;
 import static androidx.camera.core.impl.ImageOutputConfig.OPTION_MAX_RESOLUTION;
 import static androidx.camera.core.impl.ImageOutputConfig.OPTION_RESOLUTION_SELECTOR;
 import static androidx.camera.core.impl.ImageOutputConfig.OPTION_TARGET_ASPECT_RATIO;
 import static androidx.camera.core.impl.ImageOutputConfig.OPTION_TARGET_RESOLUTION;
 import static androidx.camera.core.impl.StreamSpec.FRAME_RATE_RANGE_UNSPECIFIED;
+import static androidx.camera.core.impl.SessionConfig.SESSION_TYPE_HIGH_SPEED;
+import static androidx.camera.core.impl.UseCaseConfig.OPTION_PREVIEW_STABILIZATION_MODE;
+import static androidx.camera.core.impl.UseCaseConfig.OPTION_SESSION_TYPE;
+import static androidx.camera.core.impl.UseCaseConfig.OPTION_TARGET_FRAME_RATE;
+import static androidx.camera.core.impl.UseCaseConfig.OPTION_VIDEO_STABILIZATION_MODE;
 import static androidx.camera.core.impl.utils.TransformUtils.within360;
 import static androidx.camera.core.processing.TargetUtils.isSuperset;
 import static androidx.core.util.Preconditions.checkArgument;
@@ -42,8 +48,13 @@ import android.view.Surface;
 import androidx.annotation.CallSuper;
 import androidx.annotation.GuardedBy;
 import androidx.annotation.IntRange;
+import androidx.annotation.MainThread;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
+import androidx.camera.core.featuregroup.GroupableFeature;
+import androidx.camera.core.featuregroup.impl.feature.DynamicRangeFeature;
+import androidx.camera.core.featuregroup.impl.feature.FpsRangeFeature;
+import androidx.camera.core.featuregroup.impl.feature.VideoStabilizationFeature;
 import androidx.camera.core.impl.CameraControlInternal;
 import androidx.camera.core.impl.CameraInfoInternal;
 import androidx.camera.core.impl.CameraInternal;
@@ -51,11 +62,16 @@ import androidx.camera.core.impl.Config;
 import androidx.camera.core.impl.Config.Option;
 import androidx.camera.core.impl.DeferrableSurface;
 import androidx.camera.core.impl.ImageOutputConfig;
+import androidx.camera.core.impl.MutableConfig;
 import androidx.camera.core.impl.MutableOptionsBundle;
 import androidx.camera.core.impl.SessionConfig;
 import androidx.camera.core.impl.StreamSpec;
 import androidx.camera.core.impl.UseCaseConfig;
 import androidx.camera.core.impl.UseCaseConfigFactory;
+import androidx.camera.core.impl.stabilization.StabilizationMode;
+import androidx.camera.core.impl.stabilization.VideoStabilization;
+import androidx.camera.core.impl.utils.UseCaseUtil;
+import androidx.camera.core.impl.utils.executor.CameraXExecutors;
 import androidx.camera.core.internal.TargetConfig;
 import androidx.camera.core.internal.compat.quirk.AeFpsRangeQuirk;
 import androidx.camera.core.internal.utils.UseCaseConfigUtil;
@@ -80,6 +96,9 @@ import java.util.Set;
  * the Camera.
  */
 public abstract class UseCase {
+    private static final String TAG = "UseCase";
+
+    private boolean mInSession = false;
 
     ////////////////////////////////////////////////////////////////////////////////////////////
     // [UseCase lifetime constant] - Stays constant for the lifetime of the UseCase. Which means
@@ -93,6 +112,7 @@ public abstract class UseCase {
     private final Set<StateChangeCallback> mStateChangeCallbacks = new HashSet<>();
 
     private final Object mCameraLock = new Object();
+    private final Object mRotationProviderLock = new Object();
 
     ////////////////////////////////////////////////////////////////////////////////////////////
     // [UseCase lifetime dynamic] - Dynamic variables which could change during anytime during
@@ -108,6 +128,8 @@ public abstract class UseCase {
      * Store the app defined {@link UseCaseConfig} used to create the use case.
      */
     private @NonNull UseCaseConfig<?> mUseCaseConfig;
+
+    private @Nullable Set<@NonNull GroupableFeature> mFeatureGroup;
 
     /**
      * The currently used Config.
@@ -125,6 +147,12 @@ public abstract class UseCase {
      * The {@link StreamSpec} assigned to the {@link UseCase} based on the attached camera.
      */
     private StreamSpec mAttachedStreamSpec;
+
+    /**
+     * The secondary {@link StreamSpec} assigned to the {@link UseCase} in dual camera case based
+     * on the attached secondary camera.
+     */
+    private @Nullable StreamSpec mSecondaryAttachedStreamSpec;
 
     /**
      * The camera implementation provided Config. Its options has lowest priority and will be
@@ -151,6 +179,12 @@ public abstract class UseCase {
     private @Nullable CameraEffect mEffect;
 
     private @Nullable String mPhysicalCameraId;
+
+    @GuardedBy("mRotationProviderLock")
+    private @Nullable RotationProvider mRotationProvider = null;
+
+    @GuardedBy("mRotationProviderLock")
+    private final RotationProvider.Listener mRotationListener = this::onProviderRotationChanged;
 
     ////////////////////////////////////////////////////////////////////////////////////////////
     // [UseCase attached dynamic] - Can change but is only available when the UseCase is attached.
@@ -240,6 +274,15 @@ public abstract class UseCase {
             }
         }
 
+        // Removes the default max resolution setting if session type is high speed. The resolution
+        // limit for high-speed sessions is only subject to specific camera2 APIs.
+        if (mergedConfig.containsOption(OPTION_MAX_RESOLUTION)
+                && mergedConfig.containsOption(OPTION_SESSION_TYPE)
+                && Objects.equals(mergedConfig.retrieveOption(OPTION_SESSION_TYPE),
+                SESSION_TYPE_HIGH_SPEED)) {
+            mergedConfig.removeOption(OPTION_MAX_RESOLUTION);
+        }
+
         // If any options need special handling, this is the place to do it. For now we'll just copy
         // over all options.
         for (Option<?> opt : mUseCaseConfig.listOptions()) {
@@ -275,6 +318,8 @@ public abstract class UseCase {
                 != ResolutionSelector.PREFER_CAPTURE_RATE_OVER_HIGHER_RESOLUTION) {
             mergedConfig.insertOption(UseCaseConfig.OPTION_ZSL_DISABLED, true);
         }
+
+        applyFeatureGroupToConfig(mergedConfig);
 
         return onMergeConfig(cameraInfo, getUseCaseConfigBuilder(mergedConfig));
     }
@@ -389,22 +434,38 @@ public abstract class UseCase {
         if (oldRotation == ImageOutputConfig.INVALID_ROTATION || oldRotation != targetRotation) {
             UseCaseConfig.Builder<?, ?, ?> builder = getUseCaseConfigBuilder(mUseCaseConfig);
             UseCaseConfigUtil.updateTargetRotationAndRelatedConfigs(builder, targetRotation);
-            mUseCaseConfig = builder.getUseCaseConfig();
-
-            // Only merge configs if currently attached to a camera. Otherwise, set the current
-            // config to the use case config and mergeConfig() will be called once the use case
-            // is attached to a camera.
-            CameraInternal camera = getCamera();
-            if (camera == null) {
-                mCurrentConfig = mUseCaseConfig;
-            } else {
-                mCurrentConfig = mergeConfigs(camera.getCameraInfoInternal(), mExtendedConfig,
-                        mCameraConfig);
-            }
-
+            updateUseCaseConfigAndCurrentConfig(builder);
             return true;
         }
         return false;
+    }
+
+    private void updateUseCaseConfigAndCurrentConfig(UseCaseConfig.Builder<?, ?, ?> builder) {
+        mUseCaseConfig = builder.getUseCaseConfig();
+        CameraInternal camera = getCamera();
+        // Only merge configs if currently attached to a camera. Otherwise, set the current
+        // config to the use case config and mergeConfig() will be called once the use case
+        // is attached to a camera.
+        if (camera == null) {
+            mCurrentConfig = mUseCaseConfig;
+        } else {
+            mCurrentConfig = mergeConfigs(camera.getCameraInfoInternal(), mExtendedConfig,
+                    mCameraConfig);
+        }
+    }
+
+    /**
+     * Called when the RotationProvider rotation has changed.
+     *
+     * <p>This method is called when the host of this use case is rotated.
+     *
+     * @param rotation The new rotation.
+     */
+    @RestrictTo(Scope.LIBRARY_GROUP)
+    protected void onProviderRotationChanged(@ImageOutputConfig.RotationValue int rotation) {
+        // By default, this just calls setTargetRotationInternal. But this method can be overridden
+        // by subclasses to do additional work.
+        setTargetRotationInternal(rotation);
     }
 
     /**
@@ -439,6 +500,27 @@ public abstract class UseCase {
     @MirrorMode.Mirror
     protected int getMirrorModeInternal() {
         return ((ImageOutputConfig) mCurrentConfig).getMirrorMode(MIRROR_MODE_UNSPECIFIED);
+    }
+
+    /**
+     * Updates the mirror mode of the use case config.
+     *
+     * @param mirrorMode The mirror mode.
+     * @return true if the mirror mode was changed.
+     */
+    @RestrictTo(Scope.LIBRARY_GROUP)
+    protected boolean setMirrorModeInternal(@MirrorMode.Mirror int mirrorMode) {
+        ImageOutputConfig oldConfig = (ImageOutputConfig) getCurrentConfig();
+        int oldMirrorMode = oldConfig.getMirrorMode(MIRROR_MODE_UNSPECIFIED);
+        if (oldMirrorMode != mirrorMode) {
+            UseCaseConfig.Builder<?, ?, ?> builder = getUseCaseConfigBuilder(mUseCaseConfig);
+            if (builder instanceof ImageOutputConfig.Builder) {
+                ((ImageOutputConfig.Builder<?>) builder).setMirrorMode(mirrorMode);
+                updateUseCaseConfigAndCurrentConfig(builder);
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -675,7 +757,7 @@ public abstract class UseCase {
      * Retrieves the configuration set by applications.
      */
     @RestrictTo(Scope.LIBRARY_GROUP)
-    protected @NonNull UseCaseConfig<?> getAppConfig() {
+    public @NonNull UseCaseConfig<?> getAppConfig() {
         return mUseCaseConfig;
     }
 
@@ -732,6 +814,15 @@ public abstract class UseCase {
     }
 
     /**
+     * Returns the currently attached secondary stream specification in dual camera case, or null
+     * if not set.
+     */
+    @RestrictTo(Scope.LIBRARY_GROUP)
+    public @Nullable StreamSpec getSecondaryAttachedStreamSpec() {
+        return mSecondaryAttachedStreamSpec;
+    }
+
+    /**
      * Offers suggested stream specification for the UseCase.
      *
      */
@@ -741,6 +832,7 @@ public abstract class UseCase {
             @Nullable StreamSpec secondaryStreamSpec) {
         mAttachedStreamSpec = onSuggestedStreamSpecUpdated(
                 primaryStreamSpec, secondaryStreamSpec);
+        mSecondaryAttachedStreamSpec = secondaryStreamSpec;
     }
 
     /**
@@ -840,6 +932,12 @@ public abstract class UseCase {
         mCameraConfig = cameraConfig;
         mCurrentConfig = mergeConfigs(camera.getCameraInfoInternal(), mExtendedConfig,
                 mCameraConfig);
+        synchronized (mRotationProviderLock) {
+            if (mRotationProvider != null) {
+                mRotationProvider.addListener(CameraXExecutors.mainThreadExecutor(),
+                        mRotationListener);
+            }
+        }
         onBind();
     }
 
@@ -889,7 +987,14 @@ public abstract class UseCase {
             }
         }
 
+        synchronized (mRotationProviderLock) {
+            if (mRotationProvider != null) {
+                mRotationProvider.removeListener(mRotationListener);
+            }
+        }
+
         mAttachedStreamSpec = null;
+        mSecondaryAttachedStreamSpec = null;
         mViewPortCropRect = null;
 
         // Resets the mUseCaseConfig to the initial status when the use case was created to make
@@ -911,21 +1016,25 @@ public abstract class UseCase {
     }
 
     /**
-     * Called when use case is attached to the camera. This method is called on main thread.
+     * Called when the use case is attached to the camera and the system is ready to start the
+     * camera capture session.
      *
      * <p>Once this function is invoked, the use case is attached to the {@link CameraInternal}
      * implementation of the associated camera. CameraX starts to open the camera and capture
      * session with the use case session config. The use case can receive the frame data from the
      * camera after the capture session is configured.
      *
+     * <p>This method is called on the main thread.
      */
     @RestrictTo(Scope.LIBRARY_GROUP)
     @CallSuper
-    public void onStateAttached() {
+    @MainThread
+    public void onSessionStart() {
+        mInSession = true;
     }
 
     /**
-     * Called when use case is detached from the camera. This method is called on main thread.
+     * Called when the use case is detached from the camera.
      *
      * <p>Once this function is invoked, the use case is detached from the {@link CameraInternal}
      * implementation of the associated camera. The use case no longer receives frame data from
@@ -933,7 +1042,22 @@ public abstract class UseCase {
      *
      */
     @RestrictTo(Scope.LIBRARY_GROUP)
-    public void onStateDetached() {
+    @MainThread
+    public void onSessionStop() {
+        mInSession = false;
+    }
+
+    /**
+     * Returns whether the use case is currently in an active session.
+     *
+     * <p>The use case is considered to be in a session if {@link #onSessionStart()} has been
+     * called, but {@link #onSessionStop()} has not yet been called.
+     *
+     * @return {@code true} if the use case is in a session, {@code false} otherwise.
+     */
+    @RestrictTo(Scope.LIBRARY_GROUP)
+    public boolean isInSession() {
+        return mInSession;
     }
 
     /**
@@ -1114,6 +1238,177 @@ public abstract class UseCase {
         }
     }
 
+    /**
+     * Sets a set of explicit features denoting that the feature group mode is being used.
+     *
+     * <p> Since different values of features may be set through feature group API compared to
+     * the values directly settable to the use case for the same feature, we want to keep the
+     * feature values separate. This allows the direct values to be ignored when feature group
+     * API is used and used/re-used when feature group API is not being used.
+     *
+     * <p> For example, consider the scenario
+     * {@code useCase.setTargetFrameRate(45)} -> {@code bind(useCase, requiredFeatures = FPS_60)}.
+     * In this case, the final camera configuration will use 60 FPS.
+     *
+     * <p> If the Feature Group API is not used afterwards, i.e.
+     * {@code useCase.setTargetFrameRate(45)} -> {@code bind(useCase, requiredFeatures = FPS_60)}
+     * -> {@code bind(useCase)}, 45 FPS should be used again. So, user-defined values must not be
+     * overwritten due to the feature combination in order to ensure they are used as normal again
+     * when feature group API is no longer used.
+     *
+     * <p> During the bind flow, a null value should be set if feature group is not being used
+     * and proper non-null set of features should be set when feature group is being used.
+     *
+     * @param features The set of explicit features to use, a null value can be used to disable
+     *   the feature group mode.
+     * @see androidx.camera.core.SessionConfig#getRequiredFeatureGroup()
+     * @see androidx.camera.core.SessionConfig#getPreferredFeatureGroup()
+     */
+    @RestrictTo(Scope.LIBRARY_GROUP)
+    public void setFeatureGroup(@Nullable Set<@NonNull GroupableFeature> features) {
+        mFeatureGroup = features != null ? new HashSet<>(features) : null;
+    }
+
+    @RestrictTo(Scope.LIBRARY_GROUP)
+    public @Nullable Set<@NonNull GroupableFeature> getFeatureGroup() {
+        return mFeatureGroup;
+    }
+
+    /**
+     * Applies {@link #mFeatureGroup} to a config.
+     *
+     * <p> When the feature group mode is enabled (i.e. not null), the default for all config
+     * options should use the same default as of feature group API.
+     *
+     * <p> Note that feature group mode may be enabled with zero or single feature (e.g.
+     * when the preferred features user set are not supported). In such case, it is still better to
+     * configure the camera with feature group mode and its defaults since
+     * <ul>
+     *   <li>this is more consistent with other feature group results</li>
+     *   <li>may give more accurate query result</li>
+     *   <li>may also support additional resolution group</li>
+     * </ul>
+     *
+     * @see #setFeatureGroup
+     */
+    private void applyFeatureGroupToConfig(MutableOptionsBundle config) {
+        Logger.d(TAG,
+                "applyFeaturesToConfig: mFeatureGroup = " + mFeatureGroup + ", this = " + this);
+
+        if (mFeatureGroup == null) {
+            return;
+        }
+
+        DynamicRange dynamicRange = DynamicRangeFeature.DEFAULT_DYNAMIC_RANGE;
+
+        // FpsRangeFeature.DEFAULT_FPS_RANGE is used only when using Camera2 FCQ API since max FPS
+        // is not always available and thus not always possible to be certain that a certain FPS is
+        // supported
+        Range<Integer> fpsRange = FRAME_RATE_RANGE_UNSPECIFIED;
+
+        VideoStabilization stabilization = VideoStabilizationFeature.DEFAULT_STABILIZATION;
+
+        // TODO: Use UNSPECIFIED default values for all features by default and switch to
+        //  FCQ-specific default values only when the Camera2 FCQ API is required. However,
+        //  this probably requires a good amount of refactoring (e.g. the values should be set in
+        //  SupportedSurfaceCombination based on CheckingMethod instead of here and stabilization
+        //  mode should become a part of StreamSpec so that the config doesn't have to be directly
+        //  overwritten, ImageFormat might have similar difficulties too)
+
+        for (GroupableFeature feature : mFeatureGroup) {
+            if (feature instanceof DynamicRangeFeature) {
+                dynamicRange = ((DynamicRangeFeature) feature).getDynamicRange();
+            } else if (feature instanceof FpsRangeFeature) {
+                FpsRangeFeature fpsFeature = ((FpsRangeFeature) feature);
+                fpsRange = new Range<>(fpsFeature.getMinFps(), fpsFeature.getMaxFps());
+            } else if (feature instanceof VideoStabilizationFeature) {
+                stabilization = ((VideoStabilizationFeature) feature).getVideoStabilization();
+            }
+        }
+
+        if (this instanceof Preview || UseCaseUtil.isVideoCapture(this)) {
+            config.insertOption(OPTION_INPUT_DYNAMIC_RANGE, dynamicRange);
+        }
+
+        config.insertOption(OPTION_TARGET_FRAME_RATE, fpsRange);
+
+        // Setting the same preview stabilization mode to all use cases (instead of just Preview and
+        // VideoCapture who have related public APIs) lead to a simpler logic and makes code less
+        // error-prone (e.g. if the UseCases are specified and the stabilization mode is changed for
+        // some other UseCases in future, it may lead to those use cases not being handled properly
+        // and it might be hard to notice such an issue).
+        switch (stabilization) {
+            case UNSPECIFIED:
+                config.insertOption(OPTION_PREVIEW_STABILIZATION_MODE,
+                        StabilizationMode.UNSPECIFIED);
+                config.insertOption(OPTION_VIDEO_STABILIZATION_MODE,
+                        StabilizationMode.UNSPECIFIED);
+                break;
+            case OFF:
+                config.insertOption(OPTION_PREVIEW_STABILIZATION_MODE, StabilizationMode.OFF);
+                config.insertOption(OPTION_VIDEO_STABILIZATION_MODE, StabilizationMode.OFF);
+                break;
+            case ON:
+                config.insertOption(OPTION_PREVIEW_STABILIZATION_MODE,
+                        StabilizationMode.UNSPECIFIED);
+                config.insertOption(OPTION_VIDEO_STABILIZATION_MODE, StabilizationMode.ON);
+                // Will result to video stabilization overall as per the CameraX impl. and API docs
+                break;
+            case PREVIEW:
+                config.insertOption(OPTION_PREVIEW_STABILIZATION_MODE, StabilizationMode.ON);
+                config.insertOption(OPTION_VIDEO_STABILIZATION_MODE,
+                        StabilizationMode.UNSPECIFIED);
+                // Will result to preview stabilization overall as per the CameraX impl. and API
+                // docs
+                break;
+        }
+    }
+
+    /**
+     * Returns a set of supported dynamic ranges supported by this use case for the given camera.
+     *
+     * <p> A dynamic range not supported by the camera should never be supported by the use case.
+     * Furthermore, use cases may not support some dynamic ranges even if they are supported by the
+     * camera.
+     *
+     * <p> Returning a null value represents that this use case does not specify which dynamic
+     * ranges it supports and doesn't have any constraint for dynamic ranges.
+     *
+     * @param cameraInfo The {@link CameraInfoInternal} instance of a camera.
+     * @return A set of supported dynamic ranges, or {@code null} if this use case doesn't have any
+     * constraint about what dynamic ranges it can support.
+     */
+    @RestrictTo(Scope.LIBRARY_GROUP)
+    public @Nullable Set<@NonNull DynamicRange> getSupportedDynamicRanges(
+            @NonNull CameraInfoInternal cameraInfo) {
+        return null;
+    }
+
+    /**
+     * Sets the {@link RotationProvider} for this use case.
+     *
+     * <p>If a {@link RotationProvider} is set, the use case will automatically listen to the
+     * rotation updates and set the target rotation.
+     *
+     * @param rotationProvider The {@link RotationProvider} to set.
+     */
+    @RestrictTo(Scope.LIBRARY_GROUP)
+    public void setRotationProvider(@Nullable RotationProvider rotationProvider) {
+        synchronized (mRotationProviderLock) {
+            mRotationProvider = rotationProvider;
+        }
+    }
+
+    /**
+     * Returns whether the use case supports auto-rotation.
+     *
+     * @return true if the use case supports auto-rotation, false otherwise.
+     */
+    @RestrictTo(Scope.LIBRARY_GROUP)
+    public boolean isAutoRotationSupported() {
+        return false;
+    }
+
     enum State {
         /** Currently waiting for image data. */
         ACTIVE,
@@ -1161,5 +1456,41 @@ public abstract class UseCase {
          * includes updating the {@link Surface} used by the use case.
          */
         void onUseCaseReset(@NonNull UseCase useCase);
+    }
+
+    /**
+     * Applies camera-backend-specific options.
+     *
+     * <p>Implementations (such as {@link UseCase} builders) support applying backend-specific
+     * configurations, such as Camera2 capture request options.
+     *
+     * @param <B> the type of the builder implementing this interface
+     */
+    public interface InteropConfigurable<B extends InteropConfigurable<B>> {
+        /**
+         * Applies interoperability configuration to this builder.
+         *
+         * <p>To configure Camera2 options, use {@code Camera2Interop.forUseCase(configurator)}
+         * (from the {@code camera-camera2} artifact) to create a configurator, then pass it to
+         * this method.
+         *
+         * <p><b>Note:</b> Using Camera2 interop options can override internal CameraX
+         * configurations. If an option configured via interop conflicts with options required by
+         * CameraX internally, the option from Camera2Interop will override, which may result in
+         * unexpected behavior.
+         *
+         * @param configurator the configurator that sets the interoperability options
+         * @return this builder
+         */
+        @SuppressWarnings("unchecked")
+        default @NonNull B setInterop(@NonNull InteropConfigurator<? super B> configurator) {
+            configurator.configure((B) this);
+            return (B) this;
+        }
+
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+        default @NonNull MutableConfig getInteropMutableConfig() {
+            return MutableOptionsBundle.create();
+        }
     }
 }

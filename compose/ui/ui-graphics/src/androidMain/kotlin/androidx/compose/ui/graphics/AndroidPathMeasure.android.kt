@@ -18,9 +18,9 @@ package androidx.compose.ui.graphics
 
 import androidx.compose.ui.geometry.Offset
 
-actual fun PathMeasure(): PathMeasure = AndroidPathMeasure(android.graphics.PathMeasure())
+public actual fun PathMeasure(): PathMeasure = AndroidPathMeasure(android.graphics.PathMeasure())
 
-class AndroidPathMeasure
+public class AndroidPathMeasure
 internal constructor(private val internalPathMeasure: android.graphics.PathMeasure) : PathMeasure {
 
     override val length: Float
@@ -34,13 +34,13 @@ internal constructor(private val internalPathMeasure: android.graphics.PathMeasu
         startDistance: Float,
         stopDistance: Float,
         destination: Path,
-        startWithMoveTo: Boolean
+        startWithMoveTo: Boolean,
     ): Boolean {
         return internalPathMeasure.getSegment(
             startDistance,
             stopDistance,
             destination.asAndroidPath(),
-            startWithMoveTo
+            startWithMoveTo,
         )
     }
 

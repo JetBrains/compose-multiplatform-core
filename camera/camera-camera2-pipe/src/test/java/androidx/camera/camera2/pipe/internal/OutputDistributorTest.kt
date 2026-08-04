@@ -16,15 +16,12 @@
 
 package androidx.camera.camera2.pipe.internal
 
-import android.os.Build
 import androidx.camera.camera2.pipe.CameraTimestamp
 import androidx.camera.camera2.pipe.FrameNumber
 import androidx.camera.camera2.pipe.OutputStatus
 import androidx.camera.camera2.pipe.internal.OutputDistributor.OutputListener
 import androidx.camera.camera2.pipe.media.Finalizer
 import com.google.common.truth.Truth.assertThat
-import junit.framework.TestCase.assertFalse
-import junit.framework.TestCase.assertTrue
 import kotlinx.atomicfu.atomic
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -33,7 +30,7 @@ import org.robolectric.annotation.Config
 
 /** Tests for [OutputDistributor] */
 @RunWith(RobolectricTestRunner::class)
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
+@Config(sdk = [Config.NEWEST_SDK])
 class OutputDistributorTest {
     private val fakeOutput1 = FakeOutput(101)
     private val fakeOutput2 = FakeOutput(102)
@@ -59,7 +56,8 @@ class OutputDistributorTest {
                     override fun finalize(value: FakeOutput?) {
                         value?.finalize()
                     }
-                }
+                },
+            outputMatcher = OutputMatcher.EXACT,
         )
 
     @Test
@@ -95,7 +93,7 @@ class OutputDistributorTest {
         outputDistributor.onOutputResult(fakeOutput4.outputNumber, OutputResult.from(fakeOutput4))
         outputDistributor.onOutputResult(
             fakeOutput1.outputNumber,
-            OutputResult.from(fakeOutput1)
+            OutputResult.from(fakeOutput1),
         ) // Out of order
 
         // FIFO Order for outputs, regardless of the output number.
@@ -114,15 +112,15 @@ class OutputDistributorTest {
 
         outputDistributor.onOutputResult(
             fakeOutput4.outputNumber,
-            OutputResult.failure(OutputStatus.ERROR_OUTPUT_DROPPED)
+            OutputResult.failure(OutputStatus.ERROR_OUTPUT_DROPPED),
         )
         outputDistributor.onOutputResult(
             fakeOutput5.outputNumber,
-            OutputResult.failure(OutputStatus.ERROR_OUTPUT_DROPPED)
+            OutputResult.failure(OutputStatus.ERROR_OUTPUT_DROPPED),
         )
         outputDistributor.onOutputResult(
             fakeOutput6.outputNumber,
-            OutputResult.failure(OutputStatus.ERROR_OUTPUT_DROPPED)
+            OutputResult.failure(OutputStatus.ERROR_OUTPUT_DROPPED),
         )
 
         // Dropped outputs (null) still evict old outputs.
@@ -182,7 +180,7 @@ class OutputDistributorTest {
         outputDistributor.startWith(pendingOutput1)
         outputDistributor.onOutputResult(
             fakeOutput1.outputNumber,
-            OutputResult.failure(OutputStatus.ERROR_OUTPUT_DROPPED)
+            OutputResult.failure(OutputStatus.ERROR_OUTPUT_DROPPED),
         )
 
         assertThat(pendingOutput1.isComplete).isTrue()
@@ -199,7 +197,7 @@ class OutputDistributorTest {
 
         outputDistributor.onOutputResult(
             fakeOutput3.outputNumber,
-            OutputResult.from(fakeOutput3)
+            OutputResult.from(fakeOutput3),
         ) // Match 3
 
         assertThat(pendingOutput1.isComplete).isTrue() // #1 is Canceled
@@ -459,14 +457,14 @@ class OutputDistributorTest {
 
         // OutputDistributor receives the capture result for output 1, and should complete it.
         outputDistributor.onOutputResult(fakeOutput1.outputNumber, OutputResult.from(fakeOutput1))
-        assertTrue(pendingOutput1.isComplete)
-        assertFalse(pendingOutput2.isComplete)
+        assertThat(pendingOutput1.isComplete).isTrue()
+        assertThat(pendingOutput2.isComplete).isFalse()
 
         // OutputDistributor receives the capture result for output 2, but since the onOutputStarted
         // call for output 2 is ignored, pendingOutput2 should not be completed.
         outputDistributor.onOutputResult(fakeOutput2.outputNumber, OutputResult.from(fakeOutput2))
-        assertTrue(pendingOutput1.isComplete)
-        assertFalse(pendingOutput2.isComplete)
+        assertThat(pendingOutput1.isComplete).isTrue()
+        assertThat(pendingOutput2.isComplete).isFalse()
     }
 
     @Test
@@ -480,8 +478,8 @@ class OutputDistributorTest {
         // OutputDistributor receives the capture result for output 1, and should complete it.
         val fakeOutput1 = FakeOutput(101)
         outputDistributor.onOutputResult(fakeOutput1.outputNumber, OutputResult.from(fakeOutput1))
-        assertTrue(pendingOutput1.isComplete)
-        assertFalse(pendingOutput2.isComplete)
+        assertThat(pendingOutput1.isComplete).isTrue()
+        assertThat(pendingOutput2.isComplete).isFalse()
 
         // OutputDistributor receives the capture result for output 2. Even though the output number
         // is the same should normally result in a match, the onOutputStarted call for output 2 is
@@ -489,8 +487,8 @@ class OutputDistributorTest {
         // completed.
         val fakeOutput2 = FakeOutput(101)
         outputDistributor.onOutputResult(fakeOutput2.outputNumber, OutputResult.from(fakeOutput2))
-        assertTrue(pendingOutput1.isComplete)
-        assertFalse(pendingOutput2.isComplete)
+        assertThat(pendingOutput1.isComplete).isTrue()
+        assertThat(pendingOutput2.isComplete).isFalse()
     }
 
     @Test
@@ -502,15 +500,15 @@ class OutputDistributorTest {
 
         val fakeOutput1 = FakeOutput(101)
         outputDistributor.onOutputResult(fakeOutput1.outputNumber, OutputResult.from(fakeOutput1))
-        assertTrue(pendingOutput1.isComplete)
-        assertFalse(pendingOutput2.isComplete)
+        assertThat(pendingOutput1.isComplete).isTrue()
+        assertThat(pendingOutput2.isComplete).isFalse()
 
         // Simulate OutputDistributor getting a duplicated OutputResult. In this case, the
         // OutputResult will be cached, since its corresponding onOutputStarted event is ignored.
         val fakeOutput2 = FakeOutput(101)
         outputDistributor.onOutputResult(fakeOutput2.outputNumber, OutputResult.from(fakeOutput2))
-        assertTrue(pendingOutput1.isComplete)
-        assertFalse(pendingOutput2.isComplete)
+        assertThat(pendingOutput1.isComplete).isTrue()
+        assertThat(pendingOutput2.isComplete).isFalse()
 
         // Simulate getting 3 more OutputResults, which in this case, should cause the
         // OutputDistributor to exceed its maximum number of cached OutputResults (by default), and
@@ -521,7 +519,7 @@ class OutputDistributorTest {
         outputDistributor.onOutputResult(fakeOutput3.outputNumber, OutputResult.from(fakeOutput3))
         outputDistributor.onOutputResult(fakeOutput4.outputNumber, OutputResult.from(fakeOutput4))
         outputDistributor.onOutputResult(fakeOutput5.outputNumber, OutputResult.from(fakeOutput5))
-        assertTrue(fakeOutput2.finalized)
+        assertThat(fakeOutput2.finalized).isTrue()
     }
 
     @Test
@@ -532,12 +530,12 @@ class OutputDistributorTest {
         outputDistributor.startWith(pendingOutput2)
 
         outputDistributor.onOutputResult(fakeOutput1.outputNumber, OutputResult.from(fakeOutput1))
-        assertTrue(pendingOutput1.isComplete)
-        assertFalse(pendingOutput2.isComplete)
+        assertThat(pendingOutput1.isComplete).isTrue()
+        assertThat(pendingOutput2.isComplete).isFalse()
 
         outputDistributor.onOutputResult(fakeOutput2.outputNumber, OutputResult.from(fakeOutput2))
-        assertTrue(pendingOutput1.isComplete)
-        assertTrue(pendingOutput2.isComplete)
+        assertThat(pendingOutput1.isComplete).isTrue()
+        assertThat(pendingOutput2.isComplete).isTrue()
     }
 
     @Test
@@ -549,13 +547,13 @@ class OutputDistributorTest {
 
         val fakeOutput1 = FakeOutput(101)
         outputDistributor.onOutputResult(fakeOutput1.outputNumber, OutputResult.from(fakeOutput1))
-        assertTrue(pendingOutput1.isComplete)
-        assertFalse(pendingOutput2.isComplete)
+        assertThat(pendingOutput1.isComplete).isTrue()
+        assertThat(pendingOutput2.isComplete).isFalse()
 
         val fakeOutput2 = FakeOutput(101)
         outputDistributor.onOutputResult(fakeOutput2.outputNumber, OutputResult.from(fakeOutput2))
-        assertTrue(pendingOutput1.isComplete)
-        assertTrue(pendingOutput2.isComplete)
+        assertThat(pendingOutput1.isComplete).isTrue()
+        assertThat(pendingOutput2.isComplete).isTrue()
     }
 
     /**
@@ -565,7 +563,7 @@ class OutputDistributorTest {
     private class PendingOutput(
         val cameraFrameNumber: FrameNumber,
         val cameraTimestamp: CameraTimestamp,
-        val outputNumber: Long
+        val outputNumber: Long,
     ) : OutputListener<FakeOutput> {
         private val _complete = atomic(false)
         val isComplete: Boolean
@@ -578,9 +576,9 @@ class OutputDistributorTest {
         override fun onOutputComplete(
             cameraFrameNumber: FrameNumber,
             cameraTimestamp: CameraTimestamp,
-            outputSequence: Long,
+            cameraOutputSequence: Long,
             outputNumber: Long,
-            outputResult: OutputResult<FakeOutput>
+            outputResult: OutputResult<FakeOutput>,
         ) {
             // Assert that this callback has only been invoked once.
             assertThat(_complete.compareAndSet(expect = false, update = true)).isTrue()
@@ -591,7 +589,7 @@ class OutputDistributorTest {
             assertThat(outputNumber).isEqualTo(outputNumber)
 
             // Record the actual output and outputSequence for future checks.
-            this.outputSequence = outputSequence
+            this.outputSequence = cameraOutputSequence
             this.outputStatus = outputResult.status
             this.output = outputResult.output
         }
@@ -603,14 +601,12 @@ class OutputDistributorTest {
             pendingOutput.cameraFrameNumber,
             pendingOutput.cameraTimestamp,
             pendingOutput.outputNumber,
-            pendingOutput
+            pendingOutput,
         )
     }
 
     /** Utility class for testing if an output was finalized (closed) or not */
-    private class FakeOutput(
-        val outputNumber: Long,
-    ) {
+    private class FakeOutput(val outputNumber: Long) {
         private val _finalized = atomic(false)
         val finalized: Boolean
             get() = _finalized.value

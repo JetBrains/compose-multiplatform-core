@@ -104,7 +104,7 @@ class CameraViewfinderFoldableFragment : Fragment(), View.OnClickListener {
             cameraHandler?.post(
                 ImageSaver(
                     it.acquireNextImage(),
-                    checkNotNull(file) { "file cannot be null when saving image" }
+                    checkNotNull(file) { "file cannot be null when saving image" },
                 )
             )
         }
@@ -153,7 +153,7 @@ class CameraViewfinderFoldableFragment : Fragment(), View.OnClickListener {
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
-        savedInstanceState: Bundle?
+        savedInstanceState: Bundle?,
     ): View? = inflater.inflate(R.layout.fragment_camera_view_finder_foldable, container, false)
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -280,7 +280,7 @@ class CameraViewfinderFoldableFragment : Fragment(), View.OnClickListener {
             ViewfinderSurfaceRequest(
                 width = chosenResolution.width,
                 height = chosenResolution.height,
-                implementationMode = implementationMode
+                implementationMode = implementationMode,
             )
 
         val transformationInfo =
@@ -305,7 +305,7 @@ class CameraViewfinderFoldableFragment : Fragment(), View.OnClickListener {
             relativeOrientation =
                 OrientationLiveData(
                         requireContext(),
-                        checkNotNull(characteristics) { "camera characteristics cannot be null" }
+                        checkNotNull(characteristics) { "camera characteristics cannot be null" },
                     )
                     .apply {
                         observe(viewLifecycleOwner) { orientation ->
@@ -325,14 +325,14 @@ class CameraViewfinderFoldableFragment : Fragment(), View.OnClickListener {
             resolution =
                 Collections.max(
                     /* coll = */ listOf(*map.getOutputSizes(ImageFormat.JPEG)),
-                    /* comp = */ CompareSizesByArea()
+                    /* comp = */ CompareSizesByArea(),
                 )
             imageReader =
                 ImageReader.newInstance(
                         resolution!!.width,
                         resolution!!.height,
                         ImageFormat.JPEG, /*maxImages*/
-                        2
+                        2,
                     )
                     .apply {
                         setOnImageAvailableListener(onImageAvailableListener, imageReaderHandler)
@@ -351,14 +351,14 @@ class CameraViewfinderFoldableFragment : Fragment(), View.OnClickListener {
                 openCamera(
                     cameraManager,
                     checkNotNull(cameraId) { "camera id cannot be null" },
-                    cameraHandler
+                    cameraHandler,
                 )
 
             // Creates list of Surfaces where the camera will output frames
             val targets =
                 listOf(
                     surface,
-                    checkNotNull(imageReader?.surface) { "image reader surface cannot be null" }
+                    checkNotNull(imageReader?.surface) { "image reader surface cannot be null" },
                 )
 
             try {
@@ -368,7 +368,7 @@ class CameraViewfinderFoldableFragment : Fragment(), View.OnClickListener {
                     createCaptureSession(
                         checkNotNull(camera) { "camera cannot be null" },
                         targets,
-                        cameraHandler
+                        cameraHandler,
                     )
 
                 val captureRequest =
@@ -393,7 +393,7 @@ class CameraViewfinderFoldableFragment : Fragment(), View.OnClickListener {
     private suspend fun openCamera(
         manager: CameraManager,
         cameraId: String,
-        handler: Handler? = null
+        handler: Handler? = null,
     ): CameraDevice =
         withContext(Dispatchers.IO) {
             suspendCancellableCoroutine { cont ->
@@ -422,7 +422,7 @@ class CameraViewfinderFoldableFragment : Fragment(), View.OnClickListener {
                                 Log.e(TAG, "Camera $cameraId error: ($error) $msg")
                             }
                         },
-                        handler
+                        handler,
                     )
                 } catch (e: CameraAccessException) {
                     Log.e(TAG, "openCamera CameraAccessException")
@@ -452,7 +452,7 @@ class CameraViewfinderFoldableFragment : Fragment(), View.OnClickListener {
     private suspend fun createCaptureSession(
         device: CameraDevice,
         targets: List<Surface>,
-        handler: Handler? = null
+        handler: Handler? = null,
     ): CameraCaptureSession =
         withContext(Dispatchers.IO) {
             suspendCoroutine { cont ->
@@ -474,7 +474,7 @@ class CameraViewfinderFoldableFragment : Fragment(), View.OnClickListener {
                             cont.resumeWithException(exc)
                         }
                     },
-                    handler
+                    handler,
                 )
             }
         }
@@ -520,7 +520,7 @@ class CameraViewfinderFoldableFragment : Fragment(), View.OnClickListener {
                 bitmap.compress(
                     Bitmap.CompressFormat.PNG,
                     100,
-                    checkNotNull(fos) { "fos cannot be null" }
+                    checkNotNull(fos) { "fos cannot be null" },
                 )
                 fos.close()
                 showToast("Saved: $displayName")
@@ -533,7 +533,7 @@ class CameraViewfinderFoldableFragment : Fragment(), View.OnClickListener {
                 val file =
                     File(
                         getBatchDirectoryName(),
-                        dateFormat.format(Date()) + "_ViewfinderBitmap.png"
+                        dateFormat.format(Date()) + "_ViewfinderBitmap.png",
                     )
                 val fos = FileOutputStream(file)
                 bitmap.compress(Bitmap.CompressFormat.PNG, 100, fos)
@@ -661,7 +661,7 @@ class CameraViewfinderFoldableFragment : Fragment(), View.OnClickListener {
     private fun getFeaturePositionInViewRect(
         displayFeature: DisplayFeature,
         view: View,
-        includePadding: Boolean = true
+        includePadding: Boolean = true,
     ): Rect? {
         // The location of the view in window to be in the same coordinate space as the feature.
         val viewLocationInWindow = IntArray(2)
@@ -673,7 +673,7 @@ class CameraViewfinderFoldableFragment : Fragment(), View.OnClickListener {
                 viewLocationInWindow[0],
                 viewLocationInWindow[1],
                 viewLocationInWindow[0] + view.width,
-                viewLocationInWindow[1] + view.height
+                viewLocationInWindow[1] + view.height,
             )
 
         // Include padding if needed
@@ -730,7 +730,7 @@ class CameraViewfinderFoldableFragment : Fragment(), View.OnClickListener {
                 Log.d(TAG, "Image available in queue: ${image.timestamp}")
                 imageQueue.add(image)
             },
-            imageReaderHandler
+            imageReaderHandler,
         )
 
         val captureRequest =
@@ -746,7 +746,7 @@ class CameraViewfinderFoldableFragment : Fragment(), View.OnClickListener {
                         session: CameraCaptureSession,
                         request: CaptureRequest,
                         timestamp: Long,
-                        frameNumber: Long
+                        frameNumber: Long,
                     ) {
                         super.onCaptureStarted(session, request, timestamp, frameNumber)
                     }
@@ -754,7 +754,7 @@ class CameraViewfinderFoldableFragment : Fragment(), View.OnClickListener {
                     override fun onCaptureCompleted(
                         session: CameraCaptureSession,
                         request: CaptureRequest,
-                        result: TotalCaptureResult
+                        result: TotalCaptureResult,
                     ) {
                         super.onCaptureCompleted(session, request, result)
                         val resultTimestamp = result.get(CaptureResult.SENSOR_TIMESTAMP)
@@ -765,7 +765,7 @@ class CameraViewfinderFoldableFragment : Fragment(), View.OnClickListener {
                         val timeoutRunnable = Runnable { cont.resumeWithException(exc) }
                         imageReaderHandler?.postDelayed(
                             timeoutRunnable,
-                            IMAGE_CAPTURE_TIMEOUT_MILLIS
+                            IMAGE_CAPTURE_TIMEOUT_MILLIS,
                         )
 
                         // Loop in the coroutine's context until an image with matching timestamp
@@ -812,7 +812,7 @@ class CameraViewfinderFoldableFragment : Fragment(), View.OnClickListener {
                                         result,
                                         exifOrientation,
                                         checkNotNull(imageReader) { "image reader cannot be null" }
-                                            .imageFormat
+                                            .imageFormat,
                                     )
                                 )
                                 // There is no need to break out of the loop, this coroutine will
@@ -821,7 +821,7 @@ class CameraViewfinderFoldableFragment : Fragment(), View.OnClickListener {
                         }
                     }
                 },
-                cameraHandler
+                cameraHandler,
             )
         }
     }
@@ -850,7 +850,7 @@ class CameraViewfinderFoldableFragment : Fragment(), View.OnClickListener {
                 val dngCreator =
                     DngCreator(
                         checkNotNull(characteristics) { "camera characteristics cannot be null" },
-                        result.metadata
+                        result.metadata,
                     )
                 try {
                     val output = createFile("dng")
@@ -922,7 +922,7 @@ class CameraViewfinderFoldableFragment : Fragment(), View.OnClickListener {
             val image: Image,
             val metadata: CaptureResult,
             val orientation: Int,
-            val format: Int
+            val format: Int,
         ) : Closeable {
             override fun close() = image.close()
         }

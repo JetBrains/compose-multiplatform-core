@@ -36,66 +36,65 @@ import kotlin.jvm.JvmName
 private val DefaultLineHeight = TextUnit.Unspecified
 
 /**
- * Paragraph styling configuration for a paragraph. The difference between [SpanStyle] and
- * `ParagraphStyle` is that, `ParagraphStyle` can be applied to a whole [Paragraph] while
- * [SpanStyle] can be applied at the character level. Once a portion of the text is marked with a
- * `ParagraphStyle`, that portion will be separated from the remaining as if a line feed character
- * was added.
+ * Paragraph styling configuration.
+ *
+ * Defines styling parameters that apply to a whole paragraph (e.g., alignment, line height).
+ *
+ * In contrast to [SpanStyle] which applies at character level, [ParagraphStyle] separates the
+ * marked text into a new paragraph, as if a line feed character was inserted.
  *
  * @sample androidx.compose.ui.text.samples.ParagraphStyleSample
  * @sample androidx.compose.ui.text.samples.ParagraphStyleAnnotatedStringsSample
- * @param textAlign The alignment of the text within the lines of the paragraph.
- * @param textDirection The algorithm to be used to resolve the final text direction: Left To Right
- *   or Right To Left.
- * @param lineHeight Line height for the [Paragraph] in [TextUnit] unit, e.g. SP or EM.
- * @param textIndent The indentation of the paragraph.
- * @param platformStyle Platform specific [ParagraphStyle] parameters.
- * @param lineHeightStyle the configuration for line height such as vertical alignment of the line,
- *   whether to apply additional space as a result of line height to top of first line top and
- *   bottom of last line. The configuration is applied only when a [lineHeight] is defined. When
- *   null, [LineHeightStyle.Default] is used.
- * @param lineBreak The line breaking configuration for the text.
- * @param hyphens The configuration of hyphenation.
- * @param textMotion Text character placement, whether to optimize for animated or static text.
+ * @sample androidx.compose.ui.text.samples.AnnotatedStringBuilderPushParagraphStyleSample
+ * @param textAlign alignment of the text within the lines of the paragraph.
+ * @param textDirection algorithm used to resolve the final text direction: Left To Right or Right
+ *   To Left.
+ * @param lineHeight line height
+ * @param textIndent paragraph indentation
+ * @param platformStyle platform-specific parameters
+ * @param lineHeightStyle line height distribution configuration
+ * @param lineBreak line breaking rules.
+ * @param hyphens hyphenation configuration.
+ * @param textMotion character placement optimization.
  * @see Paragraph
  * @see AnnotatedString
  * @see SpanStyle
  * @see TextStyle
  */
 @Immutable
-class ParagraphStyle(
-    val textAlign: TextAlign = TextAlign.Unspecified,
-    val textDirection: TextDirection = TextDirection.Unspecified,
-    val lineHeight: TextUnit = TextUnit.Unspecified,
-    val textIndent: TextIndent? = null,
-    val platformStyle: PlatformParagraphStyle? = null,
-    val lineHeightStyle: LineHeightStyle? = null,
-    val lineBreak: LineBreak = LineBreak.Unspecified,
-    val hyphens: Hyphens = Hyphens.Unspecified,
-    val textMotion: TextMotion? = null
+public class ParagraphStyle(
+    public val textAlign: TextAlign = TextAlign.Unspecified,
+    public val textDirection: TextDirection = TextDirection.Unspecified,
+    public val lineHeight: TextUnit = TextUnit.Unspecified,
+    public val textIndent: TextIndent? = null,
+    public val platformStyle: PlatformParagraphStyle? = null,
+    public val lineHeightStyle: LineHeightStyle? = null,
+    public val lineBreak: LineBreak = LineBreak.Unspecified,
+    public val hyphens: Hyphens = Hyphens.Unspecified,
+    public val textMotion: TextMotion? = null,
 ) : AnnotatedString.Annotation {
     @Deprecated("Kept for backwards compatibility.", level = DeprecationLevel.WARNING)
     @get:JvmName("getTextAlign-buA522U") // b/320819734
     @Suppress("unused", "RedundantNullableReturnType", "PropertyName")
-    val deprecated_boxing_textAlign: TextAlign?
+    public val deprecated_boxing_textAlign: TextAlign?
         get() = this.textAlign
 
     @Deprecated("Kept for backwards compatibility.", level = DeprecationLevel.WARNING)
     @get:JvmName("getTextDirection-mmuk1to") // b/320819734
     @Suppress("unused", "RedundantNullableReturnType", "PropertyName")
-    val deprecated_boxing_textDirection: TextDirection?
+    public val deprecated_boxing_textDirection: TextDirection?
         get() = this.textDirection
 
     @Deprecated("Kept for backwards compatibility.", level = DeprecationLevel.WARNING)
     @get:JvmName("getHyphens-EaSxIns") // b/320819734
     @Suppress("unused", "RedundantNullableReturnType", "PropertyName")
-    val deprecated_boxing_hyphens: Hyphens?
+    public val deprecated_boxing_hyphens: Hyphens?
         get() = this.hyphens
 
     @Deprecated("Kept for backwards compatibility.", level = DeprecationLevel.WARNING)
     @get:JvmName("getLineBreak-LgCVezo") // b/320819734
     @Suppress("unused", "RedundantNullableReturnType", "PropertyName")
-    val deprecated_boxing_lineBreak: LineBreak?
+    public val deprecated_boxing_lineBreak: LineBreak?
         get() = this.lineBreak
 
     @Deprecated(
@@ -103,9 +102,9 @@ class ParagraphStyle(
             "TextDirection, LineBreak, and Hyphens are deprecated. Please use a new constructor " +
             "where these parameters are non-nullable. Null value has been replaced by a special " +
             "Unspecified object for performance reason.",
-        level = DeprecationLevel.HIDDEN
+        level = DeprecationLevel.HIDDEN,
     )
-    constructor(
+    public constructor(
         textAlign: TextAlign? = null,
         textDirection: TextDirection? = null,
         lineHeight: TextUnit = TextUnit.Unspecified,
@@ -114,7 +113,7 @@ class ParagraphStyle(
         lineHeightStyle: LineHeightStyle? = null,
         lineBreak: LineBreak? = null,
         hyphens: Hyphens? = null,
-        textMotion: TextMotion? = null
+        textMotion: TextMotion? = null,
     ) : this(
         textAlign = textAlign ?: TextAlign.Unspecified,
         textDirection = textDirection ?: TextDirection.Unspecified,
@@ -124,20 +123,20 @@ class ParagraphStyle(
         lineHeightStyle = lineHeightStyle,
         lineBreak = lineBreak ?: LineBreak.Unspecified,
         hyphens = hyphens ?: Hyphens.Unspecified,
-        textMotion = textMotion
+        textMotion = textMotion,
     )
 
     @Deprecated(
         "ParagraphStyle constructors that do not take new stable parameters " +
             "like LineHeightStyle, LineBreak, Hyphens are deprecated. Please use the new stable " +
             "constructor.",
-        level = DeprecationLevel.HIDDEN
+        level = DeprecationLevel.HIDDEN,
     )
-    constructor(
+    public constructor(
         textAlign: TextAlign? = null,
         textDirection: TextDirection? = null,
         lineHeight: TextUnit = TextUnit.Unspecified,
-        textIndent: TextIndent? = null
+        textIndent: TextIndent? = null,
     ) : this(
         textAlign = textAlign ?: TextAlign.Unspecified,
         textDirection = textDirection ?: TextDirection.Unspecified,
@@ -147,22 +146,22 @@ class ParagraphStyle(
         lineHeightStyle = null,
         lineBreak = LineBreak.Unspecified,
         hyphens = Hyphens.Unspecified,
-        textMotion = null
+        textMotion = null,
     )
 
     @Deprecated(
         "ParagraphStyle constructors that do not take new stable parameters " +
             "like LineHeightStyle, LineBreak, Hyphens are deprecated. Please use the new stable " +
             "constructors.",
-        level = DeprecationLevel.HIDDEN
+        level = DeprecationLevel.HIDDEN,
     )
-    constructor(
+    public constructor(
         textAlign: TextAlign? = null,
         textDirection: TextDirection? = null,
         lineHeight: TextUnit = TextUnit.Unspecified,
         textIndent: TextIndent? = null,
         platformStyle: PlatformParagraphStyle? = null,
-        lineHeightStyle: LineHeightStyle? = null
+        lineHeightStyle: LineHeightStyle? = null,
     ) : this(
         textAlign = textAlign ?: TextAlign.Unspecified,
         textDirection = textDirection ?: TextDirection.Unspecified,
@@ -172,16 +171,16 @@ class ParagraphStyle(
         lineHeightStyle = lineHeightStyle,
         lineBreak = LineBreak.Unspecified,
         hyphens = Hyphens.Unspecified,
-        textMotion = null
+        textMotion = null,
     )
 
     @Deprecated(
         "ParagraphStyle constructors that do not take new stable parameters " +
             "like LineBreak, Hyphens, TextMotion are deprecated. Please use the new stable " +
             "constructors.",
-        level = DeprecationLevel.HIDDEN
+        level = DeprecationLevel.HIDDEN,
     )
-    constructor(
+    public constructor(
         textAlign: TextAlign? = null,
         textDirection: TextDirection? = null,
         lineHeight: TextUnit = TextUnit.Unspecified,
@@ -189,7 +188,7 @@ class ParagraphStyle(
         platformStyle: PlatformParagraphStyle? = null,
         lineHeightStyle: LineHeightStyle? = null,
         lineBreak: LineBreak? = null,
-        hyphens: Hyphens? = null
+        hyphens: Hyphens? = null,
     ) : this(
         textAlign = textAlign ?: TextAlign.Unspecified,
         textDirection = textDirection ?: TextDirection.Unspecified,
@@ -199,7 +198,7 @@ class ParagraphStyle(
         lineHeightStyle = lineHeightStyle,
         lineBreak = lineBreak ?: LineBreak.Unspecified,
         hyphens = hyphens ?: Hyphens.Unspecified,
-        textMotion = null
+        textMotion = null,
     )
 
     init {
@@ -216,9 +215,11 @@ class ParagraphStyle(
      * style.
      *
      * If the given paragraph style is null, returns this paragraph style.
+     *
+     * @param other style to merge
      */
     @Stable
-    fun merge(other: ParagraphStyle? = null): ParagraphStyle {
+    public fun merge(other: ParagraphStyle? = null): ParagraphStyle {
         if (other == null) return this
 
         return fastMerge(
@@ -230,24 +231,24 @@ class ParagraphStyle(
             lineHeightStyle = other.lineHeightStyle,
             lineBreak = other.lineBreak,
             hyphens = other.hyphens,
-            textMotion = other.textMotion
+            textMotion = other.textMotion,
         )
     }
 
     /** Plus operator overload that applies a [merge]. */
-    @Stable operator fun plus(other: ParagraphStyle): ParagraphStyle = this.merge(other)
+    @Stable public operator fun plus(other: ParagraphStyle): ParagraphStyle = this.merge(other)
 
     @Deprecated(
         "ParagraphStyle copy constructors that do not take new stable parameters " +
             "like LineHeightStyle, LineBreak, Hyphens are deprecated. Please use the new stable " +
             "copy constructor.",
-        level = DeprecationLevel.HIDDEN
+        level = DeprecationLevel.HIDDEN,
     )
-    fun copy(
+    public fun copy(
         textAlign: TextAlign? = this.textAlign,
         textDirection: TextDirection? = this.textDirection,
         lineHeight: TextUnit = this.lineHeight,
-        textIndent: TextIndent? = this.textIndent
+        textIndent: TextIndent? = this.textIndent,
     ): ParagraphStyle {
         return ParagraphStyle(
             textAlign = textAlign ?: TextAlign.Unspecified,
@@ -258,7 +259,7 @@ class ParagraphStyle(
             lineHeightStyle = this.lineHeightStyle,
             lineBreak = this.lineBreak,
             hyphens = this.hyphens,
-            textMotion = this.textMotion
+            textMotion = this.textMotion,
         )
     }
 
@@ -266,15 +267,15 @@ class ParagraphStyle(
         "ParagraphStyle copy constructors that do not take new stable parameters " +
             "like LineHeightStyle, LineBreak, Hyphens are deprecated. Please use the new stable " +
             "copy constructor.",
-        level = DeprecationLevel.HIDDEN
+        level = DeprecationLevel.HIDDEN,
     )
-    fun copy(
+    public fun copy(
         textAlign: TextAlign? = this.textAlign,
         textDirection: TextDirection? = this.textDirection,
         lineHeight: TextUnit = this.lineHeight,
         textIndent: TextIndent? = this.textIndent,
         platformStyle: PlatformParagraphStyle? = this.platformStyle,
-        lineHeightStyle: LineHeightStyle? = this.lineHeightStyle
+        lineHeightStyle: LineHeightStyle? = this.lineHeightStyle,
     ): ParagraphStyle {
         return ParagraphStyle(
             textAlign = textAlign ?: TextAlign.Unspecified,
@@ -285,7 +286,7 @@ class ParagraphStyle(
             lineHeightStyle = lineHeightStyle,
             lineBreak = this.lineBreak,
             hyphens = this.hyphens,
-            textMotion = this.textMotion
+            textMotion = this.textMotion,
         )
     }
 
@@ -293,39 +294,9 @@ class ParagraphStyle(
         "ParagraphStyle copy constructors that do not take new stable parameters " +
             "like LineBreak, Hyphens, TextMotion are deprecated. Please use the new stable " +
             "copy constructor.",
-        level = DeprecationLevel.HIDDEN
+        level = DeprecationLevel.HIDDEN,
     )
-    fun copy(
-        textAlign: TextAlign? = this.textAlign,
-        textDirection: TextDirection? = this.textDirection,
-        lineHeight: TextUnit = this.lineHeight,
-        textIndent: TextIndent? = this.textIndent,
-        platformStyle: PlatformParagraphStyle? = this.platformStyle,
-        lineHeightStyle: LineHeightStyle? = this.lineHeightStyle,
-        lineBreak: LineBreak? = this.lineBreak,
-        hyphens: Hyphens? = this.hyphens
-    ): ParagraphStyle {
-        return ParagraphStyle(
-            textAlign = textAlign ?: TextAlign.Unspecified,
-            textDirection = textDirection ?: TextDirection.Unspecified,
-            lineHeight = lineHeight,
-            textIndent = textIndent,
-            platformStyle = platformStyle,
-            lineHeightStyle = lineHeightStyle,
-            lineBreak = lineBreak ?: LineBreak.Unspecified,
-            hyphens = hyphens ?: Hyphens.Unspecified,
-            textMotion = this.textMotion
-        )
-    }
-
-    @Deprecated(
-        "ParagraphStyle copy constructors that take nullable TextAlign, " +
-            "TextDirection, LineBreak, and Hyphens are deprecated. Please use a new constructor " +
-            "where these parameters are non-nullable. Null value has been replaced by a special " +
-            "Unspecified object for performance reason.",
-        level = DeprecationLevel.HIDDEN
-    )
-    fun copy(
+    public fun copy(
         textAlign: TextAlign? = this.textAlign,
         textDirection: TextDirection? = this.textDirection,
         lineHeight: TextUnit = this.lineHeight,
@@ -334,7 +305,6 @@ class ParagraphStyle(
         lineHeightStyle: LineHeightStyle? = this.lineHeightStyle,
         lineBreak: LineBreak? = this.lineBreak,
         hyphens: Hyphens? = this.hyphens,
-        textMotion: TextMotion? = this.textMotion
     ): ParagraphStyle {
         return ParagraphStyle(
             textAlign = textAlign ?: TextAlign.Unspecified,
@@ -345,11 +315,42 @@ class ParagraphStyle(
             lineHeightStyle = lineHeightStyle,
             lineBreak = lineBreak ?: LineBreak.Unspecified,
             hyphens = hyphens ?: Hyphens.Unspecified,
-            textMotion = textMotion
+            textMotion = this.textMotion,
         )
     }
 
-    fun copy(
+    @Deprecated(
+        "ParagraphStyle copy constructors that take nullable TextAlign, " +
+            "TextDirection, LineBreak, and Hyphens are deprecated. Please use a new constructor " +
+            "where these parameters are non-nullable. Null value has been replaced by a special " +
+            "Unspecified object for performance reason.",
+        level = DeprecationLevel.HIDDEN,
+    )
+    public fun copy(
+        textAlign: TextAlign? = this.textAlign,
+        textDirection: TextDirection? = this.textDirection,
+        lineHeight: TextUnit = this.lineHeight,
+        textIndent: TextIndent? = this.textIndent,
+        platformStyle: PlatformParagraphStyle? = this.platformStyle,
+        lineHeightStyle: LineHeightStyle? = this.lineHeightStyle,
+        lineBreak: LineBreak? = this.lineBreak,
+        hyphens: Hyphens? = this.hyphens,
+        textMotion: TextMotion? = this.textMotion,
+    ): ParagraphStyle {
+        return ParagraphStyle(
+            textAlign = textAlign ?: TextAlign.Unspecified,
+            textDirection = textDirection ?: TextDirection.Unspecified,
+            lineHeight = lineHeight,
+            textIndent = textIndent,
+            platformStyle = platformStyle,
+            lineHeightStyle = lineHeightStyle,
+            lineBreak = lineBreak ?: LineBreak.Unspecified,
+            hyphens = hyphens ?: Hyphens.Unspecified,
+            textMotion = textMotion,
+        )
+    }
+
+    public fun copy(
         textAlign: TextAlign = this.textAlign,
         textDirection: TextDirection = this.textDirection,
         lineHeight: TextUnit = this.lineHeight,
@@ -358,7 +359,7 @@ class ParagraphStyle(
         lineHeightStyle: LineHeightStyle? = this.lineHeightStyle,
         lineBreak: LineBreak = this.lineBreak,
         hyphens: Hyphens = this.hyphens,
-        textMotion: TextMotion? = this.textMotion
+        textMotion: TextMotion? = this.textMotion,
     ): ParagraphStyle {
         return ParagraphStyle(
             textAlign = textAlign,
@@ -369,11 +370,11 @@ class ParagraphStyle(
             lineHeightStyle = lineHeightStyle,
             lineBreak = lineBreak,
             hyphens = hyphens,
-            textMotion = textMotion
+            textMotion = textMotion,
         )
     }
 
-    override fun equals(other: Any?): Boolean {
+    public override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is ParagraphStyle) return false
 
@@ -390,7 +391,7 @@ class ParagraphStyle(
         return true
     }
 
-    override fun hashCode(): Int {
+    public override fun hashCode(): Int {
         var result = textAlign.hashCode()
         result = 31 * result + textDirection.hashCode()
         result = 31 * result + lineHeight.hashCode()
@@ -403,7 +404,7 @@ class ParagraphStyle(
         return result
     }
 
-    override fun toString(): String {
+    public override fun toString(): String {
         return "ParagraphStyle(" +
             "textAlign=$textAlign, " +
             "textDirection=$textDirection, " +
@@ -431,7 +432,7 @@ class ParagraphStyle(
  * negative values and values greater than 1.0 are valid.
  */
 @Stable
-fun lerp(start: ParagraphStyle, stop: ParagraphStyle, fraction: Float): ParagraphStyle {
+public fun lerp(start: ParagraphStyle, stop: ParagraphStyle, fraction: Float): ParagraphStyle {
     return ParagraphStyle(
         textAlign = lerpDiscrete(start.textAlign, stop.textAlign, fraction),
         textDirection = lerpDiscrete(start.textDirection, stop.textDirection, fraction),
@@ -442,14 +443,14 @@ fun lerp(start: ParagraphStyle, stop: ParagraphStyle, fraction: Float): Paragrap
         lineHeightStyle = lerpDiscrete(start.lineHeightStyle, stop.lineHeightStyle, fraction),
         lineBreak = lerpDiscrete(start.lineBreak, stop.lineBreak, fraction),
         hyphens = lerpDiscrete(start.hyphens, stop.hyphens, fraction),
-        textMotion = lerpDiscrete(start.textMotion, stop.textMotion, fraction)
+        textMotion = lerpDiscrete(start.textMotion, stop.textMotion, fraction),
     )
 }
 
 private fun lerpPlatformStyle(
     start: PlatformParagraphStyle?,
     stop: PlatformParagraphStyle?,
-    fraction: Float
+    fraction: Float,
 ): PlatformParagraphStyle? {
     if (start == null && stop == null) return null
     val startNonNull = start ?: PlatformParagraphStyle.Default
@@ -469,7 +470,7 @@ internal fun resolveParagraphStyleDefaults(style: ParagraphStyle, direction: Lay
         lineBreak =
             if (style.lineBreak == LineBreak.Unspecified) LineBreak.Simple else style.lineBreak,
         hyphens = if (style.hyphens == Hyphens.Unspecified) Hyphens.None else style.hyphens,
-        textMotion = style.textMotion ?: TextMotion.Static
+        textMotion = style.textMotion ?: TextMotion.Static,
     )
 
 internal fun ParagraphStyle.fastMerge(
@@ -481,7 +482,7 @@ internal fun ParagraphStyle.fastMerge(
     lineHeightStyle: LineHeightStyle?,
     lineBreak: LineBreak,
     hyphens: Hyphens,
-    textMotion: TextMotion?
+    textMotion: TextMotion?,
 ): ParagraphStyle {
     // prioritize the parameters to Text in diffs here
     /** textAlign: TextAlign? lineHeight: TextUnit */
@@ -517,7 +518,7 @@ internal fun ParagraphStyle.fastMerge(
         lineHeightStyle = lineHeightStyle ?: this.lineHeightStyle,
         lineBreak = if (lineBreak != LineBreak.Unspecified) lineBreak else this.lineBreak,
         hyphens = if (hyphens != Hyphens.Unspecified) hyphens else this.hyphens,
-        textMotion = textMotion ?: this.textMotion
+        textMotion = textMotion ?: this.textMotion,
     )
 }
 

@@ -32,6 +32,7 @@ import androidx.compose.ui.text.platform.AndroidTextPaint
 import androidx.compose.ui.text.style.BaselineShift
 import androidx.compose.ui.text.style.TextGeometricTransform
 import androidx.compose.ui.text.style.TextMotion
+import androidx.compose.ui.text.style.isApplicable
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.TextUnitType
@@ -63,7 +64,7 @@ internal fun AndroidTextPaint.applySpanStyle(
                 style.fontFamily,
                 style.fontWeight ?: FontWeight.Normal,
                 style.fontStyle ?: FontStyle.Normal,
-                style.fontSynthesis ?: FontSynthesis.All
+                style.fontSynthesis ?: FontSynthesis.All,
             )
     }
 
@@ -120,7 +121,7 @@ internal fun AndroidTextPaint.applySpanStyle(
         style.letterSpacing,
         requiresLetterSpacing,
         style.background,
-        style.baselineShift
+        style.baselineShift,
     )
 }
 
@@ -128,7 +129,7 @@ private fun generateFallbackSpanStyle(
     letterSpacing: TextUnit,
     requiresLetterSpacing: Boolean,
     background: Color,
-    baselineShift: BaselineShift?
+    baselineShift: BaselineShift?,
 ): SpanStyle? {
     // letterSpacing needs to be reset at every metricsEffectingSpan transition - so generate
     // a span for it only if there are other spans
@@ -139,7 +140,7 @@ private fun generateFallbackSpanStyle(
     // baselineShift and bgColor is reset in the Android Layout constructor,
     // therefore we cannot apply them on paint, have to use spans.
     val hasBackgroundColor = background != Color.Unspecified && background != Color.Transparent
-    val hasBaselineShift = baselineShift != null && baselineShift != BaselineShift.None
+    val hasBaselineShift = baselineShift?.isApplicable == true
 
     return if (!hasLetterSpacing && !hasBackgroundColor && !hasBaselineShift) {
         null
@@ -162,7 +163,7 @@ private fun generateFallbackSpanStyle(
                     baselineShift
                 } else {
                     null
-                }
+                },
         )
     }
 }

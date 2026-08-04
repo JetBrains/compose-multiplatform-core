@@ -26,6 +26,17 @@ import androidx.compose.ui.semantics.getAllSemanticsNodes
  * This is typically implemented by entities like test rule.
  */
 internal interface TestOwner {
+    /**
+     * Indicates whether the implicit [ComposeUiTest.waitForIdle] synchronization should be bypassed
+     * before fetching semantics nodes.
+     *
+     * To prevent race conditions and ensure predictable behavior across different testing
+     * environments, this property must strictly be accessed and modified from the UI thread.
+     *
+     * This is primarily used to power scoped APIs like [ComposeUiTest.runWithoutImplicitWait].
+     */
+    var isImplicitWaitSuppressed: Boolean
+
     /** Clock that drives frames and recompositions in compose tests. */
     val mainClock: MainTestClock
 
@@ -49,6 +60,30 @@ internal interface TestOwner {
      *   present in the tested app. This affects synchronization efforts / timeouts of this API.
      */
     fun getRoots(atLeastOneRootExpected: Boolean): Set<RootForTest>
+
+    /**
+     * Executes all tasks that are currently due for immediate execution on the virtual clock.
+     *
+     * Due tasks are operations scheduled to run on this clock without any delay. This method should
+     * only be necessary when the test is running on a **confined**
+     * [TestDispatcher][kotlinx.coroutines.test.TestDispatcher] (like
+     * [StandardTestDispatcher][kotlinx.coroutines.test.StandardTestDispatcher]), where tasks are
+     * queued but not executed automatically. On an
+     * [UnconfinedTestDispatcher][kotlinx.coroutines.test.UnconfinedTestDispatcher], all tasks that
+     * are scheduled without delay will be executed immediately, so they will never end up as a due
+     * task.
+     *
+     * This function is a fundamental building block for more advanced synchronization APIs. For
+     * example, it is used internally by APIs like `waitForIdle()`, `advanceTimeBy()`, etc. to
+     * process pending work before or after manipulating the clock.
+     *
+     * In almost all testing scenarios, you should prefer using higher-level APIs to ensure proper
+     * synchronization.
+     *
+     * Only call this function directly if you have a specific need to run only the immediately
+     * available tasks without advancing time or waiting for a complete idle state.
+     */
+    fun runCurrent()
 }
 
 /**
@@ -75,7 +110,7 @@ internal fun <R> TestOwner.getAllSemanticsNodes(
     atLeastOneRootRequired: Boolean,
     useUnmergedTree: Boolean,
     skipDeactivatedNodes: Boolean = true,
-    transform: (Iterable<SemanticsNode>) -> R
+    transform: (Iterable<SemanticsNode>) -> R,
 ): R {
     val roots =
         getRoots(atLeastOneRootRequired).also {
@@ -94,7 +129,7 @@ internal fun <R> TestOwner.getAllSemanticsNodes(
             roots.flatMap {
                 it.semanticsOwner.getAllSemanticsNodes(
                     mergingEnabled = !useUnmergedTree,
-                    skipDeactivatedNodes = skipDeactivatedNodes
+                    skipDeactivatedNodes = skipDeactivatedNodes,
                 )
             }
         )

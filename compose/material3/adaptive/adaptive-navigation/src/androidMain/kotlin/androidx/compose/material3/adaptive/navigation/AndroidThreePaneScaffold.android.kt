@@ -34,7 +34,7 @@ import androidx.compose.ui.Modifier
  *
  * Example usage, including integration with the Compose Navigation library:
  *
- * @sample androidx.compose.material3.adaptive.samples.NavigableListDetailPaneScaffoldSample
+ * @sample androidx.compose.material3.adaptive.samples.ListDetailWithNavigation2Sample
  * @param navigator The navigator instance to navigate through the scaffold.
  * @param listPane the list pane of the scaffold, which is supposed to hold a list of item summaries
  *   that can be selected from, for example, the inbox mail list of a mail app. See
@@ -60,7 +60,7 @@ import androidx.compose.ui.Modifier
  */
 @ExperimentalMaterial3AdaptiveApi
 @Composable
-fun <T> NavigableListDetailPaneScaffold(
+public fun <T> NavigableListDetailPaneScaffold(
     navigator: ThreePaneScaffoldNavigator<T>,
     listPane: @Composable ThreePaneScaffoldPaneScope.() -> Unit,
     detailPane: @Composable ThreePaneScaffoldPaneScope.() -> Unit,
@@ -117,7 +117,7 @@ fun <T> NavigableListDetailPaneScaffold(
  */
 @ExperimentalMaterial3AdaptiveApi
 @Composable
-fun <T> NavigableSupportingPaneScaffold(
+public fun <T> NavigableSupportingPaneScaffold(
     navigator: ThreePaneScaffoldNavigator<T>,
     mainPane: @Composable ThreePaneScaffoldPaneScope.() -> Unit,
     supportingPane: @Composable ThreePaneScaffoldPaneScope.() -> Unit,

@@ -26,27 +26,28 @@ import kotlin.math.min
 
 /** Represents a rule to apply to scale a source rectangle to be inscribed into a destination */
 @Stable
-interface ContentScale {
+public interface ContentScale {
 
     /**
      * Computes the scale factor to apply to the horizontal and vertical axes independently of one
      * another to fit the source appropriately with the given destination
      */
-    fun computeScaleFactor(srcSize: Size, dstSize: Size): ScaleFactor
+    public fun computeScaleFactor(srcSize: Size, dstSize: Size): ScaleFactor
 
     /** Companion object containing commonly used [ContentScale] implementations */
-    companion object {
+    public companion object {
 
         /**
          * Scale the source uniformly (maintaining the source's aspect ratio) so that both
          * dimensions (width and height) of the source will be equal to or larger than the
          * corresponding dimension of the destination.
          *
-         * This [ContentScale] implementation in combination with usage of [Alignment.Center]
-         * provides similar behavior to [android.widget.ImageView.ScaleType.CENTER_CROP]
+         * This [ContentScale] implementation in combination with usage of
+         * [androidx.compose.ui.Alignment.Center] provides similar behavior to
+         * [android.widget.ImageView.ScaleType.CENTER_CROP]
          */
         @Stable
-        val Crop =
+        public val Crop: ContentScale =
             object : ContentScale {
                 override fun computeScaleFactor(srcSize: Size, dstSize: Size): ScaleFactor =
                     computeFillMaxDimension(srcSize, dstSize).let { ScaleFactor(it, it) }
@@ -57,11 +58,12 @@ interface ContentScale {
          * dimensions (width and height) of the source will be equal to or less than the
          * corresponding dimension of the destination
          *
-         * This [ContentScale] implementation in combination with usage of [Alignment.Center]
-         * provides similar behavior to [android.widget.ImageView.ScaleType.FIT_CENTER]
+         * This [ContentScale] implementation in combination with usage of
+         * [androidx.compose.ui.Alignment.Center] provides similar behavior to
+         * [android.widget.ImageView.ScaleType.FIT_CENTER]
          */
         @Stable
-        val Fit =
+        public val Fit: ContentScale =
             object : ContentScale {
                 override fun computeScaleFactor(srcSize: Size, dstSize: Size): ScaleFactor =
                     computeFillMinDimension(srcSize, dstSize).let { ScaleFactor(it, it) }
@@ -73,7 +75,7 @@ interface ContentScale {
          * the width.
          */
         @Stable
-        val FillHeight =
+        public val FillHeight: ContentScale =
             object : ContentScale {
                 override fun computeScaleFactor(srcSize: Size, dstSize: Size): ScaleFactor =
                     computeFillHeight(srcSize, dstSize).let { ScaleFactor(it, it) }
@@ -85,7 +87,7 @@ interface ContentScale {
          * height.
          */
         @Stable
-        val FillWidth =
+        public val FillWidth: ContentScale =
             object : ContentScale {
                 override fun computeScaleFactor(srcSize: Size, dstSize: Size): ScaleFactor =
                     computeFillWidth(srcSize, dstSize).let { ScaleFactor(it, it) }
@@ -97,11 +99,12 @@ interface ContentScale {
          * destination in both dimensions, this behaves similarly to [None]. This will always be
          * contained within the bounds of the destination.
          *
-         * This [ContentScale] implementation in combination with usage of [Alignment.Center]
-         * provides similar behavior to [android.widget.ImageView.ScaleType.CENTER_INSIDE]
+         * This [ContentScale] implementation in combination with usage of
+         * [androidx.compose.ui.Alignment.Center] provides similar behavior to
+         * [android.widget.ImageView.ScaleType.CENTER_INSIDE]
          */
         @Stable
-        val Inside =
+        public val Inside: ContentScale =
             object : ContentScale {
 
                 override fun computeScaleFactor(srcSize: Size, dstSize: Size): ScaleFactor {
@@ -114,16 +117,16 @@ interface ContentScale {
             }
 
         /** Do not apply any scaling to the source */
-        @Stable val None = FixedScale(1.0f)
+        @Stable public val None: FixedScale = FixedScale(1.0f)
 
         /** Scale horizontal and vertically non-uniformly to fill the destination bounds. */
         @Stable
-        val FillBounds =
+        public val FillBounds: ContentScale =
             object : ContentScale {
                 override fun computeScaleFactor(srcSize: Size, dstSize: Size): ScaleFactor =
                     ScaleFactor(
                         computeFillWidth(srcSize, dstSize),
-                        computeFillHeight(srcSize, dstSize)
+                        computeFillHeight(srcSize, dstSize),
                     )
             }
     }
@@ -135,8 +138,8 @@ interface ContentScale {
  */
 @Immutable
 @Suppress("DataClassDefinition")
-data class FixedScale(val value: Float) : ContentScale {
-    override fun computeScaleFactor(srcSize: Size, dstSize: Size): ScaleFactor =
+public data class FixedScale(public val value: Float) : ContentScale {
+    public override fun computeScaleFactor(srcSize: Size, dstSize: Size): ScaleFactor =
         ScaleFactor(value, value)
 }
 

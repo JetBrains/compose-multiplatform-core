@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("DEPRECATION")
+
 package androidx.camera.integration.antelope.cameracontrollers
 
 import android.graphics.SurfaceTexture
@@ -62,7 +64,7 @@ import kotlinx.coroutines.launch
 internal fun cameraXOpenCamera(
     activity: MainActivity,
     params: CameraParams,
-    testConfig: TestConfig
+    testConfig: TestConfig,
 ) {
 
     try {
@@ -89,7 +91,7 @@ internal fun cameraXOpenCamera(
                 cameraXPreviewUseCaseBuilder(
                     testConfig.focusMode,
                     params.cameraXDeviceStateCallback!!,
-                    params.cameraXPreviewSessionStateCallback!!
+                    params.cameraXPreviewSessionStateCallback!!,
                 )
         }
 
@@ -110,7 +112,7 @@ internal fun cameraXOpenCamera(
                 val surfaceTexture = SurfaceTexture(0)
                 surfaceTexture.setDefaultBufferSize(
                     surfaceRequest.resolution.width,
-                    surfaceRequest.resolution.height
+                    surfaceRequest.resolution.height,
                 )
                 surfaceTexture.detachFromGLContext()
                 val surface = Surface(surfaceTexture)
@@ -131,7 +133,7 @@ internal fun cameraXOpenCamera(
                     Consumer {
                         surface.release()
                         surfaceTexture.release()
-                    }
+                    },
                 )
             }
         }
@@ -171,7 +173,7 @@ internal fun cameraXOpenCamera(
                         cameraXImageCaptureUseCaseBuilder(
                             testConfig.focusMode,
                             params.cameraXDeviceStateCallback!!,
-                            params.cameraXCaptureSessionCallback!!
+                            params.cameraXCaptureSessionCallback!!,
                         )
                 }
 
@@ -185,7 +187,7 @@ internal fun cameraXOpenCamera(
                         lifecycleOwner,
                         cameraSelector,
                         previewUseCase,
-                        params.cameraXImageCaptureUseCase
+                        params.cameraXImageCaptureUseCase,
                     )
                     params.cameraXLifecycle.start()
                 }
@@ -229,7 +231,7 @@ internal fun closeCameraX(activity: MainActivity, params: CameraParams, testConf
 internal fun cameraXTakePicture(
     activity: MainActivity,
     params: CameraParams,
-    testConfig: TestConfig
+    testConfig: TestConfig,
 ) {
     if (params.cameraXLifecycle.isFinished()) {
         cameraXAbort(activity, params, testConfig)
@@ -257,7 +259,7 @@ internal fun cameraXTakePicture(
     activity.runOnUiThread {
         params.cameraXImageCaptureUseCase.takePicture(
             CameraXExecutors.mainThreadExecutor(),
-            CameraXImageAvailableListener(activity, params, testConfig)
+            CameraXImageAvailableListener(activity, params, testConfig),
         )
     }
 }
@@ -311,7 +313,7 @@ private fun isCameraSurfaceTextureReleased(texture: SurfaceTexture): Boolean {
 private fun cameraXPreviewUseCaseBuilder(
     focusMode: FocusMode,
     deviceStateCallback: CameraDevice.StateCallback,
-    sessionCaptureStateCallback: CameraCaptureSession.StateCallback
+    sessionCaptureStateCallback: CameraCaptureSession.StateCallback,
 ): Preview.Builder {
 
     val configBuilder = Preview.Builder()
@@ -330,7 +332,7 @@ private fun cameraXPreviewUseCaseBuilder(
 private fun cameraXImageCaptureUseCaseBuilder(
     focusMode: FocusMode,
     deviceStateCallback: CameraDevice.StateCallback,
-    sessionCaptureCallback: CameraCaptureSession.CaptureCallback
+    sessionCaptureCallback: CameraCaptureSession.CaptureCallback,
 ): ImageCapture.Builder {
 
     val configBuilder =

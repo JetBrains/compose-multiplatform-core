@@ -16,6 +16,8 @@
 
 package androidx.compose.foundation.text.modifiers
 
+import androidx.compose.foundation.ComposeFoundationFlags
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.internal.requirePreconditionNotNull
 import androidx.compose.foundation.text.DefaultMinLines
 import androidx.compose.ui.Modifier
@@ -68,6 +70,7 @@ import kotlin.jvm.JvmName
  *
  * Note that this Node never calculates [TextLayoutResult] unless needed by semantics.
  */
+@OptIn(ExperimentalFoundationApi::class)
 internal class TextStringSimpleNode(
     private var text: String,
     private var style: TextStyle,
@@ -76,7 +79,7 @@ internal class TextStringSimpleNode(
     private var softWrap: Boolean = true,
     private var maxLines: Int = Int.MAX_VALUE,
     private var minLines: Int = DefaultMinLines,
-    private var overrideColor: ColorProducer? = null
+    private var overrideColor: ColorProducer? = null,
 ) : Modifier.Node(), LayoutModifierNode, DrawModifierNode, SemanticsModifierNode {
     override val shouldAutoInvalidate: Boolean
         get() = false
@@ -90,6 +93,10 @@ internal class TextStringSimpleNode(
     private var _layoutCache: ParagraphLayoutCache? = null
     private val layoutCache: ParagraphLayoutCache
         get() {
+            val style =
+                if (ComposeFoundationFlags.isInheritedTextStyleEnabled)
+                    resolvedInheritedStyle ?: style
+                else style
             if (_layoutCache == null) {
                 _layoutCache =
                     ParagraphLayoutCache(
@@ -99,11 +106,13 @@ internal class TextStringSimpleNode(
                         overflow,
                         softWrap,
                         maxLines,
-                        minLines
+                        minLines,
                     )
             }
             return _layoutCache!!
         }
+
+    private var resolvedInheritedStyle: TextStyle? = null
 
     /**
      * Get the layout cache for the current state of the node during layout.
@@ -115,9 +124,31 @@ internal class TextStringSimpleNode(
      *   the density value of the returned cache.
      */
     private fun IntrinsicMeasureScope.getLayoutCacheForMeasure(): ParagraphLayoutCache {
+        if (ComposeFoundationFlags.isInheritedTextStyleEnabled) {
+            if (resolveInheritedStyle(StylePhase.Layout)) {
+                val style = resolvedInheritedStyle ?: style
+                layoutCache.update(
+                    text = text,
+                    style = style,
+                    fontFamilyResolver = fontFamilyResolver,
+                    overflow = overflow,
+                    softWrap = softWrap,
+                    maxLines = maxLines,
+                    minLines = minLines,
+                )
+            }
+        }
         val activeCache = getLayoutCache()
         activeCache.density = this@getLayoutCacheForMeasure
         return activeCache
+    }
+
+    private fun resolveInheritedStyle(phase: StylePhase): Boolean {
+        val previousStyle = resolvedInheritedStyle
+        val newInheritedStyle = inheritedTextStyle(phase, style)
+        resolvedInheritedStyle = newInheritedStyle
+        if (previousStyle == null) return false
+        return previousStyle != newInheritedStyle
     }
 
     /**
@@ -163,7 +194,7 @@ internal class TextStringSimpleNode(
         maxLines: Int,
         softWrap: Boolean,
         fontFamilyResolver: FontFamily.Resolver,
-        overflow: TextOverflow
+        overflow: TextOverflow,
     ): Boolean {
         var changed: Boolean
 
@@ -200,6 +231,10 @@ internal class TextStringSimpleNode(
 
     /** request invalidate based on the results of [updateText] and [updateLayoutRelatedArgs] */
     fun doInvalidations(drawChanged: Boolean, textChanged: Boolean, layoutChanged: Boolean) {
+        if (drawChanged || textChanged || layoutChanged) {
+            resolvedInheritedStyle = null
+        }
+
         // bring caches up to date even if the node is detached in case it is used again later
         if (textChanged || layoutChanged) {
             layoutCache.update(
@@ -209,7 +244,7 @@ internal class TextStringSimpleNode(
                 overflow = overflow,
                 softWrap = softWrap,
                 maxLines = maxLines,
-                minLines = minLines
+                minLines = minLines,
             )
         }
 
@@ -263,7 +298,7 @@ internal class TextStringSimpleNode(
                 overflow,
                 softWrap,
                 maxLines,
-                minLines
+                minLines,
             ) ?: return false
         } else {
             val newTextSubstitution = TextSubstitutionValue(text, updatedText)
@@ -275,7 +310,7 @@ internal class TextStringSimpleNode(
                     overflow,
                     softWrap,
                     maxLines,
-                    minLines
+                    minLines,
                 )
             substitutionLayoutCache.density = layoutCache.density
             newTextSubstitution.layoutCache = substitutionLayoutCache
@@ -349,7 +384,7 @@ internal class TextStringSimpleNode(
     /** Text layout happens here */
     override fun MeasureScope.measure(
         measurable: Measurable,
-        constraints: Constraints
+        constraints: Constraints,
     ): MeasureResult {
         trace("TextStringSimpleNode::measure") {
             val layoutCache = getLayoutCacheForMeasure()
@@ -379,7 +414,7 @@ internal class TextStringSimpleNode(
                         minWidth = layoutSize.width,
                         maxWidth = layoutSize.width,
                         minHeight = layoutSize.height,
-                        maxHeight = layoutSize.height
+                        maxHeight = layoutSize.height,
                     )
                 )
 
@@ -391,24 +426,24 @@ internal class TextStringSimpleNode(
 
     override fun IntrinsicMeasureScope.minIntrinsicWidth(
         measurable: IntrinsicMeasurable,
-        height: Int
+        height: Int,
     ): Int {
         return getLayoutCacheForMeasure().minIntrinsicWidth(layoutDirection)
     }
 
     override fun IntrinsicMeasureScope.minIntrinsicHeight(
         measurable: IntrinsicMeasurable,
-        width: Int
+        width: Int,
     ): Int = getLayoutCacheForMeasure().intrinsicHeight(width, layoutDirection)
 
     override fun IntrinsicMeasureScope.maxIntrinsicWidth(
         measurable: IntrinsicMeasurable,
-        height: Int
+        height: Int,
     ): Int = getLayoutCacheForMeasure().maxIntrinsicWidth(layoutDirection)
 
     override fun IntrinsicMeasureScope.maxIntrinsicHeight(
         measurable: IntrinsicMeasurable,
-        width: Int
+        width: Int,
     ): Int = getLayoutCacheForMeasure().intrinsicHeight(width, layoutDirection)
 
     /** Optimized Text draw. */
@@ -421,7 +456,7 @@ internal class TextStringSimpleNode(
         val layoutCache = getLayoutCache()
         val localParagraph =
             requirePreconditionNotNull(layoutCache.paragraph) {
-                "no paragraph (layoutCache=$_layoutCache, textSubstitution=$textSubstitution)"
+                "Internal Error: ParagraphLayoutCache could not provide a Paragraph during the draw phase. Please report this bug on the official Issue Tracker with the following diagnostic information: (layoutCache=$_layoutCache, textSubstitution=$textSubstitution)"
             }
 
         drawIntoCanvas { canvas ->
@@ -433,6 +468,11 @@ internal class TextStringSimpleNode(
                 canvas.clipRect(left = 0f, top = 0f, right = width, bottom = height)
             }
             try {
+                val style =
+                    if (ComposeFoundationFlags.isInheritedTextStyleEnabled) {
+                        resolveInheritedStyle(StylePhase.Draw)
+                        resolvedInheritedStyle ?: style
+                    } else style
                 val textDecoration = style.textDecoration ?: TextDecoration.None
                 val shadow = style.shadow ?: Shadow.None
                 val drawStyle = style.drawStyle ?: Fill
@@ -445,7 +485,7 @@ internal class TextStringSimpleNode(
                         alpha = alpha,
                         shadow = shadow,
                         drawStyle = drawStyle,
-                        textDecoration = textDecoration
+                        textDecoration = textDecoration,
                     )
                 } else {
                     val overrideColorVal = overrideColor?.invoke() ?: Color.Unspecified
@@ -462,7 +502,7 @@ internal class TextStringSimpleNode(
                         color = color,
                         shadow = shadow,
                         drawStyle = drawStyle,
-                        textDecoration = textDecoration
+                        textDecoration = textDecoration,
                     )
                 }
             } finally {

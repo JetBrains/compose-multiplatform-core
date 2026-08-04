@@ -13,19 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package androidx.build.binarycompatibilityvalidator
 
 import androidx.binarycompatibilityvalidator.BinaryCompatibilityChecker
-import androidx.binarycompatibilityvalidator.KlibDumpParser
+import androidx.binarycompatibilityvalidator.MergedKlibDumpParser
+import androidx.build.Version
+import androidx.build.metalava.shouldFreezeApis
+import java.io.File
 import javax.inject.Inject
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.RegularFileProperty
+import org.gradle.api.provider.ListProperty
+import org.gradle.api.provider.MapProperty
+import org.gradle.api.provider.Property
+import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.CacheableTask
 import org.gradle.api.tasks.Classpath
+import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.Internal
+import org.gradle.api.tasks.Nested
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
@@ -39,19 +47,18 @@ import org.jetbrains.kotlin.library.abi.ExperimentalLibraryAbiReader
 abstract class IgnoreAbiChangesTask
 @Inject
 constructor(@Internal protected val workerExecutor: WorkerExecutor) : DefaultTask() {
-
     /** Text file from which API signatures will be read. */
     @get:PathSensitive(PathSensitivity.RELATIVE)
     @get:InputFile
     abstract val previousApiDump: RegularFileProperty
-
     @get:PathSensitive(PathSensitivity.RELATIVE)
     @get:InputFile
     abstract val currentApiDump: RegularFileProperty
-
     @get:OutputFile abstract val ignoreFile: RegularFileProperty
-
     @get:Classpath abstract val runtimeClasspath: ConfigurableFileCollection
+    @get:Input abstract var referenceVersion: Provider<String>
+    @get:Input abstract var projectVersion: Provider<String>
+    @get:Nested abstract val dependencies: ListProperty<DependenciesForTarget>
 
     @TaskAction
     fun execute() {
@@ -63,6 +70,11 @@ constructor(@Internal protected val workerExecutor: WorkerExecutor) : DefaultTas
             params.previousApiDump.set(previousApiDump)
             params.currentApiDump.set(currentApiDump)
             params.ignoreFile.set(ignoreFile)
+            params.referenceVersion.set(referenceVersion.get())
+            params.projectVersion.set(projectVersion.get())
+            params.dependencies.set(
+                dependencies.get().associate { it.targetName to it.files.files }
+            )
         }
     }
 }
@@ -71,32 +83,44 @@ private interface IgnoreChangesParameters : WorkParameters {
     val previousApiDump: RegularFileProperty
     val currentApiDump: RegularFileProperty
     val ignoreFile: RegularFileProperty
+    val referenceVersion: Property<String>
+    val projectVersion: Property<String>
+    val dependencies: MapProperty<String, Set<File>>
 }
 
 private abstract class IgnoreChangesWorker : WorkAction<IgnoreChangesParameters> {
     @OptIn(ExperimentalLibraryAbiReader::class)
     override fun execute() {
-        val previousDump = KlibDumpParser(parameters.previousApiDump.get().asFile).parse()
-        val currentDump = KlibDumpParser(parameters.currentApiDump.get().asFile).parse()
+        val previousDump = MergedKlibDumpParser(parameters.previousApiDump.get().asFile).parse()
+        val currentDump = MergedKlibDumpParser(parameters.currentApiDump.get().asFile).parse()
+        val shouldFreeze =
+            shouldFreezeApis(
+                Version(parameters.referenceVersion.get()),
+                Version(parameters.projectVersion.get()),
+            )
         val ignoredErrors =
             BinaryCompatibilityChecker.checkAllBinariesAreCompatible(
                     currentDump,
                     previousDump,
                     null,
-                    validate = false
+                    validate = false,
+                    shouldFreeze = shouldFreeze,
+                    dependencies = parameters.dependencies.get(),
                 )
                 .map { it.toString() }
                 .toSet()
         parameters.ignoreFile.get().asFile.apply {
-            if (!exists()) {
-                createNewFile()
+            if (ignoredErrors.isEmpty()) {
+                takeIf { exists() }?.delete()
+            } else {
+                takeUnless { exists() }?.createNewFile()
+                writeText(FORMAT_STRING + "\n" + ignoredErrors.joinToString("\n"))
             }
-            writeText(formatString + "\n" + ignoredErrors.joinToString("\n"))
         }
     }
 
     private companion object {
         const val BASELINE_FORMAT_VERSION = "1.0"
-        const val formatString = "// Baseline format: $BASELINE_FORMAT_VERSION"
+        const val FORMAT_STRING = "// Baseline format: $BASELINE_FORMAT_VERSION"
     }
 }

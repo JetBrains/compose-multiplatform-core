@@ -13,6 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+// b/420551535
+@file:Suppress("DEPRECATION")
 
 package androidx.compose.foundation.lazy.layout
 
@@ -22,4 +24,5 @@ import androidx.compose.runtime.Composable
 
 @ExperimentalFoundationApi
 @Composable
-actual fun rememberDefaultPrefetchScheduler(): PrefetchScheduler = implementedInJetBrainsFork()
+public actual fun rememberDefaultPrefetchScheduler(): PrefetchScheduler =
+    implementedInJetBrainsFork()

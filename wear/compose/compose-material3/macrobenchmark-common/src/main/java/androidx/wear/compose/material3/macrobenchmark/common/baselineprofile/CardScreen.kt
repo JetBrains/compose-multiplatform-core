@@ -50,7 +50,7 @@ val CardScreen =
                         onClick = {},
                         onLongClick = {},
                         onLongClickLabel = "Long click",
-                        colors = CardDefaults.cardColors()
+                        colors = CardDefaults.cardColors(),
                     ) {
                         Text("Card")
                     }
@@ -81,7 +81,7 @@ val CardScreen =
                         colors =
                             CardDefaults.cardWithContainerPainterColors(
                                 contentColor = MaterialTheme.colorScheme.onSurface,
-                                titleColor = MaterialTheme.colorScheme.onSurface
+                                titleColor = MaterialTheme.colorScheme.onSurface,
                             ),
                     ) {
                         Text("TitleCard")
@@ -91,7 +91,7 @@ val CardScreen =
                         title = { Text("Card title") },
                         time = { Text("now") },
                         contentPadding = CardDefaults.CardWithContainerPainterContentPadding,
-                        modifier = Modifier.semantics { contentDescription = "Background image" }
+                        modifier = Modifier.semantics { contentDescription = "Background image" },
                     ) {
                         Text("Card content")
                     }

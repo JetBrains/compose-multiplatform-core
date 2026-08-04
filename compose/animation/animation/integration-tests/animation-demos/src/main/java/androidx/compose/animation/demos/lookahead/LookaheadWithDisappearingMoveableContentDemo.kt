@@ -20,7 +20,6 @@ import android.annotation.SuppressLint
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.DeferredTargetAnimation
-import androidx.compose.animation.core.ExperimentalAnimatableApi
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.VectorConverter
 import androidx.compose.animation.core.spring
@@ -79,7 +78,7 @@ fun LookaheadWithDisappearingMovableContentDemo() {
 
                 Row(
                     Modifier.background(Color.Yellow).animateContentSize(),
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     if (isCompact) {
                         icon(true)
@@ -106,7 +105,7 @@ fun MyIcon(visible: Boolean, modifier: Modifier = Modifier) {
         visible,
         enter = fadeIn(),
         exit = fadeOut() + slideOutHorizontally { -it },
-        modifier = modifier
+        modifier = modifier,
     ) {
         Box(modifier.size(40.dp).background(color = Color.Red, CircleShape))
     }
@@ -125,13 +124,12 @@ fun Details(visible: Boolean, modifier: Modifier = Modifier) {
         visible,
         enter = fadeIn(),
         exit = fadeOut() + slideOutVertically { it },
-        modifier = modifier
+        modifier = modifier,
     ) {
         Text("Detailed Text", fontSize = 18.sp)
     }
 }
 
-@OptIn(ExperimentalAnimatableApi::class)
 @SuppressLint("UnnecessaryComposedModifier")
 fun Modifier.animatePosition(lookaheadScope: LookaheadScope): Modifier =
     with(lookaheadScope) {
@@ -144,10 +142,10 @@ fun Modifier.animatePosition(lookaheadScope: LookaheadScope): Modifier =
                     offsetAnimation.updateTarget(
                         lookaheadScopeCoordinates.localLookaheadPositionOf(it).round(),
                         coroutineScope,
-                        spring(stiffness = Spring.StiffnessMediumLow)
+                        spring(stiffness = Spring.StiffnessMediumLow),
                     )
                     !offsetAnimation.isIdle
-                }
+                },
             ) { measurable, constraints ->
                 measurable.measure(constraints).run {
                     layout(width, height) {

@@ -16,30 +16,29 @@
 
 package androidx.xr.arcore
 
-import androidx.annotation.RestrictTo
-
-/** Result of a [Anchor.create] call. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public sealed class AnchorCreateResult
+/** Result of an attempt to create an anchor. */
+public sealed class AnchorResult
 
 /**
- * Result of a successful [Anchor.create] call.
+ * Result of a successful attempt to create an anchor.
  *
- * @property anchor the [Anchor] that was created.
+ * @property anchor the [Anchor] that was created
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public class AnchorCreateSuccess(public val anchor: Anchor) : AnchorCreateResult()
+public class AnchorCreateSuccess(public val anchor: Anchor) : AnchorResult()
 
 /**
- * Result of an unsuccessful [Anchor.create] call. The resources allocated for anchors has been
- * exhausted.
+ * Result of an unsuccessful attempt to create an [Anchor].
+ *
+ * The resources allocated for anchors has been exhausted.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public class AnchorCreateResourcesExhausted() : AnchorCreateResult()
+public class AnchorCreateResourcesExhausted : AnchorResult()
 
-/** Result of an unsuccessful [Anchor.create] call. Required tracking is not available. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public class AnchorCreateNotTracking() : AnchorCreateResult()
+/**
+ * Result of an unsuccessful attempt to create an [Anchor].
+ *
+ * Required tracking is not available.
+ */
+public class AnchorCreateTrackingUnavailable : AnchorResult()
 
-/** Result of an unsuccessful [Anchor.load] call. The anchor was loaded from an invalid UUID. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public class AnchorLoadInvalidUuid() : AnchorCreateResult()
+// Prevent exhaustive when by consumers to allow for future extensions of [AnchorResult].
+private class AnchorResultHidden() : AnchorResult()

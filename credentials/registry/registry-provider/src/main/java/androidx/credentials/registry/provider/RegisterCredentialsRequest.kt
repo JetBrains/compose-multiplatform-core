@@ -19,8 +19,8 @@ package androidx.credentials.registry.provider
 /**
  * A request to register credentials with Credential Manager.
  *
- * @constructor
- * @property type the type of the credentials being registered
+ * @property type the type of the credentials being registered; this matches the
+ *   [androidx.credentials.Credential.type] that these registered credentials will be returned as
  * @property id the unique id that identifies this registry, such that it won't be overwritten by
  *   other different registries of the same `type`
  * @property credentials the credentials to register
@@ -29,10 +29,34 @@ package androidx.credentials.registry.provider
  *   credentials given the [credentials] and the request; an invalid matcher (e.g. one that fails
  *   wasm interpretation or causes exceptions) will mean that your credentials will never be
  *   surfaced to the user
+ * @property intentAction the intent action that will be used to launch your fulfillment activity
+ *   when one of your credentials was chosen by the user, default to
+ *   [RegistryManager.ACTION_GET_CREDENTIAL] when unspecified; when Credential Manager launches your
+ *   fulfillment activity, it will build an intent with the given `intentAction` targeting your
+ *   package, so this is useful when you need to define different fulfillment activities for
+ *   different registries
+ * @property serviceAction the intent action that will be used to bind to your background
+ *   fulfillment service (silent / FULL delegation), defaults to
+ *   [RegistryManager.ACTION_GET_CREDENTIAL_SERVICE]. If you configure your credentials with a
+ *   delegation type other than NONE, you MUST implement and provide a background
+ *   [UiDelegationFulfillmentService] that handles this action to fulfill requests silently.
+ * @constructor
+ * @throws IllegalArgumentException if [id], [intentAction], or [serviceAction] length is greater
+ *   than 64 characters
  */
-public abstract class RegisterCredentialsRequest(
+public abstract class RegisterCredentialsRequest
+@JvmOverloads
+internal constructor(
     public val type: String,
     public val id: String,
     public val credentials: ByteArray,
     public val matcher: ByteArray,
-)
+    public val intentAction: String = RegistryManager.ACTION_GET_CREDENTIAL,
+    public val serviceAction: String = RegistryManager.ACTION_GET_CREDENTIAL_SERVICE,
+) {
+    init {
+        require(id.length <= 64) { "`id` length must be less than 64" }
+        require(intentAction.length <= 64) { "`intentAction` length must be less than 64" }
+        require(serviceAction.length <= 64) { "`serviceAction` length must be less than 64" }
+    }
+}

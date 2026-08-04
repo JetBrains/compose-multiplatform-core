@@ -44,13 +44,13 @@ import kotlin.reflect.KType
  */
 @Deprecated(
     message = "Deprecated in favor of composable builder that supports AnimatedContent",
-    level = DeprecationLevel.HIDDEN
+    level = DeprecationLevel.HIDDEN,
 )
 public fun NavGraphBuilder.composable(
     route: String,
     arguments: List<NamedNavArgument> = emptyList(),
     deepLinks: List<NavDeepLink> = emptyList(),
-    content: @Composable (NavBackStackEntry) -> Unit
+    content: @Composable (NavBackStackEntry) -> Unit,
 ) {
     addDestination(
         ComposeNavigator.Destination(provider[ComposeNavigator::class]) { entry -> content(entry) }
@@ -78,7 +78,7 @@ public fun NavGraphBuilder.composable(
  */
 @Deprecated(
     message = "Deprecated in favor of composable builder that supports sizeTransform",
-    level = DeprecationLevel.HIDDEN
+    level = DeprecationLevel.HIDDEN,
 )
 public fun NavGraphBuilder.composable(
     route: String,
@@ -100,7 +100,7 @@ public fun NavGraphBuilder.composable(
         (@JvmSuppressWildcards
         AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition?)? =
         exitTransition,
-    content: @Composable AnimatedContentScope.(NavBackStackEntry) -> Unit
+    content: @Composable AnimatedContentScope.(NavBackStackEntry) -> Unit,
 ) {
     destination(
         ComposeNavigatorDestinationBuilder(provider[ComposeNavigator::class], route, content)
@@ -153,7 +153,7 @@ public fun NavGraphBuilder.composable(
         (@JvmSuppressWildcards
         AnimatedContentTransitionScope<NavBackStackEntry>.() -> SizeTransform?)? =
         null,
-    content: @Composable AnimatedContentScope.(NavBackStackEntry) -> Unit
+    content: @Composable AnimatedContentScope.(NavBackStackEntry) -> Unit,
 ) {
     destination(
         ComposeNavigatorDestinationBuilder(provider[ComposeNavigator::class], route, content)
@@ -206,7 +206,7 @@ public inline fun <reified T : Any> NavGraphBuilder.composable(
         (AnimatedContentTransitionScope<NavBackStackEntry>.() -> @JvmSuppressWildcards
             SizeTransform?)? =
         null,
-    noinline content: @Composable AnimatedContentScope.(NavBackStackEntry) -> Unit
+    noinline content: @Composable AnimatedContentScope.(NavBackStackEntry) -> Unit,
 ) {
     composable(
         T::class,
@@ -217,7 +217,7 @@ public inline fun <reified T : Any> NavGraphBuilder.composable(
         popEnterTransition,
         popExitTransition,
         sizeTransform,
-        content
+        content,
     )
 }
 
@@ -259,14 +259,14 @@ public fun <T : Any> NavGraphBuilder.composable(
         (AnimatedContentTransitionScope<NavBackStackEntry>.() -> @JvmSuppressWildcards
             SizeTransform?)? =
         null,
-    content: @Composable AnimatedContentScope.(NavBackStackEntry) -> Unit
+    content: @Composable AnimatedContentScope.(NavBackStackEntry) -> Unit,
 ) {
     destination(
         ComposeNavigatorDestinationBuilder(
                 provider[ComposeNavigator::class],
                 route,
                 typeMap,
-                content
+                content,
             )
             .apply {
                 deepLinks.forEach { deepLink -> deepLink(deepLink) }
@@ -291,14 +291,14 @@ public fun <T : Any> NavGraphBuilder.composable(
  */
 @Deprecated(
     message = "Deprecated in favor of navigation builder that supports AnimatedContent",
-    level = DeprecationLevel.HIDDEN
+    level = DeprecationLevel.HIDDEN,
 )
 public fun NavGraphBuilder.navigation(
     startDestination: String,
     route: String,
     arguments: List<NamedNavArgument> = emptyList(),
     deepLinks: List<NavDeepLink> = emptyList(),
-    builder: NavGraphBuilder.() -> Unit
+    builder: NavGraphBuilder.() -> Unit,
 ) {
     navigation(startDestination, route, arguments, deepLinks, null, null, null, null, null, builder)
 }
@@ -320,7 +320,7 @@ public fun NavGraphBuilder.navigation(
  */
 @Deprecated(
     message = "Deprecated in favor of navigation builder that supports sizeTransform",
-    level = DeprecationLevel.HIDDEN
+    level = DeprecationLevel.HIDDEN,
 )
 public fun NavGraphBuilder.navigation(
     startDestination: String,
@@ -336,7 +336,7 @@ public fun NavGraphBuilder.navigation(
         enterTransition,
     popExitTransition: (AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition?)? =
         exitTransition,
-    builder: NavGraphBuilder.() -> Unit
+    builder: NavGraphBuilder.() -> Unit,
 ) {
     navigation(
         startDestination,
@@ -348,7 +348,7 @@ public fun NavGraphBuilder.navigation(
         popEnterTransition,
         popExitTransition,
         null,
-        builder
+        builder,
     )
 }
 
@@ -393,7 +393,7 @@ public fun NavGraphBuilder.navigation(
         (@JvmSuppressWildcards
         AnimatedContentTransitionScope<NavBackStackEntry>.() -> SizeTransform?)? =
         null,
-    builder: NavGraphBuilder.() -> Unit
+    builder: NavGraphBuilder.() -> Unit,
 ) {
     addDestination(
         NavGraphBuilder(provider, startDestination, route).apply(builder).build().apply {
@@ -452,7 +452,7 @@ public inline fun <reified T : Any> NavGraphBuilder.navigation(
         (AnimatedContentTransitionScope<NavBackStackEntry>.() -> @JvmSuppressWildcards
             SizeTransform?)? =
         null,
-    noinline builder: NavGraphBuilder.() -> Unit
+    noinline builder: NavGraphBuilder.() -> Unit,
 ) {
     navigation(
         startDestination,
@@ -464,7 +464,7 @@ public inline fun <reified T : Any> NavGraphBuilder.navigation(
         popEnterTransition,
         popExitTransition,
         sizeTransform,
-        builder
+        builder,
     )
 }
 
@@ -510,7 +510,7 @@ public fun <T : Any> NavGraphBuilder.navigation(
         (AnimatedContentTransitionScope<NavBackStackEntry>.() -> @JvmSuppressWildcards
             SizeTransform?)? =
         null,
-    builder: NavGraphBuilder.() -> Unit
+    builder: NavGraphBuilder.() -> Unit,
 ) {
     addDestination(
         NavGraphBuilder(provider, startDestination, route, typeMap).apply(builder).build().apply {
@@ -567,7 +567,7 @@ public inline fun <reified T : Any> NavGraphBuilder.navigation(
         (AnimatedContentTransitionScope<NavBackStackEntry>.() -> @JvmSuppressWildcards
             SizeTransform?)? =
         null,
-    noinline builder: NavGraphBuilder.() -> Unit
+    noinline builder: NavGraphBuilder.() -> Unit,
 ) {
     navigation(
         startDestination,
@@ -579,7 +579,7 @@ public inline fun <reified T : Any> NavGraphBuilder.navigation(
         popEnterTransition,
         popExitTransition,
         sizeTransform,
-        builder
+        builder,
     )
 }
 
@@ -625,7 +625,7 @@ public fun <T : Any> NavGraphBuilder.navigation(
         (AnimatedContentTransitionScope<NavBackStackEntry>.() -> @JvmSuppressWildcards
             SizeTransform?)? =
         null,
-    builder: NavGraphBuilder.() -> Unit
+    builder: NavGraphBuilder.() -> Unit,
 ) {
     addDestination(
         NavGraphBuilder(provider, startDestination, route, typeMap).apply(builder).build().apply {
@@ -659,14 +659,14 @@ public fun NavGraphBuilder.dialog(
     arguments: List<NamedNavArgument> = emptyList(),
     deepLinks: List<NavDeepLink> = emptyList(),
     dialogProperties: DialogProperties = DialogProperties(),
-    content: @Composable (NavBackStackEntry) -> Unit
+    content: @Composable (NavBackStackEntry) -> Unit,
 ) {
     destination(
         DialogNavigatorDestinationBuilder(
                 provider[DialogNavigator::class],
                 route,
                 dialogProperties,
-                content
+                content,
             )
             .apply {
                 arguments.forEach { (argumentName, argument) -> argument(argumentName, argument) }
@@ -693,7 +693,7 @@ public inline fun <reified T : Any> NavGraphBuilder.dialog(
     typeMap: Map<KType, @JvmSuppressWildcards NavType<*>> = emptyMap(),
     deepLinks: List<NavDeepLink> = emptyList(),
     dialogProperties: DialogProperties = DialogProperties(),
-    noinline content: @Composable (NavBackStackEntry) -> Unit
+    noinline content: @Composable (NavBackStackEntry) -> Unit,
 ) {
     dialog(T::class, typeMap, deepLinks, dialogProperties, content)
 }
@@ -717,7 +717,7 @@ public fun <T : Any> NavGraphBuilder.dialog(
     typeMap: Map<KType, @JvmSuppressWildcards NavType<*>> = emptyMap(),
     deepLinks: List<NavDeepLink> = emptyList(),
     dialogProperties: DialogProperties = DialogProperties(),
-    content: @Composable (NavBackStackEntry) -> Unit
+    content: @Composable (NavBackStackEntry) -> Unit,
 ) {
     destination(
         DialogNavigatorDestinationBuilder(
@@ -725,7 +725,7 @@ public fun <T : Any> NavGraphBuilder.dialog(
                 route,
                 typeMap,
                 dialogProperties,
-                content
+                content,
             )
             .apply { deepLinks.forEach { deepLink -> deepLink(deepLink) } }
     )

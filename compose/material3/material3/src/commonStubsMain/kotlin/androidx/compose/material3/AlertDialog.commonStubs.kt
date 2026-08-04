@@ -24,7 +24,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.window.DialogProperties
 
 @Composable
-actual fun AlertDialog(
+public actual fun AlertDialog(
     onDismissRequest: () -> Unit,
     confirmButton: @Composable () -> Unit,
     modifier: Modifier,
@@ -38,5 +38,5 @@ actual fun AlertDialog(
     titleContentColor: Color,
     textContentColor: Color,
     tonalElevation: Dp,
-    properties: DialogProperties
+    properties: DialogProperties,
 ): Unit = implementedInJetBrainsFork()

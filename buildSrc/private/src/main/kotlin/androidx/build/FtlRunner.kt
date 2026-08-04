@@ -90,7 +90,7 @@ abstract class FtlRunner : DefaultTask() {
     @get:Input
     @get:Option(
         option = "instrumentationArgs",
-        description = "instrumentation arguments to pass to FTL test runner"
+        description = "instrumentation arguments to pass to FTL test runner",
     )
     abstract val instrumentationArgs: Property<String>
 
@@ -100,7 +100,7 @@ abstract class FtlRunner : DefaultTask() {
         option = "api",
         description =
             "repeatable argument for which apis to run ftl tests on. " +
-                "Only relevant to $FTL_ON_APIS_NAME. Can be 21, 26, 28, 30, 33, 34, 35."
+                "Only relevant to $FTL_ON_APIS_NAME. Can be 23, 26, 28, 30, 33, 34, 35.",
     )
     abstract val apis: ListProperty<Int>
 
@@ -108,7 +108,7 @@ abstract class FtlRunner : DefaultTask() {
     @get:Input
     @get:Option(
         option = "shardCount",
-        description = "Number of shards to split tests into (requires gcloud beta)"
+        description = "Number of shards to split tests into (requires gcloud beta)",
     )
     abstract val shardCount: Property<Int>
 
@@ -118,7 +118,7 @@ abstract class FtlRunner : DefaultTask() {
         option = "excludeAnnotation",
         description =
             "Repeatable argument to exclude annotations. " +
-                "Example: `--excludeAnnotation androidx.test.filters.FlakyTest`"
+                "Example: `--excludeAnnotation androidx.test.filters.FlakyTest`",
     )
     abstract val excludeAnnotations: ListProperty<String>
 
@@ -129,7 +129,7 @@ abstract class FtlRunner : DefaultTask() {
         if (!System.getenv().containsKey("GOOGLE_APPLICATION_CREDENTIALS")) {
             throw Exception(
                 "Running tests in FTL requires credentials, you have not set up " +
-                    "GOOGLE_APPLICATION_CREDENTIALS, follow go/androidx-dev#remote-build-cache"
+                    "GOOGLE_APPLICATION_CREDENTIALS, follow go/androidx-onboarding#remote-build-cache"
             )
         }
         val testApk =
@@ -150,7 +150,7 @@ abstract class FtlRunner : DefaultTask() {
             execOperations.printCommandAndExec { it.commandLine("gcloud", "--version") }
         } catch (_: Exception) {
             throw Exception(
-                "Missing gcloud, please follow go/androidx-dev#remote-build-cache to set it up"
+                "Missing gcloud, please follow go/androidx-onboarding#remote-build-cache to set it up"
             )
         }
 
@@ -186,6 +186,7 @@ abstract class FtlRunner : DefaultTask() {
                     appApkPath,
                     "--test",
                     testApkPath,
+                    "--results-bucket=androidx-dev-prod-test-results",
                     if (hasFilters) "--test-targets" else null,
                     if (hasFilters) filters else null,
                     if (shouldPull) "--directories-to-pull" else null,
@@ -230,27 +231,29 @@ private const val HWCOR = "HWCOR,version=27"
 private const val Q2Q = "q2q,version=31"
 
 private const val PHYSICAL_PIXEL9 = "tokay,version=34"
-private const val MEDIUM_PHONE_34 = "MediumPhone.arm,version=34"
+private const val MEDIUM_PHONE_37 = "MediumPhone_ps16k.arm,version=37"
+private const val MEDIUM_PHONE_36 = "MediumPhone.arm,version=36"
 private const val MEDIUM_PHONE_35 = "MediumPhone.arm,version=35"
+private const val MEDIUM_PHONE_34 = "MediumPhone.arm,version=34"
 private const val MEDIUM_PHONE_33 = "MediumPhone.arm,version=33"
 private const val MEDIUM_PHONE_30 = "MediumPhone.arm,version=30"
 private const val MEDIUM_PHONE_28 = "MediumPhone.arm,version=28"
 private const val MEDIUM_PHONE_26 = "MediumPhone.arm,version=26"
-private const val NEXUS4_21 = "Nexus4.gce_x86,version=21"
-private const val PIXEL2_33 = "Pixel2.arm,version=33"
-private const val PIXEL2_30 = "Pixel2.arm,version=30"
-private const val PIXEL2_28 = "Pixel2.arm,version=28"
-private const val PIXEL2_26 = "Pixel2.arm,version=26"
+private const val NEXUS5X_24 = "Nexus5X,version=24"
+private const val NEXUS5_23 = "Nexus5.gce_x86,version=23"
 
 private val API_TO_MODEL_MAP =
     mapOf(
-        34 to MEDIUM_PHONE_34,
+        37 to MEDIUM_PHONE_37,
+        36 to MEDIUM_PHONE_36,
         35 to MEDIUM_PHONE_35,
+        34 to MEDIUM_PHONE_34,
         33 to MEDIUM_PHONE_33,
         30 to MEDIUM_PHONE_30,
         28 to MEDIUM_PHONE_28,
         26 to MEDIUM_PHONE_26,
-        21 to NEXUS4_21,
+        24 to NEXUS5X_24,
+        23 to NEXUS5_23,
     )
 
 private const val FTL_ON_APIS_NAME = "ftlOnApis"
@@ -258,24 +261,23 @@ private val devicesToRunOn =
     listOf(
         FTL_ON_APIS_NAME to listOf(), // instead read devices via repeatable --api
         "ftlphysicalpixel9api34" to listOf(PHYSICAL_PIXEL9),
-        "ftlmediumphoneapi34" to listOf(MEDIUM_PHONE_34),
+        "ftlmediumphoneapi37" to listOf(MEDIUM_PHONE_37),
+        "ftlmediumphoneapi36" to listOf(MEDIUM_PHONE_36),
         "ftlmediumphoneapi35" to listOf(MEDIUM_PHONE_35),
+        "ftlmediumphoneapi34" to listOf(MEDIUM_PHONE_34),
         "ftlmediumphoneapi33" to listOf(MEDIUM_PHONE_33),
         "ftlmediumphoneapi30" to listOf(MEDIUM_PHONE_30),
         "ftlmediumphoneapi28" to listOf(MEDIUM_PHONE_28),
         "ftlmediumphoneapi26" to listOf(MEDIUM_PHONE_26),
-        "ftlnexus4api21" to listOf(NEXUS4_21),
+        "ftlnexus5xapi24" to listOf(NEXUS5X_24),
+        "ftlnexus5api23" to listOf(NEXUS5_23),
         "ftlCoreTelecomDeviceSet" to listOf(NEXUS_6P, A10, PETTYL, HWCOR, Q2Q),
-        "ftlpixel2api33" to listOf(PIXEL2_33),
-        "ftlpixel2api30" to listOf(PIXEL2_30),
-        "ftlpixel2api28" to listOf(PIXEL2_28),
-        "ftlpixel2api26" to listOf(PIXEL2_26),
     )
 
 internal fun Project.registerRunner(
     name: String,
     artifacts: Artifacts,
-    namespace: Provider<String>
+    namespace: Provider<String>,
 ) {
     devicesToRunOn.forEach { (taskPrefix, model) ->
         tasks.register("$taskPrefix$name", FtlRunner::class.java) { task ->

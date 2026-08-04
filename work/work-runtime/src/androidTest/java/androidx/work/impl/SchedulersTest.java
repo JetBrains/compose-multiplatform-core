@@ -16,23 +16,19 @@
 
 package androidx.work.impl;
 
-import static androidx.work.impl.utils.PackageManagerHelper.isComponentExplicitlyEnabled;
-
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
 
+import android.content.ComponentName;
 import android.content.Context;
-import android.os.Build;
+import android.content.pm.PackageManager;
 
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.FlakyTest;
 import androidx.test.filters.MediumTest;
-import androidx.test.filters.SdkSuppress;
 import androidx.work.Configuration;
-import androidx.work.impl.background.systemalarm.SystemAlarmScheduler;
-import androidx.work.impl.background.systemalarm.SystemAlarmService;
 import androidx.work.impl.background.systemjob.SystemJobScheduler;
 import androidx.work.impl.background.systemjob.SystemJobService;
 
@@ -45,37 +41,21 @@ public class SchedulersTest {
 
     private final Context mAppContext = ApplicationProvider.getApplicationContext();
     private final Configuration mConfiguration = new Configuration.Builder().build();
-    private final WorkDatabase mWorkDatabase = WorkDatabase.create(
-            mAppContext, mConfiguration.getExecutor(), mConfiguration.getClock(), false);
+    private final WorkDatabase mWorkDatabase = WorkDatabase.create(mAppContext,
+            mConfiguration.getExecutor(), mConfiguration.getClock(), false);
 
     @FlakyTest(bugId = 206647994)
     @Test
-    @SdkSuppress(minSdkVersion = WorkManagerImpl.MIN_JOB_SCHEDULER_API_LEVEL)
-    public void testGetBackgroundScheduler_withJobSchedulerApiLevel() {
-        Scheduler scheduler =
-                Schedulers.createBestAvailableBackgroundScheduler(mAppContext,
-                        mWorkDatabase, mConfiguration);
+    public void testGetBackgroundScheduler_withJobSchedulerApiLevel() throws Exception {
+        Scheduler scheduler = Schedulers.createBestAvailableBackgroundScheduler(mAppContext,
+                mWorkDatabase, mConfiguration);
         assertThat(scheduler, is(instanceOf(SystemJobScheduler.class)));
-        assertServicesEnabled(true, false);
+        assertServicesEnabled();
     }
-
-    @Test
-    @SdkSuppress(maxSdkVersion = WorkManagerImpl.MAX_PRE_JOB_SCHEDULER_API_LEVEL)
-    public void testGetBackgroundScheduler_beforeJobSchedulerApiLevel() {
-        Scheduler scheduler =
-                Schedulers.createBestAvailableBackgroundScheduler(mAppContext,
-                        mWorkDatabase, mConfiguration);
-        assertThat(scheduler, is(instanceOf(SystemAlarmScheduler.class)));
-        assertServicesEnabled(false, true);
-    }
-
     // Only one service should really be enabled at one time.
-    private void assertServicesEnabled(boolean systemJobEnabled, boolean systemAlarmEnabled) {
-        if (Build.VERSION.SDK_INT >= WorkManagerImpl.MIN_JOB_SCHEDULER_API_LEVEL) {
-            assertThat(isComponentExplicitlyEnabled(mAppContext, SystemJobService.class),
-                    is(systemJobEnabled));
-        }
-        assertThat(isComponentExplicitlyEnabled(mAppContext, SystemAlarmService.class),
-                is(systemAlarmEnabled));
+    private void assertServicesEnabled() throws Exception {
+        PackageManager pm = mAppContext.getPackageManager();
+        ComponentName name = new ComponentName(mAppContext, SystemJobService.class);
+        assertThat(pm.getServiceInfo(name, /* flags= */ 0).enabled, is(true));
     }
 }

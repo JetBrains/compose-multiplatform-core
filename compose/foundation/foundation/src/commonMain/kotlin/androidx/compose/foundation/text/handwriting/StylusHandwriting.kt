@@ -56,7 +56,7 @@ import androidx.compose.ui.util.fastFirstOrNull
 internal fun Modifier.stylusHandwriting(
     enabled: Boolean,
     showHoverIcon: Boolean,
-    onHandwritingSlopExceeded: () -> Unit
+    onHandwritingSlopExceeded: () -> Unit,
 ): Modifier =
     if (enabled && isStylusHandwritingSupported) {
         if (showHoverIcon) {
@@ -193,7 +193,7 @@ internal open class StylusHandwritingNode(var onHandwritingSlopExceeded: () -> U
     override fun onPointerEvent(
         pointerEvent: PointerEvent,
         pass: PointerEventPass,
-        bounds: IntSize
+        bounds: IntSize,
     ) {
         suspendingPointerInputModifierNode.onPointerEvent(pointerEvent, pass, bounds)
     }
@@ -214,12 +214,14 @@ internal open class StylusHandwritingNode(var onHandwritingSlopExceeded: () -> U
 internal expect val isStylusHandwritingSupported: Boolean
 
 /** The amount of the padding added to the handwriting bounds of an editor. */
-internal val HandwritingBoundsVerticalOffset = 40.dp
-internal val HandwritingBoundsHorizontalOffset = 10.dp
+internal val HandwritingBoundsVerticalOffset
+    get() = 40.dp
+internal val HandwritingBoundsHorizontalOffset
+    get() = 10.dp
 internal val HandwritingBoundsExpansion =
     DpTouchBoundsExpansion(
         start = HandwritingBoundsHorizontalOffset,
         top = HandwritingBoundsVerticalOffset,
         end = HandwritingBoundsHorizontalOffset,
-        bottom = HandwritingBoundsVerticalOffset
+        bottom = HandwritingBoundsVerticalOffset,
     )

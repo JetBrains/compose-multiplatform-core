@@ -19,7 +19,6 @@ package androidx.appfunctions.compiler.processors
 import androidx.appfunctions.compiler.AppFunctionCompiler
 import androidx.appfunctions.compiler.core.AnnotatedAppFunctions
 import androidx.appfunctions.compiler.core.AppFunctionSymbolResolver
-import androidx.appfunctions.compiler.core.addGeneratedTimeStamp
 import androidx.appfunctions.compiler.core.fromCamelCaseToScreamingSnakeCase
 import com.google.devtools.ksp.processing.CodeGenerator
 import com.google.devtools.ksp.processing.Dependencies
@@ -51,9 +50,7 @@ import com.squareup.kotlinpoet.asTypeName
  * }
  * ```
  */
-class AppFunctionIdProcessor(
-    private val codeGenerator: CodeGenerator,
-) : SymbolProcessor {
+class AppFunctionIdProcessor(private val codeGenerator: CodeGenerator) : SymbolProcessor {
     override fun process(resolver: Resolver): List<KSAnnotated> {
         val appFunctionSymbolResolver = AppFunctionSymbolResolver(resolver)
         val appFunctionClasses = appFunctionSymbolResolver.resolveAnnotatedAppFunctions()
@@ -75,10 +72,7 @@ class AppFunctionIdProcessor(
             }
 
         val fileSpec =
-            FileSpec.builder(originalPackageName, idClassName)
-                .addType(classBuilder.build())
-                .addGeneratedTimeStamp()
-                .build()
+            FileSpec.builder(originalPackageName, idClassName).addType(classBuilder.build()).build()
         codeGenerator
             .createNewFile(
                 Dependencies(
@@ -86,10 +80,10 @@ class AppFunctionIdProcessor(
                     // from a single class containing AppFunction implementations and never from
                     // other or new files.
                     aggregating = false,
-                    checkNotNull(appFunctionClass.classDeclaration.containingFile)
+                    checkNotNull(appFunctionClass.classDeclaration.containingFile),
                 ),
                 originalPackageName,
-                idClassName
+                idClassName,
             )
             .bufferedWriter()
             .use { fileSpec.writeTo(it) }
@@ -102,16 +96,18 @@ class AppFunctionIdProcessor(
     private fun TypeSpec.Builder.addAppFunctionIdProperties(
         appFunctionClass: AnnotatedAppFunctions
     ) {
-        for (appFunctionDeclaration in appFunctionClass.appFunctionDeclarations) {
+        for (appFunction in appFunctionClass.appFunctions) {
             // For example, transform method name from "createNote" to "CREATE_NOTE"
             val functionMethodName =
-                appFunctionDeclaration.simpleName.asString().fromCamelCaseToScreamingSnakeCase()
+                appFunction.appFunctionDeclaration.simpleName
+                    .asString()
+                    .fromCamelCaseToScreamingSnakeCase()
             val propertySpec =
                 PropertySpec.builder("${functionMethodName}_ID", String::class.asTypeName())
                     .addModifiers(KModifier.CONST)
                     .initializer(
                         "%S",
-                        appFunctionClass.getAppFunctionIdentifier(appFunctionDeclaration)
+                        appFunction.getAppFunctionIdentifier(appFunctionClass.classDeclaration),
                     )
                     .build()
             this.addProperty(propertySpec)

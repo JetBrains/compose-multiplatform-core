@@ -19,7 +19,6 @@ package androidx.compose.animation.demos.visualinspection
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
-import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.expandHorizontally
 import androidx.compose.animation.expandIn
 import androidx.compose.animation.expandVertically
@@ -97,7 +96,7 @@ fun EnterExitCombination() {
                 onClick = {
                     alignment = TopCenter
                     visible = !visible
-                }
+                },
             ) {
                 Text("Top")
             }
@@ -108,7 +107,7 @@ fun EnterExitCombination() {
                         onClick = {
                             alignment = TopStart
                             visible = !visible
-                        }
+                        },
                     ) {
                         Text("Top\nStart")
                     }
@@ -117,7 +116,7 @@ fun EnterExitCombination() {
                         onClick = {
                             alignment = CenterStart
                             visible = !visible
-                        }
+                        },
                     ) {
                         Text("Start")
                     }
@@ -126,7 +125,7 @@ fun EnterExitCombination() {
                         onClick = {
                             alignment = BottomStart
                             visible = !visible
-                        }
+                        },
                     ) {
                         Text("Bottom\nStart")
                     }
@@ -136,7 +135,7 @@ fun EnterExitCombination() {
                     selectedOptions,
                     oppositeAlignment.value,
                     alignment,
-                    visible
+                    visible,
                 )
                 Box(Modifier.fillMaxHeight().wrapContentWidth()) {
                     Button(
@@ -144,7 +143,7 @@ fun EnterExitCombination() {
                         onClick = {
                             alignment = TopEnd
                             visible = !visible
-                        }
+                        },
                     ) {
                         Text("Top\nEnd")
                     }
@@ -153,7 +152,7 @@ fun EnterExitCombination() {
                         onClick = {
                             alignment = CenterEnd
                             visible = !visible
-                        }
+                        },
                     ) {
                         Text("End")
                     }
@@ -162,7 +161,7 @@ fun EnterExitCombination() {
                         onClick = {
                             alignment = BottomEnd
                             visible = !visible
-                        }
+                        },
                     ) {
                         Text("Bottom\nEnd")
                     }
@@ -173,7 +172,7 @@ fun EnterExitCombination() {
                 onClick = {
                     alignment = BottomCenter
                     visible = !visible
-                }
+                },
             ) {
                 Text("Bottom")
             }
@@ -195,14 +194,13 @@ fun AlignmentOption(state: MutableState<Boolean>) {
     }
 }
 
-@OptIn(ExperimentalAnimationApi::class)
 @Composable
 fun CenterMenu(
     modifier: Modifier = Modifier,
     selectedOptions: List<Boolean>,
     oppositeDirection: Boolean,
     alignment: Alignment,
-    visible: Boolean
+    visible: Boolean,
 ) {
     Box(modifier.fillMaxHeight()) {
         val animationAlignment = if (oppositeDirection) opposite(alignment) else alignment
@@ -276,7 +274,7 @@ fun CenterMenu(
             visible,
             if (selectedOptions[1]) Modifier.align(alignment) else Modifier,
             enter = enter ?: fadeIn(),
-            exit = exit ?: fadeOut()
+            exit = exit ?: fadeOut(),
         ) {
             val menuText = remember {
                 mutableListOf<String>().apply {
@@ -302,7 +300,7 @@ fun TransitionOptions(selectedOptions: List<Boolean>, onOptionSelected: (Int) ->
                     .height(30.dp)
                     .selectable(selected = selectedOptions[i], onClick = { onOptionSelected(i) })
                     .padding(horizontal = 16.dp),
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 Checkbox(checked = selectedOptions[i], onCheckedChange = { onOptionSelected(i) })
                 Text(text = text, modifier = Modifier.padding(start = 16.dp))

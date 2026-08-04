@@ -15,10 +15,9 @@
  */
 
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
 import androidx.build.SoftwareType
@@ -26,12 +25,11 @@ import androidx.build.SoftwareType
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("org.jetbrains.kotlin.android")
 }
 
 dependencies {
     api("androidx.annotation:annotation:1.8.1")
-    api(libs.kotlinStdlib)
+    api("androidx.wear:wear-core:1.1.0")
     api(libs.guavaListenableFuture)
     api("androidx.concurrent:concurrent-futures-ktx:1.1.0")
     api(libs.kotlinCoroutinesCore)
@@ -47,12 +45,12 @@ dependencies {
     testImplementation(libs.testCore)
     testImplementation(libs.testRules)
     testImplementation(libs.testRunner)
-    testImplementation(libs.robolectric)
     testImplementation(libs.mockitoCore4)
     testImplementation(libs.mockitoKotlin4)
+    testImplementation(libs.kotlinCoroutinesTest)
 
     implementation(libs.playServicesBasement)
-    implementation(libs.playServicesWearable, { exclude group: "androidx.core"})
+    implementation(libs.playServicesWearable)
 
     // Includes the wear-sdk jar
     compileOnly files("../../wear/wear_sdk/wear-sdk.jar")
@@ -60,12 +58,6 @@ dependencies {
 }
 
 android {
-    defaultConfig {
-        minSdk = 23
-    }
-
-    // Use Robolectric 4.+
-    testOptions.unitTests.includeAndroidResources = true
     namespace = "androidx.wear.remote.interactions"
 }
 
@@ -75,6 +67,6 @@ androidx {
     mavenVersion = LibraryVersions.WEAR_REMOTE_INTERACTIONS
     inceptionYear = "2020"
     description = "Android Wear Remote Interactions"
-    legacyDisableKotlinStrictApiMode = true
     samples(project(":wear:wear-remote-interactions-samples"))
+    enableRobolectric()
 }

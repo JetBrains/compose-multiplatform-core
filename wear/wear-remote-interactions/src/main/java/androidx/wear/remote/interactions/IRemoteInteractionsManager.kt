@@ -28,8 +28,12 @@ internal interface IRemoteInteractionsManager {
     /** Whether the availability status API is supported. */
     val isAvailabilityStatusApiSupported: Boolean
 
-    /** Whether the startRemoteActivity API is supported. */
-    @get:ChecksSdkIntAtLeast(api = 36) val isStartRemoteActivityApiSupported: Boolean
+    /** Whether the startRemoteActivity from the Wear SDK is supported. */
+    @get:ChecksSdkIntAtLeast(api = 36) val isWearSdkApiStartRemoteActivitySupported: Boolean
+
+    /** Whether the continueActivityOnPhoneWithUnlock from the Wear SDK is supported. */
+    @get:ChecksSdkIntAtLeast(api = 37)
+    val isWearSdkApiContinueActivityOnPhoneWithUnlockSupported: Boolean
 
     /**
      * Forwards a call to [RemoteInteractionsManager.registerRemoteActivityHelperStatusListener].
@@ -50,6 +54,21 @@ internal interface IRemoteInteractionsManager {
         dataUri: Uri,
         additionalCategories: List<String>,
         executor: Executor,
-        outcomeReceiver: OutcomeReceiver<Void, Throwable>
+        outcomeReceiver: OutcomeReceiver<Void?, Throwable>,
+    )
+
+    /**
+     * Forwards a call to [RemoteInteractionsManager.continueActivityOnPhoneWithUnlock].
+     *
+     * @throws IllegalStateException if the API is not supported and fallback is not possible.
+     */
+    fun continueActivityOnPhoneWithUnlock(
+        targetPackage: String,
+        targetAction: String,
+        targetUri: Uri,
+        additionalCategories: List<String>,
+        callerPackage: String,
+        executor: Executor,
+        outcomeReceiver: OutcomeReceiver<Void?, Throwable>,
     )
 }

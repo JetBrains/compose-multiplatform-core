@@ -30,11 +30,10 @@ import android.hardware.camera2.TotalCaptureResult
 import android.os.Build
 import android.util.Size
 import androidx.camera.camera2.Camera2Config
-import androidx.camera.camera2.internal.compat.quirk.CrashWhenTakingPhotoWithAutoFlashAEModeQuirk
-import androidx.camera.camera2.internal.compat.quirk.DeviceQuirks
-import androidx.camera.camera2.internal.compat.quirk.ImageCaptureFailWithAutoFlashQuirk
-import androidx.camera.camera2.internal.compat.quirk.ImageCaptureFlashNotFireQuirk
-import androidx.camera.camera2.pipe.integration.CameraPipeConfig
+import androidx.camera.camera2.compat.quirk.CrashWhenTakingPhotoWithAutoFlashAEModeQuirk
+import androidx.camera.camera2.compat.quirk.DeviceQuirks
+import androidx.camera.camera2.compat.quirk.ImageCaptureFailWithAutoFlashQuirk
+import androidx.camera.camera2.compat.quirk.ImageCaptureFlashNotFireQuirk
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraEffect.IMAGE_CAPTURE
 import androidx.camera.core.CameraInfo
@@ -46,15 +45,14 @@ import androidx.camera.core.ImageProxy
 import androidx.camera.core.Preview
 import androidx.camera.core.UseCaseGroup
 import androidx.camera.core.impl.CameraInfoInternal
-import androidx.camera.integration.core.util.Camera2InteropUtil
 import androidx.camera.lifecycle.ProcessCameraProvider
-import androidx.camera.testing.impl.CameraPipeConfigTestRule
 import androidx.camera.testing.impl.CameraUtil
 import androidx.camera.testing.impl.CameraUtil.PreTestCameraIdList
 import androidx.camera.testing.impl.LabTestRule
 import androidx.camera.testing.impl.StreamSharingForceEnabledEffect
 import androidx.camera.testing.impl.SurfaceTextureProvider
 import androidx.camera.testing.impl.fakes.FakeLifecycleOwner
+import androidx.camera.testing.impl.util.Camera2InteropUtil
 import androidx.camera.video.Recorder
 import androidx.camera.video.VideoCapture
 import androidx.test.core.app.ApplicationProvider
@@ -86,12 +84,6 @@ private const val CAPTURE_TIMEOUT = 15_000.toLong() //  15 seconds
 class FlashTest(private val implName: String, private val cameraXConfig: CameraXConfig) {
 
     @get:Rule
-    val cameraPipeConfigTestRule =
-        CameraPipeConfigTestRule(
-            active = implName == CameraPipeConfig::class.simpleName,
-        )
-
-    @get:Rule
     val cameraRule =
         CameraUtil.grantCameraPermissionAndPreTestAndPostTest(PreTestCameraIdList(cameraXConfig))
 
@@ -100,11 +92,7 @@ class FlashTest(private val implName: String, private val cameraXConfig: CameraX
     companion object {
         @JvmStatic
         @Parameterized.Parameters(name = "{0}")
-        fun data() =
-            listOf(
-                arrayOf(Camera2Config::class.simpleName, Camera2Config.defaultConfig()),
-                arrayOf(CameraPipeConfig::class.simpleName, CameraPipeConfig.defaultConfig())
-            )
+        fun data() = listOf(arrayOf(Camera2Config::class.simpleName, Camera2Config.defaultConfig()))
     }
 
     private val context = ApplicationProvider.getApplicationContext<Context>()
@@ -133,7 +121,7 @@ class FlashTest(private val implName: String, private val cameraXConfig: CameraX
         canTakePicture(
             flashMode = ImageCapture.FLASH_MODE_ON,
             captureMode = ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY,
-            addSharedEffect = false
+            addSharedEffect = false,
         )
     }
 
@@ -143,7 +131,7 @@ class FlashTest(private val implName: String, private val cameraXConfig: CameraX
         canTakePicture(
             flashMode = ImageCapture.FLASH_MODE_AUTO,
             captureMode = ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY,
-            addSharedEffect = false
+            addSharedEffect = false,
         )
     }
 
@@ -157,7 +145,7 @@ class FlashTest(private val implName: String, private val cameraXConfig: CameraX
         canTakePicture(
             flashMode = ImageCapture.FLASH_MODE_ON,
             captureMode = ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY,
-            addSharedEffect = false
+            addSharedEffect = false,
         )
     }
 
@@ -167,7 +155,7 @@ class FlashTest(private val implName: String, private val cameraXConfig: CameraX
         canTakePicture(
             flashMode = ImageCapture.FLASH_MODE_AUTO,
             captureMode = ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY,
-            addSharedEffect = false
+            addSharedEffect = false,
         )
     }
 
@@ -181,7 +169,7 @@ class FlashTest(private val implName: String, private val cameraXConfig: CameraX
         canTakePicture(
             flashMode = ImageCapture.FLASH_MODE_ON,
             captureMode = ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY,
-            addSharedEffect = false
+            addSharedEffect = false,
         )
     }
 
@@ -191,7 +179,64 @@ class FlashTest(private val implName: String, private val cameraXConfig: CameraX
         canTakePicture(
             flashMode = ImageCapture.FLASH_MODE_AUTO,
             captureMode = ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY,
-            addSharedEffect = false
+            addSharedEffect = false,
+        )
+    }
+
+    /*
+     * The following tests add VideoCapture since some OEMs may not expect image capture or flash
+     * captures when VideoCapture is bound.
+     *
+     * By default, VideoCapture uses MediaCodec surface which may have more issues with flash
+     * captures.
+     *
+     * VideoCapture surface processing changes the MediaCodec surface to a SurfaceTexture one
+     * which may have different kinds of problems.
+     */
+
+    @LabTestRule.LabTestRearCamera
+    @Test
+    fun canCaptureWithFlashOn_whenVideoCaptureIsBound() {
+        canTakePicture(
+            flashMode = ImageCapture.FLASH_MODE_ON,
+            captureMode = ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY,
+            addSharedEffect = false,
+            addVideoCapture = true,
+        )
+    }
+
+    @LabTestRule.LabTestFrontCamera
+    @Test
+    fun canCaptureWithFlashOnInDarkEnvironment_whenVideoCaptureIsBound() {
+        canTakePicture(
+            flashMode = ImageCapture.FLASH_MODE_ON,
+            captureMode = ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY,
+            addSharedEffect = false,
+            addVideoCapture = true,
+        )
+    }
+
+    @LabTestRule.LabTestRearCamera
+    @Test
+    fun canCaptureWithFlashOn_whenSurfaceProcessorVideoCaptureIsBound() {
+        canTakePicture(
+            flashMode = ImageCapture.FLASH_MODE_ON,
+            captureMode = ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY,
+            addSharedEffect = false,
+            addVideoCapture = true,
+            enableVideoCaptureSurfaceProcessing = true,
+        )
+    }
+
+    @LabTestRule.LabTestFrontCamera
+    @Test
+    fun canCaptureWithFlashOnInDarkEnvironment_whenSurfaceProcessorVideoCaptureIsBound() {
+        canTakePicture(
+            flashMode = ImageCapture.FLASH_MODE_ON,
+            captureMode = ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY,
+            addSharedEffect = false,
+            addVideoCapture = true,
+            enableVideoCaptureSurfaceProcessing = true,
         )
     }
 
@@ -226,12 +271,12 @@ class FlashTest(private val implName: String, private val cameraXConfig: CameraX
         Assume.assumeFalse(
             "Cuttlefish API 29 has AE mode availability issue for flash enabled modes." +
                 "Unable to test.",
-            Build.MODEL.contains("Cuttlefish") && Build.VERSION.SDK_INT == 29
+            Build.MODEL.contains("Cuttlefish") && Build.VERSION.SDK_INT == 29,
         )
 
         Assume.assumeTrue(
             "Flash unit not available with back lens facing camera",
-            CameraUtil.hasFlashUnitWithLensFacing(BACK_LENS_FACING)
+            CameraUtil.hasFlashUnitWithLensFacing(BACK_LENS_FACING),
         )
 
         val captureCallback =
@@ -250,7 +295,7 @@ class FlashTest(private val implName: String, private val cameraXConfig: CameraX
                 override fun onCaptureCompleted(
                     session: CameraCaptureSession,
                     request: CaptureRequest,
-                    result: TotalCaptureResult
+                    result: TotalCaptureResult,
                 ) {
                     if (!isReadyToCaptureImage) return
 
@@ -280,10 +325,12 @@ class FlashTest(private val implName: String, private val cameraXConfig: CameraX
     private fun canTakePicture(
         flashMode: Int,
         captureMode: Int,
+        addSharedEffect: Boolean,
         captureCallback: CameraCaptureSession.CaptureCallback? = null,
         flashMustBeSupported: Boolean = false,
         assertCaptureCount: Boolean = true,
-        addSharedEffect: Boolean
+        addVideoCapture: Boolean = false,
+        enableVideoCaptureSurfaceProcessing: Boolean = false,
     ) = runBlocking {
         val imageCapture =
             ImageCapture.Builder()
@@ -298,15 +345,27 @@ class FlashTest(private val implName: String, private val cameraXConfig: CameraX
 
         val preview = Preview.Builder().build()
 
-        val videoCapture = VideoCapture.withOutput(Recorder.Builder().build())
+        val videoCapture =
+            VideoCapture.Builder<Recorder>(Recorder.Builder().build())
+                .run {
+                    if (enableVideoCaptureSurfaceProcessing) {
+                        setSurfaceProcessingForceEnabled()
+                    } else {
+                        this
+                    }
+                }
+                .build()
 
         val useCaseGroup =
             UseCaseGroup.Builder()
                 .addUseCase(preview)
                 .addUseCase(imageCapture)
                 .apply {
-                    if (addSharedEffect) {
+                    if (addVideoCapture || addSharedEffect) {
                         addUseCase(videoCapture)
+                    }
+
+                    if (addSharedEffect) {
                         addEffect(StreamSharingForceEnabledEffect(IMAGE_CAPTURE))
                     }
                 }
@@ -340,7 +399,7 @@ class FlashTest(private val implName: String, private val cameraXConfig: CameraX
         // Wait for the signal that the image has been captured.
         callback.awaitCapturesAndAssert(
             capturedImagesCount = 1,
-            assertCaptureCount = assertCaptureCount
+            assertCaptureCount = assertCaptureCount,
         )
     }
 
@@ -349,7 +408,7 @@ class FlashTest(private val implName: String, private val cameraXConfig: CameraX
             object : SurfaceTextureProvider.SurfaceTextureCallback {
                 override fun onSurfaceTextureReady(
                     surfaceTexture: SurfaceTexture,
-                    resolution: Size
+                    resolution: Size,
                 ) {
                     // No-op
                 }
@@ -363,13 +422,13 @@ class FlashTest(private val implName: String, private val cameraXConfig: CameraX
 
     private fun isFlashTestSupported(
         camera: Camera,
-        @ImageCapture.FlashMode flashMode: Int
+        @ImageCapture.FlashMode flashMode: Int,
     ): Boolean {
         when (flashMode) {
             ImageCapture.FLASH_MODE_AUTO -> {
                 val cameraInfo: CameraInfo = camera.cameraInfo
                 if (cameraInfo is CameraInfoInternal) {
-                    val deviceQuirks = DeviceQuirks.getAll()
+                    val deviceQuirks = DeviceQuirks.all
                     val cameraQuirks = cameraInfo.cameraQuirks
                     if (
                         deviceQuirks.contains(
@@ -409,7 +468,7 @@ class FlashTest(private val implName: String, private val cameraXConfig: CameraX
             timeout: Long = CAPTURE_TIMEOUT,
             capturedImagesCount: Int = 0,
             errorsCount: Int = 0,
-            assertCaptureCount: Boolean = true
+            assertCaptureCount: Boolean = true,
         ) {
             latch.await(timeout, TimeUnit.MILLISECONDS)
 
@@ -419,7 +478,7 @@ class FlashTest(private val implName: String, private val cameraXConfig: CameraX
                 assumeThat(
                     "$numImages image(s) captured within $timeout MS",
                     numImages,
-                    equalTo(capturedImagesCount)
+                    equalTo(capturedImagesCount),
                 )
             }
 

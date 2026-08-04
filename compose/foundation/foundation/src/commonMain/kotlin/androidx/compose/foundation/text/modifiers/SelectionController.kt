@@ -16,15 +16,18 @@
 
 package androidx.compose.foundation.text.modifiers
 
+import androidx.compose.foundation.ComposeFoundationFlags
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.text.TextDragObserver
 import androidx.compose.foundation.text.selection.MouseSelectionObserver
 import androidx.compose.foundation.text.selection.MultiWidgetSelectionDelegate
 import androidx.compose.foundation.text.selection.Selectable
 import androidx.compose.foundation.text.selection.SelectionAdjustment
 import androidx.compose.foundation.text.selection.SelectionRegistrar
+import androidx.compose.foundation.text.selection.awaitSelectionGestures
 import androidx.compose.foundation.text.selection.hasSelection
-import androidx.compose.foundation.text.selection.selectionGestureInput
-import androidx.compose.runtime.RememberObserver
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
@@ -33,16 +36,19 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.LayoutCoordinates
+import androidx.compose.ui.layout.PinnableContainer
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.style.TextOverflow
 
 internal open class StaticTextSelectionParams(
     val layoutCoordinates: LayoutCoordinates?,
-    val textLayoutResult: TextLayoutResult?
+    val textLayoutResult: TextLayoutResult?,
+    val pinnableContainer: PinnableContainer?,
 ) {
     companion object {
-        val Empty = StaticTextSelectionParams(null, null)
+        val Empty = StaticTextSelectionParams(null, null, null)
     }
 
     open fun getPathForRange(start: Int, end: Int): Path? {
@@ -58,9 +64,10 @@ internal open class StaticTextSelectionParams(
     // if this copy shows up in traces, this class may become mutable
     fun copy(
         layoutCoordinates: LayoutCoordinates? = this.layoutCoordinates,
-        textLayoutResult: TextLayoutResult? = this.textLayoutResult
+        textLayoutResult: TextLayoutResult? = this.textLayoutResult,
+        pinnableContainer: PinnableContainer? = this.pinnableContainer,
     ): StaticTextSelectionParams {
-        return StaticTextSelectionParams(layoutCoordinates, textLayoutResult)
+        return StaticTextSelectionParams(layoutCoordinates, textLayoutResult, pinnableContainer)
     }
 }
 
@@ -70,39 +77,37 @@ internal class SelectionController(
     private val selectableId: Long,
     private val selectionRegistrar: SelectionRegistrar,
     private val backgroundSelectionColor: Color,
+) {
     // TODO: Move these into Modifier.element eventually
     private var params: StaticTextSelectionParams = StaticTextSelectionParams.Empty
-) : RememberObserver {
+
     private var selectable: Selectable? = null
+
+    private val bringIntoViewRequester = BringIntoViewRequester()
 
     val modifier: Modifier =
         selectionRegistrar
             .makeSelectionModifier(
                 selectableId = selectableId,
-                layoutCoordinates = { params.layoutCoordinates },
+                layoutCoordinatesProvider = { params.layoutCoordinates },
             )
+            .bringIntoViewRequester(bringIntoViewRequester)
             .pointerHoverIcon(PointerIcon.Text)
 
-    override fun onRemembered() {
+    fun onPlaced() {
         selectable =
             selectionRegistrar.subscribe(
                 MultiWidgetSelectionDelegate(
                     selectableId = selectableId,
                     coordinatesCallback = { params.layoutCoordinates },
-                    layoutResultCallback = { params.textLayoutResult }
+                    layoutResultCallback = { params.textLayoutResult },
+                    pinnableContainerCallback = { params.pinnableContainer },
+                    bringIntoViewRequester = bringIntoViewRequester,
                 )
             )
     }
 
-    override fun onForgotten() {
-        val localSelectable = selectable
-        if (localSelectable != null) {
-            selectionRegistrar.unsubscribe(localSelectable)
-            selectable = null
-        }
-    }
-
-    override fun onAbandoned() {
+    fun onUnplaced() {
         val localSelectable = selectable
         if (localSelectable != null) {
             selectionRegistrar.unsubscribe(localSelectable)
@@ -125,9 +130,13 @@ internal class SelectionController(
         params = params.copy(textLayoutResult = textLayoutResult)
     }
 
-    fun updateGlobalPosition(coordinates: LayoutCoordinates) {
+    fun updateLayoutCoordinates(coordinates: LayoutCoordinates) {
         params = params.copy(layoutCoordinates = coordinates)
         selectionRegistrar.notifyPositionChange(selectableId)
+    }
+
+    fun updatePinnableContainer(pinnableContainer: PinnableContainer?) {
+        params = params.copy(pinnableContainer = pinnableContainer)
     }
 
     fun draw(drawScope: DrawScope) {
@@ -166,7 +175,33 @@ internal class SelectionController(
 
 // this is not chained, but is a standalone factory
 @Suppress("ModifierFactoryExtensionFunction")
-private fun SelectionRegistrar.makeSelectionModifier(
+internal expect fun SelectionRegistrar.makeSelectionModifier(
+    selectableId: Long,
+    layoutCoordinatesProvider: () -> LayoutCoordinates?,
+): Modifier
+
+@OptIn(ExperimentalFoundationApi::class)
+@Suppress("ModifierFactoryExtensionFunction")
+internal fun SelectionRegistrar.makeDefaultSelectionModifier(
+    selectableId: Long,
+    layoutCoordinatesProvider: () -> LayoutCoordinates?,
+): Modifier {
+    return if (ComposeFoundationFlags.isSelectionAutoScrollEnabled) {
+        SelectionModifierElement(
+            selectionRegistrar = this,
+            selectableId = selectableId,
+            layoutCoordinatesProvider = layoutCoordinatesProvider,
+        )
+    } else {
+        makeLegacySelectionModifier(
+            selectableId = selectableId,
+            layoutCoordinates = layoutCoordinatesProvider,
+        )
+    }
+}
+
+@Suppress("ModifierFactoryExtensionFunction")
+internal fun SelectionRegistrar.makeLegacySelectionModifier(
     selectableId: Long,
     layoutCoordinates: () -> LayoutCoordinates?,
 ): Modifier {
@@ -184,6 +219,8 @@ private fun SelectionRegistrar.makeSelectionModifier(
              */
             var dragTotalDistance = Offset.Zero
 
+            var selectionAdjustmentMode = SelectionAdjustment.None
+
             override fun onDown(point: Offset) {
                 // Not supported for long-press-drag.
             }
@@ -192,15 +229,16 @@ private fun SelectionRegistrar.makeSelectionModifier(
                 // Nothing to do.
             }
 
-            override fun onStart(startPoint: Offset) {
+            override fun onStart(startPoint: Offset, selectionAdjustment: SelectionAdjustment) {
+                selectionAdjustmentMode = selectionAdjustment
                 layoutCoordinates()?.let {
                     if (!it.isAttached) return
 
                     notifySelectionUpdateStart(
                         layoutCoordinates = it,
                         startPosition = startPoint,
-                        adjustment = SelectionAdjustment.Word,
-                        isInTouchMode = true
+                        adjustment = selectionAdjustmentMode,
+                        isInTouchMode = true,
                     )
 
                     lastPosition = startPoint
@@ -231,8 +269,8 @@ private fun SelectionRegistrar.makeSelectionModifier(
                             previousPosition = lastPosition,
                             newPosition = newPosition,
                             isStartHandle = false,
-                            adjustment = SelectionAdjustment.Word,
-                            isInTouchMode = true
+                            adjustment = selectionAdjustmentMode,
+                            isInTouchMode = true,
                         )
                     if (consumed) {
                         lastPosition = newPosition
@@ -268,7 +306,7 @@ private fun SelectionRegistrar.makeSelectionModifier(
                             previousPosition = lastPosition,
                             isStartHandle = false,
                             adjustment = SelectionAdjustment.None,
-                            isInTouchMode = false
+                            isInTouchMode = false,
                         )
                     if (consumed) {
                         lastPosition = downPosition
@@ -290,7 +328,7 @@ private fun SelectionRegistrar.makeSelectionModifier(
                             previousPosition = lastPosition,
                             isStartHandle = false,
                             adjustment = SelectionAdjustment.None,
-                            isInTouchMode = false
+                            isInTouchMode = false,
                         )
 
                     if (consumed) {
@@ -300,7 +338,11 @@ private fun SelectionRegistrar.makeSelectionModifier(
                 return true
             }
 
-            override fun onStart(downPosition: Offset, adjustment: SelectionAdjustment): Boolean {
+            override fun onStart(
+                downPosition: Offset,
+                adjustment: SelectionAdjustment,
+                clickCount: Int,
+            ): Boolean {
                 layoutCoordinates()?.let {
                     if (!it.isAttached) return false
 
@@ -308,7 +350,7 @@ private fun SelectionRegistrar.makeSelectionModifier(
                         layoutCoordinates = it,
                         startPosition = downPosition,
                         adjustment = adjustment,
-                        isInTouchMode = false
+                        isInTouchMode = false,
                     )
 
                     lastPosition = downPosition
@@ -330,7 +372,7 @@ private fun SelectionRegistrar.makeSelectionModifier(
                             newPosition = dragPosition,
                             isStartHandle = false,
                             adjustment = adjustment,
-                            isInTouchMode = false
+                            isInTouchMode = false,
                         )
                     if (consumed) {
                         lastPosition = dragPosition
@@ -344,5 +386,7 @@ private fun SelectionRegistrar.makeSelectionModifier(
             }
         }
 
-    return Modifier.selectionGestureInput(mouseSelectionObserver, longPressDragObserver)
+    return Modifier.pointerInput(mouseSelectionObserver, longPressDragObserver) {
+        awaitSelectionGestures(mouseSelectionObserver, longPressDragObserver)
+    }
 }

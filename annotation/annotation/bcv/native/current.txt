@@ -1,5 +1,5 @@
 // Klib ABI Dump
-// Targets: [androidNativeArm32, androidNativeArm64, androidNativeX64, androidNativeX86, iosArm64, iosSimulatorArm64, iosX64, linuxArm64, linuxX64, macosArm64, macosX64, mingwX64, tvosArm64, tvosSimulatorArm64, tvosX64, watchosArm32, watchosArm64, watchosDeviceArm64, watchosSimulatorArm64, watchosX64]
+// Targets: [androidNativeArm32, androidNativeArm64, androidNativeX64, androidNativeX86, iosArm64, iosSimulatorArm64, linuxArm64, linuxX64, macosArm64, mingwX64, tvosArm64, tvosSimulatorArm64, watchosArm32, watchosArm64, watchosDeviceArm64, watchosSimulatorArm64]
 // Rendering settings:
 // - Signature version: 2
 // - Show manifest properties: true
@@ -185,4 +185,8 @@ open annotation class androidx.annotation/VisibleForTesting : kotlin/Annotation 
         final const val PROTECTED // androidx.annotation/VisibleForTesting.Companion.PROTECTED|{}PROTECTED[0]
             final fun <get-PROTECTED>(): kotlin/Int // androidx.annotation/VisibleForTesting.Companion.PROTECTED.<get-PROTECTED>|<get-PROTECTED>(){}[0]
     }
+}
+
+open annotation class androidx.annotation/WorkerThread : kotlin/Annotation { // androidx.annotation/WorkerThread|null[0]
+    constructor <init>() // androidx.annotation/WorkerThread.<init>|<init>(){}[0]
 }

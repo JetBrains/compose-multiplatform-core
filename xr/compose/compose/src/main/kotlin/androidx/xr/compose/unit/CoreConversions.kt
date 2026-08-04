@@ -17,47 +17,67 @@
 package androidx.xr.compose.unit
 
 import androidx.compose.ui.unit.Density
-import androidx.xr.scenecore.Dimensions
+import androidx.xr.runtime.math.FloatSize3d
+import androidx.xr.scenecore.PixelDensity
 
 /**
- * Converts this [IntVolumeSize] to a [Dimensions] object in meters, taking into account [density].
+ * Converts this [IntVolumeSize] to a [FloatSize3d] object in meters.
  *
- * @return a [Dimensions] object representing the volume size in meters.
+ * @param pixelDensity The pixel density to use for conversion.
+ * @return a [FloatSize3d] object representing the volume size in meters.
  */
-internal fun IntVolumeSize.toDimensionsInMeters(density: Density): Dimensions =
-    Dimensions(
-        Meter.fromPixel(width.toFloat(), density).value,
-        Meter.fromPixel(height.toFloat(), density).value,
-        Meter.fromPixel(depth.toFloat(), density).value,
+internal fun IntVolumeSize.toDimensionsInMeters(pixelDensity: PixelDensity): FloatSize3d =
+    FloatSize3d(
+        width.pxToMeters(pixelDensity),
+        height.pxToMeters(pixelDensity),
+        depth.pxToMeters(pixelDensity),
     )
 
 /**
- * Creates an [IntVolumeSize] from a [Dimensions] object in meters.
+ * Creates an [IntVolumeSize] from a [FloatSize3d] object in meters.
  *
  * The dimensions in meters are rounded to the nearest pixel value.
  *
- * @param density The pixel density of the display.
+ * @param pixelDensity The pixel density to use for conversion.
  * @return an [IntVolumeSize] object representing the same volume size in pixels.
  */
-internal fun Dimensions.toIntVolumeSize(density: Density): IntVolumeSize =
+internal fun FloatSize3d.toIntVolumeSize(pixelDensity: PixelDensity): IntVolumeSize =
     IntVolumeSize(
-        Meter(this.width).roundToPx(density),
-        Meter(this.height).roundToPx(density),
-        Meter(this.depth).roundToPx(density),
+        width.roundMetersToPx(pixelDensity),
+        height.roundMetersToPx(pixelDensity),
+        depth.roundMetersToPx(pixelDensity),
     )
 
 /**
- * Converts this [DpVolumeSize] to a [Dimensions] object in meters.
+ * Converts this [DpVolumeSize] to a [FloatSize3d] object in meters.
  *
- * @return a [Dimensions] object representing the volume size in meters
+ * @param density The pixel density of the display.
+ * @param pixelDensity The XR pixel density.
+ * @return a [FloatSize3d] object representing the volume size in meters
  */
-internal fun DpVolumeSize.toDimensionsInMeters(): Dimensions =
-    Dimensions(width.toMeter().value, height.toMeter().value, depth.toMeter().value)
+internal fun DpVolumeSize.toDimensionsInMeters(
+    density: Density,
+    pixelDensity: PixelDensity,
+): FloatSize3d =
+    FloatSize3d(
+        width.toMeters(density, pixelDensity),
+        height.toMeters(density, pixelDensity),
+        depth.toMeters(density, pixelDensity),
+    )
 
 /**
- * Creates a [DpVolumeSize] from a [Dimensions] object in meters.
+ * Creates a [DpVolumeSize] from a [FloatSize3d] object in meters.
  *
+ * @param density The pixel density of the display.
+ * @param pixelDensity The XR pixel density.
  * @return a [DpVolumeSize] object representing the same volume size in Dp.
  */
-internal fun Dimensions.toDpVolumeSize(): DpVolumeSize =
-    DpVolumeSize(Meter(width).toDp(), Meter(height).toDp(), Meter(depth).toDp())
+internal fun FloatSize3d.toDpVolumeSize(
+    density: Density,
+    pixelDensity: PixelDensity,
+): DpVolumeSize =
+    DpVolumeSize(
+        width.metersToDp(density, pixelDensity),
+        height.metersToDp(density, pixelDensity),
+        depth.metersToDp(density, pixelDensity),
+    )

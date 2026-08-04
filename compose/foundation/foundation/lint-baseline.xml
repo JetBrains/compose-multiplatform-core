@@ -1,67 +1,1192 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<issues format="6" by="lint 8.10.0-alpha07" type="baseline" client="gradle" dependencies="false" name="AGP (8.10.0-alpha07)" variant="all" version="8.10.0-alpha07">
+<issues format="6" by="lint 9.4.0-alpha05" type="baseline" client="gradle" dependencies="false" name="AGP (9.4.0-alpha05)" variant="all" version="9.4.0-alpha05">
 
     <issue
-        id="LambdaStructuralEquality"
-        message="Checking lambdas for structural equality, instead of checking for referential equality"
-        errorLine1="        if (onAttach != other.onAttach) return false"
-        errorLine2="                     ~~">
+        id="NewApi"
+        message="Call requires API level 34 (current min is 24): `setHandwritingGestures`"
+        errorLine1="        EditorInfoApi34.setHandwritingGestures(this)"
+        errorLine2="                        ~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/androidInstrumentedTest/kotlin/androidx/compose/foundation/ClickableTest.kt"/>
+            file="src/androidMain/kotlin/androidx/compose/foundation/text/input/internal/EditorInfo.android.kt"/>
     </issue>
 
     <issue
-        id="LambdaStructuralEquality"
-        message="Checking lambdas for structural equality, instead of checking for referential equality"
-        errorLine1="        if (onDraw != other.onDraw) return false"
-        errorLine2="                   ~~">
+        id="NewApi"
+        message="Field requires API level 34 (current min is 24): `EditorInfoApi34`"
+        errorLine1="        EditorInfoApi34.setHandwritingGestures(this)"
+        errorLine2="        ~~~~~~~~~~~~~~~">
         <location
-            file="src/androidInstrumentedTest/kotlin/androidx/compose/foundation/IndicationTest.kt"/>
+            file="src/androidMain/kotlin/androidx/compose/foundation/text/input/internal/EditorInfo.android.kt"/>
     </issue>
 
     <issue
-        id="LambdaStructuralEquality"
-        message="Checking lambdas for structural equality, instead of checking for referential equality"
-        errorLine1="        if (onCreate != other.onCreate) return false"
-        errorLine2="                     ~~">
+        id="KotlinRunTestResultUnused"
+        message="Result of runTest is ignored."
+        errorLine1="        runComposeUiTest {"
+        errorLine2="        ~~~~~~~~~~~~~~~~">
         <location
-            file="src/androidInstrumentedTest/kotlin/androidx/compose/foundation/IndicationTest.kt"/>
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/text/input/CommonTextFieldKeyEventTest.kt"/>
     </issue>
 
     <issue
-        id="LambdaStructuralEquality"
-        message="Checking lambdas for structural equality, instead of checking for referential equality"
-        errorLine1="        if (hasScrollableBlock != other.hasScrollableBlock) return false"
-        errorLine2="                               ~~">
+        id="KotlinRunTestResultUnused"
+        message="Result of runTest is ignored."
+        errorLine1="        keysSequenceTest {"
+        errorLine2="        ~~~~~~~~~~~~~~~~">
         <location
-            file="src/androidInstrumentedTest/kotlin/androidx/compose/foundation/ScrollableTest.kt"/>
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/textfield/HardwareKeyboardTest.kt"/>
     </issue>
 
     <issue
-        id="CoroutineCreationDuringComposition"
-        message="Calls to launch should happen inside a LaunchedEffect and not composition"
-        errorLine1="            rememberCoroutineScope().launch(start = CoroutineStart.UNDISPATCHED) {"
-        errorLine2="                                     ~~~~~~">
+        id="KotlinRunTestResultUnused"
+        message="Result of runTest is ignored."
+        errorLine1="        keysSequenceTest(initText = &quot;hello&quot;) {"
+        errorLine2="        ~~~~~~~~~~~~~~~~">
         <location
-            file="src/androidInstrumentedTest/kotlin/androidx/compose/foundation/text/selection/SelectionContainerTest.kt"/>
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/textfield/HardwareKeyboardTest.kt"/>
     </issue>
 
     <issue
-        id="CoroutineCreationDuringComposition"
-        message="Calls to launch should happen inside a LaunchedEffect and not composition"
-        errorLine1="            rememberCoroutineScope().launch(start = CoroutineStart.UNDISPATCHED) {"
-        errorLine2="                                     ~~~~~~">
+        id="KotlinRunTestResultUnused"
+        message="Result of runTest is ignored."
+        errorLine1="        keysSequenceTest(initText = &quot;hello&quot;) {"
+        errorLine2="        ~~~~~~~~~~~~~~~~">
         <location
-            file="src/androidInstrumentedTest/kotlin/androidx/compose/foundation/text/selection/SelectionContainerTest.kt"/>
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/textfield/HardwareKeyboardTest.kt"/>
     </issue>
 
     <issue
-        id="InvalidLanguageTagDelimiter"
-        message="A hyphen (-), not an underscore (_) delimiter should be used in a language tag"
-        errorLine1="                    TransformedText(text.toUpperCase(LocaleList(&quot;en_US&quot;)), OffsetMapping.Identity)"
-        errorLine2="                                                                ~~~~~~~">
+        id="KotlinRunTestResultUnused"
+        message="Result of runTest is ignored."
+        errorLine1="        keysSequenceTest(initText = &quot;hello&quot;) {"
+        errorLine2="        ~~~~~~~~~~~~~~~~">
         <location
-            file="src/androidInstrumentedTest/kotlin/androidx/compose/foundation/textfield/TextFieldTest.kt"/>
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/textfield/HardwareKeyboardTest.kt"/>
+    </issue>
+
+    <issue
+        id="KotlinRunTestResultUnused"
+        message="Result of runTest is ignored."
+        errorLine1="        keysSequenceTest(initText = &quot;hello\nworld&quot;) {"
+        errorLine2="        ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/textfield/HardwareKeyboardTest.kt"/>
+    </issue>
+
+    <issue
+        id="KotlinRunTestResultUnused"
+        message="Result of runTest is ignored."
+        errorLine1="        keysSequenceTest(initText = &quot;hello\n\nworld&quot;) {"
+        errorLine2="        ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/textfield/HardwareKeyboardTest.kt"/>
+    </issue>
+
+    <issue
+        id="KotlinRunTestResultUnused"
+        message="Result of runTest is ignored."
+        errorLine1="        keysSequenceTest(initText = &quot;hello&quot;) {"
+        errorLine2="        ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/textfield/HardwareKeyboardTest.kt"/>
+    </issue>
+
+    <issue
+        id="KotlinRunTestResultUnused"
+        message="Result of runTest is ignored."
+        errorLine1="        keysSequenceTest(initText = &quot;hello&quot;) {"
+        errorLine2="        ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/textfield/HardwareKeyboardTest.kt"/>
+    </issue>
+
+    <issue
+        id="KotlinRunTestResultUnused"
+        message="Result of runTest is ignored."
+        errorLine1="        keysSequenceTest(initText = &quot;hello&quot;) {"
+        errorLine2="        ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/textfield/HardwareKeyboardTest.kt"/>
+    </issue>
+
+    <issue
+        id="KotlinRunTestResultUnused"
+        message="Result of runTest is ignored."
+        errorLine1="        keysSequenceTest(initText = &quot;e\u0301f&quot;) { // e + combining acute accent + f"
+        errorLine2="        ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/textfield/HardwareKeyboardTest.kt"/>
+    </issue>
+
+    <issue
+        id="KotlinRunTestResultUnused"
+        message="Result of runTest is ignored."
+        errorLine1="        keysSequenceTest(initText = emojiText, useEmojiCompat = true) {"
+        errorLine2="        ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/textfield/HardwareKeyboardTest.kt"/>
+    </issue>
+
+    <issue
+        id="KotlinRunTestResultUnused"
+        message="Result of runTest is ignored."
+        errorLine1="        keysSequenceTest(initText = &quot;hello&quot;) {"
+        errorLine2="        ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/textfield/HardwareKeyboardTest.kt"/>
+    </issue>
+
+    <issue
+        id="KotlinRunTestResultUnused"
+        message="Result of runTest is ignored."
+        errorLine1="        keysSequenceTest(initText = &quot;&quot;) {"
+        errorLine2="        ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/textfield/HardwareKeyboardTest.kt"/>
+    </issue>
+
+    <issue
+        id="KotlinRunTestResultUnused"
+        message="Result of runTest is ignored."
+        errorLine1="        keysSequenceTest(initText = &quot;hello world&quot;) {"
+        errorLine2="        ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/textfield/HardwareKeyboardTest.kt"/>
+    </issue>
+
+    <issue
+        id="KotlinRunTestResultUnused"
+        message="Result of runTest is ignored."
+        errorLine1="        keysSequenceTest(initText = &quot;hello  world&quot;) {"
+        errorLine2="        ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/textfield/HardwareKeyboardTest.kt"/>
+    </issue>
+
+    <issue
+        id="KotlinRunTestResultUnused"
+        message="Result of runTest is ignored."
+        errorLine1="        keysSequenceTest(initText = &quot;hello world&quot;) {"
+        errorLine2="        ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/textfield/HardwareKeyboardTest.kt"/>
+    </issue>
+
+    <issue
+        id="KotlinRunTestResultUnused"
+        message="Result of runTest is ignored."
+        errorLine1="        keysSequenceTest(initText = &quot;hello world&quot;) {"
+        errorLine2="        ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/textfield/HardwareKeyboardTest.kt"/>
+    </issue>
+
+    <issue
+        id="KotlinRunTestResultUnused"
+        message="Result of runTest is ignored."
+        errorLine1="        keysSequenceTest(initText = &quot;hello  world\nhi&quot;) {"
+        errorLine2="        ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/textfield/HardwareKeyboardTest.kt"/>
+    </issue>
+
+    <issue
+        id="KotlinRunTestResultUnused"
+        message="Result of runTest is ignored."
+        errorLine1="        keysSequenceTest(initText = &quot;hi\nhello world\nhi&quot;) {"
+        errorLine2="        ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/textfield/HardwareKeyboardTest.kt"/>
+    </issue>
+
+    <issue
+        id="KotlinRunTestResultUnused"
+        message="Result of runTest is ignored."
+        errorLine1="        keysSequenceTest(initText = &quot;hi\nhello world\nhi&quot;) {"
+        errorLine2="        ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/textfield/HardwareKeyboardTest.kt"/>
+    </issue>
+
+    <issue
+        id="KotlinRunTestResultUnused"
+        message="Result of runTest is ignored."
+        errorLine1="        keysSequenceTest(initText = &quot;hi\nhello world\nhi&quot;) {"
+        errorLine2="        ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/textfield/HardwareKeyboardTest.kt"/>
+    </issue>
+
+    <issue
+        id="KotlinRunTestResultUnused"
+        message="Result of runTest is ignored."
+        errorLine1="        keysSequenceTest(initText = &quot;hi\nhello world\nhi&quot;) {"
+        errorLine2="        ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/textfield/HardwareKeyboardTest.kt"/>
+    </issue>
+
+    <issue
+        id="KotlinRunTestResultUnused"
+        message="Result of runTest is ignored."
+        errorLine1="        keysSequenceTest(initText = &quot;hello world\nhi world&quot;) {"
+        errorLine2="        ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/textfield/HardwareKeyboardTest.kt"/>
+    </issue>
+
+    <issue
+        id="KotlinRunTestResultUnused"
+        message="Result of runTest is ignored."
+        errorLine1="        keysSequenceTest(initText = &quot;hello world\nhi world&quot;) {"
+        errorLine2="        ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/textfield/HardwareKeyboardTest.kt"/>
+    </issue>
+
+    <issue
+        id="KotlinRunTestResultUnused"
+        message="Result of runTest is ignored."
+        errorLine1="        keysSequenceTest(initText = &quot;hello world\nhi world&quot;) {"
+        errorLine2="        ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/textfield/HardwareKeyboardTest.kt"/>
+    </issue>
+
+    <issue
+        id="KotlinRunTestResultUnused"
+        message="Result of runTest is ignored."
+        errorLine1="        keysSequenceTest(initText = &quot;hello world\nhi&quot;) {"
+        errorLine2="        ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/textfield/HardwareKeyboardTest.kt"/>
+    </issue>
+
+    <issue
+        id="KotlinRunTestResultUnused"
+        message="Result of runTest is ignored."
+        errorLine1="        keysSequenceTest(initText = &quot;hello world&quot;) {"
+        errorLine2="        ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/textfield/HardwareKeyboardTest.kt"/>
+    </issue>
+
+    <issue
+        id="KotlinRunTestResultUnused"
+        message="Result of runTest is ignored."
+        errorLine1="        keysSequenceTest(initText = &quot;1\n2\n3\n4\n5&quot;, modifier = Modifier.requiredSize(27.dp)) {"
+        errorLine2="        ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/textfield/HardwareKeyboardTest.kt"/>
+    </issue>
+
+    <issue
+        id="KotlinRunTestResultUnused"
+        message="Result of runTest is ignored."
+        errorLine1="        keysSequenceTest(initText = &quot;text&quot;, singleLine = true) {"
+        errorLine2="        ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/textfield/HardwareKeyboardTest.kt"/>
+    </issue>
+
+    <issue
+        id="KotlinRunTestResultUnused"
+        message="Result of runTest is ignored."
+        errorLine1="        keysSequenceTest(initText = &quot;text&quot;) {"
+        errorLine2="        ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/textfield/HardwareKeyboardTest.kt"/>
+    </issue>
+
+    <issue
+        id="KotlinRunTestResultUnused"
+        message="Result of runTest is ignored."
+        errorLine1="        keysSequenceTest(initText = &quot;text&quot;, singleLine = true) {"
+        errorLine2="        ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/textfield/HardwareKeyboardTest.kt"/>
+    </issue>
+
+    <issue
+        id="KotlinRunTestResultUnused"
+        message="Result of runTest is ignored."
+        errorLine1="        keysSequenceTest(initText = &quot;text&quot;, singleLine = true) {"
+        errorLine2="        ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/textfield/HardwareKeyboardTest.kt"/>
+    </issue>
+
+    <issue
+        id="KotlinRunTestResultUnused"
+        message="Result of runTest is ignored."
+        errorLine1="        keysSequenceTest(initText = &quot;text&quot;) {"
+        errorLine2="        ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/textfield/HardwareKeyboardTest.kt"/>
+    </issue>
+
+    <issue
+        id="KotlinRunTestResultUnused"
+        message="Result of runTest is ignored."
+        errorLine1="        keysSequenceTest(initText = &quot;text&quot;, singleLine = true) {"
+        errorLine2="        ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/textfield/HardwareKeyboardTest.kt"/>
+    </issue>
+
+    <issue
+        id="KotlinRunTestResultUnused"
+        message="Result of runTest is ignored."
+        errorLine1="        keysSequenceTest(initText = &quot;text&quot;) {"
+        errorLine2="        ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/textfield/HardwareKeyboardTest.kt"/>
+    </issue>
+
+    <issue
+        id="KotlinRunTestResultUnused"
+        message="Result of runTest is ignored."
+        errorLine1="        keysSequenceTest(initText = &quot;text&quot;, singleLine = true) {"
+        errorLine2="        ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/textfield/HardwareKeyboardTest.kt"/>
+    </issue>
+
+    <issue
+        id="KotlinRunTestResultUnused"
+        message="Result of runTest is ignored."
+        errorLine1="        keysSequenceTest(initText = &quot;text&quot;, singleLine = true) {"
+        errorLine2="        ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/textfield/HardwareKeyboardTest.kt"/>
+    </issue>
+
+    <issue
+        id="KotlinRunTestResultUnused"
+        message="Result of runTest is ignored."
+        errorLine1="        keysSequenceTest(initText = &quot;text&quot;) {"
+        errorLine2="        ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/textfield/HardwareKeyboardTest.kt"/>
+    </issue>
+
+    <issue
+        id="KotlinRunTestResultUnused"
+        message="Result of runTest is ignored."
+        errorLine1="        keysSequenceTest(initText = &quot;text&quot;) {"
+        errorLine2="        ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/textfield/HardwareKeyboardTest.kt"/>
+    </issue>
+
+    <issue
+        id="KotlinRunTestResultUnused"
+        message="Result of runTest is ignored."
+        errorLine1="        runTest {"
+        errorLine2="        ~~~~~~~">
+        <location
+            file="src/androidHostTest/kotlin/androidx/compose/foundation/text/LinkStateInteractionSourceObserverTest.kt"/>
+    </issue>
+
+    <issue
+        id="KotlinRunTestResultUnused"
+        message="Result of runTest is ignored."
+        errorLine1="        runTest {"
+        errorLine2="        ~~~~~~~">
+        <location
+            file="src/androidHostTest/kotlin/androidx/compose/foundation/text/LinkStateInteractionSourceObserverTest.kt"/>
+    </issue>
+
+    <issue
+        id="KotlinRunTestResultUnused"
+        message="Result of runTest is ignored."
+        errorLine1="        runTest {"
+        errorLine2="        ~~~~~~~">
+        <location
+            file="src/androidHostTest/kotlin/androidx/compose/foundation/text/LinkStateInteractionSourceObserverTest.kt"/>
+    </issue>
+
+    <issue
+        id="KotlinRunTestResultUnused"
+        message="Result of runTest is ignored."
+        errorLine1="        runTest {"
+        errorLine2="        ~~~~~~~">
+        <location
+            file="src/androidHostTest/kotlin/androidx/compose/foundation/text/LinkStateInteractionSourceObserverTest.kt"/>
+    </issue>
+
+    <issue
+        id="KotlinRunTestResultUnused"
+        message="Result of runTest is ignored."
+        errorLine1="        runTest {"
+        errorLine2="        ~~~~~~~">
+        <location
+            file="src/androidHostTest/kotlin/androidx/compose/foundation/text/LinkStateInteractionSourceObserverTest.kt"/>
+    </issue>
+
+    <issue
+        id="KotlinRunTestResultUnused"
+        message="Result of runTest is ignored."
+        errorLine1="        runTest {"
+        errorLine2="        ~~~~~~~">
+        <location
+            file="src/androidHostTest/kotlin/androidx/compose/foundation/text/LinkStateInteractionSourceObserverTest.kt"/>
+    </issue>
+
+    <issue
+        id="KotlinRunTestResultUnused"
+        message="Result of runTest is ignored."
+        errorLine1="        runTest {"
+        errorLine2="        ~~~~~~~">
+        <location
+            file="src/androidHostTest/kotlin/androidx/compose/foundation/text/LinkStateInteractionSourceObserverTest.kt"/>
+    </issue>
+
+    <issue
+        id="KotlinRunTestResultUnused"
+        message="Result of runTest is ignored."
+        errorLine1="        runTest {"
+        errorLine2="        ~~~~~~~">
+        <location
+            file="src/androidHostTest/kotlin/androidx/compose/foundation/text/LinkStateInteractionSourceObserverTest.kt"/>
+    </issue>
+
+    <issue
+        id="KotlinRunTestResultUnused"
+        message="Result of runTest is ignored."
+        errorLine1="        runTest {"
+        errorLine2="        ~~~~~~~">
+        <location
+            file="src/androidHostTest/kotlin/androidx/compose/foundation/text/LinkStateInteractionSourceObserverTest.kt"/>
+    </issue>
+
+    <issue
+        id="KotlinRunTestResultUnused"
+        message="Result of runTest is ignored."
+        errorLine1="        runTest {"
+        errorLine2="        ~~~~~~~">
+        <location
+            file="src/androidHostTest/kotlin/androidx/compose/foundation/text/LinkStateInteractionSourceObserverTest.kt"/>
+    </issue>
+
+    <issue
+        id="KotlinRunTestResultUnused"
+        message="Result of runTest is ignored."
+        errorLine1="        runTest {"
+        errorLine2="        ~~~~~~~">
+        <location
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/text/selection/SelectionContainerContextMenuTest.kt"/>
+    </issue>
+
+    <issue
+        id="KotlinRunTestResultUnused"
+        message="Result of runTest is ignored."
+        errorLine1="        runBtf1ClickContextMenuItemTest("
+        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/textfield/TextFieldContextMenuTest.kt"/>
+    </issue>
+
+    <issue
+        id="KotlinRunTestResultUnused"
+        message="Result of runTest is ignored."
+        errorLine1="        runTest {"
+        errorLine2="        ~~~~~~~">
+        <location
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/textfield/TextFieldContextMenuTest.kt"/>
+    </issue>
+
+    <issue
+        id="KotlinRunTestResultUnused"
+        message="Result of runTest is ignored."
+        errorLine1="        runTest(UnconfinedTestDispatcher()) {"
+        errorLine2="        ~~~~~~~">
+        <location
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/text/input/internal/TextFieldLayoutStateCacheTest.kt"/>
+    </issue>
+
+    <issue
+        id="KotlinRunTestResultUnused"
+        message="Result of runTest is ignored."
+        errorLine1="        runTest(UnconfinedTestDispatcher()) {"
+        errorLine2="        ~~~~~~~">
+        <location
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/text/input/internal/TextFieldLayoutStateCacheTest.kt"/>
+    </issue>
+
+    <issue
+        id="KotlinRunTestResultUnused"
+        message="Result of runTest is ignored."
+        errorLine1="            runTest {"
+        errorLine2="            ~~~~~~~">
+        <location
+            file="src/androidHostTest/kotlin/androidx/compose/foundation/text/input/TextFieldStateTest.kt"/>
+    </issue>
+
+    <issue
+        id="KotlinRunTestResultUnused"
+        message="Result of runTest is ignored."
+        errorLine1="        runTest(singleLine = true, clipboard = { clipboard }) {"
+        errorLine2="        ~~~~~~~">
+        <location
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/text/input/internal/selection/TextFieldTextContextMenuToolbarTest.kt"/>
+    </issue>
+
+    <issue
+        id="KotlinRunTestResultUnused"
+        message="Result of runTest is ignored."
+        errorLine1="        runTest(singleLine = true, clipboard = { clipboard }) {"
+        errorLine2="        ~~~~~~~">
+        <location
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/text/input/internal/selection/TextFieldTextContextMenuToolbarTest.kt"/>
+    </issue>
+
+    <issue
+        id="KotlinRunTestResultUnused"
+        message="Result of runTest is ignored."
+        errorLine1="        kotlinx.coroutines.test.runTest {"
+        errorLine2="                                ~~~~~~~">
+        <location
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/text/input/internal/TextInputServiceAndroidCursorAnchorInfoTest.kt"/>
+    </issue>
+
+    <issue
+        id="TextFieldBufferInternalAppend"
+        message="Do not use `append` on TextFieldBuffer internally as it swallows the hardware source tracking information. Use the internal `replace` overload instead."
+        errorLine1="        val buffer = TextFieldBuffer(originalValue).apply { append(&quot;hello&quot;) }"
+        errorLine2="                                                            ~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidHostTest/kotlin/androidx/compose/foundation/text/input/AllCapsTransformationTest.kt"/>
+    </issue>
+
+    <issue
+        id="TextFieldBufferInternalAppend"
+        message="Do not use `append` on TextFieldBuffer internally as it swallows the hardware source tracking information. Use the internal `replace` overload instead."
+        errorLine1="        val buffer = TextFieldBuffer(originalValue).apply { append(&quot; world&quot;) }"
+        errorLine2="                                                            ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidHostTest/kotlin/androidx/compose/foundation/text/input/AllCapsTransformationTest.kt"/>
+    </issue>
+
+    <issue
+        id="TextFieldBufferInternalAppend"
+        message="Do not use `append` on TextFieldBuffer internally as it swallows the hardware source tracking information. Use the internal `replace` overload instead."
+        errorLine1="        val buffer = TextFieldBuffer(originalValue).apply { append(&quot;i&quot;) }"
+        errorLine2="                                                            ~~~~~~~~~~~">
+        <location
+            file="src/androidHostTest/kotlin/androidx/compose/foundation/text/input/AllCapsTransformationTest.kt"/>
+    </issue>
+
+    <issue
+        id="TextFieldBufferInternalAppend"
+        message="Do not use `append` on TextFieldBuffer internally as it swallows the hardware source tracking information. Use the internal `replace` overload instead."
+        errorLine1="            append(&quot;xyz&quot;) // lACoXYZ"
+        errorLine2="            ~~~~~~~~~~~~~">
+        <location
+            file="src/androidHostTest/kotlin/androidx/compose/foundation/text/input/AllCapsTransformationTest.kt"/>
+    </issue>
+
+    <issue
+        id="TextFieldBufferInternalAppend"
+        message="Do not use `append` on TextFieldBuffer internally as it swallows the hardware source tracking information. Use the internal `replace` overload instead."
+        errorLine1="                        append(&quot; World!&quot;)"
+        errorLine2="                        ~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/text/input/BasicTextFieldAnnotatedOutputTransformationTest.kt"/>
+    </issue>
+
+    <issue
+        id="TextFieldBufferInternalAppend"
+        message="Do not use `append` on TextFieldBuffer internally as it swallows the hardware source tracking information. Use the internal `replace` overload instead."
+        errorLine1="                    append(&quot;world&quot;)"
+        errorLine2="                    ~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/text/input/BasicTextFieldImmIntegrationTest.kt"/>
+    </issue>
+
+    <issue
+        id="TextFieldBufferInternalAppend"
+        message="Do not use `append` on TextFieldBuffer internally as it swallows the hardware source tracking information. Use the internal `replace` overload instead."
+        errorLine1="                    append(&quot;world&quot;)"
+        errorLine2="                    ~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/text/input/BasicTextFieldImmIntegrationTest.kt"/>
+    </issue>
+
+    <issue
+        id="TextFieldBufferInternalAppend"
+        message="Do not use `append` on TextFieldBuffer internally as it swallows the hardware source tracking information. Use the internal `replace` overload instead."
+        errorLine1="                    append(&quot;world&quot;)"
+        errorLine2="                    ~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/text/input/BasicTextFieldImmIntegrationTest.kt"/>
+    </issue>
+
+    <issue
+        id="TextFieldBufferInternalAppend"
+        message="Do not use `append` on TextFieldBuffer internally as it swallows the hardware source tracking information. Use the internal `replace` overload instead."
+        errorLine1="                append(&quot;hello&quot;)"
+        errorLine2="                ~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/text/input/BasicTextFieldImmIntegrationTest.kt"/>
+    </issue>
+
+    <issue
+        id="TextFieldBufferInternalAppend"
+        message="Do not use `append` on TextFieldBuffer internally as it swallows the hardware source tracking information. Use the internal `replace` overload instead."
+        errorLine1="                append(&quot;hello&quot;)"
+        errorLine2="                ~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/text/input/BasicTextFieldImmIntegrationTest.kt"/>
+    </issue>
+
+    <issue
+        id="TextFieldBufferInternalAppend"
+        message="Do not use `append` on TextFieldBuffer internally as it swallows the hardware source tracking information. Use the internal `replace` overload instead."
+        errorLine1="                            append(&apos;A&apos;)"
+        errorLine2="                            ~~~~~~~~~~~">
+        <location
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/text/input/BasicTextFieldImmIntegrationTest.kt"/>
+    </issue>
+
+    <issue
+        id="TextFieldBufferInternalAppend"
+        message="Do not use `append` on TextFieldBuffer internally as it swallows the hardware source tracking information. Use the internal `replace` overload instead."
+        errorLine1="                outputTransformation = { append(&quot; xyz&quot;) },"
+        errorLine2="                                         ~~~~~~~~~~~~~~">
+        <location
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/text/input/BasicTextFieldSemanticsTest.kt"/>
+    </issue>
+
+    <issue
+        id="TextFieldBufferInternalAppend"
+        message="Do not use `append` on TextFieldBuffer internally as it swallows the hardware source tracking information. Use the internal `replace` overload instead."
+        errorLine1="                outputTransformation = { append(&quot; XYZ&quot;) },"
+        errorLine2="                                         ~~~~~~~~~~~~~~">
+        <location
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/text/input/BasicTextFieldSemanticsTest.kt"/>
+    </issue>
+
+    <issue
+        id="TextFieldBufferInternalAppend"
+        message="Do not use `append` on TextFieldBuffer internally as it swallows the hardware source tracking information. Use the internal `replace` overload instead."
+        errorLine1="            append(&quot; World!&quot;)"
+        errorLine2="            ~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/text/input/BasicTextFieldStyledTextTest.kt"/>
+    </issue>
+
+    <issue
+        id="TextFieldBufferInternalAppend"
+        message="Do not use `append` on TextFieldBuffer internally as it swallows the hardware source tracking information. Use the internal `replace` overload instead."
+        errorLine1="                    append(&quot; World!&quot;)"
+        errorLine2="                    ~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/text/input/BasicTextFieldStyledTextTest.kt"/>
+    </issue>
+
+    <issue
+        id="TextFieldBufferInternalAppend"
+        message="Do not use `append` on TextFieldBuffer internally as it swallows the hardware source tracking information. Use the internal `replace` overload instead."
+        errorLine1="                    append(&quot; World!&quot;)"
+        errorLine2="                    ~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/text/input/BasicTextFieldStyledTextTest.kt"/>
+    </issue>
+
+    <issue
+        id="TextFieldBufferInternalAppend"
+        message="Do not use `append` on TextFieldBuffer internally as it swallows the hardware source tracking information. Use the internal `replace` overload instead."
+        errorLine1="                outputTransformation = { append(&quot; world&quot;) },"
+        errorLine2="                                         ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/text/input/BasicTextFieldTest.kt"/>
+    </issue>
+
+    <issue
+        id="TextFieldBufferInternalAppend"
+        message="Do not use `append` on TextFieldBuffer internally as it swallows the hardware source tracking information. Use the internal `replace` overload instead."
+        errorLine1="            mutableStateOf&lt;OutputTransformation?>(OutputTransformation { append(&quot; World&quot;) })"
+        errorLine2="                                                                         ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/text/input/BasicTextFieldTest.kt"/>
+    </issue>
+
+    <issue
+        id="TextFieldBufferInternalAppend"
+        message="Do not use `append` on TextFieldBuffer internally as it swallows the hardware source tracking information. Use the internal `replace` overload instead."
+        errorLine1="        outputTransformation = OutputTransformation { append(&quot; Compose&quot;) }"
+        errorLine2="                                                      ~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/text/input/BasicTextFieldTest.kt"/>
+    </issue>
+
+    <issue
+        id="TextFieldBufferInternalAppend"
+        message="Do not use `append` on TextFieldBuffer internally as it swallows the hardware source tracking information. Use the internal `replace` overload instead."
+        errorLine1="        rule.runOnIdle { state.edit { append(&quot;abc&quot;) } }"
+        errorLine2="                                      ~~~~~~~~~~~~~">
+        <location
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/text/input/internal/undo/BasicTextFieldUndoTest.kt"/>
+    </issue>
+
+    <issue
+        id="TextFieldBufferInternalAppend"
+        message="Do not use `append` on TextFieldBuffer internally as it swallows the hardware source tracking information. Use the internal `replace` overload instead."
+        errorLine1="        rule.runOnIdle { repeat(3) { state.edit { append(&quot;a&quot;) } } }"
+        errorLine2="                                                  ~~~~~~~~~~~">
+        <location
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/text/input/internal/undo/BasicTextFieldUndoTest.kt"/>
+    </issue>
+
+    <issue
+        id="TextFieldBufferInternalAppend"
+        message="Do not use `append` on TextFieldBuffer internally as it swallows the hardware source tracking information. Use the internal `replace` overload instead."
+        errorLine1="                state.editAsUser(null) { append(&quot; World!&quot;) }"
+        errorLine2="                                         ~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/text/input/internal/undo/BasicTextFieldUndoTest.kt"/>
+    </issue>
+
+    <issue
+        id="TextFieldBufferInternalAppend"
+        message="Do not use `append` on TextFieldBuffer internally as it swallows the hardware source tracking information. Use the internal `replace` overload instead."
+        errorLine1="        initialize(&quot;ABC&quot;, TextRange(3), outputTransformation = { append(&quot;!&quot;) })"
+        errorLine2="                                                                 ~~~~~~~~~~~">
+        <location
+            file="src/androidHostTest/kotlin/androidx/compose/foundation/text/input/internal/BatchEditTest.kt"/>
+    </issue>
+
+    <issue
+        id="TextFieldBufferInternalAppend"
+        message="Do not use `append` on TextFieldBuffer internally as it swallows the hardware source tracking information. Use the internal `replace` overload instead."
+        errorLine1="                append(&quot;hello, world&quot;)"
+        errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/text/input/RememberTextFieldStateTest.kt"/>
+    </issue>
+
+    <issue
+        id="TextFieldBufferInternalAppend"
+        message="Do not use `append` on TextFieldBuffer internally as it swallows the hardware source tracking information. Use the internal `replace` overload instead."
+        errorLine1="        testSelectionAdjustment(&quot;&quot;, { append(&quot;hello&quot;) }, &quot;hello_&quot;)"
+        errorLine2="                                      ~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidHostTest/kotlin/androidx/compose/foundation/text/input/TextFieldBufferTest.kt"/>
+    </issue>
+
+    <issue
+        id="TextFieldBufferInternalAppend"
+        message="Do not use `append` on TextFieldBuffer internally as it swallows the hardware source tracking information. Use the internal `replace` overload instead."
+        errorLine1="        testSelectionAdjustment(&quot;_hello&quot;, { append(&quot;world&quot;) }, &quot;_helloworld&quot;)"
+        errorLine2="                                            ~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidHostTest/kotlin/androidx/compose/foundation/text/input/TextFieldBufferTest.kt"/>
+    </issue>
+
+    <issue
+        id="TextFieldBufferInternalAppend"
+        message="Do not use `append` on TextFieldBuffer internally as it swallows the hardware source tracking information. Use the internal `replace` overload instead."
+        errorLine1="        testSelectionAdjustment(&quot;hello_&quot;, { append(&quot;world&quot;) }, &quot;helloworld_&quot;)"
+        errorLine2="                                            ~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidHostTest/kotlin/androidx/compose/foundation/text/input/TextFieldBufferTest.kt"/>
+    </issue>
+
+    <issue
+        id="TextFieldBufferInternalAppend"
+        message="Do not use `append` on TextFieldBuffer internally as it swallows the hardware source tracking information. Use the internal `replace` overload instead."
+        errorLine1="        buffer.append(&quot; world&quot;)"
+        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidHostTest/kotlin/androidx/compose/foundation/text/input/TextFieldBufferTest.kt"/>
+    </issue>
+
+    <issue
+        id="TextFieldBufferInternalAppend"
+        message="Do not use `append` on TextFieldBuffer internally as it swallows the hardware source tracking information. Use the internal `replace` overload instead."
+        errorLine1="        buffer.append(&quot;hello&quot;)"
+        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidHostTest/kotlin/androidx/compose/foundation/text/input/TextFieldBufferTest.kt"/>
+    </issue>
+
+    <issue
+        id="TextFieldBufferInternalAppend"
+        message="Do not use `append` on TextFieldBuffer internally as it swallows the hardware source tracking information. Use the internal `replace` overload instead."
+        errorLine1="        buffer.append(&quot;world&quot;)"
+        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidHostTest/kotlin/androidx/compose/foundation/text/input/TextFieldBufferTest.kt"/>
+    </issue>
+
+    <issue
+        id="TextFieldBufferInternalAppend"
+        message="Do not use `append` on TextFieldBuffer internally as it swallows the hardware source tracking information. Use the internal `replace` overload instead."
+        errorLine1="        buffer.append(&quot;world&quot;, 0, 3)"
+        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidHostTest/kotlin/androidx/compose/foundation/text/input/TextFieldBufferTest.kt"/>
+    </issue>
+
+    <issue
+        id="TextFieldBufferInternalAppend"
+        message="Do not use `append` on TextFieldBuffer internally as it swallows the hardware source tracking information. Use the internal `replace` overload instead."
+        errorLine1="        buffer.append(&apos;!&apos;)"
+        errorLine2="        ~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidHostTest/kotlin/androidx/compose/foundation/text/input/TextFieldBufferTest.kt"/>
+    </issue>
+
+    <issue
+        id="TextFieldBufferInternalAppend"
+        message="Do not use `append` on TextFieldBuffer internally as it swallows the hardware source tracking information. Use the internal `replace` overload instead."
+        errorLine1="        state.edit { append(&quot;a&quot;) }"
+        errorLine2="                     ~~~~~~~~~~~">
+        <location
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/text/input/TextFieldFocusTest.kt"/>
+    </issue>
+
+    <issue
+        id="TextFieldBufferInternalAppend"
+        message="Do not use `append` on TextFieldBuffer internally as it swallows the hardware source tracking information. Use the internal `replace` overload instead."
+        errorLine1="                append(&quot;hello&quot;)"
+        errorLine2="                ~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/text/input/internal/TextFieldLayoutStateCacheTest.kt"/>
+    </issue>
+
+    <issue
+        id="TextFieldBufferInternalAppend"
+        message="Do not use `append` on TextFieldBuffer internally as it swallows the hardware source tracking information. Use the internal `replace` overload instead."
+        errorLine1="            append(&quot;hello&quot;)"
+        errorLine2="            ~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/text/input/internal/TextFieldLayoutStateCacheTest.kt"/>
+    </issue>
+
+    <issue
+        id="TextFieldBufferInternalAppend"
+        message="Do not use `append` on TextFieldBuffer internally as it swallows the hardware source tracking information. Use the internal `replace` overload instead."
+        errorLine1="            state.edit { append(&quot;1&quot;) }"
+        errorLine2="                         ~~~~~~~~~~~">
+        <location
+            file="src/androidHostTest/kotlin/androidx/compose/foundation/text/input/TextFieldStateTest.kt"/>
+    </issue>
+
+    <issue
+        id="TextFieldBufferInternalAppend"
+        message="Do not use `append` on TextFieldBuffer internally as it swallows the hardware source tracking information. Use the internal `replace` overload instead."
+        errorLine1="            append(&apos;c&apos;)"
+        errorLine2="            ~~~~~~~~~~~">
+        <location
+            file="src/androidHostTest/kotlin/androidx/compose/foundation/text/input/TextFieldStateTest.kt"/>
+    </issue>
+
+    <issue
+        id="TextFieldBufferInternalAppend"
+        message="Do not use `append` on TextFieldBuffer internally as it swallows the hardware source tracking information. Use the internal `replace` overload instead."
+        errorLine1="            append(&quot;hello&quot;)"
+        errorLine2="            ~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidHostTest/kotlin/androidx/compose/foundation/text/input/TextFieldStateTest.kt"/>
+    </issue>
+
+    <issue
+        id="TextFieldBufferInternalAppend"
+        message="Do not use `append` on TextFieldBuffer internally as it swallows the hardware source tracking information. Use the internal `replace` overload instead."
+        errorLine1="            append(&quot;hello world&quot;, 0, 5)"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidHostTest/kotlin/androidx/compose/foundation/text/input/TextFieldStateTest.kt"/>
+    </issue>
+
+    <issue
+        id="TextFieldBufferInternalAppend"
+        message="Do not use `append` on TextFieldBuffer internally as it swallows the hardware source tracking information. Use the internal `replace` overload instead."
+        errorLine1="        state.edit { append(&quot; world&quot;) }"
+        errorLine2="                     ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidHostTest/kotlin/androidx/compose/foundation/text/input/TextFieldStateTest.kt"/>
+    </issue>
+
+    <issue
+        id="TextFieldBufferInternalAppend"
+        message="Do not use `append` on TextFieldBuffer internally as it swallows the hardware source tracking information. Use the internal `replace` overload instead."
+        errorLine1="            append(&apos;c&apos;)"
+        errorLine2="            ~~~~~~~~~~~">
+        <location
+            file="src/androidHostTest/kotlin/androidx/compose/foundation/text/input/TextFieldStateTest.kt"/>
+    </issue>
+
+    <issue
+        id="TextFieldBufferInternalAppend"
+        message="Do not use `append` on TextFieldBuffer internally as it swallows the hardware source tracking information. Use the internal `replace` overload instead."
+        errorLine1="            append(&quot;world&quot;)"
+        errorLine2="            ~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidHostTest/kotlin/androidx/compose/foundation/text/input/TextFieldStateTest.kt"/>
+    </issue>
+
+    <issue
+        id="TextFieldBufferInternalAppend"
+        message="Do not use `append` on TextFieldBuffer internally as it swallows the hardware source tracking information. Use the internal `replace` overload instead."
+        errorLine1="            append(&quot;hello world&quot;, 6, 11)"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidHostTest/kotlin/androidx/compose/foundation/text/input/TextFieldStateTest.kt"/>
+    </issue>
+
+    <issue
+        id="TextFieldBufferInternalAppend"
+        message="Do not use `append` on TextFieldBuffer internally as it swallows the hardware source tracking information. Use the internal `replace` overload instead."
+        errorLine1="            append(&quot;hello&quot;)"
+        errorLine2="            ~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidHostTest/kotlin/androidx/compose/foundation/text/input/TextFieldStateTest.kt"/>
+    </issue>
+
+    <issue
+        id="TextFieldBufferInternalAppend"
+        message="Do not use `append` on TextFieldBuffer internally as it swallows the hardware source tracking information. Use the internal `replace` overload instead."
+        errorLine1="            append(&quot;hello&quot;)"
+        errorLine2="            ~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidHostTest/kotlin/androidx/compose/foundation/text/input/TextFieldStateTest.kt"/>
+    </issue>
+
+    <issue
+        id="TextFieldBufferInternalAppend"
+        message="Do not use `append` on TextFieldBuffer internally as it swallows the hardware source tracking information. Use the internal `replace` overload instead."
+        errorLine1="            append(&quot; world&quot;)"
+        errorLine2="            ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidHostTest/kotlin/androidx/compose/foundation/text/input/TextFieldStateTest.kt"/>
+    </issue>
+
+    <issue
+        id="TextFieldBufferInternalAppend"
+        message="Do not use `append` on TextFieldBuffer internally as it swallows the hardware source tracking information. Use the internal `replace` overload instead."
+        errorLine1="                append(&quot;hello&quot;)"
+        errorLine2="                ~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidHostTest/kotlin/androidx/compose/foundation/text/input/TextFieldStateTest.kt"/>
+    </issue>
+
+    <issue
+        id="TextFieldBufferInternalAppend"
+        message="Do not use `append` on TextFieldBuffer internally as it swallows the hardware source tracking information. Use the internal `replace` overload instead."
+        errorLine1="                append(&quot; world&quot;)"
+        errorLine2="                ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidHostTest/kotlin/androidx/compose/foundation/text/input/TextFieldStateTest.kt"/>
+    </issue>
+
+    <issue
+        id="TextFieldBufferInternalAppend"
+        message="Do not use `append` on TextFieldBuffer internally as it swallows the hardware source tracking information. Use the internal `replace` overload instead."
+        errorLine1="                    append(&quot;hello&quot;)"
+        errorLine2="                    ~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidHostTest/kotlin/androidx/compose/foundation/text/input/TextFieldStateTest.kt"/>
+    </issue>
+
+    <issue
+        id="TextFieldBufferInternalAppend"
+        message="Do not use `append` on TextFieldBuffer internally as it swallows the hardware source tracking information. Use the internal `replace` overload instead."
+        errorLine1="                    append(&quot;hello&quot;)"
+        errorLine2="                    ~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidHostTest/kotlin/androidx/compose/foundation/text/input/TextFieldStateTest.kt"/>
+    </issue>
+
+    <issue
+        id="TextFieldBufferInternalAppend"
+        message="Do not use `append` on TextFieldBuffer internally as it swallows the hardware source tracking information. Use the internal `replace` overload instead."
+        errorLine1="            state.edit { append(&quot;a&quot;) }"
+        errorLine2="                         ~~~~~~~~~~~">
+        <location
+            file="src/androidHostTest/kotlin/androidx/compose/foundation/text/input/TextFieldStateTest.kt"/>
+    </issue>
+
+    <issue
+        id="TextFieldBufferInternalAppend"
+        message="Do not use `append` on TextFieldBuffer internally as it swallows the hardware source tracking information. Use the internal `replace` overload instead."
+        errorLine1="            state.edit { append(&quot;b&quot;) }"
+        errorLine2="                         ~~~~~~~~~~~">
+        <location
+            file="src/androidHostTest/kotlin/androidx/compose/foundation/text/input/TextFieldStateTest.kt"/>
+    </issue>
+
+    <issue
+        id="TextFieldBufferInternalAppend"
+        message="Do not use `append` on TextFieldBuffer internally as it swallows the hardware source tracking information. Use the internal `replace` overload instead."
+        errorLine1="            state.edit { append(&quot;c&quot;) }"
+        errorLine2="                         ~~~~~~~~~~~">
+        <location
+            file="src/androidHostTest/kotlin/androidx/compose/foundation/text/input/TextFieldStateTest.kt"/>
+    </issue>
+
+    <issue
+        id="TextFieldBufferInternalAppend"
+        message="Do not use `append` on TextFieldBuffer internally as it swallows the hardware source tracking information. Use the internal `replace` overload instead."
+        errorLine1="            state.edit { append(&quot; world&quot;) }"
+        errorLine2="                         ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidHostTest/kotlin/androidx/compose/foundation/text/input/TextFieldStateTest.kt"/>
+    </issue>
+
+    <issue
+        id="TextFieldBufferInternalAppend"
+        message="Do not use `append` on TextFieldBuffer internally as it swallows the hardware source tracking information. Use the internal `replace` overload instead."
+        errorLine1="        state.edit { append(&quot; World&quot;) }"
+        errorLine2="                     ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidHostTest/kotlin/androidx/compose/foundation/text/input/TextFieldStateTest.kt"/>
+    </issue>
+
+    <issue
+        id="TextFieldBufferInternalAppend"
+        message="Do not use `append` on TextFieldBuffer internally as it swallows the hardware source tracking information. Use the internal `replace` overload instead."
+        errorLine1="        state.edit { append(&quot; World&quot;) }"
+        errorLine2="                     ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidHostTest/kotlin/androidx/compose/foundation/text/input/TextFieldStateTest.kt"/>
+    </issue>
+
+    <issue
+        id="TextFieldBufferInternalAppend"
+        message="Do not use `append` on TextFieldBuffer internally as it swallows the hardware source tracking information. Use the internal `replace` overload instead."
+        errorLine1="        state.edit { append(&quot; World&quot;) }"
+        errorLine2="                     ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidHostTest/kotlin/androidx/compose/foundation/text/input/TextFieldStateTest.kt"/>
+    </issue>
+
+    <issue
+        id="TextFieldBufferInternalAppend"
+        message="Do not use `append` on TextFieldBuffer internally as it swallows the hardware source tracking information. Use the internal `replace` overload instead."
+        errorLine1="            append(&quot; World&quot;)"
+        errorLine2="            ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidHostTest/kotlin/androidx/compose/foundation/text/input/TextFieldStateTest.kt"/>
+    </issue>
+
+    <issue
+        id="TextFieldBufferInternalAppend"
+        message="Do not use `append` on TextFieldBuffer internally as it swallows the hardware source tracking information. Use the internal `replace` overload instead."
+        errorLine1="        state.editAsUser(null) { append(&quot; World&quot;) }"
+        errorLine2="                                 ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidHostTest/kotlin/androidx/compose/foundation/text/input/TextFieldStateTest.kt"/>
+    </issue>
+
+    <issue
+        id="TextFieldBufferInternalAppend"
+        message="Do not use `append` on TextFieldBuffer internally as it swallows the hardware source tracking information. Use the internal `replace` overload instead."
+        errorLine1="            append(&quot; World!&quot;)"
+        errorLine2="            ~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/text/input/internal/selection/TextFieldTextContextMenuToolbarTest.kt"/>
+    </issue>
+
+    <issue
+        id="TextFieldBufferInternalAppend"
+        message="Do not use `append` on TextFieldBuffer internally as it swallows the hardware source tracking information. Use the internal `replace` overload instead."
+        errorLine1="            append(&quot; World!&quot;)"
+        errorLine2="            ~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/text/input/internal/selection/TextFieldTextToolbarTest.kt"/>
+    </issue>
+
+    <issue
+        id="TextFieldBufferInternalAppend"
+        message="Do not use `append` on TextFieldBuffer internally as it swallows the hardware source tracking information. Use the internal `replace` overload instead."
+        errorLine1="            append(&quot;d&quot;)"
+        errorLine2="            ~~~~~~~~~~~">
+        <location
+            file="src/androidHostTest/kotlin/androidx/compose/foundation/text/input/internal/undo/TextUndoTest.kt"/>
+    </issue>
+
+    <issue
+        id="TextFieldBufferInternalAppend"
+        message="Do not use `append` on TextFieldBuffer internally as it swallows the hardware source tracking information. Use the internal `replace` overload instead."
+        errorLine1="            append(&quot;e&quot;)"
+        errorLine2="            ~~~~~~~~~~~">
+        <location
+            file="src/androidHostTest/kotlin/androidx/compose/foundation/text/input/internal/undo/TextUndoTest.kt"/>
+    </issue>
+
+    <issue
+        id="TextFieldBufferInternalAppend"
+        message="Do not use `append` on TextFieldBuffer internally as it swallows the hardware source tracking information. Use the internal `replace` overload instead."
+        errorLine1="            append(newText.toString())"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/commonMain/kotlin/androidx/compose/foundation/text/input/internal/TransformedTextFieldState.kt"/>
+    </issue>
+
+    <issue
+        id="TextFieldBufferInternalAppend"
+        message="Do not use `append` on TextFieldBuffer internally as it swallows the hardware source tracking information. Use the internal `replace` overload instead."
+        errorLine1="        val outputTransformation = OutputTransformation { append(&quot;world&quot;) }"
+        errorLine2="                                                          ~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidHostTest/kotlin/androidx/compose/foundation/text/input/internal/TransformedTextFieldStateTest.kt"/>
+    </issue>
+
+    <issue
+        id="TextFieldBufferInternalAppend"
+        message="Do not use `append` on TextFieldBuffer internally as it swallows the hardware source tracking information. Use the internal `replace` overload instead."
+        errorLine1="        val outputTransformation = OutputTransformation { append(&quot; world&quot;) }"
+        errorLine2="                                                          ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidHostTest/kotlin/androidx/compose/foundation/text/input/internal/TransformedTextFieldStateTest.kt"/>
+    </issue>
+
+    <issue
+        id="TextFieldBufferInternalAppend"
+        message="Do not use `append` on TextFieldBuffer internally as it swallows the hardware source tracking information. Use the internal `replace` overload instead."
+        errorLine1="            append(&quot;cc&quot;)"
+        errorLine2="            ~~~~~~~~~~~~">
+        <location
+            file="src/androidHostTest/kotlin/androidx/compose/foundation/text/input/internal/TransformedTextFieldStateTest.kt"/>
+    </issue>
+
+    <issue
+        id="TextFieldBufferInternalAppend"
+        message="Do not use `append` on TextFieldBuffer internally as it swallows the hardware source tracking information. Use the internal `replace` overload instead."
+        errorLine1="            append(&quot;cc&quot;)"
+        errorLine2="            ~~~~~~~~~~~~">
+        <location
+            file="src/androidHostTest/kotlin/androidx/compose/foundation/text/input/internal/TransformedTextFieldStateTest.kt"/>
+    </issue>
+
+    <issue
+        id="TextFieldBufferInternalAppend"
+        message="Do not use `append` on TextFieldBuffer internally as it swallows the hardware source tracking information. Use the internal `replace` overload instead."
+        errorLine1="            append(&quot; world&quot;)"
+        errorLine2="            ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidHostTest/kotlin/androidx/compose/foundation/text/input/internal/TransformedTextFieldStateTest.kt"/>
+    </issue>
+
+    <issue
+        id="TextFieldBufferInternalAppend"
+        message="Do not use `append` on TextFieldBuffer internally as it swallows the hardware source tracking information. Use the internal `replace` overload instead."
+        errorLine1="            append(&quot; world&quot;)"
+        errorLine2="            ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidHostTest/kotlin/androidx/compose/foundation/text/input/internal/TransformedTextFieldStateTest.kt"/>
+    </issue>
+
+    <issue
+        id="ComposableNaming"
+        message="Composable functions with a return type should start with a lowercase letter"
+        errorLine1="    fun LazyGrid("
+        errorLine2="        ~~~~~~~~">
+        <location
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/lazy/grid/BaseLazyGridTestWithOrientation.kt"/>
     </issue>
 
     <issue
@@ -70,7 +1195,7 @@
         errorLine1="    internal fun &lt;T> createAnchoredDraggableModifier("
         errorLine2="                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/androidInstrumentedTest/kotlin/androidx/compose/foundation/anchoredDraggable/AnchoredDraggableBackwardsCompatibleTest.kt"/>
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/anchoredDraggable/AnchoredDraggableBackwardsCompatibleTest.kt"/>
     </issue>
 
     <issue
@@ -79,7 +1204,7 @@
         errorLine1="    fun LazyItemScope.fillParentMaxMainAxis() ="
         errorLine2="                      ~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/androidInstrumentedTest/kotlin/androidx/compose/foundation/lazy/list/BaseLazyListTestWithOrientation.kt"/>
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/lazy/list/BaseLazyListTestWithOrientation.kt"/>
     </issue>
 
     <issue
@@ -88,7 +1213,7 @@
         errorLine1="    fun LazyItemScope.fillParentMaxCrossAxis() ="
         errorLine2="                      ~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/androidInstrumentedTest/kotlin/androidx/compose/foundation/lazy/list/BaseLazyListTestWithOrientation.kt"/>
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/lazy/list/BaseLazyListTestWithOrientation.kt"/>
     </issue>
 
     <issue
@@ -97,7 +1222,7 @@
         errorLine1="    private fun createSubject(text: AnnotatedString): TextAnnotatedStringElement {"
         errorLine2="                ~~~~~~~~~~~~~">
         <location
-            file="src/androidInstrumentedTest/kotlin/androidx/compose/foundation/text/modifiers/TextAnnotatedStringContentCaptureInvalidationTest.kt"/>
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/text/modifiers/TextAnnotatedStringContentCaptureInvalidationTest.kt"/>
     </issue>
 
     <issue
@@ -106,7 +1231,7 @@
         errorLine1="    private fun createSubject(text: String): TextStringSimpleElement {"
         errorLine2="                ~~~~~~~~~~~~~">
         <location
-            file="src/androidInstrumentedTest/kotlin/androidx/compose/foundation/text/modifiers/TextStringContentCaptureTest.kt"/>
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/text/modifiers/TextStringContentCaptureTest.kt"/>
     </issue>
 
     <issue
@@ -115,7 +1240,7 @@
         errorLine1="    private fun createSubject(text: AnnotatedString): TextAnnotatedStringElement {"
         errorLine2="                ~~~~~~~~~~~~~">
         <location
-            file="src/androidInstrumentedTest/kotlin/androidx/compose/foundation/text/modifiers/TextAnnotatedStringContentCaptureInvalidationTest.kt"/>
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/text/modifiers/TextAnnotatedStringContentCaptureInvalidationTest.kt"/>
     </issue>
 
     <issue
@@ -124,61 +1249,7 @@
         errorLine1="    private fun createSubject(text: String): TextStringSimpleElement {"
         errorLine2="                ~~~~~~~~~~~~~">
         <location
-            file="src/androidInstrumentedTest/kotlin/androidx/compose/foundation/text/modifiers/TextStringContentCaptureTest.kt"/>
-    </issue>
-
-    <issue
-        id="ModifierParameter"
-        message="Modifier parameter should be the first optional parameter"
-        errorLine1="        modifier: Modifier = Modifier,"
-        errorLine2="        ~~~~~~~~">
-        <location
-            file="src/androidInstrumentedTest/kotlin/androidx/compose/foundation/pager/BasePagerTest.kt"/>
-    </issue>
-
-    <issue
-        id="ModifierParameter"
-        message="Modifier parameter should be named modifier"
-        errorLine1="    private fun TestMarqueeContent(marqueeModifier: Modifier) {"
-        errorLine2="                                   ~~~~~~~~~~~~~~~">
-        <location
-            file="src/androidInstrumentedTest/kotlin/androidx/compose/foundation/BasicMarqueeTest.kt"/>
-    </issue>
-
-    <issue
-        id="ModifierParameter"
-        message="Optional Modifier parameter should have a default value of `Modifier`"
-        errorLine1="private fun OuterBox(modifier: Modifier = Modifier.fillMaxSize(), content: @Composable () -> Unit) {"
-        errorLine2="                     ~~~~~~~~">
-        <location
-            file="src/androidInstrumentedTest/kotlin/androidx/compose/foundation/text/contextmenu/provider/BasicTextContextMenuProviderTest.kt"/>
-    </issue>
-
-    <issue
-        id="ModifierParameter"
-        message="Modifier parameter should be the first optional parameter"
-        errorLine1="        modifier: Modifier = Modifier,"
-        errorLine2="        ~~~~~~~~">
-        <location
-            file="src/androidInstrumentedTest/kotlin/androidx/compose/foundation/contextmenu/ContextMenuAreaTest.kt"/>
-    </issue>
-
-    <issue
-        id="ModifierParameter"
-        message="Modifier parameter should be the first optional parameter"
-        errorLine1="        modifier: Modifier = Modifier,"
-        errorLine2="        ~~~~~~~~">
-        <location
-            file="src/androidInstrumentedTest/kotlin/androidx/compose/foundation/contextmenu/ContextMenuAreaTest.kt"/>
-    </issue>
-
-    <issue
-        id="ModifierParameter"
-        message="Modifier parameter should be the first optional parameter"
-        errorLine1="        modifier: Modifier = Modifier.testTag(tag),"
-        errorLine2="        ~~~~~~~~">
-        <location
-            file="src/androidInstrumentedTest/kotlin/androidx/compose/foundation/contextmenu/ContextMenuUiTest.kt"/>
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/text/modifiers/TextStringContentCaptureTest.kt"/>
     </issue>
 
     <issue
@@ -187,25 +1258,7 @@
         errorLine1="        modifier: Modifier = Modifier.testTag(tag),"
         errorLine2="        ~~~~~~~~">
         <location
-            file="src/androidInstrumentedTest/kotlin/androidx/compose/foundation/contextmenu/ContextMenuUiTest.kt"/>
-    </issue>
-
-    <issue
-        id="ModifierParameter"
-        message="Modifier parameter should be the first optional parameter"
-        errorLine1="        modifier: Modifier = Modifier,"
-        errorLine2="        ~~~~~~~~">
-        <location
-            file="src/androidInstrumentedTest/kotlin/androidx/compose/foundation/pager/SingleParamBasePagerTest.kt"/>
-    </issue>
-
-    <issue
-        id="ModifierParameter"
-        message="Modifier parameter should be the first optional parameter"
-        errorLine1="        modifier: Modifier = Modifier,"
-        errorLine2="        ~~~~~~~~">
-        <location
-            file="src/androidInstrumentedTest/kotlin/androidx/compose/foundation/pager/SingleParamBasePagerTest.kt"/>
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/contextmenu/ContextMenuUiTest.kt"/>
     </issue>
 
     <issue
@@ -214,7 +1267,7 @@
         errorLine1="                    Modifier.fillMaxSize().testTag(PagerTestTag).composed {"
         errorLine2="                                                                 ~~~~~~~~">
         <location
-            file="src/androidInstrumentedTest/kotlin/androidx/compose/foundation/pager/PagerTest.kt"/>
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/pager/PagerTest.kt"/>
     </issue>
 
     <issue
@@ -223,7 +1276,7 @@
         errorLine1="        texts = derivedStateOf {"
         errorLine2="                ~~~~~~~~~~~~~~">
         <location
-            file="src/androidInstrumentedTest/kotlin/androidx/compose/foundation/text/selection/gestures/MultiTextSelectionGesturesBidiTest.kt"/>
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/text/selection/gestures/MultiTextSelectionGesturesBidiTest.kt"/>
     </issue>
 
     <issue
@@ -232,7 +1285,7 @@
         errorLine1="        textContentIndices = derivedStateOf { texts.value.textContentIndices() }"
         errorLine2="                             ~~~~~~~~~~~~~~">
         <location
-            file="src/androidInstrumentedTest/kotlin/androidx/compose/foundation/text/selection/gestures/MultiTextSelectionGesturesBidiTest.kt"/>
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/text/selection/gestures/MultiTextSelectionGesturesBidiTest.kt"/>
     </issue>
 
     <issue
@@ -241,7 +1294,7 @@
         errorLine1="        texts = derivedStateOf {"
         errorLine2="                ~~~~~~~~~~~~~~">
         <location
-            file="src/androidInstrumentedTest/kotlin/androidx/compose/foundation/text/selection/gestures/MultiTextSelectionGesturesRtlTest.kt"/>
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/text/selection/gestures/MultiTextSelectionGesturesRtlTest.kt"/>
     </issue>
 
     <issue
@@ -250,7 +1303,7 @@
         errorLine1="        textContentIndices = derivedStateOf { texts.value.textContentIndices() }"
         errorLine2="                             ~~~~~~~~~~~~~~">
         <location
-            file="src/androidInstrumentedTest/kotlin/androidx/compose/foundation/text/selection/gestures/MultiTextSelectionGesturesRtlTest.kt"/>
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/text/selection/gestures/MultiTextSelectionGesturesRtlTest.kt"/>
     </issue>
 
     <issue
@@ -259,7 +1312,7 @@
         errorLine1="        texts = derivedStateOf {"
         errorLine2="                ~~~~~~~~~~~~~~">
         <location
-            file="src/androidInstrumentedTest/kotlin/androidx/compose/foundation/text/selection/gestures/MultiTextSelectionGesturesTest.kt"/>
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/text/selection/gestures/MultiTextSelectionGesturesTest.kt"/>
     </issue>
 
     <issue
@@ -268,7 +1321,7 @@
         errorLine1="        textContentIndices = derivedStateOf { texts.value.textContentIndices() }"
         errorLine2="                             ~~~~~~~~~~~~~~">
         <location
-            file="src/androidInstrumentedTest/kotlin/androidx/compose/foundation/text/selection/gestures/MultiTextSelectionGesturesTest.kt"/>
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/text/selection/gestures/MultiTextSelectionGesturesTest.kt"/>
     </issue>
 
     <issue
@@ -277,7 +1330,7 @@
         errorLine1="                    BoxWithConstraints {"
         errorLine2="                                       ^">
         <location
-            file="src/androidInstrumentedTest/kotlin/androidx/compose/foundation/ClickableTest.kt"/>
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/ClickableTest.kt"/>
     </issue>
 
     <issue
@@ -286,7 +1339,7 @@
         errorLine1="                    BoxWithConstraints {"
         errorLine2="                                       ^">
         <location
-            file="src/androidInstrumentedTest/kotlin/androidx/compose/foundation/CombinedClickableTest.kt"/>
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/CombinedClickableTest.kt"/>
     </issue>
 
     <issue
@@ -295,7 +1348,7 @@
         errorLine1="                    BoxWithConstraints {"
         errorLine2="                                       ^">
         <location
-            file="src/androidInstrumentedTest/kotlin/androidx/compose/foundation/text/modifiers/TextAnnotatedStringNodeTest.kt"/>
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/text/modifiers/TextAnnotatedStringNodeTest.kt"/>
     </issue>
 
     <issue
@@ -304,41 +1357,158 @@
         errorLine1="                    BoxWithConstraints {"
         errorLine2="                                       ^">
         <location
-            file="src/androidInstrumentedTest/kotlin/androidx/compose/foundation/text/modifiers/TextStringSimpleNodeTest.kt"/>
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/text/modifiers/TextStringSimpleNodeTest.kt"/>
     </issue>
 
     <issue
-        id="AutoboxingStateValueProperty"
-        message="Reading `value` will cause an autoboxing operation. Use `intValue` to avoid unnecessary allocations."
-        errorLine1="            val stateValue = state.value"
-        errorLine2="                                   ~~~~~">
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="        if (Build.VERSION.SDK_INT >= 23) {"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/androidInstrumentedTest/kotlin/androidx/compose/foundation/text/input/TextFieldKeyEventTest.kt"/>
+            file="src/androidMain/kotlin/androidx/compose/foundation/text/contextmenu/internal/AndroidTextContextMenuToolbarProvider.android.kt"/>
     </issue>
 
     <issue
-        id="AutoboxingStateValueProperty"
-        message="Assigning `value` will cause an autoboxing operation. Use `intValue` to avoid unnecessary allocations."
-        errorLine1="            state.value += 1"
-        errorLine2="                  ~~~~~">
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="        if (Build.VERSION.SDK_INT >= 23) TextToolbarHelperApi23.invalidateContentRect(actionMode)"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/androidInstrumentedTest/kotlin/androidx/compose/foundation/text/input/TextFieldKeyEventTest.kt"/>
+            file="src/androidMain/kotlin/androidx/compose/foundation/text/contextmenu/internal/AndroidTextContextMenuToolbarProvider.android.kt"/>
     </issue>
 
     <issue
-        id="PrimitiveInCollection"
-        message="variable pinnedItems with type List&lt;? extends Integer>: replace with IntList"
-        errorLine1="            val pinnedItems ="
-        errorLine2="            ^">
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 23"
+        errorLine1="@RequiresApi(23)"
+        errorLine2="~~~~~~~~~~~~~~~~">
         <location
-            file="src/commonMain/kotlin/androidx/compose/foundation/lazy/grid/LazyGrid.kt"/>
+            file="src/androidMain/kotlin/androidx/compose/foundation/text/contextmenu/internal/AndroidTextContextMenuToolbarProvider.android.kt"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 23"
+        errorLine1="    @RequiresApi(23)"
+        errorLine2="    ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidMain/kotlin/androidx/compose/foundation/text/contextmenu/internal/AndroidTextContextMenuToolbarProvider.android.kt"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 23"
+        errorLine1="    @RequiresApi(23)"
+        errorLine2="    ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidMain/kotlin/androidx/compose/foundation/text/contextmenu/internal/AndroidTextContextMenuToolbarProvider.android.kt"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 23"
+        errorLine1="@RequiresApi(23)"
+        errorLine2="~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidMain/kotlin/androidx/compose/foundation/text/contextmenu/internal/AndroidTextContextMenuToolbarProvider.android.kt"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `Build.VERSION.SDK_INT >= 24` is always true here (`SDK_INT` ≥ 24 and &lt; 34)"
+        errorLine1="        Build.VERSION.SDK_INT >= 24 -> ComposeInputMethodManagerImplApi24(view)"
+        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidMain/kotlin/androidx/compose/foundation/text/input/internal/ComposeInputMethodManager.android.kt"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="@RequiresApi(24)"
+        errorLine2="~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidMain/kotlin/androidx/compose/foundation/text/input/internal/ComposeInputMethodManager.android.kt"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is never &lt; 24"
+        errorLine1="    if (Build.VERSION.SDK_INT &lt; 24) return"
+        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidMain/kotlin/androidx/compose/foundation/content/internal/DragAndDropRequestPermission.android.kt"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {"
+        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidMain/kotlin/androidx/compose/foundation/text/input/internal/EditorInfo.android.kt"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="@RequiresApi(24)"
+        errorLine2="~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidMain/kotlin/androidx/compose/foundation/text/input/internal/EditorInfo.android.kt"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="    @RequiresApi(24)"
+        errorLine2="    ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidMain/kotlin/androidx/compose/foundation/text/input/internal/EditorInfo.android.kt"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is never &lt; 24"
+        errorLine1="            Build.VERSION.SDK_INT &lt; 23"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidMain/kotlin/androidx/compose/foundation/text/contextmenu/ProcessText.android.kt"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 23"
+        errorLine1="@RequiresApi(23)"
+        errorLine2="~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidMain/kotlin/androidx/compose/foundation/text/contextmenu/ProcessText.android.kt"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `Build.VERSION.SDK_INT >= Build.VERSION_CODES.N` is always true here (`SDK_INT` ≥ 24 and &lt; 28)"
+        errorLine1="        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {"
+        errorLine2="                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidMain/kotlin/androidx/compose/foundation/text/input/internal/TextFieldLayoutStateCache.android.kt"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="@RequiresApi(Build.VERSION_CODES.N)"
+        errorLine2="~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidMain/kotlin/androidx/compose/foundation/text/input/internal/TextFieldLayoutStateCache.android.kt"/>
     </issue>
 
     <issue
         id="PrimitiveInCollection"
         message="return type List&lt;Integer> of calculateCrossAxisCellSizes: replace with IntList"
-        errorLine1="    fun Density.calculateCrossAxisCellSizes(availableSize: Int, spacing: Int): List&lt;Int>"
-        errorLine2="                                                                               ~~~~~~~~~">
+        errorLine1="    public fun Density.calculateCrossAxisCellSizes(availableSize: Int, spacing: Int): List&lt;Int>"
+        errorLine2="                                                                                      ~~~~~~~~~">
         <location
             file="src/commonMain/kotlin/androidx/compose/foundation/lazy/grid/LazyGridDsl.kt"/>
     </issue>
@@ -350,24 +1520,6 @@
         errorLine2="   ~~~~~~~~~">
         <location
             file="src/commonMain/kotlin/androidx/compose/foundation/lazy/grid/LazyGridDsl.kt"/>
-    </issue>
-
-    <issue
-        id="PrimitiveInCollection"
-        message="method measureLazyGrid has parameter pinnedItems with type List&lt;Integer>: replace with IntList"
-        errorLine1="    pinnedItems: List&lt;Int>,"
-        errorLine2="                 ~~~~~~~~~">
-        <location
-            file="src/commonMain/kotlin/androidx/compose/foundation/lazy/grid/LazyGridMeasure.kt"/>
-    </issue>
-
-    <issue
-        id="PrimitiveInCollection"
-        message="method calculateExtraItems has parameter pinnedItems with type List&lt;Integer>: replace with IntList"
-        errorLine1="    pinnedItems: List&lt;Int>,"
-        errorLine2="                 ~~~~~~~~~">
-        <location
-            file="src/commonMain/kotlin/androidx/compose/foundation/lazy/grid/LazyGridMeasure.kt"/>
     </issue>
 
     <issue
@@ -458,168 +1610,6 @@
         errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/commonMain/kotlin/androidx/compose/foundation/lazy/grid/LazyGridSpanLayoutProvider.kt"/>
-    </issue>
-
-    <issue
-        id="PrimitiveInCollection"
-        message="return type List&lt;Integer> of calculateLazyLayoutPinnedIndices: replace with IntList"
-        errorLine1="): List&lt;Int> {"
-        errorLine2="   ~~~~~~~~~">
-        <location
-            file="src/commonMain/kotlin/androidx/compose/foundation/lazy/layout/LazyLayoutBeyondBoundsState.kt"/>
-    </issue>
-
-    <issue
-        id="PrimitiveInCollection"
-        message="variable pinnedItems with type List&lt;Integer>: replace with IntList"
-        errorLine1="        val pinnedItems = mutableListOf&lt;Int>()"
-        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/commonMain/kotlin/androidx/compose/foundation/lazy/layout/LazyLayoutBeyondBoundsState.kt"/>
-    </issue>
-
-    <issue
-        id="PrimitiveInCollection"
-        message="variable pinnedItems with type List&lt;? extends Integer>: replace with IntList"
-        errorLine1="            val pinnedItems ="
-        errorLine2="            ^">
-        <location
-            file="src/commonMain/kotlin/androidx/compose/foundation/lazy/LazyList.kt"/>
-    </issue>
-
-    <issue
-        id="PrimitiveInCollection"
-        message="method measureLazyList has parameter pinnedItems with type List&lt;Integer>: replace with IntList"
-        errorLine1="    pinnedItems: List&lt;Int>,"
-        errorLine2="                 ~~~~~~~~~">
-        <location
-            file="src/commonMain/kotlin/androidx/compose/foundation/lazy/LazyListMeasure.kt"/>
-    </issue>
-
-    <issue
-        id="PrimitiveInCollection"
-        message="method createItemsAfterList has parameter pinnedItems with type List&lt;Integer>: replace with IntList"
-        errorLine1="    pinnedItems: List&lt;Int>,"
-        errorLine2="                 ~~~~~~~~~">
-        <location
-            file="src/commonMain/kotlin/androidx/compose/foundation/lazy/LazyListMeasure.kt"/>
-    </issue>
-
-    <issue
-        id="PrimitiveInCollection"
-        message="method createItemsBeforeList has parameter pinnedItems with type List&lt;Integer>: replace with IntList"
-        errorLine1="    pinnedItems: List&lt;Int>"
-        errorLine2="                 ~~~~~~~~~">
-        <location
-            file="src/commonMain/kotlin/androidx/compose/foundation/lazy/LazyListMeasure.kt"/>
-    </issue>
-
-    <issue
-        id="PrimitiveInCollection"
-        message="method measureStaggeredGrid has parameter pinnedItems with type List&lt;Integer>: replace with IntList"
-        errorLine1="    pinnedItems: List&lt;Int>,"
-        errorLine2="                 ~~~~~~~~~">
-        <location
-            file="src/commonMain/kotlin/androidx/compose/foundation/lazy/staggeredgrid/LazyStaggeredGridMeasure.kt"/>
-    </issue>
-
-    <issue
-        id="PrimitiveInCollection"
-        message="constructor LazyStaggeredGridMeasureContext has parameter pinnedItems with type List&lt;Integer>: replace with IntList"
-        errorLine1="    val pinnedItems: List&lt;Int>,"
-        errorLine2="                     ~~~~~~~~~">
-        <location
-            file="src/commonMain/kotlin/androidx/compose/foundation/lazy/staggeredgrid/LazyStaggeredGridMeasure.kt"/>
-    </issue>
-
-    <issue
-        id="PrimitiveInCollection"
-        message="field pinnedItems with type List&lt;Integer>: replace with IntList"
-        errorLine1="    val pinnedItems: List&lt;Int>,"
-        errorLine2="                     ~~~~~~~~~">
-        <location
-            file="src/commonMain/kotlin/androidx/compose/foundation/lazy/staggeredgrid/LazyStaggeredGridMeasure.kt"/>
-    </issue>
-
-    <issue
-        id="PrimitiveInCollection"
-        message="return type List&lt;Integer> of getPinnedItems: replace with IntList"
-        errorLine1="    val pinnedItems: List&lt;Int>,"
-        errorLine2="                     ~~~~~~~~~">
-        <location
-            file="src/commonMain/kotlin/androidx/compose/foundation/lazy/staggeredgrid/LazyStaggeredGridMeasure.kt"/>
-    </issue>
-
-    <issue
-        id="PrimitiveInCollection"
-        message="variable pinnedItems with type List&lt;? extends Integer>: replace with IntList"
-        errorLine1="            val pinnedItems ="
-        errorLine2="            ^">
-        <location
-            file="src/commonMain/kotlin/androidx/compose/foundation/lazy/staggeredgrid/LazyStaggeredGridMeasurePolicy.kt"/>
-    </issue>
-
-    <issue
-        id="PrimitiveInCollection"
-        message="field currentItemPrefetchHandles with type Map&lt;Integer, PrefetchHandle>: replace with IntObjectMap"
-        errorLine1="    private val currentItemPrefetchHandles = mutableMapOf&lt;Int, PrefetchHandle>()"
-        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/commonMain/kotlin/androidx/compose/foundation/lazy/staggeredgrid/LazyStaggeredGridState.kt"/>
-    </issue>
-
-    <issue
-        id="PrimitiveInCollection"
-        message="variable prefetchHandlesUsed with type Set&lt;Integer>: replace with IntSet"
-        errorLine1="            val prefetchHandlesUsed = mutableSetOf&lt;Int>()"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/commonMain/kotlin/androidx/compose/foundation/lazy/staggeredgrid/LazyStaggeredGridState.kt"/>
-    </issue>
-
-    <issue
-        id="PrimitiveInCollection"
-        message="method clearLeftoverPrefetchHandles has parameter prefetchHandlesUsed with type Set&lt;Integer>: replace with IntSet"
-        errorLine1="    private fun clearLeftoverPrefetchHandles(prefetchHandlesUsed: Set&lt;Int>) {"
-        errorLine2="                                                                  ~~~~~~~~">
-        <location
-            file="src/commonMain/kotlin/androidx/compose/foundation/lazy/staggeredgrid/LazyStaggeredGridState.kt"/>
-    </issue>
-
-    <issue
-        id="PrimitiveInCollection"
-        message="method measurePager has parameter pinnedPages with type List&lt;Integer>: replace with IntList"
-        errorLine1="    pinnedPages: List&lt;Int>,"
-        errorLine2="                 ~~~~~~~~~">
-        <location
-            file="src/commonMain/kotlin/androidx/compose/foundation/pager/PagerMeasure.kt"/>
-    </issue>
-
-    <issue
-        id="PrimitiveInCollection"
-        message="method createPagesAfterList has parameter pinnedPages with type List&lt;Integer>: replace with IntList"
-        errorLine1="    pinnedPages: List&lt;Int>,"
-        errorLine2="                 ~~~~~~~~~">
-        <location
-            file="src/commonMain/kotlin/androidx/compose/foundation/pager/PagerMeasure.kt"/>
-    </issue>
-
-    <issue
-        id="PrimitiveInCollection"
-        message="method createPagesBeforeList has parameter pinnedPages with type List&lt;Integer>: replace with IntList"
-        errorLine1="    pinnedPages: List&lt;Int>,"
-        errorLine2="                 ~~~~~~~~~">
-        <location
-            file="src/commonMain/kotlin/androidx/compose/foundation/pager/PagerMeasure.kt"/>
-    </issue>
-
-    <issue
-        id="PrimitiveInCollection"
-        message="variable pinnedPages with type List&lt;? extends Integer>: replace with IntList"
-        errorLine1="            val pinnedPages ="
-        errorLine2="            ^">
-        <location
-            file="src/commonMain/kotlin/androidx/compose/foundation/pager/PagerMeasurePolicy.kt"/>
     </issue>
 
 </issues>

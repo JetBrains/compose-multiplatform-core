@@ -1,0 +1,108 @@
+/*
+ * Copyright 2026 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package androidx.camera.common.compat
+
+import android.hardware.SyncFence
+import android.hardware.camera2.CameraCharacteristics
+import android.hardware.camera2.CameraExtensionCharacteristics as Camera2CameraExtensionCharacteristics
+import android.hardware.camera2.CaptureRequest
+import android.hardware.camera2.CaptureResult
+import android.media.Image
+import androidx.annotation.RequiresApi
+import androidx.camera.common.CameraCharacteristicsMetadata
+import androidx.camera.common.DynamicRangeProfilesWrapper
+
+/** Compatibility wrapper for API 33 ([android.os.Build.VERSION_CODES.TIRAMISU]) APIs. */
+@RequiresApi(33)
+internal object Api33Compat {
+    /**
+     * Returns the [SyncFence] associated with the given [Image].
+     *
+     * @param image The image to get the fence from.
+     * @return The [SyncFence] associated with the image.
+     */
+    @JvmStatic
+    fun getFence(image: Image): SyncFence {
+        return image.fence
+    }
+
+    /**
+     * Sets the [SyncFence] for the given [Image].
+     *
+     * @param image The image to set the fence on.
+     * @param fence The [SyncFence] to associate with the image.
+     */
+    @JvmStatic
+    fun setFence(image: Image, fence: SyncFence) {
+        image.fence = fence
+    }
+
+    /**
+     * Returns the data space associated with the given [Image].
+     *
+     * @param image The image to get the data space from.
+     * @return The data space associated with the image.
+     */
+    @JvmStatic
+    fun getDataSpace(image: Image): Int {
+        return image.dataSpace
+    }
+
+    /**
+     * Sets the data space for the given [Image].
+     *
+     * @param image The image to set the data space on.
+     * @param dataSpace The data space to associate with the image.
+     */
+    @JvmStatic
+    fun setDataSpace(image: Image, dataSpace: Int) {
+        image.dataSpace = dataSpace
+    }
+
+    /**
+     * Returns the [DynamicRangeProfilesWrapper] supported by the camera device.
+     *
+     * @param wrapper The camera characteristics metadata to query.
+     * @return The dynamic range profiles wrapper, or `null` if not available.
+     */
+    @JvmStatic
+    fun getDynamicRangeProfiles(
+        wrapper: CameraCharacteristicsMetadata
+    ): DynamicRangeProfilesWrapper? {
+        return wrapper[CameraCharacteristics.REQUEST_AVAILABLE_DYNAMIC_RANGE_PROFILES]?.let {
+            AndroidDynamicRangeProfiles(it)
+        }
+    }
+
+    /** Returns the list of capture request keys supported by the camera extension. */
+    @JvmStatic
+    fun getAvailableCaptureRequestKeys(
+        chars: Camera2CameraExtensionCharacteristics,
+        extension: Int,
+    ): Set<CaptureRequest.Key<*>> {
+        return chars.getAvailableCaptureRequestKeys(extension)
+    }
+
+    /** Returns the list of capture result keys supported by the camera extension. */
+    @JvmStatic
+    fun getAvailableCaptureResultKeys(
+        chars: Camera2CameraExtensionCharacteristics,
+        extension: Int,
+    ): Set<CaptureResult.Key<*>> {
+        return chars.getAvailableCaptureResultKeys(extension)
+    }
+}

@@ -36,8 +36,7 @@ public final class Flags {
     // The prefix of all the flags defined for AppSearch. The prefix has
     // "com.android.appsearch.flags", aka the package name for generated AppSearch flag classes in
     // the framework, plus an additional trailing '.'.
-    private static final String FLAG_PREFIX =
-            "com.android.appsearch.flags.";
+    public static final String FLAG_PREFIX = "com.android.appsearch.flags.";
 
     // The full string values for flags defined in the framework.
     //
@@ -53,10 +52,6 @@ public final class Flags {
     /** Enable the "hasProperty" function in list filter query expressions. */
     public static final String FLAG_ENABLE_LIST_FILTER_HAS_PROPERTY_FUNCTION =
             FLAG_PREFIX + "enable_list_filter_has_property_function";
-
-    /** Enable the "matchScoreExpression" function in list filter query expressions. */
-    public static final String FLAG_ENABLE_LIST_FILTER_MATCH_SCORE_EXPRESSION_FUNCTION =
-            FLAG_PREFIX + "enable_list_filter_match_score_expression_function";
 
     /** Enable Schema Type Grouping related features. */
     public static final String FLAG_ENABLE_GROUPING_TYPE_PER_SCHEMA =
@@ -109,8 +104,8 @@ public final class Flags {
             FLAG_PREFIX + "enable_enterprise_global_search_session";
 
     /**
-     * Enable {@link android.appsearch.app.AppSearchSchema#getDescription} and
-     * {@link android.appsearch.app.AppSearchSchema.PropertyConfig#getDescription} and the related
+     * Enable {@link androidx.appsearch.app.AppSearchSchema#getDescription} and
+     * {@link androidx.appsearch.app.AppSearchSchema.PropertyConfig#getDescription} and the related
      * builders.
      */
     public static final String FLAG_ENABLE_SCHEMA_DESCRIPTION =
@@ -132,27 +127,11 @@ public final class Flags {
     public static final String FLAG_ENABLE_GET_PARENT_TYPES_AND_INDEXABLE_NESTED_PROPERTIES =
             FLAG_PREFIX + "enable_get_parent_types_and_indexable_nested_properties";
 
-    /** Enables embedding search related APIs. */
-    public static final String FLAG_ENABLE_SCHEMA_EMBEDDING_PROPERTY_CONFIG =
-            FLAG_PREFIX + "enable_schema_embedding_property_config";
-
-    /** Enables embedding quantization. */
-    public static final String FLAG_ENABLE_SCHEMA_EMBEDDING_QUANTIZATION =
-            FLAG_PREFIX + "enable_schema_embedding_quantization";
-
     /** Enables informational ranking expressions. */
     public static final String FLAG_ENABLE_INFORMATIONAL_RANKING_EXPRESSIONS =
             FLAG_PREFIX + "enable_informational_ranking_expressions";
 
-    /** Enable {@link androidx.appsearch.app.AppSearchResult#RESULT_ALREADY_EXISTS}.     */
-    public static final String FLAG_ENABLE_RESULT_ALREADY_EXISTS =
-            FLAG_PREFIX + "enable_result_already_exists";
-
-    /**  Enable {@link androidx.appsearch.app.AppSearchBlobHandle}.  */
-    public static final String FLAG_ENABLE_BLOB_STORE =
-            FLAG_PREFIX + "enable_blob_store";
-
-    /**  Enable {@link androidx.appsearch.app.GenericDocument#writeToParcel}.  */
+    /** Enable {@link androidx.appsearch.app.GenericDocument#writeToParcel}. */
     public static final String FLAG_ENABLE_GENERIC_DOCUMENT_OVER_IPC =
             FLAG_PREFIX + "enable_generic_document_over_ipc";
 
@@ -192,59 +171,120 @@ public final class Flags {
     public static final String FLAG_ENABLE_SEARCH_RESULT_PARENT_TYPES =
             FLAG_PREFIX + "enable_search_result_parent_types";
 
-    /** Enables delete propagation type related APIs. */
-    public static final String FLAG_ENABLE_DELETE_PROPAGATION_TYPE =
-            FLAG_PREFIX + "enable_delete_propagation_type";
-
     /** Enables AppSearch to manage blob files. */
     public static final String FLAG_ENABLE_APP_SEARCH_MANAGE_BLOB_FILES =
             FLAG_PREFIX + "enable_app_search_manage_blob_files";
-
-    /**
-     * Enables time since last optimize to be calculated by last attempted optimize run time instead
-     * of last successful optimize run time.
-     */
-    public static final String FLAG_ENABLE_CALCULATE_TIME_SINCE_LAST_ATTEMPTED_OPTIMIZE =
-            FLAG_PREFIX + "enable_calculate_time_since_last_attempted_optimize";
-
-    /** Enables qualified id join index v3. */
-    public static final String FLAG_ENABLE_QUALIFIED_ID_JOIN_INDEX_V3 =
-            FLAG_PREFIX + "enable_qualified_id_join_index_v3";
-
-    /** Enables soft index restoration. */
-    public static final String FLAG_ENABLE_SOFT_INDEX_RESTORATION =
-            FLAG_PREFIX + "enable_soft_index_restoration";
-
-    /** Enables marker file creation for Optimize API. */
-    public static final String FLAG_ENABLE_MARKER_FILE_FOR_OPTIMIZE =
-            FLAG_PREFIX + "enable_marker_file_for_optimize";
-
-    /**
-     * Enables releasing the backup schema file instance in the schema store if the overlay schema
-     * instance exists.
-     */
-    public static final String FLAG_ENABLE_RELEASE_BACKUP_SCHEMA_FILE_IF_OVERLAY_PRESENT =
-            FLAG_PREFIX + "enable_release_backup_schema_file_if_overlay_present";
-
-    /** Enables retrieving embedding match snippet information. This affects  */
-    public static final String FLAG_ENABLE_EMBEDDING_MATCH_INFO =
-            FLAG_PREFIX + "enable_embedding_match_info";
-
-    /** Enables to query visibility documents rather than get.  */
-    public static final String FLAG_ENABLE_QUERY_VISIBILITY_DOCUMENTS =
-            FLAG_PREFIX + "enable_query_visibility_documents";
-
-    /** Enables strict byte size enforcement on a result page. */
-    public static final String FLAG_ENABLE_STRICT_PAGE_BYTE_SIZE_LIMIT =
-            FLAG_PREFIX + "enable_strict_page_byte_size_limit";
 
     /** Enables compression threshold. */
     public static final String FLAG_ENABLE_COMPRESSION_THRESHOLD =
             FLAG_PREFIX + "enable_compression_threshold";
 
-    /** Enables setting the gzip compression memlevel to 1. */
-    public static final String FLAG_ENABLE_COMPRESSION_MEM_LEVEL_ONE =
-            FLAG_PREFIX + "enable_compression_mem_level_one";
+    /** Enables {@link androidx.appsearch.app.AppSearchResult#RESULT_ABORTED}. */
+    public static final String FLAG_ENABLE_RESULT_ABORTED =
+            FLAG_PREFIX + "enable_result_aborted";
+
+    /** Enables {@link androidx.appsearch.app.AppSearchResult#RESULT_UNAVAILABLE}. */
+    public static final String FLAG_ENABLE_RESULT_UNAVAILABLE =
+            FLAG_PREFIX + "enable_result_unavailable";
+
+    /**
+     * Enables throwing {@link androidx.appsearch.exceptions.AppSearchException} with code
+     * {@link androidx.appsearch.app.AppSearchResult#RESULT_ABORTED} if the search result page token
+     * is not found in native.
+     */
+    public static final String FLAG_ENABLE_THROW_EXCEPTION_FOR_NATIVE_NOT_FOUND_PAGE_TOKEN =
+            FLAG_PREFIX + "enable_throw_exception_for_native_not_found_page_token";
+
+    /**
+     * Enable retrying the critical section of initialization before resetting as a last resort.
+     */
+    public static final String FLAG_ENABLE_INITIALIZATION_RETRIES_BEFORE_RESET =
+            FLAG_PREFIX + "enable_initialization_retries_before_reset";
+
+    /**
+     * Whether to skip interacting with icing if the set schema call is a noop.
+     */
+    public static final String FLAG_ENABLE_EARLY_SET_SCHEMA_EXIT =
+            FLAG_PREFIX + "enable_early_set_schema_exit";
+
+    /**
+     * Whether to directly write data to parcel data for remove and commit blob.
+     */
+    public static final String FLAG_ENABLE_DIRECTLY_WRITE_COMMIT_REMOVE_BLOB_RESPONSE =
+            FLAG_PREFIX + "directly_write_commit_remove_blob_response";
+
+    /**
+     * Whether to enable deduping schema types' property definitions when storing
+     * SchemaTypeConfigs in the schema store.
+     */
+    public static final String FLAG_ENABLE_SCHEMA_DEFINITION_DEDUPING =
+            FLAG_PREFIX + "enable_schema_definition_deduping";
+
+    /**
+     * Controls whether a few minor improvements to Optimize and Index Merge are enabled:
+     *   * Whether there is an unnecessary PersistToDisk call in Optimize
+     *   * Whether there is an unnecessary PersistToDisk call in Index Merge
+     *   * Whether DocumentStore Optimize will create unnecessary status messages.
+     */
+    public static final String FLAG_ENABLE_OPTIMIZE_IMPROVEMENTS =
+            FLAG_PREFIX + "enable_optimize_improvements";
+
+    /** Enables delete propagation API. */
+    public static final String FLAG_ENABLE_DELETE_PROPAGATION_RW =
+            FLAG_PREFIX + "enable_delete_propagation_rw";
+
+    /**
+     * Whether to enable wipe out documents under specific property paths when an account is
+     * removed.
+     */
+    public static final String FLAG_ENABLE_SCHEMAS_WIPEOUT_ACCOUNT_PROPERTY_PATHS =
+            FLAG_PREFIX + "enable_schemas_wipeout_account_property_paths";
+
+    /**
+     * Whether to enable indexing non existent parent qualified id in the join index.
+     */
+    public static final String FLAG_ENABLE_NON_EXISTENT_QUALIFIED_ID_JOIN =
+            FLAG_PREFIX + "enable_non_existent_qualified_id_join";
+
+    /** Enables visibility access for Private Compute Core UIDs. */
+    public static final String FLAG_ENABLE_PRIVATE_COMPUTE_CORE_UID_ACCESS =
+            FLAG_PREFIX + "enable_private_compute_core_uid_access";
+
+    /** Enables set SearchFeatures and RankingFeatures APIs. */
+    public static final String FLAG_ENABLE_SET_SEARCH_AND_RANKING_FEATURE =
+            FLAG_PREFIX + "enable_set_search_and_ranking_feature";
+
+    /**
+     * Whether to enable client-side pagination.
+     */
+    public static final String FLAG_ENABLE_CLIENT_SIDE_PAGINATION =
+            FLAG_PREFIX + "enable_client_side_pagination";
+
+    /** Enables embedding approximate nearest neighbor. */
+    public static final String FLAG_ENABLE_EMBEDDING_APPROXIMATE_NEAREST_NEIGHBOR =
+            FLAG_PREFIX + "enable_embedding_approximate_nearest_neighbor";
+
+    /** Enables embedding pre-quantized data. */
+    public static final String FLAG_ENABLE_EMBEDDING_PRE_QUANTIZED_DATA =
+            FLAG_PREFIX + "enable_embedding_pre_quantized_data";
+
+    /** Enables database stableness log in Icing. */
+    public static final String FLAG_ENABLE_DATABASE_STABLENESS_LOG =
+            FLAG_PREFIX + "enable_database_stableness_log";
+
+    /** Enables incompatibility check when promoting a regular property to an account property. */
+    public static final String FLAG_ENABLE_ACCOUNT_PROPERTY_INCOMPATIBILITY_CHECK =
+            FLAG_PREFIX + "enable_account_property_incompatibility_check";
+
+    /** Controls whether to release schema store cached proto after initialization. */
+    public static final String FLAG_RELEASE_SCHEMA_CACHE_AFTER_INITIALIZATION =
+            FLAG_PREFIX + "release_schema_cache_after_initialization";
+
+    /**
+     * Controls whether to remove schema store move assignment during schema store set schema.
+     */
+    public static final String FLAG_REMOVE_SCHEMA_STORE_MOVE_ASSIGNMENT =
+            FLAG_PREFIX + "remove_schema_store_move_assignment";
 
     // Whether the features should be enabled.
     //
@@ -257,14 +297,6 @@ public final class Flags {
 
     /** Whether the "hasProperty" function in list filter query expressions should be enabled. */
     public static boolean enableListFilterHasPropertyFunction() {
-        return true;
-    }
-
-    /**
-     * Whether the "matchScoreExpression" function in list filter query expressions should be
-     * enabled.
-     */
-    public static boolean enableListFilterMatchScoreExpressionFunction() {
         return true;
     }
 
@@ -348,16 +380,6 @@ public final class Flags {
         return true;
     }
 
-    /** Whether embedding search related APIs should be enabled. */
-    public static boolean enableSchemaEmbeddingPropertyConfig() {
-        return true;
-    }
-
-    /** Whether embedding quantization is enabled. */
-    public static boolean enableSchemaEmbeddingQuantization() {
-        return true;
-    }
-
     /** Whether the search parameter APIs should be enabled. */
     public static boolean enableSearchSpecSearchStringParameters() {
         return true;
@@ -365,19 +387,6 @@ public final class Flags {
 
     /** Whether informational ranking expressions should be enabled. */
     public static boolean enableInformationalRankingExpressions() {
-        return true;
-    }
-
-    /**
-     * Whether {@link androidx.appsearch.app.AppSearchResult#RESULT_ALREADY_EXISTS} should be
-     * enabled.
-     */
-    public static boolean enableResultAlreadyExists() {
-        return true;
-    }
-
-    /**  Whether {@link androidx.appsearch.app.AppSearchBlobHandle} should be enabled. */
-    public static boolean enableBlobStore() {
         return true;
     }
 
@@ -412,7 +421,9 @@ public final class Flags {
      * limit or should call into Icing to get the current active document count when the limit is
      * reached.
      */
-    public static boolean enableDocumentLimiterReplaceTracking() { return true; }
+    public static boolean enableDocumentLimiterReplaceTracking() {
+        return true;
+    }
 
     /**
      * Whether the {@link androidx.appsearch.app.SearchSpec.Builder#addFilterDocumentIds} should be
@@ -437,69 +448,6 @@ public final class Flags {
     }
 
     /**
-     * Whether delete propagation related APIs should be enabled.
-     *
-     * <p>Note: delete propagation depends on qualified id join index v3, so
-     * {@link #enableQualifiedIdJoinIndexV3()} should also be true.
-     *
-     */
-    public static boolean enableDeletePropagationType() {
-        // TODO(b/384947619): enable this flag once expiry propagation and dependency check are
-        //   implemented.
-        return false;
-    }
-
-    /**
-     * Whether to calculate time since last optimize using last attempted optimize run time instead
-     * of last successful optimize run time.
-     */
-    public static boolean enableCalculateTimeSinceLastAttemptedOptimize() {
-        return true;
-    }
-
-    /** Whether qualified id join index v3 should be enabled. */
-    public static boolean enableQualifiedIdJoinIndexV3() {
-        return true;
-    }
-
-    /** Whether soft index restoration should be enabled. */
-    public static boolean enableSoftIndexRestoration() {
-        return true;
-    }
-
-    /** Whether marker file creation for Optimize API should be enabled. */
-    public static boolean enableMarkerFileForOptimize() {
-        return true;
-    }
-
-    /**
-     * Whether to release the backup schema file instance in the schema store if the overlay schema
-     * instance exists.
-     */
-    public static boolean enableReleaseBackupSchemaFileIfOverlayPresent() {
-        return true;
-    }
-
-    /**
-     * Whether to enable retrieving embedding match info during snippetting.
-     */
-    public static boolean enableEmbeddingMatchInfo() {
-        return true;
-    }
-
-    /**
-     * Whether to query visibility documents rather than get.
-     */
-    public static boolean enableQueryVisibilityDocuments() {
-        return true;
-    }
-
-    /** Whether to enforce page byte size limit in a stricter way. */
-    public static boolean enableStrictPageByteSizeLimit() {
-        return true;
-    }
-
-    /**
      * Whether to enable compression threshold.
      */
     public static boolean enableCompressionThreshold() {
@@ -511,5 +459,169 @@ public final class Flags {
      */
     public static boolean enableCompressionMemLevelOne() {
         return true;
+    }
+
+    /**
+     * Whether {@link androidx.appsearch.app.AppSearchResult#RESULT_ABORTED} should be
+     * enabled.
+     */
+    public static boolean enableResultAborted() {
+        return true;
+    }
+
+    /**
+     * Whether {@link androidx.appsearch.app.AppSearchResult#RESULT_UNAVAILABLE} should be
+     * enabled.
+     */
+    public static boolean enableResultUnavailable() {
+        return true;
+    }
+
+    /**
+     * Whether {@link androidx.appsearch.exceptions.AppSearchException} with code
+     * {@link androidx.appsearch.app.AppSearchResult#RESULT_ABORTED} should be thrown if the search
+     * result page token is not found in native.
+     */
+    public static boolean enableThrowExceptionForNativeNotFoundPageToken() {
+        return true;
+    }
+
+    /**
+     * Whether to batch put visibility documents.
+     */
+    public static boolean enableBatchPutVisibilityDocuments() {
+        return true;
+    }
+
+    /**
+     * Whether to enable retrying the critical section of initialization before resetting as a
+     * last resort.
+     */
+    public static boolean enableInitializationRetriesBeforeReset() {
+        return true;
+    }
+
+
+    /**
+     * Whether to skip interacting with icing if the set schema call is a noop.
+     */
+    public static boolean enableEarlySetSchemaExit() {
+        // TODO(b/436813583): Enable this once the feature is rolled out to Nextfood in platform.
+        return false;
+    }
+
+    /**
+     * Whether to enable directly write to parcel for commit and remove blob response.
+     */
+    public static boolean enableDirectlyWriteCommitRemoveBlobResponse() {
+        return true;
+    }
+
+    /**
+     * Whether to enable deduping schema types' property definitions when storing
+     * SchemaTypeConfigs in the schema store.
+     */
+    public static boolean enableSchemaDefinitionDeduping() {
+        // TODO(b/448166747): Enable this once the feature is rolled out to Nextfood in platform.
+        return false;
+    }
+
+    /**
+     * Controls whether a few minor improvements to Optimize and Index Merge are enabled:
+     * * Whether there is an unnecessary PersistToDisk call in Optimize
+     * * Whether there is an unnecessary PersistToDisk call in Index Merge
+     * * Whether DocumentStore Optimize will create unnecessary status messages.
+     */
+    public static boolean enableOptimizeImprovements() {
+        // TODO(b/455903084): Enable this once the feature is rolled out to Nextfood in platform.
+        return false;
+    }
+
+    /**
+     * Whether delete propagation API should be enabled.
+     *
+     * <p>Note: delete propagation depends on qualified id join index v3 and soft index restoration.
+     */
+    public static boolean enableDeletePropagationRw() {
+        // TODO(b/384947619): Enable this once the feature is rolled out to Nextfood in platform.
+        return false;
+    }
+
+    /**
+     * Whether to enable wipe out document when an account is removed.
+     */
+    public static boolean enableSchemasWipeoutAccountPropertyPaths() {
+        return true;
+    }
+
+    /**
+     * Whether to enable indexing non existent parent qualified id in the join index.
+     */
+    public static boolean enableNonExistentQualifiedIdJoin() {
+        return true;
+    }
+
+    /**
+     * Whether visibility access for Private Compute Core UIDs should be enabled.
+     */
+    public static boolean enablePrivateComputeCoreUidAccess() {
+        return true;
+    }
+
+    /**
+     * Whether {@link androidx.appsearch.app.SearchFeatures} and
+     * {@link androidx.appsearch.app.RankingFeatures} related APIs should be enabled.
+     */
+    public static boolean enableSetSearchAndRankingFeature() {
+        return true;
+    }
+
+    /**
+     * Whether to enable client-side pagination.
+     */
+    public static boolean enableClientSidePagination() {
+        // TODO(b/492234192): Enable this feature only after it rolls out to Nextfood in
+        // platform and localstorage/SearchResultsImpl.java has been updated.
+        return false;
+    }
+
+    /** Whether embedding approximate nearest neighbor should be enabled. */
+    public static boolean enableEmbeddingApproximateNearestNeighbor() {
+        return true;
+    }
+
+    /** Whether embedding pre-quantized data should be enabled. */
+    public static boolean enableEmbeddingPreQuantizedData() {
+        return true;
+    }
+
+    /** Whether to enable database stableness log in Icing. */
+    public static boolean enableDatabaseStablenessLog() {
+        return false;
+    }
+
+    /**
+     * Whether incompatibility check when promoting a regular property to an account property
+     * should be enabled.
+     */
+    public static boolean enableAccountPropertyIncompatibilityCheck() {
+        // TODO(b/506060010): Enable this once the feature is rolled out to Nextfood in platform.
+        return false;
+    }
+
+    /**
+     * Controls whether to release schema store cached proto after initialization.
+     */
+    public static boolean releaseSchemaCacheAfterInitialization() {
+        // TODO(b/490448633): Enable this once the feature is rolled out to Nextfood in platform.
+        return false;
+    }
+
+    /**
+     * Controls whether to remove schema store move assignment during schema store set schema.
+     */
+    public static boolean removeSchemaStoreMoveAssignment() {
+        // TODO(b/521549968): Enable this once the feature is rolled out to Nextfood in platform.
+        return false;
     }
 }

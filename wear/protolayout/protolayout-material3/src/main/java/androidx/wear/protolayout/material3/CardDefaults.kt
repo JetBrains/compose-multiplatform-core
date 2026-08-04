@@ -49,7 +49,7 @@ public class CardColors(
     public val secondaryIconColor: LayoutColor = titleColor,
     public val secondaryTextColor: LayoutColor = timeColor,
     public val graphicProgressIndicatorColors: ProgressIndicatorColors? = null,
-    public val graphicIconColor: LayoutColor? = null
+    public val graphicIconColor: LayoutColor? = null,
 ) {
     /**
      * Returns a copy of this [CardColors], optionally overriding some of the values.
@@ -78,7 +78,7 @@ public class CardColors(
         secondaryTextColor: LayoutColor = this.secondaryTextColor,
         graphicProgressIndicatorColors: ProgressIndicatorColors? =
             this.graphicProgressIndicatorColors,
-        graphicIconColor: LayoutColor? = this.graphicIconColor
+        graphicIconColor: LayoutColor? = this.graphicIconColor,
     ): CardColors =
         CardColors(
             backgroundColor = backgroundColor,
@@ -89,7 +89,7 @@ public class CardColors(
             secondaryIconColor = secondaryIconColor,
             secondaryTextColor = secondaryTextColor,
             graphicProgressIndicatorColors = graphicProgressIndicatorColors,
-            graphicIconColor = graphicIconColor
+            graphicIconColor = graphicIconColor,
         )
 }
 
@@ -107,7 +107,7 @@ public object CardDefaults {
             titleColor = theme.colorScheme.onPrimary,
             contentColor = theme.colorScheme.onPrimary.withOpacity(0.8f),
             graphicProgressIndicatorColors = filledProgressIndicatorColors(),
-            graphicIconColor = theme.colorScheme.primaryContainer
+            graphicIconColor = theme.colorScheme.primaryContainer,
         )
 
     /**
@@ -124,7 +124,7 @@ public object CardDefaults {
             contentColor = theme.colorScheme.onSurfaceVariant,
             secondaryIconColor = theme.colorScheme.primary,
             graphicProgressIndicatorColors = filledTonalProgressIndicatorColors(),
-            graphicIconColor = theme.colorScheme.primaryDim
+            graphicIconColor = theme.colorScheme.primaryDim,
         )
 
     /**
@@ -140,7 +140,7 @@ public object CardDefaults {
             titleColor = theme.colorScheme.onPrimaryContainer,
             contentColor = theme.colorScheme.onPrimaryContainer.withOpacity(0.9f),
             graphicProgressIndicatorColors = filledVariantProgressIndicatorColors(),
-            graphicIconColor = theme.colorScheme.primaryDim
+            graphicIconColor = theme.colorScheme.primaryDim,
         )
 
     /**
@@ -153,7 +153,7 @@ public object CardDefaults {
         CardColors(
             backgroundColor = theme.colorScheme.background,
             titleColor = theme.colorScheme.onBackground,
-            contentColor = theme.colorScheme.onBackground
+            contentColor = theme.colorScheme.onBackground,
         )
 
     internal const val METADATA_TAG: String = "CR"

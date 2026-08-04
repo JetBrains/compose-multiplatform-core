@@ -16,6 +16,7 @@
 
 package androidx.health.connect.client.testing
 
+import androidx.annotation.IntRange
 import androidx.health.connect.client.HealthConnectClient
 import androidx.health.connect.client.HealthConnectFeatures
 import androidx.health.connect.client.PermissionController
@@ -64,7 +65,7 @@ import kotlin.reflect.KClass
 public class FakeHealthConnectClient(
     private var packageName: String = DEFAULT_PACKAGE_NAME,
     private val clock: Clock = Clock.systemDefaultZone(),
-    override val permissionController: PermissionController = FakePermissionController()
+    override val permissionController: PermissionController = FakePermissionController(),
 ) : HealthConnectClient {
 
     override val features: HealthConnectFeatures = HealthConnectFeaturesUnavailableImpl
@@ -172,7 +173,7 @@ public class FakeHealthConnectClient(
     override suspend fun deleteRecords(
         recordType: KClass<out Record>,
         recordIdsList: List<String>,
-        clientRecordIdsList: List<String>
+        clientRecordIdsList: List<String>,
     ) {
         // Stubs
         overrides.deleteRecords?.next(Unit)
@@ -203,7 +204,7 @@ public class FakeHealthConnectClient(
 
     override suspend fun deleteRecords(
         recordType: KClass<out Record>,
-        timeRangeFilter: TimeRangeFilter
+        timeRangeFilter: TimeRangeFilter,
     ) {
         // Stubs
         overrides.deleteRecords?.next(Unit)
@@ -224,7 +225,7 @@ public class FakeHealthConnectClient(
     @Suppress("UNCHECKED_CAST")
     override suspend fun <T : Record> readRecord(
         recordType: KClass<T>,
-        recordId: String
+        recordId: String,
     ): ReadRecordResponse<T> {
         // Stubs
         overrides.readRecord?.next(recordId)?.let {
@@ -281,7 +282,7 @@ public class FakeHealthConnectClient(
         // Fake implementation
         return ReadRecordsResponse(
             records = recordsPending.take(request.pageSize),
-            pageToken = nextPageToken?.toString()
+            pageToken = nextPageToken?.toString(),
         )
     }
 
@@ -369,6 +370,13 @@ public class FakeHealthConnectClient(
     }
 
     override suspend fun getChanges(changesToken: String): ChangesResponse {
+        return getChanges(changesToken, pageSizeGetChanges)
+    }
+
+    override suspend fun getChanges(
+        changesToken: String,
+        @IntRange(from = 1, to = 5000) pageSize: Int,
+    ): ChangesResponse {
         // Stubs
         overrides.getChanges?.next(changesToken)?.let {
             return it
@@ -397,24 +405,24 @@ public class FakeHealthConnectClient(
                     }
                 }
                 .values
-        val hasMoreChanges = changes.size > pageSizeGetChanges
+        val hasMoreChanges = changes.size > pageSize
         val nextChangesToken =
             if (hasMoreChanges) {
                 // Next page token
-                generateNewToken(timeInToken + pageSizeGetChanges, recordTypes)
+                generateNewToken(timeInToken + pageSize, recordTypes)
             } else {
                 // Future changes token
                 generateNewToken(timeToChangesLastKey + 1, recordTypes)
             }
 
         // Store metadata for new token
-        tokens[nextChangesToken] = tokenInfo.copy(time = tokenInfo.time + pageSizeGetChanges)
+        tokens[nextChangesToken] = tokenInfo.copy(time = tokenInfo.time + pageSize)
 
         return ChangesResponse(
-            changes.take(pageSizeGetChanges).toList(),
+            changes.take(pageSize).toList(),
             hasMore = hasMoreChanges,
             changesTokenExpired = tokenInfo.expired,
-            nextChangesToken = nextChangesToken
+            nextChangesToken = nextChangesToken,
         )
     }
 
@@ -466,5 +474,5 @@ public class FakeHealthConnectClient(
 private data class TokenInfo(
     val time: Long,
     val recordTypes: Set<KClass<out Record>>,
-    val expired: Boolean = false
+    val expired: Boolean = false,
 )

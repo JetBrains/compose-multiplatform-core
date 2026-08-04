@@ -25,6 +25,7 @@ import android.os.Looper
 import android.provider.Settings
 import android.util.Range
 import androidx.annotation.RestrictTo
+import androidx.annotation.VisibleForTesting
 import androidx.core.animation.doOnEnd
 import androidx.core.graphics.toRect
 import androidx.pdf.R
@@ -44,8 +45,8 @@ import androidx.pdf.util.buildPageIndicatorLabel
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class FastScroller(
-    public val fastScrollDrawer: FastScrollDrawer,
-    private val scrollCalculator: FastScrollCalculator
+    @get:VisibleForTesting public val fastScrollDrawer: FastScrollDrawer,
+    private val scrollCalculator: FastScrollCalculator,
 ) {
     // Init position for fastScrollY with the top margin of the scroller.
     internal var fastScrollY: Int = scrollCalculator.scrollerTopMarginPx
@@ -55,6 +56,16 @@ public class FastScroller(
     private var lastScrollY: Int = 0
 
     private var hideValueAnimator: ValueAnimator? = null
+
+    private val handler = Handler(Looper.getMainLooper())
+    private var hideRunnable: Runnable? = null
+
+    internal var shouldAutoHide: Boolean = true
+        set(value) {
+            if (field != value) {
+                field = value
+            }
+        }
 
     internal var isFastScrollerVisible: Boolean = false
         set(value) {
@@ -75,7 +86,6 @@ public class FastScroller(
      * `renderer`.
      *
      * @param canvas The canvas on which to draw the scroller.
-     * @param scrollX The raw horizontal scroll position in pixels.
      * @param scrollY The raw vertical scroll position in pixels.
      * @param viewWidth The width of the view in pixels.
      * @param viewHeight The height of the view in pixels.
@@ -84,30 +94,36 @@ public class FastScroller(
      */
     public fun drawScroller(
         canvas: Canvas,
-        scrollX: Int,
         scrollY: Int,
         viewWidth: Int,
         viewHeight: Int,
         visiblePages: Range<Int>,
-        estimatedFullHeight: Float
+        estimatedFullHeight: Float,
+        paddingRect: Rect,
     ) {
+        val effectiveViewHeight = viewHeight - paddingRect.top - paddingRect.bottom
+        if (
+            !scrollCalculator.canFastScroll(
+                effectiveViewHeight,
+                fastScrollDrawer.thumbHeightPx,
+                estimatedFullHeight,
+            )
+        ) {
+            return
+        }
+
         if (scrollY != lastScrollY) {
             fastScrollY =
                 scrollCalculator.computeThumbPosition(
                     scrollY = scrollY,
-                    viewHeight = viewHeight,
+                    viewHeight = effectiveViewHeight,
                     thumbHeightPx = fastScrollDrawer.thumbHeightPx,
-                    estimatedFullHeight = estimatedFullHeight
+                    estimatedFullHeight = estimatedFullHeight,
                 )
             lastScrollY = scrollY
         }
 
-        fastScrollDrawer.draw(
-            canvas,
-            xOffset = scrollX + viewWidth,
-            yOffset = scrollY + fastScrollY,
-            visiblePages
-        )
+        fastScrollDrawer.draw(canvas, xOffset = viewWidth, yOffset = fastScrollY, visiblePages)
     }
 
     /**
@@ -125,33 +141,59 @@ public class FastScroller(
     public fun viewScrollPositionFromFastScroller(
         scrollY: Float,
         viewHeight: Int,
-        estimatedFullHeight: Float
+        estimatedFullHeight: Float,
+        paddingRect: Rect,
     ): Int {
+        val effectiveViewHeight = viewHeight - paddingRect.top - paddingRect.bottom
+        val effectiveScrollY = scrollY - paddingRect.top
+
+        if (
+            !scrollCalculator.canFastScroll(
+                effectiveViewHeight,
+                fastScrollDrawer.thumbHeightPx,
+                estimatedFullHeight,
+            )
+        ) {
+            return 0
+        }
+
         fastScrollY =
             scrollCalculator.constrainScrollPosition(
-                scrollY,
-                viewHeight,
-                fastScrollDrawer.thumbHeightPx
+                effectiveScrollY,
+                effectiveViewHeight,
+                fastScrollDrawer.thumbHeightPx,
             )
 
         return scrollCalculator.computeViewScroll(
             fastScrollY = fastScrollY,
-            viewHeight = viewHeight,
+            viewHeight = effectiveViewHeight,
             thumbHeightPx = fastScrollDrawer.thumbHeightPx,
-            estimatedFullHeight = estimatedFullHeight
+            estimatedFullHeight = estimatedFullHeight,
         )
     }
 
-    public fun show(onAnimationUpdate: () -> Unit) {
-        hideValueAnimator?.cancel()
+    public fun show(onAnimationEnd: () -> Unit) {
+        cancelHide()
         isFastScrollerVisible = true
         fastScrollDrawer.alpha = FastScrollDrawer.VISIBLE_ALPHA
-        animate(onAnimationUpdate)
+        if (shouldAutoHide) {
+            animate(onAnimationEnd)
+        } else {
+            onAnimationEnd()
+        }
     }
 
     public fun hide() {
-        hideValueAnimator?.cancel()
+        cancelHide()
         fastScrollDrawer.alpha = FastScrollDrawer.GONE_ALPHA
+        isFastScrollerVisible = false
+    }
+
+    private fun cancelHide() {
+        hideValueAnimator?.cancel()
+        hideValueAnimator = null
+        hideRunnable?.let { handler.removeCallbacks(it) }
+        hideRunnable = null
     }
 
     private fun animate(onAnimationUpdate: () -> Unit) {
@@ -171,15 +213,17 @@ public class FastScroller(
         } else {
             // Handle when animations are disabled
             fastScrollDrawer.alpha = FastScrollDrawer.VISIBLE_ALPHA
-            isFastScrollerVisible = false
-            Handler(Looper.getMainLooper())
-                .postDelayed(
-                    {
-                        fastScrollDrawer.alpha = FastScrollDrawer.GONE_ALPHA
-                        onAnimationUpdate()
-                    },
-                    HIDE_DELAY_MS + HIDE_ANIMATION_DURATION_MILLIS
-                ) // Simulate total time
+            val runnable = Runnable {
+                fastScrollDrawer.alpha = FastScrollDrawer.GONE_ALPHA
+                isFastScrollerVisible = false
+                onAnimationUpdate()
+                hideRunnable = null
+            }
+            hideRunnable = runnable
+            handler.postDelayed(
+                runnable,
+                HIDE_DELAY_MS + HIDE_ANIMATION_DURATION_MILLIS,
+            ) // Simulate total time
         }
     }
 
@@ -189,7 +233,7 @@ public class FastScroller(
         return Settings.Global.getFloat(
             fastScrollDrawer.context.contentResolver,
             Settings.Global.ANIMATOR_DURATION_SCALE,
-            1f
+            1f,
         ) != 0f
     }
 
@@ -202,7 +246,8 @@ public class FastScroller(
      * @return True if the touch event is within the bounds of the scrubber, false otherwise.
      */
     internal fun isPointOnThumb(x: Float, y: Float, viewWidth: Int): Boolean {
-        val thumbX = viewWidth - fastScrollDrawer.thumbWidthPx.toFloat()
+        val thumbX =
+            viewWidth - (fastScrollDrawer.thumbWidthPx.toFloat() + fastScrollDrawer.thumbMarginEnd)
         val thumbYRange =
             fastScrollY.toFloat()..(fastScrollY.toFloat() +
                     fastScrollDrawer.thumbHeightPx.toFloat())
@@ -227,7 +272,7 @@ public class FastScroller(
         y: Float,
         pageCount: Int,
         viewWidth: Int,
-        scrollX: Int
+        scrollX: Int,
     ): Boolean {
         val textLabel =
             buildPageIndicatorLabel(
@@ -235,7 +280,7 @@ public class FastScroller(
                 visiblePages,
                 pageCount,
                 R.string.label_page_single,
-                R.string.label_page_range
+                R.string.label_page_range,
             )
         val indicatorRect =
             fastScrollDrawer.calculatePageIndicatorBounds(

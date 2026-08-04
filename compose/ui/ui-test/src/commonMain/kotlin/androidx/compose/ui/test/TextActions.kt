@@ -25,7 +25,7 @@ import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.ImeAction
 
 /** Clears the text in this node in similar way to IME. */
-fun SemanticsNodeInteraction.performTextClearance() {
+public fun SemanticsNodeInteraction.performTextClearance() {
     performTextReplacement("")
 }
 
@@ -34,7 +34,7 @@ fun SemanticsNodeInteraction.performTextClearance() {
  *
  * @param text Text to send.
  */
-fun SemanticsNodeInteraction.performTextInput(text: String) {
+public fun SemanticsNodeInteraction.performTextInput(text: String) {
     tryPerformAccessibilityChecks()
     getNodeAndFocus()
     performSemanticsAction(SemanticsActions.InsertTextAtCursor) { it(AnnotatedString(text)) }
@@ -47,7 +47,7 @@ fun SemanticsNodeInteraction.performTextInput(text: String) {
  */
 // Maintained for binary compatibility.
 @Deprecated("Use the non deprecated overload", level = DeprecationLevel.HIDDEN)
-fun SemanticsNodeInteraction.performTextInputSelection(selection: TextRange) {
+public fun SemanticsNodeInteraction.performTextInputSelection(selection: TextRange) {
     performTextInputSelection(selection, relativeToOriginalText = true)
 }
 
@@ -58,7 +58,7 @@ fun SemanticsNodeInteraction.performTextInputSelection(selection: TextRange) {
  * @param relativeToOriginalText `true` if the selection is relative to the untransformed, original
  *   text. `false` if it is relative to the visual text following any transformations.
  */
-fun SemanticsNodeInteraction.performTextInputSelection(
+public fun SemanticsNodeInteraction.performTextInputSelection(
     selection: TextRange,
     relativeToOriginalText: Boolean = true,
 ) {
@@ -78,7 +78,7 @@ fun SemanticsNodeInteraction.performTextInputSelection(
  *
  * @param text Text to send.
  */
-fun SemanticsNodeInteraction.performTextReplacement(text: String) {
+public fun SemanticsNodeInteraction.performTextReplacement(text: String) {
     getNodeAndFocus()
     performSemanticsAction(SemanticsActions.SetText) { it(AnnotatedString(text)) }
 }
@@ -94,7 +94,7 @@ fun SemanticsNodeInteraction.performTextReplacement(text: String) {
  *   an input connection (e.g. does not define [ImeAction][SemanticsProperties.ImeAction] or
  *   [OnImeAction] or is not focused).
  */
-fun SemanticsNodeInteraction.performImeAction() {
+public fun SemanticsNodeInteraction.performImeAction() {
     val errorOnFail = "Failed to perform IME action."
     assert(hasPerformImeAction()) { errorOnFail }
     assert(!hasImeAction(ImeAction.Default)) { errorOnFail }
@@ -108,7 +108,7 @@ fun SemanticsNodeInteraction.performImeAction() {
                     buildGeneralErrorMessage(
                         "Failed to perform IME action, handler returned false.",
                         selector,
-                        node
+                        node,
                     )
                 )
             }
@@ -118,7 +118,7 @@ fun SemanticsNodeInteraction.performImeAction() {
 
 private fun SemanticsNodeInteraction.getNodeAndFocus(
     errorOnFail: String = "Failed to perform text input.",
-    requireEditable: Boolean = true
+    requireEditable: Boolean = true,
 ): SemanticsNode {
     tryPerformAccessibilityChecks()
     val node = fetchSemanticsNode(errorOnFail)
@@ -140,5 +140,5 @@ private fun SemanticsNodeInteraction.getNodeAndFocus(
 internal expect inline fun <R> wrapAssertionErrorsWithNodeInfo(
     selector: SemanticsSelector,
     node: SemanticsNode,
-    block: () -> R
+    block: () -> R,
 ): R

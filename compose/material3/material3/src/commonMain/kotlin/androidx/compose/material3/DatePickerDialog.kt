@@ -47,9 +47,8 @@ import androidx.compose.ui.window.DialogProperties
  * @param properties typically platform specific properties to further configure the dialog
  * @param content the content of the dialog (i.e. a [DatePicker], for example)
  */
-@ExperimentalMaterial3Api
 @Composable
-expect fun DatePickerDialog(
+public expect fun DatePickerDialog(
     onDismissRequest: () -> Unit,
     confirmButton: @Composable () -> Unit,
     modifier: Modifier = Modifier,
@@ -58,5 +57,5 @@ expect fun DatePickerDialog(
     tonalElevation: Dp = DatePickerDefaults.TonalElevation,
     colors: DatePickerColors = DatePickerDefaults.colors(),
     properties: DialogProperties = DialogProperties(usePlatformDefaultWidth = false),
-    content: @Composable ColumnScope.() -> Unit
+    content: @Composable ColumnScope.() -> Unit,
 )

@@ -13,6 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@file:Suppress("DEPRECATION")
+
 package androidx.camera.integration.core.camera2
 
 import android.content.Context
@@ -31,11 +33,11 @@ import android.util.Rational
 import android.util.Size
 import android.view.Surface
 import androidx.camera.camera2.Camera2Config
-import androidx.camera.camera2.internal.DisplayInfoManager
+import androidx.camera.camera2.compat.quirk.AspectRatioLegacyApi21Quirk
+import androidx.camera.camera2.compat.quirk.DeviceQuirks
+import androidx.camera.camera2.compat.quirk.ExtraCroppingQuirk
+import androidx.camera.camera2.impl.DisplayInfoManager
 import androidx.camera.camera2.interop.Camera2Interop
-import androidx.camera.camera2.pipe.integration.CameraPipeConfig
-import androidx.camera.camera2.pipe.integration.compat.quirk.DeviceQuirks
-import androidx.camera.camera2.pipe.integration.compat.quirk.ExtraCroppingQuirk
 import androidx.camera.core.AspectRatio
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.CameraXConfig
@@ -60,7 +62,6 @@ import androidx.camera.core.resolutionselector.ResolutionSelector.PREFER_HIGHER_
 import androidx.camera.core.resolutionselector.ResolutionStrategy
 import androidx.camera.integration.core.util.CameraInfoUtil
 import androidx.camera.lifecycle.ProcessCameraProvider
-import androidx.camera.testing.impl.CameraPipeConfigTestRule
 import androidx.camera.testing.impl.CameraUtil
 import androidx.camera.testing.impl.CameraUtil.PreTestCameraIdList
 import androidx.camera.testing.impl.ExtensionsUtil
@@ -105,14 +106,7 @@ import org.junit.runners.Parameterized
 
 @LargeTest
 @RunWith(Parameterized::class)
-@SdkSuppress(minSdkVersion = 21)
 class PreviewTest(private val implName: String, private val cameraConfig: CameraXConfig) {
-    @get:Rule
-    val cameraPipeConfigTestRule =
-        CameraPipeConfigTestRule(
-            active = implName == CameraPipeConfig::class.simpleName,
-        )
-
     @get:Rule
     val cameraRule =
         CameraUtil.grantCameraPermissionAndPreTestAndPostTest(PreTestCameraIdList(cameraConfig))
@@ -131,16 +125,12 @@ class PreviewTest(private val implName: String, private val cameraConfig: Camera
 
         @JvmStatic
         @Parameterized.Parameters(name = "{0}")
-        fun data() =
-            listOf(
-                arrayOf(Camera2Config::class.simpleName, Camera2Config.defaultConfig()),
-                arrayOf(CameraPipeConfig::class.simpleName, CameraPipeConfig.defaultConfig())
-            )
+        fun data() = listOf(arrayOf(Camera2Config::class.simpleName, Camera2Config.defaultConfig()))
     }
 
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
     private lateinit var cameraProvider: ProcessCameraProvider
-    private val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
+    private lateinit var cameraSelector: CameraSelector
     private var previewResolution: Size? = null
     private var frameSemaphore: Semaphore? = null
     private val context: Context = ApplicationProvider.getApplicationContext()
@@ -149,7 +139,7 @@ class PreviewTest(private val implName: String, private val cameraConfig: Camera
     @Before
     @Throws(ExecutionException::class, InterruptedException::class)
     fun setUp() = runBlocking {
-        assumeTrue(CameraUtil.hasCameraWithLensFacing(cameraSelector.lensFacing!!))
+        cameraSelector = CameraUtil.assumeFirstAvailableCameraSelector()
 
         ProcessCameraProvider.configureInstance(cameraConfig)
         cameraProvider = ProcessCameraProvider.getInstance(context).await()
@@ -160,7 +150,10 @@ class PreviewTest(private val implName: String, private val cameraConfig: Camera
     @After
     @Throws(ExecutionException::class, InterruptedException::class, TimeoutException::class)
     fun tearDown() {
-        cameraProvider.shutdownAsync()[10000, TimeUnit.MILLISECONDS]
+        if (::cameraProvider.isInitialized) {
+            cameraProvider.shutdownAsync()[10000, TimeUnit.MILLISECONDS]
+        }
+        createdExecutors.forEach { it.shutdown() }
     }
 
     // ======================================================
@@ -176,7 +169,7 @@ class PreviewTest(private val implName: String, private val cameraConfig: Camera
                 val surfaceTexture = SurfaceTexture(0)
                 surfaceTexture.setDefaultBufferSize(
                     request.resolution.width,
-                    request.resolution.height
+                    request.resolution.height,
                 )
                 surfaceTexture.detachFromGLContext()
                 val surface = Surface(surfaceTexture)
@@ -212,8 +205,8 @@ class PreviewTest(private val implName: String, private val cameraConfig: Camera
                     frameAvailableListener = { frameSemaphore!!.release() },
                     resultListener = { result ->
                         resultDeferred.completeOnceOnly(result.resultCode)
-                    }
-                )
+                    },
+                ),
             )
             cameraProvider.bindToLifecycle(lifecycleOwner, cameraSelector, preview)
         }
@@ -261,8 +254,8 @@ class PreviewTest(private val implName: String, private val cameraConfig: Camera
                 workExecutorWithNamedThread,
                 getSurfaceProvider(
                     threadNameConsumer = { newValue: String -> threadName.set(newValue) },
-                    frameAvailableListener = { frameSemaphore!!.release() }
-                )
+                    frameAvailableListener = { frameSemaphore!!.release() },
+                ),
             )
 
             // Act.
@@ -308,8 +301,8 @@ class PreviewTest(private val implName: String, private val cameraConfig: Camera
                 workExecutorWithNamedThread,
                 getSurfaceProvider(
                     threadNameConsumer = { newValue: String -> threadName.set(newValue) },
-                    frameAvailableListener = { frameSemaphore!!.release() }
-                )
+                    frameAvailableListener = { frameSemaphore!!.release() },
+                ),
             )
         }
 
@@ -401,9 +394,9 @@ class PreviewTest(private val implName: String, private val cameraConfig: Camera
                         // RESULT_WILL_NOT_PROVIDE_SURFACE will be notified.
                         request.provideSurface(surface, CameraXExecutors.directExecutor()) { result
                             ->
+                            surface.release()
                             resultDeferred.completeOnceOnly(result.resultCode)
                         }
-
                         withTimeoutOrNull(RESULT_TIMEOUT) { resultDeferred.await() }
                             ?: fail("Timed out while waiting for surface result.")
                     } ?: fail("Timed out while waiting for surface request.")
@@ -425,7 +418,7 @@ class PreviewTest(private val implName: String, private val cameraConfig: Camera
                         SurfaceTextureProvider.createAutoDrainingSurfaceTextureAsync(
                                 surfaceRequest.resolution.width,
                                 surfaceRequest.resolution.height,
-                                { frameSemaphore!!.release() }
+                                { frameSemaphore!!.release() },
                             )
                             .await()
                     val surface = Surface(surfaceTextureHolder!!.surfaceTexture)
@@ -436,15 +429,15 @@ class PreviewTest(private val implName: String, private val cameraConfig: Camera
                             surfaceTextureHolder.close()
                             surface.release()
                             resultDeferred1.completeOnceOnly(result.resultCode)
-                        }
+                        },
                     )
 
                     // Invoking provideSurface twice is a no-op and the result will be
                     // RESULT_SURFACE_ALREADY_PROVIDED
-                    surfaceRequest.provideSurface(
-                        Surface(SurfaceTexture(1)),
-                        CameraXExecutors.directExecutor()
-                    ) { result ->
+                    val surface2 = Surface(SurfaceTexture(1))
+                    surfaceRequest.provideSurface(surface2, CameraXExecutors.directExecutor()) {
+                        result ->
+                        surface2.release()
                         resultDeferred2.completeOnceOnly(result.resultCode)
                     }
                 }
@@ -484,10 +477,9 @@ class PreviewTest(private val implName: String, private val cameraConfig: Camera
 
         val surfaceRequest = surfaceRequestDeferred.await()
         instrumentation.runOnMainSync {
-            surfaceRequest.provideSurface(
-                Surface(SurfaceTexture(0)),
-                CameraXExecutors.directExecutor()
-            ) { result ->
+            val surface = Surface(SurfaceTexture(0))
+            surfaceRequest.provideSurface(surface, CameraXExecutors.directExecutor()) { result ->
+                surface.release()
                 resultDeferred.completeOnceOnly(result.resultCode)
             }
         }
@@ -509,6 +501,7 @@ class PreviewTest(private val implName: String, private val cameraConfig: Camera
                     val surface = Surface(SurfaceTexture(0))
                     surfaceRequest.provideSurface(surface, CameraXExecutors.directExecutor()) {
                         result ->
+                        surface.release()
                         resultDeferred1.completeOnceOnly(result.resultCode)
                     }
 
@@ -518,7 +511,7 @@ class PreviewTest(private val implName: String, private val cameraConfig: Camera
                     preview.setSurfaceProvider(
                         getSurfaceProvider(
                             frameAvailableListener = { frameSemaphore!!.release() },
-                            resultListener = { resultDeferred2.completeOnceOnly(it.resultCode) }
+                            resultListener = { resultDeferred2.completeOnceOnly(it.resultCode) },
                         )
                     )
                 }
@@ -531,7 +524,7 @@ class PreviewTest(private val implName: String, private val cameraConfig: Camera
             // Wait until preview gets frame.
             frameSemaphore!!.verifyFramesReceived(
                 frameCount = FRAMES_TO_VERIFY,
-                timeoutInSeconds = 5
+                timeoutInSeconds = 5,
             )
 
             instrumentation.runOnMainSync { cameraProvider.unbindAll() }
@@ -573,7 +566,7 @@ class PreviewTest(private val implName: String, private val cameraConfig: Camera
                             SurfaceTextureProvider.createAutoDrainingSurfaceTextureAsync(
                                     surfaceRequest.resolution.width,
                                     surfaceRequest.resolution.height,
-                                    { frameSemaphore!!.release() }
+                                    { frameSemaphore!!.release() },
                                 )
                                 .await()
                         val surface = Surface(surfaceTextureHolder.surfaceTexture)
@@ -613,7 +606,7 @@ class PreviewTest(private val implName: String, private val cameraConfig: Camera
                 CameraXExecutors.mainThreadExecutor(),
                 SurfaceTextureProvider.createAutoDrainingSurfaceTextureProvider {
                     frameSemaphore!!.release()
-                }
+                },
             )
             cameraProvider.bindToLifecycle(lifecycleOwner, cameraSelector, preview)
         }
@@ -645,11 +638,11 @@ class PreviewTest(private val implName: String, private val cameraConfig: Camera
                 { request ->
                     request.provideSurface(
                         Surface(SurfaceTexture(0)).also { it.release() }, // invalid surface
-                        CameraXExecutors.directExecutor()
+                        CameraXExecutors.directExecutor(),
                     ) { result ->
                         resultDeferred1.completeOnceOnly(result.resultCode)
                     }
-                }
+                },
             )
 
             cameraProvider.bindToLifecycle(lifecycleOwner, cameraSelector, preview)
@@ -729,7 +722,7 @@ class PreviewTest(private val implName: String, private val cameraConfig: Camera
 
     private fun isAspectRatioResolutionSupported(
         targetAspectRatioValue: Float,
-        isLegacyApi: Boolean = false
+        isLegacyApi: Boolean = false,
     ): Boolean {
         val cameraCharacteristics =
             (cameraProvider.getCameraInfo(cameraSelector) as CameraInfoInternal)
@@ -790,29 +783,14 @@ class PreviewTest(private val implName: String, private val cameraConfig: Camera
     }
 
     private fun hasExtraCroppingQuirk(): Boolean {
-        return (implName.contains(CameraPipeConfig::class.simpleName!!) &&
-            DeviceQuirks[ExtraCroppingQuirk::class.java] != null) ||
-            androidx.camera.camera2.internal.compat.quirk.DeviceQuirks.get(
-                androidx.camera.camera2.internal.compat.quirk.ExtraCroppingQuirk::class.java
-            ) != null
+        return DeviceQuirks.get(ExtraCroppingQuirk::class.java) != null
     }
 
     // Checks whether it is the device for AspectRatioLegacyApi21Quirk
     private fun hasAspectRatioLegacyApi21Quirk(): Boolean {
         val quirks =
             (cameraProvider.getCameraInfo(cameraSelector) as CameraInfoInternal).cameraQuirks
-        return if (implName == CameraPipeConfig::class.simpleName) {
-            quirks.contains(
-                androidx.camera.camera2.pipe.integration.compat.quirk
-                        .AspectRatioLegacyApi21Quirk::class
-                    .java
-            )
-        } else {
-            quirks.contains(
-                androidx.camera.camera2.internal.compat.quirk.AspectRatioLegacyApi21Quirk::class
-                    .java
-            )
-        }
+        return quirks.contains(AspectRatioLegacyApi21Quirk::class.java)
     }
 
     @Suppress("DEPRECATION") // legacy resolution API
@@ -838,7 +816,7 @@ class PreviewTest(private val implName: String, private val cameraConfig: Camera
             cameraProvider.bindToLifecycle(
                 lifecycleOwner,
                 CameraSelector.DEFAULT_BACK_CAMERA,
-                useCase
+                useCase,
             )
 
             assertThat(
@@ -929,10 +907,10 @@ class PreviewTest(private val implName: String, private val cameraConfig: Camera
                     request.setTransformationInfoListener(CameraXExecutors.directExecutor()) {
                         transformationInfoDeferred.complete(it)
                     }
-                    request.provideSurface(
-                        Surface(SurfaceTexture(0)),
-                        CameraXExecutors.directExecutor()
-                    ) {}
+                    val surface = Surface(SurfaceTexture(0))
+                    request.provideSurface(surface, CameraXExecutors.directExecutor()) {
+                        surface.release()
+                    }
                     surfaceProvidedDeferred.complete(request)
                 }
 
@@ -954,7 +932,7 @@ class PreviewTest(private val implName: String, private val cameraConfig: Camera
     fun viewPort_OverwriteTransformation() = runBlocking {
         // Arrange.
         val rotation =
-            if (CameraUtil.getSensorOrientation(CameraSelector.LENS_FACING_BACK)!! % 180 != 0)
+            if (CameraUtil.getSensorOrientation(cameraSelector.lensFacing!!)!! % 180 != 0)
                 Surface.ROTATION_90
             else Surface.ROTATION_0
         val transformationInfoDeferred = CompletableDeferred<TransformationInfo>()
@@ -970,11 +948,7 @@ class PreviewTest(private val implName: String, private val cameraConfig: Camera
             }
             val useCaseGroup =
                 UseCaseGroup.Builder().setViewPort(viewPort).addUseCase(preview).build()
-            cameraProvider.bindToLifecycle(
-                lifecycleOwner,
-                CameraSelector.DEFAULT_BACK_CAMERA,
-                useCaseGroup
-            )
+            cameraProvider.bindToLifecycle(lifecycleOwner, cameraSelector, useCaseGroup)
         }
         val transformationInfo = withTimeoutOrNull(5000) { transformationInfoDeferred.await() }
 
@@ -982,7 +956,7 @@ class PreviewTest(private val implName: String, private val cameraConfig: Camera
         assertThat(
                 Rational(
                         transformationInfo!!.cropRect.width(),
-                        transformationInfo.cropRect.height()
+                        transformationInfo.cropRect.height(),
                     )
                     .toFloat()
             )
@@ -1017,7 +991,7 @@ class PreviewTest(private val implName: String, private val cameraConfig: Camera
                     frameAvailableListener = { frameSemaphore!!.release() },
                     resultListener = { result ->
                         resultDeferred.completeOnceOnly(result.resultCode)
-                    }
+                    },
                 )
             )
             // This is the first time the use case bound to the lifecycle.
@@ -1051,7 +1025,8 @@ class PreviewTest(private val implName: String, private val cameraConfig: Camera
     @Test
     @Throws(InterruptedException::class)
     fun useCaseCanBeReusedInDifferentCamera() = runBlocking {
-        assumeTrue(CameraUtil.hasCameraWithLensFacing(CameraSelector.LENS_FACING_FRONT))
+        val cameraSelectors = CameraUtil.getAvailableCameraSelectors()
+        assumeTrue("No enough cameras to test.", cameraSelectors.size >= 2)
 
         val preview = Preview.Builder().build()
         var resultDeferred = CompletableDeferred<Int>()
@@ -1061,15 +1036,11 @@ class PreviewTest(private val implName: String, private val cameraConfig: Camera
                     frameAvailableListener = { frameSemaphore!!.release() },
                     resultListener = { result ->
                         resultDeferred.completeOnceOnly(result.resultCode)
-                    }
+                    },
                 )
             )
             // This is the first time the use case bound to the lifecycle.
-            cameraProvider.bindToLifecycle(
-                lifecycleOwner,
-                CameraSelector.DEFAULT_BACK_CAMERA,
-                preview
-            )
+            cameraProvider.bindToLifecycle(lifecycleOwner, cameraSelectors[0], preview)
         }
 
         // Check the frame available callback is called.
@@ -1087,11 +1058,7 @@ class PreviewTest(private val implName: String, private val cameraConfig: Camera
 
         instrumentation.runOnMainSync {
             // Rebind the use case to different camera.
-            cameraProvider.bindToLifecycle(
-                lifecycleOwner,
-                CameraSelector.DEFAULT_FRONT_CAMERA,
-                preview
-            )
+            cameraProvider.bindToLifecycle(lifecycleOwner, cameraSelectors[1], preview)
         }
 
         // Check the frame available callback can be called after reusing the use case.
@@ -1105,13 +1072,12 @@ class PreviewTest(private val implName: String, private val cameraConfig: Camera
     // Section 4: ResolutionSelector
     // ======================================================
 
-    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.M)
     @Test
     fun verifyHighResolutionIsDisabledForPreview() = runBlocking {
         val highResolutionOutputSizes =
             CameraInfoUtil.getHighResolutionOutputSizes(
                 cameraProvider.getCameraInfo(CameraSelector.DEFAULT_BACK_CAMERA),
-                ImageFormat.PRIVATE
+                ImageFormat.PRIVATE,
             )
         // Only runs the test when the device has high resolution output sizes
         assumeTrue(highResolutionOutputSizes.isNotEmpty())
@@ -1221,13 +1187,8 @@ class PreviewTest(private val implName: String, private val cameraConfig: Camera
     @Test
     fun defaultMaxResolutionCanBeKept_whenResolutionStrategyIsNotSet() =
         runBlocking(Dispatchers.Main) {
-            assumeTrue(CameraUtil.hasCameraWithLensFacing(CameraSelector.LENS_FACING_BACK))
             val useCase = Preview.Builder().build()
-            cameraProvider.bindToLifecycle(
-                lifecycleOwner,
-                CameraSelector.DEFAULT_BACK_CAMERA,
-                useCase
-            )
+            cameraProvider.bindToLifecycle(lifecycleOwner, cameraSelector, useCase)
 
             assertThat(
                     useCase.currentConfig.containsOption(ImageOutputConfig.OPTION_MAX_RESOLUTION)
@@ -1238,7 +1199,6 @@ class PreviewTest(private val implName: String, private val cameraConfig: Camera
     @Test
     fun defaultMaxResolutionCanBeRemoved_whenResolutionStrategyIsSet() =
         runBlocking(Dispatchers.Main) {
-            assumeTrue(CameraUtil.hasCameraWithLensFacing(CameraSelector.LENS_FACING_BACK))
             val useCase =
                 Preview.Builder()
                     .setResolutionSelector(
@@ -1248,11 +1208,7 @@ class PreviewTest(private val implName: String, private val cameraConfig: Camera
                     )
                     .build()
 
-            cameraProvider.bindToLifecycle(
-                lifecycleOwner,
-                CameraSelector.DEFAULT_BACK_CAMERA,
-                useCase
-            )
+            cameraProvider.bindToLifecycle(lifecycleOwner, cameraSelector, useCase)
             assertThat(
                     useCase.currentConfig.containsOption(ImageOutputConfig.OPTION_MAX_RESOLUTION)
                 )
@@ -1272,11 +1228,7 @@ class PreviewTest(private val implName: String, private val cameraConfig: Camera
                             .build()
                     )
                     .build()
-            cameraProvider.bindToLifecycle(
-                lifecycleOwner,
-                CameraSelector.DEFAULT_BACK_CAMERA,
-                useCase
-            )
+            cameraProvider.bindToLifecycle(lifecycleOwner, cameraSelector, useCase)
 
             val resolutionSelector =
                 useCase.currentConfig.retrieveOption(OPTION_RESOLUTION_SELECTOR)
@@ -1299,10 +1251,13 @@ class PreviewTest(private val implName: String, private val cameraConfig: Camera
 
     @Test
     fun sessionErrorListenerReceivesError_getsFrame(): Unit = runBlocking {
+        val cameraSelectors = CameraUtil.getAvailableCameraSelectors()
+        assumeTrue("No enough cameras to test.", cameraSelectors.size >= 2)
+
         // Arrange.
         val preview = Preview.Builder().build()
         withContext(Dispatchers.Main) {
-            cameraProvider.bindToLifecycle(lifecycleOwner, cameraSelector, preview)
+            cameraProvider.bindToLifecycle(lifecycleOwner, cameraSelectors[0], preview)
             // Act.
             preview.surfaceProvider =
                 getSurfaceProvider(frameAvailableListener = { frameSemaphore!!.release() })
@@ -1315,20 +1270,14 @@ class PreviewTest(private val implName: String, private val cameraConfig: Camera
         triggerOnErrorAndVerifyNewImageReceived(initialSessionConfig)
 
         // Rebinds to different camera
-        if (CameraUtil.hasCameraWithLensFacing(CameraSelector.LENS_FACING_FRONT)) {
-            withContext(Dispatchers.Main) {
-                cameraProvider.unbind(preview)
-                cameraProvider.bindToLifecycle(
-                    lifecycleOwner,
-                    CameraSelector.DEFAULT_FRONT_CAMERA,
-                    preview
-                )
-            }
-
-            // Checks that image can be received successfully when onError is received by the old
-            // error listener.
-            triggerOnErrorAndVerifyNewImageReceived(initialSessionConfig)
+        withContext(Dispatchers.Main) {
+            cameraProvider.unbind(preview)
+            cameraProvider.bindToLifecycle(lifecycleOwner, cameraSelectors[1], preview)
         }
+
+        // Checks that image can be received successfully when onError is received by the old
+        // error listener.
+        triggerOnErrorAndVerifyNewImageReceived(initialSessionConfig)
 
         val sessionConfigBeforeValidErrorNotification = preview.sessionConfig
         // Checks that image can be received successfully when onError is received by the new
@@ -1344,7 +1293,7 @@ class PreviewTest(private val implName: String, private val cameraConfig: Camera
         runOnMainSync {
             sessionConfig.errorListener!!.onError(
                 sessionConfig,
-                SessionConfig.SessionError.SESSION_ERROR_UNKNOWN
+                SessionConfig.SessionError.SESSION_ERROR_UNKNOWN,
             )
         }
         // Assert.
@@ -1392,7 +1341,7 @@ class PreviewTest(private val implName: String, private val cameraConfig: Camera
         verifyVideoStabilizationModeInResultAndFramesAvailable(
             cameraSelector = cameraSelector,
             previewBuilder = previewBuilder,
-            expectedMode = CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE_PREVIEW_STABILIZATION
+            expectedMode = CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE_PREVIEW_STABILIZATION,
         )
     }
 
@@ -1417,7 +1366,7 @@ class PreviewTest(private val implName: String, private val cameraConfig: Camera
             cameraSelector = cameraSelector,
             previewBuilder = previewBuilder,
             videoCapture = videoCapture,
-            expectedMode = CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE_OFF
+            expectedMode = CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE_OFF,
         )
     }
 
@@ -1443,12 +1392,11 @@ class PreviewTest(private val implName: String, private val cameraConfig: Camera
                 cameraSelector = cameraSelector,
                 previewBuilder = previewBuilder,
                 videoCapture = videoCapture,
-                expectedMode = CaptureResult.CONTROL_VIDEO_STABILIZATION_MODE_PREVIEW_STABILIZATION
+                expectedMode = CaptureResult.CONTROL_VIDEO_STABILIZATION_MODE_PREVIEW_STABILIZATION,
             )
         }
 
     @Test
-    @SdkSuppress(minSdkVersion = 23)
     fun getPreviewCapabilitiesStabilizationSupportIsCorrect_whenNotSupportedInExtensions() {
         assumeTrue(isPreviewStabilizationModeSupported(CameraSelector.DEFAULT_BACK_CAMERA))
         val sessionProcessor =
@@ -1457,7 +1405,7 @@ class PreviewTest(private val implName: String, private val cameraConfig: Camera
                     listOf(
                         android.util.Pair(
                             CameraCharacteristics.CONTROL_AVAILABLE_VIDEO_STABILIZATION_MODES,
-                            intArrayOf(CameraCharacteristics.CONTROL_VIDEO_STABILIZATION_MODE_OFF)
+                            intArrayOf(CameraCharacteristics.CONTROL_VIDEO_STABILIZATION_MODE_OFF),
                         )
                     )
             )
@@ -1465,7 +1413,7 @@ class PreviewTest(private val implName: String, private val cameraConfig: Camera
             ExtensionsUtil.getCameraSelectorWithSessionProcessor(
                 cameraProvider,
                 CameraSelector.DEFAULT_BACK_CAMERA,
-                sessionProcessor
+                sessionProcessor,
             )
         val capabilities =
             Preview.getPreviewCapabilities(cameraProvider.getCameraInfo(cameraSelector))
@@ -1474,7 +1422,6 @@ class PreviewTest(private val implName: String, private val cameraConfig: Camera
     }
 
     @Test
-    @SdkSuppress(minSdkVersion = 23)
     fun getPreviewCapabilitiesStabilizationSupportIsCorrect_whenSupportedInExtensions() {
         assumeFalse(isPreviewStabilizationModeSupported(CameraSelector.DEFAULT_BACK_CAMERA))
         val sessionProcessor =
@@ -1486,7 +1433,7 @@ class PreviewTest(private val implName: String, private val cameraConfig: Camera
                             intArrayOf(
                                 CameraCharacteristics
                                     .CONTROL_VIDEO_STABILIZATION_MODE_PREVIEW_STABILIZATION
-                            )
+                            ),
                         )
                     )
             )
@@ -1494,7 +1441,7 @@ class PreviewTest(private val implName: String, private val cameraConfig: Camera
             ExtensionsUtil.getCameraSelectorWithSessionProcessor(
                 cameraProvider,
                 CameraSelector.DEFAULT_BACK_CAMERA,
-                sessionProcessor
+                sessionProcessor,
             )
         val capabilities =
             Preview.getPreviewCapabilities(cameraProvider.getCameraInfo(cameraSelector))
@@ -1503,7 +1450,6 @@ class PreviewTest(private val implName: String, private val cameraConfig: Camera
     }
 
     @Test
-    @SdkSuppress(minSdkVersion = 23)
     fun previewStabilizationCanBeSet_whenSupportedInExtensions() = runBlocking {
         assumeTrue(isPreviewStabilizationModeSupported(CameraSelector.DEFAULT_BACK_CAMERA))
         val sessionProcessor =
@@ -1515,7 +1461,7 @@ class PreviewTest(private val implName: String, private val cameraConfig: Camera
                             intArrayOf(
                                 CameraCharacteristics
                                     .CONTROL_VIDEO_STABILIZATION_MODE_PREVIEW_STABILIZATION
-                            )
+                            ),
                         )
                     )
             )
@@ -1523,19 +1469,19 @@ class PreviewTest(private val implName: String, private val cameraConfig: Camera
             ExtensionsUtil.getCameraSelectorWithSessionProcessor(
                 cameraProvider,
                 CameraSelector.DEFAULT_BACK_CAMERA,
-                sessionProcessor
+                sessionProcessor,
             )
 
         val previewBuilder = Preview.Builder().setPreviewStabilizationEnabled(true)
         verifyVideoStabilizationModeInResultAndFramesAvailable(
             cameraSelector = cameraSelectorWithExtensions,
             previewBuilder = previewBuilder,
-            expectedMode = CaptureResult.CONTROL_VIDEO_STABILIZATION_MODE_PREVIEW_STABILIZATION
+            expectedMode = CaptureResult.CONTROL_VIDEO_STABILIZATION_MODE_PREVIEW_STABILIZATION,
         )
     }
 
     @Test
-    @SdkSuppress(minSdkVersion = 21, maxSdkVersion = 32)
+    @SdkSuppress(maxSdkVersion = 32)
     fun setMirrorModeIsNoOp_priorToAPI33() = runBlocking {
         // Skip for b/404348154
         assumeFalse("Skip test for API 26.", Build.VERSION.SDK_INT == 26)
@@ -1543,14 +1489,14 @@ class PreviewTest(private val implName: String, private val cameraConfig: Camera
             CameraSelector.DEFAULT_BACK_CAMERA,
             mirrorMode = MirrorMode.MIRROR_MODE_ON,
             expectedMirrorMode = MirrorMode.MIRROR_MODE_ON_FRONT_ONLY,
-            expectedIsMirroringInTransformationInfo = false
+            expectedIsMirroringInTransformationInfo = false,
         )
 
         verifyMirrorMode(
             CameraSelector.DEFAULT_FRONT_CAMERA,
             mirrorMode = MirrorMode.MIRROR_MODE_ON,
             expectedMirrorMode = MirrorMode.MIRROR_MODE_ON_FRONT_ONLY,
-            expectedIsMirroringInTransformationInfo = true
+            expectedIsMirroringInTransformationInfo = true,
         )
     }
 
@@ -1561,14 +1507,14 @@ class PreviewTest(private val implName: String, private val cameraConfig: Camera
             CameraSelector.DEFAULT_BACK_CAMERA,
             mirrorMode = null, // don't set the mirror mode
             expectedMirrorMode = MirrorMode.MIRROR_MODE_ON_FRONT_ONLY,
-            expectedIsMirroringInTransformationInfo = false
+            expectedIsMirroringInTransformationInfo = false,
         )
 
         verifyMirrorMode(
             CameraSelector.DEFAULT_FRONT_CAMERA,
             mirrorMode = null, // don't set the mirror mode
             expectedMirrorMode = MirrorMode.MIRROR_MODE_ON_FRONT_ONLY,
-            expectedIsMirroringInTransformationInfo = true
+            expectedIsMirroringInTransformationInfo = true,
         )
     }
 
@@ -1579,14 +1525,14 @@ class PreviewTest(private val implName: String, private val cameraConfig: Camera
             CameraSelector.DEFAULT_BACK_CAMERA,
             mirrorMode = MirrorMode.MIRROR_MODE_ON,
             expectedMirrorMode = MirrorMode.MIRROR_MODE_ON,
-            expectedIsMirroringInTransformationInfo = true
+            expectedIsMirroringInTransformationInfo = true,
         )
 
         verifyMirrorMode(
             CameraSelector.DEFAULT_FRONT_CAMERA,
             mirrorMode = MirrorMode.MIRROR_MODE_ON,
             expectedMirrorMode = MirrorMode.MIRROR_MODE_ON,
-            expectedIsMirroringInTransformationInfo = true
+            expectedIsMirroringInTransformationInfo = true,
         )
     }
 
@@ -1597,14 +1543,14 @@ class PreviewTest(private val implName: String, private val cameraConfig: Camera
             CameraSelector.DEFAULT_BACK_CAMERA,
             mirrorMode = MirrorMode.MIRROR_MODE_OFF,
             expectedMirrorMode = MirrorMode.MIRROR_MODE_OFF,
-            expectedIsMirroringInTransformationInfo = false
+            expectedIsMirroringInTransformationInfo = false,
         )
 
         verifyMirrorMode(
             CameraSelector.DEFAULT_FRONT_CAMERA,
             mirrorMode = MirrorMode.MIRROR_MODE_OFF,
             expectedMirrorMode = MirrorMode.MIRROR_MODE_OFF,
-            expectedIsMirroringInTransformationInfo = false
+            expectedIsMirroringInTransformationInfo = false,
         )
     }
 
@@ -1615,14 +1561,14 @@ class PreviewTest(private val implName: String, private val cameraConfig: Camera
             CameraSelector.DEFAULT_BACK_CAMERA,
             mirrorMode = MirrorMode.MIRROR_MODE_ON_FRONT_ONLY,
             expectedMirrorMode = MirrorMode.MIRROR_MODE_ON_FRONT_ONLY,
-            expectedIsMirroringInTransformationInfo = false
+            expectedIsMirroringInTransformationInfo = false,
         )
 
         verifyMirrorMode(
             CameraSelector.DEFAULT_FRONT_CAMERA,
             MirrorMode.MIRROR_MODE_ON_FRONT_ONLY,
             expectedMirrorMode = MirrorMode.MIRROR_MODE_ON_FRONT_ONLY,
-            expectedIsMirroringInTransformationInfo = true
+            expectedIsMirroringInTransformationInfo = true,
         )
     }
 
@@ -1630,7 +1576,7 @@ class PreviewTest(private val implName: String, private val cameraConfig: Camera
         cameraSelector: CameraSelector,
         mirrorMode: Int? = null,
         expectedMirrorMode: Int,
-        expectedIsMirroringInTransformationInfo: Boolean
+        expectedIsMirroringInTransformationInfo: Boolean,
     ) {
         val preview =
             Preview.Builder()
@@ -1648,10 +1594,10 @@ class PreviewTest(private val implName: String, private val cameraConfig: Camera
                             CameraXExecutors.directExecutor(),
                             { transformationInfo ->
                                 transformationInfoDeferred.complete(transformationInfo)
-                            }
+                            },
                         )
                     },
-                    {}
+                    {},
                 )
             cameraProvider.bindToLifecycle(lifecycleOwner, cameraSelector, preview)
         }
@@ -1667,7 +1613,7 @@ class PreviewTest(private val implName: String, private val cameraConfig: Camera
         cameraSelector: CameraSelector,
         previewBuilder: Preview.Builder,
         videoCapture: VideoCapture<Recorder>? = null,
-        expectedMode: Int
+        expectedMode: Int,
     ) {
         val captureResultDeferred = CompletableDeferred<TotalCaptureResult>()
         Camera2Interop.Extender(previewBuilder)
@@ -1676,7 +1622,7 @@ class PreviewTest(private val implName: String, private val cameraConfig: Camera
                     override fun onCaptureCompleted(
                         session: CameraCaptureSession,
                         request: CaptureRequest,
-                        result: TotalCaptureResult
+                        result: TotalCaptureResult,
                     ) {
                         captureResultDeferred.complete(result)
                     }
@@ -1693,7 +1639,7 @@ class PreviewTest(private val implName: String, private val cameraConfig: Camera
             cameraProvider.bindToLifecycle(
                 lifecycleOwner,
                 cameraSelector,
-                useCaseGroupBuilder.build()
+                useCaseGroupBuilder.build(),
             )
         }
 
@@ -1777,7 +1723,7 @@ class PreviewTest(private val implName: String, private val cameraConfig: Camera
         val previewBuilder = Preview.Builder().setTargetFrameRate(fpsToVerify)
         verifyFrameRateRangeInResultAndFramesAvailable(
             previewBuilder = previewBuilder,
-            expectedFpsRange = fpsToVerify
+            expectedFpsRange = fpsToVerify,
         )
     }
 
@@ -1819,13 +1765,13 @@ class PreviewTest(private val implName: String, private val cameraConfig: Camera
 
         verifyFrameRateRangeInResultAndFramesAvailable(
             previewBuilder = previewBuilder,
-            expectedFpsRange = fpsToVerify
+            expectedFpsRange = fpsToVerify,
         )
     }
 
     private suspend fun verifyFrameRateRangeInResultAndFramesAvailable(
         previewBuilder: Preview.Builder,
-        expectedFpsRange: Range<Int>
+        expectedFpsRange: Range<Int>,
     ) {
         val captureResultDeferred = CompletableDeferred<TotalCaptureResult>()
         Camera2Interop.Extender(previewBuilder)
@@ -1834,7 +1780,7 @@ class PreviewTest(private val implName: String, private val cameraConfig: Camera
                     override fun onCaptureCompleted(
                         session: CameraCaptureSession,
                         request: CaptureRequest,
-                        result: TotalCaptureResult
+                        result: TotalCaptureResult,
                     ) {
                         captureResultDeferred.complete(result)
                     }
@@ -1859,18 +1805,22 @@ class PreviewTest(private val implName: String, private val cameraConfig: Camera
         frameSemaphore!!.verifyFramesReceived(frameCount = FRAMES_TO_VERIFY, timeoutInSeconds = 10)
     }
 
+    private val createdExecutors = mutableListOf<java.util.concurrent.ExecutorService>()
+
     private val workExecutorWithNamedThread: Executor
         get() {
             val threadFactory = ThreadFactory { runnable: Runnable? ->
                 Thread(runnable, ANY_THREAD_NAME)
             }
-            return Executors.newSingleThreadExecutor(threadFactory)
+            return Executors.newSingleThreadExecutor(threadFactory).also {
+                createdExecutors.add(it)
+            }
         }
 
     private fun getSurfaceProvider(
         threadNameConsumer: Consumer<String>? = null,
         resultListener: Consumer<SurfaceRequest.Result>? = null,
-        frameAvailableListener: SurfaceTexture.OnFrameAvailableListener? = null
+        frameAvailableListener: SurfaceTexture.OnFrameAvailableListener? = null,
     ): Preview.SurfaceProvider {
         return SurfaceTextureProvider.createAutoDrainingSurfaceTextureProvider(
             frameAvailableListener,
@@ -1878,7 +1828,7 @@ class PreviewTest(private val implName: String, private val cameraConfig: Camera
                 previewResolution = surfaceRequest.resolution
                 threadNameConsumer?.accept(Thread.currentThread().name)
             },
-            resultListener
+            resultListener,
         )
     }
 

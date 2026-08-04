@@ -20,7 +20,7 @@ import android.util.Size
 import androidx.camera.viewfinder.core.ImplementationMode
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.test.filters.LargeTest
@@ -34,14 +34,14 @@ import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 
 /** Tests for [Viewfinder] with various output transforms via [ContentScale] and [Alignment] */
-@SdkSuppress(minSdkVersion = 33) // Required for screenshot tests
+@SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 @LargeTest
 @RunWith(Parameterized::class)
 class ViewfinderTransformsScreenshotTest(
     private val implementationMode: ImplementationMode,
     private val contentScale: ContentScale,
     private val alignment: Alignment,
-    private val name: String
+    private val name: String,
 ) {
 
     companion object {
@@ -57,7 +57,7 @@ class ViewfinderTransformsScreenshotTest(
                         arrayOf(ContentScale.Fit, Alignment.TopStart, "fit_start"),
                         arrayOf(ContentScale.Fit, Alignment.BottomEnd, "fit_end"),
                         arrayOf(ContentScale.FillBounds, Alignment.Center, "fill_bounds_center"),
-                        arrayOf(ContentScale.None, Alignment.Center, "none_center")
+                        arrayOf(ContentScale.None, Alignment.Center, "none_center"),
                     )
                     .map { args -> arrayOf(impl, *args) }
             }
@@ -80,14 +80,14 @@ class ViewfinderTransformsScreenshotTest(
                 sourceResolution = Size(720, 540),
                 implementationMode = implementationMode,
                 alignment = alignment,
-                contentScale = contentScale
+                contentScale = contentScale,
             )
 
         drawAndAssertAgainstGolden(
             composeTestRule = composeTestRule,
             screenshotRule = screenshotRule,
             testParams = testParams,
-            goldenIdentifier = "upright_face_with_mapped_touch_point_$name"
+            goldenIdentifier = "upright_face_with_mapped_touch_point_$name",
         )
     }
 }

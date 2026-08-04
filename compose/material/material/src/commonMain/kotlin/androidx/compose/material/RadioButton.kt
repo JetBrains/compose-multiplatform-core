@@ -71,18 +71,18 @@ import androidx.compose.ui.unit.dp
  *   RadioButton in different states. See [RadioButtonDefaults.colors].
  */
 @Composable
-fun RadioButton(
+public fun RadioButton(
     selected: Boolean,
     onClick: (() -> Unit)?,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     interactionSource: MutableInteractionSource? = null,
-    colors: RadioButtonColors = RadioButtonDefaults.colors()
+    colors: RadioButtonColors = RadioButtonDefaults.colors(),
 ) {
     val dotRadius =
         animateDpAsState(
             targetValue = if (selected) RadioButtonDotSize / 2 else 0.dp,
-            animationSpec = tween(durationMillis = RadioAnimationDuration)
+            animationSpec = tween(durationMillis = RadioAnimationDuration),
         )
     val radioColor = colors.radioColor(enabled, selected)
     val selectableModifier =
@@ -93,7 +93,7 @@ fun RadioButton(
                 enabled = enabled,
                 role = Role.RadioButton,
                 interactionSource = interactionSource,
-                indication = ripple(bounded = false, radius = RadioButtonRippleRadius)
+                indication = ripple(bounded = false, radius = RadioButtonRippleRadius),
             )
         } else {
             Modifier
@@ -117,7 +117,7 @@ fun RadioButton(
         drawCircle(
             radioColor.value,
             RadioRadius.toPx() - strokeWidth / 2,
-            style = Stroke(strokeWidth)
+            style = Stroke(strokeWidth),
         )
         if (dotRadius.value > 0.dp) {
             drawCircle(radioColor.value, dotRadius.value.toPx() - strokeWidth / 2, style = Fill)
@@ -132,7 +132,7 @@ fun RadioButton(
  * specifications.
  */
 @Stable
-interface RadioButtonColors {
+public interface RadioButtonColors {
     /**
      * Represents the main color used to draw the outer and inner circles, depending on whether the
      * [RadioButton] is [enabled] / [selected].
@@ -140,11 +140,11 @@ interface RadioButtonColors {
      * @param enabled whether the [RadioButton] is enabled
      * @param selected whether the [RadioButton] is selected
      */
-    @Composable fun radioColor(enabled: Boolean, selected: Boolean): State<Color>
+    @Composable public fun radioColor(enabled: Boolean, selected: Boolean): State<Color>
 }
 
 /** Defaults used in [RadioButton]. */
-object RadioButtonDefaults {
+public object RadioButtonDefaults {
     /**
      * Creates a [RadioButtonColors] that will animate between the provided colors according to the
      * Material specification.
@@ -155,10 +155,10 @@ object RadioButtonDefaults {
      * @return the resulting [RadioButtonColors] used for the RadioButton
      */
     @Composable
-    fun colors(
+    public fun colors(
         selectedColor: Color = MaterialTheme.colors.secondary,
         unselectedColor: Color = MaterialTheme.colors.onSurface.copy(alpha = 0.6f),
-        disabledColor: Color = MaterialTheme.colors.onSurface.copy(alpha = ContentAlpha.disabled)
+        disabledColor: Color = MaterialTheme.colors.onSurface.copy(alpha = ContentAlpha.disabled),
     ): RadioButtonColors {
         return remember(selectedColor, unselectedColor, disabledColor) {
             DefaultRadioButtonColors(selectedColor, unselectedColor, disabledColor)
@@ -171,7 +171,7 @@ object RadioButtonDefaults {
 private class DefaultRadioButtonColors(
     private val selectedColor: Color,
     private val unselectedColor: Color,
-    private val disabledColor: Color
+    private val disabledColor: Color,
 ) : RadioButtonColors {
     @Composable
     override fun radioColor(enabled: Boolean, selected: Boolean): State<Color> {
@@ -214,9 +214,14 @@ private class DefaultRadioButtonColors(
 
 private const val RadioAnimationDuration = 100
 
-private val RadioButtonRippleRadius = 24.dp
-private val RadioButtonPadding = 2.dp
-private val RadioButtonSize = 20.dp
+private val RadioButtonRippleRadius
+    get() = 24.dp
+private val RadioButtonPadding
+    get() = 2.dp
+private val RadioButtonSize
+    get() = 20.dp
 private val RadioRadius = RadioButtonSize / 2
-private val RadioButtonDotSize = 12.dp
-private val RadioStrokeWidth = 2.dp
+private val RadioButtonDotSize
+    get() = 12.dp
+private val RadioStrokeWidth
+    get() = 2.dp

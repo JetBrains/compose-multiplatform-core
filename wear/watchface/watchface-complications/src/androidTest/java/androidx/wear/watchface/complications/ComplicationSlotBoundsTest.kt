@@ -62,7 +62,7 @@ class ComplicationSlotBoundsTest {
                     96f * context.resources.displayMetrics.density / widthPixels,
                     96f * context.resources.displayMetrics.density / widthPixels,
                     192f * context.resources.displayMetrics.density / widthPixels,
-                    192f * context.resources.displayMetrics.density / widthPixels
+                    192f * context.resources.displayMetrics.density / widthPixels,
                 )
             )
         assertThat(bounds.perComplicationTypeMargins[ComplicationType.LONG_TEXT]).isEqualTo(RectF())

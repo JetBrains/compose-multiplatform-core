@@ -25,8 +25,8 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SplitButton
 import androidx.compose.material3.SplitButtonDefaults
-import androidx.compose.material3.SplitButtonLayout
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
@@ -98,11 +98,9 @@ internal class SplitButtonTestCase(private val type: SplitButtonType) :
     override fun MeasuredContent() {
         when (type) {
             SplitButtonType.Filled ->
-                SplitButtonLayout(
+                SplitButton(
                     leadingButton = {
-                        SplitButtonDefaults.LeadingButton(
-                            onClick = { /* Do Nothing */ },
-                        ) {
+                        SplitButtonDefaults.LeadingButton(onClick = { /* Do Nothing */ }) {
                             leadingContent()
                         }
                     },
@@ -113,14 +111,12 @@ internal class SplitButtonTestCase(private val type: SplitButtonType) :
                         ) {
                             trailingContent()
                         }
-                    }
+                    },
                 )
             SplitButtonType.Tonal ->
-                SplitButtonLayout(
+                SplitButton(
                     leadingButton = {
-                        SplitButtonDefaults.TonalLeadingButton(
-                            onClick = { /* Do Nothing */ },
-                        ) {
+                        SplitButtonDefaults.TonalLeadingButton(onClick = { /* Do Nothing */ }) {
                             leadingContent()
                         }
                     },
@@ -131,14 +127,12 @@ internal class SplitButtonTestCase(private val type: SplitButtonType) :
                         ) {
                             trailingContent()
                         }
-                    }
+                    },
                 )
             SplitButtonType.Elevated ->
-                SplitButtonLayout(
+                SplitButton(
                     leadingButton = {
-                        SplitButtonDefaults.ElevatedLeadingButton(
-                            onClick = { /* Do Nothing */ },
-                        ) {
+                        SplitButtonDefaults.ElevatedLeadingButton(onClick = { /* Do Nothing */ }) {
                             leadingContent()
                         }
                     },
@@ -149,14 +143,12 @@ internal class SplitButtonTestCase(private val type: SplitButtonType) :
                         ) {
                             trailingContent()
                         }
-                    }
+                    },
                 )
             SplitButtonType.Outlined ->
-                SplitButtonLayout(
+                SplitButton(
                     leadingButton = {
-                        SplitButtonDefaults.OutlinedLeadingButton(
-                            onClick = { /* Do Nothing */ },
-                        ) {
+                        SplitButtonDefaults.OutlinedLeadingButton(onClick = { /* Do Nothing */ }) {
                             leadingContent()
                         }
                     },
@@ -167,7 +159,7 @@ internal class SplitButtonTestCase(private val type: SplitButtonType) :
                         ) {
                             trailingContent()
                         }
-                    }
+                    },
                 )
         }
     }
@@ -184,10 +176,7 @@ internal class SplitButtonTestCase(private val type: SplitButtonType) :
 
 @Composable
 private fun leadingContent() {
-    Icon(
-        Icons.Outlined.Edit,
-        contentDescription = "Localized description",
-    )
+    Icon(Icons.Outlined.Edit, contentDescription = "Localized description")
     Spacer(Modifier.size(ButtonDefaults.IconSpacing))
     Text("My Button")
 }

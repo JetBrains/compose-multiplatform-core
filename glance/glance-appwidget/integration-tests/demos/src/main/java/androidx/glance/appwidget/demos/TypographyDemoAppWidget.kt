@@ -18,11 +18,11 @@ package androidx.glance.appwidget.demos
 
 import android.content.Context
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
-import androidx.glance.GlanceTheme
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
 import androidx.glance.appwidget.SizeMode
@@ -41,6 +41,7 @@ import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextAlign
 import androidx.glance.text.TextStyle
+import androidx.glance.unit.ColorProvider
 
 /** Sample AppWidget showcases Glance text styles. */
 class TypographyDemoAppWidget : GlanceAppWidget() {
@@ -58,9 +59,9 @@ class TypographyDemoAppWidget : GlanceAppWidget() {
     private fun Content() {
         Column(
             modifier =
-                GlanceModifier.fillMaxSize().background(GlanceTheme.colors.background).padding(8.dp)
+                GlanceModifier.fillMaxSize().background(ColorProvider(Color.Cyan)).padding(8.dp)
         ) {
-            Column {
+            Column(GlanceModifier.background(ColorProvider(Color.Yellow))) {
                 Text(
                     "Text Component Demo Widget",
                     modifier = GlanceModifier.fillMaxWidth().wrapContentHeight(),
@@ -68,15 +69,15 @@ class TypographyDemoAppWidget : GlanceAppWidget() {
                         TextStyle(
                             fontWeight = FontWeight.Bold,
                             fontSize = 24.sp,
-                            textAlign = TextAlign.Center
-                        )
+                            textAlign = TextAlign.Center,
+                        ),
                 )
                 Spacer(GlanceModifier.size(16.dp))
                 Text("Glance text styles:", style = TextStyle(fontSize = 18.sp))
                 Spacer(GlanceModifier.size(20.dp))
             }
 
-            LazyColumn {
+            LazyColumn(GlanceModifier.fillMaxSize()) {
                 item {
                     Text(
                         "Display Large",
@@ -84,8 +85,8 @@ class TypographyDemoAppWidget : GlanceAppWidget() {
                             TextStyle(
                                 fontSize = 57.sp,
                                 fontWeight = FontWeight.Normal,
-                                fontFamily = FontFamily.SansSerif
-                            )
+                                fontFamily = FontFamily.SansSerif,
+                            ),
                     )
                 }
                 item {
@@ -95,8 +96,8 @@ class TypographyDemoAppWidget : GlanceAppWidget() {
                             TextStyle(
                                 fontSize = 32.sp,
                                 fontWeight = FontWeight.Normal,
-                                fontFamily = FontFamily.SansSerif
-                            )
+                                fontFamily = FontFamily.SansSerif,
+                            ),
                     )
                 }
                 item {
@@ -106,8 +107,8 @@ class TypographyDemoAppWidget : GlanceAppWidget() {
                             TextStyle(
                                 fontSize = 24.sp,
                                 fontWeight = FontWeight.Normal,
-                                fontFamily = FontFamily.SansSerif
-                            )
+                                fontFamily = FontFamily.SansSerif,
+                            ),
                     )
                 }
                 item {
@@ -117,8 +118,8 @@ class TypographyDemoAppWidget : GlanceAppWidget() {
                             TextStyle(
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.Medium,
-                                fontFamily = FontFamily.SansSerif
-                            )
+                                fontFamily = FontFamily.SansSerif,
+                            ),
                     )
                 }
                 item {
@@ -128,8 +129,8 @@ class TypographyDemoAppWidget : GlanceAppWidget() {
                             TextStyle(
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.Normal,
-                                fontFamily = FontFamily.SansSerif
-                            )
+                                fontFamily = FontFamily.SansSerif,
+                            ),
                     )
                 }
                 item {
@@ -139,8 +140,8 @@ class TypographyDemoAppWidget : GlanceAppWidget() {
                             TextStyle(
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.Medium,
-                                fontFamily = FontFamily.SansSerif
-                            )
+                                fontFamily = FontFamily.SansSerif,
+                            ),
                     )
                 }
                 item {
@@ -150,8 +151,8 @@ class TypographyDemoAppWidget : GlanceAppWidget() {
                             TextStyle(
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Medium,
-                                fontFamily = FontFamily.SansSerif
-                            )
+                                fontFamily = FontFamily.SansSerif,
+                            ),
                     )
                 }
             }

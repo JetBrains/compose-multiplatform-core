@@ -54,7 +54,8 @@ internal actual suspend fun PlatformTextInputSession.platformSpecificTextInputSe
     onImeAction: ((ImeAction) -> Unit)?,
     updateSelectionState: (() -> Unit)?,
     stylusHandwritingTrigger: MutableSharedFlow<Unit>?,
-    viewConfiguration: ViewConfiguration?
+    viewConfiguration: ViewConfiguration?,
+    updateDirectTouchInteraction: (Boolean) -> Unit,
 ): Nothing {
     platformSpecificTextInputSession(
         state = state,
@@ -65,7 +66,8 @@ internal actual suspend fun PlatformTextInputSession.platformSpecificTextInputSe
         updateSelectionState = updateSelectionState,
         composeImm = ComposeInputMethodManager(view),
         stylusHandwritingTrigger = stylusHandwritingTrigger,
-        viewConfiguration = viewConfiguration
+        viewConfiguration = viewConfiguration,
+        updateDirectTouchInteraction = updateDirectTouchInteraction,
     )
 }
 
@@ -79,9 +81,14 @@ internal suspend fun PlatformTextInputSession.platformSpecificTextInputSession(
     updateSelectionState: (() -> Unit)?,
     composeImm: ComposeInputMethodManager,
     stylusHandwritingTrigger: MutableSharedFlow<Unit>?,
-    viewConfiguration: ViewConfiguration?
+    viewConfiguration: ViewConfiguration?,
+    updateDirectTouchInteraction: (Boolean) -> Unit,
 ): Nothing {
     coroutineScope {
+        // Whether extracted text updates are enabled
+        var extractedTextMonitorMode = false
+        var currentExtractedTextRequestToken = 0
+
         launch(start = CoroutineStart.UNDISPATCHED) {
             state.collectImeNotifications { oldValue, newValue, restartIme ->
                 val oldSelection = oldValue.selection
@@ -91,13 +98,24 @@ internal suspend fun PlatformTextInputSession.platformSpecificTextInputSession(
 
                 if (restartIme) {
                     composeImm.restartInput()
-                } else if (oldSelection != newSelection || oldComposition != newComposition) {
-                    composeImm.updateSelection(
-                        selectionStart = newSelection.min,
-                        selectionEnd = newSelection.max,
-                        compositionStart = newComposition?.min ?: -1,
-                        compositionEnd = newComposition?.max ?: -1
-                    )
+                } else {
+                    // the order of `updateExtractedText` and `updateSelection` shouldn't matter but
+                    // this is how they were ordered in platform and some IMEs may already depend
+                    // on this order.
+                    if (extractedTextMonitorMode) {
+                        composeImm.updateExtractedText(
+                            token = currentExtractedTextRequestToken,
+                            extractedText = newValue.toExtractedText(),
+                        )
+                    }
+                    if (oldSelection != newSelection || oldComposition != newComposition) {
+                        composeImm.updateSelection(
+                            selectionStart = newSelection.min,
+                            selectionEnd = newSelection.max,
+                            compositionStart = newComposition?.min ?: -1,
+                            compositionEnd = newComposition?.max ?: -1,
+                        )
+                    }
                 }
             }
         }
@@ -122,6 +140,9 @@ internal suspend fun PlatformTextInputSession.platformSpecificTextInputSession(
             )
 
         startInputMethod { outAttrs ->
+            extractedTextMonitorMode = false
+            currentExtractedTextRequestToken = 0
+
             logDebug { "createInputConnection(value=\"${state.visualText}\")" }
 
             val imeEditCommandScope = DefaultImeEditCommandScope(state)
@@ -129,6 +150,9 @@ internal suspend fun PlatformTextInputSession.platformSpecificTextInputSession(
                 object : TextInputSession, ImeEditCommandScope by imeEditCommandScope {
                     override val text: TextFieldCharSequence
                         get() = state.visualText
+
+                    override val transformedLength: Int
+                        get() = imeEditCommandScope.transformedLength
 
                     override fun sendKeyEvent(keyEvent: KeyEvent) {
                         composeImm.sendKeyEvent(keyEvent)
@@ -149,13 +173,20 @@ internal suspend fun PlatformTextInputSession.platformSpecificTextInputSession(
                         cursorUpdatesController.requestUpdates(cursorUpdateMode)
                     }
 
+                    override fun requestExtractedTextUpdates(token: Int) {
+                        // TODO(b/521833073): Also instruct the TextField to hide handles and the
+                        //  toolbar
+                        extractedTextMonitorMode = true
+                        currentExtractedTextRequestToken = token
+                    }
+
                     override fun performHandwritingGesture(gesture: HandwritingGesture): Int {
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
                             return state.performHandwritingGesture(
                                 gesture,
                                 layoutState,
                                 updateSelectionState,
-                                viewConfiguration
+                                viewConfiguration,
                             )
                         }
                         return InputConnection.HANDWRITING_GESTURE_RESULT_UNSUPPORTED
@@ -163,16 +194,20 @@ internal suspend fun PlatformTextInputSession.platformSpecificTextInputSession(
 
                     override fun previewHandwritingGesture(
                         gesture: PreviewableHandwritingGesture,
-                        cancellationSignal: CancellationSignal?
+                        cancellationSignal: CancellationSignal?,
                     ): Boolean {
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
                             return state.previewHandwritingGesture(
                                 gesture,
                                 layoutState,
-                                cancellationSignal
+                                cancellationSignal,
                             )
                         }
                         return false
+                    }
+
+                    override fun updateDirectTouchInteraction(isDirectTouchInteraction: Boolean) {
+                        updateDirectTouchInteraction.invoke(isDirectTouchInteraction)
                     }
                 }
 
@@ -181,7 +216,7 @@ internal suspend fun PlatformTextInputSession.platformSpecificTextInputSession(
                 selection = state.visualText.selection,
                 imeOptions = imeOptions,
                 // only pass AllMimeTypes if we have a ReceiveContentConfiguration.
-                contentMimeTypes = receiveContentConfiguration?.let { ALL_MIME_TYPES }
+                contentMimeTypes = receiveContentConfiguration?.let { ALL_MIME_TYPES },
             )
             StatelessInputConnection(textInputSession, outAttrs)
         }
@@ -196,7 +231,7 @@ internal suspend fun PlatformTextInputSession.platformSpecificTextInputSession(
  */
 private val ALL_MIME_TYPES = arrayOf("*/*", "image/*", "video/*")
 
-private fun logDebug(tag: String = TIA_TAG, content: () -> String) {
+private inline fun logDebug(tag: String = TIA_TAG, content: () -> String) {
     if (TIA_DEBUG) {
         Log.d(tag, content())
     }

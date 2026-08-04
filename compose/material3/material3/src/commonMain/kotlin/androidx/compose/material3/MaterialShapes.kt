@@ -49,9 +49,11 @@ import kotlin.math.sin
  *   be the returned one.
  * @param startAngle the angle (in degrees) from which to begin drawing the generated path. By
  *   default, it is set to 0 degrees, meaning the [Path] begins drawing at the 3 o'clock position.
+ *
+ * @material3expressive
  */
 @ExperimentalMaterial3ExpressiveApi
-fun Morph.toPath(progress: Float, path: Path = Path(), startAngle: Int = 0): Path {
+public fun Morph.toPath(progress: Float, path: Path = Path(), startAngle: Int = 0): Path {
     return this.toPath(path = path, progress = progress, startAngle = startAngle)
 }
 
@@ -62,10 +64,12 @@ fun Morph.toPath(progress: Float, path: Path = Path(), startAngle: Int = 0): Pat
  *   default, it is set to 0 degrees, meaning the [Path] begins drawing at the 3 o'clock position.
  *   The returned path is rotated by this angle around the [RoundedPolygon]'s centroid (centerX,
  *   centerY).
+ *
+ * @material3expressive
  */
 @ExperimentalMaterial3ExpressiveApi
 @Composable
-fun RoundedPolygon.toPath(startAngle: Int = 0): Path {
+public fun RoundedPolygon.toPath(startAngle: Int = 0): Path {
     val path = remember { Path() }
     return remember(this, startAngle) {
         this.toPath(path = path, startAngle = startAngle, repeatPath = false, closePath = true)
@@ -79,31 +83,41 @@ fun RoundedPolygon.toPath(startAngle: Int = 0): Path {
  *   By default, it is set to 0 degrees, meaning the shape's path begins drawing at the 3 o'clock
  *   position. The returned path is rotated by this angle around the [RoundedPolygon]'s centroid
  *   (centerX, centerY).
+ *
+ * @material3expressive
  */
 @ExperimentalMaterial3ExpressiveApi
 @Composable
-fun RoundedPolygon.toShape(startAngle: Int = 0): Shape {
+public fun RoundedPolygon.toShape(startAngle: Int = 0): Shape {
     return remember(this, startAngle) {
         object : Shape {
             // Store the Path we convert from the RoundedPolygon here. The path we will be
             // manipulating and using on the createOutline would be a copy of this to ensure we
             // don't mutate the original.
             private val shapePath: Path = toPath(startAngle = startAngle)
-            private val workPath: Path = Path()
+            private var workPath: Path? = null
+            private var lastSize = Size.Unspecified
 
             override fun createOutline(
                 size: Size,
                 layoutDirection: LayoutDirection,
-                density: Density
+                density: Density,
             ): Outline {
-                workPath.rewind()
-                workPath.addPath(shapePath)
+                if (size != lastSize || workPath == null) {
+                    lastSize = size
+                    // Create a new Path if the size has changed.
+                    workPath = Path()
+                } else {
+                    workPath!!.rewind()
+                }
+                val path = workPath!!
+                path.addPath(shapePath)
                 val scaleMatrix = Matrix().apply { scale(x = size.width, y = size.height) }
                 // Scale and translate the path to align its center with the available size
                 // center.
-                workPath.transform(scaleMatrix)
-                workPath.translate(size.center - workPath.getBounds().center)
-                return Outline.Generic(workPath)
+                path.transform(scaleMatrix)
+                path.translate(size.center - path.getBounds().center)
+                return Outline.Generic(path)
             }
         }
     }
@@ -119,11 +133,13 @@ fun RoundedPolygon.toShape(startAngle: Int = 0): Shape {
  * Note that each [RoundedPolygon] in this class is normalized.
  *
  * @see RoundedPolygon.normalized
+ *
+ * @material3expressive
  */
 @ExperimentalMaterial3ExpressiveApi
-sealed class MaterialShapes {
+public sealed class MaterialShapes {
 
-    companion object {
+    public companion object {
 
         // Cache various roundings for use below
         private val cornerRound15 = CornerRounding(radius = .15f)
@@ -173,143 +189,143 @@ sealed class MaterialShapes {
         private var _heart: RoundedPolygon? = null
 
         /** A circle shape. */
-        val Circle
+        public val Circle: RoundedPolygon
             get() = _circle ?: circle().normalized().also { _circle = it }
 
         /** A rounded square shape. */
-        val Square
+        public val Square: RoundedPolygon
             get() = _square ?: square().normalized().also { _square = it }
 
         /** A slanted square shape. */
-        val Slanted
+        public val Slanted: RoundedPolygon
             get() = _slanted ?: slanted().normalized().also { _slanted = it }
 
         /** An arch shape. */
-        val Arch
+        public val Arch: RoundedPolygon
             get() = _arch ?: arch().normalized().also { _arch = it }
 
         /** A fan shape. */
-        val Fan
+        public val Fan: RoundedPolygon
             get() = _fan ?: fan().normalized().also { _fan = it }
 
         /** An arrow shape. */
-        val Arrow
+        public val Arrow: RoundedPolygon
             get() = _arrow ?: arrow().normalized().also { _arrow = it }
 
         /** A semi-circle shape. */
-        val SemiCircle
+        public val SemiCircle: RoundedPolygon
             get() = _semiCircle ?: semiCircle().normalized().also { _semiCircle = it }
 
         /** An oval shape. */
-        val Oval
+        public val Oval: RoundedPolygon
             get() = _oval ?: oval().normalized().also { _oval = it }
 
         /** A pill shape. */
-        val Pill
+        public val Pill: RoundedPolygon
             get() = _pill ?: pill().normalized().also { _pill = it }
 
         /** A rounded triangle shape. */
-        val Triangle
+        public val Triangle: RoundedPolygon
             get() = _triangle ?: triangle().normalized().also { _triangle = it }
 
         /** A diamond shape. */
-        val Diamond
+        public val Diamond: RoundedPolygon
             get() = _diamond ?: diamond().normalized().also { _diamond = it }
 
         /** A clam-shell shape. */
-        val ClamShell
+        public val ClamShell: RoundedPolygon
             get() = _clamShell ?: clamShell().normalized().also { _clamShell = it }
 
         /** A pentagon shape. */
-        val Pentagon
+        public val Pentagon: RoundedPolygon
             get() = _pentagon ?: pentagon().normalized().also { _pentagon = it }
 
         /** A gem shape. */
-        val Gem
+        public val Gem: RoundedPolygon
             get() = _gem ?: gem().normalized().also { _gem = it }
 
         /** A sunny shape. */
-        val Sunny
+        public val Sunny: RoundedPolygon
             get() = _sunny ?: sunny().normalized().also { _sunny = it }
 
         /** A very-sunny shape. */
-        val VerySunny
+        public val VerySunny: RoundedPolygon
             get() = _verySunny ?: verySunny().normalized().also { _verySunny = it }
 
         /** A 4-sided cookie shape. */
-        val Cookie4Sided
+        public val Cookie4Sided: RoundedPolygon
             get() = _cookie4Sided ?: cookie4().normalized().also { _cookie4Sided = it }
 
         /** A 6-sided cookie shape. */
-        val Cookie6Sided
+        public val Cookie6Sided: RoundedPolygon
             get() = _cookie6Sided ?: cookie6().normalized().also { _cookie6Sided = it }
 
         /** A 7-sided cookie shape. */
-        val Cookie7Sided
+        public val Cookie7Sided: RoundedPolygon
             get() = _cookie7Sided ?: cookie7().normalized().also { _cookie7Sided = it }
 
         /** A 9-sided cookie shape. */
-        val Cookie9Sided
+        public val Cookie9Sided: RoundedPolygon
             get() = _cookie9Sided ?: cookie9().normalized().also { _cookie9Sided = it }
 
         /** A 12-sided cookie shape. */
-        val Cookie12Sided
+        public val Cookie12Sided: RoundedPolygon
             get() = _cookie12Sided ?: cookie12().normalized().also { _cookie12Sided = it }
 
         /** A ghost-ish shape. */
-        val Ghostish
+        public val Ghostish: RoundedPolygon
             get() = _ghostish ?: ghostish().normalized().also { _ghostish = it }
 
         /** A 4-leaf clover shape. */
-        val Clover4Leaf
+        public val Clover4Leaf: RoundedPolygon
             get() = _clover4Leaf ?: clover4().normalized().also { _clover4Leaf = it }
 
         /** An 8-leaf clover shape. */
-        val Clover8Leaf
+        public val Clover8Leaf: RoundedPolygon
             get() = _clover8Leaf ?: clover8().normalized().also { _clover8Leaf = it }
 
         /** A burst shape. */
-        val Burst
+        public val Burst: RoundedPolygon
             get() = _burst ?: burst().normalized().also { _burst = it }
 
         /** A soft-burst shape. */
-        val SoftBurst
+        public val SoftBurst: RoundedPolygon
             get() = _softBurst ?: softBurst().normalized().also { _softBurst = it }
 
         /** A boom shape. */
-        val Boom
+        public val Boom: RoundedPolygon
             get() = _boom ?: boom().normalized().also { _boom = it }
 
         /** A soft-boom shape. */
-        val SoftBoom
+        public val SoftBoom: RoundedPolygon
             get() = _softBoom ?: softBoom().normalized().also { _softBoom = it }
 
         /** A flower shape. */
-        val Flower
+        public val Flower: RoundedPolygon
             get() = _flower ?: flower().normalized().also { _flower = it }
 
         /** A puffy shape. */
-        val Puffy
+        public val Puffy: RoundedPolygon
             get() = _puffy ?: puffy().normalized().also { _puffy = it }
 
         /** A puffy-diamond shape. */
-        val PuffyDiamond
+        public val PuffyDiamond: RoundedPolygon
             get() = _puffyDiamond ?: puffyDiamond().normalized().also { _puffyDiamond = it }
 
         /** A pixel-circle shape. */
-        val PixelCircle
+        public val PixelCircle: RoundedPolygon
             get() = _pixelCircle ?: pixelCircle().normalized().also { _pixelCircle = it }
 
         /** A pixel-triangle shape. */
-        val PixelTriangle
+        public val PixelTriangle: RoundedPolygon
             get() = _pixelTriangle ?: pixelTriangle().normalized().also { _pixelTriangle = it }
 
         /** A bun shape. */
-        val Bun
+        public val Bun: RoundedPolygon
             get() = _bun ?: bun().normalized().also { _bun = it }
 
         /** A heart shape. */
-        val Heart
+        public val Heart: RoundedPolygon
             get() = _heart ?: heart().normalized().also { _heart = it }
 
         internal fun circle(numVertices: Int = 10): RoundedPolygon {
@@ -324,9 +340,9 @@ sealed class MaterialShapes {
             return customPolygon(
                 listOf(
                     PointNRound(Offset(0.926f, 0.970f), CornerRounding(0.189f, 0.811f)),
-                    PointNRound(Offset(-0.021f, 0.967f), CornerRounding(0.187f, 0.057f))
+                    PointNRound(Offset(-0.021f, 0.967f), CornerRounding(0.187f, 0.057f)),
                 ),
-                2
+                2,
             )
         }
 
@@ -334,7 +350,7 @@ sealed class MaterialShapes {
             return RoundedPolygon(
                     numVertices = 4,
                     perVertexRounding =
-                        listOf(cornerRound100, cornerRound100, cornerRound20, cornerRound20)
+                        listOf(cornerRound100, cornerRound100, cornerRound20, cornerRound20),
                 )
                 .transformed(rotateNeg135)
         }
@@ -345,9 +361,9 @@ sealed class MaterialShapes {
                     PointNRound(Offset(1.004f, 1.000f), CornerRounding(0.148f, 0.417f)),
                     PointNRound(Offset(0.000f, 1.000f), CornerRounding(0.151f)),
                     PointNRound(Offset(0.000f, -0.003f), CornerRounding(0.148f)),
-                    PointNRound(Offset(0.978f, 0.020f), CornerRounding(0.803f))
+                    PointNRound(Offset(0.978f, 0.020f), CornerRounding(0.803f)),
                 ),
-                1
+                1,
             )
         }
 
@@ -357,9 +373,9 @@ sealed class MaterialShapes {
                     PointNRound(Offset(0.500f, 0.892f), CornerRounding(0.313f)),
                     PointNRound(Offset(-0.216f, 1.050f), CornerRounding(0.207f)),
                     PointNRound(Offset(0.499f, -0.160f), CornerRounding(0.215f, 1.000f)),
-                    PointNRound(Offset(1.225f, 1.060f), CornerRounding(0.211f))
+                    PointNRound(Offset(1.225f, 1.060f), CornerRounding(0.211f)),
                 ),
-                1
+                1,
             )
         }
 
@@ -368,7 +384,7 @@ sealed class MaterialShapes {
                 width = 1.6f,
                 height = 1f,
                 perVertexRounding =
-                    listOf(cornerRound20, cornerRound20, cornerRound100, cornerRound100)
+                    listOf(cornerRound20, cornerRound20, cornerRound100, cornerRound100),
             )
         }
 
@@ -382,10 +398,10 @@ sealed class MaterialShapes {
                 listOf(
                     PointNRound(Offset(0.961f, 0.039f), CornerRounding(0.426f)),
                     PointNRound(Offset(1.001f, 0.428f)),
-                    PointNRound(Offset(1.000f, 0.609f), CornerRounding(1.000f))
+                    PointNRound(Offset(1.000f, 0.609f), CornerRounding(1.000f)),
                 ),
                 reps = 2,
-                mirroring = true
+                mirroring = true,
             )
         }
 
@@ -398,9 +414,9 @@ sealed class MaterialShapes {
             return customPolygon(
                 listOf(
                     PointNRound(Offset(0.500f, 1.096f), CornerRounding(0.151f, 0.524f)),
-                    PointNRound(Offset(0.040f, 0.500f), CornerRounding(0.159f))
+                    PointNRound(Offset(0.040f, 0.500f), CornerRounding(0.159f)),
                 ),
-                2
+                2,
             )
         }
 
@@ -409,9 +425,9 @@ sealed class MaterialShapes {
                 listOf(
                     PointNRound(Offset(0.171f, 0.841f), CornerRounding(0.159f)),
                     PointNRound(Offset(-0.020f, 0.500f), CornerRounding(0.140f)),
-                    PointNRound(Offset(0.170f, 0.159f), CornerRounding(0.159f))
+                    PointNRound(Offset(0.170f, 0.159f), CornerRounding(0.159f)),
                 ),
-                2
+                2,
             )
         }
 
@@ -420,10 +436,10 @@ sealed class MaterialShapes {
                 listOf(
                     PointNRound(Offset(0.500f, -0.009f), CornerRounding(0.172f)),
                     PointNRound(Offset(1.030f, 0.365f), CornerRounding(0.164f)),
-                    PointNRound(Offset(0.828f, 0.970f), CornerRounding(0.169f))
+                    PointNRound(Offset(0.828f, 0.970f), CornerRounding(0.169f)),
                 ),
                 reps = 1,
-                mirroring = true
+                mirroring = true,
             )
         }
 
@@ -433,10 +449,10 @@ sealed class MaterialShapes {
                     PointNRound(Offset(0.499f, 1.023f), CornerRounding(0.241f, 0.778f)),
                     PointNRound(Offset(-0.005f, 0.792f), CornerRounding(0.208f)),
                     PointNRound(Offset(0.073f, 0.258f), CornerRounding(0.228f)),
-                    PointNRound(Offset(0.433f, -0.000f), CornerRounding(0.491f))
+                    PointNRound(Offset(0.433f, -0.000f), CornerRounding(0.491f)),
                 ),
                 1,
-                mirroring = true
+                mirroring = true,
             )
         }
 
@@ -444,7 +460,7 @@ sealed class MaterialShapes {
             return RoundedPolygon.star(
                 numVerticesPerRadius = 8,
                 innerRadius = .8f,
-                rounding = cornerRound15
+                rounding = cornerRound15,
             )
         }
 
@@ -452,9 +468,9 @@ sealed class MaterialShapes {
             return customPolygon(
                 listOf(
                     PointNRound(Offset(0.500f, 1.080f), CornerRounding(0.085f)),
-                    PointNRound(Offset(0.358f, 0.843f), CornerRounding(0.085f))
+                    PointNRound(Offset(0.358f, 0.843f), CornerRounding(0.085f)),
                 ),
-                8
+                8,
             )
         }
 
@@ -462,9 +478,9 @@ sealed class MaterialShapes {
             return customPolygon(
                 listOf(
                     PointNRound(Offset(1.237f, 1.236f), CornerRounding(0.258f)),
-                    PointNRound(Offset(0.500f, 0.918f), CornerRounding(0.233f))
+                    PointNRound(Offset(0.500f, 0.918f), CornerRounding(0.233f)),
                 ),
-                4
+                4,
             )
         }
 
@@ -473,9 +489,9 @@ sealed class MaterialShapes {
             return customPolygon(
                 listOf(
                     PointNRound(Offset(0.723f, 0.884f), CornerRounding(0.394f)),
-                    PointNRound(Offset(0.500f, 1.099f), CornerRounding(0.398f))
+                    PointNRound(Offset(0.500f, 1.099f), CornerRounding(0.398f)),
                 ),
-                6
+                6,
             )
         }
 
@@ -484,7 +500,7 @@ sealed class MaterialShapes {
             return RoundedPolygon.star(
                     numVerticesPerRadius = 7,
                     innerRadius = .75f,
-                    rounding = cornerRound50
+                    rounding = cornerRound50,
                 )
                 .transformed(rotateNeg90)
         }
@@ -493,7 +509,7 @@ sealed class MaterialShapes {
             return RoundedPolygon.star(
                     numVerticesPerRadius = 9,
                     innerRadius = .8f,
-                    rounding = cornerRound50
+                    rounding = cornerRound50,
                 )
                 .transformed(rotateNeg90)
         }
@@ -502,7 +518,7 @@ sealed class MaterialShapes {
             return RoundedPolygon.star(
                     numVerticesPerRadius = 12,
                     innerRadius = .8f,
-                    rounding = cornerRound50
+                    rounding = cornerRound50,
                 )
                 .transformed(rotateNeg90)
         }
@@ -513,10 +529,10 @@ sealed class MaterialShapes {
                     PointNRound(Offset(0.500f, 0f), CornerRounding(1.000f)),
                     PointNRound(Offset(1f, 0f), CornerRounding(1.000f)),
                     PointNRound(Offset(1f, 1.140f), CornerRounding(0.254f, 0.106f)),
-                    PointNRound(Offset(0.575f, 0.906f), CornerRounding(0.253f))
+                    PointNRound(Offset(0.575f, 0.906f), CornerRounding(0.253f)),
                 ),
                 reps = 1,
-                mirroring = true
+                mirroring = true,
             )
         }
 
@@ -524,10 +540,10 @@ sealed class MaterialShapes {
             return customPolygon(
                 listOf(
                     PointNRound(Offset(0.500f, 0.074f)),
-                    PointNRound(Offset(0.725f, -0.099f), CornerRounding(0.476f))
+                    PointNRound(Offset(0.725f, -0.099f), CornerRounding(0.476f)),
                 ),
                 reps = 4,
-                mirroring = true
+                mirroring = true,
             )
         }
 
@@ -535,9 +551,9 @@ sealed class MaterialShapes {
             return customPolygon(
                 listOf(
                     PointNRound(Offset(0.500f, 0.036f)),
-                    PointNRound(Offset(0.758f, -0.101f), CornerRounding(0.209f))
+                    PointNRound(Offset(0.758f, -0.101f), CornerRounding(0.209f)),
                 ),
-                reps = 8
+                reps = 8,
             )
         }
 
@@ -545,9 +561,9 @@ sealed class MaterialShapes {
             return customPolygon(
                 listOf(
                     PointNRound(Offset(0.500f, -0.006f), CornerRounding(0.006f)),
-                    PointNRound(Offset(0.592f, 0.158f), CornerRounding(0.006f))
+                    PointNRound(Offset(0.592f, 0.158f), CornerRounding(0.006f)),
                 ),
-                reps = 12
+                reps = 12,
             )
         }
 
@@ -555,9 +571,9 @@ sealed class MaterialShapes {
             return customPolygon(
                 listOf(
                     PointNRound(Offset(0.193f, 0.277f), CornerRounding(0.053f)),
-                    PointNRound(Offset(0.176f, 0.055f), CornerRounding(0.053f))
+                    PointNRound(Offset(0.176f, 0.055f), CornerRounding(0.053f)),
                 ),
-                reps = 10
+                reps = 10,
             )
         }
 
@@ -565,9 +581,9 @@ sealed class MaterialShapes {
             return customPolygon(
                 listOf(
                     PointNRound(Offset(0.457f, 0.296f), CornerRounding(0.007f)),
-                    PointNRound(Offset(0.500f, -0.051f), CornerRounding(0.007f))
+                    PointNRound(Offset(0.500f, -0.051f), CornerRounding(0.007f)),
                 ),
-                reps = 15
+                reps = 15,
             )
         }
 
@@ -577,10 +593,10 @@ sealed class MaterialShapes {
                     PointNRound(Offset(0.733f, 0.454f)),
                     PointNRound(Offset(0.839f, 0.437f), CornerRounding(0.532f)),
                     PointNRound(Offset(0.949f, 0.449f), CornerRounding(0.439f, 1.000f)),
-                    PointNRound(Offset(0.998f, 0.478f), CornerRounding(0.174f))
+                    PointNRound(Offset(0.998f, 0.478f), CornerRounding(0.174f)),
                 ),
                 reps = 16,
-                mirroring = true
+                mirroring = true,
             )
         }
 
@@ -589,10 +605,10 @@ sealed class MaterialShapes {
                 listOf(
                     PointNRound(Offset(0.370f, 0.187f)),
                     PointNRound(Offset(0.416f, 0.049f), CornerRounding(0.381f)),
-                    PointNRound(Offset(0.479f, 0.001f), CornerRounding(0.095f))
+                    PointNRound(Offset(0.479f, 0.001f), CornerRounding(0.095f)),
                 ),
                 reps = 8,
-                mirroring = true
+                mirroring = true,
             )
         }
 
@@ -613,7 +629,7 @@ sealed class MaterialShapes {
                         PointNRound(Offset(1.003f, 0.437f), CornerRounding(0.255f)),
                     ),
                     reps = 2,
-                    mirroring = true
+                    mirroring = true,
                 )
                 .transformed(m)
         }
@@ -623,10 +639,10 @@ sealed class MaterialShapes {
                 listOf(
                     PointNRound(Offset(0.870f, 0.130f), CornerRounding(0.146f)),
                     PointNRound(Offset(0.818f, 0.357f)),
-                    PointNRound(Offset(1.000f, 0.332f), CornerRounding(0.853f))
+                    PointNRound(Offset(1.000f, 0.332f), CornerRounding(0.853f)),
                 ),
                 reps = 4,
-                mirroring = true
+                mirroring = true,
             )
         }
 
@@ -641,10 +657,10 @@ sealed class MaterialShapes {
                     PointNRound(Offset(0.843f, 0.148f)),
                     PointNRound(Offset(0.926f, 0.148f)),
                     PointNRound(Offset(0.926f, 0.296f)),
-                    PointNRound(Offset(1.000f, 0.296f))
+                    PointNRound(Offset(1.000f, 0.296f)),
                 ),
                 reps = 2,
-                mirroring = true
+                mirroring = true,
             )
         }
 
@@ -664,10 +680,10 @@ sealed class MaterialShapes {
                     PointNRound(Offset(0.675f, 0.344f)),
                     PointNRound(Offset(0.789f, 0.344f)),
                     PointNRound(Offset(0.789f, 0.439f)),
-                    PointNRound(Offset(0.888f, 0.439f))
+                    PointNRound(Offset(0.888f, 0.439f)),
                 ),
                 reps = 1,
-                mirroring = true
+                mirroring = true,
             )
         }
 
@@ -677,10 +693,10 @@ sealed class MaterialShapes {
                     PointNRound(Offset(0.796f, 0.500f)),
                     PointNRound(Offset(0.853f, 0.518f), CornerRounding(1f)),
                     PointNRound(Offset(0.992f, 0.631f), CornerRounding(1f)),
-                    PointNRound(Offset(0.968f, 1.000f), CornerRounding(1f))
+                    PointNRound(Offset(0.968f, 1.000f), CornerRounding(1f)),
                 ),
                 reps = 2,
-                mirroring = true
+                mirroring = true,
             )
         }
 
@@ -690,16 +706,16 @@ sealed class MaterialShapes {
                     PointNRound(Offset(0.500f, 0.268f), CornerRounding(0.016f)),
                     PointNRound(Offset(0.792f, -0.066f), CornerRounding(0.958f)),
                     PointNRound(Offset(1.064f, 0.276f), CornerRounding(1.000f)),
-                    PointNRound(Offset(0.501f, 0.946f), CornerRounding(0.129f))
+                    PointNRound(Offset(0.501f, 0.946f), CornerRounding(0.129f)),
                 ),
                 reps = 1,
-                mirroring = true
+                mirroring = true,
             )
         }
 
         private data class PointNRound(
             val o: Offset,
-            val r: CornerRounding = CornerRounding.Unrounded
+            val r: CornerRounding = CornerRounding.Unrounded,
         )
 
         @Suppress("PrimitiveInCollection")
@@ -707,7 +723,7 @@ sealed class MaterialShapes {
             points: List<PointNRound>,
             reps: Int,
             center: Offset,
-            mirroring: Boolean
+            mirroring: Boolean,
         ) =
             if (mirroring) {
                 buildList {
@@ -755,7 +771,7 @@ sealed class MaterialShapes {
             pnr: List<PointNRound>,
             reps: Int,
             center: Offset = Offset(0.5f, 0.5f),
-            mirroring: Boolean = false
+            mirroring: Boolean = false,
         ): RoundedPolygon {
             val actualPoints = doRepeat(pnr, reps, center, mirroring)
             return RoundedPolygon(
@@ -765,7 +781,7 @@ sealed class MaterialShapes {
                     },
                 perVertexRounding = buildList { for (p in actualPoints) add(p.r) },
                 centerX = center.x,
-                centerY = center.y
+                centerY = center.y,
             )
         }
     }

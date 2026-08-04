@@ -28,7 +28,6 @@ import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
 import android.util.Log
-import androidx.annotation.RestrictTo
 import java.lang.reflect.Field
 import java.lang.reflect.Method
 
@@ -58,7 +57,6 @@ import java.lang.reflect.Method
  * The fix for this is to add the missing onStop() call, by using reflection to call into
  * ActivityThread.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY)
 internal object ActivityRecreatorKt {
     private const val LOG_TAG = "ActivityRecreator"
 
@@ -125,7 +123,7 @@ internal object ActivityRecreatorKt {
                         null,
                         null,
                         false,
-                        false
+                        false,
                     )
                 } else {
                     activity.recreate()
@@ -149,7 +147,7 @@ internal object ActivityRecreatorKt {
     internal fun queueOnStopIfNecessary(
         currentlyRecreatingToken: Any?,
         currentlyRecreatingHashCode: Int,
-        activity: Activity
+        activity: Activity,
     ): Boolean {
         return try {
             val token = tokenField!![activity]
@@ -173,7 +171,7 @@ internal object ActivityRecreatorKt {
                             activityThread,
                             token,
                             false,
-                            "AppCompat recreation"
+                            "AppCompat recreation",
                         )
                     } else {
                         performStopActivity2ParamsMethod!!.invoke(activityThread, token, false)
@@ -210,7 +208,7 @@ internal object ActivityRecreatorKt {
                     "performStopActivity",
                     IBinder::class.java,
                     Boolean::class.javaPrimitiveType,
-                    String::class.java
+                    String::class.java,
                 )
             performStop.isAccessible = true
             performStop
@@ -228,7 +226,7 @@ internal object ActivityRecreatorKt {
                 activityThreadClass.getDeclaredMethod(
                     "performStopActivity",
                     IBinder::class.java,
-                    Boolean::class.javaPrimitiveType
+                    Boolean::class.javaPrimitiveType,
                 )
             performStop.isAccessible = true
             performStop
@@ -257,7 +255,7 @@ internal object ActivityRecreatorKt {
                     Configuration::class.java,
                     Configuration::class.java,
                     Boolean::class.javaPrimitiveType,
-                    Boolean::class.javaPrimitiveType
+                    Boolean::class.javaPrimitiveType,
                 )
             relaunch.isAccessible = true
             relaunch

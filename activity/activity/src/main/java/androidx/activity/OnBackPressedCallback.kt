@@ -16,6 +16,9 @@
 package androidx.activity
 
 import androidx.annotation.MainThread
+import androidx.navigationevent.NavigationEvent
+import androidx.navigationevent.NavigationEventHandler
+import androidx.navigationevent.NavigationEventInfo
 import java.util.concurrent.CopyOnWriteArrayList
 
 /**
@@ -36,28 +39,49 @@ import java.util.concurrent.CopyOnWriteArrayList
  * @param enabled The default enabled state for this callback.
  * @see OnBackPressedDispatcher
  */
-abstract class OnBackPressedCallback(enabled: Boolean) {
+public abstract class OnBackPressedCallback(enabled: Boolean) {
+
+    /**
+     * This [OnBackPressedCallback] class will delegate all interactions to [eventHandlers], which
+     * provides a KMP-compatible API while preserving behavior compatibility with existing callback
+     * mechanisms.
+     */
+    private val eventHandlers: MutableList<OnBackPressedEventHandler> = mutableListOf()
+
     /**
      * The enabled state of the callback. Only when this callback is enabled will it receive
      * callbacks to [handleOnBackPressed].
      *
-     * Note that the enabled state is an additional layer on top of the
-     * [androidx.lifecycle.LifecycleOwner] passed to [OnBackPressedDispatcher.addCallback] which
-     * controls when the callback is added and removed to the dispatcher.
+     * When registered with a [androidx.lifecycle.LifecycleOwner], the callback is only active when
+     * **both** this property is `true` and the [androidx.lifecycle.Lifecycle] is at least
+     * [androidx.lifecycle.Lifecycle.State.STARTED].
      */
     @get:MainThread
     @set:MainThread
-    var isEnabled: Boolean = enabled
+    public var isEnabled: Boolean = enabled
         set(value) {
             field = value
-            enabledChangedCallback?.invoke()
+            for (callback in eventHandlers) {
+                // Only enable if the Lifecycle is active. isLifecycleActive is always
+                // true unless this callback was registered with a LifecycleOwner.
+                callback.isBackEnabled = callback.isLifecycleActive && value
+            }
         }
 
-    private val cancellables = CopyOnWriteArrayList<Cancellable>()
-    internal var enabledChangedCallback: (() -> Unit)? = null
+    private val closeables = CopyOnWriteArrayList<AutoCloseable>()
 
     /** Removes this callback from any [OnBackPressedDispatcher] it is currently added to. */
-    @MainThread fun remove() = cancellables.forEach { it.cancel() }
+    @MainThread
+    public fun remove() {
+        for (closeable in closeables) {
+            closeable.close()
+        }
+        closeables.clear()
+        for (callback in eventHandlers) {
+            callback.remove()
+        }
+        eventHandlers.clear()
+    }
 
     /**
      * Callback for handling the system UI generated equivalent to
@@ -67,7 +91,7 @@ abstract class OnBackPressedCallback(enabled: Boolean) {
      */
     @Suppress("CallbackMethodName") /* mirror handleOnBackPressed local style */
     @MainThread
-    open fun handleOnBackStarted(backEvent: BackEventCompat) {}
+    public open fun handleOnBackStarted(backEvent: BackEventCompat) {}
 
     /**
      * Callback for handling the system UI generated equivalent to
@@ -77,10 +101,10 @@ abstract class OnBackPressedCallback(enabled: Boolean) {
      */
     @Suppress("CallbackMethodName") /* mirror handleOnBackPressed local style */
     @MainThread
-    open fun handleOnBackProgressed(backEvent: BackEventCompat) {}
+    public open fun handleOnBackProgressed(backEvent: BackEventCompat) {}
 
     /** Callback for handling the [OnBackPressedDispatcher.onBackPressed] event. */
-    @MainThread abstract fun handleOnBackPressed()
+    @MainThread public abstract fun handleOnBackPressed()
 
     /**
      * Callback for handling the system UI generated equivalent to
@@ -90,15 +114,64 @@ abstract class OnBackPressedCallback(enabled: Boolean) {
      */
     @Suppress("CallbackMethodName") /* mirror handleOnBackPressed local style */
     @MainThread
-    open fun handleOnBackCancelled() {}
+    public open fun handleOnBackCancelled() {}
 
-    @JvmName("addCancellable")
-    internal fun addCancellable(cancellable: Cancellable) {
-        cancellables.add(cancellable)
+    internal fun addCloseable(closeable: AutoCloseable) {
+        closeables += closeable
     }
 
-    @JvmName("removeCancellable")
-    internal fun removeCancellable(cancellable: Cancellable) {
-        cancellables.remove(cancellable)
+    internal fun removeCloseable(closeable: AutoCloseable) {
+        closeables -= closeable
+    }
+
+    internal fun createNavigationEventHandler(
+        info: NavigationEventInfo
+    ): OnBackPressedEventHandler {
+        val newHandler = OnBackPressedEventHandler(onBackPressedCallback = this, info)
+        eventHandlers += newHandler
+        return newHandler
+    }
+
+    internal class OnBackPressedEventHandler(
+        private val onBackPressedCallback: OnBackPressedCallback,
+        info: NavigationEventInfo,
+    ) :
+        NavigationEventHandler<NavigationEventInfo>(
+            initialInfo = info,
+            isBackEnabled = onBackPressedCallback.isEnabled,
+        ) {
+
+        /**
+         * Controls whether the associated `Lifecycle` is in an active state (at least
+         * `Lifecycle.State.STARTED`).
+         *
+         * When this value changes, it automatically updates [isBackEnabled] to ensure the
+         * underlying dispatcher is only enabled when **both** the lifecycle is active and the
+         * [OnBackPressedCallback.isEnabled] is explicitly set to `true`.
+         *
+         * Defaults to `true` for use cases where no `LifecycleOwner` is associated.
+         */
+        var isLifecycleActive: Boolean = true
+            set(value) {
+                field = value
+                // Automatically sync the effective state whenever the lifecycle state changes.
+                isBackEnabled = value && onBackPressedCallback.isEnabled
+            }
+
+        override fun onBackStarted(event: NavigationEvent) {
+            onBackPressedCallback.handleOnBackStarted(BackEventCompat(event))
+        }
+
+        override fun onBackProgressed(event: NavigationEvent) {
+            onBackPressedCallback.handleOnBackProgressed(BackEventCompat(event))
+        }
+
+        override fun onBackCompleted() {
+            onBackPressedCallback.handleOnBackPressed()
+        }
+
+        override fun onBackCancelled() {
+            onBackPressedCallback.handleOnBackCancelled()
+        }
     }
 }

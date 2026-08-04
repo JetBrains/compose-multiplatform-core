@@ -25,6 +25,8 @@ import android.graphics.drawable.Icon
 import android.os.Binder
 import android.os.Build
 import android.os.Bundle
+import android.os.Process
+import android.os.ResultReceiver
 import androidx.credentials.CreateCredentialRequest.Companion.createFrom
 import androidx.credentials.CreateCustomCredentialResponse
 import androidx.credentials.CreatePasswordRequest
@@ -32,13 +34,16 @@ import androidx.credentials.CreatePasswordResponse
 import androidx.credentials.CreatePublicKeyCredentialResponse
 import androidx.credentials.Credential
 import androidx.credentials.CustomCredential
+import androidx.credentials.DigitalCredential
 import androidx.credentials.GetCredentialResponse
 import androidx.credentials.GetCustomCredentialOption
+import androidx.credentials.GetDigitalCredentialOption
 import androidx.credentials.GetPasswordOption
 import androidx.credentials.GetPublicKeyCredentialOption
 import androidx.credentials.PasswordCredential
 import androidx.credentials.PublicKeyCredential
 import androidx.credentials.assertEquals
+import androidx.credentials.createDummyProviderGetCredentialRequest
 import androidx.credentials.equals
 import androidx.credentials.exceptions.CreateCredentialInterruptedException
 import androidx.credentials.exceptions.GetCredentialException
@@ -50,10 +55,12 @@ import androidx.credentials.getTestCallingAppInfo
 import androidx.credentials.internal.getFinalCreateCredentialData
 import androidx.credentials.provider.PendingIntentHandler.Api23Impl.Companion.extractBeginGetCredentialResponse
 import androidx.credentials.provider.PendingIntentHandler.Api23Impl.Companion.extractGetCredentialException
-import androidx.credentials.provider.PendingIntentHandler.Api23Impl.Companion.extractGetCredentialResponse
 import androidx.credentials.provider.PendingIntentHandler.Api23Impl.Companion.setBeginGetCredentialRequest
 import androidx.credentials.provider.PendingIntentHandler.Api23Impl.Companion.setProviderCreateCredentialRequest
 import androidx.credentials.provider.PendingIntentHandler.Api23Impl.Companion.setProviderGetCredentialRequest
+import androidx.credentials.provider.PendingIntentHandler.Companion.EXTRA_LARGE_PAYLOAD_RESULT_RECEIVER
+import androidx.credentials.provider.PendingIntentHandler.Companion.EXTRA_PASS_IT_BY_RESULT_RECEIVER
+import androidx.credentials.provider.PendingIntentHandler.Companion.EXTRA_RP_PID
 import androidx.credentials.provider.PendingIntentHandler.Companion.retrieveBeginGetCredentialRequest
 import androidx.credentials.provider.PendingIntentHandler.Companion.retrieveProviderCreateCredentialRequest
 import androidx.credentials.provider.PendingIntentHandler.Companion.retrieveProviderGetCredentialRequest
@@ -72,12 +79,13 @@ import androidx.test.filters.SdkSuppress
 import androidx.test.filters.SmallTest
 import com.google.common.truth.Truth.assertThat
 import java.time.Instant
+import kotlin.random.Random
 import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 @SmallTest
-@SdkSuppress(minSdkVersion = 23, maxSdkVersion = 33)
+@SdkSuppress(maxSdkVersion = 33)
 @Suppress("deprecation")
 class PendingIntentHandlerApi23Test {
     private val mContext: Context = ApplicationProvider.getApplicationContext()
@@ -91,7 +99,7 @@ class PendingIntentHandlerApi23Test {
                 "password",
                 "origin",
                 /* preferImmediatelyAvailableCredentials= */ true,
-                /* isAutoSelectAllowed= */ true
+                /* isAutoSelectAllowed= */ true,
             )
         val expectedRequest =
             ProviderCreateCredentialRequest(
@@ -100,9 +108,9 @@ class PendingIntentHandlerApi23Test {
                     getFinalCreateCredentialData(callingRequest, mContext),
                     callingRequest.candidateQueryData,
                     callingRequest.isSystemProviderRequired,
-                    callingRequest.origin
+                    callingRequest.origin,
                 ),
-                getTestCallingAppInfo(callingRequest.origin)
+                getTestCallingAppInfo(callingRequest.origin),
             )
         val intent = Intent()
         setProviderCreateCredentialRequest(intent, expectedRequest)
@@ -149,19 +157,19 @@ class PendingIntentHandlerApi23Test {
                             mContext,
                             0,
                             Intent(),
-                            PendingIntent.FLAG_IMMUTABLE
+                            PendingIntent.FLAG_IMMUTABLE,
                         ),
                         BeginGetPublicKeyCredentialOption(
                             option.candidateQueryData,
                             "id",
                             option.requestJson,
-                            option.clientDataHash
+                            option.clientDataHash,
                         ),
                         "displayname",
                         null,
                         ICON,
                         true,
-                        true
+                        true,
                     )
                 )
                 .addAction(constructActionEntry("action-title-1", "subtitle"))
@@ -181,7 +189,7 @@ class PendingIntentHandlerApi23Test {
                     ICON,
                     false,
                     "entry-group-id",
-                    false
+                    false,
                 )
             )
         }
@@ -213,24 +221,24 @@ class PendingIntentHandlerApi23Test {
                     BeginGetPasswordOption(
                         pwdOption1.allowedUserIds,
                         pwdOption1.candidateQueryData,
-                        "id-1"
+                        "id-1",
                     ),
                     BeginGetPasswordOption(
                         pwdOption2.allowedUserIds,
                         pwdOption2.candidateQueryData,
-                        "id-2"
+                        "id-2",
                     ),
                     BeginGetPublicKeyCredentialOption(
                         passkeyOption.candidateQueryData,
                         "id-3",
                         passkeyOption.requestJson,
-                        passkeyOption.clientDataHash
+                        passkeyOption.clientDataHash,
                     ),
                     BeginGetCustomCredentialOption(
                         "id-4",
                         customOption.type,
-                        customOption.candidateQueryData
-                    )
+                        customOption.candidateQueryData,
+                    ),
                 )
             )
         setBeginGetCredentialRequest(intent, expectedRequest)
@@ -257,21 +265,21 @@ class PendingIntentHandlerApi23Test {
                     BeginGetPasswordOption(
                         pwdOption.allowedUserIds,
                         pwdOption.candidateQueryData,
-                        "id-1"
+                        "id-1",
                     ),
                     BeginGetPublicKeyCredentialOption(
                         passkeyOption.candidateQueryData,
                         "id-3",
                         passkeyOption.requestJson,
-                        passkeyOption.clientDataHash
+                        passkeyOption.clientDataHash,
                     ),
                     BeginGetCustomCredentialOption(
                         "id-4",
                         customOption.type,
-                        customOption.candidateQueryData
-                    )
+                        customOption.candidateQueryData,
+                    ),
                 ),
-                getTestCallingAppInfo(null)
+                getTestCallingAppInfo(null),
             )
         setBeginGetCredentialRequest(intent, expectedRequest)
 
@@ -350,7 +358,7 @@ class PendingIntentHandlerApi23Test {
         val expectedRequest =
             ProviderGetCredentialRequest(
                 listOf(pwdOption1, pwdOption2, passkeyOption, customOption),
-                getTestCallingAppInfo("origin")
+                getTestCallingAppInfo("origin"),
             )
         setProviderGetCredentialRequest(intent, expectedRequest)
 
@@ -376,9 +384,10 @@ class PendingIntentHandlerApi23Test {
         val expected = GetCredentialResponse(cred)
         val intent = Intent()
 
-        setGetCredentialResponse(intent, expected)
+        setGetCredentialResponse(intent, expected, createDummyProviderGetCredentialRequest())
 
-        val actual: GetCredentialResponse = extractGetCredentialResponse(intent)!!
+        val actual: GetCredentialResponse =
+            PendingIntentHandler.retrieveGetCredentialResponse(intent)!!
         equals(actual, expected)
     }
 
@@ -389,9 +398,10 @@ class PendingIntentHandlerApi23Test {
         val expected = GetCredentialResponse(cred)
         val intent = Intent()
 
-        setGetCredentialResponse(intent, expected)
+        setGetCredentialResponse(intent, expected, createDummyProviderGetCredentialRequest())
 
-        val actual: GetCredentialResponse = extractGetCredentialResponse(intent)!!
+        val actual: GetCredentialResponse =
+            PendingIntentHandler.retrieveGetCredentialResponse(intent)!!
         equals(actual, expected)
     }
 
@@ -405,9 +415,10 @@ class PendingIntentHandlerApi23Test {
         val expected = GetCredentialResponse(cred)
         val intent = Intent()
 
-        setGetCredentialResponse(intent, expected)
+        setGetCredentialResponse(intent, expected, createDummyProviderGetCredentialRequest())
 
-        val actual: GetCredentialResponse = extractGetCredentialResponse(intent)!!
+        val actual: GetCredentialResponse =
+            PendingIntentHandler.retrieveGetCredentialResponse(intent)!!
         equals(actual, expected)
     }
 
@@ -458,6 +469,160 @@ class PendingIntentHandlerApi23Test {
         val actual = PendingIntentHandler.retrieveCreateCredentialException(Intent())
 
         assertThat(actual).isNull()
+    }
+
+    @Test
+    fun test_credentialResponse_largePayload_usesResultReceiver() {
+        val intent = Intent()
+        val largeData = Bundle()
+        val byteArray = Random.nextBytes(1024 * 1024 + 100)
+        largeData.putByteArray("large_array", byteArray)
+        val customCredential = CustomCredential("type", largeData)
+        val initialResponse = GetCredentialResponse(customCredential)
+        var receivedIntent: Intent? = null
+        val requestData = Bundle()
+        val receiver =
+            object : android.os.ResultReceiver(null) {
+                override fun onReceiveResult(resultCode: Int, resultData: Bundle?) {
+                    receivedIntent = resultData?.getParcelable("RESULT_DATA")
+                }
+            }
+        requestData.putParcelable(EXTRA_LARGE_PAYLOAD_RESULT_RECEIVER, receiver)
+        requestData.putInt(EXTRA_RP_PID, Process.myPid())
+        val option = GetCustomCredentialOption("type", requestData, Bundle(), false, true)
+        val request = ProviderGetCredentialRequest(listOf(option), getTestCallingAppInfo("origin"))
+
+        setGetCredentialResponse(intent, initialResponse, request)
+
+        assertThat(intent.getBooleanExtra(EXTRA_PASS_IT_BY_RESULT_RECEIVER, false)).isTrue()
+        assertThat(receivedIntent).isNotNull()
+        // Verify that the GetCredentialResponse can be successfully retrieved from the same
+        // process.
+        val finalResponse = PendingIntentHandler.retrieveGetCredentialResponse(receivedIntent!!)
+        assertThat(finalResponse!!.credential.data.getByteArray("large_array")).isEqualTo(byteArray)
+    }
+
+    @Test
+    fun test_credentialResponse_largePayload_noReceiver_doesNotUseResultReceiver() {
+        val intent = Intent()
+        val largeData = Bundle()
+        val byteArray = ByteArray(205000)
+        largeData.putByteArray("large_array", byteArray)
+        val customCredential = CustomCredential("type", largeData)
+        val initialResponse = GetCredentialResponse(customCredential)
+
+        val option = GetCustomCredentialOption("type", Bundle(), Bundle(), false, true)
+        val request = ProviderGetCredentialRequest(listOf(option), getTestCallingAppInfo("origin"))
+
+        setGetCredentialResponse(intent, initialResponse, request)
+
+        assertThat(intent.hasExtra(EXTRA_PASS_IT_BY_RESULT_RECEIVER)).isFalse()
+    }
+
+    @OptIn(androidx.credentials.ExperimentalDigitalCredentialApi::class)
+    @Test
+    fun test_credentialResponse_multipleCredentials_success() {
+        val intent = Intent()
+        val cred1 = DigitalCredential("{\"protocol\":\"openid4vp\",\"data\":{\"token\":\"val1\"}}")
+        val cred2 = DigitalCredential("{\"protocol\":\"openid4vp\",\"data\":{\"token\":\"val2\"}}")
+        val initialResponse = GetCredentialResponse(listOf(cred1, cred2))
+
+        val option = GetDigitalCredentialOption("{\"providers\":[{\"protocol\":\"openid4vp\"}]}")
+        val request = ProviderGetCredentialRequest(listOf(option), getTestCallingAppInfo("origin"))
+
+        setGetCredentialResponse(intent, initialResponse, request)
+
+        val actual = PendingIntentHandler.retrieveGetCredentialResponse(intent)
+        assertThat(actual).isNotNull()
+        assertThat(actual!!.credentials).hasSize(2)
+        val retrievedCred1 = actual.credentials[0] as DigitalCredential
+        assertThat(retrievedCred1.credentialJson)
+            .isEqualTo("{\"protocol\":\"openid4vp\",\"data\":{\"token\":\"val1\"}}")
+        val retrievedCred2 = actual.credentials[1] as DigitalCredential
+        assertThat(retrievedCred2.credentialJson)
+            .isEqualTo("{\"protocol\":\"openid4vp\",\"data\":{\"token\":\"val2\"}}")
+    }
+
+    @OptIn(androidx.credentials.ExperimentalDigitalCredentialApi::class)
+    @Test
+    fun test_credentialResponse_multipleConcreteCredentials_success() {
+        val intent = Intent()
+        val passwordCred = PasswordCredential("username", "password")
+        val publicKeyCred =
+            PublicKeyCredential(
+                "{\"id\":\"test_id\",\"rawId\":\"test_raw_id\",\"response\":{\"clientDataJSON\":\"client_data\",\"authenticatorData\":\"auth_data\",\"signature\":\"sig\"},\"type\":\"public-key\"}"
+            )
+        val digitalCred =
+            DigitalCredential("{\"protocol\":\"openid4vp\",\"data\":{\"token\":\"jwt_token_123\"}}")
+        val initialResponse =
+            GetCredentialResponse(listOf(passwordCred, publicKeyCred, digitalCred))
+
+        val option = GetCustomCredentialOption(passwordCred.type, Bundle(), Bundle(), false, true)
+        val request = ProviderGetCredentialRequest(listOf(option), getTestCallingAppInfo("origin"))
+
+        setGetCredentialResponse(intent, initialResponse, request)
+
+        val finalResponse = PendingIntentHandler.retrieveGetCredentialResponse(intent)
+        assertThat(finalResponse).isNotNull()
+        assertThat(finalResponse!!.credentials).hasSize(3)
+
+        val retrievedPassword = finalResponse.credentials[0] as PasswordCredential
+        assertThat(retrievedPassword.id).isEqualTo("username")
+        assertThat(retrievedPassword.password).isEqualTo("password")
+
+        val retrievedPubKey = finalResponse.credentials[1] as PublicKeyCredential
+        assertThat(retrievedPubKey.authenticationResponseJson).contains("test_id")
+
+        val retrievedDigital = finalResponse.credentials[2] as DigitalCredential
+        assertThat(retrievedDigital.credentialJson)
+            .isEqualTo("{\"protocol\":\"openid4vp\",\"data\":{\"token\":\"jwt_token_123\"}}")
+    }
+
+    @OptIn(androidx.credentials.ExperimentalDigitalCredentialApi::class)
+    @Test
+    fun test_credentialResponse_multipleCredentials_largePayload_success() {
+        val intent = Intent()
+        val largeVpToken1 = "eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9." + "a".repeat(300000)
+        val largeJson1 =
+            """{"protocol":"openid4vp","data":{"vp_token":"$largeVpToken1","presentation_submission":{"id":"sub_mdl","definition_id":"org.iso.18013.5.mDL","descriptor_map":[{"id":"mdl","format":"mso_mdoc","path":"$"}]}}}"""
+        val cred1 = DigitalCredential(largeJson1)
+
+        val largeVpToken2 = "eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9." + "b".repeat(400000)
+        val largeJson2 =
+            """{"protocol":"openid4vp","data":{"vp_token":"$largeVpToken2","presentation_submission":{"id":"sub_pid","definition_id":"eu.europa.ec.eudiw.pid","descriptor_map":[{"id":"pid","format":"sd_jwt_vc","path":"$"}]}}}"""
+        val cred2 = DigitalCredential(largeJson2)
+
+        val initialResponse = GetCredentialResponse(listOf(cred1, cred2))
+
+        var receivedIntent: Intent? = null
+        val receiver =
+            object : ResultReceiver(null) {
+                override fun onReceiveResult(resultCode: Int, resultData: Bundle?) {
+                    @Suppress("DEPRECATION")
+                    receivedIntent = resultData?.getParcelable("RESULT_DATA")
+                }
+            }
+        val requestJson =
+            """{"providers":[{"protocol":"openid4vp","request":"eyJhbGciOiJFUzI1NiIs...request_jwt..."}]}"""
+        val option = GetDigitalCredentialOption(requestJson)
+        option.requestData.putParcelable(EXTRA_LARGE_PAYLOAD_RESULT_RECEIVER, receiver)
+        option.requestData.putInt(EXTRA_RP_PID, Process.myPid())
+        val request = ProviderGetCredentialRequest(listOf(option), getTestCallingAppInfo("origin"))
+
+        setGetCredentialResponse(intent, initialResponse, request)
+
+        assertThat(intent.getBooleanExtra(EXTRA_PASS_IT_BY_RESULT_RECEIVER, false)).isTrue()
+        assertThat(receivedIntent).isNotNull()
+
+        val finalResponse = PendingIntentHandler.retrieveGetCredentialResponse(receivedIntent!!)
+        assertThat(finalResponse).isNotNull()
+        assertThat(finalResponse!!.credentials).hasSize(2)
+
+        val retrievedCred1 = finalResponse.credentials[0] as DigitalCredential
+        assertThat(retrievedCred1.credentialJson).isEqualTo(largeJson1)
+
+        val retrievedCred2 = finalResponse.credentials[1] as DigitalCredential
+        assertThat(retrievedCred2.credentialJson).isEqualTo(largeJson2)
     }
 
     companion object {

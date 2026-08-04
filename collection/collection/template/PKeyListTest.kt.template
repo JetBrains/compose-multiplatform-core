@@ -30,6 +30,7 @@ import kotlin.test.assertTrue
 // to ensure the change is available on all versions of the map.
 // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
+@Suppress("REDUNDANT_CALL_OF_CONVERSION_METHOD")
 class PKeyListTest {
     private val list: MutablePKeyList = mutablePKeyListOf(1KeySuffix, 2KeySuffix, 3KeySuffix, 4KeySuffix, 5KeySuffix)
 
@@ -96,14 +97,14 @@ class PKeyListTest {
     fun joinToString() {
         assertEquals("${1KeySuffix}, ${2KeySuffix}, ${3KeySuffix}, ${4KeySuffix}, ${5KeySuffix}", list.joinToString())
         assertEquals(
-            "x${1KeySuffix}, ${2KeySuffix}, ${3KeySuffix}...",
+            "x${1KeySuffix}, ${2KeySuffix}, ${3KeySuffix}, ...y",
             list.joinToString(prefix = "x", postfix = "y", limit = 3)
         )
         assertEquals(
             ">${1KeySuffix}-${2KeySuffix}-${3KeySuffix}-${4KeySuffix}-${5KeySuffix}<",
             list.joinToString(separator = "-", prefix = ">", postfix = "<")
         )
-        assertEquals("one, two, three...", list.joinToString(limit = 3) {
+        assertEquals("one, two, three, ...", list.joinToString(limit = 3) {
             when (it.toInt()) {
                 1 -> "one"
                 2 -> "two"
@@ -782,13 +783,21 @@ class PKeyListTest {
     @Test
     fun binarySearchPKeyList() {
         val l = mutablePKeyListOf(-2KeySuffix, -1KeySuffix, 2KeySuffix, 10KeySuffix, 10KeySuffix)
-        assertEquals(0, l.binarySearch(-2))
-        assertEquals(2, l.binarySearch(2))
-        assertEquals(3, l.binarySearch(10))
+        assertEquals(0, l.binarySearch(-2KeySuffix))
+        assertEquals(2, l.binarySearch(2KeySuffix))
+        assertEquals(3, l.binarySearch(10KeySuffix))
 
-        assertEquals(-1, l.binarySearch(-20))
-        assertEquals(-4, l.binarySearch(3))
-        assertEquals(-6, l.binarySearch(20))
+        assertEquals(-1, l.binarySearch(-20KeySuffix))
+        assertEquals(-4, l.binarySearch(3KeySuffix))
+        assertEquals(-6, l.binarySearch(20KeySuffix))
+    }
 
+    @Test
+    fun binarySearchPKeyListWithComparison() {
+        val l = mutablePKeyListOf(-2KeySuffix, -1KeySuffix, 2KeySuffix, 10KeySuffix, 10KeySuffix)
+        assertEquals(2, l.binarySearch { it.compareTo(2KeySuffix) })
+        assertEquals(0, l.binarySearch { it.compareTo(-2KeySuffix) })
+        assertEquals(-1, l.binarySearch { it.compareTo(-20KeySuffix) })
     }
 }
+

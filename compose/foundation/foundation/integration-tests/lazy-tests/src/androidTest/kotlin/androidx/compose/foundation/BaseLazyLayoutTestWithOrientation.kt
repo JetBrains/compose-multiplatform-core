@@ -17,6 +17,8 @@
 package androidx.compose.foundation
 
 import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -36,7 +38,7 @@ import androidx.compose.ui.test.assertLeftPositionInRootIsEqualTo
 import androidx.compose.ui.test.assertTopPositionInRootIsEqualTo
 import androidx.compose.ui.test.assertWidthIsEqualTo
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.DpSize
@@ -45,6 +47,7 @@ import androidx.compose.ui.unit.dp
 import org.junit.Rule
 
 open class BaseLazyLayoutTestWithOrientation(private val orientation: Orientation) {
+
     @get:Rule val rule = createComposeRule()
 
     val vertical: Boolean
@@ -64,6 +67,14 @@ open class BaseLazyLayoutTestWithOrientation(private val orientation: Orientatio
             this.height(size)
         } else {
             this.width(size)
+        }
+
+    @Stable
+    fun Modifier.fillMaxCrossAxis() =
+        if (vertical) {
+            this.fillMaxWidth()
+        } else {
+            this.fillMaxHeight()
         }
 
     @Stable
@@ -138,7 +149,7 @@ open class BaseLazyLayoutTestWithOrientation(private val orientation: Orientatio
             beforeContent = mainAxis,
             afterContent = mainAxis,
             beforeContentCrossAxis = crossAxis,
-            afterContentCrossAxis = crossAxis
+            afterContentCrossAxis = crossAxis,
         )
 
     fun PaddingValues(
@@ -152,14 +163,14 @@ open class BaseLazyLayoutTestWithOrientation(private val orientation: Orientatio
                 start = beforeContentCrossAxis,
                 top = beforeContent,
                 end = afterContentCrossAxis,
-                bottom = afterContent
+                bottom = afterContent,
             )
         } else {
             androidx.compose.foundation.layout.PaddingValues(
                 start = beforeContent,
                 top = beforeContentCrossAxis,
                 end = afterContent,
-                bottom = afterContentCrossAxis
+                bottom = afterContentCrossAxis,
             )
         }
 
@@ -183,7 +194,7 @@ open class BaseLazyLayoutTestWithOrientation(private val orientation: Orientatio
         override fun applyToScroll(
             delta: Offset,
             source: NestedScrollSource,
-            performScroll: (Offset) -> Offset
+            performScroll: (Offset) -> Offset,
         ): Offset {
             applyToScrollCalledCount++
             val consumed = performScroll(delta)
@@ -193,7 +204,7 @@ open class BaseLazyLayoutTestWithOrientation(private val orientation: Orientatio
 
         override suspend fun applyToFling(
             velocity: Velocity,
-            performFling: suspend (Velocity) -> Velocity
+            performFling: suspend (Velocity) -> Velocity,
         ) {
             applyToFlingCalledCount++
             val consumed = performFling(velocity)

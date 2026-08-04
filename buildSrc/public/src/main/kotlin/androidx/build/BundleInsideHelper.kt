@@ -16,24 +16,38 @@
 
 package androidx.build
 
+import com.android.build.api.artifact.MultipleArtifact
+import com.android.build.api.variant.LibraryAndroidComponentsExtension
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import com.github.jengelman.gradle.plugins.shadow.transformers.Transformer
 import com.github.jengelman.gradle.plugins.shadow.transformers.TransformerContext
+import javax.inject.Inject
 import org.apache.tools.zip.ZipOutputStream
+import org.gradle.api.DefaultTask
 import org.gradle.api.Project
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.attributes.Usage
+import org.gradle.api.file.ArchiveOperations
+import org.gradle.api.file.DirectoryProperty
+import org.gradle.api.file.FileSystemOperations
 import org.gradle.api.file.FileTreeElement
+import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.Optional
+import org.gradle.api.tasks.OutputDirectory
+import org.gradle.api.tasks.PathSensitive
+import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.SourceSetContainer
+import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.kotlin.dsl.named
+import org.gradle.work.DisableCachingByDefault
 
 /** Allow java and Android libraries to bundle other projects inside the project jar/aar. */
 object BundleInsideHelper {
-    val CONFIGURATION_NAME = "bundleInside"
-    val REPACKAGE_TASK_NAME = "repackageBundledJars"
+    const val CONFIGURATION_NAME = "bundleInside"
+    const val REPACKAGE_TASK_NAME = "repackageBundledJars"
 
     /**
      * Creates a configuration for the users to use that will be used to bundle these dependency
@@ -57,8 +71,21 @@ object BundleInsideHelper {
     fun Project.forInsideAar(relocations: List<Relocation>?, dropResourcesWithSuffix: String?) {
         val bundle = createBundleConfiguration()
         val repackage = configureRepackageTaskForType(relocations, bundle, dropResourcesWithSuffix)
-        // Add to AGP's configuration so this jar get packaged inside of the aar.
-        dependencies.add("implementation", files(repackage.flatMap { it.archiveFile }))
+
+        val extractRepackaged =
+            tasks.register("extractRepackagedJarForLinkage", ExtractRepackagedJar::class.java) {
+                task ->
+                task.archiveFile.set(repackage.flatMap { it.archiveFile })
+                task.destinationDirectory.set(layout.buildDirectory.dir("repackaged-extracted"))
+            }
+
+        val androidComponents = extensions.getByType(LibraryAndroidComponentsExtension::class.java)
+        androidComponents.onVariants { variant ->
+            variant.artifacts
+                .use(extractRepackaged)
+                .wiredWith { it.destinationDirectory }
+                .toAppendTo(MultipleArtifact.PRE_COMPILATION_CLASSES)
+        }
     }
 
     /**
@@ -114,23 +141,9 @@ object BundleInsideHelper {
         compileOnly.extendsFrom(bundle)
         testImplementation.extendsFrom(bundle)
 
-        // Relocation needed to avoid classpath conflicts with Android Studio (b/337980250)
-        // Can be removed if we migrate from using kotlin-metadata-jvm inside of lint checks
-        val relocations = listOf(Relocation("kotlin.metadata", "androidx.lint.kotlin.metadata"))
-        val repackage = configureRepackageTaskForType(relocations, bundle, null)
+        val repackage = configureRepackageTaskForType(null, bundle, null)
         val sourceSets = extensions.getByType(SourceSetContainer::class.java)
-        repackage.configure { task ->
-            task.from(sourceSets.findByName("main")?.output)
-            // kotlin-metadata-jvm has a service descriptor that needs transformation
-            task.mergeServiceFiles()
-            // Exclude Kotlin metadata files from kotlin-metadata-jvm
-            task.exclude(
-                "META-INF/kotlin-metadata-jvm.kotlin_module",
-                "META-INF/kotlin-metadata.kotlin_module",
-                "META-INF/metadata.jvm.kotlin_module",
-                "META-INF/metadata.kotlin_module"
-            )
-        }
+        repackage.configure { task -> task.from(sourceSets.findByName("main")!!.output) }
 
         listOf("apiElements", "runtimeElements").forEach { config ->
             configurations.getByName(config).apply {
@@ -145,7 +158,7 @@ object BundleInsideHelper {
     private fun Project.configureRepackageTaskForType(
         relocations: List<Relocation>?,
         configuration: Configuration,
-        dropResourcesWithSuffix: String?
+        dropResourcesWithSuffix: String?,
     ): TaskProvider<ShadowJar> {
         return tasks.register(REPACKAGE_TASK_NAME, ShadowJar::class.java) { task ->
             task.apply {
@@ -168,8 +181,11 @@ object BundleInsideHelper {
     private fun Project.createBundleConfiguration(): Configuration {
         val bundle =
             configurations.create(CONFIGURATION_NAME) {
-                it.attributes {
-                    it.attribute(Usage.USAGE_ATTRIBUTE, objects.named<Usage>(Usage.JAVA_RUNTIME))
+                it.attributes { attributes ->
+                    attributes.attribute(
+                        Usage.USAGE_ATTRIBUTE,
+                        objects.named<Usage>(Usage.JAVA_RUNTIME),
+                    )
                 }
                 it.isCanBeConsumed = false
             }
@@ -199,6 +215,33 @@ object BundleInsideHelper {
 
         override fun modifyOutputStream(zipOutputStream: ZipOutputStream?, b: Boolean) {
             // no op
+        }
+    }
+}
+
+/**
+ * Task to extract a repackaged jar into a directory. This is used to wire the repackaged jar to
+ * PRE_COMPILATION_CLASSES which expects a directory.
+ */
+@DisableCachingByDefault(because = "not worth caching")
+abstract class ExtractRepackagedJar
+@Inject
+constructor(
+    private val fileSystemOperations: FileSystemOperations,
+    private val archiveOperations: ArchiveOperations,
+) : DefaultTask() {
+
+    @get:PathSensitive(PathSensitivity.NONE)
+    @get:InputFile
+    abstract val archiveFile: RegularFileProperty
+
+    @get:OutputDirectory abstract val destinationDirectory: DirectoryProperty
+
+    @TaskAction
+    fun run() {
+        fileSystemOperations.sync {
+            it.from(archiveOperations.zipTree(archiveFile))
+            it.into(destinationDirectory)
         }
     }
 }

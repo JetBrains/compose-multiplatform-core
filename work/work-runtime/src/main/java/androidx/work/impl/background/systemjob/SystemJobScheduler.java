@@ -18,7 +18,6 @@ package androidx.work.impl.background.systemjob;
 import static android.content.Context.JOB_SCHEDULER_SERVICE;
 
 import static androidx.work.OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST;
-import static androidx.work.impl.WorkManagerImpl.MIN_JOB_SCHEDULER_API_LEVEL;
 import static androidx.work.impl.background.systemjob.JobSchedulerExtKt.createErrorMessage;
 import static androidx.work.impl.background.systemjob.JobSchedulerExtKt.getSafePendingJobs;
 import static androidx.work.impl.background.systemjob.JobSchedulerExtKt.getWmJobScheduler;
@@ -35,7 +34,6 @@ import android.content.Context;
 import android.os.Build;
 import android.os.PersistableBundle;
 
-import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
 import androidx.core.util.Consumer;
@@ -63,7 +61,6 @@ import java.util.Set;
  * A class that schedules work using {@link android.app.job.JobScheduler}.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-@RequiresApi(MIN_JOB_SCHEDULER_API_LEVEL)
 public class SystemJobScheduler implements Scheduler {
 
     private static final String TAG = Logger.tagWithPrefix("SystemJobScheduler");
@@ -193,7 +190,8 @@ public class SystemJobScheduler implements Scheduler {
         JobInfo jobInfo = mSystemJobInfoConverter.convert(workSpec, jobId);
         Logger.get().debug(
                 TAG,
-                "Scheduling work ID " + workSpec.id + "Job ID " + jobId);
+                "Scheduling work ID " + workSpec.id + " (" + workSpec.workerClassName
+                        + "), Job ID " + jobId);
         try {
             int result = mJobScheduler.schedule(jobInfo);
             if (result == JobScheduler.RESULT_FAILURE) {
@@ -236,6 +234,8 @@ public class SystemJobScheduler implements Scheduler {
         List<Integer> jobIds = getPendingJobIds(mContext, mJobScheduler, workSpecId);
         if (jobIds != null && !jobIds.isEmpty()) {
             for (int jobId : jobIds) {
+                Logger.get().debug(TAG, "Cancelling work ID " + workSpecId
+                        + ", Job ID " + jobId);
                 cancelJobById(mJobScheduler, jobId);
             }
 

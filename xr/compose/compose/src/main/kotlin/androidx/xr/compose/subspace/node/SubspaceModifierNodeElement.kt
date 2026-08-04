@@ -16,7 +16,6 @@
 
 package androidx.xr.compose.subspace.node
 
-import androidx.annotation.RestrictTo
 import androidx.xr.compose.subspace.layout.SubspaceModifier
 
 /**
@@ -31,7 +30,6 @@ import androidx.xr.compose.subspace.layout.SubspaceModifier
  *
  * @param N The type of node that this element creates and updates.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public abstract class SubspaceModifierNodeElement<N : SubspaceModifier.Node> : SubspaceModifier {
     /**
      * This will be called the first time the modifier is applied to the layout and it should
@@ -43,6 +41,8 @@ public abstract class SubspaceModifierNodeElement<N : SubspaceModifier.Node> : S
      * Called when a modifier is applied to a layout whose inputs have changed from the previous
      * application. This function will have the current node instance passed in as a parameter, and
      * it is expected that the node will be brought up to date.
+     *
+     * @param node The node instance to be updated.
      */
     public abstract fun update(node: N)
 
@@ -56,6 +56,8 @@ public abstract class SubspaceModifierNodeElement<N : SubspaceModifier.Node> : S
      * Require equals() to be implemented. Using a data class is sufficient. Singletons may
      * implement this function with referential equality (`this === other`). Modifiers with no
      * inputs may implement this function by checking the type of the other object.
+     *
+     * @param other The object to compare this element against.
      */
     public abstract override fun equals(other: Any?): Boolean
 }

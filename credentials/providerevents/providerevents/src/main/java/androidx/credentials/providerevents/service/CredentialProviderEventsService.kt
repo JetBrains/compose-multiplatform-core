@@ -26,6 +26,8 @@ import androidx.credentials.exceptions.CreateCredentialException
 import androidx.credentials.provider.CredentialProviderService
 import androidx.credentials.provider.ProviderCreateCredentialRequest
 import androidx.credentials.providerevents.internal.CredentialEventsProviderFactory
+import androidx.credentials.providerevents.signal.ProviderSignalCredentialStateCallback
+import androidx.credentials.providerevents.signal.ProviderSignalCredentialStateRequest
 
 /**
  * A base service for credential providers to receive advanced requests from
@@ -118,6 +120,23 @@ public abstract class CredentialProviderEventsService() : Service() {
     public open fun onCreateCredentialRequest(
         request: ProviderCreateCredentialRequest,
         cancellationSignal: CancellationSignal,
-        callback: OutcomeReceiverCompat<CreateCredentialResponse, CreateCredentialException>
+        callback: OutcomeReceiverCompat<CreateCredentialResponse, CreateCredentialException>,
+    ) {}
+
+    /**
+     * Called when a credential provider should receive credential state signals from a calling
+     * application.
+     *
+     * This method should be extended by credential providers to receive credential state signal
+     * requests. Note there is no required action on receipt of this request if it is not
+     * applicable, however there are recommended actions. See
+     * [spec](https://w3c.github.io/webauthn/#sctn-signal-methods)
+     *
+     * @param request The request for signalling a user's credential state.
+     * @param callback The callback to receive the result of the credential state signal.
+     */
+    public open fun onSignalCredentialStateRequest(
+        request: ProviderSignalCredentialStateRequest,
+        callback: ProviderSignalCredentialStateCallback,
     ) {}
 }

@@ -17,7 +17,7 @@
 package androidx.wear.compose.material3
 
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.test.filters.MediumTest
 import androidx.wear.compose.foundation.LocalReduceMotion
 import androidx.wear.compose.foundation.lazy.TransformingLazyColumn
@@ -42,7 +42,7 @@ class SurfaceTransformationSpecTest {
                 item {
                     Button(
                         onClick = {},
-                        transformation = SurfaceTransformation(spec).also { transformation = it }
+                        transformation = SurfaceTransformation(spec).also { transformation = it },
                     ) {
                         Text("bugaga")
                     }
@@ -65,7 +65,7 @@ class SurfaceTransformationSpecTest {
                         Button(
                             onClick = {},
                             transformation =
-                                SurfaceTransformation(spec).also { transformation = it }
+                                SurfaceTransformation(spec).also { transformation = it },
                         ) {
                             Text("bugaga")
                         }

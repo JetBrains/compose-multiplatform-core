@@ -89,7 +89,7 @@ fun BasicSecureTextFieldDemo(textObfuscationMode: TextObfuscationMode) {
     BasicSecureTextField(
         state = state,
         textObfuscationMode = textObfuscationMode,
-        modifier = demoTextFieldModifiers
+        modifier = demoTextFieldModifiers,
     )
 }
 
@@ -116,18 +116,18 @@ fun ChangingMaskDemo(textObfuscationMode: TextObfuscationMode) {
                     replace(
                         start = 0,
                         end = length,
-                        text = asCharSequence().substring(changes.getRange(0))
+                        text = asCharSequence().substring(changes.getRange(0)),
                     )
                 }
             },
-            outputTransformation = { insert(0, "Enter mask character: ") }
+            outputTransformation = { insert(0, "Enter mask character: ") },
         )
     }
     BasicSecureTextField(
         state = passwordState,
         textObfuscationMode = textObfuscationMode,
         textObfuscationCharacter = maskState.text[0],
-        modifier = demoTextFieldModifiers
+        modifier = demoTextFieldModifiers,
     )
 }
 
@@ -144,7 +144,7 @@ fun NumberPasswordDemo() {
         },
         keyboardOptions =
             KeyboardOptions(autoCorrectEnabled = false, keyboardType = KeyboardType.NumberPassword),
-        modifier = demoTextFieldModifiers
+        modifier = demoTextFieldModifiers,
     )
 }
 
@@ -156,6 +156,12 @@ fun PasswordToggleVisibilityDemo() {
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         BasicSecureTextField(
             state = state,
+            keyboardOptions =
+                KeyboardOptions(
+                    autoCorrectEnabled = false,
+                    keyboardType =
+                        if (visible) KeyboardType.PasswordVisible else KeyboardType.Password,
+                ),
             textObfuscationMode =
                 if (visible) {
                     TextObfuscationMode.Visible
@@ -166,7 +172,7 @@ fun PasswordToggleVisibilityDemo() {
                 Modifier.weight(1f)
                     .padding(6.dp)
                     .border(1.dp, Color.LightGray, RoundedCornerShape(6.dp))
-                    .padding(6.dp)
+                    .padding(6.dp),
         )
         if (visible) {
             TextButton(onClick = { visible = false }) { Text("Hide") }

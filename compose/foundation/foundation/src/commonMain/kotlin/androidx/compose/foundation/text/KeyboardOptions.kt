@@ -26,47 +26,64 @@ import androidx.compose.ui.text.input.PlatformImeOptions
 import androidx.compose.ui.text.intl.LocaleList
 
 /**
- * The keyboard configuration options for TextFields. It is not guaranteed if software keyboard will
- * comply with the options provided here.
+ * Defines keyboard configuration options for TextFields.
  *
- * @param capitalization informs the keyboard whether to automatically capitalize characters, words
- *   or sentences. Only applicable to only text based [KeyboardType]s such as [KeyboardType.Text],
- *   [KeyboardType.Ascii]. It will not be applied to [KeyboardType]s such as [KeyboardType.Number].
- * @param autoCorrectEnabled informs the keyboard whether to enable auto correct. Only applicable to
- *   text based [KeyboardType]s such as [KeyboardType.Email], [KeyboardType.Uri]. It will not be
- *   applied to [KeyboardType]s such as [KeyboardType.Number]. Most of keyboard implementations
- *   ignore this value for [KeyboardType]s such as [KeyboardType.Text]. A null value (the default
- *   parameter value) means autocorrect will be enabled.
- * @param keyboardType The keyboard type to be used in this text field. Note that this input type is
- *   honored by keyboard and shows corresponding keyboard but this is not guaranteed. For example,
- *   some keyboards may send non-ASCII character even if you set [KeyboardType.Ascii].
- * @param imeAction The IME action. This IME action is honored by keyboard and may show specific
- *   icons on the keyboard. For example, search icon may be shown if [ImeAction.Search] is
- *   specified. When [ImeOptions.singleLine] is false, the keyboard might show return key rather
- *   than the action requested here.
- * @param platformImeOptions defines the platform specific IME options.
- * @param showKeyboardOnFocus when true, software keyboard will show on focus gain. When false, the
- *   user must interact (e.g. tap) before the keyboard is shown. A null value (the default parameter
- *   value) means the keyboard will be shown on focus.
- * @param hintLocales List of the languages that the user is supposed to switch to no matter what
- *   input method subtype is currently used. This special "hint" can be used mainly for, but not
- *   limited to, multilingual users who want IMEs to switch language based on editor's context. Pass
- *   null to express the intention that a specific hint should not be set.
+ * Represents specific layout, capitalization, and system action hints sent to the Input Method
+ * Editor (IME/software keyboard) on focus gain.
+ *
+ * Soft keyboards make best-effort attempts to comply with the options provided here. Key layouts
+ * and flag behaviors are ultimately determined by the active IME implementation.
+ *
+ * @sample androidx.compose.foundation.samples.RegistrationFormSample
+ * @sample androidx.compose.foundation.samples.CheckoutRegisterFormSample
+ * @sample androidx.compose.foundation.samples.DateTimeSchedulerFormSample
+ * @sample androidx.compose.foundation.samples.SpecialtyInputsFormSample
+ * @sample androidx.compose.foundation.samples.PinCodeEntryRowSample
+ * @sample androidx.compose.foundation.samples.DecimalInputSample
+ * @sample androidx.compose.foundation.samples.ItemCountSettingsSample
+ * @param capitalization informs the keyboard whether to automatically capitalize characters, words,
+ *   or sentences. Only applicable to text-based [KeyboardType]s such as [KeyboardType.Text],
+ *   [KeyboardType.Ascii], or [KeyboardType.PostalAddress]. It is ignored by soft keyboards when
+ *   paired with numeric layouts (like [KeyboardType.Number] or [KeyboardType.Decimal]).
+ * @param autoCorrectEnabled informs the keyboard whether to enable auto-correct suggestions. Only
+ *   applicable to text-based [KeyboardType]s such as [KeyboardType.Text], [KeyboardType.Email], or
+ *   [KeyboardType.Uri]. Keyboards ignore this value for numeric keypads. A null value (the default
+ *   parameter value) expresses that soft keyboard default configurations should apply.
+ * @param keyboardType keyboard keypad layout to be displayed in the focused text field. Honored by
+ *   keyboards to display tailored key selections (e.g., phone dialer characters for
+ *   [KeyboardType.Phone], decimal separator buttons for [KeyboardType.Decimal], or masked numeric
+ *   pads for [KeyboardType.NumberPassword]).
+ * @param imeAction action button displayed on the soft keyboard (e.g., search, send, next, done,
+ *   etc.). This action is honored by the software keyboard and may display custom icons (like a
+ *   magnifying glass for [ImeAction.Search]). When the text field allows multi-line inputs, the
+ *   keyboard typically displays a return key instead of the action icon requested here.
+ * @param platformImeOptions platform-specific IME options (like private IME commands).
+ * @param showKeyboardOnFocus when true, the soft keyboard shows immediately on text field focus
+ *   gain. When false, the soft keyboard is hidden until the user taps the text field. A null value
+ *   (the default parameter value) enables showing the keyboard automatically on focus gain. Note:
+ *   This option is only supported by TextFieldState-based TextFields (like BasicTextField) and is
+ *   ignored by legacy TextFields.
+ * @param hintLocales list of languages for IMEs. Provides a localized hint to help multilingual
+ *   keyboards automatically shift their keyboard language based on the active field's context.
  */
 @Immutable
-class KeyboardOptions(
-    val capitalization: KeyboardCapitalization = KeyboardCapitalization.Unspecified,
-    @Suppress("AutoBoxing") @get:Suppress("AutoBoxing") val autoCorrectEnabled: Boolean? = null,
-    val keyboardType: KeyboardType = KeyboardType.Unspecified,
-    val imeAction: ImeAction = ImeAction.Unspecified,
-    val platformImeOptions: PlatformImeOptions? = null,
-    @Suppress("AutoBoxing") @get:Suppress("AutoBoxing") val showKeyboardOnFocus: Boolean? = null,
-    @get:Suppress("NullableCollection") val hintLocales: LocaleList? = null,
+public class KeyboardOptions(
+    public val capitalization: KeyboardCapitalization = KeyboardCapitalization.Unspecified,
+    @Suppress("AutoBoxing")
+    @get:Suppress("AutoBoxing")
+    public val autoCorrectEnabled: Boolean? = null,
+    public val keyboardType: KeyboardType = KeyboardType.Unspecified,
+    public val imeAction: ImeAction = ImeAction.Unspecified,
+    public val platformImeOptions: PlatformImeOptions? = null,
+    @Suppress("AutoBoxing")
+    @get:Suppress("AutoBoxing")
+    public val showKeyboardOnFocus: Boolean? = null,
+    @get:Suppress("NullableCollection") public val hintLocales: LocaleList? = null,
 ) {
 
-    companion object {
-        /** Default [KeyboardOptions]. Please see parameter descriptions for default values. */
-        @Stable val Default = KeyboardOptions()
+    public companion object {
+        /** Provides default [KeyboardOptions]. See parameter descriptions for default values. */
+        @Stable public val Default: KeyboardOptions = KeyboardOptions()
 
         /** Default [KeyboardOptions] for [BasicSecureTextField]. */
         @Stable
@@ -88,9 +105,9 @@ class KeyboardOptions(
                     "showKeyboardOnFocus = showKeyboardOnFocus," +
                     "hintLocales = hintLocales" +
                     ")"
-            )
+            ),
     )
-    constructor(
+    public constructor(
         capitalization: KeyboardCapitalization = KeyboardCapitalization.Unspecified,
         autoCorrect: Boolean,
         keyboardType: KeyboardType = KeyboardType.Unspecified,
@@ -110,39 +127,39 @@ class KeyboardOptions(
 
     @Deprecated(
         "Please use the new constructor that takes optional platformImeOptions parameter.",
-        level = DeprecationLevel.HIDDEN
+        level = DeprecationLevel.HIDDEN,
     )
-    constructor(
+    public constructor(
         capitalization: KeyboardCapitalization = KeyboardCapitalization.Unspecified,
         autoCorrect: Boolean = Default.autoCorrectOrDefault,
         keyboardType: KeyboardType = KeyboardType.Unspecified,
-        imeAction: ImeAction = ImeAction.Default
+        imeAction: ImeAction = ImeAction.Default,
     ) : this(
         capitalization = capitalization,
         autoCorrectEnabled = autoCorrect,
         keyboardType = keyboardType,
         imeAction = imeAction,
-        platformImeOptions = null
+        platformImeOptions = null,
     )
 
     @Deprecated("Maintained for binary compat", level = DeprecationLevel.HIDDEN)
-    constructor(
+    public constructor(
         capitalization: KeyboardCapitalization = KeyboardCapitalization.None,
         autoCorrect: Boolean = Default.autoCorrectOrDefault,
         keyboardType: KeyboardType = KeyboardType.Text,
         imeAction: ImeAction = ImeAction.Default,
-        platformImeOptions: PlatformImeOptions? = null
+        platformImeOptions: PlatformImeOptions? = null,
     ) : this(
         capitalization = capitalization,
         autoCorrectEnabled = autoCorrect,
         keyboardType = keyboardType,
         imeAction = imeAction,
         platformImeOptions = platformImeOptions,
-        showKeyboardOnFocus = Default.showKeyboardOnFocusOrDefault
+        showKeyboardOnFocus = Default.showKeyboardOnFocusOrDefault,
     )
 
     @Deprecated("Please use the autoCorrectEnabled property.", level = DeprecationLevel.WARNING)
-    val autoCorrect: Boolean
+    public val autoCorrect: Boolean
         get() = autoCorrectOrDefault
 
     // Suppress GetterSetterNames because this is how the property was named previously.
@@ -150,9 +167,9 @@ class KeyboardOptions(
     @get:Suppress("GetterSetterNames")
     @Deprecated(
         "Included for binary compatibility. Use showKeyboardOnFocus.",
-        level = DeprecationLevel.HIDDEN
+        level = DeprecationLevel.HIDDEN,
     )
-    val shouldShowKeyboardOnFocus: Boolean
+    public val shouldShowKeyboardOnFocus: Boolean
         get() = showKeyboardOnFocus ?: true
 
     private val autoCorrectOrDefault: Boolean
@@ -199,7 +216,7 @@ class KeyboardOptions(
             keyboardType = keyboardTypeOrDefault,
             imeAction = imeActionOrDefault,
             platformImeOptions = platformImeOptions,
-            hintLocales = hintLocalesOrDefault
+            hintLocales = hintLocalesOrDefault,
         )
 
     /**
@@ -209,14 +226,14 @@ class KeyboardOptions(
      * any actually-specified value. This differs from the behavior of [merge], which will never
      * take an unspecified value over a specified one.
      */
-    fun copy(
+    public fun copy(
         capitalization: KeyboardCapitalization = this.capitalization,
         @Suppress("AutoBoxing") autoCorrectEnabled: Boolean? = this.autoCorrectEnabled,
         keyboardType: KeyboardType = this.keyboardType,
         imeAction: ImeAction = this.imeAction,
         platformImeOptions: PlatformImeOptions? = this.platformImeOptions,
         @Suppress("AutoBoxing") showKeyboardOnFocus: Boolean? = null,
-        hintLocales: LocaleList? = null
+        hintLocales: LocaleList? = null,
     ): KeyboardOptions {
         return KeyboardOptions(
             capitalization = capitalization,
@@ -225,7 +242,7 @@ class KeyboardOptions(
             imeAction = imeAction,
             platformImeOptions = platformImeOptions,
             showKeyboardOnFocus = showKeyboardOnFocus,
-            hintLocales = hintLocales
+            hintLocales = hintLocales,
         )
     }
 
@@ -243,16 +260,16 @@ class KeyboardOptions(
                     "showKeyboardOnFocus = showKeyboardOnFocus ?: true," +
                     "hintLocales = hintLocales" +
                     ")"
-            )
+            ),
     )
-    fun copy(
+    public fun copy(
         capitalization: KeyboardCapitalization = this.capitalization,
         autoCorrect: Boolean = this.autoCorrectOrDefault,
         keyboardType: KeyboardType = this.keyboardType,
         imeAction: ImeAction = this.imeAction,
         platformImeOptions: PlatformImeOptions? = this.platformImeOptions,
         @Suppress("AutoBoxing") showKeyboardOnFocus: Boolean? = this.showKeyboardOnFocusOrDefault,
-        hintLocales: LocaleList? = this.hintLocales
+        hintLocales: LocaleList? = this.hintLocales,
     ): KeyboardOptions {
         return KeyboardOptions(
             capitalization = capitalization,
@@ -261,17 +278,17 @@ class KeyboardOptions(
             imeAction = imeAction,
             platformImeOptions = platformImeOptions,
             showKeyboardOnFocus = showKeyboardOnFocus,
-            hintLocales = hintLocales
+            hintLocales = hintLocales,
         )
     }
 
     @Deprecated("Maintained for binary compatibility", level = DeprecationLevel.HIDDEN)
-    fun copy(
+    public fun copy(
         capitalization: KeyboardCapitalization = this.capitalization,
         autoCorrect: Boolean = this.autoCorrectOrDefault,
         keyboardType: KeyboardType = this.keyboardType,
         imeAction: ImeAction = this.imeAction,
-        platformImeOptions: PlatformImeOptions? = this.platformImeOptions
+        platformImeOptions: PlatformImeOptions? = this.platformImeOptions,
     ): KeyboardOptions {
         return KeyboardOptions(
             capitalization = capitalization,
@@ -280,7 +297,7 @@ class KeyboardOptions(
             imeAction = imeAction,
             platformImeOptions = platformImeOptions,
             showKeyboardOnFocus = this.showKeyboardOnFocus,
-            hintLocales = this.hintLocales
+            hintLocales = this.hintLocales,
             // New properties must be added here even though this is deprecated. The deprecated copy
             // constructors should still work on instances created with newer library versions.
         )
@@ -288,13 +305,13 @@ class KeyboardOptions(
 
     @Deprecated(
         "Please use the new copy function that takes optional platformImeOptions parameter.",
-        level = DeprecationLevel.HIDDEN
+        level = DeprecationLevel.HIDDEN,
     )
-    fun copy(
+    public fun copy(
         capitalization: KeyboardCapitalization = this.capitalization,
         autoCorrect: Boolean = this.autoCorrectOrDefault,
         keyboardType: KeyboardType = this.keyboardType,
-        imeAction: ImeAction = this.imeAction
+        imeAction: ImeAction = this.imeAction,
     ): KeyboardOptions {
         return KeyboardOptions(
             capitalization = capitalization,
@@ -303,7 +320,7 @@ class KeyboardOptions(
             imeAction = imeAction,
             platformImeOptions = this.platformImeOptions,
             showKeyboardOnFocus = this.showKeyboardOnFocus,
-            hintLocales = this.hintLocales
+            hintLocales = this.hintLocales,
             // New properties must be added here even though this is deprecated. The deprecated copy
             // constructors should still work on instances created with newer library versions.
         )
@@ -357,7 +374,7 @@ class KeyboardOptions(
      * If the either this or [other] is null, returns the non-null one.
      */
     // TODO(b/331222000) Rename to be more clear about precedence.
-    fun merge(other: KeyboardOptions?): KeyboardOptions =
+    public fun merge(other: KeyboardOptions?): KeyboardOptions =
         other?.fillUnspecifiedValuesWith(this) ?: this
 
     /**
@@ -388,7 +405,7 @@ class KeyboardOptions(
                 this.imeAction.takeUnless { it == ImeAction.Unspecified } ?: other.imeAction,
             platformImeOptions = this.platformImeOptions ?: other.platformImeOptions,
             showKeyboardOnFocus = this.showKeyboardOnFocus ?: other.showKeyboardOnFocus,
-            hintLocales = this.hintLocales ?: other.hintLocales
+            hintLocales = this.hintLocales ?: other.hintLocales,
         )
     }
 }

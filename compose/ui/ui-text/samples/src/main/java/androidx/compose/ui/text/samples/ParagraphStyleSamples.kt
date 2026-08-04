@@ -17,7 +17,7 @@
 package androidx.compose.ui.text.samples
 
 import androidx.annotation.Sampled
-import androidx.compose.material.Text
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.text.ParagraphStyle
 import androidx.compose.ui.text.TextStyle
@@ -33,14 +33,14 @@ fun ParagraphStyleSample() {
         TextStyle(
             textAlign = TextAlign.Justify,
             lineHeight = 20.sp,
-            textIndent = TextIndent(firstLine = 14.sp, restLine = 3.sp)
+            textIndent = TextIndent(firstLine = 14.sp, restLine = 3.sp),
         )
     Text(
         text =
             "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor " +
                 "incididunt ut labore et dolore magna aliqua.\nUt enim ad minim veniam, quis " +
                 "nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
-        style = textStyle
+        style = textStyle,
     )
 }
 

@@ -24,7 +24,7 @@ import org.junit.runners.JUnit4
 class ProjectIsolationIssueTest :
     GradleLintDetectorTest(
         detector = DiscouragedGradleMethodDetector(),
-        issues = listOf(DiscouragedGradleMethodDetector.PROJECT_ISOLATION_ISSUE)
+        issues = listOf(DiscouragedGradleMethodDetector.PROJECT_ISOLATION_ISSUE),
     ) {
     @Test
     fun `Test usage of TaskContainer#create`() {
@@ -36,7 +36,7 @@ class ProjectIsolationIssueTest :
                 fun configure(project: Project) {
                     project.findProperty("example")
                 }
-            """
+                """
                     .trimIndent()
             )
 
@@ -46,7 +46,7 @@ class ProjectIsolationIssueTest :
                 project.findProperty("example")
                         ~~~~~~~~~~~~
             1 errors, 0 warnings
-        """
+            """
                 .trimIndent()
         val expectedFixDiffs =
             """
@@ -54,7 +54,7 @@ class ProjectIsolationIssueTest :
             @@ -4 +4
             -     project.findProperty("example")
             +     project.providers.gradleProperty("example")
-        """
+            """
                 .trimIndent()
 
         check(input).expect(expected).expectFixDiffs(expectedFixDiffs)
@@ -70,7 +70,7 @@ class ProjectIsolationIssueTest :
                 fun configure(project: Project) {
                     val root = project.getRootProject().tasks
                 }
-            """
+                """
                     .trimIndent()
             )
 
@@ -80,7 +80,7 @@ class ProjectIsolationIssueTest :
                 val root = project.getRootProject().tasks
                                    ~~~~~~~~~~~~~~
             1 errors, 0 warnings
-        """
+            """
                 .trimIndent()
 
         val expectedFixDiffs =
@@ -89,7 +89,7 @@ class ProjectIsolationIssueTest :
             @@ -4 +4
             -     val root = project.getRootProject().tasks
             +     val root = project.isolated.rootProject().tasks
-        """
+            """
                 .trimIndent()
 
         check(input).expect(expected).expectFixDiffs(expectedFixDiffs)
@@ -105,7 +105,7 @@ class ProjectIsolationIssueTest :
                 fun configure(project: Project) {
                     val root = project.getRootProject().getIsolated().tasks
                 }
-            """
+                """
                     .trimIndent()
             )
 
@@ -115,7 +115,7 @@ class ProjectIsolationIssueTest :
                 val root = project.getRootProject().getIsolated().tasks
                                    ~~~~~~~~~~~~~~
             1 errors, 0 warnings
-        """
+            """
                 .trimIndent()
 
         val expectedFixDiffs =
@@ -124,7 +124,7 @@ class ProjectIsolationIssueTest :
             @@ -4 +4
             -     val root = project.getRootProject().getIsolated().tasks
             +     val root = project.isolated.rootProject().getIsolated().tasks
-        """
+            """
                 .trimIndent()
 
         check(input).expect(expected).expectFixDiffs(expectedFixDiffs)
@@ -140,9 +140,204 @@ class ProjectIsolationIssueTest :
                 fun configure(project: Project) {
                     val root = project.getIsolated().getRootProject()
                 }
-            """
+                """
                     .trimIndent()
             )
+        check(input).expectClean()
+    }
+
+    @Test
+    fun `Test usage of evaluationDependsOn`() {
+        val input =
+            kotlin(
+                """
+                import org.gradle.api.Project
+
+                fun configure(project: Project) {
+                    project.evaluationDependsOn(":foo:bar")
+                    project.evaluationDependsOnChildren()
+                }
+                """
+                    .trimIndent()
+            )
+
+        val expected =
+            """
+            src/test.kt:4: Error: Avoid using method evaluationDependsOn [GradleProjectIsolation]
+                project.evaluationDependsOn(":foo:bar")
+                        ~~~~~~~~~~~~~~~~~~~
+            src/test.kt:5: Error: Avoid using method evaluationDependsOnChildren [GradleProjectIsolation]
+                project.evaluationDependsOnChildren()
+                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            2 errors, 0 warnings
+            """
+                .trimIndent()
+
+        check(input).expect(expected)
+    }
+
+    @Test
+    fun `Test usage of getAt on build service registrations`() {
+        val input =
+            kotlin(
+                """
+                import org.gradle.api.invocation.Gradle
+
+                fun getService(gradle: Gradle) {
+                    gradle.sharedServices.registrations.getAt("example")
+                }
+                """
+                    .trimIndent()
+            )
+
+        val expected =
+            """
+            src/test.kt:4: Error: Use findByName instead of getAt on the build service registrations collection [GradleProjectIsolation]
+                gradle.sharedServices.registrations.getAt("example")
+                                                    ~~~~~
+            1 errors, 0 warnings
+            """
+                .trimIndent()
+        val expectedFixDiffs =
+            """
+            Fix for src/test.kt line 4: Replace with findByName:
+            @@ -4 +4
+            -     gradle.sharedServices.registrations.getAt("example")
+            +     gradle.sharedServices.registrations.findByName("example")
+            """
+                .trimIndent()
+
+        check(input).expect(expected).expectFixDiffs(expectedFixDiffs)
+    }
+
+    @Test
+    fun `Test usage of named on build service registrations`() {
+        val input =
+            kotlin(
+                """
+                import org.gradle.api.invocation.Gradle
+
+                fun getService(gradle: Gradle) {
+                    gradle.sharedServices.registrations.named("example")
+                }
+                """
+                    .trimIndent()
+            )
+
+        val expected =
+            """
+            src/test.kt:4: Error: Use findByName instead of named on the build service registrations collection [GradleProjectIsolation]
+                gradle.sharedServices.registrations.named("example")
+                                                    ~~~~~
+            1 errors, 0 warnings
+            """
+                .trimIndent()
+        val expectedFixDiffs =
+            """
+            Fix for src/test.kt line 4: Replace with findByName:
+            @@ -4 +4
+            -     gradle.sharedServices.registrations.named("example")
+            +     gradle.sharedServices.registrations.findByName("example")
+            """
+                .trimIndent()
+
+        check(input).expect(expected).expectFixDiffs(expectedFixDiffs)
+    }
+
+    @Test
+    fun `Test usage of getByName on build service registrations`() {
+        val input =
+            kotlin(
+                """
+                import org.gradle.api.invocation.Gradle
+
+                fun getService(gradle: Gradle) {
+                    gradle.sharedServices.registrations.getByName("example")
+                }
+                """
+                    .trimIndent()
+            )
+
+        val expected =
+            """
+            src/test.kt:4: Error: Use findByName instead of getByName on the build service registrations collection [GradleProjectIsolation]
+                gradle.sharedServices.registrations.getByName("example")
+                                                    ~~~~~~~~~
+            1 errors, 0 warnings
+            """
+                .trimIndent()
+        val expectedFixDiffs =
+            """
+            Fix for src/test.kt line 4: Replace with findByName:
+            @@ -4 +4
+            -     gradle.sharedServices.registrations.getByName("example")
+            +     gradle.sharedServices.registrations.findByName("example")
+            """
+                .trimIndent()
+
+        check(input).expect(expected).expectFixDiffs(expectedFixDiffs)
+    }
+
+    @Test
+    fun `Test usage of findAll on build service registrations`() {
+        val input =
+            kotlin(
+                """
+                import groovy.lang.Closure
+                import org.gradle.api.invocation.Gradle
+
+                fun findServices(gradle: Gradle, closure: Closure) {
+                    gradle.sharedServices.registrations.findAll(closure)
+                }
+                """
+                    .trimIndent()
+            )
+
+        val expected =
+            """
+            src/test.kt:5: Error: Avoid using method findAll on the build service registrations collection [GradleProjectIsolation]
+                gradle.sharedServices.registrations.findAll(closure)
+                                                    ~~~~~~~
+            1 errors, 0 warnings
+            """
+                .trimIndent()
+
+        check(input).expect(expected)
+    }
+
+    @Test
+    fun `Test allowed usages of build service registrations`() {
+        val input =
+            kotlin(
+                """
+                import org.gradle.api.invocation.Gradle
+
+                fun configureServices(gradle: Gradle) {
+                    gradle.sharedServices.registerIfAbsent("example", Any::class.java)
+                    gradle.sharedServices.registrations.findByName("example")
+                    gradle.sharedServices.registrations.let { }
+                }
+                """
+                    .trimIndent()
+            )
+
+        check(input).expectClean()
+    }
+
+    @Test
+    fun `Test getAt on other collections is not a project isolation violation`() {
+        val input =
+            kotlin(
+                """
+                import org.gradle.api.Project
+
+                fun configure(project: Project) {
+                    project.tasks.getAt("example")
+                }
+                """
+                    .trimIndent()
+            )
+
         check(input).expectClean()
     }
 }

@@ -43,13 +43,13 @@ import androidx.compose.ui.unit.dp
 /**
  * [Stepper] allows users to make a selection from a range of values. It's a full-screen control
  * with increase button on the top, decrease button on the bottom and a slot (expected to have
- * either [Text] or [Chip]) in the middle. Value can be increased and decreased by clicking on the
+ * either Text or Chip) in the middle. Value can be increased and decreased by clicking on the
  * increase and decrease buttons. Buttons can have custom icons - [decreaseIcon] and [increaseIcon].
  * Step value is calculated as the difference between min and max values divided by [steps]+1.
  * Stepper itself doesn't show the current value but can be displayed via the content slot or
- * [PositionIndicator] if required. If [value] is not equal to any step value, then it will be
- * coerced to the closest step value. However, the [value] itself will not be changed and
- * [onValueChange] in this case will not be triggered.
+ * [androidx.wear.compose.material.PositionIndicator] if required. If [value] is not equal to any
+ * step value, then it will be coerced to the closest step value. However, the [value] itself will
+ * not be changed and [onValueChange] in this case will not be triggered.
  *
  * @param value Current value of the Stepper. If outside of [valueRange] provided, value will be
  *   coerced to this range.
@@ -86,7 +86,7 @@ public fun Stepper(
     enabledButtonProviderValues: Array<ProvidedValue<*>>,
     disabledButtonProviderValues: Array<ProvidedValue<*>>,
     buttonRipple: Indication,
-    content: @Composable BoxScope.() -> Unit
+    content: @Composable BoxScope.() -> Unit,
 ) {
     require(steps >= 0) { "steps should be >= 0" }
     val currentStep =
@@ -102,7 +102,7 @@ public fun Stepper(
 
     Column(
         modifier = modifier.fillMaxSize().background(backgroundColor),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         val increaseButtonEnabled = currentStep < steps + 1
         val decreaseButtonEnabled = currentStep > 0
@@ -117,12 +117,12 @@ public fun Stepper(
                 if (increaseButtonEnabled) enabledButtonProviderValues
                 else disabledButtonProviderValues,
             ripple = buttonRipple,
-            content = increaseIcon
+            content = increaseIcon,
         )
         Box(
             modifier = Modifier.fillMaxWidth().weight(StepperDefaults.ContentWeight),
             contentAlignment = Alignment.Center,
-            content = content
+            content = content,
         )
         // Decrease button.
         FullScreenButton(
@@ -134,7 +134,7 @@ public fun Stepper(
                 if (decreaseButtonEnabled) enabledButtonProviderValues
                 else disabledButtonProviderValues,
             ripple = buttonRipple,
-            content = decreaseIcon
+            content = decreaseIcon,
         )
     }
 }
@@ -147,7 +147,7 @@ private fun ColumnScope.FullScreenButton(
     enabled: Boolean,
     buttonProviderValues: Array<ProvidedValue<*>>,
     ripple: Indication,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     Box(
@@ -158,7 +158,7 @@ private fun ColumnScope.FullScreenButton(
                     enabled = enabled,
                     onClick = onClick,
                     interactionSource = interactionSource,
-                    indication = null
+                    indication = null,
                 )
                 .wrapContentWidth()
                 .indication(interactionSource, ripple)

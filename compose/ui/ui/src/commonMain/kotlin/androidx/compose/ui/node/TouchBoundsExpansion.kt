@@ -33,18 +33,18 @@ import kotlin.jvm.JvmInline
  * @see PointerInputModifierNode.touchBoundsExpansion
  */
 @JvmInline
-value class TouchBoundsExpansion internal constructor(private val packedValue: Long) {
-    companion object {
+public value class TouchBoundsExpansion internal constructor(private val packedValue: Long) {
+    public companion object {
         /**
          * Creates a [TouchBoundsExpansion] that's unaware of [LayoutDirection]. The `left`, `top`,
          * `right` and `bottom` represent the amount of pixels that the touch bounds is expanded
          * along the corresponding edge. Each value must be in the range of 0 to 32767 (inclusive).
          */
-        fun Absolute(
+        public fun Absolute(
             left: Int = 0,
             top: Int = 0,
             right: Int = 0,
-            bottom: Int = 0
+            bottom: Int = 0,
         ): TouchBoundsExpansion {
             requirePrecondition(left in 0..MAX_VALUE) {
                 "Start must be in the range of 0 .. $MAX_VALUE"
@@ -62,14 +62,15 @@ value class TouchBoundsExpansion internal constructor(private val packedValue: L
         }
 
         /** Constant that represents no touch bounds expansion. */
-        val None = TouchBoundsExpansion(0)
+        public val None: TouchBoundsExpansion
+            get() = TouchBoundsExpansion(0)
 
         internal fun pack(
             start: Int,
             top: Int,
             end: Int,
             bottom: Int,
-            isLayoutDirectionAware: Boolean
+            isLayoutDirectionAware: Boolean,
         ): Long {
             return trimAndShift(start, 0) or
                 trimAndShift(top, 1) or
@@ -100,11 +101,11 @@ value class TouchBoundsExpansion internal constructor(private val packedValue: L
      * [LayoutDirection.Ltr] and vice versa. When [isLayoutDirectionAware] is `false`, it's always
      * applied to the left edge.
      */
-    val start: Int
+    public val start: Int
         get() = unpack(packedValue, 0)
 
     /** The amount of pixels the touch bounds should be expanded along the top edge. */
-    val top: Int
+    public val top: Int
         get() = unpack(packedValue, 1)
 
     /**
@@ -113,18 +114,18 @@ value class TouchBoundsExpansion internal constructor(private val packedValue: L
      * [LayoutDirection.Ltr] and vice versa. When [isLayoutDirectionAware] is `false`, it's always
      * applied to the left edge.
      */
-    val end: Int
+    public val end: Int
         get() = unpack(packedValue, 2)
 
     /** The amount of pixels the touch bounds should be expanded along the bottom edge. */
-    val bottom: Int
+    public val bottom: Int
         get() = unpack(packedValue, 3)
 
     /**
      * Whether this [TouchBoundsExpansion] is aware of [LayoutDirection] or not. See [start] and
      * [end] for more details.
      */
-    val isLayoutDirectionAware: Boolean
+    public val isLayoutDirectionAware: Boolean
         get() = (packedValue and IS_LAYOUT_DIRECTION_AWARE) != 0L
 
     /** Returns the amount of pixels the touch bounds is expanded towards left. */
@@ -154,12 +155,12 @@ value class TouchBoundsExpansion internal constructor(private val packedValue: L
  * @see PointerInputModifierNode.touchBoundsExpansion
  */
 @Suppress("DataClassDefinition")
-data class DpTouchBoundsExpansion(
-    val start: Dp,
-    val top: Dp,
-    val end: Dp,
-    val bottom: Dp,
-    val isLayoutDirectionAware: Boolean
+public data class DpTouchBoundsExpansion(
+    public val start: Dp,
+    public val top: Dp,
+    public val end: Dp,
+    public val bottom: Dp,
+    public val isLayoutDirectionAware: Boolean,
 ) {
     init {
         requirePrecondition(start.value >= 0) { "Left must be non-negative" }
@@ -168,7 +169,7 @@ data class DpTouchBoundsExpansion(
         requirePrecondition(bottom.value >= 0) { "Bottom must be non-negative" }
     }
 
-    fun roundToTouchBoundsExpansion(density: Density) =
+    public fun roundToTouchBoundsExpansion(density: Density): TouchBoundsExpansion =
         with(density) {
             TouchBoundsExpansion(
                 packedValue =
@@ -177,22 +178,22 @@ data class DpTouchBoundsExpansion(
                         top.roundToPx(),
                         end.roundToPx(),
                         bottom.roundToPx(),
-                        isLayoutDirectionAware
+                        isLayoutDirectionAware,
                     )
             )
         }
 
-    companion object {
+    public companion object {
         /**
          * Creates a [DpTouchBoundsExpansion] that's unaware of [LayoutDirection]. The `left`,
          * `top`, `right` and `bottom` represent the distance that the touch bounds is expanded
          * along the corresponding edge.
          */
-        fun Absolute(
+        public fun Absolute(
             left: Dp = 0.dp,
             top: Dp = 0.dp,
             right: Dp = 0.dp,
-            bottom: Dp = 0.dp
+            bottom: Dp = 0.dp,
         ): DpTouchBoundsExpansion {
             return DpTouchBoundsExpansion(left, top, right, bottom, false)
         }
@@ -207,11 +208,11 @@ data class DpTouchBoundsExpansion(
  * The `start`, `top`, `end` and `bottom` represent the amount of pixels that the touch bounds is
  * expanded along the corresponding edge. Each value must be in the range of 0 to 32767 (inclusive).
  */
-fun TouchBoundsExpansion(
+public fun TouchBoundsExpansion(
     start: Int = 0,
     top: Int = 0,
     end: Int = 0,
-    bottom: Int = 0
+    bottom: Int = 0,
 ): TouchBoundsExpansion {
     requirePrecondition(start in 0..TouchBoundsExpansion.MAX_VALUE) {
         "Start must be in the range of 0 .. ${TouchBoundsExpansion.MAX_VALUE}"
@@ -238,11 +239,11 @@ fun TouchBoundsExpansion(
  * The `start`, `top`, `end` and `bottom` represent the distance that the touch bounds is expanded
  * along the corresponding edge.
  */
-fun DpTouchBoundsExpansion(
+public fun DpTouchBoundsExpansion(
     start: Dp = 0.dp,
     top: Dp = 0.dp,
     end: Dp = 0.dp,
-    bottom: Dp = 0.dp
+    bottom: Dp = 0.dp,
 ): DpTouchBoundsExpansion {
     return DpTouchBoundsExpansion(start, top, end, bottom, true)
 }

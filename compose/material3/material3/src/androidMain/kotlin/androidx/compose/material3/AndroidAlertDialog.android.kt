@@ -28,7 +28,7 @@ import androidx.compose.ui.window.DialogProperties
 // Please note that binary compatibility for Desktop is tracked only in JetBrains fork
 
 @Composable
-actual fun AlertDialog(
+public actual fun AlertDialog(
     onDismissRequest: () -> Unit,
     confirmButton: @Composable () -> Unit,
     modifier: Modifier,
@@ -42,7 +42,7 @@ actual fun AlertDialog(
     titleContentColor: Color,
     textContentColor: Color,
     tonalElevation: Dp,
-    properties: DialogProperties
+    properties: DialogProperties,
 ): Unit =
     AlertDialogImpl(
         onDismissRequest = onDismissRequest,
@@ -58,5 +58,5 @@ actual fun AlertDialog(
         titleContentColor = titleContentColor,
         textContentColor = textContentColor,
         tonalElevation = tonalElevation,
-        properties = properties
+        properties = properties,
     )

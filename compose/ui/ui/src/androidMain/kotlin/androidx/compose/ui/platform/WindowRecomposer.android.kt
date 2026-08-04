@@ -23,6 +23,7 @@ import android.os.Looper
 import android.provider.Settings
 import android.view.View
 import android.view.ViewParent
+import androidx.collection.mutableScatterMapOf
 import androidx.compose.runtime.CompositionContext
 import androidx.compose.runtime.MonotonicFrameClock
 import androidx.compose.runtime.PausableMonotonicFrameClock
@@ -36,6 +37,7 @@ import androidx.compose.ui.R
 import androidx.compose.ui.internal.checkPrecondition
 import androidx.compose.ui.internal.checkPreconditionNotNull
 import androidx.core.os.HandlerCompat
+import androidx.core.viewtree.getParentOrViewTreeDisjointParent
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
@@ -66,7 +68,7 @@ import kotlinx.coroutines.launch
  *
  * See [findViewTreeCompositionContext].
  */
-var View.compositionContext: CompositionContext?
+public var View.compositionContext: CompositionContext?
     get() = getTag(R.id.androidx_compose_ui_view_composition_context) as? CompositionContext
     set(value) {
         setTag(R.id.androidx_compose_ui_view_composition_context, value)
@@ -78,18 +80,21 @@ var View.compositionContext: CompositionContext?
  *
  * See [compositionContext] to get or set the parent [CompositionContext] for a specific view.
  */
-fun View.findViewTreeCompositionContext(): CompositionContext? {
+public fun View.findViewTreeCompositionContext(): CompositionContext? {
     var found: CompositionContext? = compositionContext
     if (found != null) return found
     var parent: ViewParent? = parent
     while (found == null && parent is View) {
         found = parent.compositionContext
-        parent = parent.getParent()
+        parent = parent.getParentOrViewTreeDisjointParent()
     }
     return found
 }
 
-private val animationScale = mutableMapOf<Context, StateFlow<Float>>()
+private val animationScale = mutableScatterMapOf<Context, StateFlow<Float>>()
+
+private fun Context.readAnimationScale() =
+    Settings.Global.getFloat(contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f)
 
 // Callers of this function should pass an application context. Passing an activity context might
 // result in activity leaks.
@@ -112,12 +117,7 @@ private fun getAnimationScaleFlowFor(applicationContext: Context): StateFlow<Flo
                     resolver.registerContentObserver(animationScaleUri, false, contentObserver)
                     try {
                         for (value in channel) {
-                            val newValue =
-                                Settings.Global.getFloat(
-                                    applicationContext.contentResolver,
-                                    Settings.Global.ANIMATOR_DURATION_SCALE,
-                                    1f
-                                )
+                            val newValue = applicationContext.readAnimationScale()
                             emit(newValue)
                         }
                     } finally {
@@ -127,11 +127,7 @@ private fun getAnimationScaleFlowFor(applicationContext: Context): StateFlow<Flo
                 .stateIn(
                     MainScope(),
                     SharingStarted.WhileSubscribed(),
-                    Settings.Global.getFloat(
-                        applicationContext.contentResolver,
-                        Settings.Global.ANIMATOR_DURATION_SCALE,
-                        1f
-                    )
+                    applicationContext.readAnimationScale(),
                 )
         }
     }
@@ -139,7 +135,7 @@ private fun getAnimationScaleFlowFor(applicationContext: Context): StateFlow<Flo
 
 /** A factory for creating an Android window-scoped [Recomposer]. See [createRecomposer]. */
 @InternalComposeUiApi
-fun interface WindowRecomposerFactory {
+public fun interface WindowRecomposerFactory {
     /**
      * Get a [Recomposer] for the window where [windowRootView] is at the root of the window's
      * [View] hierarchy. The factory is responsible for establishing a policy for
@@ -147,9 +143,9 @@ fun interface WindowRecomposerFactory {
      * hard reference to the returned [Recomposer] until it [joins][Recomposer.join] after shutting
      * down.
      */
-    fun createRecomposer(windowRootView: View): Recomposer
+    public fun createRecomposer(windowRootView: View): Recomposer
 
-    companion object {
+    public companion object {
         /**
          * A [WindowRecomposerFactory] that creates **lifecycle-aware** [Recomposer]s.
          *
@@ -161,14 +157,14 @@ fun interface WindowRecomposerFactory {
          * least [Lifecycle.State.STARTED], causing animations and other uses of
          * [MonotonicFrameClock] APIs to suspend until a **visible** frame will be produced.
          */
-        val LifecycleAware: WindowRecomposerFactory = WindowRecomposerFactory { rootView ->
+        public val LifecycleAware: WindowRecomposerFactory = WindowRecomposerFactory { rootView ->
             rootView.createLifecycleAwareWindowRecomposer()
         }
     }
 }
 
 @InternalComposeUiApi
-object WindowRecomposerPolicy {
+public object WindowRecomposerPolicy {
 
     private val factory =
         AtomicReference<WindowRecomposerFactory>(WindowRecomposerFactory.LifecycleAware)
@@ -183,14 +179,14 @@ object WindowRecomposerPolicy {
     @PublishedApi
     internal fun compareAndSetFactory(
         expected: WindowRecomposerFactory,
-        factory: WindowRecomposerFactory
+        factory: WindowRecomposerFactory,
     ): Boolean = this.factory.compareAndSet(expected, factory)
 
-    fun setFactory(factory: WindowRecomposerFactory) {
+    public fun setFactory(factory: WindowRecomposerFactory) {
         this.factory.set(factory)
     }
 
-    inline fun <R> withFactory(factory: WindowRecomposerFactory, block: () -> R): R {
+    public inline fun <R> withFactory(factory: WindowRecomposerFactory, block: () -> R): R {
         var cause: Throwable? = null
         val oldFactory = getAndSetFactory(factory)
         return try {
@@ -269,10 +265,10 @@ object WindowRecomposerPolicy {
  * with the lifecycle of the host activity, we want that recomposer to shut down and create a new
  * one for the new activity instance.
  */
-private val View.contentChild: View
+internal val View.contentChild: View
     get() {
         var self: View = this
-        var parent: ViewParent? = self.parent
+        var parent: ViewParent? = self.getParentOrViewTreeDisjointParent()
         while (parent is View) {
             if (parent.id == android.R.id.content) return self
             self = parent
@@ -318,9 +314,9 @@ internal val View.windowRecomposer: Recomposer
  * Recomposition and associated [frame-based][MonotonicFrameClock] effects may be throttled or
  * paused while the [Lifecycle] is not at least [Lifecycle.State.STARTED].
  */
-fun View.createLifecycleAwareWindowRecomposer(
+public fun View.createLifecycleAwareWindowRecomposer(
     coroutineContext: CoroutineContext = EmptyCoroutineContext,
-    lifecycle: Lifecycle? = null
+    lifecycle: Lifecycle? = null,
 ): Recomposer {
     // Only access AndroidUiDispatcher.CurrentThread if we would use an element from it,
     // otherwise prevent lazy initialization.
@@ -334,10 +330,12 @@ fun View.createLifecycleAwareWindowRecomposer(
     val pausableClock =
         baseContext[MonotonicFrameClock]?.let { PausableMonotonicFrameClock(it).apply { pause() } }
 
-    var systemDurationScaleSettingConsumer: MotionDurationScaleImpl? = null
+    var motionDurationScaleImpl: MotionDurationScaleImpl? = null
     val motionDurationScale =
         baseContext[MotionDurationScale]
-            ?: MotionDurationScaleImpl().also { systemDurationScaleSettingConsumer = it }
+            ?: MotionDurationScaleImpl(context.applicationContext).also {
+                motionDurationScaleImpl = it
+            }
 
     val contextWithClockAndMotionScale =
         baseContext + (pausableClock ?: EmptyCoroutineContext) + motionDurationScale
@@ -372,22 +370,14 @@ fun View.createLifecycleAwareWindowRecomposer(
                         // Undispatched launch since we've configured this scope
                         // to be on the UI thread
                         runRecomposeScope.launch(start = CoroutineStart.UNDISPATCHED) {
-                            var durationScaleJob: Job? = null
+                            // Tied to the effect coroutine context which is cancelled on destroy
+                            // below.
+                            motionDurationScaleImpl?.coroutineScope =
+                                CoroutineScope(recomposer.effectCoroutineContext)
+
                             try {
-                                durationScaleJob =
-                                    systemDurationScaleSettingConsumer?.let {
-                                        val durationScaleStateFlow =
-                                            getAnimationScaleFlowFor(context.applicationContext)
-                                        it.scaleFactor = durationScaleStateFlow.value
-                                        launch {
-                                            durationScaleStateFlow.collect { scaleFactor ->
-                                                it.scaleFactor = scaleFactor
-                                            }
-                                        }
-                                    }
                                 recomposer.runRecomposeAndApplyChanges()
                             } finally {
-                                durationScaleJob?.cancel()
                                 // If runRecomposeAndApplyChanges returns or this coroutine is
                                 // cancelled it means we no longer care about this lifecycle.
                                 // Clean up the dangling references tied to this observer.
@@ -430,6 +420,30 @@ fun View.createLifecycleAwareWindowRecomposer(
     return recomposer
 }
 
-private class MotionDurationScaleImpl : MotionDurationScale {
-    override var scaleFactor by mutableFloatStateOf(1f)
+private class MotionDurationScaleImpl(private val applicationContext: Context) :
+    MotionDurationScale {
+    var coroutineScope: CoroutineScope? = null
+
+    private var _scaleFactor by mutableFloatStateOf(1f)
+    var job: Job? = null
+
+    override val scaleFactor: Float
+        get() {
+            if (job == null) {
+                job = startObservingSystemScaleFactor()
+            }
+            return _scaleFactor
+        }
+
+    private fun startObservingSystemScaleFactor(): Job {
+        val durationScaleStateFlow = getAnimationScaleFlowFor(applicationContext)
+        _scaleFactor = durationScaleStateFlow.value
+
+        val scope =
+            coroutineScope
+                ?: error("MotionDurationScale scale factor requested before recomposer loop start")
+        return scope.launch {
+            durationScaleStateFlow.collect { scaleFactor -> _scaleFactor = scaleFactor }
+        }
+    }
 }

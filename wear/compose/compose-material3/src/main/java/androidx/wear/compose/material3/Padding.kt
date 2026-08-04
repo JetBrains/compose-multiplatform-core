@@ -18,8 +18,12 @@ package androidx.wear.compose.material3
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.wear.compose.materialcore.screenHeightDp
+import androidx.wear.compose.materialcore.screenWidthDp
+import kotlin.math.ceil
 
 internal object PaddingDefaults {
 
@@ -36,7 +40,7 @@ internal object PaddingDefaults {
     @Composable
     fun verticalContentPadding(): Dp {
         val screenHeight = LocalConfiguration.current.screenHeightDp
-        return screenHeight.dp * verticalContentPaddingPercentage / 100
+        return ceilDp(screenHeight.dp * verticalContentPaddingPercentage / 100)
     }
 
     /**
@@ -52,9 +56,20 @@ internal object PaddingDefaults {
     @Composable
     fun horizontalContentPadding(percentage: Float = horizontalContentPaddingPercentage): Dp {
         val screenWidth = LocalConfiguration.current.screenWidthDp
-        return screenWidth.dp * percentage / 100
+        return ceilDp(screenWidth.dp * percentage / 100)
     }
 
     /** Default minimum padding between the edge of the screen and the content. */
     val edgePadding = 2.dp
 }
+
+@Composable
+internal fun screenHeightFraction(fraction: Float): Dp = ceilDp(screenHeightDp().dp * fraction)
+
+@Composable
+internal fun screenWidthFraction(fraction: Float): Dp = ceilDp(screenWidthDp().dp * fraction)
+
+internal const val LARGE_VERTICAL_CONTENT_PADDING_FRACTION = 0.23f
+internal const val SMALL_VERTICAL_CONTENT_PADDING_FRACTION = 0.13f
+
+@Composable private fun ceilDp(dp: Dp): Dp = with(LocalDensity.current) { Dp(ceil(dp.value)) }

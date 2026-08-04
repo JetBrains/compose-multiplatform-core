@@ -30,9 +30,9 @@ import androidx.compose.runtime.ComposeCompilerApi
  */
 @ComposeCompilerApi
 @Target(AnnotationTarget.CLASS, AnnotationTarget.FUNCTION)
-@Retention(AnnotationRetention.RUNTIME)
+@Retention(AnnotationRetention.BINARY)
 @Repeatable
-annotation class FunctionKeyMeta(val key: Int, val startOffset: Int, val endOffset: Int)
+public annotation class FunctionKeyMeta(val key: Int, val startOffset: Int, val endOffset: Int)
 
 /**
  * This annotation is applied to the FunctionKeyMeta classes created by the Compose Compiler. This
@@ -42,5 +42,5 @@ annotation class FunctionKeyMeta(val key: Int, val startOffset: Int, val endOffs
  */
 @ComposeCompilerApi
 @Target(AnnotationTarget.CLASS)
-@Retention(AnnotationRetention.RUNTIME)
-annotation class FunctionKeyMetaClass(val file: String)
+@Retention(AnnotationRetention.BINARY)
+public annotation class FunctionKeyMetaClass(val file: String)

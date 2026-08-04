@@ -329,14 +329,14 @@ open class SplitAttributesToggleMainActivity :
                 ActivityFilter(
                     ComponentName(
                         this@SplitAttributesToggleMainActivity,
-                        SplitAttributesTogglePrimaryActivity::class.java
+                        SplitAttributesTogglePrimaryActivity::class.java,
                     ),
                     intentAction = null,
                 )
             val placeholderIntent =
                 Intent(
                     this@SplitAttributesToggleMainActivity,
-                    SplitAttributesTogglePlaceholderActivity::class.java
+                    SplitAttributesTogglePlaceholderActivity::class.java,
                 )
             val splitPlaceholderRule =
                 SplitPlaceholderRule.Builder(setOf(placeholderFilter), placeholderIntent)
@@ -365,11 +365,11 @@ open class SplitAttributesToggleMainActivity :
                 SplitPairFilter(
                     ComponentName(
                         this@SplitAttributesToggleMainActivity,
-                        SplitAttributesTogglePrimaryActivity::class.java
+                        SplitAttributesTogglePrimaryActivity::class.java,
                     ),
                     ComponentName(
                         this@SplitAttributesToggleMainActivity,
-                        SplitAttributesToggleSecondaryActivity::class.java
+                        SplitAttributesToggleSecondaryActivity::class.java,
                     ),
                     secondaryActivityIntentAction = null,
                 )

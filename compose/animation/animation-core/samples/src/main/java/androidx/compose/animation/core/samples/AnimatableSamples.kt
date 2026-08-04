@@ -21,7 +21,6 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.AnimationEndReason
 import androidx.compose.animation.core.AnimationVector2D
 import androidx.compose.animation.core.DeferredTargetAnimation
-import androidx.compose.animation.core.ExperimentalAnimatableApi
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.VectorConverter
 import androidx.compose.animation.core.calculateTargetValue
@@ -54,6 +53,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
@@ -66,6 +66,7 @@ import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.toSize
 import kotlin.math.roundToInt
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.coroutineScope
@@ -88,7 +89,7 @@ fun AnimatableAnimateToGenericsType() {
                         // Animates to the pressed position, with the given animation spec.
                         animatedOffset.animateTo(
                             offset,
-                            animationSpec = spring(stiffness = Spring.StiffnessLow)
+                            animationSpec = spring(stiffness = Spring.StiffnessLow),
                         )
                     }
                 }
@@ -101,7 +102,7 @@ fun AnimatableAnimateToGenericsType() {
                     // Use the animated offset as the offset of the Box.
                     IntOffset(
                         animatedOffset.value.x.roundToInt(),
-                        animatedOffset.value.y.roundToInt()
+                        animatedOffset.value.y.roundToInt(),
                     )
                 }
                 .size(40.dp)
@@ -175,7 +176,7 @@ fun AnimatableAnimationResultSample() {
     suspend fun CoroutineScope.animateBouncingOffBounds(
         animatable: Animatable<Offset, *>,
         flingVelocity: Offset,
-        parentSize: Size
+        parentSize: Size,
     ) {
         launch {
             var startVelocity = flingVelocity
@@ -221,14 +222,13 @@ fun AnimatableFadeIn() {
             alphaAnimation.animateTo(
                 targetValue = 1f,
                 // Default animationSpec uses [spring] animation, here we overwrite the default.
-                animationSpec = tween(500)
+                animationSpec = tween(500),
             )
         }
         this.graphicsLayer(alpha = alphaAnimation.value)
     }
 }
 
-@OptIn(ExperimentalAnimatableApi::class)
 @Sampled
 @Composable
 fun DeferredTargetAnimationSample() {
@@ -241,7 +241,7 @@ fun DeferredTargetAnimationSample() {
     // completes.
     fun Modifier.animateConstraints(
         sizeAnimation: DeferredTargetAnimation<IntSize, AnimationVector2D>,
-        coroutineScope: CoroutineScope
+        coroutineScope: CoroutineScope,
     ) =
         this.approachLayout(
             isMeasurementApproachInProgress = { lookaheadSize ->
@@ -279,9 +279,47 @@ fun DeferredTargetAnimationSample() {
             .animateConstraints(sizeAnimation, coroutineScope)
             .clickable { fullWidth = !fullWidth }
     ) {
-        Box(
-            Modifier.weight(1f).fillMaxHeight().background(Color(0xffff6f69)),
-        )
+        Box(Modifier.weight(1f).fillMaxHeight().background(Color(0xffff6f69)))
         Box(Modifier.weight(2f).fillMaxHeight().background(Color(0xffffcc5c)))
+    }
+}
+
+@Sampled
+@Composable
+fun DeferredTargetAnimationPresentInDrawSample() {
+    // In this sample, we animate the size of a layout using DeferredTargetAnimation,
+    // and also draw a circle behind the content whose radius is determined by the
+    // current animated size of the layout.
+    // Reading sizeAnimation.value in the draw phase allows us to avoid creating
+    // another snapshot state to store the size.
+    val sizeAnimation = remember { DeferredTargetAnimation(IntSize.VectorConverter) }
+    val coroutineScope = rememberCoroutineScope()
+    var isExpanded by remember { mutableStateOf(false) }
+
+    Box(Modifier.fillMaxSize().clickable { isExpanded = !isExpanded }) {
+        Box(
+            Modifier.align(Alignment.Center)
+                .approachLayout(
+                    isMeasurementApproachInProgress = { lookaheadSize ->
+                        sizeAnimation.updateTarget(lookaheadSize, coroutineScope)
+                        !sizeAnimation.isIdle
+                    }
+                ) { measurable, _ ->
+                    val (width, height) = sizeAnimation.updateTarget(lookaheadSize, coroutineScope)
+                    val animatedConstraints = Constraints.fixed(width, height)
+                    val placeable = measurable.measure(animatedConstraints)
+                    layout(placeable.width, placeable.height) { placeable.place(0, 0) }
+                }
+                .drawBehind {
+                    // Read the current animated size in the draw phase.
+                    // If the animation is not initialized yet, fallback to the draw size.
+                    val currentAnimatedSize = sizeAnimation.value?.toSize() ?: size
+                    drawCircle(
+                        color = Color(0xffff6f69),
+                        radius = currentAnimatedSize.minDimension / 2f,
+                    )
+                }
+                .size(if (isExpanded) 200.dp else 100.dp)
+        )
     }
 }

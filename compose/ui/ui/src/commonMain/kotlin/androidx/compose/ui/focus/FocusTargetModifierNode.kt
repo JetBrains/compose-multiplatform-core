@@ -16,22 +16,25 @@
 
 package androidx.compose.ui.focus
 
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.node.DelegatableNode
 import androidx.compose.ui.node.SemanticsModifierNode
 import androidx.compose.ui.node.invalidateSemantics
+import androidx.compose.ui.node.requireLayoutCoordinates
+import androidx.compose.ui.node.requireOwner
 import kotlin.js.JsName
 
 /**
  * This modifier node can be delegated to in order to create a modifier that makes a component
  * focusable.
  */
-sealed interface FocusTargetModifierNode : DelegatableNode {
+public sealed interface FocusTargetModifierNode : DelegatableNode {
     /**
      * The [FocusState] associated with this [FocusTargetModifierNode]. When you delegate to a
      * [FocusTargetModifierNode], instead of implementing [FocusEventModifierNode], you can get the
      * state by accessing this variable.
      */
-    val focusState: FocusState
+    public val focusState: FocusState
 
     /**
      * Request focus for this node.
@@ -41,9 +44,9 @@ sealed interface FocusTargetModifierNode : DelegatableNode {
     @Deprecated(
         message = "Use the version accepting FocusDirection",
         replaceWith = ReplaceWith("this.requestFocus()"),
-        level = DeprecationLevel.HIDDEN
+        level = DeprecationLevel.HIDDEN,
     )
-    fun requestFocus(): Boolean
+    public fun requestFocus(): Boolean
 
     /**
      * Request focus for this node.
@@ -51,7 +54,7 @@ sealed interface FocusTargetModifierNode : DelegatableNode {
      * @param focusDirection The direction from which the focus is being requested
      * @return true if focus was successfully requested
      */
-    fun requestFocus(focusDirection: FocusDirection = FocusDirection.Enter): Boolean
+    public fun requestFocus(focusDirection: FocusDirection = FocusDirection.Enter): Boolean
 
     /**
      * The [Focusability] for this node.
@@ -62,7 +65,7 @@ sealed interface FocusTargetModifierNode : DelegatableNode {
      * If the current focus state would be affected by a new focusability, focus will be invalidated
      * as needed.
      */
-    var focusability: Focusability
+    public var focusability: Focusability
 }
 
 // Before aosp/3296711 we would calculate semantics configuration lazily. The focusable
@@ -84,10 +87,10 @@ private object InvalidateSemantics {
  */
 @Deprecated(
     "Use the other overload with added parameters for focusability and onFocusChange",
-    level = DeprecationLevel.HIDDEN
+    level = DeprecationLevel.HIDDEN,
 )
 @JsName("funFocusTargetModifierNode")
-fun FocusTargetModifierNode(): FocusTargetModifierNode =
+public fun FocusTargetModifierNode(): FocusTargetModifierNode =
     FocusTargetNode(onDispatchEventsCompleted = InvalidateSemantics::onDispatchEventsCompleted)
 
 /**
@@ -102,8 +105,35 @@ fun FocusTargetModifierNode(): FocusTargetModifierNode =
  *   before the node is marked as detached (node.isAttached will still be true).
  */
 @JsName("funFocusTargetModifierNode2")
-fun FocusTargetModifierNode(
+public fun FocusTargetModifierNode(
     focusability: Focusability = Focusability.Always,
-    onFocusChange: ((previous: FocusState, current: FocusState) -> Unit)? = null
+    onFocusChange: ((previous: FocusState, current: FocusState) -> Unit)? = null,
 ): FocusTargetModifierNode =
     FocusTargetNode(focusability = focusability, onFocusChange = onFocusChange)
+
+/**
+ * Calculates the rectangular area in this node's coordinates that corresponds to the focus area of
+ * the focused node under this [FocusTargetModifierNode], including itself.
+ *
+ * This function returns `null` when;
+ * - This node is not focused and there is no focused descendant.
+ * - This node is detached from the composition hierarchy.
+ */
+public fun FocusTargetModifierNode.getFocusedRect(): Rect? {
+    if (!node.isAttached) return null
+    // Reading focusState includes traversal and computation. We shouldn't do it twice.
+    val currentFocusState = focusState
+    // If there is nothing focused under this node, then we have no focus area.
+    if (!currentFocusState.hasFocus) return null
+    // Special case where the node itself is focused, not a descendant
+    if (currentFocusState.isFocused) {
+        return (this as FocusTargetNode).fetchFocusRect()
+    }
+
+    // The focused item is guaranteed to be under this node since we have focus. Now get the focus
+    // area defined by the focused child in our coordinates
+    return requireOwner()
+        .focusOwner
+        .activeFocusTargetNode
+        ?.fetchFocusRect(requireLayoutCoordinates())
+}

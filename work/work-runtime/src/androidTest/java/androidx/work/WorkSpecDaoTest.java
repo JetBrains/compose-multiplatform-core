@@ -22,6 +22,7 @@ import static android.net.NetworkCapabilities.TRANSPORT_CELLULAR;
 
 import static androidx.work.WorkInfo.State.BLOCKED;
 import static androidx.work.WorkInfo.State.FAILED;
+import static androidx.work.WorkInfo.State.RUNNING;
 import static androidx.work.WorkInfo.State.SUCCEEDED;
 import static androidx.work.impl.Scheduler.MAX_SCHEDULER_LIMIT;
 
@@ -189,6 +190,54 @@ public class WorkSpecDaoTest extends DatabaseTest {
 
     @Test
     @SmallTest
+    public void testIsWorkSpecScheduled_enqueuedWork() {
+        WorkSpecDao workSpecDao = mDatabase.workSpecDao();
+
+        long startTime = System.currentTimeMillis();
+        OneTimeWorkRequest enqueued = new OneTimeWorkRequest.Builder(TestWorker.class)
+                .setLastEnqueueTime(startTime, TimeUnit.MILLISECONDS)
+                .build();
+
+        insertWork(enqueued);
+
+        assertThat(workSpecDao.isWorkSpecScheduled(enqueued.getStringId()), is(false));
+    }
+
+    @Test
+    @SmallTest
+    public void testIsWorkSpecScheduled_scheduledWork() {
+        WorkSpecDao workSpecDao = mDatabase.workSpecDao();
+
+        long startTime = System.currentTimeMillis();
+        OneTimeWorkRequest scheduled = new OneTimeWorkRequest.Builder(TestWorker.class)
+                .setScheduleRequestedAt(startTime, TimeUnit.MILLISECONDS)
+                .setLastEnqueueTime(startTime, TimeUnit.MILLISECONDS)
+                .build();
+
+        insertWork(scheduled);
+
+        assertThat(workSpecDao.isWorkSpecScheduled(scheduled.getStringId()), is(true));
+    }
+
+    @Test
+    @SmallTest
+    public void testIsWorkSpecScheduled_runningWork() {
+        WorkSpecDao workSpecDao = mDatabase.workSpecDao();
+
+        long startTime = System.currentTimeMillis();
+        OneTimeWorkRequest running = new OneTimeWorkRequest.Builder(TestWorker.class)
+                .setScheduleRequestedAt(startTime, TimeUnit.MILLISECONDS)
+                .setLastEnqueueTime(startTime, TimeUnit.MILLISECONDS)
+                .setInitialState(RUNNING)
+                .build();
+
+        insertWork(running);
+
+        assertThat(workSpecDao.isWorkSpecScheduled(running.getStringId()), is(false));
+    }
+
+    @Test
+    @SmallTest
     public void testResetScheduledState() {
         WorkSpecDao workSpecDao = mDatabase.workSpecDao();
 
@@ -307,20 +356,14 @@ public class WorkSpecDaoTest extends DatabaseTest {
     @SmallTest
     public void insertWithNetworkRequest() {
         Constraints constraints;
-        if (Build.VERSION.SDK_INT >= 21) {
-            NetworkRequest request = new NetworkRequest.Builder()
-                    .addCapability(NET_CAPABILITY_MMS)
-                    .addCapability(NET_CAPABILITY_NOT_VPN)
-                    .addTransportType(TRANSPORT_CELLULAR)
-                    .build();
-            constraints = new Constraints.Builder()
-                    .setRequiredNetworkRequest(request, NetworkType.CONNECTED)
-                    .build();
-        } else {
-            constraints = new Constraints.Builder()
-                    .setRequiredNetworkType(NetworkType.CONNECTED)
-                    .build();
-        }
+        NetworkRequest request = new NetworkRequest.Builder()
+                .addCapability(NET_CAPABILITY_MMS)
+                .addCapability(NET_CAPABILITY_NOT_VPN)
+                .addTransportType(TRANSPORT_CELLULAR)
+                .build();
+        constraints = new Constraints.Builder()
+                .setRequiredNetworkRequest(request, NetworkType.CONNECTED)
+                .build();
 
         OneTimeWorkRequest workRequest = new OneTimeWorkRequest.Builder(TestWorker.class)
                 .setConstraints(constraints)

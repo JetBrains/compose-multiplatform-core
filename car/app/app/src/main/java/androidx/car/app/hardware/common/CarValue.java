@@ -21,7 +21,6 @@ import androidx.annotation.IntDef;
 import androidx.annotation.OptIn;
 import androidx.annotation.RestrictTo;
 import androidx.car.app.annotations.CarProtocol;
-import androidx.car.app.annotations.ExperimentalCarApi;
 import androidx.car.app.annotations.KeepFields;
 import androidx.car.app.annotations.RequiresCarApi;
 
@@ -161,11 +160,10 @@ public final class CarValue<T> {
     /**
      * Returns a list of car zones associated with this {@link CarValue}.
      *
-     * <p>For a global vehicle function, the list will only contain {@link CarZone#GLOBAL_ZONE}.
+     * <p>For a global vehicle function, the list will only contain {@link CarZone#CAR_ZONE_ROW_ALL}.
      * Returns an empty list when {@link CarValue#getStatus()} is
      * {@link CarValue#STATUS_UNIMPLEMENTED}.
      */
-    @ExperimentalCarApi
     public @NonNull List<CarZone> getCarZones() {
         if (mStatus == STATUS_UNIMPLEMENTED) {
             return Collections.emptyList();
@@ -191,7 +189,6 @@ public final class CarValue<T> {
         return Objects.hash(mValue, mTimestampMillis, mStatus, mCarZones);
     }
 
-    @OptIn(markerClass = ExperimentalCarApi.class)
     @Override
     public boolean equals(@Nullable Object other) {
         if (this == other) {
@@ -216,7 +213,6 @@ public final class CarValue<T> {
      *                        {@link #getTimestampMillis})
      * @param status          the status code associated with this value
      */
-    @OptIn(markerClass = ExperimentalCarApi.class)
     public CarValue(@Nullable T value, long timestampMillis, @StatusCode int status) {
         mValue = value;
         mTimestampMillis = timestampMillis;
@@ -233,7 +229,6 @@ public final class CarValue<T> {
      * @param status          the status code associated with this value
      * @param zones           the car zones associated with this value
      */
-    @ExperimentalCarApi
     public CarValue(@Nullable T value, long timestampMillis, @StatusCode int status,
             @NonNull List<CarZone> zones) {
         mValue = value;

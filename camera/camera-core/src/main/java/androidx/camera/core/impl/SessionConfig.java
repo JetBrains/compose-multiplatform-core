@@ -664,12 +664,26 @@ public final class SessionConfig {
         /**
          * Add a surface to the set that the session repeatedly writes data to.
          *
-         * <p>The dynamic range of this surface will default to {@link DynamicRange#SDR}. To
-         * manually set the dynamic range, use
+         * <p> The dynamic range of this surface will default to {@link DynamicRange#SDR},
+         * the physical camera ID to null and the mirror mode to
+         * {@link MirrorMode#MIRROR_MODE_UNSPECIFIED}. To manually set them, use
          * {@link #addSurface(DeferrableSurface, DynamicRange, String, int)}.
          */
         public @NonNull Builder addSurface(@NonNull DeferrableSurface surface) {
-            return addSurface(surface, DynamicRange.SDR, null,
+            return addSurface(surface, DynamicRange.SDR);
+        }
+
+        /**
+         * Add a surface with the provided dynamic range to the set that the session repeatedly
+         * writes data to.
+         *
+         * <p> The physical camera ID of this surface will default to null and the mirror mode will
+         * default to {@link MirrorMode#MIRROR_MODE_UNSPECIFIED}. To manually set them, use
+         * {@link #addSurface(DeferrableSurface, DynamicRange, String, int)}.
+         */
+        public @NonNull Builder addSurface(@NonNull DeferrableSurface surface,
+                @NonNull DynamicRange dynamicRange) {
+            return addSurface(surface, dynamicRange, null,
                     MirrorMode.MIRROR_MODE_UNSPECIFIED);
         }
 
@@ -798,6 +812,7 @@ public final class SessionConfig {
         private static final String TAG = "ValidatingBuilder";
         private final SurfaceSorter mSurfaceSorter = new SurfaceSorter();
         private boolean mValid = true;
+        private StringBuilder mInvalidReason = new StringBuilder();
         private boolean mTemplateSet = false;
         private List<ErrorListener> mErrorListeners = new ArrayList<>();
 
@@ -866,6 +881,7 @@ public final class SessionConfig {
                                 + "of surfaces";
                 Logger.d(TAG, errorMessage);
                 mValid = false;
+                mInvalidReason.append(errorMessage);
             }
 
             if (sessionConfig.getSessionType() != mSessionType
@@ -875,6 +891,7 @@ public final class SessionConfig {
                         "Invalid configuration due to that two non-default session types are set";
                 Logger.d(TAG, errorMessage);
                 mValid = false;
+                mInvalidReason.append(errorMessage);
             } else {
                 if (sessionConfig.getSessionType() != DEFAULT_SESSION_TYPE) {
                     mSessionType = sessionConfig.getSessionType();
@@ -889,6 +906,7 @@ public final class SessionConfig {
                                     + "configs are set";
                     Logger.d(TAG, errorMessage);
                     mValid = false;
+                    mInvalidReason.append(errorMessage);
                 } else {
                     mPostviewOutputConfig = sessionConfig.mPostviewOutputConfig;
                 }
@@ -914,7 +932,12 @@ public final class SessionConfig {
 
             if (!mCaptureConfigBuilder.getExpectedFrameRateRange().equals(expectedFrameRateRange)) {
                 mValid = false;
-                Logger.d(TAG, "Different ExpectedFrameRateRange values");
+
+                String errorMessage = "Different ExpectedFrameRateRange values; current = "
+                        + mCaptureConfigBuilder.getExpectedFrameRateRange() + ", new = "
+                        + expectedFrameRateRange;
+                Logger.e(TAG, errorMessage);
+                mInvalidReason.append(errorMessage);
             }
         }
 
@@ -950,6 +973,14 @@ public final class SessionConfig {
         /** Check if the set of SessionConfig that have been combined are valid */
         public boolean isValid() {
             return mTemplateSet && mValid;
+        }
+
+        /** Gets the reason(s) for {@link #isValid} returning false. */
+        public @NonNull String getInvalidReason() {
+            if (!mTemplateSet) {
+                return "Template is not set";
+            }
+            return mInvalidReason.toString();
         }
 
         /**

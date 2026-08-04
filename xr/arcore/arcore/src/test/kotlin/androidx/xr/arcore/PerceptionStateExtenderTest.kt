@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,260 +13,630 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package androidx.xr.arcore
 
-import android.app.Activity
+import androidx.activity.ComponentActivity
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.xr.arcore.testing.ArCoreTestRule
+import androidx.xr.arcore.testing.TestPlane
+import androidx.xr.runtime.AugmentedObjectCategory
+import androidx.xr.runtime.Config
 import androidx.xr.runtime.CoreState
-import androidx.xr.runtime.HandJointType
-import androidx.xr.runtime.TrackingState
-import androidx.xr.runtime.internal.Trackable as RuntimeTrackable
+import androidx.xr.runtime.DepthEstimationMode
+import androidx.xr.runtime.DeviceTrackingMode
+import androidx.xr.runtime.EyeTrackingMode
+import androidx.xr.runtime.FaceTrackingMode
+import androidx.xr.runtime.HandTrackingMode
+import androidx.xr.runtime.PlaneTrackingMode
+import androidx.xr.runtime.Session
+import androidx.xr.runtime.SessionCreateSuccess
+import androidx.xr.runtime.manifest.EYE_TRACKING_COARSE
+import androidx.xr.runtime.manifest.EYE_TRACKING_FINE
+import androidx.xr.runtime.manifest.FACE_TRACKING
+import androidx.xr.runtime.manifest.HAND_TRACKING
+import androidx.xr.runtime.manifest.HEAD_TRACKING
+import androidx.xr.runtime.manifest.SCENE_UNDERSTANDING_COARSE
+import androidx.xr.runtime.manifest.SCENE_UNDERSTANDING_FINE
+import androidx.xr.runtime.math.FieldOfView
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
-import androidx.xr.runtime.testing.FakeRuntime
-import androidx.xr.runtime.testing.FakeRuntimeFactory
-import androidx.xr.runtime.testing.FakeRuntimeHand
-import androidx.xr.runtime.testing.FakeRuntimePlane
 import com.google.common.truth.Truth.assertThat
 import java.nio.ByteBuffer
-import java.nio.ByteOrder
+import java.nio.FloatBuffer
 import kotlin.test.assertFailsWith
-import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.ComparableTimeMark
 import kotlin.time.TestTimeSource
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
-import org.junit.After
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.TestDispatcher
+import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.runTest
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.Robolectric
+import org.robolectric.Shadows.shadowOf
+import org.robolectric.android.controller.ActivityController
 
 @RunWith(AndroidJUnit4::class)
+@Suppress("DEPRECATION")
+@OptIn(ExperimentalCoroutinesApi::class)
 class PerceptionStateExtenderTest {
 
-    private val handJointBufferSize: Int = 728
-    private val tolerance = 1e-4f
-    private lateinit var fakeRuntime: FakeRuntime
+    @Rule @JvmField val arCoreTestRule = ArCoreTestRule()
+
+    private lateinit var activityController: ActivityController<ComponentActivity>
+    private lateinit var activity: ComponentActivity
+    private lateinit var testDispatcher: TestDispatcher
+    private lateinit var testScope: TestScope
+    private lateinit var session: Session
     private lateinit var timeSource: TestTimeSource
     private lateinit var underTest: PerceptionStateExtender
 
+    val perceptionStateMap: MutableMap<ComparableTimeMark, PerceptionState>
+        get() = PerceptionStateExtender.perceptionStateMap
+
     @Before
-    fun setUp() {
-        fakeRuntime = FakeRuntimeFactory().createRuntime(Activity())
-        timeSource = fakeRuntime.lifecycleManager.timeSource
+    fun setUp(): Unit = runBlocking {
+        testDispatcher = StandardTestDispatcher()
+        testScope = TestScope(testDispatcher)
+        activityController = Robolectric.buildActivity(ComponentActivity::class.java)
+        activity = activityController.get()
+        timeSource = TestTimeSource()
+        shadowOf(activity.application)
+            .grantPermissions(
+                SCENE_UNDERSTANDING_COARSE,
+                SCENE_UNDERSTANDING_FINE,
+                HAND_TRACKING,
+                HEAD_TRACKING,
+                FACE_TRACKING,
+                EYE_TRACKING_COARSE,
+                EYE_TRACKING_FINE,
+                android.Manifest.permission.ACCESS_FINE_LOCATION,
+            )
+
+        activityController.create().start().resume()
+
+        session = (Session.create(activity, testDispatcher) as SessionCreateSuccess).session
+        session.configure(
+            Config.Builder()
+                .setAugmentedObjectCategories(setOf(AugmentedObjectCategory.LAPTOP))
+                .setPlaneTracking(PlaneTrackingMode.HORIZONTAL_AND_VERTICAL)
+                .setDeviceTracking(DeviceTrackingMode.SPATIAL)
+                .setHandTracking(HandTrackingMode.BOTH)
+                .setFaceTracking(FaceTrackingMode.BLEND_SHAPES)
+                .setDepthEstimation(DepthEstimationMode.SMOOTH_AND_RAW)
+                .setEyeTracking(EyeTrackingMode.FINE_TRACKING)
+                .setGeospatial(androidx.xr.runtime.GeospatialMode.SPATIAL)
+                .build()
+        )
+
+        perceptionStateMap.clear()
         underTest = PerceptionStateExtender()
-    }
-
-    @After
-    fun tearDown() {
-        underTest.close()
+        underTest.initialize(session.runtimes)
     }
 
     @Test
-    fun extend_notInitialized_throwsIllegalStateException(): Unit = runBlocking {
-        val coreState = CoreState(timeSource.markNow())
+    fun extend_notInitialized_throwsIllegalStateException(): Unit =
+        runTest(testDispatcher) {
+            val coreState = CoreState(timeSource.markNow())
 
-        assertFailsWith<IllegalStateException> { underTest.extend(coreState) }
-    }
+            val underTestNotInitialized = PerceptionStateExtender()
 
-    @Test
-    fun extend_withOneState_addsAllTrackablesToTheCollection(): Unit = runBlocking {
-        // arrange
-        underTest.initialize(fakeRuntime)
-
-        val timeMark = timeSource.markNow()
-        val coreState = CoreState(timeMark)
-        val runtimeTrackable: RuntimeTrackable = FakeRuntimePlane()
-        fakeRuntime.perceptionManager.addTrackable(runtimeTrackable)
-
-        // act
-        underTest.extend(coreState)
-
-        // assert
-        val perceptionState = coreState.perceptionState!!
-        assertThat(perceptionState.trackables).hasSize(1)
-        assertThat(convertTrackable(perceptionState.trackables.last())).isEqualTo(runtimeTrackable)
-    }
+            assertFailsWith<IllegalStateException> { underTestNotInitialized.extend(coreState) }
+        }
 
     @Test
-    fun extend_withTwoStates_updatesAllTrackablesInTheirCollection(): Unit = runBlocking {
-        // arrange
-        underTest.initialize(fakeRuntime)
-        fakeRuntime.perceptionManager.addTrackable(FakeRuntimePlane())
-        underTest.extend(CoreState(timeSource.markNow()))
+    fun extend_once_addsAllTrackableObjectsToTheCollection() =
+        runTest(testDispatcher) {
+            arCoreTestRule.addTrackables(
+                TestPlane(PlaneType.VERTICAL, PlaneLabel.WALL),
+                TestPlane(PlaneType.VERTICAL, PlaneLabel.WALL),
+            )
+            advanceUntilIdle()
 
-        timeSource += 10.milliseconds
-        val timeMark = timeSource.markNow()
-        fakeRuntime.perceptionManager.trackables.clear()
-        val runtimeTrackable = FakeRuntimePlane()
-        fakeRuntime.perceptionManager.addTrackable(runtimeTrackable)
-        val coreState = CoreState(timeMark)
+            val timeMark = timeSource.markNow()
+            underTest.extend(CoreState(timeMark))
 
-        // act
-        underTest.extend(coreState)
-
-        // assert
-        val perceptionState = coreState.perceptionState!!
-        assertThat(perceptionState.trackables).hasSize(1)
-        assertThat(convertTrackable(perceptionState.trackables.last())).isEqualTo(runtimeTrackable)
-    }
+            val perceptionState = perceptionStateMap[timeMark]!!
+            assertThat(perceptionState.trackableStates).hasSize(2)
+            perceptionState.trackableStates.forEach {
+                assertThat(it).isInstanceOf(Plane.State::class.java)
+            }
+        }
 
     @Test
-    fun extend_withTwoStates_trackableStatusUpdated(): Unit = runBlocking {
-        // arrange
-        underTest.initialize(fakeRuntime)
-        val runtimeTrackable = FakeRuntimePlane()
-        fakeRuntime.perceptionManager.addTrackable(runtimeTrackable)
-        val coreState = CoreState(timeSource.markNow())
-        underTest.extend(coreState)
-        check(
-            coreState.perceptionState!!.trackables.last().state.value.trackingState ==
-                TrackingState.Tracking
-        )
+    fun extend_twice_updatesTrackableObjects() =
+        runTest(testDispatcher) {
+            arCoreTestRule.addTrackables(TestPlane(PlaneType.VERTICAL, PlaneLabel.WALL))
+            advanceUntilIdle()
 
-        // act
-        timeSource += 10.milliseconds
-        runtimeTrackable.trackingState = TrackingState.Stopped
-        val coreState2 = CoreState(timeSource.markNow())
-        underTest.extend(coreState2)
+            // first extend
+            var timeMark = timeSource.markNow()
+            underTest.extend(CoreState(timeMark))
 
-        // assert
-        assertThat(coreState2.perceptionState!!.trackables.last().state.value.trackingState)
-            .isEqualTo(TrackingState.Stopped)
-    }
+            var planeState = perceptionStateMap[timeMark]!!.trackableStates.single() as Plane.State
+            assertThat(planeState.centerPose).isEqualTo(Pose.Identity)
+
+            // move the trackable
+            val expectedPose = Pose(Vector3.Right, Quaternion.Identity)
+            arCoreTestRule.planes[0].centerPose = expectedPose
+            advanceUntilIdle()
+
+            // second extend
+            timeMark = timeSource.markNow()
+            underTest.extend(CoreState(timeMark))
+
+            planeState = perceptionStateMap[timeMark]!!.trackableStates.single() as Plane.State
+            assertThat(planeState.centerPose).isEqualTo(expectedPose)
+        }
 
     @Test
-    fun extend_withTwoStates_handStatesUpdated(): Unit = runBlocking {
-        // arrange
-        underTest.initialize(fakeRuntime)
-        val coreState = CoreState(timeSource.markNow())
-        underTest.extend(coreState)
-        check(coreState.perceptionState!!.leftHand != null)
-        check(coreState.perceptionState!!.rightHand != null)
-        check(
-            coreState.perceptionState!!.leftHand!!.state.value.trackingState !=
-                TrackingState.Tracking
-        )
-        check(coreState.perceptionState!!.leftHand!!.state.value.handJoints.isEmpty())
-        check(
-            coreState.perceptionState!!.rightHand!!.state.value.trackingState !=
-                TrackingState.Tracking
-        )
-        check(coreState.perceptionState!!.rightHand!!.state.value.handJoints.isEmpty())
+    fun extend_twice_trackableStatusUpdated() =
+        runTest(testDispatcher) {
+            arCoreTestRule.addTrackables(TestPlane(PlaneType.VERTICAL, PlaneLabel.WALL))
+            advanceUntilIdle()
 
-        // act
-        timeSource += 10.milliseconds
-        val handJoints: Map<HandJointType, Pose> =
-            HandJointType.values().associate { joint ->
-                val i = joint.ordinal.toFloat()
-                joint to
-                    Pose(
-                        Vector3(i + 0.5f, i + 0.6f, i + 0.7f),
-                        Quaternion(i + 0.1f, i + 0.2f, i + 0.3f, i + 0.4f),
-                    )
+            var timeMark = timeSource.markNow()
+            underTest.extend(CoreState(timeMark))
+
+            var perceptionState = perceptionStateMap[timeMark]!!
+            var planeState = perceptionState.trackableStates.single() as Plane.State
+            assertThat(planeState.trackingState).isEqualTo(TrackingState.TRACKING)
+
+            arCoreTestRule.planes[0].isVisible = false
+            advanceUntilIdle()
+
+            timeMark = timeSource.markNow()
+            underTest.extend(CoreState(timeMark))
+
+            perceptionState = perceptionStateMap[timeMark]!!
+            planeState = perceptionState.trackableStates.single() as Plane.State
+            assertThat(planeState.trackingState).isEqualTo(TrackingState.PAUSED)
+        }
+
+    @Test
+    fun extend_twice_leftHandStatesUpdated() =
+        runTest(testDispatcher) {
+            arCoreTestRule.leftHandTester.isVisible = false
+            advanceUntilIdle()
+
+            var timeMark = timeSource.markNow()
+            underTest.extend(CoreState(timeMark))
+
+            var leftHandState = perceptionStateMap[timeMark]!!.leftHandState!!
+            assertThat(leftHandState.trackingState).isEqualTo(TrackingState.PAUSED)
+            assertThat(leftHandState.handJoints[HandJointType.THUMB_TIP]).isNull()
+
+            arCoreTestRule.leftHandTester.isVisible = true
+            advanceUntilIdle()
+
+            timeMark = timeSource.markNow()
+            underTest.extend(CoreState(timeMark))
+
+            leftHandState = perceptionStateMap[timeMark]!!.leftHandState!!
+            assertThat(leftHandState.trackingState).isEqualTo(TrackingState.TRACKING)
+            assertThat(leftHandState.handJoints[HandJointType.THUMB_TIP]).isNotNull()
+        }
+
+    @Test
+    fun extend_twice_rightHandStatesUpdated() =
+        runTest(testDispatcher) {
+            arCoreTestRule.rightHandTester.isVisible = false
+            advanceUntilIdle()
+
+            var timeMark = timeSource.markNow()
+            underTest.extend(CoreState(timeMark))
+
+            var rightHandState = perceptionStateMap[timeMark]!!.rightHandState!!
+            assertThat(rightHandState.trackingState).isEqualTo(TrackingState.PAUSED)
+            assertThat(rightHandState.handJoints[HandJointType.THUMB_TIP]).isNull()
+
+            arCoreTestRule.rightHandTester.isVisible = true
+            advanceUntilIdle()
+
+            timeMark = timeSource.markNow()
+            underTest.extend(CoreState(timeMark))
+
+            rightHandState = perceptionStateMap[timeMark]!!.rightHandState!!
+            assertThat(rightHandState.trackingState).isEqualTo(TrackingState.TRACKING)
+            assertThat(rightHandState.handJoints[HandJointType.THUMB_TIP]).isNotNull()
+        }
+
+    @Test
+    fun extend_twice_leftEyeStatesUpdated() =
+        runTest(testDispatcher) {
+            arCoreTestRule.leftEyeTester.isOpen = false
+            advanceUntilIdle()
+
+            var timeMark = timeSource.markNow()
+            underTest.extend(CoreState(timeMark))
+
+            var leftEyeState = perceptionStateMap[timeMark]!!.leftEyeState
+            assertThat(leftEyeState!!.isOpen).isFalse()
+
+            arCoreTestRule.leftEyeTester.isOpen = true
+            advanceUntilIdle()
+
+            timeMark = timeSource.markNow()
+            underTest.extend(CoreState(timeMark))
+
+            leftEyeState = perceptionStateMap[timeMark]!!.leftEyeState
+            assertThat(leftEyeState!!.isOpen).isTrue()
+        }
+
+    @Test
+    fun extend_twice_rightEyeStatesUpdated() =
+        runTest(testDispatcher) {
+            arCoreTestRule.rightEyeTester.isOpen = false
+            advanceUntilIdle()
+
+            var timeMark = timeSource.markNow()
+            underTest.extend(CoreState(timeMark))
+
+            var rightEyeState = perceptionStateMap[timeMark]!!.rightEyeState
+            assertThat(rightEyeState!!.isOpen).isFalse()
+
+            arCoreTestRule.rightEyeTester.isOpen = true
+            advanceUntilIdle()
+
+            timeMark = timeSource.markNow()
+            underTest.extend(CoreState(timeMark))
+
+            rightEyeState = perceptionStateMap[timeMark]!!.rightEyeState
+            assertThat(rightEyeState!!.isOpen).isTrue()
+        }
+
+    @Test
+    fun extend_twice_arDeviceStateUpdated() =
+        runTest(testDispatcher) {
+            var timeMark = timeSource.markNow()
+
+            underTest.extend(CoreState(timeMark))
+
+            var perceptionState = perceptionStateMap[timeMark]!!
+            assertThat(perceptionState.arDeviceState.devicePose).isEqualTo(Pose.Identity)
+
+            val expectedDevicePose = Pose(Vector3(1f, 2f, 3f), Quaternion(4f, 5f, 6f, 7f))
+            arCoreTestRule.deviceTester.pose = expectedDevicePose
+            advanceUntilIdle()
+
+            timeMark = timeSource.markNow()
+            underTest.extend(CoreState(timeMark))
+
+            perceptionState = perceptionStateMap[timeMark]!!
+            assertThat(perceptionState.arDeviceState.devicePose).isEqualTo(expectedDevicePose)
+        }
+
+    @Test
+    fun extend_twice_geospatialServiceStateUpdated() =
+        runTest(testDispatcher) {
+            var timeMark = timeSource.markNow()
+
+            underTest.extend(CoreState(timeMark))
+
+            var perceptionState = perceptionStateMap[timeMark]!!
+            assertThat(perceptionState.geospatialState?.geospatialTrackingState)
+                .isEqualTo(Geospatial.GeospatialTrackingState.NOT_RUNNING)
+
+            arCoreTestRule.geospatialTester.state = Geospatial.GeospatialTrackingState.RUNNING
+            advanceUntilIdle()
+
+            timeMark = timeSource.markNow()
+            underTest.extend(CoreState(timeMark))
+
+            perceptionState = perceptionStateMap[timeMark]!!
+            assertThat(perceptionState.geospatialState?.geospatialTrackingState)
+                .isEqualTo(Geospatial.GeospatialTrackingState.RUNNING)
+        }
+
+    @Test
+    fun extend_twice_leftRenderViewpointStateUpdated() =
+        runTest(testDispatcher) {
+            var timeMark = timeSource.markNow()
+
+            underTest.extend(CoreState(timeMark))
+
+            var leftRenderViewpointState = perceptionStateMap[timeMark]!!.leftRenderViewpointState!!
+            assertThat(leftRenderViewpointState.pose).isEqualTo(Pose.Identity)
+            assertThat(leftRenderViewpointState.fieldOfView.angleLeft).isEqualTo(0f)
+            assertThat(leftRenderViewpointState.fieldOfView.angleRight).isEqualTo(0f)
+            assertThat(leftRenderViewpointState.fieldOfView.angleUp).isEqualTo(0f)
+            assertThat(leftRenderViewpointState.fieldOfView.angleDown).isEqualTo(0f)
+
+            val expectedPose = Pose(Vector3(1f, 2f, 3f), Quaternion(4f, 5f, 6f, 7f))
+            val expectedFov = FieldOfView(1f, 2f, 3f, 4f)
+            arCoreTestRule.leftRenderViewpointTester.apply {
+                pose = expectedPose
+                fieldOfView = expectedFov
+            }
+            advanceUntilIdle()
+
+            timeMark = timeSource.markNow()
+            underTest.extend(CoreState(timeMark))
+
+            leftRenderViewpointState = perceptionStateMap[timeMark]!!.leftRenderViewpointState!!
+            assertThat(leftRenderViewpointState.pose).isEqualTo(expectedPose)
+            assertThat(leftRenderViewpointState.fieldOfView.angleLeft)
+                .isEqualTo(expectedFov.angleLeft)
+            assertThat(leftRenderViewpointState.fieldOfView.angleRight)
+                .isEqualTo(expectedFov.angleRight)
+            assertThat(leftRenderViewpointState.fieldOfView.angleUp).isEqualTo(expectedFov.angleUp)
+            assertThat(leftRenderViewpointState.fieldOfView.angleDown)
+                .isEqualTo(expectedFov.angleDown)
+        }
+
+    @Test
+    fun extend_twice_rightRenderViewpointStateUpdated() =
+        runTest(testDispatcher) {
+            var timeMark = timeSource.markNow()
+
+            underTest.extend(CoreState(timeMark))
+
+            var rightRenderViewpointState =
+                perceptionStateMap[timeMark]!!.rightRenderViewpointState!!
+            assertThat(rightRenderViewpointState.pose).isEqualTo(Pose.Identity)
+            assertThat(rightRenderViewpointState.fieldOfView.angleLeft).isEqualTo(0f)
+            assertThat(rightRenderViewpointState.fieldOfView.angleRight).isEqualTo(0f)
+            assertThat(rightRenderViewpointState.fieldOfView.angleUp).isEqualTo(0f)
+            assertThat(rightRenderViewpointState.fieldOfView.angleDown).isEqualTo(0f)
+
+            val expectedPose = Pose(Vector3(1f, 2f, 3f), Quaternion(4f, 5f, 6f, 7f))
+            val expectedFov = FieldOfView(1f, 2f, 3f, 4f)
+            arCoreTestRule.rightRenderViewpointTester.apply {
+                pose = expectedPose
+                fieldOfView = expectedFov
+            }
+            advanceUntilIdle()
+
+            timeMark = timeSource.markNow()
+            underTest.extend(CoreState(timeMark))
+
+            rightRenderViewpointState = perceptionStateMap[timeMark]!!.rightRenderViewpointState!!
+            assertThat(rightRenderViewpointState.pose).isEqualTo(expectedPose)
+            assertThat(rightRenderViewpointState.fieldOfView.angleLeft)
+                .isEqualTo(expectedFov.angleLeft)
+            assertThat(rightRenderViewpointState.fieldOfView.angleRight)
+                .isEqualTo(expectedFov.angleRight)
+            assertThat(rightRenderViewpointState.fieldOfView.angleUp).isEqualTo(expectedFov.angleUp)
+            assertThat(rightRenderViewpointState.fieldOfView.angleDown)
+                .isEqualTo(expectedFov.angleDown)
+        }
+
+    @Test
+    fun extend_twice_monoRenderViewpointStateUpdated() =
+        runTest(testDispatcher) {
+            var timeMark = timeSource.markNow()
+
+            underTest.extend(CoreState(timeMark))
+
+            var monoRenderViewpointState = perceptionStateMap[timeMark]!!.monoRenderViewpointState!!
+            assertThat(monoRenderViewpointState.pose).isEqualTo(Pose.Identity)
+            assertThat(monoRenderViewpointState.fieldOfView.angleLeft).isEqualTo(0f)
+            assertThat(monoRenderViewpointState.fieldOfView.angleRight).isEqualTo(0f)
+            assertThat(monoRenderViewpointState.fieldOfView.angleUp).isEqualTo(0f)
+            assertThat(monoRenderViewpointState.fieldOfView.angleDown).isEqualTo(0f)
+
+            val expectedPose = Pose(Vector3(1f, 2f, 3f), Quaternion(4f, 5f, 6f, 7f))
+            val expectedFov = FieldOfView(1f, 2f, 3f, 4f)
+            arCoreTestRule.monoRenderViewpointTester.apply {
+                pose = expectedPose
+                fieldOfView = expectedFov
+            }
+            advanceUntilIdle()
+
+            timeMark = timeSource.markNow()
+            underTest.extend(CoreState(timeMark))
+
+            monoRenderViewpointState = perceptionStateMap[timeMark]!!.monoRenderViewpointState!!
+            assertThat(monoRenderViewpointState.pose).isEqualTo(expectedPose)
+            assertThat(monoRenderViewpointState.fieldOfView.angleLeft)
+                .isEqualTo(expectedFov.angleLeft)
+            assertThat(monoRenderViewpointState.fieldOfView.angleRight)
+                .isEqualTo(expectedFov.angleRight)
+            assertThat(monoRenderViewpointState.fieldOfView.angleUp).isEqualTo(expectedFov.angleUp)
+            assertThat(monoRenderViewpointState.fieldOfView.angleDown)
+                .isEqualTo(expectedFov.angleDown)
+        }
+
+    @Test
+    fun extend_twice_faceStatesUpdated() =
+        runTest(testDispatcher) {
+            arCoreTestRule.faceTester.isValid = false
+            advanceUntilIdle()
+
+            var timeMark = timeSource.markNow()
+            underTest.extend(CoreState(timeMark))
+
+            var faceState = perceptionStateMap[timeMark]!!.userFaceState!!
+            assertThat(faceState.trackingState).isEqualTo(TrackingState.PAUSED)
+            assertThat(faceState.blendShapeValues)
+                .isEqualTo(FloatArray(Face.blendShapeMapKeys.size))
+            assertThat(faceState.confidenceValues)
+                .isEqualTo(FloatArray(Face.confidenceRegions.size))
+
+            val expectedBlendShapeValues = floatArrayOf(0.1f, 0.2f, 0.3f)
+            val expectedConfidenceValues = floatArrayOf(0.4f, 0.5f, 0.6f)
+            arCoreTestRule.faceTester.apply {
+                isValid = true
+                blendShapeValues = expectedBlendShapeValues.toList()
+                confidenceValues = expectedConfidenceValues.toList()
+            }
+            advanceUntilIdle()
+
+            timeMark = timeSource.markNow()
+            underTest.extend(CoreState(timeMark))
+
+            faceState = perceptionStateMap[timeMark]!!.userFaceState!!
+            assertThat(faceState.trackingState).isEqualTo(TrackingState.TRACKING)
+            assertThat(faceState.blendShapeValues).isEqualTo(expectedBlendShapeValues)
+            assertThat(faceState.confidenceValues).isEqualTo(expectedConfidenceValues)
+        }
+
+    @Test
+    fun extend_perceptionStateMapSizeExceedsMax_stateIsNull() =
+        runTest(testDispatcher) {
+            var timeMark = timeSource.markNow()
+            underTest.extend(CoreState(timeMark))
+
+            repeat(PerceptionStateExtender.MAX_PERCEPTION_STATE_EXTENSION_SIZE) {
+                advanceUntilIdle()
+                val nextTimeMark = timeSource.markNow()
+                underTest.extend(CoreState(nextTimeMark))
             }
 
-        val leftRuntimeHand = fakeRuntime.perceptionManager.leftHand!! as FakeRuntimeHand
-        val rightRuntimeHand = fakeRuntime.perceptionManager.rightHand!! as FakeRuntimeHand
-        leftRuntimeHand.trackingState = TrackingState.Tracking
-        leftRuntimeHand.handJointsBuffer = generateTestBuffer(handJoints)
-        rightRuntimeHand.trackingState = TrackingState.Tracking
-        rightRuntimeHand.handJointsBuffer = generateTestBuffer(handJoints)
-        val coreState2 = CoreState(timeSource.markNow())
-        underTest.extend(coreState2)
-
-        // assert
-        assertThat(coreState2.perceptionState!!.leftHand!!.state.value.trackingState)
-            .isEqualTo(TrackingState.Tracking)
-        assertThat(coreState2.perceptionState!!.rightHand!!.state.value.trackingState)
-            .isEqualTo(TrackingState.Tracking)
-        for (jointType in HandJointType.values()) {
-            val leftHandJoints = coreState2.perceptionState!!.leftHand!!.state.value.handJoints
-            val rightHandJoints = coreState2.perceptionState!!.rightHand!!.state.value.handJoints
-            assertThat(leftHandJoints[jointType]!!.translation)
-                .isEqualTo(handJoints[jointType]!!.translation)
-            assertRotationEquals(
-                leftHandJoints[jointType]!!.rotation,
-                handJoints[jointType]!!.rotation
-            )
-            assertThat(rightHandJoints[jointType]!!.translation)
-                .isEqualTo(handJoints[jointType]!!.translation)
-            assertRotationEquals(
-                rightHandJoints[jointType]!!.rotation,
-                handJoints[jointType]!!.rotation
-            )
+            assertThat(perceptionStateMap[timeMark]).isNull()
         }
-    }
 
     @Test
-    fun extend_perceptionStateMapSizeExceedsMax(): Unit = runBlocking {
-        // arrange
-        underTest.initialize(fakeRuntime)
-        val timeMark = timeSource.markNow()
-        val coreState = CoreState(timeMark)
+    fun extend_twice_leftDepthsStateUpdated() =
+        runTest(testDispatcher) {
+            var timeMark = timeSource.markNow()
 
-        // act
-        underTest.extend(coreState)
-        // make sure the perception state is added to the map at the beginning
-        check(coreState.perceptionState != null)
+            underTest.extend(CoreState(timeMark))
 
-        for (i in 1..PerceptionStateExtender.MAX_PERCEPTION_STATE_EXTENSION_SIZE) {
-            timeSource += 10.milliseconds
-            underTest.extend(CoreState(timeSource.markNow()))
+            var leftDepthState = perceptionStateMap[timeMark]!!.leftDepthState!!
+            assertThat(leftDepthState).isNotNull()
+            assertThat(leftDepthState.width).isEqualTo(0)
+            assertThat(leftDepthState.height).isEqualTo(0)
+            assertThat(leftDepthState.rawDepthMap).isNull()
+            assertThat(leftDepthState.rawConfidenceMap).isNull()
+            assertThat(leftDepthState.smoothDepthMap).isNull()
+            assertThat(leftDepthState.smoothConfidenceMap).isNull()
+
+            val expectedWidth = 2
+            val expectedHeight = 2
+            val expectedRawDepth = FloatBuffer.wrap(FloatArray(4) { 8.0f })
+            val expectedRawConfidenceMap = ByteBuffer.wrap(ByteArray(4) { 99 })
+            val expectedSmoothDepth = FloatBuffer.wrap(FloatArray(4) { 8.888f })
+            val expectedSmoothConfidenceMap = ByteBuffer.wrap(ByteArray(4) { 100 })
+            arCoreTestRule.leftDepthTester.apply {
+                width = expectedWidth
+                height = expectedHeight
+                rawDepthMap = expectedRawDepth
+                rawConfidenceMap = expectedRawConfidenceMap
+                smoothDepthMap = expectedSmoothDepth
+                smoothConfidenceMap = expectedSmoothConfidenceMap
+            }
+            advanceUntilIdle()
+
+            timeMark = timeSource.markNow()
+            underTest.extend(CoreState(timeMark))
+
+            leftDepthState = perceptionStateMap[timeMark]!!.leftDepthState!!
+            assertThat(leftDepthState).isNotNull()
+            assertThat(leftDepthState.width).isEqualTo(expectedWidth)
+            assertThat(leftDepthState.height).isEqualTo(expectedHeight)
+            assertThat(leftDepthState.rawDepthMap).isEqualTo(expectedRawDepth)
+            assertThat(leftDepthState.rawConfidenceMap).isEqualTo(expectedRawConfidenceMap)
+            assertThat(leftDepthState.smoothDepthMap).isEqualTo(expectedSmoothDepth)
+            assertThat(leftDepthState.smoothConfidenceMap).isEqualTo(expectedSmoothConfidenceMap)
         }
-
-        // assert
-        assertThat(coreState.perceptionState).isNull()
-    }
 
     @Test
-    fun close_cleanUpData(): Unit = runBlocking {
-        // arrange
-        underTest.initialize(fakeRuntime)
-        val timeMark = timeSource.markNow()
-        val coreState = CoreState(timeMark)
-        underTest.extend(coreState)
-        // make sure the perception state is added to the map at the beginning
-        check(coreState.perceptionState != null)
+    fun extend_twice_rightDepthsStateUpdated() =
+        runTest(testDispatcher) {
+            var timeMark = timeSource.markNow()
 
-        // act
-        underTest.close()
+            underTest.extend(CoreState(timeMark))
 
-        // assert
-        assertThat(coreState.perceptionState).isNull()
-    }
+            var rightDepthState = perceptionStateMap[timeMark]!!.rightDepthState!!
+            assertThat(rightDepthState).isNotNull()
+            assertThat(rightDepthState.width).isEqualTo(0)
+            assertThat(rightDepthState.height).isEqualTo(0)
+            assertThat(rightDepthState.rawDepthMap).isNull()
+            assertThat(rightDepthState.rawConfidenceMap).isNull()
+            assertThat(rightDepthState.smoothDepthMap).isNull()
+            assertThat(rightDepthState.smoothConfidenceMap).isNull()
 
-    private fun convertTrackable(trackable: Trackable<Trackable.State>): RuntimeTrackable {
-        return when (trackable) {
-            is Plane -> trackable.runtimePlane
-            else ->
-                throw IllegalArgumentException("Unsupported trackable type: ${trackable.javaClass}")
+            val expectedWidth = 2
+            val expectedHeight = 2
+            val expectedRawDepth = FloatBuffer.wrap(FloatArray(4) { 8.0f })
+            val expectedRawConfidenceMap = ByteBuffer.wrap(ByteArray(4) { 99 })
+            val expectedSmoothDepth = FloatBuffer.wrap(FloatArray(4) { 8.888f })
+            val expectedSmoothConfidenceMap = ByteBuffer.wrap(ByteArray(4) { 100 })
+            arCoreTestRule.rightDepthTester.apply {
+                width = expectedWidth
+                height = expectedHeight
+                rawDepthMap = expectedRawDepth
+                rawConfidenceMap = expectedRawConfidenceMap
+                smoothDepthMap = expectedSmoothDepth
+                smoothConfidenceMap = expectedSmoothConfidenceMap
+            }
+            advanceUntilIdle()
+
+            timeMark = timeSource.markNow()
+            underTest.extend(CoreState(timeMark))
+
+            rightDepthState = perceptionStateMap[timeMark]!!.rightDepthState!!
+            assertThat(rightDepthState).isNotNull()
+            assertThat(rightDepthState.width).isEqualTo(expectedWidth)
+            assertThat(rightDepthState.height).isEqualTo(expectedHeight)
+            assertThat(rightDepthState.rawDepthMap).isEqualTo(expectedRawDepth)
+            assertThat(rightDepthState.rawConfidenceMap).isEqualTo(expectedRawConfidenceMap)
+            assertThat(rightDepthState.smoothDepthMap).isEqualTo(expectedSmoothDepth)
+            assertThat(rightDepthState.smoothConfidenceMap).isEqualTo(expectedSmoothConfidenceMap)
         }
-    }
 
-    fun generateTestBuffer(handJoints: Map<HandJointType, Pose>): ByteBuffer {
-        val buffer = ByteBuffer.allocate(handJointBufferSize).order(ByteOrder.nativeOrder())
+    @Test
+    fun extend_twice_monoDepthsStateUpdated() =
+        runTest(testDispatcher) {
+            var timeMark = timeSource.markNow()
 
-        repeat(26) {
-            val handJointType = HandJointType.values()[it]
-            val handJointPose = handJoints[handJointType]!!
-            buffer.putFloat(handJointPose.rotation.x)
-            buffer.putFloat(handJointPose.rotation.y)
-            buffer.putFloat(handJointPose.rotation.z)
-            buffer.putFloat(handJointPose.rotation.w)
-            buffer.putFloat(handJointPose.translation.x)
-            buffer.putFloat(handJointPose.translation.y)
-            buffer.putFloat(handJointPose.translation.z)
+            underTest.extend(CoreState(timeMark))
+
+            var monoDepthState = perceptionStateMap[timeMark]!!.monoDepthState!!
+            assertThat(monoDepthState).isNotNull()
+            assertThat(monoDepthState.width).isEqualTo(0)
+            assertThat(monoDepthState.height).isEqualTo(0)
+            assertThat(monoDepthState.rawDepthMap).isNull()
+            assertThat(monoDepthState.rawConfidenceMap).isNull()
+            assertThat(monoDepthState.smoothDepthMap).isNull()
+            assertThat(monoDepthState.smoothConfidenceMap).isNull()
+
+            val expectedWidth = 2
+            val expectedHeight = 2
+            val expectedRawDepth = FloatBuffer.wrap(FloatArray(4) { 8.0f })
+            val expectedRawConfidenceMap = ByteBuffer.wrap(ByteArray(4) { 99 })
+            val expectedSmoothDepth = FloatBuffer.wrap(FloatArray(4) { 8.888f })
+            val expectedSmoothConfidenceMap = ByteBuffer.wrap(ByteArray(4) { 100 })
+            arCoreTestRule.monoDepthTester.apply {
+                width = expectedWidth
+                height = expectedHeight
+                rawDepthMap = expectedRawDepth
+                rawConfidenceMap = expectedRawConfidenceMap
+                smoothDepthMap = expectedSmoothDepth
+                smoothConfidenceMap = expectedSmoothConfidenceMap
+            }
+            advanceUntilIdle()
+
+            timeMark = timeSource.markNow()
+            underTest.extend(CoreState(timeMark))
+
+            monoDepthState = perceptionStateMap[timeMark]!!.monoDepthState!!
+            assertThat(monoDepthState).isNotNull()
+            assertThat(monoDepthState.width).isEqualTo(expectedWidth)
+            assertThat(monoDepthState.height).isEqualTo(expectedHeight)
+            assertThat(monoDepthState.rawDepthMap).isEqualTo(expectedRawDepth)
+            assertThat(monoDepthState.rawConfidenceMap).isEqualTo(expectedRawConfidenceMap)
+            assertThat(monoDepthState.smoothDepthMap).isEqualTo(expectedSmoothDepth)
+            assertThat(monoDepthState.smoothConfidenceMap).isEqualTo(expectedSmoothConfidenceMap)
         }
 
-        buffer.flip()
-        return buffer
-    }
+    @Test
+    fun close_cleanUpData() {
+        runTest(testDispatcher) {
+            val timeMark = timeSource.markNow()
+            underTest.extend(CoreState(timeMark))
+            assertThat(perceptionStateMap[timeMark]).isNotNull()
 
-    fun assertRotationEquals(actual: Quaternion, expected: Quaternion) {
-        assertThat(actual.x).isWithin(tolerance).of(expected.x)
-        assertThat(actual.y).isWithin(tolerance).of(expected.y)
-        assertThat(actual.z).isWithin(tolerance).of(expected.z)
-        assertThat(actual.w).isWithin(tolerance).of(expected.w)
+            underTest.close()
+
+            assertThat(perceptionStateMap[timeMark]).isNull()
+        }
     }
 }

@@ -20,7 +20,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FloatingActionButtonMenu
 import androidx.compose.material3.FloatingActionButtonMenuItem
 import androidx.compose.material3.MaterialTheme
@@ -89,7 +88,7 @@ class FloatingActionButtonMenuBenchmark {
     fun fabMenu_toggle_recomposeMeasureLayout() {
         benchmarkRule.toggleStateBenchmarkComposeMeasureLayout(
             caseFactory = floatingActionButtonMenuTestCaseFactory,
-            assertOneRecomposition = false
+            assertOneRecomposition = false,
         )
     }
 }
@@ -98,7 +97,6 @@ internal class FloatingActionButtonMenuTestCase : LayeredComposeTestCase(), Togg
 
     private var state by mutableStateOf(false)
 
-    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
     @Composable
     override fun MeasuredContent() {
         Box(Modifier.fillMaxSize()) {
@@ -108,11 +106,11 @@ internal class FloatingActionButtonMenuTestCase : LayeredComposeTestCase(), Togg
                 button = {
                     ToggleFloatingActionButton(
                         checked = state,
-                        onCheckedChange = { /* Do nothing */ }
+                        onCheckedChange = { /* Do nothing */ },
                     ) {
                         Spacer(Modifier.size(24.dp))
                     }
-                }
+                },
             ) {
                 repeat(6) {
                     FloatingActionButtonMenuItem(

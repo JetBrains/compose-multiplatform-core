@@ -160,8 +160,8 @@ class MissingJvmDefaultWithCompatibilityDetector : Detector(), SourceCodeScanner
                 Severity.ERROR,
                 Implementation(
                     MissingJvmDefaultWithCompatibilityDetector::class.java,
-                    Scope.JAVA_FILE_SCOPE
-                )
+                    Scope.JAVA_FILE_SCOPE,
+                ),
             )
 
         const val JVM_DEFAULT_WITH_COMPATIBILITY = "kotlin.jvm.JvmDefaultWithCompatibility"
@@ -235,7 +235,6 @@ class MissingJvmDefaultWithCompatibilityDetector : Detector(), SourceCodeScanner
                 "androidx.compose.integration-tests.docs-snippets",
                 // These projects are excluded due to b/259578592
                 "androidx.camera.camera-camera2-pipe",
-                "androidx.camera.camera-camera2-pipe-integration",
                 "androidx.camera.camera-camera2-pipe-testing",
             )
     }

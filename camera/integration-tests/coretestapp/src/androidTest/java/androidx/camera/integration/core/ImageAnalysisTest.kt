@@ -16,18 +16,22 @@
 package androidx.camera.integration.core
 
 import android.content.Context
+import android.graphics.Bitmap
 import android.graphics.ImageFormat
+import android.hardware.HardwareBuffer
+import android.os.Build
 import android.os.Handler
 import android.os.HandlerThread
 import android.util.Rational
 import android.util.Size
 import android.view.Surface
+import androidx.annotation.DoNotInline
 import androidx.annotation.GuardedBy
 import androidx.annotation.RequiresApi
 import androidx.camera.camera2.Camera2Config
-import androidx.camera.camera2.pipe.integration.CameraPipeConfig
 import androidx.camera.core.AspectRatio
 import androidx.camera.core.Camera
+import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.CameraXConfig
 import androidx.camera.core.ExperimentalUseCaseApi
@@ -38,6 +42,7 @@ import androidx.camera.core.ImageProxy
 import androidx.camera.core.Preview
 import androidx.camera.core.UseCaseGroup
 import androidx.camera.core.ViewPort
+import androidx.camera.core.impl.CameraInfoInternal
 import androidx.camera.core.impl.ImageOutputConfig
 import androidx.camera.core.impl.ImageOutputConfig.OPTION_RESOLUTION_SELECTOR
 import androidx.camera.core.impl.SessionConfig
@@ -51,19 +56,29 @@ import androidx.camera.core.resolutionselector.ResolutionSelector.PREFER_HIGHER_
 import androidx.camera.core.resolutionselector.ResolutionStrategy
 import androidx.camera.integration.core.util.CameraInfoUtil
 import androidx.camera.lifecycle.ProcessCameraProvider
-import androidx.camera.testing.impl.CameraPipeConfigTestRule
 import androidx.camera.testing.impl.CameraUtil
 import androidx.camera.testing.impl.CameraUtil.PreTestCameraIdList
 import androidx.camera.testing.impl.LabTestRule
 import androidx.camera.testing.impl.SurfaceTextureProvider
 import androidx.camera.testing.impl.WakelockEmptyActivityRule
+import androidx.camera.testing.impl.fakes.FakeImageReaderProxy
 import androidx.camera.testing.impl.fakes.FakeLifecycleOwner
+import androidx.camera.video.Recorder
+import androidx.camera.video.VideoCapture
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.LargeTest
-import androidx.test.filters.SdkSuppress
+import androidx.testutils.assertThrows
 import com.google.common.truth.Truth.assertThat
+import com.google.mlkit.vision.barcode.BarcodeScannerOptions
+import com.google.mlkit.vision.barcode.BarcodeScanning
+import com.google.mlkit.vision.barcode.common.Barcode
+import com.google.mlkit.vision.common.InputImage
+import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Semaphore
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicLong
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
@@ -77,20 +92,12 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 
-private val DEFAULT_CAMERA_SELECTOR = CameraSelector.DEFAULT_BACK_CAMERA
-
 @LargeTest
 @RunWith(Parameterized::class)
 internal class ImageAnalysisTest(
     private val implName: String,
-    private val cameraConfig: CameraXConfig
+    private val cameraConfig: CameraXConfig,
 ) {
-
-    @get:Rule
-    val cameraPipeConfigTestRule =
-        CameraPipeConfigTestRule(
-            active = implName == CameraPipeConfig::class.simpleName,
-        )
 
     @get:Rule
     val cameraRule =
@@ -105,11 +112,7 @@ internal class ImageAnalysisTest(
 
         @JvmStatic
         @Parameterized.Parameters(name = "{0}")
-        fun data() =
-            listOf(
-                arrayOf(Camera2Config::class.simpleName, Camera2Config.defaultConfig()),
-                arrayOf(CameraPipeConfig::class.simpleName, CameraPipeConfig.defaultConfig())
-            )
+        fun data() = listOf(arrayOf(Camera2Config::class.simpleName, Camera2Config.defaultConfig()))
     }
 
     private val analysisResultLock = Any()
@@ -127,9 +130,11 @@ internal class ImageAnalysisTest(
     private lateinit var handler: Handler
     private lateinit var cameraProvider: ProcessCameraProvider
     private lateinit var fakeLifecycleOwner: FakeLifecycleOwner
+    private lateinit var cameraSelector: CameraSelector
 
     @Before
     fun setUp(): Unit = runBlocking {
+        cameraSelector = CameraUtil.assumeFirstAvailableCameraSelector()
         ProcessCameraProvider.configureInstance(cameraConfig)
 
         cameraProvider = ProcessCameraProvider.getInstance(context)[10, TimeUnit.SECONDS]
@@ -156,9 +161,35 @@ internal class ImageAnalysisTest(
     }
 
     @Test
-    fun exceedMaxImagesWithoutClosing_doNotCrash() = runBlocking {
-        assumeTrue(CameraUtil.hasCameraWithLensFacing(CameraSelector.LENS_FACING_FRONT))
+    fun canSetOutputImageFormatToPrivate() {
+        assumeTrue(isHardwareBufferSupportedOnDevice())
 
+        val imageAnalysis =
+            ImageAnalysis.Builder()
+                .setOutputImageFormat(ImageAnalysis.OUTPUT_IMAGE_FORMAT_PRIVATE)
+                .build()
+        assertThat(imageAnalysis.outputImageFormat)
+            .isEqualTo(ImageAnalysis.OUTPUT_IMAGE_FORMAT_PRIVATE)
+    }
+
+    @Test
+    fun throwException_whenBindWithPrivateFormatOnUnsupportedDevice() {
+        assumeTrue(!isHardwareBufferSupportedOnDevice())
+
+        val imageAnalysis =
+            ImageAnalysis.Builder()
+                .setOutputImageFormat(ImageAnalysis.OUTPUT_IMAGE_FORMAT_PRIVATE)
+                .build()
+
+        runOnMainSync {
+            assertThrows<IllegalArgumentException> {
+                cameraProvider.bindToLifecycle(fakeLifecycleOwner, cameraSelector, imageAnalysis)
+            }
+        }
+    }
+
+    @Test
+    fun exceedMaxImagesWithoutClosing_doNotCrash() = runBlocking {
         // Arrange.
         val queueDepth = 3
         val semaphore = Semaphore(0)
@@ -173,16 +204,12 @@ internal class ImageAnalysisTest(
             { image ->
                 imageProxyList.add(image)
                 semaphore.release()
-            }
+            },
         )
 
         // Act.
         withContext(Dispatchers.Main) {
-            cameraProvider.bindToLifecycle(
-                fakeLifecycleOwner,
-                CameraSelector.DEFAULT_FRONT_CAMERA,
-                useCase
-            )
+            cameraProvider.bindToLifecycle(fakeLifecycleOwner, cameraSelector, useCase)
         }
 
         // Assert: waiting for images does not crash.
@@ -209,7 +236,7 @@ internal class ImageAnalysisTest(
         runBlocking {
             val useCase = ImageAnalysis.Builder().setBackpressureStrategy(strategy).build()
             withContext(Dispatchers.Main) {
-                cameraProvider.bindToLifecycle(fakeLifecycleOwner, DEFAULT_CAMERA_SELECTOR, useCase)
+                cameraProvider.bindToLifecycle(fakeLifecycleOwner, cameraSelector, useCase)
             }
             useCase.setAnalyzer(CameraXExecutors.newHandlerExecutor(handler), analyzer)
             analysisResultsSemaphore.tryAcquire(5, TimeUnit.SECONDS)
@@ -223,7 +250,7 @@ internal class ImageAnalysisTest(
         val useCase = ImageAnalysis.Builder().build()
         // Bind but do not start lifecycle
         withContext(Dispatchers.Main) {
-            cameraProvider.bindToLifecycle(fakeLifecycleOwner, DEFAULT_CAMERA_SELECTOR, useCase)
+            cameraProvider.bindToLifecycle(fakeLifecycleOwner, cameraSelector, useCase)
             cameraProvider.unbindAll()
         }
         useCase.setAnalyzer(CameraXExecutors.newHandlerExecutor(handler), analyzer)
@@ -268,7 +295,7 @@ internal class ImageAnalysisTest(
     fun defaultAspectRatioWillBeSet_whenTargetResolutionIsNotSet() = runBlocking {
         val useCase = ImageAnalysis.Builder().build()
         withContext(Dispatchers.Main) {
-            cameraProvider.bindToLifecycle(fakeLifecycleOwner, DEFAULT_CAMERA_SELECTOR, useCase)
+            cameraProvider.bindToLifecycle(fakeLifecycleOwner, cameraSelector, useCase)
         }
         val config = useCase.currentConfig as ImageOutputConfig
         assertThat(config.targetAspectRatio).isEqualTo(AspectRatio.RATIO_4_3)
@@ -280,7 +307,7 @@ internal class ImageAnalysisTest(
         val useCase =
             ImageAnalysis.Builder().setTargetAspectRatio(AspectRatio.RATIO_DEFAULT).build()
         withContext(Dispatchers.Main) {
-            cameraProvider.bindToLifecycle(fakeLifecycleOwner, DEFAULT_CAMERA_SELECTOR, useCase)
+            cameraProvider.bindToLifecycle(fakeLifecycleOwner, cameraSelector, useCase)
         }
         val config = useCase.currentConfig as ImageOutputConfig
         assertThat(config.targetAspectRatio).isEqualTo(AspectRatio.RATIO_4_3)
@@ -289,7 +316,6 @@ internal class ImageAnalysisTest(
     @Suppress("DEPRECATION") // legacy resolution API
     @Test
     fun defaultAspectRatioWontBeSet_whenTargetResolutionIsSet() = runBlocking {
-        assumeTrue(CameraUtil.hasCameraWithLensFacing(CameraSelector.LENS_FACING_BACK))
         val useCase = ImageAnalysis.Builder().setTargetResolution(DEFAULT_RESOLUTION).build()
         assertThat(
                 useCase.currentConfig.containsOption(ImageOutputConfig.OPTION_TARGET_ASPECT_RATIO)
@@ -297,11 +323,7 @@ internal class ImageAnalysisTest(
             .isFalse()
 
         withContext(Dispatchers.Main) {
-            cameraProvider.bindToLifecycle(
-                fakeLifecycleOwner,
-                CameraSelector.DEFAULT_BACK_CAMERA,
-                useCase
-            )
+            cameraProvider.bindToLifecycle(fakeLifecycleOwner, cameraSelector, useCase)
         }
         assertThat(
                 useCase.currentConfig.containsOption(ImageOutputConfig.OPTION_TARGET_ASPECT_RATIO)
@@ -313,7 +335,7 @@ internal class ImageAnalysisTest(
     fun viewPort_OverwriteCropRect(): Unit = runBlocking {
         // Arrange.
         val rotation =
-            if (CameraUtil.getSensorOrientation(CameraSelector.LENS_FACING_BACK)!! % 180 != 0)
+            if (CameraUtil.getSensorOrientation(cameraSelector.lensFacing!!)!! % 180 != 0)
                 Surface.ROTATION_90
             else Surface.ROTATION_0
         val imageProxyDeferred = CompletableDeferred<ImageProxy>()
@@ -330,11 +352,7 @@ internal class ImageAnalysisTest(
         withContext(Dispatchers.Main) {
             val useCaseGroup =
                 UseCaseGroup.Builder().setViewPort(viewPort).addUseCase(imageAnalysis).build()
-            cameraProvider.bindToLifecycle(
-                fakeLifecycleOwner,
-                CameraSelector.DEFAULT_BACK_CAMERA,
-                useCaseGroup
-            )
+            cameraProvider.bindToLifecycle(fakeLifecycleOwner, cameraSelector, useCaseGroup)
         }
         val imageProxy = withTimeoutOrNull(5000) { imageProxyDeferred.await() }
 
@@ -361,11 +379,7 @@ internal class ImageAnalysisTest(
                 .setTargetRotation(Surface.ROTATION_0)
                 .build()
         withContext(Dispatchers.Main) {
-            cameraProvider.bindToLifecycle(
-                fakeLifecycleOwner,
-                DEFAULT_CAMERA_SELECTOR,
-                imageAnalysis
-            )
+            cameraProvider.bindToLifecycle(fakeLifecycleOwner, cameraSelector, imageAnalysis)
         }
 
         // Updates target rotation from ROTATION_0 to ROTATION_90.
@@ -383,7 +397,7 @@ internal class ImageAnalysisTest(
         val initialConfig = useCase.currentConfig
 
         withContext(Dispatchers.Main) {
-            cameraProvider.bindToLifecycle(fakeLifecycleOwner, DEFAULT_CAMERA_SELECTOR, useCase)
+            cameraProvider.bindToLifecycle(fakeLifecycleOwner, cameraSelector, useCase)
             cameraProvider.unbind(useCase)
         }
         val configAfterUnbinding = useCase.currentConfig
@@ -397,7 +411,7 @@ internal class ImageAnalysisTest(
         withContext(Dispatchers.Main) {
             val useCase = ImageAnalysis.Builder().build()
 
-            cameraProvider.bindToLifecycle(fakeLifecycleOwner, DEFAULT_CAMERA_SELECTOR, useCase)
+            cameraProvider.bindToLifecycle(fakeLifecycleOwner, cameraSelector, useCase)
             useCase.targetRotation = Surface.ROTATION_180
 
             // Check the target rotation is kept when the use case is unbound.
@@ -406,7 +420,7 @@ internal class ImageAnalysisTest(
 
             // Check the target rotation is kept when the use case is rebound to the
             // lifecycle.
-            cameraProvider.bindToLifecycle(fakeLifecycleOwner, DEFAULT_CAMERA_SELECTOR, useCase)
+            cameraProvider.bindToLifecycle(fakeLifecycleOwner, cameraSelector, useCase)
             assertThat(useCase.targetRotation).isEqualTo(Surface.ROTATION_180)
         }
     }
@@ -416,7 +430,7 @@ internal class ImageAnalysisTest(
     fun useCaseCanBeReusedInSameCamera() = runBlocking {
         val useCase = ImageAnalysis.Builder().build()
         withContext(Dispatchers.Main) {
-            cameraProvider.bindToLifecycle(fakeLifecycleOwner, DEFAULT_CAMERA_SELECTOR, useCase)
+            cameraProvider.bindToLifecycle(fakeLifecycleOwner, cameraSelector, useCase)
         }
         useCase.setAnalyzer(CameraXExecutors.newHandlerExecutor(handler), analyzer)
         assertThat(analysisResultsSemaphore.tryAcquire(5, TimeUnit.SECONDS)).isTrue()
@@ -424,7 +438,7 @@ internal class ImageAnalysisTest(
         analysisResultsSemaphore = Semaphore(/* permits= */ 0)
         // Rebind the use case to the same camera.
         withContext(Dispatchers.Main) {
-            cameraProvider.bindToLifecycle(fakeLifecycleOwner, DEFAULT_CAMERA_SELECTOR, useCase)
+            cameraProvider.bindToLifecycle(fakeLifecycleOwner, cameraSelector, useCase)
         }
         assertThat(analysisResultsSemaphore.tryAcquire(5, TimeUnit.SECONDS)).isTrue()
     }
@@ -434,7 +448,7 @@ internal class ImageAnalysisTest(
     fun useCaseCanBeReusedInDifferentCamera() = runBlocking {
         val useCase = ImageAnalysis.Builder().build()
         withContext(Dispatchers.Main) {
-            cameraProvider.bindToLifecycle(fakeLifecycleOwner, DEFAULT_CAMERA_SELECTOR, useCase)
+            cameraProvider.bindToLifecycle(fakeLifecycleOwner, cameraSelector, useCase)
         }
         useCase.setAnalyzer(CameraXExecutors.newHandlerExecutor(handler), analyzer)
         assertThat(analysisResultsSemaphore.tryAcquire(5, TimeUnit.SECONDS)).isTrue()
@@ -442,7 +456,7 @@ internal class ImageAnalysisTest(
         analysisResultsSemaphore = Semaphore(/* permits= */ 0)
         // Rebind the use case to different camera.
         withContext(Dispatchers.Main) {
-            cameraProvider.bindToLifecycle(fakeLifecycleOwner, DEFAULT_CAMERA_SELECTOR, useCase)
+            cameraProvider.bindToLifecycle(fakeLifecycleOwner, cameraSelector, useCase)
         }
         assertThat(analysisResultsSemaphore.tryAcquire(5, TimeUnit.SECONDS)).isTrue()
     }
@@ -457,11 +471,7 @@ internal class ImageAnalysisTest(
     fun returnCorrectTargetRotation_afterUseCaseIsAttached() = runBlocking {
         val imageAnalysis = ImageAnalysis.Builder().setTargetRotation(Surface.ROTATION_180).build()
         withContext(Dispatchers.Main) {
-            cameraProvider.bindToLifecycle(
-                fakeLifecycleOwner,
-                DEFAULT_CAMERA_SELECTOR,
-                imageAnalysis
-            )
+            cameraProvider.bindToLifecycle(fakeLifecycleOwner, cameraSelector, imageAnalysis)
         }
         assertThat(imageAnalysis.targetRotation).isEqualTo(Surface.ROTATION_180)
     }
@@ -488,11 +498,7 @@ internal class ImageAnalysisTest(
         val imageAnalysis =
             ImageAnalysis.Builder().setResolutionSelector(resolutionSelector).build()
         withContext(Dispatchers.Main) {
-            cameraProvider.bindToLifecycle(
-                fakeLifecycleOwner,
-                DEFAULT_CAMERA_SELECTOR,
-                imageAnalysis
-            )
+            cameraProvider.bindToLifecycle(fakeLifecycleOwner, cameraSelector, imageAnalysis)
         }
         assertThat(imageAnalysis.resolutionInfo!!.resolution).isEqualTo(maxHighResolutionOutputSize)
         imageAnalysis.setAnalyzer(CameraXExecutors.newHandlerExecutor(handler), analyzer)
@@ -517,7 +523,7 @@ internal class ImageAnalysisTest(
                 )
                 .build()
         withContext(Dispatchers.Main) {
-            cameraProvider.bindToLifecycle(fakeLifecycleOwner, DEFAULT_CAMERA_SELECTOR, useCase)
+            cameraProvider.bindToLifecycle(fakeLifecycleOwner, cameraSelector, useCase)
         }
         val resolutionSelector = useCase.currentConfig.retrieveOption(OPTION_RESOLUTION_SELECTOR)
         // The default 4:3 AspectRatioStrategy is kept
@@ -537,13 +543,12 @@ internal class ImageAnalysisTest(
 
     @Test
     fun analyzerAnalyzesImages_whenSessionErrorListenerReceivesError() = runBlocking {
+        val cameraSelectors = CameraUtil.getAvailableCameraSelectors()
+        assumeTrue("No enough cameras to test.", cameraSelectors.size >= 2)
+
         val imageAnalysis = ImageAnalysis.Builder().build()
         withContext(Dispatchers.Main) {
-            cameraProvider.bindToLifecycle(
-                fakeLifecycleOwner,
-                DEFAULT_CAMERA_SELECTOR,
-                imageAnalysis
-            )
+            cameraProvider.bindToLifecycle(fakeLifecycleOwner, cameraSelectors[0], imageAnalysis)
         }
 
         imageAnalysis.setAnalyzer(CameraXExecutors.newHandlerExecutor(handler), analyzer)
@@ -553,20 +558,14 @@ internal class ImageAnalysisTest(
         // Checks that image can be received successfully when onError is received.
         triggerOnErrorAndVerifyNewImageReceived(initialSessionConfig)
 
-        if (CameraUtil.hasCameraWithLensFacing(CameraSelector.LENS_FACING_FRONT)) {
-            withContext(Dispatchers.Main) {
-                cameraProvider.unbind(imageAnalysis)
-                cameraProvider.bindToLifecycle(
-                    fakeLifecycleOwner,
-                    CameraSelector.DEFAULT_FRONT_CAMERA,
-                    imageAnalysis
-                )
-            }
-
-            // Checks that image can be received successfully when onError is received by the old
-            // error listener.
-            triggerOnErrorAndVerifyNewImageReceived(initialSessionConfig)
+        withContext(Dispatchers.Main) {
+            cameraProvider.unbind(imageAnalysis)
+            cameraProvider.bindToLifecycle(fakeLifecycleOwner, cameraSelectors[1], imageAnalysis)
         }
+
+        // Checks that image can be received successfully when onError is received by the old
+        // error listener.
+        triggerOnErrorAndVerifyNewImageReceived(initialSessionConfig)
 
         // Checks that image can be received successfully when onError is received by the new
         // error listener.
@@ -574,7 +573,6 @@ internal class ImageAnalysisTest(
     }
 
     @Test
-    @SdkSuppress(minSdkVersion = 23)
     fun analyzerAnalyzesYUVImages_withRotationEnabledAndReusedToHaveDifferentSize() {
         analyzerAnalyzesImages_withRotationEnabledAndReusedToHaveDifferentSize(
             ImageAnalysis.OUTPUT_IMAGE_FORMAT_YUV_420_888
@@ -582,7 +580,6 @@ internal class ImageAnalysisTest(
     }
 
     @Test
-    @SdkSuppress(minSdkVersion = 23)
     fun analyzerAnalyzesYUVNV21Images_withRotationEnabledAndReusedToHaveDifferentSize() {
         analyzerAnalyzesImages_withRotationEnabledAndReusedToHaveDifferentSize(
             ImageAnalysis.OUTPUT_IMAGE_FORMAT_NV21
@@ -590,11 +587,196 @@ internal class ImageAnalysisTest(
     }
 
     @Test
-    @SdkSuppress(minSdkVersion = 23)
     fun analyzerAnalyzesRGBAImages_withRotationEnabledAndReusedToHaveDifferentSize() {
         analyzerAnalyzesImages_withRotationEnabledAndReusedToHaveDifferentSize(
             ImageAnalysis.OUTPUT_IMAGE_FORMAT_RGBA_8888
         )
+    }
+
+    @Test
+    fun bind_previewImageCaptureImageAnalysis_withPrivateFormat_onLegacyDevice_throwsException() {
+        // LEGACY devices' guaranteed supported configurations table doesn't include PRIV + PRIV +
+        // JPEG, so we expect an IllegalArgumentException if someone tries to bind this
+        // combination.
+        assumeTrue(isLegacyLevelDevice() && isHardwareBufferSupportedOnDevice())
+
+        val preview = Preview.Builder().build()
+        val imageCapture = ImageCapture.Builder().build()
+        val imageAnalysis =
+            ImageAnalysis.Builder()
+                .setOutputImageFormat(ImageAnalysis.OUTPUT_IMAGE_FORMAT_PRIVATE)
+                .build()
+
+        runOnMainSync {
+            assertThrows<IllegalArgumentException> {
+                cameraProvider.bindToLifecycle(
+                    fakeLifecycleOwner,
+                    cameraSelector,
+                    preview,
+                    imageCapture,
+                    imageAnalysis,
+                )
+            }
+        }
+    }
+
+    @Test
+    fun bind_previewImageCaptureImageAnalysis_withPrivateFormat_onLimitedDevice_receivesImages() {
+        assumeTrue(!isLegacyLevelDevice() && isHardwareBufferSupportedOnDevice())
+
+        val preview = Preview.Builder().build()
+        val imageCapture = ImageCapture.Builder().build()
+        val imageAnalysis =
+            ImageAnalysis.Builder()
+                .setOutputImageFormat(ImageAnalysis.OUTPUT_IMAGE_FORMAT_PRIVATE)
+                .build()
+
+        runOnMainSync {
+            preview.surfaceProvider = SurfaceTextureProvider.createSurfaceTextureProvider()
+            cameraProvider.bindToLifecycle(
+                fakeLifecycleOwner,
+                cameraSelector,
+                preview,
+                imageCapture,
+                imageAnalysis,
+            )
+        }
+
+        setAnalyzerAndVerifyNewImageReceivedWithCorrectFormat(imageAnalysis, ImageFormat.PRIVATE)
+    }
+
+    @Test
+    fun bind_previewVideoImageCaptureImageAnalysis_withPrivateFormat_onLimitedDevice_receivesImages() =
+        runBlocking {
+            assumeTrue(!isLegacyLevelDevice() && isHardwareBufferSupportedOnDevice())
+
+            val preview = Preview.Builder().build()
+            val videoCapture = VideoCapture.withOutput(Recorder.Builder().build())
+            val imageCapture = ImageCapture.Builder().build()
+            val imageAnalysis =
+                ImageAnalysis.Builder()
+                    .setOutputImageFormat(ImageAnalysis.OUTPUT_IMAGE_FORMAT_PRIVATE)
+                    .build()
+
+            withContext(Dispatchers.Main) {
+                preview.surfaceProvider = SurfaceTextureProvider.createSurfaceTextureProvider()
+                cameraProvider.bindToLifecycle(
+                    fakeLifecycleOwner,
+                    cameraSelector,
+                    preview,
+                    videoCapture,
+                    imageCapture,
+                    imageAnalysis,
+                )
+            }
+
+            setAnalyzerAndVerifyNewImageReceivedWithCorrectFormat(
+                imageAnalysis,
+                ImageFormat.PRIVATE,
+            )
+        }
+
+    @Test
+    fun imageAnalysisCapabilities_reportsPrivateSupportCorrectly() {
+        val cameraInfo = cameraSelector.filter(cameraProvider.availableCameraInfos).first()
+        val capabilities = ImageAnalysis.getImageAnalysisCapabilities(cameraInfo)
+        val isSupported =
+            capabilities.isOutputFormatSupported(ImageAnalysis.OUTPUT_IMAGE_FORMAT_PRIVATE)
+
+        if (Build.VERSION.SDK_INT < 29) {
+            assertThat(isSupported).isFalse()
+        } else {
+            (cameraInfo as CameraInfoInternal).getSupportedResolutions(ImageFormat.PRIVATE).let {
+                outputSizes ->
+                val maxResolution = SizeUtil.getMaxSize(outputSizes)!!
+                assertThat(isSupported)
+                    .isEqualTo(
+                        try {
+                            HardwareBuffer.isSupported(
+                                maxResolution.width,
+                                maxResolution.height,
+                                ImageFormat.PRIVATE,
+                                1,
+                                HardwareBuffer.USAGE_GPU_SAMPLED_IMAGE,
+                            )
+                        } catch (e: IllegalArgumentException) {
+                            false
+                        }
+                    )
+            }
+        }
+    }
+
+    @Test
+    fun imageProxyPlanesAreEmpty_whenPrivateFormatIsUsed() {
+        assumeTrue(isHardwareBufferSupportedOnDevice())
+
+        val imageAnalysis =
+            ImageAnalysis.Builder()
+                .setOutputImageFormat(ImageAnalysis.OUTPUT_IMAGE_FORMAT_PRIVATE)
+                .build()
+
+        analysisResultsSemaphore = Semaphore(0)
+        val planesEmpty = AtomicBoolean(false)
+        imageAnalysis.setAnalyzer(CameraXExecutors.newHandlerExecutor(handler)) { image ->
+            planesEmpty.set(image.planes.isEmpty())
+            image.close()
+            analysisResultsSemaphore.release()
+        }
+
+        runOnMainSync {
+            cameraProvider.bindToLifecycle(fakeLifecycleOwner, cameraSelector, imageAnalysis)
+        }
+
+        assertThat(analysisResultsSemaphore.tryAcquire(5, TimeUnit.SECONDS)).isTrue()
+        assertThat(planesEmpty.get()).isTrue()
+    }
+
+    @Test
+    fun imageReaderHasCorrectUsage_whenPrivateFormatIsUsed() {
+        assumeTrue(isHardwareBufferSupportedOnDevice())
+
+        val imageReaderUsage = AtomicLong(-1L)
+        val imageAnalysis =
+            ImageAnalysis.Builder()
+                .setOutputImageFormat(ImageAnalysis.OUTPUT_IMAGE_FORMAT_PRIVATE)
+                .setImageReaderProxyProvider { width, height, format, queueDepth, usage ->
+                    imageReaderUsage.set(usage)
+                    FakeImageReaderProxy.newInstance(width, height, format, queueDepth, usage)
+                }
+                .build()
+
+        runOnMainSync {
+            cameraProvider.bindToLifecycle(fakeLifecycleOwner, cameraSelector, imageAnalysis)
+        }
+
+        assertThat(imageReaderUsage.get())
+            .isEqualTo(android.hardware.HardwareBuffer.USAGE_GPU_SAMPLED_IMAGE)
+    }
+
+    private fun isLegacyLevelDevice(): Boolean =
+        cameraSelector.filter(cameraProvider.availableCameraInfos).first().let {
+            it.implementationType == CameraInfo.IMPLEMENTATION_TYPE_CAMERA2_LEGACY
+        }
+
+    private fun isHardwareBufferSupportedOnDevice(): Boolean =
+        cameraSelector.filter(cameraProvider.availableCameraInfos).first().let {
+            return ImageAnalysis.getImageAnalysisCapabilities(it)
+                .isOutputFormatSupported(ImageAnalysis.OUTPUT_IMAGE_FORMAT_PRIVATE)
+        }
+
+    private fun setAnalyzerAndVerifyNewImageReceivedWithCorrectFormat(
+        imageAnalysis: ImageAnalysis,
+        expectedFormat: Int,
+    ) {
+        analysisResultsSemaphore = Semaphore(0)
+        synchronized(analysisResultLock) { analysisResults.clear() }
+        imageAnalysis.setAnalyzer(CameraXExecutors.newHandlerExecutor(handler), analyzer)
+        assertThat(analysisResultsSemaphore.tryAcquire(5, TimeUnit.SECONDS)).isTrue()
+        synchronized(analysisResultLock) {
+            assertThat(analysisResults).isNotEmpty()
+            assertThat(analysisResults.last().format).isEqualTo(expectedFormat)
+        }
     }
 
     @RequiresApi(23)
@@ -622,17 +804,17 @@ internal class ImageAnalysisTest(
             camera =
                 cameraProvider.bindToLifecycle(
                     fakeLifecycleOwner,
-                    DEFAULT_CAMERA_SELECTOR,
+                    cameraSelector,
                     preview,
                     imageCapture,
-                    imageAnalysis
+                    imageAnalysis,
                 )
         }
 
         val expectedOutputResolution1 = getRotatedResolution(camera!!, imageAnalysis)
         setAnalyzerAndVerifyNewImageReceivedWithCorrectResolution(
             imageAnalysis,
-            expectedOutputResolution1
+            expectedOutputResolution1,
         )
 
         // Unbinds all and rebind the imageAnalysis only to make imageAnalysis have a MAXIMUM size
@@ -642,18 +824,14 @@ internal class ImageAnalysisTest(
             // will not be kept to cause test failure
             imageAnalysis.clearAnalyzer()
             cameraProvider.unbindAll()
-            cameraProvider.bindToLifecycle(
-                fakeLifecycleOwner,
-                DEFAULT_CAMERA_SELECTOR,
-                imageAnalysis
-            )
+            cameraProvider.bindToLifecycle(fakeLifecycleOwner, cameraSelector, imageAnalysis)
         }
 
         val expectedOutputResolution2 = getRotatedResolution(camera!!, imageAnalysis)
         assumeTrue(expectedOutputResolution2 != expectedOutputResolution1)
         setAnalyzerAndVerifyNewImageReceivedWithCorrectResolution(
             imageAnalysis,
-            expectedOutputResolution2
+            expectedOutputResolution2,
         )
     }
 
@@ -670,7 +848,7 @@ internal class ImageAnalysisTest(
 
     private fun setAnalyzerAndVerifyNewImageReceivedWithCorrectResolution(
         imageAnalysis: ImageAnalysis,
-        expectedResolution: Size
+        expectedResolution: Size,
     ) {
         analysisResultsSemaphore = Semaphore(0)
         synchronized(analysisResultLock) { analysisResults.clear() }
@@ -687,7 +865,7 @@ internal class ImageAnalysisTest(
         runOnMainSync {
             sessionConfig.errorListener!!.onError(
                 sessionConfig,
-                SessionConfig.SessionError.SESSION_ERROR_UNKNOWN
+                SessionConfig.SessionError.SESSION_ERROR_UNKNOWN,
             )
         }
         // Resets the semaphore
@@ -702,7 +880,7 @@ internal class ImageAnalysisTest(
         val resolution: Size,
         val format: Int,
         val timestamp: Long,
-        val rotationDegrees: Int
+        val rotationDegrees: Int,
     ) {
 
         constructor(
@@ -711,7 +889,85 @@ internal class ImageAnalysisTest(
             Size(image.width, image.height),
             image.format,
             image.imageInfo.timestamp,
-            image.imageInfo.rotationDegrees
+            image.imageInfo.rotationDegrees,
         )
+    }
+
+    @LabTestRule.LabTestFrontCamera
+    @Test
+    fun verifyHardwareBufferContentWithMLKit_onLabDevice_frontCamera() = runBlocking {
+        verifyHardwareBufferContentWithMLKit(CameraSelector.DEFAULT_FRONT_CAMERA)
+    }
+
+    @LabTestRule.LabTestRearCamera
+    @Test
+    fun verifyHardwareBufferContentWithMLKit_onLabDevice_rearCamera() = runBlocking {
+        verifyHardwareBufferContentWithMLKit(CameraSelector.DEFAULT_BACK_CAMERA)
+    }
+
+    private suspend fun verifyHardwareBufferContentWithMLKit(cameraSelector: CameraSelector) {
+        assumeTrue(CameraUtil.hasCameraWithLensFacing(cameraSelector.lensFacing!!))
+        assumeTrue(!isLegacyLevelDevice() && isHardwareBufferSupportedOnDevice())
+
+        val barcodeScanner =
+            BarcodeScanning.getClient(
+                BarcodeScannerOptions.Builder().setBarcodeFormats(Barcode.FORMAT_QR_CODE).build()
+            )
+        val imageAnalysis =
+            ImageAnalysis.Builder()
+                .setOutputImageFormat(ImageAnalysis.OUTPUT_IMAGE_FORMAT_PRIVATE)
+                .build()
+
+        val framesToSkip = 10
+        val framesToAnalyze = 5
+        val frameCounter = java.util.concurrent.atomic.AtomicInteger(0)
+        val latchForBarcodeDetect = CountDownLatch(1)
+
+        imageAnalysis.setAnalyzer(CameraXExecutors.newHandlerExecutor(handler)) { image ->
+            if (Build.VERSION.SDK_INT >= 28) {
+                val currentFrame = frameCounter.incrementAndGet()
+                if (currentFrame > framesToSkip && currentFrame <= framesToSkip + framesToAnalyze) {
+                    Api28Impl.getHardwareBuffer(image)?.use { hwBuffer ->
+                        val width = hwBuffer.width
+                        val height = hwBuffer.height
+                        val rgbaArray = ByteArray(width * height * 4)
+
+                        if (
+                            androidx.camera.testing.impl.NativeHardwareBufferConverter
+                                .convertToRgba(hwBuffer, rgbaArray)
+                        ) {
+                            val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+                            bitmap.copyPixelsFromBuffer(java.nio.ByteBuffer.wrap(rgbaArray))
+
+                            val inputImage =
+                                InputImage.fromBitmap(bitmap, image.imageInfo.rotationDegrees)
+                            barcodeScanner.process(inputImage).addOnSuccessListener { barcodes ->
+                                barcodes.forEach { barcode ->
+                                    if ("Hi, CamX!" == barcode.displayValue) {
+                                        latchForBarcodeDetect.countDown()
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            image.close()
+        }
+
+        withContext(Dispatchers.Main) {
+            cameraProvider.bindToLifecycle(fakeLifecycleOwner, cameraSelector, imageAnalysis)
+        }
+
+        assertThat(latchForBarcodeDetect.await(15000, TimeUnit.MILLISECONDS)).isTrue()
+        barcodeScanner.close()
+    }
+
+    @RequiresApi(28)
+    private object Api28Impl {
+        @DoNotInline
+        fun getHardwareBuffer(image: ImageProxy): HardwareBuffer? {
+            return image.hardwareBuffer
+        }
     }
 }

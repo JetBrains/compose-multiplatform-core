@@ -50,7 +50,7 @@ fun RequestPermission(activity: ActivityResultCaller) {
 @Sampled
 fun RequestBackgroundReadPermission(
     features: HealthConnectFeatures,
-    activity: ActivityResultCaller
+    activity: ActivityResultCaller,
 ) {
     val requestPermission =
         activity.registerForActivityResult(

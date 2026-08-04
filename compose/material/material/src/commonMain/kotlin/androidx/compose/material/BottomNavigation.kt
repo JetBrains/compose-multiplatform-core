@@ -97,19 +97,19 @@ import kotlin.math.roundToInt
  *   [BottomNavigationItem]s
  */
 @Composable
-fun BottomNavigation(
+public fun BottomNavigation(
     windowInsets: WindowInsets,
     modifier: Modifier = Modifier,
     backgroundColor: Color = MaterialTheme.colors.primarySurface,
     contentColor: Color = contentColorFor(backgroundColor),
     elevation: Dp = BottomNavigationDefaults.Elevation,
-    content: @Composable RowScope.() -> Unit
+    content: @Composable RowScope.() -> Unit,
 ) {
     Surface(
         color = backgroundColor,
         contentColor = contentColor,
         elevation = elevation,
-        modifier = modifier
+        modifier = modifier,
     ) {
         Row(
             Modifier.fillMaxWidth()
@@ -117,7 +117,7 @@ fun BottomNavigation(
                 .defaultMinSize(minHeight = BottomNavigationHeight)
                 .selectableGroup(),
             horizontalArrangement = Arrangement.SpaceBetween,
-            content = content
+            content = content,
         )
     }
 }
@@ -153,12 +153,12 @@ fun BottomNavigation(
  *   [BottomNavigationItem]s
  */
 @Composable
-fun BottomNavigation(
+public fun BottomNavigation(
     modifier: Modifier = Modifier,
     backgroundColor: Color = MaterialTheme.colors.primarySurface,
     contentColor: Color = contentColorFor(backgroundColor),
     elevation: Dp = BottomNavigationDefaults.Elevation,
-    content: @Composable RowScope.() -> Unit
+    content: @Composable RowScope.() -> Unit,
 ) {
     BottomNavigation(ZeroInsets, modifier, backgroundColor, contentColor, elevation, content)
 }
@@ -195,7 +195,7 @@ fun BottomNavigation(
  * @param unselectedContentColor the color of the text label and icon when this item is not selected
  */
 @Composable
-fun RowScope.BottomNavigationItem(
+public fun RowScope.BottomNavigationItem(
     selected: Boolean,
     onClick: () -> Unit,
     icon: @Composable () -> Unit,
@@ -205,7 +205,7 @@ fun RowScope.BottomNavigationItem(
     alwaysShowLabel: Boolean = true,
     interactionSource: MutableInteractionSource? = null,
     selectedContentColor: Color = LocalContentColor.current,
-    unselectedContentColor: Color = selectedContentColor.copy(alpha = ContentAlpha.medium)
+    unselectedContentColor: Color = selectedContentColor.copy(alpha = ContentAlpha.medium),
 ) {
     val styledLabel: @Composable (() -> Unit)? =
         label?.let {
@@ -227,10 +227,10 @@ fun RowScope.BottomNavigationItem(
                 enabled = enabled,
                 role = Role.Tab,
                 interactionSource = interactionSource,
-                indication = ripple
+                indication = ripple,
             )
             .weight(1f),
-        contentAlignment = Alignment.Center
+        contentAlignment = Alignment.Center,
     ) {
         BottomNavigationTransition(selectedContentColor, unselectedContentColor, selected) {
             progress ->
@@ -239,19 +239,19 @@ fun RowScope.BottomNavigationItem(
             BottomNavigationItemBaselineLayout(
                 icon = icon,
                 label = styledLabel,
-                iconPositionAnimationProgress = animationProgress
+                iconPositionAnimationProgress = animationProgress,
             )
         }
     }
 }
 
 /** Contains default values used for [BottomNavigation]. */
-object BottomNavigationDefaults {
+public object BottomNavigationDefaults {
     /** Default elevation used for [BottomNavigation]. */
-    val Elevation = 8.dp
+    public val Elevation: Dp = 8.dp
 
     /** Recommended window insets to be used and consumed by bottom navigation */
-    val windowInsets: WindowInsets
+    public val windowInsets: WindowInsets
         @Composable
         get() =
             WindowInsets.systemBarsForVisualComponents.only(
@@ -276,12 +276,12 @@ private fun BottomNavigationTransition(
     activeColor: Color,
     inactiveColor: Color,
     selected: Boolean,
-    content: @Composable (animationProgress: Float) -> Unit
+    content: @Composable (animationProgress: Float) -> Unit,
 ) {
     val animationProgress by
         animateFloatAsState(
             targetValue = if (selected) 1f else 0f,
-            animationSpec = BottomNavigationAnimationSpec
+            animationSpec = BottomNavigationAnimationSpec,
         )
 
     val color = lerp(inactiveColor, activeColor, animationProgress)
@@ -308,7 +308,7 @@ private fun BottomNavigationTransition(
 private fun BottomNavigationItemBaselineLayout(
     icon: @Composable () -> Unit,
     label: @Composable (() -> Unit)?,
-    @FloatRange(from = 0.0, to = 1.0) iconPositionAnimationProgress: Float
+    @FloatRange(from = 0.0, to = 1.0) iconPositionAnimationProgress: Float,
 ) {
     Layout({
         Box(Modifier.layoutId("icon")) { icon() }
@@ -344,7 +344,7 @@ private fun BottomNavigationItemBaselineLayout(
                 labelPlaceable!!,
                 iconPlaceable,
                 constraints,
-                iconPositionAnimationProgress
+                iconPositionAnimationProgress,
             )
         }
     }
@@ -353,7 +353,7 @@ private fun BottomNavigationItemBaselineLayout(
 /** Places the provided [iconPlaceable] in the vertical center of the provided [constraints] */
 private fun MeasureScope.placeIcon(
     iconPlaceable: Placeable,
-    constraints: Constraints
+    constraints: Constraints,
 ): MeasureResult {
     val height = constraints.constrainHeight(BottomNavigationHeight.roundToPx())
     val iconY = (height - iconPlaceable.height) / 2
@@ -384,7 +384,7 @@ private fun MeasureScope.placeLabelAndIcon(
     labelPlaceable: Placeable,
     iconPlaceable: Placeable,
     constraints: Constraints,
-    @FloatRange(from = 0.0, to = 1.0) iconPositionAnimationProgress: Float
+    @FloatRange(from = 0.0, to = 1.0) iconPositionAnimationProgress: Float,
 ): MeasureResult {
     val firstBaseline = labelPlaceable[FirstBaseline]
     val baselineOffset = CombinedItemTextBaseline.roundToPx()
@@ -430,15 +430,18 @@ private val BottomNavigationAnimationSpec =
     TweenSpec<Float>(durationMillis = 300, easing = FastOutSlowInEasing)
 
 /** Height of a [BottomNavigation] component */
-private val BottomNavigationHeight = 56.dp
+private val BottomNavigationHeight
+    get() = 56.dp
 
 /** Padding at the start and end of a [BottomNavigationItem] */
-private val BottomNavigationItemHorizontalPadding = 12.dp
+private val BottomNavigationItemHorizontalPadding
+    get() = 12.dp
 
 /**
  * The space between the text baseline and the bottom of the [BottomNavigationItem], and between the
  * text baseline and the bottom of the icon placed above it.
  */
-private val CombinedItemTextBaseline = 12.dp
+private val CombinedItemTextBaseline
+    get() = 12.dp
 
 private val ZeroInsets = WindowInsets(0.dp, 0.dp, 0.dp, 0.dp)

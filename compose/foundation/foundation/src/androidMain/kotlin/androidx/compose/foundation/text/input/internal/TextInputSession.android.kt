@@ -53,12 +53,17 @@ internal interface TextInputSession : ImeEditCommandScope {
     /** Called from [InputConnection.requestCursorUpdates]. */
     fun requestCursorUpdates(cursorUpdateMode: Int)
 
+    /** Called from [InputConnection.getExtractedText]. */
+    fun requestExtractedTextUpdates(token: Int)
+
     /** Called from [InputConnection.performHandwritingGesture]. */
     fun performHandwritingGesture(gesture: HandwritingGesture): Int
 
     /** Called from [InputConnection.previewHandwritingGesture]. */
     fun previewHandwritingGesture(
         gesture: PreviewableHandwritingGesture,
-        cancellationSignal: CancellationSignal?
+        cancellationSignal: CancellationSignal?,
     ): Boolean
+
+    fun updateDirectTouchInteraction(isDirectTouchInteraction: Boolean)
 }

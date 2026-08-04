@@ -17,6 +17,7 @@
 package androidx.paging
 
 import androidx.kruth.assertThat
+import androidx.paging.internal.IgnoreWebTarget
 import kotlin.test.Test
 import kotlin.test.fail
 import kotlinx.coroutines.CancellationException
@@ -43,7 +44,11 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runTest
 
+// TODO: When re-enabling web targets, the KotlinRunTestResultUnused suppression MUST be removed
+//  for correct execution of the tests on web.
 @OptIn(ExperimentalCoroutinesApi::class)
+@IgnoreWebTarget // b/395933428
+@Suppress("KotlinRunTestResultUnused")
 class SimpleChannelFlowTest {
     val testScope = TestScope(UnconfinedTestDispatcher())
 
@@ -267,7 +272,7 @@ class SimpleChannelFlowTest {
 
     private fun <T> createFlow(
         impl: Impl,
-        block: suspend TestProducerScope<T>.() -> Unit
+        block: suspend TestProducerScope<T>.() -> Unit,
     ): Flow<T> {
         return when (impl) {
             Impl.ChannelFlow -> channelFlow { ChannelFlowTestProducerScope(this).block() }

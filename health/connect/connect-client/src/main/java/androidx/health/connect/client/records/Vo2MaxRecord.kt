@@ -47,11 +47,11 @@ public class Vo2MaxRecord(
         } else {
             requireNonNegative(
                 value = vo2MillilitersPerMinuteKilogram,
-                name = "vo2MillilitersPerMinuteKilogram"
+                name = "vo2MillilitersPerMinuteKilogram",
             )
             vo2MillilitersPerMinuteKilogram.requireNotMore(
                 100.0,
-                name = "vo2MillilitersPerMinuteKilogram"
+                name = "vo2MillilitersPerMinuteKilogram",
             )
         }
     }

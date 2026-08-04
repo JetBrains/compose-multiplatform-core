@@ -42,18 +42,18 @@ import kotlinx.coroutines.launch
  *
  * @sample androidx.compose.foundation.samples.AndroidExternalSurfaceColors
  */
-interface SurfaceScope {
+public interface SurfaceScope {
     /**
      * Invokes [onChanged] when the surface's geometry (width and height) changes. Always invoked on
      * the main thread.
      */
-    fun Surface.onChanged(onChanged: Surface.(width: Int, height: Int) -> Unit)
+    public fun Surface.onChanged(onChanged: Surface.(width: Int, height: Int) -> Unit)
 
     /**
      * Invokes [onDestroyed] when the surface is destroyed. All rendering into the surface should
      * stop immediately after [onDestroyed] is invoked. Always invoked on the main thread.
      */
-    fun Surface.onDestroyed(onDestroyed: Surface.() -> Unit)
+    public fun Surface.onDestroyed(onDestroyed: Surface.() -> Unit)
 }
 
 /**
@@ -66,7 +66,7 @@ interface SurfaceScope {
  * @see SurfaceScope
  * @see AndroidExternalSurfaceScope
  */
-interface SurfaceCoroutineScope : SurfaceScope, CoroutineScope
+public interface SurfaceCoroutineScope : SurfaceScope, CoroutineScope
 
 /**
  * [AndroidExternalSurfaceScope] is a scoped environment provided when an [AndroidExternalSurface]
@@ -74,7 +74,7 @@ interface SurfaceCoroutineScope : SurfaceScope, CoroutineScope
  * register a lambda to invoke when a new [Surface] associated with the
  * [AndroidExternalSurface]/[AndroidEmbeddedExternalSurface] is created.
  */
-interface AndroidExternalSurfaceScope {
+public interface AndroidExternalSurfaceScope {
     /**
      * Invokes [onSurface] when a new [Surface] is created. The [onSurface] lambda is invoked on the
      * main thread as part of a [SurfaceCoroutineScope] to provide a coroutine context. Always
@@ -83,7 +83,7 @@ interface AndroidExternalSurfaceScope {
      * @param onSurface Callback invoked when a new [Surface] is created. The initial dimensions of
      *   the surface are provided.
      */
-    fun onSurface(
+    public fun onSurface(
         onSurface: suspend SurfaceCoroutineScope.(surface: Surface, width: Int, height: Int) -> Unit
     )
 }
@@ -197,17 +197,22 @@ private fun rememberAndroidExternalSurfaceState(): AndroidExternalSurfaceState {
  * set that z-order.
  */
 @JvmInline
-value class AndroidExternalSurfaceZOrder private constructor(val zOrder: Int) {
-    companion object {
+public value class AndroidExternalSurfaceZOrder private constructor(public val zOrder: Int) {
+    public companion object {
         /** The [Surface]'s window layer is positioned behind the parent window. */
-        val Behind = AndroidExternalSurfaceZOrder(0)
+        public val Behind: AndroidExternalSurfaceZOrder
+            get() = AndroidExternalSurfaceZOrder(0)
+
         /**
          * The [Surface]'s window layer is positioned behind the parent window but above other
          * [Surface] window layers marked [Behind].
          */
-        val MediaOverlay = AndroidExternalSurfaceZOrder(1)
+        public val MediaOverlay: AndroidExternalSurfaceZOrder
+            get() = AndroidExternalSurfaceZOrder(1)
+
         /** The [Surface]'s window layer is positioned above the parent window. */
-        val OnTop = AndroidExternalSurfaceZOrder(2)
+        public val OnTop: AndroidExternalSurfaceZOrder
+            get() = AndroidExternalSurfaceZOrder(2)
     }
 }
 
@@ -265,13 +270,13 @@ value class AndroidExternalSurfaceZOrder private constructor(val zOrder: Int) {
  * @sample androidx.compose.foundation.samples.AndroidExternalSurfaceColors
  */
 @Composable
-fun AndroidExternalSurface(
+public fun AndroidExternalSurface(
     modifier: Modifier = Modifier,
     isOpaque: Boolean = true,
     surfaceSize: IntSize = IntSize.Zero,
     zOrder: AndroidExternalSurfaceZOrder = AndroidExternalSurfaceZOrder.Behind,
     isSecure: Boolean = false,
-    onInit: AndroidExternalSurfaceScope.() -> Unit
+    onInit: AndroidExternalSurfaceScope.() -> Unit,
 ) {
     val state = rememberAndroidExternalSurfaceState()
 
@@ -306,7 +311,7 @@ fun AndroidExternalSurface(
             }
 
             view.setSecure(isSecure)
-        }
+        },
     )
 }
 
@@ -321,7 +326,7 @@ private class AndroidEmbeddedExternalSurfaceState(scope: CoroutineScope) :
     override fun onSurfaceTextureAvailable(
         surfaceTexture: SurfaceTexture,
         width: Int,
-        height: Int
+        height: Int,
     ) {
         var w = width
         var h = height
@@ -341,7 +346,7 @@ private class AndroidEmbeddedExternalSurfaceState(scope: CoroutineScope) :
     override fun onSurfaceTextureSizeChanged(
         surfaceTexture: SurfaceTexture,
         width: Int,
-        height: Int
+        height: Int,
     ) {
         var w = width
         var h = height
@@ -410,8 +415,8 @@ private fun rememberAndroidEmbeddedExternalSurfaceState(): AndroidEmbeddedExtern
  * performance reasons.
  *
  * @param modifier Modifier to be applied to the [AndroidExternalSurface]
- * @param isOpaque Whether the managed surface should be opaque or transparent. If transparent and
- *   [isMediaOverlay] is `false`, the surface will be positioned above the parent window.
+ * @param isOpaque Whether the managed surface should be opaque or transparent. If transparent, the
+ *   surface will be positioned above the parent window.
  * @param surfaceSize Sets the surface size independently of the layout size of this
  *   [AndroidExternalSurface]. If set to [IntSize.Zero], the surface size will be equal to the
  *   [AndroidExternalSurface] layout size.
@@ -424,12 +429,12 @@ private fun rememberAndroidEmbeddedExternalSurfaceState(): AndroidEmbeddedExtern
  * @sample androidx.compose.foundation.samples.AndroidEmbeddedExternalSurfaceColors
  */
 @Composable
-fun AndroidEmbeddedExternalSurface(
+public fun AndroidEmbeddedExternalSurface(
     modifier: Modifier = Modifier,
     isOpaque: Boolean = true,
     surfaceSize: IntSize = IntSize.Zero,
     transform: Matrix? = null,
-    onInit: AndroidExternalSurfaceScope.() -> Unit
+    onInit: AndroidExternalSurfaceScope.() -> Unit,
 ) {
     val state = rememberAndroidEmbeddedExternalSurfaceState()
 
@@ -450,6 +455,6 @@ fun AndroidEmbeddedExternalSurface(
             // If transform is null, we'll call setTransform(null) which sets the
             // identity transform on the TextureView
             view.setTransform(transform?.let { state.matrix.apply { setFrom(transform) } })
-        }
+        },
     )
 }

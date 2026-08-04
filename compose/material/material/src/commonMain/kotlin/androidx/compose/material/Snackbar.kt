@@ -82,7 +82,7 @@ import kotlin.math.max
  *   perform
  */
 @Composable
-fun Snackbar(
+public fun Snackbar(
     modifier: Modifier = Modifier,
     action: @Composable (() -> Unit)? = null,
     actionOnNewLine: Boolean = false,
@@ -90,14 +90,14 @@ fun Snackbar(
     backgroundColor: Color = SnackbarDefaults.backgroundColor,
     contentColor: Color = MaterialTheme.colors.surface,
     elevation: Dp = 6.dp,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     Surface(
         modifier = modifier,
         shape = shape,
         elevation = elevation,
         color = backgroundColor,
-        contentColor = contentColor
+        contentColor = contentColor,
     ) {
         CompositionLocalProvider(LocalContentAlpha provides ContentAlpha.high) {
             val textStyle = MaterialTheme.typography.body2
@@ -154,7 +154,7 @@ fun Snackbar(
  *   shadow below the SnackBar
  */
 @Composable
-fun Snackbar(
+public fun Snackbar(
     snackbarData: SnackbarData,
     modifier: Modifier = Modifier,
     actionOnNewLine: Boolean = false,
@@ -162,7 +162,7 @@ fun Snackbar(
     backgroundColor: Color = SnackbarDefaults.backgroundColor,
     contentColor: Color = MaterialTheme.colors.surface,
     actionColor: Color = SnackbarDefaults.primaryActionColor,
-    elevation: Dp = 6.dp
+    elevation: Dp = 6.dp,
 ) {
     val actionLabel = snackbarData.actionLabel
     val actionComposable: (@Composable () -> Unit)? =
@@ -171,7 +171,7 @@ fun Snackbar(
                 TextButton(
                     colors = ButtonDefaults.textButtonColors(contentColor = actionColor),
                     onClick = { snackbarData.performAction() },
-                    content = { Text(actionLabel) }
+                    content = { Text(actionLabel) },
                 )
             }
         } else {
@@ -185,18 +185,18 @@ fun Snackbar(
         shape = shape,
         backgroundColor = backgroundColor,
         contentColor = contentColor,
-        elevation = elevation
+        elevation = elevation,
     )
 }
 
 /** Object to hold defaults used by [Snackbar] */
-object SnackbarDefaults {
+public object SnackbarDefaults {
 
     /** Default alpha of the overlay applied to the [backgroundColor] */
     private const val SnackbarOverlayAlpha = 0.8f
 
     /** Default background color of the [Snackbar] */
-    val backgroundColor: Color
+    public val backgroundColor: Color
         @Composable
         get() =
             MaterialTheme.colors.onSurface
@@ -217,7 +217,7 @@ object SnackbarDefaults {
      * [MaterialTheme.colors] to attempt to reduce the contrast, and when in a dark theme this
      * function uses [Colors.primaryVariant].
      */
-    val primaryActionColor: Color
+    public val primaryActionColor: Color
         @Composable
         get() {
             val colors = MaterialTheme.colors
@@ -294,7 +294,7 @@ private fun NewLineButtonSnackbar(text: @Composable () -> Unit, action: @Composa
                 .padding(
                     start = HorizontalSpacing,
                     end = HorizontalSpacingButtonSide,
-                    bottom = SeparateButtonExtraY
+                    bottom = SeparateButtonExtraY,
                 )
     ) {
         Box(
@@ -316,7 +316,7 @@ private fun OneRowSnackbar(text: @Composable () -> Unit, action: @Composable () 
             Box(Modifier.layoutId(textTag).padding(vertical = SnackbarVerticalPadding)) { text() }
             Box(Modifier.layoutId(actionTag)) { action() }
         },
-        modifier = Modifier.padding(start = HorizontalSpacing, end = HorizontalSpacingButtonSide)
+        modifier = Modifier.padding(start = HorizontalSpacing, end = HorizontalSpacingButtonSide),
     ) { measurables, constraints ->
         val buttonPlaceable =
             measurables.fastFirst { it.layoutId == actionTag }.measure(constraints)
@@ -369,12 +369,21 @@ private fun OneRowSnackbar(text: @Composable () -> Unit, action: @Composable () 
     }
 }
 
-private val HeightToFirstLine = 30.dp
-private val HorizontalSpacing = 16.dp
-private val HorizontalSpacingButtonSide = 8.dp
-private val SeparateButtonExtraY = 2.dp
-private val SnackbarVerticalPadding = 6.dp
-private val TextEndExtraSpacing = 8.dp
-private val LongButtonVerticalOffset = 12.dp
-private val SnackbarMinHeightOneLine = 48.dp
-private val SnackbarMinHeightTwoLines = 68.dp
+private val HeightToFirstLine
+    get() = 30.dp
+private val HorizontalSpacing
+    get() = 16.dp
+private val HorizontalSpacingButtonSide
+    get() = 8.dp
+private val SeparateButtonExtraY
+    get() = 2.dp
+private val SnackbarVerticalPadding
+    get() = 6.dp
+private val TextEndExtraSpacing
+    get() = 8.dp
+private val LongButtonVerticalOffset
+    get() = 12.dp
+private val SnackbarMinHeightOneLine
+    get() = 48.dp
+private val SnackbarMinHeightTwoLines
+    get() = 68.dp

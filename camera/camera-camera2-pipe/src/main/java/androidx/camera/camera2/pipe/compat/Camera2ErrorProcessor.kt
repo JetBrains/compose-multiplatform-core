@@ -21,7 +21,9 @@ import androidx.camera.camera2.pipe.CameraError
 import androidx.camera.camera2.pipe.CameraId
 import androidx.camera.camera2.pipe.GraphState
 import androidx.camera.camera2.pipe.internal.CameraErrorListener
+import androidx.camera.camera2.pipe.internal.CriticalCameraErrorListener
 import javax.inject.Inject
+import javax.inject.Provider
 import javax.inject.Singleton
 
 /**
@@ -30,7 +32,10 @@ import javax.inject.Singleton
  * should update CameraErrorProcessor with the [VirtualCameraState] that came with the open request.
  */
 @Singleton
-public class Camera2ErrorProcessor @Inject constructor() : CameraErrorListener {
+public class Camera2ErrorProcessor
+@Inject
+constructor(private val criticalCameraErrorListener: Provider<CriticalCameraErrorListener>) :
+    CameraErrorListener {
     private val lock = Any()
 
     @GuardedBy("lock")
@@ -39,12 +44,15 @@ public class Camera2ErrorProcessor @Inject constructor() : CameraErrorListener {
     override fun onCameraError(
         cameraId: CameraId,
         cameraError: CameraError,
-        willAttemptRetry: Boolean
+        willAttemptRetry: Boolean,
     ) {
         val virtualCameraState = synchronized(lock) { virtualCameraStateMap[cameraId] } ?: return
         virtualCameraState.graphListener.onGraphError(
             GraphState.GraphStateError(cameraError, willAttemptRetry)
         )
+        if (cameraError == CameraError.ERROR_CAMERA_DEVICE) {
+            criticalCameraErrorListener.get().onCriticalCameraError(cameraId)
+        }
     }
 
     /**
@@ -54,6 +62,6 @@ public class Camera2ErrorProcessor @Inject constructor() : CameraErrorListener {
      */
     internal fun setActiveVirtualCamera(
         cameraId: CameraId,
-        virtualCameraState: VirtualCameraState
+        virtualCameraState: VirtualCameraState,
     ) = synchronized(lock) { virtualCameraStateMap[cameraId] = virtualCameraState }
 }

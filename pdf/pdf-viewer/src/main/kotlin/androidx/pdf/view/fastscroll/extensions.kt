@@ -20,15 +20,6 @@ import android.content.Context
 import android.util.Range
 
 /**
- * Converts density-independent pixels (dp) to pixels (px) for an integer value.
- *
- * @param context The application context used to access resources.
- * @return The equivalent pixel value as an integer.
- */
-internal fun Int.dpToPx(context: Context): Int =
-    (this * context.resources.displayMetrics.density).toInt()
-
-/**
  * Calculates the length of an integer range.
  *
  * @return The length of the range (inclusive).

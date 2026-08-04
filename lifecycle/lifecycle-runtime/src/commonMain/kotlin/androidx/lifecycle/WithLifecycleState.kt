@@ -17,12 +17,12 @@
 package androidx.lifecycle
 
 import kotlin.coroutines.EmptyCoroutineContext
-import kotlin.coroutines.coroutineContext
 import kotlin.coroutines.resumeWithException
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Runnable
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.suspendCancellableCoroutine
 
 /**
@@ -38,7 +38,7 @@ public class LifecycleDestroyedException : CancellationException(null as String?
  */
 public suspend inline fun <R> Lifecycle.withStateAtLeast(
     state: Lifecycle.State,
-    crossinline block: () -> R
+    crossinline block: () -> R,
 ): R {
     require(state >= Lifecycle.State.CREATED) {
         "target state must be CREATED or greater, found $state"
@@ -82,7 +82,7 @@ public suspend inline fun <R> Lifecycle.withResumed(crossinline block: () -> R):
  */
 public suspend inline fun <R> LifecycleOwner.withStateAtLeast(
     state: Lifecycle.State,
-    crossinline block: () -> R
+    crossinline block: () -> R,
 ): R = lifecycle.withStateAtLeast(state = state, block = block)
 
 /**
@@ -120,12 +120,12 @@ public suspend inline fun <R> LifecycleOwner.withResumed(crossinline block: () -
 @PublishedApi
 internal suspend inline fun <R> Lifecycle.withStateAtLeastUnchecked(
     state: Lifecycle.State,
-    crossinline block: () -> R
+    crossinline block: () -> R,
 ): R {
     // Fast path: if our lifecycle dispatcher doesn't require dispatch we can check
     // the current lifecycle state and decide if we can run synchronously
     val lifecycleDispatcher = Dispatchers.Main.immediate
-    val dispatchNeeded = lifecycleDispatcher.isDispatchNeeded(coroutineContext)
+    val dispatchNeeded = lifecycleDispatcher.isDispatchNeeded(currentCoroutineContext())
     if (!dispatchNeeded) {
         if (currentState == Lifecycle.State.DESTROYED) throw LifecycleDestroyedException()
         if (currentState >= state) return block()
@@ -144,7 +144,7 @@ internal suspend fun <R> Lifecycle.suspendWithStateAtLeastUnchecked(
     state: Lifecycle.State,
     dispatchNeeded: Boolean,
     lifecycleDispatcher: CoroutineDispatcher,
-    block: () -> R
+    block: () -> R,
 ): R = suspendCancellableCoroutine { co ->
     val observer =
         object : LifecycleEventObserver {
@@ -167,7 +167,7 @@ internal suspend fun <R> Lifecycle.suspendWithStateAtLeastUnchecked(
         if (lifecycleDispatcher.isDispatchNeeded(EmptyCoroutineContext)) {
             lifecycleDispatcher.dispatch(
                 EmptyCoroutineContext,
-                Runnable { removeObserver(observer) }
+                Runnable { removeObserver(observer) },
             )
         } else removeObserver(observer)
     }

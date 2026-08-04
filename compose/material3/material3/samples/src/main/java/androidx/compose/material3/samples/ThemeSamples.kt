@@ -27,7 +27,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material3.Button
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialExpressiveTheme
@@ -77,7 +76,7 @@ fun MaterialThemeSample() {
     val typography =
         Typography(
             displaySmall = TextStyle(fontWeight = FontWeight.W100, fontSize = 96.sp),
-            labelLarge = TextStyle(fontWeight = FontWeight.W600, fontSize = 14.sp)
+            labelLarge = TextStyle(fontWeight = FontWeight.W600, fontSize = 14.sp),
         )
 
     val shapes = Shapes(extraSmall = RoundedCornerShape(3.0.dp), small = RoundedCornerShape(6.0.dp))
@@ -87,12 +86,11 @@ fun MaterialThemeSample() {
         ExtendedFloatingActionButton(
             text = { Text("FAB with text style and color from $currentTheme theme") },
             icon = { Icon(Icons.Filled.Favorite, contentDescription = "Localized Description") },
-            onClick = {}
+            onClick = {},
         )
     }
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Preview
 @Sampled
 @Composable
@@ -121,7 +119,7 @@ fun MaterialExpressiveThemeSample() {
         ExtendedFloatingActionButton(
             text = { Text("FAB with text style and color from $currentTheme expressive theme") },
             icon = { Icon(Icons.Filled.Favorite, contentDescription = "Localized Description") },
-            onClick = {}
+            onClick = {},
         )
     }
 }

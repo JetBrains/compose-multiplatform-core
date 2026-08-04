@@ -17,7 +17,6 @@
 package androidx.compose.foundation.samples
 
 import androidx.annotation.Sampled
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -35,10 +34,8 @@ import androidx.compose.foundation.text.handwriting.handwritingDetector
 import androidx.compose.foundation.text.handwriting.handwritingHandler
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.Card
-import androidx.compose.material.ContentAlpha
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
+import androidx.compose.material3.Card
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -63,7 +60,7 @@ fun HandwritingDetectorSample() {
     Column(
         Modifier.imePadding().requiredWidth(300.dp).verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text(
             "This is not an actual text field, but it is a handwriting detector so you can use " +
@@ -75,13 +72,7 @@ fun HandwritingDetectorSample() {
             Modifier.fillMaxWidth()
                 .handwritingDetector { openDialog = !openDialog }
                 .padding(4.dp)
-                .border(
-                    1.dp,
-                    MaterialTheme.colors.onSurface.copy(alpha = ContentAlpha.disabled),
-                    RoundedCornerShape(4.dp)
-                )
                 .padding(16.dp),
-            color = MaterialTheme.colors.onSurface.copy(alpha = ContentAlpha.medium)
         )
     }
 
@@ -91,7 +82,7 @@ fun HandwritingDetectorSample() {
                 Column(
                     modifier = Modifier.padding(24.dp),
                     verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally
+                    horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Text("This text field is a handwriting handler.")
                     Spacer(Modifier.size(16.dp))
@@ -103,18 +94,8 @@ fun HandwritingDetectorSample() {
                                 .focusRequester(focusRequester)
                                 .handwritingHandler(),
                         decorator = { innerTextField ->
-                            Box(
-                                Modifier.padding(4.dp)
-                                    .border(
-                                        1.dp,
-                                        MaterialTheme.colors.onSurface,
-                                        RoundedCornerShape(4.dp)
-                                    )
-                                    .padding(16.dp)
-                            ) {
-                                innerTextField()
-                            }
-                        }
+                            Box(Modifier.padding(4.dp).padding(16.dp)) { innerTextField() }
+                        },
                     )
                 }
             }

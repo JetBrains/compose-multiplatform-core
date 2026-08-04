@@ -28,12 +28,12 @@ import androidx.compose.ui.graphics.colorspace.WhitePoint
 
 /** Convert the Compose [ColorSpace] into an Android framework [android.graphics.ColorSpace] */
 @RequiresApi(Build.VERSION_CODES.O)
-fun ColorSpace.toAndroidColorSpace(): android.graphics.ColorSpace =
+public fun ColorSpace.toAndroidColorSpace(): android.graphics.ColorSpace =
     with(ColorSpaceVerificationHelper) { androidColorSpace() }
 
 /** Convert the [android.graphics.ColorSpace] into a Compose [ColorSpace] */
 @RequiresApi(Build.VERSION_CODES.O)
-fun android.graphics.ColorSpace.toComposeColorSpace() =
+public fun android.graphics.ColorSpace.toComposeColorSpace(): ColorSpace =
     with(ColorSpaceVerificationHelper) { composeColorSpace() }
 
 @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
@@ -52,6 +52,24 @@ private object ColorSpaceVerificationHelperV34 {
         when (id) {
             android.graphics.ColorSpace.Named.BT2020_HLG.ordinal -> ColorSpaces.Bt2020Hlg
             android.graphics.ColorSpace.Named.BT2020_PQ.ordinal -> ColorSpaces.Bt2020Pq
+            else -> ColorSpaces.Unspecified
+        }
+}
+
+@RequiresApi(Build.VERSION_CODES.BAKLAVA)
+private object ColorSpaceVerificationHelperV36 {
+
+    @JvmStatic
+    fun obtainAndroidColorSpace(colorSpace: ColorSpace): android.graphics.ColorSpace? =
+        when (colorSpace) {
+            ColorSpaces.Oklab -> get(android.graphics.ColorSpace.Named.OK_LAB)
+            else -> null
+        }
+
+    @JvmStatic
+    fun obtainComposeColorSpaceFromId(id: Int): ColorSpace =
+        when (id) {
+            android.graphics.ColorSpace.Named.OK_LAB.ordinal -> ColorSpaces.Oklab
             else -> ColorSpaces.Unspecified
         }
 }
@@ -88,6 +106,15 @@ private object ColorSpaceVerificationHelper {
                         return v34ColorSpace
                     }
                 }
+
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) {
+                    val v36ColorSpace =
+                        ColorSpaceVerificationHelperV36.obtainAndroidColorSpace(this)
+                    if (v36ColorSpace != null) {
+                        return v36ColorSpace
+                    }
+                }
+
                 if (this is Rgb) {
                     val whitePointArray = this.whitePoint.toXyz()
                     val transferParams = this.transferParameters
@@ -100,18 +127,33 @@ private object ColorSpaceVerificationHelper {
                                 transferParams.d,
                                 transferParams.e,
                                 transferParams.f,
-                                transferParams.gamma
+                                transferParams.gamma,
                             )
                         } else {
                             null
                         }
+                    val transform = this.transform
                     if (androidTransferParams != null) {
-                        android.graphics.ColorSpace.Rgb(
-                            this.name,
-                            this.primaries,
-                            whitePointArray,
-                            androidTransferParams
-                        )
+                        val directColorSpace =
+                            android.graphics.ColorSpace.Rgb(
+                                this.name,
+                                this.primaries,
+                                whitePointArray,
+                                androidTransferParams,
+                            )
+                        if (transform[0].isNaN()) {
+                            directColorSpace
+                        } else {
+                            if (directColorSpace.transform.contentEquals(transform)) {
+                                directColorSpace
+                            } else {
+                                android.graphics.ColorSpace.Rgb(
+                                    this.name,
+                                    transform,
+                                    androidTransferParams,
+                                )
+                            }
+                        }
                     } else {
                         android.graphics.ColorSpace.Rgb(
                             this.name,
@@ -120,7 +162,7 @@ private object ColorSpaceVerificationHelper {
                             this.oetf,
                             this.eotf,
                             this.getMinValue(0),
-                            this.getMaxValue(0)
+                            this.getMaxValue(0),
                         )
                     }
                 } else {
@@ -159,6 +201,14 @@ private object ColorSpaceVerificationHelper {
                         return v34ColorSpace
                     }
                 }
+
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) {
+                    val v36ColorSpace =
+                        ColorSpaceVerificationHelperV36.obtainComposeColorSpaceFromId(this.id)
+                    if (v36ColorSpace != ColorSpaces.Unspecified) {
+                        return v36ColorSpace
+                    }
+                }
                 if (this is android.graphics.ColorSpace.Rgb) {
                     val transferParams = this.transferParameters
                     val whitePoint =
@@ -177,7 +227,7 @@ private object ColorSpaceVerificationHelper {
                                 c = transferParams.c,
                                 d = transferParams.d,
                                 e = transferParams.e,
-                                f = transferParams.f
+                                f = transferParams.f,
                             )
                         } else {
                             null
@@ -192,7 +242,7 @@ private object ColorSpaceVerificationHelper {
                         min = this.getMinValue(0),
                         max = this.getMaxValue(0),
                         transferParameters = composeTransferParams,
-                        id = this.id
+                        id = this.id,
                     )
                 } else {
                     ColorSpaces.Srgb

@@ -25,7 +25,9 @@ import androidx.compose.animation.core.FastOutLinearInEasing
 import androidx.compose.animation.core.animateDecay
 import androidx.compose.animation.core.animateTo
 import androidx.compose.animation.rememberSplineBasedDecay
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.ScrollableState
 import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.layout.Arrangement
@@ -36,14 +38,18 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.material3.BottomAppBarState.Companion.Saver
-import androidx.compose.material3.DefaultTwoRowsTopAppBarOverride.TwoRowsTopAppBar
 import androidx.compose.material3.TopAppBarState.Companion.Saver
 import androidx.compose.material3.internal.FloatProducer
 import androidx.compose.material3.internal.ProvideContentColorTextStyle
@@ -61,9 +67,8 @@ import androidx.compose.material3.tokens.FabSecondaryContainerTokens
 import androidx.compose.material3.tokens.MotionSchemeKeyTokens
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.ProvidableCompositionLocal
 import androidx.compose.runtime.Stable
-import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.runtime.State
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -113,6 +118,7 @@ import androidx.compose.ui.util.fastFirst
 import androidx.compose.ui.util.fastMaxOfOrNull
 import androidx.compose.ui.util.fastSumBy
 import kotlin.math.abs
+import kotlin.math.absoluteValue
 import kotlin.math.max
 import kotlin.math.roundToInt
 
@@ -128,67 +134,16 @@ import kotlin.math.roundToInt
  *
  * A simple top app bar looks like:
  *
- * @sample androidx.compose.material3.samples.SimpleTopAppBar A top app bar that uses a
- *   [scrollBehavior] to customize its nested scrolling behavior when working in conjunction with a
- *   scrolling content looks like:
+ * @sample androidx.compose.material3.samples.SimpleTopAppBar
+ *
+ * A top app bar that uses a [PinnedScrollBehavior] to change its container color when content is
+ * scrolled under it looks like:
+ *
  * @sample androidx.compose.material3.samples.PinnedTopAppBar
- * @sample androidx.compose.material3.samples.EnterAlwaysTopAppBar
- * @param title the title to be displayed in the top app bar
- * @param modifier the [Modifier] to be applied to this top app bar
- * @param navigationIcon the navigation icon displayed at the start of the top app bar. This should
- *   typically be an [IconButton] or [IconToggleButton].
- * @param actions the actions displayed at the end of the top app bar. This should typically be
- *   [IconButton]s. The default layout here is a [Row], so icons inside will be placed horizontally.
- * @param windowInsets a window insets that app bar will respect.
- * @param colors [TopAppBarColors] that will be used to resolve the colors used for this top app bar
- *   in different states. See [TopAppBarDefaults.topAppBarColors].
- * @param scrollBehavior a [TopAppBarScrollBehavior] which holds various offset values that will be
- *   applied by this top app bar to set up its height and colors. A scroll behavior is designed to
- *   work in conjunction with a scrolled content to change the top app bar appearance as the content
- *   scrolls. See [TopAppBarScrollBehavior.nestedScrollConnection].
- */
-@Deprecated(
-    message = "Deprecated in favor of TopAppBar with expandedHeight parameter",
-    level = DeprecationLevel.HIDDEN,
-)
-@ExperimentalMaterial3Api
-@Composable
-fun TopAppBar(
-    title: @Composable () -> Unit,
-    modifier: Modifier = Modifier,
-    navigationIcon: @Composable () -> Unit = {},
-    actions: @Composable RowScope.() -> Unit = {},
-    windowInsets: WindowInsets = TopAppBarDefaults.windowInsets,
-    colors: TopAppBarColors = TopAppBarDefaults.topAppBarColors(),
-    scrollBehavior: TopAppBarScrollBehavior? = null,
-) =
-    TopAppBar(
-        title = title,
-        modifier = modifier,
-        navigationIcon = navigationIcon,
-        actions = actions,
-        expandedHeight = TopAppBarDefaults.TopAppBarExpandedHeight,
-        windowInsets = windowInsets,
-        colors = colors,
-        scrollBehavior = scrollBehavior,
-    )
-
-/**
- * [Material Design small top app bar](https://m3.material.io/components/top-app-bar/overview)
  *
- * Top app bars display information and actions at the top of a screen.
+ * A top app bar that uses an [EnterAlwaysScrollBehavior] to collapse and expand as content is
+ * scrolled looks like:
  *
- * This small TopAppBar has slots for a title, navigation icon, and actions.
- *
- * ![Small top app bar
- * image](https://developer.android.com/images/reference/androidx/compose/material3/small-top-app-bar.png)
- *
- * A simple top app bar looks like:
- *
- * @sample androidx.compose.material3.samples.SimpleTopAppBar A top app bar that uses a
- *   [scrollBehavior] to customize its nested scrolling behavior when working in conjunction with a
- *   scrolling content looks like:
- * @sample androidx.compose.material3.samples.PinnedTopAppBar
  * @sample androidx.compose.material3.samples.EnterAlwaysTopAppBar
  * @param title the title to be displayed in the top app bar
  * @param modifier the [Modifier] to be applied to this top app bar
@@ -208,10 +163,13 @@ fun TopAppBar(
  *   work in conjunction with a scrolled content to change the top app bar appearance as the content
  *   scrolls. See [TopAppBarScrollBehavior.nestedScrollConnection].
  */
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
-@ExperimentalMaterial3Api
+@Deprecated(
+    message = "Deprecated in favor of TopAppBar with contentPadding parameter",
+    level = DeprecationLevel.HIDDEN,
+)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TopAppBar(
+public fun TopAppBar(
     title: @Composable () -> Unit,
     modifier: Modifier = Modifier,
     navigationIcon: @Composable () -> Unit = {},
@@ -220,7 +178,73 @@ fun TopAppBar(
     windowInsets: WindowInsets = TopAppBarDefaults.windowInsets,
     colors: TopAppBarColors = TopAppBarDefaults.topAppBarColors(),
     scrollBehavior: TopAppBarScrollBehavior? = null,
-) =
+): Unit =
+    TopAppBar(
+        title = title,
+        modifier = modifier,
+        navigationIcon = navigationIcon,
+        actions = actions,
+        expandedHeight = expandedHeight,
+        windowInsets = windowInsets,
+        colors = colors,
+        scrollBehavior = scrollBehavior,
+        contentPadding = TopAppBarDefaults.ContentPadding,
+    )
+
+/**
+ * [Material Design small top app bar](https://m3.material.io/components/top-app-bar/overview)
+ *
+ * Top app bars display information and actions at the top of a screen.
+ *
+ * This small TopAppBar has slots for a title, navigation icon, and actions.
+ *
+ * ![Small top app bar
+ * image](https://developer.android.com/images/reference/androidx/compose/material3/small-top-app-bar.png)
+ *
+ * A top app bar looks like:
+ *
+ * @sample androidx.compose.material3.samples.SimpleTopAppBar
+ *
+ * A top app bar that uses a [PinnedScrollBehavior] to change its container color when content is
+ * scrolled under it looks like:
+ *
+ * @sample androidx.compose.material3.samples.PinnedTopAppBar
+ *
+ * A top app bar that uses an [EnterAlwaysScrollBehavior] to collapse and expand as content is
+ * scrolled looks like:
+ *
+ * @sample androidx.compose.material3.samples.EnterAlwaysTopAppBar
+ * @param title the title to be displayed in the top app bar
+ * @param modifier the [Modifier] to be applied to this top app bar
+ * @param navigationIcon the navigation icon displayed at the start of the top app bar. This should
+ *   typically be an [IconButton] or [IconToggleButton].
+ * @param actions the actions displayed at the end of the top app bar. This should typically be
+ *   [IconButton]s. The default layout here is a [Row], so icons inside will be placed horizontally.
+ * @param expandedHeight this app bar's height. When a specified [scrollBehavior] causes the app bar
+ *   to collapse or expand, this value will represent the maximum height that the bar will be
+ *   allowed to expand. This value must be specified and finite, otherwise it will be ignored and
+ *   replaced with [TopAppBarDefaults.TopAppBarExpandedHeight].
+ * @param windowInsets a window insets that app bar will respect.
+ * @param colors [TopAppBarColors] that will be used to resolve the colors used for this top app bar
+ *   in different states. See [TopAppBarDefaults.topAppBarColors].
+ * @param scrollBehavior a [TopAppBarScrollBehavior] which holds various offset values that will be
+ *   applied by this top app bar to set up its height and colors. A scroll behavior is designed to
+ *   work in conjunction with a scrolled content to change the top app bar appearance as the content
+ *   scrolls. See [TopAppBarScrollBehavior.nestedScrollConnection].
+ * @param contentPadding the padding applied to the content of this TopAppBar.
+ */
+@Composable
+public fun TopAppBar(
+    title: @Composable () -> Unit,
+    modifier: Modifier = Modifier,
+    navigationIcon: @Composable () -> Unit = {},
+    actions: @Composable RowScope.() -> Unit = {},
+    expandedHeight: Dp = TopAppBarDefaults.TopAppBarExpandedHeight,
+    windowInsets: WindowInsets = TopAppBarDefaults.windowInsets,
+    colors: TopAppBarColors = TopAppBarDefaults.topAppBarColors(),
+    scrollBehavior: TopAppBarScrollBehavior? = null,
+    contentPadding: PaddingValues = TopAppBarDefaults.ContentPadding,
+): Unit =
     SingleRowTopAppBar(
         modifier = modifier,
         title = title,
@@ -236,6 +260,7 @@ fun TopAppBar(
             } else {
                 expandedHeight
             },
+        contentPadding = contentPadding,
         windowInsets = windowInsets,
         colors = colors,
         scrollBehavior = scrollBehavior,
@@ -254,65 +279,8 @@ fun TopAppBar(
  *
  * This CenterAlignedTopAppBar has slots for a title, navigation icon, and actions.
  *
- * A center aligned top app bar that uses a [scrollBehavior] to customize its nested scrolling
- * behavior when working in conjunction with a scrolling content looks like:
- *
- * @sample androidx.compose.material3.samples.SimpleCenterAlignedTopAppBar
- * @param title the title to be displayed in the top app bar
- * @param modifier the [Modifier] to be applied to this top app bar
- * @param navigationIcon the navigation icon displayed at the start of the top app bar. This should
- *   typically be an [IconButton] or [IconToggleButton].
- * @param actions the actions displayed at the end of the top app bar. This should typically be
- *   [IconButton]s. The default layout here is a [Row], so icons inside will be placed horizontally.
- * @param windowInsets a window insets that app bar will respect.
- * @param colors [TopAppBarColors] that will be used to resolve the colors used for this top app bar
- *   in different states. See [TopAppBarDefaults.topAppBarColors].
- * @param scrollBehavior a [TopAppBarScrollBehavior] which holds various offset values that will be
- *   applied by this top app bar to set up its height and colors. A scroll behavior is designed to
- *   work in conjunction with a scrolled content to change the top app bar appearance as the content
- *   scrolls. See [TopAppBarScrollBehavior.nestedScrollConnection].
- */
-@Deprecated(
-    message = "Deprecated in favor of CenterAlignedTopAppBar with expandedHeight parameter",
-    level = DeprecationLevel.HIDDEN,
-)
-@ExperimentalMaterial3Api
-@Composable
-fun CenterAlignedTopAppBar(
-    title: @Composable () -> Unit,
-    modifier: Modifier = Modifier,
-    navigationIcon: @Composable () -> Unit = {},
-    actions: @Composable RowScope.() -> Unit = {},
-    windowInsets: WindowInsets = TopAppBarDefaults.windowInsets,
-    colors: TopAppBarColors = TopAppBarDefaults.topAppBarColors(),
-    scrollBehavior: TopAppBarScrollBehavior? = null,
-) =
-    CenterAlignedTopAppBar(
-        title = title,
-        modifier = modifier,
-        navigationIcon = navigationIcon,
-        actions = actions,
-        expandedHeight = TopAppBarDefaults.TopAppBarExpandedHeight,
-        windowInsets = windowInsets,
-        colors = colors,
-        scrollBehavior = scrollBehavior,
-    )
-
-/**
- * [Material Design center-aligned small top app
- * bar](https://m3.material.io/components/top-app-bar/overview)
- *
- * Top app bars display information and actions at the top of a screen.
- *
- * This small top app bar has a header title that is horizontally aligned to the center.
- *
- * ![Center-aligned top app bar
- * image](https://developer.android.com/images/reference/androidx/compose/material3/center-aligned-top-app-bar.png)
- *
- * This CenterAlignedTopAppBar has slots for a title, navigation icon, and actions.
- *
- * A center aligned top app bar that uses a [scrollBehavior] to customize its nested scrolling
- * behavior when working in conjunction with a scrolling content looks like:
+ * A center aligned top app bar that uses a [TopAppBarScrollBehavior] to customize its nested
+ * scrolling behavior when working in conjunction with scrolling content looks like:
  *
  * @sample androidx.compose.material3.samples.SimpleCenterAlignedTopAppBar
  * @param title the title to be displayed in the top app bar
@@ -333,10 +301,13 @@ fun CenterAlignedTopAppBar(
  *   work in conjunction with a scrolled content to change the top app bar appearance as the content
  *   scrolls. See [TopAppBarScrollBehavior.nestedScrollConnection].
  */
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
-@ExperimentalMaterial3Api
+@Deprecated(
+    message = "Deprecated in favor of CenterAlignedTopAppBar with contentPadding parameter",
+    level = DeprecationLevel.HIDDEN,
+)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CenterAlignedTopAppBar(
+public fun CenterAlignedTopAppBar(
     title: @Composable () -> Unit,
     modifier: Modifier = Modifier,
     navigationIcon: @Composable () -> Unit = {},
@@ -345,7 +316,67 @@ fun CenterAlignedTopAppBar(
     windowInsets: WindowInsets = TopAppBarDefaults.windowInsets,
     colors: TopAppBarColors = TopAppBarDefaults.topAppBarColors(),
     scrollBehavior: TopAppBarScrollBehavior? = null,
-) =
+): Unit =
+    CenterAlignedTopAppBar(
+        title = title,
+        modifier = modifier,
+        navigationIcon = navigationIcon,
+        actions = actions,
+        expandedHeight = expandedHeight,
+        contentPadding = TopAppBarDefaults.ContentPadding,
+        windowInsets = windowInsets,
+        colors = colors,
+        scrollBehavior = scrollBehavior,
+    )
+
+/**
+ * [Material Design center-aligned small top app
+ * bar](https://m3.material.io/components/top-app-bar/overview)
+ *
+ * Top app bars display information and actions at the top of a screen.
+ *
+ * This small top app bar has a header title that is horizontally aligned to the center.
+ *
+ * ![Center-aligned top app bar
+ * image](https://developer.android.com/images/reference/androidx/compose/material3/center-aligned-top-app-bar.png)
+ *
+ * This CenterAlignedTopAppBar has slots for a title, navigation icon, and actions.
+ *
+ * A center aligned top app bar that uses a [TopAppBarScrollBehavior] to customize its nested
+ * scrolling behavior when working in conjunction with scrolling content looks like:
+ *
+ * @sample androidx.compose.material3.samples.SimpleCenterAlignedTopAppBar
+ * @param title the title to be displayed in the top app bar
+ * @param modifier the [Modifier] to be applied to this top app bar
+ * @param navigationIcon the navigation icon displayed at the start of the top app bar. This should
+ *   typically be an [IconButton] or [IconToggleButton].
+ * @param actions the actions displayed at the end of the top app bar. This should typically be
+ *   [IconButton]s. The default layout here is a [Row], so icons inside will be placed horizontally.
+ * @param expandedHeight this app bar's height. When a specified [scrollBehavior] causes the app bar
+ *   to collapse or expand, this value will represent the maximum height that the bar will be
+ *   allowed to expand. This value must be specified and finite, otherwise it will be ignored and
+ *   replaced with [TopAppBarDefaults.TopAppBarExpandedHeight].
+ * @param windowInsets a window insets that app bar will respect.
+ * @param colors [TopAppBarColors] that will be used to resolve the colors used for this top app bar
+ *   in different states. See [TopAppBarDefaults.topAppBarColors].
+ * @param scrollBehavior a [TopAppBarScrollBehavior] which holds various offset values that will be
+ *   applied by this top app bar to set up its height and colors. A scroll behavior is designed to
+ *   work in conjunction with a scrolled content to change the top app bar appearance as the content
+ *   scrolls. See [TopAppBarScrollBehavior.nestedScrollConnection].
+ * @param contentPadding the padding applied to the content of this TopAppBar.
+ */
+@Composable
+public fun CenterAlignedTopAppBar(
+    title: @Composable () -> Unit,
+    modifier: Modifier = Modifier,
+    navigationIcon: @Composable () -> Unit = {},
+    actions: @Composable RowScope.() -> Unit = {},
+    expandedHeight: Dp = TopAppBarDefaults.TopAppBarExpandedHeight,
+    windowInsets: WindowInsets = TopAppBarDefaults.windowInsets,
+    colors: TopAppBarColors = TopAppBarDefaults.topAppBarColors(),
+    scrollBehavior: TopAppBarScrollBehavior? = null,
+    contentPadding: PaddingValues = TopAppBarDefaults.ContentPadding,
+): Unit =
     SingleRowTopAppBar(
         modifier = modifier,
         title = title,
@@ -361,6 +392,7 @@ fun CenterAlignedTopAppBar(
             } else {
                 expandedHeight
             },
+        contentPadding = contentPadding,
         windowInsets = windowInsets,
         colors = colors,
         scrollBehavior = scrollBehavior,
@@ -376,11 +408,14 @@ fun CenterAlignedTopAppBar(
  * ![Small top app bar
  * image](https://developer.android.com/images/reference/androidx/compose/material3/small-top-app-bar.png)
  *
- * A top app bar that uses a [scrollBehavior] to customize its nested scrolling behavior when
- * working in conjunction with a scrolling content looks like:
+ * A top app bar that uses a [PinnedScrollBehavior] to change its container color when content is
+ * scrolled under it looks like:
  *
  * @sample androidx.compose.material3.samples.SimpleTopAppBarWithSubtitle
- * @sample androidx.compose.material3.samples.SimpleCenterAlignedTopAppBarWithSubtitle
+ *
+ * A top app bar with a centered title and subtitle looks like:
+ *
+ * @sample androidx.compose.material3.samples.SimpleTopAppBarWithSubtitleAndCenterAligned
  * @param title the title to be displayed in the top app bar
  * @param subtitle the subtitle to be displayed in the top app bar
  * @param modifier the [Modifier] to be applied to this top app bar
@@ -400,11 +435,10 @@ fun CenterAlignedTopAppBar(
  *   applied by this top app bar to set up its height and colors. A scroll behavior is designed to
  *   work in conjunction with a scrolled content to change the top app bar appearance as the content
  *   scrolls. See [TopAppBarScrollBehavior.nestedScrollConnection].
+ * @param contentPadding the padding applied to the content of this TopAppBar.
  */
-@OptIn(ExperimentalMaterial3Api::class)
-@ExperimentalMaterial3ExpressiveApi
 @Composable
-fun TopAppBar(
+public fun TopAppBar(
     title: @Composable () -> Unit,
     subtitle: @Composable () -> Unit,
     modifier: Modifier = Modifier,
@@ -415,7 +449,8 @@ fun TopAppBar(
     windowInsets: WindowInsets = TopAppBarDefaults.windowInsets,
     colors: TopAppBarColors = TopAppBarDefaults.topAppBarColors(),
     scrollBehavior: TopAppBarScrollBehavior? = null,
-) =
+    contentPadding: PaddingValues = TopAppBarDefaults.ContentPadding,
+): Unit =
     SingleRowTopAppBar(
         modifier = modifier,
         title = title,
@@ -431,6 +466,7 @@ fun TopAppBar(
             } else {
                 expandedHeight
             },
+        contentPadding = contentPadding,
         windowInsets = windowInsets,
         colors = colors,
         scrollBehavior = scrollBehavior,
@@ -447,68 +483,8 @@ fun TopAppBar(
  * This MediumTopAppBar has slots for a title, navigation icon, and actions. In its default expanded
  * state, the title is displayed in a second row under the navigation and actions.
  *
- * A medium top app bar that uses a [scrollBehavior] to customize its nested scrolling behavior when
- * working in conjunction with scrolling content looks like:
- *
- * @sample androidx.compose.material3.samples.ExitUntilCollapsedMediumTopAppBar
- * @param title the title to be displayed in the top app bar. This title will be used in the app
- *   bar's expanded and collapsed states, although in its collapsed state it will be composed with a
- *   smaller sized [TextStyle]
- * @param modifier the [Modifier] to be applied to this top app bar
- * @param navigationIcon the navigation icon displayed at the start of the top app bar. This should
- *   typically be an [IconButton] or [IconToggleButton].
- * @param actions the actions displayed at the end of the top app bar. This should typically be
- *   [IconButton]s. The default layout here is a [Row], so icons inside will be placed horizontally.
- * @param windowInsets a window insets that app bar will respect.
- * @param colors [TopAppBarColors] that will be used to resolve the colors used for this top app bar
- *   in different states. See [TopAppBarDefaults.topAppBarColors].
- * @param scrollBehavior a [TopAppBarScrollBehavior] which holds various offset values that will be
- *   applied by this top app bar to set up its height and colors. A scroll behavior is designed to
- *   work in conjunction with a scrolled content to change the top app bar appearance as the content
- *   scrolls. See [TopAppBarScrollBehavior.nestedScrollConnection].
- */
-@Deprecated(
-    message =
-        "Deprecated in favor of MediumTopAppBar with collapsedHeight and expandedHeight " +
-            "parameters",
-    level = DeprecationLevel.HIDDEN,
-)
-@ExperimentalMaterial3Api
-@Composable
-fun MediumTopAppBar(
-    title: @Composable () -> Unit,
-    modifier: Modifier = Modifier,
-    navigationIcon: @Composable () -> Unit = {},
-    actions: @Composable RowScope.() -> Unit = {},
-    windowInsets: WindowInsets = TopAppBarDefaults.windowInsets,
-    colors: TopAppBarColors = TopAppBarDefaults.topAppBarColors(),
-    scrollBehavior: TopAppBarScrollBehavior? = null,
-) =
-    MediumTopAppBar(
-        title = title,
-        modifier = modifier,
-        navigationIcon = navigationIcon,
-        actions = actions,
-        collapsedHeight = TopAppBarDefaults.MediumAppBarCollapsedHeight,
-        expandedHeight = TopAppBarDefaults.MediumAppBarExpandedHeight,
-        windowInsets = windowInsets,
-        colors = colors,
-        scrollBehavior = scrollBehavior,
-    )
-
-/**
- * [Material Design medium top app bar](https://m3.material.io/components/top-app-bar/overview)
- *
- * Top app bars display information and actions at the top of a screen.
- *
- * ![Medium top app bar
- * image](https://developer.android.com/images/reference/androidx/compose/material3/medium-top-app-bar.png)
- *
- * This MediumTopAppBar has slots for a title, navigation icon, and actions. In its default expanded
- * state, the title is displayed in a second row under the navigation and actions.
- *
- * A medium top app bar that uses a [scrollBehavior] to customize its nested scrolling behavior when
- * working in conjunction with scrolling content looks like:
+ * A medium top app bar that uses an [ExitUntilCollapsedScrollBehavior] to collapse and expand as
+ * content is scrolled looks like:
  *
  * @sample androidx.compose.material3.samples.ExitUntilCollapsedMediumTopAppBar
  * @param title the title to be displayed in the top app bar. This title will be used in the app
@@ -538,10 +514,8 @@ fun MediumTopAppBar(
  * @throws IllegalArgumentException if the provided [expandedHeight] is smaller than the
  *   [collapsedHeight]
  */
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
-@ExperimentalMaterial3Api
 @Composable
-fun MediumTopAppBar(
+public fun MediumTopAppBar(
     title: @Composable () -> Unit,
     modifier: Modifier = Modifier,
     navigationIcon: @Composable () -> Unit = {},
@@ -551,7 +525,7 @@ fun MediumTopAppBar(
     windowInsets: WindowInsets = TopAppBarDefaults.windowInsets,
     colors: TopAppBarColors = TopAppBarDefaults.topAppBarColors(),
     scrollBehavior: TopAppBarScrollBehavior? = null,
-) =
+): Unit =
     TwoRowsTopAppBar(
         modifier = modifier,
         title = title,
@@ -592,14 +566,21 @@ fun MediumTopAppBar(
  * ![Medium top app bar
  * image](https://developer.android.com/images/reference/androidx/compose/material3/medium-top-app-bar.png)
  *
+ * (Note: The image above shows the standard MediumTopAppBar layout, which is visually identical to
+ * this bar when no subtitle is provided.)
+ *
  * This `MediumFlexibleTopAppBar` has slots for a title, subtitle, navigation icon, and actions. In
  * its default expanded state, the title and subtitle are displayed in a second row under the
  * navigation and actions.
  *
- * A medium flexible top app bar that uses a [scrollBehavior] to customize its nested scrolling
- * behavior when working in conjunction with scrolling content looks like:
+ * A medium flexible top app bar that uses an [ExitUntilCollapsedScrollBehavior] to collapse and
+ * expand as content is scrolled looks like:
  *
- * @sample androidx.compose.material3.samples.ExitUntilCollapsedCenterAlignedMediumFlexibleTopAppBar
+ * @sample androidx.compose.material3.samples.ExitUntilCollapsedMediumFlexibleTopAppBar
+ *
+ * A medium flexible top app bar with a centered title and subtitle looks like:
+ *
+ * @sample androidx.compose.material3.samples.MediumFlexibleTopAppBarWithSubtitleAndCenterAligned
  * @param title the title to be displayed in the top app bar. This title will be used in the app
  *   bar's expanded and collapsed states, although in its collapsed state it will be composed with a
  *   smaller sized [TextStyle]
@@ -631,10 +612,8 @@ fun MediumTopAppBar(
  * @throws IllegalArgumentException if the provided [expandedHeight] is smaller than the
  *   [collapsedHeight]
  */
-@OptIn(ExperimentalMaterial3Api::class)
-@ExperimentalMaterial3ExpressiveApi
 @Composable
-fun MediumFlexibleTopAppBar(
+public fun MediumFlexibleTopAppBar(
     title: @Composable () -> Unit,
     modifier: Modifier = Modifier,
     subtitle: (@Composable () -> Unit)? = null,
@@ -651,7 +630,7 @@ fun MediumFlexibleTopAppBar(
     windowInsets: WindowInsets = TopAppBarDefaults.windowInsets,
     colors: TopAppBarColors = TopAppBarDefaults.topAppBarColors(),
     scrollBehavior: TopAppBarScrollBehavior? = null,
-) =
+): Unit =
     TwoRowsTopAppBar(
         modifier = modifier,
         title = title,
@@ -698,68 +677,8 @@ fun MediumFlexibleTopAppBar(
  * This LargeTopAppBar has slots for a title, navigation icon, and actions. In its default expanded
  * state, the title is displayed in a second row under the navigation and actions.
  *
- * A large top app bar that uses a [scrollBehavior] to customize its nested scrolling behavior when
- * working in conjunction with scrolling content looks like:
- *
- * @sample androidx.compose.material3.samples.ExitUntilCollapsedLargeTopAppBar
- * @param title the title to be displayed in the top app bar. This title will be used in the app
- *   bar's expanded and collapsed states, although in its collapsed state it will be composed with a
- *   smaller sized [TextStyle]
- * @param modifier the [Modifier] to be applied to this top app bar
- * @param navigationIcon the navigation icon displayed at the start of the top app bar. This should
- *   typically be an [IconButton] or [IconToggleButton].
- * @param actions the actions displayed at the end of the top app bar. This should typically be
- *   [IconButton]s. The default layout here is a [Row], so icons inside will be placed horizontally.
- * @param windowInsets a window insets that app bar will respect.
- * @param colors [TopAppBarColors] that will be used to resolve the colors used for this top app bar
- *   in different states. See [TopAppBarDefaults.topAppBarColors].
- * @param scrollBehavior a [TopAppBarScrollBehavior] which holds various offset values that will be
- *   applied by this top app bar to set up its height and colors. A scroll behavior is designed to
- *   work in conjunction with a scrolled content to change the top app bar appearance as the content
- *   scrolls. See [TopAppBarScrollBehavior.nestedScrollConnection].
- */
-@Deprecated(
-    message =
-        "Deprecated in favor of LargeTopAppBar with collapsedHeight and expandedHeight " +
-            "parameters",
-    level = DeprecationLevel.HIDDEN,
-)
-@ExperimentalMaterial3Api
-@Composable
-fun LargeTopAppBar(
-    title: @Composable () -> Unit,
-    modifier: Modifier = Modifier,
-    navigationIcon: @Composable () -> Unit = {},
-    actions: @Composable RowScope.() -> Unit = {},
-    windowInsets: WindowInsets = TopAppBarDefaults.windowInsets,
-    colors: TopAppBarColors = TopAppBarDefaults.topAppBarColors(),
-    scrollBehavior: TopAppBarScrollBehavior? = null,
-) =
-    LargeTopAppBar(
-        title = title,
-        modifier = modifier,
-        navigationIcon = navigationIcon,
-        actions = actions,
-        collapsedHeight = TopAppBarDefaults.LargeAppBarCollapsedHeight,
-        expandedHeight = TopAppBarDefaults.LargeAppBarExpandedHeight,
-        windowInsets = windowInsets,
-        colors = colors,
-        scrollBehavior = scrollBehavior,
-    )
-
-/**
- * [Material Design large top app bar](https://m3.material.io/components/top-app-bar/overview)
- *
- * Top app bars display information and actions at the top of a screen.
- *
- * ![Large top app bar
- * image](https://developer.android.com/images/reference/androidx/compose/material3/large-top-app-bar.png)
- *
- * This LargeTopAppBar has slots for a title, navigation icon, and actions. In its default expanded
- * state, the title is displayed in a second row under the navigation and actions.
- *
- * A large top app bar that uses a [scrollBehavior] to customize its nested scrolling behavior when
- * working in conjunction with scrolling content looks like:
+ * A large top app bar that uses an [ExitUntilCollapsedScrollBehavior] to collapse and expand as
+ * content is scrolled looks like:
  *
  * @sample androidx.compose.material3.samples.ExitUntilCollapsedLargeTopAppBar
  * @param title the title to be displayed in the top app bar. This title will be used in the app
@@ -789,10 +708,8 @@ fun LargeTopAppBar(
  * @throws IllegalArgumentException if the provided [expandedHeight] is smaller to the
  *   [collapsedHeight]
  */
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
-@ExperimentalMaterial3Api
 @Composable
-fun LargeTopAppBar(
+public fun LargeTopAppBar(
     title: @Composable () -> Unit,
     modifier: Modifier = Modifier,
     navigationIcon: @Composable () -> Unit = {},
@@ -802,7 +719,7 @@ fun LargeTopAppBar(
     windowInsets: WindowInsets = TopAppBarDefaults.windowInsets,
     colors: TopAppBarColors = TopAppBarDefaults.topAppBarColors(),
     scrollBehavior: TopAppBarScrollBehavior? = null,
-) =
+): Unit =
     TwoRowsTopAppBar(
         title = title,
         titleTextStyle = AppBarLargeTokens.TitleFont.value,
@@ -843,14 +760,21 @@ fun LargeTopAppBar(
  * ![Large top app bar
  * image](https://developer.android.com/images/reference/androidx/compose/material3/large-top-app-bar.png)
  *
+ * (Note: The image above shows the standard LargeTopAppBar layout, which is visually identical to
+ * this bar when no subtitle is provided.)
+ *
  * This `LargeFlexibleTopAppBar` has slots for a title, subtitle, navigation icon, and actions. In
  * its default expanded state, the title and subtitle are displayed in a second row under the
  * navigation and actions.
  *
- * A large flexible top app bar that uses a [scrollBehavior] to customize its nested scrolling
- * behavior when working in conjunction with scrolling content looks like:
+ * A large flexible top app bar that uses an [ExitUntilCollapsedScrollBehavior] to collapse and
+ * expand as content is scrolled looks like:
  *
- * @sample androidx.compose.material3.samples.ExitUntilCollapsedCenterAlignedLargeFlexibleTopAppBar
+ * @sample androidx.compose.material3.samples.ExitUntilCollapsedLargeFlexibleTopAppBar
+ *
+ * A large flexible top app bar with a centered title and subtitle looks like:
+ *
+ * @sample androidx.compose.material3.samples.LargeFlexibleTopAppBarWithSubtitleAndCenterAligned
  * @param title the title to be displayed in the top app bar. This title will be used in the app
  *   bar's expanded and collapsed states, although in its collapsed state it will be composed with a
  *   smaller sized [TextStyle]
@@ -882,10 +806,8 @@ fun LargeTopAppBar(
  * @throws IllegalArgumentException if the provided [expandedHeight] is smaller to the
  *   [collapsedHeight]
  */
-@OptIn(ExperimentalMaterial3Api::class)
-@ExperimentalMaterial3ExpressiveApi
 @Composable
-fun LargeFlexibleTopAppBar(
+public fun LargeFlexibleTopAppBar(
     title: @Composable () -> Unit,
     modifier: Modifier = Modifier,
     subtitle: (@Composable () -> Unit)? = null,
@@ -902,7 +824,7 @@ fun LargeFlexibleTopAppBar(
     windowInsets: WindowInsets = TopAppBarDefaults.windowInsets,
     colors: TopAppBarColors = TopAppBarDefaults.topAppBarColors(),
     scrollBehavior: TopAppBarScrollBehavior? = null,
-) =
+): Unit =
     TwoRowsTopAppBar(
         title = title,
         titleTextStyle = AppBarLargeFlexibleTokens.TitleFont.value,
@@ -946,6 +868,9 @@ fun LargeFlexibleTopAppBar(
  * ![Two rows top app bar
  * image](https://developer.android.com/images/reference/androidx/compose/material3/medium-top-app-bar.png)
  *
+ * (Note: The image above shows the standard MediumTopAppBar layout, which is visually identical to
+ * this bar when no subtitle is provided.)
+ *
  * This two-rows top app bar has slots for titles and subtitles, navigation icon, and actions. In
  * its default expanded state, the expanded title and subtitle are displayed in a second row under
  * the navigation and actions.
@@ -981,9 +906,9 @@ fun LargeFlexibleTopAppBar(
  *   to the [collapsedHeight], and the function will throw an [IllegalArgumentException] otherwise.
  *   Note that this value might be adjusted to support displaying larger fonts. In case the provided
  *   value is [Dp.Unspecified] or [Dp.Infinity], the height will default to
- *   [TopAppBarDefaults.MediumFlexibleAppBarWithSubtitleExpandedHeight] when an [expandedSubtitle]
- *   is provided, or to [TopAppBarDefaults.MediumFlexibleAppBarWithoutSubtitleExpandedHeight] when
- *   it's not.
+ *   [TopAppBarDefaults.MediumFlexibleAppBarWithSubtitleExpandedHeight] when a [subtitle] is
+ *   provided, or to [TopAppBarDefaults.MediumFlexibleAppBarWithoutSubtitleExpandedHeight] when it's
+ *   not.
  * @param windowInsets a window insets that app bar will respect.
  * @param colors [TopAppBarColors] that will be used to resolve the colors used for this top app bar
  *   in different states. See [TopAppBarDefaults.topAppBarColors].
@@ -994,10 +919,8 @@ fun LargeFlexibleTopAppBar(
  * @throws IllegalArgumentException if the provided [expandedHeight] is smaller to the
  *   [collapsedHeight]
  */
-@OptIn(ExperimentalMaterial3Api::class)
-@ExperimentalMaterial3ExpressiveApi
 @Composable
-fun TwoRowsTopAppBar(
+public fun TwoRowsTopAppBar(
     title: @Composable (expanded: Boolean) -> Unit,
     modifier: Modifier = Modifier,
     subtitle: (@Composable (expanded: Boolean) -> Unit)? = null,
@@ -1079,9 +1002,9 @@ fun TwoRowsTopAppBar(
  * @param contentPadding the padding applied to the content of this BottomAppBar
  * @param windowInsets a window insets that app bar will respect.
  */
-@OptIn(ExperimentalMaterial3Api::class)
+@Deprecated("Maintained for binary compatibility", level = DeprecationLevel.HIDDEN)
 @Composable
-fun BottomAppBar(
+public fun BottomAppBar(
     actions: @Composable RowScope.() -> Unit,
     modifier: Modifier = Modifier,
     floatingActionButton: @Composable (() -> Unit)? = null,
@@ -1090,7 +1013,7 @@ fun BottomAppBar(
     tonalElevation: Dp = BottomAppBarDefaults.ContainerElevation,
     contentPadding: PaddingValues = BottomAppBarDefaults.ContentPadding,
     windowInsets: WindowInsets = BottomAppBarDefaults.windowInsets,
-) =
+): Unit =
     BottomAppBar(
         actions = actions,
         modifier = modifier,
@@ -1117,8 +1040,8 @@ fun BottomAppBar(
  *
  * @sample androidx.compose.material3.samples.BottomAppBarWithFAB
  *
- * A bottom app bar that uses a [scrollBehavior] to customize its nested scrolling behavior when
- * working in conjunction with a scrolling content looks like:
+ * A bottom app bar that uses a [BottomAppBarScrollBehavior] to customize its nested scrolling
+ * behavior when working in conjunction with scrolling content looks like:
  *
  * @sample androidx.compose.material3.samples.ExitAlwaysBottomAppBar
  *
@@ -1144,9 +1067,8 @@ fun BottomAppBar(
  *   scrolls. Note that the bottom app bar will not react to scrolling in case a touch exploration
  *   service (e.g., TalkBack) is active. See [BottomAppBarScrollBehavior.nestedScrollConnection].
  */
-@ExperimentalMaterial3Api
 @Composable
-fun BottomAppBar(
+public fun BottomAppBar(
     actions: @Composable RowScope.() -> Unit,
     modifier: Modifier = Modifier,
     floatingActionButton: @Composable (() -> Unit)? = null,
@@ -1156,7 +1078,7 @@ fun BottomAppBar(
     contentPadding: PaddingValues = BottomAppBarDefaults.ContentPadding,
     windowInsets: WindowInsets = BottomAppBarDefaults.windowInsets,
     scrollBehavior: BottomAppBarScrollBehavior? = null,
-) =
+): Unit =
     BottomAppBar(
         modifier = modifier,
         containerColor = containerColor,
@@ -1209,9 +1131,9 @@ fun BottomAppBar(
  * @param content the content of this BottomAppBar. The default layout here is a [Row], so content
  *   inside will be placed horizontally.
  */
-@OptIn(ExperimentalMaterial3Api::class)
+@Deprecated("Maintained for binary compatibility", level = DeprecationLevel.HIDDEN)
 @Composable
-fun BottomAppBar(
+public fun BottomAppBar(
     modifier: Modifier = Modifier,
     containerColor: Color = BottomAppBarDefaults.containerColor,
     contentColor: Color = contentColorFor(containerColor),
@@ -1219,7 +1141,7 @@ fun BottomAppBar(
     contentPadding: PaddingValues = BottomAppBarDefaults.ContentPadding,
     windowInsets: WindowInsets = BottomAppBarDefaults.windowInsets,
     content: @Composable RowScope.() -> Unit,
-) =
+): Unit =
     BottomAppBar(
         modifier = modifier,
         containerColor = containerColor,
@@ -1262,9 +1184,8 @@ fun BottomAppBar(
  * @param content the content of this BottomAppBar. The default layout here is a [Row], so content
  *   inside will be placed horizontally.
  */
-@ExperimentalMaterial3Api
 @Composable
-fun BottomAppBar(
+public fun BottomAppBar(
     modifier: Modifier = Modifier,
     containerColor: Color = BottomAppBarDefaults.containerColor,
     contentColor: Color = contentColorFor(containerColor),
@@ -1304,14 +1225,31 @@ fun BottomAppBar(
  *
  * Also see [NavigationBar].
  *
- * A bottom app bar that specifies an [horizontalArrangement] and uses a [scrollBehavior] to
- * customize its nested scrolling behavior when working in conjunction with a scrolling content
- * looks like:
+ * A flexible bottom app bar can be configured with a [horizontalArrangement], and can optionally
+ * use a [BottomAppBarScrollBehavior] to collapse or expand on scroll:
+ *
+ * A bottom app bar with an actions row that automatically handles overflow when items do not fit:
+ *
+ * @sample androidx.compose.material3.samples.BottomAppBarWithOverflow
+ *
+ * A bottom app bar collapsing on scroll, with items spaced around:
  *
  * @sample androidx.compose.material3.samples.ExitAlwaysBottomAppBarSpacedAround
+ *
+ * A bottom app bar collapsing on scroll, with items spaced between:
+ *
  * @sample androidx.compose.material3.samples.ExitAlwaysBottomAppBarSpacedBetween
+ *
+ * A bottom app bar collapsing on scroll, with items spaced evenly:
+ *
  * @sample androidx.compose.material3.samples.ExitAlwaysBottomAppBarSpacedEvenly
+ *
+ * A bottom app bar collapsing on scroll, with items in a fixed arrangement:
+ *
  * @sample androidx.compose.material3.samples.ExitAlwaysBottomAppBarFixed
+ *
+ * A bottom app bar collapsing on scroll, with items in a fixed arrangement and a custom color:
+ *
  * @sample androidx.compose.material3.samples.ExitAlwaysBottomAppBarFixedVibrant
  * @param modifier the [Modifier] to be applied to this BottomAppBar
  * @param containerColor the color used for the background of this BottomAppBar. Use
@@ -1336,10 +1274,8 @@ fun BottomAppBar(
  * @param content the content of this BottomAppBar. The default layout here is a [Row], so content
  *   inside will be placed horizontally.
  */
-@OptIn(ExperimentalMaterial3Api::class)
-@ExperimentalMaterial3ExpressiveApi
 @Composable
-fun FlexibleBottomAppBar(
+public fun FlexibleBottomAppBar(
     modifier: Modifier = Modifier,
     containerColor: Color = BottomAppBarDefaults.containerColor,
     contentColor: Color = contentColorFor(containerColor),
@@ -1370,7 +1306,6 @@ fun FlexibleBottomAppBar(
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun BottomAppBarLayout(
     containerHeight: Dp,
@@ -1400,7 +1335,7 @@ private fun BottomAppBarLayout(
                         activeScrollBehavior.state,
                         velocity,
                         activeScrollBehavior.flingAnimationSpec,
-                        activeScrollBehavior.snapAnimationSpec
+                        activeScrollBehavior.snapAnimationSpec,
                     )
                 },
             )
@@ -1453,15 +1388,14 @@ private fun BottomAppBarLayout(
  * @see [TopAppBarDefaults.enterAlwaysScrollBehavior]
  * @see [TopAppBarDefaults.exitUntilCollapsedScrollBehavior]
  */
-@ExperimentalMaterial3Api
 @Stable
-interface TopAppBarScrollBehavior {
+public interface TopAppBarScrollBehavior {
 
     /**
      * A [TopAppBarState] that is attached to this behavior and is read and updated when scrolling
      * happens.
      */
-    val state: TopAppBarState
+    public val state: TopAppBarState
 
     /**
      * Indicates whether the top app bar is pinned.
@@ -1469,36 +1403,39 @@ interface TopAppBarScrollBehavior {
      * A pinned app bar will stay fixed in place when content is scrolled and will not react to any
      * drag gestures.
      */
-    val isPinned: Boolean
+    public val isPinned: Boolean
 
     /**
      * An optional [AnimationSpec] that defines how the top app bar snaps to either fully collapsed
-     * or fully extended state when a fling or a drag scrolled it into an intermediate position.
+     * or fully extended state when a fling or a drag scrolled it into an intermediate position. If
+     * `null` is provided, the app bar will not snap and will remain in its current state.
      */
-    val snapAnimationSpec: AnimationSpec<Float>?
+    public val snapAnimationSpec: AnimationSpec<Float>?
 
     /**
-     * An optional [DecayAnimationSpec] that defined how to fling the top app bar when the user
-     * flings the app bar itself, or the content below it.
+     * An optional [DecayAnimationSpec] that defines how to fling the top app bar when the user
+     * flings the app bar itself, or the scrollable content. If `null` is provided, the app bar will
+     * not continue to animate its height based on the scroll velocity.
      */
-    val flingAnimationSpec: DecayAnimationSpec<Float>?
+    public val flingAnimationSpec: DecayAnimationSpec<Float>?
 
     /**
-     * A [NestedScrollConnection] that should be attached to a [Modifier.nestedScroll] in order to
-     * keep track of the scroll events.
+     * A [NestedScrollConnection] that should be attached to a
+     * [androidx.compose.ui.input.nestedscroll.nestedScroll] in order to keep track of the scroll
+     * events.
      */
-    val nestedScrollConnection: NestedScrollConnection
+    public val nestedScrollConnection: NestedScrollConnection
 }
 
 /** Contains default values used for the top app bar implementations. */
-@ExperimentalMaterial3Api
-object TopAppBarDefaults {
+public object TopAppBarDefaults {
 
     /**
      * Creates a [TopAppBarColors] for small [TopAppBar]. The default implementation animates
      * between the provided colors according to the Material Design specification.
      */
-    @Composable fun topAppBarColors() = MaterialTheme.colorScheme.defaultTopAppBarColors
+    @Composable
+    public fun topAppBarColors(): TopAppBarColors = MaterialTheme.colorScheme.defaultTopAppBarColors
 
     /**
      * Creates a [TopAppBarColors] for small [TopAppBar]. The default implementation animates
@@ -1513,7 +1450,7 @@ object TopAppBarDefaults {
      * @return the resulting [TopAppBarColors] used for the top app bar
      */
     @Composable
-    fun topAppBarColors(
+    public fun topAppBarColors(
         containerColor: Color = Color.Unspecified,
         scrolledContainerColor: Color = Color.Unspecified,
         navigationIconContentColor: Color = Color.Unspecified,
@@ -1546,7 +1483,7 @@ object TopAppBarDefaults {
         level = DeprecationLevel.HIDDEN,
     )
     @Composable
-    fun topAppBarColors(
+    public fun topAppBarColors(
         containerColor: Color = Color.Unspecified,
         scrolledContainerColor: Color = Color.Unspecified,
         navigationIconContentColor: Color = Color.Unspecified,
@@ -1576,8 +1513,11 @@ object TopAppBarDefaults {
                     .also { defaultTopAppBarColorsCached = it }
         }
 
+    /** Default padding used for [TopAppBar] content */
+    public val ContentPadding: PaddingValues = PaddingValues(all = 0.dp)
+
     /** Default insets to be used and consumed by the top app bars */
-    val windowInsets: WindowInsets
+    public val windowInsets: WindowInsets
         @Composable
         get() =
             WindowInsets.systemBarsForVisualComponents.only(
@@ -1585,6 +1525,20 @@ object TopAppBarDefaults {
             )
 
     /**
+     * Default [AnimationSpec] that defines how the top app bar snaps to either fully collapsed or
+     * fully extended state when a fling or a drag scrolled it into an intermediate position.
+     */
+    public val snapAnimationSpec: AnimationSpec<Float>
+        @Composable get() = MotionSchemeKeyTokens.DefaultEffects.value()
+
+    /**
+     * Default [DecayAnimationSpec] that defines how to fling the top app bar when the user flings
+     * the app bar itself, or the scrollable content.
+     */
+    public val flingAnimationSpec: DecayAnimationSpec<Float>
+        @Composable get() = rememberSplineBasedDecay()
+
+    /**
      * Creates a [TopAppBarColors] for [CenterAlignedTopAppBar]s. The default implementation
      * animates between the provided colors according to the Material Design specification.
      */
@@ -1594,7 +1548,8 @@ object TopAppBarDefaults {
         DeprecationLevel.WARNING,
     )
     @Composable
-    fun centerAlignedTopAppBarColors() = MaterialTheme.colorScheme.defaultTopAppBarColors
+    public fun centerAlignedTopAppBarColors(): TopAppBarColors =
+        MaterialTheme.colorScheme.defaultTopAppBarColors
 
     /**
      * Creates a [TopAppBarColors] for [CenterAlignedTopAppBar]s. The default implementation
@@ -1617,7 +1572,7 @@ object TopAppBarDefaults {
         DeprecationLevel.WARNING,
     )
     @Composable
-    fun centerAlignedTopAppBarColors(
+    public fun centerAlignedTopAppBarColors(
         containerColor: Color = Color.Unspecified,
         scrolledContainerColor: Color = Color.Unspecified,
         navigationIconContentColor: Color = Color.Unspecified,
@@ -1643,7 +1598,8 @@ object TopAppBarDefaults {
         DeprecationLevel.WARNING,
     )
     @Composable
-    fun mediumTopAppBarColors() = MaterialTheme.colorScheme.defaultTopAppBarColors
+    public fun mediumTopAppBarColors(): TopAppBarColors =
+        MaterialTheme.colorScheme.defaultTopAppBarColors
 
     /**
      * Creates a [TopAppBarColors] for [MediumTopAppBar]s. The default implementation interpolates
@@ -1667,7 +1623,7 @@ object TopAppBarDefaults {
         DeprecationLevel.WARNING,
     )
     @Composable
-    fun mediumTopAppBarColors(
+    public fun mediumTopAppBarColors(
         containerColor: Color = Color.Unspecified,
         scrolledContainerColor: Color = Color.Unspecified,
         navigationIconContentColor: Color = Color.Unspecified,
@@ -1693,7 +1649,8 @@ object TopAppBarDefaults {
         DeprecationLevel.WARNING,
     )
     @Composable
-    fun largeTopAppBarColors() = MaterialTheme.colorScheme.defaultTopAppBarColors
+    public fun largeTopAppBarColors(): TopAppBarColors =
+        MaterialTheme.colorScheme.defaultTopAppBarColors
 
     /**
      * Creates a [TopAppBarColors] for [LargeTopAppBar]s. The default implementation interpolates
@@ -1717,7 +1674,7 @@ object TopAppBarDefaults {
         DeprecationLevel.WARNING,
     )
     @Composable
-    fun largeTopAppBarColors(
+    public fun largeTopAppBarColors(
         containerColor: Color = Color.Unspecified,
         scrolledContainerColor: Color = Color.Unspecified,
         navigationIconContentColor: Color = Color.Unspecified,
@@ -1734,7 +1691,8 @@ object TopAppBarDefaults {
 
     /**
      * Returns a pinned [TopAppBarScrollBehavior] that tracks nested-scroll callbacks and updates
-     * its [TopAppBarState.contentOffset] accordingly.
+     * its [TopAppBarState.contentOffset] accordingly. Note: If your layout utilizes `reverseLayout`
+     * or `reverseScrolling`, please use the overload that takes a [ScrollableState] parameter.
      *
      * The returned [TopAppBarScrollBehavior] is remembered across compositions.
      *
@@ -1743,13 +1701,214 @@ object TopAppBarDefaults {
      * @param canScroll a callback used to determine whether scroll events are to be handled by this
      *   pinned [TopAppBarScrollBehavior]
      */
-    @ExperimentalMaterial3Api
     @Composable
-    fun pinnedScrollBehavior(
+    public fun pinnedScrollBehavior(
         state: TopAppBarState = rememberTopAppBarState(),
         canScroll: () -> Boolean = { true },
     ): TopAppBarScrollBehavior =
         remember(state, canScroll) { PinnedScrollBehavior(state = state, canScroll = canScroll) }
+
+    /**
+     * Returns a pinned [TopAppBarScrollBehavior] that tracks nested-scroll callbacks and updates
+     * its [TopAppBarState.contentOffset] accordingly.
+     *
+     * This overload is intended for use cases with [LazyColumn] when the content is pre-scrolled or
+     * uses `reverseLayout`, as it correctly handles [TopAppBar] color transitions for these
+     * specific scroll states.
+     *
+     * The returned [TopAppBarScrollBehavior] is remembered across compositions.
+     *
+     * A sample for a pinned small [TopAppBar] when the content of the [LazyColumn] is pre-scrolled:
+     *
+     * @sample androidx.compose.material3.samples.PinnedTopAppBarWithPreScrolledLazyColumn
+     * @param lazyListState the [LazyListState] object observing the list's scroll position, used to
+     *   determine if the list is scrolled to the start
+     * @param state the state object to be used to control or observe the top app bar's scroll
+     *   state. See [rememberTopAppBarState] for a state that is remembered across compositions
+     * @param canScroll a callback used to determine whether scroll events are to be handled by this
+     *   pinned [TopAppBarScrollBehavior]
+     */
+    @Deprecated(
+        message =
+            "Please use the pinnedScrollBehavior function that takes a ScrollableState parameter.",
+        replaceWith =
+            ReplaceWith(
+                "pinnedScrollBehavior(scrollableState = lazyListState, state = state, canScroll = canScroll)"
+            ),
+        level = DeprecationLevel.WARNING,
+    )
+    @ExperimentalMaterial3Api
+    @Composable
+    public fun pinnedScrollBehavior(
+        lazyListState: LazyListState,
+        state: TopAppBarState = rememberTopAppBarState(),
+        canScroll: () -> Boolean = { true },
+    ): TopAppBarScrollBehavior {
+        return pinnedScrollBehavior(
+            scrollableState = lazyListState,
+            state = state,
+            canScroll = canScroll,
+        )
+    }
+
+    /**
+     * Returns a pinned [TopAppBarScrollBehavior] that tracks nested-scroll callbacks and updates
+     * its [TopAppBarState.contentOffset] accordingly.
+     *
+     * This overload is intended for use cases with composables that use a [ScrollState], such as
+     * [Column] with `verticalScroll`, especially when the content is pre-scrolled or uses
+     * `reverseScrolling`. It correctly handles [TopAppBar] color transitions for these specific
+     * scroll states.
+     *
+     * The returned [TopAppBarScrollBehavior] is remembered across compositions.
+     *
+     * @param scrollState state of the scroll
+     * @param reverseScrolling reverse the direction of scrolling, when `true`, 0
+     *   [ScrollState.value] will mean bottom, when `false`, 0 [ScrollState.value] will mean top
+     * @param state the state object to be used to control or observe the top app bar's scroll
+     *   state. See [rememberTopAppBarState] for a state that is remembered across compositions
+     * @param canScroll a callback used to determine whether scroll events are to be handled by this
+     *   pinned [TopAppBarScrollBehavior]
+     */
+    @Deprecated(
+        message =
+            "Please use the pinnedScrollBehavior function that takes a ScrollableState parameter.",
+        replaceWith =
+            ReplaceWith(
+                "pinnedScrollBehavior(scrollableState = scrollState, state = state, canScroll = canScroll)"
+            ),
+        level = DeprecationLevel.WARNING,
+    )
+    @ExperimentalMaterial3Api
+    @Composable
+    public fun pinnedScrollBehavior(
+        scrollState: ScrollState,
+        reverseScrolling: Boolean = false,
+        state: TopAppBarState = rememberTopAppBarState(),
+        canScroll: () -> Boolean = { true },
+    ): TopAppBarScrollBehavior {
+        return pinnedScrollBehavior(
+            scrollableState = scrollState,
+            state = state,
+            canScroll = canScroll,
+        )
+    }
+
+    /**
+     * Returns a pinned [TopAppBarScrollBehavior] that tracks nested-scroll callbacks and updates
+     * its [TopAppBarState.contentOffset] accordingly.
+     *
+     * This overload is intended for use cases that are not covered by the standard overloads, such
+     * as when a custom `isScrollingContentAtStart` state needs to be determined for custom or
+     * complex layouts (e.g. `LazyVerticalGrid` with `reverseLayout = true`).
+     *
+     * The returned [TopAppBarScrollBehavior] is remembered across compositions.
+     *
+     * A sample for a pinned small [TopAppBar] that is scrolled with a reversed [LazyVerticalGrid]:
+     *
+     * @sample androidx.compose.material3.samples.PinnedTopAppBarWithReversedLazyGrid
+     * @param state the state object to be used to control or observe the top app bar's scroll
+     *   state. See [rememberTopAppBarState] for a state that is remembered across compositions
+     * @param canScroll a callback used to determine whether scroll events are to be handled by this
+     *   pinned [TopAppBarScrollBehavior]
+     * @param isScrollingContentAtStart A callback that returns true when the scrollable is at the
+     *   origin of its content. Handles reversed layouts to ensure "start" always refers to the
+     *   first logical item.
+     */
+    @Deprecated(
+        message =
+            "Please use the pinnedScrollBehavior function that takes a ScrollableState parameter.",
+        level = DeprecationLevel.WARNING,
+    )
+    @ExperimentalMaterial3Api
+    @Composable
+    public fun pinnedScrollBehavior(
+        state: TopAppBarState = rememberTopAppBarState(),
+        canScroll: () -> Boolean = { true },
+        isScrollingContentAtStart: () -> Boolean = { true },
+    ): TopAppBarScrollBehavior {
+        return remember(state, canScroll, isScrollingContentAtStart) {
+            PinnedScrollBehavior(
+                state = state,
+                canScroll = canScroll,
+                isScrollingContentAtStart = isScrollingContentAtStart,
+            )
+        }
+    }
+
+    /**
+     * Returns a pinned [TopAppBarScrollBehavior] that tracks nested-scroll callbacks and updates
+     * its [TopAppBarState.contentOffset] accordingly.
+     *
+     * This overload is intended for use cases where the scroll state is represented by a
+     * [ScrollableState] (e.g. `LazyVerticalGrid`). It automatically determines if the content is at
+     * the start by observing the scroll position of the provided [ScrollableState].
+     *
+     * The returned [TopAppBarScrollBehavior] is remembered across compositions.
+     *
+     * A sample for a pinned small [TopAppBar] that is scrolled with a reversed [LazyVerticalGrid]:
+     *
+     * @sample androidx.compose.material3.samples.PinnedTopAppBarWithReversedLazyGrid
+     * @param scrollableState the [ScrollableState] of the scrollable container, used to determine
+     *   if the content is at the start
+     * @param state the state object to be used to control or observe the top app bar's scroll
+     *   state. See [rememberTopAppBarState] for a state that is remembered across compositions
+     * @param canScroll a callback used to determine whether scroll events are to be handled by this
+     *   pinned [TopAppBarScrollBehavior]
+     */
+    @Composable
+    public fun pinnedScrollBehavior(
+        scrollableState: ScrollableState,
+        state: TopAppBarState = rememberTopAppBarState(),
+        canScroll: () -> Boolean = { true },
+    ): TopAppBarScrollBehavior {
+        return remember(scrollableState, state, canScroll) {
+            PinnedScrollBehavior(
+                state = state,
+                canScroll = canScroll,
+                isScrollingContentAtStart = {
+                    (scrollableState.scrollIndicatorState?.scrollOffset ?: 0) == 0
+                },
+            )
+        }
+    }
+
+    /**
+     * Returns a [TopAppBarScrollBehavior]. A top app bar that is set up with this
+     * [TopAppBarScrollBehavior] will immediately collapse when the content is pulled up, and will
+     * immediately appear when the content is pulled down. Note: If your layout utilizes
+     * `reverseLayout` or `reverseScrolling`, please use the overload that takes a [ScrollableState]
+     * parameter.
+     *
+     * The returned [TopAppBarScrollBehavior] is remembered across compositions.
+     *
+     * @param state the state object to be used to control or observe the top app bar's scroll
+     *   state. See [rememberTopAppBarState] for a state that is remembered across compositions.
+     * @param canScroll a callback used to determine whether scroll events are to be handled by this
+     *   [TopAppBarScrollBehavior]
+     * @param snapAnimationSpec an optional [AnimationSpec] that defines how the top app bar snaps
+     *   to either fully collapsed or fully extended state when a fling or a drag scrolled it into
+     *   an intermediate position. If `null` is provided, the app bar will not snap and will remain
+     *   in its current state.
+     * @param flingAnimationSpec an optional [DecayAnimationSpec] that defines how to fling the top
+     *   app bar when the user flings the app bar itself, or the scrollable content. If `null` is
+     *   provided, the app bar will not continue to animate its height based on the scroll velocity.
+     */
+    @Composable
+    public fun enterAlwaysScrollBehavior(
+        state: TopAppBarState = rememberTopAppBarState(),
+        canScroll: () -> Boolean = { true },
+        snapAnimationSpec: AnimationSpec<Float>? = TopAppBarDefaults.snapAnimationSpec,
+        flingAnimationSpec: DecayAnimationSpec<Float>? = TopAppBarDefaults.flingAnimationSpec,
+    ): TopAppBarScrollBehavior =
+        remember(state, canScroll, snapAnimationSpec, flingAnimationSpec) {
+            EnterAlwaysScrollBehavior(
+                state = state,
+                snapAnimationSpec = snapAnimationSpec,
+                flingAnimationSpec = flingAnimationSpec,
+                canScroll = canScroll,
+            )
+        }
 
     /**
      * Returns a [TopAppBarScrollBehavior]. A top app bar that is set up with this
@@ -1764,26 +1923,91 @@ object TopAppBarDefaults {
      *   [EnterAlwaysScrollBehavior]
      * @param snapAnimationSpec an optional [AnimationSpec] that defines how the top app bar snaps
      *   to either fully collapsed or fully extended state when a fling or a drag scrolled it into
-     *   an intermediate position
-     * @param flingAnimationSpec an optional [DecayAnimationSpec] that defined how to fling the top
-     *   app bar when the user flings the app bar itself, or the content below it
+     *   an intermediate position. If `null` is provided, the app bar will not snap and will remain
+     *   in its current state.
+     * @param flingAnimationSpec an optional [DecayAnimationSpec] that defines how to fling the top
+     *   app bar when the user flings the app bar itself, or the scrollable content. If `null` is
+     *   provided, the app bar will not continue to animate its height based on the scroll velocity.
+     * @param reverseLayout indicates that this behavior is applied to a scrollable content that has
+     *   a reversed direction of scrolling and layout
      */
-    @Deprecated("Maintained for binary compatibility", level = DeprecationLevel.HIDDEN)
+    @Deprecated(
+        message =
+            "Please use the enterAlwaysScrollBehavior() function that takes a scrollableState parameter.",
+        replaceWith =
+            ReplaceWith(
+                "enterAlwaysScrollBehavior(scrollableState, state, canScroll, snapAnimationSpec, flingAnimationSpec)"
+            ),
+        level = DeprecationLevel.WARNING,
+    )
     @ExperimentalMaterial3Api
     @Composable
-    fun enterAlwaysScrollBehavior(
+    public fun enterAlwaysScrollBehavior(
         state: TopAppBarState = rememberTopAppBarState(),
         canScroll: () -> Boolean = { true },
-        // TODO Load the motionScheme tokens from the component tokens file
-        snapAnimationSpec: AnimationSpec<Float>? = MotionSchemeKeyTokens.DefaultEffects.value(),
-        flingAnimationSpec: DecayAnimationSpec<Float>? = rememberSplineBasedDecay(),
+        snapAnimationSpec: AnimationSpec<Float>? = TopAppBarDefaults.snapAnimationSpec,
+        flingAnimationSpec: DecayAnimationSpec<Float>? = TopAppBarDefaults.flingAnimationSpec,
+        reverseLayout: Boolean = false,
+    ): TopAppBarScrollBehavior =
+        remember(state, canScroll, snapAnimationSpec, flingAnimationSpec, reverseLayout) {
+            LegacyEnterAlwaysScrollBehavior(
+                state = state,
+                snapAnimationSpec = snapAnimationSpec,
+                flingAnimationSpec = flingAnimationSpec,
+                canScroll = canScroll,
+                reverseLayout = reverseLayout,
+            )
+        }
+
+    /**
+     * Returns a [TopAppBarScrollBehavior]. A top app bar that is set up with this
+     * [TopAppBarScrollBehavior] will immediately collapse when the content is pulled up, and will
+     * immediately appear when the content is pulled down.
+     *
+     * This overload is intended for use cases with [LazyColumn] when the content is pre-scrolled or
+     * uses `reverseLayout`, as it correctly handles [TopAppBar] color transitions for these
+     * specific scroll states.
+     *
+     * The returned [TopAppBarScrollBehavior] is remembered across compositions.
+     *
+     * @param lazyListState the [LazyListState] object observing the list's scroll position, used to
+     *   determine if the list is scrolled to the start
+     * @param state the state object to be used to control or observe the top app bar's scroll
+     *   state. See [rememberTopAppBarState] for a state that is remembered across compositions.
+     * @param canScroll a callback used to determine whether scroll events are to be handled by this
+     *   [TopAppBarScrollBehavior]
+     * @param snapAnimationSpec an optional [AnimationSpec] that defines how the top app bar snaps
+     *   to either fully collapsed or fully extended state when a fling or a drag scrolled it into
+     *   an intermediate position. If `null` is provided, the app bar will not snap and will remain
+     *   in its current state.
+     * @param flingAnimationSpec an optional [DecayAnimationSpec] that defines how to fling the top
+     *   app bar when the user flings the app bar itself, or the scrollable content. If `null` is
+     *   provided, the app bar will not continue to animate its height based on the scroll velocity.
+     */
+    @Deprecated(
+        message =
+            "Please use the enterAlwaysScrollBehavior function that takes a ScrollableState parameter.",
+        replaceWith =
+            ReplaceWith(
+                "enterAlwaysScrollBehavior(scrollableState = lazyListState, state = state, canScroll = canScroll, snapAnimationSpec = snapAnimationSpec, flingAnimationSpec = flingAnimationSpec)"
+            ),
+        level = DeprecationLevel.WARNING,
+    )
+    @ExperimentalMaterial3Api
+    @Composable
+    public fun enterAlwaysScrollBehavior(
+        lazyListState: LazyListState,
+        state: TopAppBarState = rememberTopAppBarState(),
+        canScroll: () -> Boolean = { true },
+        snapAnimationSpec: AnimationSpec<Float>? = TopAppBarDefaults.snapAnimationSpec,
+        flingAnimationSpec: DecayAnimationSpec<Float>? = TopAppBarDefaults.flingAnimationSpec,
     ): TopAppBarScrollBehavior {
         return enterAlwaysScrollBehavior(
+            scrollableState = lazyListState,
             state = state,
             canScroll = canScroll,
             snapAnimationSpec = snapAnimationSpec,
             flingAnimationSpec = flingAnimationSpec,
-            reverseLayout = false,
         )
     }
 
@@ -1792,39 +2016,159 @@ object TopAppBarDefaults {
      * [TopAppBarScrollBehavior] will immediately collapse when the content is pulled up, and will
      * immediately appear when the content is pulled down.
      *
+     * This overload is intended for use cases with composables that use a [ScrollState], such as
+     * [Column] with `verticalScroll`, especially when the content is pre-scrolled or uses
+     * `reverseScrolling`. It correctly handles [TopAppBar] color transitions for these specific
+     * scroll states.
+     *
+     * The returned [TopAppBarScrollBehavior] is remembered across compositions.
+     *
+     * A sample for a small [TopAppBar] that collapses when the content is scrolled up, and appears
+     * when the content is scrolled down, using a [Column] with reverse scrolling:
+     *
+     * @sample androidx.compose.material3.samples.EnterAlwaysTopAppBarWithReverseScrolling
+     * @param scrollState state of the scroll
+     * @param reverseScrolling reverse the direction of scrolling, when `true`, 0
+     *   [ScrollState.value] will mean bottom, when `false`, 0 [ScrollState.value] will mean top
+     * @param state the state object to be used to control or observe the top app bar's scroll
+     *   state. See [rememberTopAppBarState] for a state that is remembered across compositions.
+     * @param canScroll a callback used to determine whether scroll events are to be handled by this
+     *   [TopAppBarScrollBehavior]
+     * @param snapAnimationSpec an optional [AnimationSpec] that defines how the top app bar snaps
+     *   to either fully collapsed or fully extended state when a fling or a drag scrolled it into
+     *   an intermediate position. If `null` is provided, the app bar will not snap and will remain
+     *   in its current state.
+     * @param flingAnimationSpec an optional [DecayAnimationSpec] that defines how to fling the top
+     *   app bar when the user flings the app bar itself, or the scrollable content. If `null` is
+     *   provided, the app bar will not continue to animate its height based on the scroll velocity.
+     */
+    @Deprecated(
+        message =
+            "Please use the enterAlwaysScrollBehavior function that takes a ScrollableState parameter.",
+        replaceWith =
+            ReplaceWith(
+                "enterAlwaysScrollBehavior(scrollableState = scrollState, state = state, canScroll = canScroll, snapAnimationSpec = snapAnimationSpec, flingAnimationSpec = flingAnimationSpec)"
+            ),
+        level = DeprecationLevel.WARNING,
+    )
+    @ExperimentalMaterial3Api
+    @Composable
+    public fun enterAlwaysScrollBehavior(
+        scrollState: ScrollState,
+        reverseScrolling: Boolean = false,
+        state: TopAppBarState = rememberTopAppBarState(),
+        canScroll: () -> Boolean = { true },
+        snapAnimationSpec: AnimationSpec<Float>? = TopAppBarDefaults.snapAnimationSpec,
+        flingAnimationSpec: DecayAnimationSpec<Float>? = TopAppBarDefaults.flingAnimationSpec,
+    ): TopAppBarScrollBehavior {
+        return enterAlwaysScrollBehavior(
+            scrollableState = scrollState,
+            state = state,
+            canScroll = canScroll,
+            snapAnimationSpec = snapAnimationSpec,
+            flingAnimationSpec = flingAnimationSpec,
+        )
+    }
+
+    /**
+     * Returns a [TopAppBarScrollBehavior]. A top app bar that is set up with this
+     * [TopAppBarScrollBehavior] will immediately collapse when the content is pulled up, and will
+     * immediately appear when the content is pulled down.
+     *
+     * This overload is intended for use cases that are not covered by the standard overloads, such
+     * as when a custom `isScrollingContentAtStart` state needs to be determined for custom or
+     * complex layouts (e.g. `LazyVerticalGrid` with `reverseLayout = true`).
+     *
      * The returned [TopAppBarScrollBehavior] is remembered across compositions.
      *
      * @param state the state object to be used to control or observe the top app bar's scroll
      *   state. See [rememberTopAppBarState] for a state that is remembered across compositions.
      * @param canScroll a callback used to determine whether scroll events are to be handled by this
-     *   [EnterAlwaysScrollBehavior]
+     *   [TopAppBarScrollBehavior]
      * @param snapAnimationSpec an optional [AnimationSpec] that defines how the top app bar snaps
      *   to either fully collapsed or fully extended state when a fling or a drag scrolled it into
-     *   an intermediate position
-     * @param flingAnimationSpec an optional [DecayAnimationSpec] that defined how to fling the top
-     *   app bar when the user flings the app bar itself, or the content below it
-     * @param reverseLayout indicates that this behavior is applied to a scrollable content that has
-     *   a reversed direction of scrolling and layout
+     *   an intermediate position. If `null` is provided, the app bar will not snap and will remain
+     *   in its current state.
+     * @param flingAnimationSpec an optional [DecayAnimationSpec] that defines how to fling the top
+     *   app bar when the user flings the app bar itself, or the scrollable content. If `null` is
+     *   provided, the app bar will not continue to animate its height based on the scroll velocity.
+     * @param isScrollingContentAtStart A callback that returns true when the scrollable is at the
+     *   origin of its content. Handles reversed layouts to ensure "start" always refers to the
+     *   first logical item.
      */
-    @ExperimentalMaterial3Api
+    @Deprecated(
+        message =
+            "Please use the enterAlwaysScrollBehavior function that takes a ScrollableState parameter.",
+        level = DeprecationLevel.WARNING,
+    )
     @Composable
-    fun enterAlwaysScrollBehavior(
+    public fun enterAlwaysScrollBehavior(
         state: TopAppBarState = rememberTopAppBarState(),
         canScroll: () -> Boolean = { true },
-        // TODO Load the motionScheme tokens from the component tokens file
-        snapAnimationSpec: AnimationSpec<Float>? = MotionSchemeKeyTokens.DefaultEffects.value(),
-        flingAnimationSpec: DecayAnimationSpec<Float>? = rememberSplineBasedDecay(),
-        reverseLayout: Boolean = false,
+        snapAnimationSpec: AnimationSpec<Float>? = TopAppBarDefaults.snapAnimationSpec,
+        flingAnimationSpec: DecayAnimationSpec<Float>? = TopAppBarDefaults.flingAnimationSpec,
+        isScrollingContentAtStart: () -> Boolean = { true },
     ): TopAppBarScrollBehavior =
-        remember(state, canScroll, snapAnimationSpec, flingAnimationSpec, reverseLayout) {
+        remember(state, canScroll, snapAnimationSpec, flingAnimationSpec) {
             EnterAlwaysScrollBehavior(
                 state = state,
                 snapAnimationSpec = snapAnimationSpec,
                 flingAnimationSpec = flingAnimationSpec,
                 canScroll = canScroll,
-                reverseLayout = reverseLayout,
+                isScrollingContentAtStart = isScrollingContentAtStart,
             )
         }
+
+    /**
+     * Returns a [TopAppBarScrollBehavior]. A top app bar that is set up with this
+     * [TopAppBarScrollBehavior] will immediately collapse when the content is pulled up, and will
+     * immediately appear when the content is pulled down.
+     *
+     * This overload is intended for use cases with scrollable containers (such as [LazyColumn], a
+     * [Column] with `verticalScroll`, or any other container that implements [ScrollableState])
+     * when the content is pre-scrolled or uses `reverseLayout`/`reverseScrolling`, as it correctly
+     * handles [TopAppBar] color transitions for these specific scroll states.
+     *
+     * An enter always top app bar with reverse scrolling looks like:
+     *
+     * @sample androidx.compose.material3.samples.EnterAlwaysTopAppBarWithReverseScrolling
+     *
+     * The returned [TopAppBarScrollBehavior] is remembered across compositions.
+     *
+     * @param scrollableState the [ScrollableState] of the scrollable container, used to determine
+     *   if the content is at the start
+     * @param state the state object to be used to control or observe the top app bar's scroll
+     *   state. See [rememberTopAppBarState] for a state that is remembered across compositions.
+     * @param canScroll a callback used to determine whether scroll events are to be handled by this
+     *   [TopAppBarScrollBehavior]
+     * @param snapAnimationSpec an optional [AnimationSpec] that defines how the top app bar snaps
+     *   to either fully collapsed or fully extended state when a fling or a drag scrolled it into
+     *   an intermediate position. If `null` is provided, the app bar will not snap and will remain
+     *   in its current state.
+     * @param flingAnimationSpec an optional [DecayAnimationSpec] that defines how to fling the top
+     *   app bar when the user flings the app bar itself, or the scrollable content. If `null` is
+     *   provided, the app bar will not continue to animate its height based on the scroll velocity.
+     */
+    @Composable
+    public fun enterAlwaysScrollBehavior(
+        scrollableState: ScrollableState,
+        state: TopAppBarState = rememberTopAppBarState(),
+        canScroll: () -> Boolean = { true },
+        snapAnimationSpec: AnimationSpec<Float>? = TopAppBarDefaults.snapAnimationSpec,
+        flingAnimationSpec: DecayAnimationSpec<Float>? = TopAppBarDefaults.flingAnimationSpec,
+    ): TopAppBarScrollBehavior {
+        return remember(scrollableState, state, canScroll, snapAnimationSpec, flingAnimationSpec) {
+            EnterAlwaysScrollBehavior(
+                state = state,
+                snapAnimationSpec = snapAnimationSpec,
+                flingAnimationSpec = flingAnimationSpec,
+                canScroll = canScroll,
+                isScrollingContentAtStart = {
+                    (scrollableState.scrollIndicatorState?.scrollOffset ?: 0) == 0
+                },
+            )
+        }
+    }
 
     /**
      * Returns a [TopAppBarScrollBehavior] that adjusts its properties to affect the colors and
@@ -1836,24 +2180,27 @@ object TopAppBarDefaults {
      *
      * The returned [TopAppBarScrollBehavior] is remembered across compositions.
      *
+     * A sample for a [MediumTopAppBar] with [exitUntilCollapsedScrollBehavior]:
+     *
+     * @sample androidx.compose.material3.samples.ExitUntilCollapsedMediumTopAppBar
      * @param state the state object to be used to control or observe the top app bar's scroll
      *   state. See [rememberTopAppBarState] for a state that is remembered across compositions.
      * @param canScroll a callback used to determine whether scroll events are to be handled by this
      *   [ExitUntilCollapsedScrollBehavior]
      * @param snapAnimationSpec an optional [AnimationSpec] that defines how the top app bar snaps
      *   to either fully collapsed or fully extended state when a fling or a drag scrolled it into
-     *   an intermediate position
-     * @param flingAnimationSpec an optional [DecayAnimationSpec] that defined how to fling the top
-     *   app bar when the user flings the app bar itself, or the content below it
+     *   an intermediate position. If `null` is provided, the app bar will not snap and will remain
+     *   in its current state.
+     * @param flingAnimationSpec an optional [DecayAnimationSpec] that defines how to fling the top
+     *   app bar when the user flings the app bar itself, or the scrollable content. If `null` is
+     *   provided, the app bar will not continue to animate its height based on the scroll velocity.
      */
-    @ExperimentalMaterial3Api
     @Composable
-    fun exitUntilCollapsedScrollBehavior(
+    public fun exitUntilCollapsedScrollBehavior(
         state: TopAppBarState = rememberTopAppBarState(),
         canScroll: () -> Boolean = { true },
-        // TODO Load the motionScheme tokens from the component tokens file
-        snapAnimationSpec: AnimationSpec<Float>? = MotionSchemeKeyTokens.DefaultEffects.value(),
-        flingAnimationSpec: DecayAnimationSpec<Float>? = rememberSplineBasedDecay(),
+        snapAnimationSpec: AnimationSpec<Float>? = TopAppBarDefaults.snapAnimationSpec,
+        flingAnimationSpec: DecayAnimationSpec<Float>? = TopAppBarDefaults.flingAnimationSpec,
     ): TopAppBarScrollBehavior =
         remember(state, canScroll, snapAnimationSpec, flingAnimationSpec) {
             ExitUntilCollapsedScrollBehavior(
@@ -1865,34 +2212,34 @@ object TopAppBarDefaults {
         }
 
     /** The default expanded height of a [TopAppBar] and the [CenterAlignedTopAppBar]. */
-    val TopAppBarExpandedHeight: Dp = AppBarSmallTokens.ContainerHeight
+    public val TopAppBarExpandedHeight: Dp = AppBarSmallTokens.ContainerHeight
 
     /** The default height of a [MediumTopAppBar] when collapsed by a [TopAppBarScrollBehavior]. */
-    val MediumAppBarCollapsedHeight: Dp = AppBarSmallTokens.ContainerHeight
+    public val MediumAppBarCollapsedHeight: Dp = AppBarSmallTokens.ContainerHeight
 
     /** The default expanded height of a [MediumTopAppBar]. */
-    val MediumAppBarExpandedHeight: Dp = AppBarMediumTokens.ContainerHeight
+    public val MediumAppBarExpandedHeight: Dp = AppBarMediumTokens.ContainerHeight
 
     /** The default expanded height of a [MediumFlexibleTopAppBar] without subtitle. */
-    val MediumFlexibleAppBarWithoutSubtitleExpandedHeight: Dp =
+    public val MediumFlexibleAppBarWithoutSubtitleExpandedHeight: Dp =
         AppBarMediumFlexibleTokens.ContainerHeight
 
     /** The default expanded height of a [MediumFlexibleTopAppBar] with subtitle. */
-    val MediumFlexibleAppBarWithSubtitleExpandedHeight: Dp =
+    public val MediumFlexibleAppBarWithSubtitleExpandedHeight: Dp =
         AppBarMediumFlexibleTokens.LargeContainerHeight
 
     /** The default height of a [LargeTopAppBar] when collapsed by a [TopAppBarScrollBehavior]. */
-    val LargeAppBarCollapsedHeight: Dp = AppBarSmallTokens.ContainerHeight
+    public val LargeAppBarCollapsedHeight: Dp = AppBarSmallTokens.ContainerHeight
 
     /** The default expanded height of a [LargeTopAppBar]. */
-    val LargeAppBarExpandedHeight: Dp = AppBarLargeTokens.ContainerHeight
+    public val LargeAppBarExpandedHeight: Dp = AppBarLargeTokens.ContainerHeight
 
     /** The default expanded height of a [LargeFlexibleTopAppBar] without subtitle. */
-    val LargeFlexibleAppBarWithoutSubtitleExpandedHeight: Dp =
+    public val LargeFlexibleAppBarWithoutSubtitleExpandedHeight: Dp =
         AppBarLargeFlexibleTokens.ContainerHeight
 
     /** The default expanded height of a [LargeFlexibleTopAppBar] with subtitle. */
-    val LargeFlexibleAppBarWithSubtitleExpandedHeight: Dp =
+    public val LargeFlexibleAppBarWithSubtitleExpandedHeight: Dp =
         AppBarLargeFlexibleTokens.LargeContainerHeight
 }
 
@@ -1906,9 +2253,8 @@ object TopAppBarDefaults {
  *   offset height offset should be between zero and [initialHeightOffsetLimit].
  * @param initialContentOffset the initial value for [TopAppBarState.contentOffset]
  */
-@ExperimentalMaterial3Api
 @Composable
-fun rememberTopAppBarState(
+public fun rememberTopAppBarState(
     initialHeightOffsetLimit: Float = -Float.MAX_VALUE,
     initialHeightOffset: Float = 0f,
     initialContentOffset: Float = 0f,
@@ -1928,9 +2274,8 @@ fun rememberTopAppBarState(
  * @param initialHeightOffset the initial value for [TopAppBarState.heightOffset]
  * @param initialContentOffset the initial value for [TopAppBarState.contentOffset]
  */
-@ExperimentalMaterial3Api
 @Stable
-class TopAppBarState(
+public class TopAppBarState(
     initialHeightOffsetLimit: Float,
     initialHeightOffset: Float,
     initialContentOffset: Float,
@@ -1942,7 +2287,7 @@ class TopAppBarState(
      *
      * Use this limit to coerce the [heightOffset] value when it's updated.
      */
-    var heightOffsetLimit = initialHeightOffsetLimit
+    public var heightOffsetLimit: Float = initialHeightOffsetLimit
 
     /**
      * The top app bar's current height offset in pixels. This height offset is applied to the fixed
@@ -1950,7 +2295,7 @@ class TopAppBarState(
      *
      * Updates to the [heightOffset] value are coerced between zero and [heightOffsetLimit].
      */
-    var heightOffset: Float
+    public var heightOffset: Float
         get() = _heightOffset.floatValue
         set(newOffset) {
             _heightOffset.floatValue =
@@ -1967,7 +2312,13 @@ class TopAppBarState(
      * consumes scroll events. A common implementation would update the value to be the sum of all
      * [NestedScrollConnection.onPostScroll] `consumed.y` values.
      */
-    var contentOffset by mutableFloatStateOf(initialContentOffset)
+    public var contentOffset: Float by mutableFloatStateOf(initialContentOffset)
+
+    /**
+     * Determines if the content is currently at the starting scroll position. This is used to
+     * calculate the [overlappedFraction] for the app bar's visual state.
+     */
+    internal var isScrollingContentAtStart: () -> Boolean = { true }
 
     /**
      * A value that represents the collapsed height percentage of the app bar.
@@ -1975,7 +2326,7 @@ class TopAppBarState(
      * A `0.0` represents a fully expanded bar, and `1.0` represents a fully collapsed bar (computed
      * as [heightOffset] / [heightOffsetLimit]).
      */
-    val collapsedFraction: Float
+    public val collapsedFraction: Float
         get() =
             if (heightOffsetLimit != 0f) {
                 heightOffset / heightOffsetLimit
@@ -1990,11 +2341,13 @@ class TopAppBarState(
      * A `0.0` indicates that the app bar does not overlap any content, while `1.0` indicates that
      * the entire visible app bar area overlaps the scrolled content.
      */
-    val overlappedFraction: Float
+    public val overlappedFraction: Float
         get() =
-            if (heightOffsetLimit != 0f) {
+            if (!isScrollingContentAtStart() && contentOffset == 0f) {
+                1f
+            } else if (heightOffsetLimit != 0f) {
                 1 -
-                    ((heightOffsetLimit - contentOffset).coerceIn(
+                    ((heightOffsetLimit + contentOffset.absoluteValue).coerceIn(
                         minimumValue = heightOffsetLimit,
                         maximumValue = 0f,
                     ) / heightOffsetLimit)
@@ -2002,9 +2355,9 @@ class TopAppBarState(
                 0f
             }
 
-    companion object {
+    public companion object {
         /** The default [Saver] implementation for [TopAppBarState]. */
-        val Saver: Saver<TopAppBarState, *> =
+        public val Saver: Saver<TopAppBarState, *> =
             listSaver(
                 save = { listOf(it.heightOffsetLimit, it.heightOffset, it.contentOffset) },
                 restore = {
@@ -2035,15 +2388,14 @@ class TopAppBarState(
  * @constructor create an instance with arbitrary colors, see [TopAppBarColors] for a factory method
  *   using the default material3 spec
  */
-@ExperimentalMaterial3Api
 @Stable
-class TopAppBarColors(
-    val containerColor: Color,
-    val scrolledContainerColor: Color,
-    val navigationIconContentColor: Color,
-    val titleContentColor: Color,
-    val actionIconContentColor: Color,
-    val subtitleContentColor: Color,
+public class TopAppBarColors(
+    public val containerColor: Color,
+    public val scrolledContainerColor: Color,
+    public val navigationIconContentColor: Color,
+    public val titleContentColor: Color,
+    public val actionIconContentColor: Color,
+    public val subtitleContentColor: Color,
 ) {
     @Deprecated(
         "Use the TopAppBarColors constructor with subtitleContentColor",
@@ -2055,7 +2407,7 @@ class TopAppBarColors(
             ),
         DeprecationLevel.WARNING,
     )
-    constructor(
+    public constructor(
         containerColor: Color,
         scrolledContainerColor: Color,
         navigationIconContentColor: Color,
@@ -2074,14 +2426,14 @@ class TopAppBarColors(
      * Returns a copy of this TopAppBarColors, optionally overriding some of the values. This uses
      * the Color.Unspecified to mean “use the value from the source”
      */
-    fun copy(
+    public fun copy(
         containerColor: Color = this.containerColor,
         scrolledContainerColor: Color = this.scrolledContainerColor,
         navigationIconContentColor: Color = this.navigationIconContentColor,
         titleContentColor: Color = this.titleContentColor,
         actionIconContentColor: Color = this.actionIconContentColor,
         subtitleContentColor: Color = this.subtitleContentColor,
-    ) =
+    ): TopAppBarColors =
         TopAppBarColors(
             containerColor.takeOrElse { this.containerColor },
             scrolledContainerColor.takeOrElse { this.scrolledContainerColor },
@@ -2142,15 +2494,14 @@ class TopAppBarColors(
  *
  * @see [BottomAppBarDefaults.exitAlwaysScrollBehavior]
  */
-@ExperimentalMaterial3Api
 @Stable
-interface BottomAppBarScrollBehavior {
+public interface BottomAppBarScrollBehavior {
 
     /**
      * A [BottomAppBarState] that is attached to this behavior and is read and updated when
      * scrolling happens.
      */
-    val state: BottomAppBarState
+    public val state: BottomAppBarState
 
     /**
      * Indicates whether the bottom app bar is pinned.
@@ -2158,43 +2509,44 @@ interface BottomAppBarScrollBehavior {
      * A pinned app bar will stay fixed in place when content is scrolled and will not react to any
      * drag gestures.
      */
-    val isPinned: Boolean
+    public val isPinned: Boolean
 
     /**
      * An optional [AnimationSpec] that defines how the bottom app bar snaps to either fully
      * collapsed or fully extended state when a fling or a drag scrolled it into an intermediate
      * position.
      */
-    val snapAnimationSpec: AnimationSpec<Float>?
+    public val snapAnimationSpec: AnimationSpec<Float>?
 
     /**
-     * An optional [DecayAnimationSpec] that defined how to fling the bottom app bar when the user
-     * flings the app bar itself, or the content below it.
+     * An optional [DecayAnimationSpec] that defines how to fling the bottom app bar when the user
+     * flings the app bar itself, or the scrollable content.
      */
-    val flingAnimationSpec: DecayAnimationSpec<Float>?
+    public val flingAnimationSpec: DecayAnimationSpec<Float>?
 
     /**
-     * A [NestedScrollConnection] that should be attached to a [Modifier.nestedScroll] in order to
-     * keep track of the scroll events.
+     * A [NestedScrollConnection] that should be attached to a
+     * [androidx.compose.ui.input.nestedscroll.nestedScroll] in order to keep track of the scroll
+     * events.
      */
-    val nestedScrollConnection: NestedScrollConnection
+    public val nestedScrollConnection: NestedScrollConnection
 }
 
 /** Contains default values used for the bottom app bar implementations. */
-object BottomAppBarDefaults {
+public object BottomAppBarDefaults {
 
     /** Default color used for [BottomAppBar] container */
-    val containerColor: Color
+    public val containerColor: Color
         @Composable get() = BottomAppBarTokens.ContainerColor.value
 
     /** Default elevation used for [BottomAppBar] */
-    val ContainerElevation: Dp = 0.dp
+    public val ContainerElevation: Dp = 0.dp
 
     /**
      * Default padding used for [BottomAppBar] when content are default size (24dp) icons in
      * [IconButton] that meet the minimum touch target (48.dp).
      */
-    val ContentPadding =
+    public val ContentPadding: PaddingValues =
         PaddingValues(
             start = BottomAppBarHorizontalPadding,
             top = BottomAppBarVerticalPadding,
@@ -2202,7 +2554,7 @@ object BottomAppBarDefaults {
         )
 
     /** Default insets that will be used and consumed by [BottomAppBar]. */
-    val windowInsets: WindowInsets
+    public val windowInsets: WindowInsets
         @Composable
         get() {
             return WindowInsets.systemBarsForVisualComponents.only(
@@ -2211,14 +2563,11 @@ object BottomAppBarDefaults {
         }
 
     /** The color of a [BottomAppBar]'s [FloatingActionButton] */
-    val bottomAppBarFabColor: Color
+    public val bottomAppBarFabColor: Color
         @Composable get() = FabSecondaryContainerTokens.ContainerColor.value
 
-    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-    @get:ExperimentalMaterial3ExpressiveApi
-    @ExperimentalMaterial3ExpressiveApi
     /** Default padding used for [FlexibleBottomAppBar]. */
-    val FlexibleContentPadding =
+    public val FlexibleContentPadding: PaddingValues =
         PaddingValues(
             start = DockedToolbarTokens.ContainerLeadingSpace,
             end = DockedToolbarTokens.ContainerTrailingSpace,
@@ -2228,33 +2577,37 @@ object BottomAppBarDefaults {
      * Default height of a flexible [FlexibleBottomAppBar]. The height here represents the height of
      * the bottom app bar in its expanded state.
      */
-    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-    @get:ExperimentalMaterial3ExpressiveApi
-    @ExperimentalMaterial3ExpressiveApi
-    val FlexibleBottomAppBarHeight = DockedToolbarTokens.ContainerHeight
+    public val FlexibleBottomAppBarHeight: Dp = DockedToolbarTokens.ContainerHeight
 
     /** A default [Arrangement] that will be used to space a [FlexibleBottomAppBar]'s content. */
-    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-    @get:ExperimentalMaterial3ExpressiveApi
-    @ExperimentalMaterial3ExpressiveApi
-    val FlexibleHorizontalArrangement: Arrangement.Horizontal = Arrangement.SpaceBetween
+    public val FlexibleHorizontalArrangement: Arrangement.Horizontal = Arrangement.SpaceBetween
 
     /**
      * An [Arrangement] that will be used to space [FlexibleBottomAppBar]'s with a fixed spacing.
      */
-    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-    @get:ExperimentalMaterial3ExpressiveApi
-    @ExperimentalMaterial3ExpressiveApi
-    val FlexibleFixedHorizontalArrangement: Arrangement.Horizontal =
+    public val FlexibleFixedHorizontalArrangement: Arrangement.Horizontal =
         Arrangement.spacedBy(DockedToolbarTokens.ContainerMaxSpacing, Alignment.CenterHorizontally)
 
-    // TODO: note that this scroll behavior may impact assistive technologies making the component
-    //  inaccessible. See @sample androidx.compose.material3.samples.ExitAlwaysBottomAppBar on how
-    //  to disable scrolling when touch exploration is enabled.
+    /**
+     * Default [AnimationSpec] that defines how the bottom app bar snaps to either fully collapsed
+     * or fully extended state when a fling or a drag scrolled it into an intermediate position.
+     */
+    public val snapAnimationSpec: AnimationSpec<Float>
+        @Composable get() = MotionSchemeKeyTokens.FastSpatial.value()
+
+    /**
+     * Default [DecayAnimationSpec] that defines how to fling the bottom app bar when the user
+     * flings the app bar itself, or the scrollable content.
+     */
+    public val flingAnimationSpec: DecayAnimationSpec<Float>
+        @Composable get() = rememberSplineBasedDecay()
+
     /**
      * Returns a [BottomAppBarScrollBehavior]. A bottom app bar that is set up with this
      * [BottomAppBarScrollBehavior] will immediately collapse when the content is pulled up, and
-     * will immediately appear when the content is pulled down.
+     * will immediately appear when the content is pulled down. Note: Scroll behavior is
+     * automatically disabled when a touch exploration service (e.g. TalkBack) is active to preserve
+     * accessibility.
      *
      * The returned [BottomAppBarScrollBehavior] is remembered across compositions.
      *
@@ -2264,18 +2617,19 @@ object BottomAppBarDefaults {
      *   [ExitAlwaysScrollBehavior]
      * @param snapAnimationSpec an optional [AnimationSpec] that defines how the bottom app bar
      *   snaps to either fully collapsed or fully extended state when a fling or a drag scrolled it
-     *   into an intermediate position
-     * @param flingAnimationSpec an optional [DecayAnimationSpec] that defined how to fling the
-     *   bottom app bar when the user flings the app bar itself, or the content below it
+     *   into an intermediate position. If `null` is provided, the app bar will not snap and will
+     *   remain in its current state.
+     * @param flingAnimationSpec an optional [DecayAnimationSpec] that defines how to fling the
+     *   bottom app bar when the user flings the app bar itself, or the scrollable content. If
+     *   `null` is provided, the app bar will not continue to animate its height based on the scroll
+     *   velocity.
      */
-    @ExperimentalMaterial3Api
     @Composable
-    fun exitAlwaysScrollBehavior(
+    public fun exitAlwaysScrollBehavior(
         state: BottomAppBarState = rememberBottomAppBarState(),
         canScroll: () -> Boolean = { true },
-        // TODO Load the motionScheme tokens from the component tokens file
-        snapAnimationSpec: AnimationSpec<Float>? = MotionSchemeKeyTokens.FastSpatial.value(),
-        flingAnimationSpec: DecayAnimationSpec<Float>? = rememberSplineBasedDecay(),
+        snapAnimationSpec: AnimationSpec<Float>? = BottomAppBarDefaults.snapAnimationSpec,
+        flingAnimationSpec: DecayAnimationSpec<Float>? = BottomAppBarDefaults.flingAnimationSpec,
     ): BottomAppBarScrollBehavior =
         remember(state, canScroll, snapAnimationSpec, flingAnimationSpec) {
             ExitAlwaysScrollBehavior(
@@ -2297,9 +2651,8 @@ object BottomAppBarDefaults {
  *   offset height offset should be between zero and [initialHeightOffsetLimit].
  * @param initialContentOffset the initial value for [BottomAppBarState.contentOffset]
  */
-@ExperimentalMaterial3Api
 @Composable
-fun rememberBottomAppBarState(
+public fun rememberBottomAppBarState(
     initialHeightOffsetLimit: Float = -Float.MAX_VALUE,
     initialHeightOffset: Float = 0f,
     initialContentOffset: Float = 0f,
@@ -2315,8 +2668,8 @@ fun rememberBottomAppBarState(
  *
  * In most cases, this state will be created via [rememberBottomAppBarState].
  */
-@ExperimentalMaterial3Api
-interface BottomAppBarState {
+@Stable
+public interface BottomAppBarState {
 
     /**
      * The bottom app bar's height offset limit in pixels, which represents the limit that a bottom
@@ -2324,7 +2677,7 @@ interface BottomAppBarState {
      *
      * Use this limit to coerce the [heightOffset] value when it's updated.
      */
-    var heightOffsetLimit: Float
+    public var heightOffsetLimit: Float
 
     /**
      * The bottom app bar's current height offset in pixels. This height offset is applied to the
@@ -2332,7 +2685,7 @@ interface BottomAppBarState {
      *
      * Updates to the [heightOffset] value are coerced between zero and [heightOffsetLimit].
      */
-    var heightOffset: Float
+    public var heightOffset: Float
 
     /**
      * The total offset of the content scrolled under the bottom app bar.
@@ -2341,7 +2694,7 @@ interface BottomAppBarState {
      * consumes scroll events. A common implementation would update the value to be the sum of all
      * [NestedScrollConnection.onPostScroll] `consumed.y` values.
      */
-    var contentOffset: Float
+    public var contentOffset: Float
 
     /**
      * A value that represents the collapsed height percentage of the app bar.
@@ -2349,11 +2702,11 @@ interface BottomAppBarState {
      * A `0.0` represents a fully expanded bar, and `1.0` represents a fully collapsed bar (computed
      * as [heightOffset] / [heightOffsetLimit]).
      */
-    val collapsedFraction: Float
+    public val collapsedFraction: Float
 
-    companion object {
+    public companion object {
         /** The default [Saver] implementation for [BottomAppBarState]. */
-        val Saver: Saver<BottomAppBarState, *> =
+        public val Saver: Saver<BottomAppBarState, *> =
             listSaver(
                 save = { listOf(it.heightOffsetLimit, it.heightOffset, it.contentOffset) },
                 restore = {
@@ -2377,15 +2730,13 @@ interface BottomAppBarState {
  *   offset height offset should be between zero and [initialHeightOffsetLimit].
  * @param initialContentOffset the initial value for [BottomAppBarState.contentOffset]
  */
-@ExperimentalMaterial3Api
-fun BottomAppBarState(
-    initialHeightOffsetLimit: Float,
-    initialHeightOffset: Float,
-    initialContentOffset: Float,
+public fun BottomAppBarState(
+    initialHeightOffsetLimit: Float = -Float.MAX_VALUE,
+    initialHeightOffset: Float = 0f,
+    initialContentOffset: Float = 0f,
 ): BottomAppBarState =
     BottomAppBarStateImpl(initialHeightOffsetLimit, initialHeightOffset, initialContentOffset)
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Stable
 private class BottomAppBarStateImpl(
     initialHeightOffsetLimit: Float,
@@ -2426,13 +2777,14 @@ private class BottomAppBarStateImpl(
  * @param state a [BottomAppBarState]
  * @param snapAnimationSpec an optional [AnimationSpec] that defines how the bottom app bar snaps to
  *   either fully collapsed or fully extended state when a fling or a drag scrolled it into an
- *   intermediate position
- * @param flingAnimationSpec an optional [DecayAnimationSpec] that defined how to fling the bottom
- *   app bar when the user flings the app bar itself, or the content below it
+ *   intermediate position. If `null` is provided, the app bar will not snap and will remain in its
+ *   current state.
+ * @param flingAnimationSpec an optional [DecayAnimationSpec] that defines how to fling the bottom
+ *   app bar when the user flings the app bar itself, or the scrollable content. If `null` is
+ *   provided, the app bar will not continue to animate its height based on the scroll velocity.
  * @param canScroll a callback used to determine whether scroll events are to be handled by this
  *   [ExitAlwaysScrollBehavior]
  */
-@OptIn(ExperimentalMaterial3Api::class)
 private class ExitAlwaysScrollBehavior(
     override val state: BottomAppBarState,
     override val snapAnimationSpec: AnimationSpec<Float>?,
@@ -2473,7 +2825,6 @@ private class ExitAlwaysScrollBehavior(
  * Settles the app bar by flinging, in case the given velocity is greater than zero, and snapping
  * after the fling settles.
  */
-@OptIn(ExperimentalMaterial3Api::class)
 private suspend fun settleAppBarBottom(
     state: BottomAppBarState,
     velocity: Float,
@@ -2538,11 +2889,6 @@ private val FABVerticalPadding = 12.dp - BottomAppBarVerticalPadding
  *
  * This SingleRowTopAppBar has slots for a title, subtitle, navigation icon, and actions.
  */
-@OptIn(
-    ExperimentalMaterial3Api::class,
-    ExperimentalMaterial3ExpressiveApi::class,
-    ExperimentalMaterial3ComponentOverrideApi::class,
-)
 @Composable
 private fun SingleRowTopAppBar(
     modifier: Modifier = Modifier,
@@ -2554,215 +2900,112 @@ private fun SingleRowTopAppBar(
     navigationIcon: @Composable () -> Unit,
     actions: @Composable RowScope.() -> Unit,
     expandedHeight: Dp,
+    contentPadding: PaddingValues,
     windowInsets: WindowInsets,
     colors: TopAppBarColors,
     scrollBehavior: TopAppBarScrollBehavior?,
 ) {
-    val scope =
-        SingleRowTopAppBarOverrideScope(
-            modifier = modifier,
+    require(expandedHeight.isSpecified && expandedHeight.isFinite) {
+        "The expandedHeight is expected to be specified and finite"
+    }
+
+    // Obtain the container color from the TopAppBarColors using the `overlapFraction`. This
+    // ensures that the colors will adjust whether the app bar behavior is pinned or scrolled.
+    // This may potentially animate or interpolate a transition between the container-color and
+    // the container's scrolled-color according to the app bar's scroll state.
+    val targetColor by
+        remember(colors, scrollBehavior) {
+            derivedStateOf {
+                val overlappingFraction = scrollBehavior?.state?.overlappedFraction ?: 0f
+                colors.containerColor(if (overlappingFraction > 0.01f) 1f else 0f)
+            }
+        }
+    // TODO: Load the motionScheme tokens from the component tokens file
+    val appBarContainerColor =
+        animateColorAsState(
+            targetColor,
+            animationSpec = MotionSchemeKeyTokens.DefaultEffects.value(),
+        )
+
+    // Wrap the given actions in a Row.
+    val actionsRow =
+        @Composable {
+            Row(
+                horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically,
+                content = actions,
+            )
+        }
+
+    // Set up support for resizing the top app bar when vertically dragging the bar itself.
+    val appBarDragModifier =
+        if (scrollBehavior != null && !scrollBehavior.isPinned) {
+            Modifier.draggable(
+                orientation = Orientation.Vertical,
+                state =
+                    rememberDraggableState { delta -> scrollBehavior.state.heightOffset += delta },
+                onDragStopped = { velocity ->
+                    settleAppBar(
+                        scrollBehavior.state,
+                        velocity,
+                        scrollBehavior.flingAnimationSpec,
+                        scrollBehavior.snapAnimationSpec,
+                    )
+                },
+            )
+        } else {
+            Modifier
+        }
+
+    // Compose a Surface with a TopAppBarLayout content.
+    // The surface's background color is animated as specified above.
+    // The height of the app bar is determined by subtracting the bar's height offset from the
+    // app bar's defined constant height value (i.e. the ContainerHeight token).
+    Box(
+        modifier =
+            modifier
+                .then(appBarDragModifier)
+                .drawBehind {
+                    val color = appBarContainerColor.value
+                    if (color != Color.Unspecified) {
+                        drawRect(color = color)
+                    }
+                }
+                .semantics { isTraversalGroup = true }
+                .pointerInput(Unit) {}
+    ) {
+        TopAppBarLayout(
+            modifier =
+                Modifier.windowInsetsPadding(windowInsets)
+                    // clip after padding so we don't show the title over the inset area
+                    .clipToBounds()
+                    .adjustHeightOffsetLimit(scrollBehavior),
+            scrolledOffset = { scrollBehavior?.state?.heightOffset ?: 0f },
+            navigationIconContentColor = colors.navigationIconContentColor,
+            titleContentColor = colors.titleContentColor,
+            actionIconContentColor = colors.actionIconContentColor,
+            subtitleContentColor = colors.subtitleContentColor,
             title = title,
             titleTextStyle = titleTextStyle,
             subtitle = subtitle,
             subtitleTextStyle = subtitleTextStyle,
+            titleAlpha = { 1f },
+            titleVerticalArrangement = Arrangement.Center,
             titleHorizontalAlignment = titleHorizontalAlignment,
+            titleBottomPadding = 0,
+            hideTitleSemantics = false,
             navigationIcon = navigationIcon,
-            actions = actions,
-            expandedHeight = expandedHeight,
-            windowInsets = windowInsets,
-            colors = colors,
-            scrollBehavior = scrollBehavior,
+            actions = actionsRow,
+            height = expandedHeight,
+            contentPadding = contentPadding,
         )
-    with(LocalSingleRowTopAppBarOverride.current) { scope.SingleRowTopAppBar() }
-}
-
-/**
- * Provides the default behavior of the [SingleRowTopAppBar] component. This implementation is used
- * when no override is specified.
- */
-@OptIn(ExperimentalMaterial3Api::class)
-@ExperimentalMaterial3ComponentOverrideApi
-object DefaultSingleRowTopAppBarOverride : SingleRowTopAppBarOverride {
-    @Composable
-    override fun SingleRowTopAppBarOverrideScope.SingleRowTopAppBar() {
-        require(expandedHeight.isSpecified && expandedHeight.isFinite) {
-            "The expandedHeight is expected to be specified and finite"
-        }
-
-        // Obtain the container color from the TopAppBarColors using the `overlapFraction`. This
-        // ensures that the colors will adjust whether the app bar behavior is pinned or scrolled.
-        // This may potentially animate or interpolate a transition between the container-color and
-        // the container's scrolled-color according to the app bar's scroll state.
-        val targetColor by
-            remember(colors, scrollBehavior) {
-                derivedStateOf {
-                    val overlappingFraction = scrollBehavior?.state?.overlappedFraction ?: 0f
-                    colors.containerColor(if (overlappingFraction > 0.01f) 1f else 0f)
-                }
-            }
-
-        val appBarContainerColor =
-            animateColorAsState(
-                targetColor,
-                // TODO Load the motionScheme tokens from the component tokens file
-                animationSpec = MotionSchemeKeyTokens.DefaultEffects.value(),
-            )
-
-        // Wrap the given actions in a Row.
-        val actionsRow =
-            @Composable {
-                Row(
-                    horizontalArrangement = Arrangement.End,
-                    verticalAlignment = Alignment.CenterVertically,
-                    content = actions,
-                )
-            }
-
-        // Set up support for resizing the top app bar when vertically dragging the bar itself.
-        val appBarDragModifier =
-            if (scrollBehavior != null && !scrollBehavior.isPinned) {
-                Modifier.draggable(
-                    orientation = Orientation.Vertical,
-                    state =
-                        rememberDraggableState { delta ->
-                            scrollBehavior.state.heightOffset += delta
-                        },
-                    onDragStopped = { velocity ->
-                        settleAppBar(
-                            scrollBehavior.state,
-                            velocity,
-                            scrollBehavior.flingAnimationSpec,
-                            scrollBehavior.snapAnimationSpec,
-                        )
-                    },
-                )
-            } else {
-                Modifier
-            }
-
-        // Compose a Surface with a TopAppBarLayout content.
-        // The surface's background color is animated as specified above.
-        // The height of the app bar is determined by subtracting the bar's height offset from the
-        // app bar's defined constant height value (i.e. the ContainerHeight token).
-        Box(
-            modifier =
-                modifier
-                    .then(appBarDragModifier)
-                    .drawBehind {
-                        val color = appBarContainerColor.value
-                        if (color != Color.Unspecified) {
-                            drawRect(color = color)
-                        }
-                    }
-                    .semantics { isTraversalGroup = true }
-                    .pointerInput(Unit) {}
-        ) {
-            TopAppBarLayout(
-                modifier =
-                    Modifier.windowInsetsPadding(windowInsets)
-                        // clip after padding so we don't show the title over the inset area
-                        .clipToBounds()
-                        .adjustHeightOffsetLimit(scrollBehavior),
-                scrolledOffset = { scrollBehavior?.state?.heightOffset ?: 0f },
-                navigationIconContentColor = colors.navigationIconContentColor,
-                titleContentColor = colors.titleContentColor,
-                actionIconContentColor = colors.actionIconContentColor,
-                subtitleContentColor = colors.subtitleContentColor,
-                title = title,
-                titleTextStyle = titleTextStyle,
-                subtitle = subtitle,
-                subtitleTextStyle = subtitleTextStyle,
-                titleAlpha = { 1f },
-                titleVerticalArrangement = Arrangement.Center,
-                titleHorizontalAlignment = titleHorizontalAlignment,
-                titleBottomPadding = 0,
-                hideTitleSemantics = false,
-                navigationIcon = navigationIcon,
-                actions = actionsRow,
-                height = expandedHeight,
-            )
-        }
     }
 }
-
-/**
- * Interface that allows libraries to override the behavior of single-row `TopAppBar` components.
- *
- * To override this component, implement the member function of this interface, then provide the
- * implementation to [LocalSingleRowTopAppBarOverride] in the Compose hierarchy.
- */
-@OptIn(ExperimentalMaterial3Api::class)
-@ExperimentalMaterial3ComponentOverrideApi
-interface SingleRowTopAppBarOverride {
-    /** Behavior function that is called by the [SingleRowTopAppBar] component. */
-    @Composable fun SingleRowTopAppBarOverrideScope.SingleRowTopAppBar()
-}
-
-/**
- * Parameters available to [SingleRowTopAppBar].
- *
- * @property modifier the [Modifier] to be applied to this top app bar
- * @property title the title to be displayed in the top app bar typically be an [IconButton] or
- *   [IconToggleButton].
- * @property titleTextStyle the title's text style
- * @property subtitle a lambda for providing an optional subtitle to be displayed in the top app bar
- *   in collapsed and expanded states.
- * @property subtitleTextStyle the subtitle's text style
- * @property titleHorizontalAlignment the title's horizontal alignment
- * @property navigationIcon the navigation icon displayed at the start of the top app bar. This
- *   should typically be an [IconButton] or [IconToggleButton].
- * @property actions the actions displayed at the end of the top app bar. This should typically be
- *   [IconButton]s. The default layout here is a [Row], so icons inside will be placed horizontally.
- * @property expandedHeight this app bar's height. When a specified [scrollBehavior] causes the app
- *   bar to collapse or expand, this value will represent the maximum height that the bar will be
- *   allowed to expand. This value must be specified and finite, otherwise it will be ignored and
- *   replaced with [TopAppBarDefaults.TopAppBarExpandedHeight].
- * @property windowInsets a window insets that app bar will respect.
- * @property colors [TopAppBarColors] that will be used to resolve the colors used for this top app
- *   bar in different states. See [TopAppBarDefaults.topAppBarColors].
- * @property scrollBehavior a [TopAppBarScrollBehavior] which holds various offset values that will
- *   be applied by this top app bar to set up its height and colors. A scroll behavior is designed
- *   to work in conjunction with a scrolled content to change the top app bar appearance as the
- *   content scrolls. See [TopAppBarScrollBehavior.nestedScrollConnection].
- */
-@OptIn(ExperimentalMaterial3Api::class)
-@ExperimentalMaterial3ComponentOverrideApi
-class SingleRowTopAppBarOverrideScope
-internal constructor(
-    val modifier: Modifier,
-    val title: @Composable () -> Unit,
-    val titleTextStyle: TextStyle,
-    val subtitle: (@Composable () -> Unit)?,
-    val subtitleTextStyle: TextStyle,
-    val titleHorizontalAlignment: Alignment.Horizontal,
-    val navigationIcon: @Composable () -> Unit,
-    val actions: @Composable RowScope.() -> Unit,
-    val expandedHeight: Dp,
-    val windowInsets: WindowInsets,
-    val colors: TopAppBarColors,
-    val scrollBehavior: TopAppBarScrollBehavior?,
-)
-
-/** CompositionLocal containing the currently-selected [SingleRowTopAppBarOverride]. */
-@Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-@get:OptIn(ExperimentalMaterial3Api::class)
-@OptIn(ExperimentalMaterial3Api::class)
-@get:ExperimentalMaterial3ComponentOverrideApi
-@ExperimentalMaterial3ComponentOverrideApi
-val LocalSingleRowTopAppBarOverride: ProvidableCompositionLocal<SingleRowTopAppBarOverride> =
-    compositionLocalOf {
-        DefaultSingleRowTopAppBarOverride
-    }
 
 /**
  * A two-rows top app bar that is designed to be called by the Large and Medium top app bar
  * composables.
  */
-@OptIn(
-    ExperimentalMaterial3Api::class,
-    ExperimentalMaterial3ExpressiveApi::class,
-    ExperimentalMaterial3ComponentOverrideApi::class
-)
 @Composable
 private fun TwoRowsTopAppBar(
     modifier: Modifier = Modifier,
@@ -2784,248 +3027,126 @@ private fun TwoRowsTopAppBar(
     colors: TopAppBarColors,
     scrollBehavior: TopAppBarScrollBehavior?,
 ) {
-    val scope =
-        TwoRowsTopAppBarOverrideScope(
-            modifier = modifier,
-            title = title,
-            titleTextStyle = titleTextStyle,
-            titleBottomPadding = titleBottomPadding,
-            smallTitle = smallTitle,
-            smallTitleTextStyle = smallTitleTextStyle,
-            subtitle = subtitle,
-            subtitleTextStyle = subtitleTextStyle,
-            smallSubtitle = smallSubtitle,
-            smallSubtitleTextStyle = smallSubtitleTextStyle,
-            titleHorizontalAlignment = titleHorizontalAlignment,
-            navigationIcon = navigationIcon,
-            actions = actions,
-            collapsedHeight = collapsedHeight,
-            expandedHeight = expandedHeight,
-            windowInsets = windowInsets,
-            colors = colors,
-            scrollBehavior = scrollBehavior,
-        )
-    with(LocalTwoRowsTopAppBarOverride.current) { scope.TwoRowsTopAppBar() }
-}
+    require(collapsedHeight.isSpecified && collapsedHeight.isFinite) {
+        "The collapsedHeight is expected to be specified and finite"
+    }
+    require(expandedHeight.isSpecified && expandedHeight.isFinite) {
+        "The expandedHeight is expected to be specified and finite"
+    }
+    require(expandedHeight >= collapsedHeight) {
+        "The expandedHeight is expected to be greater or equal to the collapsedHeight"
+    }
+    val titleBottomPaddingPx = with(LocalDensity.current) { titleBottomPadding.roundToPx() }
 
-/**
- * Provides the default behavior of the [TwoRowsTopAppBar] component. This implementation is used
- * when no override is specified.
- */
-@OptIn(ExperimentalMaterial3Api::class)
-@ExperimentalMaterial3ComponentOverrideApi
-object DefaultTwoRowsTopAppBarOverride : TwoRowsTopAppBarOverride {
-    @Composable
-    override fun TwoRowsTopAppBarOverrideScope.TwoRowsTopAppBar() {
-        require(collapsedHeight.isSpecified && collapsedHeight.isFinite) {
-            "The collapsedHeight is expected to be specified and finite"
+    // Obtain the container Color from the TopAppBarColors using the `collapsedFraction`, as the
+    // bottom part of this TwoRowsTopAppBar changes color at the same rate the app bar expands
+    // or collapse.
+    // This will potentially animate or interpolate a transition between the container color and
+    // the container's scrolled color according to the app bar's scroll state.
+    val colorTransitionFraction = { scrollBehavior?.state?.collapsedFraction ?: 0f }
+    val appBarContainerColor = { colors.containerColor(colorTransitionFraction()) }
+
+    // Wrap the given actions in a Row.
+    val actionsRow =
+        @Composable {
+            Row(
+                horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically,
+                content = actions,
+            )
         }
-        require(expandedHeight.isSpecified && expandedHeight.isFinite) {
-            "The expandedHeight is expected to be specified and finite"
+    val topTitleAlpha = { TopTitleAlphaEasing.transform(colorTransitionFraction()) }
+    val bottomTitleAlpha = { 1f - colorTransitionFraction() }
+    // Hide the top row title semantics when its alpha value goes below 0.5 threshold.
+    // Hide the bottom row title semantics when the top title semantics are active.
+    val hideTopRowSemantics by
+        remember(colorTransitionFraction) { derivedStateOf { colorTransitionFraction() < 0.5f } }
+    val hideBottomRowSemantics = !hideTopRowSemantics
+
+    // Set up support for resizing the top app bar when vertically dragging the bar itself.
+    val appBarDragModifier =
+        if (scrollBehavior != null && !scrollBehavior.isPinned) {
+            Modifier.draggable(
+                orientation = Orientation.Vertical,
+                state =
+                    rememberDraggableState { delta -> scrollBehavior.state.heightOffset += delta },
+                onDragStopped = { velocity ->
+                    settleAppBar(
+                        scrollBehavior.state,
+                        velocity,
+                        scrollBehavior.flingAnimationSpec,
+                        scrollBehavior.snapAnimationSpec,
+                    )
+                },
+            )
+        } else {
+            Modifier
         }
-        require(expandedHeight >= collapsedHeight) {
-            "The expandedHeight is expected to be greater or equal to the collapsedHeight"
-        }
-        val titleBottomPaddingPx = with(LocalDensity.current) { titleBottomPadding.roundToPx() }
 
-        // Obtain the container Color from the TopAppBarColors using the `collapsedFraction`, as the
-        // bottom part of this TwoRowsTopAppBar changes color at the same rate the app bar expands
-        // or collapse.
-        // This will potentially animate or interpolate a transition between the container color and
-        // the container's scrolled color according to the app bar's scroll state.
-        val colorTransitionFraction = { scrollBehavior?.state?.collapsedFraction ?: 0f }
-        val appBarContainerColor = { colors.containerColor(colorTransitionFraction()) }
-
-        // Wrap the given actions in a Row.
-        val actionsRow =
-            @Composable {
-                Row(
-                    horizontalArrangement = Arrangement.End,
-                    verticalAlignment = Alignment.CenterVertically,
-                    content = actions,
-                )
-            }
-        val topTitleAlpha = { TopTitleAlphaEasing.transform(colorTransitionFraction()) }
-        val bottomTitleAlpha = { 1f - colorTransitionFraction() }
-        // Hide the top row title semantics when its alpha value goes below 0.5 threshold.
-        // Hide the bottom row title semantics when the top title semantics are active.
-        val hideTopRowSemantics by
-            remember(colorTransitionFraction) {
-                derivedStateOf { colorTransitionFraction() < 0.5f }
-            }
-        val hideBottomRowSemantics = !hideTopRowSemantics
-
-        // Set up support for resizing the top app bar when vertically dragging the bar itself.
-        val appBarDragModifier =
-            if (scrollBehavior != null && !scrollBehavior.isPinned) {
-                Modifier.draggable(
-                    orientation = Orientation.Vertical,
-                    state =
-                        rememberDraggableState { delta ->
-                            scrollBehavior.state.heightOffset += delta
-                        },
-                    onDragStopped = { velocity ->
-                        settleAppBar(
-                            scrollBehavior.state,
-                            velocity,
-                            scrollBehavior.flingAnimationSpec,
-                            scrollBehavior.snapAnimationSpec,
-                        )
-                    },
-                )
-            } else {
-                Modifier
-            }
-
-        Box(
-            modifier =
-                modifier
-                    .then(appBarDragModifier)
-                    .drawBehind { drawRect(color = appBarContainerColor()) }
-                    .semantics { isTraversalGroup = true }
-                    .pointerInput(Unit) {}
-        ) {
-            Column {
-                TopAppBarLayout(
-                    modifier =
-                        Modifier.windowInsetsPadding(windowInsets)
-                            // clip after padding so we don't show the title over the inset area
-                            .clipToBounds(),
-                    scrolledOffset = { 0f },
-                    navigationIconContentColor = colors.navigationIconContentColor,
-                    titleContentColor = colors.titleContentColor,
-                    actionIconContentColor = colors.actionIconContentColor,
-                    subtitleContentColor = colors.subtitleContentColor,
-                    title = smallTitle,
-                    titleTextStyle = smallTitleTextStyle,
-                    subtitle = smallSubtitle,
-                    subtitleTextStyle = smallSubtitleTextStyle,
-                    titleAlpha = topTitleAlpha,
-                    titleVerticalArrangement = Arrangement.Center,
-                    titleHorizontalAlignment = titleHorizontalAlignment,
-                    titleBottomPadding = 0,
-                    hideTitleSemantics = hideTopRowSemantics,
-                    navigationIcon = navigationIcon,
-                    actions = actionsRow,
-                    height = collapsedHeight,
-                )
-                TopAppBarLayout(
-                    modifier =
-                        Modifier
-                            // only apply the horizontal sides of the window insets padding, since
-                            // the top padding will always be applied by the layout above
-                            .windowInsetsPadding(windowInsets.only(WindowInsetsSides.Horizontal))
-                            .clipToBounds()
-                            .adjustHeightOffsetLimit(scrollBehavior),
-                    scrolledOffset = { scrollBehavior?.state?.heightOffset ?: 0f },
-                    navigationIconContentColor = colors.navigationIconContentColor,
-                    titleContentColor = colors.titleContentColor,
-                    actionIconContentColor = colors.actionIconContentColor,
-                    subtitleContentColor = colors.subtitleContentColor,
-                    title = title,
-                    titleTextStyle = titleTextStyle,
-                    subtitle = subtitle,
-                    subtitleTextStyle = subtitleTextStyle,
-                    titleAlpha = bottomTitleAlpha,
-                    titleVerticalArrangement = Arrangement.Bottom,
-                    titleHorizontalAlignment = titleHorizontalAlignment,
-                    titleBottomPadding = titleBottomPaddingPx,
-                    hideTitleSemantics = hideBottomRowSemantics,
-                    navigationIcon = {},
-                    actions = {},
-                    height = expandedHeight - collapsedHeight,
-                )
-            }
+    Box(
+        modifier =
+            modifier
+                .then(appBarDragModifier)
+                .drawBehind { drawRect(color = appBarContainerColor()) }
+                .semantics { isTraversalGroup = true }
+                .pointerInput(Unit) {}
+    ) {
+        Column {
+            TopAppBarLayout(
+                modifier =
+                    Modifier.windowInsetsPadding(windowInsets)
+                        // clip after padding so we don't show the title over the inset area
+                        .clipToBounds(),
+                scrolledOffset = { 0f },
+                navigationIconContentColor = colors.navigationIconContentColor,
+                titleContentColor = colors.titleContentColor,
+                actionIconContentColor = colors.actionIconContentColor,
+                subtitleContentColor = colors.subtitleContentColor,
+                title = smallTitle,
+                titleTextStyle = smallTitleTextStyle,
+                subtitle = smallSubtitle,
+                subtitleTextStyle = smallSubtitleTextStyle,
+                titleAlpha = topTitleAlpha,
+                titleVerticalArrangement = Arrangement.Center,
+                titleHorizontalAlignment = titleHorizontalAlignment,
+                titleBottomPadding = 0,
+                hideTitleSemantics = hideTopRowSemantics,
+                navigationIcon = navigationIcon,
+                actions = actionsRow,
+                height = collapsedHeight,
+                contentPadding = TopAppBarDefaults.ContentPadding,
+            )
+            TopAppBarLayout(
+                modifier =
+                    Modifier
+                        // only apply the horizontal sides of the window insets padding, since
+                        // the top padding will always be applied by the layout above
+                        .windowInsetsPadding(windowInsets.only(WindowInsetsSides.Horizontal))
+                        .clipToBounds()
+                        .adjustHeightOffsetLimit(scrollBehavior),
+                scrolledOffset = { scrollBehavior?.state?.heightOffset ?: 0f },
+                navigationIconContentColor = colors.navigationIconContentColor,
+                titleContentColor = colors.titleContentColor,
+                actionIconContentColor = colors.actionIconContentColor,
+                subtitleContentColor = colors.subtitleContentColor,
+                title = title,
+                titleTextStyle = titleTextStyle,
+                subtitle = subtitle,
+                subtitleTextStyle = subtitleTextStyle,
+                titleAlpha = bottomTitleAlpha,
+                titleVerticalArrangement = Arrangement.Bottom,
+                titleHorizontalAlignment = titleHorizontalAlignment,
+                titleBottomPadding = titleBottomPaddingPx,
+                hideTitleSemantics = hideBottomRowSemantics,
+                navigationIcon = {},
+                actions = {},
+                height = expandedHeight - collapsedHeight,
+                contentPadding = TopAppBarDefaults.ContentPadding,
+            )
         }
     }
 }
 
-/**
- * Interface that allows libraries to override the behavior of two-row `TopAppBar` components.
- *
- * To override this component, implement the member function of this interface, then provide the
- * implementation to [LocalTwoRowsTopAppBarOverride] in the Compose hierarchy.
- */
-@OptIn(ExperimentalMaterial3Api::class)
-@ExperimentalMaterial3ComponentOverrideApi
-interface TwoRowsTopAppBarOverride {
-    /** Behavior function that is called by the [TwoRowsTopAppBar] component. */
-    @Composable fun TwoRowsTopAppBarOverrideScope.TwoRowsTopAppBar()
-}
-
-/**
- * Parameters available to [TwoRowsTopAppBar].
- *
- * @property title a lambda for providing a title to be displayed in the top app bar in collapsed
- *   and expanded states. By default a small-app-bar [TextStyle] is applied to the Composition, and
- *   you may override it by wrapping your provided component with a composition local. Note that
- *   unlike the large or medium top app bars, the `TwoRowsTopAppBar` does not append bottom padding
- *   to the expanded title Composable by default. Padding should be applied directly to the provided
- *   expanded title, or to the [subtitle] that appears below it.
- * @property modifier the [Modifier] to be applied to this top app bar
- * @property subtitle a lambda for providing an optional subtitle to be displayed in the top app bar
- *   in collapsed and expanded states.
- * @property navigationIcon the navigation icon displayed at the start of the top app bar. This
- *   should typically be an [IconButton] or [IconToggleButton].
- * @property actions the actions displayed at the end of the top app bar. This should typically be
- *   [IconButton]s. The default layout here is a [Row], so icons inside will be placed horizontally.
- * @property titleHorizontalAlignment the horizontal alignment of the title and subtitle
- * @property collapsedHeight the app bar's height in its collapsed state. Note that this value might
- *   be adjusted to support displaying larger fonts. In case the provided value is [Dp.Unspecified]
- *   or [Dp.Infinity], the height will default to [TopAppBarDefaults.MediumAppBarCollapsedHeight].
- * @property expandedHeight this app bar's height in its expanded state. When a specified
- *   [scrollBehavior] causes the app bar to collapse or expand, this value will represent the total
- *   height that the app-bar will expand to. The expanded height is expected to be greater or equal
- *   to the [collapsedHeight], and the function will throw an [IllegalArgumentException] otherwise.
- *   Note that this value might be adjusted to support displaying larger fonts. In case the provided
- *   value is [Dp.Unspecified] or [Dp.Infinity], the height will default to
- *   [TopAppBarDefaults.MediumFlexibleAppBarWithSubtitleExpandedHeight] when an [expandedSubtitle]
- *   is provided, or to [TopAppBarDefaults.MediumFlexibleAppBarWithoutSubtitleExpandedHeight] when
- *   it's not.
- * @property windowInsets a window insets that app bar will respect.
- * @property colors [TopAppBarColors] that will be used to resolve the colors used for this top app
- *   bar in different states. See [TopAppBarDefaults.topAppBarColors].
- * @property scrollBehavior a [TopAppBarScrollBehavior] which holds various offset values that will
- *   be applied by this top app bar to set up its height and colors. A scroll behavior is designed
- *   to work in conjunction with a scrolled content to change the top app bar appearance as the
- *   content scrolls. See [TopAppBarScrollBehavior.nestedScrollConnection].
- */
-@OptIn(ExperimentalMaterial3Api::class)
-@ExperimentalMaterial3ComponentOverrideApi
-class TwoRowsTopAppBarOverrideScope
-internal constructor(
-    val modifier: Modifier,
-    val title: @Composable () -> Unit,
-    val titleTextStyle: TextStyle,
-    val titleBottomPadding: Dp,
-    val smallTitle: @Composable () -> Unit,
-    val smallTitleTextStyle: TextStyle,
-    val subtitle: (@Composable () -> Unit)?,
-    val subtitleTextStyle: TextStyle,
-    val smallSubtitle: (@Composable () -> Unit)?,
-    val smallSubtitleTextStyle: TextStyle,
-    val titleHorizontalAlignment: Alignment.Horizontal,
-    val navigationIcon: @Composable () -> Unit,
-    val actions: @Composable RowScope.() -> Unit,
-    val collapsedHeight: Dp,
-    val expandedHeight: Dp,
-    val windowInsets: WindowInsets,
-    val colors: TopAppBarColors,
-    val scrollBehavior: TopAppBarScrollBehavior?,
-)
-
-/** CompositionLocal containing the currently-selected [TwoRowsTopAppBarOverride]. */
-@Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-@get:OptIn(ExperimentalMaterial3Api::class)
-@OptIn(ExperimentalMaterial3Api::class)
-@get:ExperimentalMaterial3ComponentOverrideApi
-@ExperimentalMaterial3ComponentOverrideApi
-val LocalTwoRowsTopAppBarOverride: ProvidableCompositionLocal<TwoRowsTopAppBarOverride> =
-    compositionLocalOf {
-        DefaultTwoRowsTopAppBarOverride
-    }
-
-@OptIn(ExperimentalMaterial3Api::class)
 private fun Modifier.adjustHeightOffsetLimit(scrollBehavior: TopAppBarScrollBehavior?) =
     scrollBehavior?.state?.let {
         onSizeChanged { size ->
@@ -3063,8 +3184,8 @@ private fun Modifier.adjustHeightOffsetLimit(scrollBehavior: TopAppBarScrollBeha
  * @param navigationIcon a navigation icon [Composable]
  * @param actions actions [Composable]
  * @param height this app bar's requested height
+ * @param contentPadding the padding applied to the content of this TopAppBar.
  */
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun TopAppBarLayout(
     modifier: Modifier,
@@ -3085,6 +3206,7 @@ private fun TopAppBarLayout(
     navigationIcon: @Composable () -> Unit,
     actions: @Composable () -> Unit,
     height: Dp,
+    contentPadding: PaddingValues,
 ) {
     Layout(
         {
@@ -3100,8 +3222,11 @@ private fun TopAppBarLayout(
                         Modifier.layoutId("title")
                             .padding(horizontal = TopAppBarHorizontalPadding)
                             .then(
-                                if (hideTitleSemantics) Modifier.clearAndSetSemantics {}
-                                else Modifier
+                                if (hideTitleSemantics) {
+                                    Modifier.clearAndSetSemantics {}
+                                } else {
+                                    Modifier.semantics { isTraversalGroup = true }
+                                }
                             )
                             .graphicsLayer { alpha = titleAlpha() },
                     horizontalAlignment = titleHorizontalAlignment,
@@ -3157,18 +3282,19 @@ private fun TopAppBarLayout(
                     titleHorizontalAlignment,
                     titleBottomPadding,
                     height,
+                    contentPadding,
                 )
             },
     )
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 private class TopAppBarMeasurePolicy(
     val scrolledOffset: FloatProducer,
     val titleVerticalArrangement: Arrangement.Vertical,
     val titleHorizontalAlignment: Alignment.Horizontal,
     val titleBottomPadding: Int,
     val height: Dp,
+    val contentPadding: PaddingValues,
 ) : MeasurePolicy {
     override fun MeasureScope.measure(
         measurables: List<Measurable>,
@@ -3182,12 +3308,18 @@ private class TopAppBarMeasurePolicy(
             measurables
                 .fastFirst { it.layoutId == "actionIcons" }
                 .measure(constraints.copy(minWidth = 0))
-
+        val startPaddingPx = contentPadding.calculateStartPadding(layoutDirection)
+        val endPaddingPx = contentPadding.calculateEndPadding(layoutDirection)
+        val titleStartSpace = max(TopAppBarTitleInset.roundToPx(), navigationIconPlaceable.width)
         val maxTitleWidth =
             if (constraints.maxWidth == Constraints.Infinity) {
                 constraints.maxWidth
             } else {
-                (constraints.maxWidth - navigationIconPlaceable.width - actionIconsPlaceable.width)
+                (constraints.maxWidth -
+                        titleStartSpace -
+                        actionIconsPlaceable.width -
+                        startPaddingPx.roundToPx() -
+                        endPaddingPx.roundToPx())
                     .coerceAtLeast(0)
             }
         val titlePlaceable =
@@ -3207,8 +3339,10 @@ private class TopAppBarMeasurePolicy(
         // equal or smaller than zero.
         val scrolledOffsetValue = scrolledOffset()
         val heightOffset = if (scrolledOffsetValue.isNaN()) 0 else scrolledOffsetValue.roundToInt()
-
-        val maxLayoutHeight = max(height.roundToPx(), titlePlaceable.height)
+        val topPaddingPx = contentPadding.calculateTopPadding().roundToPx()
+        val bottomPaddingPx = contentPadding.calculateBottomPadding().roundToPx()
+        val maxLayoutHeight =
+            max(height.roundToPx(), titlePlaceable.height) + topPaddingPx + bottomPaddingPx
         val layoutHeight =
             if (constraints.maxHeight == Constraints.Infinity) {
                 maxLayoutHeight
@@ -3224,6 +3358,7 @@ private class TopAppBarMeasurePolicy(
             titlePlaceable,
             actionIconsPlaceable,
             titleBaseline,
+            contentPadding,
         )
     }
 
@@ -3265,12 +3400,18 @@ private class TopAppBarMeasurePolicy(
         titlePlaceable: Placeable,
         actionIconsPlaceable: Placeable,
         titleBaseline: Int,
-    ): MeasureResult =
-        layout(constraints.maxWidth, layoutHeight) {
+        contentPadding: PaddingValues,
+    ): MeasureResult {
+        val topPadding = contentPadding.calculateTopPadding().roundToPx()
+        val bottomPadding = contentPadding.calculateBottomPadding().roundToPx()
+        val startPadding = contentPadding.calculateStartPadding(layoutDirection).roundToPx()
+        val endPadding = contentPadding.calculateEndPadding(layoutDirection).roundToPx()
+        val contentHeight = layoutHeight + topPadding - bottomPadding
+        return layout(constraints.maxWidth, layoutHeight) {
             // Navigation icon
             navigationIconPlaceable.placeRelative(
-                x = 0,
-                y = (layoutHeight - navigationIconPlaceable.height) / 2,
+                x = startPadding,
+                y = (contentHeight - navigationIconPlaceable.height) / 2,
             )
 
             titlePlaceable.let {
@@ -3292,20 +3433,22 @@ private class TopAppBarMeasurePolicy(
                 // Reposition the title based on the start and the end (i.e. the navigation and
                 // action widths).
                 if (titleX < start) {
-                    titleX += (start - titleX)
+                    titleX += startPadding + (start - titleX)
                 } else if (titleX + titlePlaceable.width > constraints.maxWidth - end) {
-                    titleX += ((constraints.maxWidth - end) - (titleX + titlePlaceable.width))
+                    titleX +=
+                        startPadding +
+                            ((constraints.maxWidth - end) - (titleX + titlePlaceable.width))
                 }
 
                 // The titleVerticalArrangement is always one of Center or Bottom.
                 val titleY =
                     when (titleVerticalArrangement) {
-                        Arrangement.Center -> (layoutHeight - titlePlaceable.height) / 2
+                        Arrangement.Center -> (contentHeight - titlePlaceable.height) / 2
                         // Apply bottom padding from the title's baseline only when the Arrangement
                         // is "Bottom".
                         Arrangement.Bottom ->
                             if (titleBottomPadding == 0) {
-                                layoutHeight - titlePlaceable.height
+                                contentHeight - titlePlaceable.height
                             } else {
                                 // Calculate the actual padding from the bottom of the title, taking
                                 // into account its baseline.
@@ -3321,7 +3464,9 @@ private class TopAppBarMeasurePolicy(
                                         paddingFromBottom
                                     }
 
-                                layoutHeight - titlePlaceable.height - max(0, adjustedBottomPadding)
+                                contentHeight -
+                                    titlePlaceable.height -
+                                    max(0, adjustedBottomPadding)
                             }
                         // Arrangement.Top
                         else -> 0
@@ -3332,10 +3477,11 @@ private class TopAppBarMeasurePolicy(
 
             // Action icons
             actionIconsPlaceable.placeRelative(
-                x = constraints.maxWidth - actionIconsPlaceable.width,
-                y = (layoutHeight - actionIconsPlaceable.height) / 2,
+                x = constraints.maxWidth - actionIconsPlaceable.width - endPadding,
+                y = (contentHeight - actionIconsPlaceable.height) / 2,
             )
         }
+    }
 }
 
 /**
@@ -3346,11 +3492,18 @@ private class TopAppBarMeasurePolicy(
  * @param canScroll a callback used to determine whether scroll events are to be handled by this
  *   [PinnedScrollBehavior]
  */
-@OptIn(ExperimentalMaterial3Api::class)
 private class PinnedScrollBehavior(
     override val state: TopAppBarState,
     val canScroll: () -> Boolean = { true },
+    isScrollingContentAtStart: (() -> Boolean)? = null,
 ) : TopAppBarScrollBehavior {
+
+    init {
+        if (isScrollingContentAtStart != null) {
+            state.isScrollingContentAtStart = isScrollingContentAtStart
+        }
+    }
+
     override val isPinned: Boolean = true
     override val snapAnimationSpec: AnimationSpec<Float>? = null
     override val flingAnimationSpec: DecayAnimationSpec<Float>? = null
@@ -3387,16 +3540,17 @@ private class PinnedScrollBehavior(
  * @param state a [TopAppBarState]
  * @param snapAnimationSpec an optional [AnimationSpec] that defines how the top app bar snaps to
  *   either fully collapsed or fully extended state when a fling or a drag scrolled it into an
- *   intermediate position
- * @param flingAnimationSpec an optional [DecayAnimationSpec] that defined how to fling the top app
- *   bar when the user flings the app bar itself, or the content below it
+ *   intermediate position. If `null` is provided, the app bar will not snap and will remain in its
+ *   current state.
+ * @param flingAnimationSpec an optional [DecayAnimationSpec] that defines how to fling the top app
+ *   bar when the user flings the app bar itself, or the scrollable content. If `null` is provided,
+ *   the app bar will not continue to animate its height based on the scroll velocity.
  * @param canScroll a callback used to determine whether scroll events are to be handled by this
  *   [EnterAlwaysScrollBehavior]
  * @param reverseLayout indicates that this behavior is applied to a scrollable content that has a
  *   reversed direction of scrolling and layout
  */
-@OptIn(ExperimentalMaterial3Api::class)
-private class EnterAlwaysScrollBehavior(
+private class LegacyEnterAlwaysScrollBehavior(
     override val state: TopAppBarState,
     override val snapAnimationSpec: AnimationSpec<Float>?,
     override val flingAnimationSpec: DecayAnimationSpec<Float>?,
@@ -3463,13 +3617,90 @@ private class EnterAlwaysScrollBehavior(
  * @param state a [TopAppBarState]
  * @param snapAnimationSpec an optional [AnimationSpec] that defines how the top app bar snaps to
  *   either fully collapsed or fully extended state when a fling or a drag scrolled it into an
- *   intermediate position
- * @param flingAnimationSpec an optional [DecayAnimationSpec] that defined how to fling the top app
- *   bar when the user flings the app bar itself, or the content below it
+ *   intermediate position. If `null` is provided, the app bar will not snap and will remain in its
+ *   current state.
+ * @param flingAnimationSpec an optional [DecayAnimationSpec] that defines how to fling the top app
+ *   bar when the user flings the app bar itself, or the scrollable content. If `null` is provided,
+ *   the app bar will not continue to animate its height based on the scroll velocity.
+ * @param canScroll a callback used to determine whether scroll events are to be handled by this
+ *   [EnterAlwaysScrollBehavior]
+ */
+private class EnterAlwaysScrollBehavior(
+    override val state: TopAppBarState,
+    override val snapAnimationSpec: AnimationSpec<Float>?,
+    override val flingAnimationSpec: DecayAnimationSpec<Float>?,
+    val canScroll: () -> Boolean = { true },
+    isScrollingContentAtStart: (() -> Boolean)? = null,
+) : TopAppBarScrollBehavior {
+
+    init {
+        if (isScrollingContentAtStart != null) {
+            state.isScrollingContentAtStart = isScrollingContentAtStart
+        }
+    }
+
+    override val isPinned: Boolean = false
+    override var nestedScrollConnection =
+        object : NestedScrollConnection {
+            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                if (!canScroll()) return Offset.Zero
+                val prevHeightOffset = state.heightOffset
+                state.heightOffset += available.y
+                // The state's heightOffset is coerce in a minimum value of heightOffsetLimit and a
+                // maximum value 0f, so we check if its value was actually changed after the
+                // available.y was added to it in order to tell if the top app bar is currently
+                // collapsing or expanding.
+                return if (prevHeightOffset != state.heightOffset) {
+                    // We're in the middle of top app bar collapse or expand.
+                    // Consume only the scroll on the Y axis.
+                    available.copy(x = 0f)
+                } else {
+                    Offset.Zero
+                }
+            }
+
+            override fun onPostScroll(
+                consumed: Offset,
+                available: Offset,
+                source: NestedScrollSource,
+            ): Offset {
+                if (!canScroll()) return Offset.Zero
+                state.contentOffset += consumed.y
+                return Offset.Zero
+            }
+
+            override suspend fun onPostFling(consumed: Velocity, available: Velocity): Velocity {
+                if (available.y > 0f) {
+                    // Reset the total content offset to zero when scrolling all the way down.
+                    // This will eliminate some float precision inaccuracies.
+                    state.contentOffset = 0f
+                }
+                val superConsumed = super.onPostFling(consumed, available)
+                return superConsumed +
+                    settleAppBar(state, available.y, flingAnimationSpec, snapAnimationSpec)
+            }
+        }
+}
+
+/**
+ * A [TopAppBarScrollBehavior] that adjusts its properties to affect the colors and height of a top
+ * app bar.
+ *
+ * A top app bar that is set up with this [TopAppBarScrollBehavior] will immediately collapse when
+ * the nested content is pulled up, and will expand back the collapsed area when the content is
+ * pulled all the way down.
+ *
+ * @param state a [TopAppBarState]
+ * @param snapAnimationSpec an optional [AnimationSpec] that defines how the top app bar snaps to
+ *   either fully collapsed or fully extended state when a fling or a drag scrolled it into an
+ *   intermediate position. If `null` is provided, the app bar will not snap and will remain in its
+ *   current state.
+ * @param flingAnimationSpec an optional [DecayAnimationSpec] that defines how to fling the top app
+ *   bar when the user flings the app bar itself, or the scrollable content. If `null` is provided,
+ *   the app bar will not continue to animate its height based on the scroll velocity.
  * @param canScroll a callback used to determine whether scroll events are to be handled by this
  *   [ExitUntilCollapsedScrollBehavior]
  */
-@OptIn(ExperimentalMaterial3Api::class)
 private class ExitUntilCollapsedScrollBehavior(
     override val state: TopAppBarState,
     override val snapAnimationSpec: AnimationSpec<Float>?,
@@ -3536,7 +3767,6 @@ private class ExitUntilCollapsedScrollBehavior(
  * Settles the app bar by flinging, in case the given velocity is greater than zero, and snapping
  * after the fling settles.
  */
-@OptIn(ExperimentalMaterial3Api::class)
 private suspend fun settleAppBar(
     state: TopAppBarState,
     velocity: Float,
@@ -3593,7 +3823,7 @@ private fun rememberTouchExplorationService() =
     rememberAccessibilityServiceState(
         listenToTouchExplorationState = true,
         listenToSwitchAccessState = false,
-        listenToVoiceAccessState = false
+        listenToVoiceAccessState = false,
     )
 
 // An easing function used to compute the alpha value that is applied to the top title part of a
@@ -3601,9 +3831,12 @@ private fun rememberTouchExplorationService() =
 /*@VisibleForTesting*/
 internal val TopTitleAlphaEasing = CubicBezierEasing(.8f, 0f, .8f, .15f)
 
-private val MediumTitleBottomPadding = 24.dp
-private val LargeTitleBottomPadding = 28.dp
-private val TopAppBarHorizontalPadding = 4.dp
+private val MediumTitleBottomPadding
+    get() = 24.dp
+private val LargeTitleBottomPadding
+    get() = 28.dp
+private val TopAppBarHorizontalPadding
+    get() = 4.dp
 
 // A title inset when the App-Bar is a Medium or Large one. Also used to size a spacer when the
 // navigation icon is missing.

@@ -92,7 +92,7 @@ open class MainProcessWidget : MultiProcessGlanceAppWidget() {
                     "Click to log from $currentProcess (lambda)",
                     onClick = {
                         android.util.Log.e("WIDGET", "Running ${this::class} in $currentProcess")
-                    }
+                    },
                 )
                 Button(
                     "Click to log from $currentProcess (broadcast callback)",
@@ -107,7 +107,7 @@ class LogProcessAction : ActionCallback {
     override suspend fun onAction(
         context: Context,
         glanceId: GlanceId,
-        parameters: ActionParameters
+        parameters: ActionParameters,
     ) {
         android.util.Log.e("WIDGET", "Running ${this::class} in $currentProcess")
     }

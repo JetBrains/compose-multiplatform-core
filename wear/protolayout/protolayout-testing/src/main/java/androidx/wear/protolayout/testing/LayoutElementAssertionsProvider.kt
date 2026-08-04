@@ -48,7 +48,7 @@ public class LayoutElementAssertionsProvider(layoutRoot: LayoutElement) {
         return LayoutElementAssertion(
             elementDescription,
             searchElement(root, matcher, context),
-            context
+            context,
         )
     }
 
@@ -63,7 +63,7 @@ public class LayoutElementAssertionsProvider(layoutRoot: LayoutElement) {
     private fun searchElement(
         root: LayoutElement?,
         matcher: LayoutElementMatcher,
-        context: TestContext
+        context: TestContext,
     ): LayoutElement? {
         if (root == null) return null
         if (matcher.matches(root, context)) return root

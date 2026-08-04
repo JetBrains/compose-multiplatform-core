@@ -31,6 +31,7 @@ import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.RenderEffect
+import androidx.compose.ui.graphics.nativePaint
 
 /**
  * RenderNode on M-O devices, where RenderNode isn't officially supported. This class uses a hidden
@@ -261,7 +262,7 @@ internal class RenderNodeApi23(val ownerView: AndroidComposeView) : DeviceRender
         when (compositingStrategy) {
             CompositingStrategy.Offscreen -> {
                 setLayerType(View.LAYER_TYPE_HARDWARE)
-                setLayerPaint(layerPaint?.asFrameworkPaint())
+                setLayerPaint(layerPaint?.nativePaint)
                 setHasOverlappingRendering(true)
             }
             CompositingStrategy.ModulateAlpha -> {
@@ -371,7 +372,7 @@ internal class RenderNodeApi23(val ownerView: AndroidComposeView) : DeviceRender
             renderEffect = renderEffect,
             blendMode = blendMode,
             colorFilter = colorFilter,
-            compositingStrategy = internalCompositingStrategy
+            compositingStrategy = internalCompositingStrategy,
         )
 
     override fun discardDisplayList() {
@@ -394,11 +395,11 @@ internal class RenderNodeApi23(val ownerView: AndroidComposeView) : DeviceRender
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             RenderNodeVerificationHelper28.setAmbientShadowColor(
                 renderNode,
-                RenderNodeVerificationHelper28.getAmbientShadowColor(renderNode)
+                RenderNodeVerificationHelper28.getAmbientShadowColor(renderNode),
             )
             RenderNodeVerificationHelper28.setSpotShadowColor(
                 renderNode,
-                RenderNodeVerificationHelper28.getSpotShadowColor(renderNode)
+                RenderNodeVerificationHelper28.getSpotShadowColor(renderNode),
             )
         }
     }

@@ -32,9 +32,9 @@ import androidx.compose.ui.geometry.Offset
  * @param animationSpec [AnimationSpec] to be used for this scrolling
  * @return the amount of scroll consumed
  */
-suspend fun ScrollableState.animateScrollBy(
+public suspend fun ScrollableState.animateScrollBy(
     value: Float,
-    animationSpec: AnimationSpec<Float> = spring()
+    animationSpec: AnimationSpec<Float> = spring(),
 ): Float {
     var previousValue = 0f
     scroll {
@@ -54,9 +54,9 @@ suspend fun ScrollableState.animateScrollBy(
  * @param animationSpec [AnimationSpec] to be used for this scrolling
  * @return the amount of scroll consumed
  */
-internal suspend fun Scrollable2DState.animateScrollBy(
+public suspend fun Scrollable2DState.animateScrollBy(
     value: Offset,
-    animationSpec: AnimationSpec<Offset> = spring()
+    animationSpec: AnimationSpec<Offset> = spring(),
 ): Offset {
     var previousValue = Offset.Zero
     scroll {
@@ -78,7 +78,7 @@ internal suspend fun Scrollable2DState.animateScrollBy(
  * @return the amount of scroll consumed
  * @see animateScrollBy for an animated version
  */
-suspend fun ScrollableState.scrollBy(value: Float): Float {
+public suspend fun ScrollableState.scrollBy(value: Float): Float {
     var consumed = 0f
     scroll { consumed = scrollBy(value) }
     return consumed
@@ -93,7 +93,7 @@ suspend fun ScrollableState.scrollBy(value: Float): Float {
  * @return the amount of scroll consumed
  * @see animateScrollBy for an animated version
  */
-internal suspend fun Scrollable2DState.scrollBy(value: Offset): Offset {
+public suspend fun Scrollable2DState.scrollBy(value: Offset): Offset {
     var consumed = Offset.Zero
     scroll { consumed = scrollBy(value) }
     return consumed
@@ -105,7 +105,9 @@ internal suspend fun Scrollable2DState.scrollBy(value: Offset): Offset {
  *
  * @param scrollPriority scrolls that run with this priority or lower will be stopped
  */
-suspend fun ScrollableState.stopScroll(scrollPriority: MutatePriority = MutatePriority.Default) {
+public suspend fun ScrollableState.stopScroll(
+    scrollPriority: MutatePriority = MutatePriority.Default
+) {
     scroll(scrollPriority) {
         // do nothing, just lock the mutex so other scroll actors are cancelled
     }
@@ -117,7 +119,7 @@ suspend fun ScrollableState.stopScroll(scrollPriority: MutatePriority = MutatePr
  *
  * @param scrollPriority scrolls that run with this priority or lower will be stopped
  */
-internal suspend fun Scrollable2DState.stopScroll(
+public suspend fun Scrollable2DState.stopScroll(
     scrollPriority: MutatePriority = MutatePriority.Default
 ) {
     scroll(scrollPriority) {

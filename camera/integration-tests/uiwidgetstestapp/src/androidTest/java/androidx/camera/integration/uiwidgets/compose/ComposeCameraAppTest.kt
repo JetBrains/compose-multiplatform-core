@@ -19,6 +19,7 @@ package androidx.camera.integration.uiwidgets.compose
 import android.os.Build
 import androidx.camera.integration.uiwidgets.compose.ui.navigation.ComposeCameraScreen
 import androidx.camera.integration.uiwidgets.compose.ui.screen.imagecapture.DEFAULT_LENS_FACING
+import androidx.camera.testing.impl.AndroidUtil
 import androidx.camera.testing.impl.CameraUtil
 import androidx.camera.testing.impl.LabTestRule
 import androidx.camera.view.PreviewView
@@ -26,17 +27,12 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertIsSelected
-import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.performClick
 import androidx.test.core.app.ActivityScenario
 import androidx.test.filters.LargeTest
-import androidx.test.filters.SdkSuppress
 import androidx.test.rule.GrantPermissionRule
 import androidx.testutils.RepeatRule
-import com.google.common.truth.Truth
-import kotlinx.coroutines.Deferred
-import kotlinx.coroutines.async
-import kotlinx.coroutines.runBlocking
 import org.junit.Assume
 import org.junit.Before
 import org.junit.Rule
@@ -57,10 +53,15 @@ class ComposeCameraAppTest {
 
     @Before
     fun setup() {
+        // Skip test for b/539514196
+        Assume.assumeFalse(
+            "API 24 emulators crash due to SwiftShader driver defects. Unable to test.",
+            AndroidUtil.isEmulator(24),
+        )
         // Skip test for b/168175357
         Assume.assumeFalse(
             "Cuttlefish has MediaCodec dequeInput/Output buffer fails issue. Unable to test.",
-            Build.MODEL.contains("Cuttlefish") && Build.VERSION.SDK_INT == 29
+            Build.MODEL.contains("Cuttlefish") && Build.VERSION.SDK_INT == 29,
         )
         Assume.assumeTrue(CameraUtil.hasCameraWithLensFacing(DEFAULT_LENS_FACING))
 
@@ -70,15 +71,10 @@ class ComposeCameraAppTest {
 
     // Activity launch will render ImageCaptureScreen
     // Ensure that ImageCapture screen's PreviewView is streaming properly
-    @SdkSuppress(maxSdkVersion = 33) // b/360867144: Module crashes on API34
     @Test
     @RepeatRule.Repeat(times = 10)
     fun testPreviewViewStreamStateOnActivityLaunch() {
-        assertStreamState(
-            ComposeCameraScreen.ImageCapture,
-            PreviewView.StreamState.STREAMING,
-            androidComposeTestRule.activityRule.scenario
-        )
+        assertExpectedScreenAndStreamState(androidComposeTestRule.activityRule.scenario)
     }
 
     // Navigating from ImageCapture to VideoCapture screen
@@ -86,59 +82,48 @@ class ComposeCameraAppTest {
     @Test
     @LabTestRule.LabTestOnly
     @RepeatRule.Repeat(times = 10)
-    @SdkSuppress(maxSdkVersion = 33) // b/360867144: Module crashes on API34
     fun testPreviewViewStreamStateOnNavigation() {
 
         // Get VideoCapture Navigation Tab (Node)
         val node =
             androidComposeTestRule.onNode(
-                SemanticsMatcher.expectValue(
-                        SemanticsProperties.Role,
-                        Role.Tab,
-                    )
+                SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Tab)
                     .and(
                         SemanticsMatcher.expectValue(
                             SemanticsProperties.ContentDescription,
-                            listOf("VideoCapture")
+                            listOf("VideoCapture"),
                         )
                     )
             )
+
+        // Set expected ComposeCameraScreen and StreamState for testing
+        androidComposeTestRule.activityRule.scenario.onActivity {
+            it.setUpExpectedScreenAndStreamState(
+                ComposeCameraScreen.VideoCapture,
+                PreviewView.StreamState.STREAMING,
+            )
+        }
 
         // Ensure that Tab is selected after we click on it
         node.performClick().assertIsSelected()
 
         // Assert VideoCapture's PreviewView is streaming
-        assertStreamState(
-            ComposeCameraScreen.VideoCapture,
-            PreviewView.StreamState.STREAMING,
-            androidComposeTestRule.activityRule.scenario
-        )
+        assertExpectedScreenAndStreamState(androidComposeTestRule.activityRule.scenario)
     }
 
     // Asserts that the StreamState in the ComposeCameraScreen reaches
     // expectedState within a reasonable timeout
-    private fun assertStreamState(
-        expectedScreen: ComposeCameraScreen,
-        expectedState: PreviewView.StreamState,
-        scenario: ActivityScenario<ComposeCameraActivity>,
+    private fun assertExpectedScreenAndStreamState(
+        scenario: ActivityScenario<ComposeCameraActivity>
     ) =
-        runBlocking<Unit> {
-            lateinit var result: Deferred<Boolean>
-
-            scenario.onActivity { activity ->
-                // Make async Coroutine to wait the result, not block the test thread.
-                result = async {
-                    activity.waitForStreamState(
-                        expectedScreen = expectedScreen,
-                        expectedState = expectedState
-                    )
-                }
-            }
-
-            Truth.assertThat(result.await()).isTrue()
+        androidComposeTestRule.waitUntil(timeoutMillis = LATCH_TIMEOUT) {
+            var reached = false
+            scenario.onActivity { activity -> reached = activity.isExpectedStateReached() }
+            reached
         }
 
     companion object {
         private const val TAG = "ComposeCameraAppTest"
+        private const val LATCH_TIMEOUT: Long = 5000
     }
 }

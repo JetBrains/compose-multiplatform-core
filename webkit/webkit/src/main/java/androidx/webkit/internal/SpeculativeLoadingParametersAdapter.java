@@ -17,6 +17,9 @@
 package androidx.webkit.internal;
 
 import androidx.webkit.NoVarySearchHeader;
+import androidx.webkit.PrefetchParameters;
+import androidx.webkit.PrerenderParameters;
+import androidx.webkit.Profile;
 import androidx.webkit.SpeculativeLoadingParameters;
 
 import org.chromium.support_lib_boundary.SpeculativeLoadingParametersBoundaryInterface;
@@ -28,6 +31,7 @@ import java.lang.reflect.InvocationHandler;
 import java.util.HashMap;
 import java.util.Map;
 
+@Profile.ExperimentalUrlPrefetch
 public class SpeculativeLoadingParametersAdapter
         implements SpeculativeLoadingParametersBoundaryInterface {
 
@@ -35,6 +39,14 @@ public class SpeculativeLoadingParametersAdapter
 
     public SpeculativeLoadingParametersAdapter(@Nullable SpeculativeLoadingParameters impl) {
         mSpeculativeLoadingParameters = impl;
+    }
+
+    public SpeculativeLoadingParametersAdapter(@Nullable PrerenderParameters impl) {
+        mSpeculativeLoadingParameters = new SpeculativeLoadingParameters(impl);
+    }
+
+    public SpeculativeLoadingParametersAdapter(@Nullable PrefetchParameters impl) {
+        mSpeculativeLoadingParameters = new SpeculativeLoadingParameters(impl);
     }
 
     @Override
@@ -57,5 +69,11 @@ public class SpeculativeLoadingParametersAdapter
     public boolean isJavaScriptEnabled() {
         if (mSpeculativeLoadingParameters == null) return false;
         return mSpeculativeLoadingParameters.isJavaScriptEnabled();
+    }
+
+    @Override
+    public @Nullable Integer getVariationsId() {
+        if (mSpeculativeLoadingParameters == null) return null;
+        return mSpeculativeLoadingParameters.getVariationsId();
     }
 }

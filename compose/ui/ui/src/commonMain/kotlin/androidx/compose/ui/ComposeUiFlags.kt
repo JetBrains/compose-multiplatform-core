@@ -17,6 +17,8 @@
 
 package androidx.compose.ui
 
+import androidx.compose.ui.ComposeUiFlags.isInitialFocusOnFocusableAvailable
+import androidx.compose.ui.ComposeUiFlags.isViewFocusFixEnabled
 import kotlin.jvm.JvmField
 import kotlin.jvm.JvmName
 
@@ -48,98 +50,109 @@ import kotlin.jvm.JvmName
  * paths being completely removed from the artifact, which can often have nontrivial positive
  * performance impact.
  *
- *      -assumevalues class androidx.compose.runtime.ComposeUiFlags {
+ *      -assumevalues class androidx.compose.ui.ComposeUiFlags {
  *          public static int isRectTrackingEnabled return false
  *      }
  */
 @ExperimentalComposeUiApi
-object ComposeUiFlags {
-    /**
-     * With this flag on, during layout we will do some additional work to store the minimum
-     * bounding rectangles for all Layout Nodes. This introduces some additional maintenance burden,
-     * but will be used in the future to enable certain features that are not possible to do
-     * efficiently at this point, as well as speed up some other areas of the system such as
-     * semantics, focus, pointer input, etc. If significant performance overhead is noticed during
-     * layout phases, it is possible that the addition of this tracking is the culprit.
-     */
-    @Suppress("MutableBareField") @JvmField var isRectTrackingEnabled: Boolean = true
-
-    /**
-     * With this flag on, the new semantic version of Autofill APIs will be enabled. Turning this
-     * flag off will disable the new Semantic Autofill APIs, and the new refactored semantics.
-     */
-    @Suppress("MutableBareField") @JvmField var isSemanticAutofillEnabled: Boolean = true
+public object ComposeUiFlags {
 
     /**
      * This enables fixes for View focus. The changes are large enough to require a flag to allow
      * disabling them.
      */
-    @Suppress("MutableBareField") @JvmField var isViewFocusFixEnabled: Boolean = false
+    // TODO: b/455588830
+    @field:Suppress("MutableBareField") @JvmField public var isViewFocusFixEnabled: Boolean = false
 
     /**
-     * When an embedded view that is focused is removed from the hierarchy, it triggers a
-     * requestFocus() which tries to re-assign focus before the previous composition is complete.
-     * This flag enables a fix for this issue.
+     * This flag enables an alternate approach to fixing the issues addressed by the
+     * [isViewFocusFixEnabled] flag.
      */
-    @Suppress("MutableBareField") @JvmField var isRemoveFocusedViewFixEnabled: Boolean = false
+    // TODO: b/455592447
+    @field:Suppress("MutableBareField")
+    @JvmField
+    public var isBypassUnfocusableComposeViewEnabled: Boolean = true
+
+    /** Enable initial focus when a focusable is added to a screen with no focusable content. */
+    // TODO: b/455601824
+    @field:Suppress("MutableBareField")
+    @JvmField
+    public var isInitialFocusOnFocusableAvailable: Boolean = false
 
     /**
-     * With this flag on, the new focus state management implementation is enabled. The new
-     * implementation removes the focus state previously stored in each FocusTargetNode and instead
-     * keeps track of the current active focus node centrally in FocusOwnerImpl. This change reduces
-     * the cost of initializing the focus system.
+     * Enable focus restoration, by always saving focus. This flag depends on
+     * [isInitialFocusOnFocusableAvailable] also being true.
      */
-    @Suppress("MutableBareField") @JvmField var isTrackFocusEnabled: Boolean = true
+    // TODO: b/485962036
+    @field:Suppress("MutableBareField")
+    @JvmField
+    public var isFocusRestorationEnabled: Boolean = false
 
     /**
-     * Enable WindowInsets rulers:
-     * * `SystemBarsRulers`
-     * * `ImeRulers`
-     * * `StatusBarsRulers`
-     * * `NavigationBarsRulers`
-     * * `CaptionBarRulers`
-     * * `MandatorySystemGesturesRulers`
-     * * `TappableElementRulers`
-     * * `WaterfallRulers`
-     * * `SafeDrawingRulers`
-     * * `SafeGesturesRulers`
-     * * `SafeContentRulers`
+     * Enables a change where off-screen children of the partially visible merging nodes (e.g. a
+     * Text node of a Button) inside scrollable container are now also reported in the semantics
+     * tree for Accessibility needs.
+     *
+     * Enabled is correct, and it should be enabled in all apps.
      */
-    @Suppress("MutableBareField") @JvmField var areWindowInsetsRulersEnabled = true
+    // TODO: b/484259656
+    @field:Suppress("MutableBareField")
+    @JvmField
+    public var isAccessibilityShouldIncludeOffscreenChildrenEnabled: Boolean = true
 
     /**
-     * With this flag on, when an AccessibilityService performs ACTION_FOCUS on a Composable node,
-     * if it is in touch mode, it will exit touch mode first, then try to request focus on the node.
+     * Enable the integration of [LocalUiMediaScope] at the root compose view which provides various
+     * signals for adapting the UI across different devices.
+     *
+     * This feature is experimental and is disabled by default.
      */
-    @Suppress("MutableBareField") @JvmField var isFocusActionExitsTouchModeEnabled: Boolean = true
+    // TODO: b/485160699 - Remove once the API goes stable
+    @field:Suppress("MutableBareField")
+    @JvmField
+    public var isMediaQueryIntegrationEnabled: Boolean = false
 
     /**
-     * With this flag on, Modifier.focusRestorer() will not pin the item that needs to be restored.
-     * Users are responsible for providing a key for the item that needs to be restored b/330696779.
+     * Enables hit test to continue searching for "semantic nodes" if the initial node that is hit
+     * is unimportant from an accessibility semantics node point of view.
      */
-    @Suppress("MutableBareField") @JvmField var isNoPinningInFocusRestorationEnabled: Boolean = true
-
-    /*
-     * Enable lower-level logging of input events where a cancellation event does not stop input
-     * events from finishing processing before the cancellation event. This is to track down why a
-     * certain build of CI is failing with this functionality enabled: b/399055247
-     */
-    @Suppress("MutableBareField") @JvmField var isHitPathTrackerLoggingEnabled: Boolean = false
+    // TODO: b/487663967
+    @field:Suppress("MutableBareField")
+    @JvmField
+    public var isSkipNonImportantSemanticsNodesHitTestEnabled: Boolean = true
 
     /**
-     * With this flag on, SubcomposeLayout will deactivate not used content slots outside of the
-     * frame, not as part of a regular recomposition phase. It allows to not block the drawing
-     * phase, improving the scrolling performance for lazy layouts.
+     * This flag controls whether the fix for velocity tracker usage in Draggable and related
+     * classes is enabled to a) properly track velocity per pointer and b) make sure to also take
+     * the pointer events into account that don't move at the beginning of the gesture in order to
+     * increase the stability of the computed velocity.
      */
-    @Suppress("MutableBareField") @JvmField var isOutOfFrameDeactivationEnabled: Boolean = true
+    // TODO: Remove this flag once it has soaked (b/501080937)
+    @field:Suppress("MutableBareField")
+    @JvmField
+    public var isTriggerMoveEventsWhenLocationHasNotChangedEnabled: Boolean = false
 
-    /** Enable clearing focus when a focused item is removed from a lazyList. */
-    @Suppress("MutableBareField") @JvmField var isClearFocusOnResetEnabled: Boolean = true
+    /** Fixes trackpad pan gestures (CLASSIFICATION_TWO_FINGER_SWIPE). */
+    // TODO: b/535296682 - Cleanup feature flag
+    @field:Suppress("MutableBareField")
+    @JvmField
+    public var isTrackpadPanHoverFixEnabled: Boolean = false
 
     /**
-     * With this flag on, the adaptive refresh rate (ARR) feature will be enabled. A preferred frame
-     * rate can be set on a Composable through frame rate modifier:
-     * Modifier.requestedFrameRate(frameRate: Float)
+     * Enables re-interpreting trackpad pinch gestures (CLASSIFICATION_PINCH) as mouse events with
+     * scale factor, rather than passing through fake finger touch events.
      */
-    @Suppress("MutableBareField") @JvmField var isAdaptiveRefreshRateEnabled: Boolean = true
+    // TODO: b/519714278 - Cleanup feature flag
+    @field:Suppress("MutableBareField")
+    @JvmField
+    public var isTrackpadPinchReinterpretationEnabled: Boolean = true
+
+    /**
+     * Reduce provided CompositionLocals by letting them pull from LocalOwner /
+     * LocalAndroidComposeView dynamically when unprovided, instead of eagerly providing all of
+     * them.
+     */
+    // TODO: b/523295932 - Cleanup feature flag
+    @field:Suppress("MutableBareField")
+    @JvmField
+    public var isMinimalistLocalsEnabled: Boolean = false
 }

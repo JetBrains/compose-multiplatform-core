@@ -44,11 +44,13 @@ public enum class ComposeAnimationType {
     INFINITE_TRANSITION,
     /** `TargetBasedAnimation` animation. */
     TARGET_BASED_ANIMATION,
+    /** Trigger allowing changing the state of Composable. */
+    TRIGGER,
     /**
      * Detected animation without a support - only [ComposeAnimation.label] and
      * [ComposeAnimation.type] are provided.
      */
-    UNSUPPORTED
+    UNSUPPORTED,
 }
 
 /**

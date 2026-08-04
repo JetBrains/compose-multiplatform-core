@@ -16,13 +16,14 @@
 
 package androidx.compose.ui.node
 
-import androidx.annotation.RestrictTo
 import androidx.collection.IntObjectMap
 import androidx.compose.runtime.Applier
+import androidx.compose.runtime.retain.RetainedValuesStore
+import androidx.compose.ui.ExperimentalMediaQueryApi
 import androidx.compose.ui.InternalComposeUiApi
+import androidx.compose.ui.UiMediaScope
 import androidx.compose.ui.autofill.AutofillManager
 import androidx.compose.ui.draganddrop.DragAndDropManager
-import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusOwner
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Canvas
@@ -30,7 +31,6 @@ import androidx.compose.ui.graphics.GraphicsContext
 import androidx.compose.ui.graphics.layer.GraphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedback
 import androidx.compose.ui.input.InputModeManager
-import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.pointer.PointerIconService
 import androidx.compose.ui.input.pointer.PositionCalculator
 import androidx.compose.ui.layout.Placeable
@@ -38,22 +38,24 @@ import androidx.compose.ui.layout.PlacementScope
 import androidx.compose.ui.modifier.ModifierLocalManager
 import androidx.compose.ui.platform.AccessibilityManager
 import androidx.compose.ui.platform.Clipboard
-import androidx.compose.ui.platform.PlatformTextInputModifierNode
+import androidx.compose.ui.platform.NoSoundEffect
 import androidx.compose.ui.platform.PlatformTextInputSessionScope
 import androidx.compose.ui.platform.SoftwareKeyboardController
+import androidx.compose.ui.platform.SoundEffect
 import androidx.compose.ui.platform.TextToolbar
+import androidx.compose.ui.platform.UriHandler
 import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.platform.WindowInfo
 import androidx.compose.ui.semantics.SemanticsOwner
 import androidx.compose.ui.spatial.RectManager
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.intl.LocaleList
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.viewinterop.InteropView
 import kotlin.coroutines.CoroutineContext
-import kotlinx.coroutines.Job
 
 /**
  * Owner implements the connection to the underlying view system. On Android, this connects to
@@ -132,6 +134,9 @@ internal interface Owner : PositionCalculator {
 
     val pointerIconService: PointerIconService
 
+    val soundEffect: SoundEffect
+        get() = NoSoundEffect
+
     /**
      * Semantics owner that provides access to
      * [SemanticsInfo][androidx.compose.ui.semantics.SemanticsInfo] and
@@ -145,12 +150,31 @@ internal interface Owner : PositionCalculator {
     /** Provide information about the window that hosts this [Owner]. */
     val windowInfo: WindowInfo
 
+    /** Provide information about media query features that host this [Owner]. */
+    @ExperimentalMediaQueryApi
+    val uiMediaScope: UiMediaScope?
+        get() = null
+
+    /**
+     * Sets the [RetainedValuesStore] for the composition. On Android, this is a lifecycle-aware
+     * RetainedValuesStore that persists values across configuration changes and activity
+     * recreations. [androidx.compose.runtime.retain.ForgetfulRetainedValuesStore] is a reasonable
+     * default for platforms without window-level retain scenarios.
+     *
+     * This store is managed outside of the composition and does not receive the default calls to
+     * [RetainedValuesStore.onContentEnteredComposition] and
+     * [RetainedValuesStore.onContentExitComposition] because it is installed directly through
+     * [androidx.compose.runtime.retain.LocalRetainedValuesStore]. The Owner is responsible for
+     * tracking the content presence w.r.t. this store.
+     */
+    val retainedValuesStore: RetainedValuesStore
+
     /** Provides a queryable and observable index of nodes' bounding rectangles */
     val rectManager: RectManager
 
     @Deprecated(
         "fontLoader is deprecated, use fontFamilyResolver",
-        replaceWith = ReplaceWith("fontFamilyResolver")
+        replaceWith = ReplaceWith("fontFamilyResolver"),
     )
     @Suppress("DEPRECATION")
     val fontLoader: Font.ResourceLoader
@@ -159,9 +183,14 @@ internal interface Owner : PositionCalculator {
 
     val layoutDirection: LayoutDirection
 
+    val localeList: LocaleList
+
     /** `true` when layout should draw debug bounds. */
     var showLayoutBounds: Boolean
-        @RestrictTo(RestrictTo.Scope.LIBRARY) @InternalCoreApi set
+
+    /** [UriHandler] provided by [androidx.compose.ui.platform.LocalUriHandler] */
+    val uriHandler: UriHandler
+        get() = EmptyUriHandler
 
     /**
      * Called by [LayoutNode] to request the Owner a new measurement+layout. [forceRequest] defines
@@ -174,7 +203,7 @@ internal interface Owner : PositionCalculator {
         layoutNode: LayoutNode,
         affectsLookahead: Boolean = false,
         forceRequest: Boolean = false,
-        scheduleMeasureAndLayout: Boolean = true
+        scheduleMeasureAndLayout: Boolean = true,
     )
 
     /**
@@ -187,7 +216,7 @@ internal interface Owner : PositionCalculator {
     fun onRequestRelayout(
         layoutNode: LayoutNode,
         affectsLookahead: Boolean = false,
-        forceRequest: Boolean = false
+        forceRequest: Boolean = false,
     )
 
     /**
@@ -230,13 +259,6 @@ internal interface Owner : PositionCalculator {
      */
     fun calculateLocalPosition(positionInWindow: Offset): Offset
 
-    /**
-     * Ask the system to provide focus to this owner.
-     *
-     * @return true if the system granted focus to this owner. False otherwise.
-     */
-    fun requestFocus(): Boolean
-
     /** Ask the system to request autofill values to this owner. */
     fun requestAutofill(node: LayoutNode)
 
@@ -269,7 +291,6 @@ internal interface Owner : PositionCalculator {
         drawBlock: (canvas: Canvas, parentLayer: GraphicsLayer?) -> Unit,
         invalidateParentLayer: () -> Unit,
         explicitLayer: GraphicsLayer? = null,
-        forceUseOldLayers: Boolean = false
     ): OwnedLayer
 
     /**
@@ -303,9 +324,6 @@ internal interface Owner : PositionCalculator {
      * platform view hierarchy.
      */
     @InternalComposeUiApi fun onInteropViewLayoutChange(view: InteropView)
-
-    /** The [FocusDirection] represented by the specified keyEvent. */
-    fun getFocusDirection(keyEvent: KeyEvent): FocusDirection?
 
     val measureIteration: Long
 
@@ -346,11 +364,12 @@ internal interface Owner : PositionCalculator {
 
     /**
      * Starts a new text input session and suspends until it's closed. For more information see
-     * [PlatformTextInputModifierNode.establishTextInputSession].
+     * [androidx.compose.ui.platform.establishTextInputSession].
      *
      * Implementations must ensure that new requests cancel any active request. They must also
      * ensure that the previous request is finished running all cancellation tasks before starting
-     * the new session, to ensure that no session code overlaps (e.g. using [Job.cancelAndJoin]).
+     * the new session, to ensure that no session code overlaps (e.g. using
+     * [kotlinx.coroutines.cancelAndJoin]).
      */
     suspend fun textInputSession(
         session: suspend PlatformTextInputSessionScope.() -> Nothing
@@ -386,9 +405,15 @@ internal interface Owner : PositionCalculator {
     /**
      * Dispatches a callback when something in this hierarchy scrolls.
      *
-     * @param offset Delta scrolled.
+     * @param delta Delta scrolled.
      */
     fun dispatchOnScrollChanged(delta: Offset) {}
+
+    /**
+     * Invalidates the layer that the root elements are drawn in. This does not invalidate any child
+     * layers.
+     */
+    fun invalidateRootLayer() {}
 
     companion object {
         /**
@@ -400,5 +425,11 @@ internal interface Owner : PositionCalculator {
 
     interface OnLayoutCompletedListener {
         fun onLayoutComplete()
+    }
+}
+
+private object EmptyUriHandler : UriHandler {
+    override fun openUri(uri: String) {
+        throw NotImplementedError("Owner must implement uriHandler")
     }
 }

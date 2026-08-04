@@ -18,6 +18,7 @@ package androidx.lifecycle
 import android.os.Parcelable
 import androidx.annotation.MainThread
 import androidx.annotation.RestrictTo
+import androidx.annotation.VisibleForTesting
 import androidx.lifecycle.internal.SavedStateHandleImpl
 import androidx.lifecycle.internal.isAcceptableType
 import androidx.savedstate.SavedState
@@ -32,10 +33,12 @@ public actual class SavedStateHandle {
     private val liveDatas = mutableMapOf<String, SavingStateLiveData<*>>()
     private var impl: SavedStateHandleImpl
 
+    @VisibleForTesting
     public actual constructor(initialState: Map<String, Any?>) {
         impl = SavedStateHandleImpl(initialState)
     }
 
+    @VisibleForTesting
     public actual constructor() {
         impl = SavedStateHandleImpl()
     }
@@ -46,9 +49,9 @@ public actual class SavedStateHandle {
     @MainThread public actual operator fun contains(key: String): Boolean = key in impl
 
     /**
-     * Returns a [androidx.lifecycle.LiveData] that access data associated with the given key.
+     * Returns a [LiveData] that accesses data associated with the given [key].
      *
-     * @param key The identifier for the value
+     * @param key identifier of the value
      * @see getLiveData
      */
     @MainThread
@@ -59,45 +62,43 @@ public actual class SavedStateHandle {
     }
 
     /**
-     * Returns a [androidx.lifecycle.LiveData] that access data associated with the given key.
+     * Returns a [LiveData] that accesses data associated with the given [key].
      *
-     * ```
-     * `LiveData<String> liveData = savedStateHandle.get(KEY, "defaultValue");`
+     * ```kotlin
+     * val liveData = savedStateHandle.getLiveData(KEY, "defaultValue")
      * ```
      *
-     * Keep in mind that [LiveData] can have `null` as a valid value. If the `initialValue` is
-     * `null` and the data does not already exist in the [SavedStateHandle], the value of the
-     * returned [LiveData] will be set to `null` and observers will be notified. You can call
-     * [getLiveData] if you want to avoid dispatching `null` to observers.
+     * Note that [LiveData] can have `null` as a valid value. If the [initialValue] is `null` and
+     * the data does not already exist in the [SavedStateHandle], the value of the returned
+     * [LiveData] will be set to `null` and observers will be notified. You can call [getLiveData]
+     * to avoid dispatching `null` to observers.
      *
-     * ```
-     * `String defaultValue = ...; // nullable
-     * LiveData<String> liveData;
-     * if (defaultValue != null) {
-     *     liveData = savedStateHandle.getLiveData(KEY, defaultValue);
+     * ```kotlin
+     * val defaultValue = ... // nullable
+     * val liveData = if (defaultValue != null) {
+     *     savedStateHandle.getLiveData(KEY, defaultValue)
      * } else {
-     *     liveData = savedStateHandle.getLiveData(KEY);
-     * }`
-     * ```
-     *
-     * Note: If [T] is an [Array] of [Parcelable] classes, note that you should always use
-     * `Array<Parcelable>` and create a typed array from the result as going through process death
-     * and recreation (or using the `Don't keep activities` developer option) will result in the
-     * type information being lost, thus resulting in a `ClassCastException` if you directly try to
-     * observe the result as an `Array<CustomParcelable>`.
-     *
-     * ```
-     * val typedArrayLiveData = savedStateHandle.getLiveData<Array<Parcelable>>(
-     *   "KEY"
-     * ).map { array ->
-     *   // Convert the Array<Parcelable> to an Array<CustomParcelable>
-     *   array.map { it as CustomParcelable }.toTypedArray()
+     *     savedStateHandle.getLiveData(KEY)
      * }
      * ```
      *
-     * @param key The identifier for the value
-     * @param initialValue If no value exists with the given `key`, a new one is created with the
-     *   given `initialValue`. Note that passing `null` will create a [LiveData] with `null` value.
+     * If [T] is an [Array] of [Parcelable] classes, you should always use `Array<Parcelable>` and
+     * create a typed array from the result. Going through process death and recreation (or using
+     * the "Don't keep activities" developer option) will result in the type information being lost,
+     * causing a `ClassCastException` if you directly try to observe the result as
+     * `Array<CustomParcelable>`.
+     *
+     * ```kotlin
+     * val typedArrayLiveData = savedStateHandle.getLiveData<Array<Parcelable>>(
+     *     "KEY"
+     * ).map { array ->
+     *     // Convert the Array<Parcelable> to an Array<CustomParcelable>
+     *     array.map { it as CustomParcelable }.toTypedArray()
+     * }
+     * ```
+     *
+     * @param key identifier of the value
+     * @param initialValue value to use if no value is associated with [key]
      */
     @MainThread
     public fun <T> getLiveData(key: String, initialValue: T): MutableLiveData<T> {
@@ -107,7 +108,7 @@ public actual class SavedStateHandle {
     private fun <T> getLiveDataInternal(
         key: String,
         hasInitialValue: Boolean,
-        initialValue: T
+        initialValue: T,
     ): MutableLiveData<T> {
         require(key !in impl.mutableFlows) { createMutuallyExclusiveErrorMessage(key) }
 
@@ -123,7 +124,8 @@ public actual class SavedStateHandle {
                     else -> SavingStateLiveData(handle = this, key)
                 }
             }
-        @Suppress("UNCHECKED_CAST") return liveData as MutableLiveData<T>
+        @Suppress("UNCHECKED_CAST")
+        return liveData as MutableLiveData<T>
     }
 
     @MainThread
@@ -152,7 +154,7 @@ public actual class SavedStateHandle {
             "Can't put value with type ${value!!::class.java} into saved state"
         }
         @Suppress("UNCHECKED_CAST") val mutableLiveData = liveDatas[key] as? MutableLiveData<T?>?
-        mutableLiveData?.setValue(value)
+        mutableLiveData?.value = value
         impl[key] = value
     }
 
@@ -198,7 +200,6 @@ public actual class SavedStateHandle {
 
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         @JvmStatic
-        @Suppress("DEPRECATION")
         public actual fun createHandle(
             restoredState: SavedState?,
             defaultState: SavedState?,

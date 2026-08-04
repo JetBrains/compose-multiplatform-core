@@ -15,12 +15,13 @@
  */
 
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
+
+import androidx.build.KotlinTarget
 import androidx.build.SoftwareType
 
 plugins {
@@ -35,21 +36,23 @@ dependencies {
     api(libs.jspecify)
     api("androidx.annotation:annotation:1.1.0")
     api(libs.jsr250)
-    implementation(libs.autoCommon)
     implementation(libs.autoService)
     implementation(libs.autoServiceAnnotations)
     implementation(libs.autoValue)
     implementation(libs.autoValueAnnotations)
     implementation(libs.guava)
     implementation(libs.javapoet)
-    implementation("org.jetbrains.kotlin:kotlin-metadata-jvm:2.0.21")
-    implementation(libs.kotlinStdlib)
+    implementation(libs.kspApi)
+    implementation("androidx.room:room-compiler-processing:2.7.2")
+    implementation("org.jetbrains.kotlin:kotlin-metadata-jvm:2.1.21")
 
     // For testing, add in the compiled classes from appsearch to get access to annotations.
+    testImplementationAarAsJar(project(":annotation:annotation-experimental"))
     testImplementationAarAsJar(project(":appsearch:appsearch"))
+    // TODO(b/438455972): Use ToT of compiler-processing-testing
+    testImplementation("androidx.room:room-compiler-processing-testing:2.8.0")
     testImplementation(libs.googleCompileTesting)
-    testImplementation(project(":room:room-compiler-processing-testing"))
-    testImplementation(libs.kotlinCompilerEmbeddable)
+    testImplementation("org.jetbrains.kotlin:kotlin-compiler-embeddable:2.1.21")
     testImplementation(libs.kotlinCompileTestingKsp)
 }
 

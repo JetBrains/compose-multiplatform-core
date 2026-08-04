@@ -22,6 +22,7 @@ import androidx.compose.material3.PlainTooltip
 import androidx.compose.material3.RichTooltip
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TooltipAnchorPosition
 import androidx.compose.material3.TooltipBox
 import androidx.compose.material3.TooltipDefaults
 import androidx.compose.material3.TooltipScope
@@ -40,11 +41,16 @@ import kotlinx.coroutines.launch
 import org.junit.Rule
 import org.junit.Test
 
+@OptIn(ExperimentalMaterial3Api::class)
 class TooltipBenchmark {
     @get:Rule val benchmarkRule = ComposeBenchmarkRule()
 
     private val plainTooltipTestCaseFactory = { TooltipTestCase(TooltipType.Plain) }
     private val richTooltipTestCaseFactory = { TooltipTestCase(TooltipType.Rich) }
+    private val plainTooltipWithCaretTestCaseFactory = {
+        TooltipTestCase(TooltipType.PlainWithCaret)
+    }
+    private val richTooltipWithCaretTestCaseFactory = { TooltipTestCase(TooltipType.RichWithCaret) }
 
     @Test
     fun plainTooltipFirstPixel() {
@@ -57,10 +63,20 @@ class TooltipBenchmark {
     }
 
     @Test
+    fun plainTooltipWithCaretFirstPixel() {
+        benchmarkRule.benchmarkToFirstPixel(plainTooltipWithCaretTestCaseFactory)
+    }
+
+    @Test
+    fun richTooltipWithCaretFirstPixel() {
+        benchmarkRule.benchmarkToFirstPixel(richTooltipWithCaretTestCaseFactory)
+    }
+
+    @Test
     fun plainTooltipVisibilityTest() {
         benchmarkRule.toggleStateBenchmarkComposeMeasureLayout(
             caseFactory = plainTooltipTestCaseFactory,
-            assertOneRecomposition = false
+            assertOneRecomposition = false,
         )
     }
 
@@ -68,7 +84,23 @@ class TooltipBenchmark {
     fun richTooltipVisibilityTest() {
         benchmarkRule.toggleStateBenchmarkComposeMeasureLayout(
             caseFactory = richTooltipTestCaseFactory,
-            assertOneRecomposition = false
+            assertOneRecomposition = false,
+        )
+    }
+
+    @Test
+    fun plainTooltipWithCaretVisibilityTest() {
+        benchmarkRule.toggleStateBenchmarkComposeMeasureLayout(
+            caseFactory = plainTooltipWithCaretTestCaseFactory,
+            assertOneRecomposition = false,
+        )
+    }
+
+    @Test
+    fun richTooltipWithCaretVisibilityTest() {
+        benchmarkRule.toggleStateBenchmarkComposeMeasureLayout(
+            caseFactory = richTooltipWithCaretTestCaseFactory,
+            assertOneRecomposition = false,
         )
     }
 }
@@ -89,11 +121,23 @@ private class TooltipTestCase(val tooltipType: TooltipType) :
         when (tooltipType) {
             TooltipType.Plain -> {
                 tooltip = { PlainTooltipTest() }
-                positionProvider = TooltipDefaults.rememberTooltipPositionProvider()
+                positionProvider =
+                    TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Above)
             }
             TooltipType.Rich -> {
                 tooltip = { RichTooltipTest() }
-                positionProvider = TooltipDefaults.rememberTooltipPositionProvider()
+                positionProvider =
+                    TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Above)
+            }
+            TooltipType.PlainWithCaret -> {
+                tooltip = { PlainTooltipWithCaretTest() }
+                positionProvider =
+                    TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Above)
+            }
+            TooltipType.RichWithCaret -> {
+                tooltip = { RichTooltipWithCaretTest() }
+                positionProvider =
+                    TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Above)
             }
         }
 
@@ -122,7 +166,23 @@ private class TooltipTestCase(val tooltipType: TooltipType) :
     private fun TooltipScope.RichTooltipTest() {
         RichTooltip(
             title = { Text("Subhead") },
-            action = { TextButton(onClick = {}) { Text(text = "Action") } }
+            action = { TextButton(onClick = {}) { Text(text = "Action") } },
+        ) {
+            Text(text = "Text")
+        }
+    }
+
+    @Composable
+    private fun TooltipScope.PlainTooltipWithCaretTest() {
+        PlainTooltip(caretShape = TooltipDefaults.caretShape()) { Text("Text") }
+    }
+
+    @Composable
+    private fun TooltipScope.RichTooltipWithCaretTest() {
+        RichTooltip(
+            title = { Text("Subhead") },
+            action = { TextButton(onClick = {}) { Text(text = "Action") } },
+            caretShape = TooltipDefaults.caretShape(),
         ) {
             Text(text = "Text")
         }
@@ -131,5 +191,7 @@ private class TooltipTestCase(val tooltipType: TooltipType) :
 
 private enum class TooltipType {
     Plain,
-    Rich
+    Rich,
+    PlainWithCaret,
+    RichWithCaret,
 }

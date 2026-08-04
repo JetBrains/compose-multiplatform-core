@@ -16,14 +16,12 @@
 
 package androidx.camera.view
 
-import android.os.Build
 import android.os.Looper.getMainLooper
 import android.view.Surface
 import androidx.camera.core.impl.utils.executor.CameraXExecutors
 import androidx.test.platform.app.InstrumentationRegistry.getInstrumentation
 import com.google.common.truth.Truth.assertThat
-import org.junit.After
-import org.junit.Before
+import org.junit.Assume.assumeTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -36,33 +34,27 @@ private const val INVALID_ROTATION = -1
 /** Unit tests for [RotationProvider]. */
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
+@Config(sdk = [Config.ALL_SDKS])
 class RotationProviderTest {
 
-    private val rotationProvider = RotationProvider(getInstrumentation().context)
-
-    @Before
-    fun setUp() {
-        rotationProvider.mIgnoreCanDetectForTest = true
-    }
-
-    @After
-    fun tearDown() {
-        rotationProvider.mIgnoreCanDetectForTest = false
-    }
+    private val context = getInstrumentation().context
 
     @Test
     fun addAndRemoveListener_noCallback() {
+        // Arrange.
+        val rotationProvider = RotationProvider(context, true)
         var rotationNoChange = INVALID_ROTATION
         var rotationChanged = INVALID_ROTATION
         val listenerKept = RotationProvider.Listener { rotationChanged = it }
         val listenerRemoved = RotationProvider.Listener { rotationNoChange = it }
-        rotationProvider.addListener(CameraXExecutors.mainThreadExecutor(), listenerKept)
-        rotationProvider.addListener(CameraXExecutors.mainThreadExecutor(), listenerRemoved)
+        val listenersAdded =
+            rotationProvider.addListener(CameraXExecutors.mainThreadExecutor(), listenerKept) &&
+                rotationProvider.addListener(CameraXExecutors.mainThreadExecutor(), listenerRemoved)
+        assumeTrue("The device cannot detect rotation changes.", listenersAdded)
 
         // Act.
         rotationProvider.removeListener(listenerRemoved)
-        rotationProvider.mOrientationListener.onOrientationChanged(0)
+        rotationProvider.updateOrientationForTesting(0)
         shadowOf(getMainLooper()).idle()
 
         // Assert.
@@ -73,10 +65,13 @@ class RotationProviderTest {
     @Test
     fun addListener_receivesCallback() {
         // Arrange.
+        val rotationProvider = RotationProvider(context, true)
         var rotation = -1
-        rotationProvider.addListener(CameraXExecutors.mainThreadExecutor()) { rotation = it }
+        val added =
+            rotationProvider.addListener(CameraXExecutors.mainThreadExecutor()) { rotation = it }
+        assumeTrue("The device cannot detect rotation changes.", added)
         // Act.
-        rotationProvider.mOrientationListener.onOrientationChanged(0)
+        rotationProvider.updateOrientationForTesting(0)
         shadowOf(getMainLooper()).idle()
         // Assert.
         assertThat(rotation).isEqualTo(Surface.ROTATION_0)
@@ -84,7 +79,7 @@ class RotationProviderTest {
 
     @Test
     fun cannotDetectOrientation_addingReturnsFalse() {
-        rotationProvider.mIgnoreCanDetectForTest = false
+        val rotationProvider = RotationProvider(context, false)
         assertThat(rotationProvider.addListener(CameraXExecutors.mainThreadExecutor()) {}).isFalse()
     }
 

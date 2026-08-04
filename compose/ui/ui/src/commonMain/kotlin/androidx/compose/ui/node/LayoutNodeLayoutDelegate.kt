@@ -28,9 +28,7 @@ import androidx.compose.ui.unit.Constraints
  * requests to its [measurePassDelegate] and [lookaheadPassDelegate] depending on whether the
  * request is specific to lookahead.
  */
-internal class LayoutNodeLayoutDelegate(
-    internal val layoutNode: LayoutNode,
-) {
+internal class LayoutNodeLayoutDelegate(internal val layoutNode: LayoutNode) {
     val outerCoordinator: NodeCoordinator
         get() = layoutNode.nodes.outerCoordinator
 
@@ -97,7 +95,7 @@ internal class LayoutNodeLayoutDelegate(
      * Tracks whether another measure pass is needed for the LayoutNodeLayoutDelegate. Mutation to
      * [measurePending] is confined to LayoutNodeLayoutDelegate. It can only be set true from
      * outside of this class via [markMeasurePending]. It is cleared (i.e. set false) during the
-     * measure pass (i.e. in [measurePassDelegate.performMeasure]).
+     * measure pass (i.e. in [MeasurePassDelegate.performMeasure]).
      */
     internal val measurePending: Boolean
         get() = measurePassDelegate.measurePending
@@ -388,7 +386,7 @@ internal val LayoutNode.isOutMostLookaheadRoot: Boolean
 
 internal inline fun <T : Measurable> LayoutNode.updateChildMeasurables(
     destination: MutableVector<T>,
-    transform: (LayoutNode) -> T
+    transform: (LayoutNode) -> T,
 ) {
     forEachChildIndexed { i, layoutNode ->
         if (destination.size <= i) {
@@ -415,8 +413,8 @@ internal const val MeasuredTwiceErrorMessage: String =
  * measure/layout pass.
  */
 internal interface AlignmentLinesOwner : Measurable {
-    /** Whether the AlignmentLinesOwner has been placed. */
-    val isPlaced: Boolean
+
+    val placeOrder: Int
 
     /** InnerNodeCoordinator of the LayoutNode that the AlignmentLinesOwner operates on. */
     val innerCoordinator: NodeCoordinator

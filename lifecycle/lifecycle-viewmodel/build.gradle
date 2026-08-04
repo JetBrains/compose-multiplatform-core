@@ -15,10 +15,9 @@
  */
 
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
 
@@ -29,15 +28,22 @@ import org.jetbrains.kotlin.konan.target.Family
 
 plugins {
     id("AndroidXPlugin")
-    id("com.android.library")
 }
 
 androidXMultiplatform {
-    androidTarget()
+    androidLibrary {
+        namespace = "androidx.lifecycle.viewmodel"
+        androidResources.enable = true
+    }
     desktop()
     mac()
     linux()
     ios()
+    watchos()
+    tvos()
+    mingwX64()
+    js()
+    wasmJs()
 
     defaultPlatform(PlatformIdentifier.ANDROID)
 
@@ -46,86 +52,58 @@ androidXMultiplatform {
             languageSettings.optIn("kotlin.contracts.ExperimentalContracts")
         }
 
-        commonMain {
-            dependencies {
-                api("androidx.annotation:annotation:1.9.1")
-                api(libs.kotlinStdlib)
-                api(libs.kotlinCoroutinesCore)
-            }
+        commonMain.dependencies {
+            api("androidx.annotation:annotation:1.9.1")
+            api(libs.kotlinCoroutinesCore)
+            implementation("androidx.collection:collection:1.5.0")
         }
 
-        commonTest {
-            dependencies {
-                implementation(project(":kruth:kruth"))
-                implementation(libs.kotlinTest)
-                implementation(libs.kotlinCoroutinesTest)
-            }
+        commonTest.dependencies {
+            implementation(project(":kruth:kruth"))
+            implementation(libs.kotlinTest)
+            implementation(libs.kotlinCoroutinesTest)
         }
 
-        jvmMain {
-            dependsOn(commonMain)
+        jvmAndAndroidTest.dependencies {
+            implementation(libs.junit)
         }
 
-        jvmCommonTest {
-            dependsOn(commonTest)
-            dependencies {
-                implementation(libs.junit)
-            }
+        androidMain.dependencies {
+            api(libs.kotlinCoroutinesAndroid)
+            implementation("androidx.core:core-viewtree:1.0.0")
         }
 
-        androidMain {
-            dependsOn(jvmMain)
-            dependencies {
-                api(libs.kotlinCoroutinesAndroid)
-                implementation("androidx.core:core-viewtree:1.0.0")
-            }
+        androidHostTest.dependencies {
+            implementation(libs.mockitoCore4)
         }
 
-        androidUnitTest {
-            dependsOn(jvmCommonTest)
-            dependencies {
-                implementation(libs.mockitoCore4)
-            }
+        androidDeviceTest.dependencies {
+            implementation("androidx.core:core-ktx:1.2.0")
+            implementation(libs.testExtJunit)
+            implementation(libs.testCore)
+            implementation(libs.testRunner)
         }
 
-        androidInstrumentedTest {
-            dependsOn(commonTest)
-            dependencies {
-                implementation("androidx.core:core-ktx:1.2.0")
-                implementation(libs.testExtJunit)
-                implementation(libs.testCore)
-                implementation(libs.testRunner)
-            }
+        nativeMain.dependencies {
+            implementation(libs.atomicFu)
         }
 
-        desktopMain { dependsOn(jvmMain) }
-        nonJvmMain { dependsOn(commonMain) }
-        nativeMain { dependsOn(nonJvmMain) }
-        darwinMain { dependsOn(nativeMain) }
-        linuxMain { dependsOn(nativeMain) }
-
-        targets.configureEach { target ->
-            if (target.platformType == KotlinPlatformType.native) {
-                target.compilations["main"].defaultSourceSet {
-                    def konanTargetFamily = target.konanTarget.family
-                    if (konanTargetFamily == Family.OSX || konanTargetFamily == Family.IOS) {
-                        dependsOn(darwinMain)
-                    } else if (konanTargetFamily == Family.LINUX) {
-                        dependsOn(linuxMain)
-                    } else {
-                        throw new GradleException("unknown native target ${target}")
-                    }
-                }
-            }
+        webTest.dependencies {
+            implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")
+            implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.9.0")
         }
     }
 }
 
-android {
-    buildTypes.configureEach {
-        consumerProguardFiles "proguard-rules.pro"
+dependencies {
+    constraints {
+        // Prevents symbols duplication with old versions of JetBrains' fork.
+        // Starting with version 2.9.5, this module is published as empty artifact with dependency
+        // to this androidx module.
+        commonMainImplementation("org.jetbrains.androidx.lifecycle:lifecycle-viewmodel:2.9.5") {
+            because "prevents symbols duplication"
+        }
     }
-    namespace = "androidx.lifecycle.viewmodel"
 }
 
 androidx {
@@ -133,5 +111,4 @@ androidx {
     type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2017"
     description = "Android Lifecycle ViewModel"
-    metalavaK2UastEnabled = false
 }

@@ -42,7 +42,7 @@ import androidx.tv.material3.tokens.Elevation
  * to Compose Material's Surface composable
  *
  * @param modifier Modifier to be applied to the layout corresponding to the surface
- * @param tonalElevation When [color] is [ColorScheme.surface], a higher the elevation will result
+ * @param tonalElevation When [colors] is [ColorScheme.surface], a higher the elevation will result
  *   in a darker color in light theme and lighter color in dark theme.
  * @param shape Defines the surface's shape.
  * @param colors Defines the background & content color to be used in this Surface. See
@@ -61,18 +61,18 @@ fun Surface(
     colors: SurfaceColors = SurfaceDefaults.colors(),
     border: Border = SurfaceDefaults.border,
     glow: Glow = SurfaceDefaults.glow,
-    content: @Composable (BoxScope.() -> Unit)
+    content: @Composable (BoxScope.() -> Unit),
 ) {
     val absoluteElevation = LocalAbsoluteTonalElevation.current + tonalElevation
 
     CompositionLocalProvider(
         LocalContentColor provides colors.contentColor,
-        LocalAbsoluteTonalElevation provides absoluteElevation
+        LocalAbsoluteTonalElevation provides absoluteElevation,
     ) {
         val backgroundColorByState =
             calculateSurfaceColorAtElevation(
                 color = colors.containerColor,
-                elevation = LocalAbsoluteTonalElevation.current
+                elevation = LocalAbsoluteTonalElevation.current,
             )
 
         Box(
@@ -83,7 +83,7 @@ fun Surface(
                     .background(backgroundColorByState, shape)
                     .clip(shape),
             propagateMinConstraints = true,
-            content = content
+            content = content,
         )
     }
 }
@@ -103,7 +103,7 @@ fun Surface(
  *   clickable. A disabled surface will still be focusable (reason:
  *   https://issuetracker.google.com/302955429). If you still want it to not be focusable, consider
  *   using the Non-interactive variant of the Surface.
- * @param tonalElevation When [color] is [ColorScheme.surface], a higher the elevation will result
+ * @param tonalElevation When [colors] is [ColorScheme.surface], a higher the elevation will result
  *   in a darker color in light theme and lighter color in dark theme.
  * @param shape Defines the surface's shape.
  * @param colors Defines the background & content colors to be used in this surface for different
@@ -131,7 +131,7 @@ fun Surface(
     border: ClickableSurfaceBorder = ClickableSurfaceDefaults.border(),
     glow: ClickableSurfaceGlow = ClickableSurfaceDefaults.glow(),
     interactionSource: MutableInteractionSource? = null,
-    content: @Composable (BoxScope.() -> Unit)
+    content: @Composable (BoxScope.() -> Unit),
 ) {
     @Suppress("NAME_SHADOWING")
     val interactionSource = interactionSource ?: remember { MutableInteractionSource() }
@@ -148,36 +148,16 @@ fun Surface(
         selected = false,
         enabled = enabled,
         tonalElevation = tonalElevation,
-        shape =
-            shape.currentShape(
-                enabled = enabled,
-                focused = focused,
-                pressed = pressed,
-            ),
+        shape = shape.currentShape(enabled = enabled, focused = focused, pressed = pressed),
         color =
             colors.currentContainerColor(enabled = enabled, focused = focused, pressed = pressed),
         contentColor =
             colors.currentContentColor(enabled = enabled, focused = focused, pressed = pressed),
-        scale =
-            scale.currentScale(
-                enabled = enabled,
-                focused = focused,
-                pressed = pressed,
-            ),
-        border =
-            border.currentBorder(
-                enabled = enabled,
-                focused = focused,
-                pressed = pressed,
-            ),
-        glow =
-            glow.currentGlow(
-                enabled = enabled,
-                focused = focused,
-                pressed = pressed,
-            ),
+        scale = scale.currentScale(enabled = enabled, focused = focused, pressed = pressed),
+        border = border.currentBorder(enabled = enabled, focused = focused, pressed = pressed),
+        glow = glow.currentGlow(enabled = enabled, focused = focused, pressed = pressed),
         interactionSource = interactionSource,
-        content = content
+        content = content,
     )
 }
 
@@ -202,7 +182,7 @@ fun Surface(
  *   clickable. A disabled surface will still be focusable (reason:
  *   https://issuetracker.google.com/302955429). If you still want it to not be focusable, consider
  *   using the Non-interactive variant of the Surface.
- * @param tonalElevation When [color] is [ColorScheme.surface], a higher the elevation will result
+ * @param tonalElevation When [colors] is [ColorScheme.surface], a higher the elevation will result
  *   in a darker color in light theme and lighter color in dark theme.
  * @param shape Defines the surface's shape.
  * @param colors Defines the background & content colors to be used in this surface for different
@@ -231,7 +211,7 @@ fun Surface(
     border: SelectableSurfaceBorder = SelectableSurfaceDefaults.border(),
     glow: SelectableSurfaceGlow = SelectableSurfaceDefaults.glow(),
     interactionSource: MutableInteractionSource? = null,
-    content: @Composable (BoxScope.() -> Unit)
+    content: @Composable (BoxScope.() -> Unit),
 ) {
     @Suppress("NAME_SHADOWING")
     val interactionSource = interactionSource ?: remember { MutableInteractionSource() }
@@ -245,7 +225,7 @@ fun Surface(
                 selected = selected,
                 onClick = onClick,
                 interactionSource = interactionSource,
-                onLongClick = onLongClick
+                onLongClick = onLongClick,
             ),
         selected = selected,
         enabled = enabled,
@@ -293,6 +273,6 @@ fun Surface(
                 selected = selected,
             ),
         interactionSource = interactionSource,
-        content = content
+        content = content,
     )
 }

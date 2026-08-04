@@ -33,9 +33,8 @@ import androidx.glance.unit.ResourceColorProvider
 /** Provider of different colors depending on a checked state. */
 internal sealed interface CheckableColorProvider
 
-internal data class ResourceCheckableColorProvider(
-    @ColorRes val resId: Int,
-) : CheckableColorProvider
+internal data class ResourceCheckableColorProvider(@ColorRes val resId: Int) :
+    CheckableColorProvider
 
 /**
  * Combination of two different [ColorProvider]s representing checked and unchecked states. These
@@ -90,7 +89,7 @@ internal fun resolveCheckedColor(
     context: Context,
     @ColorRes resId: Int,
     isChecked: Boolean,
-    isNightMode: Boolean? = null
+    isNightMode: Boolean? = null,
 ): Color? {
     if (resId == 0) return null
 
@@ -113,7 +112,7 @@ internal fun resolveCheckedColor(
     return Color(
         colorStateList.getColorForState(
             if (isChecked) CheckedStateSet else UncheckedStateSet,
-            colorStateList.defaultColor
+            colorStateList.defaultColor,
         )
     )
 }

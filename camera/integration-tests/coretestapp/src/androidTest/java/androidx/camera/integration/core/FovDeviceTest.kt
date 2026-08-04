@@ -19,13 +19,11 @@ package androidx.camera.integration.core
 import android.content.Context
 import android.os.Build
 import androidx.camera.camera2.Camera2Config
-import androidx.camera.camera2.pipe.integration.CameraPipeConfig
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.CameraXConfig
 import androidx.camera.core.impl.CameraInfoInternal
 import androidx.camera.core.internal.CameraUseCaseAdapter
-import androidx.camera.testing.impl.CameraPipeConfigTestRule
 import androidx.camera.testing.impl.CameraUtil
 import androidx.camera.testing.impl.CameraXUtil
 import androidx.test.core.app.ApplicationProvider
@@ -46,18 +44,11 @@ private val DEFAULT_CAMERA_ID_GROUP = Collections.unmodifiableSet(setOf("0", "1"
 
 @LargeTest
 @RunWith(Parameterized::class)
-@SdkSuppress(minSdkVersion = 21)
 class FovDeviceTest(
     private val cameraId: String,
     private val implName: String,
-    private val cameraXConfig: CameraXConfig
+    private val cameraXConfig: CameraXConfig,
 ) {
-    @get:Rule
-    val cameraPipeConfigTestRule =
-        CameraPipeConfigTestRule(
-            active = implName == CameraPipeConfig::class.simpleName,
-        )
-
     @get:Rule
     val cameraRule =
         CameraUtil.grantCameraPermissionAndPreTestAndPostTest(
@@ -74,14 +65,7 @@ class FovDeviceTest(
                     arrayOf(
                         cameraId,
                         Camera2Config::class.simpleName,
-                        Camera2Config.defaultConfig()
-                    )
-                )
-                paramList.add(
-                    arrayOf(
-                        cameraId,
-                        CameraPipeConfig::class.simpleName,
-                        CameraPipeConfig.defaultConfig()
+                        Camera2Config.defaultConfig(),
                     )
                 )
             }

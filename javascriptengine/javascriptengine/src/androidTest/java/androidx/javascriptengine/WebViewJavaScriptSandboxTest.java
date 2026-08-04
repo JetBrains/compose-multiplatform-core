@@ -18,10 +18,10 @@ package androidx.javascriptengine;
 
 import android.content.Context;
 import android.content.res.AssetFileDescriptor;
+import android.os.Build;
 import android.os.ParcelFileDescriptor;
 
 import androidx.annotation.GuardedBy;
-import androidx.annotation.NonNull;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.LargeTest;
@@ -31,6 +31,7 @@ import androidx.test.filters.MediumTest;
 import com.google.common.base.Strings;
 import com.google.common.util.concurrent.ListenableFuture;
 
+import org.jspecify.annotations.NonNull;
 import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Before;
@@ -814,6 +815,7 @@ public class WebViewJavaScriptSandboxTest {
     @Test
     @MediumTest
     public void testHeapSizeAdjustment() throws Throwable {
+        Assume.assumeTrue("Disabled on SDK <= 26: b/414343436", Build.VERSION.SDK_INT > 26);
         final String code = "\"PASS\"";
         final String expected = "PASS";
         final long[] heapSizes = {
@@ -1277,7 +1279,7 @@ public class WebViewJavaScriptSandboxTest {
 
             @Override
             public void onConsoleMessage(
-                    @NonNull JavaScriptConsoleCallback.ConsoleMessage message) {
+                    JavaScriptConsoleCallback.@NonNull ConsoleMessage message) {
                 synchronized (mLock) {
                     mMessages.append(message).append("\n");
                 }

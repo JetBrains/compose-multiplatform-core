@@ -31,6 +31,7 @@ import androidx.compose.testutils.LayeredComposeTestCase
 import androidx.compose.testutils.ToggleableTestCase
 import androidx.compose.testutils.benchmark.ComposeBenchmarkRule
 import androidx.compose.testutils.benchmark.benchmarkFirstCompose
+import androidx.compose.testutils.benchmark.benchmarkToFirstPixel
 import androidx.compose.testutils.benchmark.toggleStateBenchmarkComposeMeasureLayout
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -45,7 +46,7 @@ class NavigationSuiteScaffoldBenchmarkTest {
 
     @Test
     fun expressive_firstPixel() {
-        benchmarkRule.benchmarkFirstRenderUntilStable(testCaseFactoryExpressive)
+        benchmarkRule.benchmarkToFirstPixel(testCaseFactoryExpressive)
     }
 
     @Test
@@ -63,7 +64,7 @@ class NavigationSuiteScaffoldBenchmarkTest {
 
     @Test
     fun firstPixel() {
-        benchmarkRule.benchmarkFirstRenderUntilStable(testCaseFactory)
+        benchmarkRule.benchmarkToFirstPixel(testCaseFactory)
     }
 
     @Test
@@ -94,13 +95,13 @@ internal class NavigationSuiteScaffoldExpressiveTestCase :
                     selected = selectedIndexState.value == 0,
                     onClick = {},
                     icon = { Spacer(Modifier.size(24.dp)) },
-                    label = null
+                    label = null,
                 )
                 NavigationSuiteItem(
                     selected = selectedIndexState.value == 1,
                     onClick = {},
                     icon = { Spacer(Modifier.size(24.dp)) },
-                    label = null
+                    label = null,
                 )
             }
         ) {}
@@ -129,12 +130,12 @@ internal class NavigationSuiteScaffoldTestCase : LayeredComposeTestCase(), Toggl
                 item(
                     selected = selectedIndexState.value == 0,
                     onClick = {},
-                    icon = { Spacer(Modifier.size(24.dp)) }
+                    icon = { Spacer(Modifier.size(24.dp)) },
                 )
                 item(
                     selected = selectedIndexState.value == 1,
                     onClick = {},
-                    icon = { Spacer(Modifier.size(24.dp)) }
+                    icon = { Spacer(Modifier.size(24.dp)) },
                 )
             }
         )

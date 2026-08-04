@@ -35,6 +35,7 @@ import androidx.window.reflection.WindowExtensionsConstants.FOLDING_FEATURE_CLAS
 import androidx.window.reflection.WindowExtensionsConstants.JAVA_CONSUMER
 import androidx.window.reflection.WindowExtensionsConstants.SUPPORTED_WINDOW_FEATURES_CLASS
 import androidx.window.reflection.WindowExtensionsConstants.WINDOW_CONSUMER
+import androidx.window.reflection.WindowExtensionsConstants.WINDOW_LAYOUT_CLASS
 import androidx.window.reflection.WindowExtensionsConstants.WINDOW_LAYOUT_COMPONENT_CLASS
 import java.lang.reflect.ParameterizedType
 
@@ -45,7 +46,7 @@ import java.lang.reflect.ParameterizedType
  */
 internal class SafeWindowLayoutComponentProvider(
     private val loader: ClassLoader,
-    private val consumerAdapter: ConsumerAdapter
+    private val consumerAdapter: ConsumerAdapter,
 ) {
     private val safeWindowExtensionsProvider = SafeWindowExtensionsProvider(loader)
 
@@ -71,7 +72,8 @@ internal class SafeWindowLayoutComponentProvider(
             vendorApiLevel < 1 -> false
             vendorApiLevel == 1 -> hasValidVendorApiLevel1()
             vendorApiLevel < 5 -> hasValidVendorApiLevel2()
-            else -> hasValidVendorApiLevel6()
+            vendorApiLevel < 10 -> hasValidVendorApiLevel6()
+            else -> hasValidVendorApiLevel10()
         }
     }
 
@@ -108,6 +110,11 @@ internal class SafeWindowLayoutComponentProvider(
             isDisplayFoldFeatureValid() &&
             isSupportedWindowFeaturesValid() &&
             isGetSupportedWindowFeaturesValid()
+    }
+
+    @VisibleForTesting
+    internal fun hasValidVendorApiLevel10(): Boolean {
+        return hasValidVendorApiLevel6() && isEngagementModeValid()
     }
 
     private fun isWindowLayoutProviderValid(): Boolean {
@@ -148,7 +155,7 @@ internal class SafeWindowLayoutComponentProvider(
                 windowLayoutComponent.getMethod(
                     "addWindowLayoutInfoListener",
                     Activity::class.java,
-                    consumerClass
+                    consumerClass,
                 )
             val removeListenerMethod =
                 windowLayoutComponent.getMethod("removeWindowLayoutInfoListener", consumerClass)
@@ -166,12 +173,12 @@ internal class SafeWindowLayoutComponentProvider(
                 windowLayoutComponent.getMethod(
                     "addWindowLayoutInfoListener",
                     Context::class.java,
-                    Consumer::class.java
+                    Consumer::class.java,
                 )
             val removeListenerMethod =
                 windowLayoutComponent.getMethod(
                     "removeWindowLayoutInfoListener",
-                    Consumer::class.java
+                    Consumer::class.java,
                 )
             addListenerMethod.isPublic && removeListenerMethod.isPublic
         }
@@ -224,6 +231,29 @@ internal class SafeWindowLayoutComponentProvider(
         }
     }
 
+    private fun isEngagementModeValid(): Boolean {
+        return validateReflection("WindowLayoutInfo#engagementMode is not valid") {
+            val windowLayoutInfoClass = windowLayoutInfoClass
+            val getEngagementModeFlagsMethod =
+                windowLayoutInfoClass.getMethod("getEngagementModeFlags")
+            val hasEngagementModeFlagMethod =
+                windowLayoutInfoClass.getMethod("hasEngagementModeFlag", Int::class.java)
+
+            val windowLayoutInfoBuilderClass = windowLayoutInfoBuilderClass
+            val setEngagementModeFlagsMethod =
+                windowLayoutInfoBuilderClass.getMethod("setEngagementModeFlags", Int::class.java)
+            val buildMethod = windowLayoutInfoBuilderClass.getMethod("build")
+
+            getEngagementModeFlagsMethod.isPublic &&
+                getEngagementModeFlagsMethod.doesReturn(Int::class) &&
+                hasEngagementModeFlagMethod.isPublic &&
+                hasEngagementModeFlagMethod.doesReturn(Boolean::class) &&
+                setEngagementModeFlagsMethod.isPublic &&
+                buildMethod.isPublic &&
+                buildMethod.doesReturn(windowLayoutInfoClass)
+        }
+    }
+
     private val displayFoldFeatureClass: Class<*>
         get() {
             return loader.loadClass(DISPLAY_FOLD_FEATURE_CLASS)
@@ -242,5 +272,16 @@ internal class SafeWindowLayoutComponentProvider(
     private val windowLayoutComponentClass: Class<*>
         get() {
             return loader.loadClass(WINDOW_LAYOUT_COMPONENT_CLASS)
+        }
+
+    private val windowLayoutInfoClass: Class<*>
+        get() {
+            return loader.loadClass(WINDOW_LAYOUT_CLASS)
+        }
+
+    private val windowLayoutInfoBuilderClass: Class<*>
+        get() {
+            val runtimeClassName = WINDOW_LAYOUT_CLASS + "\$Builder"
+            return loader.loadClass(runtimeClassName)
         }
 }

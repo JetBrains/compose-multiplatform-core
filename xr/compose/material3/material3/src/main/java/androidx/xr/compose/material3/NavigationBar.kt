@@ -24,14 +24,10 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.selection.selectableGroup
-import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.material3.ColorScheme
-import androidx.compose.material3.ExperimentalMaterial3ComponentOverrideApi
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.NavigationBarDefaults
 import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.NavigationBarOverride
-import androidx.compose.material3.NavigationBarOverrideScope
 import androidx.compose.material3.Surface
 import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
@@ -42,12 +38,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.xr.compose.material3.XrNavigationBarOverride.NavigationBar
-import androidx.xr.compose.spatial.EdgeOffset
+import androidx.xr.compose.material3.tokens.XrTokens
 import androidx.xr.compose.spatial.Orbiter
+import androidx.xr.compose.spatial.OrbiterAlignment
 import androidx.xr.compose.spatial.OrbiterDefaults
-import androidx.xr.compose.spatial.OrbiterEdge
-import androidx.xr.compose.subspace.layout.SpatialRoundedCornerShape
+import androidx.xr.compose.spatial.OrbiterEdgeOffsetType
+import androidx.xr.compose.unit.DpVolumeOffset
 
 /**
  * <a href="https://m3.material.io/components/navigation-bar/overview" class="external"
@@ -94,8 +90,6 @@ public fun NavigationBar(
             modifier = modifier,
         ) {
             Row(
-                // XR-changed: Original NavigationBar uses fillMaxWidth() and windowInsets,
-                // which do not produce the desired result in XR.
                 modifier =
                     Modifier.width(IntrinsicSize.Min)
                         .heightIn(min = XrNavigationBarTokens.ContainerHeight)
@@ -109,53 +103,38 @@ public fun NavigationBar(
     }
 }
 
-private object XrNavigationBarTokens {
-    /** The [EdgeOffset] for NavigationBar Orbiters in Full Space Mode (FSM). */
-    val OrbiterEdgeOffset = EdgeOffset.inner(24.dp)
+internal object XrNavigationBarTokens {
+    /** The [OrbiterOffset] for NavigationBar Orbiters in Full Space Mode (FSM). */
+    val OrbiterOffset = 24.dp
 
     val HorizontalPadding = 8.dp
 
     val ContainerHeight = 80.0.dp
 }
 
-/** [NavigationBarOverride] that uses the XR-specific [NavigationBar]. */
-@ExperimentalMaterial3XrApi
-@OptIn(ExperimentalMaterial3ComponentOverrideApi::class)
-internal object XrNavigationBarOverride : NavigationBarOverride {
-    @Composable
-    override fun NavigationBarOverrideScope.NavigationBar() {
-        NavigationBar(
-            modifier = modifier,
-            containerColor = containerColor,
-            contentColor = contentColor,
-            tonalElevation = tonalElevation,
-            content = content,
-        )
-    }
-}
-
 /**
- * The default [HorizontalOrbiterProperties] used by [NavigationBar] if none is specified in
+ * The default [OrbiterProperties] used by [NavigationBar] if none is specified in
  * [LocalNavigationBarOrbiterProperties].
  */
-@Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-@get:ExperimentalMaterial3XrApi
 @ExperimentalMaterial3XrApi
-public val DefaultNavigationBarOrbiterProperties: HorizontalOrbiterProperties =
-    HorizontalOrbiterProperties(
-        position = OrbiterEdge.Horizontal.Bottom,
-        offset = XrNavigationBarTokens.OrbiterEdgeOffset,
-        alignment = Alignment.CenterHorizontally,
-        settings = OrbiterDefaults.Settings,
-        shape = SpatialRoundedCornerShape(CornerSize(50)),
+public val DefaultNavigationBarOrbiterProperties: OrbiterProperties =
+    OrbiterProperties(
+        alignment =
+            OrbiterAlignment.BottomCenter(
+                edgeOffsetType = OrbiterEdgeOffsetType.OuterEdge,
+                offset =
+                    DpVolumeOffset(
+                        0.dp,
+                        -XrNavigationBarTokens.OrbiterOffset,
+                        OrbiterDefaults.Elevation,
+                    ),
+            ),
+        shape = XrTokens.ContainerShape,
     )
 
-/** The [HorizontalOrbiterProperties] used by [NavigationBar]. */
-@Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-@get:ExperimentalMaterial3XrApi
+/** The [OrbiterProperties] used by [NavigationBar]. */
 @ExperimentalMaterial3XrApi
-public val LocalNavigationBarOrbiterProperties:
-    ProvidableCompositionLocal<HorizontalOrbiterProperties> =
+public val LocalNavigationBarOrbiterProperties: ProvidableCompositionLocal<OrbiterProperties> =
     compositionLocalOf {
         DefaultNavigationBarOrbiterProperties
     }

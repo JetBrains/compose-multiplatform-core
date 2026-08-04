@@ -23,7 +23,7 @@ import androidx.compose.runtime.Stable
  * a given snap item in its containing layout.
  */
 @Stable
-interface SnapPosition {
+public interface SnapPosition {
     /**
      * Calculates the snap position where items will be aligned to in a snapping container. For
      * instance, if [SnapPosition.Center] is used, once the snapping finishes the center of one of
@@ -45,24 +45,24 @@ interface SnapPosition {
      * @return The offset of the snap position where items will be aligned to in a snapping
      *   container.
      */
-    fun position(
+    public fun position(
         layoutSize: Int,
         itemSize: Int,
         beforeContentPadding: Int,
         afterContentPadding: Int,
         itemIndex: Int,
-        itemCount: Int
+        itemCount: Int,
     ): Int
 
     /** Aligns the center of the item with the center of the containing layout. */
-    object Center : SnapPosition {
+    public object Center : SnapPosition {
         override fun position(
             layoutSize: Int,
             itemSize: Int,
             beforeContentPadding: Int,
             afterContentPadding: Int,
             itemIndex: Int,
-            itemCount: Int
+            itemCount: Int,
         ): Int {
             val availableLayoutSpace = layoutSize - beforeContentPadding - afterContentPadding
             // we use availableLayoutSpace / 2 as the main anchor point and we discount half
@@ -76,14 +76,14 @@ interface SnapPosition {
     }
 
     /** Aligns the start of the item with the start of the containing layout. */
-    object Start : SnapPosition {
+    public object Start : SnapPosition {
         override fun position(
             layoutSize: Int,
             itemSize: Int,
             beforeContentPadding: Int,
             afterContentPadding: Int,
             itemIndex: Int,
-            itemCount: Int
+            itemCount: Int,
         ): Int = 0
 
         override fun toString(): String {
@@ -92,14 +92,14 @@ interface SnapPosition {
     }
 
     /** Aligns the end of the item with the end of the containing layout. */
-    object End : SnapPosition {
+    public object End : SnapPosition {
         override fun position(
             layoutSize: Int,
             itemSize: Int,
             beforeContentPadding: Int,
             afterContentPadding: Int,
             itemIndex: Int,
-            itemCount: Int
+            itemCount: Int,
         ): Int {
             val availableLayoutSpace = layoutSize - beforeContentPadding - afterContentPadding
             // the snap position for the item is the end of the layout, discounting the item
@@ -121,7 +121,7 @@ internal fun calculateDistanceToDesiredSnapPosition(
     itemOffset: Int,
     itemIndex: Int,
     snapPosition: SnapPosition,
-    itemCount: Int
+    itemCount: Int,
 ): Float {
     val desiredDistance =
         with(snapPosition) {
@@ -131,7 +131,7 @@ internal fun calculateDistanceToDesiredSnapPosition(
                     beforeContentPadding,
                     afterContentPadding,
                     itemIndex,
-                    itemCount
+                    itemCount,
                 )
             }
             .toFloat()

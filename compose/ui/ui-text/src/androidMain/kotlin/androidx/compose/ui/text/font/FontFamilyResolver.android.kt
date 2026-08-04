@@ -35,10 +35,10 @@ import kotlin.coroutines.CoroutineContext
  * All instances of FontFamily.Resolver created by [createFontFamilyResolver] share the same
  * typeface caches.
  */
-fun createFontFamilyResolver(context: Context): FontFamily.Resolver {
+public fun createFontFamilyResolver(context: Context): FontFamily.Resolver {
     return FontFamilyResolverImpl(
         AndroidFontLoader(context),
-        AndroidFontResolveInterceptor(context)
+        AndroidFontResolveInterceptor(context),
     )
 }
 
@@ -65,15 +65,15 @@ fun createFontFamilyResolver(context: Context): FontFamily.Resolver {
  * @param context Android context for resolving fonts
  * @param coroutineContext context to launch async requests in during resolution.
  */
-fun createFontFamilyResolver(
+public fun createFontFamilyResolver(
     context: Context,
-    coroutineContext: CoroutineContext
+    coroutineContext: CoroutineContext,
 ): FontFamily.Resolver {
     return FontFamilyResolverImpl(
         AndroidFontLoader(context),
         AndroidFontResolveInterceptor(context),
         GlobalTypefaceRequestCache,
-        FontListFontFamilyTypefaceAdapter(GlobalAsyncTypefaceCache, coroutineContext)
+        FontListFontFamilyTypefaceAdapter(GlobalAsyncTypefaceCache, coroutineContext),
     )
 }
 
@@ -84,11 +84,12 @@ fun createFontFamilyResolver(
  */
 @InternalTextApi // exposed for benchmarking, not a stable API.
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-fun emptyCacheFontFamilyResolver(context: Context): FontFamily.Resolver {
+public fun emptyCacheFontFamilyResolver(context: Context): FontFamily.Resolver {
     return FontFamilyResolverImpl(
         AndroidFontLoader(context),
+        AndroidFontResolveInterceptor(context),
         typefaceRequestCache = TypefaceRequestCache(),
-        fontListFontFamilyTypefaceAdapter = FontListFontFamilyTypefaceAdapter(AsyncTypefaceCache())
+        fontListFontFamilyTypefaceAdapter = FontListFontFamilyTypefaceAdapter(AsyncTypefaceCache()),
     )
 }
 
@@ -106,11 +107,11 @@ fun emptyCacheFontFamilyResolver(context: Context): FontFamily.Resolver {
  *   match. This will allow "fake bold" (drawing with too wide a brush) and "fake italic" (drawing
  *   then skewing) to be applied when no exact match is present for the weight and style.
  */
-fun FontFamily.Resolver.resolveAsTypeface(
+public fun FontFamily.Resolver.resolveAsTypeface(
     fontFamily: FontFamily? = null,
     fontWeight: FontWeight = FontWeight.Normal,
     fontStyle: FontStyle = FontStyle.Normal,
-    fontSynthesis: FontSynthesis = FontSynthesis.All
+    fontSynthesis: FontSynthesis = FontSynthesis.All,
 ): State<Typeface> {
     // this unchecked cast is done here to avoid callers having to do it at every call site
     @Suppress("UNCHECKED_CAST")

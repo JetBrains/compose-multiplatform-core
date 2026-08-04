@@ -20,6 +20,7 @@ import android.graphics.SurfaceTexture
 import android.graphics.SurfaceTexture.OnFrameAvailableListener
 import android.os.Handler
 import android.os.HandlerThread
+import android.util.Log
 import android.view.Surface
 import androidx.annotation.VisibleForTesting
 import androidx.camera.core.DynamicRange
@@ -65,6 +66,7 @@ class ToneMappingSurfaceProcessor : SurfaceProcessor, OnFrameAvailableListener {
             }
 
         private const val GL_THREAD_NAME = "ToneMappingSurfaceProcessor"
+        private const val TAG = "ToneMappingSurfaceProcessor"
     }
 
     private val glThread: HandlerThread = HandlerThread(GL_THREAD_NAME)
@@ -82,6 +84,8 @@ class ToneMappingSurfaceProcessor : SurfaceProcessor, OnFrameAvailableListener {
     private var surfaceRequested = false
     private var outputSurfaceProvided = false
 
+    private val releasedSurfaceTextures = mutableListOf<SurfaceTexture>()
+
     init {
         glThread.start()
         glHandler = Handler(glThread.looper)
@@ -89,7 +93,7 @@ class ToneMappingSurfaceProcessor : SurfaceProcessor, OnFrameAvailableListener {
         glExecutor.execute {
             glRenderer.init(
                 DynamicRange.SDR,
-                mapOf(InputFormat.DEFAULT to TONE_MAPPING_SHADER_PROVIDER)
+                mapOf(InputFormat.DEFAULT to TONE_MAPPING_SHADER_PROVIDER),
             )
         }
     }
@@ -104,12 +108,15 @@ class ToneMappingSurfaceProcessor : SurfaceProcessor, OnFrameAvailableListener {
         val surfaceTexture = SurfaceTexture(glRenderer.textureName)
         surfaceTexture.setDefaultBufferSize(
             surfaceRequest.resolution.width,
-            surfaceRequest.resolution.height
+            surfaceRequest.resolution.height,
         )
         val surface = Surface(surfaceTexture)
-        surfaceRequest.provideSurface(surface, glExecutor) {
+        surfaceRequest.provideSurface(surface, glExecutor) { result ->
+            Log.d(TAG, "onInputSurface#resultListener: result = $result")
+
             surfaceTexture.setOnFrameAvailableListener(null)
             surfaceTexture.release()
+            releasedSurfaceTextures.add(surfaceTexture)
             surface.release()
         }
         surfaceTexture.setOnFrameAvailableListener(this, glHandler)
@@ -144,6 +151,9 @@ class ToneMappingSurfaceProcessor : SurfaceProcessor, OnFrameAvailableListener {
 
     private fun releaseInternal() {
         checkGlThread()
+
+        Log.d(TAG, "releaseInternal: isReleased = $isReleased")
+
         if (!isReleased) {
             // Once release is called, we can stop sending frame to output surfaces.
             for (surfaceOutput in outputSurfaces.keys) {
@@ -152,6 +162,7 @@ class ToneMappingSurfaceProcessor : SurfaceProcessor, OnFrameAvailableListener {
             outputSurfaces.clear()
             glRenderer.release()
             glThread.quitSafely()
+            releasedSurfaceTextures.clear()
             isReleased = true
         }
     }
@@ -169,6 +180,11 @@ class ToneMappingSurfaceProcessor : SurfaceProcessor, OnFrameAvailableListener {
         if (isReleased) {
             return
         }
+        if (releasedSurfaceTextures.contains(surfaceTexture)) {
+            Log.d(TAG, "onFrameAvailable invoked for already released $surfaceTexture")
+            return
+        }
+
         surfaceTexture.updateTexImage()
         surfaceTexture.getTransformMatrix(textureTransform)
         for (entry in outputSurfaces.entries.iterator()) {

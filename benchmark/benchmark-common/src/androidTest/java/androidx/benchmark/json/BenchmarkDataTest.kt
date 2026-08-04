@@ -64,15 +64,15 @@ class BenchmarkDataTest {
             assertEquals(
                 "startup[startup=COLD,compilation=Partial(" +
                     "baselineProfile=UseIfAvailable,iterations=0)]",
-                name
+                name,
             )
             assertEquals(
                 mapOf( // Note: parsing error in source data!
                     "compilation" to "Partial(baselineProfile=UseIfAvailable",
                     "startup" to "COLD",
-                    "iterations" to "0)"
+                    "iterations" to "0)",
                 ),
-                params
+                params,
             )
             assertEquals(2, metrics["methodsJitCompiled"]!!.runs.size)
             assertEquals(2, metrics["timeToInitialDisplayMs"]!!.runs.size)
@@ -101,14 +101,14 @@ class BenchmarkDataTest {
                         BenchmarkData.TestResult.ProfilerOutput(
                             BenchmarkData.TestResult.ProfilerOutput.Type.MethodTrace,
                             "duplicate label",
-                            "filename1.trace"
+                            "filename1.trace",
                         ),
                         BenchmarkData.TestResult.ProfilerOutput(
                             BenchmarkData.TestResult.ProfilerOutput.Type.MethodTrace,
                             "duplicate label",
-                            "filename2.trace"
-                        )
-                    )
+                            "filename2.trace",
+                        ),
+                    ),
             )
         }
     }

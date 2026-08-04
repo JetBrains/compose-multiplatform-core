@@ -63,6 +63,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.StringTokenizer;
 
 /**
@@ -1861,7 +1862,7 @@ public abstract class Transition implements Cloneable {
             if (anim != null) {
                 AnimationInfo oldInfo = runningAnimators.get(anim);
                 if (oldInfo != null && oldInfo.mView != null
-                        && windowId.equals(oldInfo.mWindowId)) {
+                        && Objects.equals(windowId, oldInfo.mWindowId)) {
                     TransitionValues oldValues = oldInfo.mValues;
                     View oldView = oldInfo.mView;
                     TransitionValues startValues = getTransitionValues(oldView, true);
@@ -2079,7 +2080,7 @@ public abstract class Transition implements Cloneable {
 
         for (int i = numOldAnims - 1; i >= 0; i--) {
             AnimationInfo info = oldAnimators.valueAt(i);
-            if (info.mView != null && windowId.equals(info.mWindowId)) {
+            if (info.mView != null && Objects.equals(windowId, info.mWindowId)) {
                 Animator anim = oldAnimators.keyAt(i);
                 anim.end();
             }
@@ -2173,6 +2174,7 @@ public abstract class Transition implements Cloneable {
      * @see PatternPathMotion
      * @see android.transition.PathMotion
      */
+    @SuppressWarnings("GetterSetterNullability")
     public @NonNull PathMotion getPathMotion() {
         return mPathMotion;
     }

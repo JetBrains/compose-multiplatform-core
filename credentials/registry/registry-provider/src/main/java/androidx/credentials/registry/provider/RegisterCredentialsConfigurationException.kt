@@ -27,10 +27,12 @@ package androidx.credentials.registry.provider
  *
  * @param errorMessage the error message
  */
-public class RegisterCredentialsConfigurationException(errorMessage: CharSequence? = null) :
+public class RegisterCredentialsConfigurationException
+@JvmOverloads
+constructor(errorMessage: CharSequence? = null) :
     RegisterCredentialsException(
         type = TYPE_REGISTER_CREDENTIALS_CONFIGURATION_EXCEPTION,
-        errorMessage = errorMessage
+        errorMessage = errorMessage,
     ) {
     private companion object {
         const val TYPE_REGISTER_CREDENTIALS_CONFIGURATION_EXCEPTION =

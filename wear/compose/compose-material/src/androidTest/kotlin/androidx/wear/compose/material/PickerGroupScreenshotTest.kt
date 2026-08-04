@@ -16,7 +16,6 @@
 
 package androidx.wear.compose.material
 
-import android.os.Build
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Spacer
@@ -31,7 +30,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.captureToImage
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
@@ -46,7 +45,7 @@ import org.junit.runner.RunWith
 
 @MediumTest
 @RunWith(AndroidJUnit4::class)
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+@SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 class PickerGroupScreenshotTest {
 
     @get:Rule val rule = createComposeRule()
@@ -81,7 +80,7 @@ class PickerGroupScreenshotTest {
                     .fillMaxWidth()
                     .background(MaterialTheme.colors.background)
                     .testTag(TEST_TAG),
-            contentAlignment = Alignment.Center
+            contentAlignment = Alignment.Center,
         ) {
             PickerGroup(
                 pickers = getPickerColumns(pickerCount),
@@ -97,7 +96,7 @@ class PickerGroupScreenshotTest {
 
     private fun verifyScreenshot(
         layoutDirection: LayoutDirection = LayoutDirection.Ltr,
-        content: @Composable () -> Unit
+        content: @Composable () -> Unit,
     ) {
         rule.setContentWithTheme {
             CompositionLocalProvider(LocalLayoutDirection provides layoutDirection) { content() }
@@ -114,7 +113,7 @@ class PickerGroupScreenshotTest {
         Array(count) {
             PickerGroupItem(
                 pickerState = PickerState(10),
-                option = { optionIndex, _ -> Text("%02d".format(optionIndex)) }
+                option = { optionIndex, _ -> Text("%02d".format(optionIndex)) },
             )
         }
 }

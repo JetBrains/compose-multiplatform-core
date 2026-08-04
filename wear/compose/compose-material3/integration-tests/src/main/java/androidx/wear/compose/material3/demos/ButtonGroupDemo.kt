@@ -27,13 +27,16 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.wear.compose.material3.Button
 import androidx.wear.compose.material3.ButtonGroup
@@ -60,30 +63,63 @@ fun ButtonGroupDemo() {
             Button(
                 onClick = {},
                 Modifier.animateWidth(interactionSource1),
-                interactionSource = interactionSource1
+                interactionSource = interactionSource1,
             ) {
                 Text("<", modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
             }
             FilledIconButton(
                 onClick = {},
                 Modifier.animateWidth(interactionSource2),
-                interactionSource = interactionSource2
+                interactionSource = interactionSource2,
             ) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Icon(
                         imageVector = Icons.Filled.Favorite,
                         contentDescription = "Favorite icon",
-                        modifier = Modifier.size(32.dp)
+                        modifier = Modifier.size(32.dp),
                     )
                 }
             }
             Button(
                 onClick = {},
                 Modifier.animateWidth(interactionSource3),
-                interactionSource = interactionSource3
+                interactionSource = interactionSource3,
             ) {
                 Text(">", modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
             }
+        }
+    }
+}
+
+@Composable
+fun ButtonGroupTwoButtonsWithRtlDemo() {
+    val interactionSource1 = remember { MutableInteractionSource() }
+    val interactionSource2 = remember { MutableInteractionSource() }
+
+    var rtl by remember { mutableStateOf(false) }
+    Box(Modifier.fillMaxSize()) {
+        CompositionLocalProvider(
+            LocalLayoutDirection provides if (rtl) LayoutDirection.Rtl else LayoutDirection.Ltr
+        ) {
+            ButtonGroup(Modifier.fillMaxWidth().align(Alignment.Center)) {
+                Button(
+                    onClick = {},
+                    modifier = Modifier.animateWidth(interactionSource1),
+                    interactionSource = interactionSource1,
+                ) {
+                    Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { Text("L") }
+                }
+                Button(
+                    onClick = {},
+                    modifier = Modifier.animateWidth(interactionSource2),
+                    interactionSource = interactionSource2,
+                ) {
+                    Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { Text("R") }
+                }
+            }
+        }
+        Button(modifier = Modifier.align(Alignment.BottomCenter), onClick = { rtl = !rtl }) {
+            Text(if (rtl) "RTL" else "LTR")
         }
     }
 }
@@ -98,7 +134,7 @@ fun ButtonGroupToggleButtonsDemo() {
                     Icon(
                         imageVector = Icons.Filled.Favorite,
                         contentDescription = "Favorite icon",
-                        modifier = Modifier.size(iconSize)
+                        modifier = Modifier.size(iconSize),
                     )
                 }
                 MyIconToggleButton(IconToggleButtonDefaults.animatedShapes()) { checked ->
@@ -114,16 +150,16 @@ fun ButtonGroupToggleButtonsDemo() {
                 MyTextToggleButton(TextToggleButtonDefaults.shapes()) { checked ->
                     Text(
                         text = if (checked) "On" else "Off",
-                        style = TextToggleButtonDefaults.textStyle
+                        style = TextToggleButtonDefaults.textStyle,
                     )
                 }
                 MyTextToggleButton(
                     TextToggleButtonDefaults.animatedShapes(),
-                    Modifier.weight(1.2f)
+                    Modifier.weight(1.2f),
                 ) { checked ->
                     Text(
                         text = if (checked) "On" else "Off",
-                        style = TextToggleButtonDefaults.textStyle
+                        style = TextToggleButtonDefaults.textStyle,
                     )
                 }
             }
@@ -135,7 +171,7 @@ fun ButtonGroupToggleButtonsDemo() {
 private fun ButtonGroupScope.MyIconToggleButton(
     shapes: IconToggleButtonShapes,
     modifier: Modifier = Modifier,
-    content: @Composable (Boolean) -> Unit
+    content: @Composable (Boolean) -> Unit,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     var checked by remember { mutableStateOf(false) }
@@ -148,7 +184,7 @@ private fun ButtonGroupScope.MyIconToggleButton(
                 .animateWidth(interactionSource),
         onCheckedChange = { checked = !checked },
         shapes = shapes,
-        interactionSource = interactionSource
+        interactionSource = interactionSource,
     ) {
         content(checked)
     }
@@ -158,7 +194,7 @@ private fun ButtonGroupScope.MyIconToggleButton(
 private fun ButtonGroupScope.MyTextToggleButton(
     shapes: TextToggleButtonShapes,
     modifier: Modifier = Modifier,
-    content: @Composable (Boolean) -> Unit
+    content: @Composable (Boolean) -> Unit,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     var checked by remember { mutableStateOf(false) }
@@ -171,7 +207,7 @@ private fun ButtonGroupScope.MyTextToggleButton(
                 .animateWidth(interactionSource),
         onCheckedChange = { checked = !checked },
         shapes = shapes,
-        interactionSource = interactionSource
+        interactionSource = interactionSource,
     ) {
         content(checked)
     }

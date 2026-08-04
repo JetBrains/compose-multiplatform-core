@@ -16,6 +16,7 @@
 
 package androidx.pdf.adapter
 
+import android.os.ParcelFileDescriptor
 import androidx.annotation.RestrictTo
 
 /**
@@ -28,12 +29,15 @@ import androidx.annotation.RestrictTo
 @RestrictTo(RestrictTo.Scope.LIBRARY)
 public interface PdfDocumentRenderer : AutoCloseable {
     /**
-     * Indicates whether the PDF document is linearized.
+     * The linearization status of the PDF document.
      *
-     * A linearized PDF allows for faster initial display of the first page, as it optimizes the
-     * file structure for progressive loading.
+     * This value indicates whether the document is optimized for incremental loading over a network
+     * where the value indicates:
+     * - 0: NOT_LINEARIZED
+     * - 1: LINEARIZED
+     * - 2: UNKNOWN STATUS.
      */
-    public val isLinearized: Boolean
+    public val linearizationStatus: Int
 
     /** The total number of pages in the PDF document. */
     public val pageCount: Int
@@ -65,4 +69,27 @@ public interface PdfDocumentRenderer : AutoCloseable {
      * @param pageNum The zero-based page number of the page to close.
      */
     public fun releasePage(page: PdfPage?, pageNum: Int)
+
+    /**
+     * Writes the contents of the [androidx.pdf.PdfDocument] to the destination and closes the
+     * [ParcelFileDescriptor]
+     *
+     * @param destination The [ParcelFileDescriptor] to write to.
+     * @param removePasswordProtection Whether to remove password protection from the document.
+     */
+    public fun write(destination: ParcelFileDescriptor, removePasswordProtection: Boolean)
+
+    public fun <T> withPage(pageNum: Int, block: (PdfPage) -> T): T? {
+        var page: PdfPage? = null
+        var results: T?
+
+        try {
+            page = this.openPage(pageNum, useCache = false)
+            results = block(page)
+        } finally {
+            this.releasePage(page, pageNum)
+        }
+
+        return results
+    }
 }

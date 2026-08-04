@@ -71,7 +71,7 @@ class ConfigurationScreenWidthHeightDetectorTest : LintDetectorTest() {
             wVjt435G8WOGfTj0BfJDfP4c3sN1TBjZoheRtRw+cclX3PyC4qcLHA4eZSyL
             qJrzhbHeMvFnDpBrYLaBuYbJdt6IWGjgNu4cgCS4i3sHGEtQSOAnuJ9Yefw3
             1TI9fr8EAAA=
-            """
+            """,
         )
 
     val FakeWearStub =
@@ -102,7 +102,7 @@ class ConfigurationScreenWidthHeightDetectorTest : LintDetectorTest() {
         K6vIPdLaOOGU0Rbb4LT3X1L/DYQVYsmQA7mNNxRe/U6YJ4yGYogFwuJvA0YQ
         D/3FIc5hieoeeaPkFRsIqhirYryKEspUMVHFJKYaYBbTmGkgtIgtZi1yFtEP
         oGFY3NwBAAA=
-        """
+        """,
         )
 
     @Test
@@ -146,7 +146,7 @@ class ConfigurationScreenWidthHeightDetectorTest : LintDetectorTest() {
                 Stubs.Composable,
                 Stubs.CompositionLocal,
                 Stubs.Dp,
-                AndroidStubs.Configuration
+                AndroidStubs.Configuration,
             )
             .run()
             .expect(
@@ -225,7 +225,7 @@ src/test/test.kt:29: Warning: Using Configuration.screenHeightDp instead of Loca
                 Stubs.Composable,
                 Stubs.CompositionLocal,
                 Stubs.Dp,
-                AndroidStubs.Configuration
+                AndroidStubs.Configuration,
             )
             .run()
             .expectClean()
@@ -255,7 +255,7 @@ src/test/test.kt:29: Warning: Using Configuration.screenHeightDp instead of Loca
                 Stubs.Composable,
                 Stubs.CompositionLocal,
                 Stubs.Dp,
-                AndroidStubs.Configuration
+                AndroidStubs.Configuration,
             )
             .run()
             .expectClean()

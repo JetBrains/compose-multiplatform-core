@@ -1,0 +1,332 @@
+/*
+ * Copyright 2025 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package androidx.text.vertical.testapp
+
+import android.graphics.Typeface
+import android.os.Build
+import android.os.Bundle
+import android.text.Layout
+import android.text.Spanned
+import android.text.StaticLayout
+import android.text.TextPaint
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.detectTransformGestures
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.PrimaryTabRow
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Tab
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.isSpecified
+import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.Layout
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalFontFamilyResolver
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontSynthesis
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.intl.Locale
+import androidx.compose.ui.text.intl.LocaleList
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.em
+import androidx.compose.ui.unit.isSpecified
+import androidx.compose.ui.unit.sp
+import androidx.text.vertical.EmphasisStyle
+import androidx.text.vertical.FontShearSpan
+import androidx.text.vertical.compose.VerticalText
+import androidx.text.vertical.compose.VerticalTextStyle
+import androidx.text.vertical.compose.buildVerticalText
+
+class VerticalTextSampleActivity : ComponentActivity() {
+    @OptIn(ExperimentalMaterial3Api::class)
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        setContent {
+            val demos =
+                arrayOf<Pair<String, @Composable () -> Unit>>(
+                    "Vertical Text" to { ZoomableVerticalText { LongText(it) } },
+                    "Vertical Multi-style Text" to { ZoomableVerticalText { ComplexText(it) } },
+                    "Horizontal Text" to { ZoomableVerticalText { LongHorizontalText(it) } },
+                    "Horizontal Emphasis Text" to
+                        {
+                            ZoomableVerticalText { ComplexHorizontalText(it) }
+                        },
+                )
+
+            Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+                Column(modifier = Modifier.padding(innerPadding)) {
+                    var selectedTabIndex by remember { mutableIntStateOf(0) }
+                    PrimaryTabRow(
+                        selectedTabIndex = selectedTabIndex,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        demos.forEachIndexed { index, (title, _) ->
+                            Tab(
+                                selected = selectedTabIndex == index,
+                                onClick = { selectedTabIndex = index },
+                                text = { Text(title) },
+                            )
+                        }
+                    }
+                    demos[selectedTabIndex].second()
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun ZoomableVerticalText(content: @Composable (VerticalTextStyle) -> Unit) {
+    val fontSize = 32f
+    var zoom by remember { mutableFloatStateOf(1f) }
+    var offsetX by remember { mutableFloatStateOf(0f) }
+    val style =
+        remember(zoom) {
+            VerticalTextStyle(
+                fontSize = (fontSize * zoom).sp,
+                fontFamily = FontFamily.Serif,
+                localeList =
+                    LocaleList(
+                        Locale(
+                            java.util.Locale.Builder()
+                                .setLocale(java.util.Locale.JAPANESE)
+                                .setUnicodeLocaleKeyword("lb", "strict")
+                                .build()
+                        )
+                    ),
+            )
+        }
+
+    Box(
+        modifier =
+            Modifier.pointerInput(Unit) {
+                    detectTapGestures(
+                        onDoubleTap = {
+                            zoom = 1f
+                            offsetX = 0f
+                        }
+                    )
+                }
+                .pointerInput(Unit) {
+                    detectTransformGestures { _, offsetChange, gestureZoom, _ ->
+                        zoom = (zoom * gestureZoom).coerceIn(0.25f, 10f)
+                        offsetX += offsetChange.x
+                    }
+                }
+                .graphicsLayer(translationX = offsetX)
+    ) {
+        content(style)
+    }
+}
+
+@Composable
+fun LegacyHorizontalText(text: Spanned, style: VerticalTextStyle, modifier: Modifier = Modifier) {
+    var hTextLayout by remember { mutableStateOf<Layout?>(null) }
+    val density = LocalDensity.current
+    val resolver = LocalFontFamilyResolver.current
+    val paint = remember(density, resolver) { TextPaint() }
+    val typeface =
+        remember(resolver, style) {
+            resolver
+                .resolve(
+                    fontFamily = style.fontFamily,
+                    fontWeight = style.fontWeight ?: FontWeight.Normal,
+                    fontStyle = style.fontStyle ?: FontStyle.Normal,
+                    fontSynthesis = style.fontSynthesis ?: FontSynthesis.All,
+                )
+                .value as Typeface
+        }
+    remember(paint, style, typeface, density) {
+        paint.reset()
+        setStyleToPaint(style, typeface, density, paint)
+        paint
+    }
+    Layout(
+        modifier =
+            modifier.fillMaxSize().drawWithContent {
+                drawIntoCanvas { c -> hTextLayout?.draw(c.nativeCanvas) }
+            },
+        content = {},
+    ) { _, constraints ->
+        hTextLayout =
+            StaticLayout.Builder.obtain(text, 0, text.length, paint, constraints.maxWidth).build()
+        layout(constraints.maxWidth, constraints.maxHeight) {}
+    }
+}
+
+@Composable
+fun LongText(style: VerticalTextStyle, modifier: Modifier = Modifier) {
+    val density = LocalDensity.current
+    val text = remember(density) { makeSampleText(density) }
+    VerticalText(text, modifier, style)
+}
+
+@Composable
+fun LongHorizontalText(style: VerticalTextStyle, modifier: Modifier = Modifier) {
+    val density = LocalDensity.current
+    val text = remember(density) { makeSampleText(density) }
+    LegacyHorizontalText(text, style, modifier)
+}
+
+@Composable
+fun ComplexHorizontalText(style: VerticalTextStyle, modifier: Modifier = Modifier) {
+    val density = LocalDensity.current
+    val text =
+        remember(density) {
+            buildVerticalText(density) {
+                withEmphasis { text("傍点も") }
+                text("Support")
+                withEmphasis(EmphasisStyle.Sesame) { text("されてます。") }
+            }
+        }
+    LegacyHorizontalText(text, style, modifier)
+}
+
+fun makeSampleText(density: Density) =
+    buildVerticalText(density) {
+        text("吾輩は猫である。", mapOf("吾輩" to "わがはい", "猫" to "ねこ"))
+        text("名前はまだ無い。", mapOf("名前" to "なまえ", "無" to "な"))
+        text("\n")
+        text("どこで生まれたかとんと見当がつかぬ。", mapOf("見当" to "けんとう"))
+        text("何でも薄暗いじめじめしたところでニャーニャー泣いていた事だけは記憶している。")
+        text("吾輩はここで始めて人間というものを見た。")
+        text("しかもあとで聞くとそれは書生という人間中で一番獰悪な種族であったそうだ。", mapOf("獰悪" to "どうあく"))
+        text("この書生というのは時々我々を捕えて煮て食うという話である。", mapOf("捕" to "つかま", "煮" to "に"))
+        text("しかしその当時は何という考もなかったから別段恐しいとも思わなかった。")
+        text("ただ彼の掌に載せられてスーと持ち上げられた時何だかフワフワした感じがあったばかりである。", mapOf("掌" to "てのひら"))
+        text("掌の上で少し落ちついて書生の顔を見たのがいわゆる人間というものの見始であろう。", mapOf("見始" to "みはじめ"))
+        text("この時妙なものだと思った感じが今でも残っている。")
+        text("第一毛をもって装飾されべきはずの顔がつるつるしてまるで薬缶だ。", mapOf("薬缶" to "やかん"))
+        text("その後猫にもだいぶ逢ったがこんな片輪には一度も出会わした事がない。", mapOf("片輪" to "かたわ", "出会" to "であ"))
+        text("のみならず顔の真中があまりに突起している。")
+        text("そうしてその穴の中から時々ぷうぷうと煙を吹く。", mapOf("煙" to "けむり"))
+        text("どうも咽せぽくて実に弱った。", mapOf("咽" to "む"))
+        text("これが人間の飲む煙草というものである事はようやくこの頃知った。", mapOf("煙草" to "たばこ"))
+        text("\n")
+    }
+
+@Composable
+fun ComplexText(style: VerticalTextStyle, modifier: Modifier = Modifier) {
+    val density = LocalDensity.current
+    val text = remember(density) { buildComplexText(density) }
+    VerticalText(text, modifier, style)
+}
+
+private fun buildComplexText(density: Density) =
+    buildVerticalText(density) {
+        upright("2024")
+        text("年の")
+        withRuby("クリスマス") {
+            combineUpright("12")
+            text("月")
+            combineUpright("25")
+            text("日")
+        }
+        text("に")
+        sideways("Google Pixel")
+        text("を買う。\n")
+
+        upright("2024")
+        text("年は")
+        combineUpright("2024")
+        text("年ともかけるし")
+        sideways("2024年")
+        text("ともかけるよ。\n")
+
+        text("もちろん")
+        withStyle(textColor = Color.Red) {
+            withRuby(
+                buildVerticalText(density) {
+                    text("インライン")
+                    withStyle(fontSize = 1.5.em) { text("スタイリング") }
+                }
+            ) {
+                withStyle(fontSize = 0.8.em) { sideways("inline ") }
+                withStyle(backgroundColor = Color.Green) { sideways("styling") }
+            }
+            withStyle(backgroundColor = Color.LightGray) {
+                text("も")
+                withStyle(fontSize = 2.em) { text("可能") }
+                text("です。\n")
+            }
+        }
+
+        combineUpright(
+            buildVerticalText(density) { // Tate Chu Yoko only respect styling.
+                text("2")
+                withStyle(backgroundColor = Color.Red) { text("0") }
+                withStyle(backgroundColor = Color.Green) { text("2") }
+                text("5")
+            }
+        )
+        text("年もよろしくお願いいたします。")
+
+        withStyle(fontShear = FontShearSpan.DEFAULT_FONT_SHEAR) {
+            text("日本語の斜体はEnglishのItalicとは少し違います。")
+        }
+        withEmphasis { text("傍点もSupportされてます。") }
+    }
+
+private fun setStyleToPaint(
+    style: VerticalTextStyle,
+    typeface: Typeface,
+    density: Density,
+    out: TextPaint,
+) {
+    with(density) {
+        out.textSize =
+            if (style.fontSize.isSpecified) style.fontSize.toPx() else DefaultFontSize.toPx()
+        out.typeface = typeface
+        out.fontFeatureSettings = style.fontFeatureSettings
+        if (style.color.isSpecified) {
+            out.color = style.color.toArgb()
+        }
+        if (style.background.isSpecified) {
+            out.bgColor = style.background.toArgb()
+        }
+        if (Build.VERSION.SDK_INT >= 25) {
+            style.localeList
+                ?.map { it.platformLocale }
+                ?.toTypedArray()
+                ?.let { out.textLocales = android.os.LocaleList(*it) }
+        }
+    }
+}
+
+private val DefaultFontSize = 16.sp

@@ -37,7 +37,7 @@ import androidx.compose.ui.unit.IntSize
  * @see androidx.compose.ui.layout.Layout
  */
 @JvmDefaultWithCompatibility
-interface LayoutModifier : Modifier.Element {
+public interface LayoutModifier : Modifier.Element {
     /**
      * The function used to measure the modifier. The [measurable] corresponds to the wrapped
      * content, and it can be measured with the desired constraints according to the logic of the
@@ -52,23 +52,31 @@ interface LayoutModifier : Modifier.Element {
      * [Layout], the only difference is that they apply to exactly one child. For a more detailed
      * explanation of measurement and layout, see [MeasurePolicy].
      */
-    fun MeasureScope.measure(measurable: Measurable, constraints: Constraints): MeasureResult
+    public fun MeasureScope.measure(measurable: Measurable, constraints: Constraints): MeasureResult
 
     /** The function used to calculate [IntrinsicMeasurable.minIntrinsicWidth]. */
-    fun IntrinsicMeasureScope.minIntrinsicWidth(measurable: IntrinsicMeasurable, height: Int): Int =
-        MeasuringIntrinsics.minWidth(this@LayoutModifier, this, measurable, height)
+    public fun IntrinsicMeasureScope.minIntrinsicWidth(
+        measurable: IntrinsicMeasurable,
+        height: Int,
+    ): Int = MeasuringIntrinsics.minWidth(this@LayoutModifier, this, measurable, height)
 
     /** The lambda used to calculate [IntrinsicMeasurable.minIntrinsicHeight]. */
-    fun IntrinsicMeasureScope.minIntrinsicHeight(measurable: IntrinsicMeasurable, width: Int): Int =
-        MeasuringIntrinsics.minHeight(this@LayoutModifier, this, measurable, width)
+    public fun IntrinsicMeasureScope.minIntrinsicHeight(
+        measurable: IntrinsicMeasurable,
+        width: Int,
+    ): Int = MeasuringIntrinsics.minHeight(this@LayoutModifier, this, measurable, width)
 
     /** The function used to calculate [IntrinsicMeasurable.maxIntrinsicWidth]. */
-    fun IntrinsicMeasureScope.maxIntrinsicWidth(measurable: IntrinsicMeasurable, height: Int): Int =
-        MeasuringIntrinsics.maxWidth(this@LayoutModifier, this, measurable, height)
+    public fun IntrinsicMeasureScope.maxIntrinsicWidth(
+        measurable: IntrinsicMeasurable,
+        height: Int,
+    ): Int = MeasuringIntrinsics.maxWidth(this@LayoutModifier, this, measurable, height)
 
     /** The lambda used to calculate [IntrinsicMeasurable.maxIntrinsicHeight]. */
-    fun IntrinsicMeasureScope.maxIntrinsicHeight(measurable: IntrinsicMeasurable, width: Int): Int =
-        MeasuringIntrinsics.maxHeight(this@LayoutModifier, this, measurable, width)
+    public fun IntrinsicMeasureScope.maxIntrinsicHeight(
+        measurable: IntrinsicMeasurable,
+        width: Int,
+    ): Int = MeasuringIntrinsics.maxHeight(this@LayoutModifier, this, measurable, width)
 }
 
 // TODO(popam): deduplicate from the copy-pasted logic of Layout.kt without making it public
@@ -77,13 +85,13 @@ private object MeasuringIntrinsics {
         modifier: LayoutModifier,
         intrinsicMeasureScope: IntrinsicMeasureScope,
         intrinsicMeasurable: IntrinsicMeasurable,
-        h: Int
+        h: Int,
     ): Int {
         val measurable =
             DefaultIntrinsicMeasurable(
                 intrinsicMeasurable,
                 IntrinsicMinMax.Min,
-                IntrinsicWidthHeight.Width
+                IntrinsicWidthHeight.Width,
             )
         val constraints = Constraints(maxHeight = h)
         val layoutResult =
@@ -98,13 +106,13 @@ private object MeasuringIntrinsics {
         modifier: LayoutModifier,
         intrinsicMeasureScope: IntrinsicMeasureScope,
         intrinsicMeasurable: IntrinsicMeasurable,
-        w: Int
+        w: Int,
     ): Int {
         val measurable =
             DefaultIntrinsicMeasurable(
                 intrinsicMeasurable,
                 IntrinsicMinMax.Min,
-                IntrinsicWidthHeight.Height
+                IntrinsicWidthHeight.Height,
             )
         val constraints = Constraints(maxWidth = w)
         val layoutResult =
@@ -119,13 +127,13 @@ private object MeasuringIntrinsics {
         modifier: LayoutModifier,
         intrinsicMeasureScope: IntrinsicMeasureScope,
         intrinsicMeasurable: IntrinsicMeasurable,
-        h: Int
+        h: Int,
     ): Int {
         val measurable =
             DefaultIntrinsicMeasurable(
                 intrinsicMeasurable,
                 IntrinsicMinMax.Max,
-                IntrinsicWidthHeight.Width
+                IntrinsicWidthHeight.Width,
             )
         val constraints = Constraints(maxHeight = h)
         val layoutResult =
@@ -140,13 +148,13 @@ private object MeasuringIntrinsics {
         modifier: LayoutModifier,
         intrinsicMeasureScope: IntrinsicMeasureScope,
         intrinsicMeasurable: IntrinsicMeasurable,
-        w: Int
+        w: Int,
     ): Int {
         val measurable =
             DefaultIntrinsicMeasurable(
                 intrinsicMeasurable,
                 IntrinsicMinMax.Max,
-                IntrinsicWidthHeight.Height
+                IntrinsicWidthHeight.Height,
             )
         val constraints = Constraints(maxWidth = w)
         val layoutResult =
@@ -160,7 +168,7 @@ private object MeasuringIntrinsics {
     private class DefaultIntrinsicMeasurable(
         val measurable: IntrinsicMeasurable,
         val minMax: IntrinsicMinMax,
-        val widthHeight: IntrinsicWidthHeight
+        val widthHeight: IntrinsicWidthHeight,
     ) : Measurable {
         override val parentData: Any?
             get() = measurable.parentData
@@ -214,18 +222,18 @@ private object MeasuringIntrinsics {
         override fun placeAt(
             position: IntOffset,
             zIndex: Float,
-            layerBlock: (GraphicsLayerScope.() -> Unit)?
+            layerBlock: (GraphicsLayerScope.() -> Unit)?,
         ) {}
     }
 
     private enum class IntrinsicMinMax {
         Min,
-        Max
+        Max,
     }
 
     private enum class IntrinsicWidthHeight {
         Width,
-        Height
+        Height,
     }
 }
 
@@ -241,8 +249,9 @@ private object MeasuringIntrinsics {
  * @sample androidx.compose.ui.samples.ConvenienceLayoutModifierSample
  * @see androidx.compose.ui.layout.LayoutModifier
  */
-fun Modifier.layout(measure: MeasureScope.(Measurable, Constraints) -> MeasureResult) =
-    this then LayoutElement(measure)
+public fun Modifier.layout(
+    measure: MeasureScope.(Measurable, Constraints) -> MeasureResult
+): Modifier = this then LayoutElement(measure)
 
 private class LayoutElement(val measure: MeasureScope.(Measurable, Constraints) -> MeasureResult) :
     ModifierNodeElement<LayoutModifierImpl>() {

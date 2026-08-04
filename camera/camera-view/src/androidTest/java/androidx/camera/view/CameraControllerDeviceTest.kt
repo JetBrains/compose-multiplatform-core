@@ -18,34 +18,49 @@ package androidx.camera.view
 
 import android.content.ContentValues
 import android.content.Context
+import android.os.Build
 import android.provider.MediaStore
 import android.view.View
-import androidx.camera.camera2.Camera2Config
-import androidx.camera.camera2.pipe.integration.CameraPipeConfig
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.CameraSelector.LENS_FACING_BACK
 import androidx.camera.core.CameraSelector.LENS_FACING_FRONT
 import androidx.camera.core.CameraXConfig
+import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageCapture
+import androidx.camera.core.ImageProxy
+import androidx.camera.core.Preview
+import androidx.camera.core.SessionConfig
 import androidx.camera.core.impl.utils.executor.CameraXExecutors.mainThreadExecutor
+import androidx.camera.extensions.ExtensionMode
+import androidx.camera.extensions.ExtensionSessionConfig
+import androidx.camera.extensions.ExtensionsManager
 import androidx.camera.lifecycle.ProcessCameraProvider
-import androidx.camera.testing.impl.CameraPipeConfigTestRule
 import androidx.camera.testing.impl.CameraUtil
 import androidx.camera.testing.impl.CameraUtil.PreTestCameraIdList
-import androidx.camera.testing.impl.CoreAppTestUtil
+import androidx.camera.testing.impl.ExtensionsUtil
+import androidx.camera.testing.impl.ParameterizedTestConfigUtil
+import androidx.camera.testing.impl.RequireForegroundRule
 import androidx.camera.testing.impl.fakes.FakeActivity
 import androidx.camera.testing.impl.fakes.FakeLifecycleOwner
 import androidx.camera.testing.impl.fakes.FakeSurfaceEffect
 import androidx.camera.testing.impl.fakes.FakeSurfaceProcessor
+import androidx.camera.video.FileOutputOptions
+import androidx.camera.video.Recorder
+import androidx.camera.video.Recording
+import androidx.camera.video.VideoCapture
+import androidx.camera.video.VideoRecordEvent
+import androidx.camera.view.video.AudioConfig
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.LargeTest
-import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
+import java.io.File
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
-import org.junit.After
+import java.util.concurrent.atomic.AtomicReference
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
 import org.junit.Assume.assumeTrue
 import org.junit.Before
 import org.junit.Rule
@@ -56,10 +71,9 @@ import org.junit.runners.Parameterized
 /** Instrumentation tests for [CameraController]. */
 @LargeTest
 @RunWith(Parameterized::class)
-@SdkSuppress(minSdkVersion = 21)
 class CameraControllerDeviceTest(
     private val implName: String,
-    private val cameraConfig: CameraXConfig
+    private val cameraConfig: CameraXConfig,
 ) {
 
     companion object {
@@ -68,17 +82,13 @@ class CameraControllerDeviceTest(
         @JvmStatic
         @Parameterized.Parameters(name = "{0}")
         fun data() =
-            listOf(
-                arrayOf(Camera2Config::class.simpleName, Camera2Config.defaultConfig()),
-                arrayOf(CameraPipeConfig::class.simpleName, CameraPipeConfig.defaultConfig())
+            ParameterizedTestConfigUtil.generateCameraXConfigParameterizedTestConfigs(
+                inLabTestRequired = true
             )
     }
 
     @get:Rule
-    val cameraPipeConfigTestRule =
-        CameraPipeConfigTestRule(
-            active = implName == CameraPipeConfig::class.simpleName,
-        )
+    val requireForegroundRule = RequireForegroundRule { assumeTrue(CameraUtil.deviceHasCamera()) }
 
     @get:Rule
     val useCamera =
@@ -89,23 +99,21 @@ class CameraControllerDeviceTest(
     private var activityScenario: ActivityScenario<FakeActivity>? = null
     private lateinit var context: Context
     private var cameraProvider: ProcessCameraProvider? = null
+    private lateinit var defaultCameraSelector: CameraSelector
 
     @Before
     fun setUp() {
-        context = ApplicationProvider.getApplicationContext<Context>()
-        CoreAppTestUtil.prepareDeviceUI(instrumentation)
+        context = ApplicationProvider.getApplicationContext()
         ProcessCameraProvider.configureInstance(cameraConfig)
-        cameraProvider = ProcessCameraProvider.getInstance(context).get()
+        defaultCameraSelector = CameraUtil.assumeFirstAvailableCameraSelector()
+        cameraProvider = ProcessCameraProvider.getInstance(context)[10, TimeUnit.SECONDS]
         activityScenario = ActivityScenario.launch(FakeActivity::class.java)
         controller = LifecycleCameraController(context)
+        instrumentation.runOnMainSync { controller!!.cameraSelector = defaultCameraSelector }
         controller!!.initializationFuture.get()
-    }
-
-    @After
-    fun tearDown() {
-        instrumentation.runOnMainSync {
+        requireForegroundRule.deferCleanup {
             controller?.shutDownForTests()
-            cameraProvider?.shutdownAsync()?.get(10000, TimeUnit.MILLISECONDS)
+            cameraProvider?.shutdownAsync()?.get(10, TimeUnit.SECONDS)
             cameraProvider = null
         }
     }
@@ -118,11 +126,13 @@ class CameraControllerDeviceTest(
             // Arrange.
             previewView = PreviewView(context)
             it.setContentView(previewView)
-            previewView!!.controller = controller
+            previewView.controller = controller
             controller!!.bindToLifecycle(FakeLifecycleOwner())
             controller!!.initializationFuture.get()
         }
-        waitUtilPreviewViewIsReady(previewView!!)
+        val layoutLatch = CountDownLatch(1)
+        waitUntilPreviewViewIsReady(previewView!!, layoutLatch)
+        assertThat(layoutLatch.await(TIMEOUT_SECONDS, TimeUnit.SECONDS)).isTrue()
 
         // Act: set the same effect twice, which is invalid.
         val previewEffect1 =
@@ -142,11 +152,13 @@ class CameraControllerDeviceTest(
             // Arrange.
             previewView = PreviewView(context)
             it.setContentView(previewView)
-            previewView!!.controller = controller
+            previewView.controller = controller
             controller!!.bindToLifecycle(FakeLifecycleOwner())
             controller!!.initializationFuture.get()
         }
-        waitUtilPreviewViewIsReady(previewView!!)
+        val layoutLatch = CountDownLatch(1)
+        waitUntilPreviewViewIsReady(previewView!!, layoutLatch)
+        assertThat(layoutLatch.await(TIMEOUT_SECONDS, TimeUnit.SECONDS)).isTrue()
 
         // Act: set an effect
         val effect =
@@ -165,25 +177,32 @@ class CameraControllerDeviceTest(
 
     @Test
     fun setSelectorAfterBound_selectorSet() {
+        val cameraSelectors = CameraUtil.getAvailableCameraSelectors()
+        assumeTrue("No enough cameras to test.", cameraSelectors.size >= 2)
+        val cameraSelector0 = cameraSelectors[0]
+        val cameraSelector1 = cameraSelectors[1]
+
         // Act
         instrumentation.runOnMainSync {
-            assertThat(controller!!.cameraSelector.lensFacing)
-                .isEqualTo(CameraSelector.LENS_FACING_BACK)
-            controller!!.cameraSelector = CameraSelector.DEFAULT_FRONT_CAMERA
+            controller!!.cameraSelector = cameraSelector0
+
+            assertThat(controller!!.cameraSelector.lensFacing).isEqualTo(cameraSelector0.lensFacing)
+            controller!!.cameraSelector = cameraSelector1
 
             // Assert.
-            assertThat(controller!!.cameraSelector.lensFacing)
-                .isEqualTo(CameraSelector.LENS_FACING_FRONT)
+            assertThat(controller!!.cameraSelector.lensFacing).isEqualTo(cameraSelector1.lensFacing)
         }
     }
 
     @Test
-    fun previewViewNotAttached_useCaseGroupIsNotBuilt() {
-        assertThat(controller!!.createUseCaseGroup()).isNull()
+    fun previewViewNotAttached_boundSessionConfigIsNotBuilt() {
+        assertThat(controller!!.boundSessionConfig).isNull()
     }
 
     @Test
     fun frontCameraFlipNotSet_imageIsMirrored() {
+        assumeTrue(CameraUtil.hasCameraWithLensFacing(LENS_FACING_FRONT))
+
         // Arrange.
         instrumentation.runOnMainSync {
             controller!!.cameraSelector = CameraSelector.DEFAULT_FRONT_CAMERA
@@ -199,6 +218,8 @@ class CameraControllerDeviceTest(
 
     @Test
     fun frontCameraFlipSetToFalse_imageIsNotMirrored() {
+        assumeTrue(CameraUtil.hasCameraWithLensFacing(LENS_FACING_FRONT))
+
         // Arrange.
         instrumentation.runOnMainSync {
             controller!!.cameraSelector = CameraSelector.DEFAULT_FRONT_CAMERA
@@ -216,6 +237,8 @@ class CameraControllerDeviceTest(
 
     @Test
     fun frontCameraFlipSetToTrue_imageIsMirrored() {
+        assumeTrue(CameraUtil.hasCameraWithLensFacing(LENS_FACING_FRONT))
+
         // Arrange.
         instrumentation.runOnMainSync {
             controller!!.cameraSelector = CameraSelector.DEFAULT_FRONT_CAMERA
@@ -235,7 +258,7 @@ class CameraControllerDeviceTest(
         return ImageCapture.OutputFileOptions.Builder(
             instrumentation.context.contentResolver,
             MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-            ContentValues()
+            ContentValues(),
         )
     }
 
@@ -262,17 +285,16 @@ class CameraControllerDeviceTest(
     @Test
     fun clearPreviewSurface_wontUnbindOthersUseCases() {
         // Arrange.
-        assumeTrue(CameraUtil.hasCameraWithLensFacing(LENS_FACING_BACK))
-        var cameraProvider =
+        val cameraProvider =
             ProcessCameraProvider.getInstance(ApplicationProvider.getApplicationContext())[
                     10000, TimeUnit.MILLISECONDS]
 
-        var imageCapture = ImageCapture.Builder().build()
+        val imageCapture = ImageCapture.Builder().build()
         instrumentation.runOnMainSync {
             cameraProvider.bindToLifecycle(
                 FakeLifecycleOwner(),
-                CameraSelector.DEFAULT_BACK_CAMERA,
-                imageCapture
+                defaultCameraSelector,
+                imageCapture,
             )
         }
 
@@ -289,36 +311,32 @@ class CameraControllerDeviceTest(
 
     @Test
     fun setCameraSelector_wontUnbindOthersUseCases() {
-        testCameraSelectorWontUnbindUseCases(
-            CameraSelector.DEFAULT_BACK_CAMERA,
-            CameraSelector.DEFAULT_BACK_CAMERA
-        )
-        testCameraSelectorWontUnbindUseCases(
-            CameraSelector.DEFAULT_FRONT_CAMERA,
-            CameraSelector.DEFAULT_FRONT_CAMERA
-        )
-        testCameraSelectorWontUnbindUseCases(
-            CameraSelector.DEFAULT_BACK_CAMERA,
-            CameraSelector.DEFAULT_FRONT_CAMERA
-        )
-        testCameraSelectorWontUnbindUseCases(
-            CameraSelector.DEFAULT_FRONT_CAMERA,
-            CameraSelector.DEFAULT_BACK_CAMERA
-        )
+        val cameraSelectors = CameraUtil.getAvailableCameraSelectors()
+        if (cameraSelectors.isNotEmpty()) {
+            val cameraSelector0 = cameraSelectors[0]
+            testCameraSelectorWontUnbindUseCases(cameraSelector0, cameraSelector0)
+        }
+        if (cameraSelectors.size > 1) {
+            val cameraSelector0 = cameraSelectors[0]
+            val cameraSelector1 = cameraSelectors[1]
+            testCameraSelectorWontUnbindUseCases(cameraSelector1, cameraSelector1)
+            testCameraSelectorWontUnbindUseCases(cameraSelector0, cameraSelector1)
+            testCameraSelectorWontUnbindUseCases(cameraSelector1, cameraSelector0)
+        }
     }
 
     private fun testCameraSelectorWontUnbindUseCases(
         firstCamera: CameraSelector,
-        secondCamera: CameraSelector
+        secondCamera: CameraSelector,
     ) {
         // Arrange.
-        assumeTrue(CameraUtil.hasCameraWithLensFacing(LENS_FACING_BACK))
-        assumeTrue(CameraUtil.hasCameraWithLensFacing(LENS_FACING_FRONT))
-        var cameraProvider =
+        assumeTrue(CameraUtil.hasCameraWithLensFacing(firstCamera.lensFacing!!))
+        assumeTrue(CameraUtil.hasCameraWithLensFacing(secondCamera.lensFacing!!))
+        val cameraProvider =
             ProcessCameraProvider.getInstance(ApplicationProvider.getApplicationContext())[
                     10000, TimeUnit.MILLISECONDS]
 
-        var imageCapture = ImageCapture.Builder().build()
+        val imageCapture = ImageCapture.Builder().build()
         instrumentation.runOnMainSync {
             cameraProvider.bindToLifecycle(FakeLifecycleOwner(), firstCamera, imageCapture)
         }
@@ -334,8 +352,281 @@ class CameraControllerDeviceTest(
         assertThat(cameraProvider.isBound(imageCapture)).isTrue()
     }
 
-    private fun waitUtilPreviewViewIsReady(previewView: PreviewView) {
-        val countDownLatch = CountDownLatch(1)
+    @Test
+    fun lifecycleCameraController_canEnterStreamingStateAndTakePicture_withSetSessionConfig() {
+        // Arrange
+        val controller = LifecycleCameraController(context)
+        val previewView = createPreview()
+        val streamingStateLatch = getPreviewStreamingStateLatch(previewView)
+        val preview = Preview.Builder().build()
+        val imageCapture = ImageCapture.Builder().build()
+        val sessionConfig = SessionConfig(preview, imageCapture)
+        val fakeLifecycleOwner = FakeLifecycleOwner()
+
+        // Act
+        instrumentation.runOnMainSync {
+            fakeLifecycleOwner.startAndResume()
+            previewView.get().controller = controller
+            controller.setSessionConfig(sessionConfig, defaultCameraSelector)
+            controller.bindToLifecycle(fakeLifecycleOwner)
+        }
+
+        // Assert: streaming and can take picture
+        assertThat(streamingStateLatch.await(TIMEOUT_SECONDS, TimeUnit.SECONDS)).isTrue()
+        assertCanTakePicture(controller, imageCapture)
+    }
+
+    @Test
+    fun lifecycleCameraController_canSwitchSessionConfig_andAllUseCasesWork() {
+        // Arrange
+        val controller = LifecycleCameraController(context)
+        val previewView = createPreview()
+        val streamingStateLatch = getPreviewStreamingStateLatch(previewView)
+        val preview = Preview.Builder().build()
+        val imageCapture = ImageCapture.Builder().build()
+        val sessionConfig1 = SessionConfig(preview, imageCapture)
+        val fakeLifecycleOwner = FakeLifecycleOwner()
+
+        // Act: set SessionConfig with Preview and ImageCapture
+        instrumentation.runOnMainSync {
+            fakeLifecycleOwner.startAndResume()
+            previewView.get().controller = controller
+            controller.setSessionConfig(sessionConfig1, defaultCameraSelector)
+            controller.bindToLifecycle(fakeLifecycleOwner)
+        }
+
+        // Assert: streaming and can take picture
+        assertThat(streamingStateLatch.await(TIMEOUT_SECONDS, TimeUnit.SECONDS)).isTrue()
+        assertCanTakePicture(controller, imageCapture)
+
+        // Act: set a new SessionConfig with VideoCapture
+        val streamingStateLatch2 = getPreviewStreamingStateLatch(previewView)
+        val videoCapture = VideoCapture.withOutput(Recorder.Builder().build())
+        val sessionConfig2 = SessionConfig(preview, imageCapture, videoCapture)
+        instrumentation.runOnMainSync {
+            controller.setSessionConfig(sessionConfig2, defaultCameraSelector)
+        }
+
+        // Assert: streaming and can take picture and record video
+        assertThat(streamingStateLatch2.await(TIMEOUT_SECONDS, TimeUnit.SECONDS)).isTrue()
+        assertCanTakePicture(controller, imageCapture)
+        assertCanRecordVideo(controller, videoCapture)
+    }
+
+    @Test
+    fun lifecycleCameraController_canEnterStreamingStateAndRecordVideo_withSetSessionConfig() {
+        // Arrange
+        val controller = LifecycleCameraController(context)
+        val previewView = createPreview()
+        val streamingStateLatch = getPreviewStreamingStateLatch(previewView)
+        val preview = Preview.Builder().build()
+        val videoCapture = VideoCapture.withOutput(Recorder.Builder().build())
+        val sessionConfig = SessionConfig(preview, videoCapture)
+        val fakeLifecycleOwner = FakeLifecycleOwner()
+
+        // Act
+        instrumentation.runOnMainSync {
+            fakeLifecycleOwner.startAndResume()
+            previewView.get().controller = controller
+            controller.setSessionConfig(sessionConfig, defaultCameraSelector)
+            controller.bindToLifecycle(fakeLifecycleOwner)
+        }
+
+        // Assert: streaming and can record video
+        assertThat(streamingStateLatch.await(TIMEOUT_SECONDS, TimeUnit.SECONDS)).isTrue()
+        assertCanRecordVideo(controller, videoCapture)
+    }
+
+    @Test
+    fun lifecycleCameraController_canEnterStreamingStateAndAnalyze_withSetSessionConfig() {
+        // Arrange
+        val controller = LifecycleCameraController(context)
+        val previewView = createPreview()
+        val streamingStateLatch = getPreviewStreamingStateLatch(previewView)
+        val preview = Preview.Builder().build()
+        val imageAnalysis = ImageAnalysis.Builder().build()
+        val sessionConfig = SessionConfig(preview, imageAnalysis)
+        val fakeLifecycleOwner = FakeLifecycleOwner()
+
+        // Act
+        instrumentation.runOnMainSync {
+            fakeLifecycleOwner.startAndResume()
+            previewView.get().controller = controller
+            controller.setSessionConfig(sessionConfig, defaultCameraSelector)
+            controller.bindToLifecycle(fakeLifecycleOwner)
+        }
+
+        // Assert: streaming and can analyze received image
+        assertThat(streamingStateLatch.await(TIMEOUT_SECONDS, TimeUnit.SECONDS)).isTrue()
+        assertCanAnalyzeImage(imageAnalysis)
+    }
+
+    @Test
+    fun lifecycleCameraController_canEnterStreamingStateAndTakePicture_withExtensionSessionConfig():
+        Unit = runBlocking {
+        assumeTrue(!Build.MODEL.contains("Cuttlefish", true))
+        ExtensionsUtil.assumePcsSupportedForImageCapture(context)
+        // 1. Get ExtensionsManager instance
+        val extensionsManager = ExtensionsManager.getInstance(context, cameraProvider!!)
+
+        // 2. Checks whether NIGHT extension mode is available
+        assumeTrue(
+            extensionsManager.isExtensionAvailable(defaultCameraSelector, ExtensionMode.NIGHT)
+        )
+
+        // 3. Create an ExtensionSessionConfig with Preview and ImageCapture
+        val previewView = createPreview()
+        val streamingStateLatch = getPreviewStreamingStateLatch(previewView)
+        val preview = Preview.Builder().build()
+        val imageCapture = ImageCapture.Builder().build()
+        val extensionSessionConfig =
+            ExtensionSessionConfig(ExtensionMode.NIGHT, extensionsManager, preview, imageCapture)
+
+        // 4. Bind the ExtensionSessionConfig and verify preview is streaming
+        val fakeLifecycleOwner = FakeLifecycleOwner()
+        instrumentation.runOnMainSync {
+            fakeLifecycleOwner.startAndResume()
+            previewView.get().controller = controller
+            controller!!.setSessionConfig(extensionSessionConfig, defaultCameraSelector)
+            controller!!.bindToLifecycle(fakeLifecycleOwner)
+        }
+
+        // Assert: streaming and can take picture
+        assertThat(streamingStateLatch.await(TIMEOUT_SECONDS, TimeUnit.SECONDS)).isTrue()
+        assertCanTakePicture(controller!!, imageCapture)
+    }
+
+    @Test
+    fun setCameraSelector_canSwitchesCamera_withSessionConfig() {
+        // Arrange
+        assumeTrue(CameraUtil.hasCameraWithLensFacing(LENS_FACING_BACK))
+        assumeTrue(CameraUtil.hasCameraWithLensFacing(LENS_FACING_FRONT))
+
+        val controller = LifecycleCameraController(context)
+        val previewView = createPreview()
+        val streamingStateLatch = getPreviewStreamingStateLatch(previewView)
+        val preview = Preview.Builder().build()
+        val sessionConfig = SessionConfig(preview)
+        val fakeLifecycleOwner = FakeLifecycleOwner()
+
+        // Act: set initial camera to back
+        instrumentation.runOnMainSync {
+            fakeLifecycleOwner.startAndResume()
+            previewView.get().controller = controller
+            controller.setSessionConfig(sessionConfig, defaultCameraSelector)
+            controller.bindToLifecycle(fakeLifecycleOwner)
+        }
+
+        // Assert: preview is streaming with back camera
+        assertThat(streamingStateLatch.await(TIMEOUT_SECONDS, TimeUnit.SECONDS)).isTrue()
+        instrumentation.runOnMainSync {
+            assertThat(controller.cameraSelector.lensFacing).isEqualTo(LENS_FACING_BACK)
+        }
+
+        // Act: switch to front camera
+        val streamingStateLatch2 = getPreviewStreamingStateLatch(previewView)
+        instrumentation.runOnMainSync {
+            controller.setSessionConfig(sessionConfig, CameraSelector.DEFAULT_FRONT_CAMERA)
+        }
+
+        // Assert: preview is streaming with front camera
+        assertThat(streamingStateLatch2.await(TIMEOUT_SECONDS, TimeUnit.SECONDS)).isTrue()
+        instrumentation.runOnMainSync {
+            assertThat(controller.cameraSelector.lensFacing).isEqualTo(LENS_FACING_FRONT)
+        }
+    }
+
+    @Test
+    fun previewViewCanEnterStreamingState_whenSetPreviewViewControllerAfterSessionConfigIsSet() {
+        // Arrange
+        val controller = LifecycleCameraController(context)
+        val previewView = createPreview()
+        val streamingStateLatch = getPreviewStreamingStateLatch(previewView)
+        val preview = Preview.Builder().build()
+        val sessionConfig = SessionConfig(preview)
+        val fakeLifecycleOwner = FakeLifecycleOwner()
+
+        // Act
+        instrumentation.runOnMainSync {
+            fakeLifecycleOwner.startAndResume()
+            // Set SessionConfig on controller, but don't set controller on PreviewView yet
+            controller.setSessionConfig(sessionConfig, defaultCameraSelector)
+            controller.bindToLifecycle(fakeLifecycleOwner)
+        }
+
+        // Assert: preview is not streaming yet.
+        // Use a short timeout because we expect it to fail.
+        assertThat(streamingStateLatch.await(2, TimeUnit.SECONDS)).isFalse()
+        instrumentation.runOnMainSync {
+            assertThat(previewView.get().previewStreamState.value)
+                .isNotEqualTo(PreviewView.StreamState.STREAMING)
+        }
+
+        // Act: set the controller on the PreviewView
+        val streamingStateLatch2 = getPreviewStreamingStateLatch(previewView)
+        instrumentation.runOnMainSync { previewView.get().controller = controller }
+
+        // Assert: preview is streaming
+        assertThat(streamingStateLatch2.await(TIMEOUT_SECONDS, TimeUnit.SECONDS)).isTrue()
+    }
+
+    @Test
+    fun previewViewCanEnterStreamingState_whenSetPreviewViewControllerBeforeSessionConfigIsSet() {
+        // Arrange
+        val controller = LifecycleCameraController(context)
+        val previewView = createPreview()
+        val streamingStateLatch = getPreviewStreamingStateLatch(previewView)
+        // Create a Preview without setting a SurfaceProvider.
+        val preview = Preview.Builder().build()
+        val sessionConfig = SessionConfig(preview)
+        val fakeLifecycleOwner = FakeLifecycleOwner()
+
+        // Act
+        instrumentation.runOnMainSync {
+            fakeLifecycleOwner.startAndResume()
+            // Set controller on PreviewView first.
+            previewView.get().controller = controller
+            // Then set the SessionConfig. The controller should automatically connect the
+            // Preview to the PreviewView's SurfaceProvider.
+            controller.setSessionConfig(sessionConfig, defaultCameraSelector)
+            controller.bindToLifecycle(fakeLifecycleOwner)
+        }
+
+        // Assert: preview is streaming.
+        assertThat(streamingStateLatch.await(TIMEOUT_SECONDS, TimeUnit.SECONDS)).isTrue()
+    }
+
+    private fun createPreview(): AtomicReference<PreviewView> {
+        val previewView = AtomicReference<PreviewView>()
+        val layoutLatch = CountDownLatch(1)
+        instrumentation.runOnMainSync {
+            val view = PreviewView(context)
+            previewView.set(view)
+            waitUntilPreviewViewIsReady(view, layoutLatch)
+            setContentView(view)
+        }
+        assertThat(layoutLatch.await(TIMEOUT_SECONDS, TimeUnit.SECONDS)).isTrue()
+        return previewView
+    }
+
+    private fun getPreviewStreamingStateLatch(
+        previewView: AtomicReference<PreviewView>
+    ): CountDownLatch {
+        val streamingLatch = CountDownLatch(1)
+        instrumentation.runOnMainSync {
+            previewView.get().previewStreamState.observeForever { streamState ->
+                if (streamState == PreviewView.StreamState.STREAMING) {
+                    streamingLatch.countDown()
+                }
+            }
+        }
+        return streamingLatch
+    }
+
+    private fun waitUntilPreviewViewIsReady(
+        previewView: PreviewView,
+        countDownLatch: CountDownLatch,
+    ) {
         previewView.addOnLayoutChangeListener(
             object : View.OnLayoutChangeListener {
                 override fun onLayoutChange(
@@ -347,7 +638,7 @@ class CameraControllerDeviceTest(
                     oldLeft: Int,
                     oldTop: Int,
                     oldRight: Int,
-                    oldBottom: Int
+                    oldBottom: Int,
                 ) {
                     if (v.width > 0 && v.height > 0) {
                         countDownLatch.countDown()
@@ -356,6 +647,124 @@ class CameraControllerDeviceTest(
                 }
             }
         )
-        assertThat(countDownLatch.await(TIMEOUT_SECONDS, TimeUnit.SECONDS)).isTrue()
+    }
+
+    private fun setContentView(view: View?) {
+        activityScenario!!.onActivity { activity: FakeActivity -> activity.setContentView(view) }
+    }
+
+    private fun assertCanTakePicture(
+        controller: LifecycleCameraController,
+        imageCapture: ImageCapture,
+    ) {
+        assertThat(controller.mImageCapture).isSameInstanceAs(imageCapture)
+
+        // Act: take picture via controller and via ImageCapture directly.
+        val captureSuccessLatch = CountDownLatch(1)
+        val callback =
+            object : ImageCapture.OnImageCapturedCallback() {
+                override fun onCaptureSuccess(image: ImageProxy) {
+                    image.close()
+                    captureSuccessLatch.countDown()
+                }
+            }
+
+        instrumentation.runOnMainSync { controller.takePicture(mainThreadExecutor(), callback) }
+
+        // Assert: camera controller capture succeed.
+        assertThat(captureSuccessLatch.await(TIMEOUT_SECONDS, TimeUnit.SECONDS)).isTrue()
+
+        val captureSuccessLatch2 = CountDownLatch(1)
+        val callback2 =
+            object : ImageCapture.OnImageCapturedCallback() {
+                override fun onCaptureSuccess(image: ImageProxy) {
+                    image.close()
+                    captureSuccessLatch2.countDown()
+                }
+            }
+        imageCapture.takePicture(mainThreadExecutor(), callback2)
+
+        // Assert: ImageCapture capture succeed.
+        assertThat(captureSuccessLatch2.await(TIMEOUT_SECONDS, TimeUnit.SECONDS)).isTrue()
+    }
+
+    private fun assertCanRecordVideo(
+        controller: LifecycleCameraController,
+        videoCapture: VideoCapture<Recorder>,
+    ) {
+        assertThat(controller.mVideoCapture).isSameInstanceAs(videoCapture)
+
+        // Act: record video via controller
+        val recordingFinalizedLatch = CountDownLatch(1)
+        val file = File.createTempFile("video", ".mp4")
+        file.deleteOnExit()
+        val outputFile = FileOutputOptions.Builder(file).build()
+
+        var recording: Recording? = null
+        instrumentation.runOnMainSync {
+            recording =
+                controller.startRecording(
+                    outputFile,
+                    AudioConfig.AUDIO_DISABLED,
+                    mainThreadExecutor(),
+                ) { event ->
+                    when (event) {
+                        is VideoRecordEvent.Finalize -> recordingFinalizedLatch.countDown()
+                    }
+                }
+        }
+
+        // Recording for 3 seconds
+        runBlocking { delay(3000) }
+
+        // Assert: recording started
+        instrumentation.runOnMainSync { recording!!.stop() }
+        assertThat(recordingFinalizedLatch.await(TIMEOUT_SECONDS, TimeUnit.SECONDS)).isTrue()
+
+        // Act: record video via VideoCapture directly
+        val recordingFinalizedLatch2 = CountDownLatch(1)
+        val file2 = File.createTempFile("video2", ".mp4")
+        file2.deleteOnExit()
+        val outputFile2 = FileOutputOptions.Builder(file2).build()
+        var recording2: Recording? = null
+        instrumentation.runOnMainSync {
+            recording2 =
+                videoCapture.output.prepareRecording(context, outputFile2).start(
+                    mainThreadExecutor()
+                ) { event ->
+                    when (event) {
+                        is VideoRecordEvent.Finalize -> recordingFinalizedLatch2.countDown()
+                    }
+                }
+        }
+
+        // Recording for 3 seconds
+        runBlocking { delay(3000) }
+
+        // Assert: recording started
+        instrumentation.runOnMainSync { recording2!!.stop() }
+        assertThat(recordingFinalizedLatch2.await(TIMEOUT_SECONDS, TimeUnit.SECONDS)).isTrue()
+    }
+
+    private fun assertCanAnalyzeImage(controller: CameraController) {
+        val analysisLatch = CountDownLatch(1)
+        instrumentation.runOnMainSync {
+            controller.setImageAnalysisAnalyzer(mainThreadExecutor()) { imageProxy ->
+                imageProxy.close()
+                analysisLatch.countDown()
+            }
+        }
+        assertThat(analysisLatch.await(TIMEOUT_SECONDS, TimeUnit.SECONDS)).isTrue()
+    }
+
+    private fun assertCanAnalyzeImage(imageAnalysis: ImageAnalysis) {
+        val analysisLatch = CountDownLatch(1)
+        instrumentation.runOnMainSync {
+            imageAnalysis.setAnalyzer(mainThreadExecutor()) { imageProxy ->
+                imageProxy.close()
+                analysisLatch.countDown()
+            }
+        }
+        assertThat(analysisLatch.await(TIMEOUT_SECONDS, TimeUnit.SECONDS)).isTrue()
     }
 }

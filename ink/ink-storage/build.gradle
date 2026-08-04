@@ -19,77 +19,48 @@ import androidx.build.PlatformIdentifier
 
 plugins {
     id("AndroidXPlugin")
-    id("com.android.library")
 }
 
 androidXMultiplatform {
+    // Only supported on non-Android JVM for Linux on x86_64 and Mac on arm64
     jvm()
-    androidTarget()
+
+    ios()
+
+    androidLibrary {
+        namespace = "androidx.ink.storage"
+    }
 
     defaultPlatform(PlatformIdentifier.JVM)
 
     sourceSets {
-        commonMain {
-            dependencies {
-                api(libs.kotlinStdlib)
-            }
+        commonMain.dependencies {
+            implementation(project(":ink:ink-brush"))
+            implementation(project(":ink:ink-nativeloader"))
+            implementation(project(":ink:ink-strokes"))
         }
 
-        jvmAndroidMain {
-            dependsOn(commonMain)
-            dependencies {
-                implementation(project(":ink:ink-brush"))
-                implementation(project(":ink:ink-strokes"))
-                implementation(project(":ink:ink-nativeloader"))
-            }
+        nativeMain.dependencies {
+            implementation(libs.okio)
         }
 
-        jvmAndroidTest {
-            dependsOn(commonTest)
-            dependencies {
-                implementation(libs.junit)
-                implementation(libs.kotlinTest)
-                implementation(libs.truth)
-                implementation(project(":ink:ink-brush"))
-                implementation(project(":ink:ink-strokes"))
-            }
+        commonTest.dependencies {
+            implementation(libs.kotlinTest)
+            implementation(libs.okio)
+            implementation(project(":kruth:kruth"))
         }
 
-        jvmMain {
-            dependsOn(jvmAndroidMain)
+        jvmAndAndroidTest.dependencies {
+            implementation(libs.junit)
+            implementation(libs.truth)
         }
 
-        jvmTest {
-            dependsOn(jvmAndroidTest)
-        }
-
-        androidMain {
-            dependsOn(jvmAndroidMain)
-	    dependencies {
-                implementation(project(":ink:ink-rendering"))
-	    }
-        }
-
-        androidInstrumentedTest {
-            // JVM tests use java.util.Base64 API which is only available on
-            // Android API 26+, so just run those tests in the JVM environment.
-            // dependsOn(jvmAndroidTest)
-            dependencies {
-                implementation(libs.testExtJunit)
-                implementation(libs.testRules)
-                implementation(libs.testRunner)
-                implementation(libs.espressoCore)
-                implementation(libs.junit)
-                implementation(libs.kotlinTest)
-                implementation(libs.truth)
-            }
+        androidDeviceTest.dependencies {
+            implementation(libs.testExtJunit)
+            implementation(libs.testRules)
+            implementation(libs.testRunner)
         }
     }
-}
-
-android {
-    namespace = "androidx.ink.storage"
-    compileSdk = 35
 }
 
 androidx {
@@ -97,4 +68,12 @@ androidx {
     type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2025"
     description = "Efficiently store and retrieve Ink strokes"
+    usePlatformSpecificCacheForJvmTests = true
+}
+
+// TODO: b/374774638 - Run tests on host as well as device.
+afterEvaluate {
+    project.tasks.named("testAndroidHostTest").configure {
+        it.enabled = false
+    }
 }

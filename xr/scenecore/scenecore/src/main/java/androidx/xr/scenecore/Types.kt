@@ -13,123 +13,95 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package androidx.xr.scenecore
 
-import androidx.annotation.IntDef
 import androidx.annotation.RestrictTo
+import androidx.xr.scenecore.PlaneOrientation.Companion.HORIZONTAL
+import androidx.xr.scenecore.PlaneOrientation.Companion.VERTICAL
 
 /**
- * Dimensions of a 3D object.
+ * Orientation of a plane, to specify valid surfaces for anchoring.
  *
- * @param width Width.
- * @param height Height.
- * @param depth Depth.
+ * For example, see [MovableComponent.createAnchorable].
  */
-@Suppress("DataClassDefinition")
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public data class Dimensions(
-    public val width: Float = 0f,
-    public val height: Float = 0f,
-    public val depth: Float = 0f,
-) {
-    override fun toString(): String {
-        return super.toString() + ": w $width x h $height x d $depth"
+public class PlaneOrientation private constructor(private val value: Int) {
+    // Note: These constants have some overlap with androidx.xr.arcore.Plane.Type, though the
+    // constants here are specifically for filtering anchors. Due to the difference in semantics,
+    // the constants are not shared between ARCore and SceneCore.
+
+    public companion object {
+
+        /** Any plane orientation is acceptable. */
+        // TODO: b/500464864 - Remove this constant.
+        @Deprecated("Explicitly enumerate PlaneOrientation constants, or use ALL")
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+        @JvmField
+        public val ANY: PlaneOrientation = PlaneOrientation(0)
+
+        /** Specify horizontal planes. */
+        @JvmField public val HORIZONTAL: PlaneOrientation = PlaneOrientation(1)
+
+        /** Specify vertical planes. */
+        @JvmField public val VERTICAL: PlaneOrientation = PlaneOrientation(2)
+
+        /** Immutable Set containing all PlaneOrientations. */
+        @JvmField public val ALL: Set<PlaneOrientation> = setOf(HORIZONTAL, VERTICAL)
     }
+
+    @Suppress("DEPRECATION")
+    public override fun toString(): String =
+        when (this) {
+            // TODO: b/500464864 - Remove this constant.
+            ANY -> "ANY"
+            HORIZONTAL -> "HORIZONTAL"
+            VERTICAL -> "VERTICAL"
+            else -> "UNKNOWN ($value)"
+        }
 }
 
 /**
- * Dimensions of a 2D surface in Pixels.
+ * The detected semantic type of a plane, to specify valid surfaces for anchoring.
  *
- * @param width Integer Width.
- * @param height Integer Height.
+ * For example, see [MovableComponent.createAnchorable].
  */
-@Suppress("DataClassDefinition")
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public data class PixelDimensions(public val width: Int = 0, public val height: Int = 0) {
-    override fun toString(): String {
-        return super.toString() + ": w $width x h $height"
+public class PlaneSemanticType private constructor(private val value: Int) {
+    // Note: These constants have some overlap with androidx.xr.arcore.Plane.Label, though the
+    // constants here are specifically for filtering anchors. Due to the difference in semantics,
+    // the constants are not shared between ARCore and SceneCore.
+
+    public companion object {
+        /** Any plane type is acceptable. */
+        // TODO: b/500464864 - Remove this constant.
+        @Deprecated("Explicitly enumerate PlaneSemanticType constants, or use ALL")
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+        @JvmField
+        public val ANY: PlaneSemanticType = PlaneSemanticType(0)
+
+        /** Specify planes that are identified as a wall. */
+        @JvmField public val WALL: PlaneSemanticType = PlaneSemanticType(1)
+
+        /** Specify planes that are identified as the floor. */
+        @JvmField public val FLOOR: PlaneSemanticType = PlaneSemanticType(2)
+
+        /** Specify planes that are identified as the ceiling. */
+        @JvmField public val CEILING: PlaneSemanticType = PlaneSemanticType(3)
+
+        /** Specify planes that are identified as a table. */
+        @JvmField public val TABLE: PlaneSemanticType = PlaneSemanticType(4)
+
+        /** Immutable Set containing all PlaneSemanticTypes. */
+        @JvmField public val ALL: Set<PlaneSemanticType> = setOf(WALL, FLOOR, CEILING, TABLE)
     }
+
+    @Suppress("DEPRECATION")
+    public override fun toString(): String =
+        when (this) {
+            // TODO: b/500464864 - Remove this constant.
+            ANY -> "ANY"
+            WALL -> "WALL"
+            FLOOR -> "FLOOR"
+            CEILING -> "CEILING"
+            TABLE -> "TABLE"
+            else -> "UNKNOWN ($value)"
+        }
 }
-
-/**
- * The angles (in radians) representing the sides of the view frustum. These are not expected to
- * change over the lifetime of the session but in rare cases may change due to updated camera
- * settings.
- */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public class Fov(
-    public val angleLeft: Float,
-    public val angleRight: Float,
-    public val angleUp: Float,
-    public val angleDown: Float,
-) {
-
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (other !is Fov) return false
-
-        return angleLeft == other.angleLeft &&
-            angleRight == other.angleRight &&
-            angleUp == other.angleUp &&
-            angleDown == other.angleDown
-    }
-
-    override fun hashCode(): Int {
-        var result = angleLeft.hashCode()
-        result = 31 * result + angleRight.hashCode()
-        result = 31 * result + angleUp.hashCode()
-        result = 31 * result + angleDown.hashCode()
-        return result
-    }
-
-    override fun toString(): String {
-        return "Fov(angleLeft=$angleLeft, angleRight=$angleRight, angleUp=$angleUp, angleDown=$angleDown)"
-    }
-
-    @JvmOverloads
-    public fun copy(
-        angleLeft: Float = this.angleLeft,
-        angleRight: Float = this.angleRight,
-        angleUp: Float = this.angleUp,
-        angleDown: Float = this.angleDown,
-    ): Fov {
-        return Fov(angleLeft, angleRight, angleUp, angleDown)
-    }
-}
-
-/** Type of plane based on orientation i.e. Horizontal or Vertical. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public object PlaneType {
-    public const val HORIZONTAL: Int = 0
-    public const val VERTICAL: Int = 1
-    public const val ANY: Int = 2
-}
-
-@RestrictTo(RestrictTo.Scope.LIBRARY)
-@Retention(AnnotationRetention.SOURCE)
-@IntDef(PlaneType.HORIZONTAL, PlaneType.VERTICAL, PlaneType.ANY)
-@Target(AnnotationTarget.TYPE, AnnotationTarget.PROPERTY, AnnotationTarget.VALUE_PARAMETER)
-internal annotation class PlaneTypeValue
-
-/** Semantic plane types. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public object PlaneSemantic {
-    public const val WALL: Int = 0
-    public const val FLOOR: Int = 1
-    public const val CEILING: Int = 2
-    public const val TABLE: Int = 3
-    public const val ANY: Int = 4
-}
-
-@RestrictTo(RestrictTo.Scope.LIBRARY)
-@Retention(AnnotationRetention.SOURCE)
-@IntDef(
-    PlaneSemantic.WALL,
-    PlaneSemantic.FLOOR,
-    PlaneSemantic.CEILING,
-    PlaneSemantic.TABLE,
-    PlaneSemantic.ANY,
-)
-@Target(AnnotationTarget.TYPE, AnnotationTarget.PROPERTY, AnnotationTarget.VALUE_PARAMETER)
-internal annotation class PlaneSemanticValue

@@ -145,6 +145,45 @@ public class CreatePublicKeyCredentialRequestJavaTest {
     }
 
     @Test
+    public void constructor_setConditionalToFalseByDefault() {
+        CreatePublicKeyCredentialRequest createPublicKeyCredentialRequest =
+                new CreatePublicKeyCredentialRequest(TEST_REQUEST_JSON);
+
+        assertThat(createPublicKeyCredentialRequest.isConditional()).isFalse();
+    }
+
+    @Test
+    public void constructor_setConditionalToTrue() {
+        boolean isConditionalExpected = true;
+        byte[] clientDataHash = "hash".getBytes();
+        String origin = "origin";
+
+        CreatePublicKeyCredentialRequest createPublicKeyCredentialRequest =
+                new CreatePublicKeyCredentialRequest(
+                        TEST_REQUEST_JSON,
+                        clientDataHash,
+                        /*preferImmediatelyAvailableCredentials=*/ false,
+                        origin,
+                        /*isAutoSelectAllowed=*/ false,
+                        isConditionalExpected
+                );
+
+        assertThat(createPublicKeyCredentialRequest.isConditional()).isEqualTo(
+                isConditionalExpected);
+        assertThat(
+                createPublicKeyCredentialRequest.getCandidateQueryData().getBoolean(
+                        CreatePublicKeyCredentialRequest.BUNDLE_KEY_CONDITIONAL_CREATE
+                )
+        ).isTrue();
+        assertThat(
+                createPublicKeyCredentialRequest.getCredentialData().getBoolean(
+                        CreatePublicKeyCredentialRequest.BUNDLE_KEY_CONDITIONAL_CREATE
+                )
+        ).isTrue();
+    }
+
+
+    @Test
     public void getter_requestJson_success() {
         String testJsonExpected = "{\"user\":{\"name\":{\"lol\":\"Value\"}}}";
         CreatePublicKeyCredentialRequest createPublicKeyCredentialReq =
@@ -207,7 +246,7 @@ public class CreatePublicKeyCredentialRequestJavaTest {
         )).isEqualTo(TEST_USER_DISPLAYNAME);
         assertThat(((Icon) (displayInfoBundle.getParcelable(
                 CreateCredentialRequest.DisplayInfo.BUNDLE_KEY_CREDENTIAL_TYPE_ICON))).getResId()
-        ).isEqualTo(R.drawable.ic_passkey);
+        ).isEqualTo(R.drawable.adx_ic_passkey);
     }
 
     @SdkSuppress(minSdkVersion = 34)
@@ -252,7 +291,7 @@ public class CreatePublicKeyCredentialRequestJavaTest {
         assertThat(displayInfo.getUserDisplayName()).isEqualTo(TEST_USER_DISPLAYNAME);
         assertThat(displayInfo.getUserId()).isEqualTo(TEST_USERNAME);
         assertThat(displayInfo.getCredentialTypeIcon().getResId())
-                .isEqualTo(R.drawable.ic_passkey);
+                .isEqualTo(R.drawable.adx_ic_passkey);
         assertThat(convertedRequest.getCredentialData().getString(customRequestDataKey))
                 .isEqualTo(customRequestDataValue);
         assertThat(convertedRequest.getCandidateQueryData().getBoolean(customCandidateQueryDataKey))

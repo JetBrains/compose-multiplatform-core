@@ -35,9 +35,9 @@ class ArrayListAllocationBenchmark : TestCase() {
             listOf(
                 platform.XCTest.XCTCPUMetric(),
                 platform.XCTest.XCTMemoryMetric(),
-                platform.XCTest.XCTClockMetric()
+                platform.XCTest.XCTClockMetric(),
             ),
-            options
+            options,
         ) {
             // Do something a bit expensive
             repeat(1000) { ArrayList<Float>(SIZE) }

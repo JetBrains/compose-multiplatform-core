@@ -16,20 +16,36 @@
 
 package androidx.xr.scenecore
 
-import androidx.annotation.IntDef
 import androidx.annotation.RestrictTo
 
-@IntDef(Space.PARENT, Space.ACTIVITY, Space.REAL_WORLD)
-@Retention(AnnotationRetention.SOURCE)
-internal annotation class SpaceValue
+/** Coordinate spaces in which to apply transformation values. */
+public class Space private constructor(private val value: Int) {
+    public companion object {
+        /**
+         * The coordinate space of an [Entity]'s parent, such that the child Entity's pose, scale,
+         * etc., are expressed relative to the parent.
+         */
+        @JvmField public val PARENT: Space = Space(1)
 
-/** Coordinate spaces in which to apply the transformation values. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public object Space {
-    /** The local coordinate space of an [Entity], relative to its parent. */
-    public const val PARENT: Int = 0
-    /** The global coordinate space, at the root of the scene graph for the activity. */
-    public const val ACTIVITY: Int = 1
-    /** The global coordinate space, unscaled, at the root of the scene graph of the activity. */
-    public const val REAL_WORLD: Int = 2
+        /** The global coordinate space, at the root of the scene graph for the activity. */
+        @JvmField public val ACTIVITY: Space = Space(2)
+
+        /**
+         * The global coordinate space, unscaled, at the root of the scene graph of the activity.
+         */
+        // TODO - b/415320653: This will be removed.
+        @Deprecated("REAL_WORLD will be removed in a subsequent release.")
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+        @JvmField
+        public val REAL_WORLD: Space = Space(3)
+    }
+
+    @Suppress("DEPRECATION")
+    override fun toString(): String =
+        when (this) {
+            PARENT -> "PARENT"
+            ACTIVITY -> "ACTIVITY"
+            REAL_WORLD -> "REAL_WORLD"
+            else -> "UNKNOWN ($value)"
+        }
 }

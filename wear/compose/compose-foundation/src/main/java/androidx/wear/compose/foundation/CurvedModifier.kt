@@ -80,29 +80,22 @@ internal open class BaseCurvedChildWrapper(val wrapped: CurvedChild) : CurvedChi
         wrapped.SubComposition(semanticProperties)
     }
 
-    override fun CurvedMeasureScope.initializeMeasure(measurables: Iterator<Measurable>) =
-        with(wrapped) { initializeMeasure(measurables) }
+    override fun CurvedMeasureScope.initializeMeasure(
+        measurables: Iterator<Measurable>
+    ): (Placeable.PlacementScope).() -> Unit = with(wrapped) { initializeMeasure(measurables) }
 
     override fun computeParentData(): Any? = wrapped.computeParentData()
 
     override fun doEstimateThickness(maxRadius: Float) = wrapped.estimateThickness(maxRadius)
 
-    override fun doRadialPosition(
-        parentOuterRadius: Float,
-        parentThickness: Float,
-    ) =
-        wrapped.radialPosition(
-            parentOuterRadius,
-            parentThickness,
-        )
+    override fun doRadialPosition(parentOuterRadius: Float, parentThickness: Float) =
+        wrapped.radialPosition(parentOuterRadius, parentThickness)
 
     override fun doAngularPosition(
         parentStartAngleRadians: Float,
         parentSweepRadians: Float,
-        centerOffset: Offset
+        centerOffset: Offset,
     ) = wrapped.angularPosition(parentStartAngleRadians, parentSweepRadians, centerOffset)
-
-    override fun (Placeable.PlacementScope).placeIfNeeded() = with(wrapped) { placeIfNeeded() }
 
     override fun DrawScope.draw() = with(wrapped) { draw() }
 }

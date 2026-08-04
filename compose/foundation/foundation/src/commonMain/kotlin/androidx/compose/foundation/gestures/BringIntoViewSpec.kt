@@ -27,8 +27,8 @@ import kotlin.math.abs
  * A composition local to customize the focus scrolling behavior used by some scrollable containers.
  * [LocalBringIntoViewSpec] has a platform defined default behavior.
  */
-@Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-expect val LocalBringIntoViewSpec: ProvidableCompositionLocal<BringIntoViewSpec>
+@Suppress("KmpExperimentalMismatch") // only experimental in android
+public expect val LocalBringIntoViewSpec: ProvidableCompositionLocal<BringIntoViewSpec>
 
 /**
  * The configuration of how a scrollable reacts to bring into view requests.
@@ -38,14 +38,14 @@ expect val LocalBringIntoViewSpec: ProvidableCompositionLocal<BringIntoViewSpec>
  * @sample androidx.compose.foundation.samples.FocusScrollingInLazyRowSample
  */
 @Stable
-interface BringIntoViewSpec {
+public interface BringIntoViewSpec {
 
     /**
      * An Animation Spec to be used as the animation to run to fulfill the BringIntoView requests.
      */
     @Deprecated("Animation spec customization is no longer supported.")
     @get:Deprecated("Animation spec customization is no longer supported.")
-    val scrollAnimationSpec: AnimationSpec<Float>
+    public val scrollAnimationSpec: AnimationSpec<Float>
         get() = DefaultScrollAnimationSpec
 
     /**
@@ -61,10 +61,10 @@ interface BringIntoViewSpec {
      * @return The necessary amount to scroll to satisfy the bring into view request. Returning zero
      *   from here means that the request was satisfied and the scrolling animation should stop.
      */
-    fun calculateScrollDistance(offset: Float, size: Float, containerSize: Float): Float =
+    public fun calculateScrollDistance(offset: Float, size: Float, containerSize: Float): Float =
         defaultCalculateScrollDistance(offset, size, containerSize)
 
-    companion object {
+    public companion object {
 
         /**
          * The default animation spec used by [Modifier.scrollable] to run Bring Into View requests.
@@ -76,7 +76,7 @@ interface BringIntoViewSpec {
         internal fun defaultCalculateScrollDistance(
             offset: Float,
             size: Float,
-            containerSize: Float
+            containerSize: Float,
         ): Float {
             val trailingEdge = offset + size
             @Suppress("UnnecessaryVariable") val leadingEdge = offset

@@ -44,13 +44,13 @@ import androidx.credentials.provider.CallingAppInfo.Companion.setCallingAppInfo
  *   [androidx.credentials.CredentialManager] to handle the authentication flow
  */
 class ProviderGetCredentialRequest
-@RestrictTo(RestrictTo.Scope.LIBRARY)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 constructor(
     val credentialOptions: List<CredentialOption>,
     val callingAppInfo: CallingAppInfo,
     val biometricPromptResult: BiometricPromptResult?,
     // The source Bundle used to construct this request, if applicable
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY) val sourceBundle: Bundle?,
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) val sourceBundle: Bundle?,
 ) {
 
     /**
@@ -80,13 +80,13 @@ constructor(
             options: List<CredentialOption>,
             callingAppInfo: CallingAppInfo,
             biometricPromptResult: BiometricPromptResult? = null,
-            sourceBundle: Bundle?
+            sourceBundle: Bundle?,
         ): ProviderGetCredentialRequest {
             return ProviderGetCredentialRequest(
                 options,
                 callingAppInfo,
                 biometricPromptResult,
-                sourceBundle
+                sourceBundle,
             )
         }
 
@@ -118,19 +118,19 @@ constructor(
                 bundle.putString("$EXTRA_CREDENTIAL_OPTION_TYPE_PREFIX$i", option.type)
                 bundle.putBundle(
                     "$EXTRA_CREDENTIAL_OPTION_CANDIDATE_QUERY_DATA_PREFIX$i",
-                    option.candidateQueryData
+                    option.candidateQueryData,
                 )
                 bundle.putBundle(
                     "$EXTRA_CREDENTIAL_OPTION_CREDENTIAL_RETRIEVAL_DATA_PREFIX$i",
-                    option.requestData
+                    option.requestData,
                 )
                 bundle.putBoolean(
                     "$EXTRA_CREDENTIAL_OPTION_IS_SYSTEM_PROVIDER_REQUIRED_PREFIX$i",
-                    option.isSystemProviderRequired
+                    option.isSystemProviderRequired,
                 )
                 bundle.putParcelableArray(
                     "$EXTRA_CREDENTIAL_OPTION_ALLOWED_PROVIDERS_PREFIX$i",
-                    option.allowedProviders.toTypedArray()
+                    option.allowedProviders.toTypedArray(),
                 )
             }
             bundle.setCallingAppInfo(request.callingAppInfo)
@@ -175,7 +175,7 @@ constructor(
                 val isSystemProviderRequired =
                     bundle.getBoolean(
                         "$EXTRA_CREDENTIAL_OPTION_IS_SYSTEM_PROVIDER_REQUIRED_PREFIX$i",
-                        false
+                        false,
                     )
                 val allowedProviders =
                     try {
@@ -195,7 +195,7 @@ constructor(
                         requestData,
                         candidateQueryData,
                         isSystemProviderRequired,
-                        allowedProviders
+                        allowedProviders,
                     )
                 )
             }

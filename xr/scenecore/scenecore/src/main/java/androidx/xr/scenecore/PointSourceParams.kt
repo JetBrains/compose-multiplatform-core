@@ -18,22 +18,39 @@ package androidx.xr.scenecore
 
 import androidx.annotation.RestrictTo
 import androidx.xr.runtime.Session
-import androidx.xr.runtime.internal.PointSourceParams as RtPointSourceParams
+import androidx.xr.scenecore.runtime.PointSourceParams as RtPointSourceParams
 
 /**
- * PointSourceParams is used to configure a sound be spatialized as a 3D point.
+ * Configures a sound source to be spatialized at a 3D location.
  *
- * If the audio being played is stereo or multichannel AND the AudioAttributes USAGE_TYPE is
- * USAGE_MEDIA then the point provided will serve as the focal point of the media sound bed.
+ * For more information, see
+ * [Add positional audio to your app][https://developer.android.com/develop/xr/jetpack-xr-sdk/add-spatial-audio#add-positional].
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public class PointSourceParams(internal val entity: Entity) {
+// TODO: b/430650745 - reevaluate the usefulness of this class prior to the beta release
+// TODO: b/426001209 - add additional parameters to PointSourceParams
+public class PointSourceParams
+internal constructor(
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public var rtPointSourceParams: RtPointSourceParams
+) {
+    public constructor() : this(RtPointSourceParams())
 
-    internal val rtPointSourceParams: RtPointSourceParams =
-        RtPointSourceParams((entity as BaseEntity<*>).rtEntity)
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as PointSourceParams
+
+        return rtPointSourceParams == other.rtPointSourceParams
+    }
+
+    override fun hashCode(): Int {
+        return rtPointSourceParams.hashCode()
+    }
 }
 
-internal fun RtPointSourceParams.toPointSourceParams(session: Session): PointSourceParams? {
-    val jxrEntity = session.scene.getEntityForRtEntity(entity)
-    return jxrEntity?.let { PointSourceParams(it) }
+/** Extension function that converts a [RtPointSourceParams] to a [PointSourceParams]. */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public fun RtPointSourceParams.toPointSourceParams(session: Session): PointSourceParams? {
+    return PointSourceParams(this)
 }

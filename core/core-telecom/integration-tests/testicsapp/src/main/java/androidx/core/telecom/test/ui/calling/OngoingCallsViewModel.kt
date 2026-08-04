@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:OptIn(androidx.core.telecom.util.ExperimentalAppActions::class)
+
 package androidx.core.telecom.test.ui.calling
 
 import android.content.Context
@@ -36,7 +38,6 @@ import androidx.core.telecom.test.services.LocalCallSilenceData
 import androidx.core.telecom.test.services.MeetingSummaryData
 import androidx.core.telecom.test.services.ParticipantExtensionData
 import androidx.core.telecom.test.services.RemoteCallProvider
-import androidx.core.telecom.util.ExperimentalAppActions
 import androidx.lifecycle.ViewModel
 import java.util.Locale
 import kotlinx.coroutines.flow.Flow
@@ -130,7 +131,7 @@ class OngoingCallsViewModel(private val callProvider: RemoteCallProvider = Remot
                 formatPhoneNumber(
                     context,
                     fullCallData.callData.phoneAccountHandle,
-                    fullCallData.callData.number
+                    fullCallData.callData.number,
                 ),
             state = fullCallData.callData.state,
             validTransition =
@@ -141,12 +142,11 @@ class OngoingCallsViewModel(private val callProvider: RemoteCallProvider = Remot
             meetingSummaryUiState = mapToUiMeetingSummaryExtension(fullCallData.meetingSummaryData),
             participantUiState = mapToUiParticipantExtension(fullCallData.participantExtensionData),
             localCallSilenceUiState = mapToUiLocalSilenceExtension(fullCallData.localSilenceData),
-            callIconUiState = mapToUiCallIconExtension(fullCallData.callIconData)
+            callIconUiState = mapToUiCallIconExtension(fullCallData.callIconData),
         )
     }
 
     /** map [CallIconData] to [MeetingSummaryUiState] */
-    @OptIn(ExperimentalAppActions::class)
     private fun mapToUiMeetingSummaryExtension(
         meetingSummaryData: MeetingSummaryData?
     ): MeetingSummaryUiState {
@@ -155,13 +155,12 @@ class OngoingCallsViewModel(private val callProvider: RemoteCallProvider = Remot
         } else {
             MeetingSummaryUiState(
                 meetingSummaryData.activeSpeaker,
-                meetingSummaryData.participantCount
+                meetingSummaryData.participantCount,
             )
         }
     }
 
     /** map [CallIconData] to [CallIconExtensionUiState] */
-    @OptIn(ExperimentalAppActions::class)
     private fun mapToUiCallIconExtension(
         callIconExtensionData: CallIconData?
     ): CallIconExtensionUiState {
@@ -172,22 +171,21 @@ class OngoingCallsViewModel(private val callProvider: RemoteCallProvider = Remot
         }
     }
 
-    @OptIn(ExperimentalAppActions::class)
     private fun mapToUiLocalSilenceExtension(
         localCallSilenceExtensionData: LocalCallSilenceData?
     ): LocalCallSilenceExtensionUiState {
         if (localCallSilenceExtensionData == null) {
-            return LocalCallSilenceExtensionUiState(false, {}, null)
+            return LocalCallSilenceExtensionUiState(false, true, {}, null)
         }
         return LocalCallSilenceExtensionUiState(
             localCallSilenceExtensionData.isLocallySilenced,
+            localCallSilenceExtensionData.canUserUpdateSilence,
             localCallSilenceExtensionData.onInCallServiceUiUpdate,
-            localCallSilenceExtensionData.extension
+            localCallSilenceExtensionData.extension,
         )
     }
 
     /** Perform a map ooperation from [ParticipantExtensionData] to [ParticipantExtensionUiState] */
-    @OptIn(ExperimentalAppActions::class)
     private fun mapToUiParticipantExtension(
         participantExtensionData: ParticipantExtensionData?
     ): ParticipantExtensionUiState? {
@@ -203,12 +201,11 @@ class OngoingCallsViewModel(private val callProvider: RemoteCallProvider = Remot
                     ?.raiseHandAction
                     ?.requestRaisedHandStateChange(it)
             },
-            participants = mapUiParticipants(participantExtensionData)
+            participants = mapUiParticipants(participantExtensionData),
         )
     }
 
     /** map [ParticipantExtensionData] to [ParticipantExtensionUiState] */
-    @OptIn(ExperimentalAppActions::class)
     private fun mapUiParticipants(
         participantExtensionData: ParticipantExtensionData
     ): List<ParticipantUiState> {
@@ -224,7 +221,7 @@ class OngoingCallsViewModel(private val callProvider: RemoteCallProvider = Remot
                         ?.kickParticipantAction
                         ?.requestKickParticipant(p)
                         ?: CallControlResult.Error(CallException.ERROR_CALL_IS_NOT_BEING_TRACKED)
-                }
+                },
             )
         }
     }
@@ -233,7 +230,7 @@ class OngoingCallsViewModel(private val callProvider: RemoteCallProvider = Remot
     private fun formatPhoneNumber(
         context: Context,
         phoneAccountHandle: PhoneAccountHandle,
-        number: Uri
+        number: Uri,
     ): String {
         val isTel = PhoneAccount.SCHEME_TEL == number.scheme
         if (!isTel) return number.schemeSpecificPart
@@ -248,7 +245,7 @@ class OngoingCallsViewModel(private val callProvider: RemoteCallProvider = Remot
     /** Determine the valid [CallStateTransition] based on [CallState] and call [Capability] */
     private fun getValidTransition(
         state: CallState,
-        capabilities: List<Capability>
+        capabilities: List<Capability>,
     ): CallStateTransition {
         return when (state) {
             CallState.INCOMING -> CallStateTransition.ANSWER
@@ -272,7 +269,7 @@ class OngoingCallsViewModel(private val callProvider: RemoteCallProvider = Remot
         return AudioEndpointUiState(
             id = endpoint.id,
             name = endpoint.frameworkName ?: getAudioEndpointRouteName(endpoint.audioRoute),
-            audioRoute = endpoint.audioRoute
+            audioRoute = endpoint.audioRoute,
         )
     }
 

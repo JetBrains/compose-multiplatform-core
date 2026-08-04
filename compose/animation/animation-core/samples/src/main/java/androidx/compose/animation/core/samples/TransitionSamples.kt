@@ -19,7 +19,8 @@ package androidx.compose.animation.core.samples
 import androidx.annotation.Sampled
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateColor
-import androidx.compose.animation.core.ExperimentalTransitionApi
+import androidx.compose.animation.core.DeferredTransitionState
+import androidx.compose.animation.core.ExperimentalDeferredTransitionApi
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.animation.core.SeekableTransitionState
@@ -29,6 +30,7 @@ import androidx.compose.animation.core.animateDp
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.createChildTransition
 import androidx.compose.animation.core.keyframes
+import androidx.compose.animation.core.rememberDeferredTransition
 import androidx.compose.animation.core.rememberTransition
 import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.spring
@@ -139,7 +141,7 @@ fun GestureAnimationSample() {
     Column {
         Button(
             modifier = Modifier.padding(10.dp).align(Alignment.CenterHorizontally),
-            onClick = { useRed = !useRed }
+            onClick = { useRed = !useRed },
         ) {
             Text("Change Color")
         }
@@ -155,18 +157,18 @@ fun GestureAnimationSample() {
 
 private enum class SquareSize {
     Small,
-    Large
+    Large,
 }
 
 private enum class ComponentState {
     Pressed,
-    Released
+    Released,
 }
 
 private enum class ButtonStatus {
     Initial,
     Pressed,
-    Released
+    Released,
 }
 
 @Sampled
@@ -216,7 +218,6 @@ fun AnimateFloatSample() {
     }
 }
 
-@OptIn(ExperimentalTransitionApi::class)
 @Sampled
 fun InitialStateSample() {
     // This composable enters the composition with a custom enter transition. This is achieved by
@@ -260,7 +261,7 @@ fun InitialStateSample() {
             Modifier.graphicsLayer(scaleX = scale, scaleY = scale)
                 .size(200.dp, 100.dp)
                 .fillMaxWidth(),
-            elevation = elevation
+            elevation = elevation,
         ) {}
     }
 }
@@ -268,7 +269,7 @@ fun InitialStateSample() {
 enum class LikedStates {
     Initial,
     Liked,
-    Disappeared
+    Disappeared,
 }
 
 @Sampled
@@ -359,7 +360,7 @@ fun DoubleTapToLikeSample() {
                 "Like",
                 Modifier.align(Alignment.Center)
                     .graphicsLayer(alpha = alpha, scaleX = scale, scaleY = scale),
-                tint = Color.Red
+                tint = Color.Red,
             )
         }
     }
@@ -370,7 +371,6 @@ fun DoubleTapToLikeSample() {
 @Sampled
 fun CreateChildTransitionSample() {
     // enum class DialerState { DialerMinimized, NumberPad }
-    @OptIn(ExperimentalTransitionApi::class)
     @Composable
     fun DialerButton(visibilityTransition: Transition<Boolean>, modifier: Modifier) {
         val scale by visibilityTransition.animateFloat { visible -> if (visible) 1f else 2f }
@@ -384,7 +384,6 @@ fun CreateChildTransitionSample() {
         // Create animations using the provided Transition for visibility change here...
     }
 
-    @OptIn(ExperimentalTransitionApi::class)
     @Composable
     fun childTransitionSample() {
         var dialerState by remember { mutableStateOf(DialerState.NumberPad) }
@@ -427,7 +426,7 @@ fun CreateChildTransitionSample() {
                         parentTransition.createChildTransition {
                             it == DialerState.DialerMinimized
                         },
-                    modifier = Modifier.matchParentSize()
+                    modifier = Modifier.matchParentSize(),
                 )
             }
         }
@@ -436,11 +435,10 @@ fun CreateChildTransitionSample() {
 
 enum class DialerState {
     DialerMinimized,
-    NumberPad
+    NumberPad,
 }
 
 @Sampled
-@OptIn(ExperimentalTransitionApi::class)
 @Composable
 fun TransitionStateIsIdleSample() {
     @Composable
@@ -454,7 +452,6 @@ fun TransitionStateIsIdleSample() {
         }
     }
 
-    @OptIn(ExperimentalTransitionApi::class)
     @Composable
     fun ItemsSample(selectedId: Int) {
         Column {
@@ -485,7 +482,7 @@ fun TransitionStateIsIdleSample() {
 enum class BoxSize {
     Small,
     Medium,
-    Large
+    Large,
 }
 
 @Sampled
@@ -498,31 +495,31 @@ fun SeekingAnimationSample() {
             Row {
                 Button(
                     onClick = { scope.launch { seekingState.animateTo(BoxSize.Small) } },
-                    Modifier.wrapContentWidth().weight(1f)
+                    Modifier.wrapContentWidth().weight(1f),
                 ) {
                     Text("Animate Small")
                 }
                 Button(
                     onClick = { scope.launch { seekingState.seekTo(0f, BoxSize.Small) } },
-                    Modifier.wrapContentWidth().weight(1f)
+                    Modifier.wrapContentWidth().weight(1f),
                 ) {
                     Text("Seek Small")
                 }
                 Button(
                     onClick = { scope.launch { seekingState.seekTo(0f, BoxSize.Medium) } },
-                    Modifier.wrapContentWidth().weight(1f)
+                    Modifier.wrapContentWidth().weight(1f),
                 ) {
                     Text("Seek Medium")
                 }
                 Button(
                     onClick = { scope.launch { seekingState.seekTo(0f, BoxSize.Large) } },
-                    Modifier.wrapContentWidth().weight(1f)
+                    Modifier.wrapContentWidth().weight(1f),
                 ) {
                     Text("Seek Large")
                 }
                 Button(
                     onClick = { scope.launch { seekingState.animateTo(BoxSize.Large) } },
-                    Modifier.wrapContentWidth().weight(1f)
+                    Modifier.wrapContentWidth().weight(1f),
                 ) {
                     Text("Animate Large")
                 }
@@ -531,14 +528,14 @@ fun SeekingAnimationSample() {
         Slider(
             value = seekingState.fraction,
             modifier = Modifier.systemGestureExclusion().padding(10.dp),
-            onValueChange = { value -> scope.launch { seekingState.seekTo(fraction = value) } }
+            onValueChange = { value -> scope.launch { seekingState.seekTo(fraction = value) } },
         )
         val transition = rememberTransition(seekingState)
 
         val scale: Float by
             transition.animateFloat(
                 transitionSpec = { tween(easing = LinearEasing) },
-                label = "Scale"
+                label = "Scale",
             ) { state ->
                 when (state) {
                     BoxSize.Small -> 1f
@@ -582,7 +579,7 @@ fun SeekToSample() {
     Slider(
         value = seekingState.fraction,
         modifier = Modifier.systemGestureExclusion().padding(10.dp),
-        onValueChange = { value -> scope.launch { seekingState.seekTo(fraction = value) } }
+        onValueChange = { value -> scope.launch { seekingState.seekTo(fraction = value) } },
     )
     val transition = rememberTransition(seekingState)
     // use the transition
@@ -599,4 +596,37 @@ fun SnapToSample() {
     }
     val transition = rememberTransition(seekingState)
     // use the transition
+}
+
+@OptIn(ExperimentalDeferredTransitionApi::class)
+@Sampled
+@Composable
+fun DeferredTransitionSample() {
+    var targetState by remember { mutableStateOf("Initial") }
+    var isDeferred by remember { mutableStateOf(false) }
+
+    // Create a DeferredTransitionState
+    val transitionState = remember { DeferredTransitionState(targetState) }
+
+    // Use LaunchedEffect to handle defer/animateTo logic based on some external signal
+    // (e.g. gesture progress, predictive back events, etc).
+    LaunchedEffect(targetState, isDeferred) {
+        if (isDeferred) {
+            // Enter deferred phase: targetState is updated as a pendingTargetState
+            // but animations don't start yet.
+            transitionState.defer(targetState)
+        } else {
+            // Start automatic transition: pendingTargetState is cleared and targetState is updated
+            // to trigger animations.
+            transitionState.animateTo(targetState)
+        }
+    }
+
+    val transition = rememberDeferredTransition(transitionState)
+    // Create animations as usual
+    val alpha by transition.animateFloat { state -> if (state == "Initial") 0f else 1f }
+
+    Box(Modifier.graphicsLayer { this.alpha = alpha }) {
+        // Content
+    }
 }

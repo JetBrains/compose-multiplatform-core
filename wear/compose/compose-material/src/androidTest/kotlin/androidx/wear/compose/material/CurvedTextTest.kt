@@ -22,7 +22,7 @@ import androidx.compose.testutils.assertContainsColor
 import androidx.compose.testutils.assertDoesNotContainColor
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.test.captureToImage
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SdkSuppress
@@ -50,7 +50,7 @@ class CurvedTextTest {
                     curvedText(
                         text = testText,
                         color = Color.Red,
-                        style = CurvedTextStyle(color = Color.Blue)
+                        style = CurvedTextStyle(color = Color.Blue),
                     )
                 }
             }
@@ -82,13 +82,7 @@ class CurvedTextTest {
     fun uses_LocalContentColor_as_fallback() {
         rule.setContent {
             CompositionLocalProvider(LocalContentColor provides Color.Yellow) {
-                CurvedLayout {
-                    curvedRow {
-                        curvedText(
-                            text = testText,
-                        )
-                    }
-                }
+                CurvedLayout { curvedRow { curvedText(text = testText) } }
             }
         }
 

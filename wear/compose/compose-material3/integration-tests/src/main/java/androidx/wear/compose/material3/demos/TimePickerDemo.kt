@@ -18,6 +18,7 @@ package androidx.wear.compose.material3.demos
 
 import android.os.Build
 import androidx.annotation.RequiresApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.icons.Icons
@@ -29,14 +30,18 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.wear.compose.integration.demos.common.ComposableDemo
 import androidx.wear.compose.material3.Button
 import androidx.wear.compose.material3.Icon
+import androidx.wear.compose.material3.MaterialTheme
 import androidx.wear.compose.material3.Text
 import androidx.wear.compose.material3.TimePicker
 import androidx.wear.compose.material3.TimePickerType
 import androidx.wear.compose.material3.samples.TimePickerSample
 import androidx.wear.compose.material3.samples.TimePickerWith12HourClockSample
+import androidx.wear.compose.material3.samples.TimePickerWithMinutesAndSecondsSample
 import androidx.wear.compose.material3.samples.TimePickerWithSecondsSample
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
@@ -46,8 +51,10 @@ val TimePickerDemos =
     listOf(
         ComposableDemo("Time HH:MM:SS") { TimePickerWithSecondsSample() },
         ComposableDemo("Time HH:MM") { TimePicker24hWithoutSecondsDemo() },
+        ComposableDemo("Time MM:SS") { TimePickerWithMinutesAndSecondsSample() },
         ComposableDemo("Time 12 Hour") { TimePickerWith12HourClockSample() },
         ComposableDemo("Time System time format") { TimePickerSample() },
+        ComposableDemo("Custom Background") { CustomBackgroundTimePickerWithSeconds() },
     )
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -64,19 +71,32 @@ private fun TimePicker24hWithoutSecondsDemo() {
             },
             timePickerType = TimePickerType.HoursMinutes24H,
             // Initialize with last picked time on reopen
-            initialTime = timePickerTime
+            initialTime = timePickerTime,
         )
     } else {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center,
-        ) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Button(
                 onClick = { showTimePicker = true },
                 label = { Text("Selected Time") },
                 secondaryLabel = { Text(timePickerTime.format(formatter)) },
                 icon = { Icon(imageVector = Icons.Filled.Edit, contentDescription = "Edit") },
             )
+        }
+    }
+}
+
+// Wrap the TimePicker in MaterialTheme.colorScheme with background set as Color.Unspecified when
+// using custom backgrounds(ex: gradients, images)
+@Composable
+private fun CustomBackgroundTimePickerWithSeconds() {
+    Box(
+        Modifier.fillMaxSize()
+            .background(Brush.linearGradient(listOf(Color.Red, Color.Blue, Color.Green)))
+    ) {
+        MaterialTheme(
+            colorScheme = MaterialTheme.colorScheme.copy(background = Color.Unspecified)
+        ) {
+            TimePickerWithSecondsSample()
         }
     }
 }

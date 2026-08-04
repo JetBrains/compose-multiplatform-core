@@ -75,8 +75,11 @@ abstract class BasePluginTest {
             GradleRunner.create()
                 .withProjectDir(projectRoot())
                 .withPluginClasspath()
-                // b/175897186 set explicit metaspace size in hopes of fewer crashes
-                .withArguments("-Dorg.gradle.jvmargs=-XX:MaxMetaspaceSize=512m", *args)
+                .withArguments(
+                    // b/175897186 set explicit metaspace size in hopes of fewer crashes
+                    "-Dorg.gradle.jvmargs=-XX:MaxMetaspaceSize=512m",
+                    *args,
+                )
         return runner
     }
 
@@ -93,7 +96,7 @@ abstract class BasePluginTest {
                     id('com.android.application')
                     id('androidx.navigation.safeargs')
                 }
-            """
+                """
                     .trimIndent(),
             suffix =
                 """
@@ -104,7 +107,7 @@ abstract class BasePluginTest {
                     implementation "$NAVIGATION_RUNTIME"
                 }
             """
-                    .trimIndent()
+                    .trimIndent(),
         )
     }
 
@@ -144,7 +147,7 @@ abstract class BasePluginTest {
                     id('kotlin-android')
                     id('androidx.navigation.safeargs.kotlin')
                 }
-            """
+                """
                     .trimIndent(),
             suffix =
                 """
@@ -167,7 +170,7 @@ abstract class BasePluginTest {
                     }
                 }
             """
-                    .trimIndent()
+                    .trimIndent(),
         )
     }
 }

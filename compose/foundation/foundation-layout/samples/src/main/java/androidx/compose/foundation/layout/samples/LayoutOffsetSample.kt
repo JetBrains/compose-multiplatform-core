@@ -22,7 +22,7 @@ import androidx.compose.foundation.layout.absoluteOffset
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.material.Text
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -40,7 +40,7 @@ fun OffsetModifier() {
     // right-to-left context, the offset will be (-10.dp, 20.dp).
     Text(
         "Layout offset modifier sample",
-        Modifier.fillMaxSize().wrapContentSize(Alignment.Center).offset(10.dp, 20.dp)
+        Modifier.fillMaxSize().wrapContentSize(Alignment.Center).offset(10.dp, 20.dp),
     )
 }
 
@@ -50,7 +50,7 @@ fun AbsoluteOffsetModifier() {
     // This text will be offset (10.dp, 20.dp) from the center of the available space.
     Text(
         "Layout offset modifier sample",
-        Modifier.fillMaxSize().wrapContentSize(Alignment.Center).absoluteOffset(10.dp, 20.dp)
+        Modifier.fillMaxSize().wrapContentSize(Alignment.Center).absoluteOffset(10.dp, 20.dp),
     )
 }
 
@@ -62,7 +62,7 @@ fun OffsetPxModifier() {
     var offset by remember { mutableStateOf(0) }
     Text(
         "Layout offset modifier sample",
-        Modifier.clickable { offset += 10 }.offset { IntOffset(offset, offset) }
+        Modifier.clickable { offset += 10 }.offset { IntOffset(offset, offset) },
     )
 }
 
@@ -73,6 +73,6 @@ fun AbsoluteOffsetPxModifier() {
     var offset by remember { mutableStateOf(0) }
     Text(
         "Layout offset modifier sample",
-        Modifier.clickable { offset += 10 }.absoluteOffset { IntOffset(offset, offset) }
+        Modifier.clickable { offset += 10 }.absoluteOffset { IntOffset(offset, offset) },
     )
 }

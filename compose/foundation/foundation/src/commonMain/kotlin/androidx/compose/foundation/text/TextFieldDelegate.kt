@@ -30,6 +30,7 @@ import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.findRootCoordinates
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.Paragraph
+import androidx.compose.ui.text.ParagraphIntrinsics
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextPainter
@@ -60,7 +61,8 @@ internal const val DefaultWidthCharCount = 10 // min width for TextField is 10 c
 internal val EmptyTextReplacement = "H".repeat(DefaultWidthCharCount) // just a reference character.
 
 /**
- * Computed the default width and height for TextField.
+ * Computes a width and height of the default string with [lines] amount of lines that is then used
+ * to calculate the default size of the text field.
  *
  * The bounding box or x-advance of the empty text is empty, i.e. 0x0 box or 0px advance. However
  * this is not useful for TextField since text field want to reserve some amount of height for
@@ -74,22 +76,34 @@ internal fun computeSizeForDefaultText(
     style: TextStyle,
     density: Density,
     fontFamilyResolver: FontFamily.Resolver,
-    text: String = EmptyTextReplacement,
-    maxLines: Int = 1
+    lines: Int = 1,
 ): IntSize {
-    val paragraph =
-        Paragraph(
-            text = text,
-            style = style,
-            spanStyles = listOf(),
-            maxLines = maxLines,
-            overflow = TextOverflow.Clip,
-            density = density,
-            fontFamilyResolver = fontFamilyResolver,
-            constraints = Constraints()
-        )
+    val paragraph = paragraphForDefaultText(style, density, fontFamilyResolver, lines, lines > 1)
     return IntSize(paragraph.minIntrinsicWidth.ceilToIntPx(), paragraph.height.ceilToIntPx())
 }
+
+/** See [computeSizeForDefaultText] for details. */
+internal fun paragraphForDefaultText(
+    style: TextStyle,
+    density: Density,
+    fontFamilyResolver: FontFamily.Resolver,
+    lines: Int,
+    softWrap: Boolean,
+) =
+    Paragraph(
+        ParagraphIntrinsics(
+            text = (0..<lines).joinToString("\n") { EmptyTextReplacement },
+            style = style,
+            fontFamilyResolver = fontFamilyResolver,
+            annotations = emptyList(),
+            placeholders = listOf(),
+            density = density,
+            softWrap = softWrap,
+        ),
+        Constraints(),
+        lines,
+        TextOverflow.Clip,
+    )
 
 internal class TextFieldDelegate {
     companion object {
@@ -105,7 +119,7 @@ internal class TextFieldDelegate {
             textDelegate: TextDelegate,
             constraints: Constraints,
             layoutDirection: LayoutDirection,
-            prevResultText: TextLayoutResult? = null
+            prevResultText: TextLayoutResult? = null,
         ): Triple<Int, Int, TextLayoutResult> {
             val layoutResult = textDelegate.layout(constraints, layoutDirection, prevResultText)
             return Triple(layoutResult.size.width, layoutResult.size.height, layoutResult)
@@ -134,7 +148,7 @@ internal class TextFieldDelegate {
             offsetMapping: OffsetMapping,
             textLayoutResult: TextLayoutResult,
             highlightPaint: Paint,
-            selectionBackgroundColor: Color
+            selectionBackgroundColor: Color,
         ) {
             if (!selectionPreviewHighlightRange.collapsed) {
                 highlightPaint.color = selectionBackgroundColor
@@ -143,7 +157,7 @@ internal class TextFieldDelegate {
                     selectionPreviewHighlightRange,
                     offsetMapping,
                     textLayoutResult,
-                    highlightPaint
+                    highlightPaint,
                 )
             } else if (!deletionPreviewHighlightRange.collapsed) {
                 val textColor =
@@ -155,7 +169,7 @@ internal class TextFieldDelegate {
                     deletionPreviewHighlightRange,
                     offsetMapping,
                     textLayoutResult,
-                    highlightPaint
+                    highlightPaint,
                 )
             } else if (!value.selection.collapsed) {
                 highlightPaint.color = selectionBackgroundColor
@@ -164,7 +178,7 @@ internal class TextFieldDelegate {
                     value.selection,
                     offsetMapping,
                     textLayoutResult,
-                    highlightPaint
+                    highlightPaint,
                 )
             }
             TextPainter.paint(canvas, textLayoutResult)
@@ -175,7 +189,7 @@ internal class TextFieldDelegate {
             range: TextRange,
             offsetMapping: OffsetMapping,
             textLayoutResult: TextLayoutResult,
-            paint: Paint
+            paint: Paint,
         ) {
             val start = offsetMapping.originalToTransformed(range.min)
             val end = offsetMapping.originalToTransformed(range.max)
@@ -204,7 +218,7 @@ internal class TextFieldDelegate {
             layoutCoordinates: LayoutCoordinates,
             textInputSession: TextInputSession,
             hasFocus: Boolean,
-            offsetMapping: OffsetMapping
+            offsetMapping: OffsetMapping,
         ) {
             if (!hasFocus) {
                 return
@@ -219,9 +233,9 @@ internal class TextFieldDelegate {
                         computeSizeForDefaultText(
                             textDelegate.style,
                             textDelegate.density,
-                            textDelegate.fontFamilyResolver
+                            textDelegate.fontFamilyResolver,
                         )
-                    }
+                    },
                 )
             )
         }
@@ -239,7 +253,7 @@ internal class TextFieldDelegate {
             textInputSession: TextInputSession,
             textFieldValue: TextFieldValue,
             offsetMapping: OffsetMapping,
-            textLayoutResult: TextLayoutResultProxy
+            textLayoutResult: TextLayoutResultProxy,
         ) {
             textLayoutResult.innerTextFieldCoordinates?.let { innerTextFieldCoordinates ->
                 if (!innerTextFieldCoordinates.isAttached) return
@@ -258,8 +272,8 @@ internal class TextFieldDelegate {
                         innerTextFieldCoordinates.visibleBounds(),
                         innerTextFieldCoordinates.localBoundingBoxOf(
                             decorationBoxCoordinates,
-                            clipBounds = false
-                        )
+                            clipBounds = false,
+                        ),
                     )
                 }
             }
@@ -277,7 +291,7 @@ internal class TextFieldDelegate {
             ops: List<EditCommand>,
             editProcessor: EditProcessor,
             onValueChange: (TextFieldValue) -> Unit,
-            session: TextInputSession?
+            session: TextInputSession?,
         ) {
             val newValue = editProcessor.apply(ops)
 
@@ -308,7 +322,7 @@ internal class TextFieldDelegate {
             textLayoutResult: TextLayoutResultProxy,
             editProcessor: EditProcessor,
             offsetMapping: OffsetMapping,
-            onValueChange: (TextFieldValue) -> Unit
+            onValueChange: (TextFieldValue) -> Unit,
         ) {
             val offset =
                 offsetMapping.transformedToOriginal(textLayoutResult.getOffsetForPosition(position))
@@ -332,7 +346,7 @@ internal class TextFieldDelegate {
             editProcessor: EditProcessor,
             imeOptions: ImeOptions,
             onValueChange: (TextFieldValue) -> Unit,
-            onImeActionPerformed: (ImeAction) -> Unit
+            onImeActionPerformed: (ImeAction) -> Unit,
         ): TextInputSession {
             var session: TextInputSession? = null
             session =
@@ -340,7 +354,7 @@ internal class TextFieldDelegate {
                     value = value,
                     imeOptions = imeOptions,
                     onEditCommand = { onEditCommand(it, editProcessor, onValueChange, session) },
-                    onImeActionPerformed = onImeActionPerformed
+                    onImeActionPerformed = onImeActionPerformed,
                 )
             return session
         }
@@ -362,7 +376,7 @@ internal class TextFieldDelegate {
             editProcessor: EditProcessor,
             imeOptions: ImeOptions,
             onValueChange: (TextFieldValue) -> Unit,
-            onImeActionPerformed: (ImeAction) -> Unit
+            onImeActionPerformed: (ImeAction) -> Unit,
         ): TextInputSession {
             // The keyboard will automatically be shown when the new IME connection is started.
             return restartInput(
@@ -371,7 +385,7 @@ internal class TextFieldDelegate {
                 editProcessor = editProcessor,
                 imeOptions = imeOptions,
                 onValueChange = onValueChange,
-                onImeActionPerformed = onImeActionPerformed
+                onImeActionPerformed = onImeActionPerformed,
             )
         }
 
@@ -386,7 +400,7 @@ internal class TextFieldDelegate {
         internal fun onBlur(
             textInputSession: TextInputSession,
             editProcessor: EditProcessor,
-            onValueChange: (TextFieldValue) -> Unit
+            onValueChange: (TextFieldValue) -> Unit,
         ) {
             onValueChange(editProcessor.toTextFieldValue().copy(composition = null))
             // Don't hide the keyboard when losing focus. If the target system needs that behavior,
@@ -403,7 +417,7 @@ internal class TextFieldDelegate {
          */
         fun applyCompositionDecoration(
             compositionRange: TextRange,
-            transformed: TransformedText
+            transformed: TransformedText,
         ): TransformedText {
             val startPositionTransformed =
                 transformed.offsetMapping.originalToTransformed(compositionRange.start)
@@ -419,11 +433,11 @@ internal class TextFieldDelegate {
                         addStyle(
                             SpanStyle(textDecoration = TextDecoration.Underline),
                             start,
-                            coercedEnd
+                            coercedEnd,
                         )
                     }
                     .toAnnotatedString(),
-                transformed.offsetMapping
+                transformed.offsetMapping,
             )
         }
     }
@@ -434,7 +448,7 @@ internal fun focusedRectInRoot(
     layoutResult: TextLayoutResult,
     layoutCoordinates: LayoutCoordinates,
     focusOffset: Int,
-    sizeForDefaultText: () -> IntSize
+    sizeForDefaultText: () -> IntSize,
 ): Rect {
     val bbox =
         when {

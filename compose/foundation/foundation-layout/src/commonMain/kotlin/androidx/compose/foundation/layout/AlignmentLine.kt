@@ -62,10 +62,10 @@ import kotlin.math.max
  * @see paddingFromBaseline
  */
 @Stable
-fun Modifier.paddingFrom(
+public fun Modifier.paddingFrom(
     alignmentLine: AlignmentLine,
     before: Dp = Dp.Unspecified,
-    after: Dp = Dp.Unspecified
+    after: Dp = Dp.Unspecified,
 ): Modifier =
     this.then(
         AlignmentLineOffsetDpElement(
@@ -77,7 +77,7 @@ fun Modifier.paddingFrom(
                 properties["alignmentLine"] = alignmentLine
                 properties["before"] = before
                 properties["after"] = after
-            }
+            },
         )
     )
 
@@ -106,10 +106,10 @@ fun Modifier.paddingFrom(
  * @see paddingFromBaseline
  */
 @Stable
-fun Modifier.paddingFrom(
+public fun Modifier.paddingFrom(
     alignmentLine: AlignmentLine,
     before: TextUnit = TextUnit.Unspecified,
-    after: TextUnit = TextUnit.Unspecified
+    after: TextUnit = TextUnit.Unspecified,
 ): Modifier =
     this.then(
         AlignmentLineOffsetTextUnitElement(
@@ -121,7 +121,7 @@ fun Modifier.paddingFrom(
                 properties["alignmentLine"] = alignmentLine
                 properties["before"] = before
                 properties["after"] = after
-            }
+            },
         )
     )
 
@@ -141,7 +141,10 @@ fun Modifier.paddingFrom(
  * @see paddingFrom
  */
 @Stable
-fun Modifier.paddingFromBaseline(top: Dp = Dp.Unspecified, bottom: Dp = Dp.Unspecified) =
+public fun Modifier.paddingFromBaseline(
+    top: Dp = Dp.Unspecified,
+    bottom: Dp = Dp.Unspecified,
+): Modifier =
     this.then(
             if (top.isSpecified) {
                 Modifier.paddingFrom(FirstBaseline, before = top)
@@ -173,10 +176,10 @@ fun Modifier.paddingFromBaseline(top: Dp = Dp.Unspecified, bottom: Dp = Dp.Unspe
  * @see paddingFrom
  */
 @Stable
-fun Modifier.paddingFromBaseline(
+public fun Modifier.paddingFromBaseline(
     top: TextUnit = TextUnit.Unspecified,
-    bottom: TextUnit = TextUnit.Unspecified
-) =
+    bottom: TextUnit = TextUnit.Unspecified,
+): Modifier =
     this.then(
             if (!top.isUnspecified) Modifier.paddingFrom(FirstBaseline, before = top) else Modifier
         )
@@ -189,7 +192,7 @@ private class AlignmentLineOffsetDpElement(
     val alignmentLine: AlignmentLine,
     val before: Dp,
     val after: Dp,
-    val inspectorInfo: InspectorInfo.() -> Unit
+    val inspectorInfo: InspectorInfo.() -> Unit,
 ) : ModifierNodeElement<AlignmentLineOffsetDpNode>() {
     init {
         requirePrecondition(
@@ -239,7 +242,7 @@ private class AlignmentLineOffsetDpNode(
 
     override fun MeasureScope.measure(
         measurable: Measurable,
-        constraints: Constraints
+        constraints: Constraints,
     ): MeasureResult {
         return alignmentLineOffsetMeasure(alignmentLine, before, after, measurable, constraints)
     }
@@ -249,7 +252,7 @@ private class AlignmentLineOffsetTextUnitElement(
     val alignmentLine: AlignmentLine,
     val before: TextUnit,
     val after: TextUnit,
-    val inspectorInfo: InspectorInfo.() -> Unit
+    val inspectorInfo: InspectorInfo.() -> Unit,
 ) : ModifierNodeElement<AlignmentLineOffsetTextUnitNode>() {
     override fun create(): AlignmentLineOffsetTextUnitNode {
         return AlignmentLineOffsetTextUnitNode(alignmentLine, before, after)
@@ -289,14 +292,14 @@ private class AlignmentLineOffsetTextUnitNode(
 ) : LayoutModifierNode, Modifier.Node() {
     override fun MeasureScope.measure(
         measurable: Measurable,
-        constraints: Constraints
+        constraints: Constraints,
     ): MeasureResult {
         return alignmentLineOffsetMeasure(
             alignmentLine,
             if (!before.isUnspecified) before.toDp() else Dp.Unspecified,
             if (!after.isUnspecified) after.toDp() else Dp.Unspecified,
             measurable,
-            constraints
+            constraints,
         )
     }
 }
@@ -306,7 +309,7 @@ private fun MeasureScope.alignmentLineOffsetMeasure(
     before: Dp,
     after: Dp,
     measurable: Measurable,
-    constraints: Constraints
+    constraints: Constraints,
 ): MeasureResult {
     val placeable =
         measurable.measure(
@@ -322,12 +325,12 @@ private fun MeasureScope.alignmentLineOffsetMeasure(
     val paddingBefore =
         ((if (before.isSpecified) before.roundToPx() else 0) - linePosition).coerceIn(
             0,
-            axisMax - axis
+            axisMax - axis,
         )
     val paddingAfter =
         ((if (after.isSpecified) after.roundToPx() else 0) - axis + linePosition).coerceIn(
             0,
-            axisMax - axis - paddingBefore
+            axisMax - axis - paddingBefore,
         )
 
     val width =

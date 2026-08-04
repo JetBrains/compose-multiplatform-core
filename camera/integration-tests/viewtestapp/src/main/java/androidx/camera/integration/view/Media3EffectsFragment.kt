@@ -52,6 +52,7 @@ import androidx.camera.view.video.AudioConfig
 import androidx.fragment.app.Fragment
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.effect.Brightness
+import androidx.media3.effect.Contrast
 
 /** Fragment for testing effects integration. */
 @OptIn(UnstableApi::class)
@@ -71,7 +72,7 @@ class Media3EffectsFragment : Fragment() {
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
-        savedInstanceState: Bundle?
+        savedInstanceState: Bundle?,
     ): View? {
         // Inflate the layout for this fragment.
         val view = inflater.inflate(R.layout.media3_effect_view, container, false)
@@ -86,10 +87,19 @@ class Media3EffectsFragment : Fragment() {
         cameraController.setEnabledUseCases(CameraController.VIDEO_CAPTURE)
         previewView.controller = cameraController
 
+        val effectName = arguments?.getString(ARG_EFFECT) ?: EFFECT_CONTRAST
+
         slider.setOnSeekBarChangeListener(
             object : SeekBar.OnSeekBarChangeListener {
                 override fun onProgressChanged(seekBar: SeekBar, progress: Int, fromUser: Boolean) {
-                    media3Effect.setEffects(listOf(Brightness(progress / 100f)))
+                    val effectValue = progress / 100f
+                    val effect =
+                        if (effectName == EFFECT_BRIGHTNESS) {
+                            Brightness(effectValue)
+                        } else {
+                            Contrast(effectValue)
+                        }
+                    media3Effect.setEffects(listOf(effect))
                 }
 
                 override fun onStartTrackingTouch(seekBar: SeekBar) = Unit
@@ -182,9 +192,15 @@ class Media3EffectsFragment : Fragment() {
         contentValues.put(MediaStore.Video.Media.DISPLAY_NAME, videoFileName)
         return MediaStoreOutputOptions.Builder(
                 resolver,
-                MediaStore.Video.Media.EXTERNAL_CONTENT_URI
+                MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
             )
             .setContentValues(contentValues)
             .build()
+    }
+
+    companion object {
+        const val ARG_EFFECT = "effect"
+        const val EFFECT_BRIGHTNESS = "brightness"
+        const val EFFECT_CONTRAST = "contrast"
     }
 }

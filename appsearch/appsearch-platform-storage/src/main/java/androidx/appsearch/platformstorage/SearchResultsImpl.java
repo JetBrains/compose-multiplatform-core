@@ -19,8 +19,10 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.os.Build;
 
+import androidx.annotation.OptIn;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
+import androidx.appsearch.annotation.HideInPlatform;
 import androidx.appsearch.app.GenericDocument;
 import androidx.appsearch.app.SearchResult;
 import androidx.appsearch.app.SearchResults;
@@ -46,8 +48,8 @@ import java.util.concurrent.Executor;
 /**
  * Platform implementation of {@link SearchResults} which proxies to the platform's
  * {@link android.app.appsearch.SearchResults}.
- * @exportToFramework:hide
  */
+@HideInPlatform
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @RequiresApi(Build.VERSION_CODES.S)
 class SearchResultsImpl implements SearchResults {
@@ -55,16 +57,22 @@ class SearchResultsImpl implements SearchResults {
     private final SearchSpec mSearchSpec;
     private final Executor mExecutor;
     private final Context mContext;
+    @OptIn(markerClass = androidx.appsearch.app.ExperimentalAppSearchApi.class)
+    @NonNull
+    private final PlatformConversionAdapter mAdapter;
 
+    @OptIn(markerClass = androidx.appsearch.app.ExperimentalAppSearchApi.class)
     SearchResultsImpl(
             android.app.appsearch.@NonNull SearchResults platformResults,
             @NonNull SearchSpec searchSpec,
             @NonNull Executor executor,
-            @NonNull Context context) {
+            @NonNull Context context,
+            @NonNull PlatformConversionAdapter adapter) {
         mPlatformResults = Preconditions.checkNotNull(platformResults);
         mSearchSpec = Preconditions.checkNotNull(searchSpec);
         mExecutor = Preconditions.checkNotNull(executor);
         mContext = Preconditions.checkNotNull(context);
+        mAdapter = Preconditions.checkNotNull(adapter);
     }
 
     @SuppressLint("WrongConstant")
@@ -110,7 +118,7 @@ class SearchResultsImpl implements SearchResults {
                     }
                     SearchResult jetpackResult =
                             SearchResultToPlatformConverter.toJetpackSearchResult(
-                                    frameworkResults.get(i));
+                                    frameworkResults.get(i), mAdapter);
 
                     if (manuallyApplyProjection) {
                         SearchResult searchResult =

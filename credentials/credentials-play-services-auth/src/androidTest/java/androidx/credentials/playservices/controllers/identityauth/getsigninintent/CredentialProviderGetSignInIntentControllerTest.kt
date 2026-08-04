@@ -67,7 +67,7 @@ class CredentialProviderGetSignInIntentControllerTest {
                         GetCredentialRequest(
                             listOf(
                                 GetPasswordOption(),
-                                GetSignInWithGoogleOption.Builder(serverClientId).build()
+                                GetSignInWithGoogleOption.Builder(serverClientId).build(),
                             )
                         )
                     )

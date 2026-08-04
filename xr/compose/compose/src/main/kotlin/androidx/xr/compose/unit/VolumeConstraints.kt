@@ -16,6 +16,8 @@
 
 package androidx.xr.compose.unit
 
+import androidx.annotation.IntRange
+
 /**
  * Defines constraints for a 3D volume, specifying minimum and maximum values for width, height, and
  * depth.
@@ -33,13 +35,20 @@ package androidx.xr.compose.unit
  *   Defaults to [INFINITY].
  */
 public class VolumeConstraints(
-    public val minWidth: Int,
-    public val maxWidth: Int,
-    public val minHeight: Int,
-    public val maxHeight: Int,
-    public val minDepth: Int = 0,
-    public val maxDepth: Int = INFINITY,
+    @IntRange(from = 0) public val minWidth: Int = 0,
+    @IntRange(from = 0) public val maxWidth: Int = INFINITY,
+    @IntRange(from = 0) public val minHeight: Int = 0,
+    @IntRange(from = 0) public val maxHeight: Int = INFINITY,
+    @IntRange(from = 0) public val minDepth: Int = 0,
+    @IntRange(from = 0) public val maxDepth: Int = INFINITY,
 ) {
+    init {
+        require(maxWidth >= minWidth) { "maxWidth ($maxWidth) must be >= minWidth ($minWidth)." }
+        require(maxHeight >= minHeight) {
+            "maxHeight ($maxHeight) must be >= minHeight ($minHeight)."
+        }
+        require(maxDepth >= minDepth) { "maxDepth ($maxDepth) must be >= minDepth ($minDepth)." }
+    }
 
     /** Indicates whether the width is bounded (has a maximum value other than [INFINITY]). */
     @get:JvmName("hasBoundedWidth")
@@ -123,17 +132,6 @@ public class VolumeConstraints(
     public companion object {
         /** Represents an unbounded (infinite) constraint value. */
         public const val INFINITY: Int = Int.MAX_VALUE
-
-        /** Represents unbounded constraints. */
-        public val Unbounded: VolumeConstraints =
-            VolumeConstraints(
-                minWidth = 0,
-                maxWidth = INFINITY,
-                minHeight = 0,
-                maxHeight = INFINITY,
-                minDepth = 0,
-                maxDepth = INFINITY,
-            )
     }
 }
 
@@ -187,22 +185,19 @@ public fun VolumeConstraints.constrainDepth(depth: Int): Int = depth.coerceIn(mi
  * @param horizontal the horizontal offset to apply.
  * @param vertical the vertical offset to apply.
  * @param depth the depth offset to apply.
- * @param resetMins if true, the minimum values in the new constraints will be set to 0, otherwise.
- *   they will be offset.
  * @return a new [VolumeConstraints] object with offset values.
  */
 public fun VolumeConstraints.offset(
     horizontal: Int = 0,
     vertical: Int = 0,
     depth: Int = 0,
-    resetMins: Boolean = false,
 ): VolumeConstraints =
     VolumeConstraints(
-        if (resetMins) 0 else (minWidth + horizontal).coerceAtLeast(0),
+        (minWidth + horizontal).coerceAtLeast(0),
         addMaxWithMinimum(maxWidth, horizontal),
-        if (resetMins) 0 else (minHeight + vertical).coerceAtLeast(0),
+        (minHeight + vertical).coerceAtLeast(0),
         addMaxWithMinimum(maxHeight, vertical),
-        if (resetMins) 0 else (minDepth + depth).coerceAtLeast(0),
+        (minDepth + depth).coerceAtLeast(0),
         addMaxWithMinimum(maxDepth, depth),
     )
 

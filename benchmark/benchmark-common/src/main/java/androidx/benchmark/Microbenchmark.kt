@@ -16,19 +16,15 @@
 
 package androidx.benchmark
 
-import android.os.Build
 import android.util.Log
 import androidx.annotation.RestrictTo
 import androidx.benchmark.BenchmarkState.Companion.enableMethodTracingAffectsMeasurementError
 import androidx.benchmark.perfetto.PerfettoCapture
 import androidx.benchmark.perfetto.PerfettoCaptureWrapper
 import androidx.benchmark.perfetto.PerfettoConfig
-import androidx.benchmark.perfetto.UiState
-import androidx.benchmark.perfetto.appendUiState
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.tracing.Trace
 import androidx.tracing.trace
-import java.io.File
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -102,12 +98,11 @@ constructor(internal val state: MicrobenchmarkRunningState) {
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 class MicrobenchmarkRunningState
-internal constructor(metrics: MetricsContainer, val yieldThreadPeriodically: Boolean) {
+internal constructor(internal var metrics: MetricsContainer, val yieldThreadPeriodically: Boolean) {
     internal var warmupEstimatedIterationTimeNs: Long = 0
     internal var warmupIterations: Int = 0
     internal var totalThermalThrottleSleepSeconds: Long = 0
     internal var maxIterationsPerRepeat = 0
-    internal var metrics: MetricsContainer = metrics
     internal var metricResults = mutableListOf<MetricResult>()
     internal var profilerResults = mutableListOf<Profiler.ResultFile>()
     internal var paused = false
@@ -201,7 +196,7 @@ internal typealias ScopeFactory = (MicrobenchmarkRunningState) -> Microbenchmark
 
 private fun <T> runBlockingOverrideMain(
     runOnMainDispatcher: Boolean,
-    block: suspend CoroutineScope.() -> T
+    block: suspend CoroutineScope.() -> T,
 ): T {
     return if (runOnMainDispatcher) {
         runBlocking(Dispatchers.Main, block)
@@ -213,7 +208,7 @@ private fun <T> runBlockingOverrideMain(
 internal fun captureMicroPerfettoTrace(
     definition: TestDefinition,
     config: MicrobenchmarkConfig?,
-    block: () -> Unit
+    block: () -> Unit,
 ): String? =
     PerfettoCaptureWrapper()
         .record(
@@ -226,18 +221,18 @@ internal fun captureMicroPerfettoTrace(
                         } else {
                             emptyList()
                         },
-                    useStackSamplingConfig = false
+                    useStackSamplingConfig = false,
                 ),
             // TODO(290918736): add support for Perfetto SDK Tracing in
             //  Microbenchmark in other cases, outside of MicrobenchmarkConfig
-            perfettoSdkConfig =
-                if (
-                    config?.perfettoSdkTracingEnabled == true &&
-                        Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
-                ) {
-                    PerfettoCapture.PerfettoSdkConfig(
-                        InstrumentationRegistry.getInstrumentation().context.packageName,
-                        PerfettoCapture.PerfettoSdkConfig.InitialProcessState.Alive
+            tracingLibraryConfig =
+                if (config?.perfettoSdkTracingEnabled == true) {
+                    PerfettoCapture.TracingLibraryConfig(
+                        targetPackage =
+                            InstrumentationRegistry.getInstrumentation().context.packageName,
+                        processState =
+                            PerfettoCapture.TracingLibraryConfig.InitialProcessState.Alive,
+                        enablePerfettoSdk = true,
                     )
                 } else {
                     null
@@ -249,7 +244,7 @@ internal fun captureMicroPerfettoTrace(
             // Additionally, skip on misconfigured devices to still enable benchmarking.
             enableTracing = !Arguments.dryRunMode && !DeviceInfo.misconfiguredForTracing,
             inMemoryTracingLabel = "Microbenchmark",
-            block = block
+            block = block,
         )
 
 /**
@@ -265,7 +260,7 @@ internal class Microbenchmark(
     private val phaseConfig: MicrobenchmarkPhase.Config,
     private val yieldThreadPeriodically: Boolean,
     private val scopeFactory: ScopeFactory,
-    private val loopedMeasurementBlock: LoopedMeasurementBlock
+    private val loopedMeasurementBlock: LoopedMeasurementBlock,
 ) {
     constructor(
         definition: TestDefinition,
@@ -273,13 +268,13 @@ internal class Microbenchmark(
         simplifiedTimingOnlyMode: Boolean,
         yieldThreadPeriodically: Boolean,
         scopeFactory: ScopeFactory = { runningState -> MicrobenchmarkScope(runningState) },
-        loopedMeasurementBlock: LoopedMeasurementBlock
+        loopedMeasurementBlock: LoopedMeasurementBlock,
     ) : this(
         definition = definition,
         phaseConfig = MicrobenchmarkPhase.Config(config, simplifiedTimingOnlyMode),
         yieldThreadPeriodically = yieldThreadPeriodically,
         scopeFactory = scopeFactory,
-        loopedMeasurementBlock = loopedMeasurementBlock
+        loopedMeasurementBlock = loopedMeasurementBlock,
     )
 
     private var startTimeNs = System.nanoTime()
@@ -309,7 +304,7 @@ internal class Microbenchmark(
                     traceUniqueName = definition.traceUniqueName,
                     scope = scope,
                     state = state,
-                    loopedMeasurementBlock = loopedMeasurementBlock
+                    loopedMeasurementBlock = loopedMeasurementBlock,
                 )
             }
         } finally {
@@ -328,7 +323,7 @@ internal class Microbenchmark(
             BenchmarkState.TAG,
             definition.outputTestName +
                 state.metricResults.map { it.getSummary() } +
-                "count=${state.maxIterationsPerRepeat}"
+                "count=${state.maxIterationsPerRepeat}",
         )
         return MicrobenchmarkOutput(
                 definition = definition,
@@ -338,7 +333,7 @@ internal class Microbenchmark(
                 warmupIterations = state.warmupIterations,
                 repeatIterations = state.maxIterationsPerRepeat,
                 thermalThrottleSleepSeconds = state.totalThermalThrottleSleepSeconds,
-                reportMetricsInBundle = !Arguments.dryRunMode
+                reportMetricsInBundle = !Arguments.dryRunMode,
             )
             .apply {
                 InstrumentationResults.reportBundle(createBundle())
@@ -352,18 +347,6 @@ internal class Microbenchmark(
 
     private fun processProfilerResults(perfettoTracePath: String?): List<Profiler.ResultFile> {
         // prepare profiling result files
-        perfettoTracePath?.apply {
-            // trace completed, and copied into shell writeable dir
-            val file = File(this)
-            file.appendUiState(
-                UiState(
-                    timelineStart = null,
-                    timelineEnd = null,
-                    highlightPackage =
-                        InstrumentationRegistry.getInstrumentation().context.packageName
-                )
-            )
-        }
         state.profilerResults.forEach {
             it.convertBeforeSync?.invoke()
             if (perfettoTracePath != null) {
@@ -391,7 +374,7 @@ internal inline fun measureRepeatedCheckNanosReentrant(
             TestDefinition(
                 fullClassName = "ThrottleDetector",
                 simpleClassName = "ThrottleDetector",
-                methodName = "checkThrottle"
+                methodName = "checkThrottle",
             ),
             config = MicrobenchmarkConfig(),
             simplifiedTimingOnlyMode = true,
@@ -402,7 +385,7 @@ internal inline fun measureRepeatedCheckNanosReentrant(
                     measureBlock.invoke(scope)
                     remainingIterations--
                 } while (remainingIterations > 0)
-            }
+            },
         )
         .run {
             runBlocking { executePhases() }
@@ -417,14 +400,14 @@ internal inline fun measureRepeatedCheckNanosReentrant(
 internal suspend fun measureRepeatedImplNoTracing(
     definition: TestDefinition,
     config: MicrobenchmarkConfig,
-    loopedMeasurementBlock: LoopedMeasurementBlock
+    loopedMeasurementBlock: LoopedMeasurementBlock,
 ) {
     Microbenchmark(
             definition = definition,
             config = config,
             simplifiedTimingOnlyMode = false,
             yieldThreadPeriodically = false,
-            loopedMeasurementBlock = loopedMeasurementBlock
+            loopedMeasurementBlock = loopedMeasurementBlock,
         )
         .apply {
             executePhases()
@@ -438,7 +421,7 @@ fun measureRepeatedImplWithTracing(
     config: MicrobenchmarkConfig?,
     postToMainThread: Boolean,
     scopeFactory: ScopeFactory = { runningState -> MicrobenchmarkScope(runningState) },
-    loopedMeasurementBlock: LoopedMeasurementBlock
+    loopedMeasurementBlock: LoopedMeasurementBlock,
 ) {
     val microbenchmark =
         Microbenchmark(
@@ -447,7 +430,7 @@ fun measureRepeatedImplWithTracing(
             simplifiedTimingOnlyMode = false,
             yieldThreadPeriodically = postToMainThread,
             scopeFactory = scopeFactory,
-            loopedMeasurementBlock = loopedMeasurementBlock
+            loopedMeasurementBlock = loopedMeasurementBlock,
         )
     val perfettoTracePath =
         captureMicroPerfettoTrace(definition, config) {
@@ -469,7 +452,7 @@ fun measureRepeatedImplWithTracing(
 inline fun measureRepeated(
     definition: TestDefinition,
     config: MicrobenchmarkConfig? = null,
-    crossinline measureBlock: MicrobenchmarkScope.() -> Unit
+    crossinline measureBlock: MicrobenchmarkScope.() -> Unit,
 ) {
     measureRepeatedImplWithTracing(
         postToMainThread = false,
@@ -481,6 +464,6 @@ inline fun measureRepeated(
                 measureBlock.invoke(scope)
                 remainingIterations--
             } while (remainingIterations > 0)
-        }
+        },
     )
 }

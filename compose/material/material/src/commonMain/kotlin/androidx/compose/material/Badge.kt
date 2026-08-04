@@ -55,7 +55,7 @@ import androidx.compose.ui.util.fastFirst
  * @param content the anchor to which this badge will be positioned
  */
 @Composable
-fun BadgedBox(
+public fun BadgedBox(
     badge: @Composable BoxScope.() -> Unit,
     modifier: Modifier = Modifier,
     content: @Composable BoxScope.() -> Unit,
@@ -65,11 +65,11 @@ fun BadgedBox(
             Box(
                 modifier = Modifier.layoutId("anchor"),
                 contentAlignment = Alignment.Center,
-                content = content
+                content = content,
             )
             Box(modifier = Modifier.layoutId("badge"), content = badge)
         },
-        modifier = modifier
+        modifier = modifier,
     ) { measurables, constraints ->
         val badgePlaceable =
             measurables
@@ -93,7 +93,7 @@ fun BadgedBox(
             totalHeight,
             // Provide custom baselines based only on the anchor content to avoid default baseline
             // calculations from including by any badge content.
-            mapOf(FirstBaseline to firstBaseline, LastBaseline to lastBaseline)
+            mapOf(FirstBaseline to firstBaseline, LastBaseline to lastBaseline),
         ) {
             // Use the width of the badge to infer whether it has any content (based on radius used
             // in [Badge]) and determine its horizontal offset.
@@ -122,7 +122,7 @@ fun BadgedBox(
  * @param content optional content to be rendered inside the badge
  */
 @Composable
-fun Badge(
+public fun Badge(
     modifier: Modifier = Modifier,
     backgroundColor: Color = MaterialTheme.colors.error,
     contentColor: Color = contentColorFor(backgroundColor),
@@ -140,7 +140,7 @@ fun Badge(
                 .clip(shape)
                 .padding(horizontal = BadgeWithContentHorizontalPadding),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.Center
+        horizontalArrangement = Arrangement.Center,
     ) {
         if (content != null) {
             CompositionLocalProvider(LocalContentColor provides contentColor) {
@@ -152,21 +152,27 @@ fun Badge(
 }
 
 /*@VisibleForTesting*/
-internal val BadgeRadius = 4.dp
+internal val BadgeRadius
+    get() = 4.dp
 
 /*@VisibleForTesting*/
-internal val BadgeWithContentRadius = 8.dp
-private val BadgeContentFontSize = 10.sp
+internal val BadgeWithContentRadius
+    get() = 8.dp
+private val BadgeContentFontSize
+    get() = 10.sp
 
 /*@VisibleForTesting*/
 // Leading and trailing text padding when a badge is displaying text that is too long to fit in
 // a circular badge, e.g. if badge number is greater than 9.
-internal val BadgeWithContentHorizontalPadding = 4.dp
+internal val BadgeWithContentHorizontalPadding
+    get() = 4.dp
 
 /*@VisibleForTesting*/
 // Horizontally align start/end of text badge 6dp from the end/start edge of its anchor
-internal val BadgeWithContentHorizontalOffset = -6.dp
+internal val BadgeWithContentHorizontalOffset
+    get() = -6.dp
 
 /*@VisibleForTesting*/
 // Horizontally align start/end of icon only badge 4dp from the end/start edge of anchor
-internal val BadgeHorizontalOffset = -4.dp
+internal val BadgeHorizontalOffset
+    get() = -4.dp

@@ -29,6 +29,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.node.ParentDataModifierNode
@@ -36,12 +37,14 @@ import androidx.compose.ui.platform.InspectorInfo
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.takeOrElse
 import androidx.compose.ui.util.fastForEachIndexed
 import androidx.compose.ui.util.fastIsFinite
 import androidx.compose.ui.util.fastMap
 import androidx.compose.ui.util.fastMapIndexed
+import androidx.wear.compose.foundation.lazy.TransformingLazyColumn
 import androidx.wear.compose.materialcore.screenHeightDp
 import kotlin.math.abs
 import kotlin.math.roundToInt
@@ -60,15 +63,28 @@ import kotlinx.coroutines.launch
  *
  * @sample androidx.wear.compose.material3.samples.ButtonGroupSample
  *
+ * <video
+ * src=https://developer.android.com/wear/images/design/WearComposeM3_ButtonGroupSample_CompositeImage.mp4
+ * autoplay loop muted playsinline style=border-radius:2.4%/6.8%;overflow:hidden; />
+ *
  * Example of 3 buttons, the middle one bigger [ButtonGroup]:
  *
  * @sample androidx.wear.compose.material3.samples.ButtonGroupThreeButtonsSample
+ *
+ * <video
+ * src=https://developer.android.com/wear/images/design/WearComposeM3_ButtonGroupThreeButtonsSample_CompositeImage.mp4
+ * autoplay loop muted playsinline style=border-radius:2.4%/6.8%;overflow:hidden; />
+ *
  * @param modifier Modifier to be applied to the button group
  * @param spacing the amount of spacing between buttons
  * @param expansionWidth how much buttons grow when pressed
  * @param contentPadding The spacing values to apply internally between the container and the
  *   content
  * @param verticalAlignment the vertical alignment of the button group's children.
+ * @param transformation The transformation for the ButtonGroup when it's inside a dynamically
+ *   changing container. To prevent a "double transformation" (on both the group and its buttons),
+ *   individual [Button]s inside this group must have their own container transformations disabled;
+ *   only their content should be transformed.
  * @param content the content and properties of each button. The Ux guidance is to use no more than
  *   3 buttons within a ButtonGroup. Note that this content is on the [ButtonGroupScope], to provide
  *   access to 3 new modifiers to configure the buttons.
@@ -80,7 +96,8 @@ public fun ButtonGroup(
     expansionWidth: Dp = ButtonGroupDefaults.ExpansionWidth,
     contentPadding: PaddingValues = ButtonGroupDefaults.fullWidthPaddings(),
     verticalAlignment: Alignment.Vertical = Alignment.CenterVertically,
-    content: @Composable ButtonGroupScope.() -> Unit
+    transformation: SurfaceTransformation? = null,
+    content: @Composable ButtonGroupScope.() -> Unit,
 ) {
     val expandAmountPx = with(LocalDensity.current) { expansionWidth.toPx() }
 
@@ -106,15 +123,20 @@ public fun ButtonGroup(
                     EnlargeOnPressElement(
                         interactionSource = interactionSource,
                         downAnimSpec,
-                        upAnimSpec
+                        upAnimSpec,
                     )
                 )
         }
     }
 
-    Layout(modifier = modifier.padding(contentPadding), content = { scope.content() }) {
-        measurables,
-        constraints ->
+    Layout(
+        modifier =
+            modifier.padding(contentPadding).graphicsLayer {
+                val transformation = transformation ?: return@graphicsLayer
+                with(transformation) { applyContainerTransformation() }
+            },
+        content = { scope.content() },
+    ) { measurables, constraints ->
         require(constraints.hasBoundedWidth) { "ButtonGroup width cannot be unbounded." }
 
         val width = constraints.maxWidth
@@ -166,22 +188,82 @@ public fun ButtonGroup(
                 placeable.measure(constraints.copy(minWidth = widths[ix], maxWidth = widths[ix]))
             }
 
+        @Suppress("ListIterator")
         val height =
             (placeables.fastMap { it.height }.max()).coerceIn(
                 constraints.minHeight,
-                constraints.maxHeight
+                constraints.maxHeight,
             )
 
         layout(width, height) {
+            val actualWidth = widths.sum() + spacingPx * (measurables.size - 1)
             var x = 0
             placeables.fastForEachIndexed { index, placeable ->
-                placeable.place(x, verticalAlignment.align(placeable.height, height))
+                val actualX =
+                    if (layoutDirection == LayoutDirection.Ltr) x
+                    else actualWidth - x - widths[index]
+                placeable.place(actualX, verticalAlignment.align(placeable.height, height))
                 x += widths[index] + spacingPx
                 // TODO: rounding finalSizes & spacing means we may have a few extra pixels wasted
                 //  or take more room than available.
             }
         }
     }
+}
+
+/**
+ * Layout component to implement an expressive group of buttons in a row, that react to touch by
+ * growing the touched button, (while the neighbor(s) shrink to accommodate and keep the group width
+ * constant).
+ *
+ * Example of a [ButtonGroup]:
+ *
+ * @sample androidx.wear.compose.material3.samples.ButtonGroupSample
+ *
+ * <video
+ * src=https://developer.android.com/wear/images/design/WearComposeM3_ButtonGroupSample_CompositeImage.mp4
+ * autoplay loop muted playsinline style=border-radius:2.4%/6.8%;overflow:hidden; />
+ *
+ * Example of 3 buttons, the middle one bigger [ButtonGroup]:
+ *
+ * @sample androidx.wear.compose.material3.samples.ButtonGroupThreeButtonsSample
+ *
+ * <video
+ * src=https://developer.android.com/wear/images/design/WearComposeM3_ButtonGroupThreeButtonsSample_CompositeImage.mp4
+ * autoplay loop muted playsinline style=border-radius:2.4%/6.8%;overflow:hidden; />
+ *
+ * @param modifier Modifier to be applied to the button group
+ * @param spacing the amount of spacing between buttons
+ * @param expansionWidth how much buttons grow when pressed
+ * @param contentPadding The spacing values to apply internally between the container and the
+ *   content
+ * @param verticalAlignment the vertical alignment of the button group's children.
+ * @param content the content and properties of each button. The Ux guidance is to use no more than
+ *   3 buttons within a ButtonGroup. Note that this content is on the [ButtonGroupScope], to provide
+ *   access to 3 new modifiers to configure the buttons.
+ */
+@Deprecated(
+    "This overload is deprecated. Please use the new overload with the transformation parameter.",
+    level = DeprecationLevel.HIDDEN,
+)
+@Composable
+public fun ButtonGroup(
+    modifier: Modifier = Modifier,
+    spacing: Dp = ButtonGroupDefaults.Spacing,
+    expansionWidth: Dp = ButtonGroupDefaults.ExpansionWidth,
+    contentPadding: PaddingValues = ButtonGroupDefaults.fullWidthPaddings(),
+    verticalAlignment: Alignment.Vertical = Alignment.CenterVertically,
+    content: @Composable ButtonGroupScope.() -> Unit,
+) {
+    ButtonGroup(
+        modifier = modifier,
+        spacing = spacing,
+        expansionWidth = expansionWidth,
+        contentPadding = contentPadding,
+        verticalAlignment = verticalAlignment,
+        transformation = null,
+        content = content,
+    )
 }
 
 public interface ButtonGroupScope {
@@ -226,9 +308,21 @@ public object ButtonGroupDefaults {
         val screenHeight = screenHeightDp().dp
         return PaddingValues(
             horizontal = screenHeight * FullWidthHorizontalPaddingPercentage / 100,
-            vertical = 0.dp
+            vertical = 0.dp,
         )
     }
+
+    /**
+     * The minimum vertical content padding for the list when a [ButtonGroup] is placed at the top
+     * or bottom edge. Recommended for use with
+     * [androidx.wear.compose.foundation.lazy.TransformingLazyColumnItemScope]'s
+     * [androidx.wear.compose.foundation.lazy.TransformingLazyColumnItemScope.minimumVerticalContentPadding],
+     * which allows items to choose a preferred content padding for the list.
+     * [TransformingLazyColumn] takes its contentPadding as the maximum of the preferred content
+     * padding values and its own contentPadding parameter.
+     */
+    public val minimumVerticalListContentPadding: Dp
+        @Composable get() = screenHeightFraction(LARGE_VERTICAL_CONTENT_PADDING_FRACTION)
 
     /** How much buttons grow (and neighbors shrink) when pressed. */
     public val ExpansionWidth: Dp = 24.dp
@@ -300,7 +394,7 @@ internal class ButtonGroupNode(var weight: Float, var minWidth: Dp) :
             ButtonGroupParentData(
                 if (weight.fastIsFinite()) weight else prev.weight,
                 minWidth.takeOrElse { prev.minWidth },
-                prev.pressedState
+                prev.pressedState,
             )
         }
 }
@@ -406,7 +500,7 @@ private data class ComputeHelper(
     var minWidth: Float,
     val weight: Float,
     val originalIndex: Int,
-    var width: Float
+    var width: Float,
 )
 
 /**
@@ -416,11 +510,12 @@ private data class ComputeHelper(
  * @param spacingPx the spacing between items, in pixels
  * @param availableWidth the total available space.
  */
+@Suppress("ListIterator")
 @VisibleForTesting
 internal fun computeWidths(
     items: List<Pair<Float, Float>>,
     spacingPx: Int,
-    availableWidth: Int
+    availableWidth: Int,
 ): IntArray {
     val helper =
         Array(items.size) { index ->

@@ -40,6 +40,7 @@ import java.util.concurrent.Executor
 import java.util.function.Supplier
 import kotlin.coroutines.ContinuationInterceptor
 import kotlin.coroutines.CoroutineContext
+import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -64,7 +65,7 @@ import kotlinx.coroutines.launch
  * All constructor parameters are forwarded to [DynamicTypeEvaluator.Config.Builder].
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-class ComplicationDataEvaluator
+public class ComplicationDataEvaluator
 @VisibleForTesting
 constructor(
     private val stateStore: StateStore? = StateStore(emptyMap()),
@@ -73,7 +74,7 @@ constructor(
     private val keepDynamicValues: Boolean = false,
     private val clock: Supplier<Instant>? = null,
 ) {
-    constructor(
+    public constructor(
         stateStore: StateStore? = StateStore(emptyMap()),
         platformTimeUpdateNotifier: PlatformTimeUpdateNotifier? = null,
         platformDataProviders: Map<PlatformDataProvider, Set<PlatformDataKey<*>>> = mapOf(),
@@ -105,7 +106,7 @@ constructor(
      *
      * The dynamic values are evaluated _separately_ on each flow collection.
      */
-    fun evaluate(unevaluatedData: WireComplicationData): Flow<WireComplicationData> =
+    public fun evaluate(unevaluatedData: WireComplicationData): Flow<WireComplicationData> =
         evaluateTopLevelFields(unevaluatedData)
             // Combining with fields that are made of WireComplicationData.
             .combineWithDataList(unevaluatedData.timelineEntries) { entries ->
@@ -119,6 +120,7 @@ constructor(
                 if (keepDynamicValues && evaluatedData.isInvalid()) {
                     // Setting invalidated data.
                     WireComplicationData.Builder(evaluatedData)
+                        .setDataSource(unevaluatedData.dataSource)
                         .setInvalidatedData(unevaluatedData)
                         .build()
                 } else {
@@ -282,7 +284,7 @@ constructor(
      * ```
      */
     private fun DynamicString.evaluateToTextSetter(
-        setter: WireComplicationData.Builder.(WireComplicationText) -> WireComplicationData.Builder,
+        setter: WireComplicationData.Builder.(WireComplicationText) -> WireComplicationData.Builder
     ): Flow<WireComplicationDataSetter> =
         evaluate()
             .toDataSetter(
@@ -333,24 +335,36 @@ constructor(
      * [DynamicTypeValueReceiverToChannel].
      */
     private fun <T : Any> evaluateDynamicType(
-        bindingRequest: (Executor, DynamicTypeValueReceiver<T>) -> DynamicTypeBindingRequest,
+        bindingRequest: (Executor, DynamicTypeValueReceiver<T>) -> DynamicTypeBindingRequest
     ): Flow<T?> =
         callbackFlow {
-                // Binding DynamicTypeEvaluator to the provided binding request.
-                val boundDynamicType: BoundDynamicType =
-                    evaluator.bind(
-                        bindingRequest(
-                            currentCoroutineContext().asExecutor(),
-                            // Emitting values to the callbackFlow's channel.
-                            DynamicTypeValueReceiverToChannel(channel)
+                try {
+                    // Binding DynamicTypeEvaluator to the provided binding request.
+                    val boundDynamicType: BoundDynamicType =
+                        evaluator.bind(
+                            bindingRequest(
+                                currentCoroutineContext().asExecutor(),
+                                // Emitting values to the callbackFlow's channel.
+                                DynamicTypeValueReceiverToChannel(channel),
+                            )
                         )
-                    )
-                // Start evaluation.
-                // TODO(b/267599473): Remove dispatches when DynamicTypeEvaluator is thread safe.
-                Dispatchers.Main.immediate { boundDynamicType.startEvaluation() }
-                awaitClose {
-                    // Stop evaluation when the Flow (created by callbackFlow) is closed.
-                    CoroutineScope(Dispatchers.Main.immediate).launch { boundDynamicType.close() }
+                    // Start evaluation.
+                    // TODO(b/267599473): Remove dispatches when DynamicTypeEvaluator is thread
+                    // safe.
+                    Dispatchers.Main.immediate { boundDynamicType.startEvaluation() }
+                    awaitClose {
+                        // Stop evaluation when the Flow (created by callbackFlow) is closed.
+                        CoroutineScope(Dispatchers.Main.immediate).launch {
+                            boundDynamicType.close()
+                        }
+                    }
+                } catch (e: CancellationException) {
+                    // Allow CancellationException to propagate.
+                    throw e
+                } catch (e: Exception) {
+                    Log.e(TAG, "Failed or rejected binding dynamic type for complication", e)
+                    channel.trySend(null)
+                    channel.close()
                 }
             }
             .conflate() // We only care about the latest data for each field.
@@ -360,9 +374,8 @@ constructor(
      *
      * [onData] emits the value, [onInvalidated] emits `null`.
      */
-    private class DynamicTypeValueReceiverToChannel<T : Any>(
-        private val channel: SendChannel<T?>,
-    ) : DynamicTypeValueReceiver<T> {
+    private class DynamicTypeValueReceiverToChannel<T : Any>(private val channel: SendChannel<T?>) :
+        DynamicTypeValueReceiver<T> {
         override fun onData(newData: T) {
             channel
                 .trySend(newData)
@@ -378,12 +391,13 @@ constructor(
         }
     }
 
-    companion object {
+    public companion object {
         private const val TAG = "ComplicationDataEvaluator"
 
-        val INVALID_DATA = NoDataComplicationData().asWireComplicationData()
+        public val INVALID_DATA: WireComplicationData =
+            NoDataComplicationData().asWireComplicationData()
 
-        fun WireComplicationData.isInvalid() =
+        public fun WireComplicationData.isInvalid(): Boolean =
             this === INVALID_DATA || (type == TYPE_NO_DATA && invalidatedData != null)
     }
 }

@@ -52,7 +52,7 @@ class StrictModeTestSuite {
             launchFragmentInContainer<TestPdfViewerFragment>(
                 themeResId =
                     com.google.android.material.R.style.Theme_Material3_DayNight_NoActionBar,
-                initialState = Lifecycle.State.INITIALIZED
+                initialState = Lifecycle.State.INITIALIZED,
             )
         scenario.onFragment { fragment ->
             // Register idling resource
@@ -84,7 +84,7 @@ class StrictModeTestSuite {
             scenario,
             TEST_DOCUMENT_FILE,
             Lifecycle.State.STARTED,
-            ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+            ActivityInfo.SCREEN_ORIENTATION_PORTRAIT,
         )
 
         onView(isRoot()).perform(click())
@@ -93,7 +93,7 @@ class StrictModeTestSuite {
             scenario,
             TEST_LINK_DOCUMENT_FILE,
             Lifecycle.State.STARTED,
-            ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+            ActivityInfo.SCREEN_ORIENTATION_PORTRAIT,
         )
         onView(isRoot()).perform(click())
 
@@ -107,7 +107,7 @@ class StrictModeTestSuite {
             scenario,
             TEST_DOCUMENT_FILE,
             Lifecycle.State.STARTED,
-            ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+            ActivityInfo.SCREEN_ORIENTATION_PORTRAIT,
         )
         onView(isRoot()).perform(click())
 
@@ -115,7 +115,7 @@ class StrictModeTestSuite {
             scenario,
             TEST_CORRUPTED_DOCUMENT_FILE,
             Lifecycle.State.STARTED,
-            ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+            ActivityInfo.SCREEN_ORIENTATION_PORTRAIT,
         )
         onView(isRoot()).perform(click())
 

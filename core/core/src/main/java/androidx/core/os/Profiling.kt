@@ -24,7 +24,6 @@ import android.os.CancellationSignal
 import android.os.ProfilingManager
 import android.os.ProfilingResult
 import androidx.annotation.RequiresApi
-import androidx.annotation.RestrictTo
 import java.util.concurrent.Executor
 import java.util.function.Consumer
 import kotlinx.coroutines.channels.awaitClose
@@ -88,7 +87,7 @@ public fun registerForAllProfilingResults(context: Context): Flow<ProfilingResul
 public fun registerForAllProfilingResults(
     context: Context,
     executor: Executor,
-    listener: Consumer<ProfilingResult>
+    listener: Consumer<ProfilingResult>,
 ) {
     val service = context.getSystemService(ProfilingManager::class.java)
     service.registerForAllProfilingResults(executor, listener)
@@ -125,7 +124,7 @@ public fun requestProfiling(
     context: Context,
     profilingRequest: ProfilingRequest,
     executor: Executor?,
-    listener: Consumer<ProfilingResult>?
+    listener: Consumer<ProfilingResult>?,
 ) {
     val service = context.getSystemService(ProfilingManager::class.java)
     service.requestProfiling(
@@ -134,7 +133,7 @@ public fun requestProfiling(
         profilingRequest.tag,
         profilingRequest.cancellationSignal,
         executor,
-        listener
+        listener,
     )
 }
 
@@ -172,17 +171,11 @@ internal constructor() {
         return ProfilingRequest(getProfilingType(), getParams(), mTag, mCancellationSignal)
     }
 
-    @SuppressWarnings("HiddenAbstractMethod")
-    @RestrictTo(RestrictTo.Scope.SUBCLASSES)
-    protected abstract fun getProfilingType(): Int
+    internal abstract fun getProfilingType(): Int
 
-    @SuppressWarnings("HiddenAbstractMethod")
-    @RestrictTo(RestrictTo.Scope.SUBCLASSES)
-    protected abstract fun getThis(): T
+    internal abstract fun getThis(): T
 
-    @SuppressWarnings("HiddenAbstractMethod")
-    @RestrictTo(RestrictTo.Scope.SUBCLASSES)
-    protected abstract fun getParams(): Bundle
+    internal abstract fun getParams(): Bundle
 }
 
 /**
@@ -194,17 +187,14 @@ internal constructor() {
 public class JavaHeapDumpRequestBuilder : ProfilingRequestBuilder<JavaHeapDumpRequestBuilder>() {
     private val mParams: Bundle = Bundle()
 
-    @RestrictTo(RestrictTo.Scope.SUBCLASSES)
     override fun getParams(): Bundle {
         return mParams
     }
 
-    @RestrictTo(RestrictTo.Scope.SUBCLASSES)
     override fun getProfilingType(): Int {
         return ProfilingManager.PROFILING_TYPE_JAVA_HEAP_DUMP
     }
 
-    @RestrictTo(RestrictTo.Scope.SUBCLASSES)
     override fun getThis(): JavaHeapDumpRequestBuilder {
         return this
     }
@@ -225,17 +215,14 @@ public class JavaHeapDumpRequestBuilder : ProfilingRequestBuilder<JavaHeapDumpRe
 public class HeapProfileRequestBuilder : ProfilingRequestBuilder<HeapProfileRequestBuilder>() {
     private val mParams: Bundle = Bundle()
 
-    @RestrictTo(RestrictTo.Scope.SUBCLASSES)
     override fun getParams(): Bundle {
         return mParams
     }
 
-    @RestrictTo(RestrictTo.Scope.SUBCLASSES)
     override fun getProfilingType(): Int {
         return ProfilingManager.PROFILING_TYPE_HEAP_PROFILE
     }
 
-    @RestrictTo(RestrictTo.Scope.SUBCLASSES)
     override fun getThis(): HeapProfileRequestBuilder {
         return this
     }
@@ -274,17 +261,14 @@ public class HeapProfileRequestBuilder : ProfilingRequestBuilder<HeapProfileRequ
 public class StackSamplingRequestBuilder : ProfilingRequestBuilder<StackSamplingRequestBuilder>() {
     private val mParams: Bundle = Bundle()
 
-    @RestrictTo(RestrictTo.Scope.SUBCLASSES)
     override fun getParams(): Bundle {
         return mParams
     }
 
-    @RestrictTo(RestrictTo.Scope.SUBCLASSES)
     override fun getProfilingType(): Int {
         return ProfilingManager.PROFILING_TYPE_STACK_SAMPLING
     }
 
-    @RestrictTo(RestrictTo.Scope.SUBCLASSES)
     override fun getThis(): StackSamplingRequestBuilder {
         return this
     }
@@ -317,17 +301,14 @@ public class StackSamplingRequestBuilder : ProfilingRequestBuilder<StackSampling
 public class SystemTraceRequestBuilder : ProfilingRequestBuilder<SystemTraceRequestBuilder>() {
     private val mParams: Bundle = Bundle()
 
-    @RestrictTo(RestrictTo.Scope.SUBCLASSES)
     override fun getParams(): Bundle {
         return mParams
     }
 
-    @RestrictTo(RestrictTo.Scope.SUBCLASSES)
     override fun getProfilingType(): Int {
         return ProfilingManager.PROFILING_TYPE_SYSTEM_TRACE
     }
 
-    @RestrictTo(RestrictTo.Scope.SUBCLASSES)
     override fun getThis(): SystemTraceRequestBuilder {
         return this
     }
@@ -364,5 +345,5 @@ internal constructor(
     public val profilingType: Int,
     public val params: Bundle,
     public val tag: String?,
-    public val cancellationSignal: CancellationSignal?
+    public val cancellationSignal: CancellationSignal?,
 )

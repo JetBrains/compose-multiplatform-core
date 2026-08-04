@@ -48,12 +48,7 @@ fun PlaySystemStandardClick(context: Context) {
 @Sampled
 fun PlayHapticSignal(hapticManager: HapticManager) {
     hapticManager.play(
-        compositionOf(
-            slowRise(),
-            quickFall(),
-            off(durationMillis = 50),
-            thud(),
-        ),
+        compositionOf(slowRise(), quickFall(), off(durationMillis = 50), thud()),
         HapticAttributes(HapticAttributes.USAGE_TOUCH),
     )
 }
@@ -76,10 +71,7 @@ fun PlayResolvableHapticSignal(hapticManager: HapticManager) {
 
 /** Sample showing how to play a haptic signal and then cancel. */
 @Sampled
-fun PlayThenCancel(
-    hapticManager: HapticManager,
-    repeatingHapticSignal: InfiniteSignal,
-) {
+fun PlayThenCancel(hapticManager: HapticManager, repeatingHapticSignal: InfiniteSignal) {
     ValueAnimator.ofFloat(0f, 1f).apply {
         duration = 3.seconds.inWholeMilliseconds
         repeatMode = RESTART
