@@ -8,6 +8,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableStateSetOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.InternalComposeUiApi
@@ -23,7 +24,6 @@ import androidx.compose.ui.desktop.LightweightWindowId
 import androidx.compose.ui.desktop.ApplicationSession
 import androidx.compose.ui.desktop.Window
 import androidx.compose.ui.desktop.WindowCloseRequestReason
-import androidx.compose.ui.desktop.WindowData
 import androidx.compose.ui.desktop.WindowResizeHandle
 import androidx.compose.ui.desktop.WindowScope
 import androidx.compose.ui.desktop.draganddrop.DragAndDropImage
@@ -65,6 +65,7 @@ import androidx.compose.ui.scene.CanvasLayersComposeScene
 import androidx.compose.ui.scene.ComposeScene
 import androidx.compose.ui.scene.PointerEventResult
 import androidx.compose.ui.scene.withFrameTransaction
+import androidx.compose.ui.semantics.SemanticsOwner
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextInputContext
@@ -86,6 +87,9 @@ import kotlinx.coroutines.CancellableContinuation
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.io.files.Path
 import noria.CallbackInterceptor
+import noria.ui.core.TestDataMode
+import noria.ui.core.UIRoot
+import noria.ui.core.WindowData
 import org.jetbrains.desktop.linux.DataSource
 import org.jetbrains.desktop.linux.DesktopTitlebarAction
 import org.jetbrains.desktop.linux.DragAndDropAction
@@ -379,7 +383,12 @@ class LinuxWindow internal constructor(
         },
     )
 
-    private val platformContext: PlatformContext = object : PlatformContext by PlatformContext.Empty() {
+    private val semanticsOwners = mutableStateSetOf<SemanticsOwner>()
+
+    private val uiRoot = UIRoot { semanticsOwners }
+
+    private val platformContext: PlatformContext = object : PlatformContext by PlatformContext.Empty(),
+        PlatformContext.SemanticsOwnerListener {
         override val windowInfo: WindowInfo
             get() = this@LinuxWindow.windowInfo
         override val viewConfiguration: ViewConfiguration
@@ -392,6 +401,21 @@ class LinuxWindow internal constructor(
             KdtDragAndDropManager(this@LinuxWindow)
 
         override fun textInputSessionOwner() = linuxTextInputSessionOwner
+
+        override val semanticsOwnerListener: PlatformContext.SemanticsOwnerListener?
+            get() = if (TestDataMode.isEnabled) this else null
+
+        override fun onSemanticsOwnerAppended(semanticsOwner: SemanticsOwner) {
+            semanticsOwners.add(semanticsOwner)
+        }
+
+        override fun onSemanticsOwnerRemoved(semanticsOwner: SemanticsOwner) {
+            semanticsOwners.remove(semanticsOwner)
+        }
+
+        override fun onSemanticsChange(semanticsOwner: SemanticsOwner) = Unit
+
+        override fun onLayoutChange(semanticsOwner: SemanticsOwner, semanticsNodeId: Int) = Unit
     }
 
     private val composeScene: ComposeScene = CanvasLayersComposeScene(
@@ -638,7 +662,7 @@ class LinuxWindow internal constructor(
     @Composable
     override fun Content(onLayout: (WindowData) -> Unit) {
         // ComposeScene drives its own composition; nothing to host here.
-        onLayout(WindowData(id))
+        onLayout(WindowData(id, uiRoot))
     }
 
     private val inputStateTracker = InputStateTracker(
