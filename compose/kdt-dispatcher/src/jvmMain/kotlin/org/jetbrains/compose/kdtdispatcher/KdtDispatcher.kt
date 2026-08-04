@@ -21,19 +21,10 @@ import kotlinx.coroutines.InternalCoroutinesApi
 import kotlinx.coroutines.MainCoroutineDispatcher
 import kotlinx.coroutines.Runnable
 import kotlinx.coroutines.internal.MainDispatcherFactory
-import kotlin.concurrent.Volatile
 import kotlin.coroutines.CoroutineContext
 
 @OptIn(InternalCoroutinesApi::class)
 public class KdtMainDispatcherFactory : MainDispatcherFactory {
-    public companion object {
-        /**
-         * Optional dispatcher override. Set this before any use of Dispatchers.Main.
-         */
-        @Volatile
-        internal var overridingMainDispatcher: MainCoroutineDispatcher? = null
-    }
-
     override val loadPriority: Int
         get() = 0
 
@@ -72,6 +63,8 @@ private object ImmediateKdtMainDispatcher : MainCoroutineDispatcher() {
     override fun toString(): String = currentKdtMainDispatcher().immediate.toString()
 }
 
+// Dispatchers.Main routes here; ComposeUIDispatcher itself carries the live test/headless override
+// (ComposeUIDispatcherOverride), so no second override layer is needed at this level.
 private fun currentKdtMainDispatcher(): MainCoroutineDispatcher {
-    return KdtMainDispatcherFactory.overridingMainDispatcher ?: ComposeUIDispatcher
+    return ComposeUIDispatcher
 }
