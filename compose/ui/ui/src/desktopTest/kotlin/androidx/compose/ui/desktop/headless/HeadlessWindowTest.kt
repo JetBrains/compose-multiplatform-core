@@ -18,6 +18,9 @@ package androidx.compose.ui.desktop.headless
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.withFrameNanos
+import androidx.compose.ui.ComposeUIDispatcher
 import androidx.compose.ui.HeadlessTest
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.desktop.ApplicationSession
@@ -32,6 +35,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -95,6 +99,46 @@ class HeadlessWindowTest {
         } finally {
             ComposeSceneFeatureFlags.isFrameIsolationEnabled = previous
         }
+    }
+
+    /**
+     * A window with no display link must never invent a frame time.
+     *
+     * Reachable through [captureScreenshot], which renders on demand when nothing has rendered yet.
+     * With a wall-clock default that frame lands around `System.nanoTime()`, and a caller driving a
+     * virtual clock then sees it jump backwards on its own next render — which makes every elapsed
+     * time the content computes garbage.
+     */
+    @Test
+    fun aSelfScheduledFrameDoesNotInventAWallClockTime() = runBlocking {
+        val frameTimes = mutableListOf<Long>()
+        val window = app.createWindow(ApplicationSession(scope)) { }
+        window.setContent(onPreviewKeyEvent = { false }, onKeyEvent = { false }) {
+            LaunchedEffect(Unit) {
+                while (true) {
+                    withFrameNanos { frameTimes.add(it) }
+                }
+            }
+            androidx.compose.foundation.layout.Box(Modifier.fillMaxSize())
+        }
+        // Renders on its own because no frame has happened yet: the frame time is the window's to
+        // choose, and it must not choose the wall clock.
+        withContext(ComposeUIDispatcher) { window.captureScreenshot() }
+        app.awaitIdle()
+        for (frame in 1..3) {
+            withContext(ComposeUIDispatcher) { window.render(nanoTime = frame * 16_000_000L) }
+            app.awaitIdle()
+        }
+        // On the loop thread: the content is suspended in withFrameNanos inside the scene's snapshot,
+        // and disposing from the test thread trips "cannot dispose while a child snapshot is open".
+        withContext(ComposeUIDispatcher) { window.dispose() }
+
+        assertTrue(frameTimes.size >= 3, "expected the driven frames to be observed: $frameTimes")
+        assertEquals(frameTimes.sorted(), frameTimes, "frame clock went backwards: $frameTimes")
+        assertTrue(
+            frameTimes.all { it <= 48_000_000L },
+            "a frame time exceeded the virtual clock, so wall-clock time leaked in: $frameTimes",
+        )
     }
 
     @Test
