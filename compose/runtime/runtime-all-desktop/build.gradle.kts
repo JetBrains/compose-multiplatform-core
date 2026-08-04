@@ -24,6 +24,7 @@ plugins {
 unsplitPackage {
     splitPackageModule(project(":compose:runtime:runtime"))
     splitPackageModule(project(":compose:runtime:runtime-annotation"))
+    splitPackageModule(project(":compose:runtime:runtime-retain"))
     splitPackageModule(project(":compose:runtime:runtime-saveable"))
 
     dependency(libs.kotlinStdlib)
