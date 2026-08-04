@@ -261,41 +261,8 @@ class ContextMenuData(
     }
 }
 
-/**
- * Represents a state of context menu in [ContextMenuArea]. [status] is implemented
- * via [androidx.compose.runtime.MutableState] so it's possible to track it inside @Composable
- * functions.
- */
-class ContextMenuState {
-    sealed class Status {
-        class Open(
-            val rect: Rect
-        ) : Status() {
-            override fun equals(other: Any?): Boolean {
-                if (this === other) return true
-                if (other == null || this::class != other::class) return false
-
-                other as Open
-
-                if (rect != other.rect) return false
-
-                return true
-            }
-
-            override fun hashCode(): Int {
-                return rect.hashCode()
-            }
-
-            override fun toString(): String {
-                return "Open(rect=$rect)"
-            }
-        }
-
-        data object Closed : Status()
-    }
-
-    var status: Status by mutableStateOf(Status.Closed)
-}
+// ContextMenuState lives in skikoMain (ContextMenuState.skiko.kt) so that Fleet common code
+// compiles for web.
 
 /**
  * Implementations of this interface are responsible for displaying context menus. There are two

@@ -24,7 +24,7 @@ import androidx.compose.ui.input.key.isMetaPressed
 import androidx.compose.ui.input.key.type
 import org.w3c.dom.events.KeyboardEvent
 
-internal actual val KeyEvent.isTypedEvent: Boolean
+actual val KeyEvent.isTypedEvent: Boolean
     get() = type == KeyEventType.KeyDown
         && !isMetaPressed
         && !isCtrlPressed

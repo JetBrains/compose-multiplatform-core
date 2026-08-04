@@ -271,99 +271,13 @@ private val SelectionManager.textManager: TextManager get() = object : TextManag
         this@textManager.selectLinkAtPositionIfAny(offset)
 }
 
-/**
- * Composition local that keeps [TextContextMenu].
- */
-@ExperimentalFoundationApi
-val LocalTextContextMenu:
-    ProvidableCompositionLocal<TextContextMenu> = staticCompositionLocalOf { TextContextMenu.Default }
+// TextContextMenu, its nested types, and LocalTextContextMenu live in skikoMain
+// (TextContextMenu.skiko.kt) so that Fleet common code compiles for web; the desktop default
+// implementation is provided through platformDefaultTextContextMenu below.
 
-/**
- * Describes how to show the text context menu for selectable texts and text fields.
- */
-@ExperimentalFoundationApi
-interface TextContextMenu {
-    /**
-     * Defines an area, that describes how to open and show text context menus.
-     * Usually it uses [ContextMenuArea] as the implementation.
-     * Note that it's up to the [Area] implementation to trigger the opening of the context menu on
-     * the appropriate user events (e.g. right-click).
-     *
-     * @param textManager Provides useful methods and information for text for which we show the
-     * text context menu.
-     * @param state [ContextMenuState] of menu controlled by this area.
-     * @param content The content of the [ContextMenuArea].
-     */
-    @Composable
-    fun Area(textManager: TextManager, state: ContextMenuState, content: @Composable () -> Unit)
-
-    /**
-     * Provides useful methods and information for text for which we show the text context menu.
-     */
-    @ExperimentalFoundationApi
-    interface TextManager {
-        /**
-         * The current selected text.
-         */
-        val selectedText: AnnotatedString
-
-        /**
-         * Action for cutting the selected text to the clipboard. Null if there is no text to cut.
-         */
-        val cut: Action?
-
-        /**
-         * Action for copy the selected text to the clipboard. Null if there is no text to copy.
-         */
-        val copy: Action?
-
-        /**
-         * Action for copying the url of the link the context menu was opened on. Null if
-         * [selectLinkAtPositionIfAny] did not select a link for this menu.
-         */
-        val copyLinkUrl: Action?
-
-        /**
-         * Action for pasting text from the clipboard. Null if there is no text in the clipboard.
-         */
-        val paste: Action?
-
-        /**
-         * Action for selecting the whole text. Null if the text is already selected.
-         */
-        val selectAll: Action?
-
-        /**
-         * Selects the word at the given [offset], unless the current selection already encompasses
-         * that position.
-         */
-        fun selectWordAtPositionIfNotAlreadySelected(offset: Offset)
-
-        /**
-         * If there is a link at the given [offset] that the current selection does not already
-         * cover, selects the whole text of that link and offers its url through [copyLinkUrl].
-         * Leaves a wider selection around [offset] alone. Returns whether a link was selected.
-         */
-        fun selectLinkAtPositionIfAny(offset: Offset): Boolean
-    }
-
-    @ExperimentalFoundationApi
-    class Action(val enabled: Boolean, val execute: () -> Unit)
-
-    companion object {
-        /**
-         * [TextContextMenu] that is used by default in Compose.
-         */
-        @ExperimentalFoundationApi
-        val Default: TextContextMenu = BasicTextContextMenu(showDisabledItems = true)
-
-        /**
-         * [TextContextMenu] that doesn't show any disabled items.
-         */
-        @ExperimentalFoundationApi
-        val HideDisabledMenuItems: TextContextMenu = BasicTextContextMenu(showDisabledItems = false)
-    }
-}
+@OptIn(ExperimentalFoundationApi::class)
+internal actual fun platformDefaultTextContextMenu(showDisabledItems: Boolean): TextContextMenu =
+    BasicTextContextMenu(showDisabledItems)
 
 /**
  * Basic implementation of [TextContextMenu].
