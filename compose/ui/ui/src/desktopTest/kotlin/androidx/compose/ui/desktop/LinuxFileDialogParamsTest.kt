@@ -102,4 +102,16 @@ class LinuxFileDialogParamsTest {
             decodeFileChooserPath("file:///home/user/my%20file.txt"),
         )
     }
+
+    @Test
+    fun decodesPercentEncodedMultiByteUtf8() {
+        // é is %C3%A9 — the decoder must accumulate both bytes before UTF-8 decoding.
+        assertEquals(Path("/home/user/café"), decodeFileChooserPath("file:///home/user/caf%C3%A9"))
+    }
+
+    @Test
+    fun preservesRawAstralPlaneCharactersMixedWithEscapes() {
+        // A raw surrogate pair (🎉) next to a percent escape must survive re-encoding.
+        assertEquals(Path("/home/user/🎉 party"), decodeFileChooserPath("/home/user/🎉%20party"))
+    }
 }
