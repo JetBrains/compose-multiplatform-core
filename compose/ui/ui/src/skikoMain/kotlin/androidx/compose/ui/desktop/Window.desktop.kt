@@ -114,10 +114,14 @@ interface Window {
     fun requestPlacement(placement: WindowPlacement)
 
     /**
-     * Threading: on macOS the native panel runs a nested modal loop — call on the main thread,
-     * where this blocks for the duration of the dialog. On Linux/GTK the call suspends without
-     * blocking and may be made from any thread, including the KDT event loop.
+     * Must be invoked on the UI thread (the KDT main/event-loop dispatcher): the native panels
+     * are UI-thread-only on every backend (KDT asserts it, e.g. macOS hard-panics off-main), and
+     * nothing marshals for the caller. On macOS the panel runs a nested modal run loop, so the
+     * call blocks (the app stays responsive via the re-entrant loop); Linux/GTK suspend on the
+     * chooser response event instead. Being `suspend` lets the modal/response await without
+     * blocking the caller's coroutine, not a relaxation of the thread requirement.
      */
+    @MainThread
     suspend fun showOpenSingleDialog(
         title: String = "Open",
         prompt: String = "Open",
@@ -134,6 +138,7 @@ interface Window {
     ): Path?
 
     /** Same threading contract as [showOpenSingleDialog]. */
+    @MainThread
     suspend fun showOpenMultipleDialog(
         title: String = "Open",
         prompt: String = "Open",
@@ -150,6 +155,7 @@ interface Window {
     ): List<Path>
 
     /** Same threading contract as [showOpenSingleDialog]. */
+    @MainThread
     suspend fun showSaveDialog(
         title: String = "Save",
         prompt: String = "Save",
