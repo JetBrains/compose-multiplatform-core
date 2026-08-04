@@ -22,7 +22,9 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
+import java.util.concurrent.atomic.AtomicInteger
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -77,6 +79,48 @@ class HeadlessApplicationLifecycleTest {
             assertEquals("Dispatchers.HeadlessMain", ComposeUIDispatcher.toString())
         } finally {
             again.resetForReuse()
+        }
+    }
+
+    /**
+     * The point of [HeadlessApplication.awaitIdle] over a single dispatch barrier: a task that
+     * queues further work must not be reported as quiescence. Here each task enqueues its
+     * successor, so one barrier would return with the chain still running.
+     */
+    @Test
+    fun awaitIdleDrainsWorkQueuedByAlreadyQueuedWork() = runBlocking {
+        val app = HeadlessApplication.initialize(libraryFolder())
+        try {
+            val ran = AtomicInteger(0)
+            fun enqueueChain(remaining: Int) {
+                app.eventLoop.dispatch {
+                    ran.incrementAndGet()
+                    if (remaining > 1) enqueueChain(remaining - 1)
+                }
+            }
+            enqueueChain(10)
+            app.awaitIdle()
+            assertEquals(10, ran.get())
+        } finally {
+            app.resetForReuse()
+        }
+    }
+
+    @Test
+    fun awaitIdleRejectsBeingCalledFromTheEventLoopThread() = runBlocking {
+        val app = HeadlessApplication.initialize(libraryFolder())
+        try {
+            // pendingTasksCount counts the running task, so from the loop thread quiescence is
+            // unreachable and a silent one-second timeout would be the only symptom.
+            val failure = assertFailsWith<IllegalStateException> {
+                withContext(ComposeUIDispatcher) {
+                    assertTrue(app.eventLoop.isCurrentThread())
+                    app.awaitIdle()
+                }
+            }
+            assertTrue(failure.message!!.contains("event-loop thread"), failure.message)
+        } finally {
+            app.resetForReuse()
         }
     }
 

@@ -228,6 +228,16 @@ class HeadlessWindow internal constructor(
         override fun onLayoutChange(semanticsOwner: SemanticsOwner, semanticsNodeId: Int) = Unit
     }
 
+    /**
+     * Declared above [composeScene] on purpose, and read by the content installed into it.
+     *
+     * With frame isolation enabled, constructing the scene activates its frame domain, which pins a
+     * snapshot. Property initializers run in declaration order, so a state created *after* the scene
+     * would not exist in that pinned snapshot, and the first `setContent` would fail
+     * `BaseComposeScene`'s "reading a state that was created after the snapshot was taken" check.
+     */
+    private var contentState = mutableStateOf<(@Composable WindowScope.() -> Unit)?>(null)
+
     private val composeScene: ComposeScene = CanvasLayersComposeScene(
         density = density,
         layoutDirection = LayoutDirection.Ltr,
@@ -337,7 +347,6 @@ class HeadlessWindow internal constructor(
     private var onPreviewKeyEvent: (KeyEvent) -> Boolean = { false }
     private var onKeyEvent: (KeyEvent) -> Boolean = { false }
 
-    private var contentState = mutableStateOf<(@Composable WindowScope.() -> Unit)?>(null)
     private var sceneContentInstalled = false
 
     private fun installSceneContentIfNeeded() {

@@ -185,9 +185,9 @@ object HeadlessApplication : Application {
      * runs ON the loop thread, the idle drain in [awaitEventLoopToBecomeIdle] counts the
      * still-running shutdown task in the event loop's pendingTasksCount, so the count never reaches
      * zero. The drain therefore always times out (~[HEADLESS_EVENT_LOOP_IDLE_TIMEOUT_MILLIS]ms) and
-     * logs one spurious "dropping N queued tasks" warning before shutdown proceeds safely. An
-     * `isCurrentThread()` special-case that skips the barrier when already on the loop thread is a
-     * recorded WS2 follow-up.
+     * logs one spurious "dropping N queued tasks" warning before shutdown proceeds safely. The fix
+     * would be an [HeadlessEventLoop.isCurrentThread] special-case that skips the barrier when
+     * already on the loop thread, the way [awaitIdle] rejects that case outright.
      */
     @OptIn(DelicateCoroutinesApi::class)
     override fun quit() {
@@ -212,7 +212,7 @@ object HeadlessApplication : Application {
         // TODO [pavel.sergeev] is the application immediately ready?
     }
 
-    // Covariant return type so tests (and Task 8) can reach HeadlessWindow-only members.
+    // Covariant return type so callers can reach HeadlessWindow-only members.
     override fun createWindow(
         session: ApplicationSession,
         onCloseRequest: (WindowCloseRequestReason) -> Unit,
@@ -226,6 +226,33 @@ object HeadlessApplication : Application {
     /** TestWindow entry point: wraps [coroutineScope] in a fresh [ApplicationSession]. */
     fun createWindow(coroutineScope: CoroutineScope): HeadlessWindow =
         createWindow(ApplicationSession(coroutineScope)) { }
+
+    /**
+     * Suspends until the event loop has no queued work left.
+     *
+     * This is what makes a step of the UI observable: the loop thread is the process's Compose UI
+     * thread, so a frame's effect bodies, recomposer resumes and snapshot apply-notifications are
+     * queued behind the render rather than finished with it. An assertion made before the queue
+     * drains can see a half-applied frame.
+     *
+     * A single dispatch barrier is not enough — it clears one FIFO level, and work the frame queues
+     * lands behind it — so this drains repeatedly until the queue is empty.
+     *
+     * Throws if the loop does not settle in time, rather than returning quietly the way shutdown
+     * does: a caller that is about to assert needs to know it is asserting against a settled frame.
+     */
+    suspend fun awaitIdle() {
+        // pendingTasksCount includes the task currently running, so from the loop thread itself the
+        // count can never reach zero and this would only ever time out.
+        check(eventLoopOrNull?.isCurrentThread() != true) {
+            "awaitIdle() must not be called from the event-loop thread"
+        }
+        val pending = awaitEventLoopToBecomeIdle()
+        check(pending == 0) {
+            "Headless event loop did not become idle within " +
+                "${HEADLESS_EVENT_LOOP_IDLE_TIMEOUT_MILLIS}ms; $pending tasks still queued"
+        }
+    }
 
     override fun prepareNativeWindowResourcesForReuse(id: LightweightWindowId) {
         // No-op for headless
