@@ -41,7 +41,7 @@ import androidx.compose.ui.text.input.TextFieldValue
 // denominator for both systems: if KeyEvent.isTypedEvent then it's safe to use
 // KeyEvent.utf16CodePoint
 @Suppress("KmpVisibilityMismatch") // public in commonStubs
-internal expect val KeyEvent.isTypedEvent: Boolean
+expect val KeyEvent.isTypedEvent: Boolean
 
 /**
  * It handles [KeyEvent]s and either process them as typed events or maps to [KeyCommand] via

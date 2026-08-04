@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,11 +14,12 @@
  * limitations under the License.
  */
 
-package androidx.compose.foundation.text
+package noria.ui.core
 
-import androidx.compose.ui.input.key.KeyEvent
+import androidx.compose.ui.graphics.Color
 
-actual val KeyEvent.isTypedEvent: Boolean
-    get() =
-        nativeKeyEvent.action == android.view.KeyEvent.ACTION_DOWN &&
-            !Character.isISOControl(nativeKeyEvent.unicodeChar)
+data class Palette(val prefix: String, val colors: Map<String, Color>) {
+  companion object {
+    val Empty = Palette("", emptyMap())
+  }
+}

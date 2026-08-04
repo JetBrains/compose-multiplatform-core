@@ -24,47 +24,8 @@ import androidx.compose.ui.text.platform.SystemFont
 import androidx.compose.ui.text.platform.asComposeFontFamily
 import java.awt.Font
 
-/**
- * Load a [FontFamily] from a system font family name. If the [familyName]
- * doesn't match any available family in the system, the lookup will return
- * a fallback font family.
- *
- * If you're trying to use an AWT [Font] in Compose, use the
- * [Font.asComposeFontFamily] function instead, which will take care of
- * some AWT-specific quirks, too. If you want to load a font family
- * embedded in the JetBrains Runtime, you can use [EmbeddedFontFamily].
- *
- * @param familyName The name of the system font family to load.
- * @return the requested system font family, or a fallback if [familyName]
- *     doesn't match any available system font family.
- * @see Font.asComposeFontFamily
- * @see EmbeddedFontFamily
- */
-@ExperimentalTextApi
-@Stable
-fun FontFamily(familyName: String): FontFamily =
-    FontListFontFamily(
-        listOf(
-            SystemFont(familyName, FontWeight.W100, FontStyle.Normal),
-            SystemFont(familyName, FontWeight.W200, FontStyle.Normal),
-            SystemFont(familyName, FontWeight.W300, FontStyle.Normal),
-            SystemFont(familyName, FontWeight.W400, FontStyle.Normal),
-            SystemFont(familyName, FontWeight.W500, FontStyle.Normal),
-            SystemFont(familyName, FontWeight.W600, FontStyle.Normal),
-            SystemFont(familyName, FontWeight.W700, FontStyle.Normal),
-            SystemFont(familyName, FontWeight.W800, FontStyle.Normal),
-            SystemFont(familyName, FontWeight.W900, FontStyle.Normal),
-            SystemFont(familyName, FontWeight.W100, FontStyle.Italic),
-            SystemFont(familyName, FontWeight.W200, FontStyle.Italic),
-            SystemFont(familyName, FontWeight.W300, FontStyle.Italic),
-            SystemFont(familyName, FontWeight.W400, FontStyle.Italic),
-            SystemFont(familyName, FontWeight.W500, FontStyle.Italic),
-            SystemFont(familyName, FontWeight.W600, FontStyle.Italic),
-            SystemFont(familyName, FontWeight.W700, FontStyle.Italic),
-            SystemFont(familyName, FontWeight.W800, FontStyle.Italic),
-            SystemFont(familyName, FontWeight.W900, FontStyle.Italic),
-        )
-    )
+// FontFamily(familyName: String) lives in skikoMain (FontFamily.skiko.kt): SystemFont
+// resolution works on every skiko platform and Fleet common code uses it on wasm.
 
 /**
  * Load a [FontFamily] embedded in the JetBrains Runtime. It will return
