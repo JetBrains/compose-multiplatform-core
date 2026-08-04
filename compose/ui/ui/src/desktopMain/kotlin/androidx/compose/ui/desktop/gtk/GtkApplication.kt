@@ -535,6 +535,12 @@ object GtkApplication : Application {
         onCloseRequest: (WindowCloseRequestReason) -> Unit,
     ): Window? {
         val oldWindow = windows[id] ?: return null
+        if (!oldWindow.isMarkedForReuse) {
+            // Defensive, mirroring the macOS shape: swapping a live, unmarked window would
+            // cannibalize it. Warn and let the caller fall back to creating a fresh window.
+            logger.warn { "reuseWindow($id) called on a window not marked for reuse; ignoring" }
+            return null
+        }
         // Removed first so the old window stops receiving events while the sibling is under
         // construction — both wrap the same native window, and only one may be routed to.
         windows -= id
@@ -586,7 +592,12 @@ object GtkApplication : Application {
 
     private suspend fun resetState() {
         val windowsToClose = windows.values.toList()
-        windowsToClose.forEach { it.dispose() }
+        windowsToClose.forEach {
+            // A window still marked at shutdown must be torn down anyway — unmark first so
+            // dispose() is not a reuse-protected no-op and awaitNativeClosed() cannot hang.
+            it.isMarkedForReuse = false
+            it.dispose()
+        }
         windowsToClose.forEach { it.awaitNativeClosed() }
         keyboardFocusWindowId = null
         activeDragSource = null

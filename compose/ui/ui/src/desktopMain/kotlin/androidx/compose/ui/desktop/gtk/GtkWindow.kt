@@ -499,6 +499,9 @@ class GtkWindow private constructor(
         openParams: FileDialog.OpenDialogParams,
     ): List<Path>? = suspendCancellableCoroutine { continuation ->
         application.onEventLoopAsync {
+            // The caller may have been cancelled between suspending and this block running;
+            // don't open a native chooser nobody is listening to.
+            if (!continuation.isActive) return@onEventLoopAsync
             if (isDisposed) {
                 continuation.resume(null)
                 return@onEventLoopAsync
@@ -522,6 +525,9 @@ class GtkWindow private constructor(
         saveParams: FileDialog.SaveDialogParams,
     ): List<Path>? = suspendCancellableCoroutine { continuation ->
         application.onEventLoopAsync {
+            // The caller may have been cancelled between suspending and this block running;
+            // don't open a native chooser nobody is listening to.
+            if (!continuation.isActive) return@onEventLoopAsync
             if (isDisposed) {
                 continuation.resume(null)
                 return@onEventLoopAsync

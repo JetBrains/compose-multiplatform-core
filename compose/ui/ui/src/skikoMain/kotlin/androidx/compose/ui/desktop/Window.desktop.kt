@@ -113,7 +113,11 @@ interface Window {
     @MainThread
     fun requestPlacement(placement: WindowPlacement)
 
-    @MainThread
+    /**
+     * Threading: on macOS the native panel runs a nested modal loop — call on the main thread,
+     * where this blocks for the duration of the dialog. On Linux/GTK the call suspends without
+     * blocking and may be made from any thread, including the KDT event loop.
+     */
     suspend fun showOpenSingleDialog(
         title: String = "Open",
         prompt: String = "Open",
@@ -129,7 +133,7 @@ interface Window {
         resolvesAliases: Boolean = true,
     ): Path?
 
-    @MainThread
+    /** Same threading contract as [showOpenSingleDialog]. */
     suspend fun showOpenMultipleDialog(
         title: String = "Open",
         prompt: String = "Open",
@@ -145,7 +149,7 @@ interface Window {
         resolvesAliases: Boolean = true,
     ): List<Path>
 
-    @MainThread
+    /** Same threading contract as [showOpenSingleDialog]. */
     suspend fun showSaveDialog(
         title: String = "Save",
         prompt: String = "Save",
